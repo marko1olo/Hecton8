@@ -1,5 +1,6 @@
 using System;
 using Hecton8.Core;
+using Hecton8.Core.Signals;
 using Hecton8.Gameplay;
 using TMPro;
 using Unity.Mathematics;
@@ -11,7 +12,7 @@ namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/PDA Barter Tab")]
-    public sealed class PDABarterTab : MonoBehaviour, IPDAEventListener
+    public sealed class PDABarterTab : MonoBehaviour, IPDAEventListener, IUpdatable
     {
         private static readonly Color PanelBg = new Color(0.03f, 0.08f, 0.1f, 0.84f);
         private static readonly Color BoxBg = new Color(0.05f, 0.12f, 0.14f, 0.72f);
@@ -66,7 +67,8 @@ namespace Hecton8.UI
         private PDABarterActionButton[] _cardButtons;
         private PDAExchangeSystem.OfferSnapshot[] _snapshotBuffer;
         private PDAExchangeSystem.TransactionSnapshot[] _transactionBuffer;
-        private PDAExchangeSystem _subscribedExchangeSystem;
+        private bool _registered;
+        private uint _exchangeSourceId;
 
         private bool IsTabActive =>
             isActiveAndEnabled &&
@@ -89,17 +91,25 @@ namespace Hecton8.UI
             AutoResolve();
             EnsureBuilt();
             Subscribe();
+            TryRegister();
             RefreshAll(true);
+        }
+
+        private void Start()
+        {
+            TryRegister();
         }
 
         private void OnDisable()
         {
             Unsubscribe();
+            TryUnregister();
         }
 
         private void OnDestroy()
         {
             Unsubscribe();
+            TryUnregister();
             PDAEvents.AssertUnregistered(this, nameof(PDABarterTab));
         }
 
@@ -135,7 +145,7 @@ namespace Hecton8.UI
 
         private void Unsubscribe()
         {
-            UnsubscribeExchangeSystem();
+            _exchangeSourceId = 0u;
             PDAEvents.Unregister(this);
         }
 
@@ -144,30 +154,53 @@ namespace Hecton8.UI
             if (exchangeSystem == null)
                 exchangeSystem = GlobalRegistry.PDAExchange;
 
-            if (_subscribedExchangeSystem == exchangeSystem)
+            _exchangeSourceId = exchangeSystem != null ? unchecked((uint)exchangeSystem.GetInstanceID()) : 0u;
+        }
+
+        public void Tick(float deltaTime)
+        {
+            ProcessExchangeSignals();
+        }
+
+        private void ProcessExchangeSignals()
+        {
+            if (!IsTabActive)
                 return;
 
-            UnsubscribeExchangeSystem();
+            RefreshExchangeBinding();
             if (exchangeSystem == null)
                 return;
 
-            exchangeSystem.ExchangeStateChanged += HandleExchangeStateChanged;
-            _subscribedExchangeSystem = exchangeSystem;
+            uint sourceId = _exchangeSourceId;
+            ReadOnlySpan<PdaExchangeStateChangedSignal> signals = SignalBus<PdaExchangeStateChangedSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                if (sourceId != 0u && signals[i].SourceId != sourceId)
+                    continue;
+
+                RefreshAll(true);
+                break;
+            }
         }
 
-        private void UnsubscribeExchangeSystem()
+        private void TryRegister()
         {
-            if (_subscribedExchangeSystem == null)
+            if (_registered || !Application.isPlaying)
                 return;
 
-            _subscribedExchangeSystem.ExchangeStateChanged -= HandleExchangeStateChanged;
-            _subscribedExchangeSystem = null;
+            if (GlobalRegistry.Dispatcher == null)
+                return;
+
+            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
         }
 
-        private void HandleExchangeStateChanged()
+        private void TryUnregister()
         {
-            if (IsTabActive)
-                RefreshAll(true);
+            if (!_registered)
+                return;
+
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+            _registered = false;
         }
 
         public void OnPDAEvent(in PDAEventPayload payload)

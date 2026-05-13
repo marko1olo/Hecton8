@@ -21,7 +21,7 @@ MonoBehaviour:
     criticalHeartbeatBpm: 124
     maxChromaticOffset: 0.0032
     maxDistortionOffset: 0.011
-    maxVignetteStrength: 0.22
+    maxVignetteStrength: 0.12
 --- !u!114 &-6711189012746036237
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -107,8 +107,8 @@ MonoBehaviour:
     flashlightShadowBias: 0.06
     flashlightShadowFloor: 0.08
     noirPower: 0.55
-    noirFogDensity: 0.0025
-    noirLiftColor: {r: 0.045, g: 0.07, b: 0.09, a: 1}
+    noirFogDensity: 0.0009
+    noirLiftColor: {r: 0.08, g: 0.11, b: 0.14, a: 1}
     lensGhostIntensity: 0.34
     lensGhostScale: 0.075
     lensChromaticAberration: 0
@@ -153,10 +153,11 @@ MonoBehaviour:
   - {fileID: -7876346766836879761}
   - {fileID: -5156602577924574680}
   - {fileID: 6465015203263784576}
+  - {fileID: 420815551001000003}
   - {fileID: 415103832360233407}
   - {fileID: 8595161897321640130}
   - {fileID: 7811646883630815038}
-  m_RendererFeatureMap: 428237b34a36661e6d5928ef81d149dd3e0de91a1c1b9010f39bc47a2611dda26f2ee4a25898b1922832f1b6461170b880a609021359b859bf29bc78bcbec205c230d4dc342648773e179ae9738b686c
+  m_RendererFeatureMap: 428237b34a36661e6d5928ef81d149dd3e0de91a1c1b9010f39bc47a2611dda26f2ee4a25898b1922832f1b6461170b880a609021359b85943f85f998309d705bf29bc78bcbec205c230d4dc342648773e179ae9738b686c
   m_UseNativeRenderPass: 1
   xrSystemData: {fileID: 0}
   postProcessData: {fileID: 11400000, guid: 41439944d30ece34e96484bdb6645b55, type: 2}
@@ -207,6 +208,19 @@ MonoBehaviour:
     renderScale: 0.5
     compositeStrength: 1
     bilateralDepthScale: 24
+--- !u!114 &420815551001000003
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eba5170be4920e746b8c0ca0765349bc, type: 3}
+  m_Name: HectonFluidAdvectionRenderFeature
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Visor.HectonFluidAdvectionRenderFeature
+  m_Active: 1
 --- !u!114 &1193483708777696574
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -260,8 +274,8 @@ MonoBehaviour:
     shader: {fileID: 4800000, guid: d38821027adf58747a75d2048230832c, type: 3}
     injectionPoint: 450
     shallowFogColor: {r: 0.34, g: 0.58, b: 0.72, a: 1}
-    abyssFogColor: {r: 0.012, g: 0.028, b: 0.05, a: 1}
-    density: 0.0028
+    abyssFogColor: {r: 0.05, g: 0.09, b: 0.12, a: 1}
+    density: 0.0012
     startDistanceMeters: 7
     maxDepthMeters: 155
     ditherStrength: 0.28
@@ -297,7 +311,7 @@ MonoBehaviour:
     heatHazeFrequency: 38
     heatHazeSpeed: 0.62
     heatHazeAmplitude: 0.0017
-    damageVignetteStrength: 0.24
+    damageVignetteStrength: 0.16
     lowTierVideoMemoryMb: 2048
     hypoxiaSafeOxygen01: 0.22
 --- !u!114 &8595161897321640130

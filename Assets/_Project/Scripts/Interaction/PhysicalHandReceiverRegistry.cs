@@ -5,7 +5,7 @@ namespace Hecton8.Interaction
     /// <summary>
     /// Shared collider-to-hand-receiver table for physical cockpit controls.
     /// </summary>
-    internal static class PhysicalHandReceiverRegistry
+    public static class PhysicalHandReceiverRegistry
     {
         private const int MaxReceivers = 128;
         private const int ReceiverCacheMask = MaxReceivers - 1;

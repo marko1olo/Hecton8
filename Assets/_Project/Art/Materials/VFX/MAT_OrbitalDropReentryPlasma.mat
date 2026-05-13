@@ -1,0 +1,46 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: MAT_OrbitalDropReentryPlasma
+  m_Shader: {fileID: 4800000, guid: ed0a893349281084383651b4a57938cd, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _SharedNoiseTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _CloudScatter: 1.15
+    - _HectonReentryPhase: 0
+    - _PlasmaAltitude01: 1
+    - _PlasmaHeat: 0
+    - _PlasmaLowTier: 1
+    - _PlasmaOpacity: 0
+    - _PlasmaVelocity: 0
+    - _VoronoiScale: 28
+    - _VoronoiSpeed: 13
+    m_Colors:
+    - _PlasmaCoreColor: {r: 5.2, g: 1.35, b: 0.22, a: 1}
+    - _PlasmaEdgeColor: {r: 2.6, g: 0.12, b: 1.75, a: 1}
+    - _RayleighColor: {r: 0.18, g: 0.78, b: 1.45, a: 1}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1

@@ -1,11 +1,15 @@
 using Hecton8.Input;
 using Hecton8.Core.Signals;
 using Hecton8.Physics;
+using System;
+using System.IO;
+using System.IO.MemoryMappedFiles;
 using System.Runtime.InteropServices;
 using System.Threading;
 using Hecton8.Tools;
 using Hecton8.World;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
@@ -21,9 +25,10 @@ namespace Hecton8.Core
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9990)]
-    public sealed class InputDispatcher : MonoBehaviour, IInputService, IUpdatable, ITickable, IServiceHeartbeat, IServiceShutdown, IDispatcherRaycastReceiver, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
+    public sealed unsafe class InputDispatcher : MonoBehaviour, IInputService, IUpdatable, ITickable, IServiceHeartbeat, IServiceShutdown, IDispatcherRaycastReceiver, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
     {
         private const int BufferedActionCapacity = 15;
+        private const int DeterministicInputRingCapacity = 60;
         private const int XRInputStateCapacity = 2;
         private const int XRControllerActiveBitCount = 5;
         private const int XRLookAtCommandCapacity = 1;
@@ -55,14 +60,45 @@ namespace Hecton8.Core
         private const byte HapticHighMotorMask = 0b0010;
         private const byte HapticBlendOverride = 0;
         private const byte HapticBlendAdditive = 1;
+        private const byte DeviceLostFlagGamepad = 1 << 0;
+        private const byte DeviceLostFlagXR = 1 << 1;
         private const byte ToolTriggerFlagPrimaryPressed = 1 << 0;
         private const byte ToolTriggerFlagSecondaryPressed = 1 << 1;
+        private const uint InputSchemeHashKeyboardMouse = 0x4B424D21u;
+        private const uint InputSchemeHashGamepad = 0x47504144u;
+        private const uint InputSchemeHashSteamDeck = 0x5354444Bu;
+        private const uint InputSchemeHashXRTouch = 0x58525443u;
+        private const uint DeviceLostSignalSourceHash = 0x494E5044u;
+        private const uint PlayerInputSignalSourceHash = 0x504C494Eu;
         private const uint XRRuntimeFlagLookAtRayCommandEnabled = 1u << 0;
         private const uint XRRuntimeFlagInputSnapshotActive = 1u << 1;
         private const uint XRRuntimeFlagsAny = XRRuntimeFlagLookAtRayCommandEnabled | XRRuntimeFlagInputSnapshotActive;
+        private const int StandardInputRingCapacity = 60;
+        private const int InputBlackBoxCapacity = 300;
+        private const int InputStateSizeBytes = 24;
+        private const int InputReplayHeaderBytes = 16;
+        private const int InputReplayPayloadBytes = StandardInputRingCapacity * InputStateSizeBytes;
+        private const int InputReplayMappedBytes = InputReplayHeaderBytes + InputReplayPayloadBytes;
+        private const int InputReplayRetryIntervalFrames = 300;
+        private const int MaxInputDelayFrames = 2;
+        private const int MaxStandardInputSubstepsPerFrame = 4;
+        private const double StandardInputTickIntervalSeconds = 0.016666666666666666;
+        private const double StandardInputTickRateHz = 60.0;
+        private const ulong InputReplayMagic = 0x594C504552384848ul;
+        private const uint InputReplayVersion = 1u;
+        private const string InputReplayFileName = "input_determinism_bridge.h8replay";
+        private const string InputDumpRelativePath = "Docs/AgentLogs/Dump_INPUT_DETERMINISM_BRIDGE.bin";
         private static readonly QueryParameters XRLookAtEnabledQueryParameters = new QueryParameters(HectonLayerMasks.DefaultRaycastLayerMask, false, QueryTriggerInteraction.Ignore);
         private static readonly QueryParameters XRLookAtDisabledQueryParameters = new QueryParameters(HectonLayerMasks.NoLayers, false, QueryTriggerInteraction.Ignore);
         private static readonly RaycastCommand DisabledXRLookAtRayCommand = new RaycastCommand(Vector3.zero, Vector3.forward, XRLookAtDisabledQueryParameters, 0.01f);
+
+        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
+        private struct DeterministicInputTelemetryEntry
+        {
+            public InputState State;
+            public uint CurrentInputSchemeHash;
+            public uint PackedAxes;
+        }
 
         [StructLayout(LayoutKind.Sequential, Pack = 4)]
         private struct BufferedActionEntry
@@ -94,7 +130,17 @@ namespace Hecton8.Core
         private ButtonControl _rightSecondaryButton;
         private NativeArray<XRInputState> _xrInputStates;
         private NativeArray<RaycastCommand> _xrLookAtRayCommands;
+        private NativeArray<InputState> _deterministicInputRing;
+        private NativeArray<DeterministicInputTelemetryEntry> _deterministicInputBlackBox;
+        private NativeArray<InputState> _inputReplaySnapshot;
         private JobHandle _xrNativeDisposeHandle;
+        private JobHandle _deterministicInputDisposeHandle;
+        private FileStream _inputReplayStream;
+        private MemoryMappedFile _inputReplayMappedFile;
+        private MemoryMappedViewAccessor _inputReplayAccessor;
+        private byte* _inputReplayPointer;
+        private Thread _inputReplayThread;
+        private AutoResetEvent _inputReplaySignal;
         private RaycastHit _lastXRLookAtHit;
         private AbsoluteUniversePosition _lastXRLookAtRayOriginAup;
         private Vector3 _lastXRLookAtRayOriginRuntimePosition;
@@ -111,7 +157,13 @@ namespace Hecton8.Core
         private int _nextXRDeviceRescanFrame;
         private int _lastXRLookAtHitFrame = -1;
         private int _bufferWriteIndex;
+        private int _deterministicInputCount;
+        private int _deterministicBlackBoxWriteIndex;
+        private int _inputReplayStopRequested;
+        private int _inputReplayWritePending;
+        private int _nextInputReplayRetryFrame;
         private Vector2 _pendingLookDelta;
+        private Vector2 _visualLookDelta;
         private uint _latchedActionBits;
         private float _appliedLowMotorSpeed;
         private float _appliedHighMotorSpeed;
@@ -124,13 +176,26 @@ namespace Hecton8.Core
         private float _lastPublishedXRSecondaryTriggerStrength = -1f;
         private uint _lastPublishedXRToolTriggerMask;
         private uint _xrRuntimeFlags;
+        private uint _currentInputSchemeHash;
+        private uint _lastTelemetryInputSchemeHash;
         private ushort _toolTriggerSequence;
+        private ushort _deviceLostPauseSequence;
         private byte _lastPublishedXRToolTriggerFlags;
         private byte _lastPublishedXRToolDominantController;
         private bool _lookBlendActive;
+        private bool _lastAutomationOverrideApplied;
         private Vector2 _lookBlendFrom;
         private Vector2 _lastDeliveredLookDelta;
         private PlayerInputState _currentState;
+        private InputState _currentInputState;
+        private InputState _previousInputState;
+        private uint _standardInputFrame;
+        private uint _inputStateSequence;
+        private uint _playerInputSignalSequence;
+        private uint _lastDeterministicInputFrame = uint.MaxValue;
+        [SerializeField, Range(0, MaxInputDelayFrames)]
+        private int _inputDelayFrames;
+        private double _standardInputAccumulator;
 
         internal static InputDispatcher ActiveRuntimeInstance { get; private set; }
 
@@ -142,11 +207,24 @@ namespace Hecton8.Core
 
         // COLD ALLOC: BufferedActionEntry[15] - fixed player action buffering ring for pre-commit intent capture - owner: InputDispatcher
         private readonly BufferedActionEntry[] _bufferedActions = new BufferedActionEntry[BufferedActionCapacity];
-
+        // COLD ALLOC: object[1] - deterministic input replay writer gate - owner: InputDispatcher
+        private readonly object _inputReplayGate = new object();
         /// <summary>
         /// Returns true once the dispatcher is registered into <see cref="GlobalRegistry"/>.
         /// </summary>
         public bool IsInitialized => _isInitialized;
+
+        public int InputDelayFrames
+        {
+            get => _inputDelayFrames;
+            set => _inputDelayFrames = Mathf.Clamp(value, 0, MaxInputDelayFrames);
+        }
+
+        public InputState CurrentInputState => _currentInputState;
+
+        public InputState PreviousInputState => _previousInputState;
+
+        public Vector2 VisualLookDelta => _visualLookDelta;
 
         /// <inheritdoc />
         public ServiceHeartbeatState HeartbeatState => _isInitialized ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.NotStarted;
@@ -227,6 +305,8 @@ namespace Hecton8.Core
             EnsureInputBinding();
             EnsureHapticDeviceBinding();
             RefreshXRNativeBufferState();
+            EnsureDeterministicInputNativeBuffers();
+            EnsureInputReplayWriter();
             TryRegisterToDispatcher();
             _isInitialized = true;
             TryRegisterInputService();
@@ -242,6 +322,7 @@ namespace Hecton8.Core
             EnsureInputBinding();
             EnsureHapticDeviceBinding();
             RefreshXRNativeBufferState();
+            EnsureDeterministicInputNativeBuffers();
         }
 
         private void OnEnable()
@@ -251,6 +332,8 @@ namespace Hecton8.Core
             EnsureInputBinding();
             EnsureHapticDeviceBinding();
             RefreshXRNativeBufferState();
+            EnsureDeterministicInputNativeBuffers();
+            EnsureInputReplayWriter();
 
             if (_isInitialized)
             {
@@ -291,6 +374,8 @@ namespace Hecton8.Core
             ClearFrameState();
             ClearCachedInputDevices();
             DisposeXRNativeBuffers(default);
+            StopInputReplayWriter();
+            DisposeDeterministicInputNativeBuffers(default);
 
             if (resetInitialization)
             {
@@ -331,8 +416,39 @@ namespace Hecton8.Core
         /// <param name="deltaTime">Game tick delta time.</param>
         public void Tick(float deltaTime)
         {
-            CaptureState(deltaTime);
+            UpdateVisualLookInterpolation();
             DrainToolHaptics();
+        }
+
+        public void PreSimulationInputTick(float deltaTime)
+        {
+            EnsureDeterministicInputNativeBuffers();
+            EnsureInputReplayWriter();
+
+            float sanitizedDeltaTime = math.isfinite(deltaTime) && deltaTime > 0f
+                ? deltaTime
+                : (float)StandardInputTickIntervalSeconds;
+            _standardInputAccumulator += sanitizedDeltaTime;
+
+            int substepCount = 0;
+            while ((_standardInputAccumulator >= StandardInputTickIntervalSeconds || _inputStateSequence == 0u) &&
+                   substepCount < MaxStandardInputSubstepsPerFrame)
+            {
+                if (_standardInputAccumulator >= StandardInputTickIntervalSeconds)
+                    _standardInputAccumulator -= StandardInputTickIntervalSeconds;
+                else
+                    _standardInputAccumulator = 0d;
+
+                CaptureState((float)StandardInputTickIntervalSeconds);
+                PublishDeterministicInputState(_standardInputFrame++);
+                substepCount++;
+            }
+
+            if (substepCount >= MaxStandardInputSubstepsPerFrame &&
+                _standardInputAccumulator >= StandardInputTickIntervalSeconds)
+            {
+                _standardInputAccumulator = 0d;
+            }
         }
 
         /// <summary>
@@ -342,6 +458,419 @@ namespace Hecton8.Core
         public PlayerInputState GetState()
         {
             return _currentState;
+        }
+
+        public bool TryGetInputState(uint frame, out InputState state)
+        {
+            if (!_deterministicInputRing.IsCreated)
+            {
+                state = default;
+                return false;
+            }
+
+            InputState candidate = _deterministicInputRing[(int)(frame % DeterministicInputRingCapacity)];
+            if (candidate.Frame == frame)
+            {
+                state = candidate;
+                return true;
+            }
+
+            state = default;
+            return false;
+        }
+
+        private void PublishDeterministicInputState(uint currentFrame)
+        {
+            if (_lastDeterministicInputFrame == currentFrame)
+                return;
+
+            if (!_deterministicInputRing.IsCreated)
+                return;
+
+            _lastDeterministicInputFrame = currentFrame;
+            InputState rawState = BuildInputState(_currentState, currentFrame, unchecked(++_inputStateSequence));
+            _deterministicInputRing[(int)(currentFrame % DeterministicInputRingCapacity)] = rawState;
+            if (_deterministicInputCount < DeterministicInputRingCapacity)
+                _deterministicInputCount++;
+
+            int delayFrames = _inputDelayFrames;
+            InputState resolvedState = rawState;
+            byte appliedDelayFrames = 0;
+            if (delayFrames > 0 &&
+                _deterministicInputCount > delayFrames &&
+                currentFrame >= delayFrames)
+            {
+                uint delayedFrame = currentFrame - (uint)delayFrames;
+                if (TryGetInputState(delayedFrame, out InputState delayedState))
+                {
+                    resolvedState = delayedState;
+                    resolvedState.Flags |= (ushort)InputStateFlags.DelayApplied;
+                    appliedDelayFrames = (byte)delayFrames;
+                }
+            }
+
+            _previousInputState = _currentInputState;
+            _currentInputState = resolvedState;
+            ApplyResolvedInputStateToPlayerSnapshot(resolvedState);
+
+            InputStateSignal signal = new InputStateSignal
+            {
+                State = resolvedState,
+                CurrentInputSchemeHash = _currentInputSchemeHash,
+                InputDelayFrames = (byte)delayFrames,
+                AppliedDelayFrames = appliedDelayFrames,
+                Flags = resolvedState.Flags
+            };
+            SignalBus<InputStateSignal>.Push(in signal);
+            WriteDeterministicInputBlackBox(in resolvedState, _currentInputSchemeHash);
+            if ((resolvedState.Sequence % StandardInputRingCapacity) == 0u)
+                StageInputReplaySnapshot();
+        }
+
+        private InputState BuildInputState(in PlayerInputState source, uint frame, uint sequence)
+        {
+            ushort flags = 0;
+            if (_lastAutomationOverrideApplied)
+                flags |= (ushort)InputStateFlags.AutomationOverride;
+
+            Vector2 move = source.MoveDelta;
+            float moveLengthSq = move.sqrMagnitude;
+            if (moveLengthSq > 1.0f)
+                move *= math.rsqrt(moveLengthSq);
+
+            return new InputState
+            {
+                Frame = frame,
+                Sequence = sequence,
+                MoveX = InputState.QuantizeUnit(move.x, ref flags),
+                MoveY = InputState.QuantizeUnit(move.y, ref flags),
+                LookX = InputState.QuantizeLook(source.LookDelta.x, ref flags),
+                LookY = InputState.QuantizeLook(source.LookDelta.y, ref flags),
+                Vertical = InputState.QuantizeUnit(source.VerticalDelta, ref flags),
+                Flags = flags,
+                ButtonsBitmask = source.ActionsBitmask
+            };
+        }
+
+        private void ApplyResolvedInputStateToPlayerSnapshot(in InputState state)
+        {
+            float2 move = state.Move;
+            float2 look = state.Look;
+            _currentState.MoveDelta = new Vector2(move.x, move.y);
+            _currentState.LookDelta = new Vector2(look.x, look.y);
+            _currentState.VerticalDelta = math.clamp(state.VerticalAxis, -1f, 1f);
+            _currentState.ActionsBitmask = state.ButtonsBitmask;
+            _visualLookDelta = _currentState.LookDelta;
+        }
+
+        private void UpdateVisualLookInterpolation()
+        {
+            float alpha = (float)math.saturate(_standardInputAccumulator * StandardInputTickRateHz);
+            float2 previous = _previousInputState.Look;
+            float2 current = _currentInputState.Look;
+            float2 interpolated = math.lerp(previous, current, alpha);
+            _visualLookDelta = new Vector2(interpolated.x, interpolated.y);
+        }
+
+        private void EnsureDeterministicInputNativeBuffers()
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (UnsafeUtility.SizeOf<InputState>() != InputStateSizeBytes)
+                Debug.LogError("[InputDispatcher] InputState ABI violation; expected 24 bytes Pack=1.");
+#endif
+            DispatcherJobSwap.TryFinalizeCompleted(ref _deterministicInputDisposeHandle);
+            if (!_deterministicInputDisposeHandle.IsCompleted)
+                return;
+
+            if (!_deterministicInputRing.IsCreated)
+            {
+                _deterministicInputRing = new NativeArray<InputState>(DeterministicInputRingCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<InputState>[60] - fixed deterministic input ring - owner: InputDispatcher
+                NativeMemorySentinel.RegisterNativeArray(
+                    _deterministicInputRing,
+                    nameof(InputDispatcher),
+                    nameof(_deterministicInputRing),
+                    NativeAllocationLifetime.Session);
+            }
+
+            if (!_deterministicInputBlackBox.IsCreated)
+            {
+                _deterministicInputBlackBox = new NativeArray<DeterministicInputTelemetryEntry>(InputBlackBoxCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<DeterministicInputTelemetryEntry>[300] - deterministic input blackbox - owner: InputDispatcher
+                NativeMemorySentinel.RegisterNativeArray(
+                    _deterministicInputBlackBox,
+                    nameof(InputDispatcher),
+                    nameof(_deterministicInputBlackBox),
+                    NativeAllocationLifetime.Session);
+            }
+
+            if (!_inputReplaySnapshot.IsCreated)
+            {
+                _inputReplaySnapshot = new NativeArray<InputState>(DeterministicInputRingCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<InputState>[60] - replay MMF staging block - owner: InputDispatcher
+                NativeMemorySentinel.RegisterNativeArray(
+                    _inputReplaySnapshot,
+                    nameof(InputDispatcher),
+                    nameof(_inputReplaySnapshot),
+                    NativeAllocationLifetime.Session);
+            }
+        }
+
+        private void DisposeDeterministicInputNativeBuffers(JobHandle dependency)
+        {
+            DispatcherJobSwap.TryFinalizeCompleted(ref _deterministicInputDisposeHandle);
+            bool hasPendingDispose = !_deterministicInputDisposeHandle.IsCompleted;
+            JobHandle disposeHandle = hasPendingDispose
+                ? JobHandle.CombineDependencies(_deterministicInputDisposeHandle, dependency)
+                : dependency;
+            bool scheduledDispose = false;
+
+            if (_deterministicInputRing.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_deterministicInputRing);
+                disposeHandle = _deterministicInputRing.Dispose(disposeHandle);
+                _deterministicInputRing = default;
+                scheduledDispose = true;
+            }
+
+            if (_deterministicInputBlackBox.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_deterministicInputBlackBox);
+                disposeHandle = _deterministicInputBlackBox.Dispose(disposeHandle);
+                _deterministicInputBlackBox = default;
+                scheduledDispose = true;
+            }
+
+            if (_inputReplaySnapshot.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_inputReplaySnapshot);
+                disposeHandle = _inputReplaySnapshot.Dispose(disposeHandle);
+                _inputReplaySnapshot = default;
+                scheduledDispose = true;
+            }
+
+            if (!scheduledDispose)
+                return;
+
+            _deterministicInputDisposeHandle = disposeHandle;
+            JobHandle.ScheduleBatchedJobs();
+        }
+
+        private void WriteDeterministicInputBlackBox(in InputState state, uint currentInputSchemeHash)
+        {
+            if (!_deterministicInputBlackBox.IsCreated)
+                return;
+
+            int writeIndex = _deterministicBlackBoxWriteIndex;
+            int wrappedIndex = writeIndex % InputBlackBoxCapacity;
+            uint packedAxes = PackInputAxes(in state);
+            _deterministicInputBlackBox[wrappedIndex] = new DeterministicInputTelemetryEntry
+            {
+                State = state,
+                CurrentInputSchemeHash = currentInputSchemeHash,
+                PackedAxes = packedAxes
+            };
+            _deterministicBlackBoxWriteIndex = (writeIndex + 1) % InputBlackBoxCapacity;
+            CrashTelemetryBuffer.ReportDeterministicInputFrame(
+                state.Frame,
+                state.Sequence,
+                state.ButtonsBitmask,
+                packedAxes);
+
+            if ((state.Flags & (ushort)InputStateFlags.NonFiniteSanitized) != 0)
+                DumpDeterministicInputBlackBox();
+        }
+
+        private static uint PackInputAxes(in InputState state)
+        {
+            return (uint)(ushort)state.MoveX |
+                   ((uint)(ushort)state.MoveY << 16);
+        }
+
+        private void StageInputReplaySnapshot()
+        {
+            if (!_deterministicInputRing.IsCreated || !_inputReplaySnapshot.IsCreated || _inputReplaySignal == null)
+                return;
+
+            lock (_inputReplayGate)
+            {
+                for (int i = 0; i < DeterministicInputRingCapacity; i++)
+                    _inputReplaySnapshot[i] = _deterministicInputRing[i];
+            }
+
+            Interlocked.Exchange(ref _inputReplayWritePending, 1);
+            _inputReplaySignal.Set();
+        }
+
+        private void EnsureInputReplayWriter()
+        {
+            if (!Application.isPlaying || _inputReplayThread != null)
+                return;
+
+            int currentFrame = Time.frameCount;
+            if (_nextInputReplayRetryFrame > currentFrame)
+                return;
+
+            try
+            {
+                string replayPath = Path.Combine(Application.persistentDataPath, InputReplayFileName);
+                string directory = Path.GetDirectoryName(replayPath);
+                if (!string.IsNullOrEmpty(directory))
+                    Directory.CreateDirectory(directory);
+
+                _inputReplayStream = new FileStream(replayPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite, 4096, FileOptions.RandomAccess);
+                _inputReplayStream.SetLength(InputReplayMappedBytes);
+                _inputReplayMappedFile = MemoryMappedFile.CreateFromFile(
+                    _inputReplayStream,
+                    null,
+                    InputReplayMappedBytes,
+                    MemoryMappedFileAccess.ReadWrite,
+                    HandleInheritability.None,
+                    false);
+                _inputReplayAccessor = _inputReplayMappedFile.CreateViewAccessor(0L, InputReplayMappedBytes, MemoryMappedFileAccess.ReadWrite);
+                _inputReplayAccessor.SafeMemoryMappedViewHandle.AcquirePointer(ref _inputReplayPointer);
+                if (_inputReplayPointer == null)
+                {
+                    MarkInputReplaySetupFailure(currentFrame);
+                    ReleaseInputReplayMap();
+                    return;
+                }
+
+                WriteInputReplayHeader();
+                _inputReplaySignal = new AutoResetEvent(false); // COLD ALLOC: AutoResetEvent[1] - deterministic input replay signal - owner: InputDispatcher
+                Interlocked.Exchange(ref _inputReplayStopRequested, 0);
+                _inputReplayThread = new Thread(InputReplayWriterLoop)
+                {
+                    IsBackground = true,
+                    Name = "H8.InputReplayMMF"
+                }; // COLD ALLOC: Thread[1] - deterministic input replay MMF writer - owner: InputDispatcher
+                _inputReplayThread.Start();
+                _nextInputReplayRetryFrame = 0;
+            }
+            catch (Exception)
+            {
+                MarkInputReplaySetupFailure(currentFrame);
+                Interlocked.Exchange(ref _inputReplayStopRequested, 1);
+                Interlocked.Exchange(ref _inputReplayWritePending, 0);
+                _inputReplayThread = null;
+                _inputReplaySignal?.Dispose();
+                _inputReplaySignal = null;
+                ReleaseInputReplayMap();
+            }
+        }
+
+        private void MarkInputReplaySetupFailure(int currentFrame)
+        {
+            CrashTelemetryBuffer.ReportBlackBoxExportFailure();
+            _nextInputReplayRetryFrame = currentFrame + InputReplayRetryIntervalFrames;
+        }
+
+        private void StopInputReplayWriter()
+        {
+            Interlocked.Exchange(ref _inputReplayStopRequested, 1);
+            AutoResetEvent signal = _inputReplaySignal;
+            signal?.Set();
+
+            Thread thread = _inputReplayThread;
+            bool stopped = true;
+            if (thread != null && thread.IsAlive)
+                stopped = thread.Join(2000);
+
+            if (!stopped)
+            {
+                CrashTelemetryBuffer.ReportBlackBoxExportFailure();
+                return;
+            }
+
+            _inputReplayThread = null;
+            _inputReplaySignal?.Dispose();
+            _inputReplaySignal = null;
+            Interlocked.Exchange(ref _inputReplayWritePending, 0);
+            ReleaseInputReplayMap();
+        }
+
+        private void ReleaseInputReplayMap()
+        {
+            if (_inputReplayPointer != null && _inputReplayAccessor != null)
+            {
+                _inputReplayAccessor.SafeMemoryMappedViewHandle.ReleasePointer();
+                _inputReplayPointer = null;
+            }
+
+            _inputReplayAccessor?.Dispose();
+            _inputReplayAccessor = null;
+            _inputReplayMappedFile?.Dispose();
+            _inputReplayMappedFile = null;
+            _inputReplayStream?.Dispose();
+            _inputReplayStream = null;
+        }
+
+        private void WriteInputReplayHeader()
+        {
+            if (_inputReplayPointer == null)
+                return;
+
+            UnsafeUtility.WriteArrayElement(_inputReplayPointer, 0, InputReplayMagic);
+            UnsafeUtility.WriteArrayElement(_inputReplayPointer + 8, 0, InputReplayVersion);
+            UnsafeUtility.WriteArrayElement(_inputReplayPointer + 12, 0, (uint)DeterministicInputRingCapacity);
+        }
+
+        private void InputReplayWriterLoop()
+        {
+            try
+            {
+                while (Volatile.Read(ref _inputReplayStopRequested) == 0)
+                {
+                    AutoResetEvent signal = _inputReplaySignal;
+                    if (signal == null)
+                        return;
+
+                    signal.WaitOne(1000);
+                    if (Interlocked.Exchange(ref _inputReplayWritePending, 0) == 0)
+                        continue;
+
+                    MemoryMappedViewAccessor accessor = _inputReplayAccessor;
+                    lock (_inputReplayGate)
+                    {
+                        if (_inputReplayPointer == null || !_inputReplaySnapshot.IsCreated)
+                            continue;
+
+                        void* source = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(_inputReplaySnapshot);
+                        UnsafeUtility.MemCpy(_inputReplayPointer + InputReplayHeaderBytes, source, InputReplayPayloadBytes);
+                    }
+
+                    accessor?.Flush();
+                }
+            }
+            catch (Exception)
+            {
+                CrashTelemetryBuffer.ReportBlackBoxExportFailure();
+                Interlocked.Exchange(ref _inputReplayStopRequested, 1);
+            }
+        }
+
+        private void DumpDeterministicInputBlackBox()
+        {
+            if (!_deterministicInputBlackBox.IsCreated)
+                return;
+
+            try
+            {
+                string projectRoot = Directory.GetParent(Application.dataPath)?.FullName;
+                if (string.IsNullOrEmpty(projectRoot))
+                    return;
+
+                string path = Path.Combine(projectRoot, InputDumpRelativePath);
+                string directory = Path.GetDirectoryName(path);
+                if (!string.IsNullOrEmpty(directory))
+                    Directory.CreateDirectory(directory);
+
+                int byteCount = _deterministicInputBlackBox.Length * UnsafeUtility.SizeOf<DeterministicInputTelemetryEntry>();
+                void* source = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(_deterministicInputBlackBox);
+                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+                    stream.Write(new ReadOnlySpan<byte>(source, byteCount));
+            }
+            catch (Exception)
+            {
+                CrashTelemetryBuffer.ReportBlackBoxExportFailure();
+            }
         }
 
         /// <summary>
@@ -571,6 +1100,7 @@ namespace Hecton8.Core
                         ResetGamepadHaptics();
                         _cachedGamepad = null;
                         SteamDeckInputPal.BindGamepad(null);
+                        PublishDeviceLostPauseSignal(DeviceLostFlagGamepad);
                         ResolveCachedGamepad();
                     }
                     break;
@@ -621,13 +1151,31 @@ namespace Hecton8.Core
                 case InputDeviceChange.Removed:
                 case InputDeviceChange.Disconnected:
                 case InputDeviceChange.Disabled:
+                    bool lostTrackedController = ReferenceEquals(_cachedLeftXRController, controller) ||
+                                                 ReferenceEquals(_cachedRightXRController, controller);
                     if (ReferenceEquals(_cachedLeftXRController, controller))
                         ClearLeftXRController();
                     if (ReferenceEquals(_cachedRightXRController, controller))
                         ClearRightXRController();
+                    if (lostTrackedController)
+                        PublishDeviceLostPauseSignal(DeviceLostFlagXR);
                     ResolveCachedXRControllers();
                     break;
             }
+        }
+
+        private void PublishDeviceLostPauseSignal(byte flags)
+        {
+            SimulationPauseSignal signal = default;
+            signal.SourceHash = DeviceLostSignalSourceHash;
+            signal.Frame = (uint)Time.frameCount;
+            signal.Sequence = ++_deviceLostPauseSequence;
+            if (signal.Sequence == 0)
+                signal.Sequence = ++_deviceLostPauseSequence;
+            signal.Paused = 1;
+            signal.Flags = flags;
+            signal.RestoreScalar = 1f;
+            GlobalSignals.Publish(in signal);
         }
 
         private void ClearCachedXRControllers()
@@ -916,14 +1464,59 @@ namespace Hecton8.Core
 
             state.ActionsBitmask = actionBits;
             bool automationOverrideApplied = ApplyAutomationOverride(ref state, (uint)currentFrame);
+            _lastAutomationOverrideApplied = automationOverrideApplied;
             if (automationOverrideApplied)
                 _lastDeliveredLookDelta = state.LookDelta;
 
-            byte inputSignalFlags = automationOverrideApplied
-                ? PhysicsDeterminismSignals.InputSignalFlagAutomationOverride
-                : (byte)0;
+            uint resolvedSchemeHash = ResolveCurrentInputSchemeHash();
+            if (automationOverrideApplied && state.CurrentInputSchemeHash != 0u)
+                resolvedSchemeHash = state.CurrentInputSchemeHash;
+
+            state.CurrentInputSchemeHash = resolvedSchemeHash;
+            _currentInputSchemeHash = state.CurrentInputSchemeHash;
+            PublishInputSchemeTelemetryIfChanged(state.CurrentInputSchemeHash, state.PlatformInputFlags, (uint)currentFrame);
+
             _currentState = state;
-            PhysicsDeterminismSignals.PublishInput(in state, (uint)currentFrame, inputSignalFlags);
+        }
+
+        private uint ResolveCurrentInputSchemeHash()
+        {
+            if (HectonXRRuntimeState.IsXRActive &&
+                ((_cachedLeftXRController != null && _cachedLeftXRController.added) ||
+                 (_cachedRightXRController != null && _cachedRightXRController.added)))
+            {
+                return InputSchemeHashXRTouch;
+            }
+
+            InputManager inputManager = _nativeInputManager;
+            if (inputManager != null)
+            {
+                switch (inputManager.CurrentDisplayStyle)
+                {
+                    case InputDisplayStyle.SteamDeck:
+                        return InputSchemeHashSteamDeck;
+                    case InputDisplayStyle.Gamepad:
+                        return InputSchemeHashGamepad;
+                    case InputDisplayStyle.XRTouch:
+                        return InputSchemeHashXRTouch;
+                    case InputDisplayStyle.KeyboardMouse:
+                        return InputSchemeHashKeyboardMouse;
+                }
+            }
+
+            if (_cachedGamepad != null && _cachedGamepad.added)
+                return SteamDeckInputPal.IsDeckInputAvailable ? InputSchemeHashSteamDeck : InputSchemeHashGamepad;
+
+            return InputSchemeHashKeyboardMouse;
+        }
+
+        private void PublishInputSchemeTelemetryIfChanged(uint schemeHash, uint flags, uint frame)
+        {
+            if (schemeHash == 0u || schemeHash == _lastTelemetryInputSchemeHash)
+                return;
+
+            _lastTelemetryInputSchemeHash = schemeHash;
+            GlobalTelemetryBus.PublishInputSchemeHash(schemeHash, flags, frame);
         }
 
         private static bool ApplyAutomationOverride(ref PlayerInputState state, uint currentFrame)
@@ -940,6 +1533,7 @@ namespace Hecton8.Core
             state.SteamDeckRightTrackpad = Vector2.zero;
             state.ActionsBitmask = overrideSignal.ActionsBitmask;
             state.PlatformInputFlags = 0u;
+            state.CurrentInputSchemeHash = overrideSignal.CurrentInputSchemeHash;
             return true;
         }
 
@@ -1090,6 +1684,7 @@ namespace Hecton8.Core
             uint actionBits = 0u;
             actionBits |= (flags & ToolTriggerFlagPrimaryPressed) != 0 ? (uint)PlayerInputAction.PrimaryFire : 0u;
             actionBits |= (flags & ToolTriggerFlagSecondaryPressed) != 0 ? (uint)PlayerInputAction.SecondaryFire : 0u;
+            actionBits |= (flags & ToolTriggerFlagSecondaryPressed) != 0 ? (uint)PlayerInputAction.Interact : 0u;
 
             uint controllerMask = left.ActiveMask | right.ActiveMask;
             float leftDominance = math.max(leftTrigger, leftGrip);
@@ -1570,6 +2165,14 @@ namespace Hecton8.Core
         private void HandleInventoryPressed()
         {
             InputLatencyTracker.MarkInputCaptured();
+            SignalBus<PlayerInputSignal>.Push(new PlayerInputSignal
+            {
+                SourceHash = PlayerInputSignalSourceHash,
+                Frame = unchecked((uint)Mathf.Max(0, Time.frameCount)),
+                Sequence = unchecked(++_playerInputSignalSequence),
+                Command = PlayerInputSignalCommands.ToggleInventory,
+                Flags = 0
+            });
             OnInventory?.Invoke();
         }
 
@@ -1611,53 +2214,111 @@ namespace Hecton8.Core
 
         private void DrainToolHaptics()
         {
-            if (!ToolHapticsRuntime.TryGetRuntime(out ToolHapticsRuntime runtime) ||
-                !runtime.TryGetFrontBufferSnapshot(out NativeArray<ToolHapticsRuntime.HapticCommand>.ReadOnly commandBuffer, out int commandCount))
-            {
-                ApplyGamepadHaptics(0f, 0f);
-                if (HectonXRRuntimeState.IsXRActive)
-                    ApplyXRHaptics(0f, 0f);
-                return;
-            }
-
+            uint schemeHash = _currentInputSchemeHash != 0u ? _currentInputSchemeHash : ResolveCurrentInputSchemeHash();
             float lowMotor = 0f;
             float highMotor = 0f;
             byte lowPriority = 0;
             byte highPriority = 0;
             bool hasLowPriority = false;
             bool hasHighPriority = false;
-            for (int i = 0; i < commandCount; i++)
+
+            while (GlobalSignals.TryDequeueHapticRequest(out HapticRequest request))
             {
-                ToolHapticsRuntime.HapticCommand command = commandBuffer[i];
-                if (command.DurationRemaining <= 0f)
+                if (schemeHash == InputSchemeHashKeyboardMouse)
                     continue;
 
-                float lowContribution = (command.MotorMask & HapticLowMotorMask) != 0
-                    ? ClampFinite01(command.LowFreqIntensity)
-                    : 0f;
-                float highContribution = (command.MotorMask & HapticHighMotorMask) != 0
-                    ? ClampFinite01(command.HighFreqIntensity)
-                    : 0f;
-
-                ApplyHapticContribution(
-                    lowContribution,
-                    command.Priority,
-                    command.BlendMode,
+                ApplyHapticRequestContribution(
+                    in request,
                     ref lowMotor,
-                    ref lowPriority,
-                    ref hasLowPriority);
-                ApplyHapticContribution(
-                    highContribution,
-                    command.Priority,
-                    command.BlendMode,
                     ref highMotor,
+                    ref lowPriority,
                     ref highPriority,
+                    ref hasLowPriority,
                     ref hasHighPriority);
             }
 
-            ApplyGamepadHaptics(lowMotor, highMotor);
-            if (HectonXRRuntimeState.IsXRActive)
+            if (schemeHash == InputSchemeHashKeyboardMouse)
+            {
+                ApplyGamepadHaptics(0f, 0f);
+                ResetXRHaptics();
+                return;
+            }
+
+            if (ToolHapticsRuntime.TryGetRuntime(out ToolHapticsRuntime runtime) &&
+                runtime.TryGetFrontBufferSnapshot(out NativeArray<ToolHapticsRuntime.HapticCommand>.ReadOnly commandBuffer, out int commandCount))
+            {
+                for (int i = 0; i < commandCount; i++)
+                {
+                    ToolHapticsRuntime.HapticCommand command = commandBuffer[i];
+                    if (command.DurationRemaining <= 0f)
+                        continue;
+
+                    float lowContribution = (command.MotorMask & HapticLowMotorMask) != 0
+                        ? ClampFinite01(command.LowFreqIntensity)
+                        : 0f;
+                    float highContribution = (command.MotorMask & HapticHighMotorMask) != 0
+                        ? ClampFinite01(command.HighFreqIntensity)
+                        : 0f;
+
+                    ApplyHapticContribution(
+                        lowContribution,
+                        command.Priority,
+                        command.BlendMode,
+                        ref lowMotor,
+                        ref lowPriority,
+                        ref hasLowPriority);
+                    ApplyHapticContribution(
+                        highContribution,
+                        command.Priority,
+                        command.BlendMode,
+                        ref highMotor,
+                        ref highPriority,
+                        ref hasHighPriority);
+                }
+            }
+
+            if (schemeHash == InputSchemeHashXRTouch)
+            {
+                ApplyGamepadHaptics(0f, 0f);
                 ApplyXRHaptics(lowMotor, highMotor);
+                return;
+            }
+
+            ResetXRHaptics();
+            ApplyGamepadHaptics(lowMotor, highMotor);
+        }
+
+        private static void ApplyHapticRequestContribution(
+            in HapticRequest request,
+            ref float lowMotor,
+            ref float highMotor,
+            ref byte lowPriority,
+            ref byte highPriority,
+            ref bool hasLowPriority,
+            ref bool hasHighPriority)
+        {
+            float intensity = ClampFinite01(request.Intensity01);
+            if (intensity <= 0f || request.DurationSeconds <= 0f)
+                return;
+
+            byte priority = request.Channel;
+            byte blendMode = (request.Flags & HapticBlendAdditive) != 0 ? HapticBlendAdditive : (byte)2;
+            float highContribution = intensity * math.max(0.25f, ClampFinite01(request.Frequency01));
+
+            ApplyHapticContribution(
+                intensity,
+                priority,
+                blendMode,
+                ref lowMotor,
+                ref lowPriority,
+                ref hasLowPriority);
+            ApplyHapticContribution(
+                highContribution,
+                priority,
+                blendMode,
+                ref highMotor,
+                ref highPriority,
+                ref hasHighPriority);
         }
 
         private static void ApplyHapticContribution(
@@ -1842,7 +2503,20 @@ namespace Hecton8.Core
             _lookBlendActive = false;
             _lookBlendFrom = Vector2.zero;
             _lastDeliveredLookDelta = Vector2.zero;
+            _visualLookDelta = Vector2.zero;
             _currentState = default;
+            _currentInputState = default;
+            _previousInputState = default;
+            _standardInputFrame = 0u;
+            _inputStateSequence = 0u;
+            _playerInputSignalSequence = 0u;
+            _inputDelayFrames = Mathf.Clamp(_inputDelayFrames, 0, MaxInputDelayFrames);
+            _lastDeterministicInputFrame = uint.MaxValue;
+            _standardInputAccumulator = 0d;
+            _deterministicInputCount = 0;
+            _deterministicBlackBoxWriteIndex = 0;
+            _nextInputReplayRetryFrame = 0;
+            _lastAutomationOverrideApplied = false;
             _lastXRLookAtHit = default;
             _lastXRLookAtHitFrame = -1;
             _lastXRLookAtRayOriginAup = default;
@@ -1854,6 +2528,24 @@ namespace Hecton8.Core
 
             for (int i = 0; i < BufferedActionCapacity; i++)
                 _bufferedActions[i].Action = PlayerBufferedAction.None;
+
+            if (_deterministicInputRing.IsCreated)
+            {
+                for (int i = 0; i < DeterministicInputRingCapacity; i++)
+                    _deterministicInputRing[i] = default;
+            }
+
+            if (_inputReplaySnapshot.IsCreated)
+            {
+                for (int i = 0; i < DeterministicInputRingCapacity; i++)
+                    _inputReplaySnapshot[i] = default;
+            }
+
+            if (_deterministicInputBlackBox.IsCreated)
+            {
+                for (int i = 0; i < InputBlackBoxCapacity; i++)
+                    _deterministicInputBlackBox[i] = default;
+            }
 
             ClearXRInputSnapshotIfActive(forceWrite: true);
 
@@ -1885,7 +2577,7 @@ namespace Hecton8.Core
 
         public static void MarkInputCaptured()
         {
-            double timestamp = InputState.currentTime;
+            double timestamp = UnityEngine.InputSystem.LowLevel.InputState.currentTime;
             if (timestamp <= 0d)
                 timestamp = Time.unscaledTimeAsDouble;
 
@@ -1927,7 +2619,7 @@ namespace Hecton8.Core
 
         public static float SampleInputSystemClockDeltaMs()
         {
-            double inputTimestamp = InputState.currentTime;
+            double inputTimestamp = UnityEngine.InputSystem.LowLevel.InputState.currentTime;
             double renderTimestamp = Time.unscaledTimeAsDouble;
             if (inputTimestamp <= 0d || renderTimestamp <= 0d)
                 return 0f;

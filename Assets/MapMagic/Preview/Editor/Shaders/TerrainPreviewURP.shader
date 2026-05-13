@@ -1,4 +1,4 @@
-﻿Shader "MapMagic/TerrainPreviewURP"
+Shader "MapMagic/TerrainPreviewURP"
 {
     Properties
     {
@@ -218,6 +218,54 @@
 
         UsePass "Hidden/Nature/Terrain/Utilities/PICKING"
     }
+
+    SubShader
+    {
+        Tags { "Queue" = "Geometry-100" "RenderType" = "Opaque" "RenderPipeline" = "UniversalPipeline" }
+
+        Pass
+        {
+            Name "PreviewFallback"
+            Tags { "LightMode" = "UniversalForward" }
+
+            CGPROGRAM
+            #pragma target 2.0
+            #pragma vertex PreviewFallbackVert
+            #pragma fragment PreviewFallbackFrag
+            #include "UnityCG.cginc"
+
+            sampler2D _Preview;
+            float4 _Preview_ST;
+
+            struct PreviewFallbackInput
+            {
+                float4 vertex : POSITION;
+                float2 uv : TEXCOORD0;
+            };
+
+            struct PreviewFallbackVaryings
+            {
+                float4 vertex : SV_POSITION;
+                float2 uv : TEXCOORD0;
+            };
+
+            PreviewFallbackVaryings PreviewFallbackVert(PreviewFallbackInput input)
+            {
+                PreviewFallbackVaryings output;
+                output.vertex = UnityObjectToClipPos(input.vertex);
+                output.uv = TRANSFORM_TEX(input.uv, _Preview);
+                return output;
+            }
+
+            fixed4 PreviewFallbackFrag(PreviewFallbackVaryings input) : SV_Target
+            {
+                fixed4 color = tex2D(_Preview, input.uv);
+                return fixed4(color.rgb, 1);
+            }
+            ENDCG
+        }
+    }
+
     Dependency "AddPassShader" = "Hidden/Universal Render Pipeline/Terrain/Lit (Add Pass)"
     Dependency "BaseMapShader" = "Hidden/Universal Render Pipeline/Terrain/Lit (Base Pass)"
     Dependency "BaseMapGenShader" = "Hidden/Universal Render Pipeline/Terrain/Lit (Basemap Gen)"

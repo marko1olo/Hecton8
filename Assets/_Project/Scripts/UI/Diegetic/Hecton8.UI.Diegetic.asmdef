@@ -1,0 +1,22 @@
+{
+    "name": "Hecton8.UI.Diegetic",
+    "rootNamespace": "Hecton8.UI.Diegetic",
+    "references": [
+        "Hecton8.UI.Diegetic.Contracts",
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Mathematics",
+        "Unity.TextMeshPro"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

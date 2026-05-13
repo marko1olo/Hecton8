@@ -164,6 +164,10 @@ namespace Hecton8.World
         private const int ThermalMapResolution = ThermalGridResolution;
         private const int ThermalMapPlaneCellCount = ThermalMapResolution * ThermalMapResolution;
         private const int ThermalMapCellCount = ThermalGridResolution * ThermalGridResolution * ThermalGridResolution;
+        private const int ThermalMapDiffusionSliceCount = 8;
+        private const int ThermalMapDiffusionSliceMask = ThermalMapDiffusionSliceCount - 1;
+        private const int ThermalMapDiffusionSliceCellCount = ThermalMapCellCount / ThermalMapDiffusionSliceCount;
+        private const int ThermalMapAxisShift = 5;
         private const int ThermalGridSaveRleCapacity = ThermalMapCellCount;
         private const int ThermalTelemetryCapacity = 300;
         private const int VentBufferRingSize = 3;
@@ -665,6 +669,9 @@ namespace Hecton8.World
         private NativeArray<ThermalTelemetryEntry> _thermalTelemetryRing;
         private JobHandle _thermalMapJobHandle;
         private bool _thermalMapJobActive;
+        private ISimulationBucketer _simulationBucketer;
+        private int _thermalMapDiffusionSlicesCompleted;
+        private int _thermalMapDiffusionSliceCursor;
         private bool _registeredFixedTick;
         private bool _thermalTelemetryDumped;
         private bool _thermalMapTextureDirty;
@@ -914,6 +921,7 @@ namespace Hecton8.World
             RandomEventEvents.Register(this);
             HectonFloatingOrigin.RegisterListener(this);
             ResolveDependencies();
+            _simulationBucketer = GlobalRegistry.SimulationBucketer;
             EnsureStorage();
             EnsureCableVisuals();
             EnsureBuffers();
@@ -934,6 +942,9 @@ namespace Hecton8.World
             _debugSeismicEruptionSeconds = 0f;
             _hasSmokeData = false;
             _frameParity = 0;
+            _simulationBucketer = null;
+            _thermalMapDiffusionSlicesCompleted = 0;
+            _thermalMapDiffusionSliceCursor = 0;
             ClearHazardSources();
             ReleaseBuffers();
             DisposeCrystallizationBuffers();
@@ -947,6 +958,7 @@ namespace Hecton8.World
             LaserCutterEvents.Unregister(this);
             RandomEventEvents.Unregister(this);
             HectonFloatingOrigin.UnregisterListener(this);
+            _simulationBucketer = null;
             ClearHazardSources();
             ReleaseBuffers();
             DisposeCrystallizationBuffers();
@@ -1069,6 +1081,7 @@ namespace Hecton8.World
             ResolveDependencies();
             UploadThermalMapTextureIfDirty();
             float deltaTime = Mathf.Max(0f, dt);
+            AdvanceThermalMapColdTick(deltaTime);
             _simulationTime += deltaTime;
             UpdateSeismicEruption(deltaTime);
             UpdateThermalPresentationDecay(deltaTime);
@@ -1115,7 +1128,6 @@ namespace Hecton8.World
             AdvancePassiveCrystallizationCooldowns(0.5f);
             SyncPersistentThermalVents();
             RebuildVentField();
-            AdvanceThermalMapColdTick(0.5f);
             ApplyThermalInfiltrationToBaseModules(0.5f);
             QueueVentBoundaryCrystallizationSamples();
             ScheduleCrystallizationJobIfNeeded();
@@ -1901,6 +1913,8 @@ namespace Hecton8.World
         {
             if (!UsesThermalGrid())
             {
+                _thermalMapDiffusionSlicesCompleted = 0;
+                _thermalMapDiffusionSliceCursor = 0;
                 PublishThermalMapMetadata(active: false);
                 return;
             }
@@ -1922,32 +1936,45 @@ namespace Hecton8.World
                 _thermalGridRleRunCount = 0;
                 _thermalGridRleByteCount = 0;
                 _thermalGridRleChecksum = 0u;
+                _thermalMapDiffusionSlicesCompleted = 0;
+                _thermalMapDiffusionSliceCursor = 0;
                 _thermalMapVersion++;
                 MarkThermalMapTextureDirty();
                 PublishThermalMapMetadata(active: false);
                 return;
             }
 
-            _thermalColdTickAccumulator += Mathf.Max(0f, deltaSeconds);
-            if (_thermalColdTickAccumulator < thermalMapColdTickSeconds || _thermalMapJobActive)
+            if (_thermalMapJobActive)
                 return;
 
-            _thermalColdTickAccumulator = 0f;
-            RebuildThermalMapSources();
+            if (_thermalMapDiffusionSlicesCompleted <= 0)
+            {
+                _thermalColdTickAccumulator += Mathf.Max(0f, deltaSeconds);
+                if (_thermalColdTickAccumulator < thermalMapColdTickSeconds)
+                    return;
+
+                _thermalColdTickAccumulator = 0f;
+                RebuildThermalMapSources();
+                _thermalMapDiffusionSliceCursor = ResolveThermalMapDiffusionSliceCursor();
+            }
+
+            int startIndex = _thermalMapDiffusionSliceCursor * ThermalMapDiffusionSliceCellCount;
             ThermalMapJacobiJob job = new ThermalMapJacobiJob
             {
                 Previous = _thermalMapReadCelsius,
                 Sources = _thermalMapSourceCelsius,
                 Insulation01 = _thermalMapInsulation01,
                 Next = _thermalMapWriteCelsius,
+                StartIndex = startIndex,
                 Width = ThermalMapResolution,
                 Height = ThermalMapResolution,
                 Depth = ThermalGridResolution,
+                AxisShift = ThermalMapAxisShift,
                 AmbientCelsius = ambientWaterTemperatureCelsius,
                 Diffusion01 = math.saturate(thermalMapDiffusion01)
             };
 
-            _thermalMapJobHandle = job.Schedule(ThermalMapCellCount, 32);
+            _thermalMapJobHandle = job.Schedule(ThermalMapDiffusionSliceCellCount, 32);
             _thermalMapJobActive = true;
         }
 
@@ -1960,6 +1987,12 @@ namespace Hecton8.World
                 return;
 
             _thermalMapJobActive = false;
+            _thermalMapDiffusionSlicesCompleted++;
+            _thermalMapDiffusionSliceCursor = (_thermalMapDiffusionSliceCursor + 1) & ThermalMapDiffusionSliceMask;
+            if (_thermalMapDiffusionSlicesCompleted < ThermalMapDiffusionSliceCount)
+                return;
+
+            _thermalMapDiffusionSlicesCompleted = 0;
             NativeArray<float> previousRead = _thermalMapReadCelsius;
             _thermalMapReadCelsius = _thermalMapWriteCelsius;
             _thermalMapWriteCelsius = previousRead;
@@ -1968,6 +2001,20 @@ namespace Hecton8.World
             StageThermalGridRleDelta();
             MarkThermalMapTextureDirty();
             PublishThermalMapMetadata(active: _activeVentCount > 0 && _thermalMapReadCelsius.IsCreated);
+        }
+
+        private int ResolveThermalMapDiffusionSliceCursor()
+        {
+            ISimulationBucketer bucketer = _simulationBucketer;
+            if (bucketer == null || !bucketer.IsInitialized)
+            {
+                bucketer = GlobalRegistry.SimulationBucketer;
+                _simulationBucketer = bucketer;
+            }
+
+            return bucketer != null && bucketer.IsInitialized
+                ? bucketer.ActiveColdBucket & ThermalMapDiffusionSliceMask
+                : _thermalMapDiffusionSliceCursor & ThermalMapDiffusionSliceMask;
         }
 
         private void RebuildThermalMapSources()
@@ -2454,6 +2501,8 @@ namespace Hecton8.World
 
             _thermalMapJobHandle = dependency;
             _thermalMapJobActive = false;
+            _thermalMapDiffusionSlicesCompleted = 0;
+            _thermalMapDiffusionSliceCursor = 0;
             _thermalMapVersion = 0;
             _thermalGridRleRunCount = 0;
             _thermalGridRleByteCount = 0;
@@ -4269,18 +4318,21 @@ namespace Hecton8.World
             [ReadOnly] public NativeArray<float> Sources;
             [ReadOnly] public NativeArray<float> Insulation01;
             public NativeArray<float> Next;
+            public int StartIndex;
             public int Width;
             public int Height;
             public int Depth;
+            public int AxisShift;
             public float AmbientCelsius;
             public float Diffusion01;
 
-            public void Execute(int index)
+            public void Execute(int localIndex)
             {
-                int x = index % Width;
-                int yz = index / Width;
-                int z = yz % Depth;
-                int y = yz / Depth;
+                int index = StartIndex + localIndex;
+                int x = index & (Width - 1);
+                int yz = index >> AxisShift;
+                int z = yz & (Depth - 1);
+                int y = yz >> AxisShift;
                 int plane = Width * Depth;
                 int left = (y * plane) + (z * Width) + math.max(0, x - 1);
                 int right = (y * plane) + (z * Width) + math.min(Width - 1, x + 1);

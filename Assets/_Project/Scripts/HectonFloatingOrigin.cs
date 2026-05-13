@@ -139,6 +139,9 @@ namespace Hecton8.Core
         private NativeArray<double3> _driftCheckAbsolutePositions;
         private NativeArray<byte> _driftCheckInvalidMask;
         private JobHandle _driftCheckHandle;
+        private int _precisionWatchdogCountdown;
+        private int _precisionWatchdogCachedFrame = -1;
+        private bool _precisionWatchdogDueThisFrame;
 
         private const float AnchorResolveCooldown = 1f;
 
@@ -152,6 +155,8 @@ namespace Hecton8.Core
         /// <summary>Cumulative absolute-universe offset committed since startup.</summary>
         public Vector3 TotalOffset { get; private set; }
 
+        private double3 _totalOffsetDouble;
+
         /// <summary>Cumulative absolute-universe offset committed since startup.</summary>
         public Vector3 TotalUniverseOffset => TotalOffset;
 
@@ -162,6 +167,16 @@ namespace Hecton8.Core
             {
                 HectonFloatingOrigin origin = GlobalRegistry.FloatingOrigin;
                 return origin != null ? origin.TotalOffset : Vector3.zero;
+            }
+        }
+
+        /// <summary>Current committed origin offset in double precision for AUP authority math.</summary>
+        public static double3 CurrentTotalOffsetDouble
+        {
+            get
+            {
+                HectonFloatingOrigin origin = GlobalRegistry.FloatingOrigin;
+                return origin != null ? origin._totalOffsetDouble : double3.zero;
             }
         }
 
@@ -278,7 +293,16 @@ namespace Hecton8.Core
         /// <returns>Absolute-universe position.</returns>
         public static Vector3 ToAbsoluteUniversePosition(Vector3 runtimePosition)
         {
-            return runtimePosition + CurrentTotalOffset;
+            double3 absolutePosition = ToAbsoluteUniversePositionDouble3(runtimePosition);
+            return ToVector3(absolutePosition);
+        }
+
+        /// <summary>
+        /// Converts runtime-space to absolute-universe coordinates without reducing the committed offset to float.
+        /// </summary>
+        public static double3 ToAbsoluteUniversePositionDouble3(Vector3 runtimePosition)
+        {
+            return new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z) + CurrentTotalOffsetDouble;
         }
 
         /// <summary>
@@ -540,7 +564,8 @@ namespace Hecton8.Core
                 return;
 
             UpdateCriticalEntityTrackers();
-            if (!_driftCheckScheduled && (Time.frameCount % PrecisionWatchdogIntervalFrames) == 0)
+            bool precisionWatchdogFrame = ShouldRunPrecisionWatchdogFrame();
+            if (!_driftCheckScheduled && precisionWatchdogFrame)
                 ScheduleAupDriftCheck();
 
             if (_anchor == null)
@@ -560,7 +585,7 @@ namespace Hecton8.Core
                 _shiftDeadzoneArmed = true;
 
             bool isMovingAwayFromCenter = IsAnchorMovingAwayFromCenter(anchorPosition, deltaTime);
-            if ((Time.frameCount % PrecisionWatchdogIntervalFrames) == 0 &&
+            if (precisionWatchdogFrame &&
                 anchorDistanceSqr >= PrecisionWatchdogSafeRadiusSq &&
                 _shiftDeadzoneArmed &&
                 isMovingAwayFromCenter)
@@ -575,6 +600,25 @@ namespace Hecton8.Core
                 _shiftDeadzoneArmed = false;
                 BeginShiftWorld(anchorPosition);
             }
+        }
+
+        private bool ShouldRunPrecisionWatchdogFrame()
+        {
+            int frame = Time.frameCount;
+            if (_precisionWatchdogCachedFrame == frame)
+                return _precisionWatchdogDueThisFrame;
+
+            _precisionWatchdogCachedFrame = frame;
+            if (_precisionWatchdogCountdown <= 0)
+            {
+                _precisionWatchdogCountdown = PrecisionWatchdogIntervalFrames - 1;
+                _precisionWatchdogDueThisFrame = true;
+                return true;
+            }
+
+            _precisionWatchdogCountdown--;
+            _precisionWatchdogDueThisFrame = false;
+            return false;
         }
 
         private void BeginShiftWorld(Vector3 shiftOffset)
@@ -659,7 +703,8 @@ namespace Hecton8.Core
                 PhysicsApplySystem.CommitTrackedBodiesForOriginShift(shiftOffset);
 
                 Vector3 previousTotalOffset = TotalOffset;
-                TotalOffset += shiftOffset;
+                _totalOffsetDouble += new double3(shiftOffset.x, shiftOffset.y, shiftOffset.z);
+                TotalOffset = ToVector3(_totalOffsetDouble);
                 _shiftSequence++;
                 float fixedInterpolationAlpha = ResolveFixedInterpolationAlpha();
                 _lastShiftEvent = new OriginShiftEventData(
@@ -1148,7 +1193,7 @@ namespace Hecton8.Core
 
             if (!tracker.Initialized)
             {
-                tracker.AbsolutePosition = new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z) + new double3(CurrentTotalOffset.x, CurrentTotalOffset.y, CurrentTotalOffset.z);
+                tracker.AbsolutePosition = new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z) + CurrentTotalOffsetDouble;
                 tracker.LastRuntimePosition = runtimePosition;
                 tracker.Initialized = true;
                 return;
@@ -1176,7 +1221,7 @@ namespace Hecton8.Core
             {
                 RuntimePositions = _driftCheckRuntimePositions,
                 TrackedAbsolutePositions = _driftCheckAbsolutePositions,
-                CurrentTotalOffset = new double3(TotalOffset.x, TotalOffset.y, TotalOffset.z),
+                CurrentTotalOffset = _totalOffsetDouble,
                 MaxDeltaSq = DriftCheckThresholdSq,
                 InvalidMask = _driftCheckInvalidMask
             }.Schedule(writeIndex, 1);
@@ -1203,6 +1248,10 @@ namespace Hecton8.Core
                 return false;
 
             _driftCheckScheduled = false;
+
+            double maxDriftErrorSq = ResolveMaxDriftErrorSq();
+            Vector3 telemetryPosition = _anchor != null ? _anchor.position : Vector3.zero;
+            CrashTelemetryBuffer.ReportAupMaxDriftError(telemetryPosition, ResolveDriftErrorMeters(maxDriftErrorSq));
 
             bool hasInvalidEntity = false;
             for (int i = 0; i < _driftCheckCount; i++)
@@ -1234,6 +1283,44 @@ namespace Hecton8.Core
             return true;
         }
 
+        private double ResolveMaxDriftErrorSq()
+        {
+            double maxDriftErrorSq = 0d;
+            for (int i = 0; i < _driftCheckCount; i++)
+            {
+                double driftErrorSq = ResolveDriftErrorSq(i);
+                if (!math.isfinite(driftErrorSq))
+                    return double.PositiveInfinity;
+
+                maxDriftErrorSq = math.max(maxDriftErrorSq, driftErrorSq);
+            }
+
+            return maxDriftErrorSq;
+        }
+
+        private double ResolveDriftErrorSq(int index)
+        {
+            double3 expectedRuntime = _driftCheckAbsolutePositions[index] - _totalOffsetDouble;
+            double3 delta = expectedRuntime - _driftCheckRuntimePositions[index];
+            double driftErrorSq = math.lengthsq(delta);
+            return math.all(math.isfinite(delta)) && math.isfinite(driftErrorSq) ? driftErrorSq : double.PositiveInfinity;
+        }
+
+        private static float ResolveDriftErrorMeters(double driftErrorSq)
+        {
+            if (driftErrorSq <= 0d)
+                return 0f;
+
+            if (!math.isfinite(driftErrorSq))
+                return float.MaxValue;
+
+            double driftErrorMeters = driftErrorSq * math.rsqrt(driftErrorSq);
+            if (!math.isfinite(driftErrorMeters))
+                return float.MaxValue;
+
+            return driftErrorMeters >= float.MaxValue ? float.MaxValue : (float)driftErrorMeters;
+        }
+
         private Vector3 ResolveForcedDriftShiftOffset()
         {
             if (TryResolveForcedDriftShiftOffset(in _playerDriftTracker, 0, out Vector3 shiftOffset))
@@ -1258,7 +1345,7 @@ namespace Hecton8.Core
                 return false;
             }
 
-            double3 expectedRuntime = tracker.AbsolutePosition - new double3(TotalOffset.x, TotalOffset.y, TotalOffset.z);
+            double3 expectedRuntime = tracker.AbsolutePosition - _totalOffsetDouble;
             if (!math.all(math.isfinite(expectedRuntime)) || math.lengthsq(expectedRuntime) <= 0.0001d)
                 return false;
 
@@ -1426,7 +1513,7 @@ namespace Hecton8.Core
             else if (_hasPreviousAnchorPosition)
             {
                 float safeDeltaTime = math.max(deltaTime, 0.0001f);
-                anchorVelocity = (anchorPosition - _previousAnchorPosition) / safeDeltaTime;
+                anchorVelocity = (anchorPosition - _previousAnchorPosition) * math.rcp(safeDeltaTime);
             }
 
             _previousAnchorPosition = anchorPosition;
@@ -1483,6 +1570,11 @@ namespace Hecton8.Core
         private float ResolveAupJitterMask()
         {
             return _aupJitterMaskReleaseFrame >= 0 && Time.frameCount <= _aupJitterMaskReleaseFrame ? 1f : 0f;
+        }
+
+        private static Vector3 ToVector3(double3 value)
+        {
+            return new Vector3((float)value.x, (float)value.y, (float)value.z);
         }
 
         private void TryRegister()

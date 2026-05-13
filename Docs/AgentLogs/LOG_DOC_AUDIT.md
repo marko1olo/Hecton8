@@ -1,27 +1,34 @@
 # LOG_DOC_AUDIT
 
-Agent ID: DOC_AUDIT
-Domain: Documentation + Project Reality Audit
-Status: PENDING VERIFICATION
+Top = old. Bottom = new.
 
-Previous DOC_AUDIT log history is archived under `Docs/Archive/Batch004/AgentLogs/LOG_DOC_AUDIT.md`.
+## R38 - 2026-05-13 - Active Memory Restart
 
-## 2026-05-13 - PDA Headless Open Guard
+What was wrong: Active `Docs/Tasks/Status_DOC_AUDIT.md`, `Docs/AgentLogs/Rationale_DOC_AUDIT.md`, and `Docs/AgentLogs/LOG_DOC_AUDIT.md` were absent after Batch005 archive movement, so continuation state could silently drift from disk-backed memory.
+
+What was done: Recreated active DOC_AUDIT working files and linked prior history to `Docs/Archive/Batch005/`.
+
+Cinematic Cheats used: none; documentation/state hygiene only.
+
+Exact Microseconds saved: 0 runtime microseconds. Prevents human/integrator time loss from stale status location.
+
+## R38 - 2026-05-13 - Pager Fault Accounting / WFC Persistence Contract
 
 What was wrong:
-- `Player.prefab` still serializes `PlayerPDA` with no panel, no CanvasGroup, and no tab refs.
-- Static scans still did not find `DiegeticPDAController` in `_Project` scenes/prefabs.
-- `PlayerPDA.Open()` could enter PDA-open global state and switch input even when no visible PDA shell existed.
+- `H8BinaryWorldPager.RunWorkerLoop()` decremented pending write/read counters only after `ProcessWrite()` / `ProcessRead()` returned normally. Unexpected exceptions before inner IO catches could stop the worker with stale pending counters.
+- `IAsyncPersistenceService` exposed WFC outpost persistence methods that `SaveManager` did not implement once current `Core.Contracts` source was used.
+- R37 full-Core compile success was no longer current: the live worktree now blocks full `Hecton8.Core` on unrelated audio/scanner/fluid/UI churn.
 
 What was done:
-- `PlayerPDA.Open()` now refuses to open unless the PDA has a panel and at least one resolved tab.
-- PDA input-map switches now guard missing/uninitialized `GlobalRegistry.Input`.
-- `ContentSanityValidator` now validates `Player.prefab` for headless PDA risk and reports `PlayerPdaHeadlessOpenRisk` plus bridge warnings.
-- Stable docs were updated to record that this is a static guard, not runtime PDA proof.
+- Added per-command pager worker wrappers that decrement pending counters in `finally`, record fault telemetry, fail-close the pager, zero exposed pending counters, and dump black-box telemetry on unexpected command faults.
+- Implemented WFC outpost state persistence in `SaveManager` using DataVault `WfcOutpostGrid`, fixed native packed/restore scratch, existing `SaveBinaryPayloadCodec`, and `IMacroDatabaseService.MarkDirty` / `TryGetPayload`.
+- Updated stable docs and the R38 X-Ray section to demote stale full-Core proof and list the current blocking files honestly.
 
-Cinematic cheats used:
-- No new physical UI hierarchy was invented by YAML. The existing diegetic bridge remains the intended physical-presentation route.
-- Missing shell now fails closed instead of pretending a backend state is a visible interface.
+Cinematic Cheats used:
+- WFC mutable state persists as a compact bitmask payload, not a full simulated outpost object graph.
+- Restore reads bounded MacroDB payload handles and unpacks only mutable flags back into the WFC grid.
 
-Exact microseconds saved:
-- 0 us/frame expected hot-path impact. The guard runs only on PDA open/close paths; validator is editor-only. No profiler run was executed.
+Exact Microseconds saved:
+- Pager normal path: 0 us/frame; only failure accounting changes.
+- WFC unchanged snapshot skip: avoids one pager enqueue/write for repeated identical sector state.
+- Full-Core proof correction: 0 runtime us; prevents stale build evidence from being treated as current.

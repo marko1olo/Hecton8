@@ -101,7 +101,6 @@ GameObject:
   - component: {fileID: 6651770595810392766}
   - component: {fileID: 7030790207171001324}
   - component: {fileID: 6297894015317484069}
-  - component: {fileID: 8942004158805481689}
   - component: {fileID: 6964830624448832012}
   - component: {fileID: 4341808213773969873}
   m_Layer: 0
@@ -166,44 +165,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 2.2, y: 2.2, z: 6.2}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!205 &8942004158805481689
-LODGroup:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 289323947487979299}
-  serializedVersion: 3
-  m_LocalReferencePoint: {x: 0, y: 0, z: 0.067404985}
-  m_Size: 6.33481
-  m_FadeMode: 1
-  m_AnimateCrossFading: 1
-  m_LastLODIsBillboard: 0
-  m_LODs:
-  - screenRelativeHeight: 0.6
-    fadeTransitionWidth: 0
-    renderers:
-    - renderer: {fileID: 2277768824464653339}
-    - renderer: {fileID: 1447911947548238182}
-    - renderer: {fileID: 8603442386231249848}
-    - renderer: {fileID: 3520098872532196883}
-    - renderer: {fileID: 8060250134802727085}
-    - renderer: {fileID: 5365256253424864937}
-    - renderer: {fileID: 428352800844497599}
-    - renderer: {fileID: 6914696487644784678}
-    - renderer: {fileID: 5003444730459873041}
-  - screenRelativeHeight: 0.15
-    fadeTransitionWidth: 0
-    renderers:
-    - renderer: {fileID: 5628745827776709620}
-    - renderer: {fileID: 357176692742734292}
-    - renderer: {fileID: 6266043527200918112}
-  - screenRelativeHeight: 0.04
-    fadeTransitionWidth: 0
-    renderers:
-    - renderer: {fileID: 8152620616325490794}
-  m_Enabled: 1
-  m_GlobalIlluminationLOD: 0
 --- !u!114 &6964830624448832012
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -220,6 +181,42 @@ MonoBehaviour:
   currentIntegrity: 100
   moduleTemplate: {fileID: 0}
   isFlooded: 0
+  isStructuralAnchor: 0
+  isEmergencyAirlock: 0
+  structuralDryMassKilograms: 14000
+  buoyancyDisplacementVolumeCubicMeters: 18
+  maximumUnmooredAccelerationMetersPerSecondSquared: 24
+  maximumFloodVisualLeanBiasMeters: 0.85
+  floodVisualLeanTauSeconds: 1.2
+  hullCrushDepthMeters: 4000
+  maximumHydroStructuralLoadNewtons: 500000
+  pressureCompressionVisualRoot: {fileID: 0}
+  deepCompressionStartDepthMeters: 3000
+  deepCompressionFullPressureKPa: 60000
+  maximumDeepCompressionAxisLoss: 0.001
+  jointShearCompressionDeltaThreshold: 0.15
+  jointShearDamagePerSecondAtFullDelta: 0.02
+  jointShearStressRecoveryPerSecond: 0.08
+  jointShearGroanCooldownSeconds: 4
+  hullCondensationStartDepthMeters: 2000
+  hullCondensationFullDepthMeters: 5000
+  lowIntegrityGroanThreshold01: 0.5
+  lowIntegrityGroanNoiseFrequency: 0.19
+  lowIntegrityGroanNoiseThreshold: 0.58
+  lowIntegrityGroanStressFloor: 0.62
+  lowIntegrityGroanPitchMin: 0.52
+  lowIntegrityGroanPitchMax: 0.78
+  breachVortexDurationSeconds: 5
+  breachVortexReferenceMassKilograms: 80
+  breachVortexMaximumAccelerationMetersPerSecondSquared: 45
+  breachVortexRadiusPaddingMeters: 1.25
+  implosionDepthThresholdMeters: 2000
+  implosionImpulseRadiusMeters: 30
+  implosionMaximumImpulseNewtonSeconds: 65000
+  localGravityAnomalyEnabled: 0
+  localGravityDirection: {x: 0, y: -1, z: 0}
+  localGravityAccelerationMetersPerSecondSquared: 9.81
+  localGravityHoldSeconds: 0.75
   drainDuration: 8
   floodPumpEnergyCost: 65
   passiveRecoveryRate: 0
@@ -229,24 +226,57 @@ MonoBehaviour:
   repairWearPerCascade: 12
   minimumRecoverableIntegrityRatio: 0.45
   maxRecoverableIntegrity: 100
+  waterVolumeM3: 0
+  breachHoleAreaSquareMeters: 0.08
+  breachPressureFlowCoefficient: 0.001
+  explosiveFloodPressureDeltaKPa: 650
+  fatigueDamage: 0
+  bulkheadFailureWaterMassKilograms: 18000
+  bulkheadStressRatePerSecond: 0.035
+  bulkheadStressRecoveryPerSecond: 0.01
   oxygenLeakDrainRate: 10
   fireSuitDamageRate: 12
   fireSuitEnergyDrainRate: 6
   interiorTrigger: {fileID: 4812677737396731781}
+  condensationSurfaces: []
+  floodedReefActivationDays: 3
+  interiorCaveWeed: {fileID: 0}
+  interiorBarnacles: {fileID: 0}
+  floodedReefAudioMaterialId: 0
+  parasiteSporeVfx: {fileID: 0}
+  parasiteSporeHazardRadius: 3.2
   worldItemPrefab: {fileID: 0}
+  deconstructionGhostRenderer: {fileID: 0}
+  deconstructionGhostMaterial: {fileID: 0}
+  deconstructionGhostVisual: {fileID: 0}
   waterVolume: {fileID: 0}
+  floodSurfacePlane: {fileID: 0}
+  floodSurfaceLocalYRange: {x: -1.25, y: 1.25}
   leakVfx: {fileID: 5365256253424239143}
   interiorLights: []
+  brownoutActivationVoltageRatio: 0.8
+  brownoutFlickerSpeed: 19
+  brownoutMinimumLightIntensityRatio: 0.04
+  brownoutEmergencyEmissionColor: {r: 1, g: 0.13, b: 0.06, a: 1}
+  brownoutEmergencyTransitionSeconds: 0.5
   floodedLocalVolume: {fileID: 0}
+  floodDistortionProbe: {fileID: 0}
   audioSource: {fileID: 0}
   leakLoop: {fileID: 0}
   floodClip: {fileID: 0}
   drainClip: {fileID: 0}
   deconstructClip: {fileID: 0}
+  oxygenScrubberHumSource: {fileID: 0}
+  oxygenScrubberHumLoop: {fileID: 0}
+  oxygenScrubberHumVolume: 0.18
+  oxygenScrubberHumPoweredPitch: 1
+  oxygenScrubberHumFailPitch: 0.2
+  oxygenScrubberHumFailFadeSeconds: 3
   oxygenRefillRate: 15
   breathableReserveCapacity: 120
   breathableReserve: 120
   airRecycleRate: 6
+  carbonFilterConsumptionIntervalSeconds: 30
   occupiedAirDrainRate: 9
   staleAirThreshold: 0.25
   staleAirMinRefillScale: 0.2
@@ -261,6 +291,7 @@ MonoBehaviour:
   _debugIsDraining: 0
   _debugDrainProgress: 0
   _debugTrackedObjectCount: 0
+  _debugSolarEmpBlackoutSeconds: 0
 --- !u!114 &4341808213773969873
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -955,6 +986,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Hecton8.Core::Hecton8.Building.ModuleSocket
   compatibleType: 
+  direction: 0
 --- !u!1 &7907550577140304633
 GameObject:
   m_ObjectHideFlags: 0
@@ -1379,6 +1411,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Hecton8.Core::Hecton8.Building.ModuleSocket
   compatibleType: 
+  direction: 0
 --- !u!1001 &4988943326986816385
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1475,11 +1508,6 @@ PrefabInstance:
 --- !u!4 &4984476781715038393 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4541793241951032, guid: 4fc157f6b09a94649afcc35cf105f067, type: 3}
-  m_PrefabInstance: {fileID: 4988943326986816385}
-  m_PrefabAsset: {fileID: 0}
---- !u!23 &5003444730459873041 stripped
-MeshRenderer:
-  m_CorrespondingSourceObject: {fileID: 23511943457707152, guid: 4fc157f6b09a94649afcc35cf105f067, type: 3}
   m_PrefabInstance: {fileID: 4988943326986816385}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &5365256253442749905
@@ -1620,11 +1648,6 @@ ParticleSystem:
   m_CorrespondingSourceObject: {fileID: 19822582, guid: 472bc216b0f362147943a3cedc36711f, type: 3}
   m_PrefabInstance: {fileID: 5365256253442749905}
   m_PrefabAsset: {fileID: 0}
---- !u!199 &5365256253424864937 stripped
-ParticleSystemRenderer:
-  m_CorrespondingSourceObject: {fileID: 19987320, guid: 472bc216b0f362147943a3cedc36711f, type: 3}
-  m_PrefabInstance: {fileID: 5365256253442749905}
-  m_PrefabAsset: {fileID: 0}
 --- !u!4 &5365256253442615349 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 400868, guid: 472bc216b0f362147943a3cedc36711f, type: 3}
@@ -1726,10 +1749,5 @@ PrefabInstance:
 --- !u!4 &6894775380766721606 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4481458170096590, guid: 5b8eed6872052a842b4ef022dc230a6b, type: 3}
-  m_PrefabInstance: {fileID: 6890721220648005000}
-  m_PrefabAsset: {fileID: 0}
---- !u!23 &6914696487644784678 stripped
-MeshRenderer:
-  m_CorrespondingSourceObject: {fileID: 23975542152562094, guid: 5b8eed6872052a842b4ef022dc230a6b, type: 3}
   m_PrefabInstance: {fileID: 6890721220648005000}
   m_PrefabAsset: {fileID: 0}

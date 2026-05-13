@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using System.Threading;
 using Hecton8.Core;
 using Hecton8.Physics;
 using Hecton8.World;
@@ -33,6 +34,7 @@ namespace Hecton8.Tools
         internal const byte BlendModeOverride = 0;
         internal const byte BlendModeAdditive = 1;
         internal const byte BlendModeMax = 2;
+        private static int s_powerSaveMute;
 
         private NativeArray<HapticCommand> _frontBuffer;
         private NativeArray<HapticCommand> _backBuffer;
@@ -129,8 +131,37 @@ namespace Hecton8.Tools
             return runtime != null;
         }
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            Volatile.Write(ref s_powerSaveMute, 0);
+        }
+
+        public static bool PowerSaveMuteActive => Volatile.Read(ref s_powerSaveMute) != 0;
+
+        public void SetPowerSaveMute(bool muted)
+        {
+            int value = muted ? 1 : 0;
+            if (Interlocked.Exchange(ref s_powerSaveMute, value) == value)
+                return;
+
+            if (!muted)
+                return;
+
+            ClearBuffers();
+            TryUnregisterLateFrame();
+            TryUnregisterUpdate();
+        }
+
         public void Tick(float deltaTime)
         {
+            if (PowerSaveMuteActive)
+            {
+                ClearBuffers();
+                TryUnregisterUpdate();
+                return;
+            }
+
             float safeDeltaTime = ClampHapticDeltaTime(deltaTime);
             _leftHapticCooldownTimer = math.max(0f, _leftHapticCooldownTimer - safeDeltaTime);
             _rightHapticCooldownTimer = math.max(0f, _rightHapticCooldownTimer - safeDeltaTime);
@@ -199,6 +230,13 @@ namespace Hecton8.Tools
 
         public void LateFrameTick()
         {
+            if (PowerSaveMuteActive)
+            {
+                ClearBuffers();
+                TryUnregisterLateFrame();
+                return;
+            }
+
             if (!_frontBuffer.IsCreated || !_backBuffer.IsCreated)
             {
                 TryUnregisterLateFrame();
@@ -234,6 +272,12 @@ namespace Hecton8.Tools
         internal bool TryGetFrontBufferSnapshot(out NativeArray<HapticCommand>.ReadOnly frontBuffer, out int count)
         {
             frontBuffer = default;
+            if (PowerSaveMuteActive)
+            {
+                count = 0;
+                return false;
+            }
+
             count = FrontCount;
             if (count <= 0)
                 return false;
@@ -448,10 +492,13 @@ namespace Hecton8.Tools
 
         private void EnqueueBackBuffer(float powerDelivered, float ratedPower, byte priority)
         {
+            if (PowerSaveMuteActive)
+                return;
+
             EnsureBuffers();
 
             float normalizedPower = math.isfinite(powerDelivered) && math.isfinite(ratedPower) && ratedPower > 0.0001f
-                ? ClampFinite01(powerDelivered / ratedPower)
+                ? ClampFinite01(powerDelivered * math.rcp(ratedPower))
                 : 0f;
             if (normalizedPower <= 0f)
                 return;
@@ -489,6 +536,9 @@ namespace Hecton8.Tools
             byte blendMode,
             float frequencyHz)
         {
+            if (PowerSaveMuteActive)
+                return;
+
             EnsureBuffers();
             byte resolvedMotorMask = (byte)(motorMask & BothMotorMask);
             if (resolvedMotorMask == 0)

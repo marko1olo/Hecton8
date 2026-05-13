@@ -15,6 +15,7 @@ using Hecton8.Modding;
 using Hecton8.World;
 using Hecton.Localization;
 using Hecton8.Core;
+using Hecton8.Input;
 using TMPro;
 using Unity.Collections;
 using UnityEngine;
@@ -387,7 +388,10 @@ namespace Hecton8.UI
                 return;
             }
 
-            Vector3 pointerPosition = UnityEngine.Input.mousePosition;
+            InputManager inputManager = GlobalRegistry.NativeInputManager;
+            Vector2 pointerPosition = inputManager != null && inputManager.TryReadUiPoint(out Vector2 uiPoint)
+                ? uiPoint
+                : new Vector2(screenWidth * 0.5f, screenHeight * 0.5f);
             float halfWidth = screenWidth * 0.5f;
             float halfHeight = screenHeight * 0.5f;
             float parallaxX = Mathf.Clamp((pointerPosition.x - halfWidth) / halfWidth, -1f, 1f) * InventoryUiParallaxStrength;

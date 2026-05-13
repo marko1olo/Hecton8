@@ -26,6 +26,8 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
         _CorpseBloatStrength("Corpse Bloat Strength", Range(0, 0.35)) = 0.08
         _DecayAmount("Decay Amount", Range(0, 1)) = 0.0
         _HitFlash("Hit Flash", Range(0, 1)) = 0.0
+        _FaunaMutationHueShift("Fauna Mutation Hue Shift", Range(0, 1)) = 0.0
+        _FaunaMutationTwitch("Fauna Mutation Twitch", Range(0, 1)) = 0.0
         _HitFlashBloatStrength("Hit Flash Bloat Strength", Range(0, 0.12)) = 0.035
         [HDR] _HitFlashEmissionColor("Hit Flash Emission Color", Color) = (1.2, 0.12, 0.04, 1)
         _TailSwayStrength("Tail Sway Strength", Range(0, 0.35)) = 0.045
@@ -96,6 +98,8 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
             float _CorpseBloatStrength;
             float _DecayAmount;
             float _HitFlash;
+            float _FaunaMutationHueShift;
+            float _FaunaMutationTwitch;
             float _HitFlashBloatStrength;
             float _TailSwayStrength;
             float _TailSwaySpeed;
@@ -211,6 +215,15 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
             positionOS += normalOS * ((bloat01 * bloat01 * _CorpseBloatStrength) - (decay01 * decay01 * 0.035));
             float hitFlash01 = ResolveHitFlash01();
             positionOS += normalOS * (hitFlash01 * _HitFlashBloatStrength);
+            float mutationTwitch = saturate(_FaunaMutationTwitch);
+            if (mutationTwitch > 0.0001)
+            {
+                float twitchMask = 0.35 + tailMask * 0.65;
+                float twitchWave = CheapSignedWave(_Time.y * lerp(18.0, 42.0, mutationTwitch) + worldPos.x * 11.73 + worldPos.z * 7.41);
+                float lateralWave = CheapSignedWave(_Time.y * 31.0 + worldPos.y * 5.19 + worldPos.x * 3.67);
+                positionOS += normalOS * (twitchWave * mutationTwitch * 0.035 * twitchMask);
+                positionOS.x += lateralWave * mutationTwitch * 0.018 * tailMask;
+            }
             return positionOS;
         }
 
@@ -365,6 +378,9 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
             normalWS = ApplyWetnessNormalWobble(normalWS, input.positionWS, wetnessVelocityMagnitudeSq);
             half3 ambientSh = input.ambientSH;
             surface.rgb = ApplyFaunaCamouflage(surface.rgb, input.positionWS, ambientSh);
+            half mutationHue01 = saturate((half)_FaunaMutationHueShift);
+            half3 sicklyMutationColor = half3(0.72h, 0.86h, 0.16h);
+            surface.rgb = lerp(surface.rgb, surface.rgb * sicklyMutationColor + sicklyMutationColor * 0.18h, mutationHue01);
             half decay01 = saturate((half)_DecayAmount);
             half boneReveal01 = smoothstep(0.55h, 1.0h, decay01);
             half3 rotColor = surface.rgb * half3(0.25h, 0.19h, 0.13h);
@@ -435,6 +451,8 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
             half3 panicEmissionColor = lerp(_EmissionColor.rgb, _GlobalOceanPanicColor.rgb, oceanPanic);
             half panicBlink = lerp(1.0h, lerp(0.35h, 1.45h, (half)step(0.5, frac(_Time.y * 7.0 + input.positionWS.y * 0.03))), oceanPanic);
             half3 emission = ((panicEmissionColor * (_EmissionStrength * emissionMask) * panicBlink) + biolum) * faunaBiolumDim + woundEmission;
+            half mutationGlow = saturate(mutationHue01 * 0.55h + (half)_FaunaMutationTwitch * 0.35h);
+            emission += half3(0.36h, 0.82h, 0.12h) * mutationGlow * (0.25h + emissionMask);
             half hitFlash01 = (half)ResolveHitFlash01();
             emission = lerp(emission, emission + half3(_HitFlashEmissionColor.rgb) * (half)_HitFlashEmissionColor.a, hitFlash01);
             half sonarFresnelBase = saturate(1.0h - dot(normalWS, viewDirWS));

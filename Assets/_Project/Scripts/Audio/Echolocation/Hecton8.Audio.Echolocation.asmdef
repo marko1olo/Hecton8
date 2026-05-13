@@ -1,0 +1,20 @@
+{
+    "name": "Hecton8.Audio.Echolocation",
+    "rootNamespace": "Hecton8.Audio.Echolocation",
+    "references": [
+        "Hecton8.Core.Contracts",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

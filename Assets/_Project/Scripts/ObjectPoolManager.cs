@@ -20,6 +20,7 @@ namespace Hecton8.Core
         private const uint PoolExhaustedReasonExpandRejected = 2u;
         private const uint PoolExhaustedReasonEmptyPool = 3u;
         private const double DefaultWarmupFrameBudgetMilliseconds = 8.0d;
+        private const float MemoryPressureInactiveTrimFraction = 0.5f;
 
         [Header("── Warmup Presets ────────────────────────────")]
         [Tooltip("Automatic warmup entries executed during Start.")]
@@ -693,23 +694,39 @@ namespace Hecton8.Core
         }
 
         /// <summary>
-        /// Releases inactive pooled instances under critical memory pressure while preserving pool registrations.
+        /// Releases half of inactive pooled instances under critical memory pressure while preserving pool registrations.
         /// </summary>
         public void FlushInactivePoolsForMemoryPressure()
+        {
+            TrimInactivePoolsForMemoryPressure(MemoryPressureInactiveTrimFraction);
+        }
+
+        /// <summary>
+        /// Releases a bounded fraction of inactive pooled instances and trims queue backing storage.
+        /// </summary>
+        public void TrimInactivePoolsForMemoryPressure(float releaseFraction)
         {
             if (_pools == null)
                 return;
 
+            float safeFraction = Mathf.Clamp01(releaseFraction);
             Dictionary<int, Pool>.Enumerator enumerator = _pools.GetEnumerator();
             while (enumerator.MoveNext())
             {
                 Pool pool = enumerator.Current.Value;
-                while (pool.available.Count > 0)
+                if (pool.available == null || pool.available.Count == 0)
+                    continue;
+
+                int releaseCount = Mathf.CeilToInt(pool.available.Count * safeFraction);
+                while (releaseCount > 0 && pool.available.Count > 0)
                 {
+                    releaseCount--;
                     GameObject instance = pool.available.Dequeue();
                     if (instance != null)
                         Destroy(instance);
                 }
+
+                pool.available.TrimExcess();
             }
 
             UpdateDiagnostics();

@@ -1,6 +1,11 @@
+using System;
 using UnityEngine;
+using Hecton8.Core;
+using Hecton8.Core.Memory;
 using Hecton8.Data;
 using Hecton8.World;
+using Unity.Collections;
+using Unity.Mathematics;
 
 namespace Hecton8.Gameplay
 {
@@ -14,7 +19,13 @@ namespace Hecton8.Gameplay
         [TextArea(2, 5)]
         [SerializeField] private string entrySummary =
             "Passive scan profile has been captured. Manual classification pending.";
+        private const int MaxLoreEntityCount = 1024;
+        private static readonly ScannableTarget[] s_loreEntityTargets = new ScannableTarget[MaxLoreEntityCount]; // COLD ALLOC: ScannableTarget[1024] - lore scanner owner mirror - owner: ScannableTarget
+        private static NativeArray<AbsoluteUniversePosition> s_loreEntityAups;
+        private static NativeArray<uint> s_loreEntityHashes;
+        private static int s_loreEntityCount;
         private int _spatialHandle;
+        private int _loreRegistryIndex = -1;
         private string _resolvedEntryId;
         private string _resolvedEntryTitle;
         private string _resolvedEntryCategory;
@@ -98,10 +109,14 @@ namespace Hecton8.Gameplay
             EnsureResolvedStrings();
             if (_spatialHandle == 0)
                 _spatialHandle = WorldSpatialHashGrid.RegisterScannable(this);
+
+            if (_loreRegistryIndex < 0)
+                _loreRegistryIndex = RegisterLoreEntity(this);
         }
 
         private void OnDisable()
         {
+            UnregisterLoreEntity(this);
             if (_spatialHandle == 0)
                 return;
 
@@ -111,6 +126,7 @@ namespace Hecton8.Gameplay
 
         private void OnDestroy()
         {
+            UnregisterLoreEntity(this);
             if (_spatialHandle == 0)
                 return;
 
@@ -162,6 +178,180 @@ namespace Hecton8.Gameplay
                 ? "Passive scan profile has been captured."
                 : entrySummary.Trim();
             _entityHash = H8DataHash.ComputeFnv1A32(_resolvedEntryId);
+        }
+
+        public static bool TryGetLoreEntityBuffers(
+            out NativeArray<AbsoluteUniversePosition> loreEntityAups,
+            out NativeArray<uint> loreEntityHashes,
+            out int count)
+        {
+            SyncLoreEntityVaultAups();
+            loreEntityAups = s_loreEntityAups;
+            loreEntityHashes = s_loreEntityHashes;
+            count = s_loreEntityCount;
+            return count > 0 &&
+                   loreEntityAups.IsCreated &&
+                   loreEntityHashes.IsCreated &&
+                   loreEntityAups.Length >= count &&
+                   loreEntityHashes.Length >= count;
+        }
+
+        public static ScannableTarget ResolveLoreEntityTarget(int index, uint hash)
+        {
+            if ((uint)index >= (uint)s_loreEntityCount)
+                return null;
+
+            ScannableTarget target = s_loreEntityTargets[index];
+            if (target == null)
+                return null;
+
+            return hash == 0u || target.EntityHash == hash ? target : null;
+        }
+
+        public static bool TryWriteLoreEntityTitle(uint hash, Span<char> destination, out int written)
+        {
+            written = 0;
+            if (hash == 0u || destination.Length <= 0)
+                return false;
+
+            for (int i = 0; i < s_loreEntityCount; i++)
+            {
+                ScannableTarget target = s_loreEntityTargets[i];
+                if (target == null || target.EntityHash != hash)
+                    continue;
+
+                ReadOnlySpan<char> title = target.EntryTitle.AsSpan();
+                int length = math.min(title.Length, destination.Length);
+                title.Slice(0, length).CopyTo(destination);
+                written = length;
+                return written > 0;
+            }
+
+            return false;
+        }
+
+        private static int RegisterLoreEntity(ScannableTarget target)
+        {
+            if (target == null)
+                return -1;
+
+            for (int i = 0; i < s_loreEntityCount; i++)
+            {
+                if (ReferenceEquals(s_loreEntityTargets[i], target))
+                    return i;
+            }
+
+            if (s_loreEntityCount >= MaxLoreEntityCount)
+                return -1;
+
+            int index = s_loreEntityCount++;
+            s_loreEntityTargets[index] = target;
+            WriteLoreEntitySlot(index, target);
+            return index;
+        }
+
+        private static void UnregisterLoreEntity(ScannableTarget target)
+        {
+            if (target == null)
+                return;
+
+            int index = target._loreRegistryIndex;
+            if ((uint)index >= (uint)s_loreEntityCount || !ReferenceEquals(s_loreEntityTargets[index], target))
+                index = FindLoreEntityIndex(target);
+
+            if (index < 0)
+            {
+                target._loreRegistryIndex = -1;
+                return;
+            }
+
+            int lastIndex = s_loreEntityCount - 1;
+            ScannableTarget moved = s_loreEntityTargets[lastIndex];
+            s_loreEntityTargets[lastIndex] = null;
+            s_loreEntityCount = lastIndex;
+
+            if (index != lastIndex)
+            {
+                s_loreEntityTargets[index] = moved;
+                if (moved != null)
+                {
+                    moved._loreRegistryIndex = index;
+                    WriteLoreEntitySlot(index, moved);
+                }
+            }
+
+            ClearLoreEntitySlot(lastIndex);
+            target._loreRegistryIndex = -1;
+        }
+
+        private static int FindLoreEntityIndex(ScannableTarget target)
+        {
+            for (int i = 0; i < s_loreEntityCount; i++)
+            {
+                if (ReferenceEquals(s_loreEntityTargets[i], target))
+                    return i;
+            }
+
+            return -1;
+        }
+
+        private static void SyncLoreEntityVaultAups()
+        {
+            if (!EnsureLoreEntityVaultBuffers())
+                return;
+
+            for (int i = 0; i < s_loreEntityCount; i++)
+            {
+                ScannableTarget target = s_loreEntityTargets[i];
+                if (target == null || target.transform == null)
+                {
+                    ClearLoreEntitySlot(i);
+                    continue;
+                }
+
+                WriteLoreEntitySlot(i, target);
+            }
+        }
+
+        private static void WriteLoreEntitySlot(int index, ScannableTarget target)
+        {
+            if ((uint)index >= MaxLoreEntityCount || target == null || !EnsureLoreEntityVaultBuffers())
+                return;
+
+            target.EnsureResolvedStrings();
+            s_loreEntityAups[index] = AbsoluteUniversePosition.FromRuntimePosition(target.transform.position);
+            s_loreEntityHashes[index] = target.EntityHash;
+        }
+
+        private static void ClearLoreEntitySlot(int index)
+        {
+            if ((uint)index >= MaxLoreEntityCount || !EnsureLoreEntityVaultBuffers())
+                return;
+
+            s_loreEntityAups[index] = default;
+            s_loreEntityHashes[index] = 0u;
+        }
+
+        private static bool EnsureLoreEntityVaultBuffers()
+        {
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null)
+                return false;
+
+            s_loreEntityAups = vault.GetBuffer<AbsoluteUniversePosition>(
+                BufferID.LoreEntityAUPs,
+                MaxLoreEntityCount,
+                SystemID.UI,
+                NativeArrayOptions.ClearMemory);
+            s_loreEntityHashes = vault.GetBuffer<uint>(
+                BufferID.LoreEntityHashes,
+                MaxLoreEntityCount,
+                SystemID.UI,
+                NativeArrayOptions.ClearMemory);
+            return s_loreEntityAups.IsCreated &&
+                   s_loreEntityHashes.IsCreated &&
+                   s_loreEntityAups.Length >= MaxLoreEntityCount &&
+                   s_loreEntityHashes.Length >= MaxLoreEntityCount;
         }
 
         private static string CachedToUpperInvariant(string input)

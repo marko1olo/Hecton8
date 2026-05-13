@@ -557,6 +557,7 @@ namespace Hecton8.Systems.AI
         private static readonly Vector2[] _eventOffsetDirectionLut = BuildEventOffsetDirectionLut(); // COLD ALLOC: Vector2[64] - deterministic director event offset directions - owner: HectonDirectorAI
 
         private HectonPlayerMovement _playerMovement;
+        private IMetaCampaignService _metaCampaignService;
         private bool _encounterDirectorServiceRegistered;
         private bool _dispatcherRegistered;
         private bool _lateFrameRegistered;
@@ -632,6 +633,7 @@ namespace Hecton8.Systems.AI
                 return;
 
             EnsureEncounterDirectorServiceRegistered();
+            RefreshMetaCampaignService();
             TryRegisterDispatcherLanes();
             _encounterDirector.EnsureGpuResources();
             _encounterDirector.Reset();
@@ -658,6 +660,7 @@ namespace Hecton8.Systems.AI
                 return;
 
             EnsureEncounterDirectorServiceRegistered();
+            RefreshMetaCampaignService();
             TryRegisterDispatcherLanes();
         }
 
@@ -699,6 +702,9 @@ namespace Hecton8.Systems.AI
                 _encounterDirectorServiceRegistered = false;
             }
 
+            _metaCampaignService = null;
+            _encounterDirector.SetMetaCampaignService(null);
+
             if (_dispatcherRegistered)
             {
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
@@ -739,6 +745,8 @@ namespace Hecton8.Systems.AI
         {
             SpectrumEvents.UnregisterSonarPingListener(this);
             UnsubscribeAcousticPingEvents();
+            _metaCampaignService = null;
+            _encounterDirector.SetMetaCampaignService(null);
 
             if (_encounterDirectorServiceRegistered && ReferenceEquals(GlobalRegistry.EncounterDirector, this))
             {
@@ -1591,6 +1599,18 @@ namespace Hecton8.Systems.AI
                 else
                     playerTransform.TryGetComponent(out playerCamera);
             }
+
+            RefreshMetaCampaignService();
+        }
+
+        private void RefreshMetaCampaignService()
+        {
+            IMetaCampaignService service = GlobalRegistry.MetaCampaign;
+            if (ReferenceEquals(_metaCampaignService, service))
+                return;
+
+            _metaCampaignService = service;
+            _encounterDirector.SetMetaCampaignService(service);
         }
 
         private float UpdateFrameTimeAverage(float deltaTime)

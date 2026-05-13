@@ -291,8 +291,17 @@ namespace Hecton8.Physics
             if (audioTransform != null)
                 audioTransform.position = runtimePosition;
 
-            if (!splashAudioSource.isPlaying)
-                splashAudioSource.Play();
+            AudioClip clip = splashAudioSource.clip;
+            IAudioService audio = GlobalRegistry.Audio;
+            if (clip != null && audio != null)
+            {
+                audio.PlayAtPoint(
+                    clip,
+                    runtimePosition,
+                    splashAudioSource.volume,
+                    splashAudioSource.pitch,
+                    splashAudioSource.outputAudioMixerGroup);
+            }
         }
     }
 }

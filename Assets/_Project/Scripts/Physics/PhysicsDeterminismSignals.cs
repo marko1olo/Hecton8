@@ -45,6 +45,7 @@ namespace Hecton8.Physics
             signal.LookDelta = new float2(state.LookDelta.x, state.LookDelta.y);
             signal.VerticalDelta = math.clamp(state.VerticalDelta, -1f, 1f);
             signal.ActionsBitmask = state.ActionsBitmask;
+            signal.CurrentInputSchemeHash = state.CurrentInputSchemeHash;
             signal.Frame = frame;
             signal.Sequence = NextSequence(ref _inputSequence);
             signal.Flags = flags;
@@ -58,6 +59,7 @@ namespace Hecton8.Physics
             signal.LookDelta = new float2(state.LookDelta.x, state.LookDelta.y);
             signal.VerticalDelta = math.clamp(state.VerticalDelta, -1f, 1f);
             signal.ActionsBitmask = state.ActionsBitmask;
+            signal.CurrentInputSchemeHash = state.CurrentInputSchemeHash;
             signal.Frame = frame;
             signal.Sequence = NextSequence(ref _inputOverrideSequence);
             signal.Flags = InputSignalFlagAutomationOverride;
@@ -261,6 +263,7 @@ namespace Hecton8.Physics
         public float2 LookDelta;
         public float VerticalDelta;
         public uint ActionsBitmask;
+        public uint CurrentInputSchemeHash;
         public uint Frame;
         public uint Sequence;
         public byte Flags;

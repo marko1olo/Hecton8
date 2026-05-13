@@ -372,13 +372,10 @@ namespace Hecton8.Graphics.Culling
 
         private float ResolveCullDistance(in InstanceCullingDispatchDescriptor descriptor)
         {
-            if (descriptor.QualityTier == InstanceCullingQualityTier.Low)
-                return LowTierCullDistanceMeters;
-
             float requested = descriptor.MaxCullDistanceMeters > 0f
                 ? descriptor.MaxCullDistanceMeters
-                : DefaultCullDistanceMeters;
-            return math.min(DefaultCullDistanceMeters, math.max(0.01f, requested));
+                : (descriptor.QualityTier == InstanceCullingQualityTier.Low ? LowTierCullDistanceMeters : DefaultCullDistanceMeters);
+            return math.max(0.01f, requested);
         }
 
         private void EnsureResources()

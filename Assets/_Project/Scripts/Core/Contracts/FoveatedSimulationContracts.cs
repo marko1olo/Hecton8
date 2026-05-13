@@ -29,5 +29,8 @@ namespace Hecton8.Core.Contracts
 
         /// <summary>Forces one entity into Tier0 for a finite duration after authoritative combat contact.</summary>
         void LockTier0(uint entityHash, ushort entityId, float seconds);
+
+        /// <summary>Applies a thermal override for the Tier2 freeze threshold. Call with inactive to restore scalability defaults.</summary>
+        void SetThermalFreezeDistanceOverride(bool active, float frozenDistanceMeters);
     }
 }

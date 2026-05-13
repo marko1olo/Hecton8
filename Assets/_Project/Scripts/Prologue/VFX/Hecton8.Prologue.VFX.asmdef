@@ -1,0 +1,21 @@
+{
+  "name": "Hecton8.Prologue.VFX",
+  "rootNamespace": "Hecton8.Prologue.VFX",
+  "references": [
+    "Hecton8.Core.Contracts",
+    "Hecton8.Core",
+    "Unity.Mathematics",
+    "Unity.Collections",
+    "Unity.Profiling.Core"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}
+

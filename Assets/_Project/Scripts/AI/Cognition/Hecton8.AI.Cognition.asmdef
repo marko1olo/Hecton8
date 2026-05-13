@@ -1,0 +1,17 @@
+{
+    "name": "Hecton8.AI.Cognition",
+    "rootNamespace": "Hecton8.AI.Cognition",
+    "references": [
+        "Hecton8.Core.Contracts",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

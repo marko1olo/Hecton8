@@ -5,6 +5,7 @@
 AppendStructuredBuffer<float4> _SonarPointAppendBuffer;
 StructuredBuffer<uint2> _DiscoveredSectors;
 StructuredBuffer<float4> _PredatorAUPBuffer;
+StructuredBuffer<float4> _HlodAUPBuffer;
 RWByteAddressBuffer _IndirectArgs;
 
 cbuffer HectonSonarMapConstants
@@ -14,6 +15,7 @@ cbuffer HectonSonarMapConstants
     float4 _PlayerWorldPosition; // xyz: player runtime position
     float4 _SonarScalarParams;   // x: view radius meters, y: word stride, z: time phase, w: point capacity
     float4 _SonarDispatchParams; // x: word count, y: max bits per word, z: predator count, w: quad index count
+    float4 _SonarOverlayParams;  // x: HLOD impostor POI count
 };
 
 bool IsWordBitSet(uint2 packedWord, uint bitOffset)
@@ -102,6 +104,19 @@ void CSBuildMapPoints(uint3 dispatchThreadId : SV_DispatchThreadID)
             float pulse = abs(frac(_SonarScalarParams.z * 0.85f + (float)predatorIndex * 0.137f) * 2.0f - 1.0f);
             float alpha = saturate((predatorAup.w * 0.008333333f) * (0.55f + pulse * 0.45f));
             _SonarPointAppendBuffer.Append(float4(ResolveLocalPdaPosition(predatorDelta, viewRadius), -max(alpha, 0.25f)));
+        }
+
+        uint hlodCount = (uint)min((int)_SonarOverlayParams.x, 16);
+        for (uint hlodIndex = 0u; hlodIndex < hlodCount; hlodIndex++)
+        {
+            float4 hlodAup = _HlodAUPBuffer[hlodIndex];
+            float3 hlodDelta = hlodAup.xyz - _PlayerWorldPosition.xyz;
+            if (dot(hlodDelta, hlodDelta) > radiusSq)
+                continue;
+
+            float pulse = abs(frac(_SonarScalarParams.z * 0.37f + (float)hlodIndex * 0.097f) * 2.0f - 1.0f);
+            float alpha = saturate(max(hlodAup.w, 0.35f) * (0.65f + pulse * 0.35f));
+            _SonarPointAppendBuffer.Append(float4(ResolveLocalPdaPosition(hlodDelta, viewRadius), alpha));
         }
     }
 

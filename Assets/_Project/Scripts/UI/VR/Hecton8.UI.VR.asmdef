@@ -1,0 +1,21 @@
+{
+    "name": "Hecton8.UI.VR",
+    "rootNamespace": "Hecton8.UI.VR",
+    "references": [
+        "Hecton8.UI.VR.Contracts",
+        "Hecton8.Core",
+        "Hecton8.Input.Universal",
+        "Unity.Mathematics",
+        "Unity.Collections",
+        "Unity.Burst"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

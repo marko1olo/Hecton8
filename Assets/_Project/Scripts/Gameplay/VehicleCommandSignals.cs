@@ -13,7 +13,8 @@ namespace Hecton8.Gameplay
         ManualYaw = 1 << 1,
         ManualThrottle = 1 << 2,
         BallastBlow = 1 << 3,
-        TowLoadLimit = 1 << 4
+        TowLoadLimit = 1 << 4,
+        CriticalList = 1 << 5
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 4)]

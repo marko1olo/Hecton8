@@ -1,6 +1,7 @@
 namespace Hecton8.Tools
 {
     using Hecton8.Core;
+    using Hecton8.Core.Signals;
     using Hecton8.Gameplay;
     using Hecton8.Power;
     using Hecton8.World;
@@ -37,6 +38,11 @@ namespace Hecton8.Tools
         private const float HeatWarningResetThreshold = 0.85f;
         private const float OverheatRecoveryThreshold = 0.15f;
         private const int ThermalProbeFrameMask = 0x03;
+        private const float ToolSignalLowTierFloatDelta = 0.02f;
+        private const float ToolSignalMidTierFloatDelta = 0.01f;
+        private const float ToolSignalHighTierFloatDelta = 0.005f;
+        private const float ToolSignalUltraTierFloatDelta = 0.0025f;
+        private const float ToolSignalDistanceDeltaMeters = 0.5f;
 
         // COLD ALLOC: PlayerTool[16] — managed owner mirror for native tool slots — owner: ModularEquipmentEngine
         private readonly PlayerTool[] _toolOwners = new PlayerTool[MaxTrackedTools];
@@ -63,6 +69,7 @@ namespace Hecton8.Tools
         private bool _registeredLateFrame;
         private bool _telemetrySubscribed;
         private uint _pendingBatteryDrainMask;
+        private uint _lastPublishedEquippedMask;
         private int _thermalProbeFrameIndex;
         private float _latestSupplyRatio = 1f;
         private bool _wirelessBrownoutActive;
@@ -348,6 +355,8 @@ namespace Hecton8.Tools
             if (!ReferenceEquals(_toolOwners[slotIndex], tool))
                 return;
 
+            ToolState previousState = _toolStates[slotIndex];
+            PublishToolStateChanged(slotIndex, in previousState, forceHolstered: true);
             _toolIndexById.Remove(toolId);
             _toolOwners[slotIndex] = null;
             _slotUsed[slotIndex] = false;
@@ -866,6 +875,7 @@ namespace Hecton8.Tools
             _batteryCharge[slotIndex] = state.CurrentBattery;
             _statusMasks[slotIndex] = state.StatusMask;
             _environmentHeat01[slotIndex] = math.saturate(_environmentHeat01[slotIndex]);
+            PublishToolStateChanged(slotIndex, in state, forceHolstered: false);
         }
 
         private void ClearSlotMirrors(int slotIndex)
@@ -873,11 +883,127 @@ namespace Hecton8.Tools
             if ((uint)slotIndex >= MaxTrackedTools)
                 return;
 
+            ToolState previousState = _toolStates.IsCreated ? _toolStates[slotIndex] : default;
+            PublishToolStateChanged(slotIndex, in previousState, forceHolstered: true);
+
             _toolTypes[slotIndex] = 0;
             _currentHeat[slotIndex] = 0f;
             _batteryCharge[slotIndex] = 0f;
             _statusMasks[slotIndex] = 0u;
             _environmentHeat01[slotIndex] = 0f;
+            _lastPublishedEquippedMask &= ~(1u << slotIndex);
+        }
+
+        private void PublishToolStateChanged(int slotIndex, in ToolState state, bool forceHolstered)
+        {
+            if ((uint)slotIndex >= MaxTrackedTools)
+                return;
+
+            PlayerTool owner = _toolOwners[slotIndex];
+            if (owner == null)
+            {
+                _lastPublishedEquippedMask &= ~(1u << slotIndex);
+                return;
+            }
+
+            uint slotBit = 1u << slotIndex;
+            bool equipped = !forceHolstered && owner.IsEquipped;
+            bool holsterTransition = false;
+            if (!equipped && !forceHolstered)
+            {
+                if ((_lastPublishedEquippedMask & slotBit) == 0u)
+                    return;
+
+                holsterTransition = true;
+            }
+
+            ToolRuntimeStats stats = _toolStats[slotIndex];
+            float capacity = math.max(0.1f, stats.BatteryCapacity);
+            float battery01 = math.saturate(state.CurrentBattery * math.rcp(capacity));
+            float heat01 = math.saturate(state.InternalHeat);
+            float durability01 = math.saturate(state.Durability);
+            float distanceMeters = math.max(0f, stats.MaxRange);
+            int ammoUnits = math.clamp((int)math.round(battery01 * 100f), 0, (int)ushort.MaxValue);
+            bool visible = equipped && owner.isActiveAndEnabled;
+            uint statusMask = state.StatusMask;
+            bool terminalHolster = forceHolstered || holsterTransition;
+            if (terminalHolster)
+            {
+                statusMask |= ToolRuntimeStatusMasks.Disabled;
+                statusMask &= ~ToolRuntimeStatusMasks.Active;
+            }
+
+            HectonQualityTier qualityTier = GlobalRegistry.ScalabilityTier;
+            bool lowTier = qualityTier == HectonQualityTier.Low ||
+                qualityTier == HectonQualityTier.Mx350 ||
+                qualityTier == HectonQualityTier.Unknown;
+
+            byte flags = 0;
+            if (equipped)
+                flags |= ToolStateChangedSignal.FlagEquipped;
+            if (visible)
+                flags |= ToolStateChangedSignal.FlagVisible;
+            if (lowTier)
+                flags |= ToolStateChangedSignal.FlagLowTierFallback;
+
+            ToolStateChangedSignal signal = new ToolStateChangedSignal
+            {
+                ToolHash = owner.RuntimeToolId,
+                Frame = unchecked((uint)Time.frameCount),
+                Battery01 = math.isfinite(battery01) ? battery01 : 0f,
+                Heat01 = math.isfinite(heat01) ? heat01 : 0f,
+                DistanceMeters = math.isfinite(distanceMeters) ? distanceMeters : 0f,
+                Durability01 = math.isfinite(durability01) ? durability01 : 0f,
+                StatusMask = statusMask,
+                AmmoUnits = (ushort)ammoUnits,
+                Flags = flags,
+                ToolTypeId = state.ToolTypeId
+            };
+
+            if (!terminalHolster && !ShouldPublishToolStateChanged(in signal, qualityTier))
+                return;
+
+            GlobalSignals.Publish(signal);
+            if (equipped)
+                _lastPublishedEquippedMask |= slotBit;
+            else
+                _lastPublishedEquippedMask &= ~slotBit;
+        }
+
+        private static bool ShouldPublishToolStateChanged(in ToolStateChangedSignal signal, HectonQualityTier qualityTier)
+        {
+            if (!GlobalSignals.TryGetLatestToolStateChangedSignal(out ToolStateChangedSignal latest, out _))
+                return true;
+
+            if (latest.ToolHash != signal.ToolHash ||
+                latest.Flags != signal.Flags ||
+                latest.StatusMask != signal.StatusMask ||
+                latest.AmmoUnits != signal.AmmoUnits ||
+                latest.ToolTypeId != signal.ToolTypeId)
+            {
+                return true;
+            }
+
+            float floatDelta = ResolveToolSignalFloatDelta(qualityTier);
+            return math.abs(latest.Battery01 - signal.Battery01) >= floatDelta ||
+                math.abs(latest.Heat01 - signal.Heat01) >= floatDelta ||
+                math.abs(latest.Durability01 - signal.Durability01) >= floatDelta ||
+                math.abs(latest.DistanceMeters - signal.DistanceMeters) >= ToolSignalDistanceDeltaMeters;
+        }
+
+        private static float ResolveToolSignalFloatDelta(HectonQualityTier qualityTier)
+        {
+            switch (qualityTier)
+            {
+                case HectonQualityTier.Ultra:
+                    return ToolSignalUltraTierFloatDelta;
+                case HectonQualityTier.High:
+                    return ToolSignalHighTierFloatDelta;
+                case HectonQualityTier.Mid:
+                    return ToolSignalMidTierFloatDelta;
+                default:
+                    return ToolSignalLowTierFloatDelta;
+            }
         }
 
         private void TryRegisterService()
@@ -1042,6 +1168,8 @@ namespace Hecton8.Tools
             owner.HandleRuntimeOverchargeFailure(OverchargeExplosionPlayerDamage);
 
             uint runtimeToolId = owner.RuntimeToolId;
+            ToolState failedState = _toolStates[slotIndex];
+            PublishToolStateChanged(slotIndex, in failedState, forceHolstered: true);
             if (runtimeToolId != 0u && _toolIndexById.IsCreated)
                 _toolIndexById.Remove(runtimeToolId);
 
@@ -1136,6 +1264,7 @@ namespace Hecton8.Tools
             _batteryDrainRates = default;
             _batteryDrainDeltaSeconds = default;
             _pendingBatteryDrainMask = 0u;
+            _lastPublishedEquippedMask = 0u;
             _thermalProbeFrameIndex = 0;
         }
 

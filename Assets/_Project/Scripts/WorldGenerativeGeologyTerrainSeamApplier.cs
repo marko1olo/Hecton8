@@ -1,7 +1,16 @@
+using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Runtime.InteropServices;
+using System.Threading;
+using Hecton8.Caves;
 using Hecton8.Core;
+using Hecton8.Core.Memory;
+using Hecton8.World.Terrain;
 using Unity.Collections;
+using Unity.Jobs;
 using Unity.Mathematics;
+using Unity.Profiling;
 using UnityEngine;
 
 namespace Hecton8.World
@@ -20,17 +29,55 @@ namespace Hecton8.World
             public float InfluenceRadius;
         }
 
+        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 64)]
+        private struct TerrainSeamTelemetryEntry
+        {
+            public uint Frame;
+            public uint TerrainHash;
+            public int PatchSampleCount;
+            public int PlanCount;
+            public float PatchCenterX;
+            public float PatchCenterZ;
+            public float MinHeight01;
+            public float MaxHeight01;
+            public float MaxBlend01;
+            public uint Flags;
+            public uint StateHash;
+            public uint Reserved0;
+            public uint Reserved1;
+            public uint Reserved2;
+            public uint Reserved3;
+        }
+
         private const string NativeMemoryOwner = nameof(WorldGenerativeGeologyTerrainSeamApplier);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
         private const int TerrainPatchBridgeSampleBudgetMx350 = 131072;
+        private const int TerrainChunkSignalSampleDrainBudget = 262144;
         private const int TerrainStateCapacity = 8;
+        private const int TerrainChunkSignalDrainBudget = 8;
+        private const int TerrainTileSnapshotCapacity = 32;
+        private const int TerrainSeamBlackBoxCapacity = 300;
+        private const int TierSwitchHysteresisFrames = 180;
+        private const string TerrainSeamBlackBoxLabel = "HybridTerrainSeamBlackBox";
+        private const string NativePlansLabel = "HybridTerrainNativePlans";
+        private const string PatchHeightsLabel = "HybridTerrainPatchHeights";
+        private const string BlendMaskLabel = "HybridTerrainBlendMask";
+        private const string NormalsLabel = "HybridTerrainNormals";
+        private const string HybridDumpPath = "Docs/AgentLogs/Dump_HYBRID_TERRAIN_BLENDER.bin";
+        private static readonly int HectonVoxelBlendMaskId = Shader.PropertyToID("_HectonVoxelBlendMask");
+        private static readonly int HectonVoxelBlendMaskRectId = Shader.PropertyToID("_HectonVoxelBlendMaskRect");
+        private static readonly int HectonVoxelBlendMaskParamsId = Shader.PropertyToID("_HectonVoxelBlendMaskParams");
+        private static readonly ProfilerMarker TerrainSignalDrainMarker = new ProfilerMarker("H8.TerrainSeam.SignalDrain");
+        private static readonly ProfilerMarker TerrainProjectionFenceMarker = new ProfilerMarker("H8.TerrainSeam.ProjectionFence");
+        private static readonly ProfilerMarker TerrainBlendMaskUploadMarker = new ProfilerMarker("H8.TerrainSeam.BlendMaskUpload");
+        private static readonly ProfilerMarker TerrainHeightmapWritebackMarker = new ProfilerMarker("H8.TerrainSeam.HeightmapWriteback");
 
         internal static WorldGenerativeGeologyTerrainSeamApplier ActiveRuntimeInstance => GlobalRegistry.GeologyTerrainSeam;
 
         private sealed class TerrainApplyState
         {
-            public Terrain terrain;
-            public TerrainData terrainData;
+            public UnityEngine.Terrain terrain;
+            public UnityEngine.TerrainData terrainData;
             public NativeArray<float> baselineHeights;
             public int heightmapResolution;
             public RectInt previousRect;
@@ -77,11 +124,34 @@ namespace Hecton8.World
         private readonly List<int> _knownTerrainIds = new List<int>(8);
         private readonly List<SeismicTrenchState> _activeTrenches = new List<SeismicTrenchState>(8);
         private readonly List<int> _terrainBucketScratch = new List<int>(8);
+        private MapMagicTerrainTileSnapshot[] _tileSnapshotScratch;
+        private Texture2D _voxelBlendMaskTexture;
+        private NativeArray<TerrainSeamTelemetryEntry> _terrainSeamBlackBox;
         private bool _registeredToTickManager;
         private int _nextPatchTelemetryFrame;
+        private int _blackBoxWriteIndex;
+        private int _debugDrainedTerrainChunkSignals;
+        private int _debugDrainedTerrainChunkSamples;
+        private int _debugHeightmapVaultSamples;
+        private int _debugSkippedVaultHeightmapMismatches;
+        private int _debugHybridBlendSamples;
+        private int _debugHybridBlendPlans;
+        private uint _vaultHeightmapTerrainHash;
+        private uint _vaultHeightmapFrame;
+        private int _vaultHeightmapResolution;
+        private int _vaultHeightmapCacheRevision;
+        private bool _voxelBlendMaskGlobalActive;
+        private bool _voxelBlendMaskUploadedThisPass;
+        private bool _debugLowTierVisualOnly;
+        private bool _debugHighTierMaskDetail;
+        private bool _hasLowTierVisualDecision;
+        private bool _resolvedLowTierVisualOnly;
+        private bool _pendingLowTierVisualOnly;
+        private int _pendingLowTierSwitchFrame;
 
         private void Awake()
         {
+            EnsureHybridTerrainSeamState();
             GlobalRegistry.RegisterGeologyTerrainSeamRuntime(this);
             ResolveReferences();
             ReconcileTerrainSeams();
@@ -89,6 +159,7 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
+            EnsureHybridTerrainSeamState();
             GlobalRegistry.RegisterGeologyTerrainSeamRuntime(this);
             ResolveReferences();
             TryRegisterToTickManager();
@@ -105,6 +176,7 @@ namespace Hecton8.World
             TryUnregisterFromTickManager();
             RestoreAllTerrains();
             DisposeTerrainStateNativeBuffers();
+            DisableVoxelBlendMaskGlobal();
 
             if (ReferenceEquals(GlobalRegistry.GeologyTerrainSeam, this))
                 GlobalRegistry.UnregisterGeologyTerrainSeamRuntime(this);
@@ -115,6 +187,7 @@ namespace Hecton8.World
             TryUnregisterFromTickManager();
             RestoreAllTerrains();
             DisposeTerrainStateNativeBuffers();
+            DisposeHybridTerrainSeamState();
 
             if (ReferenceEquals(GlobalRegistry.GeologyTerrainSeam, this))
                 GlobalRegistry.UnregisterGeologyTerrainSeamRuntime(this);
@@ -122,7 +195,36 @@ namespace Hecton8.World
 
         public void SlowTick()
         {
+            ProcessTerrainChunkGeneratedSignals();
             ReconcileTerrainSeams();
+        }
+
+        public async Awaitable ProcessTerrainChunkGeneratedSignalsAsync(CancellationToken cancellationToken = default)
+        {
+            EnsureHybridTerrainSeamState();
+            int drained = 0;
+            int copiedSamplesSinceYield = 0;
+            while (drained < TerrainChunkSignalDrainBudget &&
+                   TerrainChunkGeneratedEvents.TryDequeue(out TerrainChunkGeneratedSignal signal))
+            {
+                if (TryIngestSignalHeightmapToVault(in signal, out int copiedSamples))
+                {
+                    _debugHeightmapVaultSamples = copiedSamples;
+                    _debugDrainedTerrainChunkSamples += copiedSamples;
+                    copiedSamplesSinceYield += copiedSamples;
+                }
+
+                drained++;
+                if ((drained == TerrainChunkSignalDrainBudget >> 1 ||
+                     copiedSamplesSinceYield >= TerrainChunkSignalSampleDrainBudget) &&
+                    TerrainChunkGeneratedEvents.PendingCount > 0)
+                {
+                    copiedSamplesSinceYield = 0;
+                    await Awaitable.NextFrameAsync(cancellationToken: cancellationToken);
+                }
+            }
+
+            _debugDrainedTerrainChunkSignals += drained;
         }
 
         public void SetIntegrationDirector(WorldGenerativeGeologyIntegrationDirector director)
@@ -177,10 +279,12 @@ namespace Hecton8.World
             _debugRestoredTerrains = 0;
             _debugTopTerrainId = 0;
             _debugReady = false;
+            _voxelBlendMaskUploadedThisPass = false;
 
             if (integrationDirector == null)
             {
                 RestoreAllTerrains();
+                DisableVoxelBlendMaskGlobal();
                 return;
             }
 
@@ -196,7 +300,7 @@ namespace Hecton8.World
                     continue;
 
                 Vector3 runtimeWorldPosition = plan.RuntimeWorldPosition;
-                Terrain terrain = ResolveTerrainAt(runtimeWorldPosition.x, runtimeWorldPosition.z);
+                UnityEngine.Terrain terrain = ResolveTerrainAt(runtimeWorldPosition.x, runtimeWorldPosition.z);
                 if (terrain == null || terrain.terrainData == null)
                     continue;
 
@@ -240,6 +344,9 @@ namespace Hecton8.World
             }
 
             RestoreUntouchedTerrains();
+            if (!_voxelBlendMaskUploadedThisPass)
+                DisableVoxelBlendMaskGlobal();
+
             _debugReady = _debugAppliedPlans > 0;
         }
 
@@ -258,7 +365,7 @@ namespace Hecton8.World
             if (!_registeredToTickManager)
                 return;
 
-                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
 
             _registeredToTickManager = false;
         }
@@ -268,8 +375,8 @@ namespace Hecton8.World
             List<WorldGenerativeGeologySeamPlan> plans,
             List<SeismicTrenchState> trenches)
         {
-            Terrain terrain = state.terrain;
-            TerrainData terrainData = terrain.terrainData;
+            UnityEngine.Terrain terrain = state.terrain;
+            UnityEngine.TerrainData terrainData = terrain.terrainData;
             if (terrainData == null || !state.baselineHeights.IsCreated)
                 return;
 
@@ -307,66 +414,693 @@ namespace Hecton8.World
                 return;
             }
 
-            RectInt applyRect = state.hasPreviousRect ? UnionRect(state.previousRect, currentRect) : currentRect;
+            RectInt activeRect = ClampRect(currentRect, terrainData.heightmapResolution - 1, terrainData.heightmapResolution - 1);
+            bool hasActiveRect = activeRect.width > 0 && activeRect.height > 0;
+            RectInt applyRect = state.hasPreviousRect
+                ? (hasActiveRect ? UnionRect(state.previousRect, activeRect) : state.previousRect)
+                : activeRect;
             applyRect = ClampRect(applyRect, terrainData.heightmapResolution - 1, terrainData.heightmapResolution - 1);
             if (applyRect.width <= 0 || applyRect.height <= 0)
                 return;
 
             float[,] patch = PreparePatchBuffer(state, applyRect);
+            bool previousHeightmapChanged = state.hasPreviousRect;
+            bool currentHeightmapChanged = false;
+            bool hybridApplied = TryApplyHybridTerrainProjection(state, applyRect, patch, plans, out bool hybridHeightmapChanged);
+            currentHeightmapChanged |= hybridHeightmapChanged;
             if (plans != null)
             {
                 for (int i = 0; i < plans.Count; i++)
-                    ApplyPlanToPatch(terrain, applyRect, patch, plans[i]);
+                {
+                    WorldGenerativeGeologySeamPlan plan = plans[i];
+                    if (hybridApplied && IsHybridTerrainPlan(in plan))
+                        continue;
+
+                    currentHeightmapChanged |= ApplyPlanToPatch(terrain, applyRect, patch, plan);
+                }
             }
 
             if (trenches != null)
             {
                 for (int i = 0; i < trenches.Count; i++)
-                    ApplyTrenchToPatch(terrain, applyRect, patch, trenches[i]);
+                    currentHeightmapChanged |= ApplyTrenchToPatch(terrain, applyRect, patch, trenches[i]);
             }
 
-            terrainData.SetHeightsDelayLOD(applyRect.x, applyRect.y, patch);
-            terrainData.SyncHeightmap();
-            state.previousRect = applyRect;
-            state.hasPreviousRect = true;
+            if (previousHeightmapChanged || currentHeightmapChanged)
+            {
+                using (TerrainHeightmapWritebackMarker.Auto())
+                {
+                    terrainData.SetHeightsDelayLOD(applyRect.x, applyRect.y, patch);
+                    terrainData.SyncHeightmap();
+                }
+            }
+
+            if (currentHeightmapChanged)
+            {
+                state.previousRect = hasActiveRect ? activeRect : applyRect;
+                state.hasPreviousRect = true;
+            }
+            else
+            {
+                state.previousRect = default;
+                state.hasPreviousRect = false;
+            }
         }
 
-        private void ApplyPlanToPatch(
-            Terrain terrain,
+        private void ProcessTerrainChunkGeneratedSignals()
+        {
+            using (TerrainSignalDrainMarker.Auto())
+            {
+                EnsureHybridTerrainSeamState();
+                int drained = 0;
+                int copiedSamples = 0;
+                while (drained < TerrainChunkSignalDrainBudget &&
+                       TerrainChunkGeneratedEvents.TryDequeue(out TerrainChunkGeneratedSignal signal))
+                {
+                    if (TryIngestSignalHeightmapToVault(in signal, out int signalSamples))
+                    {
+                        _debugHeightmapVaultSamples = signalSamples;
+                        _debugDrainedTerrainChunkSamples += signalSamples;
+                        copiedSamples += signalSamples;
+                    }
+
+                    drained++;
+                    if (drained > 0 && copiedSamples >= TerrainChunkSignalSampleDrainBudget)
+                        break;
+                }
+
+                _debugDrainedTerrainChunkSignals += drained;
+            }
+        }
+
+        private bool TryIngestSignalHeightmapToVault(in TerrainChunkGeneratedSignal signal, out int copiedSampleCount)
+        {
+            copiedSampleCount = 0;
+            if (!signal.IsValid || mapMagicBridge == null || _tileSnapshotScratch == null)
+                return false;
+
+            int snapshotCount = mapMagicBridge.CopyTerrainTileSnapshotsTo(_tileSnapshotScratch);
+            bool matchedSnapshot = snapshotCount <= 0;
+            for (int i = 0; i < snapshotCount; i++)
+            {
+                MapMagicTerrainTileSnapshot snapshot = _tileSnapshotScratch[i];
+                if (!snapshot.IsValid)
+                    continue;
+
+                uint terrainHash = unchecked((uint)EntityId.ToULong(snapshot.Terrain.GetEntityId()));
+                if (terrainHash != signal.TerrainEntityHash ||
+                    snapshot.TileX != signal.ChunkX ||
+                    snapshot.TileZ != signal.ChunkZ)
+                {
+                    continue;
+                }
+
+                matchedSnapshot = true;
+                break;
+            }
+
+            if (!matchedSnapshot)
+                return false;
+
+            float sampleX = signal.TerrainPosition.x + signal.TerrainSize.x * 0.5f;
+            float sampleZ = signal.TerrainPosition.z + signal.TerrainSize.z * 0.5f;
+            if (!mapMagicBridge.TryGetQuantizedHeightmapPayload(sampleX, sampleZ, out MapMagicBridge.QuantizedHeightmapPayload payload) ||
+                !payload.IsValid ||
+                payload.HeightmapResolution != signal.HeightmapResolution)
+            {
+                return false;
+            }
+
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null)
+                return false;
+
+            int requiredLength = payload.HeightmapResolution * payload.HeightmapResolution;
+            NativeArray<ushort> vaultHeights = vault.GetBuffer<ushort>(
+                BufferID.TerrainSeamHeightmap,
+                requiredLength,
+                SystemID.TerrainSeams,
+                NativeArrayOptions.UninitializedMemory);
+            if (!vaultHeights.IsCreated || vaultHeights.Length < requiredLength)
+                return false;
+
+            for (int i = 0; i < requiredLength; i++)
+                vaultHeights[i] = payload.HeightSamples[i];
+
+            _vaultHeightmapTerrainHash = signal.TerrainEntityHash;
+            _vaultHeightmapFrame = signal.Frame;
+            _vaultHeightmapResolution = payload.HeightmapResolution;
+            _vaultHeightmapCacheRevision = payload.CacheRevision;
+            copiedSampleCount = requiredLength;
+            return true;
+        }
+
+        private bool TryApplyHybridTerrainProjection(
+            TerrainApplyState state,
+            RectInt applyRect,
+            float[,] patch,
+            List<WorldGenerativeGeologySeamPlan> plans,
+            out bool heightmapChanged)
+        {
+            heightmapChanged = false;
+            if (state == null ||
+                state.terrain == null ||
+                state.terrainData == null ||
+                patch == null ||
+                plans == null ||
+                plans.Count <= 0 ||
+                !state.baselineHeights.IsCreated)
+            {
+                return false;
+            }
+
+            int hybridPlanCount = CountHybridTerrainPlans(plans);
+            if (hybridPlanCount <= 0)
+                return false;
+
+            int sampleCount = applyRect.width * applyRect.height;
+            if (sampleCount <= 0)
+                return false;
+
+            UnityEngine.Terrain terrain = state.terrain;
+            UnityEngine.TerrainData terrainData = state.terrainData;
+            Vector3 terrainPosition = terrain.transform.position;
+            Vector3 terrainSize = terrainData.size;
+            bool lowTierVisualOnly = ResolveLowTierVisualOnly();
+            bool highTierMaskDetail = !lowTierVisualOnly && ResolveHighTierMaskDetail();
+            NativeArray<ushort> quantizedHeightmap = default;
+            bool usedVaultHeightmap = TryResolveVaultHeightmap(state, out quantizedHeightmap);
+
+            NativeArray<HybridTerrainSeamPlanNative> nativePlans = default;
+            NativeArray<float> patchHeights = default;
+            NativeArray<byte> blendMask = default;
+            NativeArray<float3> normals = default;
+
+            try
+            {
+                nativePlans = new NativeArray<HybridTerrainSeamPlanNative>(
+                    hybridPlanCount,
+                    Allocator.TempJob,
+                    NativeArrayOptions.UninitializedMemory);
+                NativeMemorySentinel.RegisterNativeArray(nativePlans, NativeMemoryOwner, NativePlansLabel, NativeAllocationLifetime.TempJob);
+                patchHeights = new NativeArray<float>(
+                    sampleCount,
+                    Allocator.TempJob,
+                    NativeArrayOptions.UninitializedMemory);
+                NativeMemorySentinel.RegisterNativeArray(patchHeights, NativeMemoryOwner, PatchHeightsLabel, NativeAllocationLifetime.TempJob);
+                blendMask = new NativeArray<byte>(
+                    sampleCount,
+                    Allocator.TempJob,
+                    NativeArrayOptions.ClearMemory);
+                NativeMemorySentinel.RegisterNativeArray(blendMask, NativeMemoryOwner, BlendMaskLabel, NativeAllocationLifetime.TempJob);
+                if (highTierMaskDetail)
+                {
+                    normals = new NativeArray<float3>(
+                        sampleCount,
+                        Allocator.TempJob,
+                        NativeArrayOptions.UninitializedMemory);
+                    NativeMemorySentinel.RegisterNativeArray(normals, NativeMemoryOwner, NormalsLabel, NativeAllocationLifetime.TempJob);
+                }
+
+                int writeIndex = 0;
+                for (int i = 0; i < plans.Count && writeIndex < hybridPlanCount; i++)
+                {
+                    WorldGenerativeGeologySeamPlan plan = plans[i];
+                    if (!IsHybridTerrainPlan(in plan))
+                        continue;
+
+                    Vector3 contact = plan.TerrainContactPosition;
+                    Vector3 voxelCenter = plan.RuntimeVoxelVolumeCenter;
+                    Vector3 voxelSize = plan.voxelVolumeSize;
+                    nativePlans[writeIndex++] = new HybridTerrainSeamPlanNative
+                    {
+                        RuntimeContactPosition = (float3)contact,
+                        RuntimeVoxelCenter = (float3)voxelCenter,
+                        VoxelSize = new float3(
+                            Mathf.Max(0.5f, voxelSize.x),
+                            Mathf.Max(0.5f, voxelSize.y),
+                            Mathf.Max(0.5f, voxelSize.z)),
+                        SeamBlendRadius = Mathf.Max(1f, plan.seamBlendRadius),
+                        TerrainBlendWeight = Mathf.Clamp01(plan.terrainBlendWeight),
+                        CaveBlendWeight = Mathf.Clamp01(plan.caveBlendWeight),
+                        SuggestedTerrainRaise = Mathf.Max(0f, plan.suggestedTerrainRaise),
+                        SuggestedTerrainCut = Mathf.Max(0f, plan.suggestedTerrainCut),
+                        TerrainDelta = plan.terrainDelta,
+                        RidgeSignal = Mathf.Clamp01(plan.ridgeSignal),
+                        CanyonSignal = Mathf.Clamp01(plan.canyonSignal),
+                        CompositionPotential = Mathf.Clamp01(plan.compositionPotential)
+                    };
+                }
+
+                HybridSdfHeightmapProjectionJob projectionJob = new HybridSdfHeightmapProjectionJob
+                {
+                    BaselineHeights01 = state.baselineHeights,
+                    QuantizedHeightSamples = quantizedHeightmap,
+                    Plans = nativePlans,
+                    PatchHeights01 = patchHeights,
+                    BlendMask = blendMask,
+                    HeightmapResolution = state.heightmapResolution,
+                    PatchX = applyRect.x,
+                    PatchZ = applyRect.y,
+                    PatchWidth = applyRect.width,
+                    PatchHeight = applyRect.height,
+                    HeightmapInvMaxIndex = 1f / Mathf.Max(1, state.heightmapResolution - 1),
+                    TerrainPosition = (float3)terrainPosition,
+                    TerrainSize = (float3)terrainSize,
+                    LowTierVisualOnly = lowTierVisualOnly ? (byte)1 : (byte)0
+                };
+
+                JobHandle projectionHandle = projectionJob.Schedule(sampleCount, 64);
+                JobHandle finalHandle = projectionHandle;
+                if (highTierMaskDetail)
+                {
+                    float cellSizeX = terrainSize.x / Mathf.Max(1, state.heightmapResolution - 1);
+                    float cellSizeZ = terrainSize.z / Mathf.Max(1, state.heightmapResolution - 1);
+                    HybridTerrainSeamNormalJob normalJob = new HybridTerrainSeamNormalJob
+                    {
+                        PatchHeights01 = patchHeights,
+                        Normals = normals,
+                        PatchWidth = applyRect.width,
+                        PatchHeight = applyRect.height,
+                        CellSizeX = cellSizeX,
+                        CellSizeZ = cellSizeZ,
+                        HeightScale = terrainSize.y
+                    };
+                    HybridTerrainSeamMaskDetailJob detailJob = new HybridTerrainSeamMaskDetailJob
+                    {
+                        Normals = normals,
+                        BlendMask = blendMask,
+                        EnableDetail = 1
+                    };
+
+                    JobHandle normalHandle = normalJob.Schedule(sampleCount, 64, projectionHandle);
+                    finalHandle = detailJob.Schedule(sampleCount, 64, normalHandle);
+                }
+
+                // COLD SYNC JOB: Unity Terrain SetHeightsDelayLOD requires CPU patch data; this path is bounded to SlowTick/chunk seam work, not frame Tick.
+                using (TerrainProjectionFenceMarker.Auto())
+                {
+                    finalHandle.Complete();
+                }
+
+                float minHeight01 = 1f;
+                float maxHeight01 = 0f;
+                float maxBlend01 = 0f;
+                bool faulted = false;
+                bool changedHeightSample = false;
+                for (int z = 0; z < applyRect.height; z++)
+                {
+                    int rowOffset = z * applyRect.width;
+                    for (int x = 0; x < applyRect.width; x++)
+                    {
+                        int index = rowOffset + x;
+                        float height01 = patchHeights[index];
+                        float sourceHeight01 = patch[z, x];
+                        if (float.IsNaN(height01) || float.IsInfinity(height01))
+                        {
+                            height01 = sourceHeight01;
+                            faulted = true;
+                        }
+
+                        height01 = Mathf.Clamp01(height01);
+                        changedHeightSample |= Mathf.Abs(height01 - sourceHeight01) > 0.00001f;
+                        patch[z, x] = height01;
+                        minHeight01 = Mathf.Min(minHeight01, height01);
+                        maxHeight01 = Mathf.Max(maxHeight01, height01);
+                        maxBlend01 = Mathf.Max(maxBlend01, blendMask[index] * (1f / 255f));
+                    }
+                }
+
+                UploadVoxelBlendMaskTexture(terrain, applyRect, blendMask, lowTierVisualOnly);
+                uint terrainHash = unchecked((uint)EntityId.ToULong(terrain.GetEntityId()));
+                uint stateHash = HashTerrainSeamState(
+                    terrainHash,
+                    applyRect,
+                    sampleCount,
+                    hybridPlanCount,
+                    minHeight01,
+                    maxHeight01,
+                    maxBlend01);
+                RecordTerrainSeamBlackBox(
+                    terrain,
+                    terrainHash,
+                    applyRect,
+                    sampleCount,
+                    hybridPlanCount,
+                    minHeight01,
+                    maxHeight01,
+                    maxBlend01,
+                    lowTierVisualOnly,
+                    highTierMaskDetail,
+                    usedVaultHeightmap,
+                    changedHeightSample,
+                    faulted,
+                    stateHash);
+                if (changedHeightSample)
+                {
+                    PublishTerrainPatchVoxelModifiedEvent(
+                        terrain,
+                        applyRect,
+                        minHeight01,
+                        maxHeight01,
+                        stateHash);
+                }
+                WorldGenerativeGeologyTelemetry.PublishTerrainSeamsBlended(
+                    sampleCount,
+                    hybridPlanCount,
+                    lowTierVisualOnly);
+
+                _debugHybridBlendSamples = sampleCount;
+                _debugHybridBlendPlans = hybridPlanCount;
+                _debugLowTierVisualOnly = lowTierVisualOnly;
+                _debugHighTierMaskDetail = highTierMaskDetail;
+
+                if (faulted)
+                    DumpTerrainSeamBlackBox();
+
+                heightmapChanged = changedHeightSample;
+                return true;
+            }
+            finally
+            {
+                DisposeRegisteredTempJobArray(ref normals);
+                DisposeRegisteredTempJobArray(ref blendMask);
+                DisposeRegisteredTempJobArray(ref patchHeights);
+                DisposeRegisteredTempJobArray(ref nativePlans);
+            }
+        }
+
+        private bool TryResolveVaultHeightmap(TerrainApplyState state, out NativeArray<ushort> quantizedHeightmap)
+        {
+            quantizedHeightmap = default;
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null ||
+                state == null ||
+                state.terrain == null ||
+                state.heightmapResolution <= 1)
+                return false;
+
+            uint terrainHash = unchecked((uint)EntityId.ToULong(state.terrain.GetEntityId()));
+            if (terrainHash == 0u ||
+                terrainHash != _vaultHeightmapTerrainHash ||
+                _vaultHeightmapResolution != state.heightmapResolution)
+            {
+                _debugSkippedVaultHeightmapMismatches++;
+                return false;
+            }
+
+            if (!vault.TryGetBuffer(BufferID.TerrainSeamHeightmap, out quantizedHeightmap))
+                return false;
+
+            int requiredLength = state.heightmapResolution * state.heightmapResolution;
+            return quantizedHeightmap.IsCreated && quantizedHeightmap.Length >= requiredLength;
+        }
+
+        private static int CountHybridTerrainPlans(List<WorldGenerativeGeologySeamPlan> plans)
+        {
+            int count = 0;
+            for (int i = 0; i < plans.Count; i++)
+            {
+                WorldGenerativeGeologySeamPlan plan = plans[i];
+                if (IsHybridTerrainPlan(in plan))
+                    count++;
+            }
+
+            return count;
+        }
+
+        private static bool IsHybridTerrainPlan(in WorldGenerativeGeologySeamPlan plan)
+        {
+            return plan.RequiresTerrainBlend &&
+                   plan.hasTerrainSample &&
+                   plan.planWeight > 0.01f &&
+                   plan.seamBlendRadius > 0.01f;
+        }
+
+        private bool ResolveLowTierVisualOnly()
+        {
+            bool requestedLowTierVisualOnly = ResolveRequestedLowTierVisualOnly();
+            if (!_hasLowTierVisualDecision)
+            {
+                _hasLowTierVisualDecision = true;
+                _resolvedLowTierVisualOnly = requestedLowTierVisualOnly;
+                _pendingLowTierVisualOnly = requestedLowTierVisualOnly;
+                _pendingLowTierSwitchFrame = Time.frameCount;
+                return _resolvedLowTierVisualOnly;
+            }
+
+            if (requestedLowTierVisualOnly == _resolvedLowTierVisualOnly)
+            {
+                _pendingLowTierVisualOnly = requestedLowTierVisualOnly;
+                _pendingLowTierSwitchFrame = Time.frameCount;
+                return _resolvedLowTierVisualOnly;
+            }
+
+            if (requestedLowTierVisualOnly != _pendingLowTierVisualOnly)
+            {
+                _pendingLowTierVisualOnly = requestedLowTierVisualOnly;
+                _pendingLowTierSwitchFrame = Time.frameCount;
+                return _resolvedLowTierVisualOnly;
+            }
+
+            int elapsedFrames = Mathf.Max(0, Time.frameCount - _pendingLowTierSwitchFrame);
+            if (elapsedFrames >= TierSwitchHysteresisFrames)
+                _resolvedLowTierVisualOnly = requestedLowTierVisualOnly;
+
+            return _resolvedLowTierVisualOnly;
+        }
+
+        private static bool ResolveRequestedLowTierVisualOnly()
+        {
+            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
+            return GlobalRegistry.ScalabilityTierProfileByte == 0 ||
+                   tier == HectonQualityTier.Unknown ||
+                   tier == HectonQualityTier.Low ||
+                   tier == HectonQualityTier.Mx350;
+        }
+
+        private static bool ResolveHighTierMaskDetail()
+        {
+            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
+            return tier == HectonQualityTier.High || tier == HectonQualityTier.Ultra;
+        }
+
+        private void UploadVoxelBlendMaskTexture(
+            UnityEngine.Terrain terrain,
+            RectInt applyRect,
+            NativeArray<byte> blendMask,
+            bool lowTierVisualOnly)
+        {
+            if (terrain == null || terrain.terrainData == null || !blendMask.IsCreated)
+                return;
+
+            int width = applyRect.width;
+            int height = applyRect.height;
+            if (_voxelBlendMaskTexture == null ||
+                _voxelBlendMaskTexture.width != width ||
+                _voxelBlendMaskTexture.height != height)
+            {
+                DestroyVoxelBlendMaskTexture();
+                // COLD ALLOC: Texture2D R8 seam blend mask resized only when the active terrain seam patch footprint changes.
+                _voxelBlendMaskTexture = new Texture2D(width, height, TextureFormat.R8, false, true)
+                {
+                    name = "HectonVoxelBlendMask_Runtime",
+                    hideFlags = HideFlags.DontSave,
+                    wrapMode = TextureWrapMode.Clamp,
+                    filterMode = FilterMode.Bilinear
+                };
+            }
+
+            using (TerrainBlendMaskUploadMarker.Auto())
+            {
+                _voxelBlendMaskTexture.SetPixelData(blendMask, 0);
+                _voxelBlendMaskTexture.Apply(false, false);
+            }
+
+            UnityEngine.TerrainData terrainData = terrain.terrainData;
+            Vector3 terrainPosition = terrain.transform.position;
+            Vector3 terrainSize = terrainData.size;
+            float denominator = Mathf.Max(1f, terrainData.heightmapResolution - 1f);
+            float worldMinX = terrainPosition.x + (applyRect.x / denominator) * terrainSize.x;
+            float worldMinZ = terrainPosition.z + (applyRect.y / denominator) * terrainSize.z;
+            float worldSizeX = Mathf.Max(0.001f, (applyRect.width / denominator) * terrainSize.x);
+            float worldSizeZ = Mathf.Max(0.001f, (applyRect.height / denominator) * terrainSize.z);
+
+            Shader.SetGlobalTexture(HectonVoxelBlendMaskId, _voxelBlendMaskTexture);
+            Shader.SetGlobalVector(HectonVoxelBlendMaskRectId, new Vector4(worldMinX, worldMinZ, 1f / worldSizeX, 1f / worldSizeZ));
+            Shader.SetGlobalVector(HectonVoxelBlendMaskParamsId, new Vector4(1f, lowTierVisualOnly ? 0.82f : 1f, lowTierVisualOnly ? 1f : 0f, 0f));
+            _voxelBlendMaskGlobalActive = true;
+            _voxelBlendMaskUploadedThisPass = true;
+        }
+
+        private void PublishTerrainPatchVoxelModifiedEvent(
+            UnityEngine.Terrain terrain,
+            RectInt applyRect,
+            float minHeight01,
+            float maxHeight01,
+            uint stateHash)
+        {
+            if (terrain == null || terrain.terrainData == null)
+                return;
+
+            UnityEngine.TerrainData terrainData = terrain.terrainData;
+            Vector3 terrainPosition = terrain.transform.position;
+            Vector3 terrainSize = terrainData.size;
+            float denominator = Mathf.Max(1f, terrainData.heightmapResolution - 1f);
+            float cellSize = Mathf.Max(0.05f, Mathf.Min(terrainSize.x, terrainSize.z) / denominator);
+            Vector3 originOffset = HectonFloatingOrigin.CurrentTotalOffset;
+            float minWorldX = terrainPosition.x + (applyRect.x / denominator) * terrainSize.x + originOffset.x;
+            float maxWorldX = terrainPosition.x + ((applyRect.x + applyRect.width) / denominator) * terrainSize.x + originOffset.x;
+            float minWorldY = terrainPosition.y + minHeight01 * terrainSize.y + originOffset.y;
+            float maxWorldY = terrainPosition.y + maxHeight01 * terrainSize.y + originOffset.y;
+            float minWorldZ = terrainPosition.z + (applyRect.y / denominator) * terrainSize.z + originOffset.z;
+            float maxWorldZ = terrainPosition.z + ((applyRect.y + applyRect.height) / denominator) * terrainSize.z + originOffset.z;
+
+            int3 minCell = new int3(
+                Mathf.FloorToInt(minWorldX / cellSize),
+                Mathf.FloorToInt(minWorldY / cellSize),
+                Mathf.FloorToInt(minWorldZ / cellSize));
+            int3 maxCell = new int3(
+                Mathf.CeilToInt(maxWorldX / cellSize),
+                Mathf.CeilToInt(maxWorldY / cellSize),
+                Mathf.CeilToInt(maxWorldZ / cellSize));
+            ulong volumeInstanceId = EntityId.ToULong(terrain.GetEntityId());
+            if (volumeInstanceId == 0ul)
+                volumeInstanceId = ((ulong)stateHash << 1) | 1ul;
+
+            VoxelChunkModifiedEvent modifiedEvent = new VoxelChunkModifiedEvent
+            {
+                VolumeInstanceId = volumeInstanceId,
+                MinAbsoluteCell = minCell,
+                MaxAbsoluteCell = maxCell,
+                VoxelSize = cellSize,
+                Frame = (uint)Time.frameCount,
+                Operation = (byte)VoxelCarveOperationType.Replace,
+                Shape = (byte)VoxelCarveShapeType.Box,
+                Flags = 1,
+                StateHash = stateHash
+            };
+            VoxelChunkModifiedEvents.TryPublish(in modifiedEvent);
+        }
+
+        private void RecordTerrainSeamBlackBox(
+            UnityEngine.Terrain terrain,
+            uint terrainHash,
+            RectInt applyRect,
+            int sampleCount,
+            int planCount,
+            float minHeight01,
+            float maxHeight01,
+            float maxBlend01,
+            bool lowTierVisualOnly,
+            bool highTierMaskDetail,
+            bool usedVaultHeightmap,
+            bool heightmapChanged,
+            bool faulted,
+            uint stateHash)
+        {
+            if (!_terrainSeamBlackBox.IsCreated || _terrainSeamBlackBox.Length == 0 || terrain == null || terrain.terrainData == null)
+                return;
+
+            UnityEngine.TerrainData terrainData = terrain.terrainData;
+            Vector3 position = terrain.transform.position;
+            Vector3 size = terrainData.size;
+            float denominator = Mathf.Max(1f, terrainData.heightmapResolution - 1f);
+            TerrainSeamTelemetryEntry entry = new TerrainSeamTelemetryEntry
+            {
+                Frame = (uint)Time.frameCount,
+                TerrainHash = terrainHash,
+                PatchSampleCount = sampleCount,
+                PlanCount = planCount,
+                PatchCenterX = position.x + ((applyRect.x + applyRect.width * 0.5f) / denominator) * size.x,
+                PatchCenterZ = position.z + ((applyRect.y + applyRect.height * 0.5f) / denominator) * size.z,
+                MinHeight01 = minHeight01,
+                MaxHeight01 = maxHeight01,
+                MaxBlend01 = maxBlend01,
+                Flags = (uint)(
+                    (lowTierVisualOnly ? 1 : 0) |
+                    (faulted ? 2 : 0) |
+                    (highTierMaskDetail ? 4 : 0) |
+                    (usedVaultHeightmap ? 8 : 0) |
+                    (heightmapChanged ? 16 : 0)),
+                StateHash = stateHash
+            };
+
+            _terrainSeamBlackBox[_blackBoxWriteIndex] = entry;
+            _blackBoxWriteIndex = (_blackBoxWriteIndex + 1) % _terrainSeamBlackBox.Length;
+        }
+
+        private static uint HashTerrainSeamState(
+            uint terrainHash,
+            RectInt rect,
+            int sampleCount,
+            int planCount,
+            float minHeight01,
+            float maxHeight01,
+            float maxBlend01)
+        {
+            uint hash = 2166136261u;
+            hash = MixHash(hash, terrainHash);
+            hash = MixHash(hash, (uint)rect.x);
+            hash = MixHash(hash, (uint)rect.y);
+            hash = MixHash(hash, (uint)rect.width);
+            hash = MixHash(hash, (uint)rect.height);
+            hash = MixHash(hash, (uint)sampleCount);
+            hash = MixHash(hash, (uint)planCount);
+            hash = MixHash(hash, (uint)Mathf.RoundToInt(minHeight01 * 65535f));
+            hash = MixHash(hash, (uint)Mathf.RoundToInt(maxHeight01 * 65535f));
+            hash = MixHash(hash, (uint)Mathf.RoundToInt(maxBlend01 * 65535f));
+            return hash == 0u ? 1u : hash;
+        }
+
+        private static uint MixHash(uint hash, uint value)
+        {
+            unchecked
+            {
+                return (hash ^ value) * 16777619u;
+            }
+        }
+
+        private bool ApplyPlanToPatch(
+            UnityEngine.Terrain terrain,
             RectInt patchRect,
             float[,] patch,
             in WorldGenerativeGeologySeamPlan plan)
         {
-            TerrainData terrainData = terrain.terrainData;
+            UnityEngine.TerrainData terrainData = terrain.terrainData;
             if (terrainData == null)
-                return;
+                return false;
 
             Vector3 terrainPosition = terrain.transform.position;
             Vector3 terrainSize = terrainData.size;
             float invHeight = terrainSize.y > 0.001f ? 1f / terrainSize.y : 0f;
+            float invMaxHeightIndex = 1f / Mathf.Max(1, terrainData.heightmapResolution - 1);
             float effectiveRadius = Mathf.Max(2f, plan.seamBlendRadius + radiusPaddingMeters);
+            float effectiveRadiusSq = effectiveRadius * effectiveRadius;
             float desiredDelta = ResolveDesiredWorldDelta(plan);
             if (Mathf.Abs(desiredDelta * invHeight) < 0.00001f)
-                return;
+                return false;
 
             Vector3 planRuntimePosition = plan.RuntimeWorldPosition;
-            Vector2 planRuntimeXZ = new Vector2(planRuntimePosition.x, planRuntimePosition.z);
             bool snapVoxelCut = desiredDelta < -0.0001f && plan.RequiresVoxelBlend;
+            bool changed = false;
 
             for (int patchZ = 0; patchZ < patchRect.height; patchZ++)
             {
                 int heightmapZ = patchRect.y + patchZ;
-                float worldZ = terrainPosition.z + (heightmapZ / (float)(terrainData.heightmapResolution - 1)) * terrainSize.z;
+                float worldZ = terrainPosition.z + heightmapZ * invMaxHeightIndex * terrainSize.z;
+                float deltaZ = worldZ - planRuntimePosition.z;
 
                 for (int patchX = 0; patchX < patchRect.width; patchX++)
                 {
                     int heightmapX = patchRect.x + patchX;
-                    float worldX = terrainPosition.x + (heightmapX / (float)(terrainData.heightmapResolution - 1)) * terrainSize.x;
-                    float distance = Vector2.Distance(new Vector2(worldX, worldZ), planRuntimeXZ);
-                    if (distance > effectiveRadius)
+                    float worldX = terrainPosition.x + heightmapX * invMaxHeightIndex * terrainSize.x;
+                    float deltaX = worldX - planRuntimePosition.x;
+                    float distanceSq = deltaX * deltaX + deltaZ * deltaZ;
+                    if (distanceSq > effectiveRadiusSq)
                         continue;
 
-                    float radial = 1f - Mathf.Clamp01(distance / effectiveRadius);
+                    float radial = 1f - Mathf.Clamp01(distanceSq / effectiveRadiusSq);
                     float falloff = Mathf.SmoothStep(0f, 1f, radial);
                     float rim = Mathf.Lerp(1f, Mathf.SmoothStep(0f, 1f, radial * radial), rimSmoothing);
                     float shapeBias = Mathf.Clamp01(
@@ -384,9 +1118,13 @@ namespace Hecton8.World
                         targetWorldHeight = snappedRuntimeHeight;
                     }
 
-                    patch[patchZ, patchX] = Mathf.Clamp01((targetWorldHeight - terrainPosition.y) * invHeight);
+                    float targetHeight01 = Mathf.Clamp01((targetWorldHeight - terrainPosition.y) * invHeight);
+                    changed |= Mathf.Abs(targetHeight01 - sourceNormalized) > 0.00001f;
+                    patch[patchZ, patchX] = targetHeight01;
                 }
             }
+
+            return changed;
         }
 
         private static bool TryResolveVoxelSnappedRuntimeHeight(
@@ -436,15 +1174,15 @@ namespace Hecton8.World
             return raise - cut;
         }
 
-        private void ApplyTrenchToPatch(
-            Terrain terrain,
+        private bool ApplyTrenchToPatch(
+            UnityEngine.Terrain terrain,
             RectInt patchRect,
             float[,] patch,
             in SeismicTrenchState trench)
         {
-            TerrainData terrainData = terrain.terrainData;
+            UnityEngine.TerrainData terrainData = terrain.terrainData;
             if (terrainData == null)
-                return;
+                return false;
 
             Vector3 runtimeStart = HectonFloatingOrigin.ToRuntimePosition(trench.AbsoluteStart);
             Vector3 runtimeEnd = HectonFloatingOrigin.ToRuntimePosition(trench.AbsoluteEnd);
@@ -453,29 +1191,33 @@ namespace Hecton8.World
             Vector2 segment = end - start;
             float segmentLengthSq = segment.sqrMagnitude;
             if (segmentLengthSq <= 0.0001f)
-                return;
+                return false;
 
             Vector3 terrainPosition = terrain.transform.position;
             Vector3 terrainSize = terrainData.size;
             float invHeight = terrainSize.y > 0.001f ? 1f / terrainSize.y : 0f;
+            float invMaxHeightIndex = 1f / Mathf.Max(1, terrainData.heightmapResolution - 1);
             float safeSlope = Mathf.Max(0.05f, trench.Slope);
             float influenceRadius = Mathf.Max(trench.InfluenceRadius, trench.DepthMeters / safeSlope) + Mathf.Max(0f, trenchRadiusPaddingMeters);
+            float influenceRadiusSq = influenceRadius * influenceRadius;
             float rimBlend = Mathf.Clamp01(trenchRimBlendStrength);
+            bool changed = false;
 
             for (int patchZ = 0; patchZ < patchRect.height; patchZ++)
             {
                 int heightmapZ = patchRect.y + patchZ;
-                float worldZ = terrainPosition.z + (heightmapZ / (float)(terrainData.heightmapResolution - 1)) * terrainSize.z;
+                float worldZ = terrainPosition.z + heightmapZ * invMaxHeightIndex * terrainSize.z;
 
                 for (int patchX = 0; patchX < patchRect.width; patchX++)
                 {
                     int heightmapX = patchRect.x + patchX;
-                    float worldX = terrainPosition.x + (heightmapX / (float)(terrainData.heightmapResolution - 1)) * terrainSize.x;
+                    float worldX = terrainPosition.x + heightmapX * invMaxHeightIndex * terrainSize.x;
                     Vector2 point = new Vector2(worldX, worldZ);
-                    float distanceToLine = DistancePointToSegment(point, start, end, segment, segmentLengthSq);
-                    if (distanceToLine > influenceRadius)
+                    float distanceToLineSq = DistanceSqPointToSegment(point, start, segment, segmentLengthSq);
+                    if (distanceToLineSq > influenceRadiusSq)
                         continue;
 
+                    float distanceToLine = LengthFromSqNoSqrt(distanceToLineSq);
                     float cutDepth = Mathf.Max(0f, trench.DepthMeters - distanceToLine * safeSlope);
                     if (cutDepth <= 0.0001f)
                         continue;
@@ -483,9 +1225,14 @@ namespace Hecton8.World
                     float radial = 1f - Mathf.Clamp01(distanceToLine / influenceRadius);
                     float rim = Mathf.Lerp(1f, Mathf.SmoothStep(0f, 1f, radial * radial), rimBlend);
                     float normalizedDelta = -(cutDepth * cutStrength * rim * Mathf.SmoothStep(0f, 1f, radial)) * invHeight;
-                    patch[patchZ, patchX] = Mathf.Clamp01(patch[patchZ, patchX] + normalizedDelta);
+                    float sourceHeight01 = patch[patchZ, patchX];
+                    float targetHeight01 = Mathf.Clamp01(sourceHeight01 + normalizedDelta);
+                    changed |= Mathf.Abs(targetHeight01 - sourceHeight01) > 0.00001f;
+                    patch[patchZ, patchX] = targetHeight01;
                 }
             }
+
+            return changed;
         }
 
         private void RestoreUntouchedTerrains()
@@ -521,7 +1268,7 @@ namespace Hecton8.World
             if (state == null || state.terrain == null || state.terrainData == null || !state.hasPreviousRect)
                 return;
 
-            TerrainData currentTerrainData = state.terrain.terrainData;
+            UnityEngine.TerrainData currentTerrainData = state.terrain.terrainData;
             if (currentTerrainData == null)
             {
                 state.hasPreviousRect = false;
@@ -547,18 +1294,21 @@ namespace Hecton8.World
             }
 
             float[,] patch = PreparePatchBuffer(state, rect);
-            state.terrainData.SetHeightsDelayLOD(rect.x, rect.y, patch);
-            state.terrainData.SyncHeightmap();
+            using (TerrainHeightmapWritebackMarker.Auto())
+            {
+                state.terrainData.SetHeightsDelayLOD(rect.x, rect.y, patch);
+                state.terrainData.SyncHeightmap();
+            }
             state.previousRect = default;
             state.hasPreviousRect = false;
         }
 
-        private void EnsureTerrainState(Terrain terrain, int terrainId)
+        private void EnsureTerrainState(UnityEngine.Terrain terrain, int terrainId)
         {
             if (terrain == null || terrain.terrainData == null)
                 return;
 
-            TerrainData terrainData = terrain.terrainData;
+            UnityEngine.TerrainData terrainData = terrain.terrainData;
             int resolution = terrainData.heightmapResolution;
             if (!_terrainStates.TryGetValue(terrainId, out TerrainApplyState state))
             {
@@ -608,8 +1358,8 @@ namespace Hecton8.World
 
         private static void RefreshTerrainBaseline(
             TerrainApplyState state,
-            Terrain terrain,
-            TerrainData terrainData,
+            UnityEngine.Terrain terrain,
+            UnityEngine.TerrainData terrainData,
             int resolution)
         {
             if (state == null || terrain == null || terrainData == null)
@@ -628,7 +1378,7 @@ namespace Hecton8.World
                 NativeMemorySentinel.RegisterNativeArray(
                     state.baselineHeights,
                     NativeMemoryOwner,
-                    $"{nameof(TerrainApplyState.baselineHeights)}:{EntityId.ToULong(terrain.GetEntityId())}",
+                    nameof(TerrainApplyState.baselineHeights),
                     NativeMemoryLifetime);
                 PopulateTerrainBaselineNative(state.baselineHeights, terrain, terrainData, resolution);
             }
@@ -639,8 +1389,8 @@ namespace Hecton8.World
 
         private static void PopulateTerrainBaselineNative(
             NativeArray<float> baseline,
-            Terrain terrain,
-            TerrainData terrainData,
+            UnityEngine.Terrain terrain,
+            UnityEngine.TerrainData terrainData,
             int resolution)
         {
             if (!baseline.IsCreated || terrain == null || terrainData == null || resolution <= 0)
@@ -673,11 +1423,136 @@ namespace Hecton8.World
             }
         }
 
+        private void EnsureHybridTerrainSeamState()
+        {
+            if (_tileSnapshotScratch == null || _tileSnapshotScratch.Length != TerrainTileSnapshotCapacity)
+            {
+                // COLD ALLOC: fixed MapMagic tile snapshot scratch used only while draining terrain generated signals.
+                _tileSnapshotScratch = new MapMagicTerrainTileSnapshot[TerrainTileSnapshotCapacity];
+            }
+
+            if (_terrainSeamBlackBox.IsCreated)
+                return;
+
+            // COLD ALLOC: fixed 300-frame seam telemetry ring required for post-mortem NaN/crash diagnosis.
+            _terrainSeamBlackBox = new NativeArray<TerrainSeamTelemetryEntry>(
+                TerrainSeamBlackBoxCapacity,
+                Allocator.Persistent,
+                NativeArrayOptions.ClearMemory);
+            NativeMemorySentinel.RegisterNativeArray(
+                _terrainSeamBlackBox,
+                NativeMemoryOwner,
+                TerrainSeamBlackBoxLabel,
+                NativeMemoryLifetime);
+            _blackBoxWriteIndex = 0;
+        }
+
+        private void DisposeHybridTerrainSeamState()
+        {
+            if (_terrainSeamBlackBox.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_terrainSeamBlackBox);
+                _terrainSeamBlackBox.Dispose();
+                _terrainSeamBlackBox = default;
+            }
+
+            DestroyVoxelBlendMaskTexture();
+            ClearVoxelBlendMaskGlobal();
+            _voxelBlendMaskGlobalActive = false;
+        }
+
+        private void DestroyVoxelBlendMaskTexture()
+        {
+            if (_voxelBlendMaskTexture == null)
+                return;
+
+            if (Application.isPlaying)
+                Destroy(_voxelBlendMaskTexture);
+            else
+                DestroyImmediate(_voxelBlendMaskTexture);
+
+            _voxelBlendMaskTexture = null;
+        }
+
+        private void DisableVoxelBlendMaskGlobal()
+        {
+            if (!_voxelBlendMaskGlobalActive)
+                return;
+
+            ClearVoxelBlendMaskGlobal();
+            _voxelBlendMaskGlobalActive = false;
+        }
+
+        private static void ClearVoxelBlendMaskGlobal()
+        {
+            Shader.SetGlobalVector(HectonVoxelBlendMaskParamsId, Vector4.zero);
+            Shader.SetGlobalVector(HectonVoxelBlendMaskRectId, Vector4.zero);
+        }
+
+        private void DumpTerrainSeamBlackBox()
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (!_terrainSeamBlackBox.IsCreated)
+                return;
+
+            try
+            {
+                string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+                string dumpPath = Path.Combine(projectRoot, HybridDumpPath);
+                string dumpDirectory = Path.GetDirectoryName(dumpPath);
+                if (!string.IsNullOrEmpty(dumpDirectory))
+                    Directory.CreateDirectory(dumpDirectory);
+
+                using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
+                using (BinaryWriter writer = new BinaryWriter(stream))
+                {
+                    writer.Write(TerrainSeamBlackBoxCapacity);
+                    writer.Write(_blackBoxWriteIndex);
+                    for (int i = 0; i < _terrainSeamBlackBox.Length; i++)
+                    {
+                        TerrainSeamTelemetryEntry entry = _terrainSeamBlackBox[i];
+                        writer.Write(entry.Frame);
+                        writer.Write(entry.TerrainHash);
+                        writer.Write(entry.PatchSampleCount);
+                        writer.Write(entry.PlanCount);
+                        writer.Write(entry.PatchCenterX);
+                        writer.Write(entry.PatchCenterZ);
+                        writer.Write(entry.MinHeight01);
+                        writer.Write(entry.MaxHeight01);
+                        writer.Write(entry.MaxBlend01);
+                        writer.Write(entry.Flags);
+                        writer.Write(entry.StateHash);
+                        writer.Write(entry.Reserved0);
+                        writer.Write(entry.Reserved1);
+                        writer.Write(entry.Reserved2);
+                        writer.Write(entry.Reserved3);
+                    }
+                }
+            }
+            catch (IOException)
+            {
+            }
+            catch (UnauthorizedAccessException)
+            {
+            }
+#endif
+        }
+
         private void DisposeTerrainStateNativeBuffers()
         {
             Dictionary<int, TerrainApplyState>.Enumerator enumerator = _terrainStates.GetEnumerator();
             while (enumerator.MoveNext())
                 enumerator.Current.Value?.ReleaseBaseline();
+        }
+
+        private static void DisposeRegisteredTempJobArray<T>(ref NativeArray<T> array) where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeArray(array);
+            array.Dispose();
+            array = default;
         }
 
         private void ClearBuckets()
@@ -708,7 +1583,11 @@ namespace Hecton8.World
                 SeismicTrenchState trench = _activeTrenches[trenchIndex];
                 Vector3 runtimeStart = HectonFloatingOrigin.ToRuntimePosition(trench.AbsoluteStart);
                 Vector3 runtimeEnd = HectonFloatingOrigin.ToRuntimePosition(trench.AbsoluteEnd);
-                float lineLength = (runtimeStart - runtimeEnd).magnitude;
+                Vector3 lineDelta = runtimeStart - runtimeEnd;
+                float lineLength = LengthFromSqNoSqrt(
+                    lineDelta.x * lineDelta.x +
+                    lineDelta.y * lineDelta.y +
+                    lineDelta.z * lineDelta.z);
                 int sampleCount = Mathf.Clamp(Mathf.CeilToInt(lineLength / 48f) + 1, 2, 8);
                 _terrainBucketScratch.Clear();
 
@@ -716,7 +1595,7 @@ namespace Hecton8.World
                 {
                     float sampleT = sampleCount <= 1 ? 0f : sampleIndex / (float)(sampleCount - 1);
                     Vector3 samplePosition = Vector3.Lerp(runtimeStart, runtimeEnd, sampleT);
-                    Terrain terrain = ResolveTerrainAt(samplePosition.x, samplePosition.z);
+                    UnityEngine.Terrain terrain = ResolveTerrainAt(samplePosition.x, samplePosition.z);
                     if (terrain == null || terrain.terrainData == null)
                         continue;
 
@@ -742,9 +1621,9 @@ namespace Hecton8.World
             }
         }
 
-        private static RectInt BuildPlanRect(Terrain terrain, in WorldGenerativeGeologySeamPlan plan)
+        private static RectInt BuildPlanRect(UnityEngine.Terrain terrain, in WorldGenerativeGeologySeamPlan plan)
         {
-            TerrainData terrainData = terrain.terrainData;
+            UnityEngine.TerrainData terrainData = terrain.terrainData;
             if (terrainData == null || terrainData.heightmapResolution < 2)
                 return default;
 
@@ -768,9 +1647,9 @@ namespace Hecton8.World
             return ClampRect(new RectInt(minX, minZ, maxX - minX + 1, maxZ - minZ + 1), maxIndex, maxIndex);
         }
 
-        private static RectInt BuildTrenchRect(Terrain terrain, in SeismicTrenchState trench)
+        private static RectInt BuildTrenchRect(UnityEngine.Terrain terrain, in SeismicTrenchState trench)
         {
-            TerrainData terrainData = terrain.terrainData;
+            UnityEngine.TerrainData terrainData = terrain.terrainData;
             if (terrainData == null || terrainData.heightmapResolution < 2)
                 return default;
 
@@ -817,25 +1696,34 @@ namespace Hecton8.World
             return new RectInt(xMin, yMin, Mathf.Max(0, xMax - xMin), Mathf.Max(0, yMax - yMin));
         }
 
-        private static float DistancePointToSegment(
+        private static float DistanceSqPointToSegment(
             Vector2 point,
             Vector2 start,
-            Vector2 end,
             Vector2 segment,
             float segmentLengthSq)
         {
             if (segmentLengthSq <= 0.0001f)
-                return Vector2.Distance(point, start);
+            {
+                Vector2 deltaToStart = point - start;
+                return Vector2.Dot(deltaToStart, deltaToStart);
+            }
 
             float projected = Mathf.Clamp01(Vector2.Dot(point - start, segment) / segmentLengthSq);
             Vector2 closest = start + segment * projected;
-            return Vector2.Distance(point, closest);
+            Vector2 deltaToClosest = point - closest;
+            return Vector2.Dot(deltaToClosest, deltaToClosest);
         }
 
-        private Terrain ResolveTerrainAt(float x, float z)
+        private static float LengthFromSqNoSqrt(float lengthSq)
+        {
+            float safeLengthSq = math.max(lengthSq, 0.000001f);
+            return safeLengthSq * math.rsqrt(safeLengthSq);
+        }
+
+        private UnityEngine.Terrain ResolveTerrainAt(float x, float z)
         {
             if (mapMagicBridge != null &&
-                mapMagicBridge.TryResolveTerrainAt(x, z, out Terrain bridgeTerrain))
+                mapMagicBridge.TryResolveTerrainAt(x, z, out UnityEngine.Terrain bridgeTerrain))
             {
                 return bridgeTerrain;
             }

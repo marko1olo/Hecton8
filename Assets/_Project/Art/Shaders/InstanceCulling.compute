@@ -1,4 +1,5 @@
 #pragma kernel CullInstances
+#pragma require compute
 
 #define HECTON_THREADS_PER_GROUP 64
 #define HECTON_FLAG_VOXEL_SDF_CULL 1u

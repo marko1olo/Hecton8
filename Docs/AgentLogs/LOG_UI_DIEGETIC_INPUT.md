@@ -63,3 +63,83 @@ PDA namespace fix: 0 us runtime, compile-only. Structural contract reconciliatio
 
 Verification:
 Dependency-first direct Unity Roslyn/Bee sweep passed with exit code 0 for: `Hecton8.Bootstrap.Contracts`, `Hecton8.World.Contracts`, `Hecton8.Core`, `Hecton8.Input.Generated`, `Hecton8.Input`, `Hecton8.Plugins`, `Hecton8.SpaceEngine098Terrain`, `Assembly-CSharp-firstpass`, `Assembly-CSharp`, `Assembly-CSharp-Editor-firstpass`, `Hecton8.Editor`, `Hecton8.UI.Editor`, `Hecton8.Optimization.Editor`, `Assembly-CSharp-Editor`, `Hecton8.EditModeTests`, `Hecton8.PlayModeTests`. `git diff --check` passed for touched files, with only LF-to-CRLF warnings on dirty files. MCP console/screenshot verification remains blocked by missing Unity session.
+
+## 2026-05-13 Continuation - Surface/HUD Readability
+What was wrong:
+The surface frame was still being crushed by stacked noir/fog/post values, and the diegetic HUD could vanish when its dedicated projection camera did not resolve. MCP server is running, but Unity session discovery currently reports `instance_count=0`, so live screenshots/console reads cannot be claimed.
+
+What was done:
+Lifted underwater/surface readability floors, reduced abyss/noir fog density, softened vignette/damage post, neutralized High/Default volume contrast/desaturation/cold filter, added player-camera fallback for diegetic HUD projection, preserved gameplay camera masks while adding the HUD layer, raised reticle alpha floors, and throttled HUD solve warnings.
+
+Cinematic Cheats used:
+Scalar fog/luminance floors and color clamps instead of extra lights or physical volumetrics. Existing diegetic canvas projection reused instead of new render targets. Reticle visibility improved by cached alpha values only.
+
+Exact Microseconds saved:
+No new hot-path systems. Expected runtime delta is 0 us for lighting/profile scalar changes; HUD fallback is cold resolve only; warning cooldown reduces diagnostic event frequency by roughly 10x during persistent over-budget states.
+
+Verification:
+`Hecton8.Core.rsp` compiled with exit code 0 after edits. `git diff --check` passed with only existing LF-to-CRLF warnings on dirty scripts. MCP live proof remains blocked by no active Unity session.
+
+## 2026-05-13 Continuation - Active Warning Sweep
+What was wrong:
+Asset worker logs showed repeated `MapMagic/TerrainPreviewURP` and `MapMagic/TerrainPreview` unsupported-shader warnings, plus mixed line-ending warnings for the same files. These are editor preview assets, but the repetition pollutes the console and makes real errors harder to see.
+
+What was done:
+Added URP-tagged lightweight fallback passes to both preview shaders and normalized both shader files to CRLF/no-BOM. Re-ran `Hecton8.Core.rsp`; compile still exits 0.
+
+Cinematic Cheats used:
+Editor fallback is a flat texture sample for preview only, not a terrain lighting simulation. Runtime terrain/water presentation remains untouched.
+
+Exact Microseconds saved:
+0 us player runtime. Editor-only fallback avoids shader importer warning churn; no runtime render pass added.
+
+Verification:
+Line-ending audit reports `LoneLF=0` and `HasBOM=False` for both shaders. `git diff --check` is clean for the shader files. Direct Unity batch import could not be used because the project is already open; MCP still has no active Unity session.
+
+## 2026-05-13 Continuation - Runtime Warning Hygiene
+What was wrong:
+`HectonUnderwaterVisuals` unresolved camera/sun diagnostics could repeat every five seconds in editor/development builds while a reference stayed missing.
+
+What was done:
+Converted those diagnostics to per-reference one-shot warnings with reset after recovery. Re-ran `Hecton8.Core.rsp`; compile exits 0.
+
+Cinematic Cheats used:
+None. Diagnostic cadence only.
+
+Exact Microseconds saved:
+No player-runtime release cost. Editor/development path now avoids repeated log work and stacktrace capture for the same unresolved reference.
+
+Verification:
+`Hecton8.Core.rsp` direct compile passed after the patch.
+
+## 2026-05-13 Continuation - Ordered Compile Sweep
+What was wrong:
+The Unity log still contains stale `GlobalDataVault` compile failures and MCP websocket warnings from earlier broken states. Current source truth needed a dependency-ordered compile pass.
+
+What was done:
+Ran Unity Roslyn/Bee response-file sweep for Bootstrap.Contracts, World.Contracts, Core, Input generated/runtime, Plugins, SpaceEngineTerrain, Assembly-CSharp firstpass/runtime, editor assemblies, UI editor, optimization editor, and Hecton8 edit/play mode tests.
+
+Cinematic Cheats used:
+None. Verification only.
+
+Exact Microseconds saved:
+0 us runtime. Prevents wasted work chasing stale log entries.
+
+Verification:
+All listed response files compiled with exit code 0; sweep ended with `COMPILE_SWEEP_OK`.
+
+## 2026-05-13 Continuation - Noir Reset Guard
+What was wrong:
+`ResetNoirResolveGlobals()` still restored old black-crush abyss/noir values, meaning reload/disable paths could re-darken the global resolve state even after runtime readability fixes.
+
+What was done:
+Changed the reset globals to the readable abyss floor, reduced noir exponent, and lower fog scattering coefficient. Re-ran `Hecton8.Core.rsp`; compile exits 0.
+
+Cinematic Cheats used:
+Scalar shader-global defaults only; no new lights, no new render passes.
+
+Exact Microseconds saved:
+0 us frame cost. The change prevents stale dark global state after teardown/reload.
+
+Verification:
+`Hecton8.Core.rsp` direct compile passed after the patch.

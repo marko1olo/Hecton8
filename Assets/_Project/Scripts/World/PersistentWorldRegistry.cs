@@ -79,8 +79,7 @@ namespace Hecton8.World
 
         public static AbsoluteUniversePosition FromRuntimePosition(Vector3 runtimePosition)
         {
-            Vector3 absolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(runtimePosition);
-            return FromAbsolutePosition(new double3(absolutePosition.x, absolutePosition.y, absolutePosition.z));
+            return FromAbsolutePosition(HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimePosition));
         }
 
         public static AbsoluteUniversePosition FromAbsolutePosition(double3 absolutePosition)

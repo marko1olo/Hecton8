@@ -1,0 +1,19 @@
+{
+    "name": "Hecton8.Prologue.Space",
+    "rootNamespace": "Hecton8.Prologue.Space",
+    "references": [
+        "Hecton8.Core",
+        "Unity.Mathematics",
+        "Unity.Collections",
+        "Unity.Burst"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -5,11 +5,16 @@ using System.IO;
 using Hecton.Localization;
 using Hecton8.AI;
 using Hecton8.Building;
+using Hecton8.Crafting;
+using Hecton8.Dev;
+using Hecton8.Gameplay;
 using Hecton8.Interaction;
 using Hecton8.Inventory;
 using Hecton8.Items;
+using Hecton8.Quest;
 using Hecton8.SaveSystem;
 using Hecton8.Scavenging;
+using Hecton8.Tools;
 using Hecton8.UI;
 using Hecton8.World;
 using UnityEditor;
@@ -25,7 +30,9 @@ namespace Hecton8.Editor.Validation
     {
         private const string MenuPath = "Hecton-8/Validate Content";
         private const string DataRoot = "Assets/_Project/Data";
+        private const string PrefabRoot = "Assets/_Project/Prefabs";
         private const string PlayerPrefabPath = "Assets/_Project/Prefabs/Player.prefab";
+        private const string ToolHeldPrefabRoot = "Assets/_Project/Prefabs/Tools/Held";
         private const string ItemCatalogPath = DataRoot + "/Items/ItemCatalog.asset";
         private const string GeneratedRoot = DataRoot + "/Diagnostics/Generated/ContentSanity";
         private const string GeneratedMeshPath = GeneratedRoot + "/MESH_ContentSanityWireCube.asset";
@@ -46,6 +53,10 @@ namespace Hecton8.Editor.Validation
             public int DataPrefabCount;
             public int ReferencedPrefabCount;
             public int ItemCount;
+            public int RecipeCount;
+            public int QuestCount;
+            public int ToolMetadataCount;
+            public int ToolHeldPrefabCount;
             public int FloraCount;
             public int FaunaCount;
             public int ResourceNodeCount;
@@ -59,12 +70,18 @@ namespace Hecton8.Editor.Validation
             public int ItemCatalogDuplicateHashCount;
             public int ItemCatalogMissingRuntimeDescriptorCount;
             public int ItemCatalogLookupAmbiguityCount;
+            public int RecipeRouteErrorCount;
+            public int RecipeScanGateWarningCount;
+            public int QuestRouteErrorCount;
+            public int ToolMetadataOrphanCount;
+            public int ToolRouteErrorCount;
             public int AudioMaterialViolationCount;
             public int ResourceNodeYieldMissingWorldPrefabCount;
             public int ResourceNodeYieldNotCatalogedCount;
             public int ResourceNodeYieldInvalidWorldPrefabContractCount;
             public int PlayerPdaHeadlessOpenRiskCount;
             public int PlayerPdaBridgeWarningCount;
+            public int PlayerDevProvisionerStartupRiskCount;
         }
 
         [MenuItem(MenuPath, priority = 141)]
@@ -81,11 +98,15 @@ namespace Hecton8.Editor.Validation
             ScanDataFolderPrefabs(result, wireMesh, wireMaterial);
             ValidateItemTemplates(result, wireMesh, wireMaterial);
             ValidateItemCatalog(result);
+            HashSet<string> craftableItemIds = ValidateRecipeData(result);
+            ValidateQuestData(result, craftableItemIds);
+            ValidateToolAuthoring(result);
             ValidateFloraTemplates(result, wireMesh, wireMaterial);
             ValidateFaunaTemplates(result, wireMesh, wireMaterial);
             ValidateResourceNodeTemplates(result);
             ValidateBaseModuleTemplates(result);
             ValidatePlayerPdaShell(result);
+            ValidatePlayerDevProvisioning(result);
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -226,6 +247,569 @@ namespace Hecton8.Editor.Validation
             {
                 result.ItemCatalogLookupAmbiguityCount++;
                 result.Errors.Add($"{ItemCatalogPath}: ItemCatalog lookup ambiguity: {itemCatalog.LookupAmbiguitySummary}");
+            }
+        }
+
+        private static HashSet<string> ValidateRecipeData(ValidationResult result)
+        {
+            HashSet<string> craftableItemIds = new HashSet<string>(StringComparer.Ordinal);
+            HashSet<string> knownScanEntryIds = CollectKnownScanEntryIds(result);
+            ItemCatalog itemCatalog = AssetDatabase.LoadAssetAtPath<ItemCatalog>(ItemCatalogPath);
+            string[] recipeGuids = AssetDatabase.FindAssets("t:RecipeData", DataRoots);
+            Dictionary<uint, string> recipeHashOwners = new Dictionary<uint, string>(Math.Max(recipeGuids.Length, 1));
+
+            for (int i = 0; i < recipeGuids.Length; i++)
+            {
+                string assetPath = AssetDatabase.GUIDToAssetPath(recipeGuids[i]);
+                RecipeData recipe = AssetDatabase.LoadAssetAtPath<RecipeData>(assetPath);
+                if (recipe == null)
+                    continue;
+
+                result.RecipeCount++;
+                ValidateRecipeIdentity(result, recipeHashOwners, recipe, assetPath);
+                ValidateRecipeResult(result, itemCatalog, recipe, assetPath, craftableItemIds);
+                ValidateRecipeIngredients(result, itemCatalog, recipe, assetPath);
+                ValidateRecipeScanGate(result, recipe, assetPath, knownScanEntryIds);
+            }
+
+            return craftableItemIds;
+        }
+
+        private static HashSet<string> CollectKnownScanEntryIds(ValidationResult result)
+        {
+            HashSet<string> knownScanEntryIds = new HashSet<string>(StringComparer.Ordinal)
+            {
+                "scan.resource_node"
+            };
+
+            string[] prefabGuids = AssetDatabase.FindAssets("t:Prefab", new[] { PrefabRoot });
+            for (int i = 0; i < prefabGuids.Length; i++)
+            {
+                string prefabPath = AssetDatabase.GUIDToAssetPath(prefabGuids[i]);
+                if (string.IsNullOrWhiteSpace(prefabPath))
+                    continue;
+
+                GameObject prefabRoot = PrefabUtility.LoadPrefabContents(prefabPath);
+                if (prefabRoot == null)
+                    continue;
+
+                try
+                {
+                    ScannableTarget[] targets = prefabRoot.GetComponentsInChildren<ScannableTarget>(true);
+                    if (targets == null)
+                        continue;
+
+                    for (int targetIndex = 0; targetIndex < targets.Length; targetIndex++)
+                    {
+                        ScannableTarget target = targets[targetIndex];
+                        if (target == null)
+                            continue;
+
+                        string entryId = target.EntryId ?? string.Empty;
+                        if (string.IsNullOrWhiteSpace(entryId))
+                        {
+                            result.RecipeScanGateWarningCount++;
+                            result.Warnings.Add($"{prefabPath}: ScannableTarget at '{BuildTransformPath(target.transform)}' has no stable EntryId for recipe scan-gate validation.");
+                            continue;
+                        }
+
+                        knownScanEntryIds.Add(entryId);
+                    }
+                }
+                finally
+                {
+                    PrefabUtility.UnloadPrefabContents(prefabRoot);
+                }
+            }
+
+            return knownScanEntryIds;
+        }
+
+        private static void ValidateRecipeIdentity(
+            ValidationResult result,
+            Dictionary<uint, string> recipeHashOwners,
+            RecipeData recipe,
+            string assetPath)
+        {
+            string recipeObjectName = recipe.name ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(recipeObjectName))
+            {
+                result.RecipeRouteErrorCount++;
+                result.Errors.Add($"{assetPath}: RecipeData asset name is empty; CraftingEvents recipe hash cannot be stable.");
+                return;
+            }
+
+            int recipeHash = LocHash.Compute(recipeObjectName);
+            if (recipeHash == 0)
+            {
+                result.RecipeRouteErrorCount++;
+                result.Errors.Add($"{assetPath}: RecipeData asset name '{recipeObjectName}' hashes to 0.");
+                return;
+            }
+
+            uint recipeHashKey = unchecked((uint)recipeHash);
+            if (recipeHashOwners.TryGetValue(recipeHashKey, out string existingPath))
+            {
+                result.RecipeRouteErrorCount++;
+                result.Errors.Add($"{assetPath}: duplicate RecipeData runtime hash 0x{recipeHashKey:X8} already authored by '{existingPath}'.");
+                return;
+            }
+
+            recipeHashOwners.Add(recipeHashKey, assetPath);
+        }
+
+        private static void ValidateRecipeResult(
+            ValidationResult result,
+            ItemCatalog itemCatalog,
+            RecipeData recipe,
+            string assetPath,
+            HashSet<string> craftableItemIds)
+        {
+            if (recipe.resultItem == null)
+            {
+                result.RecipeRouteErrorCount++;
+                result.Errors.Add($"{assetPath}: RecipeData.resultItem is null.");
+                return;
+            }
+
+            if (recipe.resultQuantity <= 0)
+            {
+                result.RecipeRouteErrorCount++;
+                result.Errors.Add($"{assetPath}: RecipeData.resultQuantity must be positive.");
+            }
+
+            if (recipe.fabricationGroup == FabricationGroup.Unspecified)
+            {
+                result.RecipeRouteErrorCount++;
+                result.Errors.Add($"{assetPath}: RecipeData.fabricationGroup is Unspecified; fabrication UI/category route is not authored.");
+            }
+
+            if (ValidateRecipeItemReference(result, itemCatalog, assetPath, "resultItem", recipe.resultItem))
+                craftableItemIds.Add(recipe.resultItem.PersistentId);
+        }
+
+        private static void ValidateRecipeIngredients(
+            ValidationResult result,
+            ItemCatalog itemCatalog,
+            RecipeData recipe,
+            string assetPath)
+        {
+            if (recipe.ingredients == null || recipe.ingredients.Count == 0)
+            {
+                result.RecipeRouteErrorCount++;
+                result.Errors.Add($"{assetPath}: RecipeData.ingredients is empty; Fabricator.CanCraft will reject the recipe.");
+                return;
+            }
+
+            for (int ingredientIndex = 0; ingredientIndex < recipe.ingredients.Count; ingredientIndex++)
+            {
+                InventoryCost cost = recipe.ingredients[ingredientIndex];
+                string label = $"ingredients[{ingredientIndex}]";
+                if (cost == null)
+                {
+                    result.RecipeRouteErrorCount++;
+                    result.Errors.Add($"{assetPath}: RecipeData.{label} is null.");
+                    continue;
+                }
+
+                if (cost.amount <= 0)
+                {
+                    result.RecipeRouteErrorCount++;
+                    result.Errors.Add($"{assetPath}: RecipeData.{label}.amount must be positive.");
+                }
+
+                ValidateRecipeItemReference(result, itemCatalog, assetPath, $"{label}.item", cost.item);
+            }
+        }
+
+        private static void ValidateRecipeScanGate(
+            ValidationResult result,
+            RecipeData recipe,
+            string assetPath,
+            HashSet<string> knownScanEntryIds)
+        {
+            string requiredScanEntryId = recipe.RequiredScanEntryId;
+            if (string.IsNullOrWhiteSpace(requiredScanEntryId))
+                return;
+
+            if (ScanEvents.ComputeEntryHash(requiredScanEntryId) == 0u)
+            {
+                result.RecipeRouteErrorCount++;
+                result.Errors.Add($"{assetPath}: RecipeData.requiredScanEntryId '{requiredScanEntryId}' hashes to 0.");
+                return;
+            }
+
+            if (knownScanEntryIds != null && knownScanEntryIds.Contains(requiredScanEntryId))
+                return;
+
+            result.RecipeScanGateWarningCount++;
+            result.Warnings.Add(
+                $"{assetPath}: RecipeData.requiredScanEntryId '{requiredScanEntryId}' has no known generic scan route and no authored ScannableTarget prefab route under {PrefabRoot}. " +
+                "If this is generated by an editor bootstrap scene, runtime unlock proof is still required.");
+        }
+
+        private static bool ValidateRecipeItemReference(
+            ValidationResult result,
+            ItemCatalog itemCatalog,
+            string assetPath,
+            string label,
+            ItemData item)
+        {
+            if (item == null)
+            {
+                result.RecipeRouteErrorCount++;
+                result.Errors.Add($"{assetPath}: RecipeData.{label} is null.");
+                return false;
+            }
+
+            string itemPath = AssetDatabase.GetAssetPath(item);
+            if (string.IsNullOrWhiteSpace(itemPath))
+            {
+                result.RecipeRouteErrorCount++;
+                result.Errors.Add($"{assetPath}: RecipeData.{label} '{item.name}' has no valid asset path.");
+            }
+
+            string persistentId = item.PersistentId ?? string.Empty;
+            int hashId = string.IsNullOrWhiteSpace(persistentId) ? 0 : LocHash.Compute(persistentId);
+            if (hashId == 0)
+            {
+                result.RecipeRouteErrorCount++;
+                result.Errors.Add($"{assetPath}: RecipeData.{label} '{item.name}' has invalid PersistentId '{persistentId}'.");
+                return false;
+            }
+
+            if (itemCatalog == null ||
+                !itemCatalog.TryGetRuntimeDescriptor(hashId, out ItemCatalog.ItemRuntimeDescriptor descriptor) ||
+                !descriptor.IsValid)
+            {
+                result.RecipeRouteErrorCount++;
+                result.Errors.Add($"{assetPath}: RecipeData.{label} '{persistentId}' has no valid ItemCatalog runtime descriptor.");
+                return false;
+            }
+
+            return true;
+        }
+
+        private static void ValidateQuestData(ValidationResult result, HashSet<string> craftableItemIds)
+        {
+            ItemCatalog itemCatalog = AssetDatabase.LoadAssetAtPath<ItemCatalog>(ItemCatalogPath);
+            string[] questGuids = AssetDatabase.FindAssets("t:QuestData", DataRoots);
+            Dictionary<string, string> questIdOwners = new Dictionary<string, string>(Math.Max(questGuids.Length, 1), StringComparer.Ordinal);
+
+            for (int i = 0; i < questGuids.Length; i++)
+            {
+                string assetPath = AssetDatabase.GUIDToAssetPath(questGuids[i]);
+                QuestData quest = AssetDatabase.LoadAssetAtPath<QuestData>(assetPath);
+                if (quest == null)
+                    continue;
+
+                result.QuestCount++;
+                string questId = quest.questId ?? string.Empty;
+                if (string.IsNullOrWhiteSpace(questId))
+                {
+                    result.QuestRouteErrorCount++;
+                    result.Errors.Add($"{assetPath}: QuestData.questId is empty.");
+                    continue;
+                }
+
+                if (questIdOwners.TryGetValue(questId, out string existingPath))
+                {
+                    result.QuestRouteErrorCount++;
+                    result.Errors.Add($"{assetPath}: duplicate QuestData.questId '{questId}' already authored by '{existingPath}'.");
+                    continue;
+                }
+
+                questIdOwners.Add(questId, assetPath);
+            }
+
+            for (int i = 0; i < questGuids.Length; i++)
+            {
+                string assetPath = AssetDatabase.GUIDToAssetPath(questGuids[i]);
+                QuestData quest = AssetDatabase.LoadAssetAtPath<QuestData>(assetPath);
+                if (quest == null)
+                    continue;
+
+                ValidateQuestPrerequisites(result, quest, assetPath, questIdOwners);
+                ValidateQuestSignalItemId(result, itemCatalog, assetPath, "triggerId", quest.triggerType, quest.triggerId);
+                ValidateQuestSignalItemId(result, itemCatalog, assetPath, "completionId", quest.completionType, quest.completionId);
+                ValidateQuestCraftRecipeRoute(result, craftableItemIds, assetPath, "triggerId", quest.triggerType, quest.triggerId);
+                ValidateQuestCraftRecipeRoute(result, craftableItemIds, assetPath, "completionId", quest.completionType, quest.completionId);
+
+                if (!string.IsNullOrWhiteSpace(quest.criticalItemId))
+                    ValidateQuestItemId(result, itemCatalog, assetPath, "criticalItemId", quest.criticalItemId);
+            }
+        }
+
+        private static void ValidateQuestPrerequisites(
+            ValidationResult result,
+            QuestData quest,
+            string assetPath,
+            Dictionary<string, string> questIdOwners)
+        {
+            if (quest.prerequisiteQuestIds == null)
+                return;
+
+            for (int i = 0; i < quest.prerequisiteQuestIds.Length; i++)
+            {
+                string prerequisiteId = quest.prerequisiteQuestIds[i] ?? string.Empty;
+                if (string.IsNullOrWhiteSpace(prerequisiteId))
+                    continue;
+
+                if (questIdOwners.ContainsKey(prerequisiteId))
+                    continue;
+
+                result.QuestRouteErrorCount++;
+                result.Errors.Add($"{assetPath}: prerequisiteQuestIds[{i}] references missing questId '{prerequisiteId}'.");
+            }
+        }
+
+        private static void ValidateQuestSignalItemId(
+            ValidationResult result,
+            ItemCatalog itemCatalog,
+            string assetPath,
+            string propertyName,
+            QuestTriggerType triggerType,
+            string signalId)
+        {
+            if (triggerType != QuestTriggerType.OnItemCollected &&
+                triggerType != QuestTriggerType.OnCraftCompleted)
+            {
+                return;
+            }
+
+            ValidateQuestItemId(result, itemCatalog, assetPath, propertyName, signalId);
+        }
+
+        private static void ValidateQuestSignalItemId(
+            ValidationResult result,
+            ItemCatalog itemCatalog,
+            string assetPath,
+            string propertyName,
+            QuestCompletionType completionType,
+            string signalId)
+        {
+            if (completionType != QuestCompletionType.OnItemCollected &&
+                completionType != QuestCompletionType.OnCraftCompleted)
+            {
+                return;
+            }
+
+            ValidateQuestItemId(result, itemCatalog, assetPath, propertyName, signalId);
+        }
+
+        private static void ValidateQuestCraftRecipeRoute(
+            ValidationResult result,
+            HashSet<string> craftableItemIds,
+            string assetPath,
+            string propertyName,
+            QuestTriggerType triggerType,
+            string signalId)
+        {
+            if (triggerType != QuestTriggerType.OnCraftCompleted)
+                return;
+
+            ValidateQuestCraftRecipeRoute(result, craftableItemIds, assetPath, propertyName, signalId);
+        }
+
+        private static void ValidateQuestCraftRecipeRoute(
+            ValidationResult result,
+            HashSet<string> craftableItemIds,
+            string assetPath,
+            string propertyName,
+            QuestCompletionType completionType,
+            string signalId)
+        {
+            if (completionType != QuestCompletionType.OnCraftCompleted)
+                return;
+
+            ValidateQuestCraftRecipeRoute(result, craftableItemIds, assetPath, propertyName, signalId);
+        }
+
+        private static void ValidateQuestCraftRecipeRoute(
+            ValidationResult result,
+            HashSet<string> craftableItemIds,
+            string assetPath,
+            string propertyName,
+            string itemId)
+        {
+            if (string.IsNullOrWhiteSpace(itemId))
+                return;
+
+            if (craftableItemIds != null && craftableItemIds.Contains(itemId))
+                return;
+
+            result.QuestRouteErrorCount++;
+            result.Errors.Add($"{assetPath}: QuestData.{propertyName} '{itemId}' uses OnCraftCompleted but no valid RecipeData.resultItem route crafts that item.");
+        }
+
+        private static void ValidateQuestItemId(
+            ValidationResult result,
+            ItemCatalog itemCatalog,
+            string assetPath,
+            string propertyName,
+            string itemId)
+        {
+            if (string.IsNullOrWhiteSpace(itemId))
+            {
+                result.QuestRouteErrorCount++;
+                result.Errors.Add($"{assetPath}: QuestData.{propertyName} must reference a catalog item PersistentId.");
+                return;
+            }
+
+            int hashId = LocHash.Compute(itemId);
+            if (hashId == 0 ||
+                itemCatalog == null ||
+                !itemCatalog.TryGetRuntimeDescriptor(hashId, out ItemCatalog.ItemRuntimeDescriptor descriptor) ||
+                !descriptor.IsValid)
+            {
+                result.QuestRouteErrorCount++;
+                result.Errors.Add($"{assetPath}: QuestData.{propertyName} '{itemId}' has no valid ItemCatalog runtime descriptor.");
+            }
+        }
+
+        private static void ValidateToolAuthoring(ValidationResult result)
+        {
+            ItemCatalog itemCatalog = AssetDatabase.LoadAssetAtPath<ItemCatalog>(ItemCatalogPath);
+            Dictionary<ToolMetadata, string> heldPrefabByMetadata = new Dictionary<ToolMetadata, string>();
+            Dictionary<string, string> toolIdOwners = new Dictionary<string, string>(StringComparer.Ordinal);
+
+            string[] heldPrefabGuids = AssetDatabase.FindAssets("t:Prefab", new[] { ToolHeldPrefabRoot });
+            for (int i = 0; i < heldPrefabGuids.Length; i++)
+            {
+                string prefabPath = AssetDatabase.GUIDToAssetPath(heldPrefabGuids[i]);
+                if (string.IsNullOrWhiteSpace(prefabPath))
+                    continue;
+
+                GameObject prefabRoot = PrefabUtility.LoadPrefabContents(prefabPath);
+                if (prefabRoot == null)
+                {
+                    result.ToolRouteErrorCount++;
+                    result.Errors.Add($"{prefabPath}: failed to load held tool prefab for tool route validation.");
+                    continue;
+                }
+
+                try
+                {
+                    PlayerTool[] tools = prefabRoot.GetComponentsInChildren<PlayerTool>(true);
+                    if (tools == null || tools.Length == 0)
+                    {
+                        result.ToolRouteErrorCount++;
+                        result.Errors.Add($"{prefabPath}: held tool prefab has no PlayerTool component.");
+                        continue;
+                    }
+
+                    result.ToolHeldPrefabCount++;
+                    for (int toolIndex = 0; toolIndex < tools.Length; toolIndex++)
+                    {
+                        PlayerTool tool = tools[toolIndex];
+                        if (tool == null)
+                            continue;
+
+                        string transformPath = BuildTransformPath(tool.transform);
+                        ToolMetadata metadata = tool.Metadata;
+                        ItemData item = tool.ToolData;
+
+                        if (metadata == null)
+                        {
+                            result.ToolRouteErrorCount++;
+                            result.Errors.Add($"{prefabPath}: PlayerTool at '{transformPath}' has no ToolMetadata.");
+                        }
+                        else if (!heldPrefabByMetadata.ContainsKey(metadata))
+                        {
+                            heldPrefabByMetadata.Add(metadata, $"{prefabPath}:{transformPath}");
+                        }
+
+                        ValidateHeldToolItemRoute(result, itemCatalog, item, prefabPath, transformPath);
+                    }
+                }
+                finally
+                {
+                    PrefabUtility.UnloadPrefabContents(prefabRoot);
+                }
+            }
+
+            string[] metadataGuids = AssetDatabase.FindAssets("t:ToolMetadata", DataRoots);
+            for (int i = 0; i < metadataGuids.Length; i++)
+            {
+                string assetPath = AssetDatabase.GUIDToAssetPath(metadataGuids[i]);
+                ToolMetadata metadata = AssetDatabase.LoadAssetAtPath<ToolMetadata>(assetPath);
+                if (metadata == null)
+                    continue;
+
+                result.ToolMetadataCount++;
+                string toolId = metadata.toolID ?? string.Empty;
+                if (string.IsNullOrWhiteSpace(toolId))
+                {
+                    result.ToolRouteErrorCount++;
+                    result.Errors.Add($"{assetPath}: ToolMetadata.toolID is empty.");
+                }
+                else if (toolIdOwners.TryGetValue(toolId, out string existingPath))
+                {
+                    result.ToolRouteErrorCount++;
+                    result.Errors.Add($"{assetPath}: duplicate ToolMetadata.toolID '{toolId}' already authored by '{existingPath}'.");
+                }
+                else
+                {
+                    toolIdOwners.Add(toolId, assetPath);
+                }
+
+                if (!heldPrefabByMetadata.ContainsKey(metadata))
+                {
+                    result.ToolMetadataOrphanCount++;
+                    result.Errors.Add(
+                        $"{assetPath}: ToolMetadata '{toolId}' has no held PlayerTool prefab route under {ToolHeldPrefabRoot}. " +
+                        "Active tool metadata without a held prefab, ItemData, catalog descriptor, and world prefab is orphan gameplay content.");
+                }
+            }
+        }
+
+        private static void ValidateHeldToolItemRoute(
+            ValidationResult result,
+            ItemCatalog itemCatalog,
+            ItemData item,
+            string prefabPath,
+            string transformPath)
+        {
+            string context = $"{prefabPath}:{transformPath}";
+            if (item == null)
+            {
+                result.ToolRouteErrorCount++;
+                result.Errors.Add($"{context}: PlayerTool has no ItemData.");
+                return;
+            }
+
+            string itemPath = AssetDatabase.GetAssetPath(item);
+            if (string.IsNullOrWhiteSpace(itemPath))
+            {
+                result.ToolRouteErrorCount++;
+                result.Errors.Add($"{context}: PlayerTool ItemData '{item.name}' has no valid asset path.");
+            }
+
+            if (item.category != ItemCategory.Tool)
+            {
+                result.ToolRouteErrorCount++;
+                result.Errors.Add($"{context}: PlayerTool ItemData '{item.name}' category is {item.category}, expected Tool.");
+            }
+
+            string persistentId = item.PersistentId ?? string.Empty;
+            int hashId = string.IsNullOrWhiteSpace(persistentId) ? 0 : LocHash.Compute(persistentId);
+            if (hashId == 0)
+            {
+                result.ToolRouteErrorCount++;
+                result.Errors.Add($"{context}: PlayerTool ItemData '{item.name}' has invalid PersistentId '{persistentId}'.");
+            }
+            else if (itemCatalog == null ||
+                     !itemCatalog.TryGetRuntimeDescriptor(hashId, out ItemCatalog.ItemRuntimeDescriptor descriptor) ||
+                     !descriptor.IsValid)
+            {
+                result.ToolRouteErrorCount++;
+                result.Errors.Add($"{context}: PlayerTool ItemData '{item.name}' is missing a valid ItemCatalog runtime descriptor.");
+            }
+
+            if (item.worldPrefab == null)
+            {
+                result.ToolRouteErrorCount++;
+                result.Errors.Add($"{context}: PlayerTool ItemData '{item.name}' has no worldPrefab for pickup/drop acquisition.");
             }
         }
 
@@ -559,6 +1143,77 @@ namespace Hecton8.Editor.Validation
 
             result.PlayerPdaBridgeWarningCount++;
             result.Warnings.Add(message);
+        }
+
+        private static void ValidatePlayerDevProvisioning(ValidationResult result)
+        {
+            GameObject prefabRoot = PrefabUtility.LoadPrefabContents(PlayerPrefabPath);
+            if (prefabRoot == null)
+            {
+                result.PlayerDevProvisionerStartupRiskCount++;
+                result.Errors.Add($"{PlayerPrefabPath}: failed to load prefab contents for dev provisioning validation.");
+                return;
+            }
+
+            try
+            {
+                ToolLoadoutProvisioner[] provisioners = prefabRoot.GetComponentsInChildren<ToolLoadoutProvisioner>(true);
+                if (provisioners == null || provisioners.Length == 0)
+                    return;
+
+                if (provisioners.Length > 1)
+                    result.Warnings.Add($"{PlayerPrefabPath}: contains {provisioners.Length} ToolLoadoutProvisioner components; canonical player should not need multiple dev provisioners.");
+
+                for (int i = 0; i < provisioners.Length; i++)
+                {
+                    ToolLoadoutProvisioner provisioner = provisioners[i];
+                    if (provisioner == null)
+                        continue;
+
+                    SerializedObject serializedProvisioner = new SerializedObject(provisioner);
+                    string context = $"{PlayerPrefabPath}:{BuildTransformPath(provisioner.transform)}";
+                    ErrorIfSerializedBoolTrue(
+                        result,
+                        serializedProvisioner,
+                        "provisionInventoryOnStart",
+                        $"{context}: ToolLoadoutProvisioner.provisionInventoryOnStart must stay disabled on the canonical player prefab.");
+                    ErrorIfSerializedBoolTrue(
+                        result,
+                        serializedProvisioner,
+                        "assignCoreLoadoutOnStart",
+                        $"{context}: ToolLoadoutProvisioner.assignCoreLoadoutOnStart must stay disabled on the canonical player prefab.");
+                    ErrorIfSerializedBoolTrue(
+                        result,
+                        serializedProvisioner,
+                        "provisionConstructionMaterialsOnStart",
+                        $"{context}: ToolLoadoutProvisioner.provisionConstructionMaterialsOnStart must stay disabled on the canonical player prefab.");
+                }
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(prefabRoot);
+            }
+        }
+
+        private static void ErrorIfSerializedBoolTrue(
+            ValidationResult result,
+            SerializedObject serializedObject,
+            string propertyName,
+            string message)
+        {
+            SerializedProperty property = serializedObject.FindProperty(propertyName);
+            if (property == null)
+            {
+                result.PlayerDevProvisionerStartupRiskCount++;
+                result.Errors.Add($"{serializedObject.targetObject.name}: expected serialized bool '{propertyName}' was not found.");
+                return;
+            }
+
+            if (!property.boolValue)
+                return;
+
+            result.PlayerDevProvisionerStartupRiskCount++;
+            result.Errors.Add(message);
         }
 
         private static void ValidateBaseModuleTemplates(ValidationResult result)
@@ -1099,7 +1754,8 @@ namespace Hecton8.Editor.Validation
             string summary =
                 $"[ContentSanityValidator] DataPrefabs={result.DataPrefabCount}, " +
                 $"ReferencedPrefabs={result.ReferencedPrefabCount}, " +
-                $"Items={result.ItemCount}, Flora={result.FloraCount}, Fauna={result.FaunaCount}, " +
+                $"Items={result.ItemCount}, Recipes={result.RecipeCount}, Quests={result.QuestCount}, ToolMetadata={result.ToolMetadataCount}, " +
+                $"ToolHeldPrefabs={result.ToolHeldPrefabCount}, Flora={result.FloraCount}, Fauna={result.FaunaCount}, " +
                 $"ResourceNodes={result.ResourceNodeCount}, BaseModules={result.BaseModuleCount}, " +
                 $"InjectedProxyCount={result.InjectedProxyCount}, GeneratedFloraProxyCount={result.GeneratedFloraProxyCount}, " +
                 $"MeshColliderViolations={result.MeshColliderViolationCount}, HashCollisions={result.HashCollisionCount}, " +
@@ -1108,12 +1764,18 @@ namespace Hecton8.Editor.Validation
                 $"ItemCatalogDuplicateHashes={result.ItemCatalogDuplicateHashCount}, " +
                 $"ItemCatalogMissingRuntimeDescriptors={result.ItemCatalogMissingRuntimeDescriptorCount}, " +
                 $"ItemCatalogLookupAmbiguities={result.ItemCatalogLookupAmbiguityCount}, " +
+                $"RecipeRouteErrors={result.RecipeRouteErrorCount}, " +
+                $"RecipeScanGateWarnings={result.RecipeScanGateWarningCount}, " +
+                $"QuestRouteErrors={result.QuestRouteErrorCount}, " +
+                $"ToolMetadataOrphans={result.ToolMetadataOrphanCount}, " +
+                $"ToolRouteErrors={result.ToolRouteErrorCount}, " +
                 $"AudioMaterialViolations={result.AudioMaterialViolationCount}, " +
                 $"ResourceNodeYieldMissingWorldPrefab={result.ResourceNodeYieldMissingWorldPrefabCount}, " +
                 $"ResourceNodeYieldNotCataloged={result.ResourceNodeYieldNotCatalogedCount}, " +
                 $"ResourceNodeYieldInvalidWorldPrefabContract={result.ResourceNodeYieldInvalidWorldPrefabContractCount}, " +
                 $"PlayerPdaHeadlessOpenRisk={result.PlayerPdaHeadlessOpenRiskCount}, " +
                 $"PlayerPdaBridgeWarnings={result.PlayerPdaBridgeWarningCount}, " +
+                $"PlayerDevProvisionerStartupRisk={result.PlayerDevProvisionerStartupRiskCount}, " +
                 $"Errors={result.Errors.Count}, Warnings={result.Warnings.Count}.";
 
             if (result.Errors.Count > 0)

@@ -1,9 +1,9 @@
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
 using System;
 using Hecton8.Core;
+using Hecton8.Input;
 using TMPro;
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 namespace Hecton8.UI
 {
@@ -11,7 +11,7 @@ namespace Hecton8.UI
     /// Development-only black-box metric dashboard using caller-owned char buffers.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class BlackBoxMetricDashboard : MonoBehaviour, IUpdatable
+    public sealed class BlackBoxMetricDashboard : MonoBehaviour, IUpdatable, IGlobalRegistryHotSwapListener
     {
         private const int BufferCapacity = 128;
         private const int RefreshIntervalFrames = 30;
@@ -28,10 +28,12 @@ namespace Hecton8.UI
         private readonly char[] _buffer = new char[BufferCapacity];
 
         private bool _registered;
+        private bool _hotSwapListenerRegistered;
         private bool _visible;
         private int _nextRefreshFrame;
         private int _accumulatedFrames;
         private float _accumulatedSeconds;
+        private InputManager _inputManager;
 
         private void Awake()
         {
@@ -44,16 +46,23 @@ namespace Hecton8.UI
         private void OnEnable()
         {
             SetVisible(visibleByDefault);
+            TrySubscribeInput();
+            TryRegisterHotSwapListener();
             TryRegister();
         }
 
         private void Start()
         {
+            TrySubscribeInput();
+            TryRegisterHotSwapListener();
             TryRegister();
         }
 
         private void OnDisable()
         {
+            UnsubscribeInput();
+            TryUnregisterHotSwapListener();
+
             if (_registered)
             {
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
@@ -67,9 +76,6 @@ namespace Hecton8.UI
         /// <param name="deltaTime">Dispatcher delta.</param>
         public void Tick(float deltaTime)
         {
-            if (Keyboard.current != null && Keyboard.current.f3Key.wasPressedThisFrame)
-                SetVisible(!_visible);
-
             if (!_visible || metricText == null)
                 return;
 
@@ -124,12 +130,76 @@ namespace Hecton8.UI
             metricText.SetCharArray(_buffer, 0, cursor);
         }
 
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.NativeInputManagerRuntime)
+                return;
+
+            UnsubscribeInput();
+
+            if (!isActiveAndEnabled)
+                return;
+
+            TrySubscribeInput(currentService as InputManager);
+        }
+
         private void TryRegister()
         {
             if (_registered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
+        }
+
+        private void TrySubscribeInput()
+        {
+            if (_inputManager != null)
+                return;
+
+            TrySubscribeInput(GlobalRegistry.NativeInputManager);
+        }
+
+        private void TrySubscribeInput(InputManager inputManager)
+        {
+            if (_inputManager != null || inputManager == null)
+                return;
+
+            _inputManager = inputManager;
+            _inputManager.OnDebugToggleBlackBoxDashboard += HandleDebugToggleBlackBoxDashboard;
+        }
+
+        private void UnsubscribeInput()
+        {
+            if (_inputManager == null)
+                return;
+
+            _inputManager.OnDebugToggleBlackBoxDashboard -= HandleDebugToggleBlackBoxDashboard;
+            _inputManager = null;
+        }
+
+        private void HandleDebugToggleBlackBoxDashboard()
+        {
+            SetVisible(!_visible);
         }
     }
 }

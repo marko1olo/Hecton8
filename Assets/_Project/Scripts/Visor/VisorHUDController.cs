@@ -217,9 +217,15 @@ namespace NASAPunk.Visor
         private float _appliedBiosRecoveryMode;
         private float _appliedPressureLensCrackIntensity;
         private float _appliedToolBatteryNormalized;
+        private float _appliedToolHeatNormalized;
+        private float _appliedToolAmmoUnits;
+        private float _appliedToolDistanceMeters;
         private Vector4 _appliedVisorCameraForward;
         private Vector4 _appliedStrongestLightDirection;
         private float _resolvedToolBatteryNormalized;
+        private float _resolvedToolHeatNormalized;
+        private float _resolvedToolAmmoUnits;
+        private float _resolvedToolDistanceMeters;
         private Vector3 _resolvedVisorCameraForward;
         private Vector4 _resolvedStrongestLightDirection;
         private UniversalAdditionalCameraData _cachedHudCameraData;
@@ -326,6 +332,9 @@ namespace NASAPunk.Visor
         private static readonly int ID_BiosRecoveryMode = Shader.PropertyToID("_BiosRecoveryMode");
         private static readonly int ID_PressureLensCrackIntensity = Shader.PropertyToID("_PressureLensCrackIntensity");
         private static readonly int ID_ToolBatteryNormalized = Shader.PropertyToID("_ToolBatteryNormalized");
+        private static readonly int ID_ToolHeat01 = Shader.PropertyToID("_ToolHeat01");
+        private static readonly int ID_ToolAmmoUnits = Shader.PropertyToID("_ToolAmmoUnits");
+        private static readonly int ID_ToolDistanceMeters = Shader.PropertyToID("_ToolDistanceMeters");
         private static readonly int ID_VisorCameraForwardWS = Shader.PropertyToID("_VisorCameraForwardWS");
         private static readonly int ID_VisorStrongestLightDirectionWS = Shader.PropertyToID("_VisorStrongestLightDirectionWS");
         private static readonly int ID_HectonVRBrownoutIntensity = Shader.PropertyToID("_HectonVRBrownoutIntensity");
@@ -822,6 +831,9 @@ namespace NASAPunk.Visor
             propertyBlockChanged |= ApplyVisorFloat(ID_BiosRecoveryMode, biosRecoverySwitch, ref _appliedBiosRecoveryMode);
             propertyBlockChanged |= ApplyVisorFloat(ID_PressureLensCrackIntensity, _pressureLensCrackIntensity, ref _appliedPressureLensCrackIntensity);
             propertyBlockChanged |= ApplyVisorFloat(ID_ToolBatteryNormalized, _resolvedToolBatteryNormalized, ref _appliedToolBatteryNormalized);
+            propertyBlockChanged |= ApplyVisorFloat(ID_ToolHeat01, _resolvedToolHeatNormalized, ref _appliedToolHeatNormalized);
+            propertyBlockChanged |= ApplyVisorFloat(ID_ToolAmmoUnits, _resolvedToolAmmoUnits, ref _appliedToolAmmoUnits);
+            propertyBlockChanged |= ApplyVisorFloat(ID_ToolDistanceMeters, _resolvedToolDistanceMeters, ref _appliedToolDistanceMeters);
             propertyBlockChanged |= ApplyVisorVector(
                 ID_VisorCameraForwardWS,
                 new Vector4(_resolvedVisorCameraForward.x, _resolvedVisorCameraForward.y, _resolvedVisorCameraForward.z, 1f),
@@ -974,13 +986,20 @@ namespace NASAPunk.Visor
 
         private void RefreshDynamicVisorMaterialInputs()
         {
-            float toolBatteryNormalized = ResolveActiveToolBatteryNormalized();
+            ResolveActiveToolDisplayState(
+                out float toolBatteryNormalized,
+                out float toolHeatNormalized,
+                out float toolAmmoUnits,
+                out float toolDistanceMeters);
             Vector3 visorCameraForward = ResolveVisorCameraForward();
             Vector4 strongestLightDirection = ResolveStrongestLightDirectionPayload();
 
             if (!_hasResolvedDynamicVisorMaterialInputs)
             {
                 _resolvedToolBatteryNormalized = toolBatteryNormalized;
+                _resolvedToolHeatNormalized = toolHeatNormalized;
+                _resolvedToolAmmoUnits = toolAmmoUnits;
+                _resolvedToolDistanceMeters = toolDistanceMeters;
                 _resolvedVisorCameraForward = visorCameraForward;
                 _resolvedStrongestLightDirection = strongestLightDirection;
                 _hasResolvedDynamicVisorMaterialInputs = true;
@@ -992,6 +1011,24 @@ namespace NASAPunk.Visor
             if (math.abs(_resolvedToolBatteryNormalized - toolBatteryNormalized) > VisorPropertyFloatWriteEpsilon)
             {
                 _resolvedToolBatteryNormalized = toolBatteryNormalized;
+                dirty = true;
+            }
+
+            if (math.abs(_resolvedToolHeatNormalized - toolHeatNormalized) > VisorPropertyFloatWriteEpsilon)
+            {
+                _resolvedToolHeatNormalized = toolHeatNormalized;
+                dirty = true;
+            }
+
+            if (math.abs(_resolvedToolAmmoUnits - toolAmmoUnits) > VisorPropertyFloatWriteEpsilon)
+            {
+                _resolvedToolAmmoUnits = toolAmmoUnits;
+                dirty = true;
+            }
+
+            if (math.abs(_resolvedToolDistanceMeters - toolDistanceMeters) > VisorPropertyFloatWriteEpsilon)
+            {
+                _resolvedToolDistanceMeters = toolDistanceMeters;
                 dirty = true;
             }
 
@@ -1078,14 +1115,67 @@ namespace NASAPunk.Visor
             return new Vector4(directionToLight.x, directionToLight.y, directionToLight.z, intensity);
         }
 
-        private static float ResolveActiveToolBatteryNormalized()
+        private static void ResolveActiveToolDisplayState(
+            out float battery01,
+            out float heat01,
+            out float ammoUnits,
+            out float distanceMeters)
+        {
+            battery01 = 0f;
+            heat01 = 0f;
+            ammoUnits = 0f;
+            distanceMeters = 0f;
+
+            PlayerTool currentTool = ResolveActivePlayerTool();
+            uint currentToolHash = currentTool != null ? currentTool.RuntimeToolId : 0u;
+            if (GlobalSignals.TryGetLatestToolStateChangedSignal(out ToolStateChangedSignal signal, out _) &&
+                (signal.Flags & ToolStateChangedSignal.FlagEquipped) != 0 &&
+                (currentToolHash == 0u || signal.ToolHash == currentToolHash))
+            {
+                battery01 = math.saturate(signal.Battery01);
+                heat01 = math.saturate(signal.Heat01);
+                ammoUnits = signal.AmmoUnits;
+                distanceMeters = math.max(0f, signal.DistanceMeters);
+                return;
+            }
+
+            if (currentTool == null)
+                return;
+
+            IModularEquipmentService equipment = GlobalRegistry.ModularEquipment;
+            if (equipment != null &&
+                currentTool.RuntimeToolId != 0u &&
+                equipment.TryGetToolState(currentTool.RuntimeToolId, out ToolState state))
+            {
+                float capacity = 1f;
+                if (equipment.TryGetToolStats(currentTool.RuntimeToolId, out ToolRuntimeStats stats))
+                {
+                    capacity = math.max(0.1f, stats.BatteryCapacity);
+                    distanceMeters = math.max(0f, stats.MaxRange);
+                }
+
+                battery01 = math.saturate(state.CurrentBattery * math.rcp(capacity));
+                heat01 = math.saturate(state.InternalHeat);
+                ammoUnits = math.clamp((int)math.round(battery01 * 100f), 0, 999);
+                return;
+            }
+
+            battery01 = ResolveActiveToolBatteryNormalized();
+            ammoUnits = math.clamp((int)math.round(battery01 * 100f), 0, 999);
+        }
+
+        private static PlayerTool ResolveActivePlayerTool()
         {
             IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
             PlayerToolManager toolManager = playerContext != null ? playerContext.ToolManager : null;
-            if (toolManager == null)
-                return 0f;
+            return toolManager != null ? toolManager.CurrentTool : null;
+        }
 
-            if (!(toolManager.CurrentTool is IBatteryTool batteryTool) || !batteryTool.HasBattery)
+        private static float ResolveActiveToolBatteryNormalized()
+        {
+            PlayerTool currentTool = ResolveActivePlayerTool();
+
+            if (!(currentTool is IBatteryTool batteryTool) || !batteryTool.HasBattery)
                 return 0f;
 
             return Mathf.Clamp01(batteryTool.BatteryCharge);

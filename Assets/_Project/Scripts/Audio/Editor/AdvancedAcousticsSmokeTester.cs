@@ -29,6 +29,7 @@ namespace Hecton8.Audio.Editor
         private const string GlobalRegistryContractsPath = "Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs";
         private const string OcclusionPath = "Assets/_Project/Scripts/World/AcousticOcclusionUtility.cs";
         private const string RingBufferPath = "Assets/_Project/Scripts/Audio/NativeAudioFrameRingBuffer.cs";
+        private const string SynthesisPath = "Assets/_Project/Scripts/Audio/Synthesis/DepthStressGranularSynthesisKernel.cs";
         private const string TelemetryPath = "Assets/_Project/Scripts/CrashTelemetryBuffer.cs";
         private const string EventsPath = "Assets/_Project/Scripts/Audio/ProceduralAudioEvents.cs";
         private const string AcousticZonePath = "Assets/_Project/Scripts/AcousticZoneController.cs";
@@ -69,6 +70,7 @@ namespace Hecton8.Audio.Editor
             string globalRegistryContracts = ReadAssetText(GlobalRegistryContractsPath, builder, ref failureCount);
             string occlusion = ReadAssetText(OcclusionPath, builder, ref failureCount);
             string ringBuffer = ReadAssetText(RingBufferPath, builder, ref failureCount);
+            string synthesis = ReadAssetText(SynthesisPath, builder, ref failureCount);
             string telemetry = ReadAssetText(TelemetryPath, builder, ref failureCount);
             string eventsSource = ReadAssetText(EventsPath, builder, ref failureCount);
             string acousticZone = ReadAssetText(AcousticZonePath, builder, ref failureCount);
@@ -154,7 +156,21 @@ namespace Hecton8.Audio.Editor
                 AssertContains(renderer, "case ItemAudioMaterialId.Metal:", "Metal impacts route to clang multiplier", builder, ref failureCount);
                 AssertContains(renderer, "return 1.1f;", "Metal impact clang multiplier is boosted", builder, ref failureCount);
                 AssertContains(renderer, "return 0.4f;", "Rock/default impact clang multiplier remains dull", builder, ref failureCount);
+                AssertContains(renderer, "SignalBus<HighSpeedImpactSignal>.GetFrameSnapshot()", "High-speed CCD impacts are consumed without dequeuing another domain's signal lane", builder, ref failureCount);
+                AssertContains(renderer, "KineticImpactThudStartHertz = 150f", "Kinetic thud starts at 150 Hz", builder, ref failureCount);
+                AssertContains(renderer, "KineticImpactThudEndHertz = 40f", "Kinetic thud descends to 40 Hz", builder, ref failureCount);
+                AssertContains(renderer, "KineticImpactWaterLowPassHertz = 800f", "Underwater kinetic impacts use 800 Hz low-pass", builder, ref failureCount);
+                AssertContains(renderer, "KineticImpactMaximumSafeEnergyJoules", "Kinetic energy is clamped before DSP gain mapping", builder, ref failureCount);
+                AssertContains(renderer, "NativeQueue<SonarEchoTap>", "Kinetic impact echo uses the existing native echo-tap bridge", builder, ref failureCount);
                 AssertNotContains(renderer, "OnAudioFilterRead", "Critical renderer has no managed Unity audio callback fallback", builder, ref failureCount);
+            }
+
+            if (synthesis.Length > 0)
+            {
+                AssertContains(synthesis, "KineticImpactSineOscillatorJob", "Burst kinetic impact sine oscillator job exists", builder, ref failureCount);
+                AssertContains(synthesis, "CompileSynchronously = true", "Kinetic impact oscillator has synchronous Burst compile coverage", builder, ref failureCount);
+                AssertContains(synthesis, "DepthStressGranularMath.FiniteOrDefault(StartHertz, 150f)", "Burst oscillator default starts at 150 Hz", builder, ref failureCount);
+                AssertContains(synthesis, "DepthStressGranularMath.FiniteOrDefault(EndHertz, 40f)", "Burst oscillator default ends at 40 Hz", builder, ref failureCount);
             }
 
             if (physicsApply.Length > 0)

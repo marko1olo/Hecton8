@@ -34,7 +34,8 @@ namespace Hecton8.UI
         private const float AcousticOverlayRadiusMeters = 160f;
         private const int PointCloudThreadAxis = 8;
         private const int MaxPredatorAupPoints = 16;
-        private const int PointCloudCapacity = CartographyGridConstants.MaxVisibleMapPoints + MaxPredatorAupPoints;
+        private const int MaxHlodImpostorAupPoints = 16;
+        private const int PointCloudCapacity = CartographyGridConstants.MaxVisibleMapPoints + MaxPredatorAupPoints + MaxHlodImpostorAupPoints;
         private const int SonarPointStrideBytes = 16;
         private const int SonarIndirectArgsStrideBytes = sizeof(uint) * 5;
         private const uint SonarQuadIndexCount = 6u;
@@ -53,7 +54,9 @@ namespace Hecton8.UI
         private static readonly int PlayerWorldPositionId = Shader.PropertyToID("_PlayerWorldPosition");
         private static readonly int SonarScalarParamsId = Shader.PropertyToID("_SonarScalarParams");
         private static readonly int SonarDispatchParamsId = Shader.PropertyToID("_SonarDispatchParams");
+        private static readonly int SonarOverlayParamsId = Shader.PropertyToID("_SonarOverlayParams");
         private static readonly int PredatorAupBufferId = Shader.PropertyToID("_PredatorAUPBuffer");
+        private static readonly int HlodAupBufferId = Shader.PropertyToID("_HlodAUPBuffer");
         private static readonly int PointCloudLocalToWorldId = Shader.PropertyToID("_PointCloudLocalToWorld");
         private static readonly int PointSizeId = Shader.PropertyToID("_PointSize");
         private static readonly int OpacityId = Shader.PropertyToID("_Opacity");
@@ -86,6 +89,7 @@ namespace Hecton8.UI
             public Vector4 PlayerWorldPosition;
             public Vector4 ScalarParams;
             public Vector4 DispatchParams;
+            public Vector4 OverlayParams;
         }
         private static readonly int SonarMapConstantsStrideBytes = UnsafeUtility.SizeOf<SonarMapConstants>();
 
@@ -121,6 +125,7 @@ namespace Hecton8.UI
         private readonly uint[] _markerHashByVisualSlot = new uint[MaxMarkerVisuals]; // COLD ALLOC: uint[64] — marker hash to visual slot ownership — owner: PDAMapTab
         private readonly PDAMarkerSnapshot[] _markerUpdateSnapshots = new PDAMarkerSnapshot[MaxMarkerVisuals]; // COLD ALLOC: PDAMarkerSnapshot[64] — bulk marker-dirty expansion scratch — owner: PDAMapTab
         private readonly Vector4[] _emptyPredatorAupUpload = new Vector4[1]; // COLD ALLOC: Vector4[1] — zero fallback predator AUP buffer upload — owner: PDAMapTab
+        private readonly Vector4[] _hlodImpostorAupUpload = new Vector4[MaxHlodImpostorAupPoints]; // COLD ALLOC: Vector4[16] - distant HLOD POI upload cache - owner: PDAMapTab
         private readonly SonarMapConstants[] _sonarMapConstantsUpload = new SonarMapConstants[1]; // COLD ALLOC: SonarMapConstants[1] — PDA compute constant-buffer upload lane — owner: PDAMapTab
         private bool _registered;
         private bool _registeredLateFrame;
@@ -137,6 +142,7 @@ namespace Hecton8.UI
         private GraphicsBuffer _pointCloudIndirectArgsBuffer;
         private GraphicsBuffer _sonarMapConstantsBuffer;
         private GraphicsBuffer _emptyPredatorAupBuffer;
+        private GraphicsBuffer _hlodImpostorAupBuffer;
         private GraphicsBuffer _cartographySectorWordBuffer;
         private Material _pointCloudMaterial;
         private Mesh _pointCloudQuadMesh;
@@ -154,6 +160,8 @@ namespace Hecton8.UI
         private bool _pointCloudLowTierActive;
         private bool _pointCloudLowTierCandidate;
         private float _pointCloudLowTierCandidateSince;
+        private uint _uploadedHlodImpostorVersion = uint.MaxValue;
+        private int _uploadedHlodImpostorCount = -1;
         private CharBufferPool.Lease _statusBufferLease;
         private readonly Vector3[] _mapWorldCorners = new Vector3[4]; // COLD ALLOC: Vector3[4] — PDA map point-cloud basis corners — owner: PDAMapTab
         private RectTransform _markerOverlayRoot;
@@ -163,6 +171,7 @@ namespace Hecton8.UI
         private IAudioService _audioService;
         private IWorldSeedProvider _worldSeedProvider;
         private IPlayerRuntimeContext _playerContext;
+        private IStreamingBackpressureService _streamingBackpressureService;
         private void Awake()
         {
             EnsureBuilt();
@@ -517,6 +526,14 @@ namespace Hecton8.UI
             return _playerContext;
         }
 
+        private IStreamingBackpressureService ResolveStreamingBackpressureService()
+        {
+            if (!IsLiveUnityObjectReference(_streamingBackpressureService))
+                _streamingBackpressureService = GlobalRegistry.StreamingBackpressure;
+
+            return _streamingBackpressureService;
+        }
+
         private static bool IsLiveUnityObjectReference(object value)
         {
             if (value == null)
@@ -534,6 +551,9 @@ namespace Hecton8.UI
             _audioService = null;
             _worldSeedProvider = null;
             _playerContext = null;
+            _streamingBackpressureService = null;
+            _uploadedHlodImpostorVersion = uint.MaxValue;
+            _uploadedHlodImpostorCount = -1;
         }
 
         private void EnsurePointCloudResources()
@@ -561,13 +581,19 @@ namespace Hecton8.UI
                     GraphicsBuffer.Target.Constant,
                     GraphicsBuffer.UsageFlags.LockBufferForWrite,
                     1,
-                    SonarMapConstantsStrideBytes); // COLD ALLOC: GraphicsBuffer[80B] — packed PDA sonar compute constants — owner: PDAMapTab
+                    SonarMapConstantsStrideBytes); // COLD ALLOC: GraphicsBuffer[96B] — packed PDA sonar compute constants — owner: PDAMapTab
             }
 
             if (_emptyPredatorAupBuffer == null || !_emptyPredatorAupBuffer.IsValid())
             {
                 _emptyPredatorAupBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Vector4>(1); // COLD ALLOC: GraphicsBuffer[1 x float4] — zero fallback predator AUP buffer — owner: PDAMapTab
                 GraphicsBufferUploadUtility.UploadArray(_emptyPredatorAupBuffer, _emptyPredatorAupUpload, 1);
+            }
+
+            if (_hlodImpostorAupBuffer == null || !_hlodImpostorAupBuffer.IsValid())
+            {
+                _hlodImpostorAupBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Vector4>(MaxHlodImpostorAupPoints); // COLD ALLOC: GraphicsBuffer[16 x float4] - distant HLOD POI PDA buffer - owner: PDAMapTab
+                GraphicsBufferUploadUtility.UploadArray(_hlodImpostorAupBuffer, _hlodImpostorAupUpload, MaxHlodImpostorAupPoints);
             }
 
             if (_cartographySectorWordBuffer == null || !_cartographySectorWordBuffer.IsValid())
@@ -791,6 +817,8 @@ namespace Hecton8.UI
                 !_pointCloudIndirectArgsBuffer.IsValid() ||
                 _emptyPredatorAupBuffer == null ||
                 !_emptyPredatorAupBuffer.IsValid() ||
+                _hlodImpostorAupBuffer == null ||
+                !_hlodImpostorAupBuffer.IsValid() ||
                 _cartographySectorWordBuffer == null ||
                 !_cartographySectorWordBuffer.IsValid() ||
                 !SystemInfo.supportsComputeShaders ||
@@ -831,6 +859,7 @@ namespace Hecton8.UI
             int wordStride = lowTier ? 4 : 1;
             int dispatchWordCount = CeilDividePositive(wordCount, wordStride);
             TryResolvePredatorAupBuffer(out GraphicsBuffer predatorAupBuffer, out int predatorAupCount);
+            TryResolveHlodImpostorAupBuffer(out GraphicsBuffer hlodAupBuffer, out int hlodAupCount);
             _pointCloudAppendBuffer.SetCounterValue(0u);
             UploadSonarMapConstants(
                 playerPosition,
@@ -841,7 +870,8 @@ namespace Hecton8.UI
                 wordCount,
                 maxBitsPerWord,
                 wordStride,
-                predatorAupCount);
+                predatorAupCount,
+                hlodAupCount);
 
             sonarMapCompute.SetBuffer(_sonarClearArgsKernel, IndirectArgsId, _pointCloudIndirectArgsBuffer);
             sonarMapCompute.Dispatch(_sonarClearArgsKernel, 1, 1, 1);
@@ -849,6 +879,7 @@ namespace Hecton8.UI
             sonarMapCompute.SetBuffer(_sonarBuildMapPointsKernel, DiscoveredSectorsId, _cartographySectorWordBuffer);
             sonarMapCompute.SetBuffer(_sonarBuildMapPointsKernel, SonarPointAppendBufferId, _pointCloudAppendBuffer);
             sonarMapCompute.SetBuffer(_sonarBuildMapPointsKernel, PredatorAupBufferId, predatorAupBuffer);
+            sonarMapCompute.SetBuffer(_sonarBuildMapPointsKernel, HlodAupBufferId, hlodAupBuffer);
             int groupsX = CeilDividePositive(dispatchWordCount, _sonarBuildMapPointsThreadGroupSizeX);
             sonarMapCompute.Dispatch(_sonarBuildMapPointsKernel, groupsX, 1, 1);
             GraphicsBuffer.CopyCount(_pointCloudAppendBuffer, _pointCloudIndirectArgsBuffer, sizeof(uint));
@@ -864,7 +895,8 @@ namespace Hecton8.UI
             int wordCount,
             int maxBitsPerWord,
             int wordStride,
-            int predatorAupCount)
+            int predatorAupCount,
+            int hlodAupCount)
         {
             SonarMapConstants constants = new SonarMapConstants
             {
@@ -892,7 +924,12 @@ namespace Hecton8.UI
                     wordCount,
                     maxBitsPerWord,
                     predatorAupCount,
-                    SonarQuadIndexCount)
+                    SonarQuadIndexCount),
+                OverlayParams = new Vector4(
+                    hlodAupCount,
+                    0f,
+                    0f,
+                    0f)
             };
 
             if (SystemInfo.supportsSetConstantBuffer &&
@@ -910,6 +947,7 @@ namespace Hecton8.UI
             sonarMapCompute.SetVector(PlayerWorldPositionId, constants.PlayerWorldPosition);
             sonarMapCompute.SetVector(SonarScalarParamsId, constants.ScalarParams);
             sonarMapCompute.SetVector(SonarDispatchParamsId, constants.DispatchParams);
+            sonarMapCompute.SetVector(SonarOverlayParamsId, constants.OverlayParams);
         }
 
         private bool TryResolvePredatorAupBuffer(out GraphicsBuffer predatorAupBuffer, out int predatorAupCount)
@@ -928,6 +966,50 @@ namespace Hecton8.UI
 
             predatorAupBuffer = runtimeBuffer;
             predatorAupCount = math.clamp(runtimeCount, 0, MaxPredatorAupPoints);
+            return true;
+        }
+
+        private bool TryResolveHlodImpostorAupBuffer(out GraphicsBuffer hlodAupBuffer, out int hlodAupCount)
+        {
+            hlodAupBuffer = _hlodImpostorAupBuffer;
+            hlodAupCount = 0;
+            if (hlodAupBuffer == null || !hlodAupBuffer.IsValid())
+                return false;
+
+            IStreamingBackpressureService streaming = ResolveStreamingBackpressureService();
+            if (streaming == null ||
+                !streaming.TryGetActiveImpostorPoints(out NativeArray<StreamingHlodImpostorPoint> points, out int runtimeCount) ||
+                !points.IsCreated)
+            {
+                _uploadedHlodImpostorCount = 0;
+                return true;
+            }
+
+            uint runtimeVersion = streaming.ActiveImpostorVersion;
+            int uploadCount = math.clamp(math.min(runtimeCount, points.Length), 0, MaxHlodImpostorAupPoints);
+            bool needsUpload = _uploadedHlodImpostorVersion != runtimeVersion ||
+                               _uploadedHlodImpostorCount != uploadCount;
+            if (needsUpload)
+            {
+                for (int i = 0; i < uploadCount; i++)
+                {
+                    StreamingHlodImpostorPoint point = points[i];
+                    _hlodImpostorAupUpload[i] = new Vector4(
+                        point.Center.x,
+                        point.Center.y,
+                        point.Center.z,
+                        math.max(0.35f, point.Fade01));
+                }
+
+                for (int i = uploadCount; i < MaxHlodImpostorAupPoints; i++)
+                    _hlodImpostorAupUpload[i] = Vector4.zero;
+
+                GraphicsBufferUploadUtility.UploadArray(hlodAupBuffer, _hlodImpostorAupUpload, MaxHlodImpostorAupPoints);
+                _uploadedHlodImpostorVersion = runtimeVersion;
+                _uploadedHlodImpostorCount = uploadCount;
+            }
+
+            hlodAupCount = uploadCount;
             return true;
         }
 
@@ -1687,6 +1769,12 @@ namespace Hecton8.UI
             {
                 _emptyPredatorAupBuffer.Release();
                 _emptyPredatorAupBuffer = null;
+            }
+
+            if (_hlodImpostorAupBuffer != null)
+            {
+                _hlodImpostorAupBuffer.Release();
+                _hlodImpostorAupBuffer = null;
             }
 
             if (_cartographySectorWordBuffer != null)

@@ -675,17 +675,63 @@ namespace Hecton8.Gameplay
             if (maxSignals <= 0 || _damageJobScheduled || _statusJobScheduled)
                 return;
 
-            int drained = 0;
-            while (drained < maxSignals &&
-                   GlobalSignals.TryDequeueDamage(out Hecton8.Core.Signals.DamageSignal globalSignal))
+            ReadOnlySpan<Hecton8.Core.Signals.CombatDamageSignal> globalSignals =
+                SignalBus<Hecton8.Core.Signals.CombatDamageSignal>.GetFrameSnapshot();
+            int signalCount = math.min(maxSignals, globalSignals.Length);
+            for (int i = 0; i < signalCount; i++)
             {
-                drained++;
+                Hecton8.Core.Signals.CombatDamageSignal globalSignal = globalSignals[i];
                 if (!TryBuildCombatSignal(in globalSignal, out CombatDamageSignal combatSignal, out CombatDamageSignalDetail detail))
                     continue;
 
                 if (!TryQueueDamage(in combatSignal, in detail))
                     return;
             }
+        }
+
+        private static bool TryBuildCombatSignal(
+            in Hecton8.Core.Signals.CombatDamageSignal globalSignal,
+            out CombatDamageSignal combatSignal,
+            out CombatDamageSignalDetail detail)
+        {
+            combatSignal = default;
+            detail = default;
+
+            float magnitude = math.max(0f, globalSignal.Magnitude);
+            uint targetId = globalSignal.TargetId != 0
+                ? globalSignal.TargetId
+                : globalSignal.TargetHash;
+            if (targetId == 0u || !(magnitude > 0f))
+                return false;
+
+            float3 localPoint = math.all(math.isfinite(globalSignal.WorldPoint))
+                ? globalSignal.WorldPoint
+                : float3.zero;
+            float3 direction = math.lengthsq(globalSignal.Direction) > 0.0001f && math.all(math.isfinite(globalSignal.Direction))
+                ? globalSignal.Direction
+                : ResolveDominantAxisDirection(localPoint);
+            uint damageType = globalSignal.DamageType != 0u
+                ? globalSignal.DamageType
+                : CombatDamageTypes.Impact;
+
+            float3 safeDirection = NormalizeOrDefault(direction, float3.zero);
+            combatSignal = new CombatDamageSignal
+            {
+                TargetId = unchecked((int)targetId),
+                SourceId = globalSignal.SourceId,
+                Amount = magnitude,
+                ImpulseMagnitude = magnitude,
+                Direction = safeDirection,
+                PackedMeta = PackSignalMeta(damageType, 0u, CombatWeakspotTier.None)
+            };
+            detail = new CombatDamageSignalDetail
+            {
+                LocalPoint = localPoint,
+                ArmorNormal = safeDirection,
+                LocalTemperatureCelsius = 0f,
+                StatusDurationSeconds = 0f
+            };
+            return true;
         }
 
         private static bool TryBuildCombatSignal(

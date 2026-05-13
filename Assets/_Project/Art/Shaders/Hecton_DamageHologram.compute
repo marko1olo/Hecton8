@@ -1,0 +1,107 @@
+#pragma kernel KMapHullDents
+
+StructuredBuffer<float3> _HectonDamageProxyVertices;
+AppendStructuredBuffer<float4> _HectonDamageHologramPoints;
+StructuredBuffer<float> _HectonDamageRoomWaterLevels;
+
+float4 _HectonHullDents[16];
+float4 _HectonDamageHologramParams; // x=time, y=scanlineWidth, z=maxPoints, w=lowTier
+float4 _HectonDamageHologramBounds; // x=minX, y=maxX, z=minY, w=maxY
+int _HectonDamageProxyVertexCount;
+int _HectonDamageRoomCount;
+
+static const float HECTON_MIN_DENT_DEPTH = 0.0001;
+static const float HECTON_INV_DEPTH_QUANT = 0.00392156862745;
+static const float HECTON_INV_RADIUS_QUANT = 0.0625;
+
+float HectonFiniteOrZero(float value)
+{
+    return abs(value) <= 3.402823e38 ? value : 0.0;
+}
+
+float HectonSaturateFinite(float value)
+{
+    return saturate(HectonFiniteOrZero(value));
+}
+
+float HectonUnpackRadius(float packed)
+{
+    uint packedInt = (uint)max(0.0, floor(packed + 0.5));
+    return (float)(packedInt & 255u) * HECTON_INV_RADIUS_QUANT;
+}
+
+float HectonUnpackDepth(float packed)
+{
+    uint packedInt = (uint)max(0.0, floor(packed + 0.5));
+    return (float)((packedInt >> 8) & 255u) * HECTON_INV_DEPTH_QUANT;
+}
+
+float HectonTriangle01(float value)
+{
+    return 1.0 - abs(frac(value) * 2.0 - 1.0);
+}
+
+float HectonResolveFlood01(float3 localPosition)
+{
+    int roomCount = min(max(_HectonDamageRoomCount, 0), 32);
+    if (roomCount <= 0)
+        return 0.0;
+
+    float minX = _HectonDamageHologramBounds.x;
+    float maxX = max(minX + 0.0001, _HectonDamageHologramBounds.y);
+    float normalizedX = saturate((localPosition.x - minX) * rcp(maxX - minX));
+    int roomIndex = min(roomCount - 1, (int)floor(normalizedX * (float)roomCount));
+    return HectonSaturateFinite(_HectonDamageRoomWaterLevels[roomIndex]);
+}
+
+[numthreads(64, 1, 1)]
+void KMapHullDents(uint3 dispatchThreadId : SV_DispatchThreadID)
+{
+    uint vertexIndex = dispatchThreadId.x;
+    uint vertexCount = (uint)min(max(_HectonDamageProxyVertexCount, 0), max((int)_HectonDamageHologramParams.z, 0));
+    if (vertexIndex >= vertexCount)
+        return;
+
+    float3 localPosition = _HectonDamageProxyVertices[vertexIndex];
+    if (abs(localPosition.x) > 3.402823e38 ||
+        abs(localPosition.y) > 3.402823e38 ||
+        abs(localPosition.z) > 3.402823e38)
+    {
+        return;
+    }
+
+    float bestSeverity = 0.0;
+    [unroll]
+    for (int dentIndex = 0; dentIndex < 16; dentIndex++)
+    {
+        float4 dent = _HectonHullDents[dentIndex];
+        float radius = HectonUnpackRadius(dent.w);
+        float depth = HectonUnpackDepth(dent.w);
+        if (radius <= 0.0001 || depth <= HECTON_MIN_DENT_DEPTH)
+            continue;
+
+        float3 delta = localPosition - dent.xyz;
+        float radiusSq = max(radius * radius, 0.000001);
+        float distSq = dot(delta, delta);
+        if (distSq > radiusSq)
+            continue;
+
+        float falloff = saturate(1.0 - distSq * rcp(radiusSq));
+        bestSeverity = max(bestSeverity, saturate(depth * 4.0) * falloff);
+    }
+
+    float flood01 = HectonResolveFlood01(localPosition);
+    if (bestSeverity > 0.001)
+    {
+        _HectonDamageHologramPoints.Append(float4(localPosition, saturate(bestSeverity + flood01 * 0.15)));
+        return;
+    }
+
+    float minY = _HectonDamageHologramBounds.z;
+    float maxY = max(minY + 0.0001, _HectonDamageHologramBounds.w);
+    float normalizedY = saturate((localPosition.y - minY) * rcp(maxY - minY));
+    float scanline = HectonTriangle01(_HectonDamageHologramParams.x * 0.18);
+    float width = max(0.02, _HectonDamageHologramParams.y);
+    if (abs(normalizedY - scanline) <= width || vertexIndex == 0u)
+        _HectonDamageHologramPoints.Append(float4(localPosition, -1.0 - flood01));
+}

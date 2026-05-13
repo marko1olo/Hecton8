@@ -56,6 +56,10 @@ float4 _HectonGlowPointParams; // x=count, y=sonar pulse gain, z/w=reserved
 float4 _HectonProjectedCausticsWorldRect;
 float4 _HectonProjectedCausticsParams;
 float4 _HectonProjectedCausticsColor;
+TEXTURE2D(_HectonCausticsMap);
+SAMPLER(sampler_HectonCausticsMap);
+float4 _HectonCausticsAUP;            // xy=projection origin xz, z=inv world size, w=compute active
+float4 _HectonCausticsRuntimeParams;  // x=compute active, y=wave count, z=cloud cover, w=intensity
 float4 _BrineColor;
 float _BrineHeightY;
 float4 _FinalGiantAbyssLight;
@@ -100,6 +104,9 @@ TEXTURE2D(_HectonPhotophobiaFieldTex);
 SAMPLER(sampler_HectonPhotophobiaFieldTex);
 TEXTURE2D(_HectonMicroNormalTex);
 SAMPLER(sampler_HectonMicroNormalTex);
+TEXTURE2D(_RustDetailMap);
+SAMPLER(sampler_RustDetailMap);
+float4 _RustDetailMap_ST;
 float4 _HectonNoirFogLutParams;
 float _HectonNoirFogLutBlend;
 float _HectonWeatherIntensity;
@@ -128,6 +135,11 @@ float _AupJitterMask;                  // 1 during the AUP shift render frame; r
 float _HectonMathLodMode;              // 0=cheap dominant-axis, 1=exact high
 float _HectonMathLodDistanceSq;        // C# scalability bridge debug/readback value
 float4 _HectonWorldShake;              // xyz=seismic vertex offset, w=intensity
+float _HectonEquipmentRust01;          // global equipment corrosion scalar, 0 clean -> 1 ruined
+float4 _HectonMaterialDecayRuntime;    // x=rust01, y=recent wetness01, z=low tier, w=stable seed
+float4 _HectonPlayerBloodSplatter;     // x=stress01, y=health damage01, z=gloss boost, w=active01
+float _InternalWaterlineY;
+float4 _InternalWaterlineRuntime;      // xyz/w owned by InternalFloodWaterlineRuntime
 
 float3 HectonCoreLitDominantAxisOrDefault(float3 value, float3 fallbackValue)
 {
@@ -793,6 +805,152 @@ half3 HectonCoreLitApplyTripleDetailMicroNormals(
     return (half3)HectonCoreLitSafeNormalize(lerp(baseNormal, microNormalWS, resolvedStrength * nearMask));
 }
 
+void HectonCoreLitBuildTangentFrame(
+    float3 normalWS,
+    float3 tangentWS,
+    float tangentSign,
+    out float3 safeNormalWS,
+    out float3 safeTangentWS,
+    out float3 safeBitangentWS)
+{
+    safeNormalWS = HectonCoreLitSafeNormalize(normalWS);
+    safeTangentWS = HectonCoreLitSafeNormalize(tangentWS);
+    float handedness = tangentSign < 0.0 ? -1.0 : 1.0;
+    safeBitangentWS = HectonCoreLitSafeNormalize(cross(safeNormalWS, safeTangentWS) * handedness);
+}
+
+half HectonCoreLitResolveDynamicRust01()
+{
+    return (half)saturate(max(_HectonEquipmentRust01, _HectonMaterialDecayRuntime.x));
+}
+
+float2 HectonCoreLitResolveDynamicWearUv(
+    float2 baseUv,
+    float3 viewDirWS,
+    float3 normalWS,
+    float3 tangentWS,
+    float tangentSign,
+    out half4 rustPacked,
+    out half rustMask)
+{
+    half rust01 = HectonCoreLitResolveDynamicRust01();
+    float2 rustUv = baseUv * _RustDetailMap_ST.xy + _RustDetailMap_ST.zw;
+    rustMask = rust01;
+
+    if (rust01 <= 0.0001h)
+    {
+        rustPacked = half4(0.0h, 0.5h, 0.5h, 1.0h);
+        rustMask = 0.0h;
+        return baseUv;
+    }
+
+    rustPacked = SAMPLE_TEXTURE2D(_RustDetailMap, sampler_RustDetailMap, rustUv);
+
+#if defined(_MATH_LOD_LOW)
+    return baseUv;
+#else
+    if (rust01 <= 0.3001h || _HectonMaterialDecayRuntime.z > 0.5)
+        return baseUv;
+
+    float3 safeNormalWS;
+    float3 safeTangentWS;
+    float3 safeBitangentWS;
+    HectonCoreLitBuildTangentFrame(normalWS, tangentWS, tangentSign, safeNormalWS, safeTangentWS, safeBitangentWS);
+    float3 safeViewWS = HectonCoreLitSafeNormalize(viewDirWS);
+    float3 viewDirTS = float3(dot(safeViewWS, safeTangentWS), dot(safeViewWS, safeBitangentWS), max(dot(safeViewWS, safeNormalWS), 0.24));
+    float viewInvZ = rcp(max(abs(viewDirTS.z), 0.24));
+    float2 parallaxStep = viewDirTS.xy * viewInvZ * (0.012 + rust01 * 0.026) * rust01;
+    float2 resolvedUv = rustUv;
+    float layerDepth = 0.0;
+
+    [unroll]
+    for (int stepIndex = 0; stepIndex < 4; stepIndex++)
+    {
+        half sampledHeight = SAMPLE_TEXTURE2D(_RustDetailMap, sampler_RustDetailMap, resolvedUv).r;
+        half stepMask = (half)step(layerDepth, sampledHeight);
+        resolvedUv -= parallaxStep * (0.25 * stepMask);
+        layerDepth += 0.25;
+    }
+
+    rustPacked = SAMPLE_TEXTURE2D(_RustDetailMap, sampler_RustDetailMap, resolvedUv);
+    half pitMask = saturate((rustPacked.r - 0.34h) * 1.85h);
+    rustMask = saturate(rust01 * (0.58h + pitMask * 0.42h));
+    half2 pitNormal = (rustPacked.gb * 2.0h - 1.0h) * (rustMask * 0.0035h);
+    return resolvedUv - _RustDetailMap_ST.zw + pitNormal;
+#endif
+}
+
+half3 HectonCoreLitDecodeRustNormalTS(half4 rustPacked, half strength)
+{
+    half2 xy = (rustPacked.gb * 2.0h - 1.0h) * saturate(strength);
+    half z = saturate(1.0h - dot(xy, xy) * 0.5h);
+    return half3(xy, z);
+}
+
+void HectonCoreLitApplyDynamicWearPOM(
+    float2 wearUv,
+    float3 positionWS,
+    float3 viewDirWS,
+    float3 tangentWS,
+    float tangentSign,
+    half4 rustPacked,
+    half rustMask,
+    inout half3 albedo,
+    inout half3 normalWS,
+    inout half metallic,
+    inout half smoothness)
+{
+    half rust01 = HectonCoreLitResolveDynamicRust01();
+    half wearMask = saturate(max(rust01, rustMask));
+    float3 safeNormalWS;
+    float3 safeTangentWS;
+    float3 safeBitangentWS;
+    HectonCoreLitBuildTangentFrame(normalWS, tangentWS, tangentSign, safeNormalWS, safeTangentWS, safeBitangentWS);
+    float3 safeViewWS = HectonCoreLitSafeNormalize(viewDirWS);
+    half edgeWear = (half)HectonCoreLitFastPower01(1.0 - saturate(dot(safeNormalWS, safeViewWS)), 2.0);
+    half finalRustMask = saturate(wearMask * (0.72h + edgeWear * 0.42h));
+
+    if (finalRustMask > 0.0001h)
+    {
+        half3 rustNormalTS = HectonCoreLitDecodeRustNormalTS(rustPacked, finalRustMask * 0.82h);
+        float3 rustNormalWS = HectonCoreLitSafeNormalize(
+            safeTangentWS * rustNormalTS.x +
+            safeBitangentWS * rustNormalTS.y +
+            safeNormalWS * rustNormalTS.z);
+        normalWS = (half3)HectonCoreLitSafeNormalize(lerp(safeNormalWS, rustNormalWS, finalRustMask));
+
+        half pitRoughness = saturate(rustPacked.a);
+        half heightCavity = saturate((rustPacked.r - 0.42h) * 1.72h);
+        half3 rustTint = half3(0.55h, 0.19h, 0.055h);
+        half3 pitTint = half3(0.16h, 0.055h, 0.028h);
+        albedo = lerp(albedo, rustTint, finalRustMask * 0.62h);
+        albedo = lerp(albedo, pitTint, heightCavity * finalRustMask * 0.35h);
+        metallic = lerp(metallic, 0.0h, finalRustMask);
+        smoothness = lerp(smoothness, saturate(1.0h - pitRoughness), finalRustMask);
+    }
+
+    half submerged = (half)step(positionWS.y, _InternalWaterlineY);
+    half recentWet = saturate((half)max(_HectonMaterialDecayRuntime.y, _InternalWaterlineRuntime.z));
+    half wetness = saturate(max(submerged, recentWet));
+    if (wetness > 0.0001h)
+    {
+        albedo *= lerp(1.0h, 0.76h, wetness * 0.28h);
+        smoothness = lerp(smoothness, 1.0h, wetness);
+    }
+
+    half bloodActive = saturate((half)_HectonPlayerBloodSplatter.w);
+    if (bloodActive > 0.0001h)
+    {
+        half bloodSource = saturate((half)max(_HectonPlayerBloodSplatter.x, _HectonPlayerBloodSplatter.y));
+        half noiseA = (half)HectonCoreLitHash12(floor(wearUv * 39.0 + _HectonMaterialDecayRuntime.w * 0.11));
+        half noiseB = (half)HectonCoreLitHash12(floor(wearUv * 113.0 + 17.0));
+        half patch = saturate((noiseA * 0.72h + noiseB * 0.28h - 0.56h) * 2.65h) * bloodSource * bloodActive;
+        half3 bloodTint = half3(0.11h, 0.012h, 0.010h);
+        albedo = lerp(albedo, bloodTint, patch * 0.72h);
+        smoothness = lerp(smoothness, 1.0h, patch * saturate((half)_HectonPlayerBloodSplatter.z));
+    }
+}
+
 half HectonCoreLitEvaluateTriplanarWearMask(float3 positionWS, half3 normalWS, half environmentalWear, half noiseScale)
 {
     half wear = saturate(environmentalWear);
@@ -1124,6 +1282,13 @@ float HectonCoreLitEvaluateCelestialWaterShadow(float3 positionWS)
            HectonCoreLitEvaluateRingCausticShadow(positionWS);
 }
 
+float HectonCoreLitEvaluateMainLightCausticShadow(float3 positionWS)
+{
+    float4 shadowCoord = TransformWorldToShadowCoord(positionWS);
+    Light mainLight = GetMainLight(shadowCoord);
+    return saturate(mainLight.shadowAttenuation * mainLight.distanceAttenuation);
+}
+
 float HectonCoreLitEvaluateCausticsSceneDepthFade(float3 positionWS)
 {
     float4 positionCS = TransformWorldToHClip(positionWS);
@@ -1196,21 +1361,34 @@ float HectonCoreLitEvaluateProjectedCausticsMaskFromUnitNormal(float3 positionWS
     if (depthFade <= 0.0)
         return 0.0;
 
-    float shadowTerm = 1.0;
+    float shadowTerm = HectonCoreLitEvaluateMainLightCausticShadow(positionWS);
+    if (shadowTerm <= 0.0001)
+        return 0.0;
+
     if (_HectonCaveVoxelActive > 0.5)
     {
         float caveSignedDistance = HectonCoreLitSampleCaveVoxelSignedDistance(positionWS + normalizedNormalWS * 0.03);
         if (caveSignedDistance <= 0.02)
             return 0.0;
 
-        shadowTerm = HectonCoreLitEvaluateCaveAmbientFactorFromSignedDistance(caveSignedDistance);
+        shadowTerm *= HectonCoreLitEvaluateCaveAmbientFactorFromSignedDistance(caveSignedDistance);
     }
 
     celestialShadow = HectonCoreLitEvaluateCelestialWaterShadow(positionWS);
     if (celestialShadow <= 0.0001)
         return 0.0;
 
-    float caustics = HectonCoreLitEvaluateProceduralCaustics(uv);
+    float caustics;
+    if (_HectonCausticsAUP.w > 0.5)
+    {
+        float3 analytical = SAMPLE_TEXTURE2D(_HectonCausticsMap, sampler_HectonCausticsMap, uv).rgb;
+        caustics = dot(analytical, float3(0.27, 0.54, 0.19));
+    }
+    else
+    {
+        caustics = HectonCoreLitEvaluateProceduralCaustics(uv);
+    }
+
     return caustics * depthFade * upFacing * directionalWeight * shadowTerm * celestialShadow * _HectonProjectedCausticsParams.x;
 }
 

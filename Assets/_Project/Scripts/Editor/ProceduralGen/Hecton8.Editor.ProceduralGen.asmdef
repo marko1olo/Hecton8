@@ -1,0 +1,20 @@
+{
+    "name": "Hecton8.Editor.ProceduralGen",
+    "rootNamespace": "Hecton8.Editor.ProceduralGen",
+    "references": [
+        "Unity.Collections",
+        "Unity.Mathematics",
+        "Unity.Burst"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

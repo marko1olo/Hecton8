@@ -9,7 +9,7 @@ namespace Hecton8.AI.Ecology.Migration
     /// <summary>
     /// Absolute macro-ecology swarm DTO. Coordinates are 50 m biomass macro-cells, not shifted runtime transforms.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 40)]
+    [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 48)]
     public struct MacroSwarm
     {
         public uint HashId;
@@ -20,6 +20,7 @@ namespace Hecton8.AI.Ecology.Migration
         public float Speed;
         public ushort Flags;
         public ushort Reserved;
+        public ulong Genome;
     }
 
     /// <summary>

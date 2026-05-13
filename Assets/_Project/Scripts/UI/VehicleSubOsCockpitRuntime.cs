@@ -3,6 +3,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Audio;
 using Hecton8.Core;
+using Hecton8.Core.Signals;
 using Hecton8.Gameplay;
 using Hecton8.Optimization;
 using Hecton8.Power;
@@ -34,6 +35,13 @@ namespace Hecton8.UI
         private const int MidRadarPointsPerTap = 128;
         private const int LowRadarPointsPerTap = 32;
         private const int MaxButtons = 32;
+        private const int MaxDamageHologramPoints = 512;
+        private const int LowTierDamageWarningPoints = 7;
+        private const int MaxDamageHologramRooms = 32;
+        private const int MinDamageProxyVertices = 8;
+        private const float DamageHologramFlickerSeconds = 0.5f;
+        private const float DamageHologramFlickerSecondsInv = 2f;
+        private const float Hash24Inv = 5.9604648e-8f;
         private const int MinUiRenderTextureWidth = 256;
         private const int MinUiRenderTextureHeight = 128;
         private const int LowUiRenderTextureMaxWidth = 512;
@@ -43,13 +51,17 @@ namespace Hecton8.UI
         private const int TelemetryCapacity = 300;
         private const int TextBufferCapacity = 96;
         private const float ButtonTravelSeconds = 0.1f;
-        private const float ButtonTravelSecondsInv = 1f / ButtonTravelSeconds;
+        private const float ButtonTravelSecondsInv = 10f;
         private const float RadarPowerCutoff = 0.2f;
         private const float RadarRedispatchPowerEpsilon = 0.01f;
         private const float RadarRedispatchFlickerEpsilon = 0.01f;
         private const float DefaultMaxSonarDelaySeconds = 6.75f;
         private const string ComputeAssetPath = "Assets/_Project/Art/Shaders/Hecton_CockpitHoloRadar.compute";
+        private const string DamageHologramComputeAssetPath = "Assets/_Project/Art/Shaders/Hecton_DamageHologram.compute";
+        private const string DamageHologramMaterialAssetPath = "Assets/_Project/Art/Materials/MAT_Damage_Hologram.mat";
+        private const string DamageHologramKernelName = "KMapHullDents";
         private const uint TelemetryContextHash = 0x56534F53u; // VSOS
+        private const uint DamageHologramTelemetryHash = 0x44484F4Cu; // DHOL
         private const uint RadarActiveHash = 0x52414452u; // RADR
         private const uint InteractionHash = 0x42544E53u; // BTNS
         private const int InvalidDisplayBucket = int.MinValue;
@@ -79,6 +91,15 @@ namespace Hecton8.UI
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
         private static readonly int PanelPowerLevelId = Shader.PropertyToID("_PanelPowerLevel");
         private static readonly int ExternalFeedBlendId = Shader.PropertyToID("_ExternalFeedBlend");
+        private static readonly int DamageProxyVerticesId = Shader.PropertyToID("_HectonDamageProxyVertices");
+        private static readonly int DamageHologramPointsId = Shader.PropertyToID("_HectonDamageHologramPoints");
+        private static readonly int DamageRoomWaterLevelsId = Shader.PropertyToID("_HectonDamageRoomWaterLevels");
+        private static readonly int DamageHologramLocalToWorldId = Shader.PropertyToID("_HectonDamageHologramLocalToWorld");
+        private static readonly int DamageHologramParamsId = Shader.PropertyToID("_HectonDamageHologramParams");
+        private static readonly int DamageHologramBoundsId = Shader.PropertyToID("_HectonDamageHologramBounds");
+        private static readonly int DamageProxyVertexCountId = Shader.PropertyToID("_HectonDamageProxyVertexCount");
+        private static readonly int DamageRoomCountId = Shader.PropertyToID("_HectonDamageRoomCount");
+        private static readonly int DamageHologramFlickerId = Shader.PropertyToID("_Flicker");
         private static readonly Vector3[] RadarQuadVertices =
         {
             new Vector3(-0.5f, -0.5f, 0f),
@@ -98,6 +119,61 @@ namespace Hecton8.UI
             0, 1, 2,
             0, 2, 3
         }; // COLD ALLOC: int[6] - immutable cockpit radar billboard quad indices - owner: VehicleSubOsCockpitRuntime
+        private static readonly Vector3[] DamageCubeVertices =
+        {
+            new Vector3(-0.5f, -0.5f, -0.5f),
+            new Vector3(0.5f, -0.5f, -0.5f),
+            new Vector3(0.5f, 0.5f, -0.5f),
+            new Vector3(-0.5f, 0.5f, -0.5f),
+            new Vector3(-0.5f, -0.5f, 0.5f),
+            new Vector3(0.5f, -0.5f, 0.5f),
+            new Vector3(0.5f, 0.5f, 0.5f),
+            new Vector3(-0.5f, 0.5f, 0.5f)
+        }; // COLD ALLOC: Vector3[8] - immutable hologram cube vertices - owner: VehicleSubOsCockpitRuntime
+        private static readonly int[] DamageCubeIndices =
+        {
+            0, 2, 1, 0, 3, 2,
+            4, 5, 6, 4, 6, 7,
+            0, 1, 5, 0, 5, 4,
+            2, 3, 7, 2, 7, 6,
+            1, 2, 6, 1, 6, 5,
+            0, 4, 7, 0, 7, 3
+        }; // COLD ALLOC: int[36] - immutable hologram cube indices - owner: VehicleSubOsCockpitRuntime
+        private static readonly Vector3[] FallbackDamageProxyVertices =
+        {
+            new Vector3(-0.62f, -0.1f, -0.08f),
+            new Vector3(-0.42f, 0.12f, -0.12f),
+            new Vector3(-0.18f, 0.18f, -0.16f),
+            new Vector3(0.18f, 0.18f, -0.16f),
+            new Vector3(0.42f, 0.12f, -0.12f),
+            new Vector3(0.62f, -0.1f, -0.08f),
+            new Vector3(-0.62f, -0.1f, 0.08f),
+            new Vector3(-0.42f, 0.12f, 0.12f),
+            new Vector3(-0.18f, 0.18f, 0.16f),
+            new Vector3(0.18f, 0.18f, 0.16f),
+            new Vector3(0.42f, 0.12f, 0.12f),
+            new Vector3(0.62f, -0.1f, 0.08f),
+            new Vector3(-0.5f, -0.28f, -0.06f),
+            new Vector3(-0.24f, -0.34f, -0.12f),
+            new Vector3(0.24f, -0.34f, -0.12f),
+            new Vector3(0.5f, -0.28f, -0.06f),
+            new Vector3(-0.5f, -0.28f, 0.06f),
+            new Vector3(-0.24f, -0.34f, 0.12f),
+            new Vector3(0.24f, -0.34f, 0.12f),
+            new Vector3(0.5f, -0.28f, 0.06f),
+            new Vector3(-0.36f, 0.0f, -0.2f),
+            new Vector3(0.0f, 0.05f, -0.24f),
+            new Vector3(0.36f, 0.0f, -0.2f),
+            new Vector3(-0.36f, 0.0f, 0.2f),
+            new Vector3(0.0f, 0.05f, 0.24f),
+            new Vector3(0.36f, 0.0f, 0.2f),
+            new Vector3(-0.08f, 0.32f, 0.0f),
+            new Vector3(0.08f, 0.32f, 0.0f),
+            new Vector3(-0.08f, -0.42f, 0.0f),
+            new Vector3(0.08f, -0.42f, 0.0f),
+            new Vector3(-0.74f, -0.12f, 0.0f),
+            new Vector3(0.74f, -0.12f, 0.0f)
+        }; // COLD ALLOC: Vector3[32] - fallback low-poly submarine proxy when LOD3 mesh is not wired - owner: VehicleSubOsCockpitRuntime
 
         [Header("Radar")]
         [SerializeField] private Transform radarDomeAnchor;
@@ -107,6 +183,16 @@ namespace Hecton8.UI
         [SerializeField] private float radarRadiusMeters = 0.42f;
         [SerializeField] private float radarBoundsSizeMeters = 1.2f;
         [SerializeField] private int radarLayer;
+
+        [Header("Damage Hologram")]
+        [SerializeField] private Transform damageHologramAnchor;
+        [SerializeField] private ComputeShader damageHologramCompute;
+        [SerializeField] private Material damageHologramMaterial;
+        [SerializeField] private Mesh damageProxyMeshLod3;
+        [SerializeField] private Mesh damagePointMesh;
+        [SerializeField] private float damageHologramBoundsSizeMeters = 1.0f;
+        [SerializeField] private float damageHologramScanlineWidth = 0.11f;
+        [SerializeField] private int damageHologramLayer;
 
         [Header("Physical Panel")]
         [SerializeField] private Transform dashboardPanelPlane;
@@ -142,6 +228,8 @@ namespace Hecton8.UI
         private readonly char[] _oxygenTextBuffer = new char[TextBufferCapacity];
         private readonly char[] _sonarTextBuffer = new char[TextBufferCapacity];
         private readonly char[] _statusTextBuffer = new char[TextBufferCapacity];
+        private readonly float[] _damageRoomWaterUpload = new float[MaxDamageHologramRooms]; // COLD ALLOC: float[32] - habitat room flood upload staging - owner: VehicleSubOsCockpitRuntime
+        private readonly Vector4[] _damageLowTierPoint = new Vector4[LowTierDamageWarningPoints]; // COLD ALLOC: Vector4[7] - static warning glyph upload for MX350 fallback - owner: VehicleSubOsCockpitRuntime
 
         private NativeArray<byte> _buttonStates;
         private NativeArray<byte> _buttonTargets;
@@ -155,8 +243,14 @@ namespace Hecton8.UI
         private GraphicsBuffer _radarBlipBuffer;
         private GraphicsBuffer _radarArgsBuffer;
         private GraphicsBuffer _buttonMatrixBuffer;
+        private GraphicsBuffer _damageProxyVertexBuffer;
+        private GraphicsBuffer _damagePointBuffer;
+        private GraphicsBuffer _damageArgsBuffer;
+        private GraphicsBuffer _damageRoomWaterBuffer;
         private Material _radarRuntimeMaterial;
+        private Material _damageRuntimeMaterial;
         private Mesh _runtimeRadarQuad;
+        private Mesh _runtimeDamageCube;
         private readonly MaterialPropertyBlock _screenPropertyBlock = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - cockpit screen per-renderer properties - owner: VehicleSubOsCockpitRuntime
         private RenderTexture _uiRenderTexture;
         private RenderTexture _externalRenderTexture;
@@ -178,7 +272,12 @@ namespace Hecton8.UI
         private bool _buttonBasesInitialized;
         private bool _resourcesReady;
         private bool _radarResourcesReady;
+        private bool _damageHologramResourcesReady;
         private bool _radarMaterialBufferBound;
+        private bool _damageHologramMaterialBufferBound;
+        private bool _damageHologramLowTierPointUploaded;
+        private bool _damageHologramLowTierWarningActive;
+        private bool _damageHologramHadSignal;
         private bool _radarUsingGpr;
         private HectonQualityTier _lastScalabilityTier = HectonQualityTier.Unknown;
         private RenderTextureFormat _uiRenderTextureFormat = RenderTextureFormat.ARGB32;
@@ -186,6 +285,14 @@ namespace Hecton8.UI
         private int _radarCapacity;
         private int _radarPointsPerTap = LowRadarPointsPerTap;
         private int _radarActivePoints;
+        private int _damageHologramKernel = -1;
+        private int _damageProxyVertexCount;
+        private int _damageHologramEstimatedPoints;
+        private int _damageKnownActiveDentCount;
+        private int _damageLastHullSignalFrame = -1;
+        private int _damageLastImpactSignalFrame = -1;
+        private int _damageRoomCount;
+        private int _damageRoomSequence = -1;
         private int _lastSonarSequence = -1;
         private int _lastGprSequence = -1;
         private int _lastRadarDispatchSequence = -1;
@@ -209,12 +316,20 @@ namespace Hecton8.UI
         private float _latestCarbonDioxideNormalized;
         private float _latestSpeedKnots;
         private float _damageFlicker;
+        private float _damageHologramFlickerTimer;
+        private float _damageHologramFlood01;
+        private uint _damageHologramFlickerSeed;
         private float _lastRadarDispatchPower = -1f;
         private float _lastRadarDispatchFlicker = -1f;
         private float _screenUpdateAccumulator;
         private Texture _lastScreenTexture;
         private GraphicsBuffer _lastRadarMaterialBlipBuffer;
         private GraphicsBuffer _lastRadarMaterialGprBuffer;
+        private Mesh _lastDamageProxyMesh;
+        private Mesh _lastDamageArgsMesh;
+        private Vector4 _damageProxyBounds = new Vector4(-0.75f, 0.75f, -0.45f, 0.35f);
+        private Vector3[] _damageProxyUploadVertices;
+        private int _lastDamageArgsInstanceCount = int.MinValue;
 
         /// <summary>
         /// GPU matrix buffer for cockpit button presentation consumers.
@@ -230,6 +345,14 @@ namespace Hecton8.UI
         /// Total cockpit button interactions recorded by this runtime instance.
         /// </summary>
         public int CockpitInteractions => _cockpitInteractions;
+
+        public int HoloDamagePoints => _damageHologramEstimatedPoints;
+
+        public int HoloProxyVertexCount => _damageProxyVertexCount;
+
+        public float HologramFlood01 => SaturateFinite(_damageHologramFlood01, 0f);
+
+        public byte HologramFlags => (byte)(BuildDamageHologramTelemetryFlags() & 0xffu);
 
         private void Awake()
         {
@@ -286,6 +409,18 @@ namespace Hecton8.UI
                 Destroy(_runtimeRadarQuad);
                 _runtimeRadarQuad = null;
             }
+
+            if (_damageRuntimeMaterial != null)
+            {
+                Destroy(_damageRuntimeMaterial);
+                _damageRuntimeMaterial = null;
+            }
+
+            if (_runtimeDamageCube != null)
+            {
+                Destroy(_runtimeDamageCube);
+                _runtimeDamageCube = null;
+            }
         }
 
         public void Tick(float deltaTime)
@@ -306,7 +441,12 @@ namespace Hecton8.UI
             _nodeVoltageSupplyRatio = ResolveNodeVoltageSupplyRatio();
             _radarPowered = _nodeVoltageSupplyRatio >= RadarPowerCutoff;
             _damageFlicker = math.isfinite(_damageFlicker) ? math.max(0f, _damageFlicker - safeDeltaTime * 0.8f) : 0f;
+            _damageHologramFlickerTimer = math.isfinite(_damageHologramFlickerTimer)
+                ? math.max(0f, _damageHologramFlickerTimer - safeDeltaTime)
+                : 0f;
 
+            ConsumeDamageHologramSignals();
+            RefreshDamageHologramFloodState();
             UpdateExternalFeedState();
             UploadSonarTapsAndDispatchRadar();
             if (UpdateOffscreenText(safeDeltaTime))
@@ -331,6 +471,7 @@ namespace Hecton8.UI
 
         public void Render(float deltaTime)
         {
+            RenderDamageHologram();
             RenderRadarPointCloud();
         }
 
@@ -467,6 +608,10 @@ namespace Hecton8.UI
 #if UNITY_EDITOR
             if (radarCompute == null)
                 radarCompute = AssetDatabase.LoadAssetAtPath<ComputeShader>(ComputeAssetPath);
+            if (damageHologramCompute == null)
+                damageHologramCompute = AssetDatabase.LoadAssetAtPath<ComputeShader>(DamageHologramComputeAssetPath);
+            if (damageHologramMaterial == null)
+                damageHologramMaterial = AssetDatabase.LoadAssetAtPath<Material>(DamageHologramMaterialAssetPath);
 #endif
         }
 
@@ -583,6 +728,7 @@ namespace Hecton8.UI
             _radarCapacity = math.clamp(_radarCapacity <= 0 ? (_lowTier ? LowRadarPoints : MaxRadarPoints) : _radarCapacity, LowRadarPoints, MaxRadarPoints);
             if (_buttonMatrixBuffer == null)
                 _buttonMatrixBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4x4>(MaxButtons); // COLD ALLOC: GraphicsBuffer[32] - kinematic dashboard matrix bridge - owner: VehicleSubOsCockpitRuntime
+            EnsureDamageHologramGraphicsResources();
             if (radarCompute == null)
             {
                 _radarResourcesReady = false;
@@ -629,11 +775,23 @@ namespace Hecton8.UI
             ReleaseBuffer(ref _radarBlipBuffer);
             ReleaseBuffer(ref _radarArgsBuffer);
             ReleaseBuffer(ref _buttonMatrixBuffer);
+            ReleaseBuffer(ref _damageProxyVertexBuffer);
+            ReleaseBuffer(ref _damagePointBuffer);
+            ReleaseBuffer(ref _damageArgsBuffer);
+            ReleaseBuffer(ref _damageRoomWaterBuffer);
             _radarKernel = -1;
+            _damageHologramKernel = -1;
             _radarResourcesReady = false;
+            _damageHologramResourcesReady = false;
             InvalidateRadarDispatchCache();
             InvalidateRadarArgsCache();
             InvalidateRadarMaterialBinding();
+            _damageHologramMaterialBufferBound = false;
+            _damageHologramLowTierPointUploaded = false;
+            _damageHologramLowTierWarningActive = false;
+            _lastDamageProxyMesh = null;
+            _lastDamageArgsMesh = null;
+            _lastDamageArgsInstanceCount = int.MinValue;
         }
 
         private static void ReleaseBuffer(ref GraphicsBuffer buffer)
@@ -643,6 +801,131 @@ namespace Hecton8.UI
 
             buffer.Release();
             buffer = null;
+        }
+
+        private void EnsureDamageHologramGraphicsResources()
+        {
+            if (_damagePointBuffer == null)
+            {
+                _damagePointBuffer = new GraphicsBuffer(
+                    GraphicsBuffer.Target.Append,
+                    MaxDamageHologramPoints,
+                16); // COLD ALLOC: GraphicsBuffer[512 float4] - GPU append hologram point cloud - owner: VehicleSubOsCockpitRuntime
+                _damageHologramMaterialBufferBound = false;
+                _damageHologramLowTierPointUploaded = false;
+                _damageHologramLowTierWarningActive = false;
+            }
+
+            if (_damageArgsBuffer == null)
+            {
+                _damageArgsBuffer = new GraphicsBuffer(
+                    GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw,
+                    GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                    1,
+                    GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] - damage hologram indirect args - owner: VehicleSubOsCockpitRuntime
+                UpdateDamageHologramArgs(0, true);
+            }
+
+            if (_damageRoomWaterBuffer == null)
+            {
+                _damageRoomWaterBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float>(MaxDamageHologramRooms); // COLD ALLOC: GraphicsBuffer[32 float] - room flood levels for hologram tint - owner: VehicleSubOsCockpitRuntime
+                GraphicsBufferUploadUtility.UploadArray(_damageRoomWaterBuffer, _damageRoomWaterUpload, MaxDamageHologramRooms);
+            }
+
+            if (_damageRuntimeMaterial == null && damageHologramMaterial != null)
+                _damageRuntimeMaterial = new Material(damageHologramMaterial); // COLD ALLOC: material instance prevents cockpit hologram shader state bleed.
+
+            if (damagePointMesh == null && _runtimeDamageCube == null)
+                _runtimeDamageCube = CreateDamageCubeMesh();
+
+            EnsureDamageProxyVertexBuffer();
+
+            if (damageHologramCompute != null && _damageHologramKernel < 0)
+                _damageHologramKernel = damageHologramCompute.HasKernel(DamageHologramKernelName)
+                    ? damageHologramCompute.FindKernel(DamageHologramKernelName)
+                    : -1;
+
+            bool lowReady = _lowTier &&
+                            _damagePointBuffer != null &&
+                            _damageArgsBuffer != null &&
+                            _damageRuntimeMaterial != null &&
+                            ResolveDamagePointMesh() != null;
+            bool computeReady = !_lowTier &&
+                                _damagePointBuffer != null &&
+                                _damageArgsBuffer != null &&
+                                _damageRuntimeMaterial != null &&
+                                _damageProxyVertexBuffer != null &&
+                                _damageRoomWaterBuffer != null &&
+                                damageHologramCompute != null &&
+                                _damageHologramKernel >= 0 &&
+                                ResolveDamagePointMesh() != null &&
+                                _damageProxyVertexCount >= MinDamageProxyVertices;
+            _damageHologramResourcesReady = lowReady || computeReady;
+        }
+
+        private void EnsureDamageProxyVertexBuffer()
+        {
+            Mesh mesh = damageProxyMeshLod3;
+            if (ReferenceEquals(mesh, _lastDamageProxyMesh) && _damageProxyVertexBuffer != null)
+                return;
+
+            _lastDamageProxyMesh = mesh;
+            Vector3[] sourceVertices = null;
+            int sourceCount = 0;
+            if (mesh != null && mesh.vertexCount > 0)
+            {
+                sourceVertices = mesh.vertices; // COLD ALLOC: Vector3[mesh.vertexCount] - one-time LOD3 proxy upload source - owner: VehicleSubOsCockpitRuntime
+                sourceCount = sourceVertices != null ? sourceVertices.Length : 0;
+            }
+
+            if (sourceCount < MinDamageProxyVertices)
+            {
+                sourceVertices = FallbackDamageProxyVertices;
+                sourceCount = FallbackDamageProxyVertices.Length;
+            }
+
+            int safeCount = math.clamp(sourceCount, MinDamageProxyVertices, MaxDamageHologramPoints);
+            if (_damageProxyUploadVertices == null || _damageProxyUploadVertices.Length != safeCount)
+                _damageProxyUploadVertices = new Vector3[safeCount]; // COLD ALLOC: Vector3[safeCount] - stable proxy vertex upload copy capped at 512 - owner: VehicleSubOsCockpitRuntime
+
+            float minX = float.MaxValue;
+            float maxX = float.MinValue;
+            float minY = float.MaxValue;
+            float maxY = float.MinValue;
+            for (int i = 0; i < safeCount; i++)
+            {
+                Vector3 vertex = sourceVertices[i];
+                if (!IsFinite(vertex))
+                    vertex = Vector3.zero;
+
+                _damageProxyUploadVertices[i] = vertex;
+                minX = math.min(minX, vertex.x);
+                maxX = math.max(maxX, vertex.x);
+                minY = math.min(minY, vertex.y);
+                maxY = math.max(maxY, vertex.y);
+            }
+
+            if (!math.isfinite(minX) || !math.isfinite(maxX) || maxX - minX < 0.0001f)
+            {
+                minX = -0.75f;
+                maxX = 0.75f;
+            }
+
+            if (!math.isfinite(minY) || !math.isfinite(maxY) || maxY - minY < 0.0001f)
+            {
+                minY = -0.45f;
+                maxY = 0.35f;
+            }
+
+            _damageProxyBounds = new Vector4(minX, maxX, minY, maxY);
+            if (_damageProxyVertexBuffer == null || _damageProxyVertexBuffer.count != safeCount)
+            {
+                ReleaseBuffer(ref _damageProxyVertexBuffer);
+                _damageProxyVertexBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Vector3>(safeCount); // COLD ALLOC: GraphicsBuffer[proxy vertices] - submarine local-space damage hologram proxy - owner: VehicleSubOsCockpitRuntime
+            }
+
+            GraphicsBufferUploadUtility.UploadArray(_damageProxyVertexBuffer, _damageProxyUploadVertices, safeCount);
+            _damageProxyVertexCount = safeCount;
         }
 
         private bool ShouldRetryRadarGraphicsResources()
@@ -1095,6 +1378,80 @@ namespace Hecton8.UI
             InvalidateRadarDispatchCache();
         }
 
+        private void ConsumeDamageHologramSignals()
+        {
+            ReadOnlySpan<HullDeformedSignal> hullSignals = SignalBus<HullDeformedSignal>.GetFrameSnapshot();
+            for (int i = 0; i < hullSignals.Length; i++)
+            {
+                HullDeformedSignal signal = hullSignals[i];
+                if (!math.all(math.isfinite(signal.LocalPoint)) ||
+                    !math.isfinite(signal.Radius) ||
+                    !math.isfinite(signal.Depth))
+                {
+                    continue;
+                }
+
+                _damageLastHullSignalFrame = (int)(signal.Frame != 0u ? signal.Frame : unchecked((uint)Time.frameCount));
+                _damageKnownActiveDentCount = math.clamp(signal.ActiveDentCount, 0, 16);
+                _damageHologramHadSignal = true;
+                _screenDirty = true;
+            }
+
+            ReadOnlySpan<HighSpeedImpactSignal> impactSignals = SignalBus<HighSpeedImpactSignal>.GetFrameSnapshot();
+            for (int i = 0; i < impactSignals.Length; i++)
+            {
+                HighSpeedImpactSignal signal = impactSignals[i];
+                float impactSpeed = math.isfinite(signal.ImpactSpeed) ? math.max(0f, signal.ImpactSpeed) : 0f;
+                float lostEnergy = math.isfinite(signal.LostKineticEnergy) ? math.max(0f, signal.LostKineticEnergy) : 0f;
+                if (impactSpeed <= 0.01f && lostEnergy <= 0.01f)
+                    continue;
+
+                _damageLastImpactSignalFrame = (int)(signal.Frame != 0u ? signal.Frame : unchecked((uint)Time.frameCount));
+                _damageHologramFlickerTimer = DamageHologramFlickerSeconds;
+                _damageHologramFlickerSeed = signal.SourceHash ^ (signal.TargetHash * 747796405u) ^ signal.Frame;
+                SetDamageFlicker(math.saturate(impactSpeed * 0.025f + lostEnergy * 0.0002f));
+                _screenDirty = true;
+            }
+        }
+
+        private void RefreshDamageHologramFloodState()
+        {
+            IHabitatGraphService habitatGraph = GlobalRegistry.HabitatGraph;
+            if (habitatGraph == null || !habitatGraph.IsInitialized || habitatGraph.RoomCount <= 0)
+            {
+                if (_damageRoomCount != 0)
+                    UploadDamageRoomWaterLevels(default, 0, 0u);
+                return;
+            }
+
+            uint sequence = habitatGraph.FloodStateSequence;
+            if (_damageRoomCount == habitatGraph.RoomCount && _damageRoomSequence == unchecked((int)sequence))
+                return;
+
+            NativeArray<float>.ReadOnly levels = habitatGraph.RoomWaterLevels;
+            UploadDamageRoomWaterLevels(levels, habitatGraph.RoomCount, sequence);
+        }
+
+        private void UploadDamageRoomWaterLevels(NativeArray<float>.ReadOnly levels, int roomCount, uint sequence)
+        {
+            int safeCount = math.clamp(roomCount, 0, MaxDamageHologramRooms);
+            _damageHologramFlood01 = 0f;
+            for (int i = 0; i < MaxDamageHologramRooms; i++)
+            {
+                float level = 0f;
+                if (i < safeCount && i < levels.Length)
+                    level = SaturateFinite(levels[i], 0f);
+
+                _damageRoomWaterUpload[i] = level;
+                _damageHologramFlood01 = math.max(_damageHologramFlood01, level);
+            }
+
+            _damageRoomCount = safeCount;
+            _damageRoomSequence = unchecked((int)sequence);
+            if (_damageRoomWaterBuffer != null)
+                GraphicsBufferUploadUtility.UploadArray(_damageRoomWaterBuffer, _damageRoomWaterUpload, MaxDamageHologramRooms);
+        }
+
         private int ResolveRadarVisualPointCount(int tapCount)
         {
             int safeTapCount = math.max(0, tapCount);
@@ -1212,6 +1569,225 @@ namespace Hecton8.UI
                 motionVectorMode = MotionVectorGenerationMode.ForceNoMotion
             };
             Graphics.RenderMeshIndirect(renderParams, mesh, _radarArgsBuffer, 1, 0);
+        }
+
+        private void RenderDamageHologram()
+        {
+            if (!_radarPowered)
+            {
+                _damageHologramEstimatedPoints = 0;
+                return;
+            }
+
+            if (!_damageHologramResourcesReady)
+            {
+                EnsureDamageHologramGraphicsResources();
+                if (!_damageHologramResourcesReady)
+                    return;
+            }
+
+            Mesh mesh = ResolveDamagePointMesh();
+            if (mesh == null || _damageRuntimeMaterial == null || _damagePointBuffer == null || _damageArgsBuffer == null)
+                return;
+
+            Transform anchor = damageHologramAnchor != null
+                ? damageHologramAnchor
+                : radarDomeAnchor != null
+                    ? radarDomeAnchor
+                    : transform;
+            Matrix4x4 hologramLocalToWorld = anchor.localToWorldMatrix;
+            if (!IsFinite(hologramLocalToWorld))
+                return;
+
+            if (_lowTier)
+                UploadLowTierDamageHologramGlyph();
+            else
+                DispatchDamageHologramCompute();
+
+            BindDamageHologramMaterial(hologramLocalToWorld);
+            Vector4 anchorColumn = hologramLocalToWorld.GetColumn(3);
+            Vector3 anchorPosition = new Vector3(anchorColumn.x, anchorColumn.y, anchorColumn.z);
+            Bounds bounds = new Bounds(anchorPosition, Vector3.one * ResolveDamageHologramBoundsSize());
+            Graphics.DrawMeshInstancedIndirect(
+                mesh,
+                0,
+                _damageRuntimeMaterial,
+                bounds,
+                _damageArgsBuffer,
+                0,
+                null,
+                ShadowCastingMode.Off,
+                false,
+                damageHologramLayer,
+                Camera.current);
+        }
+
+        private void DispatchDamageHologramCompute()
+        {
+            if (damageHologramCompute == null ||
+                _damageHologramKernel < 0 ||
+                _damageProxyVertexBuffer == null ||
+                _damageProxyVertexCount <= 0 ||
+                _damageRoomWaterBuffer == null)
+            {
+                UpdateDamageHologramArgs(0, true);
+                _damageHologramEstimatedPoints = 0;
+                return;
+            }
+
+            _damagePointBuffer.SetCounterValue(0u);
+            damageHologramCompute.SetBuffer(_damageHologramKernel, DamageProxyVerticesId, _damageProxyVertexBuffer);
+            damageHologramCompute.SetBuffer(_damageHologramKernel, DamageHologramPointsId, _damagePointBuffer);
+            damageHologramCompute.SetBuffer(_damageHologramKernel, DamageRoomWaterLevelsId, _damageRoomWaterBuffer);
+            damageHologramCompute.SetVector(
+                DamageHologramParamsId,
+                new Vector4(Time.time, ResolveDamageHologramScanlineWidth(), MaxDamageHologramPoints, 0f));
+            damageHologramCompute.SetVector(DamageHologramBoundsId, _damageProxyBounds);
+            damageHologramCompute.SetInt(DamageProxyVertexCountId, _damageProxyVertexCount);
+            damageHologramCompute.SetInt(DamageRoomCountId, _damageRoomCount);
+            damageHologramCompute.Dispatch(_damageHologramKernel, (_damageProxyVertexCount + 63) >> 6, 1, 1);
+            UpdateDamageHologramArgs(0, false);
+            GraphicsBuffer.CopyCount(_damagePointBuffer, _damageArgsBuffer, 4);
+            _damageHologramEstimatedPoints = _damageKnownActiveDentCount > 0 || _damageHologramHadSignal
+                ? _damageProxyVertexCount
+                : math.max(1, _damageProxyVertexCount >> 3);
+        }
+
+        private void UploadLowTierDamageHologramGlyph()
+        {
+            bool warningActive = IsLowTierDamageWarningActive();
+            if (!_damageHologramLowTierPointUploaded || _damageHologramLowTierWarningActive != warningActive)
+            {
+                if (warningActive)
+                    FillLowTierWarningGlyph();
+                else
+                    FillLowTierIdleGlyph();
+                _damagePointBuffer.SetData(_damageLowTierPoint, 0, 0, LowTierDamageWarningPoints);
+                _damageHologramLowTierPointUploaded = true;
+                _damageHologramLowTierWarningActive = warningActive;
+            }
+
+            UpdateDamageHologramArgs(LowTierDamageWarningPoints, false);
+            _damageHologramEstimatedPoints = LowTierDamageWarningPoints;
+        }
+
+        private bool IsLowTierDamageWarningActive()
+        {
+            return _damageKnownActiveDentCount > 0 ||
+                   _damageHologramFlood01 > 0.01f ||
+                   _damageHologramFlickerTimer > 0f;
+        }
+
+        private void FillLowTierWarningGlyph()
+        {
+            _damageLowTierPoint[0] = new Vector4(0f, 0.24f, 0f, 0.72f);
+            _damageLowTierPoint[1] = new Vector4(0f, 0.16f, 0f, 0.72f);
+            _damageLowTierPoint[2] = new Vector4(0f, 0.08f, 0f, 0.72f);
+            _damageLowTierPoint[3] = new Vector4(0f, 0.0f, 0f, 0.72f);
+            _damageLowTierPoint[4] = new Vector4(-0.06f, -0.12f, 0f, 0.72f);
+            _damageLowTierPoint[5] = new Vector4(0f, -0.12f, 0f, 0.72f);
+            _damageLowTierPoint[6] = new Vector4(0.06f, -0.12f, 0f, 0.72f);
+        }
+
+        private void FillLowTierIdleGlyph()
+        {
+            _damageLowTierPoint[0] = new Vector4(-0.24f, 0f, 0f, -1f);
+            _damageLowTierPoint[1] = new Vector4(-0.16f, 0.03f, 0f, -1f);
+            _damageLowTierPoint[2] = new Vector4(-0.08f, 0f, 0f, -1f);
+            _damageLowTierPoint[3] = new Vector4(0f, -0.03f, 0f, -1f);
+            _damageLowTierPoint[4] = new Vector4(0.08f, 0f, 0f, -1f);
+            _damageLowTierPoint[5] = new Vector4(0.16f, 0.03f, 0f, -1f);
+            _damageLowTierPoint[6] = new Vector4(0.24f, 0f, 0f, -1f);
+        }
+
+        private void BindDamageHologramMaterial(Matrix4x4 hologramLocalToWorld)
+        {
+            if (!_damageHologramMaterialBufferBound)
+            {
+                _damageRuntimeMaterial.SetBuffer(DamageHologramPointsId, _damagePointBuffer);
+                _damageRuntimeMaterial.SetBuffer(DamageRoomWaterLevelsId, _damageRoomWaterBuffer);
+                _damageHologramMaterialBufferBound = true;
+            }
+
+            _damageRuntimeMaterial.SetMatrix(DamageHologramLocalToWorldId, hologramLocalToWorld);
+            _damageRuntimeMaterial.SetVector(
+                DamageHologramParamsId,
+                new Vector4(Time.time, ResolveDamageHologramAlpha(), _damageRoomCount, _lowTier ? 1f : 0f));
+            _damageRuntimeMaterial.SetVector(DamageHologramBoundsId, _damageProxyBounds);
+            _damageRuntimeMaterial.SetFloat(DamageHologramFlickerId, ResolveDamageHologramFlicker());
+        }
+
+        private void UpdateDamageHologramArgs(int instanceCount, bool force)
+        {
+            Mesh mesh = ResolveDamagePointMesh();
+            if (_damageArgsBuffer == null || mesh == null)
+                return;
+
+            int safeInstanceCount = math.max(0, instanceCount);
+            if (!force &&
+                ReferenceEquals(mesh, _lastDamageArgsMesh) &&
+                _lastDamageArgsInstanceCount == safeInstanceCount)
+            {
+                return;
+            }
+
+            NativeArray<GraphicsBuffer.IndirectDrawIndexedArgs> argsWrite =
+                _damageArgsBuffer.LockBufferForWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(0, 1);
+            argsWrite[0] = new GraphicsBuffer.IndirectDrawIndexedArgs
+            {
+                indexCountPerInstance = mesh.GetIndexCount(0),
+                instanceCount = (uint)safeInstanceCount,
+                startIndex = mesh.GetIndexStart(0),
+                baseVertexIndex = (uint)Mathf.Max(0, mesh.GetBaseVertex(0)),
+                startInstance = 0u
+            };
+            _damageArgsBuffer.UnlockBufferAfterWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(1);
+            _lastDamageArgsMesh = mesh;
+            _lastDamageArgsInstanceCount = safeInstanceCount;
+        }
+
+        private Mesh ResolveDamagePointMesh()
+        {
+            return damagePointMesh != null ? damagePointMesh : _runtimeDamageCube;
+        }
+
+        private static Mesh CreateDamageCubeMesh()
+        {
+            Mesh mesh = new Mesh
+            {
+                name = "VSOS_DamageHologramCube"
+            };
+            mesh.SetVertices(DamageCubeVertices);
+            mesh.SetIndices(DamageCubeIndices, MeshTopology.Triangles, 0);
+            mesh.RecalculateNormals();
+            mesh.RecalculateBounds();
+            mesh.UploadMeshData(true);
+            return mesh;
+        }
+
+        private float ResolveDamageHologramAlpha()
+        {
+            float power = SaturateFinite(_nodeVoltageSupplyRatio, 0f);
+            return math.saturate(math.lerp(0.08f, 1f, power) * (1f - ResolveDamageHologramFlicker() * 0.35f));
+        }
+
+        private float ResolveDamageHologramFlicker()
+        {
+            if (_damageHologramFlickerTimer <= 0f)
+                return 0f;
+
+            float normalized = math.saturate(_damageHologramFlickerTimer * DamageHologramFlickerSecondsInv);
+            return normalized * Hash01(unchecked((uint)Time.frameCount) ^ _damageHologramFlickerSeed);
+        }
+
+        private static float Hash01(uint value)
+        {
+            value ^= value >> 16;
+            value *= 0x7feb352du;
+            value ^= value >> 15;
+            value *= 0x846ca68bu;
+            value ^= value >> 16;
+            return (value & 0x00ffffffu) * Hash24Inv;
         }
 
         private static bool TryResolveGroundRadarRenderBinding(out IGroundRadarService groundRadar, out GraphicsBuffer buffer)
@@ -1411,11 +1987,14 @@ namespace Hecton8.UI
             Transform anchor = radarDomeAnchor != null ? radarDomeAnchor : transform;
             Vector3 position = anchor.position;
             bool positionFinite = IsFinite(position);
+            float holoFlicker = ResolveDamageHologramFlicker();
             bool finite = positionFinite &&
                           math.isfinite(_nodeVoltageSupplyRatio) &&
                           math.isfinite(_latestOxygenNormalized) &&
                           math.isfinite(_latestCarbonDioxideNormalized) &&
-                          math.isfinite(_latestSpeedKnots);
+                          math.isfinite(_latestSpeedKnots) &&
+                          math.isfinite(_damageHologramFlood01) &&
+                          math.isfinite(holoFlicker);
             Vector3 safePosition = positionFinite ? position : Vector3.zero;
             int slot = _telemetryWriteIndex;
             _telemetryRing[slot] = new CockpitTelemetryEntry
@@ -1428,7 +2007,12 @@ namespace Hecton8.UI
                 Oxygen = SaturateFinite(_latestOxygenNormalized, 0f),
                 Co2 = SaturateFinite(_latestCarbonDioxideNormalized, 0f),
                 SpeedKnots = math.isfinite(_latestSpeedKnots) ? _latestSpeedKnots : 0f,
-                AnchorPosition = safePosition
+                AnchorPosition = safePosition,
+                HoloDamagePoints = _damageHologramEstimatedPoints,
+                HoloProxyVertices = _damageProxyVertexCount,
+                HoloFlicker = SaturateFinite(holoFlicker, 0f),
+                HoloFlood01 = SaturateFinite(_damageHologramFlood01, 0f),
+                HoloFlags = BuildDamageHologramTelemetryFlags()
             };
             _telemetryCursor++;
             _telemetryWriteIndex++;
@@ -1459,6 +2043,24 @@ namespace Hecton8.UI
                 flags |= 4u;
             if (!finite)
                 flags |= 0x80000000u;
+            return flags;
+        }
+
+        private uint BuildDamageHologramTelemetryFlags()
+        {
+            uint flags = 0u;
+            if (_damageHologramResourcesReady)
+                flags |= 1u;
+            if (_lowTier)
+                flags |= 2u;
+            if (_damageKnownActiveDentCount > 0)
+                flags |= 4u;
+            if (_damageHologramFlickerTimer > 0f)
+                flags |= 8u;
+            if (_damageHologramFlood01 > 0.01f)
+                flags |= 16u;
+            if (_lowTier && IsLowTierDamageWarningActive())
+                flags |= 32u;
             return flags;
         }
 
@@ -1502,11 +2104,44 @@ namespace Hecton8.UI
                     writer.Write(entry.AnchorPosition.x);
                     writer.Write(entry.AnchorPosition.y);
                     writer.Write(entry.AnchorPosition.z);
+                    writer.Write(entry.HoloDamagePoints);
+                    writer.Write(entry.HoloProxyVertices);
+                    writer.Write(entry.HoloFlicker);
+                    writer.Write(entry.HoloFlood01);
+                    writer.Write(entry.HoloFlags);
                 }
+
+                WriteDamageHolographerMirrorDump(directory, entryCount);
             }
             catch (Exception)
             {
                 GlobalTelemetryBus.PublishPerformanceWarning(0x44554D50u, TelemetryContextHash, 1f);
+            }
+        }
+
+        private void WriteDamageHolographerMirrorDump(string directory, int entryCount)
+        {
+            string path = Path.Combine(directory, "Dump_DIEGETIC_DAMAGE_HOLOGRAPHER.bin");
+            using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);
+            using BinaryWriter writer = new BinaryWriter(stream);
+            writer.Write(DamageHologramTelemetryHash);
+            writer.Write(_telemetryCursor);
+            writer.Write(_telemetryWriteIndex);
+            writer.Write(entryCount);
+            int readIndex = _telemetryCursor >= TelemetryCapacity ? _telemetryWriteIndex : 0;
+            for (int i = 0; i < entryCount; i++)
+            {
+                int slot = readIndex + i;
+                if (slot >= TelemetryCapacity)
+                    slot -= TelemetryCapacity;
+
+                CockpitTelemetryEntry entry = _telemetryRing[slot];
+                writer.Write(entry.Frame);
+                writer.Write(entry.HoloDamagePoints);
+                writer.Write(entry.HoloProxyVertices);
+                writer.Write(entry.HoloFlicker);
+                writer.Write(entry.HoloFlood01);
+                writer.Write(entry.HoloFlags);
             }
         }
 
@@ -1584,8 +2219,19 @@ namespace Hecton8.UI
             return math.isfinite(radarBoundsSizeMeters) ? math.max(0.1f, radarBoundsSizeMeters) : 1.2f;
         }
 
+        private float ResolveDamageHologramBoundsSize()
+        {
+            return math.isfinite(damageHologramBoundsSizeMeters) ? math.max(0.1f, damageHologramBoundsSizeMeters) : 1f;
+        }
+
+        private float ResolveDamageHologramScanlineWidth()
+        {
+            return math.isfinite(damageHologramScanlineWidth) ? math.clamp(damageHologramScanlineWidth, 0.02f, 0.35f) : 0.11f;
+        }
+
         private void OnValidate()
         {
+            ResolveColdAssetReferences();
             buttonColumns = ResolveButtonColumns();
             buttonRows = ResolveButtonRows();
             buttonCount = math.clamp(buttonCount, 1, MaxButtons);
@@ -1596,11 +2242,18 @@ namespace Hecton8.UI
             buttonPressedLocalZ = ResolvePressedLocalZ();
             radarRadiusMeters = ResolveRadarRadiusMeters();
             radarBoundsSizeMeters = ResolveRadarBoundsSize();
+            damageHologramBoundsSizeMeters = ResolveDamageHologramBoundsSize();
+            damageHologramScanlineWidth = ResolveDamageHologramScanlineWidth();
             uiRenderTextureWidth = math.max(MinUiRenderTextureWidth, uiRenderTextureWidth);
             uiRenderTextureHeight = math.max(MinUiRenderTextureHeight, uiRenderTextureHeight);
             externalRenderTextureWidth = math.max(MinExternalRenderTextureWidth, externalRenderTextureWidth);
             externalRenderTextureHeight = math.max(MinExternalRenderTextureHeight, externalRenderTextureHeight);
             _buttonBasesInitialized = false;
+        }
+
+        private void Reset()
+        {
+            OnValidate();
         }
 
         [BurstCompile]
@@ -1675,6 +2328,11 @@ namespace Hecton8.UI
             public float Co2;
             public float SpeedKnots;
             public Vector3 AnchorPosition;
+            public int HoloDamagePoints;
+            public int HoloProxyVertices;
+            public float HoloFlicker;
+            public float HoloFlood01;
+            public uint HoloFlags;
         }
     }
 }

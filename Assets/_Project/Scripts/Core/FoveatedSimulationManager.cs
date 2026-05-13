@@ -31,6 +31,7 @@ namespace Hecton8.Core
         bool TryCompleteFrameJobs();
         void CompleteFrameJobs();
         void SetVoxelTeardownBackpressure(bool active, int pendingChunkCount);
+        void ApplyHomeostasisPressureTier(byte pressureTier);
         void ResetRuntimeState();
     }
 
@@ -304,15 +305,28 @@ namespace Hecton8.Core
         private int _tier0Count;
         private int _tier1Count;
         private int _tier2Count;
+        private byte _homeostasisPressureTier;
         private int _telemetryCursor;
         private float _importanceAccumulator;
         private float _activeDistanceMeters = DefaultActiveDistanceMeters;
         private float _frozenDistanceMeters = DefaultFrozenDistanceMeters;
+        private float _thermalFrozenDistanceMeters = DefaultFrozenDistanceMeters;
         private Vector3 _signalCameraPosition;
         private Vector3 _signalCameraForward = Vector3.forward;
         private Vector3 _signalCameraUp = Vector3.up;
+        private bool _thermalFreezeOverrideActive;
 
         public int FrozenEntityCount => _frozenEntityCount;
+
+        public void ApplyHomeostasisPressureTier(byte pressureTier)
+        {
+            byte clampedTier = (byte)math.min(pressureTier, 3);
+            if (_homeostasisPressureTier == clampedTier)
+                return;
+
+            _homeostasisPressureTier = clampedTier;
+            _forceImmediateImportanceRefresh = true;
+        }
 
         public void InitializeRuntime()
         {
@@ -363,6 +377,22 @@ namespace Hecton8.Core
                 _tickAccumulators[i] = CenterTickIntervalSeconds;
                 _forceImmediateImportanceRefresh = true;
             }
+        }
+
+        public void SetThermalFreezeDistanceOverride(bool active, float frozenDistanceMeters)
+        {
+            float sanitizedDistance = math.isfinite(frozenDistanceMeters)
+                ? math.max(1f, frozenDistanceMeters)
+                : DefaultFrozenDistanceMeters;
+
+            if (_thermalFreezeOverrideActive == active &&
+                math.abs(_thermalFrozenDistanceMeters - sanitizedDistance) <= 0.001f)
+                return;
+
+            _thermalFreezeOverrideActive = active;
+            _thermalFrozenDistanceMeters = sanitizedDistance;
+            _forceImmediateImportanceRefresh = true;
+            _importanceAccumulator = ImportanceEvaluationIntervalSeconds;
         }
 
         public void RegisterTarget(IFoveatedSimulationTarget target)
@@ -762,6 +792,7 @@ namespace Hecton8.Core
             _tier0Count = 0;
             _tier1Count = 0;
             _tier2Count = 0;
+            _homeostasisPressureTier = 0;
             _telemetryCursor = 0;
             _importanceAccumulator = 0.0f;
             _activeDistanceMeters = DefaultActiveDistanceMeters;
@@ -893,6 +924,13 @@ namespace Hecton8.Core
                     resolvedTier = FoveatedSimulationTier.Active;
                     resolvedTickRate = FoveatedTickRate.Center60Hz;
                     importanceScore = 1.0f;
+                }
+                else if (_homeostasisPressureTier >= 3 && resolvedTickRate < FoveatedTickRate.Far10Hz)
+                {
+                    resolvedTickRate = FoveatedTickRate.Far10Hz;
+                    importanceScore = math.min(importanceScore, 0.2f);
+                    if (resolvedTier == FoveatedSimulationTier.Active)
+                        resolvedTier = FoveatedSimulationTier.Peripheral;
                 }
 
                 FoveatedTickRate currentTickRate = _tickRates[i];
@@ -1036,16 +1074,27 @@ namespace Hecton8.Core
 
         private void ResolveScalabilityThresholds(out float activeDistance, out float frozenDistance)
         {
+            if (_homeostasisPressureTier >= 3)
+            {
+                activeDistance = LowActiveDistanceMeters * 0.5f;
+                frozenDistance = LowFrozenDistanceMeters * 0.5f;
+                return;
+            }
+
             HectonQualityTier qualityTier = GlobalRegistry.ScalabilityTier;
             if (qualityTier == HectonQualityTier.Low || qualityTier == HectonQualityTier.Mx350)
             {
                 activeDistance = LowActiveDistanceMeters;
                 frozenDistance = LowFrozenDistanceMeters;
-                return;
+            }
+            else
+            {
+                activeDistance = DefaultActiveDistanceMeters;
+                frozenDistance = DefaultFrozenDistanceMeters;
             }
 
-            activeDistance = DefaultActiveDistanceMeters;
-            frozenDistance = DefaultFrozenDistanceMeters;
+            if (_thermalFreezeOverrideActive)
+                frozenDistance = math.max(activeDistance, math.min(frozenDistance, _thermalFrozenDistanceMeters));
         }
 
         private static FoveatedSimulationTier ResolveTierForPosition(

@@ -1,0 +1,96 @@
+#pragma kernel GenerateCaustics
+
+struct CausticsWaveGpuData
+{
+    float4 WaveA;
+    float4 WaveB;
+};
+
+RWTexture2D<float4> _Result;
+StructuredBuffer<CausticsWaveGpuData> _WaveData;
+int _WaveCount;
+float4 _CausticsAUP;
+float4 _CausticsParams;
+float4 _CausticsChromatic;
+
+static const float HECTON_TAU = 6.28318530718;
+
+float Triangle01(float value)
+{
+    float wrapped = frac(value);
+    return 1.0 - abs(wrapped * 2.0 - 1.0);
+}
+
+float EvaluateAnalyticalCaustic(float2 worldXZ, float timeSeconds, int waveCount, out float2 refractOffset, out float focusSignal)
+{
+    float2 gradient = 0.0;
+    float focus = 0.0;
+    float ridge = 0.0;
+
+    [loop]
+    for (int i = 0; i < waveCount; i++)
+    {
+        CausticsWaveGpuData wave = _WaveData[i];
+        if (wave.WaveB.w <= 0.5)
+            continue;
+
+        float2 rawDirection = wave.WaveA.xy;
+        float directionLenSq = max(dot(rawDirection, rawDirection), 1e-6);
+        float2 direction = rawDirection * rsqrt(directionLenSq);
+        float amplitude = max(wave.WaveA.z, 0.0);
+        float wavelength = max(wave.WaveA.w, 0.05);
+        float steepness = saturate(wave.WaveB.x);
+        float phaseOffset = wave.WaveB.y;
+        float speed = max(wave.WaveB.z, 0.01);
+        float k = HECTON_TAU / wavelength;
+        float gravityK = max(9.81 * k, 1e-6);
+        float phaseVelocity = gravityK * rsqrt(gravityK);
+        float phase = dot(worldXZ, direction) * k + phaseOffset + timeSeconds * speed * phaseVelocity;
+        float s;
+        float c;
+        sincos(phase, s, c);
+
+        float2 waveGradient = direction * (amplitude * k * c);
+        gradient += waveGradient;
+        float compression = saturate(1.0 - abs(s) * 0.62);
+        float ridgeLine = Triangle01(phase * (1.0 / HECTON_TAU) + steepness * 0.13);
+        ridge += saturate((1.0 - abs(ridgeLine - 0.5) * 2.0) * (1.0 + steepness)) * compression;
+        focus += dot(waveGradient, waveGradient) * (1.0 + steepness * 0.5);
+    }
+
+    refractOffset = gradient * 0.34;
+    float focusTerm = saturate(focus * 4.0);
+    float ridgeTerm = saturate(ridge / max(1.0, (float)waveCount));
+    focusSignal = focusTerm;
+    return saturate(ridgeTerm * ridgeTerm * 1.35 + focusTerm * 0.65);
+}
+
+[numthreads(8, 8, 1)]
+void GenerateCaustics(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= 512 || id.y >= 512)
+        return;
+
+    float2 uv = ((float2)id.xy + 0.5) * (1.0 / 512.0);
+    float invSize = max(_CausticsAUP.z, 1e-5);
+    float worldSize = rcp(invSize);
+    float2 worldXZ = _CausticsAUP.xy + uv * worldSize;
+    int waveCount = clamp(_WaveCount, 1, 16);
+    float timeSeconds = _CausticsParams.x;
+    float intensity = max(_CausticsParams.y, 0.0);
+    float splitMeters = max(_CausticsChromatic.x, 0.0);
+
+    float2 refractOffset;
+    float focusSignal;
+    float causticBase = EvaluateAnalyticalCaustic(worldXZ, timeSeconds, waveCount, refractOffset, focusSignal);
+    float chromaEnergy = saturate(dot(refractOffset, refractOffset) * splitMeters * 9.0 + focusSignal * splitMeters);
+    float redEdge = Triangle01(dot(worldXZ + refractOffset * splitMeters, float2(0.071, 0.113)) + timeSeconds * 0.061);
+    float blueEdge = Triangle01(dot(worldXZ - refractOffset * splitMeters, float2(-0.097, 0.083)) - timeSeconds * 0.047);
+    float3 chromaGain = float3(
+        lerp(0.92, 1.18, redEdge * chromaEnergy),
+        1.0,
+        lerp(1.16, 0.88, blueEdge * chromaEnergy));
+    float cloudDamp = 1.0 - saturate(_CausticsChromatic.y) * 0.45;
+    float3 caustic = saturate(causticBase * chromaGain * intensity * cloudDamp);
+    _Result[id.xy] = float4(caustic, saturate(max(max(caustic.r, caustic.g), caustic.b)));
+}

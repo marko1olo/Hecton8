@@ -423,8 +423,12 @@ namespace Hecton8.Biolum
             float lodThreshold = 5f + (500f - 5f) * Mathf.Clamp01(_lodDistanceScale);
             double lodThresholdSq = (double)lodThreshold * lodThreshold;
 
-            // Skip 2 out of 3 frames if beyond threshold
-            return AbsoluteUniversePosition.DistanceSq(in zoneAup, in cameraAup) > lodThresholdSq && (Time.frameCount % 3) != 0;
+            ISimulationBucketer bucketer = GlobalRegistry.SimulationBucketer;
+            int activeFastBucket = bucketer != null && bucketer.IsInitialized
+                ? bucketer.ActiveFastBucket
+                : Time.frameCount & SimulationBucketConstants.FastBucketMask;
+            int zoneFastBucket = SimulationBucketMath.ResolveBucket(unchecked((uint)EntityId.ToULong(GetEntityId())), SimulationBucketConstants.FastBucketMask);
+            return AbsoluteUniversePosition.DistanceSq(in zoneAup, in cameraAup) > lodThresholdSq && activeFastBucket != zoneFastBucket;
         }
 
         // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€

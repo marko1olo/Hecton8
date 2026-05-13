@@ -22,6 +22,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Hecton8.Core.Contracts;
+using Hecton8.Core.Memory.Layout;
 using Hecton8.Gameplay;
 using Hecton8.Narrative;
 using Hecton8.World;
@@ -49,12 +50,14 @@ namespace Hecton8.SaveSystem
         public double totalPlayTime;
 
         /// <summary>Tekuschaya versiya formata. Ispolzuetsya dlya migratsii.</summary>
-        public const int CurrentVersion = 70; // v70: RTG decay start-time payload.
+        public const int CurrentVersion = 72; // v72: first-hour DTO ABI lock.
 
         // ─────────────────────── DTO Sections ────────────────────
 
         public PlayerStatsDTO playerStats;
+        public PlayerKinematicStateDTO playerKinematicState;
         public InventoryDTO inventory;
+        public InventoryShadowDTO inventoryShadow;
         [NonSerialized] internal NativeArray<byte> inventoryShadowPayload;
         [NonSerialized] internal int inventoryShadowPayloadLength;
         [NonSerialized] internal uint inventoryShadowPayloadHash;
@@ -73,6 +76,7 @@ namespace Hecton8.SaveSystem
         public ProceduralLoreStateDTO proceduralLore;
         public AchievementRegistryDTO achievements;
         public RunModifiersDTO runModifiers;
+        public MetaCampaignDTO metaCampaign;
         public ResourceScarcityDTO resourceScarcity;
         public EnvironmentalStrainDTO environmentalStrain;
         public EcosystemStateDTO ecosystemState;
@@ -272,7 +276,9 @@ namespace Hecton8.SaveSystem
                 timestamp     = DateTime.Now.ToString("O"),
                 totalPlayTime = playTime,
                 playerStats   = new PlayerStatsDTO(),
+                playerKinematicState = new PlayerKinematicStateDTO(),
                 inventory     = new InventoryDTO(),
+                inventoryShadow = new InventoryShadowDTO(),
                 worldState    = new WorldStateDTO(),
                 proceduralWorldState = new ProceduralWorldStateDTO(),
                 construction  = new ConstructionDTO(),
@@ -290,6 +296,7 @@ namespace Hecton8.SaveSystem
                 {
                     dailySeedId = string.Empty
                 },
+                metaCampaign = MetaCampaignDTO.CreateDefault(),
                 resourceScarcity = new ResourceScarcityDTO(),
                 environmentalStrain = new EnvironmentalStrainDTO(),
                 ecosystemState = new EcosystemStateDTO(),
@@ -361,6 +368,17 @@ namespace Hecton8.SaveSystem
                 rtgDecayFlags = new byte[MaxRtgDecayRecords],
                 CustomModData = new Dictionary<string, string>()
             };
+        }
+
+        public void RefreshFirstHourDtoMirrors()
+        {
+            playerKinematicState = PlayerKinematicStateDTO.FromPlayerStats(in playerStats);
+            inventoryShadow = InventoryShadowDTO.FromInventory(
+                in inventory,
+                inventoryShadowPayloadLength,
+                inventoryShadowPayloadHash,
+                hasInventoryShadowPayload);
+            construction.RefreshHabitatFloodStateMirrors();
         }
 
         public const int MaxNarrativeDiscoveries = 128;
@@ -475,6 +493,58 @@ namespace Hecton8.SaveSystem
     }
 
     [Serializable]
+    [BinaryBlittableSafe]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 48)]
+    public struct PlayerKinematicStateDTO
+    {
+        public float posX;
+        public float posY;
+        public float posZ;
+        public float rotX;
+        public float rotY;
+        public float rotZ;
+        public float rotW;
+        public float velX;
+        public float velY;
+        public float velZ;
+        public int flags;
+        private int _pad0;
+
+        public static PlayerKinematicStateDTO FromPlayerStats(in PlayerStatsDTO stats)
+        {
+            PlayerKinematicStateDTO dto = default;
+            dto.posX = stats.posX;
+            dto.posY = stats.posY;
+            dto.posZ = stats.posZ;
+            dto.rotX = stats.rotX;
+            dto.rotY = stats.rotY;
+            dto.rotZ = stats.rotZ;
+            dto.rotW = stats.rotW;
+            dto.velX = stats.velX;
+            dto.velY = stats.velY;
+            dto.velZ = stats.velZ;
+            dto.flags = 1;
+            return dto;
+        }
+
+        public void ApplyTo(ref PlayerStatsDTO stats)
+        {
+            stats.posX = posX;
+            stats.posY = posY;
+            stats.posZ = posZ;
+            stats.rotX = rotX;
+            stats.rotY = rotY;
+            stats.rotZ = rotZ;
+            stats.rotW = rotW;
+            stats.velX = velX;
+            stats.velY = velY;
+            stats.velZ = velZ;
+        }
+    }
+
+    [Serializable]
+    [BinaryBlittableSafe]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
     public struct ExternalScavengerSiteDTO
     {
         public int chunkX;
@@ -486,6 +556,7 @@ namespace Hecton8.SaveSystem
         public byte quantizedRadius;
         public float remainingTime;
         public uint seed;
+        private long _pad0;
 
         public bool IsValid => remainingTime > 0f;
     }
@@ -590,6 +661,44 @@ namespace Hecton8.SaveSystem
     // ══════════════════════════════════════════════════════════════════
 
     [Serializable]
+    [BinaryBlittableSafe]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
+    public struct InventoryShadowDTO
+    {
+        public const byte FlagHasPayload = 1 << 0;
+        public const byte SchemaVersion = 1;
+
+        public int cellCount;
+        public int payloadLength;
+        public uint payloadHash;
+        public int gridColumns;
+        public int gridRows;
+        public float totalWeight;
+        public byte flags;
+        public byte schemaVersion;
+        public ushort reserved0;
+        private int _pad0;
+
+        public static InventoryShadowDTO FromInventory(
+            in InventoryDTO inventory,
+            int shadowPayloadLength,
+            uint shadowPayloadHash,
+            bool hasShadowPayload)
+        {
+            InventoryShadowDTO dto = default;
+            dto.cellCount = Math.Clamp(inventory.cellCount, 0, InventoryDTO.MaxCells);
+            dto.payloadLength = shadowPayloadLength > 0 ? shadowPayloadLength : 0;
+            dto.payloadHash = shadowPayloadHash;
+            dto.gridColumns = inventory.gridColumns;
+            dto.gridRows = inventory.gridRows;
+            dto.totalWeight = inventory.totalWeight;
+            dto.flags = hasShadowPayload ? FlagHasPayload : (byte)0;
+            dto.schemaVersion = SchemaVersion;
+            return dto;
+        }
+    }
+
+    [Serializable]
     public struct WorldStateDTO
     {
         public int depletedCount;
@@ -655,6 +764,8 @@ namespace Hecton8.SaveSystem
     }
 
     [Serializable]
+    [BinaryBlittableSafe]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
     public struct ProceduralGeologySeamStateDTO
     {
         public long runtimeKey;
@@ -671,9 +782,12 @@ namespace Hecton8.SaveSystem
         public float absoluteVoxelCenterX;
         public float absoluteVoxelCenterY;
         public float absoluteVoxelCenterZ;
+        private int _pad0;
     }
 
     [Serializable]
+    [BinaryBlittableSafe]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 48)]
     public struct ProceduralGeologyCaveEntranceDTO
     {
         public long runtimeKey;
@@ -686,6 +800,7 @@ namespace Hecton8.SaveSystem
         public float radius;
         public float funnelLength;
         public float innerRadius;
+        private int _pad0;
     }
 
     [Serializable]
@@ -742,6 +857,8 @@ namespace Hecton8.SaveSystem
         public ModuleGraphEdgeDTO[] graphEdges;
         public int moduleBlitCount;
         public ModuleBlitDTO[] moduleBlitRecords;
+        public int habitatFloodStateCount;
+        public HabitatFloodStateDTO[] habitatFloodStates;
         public const int MaxModules = 256;
         public const int MaxGraphEdges = MaxModules * 6;
 
@@ -758,6 +875,65 @@ namespace Hecton8.SaveSystem
 
             if (moduleBlitRecords == null || moduleBlitRecords.Length < MaxModules)
                 moduleBlitRecords = new ModuleBlitDTO[MaxModules];
+
+            if (habitatFloodStates == null || habitatFloodStates.Length < MaxModules)
+                habitatFloodStates = new HabitatFloodStateDTO[MaxModules];
+        }
+
+        public void RefreshHabitatFloodStateMirrors()
+        {
+            EnsureCapacity();
+            int safeCount = Math.Clamp(
+                moduleCount,
+                0,
+                modules != null ? Math.Min(MaxModules, modules.Length) : 0);
+
+            habitatFloodStateCount = safeCount;
+            for (int i = 0; i < safeCount; i++)
+            {
+                int moduleHashId = 0;
+                if (moduleBlitRecords != null && i < moduleBlitRecords.Length)
+                    moduleHashId = moduleBlitRecords[i].moduleHashId;
+
+                habitatFloodStates[i] = HabitatFloodStateDTO.FromModule(in modules[i], moduleHashId);
+            }
+        }
+    }
+
+    [Serializable]
+    [BinaryBlittableSafe]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
+    public struct HabitatFloodStateDTO
+    {
+        public const byte FlagFlooded = 1 << 0;
+        public const byte FlagInfested = 1 << 1;
+
+        public int moduleHashId;
+        public float integrity;
+        public float repairIntegrityCap;
+        public float airReserveNormalized;
+        public float co2Normalized;
+        public float floodedReefFloodSeconds;
+        public byte flags;
+        public byte failureMode;
+        public byte health;
+        public byte reserved0;
+        private int _pad0;
+
+        public static HabitatFloodStateDTO FromModule(in ModuleDTO module, int stableModuleHashId)
+        {
+            HabitatFloodStateDTO dto = default;
+            dto.moduleHashId = stableModuleHashId;
+            dto.integrity = module.integrity;
+            dto.repairIntegrityCap = module.repairIntegrityCap;
+            dto.airReserveNormalized = module.airReserveNormalized;
+            dto.co2Normalized = module.co2Normalized;
+            dto.floodedReefFloodSeconds = module.floodedReefFloodSeconds;
+            dto.flags = (byte)((module.isFlooded ? FlagFlooded : 0) |
+                               (module.interiorReefInfestationActive ? FlagInfested : 0));
+            dto.failureMode = module.failureMode;
+            dto.health = module.health;
+            return dto;
         }
     }
 
@@ -766,6 +942,7 @@ namespace Hecton8.SaveSystem
     /// Existing ModuleDTO remains the managed compatibility DTO because it contains strings and arrays.
     /// </summary>
     [Serializable]
+    [BinaryBlittableSafe]
     [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
     public struct ModuleBlitDTO
     {
@@ -1138,6 +1315,8 @@ namespace Hecton8.SaveSystem
     }
 
     [Serializable]
+    [BinaryBlittableSafe]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 48)]
     public struct PDAContextualAdvisoryDTO
     {
         public int issuedFlags;
@@ -1151,6 +1330,7 @@ namespace Hecton8.SaveSystem
         public float deepExposureSeconds;
         public float coldStressExposureSeconds;
         public float heatStressExposureSeconds;
+        private int _pad0;
     }
 
     [Serializable]
@@ -1218,6 +1398,58 @@ namespace Hecton8.SaveSystem
     }
 
     [Serializable]
+    public struct MetaCampaignDTO
+    {
+        public const int MaxGlobalVariables = 64;
+
+        public int variableCount;
+        public uint currentStageHash;
+        public int currentStage;
+        public int toxicityPermille;
+        public uint[] variableHashes;
+        public int[] variableValues;
+        public byte flags;
+
+        public static MetaCampaignDTO CreateDefault()
+        {
+            MetaCampaignDTO dto = default;
+            dto.EnsureCapacity();
+            return dto;
+        }
+
+        public void EnsureCapacity()
+        {
+            if (variableHashes == null || variableHashes.Length != MaxGlobalVariables)
+            {
+                uint[] replacement = new uint[MaxGlobalVariables];
+                if (variableHashes != null)
+                {
+                    int copyCount = variableHashes.Length < replacement.Length ? variableHashes.Length : replacement.Length;
+                    Array.Copy(variableHashes, replacement, copyCount);
+                }
+
+                variableHashes = replacement;
+            }
+
+            if (variableValues == null || variableValues.Length != MaxGlobalVariables)
+            {
+                int[] replacement = new int[MaxGlobalVariables];
+                if (variableValues != null)
+                {
+                    int copyCount = variableValues.Length < replacement.Length ? variableValues.Length : replacement.Length;
+                    Array.Copy(variableValues, replacement, copyCount);
+                }
+
+                variableValues = replacement;
+            }
+
+            int capacity = Math.Min(variableHashes.Length, variableValues.Length);
+            variableCount = Math.Clamp(variableCount, 0, capacity);
+            toxicityPermille = Math.Clamp(toxicityPermille, 0, 1000);
+        }
+    }
+
+    [Serializable]
     public struct ResourceScarcityDTO
     {
         public const int MaxTrackedResources = 96;
@@ -1268,6 +1500,8 @@ namespace Hecton8.SaveSystem
     }
 
     [Serializable]
+    [BinaryBlittableSafe]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 16)]
     public struct EnvironmentalStrainDTO
     {
         public float microplasticStrain;
@@ -1417,9 +1651,12 @@ namespace Hecton8.SaveSystem
     }
 
     [Serializable]
+    [BinaryBlittableSafe]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 16)]
     public struct ModuleGraphEdgeDTO
     {
         public int sourceNodeIndex;
         public int destinationNodeIndex;
+        private long _pad0;
     }
 }

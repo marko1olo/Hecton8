@@ -45,6 +45,7 @@ namespace Hecton8.Optimization
         private bool _registeredService;
         private ProfilerRecorder _textureMemoryRecorder;
         private ProfilerRecorder _renderTextureMemoryRecorder;
+        private ProfilerRecorder _gfxUsedMemoryRecorder;
         
         // COLD ALLOC: StringBuilder[1024] — zero-GC logging — owner: VRAMMonitor
         private readonly StringBuilder _reportBuilder = new StringBuilder(1024);
@@ -62,6 +63,13 @@ namespace Hecton8.Optimization
             "RenderTexture Memory",
             "Render Textures Bytes",
             "Render Textures Memory"
+        };
+
+        private static readonly string[] _gfxUsedMemoryCandidates =
+        {
+            "Gfx.UsedMemory",
+            "Gfx Used Memory",
+            "Gfx Used Memory Bytes"
         };
         
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -84,6 +92,11 @@ namespace Hecton8.Optimization
         /// Total VRAM consumption in bytes (textures + RenderTextures + meshes + shaders).
         /// </summary>
         public long TotalVRAMBytes { get; private set; }
+
+        /// <summary>
+        /// Raw graphics used-memory profiler counter in bytes when the platform exposes it.
+        /// </summary>
+        public long GfxUsedMemoryBytes { get; private set; }
         
         /// <summary>
         /// Returns whether texture memory exceeds 900 MB threshold.
@@ -145,6 +158,7 @@ namespace Hecton8.Optimization
             TryUnregisterService();
             _textureMemoryRecorder.Dispose();
             _renderTextureMemoryRecorder.Dispose();
+            _gfxUsedMemoryRecorder.Dispose();
         }
         
         // ── ISLOWTICABLE ───────────────────────────────────────────────────────────
@@ -180,6 +194,7 @@ namespace Hecton8.Optimization
         {
             _textureMemoryRecorder = TryStartMemoryRecorder(_textureMemoryCandidates);
             _renderTextureMemoryRecorder = TryStartMemoryRecorder(_renderTextureMemoryCandidates);
+            _gfxUsedMemoryRecorder = TryStartMemoryRecorder(_gfxUsedMemoryCandidates);
         }
 
         private void TryRegister()
@@ -234,7 +249,10 @@ namespace Hecton8.Optimization
         {
             TextureMemoryBytes = ReadRecorderValue(_textureMemoryRecorder);
             RenderTextureMemoryBytes = ReadRenderTextureMemoryBytes();
+            GfxUsedMemoryBytes = ReadRecorderValue(_gfxUsedMemoryRecorder);
             TotalVRAMBytes = ReadTotalGraphicsMemoryBytes();
+            if (TotalVRAMBytes < GfxUsedMemoryBytes)
+                TotalVRAMBytes = GfxUsedMemoryBytes;
             if (TotalVRAMBytes < TextureMemoryBytes + RenderTextureMemoryBytes)
                 TotalVRAMBytes = TextureMemoryBytes + RenderTextureMemoryBytes;
 

@@ -1,11 +1,14 @@
 using Hecton8.Core;
+using Hecton8.Core.Memory;
 using Hecton8.Core.Signals;
+using Hecton8.Caves;
 using Hecton8.Inventory;
 using Hecton8.Interaction;
 using Hecton8.Physics;
 using Hecton8.Physics.CCD;
 using Hecton8.Physics.Determinism;
 using Hecton8.World;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Unity.Collections;
 using Unity.Jobs;
@@ -74,6 +77,15 @@ namespace Hecton8.Gameplay
         private const float VoxelProxySlideDistanceRetain = 0.92f;
         private const float VoxelProxySlideVelocityRetain = 0.65f;
         private const float VoxelProxyGlideFallbackMetersPerSecond = 0.35f;
+        private const float SdfSqueezeSpeedMultiplier = 0.4f;
+        private const float SdfSqueezeVelocityMetersPerSecond = 0.65f;
+        private const float SdfSqueezeCorrectionMaxMeters = 0.22f;
+        private const float SdfSqueezeMaxCandidateSolidDensity = 0.02f;
+        private const float SdfSqueezeHapticIntensity = 0.12f;
+        private const float SdfSqueezeCameraSeverity = 0.72f;
+        private const float SdfFabricScrapeRadiusMeters = 5.5f;
+        private const float SdfFabricScrapeIntensity = 0.08f;
+        private const uint SdfFabricScrapeFrameMask = 7u;
         private const float DirectionalDragDominantAxisThresholdSq = 100f;
         private const float DirectionalDragSpeedSqPolynomialScale = 0.01f;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -135,6 +147,7 @@ namespace Hecton8.Gameplay
         private uint _kinematicRepairTargetShiftSequence;
         private uint _kinematicRepairSnapBodyBindEpoch;
         private uint _kinematicRepairSnapShiftSequence;
+        private uint _sdfSqueezeInterventions;
         private float _kinematicRepairProbeSurfaceOffset;
         private AbsoluteUniversePosition _kinematicRepairProbeOriginAup;
         private KinematicRepairTargetProbe _kinematicRepairTargetProbe;
@@ -802,6 +815,7 @@ namespace Hecton8.Gameplay
             _kinematicRepairSnapShiftSequence = _kinematicRepairTargetShiftSequence;
             _kinematicRepairTargetProbe = default;
             _kinematicRepairSnapPoint = default;
+            _sdfSqueezeInterventions = 0u;
         }
 
         /// <summary>Applies added-mass scalar only to acceleration; deceleration remains force / mass.</summary>
@@ -1431,6 +1445,224 @@ namespace Hecton8.Gameplay
             return SafeVelocity(tangentSlideDisplacement * (VoxelProxyGlideFallbackMetersPerSecond * math.rsqrt(tangentSlideSqr)));
         }
 
+        private bool TryResolveSdfSqueeze(
+            Vector3 samplePosition,
+            Vector3 intendedMovement,
+            bool lowTier,
+            out Vector3 squeezeDirection,
+            out float centerDensity)
+        {
+            squeezeDirection = Vector3.zero;
+            centerDensity = 0f;
+            if (HectonFloatingOrigin.IsShiftInProgress)
+                return false;
+
+            float3 sample3 = new float3(samplePosition.x, samplePosition.y, samplePosition.z);
+            if (!math.all(math.isfinite(sample3)) ||
+                !HectonVoxelVolume.TryGetClosestPublishedSonarSdfPayload(
+                    samplePosition,
+                    out NativeArray<byte> encodedSdf,
+                    out NativeArray<byte> _,
+                    out Vector3Int gridDimensions,
+                    out Vector3 volumeOrigin,
+                    out Vector3 voxelCellSize,
+                    out float sdfRange,
+                    out int _))
+            {
+                return false;
+            }
+
+            int3 dimensions = new int3(gridDimensions.x, gridDimensions.y, gridDimensions.z);
+            if (!PlayerKinematicsBodyJob.TryResolveSdfVoxelCount(dimensions, out int expectedLength) ||
+                encodedSdf.Length != expectedLength)
+            {
+                return false;
+            }
+
+            encodedSdf = ResolveSdfTraversalPayload(encodedSdf, expectedLength);
+            float3 origin = new float3(volumeOrigin.x, volumeOrigin.y, volumeOrigin.z);
+            float3 cellSize = new float3(voxelCellSize.x, voxelCellSize.y, voxelCellSize.z);
+            float sampleStep = ResolveSdfSqueezeSampleStep(cellSize);
+            byte sampleMode = lowTier
+                ? PlayerKinematicsBodyJob.SdfSampleModeTetra4
+                : PlayerKinematicsBodyJob.SdfSampleModeAxis6;
+
+            if (!PlayerKinematicsBodyJob.TryResolveSdfOpenSpaceGradient(
+                    encodedSdf,
+                    dimensions,
+                    origin,
+                    cellSize,
+                    sdfRange,
+                    sample3,
+                    new float3(intendedMovement.x, intendedMovement.y, intendedMovement.z),
+                    sampleStep,
+                    sampleMode,
+                    out float3 squeeze3,
+                    out centerDensity))
+            {
+                return false;
+            }
+
+            float correctionDistance = math.max(0.025f, math.min(SdfSqueezeCorrectionMaxMeters, _scheduledSweepState.SkinWidth * 2.0f));
+            float3 candidate = sample3 + squeeze3 * correctionDistance;
+            if (!PlayerKinematicsBodyJob.TrySampleSdfTrilinear(
+                    encodedSdf,
+                    dimensions,
+                    origin,
+                    cellSize,
+                    sdfRange,
+                    candidate,
+                    out float candidateDensity))
+            {
+                return false;
+            }
+
+            float allowedCandidateDensity = math.min(SdfSqueezeMaxCandidateSolidDensity, centerDensity + 0.001f);
+            if (candidateDensity > allowedCandidateDensity)
+                return false;
+
+            if (!TryValidateSdfSqueezeCapsuleLine(
+                    encodedSdf,
+                    dimensions,
+                    origin,
+                    cellSize,
+                    sdfRange,
+                    candidate,
+                    SdfSqueezeMaxCandidateSolidDensity))
+            {
+                return false;
+            }
+
+            squeezeDirection = SafeVelocity(new Vector3(squeeze3.x, squeeze3.y, squeeze3.z), Vector3.zero);
+            return squeezeDirection.sqrMagnitude > MinVectorMagnitudeSq;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static NativeArray<byte> ResolveSdfTraversalPayload(NativeArray<byte> publishedSdf, int expectedLength)
+        {
+            var dataVault = GlobalRegistry.DataVault;
+            if (dataVault != null &&
+                dataVault.TryGetBuffer<byte>(BufferID.VoxelSdfTexture3D, out NativeArray<byte> vaultSdf) &&
+                vaultSdf.IsCreated &&
+                vaultSdf.Length == expectedLength)
+            {
+                return vaultSdf;
+            }
+
+            return publishedSdf;
+        }
+
+        private bool TryValidateSdfSqueezeCapsuleLine(
+            NativeArray<byte> encodedSdf,
+            int3 dimensions,
+            float3 origin,
+            float3 cellSize,
+            float sdfRange,
+            float3 candidateCenter,
+            float maxEndpointDensity)
+        {
+            float3 centerOffset = candidateCenter - (float3)_scheduledSweepState.StartPosition;
+            float3 candidatePoint1 = (float3)_scheduledSweepState.CapsulePoint1 + centerOffset;
+            float3 candidatePoint2 = (float3)_scheduledSweepState.CapsulePoint2 + centerOffset;
+            if (!math.all(math.isfinite(candidatePoint1)) ||
+                !math.all(math.isfinite(candidatePoint2)))
+            {
+                return false;
+            }
+
+            if (!PlayerKinematicsBodyJob.TrySampleSdfTrilinear(
+                    encodedSdf,
+                    dimensions,
+                    origin,
+                    cellSize,
+                    sdfRange,
+                    candidatePoint1,
+                    out float point1Density) ||
+                !PlayerKinematicsBodyJob.TrySampleSdfTrilinear(
+                    encodedSdf,
+                    dimensions,
+                    origin,
+                    cellSize,
+                    sdfRange,
+                    candidatePoint2,
+                    out float point2Density))
+            {
+                return false;
+            }
+
+            return point1Density <= maxEndpointDensity && point2Density <= maxEndpointDensity;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float ResolveSdfSqueezeSampleStep(float3 voxelCellSize)
+        {
+            if (!math.all(math.isfinite(voxelCellSize)))
+                return 0.25f;
+
+            float maxCellSize = math.cmax(math.max(math.abs(voxelCellSize), new float3(0.025f)));
+            return math.clamp(maxCellSize * 0.75f, 0.08f, 0.45f);
+        }
+
+        private void EmitSdfSqueezeConsequences(Vector3 position, Vector3 squeezeDirection, float intensity01, bool lowTier)
+        {
+            float intensity = math.saturate(intensity01);
+            if (intensity <= 0f)
+                return;
+
+            unchecked
+            {
+                _sdfSqueezeInterventions++;
+            }
+
+            uint frame = unchecked((uint)Time.frameCount);
+            AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(position);
+            byte flags = PlayerStateSignal.FlagSqueezing |
+                PlayerStateSignal.FlagSdfGradientValid |
+                PlayerStateSignal.FlagAupShiftSafe;
+            if (lowTier)
+                flags |= PlayerStateSignal.FlagLowTierGradient;
+
+            PlayerStateSignal stateSignal = default;
+            stateSignal.PositionAup = positionAup;
+            stateSignal.Intensity01 = intensity;
+            stateSignal.SourceHash = _kinematicCcdSourceHash;
+            stateSignal.Frame = frame;
+            stateSignal.State = PlayerStateSignal.StateSqueezing;
+            stateSignal.Flags = flags;
+            GlobalSignals.Publish(in stateSignal);
+
+            HapticRequest haptic = default;
+            haptic.Intensity01 = math.saturate(SdfSqueezeHapticIntensity * intensity);
+            haptic.DurationSeconds = 0.09f;
+            haptic.Frequency01 = 0.38f;
+            haptic.SourceHash = _kinematicCcdSourceHash;
+            haptic.Frame = frame;
+            haptic.Channel = HapticRequest.ChannelGearScrape;
+            haptic.Flags = flags;
+            GlobalSignals.Publish(in haptic);
+
+            CameraJuiceSignals.PublishImpact(
+                math.saturate(SdfSqueezeCameraSeverity * intensity),
+                position,
+                squeezeDirection);
+
+            uint randomGate = math.hash(new uint3(
+                unchecked((uint)PhysicsFrame.Current),
+                _sdfSqueezeInterventions,
+                _kinematicCcdSourceHash));
+            if ((randomGate & SdfFabricScrapeFrameMask) != 0u)
+                return;
+
+            AcousticPingSignal acoustic = default;
+            acoustic.PositionAup = positionAup;
+            acoustic.RadiusMeters = SdfFabricScrapeRadiusMeters;
+            acoustic.Intensity01 = math.saturate(SdfFabricScrapeIntensity * intensity);
+            acoustic.SourceId = _kinematicCcdSourceHash;
+            acoustic.Channel = AcousticPingSignal.ChannelFabricScrape;
+            acoustic.Flags = AcousticPingSignal.FlagFabricScrape;
+            GlobalSignals.Publish(in acoustic);
+        }
+
         internal static float ResolveHeavyBrineSinkMultiplier(float fluidDensityKgPerCubicMeter, float referenceSeaWaterDensityKgPerCubicMeter)
         {
             if (!math.isfinite(fluidDensityKgPerCubicMeter) ||
@@ -1621,11 +1853,11 @@ namespace Hecton8.Gameplay
             _scheduledSweepBlockingHit = _nativeState.ScheduledSweepResults[nearestIndex];
             Vector3 safeNormal = SafeNormal(_scheduledSweepBlockingHit.normal, Vector3.up);
             bool lowTierStop = KinematicCcdMath.IsLowTier(GlobalRegistry.ScalabilityTierProfileByte);
-            bool cornerHalt = !lowTierStop &&
-                              HasScheduledSweepCornerHit(
-                                  nearestIndex,
-                                  safeNormal,
-                                  _scheduledSweepBlockingHit.distance);
+            bool cornerCandidate = HasScheduledSweepCornerHit(
+                nearestIndex,
+                safeNormal,
+                _scheduledSweepBlockingHit.distance);
+            bool cornerHalt = !lowTierStop && cornerCandidate;
             float safeDistance = KinematicCcdMath.ResolveRollbackDistance(
                 _scheduledSweepBlockingHit.distance,
                 _scheduledSweepState.Distance,
@@ -1666,16 +1898,49 @@ namespace Hecton8.Gameplay
             Vector3 projectedVelocity = ProjectVelocityOnUnitCollisionPlane(previousVelocity, safeNormal);
             if (lowTierStop || cornerHalt)
                 projectedVelocity = Vector3.zero;
+            if (nearestHitIsVoxelProxy && !lowTierStop && !cornerHalt)
+            {
+                projectedVelocity = ResolveVoxelProxySlideVelocity(previousVelocity, safeNormal, tangentSlideDisplacement);
+            }
+
+            bool sdfSqueezeApplied = false;
+            bool squeezeLowTier = lowTierStop;
+            if ((nearestHitIsVoxelProxy || cornerCandidate) &&
+                TryResolveSdfSqueeze(
+                    _scheduledSweepResolvedPosition,
+                    intendedDisplacement,
+                    lowTierStop,
+                    out Vector3 squeezeDirection,
+                    out _))
+            {
+                float previousSpeed = ApproximateSpeedMagnitude(new float3(
+                    previousVelocity.x,
+                    previousVelocity.y,
+                    previousVelocity.z));
+                float squeezeIntensity = math.saturate(0.35f + previousSpeed * 0.1f);
+                float correctionDistance = math.max(
+                    0.025f,
+                    math.min(SdfSqueezeCorrectionMaxMeters, _scheduledSweepState.SkinWidth * 2.0f));
+                _scheduledSweepResolvedPosition = SafeVelocity(
+                    _scheduledSweepResolvedPosition + squeezeDirection * correctionDistance,
+                    _scheduledSweepResolvedPosition);
+                projectedVelocity = SafeVelocity(
+                    (projectedVelocity + squeezeDirection * (SdfSqueezeVelocityMetersPerSecond * squeezeIntensity)) *
+                    SdfSqueezeSpeedMultiplier,
+                    Vector3.zero);
+                lowTierStop = false;
+                cornerHalt = false;
+                sdfSqueezeApplied = true;
+                EmitSdfSqueezeConsequences(_scheduledSweepResolvedPosition, squeezeDirection, squeezeIntensity, squeezeLowTier);
+            }
+
             Vector3 rejectedVelocity = previousVelocity - projectedVelocity;
             _scheduledSweepBlockedSpeed = ApproximateSpeedMagnitude(new float3(
                 rejectedVelocity.x,
                 rejectedVelocity.y,
                 rejectedVelocity.z));
-            if (nearestHitIsVoxelProxy && !lowTierStop && !cornerHalt)
-            {
-                projectedVelocity = ResolveVoxelProxySlideVelocity(previousVelocity, safeNormal, tangentSlideDisplacement);
+            if (nearestHitIsVoxelProxy && !sdfSqueezeApplied && !lowTierStop && !cornerHalt)
                 _scheduledSweepBlockedSpeed *= 1f - VoxelProxySlideVelocityRetain;
-            }
 
             float previousVelocitySq = previousVelocity.sqrMagnitude;
             float projectedVelocitySq = projectedVelocity.sqrMagnitude;

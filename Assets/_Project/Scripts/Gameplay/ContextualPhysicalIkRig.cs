@@ -6,6 +6,7 @@ using UnityEngine;
 using UnityEngine.Animations;
 using UnityEngine.Playables;
 using Hecton8.Core;
+using Hecton8.Core.Signals;
 using Hecton8.Caves;
 using Hecton8.Interaction;
 using Hecton8.World;
@@ -633,6 +634,10 @@ namespace Hecton8.Gameplay
         private const float UpperArmVisibilityProxyRadius = 0.35f;
         private const float UpperArmVisibilityProxyRadiusSq = UpperArmVisibilityProxyRadius * UpperArmVisibilityProxyRadius;
         private const float ColdShiverPhaseWrap = 1024.0f;
+        private const float BreathingPhaseWrap = 1024.0f;
+        private const float ExternalWallHandHoldSeconds = 0.12f;
+        private const float ExternalSqueezePoleHoldSeconds = 0.18f;
+        private const float ExternalSqueezePoleLocalMeters = 0.075f;
         private const string NativeMemoryOwner = nameof(ContextualPhysicalIkRig);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
         private static readonly float3 HeadToChestSocketLocalOffset = new float3(0.0f, -0.32f, -0.08f);
@@ -983,6 +988,24 @@ namespace Hecton8.Gameplay
         [Tooltip("Blend sharpness for entering or leaving cold shiver.")]
         [SerializeField, Range(1.0f, 24.0f)] private float coldShiverBlendSharpness = 7.0f;
 
+        [Tooltip("Applies deterministic respiration offsets to spine and shoulder targets.")]
+        [SerializeField] private bool enableProceduralBreathing = true;
+
+        [Tooltip("Base respiration rate for relaxed posture.")]
+        [SerializeField, Range(0.05f, 1.2f)] private float breathingBaseRateHz = 0.22f;
+
+        [Tooltip("Additional respiration rate at full stress.")]
+        [SerializeField, Range(0.0f, 2.0f)] private float breathingStressRateHz = 0.9f;
+
+        [Tooltip("Maximum chest/head offset from procedural breathing.")]
+        [SerializeField, Range(0.0f, 0.05f)] private float breathingAmplitudeMeters = 0.012f;
+
+        [Tooltip("Deterministic high-stress respiratory jitter cap.")]
+        [SerializeField, Range(0.0f, 0.025f)] private float breathingStressJitterMeters = 0.006f;
+
+        [Tooltip("Blend sharpness for stress-fed respiration changes.")]
+        [SerializeField, Range(1.0f, 24.0f)] private float breathingBlendSharpness = 8.0f;
+
         [SerializeField, Range(0.0f, 30.0f)] private float overExtensionResistanceDegrees = 12.0f;
         [SerializeField] private Renderer muscleBulgeRenderer;
         [SerializeField, Min(0)] private int muscleBulgeMaterialSlot;
@@ -1040,6 +1063,11 @@ namespace Hecton8.Gameplay
         private float _terminalRightHandHoldTimer;
         private float _coldShiverBlend;
         private float _coldShiverPhase;
+        private float _breathingBlend;
+        private float _breathingPhase;
+        private float _playerStress01;
+        private float _externalSqueezePoleBlend;
+        private float _externalSqueezePoleHoldTimer;
         private float _upperArmCullTimer;
         private Material _muscleBulgeMaterialInstance;
         private Material[] _muscleBulgeSharedMaterials;
@@ -1049,7 +1077,10 @@ namespace Hecton8.Gameplay
         private float _cachedRightLegReach;
         private float _cachedLeftArmReach;
         private float _cachedRightArmReach;
+        private float3 _baseLeftArmPoleLocalOffset;
+        private float3 _baseRightArmPoleLocalOffset;
 
+        private int _lastPlayerStressSignalSequence;
         private int _entitySlot = -1;
         private int _terminalRightHandSourceId;
         private int _spineHandleStartIndex = BaseHandleCount;
@@ -1178,13 +1209,19 @@ namespace Hecton8.Gameplay
 
         internal void ApplyExternalWallHandTargets(in PlayerKinematicsHandTarget leftTarget, in PlayerKinematicsHandTarget rightTarget)
         {
+            if ((leftTarget.Flags & PlayerKinematicsHandTarget.FlagSqueeze) != 0 ||
+                (rightTarget.Flags & PlayerKinematicsHandTarget.FlagSqueeze) != 0)
+            {
+                _externalSqueezePoleHoldTimer = ExternalSqueezePoleHoldSeconds;
+            }
+
             if (leftTarget.Hit != 0 && math.all(math.isfinite(leftTarget.Position)))
             {
                 _externalWallLeftHandPosition = ContextualPhysicalIkMath.ToUnityVector3(leftTarget.Position);
                 _externalWallLeftHandNormal = ContextualPhysicalIkMath.ToUnityVector3(
                     ContextualPhysicalIkMath.SafeNormalize(leftTarget.Normal, new float3(0.0f, 1.0f, 0.0f)));
                 _externalWallLeftHandBlend = math.saturate(leftTarget.Blend);
-                _externalWallLeftHandHoldTimer = 0.12f;
+                _externalWallLeftHandHoldTimer = ExternalWallHandHoldSeconds;
             }
             else
             {
@@ -1197,7 +1234,7 @@ namespace Hecton8.Gameplay
                 _externalWallRightHandNormal = ContextualPhysicalIkMath.ToUnityVector3(
                     ContextualPhysicalIkMath.SafeNormalize(rightTarget.Normal, new float3(0.0f, 1.0f, 0.0f)));
                 _externalWallRightHandBlend = math.saturate(rightTarget.Blend);
-                _externalWallRightHandHoldTimer = 0.12f;
+                _externalWallRightHandHoldTimer = ExternalWallHandHoldSeconds;
             }
             else
             {
@@ -1231,7 +1268,11 @@ namespace Hecton8.Gameplay
             bool lowTier = IsLowTier(tier);
             bool wallTouchEnabled = enableHandBracing && (!disableWallTouchOnLowTier || !lowTier);
 
-            CaptureSpineTargets();
+            RefreshPlayerStress();
+            TickBreathingState(deltaTime, lowTier);
+            TickExternalSqueezePoleState(deltaTime);
+            ApplyExternalSqueezePoleBias();
+            CaptureSpineTargets(lowTier);
             CaptureAppendageTargets();
             ApplyMuscleBulgeSignal(deltaTime);
             CapturePredictiveRepairLatch(deltaTime, wallTouchEnabled);
@@ -1351,6 +1392,84 @@ namespace Hecton8.Gameplay
                 _terminalRightHandActive = false;
                 _terminalRightHandSourceId = 0;
             }
+        }
+
+        private void RefreshPlayerStress()
+        {
+            if (!GlobalSignals.TryGetLatestPlayerStressSignal(out PlayerStressSignal signal, out int sequence) ||
+                sequence == _lastPlayerStressSignalSequence)
+            {
+                return;
+            }
+
+            _lastPlayerStressSignalSequence = sequence;
+            _playerStress01 = math.saturate(signal.Stress01);
+        }
+
+        private void TickBreathingState(float deltaTime, bool lowTier)
+        {
+            float safeDeltaTime = math.max(0.0001f, deltaTime);
+            float targetBlend = enableProceduralBreathing ? 1.0f : 0.0f;
+            _breathingBlend = ContextualPhysicalIkMath.SmoothScalar(
+                _breathingBlend,
+                targetBlend,
+                breathingBlendSharpness,
+                safeDeltaTime);
+
+            if (_breathingBlend <= 0.0001f)
+                return;
+
+            float rate = math.max(0.0f, breathingBaseRateHz) + _playerStress01 * math.max(0.0f, breathingStressRateHz);
+            if (lowTier)
+                rate *= 0.75f;
+            _breathingPhase += rate * safeDeltaTime;
+            if (_breathingPhase >= BreathingPhaseWrap)
+                _breathingPhase -= BreathingPhaseWrap;
+        }
+
+        private void TickExternalSqueezePoleState(float deltaTime)
+        {
+            float safeDeltaTime = math.max(0.0001f, deltaTime);
+            _externalSqueezePoleHoldTimer = math.max(0.0f, _externalSqueezePoleHoldTimer - safeDeltaTime);
+            float targetBlend = _externalSqueezePoleHoldTimer > 0.0f ? 1.0f : 0.0f;
+            _externalSqueezePoleBlend = ContextualPhysicalIkMath.SmoothScalar(
+                _externalSqueezePoleBlend,
+                targetBlend,
+                predictiveRepairBlendSharpness,
+                safeDeltaTime);
+        }
+
+        private void ApplyExternalSqueezePoleBias()
+        {
+            if (!_twoBoneSetups.IsCreated || _twoBoneSetups.Length < 4)
+                return;
+
+            float blend = math.saturate(_externalSqueezePoleBlend);
+            ContextualPhysicalIkTwoBoneSetup leftArm = _twoBoneSetups[2];
+            ContextualPhysicalIkTwoBoneSetup rightArm = _twoBoneSetups[3];
+            leftArm.PoleLocalOffset = ResolveSqueezePoleLocalOffset(_baseLeftArmPoleLocalOffset, blend, 1.0f);
+            rightArm.PoleLocalOffset = ResolveSqueezePoleLocalOffset(_baseRightArmPoleLocalOffset, blend, -1.0f);
+            _twoBoneSetups[2] = leftArm;
+            _twoBoneSetups[3] = rightArm;
+        }
+
+        private static float3 ResolveSqueezePoleLocalOffset(float3 baseOffset, float blend, float fallbackSideSign)
+        {
+            float safeBlend = math.saturate(blend);
+            if (safeBlend <= 0.0001f)
+                return baseOffset;
+
+            float lateral = baseOffset.x;
+            float lateralMagnitude = math.abs(lateral);
+            float direction = lateralMagnitude > 0.0001f
+                ? -math.sign(lateral)
+                : -math.sign(fallbackSideSign);
+            float maxShift = lateralMagnitude > 0.0001f
+                ? lateralMagnitude * 0.75f
+                : ExternalSqueezePoleLocalMeters;
+            float shift = direction * math.min(ExternalSqueezePoleLocalMeters * safeBlend, maxShift);
+            baseOffset.x += shift;
+            return baseOffset;
         }
 
         private void TickColdShiverState(float deltaTime)
@@ -1482,7 +1601,10 @@ namespace Hecton8.Gameplay
 
         private void ApplyExternalWallHandTargetsToPredictiveLatch(float deltaTime, bool wallTouchEnabled)
         {
-            if (!wallTouchEnabled)
+            bool hasExternalWallTargets =
+                _externalWallLeftHandHoldTimer > 0.0f ||
+                _externalWallRightHandHoldTimer > 0.0f;
+            if (!wallTouchEnabled && !hasExternalWallTargets)
             {
                 _externalWallLeftHandBlend = ContextualPhysicalIkMath.SmoothScalar(_externalWallLeftHandBlend, 0.0f, predictiveRepairBlendSharpness, deltaTime);
                 _externalWallRightHandBlend = ContextualPhysicalIkMath.SmoothScalar(_externalWallRightHandBlend, 0.0f, predictiveRepairBlendSharpness, deltaTime);
@@ -1850,6 +1972,9 @@ namespace Hecton8.Gameplay
                 RightHandHandleIndex,
                 3,
                 handLimbBlend);
+
+            _baseLeftArmPoleLocalOffset = _twoBoneSetups[2].PoleLocalOffset;
+            _baseRightArmPoleLocalOffset = _twoBoneSetups[3].PoleLocalOffset;
         }
 
         private void CacheCoreReachLengths()
@@ -2093,7 +2218,7 @@ namespace Hecton8.Gameplay
             _ikPlayable.SetJobData(job);
         }
 
-        private void CaptureSpineTargets()
+        private void CaptureSpineTargets(bool lowTier)
         {
             if (!_spineChainRuntimes.IsCreated || !_spineTargets.IsCreated)
                 return;
@@ -2115,9 +2240,35 @@ namespace Hecton8.Gameplay
             AbsoluteUniversePosition chestAup = OffsetAupLocal(in headAbsolute, hmdRotation, HeadToChestSocketLocalOffset);
             AbsoluteUniversePosition forwardAup = OffsetAupLocal(in headAbsolute, hmdRotation, HeadForwardReferenceLocalOffset);
 
-            _spineTargets[0] = chestAup.ToRuntimeFloat3();
-            _spineTargets[1] = headAup.ToRuntimeFloat3();
-            _spineTargets[2] = forwardAup.ToRuntimeFloat3();
+            float3 chestTarget = chestAup.ToRuntimeFloat3();
+            float3 headTarget = headAup.ToRuntimeFloat3();
+            float3 forwardTarget = forwardAup.ToRuntimeFloat3();
+            if (_breathingBlend > 0.0001f && enableProceduralBreathing)
+            {
+                quaternion hmdMathematicsRotation = ContextualPhysicalIkMath.ToMathematicsQuaternion(hmdRotation);
+                float3 hmdUp = ContextualPhysicalIkMath.SafeNormalize(
+                    math.mul(hmdMathematicsRotation, new float3(0.0f, 1.0f, 0.0f)),
+                    new float3(0.0f, 1.0f, 0.0f));
+                float3 hmdRight = ContextualPhysicalIkMath.SafeNormalize(
+                    math.mul(hmdMathematicsRotation, new float3(1.0f, 0.0f, 0.0f)),
+                    new float3(1.0f, 0.0f, 0.0f));
+                float wave = lowTier
+                    ? CinematicMath.FastTriangleWaveSigned(_breathingPhase)
+                    : math.sin(_breathingPhase * 6.28318530718f);
+                float amplitude = math.max(0.0f, breathingAmplitudeMeters) * _breathingBlend * (0.45f + _playerStress01 * 0.55f);
+                float jitter = CinematicMath.FastTriangleWaveSigned((_breathingPhase * 3.17f) + 0.19f) *
+                    math.max(0.0f, breathingStressJitterMeters) *
+                    _playerStress01 *
+                    _breathingBlend;
+                float3 breathOffset = hmdUp * (wave * amplitude) + hmdRight * jitter;
+                chestTarget += breathOffset;
+                headTarget += breathOffset * 0.35f;
+                forwardTarget += breathOffset * 0.2f;
+            }
+
+            _spineTargets[0] = chestTarget;
+            _spineTargets[1] = headTarget;
+            _spineTargets[2] = forwardTarget;
         }
 
         private static AbsoluteUniversePosition OffsetAupLocal(in double3 originAbsolute, Quaternion hmdRotation, float3 localOffset)
@@ -2282,6 +2433,8 @@ namespace Hecton8.Gameplay
             _cachedRightLegReach = 0.0f;
             _cachedLeftArmReach = 0.0f;
             _cachedRightArmReach = 0.0f;
+            _baseLeftArmPoleLocalOffset = float3.zero;
+            _baseRightArmPoleLocalOffset = float3.zero;
             _predictiveLeftHandBlend = 0.0f;
             _predictiveRightHandBlend = 0.0f;
             _leftToolRecoilOffset = Vector3.zero;
@@ -2294,6 +2447,12 @@ namespace Hecton8.Gameplay
             _externalWallRightHandBlend = 0.0f;
             _externalWallLeftHandHoldTimer = 0.0f;
             _externalWallRightHandHoldTimer = 0.0f;
+            _breathingBlend = 0.0f;
+            _breathingPhase = 0.0f;
+            _playerStress01 = 0.0f;
+            _externalSqueezePoleBlend = 0.0f;
+            _externalSqueezePoleHoldTimer = 0.0f;
+            _lastPlayerStressSignalSequence = 0;
             _hasPreviousLeftPredictiveControllerPose = false;
             _hasPreviousRightPredictiveControllerPose = false;
             ReleaseMuscleBulgeMaterial();

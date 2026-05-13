@@ -1,0 +1,21 @@
+{
+    "name": "Hecton8.Narrative.Campaign",
+    "rootNamespace": "Hecton8.Narrative.Campaign",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Bootstrap.Contracts",
+        "Unity.Mathematics",
+        "Unity.Burst",
+        "Unity.Collections"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

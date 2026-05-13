@@ -6,7 +6,7 @@ using System.Threading;
 using Stopwatch = System.Diagnostics.Stopwatch;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
-using Hecton8.Core.Scheduling;
+using Hecton8.Core.Memory;
 using Hecton8.Core.Signals;
 using Hecton8.Data;
 using Hecton8.Gameplay;
@@ -18,6 +18,8 @@ using Unity.Profiling;
 using UnityEngine;
 using UnityEngine.Profiling;
 using UnityEngine.SceneManagement;
+using ResidencySectorDehydratedSignal = Hecton8.Core.Signals.SectorDehydratedSignal;
+using ResidencySectorHydratedSignal = Hecton8.Core.Signals.SectorResidencyHydratedSignal;
 #if UNITY_ADDRESSABLES_EXIST
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
@@ -115,6 +117,7 @@ namespace Hecton8.World
         public ushort ResidentCount;
         public ushort LoadingCount;
         public ushort EvictingCount;
+        public ushort ActiveImpostorCount;
         public uint StateHash;
     }
 
@@ -255,11 +258,258 @@ namespace Hecton8.World
     }
 
     /// <summary>
+    /// Burst-native append/remove operation for chunk impostors. Removal uses swap-back to keep the SOA dense.
+    /// </summary>
+    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard, CompileSynchronously = true)]
+    public struct HlodImpostorSwapJob : IJob
+    {
+        public NativeArray<float4x4> ActiveImpostors;
+        public NativeArray<int> ImpostorTypes;
+        public NativeArray<long> ChunkIds;
+        public NativeArray<float> SpawnTimes;
+        public NativeArray<float3> Centers;
+        public NativeArray<float3> Sizes;
+        public NativeArray<uint> Flags;
+        public NativeArray<StreamingHlodImpostorPoint> CartographyPoints;
+        public NativeArray<int> ActiveCount;
+        public NativeArray<int> FadeOutCount;
+        public long ChunkId;
+        public float3 Center;
+        public float3 Size;
+        public float SpawnTimeSeconds;
+        public int ImpostorType;
+        public uint ImpostorFlags;
+        public uint FadeOutFlag;
+        public byte Operation;
+
+        public void Execute()
+        {
+            if (!ActiveCount.IsCreated || ActiveCount.Length <= 0)
+                return;
+
+            int count = math.clamp(ActiveCount[0], 0, ActiveImpostors.IsCreated ? ActiveImpostors.Length : 0);
+            int foundIndex = -1;
+            for (int i = 0; i < count; i++)
+            {
+                if (ChunkIds[i] == ChunkId)
+                {
+                    foundIndex = i;
+                    break;
+                }
+            }
+
+            if (Operation == 0)
+            {
+                if (foundIndex < 0 && count >= ActiveImpostors.Length)
+                    return;
+
+                int writeIndex = foundIndex >= 0 ? foundIndex : count;
+                uint previousFlags = foundIndex >= 0 ? Flags[writeIndex] : 0u;
+                if ((previousFlags & FadeOutFlag) != 0u && FadeOutCount.IsCreated && FadeOutCount.Length > 0)
+                    FadeOutCount[0] = math.max(0, FadeOutCount[0] - 1);
+
+                float3 safeSize = math.max(Size, new float3(1f, 1f, 1f));
+                float radius = math.cmax(safeSize) * 0.5f;
+                float4x4 matrix = float4x4.identity;
+                matrix.c0.x = safeSize.x;
+                matrix.c1.y = safeSize.y;
+                matrix.c2.z = safeSize.z;
+                matrix.c3.x = Center.x;
+                matrix.c3.y = Center.y;
+                matrix.c3.z = Center.z;
+                matrix.c3.w = SpawnTimeSeconds;
+                matrix.c0.w = 1f;
+                matrix.c1.w = radius;
+                matrix.c2.w = math.asfloat(ImpostorFlags);
+
+                ActiveImpostors[writeIndex] = matrix;
+                ImpostorTypes[writeIndex] = ImpostorType;
+                ChunkIds[writeIndex] = ChunkId;
+                SpawnTimes[writeIndex] = SpawnTimeSeconds;
+                Centers[writeIndex] = Center;
+                Sizes[writeIndex] = safeSize;
+                Flags[writeIndex] = ImpostorFlags;
+                CartographyPoints[writeIndex] = new StreamingHlodImpostorPoint
+                {
+                    Center = Center,
+                    Size = safeSize,
+                    ChunkId = ChunkId,
+                    ImpostorType = ImpostorType,
+                    SpawnTimeSeconds = SpawnTimeSeconds,
+                    Fade01 = 1f,
+                    Flags = ImpostorFlags
+                };
+                if (foundIndex < 0)
+                    ActiveCount[0] = count + 1;
+                return;
+            }
+
+            if (foundIndex < 0)
+                return;
+
+            if (Operation == 2)
+            {
+                uint previousFlags = Flags[foundIndex];
+                uint flags = (previousFlags & ~((uint)(1 << 8))) | ImpostorFlags;
+                if ((previousFlags & FadeOutFlag) == 0u &&
+                    (flags & FadeOutFlag) != 0u &&
+                    FadeOutCount.IsCreated &&
+                    FadeOutCount.Length > 0)
+                {
+                    FadeOutCount[0] = math.max(0, FadeOutCount[0]) + 1;
+                }
+
+                float4x4 matrix = ActiveImpostors[foundIndex];
+                matrix.c0.w = -1f;
+                matrix.c2.w = math.asfloat(flags);
+                matrix.c3.w = SpawnTimeSeconds;
+                ActiveImpostors[foundIndex] = matrix;
+                SpawnTimes[foundIndex] = SpawnTimeSeconds;
+                Flags[foundIndex] = flags;
+
+                StreamingHlodImpostorPoint point = CartographyPoints[foundIndex];
+                point.SpawnTimeSeconds = SpawnTimeSeconds;
+                point.Fade01 = 1f;
+                point.Flags = flags;
+                CartographyPoints[foundIndex] = point;
+                return;
+            }
+
+            if ((Flags[foundIndex] & FadeOutFlag) != 0u && FadeOutCount.IsCreated && FadeOutCount.Length > 0)
+                FadeOutCount[0] = math.max(0, FadeOutCount[0] - 1);
+
+            int lastIndex = count - 1;
+            if (foundIndex != lastIndex)
+            {
+                ActiveImpostors[foundIndex] = ActiveImpostors[lastIndex];
+                ImpostorTypes[foundIndex] = ImpostorTypes[lastIndex];
+                ChunkIds[foundIndex] = ChunkIds[lastIndex];
+                SpawnTimes[foundIndex] = SpawnTimes[lastIndex];
+                Centers[foundIndex] = Centers[lastIndex];
+                Sizes[foundIndex] = Sizes[lastIndex];
+                Flags[foundIndex] = Flags[lastIndex];
+                CartographyPoints[foundIndex] = CartographyPoints[lastIndex];
+            }
+
+            ActiveImpostors[lastIndex] = default;
+            ImpostorTypes[lastIndex] = 0;
+            ChunkIds[lastIndex] = 0L;
+            SpawnTimes[lastIndex] = 0f;
+            Centers[lastIndex] = default;
+            Sizes[lastIndex] = default;
+            Flags[lastIndex] = 0u;
+            CartographyPoints[lastIndex] = default;
+            ActiveCount[0] = lastIndex;
+        }
+    }
+
+    /// <summary>
+    /// Removes hydrated impostors after their shader-visible fade window expires.
+    /// </summary>
+    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard, CompileSynchronously = true)]
+    public struct HlodImpostorFadeCullJob : IJob
+    {
+        public NativeArray<float4x4> ActiveImpostors;
+        public NativeArray<int> ImpostorTypes;
+        public NativeArray<long> ChunkIds;
+        public NativeArray<float> SpawnTimes;
+        public NativeArray<float3> Centers;
+        public NativeArray<float3> Sizes;
+        public NativeArray<uint> Flags;
+        public NativeArray<StreamingHlodImpostorPoint> CartographyPoints;
+        public NativeArray<int> ActiveCount;
+        public NativeArray<int> FadeOutCount;
+        public float NowSeconds;
+        public float FadeOutSeconds;
+        public uint FadeOutFlag;
+
+        public void Execute()
+        {
+            if (!ActiveCount.IsCreated || ActiveCount.Length <= 0 || !ActiveImpostors.IsCreated)
+                return;
+
+            int count = math.clamp(ActiveCount[0], 0, ActiveImpostors.Length);
+            int remainingFadeOutCount = 0;
+            float invFade = math.rcp(math.max(0.001f, FadeOutSeconds));
+            for (int i = count - 1; i >= 0; i--)
+            {
+                uint flags = Flags[i];
+                if ((flags & FadeOutFlag) == 0u)
+                    continue;
+
+                float fade01 = math.saturate(1f - ((NowSeconds - SpawnTimes[i]) * invFade));
+                if (fade01 <= 0f)
+                {
+                    int lastIndex = count - 1;
+                    if (i != lastIndex)
+                    {
+                        ActiveImpostors[i] = ActiveImpostors[lastIndex];
+                        ImpostorTypes[i] = ImpostorTypes[lastIndex];
+                        ChunkIds[i] = ChunkIds[lastIndex];
+                        SpawnTimes[i] = SpawnTimes[lastIndex];
+                        Centers[i] = Centers[lastIndex];
+                        Sizes[i] = Sizes[lastIndex];
+                        Flags[i] = Flags[lastIndex];
+                        CartographyPoints[i] = CartographyPoints[lastIndex];
+                    }
+
+                    ActiveImpostors[lastIndex] = default;
+                    ImpostorTypes[lastIndex] = 0;
+                    ChunkIds[lastIndex] = 0L;
+                    SpawnTimes[lastIndex] = 0f;
+                    Centers[lastIndex] = default;
+                    Sizes[lastIndex] = default;
+                    Flags[lastIndex] = 0u;
+                    CartographyPoints[lastIndex] = default;
+                    count--;
+                    continue;
+                }
+
+                remainingFadeOutCount++;
+                StreamingHlodImpostorPoint point = CartographyPoints[i];
+                point.Fade01 = fade01;
+                CartographyPoints[i] = point;
+            }
+
+            ActiveCount[0] = count;
+            if (FadeOutCount.IsCreated && FadeOutCount.Length > 0)
+                FadeOutCount[0] = remainingFadeOutCount;
+        }
+    }
+
+    /// <summary>
+    /// Applies a rare AUP origin shift to active impostor matrices and cartography points.
+    /// </summary>
+    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard, CompileSynchronously = true)]
+    public struct HlodImpostorAupShiftJob : IJobParallelFor
+    {
+        public NativeArray<float4x4> ActiveImpostors;
+        public NativeArray<float3> Centers;
+        public NativeArray<StreamingHlodImpostorPoint> CartographyPoints;
+        public float3 ShiftMeters;
+
+        public void Execute(int index)
+        {
+            float4x4 matrix = ActiveImpostors[index];
+            matrix.c3.x -= ShiftMeters.x;
+            matrix.c3.y -= ShiftMeters.y;
+            matrix.c3.z -= ShiftMeters.z;
+            ActiveImpostors[index] = matrix;
+
+            float3 center = Centers[index] - ShiftMeters;
+            Centers[index] = center;
+            StreamingHlodImpostorPoint point = CartographyPoints[index];
+            point.Center = center;
+            CartographyPoints[index] = point;
+        }
+    }
+
+    /// <summary>
     /// Data-driven residency manager for Addressables-backed world chunks.
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4140)] // Streaming must register after dispatcher bootstrap and before world content lanes.
-    public sealed class WorldChunkResidencyManager : MonoBehaviour, ITickable, ISlowTickable, IBaseAirlockEventListener, IStreamingBackpressureService, IDisposable
+    public sealed class WorldChunkResidencyManager : MonoBehaviour, ITickable, ISlowTickable, ILateFrameTickable, IBaseAirlockEventListener, IStreamingBackpressureService, IDisposable
     {
         private const int DefaultMaxChunkCount = 512;
         private const int DefaultLoadQueueCapacity = 256;
@@ -280,11 +530,27 @@ namespace Hecton8.World
         private const int HighTierLoadDispatchBudget = 3;
         private const int UltraTierLoadDispatchBudget = 4;
         private const int AssetLifecycleFarBehindDrainBudget = 8;
+        private const int PagerReadTicketCapacity = 16;
+        private const int PagerReadRetireBudget = 1;
+        private const int MacroDatabaseEvictionScratchCapacity = 128;
+        private const int ActiveImpostorAudioMutedFlag = 1 << 8;
+        private const int ActiveImpostorPermanentDestroyFlag = 1 << 9;
+        private const int ActiveImpostorFadeOutFlag = 1 << 10;
+        private const int ActiveImpostorBaseType = 1;
+        private const int ActiveImpostorWreckType = 2;
+        private const float LowTierUnloadRadiusMeters = 400f;
+        private const float MiddleTierUnloadRadiusMeters = 650f;
+        private const float HighTierUnloadRadiusMeters = 800f;
+        private const float UltraTierUnloadRadiusMeters = 1000f;
+        private const float ActiveImpostorFadeOutSeconds = 1.5f;
         private const long PredictiveVramAbortBytes = 1600L * 1024L * 1024L;
         private const long PredictiveVramResumeBytes = 1400L * 1024L * 1024L;
         private const float StreamerStressSpeedSqRcp = 0.00111111112f;
+        private const float AdrenalinePurgeSeconds = 3.0f;
+        private const byte CriticalMemoryPressureSeverity = 2;
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_ASSET_STREAMING_PREDICTIVE.bin";
         private const string BackpressureDumpRelativePath = "Docs/AgentLogs/Dump_STREAMING_IO_BACKPRESSURE.bin";
+        private const string HlodDumpRelativePath = "Docs/AgentLogs/Dump_WORLD_STREAMING_LOD_MANAGER.bin";
         private const double LatencyDebtBaselineMs = 80.0;
         private const double CriticalHoleThresholdMs = 250.0;
         private const float StorageDebtEwmaWeight = 0.08f;
@@ -420,6 +686,19 @@ namespace Hecton8.World
         [Tooltip("True when predictive loading is currently suspended by VRAM, habitat, or external systems.")]
         [SerializeField] private bool _debugPredictiveSuspended;
 
+        [Header("HLOD Impostors")]
+        [Tooltip("Optional MonoBehaviour implementing IStreamingHlodMatrixRenderer for chunk LOD2 impostor records.")]
+        [SerializeField] private MonoBehaviour lod2ImpostorRenderer;
+
+        [Tooltip("Publish chunk LOD2 impostors through native records instead of spawning proxy GameObjects.")]
+        [SerializeField] private bool enableLod2Impostors = true;
+
+        [Tooltip("Distance in meters where chunk impostor records become active. Real geometry remains inside this radius.")]
+        [SerializeField, Min(1f)] private float impostorLod2DistanceMeters = HectonChunkImpostorResidency.DefaultImpostorEnterDistanceMeters;
+
+        [Tooltip("Last published LOD2 impostor count.")]
+        [SerializeField] private int _debugActiveImpostorLod2Chunks;
+
         private NativeArray<long> _chunkIds;
         private NativeArray<AbsoluteUniversePositionBlit> _chunkCenters;
         private NativeParallelHashMap<long, ChunkState> _chunkStates;
@@ -431,14 +710,28 @@ namespace Hecton8.World
         private NativeArray<ChunkResidencyTelemetryEntry> _telemetryRing;
         private NativeArray<double> _loadStartTimes;
         private NativeArray<byte> _loadImmediateRadiusFlags;
+        private NativeArray<float4x4> _activeImpostors;
+        private NativeArray<int> _impostorTypes;
+        private NativeArray<long> _activeImpostorChunkIds;
+        private NativeArray<float> _activeImpostorSpawnTimes;
+        private NativeArray<float3> _activeImpostorCenters;
+        private NativeArray<float3> _activeImpostorSizes;
+        private NativeArray<uint> _activeImpostorFlags;
+        private NativeArray<StreamingHlodImpostorPoint> _activeImpostorCartographyPoints;
+        private NativeArray<int> _activeImpostorCountRef;
+        private NativeArray<int> _activeImpostorFadeOutCountRef;
+        private NativeArray<H8WorldPageReadTicket> _pagerReadTickets;
+        private NativeArray<ulong> _macroDatabaseEvictionScratch;
         private JobHandle _residencyJobHandle;
         private long _residencyScheduleTimestamp;
         private bool _residencySortScheduled;
         private bool _residencyJobScheduled;
         private bool _registeredTick;
         private bool _registeredSlowTick;
+        private bool _registeredLateFrame;
         private bool _registeredAirlockEvents;
         private bool _registeredBackpressureService;
+        private IAsyncPersistenceService _asyncPersistenceService;
         private bool _disposed;
         private bool _forceResidencyEvaluation;
         private bool _fadeActive;
@@ -447,6 +740,8 @@ namespace Hecton8.World
         private bool _habitatPredictivePauseActive;
         private bool _transportPredictivePauseActive;
         private bool _predictiveVramAborted;
+        private float _adrenalinePurgeUntilTime;
+        private uint _lastAdrenalineSignalFrame;
         private bool _stateDiagnosticsDirty;
         private float _fadeTimer;
         private float _lastPredictionDistanceMeters;
@@ -458,7 +753,12 @@ namespace Hecton8.World
         private AbsoluteUniversePosition _lastTeleportProbeAup;
         private int _chunkCount;
         private int _pendingLoadRequestCount;
+        private int _pagerReadTicketCount;
+        private int _pagerReadRetiredReadyCount;
+        private int _pagerReadRetiredFallbackCount;
         private int _pendingAdditiveSceneOperationCount;
+        private int _activeImpostorCount;
+        private int _activeImpostorFadeOutCount;
         private int _telemetryCursor;
         private int _habitatTransitionPauseFrames;
         private double _latencyEwmaMs;
@@ -467,11 +767,15 @@ namespace Hecton8.World
         private float _storageDebt01;
         private float _smoothedStorageDebt01;
         private uint _storageDebtSequence;
+        private uint _activeImpostorVersion;
+        private uint _activeImpostorPointVersion;
+        private uint _publishedActiveImpostorVersion;
         private bool _predictionConstrainedByStorageDebt;
         private bool _turbulenceActiveByStorageDebt;
         private bool _proxyFallbackByStorageDebt;
         private bool _dataLinkDegradedByStorageDebt;
         private bool _dataLinkDegradedNotificationPublished;
+        private bool _activeImpostorGpuDirty = true;
         private uint _debugStateHash = ChunkStateHashSeed;
         private ChunkStreamingScalabilityTier _activeTier = (ChunkStreamingScalabilityTier)255;
         private ChunkStreamingScalabilityTier _resolvedTier = ChunkStreamingScalabilityTier.Low;
@@ -530,6 +834,45 @@ namespace Hecton8.World
 
         public bool DataLinkDegraded => _dataLinkDegradedByStorageDebt;
 
+        public int ActiveImpostorCount => _activeImpostorCount;
+
+        public uint ActiveImpostorVersion => _activeImpostorPointVersion;
+
+        public bool TryGetActiveImpostors(out NativeArray<float4x4> matrices, out NativeArray<int> impostorTypes, out int count)
+        {
+            matrices = _activeImpostors;
+            impostorTypes = _impostorTypes;
+            count = _activeImpostorCount;
+            return matrices.IsCreated && impostorTypes.IsCreated && count > 0;
+        }
+
+        public bool TryGetActiveImpostorPoints(out NativeArray<StreamingHlodImpostorPoint> points, out int count)
+        {
+            points = _activeImpostorCartographyPoints;
+            count = _activeImpostorCount;
+            return points.IsCreated && count > 0;
+        }
+
+        public bool IsChunkImpostorAudioMuted(long chunkId)
+        {
+            if (chunkId == 0L ||
+                !_activeImpostorChunkIds.IsCreated ||
+                !_activeImpostorFlags.IsCreated ||
+                _activeImpostorCount <= 0)
+            {
+                return false;
+            }
+
+            int count = math.min(_activeImpostorCount, _activeImpostorChunkIds.Length);
+            for (int i = 0; i < count; i++)
+            {
+                if (_activeImpostorChunkIds[i] == chunkId)
+                    return (_activeImpostorFlags[i] & ActiveImpostorAudioMutedFlag) != 0u;
+            }
+
+            return false;
+        }
+
         /// <summary>
         /// External docking/habitat code can suspend speculative streaming without taking a concrete dependency on this manager.
         /// </summary>
@@ -537,6 +880,14 @@ namespace Hecton8.World
         {
             _externalPredictiveSuspended = suspended;
             _forceResidencyEvaluation = true;
+        }
+
+        /// <summary>
+        /// Returns whether predictive/speculative chunk loading is allowed right now.
+        /// </summary>
+        public bool ShouldLoadSpeculative()
+        {
+            return !PredictiveStreamingPausedNow && !_predictiveVramAborted;
         }
 
         /// <summary>
@@ -629,7 +980,7 @@ namespace Hecton8.World
             using (_tickMarker.Auto())
             {
                 TickPredictiveSuspension();
-                DrainAupShiftSignals();
+                DrainMetabolismSignals();
                 DetectAndHandleTeleport();
                 CompleteResidencyJobIfFinished();
                 ProcessResidencyResults();
@@ -660,7 +1011,47 @@ namespace Hecton8.World
             PollAddressableLoads();
             PollAddressableCacheClears();
             EvaluateAndPublishStorageBackpressure();
+            EvictDistantMacroDatabaseBreadcrumbs();
             ScheduleResidencyJob();
+        }
+
+        /// <inheritdoc />
+        public void LateFrameTick()
+        {
+            CompleteResidencyJobIfFinished();
+            RetireAsyncPagerReadTickets(PagerReadRetireBudget);
+            DrainAupShiftSignals();
+            DrainHlodSwapSignals();
+            CullExpiredHlodFadeouts();
+            PublishLod2ImpostorResidency();
+        }
+
+        private void PublishLod2ImpostorResidency()
+        {
+            IStreamingHlodMatrixRenderer renderer = ResolveLod2ImpostorRenderer();
+            if (!enableLod2Impostors || renderer == null || !_activeImpostors.IsCreated || _activeImpostorCount <= 0)
+            {
+                if (renderer != null)
+                    renderer.ClearBinding();
+
+                _debugActiveImpostorLod2Chunks = 0;
+                _publishedActiveImpostorVersion = 0u;
+                return;
+            }
+
+            bool forceUpload = _activeImpostorGpuDirty ||
+                               _publishedActiveImpostorVersion != _activeImpostorVersion ||
+                               renderer.BoundInstanceCount != _activeImpostorCount ||
+                               (_activeImpostorFadeOutCount > 0 && !renderer.IsUsingVisibleMatrixStream);
+            renderer.BindNativeMatrices(_activeImpostors, _activeImpostorCount, ResolveActiveImpostorDefaultRadius(), forceUpload);
+            _publishedActiveImpostorVersion = _activeImpostorVersion;
+            _activeImpostorGpuDirty = false;
+            _debugActiveImpostorLod2Chunks = _activeImpostorCount;
+        }
+
+        private IStreamingHlodMatrixRenderer ResolveLod2ImpostorRenderer()
+        {
+            return lod2ImpostorRenderer as IStreamingHlodMatrixRenderer;
         }
 
         /// <summary>
@@ -723,6 +1114,73 @@ namespace Hecton8.World
             _debugPendingLoadRequests = _pendingLoadRequestCount;
         }
 
+        private void RequestAsyncPagerRead(long chunkId)
+        {
+            IAsyncPersistenceService persistence = _asyncPersistenceService;
+            if (persistence == null)
+            {
+                RefreshAsyncPersistenceService();
+                persistence = _asyncPersistenceService;
+                if (persistence == null)
+                    return;
+            }
+
+            if (!_pagerReadTickets.IsCreated)
+                return;
+
+            if (_pagerReadTicketCount >= PagerReadTicketCapacity)
+            {
+                RetireAsyncPagerReadTickets(PagerReadTicketCapacity);
+                if (_pagerReadTicketCount >= PagerReadTicketCapacity)
+                    return;
+            }
+
+            uint requestId = unchecked((uint)chunkId ^ (uint)(chunkId >> 32) ^ (uint)Time.frameCount);
+            if (requestId == 0u)
+                requestId = 1u;
+
+            if (persistence.TryRequestChunkPageRead(chunkId, H8WorldPagePayloadTypes.VoxelDeltaRle, requestId, out H8WorldPageReadTicket ticket))
+                _pagerReadTickets[_pagerReadTicketCount++] = ticket;
+        }
+
+        private void RetireAsyncPagerReadTickets(int budget)
+        {
+            if (budget <= 0 || _pagerReadTicketCount <= 0 || !_pagerReadTickets.IsCreated)
+                return;
+
+            IAsyncPersistenceService persistence = _asyncPersistenceService;
+            if (persistence == null)
+            {
+                RefreshAsyncPersistenceService();
+                persistence = _asyncPersistenceService;
+                if (persistence == null)
+                    return;
+            }
+
+            int retired = 0;
+            int index = 0;
+            while (index < _pagerReadTicketCount && retired < budget)
+            {
+                H8WorldPageReadTicket ticket = _pagerReadTickets[index];
+                if (!persistence.TryRetireCompletedChunkPage(in ticket, out H8WorldPageStatus status, out int byteCount))
+                {
+                    index++;
+                    continue;
+                }
+
+                if (status == H8WorldPageStatus.Ready && byteCount > 0)
+                    _pagerReadRetiredReadyCount++;
+                else
+                    _pagerReadRetiredFallbackCount++;
+
+                int last = _pagerReadTicketCount - 1;
+                _pagerReadTickets[index] = _pagerReadTickets[last];
+                _pagerReadTickets[last] = default;
+                _pagerReadTicketCount = last;
+                retired++;
+            }
+        }
+
         /// <summary>
         /// Evicts a resident chunk and releases tracked Addressables handles.
         /// </summary>
@@ -761,6 +1219,7 @@ namespace Hecton8.World
             state |= ChunkState.Evicting;
             state &= unchecked((ChunkState)~(byte)ChunkState.Resident);
             SetChunkState(chunkId, state);
+            PublishSectorDehydratedSignal(index, chunkId, state);
 
             DespawnChunkInstances(index);
             ReleaseChunkHandles(index, clearAddressableCache);
@@ -777,6 +1236,7 @@ namespace Hecton8.World
             loadQueueCapacity = math.max(1, loadQueueCapacity);
             loadRadiusMeters = math.max(1f, loadRadiusMeters);
             unloadRadiusMeters = math.max(loadRadiusMeters + 1f, unloadRadiusMeters);
+            impostorLod2DistanceMeters = math.max(1f, impostorLod2DistanceMeters);
             _loadQueueCapacityRcp = math.rcp((float)loadQueueCapacity);
             _maxChunkCountRcp = math.rcp((float)maxChunkCount);
         }
@@ -806,6 +1266,30 @@ namespace Hecton8.World
             _loadStartTimes = new NativeArray<double>(capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeArray<byte>[maxChunkCount] - immediate-radius load flags for oldest-pending IO debt - owner: WorldChunkResidencyManager
             _loadImmediateRadiusFlags = new NativeArray<byte>(capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<float4x4>[maxChunkCount] - signal-driven HLOD impostor matrices - owner: WorldChunkResidencyManager
+            _activeImpostors = H8Memory.Allocate<float4x4>(capacity, SystemID.WorldStreaming, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<int>[maxChunkCount] - HLOD impostor type SOA - owner: WorldChunkResidencyManager
+            _impostorTypes = H8Memory.Allocate<int>(capacity, SystemID.WorldStreaming, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<long>[maxChunkCount] - HLOD chunk id lookup for swap-back removal - owner: WorldChunkResidencyManager
+            _activeImpostorChunkIds = H8Memory.Allocate<long>(capacity, SystemID.WorldStreaming, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<float>[maxChunkCount] - HLOD spawn time for dither fade - owner: WorldChunkResidencyManager
+            _activeImpostorSpawnTimes = H8Memory.Allocate<float>(capacity, SystemID.WorldStreaming, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<float3>[maxChunkCount] - HLOD centers exposed to PDA read model - owner: WorldChunkResidencyManager
+            _activeImpostorCenters = H8Memory.Allocate<float3>(capacity, SystemID.WorldStreaming, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<float3>[maxChunkCount] - HLOD extents exposed to render/cartography - owner: WorldChunkResidencyManager
+            _activeImpostorSizes = H8Memory.Allocate<float3>(capacity, SystemID.WorldStreaming, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<uint>[maxChunkCount] - HLOD flags including audio-muted state - owner: WorldChunkResidencyManager
+            _activeImpostorFlags = H8Memory.Allocate<uint>(capacity, SystemID.WorldStreaming, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<StreamingHlodImpostorPoint>[maxChunkCount] - PDA distant POI read model - owner: WorldChunkResidencyManager
+            _activeImpostorCartographyPoints = H8Memory.Allocate<StreamingHlodImpostorPoint>(capacity, SystemID.WorldStreaming, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<int>[1] - Burst-owned active HLOD count - owner: WorldChunkResidencyManager
+            _activeImpostorCountRef = H8Memory.Allocate<int>(1, SystemID.WorldStreaming, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<int>[1] - Burst-owned active HLOD fade-out count - owner: WorldChunkResidencyManager
+            _activeImpostorFadeOutCountRef = H8Memory.Allocate<int>(1, SystemID.WorldStreaming, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<H8WorldPageReadTicket>[16] - async pager prefetch ticket retire ring - owner: WorldChunkResidencyManager
+            _pagerReadTickets = new NativeArray<H8WorldPageReadTicket>(PagerReadTicketCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<ulong>[128] - MacroDB distant-sector eviction scratch - owner: WorldChunkResidencyManager
+            _macroDatabaseEvictionScratch = new NativeArray<ulong>(MacroDatabaseEvictionScratchCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
 
             NativeMemorySentinel.RegisterNativeArray(_chunkIds, nameof(WorldChunkResidencyManager), nameof(_chunkIds), NativeAllocationLifetime.Session);
             NativeMemorySentinel.RegisterNativeArray(_chunkCenters, nameof(WorldChunkResidencyManager), nameof(_chunkCenters), NativeAllocationLifetime.Session);
@@ -818,6 +1302,18 @@ namespace Hecton8.World
             NativeMemorySentinel.RegisterNativeArray(_telemetryRing, nameof(WorldChunkResidencyManager), nameof(_telemetryRing), NativeAllocationLifetime.Session);
             NativeMemorySentinel.RegisterNativeArray(_loadStartTimes, nameof(WorldChunkResidencyManager), nameof(_loadStartTimes), NativeAllocationLifetime.Session);
             NativeMemorySentinel.RegisterNativeArray(_loadImmediateRadiusFlags, nameof(WorldChunkResidencyManager), nameof(_loadImmediateRadiusFlags), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(_activeImpostors, nameof(WorldChunkResidencyManager), nameof(_activeImpostors), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(_impostorTypes, nameof(WorldChunkResidencyManager), nameof(_impostorTypes), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(_activeImpostorChunkIds, nameof(WorldChunkResidencyManager), nameof(_activeImpostorChunkIds), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(_activeImpostorSpawnTimes, nameof(WorldChunkResidencyManager), nameof(_activeImpostorSpawnTimes), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(_activeImpostorCenters, nameof(WorldChunkResidencyManager), nameof(_activeImpostorCenters), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(_activeImpostorSizes, nameof(WorldChunkResidencyManager), nameof(_activeImpostorSizes), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(_activeImpostorFlags, nameof(WorldChunkResidencyManager), nameof(_activeImpostorFlags), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(_activeImpostorCartographyPoints, nameof(WorldChunkResidencyManager), nameof(_activeImpostorCartographyPoints), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(_activeImpostorCountRef, nameof(WorldChunkResidencyManager), nameof(_activeImpostorCountRef), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(_activeImpostorFadeOutCountRef, nameof(WorldChunkResidencyManager), nameof(_activeImpostorFadeOutCountRef), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(_pagerReadTickets, nameof(WorldChunkResidencyManager), nameof(_pagerReadTickets), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(_macroDatabaseEvictionScratch, nameof(WorldChunkResidencyManager), nameof(_macroDatabaseEvictionScratch), NativeAllocationLifetime.Session);
         }
 
         private void BuildChunkTables()
@@ -932,17 +1428,29 @@ namespace Hecton8.World
             if (!_registeredSlowTick)
                 _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
 
+            if (!_registeredLateFrame)
+                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+
             if (!_registeredBackpressureService)
             {
                 GlobalRegistry.RegisterStreamingBackpressureRuntime(this);
                 _registeredBackpressureService = ReferenceEquals(GlobalRegistry.StreamingBackpressure, this);
             }
 
+            RefreshAsyncPersistenceService();
+
             if (!_registeredAirlockEvents)
             {
                 BaseAirlockEvents.Register(this);
                 _registeredAirlockEvents = true;
             }
+        }
+
+        private void RefreshAsyncPersistenceService()
+        {
+            IAsyncPersistenceService persistence = GlobalRegistry.SaveRuntime as IAsyncPersistenceService;
+            if (persistence != null)
+                _asyncPersistenceService = persistence;
         }
 
         private void TryUnregister()
@@ -959,6 +1467,12 @@ namespace Hecton8.World
                 _registeredSlowTick = false;
             }
 
+            if (_registeredLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _registeredLateFrame = false;
+            }
+
             if (_registeredAirlockEvents)
             {
                 BaseAirlockEvents.Unregister(this);
@@ -970,6 +1484,8 @@ namespace Hecton8.World
                 GlobalRegistry.UnregisterStreamingBackpressureRuntime(this);
                 _registeredBackpressureService = false;
             }
+
+            _asyncPersistenceService = null;
         }
 
         /// <inheritdoc />
@@ -1126,7 +1642,8 @@ namespace Hecton8.World
 
         private void ForceImmediateRadiusLoad(in AbsoluteUniversePosition playerAup)
         {
-            double loadRadiusSq = (double)loadRadiusMeters * loadRadiusMeters;
+            float effectiveLoadRadiusMeters = ResolveEffectiveLoadRadiusMeters(_resolvedTier);
+            double loadRadiusSq = (double)effectiveLoadRadiusMeters * effectiveLoadRadiusMeters;
             double playerX = ToAbsoluteX(in playerAup);
             double playerY = ToAbsoluteY(in playerAup);
             double playerZ = ToAbsoluteZ(in playerAup);
@@ -1164,13 +1681,16 @@ namespace Hecton8.World
             }
 
             ChunkStreamingScalabilityTier tier = _resolvedTier;
-            bool predictivePaused = PredictiveStreamingPausedNow;
             _predictiveVramAborted = ResolvePredictiveVramAbortState();
-            bool predictiveEnabled = !predictivePaused && !_predictiveVramAborted;
+            bool predictiveEnabled = ShouldLoadSpeculative();
             float predictionDistanceMeters = predictiveEnabled ? ResolvePredictionDistanceMeters(playerVelocity, tier) : 0f;
             if (predictionDistanceMeters > 0f && _predictionConstrainedByStorageDebt)
                 predictionDistanceMeters *= 0.5f;
-            float tailUnloadRadiusMeters = predictiveEnabled ? ResolveTailUnloadRadiusMeters(predictionDistanceMeters) : unloadRadiusMeters;
+            float effectiveLoadRadiusMeters = ResolveEffectiveLoadRadiusMeters(tier);
+            float effectiveUnloadRadiusMeters = ResolveEffectiveUnloadRadiusMeters(tier);
+            float tailUnloadRadiusMeters = predictiveEnabled
+                ? ResolveTailUnloadRadiusMeters(predictionDistanceMeters, effectiveLoadRadiusMeters, effectiveUnloadRadiusMeters)
+                : effectiveUnloadRadiusMeters;
             AbsoluteUniversePosition projectedAup = BuildProjectedAup(in playerAup, playerVelocity, predictionDistanceMeters);
 
             _lastPlayerAup = AbsoluteUniversePositionBlit.FromAup(in playerAup);
@@ -1190,14 +1710,15 @@ namespace Hecton8.World
                 ChunksToUnload = _chunksToUnload.AsParallelWriter(),
                 PlayerAbsolute = ToAbsoluteDouble3(in playerAup),
                 PlayerVelocity = playerVelocity,
-                LoadRadiusSq = (double)loadRadiusMeters * loadRadiusMeters,
-                UnloadRadiusSq = (double)unloadRadiusMeters * unloadRadiusMeters,
+                LoadRadiusSq = (double)effectiveLoadRadiusMeters * effectiveLoadRadiusMeters,
+                UnloadRadiusSq = (double)effectiveUnloadRadiusMeters * effectiveUnloadRadiusMeters,
                 PredictiveDistanceMeters = predictionDistanceMeters,
                 TailUnloadRadiusSq = (double)tailUnloadRadiusMeters * tailUnloadRadiusMeters,
                 PredictiveEnabled = predictiveEnabled ? (byte)1 : (byte)0
             };
 
-            if (!job.TryScheduleParallelAdmitted(
+            if (!TryScheduleParallelAdmitted(
+                    job,
                     _chunkCount,
                     32,
                     JobAdmissionLane.Lane1_World,
@@ -1217,7 +1738,7 @@ namespace Hecton8.World
                 ProjectedAbsolute = ToAbsoluteDouble3(in projectedAup)
             };
 
-            _residencySortScheduled = sortJob.TryScheduleAdmitted(JobAdmissionLane.Lane1_World, scanHandle, out _residencyJobHandle);
+            _residencySortScheduled = TryScheduleAdmitted(sortJob, JobAdmissionLane.Lane1_World, scanHandle, out _residencyJobHandle);
             if (!_residencySortScheduled)
                 _residencyJobHandle = scanHandle;
 
@@ -1236,12 +1757,12 @@ namespace Hecton8.World
             if (_residencySortScheduled)
             {
                 float perJobMs = chainMs * 0.5f;
-                JobAdmissionScheduleExtensions.ReportAdmittedJobCompleted<RadiusBasedStreamingJob>(JobAdmissionLane.Lane1_World, perJobMs);
-                JobAdmissionScheduleExtensions.ReportAdmittedJobCompleted<ChunkLoadPrioritySortJob>(JobAdmissionLane.Lane1_World, perJobMs);
+                ReportAdmittedJobCompleted<RadiusBasedStreamingJob>(JobAdmissionLane.Lane1_World, perJobMs);
+                ReportAdmittedJobCompleted<ChunkLoadPrioritySortJob>(JobAdmissionLane.Lane1_World, perJobMs);
             }
             else
             {
-                JobAdmissionScheduleExtensions.ReportAdmittedJobCompleted<RadiusBasedStreamingJob>(JobAdmissionLane.Lane1_World, chainMs);
+                ReportAdmittedJobCompleted<RadiusBasedStreamingJob>(JobAdmissionLane.Lane1_World, chainMs);
             }
 
             _residencySortScheduled = false;
@@ -1256,6 +1777,62 @@ namespace Hecton8.World
             _residencyJobHandle.Complete();
             _residencySortScheduled = false;
             _residencyJobScheduled = false;
+        }
+
+        private static bool TryScheduleAdmitted<TJob>(
+            TJob jobData,
+            JobAdmissionLane lane,
+            JobHandle dependsOn,
+            out JobHandle handle)
+            where TJob : struct, IJob
+        {
+            IJobAdmissionService service = GlobalRegistry.JobAdmission;
+            uint jobHash = WorldJobAdmissionHash<TJob>.Value;
+            if (service != null && !service.TryAdmitJob(lane, jobHash, out _))
+            {
+                handle = dependsOn;
+                return false;
+            }
+
+            handle = jobData.Schedule(dependsOn);
+            return true;
+        }
+
+        private static bool TryScheduleParallelAdmitted<TJob>(
+            TJob jobData,
+            int arrayLength,
+            int innerloopBatchCount,
+            JobAdmissionLane lane,
+            JobHandle dependsOn,
+            out JobHandle handle)
+            where TJob : struct, IJobParallelFor
+        {
+            IJobAdmissionService service = GlobalRegistry.JobAdmission;
+            uint jobHash = WorldJobAdmissionHash<TJob>.Value;
+            if (service != null && !service.TryAdmitJob(lane, jobHash, out _))
+            {
+                handle = dependsOn;
+                return false;
+            }
+
+            handle = jobData.Schedule(arrayLength, innerloopBatchCount, dependsOn);
+            return true;
+        }
+
+        private static void ReportAdmittedJobCompleted<TJob>(JobAdmissionLane lane, float measuredCompleteMs)
+            where TJob : struct
+        {
+            IJobAdmissionService service = GlobalRegistry.JobAdmission;
+            if (service == null)
+                return;
+
+            service.ReportJobCompleted(lane, WorldJobAdmissionHash<TJob>.Value, measuredCompleteMs);
+        }
+
+        private static class WorldJobAdmissionHash<TJob>
+            where TJob : struct
+        {
+            public static readonly uint Value = ComputeJobAdmissionHash(typeof(TJob).FullName ?? typeof(TJob).Name);
         }
 
         private void ProcessResidencyResults()
@@ -1756,6 +2333,45 @@ namespace Hecton8.World
             PublishPdaDataLinkState(signal.Frame);
         }
 
+        private void EvictDistantMacroDatabaseBreadcrumbs()
+        {
+            IMacroDatabaseService macroDatabase = GlobalRegistry.MacroDatabase;
+            if (macroDatabase == null ||
+                !macroDatabase.IsOpen ||
+                !_macroDatabaseEvictionScratch.IsCreated ||
+                !TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
+            {
+                return;
+            }
+
+            MacroDatabaseAup macroAup = ToMacroDatabaseAup(in playerAup);
+            macroDatabase.EvictDistant(
+                in macroAup,
+                ResolveMacroDatabaseTier(_resolvedTier),
+                _macroDatabaseEvictionScratch);
+        }
+
+        private static MacroDatabaseAup ToMacroDatabaseAup(in AbsoluteUniversePosition aup)
+        {
+            return new MacroDatabaseAup
+            {
+                GridX = aup.GridX,
+                GridY = aup.GridY,
+                GridZ = aup.GridZ,
+                LocalX = aup.LocalX,
+                LocalY = aup.LocalY,
+                LocalZ = aup.LocalZ
+            };
+        }
+
+        private static MacroDatabaseTier ResolveMacroDatabaseTier(ChunkStreamingScalabilityTier tier)
+        {
+            return tier == ChunkStreamingScalabilityTier.Low ? MacroDatabaseTier.Low :
+                   tier == ChunkStreamingScalabilityTier.High ? MacroDatabaseTier.High :
+                   tier == ChunkStreamingScalabilityTier.Ultra ? MacroDatabaseTier.Ultra :
+                   MacroDatabaseTier.Middle;
+        }
+
         private void UpdateStorageDebtHysteresisStates()
         {
             _predictionConstrainedByStorageDebt = ResolveStorageDebtHysteresis(
@@ -1814,6 +2430,7 @@ namespace Hecton8.World
                 state |= ChunkState.Pinned;
 
             SetChunkState(chunkId, state);
+            PublishSectorHydratedSignal(index, chunkId, state);
             if (loadedPrefab != null && !proxyFallback)
                 WarmPrefab(loadedPrefab, math.max(1, chunkDefinitions[index].warmupCountPerPrefab));
             else if (proxyFallback)
@@ -2480,6 +3097,7 @@ namespace Hecton8.World
 
             DrainRuntimeQueuesAfterReleaseAll();
             ReleasePendingAddressablesCacheClearHandles();
+            ClearActiveImpostors();
             _forceResidencyEvaluation = true;
             _stateDiagnosticsDirty = true;
             WriteTelemetrySample(0L, TelemetryReleaseAllResetFlag);
@@ -2529,6 +3147,72 @@ namespace Hecton8.World
             _deferredEvictCount = 0;
         }
 
+        private void ClearActiveImpostors()
+        {
+            if (_activeImpostors.IsCreated)
+            {
+                for (int i = 0; i < _activeImpostorCount; i++)
+                    _activeImpostors[i] = default;
+            }
+
+            if (_impostorTypes.IsCreated)
+            {
+                for (int i = 0; i < _activeImpostorCount; i++)
+                    _impostorTypes[i] = 0;
+            }
+
+            if (_activeImpostorChunkIds.IsCreated)
+            {
+                for (int i = 0; i < _activeImpostorCount; i++)
+                    _activeImpostorChunkIds[i] = 0L;
+            }
+
+            if (_activeImpostorSpawnTimes.IsCreated)
+            {
+                for (int i = 0; i < _activeImpostorCount; i++)
+                    _activeImpostorSpawnTimes[i] = 0f;
+            }
+
+            if (_activeImpostorCenters.IsCreated)
+            {
+                for (int i = 0; i < _activeImpostorCount; i++)
+                    _activeImpostorCenters[i] = default;
+            }
+
+            if (_activeImpostorSizes.IsCreated)
+            {
+                for (int i = 0; i < _activeImpostorCount; i++)
+                    _activeImpostorSizes[i] = default;
+            }
+
+            if (_activeImpostorFlags.IsCreated)
+            {
+                for (int i = 0; i < _activeImpostorCount; i++)
+                    _activeImpostorFlags[i] = 0u;
+            }
+
+            if (_activeImpostorCartographyPoints.IsCreated)
+            {
+                for (int i = 0; i < _activeImpostorCount; i++)
+                    _activeImpostorCartographyPoints[i] = default;
+            }
+
+            _activeImpostorCount = 0;
+            if (_activeImpostorCountRef.IsCreated)
+                _activeImpostorCountRef[0] = 0;
+            _activeImpostorFadeOutCount = 0;
+            if (_activeImpostorFadeOutCountRef.IsCreated)
+                _activeImpostorFadeOutCountRef[0] = 0;
+            _activeImpostorVersion++;
+            _activeImpostorPointVersion++;
+            _publishedActiveImpostorVersion = 0u;
+            _activeImpostorGpuDirty = true;
+            _debugActiveImpostorLod2Chunks = 0;
+            IStreamingHlodMatrixRenderer renderer = ResolveLod2ImpostorRenderer();
+            if (renderer != null)
+                renderer.ClearBinding();
+        }
+
         private void ReleasePendingAddressablesCacheClearHandles()
         {
 #if UNITY_ADDRESSABLES_EXIST
@@ -2559,14 +3243,19 @@ namespace Hecton8.World
                 return;
 
             bool sawShift = false;
+            float3 totalShift = default;
+            uint lastShiftFrame = 0u;
             while (GlobalSignals.TryDequeueAupShift(out AupShiftSignal signal))
             {
                 _debugLastAupShiftFrameId = signal.ShiftFrameId;
+                totalShift += signal.ShiftMeters;
+                lastShiftFrame = signal.ShiftFrameId;
                 sawShift = true;
             }
 
             if (sawShift)
             {
+                ApplyActiveImpostorAupShift(totalShift, lastShiftFrame);
                 _forceResidencyEvaluation = true;
                 WriteTelemetrySample(0L, TelemetryShiftFlag);
             }
@@ -2666,9 +3355,76 @@ namespace Hecton8.World
         }
 
         private bool PredictiveStreamingPausedNow =>
+            IsAdrenalinePurgeActive ||
             _externalPredictiveSuspended ||
             _transportPredictivePauseActive ||
             (suspendPredictiveStreamingInHabitat && (_habitatPredictivePauseActive || _habitatTransitionPauseFrames > 0));
+
+        private bool IsAdrenalinePurgeActive =>
+            _adrenalinePurgeUntilTime > 0f && Time.unscaledTime < _adrenalinePurgeUntilTime;
+
+        private void DrainMetabolismSignals()
+        {
+            ReadOnlySpan<MemoryPressureSignal> pressureSignals = SignalBus<MemoryPressureSignal>.GetFrameSnapshot();
+            for (int i = 0; i < pressureSignals.Length; i++)
+            {
+                MemoryPressureSignal signal = pressureSignals[i];
+                if (signal.Severity >= CriticalMemoryPressureSeverity)
+                    ActivateAdrenalinePurge(signal.Frame);
+            }
+
+            ReadOnlySpan<SystemHealthIndexSignal> healthSignals = SignalBus<SystemHealthIndexSignal>.GetFrameSnapshot();
+            for (int i = 0; i < healthSignals.Length; i++)
+            {
+                SystemHealthIndexSignal signal = healthSignals[i];
+                if (signal.State >= SystemHealthIndexSignal.StateCritical ||
+                    (signal.Flags & SystemHealthIndexSignal.FlagAdrenaline) != 0)
+                {
+                    ActivateAdrenalinePurge(signal.Frame);
+                }
+            }
+
+            ReadOnlySpan<ResidencySectorDehydratedSignal> dehydratedSignals = SignalBus<ResidencySectorDehydratedSignal>.GetFrameSnapshot();
+            for (int i = 0; i < dehydratedSignals.Length; i++)
+                ForcePurgeDehydratedSector(in dehydratedSignals[i]);
+        }
+
+        private void ActivateAdrenalinePurge(uint frame)
+        {
+            if (frame != 0u && _lastAdrenalineSignalFrame == frame)
+                return;
+
+            _lastAdrenalineSignalFrame = frame;
+            float until = Time.unscaledTime + AdrenalinePurgeSeconds;
+            if (until > _adrenalinePurgeUntilTime)
+                _adrenalinePurgeUntilTime = until;
+
+            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+            if (pool != null)
+                pool.TrimInactivePoolsForMemoryPressure(0.5f);
+
+            _forceResidencyEvaluation = true;
+        }
+
+        private void ForcePurgeDehydratedSector(in ResidencySectorDehydratedSignal signal)
+        {
+            if (signal.ChunkId == 0L ||
+                (signal.Flags & ResidencySectorDehydratedSignal.FlagPinned) != 0 ||
+                !_chunkIndexById.IsCreated ||
+                !_chunkIndexById.TryGetValue(signal.ChunkId, out int index))
+            {
+                return;
+            }
+
+            if (_chunkStates.IsCreated &&
+                _chunkStates.TryGetValue(signal.ChunkId, out ChunkState state) &&
+                HasFlag(state, ChunkState.Pinned))
+            {
+                return;
+            }
+
+            ReleaseChunkHandles(index, clearAddressableCache: true);
+        }
 
         private bool ResolvePredictiveVramAbortState()
         {
@@ -2697,14 +3453,37 @@ namespace Hecton8.World
             return math.min(maxDistance, speed * PredictiveLookaheadSeconds);
         }
 
-        private float ResolveTailUnloadRadiusMeters(float predictionDistanceMeters)
+        private float ResolveEffectiveLoadRadiusMeters(ChunkStreamingScalabilityTier tier)
+        {
+            float unload = ResolveEffectiveUnloadRadiusMeters(tier);
+            if (tier == ChunkStreamingScalabilityTier.Low)
+                return math.max(1f, unload * 0.85f);
+
+            return math.max(1f, math.min(loadRadiusMeters, unload - 1f));
+        }
+
+        private float ResolveEffectiveUnloadRadiusMeters(ChunkStreamingScalabilityTier tier)
+        {
+            if (tier == ChunkStreamingScalabilityTier.Low)
+                return LowTierUnloadRadiusMeters;
+            if (tier == ChunkStreamingScalabilityTier.Middle)
+                return math.max(unloadRadiusMeters, MiddleTierUnloadRadiusMeters);
+            if (tier == ChunkStreamingScalabilityTier.High)
+                return math.max(unloadRadiusMeters, HighTierUnloadRadiusMeters);
+            return math.max(unloadRadiusMeters, UltraTierUnloadRadiusMeters);
+        }
+
+        private float ResolveTailUnloadRadiusMeters(
+            float predictionDistanceMeters,
+            float effectiveLoadRadiusMeters,
+            float effectiveUnloadRadiusMeters)
         {
             if (predictionDistanceMeters <= 0f)
-                return unloadRadiusMeters;
+                return effectiveUnloadRadiusMeters;
 
-            float hysteresisFloor = loadRadiusMeters * 1.05f;
-            float shrink = math.min(unloadRadiusMeters - hysteresisFloor, predictionDistanceMeters * 0.6f);
-            return math.max(hysteresisFloor, unloadRadiusMeters - math.max(0f, shrink));
+            float hysteresisFloor = effectiveLoadRadiusMeters * 1.05f;
+            float shrink = math.min(effectiveUnloadRadiusMeters - hysteresisFloor, predictionDistanceMeters * 0.6f);
+            return math.max(hysteresisFloor, effectiveUnloadRadiusMeters - math.max(0f, shrink));
         }
 
         private static AbsoluteUniversePosition BuildProjectedAup(in AbsoluteUniversePosition playerAup, float3 velocity, float predictionDistanceMeters)
@@ -2727,7 +3506,8 @@ namespace Hecton8.World
             AbsoluteUniversePositionBlit center = _chunkCenters[index];
             AbsoluteUniversePositionBlit playerAup = _lastPlayerAup;
             double distSq = DistanceSq(in center, in playerAup);
-            double loadRadiusSq = (double)loadRadiusMeters * loadRadiusMeters;
+            float effectiveLoadRadiusMeters = ResolveEffectiveLoadRadiusMeters(_resolvedTier);
+            double loadRadiusSq = (double)effectiveLoadRadiusMeters * effectiveLoadRadiusMeters;
             return distSq > loadRadiusSq ? LoadRequestFlagPredictive : (byte)0;
         }
 
@@ -2757,11 +3537,12 @@ namespace Hecton8.World
             AbsoluteUniversePositionBlit playerAup = _lastPlayerAup;
             double3 delta = ToAbsoluteDouble3(in center) - ToAbsoluteDouble3(in playerAup);
             double behind = math.dot(delta, direction);
-            if (behind >= -loadRadiusMeters)
+            float effectiveLoadRadiusMeters = ResolveEffectiveLoadRadiusMeters(_resolvedTier);
+            if (behind >= -effectiveLoadRadiusMeters)
                 return false;
 
             double distSq = math.lengthsq(delta);
-            double loadRadiusSq = (double)loadRadiusMeters * loadRadiusMeters;
+            double loadRadiusSq = (double)effectiveLoadRadiusMeters * effectiveLoadRadiusMeters;
             return distSq > loadRadiusSq;
         }
 
@@ -2828,6 +3609,360 @@ namespace Hecton8.World
             _stateDiagnosticsDirty = true;
         }
 
+        private void PublishSectorHydratedSignal(int index, long chunkId, ChunkState state)
+        {
+            if (!TryResolveChunkSignalPayload(index, state, out AbsoluteUniversePosition centerAup, out ushort radiusQ, out byte flags))
+                return;
+
+            SignalBus<ResidencySectorHydratedSignal>.Push(new ResidencySectorHydratedSignal
+            {
+                CenterAup = centerAup,
+                ChunkId = chunkId,
+                Frame = unchecked((uint)Time.frameCount),
+                RadiusMetersQ = radiusQ,
+                Flags = flags,
+                ResidencyState = unchecked((byte)state)
+            });
+        }
+
+        private void PublishSectorDehydratedSignal(int index, long chunkId, ChunkState state)
+        {
+            if (!TryResolveChunkSignalPayload(index, state, out AbsoluteUniversePosition centerAup, out ushort radiusQ, out byte flags))
+                return;
+
+            SignalBus<ResidencySectorDehydratedSignal>.Push(new ResidencySectorDehydratedSignal
+            {
+                CenterAup = centerAup,
+                ChunkId = chunkId,
+                Frame = unchecked((uint)Time.frameCount),
+                RadiusMetersQ = radiusQ,
+                Flags = flags,
+                ResidencyState = unchecked((byte)state)
+            });
+
+            SignalBus<ChunkDehydratedSignal>.Push(new ChunkDehydratedSignal
+            {
+                CenterAup = centerAup,
+                SectorHash = chunkId,
+                Frame = unchecked((uint)Time.frameCount),
+                RadiusMetersQ = radiusQ,
+                Flags = flags,
+                ResidencyState = unchecked((byte)state)
+            });
+        }
+
+        private bool TryResolveChunkSignalPayload(
+            int index,
+            ChunkState state,
+            out AbsoluteUniversePosition centerAup,
+            out ushort radiusMetersQ,
+            out byte flags)
+        {
+            centerAup = default;
+            radiusMetersQ = 0;
+            flags = 0;
+            if (!_chunkCenters.IsCreated || (uint)index >= (uint)_chunkCenters.Length)
+                return false;
+
+            centerAup = _chunkCenters[index].ToAup();
+            int chunkSizeMeters = 0;
+            if (chunkDefinitions != null && (uint)index < (uint)chunkDefinitions.Length)
+                chunkSizeMeters = chunkDefinitions[index].chunkSizeMeters;
+
+            int radiusMeters = math.max(1, chunkSizeMeters > 0 ? chunkSizeMeters : Mathf.RoundToInt(math.max(1f, loadRadiusMeters)));
+            radiusMetersQ = (ushort)math.clamp(radiusMeters, 1, ushort.MaxValue);
+            if (HasFlag(state, ChunkState.LOD1))
+                flags |= ResidencySectorHydratedSignal.FlagProxyFallback;
+            if (HasFlag(state, ChunkState.Pinned))
+                flags |= ResidencySectorHydratedSignal.FlagPinned;
+            return true;
+        }
+
+        private void DrainHlodSwapSignals()
+        {
+            if (!_activeImpostors.IsCreated || !_activeImpostorCountRef.IsCreated)
+                return;
+
+            ReadOnlySpan<ResidencySectorDehydratedSignal> dehydratedSignals =
+                SignalBus<ResidencySectorDehydratedSignal>.GetFrameSnapshot();
+            for (int i = 0; i < dehydratedSignals.Length; i++)
+                TryAppendHlodImpostor(in dehydratedSignals[i]);
+
+            ReadOnlySpan<ResidencySectorHydratedSignal> hydratedSignals =
+                SignalBus<ResidencySectorHydratedSignal>.GetFrameSnapshot();
+            for (int i = 0; i < hydratedSignals.Length; i++)
+                TryRemoveHlodImpostor(hydratedSignals[i].ChunkId, permanentDestroy: false);
+        }
+
+        private void TryAppendHlodImpostor(in ResidencySectorDehydratedSignal signal)
+        {
+            if (signal.ChunkId == 0L ||
+                !_chunkIndexById.IsCreated ||
+                !_chunkIndexById.TryGetValue(signal.ChunkId, out int index) ||
+                !TryResolveChunkImpostorPayload(index, signal.ChunkId, out float3 center, out float3 size, out int type, out uint flags))
+            {
+                return;
+            }
+
+            RunHlodSwapJob(signal.ChunkId, center, size, type, flags | ActiveImpostorAudioMutedFlag, add: true);
+            MuteAssociatedAcousticPortals(signal.ChunkId, muted: true);
+        }
+
+        private void TryRemoveHlodImpostor(long chunkId, bool permanentDestroy)
+        {
+            if (chunkId == 0L || !_activeImpostors.IsCreated)
+                return;
+
+            RunHlodSwapJob(
+                chunkId,
+                default,
+                default,
+                0,
+                permanentDestroy ? (uint)ActiveImpostorPermanentDestroyFlag : (uint)ActiveImpostorFadeOutFlag,
+                add: false,
+                fadeOut: !permanentDestroy);
+            MuteAssociatedAcousticPortals(chunkId, muted: false);
+        }
+
+        public void PurgeImpostorForDestroyedChunk(long chunkId)
+        {
+            TryRemoveHlodImpostor(chunkId, permanentDestroy: true);
+        }
+
+        private void RunHlodSwapJob(long chunkId, float3 center, float3 size, int type, uint flags, bool add, bool fadeOut = false)
+        {
+            if (!_activeImpostors.IsCreated ||
+                !_impostorTypes.IsCreated ||
+                !_activeImpostorChunkIds.IsCreated ||
+                !_activeImpostorSpawnTimes.IsCreated ||
+                !_activeImpostorCenters.IsCreated ||
+                !_activeImpostorSizes.IsCreated ||
+                !_activeImpostorFlags.IsCreated ||
+                !_activeImpostorCartographyPoints.IsCreated ||
+                !_activeImpostorCountRef.IsCreated ||
+                !_activeImpostorFadeOutCountRef.IsCreated)
+            {
+                return;
+            }
+
+            HlodImpostorSwapJob job = new HlodImpostorSwapJob
+            {
+                ActiveImpostors = _activeImpostors,
+                ImpostorTypes = _impostorTypes,
+                ChunkIds = _activeImpostorChunkIds,
+                SpawnTimes = _activeImpostorSpawnTimes,
+                Centers = _activeImpostorCenters,
+                Sizes = _activeImpostorSizes,
+                Flags = _activeImpostorFlags,
+                CartographyPoints = _activeImpostorCartographyPoints,
+                ActiveCount = _activeImpostorCountRef,
+                FadeOutCount = _activeImpostorFadeOutCountRef,
+                ChunkId = chunkId,
+                Center = center,
+                Size = size,
+                SpawnTimeSeconds = Time.time,
+                ImpostorType = type,
+                ImpostorFlags = flags,
+                FadeOutFlag = ActiveImpostorFadeOutFlag,
+                Operation = add ? (byte)0 : (fadeOut ? (byte)2 : (byte)1)
+            };
+
+            job.Run();
+            _activeImpostorCount = math.clamp(_activeImpostorCountRef[0], 0, _activeImpostors.Length);
+            _activeImpostorFadeOutCount = math.max(0, _activeImpostorFadeOutCountRef[0]);
+            _activeImpostorVersion++;
+            _activeImpostorPointVersion++;
+            _activeImpostorGpuDirty = true;
+            _debugActiveImpostorLod2Chunks = _activeImpostorCount;
+            _stateDiagnosticsDirty = true;
+        }
+
+        private void CullExpiredHlodFadeouts()
+        {
+            if (!_activeImpostors.IsCreated ||
+                !_impostorTypes.IsCreated ||
+                !_activeImpostorChunkIds.IsCreated ||
+                !_activeImpostorSpawnTimes.IsCreated ||
+                !_activeImpostorCenters.IsCreated ||
+                !_activeImpostorSizes.IsCreated ||
+                !_activeImpostorFlags.IsCreated ||
+                !_activeImpostorCartographyPoints.IsCreated ||
+                !_activeImpostorCountRef.IsCreated ||
+                !_activeImpostorFadeOutCountRef.IsCreated ||
+                _activeImpostorFadeOutCount <= 0 ||
+                _activeImpostorCount <= 0)
+            {
+                return;
+            }
+
+            int previousCount = _activeImpostorCount;
+            int previousFadeOutCount = _activeImpostorFadeOutCount;
+            HlodImpostorFadeCullJob job = new HlodImpostorFadeCullJob
+            {
+                ActiveImpostors = _activeImpostors,
+                ImpostorTypes = _impostorTypes,
+                ChunkIds = _activeImpostorChunkIds,
+                SpawnTimes = _activeImpostorSpawnTimes,
+                Centers = _activeImpostorCenters,
+                Sizes = _activeImpostorSizes,
+                Flags = _activeImpostorFlags,
+                CartographyPoints = _activeImpostorCartographyPoints,
+                ActiveCount = _activeImpostorCountRef,
+                FadeOutCount = _activeImpostorFadeOutCountRef,
+                NowSeconds = Time.time,
+                FadeOutSeconds = ActiveImpostorFadeOutSeconds,
+                FadeOutFlag = ActiveImpostorFadeOutFlag
+            };
+
+            job.Run();
+            _activeImpostorCount = math.clamp(_activeImpostorCountRef[0], 0, _activeImpostors.Length);
+            _activeImpostorFadeOutCount = math.max(0, _activeImpostorFadeOutCountRef[0]);
+            _debugActiveImpostorLod2Chunks = _activeImpostorCount;
+            if (_activeImpostorCount != previousCount)
+            {
+                _activeImpostorVersion++;
+                _activeImpostorPointVersion++;
+                _activeImpostorGpuDirty = true;
+                _stateDiagnosticsDirty = true;
+            }
+            else if (_activeImpostorFadeOutCount != previousFadeOutCount)
+            {
+                _activeImpostorPointVersion++;
+                _stateDiagnosticsDirty = true;
+            }
+            else if (_activeImpostorFadeOutCount > 0)
+            {
+                _activeImpostorPointVersion++;
+                _stateDiagnosticsDirty = true;
+            }
+        }
+
+        private void ApplyActiveImpostorAupShift(float3 shiftMeters, uint shiftFrameId)
+        {
+            _ = shiftFrameId;
+            if (!_activeImpostors.IsCreated ||
+                !_activeImpostorCenters.IsCreated ||
+                !_activeImpostorCartographyPoints.IsCreated ||
+                _activeImpostorCount <= 0 ||
+                !math.all(math.isfinite(shiftMeters)) ||
+                math.lengthsq(shiftMeters) <= 0.000001f)
+            {
+                return;
+            }
+
+            new HlodImpostorAupShiftJob
+            {
+                ActiveImpostors = _activeImpostors,
+                Centers = _activeImpostorCenters,
+                CartographyPoints = _activeImpostorCartographyPoints,
+                ShiftMeters = shiftMeters
+            }.Run(_activeImpostorCount);
+            _activeImpostorVersion++;
+            _activeImpostorPointVersion++;
+            _activeImpostorGpuDirty = true;
+        }
+
+        private bool TryResolveChunkImpostorPayload(
+            int index,
+            long chunkId,
+            out float3 center,
+            out float3 size,
+            out int type,
+            out uint flags)
+        {
+            center = default;
+            size = default;
+            type = 0;
+            flags = HectonChunkImpostorResidency.FlagUseImpostor;
+
+            if ((uint)index >= (uint)(chunkDefinitions != null ? chunkDefinitions.Length : 0))
+                return false;
+
+            ChunkDefinition definition = chunkDefinitions[index];
+            type = ResolveChunkImpostorType(in definition);
+            if (type == 0)
+                return false;
+
+            if (definition.absoluteCenterMeters.sqrMagnitude > 0.0001f)
+            {
+                center = new float3(
+                    definition.absoluteCenterMeters.x,
+                    definition.absoluteCenterMeters.y,
+                    definition.absoluteCenterMeters.z);
+            }
+            else if (_chunkIndexById.IsCreated && _chunkIndexById.TryGetValue(chunkId, out int chunkIndex) && _chunkCenters.IsCreated)
+            {
+                AbsoluteUniversePositionBlit chunkCenter = _chunkCenters[chunkIndex];
+                center = new float3(
+                    (float)ToAbsoluteX(in chunkCenter),
+                    (float)ToAbsoluteY(in chunkCenter),
+                    (float)ToAbsoluteZ(in chunkCenter));
+            }
+            else
+            {
+                return false;
+            }
+
+            float chunkSize = definition.chunkSizeMeters > 0
+                ? definition.chunkSizeMeters
+                : math.max(1f, ResolveEffectiveUnloadRadiusMeters(_resolvedTier));
+            size = new float3(
+                math.max(1f, chunkSize),
+                math.max(1f, chunkSize),
+                math.max(1f, chunkSize));
+            if (!math.all(math.isfinite(center)) || !math.all(math.isfinite(size)))
+            {
+                DumpHlodTelemetry(TelemetryInvalidAupFlag);
+                return false;
+            }
+
+            if (_resolvedTier == ChunkStreamingScalabilityTier.Low)
+                flags |= HectonChunkImpostorResidency.FlagLowTierSnap;
+            else
+                flags |= HectonChunkImpostorResidency.FlagDitherBlend;
+            return true;
+        }
+
+        private static int ResolveChunkImpostorType(in ChunkDefinition definition)
+        {
+            if (ContainsToken(definition.label, "wreck") ||
+                ContainsToken(definition.addressableAddress, "wreck") ||
+                ContainsToken(definition.additiveSceneName, "wreck") ||
+                ContainsToken(definition.label, "ruin") ||
+                ContainsToken(definition.addressableAddress, "ruin"))
+            {
+                return ActiveImpostorWreckType;
+            }
+
+            if (ContainsToken(definition.label, "base") ||
+                ContainsToken(definition.addressableAddress, "base") ||
+                ContainsToken(definition.additiveSceneName, "base") ||
+                ContainsToken(definition.label, "module") ||
+                ContainsToken(definition.addressableAddress, "module"))
+            {
+                return ActiveImpostorBaseType;
+            }
+
+            return 0;
+        }
+
+        private static bool ContainsToken(string source, string token)
+        {
+            return !string.IsNullOrEmpty(source) &&
+                   source.IndexOf(token, StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        private float ResolveActiveImpostorDefaultRadius()
+        {
+            return math.max(1f, ResolveEffectiveUnloadRadiusMeters(_resolvedTier) * 0.5f);
+        }
+
+        private void MuteAssociatedAcousticPortals(long chunkId, bool muted)
+        {
+            _ = chunkId;
+            _ = muted;
+        }
+
         private void RefreshStateDiagnosticsIfDirty()
         {
             if (!_stateDiagnosticsDirty || _residencyJobScheduled)
@@ -2867,6 +4002,7 @@ namespace Hecton8.World
             _debugResidentChunks = resident;
             _debugLoadingChunks = loading;
             _debugEvictingChunks = evicting;
+            stateHash = MixHash(stateHash, unchecked((uint)_activeImpostorCount));
             _debugStateHash = stateHash;
             _stateDiagnosticsDirty = false;
         }
@@ -2897,6 +4033,7 @@ namespace Hecton8.World
                 ResidentCount = (ushort)math.min(ushort.MaxValue, resident),
                 LoadingCount = (ushort)math.min(ushort.MaxValue, loading),
                 EvictingCount = (ushort)math.min(ushort.MaxValue, evicting),
+                ActiveImpostorCount = (ushort)math.min(ushort.MaxValue, _activeImpostorCount),
                 StateHash = stateHash
             };
             _telemetryCursor++;
@@ -2921,6 +4058,16 @@ namespace Hecton8.World
                 return;
 
             string path = Path.GetFullPath(Path.Combine(Application.dataPath, "..", BackpressureDumpRelativePath));
+            DumpTelemetryToPath(path);
+        }
+
+        private void DumpHlodTelemetry(uint reasonFlags)
+        {
+            WriteTelemetrySample(0L, reasonFlags);
+            if (!_telemetryRing.IsCreated)
+                return;
+
+            string path = Path.GetFullPath(Path.Combine(Application.dataPath, "..", HlodDumpRelativePath));
             DumpTelemetryToPath(path);
         }
 
@@ -2949,6 +4096,7 @@ namespace Hecton8.World
                     writer.Write(entry.ResidentCount);
                     writer.Write(entry.LoadingCount);
                     writer.Write(entry.EvictingCount);
+                    writer.Write(entry.ActiveImpostorCount);
                     writer.Write(entry.StateHash);
                 }
             }
@@ -3021,6 +4169,42 @@ namespace Hecton8.World
                 NativeMemorySentinel.UnregisterNativeArray(_loadImmediateRadiusFlags);
                 _loadImmediateRadiusFlags.Dispose();
             }
+
+            ReleaseH8NativeArray(ref _activeImpostors, nameof(_activeImpostors));
+            ReleaseH8NativeArray(ref _impostorTypes, nameof(_impostorTypes));
+            ReleaseH8NativeArray(ref _activeImpostorChunkIds, nameof(_activeImpostorChunkIds));
+            ReleaseH8NativeArray(ref _activeImpostorSpawnTimes, nameof(_activeImpostorSpawnTimes));
+            ReleaseH8NativeArray(ref _activeImpostorCenters, nameof(_activeImpostorCenters));
+            ReleaseH8NativeArray(ref _activeImpostorSizes, nameof(_activeImpostorSizes));
+            ReleaseH8NativeArray(ref _activeImpostorFlags, nameof(_activeImpostorFlags));
+            ReleaseH8NativeArray(ref _activeImpostorCartographyPoints, nameof(_activeImpostorCartographyPoints));
+            ReleaseH8NativeArray(ref _activeImpostorCountRef, nameof(_activeImpostorCountRef));
+            ReleaseH8NativeArray(ref _activeImpostorFadeOutCountRef, nameof(_activeImpostorFadeOutCountRef));
+            if (_pagerReadTickets.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_pagerReadTickets);
+                _pagerReadTickets.Dispose();
+                _pagerReadTickets = default;
+            }
+
+            if (_macroDatabaseEvictionScratch.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_macroDatabaseEvictionScratch);
+                _macroDatabaseEvictionScratch.Dispose();
+                _macroDatabaseEvictionScratch = default;
+            }
+
+            _pagerReadTicketCount = 0;
+        }
+
+        private static void ReleaseH8NativeArray<T>(ref NativeArray<T> array, string label) where T : struct
+        {
+            _ = label;
+            if (!array.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeArray(array);
+            H8Memory.Release(ref array);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -3043,6 +4227,12 @@ namespace Hecton8.World
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static double DistanceSq(in AbsoluteUniversePositionBlit lhs, in AbsoluteUniversePositionBlit rhs)
+        {
+            return math.distancesq(ToAbsoluteDouble3(in lhs), ToAbsoluteDouble3(in rhs));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static double DistanceSq(in AbsoluteUniversePositionBlit lhs, in AbsoluteUniversePosition rhs)
         {
             return math.distancesq(ToAbsoluteDouble3(in lhs), ToAbsoluteDouble3(in rhs));
         }
@@ -3121,6 +4311,23 @@ namespace Hecton8.World
             hash ^= value;
             hash *= 1099511628211UL;
             return hash;
+        }
+
+        private static uint ComputeJobAdmissionHash(string text)
+        {
+            const uint fnvOffset = 2166136261u;
+            const uint fnvPrime = 16777619u;
+            uint hash = fnvOffset;
+            if (!string.IsNullOrEmpty(text))
+            {
+                for (int i = 0; i < text.Length; i++)
+                {
+                    hash ^= text[i];
+                    hash *= fnvPrime;
+                }
+            }
+
+            return hash == 0u ? 1u : hash;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

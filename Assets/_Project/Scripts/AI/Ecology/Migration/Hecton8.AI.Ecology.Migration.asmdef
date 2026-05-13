@@ -6,7 +6,8 @@
         "Hecton8.World.Contracts",
         "Unity.Mathematics",
         "Unity.Burst",
-        "Unity.Collections"
+        "Unity.Collections",
+        "Unity.Jobs"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

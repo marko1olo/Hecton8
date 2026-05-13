@@ -3,6 +3,7 @@
 #pragma kernel ClearSonarGlow
 #pragma kernel AccumulateSonarGlow
 #pragma kernel ClearFogDensity
+#pragma require compute
 
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 

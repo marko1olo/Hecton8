@@ -121,6 +121,7 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
             StructuredBuffer<float4> _HectonModuleAmbienceDataBuffer;
             StructuredBuffer<float4> _HectonModuleWaterLevelsBuffer;
             int _ModuleWaterLevelCount;
+            #include "Assets/_Project/Art/Shaders/Hecton_HabitatInterior.hlsl"
             float _BaseVoltage;
             float _BaseVoltageFlickerSpeed;
             float _BaseVoltageMinimum;
@@ -192,6 +193,7 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
                 half xrNearClipFade : TEXCOORD5;
                 float2 xrFoveatedVector : TEXCOORD6;
                 half hullDentShadow : TEXCOORD7;
+                half habitatStress01 : TEXCOORD8;
             };
 
             half3 SafeNormalize3(half3 value)
@@ -402,17 +404,34 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
                 HECTON_CORE_LIT_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
                 half hullDentShadow;
                 float3 safePositionOS = HectonCoreLitApplyHullDentsOS(input.positionOS.xyz, input.normalOS, hullDentShadow);
+                float habitatStress01 = saturate(_HectonHabitatModuleStressParams.w);
+                if (_HectonHabitatModuleStressParams.z <= 0.5)
+                {
+                    VertexPositionInputs preBendPositionInputs = GetVertexPositionInputs(safePositionOS);
+                    uint habitatStressIndex = HectonHabitatInteriorResolveStressIndex(preBendPositionInputs.positionWS);
+                    habitatStress01 = HectonHabitatInteriorReadStress01(habitatStressIndex);
+                }
+                half habitatBendShadow;
+                safePositionOS = HectonHabitatInteriorApplyPanelBendOS(
+                    safePositionOS,
+                    input.normalOS,
+                    input.uv,
+                    habitatStress01,
+                    habitatBendShadow);
                 VertexPositionInputs positionInputs = GetVertexPositionInputs(safePositionOS);
                 VertexNormalInputs normalInputs = GetVertexNormalInputs(input.normalOS);
+                half3 normalWS = SafeNormalize3(normalInputs.normalWS);
+                normalWS = HectonHabitatInteriorApplyCheapNormalBiasWS(normalWS, input.uv, habitatStress01);
                 output.positionCS = positionInputs.positionCS;
                 output.positionWS = positionInputs.positionWS;
-                output.normalWS = SafeNormalize3(normalInputs.normalWS);
+                output.normalWS = normalWS;
                 output.viewDirWS = SafeNormalize3(GetWorldSpaceViewDir(positionInputs.positionWS));
                 output.uv = TRANSFORM_TEX(input.uv, _BaseMap);
                 output.fogFactor = ComputeFogFactor(positionInputs.positionCS.z);
                 output.xrNearClipFade = (half)HectonCoreLitEvaluateXRNearClipFade(output.positionWS);
                 output.xrFoveatedVector = HectonCoreLitBuildStereoFoveationVector(output.positionWS);
-                output.hullDentShadow = hullDentShadow;
+                output.hullDentShadow = max(hullDentShadow, habitatBendShadow);
+                output.habitatStress01 = (half)saturate(habitatStress01);
                 return output;
             }
 
@@ -505,6 +524,8 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
                     half lowTierScarTexture = SAMPLE_TEXTURE2D(_DetailMask, sampler_DetailMask, input.uv * 2.7).r;
                     hullDentShadow = max(hullDentShadow, (half)_HectonHullDentParams.z * lowTierScarTexture * 0.28h);
                 }
+                half habitatCreaseMask = SAMPLE_TEXTURE2D(_DetailMask, sampler_DetailMask, input.uv * 3.1).r;
+                HectonHabitatInteriorApplyLowTierCrease(input.uv, input.habitatStress01, habitatCreaseMask, hullDentShadow, albedo, smoothness);
                 HectonCoreLitApplyHullDentSurfaceCheat(hullDentShadow, albedo, smoothness);
                 float parasitePulse = 1.0;
                 float thermalGrowthMask = 0.0;

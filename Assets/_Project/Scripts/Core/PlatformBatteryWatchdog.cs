@@ -1,19 +1,14 @@
-using Unity.Mathematics;
+using Hecton8.Core.Contracts;
 using UnityEngine;
 
 namespace Hecton8.Core
 {
     /// <summary>
-    /// Low-cadence battery policy: drop runtime quality when portable hardware is critically low.
+    /// Compatibility facade for legacy battery clamps. HardwareThermalService owns all platform polling.
     /// </summary>
     public static class PlatformBatteryWatchdog
     {
-        private const float CriticalBatteryLevel = 0.15f;
-        private const int SampleIntervalFrames = 300;
-
-        // COLD ALLOC: BatteryWatchdogTickable[1] - dispatcher-owned low-cadence battery sampler - owner: PlatformBatteryWatchdog
-        private static readonly BatteryWatchdogTickable s_tickable = new BatteryWatchdogTickable();
-        private static bool _registered;
+        private const byte CriticalBatteryPercent = 15;
         private static bool _criticalQualityApplied;
 
         /// <summary>
@@ -24,27 +19,29 @@ namespace Hecton8.Core
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            _registered = false;
             _criticalQualityApplied = false;
-            s_tickable.Reset();
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void InitializeAfterSceneLoad()
         {
             SampleAndApply();
-            TryRegister();
         }
 
         /// <summary>
-        /// Samples the platform battery state and applies the critical quality clamp if needed.
+        /// Applies the critical quality clamp from cached hardware telemetry only.
         /// </summary>
         public static void SampleAndApply()
         {
             if (_criticalQualityApplied)
                 return;
 
-            if (!IsCriticalBattery())
+            IHardwareThermalService hardware = GlobalRegistry.HardwareThermal;
+            if (hardware == null)
+                return;
+
+            byte batteryPercent = hardware.BatteryPercent;
+            if (batteryPercent == 0 || batteryPercent >= CriticalBatteryPercent)
                 return;
 
             if (QualitySettings.GetQualityLevel() != 0)
@@ -52,47 +49,6 @@ namespace Hecton8.Core
 
             GlobalRegistry.RegisterScalabilityTierOverride(ScalabilityTierProfiles.LowMx350);
             _criticalQualityApplied = true;
-        }
-
-        private static void TryRegister()
-        {
-            if (_registered || !Application.isPlaying)
-                return;
-
-            if (GlobalRegistry.Dispatcher == null)
-                return;
-
-            _registered = GlobalRegistry.TryRegisterUpdatable(s_tickable, PriorityLayer.Core);
-        }
-
-        private static bool IsCriticalBattery()
-        {
-            float level = SystemInfo.batteryLevel;
-            if (!math.isfinite(level) || level < 0f)
-                return false;
-
-            return level < CriticalBatteryLevel &&
-                   SystemInfo.batteryStatus == BatteryStatus.Discharging;
-        }
-
-        private sealed class BatteryWatchdogTickable : IUpdatable
-        {
-            private int _nextSampleFrame;
-
-            public void Reset()
-            {
-                _nextSampleFrame = 0;
-            }
-
-            public void Tick(float deltaTime)
-            {
-                int frame = Time.frameCount;
-                if (frame < _nextSampleFrame)
-                    return;
-
-                _nextSampleFrame = frame + SampleIntervalFrames;
-                PlatformBatteryWatchdog.SampleAndApply();
-            }
         }
     }
 }

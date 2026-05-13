@@ -35,7 +35,7 @@ namespace Hecton8.UI
     /// Shows different prompts based on looked-at object and held tool.
     /// Uses ITickable for updates. Zero GC in hot paths.
     /// </summary>
-    public class InteractionUI : MonoBehaviour, ITickable, IUpdatable, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
+    public class InteractionUI : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
     {
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  INSPECTOR
@@ -96,6 +96,7 @@ namespace Hecton8.UI
         private PlayerToolManager _toolManager;
         private PlayerInventory _inventory;
         private bool _registered;
+        private bool _registeredLateFrame;
         private string _currentPrompt;
         private string _currentPromptSource;
         private Collider _cachedPromptCollider;
@@ -132,6 +133,7 @@ namespace Hecton8.UI
         private string _localizedVerbInhale;
         private string _localizedVerbUse;
         private string _localizedVerbTake;
+        private uint _lastInputSchemeHash;
 
         // Pre-allocated raycast buffer
         private readonly RaycastHit[] _hitBuffer = new RaycastHit[MaxPromptRaycastHits]; // COLD ALLOC: RaycastHit[4] - bounded prompt probe buffer - owner: InteractionUI
@@ -205,6 +207,7 @@ namespace Hecton8.UI
 
         public void Tick(float deltaTime)
         {
+            ConsumeInputStateSignals();
             float safeDeltaTime = math.max(0f, deltaTime);
             _cameraRetryTimer = math.max(0f, _cameraRetryTimer - safeDeltaTime);
             // â”€â”€ Check if action is in progress â”€â”€
@@ -262,6 +265,12 @@ namespace Hecton8.UI
 
             UpdatePrompt(prompt);
             SetVisible(true);
+        }
+
+        public void LateFrameTick()
+        {
+            Tick(SystemDispatcher.CurrentFrameUnscaledDeltaTime);
+            HphiReactiveUiTelemetry.RecordActiveUiUpdate();
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -838,27 +847,69 @@ namespace Hecton8.UI
 
         private void RegisterToTick()
         {
-            if (_registered || !Application.isPlaying)
+            if (!Application.isPlaying)
                 return;
 
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+            if (_registered)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+                _registered = false;
+            }
+
+            if (!_registeredLateFrame)
+                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
         private void UnregisterFromTick()
         {
-            if (!_registered)
+            if (_registered)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+                _registered = false;
+            }
+
+            if (!_registeredLateFrame)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
-            _registered = false;
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+            _registeredLateFrame = false;
         }
 
         private float ResolvePromptProbeInterval()
         {
             return math.max(MinimumPromptProbeIntervalSeconds, promptProbeIntervalSeconds);
+        }
+
+        private void ConsumeInputStateSignals()
+        {
+            ReadOnlySpan<InputStateSignal> signals = SignalBus<InputStateSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                uint schemeHash = signals[i].CurrentInputSchemeHash;
+                if (schemeHash == 0u || schemeHash == _lastInputSchemeHash)
+                    continue;
+
+                _lastInputSchemeHash = schemeHash;
+                HandleInputDisplayStyleChanged(ResolveDisplayStyleFromSignal(schemeHash));
+            }
+        }
+
+        private static InputDisplayStyle ResolveDisplayStyleFromSignal(uint schemeHash)
+        {
+            switch (schemeHash)
+            {
+                case 0x47504144u:
+                    return InputDisplayStyle.Gamepad;
+                case 0x5354444Bu:
+                    return InputDisplayStyle.SteamDeck;
+                case 0x58525443u:
+                    return InputDisplayStyle.XRTouch;
+                default:
+                    return InputDisplayStyle.KeyboardMouse;
+            }
         }
     }
 }

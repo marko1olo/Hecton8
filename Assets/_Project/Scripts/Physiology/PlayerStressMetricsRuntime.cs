@@ -23,6 +23,9 @@ namespace Hecton8.Physiology
         private const float ApexThreatRadiusMeters = 50f;
         private const float AcousticStressImpulseScale = 0.08f;
         private const float DamageStressImpulseScale = 0.18f;
+        private const float SqueezeStressImpulseScale = 1.0f;
+        private const float SqueezeStressPerSecond = 0.1f;
+        private const float SqueezeStressPerSlowTick = SqueezeStressPerSecond * StressSubstepDeltaSeconds * StressSubstepsPerSlowTick;
         private const float O2StressMultiplier = 1.5f;
         private const float NeutralLightLevel01 = 0.5f;
         private const float InvByteMax = 1f / 255f;
@@ -44,6 +47,7 @@ namespace Hecton8.Physiology
         private const byte CauseDamage = 3;
         private const byte CauseAcoustic = 4;
         private const byte CauseRecovery = 5;
+        private const byte CauseSqueeze = 6;
         private const byte FlagDarkness = 1 << 0;
         private const byte FlagApexPredator = 1 << 1;
         private const byte FlagDamage = 1 << 2;
@@ -65,6 +69,7 @@ namespace Hecton8.Physiology
         private int _lastDamageSequence;
         private int _lastAcousticSequence;
         private int _lastLightSequence;
+        private int _lastPlayerStateSequence;
         private int _hallucinationCooldownSlowTicks;
         private uint _rngState = 0xA341316Cu;
         private uint _sourceEntityId;
@@ -220,6 +225,19 @@ namespace Hecton8.Physiology
                     _state.LightLevel01 = NeutralLightLevel01;
                 }
             }
+
+            if (GlobalSignals.TryGetLatestPlayerStateSignal(out PlayerStateSignal playerStateSignal, out int playerStateSequence) &&
+                playerStateSequence != _lastPlayerStateSequence)
+            {
+                _lastPlayerStateSequence = playerStateSequence;
+                if (playerStateSignal.State == PlayerStateSignal.StateSqueezing &&
+                    (playerStateSignal.Flags & PlayerStateSignal.FlagSqueezing) != 0)
+                {
+                    _state.SqueezeImpulse01 = math.max(
+                        _state.SqueezeImpulse01,
+                        SqueezeStressPerSlowTick);
+                }
+            }
         }
 
         private void HandleMissingPlayerPose()
@@ -233,6 +251,7 @@ namespace Hecton8.Physiology
             _state.PredatorThreat01 = 0f;
             _state.AcousticImpulse01 = 0f;
             _state.DamageImpulse01 = 0f;
+            _state.SqueezeImpulse01 = 0f;
             _state.Recovery01 = 0f;
             _state.O2DrainMultiplier = 1f + _state.PlayerStress01 * O2StressMultiplier;
             _state.LastCause = 0;
@@ -277,6 +296,12 @@ namespace Hecton8.Physiology
                 cause = CauseDamage;
             }
 
+            if (_state.SqueezeImpulse01 > 0f)
+            {
+                stress += _state.SqueezeImpulse01 * SqueezeStressImpulseScale;
+                cause = CauseSqueeze;
+            }
+
             for (int i = 0; i < StressSubstepsPerSlowTick; i++)
             {
                 if (_state.LightLevel01 < DarknessLightThreshold01)
@@ -310,6 +335,7 @@ namespace Hecton8.Physiology
                 _state.LastFlags = flags;
                 _state.AcousticImpulse01 = 0f;
                 _state.DamageImpulse01 = 0f;
+                _state.SqueezeImpulse01 = 0f;
                 CrashTelemetryBuffer.ReportPhysiologyNan(
                     stress,
                     _state.O2DrainMultiplier,
@@ -325,6 +351,7 @@ namespace Hecton8.Physiology
             _state.LastFlags = flags;
             _state.AcousticImpulse01 = 0f;
             _state.DamageImpulse01 = 0f;
+            _state.SqueezeImpulse01 = 0f;
 
             if (_state.PlayerStress01 >= PanicAttackThreshold01 && _state.PanicAttackEmitted == 0)
             {
@@ -479,6 +506,7 @@ namespace Hecton8.Physiology
                 math.isfinite(_state.PredatorThreat01) &&
                 math.isfinite(_state.AcousticImpulse01) &&
                 math.isfinite(_state.DamageImpulse01) &&
+                math.isfinite(_state.SqueezeImpulse01) &&
                 math.isfinite(_state.Recovery01) &&
                 math.isfinite(_state.O2DrainMultiplier) &&
                 math.isfinite(_state.PeakStress01);
@@ -571,6 +599,7 @@ namespace Hecton8.Physiology
             public float PredatorThreat01;
             public float AcousticImpulse01;
             public float DamageImpulse01;
+            public float SqueezeImpulse01;
             public float Recovery01;
             public float O2DrainMultiplier;
             public float PeakStress01;

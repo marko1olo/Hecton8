@@ -1,0 +1,21 @@
+{
+    "name": "Hecton8.Core.Hardware",
+    "rootNamespace": "Hecton8.Core.Hardware",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Bootstrap.Contracts",
+        "Unity.Collections",
+        "Unity.Mathematics",
+        "Unity.Profiling.Core"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

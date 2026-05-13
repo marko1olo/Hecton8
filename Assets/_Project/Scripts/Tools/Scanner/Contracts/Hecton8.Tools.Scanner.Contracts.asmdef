@@ -1,0 +1,14 @@
+{
+    "name": "Hecton8.Tools.Scanner.Contracts",
+    "rootNamespace": "Hecton8.Tools.Scanner.Contracts",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

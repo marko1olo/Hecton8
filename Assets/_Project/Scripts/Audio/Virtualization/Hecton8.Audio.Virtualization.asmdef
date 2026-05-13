@@ -1,0 +1,21 @@
+{
+    "name": "Hecton8.Audio.Virtualization",
+    "rootNamespace": "Hecton8.Audio.Virtualization",
+    "references": [
+        "Hecton8.Audio.Propagation",
+        "Hecton8.Audio.Virtualization.Contracts",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -88,7 +88,7 @@ namespace Hecton8.World
         private const string SeamRootName = "__GEOLOGY_SEAM";
         private const string GapDitherName = "__SEAM_DITHER";
         private const int RuntimeKeySelectionCapacity = 128;
-        private static readonly string[] _TerrainSkirtNames = CreateIndexedNames("TerrainSkirt_", 12);
+        private const int HybridTerrainSeamBuildVersion = 2;
         private static readonly string[] _VoxelCollarNames = CreateIndexedNames("VoxelCollar_", 10);
         private static readonly string[] _DebrisNames = CreateIndexedNames("Debris_", 14);
 
@@ -100,9 +100,7 @@ namespace Hecton8.World
         [SerializeField] private int maxExecutedPlans = 48;
         [SerializeField, Min(0f)] private float autoResolveRetryInterval = 1f;
         [SerializeField] private float minExecutionWeight = 0.18f;
-        [SerializeField] private int terrainSkirtSegments = 6;
         [SerializeField] private int voxelCollarSegments = 5;
-        [SerializeField] private float verticalBlendScale = 0.42f;
         [SerializeField] private float debrisScale = 0.42f;
         [SerializeField] private float seamDitherVerticalOffset = 0.14f;
         [SerializeField] private int seamDitherMaxParticles = 36;
@@ -198,7 +196,7 @@ namespace Hecton8.World
             if (!_registeredToTickManager)
                 return;
 
-                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
 
             _registeredToTickManager = false;
         }
@@ -337,8 +335,7 @@ namespace Hecton8.World
             Material seamMaterial = ResolveSeamMaterial(binding.transform);
             int primitiveIndex = 0;
 
-            if (plan.RequiresTerrainBlend)
-                BuildTerrainSkirt(seamRoot, seamMaterial, plan, ref primitiveIndex);
+            // Terrain contact is now owned by the SDF-to-heightmap projection and global shader mask.
 
             if (plan.RequiresVoxelBlend)
                 BuildVoxelCollar(seamRoot, seamMaterial, plan, ref primitiveIndex);
@@ -510,24 +507,6 @@ namespace Hecton8.World
         {
         }
 
-        private void BuildTerrainSkirt(Transform root, Material seamMaterial, in WorldGenerativeGeologySeamPlan plan, ref int primitiveIndex)
-        {
-            int segments = Mathf.Clamp(terrainSkirtSegments, 4, 12);
-            float radius = Mathf.Max(1.8f, plan.seamBlendRadius * 0.72f);
-            float height = Mathf.Max(0.8f, (plan.suggestedTerrainRaise + plan.suggestedTerrainCut + 1f) * verticalBlendScale);
-            Vector3 contact = root.InverseTransformPoint(plan.TerrainContactPosition);
-
-            for (int i = 0; i < segments; i++)
-            {
-                float angle = (360f / segments) * i + (plan.runtimeKey % 31);
-                Vector3 offset = Quaternion.Euler(0f, angle, 0f) * Vector3.forward * radius;
-                Vector3 localPosition = new Vector3(contact.x + offset.x, contact.y + height * 0.35f, contact.z + offset.z);
-                Vector3 localScale = new Vector3(Mathf.Max(0.5f, radius * 0.28f), height, Mathf.Max(0.45f, radius * 0.22f));
-                Quaternion localRotation = Quaternion.Euler(0f, angle, Mathf.Lerp(-14f, 14f, i / Mathf.Max(1f, segments - 1f)));
-                CreatePrimitive(root, seamMaterial, PrimitiveType.Cube, _TerrainSkirtNames[i], localPosition, localRotation, localScale, ref primitiveIndex);
-            }
-        }
-
         private void BuildVoxelCollar(Transform root, Material seamMaterial, in WorldGenerativeGeologySeamPlan plan, ref int primitiveIndex)
         {
             int segments = Mathf.Clamp(voxelCollarSegments, 3, 10);
@@ -686,7 +665,8 @@ namespace Hecton8.World
         {
             unchecked
             {
-                int hash = (int)plan.runtimeKey;
+                int hash = HybridTerrainSeamBuildVersion;
+                hash = (hash * 397) ^ (int)plan.runtimeKey;
                 hash = (hash * 397) ^ (int)plan.terrainSeamMode;
                 hash = (hash * 397) ^ (int)plan.caveBlendMode;
                 hash = (hash * 397) ^ Mathf.RoundToInt(plan.seamBlendRadius * 100f);

@@ -55,6 +55,7 @@ namespace Hecton8.World
         private GraphicsBuffer _gprArgsBuffer;
         private Mesh _runtimeQuadMesh;
         private Material _runtimeMaterial;
+        private IEcosystemDirectorService _ecosystemDirector;
         private JobHandle _scanJobHandle;
         private Bounds _drawBounds;
         private Transform _cachedPlayerTransform;
@@ -94,6 +95,7 @@ namespace Hecton8.World
             _registeredUpdate = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment) ? 1 : 0;
             _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment) ? 1 : 0;
             _registeredRenderable = GlobalRegistry.Renderables.TryRegister(this) ? 1 : 0;
+            _ecosystemDirector = GlobalRegistry.EcosystemDirector;
         }
 
         private void OnDisable()
@@ -129,6 +131,7 @@ namespace Hecton8.World
             if (ReferenceEquals(GlobalRegistry.GroundRadar, this))
                 GlobalRegistry.UnregisterGroundRadarService(this);
 
+            _ecosystemDirector = null;
             if (_scanJobScheduled)
             {
                 _scanJobHandle.Complete();
@@ -326,6 +329,13 @@ namespace Hecton8.World
                 ? math.saturate(_maxSignalStrength[0])
                 : 0f;
 
+            int macroSwarmAddedCount = AppendMacroSwarmRadarPings();
+            if (macroSwarmAddedCount > 0)
+            {
+                addedCount += macroSwarmAddedCount;
+                _highestSignalStrength = math.max(_highestSignalStrength, 0.85f);
+            }
+
             if (_activeGprPings > 0 && _gprPingBuffer != null)
             {
                 GraphicsBufferUploadUtility.UploadNativeArray(_gprPingBuffer, _gprPingGpu, _activeGprPings);
@@ -349,6 +359,33 @@ namespace Hecton8.World
 
             if (addedCount > 0)
                 PublishGprSignals(_highestSignalStrength);
+        }
+
+        private int AppendMacroSwarmRadarPings()
+        {
+            IEcosystemDirectorService ecosystem = _ecosystemDirector;
+            if (ecosystem == null || !ecosystem.IsInitialized)
+            {
+                ecosystem = GlobalRegistry.EcosystemDirector;
+                _ecosystemDirector = ecosystem;
+            }
+
+            if (ecosystem == null ||
+                !ecosystem.IsInitialized ||
+                !_gprPingGpu.IsCreated ||
+                _activeGprPings >= GroundRadarConstants.MaxPings)
+            {
+                return 0;
+            }
+
+            int remaining = GroundRadarConstants.MaxPings - _activeGprPings;
+            NativeArray<float4> destination = _gprPingGpu.GetSubArray(_activeGprPings, remaining);
+            if (!ecosystem.TryCopyMacroSwarmRadarPings(destination, _lastProbeOrigin, scanRadiusMeters * 4f, out int copiedCount))
+                return 0;
+
+            copiedCount = math.clamp(copiedCount, 0, remaining);
+            _activeGprPings += copiedCount;
+            return copiedCount;
         }
 
         private bool TryResolveScannerActive(out int sequence)

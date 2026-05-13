@@ -43,6 +43,76 @@ namespace Hecton8.Core
         SteamDeckEmulatedTrackpads = 1u << 3
     }
 
+    [Flags]
+    public enum InputStateFlags : ushort
+    {
+        None = 0,
+        AutomationOverride = 1 << 0,
+        DelayApplied = 1 << 1,
+        NonFiniteSanitized = 1 << 2
+    }
+
+    /// <summary>
+    /// Bit-packed deterministic input sample consumed by simulation and replay.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 24)]
+    public struct InputState
+    {
+        public const float AxisQuantizeScale = 32767.0f;
+        public const float AxisInvQuantizeScale = 1.0f / AxisQuantizeScale;
+        public const float LookQuantizeScale = 1024.0f;
+        public const float LookInvQuantizeScale = 1.0f / LookQuantizeScale;
+        public const float LookQuantizeLimit = 31.999f;
+
+        public uint Frame;
+        public uint Sequence;
+        public short MoveX;
+        public short MoveY;
+        public short LookX;
+        public short LookY;
+        public short Vertical;
+        public ushort Flags;
+        public uint ButtonsBitmask;
+
+        public readonly float2 Move => new float2(MoveX * AxisInvQuantizeScale, MoveY * AxisInvQuantizeScale);
+        public readonly float2 Look => new float2(LookX * LookInvQuantizeScale, LookY * LookInvQuantizeScale);
+        public readonly float VerticalAxis => Vertical * AxisInvQuantizeScale;
+
+        public readonly bool HasFlag(InputStateFlags flag)
+        {
+            return (Flags & (ushort)flag) != 0;
+        }
+
+        public readonly bool HasButton(PlayerInputAction action)
+        {
+            return (ButtonsBitmask & (uint)action) != 0u;
+        }
+
+        public static short QuantizeUnit(float value, ref ushort flags)
+        {
+            if (!math.isfinite(value))
+            {
+                flags |= (ushort)InputStateFlags.NonFiniteSanitized;
+                return 0;
+            }
+
+            float clamped = math.clamp(value, -1.0f, 1.0f);
+            return (short)math.round(clamped * AxisQuantizeScale);
+        }
+
+        public static short QuantizeLook(float value, ref ushort flags)
+        {
+            if (!math.isfinite(value))
+            {
+                flags |= (ushort)InputStateFlags.NonFiniteSanitized;
+                return 0;
+            }
+
+            float clamped = math.clamp(value, -LookQuantizeLimit, LookQuantizeLimit);
+            return (short)math.round(clamped * LookQuantizeScale);
+        }
+    }
+
     /// <summary>
     /// OpenXR controller button bits exposed through the frame-cached XR input snapshot.
     /// </summary>
@@ -121,6 +191,11 @@ namespace Hecton8.Core
         /// Platform-specific input flags for Steam Deck and future PAL devices.
         /// </summary>
         public uint PlatformInputFlags;
+
+        /// <summary>
+        /// Stable hash of the input scheme that produced this frame snapshot.
+        /// </summary>
+        public uint CurrentInputSchemeHash;
 
         /// <summary>
         /// Returns true when the cached frame snapshot contains the requested action flag.

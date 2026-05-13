@@ -1,0 +1,21 @@
+{
+    "name": "Hecton8.World.Outposts",
+    "rootNamespace": "Hecton8.World.Outposts",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.World.Contracts",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

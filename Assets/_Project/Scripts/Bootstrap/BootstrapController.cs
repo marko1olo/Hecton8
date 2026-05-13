@@ -10,7 +10,12 @@ namespace Hecton8.Bootstrap
     [DefaultExecutionOrder(-30000)]
     public sealed class BootstrapController : MonoBehaviour
     {
+        [Tooltip("Scene-owned analytical caustics compute shader transferred to the runtime GameBootstrapper.")]
+        [SerializeField] private ComputeShader analyticalCausticsCompute;
+
         private bool _delegatedBoot;
+
+        internal ComputeShader AnalyticalCausticsCompute => analyticalCausticsCompute;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()

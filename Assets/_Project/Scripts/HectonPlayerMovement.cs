@@ -19,6 +19,7 @@
 // ============================================================================
 
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Signals;
 using Hecton8.Audio;
 using Hecton8.Environment;
@@ -49,7 +50,7 @@ namespace Hecton8.Gameplay
 {
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Rigidbody))]
-    public sealed class HectonPlayerMovement : MonoBehaviour, IUpdatable, IFixedTickable, IOriginShiftListener, ISargassumGlobalDragEventListener, ISonarPingEventListener
+    public sealed class HectonPlayerMovement : MonoBehaviour, IUpdatable, IFixedTickable, IOriginShiftListener, ISargassumGlobalDragEventListener, ISonarPingEventListener, IInitializable, IGlobalRegistryHotSwapListener, IScalabilityChangedEventListener, IPlayerMovementContracts
     {
         [StructLayout(LayoutKind.Sequential)]
         private struct CinematicFocusTelemetryEntry
@@ -1130,6 +1131,22 @@ namespace Hecton8.Gameplay
         private HectonPlayerInputHandler _inputHandler;
         private IInputService _inputManager;
         private IInputService _subscribedInputManager;
+        private IAudioService _audioService;
+        private SettingsManager _settingsRuntime;
+        private LocalizationManager _localizationRuntime;
+        private SpectrumSystem _spectrumRuntime;
+        private ResourceDistributionDirector _resourceDistributionRuntime;
+        private IGasDynamicsSolver _gasDynamicsRuntime;
+        private HectonFluidEngine _fluidRuntime;
+        private IInputService _inputServiceRuntime;
+        private IPlayerInventoryService _playerInventoryService;
+        private HectonVoxelEngine _voxelEngineRuntime;
+        private SargassumGlobalDragManager _sargassumDragRuntime;
+        private AbyssalThermalManager _thermodynamicsRuntime;
+        private SuitUpgradeManager _suitUpgradeRuntime;
+        private IHectonOceanKinematicsService _oceanKinematicsRuntime;
+        private IPlayerSensoryService _playerSensoryRuntime;
+        private byte _scalabilityTierProfileByte;
         private PlayerToolManager _playerToolManager;
         private PlayerTransportCoordinator _playerTransportCoordinator;
         private ITransportPlatform _activeTransportPlatform;
@@ -1482,6 +1499,9 @@ namespace Hecton8.Gameplay
         private bool _registeredTick;
         private bool _registeredFixedTick;
         private bool _registeredOriginShiftListener;
+        private bool _registeredPlayerMovementContracts;
+        private bool _registeredHotSwapListener;
+        private bool _registeredScalabilityListener;
 
         // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
         //  CACHED MATH
@@ -1503,6 +1523,8 @@ namespace Hecton8.Gameplay
         private float _fixedFrameBodyEyeY;
         private int _fixedGroundSweepHitCount;
         private float _fixedGroundSweepMaxDistance;
+        private int _cachedLadderSnapColliderInstanceId;
+        private ClimbableLadder _cachedLadderSnapComponent;
         private int _cachedFootstepAudioColliderInstanceId;
         private byte _cachedFootstepAudioMaterialId;
         private bool _cachedFootstepAudioMaterialResolved;
@@ -2035,6 +2057,26 @@ namespace Hecton8.Gameplay
             return _dynamicWaveLocalSlope;
         }
 
+        public Vector2 CurrentLocalWaveSlope => _dynamicWaveLocalSlope;
+
+        public bool TryGetRuntimePosition(out Vector3 position)
+        {
+            if (_rb != null)
+            {
+                position = HectonPlayerMotor.SafeVelocity(_rb.position);
+                return true;
+            }
+
+            if (_cachedTransform != null)
+            {
+                position = HectonPlayerMotor.SafeVelocity(_cachedTransform.position);
+                return true;
+            }
+
+            position = ResolvePlayerAupRuntimePosition();
+            return math.all(math.isfinite(new float3(position.x, position.y, position.z)));
+        }
+
         /// <summary>
         /// Fires a controller-owned active sonar ping through the existing visor sonar owner.
         /// This is an event-path action, not a per-frame scan.
@@ -2044,7 +2086,7 @@ namespace Hecton8.Gameplay
             if (_activeSonarPingCooldownTimer > 0f)
                 return false;
 
-            SpectrumSystem spectrumSystem = GlobalRegistry.Spectrum;
+            SpectrumSystem spectrumSystem = _spectrumRuntime;
             if (spectrumSystem == null)
                 return false;
 
@@ -2053,6 +2095,16 @@ namespace Hecton8.Gameplay
 
             _activeSonarPingCooldownTimer = activeSonarPingCooldown;
             return true;
+        }
+
+        public void QueueExternalAcceleration(Vector3 acceleration)
+        {
+            QueueSubsystemExternalAcceleration(acceleration);
+        }
+
+        public void QueueExternalVelocityChange(Vector3 velocityChange)
+        {
+            QueueSubsystemExternalVelocityChange(velocityChange);
         }
 
         /// <summary>
@@ -2120,7 +2172,7 @@ namespace Hecton8.Gameplay
         /// Call continuously while the hazard remains attached to the active hull.
         /// </summary>
         /// <param name="normalizedStress">Requested normalized hull-stress intensity in the 0..1 range.</param>
-        internal void RequestExternalHullStress(float normalizedStress)
+        public void RequestExternalHullStress(float normalizedStress)
         {
             float clampedStress = math.saturate(normalizedStress);
             if (clampedStress <= 0.0001f)
@@ -2434,7 +2486,7 @@ namespace Hecton8.Gameplay
             _queuedExternalKinematicVelocityChange += safeVelocityChange;
         }
 
-        internal void RequestLocalGravityOverride(Vector3 gravityVector, float holdSeconds)
+        public void RequestLocalGravityOverride(Vector3 gravityVector, float holdSeconds)
         {
             Vector3 safeGravity = HectonPlayerMotor.SafeVelocity(gravityVector);
             if (safeGravity.sqrMagnitude <= MinLocalGravitySqr || holdSeconds <= 0f)
@@ -2597,7 +2649,7 @@ namespace Hecton8.Gameplay
 
         private void RefreshCinematicFocusTierGateCold()
         {
-            _cinematicFocusFovAllowedCached = GlobalRegistry.ScalabilityTierProfileByte != 0;
+            _cinematicFocusFovAllowedCached = _scalabilityTierProfileByte != 0;
         }
 
         private float3 ResolveRawInputIntentVector()
@@ -2694,16 +2746,16 @@ namespace Hecton8.Gameplay
             _lastBrineLayerSample = default;
 
             Vector3 runtimePosition = _rb != null ? _rb.position : ResolvePlayerAupRuntimePosition();
-            ResourceDistributionDirector director = GlobalRegistry.ResourceDistribution;
-            if (!IsInDryInterior() &&
-                director != null &&
-                director.TrySampleBrineLayer(runtimePosition, out BrineLayerSample sample))
+            ResourceDistributionDirector director = _resourceDistributionRuntime;
+            Vector3 shiftOffset = HectonFloatingOrigin.CurrentTotalOffset;
+            if (PlayerMovementBrineRuntimeSystem.TrySampleBrineLayer(
+                    director,
+                    runtimePosition,
+                    IsInDryInterior(),
+                    shiftOffset.y,
+                    out BrineLayerSample sample,
+                    out bool submerged))
             {
-                Vector3 shiftOffset = HectonFloatingOrigin.CurrentTotalOffset;
-                bool submerged = BrineLayerMath.IsRuntimeBelowAbsolutePlane(
-                    runtimePosition.y,
-                    sample.AbsoluteHeightY,
-                    shiftOffset.y);
                 _lastBrineLayerSample = sample;
                 _isInsideBrineLayer = submerged;
                 PublishBrineShaderGlobals(sample, shiftOffset.y);
@@ -2727,9 +2779,9 @@ namespace Hecton8.Gameplay
                 PublishFluidDensityChanged(runtimePosition, _lastBrineLayerSample, _isInsideBrineLayer);
         }
 
-        private static void TryApplyBrineGasToxicity()
+        private void TryApplyBrineGasToxicity()
         {
-            IGasDynamicsSolver gas = GlobalRegistry.GasDynamics;
+            IGasDynamicsSolver gas = _gasDynamicsRuntime;
             gas?.TryApplyPlayerRoomCarbonDioxideEquivalentPressure(BrineLayerConstants.CarbonDioxideEquivalentKPa);
         }
 
@@ -2752,9 +2804,7 @@ namespace Hecton8.Gameplay
                 _lastPublishedBrineColorAlpha = color.w;
             }
 
-            float hardClip = GlobalRegistry.ScalabilityTierProfileByte == 0
-                ? 1f
-                : BrineLayerConstants.DefaultBrineFogHardClip;
+            float hardClip = PlayerMovementBrineRuntimeSystem.ResolveFogHardClip(_scalabilityTierProfileByte);
             if (math.abs(hardClip - _lastPublishedBrineFogHardClip) > 0.001f)
             {
                 Shader.SetGlobalFloat(BrineFogHardClipId, hardClip);
@@ -2923,9 +2973,9 @@ namespace Hecton8.Gameplay
             DumpPlayerKinematicsBlackBox(anomalyHash);
         }
 
-        private static bool TrySampleActiveVoxelSdfSolid(Vector3 runtimePosition)
+        private bool TrySampleActiveVoxelSdfSolid(Vector3 runtimePosition)
         {
-            HectonVoxelEngine voxelEngine = GlobalRegistry.VoxelEngine;
+            HectonVoxelEngine voxelEngine = _voxelEngineRuntime;
             if (voxelEngine == null || voxelEngine.ActiveVolumeCount <= 0)
                 return false;
 
@@ -3788,6 +3838,222 @@ namespace Hecton8.Gameplay
         //  LIFECYCLE
         // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
 
+        public void OnRegister()
+        {
+            if (_registeredPlayerMovementContracts &&
+                ReferenceEquals(GlobalRegistry.PlayerMovementContracts, this))
+            {
+                TryRegisterToDispatchers();
+                return;
+            }
+
+            IPlayerMovementContracts currentContracts = GlobalRegistry.PlayerMovementContracts;
+            if (currentContracts == null || ReferenceEquals(currentContracts, this))
+            {
+                GlobalRegistry.RegisterPlayerMovementContracts(this);
+                _registeredPlayerMovementContracts = ReferenceEquals(GlobalRegistry.PlayerMovementContracts, this);
+            }
+
+            TryRegisterToDispatchers();
+        }
+
+        public void OnDependencyInject()
+        {
+            _audioService = GlobalRegistry.Audio;
+            _settingsRuntime = GlobalRegistry.Settings;
+            _localizationRuntime = GlobalRegistry.Localization;
+            _spectrumRuntime = GlobalRegistry.Spectrum;
+            _resourceDistributionRuntime = GlobalRegistry.ResourceDistribution;
+            _gasDynamicsRuntime = GlobalRegistry.GasDynamics;
+            _fluidRuntime = GlobalRegistry.Fluid;
+            _inputServiceRuntime = GlobalRegistry.Input;
+            _playerInventoryService = GlobalRegistry.PlayerInventory;
+            _voxelEngineRuntime = GlobalRegistry.VoxelEngine;
+            _sargassumDragRuntime = GlobalRegistry.SargassumDrag;
+            _thermodynamicsRuntime = GlobalRegistry.Thermodynamics;
+            _suitUpgradeRuntime = GlobalRegistry.SuitUpgrades;
+            _oceanKinematicsRuntime = GlobalRegistry.OceanKinematics;
+            _playerSensoryRuntime = GlobalRegistry.PlayerSensory;
+            _scalabilityTierProfileByte = GlobalRegistry.ScalabilityTierProfileByte;
+            RefreshRuntimeDependencyBindings();
+        }
+
+        private void RefreshRuntimeDependencyBindings()
+        {
+            BindInventoryLoadSource();
+            ResolvePlayerToolManager();
+            ResolvePlayerTransportCoordinator();
+            ResolveSwimPresentationController();
+            ResolveInputManagerBinding();
+            EnsurePlayerRuntimeSubsystems();
+
+            if (_environmentHandler != null)
+                _environmentHandler.Bind(this, _playerMotor);
+
+            if (_cameraRig != null)
+                _cameraRig.Bind(playerCamera, _cameraComponent);
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Audio:
+                    _audioService = currentService as IAudioService;
+                    break;
+                case GlobalRegistryServiceSlot.SettingsRuntime:
+                    _settingsRuntime = currentService as SettingsManager;
+                    break;
+                case GlobalRegistryServiceSlot.LocalizationRuntime:
+                    _localizationRuntime = currentService as LocalizationManager;
+                    break;
+                case GlobalRegistryServiceSlot.SpectrumRuntime:
+                    _spectrumRuntime = currentService as SpectrumSystem;
+                    break;
+                case GlobalRegistryServiceSlot.ResourceDistributionRuntime:
+                    _resourceDistributionRuntime = currentService as ResourceDistributionDirector;
+                    break;
+                case GlobalRegistryServiceSlot.GasDynamicsRuntime:
+                    _gasDynamicsRuntime = currentService as IGasDynamicsSolver;
+                    break;
+                case GlobalRegistryServiceSlot.FluidRuntime:
+                    _fluidRuntime = currentService as HectonFluidEngine;
+                    break;
+                case GlobalRegistryServiceSlot.Input:
+                    _inputServiceRuntime = currentService as IInputService;
+                    _resolvedInputManager = false;
+                    break;
+                case GlobalRegistryServiceSlot.PlayerInventory:
+                    _playerInventoryService = currentService as IPlayerInventoryService;
+                    _resolvedPlayerToolManager = false;
+                    _playerToolManager = null;
+                    UnbindInventoryLoadSource();
+                    break;
+                case GlobalRegistryServiceSlot.VoxelEngineRuntime:
+                    _voxelEngineRuntime = currentService as HectonVoxelEngine;
+                    break;
+                case GlobalRegistryServiceSlot.SargassumDragRuntime:
+                    _sargassumDragRuntime = currentService as SargassumGlobalDragManager;
+                    break;
+                case GlobalRegistryServiceSlot.ThermodynamicsRuntime:
+                    _thermodynamicsRuntime = currentService as AbyssalThermalManager;
+                    break;
+                case GlobalRegistryServiceSlot.SuitUpgradeRuntime:
+                    _suitUpgradeRuntime = currentService as SuitUpgradeManager;
+                    break;
+                case GlobalRegistryServiceSlot.OceanKinematics:
+                    _oceanKinematicsRuntime = currentService as IHectonOceanKinematicsService;
+                    _oceanKinematics = null;
+                    break;
+                case GlobalRegistryServiceSlot.PlayerSensory:
+                    _playerSensoryRuntime = currentService as IPlayerSensoryService;
+                    _underwaterVisuals = null;
+                    _resolvedUnderwaterVisuals = false;
+                    break;
+            }
+
+            RefreshRuntimeDependencyBindings();
+        }
+
+        public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
+        {
+            _scalabilityTierProfileByte = payload.CurrentTier;
+            RefreshCinematicFocusTierGateCold();
+            if (_isInsideBrineLayer)
+                PublishBrineShaderGlobals(_lastBrineLayerSample, HectonFloatingOrigin.CurrentTotalOffset.y);
+            else
+                PublishInactiveBrineShaderGlobals();
+
+            InvalidateMovementProbeCaches();
+        }
+
+        private void TryRegisterDependencyRebinds()
+        {
+            if (!_registeredHotSwapListener)
+                _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+
+            if (_registeredScalabilityListener)
+                return;
+
+            ScalabilityEvents.Register(this);
+            _registeredScalabilityListener = true;
+        }
+
+        private void TryUnregisterDependencyRebinds()
+        {
+            if (_registeredHotSwapListener)
+            {
+                GlobalRegistry.TryUnregisterHotSwapListener(this);
+                _registeredHotSwapListener = false;
+            }
+
+            if (_registeredScalabilityListener)
+            {
+                ScalabilityEvents.Unregister(this);
+                _registeredScalabilityListener = false;
+            }
+        }
+
+        private void UnregisterPlayerMovementContracts()
+        {
+            if (!_registeredPlayerMovementContracts)
+                return;
+
+            GlobalRegistry.UnregisterPlayerMovementContracts(this);
+            _registeredPlayerMovementContracts = false;
+        }
+
+        private void ClearInjectedDependencies()
+        {
+            _audioService = null;
+            _settingsRuntime = null;
+            _localizationRuntime = null;
+            _spectrumRuntime = null;
+            _resourceDistributionRuntime = null;
+            _gasDynamicsRuntime = null;
+            _fluidRuntime = null;
+            _inputServiceRuntime = null;
+            _playerInventoryService = null;
+            _voxelEngineRuntime = null;
+            _sargassumDragRuntime = null;
+            _thermodynamicsRuntime = null;
+            _suitUpgradeRuntime = null;
+            _oceanKinematicsRuntime = null;
+            _playerSensoryRuntime = null;
+            _scalabilityTierProfileByte = 0;
+        }
+
+        Vector2 IPlayerMovementPoseReadModel.CurrentLocalWaveSlope => _dynamicWaveLocalSlope;
+
+        bool IPlayerMovementPoseReadModel.TryGetRuntimePosition(out Vector3 position)
+        {
+            position = _rb != null ? _rb.position : ResolvePlayerAupRuntimePosition();
+            return true;
+        }
+
+        void IPlayerMovementForceSink.QueueExternalAcceleration(Vector3 acceleration)
+        {
+            QueueSubsystemExternalAcceleration(acceleration);
+        }
+
+        void IPlayerMovementForceSink.QueueExternalVelocityChange(Vector3 velocityChange)
+        {
+            QueueSubsystemExternalVelocityChange(velocityChange);
+        }
+
+        void IPlayerMovementEnvironmentSink.RequestExternalHullStress(float normalizedStress)
+        {
+            RequestExternalHullStress(normalizedStress);
+        }
+
+        void IPlayerMovementEnvironmentSink.RequestLocalGravityOverride(Vector3 gravityVector, float holdSeconds)
+        {
+            RequestLocalGravityOverride(gravityVector, holdSeconds);
+        }
+
         private void Awake()
         {
             EnsureDegreeSinCosLutInitialized();
@@ -4021,6 +4287,9 @@ namespace Hecton8.Gameplay
             _registeredTick = false;
             _registeredFixedTick = false;
             _registeredOriginShiftListener = false;
+            _registeredPlayerMovementContracts = false;
+            _registeredHotSwapListener = false;
+            _registeredScalabilityListener = false;
             _useFixedFrameSpatialCache = false;
             InvalidateMovementProbeCaches();
             RefreshFixedFrameSpatialCache();
@@ -4057,6 +4326,9 @@ namespace Hecton8.Gameplay
         {
             SargassumGlobalDragManager.Register(this);
             SpectrumEvents.RegisterSonarPingListener(this);
+            OnRegister();
+            OnDependencyInject();
+            TryRegisterDependencyRebinds();
             if (_survivalSystem == null)
                 TryGetComponent(out _survivalSystem);
             BindInventoryLoadSource();
@@ -4087,6 +4359,7 @@ namespace Hecton8.Gameplay
             if (_survivalSystem == null)
                 TryGetComponent(out _survivalSystem);
 
+            OnDependencyInject();
             if (_registeredTick && _registeredFixedTick) return;
             TryRegisterToDispatchers();
 
@@ -4100,6 +4373,8 @@ namespace Hecton8.Gameplay
         {
             SargassumGlobalDragManager.Unregister(this);
             SpectrumEvents.UnregisterSonarPingListener(this);
+            TryUnregisterDependencyRebinds();
+            UnregisterPlayerMovementContracts();
             UnbindInventoryLoadSource();
             UnsubscribeFromInput();
             _cachedMoveInput = Vector2.zero;
@@ -4264,11 +4539,30 @@ namespace Hecton8.Gameplay
                 _registeredFixedTick = false;
             }
 
+            if (_registeredPlayerMovementContracts)
+            {
+                GlobalRegistry.UnregisterPlayerMovementContracts(this);
+                _registeredPlayerMovementContracts = false;
+            }
+
+            if (_registeredHotSwapListener)
+            {
+                GlobalRegistry.UnregisterHotSwapListener(this);
+                _registeredHotSwapListener = false;
+            }
+
+            if (_registeredScalabilityListener)
+            {
+                ScalabilityEvents.Unregister(this);
+                _registeredScalabilityListener = false;
+            }
+
             _playerKinematicsNativeState.Dispose();
             ClearCinematicFocus(true);
             DisposeCinematicFocusBlackBox();
             _lastValidAupWriteIndex = 0;
             _lastValidAupCount = 0;
+            ClearInjectedDependencies();
         }
 
         private void BindInventoryLoadSource()
@@ -4312,7 +4606,7 @@ namespace Hecton8.Gameplay
             if (TryGetComponent(out PlayerInventory localInventory))
                 return localInventory;
 
-            return Hecton8.Core.GlobalRegistry.PlayerInventoryRuntime;
+            return _playerInventoryService != null ? _playerInventoryService.Inventory : null;
         }
 
         private void HandleInventoryLoadChanged()
@@ -4478,6 +4772,24 @@ namespace Hecton8.Gameplay
                 _registeredFixedTick = GlobalRegistry.FixedTickables.Contains(this);
             }
 
+            if (!_registeredPlayerMovementContracts)
+            {
+                IPlayerMovementContracts currentContracts = GlobalRegistry.PlayerMovementContracts;
+                if (currentContracts == null)
+                    GlobalRegistry.RegisterPlayerMovementContracts(this);
+
+                _registeredPlayerMovementContracts = ReferenceEquals(GlobalRegistry.PlayerMovementContracts, this);
+            }
+
+            if (!_registeredHotSwapListener)
+                _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+
+            if (!_registeredScalabilityListener)
+            {
+                ScalabilityEvents.Register(this);
+                _registeredScalabilityListener = true;
+            }
+
         }
 
         private void ResolvePlayerToolManager()
@@ -4485,7 +4797,7 @@ namespace Hecton8.Gameplay
             if (_resolvedPlayerToolManager)
                 return;
 
-            IPlayerInventoryService playerInventoryService = GlobalRegistry.PlayerInventory;
+            IPlayerInventoryService playerInventoryService = _playerInventoryService;
             if (playerInventoryService != null && playerInventoryService.ToolManager != null)
                 _playerToolManager = playerInventoryService.ToolManager;
 
@@ -5278,7 +5590,7 @@ namespace Hecton8.Gameplay
             if (_sargassumMovementInfluence == null)
                 return;
 
-            SargassumGlobalDragManager dragManager = Hecton8.Core.GlobalRegistry.SargassumDrag;
+            SargassumGlobalDragManager dragManager = _sargassumDragRuntime;
             if (dragManager != null)
             {
                 Vector3 samplePosition = ResolvePlayerAupRuntimePosition();
@@ -5322,7 +5634,7 @@ namespace Hecton8.Gameplay
             if ((_isWalking && !IsExosuitTransportActive()) || IsInDryInterior())
                 return;
 
-            AbyssalThermalManager thermalManager = GlobalRegistry.Thermodynamics;
+            AbyssalThermalManager thermalManager = _thermodynamicsRuntime;
             if (thermalManager == null)
                 return;
 
@@ -5739,7 +6051,7 @@ namespace Hecton8.Gameplay
             if (clip == null)
                 return;
 
-            Hecton8.Core.IAudioService audioManager = Hecton8.Core.GlobalRegistry.Audio;
+            Hecton8.Core.IAudioService audioManager = _audioService;
             if (audioManager == null)
                 return;
 
@@ -6186,7 +6498,7 @@ namespace Hecton8.Gameplay
             if (wipeoutSuitUpgradeBreakChance <= 0f)
                 return;
 
-            SuitUpgradeManager suitUpgradeManager = Hecton8.Core.GlobalRegistry.SuitUpgrades;
+            SuitUpgradeManager suitUpgradeManager = _suitUpgradeRuntime;
             if (suitUpgradeManager == null)
                 return;
 
@@ -6300,7 +6612,7 @@ namespace Hecton8.Gameplay
 
         private float ResolveFallbackWaterSurfaceY()
         {
-            HectonFluidEngine fluidEngine = GlobalRegistry.Fluid;
+            HectonFluidEngine fluidEngine = _fluidRuntime;
             return fluidEngine != null ? fluidEngine.WaterLevel : waterSurfaceY;
         }
 
@@ -6474,7 +6786,7 @@ namespace Hecton8.Gameplay
                 return _oceanKinematics;
             }
 
-            IHectonOceanKinematicsService oceanKinematicsService = GlobalRegistry.OceanKinematics;
+            IHectonOceanKinematicsService oceanKinematicsService = _oceanKinematicsRuntime;
             _oceanKinematics = oceanKinematicsService != null
                 ? oceanKinematicsService.ActiveProvider
                 : null;
@@ -6502,7 +6814,7 @@ namespace Hecton8.Gameplay
             if (_resolvedUnderwaterVisuals)
                 return;
 
-            IPlayerSensoryService playerSensoryService = GlobalRegistry.PlayerSensory;
+            IPlayerSensoryService playerSensoryService = _playerSensoryRuntime;
             if (playerSensoryService != null && playerSensoryService.UnderwaterVisuals != null)
                 _underwaterVisuals = playerSensoryService.UnderwaterVisuals;
 
@@ -6542,7 +6854,7 @@ namespace Hecton8.Gameplay
             if (_resolvedInputManager && _inputManager != null && _subscribedInputManager == _inputManager)
                 return;
 
-            IInputService currentManager = GlobalRegistry.Input;
+            IInputService currentManager = _inputServiceRuntime;
             if (ReferenceEquals(_subscribedInputManager, currentManager) && ReferenceEquals(_inputManager, currentManager))
             {
                 _resolvedInputManager = true;
@@ -7256,7 +7568,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            IAudioService audioManager = GlobalRegistry.Audio;
+            IAudioService audioManager = _audioService;
             if (audioManager == null)
                 return;
 
@@ -7288,7 +7600,7 @@ namespace Hecton8.Gameplay
 
         private void RefreshVrComfortSettingsCache()
         {
-            SettingsManager settings = GlobalRegistry.Settings;
+            SettingsManager settings = _settingsRuntime;
             _vrComfortActiveCached = ResolveVrComfortModeEnabled(settings);
             _vrSnapTurnEnabledCached = settings != null ? settings.VrSnapTurnEnabled : vrSnapTurnDefaultEnabled;
             _vrHorizonLockEnabledCached = settings != null ? settings.VrHorizonLockEnabled : vrHorizonLockDefaultEnabled;
@@ -8450,18 +8762,34 @@ namespace Hecton8.Gameplay
             ApplyMotorLinearVelocity(currentVelocity);
         }
 
-        private static bool TryResolveLadderSnapFrame(Collider collider, out Vector3 origin, out Vector3 forward)
+        private bool TryResolveLadderSnapFrame(Collider collider, out Vector3 origin, out Vector3 forward)
         {
             origin = Vector3.zero;
             forward = Vector3.forward;
             if (collider == null)
                 return false;
 
-            ClimbableLadder ladder;
-            if (!collider.TryGetComponent(out ladder))
-                return false;
+            int colliderInstanceId = unchecked((int)EntityId.ToULong(collider.GetEntityId()));
+            ClimbableLadder ladder = colliderInstanceId == _cachedLadderSnapColliderInstanceId
+                ? _cachedLadderSnapComponent
+                : null;
+
             if (ladder == null)
-                return false;
+            {
+                if (!collider.TryGetComponent(out ladder) || ladder == null)
+                {
+                    if (colliderInstanceId == _cachedLadderSnapColliderInstanceId)
+                    {
+                        _cachedLadderSnapColliderInstanceId = 0;
+                        _cachedLadderSnapComponent = null;
+                    }
+
+                    return false;
+                }
+
+                _cachedLadderSnapColliderInstanceId = colliderInstanceId;
+                _cachedLadderSnapComponent = ladder;
+            }
 
             Transform ladderTransform = ladder.transform;
             Transform entryPoint = ladder.EntryPoint;
@@ -9197,7 +9525,7 @@ namespace Hecton8.Gameplay
             if (_hullStressIntensity <= 0.9f || _hullStressHudCorruptionRefreshTimer > 0f)
                 return;
 
-            LocalizationManager localization = Hecton8.Core.GlobalRegistry.Localization;
+            LocalizationManager localization = _localizationRuntime;
             if (localization == null)
                 return;
 
@@ -9448,9 +9776,9 @@ namespace Hecton8.Gameplay
             return horizontalBias;
         }
 
-        private static Vector3 ResolveGpuAbyssalFlowVelocity(Vector3 worldPosition)
+        private Vector3 ResolveGpuAbyssalFlowVelocity(Vector3 worldPosition)
         {
-            HectonFluidEngine fluidEngine = GlobalRegistry.Fluid;
+            HectonFluidEngine fluidEngine = _fluidRuntime;
             if (fluidEngine == null ||
                 !fluidEngine.TryGetGpuAbyssalFlowFieldBuffer(out _, out _, out _, out _) ||
                 !fluidEngine.TrySampleModAbyssalFlow(worldPosition, out float3 flowVector) ||
@@ -9630,7 +9958,7 @@ namespace Hecton8.Gameplay
 
         private float ResolveFatalPressureCorruptionIntensity(float sequenceIntensity)
         {
-            LocalizationManager localization = Hecton8.Core.GlobalRegistry.Localization;
+            LocalizationManager localization = _localizationRuntime;
             float localizationIntensity = localization != null
                 ? localization.GetHullStressCorruptionIntensity()
                 : 0f;
@@ -9658,7 +9986,7 @@ namespace Hecton8.Gameplay
 
         private void PushFatalPressureCorruptionWarning()
         {
-            LocalizationManager localization = Hecton8.Core.GlobalRegistry.Localization;
+            LocalizationManager localization = _localizationRuntime;
             string message = localization != null
                 ? localization.GetOrFallback(localization.CurrentLanguage, LocalizationKeys.HUD_STATUS_PRESSURE_LIMIT_EXCEEDED, "PRESSURE LIMIT EXCEEDED")
                 : "PRESSURE LIMIT EXCEEDED";
@@ -9676,7 +10004,7 @@ namespace Hecton8.Gameplay
 
             if (crushDepthImplosionClip != null)
             {
-                Hecton8.Core.IAudioService audioManager = Hecton8.Core.GlobalRegistry.Audio;
+                Hecton8.Core.IAudioService audioManager = _audioService;
                 if (audioManager != null)
                     audioManager.PlayStatic2D(crushDepthImplosionClip, 0.95f, audioManager.InterfaceGroup);
             }
@@ -10104,7 +10432,7 @@ namespace Hecton8.Gameplay
             if (exitedWater)
                 EmitBreachImpactFeedback(math.lerp(0.45f, 1f, speedT));
 
-            Hecton8.Core.IAudioService audioManager = Hecton8.Core.GlobalRegistry.Audio;
+            Hecton8.Core.IAudioService audioManager = _audioService;
             if (audioManager == null)
                 return;
 
@@ -10163,7 +10491,7 @@ namespace Hecton8.Gameplay
             if (underwaterImpactClip == null)
                 return;
 
-            Hecton8.Core.IAudioService audioManager = Hecton8.Core.GlobalRegistry.Audio;
+            Hecton8.Core.IAudioService audioManager = _audioService;
             if (audioManager == null)
                 return;
 
@@ -10213,7 +10541,7 @@ namespace Hecton8.Gameplay
         private void EmitSurfaceGasp()
         {
             if (surfaceGaspClip != null &&
-                Hecton8.Core.GlobalRegistry.Audio is Hecton8.Core.IAudioService audioManager &&
+                _audioService is Hecton8.Core.IAudioService audioManager &&
                 audioManager != null)
             {
                 audioManager.PlayStatic2D(surfaceGaspClip, surfaceGaspVolume, audioManager.InterfaceGroup);
@@ -11098,7 +11426,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            IAudioService audioManager = GlobalRegistry.Audio;
+            IAudioService audioManager = _audioService;
             if (audioManager == null)
                 return;
 
@@ -11243,7 +11571,7 @@ namespace Hecton8.Gameplay
                 exosuitFootstepSonarPingRadius <= 0.01f)
                 return;
 
-            SpectrumSystem spectrumSystem = GlobalRegistry.Spectrum;
+            SpectrumSystem spectrumSystem = _spectrumRuntime;
             if (spectrumSystem != null)
                 spectrumSystem.TriggerActiveSonarPing(exosuitFootstepSonarPingRadius, exosuitFootstepSonarRevealDuration);
 
@@ -11855,19 +12183,22 @@ namespace Hecton8.Gameplay
             }
         }
 
-        private static bool TryResolveHeavyBrineSinkMultiplier(Vector3 worldPosition, out float sinkMultiplier)
+        private bool TryResolveHeavyBrineSinkMultiplier(Vector3 worldPosition, out float sinkMultiplier)
         {
             sinkMultiplier = 0f;
-            ResourceDistributionDirector director = GlobalRegistry.ResourceDistribution;
-            if (director == null ||
-                !director.TrySampleBrineLayer(worldPosition, out BrineLayerSample sample))
+            ResourceDistributionDirector director = _resourceDistributionRuntime;
+            Vector3 shiftOffset = HectonFloatingOrigin.CurrentTotalOffset;
+            if (!PlayerMovementBrineRuntimeSystem.TrySampleBrineLayer(
+                    director,
+                    worldPosition,
+                    false,
+                    shiftOffset.y,
+                    out BrineLayerSample sample,
+                    out bool submerged) ||
+                !submerged)
             {
                 return false;
             }
-
-            Vector3 shiftOffset = HectonFloatingOrigin.CurrentTotalOffset;
-            if (!BrineLayerMath.IsRuntimeBelowAbsolutePlane(worldPosition.y, sample.AbsoluteHeightY, shiftOffset.y))
-                return false;
 
             float fluidDensityKgPerCubicMeter = ReferenceSeaWaterDensityKgPerCubicMeter * math.max(1f, sample.DensityMultiplier);
             sinkMultiplier = HectonPlayerMotor.ResolveHeavyBrineSinkMultiplier(

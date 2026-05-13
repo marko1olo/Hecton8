@@ -41,8 +41,6 @@ namespace Hecton8.EditorTools
                 return;
             }
 
-            ApplyAddressablesTierLabel(texture, assetPath, importer);
-
             if (!IsNormalMap(assetPath, importer) ||
                 !ShouldFlipNormalGreenChannel(assetPath, texture))
             {

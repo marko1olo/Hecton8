@@ -1,0 +1,14 @@
+{
+    "name": "Hecton8.UI.Diegetic.Contracts",
+    "rootNamespace": "Hecton8.UI.Diegetic.Contracts",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

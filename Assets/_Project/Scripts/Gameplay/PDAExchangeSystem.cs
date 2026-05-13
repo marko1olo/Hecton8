@@ -4,6 +4,7 @@ using System.Text;
 using Hecton.Localization;
 using Hecton8.AtlasSignal;
 using Hecton8.Core;
+using Hecton8.Core.Signals;
 using Hecton8.Inventory;
 using Hecton8.SaveSystem;
 using Hecton8.UI;
@@ -161,14 +162,10 @@ namespace Hecton8.Gameplay
         private int _recentTransactionCount;
         private bool _serviceRegistered;
 
-        public static PDAExchangeSystem Instance => GlobalRegistry.PDAExchange;
-
         public int SavePriority => 36;
         public int LoadPriority => 36;
         public int OfferCount => offerCatalog != null ? offerCatalog.Count : 0;
         public int RecentTransactionCount => _recentTransactionCount;
-
-        public event Action ExchangeStateChanged;
 
         private void Awake()
         {
@@ -342,7 +339,7 @@ namespace Hecton8.Gameplay
             PushRecentTransaction(new TransactionSnapshot(offer, offerHash));
 
             NotifyInfo(RelayConfirmedMessage);
-            ExchangeStateChanged?.Invoke();
+            PublishExchangeStateChanged(PdaExchangeStateChangedSignal.ReasonExecuted);
 
             // Notify Atlas6DirectiveSystem: barter raises trust.
             Atlas6DirectiveSystem directive = Hecton8.Core.GlobalRegistry.Atlas6Directive;
@@ -577,7 +574,7 @@ namespace Hecton8.Gameplay
                         tx.rewardSummary));
             }
 
-            ExchangeStateChanged?.Invoke();
+            PublishExchangeStateChanged(PdaExchangeStateChangedSignal.ReasonLoaded);
         }
 
         private void AutoResolve()
@@ -597,8 +594,24 @@ namespace Hecton8.Gameplay
                 HUDNotification.TryGetActive(out hudNotification);
         }
 
-        private void HandleInventoryChanged() => ExchangeStateChanged?.Invoke();
-        private void HandleScanLogChanged() => ExchangeStateChanged?.Invoke();
+        private void HandleInventoryChanged() => PublishExchangeStateChanged(PdaExchangeStateChangedSignal.ReasonInventoryChanged);
+        private void HandleScanLogChanged() => PublishExchangeStateChanged(PdaExchangeStateChangedSignal.ReasonScanLogChanged);
+
+        private void PublishExchangeStateChanged(byte reason)
+        {
+            PdaExchangeStateChangedSignal signal = new PdaExchangeStateChangedSignal
+            {
+                SourceId = unchecked((uint)GetInstanceID()),
+                Frame = unchecked((uint)Time.frameCount),
+                OfferCount = OfferCount,
+                RecentTransactionCount = _recentTransactionCount,
+                ExecutionStateCount = _executionStateCount,
+                Reason = reason,
+                Flags = 0
+            };
+
+            GlobalSignals.Publish(in signal);
+        }
 
         private bool IsUnlocked(BarterOfferData offer)
         {

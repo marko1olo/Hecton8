@@ -612,6 +612,9 @@ namespace Hecton8.Physics
         private bool _nativeStateAllocationFailureReported;
         private float _lastFixedDeltaTime = PhysicsFixedStepSeconds;
         private float _physicsCullingSlowTickAccumulator;
+        private int _aupJitterSentinelCountdown;
+        private int _aupJitterSentinelCachedFrame = -1;
+        private bool _aupJitterSentinelDueThisFrame;
         private float _hitStopRemainingUnscaledSeconds;
         private float _hitStopRestoreTimeScale = 1f;
         private int _lastKineticAnomalyFrame = -1;
@@ -2312,7 +2315,7 @@ namespace Hecton8.Physics
 
         private void ApplyAupJitterSentinel()
         {
-            if ((Time.frameCount % AupJitterSentinelFrameInterval) != 0 ||
+            if (!ShouldRunAupJitterSentinelFrame() ||
                 !_lastValidPositions.IsCreated ||
                 _trackedBodyCount <= 0 ||
                 HectonFloatingOrigin.IsShiftInProgress)
@@ -2326,6 +2329,25 @@ namespace Hecton8.Physics
             Rigidbody submarineBody = submarineContext != null ? submarineContext.HullRigidbody : null;
             if (submarineBody != null && !ReferenceEquals(submarineBody, playerBody))
                 ApplyAupJitterSentinelForBody(submarineBody);
+        }
+
+        private bool ShouldRunAupJitterSentinelFrame()
+        {
+            int frame = Time.frameCount;
+            if (_aupJitterSentinelCachedFrame == frame)
+                return _aupJitterSentinelDueThisFrame;
+
+            _aupJitterSentinelCachedFrame = frame;
+            if (_aupJitterSentinelCountdown <= 0)
+            {
+                _aupJitterSentinelCountdown = AupJitterSentinelFrameInterval - 1;
+                _aupJitterSentinelDueThisFrame = true;
+                return true;
+            }
+
+            _aupJitterSentinelCountdown--;
+            _aupJitterSentinelDueThisFrame = false;
+            return false;
         }
 
         private void ApplyAupJitterSentinelForBody(Rigidbody body)
@@ -3712,6 +3734,9 @@ namespace Hecton8.Physics
             _physicsCullingJobCount = 0;
             _physicsCullingTelemetryWriteIndex = 0;
             _physicsCullingSlowTickAccumulator = 0f;
+            _aupJitterSentinelCountdown = 0;
+            _aupJitterSentinelCachedFrame = -1;
+            _aupJitterSentinelDueThisFrame = false;
             _connectionCapacityOverflowReported = false;
             _trackedBodyCapacityOverflowReported = false;
             _nativeStateAllocationFailureReported = false;

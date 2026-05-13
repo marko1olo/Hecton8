@@ -115,6 +115,7 @@ namespace Hecton8.SaveSystem
             changed |= EnsureProceduralLore(ref data.proceduralLore, steps);
             changed |= EnsureAchievements(ref data.achievements, steps);
             changed |= EnsureRunModifiers(ref data.runModifiers, steps);
+            changed |= EnsureMetaCampaign(ref data.metaCampaign, steps);
             changed |= EnsureResourceScarcity(ref data.resourceScarcity, steps);
             changed |= EnsureEnvironmentalStrain(ref data.environmentalStrain, steps);
             changed |= EnsureEcosystemState(ref data.ecosystemState, steps);
@@ -870,6 +871,42 @@ namespace Hecton8.SaveSystem
                 dto.runMarkedDead = false;
                 changed = true;
                 steps.Add("run modifiers dead-run flag repaired");
+            }
+
+            return changed;
+        }
+
+        private static bool EnsureMetaCampaign(ref MetaCampaignDTO dto, List<string> steps)
+        {
+            bool changed = false;
+            int previousHashCapacity = dto.variableHashes != null ? dto.variableHashes.Length : 0;
+            int previousValueCapacity = dto.variableValues != null ? dto.variableValues.Length : 0;
+
+            dto.EnsureCapacity();
+            if (dto.variableHashes.Length != previousHashCapacity ||
+                dto.variableValues.Length != previousValueCapacity)
+            {
+                changed = true;
+                steps.Add("meta campaign capacity repaired");
+            }
+
+            int clampedCount = math.clamp(
+                dto.variableCount,
+                0,
+                math.min(dto.variableHashes.Length, dto.variableValues.Length));
+            if (clampedCount != dto.variableCount)
+            {
+                dto.variableCount = clampedCount;
+                changed = true;
+                steps.Add("meta campaign variable count clamped");
+            }
+
+            int clampedToxicity = math.clamp(dto.toxicityPermille, 0, 1000);
+            if (clampedToxicity != dto.toxicityPermille)
+            {
+                dto.toxicityPermille = clampedToxicity;
+                changed = true;
+                steps.Add("meta campaign toxicity clamped");
             }
 
             return changed;

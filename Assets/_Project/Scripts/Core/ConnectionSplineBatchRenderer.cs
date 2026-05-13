@@ -166,11 +166,7 @@ namespace Hecton8.Core
 
         private static IConnectionSplineBatchRendererService ResolveService()
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            return GlobalRegistry.Get<IConnectionSplineBatchRendererService>();
-#else
             return GlobalRegistry.TryGet(out IConnectionSplineBatchRendererService renderer) ? renderer : null;
-#endif
         }
 
         private void Awake()

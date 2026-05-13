@@ -172,6 +172,7 @@ namespace Hecton8.Caves
         [SerializeField] private OrganicDebrisProfile laserCarveDebrisProfile;
 
         private HectonVoxelEngine _engine;
+        private ISimulationBucketer _simulationBucketer;
         private bool _saveRegistered;
         private bool _dispatcherRegistered;
         private bool _lateFrameRegistered;
@@ -230,6 +231,7 @@ namespace Hecton8.Caves
         private void OnEnable()
         {
             _engine = GetComponent<HectonVoxelEngine>();
+            _simulationBucketer = GlobalRegistry.SimulationBucketer;
             EnsureCarveEventQueue();
             EnsureBlackBox();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -263,6 +265,7 @@ namespace Hecton8.Caves
             DisposeBlackBox();
             DisposeScheduledCarveBuffers();
             DisposeScheduledCompactionBuffers();
+            _simulationBucketer = null;
             if (_dispatcherRegistered)
             {
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
@@ -677,11 +680,21 @@ namespace Hecton8.Caves
                 return;
 
             int budget = ResolveQueuedCarveDrainBudget();
+            int scanBudget = math.min(_queuedCarveEventCount, InitialCarveEventQueueCapacity);
             while (budget-- > 0 &&
+                   scanBudget-- > 0 &&
                    _queuedCarveEventCount > 0 &&
                    _queuedCarveEvents.TryDequeue(out VoxelCarveEvent carveEvent))
             {
                 _queuedCarveEventCount--;
+                if (ShouldDeferQueuedCarveForFastBucket(in carveEvent))
+                {
+                    _queuedCarveEvents.Enqueue(carveEvent);
+                    _queuedCarveEventCount++;
+                    budget++;
+                    continue;
+                }
+
                 if (TryEnqueuePendingCarveFromEvent(in carveEvent))
                     continue;
 
@@ -694,6 +707,34 @@ namespace Hecton8.Caves
         private static int ResolveQueuedCarveDrainBudget()
         {
             return DebugResolveQueuedCarveDrainBudget(GlobalRegistry.ScalabilityTier);
+        }
+
+        private bool ShouldDeferQueuedCarveForFastBucket(in VoxelCarveEvent carveEvent)
+        {
+            ISimulationBucketer bucketer = _simulationBucketer;
+            if (bucketer == null || !bucketer.IsInitialized)
+            {
+                bucketer = GlobalRegistry.SimulationBucketer;
+                _simulationBucketer = bucketer;
+            }
+
+            if (bucketer == null || !bucketer.IsInitialized)
+                return false;
+
+            uint hash = ResolveQueuedCarveBucketHash(in carveEvent);
+            return !bucketer.IsFastBucketActive(bucketer.ResolveFastBucket(hash));
+        }
+
+        private static uint ResolveQueuedCarveBucketHash(in VoxelCarveEvent carveEvent)
+        {
+            uint volumeLo = unchecked((uint)carveEvent.VolumeInstanceId);
+            uint volumeHi = unchecked((uint)(carveEvent.VolumeInstanceId >> 32));
+            uint packedFlags =
+                carveEvent.Operation |
+                ((uint)carveEvent.Shape << 8) |
+                ((uint)carveEvent.MaterialId << 16) |
+                ((uint)carveEvent.SourceFlags << 24);
+            return math.hash(new uint4(volumeLo, volumeHi, packedFlags, 0xB4C0D4u));
         }
 
         private bool TryEnqueuePendingCarveFromEvent(in VoxelCarveEvent carveEvent)

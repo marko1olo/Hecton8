@@ -1,0 +1,192 @@
+#pragma kernel AdvectFluidParticles
+
+#define HECTON_FLUID_ADVECTION_THREADS 64
+#define HECTON_BUBBLE_POPPED_FLAG 256u
+#define HECTON_DEBRIS_RESTING_FLAG 512u
+
+struct Silt
+{
+    float3 PositionWS;
+    float Life;
+    float3 VelocityWS;
+    uint Flags;
+};
+
+struct Bubble
+{
+    float3 PositionWS;
+    float Life;
+    float3 VelocityWS;
+    uint Flags;
+};
+
+struct Debris
+{
+    float3 PositionWS;
+    float Life;
+    float3 VelocityWS;
+    uint Flags;
+};
+
+StructuredBuffer<Silt> _SiltRead;
+RWStructuredBuffer<Silt> _SiltWrite;
+StructuredBuffer<Bubble> _BubbleRead;
+RWStructuredBuffer<Bubble> _BubbleWrite;
+StructuredBuffer<Debris> _DebrisRead;
+RWStructuredBuffer<Debris> _DebrisWrite;
+
+StructuredBuffer<float4> _AbyssalFlowFieldResult;
+Texture3D<float4> _AbyssalFlowFieldTexture;
+SamplerState sampler_AbyssalFlowFieldTexture;
+
+Texture3D<float> _VoxelSdfTexture3D;
+SamplerState sampler_VoxelSdfTexture3D;
+
+float4 _FluidAdvectionCounts;        // x=silt, y=bubbles, z=debris, w=max dispatch count
+float4 _FluidAdvectionParams;        // x=dt, y=low tier, z=flow active, w=sdf active
+float4 _FluidAdvectionBuoyancy;      // x=silt, y=bubble, z=debris, w=drag
+float4 _FluidAdvectionAupShiftDelta; // xyz=runtime rebase delta applied before integration
+float4 _AbyssalGridResolution;       // xyz=grid resolution, w=flattened count
+float4 _AbyssalFlowCenter;           // xyz=center
+float4 _AbyssalFlowSpacing;          // xyz=spacing
+float4 _AbyssalFlowTextureParams;    // xyz=cell size, w=inv world size
+float _AbyssalFlowTextureActive;
+float4x4 _VoxelSdfWorldToLocal;
+float4 _VoxelSdfInvDoubleHalfExtents;
+float4 _FluidAdvectionSdfParams;     // x=active, y=solid threshold, z=unused, w=unused
+
+float3 Sanitize(float3 value)
+{
+    return all(isfinite(value)) ? value : float3(0.0, 0.0, 0.0);
+}
+
+float3 SampleAbyssalFlow(float3 positionWS)
+{
+    if (_FluidAdvectionParams.z <= 0.5)
+        return float3(0.0, 0.0, 0.0);
+
+    if (_AbyssalFlowTextureActive > 0.5 && _AbyssalFlowTextureParams.w > 0.0)
+    {
+        float3 uvw = (positionWS - _AbyssalFlowCenter.xyz) * _AbyssalFlowTextureParams.w + 0.5;
+        if (all(uvw >= 0.0) && all(uvw <= 1.0))
+            return Sanitize(_AbyssalFlowFieldTexture.SampleLevel(sampler_AbyssalFlowFieldTexture, uvw, 0.0).xyz);
+    }
+
+    if (_AbyssalGridResolution.w <= 0.5 || any(_AbyssalFlowSpacing.xyz <= 0.0))
+        return float3(0.0, 0.0, 0.0);
+
+    float3 halfExtent = (_AbyssalGridResolution.xyz - 1.0) * _AbyssalFlowSpacing.xyz * 0.5;
+    float3 invSpacing = rcp(max(_AbyssalFlowSpacing.xyz, float3(0.001, 0.001, 0.001)));
+    float3 localGrid = (positionWS - (_AbyssalFlowCenter.xyz - halfExtent)) * invSpacing;
+    int3 cell = clamp((int3)round(localGrid), int3(0, 0, 0), (int3)_AbyssalGridResolution.xyz - 1);
+    uint flatIndex = (uint)(cell.x + cell.y * (int)_AbyssalGridResolution.x + cell.z * (int)(_AbyssalGridResolution.x * _AbyssalGridResolution.y));
+    if (flatIndex >= (uint)_AbyssalGridResolution.w)
+        return float3(0.0, 0.0, 0.0);
+
+    return Sanitize(_AbyssalFlowFieldResult[flatIndex].xyz);
+}
+
+bool IsSolidVoxel(float3 positionWS)
+{
+    if (_FluidAdvectionParams.w <= 0.5 || _FluidAdvectionSdfParams.x <= 0.5)
+        return false;
+
+    if (any(_VoxelSdfInvDoubleHalfExtents.xyz <= 0.0))
+        return false;
+
+    float3 localPosition = mul(_VoxelSdfWorldToLocal, float4(positionWS, 1.0)).xyz;
+    float3 sampleUv = localPosition * _VoxelSdfInvDoubleHalfExtents.xyz + 0.5;
+    if (any(sampleUv < 0.0) || any(sampleUv > 1.0))
+        return false;
+
+    float density = _VoxelSdfTexture3D.SampleLevel(sampler_VoxelSdfTexture3D, sampleUv, 0.0);
+    return density > _FluidAdvectionSdfParams.y;
+}
+
+float3 IntegrateVelocity(float3 velocity, float3 flow, float buoyancy)
+{
+    float drag = saturate(_FluidAdvectionBuoyancy.w);
+    float3 targetVelocity = flow + float3(0.0, buoyancy, 0.0);
+    return Sanitize(lerp(velocity, targetVelocity, drag));
+}
+
+[numthreads(HECTON_FLUID_ADVECTION_THREADS, 1, 1)]
+void AdvectFluidParticles(uint3 id : SV_DispatchThreadID)
+{
+    uint index = id.x;
+    uint siltCount = (uint)max(0.0, _FluidAdvectionCounts.x);
+    uint bubbleCount = (uint)max(0.0, _FluidAdvectionCounts.y);
+    uint debrisCount = (uint)max(0.0, _FluidAdvectionCounts.z);
+    float dt = min(max(_FluidAdvectionParams.x, 0.0), 0.0666667);
+    float3 shiftDelta = _FluidAdvectionAupShiftDelta.xyz;
+
+    if (index < siltCount)
+    {
+        Silt particle = _SiltRead[index];
+        float3 previousPosition = particle.PositionWS + shiftDelta;
+        float3 flow = SampleAbyssalFlow(previousPosition);
+        float3 velocity = IntegrateVelocity(particle.VelocityWS, flow, _FluidAdvectionBuoyancy.x);
+        float3 nextPosition = previousPosition + velocity * dt;
+
+        if (IsSolidVoxel(nextPosition))
+        {
+            particle.PositionWS = previousPosition;
+            particle.VelocityWS = float3(0.0, 0.0, 0.0);
+        }
+        else
+        {
+            particle.PositionWS = nextPosition;
+            particle.VelocityWS = velocity;
+        }
+
+        _SiltWrite[index] = particle;
+    }
+
+    if (index < bubbleCount)
+    {
+        Bubble particle = _BubbleRead[index];
+        float3 previousPosition = particle.PositionWS + shiftDelta;
+        float3 flow = _FluidAdvectionParams.y > 0.5 ? float3(0.0, 0.0, 0.0) : SampleAbyssalFlow(previousPosition);
+        float3 velocity = IntegrateVelocity(particle.VelocityWS, flow, _FluidAdvectionBuoyancy.y);
+        float3 nextPosition = previousPosition + velocity * dt;
+
+        if (IsSolidVoxel(nextPosition))
+        {
+            particle.PositionWS = previousPosition;
+            particle.VelocityWS = float3(0.0, 0.0, 0.0);
+            particle.Life = 0.0;
+            particle.Flags |= HECTON_BUBBLE_POPPED_FLAG;
+        }
+        else
+        {
+            particle.PositionWS = nextPosition;
+            particle.VelocityWS = velocity;
+            particle.Life = max(0.0, particle.Life - dt * 0.05);
+        }
+
+        _BubbleWrite[index] = particle;
+    }
+
+    if (index < debrisCount)
+    {
+        Debris particle = _DebrisRead[index];
+        float3 previousPosition = particle.PositionWS + shiftDelta;
+        float3 flow = _FluidAdvectionParams.y > 0.5 ? float3(0.0, 0.0, 0.0) : SampleAbyssalFlow(previousPosition);
+        float3 velocity = IntegrateVelocity(particle.VelocityWS, flow, _FluidAdvectionBuoyancy.z);
+        float3 nextPosition = previousPosition + velocity * dt;
+
+        if (IsSolidVoxel(nextPosition))
+        {
+            particle.PositionWS = previousPosition;
+            particle.VelocityWS = float3(0.0, 0.0, 0.0);
+            particle.Flags |= HECTON_DEBRIS_RESTING_FLAG;
+        }
+        else
+        {
+            particle.PositionWS = nextPosition;
+            particle.VelocityWS = velocity;
+        }
+
+        _DebrisWrite[index] = particle;
+    }
+}

@@ -145,6 +145,6 @@ Nastroen URP, otklyucheno avto-zapekanie sveta.
 Est gazovyy gigant (Sfera GasGiant_Aegir na Z: 10000, Scale: 5000), sheyder s tsilindricheskoy teksturoy.
 Ploskost okeana (Scale: 2000x2000) s nastroennym Shader Graph (Transparent, iskazhenie cherez Noise i Time).
 Tuman (Exponential Squared, tsvet slivaetsya s Solid Color kamery, plavno perekryvaet gorizont).
-PlayerController.cs: Gotov i visit na kapsule s CharacterController. Upravlenie WASD, polet strogo po vektoru vzglyada kamery (CamTransform). Skript ispolzuet Input.GetAxisRaw.
+PlayerController.cs: Gotov i visit na kapsule s CharacterController. Upravlenie idet cherez agnosticheskiy InputAction servis, bez legacy axis polling.
 WaterLogic.cs: Gotov. Menyaet tsvet i plotnost tumana cherez Mathf.Lerp v zavisimosti ot transform.position.y igroka (pod vodoy ili nad vodoy).
 Est redaktorskiy skript ObjectSpawner, kotoryy generiruet polya oblomkov na dne (Shelf na Y: -20).

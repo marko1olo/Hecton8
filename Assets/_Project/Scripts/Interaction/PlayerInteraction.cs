@@ -376,7 +376,7 @@ namespace Hecton8.Interaction
         ///          Blocked by UI state (HectonFabricatorUI.IsMenuOpen).
         ///
         /// Zero GC: dispatcher RaycastCommand, TryGetComponent,
-        ///          ReferenceEquals, Input.GetKeyDown — all allocation-free.
+        ///          ReferenceEquals, dispatcher action latch — all allocation-free.
         /// </summary>
         public void Tick(float deltaTime)
         {

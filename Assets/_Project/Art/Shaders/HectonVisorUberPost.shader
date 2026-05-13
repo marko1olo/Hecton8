@@ -32,7 +32,9 @@ Shader "Hidden/Hecton8/VisorUberPost"
             #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON _ADDITIONAL_LIGHT_SHADOWS
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #if !defined(SHADER_API_MOBILE)
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
+            #endif
 
             CBUFFER_START(UnityPerMaterial)
                 float _HectonUberHealthFraction;
@@ -45,6 +47,7 @@ Shader "Hidden/Hecton8/VisorUberPost"
                 float _HectonUberHullStress01;
                 float _HectonUberAupShiftFrame;
                 float _HectonUberLowTier;
+                float _HectonUberDepthlessTBDR;
                 float _VRComfortVignette01;
                 float4 _HectonUberStrengths0;
                 float4 _HectonUberStrengths1;
@@ -58,6 +61,7 @@ Shader "Hidden/Hecton8/VisorUberPost"
             float _BrineHeightY;
             float4 _BrineColor;
             float _BrineFogHardClip;
+            float _InternalWaterlineY;
             float4 _InternalWaterColor;
 
             TEXTURE2D_X(_BlitTexture);
@@ -167,9 +171,24 @@ Shader "Hidden/Hecton8/VisorUberPost"
             float ResolveInternalWaterMask(float2 uv)
             {
                 float active = saturate(_InternalWaterlineParams.y);
-                float splitLine = _InternalWaterlineParams.x;
                 float softness = max(0.001, _InternalWaterlineDistortion.z);
+            #if defined(SHADER_API_MOBILE)
+            #if UNITY_REVERSED_Z
+                float farDepth = 0.0;
+            #else
+                float farDepth = 1.0;
+            #endif
+                float3 farWorld = ComputeWorldSpacePosition(uv, farDepth, UNITY_MATRIX_I_VP);
+                float3 cameraPosition = _WorldSpaceCameraPos.xyz;
+                float3 cameraRay = farWorld - cameraPosition;
+                float yDelta = _InternalWaterlineY - cameraPosition.y;
+                float cameraSubmerged = step(cameraPosition.y, _InternalWaterlineY - 0.03);
+                float planeInFront = smoothstep(-softness, softness, yDelta * cameraRay.y);
+                return active * saturate(max(cameraSubmerged, planeInFront));
+            #else
+                float splitLine = _InternalWaterlineParams.x;
                 return active * saturate(1.0 - smoothstep(splitLine - softness, splitLine + softness, uv.y));
+            #endif
             }
 
             float2 InternalWaterOffset(float2 uv, float mask)
@@ -256,6 +275,7 @@ Shader "Hidden/Hecton8/VisorUberPost"
                 return 1.0 - saturate(comfortEdge * comfortVignette01 * 0.92);
             }
 
+            #if !defined(SHADER_API_MOBILE)
             half3 AccumulateLightShaftSource(float2 uv, float centerEyeDepth, float4 source, float4 sourceColor, float sampleBudget)
             {
                 float intensity = max(0.0, source.z);
@@ -300,9 +320,17 @@ Shader "Hidden/Hecton8/VisorUberPost"
                 half3 shaftTint = half3((half)sourceColor.x, (half)sourceColor.y, (half)sourceColor.z);
                 return colorSum * invWeight * shaftTint * (half)intensity;
             }
+            #endif
 
             half3 ResolveLightShafts(float2 uv, float edge01)
             {
+            #if defined(SHADER_API_MOBILE)
+                return half3(0.0h, 0.0h, 0.0h);
+            #else
+                [branch]
+                if (_HectonUberDepthlessTBDR > 0.5)
+                    return half3(0.0h, 0.0h, 0.0h);
+
                 float activeCount = _HectonLightShaftParams.x;
                 [branch]
                 if (activeCount <= 0.5)
@@ -320,6 +348,7 @@ Shader "Hidden/Hecton8/VisorUberPost"
                 shafts += AccumulateLightShaftSource(uv, centerEyeDepth, _HectonLightShaftSource1, _HectonLightShaftColor1, sampleBudget) * (half)step(1.5, activeCount);
                 shafts += AccumulateLightShaftSource(uv, centerEyeDepth, _HectonLightShaftSource2, _HectonLightShaftColor2, sampleBudget) * (half)step(2.5, activeCount);
                 return shafts * (half)globalIntensity;
+            #endif
             }
 
             half3 ResolveLensDirt(float2 uv, float edge01)
@@ -340,6 +369,13 @@ Shader "Hidden/Hecton8/VisorUberPost"
 
             half3 ApplyBrinePlaneFog(half3 color, float2 uv, float lowTier)
             {
+            #if defined(SHADER_API_MOBILE)
+                return color;
+            #else
+                [branch]
+                if (_HectonUberDepthlessTBDR > 0.5)
+                    return color;
+
                 float rawDepth = SampleSceneDepth(uv);
             #if UNITY_REVERSED_Z
                 float depthValid = step(0.000001, rawDepth);
@@ -354,6 +390,7 @@ Shader "Hidden/Hecton8/VisorUberPost"
                 float fogMode = saturate(max(lowTier, _BrineFogHardClip));
                 float fog = belowPlane * lerp(softFog, hardFog, fogMode) * saturate(_BrineColor.a);
                 return lerp(color, (half3)_BrineColor.rgb, (half)fog);
+            #endif
             }
 
             half4 Frag(Varyings input) : SV_Target

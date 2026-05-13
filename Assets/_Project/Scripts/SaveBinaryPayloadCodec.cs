@@ -37,6 +37,11 @@ namespace Hecton8.SaveSystem
         private const int SuitUpgradeMaskSaveVersion = 65;
         private const int RadiationGridSaveVersion = 68;
         private const int RtgDecaySaveVersion = 70;
+        private const int MetaCampaignSaveVersion = 71;
+        private const int FirstHourDtoLockSaveVersion = 72;
+        private const uint WfcOutpostPayloadMagic = 0x57464342u; // WFCB
+        private const ushort WfcOutpostPayloadVersion = 1;
+        private const byte WfcOutpostPayloadFlagRle = 1 << 0;
 
         internal static ulong BuildSectorEntitySpatialSortKey(in AbsoluteUniversePosition position, int chunkSizeMeters)
         {
@@ -73,6 +78,166 @@ namespace Hecton8.SaveSystem
             double normalized = math.clamp(localMeters / chunkSizeMeters, 0d, 1d);
             return (ushort)math.clamp((int)math.round(normalized * ushort.MaxValue), 0, ushort.MaxValue);
         }
+
+        internal static bool TryWriteWfcOutpostBitmaskPayload(
+            NativeArray<ulong> packedWords,
+            int wordCount,
+            byte* destination,
+            int capacity,
+            out int bytesWritten)
+        {
+            bytesWritten = 0;
+            if (!packedWords.IsCreated ||
+                wordCount != WfcOutpostPersistenceConstants.PackedWordCount ||
+                packedWords.Length < wordCount ||
+                destination == null ||
+                capacity < WfcOutpostPersistenceConstants.PayloadMaxBytes)
+            {
+                return false;
+            }
+
+            int rawBytes = wordCount * sizeof(ulong);
+            byte* rawPtr = (byte*)packedWords.GetUnsafeReadOnlyPtr();
+            byte* payloadPtr = destination + WfcOutpostPersistenceConstants.PayloadHeaderBytes;
+            int payloadCapacity = capacity - WfcOutpostPersistenceConstants.PayloadHeaderBytes;
+            uint flags = 0u;
+            int storedBytes;
+
+            if (TryWriteByteRle(rawPtr, rawBytes, payloadPtr, payloadCapacity, out int rleBytes))
+            {
+                storedBytes = rleBytes;
+                flags |= WfcOutpostPayloadFlagRle;
+            }
+            else
+            {
+                UnsafeUtility.MemCpy(payloadPtr, rawPtr, rawBytes);
+                storedBytes = rawBytes;
+            }
+
+            UnsafeUtility.MemClear(destination, WfcOutpostPersistenceConstants.PayloadHeaderBytes);
+            WriteUInt(destination, 0, WfcOutpostPayloadMagic);
+            WriteUShort(destination, 4, WfcOutpostPayloadVersion);
+            WriteUShort(destination, 6, WfcOutpostPersistenceConstants.PayloadHeaderBytes);
+            WriteUShort(destination, 8, WfcOutpostPersistenceConstants.GridSizeX);
+            WriteUShort(destination, 10, WfcOutpostPersistenceConstants.GridSizeY);
+            WriteUShort(destination, 12, WfcOutpostPersistenceConstants.GridSizeZ);
+            WriteUShort(destination, 14, WfcOutpostPersistenceConstants.MutableBitPlaneCount);
+            WriteInt(destination, 16, wordCount);
+            WriteInt(destination, 20, rawBytes);
+            WriteInt(destination, 24, storedBytes);
+            WriteUInt(destination, 28, flags);
+            bytesWritten = WfcOutpostPersistenceConstants.PayloadHeaderBytes + storedBytes;
+            return true;
+        }
+
+        internal static bool TryReadWfcOutpostBitmaskPayload(
+            byte* source,
+            int length,
+            NativeArray<ulong> packedWords,
+            int expectedWordCount,
+            out int wordsRead)
+        {
+            wordsRead = 0;
+            if (source == null ||
+                length < WfcOutpostPersistenceConstants.PayloadHeaderBytes ||
+                !packedWords.IsCreated ||
+                expectedWordCount != WfcOutpostPersistenceConstants.PackedWordCount ||
+                packedWords.Length < expectedWordCount)
+            {
+                return false;
+            }
+
+            if (ReadUInt(source, 0) != WfcOutpostPayloadMagic ||
+                ReadUShort(source, 4) != WfcOutpostPayloadVersion ||
+                ReadUShort(source, 6) != WfcOutpostPersistenceConstants.PayloadHeaderBytes ||
+                ReadUShort(source, 8) != WfcOutpostPersistenceConstants.GridSizeX ||
+                ReadUShort(source, 10) != WfcOutpostPersistenceConstants.GridSizeY ||
+                ReadUShort(source, 12) != WfcOutpostPersistenceConstants.GridSizeZ ||
+                ReadUShort(source, 14) != WfcOutpostPersistenceConstants.MutableBitPlaneCount)
+            {
+                return false;
+            }
+
+            int wordCount = ReadInt(source, 16);
+            int rawBytes = ReadInt(source, 20);
+            int storedBytes = ReadInt(source, 24);
+            uint flags = ReadUInt(source, 28);
+            if (wordCount != expectedWordCount ||
+                rawBytes != expectedWordCount * sizeof(ulong) ||
+                storedBytes <= 0 ||
+                storedBytes > rawBytes ||
+                length < WfcOutpostPersistenceConstants.PayloadHeaderBytes + storedBytes)
+            {
+                return false;
+            }
+
+            byte* payloadPtr = source + WfcOutpostPersistenceConstants.PayloadHeaderBytes;
+            byte* destination = (byte*)packedWords.GetUnsafePtr();
+            if ((flags & WfcOutpostPayloadFlagRle) != 0u)
+            {
+                if (!TryReadByteRle(payloadPtr, storedBytes, destination, rawBytes))
+                    return false;
+            }
+            else
+            {
+                if (storedBytes != rawBytes)
+                    return false;
+
+                UnsafeUtility.MemCpy(destination, payloadPtr, rawBytes);
+            }
+
+            wordsRead = wordCount;
+            return true;
+        }
+
+        private static bool TryWriteByteRle(byte* input, int inputBytes, byte* output, int outputCapacity, out int outputBytes)
+        {
+            outputBytes = 0;
+            int read = 0;
+            while (read < inputBytes)
+            {
+                byte value = input[read];
+                int run = 1;
+                while (read + run < inputBytes && run < ushort.MaxValue && input[read + run] == value)
+                    run++;
+
+                if (outputBytes + 3 > outputCapacity)
+                    return false;
+
+                output[outputBytes++] = value;
+                ushort run16 = (ushort)run;
+                output[outputBytes++] = unchecked((byte)run16);
+                output[outputBytes++] = unchecked((byte)(run16 >> 8));
+                read += run;
+            }
+
+            return outputBytes > 0 && outputBytes < inputBytes;
+        }
+
+        private static bool TryReadByteRle(byte* input, int inputBytes, byte* output, int expectedOutputBytes)
+        {
+            int read = 0;
+            int write = 0;
+            while (read + 2 < inputBytes)
+            {
+                byte value = input[read++];
+                int run = input[read++] | (input[read++] << 8);
+                if (run <= 0 || write + run > expectedOutputBytes)
+                    return false;
+
+                UnsafeUtility.MemSet(output + write, value, run);
+                write += run;
+            }
+
+            return read == inputBytes && write == expectedOutputBytes;
+        }
+
+        private static void WriteUInt(byte* ptr, int offset, uint value) => *(uint*)(ptr + offset) = value;
+        private static void WriteUShort(byte* ptr, int offset, int value) => *(ushort*)(ptr + offset) = (ushort)value;
+        private static void WriteInt(byte* ptr, int offset, int value) => *(int*)(ptr + offset) = value;
+        private static uint ReadUInt(byte* ptr, int offset) => *(uint*)(ptr + offset);
+        private static ushort ReadUShort(byte* ptr, int offset) => *(ushort*)(ptr + offset);
+        private static int ReadInt(byte* ptr, int offset) => *(int*)(ptr + offset);
 
         internal static bool TryWrite(SaveData data, byte* destination, int capacity, out int bytesWritten, out string error)
         {
@@ -131,6 +296,7 @@ namespace Hecton8.SaveSystem
 
         private static bool WriteSaveData(SaveData data, ref BufferWriter writer)
         {
+            data.RefreshFirstHourDtoMirrors();
             return writer.WriteInt(data.version)
                 && writer.WriteString(data.timestamp)
                 && writer.WriteDouble(data.totalPlayTime)
@@ -150,6 +316,7 @@ namespace Hecton8.SaveSystem
                 && WriteProceduralLore(ref writer, data.proceduralLore)
                 && WriteAchievementRegistry(ref writer, data.achievements)
                 && WriteRunModifiers(ref writer, data.runModifiers)
+                && WriteMetaCampaign(ref writer, data.metaCampaign)
                 && WriteResourceScarcity(ref writer, data.resourceScarcity)
                 && writer.WriteStruct(data.environmentalStrain)
                 && WriteEcosystemState(ref writer, data.ecosystemState)
@@ -196,7 +363,8 @@ namespace Hecton8.SaveSystem
                 && writer.WriteBool(data.DynamicResolutionEnabled)
                 && WriteRadiationGrid(ref writer, data)
                 && WriteRtgDecay(ref writer, data)
-                && WriteStringStringDictionary(ref writer, data.CustomModData);
+                && WriteStringStringDictionary(ref writer, data.CustomModData)
+                && WriteFirstHourLockedDtos(ref writer, data);
         }
 
         private static bool ReadSaveData(ref BufferReader reader, SaveData data)
@@ -220,6 +388,7 @@ namespace Hecton8.SaveSystem
                 || !ReadProceduralLore(ref reader, out data.proceduralLore)
                 || !ReadAchievementRegistry(ref reader, out data.achievements)
                 || !ReadRunModifiers(ref reader, out data.runModifiers)
+                || !ReadMetaCampaign(ref reader, data.version, out data.metaCampaign)
                 || !ReadResourceScarcity(ref reader, data.version, out data.resourceScarcity)
                 || !reader.ReadStruct(out data.environmentalStrain)
                 || !ReadEcosystemState(ref reader, data.version, out data.ecosystemState)
@@ -266,13 +435,63 @@ namespace Hecton8.SaveSystem
                 || !reader.ReadBool(out data.DynamicResolutionEnabled)
                 || !ReadRadiationGrid(ref reader, data.version, data)
                 || !ReadRtgDecay(ref reader, data.version, data)
-                || !ReadStringStringDictionary(ref reader, out data.CustomModData))
+                || !ReadStringStringDictionary(ref reader, out data.CustomModData)
+                || !ReadFirstHourLockedDtos(ref reader, data.version, data))
             {
                 return false;
             }
 
             ApplyInventoryBiologicalDecay(ref data.inventory, data.playerStats.environmentTemperature);
             data.voxelDeltaPersistence = VoxelDeltaPersistenceDTO.CreateDefault();
+            return true;
+        }
+
+        private static bool WriteFirstHourLockedDtos(ref BufferWriter writer, SaveData data)
+        {
+            int floodCount = 0;
+            if (data != null)
+            {
+                floodCount = Math.Clamp(
+                    data.construction.habitatFloodStateCount,
+                    0,
+                    Math.Min(
+                        ConstructionDTO.MaxModules,
+                        data.construction.habitatFloodStates != null ? data.construction.habitatFloodStates.Length : 0));
+            }
+
+            return writer.WriteStruct(data != null ? data.playerKinematicState : default)
+                && writer.WriteStruct(data != null ? data.inventoryShadow : default)
+                && writer.WriteInt(floodCount)
+                && writer.WriteStructArraySlice(data != null ? data.construction.habitatFloodStates : null, floodCount);
+        }
+
+        private static bool ReadFirstHourLockedDtos(ref BufferReader reader, int saveDataVersion, SaveData data)
+        {
+            if (data == null)
+                return false;
+
+            if (saveDataVersion < FirstHourDtoLockSaveVersion)
+            {
+                data.RefreshFirstHourDtoMirrors();
+                return true;
+            }
+
+            if (!reader.ReadStruct(out data.playerKinematicState) ||
+                !reader.ReadStruct(out data.inventoryShadow) ||
+                !reader.ReadInt(out data.construction.habitatFloodStateCount) ||
+                !reader.ReadStructArray(out data.construction.habitatFloodStates))
+            {
+                return false;
+            }
+
+            data.playerKinematicState.ApplyTo(ref data.playerStats);
+            int arrayLength = data.construction.habitatFloodStates != null
+                ? data.construction.habitatFloodStates.Length
+                : 0;
+            data.construction.habitatFloodStateCount = Math.Clamp(
+                data.construction.habitatFloodStateCount,
+                0,
+                Math.Min(ConstructionDTO.MaxModules, arrayLength));
             return true;
         }
 
@@ -1409,6 +1628,58 @@ namespace Hecton8.SaveSystem
                 && reader.ReadBool(out value.isDailySeed)
                 && reader.ReadBool(out value.runMarkedDead)
                 && reader.ReadString(out value.dailySeedId);
+        }
+
+        private static bool WriteMetaCampaign(ref BufferWriter writer, MetaCampaignDTO value)
+        {
+            value.EnsureCapacity();
+            int safeCount = math.clamp(
+                value.variableCount,
+                0,
+                math.min(MetaCampaignDTO.MaxGlobalVariables, math.min(value.variableHashes.Length, value.variableValues.Length)));
+
+            return writer.WriteInt(safeCount)
+                && writer.WriteStruct(value.currentStageHash)
+                && writer.WriteInt(value.currentStage)
+                && writer.WriteInt(math.clamp(value.toxicityPermille, 0, 1000))
+                && writer.WriteStructArraySlice(value.variableHashes, safeCount)
+                && writer.WriteStructArraySlice(value.variableValues, safeCount)
+                && writer.WriteInt(value.flags);
+        }
+
+        private static bool ReadMetaCampaign(ref BufferReader reader, int saveDataVersion, out MetaCampaignDTO value)
+        {
+            value = MetaCampaignDTO.CreateDefault();
+            if (saveDataVersion < MetaCampaignSaveVersion)
+                return true;
+
+            if (!reader.ReadInt(out int count)
+                || !reader.ReadStruct(out value.currentStageHash)
+                || !reader.ReadInt(out value.currentStage)
+                || !reader.ReadInt(out value.toxicityPermille)
+                || !reader.ReadStructArray(out uint[] hashes)
+                || !reader.ReadStructArray(out int[] values)
+                || !reader.ReadInt(out int flags))
+            {
+                return false;
+            }
+
+            value.EnsureCapacity();
+            int safeCount = math.clamp(
+                count,
+                0,
+                math.min(MetaCampaignDTO.MaxGlobalVariables, math.min(hashes != null ? hashes.Length : 0, values != null ? values.Length : 0)));
+
+            for (int i = 0; i < safeCount; i++)
+            {
+                value.variableHashes[i] = hashes[i];
+                value.variableValues[i] = values[i];
+            }
+
+            value.variableCount = safeCount;
+            value.toxicityPermille = math.clamp(value.toxicityPermille, 0, 1000);
+            value.flags = (byte)math.clamp(flags, 0, byte.MaxValue);
+            return true;
         }
 
         private static bool WriteResourceScarcity(ref BufferWriter writer, ResourceScarcityDTO value)

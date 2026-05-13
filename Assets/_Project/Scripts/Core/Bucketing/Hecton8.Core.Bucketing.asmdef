@@ -1,0 +1,19 @@
+{
+    "name": "Hecton8.Core.Bucketing",
+    "rootNamespace": "Hecton8.Core.Bucketing",
+    "references": [
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Unity.Collections",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

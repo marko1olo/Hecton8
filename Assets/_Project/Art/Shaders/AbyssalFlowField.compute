@@ -20,6 +20,7 @@ struct GpuHeatSourceData
 };
 
 StructuredBuffer<GpuHeatSourceData> _AbyssalHeatSources;
+StructuredBuffer<float4> _AbyssalSplashdownImpulseBuffer;
 RWStructuredBuffer<float4> _AbyssalFlowFieldResult;
 Texture3D<float4> _AbyssalFlowTextureRead;
 RWTexture3D<float4> _AbyssalFlowTextureWrite;
@@ -62,6 +63,7 @@ float4 _AbyssalFlowWakeSphere;         // xyz: submarine center, w: radius
 float4 _AbyssalFlowWakeVelocity;       // xyz: velocity, w: speed
 float4 _AbyssalFlowVortexSphere;       // xyz: impulse center, w: radius
 float4 _AbyssalFlowVortexAxisStrength; // xyz: vortex axis, w: signed tangential strength
+float4 _AbyssalSplashdownParams;       // x: active, y: decay strength, z: affected cells, w: reserved
 uint _HectonSourceInstanceCount;
 float4 _GlobalFloatingOffset;
 float4 _HectonSubmarineWashSphere;
@@ -266,6 +268,21 @@ float3 ResolveBaseFlowTextureVelocity(float3 nodeWorldPos)
     return dot(flow, flow) < 1.0e32 ? flow : float3(0.0, 0.0, 0.0);
 }
 
+float3 ApplySplashdownImpulse(uint nodeIndex, float3 baseFlow, inout float turbulenceScalar)
+{
+    if (_AbyssalSplashdownParams.x <= 0.5 || _AbyssalSplashdownParams.y <= 0.0)
+        return baseFlow;
+
+    float4 impulse = _AbyssalSplashdownImpulseBuffer[nodeIndex];
+    float blend = saturate(impulse.w * _AbyssalSplashdownParams.y);
+    if (blend <= 0.0)
+        return baseFlow;
+
+    float3 resolved = lerp(baseFlow, impulse.xyz, blend);
+    turbulenceScalar += blend * 3.0;
+    return dot(resolved, resolved) < 1.0e32 ? resolved : baseFlow;
+}
+
 [numthreads(HECTON_THREADS_PER_GROUP, 1, 1)]
 void UpdateAbyssalFlowField(uint3 dispatchThreadId : SV_DispatchThreadID)
 {
@@ -327,6 +344,7 @@ void UpdateAbyssalFlowField(uint3 dispatchThreadId : SV_DispatchThreadID)
             flow.y = lerp(flow.y, flow.y * ThermoclineVerticalAttenuation, thermoclineBand);
     }
 
+    flow = ApplySplashdownImpulse(nodeIndex, flow, turbulenceScalar);
     float flowEnergy = dot(flow, flow);
     _AbyssalFlowFieldResult[nodeIndex] = float4(flow, flowEnergy * turbulenceScalar);
 }
@@ -341,11 +359,14 @@ void UpdateAbyssalFlowTexture(uint3 dispatchThreadId : SV_DispatchThreadID)
     int3 coord = int3(dispatchThreadId.xyz);
     float3 nodeWorldPos = ResolveFlowTextureWorldPosition(dispatchThreadId);
     float3 baseFlow = ResolveBaseFlowTextureVelocity(nodeWorldPos);
+    uint flatIndex = dispatchThreadId.x + dispatchThreadId.y * resolution + dispatchThreadId.z * resolution * resolution;
+    float turbulenceScalar = 1.0;
+    baseFlow = ApplySplashdownImpulse(flatIndex, baseFlow, turbulenceScalar);
     float3 previousFlow = _AbyssalFlowTextureRead.Load(int4(coord, 0)).xyz;
     previousFlow = dot(previousFlow, previousFlow) < 1.0e32 ? previousFlow : baseFlow;
     float blend = saturate(max(_AbyssalFlowTextureParams.z, 0.0) * FlowTextureDecayPerSecond);
     float3 resolvedFlow = lerp(previousFlow, baseFlow, blend);
-    float turbulence = min(dot(resolvedFlow, resolvedFlow), 64.0);
+    float turbulence = min(dot(resolvedFlow, resolvedFlow) * turbulenceScalar, 96.0);
     _AbyssalFlowTextureWrite[coord] = float4(resolvedFlow, turbulence);
 }
 

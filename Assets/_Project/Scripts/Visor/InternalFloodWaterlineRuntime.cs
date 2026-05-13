@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Atmosphere;
@@ -69,6 +70,7 @@ namespace Hecton8.Visor
         private int _cachedRoomId = -1;
         private int _currentRoomId = -1;
         private int _pendingGasRoomId = -1;
+        private int _lastProcessedExternalDropletFrame = int.MinValue;
         private int _nextDependencyRefreshTick;
         private float _currentWaterlineY = InternalWaterlineInvalidY;
         private float _targetWaterlineY = InternalWaterlineInvalidY;
@@ -158,6 +160,7 @@ namespace Hecton8.Visor
             if (!_isInitialized || deltaTime <= 0f)
                 return;
 
+            ConsumeExternalDropletSignals();
             RefreshCachedDependencies(force: false);
             FlushPendingGasSubmergedFraction();
             if (_dropletSecondsRemaining > 0f)
@@ -363,6 +366,31 @@ namespace Hecton8.Visor
                 Quantity = 6
             };
             GlobalSignals.Publish(in signal);
+        }
+
+        private void ConsumeExternalDropletSignals()
+        {
+            int frame = Time.frameCount;
+            if (_lastProcessedExternalDropletFrame == frame)
+                return;
+
+            _lastProcessedExternalDropletFrame = frame;
+            ReadOnlySpan<VisorDropletSignal> signals = SignalBus<VisorDropletSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                VisorDropletSignal signal = signals[i];
+                if (!math.isfinite(signal.Intensity01) || !math.isfinite(signal.DurationSeconds))
+                    continue;
+
+                float intensity01 = math.saturate(signal.Intensity01);
+                if (intensity01 <= 0.001f)
+                    continue;
+
+                float duration = math.max(0.05f, signal.DurationSeconds);
+                _lastCameraAup = signal.PositionAup;
+                _dropletSecondsRemaining = math.max(_dropletSecondsRemaining, duration * intensity01);
+                PublishShaderGlobals(_hasWaterline ? _currentFill01 : 0f);
+            }
         }
 
         private void QueueGasSubmergedFraction(int roomId, float fill01)

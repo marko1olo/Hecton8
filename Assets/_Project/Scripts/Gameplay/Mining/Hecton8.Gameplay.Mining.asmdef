@@ -1,0 +1,22 @@
+{
+    "name": "Hecton8.Gameplay.Mining",
+    "rootNamespace": "Hecton8.Gameplay.Mining",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Gameplay.Mining.Contracts",
+        "Unity.Mathematics",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.TextMeshPro"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

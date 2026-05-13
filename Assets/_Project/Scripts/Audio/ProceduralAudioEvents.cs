@@ -1,6 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Hecton8.World;
 using Unity.Collections;
 using UnityEngine;
 
@@ -94,17 +95,58 @@ namespace Hecton8.Audio
         /// <summary>
         /// Creates a hull stress signal from a pressure derivative snapshot.
         /// </summary>
-        public HullStressSignal(Vector3 worldPosition, float stress01, float pressureDelta, float depthMeters, float pitchScale)
+        public HullStressSignal(
+            Vector3 worldPosition,
+            float stress01,
+            float pressureDelta,
+            float depthMeters,
+            float pitchScale,
+            float acousticTransmission01 = 1f,
+            float lowPassCutoffHz = 22000f,
+            float acousticDelaySeconds = 0f)
         {
-            WorldPosition = worldPosition;
-            Stress01 = Mathf.Clamp01(stress01);
-            PressureDelta = SanitizeFinite(pressureDelta);
-            DepthMeters = Mathf.Max(0f, SanitizeFinite(depthMeters));
-            PitchScale = Mathf.Max(0.1f, SanitizeFinite(pitchScale));
+            Vector3 safeWorldPosition = SanitizeWorldPosition(worldPosition);
+            WorldPosition = safeWorldPosition;
+            SourceAup = AbsoluteUniversePosition.FromRuntimePosition(safeWorldPosition);
+            Stress01 = Mathf.Clamp01(SanitizeFiniteValue(stress01));
+            PressureDelta = SanitizeFiniteValue(pressureDelta);
+            DepthMeters = Mathf.Max(0f, SanitizeFiniteValue(depthMeters));
+            PitchScale = Mathf.Max(0.1f, SanitizeFiniteValue(pitchScale));
+            AcousticTransmission01 = Mathf.Clamp01(SanitizeFiniteValue(acousticTransmission01));
+            LowPassCutoffHz = Mathf.Clamp(SanitizeFiniteOrDefault(lowPassCutoffHz, 22000f), 80f, 22000f);
+            AcousticDelaySeconds = Mathf.Max(0f, SanitizeFiniteValue(acousticDelaySeconds));
+        }
+
+        /// <summary>
+        /// Creates a hull stress signal while preserving an already-authoritative AUP source snapshot.
+        /// </summary>
+        public HullStressSignal(
+            in AbsoluteUniversePosition sourceAup,
+            Vector3 worldPosition,
+            float stress01,
+            float pressureDelta,
+            float depthMeters,
+            float pitchScale,
+            float acousticTransmission01 = 1f,
+            float lowPassCutoffHz = 22000f,
+            float acousticDelaySeconds = 0f)
+        {
+            WorldPosition = SanitizeWorldPosition(worldPosition);
+            SourceAup = sourceAup;
+            Stress01 = Mathf.Clamp01(SanitizeFiniteValue(stress01));
+            PressureDelta = SanitizeFiniteValue(pressureDelta);
+            DepthMeters = Mathf.Max(0f, SanitizeFiniteValue(depthMeters));
+            PitchScale = Mathf.Max(0.1f, SanitizeFiniteValue(pitchScale));
+            AcousticTransmission01 = Mathf.Clamp01(SanitizeFiniteValue(acousticTransmission01));
+            LowPassCutoffHz = Mathf.Clamp(SanitizeFiniteOrDefault(lowPassCutoffHz, 22000f), 80f, 22000f);
+            AcousticDelaySeconds = Mathf.Max(0f, SanitizeFiniteValue(acousticDelaySeconds));
         }
 
         /// <summary>World-space origin for portal routing and AUP conversion.</summary>
         public Vector3 WorldPosition { get; }
+
+        /// <summary>AUP origin snapshot used to survive floating-origin shifts before dispatch.</summary>
+        public AbsoluteUniversePosition SourceAup { get; }
 
         /// <summary>Normalized structural stress in the [0..1] range.</summary>
         public float Stress01 { get; }
@@ -118,9 +160,31 @@ namespace Hecton8.Audio
         /// <summary>Pitch multiplier consumed by the fallback clip or granular renderer.</summary>
         public float PitchScale { get; }
 
-        private static float SanitizeFinite(float value)
+        /// <summary>Portal/path transmission in the [0..1] range.</summary>
+        public float AcousticTransmission01 { get; }
+
+        /// <summary>Portal/path low-pass cutoff in hertz.</summary>
+        public float LowPassCutoffHz { get; }
+
+        /// <summary>Portal/path delay in seconds.</summary>
+        public float AcousticDelaySeconds { get; }
+
+        internal static float SanitizeFiniteValue(float value)
         {
             return float.IsNaN(value) || float.IsInfinity(value) ? 0f : value;
+        }
+
+        internal static float SanitizeFiniteOrDefault(float value, float fallback)
+        {
+            return float.IsNaN(value) || float.IsInfinity(value) ? fallback : value;
+        }
+
+        internal static Vector3 SanitizeWorldPosition(Vector3 value)
+        {
+            return new Vector3(
+                SanitizeFiniteValue(value.x),
+                SanitizeFiniteValue(value.y),
+                SanitizeFiniteValue(value.z));
         }
     }
 
@@ -134,11 +198,16 @@ namespace Hecton8.Audio
         /// </summary>
         public StructuralStressAudioInfo(Vector3 worldPosition, float stress01, float pitchScale)
         {
-            WorldPosition = worldPosition;
-            Stress01 = Mathf.Clamp01(stress01);
-            PitchScale = Mathf.Max(0.1f, pitchScale);
+            Vector3 safeWorldPosition = HullStressSignal.SanitizeWorldPosition(worldPosition);
+            WorldPosition = safeWorldPosition;
+            SourceAup = AbsoluteUniversePosition.FromRuntimePosition(safeWorldPosition);
+            Stress01 = Mathf.Clamp01(HullStressSignal.SanitizeFiniteValue(stress01));
+            PitchScale = Mathf.Max(0.1f, HullStressSignal.SanitizeFiniteValue(pitchScale));
             PressureDelta = 0f;
             DepthMeters = 0f;
+            AcousticTransmission01 = 1f;
+            LowPassCutoffHz = 22000f;
+            AcousticDelaySeconds = 0f;
         }
 
         /// <summary>
@@ -147,14 +216,21 @@ namespace Hecton8.Audio
         public StructuralStressAudioInfo(in HullStressSignal signal)
         {
             WorldPosition = signal.WorldPosition;
+            SourceAup = signal.SourceAup;
             Stress01 = signal.Stress01;
             PitchScale = signal.PitchScale;
             PressureDelta = signal.PressureDelta;
             DepthMeters = signal.DepthMeters;
+            AcousticTransmission01 = signal.AcousticTransmission01;
+            LowPassCutoffHz = signal.LowPassCutoffHz;
+            AcousticDelaySeconds = signal.AcousticDelaySeconds;
         }
 
         /// <summary>World-space origin for spatial routing.</summary>
         public Vector3 WorldPosition { get; }
+
+        /// <summary>AUP origin snapshot used to survive floating-origin shifts before dispatch.</summary>
+        public AbsoluteUniversePosition SourceAup { get; }
 
         /// <summary>Normalized edge stress in the [0..1] range.</summary>
         public float Stress01 { get; }
@@ -167,6 +243,15 @@ namespace Hecton8.Audio
 
         /// <summary>Depth snapshot in meters used for low-cost pitch/density cheats.</summary>
         public float DepthMeters { get; }
+
+        /// <summary>Portal/path transmission in the [0..1] range.</summary>
+        public float AcousticTransmission01 { get; }
+
+        /// <summary>Portal/path low-pass cutoff in hertz.</summary>
+        public float LowPassCutoffHz { get; }
+
+        /// <summary>Portal/path delay in seconds.</summary>
+        public float AcousticDelaySeconds { get; }
     }
 
     public enum AudioEventKind : byte

@@ -2,6 +2,7 @@ using System;
 using Hecton8.Ecosystem;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
+using Hecton8.Core.Signals;
 using Hecton8.World;
 using Unity.Collections;
 using Unity.Mathematics;
@@ -140,6 +141,8 @@ namespace Hecton8.AI
             float healthNormalized,
             float distanceToPlayerSqr,
             float attackRange,
+            float fogEndDistanceMeters,
+            float baseMaxSpeedMetersPerSecond,
             float fearPressure01,
             float fleeHealthThreshold,
             float escapeDistance,
@@ -181,6 +184,8 @@ namespace Hecton8.AI
             HealthNormalized = healthNormalized;
             DistanceToPlayerSqr = distanceToPlayerSqr;
             AttackRange = attackRange;
+            FogEndDistanceMeters = math.max(1f, fogEndDistanceMeters);
+            BaseMaxSpeedMetersPerSecond = math.max(0.1f, baseMaxSpeedMetersPerSecond);
             FearPressure01 = fearPressure01;
             FleeHealthThreshold = fleeHealthThreshold;
             EscapeDistance = escapeDistance;
@@ -223,6 +228,8 @@ namespace Hecton8.AI
         public float HealthNormalized { get; }
         public float DistanceToPlayerSqr { get; }
         public float AttackRange { get; }
+        public float FogEndDistanceMeters { get; }
+        public float BaseMaxSpeedMetersPerSecond { get; }
         public float FearPressure01 { get; }
         public float FleeHealthThreshold { get; }
         public float EscapeDistance { get; }
@@ -472,6 +479,7 @@ namespace Hecton8.AI
         private int _slot;
         private bool _initialized;
         private float _metabolicTickAccumulator;
+        private int _lastConsumedAcousticPingSignalSequence;
 
         public PredatorUtilityState CurrentStateMask { get; private set; }
         public bool UsesPredatorRole => IsPredatorArchetype(_archetype, _speciesProfile);
@@ -525,6 +533,7 @@ namespace Hecton8.AI
             AggressionScore = 0f;
             FearScore = 0f;
             _metabolicTickAccumulator = 0f;
+            _lastConsumedAcousticPingSignalSequence = 0;
             if (_initialized)
             {
                 RegisterSpeciesTuning();
@@ -631,6 +640,44 @@ namespace Hecton8.AI
                 hasNoisePlayerTarget = UsesPredatorRole &&
                                        acousticPingStrength01 >= PredatorAcousticSightThreshold01 &&
                                        acousticDistanceSq <= PredatorAcousticSightRadiusMetersSqr;
+            }
+
+            if (UsesPredatorRole &&
+                GlobalSignals.TryGetLatestAcousticPingSignal(out AcousticPingSignal acousticSignal, out int acousticSequence) &&
+                acousticSequence != 0 &&
+                acousticSequence != _lastConsumedAcousticPingSignalSequence)
+            {
+                _lastConsumedAcousticPingSignalSequence = acousticSequence;
+                bool leviathanSelfRoar = acousticSignal.Channel == AcousticPingSignal.ChannelLeviathanRoar ||
+                                         (acousticSignal.Flags & AcousticPingSignal.FlagLeviathanRoar) != 0;
+                if (!leviathanSelfRoar)
+                {
+                    float radius = math.max(0.1f, acousticSignal.RadiusMeters);
+                    float radiusSq = radius * radius;
+                    float3 signalPosition3 = acousticSignal.PositionAup.ToRuntimeFloat3();
+                    float3 delta = signalPosition3 - (float3)context.SelfPosition;
+                    float distanceSq = math.lengthsq(delta);
+                    if (distanceSq <= radiusSq)
+                    {
+                        float distance01 = 1f - math.saturate(distanceSq * math.rcp(math.max(radiusSq, 0.1f)));
+                        float signalStrength01 = math.saturate(math.max(0f, acousticSignal.Intensity01) * distance01);
+                        if ((acousticSignal.Flags & AcousticPingSignal.FlagActiveSonar) != 0 ||
+                            acousticSignal.Channel == AcousticPingSignal.ChannelActiveSonar)
+                        {
+                            signalStrength01 = math.max(signalStrength01, math.saturate(acousticSignal.Intensity01));
+                        }
+
+                        if (signalStrength01 > acousticPingStrength01)
+                        {
+                            noisePlayerPosition = new Vector3(signalPosition3.x, signalPosition3.y, signalPosition3.z);
+                            noisePlayerAup = acousticSignal.PositionAup;
+                            hasNoisePlayerAup = true;
+                            acousticPingStrength01 = signalStrength01;
+                            acousticTransmission01 = math.max(acousticTransmission01, 0.35f + (distance01 * 0.65f));
+                            hasNoisePlayerTarget = signalStrength01 >= PredatorAcousticSightThreshold01;
+                        }
+                    }
+                }
             }
 
             Vector3 resolvedPlayerPosition = context.HasPlayerTarget ? context.PlayerPosition : noisePlayerPosition;
@@ -742,6 +789,8 @@ namespace Hecton8.AI
             input.PackCoordinationRadius = packCoordinationRadius;
             input.PackFlankDistance = packFlankDistance;
             input.PackCommitDistance = packCommitDistance;
+            input.FogEndDistanceMeters = math.max(1f, context.FogEndDistanceMeters);
+            input.BaseMaxSpeedMetersPerSecond = math.max(0.1f, context.BaseMaxSpeedMetersPerSecond);
             input.ImportanceScore = math.saturate(context.FoveatedImportanceScore);
             input.SpeciesId = ResolveSpeciesId();
             input.ClaimedBoidIndex = -1;
@@ -850,6 +899,7 @@ namespace Hecton8.AI
                 _slot = -1;
             }
 
+            _lastConsumedAcousticPingSignalSequence = 0;
             _initialized = false;
         }
 

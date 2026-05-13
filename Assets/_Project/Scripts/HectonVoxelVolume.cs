@@ -418,6 +418,69 @@ namespace Hecton8.Caves
             return resolved;
         }
 
+        internal static bool TryGetClosestPublishedSonarSdfPayload(
+            Vector3 runtimeOrigin,
+            out NativeArray<byte> encodedSdf,
+            out NativeArray<byte> audioMaterialIds,
+            out Vector3Int gridDimensions,
+            out Vector3 volumeOrigin,
+            out Vector3 voxelCellSize,
+            out float sdfRange,
+            out int version)
+        {
+            encodedSdf = default;
+            audioMaterialIds = default;
+            gridDimensions = default;
+            volumeOrigin = default;
+            voxelCellSize = default;
+            sdfRange = 0f;
+            version = 0;
+
+            float bestDistanceSq = float.MaxValue;
+            bool resolved = false;
+            for (int i = s_activePublishedVolumes.Count - 1; i >= 0; i--)
+            {
+                HectonVoxelVolume candidate = s_activePublishedVolumes[i];
+                if (candidate == null || !candidate._runtimeDataReady)
+                {
+                    s_activePublishedVolumes.RemoveAt(i);
+                    continue;
+                }
+
+                if (!candidate.TryGetPublishedSonarSdfPayload(
+                        out NativeArray<byte> candidateSdf,
+                        out NativeArray<byte> candidateMaterialIds,
+                        out Vector3Int candidateDimensions,
+                        out Vector3 candidateOrigin,
+                        out Vector3 candidateCellSize,
+                        out float candidateSdfRange,
+                        out int candidateVersion))
+                {
+                    continue;
+                }
+
+                Vector3 center = candidateOrigin + new Vector3(
+                    candidateCellSize.x * math.max(0, candidateDimensions.x - 1) * 0.5f,
+                    candidateCellSize.y * math.max(0, candidateDimensions.y - 1) * 0.5f,
+                    candidateCellSize.z * math.max(0, candidateDimensions.z - 1) * 0.5f);
+                float distanceSq = (center - runtimeOrigin).sqrMagnitude;
+                if (distanceSq >= bestDistanceSq)
+                    continue;
+
+                bestDistanceSq = distanceSq;
+                encodedSdf = candidateSdf;
+                audioMaterialIds = candidateMaterialIds;
+                gridDimensions = candidateDimensions;
+                volumeOrigin = candidateOrigin;
+                voxelCellSize = candidateCellSize;
+                sdfRange = candidateSdfRange;
+                version = candidateVersion;
+                resolved = true;
+            }
+
+            return resolved;
+        }
+
         public static bool TryDepositAdditiveSdfSphere(Vector3 absoluteCenter, float radiusMeters, float strengthMeters)
         {
             float radius = Mathf.Max(0.05f, radiusMeters);
@@ -1447,6 +1510,28 @@ namespace Hecton8.Caves
                    gridDimensions.z > 0 &&
                    _publishedSonarSdf.Length == gridDimensions.x * gridDimensions.y * gridDimensions.z &&
                    sdfRange > 0f;
+        }
+
+        internal bool TryGetPublishedSonarSdfPayload(
+            out NativeArray<byte> encodedSdf,
+            out NativeArray<byte> audioMaterialIds,
+            out Vector3Int gridDimensions,
+            out Vector3 volumeOrigin,
+            out Vector3 voxelCellSize,
+            out float sdfRange,
+            out int version)
+        {
+            bool resolved = TryGetPublishedSonarSdfPayload(
+                out encodedSdf,
+                out gridDimensions,
+                out volumeOrigin,
+                out voxelCellSize,
+                out sdfRange,
+                out version);
+            audioMaterialIds = _publishedSonarAudioMaterialIds;
+            return resolved &&
+                   _publishedSonarAudioMaterialIds.IsCreated &&
+                   _publishedSonarAudioMaterialIds.Length == encodedSdf.Length;
         }
 
         /// <summary>

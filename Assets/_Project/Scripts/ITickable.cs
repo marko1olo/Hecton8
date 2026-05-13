@@ -59,6 +59,7 @@ namespace Hecton8.Core
         H8TimeSnapshot TimeSnapshot { get; }
 
         void RequestTimeDilation(float scalar, uint reasonHash = 0u);
+        void RequestHeadlessTimeDilation(float scalar, uint reasonHash = 0u);
         void RequestCoreTickDilation(float scalar, int frameCount, uint reasonHash = 0u);
         void RequestSimulationPause(bool paused, uint reasonHash = 0u);
         void RequestAupPreShiftPause(uint shiftFrameId);

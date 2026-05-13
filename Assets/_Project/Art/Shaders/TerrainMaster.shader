@@ -119,6 +119,7 @@ Shader "HECTON/Terrain/TerrainMaster"
         TEXTURE2D(_HectonBiomeHeatmapTex); SAMPLER(sampler_HectonBiomeHeatmapTex);
         TEXTURE2D_ARRAY(_HectonBiomeGroundArray); SAMPLER(sampler_HectonBiomeGroundArray);
         TEXTURE2D(_HectonDistantTerrainShadowMask); SAMPLER(sampler_HectonDistantTerrainShadowMask);
+        TEXTURE2D(_HectonVoxelBlendMask); SAMPLER(sampler_HectonVoxelBlendMask);
         float4 _SargassumCanopyShadowParams;
         float4 _SargassumCanopyLightingParams;
         float4 _HectonBiomeHeatmapRect;
@@ -129,6 +130,8 @@ Shader "HECTON/Terrain/TerrainMaster"
         float4 _HectonTerrainFadeAupOrigin;
         float4 _HectonDistantTerrainShadowRect;
         float4 _HectonDistantTerrainShadowParams;
+        float4 _HectonVoxelBlendMaskRect;
+        float4 _HectonVoxelBlendMaskParams;
 
         half3 HectonDominantAxisDirection(float3 value)
         {
@@ -195,6 +198,16 @@ Shader "HECTON/Terrain/TerrainMaster"
 
             half mask = SAMPLE_TEXTURE2D(_HectonDistantTerrainShadowMask, sampler_HectonDistantTerrainShadowMask, uv).r;
             return saturate(mask * (half)_HectonDistantTerrainShadowParams.x);
+        }
+
+        half EvaluateHectonVoxelBlendMask(float3 positionWS)
+        {
+            float2 uv = (positionWS.xz - _HectonVoxelBlendMaskRect.xy) * _HectonVoxelBlendMaskRect.zw;
+            half enabled = step(0.5h, (half)_HectonVoxelBlendMaskParams.x);
+            half inside = step(0.0h, (half)uv.x) * step(0.0h, (half)uv.y) *
+                step((half)uv.x, 1.0h) * step((half)uv.y, 1.0h);
+            half mask = SAMPLE_TEXTURE2D(_HectonVoxelBlendMask, sampler_HectonVoxelBlendMask, saturate(uv)).r;
+            return saturate(mask * (half)_HectonVoxelBlendMaskParams.y * enabled * inside);
         }
 
         half HectonCellNoise2D(float2 position)
@@ -454,6 +467,10 @@ Shader "HECTON/Terrain/TerrainMaster"
                     sandSample = HectonSampleStochastic2D(TEXTURE2D_ARGS(_SandTex, sampler_SandTex), sandUv, stochasticJitter);
                     rockSample = HectonSampleStochastic2D(TEXTURE2D_ARGS(_RockTex, sampler_RockTex), rockUv, stochasticJitter);
                 }
+
+                half voxelBlendMask = EvaluateHectonVoxelBlendMask(IN.positionWS);
+                rockWeight = saturate(max(rockWeight, voxelBlendMask));
+                sandWeight = 1.0h - rockWeight;
 
                 half taaMicroBump = (screenIgn - 0.5h) * steepMask * 0.035h;
                 #if defined(_MATH_LOD_LOW)

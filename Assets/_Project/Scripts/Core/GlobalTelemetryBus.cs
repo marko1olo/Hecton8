@@ -44,7 +44,8 @@ namespace Hecton8.Core
         RegistryHeartbeatStale = 24,
         MemoryBreach = 25,
         DominantAxisTelemetry = 26,
-        UnityLogFault = 27
+        UnityLogFault = 27,
+        InputSchemeHash = 28
     }
 
     [StructLayout(LayoutKind.Sequential, Size = 64)]
@@ -379,6 +380,14 @@ namespace Hecton8.Core
         public static void PublishInputLagWarning(float latencyMilliseconds)
         {
             Publish(TelemetryEventType.InputLagWarning, InputLagWarningHash, 0u, latencyMilliseconds, default);
+        }
+
+        /// <summary>
+        /// Publishes the active input scheme hash into the fixed telemetry ring.
+        /// </summary>
+        public static void PublishInputSchemeHash(uint schemeHash, uint flags, uint frame)
+        {
+            Publish(TelemetryEventType.InputSchemeHash, schemeHash, flags, frame, default);
         }
 
         /// <summary>

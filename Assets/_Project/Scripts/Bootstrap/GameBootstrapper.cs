@@ -13,9 +13,12 @@ using Hecton8.Audio.Propagation;
 using Hecton8.Biolum;
 using Hecton8.Construction;
 using Hecton8.Core;
+using Hecton8.Core.Bucketing;
 using Hecton8.Core.Contracts;
+using Hecton8.Core.Database;
 using Hecton8.Core.Memory;
 using Hecton8.Core.Scheduling;
+using Hecton8.Core.Signals;
 using Hecton8.Dev;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
@@ -90,6 +93,7 @@ namespace Hecton8.Bootstrap
         private const string GCMonitorRuntimeName = "[GCMonitor]";
         private const string PluginsAssemblyName = "Hecton8.Plugins";
         private const string DontDestroyOnLoadSceneName = "DontDestroyOnLoad";
+        private const string HectonHeadlessCommandLineArg = "-h8headless";
         private const string HeadlessCommandLineArg = "-headless";
         private const string MathLodLowKeyword = "_MATH_LOD_LOW";
         private const string MathLodHighKeyword = "_MATH_LOD_HIGH";
@@ -162,8 +166,10 @@ namespace Hecton8.Bootstrap
         // COLD ALLOC: Dictionary<uint,string>[8] - hashed bootstrap failure reasons for cold-path diagnostics resolution - owner: GameBootstrapper
         private static readonly Dictionary<uint, string> _failureReasonsByHash = new Dictionary<uint, string>(8);
         private static GlobalDataVault _globalDataVault;
+        private static H8MacroDatabaseService _macroDatabaseService;
         private static BurstTokenBucketJobAdmissionService _jobAdmissionService;
         private static JobAdmissionTelemetryBridge _jobAdmissionTelemetryBridge;
+        private static ModuloSimulationBucketer _simulationBucketerService;
         private static NativeQueue<GameBootstrapperEventPayload> _pendingEvents;
         private static NativeQueue<GameBootstrapperEventPayload> _nextFrameEvents;
         private static int _pendingEventCount;
@@ -274,6 +280,8 @@ namespace Hecton8.Bootstrap
         };
 
         private static readonly object _bootstrapDependencyScratchLock = new object();
+        // COLD ALLOC: object[1] - bootstrap reflection argument scratch for isolated optional services - owner: GameBootstrapper
+        private static readonly object[] _bootstrapReflectionSingleArgumentScratch = new object[1];
         // COLD ALLOC: GlobalRegistryServiceSlot[bootstrap-node-count] - registry dependency execution order scratch - owner: GameBootstrapper
         private static readonly GlobalRegistryServiceSlot[] _bootstrapRegistryExecutionOrderScratch =
             new GlobalRegistryServiceSlot[(int)BootstrapDependencyNode.Count];
@@ -295,6 +303,8 @@ namespace Hecton8.Bootstrap
         [Header("Bootstrap Prewarm")]
         [Tooltip("Shader variant collections warmed during MemoryPreWarm before scene or player activation.")]
         [SerializeField] private ShaderVariantCollection[] shaderVariantCollections;
+        [Tooltip("Analytical caustics compute shader injected into the caustics service during visual runtime bootstrap.")]
+        [SerializeField] private ComputeShader analyticalCausticsCompute;
         [SerializeField] private uint expectedBiosRegistryFnv1a;
 #if UNITY_ADDRESSABLES_EXIST
         [Tooltip("Addressable groups loaded sequentially before dependent services consume them.")]
@@ -777,6 +787,9 @@ namespace Hecton8.Bootstrap
             if (bootstrapper != null)
                 return bootstrapper;
 
+            if (TryResolveBootstrapControllerOwner(out GameObject bootstrapOwner))
+                return EnsureRuntimeInstance(bootstrapOwner);
+
             Scene activeScene = SceneManager.GetActiveScene();
             GameObject runtimeRoot = new GameObject(PersistentRootName); // COLD ALLOC: GameObject[1] - bootstrap authority root when scene authoring omitted it - owner: GameBootstrapper
             if (activeScene.IsValid())
@@ -794,7 +807,10 @@ namespace Hecton8.Bootstrap
         {
             GameBootstrapper runtimeBootstrapper = GlobalRegistry.BootstrapperRuntime;
             if (runtimeBootstrapper != null)
+            {
+                TryAdoptBootstrapControllerCausticsCompute(runtimeBootstrapper, owner);
                 return runtimeBootstrapper;
+            }
 
             if (owner == null)
                 return EnsureRuntimeInstance();
@@ -802,7 +818,36 @@ namespace Hecton8.Bootstrap
             if (!owner.TryGetComponent(out GameBootstrapper bootstrapper))
                 bootstrapper = owner.AddComponent<GameBootstrapper>(); // COLD ALLOC: GameBootstrapper[1] - deterministic bootstrap owner on 00_BOOTSTRAP shell - owner: BootstrapController
 
+            TryAdoptBootstrapControllerCausticsCompute(bootstrapper, owner);
             return bootstrapper;
+        }
+
+        private static void TryAdoptBootstrapControllerCausticsCompute(GameBootstrapper bootstrapper, GameObject owner)
+        {
+            if (bootstrapper == null || bootstrapper.analyticalCausticsCompute != null || owner == null)
+                return;
+
+            if (!owner.TryGetComponent(out BootstrapController bootstrapController))
+                return;
+
+            ComputeShader computeShader = bootstrapController.AnalyticalCausticsCompute;
+            if (computeShader != null)
+                bootstrapper.analyticalCausticsCompute = computeShader;
+        }
+
+        private static bool TryResolveBootstrapControllerOwner(out GameObject owner)
+        {
+            owner = null;
+            Scene activeScene = SceneManager.GetActiveScene();
+            if (!Application.isPlaying || !IsBootstrapScene(activeScene))
+                return false;
+
+            BootstrapController bootstrapController = UnityEngine.Object.FindAnyObjectByType<BootstrapController>(); // COLD SCENE QUERY: bootstrap scene owner handoff only - owner: GameBootstrapper
+            if (bootstrapController == null || bootstrapController.gameObject.scene != activeScene)
+                return false;
+
+            owner = bootstrapController.gameObject;
+            return owner != null;
         }
 
         /// <summary>
@@ -940,6 +985,7 @@ namespace Hecton8.Bootstrap
         private static void DisposeSessionNativeStateForShutdown()
         {
             ShutdownSystemDispatcherForBootstrapTeardown();
+            ShutdownSimulationBucketerServiceForBootstrapTeardown();
             ShutdownJobAdmissionServiceForBootstrapTeardown();
             Hecton8.Modding.ModLoader.ResetStaticState();
             Hecton8.Modding.ModRegistryEvents.ResetStaticState();
@@ -999,8 +1045,22 @@ namespace Hecton8.Bootstrap
             _jobAdmissionTelemetryBridge = null;
         }
 
+        private static void ShutdownSimulationBucketerServiceForBootstrapTeardown()
+        {
+            ISimulationBucketer service = GlobalRegistry.SimulationBucketer;
+            if (service != null && ReferenceEquals(service, _simulationBucketerService))
+            {
+                GlobalRegistry.UnregisterSimulationBucketerRuntime(service);
+                service.Dispose();
+            }
+
+            _simulationBucketerService = null;
+        }
+
         private static void ShutdownGlobalDataVaultForBootstrapTeardown()
         {
+            ShutdownMacroDatabaseForBootstrapTeardown();
+
             if (_globalDataVault == null)
                 return;
 
@@ -1009,6 +1069,18 @@ namespace Hecton8.Bootstrap
 
             _globalDataVault.Dispose();
             _globalDataVault = null;
+        }
+
+        private static void ShutdownMacroDatabaseForBootstrapTeardown()
+        {
+            if (_macroDatabaseService == null)
+                return;
+
+            if (ReferenceEquals(GlobalRegistry.MacroDatabase, _macroDatabaseService))
+                GlobalRegistry.UnregisterMacroDatabase(_macroDatabaseService);
+
+            _macroDatabaseService.Shutdown();
+            _macroDatabaseService = null;
         }
 
         /// <summary>
@@ -1230,7 +1302,7 @@ namespace Hecton8.Bootstrap
             try
             {
                 ct.ThrowIfCancellationRequested();
-                _headlessBootMode = HasCommandLineArg(HeadlessCommandLineArg);
+                _headlessBootMode = IsHeadlessBootRequested();
                 InspectPreviousBootState();
                 global::Hecton8.Core.HectonHardwareProfile hardwareProfile = CaptureHardwareProfile();
                 GlobalRegistry.RegisterHardwareProfile(in hardwareProfile);
@@ -1288,6 +1360,13 @@ namespace Hecton8.Bootstrap
         {
             try
             {
+                if (_headlessBootMode)
+                {
+                    _preWarmAssetsReady = true;
+                    await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: ct);
+                    return true;
+                }
+
                 if (!_headlessBootMode)
                 {
                     WarmMathLodShaderKeywords();
@@ -1387,12 +1466,36 @@ namespace Hecton8.Bootstrap
         {
             GlobalTelemetryBus.Initialize();
             GlobalSignals.InitializeAllQueues();
+            EnsureSimulationBucketerRegistered();
             EnsureJobAdmissionServiceRegistered();
         }
 
         private static void InitializeBootstrapMmfStorage()
         {
             PreInitAssetIdMap.Initialize();
+            EnsureMacroDatabaseRegistered();
+        }
+
+        private static void EnsureMacroDatabaseRegistered()
+        {
+            if (_macroDatabaseService == null)
+                _macroDatabaseService = new H8MacroDatabaseService();
+
+            if (ReferenceEquals(GlobalRegistry.MacroDatabase, _macroDatabaseService))
+                return;
+
+            string databaseDirectory = Path.Combine(Application.persistentDataPath, "H8_MacroDB");
+            string databasePath = Path.Combine(databaseDirectory, "macro_world.h8db");
+            MacroDatabaseConfig config = MacroDatabaseConfig.Default;
+            MacroDatabaseSignalBridge signalBridge = new MacroDatabaseSignalBridge();
+            if (!_macroDatabaseService.Initialize(databasePath, in config, _globalDataVault, signalBridge))
+            {
+                _macroDatabaseService.Shutdown();
+                _macroDatabaseService = null;
+                return;
+            }
+
+            GlobalRegistry.RegisterMacroDatabase(_macroDatabaseService);
         }
 
         private static bool InitializeBootstrapDataMonolith(uint appVersionHash)
@@ -2176,13 +2279,13 @@ namespace Hecton8.Bootstrap
                 case BootstrapDependencyNode.HectonFloatingOrigin:
                     return GlobalRegistry.FloatingOrigin != null && !HectonFloatingOrigin.IsShiftInProgress;
                 case BootstrapDependencyNode.ConnectionSplineBatchRenderer:
-                    return GlobalRegistry.ConnectionSplineBatchRenderer != null;
+                    return _headlessBootMode || GlobalRegistry.ConnectionSplineBatchRenderer != null;
                 case BootstrapDependencyNode.GlobalPhysicsStateManager:
                     return GlobalRegistry.PhysicsStateManager != null;
                 case BootstrapDependencyNode.PhysicsApplySystem:
                     return GlobalRegistry.Physics != null;
                 case BootstrapDependencyNode.DebrisManager:
-                    return GlobalRegistry.Debris != null;
+                    return _headlessBootMode || GlobalRegistry.Debris != null;
                 case BootstrapDependencyNode.EnvironmentRuntimeContextService:
                     return GlobalRegistry.Environment != null;
                 case BootstrapDependencyNode.OceanKinematicsRuntimeService:
@@ -2192,7 +2295,7 @@ namespace Hecton8.Bootstrap
                 case BootstrapDependencyNode.FaunaSimulation:
                     return GlobalRegistry.FaunaSimulation != null && GlobalRegistry.FaunaSimulation.IsReady;
                 case BootstrapDependencyNode.SpatialAudioManager:
-                    return GlobalRegistry.Audio != null;
+                    return _headlessBootMode || GlobalRegistry.Audio != null;
                 case BootstrapDependencyNode.NativeInputManager:
                     return GlobalRegistry.NativeInputManager != null;
                 case BootstrapDependencyNode.InputDispatcher:
@@ -2374,6 +2477,9 @@ namespace Hecton8.Bootstrap
                     return EnsureFloatingOriginRegistered() != null && GlobalRegistry.FloatingOrigin != null;
 
                 case BootstrapDependencyNode.ConnectionSplineBatchRenderer:
+                    if (_headlessBootMode)
+                        return true;
+
                     return EnsureConnectionSplineBatchRendererRegistered() != null && GlobalRegistry.ConnectionSplineBatchRenderer != null;
 
                 case BootstrapDependencyNode.GlobalPhysicsStateManager:
@@ -2390,6 +2496,9 @@ namespace Hecton8.Bootstrap
 
                 case BootstrapDependencyNode.DebrisManager:
                 {
+                    if (_headlessBootMode)
+                        return true;
+
                     DebrisManager debrisManager = DebrisManager.EnsureRuntimeInstance();
                     if (debrisManager == null)
                         return false;
@@ -2425,6 +2534,8 @@ namespace Hecton8.Bootstrap
 
                     PersistRuntimeService(oceanKinematicsRuntimeService);
                     oceanKinematicsRuntimeService.InitializeService();
+                    if (!_headlessBootMode)
+                        TryEnsureAnalyticalCausticsRegistered();
                     return GlobalRegistry.OceanKinematics != null;
                 }
 
@@ -2436,7 +2547,7 @@ namespace Hecton8.Bootstrap
 
                 case BootstrapDependencyNode.SpatialAudioManager:
                     if (_headlessBootMode)
-                        return TryRegisterNoOpAudioFallback("Headless boot skips SpatialAudioManager");
+                        return true;
 
                     return InitializeSpatialAudioBootstrapNode();
 
@@ -2501,6 +2612,7 @@ namespace Hecton8.Bootstrap
 
         private static SystemDispatcher EnsureSystemDispatcherRegistered()
         {
+            EnsureSimulationBucketerRegistered();
             EnsureJobAdmissionServiceRegistered();
 
             SystemDispatcher dispatcher = GlobalRegistry.Dispatcher;
@@ -2524,6 +2636,25 @@ namespace Hecton8.Bootstrap
             return dispatcher;
         }
 
+        private static ISimulationBucketer EnsureSimulationBucketerRegistered()
+        {
+            ISimulationBucketer registered = GlobalRegistry.SimulationBucketer;
+            if (registered != null)
+            {
+                if (!registered.IsInitialized)
+                    registered.Initialize(SimulationBucketConstants.DefaultEntityCapacity);
+
+                return registered;
+            }
+
+            if (_simulationBucketerService == null)
+                _simulationBucketerService = new ModuloSimulationBucketer(); // COLD ALLOC: ModuloSimulationBucketer[1] - bootstrap-owned simulation cadence slicer - owner: GameBootstrapper
+
+            _simulationBucketerService.Initialize(SimulationBucketConstants.DefaultEntityCapacity);
+            GlobalRegistry.RegisterSimulationBucketerRuntime(_simulationBucketerService);
+            return _simulationBucketerService;
+        }
+
         private static IJobAdmissionService EnsureJobAdmissionServiceRegistered()
         {
             IJobAdmissionService registered = GlobalRegistry.JobAdmission;
@@ -2543,6 +2674,46 @@ namespace Hecton8.Bootstrap
             GlobalRegistry.RegisterJobAdmissionRuntime(_jobAdmissionService);
             JobAdmissionSchedulerBridge.SetService(_jobAdmissionService);
             return _jobAdmissionService;
+        }
+
+        private static bool TryEnsureAnalyticalCausticsRegistered()
+        {
+            if (GlobalRegistry.Caustics != null)
+                return true;
+
+            Type serviceType = Type.GetType("Hecton8.Graphics.Caustics.AnalyticalCausticsService, Hecton8.Graphics.Caustics", false);
+            if (serviceType == null)
+                return false;
+
+            MethodInfo ensureMethod = serviceType.GetMethod("EnsureRuntimeInstance", BindingFlags.Public | BindingFlags.Static);
+            Component serviceComponent = ensureMethod != null ? ensureMethod.Invoke(null, null) as Component : null;
+            if (serviceComponent == null)
+                return false;
+
+            PersistRuntimeService(serviceComponent);
+            ComputeShader computeShader = GlobalRegistry.BootstrapperRuntime != null
+                ? GlobalRegistry.BootstrapperRuntime.analyticalCausticsCompute
+                : null;
+            if (computeShader != null)
+            {
+                MethodInfo assignComputeMethod = serviceType.GetMethod("AssignComputeShader", BindingFlags.Public | BindingFlags.Instance);
+                if (assignComputeMethod != null)
+                {
+                    try
+                    {
+                        _bootstrapReflectionSingleArgumentScratch[0] = computeShader;
+                        assignComputeMethod.Invoke(serviceComponent, _bootstrapReflectionSingleArgumentScratch);
+                    }
+                    finally
+                    {
+                        _bootstrapReflectionSingleArgumentScratch[0] = null;
+                    }
+                }
+            }
+
+            MethodInfo initializeMethod = serviceType.GetMethod("InitializeService", BindingFlags.Public | BindingFlags.Instance);
+            initializeMethod?.Invoke(serviceComponent, null);
+            return GlobalRegistry.Caustics != null;
         }
 
         internal static void PersistRuntimeService(Component component)
@@ -3084,6 +3255,11 @@ namespace Hecton8.Bootstrap
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.LogError($"[GameBootstrapper] Bootstrap phase failed. phase={phase}");
 #endif
+        }
+
+        private static bool IsHeadlessBootRequested()
+        {
+            return HasCommandLineArg(HectonHeadlessCommandLineArg) || HasCommandLineArg(HeadlessCommandLineArg);
         }
 
         private static bool HasCommandLineArg(string commandLineArg)
@@ -4842,6 +5018,12 @@ namespace Hecton8.Bootstrap
         }
 
         /// <inheritdoc />
+        public bool QueuePrologueAudioTransition(in AudioTransitionState state)
+        {
+            return false;
+        }
+
+        /// <inheritdoc />
         public bool QueueSoundEmissionSignal(in SoundEmissionSignal signal)
         {
             return false;
@@ -4849,6 +5031,12 @@ namespace Hecton8.Bootstrap
 
         /// <inheritdoc />
         public bool QueueHullStressSignal(in HullStressSignal signal)
+        {
+            return false;
+        }
+
+        /// <inheritdoc />
+        public bool QueueHighSpeedImpactSignal(in HighSpeedImpactSignal signal)
         {
             return false;
         }

@@ -121,3 +121,45 @@ Solution: Delayed registration until dispatcher existence is factual, reused the
 Rejected Alternatives: Log suppression, weakening `GlobalRegistry` dependency-cycle detection, scene YAML surgery, or changing player-build hardware/GC policy were rejected. The fixes are cold boot/editor guard changes only.
 Scalability potential: Low/Middle/High/Ultra player builds keep the production bootstrap policy. Editor Play Mode stops failing before surface/HUD verification, enabling actual visual tuning instead of BIOS timeout churn.
 Hardware Impact: 0 us steady frame. Bootstrap-only branch checks; no render pass, no per-frame allocation, no hot-path polling.
+
+## Continuation Decision 18 - Surface Readability Scalar Pass
+Problem: Surface and near-surface view remained dark/green because multiple presentation owners still compounded noir fog, low abyss color floors, dense fog, vignette, high contrast, desaturation, and cold filters.
+Solution: Lifted surface/daylight luminance floors in `HectonUnderwaterVisuals`, reduced blackout/noir density, softened renderer feature fog/vignette scalars, and neutralized High/Default volume contrast/filter/saturation.
+Rejected Alternatives: Adding lights, disabling underwater rendering, deleting renderer features, or manually editing scene-only materials was rejected because those create brittle authoring state and extra runtime cost.
+Scalability potential: Low keeps cheaper scalar clamps and lower fog density; Middle keeps readable surface mood; High/Ultra can spend saved visibility budget on shafts/particles instead of black crush.
+Hardware Impact: 0 new passes, 0 GC. Scalar/material/profile values only; expected low-end gain from less dense post/fog blending pressure is visual readability, not CPU savings.
+
+## Continuation Decision 19 - Diegetic HUD Projection Recovery
+Problem: UI/crosshair could become invisible when the dedicated HUD camera/controller was not resolved; projection canvas would remain world-space but return before pose/scale if `projectionCamera` stayed null. The previous visibility contract also overwrote a fallback camera culling mask with only the HUD layer.
+Solution: Added a cold resolve fallback through `GlobalRegistry.Player.PlayerCamera` and owned player camera search, then changed the camera mask contract to OR the HUD layer into the target camera instead of replacing the mask. Reticle alpha floors were raised through existing cached color writes.
+Rejected Alternatives: Screen-space overlay was rejected because diegetic UI contract requires physical projection. Scene YAML surgery and a second camera spawn were rejected as brittle and potentially costly.
+Scalability potential: Low/Middle use the existing player camera and same canvas; High/Ultra can still use dedicated HUD camera when present. No extra render target is forced.
+Hardware Impact: Cold resolve only. Runtime pose path is unchanged except an existing bit-mask visibility check. Reticle alpha changes reuse cached `Image.color` writes.
+
+## Continuation Decision 20 - Warning Spam Cadence
+Problem: HUD solve over-budget telemetry could publish every 30 frames, creating unnecessary warning noise during active debugging even when the warning is useful.
+Solution: Raised cooldown to 300 frames so warnings remain actionable without flooding the console.
+Rejected Alternatives: Removing the warning or suppressing console output globally was rejected because real HUD budget regressions still need visibility.
+Scalability potential: Low/Middle/High/Ultra all keep diagnostics with lower publication frequency.
+Hardware Impact: Fewer event publications; no allocation added.
+
+## Continuation Decision 21 - MapMagic Preview Shader Warning Repair
+Problem: Fresh asset worker logs repeatedly report `Shader Unsupported: MapMagic/TerrainPreview* - All subshaders removed`, and prior imports also reported mixed line endings in those shader files. This is editor-only but creates console noise that hides real gameplay/runtime faults.
+Solution: Added URP-compatible lightweight preview fallback passes with `RenderPipeline=UniversalPipeline` and `LightMode=UniversalForward`, then normalized both files to CRLF without BOM.
+Rejected Alternatives: Deleting MapMagic, disabling terrain preview, or suppressing shader warnings globally was rejected. Those would either damage tooling or hide real shader faults.
+Scalability potential: Runtime Low/Middle/High/Ultra unaffected; this only gives the editor importer a cheap fallback path for preview materials.
+Hardware Impact: 0 us player runtime. Editor preview fallback is a single texture sample and no terrain lighting path when the full preview shader is stripped.
+
+## Continuation Decision 22 - Runtime Reference Warning One-Shot
+Problem: `HectonUnderwaterVisuals` could log unresolved player/main camera or sun transform every five seconds in development/editor if a runtime reference stayed missing, creating noise without adding new information.
+Solution: Kept the diagnostic but added a byte mask so each missing reference logs once and resets only after the reference resolves.
+Rejected Alternatives: Removing diagnostics was rejected because missing camera/sun references are real visual blockers. Keeping the five-second repeat was rejected because it buries actionable console entries.
+Scalability potential: Low/Middle/High/Ultra player runtime unaffected in release; dev/editor diagnostics stay precise.
+Hardware Impact: One byte mask and three bit checks on an editor/development diagnostic cadence only; 0 GC.
+
+## Continuation Decision 23 - Noir Global Reset Floor
+Problem: `ResetNoirResolveGlobals()` still wrote the old near-black abyss floor and high noir exponent/density values, so domain reload, disable, or teardown could leave global shader state darker than the repaired runtime values.
+Solution: Updated the reset path to the readable abyss floor, lower noir exponent, and lower fog scattering coefficient used by the active runtime path.
+Rejected Alternatives: Removing the reset was rejected because stale globals must still be cleaned. Leaving old black-crush defaults was rejected because it can reintroduce the exact surface darkness being fixed.
+Scalability potential: Low/Middle/High/Ultra all get safe fallback shader globals if the visual owner is disabled or reloaded.
+Hardware Impact: Disable/reload scalar writes only; 0 frame cost, 0 GC.

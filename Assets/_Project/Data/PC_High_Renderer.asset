@@ -21,7 +21,7 @@ MonoBehaviour:
     criticalHeartbeatBpm: 124
     maxChromaticOffset: 0.0038
     maxDistortionOffset: 0.014
-    maxVignetteStrength: 0.28
+    maxVignetteStrength: 0.14
 --- !u!114 &-5081531551300358816
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -52,7 +52,7 @@ MonoBehaviour:
     heatHazeFrequency: 38
     heatHazeSpeed: 0.62
     heatHazeAmplitude: 0.0017
-    damageVignetteStrength: 0.24
+    damageVignetteStrength: 0.16
     lowTierVideoMemoryMb: 2048
     hypoxiaSafeOxygen01: 0.22
 --- !u!114 &-4438276556181502662
@@ -118,8 +118,8 @@ MonoBehaviour:
     flashlightShadowBias: 0.06
     flashlightShadowFloor: 0.08
     noirPower: 0.55
-    noirFogDensity: 0.0025
-    noirLiftColor: {r: 0.045, g: 0.07, b: 0.09, a: 1}
+    noirFogDensity: 0.0009
+    noirLiftColor: {r: 0.08, g: 0.11, b: 0.14, a: 1}
     lensGhostIntensity: 0.34
     lensGhostScale: 0.075
     lensChromaticAberration: 0
@@ -154,6 +154,19 @@ MonoBehaviour:
     renderScale: 0.5
     compositeStrength: 1
     bilateralDepthScale: 24
+--- !u!114 &420815551001000002
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eba5170be4920e746b8c0ca0765349bc, type: 3}
+  m_Name: HectonFluidAdvectionRenderFeature
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Visor.HectonFluidAdvectionRenderFeature
+  m_Active: 1
 --- !u!114 &-2039857032782672258
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -171,8 +184,8 @@ MonoBehaviour:
     shader: {fileID: 4800000, guid: d38821027adf58747a75d2048230832c, type: 3}
     injectionPoint: 450
     shallowFogColor: {r: 0.34, g: 0.58, b: 0.72, a: 1}
-    abyssFogColor: {r: 0.012, g: 0.028, b: 0.05, a: 1}
-    density: 0.0028
+    abyssFogColor: {r: 0.05, g: 0.09, b: 0.12, a: 1}
+    density: 0.0012
     startDistanceMeters: 7
     maxDepthMeters: 155
     ditherStrength: 0.28
@@ -212,10 +225,11 @@ MonoBehaviour:
   - {fileID: -8819836769844018346}
   - {fileID: 8465884984933540169}
   - {fileID: -2039857032782672258}
+  - {fileID: 420815551001000002}
   - {fileID: -3471827618286992026}
   - {fileID: 5943226787261363979}
   - {fileID: -5081531551300358816}
-  m_RendererFeatureMap: abf8db7c8ef6cf00a15e49751debe464b188e97609222e1afb2b45d40b3759c73a85dbb5fc1268c239d6e6b8d359d04956c384f42fa5998549e146248add7c757e0e6818d6f8b0e366059dfa2c97d1cf0bb74c4246957a52606dcd29fac57ab9
+  m_RendererFeatureMap: abf8db7c8ef6cf00a15e49751debe464b188e97609222e1afb2b45d40b3759c73a85dbb5fc1268c239d6e6b8d359d04956c384f42fa5998549e146248add7c757e0e6818d6f8b0e342f85f998309d70566059dfa2c97d1cf0bb74c4246957a52606dcd29fac57ab9
   m_UseNativeRenderPass: 1
   xrSystemData: {fileID: 0}
   postProcessData: {fileID: 11400000, guid: 41439944d30ece34e96484bdb6645b55, type: 2}

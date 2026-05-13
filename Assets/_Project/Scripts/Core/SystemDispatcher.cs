@@ -20,6 +20,7 @@ using Hecton8.Environment;
 using Hecton8.Gameplay;
 using Hecton8.Inventory;
 using Hecton8.Narrative;
+using Hecton8.Optimization;
 using Hecton8.Physics;
 using Hecton8.Power;
 using Hecton8.Quest;
@@ -61,11 +62,13 @@ namespace Hecton8.Core
         private const int LaneCount = 4;
         private const double FastTickIntervalSeconds = 1.0 / 60.0;
         private const double SlowTickIntervalSeconds = 0.1;
+        private const double ThermalCriticalSlowTickIntervalSeconds = 0.2;
         private const double ColdTickIntervalSeconds = 1.0;
         private const double FrostTickIntervalSeconds = 5.0;
         private const int MaxCadenceSubstepsPerFrame = 4;
         private const float TimeDilationMinimumScalar = 0f;
         private const float TimeDilationMaximumScalar = 4f;
+        private const float HeadlessTimeDilationMaximumScalar = 100f;
         private const float TimeDilationPausedEpsilon = 0.0001f;
         private const float BulletTimePostScalarThreshold = 0.98f;
         private const double SlowJobCompleteWarningMilliseconds = 1.0;
@@ -87,6 +90,7 @@ namespace Hecton8.Core
         private const float PauseDepthOfFieldBlendSeconds = 0.2f;
         private const float VisualStaticGlitchDurationSeconds = 1f;
         private const float SafeGcCollectFrameBudgetSeconds = 0.014f;
+        private const double HomeostasisEmergencySlowTickIntervalSeconds = 0.5;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private const float AupNanInquisitorLogIntervalSeconds = 5f;
         private const float DispatcherPhaseWarningLogIntervalSeconds = 5f;
@@ -99,6 +103,7 @@ namespace Hecton8.Core
         private static readonly ProfilerMarker _slowTickProfilerMarker = new ProfilerMarker("H8.Dispatcher.SlowTick");
         private static readonly ProfilerMarker _coldTickProfilerMarker = new ProfilerMarker("H8.Dispatcher.ColdTick");
         private static readonly ProfilerMarker _frostTickProfilerMarker = new ProfilerMarker("H8.Dispatcher.FrostTick");
+        private static readonly ProfilerMarker _memoryDefragProfilerMarker = new ProfilerMarker("H8.Dispatcher.MemoryDefrag.PreSimulation");
         private static readonly ProfilerMarker _lateFrameProfilerMarker = new ProfilerMarker("H8.Dispatcher.LateFrame");
         private static readonly ProfilerMarker _postFixedProfilerMarker = new ProfilerMarker("H8.Dispatcher.PostFixed");
         private static readonly ProfilerMarker _lateFrameCommandQueueDrainProfilerMarker = new ProfilerMarker("H8.Dispatcher.CommandQueue.Drain");
@@ -118,6 +123,12 @@ namespace Hecton8.Core
         private const uint _LateFrameBudgetWarningHash = 3118918745u;
         private const uint _AmbientEventsDropHash = 3299023854u;
         private const uint _CriticalPerformanceSpikeHash = 3729248491u;
+        private const uint _DataVaultDefragContextHash = 0xDADA7048u;
+        private const uint _HeapFragmentationRatioHash = 0xF9A60001u;
+        private const uint _DataVaultMovedBytesHash = 0xDADA7049u;
+        private const uint _DataVaultWatchdogHash = 0xDADA7050u;
+        private const uint _DataVaultMassiveMoveHash = 0xDADA7051u;
+        private const uint _DataVaultVramPressureHash = 0xDADA7052u;
         private const uint _BaseStressCascadeBreakerHash = 3838237614u;
         private static readonly int _HectonFreezeFrameDitherId = Shader.PropertyToID("_HectonFreezeFrameDither");
         private static readonly int _GamePausedId = Shader.PropertyToID("_GamePaused");
@@ -204,6 +215,7 @@ namespace Hecton8.Core
             new RegistryBucket<ISlowTickable>(96),
             new RegistryBucket<ISlowTickable>(32),
         };
+        private static int _bucketedSlowTickableCount;
         private static readonly RegistryBucket<IColdTickable>[] _coldPriorityLanes =
         {
             new RegistryBucket<IColdTickable>(64),
@@ -241,6 +253,10 @@ namespace Hecton8.Core
         };
 
         private static IFoveatedDispatcher _foveatedSimulationManager = new FoveatedSimulationManager();
+        private static long _homeostasisKillSwitchMaskBits;
+        private static int _homeostasisPressureLevel;
+        private static int _homeostasisSlowTick2Hz;
+        private static int _homeostasisFoveatedTier;
         private static IModdingBridge _moddingBridgeProjectionRuntime;
         // COLD ALLOC: IDispatcherRaycastReceiver[256] - dispatcher-owned pending raycast receivers - owner: SystemDispatcher
         private static readonly IDispatcherRaycastReceiver[] _pendingDispatcherRaycastReceivers = new IDispatcherRaycastReceiver[MaxQueuedDispatcherRaycasts];
@@ -265,13 +281,16 @@ namespace Hecton8.Core
         // COLD ALLOC: bool[64] - single telemetry gate per IslandID per frame - owner: SystemDispatcher
         private static readonly bool[] _baseStressCascadeTelemetryEmitted = new bool[BaseStressCascadeCircuitBreakerCapacity];
         private NativeArray<double> _h8Time;
+        private bool _h8TimeVaultOwned;
         private double _fastTickAccumulator;
         private double _slowTickAccumulator;
         private double _coldTickAccumulator;
         private double _frostTickAccumulator;
+        private double _memoryDefragAccumulator;
         private double _unscaledFastTickAccumulator;
         private double _fixedStepAccumulator;
         private IDataVault _dataVault;
+        private ISimulationBucketer _simulationBucketer;
         private float _timeDilationScalar = 1f;
         private float _prePauseTimeDilationScalar = 1f;
         private float _coreTickDilationScalar = 1f;
@@ -279,6 +298,7 @@ namespace Hecton8.Core
         private int _coreTickDilationFramesRemaining;
         private uint _coreTickDilationReasonHash;
         private bool _simulationPaused;
+        private bool _thermalCriticalSlowTickActive;
         private uint _timeDilationSequence;
         private uint _lastPublishedTimeDilationSequence;
         private uint _aupPreShiftPauseSequence;
@@ -286,6 +306,7 @@ namespace Hecton8.Core
         private bool _coreTickDilationRestorePending;
         private H8TimeSnapshot _timeSnapshot;
         private bool _serviceRegistered;
+        private int _lastMemoryDefragPressureWarningFrame = -1;
         private static int _lateFrameEventDispatchBudget;
         private static bool _lateFrameEventBudgetActive;
         private static bool _lateFrameCircuitBreakerTripped;
@@ -302,6 +323,7 @@ namespace Hecton8.Core
         private static int _baseStressCascadeTableOverflowTelemetryFrame = -1;
         private static int _originShiftBootstrapLockCount;
         private static int _originShiftFrameLockFrame = -1;
+        private static int _criticalMemoryPressureDefragRequested;
         private static int _streamingStorageDebtMilli;
         private static int _streamingStorageDebtSequence;
 
@@ -318,6 +340,12 @@ namespace Hecton8.Core
         internal static bool IsOriginShiftFrameLockedForCurrentFrame => Volatile.Read(ref _originShiftFrameLockFrame) == Time.frameCount;
 
         public float TimeDilationScalar => _timeDilationScalar;
+
+        public static ulong KillSwitchMask => unchecked((ulong)Volatile.Read(ref _homeostasisKillSwitchMaskBits));
+
+        internal static byte HomeostasisPressureLevel => (byte)Volatile.Read(ref _homeostasisPressureLevel);
+
+        internal static byte HomeostasisFoveatedTier => (byte)Volatile.Read(ref _homeostasisFoveatedTier);
 
         public bool SimulationPaused => _simulationPaused || _timeDilationScalar <= TimeDilationPausedEpsilon;
 
@@ -357,6 +385,7 @@ namespace Hecton8.Core
         private static NativeQueue<RaycastCommand> _pendingDispatcherRaycastCommands;
         private static NativeList<RaycastCommand> _scheduledDispatcherRaycastCommands;
         private static NativeArray<RaycastHit> _scheduledDispatcherRaycastHits;
+        private static bool _scheduledDispatcherRaycastHitsVaultOwned;
         private static JobHandle _scheduledDispatcherRaycastHandle;
         private static bool _dispatcherRaycastsScheduled;
         private static int _pendingDispatcherRaycastCount;
@@ -440,6 +469,7 @@ namespace Hecton8.Core
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
+            HomeostasisBrain.ShutdownRuntime();
             _foveatedSimulationManager.Dispose();
             _foveatedSimulationManager = new FoveatedSimulationManager();
             _foveatedSimulationManager.InitializeRuntime();
@@ -488,6 +518,10 @@ namespace Hecton8.Core
             _temporalCompressionFrameCount = 0;
             _pdaOverBudgetConsecutiveFrames = 0;
             _moddingBridgeProjectionRuntime = null;
+            Volatile.Write(ref _homeostasisKillSwitchMaskBits, 0L);
+            Volatile.Write(ref _homeostasisPressureLevel, 0);
+            Volatile.Write(ref _homeostasisSlowTick2Hz, 0);
+            Volatile.Write(ref _homeostasisFoveatedTier, 0);
             ActiveRuntimeInstance = null;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             _currentPostFixedGcOwner = null;
@@ -497,6 +531,24 @@ namespace Hecton8.Core
             _lastPostFixedGcLaneIndex = -1;
             _lastPostFixedGcItemIndex = -1;
 #endif
+        }
+
+        internal static void ApplyHomeostasisKillSwitch(
+            ulong mask,
+            byte pressureLevel,
+            byte foveatedTier,
+            bool slowTick2Hz,
+            bool forceTimeDilation08,
+            uint reasonHash)
+        {
+            Volatile.Write(ref _homeostasisKillSwitchMaskBits, unchecked((long)mask));
+            Volatile.Write(ref _homeostasisPressureLevel, pressureLevel);
+            Volatile.Write(ref _homeostasisSlowTick2Hz, slowTick2Hz ? 1 : 0);
+            Volatile.Write(ref _homeostasisFoveatedTier, foveatedTier);
+            _foveatedSimulationManager.ApplyHomeostasisPressureTier(foveatedTier);
+
+            if (forceTimeDilation08 && ActiveRuntimeInstance != null)
+                ActiveRuntimeInstance.RequestCoreTickDilation(0.8f, 2, reasonHash);
         }
 
         /// <summary>
@@ -828,7 +880,13 @@ namespace Hecton8.Core
             if (item == null)
                 return false;
 
-            return GetSlowLane(layer).TryRegister(item);
+            if (!GetSlowLane(layer).TryRegister(item))
+                return false;
+
+            if (item is IBucketedSlowTickable)
+                _bucketedSlowTickableCount++;
+
+            return true;
         }
 
         /// <summary>
@@ -942,7 +1000,8 @@ namespace Hecton8.Core
             if (item == null)
                 return;
 
-            GetSlowLane(layer).TryUnregister(item);
+            if (GetSlowLane(layer).TryUnregister(item) && item is IBucketedSlowTickable)
+                _bucketedSlowTickableCount = math.max(0, _bucketedSlowTickableCount - 1);
         }
 
         /// <summary>
@@ -1024,6 +1083,7 @@ namespace Hecton8.Core
                 _unscaledFastPriorityLanes[i].Clear();
             }
 
+            _bucketedSlowTickableCount = 0;
             _foveatedSimulationManager.ResetRuntimeState();
         }
 
@@ -1044,6 +1104,17 @@ namespace Hecton8.Core
         {
             ClearCoreTickDilationBurst();
             SetTimeDilationScalar(scalar, reasonHash, publishImmediate: true);
+        }
+
+        public void RequestHeadlessTimeDilation(float scalar, uint reasonHash = 0u)
+        {
+            ClearCoreTickDilationBurst();
+            SetTimeDilationScalar(
+                scalar,
+                TimeDilationMinimumScalar,
+                HeadlessTimeDilationMaximumScalar,
+                reasonHash,
+                publishImmediate: true);
         }
 
         /// <summary>
@@ -1074,6 +1145,13 @@ namespace Hecton8.Core
             _coreTickDilationFramesRemaining = math.max(_coreTickDilationFramesRemaining, frameCount);
             _coreTickDilationReasonHash = reasonHash;
             SetTimeDilationScalar(safeScalar, reasonHash, publishImmediate: true);
+        }
+
+        public void SetThermalCriticalSlowTick(bool active)
+        {
+            _thermalCriticalSlowTickActive = active;
+            if (active && _slowTickAccumulator > ThermalCriticalSlowTickIntervalSeconds)
+                _slowTickAccumulator = ThermalCriticalSlowTickIntervalSeconds;
         }
 
         public void RequestSimulationPause(bool paused, uint reasonHash = 0u)
@@ -1122,8 +1200,23 @@ namespace Hecton8.Core
 
         private void SetTimeDilationScalar(float scalar, uint reasonHash, bool publishImmediate)
         {
+            SetTimeDilationScalar(
+                scalar,
+                TimeDilationMinimumScalar,
+                TimeDilationMaximumScalar,
+                reasonHash,
+                publishImmediate);
+        }
+
+        private void SetTimeDilationScalar(
+            float scalar,
+            float minimumScalar,
+            float maximumScalar,
+            uint reasonHash,
+            bool publishImmediate)
+        {
             float safeScalar = math.isfinite(scalar)
-                ? math.clamp(scalar, TimeDilationMinimumScalar, TimeDilationMaximumScalar)
+                ? math.clamp(scalar, minimumScalar, maximumScalar)
                 : 1f;
             if (math.abs(_timeDilationScalar - safeScalar) <= 0.0001f)
                 return;
@@ -1189,6 +1282,7 @@ namespace Hecton8.Core
             _fastTickAccumulator = 0f;
             _coldTickAccumulator = 0f;
             _frostTickAccumulator = 0f;
+            _memoryDefragAccumulator = 0f;
             _unscaledFastTickAccumulator = 0f;
             _timeDilationScalar = 1f;
             _prePauseTimeDilationScalar = 1f;
@@ -1198,6 +1292,7 @@ namespace Hecton8.Core
             _coreTickDilationReasonHash = 0u;
             _coreTickDilationRestorePending = false;
             _simulationPaused = false;
+            _thermalCriticalSlowTickActive = false;
             _timeSnapshot = default;
             CurrentFixedInterpolationAlpha = 0f;
         }
@@ -1219,6 +1314,7 @@ namespace Hecton8.Core
 
             if (_serviceRegistered)
             {
+                HomeostasisBrain.ShutdownRuntime();
                 _foveatedSimulationManager.Dispose();
                 DisposeDispatcherRaycastBuffers();
                 DisposeH8TimeArray();
@@ -1232,21 +1328,29 @@ namespace Hecton8.Core
             _fastTickAccumulator = 0f;
             _coldTickAccumulator = 0f;
             _frostTickAccumulator = 0f;
+            _memoryDefragAccumulator = 0f;
             _unscaledFastTickAccumulator = 0f;
             _timeDilationScalar = 1f;
             _prePauseTimeDilationScalar = 1f;
             _simulationPaused = false;
+            _thermalCriticalSlowTickActive = false;
             _timeDilationSequence = 0u;
             _lastPublishedTimeDilationSequence = 0u;
             _aupPreShiftPauseSequence = 0u;
             _aupPreShiftPauseFrame = -1;
             ClearCoreTickDilationBurst();
             _dataVault = null;
+            _simulationBucketer = null;
             _timeSnapshot = default;
             CurrentFrameDeltaTime = 0f;
             CurrentFrameUnscaledDeltaTime = 0f;
             CurrentFixedInterpolationAlpha = 0f;
             _serviceRegistered = false;
+            _lastMemoryDefragPressureWarningFrame = -1;
+            Volatile.Write(ref _homeostasisKillSwitchMaskBits, 0L);
+            Volatile.Write(ref _homeostasisPressureLevel, 0);
+            Volatile.Write(ref _homeostasisSlowTick2Hz, 0);
+            Volatile.Write(ref _homeostasisFoveatedTier, 0);
         }
 
         /// <summary>
@@ -1261,8 +1365,10 @@ namespace Hecton8.Core
             UIStateStore.EnsureInitialized();
             BaseAirlockEvents.Prewarm();
             RefreshDataVaultDependency();
+            RefreshSimulationBucketerDependency();
             EnsureDispatcherRaycastBuffers();
             EnsureH8TimeArray();
+            HomeostasisBrain.InitializeRuntime();
             GlobalRegistry.RegisterSystemDispatcher(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.Dispatcher, this);
             PublishTimeDilationState(0u);
@@ -1273,12 +1379,34 @@ namespace Hecton8.Core
             if (_h8Time.IsCreated)
                 return;
 
-            _h8Time = H8Memory.Allocate<double>((int)H8TimeSlot.Count, SystemID.SystemDispatcher, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<double>[4] - dispatcher-owned H8 time SOA - owner: SystemDispatcher
+            IDataVault dataVault = _dataVault;
+            if (dataVault == null)
+            {
+                RefreshDataVaultDependency();
+                dataVault = _dataVault;
+            }
+
+            if (dataVault != null)
+            {
+                _h8Time = dataVault.GetBuffer<double>(
+                    BufferID.H8Time,
+                    (int)H8TimeSlot.Count,
+                    SystemID.SystemDispatcher,
+                    NativeArrayOptions.ClearMemory);
+                if (_h8Time.IsCreated)
+                {
+                    _h8TimeVaultOwned = true;
+                    return;
+                }
+            }
+
+            _h8Time = H8Memory.Allocate<double>((int)H8TimeSlot.Count, SystemID.SystemDispatcher, Allocator.Persistent, NativeArrayOptions.ClearMemory); // FALLBACK COLD ALLOC: NativeArray<double>[4] - dispatcher H8 time SOA when DataVault is unavailable - owner: SystemDispatcher
             NativeMemorySentinel.RegisterNativeArray(
                 _h8Time,
                 nameof(SystemDispatcher),
                 nameof(_h8Time),
                 NativeAllocationLifetime.Session);
+            _h8TimeVaultOwned = false;
         }
 
         private void RefreshDataVaultDependency()
@@ -1288,13 +1416,151 @@ namespace Hecton8.Core
                 _dataVault = dataVault;
         }
 
+        private void RefreshSimulationBucketerDependency()
+        {
+            _simulationBucketer = GlobalRegistry.SimulationBucketer;
+        }
+
+        private void RunPreSimulationMemoryDefrag(float unscaledDeltaTime)
+        {
+            IDataVault dataVault = _dataVault;
+            if (dataVault == null)
+            {
+                RefreshDataVaultDependency();
+                dataVault = _dataVault;
+            }
+
+            if (dataVault == null || unscaledDeltaTime < 0f)
+                return;
+
+            bool forcedByMemoryPressure = Interlocked.Exchange(ref _criticalMemoryPressureDefragRequested, 0) != 0;
+            double cadenceSeconds = GlobalRegistry.ScalabilityTierProfileByte == 0
+                ? ColdTickIntervalSeconds
+                : FrostTickIntervalSeconds;
+            _memoryDefragAccumulator += unscaledDeltaTime;
+            if (!forcedByMemoryPressure && _memoryDefragAccumulator < cadenceSeconds)
+                return;
+
+            float elapsedSeconds = (float)(_memoryDefragAccumulator > 0d ? _memoryDefragAccumulator : cadenceSeconds);
+            _memoryDefragAccumulator = 0d;
+            float compactionStress01 = ResolveMemoryCompactionStress01(unscaledDeltaTime);
+            long startTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
+            using (_memoryDefragProfilerMarker.Auto())
+            {
+                dataVault.FrostTickDefrag(elapsedSeconds, compactionStress01);
+            }
+
+            double elapsedMilliseconds =
+                (System.Diagnostics.Stopwatch.GetTimestamp() - startTimestamp) * 1000.0d /
+                System.Diagnostics.Stopwatch.Frequency;
+            PublishMemoryAddressShiftSignals(dataVault);
+            PublishDataVaultDefragTelemetry(dataVault, elapsedMilliseconds);
+            EmitVramPressureDefragSignalIfNeeded();
+        }
+
+        private static float ResolveMemoryCompactionStress01(float unscaledDeltaTime)
+        {
+            if (!math.isfinite(unscaledDeltaTime) || unscaledDeltaTime < 0f)
+                return 1f;
+
+            float frameStress = math.saturate(unscaledDeltaTime / 0.05f);
+            float pressureStress = math.saturate(HomeostasisPressureLevel * 0.125f);
+            return math.max(frameStress, pressureStress);
+        }
+
+        private static void PublishMemoryAddressShiftSignals(IDataVault dataVault)
+        {
+            int recordCount = dataVault.LastRelocationRecordCount;
+            for (int i = 0; i < recordCount; i++)
+            {
+                if (!dataVault.TryGetLastRelocationRecord(i, out VaultRelocationRecord record))
+                    break;
+
+                MemoryAddressShiftSignal signal = default;
+                signal.OldPointer = record.OldPointer;
+                signal.NewPointer = record.NewPointer;
+                signal.BufferId = record.BufferId;
+                signal.ByteLength = record.ByteLength;
+                signal.Version = record.Generation;
+                signal.Flags = record.Flags;
+                signal.SystemId = record.SystemId;
+                GlobalSignals.Publish(in signal);
+            }
+        }
+
+        private void PublishDataVaultDefragTelemetry(IDataVault dataVault, double elapsedMilliseconds)
+        {
+            if (dataVault.HeapFragmentationRatio > 0f)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(
+                    _HeapFragmentationRatioHash,
+                    _DataVaultDefragContextHash,
+                    dataVault.HeapFragmentationRatio);
+            }
+
+            if (dataVault.LastDefragMovedBytes > 0L)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(
+                    _DataVaultMovedBytesHash,
+                    _DataVaultDefragContextHash,
+                    dataVault.LastDefragMovedBytes * GlobalTelemetryBus.BytesToMegabytes);
+            }
+
+            if (dataVault.LastDefragWatchdogExceeded || elapsedMilliseconds > 1.0d)
+            {
+                GlobalTelemetryBus.PublishJobBarrierStall(
+                    nameof(GlobalDataVault),
+                    nameof(RunPreSimulationMemoryDefrag),
+                    (float)elapsedMilliseconds);
+                GlobalTelemetryBus.PublishPerformanceWarning(
+                    _DataVaultWatchdogHash,
+                    _DataVaultDefragContextHash,
+                    (float)elapsedMilliseconds);
+            }
+
+            if (dataVault.PendingMassiveMoveBytes >= 50L * 1024L * 1024L &&
+                _lastMemoryDefragPressureWarningFrame != Time.frameCount)
+            {
+                _lastMemoryDefragPressureWarningFrame = Time.frameCount;
+                GlobalTelemetryBus.PublishPerformanceWarning(
+                    _DataVaultMassiveMoveHash,
+                    _DataVaultDefragContextHash,
+                    dataVault.PendingMassiveMoveBytes * GlobalTelemetryBus.BytesToMegabytes);
+            }
+        }
+
+        private static void EmitVramPressureDefragSignalIfNeeded()
+        {
+            VRAMMonitor monitor = GlobalRegistry.VRAMMonitor;
+            if (monitor == null || monitor.TotalVRAMBytes <= 1800L * 1024L * 1024L)
+                return;
+
+            GlobalTelemetryBus.PublishVRAMWarningEvent(monitor.TotalVRAMBytes);
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _DataVaultVramPressureHash,
+                _DataVaultDefragContextHash,
+                monitor.TotalVRAMBytes * GlobalTelemetryBus.BytesToMegabytes);
+
+            VRAMPressureMonitor pressureMonitor = GlobalRegistry.VRAMPressure;
+            if (pressureMonitor != null)
+                pressureMonitor.ForceImmediateSampleAndResponse();
+        }
+
         private void DisposeH8TimeArray()
         {
             if (!_h8Time.IsCreated)
                 return;
 
+            if (_h8TimeVaultOwned)
+            {
+                _h8Time = default;
+                _h8TimeVaultOwned = false;
+                return;
+            }
+
             NativeMemorySentinel.UnregisterNativeArray(_h8Time);
             H8Memory.Release(ref _h8Time);
+            _h8TimeVaultOwned = false;
         }
 
         private void UpdateH8TimeState(float dilatedDeltaTime, float unscaledDeltaTime)
@@ -1380,8 +1646,12 @@ namespace Hecton8.Core
                 float unscaledDeltaTime = HectonXRRuntimeState.ResolveDispatcherDeltaTime(measuredUnscaledDeltaTime);
                 bool previousFrameMissedBudget = CurrentFrameUnscaledDeltaTime > JobAdmissionFrameBudgetMissThresholdSeconds;
                 CurrentFrameUnscaledDeltaTime = unscaledDeltaTime;
+                HomeostasisBrain.PreSimulationTick(unscaledDeltaTime);
+                GlobalRegistry.InputDeterminism?.PreSimulationInputTick(unscaledDeltaTime);
                 GlobalSignals.FlushPreSimulation();
-                GlobalRegistry.JobAdmission?.Refill(
+                RunPreSimulationMemoryDefrag(unscaledDeltaTime);
+                IJobAdmissionService jobAdmission = GlobalRegistry.JobAdmission;
+                jobAdmission?.Refill(
                     GlobalRegistry.ScalabilityTierProfileByte,
                     unscaledDeltaTime,
                     previousFrameMissedBudget);
@@ -1391,6 +1661,20 @@ namespace Hecton8.Core
                 CurrentFrameDeltaTime = deltaTime;
                 UpdateH8TimeState(deltaTime, unscaledDeltaTime);
                 PublishTimeDilationState(0u);
+                RefreshSimulationBucketerDependency();
+                ISimulationBucketer simulationBucketer = _simulationBucketer;
+                bool aupBarrierActive = IsOriginShiftBootstrapLocked ||
+                                        IsOriginShiftFrameLockedForCurrentFrame ||
+                                        _aupPreShiftPauseFrame == Time.frameCount;
+                if (simulationBucketer != null && simulationBucketer.IsInitialized)
+                {
+                    simulationBucketer.AdvanceFrame(
+                        GlobalRegistry.ScalabilityTierProfileByte,
+                        unscaledDeltaTime,
+                        jobAdmission != null ? jobAdmission.CriticalDebtFrameCount : 0,
+                        aupBarrierActive);
+                }
+
                 if (IsOriginShiftBootstrapLocked)
                 {
                     if (!HectonFloatingOrigin.TryFlushInitialSceneRebaseBeforeTicks())
@@ -1420,6 +1704,7 @@ namespace Hecton8.Core
                 bool blockGameplayLanes = Application.isPlaying &&
                                           BootstrapState.HasActiveInstance &&
                                           !BootstrapState.IsGameReady;
+                long bucketWorkStartTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
 
                 for (int laneIndex = 0; laneIndex < LaneCount; laneIndex++)
                 {
@@ -1455,6 +1740,7 @@ namespace Hecton8.Core
                 RunFastTick(deltaTime, blockGameplayLanes);
                 RunUnscaledFastTick(CurrentFrameUnscaledDeltaTime, blockGameplayLanes: false);
                 RunFixedStepAccumulator(deltaTime, blockGameplayLanes);
+                RunBucketedSlowTick(blockGameplayLanes);
                 RunSlowTick(deltaTime, blockGameplayLanes);
                 RunColdTick(deltaTime, blockGameplayLanes);
                 RunFrostTick(deltaTime, blockGameplayLanes);
@@ -1462,6 +1748,14 @@ namespace Hecton8.Core
                 IModdingBridge moddingBridge = _moddingBridgeProjectionRuntime;
                 if (moddingBridge != null)
                     moddingBridge.ProjectPostSimulation();
+                if (simulationBucketer != null)
+                {
+                    float activeBucketLoadMs = (float)((System.Diagnostics.Stopwatch.GetTimestamp() - bucketWorkStartTimestamp) * 1000.0 /
+                                                       System.Diagnostics.Stopwatch.Frequency);
+                    simulationBucketer.ReportActiveBucketLoadMs(activeBucketLoadMs);
+                    CrashTelemetryBuffer.ReportSimulationBucketFrame(simulationBucketer.CaptureFrameState());
+                }
+
                 double tickOverheadMilliseconds =
                     (System.Diagnostics.Stopwatch.GetTimestamp() - dispatcherTickStartTimestamp) * 1000.0 /
                     System.Diagnostics.Stopwatch.Frequency;
@@ -1821,7 +2115,7 @@ namespace Hecton8.Core
             if (!_lateFrameEventBudgetActive)
                 return true;
 
-            if (IsLateFrameEventFlushTimeBudgetExhausted())
+            if (LateFrameFlushBudgetExhausted)
             {
                 _lateFrameCircuitBreakerTripped = true;
                 RecordLateFrameCircuitBreakerLane(_activeLateFrameEventLaneHash);
@@ -1851,11 +2145,22 @@ namespace Hecton8.Core
         /// True while the late-frame ambient event lane has crossed its time budget for this frame.
         /// </summary>
         public static bool IsLateFrameAmbientEventSheddingActive =>
-            _lateFrameEventBudgetActive && IsLateFrameEventFlushTimeBudgetExhausted();
+            _lateFrameEventBudgetActive && LateFrameFlushBudgetExhausted;
 
         public static void DispatchCriticalMemoryPressure(in CriticalMemoryPressureEvent memoryPressureEvent)
         {
             RequestVisualStaticGlitch();
+            MemoryPressureSignal pressureSignal = new MemoryPressureSignal
+            {
+                ReservedMemoryBytes = memoryPressureEvent.ReservedMemoryBytes,
+                PhysicalMemoryBytes = memoryPressureEvent.PhysicalMemoryBytes,
+                UsageRatio = (float)memoryPressureEvent.UsageRatio,
+                Frame = unchecked((uint)memoryPressureEvent.Frame),
+                Severity = 2,
+                Flags = 1
+            };
+            GlobalSignals.Publish(in pressureSignal);
+            Interlocked.Exchange(ref _criticalMemoryPressureDefragRequested, 1);
             CrashTelemetryBuffer.ReportCriticalMemoryPressure(
                 memoryPressureEvent.ReservedMemoryBytes,
                 memoryPressureEvent.PhysicalMemoryBytes,
@@ -1946,7 +2251,7 @@ namespace Hecton8.Core
 
         private static bool ShouldDropAmbientLateFrameEvents(uint laneHash)
         {
-            if (!_lateFrameEventBudgetActive || !IsLateFrameEventFlushTimeBudgetExhausted())
+            if (!_lateFrameEventBudgetActive || !LateFrameFlushBudgetExhausted)
                 return false;
 
             _lateFrameCircuitBreakerTripped = true;
@@ -2082,14 +2387,17 @@ namespace Hecton8.Core
             }
         }
 
-        private static bool IsLateFrameEventFlushTimeBudgetExhausted()
+        private static bool LateFrameFlushBudgetExhausted
         {
-            if (_lateFrameEventBudgetStartTimestamp == 0L)
-                return false;
+            get
+            {
+                if (_lateFrameEventBudgetStartTimestamp == 0L)
+                    return false;
 
-            long elapsedTicks = System.Diagnostics.Stopwatch.GetTimestamp() - _lateFrameEventBudgetStartTimestamp;
-            double elapsedMilliseconds = elapsedTicks * 1000.0 / System.Diagnostics.Stopwatch.Frequency;
-            return elapsedMilliseconds >= LateFrameEventFlushBudgetMilliseconds;
+                long elapsedTicks = System.Diagnostics.Stopwatch.GetTimestamp() - _lateFrameEventBudgetStartTimestamp;
+                double elapsedMilliseconds = elapsedTicks * 1000.0 / System.Diagnostics.Stopwatch.Frequency;
+                return elapsedMilliseconds >= LateFrameEventFlushBudgetMilliseconds;
+            }
         }
 
         private static void RecordLateFrameCircuitBreakerLane(uint queueHash)
@@ -2358,11 +2666,12 @@ namespace Hecton8.Core
             if (deltaTime <= 0f)
                 return;
 
+            double slowTickIntervalSeconds = ResolveSlowTickIntervalSeconds();
             _slowTickAccumulator += deltaTime;
             int substeps = 0;
-            while (_slowTickAccumulator >= SlowTickIntervalSeconds && substeps < MaxCadenceSubstepsPerFrame)
+            while (_slowTickAccumulator >= slowTickIntervalSeconds && substeps < MaxCadenceSubstepsPerFrame)
             {
-                _slowTickAccumulator -= SlowTickIntervalSeconds;
+                _slowTickAccumulator -= slowTickIntervalSeconds;
                 substeps++;
 
                 using (_slowTickProfilerMarker.Auto())
@@ -2384,17 +2693,78 @@ namespace Hecton8.Core
                             int count = lane.Count;
 
                             for (int itemIndex = count - 1; itemIndex >= 0; itemIndex--)
-                                rawArray[itemIndex].SlowTick();
+                            {
+                                ISlowTickable tickable = rawArray[itemIndex];
+                                if (tickable is IBucketedSlowTickable)
+                                    continue;
+
+                                tickable.SlowTick();
+                            }
                         }
                     }
 
-                    WorldSpatialHashGrid.SlowTickMaintenance((float)SlowTickIntervalSeconds);
-                    CombatDamageRuntime.SlowTick((float)SlowTickIntervalSeconds);
+                    float slowTickDeltaSeconds = (float)slowTickIntervalSeconds;
+                    WorldSpatialHashGrid.SlowTickMaintenance(slowTickDeltaSeconds);
+                    CombatDamageRuntime.SlowTick(slowTickDeltaSeconds);
                 }
             }
 
-            if (substeps == MaxCadenceSubstepsPerFrame && _slowTickAccumulator >= SlowTickIntervalSeconds)
-                _slowTickAccumulator = SlowTickIntervalSeconds;
+            if (substeps == MaxCadenceSubstepsPerFrame && _slowTickAccumulator >= slowTickIntervalSeconds)
+                _slowTickAccumulator = slowTickIntervalSeconds;
+        }
+
+        private void RunBucketedSlowTick(bool blockGameplayLanes)
+        {
+            ISimulationBucketer bucketer = _simulationBucketer;
+            if (_bucketedSlowTickableCount <= 0 || bucketer == null || !bucketer.IsInitialized)
+                return;
+
+            using (_slowTickProfilerMarker.Auto())
+            {
+                for (int laneIndex = 0; laneIndex < LaneCount; laneIndex++)
+                {
+                    if (ShouldSkipLaneDuringBootstrap(laneIndex, blockGameplayLanes))
+                        continue;
+
+                    RegistryBucket<ISlowTickable> lane = _slowPriorityLanes[laneIndex];
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                    lane.ValidateNoDestroyedEntriesDebug(nameof(ISlowTickable));
+#endif
+                    using (_slowLaneProfilerMarkers[laneIndex].Auto())
+                    {
+                        ISlowTickable[] rawArray = lane.RawArray;
+                        int count = lane.Count;
+
+                        for (int itemIndex = count - 1; itemIndex >= 0; itemIndex--)
+                        {
+                            if (rawArray[itemIndex] is IBucketedSlowTickable bucketedTickable &&
+                                bucketer.IsSlowBucketActive(bucketedTickable.SimulationBucketId))
+                            {
+                                bucketedTickable.SlowTick();
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        private double ResolveSlowTickIntervalSeconds()
+        {
+            if (Volatile.Read(ref _homeostasisSlowTick2Hz) != 0)
+                return HomeostasisEmergencySlowTickIntervalSeconds;
+
+            ISimulationBucketer bucketer = _simulationBucketer;
+            if (bucketer != null &&
+                bucketer.IsInitialized &&
+                bucketer.SlowBucketCount == SimulationBucketConstants.StandardSlowBucketCount &&
+                bucketer.ActiveSlowBucketCount <= SimulationBucketConstants.MinimumActiveSlowBucketCount)
+            {
+                return math.max(
+                    _thermalCriticalSlowTickActive ? ThermalCriticalSlowTickIntervalSeconds : SlowTickIntervalSeconds,
+                    SlowTickIntervalSeconds * 2.0);
+            }
+
+            return _thermalCriticalSlowTickActive ? ThermalCriticalSlowTickIntervalSeconds : SlowTickIntervalSeconds;
         }
 
         private void RunColdTick(float deltaTime, bool blockGameplayLanes)
@@ -2467,8 +2837,6 @@ namespace Hecton8.Core
                             rawArray[itemIndex].FrostTick();
                     }
                 }
-
-                _dataVault?.FrostTickDefrag((float)FrostTickIntervalSeconds);
             }
         }
 
@@ -2498,12 +2866,28 @@ namespace Hecton8.Core
 
             if (!_scheduledDispatcherRaycastHits.IsCreated)
             {
-                _scheduledDispatcherRaycastHits = H8Memory.Allocate<RaycastHit>(MaxQueuedDispatcherRaycasts, SystemID.SystemDispatcher, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastHit>[1024] - dispatcher-owned deferred raycast hit lane - owner: SystemDispatcher
+                IDataVault dataVault = GlobalRegistry.DataVault;
+                if (dataVault != null)
+                {
+                    _scheduledDispatcherRaycastHits = dataVault.GetBuffer<RaycastHit>(
+                        BufferID.DispatcherRaycastHits,
+                        MaxQueuedDispatcherRaycasts,
+                        SystemID.SystemDispatcher,
+                        NativeArrayOptions.ClearMemory);
+                    if (_scheduledDispatcherRaycastHits.IsCreated)
+                    {
+                        _scheduledDispatcherRaycastHitsVaultOwned = true;
+                        return;
+                    }
+                }
+
+                _scheduledDispatcherRaycastHits = H8Memory.Allocate<RaycastHit>(MaxQueuedDispatcherRaycasts, SystemID.SystemDispatcher, Allocator.Persistent, NativeArrayOptions.ClearMemory); // FALLBACK COLD ALLOC: NativeArray<RaycastHit>[1024] - deferred raycast hit lane when DataVault is unavailable - owner: SystemDispatcher
                 NativeMemorySentinel.RegisterNativeArray(
                     _scheduledDispatcherRaycastHits,
                     nameof(SystemDispatcher),
                     nameof(_scheduledDispatcherRaycastHits),
                     NativeAllocationLifetime.Session);
+                _scheduledDispatcherRaycastHitsVaultOwned = false;
             }
         }
 
@@ -2621,8 +3005,16 @@ namespace Hecton8.Core
 
             if (_scheduledDispatcherRaycastHits.IsCreated)
             {
-                NativeMemorySentinel.UnregisterNativeArray(_scheduledDispatcherRaycastHits);
-                H8Memory.Release(ref _scheduledDispatcherRaycastHits);
+                if (_scheduledDispatcherRaycastHitsVaultOwned)
+                {
+                    _scheduledDispatcherRaycastHits = default;
+                    _scheduledDispatcherRaycastHitsVaultOwned = false;
+                }
+                else
+                {
+                    NativeMemorySentinel.UnregisterNativeArray(_scheduledDispatcherRaycastHits);
+                    H8Memory.Release(ref _scheduledDispatcherRaycastHits);
+                }
             }
 
             _pendingDispatcherRaycastCount = 0;

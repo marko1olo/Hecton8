@@ -9,10 +9,12 @@ using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Scripting;
 using BiomeChangedSignal = Hecton8.Core.Signals.BiomeChangedSignal;
 using CameraFrustumSignal = Hecton8.Core.Signals.CameraFrustumSignal;
 using CameraPositionSignal = Hecton8.Core.Signals.CameraPositionSignal;
 using CombatDamageSignal = Hecton8.Core.Signals.CombatDamageSignal;
+using CrashTelemetrySignal = Hecton8.Core.Signals.CrashTelemetrySignal;
 using FocusBrokenSignal = Hecton8.Core.Signals.FocusBrokenSignal;
 using MixerStateSignal = Hecton8.Core.Signals.MixerStateSignal;
 using NarrativeFocusSignal = Hecton8.Core.Signals.NarrativeFocusSignal;
@@ -26,6 +28,7 @@ namespace Hecton8.Core.Signals
     /// <summary>
     /// Marker for unmanaged signal-lane payloads. Implemented only by blittable structs.
     /// </summary>
+    [Preserve]
     public interface ISignal
     {
     }
@@ -33,6 +36,7 @@ namespace Hecton8.Core.Signals
     /// <summary>
     /// Deterministic two-stage initialization contract for registry-pinned systems.
     /// </summary>
+    [Preserve]
     public interface IInitializable
     {
         /// <summary>Registers the system with its owning registry without resolving external dependencies.</summary>
@@ -46,6 +50,7 @@ namespace Hecton8.Core.Signals
     /// In-place signal snapshot transformer. Used for rare structural passes such as AUP rebases.
     /// </summary>
     /// <typeparam name="T">Signal payload type.</typeparam>
+    [Preserve]
     public interface ISignalSnapshotTransformer<T>
         where T : unmanaged, ISignal
     {
@@ -67,6 +72,37 @@ namespace Hecton8.Core.Signals
         public byte Flags;
     }
 
+    /// <summary>
+    /// Pre-simulation deterministic input snapshot. Gameplay physics consumes this signal, not hardware APIs.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
+    public struct InputStateSignal : ISignal
+    {
+        public Hecton8.Core.InputState State;
+        public uint CurrentInputSchemeHash;
+        public byte InputDelayFrames;
+        public byte AppliedDelayFrames;
+        public ushort Flags;
+    }
+
+    /// <summary>Discrete player input command identifiers for zero-GC UI/gameplay consumers.</summary>
+    public static class PlayerInputSignalCommands
+    {
+        public const byte ToggleInventory = 1;
+    }
+
+    /// <summary>Discrete player input lane for command-style consumers. Size: 32 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct PlayerInputSignal : ISignal
+    {
+        [FieldOffset(0)] public uint SourceHash;
+        [FieldOffset(4)] public uint Frame;
+        [FieldOffset(8)] public uint Sequence;
+        [FieldOffset(12)] public byte Command;
+        [FieldOffset(13)] public byte Flags;
+        [FieldOffset(31)] private byte _pad;
+    }
+
     internal interface ISignalLane
     {
         uint LaneHash { get; }
@@ -83,6 +119,7 @@ namespace Hecton8.Core.Signals
     /// <summary>
     /// Registry for every closed <see cref="SignalBus{T}"/> lane touched this session.
     /// </summary>
+    [Preserve]
     public static class SignalBusRegistry
     {
         private const int LaneCapacity = 256;
@@ -186,6 +223,7 @@ namespace Hecton8.Core.Signals
     /// Typed unmanaged signal lane. Each closed generic type owns a discrete NativeQueue and frame snapshot.
     /// </summary>
     /// <typeparam name="T">Unmanaged signal payload type.</typeparam>
+    [Preserve]
     public static class SignalBus<T>
         where T : unmanaged, ISignal
     {
@@ -290,7 +328,12 @@ namespace Hecton8.Core.Signals
         public static void Push(in T signal)
         {
             EnsureInitialized();
-            _queue.Enqueue(signal);
+            T sanitizedSignal = signal;
+            int guardCode = SignalPayloadFiniteGuards.Sanitize(ref sanitizedSignal);
+            if (guardCode != 0)
+                global::Hecton8.Core.GlobalTelemetryBus.PublishMathGuardInvalidNumber(guardCode);
+
+            _queue.Enqueue(sanitizedSignal);
         }
 
         /// <summary>Returns a contiguous read-only view over the current frame snapshot.</summary>
@@ -499,6 +542,150 @@ namespace Hecton8.Core.Signals
             }
         }
     }
+
+    internal static class SignalPayloadFiniteGuards
+    {
+        private const int DamageSignalGuardCode = unchecked((int)0x51A10001u);
+        private const int ImpactSignalGuardCode = unchecked((int)0x51A10002u);
+        private const int HighSpeedImpactSignalGuardCode = unchecked((int)0x51A10003u);
+        private const int CombatDamageSignalGuardCode = unchecked((int)0x51A10004u);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int Sanitize<T>(ref T signal)
+            where T : unmanaged, ISignal
+        {
+            if (typeof(T) == typeof(DamageSignal))
+            {
+                ref DamageSignal typed = ref UnsafeUtility.As<T, DamageSignal>(ref signal);
+                return SanitizeDamageSignal(ref typed);
+            }
+
+            if (typeof(T) == typeof(ImpactSignal))
+            {
+                ref ImpactSignal typed = ref UnsafeUtility.As<T, ImpactSignal>(ref signal);
+                return SanitizeImpactSignal(ref typed);
+            }
+
+            if (typeof(T) == typeof(HighSpeedImpactSignal))
+            {
+                ref HighSpeedImpactSignal typed = ref UnsafeUtility.As<T, HighSpeedImpactSignal>(ref signal);
+                return SanitizeHighSpeedImpactSignal(ref typed);
+            }
+
+            if (typeof(T) == typeof(CombatDamageSignal))
+            {
+                ref CombatDamageSignal typed = ref UnsafeUtility.As<T, CombatDamageSignal>(ref signal);
+                return SanitizeCombatDamageSignal(ref typed);
+            }
+
+            return 0;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizeDamageSignal(ref DamageSignal signal)
+        {
+            int guardCode = 0;
+            if (!math.isfinite(signal.Magnitude) || signal.Magnitude < 0f)
+            {
+                signal.Magnitude = 0f;
+                guardCode = DamageSignalGuardCode;
+            }
+
+            if (!math.all(math.isfinite(signal.LocalPoint)))
+            {
+                signal.LocalPoint = float3.zero;
+                guardCode = DamageSignalGuardCode;
+            }
+
+            return guardCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizeImpactSignal(ref ImpactSignal signal)
+        {
+            int guardCode = SanitizeAup(ref signal.PointAup) ? ImpactSignalGuardCode : 0;
+            if (!math.isfinite(signal.Force))
+            {
+                signal.Force = 0f;
+                guardCode = ImpactSignalGuardCode;
+            }
+
+            if (!math.isfinite(signal.Intensity))
+            {
+                signal.Intensity = 0f;
+                guardCode = ImpactSignalGuardCode;
+            }
+
+            return guardCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizeHighSpeedImpactSignal(ref HighSpeedImpactSignal signal)
+        {
+            int guardCode = SanitizeAup(ref signal.PointAup) ? HighSpeedImpactSignalGuardCode : 0;
+            if (!math.all(math.isfinite(signal.Normal)))
+            {
+                signal.Normal = float3.zero;
+                guardCode = HighSpeedImpactSignalGuardCode;
+            }
+
+            if (!math.isfinite(signal.LostKineticEnergy) || signal.LostKineticEnergy < 0f)
+            {
+                signal.LostKineticEnergy = 0f;
+                guardCode = HighSpeedImpactSignalGuardCode;
+            }
+
+            if (!math.isfinite(signal.ImpactSpeed) || signal.ImpactSpeed < 0f)
+            {
+                signal.ImpactSpeed = 0f;
+                guardCode = HighSpeedImpactSignalGuardCode;
+            }
+
+            return guardCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizeCombatDamageSignal(ref CombatDamageSignal signal)
+        {
+            int guardCode = 0;
+            if (!math.all(math.isfinite(signal.WorldPoint)))
+            {
+                signal.WorldPoint = float3.zero;
+                guardCode = CombatDamageSignalGuardCode;
+            }
+
+            if (!math.all(math.isfinite(signal.Direction)))
+            {
+                signal.Direction = float3.zero;
+                guardCode = CombatDamageSignalGuardCode;
+            }
+
+            if (!math.isfinite(signal.Magnitude) || signal.Magnitude < 0f)
+            {
+                signal.Magnitude = 0f;
+                guardCode = CombatDamageSignalGuardCode;
+            }
+
+            return guardCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool SanitizeAup(ref AbsoluteUniversePosition position)
+        {
+            bool invalid =
+                !math.isfinite(position.LocalX) ||
+                !math.isfinite(position.LocalY) ||
+                !math.isfinite(position.LocalZ);
+
+            if (!invalid)
+                return false;
+
+            position.LocalX = 0f;
+            position.LocalY = 0f;
+            position.LocalZ = 0f;
+            return true;
+        }
+    }
 }
 
 namespace Hecton8.Core
@@ -506,24 +693,30 @@ namespace Hecton8.Core
     /// <summary>
     /// Global native signal corridor. Producers enqueue unmanaged packets; consumers drain their own lanes.
     /// </summary>
+    [Preserve]
     public static class GlobalSignals
     {
         private const int DamageSignalCapacity = 256;
         private const int HullDeformedSignalCapacity = 64;
+        private const int BaseModuleCompromisedSignalCapacity = 64;
         private const int ImpactSignalCapacity = 256;
         private const int HighSpeedImpactSignalCapacity = 128;
         private const int HapticRequestCapacity = 64;
+        private const int PlayerStateSignalCapacity = 64;
         private const int AupPreShiftSignalCapacity = 64;
         private const int AupShiftSignalCapacity = 64;
         private const int BrownoutSignalCapacity = 64;
         private const int DebrisSpawnSignalCapacity = 128;
         private const int DeflectSignalCapacity = 128;
         private const int EntityDeathSignalCapacity = 64;
+        private const int InputStateSignalCapacity = 64;
+        private const int PlayerInputSignalCapacity = 64;
         private const int SolarFlareSignalCapacity = 16;
         private const int RebaseSignalCapacity = 64;
         private const int ControlSignalCapacity = 256;
         private const int AnomalySignalCapacity = 128;
         private const int TelemetryAnomalySignalCapacity = 128;
+        private const int CrashTelemetrySignalCapacity = 64;
         private const int HabitatConstructionSignalCapacity = 64;
         private const int DeconstructRequestSignalCapacity = 64;
         private const int DeconstructResultSignalCapacity = 64;
@@ -534,6 +727,9 @@ namespace Hecton8.Core
         private const int SubtitleSignalCapacity = 64;
         private const int DataReloadSignalCapacity = 32;
         private const int MemoryPressureSignalCapacity = 16;
+        private const int MemoryAddressShiftSignalCapacity = 64;
+        private const int ResolutionChangedSignalCapacity = 16;
+        private const int SystemHealthIndexSignalCapacity = 16;
         private const int AcousticPingSignalCapacity = 64;
         private const int MovementAcousticSignalCapacity = 128;
         private const int SwarmDispersedSignalCapacity = 64;
@@ -549,13 +745,17 @@ namespace Hecton8.Core
         private const int RigidbodySleepSignalCapacity = 128;
         private const int ScannerToolActiveSignalCapacity = 64;
         private const int ScanCompleteSignalCapacity = 128;
+        private const int LoreFragmentScannedSignalCapacity = 128;
         private const int BlueprintUnlockedSignalCapacity = 128;
         private const int CraftingStartedSignalCapacity = 128;
         private const int CraftingCompletedSignalCapacity = 128;
+        private const int ToolStateChangedSignalCapacity = 64;
         private const int ToolAcousticSignalCapacity = 128;
         private const int PowerDrainSignalCapacity = 128;
         private const int ToolTriggerSignalCapacity = 128;
         private const int HUDNotificationSignalCapacity = 128;
+        private const int ThermalStateChangedSignalCapacity = 32;
+        private const int BatteryLevelSignalCapacity = 32;
         private const int ReconDataSignalCapacity = 128;
         private const int SaveLifecycleSignalCapacity = 16;
         private const int ComplianceViolationSignalCapacity = 64;
@@ -567,6 +767,7 @@ namespace Hecton8.Core
         private const int WeatherStrengthSignalCapacity = 32;
         private const int CameraPositionSignalCapacity = 8;
         private const int CameraFrustumSignalCapacity = 8;
+        private const int ChunkDehydratedSignalCapacity = 64;
         private const int ItemDecaySignalCapacity = 64;
         private const int InventoryCommandSignalCapacity = 16;
         private const int InventoryChangedSignalCapacity = 64;
@@ -583,6 +784,7 @@ namespace Hecton8.Core
         private const int TraumaSignalCapacity = 16;
         private const int WakeGeneratedSignalCapacity = 128;
         private const int ProgressionEventSignalCapacity = 128;
+        private const int GlobalWorldStateSignalCapacity = 64;
         private const int BiomeChangedSignalCapacity = 64;
         private const int NarrativeFocusSignalCapacity = 64;
         private const int FocusBrokenSignalCapacity = 32;
@@ -592,7 +794,15 @@ namespace Hecton8.Core
         private const int NarrativePoiStateSignalCapacity = 64;
         private const int StorageDebtSignalCapacity = 32;
         private const int StreamingTurbulenceSignalCapacity = 32;
+        private const int AtmosphericReentrySignalCapacity = 32;
+        private const int PrologueCompleteSignalCapacity = 8;
+        private const int ManualOverridePulledSignalCapacity = 8;
         private const int CullingOverloadSignalCapacity = 16;
+        private const int PlayerActionProgressSignalCapacity = 64;
+        private const int PlayerActionCompletedSignalCapacity = 16;
+        private const int PlayerActionCancelledSignalCapacity = 16;
+        private const int PdaExchangeStateChangedSignalCapacity = 32;
+        private const int VehicleUpgradesChangedSignalCapacity = 32;
         private const int SignalTelemetryLaneBudgetPerFrame = 4;
 
         private static NativeQueue<DamageSignal> _damageSignals;
@@ -608,6 +818,7 @@ namespace Hecton8.Core
         private static NativeQueue<ControlSignal> _controlSignals;
         private static NativeQueue<AnomalySignal> _anomalySignals;
         private static NativeQueue<TelemetryAnomalySignal> _telemetryAnomalySignals;
+        private static NativeQueue<CrashTelemetrySignal> _crashTelemetrySignals;
         private static NativeQueue<HabitatConstructionSignal> _habitatConstructionSignals;
         private static NativeQueue<DeconstructRequestSignal> _deconstructRequestSignals;
         private static NativeQueue<DeconstructResultSignal> _deconstructResultSignals;
@@ -635,6 +846,7 @@ namespace Hecton8.Core
         private static NativeQueue<BlueprintUnlockedSignal> _blueprintUnlockedSignals;
         private static NativeQueue<CraftingStartedSignal> _craftingStartedSignals;
         private static NativeQueue<CraftingCompletedSignal> _craftingCompletedSignals;
+        private static NativeQueue<ToolStateChangedSignal> _toolStateChangedSignals;
         private static NativeQueue<ToolAcousticSignal> _toolAcousticSignals;
         private static NativeQueue<PowerDrainSignal> _powerDrainSignals;
         private static NativeQueue<ToolTriggerSignal> _toolTriggerSignals;
@@ -660,6 +872,7 @@ namespace Hecton8.Core
         private static NativeQueue<TraumaSignal> _traumaSignals;
         private static NativeQueue<WakeGeneratedSignal> _wakeGeneratedSignals;
         private static NativeQueue<ProgressionEventSignal> _progressionEventSignals;
+        private static NativeQueue<GlobalWorldStateSignal> _globalWorldStateSignals;
         private static NativeQueue<BiomeChangedSignal> _biomeChangedSignals;
         private static NativeQueue<NarrativeFocusSignal> _narrativeFocusSignals;
         private static NativeQueue<FocusBrokenSignal> _focusBrokenSignals;
@@ -674,8 +887,10 @@ namespace Hecton8.Core
         private static LightLevelSignal _latestLightLevelSignal;
         private static PhysiologyStateSignal _latestPhysiologyStateSignal;
         private static PlayerStressSignal _latestPlayerStressSignal;
+        private static PlayerStateSignal _latestPlayerStateSignal;
         private static SeismicSignal _latestSeismicSignal;
         private static ScannerToolActiveSignal _latestScannerToolActiveSignal;
+        private static ToolStateChangedSignal _latestToolStateChangedSignal;
         private static int _latestStorageDebtMilli;
         private static int _latestStorageLatencyMilli;
         private static int _latestStorageDebtSequence;
@@ -685,8 +900,10 @@ namespace Hecton8.Core
         private static int _latestLightLevelSignalSequence;
         private static int _latestPhysiologyStateSignalSequence;
         private static int _latestPlayerStressSignalSequence;
+        private static int _latestPlayerStateSignalSequence;
         private static int _latestSeismicSignalSequence;
         private static int _latestScannerToolActiveSignalSequence;
+        private static int _latestToolStateChangedSignalSequence;
         private static int _timeDilationScalarMilli = 1000;
         private static int _timeDilationSequence;
         private static int _simulationPaused;
@@ -865,6 +1082,16 @@ namespace Hecton8.Core
             }
         }
 
+        /// <summary>Tool state writer for Burst jobs or background producers.</summary>
+        public static NativeQueue<ToolStateChangedSignal>.ParallelWriter ToolStateChangedSignalWriter
+        {
+            get
+            {
+                EnsureInitialized();
+                return _toolStateChangedSignals.AsParallelWriter();
+            }
+        }
+
         /// <summary>Power-drain writer for crafting and power-network producers.</summary>
         public static NativeQueue<PowerDrainSignal>.ParallelWriter PowerDrainSignalWriter
         {
@@ -1015,6 +1242,16 @@ namespace Hecton8.Core
             }
         }
 
+        /// <summary>Global narrative state writer for Burst jobs or background producers.</summary>
+        public static NativeQueue<GlobalWorldStateSignal>.ParallelWriter GlobalWorldStateSignalWriter
+        {
+            get
+            {
+                EnsureInitialized();
+                return _globalWorldStateSignals.AsParallelWriter();
+            }
+        }
+
         /// <summary>Biome transition writer for Burst jobs or background producers.</summary>
         public static NativeQueue<BiomeChangedSignal>.ParallelWriter BiomeChangedSignalWriter
         {
@@ -1022,6 +1259,16 @@ namespace Hecton8.Core
             {
                 EnsureInitialized();
                 return _biomeChangedSignals.AsParallelWriter();
+            }
+        }
+
+        /// <summary>Crash/postmortem telemetry writer for watchdog producers.</summary>
+        public static NativeQueue<CrashTelemetrySignal>.ParallelWriter CrashTelemetrySignalWriter
+        {
+            get
+            {
+                EnsureInitialized();
+                return _crashTelemetrySignals.AsParallelWriter();
             }
         }
 
@@ -1045,6 +1292,7 @@ namespace Hecton8.Core
             CreateQueue(ref _controlSignals, ControlSignalCapacity, nameof(_controlSignals));
             CreateQueue(ref _anomalySignals, AnomalySignalCapacity, nameof(_anomalySignals));
             CreateQueue(ref _telemetryAnomalySignals, TelemetryAnomalySignalCapacity, nameof(_telemetryAnomalySignals));
+            CreateQueue(ref _crashTelemetrySignals, CrashTelemetrySignalCapacity, nameof(_crashTelemetrySignals));
             CreateQueue(ref _habitatConstructionSignals, HabitatConstructionSignalCapacity, nameof(_habitatConstructionSignals));
             CreateQueue(ref _deconstructRequestSignals, DeconstructRequestSignalCapacity, nameof(_deconstructRequestSignals));
             CreateQueue(ref _deconstructResultSignals, DeconstructResultSignalCapacity, nameof(_deconstructResultSignals));
@@ -1072,6 +1320,7 @@ namespace Hecton8.Core
             CreateQueue(ref _blueprintUnlockedSignals, BlueprintUnlockedSignalCapacity, nameof(_blueprintUnlockedSignals));
             CreateQueue(ref _craftingStartedSignals, CraftingStartedSignalCapacity, nameof(_craftingStartedSignals));
             CreateQueue(ref _craftingCompletedSignals, CraftingCompletedSignalCapacity, nameof(_craftingCompletedSignals));
+            CreateQueue(ref _toolStateChangedSignals, ToolStateChangedSignalCapacity, nameof(_toolStateChangedSignals));
             CreateQueue(ref _toolAcousticSignals, ToolAcousticSignalCapacity, nameof(_toolAcousticSignals));
             CreateQueue(ref _powerDrainSignals, PowerDrainSignalCapacity, nameof(_powerDrainSignals));
             CreateQueue(ref _toolTriggerSignals, ToolTriggerSignalCapacity, nameof(_toolTriggerSignals));
@@ -1097,6 +1346,7 @@ namespace Hecton8.Core
             CreateQueue(ref _traumaSignals, TraumaSignalCapacity, nameof(_traumaSignals));
             CreateQueue(ref _wakeGeneratedSignals, WakeGeneratedSignalCapacity, nameof(_wakeGeneratedSignals));
             CreateQueue(ref _progressionEventSignals, ProgressionEventSignalCapacity, nameof(_progressionEventSignals));
+            CreateQueue(ref _globalWorldStateSignals, GlobalWorldStateSignalCapacity, nameof(_globalWorldStateSignals));
             CreateQueue(ref _biomeChangedSignals, BiomeChangedSignalCapacity, nameof(_biomeChangedSignals));
             CreateQueue(ref _narrativeFocusSignals, NarrativeFocusSignalCapacity, nameof(_narrativeFocusSignals));
             CreateQueue(ref _focusBrokenSignals, FocusBrokenSignalCapacity, nameof(_focusBrokenSignals));
@@ -1111,6 +1361,7 @@ namespace Hecton8.Core
             ValidateSignalPayload<ImpactSignal>(64);
             ValidateSignalSize<HighSpeedImpactSignal>(88);
             ValidateSignalSize<HapticRequest>(32);
+            ValidateSignalSize<PlayerStateSignal>(64);
             ValidateSignalPayload<AupPreShiftSignal>(32);
             ValidateSignalPayload<AupShiftSignal>(32);
             ValidateSignalSize<BrownoutSignal>(32);
@@ -1122,6 +1373,7 @@ namespace Hecton8.Core
             ValidateSignalSize<ControlSignal>(32);
             ValidateSignalPayload<AnomalySignal>(32);
             ValidateSignalSize<TelemetryAnomalySignal>(32);
+            ValidateSignalSize<CrashTelemetrySignal>(32);
             ValidateSignalSize<HabitatConstructionSignal>(64);
             ValidateSignalSize<DeconstructRequestSignal>(128);
             ValidateSignalSize<DeconstructResultSignal>(64);
@@ -1132,26 +1384,35 @@ namespace Hecton8.Core
             ValidateSignalSize<SubtitleSignal>(32);
             ValidateSignalSize<DataReloadSignal>(32);
             ValidateSignalSize<MemoryPressureSignal>(32);
+            ValidateSignalSize<MemoryAddressShiftSignal>(32);
+            ValidateSignalSize<ResolutionChangedSignal>(32);
+            ValidateSignalSize<SystemHealthIndexSignal>(32);
             ValidateSignalPayload<AcousticPingSignal>(64);
             ValidateSignalPayload<MovementAcousticSignal>(64);
             ValidateSignalPayload<SwarmDispersedSignal>(64);
-            ValidateSignalSize<SectorHydratedSignal>(64);
+            ValidateSignalSize<SectorHydratedSignal>(32);
+            ValidateSignalSize<WfcOutpostStateChangedSignal>(32);
+            ValidateSignalSize<SectorResidencyHydratedSignal>(64);
             ValidateSignalSize<SectorDehydratedSignal>(64);
+            ValidateSignalSize<ChunkDehydratedSignal>(64);
             ValidateSignalSize<SonarPingSignal>(64);
             ValidateSignalPayload<HypoxiaSignal>(32);
             ValidateSignalSize<OxygenCriticalSignal>(32);
             ValidateSignalSize<InteractionUiSignal>(64);
             ValidateSignalSize<UIRescaleRequestSignal>(32);
             ValidateSignalSize<FluidIncursionSignal>(64);
+            ValidateSignalSize<SubmarineFloodStateSignal>(64);
             ValidateSignalSize<FluidDensityChangedSignal>(64);
             ValidateSignalSize<PipeRuptureSignal>(64);
             ValidateSignalSize<SpectrumScanSignal>(32);
             ValidateSignalSize<RigidbodySleepSignal>(64);
             ValidateSignalSize<ScannerToolActiveSignal>(32);
             ValidateSignalPayload<ScanCompleteSignal>(64);
+            ValidateSignalSize<LoreFragmentScannedSignal>(32);
             ValidateSignalSize<BlueprintUnlockedSignal>(32);
             ValidateSignalSize<CraftingStartedSignal>(32);
             ValidateSignalSize<CraftingCompletedSignal>(32);
+            ValidateSignalSize<ToolStateChangedSignal>(32);
             ValidateSignalSize<ToolAcousticSignal>(32);
             ValidateSignalSize<PowerDrainSignal>(32);
             ValidateSignalSize<ToolTriggerSignal>(32);
@@ -1179,6 +1440,7 @@ namespace Hecton8.Core
             ValidateSignalSize<TraumaSignal>(32);
             ValidateSignalSize<WakeGeneratedSignal>(64);
             ValidateSignalSize<ProgressionEventSignal>(64);
+            ValidateSignalSize<GlobalWorldStateSignal>(64);
             ValidateSignalSize<BiomeChangedSignal>(64);
             ValidateSignalSize<NarrativeFocusSignal>(80);
             ValidateSignalSize<FocusBrokenSignal>(32);
@@ -1188,6 +1450,7 @@ namespace Hecton8.Core
             ValidateSignalSize<NarrativePoiStateSignal>(32);
             ValidateSignalSize<CombatDamageSignal>(64);
             ValidateSignalSize<HullDeformedSignal>(64);
+            ValidateSignalSize<BaseModuleCompromisedSignal>(64);
             ValidateSignalSize<CameraPositionSignal>(32);
             ValidateSignalSize<CameraFrustumSignal>(64);
             ValidateSignalSize<WeatherChangedSignal>(32);
@@ -1199,7 +1462,15 @@ namespace Hecton8.Core
             ValidateSignalSize<CpuStarvationSignal>(32);
             ValidateSignalSize<StorageDebtSignal>(32);
             ValidateSignalSize<StreamingTurbulenceSignal>(32);
+            ValidateSignalSize<AtmosphericReentrySignal>(64);
+            ValidateSignalSize<PrologueCompleteSignal>(64);
+            ValidateSignalSize<ManualOverridePulledSignal>(64);
             ValidateSignalSize<CullingOverloadSignal>(32);
+            ValidateSignalSize<PlayerActionProgressSignal>(32);
+            ValidateSignalSize<PlayerActionCompletedSignal>(32);
+            ValidateSignalSize<PlayerActionCancelledSignal>(32);
+            ValidateSignalSize<PdaExchangeStateChangedSignal>(32);
+            ValidateSignalSize<VehicleUpgradesChangedSignal>(32);
 #endif
 
             _initialized = true;
@@ -1221,6 +1492,7 @@ namespace Hecton8.Core
             DisposeQueue(ref _controlSignals, nameof(_controlSignals));
             DisposeQueue(ref _anomalySignals, nameof(_anomalySignals));
             DisposeQueue(ref _telemetryAnomalySignals, nameof(_telemetryAnomalySignals));
+            DisposeQueue(ref _crashTelemetrySignals, nameof(_crashTelemetrySignals));
             DisposeQueue(ref _habitatConstructionSignals, nameof(_habitatConstructionSignals));
             DisposeQueue(ref _deconstructRequestSignals, nameof(_deconstructRequestSignals));
             DisposeQueue(ref _deconstructResultSignals, nameof(_deconstructResultSignals));
@@ -1248,6 +1520,7 @@ namespace Hecton8.Core
             DisposeQueue(ref _blueprintUnlockedSignals, nameof(_blueprintUnlockedSignals));
             DisposeQueue(ref _craftingStartedSignals, nameof(_craftingStartedSignals));
             DisposeQueue(ref _craftingCompletedSignals, nameof(_craftingCompletedSignals));
+            DisposeQueue(ref _toolStateChangedSignals, nameof(_toolStateChangedSignals));
             DisposeQueue(ref _toolAcousticSignals, nameof(_toolAcousticSignals));
             DisposeQueue(ref _powerDrainSignals, nameof(_powerDrainSignals));
             DisposeQueue(ref _toolTriggerSignals, nameof(_toolTriggerSignals));
@@ -1273,6 +1546,7 @@ namespace Hecton8.Core
             DisposeQueue(ref _traumaSignals, nameof(_traumaSignals));
             DisposeQueue(ref _wakeGeneratedSignals, nameof(_wakeGeneratedSignals));
             DisposeQueue(ref _progressionEventSignals, nameof(_progressionEventSignals));
+            DisposeQueue(ref _globalWorldStateSignals, nameof(_globalWorldStateSignals));
             DisposeQueue(ref _biomeChangedSignals, nameof(_biomeChangedSignals));
             DisposeQueue(ref _narrativeFocusSignals, nameof(_narrativeFocusSignals));
             DisposeQueue(ref _focusBrokenSignals, nameof(_focusBrokenSignals));
@@ -1305,23 +1579,28 @@ namespace Hecton8.Core
         public static void Publish(in DamageSignal signal)
         {
             EnsureInitialized();
-            _latestDamageSignal = signal;
+            DamageSignal sanitizedSignal = signal;
+            int guardCode = SignalPayloadFiniteGuards.Sanitize(ref sanitizedSignal);
+            if (guardCode != 0)
+                GlobalTelemetryBus.PublishMathGuardInvalidNumber(guardCode);
+
+            _latestDamageSignal = sanitizedSignal;
             AdvanceSignalSequence(ref _latestDamageSignalSequence);
-            _damageSignals.Enqueue(signal);
+            _damageSignals.Enqueue(sanitizedSignal);
             SignalBus<CombatDamageSignal>.Push(new CombatDamageSignal
             {
-                WorldPoint = signal.LocalPoint,
+                WorldPoint = sanitizedSignal.LocalPoint,
                 Direction = float3.zero,
-                Magnitude = signal.Magnitude,
-                DamageType = signal.DamageType,
-                TargetHash = signal.SubjectHash,
-                SourceHash = signal.SourceId,
+                Magnitude = sanitizedSignal.Magnitude,
+                DamageType = sanitizedSignal.DamageType,
+                TargetHash = sanitizedSignal.SubjectHash,
+                SourceHash = sanitizedSignal.SourceId,
                 Frame = unchecked((uint)Time.frameCount),
-                SourceId = signal.SourceId,
-                TargetId = signal.TargetId > (uint)ushort.MaxValue ? ushort.MaxValue : (ushort)signal.TargetId,
-                Channel = signal.Channel,
+                SourceId = sanitizedSignal.SourceId,
+                TargetId = sanitizedSignal.TargetId > (uint)ushort.MaxValue ? ushort.MaxValue : (ushort)sanitizedSignal.TargetId,
+                Channel = sanitizedSignal.Channel,
                 Flags = CombatDamageSignal.LegacyMirrorFlag,
-                IntegrityDelta = signal.IntegrityDelta
+                IntegrityDelta = sanitizedSignal.IntegrityDelta
             });
         }
 
@@ -1336,7 +1615,13 @@ namespace Hecton8.Core
         public static void Publish(in ImpactSignal signal)
         {
             EnsureInitialized();
-            _impactSignals.Enqueue(signal);
+            ImpactSignal sanitizedSignal = signal;
+            int guardCode = SignalPayloadFiniteGuards.Sanitize(ref sanitizedSignal);
+            if (guardCode != 0)
+                GlobalTelemetryBus.PublishMathGuardInvalidNumber(guardCode);
+
+            _impactSignals.Enqueue(sanitizedSignal);
+            SignalBus<ImpactSignal>.Push(in sanitizedSignal);
         }
 
         /// <summary>Queues one high-speed kinematic CCD impact packet on the typed native lane.</summary>
@@ -1353,11 +1638,26 @@ namespace Hecton8.Core
             SignalBus<HapticRequest>.Push(in signal);
         }
 
+        /// <summary>Queues one player state packet on the typed native lane.</summary>
+        public static void Publish(in PlayerStateSignal signal)
+        {
+            EnsureInitialized();
+            _latestPlayerStateSignal = signal;
+            AdvanceSignalSequence(ref _latestPlayerStateSignalSequence);
+            SignalBus<PlayerStateSignal>.Push(in signal);
+        }
+
         /// <summary>Queues one hull deformation VFX packet for downstream audio and feedback systems.</summary>
         public static void Publish(in HullDeformedSignal signal)
         {
             EnsureInitialized();
             SignalBus<HullDeformedSignal>.Push(in signal);
+        }
+
+        public static void Publish(in BaseModuleCompromisedSignal signal)
+        {
+            EnsureInitialized();
+            SignalBus<BaseModuleCompromisedSignal>.Push(in signal);
         }
 
         /// <summary>Queues one AUP shift broadcast packet from the main thread.</summary>
@@ -1450,6 +1750,13 @@ namespace Hecton8.Core
             _telemetryAnomalySignals.Enqueue(signal);
         }
 
+        /// <summary>Queues one postmortem crash telemetry packet from the main thread.</summary>
+        public static void Publish(in CrashTelemetrySignal signal)
+        {
+            EnsureInitialized();
+            _crashTelemetrySignals.Enqueue(signal);
+        }
+
         /// <summary>Queues one habitat construction packet from the main thread.</summary>
         public static void Publish(in HabitatConstructionSignal signal)
         {
@@ -1518,6 +1825,27 @@ namespace Hecton8.Core
         {
             EnsureInitialized();
             _memoryPressureSignals.Enqueue(signal);
+        }
+
+        /// <summary>Queues one vault pointer relocation packet from the main thread.</summary>
+        public static void Publish(in MemoryAddressShiftSignal signal)
+        {
+            EnsureInitialized();
+            SignalBus<MemoryAddressShiftSignal>.Push(in signal);
+        }
+
+        /// <summary>Queues one runtime resolution/mip residency transition packet.</summary>
+        public static void Publish(in ResolutionChangedSignal signal)
+        {
+            EnsureInitialized();
+            SignalBus<ResolutionChangedSignal>.Push(in signal);
+        }
+
+        /// <summary>Queues one homeostasis health-index packet.</summary>
+        public static void Publish(in SystemHealthIndexSignal signal)
+        {
+            EnsureInitialized();
+            SignalBus<SystemHealthIndexSignal>.Push(in signal);
         }
 
         /// <summary>Queues one CPU job-admission starvation diagnostic signal.</summary>
@@ -1593,6 +1921,13 @@ namespace Hecton8.Core
             _fluidIncursionSignals.Enqueue(signal);
         }
 
+        /// <summary>Queues one submarine flood mass-state packet from the main thread.</summary>
+        public static void Publish(in SubmarineFloodStateSignal signal)
+        {
+            EnsureInitialized();
+            SignalBus<SubmarineFloodStateSignal>.Push(in signal);
+        }
+
         /// <summary>Queues one fluid-density transition packet from the main thread.</summary>
         public static void Publish(in FluidDensityChangedSignal signal)
         {
@@ -1639,6 +1974,13 @@ namespace Hecton8.Core
             _scanCompleteSignals.Enqueue(signal);
         }
 
+        /// <summary>Queues one lore-fragment scanned packet from the main thread.</summary>
+        public static void Publish(in LoreFragmentScannedSignal signal)
+        {
+            EnsureInitialized();
+            SignalBus<LoreFragmentScannedSignal>.Push(signal);
+        }
+
         /// <summary>Queues one blueprint-unlocked packet from the main thread.</summary>
         public static void Publish(in BlueprintUnlockedSignal signal)
         {
@@ -1658,6 +2000,15 @@ namespace Hecton8.Core
         {
             EnsureInitialized();
             _craftingCompletedSignals.Enqueue(signal);
+        }
+
+        /// <summary>Queues one tool runtime state packet from the main thread.</summary>
+        public static void Publish(in ToolStateChangedSignal signal)
+        {
+            EnsureInitialized();
+            _latestToolStateChangedSignal = signal;
+            AdvanceSignalSequence(ref _latestToolStateChangedSignalSequence);
+            _toolStateChangedSignals.Enqueue(signal);
         }
 
         /// <summary>Queues one tool acoustic packet from the main thread.</summary>
@@ -1688,11 +2039,60 @@ namespace Hecton8.Core
             _hudNotificationSignals.Enqueue(signal);
         }
 
+        /// <summary>Queues one cached platform thermal state packet.</summary>
+        public static void Publish(in ThermalStateChangedSignal signal)
+        {
+            EnsureInitialized();
+            SignalBus<ThermalStateChangedSignal>.Push(in signal);
+        }
+
+        /// <summary>Queues one cached platform battery level packet.</summary>
+        public static void Publish(in BatteryLevelSignal signal)
+        {
+            EnsureInitialized();
+            SignalBus<BatteryLevelSignal>.Push(in signal);
+        }
+
         /// <summary>Queues one inventory item durability update packet.</summary>
         public static void Publish(in ItemDurabilityChangedSignal signal)
         {
             EnsureInitialized();
             SignalBus<ItemDurabilityChangedSignal>.Push(in signal);
+        }
+
+        /// <summary>Queues one player delayed-action progress packet.</summary>
+        public static void Publish(in PlayerActionProgressSignal signal)
+        {
+            EnsureInitialized();
+            SignalBus<PlayerActionProgressSignal>.Push(in signal);
+        }
+
+        /// <summary>Queues one player delayed-action completion packet.</summary>
+        public static void Publish(in PlayerActionCompletedSignal signal)
+        {
+            EnsureInitialized();
+            SignalBus<PlayerActionCompletedSignal>.Push(in signal);
+        }
+
+        /// <summary>Queues one player delayed-action cancellation packet.</summary>
+        public static void Publish(in PlayerActionCancelledSignal signal)
+        {
+            EnsureInitialized();
+            SignalBus<PlayerActionCancelledSignal>.Push(in signal);
+        }
+
+        /// <summary>Queues one PDA exchange dirty-state packet.</summary>
+        public static void Publish(in PdaExchangeStateChangedSignal signal)
+        {
+            EnsureInitialized();
+            SignalBus<PdaExchangeStateChangedSignal>.Push(in signal);
+        }
+
+        /// <summary>Queues one vehicle upgrade bitmask mutation packet.</summary>
+        public static void Publish(in VehicleUpgradesChangedSignal signal)
+        {
+            EnsureInitialized();
+            SignalBus<VehicleUpgradesChangedSignal>.Push(in signal);
         }
 
         /// <summary>Queues one storage IO backpressure scalar packet from the streaming service.</summary>
@@ -1712,6 +2112,27 @@ namespace Hecton8.Core
             SignalBus<StreamingTurbulenceSignal>.Push(in signal);
         }
 
+        /// <summary>Queues one orbital prologue atmospheric re-entry state packet.</summary>
+        public static void Publish(in AtmosphericReentrySignal signal)
+        {
+            EnsureInitialized();
+            SignalBus<AtmosphericReentrySignal>.Push(in signal);
+        }
+
+        /// <summary>Queues one orbital prologue completion handoff packet.</summary>
+        public static void Publish(in PrologueCompleteSignal signal)
+        {
+            EnsureInitialized();
+            SignalBus<PrologueCompleteSignal>.Push(in signal);
+        }
+
+        /// <summary>Queues one physical cockpit manual override latch packet.</summary>
+        public static void Publish(in ManualOverridePulledSignal signal)
+        {
+            EnsureInitialized();
+            SignalBus<ManualOverridePulledSignal>.Push(in signal);
+        }
+
         /// <summary>Queues one recon data packet from the main thread.</summary>
         public static void Publish(in ReconDataSignal signal)
         {
@@ -1724,6 +2145,20 @@ namespace Hecton8.Core
         {
             EnsureInitialized();
             _saveLifecycleSignals.Enqueue(signal);
+        }
+
+        /// <summary>Queues one macro database hydration packet on the typed native lane.</summary>
+        public static void Publish(in SectorHydratedSignal signal)
+        {
+            EnsureInitialized();
+            SignalBus<SectorHydratedSignal>.Push(in signal);
+        }
+
+        /// <summary>Queues one WFC outpost mutable-cell state change on the typed native lane.</summary>
+        public static void Publish(in WfcOutpostStateChangedSignal signal)
+        {
+            EnsureInitialized();
+            SignalBus<WfcOutpostStateChangedSignal>.Push(in signal);
         }
 
         /// <summary>Queues one compliance violation packet from the main thread.</summary>
@@ -1900,6 +2335,13 @@ namespace Hecton8.Core
             _progressionEventSignals.Enqueue(signal);
         }
 
+        /// <summary>Queues one AUP-independent global world-state mutation from the main thread.</summary>
+        public static void Publish(in GlobalWorldStateSignal signal)
+        {
+            EnsureInitialized();
+            _globalWorldStateSignals.Enqueue(signal);
+        }
+
         /// <summary>Queues one biome transition packet from the main thread.</summary>
         public static void Publish(in BiomeChangedSignal signal)
         {
@@ -1962,6 +2404,7 @@ namespace Hecton8.Core
         public static bool TryDequeueControl(out ControlSignal signal) => TryDequeue(ref _controlSignals, out signal);
         public static bool TryDequeueAnomaly(out AnomalySignal signal) => TryDequeue(ref _anomalySignals, out signal);
         public static bool TryDequeueTelemetryAnomaly(out TelemetryAnomalySignal signal) => TryDequeue(ref _telemetryAnomalySignals, out signal);
+        public static bool TryDequeueCrashTelemetry(out CrashTelemetrySignal signal) => TryDequeue(ref _crashTelemetrySignals, out signal);
         public static bool TryDequeueHabitatConstruction(out HabitatConstructionSignal signal) => TryDequeue(ref _habitatConstructionSignals, out signal);
         public static bool TryDequeueDeconstructRequest(out DeconstructRequestSignal signal) => TryDequeue(ref _deconstructRequestSignals, out signal);
         public static bool TryDequeueDeconstructResult(out DeconstructResultSignal signal) => TryDequeue(ref _deconstructResultSignals, out signal);
@@ -1986,15 +2429,20 @@ namespace Hecton8.Core
         public static bool TryDequeueRigidbodySleep(out RigidbodySleepSignal signal) => TryDequeue(ref _rigidbodySleepSignals, out signal);
         public static bool TryDequeueScannerToolActive(out ScannerToolActiveSignal signal) => TryDequeue(ref _scannerToolActiveSignals, out signal);
         public static bool TryDequeueScanComplete(out ScanCompleteSignal signal) => TryDequeue(ref _scanCompleteSignals, out signal);
+        public static bool TryDequeueLoreFragmentScanned(out LoreFragmentScannedSignal signal) => SignalBus<LoreFragmentScannedSignal>.TryReadFrame(out signal);
         public static bool TryDequeueBlueprintUnlocked(out BlueprintUnlockedSignal signal) => TryDequeue(ref _blueprintUnlockedSignals, out signal);
         public static bool TryDequeueCraftingStarted(out CraftingStartedSignal signal) => TryDequeue(ref _craftingStartedSignals, out signal);
         public static bool TryDequeueCraftingCompleted(out CraftingCompletedSignal signal) => TryDequeue(ref _craftingCompletedSignals, out signal);
+        public static bool TryDequeueToolStateChanged(out ToolStateChangedSignal signal) => TryDequeue(ref _toolStateChangedSignals, out signal);
         public static bool TryDequeueToolAcoustic(out ToolAcousticSignal signal) => TryDequeue(ref _toolAcousticSignals, out signal);
         public static bool TryDequeuePowerDrain(out PowerDrainSignal signal) => TryDequeue(ref _powerDrainSignals, out signal);
         public static bool TryDequeueToolTrigger(out ToolTriggerSignal signal) => TryDequeue(ref _toolTriggerSignals, out signal);
         public static bool TryDequeueHUDNotification(out HUDNotificationSignal signal) => TryDequeue(ref _hudNotificationSignals, out signal);
         public static bool TryDequeueStorageDebt(out StorageDebtSignal signal) => SignalBus<StorageDebtSignal>.TryReadFrame(out signal);
         public static bool TryDequeueStreamingTurbulence(out StreamingTurbulenceSignal signal) => SignalBus<StreamingTurbulenceSignal>.TryReadFrame(out signal);
+        public static bool TryDequeueAtmosphericReentry(out AtmosphericReentrySignal signal) => SignalBus<AtmosphericReentrySignal>.TryReadFrame(out signal);
+        public static bool TryDequeuePrologueComplete(out PrologueCompleteSignal signal) => SignalBus<PrologueCompleteSignal>.TryReadFrame(out signal);
+        public static bool TryDequeueManualOverridePulled(out ManualOverridePulledSignal signal) => SignalBus<ManualOverridePulledSignal>.TryReadFrame(out signal);
         public static bool TryDequeueReconData(out ReconDataSignal signal) => TryDequeue(ref _reconDataSignals, out signal);
         public static bool TryDequeueSaveLifecycle(out SaveLifecycleSignal signal) => TryDequeue(ref _saveLifecycleSignals, out signal);
         public static bool TryDequeueComplianceViolation(out ComplianceViolationSignal signal) => TryDequeue(ref _complianceViolationSignals, out signal);
@@ -2002,6 +2450,8 @@ namespace Hecton8.Core
         public static bool TryDequeueSeismic(out SeismicSignal signal) => TryDequeue(ref _seismicSignals, out signal);
         public static bool TryDequeueTimeDilation(out TimeDilationSignal signal) => TryDequeue(ref _timeDilationSignals, out signal);
         public static bool TryDequeueSimulationPause(out SimulationPauseSignal signal) => TryDequeue(ref _simulationPauseSignals, out signal);
+        public static bool TryDequeueHapticRequest(out HapticRequest signal) => SignalBus<HapticRequest>.TryReadFrame(out signal);
+        public static bool TryDequeueSubmarineFloodState(out SubmarineFloodStateSignal signal) => SignalBus<SubmarineFloodStateSignal>.TryReadFrame(out signal);
         public static bool TryDequeueBulletTimeVisual(out BulletTimeVisualSignal signal) => TryDequeue(ref _bulletTimeVisualSignals, out signal);
         public static bool TryDequeueWeatherStrength(out WeatherStrengthSignal signal) => TryDequeue(ref _weatherStrengthSignals, out signal);
         public static bool TryDequeueItemDecay(out ItemDecaySignal signal) => TryDequeue(ref _itemDecaySignals, out signal);
@@ -2013,9 +2463,11 @@ namespace Hecton8.Core
         public static bool TryDequeueFaunaStateChanged(out FaunaStateChangedSignal signal) => TryDequeue(ref _faunaStateChangedSignals, out signal);
         public static bool TryDequeuePhysiologyState(out PhysiologyStateSignal signal) => TryDequeue(ref _physiologyStateSignals, out signal);
         public static bool TryDequeuePlayerStress(out PlayerStressSignal signal) => TryDequeue(ref _playerStressSignals, out signal);
+        public static bool TryDequeuePlayerState(out PlayerStateSignal signal) => SignalBus<PlayerStateSignal>.TryReadFrame(out signal);
         public static bool TryDequeueTrauma(out TraumaSignal signal) => TryDequeue(ref _traumaSignals, out signal);
         public static bool TryDequeueWakeGenerated(out WakeGeneratedSignal signal) => TryDequeue(ref _wakeGeneratedSignals, out signal);
         public static bool TryDequeueProgressionEvent(out ProgressionEventSignal signal) => TryDequeue(ref _progressionEventSignals, out signal);
+        public static bool TryDequeueGlobalWorldState(out GlobalWorldStateSignal signal) => TryDequeue(ref _globalWorldStateSignals, out signal);
         public static bool TryDequeueBiomeChanged(out BiomeChangedSignal signal) => TryDequeue(ref _biomeChangedSignals, out signal);
         public static bool TryDequeueNarrativeFocus(out NarrativeFocusSignal signal) => TryDequeue(ref _narrativeFocusSignals, out signal);
         public static bool TryDequeueFocusBroken(out FocusBrokenSignal signal) => TryDequeue(ref _focusBrokenSignals, out signal);
@@ -2059,6 +2511,13 @@ namespace Hecton8.Core
             return sequence != 0;
         }
 
+        public static bool TryGetLatestPlayerStateSignal(out PlayerStateSignal signal, out int sequence)
+        {
+            sequence = Volatile.Read(ref _latestPlayerStateSignalSequence);
+            signal = _latestPlayerStateSignal;
+            return sequence != 0;
+        }
+
         public static bool TryGetLatestPhysiologyStateSignal(out PhysiologyStateSignal signal, out int sequence)
         {
             sequence = Volatile.Read(ref _latestPhysiologyStateSignalSequence);
@@ -2077,6 +2536,13 @@ namespace Hecton8.Core
         {
             sequence = Volatile.Read(ref _latestScannerToolActiveSignalSequence);
             signal = _latestScannerToolActiveSignal;
+            return sequence != 0;
+        }
+
+        public static bool TryGetLatestToolStateChangedSignal(out ToolStateChangedSignal signal, out int sequence)
+        {
+            sequence = Volatile.Read(ref _latestToolStateChangedSignalSequence);
+            signal = _latestToolStateChangedSignal;
             return sequence != 0;
         }
 
@@ -2192,14 +2658,26 @@ namespace Hecton8.Core
 
         private static void InitializeCategorySignalLanes()
         {
+            SignalBus<InputStateSignal>.Configure(InputStateSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(InputStateSignal)));
+            SignalBus<InputStateSignal>.EnsureInitialized();
+            SignalBus<PlayerInputSignal>.Configure(PlayerInputSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(PlayerInputSignal)));
+            SignalBus<PlayerInputSignal>.EnsureInitialized();
             SignalBus<CombatDamageSignal>.Configure(DamageSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(CombatDamageSignal)));
             SignalBus<CombatDamageSignal>.EnsureInitialized();
             SignalBus<HullDeformedSignal>.Configure(HullDeformedSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(HullDeformedSignal)));
             SignalBus<HullDeformedSignal>.EnsureInitialized();
+            SignalBus<BaseModuleCompromisedSignal>.Configure(BaseModuleCompromisedSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(BaseModuleCompromisedSignal)));
+            SignalBus<BaseModuleCompromisedSignal>.EnsureInitialized();
             SignalBus<HighSpeedImpactSignal>.Configure(HighSpeedImpactSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(HighSpeedImpactSignal)));
             SignalBus<HighSpeedImpactSignal>.EnsureInitialized();
             SignalBus<HapticRequest>.Configure(HapticRequestCapacity, laneHash: ComputeStableSignalLaneHash(nameof(HapticRequest)));
             SignalBus<HapticRequest>.EnsureInitialized();
+            SignalBus<ThermalStateChangedSignal>.Configure(ThermalStateChangedSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(ThermalStateChangedSignal)));
+            SignalBus<ThermalStateChangedSignal>.EnsureInitialized();
+            SignalBus<BatteryLevelSignal>.Configure(BatteryLevelSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(BatteryLevelSignal)));
+            SignalBus<BatteryLevelSignal>.EnsureInitialized();
+            SignalBus<PlayerStateSignal>.Configure(PlayerStateSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(PlayerStateSignal)));
+            SignalBus<PlayerStateSignal>.EnsureInitialized();
             SignalBus<CameraPositionSignal>.Configure(CameraPositionSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(CameraPositionSignal)));
             SignalBus<CameraPositionSignal>.EnsureInitialized();
             SignalBus<CameraFrustumSignal>.Configure(CameraFrustumSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(CameraFrustumSignal)));
@@ -2218,16 +2696,36 @@ namespace Hecton8.Core
             SignalBus<SaveMetadataReadySignal>.EnsureInitialized();
             SignalBus<CpuStarvationSignal>.Configure(64, laneHash: ComputeStableSignalLaneHash(nameof(CpuStarvationSignal)));
             SignalBus<CpuStarvationSignal>.EnsureInitialized();
+            SignalBus<LoreFragmentScannedSignal>.Configure(LoreFragmentScannedSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(LoreFragmentScannedSignal)));
+            SignalBus<LoreFragmentScannedSignal>.EnsureInitialized();
+            SignalBus<MemoryAddressShiftSignal>.Configure(MemoryAddressShiftSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(MemoryAddressShiftSignal)));
+            SignalBus<MemoryAddressShiftSignal>.EnsureInitialized();
+            SignalBus<ResolutionChangedSignal>.Configure(ResolutionChangedSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(ResolutionChangedSignal)));
+            SignalBus<ResolutionChangedSignal>.EnsureInitialized();
+            SignalBus<SystemHealthIndexSignal>.Configure(SystemHealthIndexSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(SystemHealthIndexSignal)));
+            SignalBus<SystemHealthIndexSignal>.EnsureInitialized();
             SignalBus<StorageDebtSignal>.Configure(StorageDebtSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(StorageDebtSignal)));
             SignalBus<StorageDebtSignal>.EnsureInitialized();
             SignalBus<StreamingTurbulenceSignal>.Configure(StreamingTurbulenceSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(StreamingTurbulenceSignal)));
             SignalBus<StreamingTurbulenceSignal>.EnsureInitialized();
+            SignalBus<AtmosphericReentrySignal>.Configure(AtmosphericReentrySignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(AtmosphericReentrySignal)));
+            SignalBus<AtmosphericReentrySignal>.EnsureInitialized();
+            SignalBus<PrologueCompleteSignal>.Configure(PrologueCompleteSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(PrologueCompleteSignal)));
+            SignalBus<PrologueCompleteSignal>.EnsureInitialized();
+            SignalBus<ManualOverridePulledSignal>.Configure(ManualOverridePulledSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(ManualOverridePulledSignal)));
+            SignalBus<ManualOverridePulledSignal>.EnsureInitialized();
             SignalBus<SwarmDispersedSignal>.Configure(SwarmDispersedSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(SwarmDispersedSignal)));
             SignalBus<SwarmDispersedSignal>.EnsureInitialized();
             SignalBus<SectorHydratedSignal>.Configure(64, laneHash: ComputeStableSignalLaneHash(nameof(SectorHydratedSignal)));
             SignalBus<SectorHydratedSignal>.EnsureInitialized();
+            SignalBus<WfcOutpostStateChangedSignal>.Configure(128, laneHash: ComputeStableSignalLaneHash(nameof(WfcOutpostStateChangedSignal)));
+            SignalBus<WfcOutpostStateChangedSignal>.EnsureInitialized();
+            SignalBus<SectorResidencyHydratedSignal>.Configure(64, laneHash: ComputeStableSignalLaneHash(nameof(SectorResidencyHydratedSignal)));
+            SignalBus<SectorResidencyHydratedSignal>.EnsureInitialized();
             SignalBus<SectorDehydratedSignal>.Configure(64, laneHash: ComputeStableSignalLaneHash(nameof(SectorDehydratedSignal)));
             SignalBus<SectorDehydratedSignal>.EnsureInitialized();
+            SignalBus<ChunkDehydratedSignal>.Configure(ChunkDehydratedSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(ChunkDehydratedSignal)));
+            SignalBus<ChunkDehydratedSignal>.EnsureInitialized();
             SignalBus<InventoryCommandSignal>.Configure(InventoryCommandSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(InventoryCommandSignal)));
             SignalBus<InventoryCommandSignal>.EnsureInitialized();
             SignalBus<InventoryChangedSignal>.Configure(InventoryChangedSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(InventoryChangedSignal)));
@@ -2238,6 +2736,16 @@ namespace Hecton8.Core
             SignalBus<TemperatureChangedSignal>.EnsureInitialized();
             SignalBus<CullingOverloadSignal>.Configure(CullingOverloadSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(CullingOverloadSignal)));
             SignalBus<CullingOverloadSignal>.EnsureInitialized();
+            SignalBus<PlayerActionProgressSignal>.Configure(PlayerActionProgressSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(PlayerActionProgressSignal)));
+            SignalBus<PlayerActionProgressSignal>.EnsureInitialized();
+            SignalBus<PlayerActionCompletedSignal>.Configure(PlayerActionCompletedSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(PlayerActionCompletedSignal)));
+            SignalBus<PlayerActionCompletedSignal>.EnsureInitialized();
+            SignalBus<PlayerActionCancelledSignal>.Configure(PlayerActionCancelledSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(PlayerActionCancelledSignal)));
+            SignalBus<PlayerActionCancelledSignal>.EnsureInitialized();
+            SignalBus<PdaExchangeStateChangedSignal>.Configure(PdaExchangeStateChangedSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(PdaExchangeStateChangedSignal)));
+            SignalBus<PdaExchangeStateChangedSignal>.EnsureInitialized();
+            SignalBus<VehicleUpgradesChangedSignal>.Configure(VehicleUpgradesChangedSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(VehicleUpgradesChangedSignal)));
+            SignalBus<VehicleUpgradesChangedSignal>.EnsureInitialized();
         }
 
         private static void CreateQueue<T>(ref NativeQueue<T> queue, int expectedCapacity, string label)
@@ -2264,8 +2772,10 @@ namespace Hecton8.Core
             _latestLightLevelSignal = default;
             _latestPhysiologyStateSignal = default;
             _latestPlayerStressSignal = default;
+            _latestPlayerStateSignal = default;
             _latestSeismicSignal = default;
             _latestScannerToolActiveSignal = default;
+            _latestToolStateChangedSignal = default;
             Volatile.Write(ref _latestStorageDebtMilli, 0);
             Volatile.Write(ref _latestStorageLatencyMilli, 0);
             Volatile.Write(ref _latestStorageDebtSequence, 0);
@@ -2275,8 +2785,10 @@ namespace Hecton8.Core
             Volatile.Write(ref _latestLightLevelSignalSequence, 0);
             Volatile.Write(ref _latestPhysiologyStateSignalSequence, 0);
             Volatile.Write(ref _latestPlayerStressSignalSequence, 0);
+            Volatile.Write(ref _latestPlayerStateSignalSequence, 0);
             Volatile.Write(ref _latestSeismicSignalSequence, 0);
             Volatile.Write(ref _latestScannerToolActiveSignalSequence, 0);
+            Volatile.Write(ref _latestToolStateChangedSignalSequence, 0);
             Volatile.Write(ref _timeDilationScalarMilli, 1000);
             Volatile.Write(ref _timeDilationSequence, 0);
             Volatile.Write(ref _simulationPaused, 0);
@@ -2484,6 +2996,10 @@ namespace Hecton8.Core.Signals
     public struct HapticRequest : ISignal
     {
         public const byte ChannelCollision = 1;
+        public const byte ChannelLightThud = 2;
+        public const byte ChannelGearScrape = 3;
+        public const byte ChannelVehicleCritical = 4;
+        public const byte FlagLightThud = 1 << 0;
 
         [FieldOffset(0)] public float Intensity01;
         [FieldOffset(4)] public float DurationSeconds;
@@ -2492,6 +3008,76 @@ namespace Hecton8.Core.Signals
         [FieldOffset(16)] public uint Frame;
         [FieldOffset(20)] public byte Channel;
         [FieldOffset(21)] public byte Flags;
+    }
+
+    /// <summary>Player state adapter lane for animation, traversal, and contextual physiology. Size: 64 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct PlayerStateSignal : ISignal
+    {
+        public const byte StateSqueezing = 1;
+        public const byte FlagActive = 1 << 0;
+        public const byte FlagSqueezing = FlagActive;
+        public const byte FlagSdfGradientValid = 1 << 1;
+        public const byte FlagLowTierGradient = 1 << 2;
+        public const byte FlagAupShiftSafe = 1 << 3;
+
+        [FieldOffset(0)] public AbsoluteUniversePosition PositionAup;
+        [FieldOffset(48)] public float Intensity01;
+        [FieldOffset(52)] public uint SourceHash;
+        [FieldOffset(56)] public uint Frame;
+        [FieldOffset(60)] public byte State;
+        [FieldOffset(61)] public byte Flags;
+    }
+
+    /// <summary>Player delayed-action progress lane for UI and feedback consumers. Size: 32 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct PlayerActionProgressSignal : ISignal
+    {
+        public const byte ActionKindGeneric = 0;
+        public const byte ActionKindMedical = 1;
+        public const byte ActionKindOxygen = 2;
+        public const byte ActionKindFood = 3;
+        public const byte FlagHasItem = 1 << 0;
+
+        [FieldOffset(0)] public float Progress01;
+        [FieldOffset(4)] public uint ItemHash;
+        [FieldOffset(8)] public uint Frame;
+        [FieldOffset(12)] public ushort ActiveToolSlot;
+        [FieldOffset(14)] public byte ActionKind;
+        [FieldOffset(15)] public byte Flags;
+        [FieldOffset(31)] private byte _pad;
+    }
+
+    /// <summary>Player delayed-action completion lane. Size: 32 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct PlayerActionCompletedSignal : ISignal
+    {
+        public const byte FlagHasItem = 1 << 0;
+        public const byte FlagInventoryAnchorValid = 1 << 1;
+
+        [FieldOffset(0)] public uint ItemHash;
+        [FieldOffset(4)] public uint Frame;
+        [FieldOffset(8)] public ushort InventoryAnchorX;
+        [FieldOffset(10)] public ushort InventoryAnchorY;
+        [FieldOffset(12)] public byte ActionKind;
+        [FieldOffset(13)] public byte Flags;
+        [FieldOffset(31)] private byte _pad;
+    }
+
+    /// <summary>Player delayed-action cancellation lane. Size: 32 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct PlayerActionCancelledSignal : ISignal
+    {
+        public const byte ReasonGeneric = 0;
+        public const byte FlagHasItem = 1 << 0;
+
+        [FieldOffset(0)] public uint ItemHash;
+        [FieldOffset(4)] public uint Frame;
+        [FieldOffset(8)] public float Progress01;
+        [FieldOffset(12)] public byte ActionKind;
+        [FieldOffset(13)] public byte Reason;
+        [FieldOffset(14)] public byte Flags;
+        [FieldOffset(31)] private byte _pad;
     }
 
     public static class InventoryCommandSignalCommands
@@ -2661,6 +3247,27 @@ namespace Hecton8.Core.Signals
         [FieldOffset(56)] public uint Frame;
         [FieldOffset(60)] public byte Source;
         [FieldOffset(61)] public byte Flags;
+    }
+
+    /// <summary>AUP-independent global narrative state mutation. Size: 64 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct GlobalWorldStateSignal : ISignal
+    {
+        public const byte ChangeKindRule = 1;
+        public const byte ChangeKindLoad = 2;
+        public const byte ChangeKindDevConsole = 3;
+        public const byte FlagAupIndependent = 1 << 0;
+        public const byte FlagVisualRefresh = 1 << 1;
+        public const byte FlagAudioBroadcast = 1 << 2;
+        public const byte FlagCartographyRefresh = 1 << 3;
+
+        [FieldOffset(0)] public AbsoluteUniversePosition PositionAup;
+        [FieldOffset(48)] public uint VariableHash;
+        [FieldOffset(52)] public int Value;
+        [FieldOffset(56)] public uint StageHash;
+        [FieldOffset(60)] public byte ChangeKind;
+        [FieldOffset(61)] public byte Flags;
+        [FieldOffset(62)] public ushort Sequence;
     }
 
     /// <summary>Narrative-driven biome transition broadcast. Size: 64 bytes.</summary>
@@ -2866,6 +3473,20 @@ namespace Hecton8.Core.Signals
         [FieldOffset(17)] public byte Flags;
     }
 
+    /// <summary>Crash/postmortem telemetry signal. Size: 32 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct CrashTelemetrySignal : ISignal
+    {
+        [FieldOffset(0)] public uint SystemHash;
+        [FieldOffset(4)] public uint ReasonHash;
+        [FieldOffset(8)] public uint Frame;
+        [FieldOffset(12)] public int ExitCode;
+        [FieldOffset(16)] public int NativeAllocationCount;
+        [FieldOffset(20)] public float NativeTrackedBytesMb;
+        [FieldOffset(24)] public byte Severity;
+        [FieldOffset(25)] public byte Flags;
+    }
+
     /// <summary>Habitat construction graph mutation signal. Size: 64 bytes.</summary>
     [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct HabitatConstructionSignal : ISignal
@@ -2993,6 +3614,56 @@ namespace Hecton8.Core.Signals
         [FieldOffset(25)] public byte Flags;
     }
 
+    /// <summary>GlobalDataVault relocation notice for systems caching raw pointers. Size: 32 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct MemoryAddressShiftSignal : ISignal
+    {
+        public const byte FlagMemMove = 1 << 0;
+        public const byte FlagFenceProtected = 1 << 1;
+
+        [FieldOffset(0)] public long OldPointer;
+        [FieldOffset(8)] public long NewPointer;
+        [FieldOffset(16)] public int BufferId;
+        [FieldOffset(20)] public int ByteLength;
+        [FieldOffset(24)] public uint Version;
+        [FieldOffset(28)] public byte Flags;
+        [FieldOffset(29)] public byte SystemId;
+    }
+
+    /// <summary>Runtime mip/resolution residency change signal. Size: 32 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct ResolutionChangedSignal : ISignal
+    {
+        public const byte ReasonVramRedline = 1;
+        public const byte ReasonVramRecovered = 2;
+        public const byte FlagTextureMipLimit = 1 << 0;
+
+        [FieldOffset(0)] public uint Frame;
+        [FieldOffset(4)] public uint SourceHash;
+        [FieldOffset(8)] public int OldMipLimit;
+        [FieldOffset(12)] public int NewMipLimit;
+        [FieldOffset(16)] public float VramUsedMb;
+        [FieldOffset(20)] public byte Reason;
+        [FieldOffset(21)] public byte Flags;
+    }
+
+    /// <summary>Homeostasis state broadcast. Critical state is the SHI_Critical equivalent. Size: 32 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct SystemHealthIndexSignal : ISignal
+    {
+        public const byte StateStable = 0;
+        public const byte StateWarning = 1;
+        public const byte StateCritical = 2;
+        public const byte FlagAdrenaline = 1 << 0;
+
+        [FieldOffset(0)] public float Health01;
+        [FieldOffset(4)] public float Pressure01;
+        [FieldOffset(8)] public uint Frame;
+        [FieldOffset(12)] public uint SourceHash;
+        [FieldOffset(16)] public byte State;
+        [FieldOffset(17)] public byte Flags;
+    }
+
     /// <summary>CPU worker-starvation broadcast emitted when a non-critical job admission is denied. Size: 32 bytes.</summary>
     [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct CpuStarvationSignal : ISignal
@@ -3011,7 +3682,14 @@ namespace Hecton8.Core.Signals
     public struct AcousticPingSignal : ISignal
     {
         public const byte ChannelActiveSonar = 2;
+        public const byte ChannelGloveScrape = 3;
+        public const byte ChannelFabricScrape = ChannelGloveScrape;
+        public const byte ChannelMetalStress = 4;
+        public const byte ChannelLeviathanRoar = 5;
         public const byte FlagActiveSonar = 1;
+        public const byte FlagGloveScrape = 1 << 1;
+        public const byte FlagFabricScrape = FlagGloveScrape;
+        public const byte FlagLeviathanRoar = 1 << 2;
 
         [FieldOffset(0)] public AbsoluteUniversePosition PositionAup;
         [FieldOffset(48)] public float RadiusMeters;
@@ -3045,6 +3723,51 @@ namespace Hecton8.Core.Signals
         [FieldOffset(60)] public ushort EstimatedBoidCount;
         [FieldOffset(62)] public byte Flags;
         [FieldOffset(63)] public byte QualityTier;
+    }
+
+    /// <summary>World chunk hydration broadcast consumed by data-only ecology systems. Size: 64 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct SectorResidencyHydratedSignal : ISignal
+    {
+        public const byte FlagProxyFallback = 1;
+        public const byte FlagPinned = 1 << 1;
+
+        [FieldOffset(0)] public AbsoluteUniversePosition CenterAup;
+        [FieldOffset(48)] public long ChunkId;
+        [FieldOffset(56)] public uint Frame;
+        [FieldOffset(60)] public ushort RadiusMetersQ;
+        [FieldOffset(62)] public byte Flags;
+        [FieldOffset(63)] public byte ResidencyState;
+    }
+
+    /// <summary>World chunk dehydration broadcast consumed by data-only ecology systems. Size: 64 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct SectorDehydratedSignal : ISignal
+    {
+        public const byte FlagProxyFallback = 1;
+        public const byte FlagPinned = 1 << 1;
+
+        [FieldOffset(0)] public AbsoluteUniversePosition CenterAup;
+        [FieldOffset(48)] public long ChunkId;
+        [FieldOffset(56)] public uint Frame;
+        [FieldOffset(60)] public ushort RadiusMetersQ;
+        [FieldOffset(62)] public byte Flags;
+        [FieldOffset(63)] public byte ResidencyState;
+    }
+
+    /// <summary>Chunk dehydration persistence trigger. Size: 64 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct ChunkDehydratedSignal : ISignal
+    {
+        public const byte FlagProxyFallback = SectorDehydratedSignal.FlagProxyFallback;
+        public const byte FlagPinned = SectorDehydratedSignal.FlagPinned;
+
+        [FieldOffset(0)] public AbsoluteUniversePosition CenterAup;
+        [FieldOffset(48)] public long SectorHash;
+        [FieldOffset(56)] public uint Frame;
+        [FieldOffset(60)] public ushort RadiusMetersQ;
+        [FieldOffset(62)] public byte Flags;
+        [FieldOffset(63)] public byte ResidencyState;
     }
 
     /// <summary>Sonar ping broadcast signal. Size: 64 bytes.</summary>
@@ -3114,6 +3837,27 @@ namespace Hecton8.Core.Signals
         [FieldOffset(52)] public float FloodLevel01;
         [FieldOffset(56)] public float FlowRate01;
         [FieldOffset(60)] public byte Flags;
+    }
+
+    /// <summary>Submarine dynamic flood mass-state signal. Size: 64 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct SubmarineFloodStateSignal : ISignal
+    {
+        public const byte FlagHasFloodMass = 1 << 0;
+        public const byte FlagCriticalFlood = 1 << 1;
+        public const byte FlagInvalid = 1 << 7;
+
+        [FieldOffset(0)] public float3 DynamicCenterOfMassLocal;
+        [FieldOffset(12)] public float3 DynamicCenterOfMassOffsetLocal;
+        [FieldOffset(24)] public float TotalWaterMassKg;
+        [FieldOffset(28)] public float BaseMassKg;
+        [FieldOffset(32)] public float FillRatio01;
+        [FieldOffset(36)] public float AngularDragMultiplier;
+        [FieldOffset(40)] public uint SourceBodyId;
+        [FieldOffset(44)] public uint Frame;
+        [FieldOffset(48)] public ushort RoomCount;
+        [FieldOffset(50)] public byte MathLod;
+        [FieldOffset(51)] public byte Flags;
     }
 
     /// <summary>Fluid density transition signal. Size: 64 bytes.</summary>
@@ -3193,6 +3937,16 @@ namespace Hecton8.Core.Signals
         [FieldOffset(61)] public byte Flags;
     }
 
+    /// <summary>Lore-fragment scan commit signal. Size: 32 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct LoreFragmentScannedSignal : ISignal
+    {
+        [FieldOffset(0)] public uint Hash;
+        [FieldOffset(4)] public uint Frame;
+        [FieldOffset(8)] public uint SourceId;
+        [FieldOffset(12)] public byte Flags;
+    }
+
     /// <summary>Blueprint unlock signal for crafting and PDA consumers. Size: 32 bytes.</summary>
     [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct BlueprintUnlockedSignal : ISignal
@@ -3227,6 +3981,26 @@ namespace Hecton8.Core.Signals
         [FieldOffset(12)] public uint Frame;
         [FieldOffset(16)] public ushort Quantity;
         [FieldOffset(18)] public byte Flags;
+    }
+
+    /// <summary>Authoritative active tool state signal consumed by diegetic tool screens. Size: 32 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct ToolStateChangedSignal : ISignal
+    {
+        public const byte FlagEquipped = 1 << 0;
+        public const byte FlagVisible = 1 << 1;
+        public const byte FlagLowTierFallback = 1 << 2;
+
+        [FieldOffset(0)] public uint ToolHash;
+        [FieldOffset(4)] public uint Frame;
+        [FieldOffset(8)] public float Battery01;
+        [FieldOffset(12)] public float Heat01;
+        [FieldOffset(16)] public float DistanceMeters;
+        [FieldOffset(20)] public float Durability01;
+        [FieldOffset(24)] public uint StatusMask;
+        [FieldOffset(28)] public ushort AmmoUnits;
+        [FieldOffset(30)] public byte Flags;
+        [FieldOffset(31)] public byte ToolTypeId;
     }
 
     /// <summary>Tool acoustic state signal. Size: 32 bytes.</summary>
@@ -3300,6 +4074,65 @@ namespace Hecton8.Core.Signals
         [FieldOffset(20)] public uint Sequence;
     }
 
+    /// <summary>Orbital prologue re-entry phase packet. Size: 64 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct AtmosphericReentrySignal : ISignal
+    {
+        public const byte PhaseApproach = 1;
+        public const byte PhasePlasma = 2;
+        public const byte PhaseWhiteout = 3;
+        public const byte FlagAuthoritativeHeat = 1 << 0;
+        public const byte FlagWhiteoutRequested = 1 << 1;
+
+        [FieldOffset(0)] public AbsoluteUniversePosition CapsuleAup;
+        [FieldOffset(48)] public float AltitudeMeters;
+        [FieldOffset(52)] public float UniverseVelocityMetersPerSecond;
+        [FieldOffset(56)] public float Heat01;
+        [FieldOffset(60)] public ushort Sequence;
+        [FieldOffset(62)] public byte Flags;
+        [FieldOffset(63)] public byte Phase;
+    }
+
+    /// <summary>Orbital prologue whiteout completion packet. Size: 64 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct PrologueCompleteSignal : ISignal
+    {
+        public const byte PhaseWhiteout = 1;
+        public const byte PhaseOceanHandoff = 2;
+        public const byte FlagForceWhiteout = 1 << 0;
+
+        [FieldOffset(0)] public AbsoluteUniversePosition CapsuleAup;
+        [FieldOffset(48)] public uint Frame;
+        [FieldOffset(52)] public float WhiteoutHoldSeconds;
+        [FieldOffset(56)] public uint SourceHash;
+        [FieldOffset(60)] public ushort Sequence;
+        [FieldOffset(62)] public byte Flags;
+        [FieldOffset(63)] public byte Phase;
+    }
+
+    /// <summary>Manual cockpit override latch packet emitted by physical VR lever controls. Size: 64 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct ManualOverridePulledSignal : ISignal
+    {
+        public const byte FlagVrGrip = 1 << 0;
+        public const byte FlagNonVrFallback = 1 << 1;
+        public const byte FlagLatched = 1 << 2;
+        public const byte HandUnknown = 0;
+        public const byte HandLeft = 1;
+        public const byte HandRight = 2;
+
+        [FieldOffset(0)] public float3 LeverLocalPosition;
+        [FieldOffset(12)] public float AngleDegrees;
+        [FieldOffset(16)] public float GripStrength01;
+        [FieldOffset(20)] public uint SourceHash;
+        [FieldOffset(24)] public uint Frame;
+        [FieldOffset(28)] public ushort Sequence;
+        [FieldOffset(30)] public byte Flags;
+        [FieldOffset(31)] public byte HandSide;
+        [FieldOffset(32)] public float3 PivotLocalPosition;
+        [FieldOffset(44)] public float VelocityDegreesPerSecond;
+    }
+
     /// <summary>Hash-only HUD notification signal. Size: 32 bytes.</summary>
     [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct HUDNotificationSignal : ISignal
@@ -3310,6 +4143,71 @@ namespace Hecton8.Core.Signals
         [FieldOffset(12)] public uint Frame;
         [FieldOffset(16)] public byte Severity;
         [FieldOffset(17)] public byte Flags;
+    }
+
+    /// <summary>PDA exchange dirty-state signal for barter UI and relay consumers. Size: 32 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct PdaExchangeStateChangedSignal : ISignal
+    {
+        public const byte ReasonExecuted = 1;
+        public const byte ReasonLoaded = 2;
+        public const byte ReasonInventoryChanged = 3;
+        public const byte ReasonScanLogChanged = 4;
+
+        [FieldOffset(0)] public uint SourceId;
+        [FieldOffset(4)] public uint Frame;
+        [FieldOffset(8)] public int OfferCount;
+        [FieldOffset(12)] public int RecentTransactionCount;
+        [FieldOffset(16)] public int ExecutionStateCount;
+        [FieldOffset(20)] public byte Reason;
+        [FieldOffset(21)] public byte Flags;
+        [FieldOffset(31)] private byte _pad;
+    }
+
+    /// <summary>Vehicle upgrade bitmask mutation signal. Size: 32 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct VehicleUpgradesChangedSignal : ISignal
+    {
+        public const byte ReasonPenalty = 1;
+        public const byte ReasonInstall = 2;
+
+        [FieldOffset(0)] public uint SourceId;
+        [FieldOffset(4)] public uint UpgradeMask;
+        [FieldOffset(8)] public uint Frame;
+        [FieldOffset(12)] public float SafeDepthBonusMeters;
+        [FieldOffset(16)] public float PermanentSafeDepthPenaltyMeters;
+        [FieldOffset(20)] public byte Reason;
+        [FieldOffset(21)] public byte Flags;
+        [FieldOffset(31)] private byte _pad;
+    }
+
+    /// <summary>Cached platform thermal state transition signal. Size: 32 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct ThermalStateChangedSignal : ISignal
+    {
+        [FieldOffset(0)] public uint SourceHash;
+        [FieldOffset(4)] public uint Frame;
+        [FieldOffset(8)] public uint Sequence;
+        [FieldOffset(12)] public byte Severity;
+        [FieldOffset(13)] public byte PreviousSeverity;
+        [FieldOffset(14)] public byte ThermalStatus;
+        [FieldOffset(15)] public byte Flags;
+        [FieldOffset(16)] public short TemperatureTenthsCelsius;
+        [FieldOffset(18)] public byte BatteryPercent;
+        [FieldOffset(20)] public uint ActionMask;
+    }
+
+    /// <summary>Cached platform battery level signal. Size: 32 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct BatteryLevelSignal : ISignal
+    {
+        [FieldOffset(0)] public uint SourceHash;
+        [FieldOffset(4)] public uint Frame;
+        [FieldOffset(8)] public uint Sequence;
+        [FieldOffset(12)] public byte BatteryPercent;
+        [FieldOffset(13)] public byte BatteryStatus;
+        [FieldOffset(14)] public byte Flags;
+        [FieldOffset(16)] public uint ActionMask;
     }
 
     /// <summary>Recon data signal for PDA map population. Size: 64 bytes.</summary>
@@ -3333,6 +4231,31 @@ namespace Hecton8.Core.Signals
         [FieldOffset(12)] public uint Frame;
         [FieldOffset(16)] public byte State;
         [FieldOffset(17)] public byte Flags;
+    }
+
+    /// <summary>Macro database sector hydration completion lane. Size: 32 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct SectorHydratedSignal : ISignal
+    {
+        [FieldOffset(0)] public ulong SectorHash;
+        [FieldOffset(8)] public long FileOffset;
+        [FieldOffset(16)] public int PayloadBytes;
+        [FieldOffset(20)] public uint Frame;
+        [FieldOffset(24)] public byte SourceTier;
+        [FieldOffset(25)] public byte Flags;
+    }
+
+    /// <summary>WFC outpost mutable-cell state change lane. Size: 32 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct WfcOutpostStateChangedSignal : ISignal
+    {
+        [FieldOffset(0)] public ulong SectorHash;
+        [FieldOffset(8)] public ushort CellIndex;
+        [FieldOffset(10)] public byte PreviousFlags;
+        [FieldOffset(11)] public byte CurrentFlags;
+        [FieldOffset(12)] public uint Frame;
+        [FieldOffset(16)] public uint SourceHash;
+        [FieldOffset(20)] public byte Flags;
     }
 
     /// <summary>Async persistence save request lane payload. Size: 32 bytes.</summary>
@@ -3552,6 +4475,7 @@ namespace Hecton8.Core.Signals
     public static class FaunaStateChangedSignalKinds
     {
         public const byte Blind = 1;
+        public const byte Mutated = 2;
     }
 
     public static class FaunaStateChangedSignalFlags
@@ -3674,6 +4598,28 @@ namespace Hecton8.Core.Signals
         [FieldOffset(42)] public byte QualityTier;
         [FieldOffset(43)] public byte Channel;
         [FieldOffset(44)] public uint DamageType;
+    }
+
+    /// <summary>Habitat module deformation reached the compromise threshold. Size: 64 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct BaseModuleCompromisedSignal : ISignal
+    {
+        public const ushort MaxDeformationFlag = 1 << 0;
+        public const ushort LowTierVisualOnlyFlag = 1 << 1;
+
+        [FieldOffset(0)] public float3 ModuleCenter;
+        [FieldOffset(12)] public float Stress01;
+        [FieldOffset(16)] public float PeakStress01;
+        [FieldOffset(20)] public float DepthMeters;
+        [FieldOffset(24)] public uint NodeId;
+        [FieldOffset(28)] public uint ModuleHash;
+        [FieldOffset(32)] public uint Frame;
+        [FieldOffset(36)] public uint Sequence;
+        [FieldOffset(40)] public ushort SourceId;
+        [FieldOffset(42)] public ushort Flags;
+        [FieldOffset(44)] public byte StressIndex;
+        [FieldOffset(45)] public byte QualityTier;
+        [FieldOffset(46)] public ushort Reserved0;
     }
 
     /// <summary>Weather transition lane payload. Size: 32 bytes.</summary>

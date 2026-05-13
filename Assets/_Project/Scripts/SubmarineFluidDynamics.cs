@@ -7,6 +7,7 @@ using Hecton8.Atmosphere;
 using Hecton8.Bootstrap;
 using Hecton8.Construction;
 using Hecton8.Core;
+using Hecton8.Core.Memory;
 using Hecton8.Core.Signals;
 using Hecton8.Environment.Fluids;
 using Hecton8.Gameplay;
@@ -59,6 +60,7 @@ namespace Hecton8.Physics
         private const int RingBufferMask = RingBufferLength - 1;
         private const int SloshDelayFrames = 3;
         private const float WaterDensityKgPerCubicMeter = 1025f;
+        private const float MinimumMassForReciprocal = 0.01f;
         private const float GravityMetersPerSecondSquared = 9.81f;
         private const float DefaultFixedStepSeconds = 0.02f;
         private const float DefaultDischargeCoefficient = 0.62f;
@@ -489,6 +491,7 @@ namespace Hecton8.Physics
         private bool _registeredOriginShiftListener;
         private bool _fluidJobRunning;
         private bool _skipHydrodynamicsForCurrentFixedTick;
+        private bool _externalCenterOfMassAuthority;
         private int _configuredCompartmentCount;
         private int _configuredBulkheadCount;
         private int _ringHead;
@@ -975,11 +978,11 @@ namespace Hecton8.Physics
 
                 float3 floodCenter = DryCenterLocal;
                 if (totalFloodMass > Epsilon)
-                    floodCenter = weightedSum * math.rcp(totalFloodMass);
+                    floodCenter = weightedSum * math.rcp(math.max(MinimumMassForReciprocal, totalFloodMass));
 
                 float maxFloodMass = totalCapacity * WaterDensityKgPerCubicMeter;
                 float floodMassRatio = maxFloodMass > Epsilon
-                    ? math.saturate(totalFloodMass * math.rcp(maxFloodMass))
+                    ? math.saturate(totalFloodMass * math.rcp(math.max(MinimumMassForReciprocal, maxFloodMass)))
                     : 0f;
 
                 float3 targetCenter = LerpMad(DryCenterLocal, floodCenter, floodMassRatio);
@@ -1015,6 +1018,15 @@ namespace Hecton8.Physics
         public float ExternalDepthMeters => _externalDepthMeters;
 
         internal int ConfiguredBulkheadCount => _configuredBulkheadCount;
+
+        internal void SetExternalCenterOfMassAuthority(bool enabled)
+        {
+            _externalCenterOfMassAuthority = enabled;
+            if (!enabled || _rigidbody == null)
+                return;
+
+            _appliedCenterOfMassLocal = SanitizeCenterOfMass(_rigidbody.centerOfMass, _appliedCenterOfMassLocal);
+        }
 
         private void Awake()
         {
@@ -2242,6 +2254,140 @@ namespace Hecton8.Physics
             NativeArray<float3> accumulatorFrontBuffer = _comAccumulatorFront;
             _comAccumulatorFront = _comAccumulatorBack;
             _comAccumulatorBack = accumulatorFrontBuffer;
+
+            PublishSubmarineRoomMassDataVault();
+            PublishSubmarineFloodStateSignal();
+        }
+
+        private void PublishSubmarineRoomMassDataVault()
+        {
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null ||
+                !_compartmentFloodVolumes.IsCreated ||
+                !_compartmentMaxVolumes.IsCreated ||
+                !_compartmentLocalCentroids.IsCreated)
+            {
+                return;
+            }
+
+            int activeCount = math.min(
+                math.max(0, _configuredCompartmentCount),
+                math.min(_compartmentFloodVolumes.Length, math.min(_compartmentMaxVolumes.Length, _compartmentLocalCentroids.Length)));
+
+            const int sharedRoomCount = CompartmentCapacity;
+            NativeArray<float> roomWaterLevels;
+            NativeArray<float> roomVolumes;
+            NativeArray<float3> roomLocalAups;
+            bool hasRoomWaterLevels = vault.TryGetBuffer(BufferID.RoomWaterLevels, out roomWaterLevels);
+            bool hasRoomVolumes = vault.TryGetBuffer(BufferID.RoomVolumes, out roomVolumes);
+            bool hasRoomLocalAups = vault.TryGetBuffer(BufferID.RoomLocalAUPs, out roomLocalAups);
+            bool hasPartialRoomSoa = hasRoomWaterLevels || hasRoomVolumes || hasRoomLocalAups;
+            if (activeCount <= 0 && !hasPartialRoomSoa)
+                return;
+
+            if (vault.IsAllocationLocked || hasPartialRoomSoa)
+            {
+                if (!hasRoomWaterLevels || !hasRoomVolumes || !hasRoomLocalAups)
+                    return;
+            }
+            else
+            {
+                roomWaterLevels = vault.GetBuffer<float>(
+                    BufferID.RoomWaterLevels,
+                    sharedRoomCount,
+                    SystemID.VehiclesPhysics,
+                    NativeArrayOptions.UninitializedMemory);
+                roomVolumes = vault.GetBuffer<float>(
+                    BufferID.RoomVolumes,
+                    sharedRoomCount,
+                    SystemID.VehiclesPhysics,
+                    NativeArrayOptions.UninitializedMemory);
+                roomLocalAups = vault.GetBuffer<float3>(
+                    BufferID.RoomLocalAUPs,
+                    sharedRoomCount,
+                    SystemID.VehiclesPhysics,
+                    NativeArrayOptions.UninitializedMemory);
+            }
+
+            if (!roomWaterLevels.IsCreated ||
+                !roomVolumes.IsCreated ||
+                !roomLocalAups.IsCreated ||
+                roomWaterLevels.Length < sharedRoomCount ||
+                roomVolumes.Length < sharedRoomCount ||
+                roomLocalAups.Length < sharedRoomCount)
+            {
+                return;
+            }
+
+            for (int i = 0; i < sharedRoomCount; i++)
+            {
+                bool active = i < activeCount;
+                float maxVolume = active ? math.max(0f, _compartmentMaxVolumes[i]) : 0f;
+                float currentVolume = active ? math.clamp(_compartmentFloodVolumes[i], 0f, maxVolume) : 0f;
+                float fill01 = maxVolume > Epsilon
+                    ? math.saturate(currentVolume * math.rcp(maxVolume))
+                    : 0f;
+
+                roomWaterLevels[i] = math.isfinite(fill01) ? fill01 : 0f;
+                roomVolumes[i] = math.isfinite(maxVolume) ? maxVolume : 0f;
+                roomLocalAups[i] = active && math.all(math.isfinite(_compartmentLocalCentroids[i]))
+                    ? _compartmentLocalCentroids[i]
+                    : float3.zero;
+            }
+        }
+
+        private void PublishSubmarineFloodStateSignal()
+        {
+            if (_rigidbody == null || !_massPropertiesFront.IsCreated || _massPropertiesFront.Length == 0)
+                return;
+
+            FloodMassPropertiesResult result = _massPropertiesFront[0];
+            float3 dryCenter = new float3(dryCenterOfMassLocal.x, dryCenterOfMassLocal.y, dryCenterOfMassLocal.z);
+            float3 appliedCenter = new float3(_appliedCenterOfMassLocal.x, _appliedCenterOfMassLocal.y, _appliedCenterOfMassLocal.z);
+            float3 targetCenter = math.all(math.isfinite(result.TargetCenterLocal))
+                ? result.TargetCenterLocal
+                : dryCenter;
+            float3 dynamicCenter = math.all(math.isfinite(appliedCenter))
+                ? appliedCenter
+                : targetCenter;
+            float3 centerOffset = dynamicCenter - dryCenter;
+            float baseMass = math.max(MinimumMassForReciprocal, math.isfinite(_dryRigidbodyMass) ? _dryRigidbodyMass : _rigidbody.mass);
+            float waterMass = math.max(0f, result.FloodMassKilograms) + math.max(0f, _damageControlLeakAddedMassKilograms);
+            float angularDragMultiplier = 1f + (waterMass * math.rcp(math.max(MinimumMassForReciprocal, baseMass)));
+            byte flags = 0;
+
+            if (waterMass > Epsilon)
+                flags |= SubmarineFloodStateSignal.FlagHasFloodMass;
+
+            if (waterMass > baseMass * 0.4f)
+                flags |= SubmarineFloodStateSignal.FlagCriticalFlood;
+
+            if (!math.all(math.isfinite(dynamicCenter)) ||
+                !math.all(math.isfinite(centerOffset)) ||
+                !math.isfinite(waterMass) ||
+                !math.isfinite(baseMass) ||
+                !math.isfinite(angularDragMultiplier))
+            {
+                flags |= SubmarineFloodStateSignal.FlagInvalid;
+                dynamicCenter = dryCenter;
+                centerOffset = float3.zero;
+                waterMass = 0f;
+                angularDragMultiplier = 1f;
+            }
+
+            SubmarineFloodStateSignal signal = default;
+            signal.DynamicCenterOfMassLocal = dynamicCenter;
+            signal.DynamicCenterOfMassOffsetLocal = centerOffset;
+            signal.TotalWaterMassKg = waterMass;
+            signal.BaseMassKg = baseMass;
+            signal.FillRatio01 = math.saturate(math.isfinite(result.FloodMassRatio) ? result.FloodMassRatio : _floodFillRatio);
+            signal.AngularDragMultiplier = math.max(1f, angularDragMultiplier);
+            signal.SourceBodyId = _rigidbody != null ? unchecked((uint)EntityId.ToULong(_rigidbody.GetEntityId())) : 0u;
+            signal.Frame = unchecked((uint)Time.frameCount);
+            signal.RoomCount = (ushort)math.min(ushort.MaxValue, math.max(0, _configuredCompartmentCount));
+            signal.MathLod = DistanceMath.IsHighQualityTier(GlobalRegistry.ScalabilityTier) ? (byte)1 : (byte)0;
+            signal.Flags = flags;
+            GlobalSignals.Publish(in signal);
         }
 
         private void CompleteHydroKinematicJobInPostFixedSwapWindow()
@@ -3411,8 +3557,10 @@ namespace Hecton8.Physics
             if ((_appliedCenterOfMassLocal - newCenter).sqrMagnitude <= 0.000001f)
                 return;
 
-            _rigidbody.centerOfMass = newCenter;
             _appliedCenterOfMassLocal = newCenter;
+            _currentFloodCenterOfMassLocal = newCenter;
+            if (!_externalCenterOfMassAuthority)
+                _rigidbody.centerOfMass = newCenter;
         }
 
         private void ApplyStartupMassProperties(float3 targetCenter)
@@ -3433,7 +3581,8 @@ namespace Hecton8.Physics
             if (_rigidbody == null)
                 return;
 
-            _rigidbody.centerOfMass = safeCenter;
+            if (!_externalCenterOfMassAuthority)
+                _rigidbody.centerOfMass = safeCenter;
             _rigidbody.inertiaTensor = safeTensor;
             ApplyFloodMassPropertiesToRigidbody(force: true);
             _rigidbody.linearDamping = safeLinearDamping;

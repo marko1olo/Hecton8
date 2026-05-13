@@ -81,7 +81,8 @@ namespace Hecton8.Environment
         Hecton8.Core.IRenderable,
         Hecton8.World.ISoundscapeEventListener,
         IBiomeMatrixEventListener,
-        Hecton8.Core.IMapMagicBiomeEventListener
+        Hecton8.Core.IMapMagicBiomeEventListener,
+        Hecton8.Core.IGlobalRegistryHotSwapListener
     {
 #if UNITY_EDITOR
         private const string HudFogLuminanceComputeAssetPath = "Assets/_Project/Art/Shaders/HectonHudFogLuminance.compute";
@@ -102,12 +103,12 @@ namespace Hecton8.Environment
         private const float UnderwaterFogDensityFloorNearSurface = 0.012f;
         private const float UnderwaterFogDensityFloorAtDepth = 0.0048f;
         private const float UnderwaterFogDensityFloorDepth = 8f;
-        private const float DaylightReadableDepth = 460f;
-        private const float DaylightReadableLightFloor = 0.27f;
-        private const float DaylightReadableExtinctionReduction = 0.38f;
-        private const float FogBlackoutStartDepthDay = 340f;
-        private const float FogBlackoutStartDepthNight = 90f;
-        private const float FogBlackBlendIntensity = 0.68f;
+        private const float DaylightReadableDepth = 620f;
+        private const float DaylightReadableLightFloor = 0.36f;
+        private const float DaylightReadableExtinctionReduction = 0.52f;
+        private const float FogBlackoutStartDepthDay = 900f;
+        private const float FogBlackoutStartDepthNight = 260f;
+        private const float FogBlackBlendIntensity = 0.24f;
         private const float UnderwaterFarHazeStartDepth = 1.5f;
         private const float UnderwaterFarHazeFullDepth = 14f;
         private const float UnderwaterFarHazeDensityBoost = 0.00075f;
@@ -371,15 +372,15 @@ namespace Hecton8.Environment
         [SerializeField, UnityEngine.Range(0f, 1f)] private float causticsMinLightFactor = 0.18f;
         [Header("Noir Final Resolve")]
         [Tooltip("Non-linear blackout exponent applied to underwater fog. Pure #000 is forbidden because it destroys silhouette and color separation.")]
-        [SerializeField, UnityEngine.Range(1f, 4f)] private float noirFogPower = 2.35f;
+        [SerializeField, UnityEngine.Range(1f, 4f)] private float noirFogPower = 1.18f;
         [Tooltip("Blue-noise dither strength applied in the final underwater resolve pass.")]
         [SerializeField, UnityEngine.Range(0f, 2f)] private float underwaterFinalDitherStrength = 0.75f;
         [Tooltip("Absolute abyssal luminance floor. Pure black is forbidden because the frame must keep readable separation in the deep.")]
-        [SerializeField] private Color abyssalBlackFloor = new Color(0.0015f, 0.0023f, 0.0031f, 1f);
+        [SerializeField] private Color abyssalBlackFloor = new Color(0.028f, 0.042f, 0.060f, 1f);
         [Tooltip("Meters between the water surface and the noir floor band used to normalize vertical fog density.")]
         [SerializeField, UnityEngine.Range(8f, 600f)] private float noirVerticalFogSpan = 180f;
         [Tooltip("Extra density injected at the abyssal floor. 1.5 = 2.5x denser than the surface layer.")]
-        [SerializeField, UnityEngine.Range(0f, 4f)] private float abyssalDensityBoost = 1.5f;
+        [SerializeField, UnityEngine.Range(0f, 4f)] private float abyssalDensityBoost = 0.42f;
         [Tooltip("How aggressively voxel-cave occlusion absorbs procedural caustics.")]
         [SerializeField, UnityEngine.Range(0f, 1f)] private float biomeAbsorption = 0.9f;
         [Header("Noir Value Caustics")]
@@ -766,15 +767,15 @@ namespace Hecton8.Environment
         private const float SurfaceOceanShadowLuminanceFloorBlend = 0.72f;
         private const float SurfaceOceanDiffuseShadowBlackBlend = 0.24f;
         private const float SurfaceOceanShallowShadowBaseBlend = 0.18f;
-        private const float UnderwaterScatterLuminanceFloor = 0.06f;
-        private const float SharedOceanUnderwaterScatterLuminanceFloor = 0.56f;
-        private const float SurfaceReadableSunIntensityFloor = 0.85f;
-        private const float SurfaceReadableAmbientIntensityFloor = 1.1f;
+        private const float UnderwaterScatterLuminanceFloor = 0.14f;
+        private const float SharedOceanUnderwaterScatterLuminanceFloor = 0.64f;
+        private const float SurfaceReadableSunIntensityFloor = 1.05f;
+        private const float SurfaceReadableAmbientIntensityFloor = 1.24f;
         private const float SurfaceReadableFogDensityCeiling = 0.001f;
         private const float SurfaceReadableCrestDepthFogCeiling = 0.032f;
-        private const float SurfaceFogReadableLuminanceFloor = 0.48f;
-        private const float SurfaceHorizonReadableLuminanceFloor = 0.50f;
-        private const float SurfaceSkyReadableLuminanceFloor = 0.42f;
+        private const float SurfaceFogReadableLuminanceFloor = 0.58f;
+        private const float SurfaceHorizonReadableLuminanceFloor = 0.62f;
+        private const float SurfaceSkyReadableLuminanceFloor = 0.56f;
         private const float SurfaceFogDaylightBlueBias = 0.24f;
         private const float SurfaceHorizonDaylightBlueBias = 0.18f;
         private const float SurfaceSkyDaylightBlueBias = 0.10f;
@@ -788,9 +789,19 @@ namespace Hecton8.Environment
 
         private Hecton8.Physics.HectonFluidEngine _physicsEngine;
         private bool _physicsEngineCached;
+        private bool _physicsEngineLookupAttempted;
 
         private HectonAtmosphereManager _cachedAtmoManager;
         private bool _atmoManagerCached;
+        private bool _atmoManagerLookupAttempted;
+        private IAudioService _audioRuntime;
+        private DynamicResolutionScaler _dynamicResolutionRuntime;
+        private IWeatherService _weatherRuntime;
+        private HectonSurfaceWeatherDirector _surfaceWeatherRuntime;
+        private SargassumGlobalDragManager _sargassumDragRuntime;
+        private SoundscapeSystem _soundscapeRuntime;
+        private MapMagicBridge _mapMagicRuntime;
+        private IPlayerRuntimeContext _playerRuntimeContext;
         private HectonPlayerMovement _playerMovement;
         private HectonPlayerMovement _subscribedPlayerMovement;
         private Rigidbody _playerRigidbody;
@@ -872,6 +883,7 @@ namespace Hecton8.Environment
         private bool _registeredTick;
         private bool _registeredSlowTick;
         private bool _registeredLateFrameTick;
+        private bool _registeredHotSwapListener;
         private bool _renderSettingsGuardAcquired;
         private bool _wasUnderwater;
         private DepthZoneProfile _lastDepthZoneProfile;
@@ -904,6 +916,10 @@ namespace Hecton8.Environment
         private float _nextRuntimePlayerCameraResolveTime = float.NegativeInfinity;
         private float _nextRuntimeMainCameraResolveTime = float.NegativeInfinity;
         private float _nextRuntimeReferenceWarningTime = float.NegativeInfinity;
+        private byte _runtimeReferenceWarningMask;
+        private const byte RuntimeReferenceWarningPlayerCamera = 1 << 0;
+        private const byte RuntimeReferenceWarningMainCamera = 1 << 1;
+        private const byte RuntimeReferenceWarningSunVisual = 1 << 2;
         private float _nextEditorCameraResolveTime = float.NegativeInfinity;
         private const int RuntimeCameraBufferSize = 8;
         private static readonly Camera[] _runtimeCameraBuffer = new Camera[RuntimeCameraBufferSize]; // COLD ALLOC: Camera[8] Ã¢â‚¬â€ reusable runtime main-camera resolve buffer to avoid hierarchy array allocations Ã¢â‚¬â€ owner: HectonUnderwaterVisuals
@@ -966,6 +982,8 @@ namespace Hecton8.Environment
             {
                 ActiveRuntimeInstance = this;
                 GlobalRegistry.RegisterUnderwaterVisualsRuntime(this);
+                CacheRuntimeDependencies();
+                TryRegisterHotSwapListener();
                 _debugEditorDriven = false;
                 if (mainCamera != null && !IsRuntimeMainCamera(mainCamera))
                     mainCamera = null;
@@ -1369,6 +1387,8 @@ namespace Hecton8.Environment
             EditorApplication.update -= EditorUpdate;
 #endif
             _debugEditorDriven = false;
+            CacheRuntimeDependencies();
+            TryRegisterHotSwapListener();
             TryRegisterRenderDispatcher();
             EnsureRuntimeVisualOwners();
             EnsureGameplayCameraStackEnabled();
@@ -1376,10 +1396,10 @@ namespace Hecton8.Environment
             if (!_registeredTick || !_registeredSlowTick)
                 TryRegisterTickManagers();
 
-            if (!_physicsEngineCached)
+            if (!_physicsEngineLookupAttempted)
                 CachePhysicsEngine();
 
-            if (!_atmoManagerCached)
+            if (!_atmoManagerLookupAttempted)
                 CacheAtmosphereManager();
 
             if (biomeMatrixDirector == null)
@@ -1395,6 +1415,7 @@ namespace Hecton8.Environment
         {
             if (Application.isPlaying)
             {
+                TryUnregisterHotSwapListener();
                 if (ActiveRuntimeInstance == this)
                 {
                     ActiveRuntimeInstance = null;
@@ -1478,6 +1499,7 @@ namespace Hecton8.Environment
         {
             if (Application.isPlaying)
             {
+                TryUnregisterHotSwapListener();
                 MapMagicBiomeEvents.Unregister(this);
                 BiomeMatrixEvents.Unregister(this);
                 if (GlobalRegistry.UnderwaterVisuals == this)
@@ -1935,7 +1957,7 @@ namespace Hecton8.Environment
 
         private float ResolveProfileSunIntensity()
         {
-            if (!_atmoManagerCached)
+            if (!_atmoManagerLookupAttempted)
                 CacheAtmosphereManager();
 
             if (_cachedAtmoManager != null)
@@ -1970,7 +1992,7 @@ namespace Hecton8.Environment
         /// </summary>
         private float ResolveHorizonFade()
         {
-            if (!_atmoManagerCached)
+            if (!_atmoManagerLookupAttempted)
                 CacheAtmosphereManager();
 
             if (_cachedAtmoManager != null)
@@ -2051,6 +2073,7 @@ namespace Hecton8.Environment
             if (_cachedAtmoManager == null)
                 _cachedAtmoManager = Hecton8.Core.GlobalRegistry.Atmosphere;
 
+            _atmoManagerLookupAttempted = Application.isPlaying;
             _atmoManagerCached = _cachedAtmoManager != null;
 
 #if UNITY_EDITOR
@@ -2061,6 +2084,119 @@ namespace Hecton8.Environment
         // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
         //  SUN INTENSITY
         // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
+
+        private void CacheRuntimeDependencies()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            _audioRuntime = GlobalRegistry.Audio;
+            _dynamicResolutionRuntime = GlobalRegistry.DynamicResolution;
+            _weatherRuntime = GlobalRegistry.Weather;
+            _surfaceWeatherRuntime = GlobalRegistry.SurfaceWeather;
+            _sargassumDragRuntime = GlobalRegistry.SargassumDrag;
+            _soundscapeRuntime = GlobalRegistry.Soundscape;
+            _mapMagicRuntime = GlobalRegistry.MapMagic;
+            _playerRuntimeContext = GlobalRegistry.Player;
+
+            if (depthZoneDirector == null)
+                depthZoneDirector = GlobalRegistry.DepthZone;
+
+            CachePhysicsEngine();
+            CacheAtmosphereManager();
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Audio:
+                    _audioRuntime = currentService as IAudioService;
+                    break;
+
+                case GlobalRegistryServiceSlot.DynamicResolutionRuntime:
+                    _dynamicResolutionRuntime = currentService as DynamicResolutionScaler;
+                    RefreshAdaptiveBudgetResponse();
+                    break;
+
+                case GlobalRegistryServiceSlot.Weather:
+                    _weatherRuntime = currentService as IWeatherService;
+                    break;
+
+                case GlobalRegistryServiceSlot.SurfaceWeatherRuntime:
+                    _surfaceWeatherRuntime = currentService as HectonSurfaceWeatherDirector;
+                    break;
+
+                case GlobalRegistryServiceSlot.SargassumDragRuntime:
+                    _sargassumDragRuntime = currentService as SargassumGlobalDragManager;
+                    break;
+
+                case GlobalRegistryServiceSlot.SoundscapeRuntime:
+                    _soundscapeRuntime = currentService as SoundscapeSystem;
+                    RefreshSoundscapeTierResponse(true);
+                    break;
+
+                case GlobalRegistryServiceSlot.DepthZoneRuntime:
+                    depthZoneDirector = currentService as DepthZoneDirector;
+                    _lastDepthZoneProfile = null;
+                    break;
+
+                case GlobalRegistryServiceSlot.MapMagicRuntime:
+                    _mapMagicRuntime = currentService as MapMagicBridge;
+                    _nextBottomSiltProbeTime = float.NegativeInfinity;
+                    break;
+
+                case GlobalRegistryServiceSlot.Player:
+                    _playerRuntimeContext = currentService as IPlayerRuntimeContext;
+                    UnsubscribePlayerMovement(_subscribedPlayerMovement);
+                    _playerMovement = null;
+                    _playerRigidbody = null;
+                    _playerTransportCoordinator = null;
+                    _nextRuntimePlayerCameraResolveTime = float.NegativeInfinity;
+                    ResolvePlayerCamera();
+                    break;
+
+                case GlobalRegistryServiceSlot.FluidRuntime:
+                    _physicsEngine = currentService as Hecton8.Physics.HectonFluidEngine;
+                    _physicsEngineLookupAttempted = true;
+                    _physicsEngineCached = _physicsEngine != null;
+#if UNITY_EDITOR
+                    _debugPhysicsEngineFound = _physicsEngineCached;
+#endif
+                    break;
+
+                case GlobalRegistryServiceSlot.AtmosphereRuntime:
+                    _cachedAtmoManager = atmosphereManager != null
+                        ? atmosphereManager
+                        : currentService as HectonAtmosphereManager;
+                    _atmoManagerLookupAttempted = true;
+                    _atmoManagerCached = _cachedAtmoManager != null;
+#if UNITY_EDITOR
+                    _debugAtmoManagerFound = _atmoManagerCached;
+#endif
+                    break;
+            }
+        }
 
         private float SmoothSunState(float targetIntensity, float targetLightFactor, float deltaTime)
         {
@@ -2681,7 +2817,7 @@ namespace Hecton8.Environment
             if (!enableSargassumCanopyLighting)
                 return sample;
 
-            SargassumGlobalDragManager dragManager = Hecton8.Core.GlobalRegistry.SargassumDrag;
+            SargassumGlobalDragManager dragManager = _sargassumDragRuntime;
             if (dragManager == null)
                 return sample;
 
@@ -4030,7 +4166,7 @@ namespace Hecton8.Environment
         }
         private void RefreshSoundscapeTierResponse(bool force)
         {
-            SoundscapeSystem soundscape = GlobalRegistry.Soundscape;
+            SoundscapeSystem soundscape = _soundscapeRuntime;
             SoundscapeTier tier = soundscape != null
                 ? soundscape.CurrentTier
                 : SoundscapeTier.Shallow;
@@ -4640,9 +4776,6 @@ namespace Hecton8.Environment
             if (!IsCameraReferenceValid(_spaceCamera))
                 ResolveSpaceCamera();
 
-            if (depthZoneDirector == null)
-                depthZoneDirector = GlobalRegistry.DepthZone;
-
             EnsureCrestOceanCameraOwnership();
 
             if (_mainCameraUnderwaterRenderer == null)
@@ -4870,9 +5003,6 @@ namespace Hecton8.Environment
             if (!Application.isPlaying)
                 return;
 
-            if (depthZoneDirector == null)
-                depthZoneDirector = GlobalRegistry.DepthZone;
-
             DepthZoneProfile currentZone = depthZoneDirector != null ? depthZoneDirector.CurrentZone : null;
             if (!isUnderwater || !_wasUnderwater)
             {
@@ -4909,8 +5039,9 @@ namespace Hecton8.Environment
                     thermoclineVisorDistortionRecoverySpeed);
             }
 
-            if (thermoclineTransitionClip != null && Hecton8.Core.GlobalRegistry.Audio != null)
-                Hecton8.Core.GlobalRegistry.Audio.PlayStatic2D(thermoclineTransitionClip, thermoclineAudioVolume * intensity);
+            IAudioService audioRuntime = _audioRuntime;
+            if (thermoclineTransitionClip != null && audioRuntime != null)
+                audioRuntime.PlayStatic2D(thermoclineTransitionClip, thermoclineAudioVolume * intensity);
 
             _nextThermoclineAllowedTime = Time.unscaledTime + thermoclineMinRepeatInterval;
         }
@@ -5116,7 +5247,7 @@ namespace Hecton8.Environment
                 return;
             }
 
-            DynamicResolutionScaler scaler = GlobalRegistry.DynamicResolution;
+            DynamicResolutionScaler scaler = _dynamicResolutionRuntime;
             if (scaler == null || !scaler.Enabled)
             {
                 ApplyAdaptiveBudgetResponse(1f, 1f);
@@ -5719,9 +5850,9 @@ namespace Hecton8.Environment
 
         private void ResetNoirResolveGlobals()
         {
-            Shader.SetGlobalVector(_HectonNoirResolveSettingsId, new Vector4(2.35f, 0.75f, 0f, 0f));
-            Shader.SetGlobalColor(_HectonNoirAbyssFloorId, new Color(0.0015f, 0.0023f, 0.0031f, 1f));
-            Shader.SetGlobalVector(_HectonNoirFogStratificationId, new Vector4(4900f, 1f / 180f, 1.5f, 0.01f));
+            Shader.SetGlobalVector(_HectonNoirResolveSettingsId, new Vector4(1.18f, 0.75f, 0f, 0f));
+            Shader.SetGlobalColor(_HectonNoirAbyssFloorId, new Color(0.028f, 0.042f, 0.060f, 1f));
+            Shader.SetGlobalVector(_HectonNoirFogStratificationId, new Vector4(4900f, 1f / 180f, 0.42f, 0.0001f));
             Shader.SetGlobalVector(_HectonNoirDitherParamsId, new Vector4(0f, 0f, 64f, 0f));
             Shader.SetGlobalVector(_HectonNoirCausticsLayerAId, Vector4.zero);
             Shader.SetGlobalVector(_HectonNoirCausticsLayerBId, Vector4.zero);
@@ -5767,16 +5898,16 @@ namespace Hecton8.Environment
             _stormFogDriftColor.a = 1f;
         }
 
-        private static float ResolveStormFlowBlend()
+        private float ResolveStormFlowBlend()
         {
-            IWeatherService weatherService = GlobalRegistry.Weather;
+            IWeatherService weatherService = _weatherRuntime;
             if (weatherService != null &&
                 (weatherService.CurrentWeatherState & WeatherState.Storm) != 0)
             {
                 return 1f;
             }
 
-            HectonSurfaceWeatherDirector surfaceWeather = GlobalRegistry.SurfaceWeather;
+            HectonSurfaceWeatherDirector surfaceWeather = _surfaceWeatherRuntime;
             if (surfaceWeather == null || surfaceWeather.IsSurfaceSuppressed)
                 return 0f;
 
@@ -5856,6 +5987,12 @@ namespace Hecton8.Environment
             if (underwaterMarineSnow != null && underwaterMarineSnow.IsOperational)
             {
                 _gpuBubbleExhaleImpulse01 = 1f;
+                if (!_physicsEngineLookupAttempted)
+                    CachePhysicsEngine();
+                Hecton8.Physics.HectonFluidEngine fluidEngine = _physicsEngine;
+                Transform bubbleOrigin = playerCamera != null ? playerCamera : transform;
+                if (fluidEngine != null && bubbleOrigin != null)
+                    fluidEngine.TryQueueAdvectedBubbleBurst(bubbleOrigin.position, burstCount, 1f);
 #if UNITY_EDITOR
                 _debugExhaleBubbleBurstCount = burstCount;
 #endif
@@ -5980,7 +6117,7 @@ namespace Hecton8.Environment
 
         private float ResolveBottomSiltDistance(Vector3 probePosition)
         {
-            MapMagicBridge bridge = GlobalRegistry.MapMagic;
+            MapMagicBridge bridge = _mapMagicRuntime;
             if (bridge != null && bridge.TryGetHeight(probePosition.x, probePosition.z, out float seafloorHeight))
                 return math.max(0f, probePosition.y - seafloorHeight);
 
@@ -6247,14 +6384,38 @@ namespace Hecton8.Environment
 
             _nextRuntimeReferenceWarningTime = Time.unscaledTime + 5f;
 
-            if (playerCamera == null)
-                Debug.LogWarning("[HectonUnderwaterVisuals] playerCamera still unresolved after runtime retry.", this);
+            WarnIfRuntimeReferenceMissing(
+                playerCamera == null,
+                RuntimeReferenceWarningPlayerCamera,
+                "[HectonUnderwaterVisuals] playerCamera still unresolved after runtime retry.");
 
-            if (mainCamera == null)
-                Debug.LogWarning("[HectonUnderwaterVisuals] mainCamera still unresolved after runtime retry.", this);
+            WarnIfRuntimeReferenceMissing(
+                mainCamera == null,
+                RuntimeReferenceWarningMainCamera,
+                "[HectonUnderwaterVisuals] mainCamera still unresolved after runtime retry.");
 
-            if (sunVisualTransform == null)
-                Debug.LogWarning("[HectonUnderwaterVisuals] sunVisualTransform still unresolved after runtime retry.", this);
+            WarnIfRuntimeReferenceMissing(
+                sunVisualTransform == null,
+                RuntimeReferenceWarningSunVisual,
+                "[HectonUnderwaterVisuals] sunVisualTransform still unresolved after runtime retry.");
+#endif
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private void WarnIfRuntimeReferenceMissing(bool missing, byte warningMask, string message)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (!missing)
+            {
+                _runtimeReferenceWarningMask = (byte)(_runtimeReferenceWarningMask & ~warningMask);
+                return;
+            }
+
+            if ((_runtimeReferenceWarningMask & warningMask) != 0)
+                return;
+
+            _runtimeReferenceWarningMask |= warningMask;
+            Debug.LogWarning(message, this);
 #endif
         }
 
@@ -6361,7 +6522,7 @@ namespace Hecton8.Environment
                 return false;
 
             float renderScale = 1f;
-            DynamicResolutionScaler scaler = GlobalRegistry.DynamicResolution;
+            DynamicResolutionScaler scaler = _dynamicResolutionRuntime;
             if (scaler != null)
                 renderScale = math.saturate(scaler.CurrentRenderScale);
 
@@ -6432,7 +6593,7 @@ namespace Hecton8.Environment
 
         private float ResolveWaterLevel()
         {
-            if (!_physicsEngineCached)
+            if (!_physicsEngineLookupAttempted)
                 CachePhysicsEngine();
             if (_physicsEngine != null)
                 return _physicsEngine.WaterLevel;
@@ -6572,7 +6733,7 @@ namespace Hecton8.Environment
             }
             else if (playerTransform != null)
             {
-                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+                IPlayerRuntimeContext playerContext = _playerRuntimeContext;
                 if (playerContext != null && ReferenceEquals(playerContext.PlayerTransform, playerTransform))
                 {
                     nextPlayerMovement = playerContext.PlayerMovement;
@@ -6674,7 +6835,7 @@ namespace Hecton8.Environment
             }
             else
             {
-                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+                IPlayerRuntimeContext playerContext = _playerRuntimeContext;
                 if (playerContext != null)
                 {
                     playerRoot = playerContext.PlayerTransform;
@@ -6725,12 +6886,14 @@ namespace Hecton8.Environment
             if (!Application.isPlaying)
             {
                 _physicsEngineCached = false;
+                _physicsEngineLookupAttempted = false;
 #if UNITY_EDITOR
                 _debugPhysicsEngineFound = false;
 #endif
                 return;
             }
             _physicsEngine = GlobalRegistry.Fluid;
+            _physicsEngineLookupAttempted = true;
             _physicsEngineCached = _physicsEngine != null;
 #if UNITY_EDITOR
             _debugPhysicsEngineFound = _physicsEngineCached;

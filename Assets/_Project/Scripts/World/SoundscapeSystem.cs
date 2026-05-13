@@ -681,11 +681,11 @@ namespace Hecton8.World
             HectonQualityTier scalabilityTier = GlobalRegistry.ScalabilityTier;
             int signalDrainBudget = ResolveSignalDrainBudget(scalabilityTier);
             bool dynamicPitch = DistanceMath.IsHighQualityTier(scalabilityTier);
-            int drained = 0;
-            while (drained < signalDrainBudget &&
-                   GlobalSignals.TryDequeueImpact(out ImpactSignal signal))
+            ReadOnlySpan<ImpactSignal> signals = SignalBus<ImpactSignal>.GetFrameSnapshot();
+            int signalCount = math.min(signalDrainBudget, signals.Length);
+            for (int i = 0; i < signalCount; i++)
             {
-                drained++;
+                ImpactSignal signal = signals[i];
                 HandleImpactSignal(in signal, audio, dynamicPitch);
             }
         }

@@ -39,6 +39,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Hecton8.Core.Memory;
 using Hecton8.Core.Signals;
 using Hecton8.Bootstrap;
 using Hecton8.Celestial;
@@ -125,6 +126,19 @@ namespace Hecton8.Physics
     }
 
     [StructLayout(LayoutKind.Sequential)]
+    public struct FluidAdvectionTelemetryEntry
+    {
+        public uint FrameIndex;
+        public uint OriginShiftSequence;
+        public int ActiveAdvectedParticles;
+        public int SiltCount;
+        public int BubbleCount;
+        public int DebrisCount;
+        public uint Flags;
+        public uint StateHash;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
     public struct InteriorFloodNode
     {
         public float CurrentLiters;
@@ -157,11 +171,12 @@ namespace Hecton8.Physics
 
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-5000)]
-    public sealed class HectonFluidEngine : MonoBehaviour, IFixedTickable, IPostFixedTickable, IOriginShiftListener
+    public sealed class HectonFluidEngine : MonoBehaviour, IFixedTickable, IPostFixedTickable, ILateFrameTickable, IOriginShiftListener
     {
 #if UNITY_EDITOR
         private const string GpuBuoyancyComputeAssetPath = "Assets/_Project/Art/Shaders/Hecton_GpuBuoyancy.compute";
         private const string AbyssalFlowFieldComputeAssetPath = "Assets/_Project/Art/Shaders/AbyssalFlowField.compute";
+        private const string FluidAdvectionComputeAssetPath = "Assets/_Project/Art/Shaders/Hecton_FluidAdvection.compute";
 #endif
         private const float AbyssalFlowThermoclineDepthMeters = 120f;
         private const int AbyssalFlowTextureResolution = 32;
@@ -174,11 +189,40 @@ namespace Hecton8.Physics
         private const float AbyssalVortexImpulseMaximumRadiusMeters = 45f;
         private const float AbyssalVortexImpulseMaximumStrengthMetersPerSecond = 14f;
         private const float AbyssalVortexImpulseMaximumDurationSeconds = 4f;
+        private const int SplashdownBubbleCount = 500;
+        private const float SplashdownImpulseRadiusMeters = 30f;
+        private const float SplashdownImpulseDurationSeconds = 10f;
+        private const float SplashdownImpulseStrength = 900f;
+        private const float SplashdownImpulseUpwardBiasMeters = 4f;
+        private const float SplashdownImpulseMaxVelocityMetersPerSecond = 16f;
+        private const float SplashdownBubbleSpawnRadiusMeters = 1.15f;
+        private const float SplashdownBubbleUpwardBiasMeters = 1.8f;
+        private const float SplashdownBubbleLowTierMaxVelocityMetersPerSecond = 8f;
+        private const float SplashdownGoldenAngleRadians = 2.39996323f;
         private const int AbyssalFlowTelemetryCapacity = 300;
-        private const string AbyssalFlowDumpRelativePath = "Docs/AgentLogs/Dump_ABYSSAL_FLOW_FIELD.bin";
+        private const string AbyssalFlowDumpRelativePath = "Docs/AgentLogs/Dump_SPLASHDOWN_FLUID_DYNAMICS.bin";
         private const int GpuReadbackRingSize = 3;
         private const int MaxAbyssalHeatSourceCount = 8;
         private const int MaxCavitationBurstEvents = 8;
+        private const int FluidAdvectionThreadGroupSize = 64;
+        private const int FluidAdvectionTelemetryCapacity = 300;
+        private const int FluidAdvectionSignalDrainBudget = 64;
+        private const int FluidAdvectionGlobalTelemetryIntervalFrames = 30;
+        private const int MaxAdvectedSiltCount = 4096;
+        public const int MaxAdvectedDebrisCount = 1000;
+        public const int MaxAdvectedBubbleCount = 2000;
+        private const float BubbleAdvectionBuoyancyMetersPerSecond = 0.42f;
+        private const float SiltAdvectionBuoyancyMetersPerSecond = 0f;
+        private const float DebrisAdvectionBuoyancyMetersPerSecond = -0.24f;
+        private const float FluidAdvectionVelocityBlend = 0.82f;
+        private const float BubbleBurstSpawnRadiusMeters = 0.18f;
+        private const float DebrisSpawnRadiusMeters = 0.12f;
+        private const float FluidAdvectionSdfSolidThreshold = 0.5f;
+        private const uint AdvectedBubbleActiveFlag = 1u;
+        private const uint AdvectedDebrisActiveFlag = 1u;
+        private const uint ActiveAdvectedParticlesTelemetryHash = 0x41445650u;
+        private const uint FluidAdvectionTelemetryContextHash = 0x41425953u;
+        private const string FluidAdvectionDumpRelativePath = "Docs/AgentLogs/Dump_ABYSSAL_CURRENT_ADVECTION.bin";
         public const int MaxAnalyticalThrusterCount = 4;
         public const int MaxAnalyticalWhirlpoolCount = 2;
         public const int MaxActiveMaelstromCount = MaxAnalyticalWhirlpoolCount;
@@ -217,6 +261,8 @@ namespace Hecton8.Physics
         private const uint NonFiniteBuoyancyForceHash = 0x4E464246u;
         private const uint NonFiniteBuoyancyTorqueHash = 0x4E464254u;
         private const uint OceanSplashSignalHash = 0x4F435350u;
+        private const uint SplashdownFluidImpulseCountHash = 0x53464943u;
+        private const uint SplashdownFluidImpulseContextHash = 0x5346504Cu;
         // Keep GPU sampling dormant until it matches the 16-wave/AUP/terrain Burst path.
         private const bool GpuBuoyancySurfaceParityAvailable = false;
         private const string NativeMemoryOwner = nameof(HectonFluidEngine);
@@ -254,6 +300,7 @@ namespace Hecton8.Physics
             public float3 WakeVelocityWS;
             public float WakeRadius;
             public int HeatSourceCount;
+            public int FluidImpulseCount;
             public uint Flags;
             public uint StateHash;
         }
@@ -339,7 +386,23 @@ namespace Hecton8.Physics
         private static readonly int _AbyssalFlowWakeVelocityId = Shader.PropertyToID("_AbyssalFlowWakeVelocity");
         private static readonly int _AbyssalFlowVortexSphereId = Shader.PropertyToID("_AbyssalFlowVortexSphere");
         private static readonly int _AbyssalFlowVortexAxisStrengthId = Shader.PropertyToID("_AbyssalFlowVortexAxisStrength");
+        private static readonly int _AbyssalSplashdownImpulseBufferId = Shader.PropertyToID("_AbyssalSplashdownImpulseBuffer");
+        private static readonly int _AbyssalSplashdownParamsId = Shader.PropertyToID("_AbyssalSplashdownParams");
         private static readonly int _AbyssalFlowTextureActiveId = Shader.PropertyToID("_AbyssalFlowTextureActive");
+        private static readonly int _SiltReadId = Shader.PropertyToID("_SiltRead");
+        private static readonly int _SiltWriteId = Shader.PropertyToID("_SiltWrite");
+        private static readonly int _BubbleReadId = Shader.PropertyToID("_BubbleRead");
+        private static readonly int _BubbleWriteId = Shader.PropertyToID("_BubbleWrite");
+        private static readonly int _DebrisReadId = Shader.PropertyToID("_DebrisRead");
+        private static readonly int _DebrisWriteId = Shader.PropertyToID("_DebrisWrite");
+        private static readonly int _VoxelSdfTexture3DId = Shader.PropertyToID("_VoxelSdfTexture3D");
+        private static readonly int _VoxelSdfWorldToLocalId = Shader.PropertyToID("_VoxelSdfWorldToLocal");
+        private static readonly int _VoxelSdfInvDoubleHalfExtentsId = Shader.PropertyToID("_VoxelSdfInvDoubleHalfExtents");
+        private static readonly int _FluidAdvectionCountsId = Shader.PropertyToID("_FluidAdvectionCounts");
+        private static readonly int _FluidAdvectionParamsId = Shader.PropertyToID("_FluidAdvectionParams");
+        private static readonly int _FluidAdvectionBuoyancyId = Shader.PropertyToID("_FluidAdvectionBuoyancy");
+        private static readonly int _FluidAdvectionAupShiftDeltaId = Shader.PropertyToID("_FluidAdvectionAupShiftDelta");
+        private static readonly int _FluidAdvectionSdfParamsId = Shader.PropertyToID("_FluidAdvectionSdfParams");
         private static readonly ProfilerMarker _gatherDataProfilerMarker = new ProfilerMarker("H8.Fluid.GatherData");
         private static readonly ProfilerMarker _jobScheduleProfilerMarker = new ProfilerMarker("H8.Fluid.ScheduleBuoyancyJob");
         private static readonly ProfilerMarker _scheduledApplyProfilerMarker = new ProfilerMarker("H8.Fluid.ApplyScheduledForces");
@@ -476,6 +539,7 @@ namespace Hecton8.Physics
         [SerializeField, Range(64, 1024)] private int gpuBuoyancyActivationThreshold = 256;
         [SerializeField] private bool enableGpuAbyssalFlowField = true;
         [SerializeField] private ComputeShader abyssalFlowFieldCompute;
+        [SerializeField] private ComputeShader fluidAdvectionCompute;
         [SerializeField, Range(8, 32)] private int abyssalFlowHorizontalResolution = 16;
         [SerializeField, Range(4, 24)] private int abyssalFlowVerticalResolution = 12;
         [SerializeField, Range(4f, 32f)] private float abyssalFlowHorizontalCellSize = 12f;
@@ -498,6 +562,69 @@ namespace Hecton8.Physics
         // ══════════════════════════════════════════════════════════
         //  PUBLIC API
         // ══════════════════════════════════════════════════════════
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct AdvectedSilt
+        {
+            public float3 PositionWS;
+            public float Life;
+            public float3 VelocityWS;
+            public uint Flags;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct AdvectedBubble
+        {
+            public float3 PositionWS;
+            public float Life;
+            public float3 VelocityWS;
+            public uint Flags;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct AdvectedDebris
+        {
+            public float3 PositionWS;
+            public float Life;
+            public float3 VelocityWS;
+            public uint Flags;
+        }
+
+        public struct FluidAdvectionRenderGraphPayload
+        {
+            public ComputeShader Compute;
+            public int Kernel;
+            public int DispatchGroups;
+            public GraphicsBuffer SiltRead;
+            public GraphicsBuffer SiltWrite;
+            public GraphicsBuffer BubbleRead;
+            public GraphicsBuffer BubbleWrite;
+            public GraphicsBuffer DebrisRead;
+            public GraphicsBuffer DebrisWrite;
+            public GraphicsBuffer EmptySiltBuffer;
+            public GraphicsBuffer EmptyBubbleBuffer;
+            public GraphicsBuffer EmptyDebrisBuffer;
+            public GraphicsBuffer AbyssalFlowBuffer;
+            public GraphicsBuffer EmptyAbyssalFlowBuffer;
+            public Texture AbyssalFlowTexture;
+            public Texture VoxelSdfTexture;
+            public Texture EmptyVoxelSdfTexture;
+            public RTHandle AbyssalFlowTextureHandle;
+            public RTHandle VoxelSdfTextureHandle;
+            public RTHandle EmptyVoxelSdfTextureHandle;
+            public Vector4 Counts;
+            public Vector4 Params;
+            public Vector4 Buoyancy;
+            public Vector4 AupShiftDelta;
+            public Vector4 AbyssalGridResolution;
+            public Vector4 AbyssalFlowCenter;
+            public Vector4 AbyssalFlowSpacing;
+            public Vector4 AbyssalFlowTextureParams;
+            public float AbyssalFlowTextureActive;
+            public Matrix4x4 VoxelSdfWorldToLocal;
+            public Vector4 VoxelSdfInvDoubleHalfExtents;
+            public Vector4 SdfParams;
+        }
 
         /// <summary>Y-koordinata poverhnosti vody.</summary>
         public float WaterLevel
@@ -628,6 +755,43 @@ namespace Hecton8.Physics
             HectonFluidEngine instance = GlobalRegistry.Fluid;
             return instance != null &&
                    instance.EnqueueCavitationBurst(position, direction, intensity01, radius, acceleration, sourceBodyInstanceId);
+        }
+
+        public bool TryQueueAdvectedBubbleBurst(Vector3 runtimePosition, int requestedCount, float intensity01)
+        {
+            if (!Application.isPlaying ||
+                requestedCount <= 0 ||
+                !math.all(math.isfinite(new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z))))
+            {
+                return false;
+            }
+
+            EnsureFluidAdvectionState();
+            if (!IsFluidAdvectionReady())
+                return false;
+
+            ClearPendingFluidAdvectionShiftIfNoActiveParticles();
+
+            int safeCount = math.min(requestedCount, MaxAdvectedBubbleCount);
+            float finiteIntensity = math.saturate(math.isfinite(intensity01) ? intensity01 : 0f);
+            for (int i = 0; i < safeCount; i++)
+            {
+                int slot = _advectedBubbleWriteCursor;
+                _advectedBubbleWriteCursor = (_advectedBubbleWriteCursor + 1) % MaxAdvectedBubbleCount;
+                _activeAdvectedBubbleCount = math.min(MaxAdvectedBubbleCount, _activeAdvectedBubbleCount + 1);
+
+                float3 offset = ResolveSpawnJitter(slot, BubbleBurstSpawnRadiusMeters * (0.5f + finiteIntensity));
+                AdvectedBubble bubble = new AdvectedBubble
+                {
+                    PositionWS = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z) + offset,
+                    Life = 1f,
+                    VelocityWS = new float3(offset.x * 0.3f, BubbleAdvectionBuoyancyMetersPerSecond, offset.z * 0.3f),
+                    Flags = AdvectedBubbleActiveFlag
+                };
+                UploadAdvectedBubble(slot, in bubble);
+            }
+
+            return true;
         }
 
         public Vector3 GetFlowAtPosition(Vector3 position)
@@ -1140,12 +1304,63 @@ namespace Hecton8.Physics
         private RenderTexture _gpuAbyssalFlowTextureB;
         private RenderTexture _gpuAbyssalFlowReadTexture;
         private RenderTexture _gpuAbyssalFlowWriteTexture;
+        private RTHandle _gpuAbyssalFlowTextureAHandle;
+        private RTHandle _gpuAbyssalFlowTextureBHandle;
+        private GraphicsBuffer _advectedSiltBufferA;
+        private GraphicsBuffer _advectedSiltBufferB;
+        private GraphicsBuffer _advectedBubbleBufferA;
+        private GraphicsBuffer _advectedBubbleBufferB;
+        private GraphicsBuffer _advectedDebrisBufferA;
+        private GraphicsBuffer _advectedDebrisBufferB;
+        private GraphicsBuffer _emptyAdvectedSiltBuffer;
+        private GraphicsBuffer _emptyAdvectedBubbleBuffer;
+        private GraphicsBuffer _emptyAdvectedDebrisBuffer;
+        private GraphicsBuffer _emptyAbyssalFlowBuffer;
+        private GraphicsBuffer _gpuSplashdownImpulseBuffer;
+        private Texture3D _emptyFluidAdvectionTexture;
+        private RTHandle _emptyFluidAdvectionTextureHandle;
+        private Texture _cachedFluidAdvectionFlowHandleSource;
+        private RTHandle _cachedFluidAdvectionFlowHandle;
+        private Texture _cachedFluidAdvectionSdfHandleSource;
+        private RTHandle _cachedFluidAdvectionSdfHandle;
+        private NativeArray<AdvectedSilt> _advectedSiltUpload;
+        private NativeArray<AdvectedBubble> _advectedBubbleUpload;
+        private NativeArray<AdvectedDebris> _advectedDebrisUpload;
+        private NativeArray<float4> _emptyAbyssalFlowUpload;
+        private NativeArray<FluidAdvectionTelemetryEntry> _fluidAdvectionTelemetry;
+        private NativeArray<float4> _splashdownImpulseUpload;
+        private NativeArray<int> _splashdownImpulseStats;
+        private int _activeAdvectedSiltCount;
+        private int _activeAdvectedBubbleCount;
+        private int _activeAdvectedDebrisCount;
+        private int _advectedBubbleWriteCursor;
+        private int _advectedDebrisWriteCursor;
+        private int _fluidAdvectionKernel = -1;
+        private int _fluidAdvectionBufferParity;
+        private int _fluidAdvectionTelemetryCursor;
+        private int _lastFluidAdvectionTelemetryFrame = -1;
+        private bool _fluidAdvectionTelemetryDumped;
+        private bool _fluidAdvectionStateReady;
+        private bool _fluidAdvectionRenderGraphQueued;
+        private uint _lastProcessedFluidAdvectionAupShiftFrameId;
+        private float3 _pendingFluidAdvectionRuntimeShift;
         private Vector4 _lastAbyssalGridResolution;
         private Vector4 _lastAbyssalFlowCenter;
         private Vector4 _lastAbyssalFlowSpacing;
         private Vector4 _lastAbyssalFlowTextureSpacing;
         private bool _hasAbyssalFlowTexture;
         private bool _abyssalFlowPublicationClearIssued;
+        private JobHandle _splashdownImpulseJobHandle;
+        private bool _splashdownImpulseJobActive;
+        private bool _splashdownImpulseUploaded;
+        private int _splashdownImpulseScheduleFrame = -1;
+        private float3 _splashdownImpulsePositionWS;
+        private float _splashdownImpulseRemainingSeconds;
+        private float _splashdownImpulseDurationSeconds;
+        private int _lastSplashdownFluidImpulseCount;
+        private ushort _lastProcessedSplashdownSequence;
+        private uint _lastProcessedSplashdownFrame;
+        private uint _splashdownImpulseFlags;
         private int _gpuAbyssalUpdateKernel = -1;
         private int _gpuAbyssalTextureUpdateKernel = -1;
         private int _gpuAbyssalWakeKernel = -1;
@@ -1164,6 +1379,7 @@ namespace Hecton8.Physics
         private bool _fluidRuntimeRegistered;
         private bool _fixedTickRegistered;
         private bool _postFixedRegistered;
+        private bool _lateFrameRegistered;
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -1193,6 +1409,9 @@ namespace Hecton8.Physics
 
             if (abyssalFlowFieldCompute == null)
                 abyssalFlowFieldCompute = AssetDatabase.LoadAssetAtPath<ComputeShader>(AbyssalFlowFieldComputeAssetPath);
+
+            if (fluidAdvectionCompute == null)
+                fluidAdvectionCompute = AssetDatabase.LoadAssetAtPath<ComputeShader>(FluidAdvectionComputeAssetPath);
 #endif
             if (gpuBuoyancyCompute != null)
                 _gpuBuoyancyKernel = gpuBuoyancyCompute.FindKernel("EvaluateBuoyancy");
@@ -1204,10 +1423,14 @@ namespace Hecton8.Physics
                 _gpuAbyssalVortexKernel = abyssalFlowFieldCompute.FindKernel("InjectAbyssalVortexTexture");
             }
 
+            if (fluidAdvectionCompute != null)
+                _fluidAdvectionKernel = fluidAdvectionCompute.FindKernel("AdvectFluidParticles");
+
             _gpuReadbackRequests = new AsyncGPUReadbackRequest[GpuReadbackRingSize]; // COLD ALLOC: AsyncGPUReadbackRequest[3] — fixed GPU buoyancy readback ring state — owner: HectonFluidEngine
             _gpuReadbackCounts = new int[GpuReadbackRingSize]; // COLD ALLOC: int[3] — GPU buoyancy readback element counts — owner: HectonFluidEngine
             _gpuReadbackActive = new bool[GpuReadbackRingSize]; // COLD ALLOC: bool[3] — GPU buoyancy readback slot activity — owner: HectonFluidEngine
             EnsureAbyssalFlowNativeState();
+            EnsureFluidAdvectionState();
             EnsurePrebakedVectorNoiseField();
             PublishCurrentWaterLevelUniform();
         }
@@ -1242,6 +1465,12 @@ namespace Hecton8.Physics
             {
                 GlobalRegistry.RegisterPostFixedTickable(this, PriorityLayer.Environment);
                 _postFixedRegistered = SystemDispatcher.GetPostFixedLane(PriorityLayer.Environment).Contains(this);
+            }
+
+            if (!_lateFrameRegistered)
+            {
+                GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
+                _lateFrameRegistered = SystemDispatcher.GetLateFrameLane(PriorityLayer.Environment).Contains(this);
             }
 
             if (!_originShiftRegistered)
@@ -1279,12 +1508,19 @@ namespace Hecton8.Physics
                 _postFixedRegistered = false;
             }
 
+            if (_lateFrameRegistered)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _lateFrameRegistered = false;
+            }
+
             // Release runtime job buffers before editor domain/play-mode teardown.
             // In-editor play transitions do not always guarantee a clean OnDestroy path
             // for persistent native allocations, so we free them on disable as well.
             ClearAbyssalVortexImpulses();
             DisposePrebakedVectorNoiseField();
             DisposeNativeArrays();
+            DisposeFluidAdvectionState();
         }
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
@@ -1327,6 +1563,11 @@ namespace Hecton8.Physics
                 {
                     _previousPositions[i] += runtimeOffset;
                 }
+            }
+
+            if (_splashdownImpulseRemainingSeconds > 0f)
+            {
+                _splashdownImpulsePositionWS += runtimeOffset;
             }
 
             int vortexCount = _abyssalVortexImpulseCount;
@@ -1415,9 +1656,16 @@ namespace Hecton8.Physics
                 _postFixedRegistered = false;
             }
 
+            if (_lateFrameRegistered)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _lateFrameRegistered = false;
+            }
+
             ClearAbyssalVortexImpulses();
             DisposePrebakedVectorNoiseField();
             DisposeNativeArrays();
+            DisposeFluidAdvectionState();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -1677,7 +1925,74 @@ namespace Hecton8.Physics
             }
 
             _activeGerstnerWaveCount = activeWaveCount;
+            PublishGerstnerWaveDataVault(activeWaveCount, weatherSnapshot.CurrentMeta.TimeAccumulator);
             PublishOceanSurfaceWaveUniforms(activeWaveCount, weatherSnapshot.CurrentMeta.TimeAccumulator);
+        }
+
+        private void EnsureSharedGerstnerDataVaultBuffers()
+        {
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null || vault.IsAllocationLocked)
+                return;
+
+            vault.GetBuffer<GerstnerWaveComponent>(
+                BufferID.OceanGerstnerWaves,
+                MaxGerstnerWaveCount,
+                SystemID.Fluid,
+                NativeArrayOptions.ClearMemory);
+            vault.GetBuffer<OceanGerstnerWaveBufferMeta>(
+                BufferID.OceanGerstnerWaveMeta,
+                1,
+                SystemID.Fluid,
+                NativeArrayOptions.ClearMemory);
+        }
+
+        private void PublishGerstnerWaveDataVault(int activeWaveCount, float timeSeconds)
+        {
+            if (!_gerstnerWaves.IsCreated)
+                return;
+
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null)
+                return;
+
+            NativeArray<GerstnerWaveComponent> sharedWaves;
+            NativeArray<OceanGerstnerWaveBufferMeta> sharedMeta;
+            if (vault.IsAllocationLocked)
+            {
+                if (!vault.TryGetBuffer(BufferID.OceanGerstnerWaves, out sharedWaves) ||
+                    !vault.TryGetBuffer(BufferID.OceanGerstnerWaveMeta, out sharedMeta))
+                {
+                    return;
+                }
+            }
+            else
+            {
+                sharedWaves = vault.GetBuffer<GerstnerWaveComponent>(
+                    BufferID.OceanGerstnerWaves,
+                    MaxGerstnerWaveCount,
+                    SystemID.Fluid,
+                    NativeArrayOptions.ClearMemory);
+                sharedMeta = vault.GetBuffer<OceanGerstnerWaveBufferMeta>(
+                    BufferID.OceanGerstnerWaveMeta,
+                    1,
+                    SystemID.Fluid,
+                    NativeArrayOptions.ClearMemory);
+            }
+
+            if (!sharedWaves.IsCreated || sharedWaves.Length < MaxGerstnerWaveCount ||
+                !sharedMeta.IsCreated || sharedMeta.Length < 1)
+            {
+                return;
+            }
+
+            NativeArray<GerstnerWaveComponent>.Copy(_gerstnerWaves, sharedWaves, MaxGerstnerWaveCount);
+            OceanGerstnerWaveBufferMeta meta = sharedMeta[0];
+            meta.ActiveWaveCount = math.clamp(activeWaveCount, 0, MaxGerstnerWaveCount);
+            meta.TimeSeconds = math.max(0f, timeSeconds);
+            meta.SleepCount = _lastOceanSleepCount;
+            meta.Version++;
+            sharedMeta[0] = meta;
         }
 
         private void PublishOceanSurfaceWaveUniforms(int activeWaveCount, float timeSeconds)
@@ -2019,6 +2334,9 @@ namespace Hecton8.Physics
             WeatherRuntimeSnapshot abyssalWeatherSnapshot = ResolveWeatherSnapshot();
             _resolvedGiantWakeCurrent = ResolveGiantWakeCurrentBase();
             _debugGiantWakeCurrent = new Vector3(_resolvedGiantWakeCurrent.x, _resolvedGiantWakeCurrent.y, _resolvedGiantWakeCurrent.z);
+            DrainSplashdownFluidSignals(cinematicWaterLevel);
+            UpdateSplashdownImpulseState(fixedDeltaTime);
+            TryCompleteSplashdownImpulseJobForUpload();
             TryDispatchGpuAbyssalFlowField(abyssalWeatherSnapshot, cinematicWaterLevel, fixedDeltaTime);
 
             int count = _objects.Count;
@@ -2221,6 +2539,836 @@ namespace Hecton8.Physics
             DrainCavitationBursts();
 
             TryDrainScheduledBuoyancyJob();
+        }
+
+        /// <inheritdoc />
+        public void LateFrameTick()
+        {
+            EnsureFluidAdvectionState();
+            DrainFluidAdvectionSignals();
+            _fluidAdvectionRenderGraphQueued = IsFluidAdvectionReady() &&
+                                               (_activeAdvectedSiltCount > 0 ||
+                                                _activeAdvectedBubbleCount > 0 ||
+                                                _activeAdvectedDebrisCount > 0);
+            WriteFluidAdvectionTelemetry();
+            TryDrainScheduledBuoyancyJob();
+        }
+
+        public bool TryBuildFluidAdvectionRenderGraphPayload(out FluidAdvectionRenderGraphPayload payload)
+        {
+            payload = default;
+            if (!_fluidAdvectionRenderGraphQueued || !IsFluidAdvectionReady())
+                return false;
+
+            int maxCount = math.max(_activeAdvectedSiltCount, math.max(_activeAdvectedBubbleCount, _activeAdvectedDebrisCount));
+            if (maxCount <= 0)
+                return false;
+
+            bool readA = (_fluidAdvectionBufferParity & 1) == 0;
+            GraphicsBuffer siltRead = readA ? _advectedSiltBufferA : _advectedSiltBufferB;
+            GraphicsBuffer siltWrite = readA ? _advectedSiltBufferB : _advectedSiltBufferA;
+            GraphicsBuffer bubbleRead = readA ? _advectedBubbleBufferA : _advectedBubbleBufferB;
+            GraphicsBuffer bubbleWrite = readA ? _advectedBubbleBufferB : _advectedBubbleBufferA;
+            GraphicsBuffer debrisRead = readA ? _advectedDebrisBufferA : _advectedDebrisBufferB;
+            GraphicsBuffer debrisWrite = readA ? _advectedDebrisBufferB : _advectedDebrisBufferA;
+
+            bool hasFlowBuffer = TryGetGpuAbyssalFlowFieldBuffer(
+                out GraphicsBuffer flowBuffer,
+                out Vector4 gridResolution,
+                out Vector4 flowCenter,
+                out Vector4 flowSpacing);
+            bool hasFlowTexture = TryGetGpuAbyssalFlowFieldTexture(
+                out Texture flowTexture,
+                out Vector4 textureResolution,
+                out Vector4 textureCenter,
+                out Vector4 textureSpacing);
+            if (hasFlowTexture)
+            {
+                gridResolution = textureResolution;
+                flowCenter = textureCenter;
+                flowSpacing = hasFlowBuffer ? flowSpacing : Vector4.zero;
+            }
+
+            Texture sdfTexture = _emptyFluidAdvectionTexture;
+            Matrix4x4 sdfWorldToLocal = Matrix4x4.identity;
+            Vector4 sdfInvDoubleHalfExtents = Vector4.zero;
+            float sdfActive = 0f;
+            HectonCaveVoxelLightingVolume caveVolume = HectonCaveVoxelLightingVolume.ActiveRuntimeInstance;
+            if (caveVolume != null &&
+                caveVolume.TryGetPublishedGpuSdfPayload(
+                    out Texture3D publishedSdfTexture,
+                    out Matrix4x4 publishedWorldToLocal,
+                    out _,
+                    out Vector4 publishedInvDoubleHalfExtents))
+            {
+                sdfTexture = publishedSdfTexture;
+                sdfWorldToLocal = publishedWorldToLocal;
+                sdfInvDoubleHalfExtents = publishedInvDoubleHalfExtents;
+                sdfActive = 1f;
+            }
+
+            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
+            bool lowTier = tier == HectonQualityTier.Unknown ||
+                           tier == HectonQualityTier.Low ||
+                           tier == HectonQualityTier.Mx350;
+
+            Texture resolvedFlowTexture = hasFlowTexture ? flowTexture : _emptyFluidAdvectionTexture;
+            Texture resolvedSdfTexture = sdfTexture != null ? sdfTexture : _emptyFluidAdvectionTexture;
+            RTHandle resolvedFlowTextureHandle = ResolveFluidAdvectionFlowTextureHandle(resolvedFlowTexture);
+            RTHandle resolvedSdfTextureHandle = ResolveFluidAdvectionSdfTextureHandle(resolvedSdfTexture);
+
+            payload = new FluidAdvectionRenderGraphPayload
+            {
+                Compute = fluidAdvectionCompute,
+                Kernel = _fluidAdvectionKernel,
+                DispatchGroups = (maxCount + FluidAdvectionThreadGroupSize - 1) / FluidAdvectionThreadGroupSize,
+                SiltRead = siltRead,
+                SiltWrite = siltWrite,
+                BubbleRead = bubbleRead,
+                BubbleWrite = bubbleWrite,
+                DebrisRead = debrisRead,
+                DebrisWrite = debrisWrite,
+                EmptySiltBuffer = _emptyAdvectedSiltBuffer,
+                EmptyBubbleBuffer = _emptyAdvectedBubbleBuffer,
+                EmptyDebrisBuffer = _emptyAdvectedDebrisBuffer,
+                AbyssalFlowBuffer = hasFlowBuffer ? flowBuffer : _emptyAbyssalFlowBuffer,
+                EmptyAbyssalFlowBuffer = _emptyAbyssalFlowBuffer,
+                AbyssalFlowTexture = resolvedFlowTexture,
+                VoxelSdfTexture = resolvedSdfTexture,
+                EmptyVoxelSdfTexture = _emptyFluidAdvectionTexture,
+                AbyssalFlowTextureHandle = resolvedFlowTextureHandle,
+                VoxelSdfTextureHandle = resolvedSdfTextureHandle,
+                EmptyVoxelSdfTextureHandle = _emptyFluidAdvectionTextureHandle,
+                Counts = new Vector4(_activeAdvectedSiltCount, _activeAdvectedBubbleCount, _activeAdvectedDebrisCount, maxCount),
+                Params = new Vector4(
+                    math.max(SystemDispatcher.CurrentFrameDeltaTime, 0.0001f),
+                    lowTier ? 1f : 0f,
+                    (hasFlowTexture || hasFlowBuffer) ? 1f : 0f,
+                    sdfActive),
+                Buoyancy = new Vector4(
+                    SiltAdvectionBuoyancyMetersPerSecond,
+                    BubbleAdvectionBuoyancyMetersPerSecond,
+                    DebrisAdvectionBuoyancyMetersPerSecond,
+                    FluidAdvectionVelocityBlend),
+                AupShiftDelta = new Vector4(
+                    _pendingFluidAdvectionRuntimeShift.x,
+                    _pendingFluidAdvectionRuntimeShift.y,
+                    _pendingFluidAdvectionRuntimeShift.z,
+                    0f),
+                AbyssalGridResolution = gridResolution,
+                AbyssalFlowCenter = flowCenter,
+                AbyssalFlowSpacing = flowSpacing,
+                AbyssalFlowTextureParams = hasFlowTexture ? textureSpacing : Vector4.zero,
+                AbyssalFlowTextureActive = hasFlowTexture ? 1f : 0f,
+                VoxelSdfWorldToLocal = sdfWorldToLocal,
+                VoxelSdfInvDoubleHalfExtents = sdfInvDoubleHalfExtents,
+                SdfParams = new Vector4(sdfActive, FluidAdvectionSdfSolidThreshold, 0f, 0f)
+            };
+
+            _pendingFluidAdvectionRuntimeShift = default;
+            _fluidAdvectionBufferParity ^= 1;
+            _fluidAdvectionRenderGraphQueued = false;
+            return true;
+        }
+
+        internal static void BindFluidAdvectionCompute(CommandBuffer cmd, in FluidAdvectionRenderGraphPayload payload)
+        {
+            ComputeShader compute = payload.Compute;
+            int kernel = payload.Kernel;
+            cmd.SetComputeBufferParam(compute, kernel, _SiltReadId, payload.SiltRead);
+            cmd.SetComputeBufferParam(compute, kernel, _SiltWriteId, payload.SiltWrite);
+            cmd.SetComputeBufferParam(compute, kernel, _BubbleReadId, payload.BubbleRead);
+            cmd.SetComputeBufferParam(compute, kernel, _BubbleWriteId, payload.BubbleWrite);
+            cmd.SetComputeBufferParam(compute, kernel, _DebrisReadId, payload.DebrisRead);
+            cmd.SetComputeBufferParam(compute, kernel, _DebrisWriteId, payload.DebrisWrite);
+            cmd.SetComputeBufferParam(compute, kernel, _AbyssalFlowFieldResultId, payload.AbyssalFlowBuffer);
+            cmd.SetComputeTextureParam(compute, kernel, _AbyssalFlowFieldTextureId, payload.AbyssalFlowTexture);
+            cmd.SetComputeTextureParam(compute, kernel, _VoxelSdfTexture3DId, payload.VoxelSdfTexture);
+            cmd.SetComputeVectorParam(compute, _FluidAdvectionCountsId, payload.Counts);
+            cmd.SetComputeVectorParam(compute, _FluidAdvectionParamsId, payload.Params);
+            cmd.SetComputeVectorParam(compute, _FluidAdvectionBuoyancyId, payload.Buoyancy);
+            cmd.SetComputeVectorParam(compute, _FluidAdvectionAupShiftDeltaId, payload.AupShiftDelta);
+            cmd.SetComputeVectorParam(compute, _AbyssalGridResolutionId, payload.AbyssalGridResolution);
+            cmd.SetComputeVectorParam(compute, _AbyssalFlowCenterId, payload.AbyssalFlowCenter);
+            cmd.SetComputeVectorParam(compute, _AbyssalFlowSpacingId, payload.AbyssalFlowSpacing);
+            cmd.SetComputeVectorParam(compute, _AbyssalFlowTextureParamsId, payload.AbyssalFlowTextureParams);
+            cmd.SetComputeFloatParam(compute, _AbyssalFlowTextureActiveId, payload.AbyssalFlowTextureActive);
+            cmd.SetComputeMatrixParam(compute, _VoxelSdfWorldToLocalId, payload.VoxelSdfWorldToLocal);
+            cmd.SetComputeVectorParam(compute, _VoxelSdfInvDoubleHalfExtentsId, payload.VoxelSdfInvDoubleHalfExtents);
+            cmd.SetComputeVectorParam(compute, _FluidAdvectionSdfParamsId, payload.SdfParams);
+        }
+
+        internal static void UnbindFluidAdvectionCompute(CommandBuffer cmd, in FluidAdvectionRenderGraphPayload payload)
+        {
+            ComputeShader compute = payload.Compute;
+            int kernel = payload.Kernel;
+            cmd.SetComputeBufferParam(compute, kernel, _SiltReadId, payload.EmptySiltBuffer);
+            cmd.SetComputeBufferParam(compute, kernel, _SiltWriteId, payload.EmptySiltBuffer);
+            cmd.SetComputeBufferParam(compute, kernel, _BubbleReadId, payload.EmptyBubbleBuffer);
+            cmd.SetComputeBufferParam(compute, kernel, _BubbleWriteId, payload.EmptyBubbleBuffer);
+            cmd.SetComputeBufferParam(compute, kernel, _DebrisReadId, payload.EmptyDebrisBuffer);
+            cmd.SetComputeBufferParam(compute, kernel, _DebrisWriteId, payload.EmptyDebrisBuffer);
+            cmd.SetComputeBufferParam(compute, kernel, _AbyssalFlowFieldResultId, payload.EmptyAbyssalFlowBuffer);
+            cmd.SetComputeTextureParam(compute, kernel, _AbyssalFlowFieldTextureId, payload.EmptyVoxelSdfTexture);
+            cmd.SetComputeTextureParam(compute, kernel, _VoxelSdfTexture3DId, payload.EmptyVoxelSdfTexture);
+        }
+
+        private void DrainSplashdownFluidSignals(float cinematicWaterLevel)
+        {
+            int frame = Time.frameCount;
+            if (_lastProcessedSplashdownFrame == (uint)frame)
+                return;
+
+            _lastProcessedSplashdownFrame = (uint)frame;
+            System.ReadOnlySpan<PrologueCompleteSignal> signals = SignalBus<PrologueCompleteSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                PrologueCompleteSignal signal = signals[i];
+                if (signal.Phase != PrologueCompleteSignal.PhaseOceanHandoff &&
+                    (signal.Flags & PrologueCompleteSignal.FlagForceWhiteout) == 0)
+                {
+                    continue;
+                }
+
+                if (signal.Sequence != 0 && signal.Sequence == _lastProcessedSplashdownSequence)
+                    continue;
+
+                _lastProcessedSplashdownSequence = signal.Sequence;
+                QueueSplashdownFluidImpulse(in signal, cinematicWaterLevel);
+            }
+        }
+
+        private void QueueSplashdownFluidImpulse(in PrologueCompleteSignal signal, float cinematicWaterLevel)
+        {
+            float3 runtimePosition = signal.CapsuleAup.ToRuntimeFloat3();
+            if (!math.all(math.isfinite(runtimePosition)))
+            {
+                _splashdownImpulseFlags |= 0x80000000u;
+                DumpAbyssalFlowTelemetryOnce(_splashdownImpulseFlags);
+                GlobalTelemetryBus.PublishMathGuardInvalidNumber(unchecked((int)SplashdownFluidImpulseContextHash));
+                return;
+            }
+
+            runtimePosition.y = math.min(runtimePosition.y, cinematicWaterLevel - 0.25f);
+            bool lowTier = IsLowFluidMathTier();
+            int queuedBubbles = QueueSplashdownBubbleRing(runtimePosition, lowTier);
+            _splashdownImpulsePositionWS = runtimePosition;
+            _splashdownImpulseRemainingSeconds = SplashdownImpulseDurationSeconds;
+            _splashdownImpulseDurationSeconds = SplashdownImpulseDurationSeconds;
+            _splashdownImpulseFlags = lowTier ? 1u : 0u;
+            _lastSplashdownFluidImpulseCount = 0;
+
+            if (lowTier)
+            {
+                PublishSplashdownFluidImpulseTelemetry(queuedBubbles, _splashdownImpulseFlags);
+                return;
+            }
+
+            float3 flowCenter = lodObserver != null
+                ? ResolveAbyssalFlowCenter(cinematicWaterLevel)
+                : runtimePosition;
+            ScheduleSplashdownImpulseField(runtimePosition, flowCenter);
+            PublishSplashdownFluidImpulseTelemetry(queuedBubbles, _splashdownImpulseFlags);
+        }
+
+        private bool IsLowFluidMathTier()
+        {
+            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
+            return tier == HectonQualityTier.Unknown ||
+                   tier == HectonQualityTier.Low ||
+                   tier == HectonQualityTier.Mx350 ||
+                   GlobalRegistry.H8_LOW_MEMORY_PROFILE;
+        }
+
+        private int QueueSplashdownBubbleRing(float3 runtimePosition, bool lowTier)
+        {
+            EnsureFluidAdvectionState();
+            if (!IsFluidAdvectionReady() || !_advectedBubbleUpload.IsCreated)
+                return 0;
+
+            ClearPendingFluidAdvectionShiftIfNoActiveParticles();
+            int safeCount = math.min(SplashdownBubbleCount, MaxAdvectedBubbleCount);
+            float spawnRadius = SplashdownBubbleSpawnRadiusMeters * (lowTier ? 0.85f : 1.15f);
+
+            for (int i = 0; i < safeCount; i++)
+            {
+                int slot = _advectedBubbleWriteCursor;
+                _advectedBubbleWriteCursor = (_advectedBubbleWriteCursor + 1) % MaxAdvectedBubbleCount;
+                _activeAdvectedBubbleCount = math.min(MaxAdvectedBubbleCount, _activeAdvectedBubbleCount + 1);
+
+                float phase = (slot + i) * SplashdownGoldenAngleRadians;
+                math.sincos(phase, out float sin, out float cos);
+                float ringBand = 1f + ((slot & 7) * 0.045f);
+                float3 offset = new float3(sin * spawnRadius * ringBand, HashToSignedUnit((uint)slot) * 0.18f, cos * spawnRadius * ringBand);
+                float3 velocity = ResolveSplashdownBubbleVelocity(offset, lowTier);
+                AdvectedBubble bubble = new AdvectedBubble
+                {
+                    PositionWS = runtimePosition + offset,
+                    Life = 1f,
+                    VelocityWS = velocity,
+                    Flags = AdvectedBubbleActiveFlag
+                };
+                _advectedBubbleUpload[slot] = bubble;
+            }
+
+            GraphicsBufferUploadUtility.UploadNativeArray(_advectedBubbleBufferA, _advectedBubbleUpload, MaxAdvectedBubbleCount);
+            GraphicsBufferUploadUtility.UploadNativeArray(_advectedBubbleBufferB, _advectedBubbleUpload, MaxAdvectedBubbleCount);
+            return safeCount;
+        }
+
+        private static float3 ResolveSplashdownBubbleVelocity(float3 offset, bool lowTier)
+        {
+            float3 lifted = offset;
+            lifted.y += SplashdownBubbleUpwardBiasMeters;
+            float lengthSq = math.lengthsq(lifted);
+            float3 direction = lengthSq > 0.0001f
+                ? lifted * math.rsqrt(math.max(lengthSq, 0.0001f))
+                : new float3(0f, 1f, 0f);
+            float gain = SplashdownImpulseStrength * math.rcp(math.max(math.lengthsq(offset), 1f));
+            float3 velocity = direction * gain;
+            float maxVelocity = lowTier ? SplashdownBubbleLowTierMaxVelocityMetersPerSecond : SplashdownImpulseMaxVelocityMetersPerSecond;
+            float velocitySq = math.lengthsq(velocity);
+            float maxVelocitySq = maxVelocity * maxVelocity;
+            if (velocitySq > maxVelocitySq)
+                velocity *= maxVelocity * math.rsqrt(math.max(velocitySq, 0.0001f));
+
+            return HectonAnalyticalFlowField.ResolveFiniteFloat3OrZero(velocity);
+        }
+
+        private void ScheduleSplashdownImpulseField(float3 runtimePosition, float3 flowCenter)
+        {
+            if (_splashdownImpulseJobActive)
+            {
+                TryCompleteSplashdownImpulseJobForUpload();
+                if (_splashdownImpulseJobActive)
+                    return;
+            }
+
+            EnsureGpuAbyssalFlowBuffers();
+            EnsureSplashdownImpulseState();
+            if (!_splashdownImpulseUpload.IsCreated || !_splashdownImpulseStats.IsCreated)
+                return;
+
+            _splashdownImpulseStats[0] = 0;
+            _splashdownImpulseStats[1] = 0;
+            FluidImpulseJob job = new FluidImpulseJob
+            {
+                ImpulseField = _splashdownImpulseUpload,
+                ImpulseStats = _splashdownImpulseStats,
+                FieldCenterWS = flowCenter,
+                ImpactPositionWS = runtimePosition,
+                WorldSizeMeters = AbyssalFlowTextureWorldSizeMeters,
+                RadiusMeters = SplashdownImpulseRadiusMeters,
+                ImpulseStrength = SplashdownImpulseStrength,
+                UpwardBiasMeters = SplashdownImpulseUpwardBiasMeters,
+                MaxVelocityMetersPerSecond = SplashdownImpulseMaxVelocityMetersPerSecond,
+                Resolution = AbyssalFlowTextureResolution
+            };
+
+            _splashdownImpulseJobHandle = job.Schedule();
+            _splashdownImpulseJobActive = true;
+            _splashdownImpulseUploaded = false;
+            _splashdownImpulseScheduleFrame = Time.frameCount;
+        }
+
+        private void TryCompleteSplashdownImpulseJobForUpload()
+        {
+            if (!_splashdownImpulseJobActive)
+                return;
+
+            if (!_splashdownImpulseJobHandle.IsCompleted || _splashdownImpulseScheduleFrame == Time.frameCount)
+                return;
+
+            _splashdownImpulseJobHandle.Complete();
+            _splashdownImpulseJobActive = false;
+            _splashdownImpulseScheduleFrame = -1;
+
+            int affectedCount = _splashdownImpulseStats.IsCreated && _splashdownImpulseStats.Length > 0
+                ? math.max(0, _splashdownImpulseStats[0])
+                : 0;
+            uint flags = _splashdownImpulseStats.IsCreated && _splashdownImpulseStats.Length > 1
+                ? unchecked((uint)_splashdownImpulseStats[1])
+                : 0u;
+            _lastSplashdownFluidImpulseCount = affectedCount;
+            _splashdownImpulseFlags |= flags;
+            UploadSplashdownImpulseBuffer();
+            PublishSplashdownFluidImpulseTelemetry(affectedCount, _splashdownImpulseFlags);
+            if ((flags & 1u) != 0u)
+                DumpAbyssalFlowTelemetryOnce(_splashdownImpulseFlags);
+        }
+
+        private void UploadSplashdownImpulseBuffer()
+        {
+            if (_gpuSplashdownImpulseBuffer == null ||
+                !_gpuSplashdownImpulseBuffer.IsValid() ||
+                !_splashdownImpulseUpload.IsCreated)
+            {
+                return;
+            }
+
+            GraphicsBufferUploadUtility.UploadNativeArray(_gpuSplashdownImpulseBuffer, _splashdownImpulseUpload, GetAbyssalFlowNodeCount());
+            _splashdownImpulseUploaded = true;
+        }
+
+        private void UpdateSplashdownImpulseState(float fixedDeltaTime)
+        {
+            if (_splashdownImpulseRemainingSeconds <= 0f)
+                return;
+
+            _splashdownImpulseRemainingSeconds = math.max(0f, _splashdownImpulseRemainingSeconds - math.max(0f, fixedDeltaTime));
+            if (_splashdownImpulseRemainingSeconds <= 0f)
+            {
+                _lastSplashdownFluidImpulseCount = 0;
+                _splashdownImpulseFlags = 0u;
+                _splashdownImpulseUploaded = false;
+            }
+        }
+
+        private Vector4 ResolveSplashdownImpulseParams()
+        {
+            if (!_splashdownImpulseUploaded ||
+                _splashdownImpulseRemainingSeconds <= 0f ||
+                _lastSplashdownFluidImpulseCount <= 0)
+            {
+                return Vector4.zero;
+            }
+
+            float duration = math.max(0.001f, _splashdownImpulseDurationSeconds);
+            float strengthScale = math.saturate(_splashdownImpulseRemainingSeconds * math.rcp(duration));
+            return new Vector4(1f, strengthScale, _lastSplashdownFluidImpulseCount, 0f);
+        }
+
+        private GraphicsBuffer ResolveSplashdownImpulseBuffer()
+        {
+            return _gpuSplashdownImpulseBuffer != null && _gpuSplashdownImpulseBuffer.IsValid()
+                ? _gpuSplashdownImpulseBuffer
+                : _emptyAbyssalFlowBuffer;
+        }
+
+        private void PublishSplashdownFluidImpulseTelemetry(int count, uint flags)
+        {
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                SplashdownFluidImpulseCountHash,
+                SplashdownFluidImpulseContextHash ^ flags,
+                math.max(0, count));
+        }
+
+        private void DrainFluidAdvectionSignals()
+        {
+            ConsumeFluidAdvectionAupShiftSignals();
+            ClearPendingFluidAdvectionShiftIfNoActiveParticles();
+
+            int drained = 0;
+            while (drained < FluidAdvectionSignalDrainBudget &&
+                   GlobalSignals.TryDequeueDebrisSpawn(out DebrisSpawnSignal signal))
+            {
+                QueueAdvectedDebrisFromSignal(in signal);
+                drained++;
+            }
+        }
+
+        private void ConsumeFluidAdvectionAupShiftSignals()
+        {
+            System.ReadOnlySpan<AupShiftSignal> shifts = SignalBus<AupShiftSignal>.GetFrameSnapshot();
+            for (int i = 0; i < shifts.Length; i++)
+            {
+                AupShiftSignal signal = shifts[i];
+                if (signal.ShiftFrameId == 0u || signal.ShiftFrameId == _lastProcessedFluidAdvectionAupShiftFrameId)
+                    continue;
+
+                _lastProcessedFluidAdvectionAupShiftFrameId = signal.ShiftFrameId;
+                if (!math.all(math.isfinite(signal.ShiftMeters)))
+                {
+                    DumpFluidAdvectionTelemetryOnce(1u);
+                    continue;
+                }
+
+                _pendingFluidAdvectionRuntimeShift += -signal.ShiftMeters;
+            }
+        }
+
+        private bool HasActiveAdvectedParticles()
+        {
+            return _activeAdvectedSiltCount > 0 ||
+                   _activeAdvectedBubbleCount > 0 ||
+                   _activeAdvectedDebrisCount > 0;
+        }
+
+        private void ClearPendingFluidAdvectionShiftIfNoActiveParticles()
+        {
+            if (!HasActiveAdvectedParticles())
+                _pendingFluidAdvectionRuntimeShift = default;
+        }
+
+        private void QueueAdvectedDebrisFromSignal(in DebrisSpawnSignal signal)
+        {
+            EnsureFluidAdvectionState();
+            if (!IsFluidAdvectionReady())
+                return;
+
+            int requestedQuantity = signal.Quantity;
+            int quantity = math.clamp(requestedQuantity <= 0 ? 1 : requestedQuantity, 1, MaxAdvectedDebrisCount);
+            float intensity = math.saturate(math.isfinite(signal.Intensity01) ? signal.Intensity01 : 0.25f);
+            float3 runtimePosition = signal.PositionAup.ToRuntimeFloat3();
+            if (!math.all(math.isfinite(runtimePosition)))
+            {
+                DumpFluidAdvectionTelemetryOnce(2u);
+                return;
+            }
+
+            for (int i = 0; i < quantity; i++)
+            {
+                int slot = _advectedDebrisWriteCursor;
+                _advectedDebrisWriteCursor = (_advectedDebrisWriteCursor + 1) % MaxAdvectedDebrisCount;
+                _activeAdvectedDebrisCount = math.min(MaxAdvectedDebrisCount, _activeAdvectedDebrisCount + 1);
+
+                float3 offset = ResolveSpawnJitter(slot + (int)signal.SpeciesHash, DebrisSpawnRadiusMeters * (0.5f + intensity));
+                AdvectedDebris debris = new AdvectedDebris
+                {
+                    PositionWS = runtimePosition + offset,
+                    Life = 1f,
+                    VelocityWS = new float3(offset.x * 0.2f, DebrisAdvectionBuoyancyMetersPerSecond, offset.z * 0.2f),
+                    Flags = AdvectedDebrisActiveFlag | ((uint)signal.DebrisKind << 8)
+                };
+                UploadAdvectedDebris(slot, in debris);
+            }
+        }
+
+        private void EnsureFluidAdvectionState()
+        {
+            if (_fluidAdvectionStateReady && IsFluidAdvectionReady())
+            {
+                return;
+            }
+
+            if (!_advectedSiltUpload.IsCreated)
+            {
+                _advectedSiltUpload = new NativeArray<AdvectedSilt>(
+                    MaxAdvectedSiltCount,
+                    Allocator.Persistent,
+                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<AdvectedSilt>[4096] - fixed GPU silt advection staging and black-box reset memory - owner: HectonFluidEngine
+                NativeMemorySentinel.RegisterNativeArray(_advectedSiltUpload, NativeMemoryOwner, nameof(_advectedSiltUpload), NativeMemoryLifetime);
+            }
+
+            if (!_advectedBubbleUpload.IsCreated)
+            {
+                _advectedBubbleUpload = new NativeArray<AdvectedBubble>(
+                    MaxAdvectedBubbleCount,
+                    Allocator.Persistent,
+                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<AdvectedBubble>[2000] - fixed GPU bubble advection staging memory - owner: HectonFluidEngine
+                NativeMemorySentinel.RegisterNativeArray(_advectedBubbleUpload, NativeMemoryOwner, nameof(_advectedBubbleUpload), NativeMemoryLifetime);
+            }
+
+            if (!_advectedDebrisUpload.IsCreated)
+            {
+                _advectedDebrisUpload = new NativeArray<AdvectedDebris>(
+                    MaxAdvectedDebrisCount,
+                    Allocator.Persistent,
+                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<AdvectedDebris>[1000] - fixed GPU debris advection staging memory - owner: HectonFluidEngine
+                NativeMemorySentinel.RegisterNativeArray(_advectedDebrisUpload, NativeMemoryOwner, nameof(_advectedDebrisUpload), NativeMemoryLifetime);
+            }
+
+            if (!_emptyAbyssalFlowUpload.IsCreated)
+            {
+                _emptyAbyssalFlowUpload = new NativeArray<float4>(
+                    1,
+                    Allocator.Persistent,
+                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float4>[1] - zero abyssal flow fallback upload - owner: HectonFluidEngine
+                NativeMemorySentinel.RegisterNativeArray(_emptyAbyssalFlowUpload, NativeMemoryOwner, nameof(_emptyAbyssalFlowUpload), NativeMemoryLifetime);
+            }
+
+            if (!_fluidAdvectionTelemetry.IsCreated)
+            {
+                _fluidAdvectionTelemetry = new NativeArray<FluidAdvectionTelemetryEntry>(
+                    FluidAdvectionTelemetryCapacity,
+                    Allocator.Persistent,
+                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<FluidAdvectionTelemetryEntry>[300] - fluid advection black-box ring - owner: HectonFluidEngine
+                NativeMemorySentinel.RegisterNativeArray(_fluidAdvectionTelemetry, NativeMemoryOwner, nameof(_fluidAdvectionTelemetry), NativeMemoryLifetime);
+            }
+
+            EnsureEmptyFluidAdvectionTexture();
+            EnsureFluidAdvectionBuffers();
+            _fluidAdvectionStateReady = IsFluidAdvectionReady();
+        }
+
+        private bool HasFluidAdvectionNativeState()
+        {
+            return _advectedSiltUpload.IsCreated &&
+                   _advectedBubbleUpload.IsCreated &&
+                   _advectedDebrisUpload.IsCreated &&
+                   _emptyAbyssalFlowUpload.IsCreated &&
+                   _fluidAdvectionTelemetry.IsCreated;
+        }
+
+        private void EnsureFluidAdvectionBuffers()
+        {
+            if (_advectedSiltBufferA == null || !_advectedSiltBufferA.IsValid())
+                _advectedSiltBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<AdvectedSilt>(MaxAdvectedSiltCount); // COLD ALLOC: GraphicsBuffer[4096] - silt advection front buffer - owner: HectonFluidEngine
+            if (_advectedSiltBufferB == null || !_advectedSiltBufferB.IsValid())
+                _advectedSiltBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<AdvectedSilt>(MaxAdvectedSiltCount); // COLD ALLOC: GraphicsBuffer[4096] - silt advection back buffer - owner: HectonFluidEngine
+            if (_advectedBubbleBufferA == null || !_advectedBubbleBufferA.IsValid())
+                _advectedBubbleBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<AdvectedBubble>(MaxAdvectedBubbleCount); // COLD ALLOC: GraphicsBuffer[2000] - bubble advection front buffer - owner: HectonFluidEngine
+            if (_advectedBubbleBufferB == null || !_advectedBubbleBufferB.IsValid())
+                _advectedBubbleBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<AdvectedBubble>(MaxAdvectedBubbleCount); // COLD ALLOC: GraphicsBuffer[2000] - bubble advection back buffer - owner: HectonFluidEngine
+            if (_advectedDebrisBufferA == null || !_advectedDebrisBufferA.IsValid())
+                _advectedDebrisBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<AdvectedDebris>(MaxAdvectedDebrisCount); // COLD ALLOC: GraphicsBuffer[1000] - debris advection front buffer - owner: HectonFluidEngine
+            if (_advectedDebrisBufferB == null || !_advectedDebrisBufferB.IsValid())
+                _advectedDebrisBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<AdvectedDebris>(MaxAdvectedDebrisCount); // COLD ALLOC: GraphicsBuffer[1000] - debris advection back buffer - owner: HectonFluidEngine
+            if (_emptyAdvectedSiltBuffer == null || !_emptyAdvectedSiltBuffer.IsValid())
+                _emptyAdvectedSiltBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<AdvectedSilt>(1); // COLD ALLOC: GraphicsBuffer[1] - silt unbind fallback - owner: HectonFluidEngine
+            if (_emptyAdvectedBubbleBuffer == null || !_emptyAdvectedBubbleBuffer.IsValid())
+                _emptyAdvectedBubbleBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<AdvectedBubble>(1); // COLD ALLOC: GraphicsBuffer[1] - bubble unbind fallback - owner: HectonFluidEngine
+            if (_emptyAdvectedDebrisBuffer == null || !_emptyAdvectedDebrisBuffer.IsValid())
+                _emptyAdvectedDebrisBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<AdvectedDebris>(1); // COLD ALLOC: GraphicsBuffer[1] - debris unbind fallback - owner: HectonFluidEngine
+            if (_emptyAbyssalFlowBuffer == null || !_emptyAbyssalFlowBuffer.IsValid())
+                _emptyAbyssalFlowBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4>(1); // COLD ALLOC: GraphicsBuffer[1] - zero abyssal-flow fallback - owner: HectonFluidEngine
+
+            GraphicsBufferUploadUtility.UploadNativeArray(_advectedSiltBufferA, _advectedSiltUpload, MaxAdvectedSiltCount);
+            GraphicsBufferUploadUtility.UploadNativeArray(_advectedSiltBufferB, _advectedSiltUpload, MaxAdvectedSiltCount);
+            GraphicsBufferUploadUtility.UploadNativeArray(_advectedBubbleBufferA, _advectedBubbleUpload, MaxAdvectedBubbleCount);
+            GraphicsBufferUploadUtility.UploadNativeArray(_advectedBubbleBufferB, _advectedBubbleUpload, MaxAdvectedBubbleCount);
+            GraphicsBufferUploadUtility.UploadNativeArray(_advectedDebrisBufferA, _advectedDebrisUpload, MaxAdvectedDebrisCount);
+            GraphicsBufferUploadUtility.UploadNativeArray(_advectedDebrisBufferB, _advectedDebrisUpload, MaxAdvectedDebrisCount);
+            GraphicsBufferUploadUtility.UploadNativeArray(_emptyAbyssalFlowBuffer, _emptyAbyssalFlowUpload, 1);
+        }
+
+        private void EnsureEmptyFluidAdvectionTexture()
+        {
+            if (_emptyFluidAdvectionTexture != null)
+            {
+                if (_emptyFluidAdvectionTextureHandle == null)
+                    _emptyFluidAdvectionTextureHandle = RTHandles.Alloc(_emptyFluidAdvectionTexture);
+                return;
+            }
+
+            _emptyFluidAdvectionTexture = new Texture3D(1, 1, 1, TextureFormat.RGBA32, false)
+            {
+                name = "__HectonFluidAdvectionEmptyTex3D",
+                wrapMode = TextureWrapMode.Clamp,
+                filterMode = FilterMode.Bilinear,
+                hideFlags = HideFlags.HideAndDontSave
+            }; // COLD ALLOC: Texture3D[1x1x1 RGBA32] - bound fallback for advection compute texture slots - owner: HectonFluidEngine
+            _emptyFluidAdvectionTexture.SetPixel(0, 0, 0, Color.black);
+            _emptyFluidAdvectionTexture.Apply(false, true);
+            _emptyFluidAdvectionTextureHandle = RTHandles.Alloc(_emptyFluidAdvectionTexture);
+        }
+
+        private RTHandle ResolveFluidAdvectionFlowTextureHandle(Texture texture)
+        {
+            if (texture == null || ReferenceEquals(texture, _emptyFluidAdvectionTexture))
+                return _emptyFluidAdvectionTextureHandle;
+
+            if (ReferenceEquals(texture, _gpuAbyssalFlowTextureA))
+            {
+                if (_gpuAbyssalFlowTextureAHandle == null)
+                    _gpuAbyssalFlowTextureAHandle = RTHandles.Alloc(_gpuAbyssalFlowTextureA);
+                return _gpuAbyssalFlowTextureAHandle;
+            }
+
+            if (ReferenceEquals(texture, _gpuAbyssalFlowTextureB))
+            {
+                if (_gpuAbyssalFlowTextureBHandle == null)
+                    _gpuAbyssalFlowTextureBHandle = RTHandles.Alloc(_gpuAbyssalFlowTextureB);
+                return _gpuAbyssalFlowTextureBHandle;
+            }
+
+            if (!ReferenceEquals(texture, _cachedFluidAdvectionFlowHandleSource))
+            {
+                ReleaseRTHandle(ref _cachedFluidAdvectionFlowHandle);
+                _cachedFluidAdvectionFlowHandleSource = texture;
+                _cachedFluidAdvectionFlowHandle = RTHandles.Alloc(texture);
+            }
+
+            return _cachedFluidAdvectionFlowHandle;
+        }
+
+        private RTHandle ResolveFluidAdvectionSdfTextureHandle(Texture texture)
+        {
+            if (texture == null || ReferenceEquals(texture, _emptyFluidAdvectionTexture))
+                return _emptyFluidAdvectionTextureHandle;
+
+            if (!ReferenceEquals(texture, _cachedFluidAdvectionSdfHandleSource))
+            {
+                ReleaseRTHandle(ref _cachedFluidAdvectionSdfHandle);
+                _cachedFluidAdvectionSdfHandleSource = texture;
+                _cachedFluidAdvectionSdfHandle = RTHandles.Alloc(texture);
+            }
+
+            return _cachedFluidAdvectionSdfHandle;
+        }
+
+        private bool IsFluidAdvectionReady()
+        {
+            return fluidAdvectionCompute != null &&
+                   _fluidAdvectionKernel >= 0 &&
+                   HasFluidAdvectionNativeState() &&
+                   _advectedSiltBufferA != null &&
+                   _advectedSiltBufferB != null &&
+                   _advectedBubbleBufferA != null &&
+                   _advectedBubbleBufferB != null &&
+                   _advectedDebrisBufferA != null &&
+                   _advectedDebrisBufferB != null &&
+                   _emptyAdvectedSiltBuffer != null &&
+                   _emptyAdvectedBubbleBuffer != null &&
+                   _emptyAdvectedDebrisBuffer != null &&
+                   _emptyAbyssalFlowBuffer != null &&
+                   _emptyFluidAdvectionTexture != null &&
+                   _emptyFluidAdvectionTextureHandle != null &&
+                   _advectedSiltBufferA.IsValid() &&
+                   _advectedSiltBufferB.IsValid() &&
+                   _advectedBubbleBufferA.IsValid() &&
+                   _advectedBubbleBufferB.IsValid() &&
+                   _advectedDebrisBufferA.IsValid() &&
+                   _advectedDebrisBufferB.IsValid() &&
+                   _emptyAdvectedSiltBuffer.IsValid() &&
+                   _emptyAdvectedBubbleBuffer.IsValid() &&
+                   _emptyAdvectedDebrisBuffer.IsValid() &&
+                   _emptyAbyssalFlowBuffer.IsValid();
+        }
+
+        private void UploadAdvectedBubble(int slot, in AdvectedBubble bubble)
+        {
+            if ((uint)slot >= MaxAdvectedBubbleCount || !_advectedBubbleUpload.IsCreated)
+                return;
+
+            _advectedBubbleUpload[slot] = bubble;
+            UploadSingle(_advectedBubbleBufferA, slot, in bubble);
+            UploadSingle(_advectedBubbleBufferB, slot, in bubble);
+        }
+
+        private void UploadAdvectedDebris(int slot, in AdvectedDebris debris)
+        {
+            if ((uint)slot >= MaxAdvectedDebrisCount || !_advectedDebrisUpload.IsCreated)
+                return;
+
+            _advectedDebrisUpload[slot] = debris;
+            UploadSingle(_advectedDebrisBufferA, slot, in debris);
+            UploadSingle(_advectedDebrisBufferB, slot, in debris);
+        }
+
+        private static void UploadSingle<T>(GraphicsBuffer buffer, int slot, in T value)
+            where T : struct
+        {
+            if (buffer == null || !buffer.IsValid() || slot < 0 || slot >= buffer.count)
+                return;
+
+            NativeArray<T> mapped = buffer.LockBufferForWrite<T>(slot, 1);
+            mapped[0] = value;
+            buffer.UnlockBufferAfterWrite<T>(1);
+        }
+
+        private static float3 ResolveSpawnJitter(int seed, float radius)
+        {
+            uint hash = unchecked((uint)seed * 747796405u + 2891336453u);
+            float x = HashToSignedUnit(hash);
+            float y = HashToSignedUnit(hash ^ 0x9E3779B9u) * 0.35f;
+            float z = HashToSignedUnit(hash ^ 0x85EBCA6Bu);
+            float3 raw = new float3(x, y, z);
+            float lengthSq = math.dot(raw, raw);
+            float3 direction = lengthSq > 0.0001f ? raw * math.rsqrt(lengthSq) : new float3(0f, 1f, 0f);
+            return direction * math.max(0f, radius);
+        }
+
+        private static float HashToSignedUnit(uint hash)
+        {
+            hash ^= hash >> 16;
+            hash *= 2246822519u;
+            hash ^= hash >> 13;
+            hash *= 3266489917u;
+            hash ^= hash >> 16;
+            return ((hash & 0x00ffffffu) * 0.00000011920928955078125f) - 1f;
+        }
+
+        private void WriteFluidAdvectionTelemetry()
+        {
+            if (!_fluidAdvectionTelemetry.IsCreated || _fluidAdvectionTelemetry.Length == 0)
+                return;
+
+            int frame = Time.frameCount;
+            if (_lastFluidAdvectionTelemetryFrame == frame)
+                return;
+
+            _lastFluidAdvectionTelemetryFrame = frame;
+            int activeCount = _activeAdvectedSiltCount + _activeAdvectedBubbleCount + _activeAdvectedDebrisCount;
+            int index = _fluidAdvectionTelemetryCursor;
+            uint flags = _fluidAdvectionRenderGraphQueued ? 1u : 0u;
+            flags |= math.lengthsq(_pendingFluidAdvectionRuntimeShift) > 0.000001f ? 2u : 0u;
+            _fluidAdvectionTelemetry[index] = new FluidAdvectionTelemetryEntry
+            {
+                FrameIndex = (uint)frame,
+                OriginShiftSequence = _lastOriginShiftSequence,
+                ActiveAdvectedParticles = activeCount,
+                SiltCount = _activeAdvectedSiltCount,
+                BubbleCount = _activeAdvectedBubbleCount,
+                DebrisCount = _activeAdvectedDebrisCount,
+                Flags = flags,
+                StateHash = BuildFluidAdvectionTelemetryHash(activeCount, flags)
+            };
+            _fluidAdvectionTelemetryCursor = (index + 1) % _fluidAdvectionTelemetry.Length;
+
+            if (FluidAdvectionGlobalTelemetryIntervalFrames > 0 &&
+                frame % FluidAdvectionGlobalTelemetryIntervalFrames == 0)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(
+                    ActiveAdvectedParticlesTelemetryHash,
+                    FluidAdvectionTelemetryContextHash,
+                    activeCount);
+            }
+        }
+
+        private uint BuildFluidAdvectionTelemetryHash(int activeCount, uint flags)
+        {
+            uint hash = 2166136261u;
+            hash = HashAbyssalFlowTelemetry(hash, (uint)math.max(0, activeCount));
+            hash = HashAbyssalFlowTelemetry(hash, (uint)math.max(0, _activeAdvectedSiltCount));
+            hash = HashAbyssalFlowTelemetry(hash, (uint)math.max(0, _activeAdvectedBubbleCount));
+            hash = HashAbyssalFlowTelemetry(hash, (uint)math.max(0, _activeAdvectedDebrisCount));
+            hash = HashAbyssalFlowTelemetry(hash, flags);
+            return hash;
+        }
+
+        private void DumpFluidAdvectionTelemetryOnce(uint reasonFlags)
+        {
+            if (_fluidAdvectionTelemetryDumped || !_fluidAdvectionTelemetry.IsCreated)
+                return;
+
+            _fluidAdvectionTelemetryDumped = true;
+            try
+            {
+                string projectRoot = Directory.GetParent(Application.dataPath)?.FullName ?? Application.dataPath;
+                string dumpPath = Path.Combine(projectRoot, FluidAdvectionDumpRelativePath);
+                string directory = Path.GetDirectoryName(dumpPath);
+                if (!string.IsNullOrEmpty(directory))
+                    Directory.CreateDirectory(directory);
+
+                using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
+                using (BinaryWriter writer = new BinaryWriter(stream))
+                {
+                    writer.Write(0x41435654u);
+                    writer.Write(FluidAdvectionTelemetryCapacity);
+                    writer.Write(_fluidAdvectionTelemetryCursor);
+                    writer.Write(reasonFlags);
+                    for (int i = 0; i < _fluidAdvectionTelemetry.Length; i++)
+                    {
+                        int index = (_fluidAdvectionTelemetryCursor + i) % _fluidAdvectionTelemetry.Length;
+                        FluidAdvectionTelemetryEntry entry = _fluidAdvectionTelemetry[index];
+                        writer.Write(entry.FrameIndex);
+                        writer.Write(entry.OriginShiftSequence);
+                        writer.Write(entry.ActiveAdvectedParticles);
+                        writer.Write(entry.SiltCount);
+                        writer.Write(entry.BubbleCount);
+                        writer.Write(entry.DebrisCount);
+                        writer.Write(entry.Flags);
+                        writer.Write(entry.StateHash);
+                    }
+                }
+            }
+            catch (System.Exception exception)
+            {
+#if UNITY_EDITOR
+                Debug.LogWarning("[HectonFluidEngine] Fluid advection telemetry dump failed: " + exception.Message, this);
+#endif
+            }
         }
 
         private bool TryDrainScheduledBuoyancyJob()
@@ -2842,6 +3990,7 @@ namespace Hecton8.Physics
             _fluidImpactEvents = new NativeQueue<FluidImpactEvent>(Allocator.Persistent); // COLD ALLOC: NativeQueue<FluidImpactEvent>[64] — deferred water impact acoustic lane — owner: HectonFluidEngine
             PrewarmQueue(ref _fluidImpactEvents, FluidImpactEventQueueCapacity);
             RegisterNativeMemorySentinel();
+            EnsureSharedGerstnerDataVaultBuffers();
             _scheduledBodies = new Rigidbody[newCapacity];
             EnsureGpuBuoyancyBuffers(newCapacity);
             EnsureGpuAbyssalFlowBuffers();
@@ -2884,7 +4033,16 @@ namespace Hecton8.Physics
                 DisposeNativeArray(ref _abyssalFlowTelemetry, dependency);
                 DisposeNativeArray(ref _maelstromTelemetry, dependency);
                 DisposeNativeArray(ref _activeMaelstroms, dependency);
+                DisposeSplashdownImpulseState();
             }
+            DisposeNativeArray(ref _advectedSiltUpload, dependency);
+            DisposeNativeArray(ref _advectedBubbleUpload, dependency);
+            DisposeNativeArray(ref _advectedDebrisUpload, dependency);
+            DisposeNativeArray(ref _fluidAdvectionTelemetry, dependency);
+            _fluidAdvectionStateReady = false;
+            _fluidAdvectionRenderGraphQueued = false;
+            _fluidAdvectionTelemetryCursor = 0;
+            _lastFluidAdvectionTelemetryFrame = -1;
             DisposeNativeArray(ref _activeThrusterFlows, dependency);
             DisposeNativeArray(ref _activeWhirlpools, dependency);
             DisposeNativeArray(ref _activeViscosityRegions, dependency);
@@ -2895,6 +4053,9 @@ namespace Hecton8.Physics
             _activeWhirlpoolFlowCount = 0;
             _activeMaelstromCount = 0;
             _activeViscosityRegionCount = 0;
+            _activeAdvectedSiltCount = 0;
+            _activeAdvectedBubbleCount = 0;
+            _activeAdvectedDebrisCount = 0;
             _activeGerstnerWaveCount = 0;
             _activeMaelstromMeta = Vector4.zero;
             _lastOceanSleepCount = 0;
@@ -3783,6 +4944,14 @@ namespace Hecton8.Physics
                 _gpuAbyssalHeatSourceBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<GpuHeatSourceData>(MaxAbyssalHeatSourceCount); // COLD ALLOC: GraphicsBuffer[8] — inferred hydrothermal heat-source upload staging — owner: HectonFluidEngine
             }
 
+            if (_gpuSplashdownImpulseBuffer == null ||
+                !_gpuSplashdownImpulseBuffer.IsValid() ||
+                _gpuSplashdownImpulseBuffer.count != nodeCount)
+            {
+                ReleaseGraphicsBuffer(ref _gpuSplashdownImpulseBuffer);
+                _gpuSplashdownImpulseBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4>(nodeCount); // COLD ALLOC: GraphicsBuffer[nodeCount] - splashdown impulse flow override buffer - owner: HectonFluidEngine
+            }
+
             if (_gpuAbyssalFlowTextureA == null || _gpuAbyssalFlowTextureB == null)
             {
                 ReleaseAbyssalFlowTextures();
@@ -3813,11 +4982,50 @@ namespace Hecton8.Physics
                 }
             }
 
+            EnsureAbyssalFlowTextureHandles();
+
             _lastAbyssalFlowTextureSpacing = new Vector4(
                 AbyssalFlowTextureCellSizeMeters,
                 AbyssalFlowTextureCellSizeMeters,
                 AbyssalFlowTextureWorldSizeMeters,
                 math.rcp(AbyssalFlowTextureWorldSizeMeters));
+        }
+
+        private void EnsureSplashdownImpulseState()
+        {
+            int nodeCount = GetAbyssalFlowNodeCount();
+            if (nodeCount <= 0)
+                return;
+
+            if (_splashdownImpulseUpload.IsCreated && _splashdownImpulseUpload.Length != nodeCount)
+                DisposeSplashdownImpulseState();
+
+            if (!_splashdownImpulseUpload.IsCreated)
+            {
+                _splashdownImpulseUpload = new NativeArray<float4>(
+                    nodeCount,
+                    Allocator.Persistent,
+                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float4>[32768] - splashdown impulse vector-field staging - owner: HectonFluidEngine
+                NativeMemorySentinel.RegisterNativeArray(_splashdownImpulseUpload, NativeMemoryOwner, nameof(_splashdownImpulseUpload), NativeMemoryLifetime);
+            }
+
+            if (!_splashdownImpulseStats.IsCreated)
+            {
+                _splashdownImpulseStats = new NativeArray<int>(
+                    2,
+                    Allocator.Persistent,
+                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[2] - splashdown impulse affected-count and guard flags - owner: HectonFluidEngine
+                NativeMemorySentinel.RegisterNativeArray(_splashdownImpulseStats, NativeMemoryOwner, nameof(_splashdownImpulseStats), NativeMemoryLifetime);
+            }
+        }
+
+        private void EnsureAbyssalFlowTextureHandles()
+        {
+            if (_gpuAbyssalFlowTextureA != null && _gpuAbyssalFlowTextureAHandle == null)
+                _gpuAbyssalFlowTextureAHandle = RTHandles.Alloc(_gpuAbyssalFlowTextureA);
+
+            if (_gpuAbyssalFlowTextureB != null && _gpuAbyssalFlowTextureBHandle == null)
+                _gpuAbyssalFlowTextureBHandle = RTHandles.Alloc(_gpuAbyssalFlowTextureB);
         }
 
         private static RenderTexture CreateAbyssalFlowTexture(string textureName)
@@ -3862,17 +5070,101 @@ namespace Hecton8.Physics
                 _gpuAbyssalHeatSourceBuffer = null;
             }
 
+            ReleaseGraphicsBuffer(ref _gpuSplashdownImpulseBuffer);
             ReleaseAbyssalFlowTextures();
             DeactivateAbyssalFlowPublication();
         }
 
+        private void DisposeFluidAdvectionState()
+        {
+            ReleaseGraphicsBuffer(ref _advectedSiltBufferA);
+            ReleaseGraphicsBuffer(ref _advectedSiltBufferB);
+            ReleaseGraphicsBuffer(ref _advectedBubbleBufferA);
+            ReleaseGraphicsBuffer(ref _advectedBubbleBufferB);
+            ReleaseGraphicsBuffer(ref _advectedDebrisBufferA);
+            ReleaseGraphicsBuffer(ref _advectedDebrisBufferB);
+            ReleaseGraphicsBuffer(ref _emptyAdvectedSiltBuffer);
+            ReleaseGraphicsBuffer(ref _emptyAdvectedBubbleBuffer);
+            ReleaseGraphicsBuffer(ref _emptyAdvectedDebrisBuffer);
+            ReleaseGraphicsBuffer(ref _emptyAbyssalFlowBuffer);
+
+            JobHandle dependency = _scheduledBuoyancyJobActive ? _scheduledBuoyancyHandle : default;
+            DisposeNativeArray(ref _advectedSiltUpload, dependency);
+            DisposeNativeArray(ref _advectedBubbleUpload, dependency);
+            DisposeNativeArray(ref _advectedDebrisUpload, dependency);
+            DisposeNativeArray(ref _emptyAbyssalFlowUpload, dependency);
+            DisposeNativeArray(ref _fluidAdvectionTelemetry, dependency);
+
+            ReleaseRTHandle(ref _cachedFluidAdvectionFlowHandle);
+            ReleaseRTHandle(ref _cachedFluidAdvectionSdfHandle);
+            _cachedFluidAdvectionFlowHandleSource = null;
+            _cachedFluidAdvectionSdfHandleSource = null;
+            ReleaseRTHandle(ref _emptyFluidAdvectionTextureHandle);
+
+            if (_emptyFluidAdvectionTexture != null)
+            {
+                UnityEngine.Object.Destroy(_emptyFluidAdvectionTexture);
+                _emptyFluidAdvectionTexture = null;
+            }
+
+            _activeAdvectedSiltCount = 0;
+            _activeAdvectedBubbleCount = 0;
+            _activeAdvectedDebrisCount = 0;
+            _advectedBubbleWriteCursor = 0;
+            _advectedDebrisWriteCursor = 0;
+            _fluidAdvectionTelemetryCursor = 0;
+            _lastFluidAdvectionTelemetryFrame = -1;
+            _lastProcessedFluidAdvectionAupShiftFrameId = 0u;
+            _pendingFluidAdvectionRuntimeShift = default;
+            _fluidAdvectionStateReady = false;
+            _fluidAdvectionRenderGraphQueued = false;
+            _fluidAdvectionTelemetryDumped = false;
+        }
+
+        private void DisposeSplashdownImpulseState()
+        {
+            JobHandle dependency = _splashdownImpulseJobActive ? _splashdownImpulseJobHandle : default;
+            DisposeNativeArray(ref _splashdownImpulseUpload, dependency);
+            DisposeNativeArray(ref _splashdownImpulseStats, dependency);
+            ReleaseGraphicsBuffer(ref _gpuSplashdownImpulseBuffer);
+            _splashdownImpulseJobHandle = default;
+            _splashdownImpulseJobActive = false;
+            _splashdownImpulseUploaded = false;
+            _splashdownImpulseScheduleFrame = -1;
+            _splashdownImpulsePositionWS = default;
+            _splashdownImpulseRemainingSeconds = 0f;
+            _splashdownImpulseDurationSeconds = 0f;
+            _lastSplashdownFluidImpulseCount = 0;
+            _splashdownImpulseFlags = 0u;
+        }
+
+        private static void ReleaseGraphicsBuffer(ref GraphicsBuffer buffer)
+        {
+            if (buffer == null)
+                return;
+
+            buffer.Release();
+            buffer = null;
+        }
+
         private void ReleaseAbyssalFlowTextures()
         {
+            ReleaseRTHandle(ref _gpuAbyssalFlowTextureAHandle);
+            ReleaseRTHandle(ref _gpuAbyssalFlowTextureBHandle);
             ReleaseRenderTexture(ref _gpuAbyssalFlowTextureA);
             ReleaseRenderTexture(ref _gpuAbyssalFlowTextureB);
             _gpuAbyssalFlowReadTexture = null;
             _gpuAbyssalFlowWriteTexture = null;
             _hasAbyssalFlowTexture = false;
+        }
+
+        private static void ReleaseRTHandle(ref RTHandle handle)
+        {
+            if (handle == null)
+                return;
+
+            handle.Release();
+            handle = null;
         }
 
         private void DeactivateAbyssalFlowPublication()
@@ -3965,9 +5257,12 @@ namespace Hecton8.Physics
             int textureGroupCount = math.max(
                 1,
                 (AbyssalFlowTextureResolution + AbyssalFlowTextureThreadGroupSize - 1) / AbyssalFlowTextureThreadGroupSize);
+            GraphicsBuffer splashdownImpulseBuffer = ResolveSplashdownImpulseBuffer();
+            Vector4 splashdownParams = ResolveSplashdownImpulseParams();
 
             abyssalFlowFieldCompute.SetBuffer(_gpuAbyssalUpdateKernel, _AbyssalFlowFieldResultId, _gpuAbyssalFlowResultBuffer);
             abyssalFlowFieldCompute.SetBuffer(_gpuAbyssalUpdateKernel, _AbyssalHeatSourcesId, _gpuAbyssalHeatSourceBuffer);
+            abyssalFlowFieldCompute.SetBuffer(_gpuAbyssalUpdateKernel, _AbyssalSplashdownImpulseBufferId, splashdownImpulseBuffer);
 
             float3 resolvedWeatherCurrent =
                 weatherSnapshot.CurrentMeta.GlobalBaseVector * weatherSnapshot.CurrentMeta.GlobalScale +
@@ -4029,6 +5324,7 @@ namespace Hecton8.Physics
             abyssalFlowFieldCompute.SetVector(_AbyssalFlowWeatherParamsId, weatherParams);
             abyssalFlowFieldCompute.SetVector(_AbyssalFlowTextureParamsId, textureParams);
             abyssalFlowFieldCompute.SetVector(_AbyssalFlowNoiseOffsetId, noiseOffset);
+            abyssalFlowFieldCompute.SetVector(_AbyssalSplashdownParamsId, splashdownParams);
             abyssalFlowFieldCompute.SetFloat(_AbyssalFlowSurfaceYId, resolvedWaterLevel);
             abyssalFlowFieldCompute.SetFloat(_AbyssalFlowThermoclineYId, resolvedWaterLevel - AbyssalFlowThermoclineDepthMeters);
             abyssalFlowFieldCompute.SetInt(_AbyssalFlowHeatSourceCountId, heatSourceCount);
@@ -4039,6 +5335,8 @@ namespace Hecton8.Physics
             abyssalFlowFieldCompute.SetTexture(_gpuAbyssalTextureUpdateKernel, _AbyssalFlowTextureReadId, _gpuAbyssalFlowReadTexture);
             abyssalFlowFieldCompute.SetTexture(_gpuAbyssalTextureUpdateKernel, _AbyssalFlowTextureWriteId, _gpuAbyssalFlowWriteTexture);
             abyssalFlowFieldCompute.SetBuffer(_gpuAbyssalTextureUpdateKernel, _AbyssalHeatSourcesId, _gpuAbyssalHeatSourceBuffer);
+            abyssalFlowFieldCompute.SetBuffer(_gpuAbyssalTextureUpdateKernel, _AbyssalSplashdownImpulseBufferId, splashdownImpulseBuffer);
+            abyssalFlowFieldCompute.SetVector(_AbyssalSplashdownParamsId, splashdownParams);
             abyssalFlowFieldCompute.Dispatch(_gpuAbyssalTextureUpdateKernel, textureGroupCount, textureGroupCount, textureGroupCount);
             SwapAbyssalFlowTextures();
 
@@ -4070,7 +5368,9 @@ namespace Hecton8.Physics
             uint telemetryFlags = highTier ? 1u : 0u;
             if (vortexDispatchCount > 0)
                 telemetryFlags |= 2u;
-            WriteAbyssalFlowTelemetry(flowCenter, wakeSphere, wakeVelocity, heatSourceCount, telemetryFlags);
+            if (splashdownParams.x > 0.5f)
+                telemetryFlags |= 4u;
+            WriteAbyssalFlowTelemetry(flowCenter, wakeSphere, wakeVelocity, heatSourceCount, _lastSplashdownFluidImpulseCount, telemetryFlags);
         }
 
         private void ClearAbyssalVortexImpulses()
@@ -4207,6 +5507,7 @@ namespace Hecton8.Physics
             Vector4 wakeSphere,
             Vector4 wakeVelocity,
             int heatSourceCount,
+            int fluidImpulseCount,
             uint flags)
         {
             if (!_abyssalFlowTelemetry.IsCreated)
@@ -4238,8 +5539,9 @@ namespace Hecton8.Physics
                 WakeVelocityWS = wakeVelocity3,
                 WakeRadius = math.max(0f, wakeSphere.w),
                 HeatSourceCount = math.max(0, heatSourceCount),
+                FluidImpulseCount = math.max(0, fluidImpulseCount),
                 Flags = flags,
-                StateHash = BuildAbyssalFlowTelemetryHash(center, wakePosition, wakeVelocity3, heatSourceCount, flags)
+                StateHash = BuildAbyssalFlowTelemetryHash(center, wakePosition, wakeVelocity3, heatSourceCount, fluidImpulseCount, flags)
             };
             _abyssalFlowTelemetryCursor = (index + 1) % _abyssalFlowTelemetry.Length;
 
@@ -4252,6 +5554,7 @@ namespace Hecton8.Physics
             float3 wakePosition,
             float3 wakeVelocity,
             int heatSourceCount,
+            int fluidImpulseCount,
             uint flags)
         {
             uint hash = 2166136261u;
@@ -4265,6 +5568,7 @@ namespace Hecton8.Physics
             hash = HashAbyssalFlowTelemetry(hash, QuantizeAbyssalFlowTelemetry(wakeVelocity.y));
             hash = HashAbyssalFlowTelemetry(hash, QuantizeAbyssalFlowTelemetry(wakeVelocity.z));
             hash = HashAbyssalFlowTelemetry(hash, (uint)math.max(0, heatSourceCount));
+            hash = HashAbyssalFlowTelemetry(hash, (uint)math.max(0, fluidImpulseCount));
             hash = HashAbyssalFlowTelemetry(hash, flags);
             return hash;
         }
@@ -4325,6 +5629,7 @@ namespace Hecton8.Physics
                         writer.Write(entry.WakeVelocityWS.z);
                         writer.Write(entry.WakeRadius);
                         writer.Write(entry.HeatSourceCount);
+                        writer.Write(entry.FluidImpulseCount);
                         writer.Write(entry.Flags);
                         writer.Write(entry.StateHash);
                     }

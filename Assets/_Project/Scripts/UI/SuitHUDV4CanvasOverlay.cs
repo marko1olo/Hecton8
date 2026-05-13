@@ -7,6 +7,7 @@ using Hecton8.Audio;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
 using Hecton8.Core;
+using Hecton8.Core.Signals;
 using Hecton8.Inventory;
 using Hecton8.Items;
 using Hecton8.SaveSystem;
@@ -30,7 +31,7 @@ namespace Hecton8.UI
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Suit HUD V4 Canvas Overlay")]
     [RequireComponent(typeof(Canvas))]
-    public sealed class SuitHUDV4CanvasOverlay : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IUIService, IScannerInterferenceUiSink, IGameBootstrapperEventListener, IPlayerSignalEventListener, ILocalizationLanguageChangedListener, ILocalizationCorruptionVisualStateListener, ISaveEventListener
+    public sealed class SuitHUDV4CanvasOverlay : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IUIService, IScannerInterferenceUiSink, IGameBootstrapperEventListener, IPlayerSignalEventListener, ILocalizationLanguageChangedListener, ILocalizationCorruptionVisualStateListener, ISaveEventListener, IGlobalRegistryHotSwapListener
     {
         // COLD ALLOC: List<SuitHUDV4CanvasOverlay>[4] — active HUD overlay registry — owner: SuitHUDV4CanvasOverlay
         private static readonly List<SuitHUDV4CanvasOverlay> s_activeOverlays = new List<SuitHUDV4CanvasOverlay>(4);
@@ -82,6 +83,7 @@ namespace Hecton8.UI
         private const string DefaultStatusLifeSupportNominalStable = "LIFE SUPPORT NOMINAL / STABLE";
         private const string DefaultStatusLifeSupportNominalAscending = "LIFE SUPPORT NOMINAL / ASCENDING";
         private const string DefaultStatusLifeSupportNominalDescending = "LIFE SUPPORT NOMINAL / DESCENDING";
+        private const string DefaultStatusOptimizingCoreSystems = "OPTIMIZING CORE SYSTEMS";
         private const string DefaultToolDepletedLabel = "TOOL DEPLETED";
         private const string DefaultCriticalLabel = "CRITICAL";
         private const string DepthNumberToken = "{N0:F0}";
@@ -144,11 +146,15 @@ namespace Hecton8.UI
         private const string DitheredUiBackgroundShaderName = "Hecton8/UI/IGNDitheredBackground";
         private const string DataRecPulseShaderPath = "Assets/_Project/Shaders/UI/Hecton_DataRecPulse.shader";
         private const string DataRecPulseShaderName = "Hecton8/UI/DataRecPulse";
-        private const int HudPerformanceWarningCooldownFrames = 30;
+        private const int HudPerformanceWarningCooldownFrames = 300;
+        private const int SystemHealthWarningStaleFrames = 120;
         private const string WorldGeometrySortingLayer = "WorldGeometry";
         private const int MaxThreatChevronCount = 4;
         private const int HudInternalLayerIndex = 17;
+        private const int LowTierDirtyCadenceFrameModulo = 4;
         private const float ThreatChevronPlaneBiasMeters = 0.0004f;
+        private const float VrLazyFollowPositionSharpness = 18f;
+        private const float VrLazyFollowRotationSharpness = 22f;
         private static int UiLayerIndex = -1;
         private static bool s_layerCacheInitialized;
         private const int DefaultLayerIndex = 0;
@@ -203,6 +209,7 @@ namespace Hecton8.UI
         private static readonly char[] s_statusLifeSupportNominalStableChars = DefaultStatusLifeSupportNominalStable.ToCharArray();
         private static readonly char[] s_statusLifeSupportNominalAscendingChars = DefaultStatusLifeSupportNominalAscending.ToCharArray();
         private static readonly char[] s_statusLifeSupportNominalDescendingChars = DefaultStatusLifeSupportNominalDescending.ToCharArray();
+        private static readonly char[] s_statusOptimizingCoreSystemsChars = DefaultStatusOptimizingCoreSystems.ToCharArray();
         private static readonly char[] s_loadPrefixChars = "MASS: ".ToCharArray();
         private static readonly char[] s_loadKgSuffixChars = " KG".ToCharArray();
         private static readonly char[] s_emptyHudChars = Array.Empty<char>();
@@ -652,6 +659,19 @@ namespace Hecton8.UI
         private bool _hasAppliedStatusKeyHash;
         private int _appliedStatusWhisperVersion = int.MinValue;
         private Color _appliedStatusLabelColor;
+        private int _systemHealthWarningFrame = int.MinValue;
+        private byte _systemHealthPressureLevel;
+        private bool _systemHealthWarningActive;
+        private bool _systemHealthSignalDirty;
+        private bool _inventorySignalDirty = true;
+        private bool _playerStateSignalDirty;
+        private bool _inputStateSignalDirty;
+        private bool _lowTierDirtyThrottleActive;
+        private uint _lastInventorySignalRevision;
+        private uint _lastInputSchemeHash;
+        private byte _playerStateFlags;
+        private byte _playerStateState;
+        private float _playerStateIntensity01;
         private int _appliedDepthValue;
         private bool _hasAppliedDepthValue;
         private int _appliedDepthWhisperVersion = int.MinValue;
@@ -748,6 +768,8 @@ namespace Hecton8.UI
         private ItemCatalog _itemCatalog;
         private PlayerToolManager _toolManager;
         private Hecton8.Core.IAudioService _spatialAudioManager;
+        private LocalizationManager _localizationRuntime;
+        private IPlayerRuntimeContext _playerRuntimeContext;
         private int _lastInventoryVersion = -1;
         private readonly int[] _quickbarSlotHashCache = new int[QuickbarSlotCount];
         private readonly bool[] _quickbarSlotHashResolved = new bool[QuickbarSlotCount];
@@ -1044,6 +1066,7 @@ namespace Hecton8.UI
         public bool IsInitialized => isActiveAndEnabled && targetCanvas != null && _root != null && _layoutBuilt;
 
         private bool _ownsGlobalUiSlot;
+        private bool _hotSwapRegistered;
         private int _hudProxyLightKey;
         private bool _hudProxyLightRegistered;
 
@@ -1063,6 +1086,7 @@ namespace Hecton8.UI
         {
             EnsureLayerCache();
             ResolveGraphicRaycasterCold();
+            CacheRuntimeDependencies();
             LocalizationEvents.RegisterLanguageListener(this);
             LocalizationEvents.RegisterCorruptionVisualStateListener(this);
             GameBootstrapper.Register(this);
@@ -1089,6 +1113,7 @@ namespace Hecton8.UI
 
             HectonFloatingOrigin.RegisterListener(this);
             TryRegisterUiService();
+            TryRegisterHotSwapListener();
             ToolHapticsRuntime.EnsureRuntimeInstance();
             QueueRuntimeCanvasRefresh(forceResolve: true, refreshDepthSignal: true);
             TryRegisterRuntimeTick();
@@ -1113,6 +1138,7 @@ namespace Hecton8.UI
             PlayerSignalEvents.Unregister(this);
             SaveEvents.Unregister(this);
             HectonFloatingOrigin.UnregisterListener(this);
+            TryUnregisterHotSwapListener();
             UnregisterUiService();
             UnregisterActiveOverlay();
             UnregisterRuntimeTick();
@@ -1151,6 +1177,7 @@ namespace Hecton8.UI
         private void OnDestroy()
         {
             SaveEvents.Unregister(this);
+            TryUnregisterHotSwapListener();
             UnregisterUiService();
             UnregisterHudProxyLight();
             DisposeDitheredUiBackgroundRuntimeResources();
@@ -1371,6 +1398,11 @@ namespace Hecton8.UI
 
         public void Tick(float deltaTime)
         {
+            RunReactiveLateFrameSolve(deltaTime);
+        }
+
+        private void RunReactiveLateFrameSolve(float deltaTime)
+        {
             if (_toolDepletedWarningTimer > 0f)
             {
                 _toolDepletedWarningTimer = math.max(0f, _toolDepletedWarningTimer - math.max(0f, deltaTime));
@@ -1383,12 +1415,23 @@ namespace Hecton8.UI
             long hudSolveStartTimestamp = Stopwatch.GetTimestamp();
             UpdateSavingProgressHud(deltaTime);
             int cadenceFrame = Time.frameCount;
-            bool refreshMediumCadence = cadenceFrame % MediumCadenceFrameModulo == 0;
-            bool refreshSlowCadence = cadenceFrame % SlowCadenceFrameModulo == 0;
+            bool reactiveDirty = ConsumeReactiveSignals();
+            bool lowTierGateOpen = !_lowTierDirtyThrottleActive ||
+                reactiveDirty ||
+                cadenceFrame % LowTierDirtyCadenceFrameModulo == 0;
+            bool refreshMediumCadence = reactiveDirty ||
+                (lowTierGateOpen && cadenceFrame % MediumCadenceFrameModulo == 0);
+            bool refreshSlowCadence = reactiveDirty ||
+                (lowTierGateOpen && cadenceFrame % SlowCadenceFrameModulo == 0);
             RefreshAcousticRadarPayload();
             if (_threatChevronActiveMask != 0u)
                 _threatChevronPulseTime += math.max(0f, deltaTime);
-            RefreshVisuals(deltaTime, refreshMediumCadence, refreshSlowCadence);
+            if (lowTierGateOpen)
+            {
+                RefreshVisuals(deltaTime, refreshMediumCadence, refreshSlowCadence);
+                HphiReactiveUiTelemetry.RecordActiveUiUpdate();
+            }
+
             PublishHudSolveWarningIfNeeded(hudSolveStartTimestamp);
             RuntimeWatchdog.MarkHudCanvasUpdated(targetCanvas);
         }
@@ -1412,6 +1455,7 @@ namespace Hecton8.UI
             if (!Application.isPlaying)
                 return;
 
+            _lowTierDirtyThrottleActive = IsLowTierUiThrottle(GlobalRegistry.ScalabilityTier);
             TryRegisterRuntimeTick();
             ProcessPendingRuntimeCanvasRefresh();
             RefreshThreatChevronTargets();
@@ -1448,6 +1492,8 @@ namespace Hecton8.UI
         {
             if (!Application.isPlaying || _root == null)
                 return;
+
+            RunReactiveLateFrameSolve(SystemDispatcher.CurrentFrameUnscaledDeltaTime);
 
             if (renderPath == RenderPath.ProjectionSource && targetCanvas != null)
                 UpdateProjectionCanvasPose(targetCanvas.transform as RectTransform, ResolveUiReferenceResolution());
@@ -1556,6 +1602,8 @@ namespace Hecton8.UI
             if (!isActiveAndEnabled)
                 return;
 
+            if (CacheRuntimeDependencies())
+                RebuildLocalizationCache();
             _layoutBuilt = false;
             InvalidateVisualCaches();
             TryRegisterRuntimeTick();
@@ -1673,19 +1721,11 @@ namespace Hecton8.UI
                 return;
 
             _nextAutoResolveAt = now + AutoResolveRetryInterval;
+            if (CacheRuntimeDependencies())
+                RebuildLocalizationCache();
 
             if (targetCanvas == null)
                 targetCanvas = ResolveTargetCanvas();
-
-            IPlayerInventoryService inventoryService = GlobalRegistry.PlayerInventory;
-            if (!ReferenceEquals(_inventoryService, inventoryService))
-            {
-                _inventoryService = inventoryService;
-                _playerInventory = null;
-                _itemCatalog = null;
-                _lastInventoryVersion = -1;
-                InvalidateQuickbarSlotHashCache();
-            }
 
             if (_inventoryService != null)
             {
@@ -1697,7 +1737,7 @@ namespace Hecton8.UI
 
             Transform playerRoot = null;
             bool hasPlayerRoot = false;
-            if (survival == null || playerMovement == null || flashlight == null || underwaterVisuals == null || _toolManager == null)
+            if (projectionCamera == null || survival == null || playerMovement == null || flashlight == null || underwaterVisuals == null || _toolManager == null)
                 hasPlayerRoot = GameBootstrapper.TryGetCurrentPlayerTransform(out playerRoot);
 
             if (projectionCamera == null)
@@ -1733,6 +1773,8 @@ namespace Hecton8.UI
                 s_controllerResolveBuffer.Clear();
             }
 
+            TryResolveProjectionCameraFromPlayer(playerRoot, hasPlayerRoot);
+
             if (uiFont == null)
                 uiFont = TMP_Settings.defaultFontAsset;
 
@@ -1760,24 +1802,152 @@ namespace Hecton8.UI
 
             if (flashlight == null)
             {
-                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+                IPlayerRuntimeContext playerContext = _playerRuntimeContext;
                 if (playerContext != null)
                     flashlight = playerContext.Flashlight;
             }
 
             if (underwaterVisuals == null)
             {
-                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+                IPlayerRuntimeContext playerContext = _playerRuntimeContext;
                 if (playerContext != null)
                     underwaterVisuals = playerContext.UnderwaterVisuals;
             }
 
             if (_toolManager == null)
             {
-                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+                IPlayerRuntimeContext playerContext = _playerRuntimeContext;
                 if (playerContext != null)
                     _toolManager = playerContext.ToolManager;
             }
+        }
+
+        private void TryResolveProjectionCameraFromPlayer(Transform playerRoot, bool hasPlayerRoot)
+        {
+            if (projectionCamera != null)
+                return;
+
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            Camera playerCamera = playerContext != null ? playerContext.PlayerCamera : null;
+            if (playerCamera != null)
+            {
+                projectionCamera = playerCamera;
+                return;
+            }
+
+            if (!hasPlayerRoot || playerRoot == null)
+                return;
+
+            projectionCamera = ComponentReferenceUtility.ResolveOwnedComponent<Camera>(playerRoot);
+        }
+
+        private bool CacheRuntimeDependencies()
+        {
+            LocalizationManager localizationRuntime = GlobalRegistry.Localization;
+            bool localizationChanged = !ReferenceEquals(_localizationRuntime, localizationRuntime);
+            _localizationRuntime = localizationRuntime;
+            _spatialAudioManager = GlobalRegistry.Audio;
+            _playerRuntimeContext = GlobalRegistry.Player;
+            RebindInventoryService(GlobalRegistry.PlayerInventory);
+            _lowTierDirtyThrottleActive = IsLowTierUiThrottle(GlobalRegistry.ScalabilityTier);
+            return localizationChanged;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            bool needsRefresh = false;
+            bool forceResolve = false;
+
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.LocalizationRuntime:
+                    if (ReferenceEquals(_localizationRuntime, currentService))
+                        return;
+
+                    _localizationRuntime = currentService as LocalizationManager;
+                    RebuildLocalizationCache();
+                    InvalidateVisualCaches();
+                    needsRefresh = true;
+                    break;
+
+                case GlobalRegistryServiceSlot.Audio:
+                    _spatialAudioManager = currentService as IAudioService;
+                    break;
+
+                case GlobalRegistryServiceSlot.Player:
+                    _playerRuntimeContext = currentService as IPlayerRuntimeContext;
+                    ClearPlayerRuntimeBindings(previousService as IPlayerRuntimeContext);
+                    forceResolve = true;
+                    needsRefresh = true;
+                    break;
+
+                case GlobalRegistryServiceSlot.PlayerInventory:
+                    RebindInventoryService(currentService as IPlayerInventoryService);
+                    _toolManager = null;
+                    forceResolve = true;
+                    needsRefresh = true;
+                    break;
+
+                default:
+                    return;
+            }
+
+            if (!needsRefresh || !isActiveAndEnabled)
+                return;
+
+            QueueRuntimeCanvasRefresh(forceResolve, refreshDepthSignal: forceResolve);
+            TryRegisterRuntimeTick();
+        }
+
+        private void ClearPlayerRuntimeBindings(IPlayerRuntimeContext previousContext)
+        {
+            if (previousContext == null)
+            {
+                flashlight = null;
+                underwaterVisuals = null;
+                _toolManager = null;
+                return;
+            }
+
+            if (ReferenceEquals(flashlight, previousContext.Flashlight))
+                flashlight = null;
+            if (ReferenceEquals(underwaterVisuals, previousContext.UnderwaterVisuals))
+                underwaterVisuals = null;
+            if (ReferenceEquals(_toolManager, previousContext.ToolManager))
+                _toolManager = null;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
+        }
+
+        private void RebindInventoryService(IPlayerInventoryService inventoryService)
+        {
+            if (ReferenceEquals(_inventoryService, inventoryService))
+                return;
+
+            _inventoryService = inventoryService;
+            _playerInventory = null;
+            _itemCatalog = null;
+            _lastInventoryVersion = -1;
+            _inventorySignalDirty = true;
+            InvalidateQuickbarSlotHashCache();
         }
 
         private bool NeedsAutoResolve()
@@ -2056,7 +2226,20 @@ namespace Hecton8.UI
             float projectionDistance = ResolveProjectionPlaneDistance();
             float expectedScale = ResolveProjectionCanvasWorldScale(projectionCamera, referenceResolution);
             Vector3 targetPosition = cameraTransform.position + cameraTransform.forward * projectionDistance;
-            canvasRect.SetPositionAndRotation(targetPosition, cameraTransform.rotation);
+            if (HectonXRRuntimeState.IsXRActive)
+            {
+                float dt = math.max(0f, SystemDispatcher.CurrentFrameUnscaledDeltaTime);
+                float positionBlend = ApproximateOneMinusExpNeg(VrLazyFollowPositionSharpness * dt);
+                float rotationBlend = ApproximateOneMinusExpNeg(VrLazyFollowRotationSharpness * dt);
+                Vector3 smoothedPosition = Vector3.LerpUnclamped(canvasRect.position, targetPosition, positionBlend);
+                Quaternion smoothedRotation = CinematicMath.FastNlerp(canvasRect.rotation, cameraTransform.rotation, rotationBlend);
+                canvasRect.SetPositionAndRotation(smoothedPosition, smoothedRotation);
+            }
+            else
+            {
+                canvasRect.SetPositionAndRotation(targetPosition, cameraTransform.rotation);
+            }
+
             canvasRect.localScale = new Vector3(expectedScale, expectedScale, expectedScale);
         }
 
@@ -2114,8 +2297,8 @@ namespace Hecton8.UI
                 return;
 
             int hudInternalMask = 1 << HudInternalLayerIndex;
-            if (targetCamera.cullingMask != hudInternalMask)
-                targetCamera.cullingMask = hudInternalMask;
+            if ((targetCamera.cullingMask & hudInternalMask) == 0)
+                targetCamera.cullingMask |= hudInternalMask;
         }
 
         private static void SetLayerRecursively(Transform root, int layer)
@@ -2305,9 +2488,6 @@ namespace Hecton8.UI
             EnsureAcousticRadarRuntimeResources();
             if (_acousticRadarMaterial == null)
                 return;
-
-            if (_spatialAudioManager == null)
-                _spatialAudioManager = Hecton8.Core.GlobalRegistry.Audio;
 
             NativeArray<float> radarSamples = default;
             int radarResolution = 0;
@@ -3599,10 +3779,17 @@ namespace Hecton8.UI
             float healthCurrent = FiniteNonNegative(ReadHeadlessUIValue(UIValueSlotId.IntegrityCurrent, healthCurrentFallback), healthCurrentFallback);
             uint survivalStatusMask = ReadHeadlessSurvivalStatusMask(survival);
             float stressPulse = _biosRecoveryMode ? 0f : UpdateStressPulse(dt);
+            if (_playerStateSignalDirty &&
+                _playerStateState == PlayerStateSignal.StateSqueezing &&
+                (_playerStateFlags & PlayerStateSignal.FlagSqueezing) != 0)
+            {
+                stressPulse = math.max(stressPulse, _playerStateIntensity01 * 0.35f);
+            }
+
             Color pulsedPrimary = ResolveStressPulseColor(primary, warning, stressPulse, stressPulseBrightnessBoost, stressPulseWarningBlend);
             Color pulsedDim = ResolveStressPulseColor(dim, warning, stressPulse, stressPulseBrightnessBoost * 0.45f, stressPulseWarningBlend * 0.38f);
             Color pulsedWarning = ResolveStressPulseColor(warning, primary, stressPulse, stressPulseBrightnessBoost * 0.22f, 0f);
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
+            LocalizationManager manager = _localizationRuntime;
             float hullStressCorruptionIntensity = manager != null ? manager.GetHullStressCorruptionIntensity() : 0f;
             bool hullStressWhisperMode = !_biosRecoveryMode && ShouldUseHullStressWhisperMode(manager);
             float traumaCorruptionIntensity = _traumaGlitchIntensity > CorruptedModeThreshold ? _traumaGlitchIntensity : 0f;
@@ -3647,7 +3834,7 @@ namespace Hecton8.UI
             bool shouldRefreshGaugeText = specialCadenceBypass || NeedsGaugeCadenceRefresh(refreshMediumCadence, oxygen, power, health);
 
             SetRootVisible(true);
-            bool shouldRefreshQuickbar = !_quickbarVisualsInitialized || specialCadenceBypass || refreshMediumCadence;
+            bool shouldRefreshQuickbar = !_quickbarVisualsInitialized || _inventorySignalDirty || _inputStateSignalDirty || specialCadenceBypass || refreshMediumCadence;
             char[] hullStressWhisperBuffer = null;
             int hullStressWhisperLength = 0;
             int hullStressWhisperVersion = int.MinValue;
@@ -3778,6 +3965,10 @@ namespace Hecton8.UI
                 SetDisplayBufferIfChanged(_statusLabel, depletedBuffer, depletedLength, false, Alpha(pulsedWarning, depletedAlpha), _toolDepletedVersion ^ _toolDepletedHashId, corruptedMode, displayCorruptionIntensity, _corruptionFrameVersion, 307, ref _appliedStatusWhisperVersion, ref _appliedStatusLabelColor);
                 _hasAppliedStatusKeyHash = false;
             }
+            else if (TryApplyHomeostasisStatusLabelOverride(pulsedWarning, corruptedMode, displayCorruptionIntensity, _corruptionFrameVersion))
+            {
+                _hasAppliedStatusKeyHash = false;
+            }
             else if (TryApplyScannerStatusLabelOverride(statusColor, corruptedMode, displayCorruptionIntensity, _corruptionFrameVersion))
             {
                 _hasAppliedStatusKeyHash = false;
@@ -3796,13 +3987,13 @@ namespace Hecton8.UI
 
                 if (corruptedMode)
                 {
-                    ResolveLocalizedKeyBuffer(statusKeyHash, out char[] statusBuffer, out int statusLength);
+                    ResolveLocalizedKeyBuffer(statusKeyHash, _localizationRuntime != null, out char[] statusBuffer, out int statusLength);
                     SetDisplayBufferIfChanged(_statusLabel, statusBuffer, statusLength, localizedRtl, statusColor, statusKeyHash, true, displayCorruptionIntensity, _corruptionFrameVersion, 307, ref _appliedStatusWhisperVersion, ref _appliedStatusLabelColor);
                     _hasAppliedStatusKeyHash = false;
                 }
                 else
                 {
-                    SetLocalizedKeyIfChanged(_statusLabel, statusKeyHash, localizedRtl, statusColor, ref _appliedStatusKeyHash, ref _hasAppliedStatusKeyHash, ref _appliedStatusLabelColor);
+                    SetLocalizedKeyIfChanged(_statusLabel, statusKeyHash, _localizationRuntime != null, localizedRtl, statusColor, ref _appliedStatusKeyHash, ref _hasAppliedStatusKeyHash, ref _appliedStatusLabelColor);
                 }
             }
 
@@ -3810,9 +4001,10 @@ namespace Hecton8.UI
             Color healthAccent = LerpColor(pulsedPrimary, pulsedDim, 0.24f);
             Color energyAccent = LerpColor(pulsedPrimary, pulsedWarning, 0.28f);
 
-            UpdateGauge(ref _oxygenGauge, _displayOxygen01, oxygenCurrent, oxygenAccent, pulsedDim, pulsedWarning, localizedRtl, hullStressWhisperBuffer, hullStressWhisperLength, hullStressWhisperVersion, corruptedMode, displayCorruptionIntensity, _corruptionFrameVersion, 401, dt, OxygenGaugeDamping, shouldRefreshGaugeText);
-            UpdateGauge(ref _healthGauge, _displayHealth01, healthCurrent, healthAccent, pulsedDim, pulsedWarning, localizedRtl, hullStressWhisperBuffer, hullStressWhisperLength, hullStressWhisperVersion, corruptedMode, displayCorruptionIntensity, _corruptionFrameVersion, 503, dt, HealthGaugeDamping, shouldRefreshGaugeText);
-            UpdateGauge(ref _powerGauge, _displayPower01, energyCurrent, energyAccent, pulsedDim, pulsedWarning, localizedRtl, hullStressWhisperBuffer, hullStressWhisperLength, hullStressWhisperVersion, corruptedMode, displayCorruptionIntensity, _corruptionFrameVersion, 607, dt, BatteryGaugeDamping, shouldRefreshGaugeText);
+            bool hasLocalizationRuntime = manager != null;
+            UpdateGauge(ref _oxygenGauge, _displayOxygen01, oxygenCurrent, oxygenAccent, pulsedDim, pulsedWarning, localizedRtl, hasLocalizationRuntime, hullStressWhisperBuffer, hullStressWhisperLength, hullStressWhisperVersion, corruptedMode, displayCorruptionIntensity, _corruptionFrameVersion, 401, dt, OxygenGaugeDamping, shouldRefreshGaugeText);
+            UpdateGauge(ref _healthGauge, _displayHealth01, healthCurrent, healthAccent, pulsedDim, pulsedWarning, localizedRtl, hasLocalizationRuntime, hullStressWhisperBuffer, hullStressWhisperLength, hullStressWhisperVersion, corruptedMode, displayCorruptionIntensity, _corruptionFrameVersion, 503, dt, HealthGaugeDamping, shouldRefreshGaugeText);
+            UpdateGauge(ref _powerGauge, _displayPower01, energyCurrent, energyAccent, pulsedDim, pulsedWarning, localizedRtl, hasLocalizationRuntime, hullStressWhisperBuffer, hullStressWhisperLength, hullStressWhisperVersion, corruptedMode, displayCorruptionIntensity, _corruptionFrameVersion, 607, dt, BatteryGaugeDamping, shouldRefreshGaugeText);
             if (shouldRefreshGaugeText)
             {
                 _lastStreamedPower01 = power;
@@ -3823,7 +4015,12 @@ namespace Hecton8.UI
             {
                 RefreshQuickbarVisuals(pulsedPrimary, pulsedDim, pulsedWarning);
                 _quickbarVisualsInitialized = true;
+                _inventorySignalDirty = false;
+                _inputStateSignalDirty = false;
             }
+
+            _playerStateSignalDirty = false;
+            _systemHealthSignalDirty = false;
         }
 
         private void UpdateEncumbranceReadout(
@@ -4447,11 +4644,12 @@ namespace Hecton8.UI
 
         private void RebuildLocalizationCache()
         {
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
+            LocalizationManager manager = _localizationRuntime;
+            bool hasLocalizationRuntime = manager != null;
             _localizedMeasurementLanguage = manager != null ? manager.CurrentLanguage : GameLanguage.English;
-            BuildMetricTemplate(ref _depthTemplateBuffer, out _depthTemplateLength, _HudDepthKeyHash, ResolveDistanceUnitKeyHash(_localizedMeasurementLanguage), DepthNumberToken.AsSpan(), prependNegativeSign: true);
-            BuildMetricTemplate(ref _temperatureTemplateBuffer, out _temperatureTemplateLength, _HudTemperatureKeyHash, ResolveTemperatureUnitKeyHash(_localizedMeasurementLanguage), FixedTenthsNumberToken.AsSpan(), prependNegativeSign: false);
-            BuildMetricTemplate(ref _pressureTemplateBuffer, out _pressureTemplateLength, _HudPressureKeyHash, _HudAtmKeyHash, FixedTenthsNumberToken.AsSpan(), prependNegativeSign: false);
+            BuildMetricTemplate(ref _depthTemplateBuffer, out _depthTemplateLength, _HudDepthKeyHash, ResolveDistanceUnitKeyHash(_localizedMeasurementLanguage), DepthNumberToken.AsSpan(), prependNegativeSign: true, hasLocalizationRuntime: hasLocalizationRuntime);
+            BuildMetricTemplate(ref _temperatureTemplateBuffer, out _temperatureTemplateLength, _HudTemperatureKeyHash, ResolveTemperatureUnitKeyHash(_localizedMeasurementLanguage), FixedTenthsNumberToken.AsSpan(), prependNegativeSign: false, hasLocalizationRuntime: hasLocalizationRuntime);
+            BuildMetricTemplate(ref _pressureTemplateBuffer, out _pressureTemplateLength, _HudPressureKeyHash, _HudAtmKeyHash, FixedTenthsNumberToken.AsSpan(), prependNegativeSign: false, hasLocalizationRuntime: hasLocalizationRuntime);
         }
 
         private static bool ShouldUseHullStressWhisperMode(LocalizationManager manager)
@@ -4501,6 +4699,7 @@ namespace Hecton8.UI
             Color dim,
             Color warning,
             bool localizedRtl,
+            bool hasLocalizationRuntime,
             char[] hullStressWhisperBuffer,
             int hullStressWhisperLength,
             int hullStressWhisperVersion,
@@ -4597,7 +4796,7 @@ namespace Hecton8.UI
                     gauge.CachedLabelWhisperVersion = int.MinValue;
                     if (corruptedMode)
                     {
-                        ResolveLocalizedKeyBuffer(gauge.LabelKeyHash, out char[] labelBuffer, out int labelLength);
+                        ResolveLocalizedKeyBuffer(gauge.LabelKeyHash, hasLocalizationRuntime, out char[] labelBuffer, out int labelLength);
                         SetDisplayBufferIfChanged(
                             gauge.Label,
                             labelBuffer,
@@ -4615,7 +4814,7 @@ namespace Hecton8.UI
                     }
                     else
                     {
-                        SetLocalizedKeyIfChanged(gauge.Label, gauge.LabelKeyHash, localizedRtl, labelColor, ref gauge.CachedLabelKeyHash, ref gauge.HasCachedLabelKeyHash, ref gauge.CachedLabelColor);
+                        SetLocalizedKeyIfChanged(gauge.Label, gauge.LabelKeyHash, hasLocalizationRuntime, localizedRtl, labelColor, ref gauge.CachedLabelKeyHash, ref gauge.HasCachedLabelKeyHash, ref gauge.CachedLabelColor);
                     }
                 }
             }
@@ -5329,6 +5528,7 @@ namespace Hecton8.UI
         private static void SetLocalizedKeyIfChanged(
             TextMeshProUGUI label,
             int keyHash,
+            bool hasLocalizationRuntime,
             bool rtl,
             Color color,
             ref int cachedKeyHash,
@@ -5343,7 +5543,7 @@ namespace Hecton8.UI
                 SetLocalizedRtlState(label, rtl);
                 char[] buffer;
                 int length;
-                if (Hecton8.Core.GlobalRegistry.Localization == null)
+                if (!hasLocalizationRuntime)
                 {
                     TryGetFallbackBuffer(keyHash, out buffer, out length);
                 }
@@ -5389,6 +5589,132 @@ namespace Hecton8.UI
                 label.color = color;
                 cachedColor = color;
             }
+        }
+
+        private bool ConsumeReactiveSignals()
+        {
+            bool dirty = false;
+            dirty |= ConsumePlayerStateSignals();
+            dirty |= ConsumeInventoryChangedSignals();
+            dirty |= ConsumeInputStateSignals();
+            dirty |= ConsumeSystemHealthSignals();
+            return dirty || _inventorySignalDirty || _inputStateSignalDirty;
+        }
+
+        private bool ConsumePlayerStateSignals()
+        {
+            bool dirty = false;
+            ReadOnlySpan<PlayerStateSignal> signals = SignalBus<PlayerStateSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                PlayerStateSignal signal = signals[i];
+                _playerStateFlags = signal.Flags;
+                _playerStateState = signal.State;
+                _playerStateIntensity01 = math.saturate(signal.Intensity01);
+                dirty = true;
+            }
+
+            _playerStateSignalDirty = dirty;
+            return dirty;
+        }
+
+        private bool ConsumeInventoryChangedSignals()
+        {
+            bool dirty = false;
+            ReadOnlySpan<InventoryChangedSignal> signals = SignalBus<InventoryChangedSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                InventoryChangedSignal signal = signals[i];
+                if (signal.Revision == _lastInventorySignalRevision && _lastInventorySignalRevision != 0u)
+                    continue;
+
+                _lastInventorySignalRevision = signal.Revision;
+                dirty = true;
+            }
+
+            if (!dirty)
+                return false;
+
+            _inventorySignalDirty = true;
+            InvalidateQuickbarSlotHashCache();
+            return true;
+        }
+
+        private bool ConsumeInputStateSignals()
+        {
+            bool dirty = false;
+            ReadOnlySpan<InputStateSignal> signals = SignalBus<InputStateSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                uint schemeHash = signals[i].CurrentInputSchemeHash;
+                if (schemeHash == 0u || schemeHash == _lastInputSchemeHash)
+                    continue;
+
+                _lastInputSchemeHash = schemeHash;
+                dirty = true;
+            }
+
+            _inputStateSignalDirty = dirty;
+            return dirty;
+        }
+
+        private bool ConsumeSystemHealthSignals()
+        {
+            bool dirty = false;
+            ReadOnlySpan<SystemHealthSignal> signals = SignalBus<SystemHealthSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                SystemHealthSignal signal = signals[i];
+                bool warning = signal.PressureLevel > 1 ||
+                    (signal.Flags & (ushort)HomeostasisSignalFlags.HudWarning) != 0;
+                _systemHealthWarningActive = warning;
+                _systemHealthPressureLevel = signal.PressureLevel;
+                _systemHealthWarningFrame = Time.frameCount;
+                dirty = true;
+            }
+
+            if (_systemHealthWarningActive &&
+                Time.frameCount - _systemHealthWarningFrame > SystemHealthWarningStaleFrames)
+            {
+                _systemHealthWarningActive = false;
+                _systemHealthPressureLevel = 0;
+                dirty = true;
+            }
+
+            _systemHealthSignalDirty = dirty;
+            return dirty;
+        }
+
+        private bool TryApplyHomeostasisStatusLabelOverride(
+            Color warningColor,
+            bool corruptedMode,
+            float corruptionIntensity,
+            int corruptionVersion)
+        {
+            if (!_systemHealthWarningActive || _statusLabel == null)
+                return false;
+
+            float flickerFrequency = 14f + _systemHealthPressureLevel * 2f;
+            float flickerAlpha = IsBlinkVisible(Time.unscaledTime, flickerFrequency) ? 1f : 0.18f;
+            Color color = Alpha(warningColor, math.max(0.18f, warningColor.a * flickerAlpha));
+            int version = unchecked((int)(0x484F0000u |
+                ((uint)_systemHealthPressureLevel << 8) |
+                (uint)((Time.frameCount >> 2) & 0xFF)));
+
+            SetDisplayBufferIfChanged(
+                _statusLabel,
+                s_statusOptimizingCoreSystemsChars,
+                s_statusOptimizingCoreSystemsChars.Length,
+                false,
+                color,
+                version,
+                corruptedMode,
+                corruptionIntensity,
+                corruptionVersion,
+                307,
+                ref _appliedStatusWhisperVersion,
+                ref _appliedStatusLabelColor);
+            return true;
         }
 
         private bool TryApplyScannerStatusLabelOverride(
@@ -5649,9 +5975,9 @@ namespace Hecton8.UI
                 length = 0;
         }
 
-        private static void ResolveLocalizedKeyBuffer(int keyHash, out char[] buffer, out int length)
+        private static void ResolveLocalizedKeyBuffer(int keyHash, bool hasLocalizationRuntime, out char[] buffer, out int length)
         {
-            if (Hecton8.Core.GlobalRegistry.Localization == null)
+            if (!hasLocalizationRuntime)
             {
                 TryGetFallbackBuffer(keyHash, out buffer, out length);
                 return;
@@ -5810,14 +6136,15 @@ namespace Hecton8.UI
             int labelKeyHash,
             int unitKeyHash,
             ReadOnlySpan<char> numberToken,
-            bool prependNegativeSign)
+            bool prependNegativeSign,
+            bool hasLocalizationRuntime)
         {
             char[] labelBuffer;
             int labelLength;
             char[] unitBuffer;
             int unitLength;
 
-            if (Hecton8.Core.GlobalRegistry.Localization == null)
+            if (!hasLocalizationRuntime)
             {
                 TryGetFallbackBuffer(labelKeyHash, out labelBuffer, out labelLength);
                 TryGetFallbackBuffer(unitKeyHash, out unitBuffer, out unitLength);
@@ -6075,10 +6402,10 @@ namespace Hecton8.UI
             _telemetryRule.color = Alpha(primary, 0.18f);
             _telemetryBraceUpper.color = Alpha(primary, 0.18f);
             _telemetryBraceLower.color = Alpha(primary, 0.12f);
-            _reticleH.color = Alpha(primary, 0.76f);
-            _reticleV.color = Alpha(primary, 0.5f);
-            _reticleBracketLeft.color = Alpha(primary, 0.42f);
-            _reticleBracketRight.color = Alpha(primary, 0.42f);
+            _reticleH.color = Alpha(primary, 0.96f);
+            _reticleV.color = Alpha(primary, 0.82f);
+            _reticleBracketLeft.color = Alpha(primary, 0.68f);
+            _reticleBracketRight.color = Alpha(primary, 0.68f);
             ApplySavingProgressStyle(primary, dim, warning);
 
             _appliedOverallScale = overallScale;
@@ -6110,10 +6437,10 @@ namespace Hecton8.UI
             _telemetryRule.color = Alpha(pulsedPrimary, 0.18f + stressPulse * 0.03f);
             _telemetryBraceUpper.color = Alpha(pulsedPrimary, 0.18f + stressPulse * 0.03f);
             _telemetryBraceLower.color = Alpha(pulsedPrimary, 0.12f + stressPulse * 0.03f);
-            _reticleH.color = Alpha(pulsedPrimary, 0.76f + stressPulse * 0.1f);
-            _reticleV.color = Alpha(pulsedPrimary, 0.5f + stressPulse * 0.08f);
-            _reticleBracketLeft.color = Alpha(pulsedPrimary, 0.42f + stressPulse * 0.08f);
-            _reticleBracketRight.color = Alpha(pulsedPrimary, 0.42f + stressPulse * 0.08f);
+            _reticleH.color = Alpha(pulsedPrimary, 0.96f);
+            _reticleV.color = Alpha(pulsedPrimary, 0.82f + stressPulse * 0.08f);
+            _reticleBracketLeft.color = Alpha(pulsedPrimary, 0.68f + stressPulse * 0.08f);
+            _reticleBracketRight.color = Alpha(pulsedPrimary, 0.68f + stressPulse * 0.08f);
             ApplySavingProgressStyle(pulsedPrimary, primary, warning);
             _appliedStressPulseStrength = stressPulse;
         }
@@ -6506,9 +6833,10 @@ namespace Hecton8.UI
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            if (!_tickRegistered)
+            if (_tickRegistered)
             {
-                _tickRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+                _tickRegistered = false;
             }
 
             if (!_lateFrameTickRegistered)
@@ -6520,6 +6848,11 @@ namespace Hecton8.UI
                 return;
 
             _slowTickRegistered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI);
+        }
+
+        private static bool IsLowTierUiThrottle(HectonQualityTier tier)
+        {
+            return tier == HectonQualityTier.Low || tier == HectonQualityTier.Mx350;
         }
 
         private void UnregisterRuntimeTick()

@@ -113,6 +113,7 @@ namespace Hecton8.World
         private struct CorpseResourceNodeRecord
         {
             public uint NodeId;
+            public uint ContaminatedItemHash;
             public int SpeciesId;
             public AbsoluteUniversePosition PositionAup;
             public Vector3 Position;
@@ -414,17 +415,27 @@ namespace Hecton8.World
 
         internal bool RegisterCorpseResourceNode(Vector3 worldPosition, int speciesId, float capacityUnits)
         {
+            return RegisterCorpseResourceNode(worldPosition, speciesId, capacityUnits, 0u);
+        }
+
+        internal bool RegisterCorpseResourceNode(Vector3 worldPosition, int speciesId, float capacityUnits, uint contaminatedItemHash)
+        {
             AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(worldPosition);
-            return RegisterCorpseResourceNode(in positionAup, worldPosition, speciesId, capacityUnits);
+            return RegisterCorpseResourceNode(in positionAup, worldPosition, speciesId, capacityUnits, contaminatedItemHash);
         }
 
         internal bool RegisterCorpseResourceNode(in AbsoluteUniversePosition positionAup, int speciesId, float capacityUnits)
         {
-            Vector3 runtimePosition = positionAup.ToRuntimeFloat3();
-            return RegisterCorpseResourceNode(in positionAup, runtimePosition, speciesId, capacityUnits);
+            return RegisterCorpseResourceNode(in positionAup, speciesId, capacityUnits, 0u);
         }
 
-        private bool RegisterCorpseResourceNode(in AbsoluteUniversePosition positionAup, Vector3 worldPosition, int speciesId, float capacityUnits)
+        internal bool RegisterCorpseResourceNode(in AbsoluteUniversePosition positionAup, int speciesId, float capacityUnits, uint contaminatedItemHash)
+        {
+            Vector3 runtimePosition = positionAup.ToRuntimeFloat3();
+            return RegisterCorpseResourceNode(in positionAup, runtimePosition, speciesId, capacityUnits, contaminatedItemHash);
+        }
+
+        private bool RegisterCorpseResourceNode(in AbsoluteUniversePosition positionAup, Vector3 worldPosition, int speciesId, float capacityUnits, uint contaminatedItemHash)
         {
             if (_corpseResourceNodes == null || _corpseResourceNodes.Length == 0 || capacityUnits <= 0f)
                 return false;
@@ -449,6 +460,7 @@ namespace Hecton8.World
             CorpseResourceNodeRecord record = new CorpseResourceNodeRecord
             {
                 NodeId = (uint)(PersistentWorldRegistry.ComputeResourceNodeTombstoneId(in positionAup) & uint.MaxValue),
+                ContaminatedItemHash = contaminatedItemHash,
                 SpeciesId = speciesId,
                 PositionAup = positionAup,
                 Position = worldPosition,
@@ -524,6 +536,25 @@ namespace Hecton8.World
                 _corpseResourceNodes[i] = record;
                 TrimTrailingCorpseNodes();
                 return true;
+            }
+
+            return false;
+        }
+
+        internal bool TryResolveCorpseContaminatedItemHash(uint corpseNodeId, out uint itemHash)
+        {
+            itemHash = 0u;
+            if (corpseNodeId == 0u || _corpseResourceNodes == null)
+                return false;
+
+            for (int i = 0; i < _corpseResourceNodeCount; i++)
+            {
+                CorpseResourceNodeRecord record = _corpseResourceNodes[i];
+                if (record.Active == 0 || record.NodeId != corpseNodeId)
+                    continue;
+
+                itemHash = record.ContaminatedItemHash;
+                return itemHash != 0u;
             }
 
             return false;

@@ -15,6 +15,7 @@
         "Unity.Burst",
         "Unity.TextMeshPro",
         "UnityEngine.UI",
+        "Unity.RenderPipelines.Universal.Runtime",
         "GPUInstancer",
         "Den.Tools",
         "MapMagic",

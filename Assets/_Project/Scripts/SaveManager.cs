@@ -13,9 +13,13 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Threading;
 using Hecton8.Bootstrap;
 using Hecton8.Caves;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
+using Hecton8.Core.Memory;
+using Hecton8.Core.Persistence.Paging;
 using Hecton8.Core.Signals;
 using Hecton8.Gameplay;
 using Hecton8.Inventory;
@@ -46,12 +50,21 @@ namespace Hecton8.SaveSystem
         private const float SafeGcCollectFrameBudgetSeconds = 0.014f;
         private const long VramAbortThresholdBytes = 1800L * 1024L * 1024L;
         private const uint AsyncPersistenceSourceHash = 0x41505953u; // APYS
+        private const uint WorldPagerSourceHash = 0x48384250u; // H8BP
+        private const uint WfcOutpostPersistenceSourceHash = 0x57464350u; // WFCP
+        private const uint WfcBytesSavedTelemetryHash = 0x57464253u; // WFBS
+        private const uint WfcCorruptPayloadTelemetryHash = 0x57464358u; // WFCX
+        private const uint WorldPagerSavingMessageHash = 0x53415647u; // SAVG
+        private const uint WorldPagerSavingContextHash = 0x48384249u; // H8BI
         private const uint SaveRecoveredMessageHash = 0x53565243u; // SVRC
         private const uint SaveRecoveredContextHash = 0x42414B52u; // BAKR
         private const uint SaveSynchronizedMessageHash = 0x53565359u; // SVSY
         private const uint SaveDurationTelemetryHash = 0x5356444Du; // SVDM
         private const uint SaveCompressedSizeTelemetryHash = 0x53564342u; // SVCB
         private const uint ScreenshotSizeKbTelemetryHash = 0x53534B42u; // SSKB
+        private const int MaxChunkDehydrationSignalsPerTick = 2;
+        private const int MaxWfcOutpostStateSignalsPerTick = 8;
+        private const int MaxWfcSectorHydratedSignalsPerTick = 4;
         private const float SafeAupSnapGroundPaddingMeters = 0.28f;
         private const float SafeAupSnapMinimumLiftMeters = 0.35f;
         private const string CriticalSectorCorruptionMessage = "CRITICAL ERROR: LOCALIZED DATA CORRUPTION. TERRAIN RE-INITIALIZED.";
@@ -121,6 +134,8 @@ namespace Hecton8.SaveSystem
         private double _sessionStartTime;
         private double _totalPlayTime;
         private bool _isBusy;
+        private H8BinaryWorldPager _worldPager;
+        private bool _worldPagerSavingNotificationArmed;
 
         private static readonly IComparer<ISaveable> SavePriorityComparer = new SavePriorityComparerImpl();
         private static readonly IComparer<ISaveable> LoadPriorityComparer = new LoadPriorityComparerImpl();
@@ -161,7 +176,17 @@ namespace Hecton8.SaveSystem
         private NativeArray<byte> _savePayloadBuffer;
         private NativeArray<byte> _compressedSaveBuffer;
         private NativeArray<byte> _saveStagingBuffer;
+        private NativeArray<byte> _wfcOutpostGrid;
+        private NativeArray<ulong> _wfcOutpostPackedWords;
+        private NativeArray<ulong> _wfcOutpostRestoreWords;
+        private NativeArray<byte> _wfcOutpostPayloadBuffer;
         private NativeArray<AsyncPersistenceTelemetryEntry> _saveTelemetryRing;
+        private ulong _lastWfcOutpostSectorHash;
+        private ulong _lastWfcOutpostPayloadHash;
+        private IMacroDatabaseService _macroDatabaseService;
+        private IDataVault _dataVault;
+        private int _wfcOutpostAppendActive;
+        private bool _hasLastWfcOutpostSnapshot;
         private ulong _expectedIntegrityPayloadHash64;
         private int _integrityPayloadLength;
         private bool _updatableRegistered;
@@ -402,6 +427,12 @@ namespace Hecton8.SaveSystem
             ShutdownServiceState();
         }
 
+        private void OnApplicationQuit()
+        {
+            FlushWorldPager();
+            ShutdownServiceState();
+        }
+
         public void OnServiceShutdown()
         {
             ShutdownServiceState();
@@ -447,13 +478,30 @@ namespace Hecton8.SaveSystem
             _saveableCount = 0;
             _debugRegisteredCount = 0;
             _registryDirty = false;
+            _worldPagerSavingNotificationArmed = false;
+
+            if (_worldPager != null)
+            {
+                _worldPager.Dispose();
+                _worldPager = null;
+            }
 
             DisposeNativeArray(ref _savePayloadBuffer);
             DisposeNativeArray(ref _compressedSaveBuffer);
             DisposeNativeArray(ref _saveStagingBuffer);
+            DisposeNativeArray(ref _wfcOutpostPackedWords);
+            DisposeNativeArray(ref _wfcOutpostRestoreWords);
+            DisposeNativeArray(ref _wfcOutpostPayloadBuffer);
             DisposeNativeArray(ref _saveTelemetryRing);
             DisposeNativeArray(ref _loadCandidateScratch);
             DisposeStaticLoadCandidateScratch();
+            _wfcOutpostGrid = default;
+            _macroDatabaseService = null;
+            _dataVault = null;
+            _wfcOutpostAppendActive = 0;
+            _lastWfcOutpostSectorHash = 0UL;
+            _lastWfcOutpostPayloadHash = 0UL;
+            _hasLastWfcOutpostSnapshot = false;
 
             DisposeIntegrityResources();
         }
@@ -462,6 +510,7 @@ namespace Hecton8.SaveSystem
         {
             CachePersistentDataPathRoot();
             InitializeNativeBuffers();
+            RefreshWfcOutpostDependencies();
 
             if (_serviceRegistered)
             {
@@ -499,7 +548,235 @@ namespace Hecton8.SaveSystem
             }
         }
 
+        public unsafe bool TryPersistWfcOutpostStateSnapshot(
+            ulong sectorHash,
+            NativeArray<byte> wfcGrid,
+            uint frame,
+            out WfcOutpostPersistenceStatus status)
+        {
+            status = WfcOutpostPersistenceStatus.None;
+            if (sectorHash == 0UL)
+            {
+                status = WfcOutpostPersistenceStatus.Rejected;
+                return false;
+            }
+
+            if (!IsValidWfcOutpostGrid(wfcGrid))
+            {
+                status = WfcOutpostPersistenceStatus.InvalidGrid;
+                return false;
+            }
+
+            if (!TryResolveWfcOutpostMacroDatabase(out IMacroDatabaseService macroDatabase))
+            {
+                status = WfcOutpostPersistenceStatus.ServiceUnavailable;
+                return false;
+            }
+
+            EnsureWfcOutpostNativeBuffers();
+            PackWfcOutpostMutableStateJob packJob = new PackWfcOutpostMutableStateJob
+            {
+                Grid = wfcGrid,
+                PackedWords = _wfcOutpostPackedWords
+            };
+            packJob.Run();
+
+            ulong packedHash = ComputeWfcOutpostPackedHash(_wfcOutpostPackedWords);
+            if (_hasLastWfcOutpostSnapshot &&
+                _lastWfcOutpostSectorHash == sectorHash &&
+                _lastWfcOutpostPayloadHash == packedHash)
+            {
+                status = WfcOutpostPersistenceStatus.DirtySkippedUnchanged;
+                return true;
+            }
+
+            if (!SaveBinaryPayloadCodec.TryWriteWfcOutpostBitmaskPayload(
+                    _wfcOutpostPackedWords,
+                    WfcOutpostPersistenceConstants.PackedWordCount,
+                    (byte*)_wfcOutpostPayloadBuffer.GetUnsafePtr(),
+                    _wfcOutpostPayloadBuffer.Length,
+                    out int payloadBytes))
+            {
+                status = WfcOutpostPersistenceStatus.Rejected;
+                return false;
+            }
+
+            if (!macroDatabase.MarkDirty(
+                    sectorHash,
+                    (IntPtr)_wfcOutpostPayloadBuffer.GetUnsafeReadOnlyPtr(),
+                    payloadBytes,
+                    0))
+            {
+                status = WfcOutpostPersistenceStatus.Rejected;
+                return false;
+            }
+
+            _hasLastWfcOutpostSnapshot = true;
+            _lastWfcOutpostSectorHash = sectorHash;
+            _lastWfcOutpostPayloadHash = packedHash;
+            status = WfcOutpostPersistenceStatus.DirtyQueued;
+            PublishWfcBytesSaved(payloadBytes);
+            QueueWfcOutpostDirtyAppend(sectorHash, frame);
+            return true;
+        }
+
+        public unsafe bool TryApplyWfcOutpostStateOverride(
+            ulong sectorHash,
+            NativeArray<byte> wfcGrid,
+            out WfcOutpostPersistenceStatus status)
+        {
+            status = WfcOutpostPersistenceStatus.None;
+            if (sectorHash == 0UL)
+            {
+                status = WfcOutpostPersistenceStatus.Rejected;
+                return false;
+            }
+
+            if (!IsValidWfcOutpostGrid(wfcGrid))
+            {
+                status = WfcOutpostPersistenceStatus.InvalidGrid;
+                return false;
+            }
+
+            if (!TryResolveWfcOutpostMacroDatabase(out IMacroDatabaseService macroDatabase))
+            {
+                status = WfcOutpostPersistenceStatus.ServiceUnavailable;
+                return false;
+            }
+
+            EnsureWfcOutpostNativeBuffers();
+            if (!macroDatabase.TryGetPayload(sectorHash, out MacroDatabasePayloadHandle handle))
+            {
+                status = WfcOutpostPersistenceStatus.Missing;
+                return false;
+            }
+
+            if (handle.Pointer == IntPtr.Zero ||
+                handle.ByteLength < WfcOutpostPersistenceConstants.PayloadHeaderBytes ||
+                handle.ByteLength > WfcOutpostPersistenceConstants.PayloadMaxBytes ||
+                !SaveBinaryPayloadCodec.TryReadWfcOutpostBitmaskPayload(
+                    (byte*)handle.Pointer,
+                    handle.ByteLength,
+                    _wfcOutpostRestoreWords,
+                    WfcOutpostPersistenceConstants.PackedWordCount,
+                    out int wordsRead) ||
+                wordsRead != WfcOutpostPersistenceConstants.PackedWordCount)
+            {
+                status = WfcOutpostPersistenceStatus.CorruptLength;
+                PublishWfcCorruptPayloadWarning();
+                return false;
+            }
+
+            UnpackWfcOutpostGrid(_wfcOutpostRestoreWords, wfcGrid);
+            _hasLastWfcOutpostSnapshot = true;
+            _lastWfcOutpostSectorHash = sectorHash;
+            _lastWfcOutpostPayloadHash = ComputeWfcOutpostPackedHash(_wfcOutpostRestoreWords);
+            status = WfcOutpostPersistenceStatus.Ready;
+            return true;
+        }
+
+        public bool TryEnqueueChunkPageWrite(
+            long sectorHash,
+            uint payloadType,
+            NativeArray<byte> payload,
+            int byteCount,
+            uint sourceHash,
+            uint frame)
+        {
+            H8BinaryWorldPager pager = EnsureWorldPager();
+            return pager != null && pager.TryEnqueueWrite(sectorHash, payloadType, payload, byteCount, sourceHash, frame);
+        }
+
+        public bool TryRequestChunkPageRead(
+            long sectorHash,
+            uint payloadType,
+            uint requestId,
+            out H8WorldPageReadTicket ticket)
+        {
+            uint frame = unchecked((uint)Time.frameCount);
+            ticket = new H8WorldPageReadTicket
+            {
+                SectorHash = sectorHash,
+                PayloadType = payloadType,
+                RequestId = requestId,
+                Frame = frame,
+                Status = H8WorldPageStatus.Rejected
+            };
+
+            H8BinaryWorldPager pager = EnsureWorldPager();
+            return pager != null && pager.TryRequestRead(sectorHash, payloadType, requestId, frame, out ticket);
+        }
+
+        public bool TryCopyCompletedChunkPage(
+            in H8WorldPageReadTicket ticket,
+            NativeArray<byte> destination,
+            out int bytesWritten,
+            out H8WorldPageStatus status)
+        {
+            H8BinaryWorldPager pager = _worldPager;
+            if (pager == null)
+            {
+                bytesWritten = 0;
+                status = H8WorldPageStatus.Rejected;
+                return false;
+            }
+
+            return pager.TryCopyCompletedPage(in ticket, destination, out bytesWritten, out status);
+        }
+
+        public bool TryRetireCompletedChunkPage(
+            in H8WorldPageReadTicket ticket,
+            out H8WorldPageStatus status,
+            out int byteCount)
+        {
+            H8BinaryWorldPager pager = _worldPager;
+            if (pager == null)
+            {
+                status = H8WorldPageStatus.Rejected;
+                byteCount = 0;
+                return false;
+            }
+
+            return pager.TryRetireCompletedPage(in ticket, out status, out byteCount);
+        }
+
+        public H8WorldPagerTelemetrySnapshot GetWorldPagerTelemetry()
+        {
+            return _worldPager != null ? _worldPager.GetTelemetry() : default;
+        }
+
+        public void FlushWorldPager()
+        {
+            _worldPager?.Flush();
+        }
+
+        private H8BinaryWorldPager EnsureWorldPager()
+        {
+            if (_worldPager == null)
+                _worldPager = new H8BinaryWorldPager(); // COLD ALLOC: H8BinaryWorldPager[1] - async chunk page persistence bridge - owner: SaveManager
+
+            if (!_worldPager.IsInitialized && !_worldPager.HasInitializationFault)
+                _worldPager.Initialize(null);
+
+            return _worldPager;
+        }
+
         private void InitializeNativeBuffers()
+        {
+            EnsureSaveTelemetryRing();
+            EnsureLoadCandidateScratch();
+        }
+
+        private void EnsureSaveWorkingBuffers()
+        {
+            EnsureSavePayloadBuffer();
+            EnsureCompressedSaveBuffer();
+            EnsureSaveStagingBuffer();
+            EnsureLoadCandidateScratch();
+            EnsureSaveTelemetryRing();
+        }
+
+        private void EnsureSavePayloadBuffer()
         {
             if (!_savePayloadBuffer.IsCreated)
             {
@@ -507,34 +784,127 @@ namespace Hecton8.SaveSystem
                 _savePayloadBuffer = new NativeArray<byte>(SaveBinaryStorage.RawPayloadCapacityBytes, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
                 NativeMemorySentinel.RegisterNativeArray(_savePayloadBuffer, NativeMemoryOwner, nameof(_savePayloadBuffer), NativeMemoryLifetime);
             }
+        }
 
+        private void EnsureCompressedSaveBuffer()
+        {
             if (!_compressedSaveBuffer.IsCreated)
             {
                 // COLD ALLOC: NativeArray<byte>[71303168] — protected 16KB LZ4 block-compressed save payload buffer for 64MB raw save budget — owner: SaveManager
                 _compressedSaveBuffer = new NativeArray<byte>(SaveBinaryStorage.MaxCompressedPayloadBytes, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
                 NativeMemorySentinel.RegisterNativeArray(_compressedSaveBuffer, NativeMemoryOwner, nameof(_compressedSaveBuffer), NativeMemoryLifetime);
             }
+        }
 
+        private void EnsureSaveStagingBuffer()
+        {
             if (!_saveStagingBuffer.IsCreated)
             {
                 // COLD ALLOC: NativeArray<byte>[10485760] - 10MB async persistence snapshot staging arena - owner: SaveManager
                 _saveStagingBuffer = new NativeArray<byte>(SaveStagingBufferBytes, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
                 NativeMemorySentinel.RegisterNativeArray(_saveStagingBuffer, NativeMemoryOwner, nameof(_saveStagingBuffer), NativeMemoryLifetime);
             }
+        }
 
+        private void RefreshWfcOutpostDependencies()
+        {
+            _macroDatabaseService = GlobalRegistry.MacroDatabase;
+            _dataVault = GlobalRegistry.DataVault;
+            TryEnsureWfcOutpostGrid(out _);
+        }
+
+        private bool TryResolveWfcOutpostMacroDatabase(out IMacroDatabaseService macroDatabase)
+        {
+            macroDatabase = _macroDatabaseService;
+            if (macroDatabase == null || !macroDatabase.IsOpen)
+            {
+                RefreshWfcOutpostDependencies();
+                macroDatabase = _macroDatabaseService;
+            }
+
+            return macroDatabase != null && macroDatabase.IsOpen;
+        }
+
+        private bool TryEnsureWfcOutpostGrid(out NativeArray<byte> wfcGrid)
+        {
+            wfcGrid = default;
+            IDataVault dataVault = _dataVault;
+            if (dataVault == null)
+            {
+                dataVault = GlobalRegistry.DataVault;
+                _dataVault = dataVault;
+            }
+
+            if (dataVault == null)
+                return false;
+
+            wfcGrid = dataVault.GetBuffer<byte>(
+                BufferID.WfcOutpostGrid,
+                WfcOutpostPersistenceConstants.CellCount,
+                SystemID.CoreDataVault,
+                NativeArrayOptions.ClearMemory);
+
+            if (!IsValidWfcOutpostGrid(wfcGrid))
+            {
+                _wfcOutpostGrid = default;
+                return false;
+            }
+
+            _wfcOutpostGrid = wfcGrid;
+            return true;
+        }
+
+        private void EnsureWfcOutpostNativeBuffers()
+        {
+            if (!_wfcOutpostPackedWords.IsCreated)
+            {
+                // COLD ALLOC: NativeArray<ulong>[32] - WFC outpost mutable-bit payload pack scratch - owner: SaveManager
+                _wfcOutpostPackedWords = new NativeArray<ulong>(WfcOutpostPersistenceConstants.PackedWordCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                NativeMemorySentinel.RegisterNativeArray(_wfcOutpostPackedWords, NativeMemoryOwner, nameof(_wfcOutpostPackedWords), NativeMemoryLifetime);
+            }
+
+            if (!_wfcOutpostRestoreWords.IsCreated)
+            {
+                // COLD ALLOC: NativeArray<ulong>[32] - WFC outpost mutable-bit restore scratch - owner: SaveManager
+                _wfcOutpostRestoreWords = new NativeArray<ulong>(WfcOutpostPersistenceConstants.PackedWordCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                NativeMemorySentinel.RegisterNativeArray(_wfcOutpostRestoreWords, NativeMemoryOwner, nameof(_wfcOutpostRestoreWords), NativeMemoryLifetime);
+            }
+
+            if (!_wfcOutpostPayloadBuffer.IsCreated)
+            {
+                // COLD ALLOC: NativeArray<byte>[288] - WFC outpost RLE payload staging buffer - owner: SaveManager
+                _wfcOutpostPayloadBuffer = new NativeArray<byte>(WfcOutpostPersistenceConstants.PayloadMaxBytes, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+                NativeMemorySentinel.RegisterNativeArray(_wfcOutpostPayloadBuffer, NativeMemoryOwner, nameof(_wfcOutpostPayloadBuffer), NativeMemoryLifetime);
+            }
+        }
+
+        private void EnsureSaveTelemetryRing()
+        {
             if (!_saveTelemetryRing.IsCreated)
             {
                 // COLD ALLOC: NativeArray<AsyncPersistenceTelemetryEntry>[300] - save black box duration/size ring - owner: SaveManager
                 _saveTelemetryRing = new NativeArray<AsyncPersistenceTelemetryEntry>(SaveTelemetryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
                 NativeMemorySentinel.RegisterNativeArray(_saveTelemetryRing, NativeMemoryOwner, nameof(_saveTelemetryRing), NativeMemoryLifetime);
             }
+        }
 
+        private void EnsureLoadCandidateScratch()
+        {
             if (!_loadCandidateScratch.IsCreated)
             {
                 // COLD ALLOC: NativeArray<SaveLoadCandidate>[9] - unmanaged load fallback descriptors - owner: SaveManager
                 _loadCandidateScratch = new NativeArray<SaveLoadCandidate>(MaxSaveLoadCandidateCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
                 NativeMemorySentinel.RegisterNativeArray(_loadCandidateScratch, NativeMemoryOwner, nameof(_loadCandidateScratch), NativeMemoryLifetime);
             }
+        }
+
+        private void EnsureWorldPagerInitialized()
+        {
+            if (_worldPager == null)
+                _worldPager = new H8BinaryWorldPager();
+
+            if (!_worldPager.IsInitialized && !_worldPager.HasInitializationFault)
+                _worldPager.Initialize(HectonPersistentPathPolicy.CombineFile("world_data.h8bin"));
         }
 
         private static void EnsureStaticLoadCandidateScratch()
@@ -563,6 +933,10 @@ namespace Hecton8.SaveSystem
         public void Tick(float deltaTime)
         {
             DrainSaveRequestSignals();
+            DrainWfcOutpostStateChangedSignals();
+            DrainWfcSectorHydratedSignals();
+            DrainChunkDehydratedSignals();
+            PollWorldPagerSavingNotification();
             DrainPostSaveVramGc();
         }
 
@@ -634,6 +1008,303 @@ namespace Hecton8.SaveSystem
 
                 _ = SaveGameAsyncInternal(slotName, slotIndex, operationId);
             }
+        }
+
+        private void DrainWfcOutpostStateChangedSignals()
+        {
+            ReadOnlySpan<WfcOutpostStateChangedSignal> signals = SignalBus<WfcOutpostStateChangedSignal>.GetFrameSnapshot();
+            int count = math.min(signals.Length, MaxWfcOutpostStateSignalsPerTick);
+            for (int i = 0; i < count; i++)
+            {
+                WfcOutpostStateChangedSignal signal = signals[i];
+                if (signal.SectorHash == 0UL || signal.CellIndex >= WfcOutpostPersistenceConstants.CellCount)
+                    continue;
+
+                byte changedMask = (byte)((signal.PreviousFlags ^ signal.CurrentFlags) & WfcOutpostPersistenceConstants.MutableFlagMask);
+                if (changedMask == 0)
+                    continue;
+
+                if (!TryEnsureWfcOutpostGrid(out NativeArray<byte> wfcGrid))
+                    continue;
+
+                byte immutableMask = unchecked((byte)~WfcOutpostPersistenceConstants.MutableFlagMask);
+                byte mutableFlags = (byte)(signal.CurrentFlags & WfcOutpostPersistenceConstants.MutableFlagMask);
+                wfcGrid[signal.CellIndex] = (byte)((wfcGrid[signal.CellIndex] & immutableMask) | mutableFlags);
+
+                TryPersistWfcOutpostStateSnapshot(signal.SectorHash, wfcGrid, signal.Frame, out _);
+            }
+        }
+
+        private void DrainWfcSectorHydratedSignals()
+        {
+            ReadOnlySpan<SectorHydratedSignal> signals = SignalBus<SectorHydratedSignal>.GetFrameSnapshot();
+            int count = math.min(signals.Length, MaxWfcSectorHydratedSignalsPerTick);
+            for (int i = 0; i < count; i++)
+            {
+                SectorHydratedSignal signal = signals[i];
+                if (signal.SectorHash == 0UL ||
+                    signal.PayloadBytes < WfcOutpostPersistenceConstants.PayloadHeaderBytes ||
+                    signal.PayloadBytes > WfcOutpostPersistenceConstants.PayloadMaxBytes)
+                {
+                    continue;
+                }
+
+                if (!TryEnsureWfcOutpostGrid(out NativeArray<byte> wfcGrid))
+                    continue;
+
+                TryApplyWfcOutpostStateOverrideFromHydration(signal.SectorHash, wfcGrid);
+            }
+        }
+
+        private void DrainChunkDehydratedSignals()
+        {
+            int drained = 0;
+            while (drained < MaxChunkDehydrationSignalsPerTick &&
+                   SignalBus<ChunkDehydratedSignal>.TryReadFrame(out ChunkDehydratedSignal signal))
+            {
+                drained++;
+                EnqueueChunkDehydrationPayloads(in signal);
+            }
+        }
+
+        private void EnqueueChunkDehydrationPayloads(in ChunkDehydratedSignal signal)
+        {
+            EnsureWorldPagerInitialized();
+            if (_worldPager == null || !_worldPager.IsInitialized || _worldPager.HasInitializationFault)
+                return;
+
+            EnsureSaveStagingBuffer();
+
+            PlayerInventory inventory = ResolveRegisteredSaveable<PlayerInventory>();
+            if (inventory != null &&
+                inventory.TryCopyInventoryShadowPayload(_saveStagingBuffer, out int inventoryPayloadLength, out _))
+            {
+                _worldPager.TryEnqueueWrite(
+                    DerivePayloadSectorHash(signal.SectorHash, H8WorldPagePayloadTypes.InventoryState),
+                    H8WorldPagePayloadTypes.InventoryState,
+                    _saveStagingBuffer,
+                    inventoryPayloadLength,
+                    WorldPagerSourceHash,
+                    signal.Frame);
+            }
+
+            int metadataPayloadLength = StageChunkDehydrationMetadata(in signal);
+            if (metadataPayloadLength > 0)
+            {
+                _worldPager.TryEnqueueWrite(
+                    DerivePayloadSectorHash(signal.SectorHash, H8WorldPagePayloadTypes.ChunkDehydratedMetadata),
+                    H8WorldPagePayloadTypes.ChunkDehydratedMetadata,
+                    _saveStagingBuffer,
+                    metadataPayloadLength,
+                    WorldPagerSourceHash,
+                    signal.Frame);
+            }
+        }
+
+        private T ResolveRegisteredSaveable<T>() where T : class, ISaveable
+        {
+            for (int i = 0; i < _saveableCount; i++)
+            {
+                if (_saveables[i] is T typed)
+                    return typed;
+            }
+
+            return null;
+        }
+
+        private unsafe int StageChunkDehydrationMetadata(in ChunkDehydratedSignal signal)
+        {
+            int bytes = UnsafeUtility.SizeOf<ChunkDehydratedSignal>();
+            if (!_saveStagingBuffer.IsCreated || _saveStagingBuffer.Length < bytes)
+                return 0;
+
+            ChunkDehydratedSignal copy = signal;
+            UnsafeUtility.CopyStructureToPtr(ref copy, _saveStagingBuffer.GetUnsafePtr());
+            return bytes;
+        }
+
+        private static long DerivePayloadSectorHash(long sectorHash, uint payloadType)
+        {
+            if (payloadType == H8WorldPagePayloadTypes.VoxelDeltaRle)
+                return sectorHash;
+
+            unchecked
+            {
+                ulong mixed = (ulong)sectorHash ^ ((ulong)payloadType * 11400714819323198485UL);
+                mixed ^= mixed >> 33;
+                mixed *= 0xff51afd7ed558ccdUL;
+                mixed ^= mixed >> 33;
+                return (long)mixed;
+            }
+        }
+
+        private unsafe bool TryApplyWfcOutpostStateOverrideFromHydration(ulong sectorHash, NativeArray<byte> wfcGrid)
+        {
+            if (sectorHash == 0UL ||
+                !IsValidWfcOutpostGrid(wfcGrid) ||
+                !TryResolveWfcOutpostMacroDatabase(out IMacroDatabaseService macroDatabase))
+            {
+                return false;
+            }
+
+            EnsureWfcOutpostNativeBuffers();
+            if (!macroDatabase.TryGetPayload(sectorHash, out MacroDatabasePayloadHandle handle) ||
+                handle.Pointer == IntPtr.Zero ||
+                handle.ByteLength < WfcOutpostPersistenceConstants.PayloadHeaderBytes ||
+                handle.ByteLength > WfcOutpostPersistenceConstants.PayloadMaxBytes ||
+                !SaveBinaryPayloadCodec.TryReadWfcOutpostBitmaskPayload(
+                    (byte*)handle.Pointer,
+                    handle.ByteLength,
+                    _wfcOutpostRestoreWords,
+                    WfcOutpostPersistenceConstants.PackedWordCount,
+                    out int wordsRead) ||
+                wordsRead != WfcOutpostPersistenceConstants.PackedWordCount)
+            {
+                return false;
+            }
+
+            UnpackWfcOutpostGrid(_wfcOutpostRestoreWords, wfcGrid);
+            _hasLastWfcOutpostSnapshot = true;
+            _lastWfcOutpostSectorHash = sectorHash;
+            _lastWfcOutpostPayloadHash = ComputeWfcOutpostPackedHash(_wfcOutpostRestoreWords);
+            return true;
+        }
+
+        private static bool IsValidWfcOutpostGrid(NativeArray<byte> wfcGrid)
+        {
+            return wfcGrid.IsCreated && wfcGrid.Length >= WfcOutpostPersistenceConstants.CellCount;
+        }
+
+        private static unsafe void UnpackWfcOutpostGrid(NativeArray<ulong> packedWords, NativeArray<byte> wfcGrid)
+        {
+            ulong* words = (ulong*)packedWords.GetUnsafeReadOnlyPtr();
+            byte* cells = (byte*)wfcGrid.GetUnsafePtr();
+            byte immutableMask = unchecked((byte)~WfcOutpostPersistenceConstants.MutableFlagMask);
+            for (int cell = 0; cell < WfcOutpostPersistenceConstants.CellCount; cell++)
+            {
+                byte flags = 0;
+                for (int bit = 0; bit < WfcOutpostPersistenceConstants.MutableBitPlaneCount; bit++)
+                {
+                    int bitIndex = cell + (bit * WfcOutpostPersistenceConstants.CellCount);
+                    if ((words[bitIndex >> 6] & (1UL << (bitIndex & 63))) != 0UL)
+                        flags |= (byte)(1 << bit);
+                }
+
+                cells[cell] = (byte)((cells[cell] & immutableMask) | flags);
+            }
+        }
+
+        private static unsafe ulong ComputeWfcOutpostPackedHash(NativeArray<ulong> packedWords)
+        {
+            ulong hash = 1469598103934665603UL;
+            ulong* words = (ulong*)packedWords.GetUnsafeReadOnlyPtr();
+            for (int i = 0; i < WfcOutpostPersistenceConstants.PackedWordCount; i++)
+                hash = (hash ^ words[i]) * 1099511628211UL;
+
+            return hash != 0UL ? hash : 1UL;
+        }
+
+        [BurstCompile]
+        private struct PackWfcOutpostMutableStateJob : IJob
+        {
+            [ReadOnly] public NativeArray<byte> Grid;
+            public NativeArray<ulong> PackedWords;
+
+            public void Execute()
+            {
+                for (int word = 0; word < WfcOutpostPersistenceConstants.PackedWordCount; word++)
+                    PackedWords[word] = 0UL;
+
+                for (int cell = 0; cell < WfcOutpostPersistenceConstants.CellCount; cell++)
+                {
+                    byte flags = (byte)(Grid[cell] & WfcOutpostPersistenceConstants.MutableFlagMask);
+                    if ((flags & (byte)WfcOutpostCellStateFlags.DoorOpen) != 0)
+                        SetBit(cell);
+                    if ((flags & (byte)WfcOutpostCellStateFlags.DoorUnlocked) != 0)
+                        SetBit(cell + WfcOutpostPersistenceConstants.CellCount);
+                    if ((flags & (byte)WfcOutpostCellStateFlags.PowerOn) != 0)
+                        SetBit(cell + (WfcOutpostPersistenceConstants.CellCount * 2));
+                    if ((flags & (byte)WfcOutpostCellStateFlags.DatapadLooted) != 0)
+                        SetBit(cell + (WfcOutpostPersistenceConstants.CellCount * 3));
+                }
+            }
+
+            private void SetBit(int bitIndex)
+            {
+                int wordIndex = bitIndex >> 6;
+                PackedWords[wordIndex] = PackedWords[wordIndex] | (1UL << (bitIndex & 63));
+            }
+        }
+
+        private void QueueWfcOutpostDirtyAppend(ulong sectorHash, uint frame)
+        {
+            if (sectorHash == 0UL)
+                return;
+
+            Interlocked.Increment(ref _wfcOutpostAppendActive);
+            _ = FlushWfcOutpostDirtyPayloadAsync(sectorHash, frame);
+        }
+
+        private async Awaitable FlushWfcOutpostDirtyPayloadAsync(ulong sectorHash, uint frame)
+        {
+            bool appended = false;
+            try
+            {
+                IMacroDatabaseService macroDatabase = _macroDatabaseService;
+                await Awaitable.BackgroundThreadAsync();
+                appended = macroDatabase != null && macroDatabase.TryAppendDirtyPayload(sectorHash);
+            }
+            catch (Exception)
+            {
+                appended = false;
+            }
+            finally
+            {
+                Interlocked.Decrement(ref _wfcOutpostAppendActive);
+            }
+
+            await Awaitable.MainThreadAsync();
+            if (!appended)
+                GlobalTelemetryBus.PublishPerformanceWarning(WfcCorruptPayloadTelemetryHash, WfcOutpostPersistenceSourceHash, frame);
+        }
+
+        private static void PublishWfcBytesSaved(int payloadBytes)
+        {
+            int savedBytes = math.max(0, WfcOutpostPersistenceConstants.PackedWordBytes - payloadBytes);
+            GlobalTelemetryBus.PublishModTelemetry(WfcOutpostPersistenceSourceHash, WfcBytesSavedTelemetryHash, savedBytes);
+        }
+
+        private static void PublishWfcCorruptPayloadWarning()
+        {
+            GlobalTelemetryBus.PublishPerformanceWarning(WfcCorruptPayloadTelemetryHash, WfcOutpostPersistenceSourceHash, 1f);
+        }
+
+        private void PollWorldPagerSavingNotification()
+        {
+            if (_worldPager == null)
+                return;
+
+            H8WorldPagerTelemetrySnapshot telemetry = _worldPager.GetTelemetry();
+            if (telemetry.PendingDiskWrites > 10)
+            {
+                if (_worldPagerSavingNotificationArmed)
+                    return;
+
+                _worldPagerSavingNotificationArmed = true;
+                HUDNotificationSignal notification = new HUDNotificationSignal
+                {
+                    MessageHash = WorldPagerSavingMessageHash,
+                    ContextHash = WorldPagerSavingContextHash,
+                    SourceId = WorldPagerSourceHash,
+                    Frame = unchecked((uint)Time.frameCount),
+                    Severity = 0,
+                    Flags = 0
+                };
+                GlobalSignals.Publish(in notification);
+                return;
+            }
+
+            _worldPagerSavingNotificationArmed = false;
         }
 
         private void DrainPostSaveVramGc()
@@ -1189,6 +1860,7 @@ namespace Hecton8.SaveSystem
 
             try
             {
+                EnsureSaveWorkingBuffers();
                 RequestSnapshotPause(operationId);
                 snapshotPauseActive = true;
                 await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(destroyCancellationToken);
@@ -1676,11 +2348,14 @@ namespace Hecton8.SaveSystem
             ReportLoadPipelineStage(LoadingPipelineStage.PagingSectors, 0.08f);
             var totalTimer = Stopwatch.StartNew();
             NativeArray<byte> loadedVoxelDeltaSnapshot = default;
-            NativeArray<SaveLoadCandidate> candidates = _loadCandidateScratch;
+            NativeArray<SaveLoadCandidate> candidates = default;
             int candidateCount = 0;
 
             try
             {
+                EnsureSavePayloadBuffer();
+                EnsureLoadCandidateScratch();
+                candidates = _loadCandidateScratch;
                 SaveBinaryStorage.ConsumeIndexedSectorQuarantineFlag();
                 await Awaitable.BackgroundThreadAsync();
                 SaveData data = null;

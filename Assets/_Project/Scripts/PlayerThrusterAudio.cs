@@ -113,7 +113,6 @@ namespace Hecton8.Audio
             _audioSource.spatialBlend = 1f;
             _audioSource.volume = 0f;
             _audioSource.pitch = idlePitch;
-            _audioSource.priority = 200;
             TryAssignMixerRoute();
 
             if (playerMovement != null)

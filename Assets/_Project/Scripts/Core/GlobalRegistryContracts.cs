@@ -8,6 +8,8 @@ using Hecton8.Construction;
 using Hecton8.Building;
 using Hecton8.Audio;
 using Hecton8.Audio.Propagation;
+using Hecton8.Audio.Virtualization;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Signals;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
@@ -154,8 +156,107 @@ namespace Hecton8.Core
     }
 
     /// <summary>
+    /// Scene domain gate used by isolated runtime systems to avoid cross-domain execution.
+    /// </summary>
+    public enum Domain : byte
+    {
+        Unknown = 0,
+        Space = 1,
+        Ocean = 2,
+        Submarine = 3,
+        Habitat = 4,
+        Surface = 5,
+        Menu = 6
+    }
+
+    /// <summary>
+    /// Read-only orbital prologue snapshot for consumers that need telemetry without owning the simulation.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
+    public readonly struct OrbitalDirectorSnapshot
+    {
+        public OrbitalDirectorSnapshot(
+            double3 universeVelocity,
+            double planetDistanceMeters,
+            float reentryHeat01,
+            float cloudWhiteout01,
+            uint sequence,
+            byte mathLod,
+            byte flags)
+        {
+            UniverseVelocity = universeVelocity;
+            PlanetDistanceMeters = planetDistanceMeters;
+            ReentryHeat01 = reentryHeat01;
+            CloudWhiteout01 = cloudWhiteout01;
+            Sequence = sequence;
+            MathLod = mathLod;
+            Flags = flags;
+        }
+
+        public double3 UniverseVelocity { get; }
+        public double PlanetDistanceMeters { get; }
+        public float ReentryHeat01 { get; }
+        public float CloudWhiteout01 { get; }
+        public uint Sequence { get; }
+        public byte MathLod { get; }
+        public byte Flags { get; }
+    }
+
+    /// <summary>
+    /// Registry-published authority for the space prologue relativity fake.
+    /// </summary>
+    public interface IOrbitalDirector : ISystem
+    {
+        /// <summary>Universe velocity in authoritative double precision space.</summary>
+        double3 UniverseVelocity { get; }
+
+        /// <summary>Current fake planet distance from the capsule origin.</summary>
+        double PlanetDistanceMeters { get; }
+
+        /// <summary>True after the re-entry plasma phase has started.</summary>
+        bool ReentryArmed { get; }
+
+        /// <summary>Copies the latest orbital director snapshot.</summary>
+        bool TryGetSnapshot(out OrbitalDirectorSnapshot snapshot);
+
+        /// <summary>Enables or disables player thrust consumption without disabling telemetry.</summary>
+        void SetInputEnabled(bool enabled);
+
+        /// <summary>Fail-fast hook used by bootstrap/integrator code to abort the prologue lane.</summary>
+        void ForceAbortReentry(byte reason);
+    }
+
+    /// <summary>
     /// Registry-published world streaming IO backpressure read model.
     /// Movement, PDA, and VFX consumers read the dispatcher scalar or this cached service; they do not touch Addressables owners directly.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
+    public struct StreamingHlodImpostorPoint
+    {
+        public float3 Center;
+        public float3 Size;
+        public long ChunkId;
+        public int ImpostorType;
+        public float SpawnTimeSeconds;
+        public float Fade01;
+        public uint Flags;
+    }
+
+    /// <summary>
+    /// Renderer boundary for streaming-owned HLOD matrix residency.
+    /// Implementations may draw through compute-culling, BRG, or a fallback indirect path.
+    /// </summary>
+    public interface IStreamingHlodMatrixRenderer
+    {
+        int BoundInstanceCount { get; }
+        bool IsUsingVisibleMatrixStream { get; }
+        void BindNativeMatrices(NativeArray<float4x4> matrices, int instanceCount, float boundsRadius, bool forceUpload);
+        void ClearBinding();
+    }
+
+    /// <summary>
+    /// Registry-published world streaming IO backpressure and distant HLOD read model.
+    /// Consumers read native snapshots only; the streaming owner keeps mutation authority.
     /// </summary>
     public interface IStreamingBackpressureService : ISystem
     {
@@ -166,6 +267,12 @@ namespace Hecton8.Core
         double CriticalHoleDebtMs { get; }
         uint BackpressureSequence { get; }
         bool DataLinkDegraded { get; }
+        int ActiveImpostorCount { get; }
+        uint ActiveImpostorVersion { get; }
+        bool TryGetActiveImpostors(out NativeArray<float4x4> matrices, out NativeArray<int> impostorTypes, out int count);
+        bool TryGetActiveImpostorPoints(out NativeArray<StreamingHlodImpostorPoint> points, out int count);
+        bool IsChunkImpostorAudioMuted(long chunkId);
+        void PurgeImpostorForDestroyedChunk(long chunkId);
     }
 
     /// <summary>
@@ -440,6 +547,18 @@ namespace Hecton8.Core
     }
 
     /// <summary>
+    /// Shared metadata for the global data-vault Gerstner spectrum buffer.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
+    public struct OceanGerstnerWaveBufferMeta
+    {
+        public int ActiveWaveCount;
+        public float TimeSeconds;
+        public int SleepCount;
+        public int Version;
+    }
+
+    /// <summary>
     /// Zero-allocation weather snapshot consumed by physics and VFX systems.
     /// </summary>
     [StructLayout(LayoutKind.Sequential)]
@@ -648,9 +767,9 @@ namespace Hecton8.Core
     }
 
     /// <summary>
-    /// Minimal input service contract exposed through <see cref="GlobalRegistry"/>.
+    /// Deterministic frame-input service exposed through <see cref="GlobalRegistry"/>.
     /// </summary>
-    public interface IInputService : ISystem
+    public interface IInputDeterminismService : ISystem
     {
         /// <summary>
         /// True once the service has completed explicit bootstrap registration.
@@ -661,6 +780,36 @@ namespace Hecton8.Core
         /// True when the authoritative player-input map is enabled and safe for gameplay reads.
         /// </summary>
         bool IsPlayerInputEnabled { get; }
+
+        /// <summary>
+        /// Offline/network latency simulation delay, clamped to the deterministic 0-2 frame contract.
+        /// </summary>
+        int InputDelayFrames { get; set; }
+
+        /// <summary>
+        /// Latest fixed-cadence deterministic input sample after configured delay.
+        /// </summary>
+        InputState CurrentInputState { get; }
+
+        /// <summary>
+        /// Previous fixed-cadence deterministic input sample used by presentation interpolation.
+        /// </summary>
+        InputState PreviousInputState { get; }
+
+        /// <summary>
+        /// Presentation-only look delta interpolated between deterministic samples.
+        /// </summary>
+        Vector2 VisualLookDelta { get; }
+
+        /// <summary>
+        /// Captures raw hardware input into the deterministic 60 Hz ring before simulation signal flush.
+        /// </summary>
+        void PreSimulationInputTick(float deltaTime);
+
+        /// <summary>
+        /// Reads a retained deterministic input frame from the 60-slot ring.
+        /// </summary>
+        bool TryGetInputState(uint frame, out InputState state);
 
         /// <summary>
         /// Discrete interact input event forwarded from the native input backend.
@@ -751,6 +900,13 @@ namespace Hecton8.Core
         /// Switches native input routing to UI.
         /// </summary>
         void SwitchToUIInput();
+    }
+
+    /// <summary>
+    /// Minimal input service contract exposed through <see cref="GlobalRegistry"/>.
+    /// </summary>
+    public interface IInputService : IInputDeterminismService
+    {
     }
 
     /// <summary>
@@ -859,6 +1015,44 @@ namespace Hecton8.Core
     }
 
     /// <summary>
+    /// Blittable prologue audio transition state routed from visual-sync orchestration into procedural DSP.
+    /// Size: 64 bytes.
+    /// </summary>
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct AudioTransitionState
+    {
+        public const byte StageSpace = 1;
+        public const byte StagePlasma = 2;
+        public const byte StageWhiteout = 3;
+        public const byte StageOceanHandoff = 4;
+
+        public const byte FlagSplashdown = 1 << 0;
+        public const byte FlagPortalActive = 1 << 1;
+        public const byte FlagGranularEnabled = 1 << 2;
+        public const byte FlagLowTierProxy = 1 << 3;
+        public const byte FlagNonFiniteGuard = 1 << 4;
+
+        [FieldOffset(0)] public float UniverseVelocityMetersPerSecond;
+        [FieldOffset(4)] public float Heat01;
+        [FieldOffset(8)] public float LowPassCutoffHz;
+        [FieldOffset(12)] public float LfeGain01;
+        [FieldOffset(16)] public float GranularStress01;
+        [FieldOffset(20)] public float SplashdownGain01;
+        [FieldOffset(24)] public float PortalBlend01;
+        [FieldOffset(28)] public float Reserved0;
+        [FieldOffset(32)] public uint Frame;
+        [FieldOffset(36)] public uint Sequence;
+        [FieldOffset(40)] public uint SourceHash;
+        [FieldOffset(44)] public byte Stage;
+        [FieldOffset(45)] public byte Flags;
+        [FieldOffset(46)] public byte QualityTier;
+        [FieldOffset(47)] public byte Reserved1;
+        [FieldOffset(48)] public double AbsoluteTimeSeconds;
+        [FieldOffset(56)] public uint Reserved2;
+        [FieldOffset(60)] public uint Reserved3;
+    }
+
+    /// <summary>
     /// Minimal audio service contract exposed through <see cref="GlobalRegistry"/>.
     /// </summary>
     public interface IAudioService : ISystem
@@ -899,11 +1093,23 @@ namespace Hecton8.Core
         bool QueueHullStressSignal(in HullStressSignal signal);
 
         /// <summary>
+        /// Queues one kinematic CCD impact for procedural collision audio.
+        /// </summary>
+        bool QueueHighSpeedImpactSignal(in HighSpeedImpactSignal signal);
+
+        /// <summary>
         /// Queues one world-space audio event for the central NativeQueue-backed audio drain.
         /// </summary>
         /// <param name="audioEvent">Blittable event payload. EventID is one-based into the authored audio event table.</param>
         /// <returns>True when the event was accepted by the queue.</returns>
         bool QueueAudioEvent(in AudioEvent audioEvent);
+
+        /// <summary>
+        /// Queues one prologue vacuum-to-ocean DSP transition state for procedural audio rendering.
+        /// </summary>
+        /// <param name="state">Blittable state sampled in the visual-sync lane.</param>
+        /// <returns>True when the transition state was accepted by the renderer bridge.</returns>
+        bool QueuePrologueAudioTransition(in AudioTransitionState state);
 
         /// <summary>
         /// Plays one helmet/UI clip through the authored 2D pool.
@@ -1118,6 +1324,89 @@ namespace Hecton8.Core
         /// <param name="operationId">Optional caller-owned operation id; zero lets the service assign one.</param>
         /// <returns>False when the request is invalid or another save/load operation is active.</returns>
         bool TryRequestSave(byte slotIndex, uint sourceHash, uint operationId = 0u);
+
+        /// <summary>
+        /// Packs and queues one WFC outpost mutable-grid snapshot for MacroDB persistence.
+        /// </summary>
+        /// <param name="sectorHash">Absolute AUP-derived sector hash.</param>
+        /// <param name="wfcGrid">Caller-owned 10x10x5 mutable state grid.</param>
+        /// <param name="frame">Producer frame id.</param>
+        /// <param name="status">Result status for rejection, no-op, or dirty queue.</param>
+        /// <returns>True when the snapshot was accepted or skipped as unchanged.</returns>
+        bool TryPersistWfcOutpostStateSnapshot(
+            ulong sectorHash,
+            NativeArray<byte> wfcGrid,
+            uint frame,
+            out WfcOutpostPersistenceStatus status);
+
+        /// <summary>
+        /// Applies a saved WFC outpost mutable-grid override before procedural WFC collapse runs.
+        /// </summary>
+        /// <param name="sectorHash">Absolute AUP-derived sector hash.</param>
+        /// <param name="wfcGrid">Destination grid that receives mutable state bits.</param>
+        /// <param name="status">Restore result; corrupt length means caller must generate a fresh base.</param>
+        /// <returns>True only when saved state was copied into <paramref name="wfcGrid"/>.</returns>
+        bool TryApplyWfcOutpostStateOverride(
+            ulong sectorHash,
+            NativeArray<byte> wfcGrid,
+            out WfcOutpostPersistenceStatus status);
+
+        /// <summary>
+        /// Copies a chunk-local payload into the async world pager write queue.
+        /// </summary>
+        /// <param name="sectorHash">Absolute AUP-derived sector hash. Must not be runtime-origin relative.</param>
+        /// <param name="payloadType">Stable payload family hash from <see cref="H8WorldPagePayloadTypes"/>.</param>
+        /// <param name="payload">Native payload source. The service copies before returning.</param>
+        /// <param name="byteCount">Payload bytes to copy.</param>
+        /// <param name="sourceHash">Stable producer hash for telemetry.</param>
+        /// <param name="frame">Producer frame id.</param>
+        /// <returns>False when the queue is full, uninitialized, or payload exceeds one sector.</returns>
+        bool TryEnqueueChunkPageWrite(
+            long sectorHash,
+            uint payloadType,
+            NativeArray<byte> payload,
+            int byteCount,
+            uint sourceHash,
+            uint frame);
+
+        /// <summary>
+        /// Queues a non-blocking read of a chunk-local pager payload.
+        /// </summary>
+        /// <param name="sectorHash">Absolute AUP-derived sector hash.</param>
+        /// <param name="payloadType">Stable payload family hash from <see cref="H8WorldPagePayloadTypes"/>.</param>
+        /// <param name="requestId">Caller-owned non-zero ticket id.</param>
+        /// <param name="ticket">Read ticket for later completion copy.</param>
+        /// <returns>False when the queue is full or the service is unavailable.</returns>
+        bool TryRequestChunkPageRead(
+            long sectorHash,
+            uint payloadType,
+            uint requestId,
+            out H8WorldPageReadTicket ticket);
+
+        /// <summary>
+        /// Copies one completed page into caller-owned native memory without blocking the main thread.
+        /// Corrupt or missing pages return true with a non-ready status so callers can use procedural fallback.
+        /// </summary>
+        bool TryCopyCompletedChunkPage(
+            in H8WorldPageReadTicket ticket,
+            NativeArray<byte> destination,
+            out int bytesWritten,
+            out H8WorldPageStatus status);
+
+        /// <summary>
+        /// Releases one completed page result without copying payload bytes. This is for prefetch callers that
+        /// need pager backpressure cleared before a dedicated hydration consumer is wired.
+        /// </summary>
+        bool TryRetireCompletedChunkPage(
+            in H8WorldPageReadTicket ticket,
+            out H8WorldPageStatus status,
+            out int byteCount);
+
+        /// <summary>Returns the current async pager counters for telemetry surfaces.</summary>
+        H8WorldPagerTelemetrySnapshot GetWorldPagerTelemetry();
+
+        /// <summary>Flushes the pager handle during controlled shutdown or save synchronization.</summary>
+        void FlushWorldPager();
     }
 
     /// <summary>
@@ -2120,6 +2409,48 @@ namespace Hecton8.Core
     }
 
     /// <summary>
+    /// Authoritative meta-campaign progression service exposed through <see cref="GlobalRegistry"/>.
+    /// Consumers query stable uint state only; progression writes enter through signal lanes.
+    /// </summary>
+    public interface IMetaCampaignService : ISystem
+    {
+        /// <summary>
+        /// True once native state, rules, and registry ownership are ready.
+        /// </summary>
+        bool IsInitialized { get; }
+
+        /// <summary>
+        /// Stable hash of the current global campaign stage.
+        /// </summary>
+        uint CurrentCampaignStageHash { get; }
+
+        /// <summary>
+        /// Numeric stage used by save/debug only.
+        /// </summary>
+        int CurrentCampaignStage { get; }
+
+        /// <summary>
+        /// Global ocean toxicity scalar used by renderer and ecosystem fakes.
+        /// </summary>
+        float OceanToxicity01 { get; }
+
+        /// <summary>
+        /// True when late-game leviathan encounters may enter the pacing budget.
+        /// </summary>
+        bool IsLeviathanAwakened { get; }
+
+        /// <summary>
+        /// Reads a stable FNV1a global variable from the native campaign map.
+        /// </summary>
+        bool TryGetGlobalVariable(uint variableHash, out int value);
+
+        /// <summary>
+        /// Cold-path force set used by hidden developer tooling.
+        /// </summary>
+        bool TryForceSetGlobalVariable(uint variableHash, int value, byte reason);
+    }
+
+    /// <summary>
     /// Authoritative quest-system service exposed through <see cref="GlobalRegistry"/>.
     /// </summary>
     public interface IQuestSystem
@@ -2729,6 +3060,15 @@ namespace Hecton8.Core
         ModdingBridgeRuntime = 155,
         InstanceCullingRuntime = 156,
         WorldResourceSpawnerRuntime = 157,
+        MacroDatabase = 158,
+        MetaCampaignRuntime = 159,
+        OrbitalDirectorRuntime = 160,
+        SimulationBucketerRuntime = 161,
+        CausticsRuntime = 162,
+        PlayerMovementContracts = 163,
+        HardwareThermalService = 164,
+        AudioVirtualization = 165,
+        OutpostGenerationRuntime = 166,
         Unknown = 255
     }
 
@@ -2818,6 +3158,16 @@ namespace Hecton8.Core
         /// Highest-priority currently available ocean kinematics provider.
         /// </summary>
         IHectonOceanKinematics ActiveProvider { get; }
+    }
+
+    /// <summary>
+    /// Registry-facing owner of the analytical underwater caustics projection pass.
+    /// </summary>
+    public interface ICausticsService : ISystem
+    {
+        bool IsComputeActive { get; }
+        RenderTexture CausticsMap { get; }
+        Vector4 CausticsAup { get; }
     }
 
     /// <summary>
@@ -2990,6 +3340,53 @@ namespace Hecton8.Core
     }
 
     /// <summary>
+    /// Allocation-free fauna genome mutation request passed through the ecosystem service boundary.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
+    public struct FaunaGenomeMutationRequest
+    {
+        public Vector3 RuntimePosition;
+        public ulong Genome;
+        public uint StableEntityHash;
+        public int SpeciesId;
+        public uint RollIndex;
+        public ushort Slot;
+        public byte Flags;
+        public byte ResultFlags;
+        public float RadiationRads;
+        public float Toxicity01;
+        public float BrineDepth01;
+    }
+
+    /// <summary>
+    /// Flags for <see cref="FaunaGenomeMutationRequest"/>.
+    /// </summary>
+    public static class FaunaGenomeMutationRequestFlags
+    {
+        public const byte LoadedEntity = 1 << 0;
+        public const byte MacroSwarm = 1 << 1;
+        public const byte LowTierMacroSkipped = 1 << 2;
+    }
+
+    /// <summary>
+    /// Allocation-free global biomass audit sample returned by <see cref="IEcosystemDirectorService"/>.
+    /// </summary>
+    public struct EcosystemBiomassAuditSample
+    {
+        public float PreyBiomassSum;
+        public float PredatorBiomassSum;
+        public float CarryingCapacitySum;
+        public int ActiveCellCount;
+        public uint Sequence;
+        public uint Flags;
+
+        public bool IsFinite =>
+            math.isfinite(PreyBiomassSum) &&
+            math.isfinite(PredatorBiomassSum) &&
+            math.isfinite(CarryingCapacitySum);
+    }
+
+    /// <summary>
     /// Sector-level ecosystem population service exposed through <see cref="GlobalRegistry"/>.
     /// </summary>
     public interface IEcosystemDirectorService
@@ -3021,6 +3418,16 @@ namespace Hecton8.Core
         /// Resolves normalized 50 m biomass availability used by encounter pacing and flora presentation.
         /// </summary>
         bool TryGetBiomassAvailability(Vector3 worldPosition, out float preyBiomass01, out float predatorBiomass01, out float carryingCapacity01);
+
+        /// <summary>
+        /// Mutates a fauna genome against current radiation, toxicity, and brine scalars without exposing ecology storage ownership.
+        /// </summary>
+        bool TryMutateFaunaGenome(ref FaunaGenomeMutationRequest request);
+
+        /// <summary>
+        /// Resolves a global biomass checksum for long-run headless QA without exposing ecology-owned buffers.
+        /// </summary>
+        bool TryGetGlobalBiomassAudit(out EcosystemBiomassAuditSample sample);
 
         /// <summary>
         /// Copies active macro swarms into caller-owned native storage for save, radar, and diagnostics consumers.
@@ -3062,6 +3469,11 @@ namespace Hecton8.Core
         /// <param name="intensity01">Normalized predator migration pressure.</param>
         /// <param name="holdSeconds">Seconds to keep the migration window active.</param>
         void ApplyEclipsePredatorShallowMigration(float intensity01, float holdSeconds);
+
+        /// <summary>
+        /// Applies AUP-independent campaign toxicity as a cold-path biomass pressure fake.
+        /// </summary>
+        void ApplyCampaignToxicityPressure(float toxicity01, uint stageHash, uint frame);
 
         /// <summary>
         /// Returns normalized eclipse suppression applied to predator light reactions at the supplied position.

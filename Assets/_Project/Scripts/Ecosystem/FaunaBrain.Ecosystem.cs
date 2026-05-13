@@ -3,6 +3,7 @@ using Hecton8.Ecosystem;
 using Hecton8.Meta;
 using Hecton8.Core;
 using Hecton8.World;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.AI
@@ -15,13 +16,15 @@ namespace Hecton8.AI
         private const float PredatorThreatPulseRadiusPadding = 4f;
         private const float PredatorThreatPulseStrengthBase = 0.28f;
         private const float PredatorThreatPulseStrengthAggressiveBonus = 0.16f;
+        private const float GenomeMutationCadenceSeconds = 5f;
+        private const uint FaunaGenomeMutationHashSalt = 0x4D555441u;
 
         private static readonly int _ColorId = Shader.PropertyToID("_Color");
         private static readonly int _BaseColorId = Shader.PropertyToID("_BaseColor");
         private static readonly int _EmissionColorId = Shader.PropertyToID("_EmissionColor");
 
-        // COLD ALLOC: MaterialPropertyBlock[1] - per-fauna infection tint overlay without material clones - owner: FaunaBrain
-        private MaterialPropertyBlock _ecosystemPropertyBlock;
+        private static readonly Color FaunaInfectionTint = new Color(0.45f, 1f, 0.58f, 1f);
+        private static readonly Color FaunaInfectionEmission = new Color(0.08f, 0.35f, 0.12f, 1f);
         private Vector3 _baseLocalScale = Vector3.one;
         private bool _baseLocalScaleCaptured;
         private float _baseAggroDistance;
@@ -32,7 +35,12 @@ namespace Hecton8.AI
         private float _baseTurnSpeed;
         private float _baseMaxHealth = 1f;
         private float _runtimeAggressionScale = 1f;
+        private FaunaGeneticTraits _baseGeneticTraits;
         private FaunaGeneticTraits _geneticTraits;
+        private float _genomeMutationAccumulator;
+        private uint _genomeMutationRollIndex;
+        private IEcosystemDirectorService _cachedEcosystemDirectorService;
+        private EcosystemDirector _cachedEcosystemDirectorConcrete;
         private bool _hasGeneticTraits;
         private bool _isInfected;
         private bool _isDiseased;
@@ -46,7 +54,12 @@ namespace Hecton8.AI
         public bool IsDiseased => _isDiseased;
 
         /// <summary>Returns true when the instance represents poisoned non-predator loot.</summary>
-        public bool HasPoisonedYield => _isInfected && !isAggressive;
+        public bool HasPoisonedYield => (_isInfected && !isAggressive) || (_hasGeneticTraits && FaunaGenome64.HasContaminatedYield(_geneticTraits.Genome));
+
+        /// <summary>Stable contaminated meat hash exposed to death/drop systems when mutation flags are active.</summary>
+        public uint ContaminatedMeatItemHash => _hasGeneticTraits && _geneticTraits.ContaminatedMeatHash != 0u
+            ? _geneticTraits.ContaminatedMeatHash
+            : 0u;
 
         /// <summary>Authoring loot-profile identifier inherited from the applied archetype.</summary>
         public string LootProfileId => _lootProfileId;
@@ -56,7 +69,10 @@ namespace Hecton8.AI
         /// </summary>
         public void ApplyGeneticTraits(FaunaGeneticTraits traits)
         {
-            _geneticTraits = traits;
+            _baseGeneticTraits = traits;
+            _geneticTraits = FaunaGenome64.ResolveRuntimeTraitsFromGenome(traits, traits.Genome != 0UL ? traits.Genome : traits.BaseGenome);
+            _genomeMutationAccumulator = 0f;
+            _genomeMutationRollIndex = 0u;
             _hasGeneticTraits = true;
             ApplyRuntimeEcosystemOverlays();
         }
@@ -66,7 +82,10 @@ namespace Hecton8.AI
         /// </summary>
         public void ClearGeneticTraits()
         {
+            _baseGeneticTraits = default;
             _geneticTraits = default;
+            _genomeMutationAccumulator = 0f;
+            _genomeMutationRollIndex = 0u;
             _hasGeneticTraits = false;
             ApplyRuntimeEcosystemOverlays();
         }
@@ -98,7 +117,7 @@ namespace Hecton8.AI
             }
 
             float ecosystemHostilityScale = 1f;
-            IEcosystemDirectorService ecosystemDirector = GlobalRegistry.EcosystemDirector;
+            IEcosystemDirectorService ecosystemDirector = ResolveCachedEcosystemDirectorService();
             if (ecosystemDirector != null && ecosystemDirector.IsInitialized)
                 ecosystemHostilityScale = Mathf.Lerp(1f, 1.35f, ecosystemDirector.BiomeHostility01);
 
@@ -109,14 +128,56 @@ namespace Hecton8.AI
                 ApplyRuntimeEcosystemOverlays();
             }
 
+            TryApplyRuntimeGenomeMutation(ecosystemDirector);
             RefreshCorpseDiseaseState();
             UpdateInfectionHazardRegistration();
             UpdatePredatorThreatPulse();
         }
 
+        private void TryApplyRuntimeGenomeMutation(IEcosystemDirectorService ecosystemDirector)
+        {
+            if (!_hasGeneticTraits ||
+                ecosystemDirector == null ||
+                !ecosystemDirector.IsInitialized ||
+                _isDead)
+            {
+                return;
+            }
+
+            _genomeMutationAccumulator += SlowTickIntervalSeconds;
+            if (_genomeMutationAccumulator < GenomeMutationCadenceSeconds)
+                return;
+
+            _genomeMutationAccumulator = 0f;
+            if (!TryResolveSelfLogicPosition(out Vector3 runtimePosition))
+                return;
+
+            _genomeMutationRollIndex++;
+            if (_genomeMutationRollIndex == 0u)
+                _genomeMutationRollIndex = 1u;
+
+            FaunaGenomeMutationRequest request = new FaunaGenomeMutationRequest
+            {
+                RuntimePosition = runtimePosition,
+                Genome = _geneticTraits.Genome,
+                StableEntityHash = ResolveStableFaunaHash(FaunaGenomeMutationHashSalt, 0u),
+                SpeciesId = ComputeStableSpeciesId(),
+                RollIndex = _genomeMutationRollIndex,
+                Slot = (ushort)(ResolveStableFaunaHash(FaunaGenomeMutationHashSalt, 1u) & ushort.MaxValue),
+                Flags = FaunaGenomeMutationRequestFlags.LoadedEntity
+            };
+
+            if (!ecosystemDirector.TryMutateFaunaGenome(ref request))
+                return;
+
+            _geneticTraits = FaunaGenome64.ResolveRuntimeTraitsFromGenome(_baseGeneticTraits, request.Genome);
+            ApplyRuntimeEcosystemOverlays();
+        }
+
         private void RefreshCorpseDiseaseState()
         {
-            if (!(GlobalRegistry.EcosystemDirector is EcosystemDirector ecosystemDirector))
+            EcosystemDirector ecosystemDirector = ResolveCachedEcosystemDirectorConcrete();
+            if (ecosystemDirector == null)
             {
                 if (_isDiseased)
                     SetDiseasedState(false, 0f);
@@ -136,6 +197,41 @@ namespace Hecton8.AI
                 SetDiseasedState(false, 0f);
         }
 
+        private void RefreshCachedEcosystemDirectorReference()
+        {
+            IEcosystemDirectorService ecosystemDirector = GlobalRegistry.EcosystemDirector;
+            _cachedEcosystemDirectorService = ecosystemDirector;
+            _cachedEcosystemDirectorConcrete = ecosystemDirector as EcosystemDirector;
+        }
+
+        private void ClearCachedEcosystemDirectorReference()
+        {
+            _cachedEcosystemDirectorService = null;
+            _cachedEcosystemDirectorConcrete = null;
+        }
+
+        private IEcosystemDirectorService ResolveCachedEcosystemDirectorService()
+        {
+            IEcosystemDirectorService ecosystemDirector = _cachedEcosystemDirectorService;
+            if (ecosystemDirector != null && ecosystemDirector.IsInitialized)
+                return ecosystemDirector;
+
+            RefreshCachedEcosystemDirectorReference();
+            return _cachedEcosystemDirectorService;
+        }
+
+        private EcosystemDirector ResolveCachedEcosystemDirectorConcrete()
+        {
+            EcosystemDirector ecosystemDirector = _cachedEcosystemDirectorConcrete;
+            if (ecosystemDirector != null && ecosystemDirector.IsInitialized)
+                return ecosystemDirector;
+
+            RefreshCachedEcosystemDirectorReference();
+            return _cachedEcosystemDirectorConcrete != null && _cachedEcosystemDirectorConcrete.IsInitialized
+                ? _cachedEcosystemDirectorConcrete
+                : null;
+        }
+
         private void ApplyRuntimeEcosystemOverlays()
         {
             EnsureBaseLocalScaleCaptured();
@@ -143,7 +239,8 @@ namespace Hecton8.AI
             float scaleMultiplier = _hasGeneticTraits ? _geneticTraits.ScaleMultiplier : 1f;
             float healthMultiplier = _hasGeneticTraits ? _geneticTraits.HealthMultiplier : 1f;
             float moveMultiplier = _hasGeneticTraits ? _geneticTraits.SpeedMultiplier : 1f;
-            float aggressionMultiplier = Mathf.Clamp(_runtimeAggressionScale, 0.85f, 2f);
+            float geneticsAggressionMultiplier = _hasGeneticTraits ? _geneticTraits.AggressionMultiplier : 1f;
+            float aggressionMultiplier = Mathf.Clamp(_runtimeAggressionScale * geneticsAggressionMultiplier, 0.85f, 2.25f);
 
             if (_isInfected)
             {
@@ -156,7 +253,7 @@ namespace Hecton8.AI
 
             transform.localScale = _baseLocalScale * scaleMultiplier;
 
-            float previousHealthNormalized = _maxHealth > 0.001f ? _currentHealth / _maxHealth : 1f;
+            float previousHealthNormalized = _maxHealth > 0.001f ? _currentHealth * math.rcp(_maxHealth) : 1f;
             _maxHealth = Mathf.Max(1f, _baseMaxHealth * healthMultiplier);
             _currentHealth = _isDead ? 0f : Mathf.Clamp(_maxHealth * previousHealthNormalized, 0f, _maxHealth);
             if (!_isDead && _currentHealth <= 0.001f)
@@ -183,7 +280,9 @@ namespace Hecton8.AI
 
         private float ResolveRuntimeAttackDamageMultiplier()
         {
-            float multiplier = isAggressive ? Mathf.Lerp(1f, Mathf.Clamp(_runtimeAggressionScale, 0.85f, 2f), 0.65f) : 1f;
+            float geneticsAggressionMultiplier = _hasGeneticTraits ? _geneticTraits.AggressionMultiplier : 1f;
+            float runtimeAggression = _runtimeAggressionScale * geneticsAggressionMultiplier;
+            float multiplier = isAggressive ? Mathf.Lerp(1f, Mathf.Clamp(runtimeAggression, 0.85f, 2.25f), 0.65f) : 1f;
             if (_isInfected)
                 multiplier *= Mathf.Lerp(1f, 1.22f, _infectionSeverity);
 
@@ -199,7 +298,9 @@ namespace Hecton8.AI
                 case AIState.Threaten:
                 case AIState.Loom:
                 case AIState.Feint:
-                    float multiplier = Mathf.Lerp(1f, Mathf.Clamp(_runtimeAggressionScale, 0.85f, 2f), 0.55f);
+                    float geneticsAggressionMultiplier = _hasGeneticTraits ? _geneticTraits.AggressionMultiplier : 1f;
+                    float runtimeAggression = _runtimeAggressionScale * geneticsAggressionMultiplier;
+                    float multiplier = Mathf.Lerp(1f, Mathf.Clamp(runtimeAggression, 0.85f, 2.25f), 0.55f);
                     if (_isInfected)
                         multiplier *= Mathf.Lerp(1f, 1.08f, _infectionSeverity);
 
@@ -215,34 +316,55 @@ namespace Hecton8.AI
 
         private void ApplyInfectionVisuals()
         {
-            if (_renderer == null)
+            int runtimeMaterialCount = _faunaPresentationRuntimeMaterials.Count;
+            if (runtimeMaterialCount <= 0)
                 return;
 
-            EnsureEcosystemPropertyBlock();
-            _renderer.GetPropertyBlock(_ecosystemPropertyBlock);
-
-            if (!_isInfected)
+            float resolvedSeverity01 = _isInfected ? math.saturate(_infectionSeverity) : 0f;
+            if (_lastAppliedInfectionShaderActive == _isInfected &&
+                math.abs(_lastAppliedInfectionShaderSeverity01 - resolvedSeverity01) < 0.001f)
             {
-                _ecosystemPropertyBlock.Clear();
-                _renderer.SetPropertyBlock(_ecosystemPropertyBlock);
                 return;
             }
 
-            Color infectedColor = Color.Lerp(Color.white, new Color(0.45f, 1f, 0.58f, 1f), _infectionSeverity);
-            Color infectedEmission = Color.Lerp(Color.black, new Color(0.08f, 0.35f, 0.12f, 1f), _infectionSeverity);
-            _ecosystemPropertyBlock.SetColor(_ColorId, infectedColor);
-            _ecosystemPropertyBlock.SetColor(_BaseColorId, infectedColor);
-            _ecosystemPropertyBlock.SetColor(_EmissionColorId, infectedEmission);
-            _renderer.SetPropertyBlock(_ecosystemPropertyBlock);
+            _lastAppliedInfectionShaderActive = _isInfected;
+            _lastAppliedInfectionShaderSeverity01 = resolvedSeverity01;
+            Color infectedColor = Color.Lerp(Color.white, FaunaInfectionTint, resolvedSeverity01);
+            Color infectedEmission = Color.Lerp(Color.black, FaunaInfectionEmission, resolvedSeverity01);
+            int originalMaterialCount = _faunaPresentationOriginalMaterials.Count;
+            for (int i = 0; i < runtimeMaterialCount; i++)
+            {
+                Material runtimeMaterial = _faunaPresentationRuntimeMaterials[i];
+                if (runtimeMaterial == null)
+                    continue;
+
+                Material originalMaterial = i < originalMaterialCount ? _faunaPresentationOriginalMaterials[i] : null;
+                ushort propertyMask = _faunaPresentationRuntimeMaterialMasks[i];
+                if ((propertyMask & FaunaPresentationColorMask) != 0)
+                {
+                    Color color = _isInfected ? infectedColor : ResolveOriginalMaterialColor(originalMaterial, _ColorId, Color.white);
+                    runtimeMaterial.SetColor(_ColorId, color);
+                }
+
+                if ((propertyMask & FaunaPresentationBaseColorMask) != 0)
+                {
+                    Color color = _isInfected ? infectedColor : ResolveOriginalMaterialColor(originalMaterial, _BaseColorId, Color.white);
+                    runtimeMaterial.SetColor(_BaseColorId, color);
+                }
+
+                if ((propertyMask & FaunaPresentationEmissionColorMask) != 0)
+                {
+                    Color color = _isInfected ? infectedEmission : ResolveOriginalMaterialColor(originalMaterial, _EmissionColorId, Color.black);
+                    runtimeMaterial.SetColor(_EmissionColorId, color);
+                }
+            }
         }
 
-        private void EnsureEcosystemPropertyBlock()
+        private static Color ResolveOriginalMaterialColor(Material originalMaterial, int shaderId, Color fallback)
         {
-            if (_ecosystemPropertyBlock != null)
-                return;
-
-            // COLD ALLOC: MaterialPropertyBlock[1] — per-fauna infection tint overlay without material clones — owner: FaunaBrain
-            _ecosystemPropertyBlock = new MaterialPropertyBlock();
+            return originalMaterial != null && originalMaterial.HasProperty(shaderId)
+                ? originalMaterial.GetColor(shaderId)
+                : fallback;
         }
 
         private void UpdateInfectionHazardRegistration()

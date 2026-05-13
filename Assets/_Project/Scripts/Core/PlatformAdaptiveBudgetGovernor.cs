@@ -1,4 +1,5 @@
 using System;
+using Hecton8.Core.Contracts;
 using Hecton8.World;
 using UnityEngine;
 
@@ -92,11 +93,16 @@ namespace Hecton8.Core
                 flags |= (uint)PlatformAdaptivePressureFlags.VramNearBudget;
             if (IsCriticalBattery())
                 flags |= (uint)PlatformAdaptivePressureFlags.CriticalBattery;
+            if (IsThermalThrottling(out bool thermalCritical))
+                flags |= (uint)(thermalCritical
+                    ? PlatformAdaptivePressureFlags.ThermalCritical
+                    : PlatformAdaptivePressureFlags.ThermalThrottling);
             if (IsFrameOverBudget(deltaTime))
                 flags |= (uint)PlatformAdaptivePressureFlags.FrameOverBudget;
 
             bool pressured = flags != 0u;
             bool critical = (flags & (uint)(PlatformAdaptivePressureFlags.CriticalBattery |
+                                            PlatformAdaptivePressureFlags.ThermalCritical |
                                             PlatformAdaptivePressureFlags.VramNearBudget |
                                             PlatformAdaptivePressureFlags.FrameOverBudget)) != 0u;
 
@@ -137,12 +143,26 @@ namespace Hecton8.Core
 
         private static bool IsCriticalBattery()
         {
-            float level = SystemInfo.batteryLevel;
-            if (float.IsNaN(level) || float.IsInfinity(level) || level < 0f)
+            IHardwareThermalService hardware = GlobalRegistry.HardwareThermal;
+            if (hardware == null)
                 return false;
 
-            return level < 0.15f &&
-                   SystemInfo.batteryStatus == BatteryStatus.Discharging;
+            byte batteryPercent = hardware.BatteryPercent;
+            return batteryPercent > 0 && batteryPercent < 15;
+        }
+
+        private static bool IsThermalThrottling(out bool critical)
+        {
+            IHardwareThermalService hardware = GlobalRegistry.HardwareThermal;
+            if (hardware == null)
+            {
+                critical = false;
+                return false;
+            }
+
+            byte severity = hardware.CurrentSeverity;
+            critical = severity >= (byte)HardwareThermalSeverity.Critical;
+            return severity >= (byte)HardwareThermalSeverity.Throttling;
         }
 
         private static bool IsFrameOverBudget(float deltaTime)
@@ -170,8 +190,11 @@ namespace Hecton8.Core
 
         private static int ResolveRenderScaleMilli(uint flags)
         {
-            if ((flags & (uint)PlatformAdaptivePressureFlags.CriticalBattery) != 0u)
+            if ((flags & (uint)(PlatformAdaptivePressureFlags.CriticalBattery |
+                                PlatformAdaptivePressureFlags.ThermalCritical)) != 0u)
                 return CriticalRenderScaleMilli;
+            if ((flags & (uint)PlatformAdaptivePressureFlags.ThermalThrottling) != 0u)
+                return FramePressureRenderScaleMilli;
             if ((flags & (uint)PlatformAdaptivePressureFlags.VramNearBudget) != 0u)
                 return VramPressureRenderScaleMilli;
             if ((flags & (uint)PlatformAdaptivePressureFlags.FrameOverBudget) != 0u)
@@ -235,6 +258,8 @@ namespace Hecton8.Core
         SteamDeckLike = 1u << 1,
         VramNearBudget = 1u << 2,
         CriticalBattery = 1u << 3,
-        FrameOverBudget = 1u << 4
+        FrameOverBudget = 1u << 4,
+        ThermalThrottling = 1u << 5,
+        ThermalCritical = 1u << 6
     }
 }

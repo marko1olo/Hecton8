@@ -60,7 +60,18 @@
         { "name": "negative", "id": "54f40dcb-4fc8-420f-aa01-033", "path": "<Keyboard>/c", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "VerticalMovement", "isComposite": false, "isPartOfComposite": true },
         { "name": "positive", "id": "54f40dcb-4fc8-420f-aa01-034", "path": "<Keyboard>/space", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "VerticalMovement", "isComposite": false, "isPartOfComposite": true },
         { "name": "", "id": "54f40dcb-4fc8-420f-aa01-035", "path": "<Keyboard>/i", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "Inventory", "isComposite": false, "isPartOfComposite": false },
-        { "name": "", "id": "54f40dcb-4fc8-420f-aa01-036", "path": "<Gamepad>/select", "interactions": "", "processors": "", "groups": "Gamepad", "action": "Inventory", "isComposite": false, "isPartOfComposite": false }
+        { "name": "", "id": "54f40dcb-4fc8-420f-aa01-036", "path": "<Gamepad>/select", "interactions": "", "processors": "", "groups": "Gamepad", "action": "Inventory", "isComposite": false, "isPartOfComposite": false },
+        { "name": "", "id": "54f40dcb-4fc8-420f-aa01-x01", "path": "<XRController>{LeftHand}/thumbstick", "interactions": "", "processors": "", "groups": "XR_Touch", "action": "Movement", "isComposite": false, "isPartOfComposite": false },
+        { "name": "", "id": "54f40dcb-4fc8-420f-aa01-x02", "path": "<XRController>{RightHand}/thumbstick", "interactions": "", "processors": "", "groups": "XR_Touch", "action": "Look", "isComposite": false, "isPartOfComposite": false },
+        { "name": "", "id": "54f40dcb-4fc8-420f-aa01-x03", "path": "<XRController>{LeftHand}/gripPressed", "interactions": "", "processors": "", "groups": "XR_Touch", "action": "Interact", "isComposite": false, "isPartOfComposite": false },
+        { "name": "", "id": "54f40dcb-4fc8-420f-aa01-x04", "path": "<XRController>{RightHand}/gripPressed", "interactions": "", "processors": "", "groups": "XR_Touch", "action": "Interact", "isComposite": false, "isPartOfComposite": false },
+        { "name": "", "id": "54f40dcb-4fc8-420f-aa01-x05", "path": "<XRController>{RightHand}/triggerPressed", "interactions": "", "processors": "", "groups": "XR_Touch", "action": "PrimaryAction", "isComposite": false, "isPartOfComposite": false },
+        { "name": "", "id": "54f40dcb-4fc8-420f-aa01-x06", "path": "<XRController>{LeftHand}/triggerPressed", "interactions": "", "processors": "", "groups": "XR_Touch", "action": "SecondaryAction", "isComposite": false, "isPartOfComposite": false },
+        { "name": "", "id": "54f40dcb-4fc8-420f-aa01-x07", "path": "<XRController>{RightHand}/primaryButton", "interactions": "", "processors": "", "groups": "XR_Touch", "action": "Jump", "isComposite": false, "isPartOfComposite": false },
+        { "name": "", "id": "54f40dcb-4fc8-420f-aa01-x08", "path": "<XRController>{LeftHand}/thumbstickClicked", "interactions": "", "processors": "", "groups": "XR_Touch", "action": "Sprint", "isComposite": false, "isPartOfComposite": false },
+        { "name": "", "id": "54f40dcb-4fc8-420f-aa01-x09", "path": "<XRController>{LeftHand}/menuButton", "interactions": "", "processors": "", "groups": "XR_Touch", "action": "PDA", "isComposite": false, "isPartOfComposite": false },
+        { "name": "", "id": "54f40dcb-4fc8-420f-aa01-x10", "path": "<XRController>{LeftHand}/menuButton", "interactions": "", "processors": "", "groups": "XR_Touch", "action": "Pause", "isComposite": false, "isPartOfComposite": false },
+        { "name": "", "id": "54f40dcb-4fc8-420f-aa01-x11", "path": "<XRController>{RightHand}/secondaryButton", "interactions": "", "processors": "", "groups": "XR_Touch", "action": "Inventory", "isComposite": false, "isPartOfComposite": false }
       ]
     },
     {
@@ -71,7 +82,9 @@
         { "name": "Submit", "type": "Button", "id": "7d03895d-7b15-4bb1-a8d2-1b958ec4aa01", "expectedControlType": "Button", "processors": "", "interactions": "", "initialStateCheck": false },
         { "name": "Cancel", "type": "Button", "id": "6285982d-4d98-438f-ae94-e14c1f6caa01", "expectedControlType": "Button", "processors": "", "interactions": "", "initialStateCheck": false },
         { "name": "TabNext", "type": "Button", "id": "ed7ea8c7-d77f-4b56-815b-d3595b80aa01", "expectedControlType": "Button", "processors": "", "interactions": "", "initialStateCheck": false },
-        { "name": "TabPrevious", "type": "Button", "id": "c591dc2a-084d-4fcb-8ac4-9260fd50aa01", "expectedControlType": "Button", "processors": "", "interactions": "", "initialStateCheck": false }
+        { "name": "TabPrevious", "type": "Button", "id": "c591dc2a-084d-4fcb-8ac4-9260fd50aa01", "expectedControlType": "Button", "processors": "", "interactions": "", "initialStateCheck": false },
+        { "name": "DebugToggleBlackBoxDashboard", "type": "Button", "id": "a09aa8da-2173-49d3-a7e1-c57f17d2aa01", "expectedControlType": "Button", "processors": "", "interactions": "", "initialStateCheck": false },
+        { "name": "DebugToggleEngineHealthOverlay", "type": "Button", "id": "f3ec7ea0-61db-43b5-83e0-19a0e3d5aa01", "expectedControlType": "Button", "processors": "", "interactions": "", "initialStateCheck": false }
       ],
       "bindings": [
         { "name": "WASD", "id": "f5c0ff4a-0bc1-44d0-aa01-001", "path": "2DVector", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "Navigate", "isComposite": true, "isPartOfComposite": false },
@@ -97,13 +110,37 @@
         { "name": "", "id": "f5c0ff4a-0bc1-44d0-aa01-021", "path": "<Keyboard>/e", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "TabNext", "isComposite": false, "isPartOfComposite": false },
         { "name": "", "id": "f5c0ff4a-0bc1-44d0-aa01-022", "path": "<Gamepad>/rightShoulder", "interactions": "", "processors": "", "groups": "Gamepad", "action": "TabNext", "isComposite": false, "isPartOfComposite": false },
         { "name": "", "id": "f5c0ff4a-0bc1-44d0-aa01-023", "path": "<Keyboard>/q", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "TabPrevious", "isComposite": false, "isPartOfComposite": false },
-        { "name": "", "id": "f5c0ff4a-0bc1-44d0-aa01-024", "path": "<Gamepad>/leftShoulder", "interactions": "", "processors": "", "groups": "Gamepad", "action": "TabPrevious", "isComposite": false, "isPartOfComposite": false }
+        { "name": "", "id": "f5c0ff4a-0bc1-44d0-aa01-024", "path": "<Gamepad>/leftShoulder", "interactions": "", "processors": "", "groups": "Gamepad", "action": "TabPrevious", "isComposite": false, "isPartOfComposite": false },
+        { "name": "", "id": "f5c0ff4a-0bc1-44d0-aa01-d01", "path": "<Keyboard>/f3", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "DebugToggleBlackBoxDashboard", "isComposite": false, "isPartOfComposite": false },
+        { "name": "CTRL_F10_LEFT", "id": "f5c0ff4a-0bc1-44d0-aa01-d02", "path": "ButtonWithOneModifier", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "DebugToggleEngineHealthOverlay", "isComposite": true, "isPartOfComposite": false },
+        { "name": "Modifier", "id": "f5c0ff4a-0bc1-44d0-aa01-d03", "path": "<Keyboard>/leftCtrl", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "DebugToggleEngineHealthOverlay", "isComposite": false, "isPartOfComposite": true },
+        { "name": "Button", "id": "f5c0ff4a-0bc1-44d0-aa01-d04", "path": "<Keyboard>/f10", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "DebugToggleEngineHealthOverlay", "isComposite": false, "isPartOfComposite": true },
+        { "name": "CTRL_F10_RIGHT", "id": "f5c0ff4a-0bc1-44d0-aa01-d05", "path": "ButtonWithOneModifier", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "DebugToggleEngineHealthOverlay", "isComposite": true, "isPartOfComposite": false },
+        { "name": "Modifier", "id": "f5c0ff4a-0bc1-44d0-aa01-d06", "path": "<Keyboard>/rightCtrl", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "DebugToggleEngineHealthOverlay", "isComposite": false, "isPartOfComposite": true },
+        { "name": "Button", "id": "f5c0ff4a-0bc1-44d0-aa01-d07", "path": "<Keyboard>/f10", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "DebugToggleEngineHealthOverlay", "isComposite": false, "isPartOfComposite": true },
+        { "name": "SELECT_RB", "id": "f5c0ff4a-0bc1-44d0-aa01-d08", "path": "ButtonWithOneModifier", "interactions": "", "processors": "", "groups": "Gamepad", "action": "DebugToggleBlackBoxDashboard", "isComposite": true, "isPartOfComposite": false },
+        { "name": "Modifier", "id": "f5c0ff4a-0bc1-44d0-aa01-d09", "path": "<Gamepad>/select", "interactions": "", "processors": "", "groups": "Gamepad", "action": "DebugToggleBlackBoxDashboard", "isComposite": false, "isPartOfComposite": true },
+        { "name": "Button", "id": "f5c0ff4a-0bc1-44d0-aa01-d10", "path": "<Gamepad>/rightShoulder", "interactions": "", "processors": "", "groups": "Gamepad", "action": "DebugToggleBlackBoxDashboard", "isComposite": false, "isPartOfComposite": true },
+        { "name": "XR_MENU_PRIMARY", "id": "f5c0ff4a-0bc1-44d0-aa01-d11", "path": "ButtonWithOneModifier", "interactions": "", "processors": "", "groups": "XR_Touch", "action": "DebugToggleBlackBoxDashboard", "isComposite": true, "isPartOfComposite": false },
+        { "name": "Modifier", "id": "f5c0ff4a-0bc1-44d0-aa01-d12", "path": "<XRController>{LeftHand}/menuButton", "interactions": "", "processors": "", "groups": "XR_Touch", "action": "DebugToggleBlackBoxDashboard", "isComposite": false, "isPartOfComposite": true },
+        { "name": "Button", "id": "f5c0ff4a-0bc1-44d0-aa01-d13", "path": "<XRController>{RightHand}/primaryButton", "interactions": "", "processors": "", "groups": "XR_Touch", "action": "DebugToggleBlackBoxDashboard", "isComposite": false, "isPartOfComposite": true },
+        { "name": "SELECT_LB", "id": "f5c0ff4a-0bc1-44d0-aa01-d14", "path": "ButtonWithOneModifier", "interactions": "", "processors": "", "groups": "Gamepad", "action": "DebugToggleEngineHealthOverlay", "isComposite": true, "isPartOfComposite": false },
+        { "name": "Modifier", "id": "f5c0ff4a-0bc1-44d0-aa01-d15", "path": "<Gamepad>/select", "interactions": "", "processors": "", "groups": "Gamepad", "action": "DebugToggleEngineHealthOverlay", "isComposite": false, "isPartOfComposite": true },
+        { "name": "Button", "id": "f5c0ff4a-0bc1-44d0-aa01-d16", "path": "<Gamepad>/leftShoulder", "interactions": "", "processors": "", "groups": "Gamepad", "action": "DebugToggleEngineHealthOverlay", "isComposite": false, "isPartOfComposite": true },
+        { "name": "XR_MENU_SECONDARY", "id": "f5c0ff4a-0bc1-44d0-aa01-d17", "path": "ButtonWithOneModifier", "interactions": "", "processors": "", "groups": "XR_Touch", "action": "DebugToggleEngineHealthOverlay", "isComposite": true, "isPartOfComposite": false },
+        { "name": "Modifier", "id": "f5c0ff4a-0bc1-44d0-aa01-d18", "path": "<XRController>{LeftHand}/menuButton", "interactions": "", "processors": "", "groups": "XR_Touch", "action": "DebugToggleEngineHealthOverlay", "isComposite": false, "isPartOfComposite": true },
+        { "name": "Button", "id": "f5c0ff4a-0bc1-44d0-aa01-d19", "path": "<XRController>{RightHand}/secondaryButton", "interactions": "", "processors": "", "groups": "XR_Touch", "action": "DebugToggleEngineHealthOverlay", "isComposite": false, "isPartOfComposite": true },
+        { "name": "", "id": "f5c0ff4a-0bc1-44d0-aa01-x01", "path": "<XRController>{LeftHand}/thumbstick", "interactions": "", "processors": "", "groups": "XR_Touch", "action": "Navigate", "isComposite": false, "isPartOfComposite": false },
+        { "name": "", "id": "f5c0ff4a-0bc1-44d0-aa01-x02", "path": "<XRController>{RightHand}/triggerPressed", "interactions": "", "processors": "", "groups": "XR_Touch", "action": "Submit", "isComposite": false, "isPartOfComposite": false },
+        { "name": "", "id": "f5c0ff4a-0bc1-44d0-aa01-x03", "path": "<XRController>{LeftHand}/primaryButton", "interactions": "", "processors": "", "groups": "XR_Touch", "action": "Cancel", "isComposite": false, "isPartOfComposite": false },
+        { "name": "", "id": "f5c0ff4a-0bc1-44d0-aa01-x04", "path": "<XRController>{RightHand}/primaryButton", "interactions": "", "processors": "", "groups": "XR_Touch", "action": "TabNext", "isComposite": false, "isPartOfComposite": false },
+        { "name": "", "id": "f5c0ff4a-0bc1-44d0-aa01-x05", "path": "<XRController>{LeftHand}/secondaryButton", "interactions": "", "processors": "", "groups": "XR_Touch", "action": "TabPrevious", "isComposite": false, "isPartOfComposite": false }
       ]
     }
   ],
   "controlSchemes": [
     {
-      "name": "Keyboard&Mouse",
+      "name": "KeyboardMouse",
       "bindingGroup": "Keyboard&Mouse",
       "devices": [
         { "devicePath": "<Keyboard>", "isOptional": false, "isOR": false },
@@ -115,6 +152,14 @@
       "bindingGroup": "Gamepad",
       "devices": [
         { "devicePath": "<Gamepad>", "isOptional": false, "isOR": false }
+      ]
+    },
+    {
+      "name": "XR_Touch",
+      "bindingGroup": "XR_Touch",
+      "devices": [
+        { "devicePath": "<XRController>{LeftHand}", "isOptional": false, "isOR": false },
+        { "devicePath": "<XRController>{RightHand}", "isOptional": false, "isOR": true }
       ]
     }
   ]

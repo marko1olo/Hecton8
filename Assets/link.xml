@@ -1,0 +1,16 @@
+<linker>
+  <assembly fullname="Hecton8.Core" preserve="nothing">
+    <type fullname="Hecton8.Core.GlobalRegistry" preserve="all" />
+    <type fullname="Hecton8.Core.GlobalSignals" preserve="all" />
+    <type fullname="Hecton8.Core.Signals.ISignal" preserve="all" />
+    <type fullname="Hecton8.Core.Signals.IInitializable" preserve="all" />
+    <type fullname="Hecton8.Core.Signals.ISignalSnapshotTransformer`1" preserve="all" />
+    <type fullname="Hecton8.Core.Signals.SignalBusRegistry" preserve="all" />
+    <type fullname="Hecton8.Core.Signals.SignalBus`1" preserve="all" />
+  </assembly>
+  <assembly fullname="Unity.Collections" preserve="nothing">
+    <type fullname="Unity.Collections.NativeArray`1" preserve="all" />
+    <type fullname="Unity.Collections.NativeList`1" preserve="all" />
+    <type fullname="Unity.Collections.NativeQueue`1" preserve="all" />
+  </assembly>
+</linker>

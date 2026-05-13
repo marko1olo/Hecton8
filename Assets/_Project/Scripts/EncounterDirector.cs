@@ -269,6 +269,7 @@ namespace Hecton8.Systems.AI
         private int _lastPublishedPredatorAupCount = -1;
         private bool _predatorAupWriteToA = true;
         private readonly int _candidateCount;
+        private IMetaCampaignService _metaCampaignService;
         private int _pendingPhaseOverride = -1;
         private bool _pendingReset;
         private int _pendingForcedThreatClass = -1;
@@ -372,6 +373,11 @@ namespace Hecton8.Systems.AI
             _nextHeadlessEntitySequence = 0;
             _headlessFreeSearchCursor = 0;
             PublishPredatorAupBuffer();
+        }
+
+        internal void SetMetaCampaignService(IMetaCampaignService service)
+        {
+            _metaCampaignService = service;
         }
 
         internal void RequestPhaseOverride(EncounterPhase phase)
@@ -751,6 +757,13 @@ namespace Hecton8.Systems.AI
                     out _))
             {
                 ApplyBiomassThreatCostModifiers(ref threatAuthoring, preyBiomass01, predatorBiomass01);
+            }
+
+            IMetaCampaignService metaCampaign = _metaCampaignService;
+            if (metaCampaign == null || !metaCampaign.IsLeviathanAwakened)
+            {
+                threatAuthoring.LeviathanMaxSimultaneous = 0;
+                threatAuthoring.LeviathanAllowCriticalHealth = 0;
             }
 
             EncounterDirectorJob job = new EncounterDirectorJob

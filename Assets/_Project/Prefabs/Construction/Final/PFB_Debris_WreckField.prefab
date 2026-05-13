@@ -985,7 +985,6 @@ GameObject:
   - component: {fileID: 3302993985319533558}
   - component: {fileID: 2488107088689800797}
   - component: {fileID: 7606436259534855414}
-  - component: {fileID: 1701972591832816021}
   m_Layer: 0
   m_Name: PFB_Debris_WreckField
   m_TagString: Untagged
@@ -1044,40 +1043,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 4.8, y: 2.4, z: 3.4}
   m_Center: {x: 0, y: 1.2, z: 0}
---- !u!205 &1701972591832816021
-LODGroup:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8365438976427868984}
-  serializedVersion: 3
-  m_LocalReferencePoint: {x: -0.07250011, y: 0.85, z: 0.18598735}
-  m_Size: 4.3121223
-  m_FadeMode: 1
-  m_AnimateCrossFading: 1
-  m_LastLODIsBillboard: 0
-  m_LODs:
-  - screenRelativeHeight: 0.55
-    fadeTransitionWidth: 0
-    renderers:
-    - renderer: {fileID: 6677300892460017582}
-    - renderer: {fileID: 3861741658109743212}
-    - renderer: {fileID: 9141941493452688840}
-    - renderer: {fileID: 4671345112313200810}
-    - renderer: {fileID: 7056774495882941175}
-    - renderer: {fileID: 8564885503204863278}
-    - renderer: {fileID: 2948933847123697764}
-    - renderer: {fileID: 6692266496960402667}
-    - renderer: {fileID: 8425433287496572986}
-  - screenRelativeHeight: 0.12
-    fadeTransitionWidth: 0
-    renderers:
-    - renderer: {fileID: 969154045644704021}
-    - renderer: {fileID: 6792477565636322750}
-    - renderer: {fileID: 6629403580434756131}
-  m_Enabled: 1
-  m_GlobalIlluminationLOD: 0
 --- !u!1 &8872866789964236273
 GameObject:
   m_ObjectHideFlags: 0

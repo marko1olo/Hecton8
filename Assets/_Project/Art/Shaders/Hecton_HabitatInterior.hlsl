@@ -1,0 +1,113 @@
+#ifndef HECTON_HABITAT_INTERIOR_INCLUDED
+#define HECTON_HABITAT_INTERIOR_INCLUDED
+
+#define HECTON_HABITAT_INTERIOR_PI 3.14159265359
+#define HECTON_HABITAT_INTERIOR_MAX_MODULES 64
+
+StructuredBuffer<float> _HectonHabitatModuleStressBuffer;
+float4 _HectonHabitatModuleStressParams; // x=count, y=max deformation, z=low-tier crease mode, w=peak stress
+
+float3 HectonHabitatInteriorSafeNormalize3(float3 value)
+{
+    return value * rsqrt(max(dot(value, value), 0.0001));
+}
+
+half3 HectonHabitatInteriorSafeNormalizeHalf3(half3 value)
+{
+    return value * rsqrt(max(dot(value, value), 0.0001h));
+}
+
+uint HectonHabitatInteriorResolveStressIndex(float3 positionWS)
+{
+    uint count = min((uint)max(_HectonHabitatModuleStressParams.x, 0.0), (uint)HECTON_HABITAT_INTERIOR_MAX_MODULES);
+    if (count == 0u)
+        return 0u;
+
+    uint bestIndex = 0u;
+    float bestDistanceSq = 1.0e20;
+    [loop]
+    for (uint i = 0u; i < count; i++)
+    {
+        float4 centerRadius = _HectonModuleAmbienceDataBuffer[i];
+        float radius = max(centerRadius.w, 0.001);
+        float3 delta = positionWS - centerRadius.xyz;
+        float distanceSq = dot(delta, delta);
+        if (distanceSq > radius * radius || distanceSq >= bestDistanceSq)
+            continue;
+
+        bestDistanceSq = distanceSq;
+        bestIndex = i;
+    }
+
+    return bestIndex;
+}
+
+float HectonHabitatInteriorReadStress01(uint stressIndex)
+{
+    uint count = min((uint)max(_HectonHabitatModuleStressParams.x, 0.0), (uint)HECTON_HABITAT_INTERIOR_MAX_MODULES);
+    if (stressIndex >= count)
+        return 0.0;
+
+    return saturate(_HectonHabitatModuleStressBuffer[stressIndex]);
+}
+
+float HectonHabitatInteriorPanelMask(float2 uv)
+{
+    float2 panelUv = saturate(frac(abs(uv)));
+    float sx = sin(panelUv.x * HECTON_HABITAT_INTERIOR_PI);
+    float sy = sin(panelUv.y * HECTON_HABITAT_INTERIOR_PI);
+    return saturate(sx * sy);
+}
+
+float3 HectonHabitatInteriorApplyPanelBendOS(
+    float3 positionOS,
+    float3 normalOS,
+    float2 uv,
+    float stress01,
+    out half shadow01)
+{
+    shadow01 = 0.0h;
+    float maxDeformation = max(_HectonHabitatModuleStressParams.y, 0.0);
+    if (_HectonHabitatModuleStressParams.z > 0.5 || maxDeformation <= 0.00001 || stress01 <= 0.0001)
+        return positionOS;
+
+    float panelMask = HectonHabitatInteriorPanelMask(uv);
+    float offsetMeters = panelMask * saturate(stress01) * maxDeformation;
+    shadow01 = (half)saturate(panelMask * stress01 * 0.45);
+    return positionOS + HectonHabitatInteriorSafeNormalize3(normalOS) * offsetMeters;
+}
+
+half3 HectonHabitatInteriorApplyCheapNormalBiasWS(half3 normalWS, float2 uv, float stress01)
+{
+    if (_HectonHabitatModuleStressParams.z > 0.5 || stress01 <= 0.0001)
+        return normalWS;
+
+    half3 baseNormal = HectonHabitatInteriorSafeNormalizeHalf3(normalWS);
+    half3 tangentWS = abs(baseNormal.y) < 0.999h
+        ? HectonHabitatInteriorSafeNormalizeHalf3(cross(half3(0.0h, 1.0h, 0.0h), baseNormal))
+        : half3(1.0h, 0.0h, 0.0h);
+    half3 bitangentWS = HectonHabitatInteriorSafeNormalizeHalf3(cross(baseNormal, tangentWS));
+    half2 centeredUv = (half2)(saturate(frac(abs(uv))) * 2.0 - 1.0);
+    half slopeStrength = (half)(saturate(stress01) * HectonHabitatInteriorPanelMask(uv) * 0.08);
+    return HectonHabitatInteriorSafeNormalizeHalf3(baseNormal - tangentWS * centeredUv.x * slopeStrength - bitangentWS * centeredUv.y * slopeStrength);
+}
+
+void HectonHabitatInteriorApplyLowTierCrease(
+    float2 uv,
+    half stress01,
+    half detailMask,
+    inout half hullDentShadow,
+    inout half3 albedo,
+    inout half smoothness)
+{
+    if (_HectonHabitatModuleStressParams.z <= 0.5 || stress01 <= 0.0001h)
+        return;
+
+    half panelMask = (half)HectonHabitatInteriorPanelMask(uv);
+    half crease = saturate(stress01 * panelMask * lerp(0.38h, 1.0h, detailMask));
+    hullDentShadow = max(hullDentShadow, crease * 0.32h);
+    albedo *= lerp(1.0h, 0.74h, crease);
+    smoothness = lerp(smoothness, smoothness * 0.72h, crease);
+}
+
+#endif

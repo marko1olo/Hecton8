@@ -151,6 +151,7 @@ namespace Hecton8.Core
             Scheduler = 1u << 13,
             Vfx = 1u << 14,
             WorldStreaming = 1u << 15,
+            Rendering = 1u << 16,
         }
 
         private enum ExportReason : uint
@@ -540,6 +541,18 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Records simulation bucketing cadence and load state into the crash black-box ring.
+        /// </summary>
+        public static void ReportSimulationBucketFrame(SimulationBucketFrameState frameState)
+        {
+            CrashTelemetryBuffer instance = GlobalRegistry.CrashTelemetry;
+            if (instance == null || !instance._ringBuffer.IsCreated)
+                return;
+
+            instance.WriteSimulationBucketTelemetry(frameState);
+        }
+
+        /// <summary>
         /// Reports a NativeQueue event bus that exceeded its frame budget for consecutive frames.
         /// </summary>
         /// <param name="queueHash">Stable queue identifier hash.</param>
@@ -575,6 +588,33 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Records the latest deterministic input frame into the crash black-box ring.
+        /// </summary>
+        public static void ReportDeterministicInputFrame(uint frame, uint sequence, uint buttonsBitmask, uint packedAxes)
+        {
+            CrashTelemetryBuffer instance = GlobalRegistry.CrashTelemetry;
+            if (instance == null || !instance._ringBuffer.IsCreated)
+                return;
+
+            instance.WriteDeterministicInputTelemetry(frame, sequence, buttonsBitmask, packedAxes);
+        }
+
+        /// <summary>
+        /// Records a failed owner-specific black-box export without allocating managed exception text.
+        /// </summary>
+        public static void ReportBlackBoxExportFailure()
+        {
+            CrashTelemetryBuffer instance = GlobalRegistry.CrashTelemetry;
+            if (instance == null)
+            {
+                OrRuntimeFaultFlags((int)ErrorBits.BlackBoxExportFault);
+                return;
+            }
+
+            instance.RecordBlackBoxExportFailure();
+        }
+
+        /// <summary>
         /// Records active hull dent presentation state into the black-box ring.
         /// </summary>
         public static void ReportHullDentState(uint dentBufferHash, int activeHullDents, uint packedFlags)
@@ -584,6 +624,18 @@ namespace Hecton8.Core
                 return;
 
             instance.WriteHullDentTelemetry(dentBufferHash, activeHullDents, packedFlags);
+        }
+
+        /// <summary>
+        /// Records active octahedral impostor count into the black-box ring.
+        /// </summary>
+        public static void ReportActiveImpostors(int activeImpostors, int qualityFlags, uint contextHash)
+        {
+            CrashTelemetryBuffer instance = GlobalRegistry.CrashTelemetry;
+            if (instance == null || !instance._ringBuffer.IsCreated)
+                return;
+
+            instance.WriteActiveImpostorTelemetry(activeImpostors, qualityFlags, contextHash);
         }
 
         /// <summary>
@@ -887,6 +939,18 @@ namespace Hecton8.Core
                 return;
 
             instance.WriteAupJitterCorrectionTelemetry(runtimePosition, correctionMeters);
+        }
+
+        /// <summary>
+        /// Records the current watchdog maximum AUP/runtime drift without raising a crash export fault.
+        /// </summary>
+        public static void ReportAupMaxDriftError(Vector3 runtimePosition, float maxDriftErrorMeters)
+        {
+            CrashTelemetryBuffer instance = GlobalRegistry.CrashTelemetry;
+            if (instance == null || !instance._ringBuffer.IsCreated)
+                return;
+
+            instance.WriteAupMaxDriftErrorTelemetry(runtimePosition, maxDriftErrorMeters);
         }
 
         /// <summary>
@@ -1292,6 +1356,29 @@ namespace Hecton8.Core
                 TryExportSnapshot(ExportReason.BusCongestionWarning, errorFlags, bypassCooldown: false);
         }
 
+        private void WriteDeterministicInputTelemetry(uint frame, uint sequence, uint buttonsBitmask, uint packedAxes)
+        {
+            int writeIndex = ReserveTelemetryWriteIndex();
+            OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
+
+            TelemetryEntry entry = default;
+            entry.FrameIndex = frame;
+            entry.SystemMask = (uint)SystemBits.Input;
+            entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
+            entry.LatencyMs = _lastLatencyMs;
+            entry.GpuFrameTime = 0f;
+            entry.MemoryUsedMb = SampleReservedMemoryMegabytes();
+            entry.PlayerAup = SamplePlayerPosition(out _);
+            entry.ActiveChunkCount = sequence;
+            entry.ErrorFlags = 0u;
+            entry.ExportReason = (uint)ExportReason.None;
+            entry.AupShiftSequence = shiftEvent.Sequence;
+            entry.AiStatePacked = buttonsBitmask;
+            entry.SubsystemHeatPacked = packedAxes;
+            entry.LastOriginShiftFrame = unchecked((uint)Math.Max(0, shiftEvent.Frame));
+            _ringBuffer[writeIndex] = entry;
+        }
+
         private void WriteHullDentTelemetry(uint dentBufferHash, int activeHullDents, uint packedFlags)
         {
             uint frameIndex = unchecked((uint)Time.frameCount);
@@ -1327,6 +1414,24 @@ namespace Hecton8.Core
         {
             uint debt = unchecked((uint)Math.Min(Math.Max(0, criticalDebtFrames), 0x00FFFFFF));
             return debt | ((uint)flags << 24);
+        }
+
+        private static uint PackSimulationBuckets(int activeFastBucket, int activeSlowBucket, int activeColdBucket, byte activeSlowBucketCount)
+        {
+            uint fast = unchecked((uint)Math.Min(Math.Max(0, activeFastBucket), byte.MaxValue));
+            uint slow = unchecked((uint)Math.Min(Math.Max(0, activeSlowBucket), byte.MaxValue));
+            uint cold = unchecked((uint)Math.Min(Math.Max(0, activeColdBucket), byte.MaxValue));
+            uint count = activeSlowBucketCount;
+            return fast | (slow << 8) | (cold << 16) | (count << 24);
+        }
+
+        private static uint PackSimulationBucketCadence(int slowBucketCount, int slowBucketMask, int criticalDebtFrames, byte aupBarrierActive)
+        {
+            uint count = unchecked((uint)Math.Min(Math.Max(0, slowBucketCount), 1023));
+            uint mask = unchecked((uint)Math.Min(Math.Max(0, slowBucketMask), 1023));
+            uint debt = unchecked((uint)Math.Min(Math.Max(0, criticalDebtFrames), 1023));
+            uint barrier = aupBarrierActive != 0 ? 1u << 31 : 0u;
+            return count | (mask << 10) | (debt << 20) | barrier;
         }
 
         private void WriteJobAdmissionTelemetry(byte lane, uint jobHash, float estimatedCostMs, float remainingBudgetMs, int criticalDebtFrames, byte flags)
@@ -1431,6 +1536,30 @@ namespace Hecton8.Core
             _ringBuffer[writeIndex] = entry;
         }
 
+        private void WriteActiveImpostorTelemetry(int activeImpostors, int qualityFlags, uint contextHash)
+        {
+            uint frameIndex = unchecked((uint)Time.frameCount);
+            int writeIndex = ReserveTelemetryWriteIndex();
+            OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
+
+            TelemetryEntry entry = default;
+            entry.FrameIndex = frameIndex;
+            entry.SystemMask = (uint)SystemBits.Rendering | (uint)SystemBits.WorldStreaming;
+            entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
+            entry.LatencyMs = _lastLatencyMs;
+            entry.GpuFrameTime = 0f;
+            entry.MemoryUsedMb = SampleReservedMemoryMegabytes();
+            entry.PlayerAup = SamplePlayerPosition(out _);
+            entry.ActiveChunkCount = unchecked((uint)math.max(0, activeImpostors));
+            entry.ErrorFlags = 0u;
+            entry.ExportReason = (uint)ExportReason.None;
+            entry.AupShiftSequence = shiftEvent.Sequence;
+            entry.AiStatePacked = unchecked((uint)math.max(0, qualityFlags));
+            entry.SubsystemHeatPacked = contextHash;
+            entry.LastOriginShiftFrame = unchecked((uint)math.max(0, shiftEvent.Frame));
+            _ringBuffer[writeIndex] = entry;
+        }
+
         private void WriteNanPhysicsRecoveryTelemetry(Vector3 invalidRuntimePosition, Vector3 recoveredRuntimePosition)
         {
             uint frameIndex = unchecked((uint)Time.frameCount);
@@ -1488,6 +1617,41 @@ namespace Hecton8.Core
             entry.AiStatePacked = queueHash;
             entry.SubsystemHeatPacked = unchecked((uint)math.max(0, remainingDispatchBudget));
             entry.LastOriginShiftFrame = unchecked((uint)math.max(0, shiftEvent.Frame));
+            _ringBuffer[writeIndex] = entry;
+        }
+
+        private void WriteSimulationBucketTelemetry(SimulationBucketFrameState frameState)
+        {
+            uint frameIndex = unchecked((uint)Time.frameCount);
+            int writeIndex = ReserveTelemetryWriteIndex();
+            OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
+            float activeLoadMs = math.isfinite(frameState.ActiveBucketLoadMs)
+                ? math.max(0f, frameState.ActiveBucketLoadMs)
+                : 0f;
+
+            TelemetryEntry entry = default;
+            entry.FrameIndex = frameIndex;
+            entry.SystemMask = (uint)SystemBits.Scheduler;
+            entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
+            entry.LatencyMs = activeLoadMs;
+            entry.GpuFrameTime = frameState.ActiveSlowBucketCount;
+            entry.MemoryUsedMb = SampleReservedMemoryMegabytes();
+            entry.PlayerAup = SamplePlayerPosition(out _);
+            entry.ActiveChunkCount = unchecked((uint)Math.Max(0, frameState.CurrentFrameCount));
+            entry.ErrorFlags = 0u;
+            entry.ExportReason = (uint)ExportReason.None;
+            entry.AupShiftSequence = shiftEvent.Sequence;
+            entry.AiStatePacked = PackSimulationBuckets(
+                frameState.ActiveFastBucket,
+                frameState.ActiveSlowBucket,
+                frameState.ActiveColdBucket,
+                frameState.ActiveSlowBucketCount);
+            entry.SubsystemHeatPacked = PackSimulationBucketCadence(
+                frameState.SlowBucketCount,
+                frameState.SlowBucketMask,
+                frameState.CriticalDebtFrames,
+                frameState.AupBarrierActive);
+            entry.LastOriginShiftFrame = unchecked((uint)Math.Max(0, shiftEvent.Frame));
             _ringBuffer[writeIndex] = entry;
         }
 
@@ -1934,6 +2098,31 @@ namespace Hecton8.Core
             entry.ActiveChunkCount = SampleActiveChunkCount();
             entry.ErrorFlags = (uint)ErrorBits.AupJitterCorrection;
             entry.ExportReason = (uint)ExportReason.AupJitterCorrection;
+            entry.AupShiftSequence = shiftEvent.Sequence;
+            entry.AiStatePacked = PackAiState();
+            entry.SubsystemHeatPacked = PackSubsystemHeat();
+            entry.LastOriginShiftFrame = unchecked((uint)math.max(0, shiftEvent.Frame));
+            _ringBuffer[writeIndex] = entry;
+        }
+
+        private void WriteAupMaxDriftErrorTelemetry(Vector3 runtimePosition, float maxDriftErrorMeters)
+        {
+            uint frameIndex = unchecked((uint)Time.frameCount);
+            int writeIndex = ReserveTelemetryWriteIndex();
+            OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
+            float safeMaxDriftError = math.isfinite(maxDriftErrorMeters) ? math.max(0f, maxDriftErrorMeters) : float.MaxValue;
+
+            TelemetryEntry entry = default;
+            entry.FrameIndex = frameIndex;
+            entry.SystemMask = (uint)SystemBits.Physics | (uint)SystemBits.OriginShift;
+            entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
+            entry.LatencyMs = _lastLatencyMs;
+            entry.GpuFrameTime = safeMaxDriftError;
+            entry.MemoryUsedMb = SampleReservedMemoryMegabytes();
+            entry.PlayerAup = ToAbsoluteUniversePosition(runtimePosition);
+            entry.ActiveChunkCount = SampleActiveChunkCount();
+            entry.ErrorFlags = (uint)ErrorBits.None;
+            entry.ExportReason = (uint)ExportReason.None;
             entry.AupShiftSequence = shiftEvent.Sequence;
             entry.AiStatePacked = PackAiState();
             entry.SubsystemHeatPacked = PackSubsystemHeat();

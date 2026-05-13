@@ -45,6 +45,7 @@ namespace Hecton8.Gameplay
         private static readonly int _HectonHandRadiationDoseId = Shader.PropertyToID("_HectonHandRadiationDose");
         private static readonly int _HectonHandRadiationMutationId = Shader.PropertyToID("_HectonHandRadiationMutation01");
         private static readonly int _HectonHandRadiationTintId = Shader.PropertyToID("_HectonHandRadiationTint");
+        internal static RadiationHazardGrid ActiveRuntimeInstance { get; private set; }
 
         [SerializeField, Min(0.5f)] private float cellSizeMeters = DefaultCellSizeMeters;
         [SerializeField, Min(0f)] private float doseScalePerFrostTick = 1f;
@@ -129,6 +130,18 @@ namespace Hecton8.Gameplay
             GlobalSignals.Publish(in signal);
         }
 
+        internal static bool TrySampleRadiationIntensity01(Vector3 runtimePosition, out float intensity01)
+        {
+            intensity01 = 0f;
+            RadiationHazardGrid grid = ActiveRuntimeInstance;
+            if (grid == null)
+                return false;
+
+            AbsoluteUniversePosition sampleAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+            intensity01 = math.max(grid.SampleInverseSquare(in sampleAup), grid.SampleGridNearest(in sampleAup));
+            return intensity01 > 0f;
+        }
+
         private void Awake()
         {
             EnsureNativeBuffers();
@@ -141,17 +154,24 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
+            ActiveRuntimeInstance = this;
             EnsureNativeBuffers();
             TryRegisterRuntimeLanes();
         }
 
         private void OnDisable()
         {
+            if (ActiveRuntimeInstance == this)
+                ActiveRuntimeInstance = null;
+
             TryUnregisterRuntimeLanes();
         }
 
         private void OnDestroy()
         {
+            if (ActiveRuntimeInstance == this)
+                ActiveRuntimeInstance = null;
+
             TryUnregisterRuntimeLanes();
             DisposeNativeBuffers();
         }

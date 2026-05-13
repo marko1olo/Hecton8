@@ -1316,6 +1316,7 @@ namespace Hecton8.UI
                 return false;
             }
 
+            bool resolvedTabsDuringOpen = false;
             if (!HasAnyResolvedTab())
             {
                 ResolveTabReferences(createMissingTabs: false);
@@ -1324,7 +1325,12 @@ namespace Hecton8.UI
                     ReportMissingUiShellOnce();
                     return false;
                 }
+
+                resolvedTabsDuringOpen = true;
             }
+
+            if (resolvedTabsDuringOpen)
+                PrepareRuntimeVisibility();
 
             return true;
         }

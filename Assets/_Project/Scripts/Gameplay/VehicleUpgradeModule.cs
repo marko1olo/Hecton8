@@ -1,5 +1,7 @@
 using System;
 using Hecton.Localization;
+using Hecton8.Core;
+using Hecton8.Core.Signals;
 using UnityEngine;
 
 namespace Hecton8.Gameplay
@@ -97,9 +99,6 @@ namespace Hecton8.Gameplay
 
         private uint _runtimeInstalledUpgradeMask;
         private float _permanentSafeDepthPenaltyMeters;
-
-        /// <summary>Raised whenever the effective vehicle upgrade bitmask changes.</summary>
-        public event Action UpgradesChanged;
 
         /// <summary>Combined authored plus runtime-installed upgrade bitmask.</summary>
         public uint ActiveUpgradeBitmask => ComposeAuthoredBitmask() | _runtimeInstalledUpgradeMask;
@@ -231,7 +230,7 @@ namespace Hecton8.Gameplay
                 return;
 
             _permanentSafeDepthPenaltyMeters = Mathf.Max(0f, _permanentSafeDepthPenaltyMeters + penaltyMeters);
-            UpgradesChanged?.Invoke();
+            PublishUpgradesChanged(VehicleUpgradesChangedSignal.ReasonPenalty);
         }
 
         /// <summary>
@@ -248,8 +247,24 @@ namespace Hecton8.Gameplay
                 return false;
 
             _runtimeInstalledUpgradeMask |= bitMask;
-            UpgradesChanged?.Invoke();
+            PublishUpgradesChanged(VehicleUpgradesChangedSignal.ReasonInstall);
             return true;
+        }
+
+        private void PublishUpgradesChanged(byte reason)
+        {
+            VehicleUpgradesChangedSignal signal = new VehicleUpgradesChangedSignal
+            {
+                SourceId = unchecked((uint)GetInstanceID()),
+                UpgradeMask = ActiveUpgradeBitmask,
+                Frame = unchecked((uint)Time.frameCount),
+                SafeDepthBonusMeters = SafeDepthBonusMeters,
+                PermanentSafeDepthPenaltyMeters = _permanentSafeDepthPenaltyMeters,
+                Reason = reason,
+                Flags = 0
+            };
+
+            GlobalSignals.Publish(in signal);
         }
 
         private uint ComposeAuthoredBitmask()

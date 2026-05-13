@@ -7,9 +7,11 @@ using Hecton.Localization;
 using Hecton8.Audio;
 using Hecton8.Building;
 using Hecton8.Core;
+using Hecton8.Core.Signals;
 using Hecton8.Gameplay;
 using Hecton8.Power;
 using Hecton8.World;
+using CoreCombatDamageSignal = Hecton8.Core.Signals.CombatDamageSignal;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
@@ -82,8 +84,10 @@ namespace Hecton8.Construction
         public float BaseTotalStress;
         public float MaxWaterLevel01;
         public float TotalWaterVolumeM3;
+        public float PeakModuleStress;
         public uint Flags;
         public uint StateHash;
+        public uint DeformationSequence;
     }
 
     /// <summary>
@@ -136,6 +140,14 @@ namespace Hecton8.Construction
         private const float AnalyticalShaderRadiusPaddingMeters = 2f;
         private const float AnalyticalShaderDisplacementMaxMeters = 0.055f;
         private const float AnalyticalShaderGridScale = 0.085f;
+        private const float ModuleStressUploadEpsilon = 0.0015f;
+        private const float ModuleStressDepthWeight = 0.58f;
+        private const float ModuleStressDamageWeight = 0.42f;
+        private const float ModuleStressFloodWeight = 0.28f;
+        private const float ModuleStressImpactSpikeDecayPerSecond = 1f;
+        private const float ModuleStressImpactSpikeStrength = 1f;
+        private const float ModuleStressFastDeltaGroanThresholdPerSecond = 0.9f;
+        private const float ModuleStressCompromisedThreshold01 = 0.985f;
         private const float AnalyticalLowTierFeedbackThreshold01 = 0.42f;
         private const float AnalyticalLowTierFeedbackCooldownSeconds = 3.5f;
         private const float AnalyticalEmergencyRemainingIntegrityThreshold01 = 0.2f;
@@ -158,17 +170,21 @@ namespace Hecton8.Construction
         internal const int MaxSiegeTargetCount = 64;
         private const int FloodBlackBoxCapacity = 300;
         private const uint FloodBlackBoxMagic = 0x48464C44u; // "HFLD"
-        private const uint FloodBlackBoxVersion = 2u;
+        private const uint FloodBlackBoxVersion = 3u;
         private const uint FloodBlackBoxNonFiniteFlag = 1u << 0;
         private const uint FloodBlackBoxOverflowClampedFlag = 1u << 1;
         private const uint FloodBlackBoxTraversalOverflowFlag = 1u << 2;
         private const uint FloodBlackBoxTopologyInvalidFlag = 1u << 3;
+        private const uint FloodBlackBoxModuleStressInvalidFlag = 1u << 4;
         private const string FloodBlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_HABITAT_INTEGRITY.bin";
+        private const string ModuleStressBlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_VOLUMETRIC_PRESSURE_SOLVER.bin";
         private const float SiegeVulnerableIntegrityThreshold01 = 0.72f;
         private static readonly int CarbonFilterItemHashId = LocHash.Compute("Data_CarbonFilter");
         private static readonly uint RuptureCascadeEventHash = unchecked((uint)LocHash.Compute("HabitatGraphManager.RuptureCascade"));
         private static readonly int HabitatStressCenterRadiusId = Shader.PropertyToID("_HectonHabitatStressCenterRadius");
         private static readonly int HabitatStressParamsId = Shader.PropertyToID("_HectonHabitatStressParams");
+        private static readonly int HabitatModuleStressBufferId = Shader.PropertyToID("_HectonHabitatModuleStressBuffer");
+        private static readonly int HabitatModuleStressParamsId = Shader.PropertyToID("_HectonHabitatModuleStressParams");
         private static readonly int HabitatVibrationId = Shader.PropertyToID("_HectonHabitatVibration01");
         private static readonly int BaseEmergencyStateId = Shader.PropertyToID("_BaseEmergencyState");
         private const string NativeMemoryOwner = nameof(HabitatGraphManager);
@@ -224,6 +240,10 @@ namespace Hecton8.Construction
         private NativeArray<float> _roomWaterLevels;
         private NativeArray<float> _roomVolumes;
         private NativeArray<float> _roomFloodDeltaLevels;
+        private NativeArray<float> _moduleStressScalars;
+        private NativeArray<float> _previousModuleStressScalars;
+        private NativeArray<float> _moduleImpactStressSpikes;
+        private NativeArray<byte> _moduleCompromisedFlags;
         private NativeArray<byte> _roomFlags;
         private NativeArray<byte> _edgeFlags;
         private NativeArray<HabitatFloodBlackBoxEntry> _floodBlackBox;
@@ -253,8 +273,17 @@ namespace Hecton8.Construction
         private float _baseTotalStress;
         private float _maxRoomWaterLevel01;
         private float _totalRoomWaterVolumeM3;
+        private float _peakModuleStress01;
+        private float _lastUploadedPeakModuleStress01 = -1f;
         private uint _floodBlackBoxStateHash;
+        private uint _moduleStressSequence;
+        private uint _moduleStressOrderHash;
         private bool _floodBlackBoxDumped;
+        private bool _moduleStressBlackBoxDumped;
+        private bool _lastUploadedModuleStressLowTier;
+        private int _lastUploadedModuleStressCount = -1;
+        private int _lastProcessedModuleStressSignalFrame = -1;
+        private GraphicsBuffer _moduleStressBuffer;
 
         internal HabitatGraphManager(int initialModuleCapacity)
         {
@@ -400,6 +429,7 @@ namespace Hecton8.Construction
             _socketLookup.Clear();
             _nodeCount = 0;
             _edgeCount = 0;
+            ClearModuleStressState();
             BaseDegradationSystem.BeginRuptureSync();
 
             if (modules == null || modules.Count <= 0)
@@ -459,6 +489,7 @@ namespace Hecton8.Construction
                 PublishRuntimeRuptureTopologyState();
 
             EvaluateAnalyticalIntegrityStress();
+            UpdateHabitatModuleStressMatrix(deltaTime);
             SyncFloodRoomStateSnapshot();
             WriteFloodBlackBoxSample(0u);
             PublishSiegeTargetSnapshot();
@@ -773,6 +804,450 @@ namespace Hecton8.Construction
                     displacementMaxMeters,
                     AnalyticalShaderGridScale,
                     (float)(_analyticalBreachNodeId & 1023u)));
+        }
+
+        private void UpdateHabitatModuleStressMatrix(float deltaTime)
+        {
+            if (!_moduleStressScalars.IsCreated)
+            {
+                ClearModuleStressState();
+                return;
+            }
+
+            int moduleCount = math.min(BaseModule.ActiveModuleCount, _moduleStressScalars.Length);
+            if (moduleCount <= 0)
+            {
+                ClearModuleStressState();
+                return;
+            }
+
+            int stressCount = moduleCount;
+            uint activeOrderHash = ResolveActiveModuleStressOrderHash(stressCount);
+            bool orderChanged = activeOrderHash != _moduleStressOrderHash;
+            if (orderChanged)
+            {
+                ClearModuleStressState();
+                _moduleStressOrderHash = activeOrderHash;
+            }
+
+            ConsumeModuleStressSignals(stressCount);
+
+            float safeDeltaTime = math.max(0.0001f, deltaTime);
+            float peakStress01 = 0f;
+            bool lowTier = IsModuleStressLowTier(GlobalRegistry.ScalabilityTier);
+            bool changed = orderChanged ||
+                           stressCount != _lastUploadedModuleStressCount ||
+                           lowTier != _lastUploadedModuleStressLowTier;
+            float3 loudestPosition = float3.zero;
+            float loudestDeltaPerSecond = 0f;
+            float loudestStress01 = 0f;
+            float loudestDepthMeters = 0f;
+
+            for (int nodeIndex = 0; nodeIndex < stressCount; nodeIndex++)
+            {
+                BaseModule baseModule = BaseModule.GetActiveModuleAt(nodeIndex);
+                float stress01 = 0f;
+                float depthMeters = 0f;
+                float3 modulePosition = float3.zero;
+                bool hasGraphRecord = TryResolveGraphModuleRecord(baseModule, out int graphNodeIndex, out ModuleRecord module);
+                if (baseModule != null && baseModule.isActiveAndEnabled)
+                {
+                    modulePosition = hasGraphRecord ? module.Position : ResolveActiveModulePosition(baseModule);
+                    depthMeters = ResolveActiveModuleDepthMeters(baseModule, modulePosition);
+                    float floodStress01 = ResolveActiveModuleFloodStress01(baseModule, graphNodeIndex, hasGraphRecord);
+                    stress01 = ResolveModuleStress01(nodeIndex, baseModule, depthMeters, floodStress01, safeDeltaTime);
+                }
+
+                bool finiteStress = math.isfinite(stress01);
+                stress01 = finiteStress ? math.saturate(stress01) : 0f;
+                if (!finiteStress)
+                {
+                    stress01 = 0f;
+                    WriteFloodBlackBoxSample(FloodBlackBoxModuleStressInvalidFlag);
+                    DumpModuleStressBlackBoxOnce(FloodBlackBoxModuleStressInvalidFlag);
+                }
+
+                float previousStress01 = _previousModuleStressScalars[nodeIndex];
+                float deltaPerSecond = math.abs(stress01 - previousStress01) * math.rcp(safeDeltaTime);
+                if (deltaPerSecond > loudestDeltaPerSecond)
+                {
+                    loudestDeltaPerSecond = deltaPerSecond;
+                    loudestStress01 = stress01;
+                    loudestPosition = modulePosition;
+                    loudestDepthMeters = depthMeters;
+                }
+
+                if (math.abs(stress01 - _moduleStressScalars[nodeIndex]) > ModuleStressUploadEpsilon)
+                    changed = true;
+
+                _moduleStressScalars[nodeIndex] = stress01;
+                _previousModuleStressScalars[nodeIndex] = stress01;
+                peakStress01 = math.max(peakStress01, stress01);
+
+                if (baseModule != null && stress01 >= ModuleStressCompromisedThreshold01)
+                    TryPublishBaseModuleCompromisedSignal(nodeIndex, baseModule, module, hasGraphRecord, modulePosition, stress01, peakStress01, depthMeters);
+                else if (nodeIndex < _moduleCompromisedFlags.Length && stress01 < ModuleStressCompromisedThreshold01 * 0.82f)
+                    _moduleCompromisedFlags[nodeIndex] = 0;
+            }
+
+            _peakModuleStress01 = peakStress01;
+            if (math.abs(peakStress01 - _lastUploadedPeakModuleStress01) > ModuleStressUploadEpsilon)
+                changed = true;
+
+            if (!orderChanged &&
+                loudestDeltaPerSecond >= ModuleStressFastDeltaGroanThresholdPerSecond &&
+                loudestStress01 > 0.08f)
+            {
+                PublishHullStressSignal(
+                    new Vector3(loudestPosition.x, loudestPosition.y, loudestPosition.z),
+                    loudestStress01,
+                    math.saturate(loudestDeltaPerSecond * 0.25f),
+                    loudestDepthMeters,
+                    1f + (math.saturate(loudestStress01 + loudestDeltaPerSecond * 0.08f) * StructuralGroanPitchRange));
+            }
+
+            if (changed)
+                UploadModuleStressMatrix(stressCount, peakStress01, lowTier);
+        }
+
+        private void ClearModuleStressState()
+        {
+            _peakModuleStress01 = 0f;
+            _lastUploadedPeakModuleStress01 = -1f;
+            _lastUploadedModuleStressCount = -1;
+            _lastUploadedModuleStressLowTier = false;
+            _moduleStressOrderHash = 0u;
+            if (_moduleStressScalars.IsCreated)
+            {
+                int clearCount = _moduleStressScalars.Length;
+                for (int i = 0; i < clearCount; i++)
+                    _moduleStressScalars[i] = 0f;
+            }
+
+            if (_previousModuleStressScalars.IsCreated)
+            {
+                int clearCount = _previousModuleStressScalars.Length;
+                for (int i = 0; i < clearCount; i++)
+                    _previousModuleStressScalars[i] = 0f;
+            }
+
+            if (_moduleImpactStressSpikes.IsCreated)
+            {
+                int clearCount = _moduleImpactStressSpikes.Length;
+                for (int i = 0; i < clearCount; i++)
+                    _moduleImpactStressSpikes[i] = 0f;
+            }
+
+            if (_moduleCompromisedFlags.IsCreated)
+            {
+                int clearCount = _moduleCompromisedFlags.Length;
+                for (int i = 0; i < clearCount; i++)
+                    _moduleCompromisedFlags[i] = 0;
+            }
+
+            PublishModuleStressShader(0, 0f, false);
+        }
+
+        private static float ResolveActiveModuleDepthMeters(BaseModule baseModule, float3 runtimePosition)
+        {
+            float depthMeters = baseModule != null ? baseModule.PressureCompressionDepthMeters : 0f;
+            if (depthMeters <= 0.25f || !math.isfinite(depthMeters))
+                depthMeters = ResolveRuntimeDepthMeters(runtimePosition);
+
+            return math.max(0f, depthMeters);
+        }
+
+        private static float3 ResolveActiveModulePosition(BaseModule baseModule)
+        {
+            if (baseModule == null)
+                return float3.zero;
+
+            Transform transform = baseModule.transform;
+            if (transform == null)
+                return float3.zero;
+
+            Vector3 position = transform.position;
+            return new float3(position.x, position.y, position.z);
+        }
+
+        private bool TryResolveGraphModuleRecord(BaseModule baseModule, out int nodeIndex, out ModuleRecord module)
+        {
+            nodeIndex = -1;
+            module = default;
+            if (baseModule == null || _moduleBuffer == null)
+                return false;
+
+            int moduleCount = math.min(_nodeCount, _moduleBuffer.Count);
+            for (int i = 0; i < moduleCount; i++)
+            {
+                ModuleRecord candidate = _moduleBuffer[i];
+                if (candidate.BaseModule != baseModule)
+                    continue;
+
+                nodeIndex = i;
+                module = candidate;
+                return true;
+            }
+
+            return false;
+        }
+
+        private uint ResolveActiveModuleStressOrderHash(int moduleCount)
+        {
+            uint hash = 2166136261u;
+            for (int i = 0; i < moduleCount; i++)
+            {
+                BaseModule baseModule = BaseModule.GetActiveModuleAt(i);
+                bool hasGraphRecord = TryResolveGraphModuleRecord(baseModule, out _, out ModuleRecord module);
+                uint moduleHash = ResolveModuleStressHash(baseModule, module, hasGraphRecord);
+                if (moduleHash == 0u)
+                    moduleHash = (uint)(i + 1);
+
+                hash ^= moduleHash;
+                hash *= 16777619u;
+            }
+
+            return hash;
+        }
+
+        private float ResolveActiveModuleFloodStress01(BaseModule baseModule, int graphNodeIndex, bool hasGraphRecord)
+        {
+            if (hasGraphRecord && _roomWaterLevels.IsCreated && (uint)graphNodeIndex < (uint)_roomWaterLevels.Length)
+                return math.saturate(_roomWaterLevels[graphNodeIndex]);
+
+            return baseModule != null && baseModule.IsFlooded ? 1f : 0f;
+        }
+
+        private float ResolveModuleStress01(int nodeIndex, BaseModule baseModule, float depthMeters, float floodStress01, float deltaTime)
+        {
+            float depth01 = math.saturate(depthMeters * AnalyticalFullStressDepthInv);
+            float ambientPressure01 = math.saturate(ResolveAnalyticalDepthScale(depthMeters) * depth01);
+            float integrity01 = baseModule.MaxIntegrity > 0.01f
+                ? math.saturate(baseModule.CurrentIntegrity * math.rcp(baseModule.MaxIntegrity))
+                : 1f;
+            float impactDamage01 = math.saturate(1f - integrity01);
+            impactDamage01 = math.max(impactDamage01, math.saturate(baseModule.JointShearStress01));
+            impactDamage01 = math.max(impactDamage01, math.saturate(baseModule.PressureCompressionAlpha01));
+
+            impactDamage01 = math.max(impactDamage01, math.saturate(floodStress01) * ModuleStressFloodWeight);
+
+            float spike01 = 0f;
+            if (_moduleImpactStressSpikes.IsCreated && nodeIndex < _moduleImpactStressSpikes.Length)
+            {
+                spike01 = math.saturate(_moduleImpactStressSpikes[nodeIndex]);
+                _moduleImpactStressSpikes[nodeIndex] = math.max(0f, spike01 - ModuleStressImpactSpikeDecayPerSecond * deltaTime);
+            }
+
+            float stress01 = (ambientPressure01 * ModuleStressDepthWeight) + (impactDamage01 * ModuleStressDamageWeight) + spike01;
+            return math.saturate(stress01);
+        }
+
+        private void ConsumeModuleStressSignals(int moduleCount)
+        {
+            int frame = Time.frameCount;
+            if (_lastProcessedModuleStressSignalFrame == frame || moduleCount <= 0)
+                return;
+
+            _lastProcessedModuleStressSignalFrame = frame;
+            ReadOnlySpan<HullDeformedSignal> hullSignals = SignalBus<HullDeformedSignal>.GetFrameSnapshot();
+            for (int i = 0; i < hullSignals.Length; i++)
+            {
+                HullDeformedSignal signal = hullSignals[i];
+                if (!IsModuleImpactStressSignal(signal.SourceId, signal.DamageType, signal.Intensity01))
+                    continue;
+
+                if (!TryResolveModuleStressIndex(signal.TargetHash, signal.TargetId, float3.zero, false, moduleCount, out int moduleIndex))
+                    continue;
+
+                InjectModuleStressSpike(moduleIndex, math.max(signal.Intensity01, signal.Depth));
+            }
+
+            ReadOnlySpan<CoreCombatDamageSignal> damageSignals = SignalBus<CoreCombatDamageSignal>.GetFrameSnapshot();
+            for (int i = 0; i < damageSignals.Length; i++)
+            {
+                CoreCombatDamageSignal signal = damageSignals[i];
+                if (!IsModuleImpactStressSignal(signal.SourceId, signal.DamageType, signal.Magnitude))
+                    continue;
+
+                bool allowNearest = (signal.Flags & CoreCombatDamageSignal.LegacyMirrorFlag) == 0 &&
+                                    math.all(math.isfinite(signal.WorldPoint));
+                if (!TryResolveModuleStressIndex(signal.TargetHash, signal.TargetId, signal.WorldPoint, allowNearest, moduleCount, out int moduleIndex))
+                    continue;
+
+                InjectModuleStressSpike(moduleIndex, signal.Magnitude);
+            }
+        }
+
+        private static bool IsModuleImpactStressSignal(ushort sourceId, uint damageType, float magnitude)
+        {
+            if (!math.isfinite(magnitude) || magnitude <= 0f)
+                return false;
+
+            if (sourceId == DamageSourceIds.FaunaLeviathanBite)
+                return true;
+
+            return (damageType & (CombatDamageTypes.Impact | CombatDamageTypes.Pressure | CombatDamageTypes.MicroFracture)) != 0u;
+        }
+
+        private bool TryResolveModuleStressIndex(
+            uint targetHash,
+            ushort targetId,
+            float3 worldPoint,
+            bool allowNearest,
+            int moduleCount,
+            out int moduleIndex)
+        {
+            moduleIndex = -1;
+            if (moduleCount <= 0)
+                return false;
+
+            for (int nodeIndex = 0; nodeIndex < moduleCount; nodeIndex++)
+            {
+                BaseModule baseModule = BaseModule.GetActiveModuleAt(nodeIndex);
+                if (baseModule == null || !baseModule.isActiveAndEnabled)
+                    continue;
+
+                bool hasGraphRecord = TryResolveGraphModuleRecord(baseModule, out _, out ModuleRecord module);
+                uint moduleHash = ResolveModuleStressHash(baseModule, module, hasGraphRecord);
+                if (targetHash != 0u && moduleHash == targetHash)
+                {
+                    moduleIndex = nodeIndex;
+                    return true;
+                }
+
+                if (targetId != 0 && hasGraphRecord && (ushort)(module.NodeId & 0xFFFFu) == targetId)
+                {
+                    moduleIndex = nodeIndex;
+                    return true;
+                }
+            }
+
+            if (!allowNearest || !math.all(math.isfinite(worldPoint)))
+                return false;
+
+            float bestDistanceSq = float.MaxValue;
+            for (int nodeIndex = 0; nodeIndex < moduleCount; nodeIndex++)
+            {
+                BaseModule baseModule = BaseModule.GetActiveModuleAt(nodeIndex);
+                if (baseModule == null || !baseModule.isActiveAndEnabled)
+                    continue;
+
+                float3 modulePosition = TryResolveGraphModuleRecord(baseModule, out _, out ModuleRecord module)
+                    ? module.Position
+                    : ResolveActiveModulePosition(baseModule);
+                float distanceSq = math.lengthsq(modulePosition - worldPoint);
+                if (distanceSq >= bestDistanceSq)
+                    continue;
+
+                bestDistanceSq = distanceSq;
+                moduleIndex = nodeIndex;
+            }
+
+            return moduleIndex >= 0;
+        }
+
+        private static uint ResolveModuleStressHash(BaseModule baseModule, ModuleRecord module, bool hasGraphRecord)
+        {
+            if (hasGraphRecord && module.Marker != null && module.Marker.Data != null)
+                return unchecked((uint)module.Marker.Data.ModuleHashId);
+
+            if (hasGraphRecord)
+                return module.NodeId;
+
+            return 0u;
+        }
+
+        private void InjectModuleStressSpike(int moduleIndex, float magnitude)
+        {
+            if (!_moduleImpactStressSpikes.IsCreated || (uint)moduleIndex >= (uint)_moduleImpactStressSpikes.Length)
+                return;
+
+            float spike01 = math.saturate(math.max(0f, magnitude) * ModuleStressImpactSpikeStrength);
+            _moduleImpactStressSpikes[moduleIndex] = math.max(_moduleImpactStressSpikes[moduleIndex], spike01);
+        }
+
+        private void TryPublishBaseModuleCompromisedSignal(
+            int moduleIndex,
+            BaseModule baseModule,
+            ModuleRecord module,
+            bool hasGraphRecord,
+            float3 modulePosition,
+            float stress01,
+            float peakStress01,
+            float depthMeters)
+        {
+            if (!_moduleCompromisedFlags.IsCreated || (uint)moduleIndex >= (uint)_moduleCompromisedFlags.Length)
+                return;
+
+            if (_moduleCompromisedFlags[moduleIndex] != 0)
+                return;
+
+            _moduleCompromisedFlags[moduleIndex] = 1;
+            BaseModuleCompromisedSignal signal = new BaseModuleCompromisedSignal
+            {
+                ModuleCenter = modulePosition,
+                Stress01 = math.saturate(stress01),
+                PeakStress01 = math.saturate(peakStress01),
+                DepthMeters = math.max(0f, depthMeters),
+                NodeId = hasGraphRecord ? module.NodeId : 0u,
+                ModuleHash = ResolveModuleStressHash(baseModule, module, hasGraphRecord),
+                Frame = unchecked((uint)Time.frameCount),
+                Sequence = ++_moduleStressSequence,
+                SourceId = DamageSourceIds.HabitatIntegrity,
+                Flags = IsModuleStressLowTier(GlobalRegistry.ScalabilityTier)
+                    ? BaseModuleCompromisedSignal.LowTierVisualOnlyFlag
+                    : BaseModuleCompromisedSignal.MaxDeformationFlag,
+                StressIndex = (byte)math.min(byte.MaxValue, moduleIndex),
+                QualityTier = GlobalRegistry.ScalabilityTierProfileByte
+            };
+            GlobalSignals.Publish(in signal);
+        }
+
+        private void UploadModuleStressMatrix(int moduleCount, float peakStress01, bool lowTier)
+        {
+            EnsureModuleStressBuffer(moduleCount);
+            if (_moduleStressBuffer != null && moduleCount > 0)
+            {
+                GraphicsBufferUploadUtility.UploadNativeArray(_moduleStressBuffer, _moduleStressScalars, moduleCount);
+                Shader.SetGlobalBuffer(HabitatModuleStressBufferId, _moduleStressBuffer);
+            }
+
+            PublishModuleStressShader(moduleCount, peakStress01, lowTier);
+            _lastUploadedModuleStressCount = moduleCount;
+            _lastUploadedPeakModuleStress01 = peakStress01;
+            _lastUploadedModuleStressLowTier = lowTier;
+            _moduleStressSequence++;
+        }
+
+        private void PublishModuleStressShader(int moduleCount, float peakStress01, bool lowTier)
+        {
+            float displacementMaxMeters = lowTier ? 0f : AnalyticalShaderDisplacementMaxMeters;
+            Shader.SetGlobalVector(
+                HabitatModuleStressParamsId,
+                new Vector4(
+                    math.max(0, moduleCount),
+                    displacementMaxMeters,
+                    lowTier ? 1f : 0f,
+                    math.saturate(peakStress01)));
+        }
+
+        private void EnsureModuleStressBuffer(int moduleCount)
+        {
+            int safeCount = math.max(1, moduleCount);
+            if (_moduleStressBuffer != null && _moduleStressBuffer.count >= safeCount)
+                return;
+
+            ReleaseModuleStressBuffer();
+            _moduleStressBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float>(
+                NextPowerOfTwo(math.max(safeCount, InitialNodeCapacity)));
+            _lastUploadedModuleStressCount = -1;
+        }
+
+        private static bool IsModuleStressLowTier(HectonQualityTier tier)
+        {
+            return tier == HectonQualityTier.Low ||
+                   tier == HectonQualityTier.Mx350 ||
+                   tier == HectonQualityTier.Unknown;
         }
 
         private void TryPublishLowTierAnalyticalStressFeedback(float3 center, float stress01)
@@ -1384,8 +1859,10 @@ namespace Hecton8.Construction
                 BaseTotalStress = _baseTotalStress,
                 MaxWaterLevel01 = _maxRoomWaterLevel01,
                 TotalWaterVolumeM3 = _totalRoomWaterVolumeM3,
+                PeakModuleStress = _peakModuleStress01,
                 Flags = flags,
-                StateHash = _floodBlackBoxStateHash
+                StateHash = _floodBlackBoxStateHash,
+                DeformationSequence = _moduleStressSequence
             };
 
             _floodBlackBoxCursor = (cursor + 1) % _floodBlackBox.Length;
@@ -1402,14 +1879,28 @@ namespace Hecton8.Construction
             DumpFloodBlackBox(reasonFlags);
         }
 
+        private void DumpModuleStressBlackBoxOnce(uint reasonFlags)
+        {
+            if (_moduleStressBlackBoxDumped || !_floodBlackBox.IsCreated)
+                return;
+
+            _moduleStressBlackBoxDumped = true;
+            DumpFloodBlackBox(reasonFlags, ModuleStressBlackBoxDumpRelativePath);
+        }
+
         private void DumpFloodBlackBox(uint reasonFlags)
+        {
+            DumpFloodBlackBox(reasonFlags, FloodBlackBoxDumpRelativePath);
+        }
+
+        private void DumpFloodBlackBox(uint reasonFlags, string relativePath)
         {
             if (!_floodBlackBox.IsCreated)
                 return;
 
             try
             {
-                string path = Path.GetFullPath(Path.Combine(Application.dataPath, "..", FloodBlackBoxDumpRelativePath));
+                string path = Path.GetFullPath(Path.Combine(Application.dataPath, "..", relativePath));
                 string directory = Path.GetDirectoryName(path);
                 if (!string.IsNullOrEmpty(directory))
                     Directory.CreateDirectory(directory);
@@ -1445,8 +1936,10 @@ namespace Hecton8.Construction
             writer.Write(entry.BaseTotalStress);
             writer.Write(entry.MaxWaterLevel01);
             writer.Write(entry.TotalWaterVolumeM3);
+            writer.Write(entry.PeakModuleStress);
             writer.Write(entry.Flags);
             writer.Write(entry.StateHash);
+            writer.Write(entry.DeformationSequence);
         }
 
         private static uint QuantizeFloodBlackBoxFloat(float value)
@@ -3722,6 +4215,14 @@ namespace Hecton8.Construction
             _roomVolumes = new NativeArray<float>(nodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeArray<Single>[64] - Burst flood propagation delta lane - owner: HabitatGraphManager
             _roomFloodDeltaLevels = new NativeArray<float>(nodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<Single>[64] - per-module shader pressure stress lane - owner: HabitatGraphManager
+            _moduleStressScalars = new NativeArray<float>(nodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<Single>[64] - stress delta lane for structural acoustics sync - owner: HabitatGraphManager
+            _previousModuleStressScalars = new NativeArray<float>(nodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<Single>[64] - one-second impact spike lane for deformation solver - owner: HabitatGraphManager
+            _moduleImpactStressSpikes = new NativeArray<float>(nodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<Byte>[64] - compromised-event hysteresis lane - owner: HabitatGraphManager
+            _moduleCompromisedFlags = new NativeArray<byte>(nodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeArray<Byte>[64] - habitat room flood flags SoA lane - owner: HabitatGraphManager
             _roomFlags = new NativeArray<byte>(nodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeArray<Byte>[128] - habitat directed edge flood flags - owner: HabitatGraphManager
@@ -3734,6 +4235,12 @@ namespace Hecton8.Construction
             _floodPropagationSummary = new NativeArray<HabitatFloodPropagationSummary>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _floodBlackBoxCursor = 0;
             _floodBlackBoxDumped = false;
+            _moduleStressBlackBoxDumped = false;
+            _lastUploadedModuleStressCount = -1;
+            _lastUploadedPeakModuleStress01 = -1f;
+            _lastUploadedModuleStressLowTier = false;
+            _moduleStressOrderHash = 0u;
+            _peakModuleStress01 = 0f;
             RegisterNativeMemorySentinel();
         }
 
@@ -3756,6 +4263,14 @@ namespace Hecton8.Construction
                 _roomVolumes.Length >= safeLength &&
                 _roomFloodDeltaLevels.IsCreated &&
                 _roomFloodDeltaLevels.Length >= safeLength &&
+                _moduleStressScalars.IsCreated &&
+                _moduleStressScalars.Length >= safeLength &&
+                _previousModuleStressScalars.IsCreated &&
+                _previousModuleStressScalars.Length >= safeLength &&
+                _moduleImpactStressSpikes.IsCreated &&
+                _moduleImpactStressSpikes.Length >= safeLength &&
+                _moduleCompromisedFlags.IsCreated &&
+                _moduleCompromisedFlags.Length >= safeLength &&
                 _roomFlags.IsCreated &&
                 _roomFlags.Length >= safeLength &&
                 _floodBlackBox.IsCreated &&
@@ -3820,11 +4335,16 @@ namespace Hecton8.Construction
             DisposeNativeArray(ref _roomWaterLevels);
             DisposeNativeArray(ref _roomVolumes);
             DisposeNativeArray(ref _roomFloodDeltaLevels);
+            DisposeNativeArray(ref _moduleStressScalars);
+            DisposeNativeArray(ref _previousModuleStressScalars);
+            DisposeNativeArray(ref _moduleImpactStressSpikes);
+            DisposeNativeArray(ref _moduleCompromisedFlags);
             DisposeNativeArray(ref _roomFlags);
             DisposeNativeArray(ref _edgeFlags);
             DisposeNativeArray(ref _floodBlackBox);
             DisposeNativeArray(ref _floodPropagationSummary);
             DisposeNativeParallelMultiHashMap(ref _roomConnections, nameof(_roomConnections));
+            ReleaseModuleStressBuffer();
         }
 
         private void RegisterNativeMemorySentinel()
@@ -3841,6 +4361,10 @@ namespace Hecton8.Construction
             NativeMemorySentinel.RegisterNativeArray(_roomWaterLevels, NativeMemoryOwner, nameof(_roomWaterLevels), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_roomVolumes, NativeMemoryOwner, nameof(_roomVolumes), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_roomFloodDeltaLevels, NativeMemoryOwner, nameof(_roomFloodDeltaLevels), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_moduleStressScalars, NativeMemoryOwner, nameof(_moduleStressScalars), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_previousModuleStressScalars, NativeMemoryOwner, nameof(_previousModuleStressScalars), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_moduleImpactStressSpikes, NativeMemoryOwner, nameof(_moduleImpactStressSpikes), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_moduleCompromisedFlags, NativeMemoryOwner, nameof(_moduleCompromisedFlags), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_roomFlags, NativeMemoryOwner, nameof(_roomFlags), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_edgeFlags, NativeMemoryOwner, nameof(_edgeFlags), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_floodBlackBox, NativeMemoryOwner, nameof(_floodBlackBox), NativeMemoryLifetime);
@@ -3856,6 +4380,17 @@ namespace Hecton8.Construction
             NativeMemorySentinel.UnregisterNativeArray(array);
             array.Dispose();
             array = default;
+        }
+
+        private void ReleaseModuleStressBuffer()
+        {
+            if (_moduleStressBuffer == null)
+                return;
+
+            _moduleStressBuffer.Release();
+            _moduleStressBuffer = null;
+            _lastUploadedModuleStressCount = -1;
+            Shader.SetGlobalVector(HabitatModuleStressParamsId, Vector4.zero);
         }
 
         private static void DisposeNativeParallelMultiHashMap<TKey, TValue>(

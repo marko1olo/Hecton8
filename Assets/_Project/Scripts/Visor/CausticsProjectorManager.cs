@@ -17,6 +17,7 @@ namespace Hecton8.Visor
     {
         private const float InvTwoPi = 1f / (math.PI * 2f);
         private const float ShaderVectorPublishEpsilon = 0.0001f;
+        private const double CausticsPublishBudgetWarningMilliseconds = 0.1d;
         private static readonly int _CausticsWorldRectId = Shader.PropertyToID("_HectonProjectedCausticsWorldRect");
         private static readonly int _CausticsParamsId = Shader.PropertyToID("_HectonProjectedCausticsParams");
         private static readonly int _CausticsColorId = Shader.PropertyToID("_HectonProjectedCausticsColor");
@@ -111,6 +112,9 @@ namespace Hecton8.Visor
 
         public void SlowTick()
         {
+            if (GlobalRegistry.Caustics != null)
+                return;
+
             ResolveDependencies();
 
             float depthMeters = _survivalSystem != null ? math.max(0f, _survivalSystem.Depth) : 0f;
@@ -158,6 +162,9 @@ namespace Hecton8.Visor
 
         private void PublishShaderOnlyGlobals()
         {
+            if (GlobalRegistry.Caustics != null)
+                return;
+
             Vector3 runtimeAnchor = ResolveRuntimeAnchor();
             UpdateWorldRect(runtimeAnchor);
             float waterLevel = ResolveWaterLevel();
@@ -327,6 +334,9 @@ namespace Hecton8.Visor
         private void TryRegisterTickHandlers()
         {
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            if (GlobalRegistry.Caustics != null)
                 return;
 
             if (!_registeredSlowTick)

@@ -113,11 +113,12 @@ namespace Hecton8.Ecosystem
             ApplyMutationOverlays(archetype, biomeIndex, variationHash, ref scale, ref speed, ref health);
 
             FaunaGeneticTraits traits = default;
-            traits.ScaleMultiplier = Mathf.Clamp(scale, 0.8f, 1.25f);
-            traits.SpeedMultiplier = Mathf.Clamp(speed, 0.75f, 1.35f);
-            traits.HealthMultiplier = Mathf.Clamp(health, 0.75f, 1.5f);
+            traits.BaseScaleMultiplier = Mathf.Clamp(scale, 0.8f, 1.25f);
+            traits.BaseSpeedMultiplier = Mathf.Clamp(speed, 0.75f, 1.35f);
+            traits.BaseHealthMultiplier = Mathf.Clamp(health, 0.75f, 1.5f);
             traits.VariationHash = variationHash;
-            return traits;
+            traits.BaseGenome = FaunaGenome64.BuildGenome(variationHash, traits.BaseScaleMultiplier, traits.BaseSpeedMultiplier);
+            return FaunaGenome64.ResolveRuntimeTraitsFromGenome(traits, traits.BaseGenome);
         }
 
         /// <inheritdoc />

@@ -1,0 +1,20 @@
+{
+    "name": "Hecton8.Animation.IK",
+    "rootNamespace": "Hecton8.Animation.IK",
+    "references": [
+        "Hecton8.Core.Contracts",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

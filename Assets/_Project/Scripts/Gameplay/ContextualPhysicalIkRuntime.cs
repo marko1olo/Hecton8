@@ -785,7 +785,7 @@ namespace Hecton8.Gameplay
 
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9920)]
-    internal sealed class ContextualPhysicalIkRuntime : MonoBehaviour, IUpdatable, ILateFrameTickable, IOriginShiftListener
+    internal sealed class ContextualPhysicalIkRuntime : MonoBehaviour, IFastTickable, ILateFrameTickable, IOriginShiftListener
     {
         private const int MaxEntities = 128;
         internal const int RaysPerEntity = 6;
@@ -820,7 +820,7 @@ namespace Hecton8.Gameplay
         private Transform _cameraTransform;
         private bool _groundResponseScheduled;
         private bool _registered;
-        private bool _registeredUpdate;
+        private bool _registeredFastTick;
         private bool _registeredLateFrame;
         private bool _registeredOriginShiftListener;
         private int _freeSlotCount;
@@ -896,7 +896,7 @@ namespace Hecton8.Gameplay
         }
 
         /// <inheritdoc />
-        public void Tick(float deltaTime)
+        public void FastTick(float deltaTime)
         {
             uint frameIndex = _frameIndex;
             _frameIndex++;
@@ -1079,18 +1079,18 @@ namespace Hecton8.Gameplay
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            bool updateRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
-            bool lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
-            if (!updateRegistered || !lateFrameRegistered)
+            bool fastTickRegistered = GlobalRegistry.TryRegisterFastTickable(this, PriorityLayer.Player);
+            bool lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
+            if (!fastTickRegistered || !lateFrameRegistered)
             {
-                if (updateRegistered)
-                    GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+                if (fastTickRegistered)
+                    GlobalRegistry.UnregisterFastTickable(this, PriorityLayer.Player);
                 if (lateFrameRegistered)
-                    GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+                    GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
                 return;
             }
 
-            _registeredUpdate = true;
+            _registeredFastTick = true;
             _registeredLateFrame = true;
             _registered = true;
         }
@@ -1100,14 +1100,14 @@ namespace Hecton8.Gameplay
             if (!_registered)
                 return;
 
-            if (_registeredUpdate)
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+            if (_registeredFastTick)
+                GlobalRegistry.UnregisterFastTickable(this, PriorityLayer.Player);
 
             if (_registeredLateFrame)
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
 
             _registered = false;
-            _registeredUpdate = false;
+            _registeredFastTick = false;
             _registeredLateFrame = false;
         }
 

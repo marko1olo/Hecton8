@@ -1,6 +1,7 @@
 using System.IO;
 using System.Runtime.InteropServices;
 using Stopwatch = System.Diagnostics.Stopwatch;
+using Hecton8.AI.Cognition;
 using Hecton8.Construction;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
@@ -162,6 +163,8 @@ namespace Hecton8.AI
         public float PackCoordinationRadius;
         public float PackFlankDistance;
         public float PackCommitDistance;
+        public float FogEndDistanceMeters;
+        public float BaseMaxSpeedMetersPerSecond;
         public float ImportanceScore;
         public AbsoluteUniversePositionBlit128 PlayerTargetAup;
         public AbsoluteUniversePositionBlit128 PackTargetAup;
@@ -352,6 +355,22 @@ namespace Hecton8.AI
         private const float RetinalBlindHoldSeconds = 2.25f;
         private const uint RetinalBlindPredatorsTelemetryHash = 0x5242544Cu; // RBTL
         private const uint RetinalTelemetryContextHash = 0x4641554Eu; // FAUN
+        private const float AlphaLeviathanSlowTickIntervalSeconds = 0.1f;
+        private const float AlphaLeviathanEvaluationStaggerStepSeconds = AlphaLeviathanSlowTickIntervalSeconds * 0.03125f;
+        private const float AlphaFogFallbackEndMeters = 80f;
+        private const float AlphaFogSilhouetteOffsetMeters = 10f;
+        private const float AlphaFalseChargeSpeedMetersPerSecond = 30f;
+        private const float AlphaFalseChargeVeerDistanceMeters = 15f;
+        private const float AlphaFalseChargeMaxSeconds = 2.5f;
+        private const float AlphaCirclingHoldSeconds = 2.0f;
+        private const float AlphaVeerHoldSeconds = 1.25f;
+        private const float AlphaPlayerGazeDotThreshold = 0.8f;
+        private const float AlphaRetinalDiveThreshold = 0.35f;
+        private const float AlphaDiveDepthMeters = 24f;
+        private const float AlphaVeerDistanceMeters = 32f;
+        private const float AlphaRingCorrectionScale = 0.08f;
+        private const uint AlphaLeviathanPhaseTelemetryHash = 0x414C5048u; // ALPH
+        private const uint AlphaLeviathanTelemetryContextHash = 0x4C564354u; // LVCT
         private const float PredatorInterceptLeadSeconds = 0.65f;
         private const float PredatorHeadlessDistanceSqr = 1000000f;
         private const float PredatorVisionConeCosineThreshold = 0.28f;
@@ -429,6 +448,8 @@ namespace Hecton8.AI
         private static NativeArray<int> _claimedBoidIndices;
         private static NativeArray<float3> _claimedBoidPositions;
         private static NativeArray<byte> _chosenStates;
+        private static NativeArray<byte> _stalkingPhases;
+        private static NativeArray<float> _stalkingPhaseStartTimes;
         private static NativeArray<float3> _predatorPackTargets;
         private static NativeArray<float> _predatorPackWeights;
         private static NativeArray<float3> _predatorPackBaitPositions;
@@ -451,6 +472,7 @@ namespace Hecton8.AI
         private static NativeArray<byte> _lastPublishedBlindnessState;
         private static NativeArray<LightSourceData> _retinalLightSources;
         private static NativeArray<RetinalTelemetryEntry> _retinalTelemetryRing;
+        private static NativeArray<AlphaLeviathanTelemetryEntry> _alphaLeviathanTelemetryRing;
         private static NativeParallelHashMap<int, SpeciesCognitionTuning> _speciesTuningById;
         private static NativeArray<byte> _threatVoxelGrid;
         private static int3 _threatVoxelDimensions;
@@ -473,9 +495,12 @@ namespace Hecton8.AI
         private static int _habitatSiegeTargetCount;
         private static int _retinalLightCount;
         private static int _retinalTelemetryCursor;
+        private static int _alphaLeviathanTelemetryCursor;
+        private static int _activeAlphaLeviathanTelemetryCount;
         private static int _totalBlindPredators;
         private static int _lastTelemetryBlindPredatorCount = -1;
         private static bool _retinalFaultDumped;
+        private static bool _alphaLeviathanFaultDumped;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetDomain()
@@ -498,6 +523,8 @@ namespace Hecton8.AI
                 _outputs[i] = default;
                 _evaluationDueFlags[i] = 1;
                 _chosenStates[i] = 0;
+                _stalkingPhases[i] = AlphaLeviathanPhase.Hidden;
+                _stalkingPhaseStartTimes[i] = 0f;
                 _nextEvaluationTimes[i] = 0f;
                 _evaluationIntervals[i] = CenterEvaluationIntervalSeconds;
                 _retinalExposure[i] = 0f;
@@ -539,6 +566,8 @@ namespace Hecton8.AI
             _outputs[slot] = default;
             _evaluationDueFlags[slot] = 0;
             _chosenStates[slot] = 0;
+            _stalkingPhases[slot] = AlphaLeviathanPhase.Hidden;
+            _stalkingPhaseStartTimes[slot] = 0f;
             _nextEvaluationTimes[slot] = 0f;
             _evaluationIntervals[slot] = CenterEvaluationIntervalSeconds;
             _retinalExposure[slot] = 0f;
@@ -619,6 +648,8 @@ namespace Hecton8.AI
             _outputs[slot] = BuildDefaultPackedOutput(new float3(0f, 0f, 1f));
             _evaluationDueFlags[slot] = 1;
             _chosenStates[slot] = 0;
+            _stalkingPhases[slot] = AlphaLeviathanPhase.Hidden;
+            _stalkingPhaseStartTimes[slot] = 0f;
             _nextEvaluationTimes[slot] = 0f;
             _evaluationIntervals[slot] = CenterEvaluationIntervalSeconds;
             _retinalExposure[slot] = 0f;
@@ -831,7 +862,10 @@ namespace Hecton8.AI
             _evaluationScheduled = false;
             _lastEvaluatedFrame = _lastScheduledFrame;
             if (_predatorEvaluationJobScheduled)
+            {
                 UpdateRetinalPostEvaluationTelemetry(_lastEvaluatedFrame);
+                UpdateAlphaLeviathanPostEvaluationTelemetry(_lastEvaluatedFrame);
+            }
             _predatorEvaluationJobScheduled = false;
         }
 
@@ -927,6 +961,8 @@ namespace Hecton8.AI
                 BaseSiegeLoitererClaimTable = (int*)_baseSiegeLoitererClaimTable.GetUnsafePtr(),
                 SpeciesTuningById = _speciesTuningById,
                 ChosenStates = _chosenStates,
+                StalkingPhases = _stalkingPhases,
+                StalkingPhaseStartTimes = _stalkingPhaseStartTimes,
                 BoidClaimTable = _boidClaimTable,
                 Outputs = _outputs,
                 ThreatVoxelGrid = _threatVoxelGrid,
@@ -984,6 +1020,8 @@ namespace Hecton8.AI
             DisposeNativeArray(ref _claimedBoidIndices, disposeDependency);
             DisposeNativeArray(ref _claimedBoidPositions, disposeDependency);
             DisposeNativeArray(ref _chosenStates, disposeDependency);
+            DisposeNativeArray(ref _stalkingPhases, disposeDependency);
+            DisposeNativeArray(ref _stalkingPhaseStartTimes, disposeDependency);
             DisposeNativeArray(ref _predatorPackTargets, disposeDependency);
             DisposeNativeArray(ref _predatorPackWeights, disposeDependency);
             DisposeNativeArray(ref _predatorPackBaitPositions, disposeDependency);
@@ -1005,6 +1043,7 @@ namespace Hecton8.AI
             DisposeNativeArray(ref _lastPublishedBlindnessState, disposeDependency);
             DisposeNativeArray(ref _retinalLightSources, disposeDependency);
             DisposeNativeArray(ref _retinalTelemetryRing, disposeDependency);
+            DisposeNativeArray(ref _alphaLeviathanTelemetryRing, disposeDependency);
             DisposeNativeParallelHashMap(ref _predatorSpeciesTargetPositions, disposeDependency, nameof(_predatorSpeciesTargetPositions));
             DisposeNativeParallelHashMap(ref _speciesTuningById, disposeDependency, nameof(_speciesTuningById));
 
@@ -1024,6 +1063,8 @@ namespace Hecton8.AI
             _claimedBoidIndices = default;
             _claimedBoidPositions = default;
             _chosenStates = default;
+            _stalkingPhases = default;
+            _stalkingPhaseStartTimes = default;
             _predatorPackTargets = default;
             _predatorPackWeights = default;
             _predatorPackBaitPositions = default;
@@ -1046,6 +1087,7 @@ namespace Hecton8.AI
             _lastPublishedBlindnessState = default;
             _retinalLightSources = default;
             _retinalTelemetryRing = default;
+            _alphaLeviathanTelemetryRing = default;
             _speciesTuningById = default;
             _threatVoxelGrid = default;
             _threatVoxelDimensions = int3.zero;
@@ -1067,9 +1109,12 @@ namespace Hecton8.AI
             _habitatSiegeTargetCount = 0;
             _retinalLightCount = 0;
             _retinalTelemetryCursor = 0;
+            _alphaLeviathanTelemetryCursor = 0;
+            _activeAlphaLeviathanTelemetryCount = 0;
             _totalBlindPredators = 0;
             _lastTelemetryBlindPredatorCount = -1;
             _retinalFaultDumped = false;
+            _alphaLeviathanFaultDumped = false;
         }
 
         private static void EnsureInitialized()
@@ -1109,6 +1154,10 @@ namespace Hecton8.AI
             _claimedBoidPositions = new NativeArray<float3>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeArray<byte>[Capacity] - chosen utility state code per fauna slot for post-job consumers and diagnostics - owner: PredatorCognitionDomain
             _chosenStates = new NativeArray<byte>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<byte>[Capacity] - Alpha Leviathan stalking phase lane, SoA predator data - owner: PredatorCognitionDomain
+            _stalkingPhases = new NativeArray<byte>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<float>[Capacity] - Alpha Leviathan phase start timestamps - owner: PredatorCognitionDomain
+            _stalkingPhaseStartTimes = new NativeArray<float>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeArray<float3>[Capacity] - burst-computed predator flank targets for coordinated pack strikes - owner: PredatorCognitionDomain
             _predatorPackTargets = new NativeArray<float3>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeArray<float>[Capacity] - burst-computed predator flank weights for coordinated pack strikes - owner: PredatorCognitionDomain
@@ -1153,6 +1202,8 @@ namespace Hecton8.AI
             _retinalLightSources = new NativeArray<LightSourceData>(RetinalLightCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeArray<RetinalTelemetryEntry>[300] - retinal black-box circular buffer - owner: PredatorCognitionDomain
             _retinalTelemetryRing = new NativeArray<RetinalTelemetryEntry>(RetinalTelemetryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<AlphaLeviathanTelemetryEntry>[300] - Alpha stalking black-box circular buffer - owner: PredatorCognitionDomain
+            _alphaLeviathanTelemetryRing = new NativeArray<AlphaLeviathanTelemetryEntry>(RetinalTelemetryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeParallelHashMap<int,SpeciesCognitionTuning>[Capacity] - species cognition tuning table keyed by stable species id - owner: PredatorCognitionDomain
             _speciesTuningById = new NativeParallelHashMap<int, SpeciesCognitionTuning>(Capacity, Allocator.Persistent);
             RegisterNativeMemorySentinel();
@@ -1177,6 +1228,8 @@ namespace Hecton8.AI
             NativeMemorySentinel.RegisterNativeArray(_claimedBoidIndices, NativeMemoryOwner, nameof(_claimedBoidIndices), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_claimedBoidPositions, NativeMemoryOwner, nameof(_claimedBoidPositions), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_chosenStates, NativeMemoryOwner, nameof(_chosenStates), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_stalkingPhases, NativeMemoryOwner, nameof(_stalkingPhases), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_stalkingPhaseStartTimes, NativeMemoryOwner, nameof(_stalkingPhaseStartTimes), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_predatorPackTargets, NativeMemoryOwner, nameof(_predatorPackTargets), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_predatorPackWeights, NativeMemoryOwner, nameof(_predatorPackWeights), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_predatorPackBaitPositions, NativeMemoryOwner, nameof(_predatorPackBaitPositions), NativeMemoryLifetime);
@@ -1199,6 +1252,7 @@ namespace Hecton8.AI
             NativeMemorySentinel.RegisterNativeArray(_lastPublishedBlindnessState, NativeMemoryOwner, nameof(_lastPublishedBlindnessState), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_retinalLightSources, NativeMemoryOwner, nameof(_retinalLightSources), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_retinalTelemetryRing, NativeMemoryOwner, nameof(_retinalTelemetryRing), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_alphaLeviathanTelemetryRing, NativeMemoryOwner, nameof(_alphaLeviathanTelemetryRing), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeParallelHashMap(_speciesTuningById, NativeMemoryOwner, nameof(_speciesTuningById), NativeMemoryLifetime);
         }
 
@@ -1254,13 +1308,18 @@ namespace Hecton8.AI
 
                 float currentTime = math.max(0f, input.CurrentTime);
                 bool predatorRole = (input.Flags & (int)CognitionInputFlags.PredatorRole) != 0;
+                bool alphaLeviathan = predatorRole && (input.Flags & (int)CognitionInputFlags.IsApexPredator) != 0;
                 float interval = predatorRole
-                    ? math.select(PredatorUtilityEvaluationIntervalSeconds, RetinalLowTierEvaluationIntervalSeconds, lowTierRetina)
+                    ? math.select(
+                        math.select(PredatorUtilityEvaluationIntervalSeconds, RetinalLowTierEvaluationIntervalSeconds, lowTierRetina),
+                        AlphaLeviathanSlowTickIntervalSeconds,
+                        alphaLeviathan)
                     : ResolveEvaluationInterval(input.ImportanceScore);
                 float previousInterval = math.max(_evaluationIntervals[slot], CenterEvaluationIntervalSeconds);
                 float scheduledTime = _nextEvaluationTimes[slot];
                 bool firstPredatorSchedule = predatorRole && scheduledTime <= DdaEpsilon;
-                float staggerOffset = (slot & 31) * PredatorUtilityEvaluationStaggerStepSeconds;
+                float staggerStep = math.select(PredatorUtilityEvaluationStaggerStepSeconds, AlphaLeviathanEvaluationStaggerStepSeconds, alphaLeviathan);
+                float staggerOffset = (slot & 31) * staggerStep;
                 scheduledTime = math.select(scheduledTime, currentTime + staggerOffset, firstPredatorSchedule);
                 scheduledTime = math.min(scheduledTime, currentTime + interval);
                 if (interval + DdaEpsilon < previousInterval)
@@ -1574,6 +1633,154 @@ namespace Hecton8.AI
             catch (System.Exception exception)
             {
                 Debug.LogError("Retinal black-box dump failed: " + exception.Message);
+            }
+        }
+
+        private static void UpdateAlphaLeviathanPostEvaluationTelemetry(int frameId)
+        {
+            if (!_activeSlots.IsCreated ||
+                !_alphaLeviathanTelemetryRing.IsCreated ||
+                !_stalkingPhases.IsCreated ||
+                !_outputs.IsCreated)
+            {
+                return;
+            }
+
+            int activeAlphaCount = 0;
+            byte lastPhase = AlphaLeviathanPhase.Hidden;
+            uint lastStateHash = 0u;
+            bool foundFault = false;
+            for (int i = 0; i < _activeSlots.Length; i++)
+            {
+                int slot = _activeSlots[i];
+                CognitionInput input = _inputs[slot];
+                bool isAlpha = (input.Flags & (int)CognitionInputFlags.Active) != 0 &&
+                               (input.Flags & (int)CognitionInputFlags.PredatorRole) != 0 &&
+                               (input.Flags & (int)CognitionInputFlags.IsApexPredator) != 0;
+                if (!isAlpha)
+                    continue;
+
+                activeAlphaCount++;
+                CognitionCore core = _cores[slot];
+                PackedCognitionOutput output = _outputs[slot];
+                byte phase = _stalkingPhases[slot];
+                byte flags = 0;
+                if ((input.Flags & (int)CognitionInputFlags.HighTierSmoothSteering) == 0)
+                    flags |= AlphaLeviathanTelemetryFlags.LowTierRadialFallback;
+                if ((input.Flags & (int)CognitionInputFlags.RetinalBlind) != 0 || input.RetinalExposure01 >= AlphaRetinalDiveThreshold)
+                    flags |= AlphaLeviathanTelemetryFlags.SdfDiveRequested;
+                if ((output.OutputFlags & (uint)CognitionOutputFlags.EmitThreatPulse) != 0u)
+                    flags |= AlphaLeviathanTelemetryFlags.RoarEmitted;
+
+                float3 playerPosition = (input.Flags & (int)CognitionInputFlags.HasPlayerTarget) != 0
+                    ? input.PlayerPosition
+                    : ResolveTelemetryRuntimePosition(in input.PlayerTargetAup, input.FloatingOriginOffset);
+                float distanceSq = math.lengthsq(playerPosition - core.Position);
+                float distanceMeters = distanceSq > DdaEpsilon ? distanceSq * math.rsqrt(math.max(distanceSq, DdaEpsilon)) : 0f;
+                float fogRingDistance = math.max(
+                    AlphaFalseChargeVeerDistanceMeters + 5f,
+                    math.max(input.FogEndDistanceMeters, AlphaFogFallbackEndMeters) - AlphaFogSilhouetteOffsetMeters);
+
+                bool invalid = !MathGuard.IsFinite(core.Position) ||
+                               !MathGuard.IsFinite(playerPosition) ||
+                               !MathGuard.IsFinite(output.DesiredDirection) ||
+                               !float.IsFinite(distanceMeters) ||
+                               !float.IsFinite(fogRingDistance);
+                if (invalid)
+                {
+                    foundFault = true;
+                    flags |= AlphaLeviathanTelemetryFlags.Fault;
+                    distanceMeters = 0f;
+                    fogRingDistance = 0f;
+                    playerPosition = float3.zero;
+                }
+
+                uint stateHash = BuildAlphaLeviathanTelemetryHash(
+                    slot,
+                    phase,
+                    flags,
+                    _chosenStates.IsCreated ? _chosenStates[slot] : (byte)0);
+                AlphaLeviathanTelemetryEntry entry = default;
+                entry.Frame = unchecked((uint)math.max(0, frameId));
+                entry.Slot = (ushort)math.clamp(slot, 0, ushort.MaxValue);
+                entry.Phase = phase;
+                entry.Flags = flags;
+                entry.DistanceToPlayerMeters = distanceMeters;
+                entry.FogRingDistanceMeters = fogRingDistance;
+                entry.Position = invalid ? float3.zero : core.Position;
+                entry.PlayerPosition = playerPosition;
+                entry.DesiredDirection = invalid ? float3.zero : output.DesiredDirection;
+                entry.StateHash = stateHash;
+                _alphaLeviathanTelemetryRing[_alphaLeviathanTelemetryCursor] = entry;
+                _alphaLeviathanTelemetryCursor = (_alphaLeviathanTelemetryCursor + 1) % RetinalTelemetryCapacity;
+                lastPhase = phase;
+                lastStateHash = stateHash;
+            }
+
+            _activeAlphaLeviathanTelemetryCount = activeAlphaCount;
+            if (foundFault)
+                DumpAlphaLeviathanBlackBoxCold(frameId);
+
+            if (activeAlphaCount > 0 && (frameId & 31) == 0)
+                GlobalTelemetryBus.PublishModTelemetry(AlphaLeviathanPhaseTelemetryHash, lastStateHash, lastPhase);
+        }
+
+        private static uint BuildAlphaLeviathanTelemetryHash(int slot, byte phase, byte flags, byte state)
+        {
+            uint hash = AlphaLeviathanTelemetryContextHash;
+            hash ^= (uint)slot * 0x9E3779B9u;
+            hash = (hash << 5) | (hash >> 27);
+            hash ^= (uint)phase * 0x85EBCA6Bu;
+            hash = (hash << 7) | (hash >> 25);
+            hash ^= (uint)flags * 0xC2B2AE35u;
+            hash ^= (uint)state * 0x27D4EB2Du;
+            return hash == 0u ? AlphaLeviathanPhaseTelemetryHash : hash;
+        }
+
+        private static void DumpAlphaLeviathanBlackBoxCold(int frameId)
+        {
+            if (_alphaLeviathanFaultDumped || !_alphaLeviathanTelemetryRing.IsCreated)
+                return;
+
+            _alphaLeviathanFaultDumped = true;
+            try
+            {
+                DirectoryInfo dataDirectory = Directory.GetParent(Application.dataPath);
+                string projectRoot = dataDirectory != null ? dataDirectory.FullName : Application.dataPath;
+                string logDirectory = Path.Combine(projectRoot, "Docs", "AgentLogs");
+                Directory.CreateDirectory(logDirectory);
+                string dumpPath = Path.Combine(logDirectory, "Dump_ALPHA_LEVIATHAN_COGNITION.bin");
+                using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
+                using (BinaryWriter writer = new BinaryWriter(stream))
+                {
+                    writer.Write(frameId);
+                    writer.Write(_alphaLeviathanTelemetryCursor);
+                    writer.Write(_activeAlphaLeviathanTelemetryCount);
+                    for (int i = 0; i < RetinalTelemetryCapacity; i++)
+                    {
+                        AlphaLeviathanTelemetryEntry entry = _alphaLeviathanTelemetryRing[i];
+                        writer.Write(entry.Frame);
+                        writer.Write(entry.Slot);
+                        writer.Write(entry.Phase);
+                        writer.Write(entry.Flags);
+                        writer.Write(entry.DistanceToPlayerMeters);
+                        writer.Write(entry.FogRingDistanceMeters);
+                        writer.Write(entry.Position.x);
+                        writer.Write(entry.Position.y);
+                        writer.Write(entry.Position.z);
+                        writer.Write(entry.PlayerPosition.x);
+                        writer.Write(entry.PlayerPosition.y);
+                        writer.Write(entry.PlayerPosition.z);
+                        writer.Write(entry.DesiredDirection.x);
+                        writer.Write(entry.DesiredDirection.y);
+                        writer.Write(entry.DesiredDirection.z);
+                        writer.Write(entry.StateHash);
+                    }
+                }
+            }
+            catch (System.Exception exception)
+            {
+                Debug.LogError("Alpha Leviathan black-box dump failed: " + exception.Message);
             }
         }
 
@@ -2283,6 +2490,17 @@ namespace Hecton8.AI
             // a slot, and BoidClaimTable competing writes are resolved through atomic reservation logic before claims are
             // consumed by later code.
             [NativeDisableParallelForRestriction] public NativeArray<byte> ChosenStates;
+            // SAFETY_JUSTIFICATION_PARAGRAPH_1:
+            // Alpha stalking phase tables are slot-addressed output lanes. ActiveSlots is unique, so every job iteration
+            // writes at most one distinct phase/start-time pair and no dense remap pass is required.
+            // SAFETY_JUSTIFICATION_PARAGRAPH_2:
+            // A managed per-creature phase object was rejected because it would allocate or require main-thread sync. The
+            // SoA byte/float lanes preserve deterministic Burst ownership and keep cold telemetry separate.
+            // SAFETY_JUSTIFICATION_PARAGRAPH_3:
+            // Safety invariant: slots are registered once, unregistered slots are not active, and reset/unregister clear
+            // both phase lanes before the slot can be reused by another fauna brain.
+            [NativeDisableParallelForRestriction] public NativeArray<byte> StalkingPhases;
+            [NativeDisableParallelForRestriction] public NativeArray<float> StalkingPhaseStartTimes;
             [NativeDisableParallelForRestriction] public NativeArray<int> BoidClaimTable;
             public NativeArray<PackedCognitionOutput> Outputs;
             [ReadOnly] public NativeArray<byte> ThreatVoxelGrid;
@@ -2308,6 +2526,11 @@ namespace Hecton8.AI
                 {
                     Outputs[slot] = BuildDefaultPackedOutput(fallbackForward);
                     ChosenStates[slot] = 0;
+                    if (StalkingPhases.IsCreated)
+                    {
+                        StalkingPhases[slot] = AlphaLeviathanPhase.Hidden;
+                        StalkingPhaseStartTimes[slot] = 0f;
+                    }
                     return;
                 }
 
@@ -2439,6 +2662,17 @@ namespace Hecton8.AI
                 public float Exposure01;
                 public float3 LightPosition;
                 public byte BlindState;
+            }
+
+            private struct AlphaLeviathanDirective
+            {
+                public byte Phase;
+                public byte Flags;
+                public bool OverrideActive;
+                public bool FalseChargeStarted;
+                public float RingDistanceMeters;
+                public float3 TargetPosition;
+                public PredatorUtilityState StateMask;
             }
 
             private RetinalLightResult ResolveRetinalExposure(int slot, in CognitionInput input, float3 fallbackForward)
@@ -2774,6 +3008,28 @@ namespace Hecton8.AI
                     hasTarget = true;
                 }
 
+                AlphaLeviathanDirective alphaDirective = default;
+                bool alphaOverrideActive = false;
+                if (isApexPredator && hasPlayerTarget && !rivalApexVisible)
+                {
+                    alphaDirective = ResolveAlphaLeviathanDirective(
+                        slot,
+                        in input,
+                        fallbackForward,
+                        hasPlayerTarget,
+                        predictedPlayerPosition,
+                        retinalBlindActive,
+                        useHighTierSmoothSteering);
+                    if (alphaDirective.OverrideActive)
+                    {
+                        alphaOverrideActive = true;
+                        targetPosition = alphaDirective.TargetPosition;
+                        hasTarget = true;
+                        usingAmbushPoint = false;
+                        threatLevel = math.max(threatLevel, math.max(directAcousticScore, 0.35f));
+                    }
+                }
+
                 float threatVisual = 0f;
                 if (isApexPredator && rivalApexVisible)
                     threatVisual = ComputeThreatVisual(input.Position, input.RivalApexPosition, fallbackForward, math.max(input.AttackRange, input.ApexTerritoryRadius * 0.2f));
@@ -2898,6 +3154,11 @@ namespace Hecton8.AI
                 PredatorUtilityState stateMask = (PredatorUtilityState)stateCode;
                 bool wasHunting = control.LastPredatorStateCode == (int)PredatorUtilityState.Stalking ||
                                   control.LastPredatorStateCode == (int)PredatorUtilityState.Attacking;
+                if (alphaOverrideActive)
+                {
+                    stateMask = alphaDirective.StateMask;
+                    stateCode = (int)stateMask;
+                }
 
                 bool wantsBoidClaim =
                     stateMask == PredatorUtilityState.Attacking &&
@@ -3002,6 +3263,42 @@ namespace Hecton8.AI
                 if (hunger > HungerMobilityPenaltyThreshold01)
                     output.SpeedMultiplier *= HungerMobilityPenaltySpeedScale;
 
+                if (alphaOverrideActive)
+                {
+                    output.OutputFlags &= ~((uint)CognitionOutputFlags.ShouldAttack | (uint)CognitionOutputFlags.EmitThreatPulse);
+                    switch (alphaDirective.Phase)
+                    {
+                        case AlphaLeviathanPhase.FalseCharge:
+                            output.LegacyState = (int)FaunaBrain.AIState.Feint;
+                            output.ForceMultiplier = math.max(output.ForceMultiplier, 2.85f);
+                            output.SpeedMultiplier = math.max(
+                                output.SpeedMultiplier,
+                                AlphaFalseChargeSpeedMetersPerSecond * math.rcp(math.max(0.1f, input.BaseMaxSpeedMetersPerSecond)));
+                            output.TurnMultiplier = math.max(output.TurnMultiplier, 1.35f);
+                            if (alphaDirective.FalseChargeStarted)
+                                output.OutputFlags |= (uint)CognitionOutputFlags.EmitThreatPulse;
+                            break;
+                        case AlphaLeviathanPhase.Hidden:
+                            output.LegacyState = (int)FaunaBrain.AIState.Retreat;
+                            output.ForceMultiplier = math.max(output.ForceMultiplier, 2.2f);
+                            output.SpeedMultiplier = math.max(output.SpeedMultiplier, 1.35f);
+                            output.TurnMultiplier = math.max(output.TurnMultiplier, 1.2f);
+                            break;
+                        case AlphaLeviathanPhase.VeerOff:
+                            output.LegacyState = (int)FaunaBrain.AIState.Feint;
+                            output.ForceMultiplier = math.max(output.ForceMultiplier, 2.4f);
+                            output.SpeedMultiplier = math.max(output.SpeedMultiplier, 1.6f);
+                            output.TurnMultiplier = math.max(output.TurnMultiplier, 1.35f);
+                            break;
+                        default:
+                            output.LegacyState = (int)FaunaBrain.AIState.Stalk;
+                            output.ForceMultiplier = math.max(output.ForceMultiplier, 1.35f);
+                            output.SpeedMultiplier = math.max(output.SpeedMultiplier, 1.05f);
+                            output.TurnMultiplier = math.max(output.TurnMultiplier, 1.1f);
+                            break;
+                    }
+                }
+
                 if (packRole == PredatorPackRole.Bait)
                     output.OutputFlags |= (uint)CognitionOutputFlags.PackRoleBait;
                 else if (packRole == PredatorPackRole.Flanker)
@@ -3019,6 +3316,176 @@ namespace Hecton8.AI
 
                 control.LastPredatorStateCode = (int)stateMask;
                 return output;
+            }
+
+            private AlphaLeviathanDirective ResolveAlphaLeviathanDirective(
+                int slot,
+                in CognitionInput input,
+                float3 fallbackForward,
+                bool hasPlayerTarget,
+                float3 predictedPlayerPosition,
+                bool retinalBlindActive,
+                bool useHighTierSmoothSteering)
+            {
+                AlphaLeviathanDirective directive = default;
+                directive.Phase = AlphaLeviathanPhase.Hidden;
+                directive.RingDistanceMeters = math.max(
+                    AlphaFalseChargeVeerDistanceMeters + 5f,
+                    math.max(input.FogEndDistanceMeters, AlphaFogFallbackEndMeters) - AlphaFogSilhouetteOffsetMeters);
+                if (!hasPlayerTarget || !StalkingPhases.IsCreated || !StalkingPhaseStartTimes.IsCreated)
+                    return directive;
+
+                float3 playerPosition = ResolveRuntimePosition(in input.PlayerTargetAup, input.FloatingOriginOffset);
+                if (!MathGuard.IsFinite(playerPosition) || math.lengthsq(playerPosition - input.Position) <= DdaEpsilon)
+                    playerPosition = predictedPlayerPosition;
+
+                float3 playerToSelf = input.Position - playerPosition;
+                float distanceSq = math.lengthsq(playerToSelf);
+                float3 awayFromPlayer = ResolveRsqrtDirection(playerToSelf, -fallbackForward);
+                float currentDistance = distanceSq > DdaEpsilon
+                    ? distanceSq * math.rsqrt(math.max(distanceSq, DdaEpsilon))
+                    : 0f;
+                float3 playerForward = ResolveRsqrtDirection(input.PlayerForward, -awayFromPlayer);
+                float playerLookDot = math.dot(playerForward, awayFromPlayer);
+                bool playerGazeBreak = playerLookDot >= AlphaPlayerGazeDotThreshold;
+                bool retinalBreak = retinalBlindActive || input.RetinalExposure01 >= AlphaRetinalDiveThreshold;
+
+                byte priorPhase = StalkingPhases[slot];
+                if (priorPhase > AlphaLeviathanPhase.VeerOff)
+                    priorPhase = AlphaLeviathanPhase.Hidden;
+
+                float startTime = StalkingPhaseStartTimes[slot];
+                float phaseAge = startTime > DdaEpsilon ? math.max(0f, input.CurrentTime - startTime) : 0f;
+                byte phase = priorPhase;
+                if (playerGazeBreak || retinalBreak)
+                {
+                    phase = AlphaLeviathanPhase.Hidden;
+                }
+                else if (priorPhase == AlphaLeviathanPhase.Hidden)
+                {
+                    phase = AlphaLeviathanPhase.Circling;
+                }
+                else if (priorPhase == AlphaLeviathanPhase.Circling)
+                {
+                    float chargeWindow = directive.RingDistanceMeters + 12f;
+                    if (phaseAge >= AlphaCirclingHoldSeconds && currentDistance <= chargeWindow)
+                        phase = AlphaLeviathanPhase.FalseCharge;
+                }
+                else if (priorPhase == AlphaLeviathanPhase.FalseCharge)
+                {
+                    if (currentDistance <= AlphaFalseChargeVeerDistanceMeters || phaseAge >= AlphaFalseChargeMaxSeconds)
+                        phase = AlphaLeviathanPhase.VeerOff;
+                }
+                else if (priorPhase == AlphaLeviathanPhase.VeerOff &&
+                         phaseAge >= AlphaVeerHoldSeconds)
+                {
+                    phase = AlphaLeviathanPhase.Circling;
+                }
+
+                bool phaseChanged = phase != priorPhase || startTime <= DdaEpsilon;
+                if (phaseChanged)
+                    StalkingPhaseStartTimes[slot] = input.CurrentTime;
+                StalkingPhases[slot] = phase;
+
+                byte flags = 0;
+                if (!useHighTierSmoothSteering)
+                    flags |= AlphaLeviathanTelemetryFlags.LowTierRadialFallback;
+                if (playerGazeBreak)
+                    flags |= AlphaLeviathanTelemetryFlags.PlayerGazeBreak;
+
+                directive.OverrideActive = true;
+                directive.Phase = phase;
+                directive.FalseChargeStarted = phaseChanged && phase == AlphaLeviathanPhase.FalseCharge;
+                directive.StateMask = PredatorUtilityState.Stalking;
+                switch (phase)
+                {
+                    case AlphaLeviathanPhase.Hidden:
+                    {
+                        float3 diveDirection = ResolveAlphaDiveDirection(
+                            in input,
+                            awayFromPlayer,
+                            fallbackForward,
+                            useHighTierSmoothSteering,
+                            ref flags);
+                        directive.TargetPosition = input.Position + (diveDirection * AlphaDiveDepthMeters);
+                        directive.StateMask = PredatorUtilityState.Fleeing;
+                        break;
+                    }
+                    case AlphaLeviathanPhase.FalseCharge:
+                        directive.TargetPosition = predictedPlayerPosition;
+                        directive.StateMask = PredatorUtilityState.Attacking;
+                        break;
+                    case AlphaLeviathanPhase.VeerOff:
+                    {
+                        float3 veerDirection = ResolveAlphaVeerDirection(awayFromPlayer, fallbackForward);
+                        directive.TargetPosition = input.Position + (veerDirection * AlphaVeerDistanceMeters);
+                        directive.StateMask = PredatorUtilityState.Fleeing;
+                        break;
+                    }
+                    default:
+                    {
+                        float3 circleDirection = ResolveAlphaCircleDirection(
+                            slot,
+                            in input,
+                            playerPosition,
+                            awayFromPlayer,
+                            directive.RingDistanceMeters,
+                            useHighTierSmoothSteering);
+                        directive.TargetPosition = input.Position + (circleDirection * math.max(8f, directive.RingDistanceMeters * 0.25f));
+                        directive.StateMask = PredatorUtilityState.Stalking;
+                        break;
+                    }
+                }
+
+                directive.Flags = flags;
+                return directive;
+            }
+
+            private float3 ResolveAlphaCircleDirection(
+                int slot,
+                in CognitionInput input,
+                float3 playerPosition,
+                float3 awayFromPlayer,
+                float ringDistanceMeters,
+                bool useHighTierSmoothSteering)
+            {
+                float3 up = new float3(0f, 1f, 0f);
+                float3 tangent = ResolveRsqrtDirection(math.cross(up, awayFromPlayer), math.cross(new float3(0f, 0f, 1f), awayFromPlayer));
+                tangent = math.select(tangent, -tangent, (slot & 1) != 0);
+                float distanceSq = math.lengthsq(input.Position - playerPosition);
+                float currentDistance = distanceSq > DdaEpsilon
+                    ? distanceSq * math.rsqrt(math.max(distanceSq, DdaEpsilon))
+                    : ringDistanceMeters;
+                float radialCorrection = math.clamp((ringDistanceMeters - currentDistance) * AlphaRingCorrectionScale, -1f, 1f);
+                float3 desired = tangent + (awayFromPlayer * radialCorrection);
+                return ResolveSteeringAxis(desired, tangent, useHighTierSmoothSteering);
+            }
+
+            private float3 ResolveAlphaDiveDirection(
+                in CognitionInput input,
+                float3 awayFromPlayer,
+                float3 fallbackForward,
+                bool useHighTierSmoothSteering,
+                ref byte flags)
+            {
+                if (!useHighTierSmoothSteering)
+                {
+                    flags |= AlphaLeviathanTelemetryFlags.LowTierRadialFallback;
+                    return ResolveDominantAxis(awayFromPlayer, fallbackForward);
+                }
+
+                flags |= AlphaLeviathanTelemetryFlags.SdfDiveRequested;
+                float3 down = new float3(0f, -1f, 0f);
+                float3 sdfBias = down;
+                if (ThreatVoxelGrid.IsCreated && TryResolveThreatVoxelGradient(input.Position, out float3 gradient))
+                    sdfBias = ResolveRsqrtDirection(gradient + (down * 1.5f), down);
+
+                return ResolveRsqrtDirection((awayFromPlayer * 0.65f) + (sdfBias * 1.35f), down);
+            }
+
+            private static float3 ResolveAlphaVeerDirection(float3 awayFromPlayer, float3 fallbackForward)
+            {
+                return ResolveRsqrtDirection(awayFromPlayer + new float3(0f, 0.85f, 0f), fallbackForward);
             }
 
             private float3 ResolvePredictedPlayerIntercept(in CognitionInput input)

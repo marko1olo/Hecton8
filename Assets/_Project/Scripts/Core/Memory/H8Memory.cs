@@ -17,10 +17,15 @@ namespace Hecton8.Core.Memory
         CoreDataVault = 1,
         H8Memory = 2,
         Bootstrap = 3,
+        CoreDeterminism = 4,
         SystemDispatcher = 30,
         GlobalPhysicsStateManager = 32,
         Physics = 64,
+        VehiclesPhysics = 65,
+        Fluid = 66,
         WorldStreaming = 128,
+        TerrainSeams = 129,
+        SimulationBucketer = 161,
         Vfx = 192,
         UI = 224,
         External = 65534
@@ -40,7 +45,24 @@ namespace Hecton8.Core.Memory
         RigidbodyDistanceSq = 6,
         PhysicsCullingTelemetry = 7,
         DispatcherRaycastHits = 8,
-        H8Time = 9
+        H8Time = 9,
+        TerrainSeamHeightmap = 10,
+        PlayerKinematicState = 11,
+        RoomWaterLevels = 12,
+        EntityAUPs = 13,
+        VoxelSdfTexture3D = 14,
+        RoomVolumes = 15,
+        RoomLocalAUPs = 16,
+        OceanGerstnerWaves = 17,
+        OceanGerstnerWaveMeta = 18,
+        WfcOutpostGrid = 19,
+        LoreEntityAUPs = 20,
+        LoreEntityHashes = 21,
+        SubmarineBallastFill01 = 22,
+        SubmarineBallastTankLocalPositions = 23,
+        SubmarineBallastPidOutput = 24,
+        SubmarineDynamicFloodMassOutput = 25,
+        SubmarinePidTelemetry = 26
     }
 
     [Flags]
@@ -52,7 +74,8 @@ namespace Hecton8.Core.Memory
         Vault = 1 << 2,
         Alias = 1 << 3,
         Freed = 1 << 4,
-        Relocatable = 1 << 5
+        Relocatable = 1 << 5,
+        SubAllocatorRoot = 1 << 6
     }
 
     public enum H8BlockState : byte
@@ -183,7 +206,9 @@ namespace Hecton8.Core.Memory
             Allocator allocator,
             NativeArrayOptions options = NativeArrayOptions.ClearMemory) where T : struct
         {
-            EnsureInitialized();
+            if (!_initialized)
+                Initialize();
+
             if (length <= 0)
                 return default;
 
@@ -238,7 +263,9 @@ namespace Hecton8.Core.Memory
             bool clearMemory,
             H8AllocationFlags extraFlags = H8AllocationFlags.None)
         {
-            EnsureInitialized();
+            if (!_initialized)
+                Initialize();
+
             if (bytes <= 0L)
                 return null;
 
@@ -270,7 +297,9 @@ namespace Hecton8.Core.Memory
             bool clearExtendedBytes,
             H8AllocationFlags extraFlags = H8AllocationFlags.None)
         {
-            EnsureInitialized();
+            if (!_initialized)
+                Initialize();
+
             if (newBytes <= 0L)
                 return null;
 
@@ -286,7 +315,7 @@ namespace Hecton8.Core.Memory
                 return null;
 
             long copyBytes = oldBytes < newBytes ? oldBytes : newBytes;
-            UnsafeUtility.MemCpy(newPointer, oldPointer, copyBytes);
+            UnsafeUtility.MemMove(newPointer, oldPointer, copyBytes);
             if (clearExtendedBytes && newBytes > copyBytes)
                 UnsafeUtility.MemClear((byte*)newPointer + copyBytes, newBytes - copyBytes);
 
@@ -410,7 +439,9 @@ namespace Hecton8.Core.Memory
         /// </summary>
         public static int RegisterBlockDescriptor(in BlockDescriptor descriptor)
         {
-            EnsureInitialized();
+            if (!_initialized)
+                Initialize();
+
             return RegisterBlockDescriptorNoInit(in descriptor);
         }
 
@@ -472,13 +503,6 @@ namespace Hecton8.Core.Memory
             }
 #endif
             _initialized = false;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void EnsureInitialized()
-        {
-            if (!_initialized)
-                Initialize();
         }
 
         private static bool TryReserveBytes(SystemID owner, long bytes)
@@ -575,6 +599,9 @@ namespace Hecton8.Core.Memory
             if ((uint)ownerIndex < (uint)_ownerBytes.Length)
                 _ownerBytes[ownerIndex] += bytes;
 
+            if ((flags & H8AllocationFlags.SubAllocatorRoot) != 0)
+                return;
+
             RegisterBlockDescriptorNoInit(new BlockDescriptor
             {
                 BasePointer = pointerValue,
@@ -620,6 +647,7 @@ namespace Hecton8.Core.Memory
                 H8AllocationRecord moved = _records[_recordCount];
                 moved.AllocationIndex = index;
                 _records[index] = moved;
+                UpdateBlockDescriptorOwnerKey(moved.Pointer, 0L, index);
             }
 
             _records[_recordCount] = default;
@@ -669,6 +697,27 @@ namespace Hecton8.Core.Memory
 
                 descriptor.State = (byte)H8BlockState.Free;
                 descriptor.Flags |= (ushort)H8AllocationFlags.Freed;
+                descriptor.Generation++;
+                _blockDescriptors[i] = descriptor;
+                return;
+            }
+        }
+
+        private static void UpdateBlockDescriptorOwnerKey(IntPtr basePointer, long offsetBytes, int ownerKey)
+        {
+            if (!_blockDescriptors.IsCreated || basePointer == IntPtr.Zero)
+                return;
+
+            for (int i = _blockDescriptors.Length - 1; i >= 0; i--)
+            {
+                BlockDescriptor descriptor = _blockDescriptors[i];
+                if (descriptor.BasePointer != basePointer || descriptor.OffsetBytes != offsetBytes)
+                    continue;
+
+                if (descriptor.State != (byte)H8BlockState.Occupied)
+                    return;
+
+                descriptor.OwnerKey = ownerKey;
                 descriptor.Generation++;
                 _blockDescriptors[i] = descriptor;
                 return;

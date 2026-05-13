@@ -3,6 +3,7 @@ using System.IO;
 using System.Threading;
 using System.Runtime.InteropServices;
 using Hecton8.AI;
+using Hecton8.Audio.Echolocation;
 using Hecton8.Bootstrap;
 using Hecton8.Caves;
 using Hecton8.Core;
@@ -88,6 +89,20 @@ namespace Hecton8.Audio
         private const float ImpactEchoCarrierPrimaryHertz = 420f;
         private const float ImpactEchoCarrierSecondaryHertz = 860f;
         private const float ImpactEchoNoiseBlend = 0.34f;
+        private const int KineticImpactSignalScanLimit = 32;
+        private const int SonarTriggerFlagKineticImpactEcho = 1 << 0;
+        private const float KineticImpactMinimumEnergyJoules = 12f;
+        private const float KineticImpactReferenceEnergyJoules = 42000f;
+        private const float KineticImpactExtremeEnergyJoules = 65000f;
+        private const float KineticImpactMaximumSafeEnergyJoules = 120000f;
+        private const float KineticImpactThudDurationSeconds = 0.2f;
+        private const float KineticImpactPortalEchoLifetimeSeconds = 0.75f;
+        private const float KineticImpactThudStartHertz = 150f;
+        private const float KineticImpactThudEndHertz = 40f;
+        private const float KineticImpactWaterLowPassHertz = 800f;
+        private const float KineticImpactThudMinimumExcitation = 0.015f;
+        private const float KineticImpactPortalEchoMasterGain = 0.46f;
+        private const float KineticImpactDefaultWaterlineY = 0f;
         private const float ImpactClangMinimumExcitation = 0.12f;
         private const float ImpactClangFundamentalHertz = 150f;
         private const float ImpactClangPitchSpread = 0.22f;
@@ -130,6 +145,7 @@ namespace Hecton8.Audio
         private const float PressureCreakDerivativeReferencePerSecond = 1.6f;
         private const float PressureCreakDerivativeDensityBoostPerSecond = 2.25f;
         private const float PressureCreakDerivativePitchBoost = 1.35f;
+        private const float PressureSignalImpulseDecayPerSecond = 8f;
         private const float PressureCreakMinimumPlaybackRate = 0.58f;
         private const float PressureCreakMaximumPlaybackRate = 1.95f;
         private const float PressureCreakMinimumBandCenterHertz = 96f;
@@ -138,7 +154,10 @@ namespace Hecton8.Audio
         private const int MetallicGrainBankCapacity = MetallicGrainSampleRate * 2;
         private const int GranularVoiceCapacity = 16;
         private const int GranularTelemetryCapacity = 300;
+        private const int PrologueTransitionTelemetryCapacity = 300;
+        private const int PrologueTransitionQueueCapacity = 32;
         private const uint GranularTelemetrySampleStrideMask = 63u;
+        private const int GranularDisabledVoiceCapacity = 0;
         private const int GranularLowTierVoiceCapacity = 4;
         private const int GranularImpactClusterVoiceCount = 3;
         private const int GranularImpactStealTailSamples = 96;
@@ -151,6 +170,15 @@ namespace Hecton8.Audio
         private const float GranularImpactClusterCooldownSeconds = 0.02f;
         private const int HullCreakMinimumGrainSamples = 96;
         private const float HullCreakMetalGroanWindowSeconds = 1.35f;
+        private const float PrologueClosedLowPassHertz = 400f;
+        private const float PrologueOpenLowPassHertz = 22000f;
+        private const float PrologueLfeHertz = 40f;
+        private const float PrologueLfeOutputGain = 0.24f;
+        private const float PrologueSplashdownDurationSeconds = 0.1f;
+        private const float PrologueSplashdownSweepStartHertz = 40f;
+        private const float PrologueSplashdownSweepEndHertz = 56f;
+        private const float PrologueSplashdownOutputGain = 0.82f;
+        private const float ProloguePortalFdnSend = 0.28f;
         private const float HullCreakGrainSeconds = 0.045f;
         private const float HullSubBassMinimumHertz = 25f;
         private const float HullSubBassMaximumHertz = 40f;
@@ -215,14 +243,16 @@ namespace Hecton8.Audio
         private const int AudioProducerIdleWaitTimeoutMs = 8;
         private const int SonarEchoDelayCapacity = 131072;
         private const int SonarEchoDelayMask = SonarEchoDelayCapacity - 1;
-        private const int SonarEchoTapCapacity = 16;
-        private const int SonarSdfDefaultProbeCount = 8;
-        private const int SonarSdfLowProbeCount = 4;
-        private const int SonarSdfHighProbeCount = 16;
+        private const int SonarEchoTapCapacity = 32;
+        private const int SonarSdfDefaultProbeCount = 32;
+        private const int SonarSdfLowProbeCount = 8;
+        private const int SonarSdfHighProbeCount = 32;
         private const int SonarEchoCompositeCandidateCapacity = 32;
         private const int SonarEchoCompositeGroupCapacity = 8;
         private const double SonarEchoCompositeCellSizeMeters = 10d;
         private const double SonarEchoCompositeCellSizeMetersInv = 0.1d;
+        private const float EcholocationReflectivityConstant = 0.000045f;
+        private const float EcholocationDensityThreshold01 = 0.5f;
         private const float SonarEchoMinimumDopplerRatio = 0.05f;
         private const float SonarEchoMaximumDopplerRatio = 4f;
         private const int ImpactClangDelayCapacity = 1024;
@@ -392,6 +422,7 @@ namespace Hecton8.Audio
         private const byte SonarAudioMaterialIdMetal = 1;
         private const byte SonarAudioMaterialIdRock = 2;
         private const byte SonarAudioMaterialIdGlass = 3;
+        private const byte SonarAudioMaterialIdBiological = 4;
         private const float StructuralSnapMinimumHertz = 4200f;
         private const float StructuralSnapMaximumHertz = 9600f;
         private const float StructuralSnapDecayPerSecond = 14f;
@@ -449,6 +480,12 @@ namespace Hecton8.Audio
 
         [Tooltip("Maximum gain applied to the hull-groan loop at full hull stress.")]
         [SerializeField, Range(0f, 1f)] private float hullGroanLoopMaximumVolume = 0.42f;
+
+        [Tooltip("Optional two-second authored metal-stress WAV used as the raw granular source. Procedural bank is used if absent.")]
+        [SerializeField] private AudioClip metalStressGrainClip;
+
+        [Tooltip("Low-tier fallback impact clip used when MX350 disables kinetic procedural collision synthesis.")]
+        [SerializeField] private AudioClip lowTierKineticImpactClip;
 
         [Header("Sonar Ping")]
         [Tooltip("How much of the piezo attack from the reference implementation is kept in front of the chirp.")]
@@ -599,21 +636,21 @@ namespace Hecton8.Audio
         private NativeArray<float> _stereoMixScratch;
         // COLD ALLOC: NativeArray<float>[131072] - sonar linear echo delay ring - owner: PlayerCriticalProceduralAudioRenderer
         private NativeArray<float> _sonarEchoDelay;
-        // COLD ALLOC: NativeArray<SonarEchoTap>[16] - pending sonar echo tap buffer A - owner: PlayerCriticalProceduralAudioRenderer
+        // COLD ALLOC: NativeArray<SonarEchoTap>[32] - pending sonar echo tap buffer A - owner: PlayerCriticalProceduralAudioRenderer
         private NativeArray<SonarEchoTap> _pendingSonarEchoTapsA;
-        // COLD ALLOC: NativeArray<SonarEchoTap>[16] - pending sonar echo tap buffer B - owner: PlayerCriticalProceduralAudioRenderer
+        // COLD ALLOC: NativeArray<SonarEchoTap>[32] - pending sonar echo tap buffer B - owner: PlayerCriticalProceduralAudioRenderer
         private NativeArray<SonarEchoTap> _pendingSonarEchoTapsB;
-        // COLD ALLOC: NativeArray<SonarEchoTap>[16] - worker-owned sonar tap snapshot prevents main-thread tap tearing - owner: PlayerCriticalProceduralAudioRenderer
+        // COLD ALLOC: NativeArray<SonarEchoTap>[32] - worker-owned sonar tap snapshot prevents main-thread tap tearing - owner: PlayerCriticalProceduralAudioRenderer
         private NativeArray<SonarEchoTap> _workerSonarEchoTaps;
-        // COLD ALLOC: NativeArray<float>[16] - sonar echo read cursors per tap - owner: PlayerCriticalProceduralAudioRenderer
+        // COLD ALLOC: NativeArray<float>[32] - sonar echo read cursors per tap - owner: PlayerCriticalProceduralAudioRenderer
         private NativeArray<float> _sonarEchoReadCursors;
-        // COLD ALLOC: NativeArray<float>[16] - sonar echo low-pass x1 state per tap - owner: PlayerCriticalProceduralAudioRenderer
+        // COLD ALLOC: NativeArray<float>[32] - sonar echo low-pass x1 state per tap - owner: PlayerCriticalProceduralAudioRenderer
         private NativeArray<float> _sonarEchoFilterInput1;
-        // COLD ALLOC: NativeArray<float>[16] - sonar echo low-pass x2 state per tap - owner: PlayerCriticalProceduralAudioRenderer
+        // COLD ALLOC: NativeArray<float>[32] - sonar echo low-pass x2 state per tap - owner: PlayerCriticalProceduralAudioRenderer
         private NativeArray<float> _sonarEchoFilterInput2;
-        // COLD ALLOC: NativeArray<float>[16] - sonar echo low-pass y1 state per tap - owner: PlayerCriticalProceduralAudioRenderer
+        // COLD ALLOC: NativeArray<float>[32] - sonar echo low-pass y1 state per tap - owner: PlayerCriticalProceduralAudioRenderer
         private NativeArray<float> _sonarEchoFilterOutput1;
-        // COLD ALLOC: NativeArray<float>[16] - sonar echo low-pass y2 state per tap - owner: PlayerCriticalProceduralAudioRenderer
+        // COLD ALLOC: NativeArray<float>[32] - sonar echo low-pass y2 state per tap - owner: PlayerCriticalProceduralAudioRenderer
         private NativeArray<float> _sonarEchoFilterOutput2;
         // COLD ALLOC: NativeArray<SonarEchoCompositeGroup>[32] - active-sonar echo candidate buffer A before AUP hash coalescing - owner: PlayerCriticalProceduralAudioRenderer
         private NativeArray<SonarEchoCompositeGroup> _sonarEchoCompositeCandidatesA;
@@ -627,6 +664,10 @@ namespace Hecton8.Audio
         private NativeParallelMultiHashMap<int, int> _sonarEchoCompositeSpatialHash;
         // COLD ALLOC: NativeParallelHashMap<int,int>[8] - sonar echo hash-to-output group lookup for coalescing - owner: PlayerCriticalProceduralAudioRenderer
         private NativeParallelHashMap<int, int> _sonarEchoCompositeGroupByHash;
+        // COLD ALLOC: NativeArray<AcousticEcholocationRayHit>[32] - Burst SDF ping ray hit cache - owner: PlayerCriticalProceduralAudioRenderer
+        private NativeArray<AcousticEcholocationRayHit> _sonarEcholocationHits;
+        // COLD ALLOC: NativeQueue<SonarEchoTap>[32] - late-frame echo tap upload bridge into DSP pending buffers - owner: PlayerCriticalProceduralAudioRenderer
+        private NativeQueue<SonarEchoTap> _sonarEchoTapUploadQueue;
         // COLD ALLOC: NativeArray<float>[1024] - Karplus-Strong delay line for metallic impact synthesis - owner: PlayerCriticalProceduralAudioRenderer
         private NativeArray<float> _impactClangDelay;
         // COLD ALLOC: NativeArray<float>[4096] - thruster comb filter delay ring - owner: PlayerCriticalProceduralAudioRenderer
@@ -671,6 +712,10 @@ namespace Hecton8.Audio
         private NativeArray<float> _granularVoiceGain;
         // COLD ALLOC: NativeArray<GranularAudioTelemetryEntry>[300] - granular DSP black-box ring - owner: PlayerCriticalProceduralAudioRenderer
         private NativeArray<GranularAudioTelemetryEntry> _granularTelemetryRing;
+        // COLD ALLOC: NativeArray<PrologueAudioTransitionTelemetryEntry>[300] - prologue transition DSP black-box ring - owner: PlayerCriticalProceduralAudioRenderer
+        private NativeArray<PrologueAudioTransitionTelemetryEntry> _prologueTransitionTelemetryRing;
+        // COLD ALLOC: NativeQueue<AudioTransitionState>[32] - prologue visual-sync to DSP command lane - owner: PlayerCriticalProceduralAudioRenderer
+        private NativeQueue<AudioTransitionState> _prologueTransitionQueue;
         // COLD ALLOC: NativeArray<float>[262144] - double-buffered VWS PCM clip lane A - owner: PlayerCriticalProceduralAudioRenderer
         private NativeArray<float> _vwsClipSamplesA;
         // COLD ALLOC: NativeArray<float>[262144] - double-buffered VWS PCM clip lane B - owner: PlayerCriticalProceduralAudioRenderer
@@ -691,6 +736,10 @@ namespace Hecton8.Audio
         private int _granularTelemetryCursor;
         private int _granularTelemetryDumpRequested;
         private int _granularTelemetryDumped;
+        private int _prologueTransitionTelemetryCursor;
+        private int _prologueTransitionTelemetryDumpRequested;
+        private int _prologueTransitionTelemetryDumped;
+        private int _prologueTransitionQueueCount;
         private AudioFrameSpscRingBuffer _sampleRingBuffer;
         private Thread _audioProducerThread;
         // COLD ALLOC: ManualResetEventSlim[1] - producer-thread wake fence - owner: PlayerCriticalProceduralAudioRenderer
@@ -698,6 +747,22 @@ namespace Hecton8.Audio
         private int _frameCapacity;
         private int _sampleRate;
         private int _sonarTotalDurationSamples;
+        private JobHandle _sonarEcholocationJobHandle;
+        private int _sonarEcholocationJobScheduled;
+        private int _sonarEcholocationScheduledSequence;
+        private int _sonarEcholocationScheduledRayCount;
+        private int _sonarEcholocationScheduledSdfVersion;
+        private uint _sonarEcholocationScheduledShiftSequence;
+        private long _sonarEcholocationScheduledStartFrame;
+        private float _sonarEcholocationScheduledIntensity;
+        private Vector3 _sonarEcholocationScheduledOrigin;
+        private Transform _sonarEcholocationScheduledTransform;
+        private int _lastConsumedAcousticPingSignalSequence;
+        private uint _lastHighSpeedImpactFrame;
+        private uint _lastHighSpeedImpactSignature;
+        private int _lastDirectSonarPingFrame = -4096;
+        private float _lastDirectSonarPingIntensity;
+        private Vector3 _lastDirectSonarPingOrigin;
         private bool _buffersInitialized;
         private bool _runtimeRegistered;
         private bool _registered;
@@ -734,6 +799,7 @@ namespace Hecton8.Audio
         private float _hullStressTickValue;
         private float _structuralHullStressTickValue;
         private float _structuralHullStressVelocityTickValue;
+        private float _structuralPressureImpulseTickValue;
         private float _impactStressImpulseTickValue;
         private float _hullPressureDepthTickValue;
         private float _absoluteDepthTickValue;
@@ -759,6 +825,7 @@ namespace Hecton8.Audio
         private float _audioEnclosureDensityIndex;
         private float _audioImpactStressValue;
         private float _audioImpactMetallicValue;
+        private float _audioPeakImpactEnergyJoules;
         private float _audioThrusterBlendValue;
         private float _audioThrusterLoadValue;
         private float _audioThrusterRpmValue;
@@ -778,6 +845,15 @@ namespace Hecton8.Audio
         private float _audioLeviathanRoarPitchScale = 1f;
         private float _audioVehicleCavitationSpeed01;
         private float _audioBubbleBoilIntensity;
+        private float _audioPrologueLowPassCutoffHertz = PrologueOpenLowPassHertz;
+        private float _audioPrologueLfeGain;
+        private float _audioProloguePortalBlend01;
+        private uint _audioPrologueSplashdownSequence;
+        private int _prologueSplashdownRemainingSamples;
+        private int _prologueSplashdownTotalSamples;
+        private float _prologueSplashdownGain;
+        private double _prologueLfePhase;
+        private double _prologueSplashdownPhase;
         private float _smoothedReverbDecayTime;
         private float _smoothedReverbWetMix;
         private float _smoothedReverbOpenness = 1f;
@@ -891,6 +967,14 @@ namespace Hecton8.Audio
         private volatile float _targetVehicleCavitationSpeed01;
         private volatile float _targetStructuralSnapValue;
         private volatile int _targetGranularMaxVoiceCount = GranularVoiceCapacity;
+        private volatile float _targetPrologueLowPassCutoffHertz = PrologueOpenLowPassHertz;
+        private volatile float _targetPrologueLfeGain;
+        private volatile float _targetPrologueGranularStress;
+        private volatile float _targetPrologueSplashdownGain;
+        private volatile float _targetProloguePortalBlend01;
+        private volatile int _targetPrologueSplashdownSequence;
+        private volatile int _targetPrologueStage;
+        private volatile int _targetPrologueFlags;
         private float _granularVoiceUpgradeHoldSeconds;
         private int _granularVoiceUpgradeRequestedCount;
         private volatile float _targetBinauralAzimuthRadians;
@@ -956,9 +1040,32 @@ namespace Hecton8.Audio
             public float Depth01;
             public float Impact01;
             public float MixedSample;
+            public float PeakImpactEnergyJoules;
             public int ActiveVoices;
             public int VoiceLimit;
+            public int ActiveEchoTaps;
             public uint Flags;
+        }
+
+        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        private struct PrologueAudioTransitionTelemetryEntry
+        {
+            public uint Frame;
+            public uint Sequence;
+            public float UniverseVelocityMetersPerSecond;
+            public float Heat01;
+            public float LowPassCutoffHz;
+            public float LfeGain01;
+            public float GranularStress01;
+            public float SplashdownGain01;
+            public float PortalBlend01;
+            public float AudioLowPassCutoffHz;
+            public int SplashdownSamplesRemaining;
+            public byte Stage;
+            public byte Flags;
+            public byte QualityTier;
+            public byte Reserved;
+            public uint DspFlags;
         }
 
         private struct SonarTriggerState
@@ -968,6 +1075,7 @@ namespace Hecton8.Audio
             public long StartFrame;
             public float Intensity;
             public int EchoTapCount;
+            public int Flags;
         }
 
         internal struct AudioThreadDiagnostics
@@ -1025,14 +1133,22 @@ namespace Hecton8.Audio
             public float BinauralEnergy01;
             public float BinauralWaterDensityMul;
             public int BinauralValid;
+            public float PrologueLowPassCutoffHz;
+            public float PrologueLfeGain;
+            public float PrologueGranularStress;
+            public float PrologueSplashdownGain;
+            public float ProloguePortalBlend01;
+            public uint PrologueSplashdownSequence;
+            public int PrologueStage;
+            public int PrologueFlags;
         }
 
-        [StructLayout(LayoutKind.Explicit, Size = 256)]
+        [StructLayout(LayoutKind.Explicit, Size = 320)]
         private struct AudioParameterSnapshotSlot
         {
             [FieldOffset(0)]
             public AudioParameterSnapshot Value;
-            [FieldOffset(192)]
+            [FieldOffset(256)]
             private AudioParameterSnapshotCacheLinePad Padding;
         }
 
@@ -1089,7 +1205,21 @@ namespace Hecton8.Audio
             }
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = 32)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        private struct PrologueSplashdownSineSweepProbeJob : IJob
+        {
+            [WriteOnly] public NativeArray<float> Output;
+            public float NormalizedTime;
+
+            public void Execute()
+            {
+                float t = math.saturate(NormalizedTime);
+                float frequency = math.lerp(PrologueSplashdownSweepStartHertz, PrologueSplashdownSweepEndHertz, t);
+                Output[0] = FastSine01(frequency * PrologueSplashdownDurationSeconds * t);
+            }
+        }
+
+        [StructLayout(LayoutKind.Sequential, Size = 64)]
         private struct ImpactAudioEvent
         {
             public float Stress;
@@ -1100,6 +1230,14 @@ namespace Hecton8.Audio
             public float EchoAttenuation;
             public float EchoLowPassCutoffHz;
             public float EchoPitchScale;
+            public float ThudExcitation;
+            public float ThudDurationSeconds;
+            public float ThudStartHertz;
+            public float ThudEndHertz;
+            public float ThudDistortion;
+            public float ThudLowPassCutoffHz;
+            public float EnergyJoules;
+            public float Reserved0;
         }
 
         private struct HullSynthesisState
@@ -1142,6 +1280,15 @@ namespace Hecton8.Audio
             public float ImpactClangLowPassState;
             public int ImpactClangDelaySamples;
             public int ImpactClangWriteIndex;
+            public double KineticImpactThudPhase;
+            public float KineticImpactThudAgeSeconds;
+            public float KineticImpactThudDurationSeconds;
+            public float KineticImpactThudStartHertz;
+            public float KineticImpactThudEndHertz;
+            public float KineticImpactThudAmplitude;
+            public float KineticImpactThudDistortion;
+            public float KineticImpactThudLowPassCutoffHz;
+            public float KineticImpactThudLowPassState;
             public long LastGranularImpactClusterSampleFrame;
         }
 
@@ -1337,6 +1484,24 @@ namespace Hecton8.Audio
         }
 
         /// <summary>
+        /// Queues a prologue vacuum-to-ocean transition state into the SPSC DSP parameter lane.
+        /// </summary>
+        public bool QueuePrologueAudioTransition(in AudioTransitionState state)
+        {
+            if (!_prologueTransitionQueue.IsCreated ||
+                _prologueTransitionQueueCount >= PrologueTransitionQueueCapacity)
+            {
+                return false;
+            }
+
+            AudioTransitionState sanitized = SanitizePrologueAudioTransition(in state, out bool invalid);
+            _prologueTransitionQueue.Enqueue(sanitized);
+            _prologueTransitionQueueCount++;
+            PublishAudioParameterSnapshot();
+            return !invalid;
+        }
+
+        /// <summary>
         /// Copies one warning clip into the double-buffered procedural VWS PCM lane.
         /// </summary>
         /// <param name="warningId">Priority warning byte ID.</param>
@@ -1438,6 +1603,11 @@ namespace Hecton8.Audio
             tapCount = safeTapCount;
             sequence = pendingState.Sequence;
             return true;
+        }
+
+        public bool QueueHighSpeedImpactSignal(in HighSpeedImpactSignal signal)
+        {
+            return TryHandleHighSpeedImpactSignal(in signal);
         }
 
         private void Awake()
@@ -1749,6 +1919,7 @@ namespace Hecton8.Audio
                 _hasLeviathanRoarDopplerSample = false;
                 _hasPendingLeviathanRoarDistance = false;
                 _impactStressImpulseTickValue = 0f;
+                _structuralPressureImpulseTickValue = 0f;
                 _hullPressureDepthTickValue = 0f;
                 _absoluteDepthTickValue = 0f;
                 _pressureScrubberHumLastDepthMeters = float.MinValue;
@@ -1760,8 +1931,15 @@ namespace Hecton8.Audio
                 return;
             }
 
+            ConsumeLatestAcousticPingSignal();
+            ConsumeHighSpeedImpactSignals();
+
             float impactStress = _impactStressImpulseTickValue;
             _impactStressImpulseTickValue = math.max(0f, impactStress - deltaTime * PhysicsImpactStressDecayPerSecond);
+            float structuralPressureImpulse = _structuralPressureImpulseTickValue;
+            _structuralPressureImpulseTickValue = math.max(
+                0f,
+                structuralPressureImpulse - deltaTime * PressureSignalImpulseDecayPerSecond);
             _targetEardrumRuptureTinnitusValue = math.max(
                 0f,
                 _targetEardrumRuptureTinnitusValue - (deltaTime * EardrumRuptureDecayPerSecond));
@@ -1782,8 +1960,10 @@ namespace Hecton8.Audio
             _structuralHullStressTickValue = math.lerp(_structuralHullStressTickValue, structuralStressTarget, structuralBlendT);
             _targetStructuralHullStressValue = _structuralHullStressTickValue;
             float structuralStressVelocityTarget = math.saturate(
-                math.abs(structuralStressTarget - _structuralHullStressTickValue) *
-                math.rcp(math.max(PressureCreakDerivativeReferencePerSecond * deltaTime, 0.0001f)));
+                math.max(
+                    structuralPressureImpulse,
+                    math.abs(structuralStressTarget - _structuralHullStressTickValue) *
+                    math.rcp(math.max(PressureCreakDerivativeReferencePerSecond * deltaTime, 0.0001f))));
             _structuralHullStressVelocityTickValue = math.lerp(
                 _structuralHullStressVelocityTickValue,
                 structuralStressVelocityTarget,
@@ -1792,7 +1972,7 @@ namespace Hecton8.Audio
             _targetStructuralFatigueValue = ResolveStructuralFatigue01();
             _structuralSnapTickValue = math.lerp(
                 _structuralSnapTickValue,
-                ResolveStructuralDamageTransient01(),
+                math.max(ResolveStructuralDamageTransient01(), structuralPressureImpulse),
                 structuralBlendT);
             _targetStructuralSnapValue = _structuralSnapTickValue;
             UpdateHullGroanLoop(true, math.saturate(math.max(_targetHullStressValue, _targetStructuralHullStressValue)));
@@ -1839,9 +2019,11 @@ namespace Hecton8.Audio
 
         public void LateFrameTick()
         {
+            TryCompleteSdfSonarEchoJob(forceComplete: false);
             FlushSonarEchoCompositeGroups(allowJobCompletion: true);
             PublishPendingDspProducerOverBudgetWarning();
             FlushGranularTelemetryDumpRequest();
+            FlushPrologueTransitionTelemetryDumpRequest();
             PublishAudioSpatializationBlackBoxFrame();
         }
 
@@ -2008,6 +2190,14 @@ namespace Hecton8.Audio
             float hullTarget = math.saturate(math.max(parameters.HullStress, impactStressTarget));
             float structuralHullTarget = math.saturate(parameters.StructuralHullStress);
             float structuralHullVelocityTarget = math.saturate(parameters.StructuralHullStressVelocity);
+            float prologueGranularStress = math.saturate(parameters.PrologueGranularStress);
+            if (prologueGranularStress > HullNoiseFloor)
+            {
+                hullTarget = math.saturate(math.max(hullTarget, prologueGranularStress * 0.35f));
+                structuralHullTarget = math.saturate(math.max(structuralHullTarget, prologueGranularStress));
+                structuralHullVelocityTarget = math.saturate(math.max(structuralHullVelocityTarget, prologueGranularStress * 0.85f));
+            }
+
             float structuralFatigueTarget = math.saturate(parameters.StructuralFatigue);
             float structuralSnapTarget = math.saturate(parameters.StructuralSnap);
             float hullDepthTarget = math.saturate(parameters.HullPressureDepth);
@@ -2031,7 +2221,7 @@ namespace Hecton8.Audio
             bool heartbeatActiveTarget = parameters.HeartbeatActive != 0;
             int granularMaxVoiceCount = math.clamp(
                 parameters.GranularMaxVoiceCount,
-                GranularLowTierVoiceCapacity,
+                GranularDisabledVoiceCapacity,
                 GranularVoiceCapacity);
             float granularAccelerationPitchWobble = math.lerp(0.96f, 1.08f, thrusterAccelerationTarget);
 
@@ -2538,6 +2728,27 @@ namespace Hecton8.Audio
             _targetReverbDspTier = (int)ReverbDspTier.UnityProfileOnly;
         }
 
+        private void ResetPrologueDspState()
+        {
+            _targetPrologueLowPassCutoffHertz = PrologueOpenLowPassHertz;
+            _targetPrologueLfeGain = 0f;
+            _targetPrologueGranularStress = 0f;
+            _targetPrologueSplashdownGain = 0f;
+            _targetProloguePortalBlend01 = 0f;
+            _targetPrologueSplashdownSequence = 0;
+            _targetPrologueStage = 0;
+            _targetPrologueFlags = 0;
+            _audioPrologueLowPassCutoffHertz = PrologueOpenLowPassHertz;
+            _audioPrologueLfeGain = 0f;
+            _audioProloguePortalBlend01 = 0f;
+            _audioPrologueSplashdownSequence = 0u;
+            _prologueSplashdownRemainingSamples = 0;
+            _prologueSplashdownTotalSamples = 0;
+            _prologueSplashdownGain = 0f;
+            _prologueLfePhase = 0d;
+            _prologueSplashdownPhase = 0d;
+        }
+
         private void ResolveListenerReverbFilter()
         {
             EnsureReverbMixerBindings();
@@ -2700,52 +2911,637 @@ namespace Hecton8.Audio
 
         private void HandleSonarPingSent(float intensity)
         {
-            long producerFrame = Interlocked.Read(ref _producedSampleCount);
-            long scheduledStartFrame = producerFrame;
-            int sequence = Interlocked.Increment(ref _pendingSonarSequence);
-            int echoRevision = 2;
+            Transform originTransform = ResolveSonarOriginTransform();
+            Vector3 origin = originTransform != null ? originTransform.position : transform.position;
+            TriggerSonarEchoFromOrigin(origin, originTransform, intensity);
+            RecordDirectSonarPing(origin, intensity);
+        }
 
-            int inactiveIndex = 1 - Volatile.Read(ref _pendingSonarStateReadIndex);
-            NativeArray<SonarEchoTap> inactiveTapBuffer = inactiveIndex == 0 ? _pendingSonarEchoTapsA : _pendingSonarEchoTapsB;
-            int tapCount = 0;
-            if (inactiveTapBuffer.IsCreated)
+        private void ConsumeLatestAcousticPingSignal()
+        {
+            if (!GlobalSignals.TryGetLatestAcousticPingSignal(out AcousticPingSignal signal, out int sequence) ||
+                sequence == _lastConsumedAcousticPingSignalSequence)
             {
-                Transform originTransform = _boundPlayerTransform;
-                if (originTransform == null)
+                return;
+            }
+
+            _lastConsumedAcousticPingSignalSequence = sequence;
+            if (!IsActiveSonarAcousticPing(in signal) || signal.Intensity01 <= 0.0001f)
+                return;
+
+            float3 runtimeOrigin = signal.PositionAup.ToRuntimeFloat3();
+            if (!math.all(math.isfinite(runtimeOrigin)))
+                return;
+
+            Vector3 origin = new Vector3(runtimeOrigin.x, runtimeOrigin.y, runtimeOrigin.z);
+            if (IsDuplicateDirectSonarPing(origin, signal.Intensity01))
+                return;
+
+            TriggerSonarEchoFromOrigin(origin, ResolveSonarOriginTransform(), signal.Intensity01);
+        }
+
+        private void ConsumeHighSpeedImpactSignals()
+        {
+            ReadOnlySpan<HighSpeedImpactSignal> impactSignals = SignalBus<HighSpeedImpactSignal>.GetFrameSnapshot();
+            int startIndex = math.max(0, impactSignals.Length - KineticImpactSignalScanLimit);
+            for (int i = startIndex; i < impactSignals.Length; i++)
+                TryHandleHighSpeedImpactSignal(in impactSignals[i]);
+        }
+
+        private bool TryHandleHighSpeedImpactSignal(in HighSpeedImpactSignal signal)
+        {
+            if (IsDuplicateHighSpeedImpactSignal(in signal) ||
+                !math.isfinite(signal.ImpactSpeed) ||
+                !math.isfinite(signal.LostKineticEnergy))
+            {
+                return false;
+            }
+
+            float speed = math.max(0f, signal.ImpactSpeed);
+            float speedSq = speed * speed;
+            float lostEnergy = math.max(0f, signal.LostKineticEnergy);
+            float mass = speedSq > 0.0001f ? (lostEnergy + lostEnergy) * math.rcp(speedSq) : 0f;
+            float kineticEnergy = 0.5f * mass * speedSq;
+            if (!math.isfinite(kineticEnergy) || kineticEnergy < KineticImpactMinimumEnergyJoules)
+                return false;
+
+            kineticEnergy = math.clamp(kineticEnergy, KineticImpactMinimumEnergyJoules, KineticImpactMaximumSafeEnergyJoules);
+            float3 runtime = signal.PointAup.ToRuntimeFloat3();
+            if (!math.all(math.isfinite(runtime)))
+                return false;
+
+            float energy01 = math.saturate(kineticEnergy * math.rcp(KineticImpactReferenceEnergyJoules));
+            float maxDistance = math.lerp(PhysicsImpactStressRadiusMeters, 64f, energy01);
+            bool playerOwnedImpact =
+                signal.SourceKind == HighSpeedImpactSignal.SourcePlayer ||
+                signal.SourceKind == HighSpeedImpactSignal.SourceVehicle;
+            float distance = 0f;
+            if (!playerOwnedImpact &&
+                !TryResolveBoundPlayerDistanceWithin(in signal.PointAup, maxDistance, out distance))
+            {
+                return false;
+            }
+
+            float proximity = playerOwnedImpact
+                ? 1f
+                : 1f - math.saturate(distance * math.rcp(math.max(maxDistance, 0.001f)));
+            if (proximity <= 0.001f)
+                return false;
+
+            Vector3 runtimePosition = new Vector3(runtime.x, runtime.y, runtime.z);
+            if (IsLowTierKineticImpactFallback())
+            {
+                bool queued = TryQueueLowTierKineticImpactClip(runtimePosition, energy01, proximity);
+                if (queued)
                 {
-                    TryBindFromBootstrap();
-                    originTransform = _boundPlayerTransform;
+                    _lastHighSpeedImpactFrame = signal.Frame;
+                    _lastHighSpeedImpactSignature = ResolveHighSpeedImpactSignature(in signal);
                 }
 
-                Vector3 origin = originTransform != null ? originTransform.position : transform.position;
-                tapCount = BuildSdfSonarEchoTaps(origin, originTransform, intensity, inactiveTapBuffer);
+                return queued;
+            }
+
+            float waterlineY = ResolveKineticImpactWaterlineY();
+            bool underwater = runtime.y < waterlineY;
+            bool metalImpact = ResolveHighSpeedImpactMetal(in signal);
+            float lowPassCutoffHz = underwater
+                ? KineticImpactWaterLowPassHertz
+                : AcousticOcclusionUtility.OpenLowPassCutoffHertz;
+            float thudExcitation = math.saturate((0.16f + energy01 * 0.84f) * math.max(0.18f, proximity));
+            float distortion = math.saturate(
+                (kineticEnergy - KineticImpactExtremeEnergyJoules) *
+                math.rcp(math.max(1f, KineticImpactMaximumSafeEnergyJoules - KineticImpactExtremeEnergyJoules)));
+            float impactStress = math.saturate(thudExcitation * math.lerp(0.36f, 0.72f, energy01));
+            float metallic = metalImpact ? math.saturate(thudExcitation * 0.92f) : math.saturate(thudExcitation * 0.24f);
+            float clangExcitation = metalImpact
+                ? math.saturate(thudExcitation * math.lerp(0.42f, 0.86f, energy01))
+                : 0f;
+            float echoExcitation = math.saturate(thudExcitation * math.lerp(0.35f, 0.78f, energy01));
+            float echoDelaySeconds = math.clamp(distance * SoundSpeedWaterMetersPerSecondInv, 0f, SonarEchoMaximumDelaySeconds);
+            float echoAttenuation = math.saturate(math.max(0.12f, proximity) * math.lerp(0.24f, 0.9f, energy01));
+            float pitchScale = math.lerp(0.82f, 1.18f, energy01);
+
+            bool accepted = TryEnqueueImpactAudioEvent(
+                impactStress,
+                metallic,
+                clangExcitation,
+                echoExcitation,
+                echoDelaySeconds,
+                echoAttenuation,
+                lowPassCutoffHz,
+                pitchScale,
+                thudExcitation,
+                KineticImpactThudDurationSeconds,
+                KineticImpactThudStartHertz,
+                KineticImpactThudEndHertz,
+                distortion,
+                lowPassCutoffHz,
+                kineticEnergy);
+            if (!accepted)
+                return false;
+
+            TryPublishKineticImpactEchoTap(runtimePosition, distance, proximity, thudExcitation, lowPassCutoffHz, energy01);
+            if (distortion > 0f)
+                _targetEardrumRuptureTinnitusValue = math.max(_targetEardrumRuptureTinnitusValue, distortion);
+
+            _impactStressImpulseTickValue = math.max(_impactStressImpulseTickValue, impactStress);
+            _lastHighSpeedImpactFrame = signal.Frame;
+            _lastHighSpeedImpactSignature = ResolveHighSpeedImpactSignature(in signal);
+            return true;
+        }
+
+        private bool IsDuplicateHighSpeedImpactSignal(in HighSpeedImpactSignal signal)
+        {
+            return signal.Frame == _lastHighSpeedImpactFrame &&
+                   ResolveHighSpeedImpactSignature(in signal) == _lastHighSpeedImpactSignature;
+        }
+
+        private static uint ResolveHighSpeedImpactSignature(in HighSpeedImpactSignal signal)
+        {
+            uint hash = 2166136261u;
+            hash = (hash ^ signal.SourceHash) * 16777619u;
+            hash = (hash ^ signal.TargetHash) * 16777619u;
+            hash = (hash ^ math.asuint(signal.ImpactSpeed)) * 16777619u;
+            hash = (hash ^ math.asuint(signal.LostKineticEnergy)) * 16777619u;
+            hash = (hash ^ signal.SourceKind) * 16777619u;
+            hash = (hash ^ signal.Flags) * 16777619u;
+            return hash;
+        }
+
+        private static bool ResolveHighSpeedImpactMetal(in HighSpeedImpactSignal signal)
+        {
+            return signal.SourceKind == HighSpeedImpactSignal.SourcePlayer ||
+                   signal.SourceKind == HighSpeedImpactSignal.SourceVehicle ||
+                   signal.SourceKind == HighSpeedImpactSignal.SourceLeviathan;
+        }
+
+        private static bool IsLowTierKineticImpactFallback()
+        {
+            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
+            return GlobalRegistry.H8_LOW_MEMORY_PROFILE ||
+                   tier == HectonQualityTier.Low ||
+                   tier == HectonQualityTier.Mx350 ||
+                   tier == HectonQualityTier.Unknown;
+        }
+
+        private bool TryQueueLowTierKineticImpactClip(Vector3 runtimePosition, float energy01, float proximity)
+        {
+            if (lowTierKineticImpactClip == null || !IsFiniteVector(runtimePosition))
+                return false;
+
+            IAudioService audio = GlobalRegistry.Audio;
+            if (audio == null || !audio.IsInitialized)
+                return false;
+
+            float volume = math.saturate((0.18f + energy01 * 0.82f) * math.max(0.2f, proximity));
+            float pitch = math.clamp(math.lerp(0.82f, 1.08f, energy01), 0.1f, 3f);
+            audio.PlayAtPoint(lowTierKineticImpactClip, runtimePosition, volume, pitch);
+            return true;
+        }
+
+        private float ResolveKineticImpactWaterlineY()
+        {
+            if (playerMovement != null && math.isfinite(playerMovement.CurrentWaterSurfaceY))
+                return playerMovement.CurrentWaterSurfaceY;
+
+            return KineticImpactDefaultWaterlineY;
+        }
+
+        private bool TryPublishKineticImpactEchoTap(
+            Vector3 runtimePosition,
+            float distanceMeters,
+            float proximity,
+            float thudExcitation,
+            float lowPassCutoffHz,
+            float energy01)
+        {
+            if (!_sonarEchoTapUploadQueue.IsCreated ||
+                thudExcitation <= KineticImpactThudMinimumExcitation)
+            {
+                return false;
+            }
+
+            int inactiveIndex = 1 - Volatile.Read(ref _pendingSonarStateReadIndex);
+            NativeArray<SonarEchoTap> inactiveTapBuffer = inactiveIndex == 0
+                ? _pendingSonarEchoTapsA
+                : _pendingSonarEchoTapsB;
+            if (!inactiveTapBuffer.IsCreated)
+                return false;
+
+            ClearSonarEchoTapUploadQueue();
+            int queuedTapCount = 0;
+            float panStereo = ResolveKineticImpactPanStereo(runtimePosition);
+            float delaySeconds = math.clamp(
+                math.max(0.035f, distanceMeters * SoundSpeedWaterMetersPerSecondInv),
+                0.025f,
+                SonarEchoMaximumDelaySeconds);
+            SonarEchoTap tap = BuildSonarEchoTap(
+                delaySeconds,
+                math.lerp(0.82f, 1.08f, energy01),
+                math.saturate(thudExcitation * math.max(0.12f, proximity)),
+                panStereo,
+                lowPassCutoffHz);
+            if (!TryEnqueueSonarEchoTap(tap, ref queuedTapCount))
+                return false;
+
+            int tapCount = DrainSonarEchoTapUploadQueue(inactiveTapBuffer);
+            if (tapCount <= 0)
+                return false;
+
+            PublishPendingSonarState(
+                inactiveIndex,
+                new SonarTriggerState
+                {
+                    Sequence = Interlocked.Increment(ref _pendingSonarSequence),
+                    EchoRevision = 3,
+                    StartFrame = Interlocked.Read(ref _producedSampleCount),
+                    Intensity = math.saturate(thudExcitation * KineticImpactPortalEchoMasterGain),
+                    EchoTapCount = tapCount,
+                    Flags = SonarTriggerFlagKineticImpactEcho
+                },
+                tapCount);
+            return true;
+        }
+
+        private float ResolveKineticImpactPanStereo(Vector3 runtimePosition)
+        {
+            if (_boundPlayerTransform == null || !IsFiniteVector(runtimePosition))
+                return 0f;
+
+            Vector3 toImpact = runtimePosition - _boundPlayerTransform.position;
+            float magnitudeSq = toImpact.sqrMagnitude;
+            if (magnitudeSq <= 0.0001f || !math.isfinite(magnitudeSq))
+                return 0f;
+
+            Vector3 direction = toImpact * math.rsqrt(magnitudeSq);
+            return math.clamp(Vector3.Dot(_boundPlayerTransform.right, direction), -1f, 1f);
+        }
+
+        private static bool IsActiveSonarAcousticPing(in AcousticPingSignal signal)
+        {
+            return signal.Channel == AcousticPingSignal.ChannelActiveSonar ||
+                   (signal.Flags & AcousticPingSignal.FlagActiveSonar) != 0;
+        }
+
+        private Transform ResolveSonarOriginTransform()
+        {
+            Transform originTransform = _boundPlayerTransform;
+            if (originTransform == null)
+            {
+                TryBindFromBootstrap();
+                originTransform = _boundPlayerTransform;
+            }
+
+            return originTransform;
+        }
+
+        private void TriggerSonarEchoFromOrigin(Vector3 origin, Transform originTransform, float intensity)
+        {
+            if (!IsFiniteVector(origin))
+                return;
+
+            long scheduledStartFrame = Interlocked.Read(ref _producedSampleCount);
+            int sequence = Interlocked.Increment(ref _pendingSonarSequence);
+            int inactiveIndex = 1 - Volatile.Read(ref _pendingSonarStateReadIndex);
+            NativeArray<SonarEchoTap> inactiveTapBuffer = inactiveIndex == 0 ? _pendingSonarEchoTapsA : _pendingSonarEchoTapsB;
+            float clampedIntensity = math.saturate(intensity);
+            int tapCount = 0;
+            int echoRevision = 2;
+
+            bool sdfJobBusy = Volatile.Read(ref _sonarEcholocationJobScheduled) != 0;
+            if (!sdfJobBusy &&
+                inactiveTapBuffer.IsCreated &&
+                TryScheduleSdfSonarEchoJob(
+                    origin,
+                    originTransform,
+                    clampedIntensity,
+                    sequence,
+                    scheduledStartFrame))
+            {
+                PublishPendingSonarState(
+                    inactiveIndex,
+                    new SonarTriggerState
+                    {
+                        Sequence = sequence,
+                        EchoRevision = 1,
+                        StartFrame = scheduledStartFrame,
+                        Intensity = clampedIntensity,
+                        EchoTapCount = 0
+                    },
+                    0);
+                TryPublishPredatorPingBack(origin, clampedIntensity);
+                RaiseProceduralPingTriggered(scheduledStartFrame, clampedIntensity);
+                return;
+            }
+
+            if (sdfJobBusy)
+            {
+                PublishPendingSonarState(
+                    inactiveIndex,
+                    new SonarTriggerState
+                    {
+                        Sequence = sequence,
+                        EchoRevision = 1,
+                        StartFrame = scheduledStartFrame,
+                        Intensity = clampedIntensity,
+                        EchoTapCount = 0
+                    },
+                    0);
+                TryPublishPredatorPingBack(origin, clampedIntensity);
+                RaiseProceduralPingTriggered(scheduledStartFrame, clampedIntensity);
+                return;
+            }
+
+            if (inactiveTapBuffer.IsCreated)
+            {
+                tapCount = BuildSdfSonarEchoTaps(origin, originTransform, clampedIntensity, inactiveTapBuffer);
+                TryAppendPredatorFleshEchoTapToBuffer(origin, originTransform, clampedIntensity, inactiveTapBuffer, ref tapCount);
                 if (tapCount <= 0 && sonarSdfFallbackGhostEchoes)
                 {
                     int tapLimit = math.min(SonarGhostEchoTapCount, inactiveTapBuffer.Length);
                     for (int tapIndex = 0; tapIndex < tapLimit; tapIndex++)
-                        inactiveTapBuffer[tapIndex] = BuildGhostSonarEchoTap(sequence, tapIndex, intensity);
+                        inactiveTapBuffer[tapIndex] = BuildGhostSonarEchoTap(sequence, tapIndex, clampedIntensity);
                     tapCount = tapLimit;
                     echoRevision = 1;
                 }
 
-                TryPublishPredatorPingBack(origin, intensity);
+                TryPublishPredatorPingBack(origin, clampedIntensity);
             }
 
-            SonarTriggerState pendingState = new SonarTriggerState
-            {
-                Sequence = sequence,
-                EchoRevision = echoRevision,
-                StartFrame = scheduledStartFrame,
-                Intensity = math.saturate(intensity),
-                EchoTapCount = tapCount
-            };
-            PublishPendingSonarState(inactiveIndex, pendingState, tapCount);
+            PublishPendingSonarState(
+                inactiveIndex,
+                new SonarTriggerState
+                {
+                    Sequence = sequence,
+                    EchoRevision = echoRevision,
+                    StartFrame = scheduledStartFrame,
+                    Intensity = clampedIntensity,
+                    EchoTapCount = tapCount
+                },
+                tapCount);
+            RaiseProceduralPingTriggered(scheduledStartFrame, clampedIntensity);
+        }
 
+        private void RaiseProceduralPingTriggered(long scheduledStartFrame, float intensity)
+        {
             ProceduralAudioEvents.RaiseAudioPingTriggered(
                 scheduledStartFrame,
                 math.max(_sampleRate, 1),
                 math.saturate(intensity),
                 SonarChirpDurationSeconds);
+        }
+
+        private void RecordDirectSonarPing(Vector3 origin, float intensity)
+        {
+            _lastDirectSonarPingFrame = Time.frameCount;
+            _lastDirectSonarPingIntensity = math.saturate(intensity);
+            _lastDirectSonarPingOrigin = origin;
+        }
+
+        private bool IsDuplicateDirectSonarPing(Vector3 origin, float intensity)
+        {
+            int frameDelta = Time.frameCount - _lastDirectSonarPingFrame;
+            if ((uint)frameDelta > 2u)
+                return false;
+
+            if (math.abs(math.saturate(intensity) - _lastDirectSonarPingIntensity) > 0.02f)
+                return false;
+
+            return (origin - _lastDirectSonarPingOrigin).sqrMagnitude <= 1f;
+        }
+
+        private static bool IsFiniteVector(Vector3 value)
+        {
+            return math.isfinite(value.x) &&
+                   math.isfinite(value.y) &&
+                   math.isfinite(value.z);
+        }
+
+        private bool TryScheduleSdfSonarEchoJob(
+            Vector3 origin,
+            Transform originTransform,
+            float intensity,
+            int sequence,
+            long scheduledStartFrame)
+        {
+            if (Volatile.Read(ref _sonarEcholocationJobScheduled) != 0 ||
+                !_sonarEcholocationHits.IsCreated ||
+                !HectonVoxelVolume.TryGetClosestPublishedSonarSdfPayload(
+                    origin,
+                    out NativeArray<byte> encodedSdf,
+                    out NativeArray<byte> audioMaterialIds,
+                    out Vector3Int gridDimensions,
+                    out Vector3 volumeOrigin,
+                    out Vector3 voxelCellSize,
+                    out float sdfRange,
+                    out int version))
+            {
+                return false;
+            }
+
+            int rayCount = math.clamp(ResolveSonarSdfProbeCount(), 1, math.min(SonarEchoTapCapacity, _sonarEcholocationHits.Length));
+            float maxDistance = math.clamp(
+                sonarSdfMaximumProbeDistanceMeters,
+                math.max(1f, sonarSdfProbeIntervalMeters),
+                MaximumProbeDistanceMeters);
+            float stepMeters = math.clamp(sonarSdfProbeIntervalMeters, 1f, maxDistance);
+            Vector3 forward = NormalizeVector(originTransform != null ? originTransform.forward : Vector3.forward, Vector3.forward);
+            Vector3 right = NormalizeVector(originTransform != null ? originTransform.right : Vector3.right, Vector3.right);
+            Vector3 up = NormalizeVector(originTransform != null ? originTransform.up : Vector3.up, Vector3.up);
+            AcousticEcholocationRaymarchJob job = new AcousticEcholocationRaymarchJob
+            {
+                EncodedSdf = encodedSdf,
+                AudioMaterialIds = audioMaterialIds,
+                GridDimensions = new int3(gridDimensions.x, gridDimensions.y, gridDimensions.z),
+                VolumeOrigin = new float3(volumeOrigin.x, volumeOrigin.y, volumeOrigin.z),
+                CellSize = new float3(voxelCellSize.x, voxelCellSize.y, voxelCellSize.z),
+                SdfRange = sdfRange,
+                PingOrigin = new float3(origin.x, origin.y, origin.z),
+                ListenerPosition = new float3(origin.x, origin.y, origin.z),
+                Forward = new float3(forward.x, forward.y, forward.z),
+                Right = new float3(right.x, right.y, right.z),
+                Up = new float3(up.x, up.y, up.z),
+                MaxDistanceMeters = maxDistance,
+                StepMeters = stepMeters,
+                Intensity01 = math.saturate(intensity),
+                ReflectivityConstant = EcholocationReflectivityConstant,
+                SoundSpeedInv = SoundSpeedWaterMetersPerSecondInv,
+                DensityThreshold01 = EcholocationDensityThreshold01,
+                MinimumLowPassHertz = AcousticOcclusionUtility.MinimumLowPassCutoffHertz,
+                OpenLowPassHertz = AcousticOcclusionUtility.OpenLowPassCutoffHertz,
+                AbsorptionCoefficient = SonarEchoAbsorptionCoefficient,
+                ReferenceDistanceMeters = SonarEchoReferenceDistanceMeters,
+                RayCount = rayCount,
+                Hits = _sonarEcholocationHits
+            };
+
+            _sonarEcholocationScheduledSequence = sequence;
+            _sonarEcholocationScheduledRayCount = rayCount;
+            _sonarEcholocationScheduledSdfVersion = version;
+            _sonarEcholocationScheduledShiftSequence = HectonFloatingOrigin.CurrentShiftSequence;
+            _sonarEcholocationScheduledStartFrame = scheduledStartFrame;
+            _sonarEcholocationScheduledIntensity = math.saturate(intensity);
+            _sonarEcholocationScheduledOrigin = origin;
+            _sonarEcholocationScheduledTransform = originTransform;
+            _sonarEcholocationJobHandle = job.Schedule(rayCount, math.min(8, rayCount));
+            Volatile.Write(ref _sonarEcholocationJobScheduled, 1);
+            return true;
+        }
+
+        private bool TryCompleteSdfSonarEchoJob(bool forceComplete)
+        {
+            if (Volatile.Read(ref _sonarEcholocationJobScheduled) == 0)
+                return false;
+
+            if (!DispatcherJobSwap.TryComplete(ref _sonarEcholocationJobHandle, forceComplete))
+                return false;
+
+            Volatile.Write(ref _sonarEcholocationJobScheduled, 0);
+            if (forceComplete)
+                return true;
+
+            if (_sonarEcholocationScheduledSequence != Volatile.Read(ref _pendingSonarSequence))
+                return true;
+
+            if (HectonFloatingOrigin.IsShiftInProgress ||
+                _sonarEcholocationScheduledShiftSequence != HectonFloatingOrigin.CurrentShiftSequence)
+            {
+                Transform originTransform = ResolveSonarOriginTransform();
+                Vector3 origin = originTransform != null
+                    ? originTransform.position
+                    : _sonarEcholocationScheduledOrigin;
+                TryScheduleSdfSonarEchoJob(
+                    origin,
+                    originTransform,
+                    _sonarEcholocationScheduledIntensity,
+                    _sonarEcholocationScheduledSequence,
+                    _sonarEcholocationScheduledStartFrame);
+                return true;
+            }
+
+            PublishCompletedSdfSonarEchoJob();
+            return true;
+        }
+
+        private void PublishCompletedSdfSonarEchoJob()
+        {
+            if (_sonarEcholocationScheduledSequence != Volatile.Read(ref _pendingSonarSequence))
+                return;
+
+            int inactiveIndex = 1 - Volatile.Read(ref _pendingSonarStateReadIndex);
+            NativeArray<SonarEchoTap> inactiveTapBuffer = inactiveIndex == 0 ? _pendingSonarEchoTapsA : _pendingSonarEchoTapsB;
+            if (!inactiveTapBuffer.IsCreated)
+                return;
+
+            ClearSonarEchoTapUploadQueue();
+            int queuedTapCount = 0;
+            int rayCount = math.clamp(_sonarEcholocationScheduledRayCount, 0, math.min(SonarEchoTapCapacity, _sonarEcholocationHits.Length));
+            Transform originTransform = _sonarEcholocationScheduledTransform;
+            Vector3 right = originTransform != null ? originTransform.right : Vector3.right;
+            for (int rayIndex = 0; rayIndex < rayCount; rayIndex++)
+            {
+                AcousticEcholocationRayHit hit = _sonarEcholocationHits[rayIndex];
+                if (hit.Hit == 0 || hit.Gain <= 0.000001f)
+                    continue;
+
+                Vector3 direction = (Vector3)hit.Direction;
+                byte audioMaterialId = NormalizeSonarAudioMaterialId(hit.AudioMaterialId);
+                float dopplerRatio = ResolveSdfSonarEchoDopplerRatio(direction) *
+                                     ResolveSonarMaterialPitchScale(audioMaterialId);
+                float panStereo = originTransform != null
+                    ? math.clamp(Vector3.Dot(right, direction), -1f, 1f)
+                    : 0f;
+                float lowPassCutoffHz = ResolveDepthMuffledSonarLowPass(
+                    ResolveSonarMaterialLowPassCutoffHz(audioMaterialId, hit.LowPassCutoffHertz));
+                if (!TryEnqueueSonarEchoTap(
+                        BuildSonarEchoTap(
+                            hit.DelaySeconds,
+                            dopplerRatio,
+                            hit.Gain * ResolveSonarDepthMufflingGain(),
+                            panStereo,
+                            lowPassCutoffHz),
+                        ref queuedTapCount))
+                {
+                    break;
+                }
+
+                PublishPingReturnSignal((Vector3)hit.Point, hit.RayDistanceMeters, hit.Gain, hit.DelaySeconds, audioMaterialId);
+            }
+
+            TryAppendPredatorFleshEchoTapToQueue(
+                _sonarEcholocationScheduledOrigin,
+                originTransform,
+                _sonarEcholocationScheduledIntensity,
+                ref queuedTapCount);
+
+            int tapCount = DrainSonarEchoTapUploadQueue(inactiveTapBuffer);
+            int echoRevision = 2;
+            if (tapCount <= 0 && sonarSdfFallbackGhostEchoes)
+            {
+                int tapLimit = math.min(SonarGhostEchoTapCount, inactiveTapBuffer.Length);
+                for (int tapIndex = 0; tapIndex < tapLimit; tapIndex++)
+                    inactiveTapBuffer[tapIndex] = BuildGhostSonarEchoTap(_sonarEcholocationScheduledSequence, tapIndex, _sonarEcholocationScheduledIntensity);
+                tapCount = tapLimit;
+            }
+
+            PublishPendingSonarState(
+                inactiveIndex,
+                new SonarTriggerState
+                {
+                    Sequence = _sonarEcholocationScheduledSequence,
+                    EchoRevision = echoRevision,
+                    StartFrame = _sonarEcholocationScheduledStartFrame,
+                    Intensity = _sonarEcholocationScheduledIntensity,
+                    EchoTapCount = tapCount
+                },
+                tapCount);
+        }
+
+        private void ClearSonarEchoTapUploadQueue()
+        {
+            if (!_sonarEchoTapUploadQueue.IsCreated)
+                return;
+
+            int guard = SonarEchoTapCapacity;
+            while (guard-- > 0 && _sonarEchoTapUploadQueue.TryDequeue(out _))
+            {
+            }
+        }
+
+        private void PrewarmSonarEchoTapUploadQueue()
+        {
+            if (!_sonarEchoTapUploadQueue.IsCreated)
+                return;
+
+            for (int i = 0; i < SonarEchoTapCapacity; i++)
+                _sonarEchoTapUploadQueue.Enqueue(default);
+            ClearSonarEchoTapUploadQueue();
+        }
+
+        private bool TryEnqueueSonarEchoTap(SonarEchoTap tap, ref int queuedTapCount)
+        {
+            if (!_sonarEchoTapUploadQueue.IsCreated || queuedTapCount >= SonarEchoTapCapacity)
+                return false;
+
+            _sonarEchoTapUploadQueue.Enqueue(tap);
+            queuedTapCount++;
+            return true;
+        }
+
+        private int DrainSonarEchoTapUploadQueue(NativeArray<SonarEchoTap> destination)
+        {
+            if (!destination.IsCreated || !_sonarEchoTapUploadQueue.IsCreated)
+                return 0;
+
+            int tapCount = 0;
+            while (tapCount < destination.Length &&
+                   tapCount < SonarEchoTapCapacity &&
+                   _sonarEchoTapUploadQueue.TryDequeue(out SonarEchoTap tap))
+            {
+                destination[tapCount++] = tap;
+            }
+
+            return tapCount;
         }
 
         private void HandleAcousticEchoReturned(AcousticEchoEvent echoEvent)
@@ -3051,13 +3847,16 @@ namespace Hecton8.Audio
                 }
 
                 float distanceMeters = math.clamp(hit.Distance, MinimumProbeDistanceMeters, maxDistance);
+                float returnDistanceMeters = math.max(
+                    MinimumProbeDistanceMeters,
+                    ApproximateDistanceMetersFromSq((hit.Point - origin).sqrMagnitude));
                 byte audioMaterialId = ResolveSdfSonarAudioMaterialId(hitVolume, hit.Point);
                 float attenuation = ResolveSdfSonarEchoAttenuation(distanceMeters, intensity, audioMaterialId);
                 if (attenuation <= 0.0001f)
                     continue;
 
                 float delaySeconds = math.clamp(
-                    distanceMeters * SoundSpeedWaterMetersPerSecondInv,
+                    (distanceMeters + returnDistanceMeters) * SoundSpeedWaterMetersPerSecondInv,
                     0f,
                     SonarEchoMaximumDelaySeconds);
                 float dopplerRatio = ResolveSdfSonarEchoDopplerRatio(direction) *
@@ -3111,16 +3910,20 @@ namespace Hecton8.Audio
 
             if (probeCount <= SonarSdfLowProbeCount)
             {
-                switch (probeIndex & 3)
+                switch (probeIndex & 7)
                 {
                     case 0: return forward;
-                    case 1: return right;
-                    case 2: return -forward;
-                    default: return -right;
+                    case 1: return NormalizeVector(forward + right, forward);
+                    case 2: return right;
+                    case 3: return -forward;
+                    case 4: return -right;
+                    case 5: return up;
+                    case 6: return -up;
+                    default: return NormalizeVector(forward - right, forward);
                 }
             }
 
-            if (probeCount <= SonarSdfDefaultProbeCount)
+            if (probeCount <= 16)
             {
                 switch (probeIndex & 7)
                 {
@@ -3135,25 +3938,19 @@ namespace Hecton8.Audio
                 }
             }
 
-            switch (probeIndex & 15)
-            {
-                case 0: return forward;
-                case 1: return NormalizeVector(forward + right, forward);
-                case 2: return right;
-                case 3: return NormalizeVector(-forward + right, right);
-                case 4: return -forward;
-                case 5: return NormalizeVector(-forward - right, -forward);
-                case 6: return -right;
-                case 7: return NormalizeVector(forward - right, forward);
-                case 8: return up;
-                case 9: return -up;
-                case 10: return NormalizeVector(forward + up, forward);
-                case 11: return NormalizeVector(forward - up, forward);
-                case 12: return NormalizeVector(right + up, right);
-                case 13: return NormalizeVector(right - up, right);
-                case 14: return NormalizeVector(-right + up, -right);
-                default: return NormalizeVector(-right - up, -right);
-            }
+            int lane = probeIndex & 31;
+            float sx = (lane & 1) == 0 ? 1f : -1f;
+            float sy = (lane & 2) == 0 ? 1f : -1f;
+            float sz = (lane & 4) == 0 ? 1f : -1f;
+            int weightSet = (lane >> 3) & 3;
+            float forwardWeight = weightSet == 0 ? 1f : weightSet == 1 ? 0.55f : weightSet == 2 ? 0.25f : 0.75f;
+            float rightWeight = weightSet == 1 ? 1f : weightSet == 2 ? 0.55f : weightSet == 3 ? 0.25f : 0.75f;
+            float upWeight = weightSet == 2 ? 1f : weightSet == 3 ? 0.55f : weightSet == 0 ? 0.25f : 0.75f;
+            return NormalizeVector(
+                right * (sx * rightWeight) +
+                up * (sy * upWeight) +
+                forward * (sz * forwardWeight),
+                forward);
         }
 
         private static Vector3 NormalizeVector(Vector3 value, Vector3 fallback)
@@ -3176,11 +3973,26 @@ namespace Hecton8.Audio
                     case SonarAudioMaterialIdMetal:
                     case SonarAudioMaterialIdRock:
                     case SonarAudioMaterialIdGlass:
+                    case SonarAudioMaterialIdBiological:
                         return audioMaterialId;
                 }
             }
 
             return SonarAudioMaterialIdRock;
+        }
+
+        private static byte NormalizeSonarAudioMaterialId(byte audioMaterialId)
+        {
+            switch (audioMaterialId)
+            {
+                case SonarAudioMaterialIdMetal:
+                case SonarAudioMaterialIdRock:
+                case SonarAudioMaterialIdGlass:
+                case SonarAudioMaterialIdBiological:
+                    return audioMaterialId;
+                default:
+                    return SonarAudioMaterialIdRock;
+            }
         }
 
         private float ResolveSdfSonarEchoAttenuation(float distanceMeters, float intensity, byte audioMaterialId)
@@ -3292,9 +4104,122 @@ namespace Hecton8.Audio
                 0.62f,
                 math.max(12f, radius * 0.45f),
                 sourceBodyInstanceId,
-                SonarAudioMaterialIdDefault,
+                SonarAudioMaterialIdBiological,
                 AcousticImpulseFlags.Leviathan | AcousticImpulseFlags.Large);
             PhysicsEventBus.NotifyAcousticImpulse(in impulseEvent);
+        }
+
+        private void TryAppendPredatorFleshEchoTapToBuffer(
+            Vector3 origin,
+            Transform originTransform,
+            float intensity,
+            NativeArray<SonarEchoTap> tapBuffer,
+            ref int tapCount)
+        {
+            if (!tapBuffer.IsCreated || tapCount >= tapBuffer.Length)
+                return;
+
+            if (!TryBuildPredatorFleshEchoTap(
+                    origin,
+                    originTransform,
+                    intensity,
+                    out SonarEchoTap tap,
+                    out Vector3 hitPosition,
+                    out float distanceMeters,
+                    out float strength))
+            {
+                return;
+            }
+
+            tapBuffer[tapCount++] = tap;
+            PublishPingReturnSignal(
+                hitPosition,
+                distanceMeters,
+                strength,
+                tap.DelaySeconds,
+                SonarAudioMaterialIdBiological);
+        }
+
+        private void TryAppendPredatorFleshEchoTapToQueue(
+            Vector3 origin,
+            Transform originTransform,
+            float intensity,
+            ref int queuedTapCount)
+        {
+            if (!TryBuildPredatorFleshEchoTap(
+                    origin,
+                    originTransform,
+                    intensity,
+                    out SonarEchoTap tap,
+                    out Vector3 hitPosition,
+                    out float distanceMeters,
+                    out float strength))
+            {
+                return;
+            }
+
+            if (!TryEnqueueSonarEchoTap(tap, ref queuedTapCount))
+                return;
+
+            PublishPingReturnSignal(
+                hitPosition,
+                distanceMeters,
+                strength,
+                tap.DelaySeconds,
+                SonarAudioMaterialIdBiological);
+        }
+
+        private bool TryBuildPredatorFleshEchoTap(
+            Vector3 origin,
+            Transform originTransform,
+            float intensity,
+            out SonarEchoTap tap,
+            out Vector3 hitPosition,
+            out float distanceMeters,
+            out float strength)
+        {
+            tap = default;
+            hitPosition = default;
+            distanceMeters = 0f;
+            strength = 0f;
+
+            float radius = math.max(1f, sonarPredatorPingBackRadiusMeters);
+            if (!WorldSpatialHashGrid.TryGetNearestAggressiveBioform(
+                    origin,
+                    radius,
+                    ~0,
+                    _boundPlayerTransform,
+                    out SpatialQueryHit hit) ||
+                !(hit.Owner is FaunaBrain brain) ||
+                brain.SpeciesProfile == null ||
+                !brain.SpeciesProfile.isLeviathan)
+            {
+                return false;
+            }
+
+            distanceMeters = ApproximateDistanceMetersFromSq(hit.DistanceSqr);
+            float range01 = 1f - math.saturate(distanceMeters * math.rcp(radius));
+            strength = math.saturate(math.saturate(intensity) * range01 * 0.74f);
+            if (strength <= 0.0001f)
+                return false;
+
+            hitPosition = hit.Position;
+            Vector3 direction = NormalizeVector(hitPosition - origin, Vector3.forward);
+            float returnDistance = math.max(MinimumProbeDistanceMeters, distanceMeters);
+            float delaySeconds = math.clamp(
+                (distanceMeters + returnDistance) * SoundSpeedWaterMetersPerSecondInv,
+                0f,
+                SonarEchoMaximumDelaySeconds);
+            float panStereo = originTransform != null
+                ? math.clamp(Vector3.Dot(originTransform.right, direction), -1f, 1f)
+                : 0f;
+            tap = BuildSonarEchoTap(
+                delaySeconds,
+                ResolveSonarMaterialPitchScale(SonarAudioMaterialIdBiological),
+                strength,
+                panStereo,
+                ResolveDepthMuffledSonarLowPass(ResolveSonarMaterialLowPassCutoffHz(SonarAudioMaterialIdBiological, 900f)));
+            return true;
         }
 
         private SonarEchoTap BuildGhostSonarEchoTap(int sequence, int tapIndex, float intensity)
@@ -3751,27 +4676,58 @@ namespace Hecton8.Audio
                 return;
 
             float maxDistance = PhysicsImpactStressRadiusMeters;
-            if (!TryResolveBoundPlayerDistanceWithin(stressInfo.WorldPosition, maxDistance, out float distance))
+            Vector3 sourcePosition = ResolveStructuralStressRuntimePosition(in stressInfo);
+            if (!TryResolveBoundPlayerDistanceWithin(sourcePosition, maxDistance, out float distance))
                 return;
 
             float proximity = 1f - math.saturate(distance * math.rcp(math.max(maxDistance, 0.001f)));
-            float stress = math.saturate(stressInfo.Stress01 * math.max(0.25f, proximity));
+            float pressureDelta = math.saturate(math.abs(stressInfo.PressureDelta));
+            float acousticTransmission = math.saturate(stressInfo.AcousticTransmission01);
+            float stress = math.saturate((stressInfo.Stress01 + pressureDelta * 0.65f) * math.max(0.25f, proximity) * math.max(0.12f, acousticTransmission));
             if (stress <= 0f)
                 return;
 
-            float metallic = math.saturate(stress * 0.95f);
-            float clangExcitation = math.saturate(stress * 0.35f);
-            float echoExcitation = math.saturate(stress * 0.45f);
+            float metallic = math.saturate(math.max(stress * 0.95f, pressureDelta));
+            float clangExcitation = math.saturate(stress * 0.35f + pressureDelta * 0.75f);
+            float echoExcitation = math.saturate(stress * 0.45f + pressureDelta * 0.5f);
+            float echoLowPassCutoffHz = math.clamp(
+                stressInfo.LowPassCutoffHz,
+                AcousticOcclusionUtility.MinimumLowPassCutoffHertz,
+                AcousticOcclusionUtility.OpenLowPassCutoffHertz);
             TryEnqueueImpactAudioEvent(
                 stress,
                 metallic,
                 clangExcitation,
                 echoExcitation,
-                0f,
-                0f,
-                AcousticOcclusionUtility.OpenLowPassCutoffHertz,
+                stressInfo.AcousticDelaySeconds,
+                acousticTransmission,
+                echoLowPassCutoffHz,
                 stressInfo.PitchScale);
             _impactStressImpulseTickValue = math.max(_impactStressImpulseTickValue, stress);
+            _structuralHullStressVelocityTickValue = math.max(_structuralHullStressVelocityTickValue, pressureDelta);
+            _structuralPressureImpulseTickValue = math.max(_structuralPressureImpulseTickValue, pressureDelta);
+            _structuralSnapTickValue = math.max(_structuralSnapTickValue, math.saturate(pressureDelta * 1.15f));
+            _targetHullPressureDepthValue = math.max(_targetHullPressureDepthValue, ResolveHullPressureDepth01(stressInfo.DepthMeters));
+            if (pressureDelta > 0.08f || stress > 0.65f)
+            {
+                float hapticDrive = math.saturate(stress * 0.45f + pressureDelta * 0.65f);
+                Hecton8.Tools.ToolHapticsRuntime.EnqueueCommand(
+                    hapticDrive * 0.4f,
+                    hapticDrive,
+                    0.08f + hapticDrive * 0.11f,
+                    8f,
+                    3,
+                    0b0011,
+                    2);
+            }
+        }
+
+        private static Vector3 ResolveStructuralStressRuntimePosition(in StructuralStressAudioInfo stressInfo)
+        {
+            float3 runtime = stressInfo.SourceAup.ToRuntimeFloat3();
+            return math.all(math.isfinite(runtime))
+                ? new Vector3(runtime.x, runtime.y, runtime.z)
+                : stressInfo.WorldPosition;
         }
 
         private static byte ResolveDominantImpactMaterialId(byte primaryMaterialId, byte secondaryMaterialId)
@@ -3853,6 +4809,9 @@ namespace Hecton8.Audio
                 case SonarAudioMaterialIdGlass:
                     return 1.34f;
 
+                case SonarAudioMaterialIdBiological:
+                    return 0.72f;
+
                 default:
                     return 1f;
             }
@@ -3870,6 +4829,9 @@ namespace Hecton8.Audio
 
                 case SonarAudioMaterialIdGlass:
                     return 1.18f;
+
+                case SonarAudioMaterialIdBiological:
+                    return 0.74f;
 
                 default:
                     return 0.86f;
@@ -3892,6 +4854,9 @@ namespace Hecton8.Audio
 
                 case SonarAudioMaterialIdGlass:
                     return math.clamp(math.max(cutoff, 6800f), AcousticOcclusionUtility.MinimumLowPassCutoffHertz, AcousticOcclusionUtility.OpenLowPassCutoffHertz);
+
+                case SonarAudioMaterialIdBiological:
+                    return math.clamp(math.min(cutoff, 1150f), AcousticOcclusionUtility.MinimumLowPassCutoffHertz, AcousticOcclusionUtility.OpenLowPassCutoffHertz);
 
                 default:
                     return cutoff;
@@ -4092,20 +5057,23 @@ namespace Hecton8.Audio
             _mixScratch = new NativeArray<float>(_frameCapacity, Allocator.AudioKernel, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<float>[frameCapacity] - mixed procedural audio worklet scratch - owner: PlayerCriticalProceduralAudioRenderer
             _stereoMixScratch = new NativeArray<float>(_frameCapacity * BinauralOutputChannels, Allocator.AudioKernel, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<float>[frameCapacity*2] - stereo binaural output scratch - owner: PlayerCriticalProceduralAudioRenderer
             _sonarEchoDelay = new NativeArray<float>(SonarEchoDelayCapacity, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[131072] - sonar linear echo delay ring - owner: PlayerCriticalProceduralAudioRenderer
-            _pendingSonarEchoTapsA = new NativeArray<SonarEchoTap>(SonarEchoTapCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<SonarEchoTap>[16] - pending sonar echo taps A - owner: PlayerCriticalProceduralAudioRenderer
-            _pendingSonarEchoTapsB = new NativeArray<SonarEchoTap>(SonarEchoTapCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<SonarEchoTap>[16] - pending sonar echo taps B - owner: PlayerCriticalProceduralAudioRenderer
-            _workerSonarEchoTaps = new NativeArray<SonarEchoTap>(SonarEchoTapCapacity, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<SonarEchoTap>[16] - worker-owned sonar tap snapshot prevents main-thread tap tearing - owner: PlayerCriticalProceduralAudioRenderer
-            _sonarEchoReadCursors = new NativeArray<float>(SonarEchoTapCapacity, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[16] - sonar echo read cursors per tap - owner: PlayerCriticalProceduralAudioRenderer
-            _sonarEchoFilterInput1 = new NativeArray<float>(SonarEchoTapCapacity, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[16] - sonar echo low-pass x1 state per tap - owner: PlayerCriticalProceduralAudioRenderer
-            _sonarEchoFilterInput2 = new NativeArray<float>(SonarEchoTapCapacity, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[16] - sonar echo low-pass x2 state per tap - owner: PlayerCriticalProceduralAudioRenderer
-            _sonarEchoFilterOutput1 = new NativeArray<float>(SonarEchoTapCapacity, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[16] - sonar echo low-pass y1 state per tap - owner: PlayerCriticalProceduralAudioRenderer
-            _sonarEchoFilterOutput2 = new NativeArray<float>(SonarEchoTapCapacity, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[16] - sonar echo low-pass y2 state per tap - owner: PlayerCriticalProceduralAudioRenderer
+            _pendingSonarEchoTapsA = new NativeArray<SonarEchoTap>(SonarEchoTapCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<SonarEchoTap>[32] - pending sonar echo taps A - owner: PlayerCriticalProceduralAudioRenderer
+            _pendingSonarEchoTapsB = new NativeArray<SonarEchoTap>(SonarEchoTapCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<SonarEchoTap>[32] - pending sonar echo taps B - owner: PlayerCriticalProceduralAudioRenderer
+            _workerSonarEchoTaps = new NativeArray<SonarEchoTap>(SonarEchoTapCapacity, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<SonarEchoTap>[32] - worker-owned sonar tap snapshot prevents main-thread tap tearing - owner: PlayerCriticalProceduralAudioRenderer
+            _sonarEchoReadCursors = new NativeArray<float>(SonarEchoTapCapacity, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[32] - sonar echo read cursors per tap - owner: PlayerCriticalProceduralAudioRenderer
+            _sonarEchoFilterInput1 = new NativeArray<float>(SonarEchoTapCapacity, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[32] - sonar echo low-pass x1 state per tap - owner: PlayerCriticalProceduralAudioRenderer
+            _sonarEchoFilterInput2 = new NativeArray<float>(SonarEchoTapCapacity, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[32] - sonar echo low-pass x2 state per tap - owner: PlayerCriticalProceduralAudioRenderer
+            _sonarEchoFilterOutput1 = new NativeArray<float>(SonarEchoTapCapacity, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[32] - sonar echo low-pass y1 state per tap - owner: PlayerCriticalProceduralAudioRenderer
+            _sonarEchoFilterOutput2 = new NativeArray<float>(SonarEchoTapCapacity, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[32] - sonar echo low-pass y2 state per tap - owner: PlayerCriticalProceduralAudioRenderer
             _sonarEchoCompositeCandidatesA = new NativeArray<SonarEchoCompositeGroup>(SonarEchoCompositeCandidateCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<SonarEchoCompositeGroup>[32] - active-sonar echo candidates A before Burst AUP hash coalescing - owner: PlayerCriticalProceduralAudioRenderer
             _sonarEchoCompositeCandidatesB = new NativeArray<SonarEchoCompositeGroup>(SonarEchoCompositeCandidateCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<SonarEchoCompositeGroup>[32] - active-sonar echo candidates B before Burst AUP hash coalescing - owner: PlayerCriticalProceduralAudioRenderer
             _sonarEchoCompositeGroups = new NativeArray<SonarEchoCompositeGroup>(SonarEchoCompositeGroupCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<SonarEchoCompositeGroup>[8] - coalesced active-sonar echo groups by 10m AUP hash - owner: PlayerCriticalProceduralAudioRenderer
             _sonarEchoCompositeGroupCountNative = new NativeArray<int>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[1] - sonar echo coalesced group count from Burst hash job - owner: PlayerCriticalProceduralAudioRenderer
             _sonarEchoCompositeSpatialHash = new NativeParallelMultiHashMap<int, int>(SonarEchoCompositeCandidateCapacity, Allocator.Persistent); // COLD ALLOC: NativeParallelMultiHashMap<int,int>[32] - sonar echo AUP cell occupancy before DSP tap publish - owner: PlayerCriticalProceduralAudioRenderer
             _sonarEchoCompositeGroupByHash = new NativeParallelHashMap<int, int>(SonarEchoCompositeGroupCapacity, Allocator.Persistent); // COLD ALLOC: NativeParallelHashMap<int,int>[8] - sonar echo hash-to-output group lookup - owner: PlayerCriticalProceduralAudioRenderer
+            _sonarEcholocationHits = new NativeArray<AcousticEcholocationRayHit>(SonarEchoTapCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<AcousticEcholocationRayHit>[32] - active-ping SDF ray hits - owner: PlayerCriticalProceduralAudioRenderer
+            _sonarEchoTapUploadQueue = new NativeQueue<SonarEchoTap>(Allocator.Persistent); // COLD ALLOC: NativeQueue<SonarEchoTap>[32] - echolocation tap upload lane - owner: PlayerCriticalProceduralAudioRenderer
+            PrewarmSonarEchoTapUploadQueue();
             _impactClangDelay = new NativeArray<float>(ImpactClangDelayCapacity, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[1024] - Karplus-Strong impact delay line - owner: PlayerCriticalProceduralAudioRenderer
             _thrusterCombDelay = new NativeArray<float>(ThrusterCombDelayCapacity, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[4096] - thruster comb filter delay ring - owner: PlayerCriticalProceduralAudioRenderer
             if (!_sabineReverbDelay.IsCreated)
@@ -4131,12 +5099,14 @@ namespace Hecton8.Audio
             _granularVoicePlaybackRate = new NativeArray<float>(GranularVoiceCapacity, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[16] - SOA granular voice pitch scalars - owner: PlayerCriticalProceduralAudioRenderer
             _granularVoiceGain = new NativeArray<float>(GranularVoiceCapacity, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[16] - SOA granular voice gains - owner: PlayerCriticalProceduralAudioRenderer
             _granularTelemetryRing = new NativeArray<GranularAudioTelemetryEntry>(GranularTelemetryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<GranularAudioTelemetryEntry>[300] - fixed granular DSP black-box ring - owner: PlayerCriticalProceduralAudioRenderer
+            _prologueTransitionTelemetryRing = new NativeArray<PrologueAudioTransitionTelemetryEntry>(PrologueTransitionTelemetryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<PrologueAudioTransitionTelemetryEntry>[300] - fixed prologue transition black-box ring - owner: PlayerCriticalProceduralAudioRenderer
+            _prologueTransitionQueue = new NativeQueue<AudioTransitionState>(Allocator.Persistent); // COLD ALLOC: NativeQueue<AudioTransitionState>[32 soft-cap] - prologue visual-sync to DSP command lane - owner: PlayerCriticalProceduralAudioRenderer
             _vwsClipSamplesA = new NativeArray<float>(VwsClipSampleCapacity, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[262144] - VWS PCM clip lane A - owner: PlayerCriticalProceduralAudioRenderer
             _vwsClipSamplesB = new NativeArray<float>(VwsClipSampleCapacity, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[262144] - VWS PCM clip lane B - owner: PlayerCriticalProceduralAudioRenderer
             _vwsClipManagedScratch ??= new float[VwsClipSampleCapacity]; // COLD ALLOC: float[262144] - VWS AudioClip PCM staging - owner: PlayerCriticalProceduralAudioRenderer
             RegisterNativeBuffers(registerSabineReverbDelay: !retainedSabineReverbDelay);
             BakeCaveConvolutionImpulseResponse(_caveConvolutionImpulse);
-            PlayerCriticalMetallicGrainBank.Generate(_metallicGrainBank);
+            PopulateMetallicGrainBank();
             _sampleRingBuffer ??= new AudioFrameSpscRingBuffer();
             int audioBufferCapacity = AudioFrameSpscRingBuffer.ResolvePowerOfTwoCapacity(
                 math.max(frameCapacity * 16, ringBufferCapacityFrames));
@@ -4154,6 +5124,19 @@ namespace Hecton8.Audio
             _sonarEchoCompositeScheduledBufferIndex = -1;
             _sonarEchoCompositeScheduledCandidateCount = 0;
             _sonarEchoCompositeHashJobScheduled = false;
+            Volatile.Write(ref _sonarEcholocationJobScheduled, 0);
+            _sonarEcholocationScheduledSequence = 0;
+            _sonarEcholocationScheduledRayCount = 0;
+            _sonarEcholocationScheduledSdfVersion = 0;
+            _sonarEcholocationScheduledShiftSequence = HectonFloatingOrigin.CurrentShiftSequence;
+            _sonarEcholocationScheduledStartFrame = 0L;
+            _sonarEcholocationScheduledIntensity = 0f;
+            _sonarEcholocationScheduledOrigin = Vector3.zero;
+            _sonarEcholocationScheduledTransform = null;
+            _lastConsumedAcousticPingSignalSequence = 0;
+            _lastDirectSonarPingFrame = -4096;
+            _lastDirectSonarPingIntensity = 0f;
+            _lastDirectSonarPingOrigin = Vector3.zero;
             _pendingSonarEchoTapCountA = 0;
             _pendingSonarEchoTapCountB = 0;
             _pendingSonarStateA = default;
@@ -4161,6 +5144,11 @@ namespace Hecton8.Audio
             _granularTelemetryCursor = 0;
             Interlocked.Exchange(ref _granularTelemetryDumpRequested, 0);
             Interlocked.Exchange(ref _granularTelemetryDumped, 0);
+            _prologueTransitionTelemetryCursor = 0;
+            _prologueTransitionQueueCount = 0;
+            Interlocked.Exchange(ref _prologueTransitionTelemetryDumpRequested, 0);
+            Interlocked.Exchange(ref _prologueTransitionTelemetryDumped, 0);
+            ResetPrologueDspState();
             _heartbeatSynthesisState = default;
             _sabineReverbSynthesisState = default;
             _caveConvolutionReverbSynthesisState = default;
@@ -4206,6 +5194,8 @@ namespace Hecton8.Audio
             NativeMemorySentinel.RegisterNativeArray(_sonarEchoCompositeGroupCountNative, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_sonarEchoCompositeGroupCountNative), NativeAllocationLifetime.Session);
             NativeMemorySentinel.RegisterNativeParallelMultiHashMap(_sonarEchoCompositeSpatialHash, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_sonarEchoCompositeSpatialHash), NativeAllocationLifetime.Session);
             NativeMemorySentinel.RegisterNativeParallelHashMap(_sonarEchoCompositeGroupByHash, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_sonarEchoCompositeGroupByHash), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(_sonarEcholocationHits, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_sonarEcholocationHits), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeQueue(_sonarEchoTapUploadQueue, SonarEchoTapCapacity, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_sonarEchoTapUploadQueue), NativeAllocationLifetime.Session);
             NativeMemorySentinel.RegisterNativeArray(_impactClangDelay, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_impactClangDelay), NativeAllocationLifetime.Session);
             NativeMemorySentinel.RegisterNativeArray(_thrusterCombDelay, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_thrusterCombDelay), NativeAllocationLifetime.Session);
             if (registerSabineReverbDelay)
@@ -4229,6 +5219,8 @@ namespace Hecton8.Audio
             NativeMemorySentinel.RegisterNativeArray(_granularVoicePlaybackRate, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_granularVoicePlaybackRate), NativeAllocationLifetime.Session);
             NativeMemorySentinel.RegisterNativeArray(_granularVoiceGain, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_granularVoiceGain), NativeAllocationLifetime.Session);
             NativeMemorySentinel.RegisterNativeArray(_granularTelemetryRing, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_granularTelemetryRing), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(_prologueTransitionTelemetryRing, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_prologueTransitionTelemetryRing), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeQueue(_prologueTransitionQueue, PrologueTransitionQueueCapacity, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_prologueTransitionQueue), NativeAllocationLifetime.Session);
             NativeMemorySentinel.RegisterNativeArray(_vwsClipSamplesA, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_vwsClipSamplesA), NativeAllocationLifetime.Session);
             NativeMemorySentinel.RegisterNativeArray(_vwsClipSamplesB, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_vwsClipSamplesB), NativeAllocationLifetime.Session);
         }
@@ -4261,6 +5253,9 @@ namespace Hecton8.Audio
                 NativeMemorySentinel.UnregisterNativeParallelMultiHashMap(nameof(PlayerCriticalProceduralAudioRenderer), nameof(_sonarEchoCompositeSpatialHash));
             if (_sonarEchoCompositeGroupByHash.IsCreated)
                 NativeMemorySentinel.UnregisterNativeParallelHashMap(nameof(PlayerCriticalProceduralAudioRenderer), nameof(_sonarEchoCompositeGroupByHash));
+            NativeMemorySentinel.UnregisterNativeArray(_sonarEcholocationHits);
+            if (_sonarEchoTapUploadQueue.IsCreated)
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(PlayerCriticalProceduralAudioRenderer), nameof(_sonarEchoTapUploadQueue));
             NativeMemorySentinel.UnregisterNativeArray(_impactClangDelay);
             NativeMemorySentinel.UnregisterNativeArray(_thrusterCombDelay);
             if (unregisterSabineReverbDelay)
@@ -4284,6 +5279,9 @@ namespace Hecton8.Audio
             NativeMemorySentinel.UnregisterNativeArray(_granularVoicePlaybackRate);
             NativeMemorySentinel.UnregisterNativeArray(_granularVoiceGain);
             NativeMemorySentinel.UnregisterNativeArray(_granularTelemetryRing);
+            NativeMemorySentinel.UnregisterNativeArray(_prologueTransitionTelemetryRing);
+            if (_prologueTransitionQueue.IsCreated)
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(PlayerCriticalProceduralAudioRenderer), nameof(_prologueTransitionQueue));
             NativeMemorySentinel.UnregisterNativeArray(_vwsClipSamplesA);
             NativeMemorySentinel.UnregisterNativeArray(_vwsClipSamplesB);
         }
@@ -4291,6 +5289,7 @@ namespace Hecton8.Audio
         private void DisposeBuffers(bool disposeSabineReverbDelay)
         {
             ClearNativeOutputBridge();
+            TryCompleteSdfSonarEchoJob(forceComplete: true);
             CompleteSonarEchoCompositeHashJob(forceComplete: true);
             _sampleRingBuffer?.Dispose();
             _sampleRingBuffer = null;
@@ -4343,6 +5342,10 @@ namespace Hecton8.Audio
                 _sonarEchoCompositeSpatialHash.Dispose();
             if (_sonarEchoCompositeGroupByHash.IsCreated)
                 _sonarEchoCompositeGroupByHash.Dispose();
+            if (_sonarEcholocationHits.IsCreated)
+                _sonarEcholocationHits.Dispose();
+            if (_sonarEchoTapUploadQueue.IsCreated)
+                _sonarEchoTapUploadQueue.Dispose();
             if (_impactClangDelay.IsCreated)
                 _impactClangDelay.Dispose();
             if (_thrusterCombDelay.IsCreated)
@@ -4387,6 +5390,10 @@ namespace Hecton8.Audio
                 _granularVoiceGain.Dispose();
             if (_granularTelemetryRing.IsCreated)
                 _granularTelemetryRing.Dispose();
+            if (_prologueTransitionTelemetryRing.IsCreated)
+                _prologueTransitionTelemetryRing.Dispose();
+            if (_prologueTransitionQueue.IsCreated)
+                _prologueTransitionQueue.Dispose();
             if (_vwsClipSamplesA.IsCreated)
                 _vwsClipSamplesA.Dispose();
             if (_vwsClipSamplesB.IsCreated)
@@ -4439,6 +5446,8 @@ namespace Hecton8.Audio
             _granularVoicePlaybackRate = default;
             _granularVoiceGain = default;
             _granularTelemetryRing = default;
+            _prologueTransitionTelemetryRing = default;
+            _prologueTransitionQueue = default;
             _vwsClipSamplesA = default;
             _vwsClipSamplesB = default;
             _vwsPlaybackState = default;
@@ -4450,6 +5459,11 @@ namespace Hecton8.Audio
             _granularTelemetryCursor = 0;
             Interlocked.Exchange(ref _granularTelemetryDumpRequested, 0);
             Interlocked.Exchange(ref _granularTelemetryDumped, 0);
+            _prologueTransitionTelemetryCursor = 0;
+            _prologueTransitionQueueCount = 0;
+            Interlocked.Exchange(ref _prologueTransitionTelemetryDumpRequested, 0);
+            Interlocked.Exchange(ref _prologueTransitionTelemetryDumped, 0);
+            ResetPrologueDspState();
 
             _buffersInitialized = false;
             _frameCapacity = 0;
@@ -4539,6 +5553,9 @@ namespace Hecton8.Audio
             _workerConsumedSonarSequence = 0;
             _workerConsumedSonarRevision = 0;
             _workerActiveSonarTapCount = 0;
+            _lastDirectSonarPingFrame = -4096;
+            _lastDirectSonarPingIntensity = 0f;
+            _lastDirectSonarPingOrigin = Vector3.zero;
             Interlocked.Exchange(ref _impactEventReadIndex, 0);
             Interlocked.Exchange(ref _impactEventWriteIndex, 0);
             Interlocked.Exchange(ref _impactEventQueueDropCount, 0);
@@ -4560,6 +5577,7 @@ namespace Hecton8.Audio
             Volatile.Write(ref _vwsCurrentBufferIndex, 0);
             _audioImpactStressValue = 0f;
             _audioImpactMetallicValue = 0f;
+            _audioPeakImpactEnergyJoules = 0f;
             _audioTinnitusOxygenStressValue = 0f;
             _audioEardrumRuptureTinnitusValue = 0f;
             _targetEardrumRuptureTinnitusValue = 0f;
@@ -4586,6 +5604,7 @@ namespace Hecton8.Audio
             _hullStressTickValue = 0f;
             _structuralHullStressTickValue = 0f;
             _structuralHullStressVelocityTickValue = 0f;
+            _structuralPressureImpulseTickValue = 0f;
             _absoluteDepthTickValue = 0f;
             _targetAbsoluteDepthMeters = 0f;
             ResetReverbModelState();
@@ -4959,10 +5978,34 @@ namespace Hecton8.Audio
                     LeviathanDopplerMinimumPitchScale,
                     LeviathanDopplerMaximumPitchScale)
                 : 1f;
+            float startPrologueLowPassCutoff = math.clamp(
+                _audioPrologueLowPassCutoffHertz,
+                AcousticOcclusionUtility.MinimumLowPassCutoffHertz,
+                PrologueOpenLowPassHertz);
+            float endPrologueLowPassCutoff = math.clamp(
+                parameters.PrologueLowPassCutoffHz > 0f ? parameters.PrologueLowPassCutoffHz : PrologueOpenLowPassHertz,
+                AcousticOcclusionUtility.MinimumLowPassCutoffHertz,
+                PrologueOpenLowPassHertz);
+            float startPrologueLfeGain = math.saturate(_audioPrologueLfeGain);
+            float endPrologueLfeGain = math.saturate(parameters.PrologueLfeGain);
+            float startProloguePortalBlend = math.saturate(_audioProloguePortalBlend01);
+            float endProloguePortalBlend = math.saturate(parameters.ProloguePortalBlend01);
+            uint targetSplashdownSequence = parameters.PrologueSplashdownSequence;
+            if (targetSplashdownSequence != 0u && targetSplashdownSequence != _audioPrologueSplashdownSequence)
+            {
+                _audioPrologueSplashdownSequence = targetSplashdownSequence;
+                _prologueSplashdownTotalSamples = math.max(1, (int)(PrologueSplashdownDurationSeconds * math.max(1, _sampleRate) + 0.5f));
+                _prologueSplashdownRemainingSamples = _prologueSplashdownTotalSamples;
+                _prologueSplashdownGain = math.saturate(parameters.PrologueSplashdownGain);
+                _prologueSplashdownPhase = 0d;
+            }
+
             AmbientCurrentSynthesisState ambientState = _ambientCurrentSynthesisState;
-            float ambientDepthDrive = math.saturate(math.max(parameters.HullPressureDepth, parameters.AbyssalLowPassMix));
+            float ambientDepthDrive = math.saturate(math.max(math.max(parameters.HullPressureDepth, parameters.AbyssalLowPassMix), endProloguePortalBlend));
             float panicAmbientDull = math.saturate(parameters.HeartbeatStress);
-            float structuralSidechainDrive = math.saturate(math.max(parameters.StructuralHullStress, parameters.StructuralSnap));
+            float structuralSidechainDrive = math.saturate(math.max(
+                math.max(parameters.StructuralHullStress, parameters.StructuralSnap),
+                math.max(parameters.PrologueGranularStress, parameters.PrologueSplashdownGain) * 0.85f));
             CriticalSidechainCompressorState sidechainState = _criticalSidechainCompressorState;
             if (sidechainState.Gain <= HullNoiseFloor)
                 sidechainState.Gain = 1f;
@@ -5028,6 +6071,8 @@ namespace Hecton8.Audio
                     (1f - math.saturate(parameters.BinauralWaterDensityMul)) * enclosureDensityTarget,
                     sabineFdnSend))
                 : 0f;
+            if (nativeReverbActive)
+                interiorFdnSend = math.saturate(math.max(interiorFdnSend, endProloguePortalBlend * ProloguePortalFdnSend));
             float frameTScale = frameCount > 1 ? math.rcp((float)(frameCount - 1)) : 0f;
             float invSampleRateF = (float)invSampleRate;
             float sampleRateF = math.max(1f, _sampleRate);
@@ -5103,6 +6148,12 @@ namespace Hecton8.Audio
                     mixed,
                     (uint)math.max(0L, sampleFrame),
                     panicAmbientDull);
+                float prologueLfeGain = math.lerp(startPrologueLfeGain, endPrologueLfeGain, frameT);
+                float prologueLfe = prologueLfeGain > HullNoiseFloor
+                    ? AdvanceSine(ref _prologueLfePhase, PrologueLfeHertz, invSampleRate) * prologueLfeGain * PrologueLfeOutputGain
+                    : 0f;
+                float prologueSplashdown = RenderPrologueSplashdownSample(invSampleRate);
+                mixed = FastSoftClip(mixed + prologueLfe + prologueSplashdown);
 
                 if (sabineReverbActive)
                 {
@@ -5142,7 +6193,8 @@ namespace Hecton8.Audio
                 float abyssalCutoff = math.lerp(_sampleRate * 0.45f, AbyssalLowPassCutoffHertz, mix);
                 float pressureCutoff = math.lerp(startPressureCutoff, endPressureCutoff, frameT);
                 float tinnitusCutoff = math.lerp(_sampleRate * 0.45f, TinnitusLowPassCutoffHertz, tinnitusStress);
-                float cutoff = math.min(math.min(abyssalCutoff, pressureCutoff), tinnitusCutoff);
+                float prologueCutoff = math.lerp(startPrologueLowPassCutoff, endPrologueLowPassCutoff, frameT);
+                float cutoff = math.min(math.min(math.min(abyssalCutoff, pressureCutoff), tinnitusCutoff), prologueCutoff);
                 float muffled01 = math.saturate((openCutoff - cutoff) * muffledRangeInv);
                 float targetAlpha = ResolveOnePoleLowPassCoefficient(cutoff, _sampleRate);
                 float alpha = math.lerp(1f, targetAlpha, muffled01);
@@ -5176,6 +6228,30 @@ namespace Hecton8.Audio
             _audioEardrumRuptureTinnitusValue = endEardrumRupture;
             _audioLeviathanRoarAggroValue = endLeviathanAggro;
             _audioLeviathanRoarPitchScale = endLeviathanPitchScale;
+            _audioPrologueLowPassCutoffHertz = endPrologueLowPassCutoff;
+            _audioPrologueLfeGain = endPrologueLfeGain;
+            _audioProloguePortalBlend01 = endProloguePortalBlend;
+        }
+
+        private float RenderPrologueSplashdownSample(double invSampleRate)
+        {
+            if (_prologueSplashdownRemainingSamples <= 0)
+                return 0f;
+
+            int totalSamples = math.max(1, _prologueSplashdownTotalSamples);
+            int elapsedSamples = math.clamp(totalSamples - _prologueSplashdownRemainingSamples, 0, totalSamples);
+            float t = totalSamples > 1
+                ? elapsedSamples * math.rcp((float)(totalSamples - 1))
+                : 1f;
+            float fadeOut = 1f - t;
+            float envelope = math.saturate(fadeOut * fadeOut);
+            float frequency = math.lerp(PrologueSplashdownSweepStartHertz, PrologueSplashdownSweepEndHertz, t);
+            float sample = AdvanceSine(ref _prologueSplashdownPhase, frequency, invSampleRate) *
+                           envelope *
+                           _prologueSplashdownGain *
+                           PrologueSplashdownOutputGain;
+            _prologueSplashdownRemainingSamples--;
+            return sample;
         }
 
         private float RenderVocalWarningSample(ref VwsPlaybackState state)
@@ -5905,6 +6981,90 @@ namespace Hecton8.Audio
             return math.saturate(math.max(0f, depthMeters) * PressureCreakDepthReferenceMetersInv);
         }
 
+        private void PopulateMetallicGrainBank()
+        {
+            if (TryLoadMetalStressGrainClip(metalStressGrainClip, _metallicGrainBank))
+                return;
+
+            PlayerCriticalMetallicGrainBank.Generate(_metallicGrainBank);
+        }
+
+        private bool TryLoadMetalStressGrainClip(AudioClip clip, NativeArray<float> target)
+        {
+            if (clip == null ||
+                !target.IsCreated ||
+                target.Length <= 0 ||
+                _vwsClipManagedScratch == null ||
+                _vwsClipManagedScratch.Length <= 0 ||
+                clip.samples <= 0 ||
+                clip.channels <= 0)
+            {
+                return false;
+            }
+
+            int sourceChannels = math.min(clip.channels, 8);
+            int clipSampleCount = clip.samples > int.MaxValue / clip.channels
+                ? _vwsClipManagedScratch.Length
+                : clip.samples * clip.channels;
+            int sourceSampleCount = math.min(_vwsClipManagedScratch.Length, clipSampleCount);
+            if (sourceSampleCount <= 0 || !clip.GetData(_vwsClipManagedScratch, 0))
+                return false;
+
+            int readableFrameCount = math.max(1, sourceSampleCount / clip.channels);
+            int twoSecondSourceFrames = clip.frequency > 0 && clip.frequency <= int.MaxValue / 2
+                ? clip.frequency * 2
+                : readableFrameCount;
+            int sourceFrameWindow = math.clamp(twoSecondSourceFrames, 1, readableFrameCount);
+            float sourceFrameScale = target.Length > 1 && sourceFrameWindow > 1
+                ? (sourceFrameWindow - 1f) * math.rcp(target.Length - 1f)
+                : 0f;
+            for (int targetIndex = 0; targetIndex < target.Length; targetIndex++)
+            {
+                float sourceFrame = targetIndex * sourceFrameScale;
+                int sourceFrame0 = math.clamp((int)sourceFrame, 0, sourceFrameWindow - 1);
+                int sourceFrame1 = math.min(sourceFrame0 + 1, sourceFrameWindow - 1);
+                float frameT = math.saturate(sourceFrame - sourceFrame0);
+                float mono0 = ReadMetalStressClipMonoFrame(
+                    _vwsClipManagedScratch,
+                    sourceSampleCount,
+                    sourceChannels,
+                    clip.channels,
+                    sourceFrame0);
+                float mono1 = ReadMetalStressClipMonoFrame(
+                    _vwsClipManagedScratch,
+                    sourceSampleCount,
+                    sourceChannels,
+                    clip.channels,
+                    sourceFrame1);
+                target[targetIndex] = math.clamp(math.lerp(mono0, mono1, frameT), -1f, 1f);
+            }
+
+            return true;
+        }
+
+        private static float ReadMetalStressClipMonoFrame(
+            float[] samples,
+            int sourceSampleCount,
+            int sourceChannels,
+            int clipChannels,
+            int sourceFrame)
+        {
+            if (samples == null || sourceSampleCount <= 0 || sourceChannels <= 0 || clipChannels <= 0)
+                return 0f;
+
+            int sourceSampleOffset = sourceFrame * clipChannels;
+            if (sourceSampleOffset < 0 || sourceSampleOffset >= sourceSampleCount)
+                return 0f;
+
+            float mono = 0f;
+            int availableChannels = math.min(sourceChannels, sourceSampleCount - sourceSampleOffset);
+            for (int channel = 0; channel < availableChannels; channel++)
+                mono += FiniteOrZero(samples[sourceSampleOffset + channel]);
+            return availableChannels > 0
+                ? math.clamp(mono * math.rcp(availableChannels), -1f, 1f)
+                : 0f;
+        }
+
         private float ResolveAbsoluteDepthMeters()
         {
             if (playerMovement == null)
@@ -6095,7 +7255,7 @@ namespace Hecton8.Audio
                 case HectonQualityTier.Low:
                 case HectonQualityTier.Mx350:
                 case HectonQualityTier.Unknown:
-                    return GranularLowTierVoiceCapacity;
+                    return GranularDisabledVoiceCapacity;
                 case HectonQualityTier.Mid:
                     return 8;
                 case HectonQualityTier.High:
@@ -6103,7 +7263,7 @@ namespace Hecton8.Audio
                 case HectonQualityTier.Ultra:
                     return GranularVoiceCapacity;
                 default:
-                    return GranularLowTierVoiceCapacity;
+                    return GranularDisabledVoiceCapacity;
             }
         }
 
@@ -6111,11 +7271,11 @@ namespace Hecton8.Audio
         {
             int currentVoiceCount = math.clamp(
                 _targetGranularMaxVoiceCount,
-                GranularLowTierVoiceCapacity,
+                GranularDisabledVoiceCapacity,
                 GranularVoiceCapacity);
             int safeRequestedVoiceCount = math.clamp(
                 requestedVoiceCount,
-                GranularLowTierVoiceCapacity,
+                GranularDisabledVoiceCapacity,
                 GranularVoiceCapacity);
 
             if (safeRequestedVoiceCount <= currentVoiceCount)
@@ -6443,6 +7603,41 @@ namespace Hecton8.Audio
             float echoLowPassCutoffHz,
             float echoPitchScale)
         {
+            return TryEnqueueImpactAudioEvent(
+                stress,
+                metallic,
+                clangExcitation,
+                echoExcitation,
+                echoDelaySeconds,
+                echoAttenuation,
+                echoLowPassCutoffHz,
+                echoPitchScale,
+                0f,
+                0f,
+                0f,
+                0f,
+                0f,
+                AcousticOcclusionUtility.OpenLowPassCutoffHertz,
+                0f);
+        }
+
+        private bool TryEnqueueImpactAudioEvent(
+            float stress,
+            float metallic,
+            float clangExcitation,
+            float echoExcitation,
+            float echoDelaySeconds,
+            float echoAttenuation,
+            float echoLowPassCutoffHz,
+            float echoPitchScale,
+            float thudExcitation,
+            float thudDurationSeconds,
+            float thudStartHertz,
+            float thudEndHertz,
+            float thudDistortion,
+            float thudLowPassCutoffHz,
+            float energyJoules)
+        {
             float pitchJitter = ResolveImpactPitchJitter(unchecked((uint)Time.frameCount ^ ((uint)(Volatile.Read(ref _impactEventWriteIndex) & ImpactEventQueueMask) * 0x9E3779B9u)));
             ImpactAudioEvent impactAudioEvent = new ImpactAudioEvent
             {
@@ -6456,7 +7651,20 @@ namespace Hecton8.Audio
                     echoLowPassCutoffHz,
                     AcousticOcclusionUtility.MinimumLowPassCutoffHertz,
                     AcousticOcclusionUtility.OpenLowPassCutoffHertz),
-                EchoPitchScale = math.clamp(echoPitchScale * pitchJitter, 0.65f, 1.45f)
+                EchoPitchScale = math.clamp(echoPitchScale * pitchJitter, 0.65f, 1.45f),
+                ThudExcitation = math.saturate(thudExcitation),
+                ThudDurationSeconds = math.clamp(thudDurationSeconds, 0f, KineticImpactThudDurationSeconds),
+                ThudStartHertz = math.clamp(thudStartHertz, 8f, 240f),
+                ThudEndHertz = math.clamp(thudEndHertz, 8f, 240f),
+                ThudDistortion = math.saturate(thudDistortion),
+                ThudLowPassCutoffHz = math.clamp(
+                    thudLowPassCutoffHz,
+                    AcousticOcclusionUtility.MinimumLowPassCutoffHertz,
+                    AcousticOcclusionUtility.OpenLowPassCutoffHertz),
+                EnergyJoules = math.clamp(
+                    math.isfinite(energyJoules) ? energyJoules : 0f,
+                    0f,
+                    KineticImpactMaximumSafeEnergyJoules)
             };
 
             for (int attempt = 0; attempt < ImpactEventQueueEnqueueAttemptLimit; attempt++)
@@ -6523,6 +7731,12 @@ namespace Hecton8.Audio
                     clangSeed += 0x9E3779B9u;
                 }
 
+                if (impactAudioEvent.ThudExcitation > KineticImpactThudMinimumExcitation)
+                    ArmKineticImpactThudInternal(ref hullState, in impactAudioEvent);
+
+                if (impactAudioEvent.EnergyJoules > _audioPeakImpactEnergyJoules)
+                    _audioPeakImpactEnergyJoules = impactAudioEvent.EnergyJoules;
+
                 if (impactAudioEvent.EchoExcitation > ImpactEchoMinimumExcitation &&
                     impactAudioEvent.EchoAttenuation > 0.0001f)
                 {
@@ -6588,6 +7802,7 @@ namespace Hecton8.Audio
             float previousStructuralSnap = structuralSnapStart;
             float frameTScale = frameCount > 1 ? math.rcp((float)(frameCount - 1)) : 0f;
             int blockSampleRate = math.max(1, _sampleRate);
+            TrimGranularVoicesToBudget(granularMaxVoiceCount);
 
             for (int frameIndex = 0; frameIndex < frameCount; frameIndex++)
             {
@@ -6633,6 +7848,7 @@ namespace Hecton8.Audio
                     structuralStress,
                     invSampleRate);
                 float impactClang = RenderImpactClangSampleInternal(ref state, sampleIndex, invSampleRate);
+                float kineticThud = RenderKineticImpactThudSampleInternal(ref state, invSampleRate);
                 float subBass = RenderHullSubBassSample(ref state, structuralStress, depthParam, absoluteDepthMeters, enclosureDensityIndex, invSampleRate);
                 float pressureScrubberHum = RenderPressureScrubberHumSample(
                     ref state,
@@ -6641,9 +7857,9 @@ namespace Hecton8.Audio
                     pressureHumGainTarget,
                     invSampleRate);
                 float rivetBurst = BuildRivetBurst(sampleIndex, math.max(stress, metallicImpulse), rivetAmount);
-                float combined = pressureBed + pressureCreak + granularMetal + fatigueRing + structuralSnapTransient + impactClang + rivetBurst + subBass + pressureScrubberHum;
+                float combined = pressureBed + pressureCreak + granularMetal + fatigueRing + structuralSnapTransient + impactClang + kineticThud + rivetBurst + subBass + pressureScrubberHum;
                 combined = ApplyDepthHullDistortion(combined, depthParam, structuralStress);
-                _hullScratch[frameIndex] = math.max(stress, structuralSnap) <= HullNoiseFloor
+                _hullScratch[frameIndex] = math.max(math.max(stress, structuralSnap), math.abs(kineticThud)) <= HullNoiseFloor
                     ? 0f
                     : FastSoftClip(combined * math.lerp(1.7f, 2.8f, metallicImpulse)) * hullMasterGain;
                 previousStructuralSnap = structuralSnap;
@@ -6906,14 +8122,22 @@ namespace Hecton8.Audio
             int activeTapCount = activeTapBuffer.IsCreated
                 ? math.clamp(_workerActiveSonarTapCount, 0, math.min(SonarEchoTapCapacity, activeTapBuffer.Length))
                 : 0;
-            long maxActiveFrame = activeState.StartFrame + math.max(1, _sonarTotalDurationSamples);
+            bool kineticImpactEcho = (activeState.Flags & SonarTriggerFlagKineticImpactEcho) != 0;
+            float activeDurationSeconds = kineticImpactEcho
+                ? KineticImpactPortalEchoLifetimeSeconds
+                : SonarTotalDurationSeconds;
+            float echoSourceDurationSeconds = kineticImpactEcho
+                ? KineticImpactThudDurationSeconds
+                : SonarChirpDurationSeconds;
+            long maxActiveFrame = activeState.StartFrame +
+                math.max(1, (int)(activeDurationSeconds * math.max(_sampleRate, 1) + 0.5f));
             float dopplerFrameDelta = frameCount > 1 ? math.rcp((float)(frameCount - 1)) : 1f;
             for (int frameIndex = 0; frameIndex < frameCount; frameIndex++)
             {
                 long sampleFrame = blockStartFrame + frameIndex;
                 float dopplerFrameT = math.saturate(frameIndex * dopplerFrameDelta);
                 float age = (float)((sampleFrame - activeState.StartFrame) * invSampleRate);
-                if (age < 0f || age > SonarTotalDurationSeconds)
+                if (age < 0f || age > activeDurationSeconds)
                 {
                     _sonarScratch[frameIndex] = 0f;
                     StoreSonarStereoDelta(frameIndex, 0f, 0f);
@@ -6921,24 +8145,52 @@ namespace Hecton8.Audio
                 }
 
                 uint sampleIndex = (uint)math.max(0L, sampleFrame);
-                float attack = 0f;
-                if (age < 0.03f)
+                float drySignal = 0f;
+                float tail = 0f;
+                if (kineticImpactEcho)
                 {
-                    float attackEnv = ApproximateExpNegPositive(age * 220f);
-                    float attackNoise = HashSigned(sampleIndex ^ 0x3941AA1u);
-                    attack = attackEnv * (AdvanceSine(ref state.AttackPhase, 4500d, invSampleRate) + attackNoise * 0.85f) * sonarAttackBlend;
+                    if (age < KineticImpactThudDurationSeconds)
+                    {
+                        float thudT = math.saturate(age * math.rcp(KineticImpactThudDurationSeconds));
+                        float thudFrequency = math.lerp(KineticImpactThudStartHertz, KineticImpactThudEndHertz, thudT);
+                        float thudEnvelope = math.saturate(age * 200f) * (1f - thudT) * (1f - thudT);
+                        drySignal = thudEnvelope * AdvanceSine(ref state.ChirpPhase, thudFrequency, invSampleRate);
+                    }
+                }
+                else
+                {
+                    float attack = 0f;
+                    if (age < 0.03f)
+                    {
+                        float attackEnv = ApproximateExpNegPositive(age * 220f);
+                        float attackNoise = HashSigned(sampleIndex ^ 0x3941AA1u);
+                        attack = attackEnv * (AdvanceSine(ref state.AttackPhase, 4500d, invSampleRate) + attackNoise * 0.85f) * sonarAttackBlend;
+                    }
+
+                    float chirp = 0f;
+                    if (age < SonarChirpDurationSeconds)
+                    {
+                        float chirpT = math.saturate(age * SonarChirpDurationSecondsInv);
+                        float chirpFrequency = math.lerp(2000f, 400f, chirpT);
+                        float chirpEnv = ApproximateExpNegPositive(age * 5f);
+                        chirp = chirpEnv * AdvanceSine(ref state.ChirpPhase, chirpFrequency, invSampleRate);
+                    }
+
+                    drySignal = attack + chirp;
+                    if (age >= 0.08f)
+                    {
+                        float tailAge = age - 0.08f;
+                        float tailEnv = math.saturate(tailAge * SonarTailAttackSecondsInv) * ApproximateExpNegPositive(tailAge * 0.95f);
+                        float slowLfo = 0.55f + 0.45f * AdvanceSine(ref state.TailSlowPhase, 0.38d, invSampleRate);
+                        float beat =
+                            AdvanceSine(ref state.TailBeatAPhase, 150d, invSampleRate) +
+                            AdvanceSine(ref state.TailBeatBPhase, 147d, invSampleRate) * 0.6f +
+                            AdvanceSine(ref state.TailBeatCPhase, 300d, invSampleRate) * 0.4f;
+                        float pinkTail = LayeredPinkLike(sampleIndex) * slowLfo;
+                        tail = tailEnv * ((beat * 0.46f) + (pinkTail * 0.54f)) * sonarTailBlend;
+                    }
                 }
 
-                float chirp = 0f;
-                if (age < SonarChirpDurationSeconds)
-                {
-                    float chirpT = math.saturate(age * SonarChirpDurationSecondsInv);
-                    float chirpFrequency = math.lerp(2000f, 400f, chirpT);
-                    float chirpEnv = ApproximateExpNegPositive(age * 5f);
-                    chirp = chirpEnv * AdvanceSine(ref state.ChirpPhase, chirpFrequency, invSampleRate);
-                }
-
-                float drySignal = attack + chirp;
                 if (_sonarEchoDelay.IsCreated)
                 {
                     _sonarEchoDelay[state.EchoWriteIndex] = drySignal;
@@ -6959,7 +8211,7 @@ namespace Hecton8.Audio
                         continue;
                     }
 
-                    if (echoAge >= SonarChirpDurationSeconds || !_sonarEchoDelay.IsCreated || !_sonarEchoReadCursors.IsCreated)
+                    if (echoAge >= echoSourceDurationSeconds || !_sonarEchoDelay.IsCreated || !_sonarEchoReadCursors.IsCreated)
                         continue;
 
                     int echoDelaySamples = tap.DelaySamples;
@@ -7003,26 +8255,14 @@ namespace Hecton8.Audio
                     echoRightDelta += tapEcho * tap.RightPanDeltaGain;
                 }
 
-                float tail = 0f;
-                if (age >= 0.08f)
-                {
-                    float tailAge = age - 0.08f;
-                    float tailEnv = math.saturate(tailAge * SonarTailAttackSecondsInv) * ApproximateExpNegPositive(tailAge * 0.95f);
-                    float slowLfo = 0.55f + 0.45f * AdvanceSine(ref state.TailSlowPhase, 0.38d, invSampleRate);
-                    float beat =
-                        AdvanceSine(ref state.TailBeatAPhase, 150d, invSampleRate) +
-                        AdvanceSine(ref state.TailBeatBPhase, 147d, invSampleRate) * 0.6f +
-                        AdvanceSine(ref state.TailBeatCPhase, 300d, invSampleRate) * 0.4f;
-                    float pinkTail = LayeredPinkLike(sampleIndex) * slowLfo;
-                    tail = tailEnv * ((beat * 0.46f) + (pinkTail * 0.54f)) * sonarTailBlend;
-                }
-
-                float mixed = (attack + chirp + echo + tail) * activeState.Intensity;
-                _sonarScratch[frameIndex] = FastSoftClip(mixed * sonarSaturationDrive) * sonarMasterGain;
+                float masterGain = kineticImpactEcho ? 1f : sonarMasterGain;
+                float saturationDrive = kineticImpactEcho ? 1.35f : sonarSaturationDrive;
+                float mixed = (drySignal + echo + tail) * activeState.Intensity;
+                _sonarScratch[frameIndex] = FastSoftClip(mixed * saturationDrive) * masterGain;
                 StoreSonarStereoDelta(
                     frameIndex,
-                    echoLeftDelta * activeState.Intensity * sonarMasterGain,
-                    echoRightDelta * activeState.Intensity * sonarMasterGain);
+                    echoLeftDelta * activeState.Intensity * masterGain,
+                    echoRightDelta * activeState.Intensity * masterGain);
             }
 
             if (blockStartFrame >= maxActiveFrame)
@@ -7116,6 +8356,78 @@ namespace Hecton8.Audio
             }
 
             _impactEchoSynthesisState = state;
+        }
+
+        private static void ArmKineticImpactThudInternal(ref HullSynthesisState state, in ImpactAudioEvent impactAudioEvent)
+        {
+            float excitation = math.saturate(impactAudioEvent.ThudExcitation);
+            if (excitation <= KineticImpactThudMinimumExcitation)
+                return;
+
+            state.KineticImpactThudAgeSeconds = 0f;
+            state.KineticImpactThudDurationSeconds = math.clamp(
+                impactAudioEvent.ThudDurationSeconds,
+                0.02f,
+                KineticImpactThudDurationSeconds);
+            state.KineticImpactThudStartHertz = math.clamp(
+                impactAudioEvent.ThudStartHertz,
+                KineticImpactThudEndHertz,
+                KineticImpactThudStartHertz);
+            state.KineticImpactThudEndHertz = math.clamp(
+                impactAudioEvent.ThudEndHertz,
+                8f,
+                state.KineticImpactThudStartHertz);
+            state.KineticImpactThudAmplitude = math.max(state.KineticImpactThudAmplitude, excitation);
+            state.KineticImpactThudDistortion = math.max(state.KineticImpactThudDistortion, impactAudioEvent.ThudDistortion);
+            state.KineticImpactThudLowPassCutoffHz = math.clamp(
+                impactAudioEvent.ThudLowPassCutoffHz,
+                AcousticOcclusionUtility.MinimumLowPassCutoffHertz,
+                AcousticOcclusionUtility.OpenLowPassCutoffHertz);
+            state.KineticImpactThudLowPassState = 0f;
+        }
+
+        private float RenderKineticImpactThudSampleInternal(ref HullSynthesisState state, double invSampleRate)
+        {
+            if (state.KineticImpactThudAmplitude <= KineticImpactThudMinimumExcitation ||
+                state.KineticImpactThudDurationSeconds <= 0f)
+            {
+                return 0f;
+            }
+
+            float age = state.KineticImpactThudAgeSeconds;
+            float duration = math.max(0.02f, state.KineticImpactThudDurationSeconds);
+            if (age >= duration)
+            {
+                state.KineticImpactThudAmplitude = 0f;
+                state.KineticImpactThudDistortion = 0f;
+                return 0f;
+            }
+
+            float t = math.saturate(age * math.rcp(duration));
+            float attack = math.saturate(age * 200f);
+            float decay = (1f - t) * (1f - t);
+            float envelope = attack * decay;
+            float frequency = math.lerp(
+                state.KineticImpactThudStartHertz,
+                state.KineticImpactThudEndHertz,
+                t);
+            float raw = AdvanceSine(ref state.KineticImpactThudPhase, frequency, invSampleRate) *
+                envelope *
+                state.KineticImpactThudAmplitude;
+            float cutoff = math.clamp(
+                state.KineticImpactThudLowPassCutoffHz,
+                AcousticOcclusionUtility.MinimumLowPassCutoffHertz,
+                AcousticOcclusionUtility.OpenLowPassCutoffHertz);
+            float lowPassAlpha = ApproximateExpNegPositive(TwoPi * cutoff * math.rcp(math.max(_sampleRate, 1f)));
+            float filtered = raw + lowPassAlpha * ((state.KineticImpactThudLowPassState + BiquadDenormalBias) - raw);
+            state.KineticImpactThudLowPassState = filtered;
+
+            float distortion = math.saturate(state.KineticImpactThudDistortion);
+            float hardClipped = math.clamp(filtered * math.lerp(1f, 2.85f, distortion), -0.82f, 0.82f);
+            float output = math.lerp(filtered, hardClipped, distortion) * 0.72f;
+            state.KineticImpactThudAgeSeconds += (float)invSampleRate;
+            state.KineticImpactThudAmplitude *= ApproximateExpNegPositive(0.6f * (float)invSampleRate);
+            return math.isfinite(output) ? output : 0f;
         }
 
         private void ArmImpactClangInternal(ref HullSynthesisState state, float excitation, uint seed)
@@ -7494,9 +8806,16 @@ namespace Hecton8.Audio
             if (!HasGranularVoiceBuffers() || !grainBank.IsCreated || grainBank.Length <= 1)
                 return 0f;
 
-            int voiceLimit = math.clamp(maxVoices, GranularLowTierVoiceCapacity, GranularVoiceCapacity);
-            float structuralDrive = math.saturate((math.max(stress, stressDerivative) - GranularStressThreshold01) * 2f);
-            float impactDrive = math.saturate(impactMetallic);
+            int voiceLimit = math.clamp(maxVoices, GranularDisabledVoiceCapacity, GranularVoiceCapacity);
+            if (voiceLimit <= 0)
+                return 0f;
+
+            float safeStress = math.saturate(FiniteOrZero(stress));
+            float safeStressDerivative = math.saturate(FiniteOrZero(stressDerivative));
+            float safeDepthParam = math.saturate(FiniteOrZero(depthParam));
+            float impactDrive = math.saturate(FiniteOrZero(impactMetallic));
+            float safePitchWobble = math.clamp(FiniteOrDefault(accelerationPitchWobble, 1f), 0.92f, 1.12f);
+            float structuralDrive = math.saturate((math.max(safeStress, safeStressDerivative) - GranularStressThreshold01) * 2f);
             int safeSampleRate = math.max(1, sampleRate);
 
             if (impactDrive > HullNoiseFloor)
@@ -7515,11 +8834,11 @@ namespace Hecton8.Audio
                             voiceLimit,
                             safeSampleRate,
                             clusterSeed,
-                            math.max(stress, impactDrive),
-                            math.max(stressDerivative, impactDrive),
-                            depthParam,
+                            math.max(safeStress, impactDrive),
+                            math.max(safeStressDerivative, impactDrive),
+                            safeDepthParam,
                             impactDrive,
-                            accelerationPitchWobble,
+                            safePitchWobble,
                             highPitchCluster: true);
                     }
 
@@ -7531,7 +8850,7 @@ namespace Hecton8.Audio
             {
                 float eventsPerSecond =
                     math.lerp(0.25f, 24f, structuralDrive) +
-                    stressDerivative * 18f +
+                    safeStressDerivative * 18f +
                     impactDrive * 32f;
                 float eventThreshold = math.saturate(eventsPerSecond * math.rcp((float)safeSampleRate));
                 if (Hash01(sampleIndex ^ 0x2FD6A8BBu) <= eventThreshold)
@@ -7542,11 +8861,11 @@ namespace Hecton8.Audio
                         voiceLimit,
                         safeSampleRate,
                         seed,
-                        stress,
-                        stressDerivative,
-                        depthParam,
+                        safeStress,
+                        safeStressDerivative,
+                        safeDepthParam,
                         impactDrive,
-                        accelerationPitchWobble,
+                        safePitchWobble,
                         highPitchCluster: false);
                 }
             }
@@ -7561,7 +8880,7 @@ namespace Hecton8.Audio
                     continue;
 
                 int elapsed = _granularVoiceElapsed[voiceIndex];
-                int length = math.max(1, _granularVoiceLength[voiceIndex]);
+                int length = math.clamp(_granularVoiceLength[voiceIndex], 1, grainBank.Length);
                 if (elapsed >= length)
                 {
                     _granularVoiceActive[voiceIndex] = 0;
@@ -7572,6 +8891,12 @@ namespace Hecton8.Audio
                 float cursor = _granularVoiceCursor[voiceIndex];
                 if (!math.isfinite(cursor))
                     cursor = 0f;
+                cursor = math.clamp(cursor, 0f, math.max(0f, length - 1f));
+                float voiceGain = math.saturate(FiniteOrZero(_granularVoiceGain[voiceIndex]));
+                float playbackRate = math.clamp(
+                    FiniteOrDefault(_granularVoicePlaybackRate[voiceIndex], 1f),
+                    0.05f,
+                    2.4f);
 
                 float sample = highQualityInterpolation
                     ? HermiteSampleGrainWindow(
@@ -7587,9 +8912,9 @@ namespace Hecton8.Audio
                 float envelope = linearWindow
                     ? ResolveLinearGrainEnvelope(elapsed, length)
                     : ResolveParabolicGrainEnvelope(elapsed, length);
-                mixed += sample * envelope * _granularVoiceGain[voiceIndex];
+                mixed += FiniteOrZero(sample) * envelope * voiceGain;
 
-                cursor += math.max(0.05f, _granularVoicePlaybackRate[voiceIndex]);
+                cursor += playbackRate;
                 if (cursor >= length)
                     cursor -= length;
 
@@ -7604,17 +8929,32 @@ namespace Hecton8.Audio
                 _granularVoiceElapsed[voiceIndex] = elapsed;
             }
 
-            float clipped = FastSoftClip(mixed);
+            float clipped = FastSoftClip(FiniteOrZero(mixed));
             RecordGranularTelemetry(
                 sampleIndex,
-                stress,
-                stressDerivative,
-                depthParam,
+                safeStress,
+                safeStressDerivative,
+                safeDepthParam,
                 impactDrive,
                 clipped,
                 activeVoiceCount,
                 voiceLimit);
             return math.isfinite(clipped) ? clipped : 0f;
+        }
+
+        private void TrimGranularVoicesToBudget(int voiceLimit)
+        {
+            if (!HasGranularVoiceBuffers())
+                return;
+
+            int safeLimit = math.clamp(voiceLimit, GranularDisabledVoiceCapacity, GranularVoiceCapacity);
+            for (int voiceIndex = safeLimit; voiceIndex < GranularVoiceCapacity; voiceIndex++)
+            {
+                _granularVoiceActive[voiceIndex] = 0;
+                _granularVoiceElapsed[voiceIndex] = 0;
+                _granularVoiceCursor[voiceIndex] = 0f;
+                _granularVoiceGain[voiceIndex] = 0f;
+            }
         }
 
         private void RecordGranularTelemetry(
@@ -7632,7 +8972,8 @@ namespace Hecton8.Audio
                 !math.isfinite(stressDerivative) ||
                 !math.isfinite(depthParam) ||
                 !math.isfinite(impactDrive) ||
-                !math.isfinite(mixedSample);
+                !math.isfinite(mixedSample) ||
+                !math.isfinite(_audioPeakImpactEnergyJoules);
             uint flags = 0u;
             if (invalid)
                 flags |= 1u;
@@ -7662,8 +9003,13 @@ namespace Hecton8.Audio
                 Depth01 = math.saturate(depthParam),
                 Impact01 = math.saturate(impactDrive),
                 MixedSample = mixedSample,
+                PeakImpactEnergyJoules = math.clamp(
+                    math.isfinite(_audioPeakImpactEnergyJoules) ? _audioPeakImpactEnergyJoules : 0f,
+                    0f,
+                    KineticImpactMaximumSafeEnergyJoules),
                 ActiveVoices = activeVoiceCount,
                 VoiceLimit = voiceLimit,
+                ActiveEchoTaps = math.clamp(_workerActiveSonarTapCount, 0, SonarEchoTapCapacity),
                 Flags = flags
             };
 
@@ -7676,12 +9022,77 @@ namespace Hecton8.Audio
                 Interlocked.Exchange(ref _granularTelemetryDumpRequested, 1);
         }
 
+        private void RecordPrologueTransitionTelemetry(in AudioTransitionState state)
+        {
+            bool invalid = (state.Flags & AudioTransitionState.FlagNonFiniteGuard) != 0 ||
+                           !math.isfinite(state.UniverseVelocityMetersPerSecond) ||
+                           !math.isfinite(state.Heat01) ||
+                           !math.isfinite(state.LowPassCutoffHz) ||
+                           !math.isfinite(state.LfeGain01) ||
+                           !math.isfinite(state.GranularStress01) ||
+                           !math.isfinite(state.SplashdownGain01) ||
+                           !math.isfinite(state.PortalBlend01);
+            uint dspFlags = 0u;
+            if (invalid)
+                dspFlags |= 1u;
+            if ((state.Flags & AudioTransitionState.FlagLowTierProxy) != 0)
+                dspFlags |= 2u;
+            if ((state.Flags & AudioTransitionState.FlagPortalActive) != 0)
+                dspFlags |= 4u;
+            if ((state.Flags & AudioTransitionState.FlagGranularEnabled) != 0)
+                dspFlags |= 8u;
+            if ((state.Flags & AudioTransitionState.FlagSplashdown) != 0)
+                dspFlags |= 16u;
+
+            if (!_prologueTransitionTelemetryRing.IsCreated)
+                return;
+
+            int cursor = _prologueTransitionTelemetryCursor;
+            if ((uint)cursor >= (uint)PrologueTransitionTelemetryCapacity)
+                cursor = 0;
+
+            _prologueTransitionTelemetryRing[cursor] = new PrologueAudioTransitionTelemetryEntry
+            {
+                Frame = state.Frame,
+                Sequence = state.Sequence,
+                UniverseVelocityMetersPerSecond = state.UniverseVelocityMetersPerSecond,
+                Heat01 = state.Heat01,
+                LowPassCutoffHz = state.LowPassCutoffHz,
+                LfeGain01 = state.LfeGain01,
+                GranularStress01 = state.GranularStress01,
+                SplashdownGain01 = state.SplashdownGain01,
+                PortalBlend01 = state.PortalBlend01,
+                AudioLowPassCutoffHz = _audioPrologueLowPassCutoffHertz,
+                SplashdownSamplesRemaining = _prologueSplashdownRemainingSamples,
+                Stage = state.Stage,
+                Flags = state.Flags,
+                QualityTier = state.QualityTier,
+                DspFlags = dspFlags
+            };
+
+            cursor++;
+            if (cursor >= PrologueTransitionTelemetryCapacity)
+                cursor = 0;
+            _prologueTransitionTelemetryCursor = cursor;
+
+            if (invalid)
+                Interlocked.Exchange(ref _prologueTransitionTelemetryDumpRequested, 1);
+        }
+
         private void FlushGranularTelemetryDumpRequest()
         {
             if (Interlocked.Exchange(ref _granularTelemetryDumpRequested, 0) == 0)
                 return;
 
             DumpGranularTelemetryCold();
+        }
+
+        private void FlushPrologueTransitionTelemetryDumpRequest()
+        {
+            if (Interlocked.Exchange(ref _prologueTransitionTelemetryDumpRequested, 0) == 0)
+                return;
+
+            DumpPrologueTransitionTelemetryCold();
         }
 
         private void DumpGranularTelemetryCold()
@@ -7697,29 +9108,87 @@ namespace Hecton8.Audio
                 string root = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
                 string directory = Path.Combine(root, "Docs", "AgentLogs");
                 Directory.CreateDirectory(directory);
-                string path = Path.Combine(directory, "Dump_AUDIO_SPATIALIZATION.bin");
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-                using (BinaryWriter writer = new BinaryWriter(stream))
-                {
-                    writer.Write(GranularTelemetryCapacity);
-                    writer.Write(_granularTelemetryCursor);
-                    for (int i = 0; i < _granularTelemetryRing.Length; i++)
-                    {
-                        GranularAudioTelemetryEntry entry = _granularTelemetryRing[i];
-                        writer.Write(entry.SampleIndex);
-                        writer.Write(entry.Stress01);
-                        writer.Write(entry.StressDerivative01);
-                        writer.Write(entry.Depth01);
-                        writer.Write(entry.Impact01);
-                        writer.Write(entry.MixedSample);
-                        writer.Write(entry.ActiveVoices);
-                        writer.Write(entry.VoiceLimit);
-                        writer.Write(entry.Flags);
-                    }
-                }
+                WriteGranularTelemetryDumpCold(Path.Combine(directory, "Dump_STRUCTURAL_ACOUSTICS_LEAD.bin"));
+                WriteGranularTelemetryDumpCold(Path.Combine(directory, "Dump_ACOUSTIC_REFLECTION_MAPPER.bin"));
+                WriteGranularTelemetryDumpCold(Path.Combine(directory, "Dump_KINETIC_IMPACT_ACOUSTICS.bin"));
             }
             catch (Exception)
             {
+            }
+        }
+
+        private void WriteGranularTelemetryDumpCold(string path)
+        {
+            using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+            using (BinaryWriter writer = new BinaryWriter(stream))
+            {
+                writer.Write(GranularTelemetryCapacity);
+                writer.Write(_granularTelemetryCursor);
+                for (int i = 0; i < _granularTelemetryRing.Length; i++)
+                {
+                    GranularAudioTelemetryEntry entry = _granularTelemetryRing[i];
+                    writer.Write(entry.SampleIndex);
+                    writer.Write(entry.Stress01);
+                    writer.Write(entry.StressDerivative01);
+                    writer.Write(entry.Depth01);
+                    writer.Write(entry.Impact01);
+                    writer.Write(entry.MixedSample);
+                    writer.Write(entry.PeakImpactEnergyJoules);
+                    writer.Write(entry.ActiveVoices);
+                    writer.Write(entry.VoiceLimit);
+                    writer.Write(entry.ActiveEchoTaps);
+                    writer.Write(entry.Flags);
+                }
+            }
+        }
+
+        private void DumpPrologueTransitionTelemetryCold()
+        {
+            if (!_prologueTransitionTelemetryRing.IsCreated)
+                return;
+
+            if (Interlocked.Exchange(ref _prologueTransitionTelemetryDumped, 1) != 0)
+                return;
+
+            try
+            {
+                string root = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+                string directory = Path.Combine(root, "Docs", "AgentLogs");
+                Directory.CreateDirectory(directory);
+                WritePrologueTransitionTelemetryDumpCold(Path.Combine(directory, "Dump_PROLOGUE_ACOUSTIC_ORCHESTRATOR.bin"));
+            }
+            catch (Exception)
+            {
+            }
+        }
+
+        private void WritePrologueTransitionTelemetryDumpCold(string path)
+        {
+            using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+            using (BinaryWriter writer = new BinaryWriter(stream))
+            {
+                writer.Write(PrologueTransitionTelemetryCapacity);
+                writer.Write(_prologueTransitionTelemetryCursor);
+                for (int i = 0; i < _prologueTransitionTelemetryRing.Length; i++)
+                {
+                    PrologueAudioTransitionTelemetryEntry entry = _prologueTransitionTelemetryRing[i];
+                    writer.Write(entry.Frame);
+                    writer.Write(entry.Sequence);
+                    writer.Write(entry.UniverseVelocityMetersPerSecond);
+                    writer.Write(entry.Heat01);
+                    writer.Write(entry.LowPassCutoffHz);
+                    writer.Write(entry.LfeGain01);
+                    writer.Write(entry.GranularStress01);
+                    writer.Write(entry.SplashdownGain01);
+                    writer.Write(entry.PortalBlend01);
+                    writer.Write(entry.AudioLowPassCutoffHz);
+                    writer.Write(entry.SplashdownSamplesRemaining);
+                    writer.Write(entry.Stage);
+                    writer.Write(entry.Flags);
+                    writer.Write(entry.QualityTier);
+                    writer.Write(entry.Reserved);
+                    writer.Write(entry.DspFlags);
+                }
             }
         }
 
@@ -7754,6 +9223,11 @@ namespace Hecton8.Audio
             if (voiceIndex < 0)
                 return;
 
+            float safeStress = math.saturate(FiniteOrZero(stress));
+            float safeStressDerivative = math.saturate(FiniteOrZero(stressDerivative));
+            float safeDepthParam = math.saturate(FiniteOrZero(depthParam));
+            float safeImpactDrive = math.saturate(FiniteOrZero(impactDrive));
+            float safePitchWobble = math.clamp(FiniteOrDefault(accelerationPitchWobble, 1f), 0.92f, 1.12f);
             uint lcg = seed == 0u ? 0x9E3779B9u : seed;
             uint durationSeed = NextLcg(lcg);
             uint startSeed = NextLcg(durationSeed);
@@ -7767,17 +9241,16 @@ namespace Hecton8.Audio
                 minSamples + (int)MapUIntToRange(durationSeed, (uint)durationRange));
             int selectableRange = math.max(1, grainBank.Length - grainSamples - 1);
             int startIndex = (int)MapUIntToRange(startSeed, (uint)selectableRange);
-            float depthPitch = math.lerp(1f, 0.52f, math.saturate(depthParam));
+            float depthPitch = math.lerp(1f, 0.52f, safeDepthParam);
             float basePitch = highPitchCluster
                 ? math.lerp(1.22f, 1.82f, Hash01(pitchSeed ^ 0xA7C15E31u))
                 : math.lerp(0.72f, 1.16f, Hash01(pitchSeed ^ 0xC2B2AE35u));
-            float derivativePitch = math.lerp(1f, 1.28f, math.saturate(stressDerivative));
-            float dopplerFake = math.clamp(accelerationPitchWobble, 0.92f, 1.12f);
-            float playbackRate = math.clamp(basePitch * derivativePitch * depthPitch * dopplerFake, 0.35f, 2.4f);
+            float derivativePitch = math.lerp(1f, 1.28f, safeStressDerivative);
+            float playbackRate = math.clamp(basePitch * derivativePitch * depthPitch * safePitchWobble, 0.35f, 2.4f);
             float gain =
-                math.lerp(0.06f, 0.28f, math.saturate(depthParam)) *
-                math.lerp(0.42f, 1f, math.saturate(stress)) *
-                math.lerp(0.75f, 1.65f, math.max(math.saturate(stressDerivative), impactDrive)) *
+                math.lerp(0.06f, 0.28f, safeDepthParam) *
+                math.lerp(0.42f, 1f, safeStress) *
+                math.lerp(0.75f, 1.65f, math.max(safeStressDerivative, safeImpactDrive)) *
                 math.lerp(0.88f, 1.12f, Hash01(gainSeed ^ 0x3D4E91B7u));
 
             _granularVoiceActive[voiceIndex] = 1;
@@ -7792,7 +9265,10 @@ namespace Hecton8.Audio
 
         private int ResolveGranularVoiceSlot(int voiceLimit, bool highPrioritySteal)
         {
-            int safeLimit = math.clamp(voiceLimit, 1, GranularVoiceCapacity);
+            int safeLimit = math.clamp(voiceLimit, GranularDisabledVoiceCapacity, GranularVoiceCapacity);
+            if (safeLimit <= 0)
+                return -1;
+
             int shortestTailVoiceIndex = -1;
             int shortestTailSamples = int.MaxValue;
             for (int i = 0; i < safeLimit; i++)
@@ -8390,8 +9866,79 @@ namespace Hecton8.Audio
             return math.saturate(simplex * 0.5f + 0.5f);
         }
 
+        private static AudioTransitionState SanitizePrologueAudioTransition(
+            in AudioTransitionState state,
+            out bool invalid)
+        {
+            invalid =
+                !math.isfinite(state.UniverseVelocityMetersPerSecond) ||
+                !math.isfinite(state.Heat01) ||
+                !math.isfinite(state.LowPassCutoffHz) ||
+                !math.isfinite(state.LfeGain01) ||
+                !math.isfinite(state.GranularStress01) ||
+                !math.isfinite(state.SplashdownGain01) ||
+                !math.isfinite(state.PortalBlend01) ||
+                !math.isfinite(state.AbsoluteTimeSeconds);
+
+            AudioTransitionState sanitized = state;
+            sanitized.UniverseVelocityMetersPerSecond = math.isfinite(state.UniverseVelocityMetersPerSecond)
+                ? math.max(0f, state.UniverseVelocityMetersPerSecond)
+                : 0f;
+            sanitized.Heat01 = math.isfinite(state.Heat01) ? math.saturate(state.Heat01) : 0f;
+            sanitized.LowPassCutoffHz = math.clamp(
+                math.isfinite(state.LowPassCutoffHz) ? state.LowPassCutoffHz : PrologueClosedLowPassHertz,
+                AcousticOcclusionUtility.MinimumLowPassCutoffHertz,
+                PrologueOpenLowPassHertz);
+            sanitized.LfeGain01 = math.isfinite(state.LfeGain01) ? math.saturate(state.LfeGain01) : 0f;
+            sanitized.GranularStress01 = math.isfinite(state.GranularStress01) ? math.saturate(state.GranularStress01) : 0f;
+            sanitized.SplashdownGain01 = math.isfinite(state.SplashdownGain01) ? math.saturate(state.SplashdownGain01) : 0f;
+            sanitized.PortalBlend01 = math.isfinite(state.PortalBlend01) ? math.saturate(state.PortalBlend01) : 0f;
+            if (sanitized.Stage < AudioTransitionState.StageSpace || sanitized.Stage > AudioTransitionState.StageOceanHandoff)
+            {
+                sanitized.Stage = AudioTransitionState.StageSpace;
+                invalid = true;
+            }
+
+            if (invalid)
+                sanitized.Flags = (byte)(sanitized.Flags | AudioTransitionState.FlagNonFiniteGuard);
+
+            return sanitized;
+        }
+
+        private void DrainPrologueTransitionQueue()
+        {
+            if (!_prologueTransitionQueue.IsCreated)
+                return;
+
+            int guard = math.min(math.max(0, _prologueTransitionQueueCount), PrologueTransitionQueueCapacity);
+            while (guard-- > 0 && _prologueTransitionQueue.TryDequeue(out AudioTransitionState state))
+            {
+                _prologueTransitionQueueCount = math.max(0, _prologueTransitionQueueCount - 1);
+                ApplyPrologueTransitionState(in state);
+                RecordPrologueTransitionTelemetry(in state);
+            }
+        }
+
+        private void ApplyPrologueTransitionState(in AudioTransitionState state)
+        {
+            _targetPrologueLowPassCutoffHertz = math.clamp(
+                state.LowPassCutoffHz,
+                AcousticOcclusionUtility.MinimumLowPassCutoffHertz,
+                PrologueOpenLowPassHertz);
+            _targetPrologueLfeGain = math.saturate(state.LfeGain01);
+            _targetPrologueGranularStress = math.saturate(state.GranularStress01);
+            _targetPrologueSplashdownGain = math.saturate(state.SplashdownGain01);
+            _targetProloguePortalBlend01 = math.saturate(state.PortalBlend01);
+            _targetPrologueStage = state.Stage;
+            _targetPrologueFlags = state.Flags;
+            if ((state.Flags & AudioTransitionState.FlagSplashdown) != 0)
+                _targetPrologueSplashdownSequence = unchecked((int)state.Sequence);
+        }
+
         private void PublishAudioParameterSnapshot()
         {
+            DrainPrologueTransitionQueue();
+
             AudioParameterSnapshot snapshot = new AudioParameterSnapshot
             {
                 HullStress = _targetHullStressValue,
@@ -8436,7 +9983,15 @@ namespace Hecton8.Audio
                 BinauralShadowCutoffHertz = _targetBinauralShadowCutoffHertz,
                 BinauralEnergy01 = _targetBinauralEnergy01,
                 BinauralWaterDensityMul = _targetBinauralWaterDensityMul,
-                BinauralValid = _targetBinauralValid
+                BinauralValid = _targetBinauralValid,
+                PrologueLowPassCutoffHz = _targetPrologueLowPassCutoffHertz,
+                PrologueLfeGain = _targetPrologueLfeGain,
+                PrologueGranularStress = _targetPrologueGranularStress,
+                PrologueSplashdownGain = _targetPrologueSplashdownGain,
+                ProloguePortalBlend01 = _targetProloguePortalBlend01,
+                PrologueSplashdownSequence = unchecked((uint)_targetPrologueSplashdownSequence),
+                PrologueStage = _targetPrologueStage,
+                PrologueFlags = _targetPrologueFlags
             };
 
             int inactiveIndex = Volatile.Read(ref _audioParameterSnapshotReadIndex) ^ 1;

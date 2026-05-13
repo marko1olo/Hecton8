@@ -56,9 +56,12 @@ using Hecton.Localization;
 using Hecton8.AI;
 using Hecton8.Atmosphere;
 using Hecton8.Audio.Propagation;
+using Hecton8.Audio.Virtualization;
 using Hecton8.Caves;
 using Hecton8.Construction;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
+using Hecton8.Core.Signals;
 using Hecton8.Gameplay;
 using Hecton8.Physics;
 using Hecton8.World;
@@ -76,7 +79,7 @@ namespace Hecton8.Audio
     /// Runtime audio service accessed through Hecton8.Core.GlobalRegistry.Audio.
     /// Zero-GC Ð² hot path. Ð–Ñ‘ÑÑ‚ÐºÐ¸Ð¹ Ð»Ð¸Ð¼Ð¸Ñ‚ Ð¾Ð´Ð½Ð¾Ð²Ñ€ÐµÐ¼ÐµÐ½Ð½Ñ‹Ñ… Ð¸ÑÑ‚Ð¾Ñ‡Ð½Ð¸ÐºÐ¾Ð².
     /// </summary>
-    public sealed class SpatialAudioManager : MonoBehaviour, IAudioService, IUpdatable, ISlowTickable, ILateFrameTickable, IPhysicsImpactEventListener, IPhysicsAcousticImpulseEventListener, IRepairDroneTorchAcousticListener, IFatalPressureImplosionEventListener, IServiceHeartbeat, IServiceShutdown
+    public sealed class SpatialAudioManager : MonoBehaviour, IAudioService, IAudioVirtualizationService, IUpdatable, IFastTickable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IPhysicsImpactEventListener, IPhysicsAcousticImpulseEventListener, IRepairDroneTorchAcousticListener, IFatalPressureImplosionEventListener, IServiceHeartbeat, IServiceShutdown
     {
         private const float SoundSpeedWaterMetersPerSecond = 1480f;
         private const float MassiveDistanceFixedAudioDelayMeters = 740f;
@@ -178,6 +181,12 @@ namespace Hecton8.Audio
         private const float NullClipEditorLogIntervalSeconds = 5f;
         private const int MaxQueuedAudioEvents = 32;
         private const int MaxQueuedSoundEmissionSignals = 32;
+        private const int MaxVirtualVoiceCapacity = 8192;
+        private const int MaxVirtualPhysicalVoices = 16;
+        private const int LowTierVirtualPhysicalVoices = 8;
+        private const int VirtualVoiceBlackBoxFrameCount = 300;
+        private const float VirtualVoiceStealFadeSeconds = 0.01f;
+        private const string VirtualVoiceDumpRelativePath = "Docs/AgentLogs/Dump_ACOUSTIC_OCCLUSION_CULLING.bin";
         private const int AcousticPortalMaxNodes = AcousticPortalConstants.MaxPathNodes;
         private const int AcousticPortalMaxEdges = AcousticPortalConstants.MaxPathEdges;
         private const int AcousticPortalCacheCapacity = 16;
@@ -199,6 +208,9 @@ namespace Hecton8.Audio
         private const int SabineReverbDecayLutMaxIndex = SabineReverbDecayLutSize - 1;
         private const float SabineReverbDepthReferenceMeters = 6000f;
         private const float SabineReverbModuleVolumeReferenceCubicMeters = 6000f;
+        private static readonly uint _virtualVoiceTelemetryHash = unchecked((uint)LocHash.Compute("Audio.VirtualVoiceTelemetry"));
+        private static readonly uint _virtualVoiceActiveHash = unchecked((uint)LocHash.Compute("Audio.VirtualVoice.Active"));
+        private static readonly uint _virtualVoiceCulledHash = unchecked((uint)LocHash.Compute("Audio.VirtualVoice.Culled"));
 
         private enum AudioLodTier : byte
         {
@@ -452,9 +464,12 @@ namespace Hecton8.Audio
         private int[] _activeWorldSlots;
         private int _activeWorldCount;
         private bool _registeredUpdatable;
+        private bool _registeredFastTickable;
         private bool _registeredSlowTickable;
         private bool _registeredLateFrameTickable;
+        private bool _registeredOriginShiftListener;
         private bool _acousticOcclusionRuntimeAcquired;
+        private IFoveatedSimulationDirector _foveatedSimulationDirector;
         private Transform _listenerTransform;
         private Vector3 _previousListenerAbsolutePosition;
         private bool _hasPreviousListenerAbsolutePosition;
@@ -531,6 +546,26 @@ namespace Hecton8.Audio
         private int _soundEmissionSignalQueueCount;
         private int _soundEmissionSignalDroppedCount;
         private NativeQueue<SoundEmissionSignal> _soundEmissionSignals;
+        private NativeList<VirtualVoice> _virtualVoiceWriteQueue;
+        private NativeList<VirtualVoice> _virtualVoiceSortQueue;
+        private NativeArray<VirtualVoiceSelection> _virtualVoiceSelections;
+        private NativeArray<VirtualVoiceStatistics> _virtualVoiceStatistics;
+        private NativeArray<VirtualVoiceTelemetryEntry> _virtualVoiceBlackBox;
+        private JobHandle _virtualVoiceSortHandle;
+        private VirtualVoiceStatistics _lastVirtualVoiceStatistics;
+        private AcousticAup _virtualListenerAup;
+        private int _virtualVoiceBlackBoxCursor;
+        private int _virtualVoiceDroppedCount;
+        private int _virtualPhysicalVoiceLimit = MaxVirtualPhysicalVoices;
+        private bool _virtualVoiceSortScheduled;
+        private bool _hasVirtualListenerAup;
+        private bool _virtualVoiceBlackBoxDumped;
+        private uint[] _virtualChannelStableKeys;
+        private int[] _virtualChannelSourceIndices;
+        private VirtualVoiceSelection[] _virtualChannelPendingSelections;
+        private float[] _virtualChannelFadeRemaining;
+        private float[] _virtualChannelFadeStartVolumes;
+        private byte[] _virtualChannelPendingFlags;
         private NativeArray<AcousticPortalNode> _acousticPortalNodes;
         private NativeArray<AcousticPortalEdge> _acousticPortalEdges;
         private NativeArray<AcousticPathResult> _acousticPortalResult;
@@ -575,6 +610,7 @@ namespace Hecton8.Audio
 
             if (_isInitialized)
                 TrySubscribeAudioEvents();
+            TryRegisterOriginShiftListener();
         }
 
         private void OnDisable()
@@ -600,6 +636,7 @@ namespace Hecton8.Audio
             TryUnsubscribeAudioEvents();
             if (_isInitialized)
             {
+                GlobalRegistry.UnregisterAudioVirtualizationService(this);
                 GlobalRegistry.UnregisterAudioService(this);
                 _isInitialized = false;
             }
@@ -608,6 +645,10 @@ namespace Hecton8.Audio
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
 
             _registeredUpdatable = false;
+            if (_registeredFastTickable)
+                GlobalRegistry.UnregisterFastTickable(this, PriorityLayer.Environment);
+
+            _registeredFastTickable = false;
             if (_registeredSlowTickable)
                 GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
 
@@ -616,6 +657,10 @@ namespace Hecton8.Audio
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
 
             _registeredLateFrameTickable = false;
+            if (_registeredOriginShiftListener)
+                HectonFloatingOrigin.UnregisterListener(this);
+
+            _registeredOriginShiftListener = false;
             _hasPreviousListenerAbsolutePosition = false;
             _previousListenerAbsolutePosition = default;
             ResetAllWorldSourceState();
@@ -626,7 +671,9 @@ namespace Hecton8.Audio
             ResetBaseInteriorMuffleCache();
             ClearDelayedAudioEvents();
             ClearAudioEventQueue();
+            ClearVirtualVoiceQueues();
             _listenerPlayerMovement = null;
+            _foveatedSimulationDirector = null;
             _listenerWaterDensityMul = 0f;
             SetParasiteRoomAcousticLoad(0);
             SetEclipseAcousticPitchShiftCents(0f);
@@ -658,6 +705,32 @@ namespace Hecton8.Audio
 
         /// <inheritdoc />
         public bool IsServiceReady => _isInitialized;
+
+        /// <inheritdoc />
+        public bool IsVirtualizationReady =>
+            _runtimeResourcesInitialized &&
+            _virtualVoiceWriteQueue.IsCreated &&
+            _virtualVoiceSortQueue.IsCreated &&
+            _virtualVoiceSelections.IsCreated &&
+            _virtualVoiceStatistics.IsCreated;
+
+        /// <inheritdoc />
+        public int PhysicalVoiceLimit => _virtualPhysicalVoiceLimit;
+
+        /// <inheritdoc />
+        public int VirtualVoiceCount => _virtualVoiceWriteQueue.IsCreated ? _virtualVoiceWriteQueue.Length : 0;
+
+        /// <inheritdoc />
+        public int ActivePhysicalVoiceCount => _lastVirtualVoiceStatistics.ActivePhysicalVoices;
+
+        /// <inheritdoc />
+        public int CulledVoiceCount => _lastVirtualVoiceStatistics.CulledVoices;
+
+        /// <inheritdoc />
+        public int StolenVoiceCount => _lastVirtualVoiceStatistics.StolenVoices;
+
+        /// <inheritdoc />
+        public int DroppedVoiceCount => _virtualVoiceDroppedCount;
 
         /// <summary>
         /// Current eclipse-driven pitch shift applied to ambient bed/drone world sources.
@@ -721,19 +794,25 @@ namespace Hecton8.Audio
         {
             EnsureRuntimeResourcesInitialized();
             TrySubscribeAudioEvents();
+            TryRegisterOriginShiftListener();
 
             if (_isInitialized)
             {
                 TryRegisterUpdatable();
+                TryRegisterFastTickable();
                 TryRegisterSlowTickable();
                 TryRegisterLateFrameTickable();
+                RefreshFoveatedDirector();
                 return;
             }
 
             GlobalRegistry.RegisterAudioService(this);
+            GlobalRegistry.RegisterAudioVirtualizationService(this);
             TryRegisterUpdatable();
+            TryRegisterFastTickable();
             TryRegisterSlowTickable();
             TryRegisterLateFrameTickable();
+            RefreshFoveatedDirector();
             _isInitialized = true;
         }
 
@@ -784,6 +863,7 @@ namespace Hecton8.Audio
                 return;
 
             float safeDeltaTime = math.max(0f, deltaTime);
+            AdvanceVirtualVoiceStealFades(safeDeltaTime);
             float blendT = FastDecayBlend(HaasBlendSharpness, safeDeltaTime);
             float now = Time.unscaledTime;
             int currentFrame = Time.frameCount;
@@ -893,6 +973,63 @@ namespace Hecton8.Audio
         }
 
         /// <summary>
+        /// Ranks virtual acoustic emitters after simulation and before late-frame DSP injection.
+        /// </summary>
+        /// <param name="deltaTime">Dispatcher delta time.</param>
+        public void FastTick(float deltaTime)
+        {
+            CompleteVirtualVoiceSort();
+            RefreshVirtualPhysicalVoiceLimit();
+            RefreshFoveatedDirector();
+
+            if (!_virtualVoiceWriteQueue.IsCreated ||
+                !_virtualVoiceSortQueue.IsCreated ||
+                !_virtualVoiceSelections.IsCreated ||
+                !_virtualVoiceStatistics.IsCreated)
+            {
+                return;
+            }
+
+            if (!TryResolveListenerFrame(
+                    out _,
+                    out _,
+                    out _,
+                    out AbsoluteUniversePosition listenerAup))
+            {
+                _hasVirtualListenerAup = false;
+                _virtualVoiceWriteQueue.Clear();
+                _virtualVoiceSortQueue.Clear();
+                ResetVirtualVoiceSelections();
+                _lastVirtualVoiceStatistics = default;
+                return;
+            }
+
+            AcousticAup acousticListener = ToAcousticAup(in listenerAup);
+            SetVirtualListener(in acousticListener);
+
+            NativeList<VirtualVoice> previousSortQueue = _virtualVoiceSortQueue;
+            _virtualVoiceSortQueue = _virtualVoiceWriteQueue;
+            _virtualVoiceWriteQueue = previousSortQueue;
+            _virtualVoiceWriteQueue.Clear();
+
+            var sortJob = new VirtualVoiceSortJob
+            {
+                Voices = _virtualVoiceSortQueue,
+                Selections = _virtualVoiceSelections,
+                Statistics = _virtualVoiceStatistics,
+                ListenerAup = _virtualListenerAup,
+                PhysicalVoiceLimit = _virtualPhysicalVoiceLimit,
+                DroppedVoiceCount = _virtualVoiceDroppedCount,
+                Frame = Time.frameCount,
+                MinimumAudibleEnergy = VirtualVoiceUtility.MinimumAudibleEnergy
+            };
+
+            _virtualVoiceDroppedCount = 0;
+            _virtualVoiceSortHandle = sortJob.Schedule();
+            _virtualVoiceSortScheduled = true;
+        }
+
+        /// <summary>
         /// Refreshes listener cave/reverb telemetry on the slow lane.
         /// </summary>
         public void SlowTick()
@@ -913,11 +1050,28 @@ namespace Hecton8.Audio
         }
 
         /// <summary>
+        /// Locks virtual voice job ownership during floating-origin shifts.
+        /// </summary>
+        /// <param name="shiftData">Committed shift payload.</param>
+        public void OnOriginShift(in OriginShiftEventData shiftData)
+        {
+            if (!IsFinite(shiftData.ShiftOffset))
+            {
+                DumpVirtualVoiceBlackBox();
+                return;
+            }
+
+            CompleteVirtualVoiceSort();
+        }
+
+        /// <summary>
         /// Drains queued gameplay audio events after frame simulation.
         /// </summary>
         public void LateFrameTick()
         {
             AcousticOcclusionUtility.LateFrameTick();
+            CompleteVirtualVoiceSort();
+            InjectVirtualVoiceSelections();
             DrainSoundEmissionSignals();
             DrainAudioEventQueue();
         }
@@ -1230,7 +1384,7 @@ namespace Hecton8.Audio
                 0);
         }
 
-        private void PlayAtPointResolved(
+        private int PlayAtPointResolved(
             AudioClip clip,
             Vector3 position,
             in AbsoluteUniversePosition sourceAup,
@@ -1238,7 +1392,8 @@ namespace Hecton8.Audio
             float volume,
             float pitch,
             AudioMixerGroup mixerGroup,
-            int stationaryCacheKey)
+            int stationaryCacheKey,
+            float dopplerRatio = 1f)
         {
             if (clip == null)
             {
@@ -1246,11 +1401,11 @@ namespace Hecton8.Audio
                 if (ShouldEmitEditorThrottledLog(ref _nextPlayAtPointNullClipLogTime, NullClipEditorLogIntervalSeconds))
                     Debug.LogWarning("[SpatialAudioManager] PlayAtPoint called with null clip.");
 #endif
-                return;
+                return -1;
             }
 
             if (_pool == null || _poolSize <= 0)
-                return;
+                return -1;
 
             bool hasListener = TryResolveListenerFrame(
                 out Transform listener,
@@ -1307,7 +1462,13 @@ namespace Hecton8.Audio
             _basePitches[index] = clampedPitch;
             source.outputAudioMixerGroup = ResolveWorldMixerGroup(clip, mixerGroup);
             CacheWorldSourceBusFlags(index, source.outputAudioMixerGroup);
-            source.pitch = ResolveSourcePitch(index, 1f);
+            float clampedDopplerRatio = math.clamp(
+                1f,
+                VirtualVoiceUtility.MinimumDopplerRatio,
+                VirtualVoiceUtility.MaximumDopplerRatio);
+            if (_smoothedDopplerRatios != null && index < _smoothedDopplerRatios.Length)
+                _smoothedDopplerRatios[index] = clampedDopplerRatio;
+            source.pitch = ResolveSourcePitch(index, clampedDopplerRatio);
             _audioLodTiers[index] = lodTier;
             float now = Time.unscaledTime;
             int currentFrame = Time.frameCount;
@@ -1336,6 +1497,7 @@ namespace Hecton8.Audio
             CacheActiveWorldRuntimePosition(index, audiblePosition, currentFrame);
             CacheActiveWorldAup(index, in audibleAup, currentFrame);
             MarkWorldSourceActive(index);
+            return;
         }
 
         public bool QueueAudioEvent(in CoreAudioEvent audioEvent)
@@ -1354,21 +1516,39 @@ namespace Hecton8.Audio
             return true;
         }
 
+        public bool QueuePrologueAudioTransition(in AudioTransitionState state)
+        {
+            PlayerCriticalProceduralAudioRenderer playerCriticalAudio = GlobalRegistry.PlayerCriticalAudio;
+            return playerCriticalAudio != null && playerCriticalAudio.QueuePrologueAudioTransition(in state);
+        }
+
         public bool QueueSoundEmissionSignal(in SoundEmissionSignal signal)
         {
-            if (!_soundEmissionSignals.IsCreated ||
-                _soundEmissionSignalQueueCount >= MaxQueuedSoundEmissionSignals ||
-                !TryResolveAudioEventClip(signal.EventID, out _) ||
+            if (!_virtualVoiceWriteQueue.IsCreated ||
+                !TryResolveAudioEventClip(signal.EventID, out AudioClip clip) ||
                 !AcousticAup.IsFinite(in signal.SourceAup))
             {
-                if (_soundEmissionSignals.IsCreated && _soundEmissionSignalQueueCount >= MaxQueuedSoundEmissionSignals)
-                    _soundEmissionSignalDroppedCount++;
+                if (_virtualVoiceWriteQueue.IsCreated)
+                    _virtualVoiceDroppedCount++;
                 return false;
             }
 
-            _soundEmissionSignals.Enqueue(signal);
-            _soundEmissionSignalQueueCount++;
-            return true;
+            AbsoluteUniversePosition sourceAup = ToAbsoluteUniversePosition(in signal.SourceAup);
+            Vector3 runtimePosition = ToRuntimeVector3(in sourceAup);
+            byte foveatedTier = ResolveVirtualVoiceFoveatedTier(runtimePosition);
+            float priority = ResolveVirtualVoicePriority(signal.Volume, signal.Flags, foveatedTier);
+            var request = new VirtualVoiceRequest(
+                signal.EventID,
+                unchecked((uint)clip.GetInstanceID()),
+                in signal.SourceAup,
+                signal.Volume,
+                priority,
+                signal.Pitch,
+                1f,
+                signal.StationaryCacheKey,
+                signal.Flags,
+                foveatedTier);
+            return EnqueueVirtualVoice(in request);
         }
 
         public bool QueueHullStressSignal(in HullStressSignal signal)
@@ -1383,8 +1563,78 @@ namespace Hecton8.Audio
                 return false;
             }
 
-            ProceduralAudioEvents.RaiseHullStressSignal(in signal);
+            HullStressSignal routedSignal = signal;
+            AbsoluteUniversePosition sourceAup = signal.SourceAup;
+            float3 sourceRuntime = sourceAup.ToRuntimeFloat3();
+            if (!math.all(math.isfinite(sourceRuntime)))
+                return false;
+
+            Vector3 sourceRuntimePosition = new Vector3(sourceRuntime.x, sourceRuntime.y, sourceRuntime.z);
+            if (TryResolveListenerFrame(
+                    out Transform listener,
+                    out Vector3 listenerRuntimePosition,
+                    out _,
+                    out AbsoluteUniversePosition listenerAup))
+            {
+                ResolveListenerBasis(listener, out float3 listenerRight, out _, out _);
+                if (TryResolveAcousticPortalPath(
+                        sourceRuntimePosition,
+                        listenerRuntimePosition,
+                        listenerRight,
+                        in sourceAup,
+                        in listenerAup,
+                        0,
+                        out AcousticPathResult acousticPathResult))
+                {
+                    float routedTransmission = math.saturate(
+                        signal.AcousticTransmission01 * acousticPathResult.Transmission01);
+                    float routedLowPassCutoffHz = math.min(
+                        signal.LowPassCutoffHz,
+                        acousticPathResult.LowPassCutoffHz);
+                    float routedDelaySeconds = math.max(0f, signal.AcousticDelaySeconds) +
+                        math.max(0f, acousticPathResult.DelaySeconds);
+                    routedSignal = new HullStressSignal(
+                        in sourceAup,
+                        sourceRuntimePosition,
+                        signal.Stress01,
+                        signal.PressureDelta,
+                        signal.DepthMeters,
+                        signal.PitchScale,
+                        routedTransmission,
+                        routedLowPassCutoffHz,
+                        routedDelaySeconds);
+                }
+            }
+
+            ProceduralAudioEvents.RaiseHullStressSignal(in routedSignal);
             return true;
+        }
+
+        public bool QueueHighSpeedImpactSignal(in HighSpeedImpactSignal signal)
+        {
+            if (!IsInitialized ||
+                !math.isfinite(signal.LostKineticEnergy) ||
+                !math.isfinite(signal.ImpactSpeed) ||
+                math.max(signal.LostKineticEnergy, signal.ImpactSpeed) <= 0f)
+            {
+                return false;
+            }
+
+            float3 runtime = signal.PointAup.ToRuntimeFloat3();
+            if (!math.all(math.isfinite(runtime)))
+                return false;
+
+            Vector3 position = new Vector3(runtime.x, runtime.y, runtime.z);
+            float amplitude = math.saturate(signal.ImpactSpeed * 0.04f + signal.LostKineticEnergy * 0.000025f);
+            bool radarQueued = TryQueueImpactRadarEmitter(
+                position,
+                in signal.PointAup,
+                amplitude * ImpactEmitterAmplitudeScale,
+                amplitude);
+
+            PlayerCriticalProceduralAudioRenderer renderer = GlobalRegistry.PlayerCriticalAudio;
+            bool proceduralQueued = renderer != null && renderer.QueueHighSpeedImpactSignal(in signal);
+            return radarQueued || proceduralQueued;
         }
 
         private bool TryResolveAudioEventClip(uint eventID, out AudioClip clip)
@@ -1452,6 +1702,741 @@ namespace Hecton8.Audio
                 signal.Pitch,
                 ResolvedDefaultWorldMixerGroup,
                 stationaryCacheKey);
+        }
+
+        /// <inheritdoc />
+        public bool EnqueueVirtualVoice(in VirtualVoiceRequest request)
+        {
+            if (!_virtualVoiceWriteQueue.IsCreated ||
+                _virtualVoiceWriteQueue.Length >= _virtualVoiceWriteQueue.Capacity ||
+                !AcousticAup.IsFinite(in request.SourceAup) ||
+                !TryResolveAudioEventClip(request.EventID, out _))
+            {
+                if (_virtualVoiceWriteQueue.IsCreated)
+                    _virtualVoiceDroppedCount++;
+                return false;
+            }
+
+            float priority = request.FoveatedTier >= VirtualVoiceUtility.FoveatedTierFrozen
+                ? 0f
+                : math.max(0f, SanitizeFinite(request.Priority, 0f));
+            uint stableKey = VirtualVoiceUtility.ComputeStableKey(request.EventID, request.ClipHash, in request.SourceAup);
+            _virtualVoiceWriteQueue.Add(new VirtualVoice
+            {
+                EventID = request.EventID,
+                ClipHash = request.ClipHash,
+                StableKey = stableKey,
+                SourceAup = request.SourceAup,
+                Volume = math.saturate(SanitizeFinite(request.Volume, 0f)),
+                Priority = priority,
+                Pitch = math.clamp(SanitizeFinite(request.Pitch, 1f), 0.1f, 3f),
+                DopplerRatio = math.clamp(
+                    SanitizeFinite(request.DopplerRatio, 1f),
+                    VirtualVoiceUtility.MinimumDopplerRatio,
+                    VirtualVoiceUtility.MaximumDopplerRatio),
+                StationaryCacheKey = request.StationaryCacheKey,
+                PortalFlags = request.PortalFlags,
+                FoveatedTier = request.FoveatedTier
+            });
+            return true;
+        }
+
+        /// <inheritdoc />
+        public void SetVirtualListener(in AcousticAup listenerAup)
+        {
+            if (!AcousticAup.IsFinite(in listenerAup))
+            {
+                _hasVirtualListenerAup = false;
+                return;
+            }
+
+            _virtualListenerAup = listenerAup;
+            _hasVirtualListenerAup = true;
+        }
+
+        /// <inheritdoc />
+        public void SetLowTierVirtualization(bool lowTier)
+        {
+            _virtualPhysicalVoiceLimit = lowTier ? LowTierVirtualPhysicalVoices : MaxVirtualPhysicalVoices;
+        }
+
+        /// <inheritdoc />
+        public void ApplyVirtualVoiceAupShift(long gridDeltaX, long gridDeltaY, long gridDeltaZ)
+        {
+            CompleteVirtualVoiceSort();
+            RebaseVirtualVoiceList(ref _virtualVoiceWriteQueue, gridDeltaX, gridDeltaY, gridDeltaZ);
+            RebaseVirtualVoiceList(ref _virtualVoiceSortQueue, gridDeltaX, gridDeltaY, gridDeltaZ);
+            if (_hasVirtualListenerAup)
+            {
+                _virtualListenerAup.GridX += gridDeltaX;
+                _virtualListenerAup.GridY += gridDeltaY;
+                _virtualListenerAup.GridZ += gridDeltaZ;
+            }
+        }
+
+        /// <inheritdoc />
+        public bool TryGetVirtualizationStats(out VirtualVoiceStatistics statistics)
+        {
+            statistics = _lastVirtualVoiceStatistics;
+            return IsVirtualizationReady;
+        }
+
+        private void CompleteVirtualVoiceSort()
+        {
+            if (!_virtualVoiceSortScheduled)
+                return;
+
+            _virtualVoiceSortHandle.Complete();
+            _virtualVoiceSortScheduled = false;
+            if (_virtualVoiceStatistics.IsCreated && _virtualVoiceStatistics.Length > 0)
+                _lastVirtualVoiceStatistics = _virtualVoiceStatistics[0];
+
+            PushVirtualVoiceTelemetry(in _lastVirtualVoiceStatistics);
+            PublishVirtualVoiceTelemetry(in _lastVirtualVoiceStatistics);
+        }
+
+        private void InjectVirtualVoiceSelections()
+        {
+            if (!_virtualVoiceSelections.IsCreated ||
+                _virtualChannelStableKeys == null ||
+                _virtualChannelSourceIndices == null)
+            {
+                return;
+            }
+
+            int safeLimit = math.clamp(_lastVirtualVoiceStatistics.PhysicalVoiceLimit, 0, MaxVirtualPhysicalVoices);
+            int selectedCount = math.clamp(_lastVirtualVoiceStatistics.ActivePhysicalVoices, 0, safeLimit);
+            for (int channel = safeLimit; channel < MaxVirtualPhysicalVoices; channel++)
+                BeginVirtualChannelFadeToSilence(channel);
+
+            for (int i = 0; i < selectedCount; i++)
+            {
+                VirtualVoiceSelection selection = _virtualVoiceSelections[i];
+                if (selection.StableKey == 0u)
+                    continue;
+
+                int channel = FindVirtualChannelByStableKey(selection.StableKey, safeLimit);
+                if (channel < 0)
+                    channel = FindFreeVirtualChannel(safeLimit);
+                if (channel < 0)
+                    channel = math.min(i, safeLimit - 1);
+                if (channel < 0)
+                    continue;
+
+                uint currentKey = _virtualChannelStableKeys[channel];
+                if (currentKey != 0u && currentKey != selection.StableKey)
+                    BeginVirtualChannelSteal(channel, in selection);
+                else
+                    StartOrUpdateVirtualPhysicalVoice(channel, in selection);
+            }
+
+            for (int channel = 0; channel < safeLimit; channel++)
+            {
+                if (_virtualChannelPendingFlags != null && _virtualChannelPendingFlags[channel] != 0)
+                    continue;
+
+                uint key = _virtualChannelStableKeys[channel];
+                if (key != 0u && !IsVirtualStableKeySelected(key, selectedCount))
+                    BeginVirtualChannelFadeToSilence(channel);
+            }
+        }
+
+        private void StartOrUpdateVirtualPhysicalVoice(int channel, in VirtualVoiceSelection selection)
+        {
+            int sourceIndex = ResolveVirtualChannelSourceIndex(channel);
+            if (sourceIndex >= 0 &&
+                _pool != null &&
+                sourceIndex < _pool.Length &&
+                _pool[sourceIndex] != null &&
+                _pool[sourceIndex].clip != null &&
+                _pool[sourceIndex].isPlaying &&
+                _virtualChannelStableKeys[channel] == selection.StableKey)
+            {
+                UpdateVirtualPhysicalVoice(channel, sourceIndex, in selection);
+                return;
+            }
+
+            StartVirtualPhysicalVoice(channel, in selection, sourceIndex);
+        }
+
+        private void StartVirtualPhysicalVoice(int channel, in VirtualVoiceSelection selection, int preferredSourceIndex)
+        {
+            bool played = preferredSourceIndex >= 0 &&
+                TryPlayVirtualSelectionOnSource(channel, preferredSourceIndex, in selection);
+            if (!played)
+            {
+                AbsoluteUniversePosition sourceAup = ToAbsoluteUniversePosition(in selection.SourceAup);
+                Vector3 runtimePosition = ToRuntimeVector3(in sourceAup);
+                Vector3 absolutePosition = ToAbsoluteVector3(in sourceAup);
+                int sourceIndex = PlayAtPointResolved(
+                    TryResolveAudioEventClip(selection.EventID, out AudioClip clip) ? clip : null,
+                    runtimePosition,
+                    in sourceAup,
+                    absolutePosition,
+                    selection.Volume,
+                    selection.Pitch,
+                    ResolvedDefaultWorldMixerGroup,
+                    selection.StationaryCacheKey,
+                    selection.DopplerRatio);
+                played = sourceIndex >= 0;
+                preferredSourceIndex = sourceIndex;
+            }
+
+            if (!played)
+            {
+                ClearVirtualChannel(channel);
+                return;
+            }
+
+            ClearVirtualChannelOwningSource(preferredSourceIndex, channel);
+            _virtualChannelStableKeys[channel] = selection.StableKey;
+            _virtualChannelSourceIndices[channel] = preferredSourceIndex;
+            _virtualChannelPendingFlags[channel] = 0;
+            _virtualChannelFadeRemaining[channel] = 0f;
+        }
+
+        private bool TryPlayVirtualSelectionOnSource(int channel, int sourceIndex, in VirtualVoiceSelection selection)
+        {
+            if (!TryResolveAudioEventClip(selection.EventID, out AudioClip clip) ||
+                _pool == null ||
+                sourceIndex < 0 ||
+                sourceIndex >= _pool.Length ||
+                _pool[sourceIndex] == null)
+            {
+                return false;
+            }
+
+            AbsoluteUniversePosition sourceAup = ToAbsoluteUniversePosition(in selection.SourceAup);
+            Vector3 runtimePosition = ToRuntimeVector3(in sourceAup);
+            Vector3 sourceAbsolutePosition = ToAbsoluteVector3(in sourceAup);
+            bool hasListener = TryResolveListenerFrame(
+                out Transform listener,
+                out Vector3 listenerRuntimePosition,
+                out Vector3 listenerAbsolutePosition,
+                out AbsoluteUniversePosition listenerAup);
+            ResolveListenerBasis(listener, out float3 listenerRight, out _, out float3 listenerForward);
+            float3 listenerAcousticForward = listenerForward;
+            Vector3 audiblePosition = runtimePosition;
+            Vector3 audibleAbsolutePosition = sourceAbsolutePosition;
+            AbsoluteUniversePosition audibleAup = sourceAup;
+            AcousticPathResult acousticPortalResult = default;
+            bool hasAcousticPortalPath = hasListener &&
+                TryResolveAcousticPortalPath(
+                    runtimePosition,
+                    listenerRuntimePosition,
+                    listenerRight,
+                    in sourceAup,
+                    in listenerAup,
+                    selection.StationaryCacheKey,
+                    out acousticPortalResult);
+            if (hasAcousticPortalPath)
+            {
+                audibleAup = ToAbsoluteUniversePosition(in acousticPortalResult.LastPortalAup);
+                audiblePosition = ToRuntimeVector3(in audibleAup);
+                audibleAbsolutePosition = ToAbsoluteVector3(in audibleAup);
+            }
+
+            AudioLodTier lodTier = hasListener
+                ? ResolveAudioLodTier(in audibleAup, in listenerAup)
+                : AudioLodTier.Tier0Full;
+            if (lodTier == AudioLodTier.Tier2Culled)
+                return false;
+
+            AudioSource source = _pool[sourceIndex];
+            ResetWorldSourceState(sourceIndex, true);
+            source.enabled = true;
+            source.transform.position = audiblePosition;
+            source.clip = clip;
+            float clampedVolume = math.saturate(selection.Volume);
+            if (hasAcousticPortalPath)
+                clampedVolume *= acousticPortalResult.Transmission01;
+            source.volume = clampedVolume;
+            float clampedPitch = math.clamp(selection.Pitch, 0.1f, 3f);
+            _baseVolumes[sourceIndex] = clampedVolume;
+            _basePitches[sourceIndex] = clampedPitch;
+            source.outputAudioMixerGroup = ResolveWorldMixerGroup(clip, ResolvedDefaultWorldMixerGroup);
+            CacheWorldSourceBusFlags(sourceIndex, source.outputAudioMixerGroup);
+            float dopplerRatio = math.clamp(
+                selection.DopplerRatio,
+                VirtualVoiceUtility.MinimumDopplerRatio,
+                VirtualVoiceUtility.MaximumDopplerRatio);
+            if (_smoothedDopplerRatios != null && sourceIndex < _smoothedDopplerRatios.Length)
+                _smoothedDopplerRatios[sourceIndex] = dopplerRatio;
+            source.pitch = ResolveSourcePitch(sourceIndex, dopplerRatio);
+            _audioLodTiers[sourceIndex] = lodTier;
+            float now = Time.unscaledTime;
+            int currentFrame = Time.frameCount;
+            UpdateWorldSourceAudioLod(
+                sourceIndex,
+                source,
+                audiblePosition,
+                audibleAbsolutePosition,
+                in audibleAup,
+                listener,
+                in listenerAup,
+                listenerRuntimePosition,
+                listenerRight,
+                listenerAcousticForward,
+                listenerAbsolutePosition,
+                now,
+                true);
+            if (hasAcousticPortalPath)
+                ApplyAcousticPortalPresentation(sourceIndex, source, in acousticPortalResult);
+            ApplyHaasMask(sourceIndex, in audibleAup, hasListener, in listenerAup, now);
+            source.spatialBlend = ResolveTargetSpatialBlend(sourceIndex, now);
+            PlayAcousticSource(source, hasAcousticPortalPath ? acousticPortalResult.DelaySeconds : 0f);
+            _startTimes[sourceIndex] = now;
+            CacheActiveWorldRuntimePosition(sourceIndex, audiblePosition, currentFrame);
+            CacheActiveWorldAup(sourceIndex, in audibleAup, currentFrame);
+            MarkWorldSourceActive(sourceIndex);
+            return true;
+        }
+
+        private void UpdateVirtualPhysicalVoice(int channel, int sourceIndex, in VirtualVoiceSelection selection)
+        {
+            if (!TryResolveAudioEventClip(selection.EventID, out AudioClip clip) ||
+                _pool == null ||
+                sourceIndex < 0 ||
+                sourceIndex >= _pool.Length)
+            {
+                ClearVirtualChannel(channel);
+                return;
+            }
+
+            AudioSource source = _pool[sourceIndex];
+            if (source == null)
+            {
+                ClearVirtualChannel(channel);
+                return;
+            }
+
+            AbsoluteUniversePosition sourceAup = ToAbsoluteUniversePosition(in selection.SourceAup);
+            Vector3 runtimePosition = ToRuntimeVector3(in sourceAup);
+            source.transform.position = runtimePosition;
+            if (source.clip != clip)
+            {
+                StartVirtualPhysicalVoice(channel, in selection, sourceIndex);
+                return;
+            }
+
+            float clampedVolume = math.saturate(selection.Volume);
+            source.volume = clampedVolume;
+            if (_baseVolumes != null && sourceIndex < _baseVolumes.Length)
+                _baseVolumes[sourceIndex] = clampedVolume;
+
+            float clampedPitch = math.clamp(selection.Pitch, 0.1f, 3f);
+            if (_basePitches != null && sourceIndex < _basePitches.Length)
+                _basePitches[sourceIndex] = clampedPitch;
+
+            float dopplerRatio = math.clamp(
+                selection.DopplerRatio,
+                VirtualVoiceUtility.MinimumDopplerRatio,
+                VirtualVoiceUtility.MaximumDopplerRatio);
+            if (_smoothedDopplerRatios != null && sourceIndex < _smoothedDopplerRatios.Length)
+                _smoothedDopplerRatios[sourceIndex] = dopplerRatio;
+            source.pitch = ResolveSourcePitch(sourceIndex, dopplerRatio);
+            int currentFrame = Time.frameCount;
+            CacheActiveWorldRuntimePosition(sourceIndex, runtimePosition, currentFrame);
+            CacheActiveWorldAup(sourceIndex, in sourceAup, currentFrame);
+            _virtualChannelSourceIndices[channel] = sourceIndex;
+            _virtualChannelStableKeys[channel] = selection.StableKey;
+        }
+
+        private void BeginVirtualChannelSteal(int channel, in VirtualVoiceSelection nextSelection)
+        {
+            if (_virtualChannelPendingFlags == null ||
+                channel < 0 ||
+                channel >= _virtualChannelPendingFlags.Length)
+            {
+                return;
+            }
+
+            if (_virtualChannelPendingFlags[channel] != 0 &&
+                _virtualChannelPendingSelections[channel].StableKey == nextSelection.StableKey)
+            {
+                return;
+            }
+
+            _virtualChannelPendingSelections[channel] = nextSelection;
+            _virtualChannelPendingFlags[channel] = 1;
+            _virtualChannelFadeRemaining[channel] = VirtualVoiceStealFadeSeconds;
+            int sourceIndex = ResolveVirtualChannelSourceIndex(channel);
+            AudioSource source = sourceIndex >= 0 && _pool != null && sourceIndex < _pool.Length
+                ? _pool[sourceIndex]
+                : null;
+            _virtualChannelFadeStartVolumes[channel] = source != null ? math.max(0f, source.volume) : 0f;
+        }
+
+        private void BeginVirtualChannelFadeToSilence(int channel)
+        {
+            if (_virtualChannelPendingSelections == null ||
+                channel < 0 ||
+                channel >= _virtualChannelPendingSelections.Length ||
+                _virtualChannelStableKeys[channel] == 0u)
+            {
+                return;
+            }
+
+            _virtualChannelPendingSelections[channel] = default;
+            _virtualChannelPendingFlags[channel] = 1;
+            _virtualChannelFadeRemaining[channel] = VirtualVoiceStealFadeSeconds;
+            int sourceIndex = ResolveVirtualChannelSourceIndex(channel);
+            AudioSource source = sourceIndex >= 0 && _pool != null && sourceIndex < _pool.Length
+                ? _pool[sourceIndex]
+                : null;
+            _virtualChannelFadeStartVolumes[channel] = source != null ? math.max(0f, source.volume) : 0f;
+        }
+
+        private void AdvanceVirtualVoiceStealFades(float deltaTime)
+        {
+            if (_virtualChannelPendingFlags == null)
+                return;
+
+            float safeDelta = math.max(0f, deltaTime);
+            for (int channel = 0; channel < _virtualChannelPendingFlags.Length; channel++)
+            {
+                if (_virtualChannelPendingFlags[channel] == 0)
+                    continue;
+
+                int sourceIndex = ResolveVirtualChannelSourceIndex(channel);
+                AudioSource source = sourceIndex >= 0 && _pool != null && sourceIndex < _pool.Length
+                    ? _pool[sourceIndex]
+                    : null;
+                float remaining = math.max(0f, _virtualChannelFadeRemaining[channel] - safeDelta);
+                _virtualChannelFadeRemaining[channel] = remaining;
+                if (source != null && source.isPlaying)
+                {
+                    float fade01 = VirtualVoiceStealFadeSeconds > 0f
+                        ? math.saturate(remaining * math.rcp(VirtualVoiceStealFadeSeconds))
+                        : 0f;
+                    source.volume = _virtualChannelFadeStartVolumes[channel] * fade01;
+                    if (remaining > 0f)
+                        continue;
+
+                    source.Stop();
+                    ResetWorldSourceState(sourceIndex, true);
+                }
+
+                VirtualVoiceSelection pendingSelection = _virtualChannelPendingSelections[channel];
+                if (pendingSelection.StableKey != 0u)
+                    StartVirtualPhysicalVoice(channel, in pendingSelection, sourceIndex);
+                else
+                    ClearVirtualChannel(channel);
+            }
+        }
+
+        private int ResolveVirtualChannelSourceIndex(int channel)
+        {
+            if (_virtualChannelSourceIndices == null ||
+                channel < 0 ||
+                channel >= _virtualChannelSourceIndices.Length)
+            {
+                return -1;
+            }
+
+            return _virtualChannelSourceIndices[channel];
+        }
+
+        private int FindVirtualChannelByStableKey(uint stableKey, int limit)
+        {
+            if (stableKey == 0u || _virtualChannelStableKeys == null)
+                return -1;
+
+            int safeLimit = math.min(limit, _virtualChannelStableKeys.Length);
+            for (int channel = 0; channel < safeLimit; channel++)
+            {
+                if (_virtualChannelStableKeys[channel] == stableKey)
+                    return channel;
+            }
+
+            return -1;
+        }
+
+        private int FindFreeVirtualChannel(int limit)
+        {
+            if (_virtualChannelStableKeys == null)
+                return -1;
+
+            int safeLimit = math.min(limit, _virtualChannelStableKeys.Length);
+            for (int channel = 0; channel < safeLimit; channel++)
+            {
+                if (_virtualChannelStableKeys[channel] == 0u &&
+                    (_virtualChannelPendingFlags == null || _virtualChannelPendingFlags[channel] == 0))
+                {
+                    return channel;
+                }
+            }
+
+            return -1;
+        }
+
+        private bool IsVirtualStableKeySelected(uint stableKey, int selectedCount)
+        {
+            if (stableKey == 0u || !_virtualVoiceSelections.IsCreated)
+                return false;
+
+            int safeCount = math.min(selectedCount, _virtualVoiceSelections.Length);
+            for (int i = 0; i < safeCount; i++)
+            {
+                if (_virtualVoiceSelections[i].StableKey == stableKey)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private void ClearVirtualChannelOwningSource(int sourceIndex, int exceptChannel)
+        {
+            if (_virtualChannelSourceIndices == null)
+                return;
+
+            for (int channel = 0; channel < _virtualChannelSourceIndices.Length; channel++)
+            {
+                if (channel == exceptChannel)
+                    continue;
+
+                if (_virtualChannelSourceIndices[channel] == sourceIndex)
+                    ClearVirtualChannel(channel);
+            }
+        }
+
+        private void ClearVirtualChannel(int channel)
+        {
+            if (_virtualChannelStableKeys == null ||
+                channel < 0 ||
+                channel >= _virtualChannelStableKeys.Length)
+            {
+                return;
+            }
+
+            _virtualChannelStableKeys[channel] = 0u;
+            if (_virtualChannelSourceIndices != null && channel < _virtualChannelSourceIndices.Length)
+                _virtualChannelSourceIndices[channel] = -1;
+            if (_virtualChannelPendingSelections != null && channel < _virtualChannelPendingSelections.Length)
+                _virtualChannelPendingSelections[channel] = default;
+            if (_virtualChannelFadeRemaining != null && channel < _virtualChannelFadeRemaining.Length)
+                _virtualChannelFadeRemaining[channel] = 0f;
+            if (_virtualChannelFadeStartVolumes != null && channel < _virtualChannelFadeStartVolumes.Length)
+                _virtualChannelFadeStartVolumes[channel] = 0f;
+            if (_virtualChannelPendingFlags != null && channel < _virtualChannelPendingFlags.Length)
+                _virtualChannelPendingFlags[channel] = 0;
+        }
+
+        private void ClearVirtualVoiceQueues()
+        {
+            CompleteVirtualVoiceSort();
+            if (_virtualVoiceWriteQueue.IsCreated)
+                _virtualVoiceWriteQueue.Clear();
+            if (_virtualVoiceSortQueue.IsCreated)
+                _virtualVoiceSortQueue.Clear();
+            ResetVirtualVoiceSelections();
+            _virtualVoiceDroppedCount = 0;
+            _lastVirtualVoiceStatistics = default;
+            if (_virtualChannelStableKeys == null)
+                return;
+
+            for (int channel = 0; channel < _virtualChannelStableKeys.Length; channel++)
+                ClearVirtualChannel(channel);
+        }
+
+        private void ResetVirtualVoiceSelections()
+        {
+            if (!_virtualVoiceSelections.IsCreated)
+                return;
+
+            for (int i = 0; i < _virtualVoiceSelections.Length; i++)
+                _virtualVoiceSelections[i] = default;
+        }
+
+        private void EnsureVirtualChannelArrays()
+        {
+            bool createdSourceIndices = _virtualChannelSourceIndices == null ||
+                _virtualChannelSourceIndices.Length != MaxVirtualPhysicalVoices;
+            if (_virtualChannelStableKeys == null || _virtualChannelStableKeys.Length != MaxVirtualPhysicalVoices)
+                _virtualChannelStableKeys = new uint[MaxVirtualPhysicalVoices]; // COLD ALLOC: uint[16] - stable virtual voice key per physical channel - owner: SpatialAudioManager
+            if (createdSourceIndices)
+                _virtualChannelSourceIndices = new int[MaxVirtualPhysicalVoices]; // COLD ALLOC: int[16] - AudioSource pool index per virtual channel - owner: SpatialAudioManager
+            if (_virtualChannelPendingSelections == null || _virtualChannelPendingSelections.Length != MaxVirtualPhysicalVoices)
+                _virtualChannelPendingSelections = new VirtualVoiceSelection[MaxVirtualPhysicalVoices]; // COLD ALLOC: VirtualVoiceSelection[16] - deferred post-fade PCM injection payloads - owner: SpatialAudioManager
+            if (_virtualChannelFadeRemaining == null || _virtualChannelFadeRemaining.Length != MaxVirtualPhysicalVoices)
+                _virtualChannelFadeRemaining = new float[MaxVirtualPhysicalVoices]; // COLD ALLOC: float[16] - 10ms steal fade countdowns - owner: SpatialAudioManager
+            if (_virtualChannelFadeStartVolumes == null || _virtualChannelFadeStartVolumes.Length != MaxVirtualPhysicalVoices)
+                _virtualChannelFadeStartVolumes = new float[MaxVirtualPhysicalVoices]; // COLD ALLOC: float[16] - source volume captured at steal fade start - owner: SpatialAudioManager
+            if (_virtualChannelPendingFlags == null || _virtualChannelPendingFlags.Length != MaxVirtualPhysicalVoices)
+                _virtualChannelPendingFlags = new byte[MaxVirtualPhysicalVoices]; // COLD ALLOC: byte[16] - pending virtual channel fade/injection flags - owner: SpatialAudioManager
+
+            if (createdSourceIndices)
+            {
+                for (int i = 0; i < _virtualChannelSourceIndices.Length; i++)
+                    _virtualChannelSourceIndices[i] = -1;
+            }
+        }
+
+        private void RebaseVirtualVoiceList(
+            ref NativeList<VirtualVoice> voices,
+            long gridDeltaX,
+            long gridDeltaY,
+            long gridDeltaZ)
+        {
+            if (!voices.IsCreated)
+                return;
+
+            for (int i = 0; i < voices.Length; i++)
+            {
+                VirtualVoice voice = voices[i];
+                voice.SourceAup.GridX += gridDeltaX;
+                voice.SourceAup.GridY += gridDeltaY;
+                voice.SourceAup.GridZ += gridDeltaZ;
+                voices[i] = voice;
+            }
+        }
+
+        private byte ResolveVirtualVoiceFoveatedTier(Vector3 runtimePosition)
+        {
+            IFoveatedSimulationDirector director = _foveatedSimulationDirector;
+            if (director == null)
+            {
+                director = GlobalRegistry.FoveatedSimulationDirector;
+                _foveatedSimulationDirector = director;
+            }
+
+            return director != null
+                ? (byte)director.ResolveTierForPosition(runtimePosition)
+                : (byte)FoveatedSimulationTier.Active;
+        }
+
+        private float ResolveVirtualVoicePriority(float volume, AcousticPortalFlags flags, byte foveatedTier)
+        {
+            if (foveatedTier >= VirtualVoiceUtility.FoveatedTierFrozen)
+                return 0f;
+
+            float priority = math.max(0.001f, math.saturate(SanitizeFinite(volume, 0f)));
+            if ((flags & AcousticPortalFlags.SealedBulkhead) != 0)
+                priority *= 0.75f;
+            if ((flags & AcousticPortalFlags.Solid) != 0)
+                priority *= 0.5f;
+            return priority;
+        }
+
+        private void RefreshFoveatedDirector()
+        {
+            IFoveatedSimulationDirector director = GlobalRegistry.FoveatedSimulationDirector;
+            if (director != null || _foveatedSimulationDirector == null)
+                _foveatedSimulationDirector = director;
+        }
+
+        private void RefreshVirtualPhysicalVoiceLimit()
+        {
+            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
+            bool lowTier = GlobalRegistry.H8_LOW_MEMORY_PROFILE ||
+                tier == HectonQualityTier.Low ||
+                tier == HectonQualityTier.Mx350;
+            SetLowTierVirtualization(lowTier);
+        }
+
+        private void PushVirtualVoiceTelemetry(in VirtualVoiceStatistics statistics)
+        {
+            if (!_virtualVoiceBlackBox.IsCreated || _virtualVoiceBlackBox.Length == 0)
+                return;
+
+            float loudestWeight = 0f;
+            if (_virtualVoiceSelections.IsCreated && statistics.ActivePhysicalVoices > 0)
+                loudestWeight = _virtualVoiceSelections[0].Weight;
+            uint stateHash = ComputeVirtualVoiceStateHash(in statistics, loudestWeight);
+            int index = _virtualVoiceBlackBoxCursor % _virtualVoiceBlackBox.Length;
+            _virtualVoiceBlackBox[index] = new VirtualVoiceTelemetryEntry
+            {
+                Frame = statistics.Frame,
+                TotalVoices = (ushort)math.clamp(statistics.TotalVoices, 0, ushort.MaxValue),
+                AudibleVoices = (ushort)math.clamp(statistics.AudibleVoices, 0, ushort.MaxValue),
+                CulledVoices = (ushort)math.clamp(statistics.CulledVoices, 0, ushort.MaxValue),
+                ActiveVoices = (ushort)math.clamp(statistics.ActivePhysicalVoices, 0, ushort.MaxValue),
+                PhysicalVoiceLimit = (ushort)math.clamp(statistics.PhysicalVoiceLimit, 0, ushort.MaxValue),
+                StolenVoices = (ushort)math.clamp(statistics.StolenVoices, 0, ushort.MaxValue),
+                DroppedVoices = (ushort)math.clamp(statistics.DroppedVoices, 0, ushort.MaxValue),
+                Flags = (ushort)(_hasVirtualListenerAup ? 1 : 0),
+                StateHash = stateHash,
+                LoudestWeight = loudestWeight
+            };
+            _virtualVoiceBlackBoxCursor = (_virtualVoiceBlackBoxCursor + 1) % _virtualVoiceBlackBox.Length;
+            if (!math.isfinite(loudestWeight))
+                DumpVirtualVoiceBlackBox();
+        }
+
+        private void PublishVirtualVoiceTelemetry(in VirtualVoiceStatistics statistics)
+        {
+            GlobalTelemetryBus.PublishModTelemetry(
+                _virtualVoiceTelemetryHash,
+                _virtualVoiceActiveHash,
+                math.max(0, statistics.ActivePhysicalVoices));
+            GlobalTelemetryBus.PublishModTelemetry(
+                _virtualVoiceTelemetryHash,
+                _virtualVoiceCulledHash,
+                math.max(0, statistics.CulledVoices));
+        }
+
+        private static uint ComputeVirtualVoiceStateHash(in VirtualVoiceStatistics statistics, float loudestWeight)
+        {
+            unchecked
+            {
+                uint hash = 2166136261u;
+                hash = (hash ^ (uint)statistics.Frame) * 16777619u;
+                hash = (hash ^ (uint)statistics.TotalVoices) * 16777619u;
+                hash = (hash ^ (uint)statistics.AudibleVoices) * 16777619u;
+                hash = (hash ^ (uint)statistics.CulledVoices) * 16777619u;
+                hash = (hash ^ (uint)statistics.ActivePhysicalVoices) * 16777619u;
+                hash = (hash ^ (uint)statistics.StolenVoices) * 16777619u;
+                hash = (hash ^ math.asuint(loudestWeight)) * 16777619u;
+                return hash;
+            }
+        }
+
+        private void DumpVirtualVoiceBlackBox()
+        {
+            if (_virtualVoiceBlackBoxDumped || !_virtualVoiceBlackBox.IsCreated)
+                return;
+
+            _virtualVoiceBlackBoxDumped = true;
+            try
+            {
+                string path = Path.GetFullPath(Path.Combine(Application.dataPath, "..", VirtualVoiceDumpRelativePath));
+                string directory = Path.GetDirectoryName(path);
+                if (!string.IsNullOrEmpty(directory))
+                    Directory.CreateDirectory(directory);
+
+                using (var stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+                using (var writer = new BinaryWriter(stream))
+                {
+                    writer.Write(_virtualVoiceBlackBoxCursor);
+                    writer.Write(_virtualVoiceBlackBox.Length);
+                    for (int i = 0; i < _virtualVoiceBlackBox.Length; i++)
+                    {
+                        VirtualVoiceTelemetryEntry entry = _virtualVoiceBlackBox[i];
+                        writer.Write(entry.Frame);
+                        writer.Write(entry.TotalVoices);
+                        writer.Write(entry.AudibleVoices);
+                        writer.Write(entry.CulledVoices);
+                        writer.Write(entry.ActiveVoices);
+                        writer.Write(entry.PhysicalVoiceLimit);
+                        writer.Write(entry.StolenVoices);
+                        writer.Write(entry.DroppedVoices);
+                        writer.Write(entry.Flags);
+                        writer.Write(entry.StateHash);
+                        writer.Write(entry.LoudestWeight);
+                    }
+                }
+            }
+            catch (Exception exception)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogException(exception, this);
+#endif
+            }
+        }
+
+        private static float SanitizeFinite(float value, float fallback)
+        {
+            return math.isfinite(value) ? value : fallback;
         }
 
         private void DispatchQueuedAudioEvent(in CoreAudioEvent audioEvent)
@@ -1522,11 +2507,11 @@ namespace Hecton8.Audio
                 ? ResolveAudioLodTier(in audibleAup, in listenerAup)
                 : AudioLodTier.Tier0Full;
             if (lodTier == AudioLodTier.Tier2Culled)
-                return;
+                return -1;
 
             int index = AcquireSourceIndex();
             if (index < 0)
-                return;
+                return -1;
 
             AudioSource source = _pool[index];
             ResetWorldSourceState(index, true);
@@ -1542,7 +2527,13 @@ namespace Hecton8.Audio
             _basePitches[index] = clampedPitch;
             source.outputAudioMixerGroup = ResolveWorldMixerGroup(clip, mixerGroup);
             CacheWorldSourceBusFlags(index, source.outputAudioMixerGroup);
-            source.pitch = ResolveSourcePitch(index, 1f);
+            float clampedDopplerRatio = math.clamp(
+                dopplerRatio,
+                VirtualVoiceUtility.MinimumDopplerRatio,
+                VirtualVoiceUtility.MaximumDopplerRatio);
+            if (_smoothedDopplerRatios != null && index < _smoothedDopplerRatios.Length)
+                _smoothedDopplerRatios[index] = clampedDopplerRatio;
+            source.pitch = ResolveSourcePitch(index, clampedDopplerRatio);
             _audioLodTiers[index] = lodTier;
             float now = Time.unscaledTime;
             int currentFrame = Time.frameCount;
@@ -1580,6 +2571,7 @@ namespace Hecton8.Audio
             CacheActiveWorldRuntimePosition(index, audiblePosition, currentFrame);
             CacheActiveWorldAup(index, in audibleAup, currentFrame);
             MarkWorldSourceActive(index);
+            return index;
         }
 
         /// <summary>
@@ -2174,6 +3166,14 @@ namespace Hecton8.Audio
             _registeredUpdatable = GlobalRegistry.Updatables.Contains(this);
         }
 
+        private void TryRegisterFastTickable()
+        {
+            if (_registeredFastTickable || !Application.isPlaying)
+                return;
+
+            _registeredFastTickable = GlobalRegistry.TryRegisterFastTickable(this, PriorityLayer.Environment);
+        }
+
         private void TryRegisterSlowTickable()
         {
             if (_registeredSlowTickable || !Application.isPlaying)
@@ -2192,6 +3192,15 @@ namespace Hecton8.Audio
                 return;
 
             _registeredLateFrameTickable = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+        }
+
+        private void TryRegisterOriginShiftListener()
+        {
+            if (_registeredOriginShiftListener || !Application.isPlaying)
+                return;
+
+            HectonFloatingOrigin.RegisterListener(this);
+            _registeredOriginShiftListener = HectonFloatingOrigin.IsListenerRegistered(this);
         }
 
         void IPhysicsImpactEventListener.OnPhysicsImpact(in PhysicsImpactSignal impactSignal)
@@ -4158,6 +5167,58 @@ namespace Hecton8.Audio
                 PrewarmSoundEmissionSignalQueue();
             }
 
+            if (!_virtualVoiceWriteQueue.IsCreated)
+            {
+                _virtualVoiceWriteQueue = new NativeList<VirtualVoice>(MaxVirtualVoiceCapacity, Allocator.Persistent); // COLD ALLOC: NativeList<VirtualVoice>[8192] - virtual acoustic emission write buffer - owner: SpatialAudioManager
+                NativeMemorySentinel.RegisterNativeList(
+                    _virtualVoiceWriteQueue,
+                    nameof(SpatialAudioManager),
+                    nameof(_virtualVoiceWriteQueue),
+                    NativeAllocationLifetime.Session);
+            }
+
+            if (!_virtualVoiceSortQueue.IsCreated)
+            {
+                _virtualVoiceSortQueue = new NativeList<VirtualVoice>(MaxVirtualVoiceCapacity, Allocator.Persistent); // COLD ALLOC: NativeList<VirtualVoice>[8192] - Burst-ranked virtual acoustic emission buffer - owner: SpatialAudioManager
+                NativeMemorySentinel.RegisterNativeList(
+                    _virtualVoiceSortQueue,
+                    nameof(SpatialAudioManager),
+                    nameof(_virtualVoiceSortQueue),
+                    NativeAllocationLifetime.Session);
+            }
+
+            if (!_virtualVoiceSelections.IsCreated)
+            {
+                _virtualVoiceSelections = new NativeArray<VirtualVoiceSelection>(MaxVirtualPhysicalVoices, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<VirtualVoiceSelection>[16] - selected virtual voices mapped to physical DSP channels - owner: SpatialAudioManager
+                NativeMemorySentinel.RegisterNativeArray(
+                    _virtualVoiceSelections,
+                    nameof(SpatialAudioManager),
+                    nameof(_virtualVoiceSelections),
+                    NativeAllocationLifetime.Session);
+            }
+
+            if (!_virtualVoiceStatistics.IsCreated)
+            {
+                _virtualVoiceStatistics = new NativeArray<VirtualVoiceStatistics>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<VirtualVoiceStatistics>[1] - last virtual voice sort counters - owner: SpatialAudioManager
+                NativeMemorySentinel.RegisterNativeArray(
+                    _virtualVoiceStatistics,
+                    nameof(SpatialAudioManager),
+                    nameof(_virtualVoiceStatistics),
+                    NativeAllocationLifetime.Session);
+            }
+
+            if (!_virtualVoiceBlackBox.IsCreated)
+            {
+                _virtualVoiceBlackBox = new NativeArray<VirtualVoiceTelemetryEntry>(VirtualVoiceBlackBoxFrameCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<VirtualVoiceTelemetryEntry>[300] - virtual voice black-box dump ring - owner: SpatialAudioManager
+                NativeMemorySentinel.RegisterNativeArray(
+                    _virtualVoiceBlackBox,
+                    nameof(SpatialAudioManager),
+                    nameof(_virtualVoiceBlackBox),
+                    NativeAllocationLifetime.Session);
+            }
+
+            EnsureVirtualChannelArrays();
+
             if (!_acousticPortalNodes.IsCreated)
             {
                 _acousticPortalNodes = new NativeArray<AcousticPortalNode>(AcousticPortalMaxNodes, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<AcousticPortalNode>[30] - acoustic portal route nodes - owner: SpatialAudioManager
@@ -4274,6 +5335,8 @@ namespace Hecton8.Audio
 
         private void ReleaseTelemetryCaches()
         {
+            CompleteVirtualVoiceSort();
+
             if (_acousticRadarIntensityBins.IsCreated)
             {
                 NativeMemorySentinel.UnregisterNativeArray(_acousticRadarIntensityBins);
@@ -4320,6 +5383,41 @@ namespace Hecton8.Audio
                 NativeMemorySentinel.UnregisterNativeQueue(nameof(SpatialAudioManager), nameof(_soundEmissionSignals));
                 _soundEmissionSignals.Dispose();
                 _soundEmissionSignals = default;
+            }
+
+            if (_virtualVoiceWriteQueue.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeList(nameof(SpatialAudioManager), nameof(_virtualVoiceWriteQueue));
+                _virtualVoiceWriteQueue.Dispose();
+                _virtualVoiceWriteQueue = default;
+            }
+
+            if (_virtualVoiceSortQueue.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeList(nameof(SpatialAudioManager), nameof(_virtualVoiceSortQueue));
+                _virtualVoiceSortQueue.Dispose();
+                _virtualVoiceSortQueue = default;
+            }
+
+            if (_virtualVoiceSelections.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_virtualVoiceSelections);
+                _virtualVoiceSelections.Dispose();
+                _virtualVoiceSelections = default;
+            }
+
+            if (_virtualVoiceStatistics.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_virtualVoiceStatistics);
+                _virtualVoiceStatistics.Dispose();
+                _virtualVoiceStatistics = default;
+            }
+
+            if (_virtualVoiceBlackBox.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_virtualVoiceBlackBox);
+                _virtualVoiceBlackBox.Dispose();
+                _virtualVoiceBlackBox = default;
             }
 
             if (_acousticPortalNodes.IsCreated)
@@ -4390,6 +5488,9 @@ namespace Hecton8.Audio
             _audioEventQueueDroppedCount = 0;
             _soundEmissionSignalQueueCount = 0;
             _soundEmissionSignalDroppedCount = 0;
+            _virtualVoiceDroppedCount = 0;
+            _virtualVoiceBlackBoxCursor = 0;
+            _lastVirtualVoiceStatistics = default;
             _acousticPortalBlackBoxCursor = 0;
         }
 

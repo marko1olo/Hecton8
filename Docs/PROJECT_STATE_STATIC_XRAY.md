@@ -2,15 +2,15 @@
 
 Date: 2026-05-13
 Status: PENDING VERIFICATION
-Evidence class: STATIC_SOURCE / STATIC_DOC / FILESYSTEM / PACKAGE_LOCK
+Evidence class: STATIC_SOURCE / STATIC_DOC / FILESYSTEM / PACKAGE_LOCK / UNITY_BATCHMODE_IMPORT_COMPILE
 
 This file is a durable project-state risk register. It is not an AgentLog and must not be treated as runtime proof.
 
 ## Scope
 
-User request: ignore easy build bugs, audit deeper project health, and avoid `dotnet` / Unity execution because many agents are active.
+User request: ignore easy build bugs, audit deeper project health, and keep documentation current under concurrent agent churn.
 
-Commands were limited to static filesystem and source scans. No Unity import, Unity Console, Play Mode, profiler, GCMonitor, player build, Memory Profiler, RenderDoc, or runtime benchmark was run. DOC_AUDIT R5/R6 added package-lock, BuildSettings, URP asset, PlayerSettings, and script-local docs checks; R8 added the world/scatter/streaming wiring addendum; R17 added the renderer/visor/shader proof boundary under the same evidence ceiling; R21 closed the static resource-node catalog/worldPrefab gaps but still did not run Unity; R22 hardened editor validation for duplicate item identity/catalog ambiguity.
+Most commands were static filesystem and source scans. DOC_AUDIT R29 added one Unity `6000.4.1f1` batchmode import/script-compilation artifact at `Library/Codex_DOC_AUDIT_UnityBatchCompile.log`; no Play Mode, profiler, GCMonitor, player build, Memory Profiler, RenderDoc, save/load roundtrip, visual capture, or runtime benchmark was run. DOC_AUDIT R5/R6 added package-lock, BuildSettings, URP asset, PlayerSettings, and script-local docs checks; R8 added the world/scatter/streaming wiring addendum; R17 added the renderer/visor/shader proof boundary; R21 closed the static resource-node catalog/worldPrefab gaps; R22 added the PDA fail-closed guard; R23 hardened editor validation for duplicate item identity/catalog ambiguity.
 
 Mandates used:
 
@@ -73,7 +73,7 @@ Largest first-party runtime files are mostly real code, not empty filler. The pr
 
 Highest pileup risk:
 
-- `Assets/_Project/Scripts/HectonPlayerMovement.cs` - 684.1 KB.
+- `Assets/_Project/Scripts/HectonPlayerMovement.cs` - 740,426 bytes / 13,240 lines.
 - `Assets/_Project/Scripts/WorldProceduralScatterDirector.cs` - 526.5 KB.
 - `Assets/_Project/Scripts/HectonUnderwaterVisuals.cs` - 355.3 KB.
 - `Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs` - 323.9 KB.
@@ -124,10 +124,12 @@ Good signs:
 - no `FindObjectOfType` / `GameObject.Find`
 - dispatcher registration exists
 - many caches and finite/failsafe paths exist
+- R34 adds a small fixed-path ladder snap cache, avoiding repeated `ClimbableLadder` component resolution for the same collider.
 
 Bad sign:
 
 - ownership is wrong. Player movement owns too many environmental hazards and presentation effects.
+- The file is still too large for safe human reasoning without targeted slices; current state is 740,426 bytes / 13,240 lines.
 
 Decision:
 
@@ -818,20 +820,23 @@ Static inventory:
 - Recipe groups are populated: group `1` has `5`, group `2` has `7`, group `3` has `6`, group `4` has `3`, group `5` has `11`, group `6` has `9`.
 - `6` recipes are scan-locked: `Recipe_EnvAnalyzer`, `Recipe_FieldBeacon`, `Recipe_Flashlight`, `Recipe_RepairTool`, `Recipe_SalvageSampler`, and `Recipe_Scanner`. No biome-locked recipe was found in this static parse.
 - Recipe ingredient count is currently small and bounded: max `3` ingredients per recipe asset.
+- R27 static craft-route check: `Recipe_Scanner.asset` outputs `Item_Tool_Scanner` and has two authored ingredient entries; `ContentSanityValidator` now validates recipe result/ingredient/catalog/group integrity and cross-checks `QuestData.OnCraftCompleted` IDs against valid recipe outputs. This is still not runtime fabricator proof.
+- R28 scan-gate check: `scan.resource_node` has an obvious generic runtime source in `ScanLogSystem` / `ScannerTool`; `scan.expedition_contact`, `scan.resource_cache`, and `scan.structure_relay` are visible in recipe assets and editor authoring scripts, but no current `_Project` prefab/scene/data route was found by static grep. `ContentSanityValidator` now warns via `RecipeScanGateWarnings` when a scan-locked recipe has no known generic or prefab `ScannableTarget` route.
 - `Assets/_Project/Data/Scavenging/ResourceNodes` contains `27` `ResourceNodeTemplate` assets; all `27` harvest item refs resolve to current ItemData assets.
 - R14 snapshot found `23 / 27` ResourceNodeTemplate harvest items with `worldPrefab: {fileID: 0}`. R19 reduced the current primary-harvest gap to `16 / 27`; R21 reduced the current resource-node primary-harvest gap to `0 / 27` by assigning existing pickup shells to the remaining harvest ItemData.
 - R14 snapshot found `4 / 27` ResourceNodeTemplate harvest refs pointing to ItemData assets not present in `ItemCatalog`. R19 moved `ResourceNodeTemplate_CopperVein` to cataloged raw copper; R21 added the remaining three raw resources to `ItemCatalog`, so the current resource-node harvest non-catalog count is `0 / 27`.
-- There are still two `Data_Copper` ItemData assets with the same `stableId: Data_Copper`: root `Assets/_Project/Data/Items/Data_Copper.asset` and cataloged raw `Assets/_Project/Data/Items/Resources/Raw/Data_Copper.asset`. Recipes, the catalog, `ResourceNodeTemplate_CopperVein`, R18 provisioner starter material, and the checked barter offers now reference the raw asset; the root asset remains legacy contamination, not current first-hour copper authority. R22 adds an editor validator tripwire for duplicate `ItemData.PersistentId` so this contamination is no longer only documented manually.
+- There are still two `Data_Copper` ItemData assets with the same `stableId: Data_Copper`: root `Assets/_Project/Data/Items/Data_Copper.asset` and cataloged raw `Assets/_Project/Data/Items/Resources/Raw/Data_Copper.asset`. Recipes, the catalog, `ResourceNodeTemplate_CopperVein`, R18 provisioner starter material, and the checked barter offers now reference the raw asset; the root asset remains legacy contamination, not current first-hour copper authority. R23 adds an editor validator tripwire for duplicate `ItemData.PersistentId` so this contamination is no longer only documented manually.
 - `PlayerInventory.cs` is about `166.9 KB` and is load-bearing: it owns a grid plus native SOA mirrors, stack counts, condition, craft locks, genetics, quality, mass/volume/radiation caches, degradation, pressure crush, reactive chemistry, and save shadow payloads.
 - `CraftingSystem.cs` has bounded native evaluators: recipe ingredient cap `32`, complex recipe depth cap `5`, graph node cap `64`, graph edge cap `128`, bitmask fast-fail, `NativeParallelHashMap` counts, and a topological raw-cost expansion path.
 - `Fabricator.cs` is present in the binary world scenes: static scene string scan found `Trial_Fabricator`, `Forward_Fabricator`, `Hecton8.Crafting.Fabricator`, and `HectonFabricatorUI`; `Player.prefab` targets `Forward_Fabricator`.
+- R26/R27 static first-hour quest string check: `Data_TitaniumScrap`, `Item_Tool_Scanner`, and cataloged raw `Data_Copper` are present in `ItemCatalog`; checked first-hour prerequisites resolve to existing quest IDs; `OnCraftCompleted` IDs are now required to resolve to valid recipe outputs. The legacy root `Data_Copper` remains outside catalog and is covered by R23 duplicate identity validation.
 - `ResourceNode` is present in the binary world scenes: static scene string scan found `14` `Hecton8.Scavenging.ResourceNode` hits and named starter nodes including `Node_Copper_A`, `Node_Copper_B`, `Trial_Node_Active`, and `Trial_Node_Depleted`.
 - `ResourceScarcityDirector` is not scene-placed by static scene string scan, but `GameBootstrapper.PublishPlayerRuntimeReference()` calls `EconomyRuntimeInstaller.EnsureRuntimeSystems()`, which creates `ResourceScarcityDirector` under `__HECTON_ECONOMY_RUNTIME`.
 - `ResourceDistributionDirector` and `ProceduralOreSpawner` contain serious deterministic spawning code, but static scene/prefab string scans found `0` placements for them. `ResourceDistributionBootstrapAuthoring` can install the director through an editor menu, which is authoring proof, not runtime placement proof.
 - `ConstructionManager` is present in world scenes and is the `ILogisticsService` owner. `PowerGridManager` is boot-created by `GameBootstrapper` if no runtime instance exists.
 - `BaseLogisticsNetwork` is a real cold-path logistics layer: fixed reservation pool `64`, storage/fabricator/recycler endpoint registries, power-grid scoped access counts, route CSR scratch, and BFS routing through `LogisticsPipeRoutingKernel`.
 - `FluidPipeGraphRuntime`, `LogisticsPipeNode`, and `LogisticsPipeTransportScheduler` code exists, including native SOA pipe pressure jobs and a `300` frame black box, but static scene/prefab scans found `0` placements for the pipe runtime and `GameBootstrapper` does not create it.
-- `ContentSanityValidator` now checks `ResourceNodeTemplate.harvestYield` and `rarityDrops` against the active `ItemCatalog`, `ItemData.worldPrefab`, and world-prefab pickup contract (`PickupItem`/`HectonItem`, `Collider`, `Rigidbody`), with explicit `ResourceNodeYieldMissingWorldPrefab`, `ResourceNodeYieldNotCataloged`, and `ResourceNodeYieldInvalidWorldPrefabContract` summary counters. R22 extends it with item/catalog identity counters: `ItemDataDuplicatePersistentId`, `ItemCatalogNullEntries`, `ItemCatalogDuplicateHashes`, `ItemCatalogMissingRuntimeDescriptors`, and `ItemCatalogLookupAmbiguities`. This is editor tooling proof only; the validator was not run in Unity during this pass.
+- `ContentSanityValidator` now checks `ResourceNodeTemplate.harvestYield` and `rarityDrops` against the active `ItemCatalog`, `ItemData.worldPrefab`, and world-prefab pickup contract (`PickupItem`/`HectonItem`, `Collider`, `Rigidbody`), with explicit `ResourceNodeYieldMissingWorldPrefab`, `ResourceNodeYieldNotCataloged`, and `ResourceNodeYieldInvalidWorldPrefabContract` summary counters. R23 extends it with item/catalog identity counters: `ItemDataDuplicatePersistentId`, `ItemCatalogNullEntries`, `ItemCatalogDuplicateHashes`, `ItemCatalogMissingRuntimeDescriptors`, and `ItemCatalogLookupAmbiguities`. R26 extends it with quest route counters: `Quests` and `QuestRouteErrors`, validating `QuestData.questId`, `prerequisiteQuestIds`, item/craft `triggerId` and `completionId`, and `criticalItemId` against active quest/catalog data. R27 extends it with recipe route counters: `Recipes` and `RecipeRouteErrors`, validating `RecipeData` result/ingredient/catalog/group state and craft quest recipe-output routes. R28 adds `RecipeScanGateWarnings` for scan-locked recipes with no known generic or authored prefab `ScannableTarget` route. This is editor tooling proof only; the validator was not run in Unity during this pass.
 
 Positive architecture:
 
@@ -861,7 +866,8 @@ Decision:
 - Classify gameplay economy as "real but currently fragile at the resource acquisition seam".
 - The biggest immediate product risk is now runtime route proof, not the previously visible static ItemData/Catalog/worldPrefab hole. The route can still fail at scene wiring, pooling, pickup interaction, inventory add, quest signal, or save/load.
 - Fix direction should stay data-first and narrow: replace reused low-tier pickup shells with dedicated per-resource pickup art after runtime route proof, not before. The current shells are acceptable static route closures, not final AAA presentation.
-- Keep the R21/R22 editor validator strict for `ResourceNodeTemplate.harvestYield[*].item` / `rarityDrops[*].item` active catalog membership, `worldPrefab` availability, pickup prefab contract, duplicate `ItemData.PersistentId`, and catalog lookup ambiguity. The root duplicate `Data_Copper` is now a validator failure candidate, but the validator was not run in Unity.
+- Keep the R21/R23 editor validator strict for `ResourceNodeTemplate.harvestYield[*].item` / `rarityDrops[*].item` active catalog membership, `worldPrefab` availability, pickup prefab contract, duplicate `ItemData.PersistentId`, and catalog lookup ambiguity. The root duplicate `Data_Copper` is now a validator failure candidate, but the validator was not run in Unity.
+- Keep the R26/R27/R28 quest/recipe validators strict for item/craft quest strings, prerequisite quest IDs, `RecipeData` integrity, craft-completion recipe-output routes, and scan-locked recipe unlock routes. Static clean string/result/unlock-warning resolution is not runtime proof of `InteractionEvents.ItemCollected`, `CraftingEvents.CraftCompleted`, scan log unlock, fabricator delivery, quest completion, PDA display, or save/load.
 - Do not spend time hand-polishing pipe GameObjects before the resource acquisition chain is clean. Pipes are deeper vertical-slice content; copper/resource pickup is first-hour progression.
 - Require one bounded runtime route later: mine/collect copper, observe `InteractionEvents.ItemCollected`, inventory contains `Data_Copper`, `quest_copper_sample` completes, craft `Copper Wire`, then save/load that state. Until that exists, gameplay loop readiness remains `PENDING VERIFICATION`.
 
@@ -877,6 +883,7 @@ Static inventory:
 - `Assets/_Project/Data/Tools` contains `13` `ToolMetadata_*.asset` files. The extra metadata is `ToolMetadata_LogicSpanner.asset`.
 - All `12` tool ItemData assets have non-null `worldPrefab` refs.
 - `LogicSpannerTool.cs` and `ToolMetadata_LogicSpanner.asset` exist, but static scan found no `Item_Tool_LogicSpanner.asset`, no held prefab, no world prefab, no catalog ref, and no recipe ref.
+- R24 static metadata reference recount: `12 / 13` `ToolMetadata_*.asset` files are referenced by held prefabs; `ToolMetadata_LogicSpanner.asset` has only the asset/meta self-reference route.
 - `Player.prefab` owns `PlayerToolManager`, `PlayerPDA`, `ToolLoadoutProvisioner`, `ScanLogSystem`, `PDAExchangeSystem`, and `PlayerInteraction`.
 - `Player.prefab` `ToolLoadoutProvisioner` remains present, but startup grants are now disabled: `provisionInventoryOnStart: 0`, `assignCoreLoadoutOnStart: 0`, and `provisionConstructionMaterialsOnStart: 0`.
 - `Player.prefab` provisioner still carries four core quick-slot prefabs and `12` `allToolItems` for explicit editor/development validation.
@@ -887,6 +894,8 @@ Static inventory:
 - `DiegeticPDAController.cs` calls `PlayerPDA.ConfigureUI(...)`, but static scene/prefab scans did not find the `DiegeticPDAController` class string or MonoScript GUID `8f05da9f4a7a4158a04d6cc0e0f9d8c2` in `_Project` scenes/prefabs.
 - `ProgressionRuntimeInstaller` boot-adds `HectonOSBootManager`; `PDARuntimeInstaller` boot-adds exploration/logbook/marker/intrusion systems. Neither installer adds `DiegeticPDAController`.
 - R22 source guard: `PlayerPDA.Open()` now refuses to set `IsOpen` or switch input unless a PDA panel and at least one tab are configured. `ContentSanityValidator` now reports `PlayerPdaHeadlessOpenRisk` when `Player.prefab` has a `PlayerPDA` with no serialized panel and no `DiegeticPDAController` bridge.
+- R24 validator hardening: `ContentSanityValidator` now loads held tool prefabs under `Assets/_Project/Prefabs/Tools/Held`, validates `PlayerTool.Metadata`, `PlayerTool.ToolData`, `ItemCategory.Tool`, `ItemCatalog` runtime descriptors, non-null tool `worldPrefab`, duplicate/empty `ToolMetadata.toolID`, and orphan active tool metadata. The validator summary now reports `ToolMetadata`, `ToolHeldPrefabs`, `ToolMetadataOrphans`, and `ToolRouteErrors`.
+- R25 validator hardening: `ContentSanityValidator` now loads canonical `Player.prefab` `ToolLoadoutProvisioner` and reports `PlayerDevProvisionerStartupRisk` if `provisionInventoryOnStart`, `assignCoreLoadoutOnStart`, or `provisionConstructionMaterialsOnStart` is re-enabled.
 - `Player.prefab` still contains multiple dev/smoke components with `runOnStart: 0`. That is lower risk than active provisioning, but it is production-prefab contamination.
 - `WorldShippingContentFilter` suppresses trial/staging scene hierarchies such as `Tool_Staging`, `Fabrication_Trial`, and `Tool_TrialRange`; static source does not show it stripping player-attached `ToolLoadoutProvisioner` or smoke components.
 
@@ -905,11 +914,11 @@ Positive architecture:
 Risk:
 
 - R18 removed the immediate hidden-startup-grant defect from `Player.prefab`; static source/prefab proof now shows startup flags `0` and release-build provisioning guard.
-- Remaining provisioning risk is boundary hygiene, not current startup mutation: `ToolLoadoutProvisioner` is still serialized on the canonical player prefab, still carries direct tool/material references, and still allows explicit provisioning in editor/development builds.
+- Remaining provisioning risk is boundary hygiene, not current startup mutation: `ToolLoadoutProvisioner` is still serialized on the canonical player prefab, still carries direct tool/material references, and still allows explicit provisioning in editor/development builds. After R25, accidentally re-enabling its startup grant flags should become a content-validator error.
 - Shipping cleanup does not strip player-attached `ToolLoadoutProvisioner`; it suppresses named scene hierarchies. That is acceptable after R18 for release mutation risk, but prefab dependency pollution remains.
 - PDA backend and tab content exist, but the bridge is not proven. Before R22, `PlayerPDA.Open()` could switch to UI input, cursor, depth of field, sound, and events even when `pdaPanel`/tabs were null. R22 now fails closed instead of opening headless, but visible PDA UX is still not proven.
 - Scene tab strings are positive evidence for authored PDA UI objects, but they do not prove that `PlayerPDA` is connected to them.
-- `LogicSpanner` is partial content: source and metadata exist, but no player acquisition or prefab path was found.
+- `LogicSpanner` is partial content: source and metadata exist, but no player acquisition or prefab path was found. After R24 this is no longer only a manual audit finding; the active content validator should emit `ToolMetadataOrphans=1` / `ToolRouteErrors>=1` until the full route is authored or the metadata is quarantined.
 - Dev/smoke components with `runOnStart: 0` are not hot by default, but they still pollute production-prefab verification and increase the chance of false positives in future smoke/readiness claims.
 
 Decision:
@@ -918,7 +927,7 @@ Decision:
 - Do not classify the first-hour route as proven from the static fix. R18 removes hidden dev startup grants, but runtime route proof is still absent.
 - Do not call PDA absent; call PDA shell wiring `PENDING VERIFICATION`. The backend, tabs, and installers exist, but the `DiegeticPDAController` bridge placement was not proven statically.
 - Next fix direction should be route proof, not GameObject polish: prove one clean route from empty-ish start -> acquire resource -> unlock/craft/equip scanner -> visible PDA/scan/log/quest update.
-- Add editor validators later for player-prefab dev provisioning, `LogicSpanner` orphan content, duplicate/cross-catalog starter materials, and low-tier shared pickup shells that still need high-tier per-resource presentation. R21 covers resource-node yield catalog/worldPrefab/contract gaps in `ContentSanityValidator`; R22 covers the headless `PlayerPDA` shell/bridge tripwire.
+- Keep editor validators strict for player-prefab dev provisioning, tool metadata routes, recipe output/unlock routes, duplicate/cross-catalog starter materials, and low-tier shared pickup shells that still need high-tier per-resource presentation. R21 covers resource-node yield catalog/worldPrefab/contract gaps in `ContentSanityValidator`; R22 covers the headless `PlayerPDA` shell/bridge tripwire; R24 covers orphan active tool metadata and held tool item/catalog/world-prefab routes; R25 covers dev provisioning startup flag regression; R27 covers recipe result/ingredient/catalog/group integrity plus craft quest recipe-output routes; R28 covers scan-locked recipe routes as warnings until production unlock proof exists.
 
 ## AI / Fauna Data vs Runtime Wiring Addendum
 
@@ -962,7 +971,7 @@ Decision:
 
 ## Save / Persistence Addendum
 
-Evidence type: `STATIC_SOURCE`, `FILESYSTEM`, `STATIC_DOC`. No Unity, Play Mode, profiler, or dotnet verification was run for this addendum.
+Evidence type: `STATIC_SOURCE`, `FILESYSTEM`, `STATIC_DOC`, plus DOC_AUDIT R29 Unity batchmode import/script-compilation evidence. No Play Mode, profiler, GCMonitor, Memory Profiler, player build, or save/load roundtrip was run for this addendum.
 
 Static inventory:
 
@@ -989,16 +998,19 @@ Positive architecture:
 - This is not a toy save system. It has a binary container, magic/version/checksum validation, header checksum version `0x0009`, minimum supported version `0x0003`, tokenized payloads, indexed block storage, mod payload sidecars, backup generations, migration, slot-name guards, and explicit load-candidate fallback.
 - `SaveBinaryStorage` defines a 64 MB raw payload budget and a 68 MB compressed payload budget, with native LZ4 entry points and a managed Deflate fallback path.
 - Windows native `liblz4.dll` exists at `Assets/_Project/Plugins/Windows/x86_64/liblz4.dll`.
-- `SaveManager.SaveGameAsync()` blocks saves during floating-origin shifts, captures save thumbnails, snapshots registered `ISaveable` owners, routes voxel deltas through a native snapshot path, stamps runtime world seed, captures persistent-world/ecosystem/quest snapshots, and moves binary write work to background-thread stages.
+- `SaveManager.SaveGameAsync()` blocks saves during floating-origin shifts, captures save thumbnails, snapshots registered `ISaveable` owners, routes full-save voxel deltas through a native snapshot path, stamps runtime world seed, captures persistent-world/ecosystem/quest snapshots, and moves binary write work to background-thread stages.
 - `SaveManager.LoadGameAsync()` builds primary/backup candidates, migrates save data, validates runtime world seed, preloads tombstones, loads mod MMF payloads, stages packed quest state, applies saveables in load-priority order, restores voxel native deltas, and falls back from indexed persistent-world directory restore to loaded record arrays when needed.
+- DOC_AUDIT R29 added a `SaveManager` async world-pager bridge for chunk page writes/reads/copy/retire/telemetry/flush. DOC_AUDIT R30/R31 corrected the overclaim: chunk dehydration is now bounded to at most `2` signals per tick and stages inventory shadow plus chunk metadata only. It no longer captures the entire global `VoxelDeltaProcessor` snapshot per dehydrated chunk.
+- `H8BinaryWorldPager` now fail-closes on `IOException` / `UnauthorizedAccessException` while opening `world_data.h8bin`: it records an initialization fault and rejects pager IO instead of throwing through bootstrap. R30 also changes page-file sharing to `FileShare.Read` for single-writer semantics, adds a bounded worker-stop handshake before native disposal, releases invalid read results, and treats sparse/collided page headers as `Missing` rather than `Corrupt`. R31 removes pager initialization from `SaveManager.InitializeNativeBuffers()`, so the sidecar page file is opened only on first actual chunk page IO.
+- DOC_AUDIT R32 splits `SaveManager` boot buffers from persistence working buffers: boot now keeps the save telemetry ring and tiny load-candidate scratch only, while the 64 MB raw payload, about 68 MB compressed payload, and 10 MB staging arenas allocate on first save/load/chunk-sidecar use. R33 tightens the fault path so a faulted/uninitialized pager does not allocate the 10 MB staging arena, and load first-use allocation sits inside the normal failure/cleanup envelope. R36 re-removed a concurrent regression where chunk dehydration captured the global voxel snapshot as `worldPagerVoxelDeltaSnapshot`; R37 rechecked the latest churn, restored a joinable pager worker thread, and locally compiled `Hecton8.Core.Memory` plus `Hecton8.Core` through Unity Bee/Roslyn temp response files with exit code `0`. R38 hardens unexpected pager worker command faults so dequeued pending counters decrement in `finally`, records current WFC outpost MacroDB bitmask persist/restore contract coverage in `SaveManager`, and demotes the old full-Core success as stale because the current full `Hecton8.Core` probe is blocked by unrelated active churn in audio/scanner/fluid/UI files.
 - `PersistentWorldRegistry` is a real persistence authority, not a thin list dump. It owns save snapshots, tombstone preload, indexed-sector restore, paging disable/fallback, sector override temp files, and corruption/quarantine surfaces.
 - `ISaveable` documents ownership rules: each owner writes only its own DTO section, validates on load, and should avoid new array allocation in the contract.
 - PlayMode and smoke surfaces exist: `SmokeTests_SaveLoad.cs`, `InquisitionStabilityPlayModeTests.cs`, `SavePersistenceOmegaSmokeTester`, `SaveRecoverySmokeTester`, and `SaveSystemRuntimeSmokeTester`.
 
 Risk:
 
-- Bootstrap `SaveManager.Awake()` calls `InitializeNativeBuffers()`, which allocates persistent native buffers for 64 MB raw payload, 68 MB compressed payload, and load-candidate scratch. This is about 132 MB native staging reserved at boot before the player actually saves or loads.
-- The above memory can be defensible for instant-save reliability, but on the low-end target class it is a serious boot-residency cost until a memory snapshot proves the trade is acceptable.
+- Bootstrap `SaveManager.Awake()` calls `InitializeNativeBuffers()`, but after R32 that method initializes only the save telemetry ring and load-candidate scratch. The large raw/compressed/staging save buffers are now first-use allocations, not boot allocations.
+- The remaining risk moved from boot residency to first-use latency, after-first-use residency, and runtime behavior under real IO/memory faults. On the low-end target class this still needs a Memory Profiler capture and a save/load timing artifact.
 - The normal primary promotion path rotates backups, then uses `File.Move(temp, final)` for the primary `.sav`. There is temp verification and a backup chain, so it is not naive, but the normal commit path is not the same as an atomic `File.Replace` primary swap.
 - `File.Replace` exists in critical backup/self-repair paths, which means the code already knows the safer primitive. The inconsistency needs a deliberate policy, not accidental drift.
 - The release-build behavior for save registry overflow is weak. Capacity is 256; editor/development logs the first capacity error, while non-development builds return without registering the extra saveable.
@@ -1006,6 +1018,8 @@ Risk:
 - `SaveData` remains a managed DTO graph with lists/strings/arrays. That is acceptable for cold save/load work, but this system should not be described as zero-GC in the literal sense.
 - If native LZ4 is unavailable on a target, the managed Deflate fallback is correctness-friendly but has different CPU/GC behavior that needs platform proof.
 - Current `.codex-artifacts/unity-save-persistence-omega-smoke-2026-05-05.log` only shows Unity startup/licensing and stops at `Library Redirect Path: Library/`; it does not contain a visible PASS/FAIL save result. Treat it as stale/incomplete, not proof.
+- Fresh DOC_AUDIT R29 Unity Console evidence before the final batch run showed a real bootstrap fault from `world_data.h8bin` sharing violation. The source now degrades that case to a disabled pager, but no Play Mode rerun proved bootstrap recovery in a live scene.
+- R30/R31 source review found the async voxel chunk-paging route is not ready for correctness claims: residency prefetch can retire pager tickets, but there is still no chunk-local voxel payload apply path. `WorldChunkResidencyManager.RequestLoad()` no longer starts orphaned `VoxelDeltaRle` prefetch from static source, chunk dehydration no longer writes global voxel snapshots, and chunk-local voxel persistence remains `PENDING DESIGN/PROOF`.
 - Save-station runtime access is not proven from text-serialized `_Project` scenes/prefabs. The class exists, but static YAML evidence did not prove a placed station in active content.
 - The indexed persistent-world path is load-bearing and complex. Static review cannot prove restore order, sector quarantine, override temp cleanup, AUP math, or backup promotion under real corrupted-sector conditions.
 
@@ -1015,8 +1029,27 @@ Decision:
 - Do not refactor this blindly; the code is load-bearing and has real recovery logic.
 - Require one fresh artifact-backed save/load test that covers: clean save, clean load, backup recovery, corrupted indexed sector, missing/corrupt mod payload, migration path, and memory capture before/after `SaveManager.Awake()`.
 - Create a persistence authority ledger. Minimum columns: file/artifact, owning system, path under `Application.persistentDataPath`, temp/backup policy, atomicity primitive, load order, and failure behavior.
-- Re-evaluate the boot allocation policy. Low tier should not permanently pay 132 MB for save buffers unless instant-save UX is explicitly worth that memory. Candidate direction: lazy allocate on first save/load, pooled arena reuse, or tier-based reduced staging budget.
+- Re-evaluate the post-first-use allocation policy. R32 removes the large boot allocation, but low tier may still need release-after-use, pooled arena reuse, or tier-based reduced staging budget if Memory Profiler/save-load timing proves the first-use/resident cost too high.
 - Do not claim shipping-grade persistence until the current dirty workspace has a fresh Play Mode/player artifact with PASS lines and a captured save directory diff.
+- Treat `Library/Codex_DOC_AUDIT_UnityBatchCompile.log` as compile/import evidence only: it contains no `error CS`, no bootstrap dependency exception, no `BIOS ERROR`, and ends in successful batchmode exit. Later read-only Unity MCP Console readback first returned `0` errors and `7` non-C# warnings, then final readback returned `0` log entries. This does not prove runtime save/load behavior.
+
+## World Streaming / HLOD PDA Upload Addendum
+
+Evidence type: `STATIC_SOURCE`. No Unity import, Play Mode, PDA route, profiler, GCMonitor, Frame Debugger, or player build was run for this addendum.
+
+Current source facts:
+
+- `WorldChunkResidencyManager` owns HLOD active impostor SOA and exposes the read model through `IStreamingBackpressureService`.
+- `PDAMapTab` consumes active HLOD impostor points into a fixed `16 x float4` GPU buffer for the sonar/cartography overlay.
+- Before R35, `TryResolveHlodImpostorAupBuffer()` uploaded that fixed buffer on every map build whenever active HLOD points existed, even if the streaming point data had not changed.
+- R35 adds `IStreamingBackpressureService.ActiveImpostorVersion` and backs it with a separate `_activeImpostorPointVersion` in `WorldChunkResidencyManager`.
+- `PDAMapTab` now caches uploaded HLOD version/count, clamps count to the native point array length, clears trailing fixed slots only when data changes, and skips unchanged HLOD POI uploads.
+- Renderer matrix dirty state remains separate from PDA point dirty state, so PDA fade progress can advance without forcing HLOD matrix re-upload.
+
+Decision:
+
+- Treat this as a small but real bandwidth-discipline fix.
+- Do not claim measured savings until Frame Debugger/profiler proof captures PDA map builds with active HLOD points.
 
 ## Third-Party Contamination Finding
 

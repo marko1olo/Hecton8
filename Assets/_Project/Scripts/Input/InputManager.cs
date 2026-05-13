@@ -14,6 +14,7 @@ using Hecton8.Core;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.UI;
+using UnityEngine.InputSystem.XR;
 
 namespace Hecton8.Input
 {
@@ -24,7 +25,8 @@ namespace Hecton8.Input
     {
         KeyboardMouse = 0,
         Gamepad = 1,
-        SteamDeck = 2
+        SteamDeck = 2,
+        XRTouch = 3
     }
 
     /// <summary>
@@ -71,6 +73,7 @@ namespace Hecton8.Input
         private bool _processingInputRecovery;
         private int _lastDisplayDeviceId;
         private int _connectedGamepadCount;
+        private int _connectedXRControllerCount;
         private Vector2 _moveInput;
         private Vector2 _lookInput;
         private float _verticalMovementInput;
@@ -156,6 +159,10 @@ namespace Hecton8.Input
         private InputAction _uiMiddleClickAction;
         private InputAction _uiRightClickAction;
         private InputAction _uiScrollWheelAction;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private InputAction _debugToggleBlackBoxDashboardAction;
+        private InputAction _debugToggleEngineHealthOverlayAction;
+#endif
 
         private InputActionReference _uiModuleMoveReference;
         private InputActionReference _uiModuleSubmitReference;
@@ -205,6 +212,10 @@ namespace Hecton8.Input
         public event Action OnTabNext;
         public event Action OnTabPrevious;
         public event Action<InputDisplayStyle> OnInputDisplayStyleChanged;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        public event Action OnDebugToggleBlackBoxDashboard;
+        public event Action OnDebugToggleEngineHealthOverlay;
+#endif
 
         // ═══════════════════════════════════════════════════════════════════════════════════════════
         // PROPERTIES
@@ -233,6 +244,16 @@ namespace Hecton8.Input
 
             scrollDelta = _uiScrollWheelAction.ReadValue<Vector2>();
             return scrollDelta.sqrMagnitude > 0.000001f;
+        }
+
+        public bool TryReadUiPoint(out Vector2 point)
+        {
+            point = Vector2.zero;
+            if (_uiPointAction == null || !TryGetActionMapEnabled(_uiActionMap))
+                return false;
+
+            point = _uiPointAction.ReadValue<Vector2>();
+            return point.x >= 0f && point.y >= 0f;
         }
 
         public bool TryValidateRuntimeActions(out string message)
@@ -493,6 +514,10 @@ namespace Hecton8.Input
             _uiMiddleClickAction = _uiActionMap.FindAction("MiddleClick");
             _uiRightClickAction = _uiActionMap.FindAction("RightClick");
             _uiScrollWheelAction = _uiActionMap.FindAction("ScrollWheel");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            _debugToggleBlackBoxDashboardAction = _uiActionMap.FindAction("DebugToggleBlackBoxDashboard");
+            _debugToggleEngineHealthOverlayAction = _uiActionMap.FindAction("DebugToggleEngineHealthOverlay");
+#endif
         }
 
         private void EnsureUiModuleActionReferences()
@@ -617,6 +642,13 @@ namespace Hecton8.Input
             _cancelAction.performed += OnCancelPerformed;
             _tabNextAction.performed += OnTabNextPerformed;
             _tabPreviousAction.performed += OnTabPreviousPerformed;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (_debugToggleBlackBoxDashboardAction != null)
+                _debugToggleBlackBoxDashboardAction.performed += OnDebugToggleBlackBoxDashboardPerformed;
+
+            if (_debugToggleEngineHealthOverlayAction != null)
+                _debugToggleEngineHealthOverlayAction.performed += OnDebugToggleEngineHealthOverlayPerformed;
+#endif
 
             _uiActionsSubscribed = true;
         }
@@ -720,6 +752,14 @@ namespace Hecton8.Input
 
             if (_tabPreviousAction != null)
                 _tabPreviousAction.performed -= OnTabPreviousPerformed;
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (_debugToggleBlackBoxDashboardAction != null)
+                _debugToggleBlackBoxDashboardAction.performed -= OnDebugToggleBlackBoxDashboardPerformed;
+
+            if (_debugToggleEngineHealthOverlayAction != null)
+                _debugToggleEngineHealthOverlayAction.performed -= OnDebugToggleEngineHealthOverlayPerformed;
+#endif
 
             _uiActionsSubscribed = false;
         }
@@ -884,6 +924,19 @@ namespace Hecton8.Input
             CaptureInputDisplayStyle(context);
             OnTabPrevious?.Invoke();
         }
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private void OnDebugToggleBlackBoxDashboardPerformed(InputAction.CallbackContext context)
+        {
+            CaptureInputDisplayStyle(context);
+            OnDebugToggleBlackBoxDashboard?.Invoke();
+        }
+
+        private void OnDebugToggleEngineHealthOverlayPerformed(InputAction.CallbackContext context)
+        {
+            CaptureInputDisplayStyle(context);
+            OnDebugToggleEngineHealthOverlay?.Invoke();
+        }
+#endif
 
         // ═══════════════════════════════════════════════════════════════════════════════════════════
         // PUBLIC API
@@ -1667,6 +1720,9 @@ namespace Hecton8.Input
             if (IsGamepadDisplayStyle(displayStyle))
                 return path.IndexOf("Gamepad", StringComparison.OrdinalIgnoreCase) >= 0;
 
+            if (IsXRDisplayStyle(displayStyle))
+                return path.IndexOf("XRController", StringComparison.OrdinalIgnoreCase) >= 0;
+
             return path.IndexOf("Keyboard", StringComparison.OrdinalIgnoreCase) >= 0 ||
                    path.IndexOf("Mouse", StringComparison.OrdinalIgnoreCase) >= 0;
         }
@@ -1674,7 +1730,7 @@ namespace Hecton8.Input
         private static string FormatBindingChip(string display, InputDisplayStyle displayStyle)
         {
             string sanitized = string.IsNullOrWhiteSpace(display) ? "?" : display.Trim().ToUpperInvariant();
-            string prefix = IsGamepadDisplayStyle(displayStyle) ? "\u25C6" : "\u2328";
+            string prefix = IsXRDisplayStyle(displayStyle) ? "XR" : IsGamepadDisplayStyle(displayStyle) ? "\u25C6" : "\u2328";
             return $"<b><color=#AEE8FF>{prefix}</color> {sanitized}</b>";
         }
 
@@ -1834,6 +1890,7 @@ namespace Hecton8.Input
         {
             _displayStyleByDeviceId.Clear();
             _connectedGamepadCount = 0;
+            _connectedXRControllerCount = 0;
 
             var devices = InputSystem.devices;
             for (int i = 0; i < devices.Count; i++)
@@ -1859,11 +1916,15 @@ namespace Hecton8.Input
 
                 if (IsGamepadDisplayStyle(existingStyle))
                     _connectedGamepadCount = Mathf.Max(0, _connectedGamepadCount - 1);
+                if (IsXRDisplayStyle(existingStyle))
+                    _connectedXRControllerCount = Mathf.Max(0, _connectedXRControllerCount - 1);
             }
 
             _displayStyleByDeviceId[deviceId] = style;
             if (IsGamepadDisplayStyle(style))
                 _connectedGamepadCount++;
+            if (IsXRDisplayStyle(style))
+                _connectedXRControllerCount++;
         }
 
         private void UntrackDevice(InputDevice device)
@@ -1877,6 +1938,8 @@ namespace Hecton8.Input
 
             if (IsGamepadDisplayStyle(style))
                 _connectedGamepadCount = Mathf.Max(0, _connectedGamepadCount - 1);
+            if (IsXRDisplayStyle(style))
+                _connectedXRControllerCount = Mathf.Max(0, _connectedXRControllerCount - 1);
 
             _displayStyleByDeviceId.Remove(deviceId);
             if (_lastDisplayDeviceId == deviceId)
@@ -1892,6 +1955,8 @@ namespace Hecton8.Input
             }
 
             if (IsGamepadDisplayStyle(CurrentDisplayStyle) && _connectedGamepadCount == 0)
+                SetCurrentDisplayStyle(InputDisplayStyle.KeyboardMouse);
+            if (IsXRDisplayStyle(CurrentDisplayStyle) && _connectedXRControllerCount == 0)
                 SetCurrentDisplayStyle(InputDisplayStyle.KeyboardMouse);
         }
 
@@ -1913,6 +1978,9 @@ namespace Hecton8.Input
 
         private static InputDisplayStyle ResolveDisplayStyle(InputDevice device)
         {
+            if (device is XRController)
+                return InputDisplayStyle.XRTouch;
+
             if (!(device is Gamepad))
                 return InputDisplayStyle.KeyboardMouse;
 
@@ -1922,6 +1990,11 @@ namespace Hecton8.Input
         private static bool IsGamepadDisplayStyle(InputDisplayStyle style)
         {
             return style == InputDisplayStyle.Gamepad || style == InputDisplayStyle.SteamDeck;
+        }
+
+        private static bool IsXRDisplayStyle(InputDisplayStyle style)
+        {
+            return style == InputDisplayStyle.XRTouch;
         }
 
         private static bool LooksLikeSteamDeck(InputDevice device)
@@ -2372,6 +2445,39 @@ namespace Hecton8.Input
             InputAction scrollWheelAction = EnsureUiAction(uiActionMap, "ScrollWheel", InputActionType.PassThrough, "Vector2");
             AddBindingIfMissing(scrollWheelAction, "<Mouse>/scroll");
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            InputAction debugBlackBoxDashboardAction =
+                EnsureUiAction(uiActionMap, "DebugToggleBlackBoxDashboard", InputActionType.Button, "Button");
+            AddBindingIfMissing(debugBlackBoxDashboardAction, "<Keyboard>/f3");
+            AddButtonWithOneModifierBindingIfMissing(
+                debugBlackBoxDashboardAction,
+                "<Gamepad>/select",
+                "<Gamepad>/rightShoulder");
+            AddButtonWithOneModifierBindingIfMissing(
+                debugBlackBoxDashboardAction,
+                "<XRController>{LeftHand}/menuButton",
+                "<XRController>{RightHand}/primaryButton");
+
+            InputAction debugEngineHealthOverlayAction =
+                EnsureUiAction(uiActionMap, "DebugToggleEngineHealthOverlay", InputActionType.Button, "Button");
+            AddButtonWithOneModifierBindingIfMissing(
+                debugEngineHealthOverlayAction,
+                "<Keyboard>/leftCtrl",
+                "<Keyboard>/f10");
+            AddButtonWithOneModifierBindingIfMissing(
+                debugEngineHealthOverlayAction,
+                "<Keyboard>/rightCtrl",
+                "<Keyboard>/f10");
+            AddButtonWithOneModifierBindingIfMissing(
+                debugEngineHealthOverlayAction,
+                "<Gamepad>/select",
+                "<Gamepad>/leftShoulder");
+            AddButtonWithOneModifierBindingIfMissing(
+                debugEngineHealthOverlayAction,
+                "<XRController>{LeftHand}/menuButton",
+                "<XRController>{RightHand}/secondaryButton");
+#endif
+
             return uiActionMap;
         }
 
@@ -2411,6 +2517,70 @@ namespace Hecton8.Input
 
             action.AddBinding(bindingPath);
         }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private static void AddButtonWithOneModifierBindingIfMissing(
+            InputAction action,
+            string modifierPath,
+            string buttonPath)
+        {
+            if (action == null ||
+                string.IsNullOrEmpty(modifierPath) ||
+                string.IsNullOrEmpty(buttonPath) ||
+                HasButtonWithOneModifierBinding(action, modifierPath, buttonPath))
+            {
+                return;
+            }
+
+            action.AddCompositeBinding("ButtonWithOneModifier")
+                .With("Modifier", modifierPath)
+                .With("Button", buttonPath);
+        }
+
+        private static bool HasButtonWithOneModifierBinding(
+            InputAction action,
+            string modifierPath,
+            string buttonPath)
+        {
+            if (action == null)
+                return false;
+
+            var bindings = action.bindings;
+            int bindingCount = bindings.Count;
+            for (int i = 0; i < bindingCount; i++)
+            {
+                if (!bindings[i].isComposite ||
+                    !string.Equals(bindings[i].path, "ButtonWithOneModifier", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                bool hasModifier = false;
+                bool hasButton = false;
+                int partIndex = i + 1;
+                while (partIndex < bindingCount && bindings[partIndex].isPartOfComposite)
+                {
+                    if (string.Equals(bindings[partIndex].name, "Modifier", StringComparison.Ordinal) &&
+                        string.Equals(bindings[partIndex].path, modifierPath, StringComparison.Ordinal))
+                    {
+                        hasModifier = true;
+                    }
+                    else if (string.Equals(bindings[partIndex].name, "Button", StringComparison.Ordinal) &&
+                             string.Equals(bindings[partIndex].path, buttonPath, StringComparison.Ordinal))
+                    {
+                        hasButton = true;
+                    }
+
+                    partIndex++;
+                }
+
+                if (hasModifier && hasButton)
+                    return true;
+            }
+
+            return false;
+        }
+#endif
 
         private bool EnsureInputActionsInitialized()
         {
@@ -2493,6 +2663,10 @@ namespace Hecton8.Input
             _uiMiddleClickAction = null;
             _uiRightClickAction = null;
             _uiScrollWheelAction = null;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            _debugToggleBlackBoxDashboardAction = null;
+            _debugToggleEngineHealthOverlayAction = null;
+#endif
 
             ReleaseUiModuleActionReferences();
 

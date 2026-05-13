@@ -1,0 +1,17 @@
+{
+    "name": "Hecton8.Core.Memory.Defrag",
+    "rootNamespace": "Hecton8.Core.Memory.Defrag",
+    "references": [
+        "Hecton8.Core.Contracts",
+        "Unity.Collections"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

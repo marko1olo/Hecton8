@@ -39,7 +39,16 @@ namespace Hecton8.World
         internal static float3 AUPDirection(in AbsoluteUniversePosition from, in AbsoluteUniversePosition to)
         {
             double3 delta = AUPDelta(in to, in from);
-            return math.normalizesafe(new float3((float)delta.x, (float)delta.y, (float)delta.z), float3.zero);
+            double lengthSq = math.dot(delta, delta);
+            if (!math.isfinite(lengthSq) || lengthSq <= double.Epsilon)
+                return float3.zero;
+
+            double3 direction = delta * math.rsqrt(lengthSq);
+            float3 result = new float3((float)direction.x, (float)direction.y, (float)direction.z);
+            if (!math.all(math.isfinite(result)))
+                ReportInvalidFloatResult();
+
+            return result;
         }
 
         /// <summary>

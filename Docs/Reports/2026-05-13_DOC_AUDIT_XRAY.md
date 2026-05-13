@@ -2,12 +2,12 @@
 
 Date: 2026-05-13
 Status: PENDING VERIFICATION
-Evidence class: STATIC_SOURCE / STATIC_DOC / FILESYSTEM / PACKAGE_LOCK only
+Evidence class: STATIC_SOURCE / STATIC_DOC / FILESYSTEM / PACKAGE_LOCK / UNITY_BATCHMODE_IMPORT_COMPILE
 Scope: documentation authority, root/doc surface, package pins, build-settings text, asmdef graph, and stale proof references.
 
 ## Current Boundary
 
-This report does not claim Unity import, Unity Console, Play Mode, profiler, GCMonitor, player build, frame-time, memory, scene wiring, or visual quality proof.
+This report now includes one Unity `6000.4.1f1` batchmode import/script-compilation artifact from DOC_AUDIT R29 plus static async pager / save-buffer hardening from R30/R31/R32/R33/R36/R37/R38, player-movement ladder hot-path cache hardening from R34, and HLOD PDA upload version gating from R35. R37 added local Unity Bee/Roslyn temp-output probes for `Hecton8.Core.Memory` and `Hecton8.Core` with exit code `0`, but R38 demotes the full-Core success as stale under current active churn: current full `Hecton8.Core` probe is blocked by unrelated audio/scanner/fluid/UI errors. It still does not claim Play Mode, profiler, GCMonitor, player build, frame-time, memory, scene wiring, save/load correctness, WFC outpost restore correctness, locomotion correctness, PDA map correctness, or visual quality proof.
 
 Build errors are not the center of this audit. The center is whether documentation still matches current disk reality.
 
@@ -390,9 +390,19 @@ Remaining boundary:
 
 ## Continuation R22 - 2026-05-13
 
+PDA headless open guard:
+
+- `PlayerPDA.Open()` now fails closed unless a PDA panel and at least one tab are resolved.
+- PDA input-map switching now guards missing/uninitialized `GlobalRegistry.Input`.
+- `ContentSanityValidator` now validates `Player.prefab` for headless PDA shell risk and reports `PlayerPdaHeadlessOpenRisk` plus bridge warnings.
+- The guard returns before setting `IsOpen`, switching input, touching cursor state, requesting depth of field, playing open audio, or raising opened events when the physical shell is missing.
+- This is static source proof only; visible PDA shell and `DiegeticPDAController` scene/prefab route remain `PENDING VERIFICATION`.
+
+## Continuation R23 - 2026-05-13
+
 Item identity / catalog validator hardening:
 
-- Active DOC_AUDIT state files had been archived under `Docs/Archive/Batch004/`; active R22 status/rationale/log were recreated with Batch004 as historical memory.
+- Active DOC_AUDIT state files had been archived under `Docs/Archive/Batch004/`; active R22/R23 status/rationale/log were recreated with Batch004 as historical memory.
 - Static YAML scan found exactly one duplicate `ItemData.PersistentId` group under `Assets/_Project/Data`: root `Assets/_Project/Data/Items/Data_Copper.asset` and cataloged raw `Assets/_Project/Data/Items/Resources/Raw/Data_Copper.asset` both author `Data_Copper`.
 - `ContentSanityValidator` now reports duplicate `ItemData.PersistentId` across data assets.
 - `ContentSanityValidator` now validates `ItemCatalog.allItems` for null entries, duplicate hash / `PersistentId` entries, missing runtime descriptors, and `ItemCatalog.HasLookupAmbiguity`.
@@ -400,12 +410,233 @@ Item identity / catalog validator hardening:
 
 Action:
 
-- Patched `Assets/_Project/Scripts/Editor/ContentSanityValidator.cs`.
-- Promoted the R22 validator boundary into stable docs.
+- Verified current `Assets/_Project/Scripts/Editor/ContentSanityValidator.cs` contains the item/catalog identity gates.
+- Promoted the R23 validator boundary into stable docs.
 
 Remaining boundary:
 
-- This is static source proof only. The Unity editor validator menu was not run, no Console output was captured, and no compile/import/player route proof exists in this pass.
+- Unity MCP `validate_script` returned `0` diagnostics for `ContentSanityValidator.cs`. This is not Unity menu execution or import proof.
+- `dotnet build Hecton8.Editor.csproj` restored packages but remains blocked by existing `Hecton8.Core` missing namespace/type errors before useful editor-validator proof.
+- The Unity editor validator menu was not run, no Console output was captured, and no import/player route proof exists in this pass.
+
+## Continuation R24 - 2026-05-13
+
+Tool route / LogicSpanner validator hardening:
+
+- Static metadata reference recount found `13` `ToolMetadata_*.asset` files and `12` held tool prefabs.
+- `12 / 13` tool metadata assets are referenced by held prefabs. `ToolMetadata_LogicSpanner.asset` has only its own asset/meta reference route, matching the earlier orphan-content finding.
+- `ContentSanityValidator` now validates held `PlayerTool` prefabs for non-null `ToolMetadata`, non-null `ItemData`, `ItemCategory.Tool`, valid `ItemCatalog` runtime descriptor, and non-null tool `worldPrefab`.
+- `ContentSanityValidator` now validates active `ToolMetadata` assets for duplicate/empty `toolID` and reports active metadata with no held prefab route as orphan gameplay content.
+- The validator summary now includes `ToolMetadata`, `ToolHeldPrefabs`, `ToolMetadataOrphans`, and `ToolRouteErrors`.
+
+Remaining boundary:
+
+- This is static source/documentation proof only. The Unity validator menu was not run, no Console output was captured, and no runtime tool acquisition/equip/drop proof exists in this pass.
+- Expected current validator behavior from static evidence: `ToolMetadataOrphans=1` for `ToolMetadata_LogicSpanner.asset` until the full item/prefab/catalog/recipe route is authored or the metadata is quarantined outside active data.
+
+## Continuation R25 - 2026-05-13
+
+Player dev provisioner startup regression gate:
+
+- Static prefab YAML still shows canonical `Player.prefab` `ToolLoadoutProvisioner` startup grant flags disabled: `provisionInventoryOnStart: 0`, `assignCoreLoadoutOnStart: 0`, `provisionConstructionMaterialsOnStart: 0`, and `startupPreset: {fileID: 0}`.
+- `ContentSanityValidator` now validates canonical `Player.prefab` `ToolLoadoutProvisioner` startup flags.
+- The validator summary now includes `PlayerDevProvisionerStartupRisk`.
+- Expected current validator behavior from static evidence: `PlayerDevProvisionerStartupRisk=0`; if any startup grant flag is re-enabled, the validator should error.
+
+Remaining boundary:
+
+- This is static source/prefab proof only. The Unity validator menu was not run, no Console output was captured, and no clean first-hour no-dev-grant runtime route was executed.
+
+## Continuation R26 - 2026-05-13
+
+Quest item / prerequisite route validator:
+
+- Static first-hour quest scan found `Data_TitaniumScrap`, `Item_Tool_Scanner`, and cataloged raw `Data_Copper` present in `ItemCatalog`.
+- The legacy root `Data_Copper` remains outside `ItemCatalog`; this is still covered by R23 duplicate identity validation and should not be treated as current first-hour copper authority.
+- Checked first-hour prerequisites resolve to existing quest IDs: `quest_first_hour_exit_lifepod` and `quest_first_hour_collect_titanium`.
+- `QuestGraphEvaluator` already consumes `InteractionEvents.ItemCollected` and `CraftingEvents.CraftCompleted`; the new hardening is authored data validation, not runtime route proof.
+- `ContentSanityValidator` now validates `QuestData.questId` uniqueness, `prerequisiteQuestIds`, item/craft `triggerId`, item/craft `completionId`, and non-empty `criticalItemId` against active quest/catalog data.
+- The validator summary now includes `Quests` and `QuestRouteErrors`.
+
+Remaining boundary:
+
+- This is static source/data proof only. The Unity validator menu was not run, no Console output was captured, and no pickup/craft/quest/PDA/save-load route was executed.
+
+## Continuation R27 - 2026-05-13
+
+Recipe / craft completion route validator:
+
+- Static recipe scan found `41` `RecipeData` assets under `Assets/_Project/Data/Crafting/Recipes`.
+- `Recipe_Scanner.asset` outputs `Item_Tool_Scanner` and has two authored ingredient entries. This is static YAML evidence only; it is not proof that the player can gather the ingredients, open a fabricator, craft, receive the item, complete the quest, see PDA feedback, or survive save/load.
+- `ContentSanityValidator` now validates `RecipeData` runtime hash uniqueness, result item catalog descriptors, positive result quantities, explicit fabrication groups, non-empty ingredient lists, positive ingredient amounts, and ingredient catalog descriptors.
+- `ContentSanityValidator` now cross-checks `QuestData.OnCraftCompleted` trigger/completion IDs against valid recipe result persistent IDs.
+- The validator summary now includes `Recipes` and `RecipeRouteErrors`.
+
+Remaining boundary:
+
+- This is static source/data proof only. The Unity validator menu was not run, no Console output was captured, and no fabricator UI/craft completion/PDA/save-load route was executed.
+
+## Continuation R28 - 2026-05-13
+
+Recipe scan-gate route warning:
+
+- Static scan found `scan.resource_node` has a visible generic runtime source in `ScanLogSystem` / `ScannerTool`.
+- `scan.expedition_contact`, `scan.resource_cache`, and `scan.structure_relay` are currently visible in recipe assets and editor authoring scripts, but no current `_Project` prefab/scene/data route was found by static grep.
+- `ConstructionBootstrapAuthoring` source can create proving-ground `ScannableTarget` probes for those IDs, but editor authoring capability is not production scene/prefab unlock proof.
+- `ContentSanityValidator` now collects known generic scan IDs and authored `ScannableTarget` prefab entry IDs under `Assets/_Project/Prefabs`.
+- `ContentSanityValidator` now warns when `RecipeData.requiredScanEntryId` has no known prefab/generic route. The validator summary now includes `RecipeScanGateWarnings`.
+
+Remaining boundary:
+
+- This is static source/data proof only. The Unity validator menu was not run, no Console output was captured, and no scan interaction, recipe unlock, fabricator UI, craft completion, PDA, or save-load route was executed.
+
+## Continuation R29 - 2026-05-13
+
+Unity compile / async world pager reconciliation:
+
+- Current stale `dotnet build Hecton8.Core.csproj --no-restore` remains non-authoritative for this workspace: it failed with `154` missing namespace/type errors from generated `.csproj` reference drift across split asmdefs.
+- `H8BinaryWorldPager` was kept in a safe public C# surface: public write/copy methods are no longer unsafe-call sites, while internal NativeArray copy/header serialization remains inside unsafe blocks.
+- `SaveManager` now owns an `IAsyncPersistenceService` world-pager bridge for chunk page writes, reads, completed-read copy, telemetry, and flush.
+- Duplicate `SaveManager` dehydration-drain and pager-saving-notification methods were collapsed to one bounded route. The retained route drains at most `2` chunk dehydration signals per tick and writes voxel delta, inventory shadow, and chunk metadata payloads.
+- Fresh Unity Console before the final batch run showed no current C# compile wall, but did expose a runtime bootstrap fault: `IOException: Sharing violation on path ... world_data.h8bin`, followed by `SaveManager` CoreServices failure and `BIOS ERROR 0xBOOT_TIMEOUT`.
+- `H8BinaryWorldPager.Initialize()` now fail-closes on `IOException` / `UnauthorizedAccessException`: it records an initialization fault, increments IO telemetry, emits a development warning, and leaves read/write APIs rejected instead of throwing through bootstrap.
+- `SaveManager` checks `HasInitializationFault` before reinitializing the pager, avoiding per-frame retry/log spam after a locked file.
+- Generated `Library/BurstCache` was deleted after a Burst hash-cache exception; Unity `6000.4.1f1` batchmode import/script compilation was run with `Library/Codex_DOC_AUDIT_UnityBatchCompile.log`.
+- Strict scan of that batch log found no `error CS`, no bootstrap dependency exception, and no `BIOS ERROR`; the log includes script compilation requests, `DisplayProgressbar: Compiling Scripts`, `Application.AssetDatabase Initial Refresh End`, and `Exiting batchmode successfully`.
+- A later read-only Unity MCP Console readback first returned `0` errors and `7` warnings from ADB/Crest/MCP bridge/serializer surfaces; final read-only Console readback returned `0` log entries.
+
+Remaining boundary:
+
+- This is compile/import and source-route evidence only. It is not Play Mode, not a save/load roundtrip, not corrupted-sector recovery, not backup recovery, not profiler/GC/memory proof, not player build proof, and not gameplay route proof.
+
+## Continuation R30 - 2026-05-13
+
+Async world pager static X-Ray / overclaim correction:
+
+- R29's compile-clean pager state was not sufficient persistence correctness. Static review found `world_data.h8bin` still opened with `FileShare.ReadWrite`, which allowed concurrent page-file writers.
+- `H8BinaryWorldPager` now opens with `FileShare.Read`, so diagnostic readers are allowed but a second writer should fail closed instead of silently corrupting fixed page slots.
+- The pager worker now has a bounded shutdown handshake through `_workerStopLock`, `Monitor.Wait`, and `Monitor.PulseAll` before native queue/arena disposal.
+- Invalid ready read results now release their result map entry/read slot instead of poisoning the fixed read-result capacity.
+- Empty sparse page headers and valid headers for a different sector/payload are now classified as `Missing`, not `Corrupt`; this prevents false corruption dumps for unwritten random-access sectors and fixed-slot hash collisions.
+- `SaveManager.EnqueueChunkDehydrationPayloads()` no longer captures the full global `VoxelDeltaProcessor` native snapshot for every dehydrated chunk. The current sidecar dehydration route writes inventory shadow plus chunk metadata only.
+- `WorldChunkResidencyManager.RequestLoad()` no longer enqueues orphaned `VoxelDeltaRle` pager prefetch requests. Ticket retirement exists, but there is still no chunk-local voxel payload apply path, so voxel chunk hydration remains unproven.
+
+Remaining boundary:
+
+- This is static source correction only. No Unity import, Play Mode, save/load roundtrip, backup recovery, corrupted-page recovery, profiler, GCMonitor, Memory Profiler, player build, or frame-time proof was run in R30.
+
+## Continuation R31 - 2026-05-13
+
+SaveManager world pager cold-boot trim / regression guard:
+
+- A post-R30 static check found `worldPagerVoxelDeltaSnapshot` had reappeared in `SaveManager.EnqueueChunkDehydrationPayloads()` under concurrent workspace churn.
+- The returned block again captured the global `VoxelDeltaProcessor` snapshot per dehydrated chunk and attempted a `VoxelDeltaRle` sidecar write. It has been removed again.
+- Current dehydration sidecar writes are inventory shadow plus chunk metadata only. There is still no claim of chunk-local voxel persistence.
+- `InitializeNativeBuffers()` no longer calls `EnsureWorldPagerInitialized()`. `world_data.h8bin` is opened only when chunk sidecar IO is actually requested, not during `SaveManager.Awake()` / `InitializeService()` native-buffer allocation.
+- At the R31 boundary this still did not fix the main raw/compressed/staging save-buffer boot residency; R32 below moves those large buffers to first-use allocation. Memory Profiler/runtime proof is still required.
+
+Remaining boundary:
+
+- Static source correction only. No Unity import, Play Mode, save/load roundtrip, backup recovery, corrupted-page recovery, profiler, GCMonitor, Memory Profiler, player build, or frame-time proof was run in R31.
+
+## Continuation R32 - 2026-05-13
+
+SaveManager large buffer lazy allocation:
+
+- Static source review showed `SaveManager.Awake()` / `InitializeService()` still allocated the main persistence working set at boot: 64 MB raw save payload, about 68 MB compressed payload, and 10 MB staging.
+- `InitializeNativeBuffers()` now initializes only the save black-box telemetry ring and the `9`-entry load-candidate scratch.
+- Full save calls `EnsureSaveWorkingBuffers()` before snapshot/write pipeline work.
+- Load calls `EnsureSavePayloadBuffer()` and `EnsureLoadCandidateScratch()` before marking the service busy.
+- Chunk dehydration calls `EnsureSaveStagingBuffer()` before inventory/metadata sidecar writes.
+- The large buffers remain persistent after first use. R32 is a cold-boot residency fix, not proof that after-first-use memory policy is final.
+
+Remaining boundary:
+
+- Static source correction only. No Unity import, Play Mode, save/load roundtrip, backup recovery, corrupted-page recovery, profiler, GCMonitor, Memory Profiler, player build, or frame-time proof was run in R32.
+
+## Continuation R33 - 2026-05-13
+
+SaveManager fault-path allocation guard:
+
+- Static review after R32 found chunk dehydration could allocate the 10 MB staging arena even when pager initialization had faulted and writes would reject.
+- `EnqueueChunkDehydrationPayloads()` now returns before staging allocation unless `_worldPager` exists, `IsInitialized` is true, and `HasInitializationFault` is false.
+- `LoadGameAsync()` now performs first-use raw-buffer/candidate-scratch allocation inside the load `try`; `candidates` starts as default, and the existing clear helper handles default arrays.
+- This reduces avoidable fault-path residency and keeps low-memory load allocation failures inside the normal failure/cleanup path.
+
+Remaining boundary:
+
+- Static source correction only. No Unity import, Play Mode, save/load roundtrip, backup recovery, corrupted-page recovery, profiler, GCMonitor, Memory Profiler, player build, or frame-time proof was run in R33.
+
+## Continuation R34 - 2026-05-13
+
+HectonPlayerMovement ladder snap hot-path cache:
+
+- Current `HectonPlayerMovement.cs` is 740,426 bytes / 13,240 lines. The older large-file numbers in stable docs were stale.
+- Static review confirms this is a fused player integration hub: locomotion, KCC, water, transport, hazards, camera, AUP repair, probes, and telemetry.
+- A narrow fixed locomotion issue was found: ladder spline snap resolved `ClimbableLadder` from the recent ladder probe collider via `TryGetComponent`.
+- The method now caches positive ladder component resolution by collider instance id and clears stale cache on failed resolution.
+- This is not a broad decomposition and does not claim player movement runtime correctness.
+
+Remaining boundary:
+
+- Static source correction only. No Unity import, Play Mode, ladder interaction, profiler, GCMonitor, player build, or frame-time proof was run in R34.
+
+## Continuation R35 - 2026-05-13
+
+HLOD PDA overlay upload version gate:
+
+- Static review of the `WORLD_STREAMING_LOD_MANAGER` handoff found `PDAMapTab.TryResolveHlodImpostorAupBuffer()` uploaded the fixed `16`-point HLOD AUP buffer every map build while active impostor points existed.
+- `IStreamingBackpressureService` now exposes `ActiveImpostorVersion`.
+- `WorldChunkResidencyManager` now keeps a separate point/read-model version for PDA HLOD points, distinct from the renderer matrix version.
+- `PDAMapTab` now caches uploaded HLOD version/count, clamps count to the native point array length, clears trailing fixed slots only when the read model changes, and skips the HLOD buffer upload when version/count are unchanged.
+- Fade progress advances the point version without forcing renderer matrix uploads.
+
+Remaining boundary:
+
+- Static source correction only. No Unity import, Play Mode, PDA map route, profiler, GCMonitor, Frame Debugger, player build, or frame-time proof was run in R35.
+
+## Continuation R36 - 2026-05-13
+
+Recurrent world-pager voxel snapshot regression guard:
+
+- Post-R35 regression grep found `worldPagerVoxelDeltaSnapshot` back in `SaveManager.EnqueueChunkDehydrationPayloads()`.
+- The reintroduced block captured a global `VoxelDeltaProcessor` snapshot for each dehydrated chunk and wrote it as `H8WorldPagePayloadTypes.VoxelDeltaRle`.
+- The block was removed again. Chunk dehydration sidecar writes are limited to inventory shadow and chunk metadata until a real chunk-local voxel capture/apply contract exists.
+- Scoped grep now finds no `FileShare.ReadWrite`, no `worldPagerVoxelDeltaSnapshot`, and no direct `RequestAsyncPagerRead(chunkId)` in `H8BinaryWorldPager.cs`, `SaveManager.cs`, or `WorldChunkResidencyManager.cs`.
+
+Remaining boundary:
+
+- Static source correction only. No Unity import, Play Mode, save/load roundtrip, corrupted-page recovery, profiler, GCMonitor, Memory Profiler, player build, or frame-time proof was run in R36.
+
+## Continuation R37 - 2026-05-13
+
+Unity C# wall reconciliation / pager thread guard:
+
+- Post-R36 recheck found `H8BinaryWorldPager` had reintroduced `async void RunWorkerAsync()` / `Awaitable.BackgroundThreadAsync()` under concurrent churn.
+- `H8BinaryWorldPager` now owns a named background `Thread` through `_workerThread`, uses `RunWorkerLoop()`, and joins before monitor fallback during shutdown.
+- `GlobalDataVault` stays inside the `Hecton8.Core.Memory` asmdef boundary: current scoped grep finds no Burst attribute, Unity.Mathematics dependency, GlobalSignals dependency, or MemoryAddressShiftSignal dependency.
+- Local Unity Bee/Roslyn temp-output probes returned exit code `0` for `Hecton8.Core.Memory` and `Hecton8.Core`.
+- Scoped grep also finds no `FileShare.ReadWrite`, no `worldPagerVoxelDeltaSnapshot`, and no direct `RequestAsyncPagerRead(chunkId)` in the pager integration files.
+
+Remaining boundary:
+
+- Unity MCP `read_console` returned `Unity session not available`. This is local compile/source evidence only; no Unity import, Play Mode, save/load roundtrip, corrupted-page recovery, profiler, GCMonitor, Memory Profiler, player build, or frame-time proof was run in R37.
+
+## Continuation R38 - 2026-05-13
+
+World pager worker fault accounting / WFC outpost persistence contract:
+
+- Active `DOC_AUDIT` status/rationale/log files were recreated after Batch005 moved the previous active files into `Docs/Archive/Batch005/`.
+- `H8BinaryWorldPager.RunWorkerLoop()` now processes dequeued write/read commands through per-command accounting wrappers.
+- Unexpected command-level faults now decrement the already-dequeued pending counter in `finally`, record fault telemetry, mark the pager fail-closed, zero exposed pending write/read counters, request worker shutdown, and dump the existing black-box telemetry.
+- `IAsyncPersistenceService` WFC outpost methods are now implemented by the current `SaveManager`: mutable WFC cell flags are held in DataVault `BufferID.WfcOutpostGrid`, packed by `PackWfcOutpostMutableStateJob`, encoded through the existing `SaveBinaryPayloadCodec` bitmask payload, deduplicated by one-sector packed hash, committed through `IMacroDatabaseService.MarkDirty`, and restored from `MacroDatabasePayloadHandle` through `TryGetPayload`.
+- Local probes: `Hecton8.Core.Contracts` rebuilt from the current `Assets/_Project/Scripts/Core/Contracts/*.cs` source list with exit code `0`; `Hecton8.Core.Memory` probe exit code `0`; temporary `Hecton8.Audio.Virtualization.Contracts` and `Hecton8.Audio.Virtualization` probes exit code `0` were needed because current Bee `.rsp` files had not yet been generated for those new asmdefs.
+- Full local `Hecton8.Core` Bee/Roslyn probe remains blocked by unrelated active churn in `SpatialAudioManager.cs`, `ScannerTool.cs`, `ScannableTarget.cs`, `HectonFluidEngine.cs`, and `UI/ActionProgressHUD.cs`. The current error set is not caused by the R38 persistence files, but it means there is no current full Core compile-success claim.
+- Unity MCP `read_console` again returned `Unity session not available`.
+
+Remaining boundary:
+
+- R38 is source/local-probe evidence only. No Unity import, Play Mode, save/load roundtrip, WFC outpost MacroDB restore route, corrupted-page recovery, profiler, GCMonitor, Memory Profiler, player build, or frame-time proof was run.
 
 ## Broken Evidence References
 
@@ -453,17 +684,17 @@ Consequence: those labels are target-contract names, not implemented-file proof.
 
 ## Risk Model
 
-CPU: no runtime code changed.  
-GC: no runtime code changed.  
-Memory: no runtime code changed.  
-Cadence: no runtime code changed.  
-Correctness: documentation trust improved by demoting missing artifacts and stale navigation claims.
+CPU: R29 adds fail-closed persistence initialization and a bounded world-pager dehydration drain; R30/R31/R36/R37 remove the per-dehydrated-chunk global voxel snapshot write attempt and restore joinable pager worker ownership; R38 adds cold-path pager fault accounting and WFC outpost MacroDB bit packing without adding normal-frame work outside WFC signal drain/service calls; R32 moves large save-buffer allocation from boot to first persistence use; R33 avoids staging allocation on pager fault path; R34 removes repeated ladder component resolution for the same collider in the fixed ladder-snap path; R35 skips unchanged PDA HLOD fixed-buffer uploads. No profiler measurement was captured.
+GC: R30/R31/R36/R37 remove one potentially large cold-path native snapshot capture from chunk dehydration. R38 uses existing native staging/packed-word scratch for WFC outpost persistence and does not add managed hot-path allocations by source inspection. R32 changes NativeArray allocation timing, not managed DTO save/load allocation behavior. No GCMonitor proof was captured.
+Memory: normal pager initialization owns fixed native arenas/queues and telemetry, but R31 makes that initialization lazy instead of part of `InitializeNativeBuffers()`. R32 also makes the 64 MB raw, about 68 MB compressed, and 10 MB staging save buffers first-use allocations; R33 prevents the 10 MB staging allocation when the pager is faulted/uninitialized. Memory Profiler proof remains absent.
+Cadence: chunk dehydration ingestion is capped at `2` signals/tick. R35 PDA HLOD uploads now follow point-version/count changes instead of every unchanged map build. R38 WFC outpost state signal drain is capped at `8` state-change signals/tick and `4` sector-hydration signals/tick by current source.
+Correctness: documentation trust improved by demoting missing artifacts/stale navigation claims, recording the current Unity batch compile/import boundary, correcting the false chunk-local voxel pager readiness claim, and recording that the current full Core probe is again blocked by unrelated active churn.
 
 ## Non-Claims
 
-- No compile run was performed for this report.
-- No Unity MCP run was performed.
+- A Unity batchmode import/script-compilation run was performed for R29 only; it is not runtime proof.
+- Unity MCP was used earlier in this continuation but the live MCP editor session disappeared; final verification used batchmode log evidence.
 - No profiler/GC/runtime data was captured.
-- No claim of fixed build, clean Console, or working gameplay is made.
+- No claim of PlayMode-clean Console, save/load correctness, player build, profiler-clean frame time, or working gameplay is made.
 
 STATUS: PENDING VERIFICATION

@@ -1,6 +1,7 @@
 using System;
 using System.Runtime.CompilerServices;
 using System.Threading;
+using Hecton8.Core.Memory;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Profiling;
@@ -165,8 +166,23 @@ namespace Hecton8.Core
                 _arenaSafetyHandleCreated = new bool[ArenaBufferCount];
 #endif
 
-                _basePtr = (byte*)UnsafeUtility.Malloc(_capacityBytes, CacheLineAlignment, Allocator.Persistent);
-                UnsafeUtility.MemClear(_basePtr, _capacityBytes);
+                _basePtr = (byte*)H8Memory.AllocateRaw(
+                    _capacityBytes,
+                    CacheLineAlignment,
+                    SystemID.H8Memory,
+                    Allocator.Persistent,
+                    clearMemory: true,
+                    H8AllocationFlags.Raw);
+                if (_basePtr == null)
+                {
+                    _capacityBytes = 0;
+                    _arenaCapacityBytes = 0;
+                    _slabCapacityBytes = 0;
+                    _slabCount = 0;
+                    ResetScalarState();
+                    ClearManagedState();
+                    return;
+                }
 
                 _sentinelId = NativeMemorySentinel.RegisterPointer(
                     _basePtr,
@@ -386,7 +402,7 @@ namespace Hecton8.Core
             }
 
             MemoryBudgetTracker.Unregister(BudgetOwner);
-            UnsafeUtility.Free(_basePtr, Allocator.Persistent);
+            H8Memory.FreeRaw(_basePtr, Allocator.Persistent);
             _basePtr = null;
             _capacityBytes = 0;
             _arenaCapacityBytes = 0;

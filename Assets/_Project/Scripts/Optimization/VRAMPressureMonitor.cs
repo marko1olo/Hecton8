@@ -1,4 +1,5 @@
 using Hecton8.Core;
+using Hecton8.Core.Signals;
 using Hecton8.SaveSystem;
 using UnityEngine;
 using UnityEngine.Profiling;
@@ -29,6 +30,7 @@ namespace Hecton8.Optimization
         private const long MinimumHardwareHeadroomBytes = 200L * 1024L * 1024L;
         private const int WorldPrefabEvictionIdleFrames = 180;
         private const int SoftPressurePendingReleaseDrain = 4;
+        private const uint ResolutionChangeSourceHash = 0x5652414Du; // VRAM
 
         [Header("VRAM Pressure Thresholds")]
         [Tooltip("Preventive mip downgrade threshold: 1.6 GB against the 1.8 GB MX350 ceiling. Forced half-res begins at 1.4 GB, or 1.2 GB while XR is active; XR full-res recovery waits for 0.9 GB.")]
@@ -220,7 +222,9 @@ namespace Hecton8.Optimization
             long restoreMipThresholdBytes = ResolveFullResolutionRestoreThresholdBytes();
             bool allowFractionRestore = !HectonXRRuntimeState.IsXRActive;
 
-            if (LastUsedVramBytes >= forcedMipThresholdBytes)
+            if (LastUsedVramBytes >= RedZoneVramPressureBytes)
+                targetMipLimit = Mathf.Max(_baselineMipLimit, 1);
+            else if (LastUsedVramBytes >= forcedMipThresholdBytes)
                 targetMipLimit = Mathf.Max(_baselineMipLimit, 1);
             else if (LastUsedVramBytes <= restoreMipThresholdBytes)
                 targetMipLimit = _baselineMipLimit;
@@ -232,8 +236,26 @@ namespace Hecton8.Optimization
             if (targetMipLimit == _activeMipLimit)
                 return;
 
+            ApplyTextureMipLimit(targetMipLimit);
+        }
+
+        private void ApplyTextureMipLimit(int targetMipLimit)
+        {
+            int oldMipLimit = _activeMipLimit;
             QualitySettings.globalTextureMipmapLimit = targetMipLimit;
             _activeMipLimit = targetMipLimit;
+            GlobalSignals.Publish(new ResolutionChangedSignal
+            {
+                Frame = unchecked((uint)Time.frameCount),
+                SourceHash = ResolutionChangeSourceHash,
+                OldMipLimit = oldMipLimit,
+                NewMipLimit = targetMipLimit,
+                VramUsedMb = LastUsedVramBytes / BytesPerMegabyte,
+                Reason = targetMipLimit > oldMipLimit
+                    ? ResolutionChangedSignal.ReasonVramRedline
+                    : ResolutionChangedSignal.ReasonVramRecovered,
+                Flags = ResolutionChangedSignal.FlagTextureMipLimit
+            });
         }
 
         private void ApplyLodAggression()

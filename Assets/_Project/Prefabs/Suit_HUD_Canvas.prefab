@@ -2344,7 +2344,6 @@ GameObject:
   m_Component:
   - component: {fileID: 6203717398458511907}
   - component: {fileID: 7915165240633007945}
-  - component: {fileID: 918044680547512795}
   - component: {fileID: 5920354388807484853}
   - component: {fileID: 3896178095003698194}
   m_Layer: 5
@@ -2403,29 +2402,6 @@ Canvas:
   m_SortingLayerID: 0
   m_SortingOrder: 140
   m_TargetDisplay: 0
---- !u!114 &918044680547512795
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2631486575886313125}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0cd44c1031e13a943bb63640046fad76, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.CanvasScaler
-  m_UiScaleMode: 1
-  m_ReferencePixelsPerUnit: 100
-  m_ScaleFactor: 1
-  m_ReferenceResolution: {x: 1600, y: 900}
-  m_ScreenMatchMode: 0
-  m_MatchWidthOrHeight: 0.5
-  m_PhysicalUnit: 3
-  m_FallbackScreenDPI: 96
-  m_DefaultSpriteDPI: 96
-  m_DynamicPixelsPerUnit: 1
-  m_PresetInfoIsWorld: 0
 --- !u!114 &5920354388807484853
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2464,6 +2440,14 @@ MonoBehaviour:
   stressPulseBrightnessBoost: 0.12
   stressPulseWarningBlend: 0.18
   stressPulseBlendSpeed: 3.4
+  enableHudProxyLight: 1
+  hudProxyLightRangeMeters: 1.05
+  hudProxyLightIntensity: 0.18
+  hudProxyLightOxygenStressBoost: 0.28
+  hudProxyLightStressFlicker: 0.22
+  hudProxyLightForwardOffsetMeters: 0.03
+  hudProxyLightColor: {r: 0.08, g: 0.88, b: 1, a: 1}
+  hudProxyLightStressColor: {r: 1, g: 0.18, b: 0.12, a: 1}
   headerOffset: {x: 0, y: -34}
   telemetryOffset: {x: -226, y: 126}
   telemetrySize: {x: 184, y: 124}
@@ -2495,6 +2479,7 @@ MonoBehaviour:
   acousticRadarWaveAmplitude: 2.4
   acousticRadarPulseFrequency: 3.2
   acousticRadarGlitchStrength: 0.2
+  ditheredUiBackgroundShader: {fileID: 0}
   threatChevronShader: {fileID: 4800000, guid: 93d4136c67d64c5bb944522bd67021a1, type: 3}
   threatChevronColor: {r: 1, g: 0.18, b: 0.2, a: 0.88}
   threatChevronThreshold: 0.62
@@ -2504,14 +2489,10 @@ MonoBehaviour:
   threatChevronFillAlpha: 0.08
   threatChevronFlickerFrequency: 7
   threatChevronFlickerIntensity: 0.04
-  scannerHologramShader: {fileID: 0}
-  scannerHologramProxyMeshes: []
-  scannerHologramDistance: 0.74
-  scannerHologramLocalOffset: {x: 0, y: -0.025, z: 0}
-  scannerHologramScale: 0.052
-  scannerHologramBobAmplitude: 0.006
-  scannerHologramBobFrequency: 1.8
-  scannerHologramSpinDegreesPerSecond: 38
+  scannerHologramOffsetPixels: {x: 0, y: -56}
+  scannerHologramSizePixels: {x: 92, y: 56}
+  scannerHologramPulsePixels: 5
+  scannerHologramJitterPixels: 2.5
   scannerHologramScanStartColor: {r: 0.08, g: 0.88, b: 1, a: 0.44}
   scannerHologramScanCompleteColor: {r: 0.14, g: 1, b: 0.46, a: 0.52}
   _appliedLayoutRevision: 0
@@ -2534,6 +2515,11 @@ MonoBehaviour:
   ultrawideAspectThreshold: 1.8
   ultrawideHorizontalInset: 128
   ultrawideScaleX: 0.94
+  disableLayoutGroupsUnderContentRoot: 1
+  manualLinearLayoutItems: []
+  manualLayoutOrigin: {x: 0, y: 0}
+  manualLayoutStep: {x: 0, y: -24}
+  manualLayoutItemSize: {x: 240, y: 22}
 --- !u!1 &2686821459172600369
 GameObject:
   m_ObjectHideFlags: 0

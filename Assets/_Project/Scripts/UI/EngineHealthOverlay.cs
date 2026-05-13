@@ -1,5 +1,6 @@
 #if UNITY_EDITOR
 using Hecton8.Core;
+using Hecton8.Input;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -10,7 +11,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(UIDocument))]
-    public sealed class EngineHealthOverlay : MonoBehaviour, IUpdatable
+    public sealed class EngineHealthOverlay : MonoBehaviour, IUpdatable, IGlobalRegistryHotSwapListener
     {
         private const int SampleCapacity = 64;
         private const int SampleIntervalFrames = 10;
@@ -20,8 +21,6 @@ namespace Hecton8.UI
 
         [SerializeField] private UIDocument uiDocument;
         [SerializeField] private bool visibleByDefault;
-        [SerializeField] private KeyCode toggleKey = KeyCode.F10;
-        [SerializeField] private bool requireControlForToggle = true;
 
         // COLD ALLOC: float[64] - dispatcher artery flush graph sample cache - owner: EngineHealthOverlay
         private readonly float[] _samples = new float[SampleCapacity];
@@ -29,8 +28,10 @@ namespace Hecton8.UI
         private VisualElement _root;
         private GraphElement _graph;
         private bool _registered;
+        private bool _hotSwapListenerRegistered;
         private bool _visible;
         private int _nextSampleFrame;
+        private InputManager _inputManager;
 
         private void Awake()
         {
@@ -48,21 +49,27 @@ namespace Hecton8.UI
 
             BuildVisualTree();
             SetVisible(visibleByDefault);
+            TrySubscribeInput();
+            TryRegisterHotSwapListener();
             TryRegister();
+        }
+
+        private void Start()
+        {
+            TrySubscribeInput();
+            TryRegisterHotSwapListener();
         }
 
         private void OnDisable()
         {
+            UnsubscribeInput();
+            TryUnregisterHotSwapListener();
             Unregister();
             TeardownVisualTree();
         }
 
         public void Tick(float deltaTime)
         {
-#if ENABLE_INPUT_SYSTEM
-            if (ShouldToggle())
-                SetVisible(!_visible);
-#endif
             if (!_visible)
                 return;
 
@@ -88,42 +95,21 @@ namespace Hecton8.UI
                 _root.style.display = visible ? DisplayStyle.Flex : DisplayStyle.None;
         }
 
-#if ENABLE_INPUT_SYSTEM
-        private bool ShouldToggle()
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
         {
-            global::UnityEngine.InputSystem.Keyboard keyboard = global::UnityEngine.InputSystem.Keyboard.current;
-            if (keyboard == null || toggleKey == KeyCode.None || !IsToggleKeyPressed(keyboard, toggleKey))
-                return false;
+            if (serviceSlot != GlobalRegistryServiceSlot.NativeInputManagerRuntime)
+                return;
 
-            if (!requireControlForToggle)
-                return true;
+            UnsubscribeInput();
 
-            return keyboard.leftCtrlKey.isPressed || keyboard.rightCtrlKey.isPressed;
+            if (!isActiveAndEnabled)
+                return;
+
+            TrySubscribeInput(currentService as InputManager);
         }
-
-        private static bool IsToggleKeyPressed(global::UnityEngine.InputSystem.Keyboard keyboard, KeyCode key)
-        {
-            if (keyboard == null)
-                return false;
-
-            switch (key)
-            {
-                case KeyCode.F1: return keyboard.f1Key.wasPressedThisFrame;
-                case KeyCode.F2: return keyboard.f2Key.wasPressedThisFrame;
-                case KeyCode.F3: return keyboard.f3Key.wasPressedThisFrame;
-                case KeyCode.F4: return keyboard.f4Key.wasPressedThisFrame;
-                case KeyCode.F5: return keyboard.f5Key.wasPressedThisFrame;
-                case KeyCode.F6: return keyboard.f6Key.wasPressedThisFrame;
-                case KeyCode.F7: return keyboard.f7Key.wasPressedThisFrame;
-                case KeyCode.F8: return keyboard.f8Key.wasPressedThisFrame;
-                case KeyCode.F9: return keyboard.f9Key.wasPressedThisFrame;
-                case KeyCode.F10: return keyboard.f10Key.wasPressedThisFrame;
-                case KeyCode.F11: return keyboard.f11Key.wasPressedThisFrame;
-                case KeyCode.F12: return keyboard.f12Key.wasPressedThisFrame;
-                default: return false;
-            }
-        }
-#endif
 
         private void TryRegister()
         {
@@ -132,6 +118,54 @@ namespace Hecton8.UI
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
             _registered = SystemDispatcher.GetLane(PriorityLayer.UI).Contains(this);
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
+        }
+
+        private void TrySubscribeInput()
+        {
+            if (_inputManager != null)
+                return;
+
+            TrySubscribeInput(GlobalRegistry.NativeInputManager);
+        }
+
+        private void TrySubscribeInput(InputManager inputManager)
+        {
+            if (_inputManager != null || inputManager == null)
+                return;
+
+            _inputManager = inputManager;
+            _inputManager.OnDebugToggleEngineHealthOverlay += HandleDebugToggleEngineHealthOverlay;
+        }
+
+        private void UnsubscribeInput()
+        {
+            if (_inputManager == null)
+                return;
+
+            _inputManager.OnDebugToggleEngineHealthOverlay -= HandleDebugToggleEngineHealthOverlay;
+            _inputManager = null;
+        }
+
+        private void HandleDebugToggleEngineHealthOverlay()
+        {
+            Toggle();
         }
 
         private void Unregister()

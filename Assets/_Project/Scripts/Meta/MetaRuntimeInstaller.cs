@@ -1,3 +1,4 @@
+using System;
 using Hecton8.World;
 using UnityEngine;
 
@@ -31,6 +32,18 @@ namespace Hecton8.Meta
 
             if (runtimeRoot.GetComponent<MetaBuffInjector>() == null)
                 runtimeRoot.AddComponent<MetaBuffInjector>();
+
+            EnsureMetaCampaignService(runtimeRoot);
+        }
+
+        private static void EnsureMetaCampaignService(GameObject runtimeRoot)
+        {
+            Type serviceType = Type.GetType("Hecton8.Narrative.Campaign.MetaCampaignService, Hecton8.Narrative.Campaign");
+            if (serviceType == null)
+                return;
+
+            if (runtimeRoot.GetComponent(serviceType) == null)
+                runtimeRoot.AddComponent(serviceType);
         }
     }
 }

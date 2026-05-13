@@ -67,6 +67,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Hecton8.Core::Hecton8.Building.ModuleSocket
   compatibleType: 
+  direction: 0
 --- !u!1 &1621609820853145237
 GameObject:
   m_ObjectHideFlags: 0
@@ -224,6 +225,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Hecton8.Core::Hecton8.Building.ModuleSocket
   compatibleType: 
+  direction: 0
 --- !u!1 &2503903853122653208
 GameObject:
   m_ObjectHideFlags: 0
@@ -561,6 +563,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Hecton8.Core::Hecton8.Building.ModuleSocket
   compatibleType: 
+  direction: 0
 --- !u!1 &4627949501366080446
 GameObject:
   m_ObjectHideFlags: 0
@@ -824,7 +827,6 @@ GameObject:
   - component: {fileID: 1626080007765382837}
   - component: {fileID: 2655406309136802122}
   - component: {fileID: 4357823286233693684}
-  - component: {fileID: 5069404169061591322}
   - component: {fileID: 3844149689771364207}
   - component: {fileID: 7431571280932074566}
   m_Layer: 0
@@ -891,44 +893,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 4, y: 0.35, z: 4}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!205 &5069404169061591322
-LODGroup:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5760737024609812604}
-  serializedVersion: 3
-  m_LocalReferencePoint: {x: 0, y: 0.36550006, z: 0}
-  m_Size: 4
-  m_FadeMode: 1
-  m_AnimateCrossFading: 1
-  m_LastLODIsBillboard: 0
-  m_LODs:
-  - screenRelativeHeight: 0.6
-    fadeTransitionWidth: 0
-    renderers:
-    - renderer: {fileID: 773540459979450431}
-    - renderer: {fileID: 5285239544013517212}
-    - renderer: {fileID: 9127378459924161919}
-    - renderer: {fileID: 550401582673050660}
-    - renderer: {fileID: 2133013909706064967}
-    - renderer: {fileID: 8656830894143595444}
-    - renderer: {fileID: 3440850517352070578}
-    - renderer: {fileID: 3290270251926031773}
-    - renderer: {fileID: 605163725552753972}
-  - screenRelativeHeight: 0.15
-    fadeTransitionWidth: 0
-    renderers:
-    - renderer: {fileID: 1142820251973673892}
-    - renderer: {fileID: 2598230326876925397}
-    - renderer: {fileID: 8759297074710253474}
-  - screenRelativeHeight: 0.04
-    fadeTransitionWidth: 0
-    renderers:
-    - renderer: {fileID: 5687358788292182437}
-  m_Enabled: 1
-  m_GlobalIlluminationLOD: 0
 --- !u!114 &3844149689771364207
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -945,6 +909,42 @@ MonoBehaviour:
   currentIntegrity: 100
   moduleTemplate: {fileID: 0}
   isFlooded: 0
+  isStructuralAnchor: 0
+  isEmergencyAirlock: 0
+  structuralDryMassKilograms: 14000
+  buoyancyDisplacementVolumeCubicMeters: 18
+  maximumUnmooredAccelerationMetersPerSecondSquared: 24
+  maximumFloodVisualLeanBiasMeters: 0.85
+  floodVisualLeanTauSeconds: 1.2
+  hullCrushDepthMeters: 4000
+  maximumHydroStructuralLoadNewtons: 500000
+  pressureCompressionVisualRoot: {fileID: 0}
+  deepCompressionStartDepthMeters: 3000
+  deepCompressionFullPressureKPa: 60000
+  maximumDeepCompressionAxisLoss: 0.001
+  jointShearCompressionDeltaThreshold: 0.15
+  jointShearDamagePerSecondAtFullDelta: 0.02
+  jointShearStressRecoveryPerSecond: 0.08
+  jointShearGroanCooldownSeconds: 4
+  hullCondensationStartDepthMeters: 2000
+  hullCondensationFullDepthMeters: 5000
+  lowIntegrityGroanThreshold01: 0.5
+  lowIntegrityGroanNoiseFrequency: 0.19
+  lowIntegrityGroanNoiseThreshold: 0.58
+  lowIntegrityGroanStressFloor: 0.62
+  lowIntegrityGroanPitchMin: 0.52
+  lowIntegrityGroanPitchMax: 0.78
+  breachVortexDurationSeconds: 5
+  breachVortexReferenceMassKilograms: 80
+  breachVortexMaximumAccelerationMetersPerSecondSquared: 45
+  breachVortexRadiusPaddingMeters: 1.25
+  implosionDepthThresholdMeters: 2000
+  implosionImpulseRadiusMeters: 30
+  implosionMaximumImpulseNewtonSeconds: 65000
+  localGravityAnomalyEnabled: 0
+  localGravityDirection: {x: 0, y: -1, z: 0}
+  localGravityAccelerationMetersPerSecondSquared: 9.81
+  localGravityHoldSeconds: 0.75
   drainDuration: 8
   floodPumpEnergyCost: 65
   passiveRecoveryRate: 0
@@ -954,24 +954,57 @@ MonoBehaviour:
   repairWearPerCascade: 12
   minimumRecoverableIntegrityRatio: 0.45
   maxRecoverableIntegrity: 100
+  waterVolumeM3: 0
+  breachHoleAreaSquareMeters: 0.08
+  breachPressureFlowCoefficient: 0.001
+  explosiveFloodPressureDeltaKPa: 650
+  fatigueDamage: 0
+  bulkheadFailureWaterMassKilograms: 18000
+  bulkheadStressRatePerSecond: 0.035
+  bulkheadStressRecoveryPerSecond: 0.01
   oxygenLeakDrainRate: 10
   fireSuitDamageRate: 12
   fireSuitEnergyDrainRate: 6
   interiorTrigger: {fileID: 2128856094411290684}
+  condensationSurfaces: []
+  floodedReefActivationDays: 3
+  interiorCaveWeed: {fileID: 0}
+  interiorBarnacles: {fileID: 0}
+  floodedReefAudioMaterialId: 0
+  parasiteSporeVfx: {fileID: 0}
+  parasiteSporeHazardRadius: 3.2
   worldItemPrefab: {fileID: 0}
+  deconstructionGhostRenderer: {fileID: 0}
+  deconstructionGhostMaterial: {fileID: 0}
+  deconstructionGhostVisual: {fileID: 0}
   waterVolume: {fileID: 0}
+  floodSurfacePlane: {fileID: 0}
+  floodSurfaceLocalYRange: {x: -1.25, y: 1.25}
   leakVfx: {fileID: 8656830894143762234}
   interiorLights: []
+  brownoutActivationVoltageRatio: 0.8
+  brownoutFlickerSpeed: 19
+  brownoutMinimumLightIntensityRatio: 0.04
+  brownoutEmergencyEmissionColor: {r: 1, g: 0.13, b: 0.06, a: 1}
+  brownoutEmergencyTransitionSeconds: 0.5
   floodedLocalVolume: {fileID: 0}
+  floodDistortionProbe: {fileID: 0}
   audioSource: {fileID: 0}
   leakLoop: {fileID: 0}
   floodClip: {fileID: 0}
   drainClip: {fileID: 0}
   deconstructClip: {fileID: 0}
+  oxygenScrubberHumSource: {fileID: 0}
+  oxygenScrubberHumLoop: {fileID: 0}
+  oxygenScrubberHumVolume: 0.18
+  oxygenScrubberHumPoweredPitch: 1
+  oxygenScrubberHumFailPitch: 0.2
+  oxygenScrubberHumFailFadeSeconds: 3
   oxygenRefillRate: 15
   breathableReserveCapacity: 120
   breathableReserve: 120
   airRecycleRate: 6
+  carbonFilterConsumptionIntervalSeconds: 30
   occupiedAirDrainRate: 9
   staleAirThreshold: 0.25
   staleAirMinRefillScale: 0.2
@@ -986,6 +1019,7 @@ MonoBehaviour:
   _debugIsDraining: 0
   _debugDrainProgress: 0
   _debugTrackedObjectCount: 0
+  _debugSolarEmpBlackoutSeconds: 0
 --- !u!114 &7431571280932074566
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1391,6 +1425,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Hecton8.Core::Hecton8.Building.ModuleSocket
   compatibleType: 
+  direction: 0
 --- !u!1 &8764780208412720151
 GameObject:
   m_ObjectHideFlags: 0
@@ -1613,11 +1648,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4541793241951032, guid: 4fc157f6b09a94649afcc35cf105f067, type: 3}
   m_PrefabInstance: {fileID: 591799829932312996}
   m_PrefabAsset: {fileID: 0}
---- !u!23 &605163725552753972 stripped
-MeshRenderer:
-  m_CorrespondingSourceObject: {fileID: 23511943457707152, guid: 4fc157f6b09a94649afcc35cf105f067, type: 3}
-  m_PrefabInstance: {fileID: 591799829932312996}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &3313610271760255027
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1711,11 +1741,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 5b8eed6872052a842b4ef022dc230a6b, type: 3}
---- !u!23 &3290270251926031773 stripped
-MeshRenderer:
-  m_CorrespondingSourceObject: {fileID: 23975542152562094, guid: 5b8eed6872052a842b4ef022dc230a6b, type: 3}
-  m_PrefabInstance: {fileID: 3313610271760255027}
-  m_PrefabAsset: {fileID: 0}
 --- !u!4 &3311171710825718781 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4481458170096590, guid: 5b8eed6872052a842b4ef022dc230a6b, type: 3}
@@ -1854,11 +1879,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 472bc216b0f362147943a3cedc36711f, type: 3}
---- !u!199 &8656830894143595444 stripped
-ParticleSystemRenderer:
-  m_CorrespondingSourceObject: {fileID: 19987320, guid: 472bc216b0f362147943a3cedc36711f, type: 3}
-  m_PrefabInstance: {fileID: 8656830894163531980}
-  m_PrefabAsset: {fileID: 0}
 --- !u!198 &8656830894143762234 stripped
 ParticleSystem:
   m_CorrespondingSourceObject: {fileID: 19822582, guid: 472bc216b0f362147943a3cedc36711f, type: 3}

@@ -66,11 +66,14 @@ namespace Hecton8.Gameplay
     [StructLayout(LayoutKind.Sequential, Pack = 4)]
     internal struct PlayerKinematicsHandTarget
     {
+        public const byte FlagBrace = 1 << 0;
+        public const byte FlagSqueeze = 1 << 1;
+
         public float3 Position;
         public float3 Normal;
         public float Blend;
-        public float ElbowCosine;
         public byte Hit;
+        public byte Flags;
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 64)]

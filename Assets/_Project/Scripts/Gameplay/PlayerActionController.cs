@@ -4,7 +4,7 @@
 //
 // ÐžÐ¢Ð’Ð•Ð¢Ð¡Ð¢Ð’Ð•ÐÐÐžÐ¡Ð¢Ð˜:
 //   1. Ð—Ð°Ð¿ÑƒÑÐº Ñ‚Ð°Ð¹Ð¼ÐµÑ€Ð° Ð´ÐµÐ¹ÑÑ‚Ð²Ð¸Ñ (ÐµÐ´Ð° 1Ñ, Ð¼ÐµÐ´Ð¸ÐºÐ¸Ñ‚ 3Ñ).
-//   2. ÐŸÑƒÐ±Ð»Ð¸ÐºÐ°Ñ†Ð¸Ñ Ð¿Ñ€Ð¾Ð³Ñ€ÐµÑÑÐ° Ñ‡ÐµÑ€ÐµÐ· UnityEvent (Ð´Ð»Ñ UI).
+//   2. ÐŸÑƒÐ±Ð»Ð¸ÐºÐ°Ñ†Ð¸Ñ Ð¿Ñ€Ð¾Ð³Ñ€ÐµÑÑÐ° Ñ‡ÐµÑ€ÐµÐ· SignalBus (Ð´Ð»Ñ UI).
 //   3. ÐžÐ±Ñ€Ð°Ð±Ð¾Ñ‚ÐºÐ° Ð¿Ñ€ÐµÑ€Ñ‹Ð²Ð°Ð½Ð¸Ð¹: Ð´Ð²Ð¸Ð¶ÐµÐ½Ð¸Ðµ, ÑÐ¼ÐµÐ½Ð° Ð¸Ð½ÑÑ‚Ñ€ÑƒÐ¼ÐµÐ½Ñ‚Ð°, ÑƒÑ€Ð¾Ð½.
 //   4. Ð—Ð°Ð²ÐµÑ€ÑˆÐµÐ½Ð¸Ðµ Ð´ÐµÐ¹ÑÑ‚Ð²Ð¸Ñ: Ð²Ñ‹Ð·Ð¾Ð² ConsumableItem.TryConsume().
 //   5. ÐšÐ°Ð¼ÐµÑ€Ð½Ñ‹Ð¹ Ñ„Ð¸Ð´Ð±ÐµÐº Ñ‡ÐµÑ€ÐµÐ· CameraJuiceProcessor (Ð¼Ð¸ÐºÑ€Ð¾-Ð¿Ð¾ÐºÐ°Ñ‡Ð¸Ð²Ð°Ð½Ð¸Ðµ).
@@ -13,12 +13,12 @@
 // ZERO GC:
 //   â€¢ ITickable state machine â€” Ð½Ð¸ÐºÐ°ÐºÐ¸Ñ… ÐºÐ¾Ñ€ÑƒÑ‚Ð¸Ð½.
 //   â€¢ Pre-cached strings Ð´Ð»Ñ UI.
-//   â€¢ UnityEvent Ð´Ð»Ñ UI/Sound hooks â€” Ð´Ð¸Ð·Ð°Ð¹Ð½ÐµÑ€Ñ‹ Ð½Ðµ Ñ‚Ñ€Ð¾Ð³Ð°ÑŽÑ‚ ÐºÐ¾Ð´.
+//   â€¢ SignalBus Ð´Ð»Ñ UI/Sound hooks â€” Ð´Ð¸Ð·Ð°Ð¹Ð½ÐµÑ€Ñ‹ Ð½Ðµ Ñ‚Ñ€Ð¾Ð³Ð°ÑŽÑ‚ ÐºÐ¾Ð´.
 // ============================================================================
 
-using System;
 using Hecton8.Audio;
 using Hecton8.Core;
+using Hecton8.Core.Signals;
 using Hecton8.Inventory;
 using Hecton8.Items;
 using Unity.Mathematics;
@@ -38,9 +38,6 @@ namespace Hecton8.Gameplay
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  SINGLETON
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-
-        /// <summary>Singleton instance for external access (e.g., FloraProjectile interrupt).</summary>
-        public static PlayerActionController Instance => GlobalRegistry.PlayerActions;
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  INSPECTOR
@@ -71,17 +68,8 @@ namespace Hecton8.Gameplay
         [SerializeField] private AudioClip cancelSound;
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-        //  EVENTS
+        //  SIGNAL OUTPUT
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-
-        /// <summary>Ð’Ñ‹Ð·Ñ‹Ð²Ð°ÐµÑ‚ÑÑ ÐºÐ°Ð¶Ð´Ñ‹Ð¹ ÐºÐ°Ð´Ñ€ Ñ Ð¿Ñ€Ð¾Ð³Ñ€ÐµÑÑÐ¾Ð¼ 0-1.</summary>
-        public event Action<float> OnActionProgress;
-
-        /// <summary>Ð’Ñ‹Ð·Ñ‹Ð²Ð°ÐµÑ‚ÑÑ Ð¿Ñ€Ð¸ ÑƒÑÐ¿ÐµÑˆÐ½Ð¾Ð¼ Ð·Ð°Ð²ÐµÑ€ÑˆÐµÐ½Ð¸Ð¸ Ð´ÐµÐ¹ÑÑ‚Ð²Ð¸Ñ.</summary>
-        public event Action<ItemData> OnActionCompleted;
-
-        /// <summary>Ð’Ñ‹Ð·Ñ‹Ð²Ð°ÐµÑ‚ÑÑ Ð¿Ñ€Ð¸ Ð¿Ñ€ÐµÑ€Ñ‹Ð²Ð°Ð½Ð¸Ð¸ Ð´ÐµÐ¹ÑÑ‚Ð²Ð¸Ñ.</summary>
-        public event Action OnActionCancelled;
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  STATE MACHINE
@@ -183,6 +171,9 @@ namespace Hecton8.Gameplay
         {
             if (_state != ActionState.InProgress) return;
 
+            ItemData cancelledItem = _activeItem;
+            float cancelledProgress = ResolveProgress01();
+
             _state = ActionState.Idle;
             _activeItem = null;
             _inventoryAnchorX = -1;
@@ -195,7 +186,7 @@ namespace Hecton8.Gameplay
                 cameraJuiceProcessor.ClearActionBob();
 
             PlayCancelSound();
-            OnActionCancelled?.Invoke();
+            PublishActionCancelled(cancelledItem, cancelledProgress, PlayerActionCancelledSignal.ReasonGeneric);
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -269,7 +260,7 @@ namespace Hecton8.Gameplay
 
             // â”€â”€ ÐŸÑƒÐ±Ð»Ð¸ÐºÐ°Ñ†Ð¸Ñ Ð¿Ñ€Ð¾Ð³Ñ€ÐµÑÑÐ° â”€â”€
             float progress = ResolveProgress01();
-            OnActionProgress?.Invoke(progress);
+            PublishActionProgress(progress);
 
             // â”€â”€ Ð—Ð°Ð²ÐµÑ€ÑˆÐµÐ½Ð¸Ðµ â”€â”€
             if (_actionTimer >= _actionDuration)
@@ -306,6 +297,79 @@ namespace Hecton8.Gameplay
             return _state == ActionState.InProgress && _actionDuration > 0.0001f
                 ? math.saturate(_actionTimer / _actionDuration)
                 : 0f;
+        }
+
+        private void PublishActionProgress(float progress01)
+        {
+            ItemData item = _activeItem;
+            PlayerActionProgressSignal signal = new PlayerActionProgressSignal
+            {
+                Progress01 = math.saturate(progress01),
+                ItemHash = ResolveItemHash(item),
+                Frame = unchecked((uint)Time.frameCount),
+                ActiveToolSlot = _lastToolSlotIndex >= 0 ? (ushort)math.min(_lastToolSlotIndex, ushort.MaxValue) : ushort.MaxValue,
+                ActionKind = ResolveActionKind(item),
+                Flags = item != null ? PlayerActionProgressSignal.FlagHasItem : (byte)0
+            };
+
+            GlobalSignals.Publish(in signal);
+        }
+
+        private void PublishActionCompleted(ItemData item, int anchorX, int anchorY)
+        {
+            byte flags = item != null ? PlayerActionCompletedSignal.FlagHasItem : (byte)0;
+            if (anchorX >= 0 && anchorY >= 0)
+                flags |= PlayerActionCompletedSignal.FlagInventoryAnchorValid;
+
+            PlayerActionCompletedSignal signal = new PlayerActionCompletedSignal
+            {
+                ItemHash = ResolveItemHash(item),
+                Frame = unchecked((uint)Time.frameCount),
+                InventoryAnchorX = PackInventoryAnchor(anchorX),
+                InventoryAnchorY = PackInventoryAnchor(anchorY),
+                ActionKind = ResolveActionKind(item),
+                Flags = flags
+            };
+
+            GlobalSignals.Publish(in signal);
+        }
+
+        private void PublishActionCancelled(ItemData item, float progress01, byte reason)
+        {
+            PlayerActionCancelledSignal signal = new PlayerActionCancelledSignal
+            {
+                ItemHash = ResolveItemHash(item),
+                Frame = unchecked((uint)Time.frameCount),
+                Progress01 = math.saturate(progress01),
+                ActionKind = ResolveActionKind(item),
+                Reason = reason,
+                Flags = item != null ? PlayerActionCancelledSignal.FlagHasItem : (byte)0
+            };
+
+            GlobalSignals.Publish(in signal);
+        }
+
+        private static uint ResolveItemHash(ItemData item)
+        {
+            return item != null ? unchecked((uint)item.PersistentHashId) : 0u;
+        }
+
+        private static byte ResolveActionKind(ItemData item)
+        {
+            if (item == null)
+                return PlayerActionProgressSignal.ActionKindGeneric;
+            if (item.integrityRestore > 0f)
+                return PlayerActionProgressSignal.ActionKindMedical;
+            if (item.oxygenRestore > 0f)
+                return PlayerActionProgressSignal.ActionKindOxygen;
+            if (item.hungerRestore > 0f || item.thirstRestore > 0f)
+                return PlayerActionProgressSignal.ActionKindFood;
+            return PlayerActionProgressSignal.ActionKindGeneric;
+        }
+
+        private static ushort PackInventoryAnchor(int anchor)
+        {
+            return anchor >= 0 ? (ushort)math.min(anchor, ushort.MaxValue - 1) : ushort.MaxValue;
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -379,7 +443,7 @@ namespace Hecton8.Gameplay
                 PlayCompletionSound(completedItem);
             }
 
-            OnActionCompleted?.Invoke(completedItem);
+            PublishActionCompleted(completedItem, anchorX, anchorY);
         }
 
         /// <summary>

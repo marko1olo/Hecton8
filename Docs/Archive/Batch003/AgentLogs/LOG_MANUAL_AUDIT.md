@@ -331,3 +331,296 @@ Exact Microseconds saved:
 Remaining risk:
 - Fanout queue is still process-local RAM. A hard kill during backlog can still lose unsent queued phases.
 - The correct next reliability step is durable fanout jobs with per-recipient progress and resume.
+
+## 2026-05-13 Loop 35: Punch-Up Load Shed And Clean Startup Logs
+
+What was wrong:
+- The shared mode punch-up layer had a rollback env knob, but no live toggle and no automatic skip under queue pressure.
+- The PowerShell `Tee-Object` startup capture exposed the import/startup failure, but it also ran Python stdout through an unsafe encoding path. Russian/emoji startup prints could trigger `UnicodeEncodeError` before runtime logging initialized.
+- `logs/bot_stdout.log` became mixed-encoding evidence because old `Tee-Object` output and later UTF-8 redirect output landed in the same file.
+
+What was done:
+- Added `BOT_MODE_PUNCHUP_QUEUE_SHED_SEC=8` and `BOT_MODE_PUNCHUP_SLOW_LOG_US=2500`.
+- Added runtime punch-up stats: calls, average/max microseconds, slow count, disabled skips, load-shed skips, and top modes.
+- Added admin `/punchup` command with `status`, `on`, `off`, and `reset`.
+- Added `/queues` and runtime snapshot reporting for punch-up runtime state.
+- Replaced PowerShell tee startup capture with direct UTF-8 redirect to `logs/bot_stdout_utf8.log`.
+- Preserved old mixed startup log as `logs/bot_stdout_legacy_mixed_20260513.log`.
+
+Cinematic Cheats used:
+- No extra mode assets, no external generation, no persistent creative cache.
+- Heavy flavor is a second text pass that can be turned off or skipped when queue age is already bad.
+
+Exact Microseconds saved:
+- Under queue pressure, skipped punch-up saves the measured `270-1220us` typical short-post cost and up to about `4640us` on the long stress sample per transformed message.
+- Startup log fix is not a frame-time optimization; it removes a crash-loop trigger before runtime telemetry starts.
+
+Verification:
+- `python -m py_compile main.py common\config.py common\database.py help_text.py new_modes.py mode_punchup.py` passed before restart.
+- Watchdog chain after final restart: `60964 -> 36596 -> 31484`.
+- `bot.lock=31484`.
+- Healthcheck returned HTTP `200`.
+- Runtime snapshot: PID `31484`, private memory about `500.73 MB`, queues `0`, `/b/ active Telegram recipients `625`, `mode_punchup.runtime_enabled=true`, shed `8.0s`.
+- SQLite readonly: `quick_check=ok`, `Posts=150448`, `PostCopies=1324453`, `/b/ active Telegram=625`, `/b/ banned Telegram=1`, `/b/ active site guests=3359`.
+
+## 2026-05-13 Loop 36: Hidden Watchdog And Media Stall Recovery
+
+What was wrong:
+- The bot was not dead by process table, but it was functionally stalled.
+- Hidden watchdog chain `60964 -> 36596 -> 31484` held `bot.lock=31484`.
+- Port `8080` was owned by `31484`, but healthcheck timed out.
+- Runtime logging stopped at `2026-05-13 16:50:53`; stdout stopped shortly after external anime/media URL fetch logs.
+- TCP state had many `CloseWait` sockets, matching an external IO stall.
+- The startup line `active=3986` mixed Telegram users and site guest IDs, which made the recipient count look like data loss after split-fanout logs showed `90/624`.
+
+What was done:
+- Stopped only the hidden bot chain, not site/stomchat/other Python processes.
+- Removed `bot.lock`.
+- Restarted watchdog as visible `cmd /k start_bot.bat`: first chain `68260 -> 30504 -> 38448`.
+- Waited for `/b/` RAM backlog to drain to `queues_total=0`, then restarted again to activate chunk/startup-log refinements: final chain `69912 -> 2584 -> 32956`.
+- Added `stop_bot.bat` to stop the watchdog tree deterministically when Ctrl+C is unavailable.
+- Added hard stacked anime/media URL fetch bounds and download bounds.
+- Added connector `force_close`/cleanup for image download sessions.
+- Runtime and `/queues` now expose media bounds.
+- Startup board-count logs now split `tg_active`, `site_active`, `active_total`, `tg_banned`, and `banned_total`.
+- Added source knobs `BOT_DELIVERY_INITIAL_CHUNK_SIZE=20` and `BOT_DELIVERY_MIN_CHUNK_SIZE=5` to reduce future FloodWait burst pressure.
+
+Cinematic Cheats used:
+- No new media worker yet.
+- Cheap failure path: when external image APIs/proxies stall, the command fails bounded instead of holding the bot loop.
+- Delivery throughput is tuned with a smaller burst chunk rather than adding more workers that can break ordering.
+
+Exact Microseconds saved:
+- No microsecond speedup claimed.
+- Avoided worst case is minutes of event-loop stall from external media IO.
+- New bounded defaults cap URL search at `35s` total and downloads at `45s` total per media command path, with per-source API timeout `8s`.
+
+Verification:
+- `python -m py_compile main.py common\config.py japanese_translator.py mode_punchup.py new_modes.py common\database.py help_text.py` passed.
+- `python -c "import main; print('IMPORT_OK')"` passed before live restart.
+- Healthcheck after recovery returned HTTP `200`.
+- Runtime PID `38448` reported `/b/ active Telegram recipients `625`; final PID after backlog-safe restart is `32956`.
+- Runtime media limits: `url_timeout_sec=12`, `url_total_sec=35`, `url_parallel=3`, `download_timeout_sec=35`, `download_total_sec=45`, `download_parallel=2`.
+- SQLite readonly: `quick_check=ok`, `Posts=150501`, `PostCopies=1350840`.
+- Direct DB user truth: `/b/ active Telegram=625`, `/b/ banned Telegram=1`, `/b/ active site guests=3361`, all-board active Telegram=1969.
+
+Remaining risk:
+- Running process is still draining `/b/` passive RAM backlog from downtime and Telegram FloodWait. It is live, not dead.
+- The compiled chunk-size/startup-log refinements should be activated on a restart only after the RAM backlog is safe to discard or drained.
+- Durable fanout jobs remain mandatory. Process-local RAM queues are still the architectural weak point.
+
+## 2026-05-13 Loop 37: Threaded Healthcheck And Per-Recipient Delivery Watchdog
+
+What was wrong:
+- The visible bot repeated the live-but-stalled pattern: chain `69912 -> 2584 -> 32956`, `bot.lock=32956`, runtime/stdout stopped at `2026-05-13 19:08:14`, and healthcheck timed out.
+- The healthcheck endpoint was not independent; it ran on the same asyncio loop it was supposed to diagnose.
+- `send_message_to_users()` waited for an entire chunk with `asyncio.gather()`. A single stuck recipient send could block the board worker.
+- Bad photo URLs rejected by Telegram as `wrong type of the web page content` caused whole passive phases to fail, e.g. old post `#375677` photo phases had `success=0`, `errors=120`.
+
+What was done:
+- Replaced loop-bound aiohttp healthcheck with `ThreadingHTTPServer`.
+- Added `event_loop_health_tick_task()` and stale-loop JSON status. Healthy samples return `HTTP 200`; stale loop returns `HTTP 503` with `status=stale`.
+- Added `BOT_DELIVERY_PER_RECIPIENT_TIMEOUT_SEC=75` and `BOT_DELIVERY_MAX_RECIPIENT_RETRIES=25`.
+- Added `delivery_result.timeouts`, `delivery_recipient_timeout`, and `delivery_recipient_retry_exhausted`.
+- Added Telegram media URL text fallback and `delivery_media_url_text_fallback`.
+- Restarted only when `/b/` RAM queue reached `0`.
+
+Cinematic Cheats used:
+- Health truth was moved outside the bot loop: a tiny OS-thread HTTP probe watches loop lag instead of asking the frozen loop if it is alive.
+- Media URL fallback preserves user-visible content as text when Telegram refuses to treat the URL as media. It is a cheap continuity cheat, not media repair.
+
+Exact Microseconds saved:
+- No raw send-time speedup is claimed. The saved time is bounded failure time: one recipient is capped at `75s`, one recipient retry loop is capped at `25`, and healthcheck no longer waits indefinitely on a stalled event loop.
+- Live proof under load before final deploy: chain `24100 -> 15068 -> 32608`, healthcheck JSON `status=ok`, `loop_lag_sec=0.8`, `queues_total=4`.
+- Final proof: chain `40020 -> 18380 -> 54740`, `bot.lock=54740`, healthcheck `HTTP 200`, `queues_total=0`, `private_mb=494.8`, `/b/ Telegram active `625`, SQLite `quick_check=ok`, `Posts=150638`, `PostCopies=1444259`, `max_post=375684`.
+- Runtime snapshot exposed `delivery_per_recipient_timeout_sec=75.0`, `delivery_max_recipient_retries=25`, `reply_coverage.gap_from_latest=0`.
+## Loop 38 - External Supervisor Recovery Boundary
+
+What was wrong:
+- The previous "final" threaded-health verification was superseded by another live-but-stalled bot process.
+- Old chain `40020 -> 18380 -> 54740` had a live PID and lock, but external healthcheck timed out.
+- This means in-process health was useful evidence but not a sufficient recovery boundary.
+
+What was done:
+- Added `bot_watchdog.py` as an out-of-process supervisor.
+- Rewired `start_bot.bat` to run `python -X utf8 -u bot_watchdog.py`.
+- Rewired `stop_bot.bat` to stop the whole `start_bot -> bot_watchdog -> main.py` tree from `bot.lock`.
+- Stopped only old bot tree `18380,29332,40020,54740`; did not kill site/stomchat/other Python services.
+- Started visible supervised bot window.
+- Updated dvachbot architecture/runbook/audit docs with the corrected truth.
+
+Cinematic Cheats used:
+- Process-boundary cheat: instead of trying to perfectly diagnose a stuck asyncio/GIL/network state inside `main.py`, use an external process to decide when the child is not serviceable.
+- Log-staleness cheat: combine failed health probes with runtime/stdout mtime instead of expensive stack sampling.
+
+Exact Microseconds saved:
+- Startup/compile verification: `python -m py_compile bot_watchdog.py main.py common\config.py japanese_translator.py mode_punchup.py new_modes.py common\database.py help_text.py` exited `0`.
+- Runtime watchdog overhead is below the bot hot path: one external HTTP probe every `15s` after `75s` warmup.
+- Live `/b/` phase evidence after restart: `89/624` priority phases completed in about `3-4s`; passive slices then drained in `~1-3s` each when no FloodWait spike was active.
+
+Final evidence:
+- Visible window: `cmd.exe 58728`.
+- Supervisor chain: `43256 -> 23944`.
+- Bot child chain: `69868 -> 46488`.
+- `bot.lock = 46488`.
+- Health samples: 3/3 `HTTP 200`, `status=ok`, `loop_lag_sec=0.487..0.743`, queues `0`.
+- Bot private memory: about `514.08 MB`.
+- SQLite: `quick_check=ok`, `Posts=150649`, `PostCopies=1449384`, `max_post=375695`.
+- `/b/`: `625` active Telegram users, `3361` active site guests, `1` banned Telegram user.
+
+Remaining risk:
+- RAM-local fanout is still not durable.
+- External watchdog can recover the process, but cannot resume a killed in-RAM passive queue.
+- Durable fanout jobs with per-recipient progress remain the required permanent fix.
+
+## Loop 39 - Heartbeat Supervisor And Image Command Guardrails
+
+What was wrong:
+- After restart, `/b/` delivery and image commands continued, but HTTP health again failed during/after live `/b/` load.
+- The old supervisor deferred restart because the latest runtime snapshot still said `queues.total=1`, even after later delivery logs had drained passive tails.
+- Image command logs printed full external media URLs and legacy source tags were too risky to keep as-is.
+
+What was done:
+- Added `logs/bot_heartbeat.json`, written by `event_loop_health_tick_task()` every ~2 seconds.
+- Updated `bot_watchdog.py` to read heartbeat before stale runtime/stdout queue parsing.
+- Added `BOT_WATCHDOG_HEARTBEAT_STALE_SEC=15`.
+- Hardened `ThreadingHTTPServer`: daemon handler threads, request queue `64`, per-request socket timeout `2s`, `Connection: close`.
+- Added shared booru safety blocked/negative tags and post metadata filtering.
+- Changed legacy `/loli` to a safe cute/chibi compatibility alias.
+- Redacted anime URL and download error logs to source/host/ext/SHA-12.
+- Updated dvachbot architecture/runbook/audit docs with current verification.
+
+Cinematic Cheats used:
+- Heartbeat-file cheat: a tiny event-loop JSON pulse gives the supervisor enough truth without sampling Python stacks or relying only on HTTP.
+- Log-redaction cheat: keep forensic correlation via SHA-12 while removing full tag-heavy URLs from operator logs.
+
+Exact Microseconds saved:
+- No delivery hot-path speedup is claimed.
+- Failure detection no longer waits for a 5-minute runtime snapshot to refresh queue truth; heartbeat freshness target is `<=15s`.
+- Image source safety adds only small tag/list filtering next to network IO.
+
+Final evidence:
+- Compile: `python -m py_compile bot_watchdog.py main.py common\config.py japanese_translator.py mode_punchup.py new_modes.py common\database.py help_text.py` exited `0`.
+- Visible window: `cmd.exe 36128`.
+- Supervisor chain: `35556 -> 32376`.
+- Bot child chain: `71836 -> 3456`.
+- `bot.lock = 3456`.
+- Health samples: 3/3 `HTTP 200`, `status=ok`, queues `0`.
+- Heartbeat: `pid=3456`, `queues_total=0`, `post_counter=375761`, `is_shutting_down=false`.
+- Runtime: `private_mb=497.11`, `queues.total=0`.
+- Site: `http://127.0.0.1:8000/` returned `200`.
+- SQLite: `quick_check=ok`, `Posts=150715`, `PostCopies=1491101`, `max_post=375761`.
+- `/b/`: `625` active Telegram users, `3362` active site guests, `1` banned Telegram user.
+- Image probes: legacy safe command URL+download ok; random anime URL ok; NSFW anime URL ok.
+
+Remaining risk:
+- RAM-local fanout is still not durable.
+- Heartbeat reduces watchdog blindness but does not resume killed passive phases.
+- Durable fanout jobs with per-recipient progress remain the required permanent fix.
+## 2026-05-13 Loop 40: Visible Watchdog Output And Heartbeat-First Probing
+
+What was wrong:
+
+- External watchdog made the process controllable, but the visible `start_bot.bat` window mostly showed supervisor health lines.
+- Bot delivery output was still present, but only in `logs/bot_stdout_utf8.log` / `logs/bot_runtime.log`.
+- HTTP health also began timing out while event-loop heartbeat stayed fresh; the old supervisor logged scary HTTP failures once per minute.
+- Port 8080 showed `CloseWait` buildup before the final health socket cleanup.
+
+What was done:
+
+- `bot_watchdog.py` now launches `main.py` with `stdout=PIPE`.
+- Added a daemon log-pump thread that tees every child stdout/stderr line to:
+  - the visible `start_bot.bat` console
+  - `logs/bot_stdout_utf8.log`
+- Supervisor decisions remain in `logs/bot_supervisor.log`.
+- Watchdog now checks fresh `logs/bot_heartbeat.json` before HTTP probing.
+- `main.py` health handler now closes request sockets in `finish()` and catches `OSError`.
+- Restart was delayed until heartbeat showed `queues_total=0`; no RAM fanout tail was knowingly discarded.
+
+Cinematic cheats used:
+
+- Process heartbeat file is the cheap truth source: one tiny JSON write beats expensive/fragile HTTP probing during load.
+- Console tee is a direct pipe pump, not a PowerShell layer; fewer encoding failure modes.
+
+Verification:
+
+```text
+compile = ok
+restart waited for queues_total = 0
+final chain = 9380 -> 69104 -> 29660 -> 59488 -> 7972
+bot.lock = 7972
+heartbeat pid = 7972
+heartbeat queues_total = 0
+heartbeat post_counter = 375809
+bot health = HTTP 200 status ok
+health loop_lag_sec = 0.561
+port 8080 sockets = Listen 1, TimeWait 1, CloseWait 0
+site 8000 = HTTP 200
+/b/ tg_active = 625
+/b/ site_active = 3362
+/b/ banned = 1
+Posts = 150763
+PostCopies = 1518162
+deadlock dump file = not created yet after final restart
+```
+
+Exact microseconds saved:
+
+- Avoided HTTP health probe on every fresh-heartbeat watchdog tick: about `5,000,000 us` worst-case timeout avoided per failed probe cycle.
+- Visible log tee adds negligible cost per line compared with Telegram delivery; estimated under `500 us` per stdout line.
+- Avoided unsafe restart while `/b/` queue was `7-8`, preserving RAM passive-tail delivery instead of trading visibility for message loss.
+- Added event-loop stall dump path. Next `30s` loop stall should write Python thread stacks to `logs/bot_deadlock_watchdog.log`.
+
+## 2026-05-14 Loop 41: Mode Signature Punchlines
+
+What was wrong:
+
+- All-mode punch-up was denser than before, but the last creative pass mostly added replacement volume.
+- More regex dictionaries would increase hot-path CPU without guaranteeing better jokes.
+- The user explicitly asked for stronger, less childish modes; this needed editorial flavor, not another blind word list.
+
+What was done:
+
+- Added `_add_signature()` in `mode_punchup.py`.
+- Added `6` signature punchlines for every supported punch-up mode.
+- Kept `signature_chance=0.16` and `max_text_for_signature=1200`.
+- Kept `/jewish` as Talmudic/Odessa debate framing; no protected-class stereotype generator.
+- Updated `MODES_AND_ROADMAP.md`, `OPERATIONS_RUNBOOK.md`, and `AUDIT_2026-05-12.md`.
+- Waited for heartbeat queue drain before restart.
+
+Cinematic cheats used:
+
+- Signature-cheat: one cheap final punchline adds more voice than expanding every regex table again.
+- Queue-safe restart cheat: heartbeat proved the RAM queue was empty before killing the process tree.
+
+Verification:
+
+```text
+compile = ok
+profile counts = replacements 55, prefixes 6, suffixes 6, injections 7, signatures 6 per mode
+short source-trigger sample p95 ~= 0.09-0.34ms
+4x repeated source-trigger sample p95 ~= 0.34-0.84ms
+old pid before restart = 7972
+restart waited until queues_total = 0
+stopped tree = 7972,9380,13564,29660,59488,69104
+final visible chain = 58540 -> 20412 -> 20888 -> 48028 -> 8176
+heartbeat pid = 8176
+heartbeat queues_total = 0
+bot health = HTTP 200 status ok
+site 8000 = HTTP 200
+runtime private_mb ~= 509.02
+mode_punchup.enabled = true
+SQLite quick_check = ok
+Posts = 150806
+PostCopies = 1544883
+/b/ tg_active = 624
+/b/ site_active = 3362
+/b/ banned = 1
+deadlock dump file = not created after restart
+```
+
+Exact microseconds saved:
+
+- Avoided another regex expansion pass; signature append is O(1) after the existing transform.
+- Estimated signature overhead is under `50us` in normal cases; measured total punch-up p95 stayed below `0.84ms` on the repeated source-trigger sample.
+- No network, DB, file IO, or persistent memory added to the message hot path.

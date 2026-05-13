@@ -79,6 +79,7 @@ namespace Hecton8.EditorTools
                 .Append(", StripPointLights=").Append(Bool01(policy.StripPointLights))
                 .Append(", StripSpotLights=").Append(Bool01(policy.StripSpotLights))
                 .Append(", StripMathLodHigh=").Append(Bool01(policy.StripMathLodHigh))
+                .Append(", StripQuestAndroidTBDR=").Append(Bool01(policy.StripQuestAndroidTBDRVariants))
                 .Append(", StrippedSoFar=").Append(s_StrippedVariantCount)
                 .Append(", Evidence=").Append(policy.Evidence);
             return builder.ToString();
@@ -97,6 +98,7 @@ namespace Hecton8.EditorTools
             HashSet<string> usedMaterialKeywords = new HashSet<string>(StringComparer.Ordinal);
             int materialAssetCount = CollectWorldSceneMaterialKeywords(usedMaterialKeywords, out string materialEvidence);
             bool stripMx350LightVariants = ShouldStripMx350LightVariants();
+            bool stripQuestAndroidTBDRVariants = EditorUserBuildSettings.activeBuildTarget == BuildTarget.Android;
 
             string[] guids = AssetDatabase.FindAssets("t:UniversalRenderPipelineAsset", UrpAssetRoots);
             List<string> assetPaths = new List<string>(guids.Length);
@@ -145,6 +147,7 @@ namespace Hecton8.EditorTools
                 stripPointLights: stripMx350LightVariants,
                 stripSpotLights: stripMx350LightVariants,
                 stripMathLodHigh: stripMx350LightVariants,
+                stripQuestAndroidTBDRVariants: stripQuestAndroidTBDRVariants,
                 materialAssetCount: materialAssetCount,
                 usedMaterialKeywords: usedMaterialKeywords,
                 evidence: evidence.Append(" | materialScope=").Append(materialEvidence)
@@ -167,7 +170,8 @@ namespace Hecton8.EditorTools
                     || (policy.StripMixedLighting && IsMixedLightingKeyword(keywordName))
                     || (policy.StripPointLights && IsPointLightKeyword(keywordName))
                     || (policy.StripSpotLights && IsSpotLightKeyword(keywordName))
-                    || (policy.StripMathLodHigh && IsMathLodHighKeyword(keywordName)))
+                    || (policy.StripMathLodHigh && IsMathLodHighKeyword(keywordName))
+                    || (policy.StripQuestAndroidTBDRVariants && IsQuestAndroidTBDRKeyword(keywordName)))
                 {
                     return true;
                 }
@@ -387,6 +391,28 @@ namespace Hecton8.EditorTools
             }
         }
 
+        private static bool IsQuestAndroidTBDRKeyword(string keywordName)
+        {
+            if (IsSoftShadowKeyword(keywordName))
+                return true;
+
+            switch (keywordName)
+            {
+                case "DIRLIGHTMAP_COMBINED":
+                case "DYNAMICLIGHTMAP_ON":
+                case "LIGHTMAP_SHADOW_MIXING":
+                case "SHADOWS_SHADOWMASK":
+                case "_HDR":
+                case "HDR":
+                case "UNITY_HDR_ON":
+                case "_USE_HDR":
+                case "_ENABLE_HDR":
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
         private static int Bool01(bool value)
         {
             return value ? 1 : 0;
@@ -434,6 +460,7 @@ namespace Hecton8.EditorTools
                 bool stripPointLights,
                 bool stripSpotLights,
                 bool stripMathLodHigh,
+                bool stripQuestAndroidTBDRVariants,
                 int materialAssetCount,
                 HashSet<string> usedMaterialKeywords,
                 string evidence)
@@ -447,6 +474,7 @@ namespace Hecton8.EditorTools
                 StripPointLights = stripPointLights;
                 StripSpotLights = stripSpotLights;
                 StripMathLodHigh = stripMathLodHigh;
+                StripQuestAndroidTBDRVariants = stripQuestAndroidTBDRVariants;
                 MaterialAssetCount = materialAssetCount;
                 UsedMaterialKeywords = usedMaterialKeywords ?? new HashSet<string>(StringComparer.Ordinal);
                 Evidence = evidence ?? string.Empty;
@@ -462,6 +490,7 @@ namespace Hecton8.EditorTools
             internal bool StripPointLights { get; }
             internal bool StripSpotLights { get; }
             internal bool StripMathLodHigh { get; }
+            internal bool StripQuestAndroidTBDRVariants { get; }
             internal HashSet<string> UsedMaterialKeywords { get; }
             internal bool HasMaterialKeywordPolicy => UsedMaterialKeywords.Count > 0;
             internal string Evidence { get; }
@@ -474,6 +503,7 @@ namespace Hecton8.EditorTools
                 || StripPointLights
                 || StripSpotLights
                 || StripMathLodHigh
+                || StripQuestAndroidTBDRVariants
                 || HasMaterialKeywordPolicy;
         }
     }

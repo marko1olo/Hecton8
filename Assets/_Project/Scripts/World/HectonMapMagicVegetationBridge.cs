@@ -1002,8 +1002,8 @@ namespace Hecton8.World
         {
             public int TileX;
             public int TileZ;
-            public Terrain Terrain;
-            public TerrainData TerrainData;
+            public UnityEngine.Terrain Terrain;
+            public UnityEngine.TerrainData TerrainData;
             public Texture2D[] AlphamapTextureCache;
             public Texture HeightTextureCache;
             public Vector3 TerrainPosition;
@@ -5030,7 +5030,7 @@ namespace Hecton8.World
             return VegetationMath.SampleValueNoise(x, z, salt);
         }
 
-        private bool TryResolveLayerIndices(TerrainData terrainData, out LayerIndices indices)
+        private bool TryResolveLayerIndices(UnityEngine.TerrainData terrainData, out LayerIndices indices)
         {
             indices = default;
             indices.Sand = -1;
@@ -5991,14 +5991,14 @@ namespace Hecton8.World
             if (!snapshot.IsValid)
                 return;
 
-            Terrain terrain = snapshot.Terrain;
+            UnityEngine.Terrain terrain = snapshot.Terrain;
             if (terrain == null || terrain.terrainData == null)
             {
                 RemoveTileState(snapshot.TileX, snapshot.TileZ);
                 return;
             }
 
-            TerrainData terrainData = terrain.terrainData;
+            UnityEngine.TerrainData terrainData = terrain.terrainData;
             if (!TryResolveLayerIndices(terrainData, out LayerIndices indices))
             {
                 RemoveTileState(snapshot.TileX, snapshot.TileZ);
@@ -6380,7 +6380,7 @@ namespace Hecton8.World
             _densityQueryChunkLookup.Clear();
         }
 
-        private bool CacheTileMasks(TileRuntimeState state, TerrainData terrainData)
+        private bool CacheTileMasks(TileRuntimeState state, UnityEngine.TerrainData terrainData)
         {
             if (state == null || terrainData == null)
                 return false;
@@ -6529,7 +6529,7 @@ namespace Hecton8.World
             heightmapUpdateCount = heightTexture.updateCount;
         }
 
-        private static void RefreshTerrainTextureCaches(TileRuntimeState state, TerrainData terrainData)
+        private static void RefreshTerrainTextureCaches(TileRuntimeState state, UnityEngine.TerrainData terrainData)
         {
             if (state == null || terrainData == null)
                 return;

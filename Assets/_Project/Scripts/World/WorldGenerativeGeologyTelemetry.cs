@@ -18,6 +18,7 @@ namespace Hecton8.World
         private const uint QueuePressureWarningHash = 0x56425851u;
         private const uint BuildDataBudgetWarningHash = 0x56425842u;
         private const uint TerrainPatchBridgeWarningHash = 0x54485042u;
+        private const uint TerrainSeamsBlendedHash = 0x5453424Cu;
         private const uint VoxelBridgeTelemetryContextHash = 0x56425843u;
         private const uint TerrainSeamTelemetryContextHash = 0x54534D43u;
         private const float BuildDataTelemetryThresholdMs = 4f;
@@ -82,6 +83,21 @@ namespace Hecton8.World
                 TerrainPatchBridgeWarningHash,
                 TerrainSeamTelemetryContextHash,
                 patchSampleCount);
+        }
+
+        internal static void PublishTerrainSeamsBlended(
+            int patchSampleCount,
+            int planCount,
+            bool lowTierVisualOnly)
+        {
+            if (!Application.isPlaying)
+                return;
+
+            float packed = patchSampleCount + planCount * 0.001f + (lowTierVisualOnly ? 0.0005f : 0f);
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                TerrainSeamsBlendedHash,
+                TerrainSeamTelemetryContextHash,
+                packed);
         }
     }
 }

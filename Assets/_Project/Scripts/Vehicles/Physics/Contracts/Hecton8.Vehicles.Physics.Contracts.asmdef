@@ -1,0 +1,16 @@
+{
+    "name": "Hecton8.Vehicles.Physics.Contracts",
+    "rootNamespace": "Hecton8.Vehicles.Physics.Contracts",
+    "references": [
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

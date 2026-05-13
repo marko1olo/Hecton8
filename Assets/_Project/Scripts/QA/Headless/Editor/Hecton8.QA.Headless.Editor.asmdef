@@ -1,0 +1,19 @@
+{
+    "name": "Hecton8.QA.Headless.Editor",
+    "rootNamespace": "Hecton8.QA.Headless.Editor",
+    "references": [
+        "Hecton8.QA.Headless",
+        "Hecton8.Core"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

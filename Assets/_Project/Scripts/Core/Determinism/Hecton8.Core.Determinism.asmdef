@@ -1,0 +1,22 @@
+{
+    "name": "Hecton8.Core.Determinism",
+    "rootNamespace": "Hecton8.Core.Determinism",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Hecton8.Physics.Determinism",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

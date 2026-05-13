@@ -29,6 +29,10 @@ namespace Hecton8.Core
 
         private static bool _isXRActive;
         private static float _refreshRateHz = DefaultXRRefreshRateHz;
+        private static bool _hardwareFoveationActive;
+        private static float _hardwareFoveationLevel01;
+        private static int _hardwareEyeTextureWidth;
+        private static int _hardwareEyeTextureHeight;
         private static int _nextRefreshSampleFrame;
         private static Vector4 _lastFoveatedParams = Vector4.positiveInfinity;
         private static Vector4 _lastFoveatedCenterRadius = Vector4.positiveInfinity;
@@ -67,6 +71,10 @@ namespace Hecton8.Core
             _displaySubsystems.Clear();
             _isXRActive = false;
             _refreshRateHz = DefaultXRRefreshRateHz;
+            _hardwareFoveationActive = false;
+            _hardwareFoveationLevel01 = 0f;
+            _hardwareEyeTextureWidth = 0;
+            _hardwareEyeTextureHeight = 0;
             _nextRefreshSampleFrame = 0;
             _lastFoveatedParams = Vector4.positiveInfinity;
             _lastFoveatedCenterRadius = Vector4.positiveInfinity;
@@ -254,6 +262,27 @@ namespace Hecton8.Core
             MarkInactiveShaderStatePublished();
         }
 
+        internal static void ReportHardwareFoveationState(bool active, float level01, int eyeTextureWidth, int eyeTextureHeight)
+        {
+            float sanitizedLevel = math.saturate(math.isfinite(level01) ? level01 : 0f);
+            int sanitizedWidth = math.max(0, eyeTextureWidth);
+            int sanitizedHeight = math.max(0, eyeTextureHeight);
+            if (_hardwareFoveationActive == active &&
+                math.abs(_hardwareFoveationLevel01 - sanitizedLevel) <= 0.0001f &&
+                _hardwareEyeTextureWidth == sanitizedWidth &&
+                _hardwareEyeTextureHeight == sanitizedHeight)
+            {
+                return;
+            }
+
+            _hardwareFoveationActive = active;
+            _hardwareFoveationLevel01 = sanitizedLevel;
+            _hardwareEyeTextureWidth = sanitizedWidth;
+            _hardwareEyeTextureHeight = sanitizedHeight;
+            _lastFoveatedParams = Vector4.positiveInfinity;
+            _lastFoveatedCenterRadius = Vector4.positiveInfinity;
+        }
+
         private static void InvalidateShaderStateCache()
         {
             _lastFoveatedParams = Vector4.positiveInfinity;
@@ -290,11 +319,20 @@ namespace Hecton8.Core
             if (!_isXRActive && _publishedInactiveShaderState)
                 return;
 
+            float foveatedResolveWeight = _hardwareFoveationActive
+                ? math.clamp(0.65f + _hardwareFoveationLevel01 * 0.25f, 0.65f, 0.90f)
+                : 0.65f;
+            float foveatedInnerRadius = _hardwareFoveationActive
+                ? math.lerp(0.62f, 0.54f, _hardwareFoveationLevel01)
+                : 0.62f;
+            float foveatedOuterRadius = _hardwareFoveationActive
+                ? math.lerp(1.04f, 0.96f, _hardwareFoveationLevel01)
+                : 1.04f;
             Vector4 foveatedParams = _isXRActive
-                ? new Vector4(1f, 0.65f, 0.5f, _refreshRateHz)
+                ? new Vector4(1f, foveatedResolveWeight, _hardwareFoveationLevel01, _refreshRateHz)
                 : Vector4.zero;
             Vector4 foveatedCenterRadius = _isXRActive
-                ? new Vector4(0f, 0f, 0.62f, 1.04f)
+                ? new Vector4(0f, 0f, foveatedInnerRadius, foveatedOuterRadius)
                 : Vector4.zero;
             Vector4 nearClipDitherParams = _isXRActive
                 ? new Vector4(1f, 0.1f, 0.025f, 1f)

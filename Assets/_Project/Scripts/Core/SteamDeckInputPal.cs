@@ -18,15 +18,20 @@ namespace Hecton8.Core
         private const float GyroNoiseFloorSq = GyroNoiseFloor * GyroNoiseFloor;
         private const float GyroSensitivity = 3.2f;
         private const float MaxGyroDelta = 7.5f;
+        private const float GyroEwmaAlpha = 0.22f;
 
         private static Gamepad _boundGamepad;
+        private static float2 _gyroEwma;
         private static bool _deckInputAvailable;
         private static bool _gyroEnableAttempted;
+
+        public static bool IsDeckInputAvailable => _deckInputAvailable;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
             _boundGamepad = null;
+            _gyroEwma = float2.zero;
             _deckInputAvailable = false;
             _gyroEnableAttempted = false;
         }
@@ -38,6 +43,8 @@ namespace Hecton8.Core
         {
             _boundGamepad = gamepad != null && gamepad.added ? gamepad : null;
             _deckInputAvailable = HardwareTierDetector.IsSteamDeckLike || IsSteamDeckDevice(_boundGamepad);
+            if (!_deckInputAvailable)
+                _gyroEwma = float2.zero;
             if (_deckInputAvailable)
                 TryEnableGyro();
         }
@@ -89,17 +96,24 @@ namespace Hecton8.Core
             TryEnableGyro();
             UnityEngine.InputSystem.Gyroscope gyro = UnityEngine.InputSystem.Gyroscope.current;
             if (gyro == null || !gyro.enabled)
+            {
+                _gyroEwma = float2.zero;
                 return Vector2.zero;
+            }
 
             Vector3 angularVelocity = gyro.angularVelocity.ReadValue();
             float2 axis = new float2(angularVelocity.y, -angularVelocity.x);
             if (!math.all(math.isfinite(axis)) || math.lengthsq(axis) <= GyroNoiseFloorSq)
+            {
+                _gyroEwma = math.lerp(_gyroEwma, float2.zero, GyroEwmaAlpha);
                 return Vector2.zero;
+            }
 
             float safeDeltaTime = math.isfinite(deltaTime) ? math.min(math.max(0f, deltaTime), 0.05f) : 0f;
             float2 delta = axis * (GyroSensitivity * safeDeltaTime);
             delta = math.clamp(delta, new float2(-MaxGyroDelta), new float2(MaxGyroDelta));
-            return new Vector2(delta.x, delta.y);
+            _gyroEwma = math.lerp(_gyroEwma, delta, GyroEwmaAlpha);
+            return new Vector2(_gyroEwma.x, _gyroEwma.y);
         }
 
         private static void TryEnableGyro()

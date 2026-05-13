@@ -132,17 +132,17 @@ namespace Hecton8.Audio
                     if (voice == null)
                         continue;
 
-                    ConfigureVoiceSource(voice, musicMixerGroup, 48);
+                    ConfigureVoiceSource(voice, musicMixerGroup);
                 }
             }
 
             if (_stingerSource != null)
-                ConfigureVoiceSource(_stingerSource, stingerMixerGroup, 32);
+                ConfigureVoiceSource(_stingerSource, stingerMixerGroup);
 
             ResetRuntimeAvailability();
         }
 
-        private static void ConfigureVoiceSource(AudioSource source, AudioMixerGroup mixerGroup, int priority)
+        private static void ConfigureVoiceSource(AudioSource source, AudioMixerGroup mixerGroup)
         {
             source.playOnAwake = false;
             source.loop = false;
@@ -150,7 +150,6 @@ namespace Hecton8.Audio
             source.spread = 0f;
             source.dopplerLevel = 0f;
             source.rolloffMode = AudioRolloffMode.Linear;
-            source.priority = priority;
             source.outputAudioMixerGroup = mixerGroup;
         }
     }

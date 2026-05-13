@@ -235,6 +235,22 @@ namespace Hecton8.Core
             if (!snapshot.IsValid)
                 return;
 
+            Terrain terrain = snapshot.Terrain;
+            TerrainData terrainData = terrain.terrainData;
+            TerrainChunkGeneratedSignal signal = new TerrainChunkGeneratedSignal
+            {
+                ChunkX = snapshot.TileX,
+                ChunkZ = snapshot.TileZ,
+                TerrainEntityHash = unchecked((uint)EntityId.ToULong(terrain.GetEntityId())),
+                HeightmapResolution = terrainData.heightmapResolution,
+                CacheRevision = 0,
+                TerrainPosition = (float3)terrain.transform.position,
+                TerrainSize = (float3)terrainData.size,
+                Frame = (uint)Time.frameCount,
+                Flags = 1
+            };
+            TerrainChunkGeneratedEvents.TryPublish(in signal);
+
             IMapMagicTerrainTileEventListener[] rawArray = _listeners.RawArray;
             int count = _listeners.Count;
             for (int i = count - 1; i >= 0; i--)

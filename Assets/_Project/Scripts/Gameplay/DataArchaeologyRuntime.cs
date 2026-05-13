@@ -1039,6 +1039,22 @@ namespace Hecton8.Gameplay
                 ReconKind = (byte)ScanEntryKind.Scannable,
                 Flags = 0
             });
+            GlobalSignals.Publish(new LoreFragmentScannedSignal
+            {
+                Hash = hash,
+                Frame = frame,
+                SourceId = _scannerToolHash,
+                Flags = 0
+            });
+            GlobalSignals.Publish(new ProgressionEventSignal
+            {
+                PositionAup = aup,
+                PoiHash = hash,
+                QuestHash = hash,
+                Frame = frame,
+                Source = 2,
+                Flags = 0
+            });
             GlobalSignals.Publish(new BlueprintUnlockedSignal
             {
                 EntityHash = hash,

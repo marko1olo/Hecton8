@@ -50,7 +50,7 @@ namespace Hecton8.World
         [SerializeField] private int _debugGpuInfluenceBufferCapacity;
 
         // COLD ALLOC: Terrain[32] - smoke-test MapMagic tile cache resolver buffer - owner: BiomeMatrixSmokeTester
-        private readonly Terrain[] _terrainScratch = new Terrain[TerrainScratchCapacity];
+        private readonly UnityEngine.Terrain[] _terrainScratch = new UnityEngine.Terrain[TerrainScratchCapacity];
 
         /// <summary>
         /// True when the latest smoke run passed every enabled gate.

@@ -1,0 +1,20 @@
+{
+    "name": "Hecton8.Audio.Prologue",
+    "rootNamespace": "Hecton8.Audio.Prologue",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Unity.Mathematics",
+        "Unity.Collections",
+        "Unity.Profiling.Core"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
