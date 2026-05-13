@@ -1,4 +1,5 @@
 using Hecton8.Core;
+using Hecton8.Environment.Fluids;
 using UnityEngine;
 using Unity.Jobs;
 using UnityEngine.Serialization;
@@ -1085,6 +1086,20 @@ namespace Hecton8.AI
         {
             if (!IsFinite(runtimePosition))
                 return false;
+
+            ResourceDistributionDirector director = GlobalRegistry.ResourceDistribution;
+            if (director != null &&
+                director.TrySampleBrineLayer(runtimePosition, out BrineLayerSample brineSample))
+            {
+                Vector3 shiftOffset = HectonFloatingOrigin.CurrentTotalOffset;
+                if (BrineLayerMath.IsRuntimeBelowAbsolutePlane(
+                        runtimePosition.y,
+                        brineSample.AbsoluteHeightY,
+                        shiftOffset.y))
+                {
+                    return true;
+                }
+            }
 
             if (!VoxelDynamicNavGridRuntime.TrySampleHybridNavigation(
                     new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z),

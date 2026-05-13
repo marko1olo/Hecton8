@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Core.Memory;
 using Hecton8.Core.Signals;
+using Hecton8.World;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
@@ -287,11 +288,12 @@ namespace Hecton8.Lighting.Shafts
         {
             ClearTopContributions();
 
+            AbsoluteUniversePosition cameraAup = AbsoluteUniversePosition.FromRuntimePosition(renderCamera.transform.position);
             int sourceCount = ScreenSpaceLightShaftSource.RegisteredCount;
             for (int i = 0; i < sourceCount; i++)
             {
                 ScreenSpaceLightShaftSource source = ScreenSpaceLightShaftSource.GetRegisteredAt(i);
-                if (source == null || !source.TryGetContribution(renderCamera, out LightShaftContribution contribution))
+                if (source == null || !source.TryGetContribution(renderCamera, in cameraAup, out LightShaftContribution contribution))
                     continue;
 
                 InsertContribution(in contribution);

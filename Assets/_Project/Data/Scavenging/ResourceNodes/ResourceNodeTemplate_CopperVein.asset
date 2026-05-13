@@ -38,7 +38,7 @@ MonoBehaviour:
   colliderShape: 1
   physicalSize: {x: 0.95, y: 0.95, z: 0.95}
   harvestYield:
-  - item: {fileID: 11400000, guid: 84877e24023afe648a6682f49f11defa, type: 2}
+  - item: {fileID: 11400000, guid: 7a9f752461931354e865d30b319c0f35, type: 2}
     minimumAmount: 1
     maximumAmount: 2
     weight: 1

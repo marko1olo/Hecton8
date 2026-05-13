@@ -5,8 +5,10 @@ using System.IO;
 using Hecton.Localization;
 using Hecton8.AI;
 using Hecton8.Building;
+using Hecton8.Interaction;
 using Hecton8.Inventory;
 using Hecton8.Items;
+using Hecton8.SaveSystem;
 using Hecton8.Scavenging;
 using Hecton8.World;
 using UnityEditor;
@@ -22,6 +24,7 @@ namespace Hecton8.Editor.Validation
     {
         private const string MenuPath = "Hecton-8/Validate Content";
         private const string DataRoot = "Assets/_Project/Data";
+        private const string ItemCatalogPath = DataRoot + "/Items/ItemCatalog.asset";
         private const string GeneratedRoot = DataRoot + "/Diagnostics/Generated/ContentSanity";
         private const string GeneratedMeshPath = GeneratedRoot + "/MESH_ContentSanityWireCube.asset";
         private const string GeneratedMaterialPath = GeneratedRoot + "/MAT_ContentSanityWireframe.mat";
@@ -49,6 +52,9 @@ namespace Hecton8.Editor.Validation
             public int MeshColliderViolationCount;
             public int HashCollisionCount;
             public int AudioMaterialViolationCount;
+            public int ResourceNodeYieldMissingWorldPrefabCount;
+            public int ResourceNodeYieldNotCatalogedCount;
+            public int ResourceNodeYieldInvalidWorldPrefabContractCount;
         }
 
         [MenuItem(MenuPath, priority = 141)]
@@ -266,6 +272,10 @@ namespace Hecton8.Editor.Validation
 
         private static void ValidateResourceNodeTemplates(ValidationResult result)
         {
+            ItemCatalog itemCatalog = AssetDatabase.LoadAssetAtPath<ItemCatalog>(ItemCatalogPath);
+            if (itemCatalog == null)
+                result.Errors.Add($"{ItemCatalogPath}: ItemCatalog asset is missing; resource-node yield catalog validation cannot run.");
+
             string[] resourceGuids = AssetDatabase.FindAssets("t:ResourceNodeTemplate", DataRoots);
             for (int i = 0; i < resourceGuids.Length; i++)
             {
@@ -280,6 +290,132 @@ namespace Hecton8.Editor.Validation
 
                 if (template.NodeMesh == null)
                     result.Warnings.Add($"{assetPath}: nodeMesh is null. Runtime ghost-box standard remains active.");
+
+                ValidateResourceNodeYieldArray(result, itemCatalog, template, assetPath, "harvestYield", "harvestYield");
+                ValidateResourceNodeYieldArray(result, itemCatalog, template, assetPath, "rarityDrops", "rarityDrops");
+            }
+        }
+
+        private static void ValidateResourceNodeYieldArray(
+            ValidationResult result,
+            ItemCatalog itemCatalog,
+            ResourceNodeTemplate template,
+            string assetPath,
+            string propertyName,
+            string label)
+        {
+            SerializedObject serializedTemplate = new SerializedObject(template);
+            SerializedProperty tableProperty = serializedTemplate.FindProperty(propertyName);
+            if (tableProperty == null || !tableProperty.isArray)
+                return;
+
+            if (propertyName == "harvestYield" && tableProperty.arraySize <= 0)
+            {
+                result.Errors.Add($"{assetPath}: ResourceNodeTemplate.harvestYield is empty; node can deplete without an authored primary pickup.");
+                return;
+            }
+
+            for (int i = 0; i < tableProperty.arraySize; i++)
+            {
+                SerializedProperty elementProperty = tableProperty.GetArrayElementAtIndex(i);
+                SerializedProperty itemProperty = elementProperty != null ? elementProperty.FindPropertyRelative("item") : null;
+                ValidateResourceNodeYieldItem(result, itemCatalog, assetPath, itemProperty, $"{label}[{i}]");
+            }
+        }
+
+        private static void ValidateResourceNodeYieldItem(
+            ValidationResult result,
+            ItemCatalog itemCatalog,
+            string assetPath,
+            SerializedProperty itemProperty,
+            string label)
+        {
+            if (itemProperty == null || itemProperty.objectReferenceValue == null)
+            {
+                result.Errors.Add($"{assetPath}: ResourceNodeTemplate.{label}.item is null.");
+                return;
+            }
+
+            if (!(itemProperty.objectReferenceValue is ItemData item))
+            {
+                result.Errors.Add($"{assetPath}: ResourceNodeTemplate.{label}.item is not ItemData.");
+                return;
+            }
+
+            string itemPath = AssetDatabase.GetAssetPath(item);
+            if (string.IsNullOrWhiteSpace(itemPath))
+                result.Errors.Add($"{assetPath}: ResourceNodeTemplate.{label}.item has no valid asset path.");
+
+            int itemHash = !string.IsNullOrWhiteSpace(item.PersistentId) ? LocHash.Compute(item.PersistentId) : 0;
+            if (itemHash == 0)
+            {
+                result.Errors.Add($"{assetPath}: ResourceNodeTemplate.{label}.item '{item.name}' has empty PersistentId.");
+            }
+            else if (itemCatalog == null || !ReferenceEquals(itemCatalog.FindByHash(itemHash), item))
+            {
+                result.ResourceNodeYieldNotCatalogedCount++;
+                result.Errors.Add($"{assetPath}: ResourceNodeTemplate.{label}.item '{item.name}' is not the active ItemCatalog entry for hash 0x{itemHash:X8}.");
+            }
+
+            if (item.worldPrefab == null)
+            {
+                result.ResourceNodeYieldMissingWorldPrefabCount++;
+                result.Errors.Add($"{assetPath}: ResourceNodeTemplate.{label}.item '{item.name}' has null ItemData.worldPrefab; PersistentWorldRegistry drops will reject it.");
+                return;
+            }
+
+            string worldPrefabPath = AssetDatabase.GetAssetPath(item.worldPrefab);
+            if (string.IsNullOrWhiteSpace(worldPrefabPath))
+            {
+                result.Errors.Add($"{assetPath}: ResourceNodeTemplate.{label}.item '{item.name}' worldPrefab has no valid asset path.");
+                return;
+            }
+
+            ValidateResourceYieldWorldPrefabContract(result, assetPath, label, item, worldPrefabPath);
+        }
+
+        private static void ValidateResourceYieldWorldPrefabContract(
+            ValidationResult result,
+            string assetPath,
+            string label,
+            ItemData item,
+            string worldPrefabPath)
+        {
+            GameObject prefabRoot = PrefabUtility.LoadPrefabContents(worldPrefabPath);
+            if (prefabRoot == null)
+            {
+                result.ResourceNodeYieldInvalidWorldPrefabContractCount++;
+                result.Errors.Add($"{assetPath}: ResourceNodeTemplate.{label}.item '{item.name}' failed to load worldPrefab contents -> {worldPrefabPath}.");
+                return;
+            }
+
+            try
+            {
+                bool hasPickupContract =
+                    prefabRoot.GetComponentInChildren<PickupItem>(true) != null ||
+                    prefabRoot.GetComponentInChildren<HectonItem>(true) != null;
+
+                if (!hasPickupContract)
+                {
+                    result.ResourceNodeYieldInvalidWorldPrefabContractCount++;
+                    result.Errors.Add($"{assetPath}: ResourceNodeTemplate.{label}.item '{item.name}' worldPrefab has neither PickupItem nor HectonItem -> {worldPrefabPath}.");
+                }
+
+                if (prefabRoot.GetComponentInChildren<Collider>(true) == null)
+                {
+                    result.ResourceNodeYieldInvalidWorldPrefabContractCount++;
+                    result.Errors.Add($"{assetPath}: ResourceNodeTemplate.{label}.item '{item.name}' worldPrefab has no Collider -> {worldPrefabPath}.");
+                }
+
+                if (prefabRoot.GetComponentInChildren<Rigidbody>(true) == null)
+                {
+                    result.ResourceNodeYieldInvalidWorldPrefabContractCount++;
+                    result.Errors.Add($"{assetPath}: ResourceNodeTemplate.{label}.item '{item.name}' worldPrefab has no Rigidbody -> {worldPrefabPath}.");
+                }
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(prefabRoot);
             }
         }
 
@@ -806,7 +942,11 @@ namespace Hecton8.Editor.Validation
                 $"ResourceNodes={result.ResourceNodeCount}, BaseModules={result.BaseModuleCount}, " +
                 $"InjectedProxyCount={result.InjectedProxyCount}, GeneratedFloraProxyCount={result.GeneratedFloraProxyCount}, " +
                 $"MeshColliderViolations={result.MeshColliderViolationCount}, HashCollisions={result.HashCollisionCount}, " +
-                $"AudioMaterialViolations={result.AudioMaterialViolationCount}, Errors={result.Errors.Count}, Warnings={result.Warnings.Count}.";
+                $"AudioMaterialViolations={result.AudioMaterialViolationCount}, " +
+                $"ResourceNodeYieldMissingWorldPrefab={result.ResourceNodeYieldMissingWorldPrefabCount}, " +
+                $"ResourceNodeYieldNotCataloged={result.ResourceNodeYieldNotCatalogedCount}, " +
+                $"ResourceNodeYieldInvalidWorldPrefabContract={result.ResourceNodeYieldInvalidWorldPrefabContractCount}, " +
+                $"Errors={result.Errors.Count}, Warnings={result.Warnings.Count}.";
 
             if (result.Errors.Count > 0)
             {

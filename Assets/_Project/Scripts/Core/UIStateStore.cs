@@ -122,6 +122,25 @@ namespace Hecton8.Core
             Shutdown();
         }
 
+#if UNITY_EDITOR
+        [UnityEditor.InitializeOnLoadMethod]
+        private static void RegisterEditorShutdownHooks()
+        {
+            UnityEditor.AssemblyReloadEvents.beforeAssemblyReload -= Shutdown;
+            UnityEditor.AssemblyReloadEvents.beforeAssemblyReload += Shutdown;
+            UnityEditor.EditorApplication.quitting -= Shutdown;
+            UnityEditor.EditorApplication.quitting += Shutdown;
+            UnityEditor.EditorApplication.playModeStateChanged -= HandleEditorPlayModeStateChanged;
+            UnityEditor.EditorApplication.playModeStateChanged += HandleEditorPlayModeStateChanged;
+        }
+
+        private static void HandleEditorPlayModeStateChanged(UnityEditor.PlayModeStateChange state)
+        {
+            if (state == UnityEditor.PlayModeStateChange.ExitingPlayMode)
+                Shutdown();
+        }
+#endif
+
         /// <summary>
         /// Ensures the persistent native UI state arrays are allocated.
         /// </summary>
@@ -182,6 +201,9 @@ namespace Hecton8.Core
             valueSlot = default;
             int index = (int)slotId;
             if ((uint)index >= ValueSlotCount)
+                return false;
+
+            if (!Application.isPlaying && !IsInitialized)
                 return false;
 
             EnsureInitialized();

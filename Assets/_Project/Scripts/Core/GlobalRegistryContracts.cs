@@ -1826,6 +1826,11 @@ namespace Hecton8.Core
             out Vector3 originWS,
             out float cellSizeMeters,
             out int version);
+
+        /// <summary>
+        /// Injects a transient heat source without exposing thermodynamics internals.
+        /// </summary>
+        bool TryInjectTransientHeatSource(Vector3 positionWS, float radiusWS, float heatIntensity, uint sourceId);
     }
 
     /// <summary>
@@ -2717,6 +2722,7 @@ namespace Hecton8.Core
         InertialNavigationRuntime = 154,
         ModdingBridgeRuntime = 155,
         InstanceCullingRuntime = 156,
+        WorldResourceSpawnerRuntime = 157,
         Unknown = 255
     }
 

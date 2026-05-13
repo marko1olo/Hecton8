@@ -49,7 +49,7 @@ namespace Hecton8.SaveSystem
         public double totalPlayTime;
 
         /// <summary>Tekuschaya versiya formata. Ispolzuetsya dlya migratsii.</summary>
-        public const int CurrentVersion = 69; // v69: inventory equipment durability RLE payload.
+        public const int CurrentVersion = 70; // v70: RTG decay start-time payload.
 
         // ─────────────────────── DTO Sections ────────────────────
 
@@ -240,6 +240,18 @@ namespace Hecton8.SaveSystem
         /// <summary>Sparse RLE packets: ushort start, sbyte-equivalent byte value, ushort run. v68 RADIATION.</summary>
         public byte[] radiationGridRle;
 
+        /// <summary>Number of persisted radioisotope thermal generators. v70 RTG.</summary>
+        public int rtgDecayCount;
+
+        /// <summary>Stable source ids for persisted RTGs. v70 RTG.</summary>
+        public int[] rtgDecaySourceIds;
+
+        /// <summary>Absolute H8 unscaled start times in seconds. v70 RTG.</summary>
+        public double[] rtgStartTimesSeconds;
+
+        /// <summary>Persisted RTG flags: active/dead/warned/reprocessed. v70 RTG.</summary>
+        public byte[] rtgDecayFlags;
+
         /// <summary>Custom mod payload map persisted inside the official save file. v24 MODDING</summary>
         public Dictionary<string, string> CustomModData = new Dictionary<string, string>();
 
@@ -343,6 +355,10 @@ namespace Hecton8.SaveSystem
                 radiationGridCellSizeMeters = 4f,
                 radiationGridRleLength = 0,
                 radiationGridRle = new byte[RadiationGridRleMaxBytes],
+                rtgDecayCount = 0,
+                rtgDecaySourceIds = new int[MaxRtgDecayRecords],
+                rtgStartTimesSeconds = new double[MaxRtgDecayRecords],
+                rtgDecayFlags = new byte[MaxRtgDecayRecords],
                 CustomModData = new Dictionary<string, string>()
             };
         }
@@ -360,6 +376,19 @@ namespace Hecton8.SaveSystem
 
         /// <summary>Maximum sparse RLE radiation payload. v68 RADIATION.</summary>
         public const int RadiationGridRleMaxBytes = 81920;
+
+        /// <summary>Maximum persisted RTG decay records. v70 RTG.</summary>
+        public const int MaxRtgDecayRecords = 128;
+
+        public void EnsureRtgDecayCapacity()
+        {
+            if (rtgDecaySourceIds == null || rtgDecaySourceIds.Length < MaxRtgDecayRecords)
+                Array.Resize(ref rtgDecaySourceIds, MaxRtgDecayRecords);
+            if (rtgStartTimesSeconds == null || rtgStartTimesSeconds.Length < MaxRtgDecayRecords)
+                Array.Resize(ref rtgStartTimesSeconds, MaxRtgDecayRecords);
+            if (rtgDecayFlags == null || rtgDecayFlags.Length < MaxRtgDecayRecords)
+                Array.Resize(ref rtgDecayFlags, MaxRtgDecayRecords);
+        }
     }
 
     // ══════════════════════════════════════════════════════════════════
@@ -487,29 +516,45 @@ namespace Hecton8.SaveSystem
 
         public void EnsureCapacity()
         {
-            if (itemHashIds == null || itemHashIds.Length < MaxCells)
+            if (itemHashIds == null)
                 itemHashIds = new int[MaxCells];
+            else if (itemHashIds.Length < MaxCells)
+                Array.Resize(ref itemHashIds, MaxCells);
 
-            if (packedCellCoordinates == null || packedCellCoordinates.Length < MaxCells)
+            if (packedCellCoordinates == null)
                 packedCellCoordinates = new uint[MaxCells];
+            else if (packedCellCoordinates.Length < MaxCells)
+                Array.Resize(ref packedCellCoordinates, MaxCells);
 
-            if (stackCounts == null || stackCounts.Length < MaxCells)
+            if (stackCounts == null)
                 stackCounts = new ushort[MaxCells];
+            else if (stackCounts.Length < MaxCells)
+                Array.Resize(ref stackCounts, MaxCells);
 
-            if (itemStateFlags == null || itemStateFlags.Length < MaxCells)
+            if (itemStateFlags == null)
                 itemStateFlags = new ushort[MaxCells];
+            else if (itemStateFlags.Length < MaxCells)
+                Array.Resize(ref itemStateFlags, MaxCells);
 
-            if (itemGeneticsWords == null || itemGeneticsWords.Length < MaxCells)
+            if (itemGeneticsWords == null)
                 itemGeneticsWords = new byte[MaxCells];
+            else if (itemGeneticsWords.Length < MaxCells)
+                Array.Resize(ref itemGeneticsWords, MaxCells);
 
-            if (qualityMilli == null || qualityMilli.Length < MaxCells)
+            if (qualityMilli == null)
                 qualityMilli = new ushort[MaxCells];
+            else if (qualityMilli.Length < MaxCells)
+                Array.Resize(ref qualityMilli, MaxCells);
 
-            if (lastUpdateUnixSeconds == null || lastUpdateUnixSeconds.Length < MaxCells)
+            if (lastUpdateUnixSeconds == null)
                 lastUpdateUnixSeconds = new uint[MaxCells];
+            else if (lastUpdateUnixSeconds.Length < MaxCells)
+                Array.Resize(ref lastUpdateUnixSeconds, MaxCells);
 
-            if (itemDurabilityRle == null || itemDurabilityRle.Length < MaxDurabilityRleBytes)
+            if (itemDurabilityRle == null)
                 itemDurabilityRle = new byte[MaxDurabilityRleBytes];
+            else if (itemDurabilityRle.Length < MaxDurabilityRleBytes)
+                Array.Resize(ref itemDurabilityRle, MaxDurabilityRleBytes);
         }
 
         public static uint PackCellCoordinate(int x, int y)

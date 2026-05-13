@@ -16,6 +16,8 @@ namespace Hecton8.World.GPR
         public const float OreMatchDistanceMeters = 5f;
         public const float OreMatchDistanceSq = OreMatchDistanceMeters * OreMatchDistanceMeters;
         public const float ScanDecaySeconds = 3f;
+        public const uint ScanFlag = 1u << 0;
+        public const uint AupShiftFlag = 1u << 1;
     }
 
     public struct GroundRadarTelemetryEntry
@@ -55,8 +57,7 @@ namespace Hecton8.World.GPR
         public float StepMeters;
         public float DeltaTime;
         public float3 RuntimeShift;
-        public byte ShouldScan;
-        public byte ApplyShift;
+        public uint Flags;
 
         public void Execute()
         {
@@ -68,7 +69,7 @@ namespace Hecton8.World.GPR
 
             int rayCount = math.clamp(RequestedRayCount, 1, GroundRadarConstants.MaxRays);
             int maxSteps = math.clamp(MaxSteps, 1, GroundRadarConstants.MaxRaymarchSteps);
-            if (ShouldScan != 0 && HasValidSdf() && OrePositions.IsCreated && OreScanCount > 0)
+            if ((Flags & GroundRadarConstants.ScanFlag) != 0u && HasValidSdf() && OrePositions.IsCreated && OreScanCount > 0)
             {
                 float scanRadius = math.max(1f, ScanRadiusMeters);
                 float stepMeters = math.max(0.5f, StepMeters);
@@ -135,7 +136,7 @@ namespace Hecton8.World.GPR
 
             int previousCount = math.min(math.max(0, PreviousActiveCount), GprHits.Length);
             float safeDelta = math.max(0f, DeltaTime);
-            float3 shift = ApplyShift != 0 ? RuntimeShift : float3.zero;
+            float3 shift = (Flags & GroundRadarConstants.AupShiftFlag) != 0u ? RuntimeShift : float3.zero;
             int writeIndex = 0;
 
             for (int i = 0; i < previousCount; i++)
@@ -178,7 +179,7 @@ namespace Hecton8.World.GPR
         private float SampleDensity(float3 runtimePosition)
         {
             float3 local = runtimePosition - VolumeOrigin;
-            float3 grid = local / CellSize;
+            float3 grid = local * math.rcp(CellSize);
             int ix = (int)math.floor(grid.x);
             int iy = (int)math.floor(grid.y);
             int iz = (int)math.floor(grid.z);

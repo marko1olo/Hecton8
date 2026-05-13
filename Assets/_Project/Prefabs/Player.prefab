@@ -1613,7 +1613,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 3e2e240b485c95542b2065beeabfa98f, type: 2}
   - {fileID: 11400000, guid: 06eaf0cc1d3b75a448b18b1b0dfa38c5, type: 2}
   starterConstructionItems:
-  - {fileID: 11400000, guid: 84877e24023afe648a6682f49f11defa, type: 2}
+  - {fileID: 11400000, guid: 7a9f752461931354e865d30b319c0f35, type: 2}
   starterConstructionAmounts: 0c000000
 --- !u!114 &533655622894388290
 MonoBehaviour:

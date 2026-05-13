@@ -280,13 +280,7 @@ namespace Hecton8.World
             if (scanDue)
                 TryResolveNearestSdf(probeOrigin, out encodedSdf, out gridDimensions, out volumeOrigin, out cellSize, out sdfRange);
 
-            NativeArray<float3> orePositions = default;
-            int oreCount = 0;
-            if (worldResourceSpawner != null && worldResourceSpawner.OrePositions.IsCreated)
-            {
-                orePositions = worldResourceSpawner.OrePositions;
-                oreCount = worldResourceSpawner.ActiveOreCount;
-            }
+            TryResolveOreSource(out NativeArray<float3> orePositions, out int oreCount);
 
             _maxSignalStrength[0] = 0f;
             GroundRadarRaymarchJob job = new GroundRadarRaymarchJob
@@ -312,8 +306,8 @@ namespace Hecton8.World
                 StepMeters = stepMeters,
                 DeltaTime = deltaTime,
                 RuntimeShift = aupShift,
-                ShouldScan = scanDue ? (byte)1 : (byte)0,
-                ApplyShift = hasShift ? (byte)1 : (byte)0
+                Flags = (scanDue ? GroundRadarConstants.ScanFlag : 0u) |
+                        (hasShift ? GroundRadarConstants.AupShiftFlag : 0u)
             };
 
             _scanJobHandle = job.Schedule();
@@ -472,6 +466,23 @@ namespace Hecton8.World
             return tier == HectonQualityTier.Low || tier == HectonQualityTier.Mx350 || tier == HectonQualityTier.Unknown
                 ? GroundRadarConstants.LowTierRays
                 : GroundRadarConstants.MaxRays;
+        }
+
+        private bool TryResolveOreSource(out NativeArray<float3> orePositions, out int oreCount)
+        {
+            if (worldResourceSpawner != null &&
+                worldResourceSpawner.TryGetOrePositions(out orePositions, out oreCount))
+            {
+                return true;
+            }
+
+            IWorldResourceSpawnerReadModel resourceSpawner = GlobalRegistry.WorldResourceSpawner;
+            if (resourceSpawner != null && resourceSpawner.TryGetOrePositions(out orePositions, out oreCount))
+                return true;
+
+            orePositions = default;
+            oreCount = 0;
+            return false;
         }
 
         private void PublishGprSignals(float highestStrength)

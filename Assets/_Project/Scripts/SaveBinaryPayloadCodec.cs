@@ -36,6 +36,7 @@ namespace Hecton8.SaveSystem
         private const int NullCollectionCount = -1;
         private const int SuitUpgradeMaskSaveVersion = 65;
         private const int RadiationGridSaveVersion = 68;
+        private const int RtgDecaySaveVersion = 70;
 
         internal static ulong BuildSectorEntitySpatialSortKey(in AbsoluteUniversePosition position, int chunkSizeMeters)
         {
@@ -194,6 +195,7 @@ namespace Hecton8.SaveSystem
                 && writer.WriteInt(data.LODQualityPreset)
                 && writer.WriteBool(data.DynamicResolutionEnabled)
                 && WriteRadiationGrid(ref writer, data)
+                && WriteRtgDecay(ref writer, data)
                 && WriteStringStringDictionary(ref writer, data.CustomModData);
         }
 
@@ -263,6 +265,7 @@ namespace Hecton8.SaveSystem
                 || !reader.ReadInt(out data.LODQualityPreset)
                 || !reader.ReadBool(out data.DynamicResolutionEnabled)
                 || !ReadRadiationGrid(ref reader, data.version, data)
+                || !ReadRtgDecay(ref reader, data.version, data)
                 || !ReadStringStringDictionary(ref reader, out data.CustomModData))
             {
                 return false;
@@ -322,6 +325,50 @@ namespace Hecton8.SaveSystem
             data.radiationGridRleLength = math.clamp(data.radiationGridRleLength, 0, payloadLength);
             data.radiationGridCellSizeMeters = math.max(0.5f, data.radiationGridCellSizeMeters);
             data.radiationDose = math.max(0f, data.radiationDose);
+            return true;
+        }
+
+        private static bool WriteRtgDecay(ref BufferWriter writer, SaveData data)
+        {
+            int sourceLength = data?.rtgDecaySourceIds != null ? data.rtgDecaySourceIds.Length : 0;
+            int startLength = data?.rtgStartTimesSeconds != null ? data.rtgStartTimesSeconds.Length : 0;
+            int flagLength = data?.rtgDecayFlags != null ? data.rtgDecayFlags.Length : 0;
+            int safeCount = data != null
+                ? math.clamp(data.rtgDecayCount, 0, math.min(SaveData.MaxRtgDecayRecords, math.min(sourceLength, math.min(startLength, flagLength))))
+                : 0;
+
+            return writer.WriteInt(safeCount)
+                && writer.WriteStructArraySlice(data != null ? data.rtgDecaySourceIds : null, safeCount)
+                && writer.WriteStructArraySlice(data != null ? data.rtgStartTimesSeconds : null, safeCount)
+                && writer.WriteStructArraySlice(data != null ? data.rtgDecayFlags : null, safeCount);
+        }
+
+        private static bool ReadRtgDecay(ref BufferReader reader, int version, SaveData data)
+        {
+            if (version < RtgDecaySaveVersion)
+            {
+                data.rtgDecayCount = 0;
+                data.rtgDecaySourceIds = Array.Empty<int>();
+                data.rtgStartTimesSeconds = Array.Empty<double>();
+                data.rtgDecayFlags = Array.Empty<byte>();
+                return true;
+            }
+
+            if (!reader.ReadInt(out data.rtgDecayCount)
+                || !reader.ReadStructArray(out data.rtgDecaySourceIds)
+                || !reader.ReadStructArray(out data.rtgStartTimesSeconds)
+                || !reader.ReadStructArray(out data.rtgDecayFlags))
+            {
+                return false;
+            }
+
+            int sourceLength = data.rtgDecaySourceIds != null ? data.rtgDecaySourceIds.Length : 0;
+            int startLength = data.rtgStartTimesSeconds != null ? data.rtgStartTimesSeconds.Length : 0;
+            int flagLength = data.rtgDecayFlags != null ? data.rtgDecayFlags.Length : 0;
+            data.rtgDecayCount = math.clamp(
+                data.rtgDecayCount,
+                0,
+                math.min(SaveData.MaxRtgDecayRecords, math.min(sourceLength, math.min(startLength, flagLength))));
             return true;
         }
 
@@ -599,6 +646,9 @@ namespace Hecton8.SaveSystem
                 && writer.WriteStructArraySlice(value.itemGeneticsWords, logicalCellCount)
                 && writer.WriteStructArraySlice(value.qualityMilli, logicalCellCount)
                 && writer.WriteStructArraySlice(value.lastUpdateUnixSeconds, logicalCellCount)
+                && writer.WriteStructArraySlice(
+                    value.itemDurabilityRle,
+                    Math.Clamp(value.itemDurabilityRleLength, 0, value.itemDurabilityRle != null ? value.itemDurabilityRle.Length : 0))
                 && writer.WriteFloat(value.totalWeight)
                 && writer.WriteInt(value.gridColumns)
                 && writer.WriteInt(value.gridRows);
@@ -803,10 +853,25 @@ namespace Hecton8.SaveSystem
         {
             if (version >= 59)
             {
-                return reader.ReadStructArray(out value.itemStateFlags)
+                bool ok = reader.ReadStructArray(out value.itemStateFlags)
                     && reader.ReadStructArray(out value.itemGeneticsWords)
                     && reader.ReadStructArray(out value.qualityMilli)
                     && reader.ReadStructArray(out value.lastUpdateUnixSeconds);
+
+                if (!ok)
+                    return false;
+
+                if (version >= 69)
+                {
+                    if (!reader.ReadStructArray(out value.itemDurabilityRle))
+                        return false;
+
+                    value.itemDurabilityRleLength = value.itemDurabilityRle != null
+                        ? Math.Clamp(value.itemDurabilityRle.Length, 0, InventoryDTO.MaxDurabilityRleBytes)
+                        : 0;
+                }
+
+                return true;
             }
 
             if (version >= 53)

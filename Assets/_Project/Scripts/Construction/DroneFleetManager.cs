@@ -407,7 +407,9 @@ namespace Hecton8.Construction
         private const int HeadlessTaskCapacity = 64;
         private const int HeadlessPendingLaunchCapacity = HeadlessDroneCapacity;
         private const int DroneServiceCommandCapacity = HeadlessDroneCapacity * 3;
-        private const int DockingRaycastCapacity = HeadlessDroneCapacity;
+        private const int DockingObstacleProbeMaxSegments = 3;
+        private const int DockingRaycastCapacity = HeadlessDroneCapacity * DockingObstacleProbeMaxSegments;
+        private const int DockingRaycastMinCommandsPerJob = 8;
         private const int DroneFleetBlackBoxFrameCapacity = 300;
         private const int MaxMainThreadTaskScanCount = 64;
         private const int MaxMainThreadHubScanCount = 8;
@@ -438,8 +440,7 @@ namespace Hecton8.Construction
         private const float SolderIntegrityUnitsPerPack = 10f;
         private const float OrphanWanderDistanceMeters = 4f;
         private const float DroneFlowDragCoefficient = 0.85f;
-        private const float DockingObstacleProbeStartOffsetMeters = 0.35f;
-        private const float DockingObstacleProbeFraction = 0.8f;
+        private const float DockingObstacleProbeEndpointTrimMeters = 0.35f;
         private const float DockingMinimumProbeDistanceMeters = 0.25f;
         private const int FleetTelemetryPublishFrameInterval = 60;
         private const string DroneCullingComputeAssetPath = "Assets/_Project/Art/Shaders/DroneCulling.compute";
@@ -1124,12 +1125,12 @@ namespace Hecton8.Construction
             s_DroneBlackBox = new NativeArray<DroneFleetBlackBoxEntry>(DroneFleetBlackBoxFrameCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<DroneFleetBlackBoxEntry>[300] - fixed fleet black-box ring buffer - owner: DroneFleetManager
             s_HeadlessTaskClaimOwners = new NativeArray<int>(HeadlessTaskCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[64] - atomic task claim owners for Burst arbitration - owner: DroneFleetManager
             s_FleetTelemetryAccumulator = new NativeArray<int>((int)DroneFleetTelemetryAccumulatorSlot.Count, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[6] - Burst fleet telemetry accumulator - owner: DroneFleetManager
-            s_DockingRaycastCommands = new NativeArray<RaycastCommand>(DockingRaycastCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastCommand>[64] - batched docking corridor probes - owner: DroneFleetManager
-            s_DockingRaycastHits = new NativeArray<RaycastHit>(DockingRaycastCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastHit>[64] - batched docking corridor probe results - owner: DroneFleetManager
-            s_DockingRaycastSlots = new NativeArray<int>(DockingRaycastCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[64] - batched docking raycast slot lookup - owner: DroneFleetManager
+            s_DockingRaycastCommands = new NativeArray<RaycastCommand>(DockingRaycastCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastCommand>[192] - segmented docking corridor probes - owner: DroneFleetManager
+            s_DockingRaycastHits = new NativeArray<RaycastHit>(DockingRaycastCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastHit>[192] - segmented docking corridor probe results - owner: DroneFleetManager
+            s_DockingRaycastSlots = new NativeArray<int>(DockingRaycastCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[192] - segmented docking raycast slot lookup - owner: DroneFleetManager
             s_HeadlessTasksByHub = new NativeParallelMultiHashMap<int, HeadlessDroneTask>(HeadlessTaskCapacity, Allocator.Persistent); // COLD ALLOC: NativeParallelMultiHashMap<int,HeadlessDroneTask>[64] - hub-keyed drone task fanout - owner: DroneFleetManager
             s_HeadlessDroneSpatialHash = new NativeParallelMultiHashMap<int, int>(HeadlessDroneCapacity, Allocator.Persistent); // COLD ALLOC: NativeParallelMultiHashMap<int,int>[64] - real drone boid spatial hash - owner: DroneFleetManager
-            s_DroneServiceCommands = new NativeQueue<DroneServiceCommand>(Allocator.Persistent); // COLD ALLOC: NativeQueue<DroneServiceCommand>[128] - Burst drone service command lane drained on late-frame owner thread - owner: DroneFleetManager
+            s_DroneServiceCommands = new NativeQueue<DroneServiceCommand>(Allocator.Persistent); // COLD ALLOC: NativeQueue<DroneServiceCommand>[192] - Burst drone service command lane drained on late-frame owner thread - owner: DroneFleetManager
             RegisterNativeArray(s_DroneStates, nameof(s_DroneStates));
             RegisterNativeArray(s_DroneStateBackBuffer, nameof(s_DroneStateBackBuffer));
             RegisterNativeArray(s_DroneRenderMatrices, nameof(s_DroneRenderMatrices));
@@ -1473,21 +1474,30 @@ namespace Hecton8.Construction
                 DockingRequestSignal request = requests[i];
                 int slot = ResolveHeadlessSlot(request.DroneId);
                 if (slot < 0)
+                {
+                    PublishDockingFailedForMissingDrone(in request);
                     continue;
+                }
 
                 HeadlessDroneState drone = s_DroneStates[slot];
                 if (drone.State == (byte)HeadlessDroneRuntimeState.Empty ||
                     drone.State == (byte)HeadlessDroneRuntimeState.Sacrificed ||
                     drone.State == (byte)HeadlessDroneRuntimeState.Completed)
                 {
-                    PublishDockingFailed(slot, in drone, ToVector3(drone.Position), DockingFailureReason.InvalidRequest);
+                    PublishDockingFailed(slot, in drone, ToVector3(drone.Position), request.RequestId, DockingFailureReason.InvalidRequest);
+                    continue;
+                }
+
+                if (request.HubGridId != 0 && request.HubGridId != drone.HubGridId)
+                {
+                    PublishDockingFailed(slot, in drone, ToVector3(drone.Position), request.RequestId, DockingFailureReason.InvalidRequest);
                     continue;
                 }
 
                 float3 dockRuntime = request.DockAup.ToAup().ToRuntimeFloat3();
                 if (!IsFiniteFloat3(dockRuntime))
                 {
-                    PublishDockingFailed(slot, in drone, ToVector3(drone.Position), DockingFailureReason.InvalidRequest);
+                    PublishDockingFailed(slot, in drone, ToVector3(drone.Position), request.RequestId, DockingFailureReason.InvalidRequest);
                     continue;
                 }
 
@@ -1515,6 +1525,7 @@ namespace Hecton8.Construction
         {
             if (!s_DroneStates.IsCreated ||
                 s_DroneSlotDroneIds == null ||
+                s_PendingReleaseBySlot == null ||
                 !s_DockingRaycastCommands.IsCreated ||
                 !s_DockingRaycastHits.IsCreated ||
                 !s_DockingRaycastSlots.IsCreated)
@@ -1523,6 +1534,8 @@ namespace Hecton8.Construction
             }
 
             int commandCount = 0;
+            int segmentCount = ResolveDockingObstacleSegmentCount(GlobalRegistry.ScalabilityTier);
+            float invSegmentCount = math.rcp((float)segmentCount);
             for (int slot = 0; slot < HeadlessDroneCapacity && commandCount < DockingRaycastCapacity; slot++)
             {
                 if (s_DroneSlotDroneIds[slot] <= 0 || s_PendingReleaseBySlot[slot])
@@ -1533,24 +1546,31 @@ namespace Hecton8.Construction
                     continue;
 
                 float3 p0 = IsFiniteFloat3(drone.DockControlP0) ? drone.DockControlP0 : drone.Position;
+                float3 p1 = IsFiniteFloat3(drone.DockControlP1) ? drone.DockControlP1 : p0;
+                float3 p2 = IsFiniteFloat3(drone.DockControlP2) ? drone.DockControlP2 : drone.HomePosition;
                 float3 p3 = IsFiniteFloat3(drone.DockControlP3) ? drone.DockControlP3 : drone.HomePosition;
-                float3 delta = p3 - p0;
-                float lengthSq = math.lengthsq(delta);
-                if (!IsFiniteFloat3(p0) || !IsFiniteFloat3(delta) || !math.isfinite(lengthSq) || lengthSq <= DockingMinimumProbeDistanceMeters * DockingMinimumProbeDistanceMeters)
+                if (!IsFiniteFloat3(p0) || !IsFiniteFloat3(p1) || !IsFiniteFloat3(p2) || !IsFiniteFloat3(p3))
                     continue;
 
-                float lengthInv = math.rsqrt(lengthSq);
-                float length = lengthSq * lengthInv;
-                Vector3 origin = ToVector3(p0);
-                Vector3 direction = ToVector3(delta * lengthInv);
-                float probeDistance = Mathf.Max(
-                    DockingMinimumProbeDistanceMeters,
-                    (length * DockingObstacleProbeFraction) - DockingObstacleProbeStartOffsetMeters);
-                Vector3 probeOrigin = origin + (direction * DockingObstacleProbeStartOffsetMeters);
-                s_DockingRaycastCommands[commandCount] = CreateDockingRaycastCommand(probeOrigin, direction, probeDistance);
-                s_DockingRaycastHits[commandCount] = default;
-                s_DockingRaycastSlots[commandCount] = slot;
-                commandCount++;
+                float startT = math.saturate(drone.DockingElapsed);
+                if (startT >= 1f)
+                    continue;
+
+                float3 segmentStart = IsFiniteFloat3(drone.Position)
+                    ? drone.Position
+                    : EvaluateDockingObstacleBezier(p0, p1, p2, p3, startT);
+                for (int segment = 1; segment <= segmentCount && commandCount < DockingRaycastCapacity; segment++)
+                {
+                    float segmentT = math.lerp(startT, 1f, segment * invSegmentCount);
+                    float3 segmentEnd = EvaluateDockingObstacleBezier(p0, p1, p2, p3, segmentT);
+                    TryAppendDockingRaycastCommand(
+                        slot,
+                        segmentStart,
+                        segmentEnd,
+                        segment == segmentCount,
+                        ref commandCount);
+                    segmentStart = segmentEnd;
+                }
             }
 
             if (commandCount <= 0)
@@ -1558,7 +1578,7 @@ namespace Hecton8.Construction
 
             NativeArray<RaycastCommand> commandBatch = s_DockingRaycastCommands.GetSubArray(0, commandCount);
             NativeArray<RaycastHit> hitBatch = s_DockingRaycastHits.GetSubArray(0, commandCount);
-            JobHandle raycastHandle = RaycastCommand.ScheduleBatch(commandBatch, hitBatch, 1, default);
+            JobHandle raycastHandle = RaycastCommand.ScheduleBatch(commandBatch, hitBatch, DockingRaycastMinCommandsPerJob, default);
             DispatcherJobSwap.TryComplete(ref raycastHandle, true);
 
             for (int i = 0; i < commandCount; i++)
@@ -1578,8 +1598,62 @@ namespace Hecton8.Construction
                 }
 
                 HeadlessDroneState drone = s_DroneStates[slot];
+                if (drone.State != (byte)HeadlessDroneRuntimeState.Docking)
+                    continue;
+
                 AbortDockingForObstacle(slot, ref drone, hit.point);
             }
+        }
+
+        private static void TryAppendDockingRaycastCommand(
+            int slot,
+            float3 segmentStart,
+            float3 segmentEnd,
+            bool isLastSegment,
+            ref int commandCount)
+        {
+            float3 delta = segmentEnd - segmentStart;
+            float lengthSq = math.lengthsq(delta);
+            if (!IsFiniteFloat3(delta) ||
+                !math.isfinite(lengthSq) ||
+                lengthSq <= DockingMinimumProbeDistanceMeters * DockingMinimumProbeDistanceMeters)
+            {
+                return;
+            }
+
+            float lengthInv = math.rsqrt(lengthSq);
+            float length = lengthSq * lengthInv;
+            float endTrim = isLastSegment ? DockingObstacleProbeEndpointTrimMeters : 0f;
+            float probeDistance = length - endTrim;
+            if (!math.isfinite(probeDistance) || probeDistance <= DockingMinimumProbeDistanceMeters)
+                return;
+
+            Vector3 direction = ToVector3(delta * lengthInv);
+            Vector3 probeOrigin = ToVector3(segmentStart);
+            s_DockingRaycastCommands[commandCount] = CreateDockingRaycastCommand(probeOrigin, direction, probeDistance);
+            s_DockingRaycastHits[commandCount] = default;
+            s_DockingRaycastSlots[commandCount] = slot;
+            commandCount++;
+        }
+
+        private static float3 EvaluateDockingObstacleBezier(float3 p0, float3 p1, float3 p2, float3 p3, float t)
+        {
+            float clampedT = math.saturate(t);
+            float oneMinusT = 1f - clampedT;
+            float oneMinusT2 = oneMinusT * oneMinusT;
+            float t2 = clampedT * clampedT;
+            return
+                (oneMinusT2 * oneMinusT * p0) +
+                (3f * oneMinusT2 * clampedT * p1) +
+                (3f * oneMinusT * t2 * p2) +
+                (t2 * clampedT * p3);
+        }
+
+        private static int ResolveDockingObstacleSegmentCount(HectonQualityTier tier)
+        {
+            return tier == HectonQualityTier.High || tier == HectonQualityTier.Ultra
+                ? DockingObstacleProbeMaxSegments
+                : 2;
         }
 
         private static RaycastCommand CreateDockingRaycastCommand(Vector3 origin, Vector3 direction, float distance)
@@ -1648,7 +1722,7 @@ namespace Hecton8.Construction
             }
         }
 
-        private static void PublishDockingHatchOpen(int slot, in DroneServiceCommand command)
+        private static void PublishDockingHatchOpen(int slot)
         {
             if (s_DroneHubs == null || slot < 0 || slot >= s_DroneHubs.Length)
                 return;
@@ -1658,17 +1732,25 @@ namespace Hecton8.Construction
                 BaseAirlockEvents.RaiseCycleStarted(airlock, null);
         }
 
-        private static void PublishDockingComplete(int slot, in HeadlessDroneState drone)
+        private static void PublishPendingDockingHatchOpen(int slot, ref HeadlessDroneState drone)
         {
-            RepairDroneHub hub = s_DroneHubs != null && slot >= 0 && slot < s_DroneHubs.Length
-                ? s_DroneHubs[slot]
-                : null;
-            AbsoluteUniversePosition dockAup = hub != null
-                ? hub.DockAup
-                : AbsoluteUniversePosition.FromRuntimePosition(ToVector3(drone.HomePosition));
-            float3 dockForward = hub != null
-                ? NormalizeOrFallback(ToFloat3(hub.DockForward), ResolveForward(drone.HomeRotation))
-                : ResolveForward(drone.HomeRotation);
+            if ((drone.DockingFlags & DroneCognitionJob.DockingFlagHatchOpenQueued) == 0 ||
+                (drone.DockingFlags & DroneCognitionJob.DockingFlagHatchOpenPublished) != 0)
+            {
+                return;
+            }
+
+            PublishDockingHatchOpen(slot);
+            drone.DockingFlags |= DroneCognitionJob.DockingFlagHatchOpenPublished;
+        }
+
+        private static void PublishDockingComplete(in HeadlessDroneState drone)
+        {
+            Vector3 dockRuntime = IsFiniteFloat3(drone.HomePosition)
+                ? ToVector3(drone.HomePosition)
+                : ToVector3(drone.Position);
+            AbsoluteUniversePosition dockAup = AbsoluteUniversePosition.FromRuntimePosition(dockRuntime);
+            float3 dockForward = ResolveForward(drone.HomeRotation);
 
             DockingCompleteSignal signal = new DockingCompleteSignal
             {
@@ -1687,6 +1769,11 @@ namespace Hecton8.Construction
 
         private static void PublishDockingFailed(int slot, in HeadlessDroneState drone, Vector3 hitPoint, DockingFailureReason reason)
         {
+            PublishDockingFailed(slot, in drone, hitPoint, drone.DockingRequestId, reason);
+        }
+
+        private static void PublishDockingFailed(int slot, in HeadlessDroneState drone, Vector3 hitPoint, uint requestId, DockingFailureReason reason)
+        {
             AbsoluteUniversePosition lastAup = AbsoluteUniversePosition.FromRuntimePosition(ToVector3(drone.Position));
             Vector3 failureVector = hitPoint - ToVector3(drone.Position);
             float3 finiteFailureVector = IsFiniteVector(failureVector)
@@ -1698,8 +1785,25 @@ namespace Hecton8.Construction
                 HubGridId = drone.HubGridId,
                 LastAup = AbsoluteUniversePositionBlit.FromAup(in lastAup),
                 FailureVector = finiteFailureVector,
-                RequestId = drone.DockingRequestId,
+                RequestId = requestId,
                 Reason = (byte)reason,
+                Flags = 0,
+                Reserved0 = 0,
+                Reserved1 = 0
+            };
+            SignalBus<DockingFailedSignal>.Push(in signal);
+        }
+
+        private static void PublishDockingFailedForMissingDrone(in DockingRequestSignal request)
+        {
+            DockingFailedSignal signal = new DockingFailedSignal
+            {
+                DroneId = request.DroneId,
+                HubGridId = request.HubGridId,
+                LastAup = request.DockAup,
+                FailureVector = float3.zero,
+                RequestId = request.RequestId,
+                Reason = (byte)DockingFailureReason.InvalidRequest,
                 Flags = 0,
                 Reserved0 = 0,
                 Reserved1 = 0
@@ -1724,7 +1828,8 @@ namespace Hecton8.Construction
 
                 if (drone.State == (byte)HeadlessDroneRuntimeState.Completed)
                 {
-                    PublishDockingComplete(slot, in drone);
+                    PublishPendingDockingHatchOpen(slot, ref drone);
+                    PublishDockingComplete(in drone);
                     ClearHeadlessSlot(slot, true);
                     continue;
                 }
@@ -1786,7 +1891,12 @@ namespace Hecton8.Construction
                 HeadlessDroneState drone = s_DroneStates[slot];
                 if (command.Kind == (byte)DroneServiceCommandKind.DockingHatchOpen)
                 {
-                    PublishDockingHatchOpen(slot, in command);
+                    PublishPendingDockingHatchOpen(slot, ref drone);
+                    s_DroneStates[slot] = drone;
+
+                    if (s_DroneStateBackBuffer.IsCreated)
+                        s_DroneStateBackBuffer[slot] = drone;
+
                     continue;
                 }
 

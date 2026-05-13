@@ -1564,7 +1564,6 @@ namespace Hecton8.Celestial
             if (!_editorPreviewDirty && !sunMoved)
                 return;
 
-            RunCelestialTimeline(0f);
             _editorPreviewDirty = false;
             SceneView.RepaintAll();
         }
@@ -1573,7 +1572,6 @@ namespace Hecton8.Celestial
         {
             CacheCelestialOrbitReciprocals();
             MarkAtmosphereGradientSamplesDirty();
-            EnsureCelestialAtmosphereLutReady(publishOnRebuild: Application.isPlaying);
             CacheMoonRenderers();
             sunAngularRadiusDegrees = Mathf.Max(0.01f, sunAngularRadiusDegrees);
             celestialTideAmplitudeMeters = Mathf.Clamp(celestialTideAmplitudeMeters, 0f, 8f);
@@ -1588,10 +1586,13 @@ namespace Hecton8.Celestial
             _editorPreviewDirty = true;
 
             if (Application.isPlaying)
+            {
+                EnsureCelestialAtmosphereLutReady(publishOnRebuild: true);
                 return;
+            }
 
             InitializeMaterialPropertyBlocks();
-            RunCelestialTimeline(0f);
+            DisposeAtmosphereGradientSamples();
 
 #if UNITY_EDITOR
             EditorApplication.QueuePlayerLoopUpdate();

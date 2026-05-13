@@ -1,3 +1,4 @@
+using Hecton8.World;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -29,6 +30,7 @@ namespace Hecton8.Lighting.Shafts
         // COLD ALLOC: ScreenSpaceLightShaftSource[64] - fixed screen-space shaft source registry - owner: ScreenSpaceLightShaftSource
         private static readonly ScreenSpaceLightShaftSource[] _registeredSources = new ScreenSpaceLightShaftSource[MaxRegisteredSources];
         private static int _registeredCount;
+        private static uint _nextRuntimeSourceId = 1u;
 
         [Header("Light Shaft Source")]
         [Tooltip("Light used for color and intensity inheritance. Cached; no scene search at runtime.")]
@@ -53,12 +55,13 @@ namespace Hecton8.Lighting.Shafts
         [SerializeField, Min(1)] private int massiveBurstCooldownFrames = 45;
 
         private Transform _cachedTransform;
+        private uint _runtimeSourceId;
         private int _registeredIndex = -1;
         private int _lastBurstFrame = -100000;
 
         internal static int RegisteredCount => _registeredCount;
 
-        internal uint ResolvedSourceId => sourceId != 0u ? sourceId : unchecked((uint)GetInstanceID());
+        internal uint ResolvedSourceId => sourceId != 0u ? sourceId : _runtimeSourceId;
 
         internal static ScreenSpaceLightShaftSource GetRegisteredAt(int index)
         {
@@ -81,7 +84,7 @@ namespace Hecton8.Lighting.Shafts
             UnregisterSource(this);
         }
 
-        internal bool TryGetContribution(Camera renderCamera, out LightShaftContribution contribution)
+        internal bool TryGetContribution(Camera renderCamera, in AbsoluteUniversePosition cameraAup, out LightShaftContribution contribution)
         {
             contribution = default;
 
@@ -92,7 +95,10 @@ namespace Hecton8.Lighting.Shafts
             if (light == null || !light.enabled || intensityScale <= Epsilon)
                 return false;
 
-            Vector3 viewport = renderCamera.WorldToViewportPoint(_cachedTransform.position);
+            Vector3 sourcePosition = _cachedTransform.position;
+            AbsoluteUniversePosition sourceAup = AbsoluteUniversePosition.FromRuntimePosition(sourcePosition);
+            float aupDistance = (float)math.sqrt(math.max(0.0, AbsoluteUniversePosition.DistanceSq(in sourceAup, in cameraAup)));
+            Vector3 viewport = renderCamera.WorldToViewportPoint(sourcePosition);
             if (!math.isfinite(viewport.x) || !math.isfinite(viewport.y) || !math.isfinite(viewport.z))
                 return false;
 
@@ -105,7 +111,7 @@ namespace Hecton8.Lighting.Shafts
                 return false;
             }
 
-            float distanceFade = math.saturate(1f - viewport.z * math.rcp(math.max(0.25f, maxDistanceMeters)));
+            float distanceFade = math.saturate(1f - aupDistance * math.rcp(math.max(0.25f, maxDistanceMeters)));
             float resolvedIntensity = math.max(0f, light.intensity) * math.max(0f, intensityScale) * distanceFade;
             if (resolvedIntensity <= Epsilon)
                 return false;
@@ -144,8 +150,20 @@ namespace Hecton8.Lighting.Shafts
         private void CacheLocalReferences()
         {
             _cachedTransform = transform;
+            if (_runtimeSourceId == 0u)
+                _runtimeSourceId = AllocateRuntimeSourceId();
+
             if (sourceLight == null)
                 TryGetComponent(out sourceLight);
+        }
+
+        private static uint AllocateRuntimeSourceId()
+        {
+            uint id = _nextRuntimeSourceId++;
+            if (_nextRuntimeSourceId == 0u)
+                _nextRuntimeSourceId = 1u;
+
+            return id != 0u ? id : 1u;
         }
 
         private static void RegisterSource(ScreenSpaceLightShaftSource source)

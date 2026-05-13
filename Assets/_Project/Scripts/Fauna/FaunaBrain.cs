@@ -3271,19 +3271,53 @@ namespace Hecton8.AI
             signal.LostKineticEnergy = lostKineticEnergy;
             signal.ImpactSpeed = impactSpeed;
             signal.SourceHash = ResolveStableFaunaHash(FaunaLeviathanBiteHashSalt, 0u);
-            signal.TargetHash = hit.collider != null ? unchecked((uint)EntityId.ToULong(hit.collider.GetEntityId())) : 0u;
+            signal.TargetHash = unchecked((uint)EntityId.ToULong(hit.colliderEntityId));
             signal.Frame = unchecked((uint)Time.frameCount);
             signal.SourceKind = HighSpeedImpactSignal.SourceLeviathan;
             signal.Flags = flags;
             GlobalSignals.Publish(in signal);
 
+            ImpactSignal impact = default;
+            impact.PointAup = pointAup;
+            impact.Velocity = impactSpeed;
+            impact.Intensity = math.saturate(impactSpeed * 0.045f + lostKineticEnergy * 0.00002f);
+            impact.PrimaryBodyId = signal.SourceHash;
+            impact.WeightClass = 3;
+            impact.Flags = flags;
+            GlobalSignals.Publish(in impact);
+            CameraJuiceSignals.PublishImpact(in impact, signal.Normal);
+
             DebrisSpawnSignal debris = default;
             debris.PositionAup = pointAup;
             debris.SourceEntityId = signal.SourceHash;
-            debris.Intensity01 = math.saturate(lostKineticEnergy * 0.00004f);
+            debris.Intensity01 = impact.Intensity;
             debris.DebrisKind = 1;
             debris.Flags = flags;
             GlobalSignals.Publish(in debris);
+
+            HapticRequest haptic = default;
+            haptic.Intensity01 = math.saturate(lostKineticEnergy * 0.00005f);
+            haptic.DurationSeconds = math.lerp(0.04f, 0.18f, haptic.Intensity01);
+            haptic.Frequency01 = math.saturate(impactSpeed * 0.04f);
+            haptic.SourceHash = signal.SourceHash;
+            haptic.Frame = signal.Frame;
+            haptic.Channel = HapticRequest.ChannelCollision;
+            haptic.Flags = flags;
+            GlobalSignals.Publish(in haptic);
+
+            if (signal.TargetHash != 0u && lostKineticEnergy >= KinematicCcdMath.MassiveLostKineticEnergyJoules)
+            {
+                Hecton8.Core.Signals.DamageSignal damage = default;
+                damage.Magnitude = math.min(600f, lostKineticEnergy * 0.004f);
+                damage.LocalPoint = new float3(point.x, point.y, point.z);
+                damage.DamageType = (uint)DamageTypeMask.Impact;
+                damage.SubjectHash = signal.TargetHash;
+                damage.SourceId = signal.SourceHash > ushort.MaxValue ? ushort.MaxValue : (ushort)signal.SourceHash;
+                damage.TargetId = signal.TargetHash;
+                damage.Channel = 0;
+                damage.IntegrityDelta = 1;
+                GlobalSignals.Publish(in damage);
+            }
 
             GlobalPhysicsStateManager.ReportKinematicCcdIntervention();
         }

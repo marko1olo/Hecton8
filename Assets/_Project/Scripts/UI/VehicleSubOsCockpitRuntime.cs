@@ -1166,7 +1166,9 @@ namespace Hecton8.UI
             Vector4 anchorColumn = radarLocalToWorld.GetColumn(3);
             Vector3 anchorPosition = new Vector3(anchorColumn.x, anchorColumn.y, anchorColumn.z);
 
-            if (_radarUsingGpr && !TryResolveGroundRadarRenderBinding(out IGroundRadarService groundRadar, out GraphicsBuffer groundRadarBuffer))
+            IGroundRadarService groundRadar = null;
+            GraphicsBuffer groundRadarBuffer = null;
+            if (_radarUsingGpr && !TryResolveGroundRadarRenderBinding(out groundRadar, out groundRadarBuffer))
                 return;
 
             if (_radarUsingGpr)

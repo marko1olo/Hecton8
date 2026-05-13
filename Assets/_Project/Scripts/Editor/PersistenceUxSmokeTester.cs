@@ -51,10 +51,13 @@ namespace Hecton8.Dev
             string saveStation = ReadProjectFile("Assets/_Project/Scripts/Interaction/SaveStation.cs");
             string saveSidecarStorage = ReadProjectFile("Assets/_Project/Scripts/SaveSidecarStorage.cs");
             string saveSlotThumbnail = ReadProjectFile("Assets/_Project/Scripts/UI/SaveSlotThumbnail.cs");
+            string saveThumbnailCapture = ReadProjectFile("Assets/_Project/Scripts/UI/SaveThumbnailCapture.cs");
 
             bool asyncThumbnailPass =
                 ContainsAll(thumbnailSystem, "Extension = \".jpg\"", "EncodeNativeArrayToJPG", "Awaitable.BackgroundThreadAsync", "NativeMemorySentinel.RegisterNativeArray") &&
                 ContainsAll(thumbnailSystem, "MinPoseCaptureDistanceMeters = 5f", "MinPoseCaptureAngleDegrees = 5f", "MinPoseCaptureQuaternionDot", "HasCapturePoseChanged", "delta.sqrMagnitude > MinPoseCaptureDistanceSq", "Quaternion.Dot") &&
+                ContainsAll(thumbnailSystem, "s_completionHistory", "TryGetCompletion(ticket.SequenceId", "if (completion.OperationId != 0u)", "ticket.ByteLength", "catch (OperationCanceledException)", "ReleaseWriteInProgress()") &&
+                SourceIndex(thumbnailSystem, "ReleaseWriteInProgress();") < SourceIndex(thumbnailSystem, "CompleteRequest(completion);") &&
                 ContainsAll(captureFeature, "RequestAsyncReadback", "SaveThumbnailSystem.ReadbackCompletedCallback") &&
                 SourceIndex(saveManager, "SaveThumbnailSystem.CaptureThumbnailForSave(slotName, slotIndex, operationId)") <
                 SourceIndex(saveManager, "SaveEvents.RaiseSaveStarted(slotName);");
@@ -141,7 +144,9 @@ namespace Hecton8.Dev
                 ContainsAll(pauseMenuController, "NormalizeSaveSlots()", "saveSlots = { \"slot_0\", \"slot_1\", \"slot_2\" }", "new string[SaveEvents.ManualSlotCount]") &&
                 ContainsAll(pauseMenuController, "CopyFixedStringUpperAsciiToBuffer(in error, buffer, ref cursor)", "CopyStringToBuffer(_cachedUnknownErrorStatus, buffer, cursor)") &&
                 ContainsAll(mainMenuController, "SlotCount = SaveEvents.ManualSlotCount", "SaveEvents.ResolveManualSlotName(0)", "SaveEvents.ResolveManualSlotName(1)", "SaveEvents.ResolveManualSlotName(2)") &&
-                ContainsAll(ReadProjectFile("Assets/_Project/Scripts/UI/SaveThumbnailCapture.cs"), "SaveEvents.TryResolveKnownSlotName(in payload.SlotName, out string slotName)", "SaveThumbnailSystem.CaptureThumbnail(slotName, captureCamera);") &&
+                ContainsAll(saveThumbnailCapture, "public void CaptureThumbnail(string slotName)", "SaveManager.TryResolveSafeSlotName(slotName, out string safeSlotName)", "SaveThumbnailSystem.CaptureThumbnail(safeSlotName, captureCamera);") &&
+                SourceIndex(saveThumbnailCapture, "SaveEvents.Register(this)") == int.MaxValue &&
+                SourceIndex(saveThumbnailCapture, "ISaveEventListener") == int.MaxValue &&
                 SourceIndex(saveEvents, "Slot3Name") == int.MaxValue &&
                 SourceIndex(saveEvents, "\"slot_3\"") == int.MaxValue &&
                 SourceIndex(mainMenuController, "\"slot_3\"") == int.MaxValue &&
@@ -205,7 +210,7 @@ namespace Hecton8.Dev
                 CountOccurrences(thumbnailSystem, "SaveManager.TryResolveSafeSlotName(slotName, out slotName)") >= 4 &&
                 ContainsAll(thumbnailSystem, "AsyncWriteManager.WriteAll(tempPath, dataPtr, encodedJpg.Length, out string writeError)", "throw new IOException(writeError);", "bool encodedJpgRegistered = false", "encodedJpgRegistered = true", "File.Move(tempPath, path);", "await Awaitable.MainThreadAsync();") &&
                 ContainsAll(saveSidecarStorage, "NativeTempMemoryLifetime = NativeAllocationLifetime.Temp", "RegisterTempBuffer(buffer, \"metadataWriteBuffer\")", "RegisterTempBuffer(buffer, \"metadataReadBuffer\")", "RegisterTempBuffer(buffer, \"maintenanceWriteBuffer\")", "RegisterTempBuffer(buffer, \"maintenanceReadBuffer\")", "NativeMemorySentinel.RegisterNativeArray(buffer, NativeMemoryOwner, label, NativeTempMemoryLifetime)", "NativeMemorySentinel.UnregisterNativeArray(buffer)") &&
-                ContainsAll(saveSlotThumbnail, "SaveManager.IsSafeSlotName(slotName)", "SaveThumbnailSystem.CaptureThumbnail(slotName, captureCamera);", "SaveThumbnailSystem.LoadThumbnailTexture(slotName)") &&
+                ContainsAll(saveSlotThumbnail, "SaveManager.IsSafeSlotName(slotName)", "SaveThumbnailSystem.CaptureThumbnail(slotName, captureCamera);", "SaveThumbnailSystem.LoadThumbnailTextureAsync(slotName, destroyCancellationToken)", "AdvanceLoadSequence()") &&
                 SourceIndex(thumbnailSystem, "slotName + Extension") == int.MaxValue &&
                 SourceIndex(thumbnailSystem, "slotName + LegacyExtension") == int.MaxValue &&
                 SourceIndex(thumbnailSystem, "new FileStream(tempPath") == int.MaxValue &&

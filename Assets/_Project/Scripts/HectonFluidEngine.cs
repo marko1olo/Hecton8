@@ -187,8 +187,8 @@ namespace Hecton8.Physics
         private const string MaelstromDumpRelativePath = "Docs/AgentLogs/Dump_MAELSTROM_KINEMATICS.bin";
         private const float MaelstromMinimumRadiusMeters = 0.5f;
         private const float MaelstromEventHorizonRadiusFactor = 0.12f;
-        private const float MaelstromMaxVelocityMetersPerSecond = 18f;
-        private const float MaelstromLowTierMaxVelocityMetersPerSecond = 10f;
+        internal const float MaelstromMaxVelocityMetersPerSecond = 18f;
+        internal const float MaelstromLowTierMaxVelocityMetersPerSecond = 10f;
         private const float MaelstromAudioIntervalSeconds = 0.45f;
         private const float MaelstromDamageIntervalSeconds = 0.35f;
         private const float MaelstromDamageMagnitude = 18f;
@@ -686,8 +686,17 @@ namespace Hecton8.Physics
             for (int i = 0; i < MaxAnalyticalThrusterCount; i++)
                 HectonAnalyticalFlowField.ApplyThrusterFlow(ref flow, position, _thrusterFlowBuffer[i]);
 
-            for (int i = 0; i < MaxAnalyticalWhirlpoolCount; i++)
-                HectonAnalyticalFlowField.ApplyWhirlpoolFlow(ref flow, position, _whirlpoolFlowBuffer[i]);
+            byte lowMaelstromTier = IsLowMaelstromTier() ? (byte)1 : (byte)0;
+            if (lowMaelstromTier != 0)
+            {
+                if (TryResolveStrongestWhirlpool(out WhirlpoolFlow strongestWhirlpool))
+                    HectonAnalyticalFlowField.ApplyWhirlpoolFlow(ref flow, position, strongestWhirlpool, lowMaelstromTier);
+            }
+            else
+            {
+                for (int i = 0; i < MaxAnalyticalWhirlpoolCount; i++)
+                    HectonAnalyticalFlowField.ApplyWhirlpoolFlow(ref flow, position, _whirlpoolFlowBuffer[i], lowMaelstromTier);
+            }
 
             return HectonAnalyticalFlowField.ResolveFiniteFloat3OrZero(flow);
         }
@@ -773,6 +782,10 @@ namespace Hecton8.Physics
         {
             if ((uint)slot >= MaxAnalyticalWhirlpoolCount ||
                 !IsFiniteVector(center) ||
+                !math.isfinite(radius) ||
+                !math.isfinite(tangentialStrength) ||
+                !math.isfinite(centripetalStrength) ||
+                !math.isfinite(verticalPull) ||
                 radius <= 0f)
             {
                 return false;
@@ -857,22 +870,23 @@ namespace Hecton8.Physics
                 return false;
 
             float3 sample = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
-            int cap = ResolveActiveMaelstromLoopCap();
-            for (int i = 0; i < cap; i++)
+            if (IsLowMaelstromTier())
+            {
+                if (TryResolveStrongestWhirlpool(out WhirlpoolFlow strongestWhirlpool))
+                    warp01 = SampleMaelstromWarp01(strongestWhirlpool, sample);
+
+                warp01 = math.saturate(warp01);
+                return warp01 > 0.0001f;
+            }
+
+            for (int i = 0; i < MaxAnalyticalWhirlpoolCount; i++)
             {
                 WhirlpoolFlow whirlpool = _whirlpoolFlowBuffer[i];
-                if (whirlpool.Active == 0 || whirlpool.RadiusSq <= 0f || whirlpool.InvRadiusSq <= 0f)
+                float sampleWarp01 = SampleMaelstromWarp01(whirlpool, sample);
+                if (sampleWarp01 <= 0f)
                     continue;
 
-                float3 toCenter = whirlpool.CenterWS - sample;
-                toCenter.y = 0f;
-                float distanceSq = math.lengthsq(toCenter);
-                if (!math.isfinite(distanceSq) || distanceSq > whirlpool.RadiusSq)
-                    continue;
-
-                float inside01 = 1f - math.saturate(distanceSq * whirlpool.InvRadiusSq);
-                float intensity01 = math.saturate(whirlpool.Padding0 * 0.08f);
-                warp01 = math.max(warp01, inside01 * intensity01);
+                warp01 = math.max(warp01, sampleWarp01);
             }
 
             warp01 = math.saturate(warp01);
@@ -1354,7 +1368,9 @@ namespace Hecton8.Physics
                 for (int i = 0; i < maelstromCount; i++)
                 {
                     float4 maelstrom = _activeMaelstroms[i];
-                    maelstrom.xyz += runtimeOffset;
+                    maelstrom.x += runtimeOffset.x;
+                    maelstrom.y += runtimeOffset.y;
+                    maelstrom.z += runtimeOffset.z;
                     _activeMaelstroms[i] = maelstrom;
                 }
             }
@@ -2201,7 +2217,7 @@ namespace Hecton8.Physics
         /// <inheritdoc />
         public void PostFixedTick(float fixedDeltaTime)
         {
-            PublishMaelstromRuntimeSignals(fixedDeltaTime);
+            PublishMaelstromRuntimeSignals();
             DrainCavitationBursts();
 
             TryDrainScheduledBuoyancyJob();
@@ -3189,14 +3205,22 @@ namespace Hecton8.Physics
             _activeThrusterFlowCount = thrusterWriteIndex;
 
             int whirlpoolWriteIndex = 0;
-            int whirlpoolLoopCap = ResolveActiveMaelstromLoopCap();
-            for (int i = 0; i < whirlpoolLoopCap; i++)
+            bool lowTier = IsLowMaelstromTier();
+            if (lowTier)
             {
-                WhirlpoolFlow whirlpool = _whirlpoolFlowBuffer[i];
-                if (whirlpool.Active == 0 || whirlpool.RadiusSq <= 0f || whirlpool.InvRadiusSq <= 0f)
-                    continue;
+                if (TryResolveStrongestWhirlpool(out WhirlpoolFlow strongestWhirlpool))
+                    _activeWhirlpools[whirlpoolWriteIndex++] = strongestWhirlpool;
+            }
+            else
+            {
+                for (int i = 0; i < MaxAnalyticalWhirlpoolCount; i++)
+                {
+                    WhirlpoolFlow whirlpool = _whirlpoolFlowBuffer[i];
+                    if (!IsValidWhirlpool(whirlpool))
+                        continue;
 
-                _activeWhirlpools[whirlpoolWriteIndex++] = whirlpool;
+                    _activeWhirlpools[whirlpoolWriteIndex++] = whirlpool;
+                }
             }
 
             for (int i = whirlpoolWriteIndex; i < MaxAnalyticalWhirlpoolCount; i++)
@@ -3222,31 +3246,54 @@ namespace Hecton8.Physics
 
         private void CopyActiveMaelstromsToNative()
         {
-            int maxCount = ResolveActiveMaelstromLoopCap();
             int writeIndex = 0;
             float maxRadius = 0f;
             float maxIntensity = 0f;
+            bool lowTier = IsLowMaelstromTier();
 
-            for (int i = 0; i < maxCount; i++)
+            if (lowTier)
             {
-                WhirlpoolFlow whirlpool = _whirlpoolFlowBuffer[i];
-                if (whirlpool.Active == 0 || whirlpool.RadiusSq <= 0f || whirlpool.InvRadiusSq <= 0f)
-                    continue;
-
-                float radius = math.max(MaelstromMinimumRadiusMeters, whirlpool.Padding1);
-                float intensityOverRadius = math.max(0f, whirlpool.Padding0);
-                if (_activeMaelstroms.IsCreated && writeIndex < _activeMaelstroms.Length)
+                if (TryResolveStrongestWhirlpool(out WhirlpoolFlow strongestWhirlpool))
                 {
-                    _activeMaelstroms[writeIndex] = new float4(
-                        whirlpool.CenterWS.x,
-                        whirlpool.CenterWS.y,
-                        whirlpool.CenterWS.z,
-                        intensityOverRadius);
-                }
+                    float radius = math.max(MaelstromMinimumRadiusMeters, strongestWhirlpool.Padding1);
+                    float intensityOverRadius = math.max(0f, strongestWhirlpool.Padding0);
+                    if (_activeMaelstroms.IsCreated && _activeMaelstroms.Length > 0)
+                    {
+                        _activeMaelstroms[0] = new float4(
+                            strongestWhirlpool.CenterWS.x,
+                            strongestWhirlpool.CenterWS.y,
+                            strongestWhirlpool.CenterWS.z,
+                            intensityOverRadius);
+                    }
 
-                maxRadius = math.max(maxRadius, radius);
-                maxIntensity = math.max(maxIntensity, intensityOverRadius * radius);
-                writeIndex++;
+                    maxRadius = radius;
+                    maxIntensity = intensityOverRadius * radius;
+                    writeIndex = 1;
+                }
+            }
+            else
+            {
+                for (int i = 0; i < MaxAnalyticalWhirlpoolCount; i++)
+                {
+                    WhirlpoolFlow whirlpool = _whirlpoolFlowBuffer[i];
+                    if (!IsValidWhirlpool(whirlpool))
+                        continue;
+
+                    float radius = math.max(MaelstromMinimumRadiusMeters, whirlpool.Padding1);
+                    float intensityOverRadius = math.max(0f, whirlpool.Padding0);
+                    if (_activeMaelstroms.IsCreated && writeIndex < _activeMaelstroms.Length)
+                    {
+                        _activeMaelstroms[writeIndex] = new float4(
+                            whirlpool.CenterWS.x,
+                            whirlpool.CenterWS.y,
+                            whirlpool.CenterWS.z,
+                            intensityOverRadius);
+                    }
+
+                    maxRadius = math.max(maxRadius, radius);
+                    maxIntensity = math.max(maxIntensity, intensityOverRadius * radius);
+                    writeIndex++;
+                }
             }
 
             if (_activeMaelstroms.IsCreated)
@@ -3260,12 +3307,62 @@ namespace Hecton8.Physics
                 writeIndex,
                 maxRadius,
                 maxIntensity,
-                IsLowMaelstromTier() ? 1f : 0f);
+                lowTier ? 1f : 0f);
         }
 
-        private int ResolveActiveMaelstromLoopCap()
+        private static bool IsValidWhirlpool(WhirlpoolFlow whirlpool)
         {
-            return IsLowMaelstromTier() ? 1 : MaxAnalyticalWhirlpoolCount;
+            return whirlpool.Active != 0 &&
+                   whirlpool.RadiusSq > 0f &&
+                   whirlpool.InvRadiusSq > 0f &&
+                   math.all(math.isfinite(whirlpool.CenterWS)) &&
+                   math.isfinite(whirlpool.RadiusSq) &&
+                   math.isfinite(whirlpool.InvRadiusSq) &&
+                   math.isfinite(whirlpool.TangentialStrength) &&
+                   math.isfinite(whirlpool.CentripetalStrength) &&
+                   math.isfinite(whirlpool.VerticalPull) &&
+                   math.isfinite(whirlpool.Padding0) &&
+                   math.isfinite(whirlpool.Padding1);
+        }
+
+        private bool TryResolveStrongestWhirlpool(out WhirlpoolFlow strongest)
+        {
+            strongest = default;
+            float strongestScore = -1f;
+            for (int i = 0; i < MaxAnalyticalWhirlpoolCount; i++)
+            {
+                WhirlpoolFlow candidate = _whirlpoolFlowBuffer[i];
+                if (!IsValidWhirlpool(candidate))
+                    continue;
+
+                float candidateScore = ResolveMaelstromIntensity(
+                    candidate.TangentialStrength,
+                    candidate.CentripetalStrength,
+                    candidate.VerticalPull);
+                if (candidateScore <= strongestScore)
+                    continue;
+
+                strongest = candidate;
+                strongestScore = candidateScore;
+            }
+
+            return strongestScore >= 0f;
+        }
+
+        private static float SampleMaelstromWarp01(WhirlpoolFlow whirlpool, float3 sample)
+        {
+            if (!IsValidWhirlpool(whirlpool))
+                return 0f;
+
+            float3 toCenter = whirlpool.CenterWS - sample;
+            toCenter.y = 0f;
+            float distanceSq = math.lengthsq(toCenter);
+            if (!math.isfinite(distanceSq) || distanceSq > whirlpool.RadiusSq)
+                return 0f;
+
+            float inside01 = 1f - math.saturate(distanceSq * whirlpool.InvRadiusSq);
+            float intensity01 = math.saturate(whirlpool.Padding0 * 0.08f);
+            return inside01 * intensity01;
         }
 
         private static bool IsLowMaelstromTier()
@@ -3283,7 +3380,7 @@ namespace Hecton8.Physics
                 math.max(math.abs(centripetalStrength), math.max(0f, verticalPull)));
         }
 
-        private void PublishMaelstromRuntimeSignals(float fixedDeltaTime)
+        private void PublishMaelstromRuntimeSignals()
         {
             CopyActiveMaelstromsToNative();
             int activeCount = _activeMaelstromCount;
@@ -3337,11 +3434,10 @@ namespace Hecton8.Physics
         {
             WhirlpoolFlow best = default;
             float bestIntensity = -1f;
-            int cap = ResolveActiveMaelstromLoopCap();
-            for (int i = 0; i < cap; i++)
+            for (int i = 0; i < MaxAnalyticalWhirlpoolCount; i++)
             {
                 WhirlpoolFlow candidate = _whirlpoolFlowBuffer[i];
-                if (candidate.Active == 0 || candidate.RadiusSq <= 0f || candidate.InvRadiusSq <= 0f)
+                if (!IsValidWhirlpool(candidate))
                     continue;
 
                 float intensity = ResolveMaelstromIntensity(
@@ -3374,7 +3470,7 @@ namespace Hecton8.Physics
                 ? playerBody.worldCenterOfMass
                 : playerTransform != null ? playerTransform.position : Vector3.positiveInfinity;
             if (IsFiniteVector(playerPosition) && (playerPosition - center).sqrMagnitude <= eventHorizonRadiusSq)
-                published |= PublishMaelstromDamageSignal(center, playerPosition, playerBody != null ? playerBody.GetInstanceID() : 0, intensity01);
+                published |= PublishMaelstromDamageSignal(center, playerPosition, playerBody != null ? unchecked((uint)EntityId.ToULong(playerBody.GetEntityId())) : 0u, intensity01);
 
             ISubmarineRuntimeContext submarine = GlobalRegistry.Submarine;
             Rigidbody hull = submarine != null ? submarine.HullRigidbody : null;
@@ -3382,13 +3478,13 @@ namespace Hecton8.Physics
             {
                 Vector3 hullPosition = hull.worldCenterOfMass;
                 if (IsFiniteVector(hullPosition) && (hullPosition - center).sqrMagnitude <= eventHorizonRadiusSq)
-                    published |= PublishMaelstromDamageSignal(center, hullPosition, hull.GetInstanceID(), intensity01);
+                    published |= PublishMaelstromDamageSignal(center, hullPosition, unchecked((uint)EntityId.ToULong(hull.GetEntityId())), intensity01);
             }
 
             return published;
         }
 
-        private static bool PublishMaelstromDamageSignal(Vector3 center, Vector3 targetPosition, int targetHash, float intensity01)
+        private static bool PublishMaelstromDamageSignal(Vector3 center, Vector3 targetPosition, uint targetHash, float intensity01)
         {
             if (!IsFiniteVector(center) || !IsFiniteVector(targetPosition))
                 return false;
@@ -3400,18 +3496,18 @@ namespace Hecton8.Physics
             else
                 direction = Vector3.up;
 
-            CombatDamageSignal damage = default;
+            Hecton8.Core.Signals.CombatDamageSignal damage = default;
             damage.WorldPoint = new float3(center.x, center.y, center.z);
             damage.Direction = new float3(direction.x, direction.y, direction.z);
             damage.Magnitude = MaelstromDamageMagnitude * math.max(0.25f, math.saturate(intensity01));
             damage.DamageType = CombatDamageTypes.Pressure;
-            damage.TargetHash = targetHash > 0 ? (uint)targetHash : 0u;
+            damage.TargetHash = targetHash;
             damage.SourceHash = MaelstromSourceHash;
             damage.Frame = unchecked((uint)Time.frameCount);
             damage.SourceId = (ushort)(MaelstromSourceHash & 0xffffu);
-            damage.TargetId = targetHash > 0 ? (ushort)math.min(targetHash, ushort.MaxValue) : (ushort)0;
+            damage.TargetId = targetHash != 0u ? (ushort)math.min(targetHash, (uint)ushort.MaxValue) : (ushort)0;
             damage.Channel = MaelstromAcousticChannel;
-            damage.Flags = CombatDamageSignal.DirectRuntimeFlag;
+            damage.Flags = Hecton8.Core.Signals.CombatDamageSignal.DirectRuntimeFlag;
             damage.IntegrityDelta = 1;
             GlobalSignals.Publish(in damage);
             return true;
@@ -5102,7 +5198,11 @@ namespace Hecton8.Physics
 
                 int whirlpoolCount = math.min(math.max(0, activeWhirlpoolCount), activeWhirlpools.Length);
                 for (int whirlpoolIndex = 0; whirlpoolIndex < whirlpoolCount; whirlpoolIndex++)
-                    HectonAnalyticalFlowField.ApplyWhirlpoolFlow(ref sampledCurrent, pos, activeWhirlpools[whirlpoolIndex]);
+                    HectonAnalyticalFlowField.ApplyWhirlpoolFlow(
+                        ref sampledCurrent,
+                        pos,
+                        activeWhirlpools[whirlpoolIndex],
+                        highScalabilityTier == 0 ? (byte)1 : (byte)0);
             }
 
             float3 analyticalShearForce = float3.zero;
@@ -5600,23 +5700,87 @@ namespace Hecton8.Physics
 
         public static void ApplyWhirlpoolFlow(ref float3 flow, float3 samplePosition, WhirlpoolFlow whirlpool)
         {
+            ApplyWhirlpoolFlow(ref flow, samplePosition, whirlpool, 0);
+        }
+
+        public static void ApplyWhirlpoolFlow(ref float3 flow, float3 samplePosition, WhirlpoolFlow whirlpool, byte lowMathTier)
+        {
+            flow += SampleWhirlpoolVelocity(samplePosition, whirlpool, lowMathTier, HectonFluidEngine.MaelstromMaxVelocityMetersPerSecond);
+        }
+
+        public static float3 SampleWhirlpoolVelocity(
+            float3 samplePosition,
+            WhirlpoolFlow whirlpool,
+            byte lowMathTier,
+            float maxVelocityMetersPerSecond)
+        {
             if (whirlpool.Active == 0 || whirlpool.RadiusSq <= 0f || whirlpool.InvRadiusSq <= 0f)
-                return;
+                return float3.zero;
+
+            if (!math.all(math.isfinite(whirlpool.CenterWS)) ||
+                !math.isfinite(whirlpool.TangentialStrength) ||
+                !math.isfinite(whirlpool.CentripetalStrength) ||
+                !math.isfinite(whirlpool.VerticalPull))
+            {
+                return float3.zero;
+            }
 
             float3 toCenter = whirlpool.CenterWS - samplePosition;
             toCenter.y = 0f;
             float distanceSq = math.lengthsq(toCenter);
             float normalizedDistanceSq = distanceSq * whirlpool.InvRadiusSq;
             if (distanceSq <= 0.000001f || normalizedDistanceSq > 1f)
-                return;
+                return float3.zero;
 
             float invDistance = math.rsqrt(math.max(distanceSq, 0.000001f));
             float3 inward = toCenter * invDistance;
-            float3 tangent = math.cross(new float3(0f, 1f, 0f), toCenter) * invDistance;
+            float3 tangent = lowMathTier != 0
+                ? float3.zero
+                : math.cross(new float3(0f, 1f, 0f), toCenter) * invDistance;
             float falloff = math.saturate(1f - normalizedDistanceSq);
-            flow += tangent * (whirlpool.TangentialStrength * falloff);
-            flow += inward * (whirlpool.CentripetalStrength * falloff);
-            flow.y -= whirlpool.VerticalPull * falloff;
+            float inverseSqGain = math.min(8f, whirlpool.RadiusSq * math.rcp(math.max(1f, distanceSq)));
+            float3 velocity =
+                ((inward * whirlpool.CentripetalStrength) +
+                 (tangent * whirlpool.TangentialStrength)) *
+                (falloff * inverseSqGain);
+            velocity.y -= whirlpool.VerticalPull * falloff;
+            return ClampFiniteFloat3Magnitude(
+                velocity,
+                lowMathTier != 0
+                    ? math.min(maxVelocityMetersPerSecond, HectonFluidEngine.MaelstromLowTierMaxVelocityMetersPerSecond)
+                    : maxVelocityMetersPerSecond);
+        }
+
+        public static float3 SampleWhirlpoolVelocity(
+            float3 samplePosition,
+            NativeArray<WhirlpoolFlow> whirlpools,
+            int whirlpoolCount,
+            byte lowMathTier,
+            float maxVelocityMetersPerSecond)
+        {
+            if (!whirlpools.IsCreated || whirlpoolCount <= 0)
+                return float3.zero;
+
+            float3 velocity = float3.zero;
+            int count = math.min(math.max(0, whirlpoolCount), whirlpools.Length);
+            for (int i = 0; i < count; i++)
+                velocity += SampleWhirlpoolVelocity(samplePosition, whirlpools[i], lowMathTier, maxVelocityMetersPerSecond);
+
+            return ClampFiniteFloat3Magnitude(velocity, maxVelocityMetersPerSecond);
+        }
+
+        private static float3 ClampFiniteFloat3Magnitude(float3 value, float maxMagnitude)
+        {
+            if (!math.all(math.isfinite(value)))
+                return float3.zero;
+
+            float maxSafe = math.max(0f, maxMagnitude);
+            float lengthSq = math.lengthsq(value);
+            float maxSq = maxSafe * maxSafe;
+            if (lengthSq > maxSq && lengthSq > 0.000001f)
+                value *= maxSafe * math.rsqrt(lengthSq);
+
+            return ResolveFiniteFloat3OrZero(value);
         }
 
         public static float3 ResolveFiniteFloat3OrZero(float3 value)

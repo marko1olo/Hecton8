@@ -56,5 +56,5 @@ MonoBehaviour:
     tableKey: ITEM_INTERACT_TAKE
     fallbackText: Take
     variants: []
-  worldPrefab: {fileID: 0}
+  worldPrefab: {fileID: 5347411261108251368, guid: 23915a0462260944fad1abd2e26fb1b2, type: 3}
   worldBuoyancyProfile: {fileID: 0}

@@ -29,6 +29,7 @@ using Hecton8.Quest;
 using Hecton8.SaveSystem;
 using Hecton8.Systems.AI;
 using Hecton8.UI;
+using Hecton8.Visor;
 using Hecton8.World;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -554,12 +555,7 @@ namespace Hecton8.Bootstrap
             _fatalOverlayMessageBuilder.Length = 0;
             BootstrapState.Reset();
             RemoveH8MemoryFatalDumpHook();
-            if (_globalDataVault != null)
-            {
-                GlobalRegistry.UnregisterDataVault(_globalDataVault);
-                _globalDataVault.Dispose();
-                _globalDataVault = null;
-            }
+            ShutdownGlobalDataVaultForBootstrapTeardown();
             H8Memory.Shutdown();
             if (_sceneGuardRegistered)
             {
@@ -960,12 +956,17 @@ namespace Hecton8.Bootstrap
             Hecton8.Interaction.InteractionEvents.ResetStaticState();
             Hecton8.Crafting.CraftingEvents.ResetStaticState();
             Hecton8.Power.PowerGridTelemetryEvents.ResetStaticState();
+            PhysicsEventBus.Shutdown();
+            FrameTimeWatchdog.Shutdown();
+            MathGuard.Dispose();
             GlobalSignals.DisposeAllQueues();
             LogisticsPipeTransportScheduler.Shutdown();
             WorldSpatialHashGrid.ClearRuntimeState();
             global::Hecton8.Data.H8StaticDataArena.Shutdown();
             PreInitAssetIdMap.Shutdown();
             NativeArenaAllocator.Shutdown();
+            ShutdownGlobalDataVaultForBootstrapTeardown();
+            H8Memory.Shutdown();
             GlobalRegistry.DisposeServiceReboundQueuesForShutdown();
         }
 
@@ -996,6 +997,18 @@ namespace Hecton8.Bootstrap
 
             _jobAdmissionService = null;
             _jobAdmissionTelemetryBridge = null;
+        }
+
+        private static void ShutdownGlobalDataVaultForBootstrapTeardown()
+        {
+            if (_globalDataVault == null)
+                return;
+
+            if (ReferenceEquals(GlobalRegistry.DataVault, _globalDataVault))
+                GlobalRegistry.UnregisterDataVault(_globalDataVault);
+
+            _globalDataVault.Dispose();
+            _globalDataVault = null;
         }
 
         /// <summary>
@@ -2907,14 +2920,26 @@ namespace Hecton8.Bootstrap
         private static ConstructionManager EnsureConstructionServiceRegistered()
         {
             if (GlobalRegistry.Logistics is ConstructionManager registeredConstruction)
+            {
+                EnsureInternalFloodWaterlineRuntimeRegistered();
                 return registeredConstruction;
+            }
 
             ConstructionManager constructionManager = ConstructionManager.ActiveRuntimeInstance;
             if (constructionManager == null)
                 return null;
 
             constructionManager.InitializeService();
+            EnsureInternalFloodWaterlineRuntimeRegistered();
             return constructionManager;
+        }
+
+        private static InternalFloodWaterlineRuntime EnsureInternalFloodWaterlineRuntimeRegistered()
+        {
+            InternalFloodWaterlineRuntime runtime = InternalFloodWaterlineRuntime.EnsureRuntimeInstance();
+            PersistRuntimeService(runtime);
+            runtime.InitializeService();
+            return runtime;
         }
 
         private static SpatialAudioManager EnsureAudioServiceRegistered()

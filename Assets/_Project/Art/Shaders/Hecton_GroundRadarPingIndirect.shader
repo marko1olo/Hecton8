@@ -70,8 +70,9 @@ Shader "Hecton8/World/GroundRadarPingIndirect"
             half4 Frag(Varyings input) : SV_Target
             {
                 float2 centered = input.uv * 2.0 - 1.0;
-                float radius = length(centered);
-                clip(1.0 - radius);
+                float radiusSq = dot(centered, centered);
+                float radius = radiusSq * rsqrt(max(0.000001, radiusSq));
+                clip(1.0 - radiusSq);
 
                 float pulse = frac(_GroundRadarPulse * 0.85);
                 float band = abs(frac(radius * 4.0 - pulse) - 0.5);

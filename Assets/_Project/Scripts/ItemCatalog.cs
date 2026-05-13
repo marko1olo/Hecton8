@@ -297,7 +297,7 @@ namespace Hecton8.SaveSystem
                 prefabReference == null ||
                 !prefabReference.RuntimeKeyIsValid())
             {
-                return false;
+                return TryGetDirectWorldPrefabFallback(hashId, out _);
             }
 
             AssetLoadDispatcher dispatcher = Hecton8.Core.GlobalRegistry.AssetLoadDispatcher;
@@ -361,7 +361,7 @@ namespace Hecton8.SaveSystem
             PumpWorldPrefabDispatchTickets();
 
             if (_worldPrefabRuntimeLookup == null || !_worldPrefabRuntimeLookup.TryGetValue(hashId, out WorldPrefabRuntimeRecord runtimeRecord))
-                return false;
+                return TryGetDirectWorldPrefabFallback(hashId, out prefab);
 
             runtimeRecord.LastAccessFrame = Time.frameCount;
             CaptureCurrentPlayerAup(ref runtimeRecord);
@@ -370,7 +370,7 @@ namespace Hecton8.SaveSystem
             {
                 runtimeRecord.LoadState = WorldPrefabLoadState.Failed;
                 _worldPrefabRuntimeLookup[hashId] = runtimeRecord;
-                return false;
+                return TryGetDirectWorldPrefabFallback(hashId, out prefab);
             }
 
             if (runtimeRecord.LoadState == WorldPrefabLoadState.Queued)
@@ -386,7 +386,7 @@ namespace Hecton8.SaveSystem
                     CompleteWorldPrefabDispatch(ref runtimeRecord, success: false);
                     runtimeRecord.LoadState = WorldPrefabLoadState.Failed;
                     _worldPrefabRuntimeLookup[hashId] = runtimeRecord;
-                    return false;
+                    return TryGetDirectWorldPrefabFallback(hashId, out prefab);
                 }
 
                 CompleteWorldPrefabDispatch(ref runtimeRecord, success: true);
@@ -401,6 +401,13 @@ namespace Hecton8.SaveSystem
             _worldPrefabRuntimeLookup[hashId] = runtimeRecord;
             return prefab != null;
 #endif
+        }
+
+        private bool TryGetDirectWorldPrefabFallback(int hashId, out GameObject prefab)
+        {
+            ItemData item = FindByHash(hashId);
+            prefab = item != null ? item.worldPrefab : null;
+            return prefab != null;
         }
 
         public bool AreWorldPrefabsReadyNonAlloc(List<int> hashIds)

@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 1058539406748783995}
   - component: {fileID: 7682611757751396056}
   - component: {fileID: 848451706770078234}
+  - component: {fileID: 14875980349479308}
   m_Layer: 0
   m_Name: PFB_Submarine_Core
   m_TagString: Untagged
@@ -44,7 +45,7 @@ Rigidbody:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7469304799692171133}
   serializedVersion: 5
-  m_Mass: 1
+  m_Mass: 1200
   m_LinearDamping: 0
   m_AngularDamping: 0
   m_CenterOfMass: {x: 0, y: 0, z: 0}
@@ -75,6 +76,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f7432298f76f4204caaa36a377ccaad2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Hecton8.Core::Hecton8.Gameplay.SubmarineCoreDirector
+  submarineProfile: {fileID: 0}
+  installedUpgradeItemHashIds: 00000000000000000000000000000000
   platformFrame: {fileID: 5395448271717738479}
   inheritPlatformRotation: 1
   hullRigidbody: {fileID: 4782707706788331048}
@@ -137,7 +140,21 @@ MonoBehaviour:
   dischargeCoefficient: 0.62
   bulkheadFlowCoefficient: 0.4
   maxTransferPerTick: 0.1
+  nearZeroHeadDampingMeters: 0.15
   maximumIngressPerSecondNormalized: 0.25
+  deepFreezeSupplyRatioThreshold: 0.1
+  deepFreezeDepthThresholdMeters: 3000
+  maximumCompressionNormalized: 0.15
+  hydraulicLeakRateCubicMetersPerSecond: 0.006
+  maximumHydraulicViscosity: 1
+  viscositySloshDampingScale: 0.85
+  sludgePlayerDragMultiplier: 3.2
+  externalReferencePressureKPa: 101.325
+  minimumDepressurizationPressureDeltaKPa: 5
+  depressurizationReferenceMassKilograms: 80
+  maximumDepressurizationAccelerationMetersPerSecondSquared: 45
+  depressurizationRoomRadiusPaddingMeters: 1.25
+  depressurizationDistanceFloorMeters: 0.5
   sloshFactor: 0.15
   sloshMinimumVolumeCubicMeters: 0.05
   maxSloshTorque: 50000
@@ -145,10 +162,42 @@ MonoBehaviour:
   addedMassLinearDampingScale: 0.3
   sampleDepthFromAtmosphere: 1
   manualExternalDepthMeters: 0
+  hullImplosionDepthThresholdMeters: 4000
+  hullPressureRatingKPa: 40000
+  hullImplosionBreachAreaNormalized: 0.6
+  implosionDragBonus: 50
+  floraDragMinimumSpeedMetersPerSecond: 1
+  floraDragMinimumSampleRadiusMeters: 2.5
+  floraDragLinearMultiplier: 1.45
+  floraDragAngularMultiplier: 1.3
+  floraDragAddedMassAtFullDensityKilograms: 4000
+  floraCenterOfMassDownshiftMeters: 0.35
   exteriorHullCollider: {fileID: 0}
   exteriorDisplacementVolumeCubicMeters: 0
   exteriorBuoyancyForceClampScale: 1.15
   exteriorBuoyancyTorqueClampScale: 1.25
+  syncCargoMassFromInventoryEvents: 1
+  maxCargoMassKilograms: 12000
+  damageControlLeakMassKilogramsPerKpaSecond: 0.025
+  cargoDraftMetersPer1000Kg: 0.18
+  maxCargoDraftOffsetMeters: 1.2
+  safeCrushDepthMeters: 0
+  crushDepthBuoyancyScale: 0.85
+  forwardHydroDragCoefficient: 0.04
+  lateralHydroDragMultiplier: 5
+  verticalHydroDragCoefficient: 0.08
+  angularHydroDragCoefficient: 14
+  pitchRollRightingTorqueCoefficient: 18
+  hydroSolverMaxAcceleration: 45
+  hydroSolverMaxTorque: 85000
+  compressedAirUnits: 6
+  ballastBlowAirCost: 1
+  ballastBlowDurationSeconds: 1.75
+  ballastBlowUpAcceleration: 2.8
+  surfacingBreachSpeedMetersPerSecond: 15
+  cavitationThrottleThreshold: 0.98
+  cavitationStallSpeedMetersPerSecond: 2
+  cavitationCooldownSeconds: 0.35
   _debugConfiguredCompartmentCount: 0
   _debugConfiguredBulkheadCount: 0
   _debugExternalDepthMeters: 0
@@ -167,6 +216,30 @@ MonoBehaviour:
   _debugAppliedLinearDamping: 0
   _debugAppliedAngularDamping: 0
   _debugSubmersionFactor: 0
+  _debugHullImplosionActive: 0
+  _debugExternalPressureKPa: 0
+  _debugCompressionScale: 1
+  _debugFloraDragDensity: 0
+  _debugFloraAddedMassKilograms: 0
+  _debugTotalCargoMassKilograms: 0
+  _debugBallastWaterMassKilograms: 0
+  _debugDockedExternalMassKilograms: 0
+  _debugDamageControlLeakAddedMassKilograms: 0
+  _debugCargoMassScalar: 0
+  _debugCargoDraftOffsetMeters: 0
+  _debugCrushBuoyancyScale: 1
+  _debugTargetBuoyancyBias01: 0
+  _debugCompressedAirUnits: 0
+  _debugHydroForwardSpeed: 0
+  _debugHydroLateralSpeed: 0
+  _debugHydroVerticalSpeed: 0
+  _debugHydroDragAcceleration: {x: 0, y: 0, z: 0}
+  _debugHydroTorque: {x: 0, y: 0, z: 0}
+  _debugTowingTensionVector: {x: 0, y: 0, z: 0}
+  _debugCavitationActive: 0
+  _debugLastThermalAnomalyCenter: {x: 0, y: 0, z: 0}
+  _debugLastThermalAnomalyTemperature: 0
+  _debugLastThermalAnomalyDepth: 0
 --- !u!114 &7682611757751396056
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -186,47 +259,142 @@ MonoBehaviour:
     initialCarbonDioxideFraction: 0
     oxygenConsumptionUnitsPerSecond: 0
     carbonDioxideGenerationUnitsPerSecond: 0
+    passiveHeatWatts: 0
+    initialTemperatureCelsius: 0
+    primaryStructuralMaterial: 0
   - gasCapacityOverrideCubicMeters: 0
     initialOxygenFraction: 0
     initialCarbonDioxideFraction: 0
     oxygenConsumptionUnitsPerSecond: 0
     carbonDioxideGenerationUnitsPerSecond: 0
+    passiveHeatWatts: 0
+    initialTemperatureCelsius: 0
+    primaryStructuralMaterial: 0
   - gasCapacityOverrideCubicMeters: 0
     initialOxygenFraction: 0
     initialCarbonDioxideFraction: 0
     oxygenConsumptionUnitsPerSecond: 0
     carbonDioxideGenerationUnitsPerSecond: 0
+    passiveHeatWatts: 0
+    initialTemperatureCelsius: 0
+    primaryStructuralMaterial: 0
   - gasCapacityOverrideCubicMeters: 0
     initialOxygenFraction: 0
     initialCarbonDioxideFraction: 0
     oxygenConsumptionUnitsPerSecond: 0
     carbonDioxideGenerationUnitsPerSecond: 0
+    passiveHeatWatts: 0
+    initialTemperatureCelsius: 0
+    primaryStructuralMaterial: 0
   - gasCapacityOverrideCubicMeters: 0
     initialOxygenFraction: 0
     initialCarbonDioxideFraction: 0
     oxygenConsumptionUnitsPerSecond: 0
     carbonDioxideGenerationUnitsPerSecond: 0
+    passiveHeatWatts: 0
+    initialTemperatureCelsius: 0
+    primaryStructuralMaterial: 0
   - gasCapacityOverrideCubicMeters: 0
     initialOxygenFraction: 0
     initialCarbonDioxideFraction: 0
     oxygenConsumptionUnitsPerSecond: 0
     carbonDioxideGenerationUnitsPerSecond: 0
+    passiveHeatWatts: 0
+    initialTemperatureCelsius: 0
+    primaryStructuralMaterial: 0
   - gasCapacityOverrideCubicMeters: 0
     initialOxygenFraction: 0
     initialCarbonDioxideFraction: 0
     oxygenConsumptionUnitsPerSecond: 0
     carbonDioxideGenerationUnitsPerSecond: 0
+    passiveHeatWatts: 0
+    initialTemperatureCelsius: 0
+    primaryStructuralMaterial: 0
   - gasCapacityOverrideCubicMeters: 0
     initialOxygenFraction: 0
     initialCarbonDioxideFraction: 0
     oxygenConsumptionUnitsPerSecond: 0
     carbonDioxideGenerationUnitsPerSecond: 0
+    passiveHeatWatts: 0
+    initialTemperatureCelsius: 0
+    primaryStructuralMaterial: 0
   referencePressureKPa: 101.325
   doorConductance: 0.045
   maxTransferUnitsPerSecond: 1.5
   minimumGasVolumeCubicMeters: 0.05
   maximumPressureKPa: 400
   highPressureEventThresholdKPa: 150
+  oxygenTankCapacity: 100
+  lowOxygenThreshold01: 0.2
+  playerOxygenConsumptionPercentPerSecond: 0.5
+  atmosphereSlowTickSeconds: 1
+  heatWattsToCelsiusPerSecond: 0.001
+  overheatBrownoutTemperatureCelsius: 80
+  overheatMinimumVoltage: 0.18
+  toxicRoomHazardIntensity: 1
+  fireSmokeHazardIntensity: 0.85
+  roomHazardRadiusPaddingMeters: 1.25
+  fireSmokeVisorGlitchBias: 1.15
+  fireSmokeSootScreenRadiusScale: 0.08
+  fireSmokeSootDitherStrength: 0.58
+  fireSmokeSootDarkenStrength: 0.42
+  lowOxygenGaspingAudioLog: {fileID: 0}
+  lowOxygenAudioCooldownSeconds: 45
+  freezingRoomTemperatureCelsius: 0
+  pressureScreechClips: []
+  pressureScreechCooldownSeconds: 2.75
+  pressureScreechVolume: 0.82
+  pressureScreechPitchMin: 0.86
+  pressureScreechPitchMax: 1.08
+  toxicRoomVisorPulseCooldownSeconds: 0.35
+  referenceTemperatureCelsius: 20
+  floodWaterTemperatureCelsius: 4
+  minimumTemperatureCelsius: -5
+  maximumTemperatureCelsius: 90
+  airDensityKilogramsPerCubicMeter: 1.225
+  airSpecificHeatJoulesPerKilogramKelvin: 1005
+  waterDensityKilogramsPerCubicMeter: 1027
+  waterSpecificHeatJoulesPerKilogramKelvin: 3990
+  minimumThermalCapacityJoulesPerKelvin: 400
+  bulkheadThermalConductivityWattsPerKelvin: 185
+  sealedBulkheadThermalCoupling: 0.35
+  openBulkheadThermalCoupling: 1
+  referenceTemperatureKelvin: 293.15
+  steamExpansionRatio: 1600
+  steamGenerationRateCubicMetersPerSecondPerCelsius: 0.00045
+  steamCondensationCoefficient: 0.012
+  steamVentReleaseFraction: 0.35
+  steamVentMinimumPressureRatio: 0.92
+  steamVentImpulsePerKilopascal: 55
+  fabricatorHeatWattsScale: 0.92
+  drillHeatWattsScale: 0.97
+  reactorHeatWattsScale: 1.15
+  deepFreezeDepthThresholdMeters: 3000
+  deepFreezeSupplyRatioThreshold: 0.1
+  deepFreezeTauSeconds: 8
+  deepFreezeTargetTemperatureCelsius: -3
+  brownoutOxygenSupplyRatioThreshold: 0.4
+  brownoutOccupiedRoomOxygenConsumptionUnitsPerSecond: 0.0008
+  boilingFloodTemperatureCelsius: 80
+  boilingFloodMinimumFillRatio: 0.15
+  boilingHazardIntensity: 1.1
+  boilingHazardRadiusPaddingMeters: 1.25
+  boilingFaunaDamagePerSecond: 14
+  reactorMeltdownTemperatureCelsius: 150
+  reactorMeltdownImpulseDurationSeconds: 0.18
+  reactorMeltdownImpulsePerWattSecond: 42
+  reactorMeltdownMinimumImpulseNewtonSeconds: 3200
+  reactorMeltdownMaximumImpulseNewtonSeconds: 28000
+  reactorMeltdownUpwardBias: 0.55
+  reactorMeltdownFloodAmplification: 1.35
+  thermalFatigueThresholdCelsius: 120
+  glassThermalFatigueMultiplier: 5
+  titaniumThermalFatigueMultiplier: 0.1
+  explosivePocketDecayPerSecond: 0.35
+  explosivePocketThreshold: 0.15
+  explosionImpulsePerPocketUnit: 24000
+  explosionMaximumImpulseNewtonSeconds: 120000
+  explosionPressureSpikeKPa: 55
   pressureImpulseRadiusMeters: 2.5
   pressureImpulseDurationSeconds: 0.12
   pressureImpulseFalloffExponent: 1.5
@@ -240,6 +408,10 @@ MonoBehaviour:
   _debugMaxPressureKPa: 0
   _debugAverageOxygenFraction: 0
   _debugAverageCarbonDioxideFraction: 0
+  _debugAverageTemperatureCelsius: 0
+  _debugMaxTemperatureCelsius: 0
+  _debugAverageSteamVolumeCubicMeters: 0
+  _debugMaxSteamVolumeCubicMeters: 0
 --- !u!114 &848451706770078234
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -264,5 +436,70 @@ MonoBehaviour:
   sigmaScale: 0.45
   impactSpeedToCellDamageScale: 9
   integrityByteToCellDamageScale: 1.15
+  hullImpactDentDecalPrefab: {fileID: 0}
+  minimumDentDecalSizeMeters: 0.35
+  dentDecalSizeFromSeverityMeters: 0.95
+  dentDecalProjectionDepthMeters: 0.18
+  dentDecalSurfaceOffsetMeters: 0.015
+  dentDecalLifetimeSeconds: 4
+  hullCollisionYieldEnergyJoules: 12000
+  hullCollisionFullDentEnergyJoules: 65000
+  hullCollisionMaxIntegrityDelta: 96
+  hullImpactSparkMaterial: {fileID: 0}
+  hullImpactSparkMaxParticles: 192
+  hullImpactSparkMaxBurstCount: 50
+  hullImpactScratchDecalPrefab: {fileID: 0}
+  hullImpactDecalPoolWarmupCount: 8
   hullCollider: {fileID: 0}
   fluidDynamics: {fileID: 0}
+  atmosphereSystem: {fileID: 0}
+  leakPlumeCompute: {fileID: 7200000, guid: d234d90cb2691aa47a9982b72968605e, type: 3}
+  leakPlumeRenderMaterial: {fileID: 2100000, guid: 3f583590a43a3d94d954e04de649999d, type: 2}
+  pressureToBreachSeverityScale: 0.00025
+  repairUnitsToBreachSeverityScale: 0.01
+  leakAudioCadenceSeconds: 0.35
+  leakPlumeParticleSizeMeters: 0.18
+  leakPlumeRenderBoundsPaddingMeters: 4
+  fatiguePressureThresholdKPa: 150
+  fatigueIntegrityLossPerCycle: 4
+  compressionDepthThresholdMeters: 3000
+  compressionFullPressureKPa: 60000
+  maximumVolumeCompressionNormalized: 0.15
+  fakeCrushDepthMeters: 4000
+  fakeCrushMaxVertexDisplacementMeters: 0.22
+  fakeCrushEffectRadiusMeters: 18
+  fakeCrushVoronoiScale: 0.18
+--- !u!114 &14875980349479308
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7469304799692171133}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c1cdd4f43d41e9845a51d240975ae71b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Gameplay.SubmarineAutoLevelBallastController
+  autoLevelEnabled: 1
+  proportionalGain: 42000
+  integralGain: 2400
+  derivativeGain: 15000
+  integralClamp: 0.35
+  maxTorqueNewtons: 90000
+  neutralBallastFill01: 0.38
+  ballastTankVolumeCubicMeters: 0.85
+  pumpFillRate01PerSecond: 0.18
+  ballastBlowRate01PerSecond: 0.45
+  pumpEnergyWattSecondsPerFill01: 320
+  maxCommandBallastBias01: 0.22
+  airReleaseAudioFillDeltaThreshold: 0.035
+  mathLodSwitchHoldSeconds: 2.5
+  baseCenterOfMassLocal: {x: 0, y: 0, z: 0}
+  frontTankLocalPosition: {x: 0, y: -0.35, z: 2.4}
+  aftTankLocalPosition: {x: 0, y: -0.35, z: -2.4}
+  portTankLocalPosition: {x: -1.1, y: -0.35, z: 0}
+  starboardTankLocalPosition: {x: 1.1, y: -0.35, z: 0}
+  combatTargetHealth: 250
+  massiveImpactDamageThreshold: 35
+  combatArmorValue: 8

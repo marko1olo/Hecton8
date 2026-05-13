@@ -49,6 +49,7 @@ namespace Hecton8.Core.Scheduling
         private int _criticalDebtFrameCount;
         private uint _refillFrameSequence;
         private uint _systemKillSwitchMask;
+        private uint _lastFaultDumpFrameSequence;
         private float _overflowEwmaCostMs;
         private bool _initialized;
         private bool _aupBarrierActive;
@@ -78,6 +79,7 @@ namespace Hecton8.Core.Scheduling
             _ewmaCostsMs = new NativeArray<float>(CostSlotCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[256] - fixed EWMA cost table - owner: BurstTokenBucketJobAdmissionService
             _blackbox = new NativeArray<JobAdmissionBlackboxEntry>(BlackboxCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<JobAdmissionBlackboxEntry>[300] - admission blackbox ring - owner: BurstTokenBucketJobAdmissionService
             _overflowEwmaCostMs = OverflowEstimatedCostMs;
+            _lastFaultDumpFrameSequence = uint.MaxValue;
 
             for (int i = 0; i < LaneCount; i++)
             {
@@ -125,7 +127,13 @@ namespace Hecton8.Core.Scheduling
                 }
 
                 float next = current + refill;
-                float cap = _baseRefillMs[lane] * MaxDeltaRefillScale;
+                float cap = _baseRefillMs[lane] * MaxDeltaRefillScale * tierScale;
+                if (!math.isfinite(next))
+                {
+                    ReportNonFinite((JobAdmissionLane)lane, 0u, next);
+                    next = cap;
+                }
+
                 _laneBudgetsMs[lane] = math.min(next, cap);
                 _telemetrySink?.ReportLaneState((JobAdmissionLane)lane, _laneBudgetsMs[lane], refill, _criticalDebtFrameCount, _systemKillSwitchMask);
             }
@@ -151,30 +159,31 @@ namespace Hecton8.Core.Scheduling
                 return true;
 
             int laneIndex = ClampLane(lane);
+            JobAdmissionLane normalizedLane = (JobAdmissionLane)laneIndex;
             estimatedCostMs = ResolveEstimatedCostMs(jobHash);
             if (!math.isfinite(estimatedCostMs) || estimatedCostMs < 0f)
             {
-                ReportNonFinite(lane, jobHash, estimatedCostMs);
+                ReportNonFinite(normalizedLane, jobHash, estimatedCostMs);
                 estimatedCostMs = DefaultEstimatedCostMs;
             }
 
             float budget = _laneBudgetsMs[laneIndex];
             if (!math.isfinite(budget))
             {
-                ReportNonFinite(lane, jobHash, budget);
+                ReportNonFinite(normalizedLane, jobHash, budget);
                 budget = 0f;
                 _laneBudgetsMs[laneIndex] = 0f;
             }
 
             if (_aupBarrierActive && laneIndex != JobAdmissionLanes.Lane0Critical)
             {
-                ReportDenied(lane, jobHash, estimatedCostMs, budget);
+                ReportDenied(normalizedLane, jobHash, estimatedCostMs, budget);
                 return false;
             }
 
             if (laneIndex == JobAdmissionLanes.Lane4VFX && (_systemKillSwitchMask & KillSwitchDisableVfxMask) != 0u)
             {
-                ReportDenied(lane, jobHash, estimatedCostMs, budget);
+                ReportDenied(normalizedLane, jobHash, estimatedCostMs, budget);
                 return false;
             }
 
@@ -184,19 +193,19 @@ namespace Hecton8.Core.Scheduling
                 float nextBudget = math.max(LaneDebtFloorMs, budget - estimatedCostMs);
                 float nextDebt = math.max(0f, -nextBudget);
                 _laneBudgetsMs[laneIndex] = nextBudget;
-                BorrowCriticalDebt(math.max(0f, nextDebt - previousDebt));
-                WriteBlackbox(lane, jobHash, estimatedCostMs, _laneBudgetsMs[laneIndex], admitted: true);
+                BorrowCriticalDebt(math.max(0f, nextDebt - previousDebt), jobHash);
+                WriteBlackbox(normalizedLane, jobHash, estimatedCostMs, _laneBudgetsMs[laneIndex], admitted: true);
                 return true;
             }
 
             if (budget >= estimatedCostMs)
             {
                 _laneBudgetsMs[laneIndex] = budget - estimatedCostMs;
-                WriteBlackbox(lane, jobHash, estimatedCostMs, _laneBudgetsMs[laneIndex], admitted: true);
+                WriteBlackbox(normalizedLane, jobHash, estimatedCostMs, _laneBudgetsMs[laneIndex], admitted: true);
                 return true;
             }
 
-            ReportDenied(lane, jobHash, estimatedCostMs, budget);
+            ReportDenied(normalizedLane, jobHash, estimatedCostMs, budget);
             return false;
         }
 
@@ -206,9 +215,10 @@ namespace Hecton8.Core.Scheduling
             if (!_initialized || jobHash == 0u)
                 return;
 
+            JobAdmissionLane normalizedLane = (JobAdmissionLane)ClampLane(lane);
             if (!math.isfinite(measuredCompleteMs) || measuredCompleteMs < 0f)
             {
-                ReportNonFinite(lane, jobHash, measuredCompleteMs);
+                ReportNonFinite(normalizedLane, jobHash, measuredCompleteMs);
                 return;
             }
 
@@ -271,6 +281,7 @@ namespace Hecton8.Core.Scheduling
             _criticalDebtFrameCount = 0;
             _refillFrameSequence = 0u;
             _systemKillSwitchMask = 0u;
+            _lastFaultDumpFrameSequence = 0u;
             _overflowEwmaCostMs = 0f;
             _aupBarrierActive = false;
             _initialized = false;
@@ -341,7 +352,7 @@ namespace Hecton8.Core.Scheduling
             return -1;
         }
 
-        private void BorrowCriticalDebt(float debtMs)
+        private void BorrowCriticalDebt(float debtMs, uint jobHash)
         {
             float remainingDebt = debtMs;
             if (remainingDebt <= 0f)
@@ -350,6 +361,13 @@ namespace Hecton8.Core.Scheduling
             for (int lane = JobAdmissionLanes.Lane5IO; lane >= JobAdmissionLanes.Lane1World; lane--)
             {
                 float budget = _laneBudgetsMs[lane];
+                if (!math.isfinite(budget))
+                {
+                    ReportNonFinite((JobAdmissionLane)lane, jobHash, budget);
+                    _laneBudgetsMs[lane] = 0f;
+                    continue;
+                }
+
                 if (budget <= 0f)
                     continue;
 
@@ -369,8 +387,41 @@ namespace Hecton8.Core.Scheduling
 
         private void ReportNonFinite(JobAdmissionLane lane, uint jobHash, float value)
         {
+            DumpFaultStateToTelemetry();
             _telemetrySink?.ReportNonFiniteAdmissionState(lane, jobHash, value);
             WriteBlackbox(lane, jobHash, value, 0f, admitted: false);
+        }
+
+        private void DumpFaultStateToTelemetry()
+        {
+            if (_telemetrySink == null || _lastFaultDumpFrameSequence == _refillFrameSequence)
+                return;
+
+            _lastFaultDumpFrameSequence = _refillFrameSequence;
+            for (int lane = 0; lane < LaneCount; lane++)
+            {
+                float budget = _laneBudgetsMs.IsCreated ? _laneBudgetsMs[lane] : 0f;
+                float refill = _baseRefillMs.IsCreated ? _baseRefillMs[lane] : 0f;
+                _telemetrySink.ReportLaneState(
+                    (JobAdmissionLane)lane,
+                    math.isfinite(budget) ? budget : 0f,
+                    math.isfinite(refill) ? refill : 0f,
+                    _criticalDebtFrameCount,
+                    _systemKillSwitchMask);
+            }
+
+            int slotCount = math.min(_costSlotCount, CostSlotCapacity);
+            float overflow = ResolveOverflowEstimatedCostMs();
+            for (int slot = 0; slot < slotCount; slot++)
+            {
+                float cost = _ewmaCostsMs[slot];
+                _telemetrySink.ReportCostState(
+                    slot,
+                    _jobHashes[slot],
+                    math.isfinite(cost) ? cost : 0f,
+                    slotCount,
+                    overflow);
+            }
         }
 
         private void WriteBlackbox(JobAdmissionLane lane, uint jobHash, float estimatedCostMs, float remainingBudgetMs, bool admitted)

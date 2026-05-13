@@ -241,6 +241,7 @@ namespace Hecton8.Core
         };
 
         private static IFoveatedDispatcher _foveatedSimulationManager = new FoveatedSimulationManager();
+        private static IModdingBridge _moddingBridgeProjectionRuntime;
         // COLD ALLOC: IDispatcherRaycastReceiver[256] - dispatcher-owned pending raycast receivers - owner: SystemDispatcher
         private static readonly IDispatcherRaycastReceiver[] _pendingDispatcherRaycastReceivers = new IDispatcherRaycastReceiver[MaxQueuedDispatcherRaycasts];
         // COLD ALLOC: int[256] - dispatcher-owned pending raycast request ids - owner: SystemDispatcher
@@ -396,6 +397,18 @@ namespace Hecton8.Core
             Volatile.Write(ref _streamingStorageDebtSequence, unchecked(Volatile.Read(ref _streamingStorageDebtSequence) + 1));
         }
 
+        internal static void SetModdingBridgeProjectionRuntime(IModdingBridge bridge)
+        {
+            if (bridge != null)
+                _moddingBridgeProjectionRuntime = bridge;
+        }
+
+        internal static void ClearModdingBridgeProjectionRuntime(IModdingBridge bridge)
+        {
+            if (ReferenceEquals(_moddingBridgeProjectionRuntime, bridge))
+                _moddingBridgeProjectionRuntime = null;
+        }
+
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         internal static bool TryGetLastPostFixedGcAttribution(
             out string ownerName,
@@ -474,6 +487,7 @@ namespace Hecton8.Core
             _temporalCompressionActive = false;
             _temporalCompressionFrameCount = 0;
             _pdaOverBudgetConsecutiveFrames = 0;
+            _moddingBridgeProjectionRuntime = null;
             ActiveRuntimeInstance = null;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             _currentPostFixedGcOwner = null;
@@ -1207,6 +1221,7 @@ namespace Hecton8.Core
             {
                 _foveatedSimulationManager.Dispose();
                 DisposeDispatcherRaycastBuffers();
+                DisposeH8TimeArray();
                 ThreadSafeCommandQueue.Shutdown();
                 if (ReferenceEquals(GlobalRegistry.Dispatcher, this))
                     GlobalRegistry.UnregisterSystemDispatcher(this);
@@ -1227,7 +1242,6 @@ namespace Hecton8.Core
             _aupPreShiftPauseFrame = -1;
             ClearCoreTickDilationBurst();
             _dataVault = null;
-            DisposeH8TimeArray();
             _timeSnapshot = default;
             CurrentFrameDeltaTime = 0f;
             CurrentFrameUnscaledDeltaTime = 0f;
@@ -1445,7 +1459,9 @@ namespace Hecton8.Core
                 RunColdTick(deltaTime, blockGameplayLanes);
                 RunFrostTick(deltaTime, blockGameplayLanes);
                 ScheduleDispatcherRaycasts();
-                GlobalRegistry.ModdingBridge?.ProjectPostSimulation();
+                IModdingBridge moddingBridge = _moddingBridgeProjectionRuntime;
+                if (moddingBridge != null)
+                    moddingBridge.ProjectPostSimulation();
                 double tickOverheadMilliseconds =
                     (System.Diagnostics.Stopwatch.GetTimestamp() - dispatcherTickStartTimestamp) * 1000.0 /
                     System.Diagnostics.Stopwatch.Frequency;
@@ -2579,12 +2595,14 @@ namespace Hecton8.Core
 
         private static void DisposeDispatcherRaycastBuffers()
         {
-            JobHandle scheduledRaycastDependency = default;
             if (_dispatcherRaycastsScheduled)
             {
-                scheduledRaycastDependency = _scheduledDispatcherRaycastHandle;
-                _scheduledDispatcherRaycastHandle = default;
+                DispatcherJobSwap.TryComplete(ref _scheduledDispatcherRaycastHandle, forceComplete: true);
                 _dispatcherRaycastsScheduled = false;
+            }
+            else
+            {
+                _scheduledDispatcherRaycastHandle = default;
             }
 
             if (_pendingDispatcherRaycastCommands.IsCreated)
@@ -2594,11 +2612,18 @@ namespace Hecton8.Core
                 _pendingDispatcherRaycastCommands = default;
             }
 
-            JobHandle disposeHandle = scheduledRaycastDependency;
-            DisposeNativeList(ref _scheduledDispatcherRaycastCommands, ref disposeHandle);
-            DisposeNativeArray(ref _scheduledDispatcherRaycastHits, ref disposeHandle);
-            JobHandle.ScheduleBatchedJobs();
-            DispatcherJobSwap.TryComplete(ref disposeHandle, forceComplete: true);
+            if (_scheduledDispatcherRaycastCommands.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeList(nameof(SystemDispatcher), nameof(_scheduledDispatcherRaycastCommands));
+                _scheduledDispatcherRaycastCommands.Dispose();
+                _scheduledDispatcherRaycastCommands = default;
+            }
+
+            if (_scheduledDispatcherRaycastHits.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_scheduledDispatcherRaycastHits);
+                H8Memory.Release(ref _scheduledDispatcherRaycastHits);
+            }
 
             _pendingDispatcherRaycastCount = 0;
             _scheduledDispatcherRaycastCount = 0;
@@ -2606,25 +2631,6 @@ namespace Hecton8.Core
             System.Array.Clear(_pendingDispatcherRaycastRequestIds, 0, _pendingDispatcherRaycastRequestIds.Length);
             System.Array.Clear(_scheduledDispatcherRaycastReceivers, 0, _scheduledDispatcherRaycastReceivers.Length);
             System.Array.Clear(_scheduledDispatcherRaycastRequestIds, 0, _scheduledDispatcherRaycastRequestIds.Length);
-        }
-
-        private static void DisposeNativeList<T>(ref NativeList<T> list, ref JobHandle dependency) where T : unmanaged
-        {
-            if (!list.IsCreated)
-                return;
-
-            NativeMemorySentinel.UnregisterNativeList(nameof(SystemDispatcher), nameof(_scheduledDispatcherRaycastCommands));
-            dependency = list.Dispose(dependency);
-            list = default;
-        }
-
-        private static void DisposeNativeArray<T>(ref NativeArray<T> array, ref JobHandle dependency) where T : struct
-        {
-            if (!array.IsCreated)
-                return;
-
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            dependency = H8Memory.Release(ref array, dependency);
         }
 
         private static bool ShouldSkipLaneDuringBootstrap(int laneIndex, bool blockGameplayLanes)

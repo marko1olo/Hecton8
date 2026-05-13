@@ -50,16 +50,20 @@ namespace Hecton8.Gameplay
         public NativeArray<float3> IntendedMovement;
         public NativeArray<float3> FlowVelocity;
         public NativeArray<float3> LastValidPositions;
+        [ReadOnly] public NativeArray<WhirlpoolFlow> ActiveMaelstroms;
         public NativeArray<PlayerKinematicsRuntimeTelemetryEntry> Telemetry;
         public NativeArray<int> TelemetryWriteIndex;
         public NativeArray<int> FaultFlags;
+        public int ActiveMaelstromCount;
         public float DeltaTime;
         public float DragCoefficient;
         public float WaterDensity;
         public float EquipmentDragMultiplier;
+        public float MaelstromVelocityClamp;
         public float LadderSnapRadiusSq;
         public float3 LadderPoint;
         public float SolidDensity;
+        public byte LowMaelstromTier;
         public uint Frame;
         public uint RuntimeFlags;
 
@@ -75,6 +79,15 @@ namespace Hecton8.Gameplay
             float dragTerm = drag * density * dt;
             velocity *= math.rcp(1.0f + math.max(0.0f, dragTerm));
             velocity += FlowVelocity[0] * dt;
+            if (ActiveMaelstromCount > 0)
+            {
+                velocity += HectonAnalyticalFlowField.SampleWhirlpoolVelocity(
+                    position,
+                    ActiveMaelstroms,
+                    ActiveMaelstromCount,
+                    LowMaelstromTier,
+                    MaelstromVelocityClamp) * dt;
+            }
 
             if ((RuntimeFlags & PlayerKinematicsRuntime.BodyFlagLadderActive) != 0u)
             {
@@ -239,6 +252,7 @@ namespace Hecton8.Gameplay
         internal const int FaultStateCorrection = 1 << 4;
         internal const uint BodyFlagLadderActive = 1u << 0;
         internal const uint BodyFlagInSolid = 1u << 1;
+        internal const uint BodyFlagMaelstromActive = 1u << 2;
         private const uint SyncStateFlagCorrection = 1u << 24;
         private const uint SyncStateFlagApplyRotation = 1u << 25;
         private const int EntityCount = 1;
@@ -255,6 +269,7 @@ namespace Hecton8.Gameplay
         private const float DragCoefficientBase = 0.18f;
         private const float DragCoefficientLoadScale = 0.35f;
         private const float AdvectionVelocityScale = 0.55f;
+        private const float MaelstromVelocityClamp = 8.5f;
         private const float StaminaDrainPerSecond = 0.025f;
         private const float WallImpactRollThreshold = 4.0f;
         private const float WallImpactRollDegrees = 9.0f;
@@ -395,6 +410,14 @@ namespace Hecton8.Gameplay
             _positions[0] = ToFloat3(_body.position);
             _velocities[0] = ToFloat3(_body.linearVelocity);
             _flowVelocity[0] = ResolveCurrentAdvection(_body.position);
+            NativeArray<WhirlpoolFlow> activeMaelstroms = default;
+            int activeMaelstromCount = 0;
+            if (_fluid != null &&
+                _fluid.TryGetActiveWhirlpoolFlows(out NativeArray<WhirlpoolFlow> fluidMaelstroms, out int fluidMaelstromCount))
+            {
+                activeMaelstroms = fluidMaelstroms;
+                activeMaelstromCount = fluidMaelstromCount;
+            }
 
             var bodyJob = new PlayerKinematicsBodyJob
             {
@@ -403,18 +426,23 @@ namespace Hecton8.Gameplay
                 IntendedMovement = _intendedMovement,
                 FlowVelocity = _flowVelocity,
                 LastValidPositions = _lastValidPositions,
+                ActiveMaelstroms = activeMaelstroms,
                 Telemetry = _telemetry,
                 TelemetryWriteIndex = _telemetryWriteIndex,
                 FaultFlags = _faultFlags,
+                ActiveMaelstromCount = activeMaelstromCount,
                 DeltaTime = fixedDeltaTime,
                 DragCoefficient = math.max(0.0f, dragCoefficient),
                 WaterDensity = ResolveRuntimeWaterDensityScale(),
                 EquipmentDragMultiplier = ResolveEquipmentDragMultiplier(),
+                MaelstromVelocityClamp = MaelstromVelocityClamp,
                 LadderSnapRadiusSq = LadderSnapRadius * LadderSnapRadius,
                 LadderPoint = ladderPoint,
                 SolidDensity = solidDensity,
+                LowMaelstromTier = IsLowTier(GlobalRegistry.ScalabilityTier) ? (byte)1 : (byte)0,
                 Frame = (uint)Time.frameCount,
-                RuntimeFlags = ResolveBodyFlags(ladderActive, inSolid)
+                RuntimeFlags = ResolveBodyFlags(ladderActive, inSolid) |
+                               math.select(0u, BodyFlagMaelstromActive, activeMaelstromCount > 0)
             };
             bodyJob.Run();
 

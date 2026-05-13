@@ -612,6 +612,18 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Records one scheduler EWMA cost-table slot before a forced fault export.
+        /// </summary>
+        public static void ReportJobAdmissionCostState(int slotIndex, uint jobHash, float ewmaCostMs, int costSlotCount, float overflowEwmaCostMs)
+        {
+            CrashTelemetryBuffer instance = GlobalRegistry.CrashTelemetry;
+            if (instance == null || !instance._ringBuffer.IsCreated)
+                return;
+
+            instance.WriteJobAdmissionCostTelemetry(slotIndex, jobHash, ewmaCostMs, costSlotCount, overflowEwmaCostMs);
+        }
+
+        /// <summary>
         /// Records non-finite scheduler state and forces an immediate black-box export.
         /// </summary>
         public static void ReportJobAdmissionNonFinite(byte lane, uint jobHash, float value)
@@ -1361,6 +1373,30 @@ namespace Hecton8.Core
             entry.AupShiftSequence = shiftEvent.Sequence;
             entry.AiStatePacked = killSwitchMask;
             entry.SubsystemHeatPacked = PackJobAdmissionState(criticalDebtFrames, 0);
+            entry.LastOriginShiftFrame = unchecked((uint)Math.Max(0, shiftEvent.Frame));
+            _ringBuffer[writeIndex] = entry;
+        }
+
+        private void WriteJobAdmissionCostTelemetry(int slotIndex, uint jobHash, float ewmaCostMs, int costSlotCount, float overflowEwmaCostMs)
+        {
+            uint frameIndex = unchecked((uint)Time.frameCount);
+            int writeIndex = ReserveTelemetryWriteIndex();
+            OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
+
+            TelemetryEntry entry = default;
+            entry.FrameIndex = frameIndex;
+            entry.SystemMask = (uint)SystemBits.Scheduler;
+            entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
+            entry.LatencyMs = ewmaCostMs;
+            entry.GpuFrameTime = overflowEwmaCostMs;
+            entry.MemoryUsedMb = SampleReservedMemoryMegabytes();
+            entry.PlayerAup = SamplePlayerPosition(out _);
+            entry.ActiveChunkCount = unchecked((uint)Math.Max(0, slotIndex));
+            entry.ErrorFlags = (uint)ErrorBits.JobAdmissionStarvation;
+            entry.ExportReason = (uint)ExportReason.JobAdmissionStarvation;
+            entry.AupShiftSequence = shiftEvent.Sequence;
+            entry.AiStatePacked = jobHash;
+            entry.SubsystemHeatPacked = unchecked((uint)Math.Max(0, costSlotCount));
             entry.LastOriginShiftFrame = unchecked((uint)Math.Max(0, shiftEvent.Frame));
             _ringBuffer[writeIndex] = entry;
         }

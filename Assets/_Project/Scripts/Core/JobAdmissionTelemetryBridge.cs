@@ -49,6 +49,17 @@ namespace Hecton8.Core
         }
 
         /// <inheritdoc />
+        public void ReportCostState(int slotIndex, uint jobHash, float ewmaCostMs, int costSlotCount, float overflowEwmaCostMs)
+        {
+            CrashTelemetryBuffer.ReportJobAdmissionCostState(
+                slotIndex,
+                jobHash,
+                math.isfinite(ewmaCostMs) ? ewmaCostMs : 0f,
+                costSlotCount,
+                math.isfinite(overflowEwmaCostMs) ? overflowEwmaCostMs : 0f);
+        }
+
+        /// <inheritdoc />
         public void ReportNonFiniteAdmissionState(JobAdmissionLane lane, uint jobHash, float value)
         {
             CpuStarvationSignal signal = new CpuStarvationSignal

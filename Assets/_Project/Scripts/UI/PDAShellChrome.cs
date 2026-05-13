@@ -391,7 +391,7 @@ namespace Hecton8.UI
             bool intrusionActive = _intrusionManager != null && _intrusionManager.IsHacked;
             bool mechModeActive = _playerMovement != null && _playerMovement.CurrentLocomotionMode == PlayerLocomotionMode.ExosuitLocomotion;
             float storageDebt01 = SystemDispatcher.StreamingStorageDebt01;
-            bool dataLinkDegraded = storageDebt01 > 0.6f;
+            bool dataLinkDegraded = _lastDataLinkDegraded ? storageDebt01 > 0.45f : storageDebt01 > 0.6f;
             int storageDebtBucket = (int)math.round(storageDebt01 * 20f);
             int rebootProgressPercent = intrusionActive
                 ? (int)math.round(_intrusionManager.RebootProgressNormalized * 100f)
@@ -613,7 +613,7 @@ namespace Hecton8.UI
             bool intrusionActive = _intrusionManager != null && _intrusionManager.IsHacked;
             bool mechModeActive = _playerMovement != null && _playerMovement.CurrentLocomotionMode == PlayerLocomotionMode.ExosuitLocomotion;
             float storageDebt01 = SystemDispatcher.StreamingStorageDebt01;
-            bool dataLinkDegraded = storageDebt01 > 0.6f;
+            bool dataLinkDegraded = _lastDataLinkDegraded ? storageDebt01 > 0.45f : storageDebt01 > 0.6f;
             int rebootProgressPercent = intrusionActive
                 ? (int)math.round(_intrusionManager.RebootProgressNormalized * 100f)
                 : 0;

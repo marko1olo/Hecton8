@@ -1271,6 +1271,28 @@ namespace Hecton8.World
             return UsesThermalGrid() && _thermalMapReadCelsius.IsCreated;
         }
 
+        public bool TryInjectTransientHeatSource(Vector3 positionWS, float radiusWS, float heatIntensity, uint sourceId)
+        {
+            if (!Application.isPlaying ||
+                radiusWS <= 0f ||
+                heatIntensity <= 0f ||
+                !math.all(math.isfinite(new float3(positionWS.x, positionWS.y, positionWS.z))) ||
+                !math.isfinite(radiusWS) ||
+                !math.isfinite(heatIntensity))
+            {
+                return false;
+            }
+
+            RegisterThermalSpatialEvent(positionWS, radiusWS, heatIntensity);
+            PublishTemperatureChangedSignal(
+                positionWS,
+                heatIntensity,
+                heatIntensity,
+                unchecked((int)(sourceId & 0x7FFFFFFFu)),
+                TemperatureChangedSignal.FlagSubmarineAmbient);
+            return true;
+        }
+
         /// <summary>
         /// Samples hydrothermal flow and cable entanglement without allocating.
         /// </summary>

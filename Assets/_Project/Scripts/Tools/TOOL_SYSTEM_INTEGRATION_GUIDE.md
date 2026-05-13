@@ -161,17 +161,17 @@ myTool.OnToolBroken += () =>
 };
 
 // ToolDurabilitySystem events
-ToolDurabilitySystem.Instance.OnDurabilityChanged += (toolID, current, max) =>
+GlobalRegistry.ToolDurability.OnDurabilityChanged += (toolID, current, max) =>
 {
     Debug.Log($"Tool {toolID}: {current}/{max}");
 };
 
-ToolDurabilitySystem.Instance.OnToolBroken += (toolID) =>
+GlobalRegistry.ToolDurability.OnToolBroken += (toolID) =>
 {
     Debug.Log($"Tool {toolID} is broken!");
 };
 
-ToolDurabilitySystem.Instance.OnToolRepaired += (toolID, newDurability) =>
+GlobalRegistry.ToolDurability.OnToolRepaired += (toolID, newDurability) =>
 {
     Debug.Log($"Tool {toolID} repaired to {newDurability}");
 };
@@ -181,10 +181,10 @@ ToolDurabilitySystem.Instance.OnToolRepaired += (toolID, newDurability) =>
 
 ```csharp
 // Polnyy remont
-ToolDurabilitySystem.Instance.RepairToolFull(toolID, maxDurability);
+GlobalRegistry.ToolDurability.RepairToolFull(toolID, maxDurability);
 
 // Chastichnyy remont
-ToolDurabilitySystem.Instance.RepairTool(toolID, repairAmount, maxDurability);
+GlobalRegistry.ToolDurability.RepairTool(toolID, repairAmount, maxDurability);
 
 // Proverka stoimosti remonta
 ToolMetadata metadata = tool.Metadata;
@@ -195,7 +195,7 @@ string resourceID = metadata.repairResourceID;
 if (inventory.HasResource(resourceID, cost))
 {
     inventory.RemoveResource(resourceID, cost);
-    ToolDurabilitySystem.Instance.RepairToolFull(metadata.toolID, metadata.maxDurability);
+    GlobalRegistry.ToolDurability.RepairToolFull(metadata.toolID, metadata.maxDurability);
 }
 ```
 

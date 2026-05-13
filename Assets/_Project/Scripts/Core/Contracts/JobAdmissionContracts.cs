@@ -64,6 +64,9 @@ namespace Hecton8.Core.Contracts
         /// <summary>Reports finite lane state for black-box retention.</summary>
         void ReportLaneState(JobAdmissionLane lane, float budgetMs, float refillMs, int criticalDebtFrames, uint killSwitchMask);
 
+        /// <summary>Reports one EWMA cost-table slot for black-box retention before fault export.</summary>
+        void ReportCostState(int slotIndex, uint jobHash, float ewmaCostMs, int costSlotCount, float overflowEwmaCostMs);
+
         /// <summary>Reports a non-finite admission state that requires a crash telemetry dump.</summary>
         void ReportNonFiniteAdmissionState(JobAdmissionLane lane, uint jobHash, float value);
     }

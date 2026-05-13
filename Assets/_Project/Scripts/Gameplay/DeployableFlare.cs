@@ -21,6 +21,7 @@
 
 using Hecton8.Audio;
 using Hecton8.Core;
+using Hecton8.Core.Signals;
 using Hecton8.Physics;
 using Hecton8.World;
 using Unity.Mathematics;
@@ -49,6 +50,7 @@ namespace Hecton8.Gameplay
     public sealed class DeployableFlare : MonoBehaviour, ITickable, IUpdatable
     {
         private const float FlareRetinalSignalMinIntensity = 0.0001f;
+        private const int FlareRetinalSignalFrameStride = 4;
         private const uint FlareRetinalSignalSourceSalt = 0x464C5245u; // FLRE
 
         // ══════════════════════════════════════════════════════════
@@ -520,6 +522,12 @@ namespace Hecton8.Gameplay
 
         private void PublishFlareRetinalSignal()
         {
+            if (!Application.isPlaying)
+            {
+                _flareRetinalSignalPublished = false;
+                return;
+            }
+
             if ((_state != FlareState.Burning && _state != FlareState.Fading) ||
                 pointLight == null ||
                 !pointLight.enabled ||
@@ -530,6 +538,14 @@ namespace Hecton8.Gameplay
                 return;
             }
 
+            uint sourceId = ResolveFlareRetinalSignalSourceId();
+            if (_flareRetinalSignalPublished)
+            {
+                int phase = (int)(sourceId & (FlareRetinalSignalFrameStride - 1));
+                if (((Time.frameCount + phase) & (FlareRetinalSignalFrameStride - 1)) != 0)
+                    return;
+            }
+
             Vector3 positionWs = _transform != null ? _transform.position : transform.position;
             GlobalSignals.Publish(new SubmarineLightsChangedSignal
             {
@@ -537,7 +553,7 @@ namespace Hecton8.Gameplay
                 Forward = new float3(0f, 0f, 1f),
                 RangeMeters = math.max(0.1f, lightRange),
                 Intensity = math.max(0f, _currentIntensity),
-                SourceId = ResolveFlareRetinalSignalSourceId(),
+                SourceId = sourceId,
                 Slot = 0,
                 Operation = SubmarineLightsChangedSignalOperations.Upsert,
                 Flags = SubmarineLightsChangedSignalFlags.Powered,
@@ -548,6 +564,12 @@ namespace Hecton8.Gameplay
 
         private void PublishFlareRetinalClearSignal()
         {
+            if (!Application.isPlaying)
+            {
+                _flareRetinalSignalPublished = false;
+                return;
+            }
+
             if (!_flareRetinalSignalPublished)
                 return;
 

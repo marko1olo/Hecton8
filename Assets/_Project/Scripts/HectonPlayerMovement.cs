@@ -1164,6 +1164,7 @@ namespace Hecton8.Gameplay
         private float _brineSubmersionSeconds;
         private float _lastPublishedBrineRuntimeHeightY = float.NegativeInfinity;
         private float _lastPublishedBrineFogHardClip = -1f;
+        private float _lastPublishedBrineColorAlpha = -1f;
         private readonly AbsoluteUniversePosition[] _lastValidAupRing = new AbsoluteUniversePosition[LastValidAupRingCapacity]; // COLD ALLOC: AbsoluteUniversePosition[16] - no-clip recovery ring - owner: HectonPlayerMovement
         private int _lastValidAupWriteIndex;
         private int _lastValidAupCount;
@@ -2745,7 +2746,11 @@ namespace Hecton8.Gameplay
             }
 
             float4 color = BrineLayerConstants.DefaultBrineColor;
-            Shader.SetGlobalVector(BrineColorId, new Vector4(color.x, color.y, color.z, color.w));
+            if (math.abs(color.w - _lastPublishedBrineColorAlpha) > 0.001f)
+            {
+                Shader.SetGlobalVector(BrineColorId, new Vector4(color.x, color.y, color.z, color.w));
+                _lastPublishedBrineColorAlpha = color.w;
+            }
 
             float hardClip = GlobalRegistry.ScalabilityTierProfileByte == 0
                 ? 1f
@@ -2765,7 +2770,11 @@ namespace Hecton8.Gameplay
                 _lastPublishedBrineRuntimeHeightY = float.NegativeInfinity;
             }
 
-            Shader.SetGlobalVector(BrineColorId, Vector4.zero);
+            if (_lastPublishedBrineColorAlpha != 0f)
+            {
+                Shader.SetGlobalVector(BrineColorId, Vector4.zero);
+                _lastPublishedBrineColorAlpha = 0f;
+            }
             if (_lastPublishedBrineFogHardClip != 0f)
             {
                 Shader.SetGlobalFloat(BrineFogHardClipId, 0f);
@@ -6951,6 +6960,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
+            bool focusChanged = !_cinematicFocusActive || _cinematicFocusHash != signal.FocusHash;
             bool shouldPublishAudioDuck = !_cinematicFocusAudioDucked;
             _cinematicFocusTargetAup = signal.TargetAup;
             _cinematicFocusHash = signal.FocusHash;
@@ -6964,7 +6974,8 @@ namespace Hecton8.Gameplay
             _cinematicFocusActive = true;
             if (shouldPublishAudioDuck)
                 PublishCinematicMixerState(_cinematicFocusIntensity01);
-            GlobalTelemetryBus.PublishPerformanceWarning(_cinematicFocusTelemetryHash, _cinematicFocusHash, _cinematicFocusIntensity01);
+            if (focusChanged)
+                GlobalTelemetryBus.PublishPerformanceWarning(_cinematicFocusTelemetryHash, _cinematicFocusHash, _cinematicFocusIntensity01);
         }
 
         private float ResolveCinematicSubtitleFadeDistanceSq(float signaledDistanceSq)
@@ -7006,6 +7017,7 @@ namespace Hecton8.Gameplay
             float deltaSq = (lookDelta.x * lookDelta.x) + (lookDelta.y * lookDelta.y);
             float threshold = math.max(0.01f, cinematicFocusInputBreakThreshold);
             float thresholdSq = threshold * threshold;
+            float invThresholdSq = math.rcp(thresholdSq);
             if (deltaSq >= thresholdSq)
             {
                 BreakCinematicFocus(deltaSq);
@@ -7014,7 +7026,7 @@ namespace Hecton8.Gameplay
 
             float yieldStartSq = thresholdSq * 0.25f;
             if (deltaSq > yieldStartSq)
-                _cinematicFocusPullSuppression01 = math.max(_cinematicFocusPullSuppression01, math.saturate(deltaSq / thresholdSq));
+                _cinematicFocusPullSuppression01 = math.max(_cinematicFocusPullSuppression01, math.saturate(deltaSq * invThresholdSq));
         }
 
         private void BreakCinematicFocus(float inputDeltaSq)
@@ -7799,7 +7811,7 @@ namespace Hecton8.Gameplay
                     }
                 }
             }
-            catch (IOException)
+            catch (System.Exception)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogError("[CinematicFocus] Failed to dump blackbox.");

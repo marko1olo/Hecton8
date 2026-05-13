@@ -1063,8 +1063,12 @@ namespace Hecton8.Core
             if (distanceSq <= MinimumDirectionLength)
                 return FoveatedSimulationTier.Active;
 
-            Vector3 direction = toTarget * (1.0f / Mathf.Sqrt(distanceSq));
-            Vector3 forward = cameraForward.sqrMagnitude > MinimumDirectionLength ? cameraForward.normalized : Vector3.forward;
+            float inverseDistance = math.rsqrt(math.max(distanceSq, MinimumDirectionLength));
+            Vector3 direction = toTarget * inverseDistance;
+            float forwardLengthSq = cameraForward.sqrMagnitude;
+            Vector3 forward = forwardLengthSq > MinimumDirectionLength
+                ? cameraForward * math.rsqrt(forwardLengthSq)
+                : Vector3.forward;
             bool insideFrustum = Vector3.Dot(direction, forward) >= FrustumForwardDotThreshold;
             if (!insideFrustum || distanceSq >= activeDistance * activeDistance)
                 return FoveatedSimulationTier.Peripheral;

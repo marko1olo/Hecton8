@@ -615,6 +615,8 @@ namespace Hecton8.World
         private const float SwarmMovementPanicDurationSeconds = 0.08f;
         private const float SwarmDispersedSignalCooldownSeconds = 0.08f;
         private const float SwarmDispersedMinimumIntensity = 0.25f;
+        private const float MaelstromThreatRefreshSeconds = 0.22f;
+        private const float MaelstromThreatDurationSeconds = 0.45f;
         private const int LatchStatsLatchedCountIndex = 0;
         private const int LatchStatsLatchedSumXIndex = 1;
         private const int LatchStatsLatchedSumYIndex = 2;
@@ -1585,6 +1587,7 @@ namespace Hecton8.World
         private WorldZoneDirector _worldZoneDirector;
         private BiomeMatrixDirector _biomeMatrixDirector;
         private HectonMapMagicVegetationBridge _mapMagicVegetationBridge;
+        private HectonFluidEngine _fluidEngine;
         private bool _flashlightOn;
         private bool _parasiteModeActive;
         private bool _formationModeActive;
@@ -1629,6 +1632,8 @@ namespace Hecton8.World
         private uint _acousticPanicSeed;
         private float _lastSwarmDispersedSignalTime = float.NegativeInfinity;
         private uint _swarmDispersedSequence;
+        private uint _lastMaelstromThreatHash;
+        private float _nextMaelstromThreatRefreshTime = float.NegativeInfinity;
         private int _threatGridResolution;
         private Vector3 _threatGridCenterWS = Vector3.zero;
         private float _threatGridCellSizeWS = 1f;
@@ -1886,6 +1891,7 @@ namespace Hecton8.World
 
             _simulationTime += deltaTime;
             WrapSimulationPhase();
+            RefreshMaelstromThreats();
             UpdateMassiveThreats();
             UpdateParasiteLatchReadback(deltaTime);
             float hibernation01 = 0f;
@@ -2023,7 +2029,8 @@ namespace Hecton8.World
                                           cutManager == null ||
                                           _worldZoneDirector == null ||
                                           _biomeMatrixDirector == null ||
-                                          _mapMagicVegetationBridge == null;
+                                          _mapMagicVegetationBridge == null ||
+                                          _fluidEngine == null;
             if (!_runtimeServiceProbeAttempted && missingRuntimeServices)
             {
                 if (biolumManager == null)
@@ -2043,6 +2050,9 @@ namespace Hecton8.World
 
                 if (_mapMagicVegetationBridge == null)
                     _mapMagicVegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
+
+                if (_fluidEngine == null)
+                    _fluidEngine = GlobalRegistry.Fluid;
 
                 _runtimeServiceProbeAttempted = true;
             }
@@ -5115,6 +5125,76 @@ namespace Hecton8.World
         {
             ConsumeMovementAcousticSignals();
             ConsumeAcousticPingSignals(simulationDt);
+        }
+
+        private void RefreshMaelstromThreats()
+        {
+            if (_fluidEngine == null ||
+                !_fluidEngine.TryGetActiveMaelstroms(
+                    out NativeArray<float4> maelstroms,
+                    out int maelstromCount,
+                    out Vector4 maelstromMeta))
+            {
+                _lastMaelstromThreatHash = 0u;
+                return;
+            }
+
+            int count = math.clamp(maelstromCount, 0, math.min(HectonFluidEngine.MaxActiveMaelstromCount, maelstroms.Length));
+            if (count <= 0)
+            {
+                _lastMaelstromThreatHash = 0u;
+                return;
+            }
+
+            float absoluteSimulationTime = GetAbsoluteSimulationTime();
+            uint hash = 2166136261u;
+            for (int i = 0; i < count; i++)
+            {
+                float4 maelstrom = maelstroms[i];
+                hash = HashMaelstromThreat(hash, QuantizeThreatCoord(maelstrom.x));
+                hash = HashMaelstromThreat(hash, QuantizeThreatCoord(maelstrom.y));
+                hash = HashMaelstromThreat(hash, QuantizeThreatCoord(maelstrom.z));
+                hash = HashMaelstromThreat(hash, QuantizeThreatCoord(maelstrom.w));
+            }
+
+            if (hash == _lastMaelstromThreatHash && absoluteSimulationTime < _nextMaelstromThreatRefreshTime)
+                return;
+
+            _lastMaelstromThreatHash = hash;
+            _nextMaelstromThreatRefreshTime = absoluteSimulationTime + MaelstromThreatRefreshSeconds;
+            float radius = math.clamp(maelstromMeta.y, 8f, 160f);
+            for (int i = 0; i < count; i++)
+            {
+                float4 maelstrom = maelstroms[i];
+                Vector3 originWS = new Vector3(maelstrom.x, maelstrom.y, maelstrom.z);
+                if (!IsFiniteVector3(originWS))
+                    continue;
+
+                float intensity01 = math.saturate(maelstrom.w * radius * 0.04f);
+                RegisterPredatorFearBurst(
+                    originWS,
+                    Vector3.forward,
+                    radius,
+                    MaelstromThreatDurationSeconds,
+                    math.max(0.35f, intensity01));
+            }
+        }
+
+        private static uint HashMaelstromThreat(uint hash, uint value)
+        {
+            unchecked
+            {
+                hash ^= value;
+                return hash * 16777619u;
+            }
+        }
+
+        private static uint QuantizeThreatCoord(float value)
+        {
+            if (!math.isfinite(value))
+                return 0xffffffffu;
+
+            return unchecked((uint)(int)math.clamp(math.round(value * 8f), int.MinValue + 1f, int.MaxValue - 1f));
         }
 
         private void ConsumeMovementAcousticSignals()

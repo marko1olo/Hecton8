@@ -306,9 +306,11 @@ namespace Hecton8.Gameplay
             EnsureUpgradeSlots();
             CacheReferences();
             ApplyProfileMassToHull();
-            if (Application.isPlaying)
+            if (Application.isPlaying &&
+                _hullIntegritySummaryNative.IsCreated &&
+                _physicsBindingsNative.IsCreated &&
+                _gridStatesNative.IsCreated)
             {
-                EnsureNativeState();
                 RefreshNativeState();
             }
         }

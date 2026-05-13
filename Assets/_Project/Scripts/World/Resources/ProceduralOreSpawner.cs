@@ -17,7 +17,7 @@ namespace Hecton8.World
     /// Deterministic sector ore generator with SoA authority, indirect dormant rendering, and bounded collider hydration.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class ProceduralOreSpawner : MonoBehaviour, ISlowTickable, ILateFrameTickable, IDisposable
+    public sealed class ProceduralOreSpawner : MonoBehaviour, ISlowTickable, ILateFrameTickable, IDisposable, IWorldResourceSpawnerReadModel
     {
         private const string OwnerName = nameof(ProceduralOreSpawner);
         private const int DefaultOreCapacity = 2048;
@@ -113,6 +113,13 @@ namespace Hecton8.World
         /// <summary>Stable hash for the currently loaded AUP sector.</summary>
         public long CurrentSectorHash => _currentSectorHash;
 
+        public bool TryGetOrePositions(out NativeArray<float3> orePositions, out int activeCount)
+        {
+            orePositions = OrePositions;
+            activeCount = _activeOreCount;
+            return OrePositions.IsCreated && _activeOreCount > 0;
+        }
+
         private void Awake()
         {
             if (!Application.isPlaying)
@@ -135,6 +142,8 @@ namespace Hecton8.World
                 EnsureProxyPool();
             }
 
+            GlobalRegistry.RegisterWorldResourceSpawner(this);
+
             if (!_slowTickRegistered)
                 _slowTickRegistered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
 
@@ -144,6 +153,8 @@ namespace Hecton8.World
 
         private void OnDisable()
         {
+            if (ReferenceEquals(GlobalRegistry.WorldResourceSpawner, this))
+                GlobalRegistry.UnregisterWorldResourceSpawner(this);
             UnregisterDispatchers();
             DisableAllProxies();
             if (_spawnJobScheduled)

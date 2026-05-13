@@ -2793,7 +2793,7 @@ namespace Hecton8.Visor
             Vector4 state = new Vector4(
                 _activeSonarGeoPingCount,
                 ActiveSonarGeoMaxRangeMeters,
-                GlobalRegistry.ScalabilityTierProfileByte == 0 ? 0f : 1f,
+                GlobalRegistry.ScalabilityTierProfileByte == 0 ? 0f : 2f,
                 ActiveSonarGeoSpeedMetersPerSecond);
 
             if (force || _activeSonarGeoGlobalsDirty)

@@ -92,7 +92,7 @@ namespace Hecton8.Core
         private static readonly long[] _requestedServiceSlotMask = new long[ServiceSlotMaskWordCount];
         // COLD ALLOC: long[4] - registered service-slot bitset for ghost-service detection - owner: GlobalRegistry
         private static readonly long[] _registeredServiceSlotMask = new long[ServiceSlotMaskWordCount];
-        // COLD ALLOC: string[155] - allocation-free ghost-service slot names; index matches GlobalRegistryServiceSlot numeric value - owner: GlobalRegistry
+        // COLD ALLOC: string[158] - allocation-free ghost-service slot names; index matches GlobalRegistryServiceSlot numeric value - owner: GlobalRegistry
         private static readonly string[] _serviceSlotNames =
         {
             nameof(GlobalRegistryServiceSlot.Input),
@@ -251,7 +251,8 @@ namespace Hecton8.Core
             nameof(GlobalRegistryServiceSlot.GroundRadarRuntime),
             nameof(GlobalRegistryServiceSlot.InertialNavigationRuntime),
             nameof(GlobalRegistryServiceSlot.ModdingBridgeRuntime),
-            nameof(GlobalRegistryServiceSlot.InstanceCullingRuntime)
+            nameof(GlobalRegistryServiceSlot.InstanceCullingRuntime),
+            nameof(GlobalRegistryServiceSlot.WorldResourceSpawnerRuntime)
         };
         private static int _registryPhase = (int)RegistryPhase.Uninitialized;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -550,6 +551,7 @@ namespace Hecton8.Core
         private static IStreamingBackpressureService _streamingBackpressureRuntime;
         private static IFoveatedSimulationDirector _foveatedSimulationDirector;
         private static IGroundRadarService _groundRadarRuntime;
+        private static IWorldResourceSpawnerReadModel _worldResourceSpawnerRuntime;
         private static IInstanceCullingService _instanceCullingRuntime;
         private static HectonHardwareProfile _hardwareProfile;
         private static int _scalabilityTierOverride = -1;
@@ -697,6 +699,11 @@ namespace Hecton8.Core
         /// Registry-owned subsurface GPR read model.
         /// </summary>
         public static IGroundRadarService GroundRadar => _groundRadarRuntime;
+
+        /// <summary>
+        /// Registry-owned world resource SoA read model.
+        /// </summary>
+        public static IWorldResourceSpawnerReadModel WorldResourceSpawner => _worldResourceSpawnerRuntime;
 
         /// <summary>
         /// Registry-owned prefab ID registry.
@@ -2068,6 +2075,7 @@ namespace Hecton8.Core
             _streamingBackpressureRuntime = null;
             _foveatedSimulationDirector = null;
             _groundRadarRuntime = null;
+            _worldResourceSpawnerRuntime = null;
             _instanceCullingRuntime = null;
             _hardwareProfile = default;
             _scalabilityTierOverride = -1;
@@ -3576,6 +3584,14 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Registers the authoritative world resource SoA read model.
+        /// </summary>
+        public static void RegisterWorldResourceSpawner(IWorldResourceSpawnerReadModel instance)
+        {
+            RegisterServiceAllowSameInstance(ref _worldResourceSpawnerRuntime, instance);
+        }
+
+        /// <summary>
         /// Registers the authoritative procedural GPU instance culling service.
         /// </summary>
         public static void RegisterInstanceCullingService(IInstanceCullingService instance)
@@ -3613,6 +3629,14 @@ namespace Hecton8.Core
         public static void UnregisterGroundRadarService(IGroundRadarService instance)
         {
             UnregisterService(ref _groundRadarRuntime, instance);
+        }
+
+        /// <summary>
+        /// Clears the authoritative world resource SoA read model.
+        /// </summary>
+        public static void UnregisterWorldResourceSpawner(IWorldResourceSpawnerReadModel instance)
+        {
+            UnregisterService(ref _worldResourceSpawnerRuntime, instance);
         }
 
         /// <summary>
@@ -6483,6 +6507,7 @@ namespace Hecton8.Core
                 case GlobalRegistryServiceSlot.StreamingBackpressureRuntime: return _streamingBackpressureRuntime;
                 case GlobalRegistryServiceSlot.FoveatedSimulationDirector: return _foveatedSimulationDirector;
                 case GlobalRegistryServiceSlot.GroundRadarRuntime: return _groundRadarRuntime;
+                case GlobalRegistryServiceSlot.WorldResourceSpawnerRuntime: return _worldResourceSpawnerRuntime;
                 case GlobalRegistryServiceSlot.InstanceCullingRuntime: return _instanceCullingRuntime;
                 default: return null;
             }
@@ -6754,6 +6779,7 @@ namespace Hecton8.Core
             if (serviceType == typeof(IStreamingBackpressureService)) return GlobalRegistryServiceSlot.StreamingBackpressureRuntime;
             if (serviceType == typeof(IFoveatedSimulationDirector)) return GlobalRegistryServiceSlot.FoveatedSimulationDirector;
             if (serviceType == typeof(IGroundRadarService)) return GlobalRegistryServiceSlot.GroundRadarRuntime;
+            if (serviceType == typeof(IWorldResourceSpawnerReadModel)) return GlobalRegistryServiceSlot.WorldResourceSpawnerRuntime;
             if (serviceType == typeof(IInstanceCullingService)) return GlobalRegistryServiceSlot.InstanceCullingRuntime;
             return GlobalRegistryServiceSlot.Unknown;
         }

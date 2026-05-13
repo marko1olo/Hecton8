@@ -955,6 +955,9 @@ namespace Hecton8.Gameplay
                 ladderQuery,
                 math.max(ScheduledLadderProbeDistance, safeSkinWidth + safeRadius));
 
+            for (int i = 0; i < ScheduledSweepMaxHits; i++)
+                _nativeState.ScheduledSweepResults[i] = default;
+
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             long scheduleBudgetStart = BeginSweepBudgetSample();
 #endif

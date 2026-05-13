@@ -108,6 +108,20 @@ namespace Hecton8.Core.Memory
         /// <summary>Number of owner-unregister leaks force-reaped by the sentinel.</summary>
         public static int FatalLeakPreventedCount => _fatalLeakPreventedCount;
 
+#if UNITY_EDITOR
+        [UnityEditor.InitializeOnLoadMethod]
+        private static void RegisterEditorShutdownHooks()
+        {
+            UnityEditor.AssemblyReloadEvents.beforeAssemblyReload -= Shutdown;
+            UnityEditor.EditorApplication.quitting -= Shutdown;
+            UnityEditor.EditorApplication.playModeStateChanged -= HandleEditorPlayModeStateChanged;
+        }
+
+        private static void HandleEditorPlayModeStateChanged(UnityEditor.PlayModeStateChange state)
+        {
+        }
+#endif
+
         /// <summary>
         /// Initializes native tracking tables. Safe to call more than once.
         /// </summary>

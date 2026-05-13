@@ -14,7 +14,7 @@ namespace Hecton8.Core.Scheduling
 
         private static uint ComputeTypeHash()
         {
-            string typeName = typeof(TJob).FullName;
+            string typeName = typeof(TJob).FullName ?? typeof(TJob).Name;
             return JobAdmissionHash.ComputeFnv1a(typeName);
         }
     }

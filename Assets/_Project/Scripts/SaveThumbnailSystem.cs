@@ -27,6 +27,7 @@ namespace Hecton8.SaveSystem
         private const int JpegQuality = 82;
         private const int MaxCachedTextures = 12;
         private const int MaxCaptureWaitFrames = 90;
+        private const int CompletionHistoryCapacity = 8;
         private const float MinPoseCaptureDistanceMeters = 5f;
         private const float MinPoseCaptureAngleDegrees = 5f;
         private const float MinPoseCaptureDistanceSq = MinPoseCaptureDistanceMeters * MinPoseCaptureDistanceMeters;
@@ -48,18 +49,28 @@ namespace Hecton8.SaveSystem
 
         public readonly struct CaptureTicket
         {
-            public CaptureTicket(int sequenceId, uint operationId, uint slotHash, CaptureStatus status)
+            public CaptureTicket(
+                int sequenceId,
+                uint operationId,
+                uint slotHash,
+                CaptureStatus status,
+                int byteLength = 0,
+                uint byteHash = 0u)
             {
                 SequenceId = sequenceId;
                 OperationId = operationId;
                 SlotHash = slotHash;
                 InitialStatus = status;
+                ByteLength = byteLength;
+                ByteHash = byteHash;
             }
 
             public int SequenceId { get; }
             public uint OperationId { get; }
             public uint SlotHash { get; }
             public CaptureStatus InitialStatus { get; }
+            public int ByteLength { get; }
+            public uint ByteHash { get; }
             public bool IsValid => SequenceId > 0;
             public bool IsTerminal => InitialStatus != CaptureStatus.Queued && InitialStatus != CaptureStatus.None;
         }
@@ -110,11 +121,12 @@ namespace Hecton8.SaveSystem
             new Dictionary<string, Texture2D>(MaxCachedTextures, StringComparer.OrdinalIgnoreCase);
         private static readonly List<string> _textureCacheOrder = new List<string>(MaxCachedTextures);
         private static readonly Action<AsyncGPUReadbackRequest> s_readbackCompleted = HandleReadbackCompleted;
+        private static readonly CaptureCompletion[] s_completionHistory = new CaptureCompletion[CompletionHistoryCapacity]; // COLD ALLOC: fixed completion ring for overlapping save/UI requests - owner: SaveThumbnailSystem
 
         private static Camera _cachedCaptureCamera;
         private static CaptureRequest _pendingRequest;
         private static CaptureRequest _inflightRequest;
-        private static CaptureCompletion _lastCompletion;
+        private static int _completionHistoryWriteIndex;
         private static bool _hasPendingRequest;
         private static bool _hasInflightRequest;
         private static bool _hasLastCapturePose;
@@ -139,7 +151,7 @@ namespace Hecton8.SaveSystem
             _cachedCaptureCamera = null;
             _pendingRequest = default;
             _inflightRequest = default;
-            _lastCompletion = default;
+            ResetCompletionHistory();
             _hasPendingRequest = false;
             _hasInflightRequest = false;
             _hasLastCapturePose = false;
@@ -235,7 +247,7 @@ namespace Hecton8.SaveSystem
             {
                 TryGetExistingThumbnailStats(slotName, out int existingBytes, out uint existingHash);
                 CompleteRequest(new CaptureCompletion(sequenceId, operationId, slotHash, existingBytes, existingHash, CaptureStatus.ReusedExisting));
-                return new CaptureTicket(sequenceId, operationId, slotHash, CaptureStatus.ReusedExisting);
+                return new CaptureTicket(sequenceId, operationId, slotHash, CaptureStatus.ReusedExisting, existingBytes, existingHash);
             }
 
             ClearCacheEntry(slotName);
@@ -263,15 +275,19 @@ namespace Hecton8.SaveSystem
             if (!ticket.IsValid)
                 return default;
 
-            if (ticket.IsTerminal && _lastCompletion.SequenceId == ticket.SequenceId)
-                return _lastCompletion;
+            if (TryGetCompletion(ticket.SequenceId, out CaptureCompletion completion))
+                return completion;
+
+            if (ticket.IsTerminal)
+                return new CaptureCompletion(ticket.SequenceId, ticket.OperationId, ticket.SlotHash, ticket.ByteLength, ticket.ByteHash, ticket.InitialStatus);
 
             int startFrame = Time.frameCount;
-            while (_lastCompletion.SequenceId != ticket.SequenceId)
+            while (!TryGetCompletion(ticket.SequenceId, out completion))
             {
                 if (cancellationToken.IsCancellationRequested)
                 {
                     CaptureCompletion cancelled = new CaptureCompletion(ticket.SequenceId, ticket.OperationId, ticket.SlotHash, 0, 0u, CaptureStatus.Cancelled);
+                    ClearRequestIfMatching(ticket.SequenceId);
                     CompleteRequest(cancelled);
                     return cancelled;
                 }
@@ -280,18 +296,30 @@ namespace Hecton8.SaveSystem
                     (_hasPendingRequest && _pendingRequest.SequenceId == ticket.SequenceId) ||
                     (_hasInflightRequest && _inflightRequest.SequenceId == ticket.SequenceId);
 
-                if (waitingForGpuSubmit && Time.frameCount - startFrame > MaxCaptureWaitFrames)
+                if (Time.frameCount - startFrame > MaxCaptureWaitFrames)
                 {
                     CaptureCompletion timedOut = new CaptureCompletion(ticket.SequenceId, ticket.OperationId, ticket.SlotHash, 0, 0u, CaptureStatus.TimedOut);
-                    ClearRequestIfMatching(ticket.SequenceId);
+                    if (waitingForGpuSubmit)
+                        ClearRequestIfMatching(ticket.SequenceId);
+
                     CompleteRequest(timedOut);
                     return timedOut;
                 }
 
-                await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: cancellationToken);
+                try
+                {
+                    await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: cancellationToken);
+                }
+                catch (OperationCanceledException)
+                {
+                    CaptureCompletion cancelled = new CaptureCompletion(ticket.SequenceId, ticket.OperationId, ticket.SlotHash, 0, 0u, CaptureStatus.Cancelled);
+                    ClearRequestIfMatching(ticket.SequenceId);
+                    CompleteRequest(cancelled);
+                    return cancelled;
+                }
             }
 
-            return _lastCompletion;
+            return completion;
         }
 
         internal static bool TryAcquireRenderRequest(Camera renderCamera, out RenderRequest request)
@@ -598,8 +626,8 @@ namespace Hecton8.SaveSystem
             string slotName = request.SlotName;
             if (!SaveManager.TryResolveSafeSlotName(slotName, out slotName))
             {
+                ReleaseWriteInProgress();
                 CompleteRequest(new CaptureCompletion(request.SequenceId, request.OperationId, request.SlotHash, 0, 0u, CaptureStatus.Failed));
-                _thumbnailWriteInProgress = false;
                 return;
             }
 
@@ -688,19 +716,26 @@ namespace Hecton8.SaveSystem
             }
             finally
             {
-                CompleteRequest(new CaptureCompletion(
+                CaptureCompletion completion = new CaptureCompletion(
                     request.SequenceId,
                     request.OperationId,
                     request.SlotHash,
                     finalStatus == CaptureStatus.Completed ? encodedByteLength : 0,
                     finalStatus == CaptureStatus.Completed ? encodedByteHash : 0u,
-                    finalStatus));
-                _thumbnailWriteInProgress = false;
-                if (_disposeReadbackBufferWhenIdle)
-                {
-                    _disposeReadbackBufferWhenIdle = false;
-                    DisposeReadbackBuffer();
-                }
+                    finalStatus);
+
+                ReleaseWriteInProgress();
+                CompleteRequest(completion);
+            }
+        }
+
+        private static void ReleaseWriteInProgress()
+        {
+            _thumbnailWriteInProgress = false;
+            if (_disposeReadbackBufferWhenIdle)
+            {
+                _disposeReadbackBufferWhenIdle = false;
+                DisposeReadbackBuffer();
             }
         }
 
@@ -873,8 +908,38 @@ namespace Hecton8.SaveSystem
 
         private static void CompleteRequest(CaptureCompletion completion)
         {
-            _lastCompletion = completion;
-            PublishMetadataReady(completion);
+            StoreCompletion(completion);
+            if (completion.OperationId != 0u)
+                PublishMetadataReady(completion);
+        }
+
+        private static void StoreCompletion(CaptureCompletion completion)
+        {
+            s_completionHistory[_completionHistoryWriteIndex] = completion;
+            _completionHistoryWriteIndex++;
+            if (_completionHistoryWriteIndex >= s_completionHistory.Length)
+                _completionHistoryWriteIndex = 0;
+        }
+
+        private static bool TryGetCompletion(int sequenceId, out CaptureCompletion completion)
+        {
+            for (int i = 0; i < s_completionHistory.Length; i++)
+            {
+                completion = s_completionHistory[i];
+                if (completion.SequenceId == sequenceId)
+                    return true;
+            }
+
+            completion = default;
+            return false;
+        }
+
+        private static void ResetCompletionHistory()
+        {
+            for (int i = 0; i < s_completionHistory.Length; i++)
+                s_completionHistory[i] = default;
+
+            _completionHistoryWriteIndex = 0;
         }
 
         private static void PublishMetadataReady(CaptureCompletion completion)

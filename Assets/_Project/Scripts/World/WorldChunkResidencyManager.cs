@@ -288,12 +288,17 @@ namespace Hecton8.World
         private const double LatencyDebtBaselineMs = 80.0;
         private const double CriticalHoleThresholdMs = 250.0;
         private const float StorageDebtEwmaWeight = 0.08f;
+        private const float StorageDebtIdleRecoveryWeight = 0.12f;
         private const float StorageDebtPublishBlend = 0.18f;
         private const float StorageDebtPredictionHalveThreshold = 0.25f;
+        private const float StorageDebtPredictionResetThreshold = 0.18f;
         private const float StorageDebtTurbulenceThreshold = 0.5f;
+        private const float StorageDebtTurbulenceResetThreshold = 0.4f;
+        private const float StorageDebtTurbulenceRangeRcp = 10f;
         private const float StorageDebtDataLinkThreshold = 0.6f;
         private const float StorageDebtDataLinkResetThreshold = 0.45f;
         private const float StorageDebtProxyFallbackThreshold = 0.6f;
+        private const float StorageDebtProxyFallbackResetThreshold = 0.45f;
         private const byte LoadRequestFlagPredictive = 1 << 0;
         private const byte LoadRequestFlagTeleport = 1 << 1;
         private const uint TelemetryInvalidAupFlag = 1u << 0;
@@ -462,7 +467,11 @@ namespace Hecton8.World
         private float _storageDebt01;
         private float _smoothedStorageDebt01;
         private uint _storageDebtSequence;
-        private bool _dataLinkDegradedPublished;
+        private bool _predictionConstrainedByStorageDebt;
+        private bool _turbulenceActiveByStorageDebt;
+        private bool _proxyFallbackByStorageDebt;
+        private bool _dataLinkDegradedByStorageDebt;
+        private bool _dataLinkDegradedNotificationPublished;
         private uint _debugStateHash = ChunkStateHashSeed;
         private ChunkStreamingScalabilityTier _activeTier = (ChunkStreamingScalabilityTier)255;
         private ChunkStreamingScalabilityTier _resolvedTier = ChunkStreamingScalabilityTier.Low;
@@ -519,7 +528,7 @@ namespace Hecton8.World
 
         public uint BackpressureSequence => _storageDebtSequence;
 
-        public bool DataLinkDegraded => _smoothedStorageDebt01 > StorageDebtDataLinkThreshold;
+        public bool DataLinkDegraded => _dataLinkDegradedByStorageDebt;
 
         /// <summary>
         /// External docking/habitat code can suspend speculative streaming without taking a concrete dependency on this manager.
@@ -1159,7 +1168,7 @@ namespace Hecton8.World
             _predictiveVramAborted = ResolvePredictiveVramAbortState();
             bool predictiveEnabled = !predictivePaused && !_predictiveVramAborted;
             float predictionDistanceMeters = predictiveEnabled ? ResolvePredictionDistanceMeters(playerVelocity, tier) : 0f;
-            if (predictionDistanceMeters > 0f && _smoothedStorageDebt01 > StorageDebtPredictionHalveThreshold)
+            if (predictionDistanceMeters > 0f && _predictionConstrainedByStorageDebt)
                 predictionDistanceMeters *= 0.5f;
             float tailUnloadRadiusMeters = predictiveEnabled ? ResolveTailUnloadRadiusMeters(predictionDistanceMeters) : unloadRadiusMeters;
             AbsoluteUniversePosition projectedAup = BuildProjectedAup(in playerAup, playerVelocity, predictionDistanceMeters);
@@ -1668,7 +1677,9 @@ namespace Hecton8.World
                 now = Time.unscaledTimeAsDouble;
 
             double oldestPendingMs = 0d;
+            int pendingLoads = 0;
 #if UNITY_ADDRESSABLES_EXIST
+            pendingLoads = _pendingAddressableLoadCount;
             if (_addressableLoadPending != null && _loadStartTimes.IsCreated && _loadImmediateRadiusFlags.IsCreated)
             {
                 int count = math.min(_addressableLoadPending.Length, math.min(_loadStartTimes.Length, _loadImmediateRadiusFlags.Length));
@@ -1690,6 +1701,9 @@ namespace Hecton8.World
 
             _oldestPendingMs = oldestPendingMs;
             _criticalHoleDebtMs = math.max(0d, oldestPendingMs - CriticalHoleThresholdMs);
+            if (pendingLoads <= 0 && oldestPendingMs <= 0d && _latencyEwmaMs > LatencyDebtBaselineMs)
+                _latencyEwmaMs = math.lerp(_latencyEwmaMs, LatencyDebtBaselineMs, StorageDebtIdleRecoveryWeight);
+
             double rawDebt = ((_latencyEwmaMs - LatencyDebtBaselineMs) * 0.0023) +
                              (oldestPendingMs * 0.001) +
                              (_criticalHoleDebtMs * 0.002);
@@ -1702,21 +1716,18 @@ namespace Hecton8.World
             _storageDebt01 = math.saturate((float)rawDebt);
             _smoothedStorageDebt01 = math.lerp(_smoothedStorageDebt01, _storageDebt01, StorageDebtPublishBlend);
             _storageDebtSequence++;
+            UpdateStorageDebtHysteresisStates();
 
             byte flags = 0;
-            if (_smoothedStorageDebt01 > StorageDebtTurbulenceThreshold)
+            if (_turbulenceActiveByStorageDebt)
                 flags |= StorageDebtSignal.HighDebtFlag;
-            if (_smoothedStorageDebt01 > StorageDebtDataLinkThreshold)
+            if (_dataLinkDegradedByStorageDebt)
                 flags |= StorageDebtSignal.DataLinkDegradedFlag;
             if (_criticalHoleDebtMs > 0d)
                 flags |= StorageDebtSignal.CriticalHoleFlag;
-            if (_smoothedStorageDebt01 >= StorageDebtProxyFallbackThreshold)
+            if (_proxyFallbackByStorageDebt)
                 flags |= StorageDebtSignal.ProxyFallbackFlag;
 
-            int pendingLoads = 0;
-#if UNITY_ADDRESSABLES_EXIST
-            pendingLoads = _pendingAddressableLoadCount;
-#endif
             StorageDebtSignal signal = default;
             signal.Debt01 = _smoothedStorageDebt01;
             signal.LatencyEwmaMs = (float)math.max(0d, _latencyEwmaMs);
@@ -1730,10 +1741,10 @@ namespace Hecton8.World
             SystemDispatcher.PublishStreamingStorageDebt(_smoothedStorageDebt01);
             CrashTelemetryBuffer.ReportStreamingBackpressureFrame(_smoothedStorageDebt01, _latencyEwmaMs, oldestPendingMs, pendingLoads);
 
-            if (_smoothedStorageDebt01 > StorageDebtTurbulenceThreshold)
+            if (_turbulenceActiveByStorageDebt)
             {
                 StreamingTurbulenceSignal turbulence = default;
-                turbulence.Intensity01 = math.saturate((_smoothedStorageDebt01 - StorageDebtTurbulenceThreshold) * 2f);
+                turbulence.Intensity01 = math.saturate((_smoothedStorageDebt01 - StorageDebtTurbulenceResetThreshold) * StorageDebtTurbulenceRangeRcp);
                 turbulence.Debt01 = _smoothedStorageDebt01;
                 turbulence.DurationSeconds = 0.35f;
                 turbulence.Frame = signal.Frame;
@@ -1745,11 +1756,43 @@ namespace Hecton8.World
             PublishPdaDataLinkState(signal.Frame);
         }
 
+        private void UpdateStorageDebtHysteresisStates()
+        {
+            _predictionConstrainedByStorageDebt = ResolveStorageDebtHysteresis(
+                _predictionConstrainedByStorageDebt,
+                _smoothedStorageDebt01,
+                StorageDebtPredictionHalveThreshold,
+                StorageDebtPredictionResetThreshold);
+            _turbulenceActiveByStorageDebt = ResolveStorageDebtHysteresis(
+                _turbulenceActiveByStorageDebt,
+                _smoothedStorageDebt01,
+                StorageDebtTurbulenceThreshold,
+                StorageDebtTurbulenceResetThreshold);
+            _proxyFallbackByStorageDebt = ResolveStorageDebtHysteresis(
+                _proxyFallbackByStorageDebt,
+                _smoothedStorageDebt01,
+                StorageDebtProxyFallbackThreshold,
+                StorageDebtProxyFallbackResetThreshold);
+            _dataLinkDegradedByStorageDebt = ResolveStorageDebtHysteresis(
+                _dataLinkDegradedByStorageDebt,
+                _smoothedStorageDebt01,
+                StorageDebtDataLinkThreshold,
+                StorageDebtDataLinkResetThreshold);
+
+            if (!_dataLinkDegradedByStorageDebt)
+                _dataLinkDegradedNotificationPublished = false;
+        }
+
+        private static bool ResolveStorageDebtHysteresis(bool active, float value, float enterThreshold, float exitThreshold)
+        {
+            return active ? value > exitThreshold : value > enterThreshold;
+        }
+
         private void PublishPdaDataLinkState(uint frame)
         {
-            if (_smoothedStorageDebt01 > StorageDebtDataLinkThreshold)
+            if (_dataLinkDegradedByStorageDebt)
             {
-                if (_dataLinkDegradedPublished)
+                if (_dataLinkDegradedNotificationPublished)
                     return;
 
                 HUDNotificationSignal notification = default;
@@ -1759,17 +1802,13 @@ namespace Hecton8.World
                 notification.Severity = 1;
                 notification.Flags = StorageDebtSignal.DataLinkDegradedFlag;
                 GlobalSignals.Publish(in notification);
-                _dataLinkDegradedPublished = true;
-                return;
+                _dataLinkDegradedNotificationPublished = true;
             }
-
-            if (_smoothedStorageDebt01 < StorageDebtDataLinkResetThreshold)
-                _dataLinkDegradedPublished = false;
         }
 
         private void PromoteChunkResident(int index, long chunkId, GameObject loadedPrefab)
         {
-            bool proxyFallback = _smoothedStorageDebt01 >= StorageDebtProxyFallbackThreshold;
+            bool proxyFallback = _proxyFallbackByStorageDebt;
             ChunkState state = ChunkState.Resident | ChunkState.Staged | (proxyFallback ? ChunkState.LOD1 : ChunkState.LOD0);
             if (chunkDefinitions[index].pinned)
                 state |= ChunkState.Pinned;

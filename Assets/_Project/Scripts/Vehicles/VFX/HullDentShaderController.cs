@@ -50,6 +50,7 @@ namespace Hecton8.Vehicles.VFX
         private readonly Vector4[] _dentBuffer = new Vector4[MaxHullDents];
 
         private ISubmarineHullBreachReadModel _breachReadModel;
+        private ITickDispatcher _tickDispatcher;
         private Transform _cachedRoot;
         private int _writeHead;
         private int _activeDentCount;
@@ -64,6 +65,7 @@ namespace Hecton8.Vehicles.VFX
         {
             ResolveRoot();
             ResolveBreachReadModel();
+            ResolveTickDispatcher();
             RefreshQualityTier(force: true);
             ClearDentBuffer();
             TryRegisterLateFrameTickable();
@@ -80,6 +82,7 @@ namespace Hecton8.Vehicles.VFX
 
             ClearDentBuffer();
             UploadShaderGlobals();
+            _tickDispatcher = null;
         }
 
         public void LateFrameTick()
@@ -95,7 +98,7 @@ namespace Hecton8.Vehicles.VFX
 
                 RefreshQualityTier(force: false);
                 int acceptedSignals = ConsumeCombatDamageSignals();
-                bool repairChanged = ApplyRepairCoupling(SystemDispatcher.CurrentFrameUnscaledDeltaTime);
+                bool repairChanged = ApplyRepairCoupling(ResolveUnscaledDeltaTime());
 
                 if (_dirty)
                     UploadShaderGlobals();
@@ -110,6 +113,7 @@ namespace Hecton8.Vehicles.VFX
             if (_registeredLateFrame)
                 return;
 
+            ResolveTickDispatcher();
             _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
 
@@ -125,6 +129,11 @@ namespace Hecton8.Vehicles.VFX
                 _breachReadModel = GetComponent(typeof(ISubmarineHullBreachReadModel)) as ISubmarineHullBreachReadModel;
         }
 
+        private void ResolveTickDispatcher()
+        {
+            _tickDispatcher = GlobalRegistry.TickDispatcher;
+        }
+
         private void RefreshQualityTier(bool force)
         {
             int frame = Time.frameCount;
@@ -132,11 +141,17 @@ namespace Hecton8.Vehicles.VFX
                 return;
 
             _qualityRefreshFrame = frame;
-            _qualityTier = GlobalRegistry.ScalabilityTierProfileByte;
+            byte newQualityTier = GlobalRegistry.ScalabilityTierProfileByte;
             HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
-            _lowTier = tier == HectonQualityTier.Unknown ||
-                       tier == HectonQualityTier.Low ||
-                       tier == HectonQualityTier.Mx350;
+            bool newLowTier = tier == HectonQualityTier.Unknown ||
+                              tier == HectonQualityTier.Low ||
+                              tier == HectonQualityTier.Mx350;
+
+            if (!force && newQualityTier == _qualityTier && newLowTier == _lowTier)
+                return;
+
+            _qualityTier = newQualityTier;
+            _lowTier = newLowTier;
             _dirty = true;
         }
 
@@ -289,6 +304,22 @@ namespace Hecton8.Vehicles.VFX
             }
 
             return changed;
+        }
+
+        private float ResolveUnscaledDeltaTime()
+        {
+            ITickDispatcher dispatcher = _tickDispatcher;
+            if (dispatcher != null)
+            {
+                double dispatcherDelta = dispatcher.TimeSnapshot.UnscaledDeltaTime;
+                if (dispatcherDelta > 0d && double.IsFinite(dispatcherDelta))
+                    return dispatcherDelta > 1d ? 1f : (float)dispatcherDelta;
+            }
+
+            float fallbackDelta = Time.unscaledDeltaTime;
+            return math.isfinite(fallbackDelta) && fallbackDelta > 0f
+                ? math.min(fallbackDelta, 1f)
+                : 0f;
         }
 
         private bool IsDentStillBackedByBreach(Vector4 dent, float matchRadius, int breachCount)

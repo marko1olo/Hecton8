@@ -498,9 +498,14 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
                 }
                 ApplyModuleWaterline(moduleFloodLevel01, moduleSubmerged01, albedo, smoothness);
                 HectonCoreLitApplyEnvironmentalWear(input.positionWS, normalWS, (half)_EnvironmentalWear, (half3)_RustSaltColor.rgb, albedo, metallic, smoothness);
-                half lowTierScarTexture = SAMPLE_TEXTURE2D(_DetailMask, sampler_DetailMask, input.uv * 2.7).r;
-                half lowTierScar = (half)(_HectonHullDentParams.z * _HectonHullDentParams.y) * lowTierScarTexture * 0.28h;
-                HectonCoreLitApplyHullDentSurfaceCheat(max(input.hullDentShadow, lowTierScar), albedo, smoothness);
+                half hullDentShadow = input.hullDentShadow;
+                [branch]
+                if (_HectonHullDentParams.y > 0.5 && _HectonHullDentParams.z > 0.0001)
+                {
+                    half lowTierScarTexture = SAMPLE_TEXTURE2D(_DetailMask, sampler_DetailMask, input.uv * 2.7).r;
+                    hullDentShadow = max(hullDentShadow, (half)_HectonHullDentParams.z * lowTierScarTexture * 0.28h);
+                }
+                HectonCoreLitApplyHullDentSurfaceCheat(hullDentShadow, albedo, smoothness);
                 float parasitePulse = 1.0;
                 float thermalGrowthMask = 0.0;
                 float parasiteMask = HectonCoreLitEvaluateParasiteField(input.positionWS, parasitePulse, thermalGrowthMask);
@@ -544,6 +549,7 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
                     half parasiteEmission = (half)(parasiteMask * saturate(parasitePulse) * lerp(1.0, 1.35, thermalGrowthMask));
                     emission += parasiteEmissionMask * _ParasiteOverlayEmissionColor.rgb * parasiteEmission;
                 }
+                emission += (half3)HectonCoreLitEvaluateActiveSonarGeoEmission(input.positionWS);
                 half3 finalColor = MixFog(litColor + emission, input.fogFactor);
                 finalColor = HectonCoreLitApplyXRFoveatedResolve(finalColor, input.xrFoveatedVector);
                 return half4(finalColor, coverage);

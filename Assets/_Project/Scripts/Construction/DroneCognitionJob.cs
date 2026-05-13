@@ -224,8 +224,9 @@ namespace Hecton8.Construction
         private const float DockingMinimumPathLengthMeters = 1f;
         private const float DockingHatchOpenT = 0.8f;
         private const float DockingVisualSlipWeight = 0.25f;
-        private const byte DockingFlagHatchOpenQueued = 1 << 0;
-        private const byte DockingFlagCompleted = 1 << 1;
+        internal const byte DockingFlagHatchOpenQueued = 1 << 0;
+        internal const byte DockingFlagCompleted = 1 << 1;
+        internal const byte DockingFlagHatchOpenPublished = 1 << 2;
         private const float RebootDurationSeconds = 2f;
         private const float SpatialCellSize = 2f;
         private const float SpatialCellSizeInv = 0.5f;
@@ -811,6 +812,7 @@ namespace Hecton8.Construction
             {
                 float3 flowVelocity = ResolveFlowVelocity(position);
                 float3 crossCurrent = flowVelocity - (tangent * math.dot(flowVelocity, tangent));
+                crossCurrent -= math.up() * math.dot(crossCurrent, math.up());
                 float crossLengthSq = math.lengthsq(crossCurrent);
                 if (math.isfinite(crossLengthSq) && crossLengthSq > MinimumVectorLengthSq)
                 {

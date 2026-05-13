@@ -125,3 +125,146 @@ What was wrong: The first user-suggested mode pass shipped working Matrix/Americ
 What was done: Expanded `new_modes.py` profile content and increased replacement density for Matrix/America/Holiday/Oldweb. Added `/jewish` aliases `/talmud`, `/odessa`, `/shabbat`, `/rabbi`, `/evrei`, `/evrey`; wired `jewish_mode` through imports, `MODE_FLAGS`, RAM defaults, DB load defaults, headers, transform dispatch, activation, end phrases, public help, architecture docs, roadmap, and audit docs. The shipped framing is Talmudic/Odessa debate mode, not protected-class stereotype generation.
 Cinematic Cheats used: Dense text illusion only. Precompiled regex, random prefix/suffix/injection, and one mode flag buy a much stronger perceived event without images, API calls, new workers, or extra persistent caches.
 Exact Microseconds saved: No speedup claimed; cost was measured. 2000-call sample: `matrix=137.53us`, `america=80.87us`, `holiday=75.34us`, `oldweb=80.93us`, `jewish=153.27us`. Verification: compile green; watchdog chain `8444 -> 14024 -> 22048`; runtime snapshot PID `22048` had `private_mb=504.78`, queues `0`, `messages_storage=3301`, `post_to_messages=369`, `message_to_post=212085`, reply coverage gap `0`; DB `quick_check=ok`, `Posts=150366`, `PostCopies=1273984`; live `/b/ #375412` delivered to `626` recipients in `7.292s`.
+## 2026-05-13 08:20 - Loop 30 Priority Split Fanout
+
+What was wrong:
+- Weekly-active priority delivery only sorted recipients inside one uninterrupted fanout.
+- Under `/b/` load, a fresh post could still wait behind the passive tail of an older post.
+- Evidence before patch: `/b/` delivery log had queue waits up to `145.994s`; post `#375422` took `101.082s` to complete a single fanout with `91` priority and `535` passive recipients.
+
+What was done:
+- Added config knobs: `BOT_PRIORITY_SPLIT_FANOUT`, `BOT_PRIORITY_SPLIT_MIN_PASSIVE`, `BOT_PRIORITY_PASSIVE_SLICE_SIZE`.
+- Added `_split_recipients_for_delivery()`.
+- `message_worker()` now sends active weekly users first as `delivery_phase=priority`.
+- Passive tails are requeued as `delivery_phase=passive`.
+- Large passive tails are sent as `delivery_phase=passive_slice` chunks of `120` recipients by default.
+- `delivery_result`, runtime snapshots, and `/queues` now expose the delivery phase and split settings.
+- Updated `BOT_ARCHITECTURE.md`, `OPERATIONS_RUNBOOK.md`, and `AUDIT_2026-05-12.md`.
+
+Verification:
+- `python -m py_compile main.py common\config.py common\database.py help_text.py new_modes.py` exited `0`.
+- Restarted only the dvachbot child process through the existing watchdog.
+- Watchdog chain after restart: `8444 -> 64968 -> 72112`.
+- Runtime snapshot PID `72112`: `private_mb=484.66`, queues `0`, `messages_storage=3300`, `post_to_messages=369`, `message_to_post=210213`.
+- Runtime `delivery_priority`: `split_fanout=true`, `split_min_passive=30`, `passive_slice_size=120`.
+- SQLite `quick_check=ok`; `Posts=150376`, `PostCopies=1278382`, `Users=9572`, `Boards=29`.
+
+Cinematic Cheats used:
+- Scheduling fake, not architecture rewrite: move perceived freshness by letting active users exit the queue before passive tail.
+- Passive slicing: cap the maximum uninterrupted passive fanout window without adding multi-worker ordering risk.
+
+Exact Microseconds saved:
+- Direct CPU saved per fanout: not meaningful; this adds tiny list/queue overhead.
+- User-visible latency saved during backlog: bounded by the passive tail that no longer blocks fresh priority phase. With `/b/` sample `535` passive recipients and slice size `120`, newer posts can preempt after a slice instead of waiting for the full passive tail.
+- Verified implementation overhead target: under Telegram IO noise; no measurable memory increase. Runtime private memory after restart stayed about `484.66 MB`.
+
+Remaining risk:
+- No live post arrived after the restart during the verification window, so the first real `priority/passive_slice` delivery_result still needs to be watched.
+- Queue state is still RAM-only. A restart during backlog can still lose unsent queued items. Durable fanout jobs remain the real end-state.
+
+## 2026-05-13 09:15 - Loop 31 All-Mode Punch-Up Layer
+
+What was wrong:
+- New modes had already been expanded, but old modes still varied wildly in density and flavor.
+- Editing every historical mode module directly would duplicate logic and risk breaking mixed text/image paths.
+- The requested "make all modes funnier and stronger" needed a bounded hot-path implementation, not another memory or API leak source.
+
+What was done:
+- Added `mode_punchup.py` as a shared text-only final flavor layer.
+- Added profiles for `anime_mode`, `zaputin_mode`, `slavaukraine_mode`, `suka_blyat_mode`, `polish_mode`, `warhammer_mode`, `imperial_mode`, `gopnik_mode`, `schizo_mode`, `matrix_mode`, `america_mode`, `holiday_mode`, `oldweb_mode`, and `jewish_mode`.
+- Patched `main.py` `_apply_mode_transformations()` so anime punch-up happens before HTML escaping, while other text modes punch up after their primary transform.
+- Left image-byte paths untouched to avoid corrupting generated visual responses.
+- Updated `Docs/MODES_AND_ROADMAP.md` and `Docs/AUDIT_2026-05-12.md`.
+
+Verification:
+- `python -m py_compile main.py mode_punchup.py new_modes.py gopnik_mode.py imperial_mode.py polish_mode.py shizo_mode.py ukrainian_mode.py warhammer_mode.py zaputin_mode.py common\config.py common\database.py help_text.py` exited `0`.
+- 10000-call punch-up benchmark: `anime=56.28us`, `zaputin=57.63us`, `slavaukraine=55.49us`, `suka_blyat=59.09us`, `polish=93.37us`, `warhammer=163.55us`, `imperial=116.52us`, `gopnik=111.44us`, `schizo=82.51us`, `matrix=101.91us`, `america=52.51us`, `holiday=103.17us`, `oldweb=93.97us`, `jewish=88.21us`.
+- Restarted only dvachbot through the existing watchdog. Chain after restart: `8444 -> 13556 -> 15356`.
+- Runtime snapshot PID `15356`: `private_mb=481.16`, queues `0`, `messages_storage=3300`, `post_to_messages=369`, `message_to_post=210213`, `reply_coverage.gap_from_latest=0`.
+- SQLite readonly `quick_check=ok`; `Posts=150376`, `PostCopies=1278382`, `Users=9572`, `Boards=29`.
+
+Cinematic Cheats used:
+- One cheap final text illusion layer instead of expensive images, external providers, or a full mode-system rewrite.
+- Per-mode flavor profiles increase perceived density while keeping all mode state stateless and bounded.
+
+Exact Microseconds saved:
+- No speedup claimed. Measured extra text cost is about `52.51..163.55us` per message, which is below Telegram IO noise and adds no long-lived memory.
+- Avoided cost: no extra worker process, no network call, no DB write, no persistent cache for creative mode flavor.
+
+Remaining risk:
+- This improves mode flavor density, not the structural duplication of mode commands/flags/help text. A later registry pass is still the correct cleanup.
+- Split fanout still needs real backlog observation after fresh `/b/` posts under CPU load.
+
+## 2026-05-13 09:30 - Loop 32 Punch-Up Density Expansion
+
+What was wrong:
+- The first all-mode punch-up layer was technically correct, but quantitatively thin: `8` replacement triggers, `4` prefixes, `4` suffixes, and `5` injections per mode.
+- That did not satisfy the user's explicit request for many replacements across all modes.
+- A blind expansion would risk turning every transformed message into hidden CPU overhead.
+
+What was done:
+- Added `_COMMON_SOURCE_TERMS` to cover reusable semantic slots: user, message, image, sticker, site, mode, database, queue, memory, bug, lag, link, file, command, poll, reaction, thread, plural posts, and replies.
+- Added `_MODE_VOCAB` so every mode maps those slots to its own flavor vocabulary.
+- Added `_MODE_PHRASE_EXPANSIONS` for extra prefixes, suffixes, and injections.
+- Raised every punch-up profile to `55` replacement triggers, `6` prefixes, `6` suffixes, and `7` injections.
+- Raised punch-up density to `replace_chance=0.42`, `inject_chance=0.46`, and `max_injections=3`.
+- Updated project docs with final density and timing instead of the obsolete `50-165us` numbers.
+
+Verification:
+- `python -m py_compile main.py mode_punchup.py new_modes.py gopnik_mode.py imperial_mode.py polish_mode.py shizo_mode.py ukrainian_mode.py warhammer_mode.py zaputin_mode.py common\config.py common\database.py help_text.py` exited `0`.
+- Profile introspection confirmed every active mode has `55` replacements, `6` prefixes, `6` suffixes, `7` injections.
+- Short 27-token local benchmark:
+  - fastest observed: `anime_mode=275.37us`
+  - slowest observed: `oldweb_mode=1216.16us`
+- Longer repeated 81-token benchmark:
+  - fastest observed: `matrix_mode=1231.53us`
+  - slowest observed: `warhammer_mode=4642.70us`
+- Restarted only dvachbot through the watchdog. Chain after restart: `8444 -> 58248 -> 11916`.
+- Runtime snapshot PID `11916`: `private_mb=482.34`, queues `0`, `messages_storage=3300`, `post_to_messages=369`, `message_to_post=210213`, `reply_coverage.gap_from_latest=0`.
+- SQLite readonly `quick_check=ok`; `Posts=150376`, `PostCopies=1278382`, `Users=9572`, `Boards=29`.
+
+Cinematic Cheats used:
+- Semantic-slot expansion gives each mode many themed replacements without duplicating 14 huge hand-written blocks.
+- The effect is still text-only and stateless: no DB writes, no API calls, no files, no new caches.
+
+Exact Microseconds saved:
+- No speedup claimed. This spends more CPU for stronger mode flavor.
+- Measured cost after expansion: about `0.27-1.22ms` for a short dense sample, up to about `4.64ms` for a repeated 81-token stress sample.
+- Hard stop: do not expand this hot-path dictionary further without adding per-mode timing telemetry or a weak-host disable knob.
+
+Remaining risk:
+- Very long transformed posts can now spend several milliseconds in regex flavoring. Still acceptable beside Telegram fanout, but it is no longer "free".
+- The structural mode registry cleanup remains undone.
+
+## 2026-05-13 09:35 - Loop 33 Punch-Up Rollback Knob
+
+What was wrong:
+- The expanded punch-up layer is deliberately stronger and measurably heavier.
+- If the laptop is under CPU pressure, there was no way to disable only this second-stage flavor layer without reverting code or disabling modes entirely.
+
+What was done:
+- Added `BOT_MODE_PUNCHUP_ENABLED` to `common/config.py`, default enabled.
+- Gated only `punch_up_mode_text()` calls in `main.py`.
+- Base mode transforms still run when the knob is off.
+- Anime still escapes HTML after its base transform; punch-up only runs before escaping when enabled.
+- Added `runtime_snapshot.mode_punchup.enabled`.
+- Added the switch state to `/debug_memory` formatted runtime output.
+- Updated `OPERATIONS_RUNBOOK.md`, `MODES_AND_ROADMAP.md`, and `AUDIT_2026-05-12.md`.
+
+Verification:
+- `python -m py_compile main.py mode_punchup.py new_modes.py gopnik_mode.py imperial_mode.py polish_mode.py shizo_mode.py ukrainian_mode.py warhammer_mode.py zaputin_mode.py common\config.py common\database.py help_text.py` exited `0`.
+- Restarted only dvachbot through the watchdog. Chain after restart: `8444 -> 19564 -> 20720`.
+- Runtime snapshot PID `20720`: `private_mb=483.62`, queues `0`, `mode_punchup.enabled=true`, `messages_storage=3300`, `post_to_messages=369`, `message_to_post=210213`, `reply_coverage.gap_from_latest=0`.
+- SQLite readonly `quick_check=ok`; `Posts=150376`, `PostCopies=1278382`, `max_post=375422`.
+
+Cinematic Cheats used:
+- Keep the creative illusion as a second-stage layer, but make it discardable under load.
+- Preserve base mode identity while allowing CPU load shedding.
+
+Exact Microseconds saved:
+- Default state saves nothing; it keeps punch-up enabled.
+- In an incident, `BOT_MODE_PUNCHUP_ENABLED=0` skips the measured punch-up cost: about `0.27-1.22ms` on a short dense sample and up to about `4.64ms` on the 81-token stress sample.
+
+Remaining risk:
+- The switch is env/startup controlled, not a live admin toggle. Changing it requires process restart.
+- There is still no per-mode timing telemetry in production snapshots.

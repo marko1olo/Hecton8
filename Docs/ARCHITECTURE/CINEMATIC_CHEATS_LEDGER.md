@@ -37,6 +37,8 @@ Mandate authority:
 | Flow/weather | Flow fields drive VFX/audio/AI hints first; physics sampling is limited to player/vehicles/hazards/near interactables. | Documentation-only. |
 | Fluid incursion | Interior flooding defaults to scalar state plus leak/audio/haptic/shader fakes; real mass/CoM only for gameplay-critical vessels. | Documentation-only. |
 | Abyssal lighting | Darkness volumes, baked AO, LUT haze, emissive proxies, and dithered shadow proxies precede raymarch/voxel truth. | Documentation-only. |
+| R17 visor/noir shafts | `HectonScooterVolumetricShaftsFeature` source marks scooter shafts as screen-space, zero world-raymarch presentation; material upload forces `_HectonShaftRaymarchSteps = 0` despite legacy renderer YAML `raymarchSteps: 8`. | Source/YAML verified; Frame Debugger, Profiler, Memory Profiler, and visual capture still required. |
+| R17 ground radar pings | `GroundPenetratingRadarRuntime` and `GroundRadarRaymarchJob` cap the sensor fake at `64` rays, `16` low-tier rays, `10` steps, and `128` pings, then render pings indirectly through `Hecton_GroundRadarPingIndirect.shader`. | Source verified; scene wiring, gameplay route, and profiler proof still required. |
 | Tether/cable physics | Old ConfigurableJoint/AddForce path is stale against current AGENTS.md; new production path must use custom constraint packets or visual fake. | Documentation-only. |
 | Tool/hand physics | Welds, anchors, grabs, drag, recoil, and scatter now route through owned physics packets or presentation fakes; direct tool-side Unity physics calls are stale. | Documentation-only. |
 | Underwater audio | HRTF/ITD/ILD becomes optional accessibility/headphone processing, not default underwater realism. | Documentation-only. |

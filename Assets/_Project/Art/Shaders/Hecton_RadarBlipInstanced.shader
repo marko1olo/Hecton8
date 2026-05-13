@@ -107,8 +107,9 @@ Shader "HECTON/HUD/RadarBlipInstanced"
                         float4 ping = _HectonGroundRadarPings[input.instanceId];
                         float strength = saturate(ping.w);
                         float radius = max(1.0, _HectonRadarGprOriginRadius.w);
+                        float invRadius = rcp(radius);
                         float3 delta = ping.xyz - _HectonRadarGprOriginRadius.xyz;
-                        float3 localCenter = float3(delta.x / radius * 0.42, delta.z / radius * 0.42, 0.0);
+                        float3 localCenter = float3(delta.x * invRadius * 0.42, delta.z * invRadius * 0.42, 0.0);
                         float3 worldCenter = mul(_HectonRadarLocalToWorld, float4(localCenter, 1.0)).xyz;
                         float3 cameraRight = HectonSafeNormalize(float3(UNITY_MATRIX_I_V._m00, UNITY_MATRIX_I_V._m10, UNITY_MATRIX_I_V._m20), float3(1.0, 0.0, 0.0));
                         float3 cameraUp = HectonSafeNormalize(float3(UNITY_MATRIX_I_V._m01, UNITY_MATRIX_I_V._m11, UNITY_MATRIX_I_V._m21), float3(0.0, 1.0, 0.0));

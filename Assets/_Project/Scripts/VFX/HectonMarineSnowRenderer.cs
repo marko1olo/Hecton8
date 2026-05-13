@@ -100,6 +100,8 @@ namespace Hecton8.Environment
             internal static readonly int AbyssalFlowSpacingId = Shader.PropertyToID("_AbyssalFlowSpacing");
             internal static readonly int AbyssalFlowTextureParamsId = Shader.PropertyToID("_AbyssalFlowTextureParams");
             internal static readonly int AbyssalFlowTextureActiveId = Shader.PropertyToID("_AbyssalFlowTextureActive");
+            internal static readonly int MaelstromsId = Shader.PropertyToID("_MarineSnowMaelstroms");
+            internal static readonly int MaelstromParamsId = Shader.PropertyToID("_MarineSnowMaelstromParams");
             internal static readonly int FrameConstantsId = Shader.PropertyToID("_HectonMarineSnowFrame");
             internal static readonly int DriftParamsId = Shader.PropertyToID("_MarineSnowDriftParams");
             internal static readonly int FlowParamsId = Shader.PropertyToID("_MarineSnowFlowParams");
@@ -235,6 +237,8 @@ namespace Hecton8.Environment
         private GraphicsBuffer _frameConstantsBuffer;
         private GraphicsBuffer _visibleParticleIndexBuffer;
         private GraphicsBuffer _indirectArgsBuffer;
+        private GraphicsBuffer _maelstromBufferA;
+        private GraphicsBuffer _maelstromBufferB;
         private GraphicsBuffer _emptyAbyssalFlowBuffer;
         private GraphicsBuffer _boundAbyssalFlowBuffer;
         private Camera _targetCameraComponent;
@@ -282,6 +286,8 @@ namespace Hecton8.Environment
         private int _fogDensityHeight;
         private int _fogDensityClearGroupsX;
         private int _fogDensityClearGroupsY;
+        private HectonFluidEngine _fluidEngine;
+        private int _nextFluidRebindFrame;
         private Vector4 _fogDensityTexelSize;
         private Vector4 _lastPublishedSonarGlowTexelSize;
         private Vector4 _lastPublishedSonarGlowParams;
@@ -299,6 +305,7 @@ namespace Hecton8.Environment
         private Vector4 _boundAbyssalFlowCenter;
         private Vector4 _boundAbyssalFlowSpacing;
         private Vector4 _boundAbyssalFlowTextureParams;
+        private Vector4 _boundMaelstromParams = InvalidVector;
         private float _boundAbyssalFlowTextureActive = float.NaN;
         private Vector4 _boundCaveVoxelHalfExtents;
         private Vector4 _boundCaveVoxelInvDoubleHalfExtents;
@@ -314,6 +321,10 @@ namespace Hecton8.Environment
         private GraphicsBuffer _boundSimulationFlowFieldBuffer;
         private GraphicsBuffer _boundSimulationVisibleParticleIndexBuffer;
         private GraphicsBuffer _boundSimulationIndirectArgsBuffer;
+        private GraphicsBuffer _boundSimulationMaelstromBuffer;
+        private uint _boundMaelstromUploadHash;
+        private int _boundMaelstromUploadCount = -1;
+        private int _maelstromWriteBufferIndex;
         private GraphicsBuffer _boundMaterialParticlesBuffer;
         private GraphicsBuffer _boundMaterialVisibleParticleIndexBuffer;
         private GraphicsBuffer _boundSonarGlowParticlesWriteBuffer;
@@ -360,6 +371,7 @@ namespace Hecton8.Environment
         {
             RefreshSpeedLineCache();
             ResolveTargetCamera();
+            RefreshFluidBinding(force: true);
             HectonFloatingOrigin.RegisterListener(this);
             TryRegisterTick();
         }
@@ -382,6 +394,8 @@ namespace Hecton8.Environment
             }
 
             ReleaseBuffers();
+            _fluidEngine = null;
+            _nextFluidRebindFrame = 0;
         }
 
         private void OnDestroy()
@@ -532,6 +546,16 @@ namespace Hecton8.Environment
                 (_bubbleTrailExhale01 * 0.12f));
         }
 
+        private void RefreshFluidBinding(bool force)
+        {
+            int frame = Time.frameCount;
+            if (!force && frame < _nextFluidRebindFrame)
+                return;
+
+            _fluidEngine = GlobalRegistry.Fluid;
+            _nextFluidRebindFrame = frame + 30;
+        }
+
         private void UpdateBiolumeSurgeState(float dt)
         {
             IWeatherService weatherService = GlobalRegistry.Weather;
@@ -622,6 +646,8 @@ namespace Hecton8.Environment
             _indirectArgsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw, 1, GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] - GPU-written culled indirect indexed draw arguments - owner: HectonMarineSnowRenderer
             _emptyAbyssalFlowBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Vector4>(1); // COLD ALLOC: GraphicsBuffer[1] - zero fallback abyssal-flow vector buffer - owner: HectonMarineSnowRenderer
             GraphicsBufferUploadUtility.UploadArray(_emptyAbyssalFlowBuffer, _emptyAbyssalFlowUpload, 1);
+            _maelstromBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4>(HectonFluidEngine.MaxActiveMaelstromCount); // COLD ALLOC: GraphicsBuffer[2] - compact maelstrom particle swirl buffer A - owner: HectonMarineSnowRenderer
+            _maelstromBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4>(HectonFluidEngine.MaxActiveMaelstromCount); // COLD ALLOC: GraphicsBuffer[2] - compact maelstrom particle swirl buffer B for CPU/GPU flip - owner: HectonMarineSnowRenderer
             BootstrapParticles(clampedParticleCount);
             GraphicsBufferUploadUtility.UploadArray(_particleBufferA, _bootstrapParticles, clampedParticleCount);
             GraphicsBufferUploadUtility.UploadArray(_particleBufferB, _bootstrapParticles, clampedParticleCount);
@@ -843,6 +869,10 @@ namespace Hecton8.Environment
             marineSnowCompute.SetBuffer(_clearVisibleKernel, ShaderIds.IndirectArgsId, _indirectArgsBuffer);
             marineSnowCompute.SetBuffer(_kernelIndex, ShaderIds.AbyssalFlowFieldResultId, _emptyAbyssalFlowBuffer);
             _boundAbyssalFlowBuffer = _emptyAbyssalFlowBuffer;
+            marineSnowCompute.SetBuffer(_kernelIndex, ShaderIds.MaelstromsId, _emptyAbyssalFlowBuffer);
+            _boundSimulationMaelstromBuffer = _emptyAbyssalFlowBuffer;
+            marineSnowCompute.SetVector(ShaderIds.MaelstromParamsId, Vector4.zero);
+            _boundMaelstromParams = Vector4.zero;
             marineSnowCompute.SetTexture(_kernelIndex, ShaderIds.AbyssalFlowFieldTextureId, _emptyAbyssalFlowTexture);
             _boundAbyssalFlowTexture = _emptyAbyssalFlowTexture;
             marineSnowCompute.SetFloat(ShaderIds.AbyssalFlowTextureActiveId, 0f);
@@ -998,7 +1028,9 @@ namespace Hecton8.Environment
             if (!_externalGpuBindingsDirty && _externalGpuBindingColdTickTimer > 0f)
                 return;
 
+            RefreshFluidBinding(force: false);
             RefreshAbyssalFlowBinding();
+            RefreshMaelstromBinding();
             RefreshCaveSdfBinding();
             RefreshTerrainHeightBinding();
             SetComputeVectorIfChanged(ShaderIds.FlowSynchronyParamsId, ResolveFlowSynchronyParams(), ref _boundFlowSynchronyParams);
@@ -1016,7 +1048,7 @@ namespace Hecton8.Environment
             Vector4 textureParams = Vector4.zero;
             float textureActive = 0f;
 
-            HectonFluidEngine fluidEngine = GlobalRegistry.Fluid;
+            HectonFluidEngine fluidEngine = _fluidEngine;
             if (fluidEngine != null &&
                 fluidEngine.TryGetGpuAbyssalFlowFieldBuffer(
                     out GraphicsBuffer publishedFlowFieldBuffer,
@@ -1064,6 +1096,106 @@ namespace Hecton8.Environment
             SetComputeVectorIfChanged(ShaderIds.AbyssalFlowSpacingId, flowSpacing, ref _boundAbyssalFlowSpacing);
             SetComputeVectorIfChanged(ShaderIds.AbyssalFlowTextureParamsId, textureParams, ref _boundAbyssalFlowTextureParams);
             SetComputeBinaryFloatIfChanged(ShaderIds.AbyssalFlowTextureActiveId, textureActive, ref _boundAbyssalFlowTextureActive);
+        }
+
+        private void RefreshMaelstromBinding()
+        {
+            GraphicsBuffer maelstromBuffer = _emptyAbyssalFlowBuffer;
+            Vector4 maelstromParams = Vector4.zero;
+
+            HectonFluidEngine fluidEngine = _fluidEngine;
+            if (fluidEngine != null &&
+                _maelstromBufferA != null &&
+                _maelstromBufferB != null &&
+                fluidEngine.TryGetActiveMaelstroms(
+                    out NativeArray<float4> maelstroms,
+                    out int maelstromCount,
+                    out Vector4 publishedMeta))
+            {
+                int uploadCount = math.clamp(maelstromCount, 0, HectonFluidEngine.MaxActiveMaelstromCount);
+                if (uploadCount > 0)
+                {
+                    uint uploadHash = BuildMaelstromUploadHash(maelstroms, uploadCount, publishedMeta);
+                    if (uploadHash != _boundMaelstromUploadHash || uploadCount != _boundMaelstromUploadCount)
+                    {
+                        GraphicsBuffer writeBuffer = ResolveMaelstromWriteBuffer();
+                        GraphicsBufferUploadUtility.UploadNativeArray(writeBuffer, maelstroms, uploadCount);
+                        _boundMaelstromUploadHash = uploadHash;
+                        _boundMaelstromUploadCount = uploadCount;
+                        _maelstromWriteBufferIndex ^= 1;
+                        maelstromBuffer = writeBuffer;
+                    }
+                    else if (_boundSimulationMaelstromBuffer != null &&
+                             _boundSimulationMaelstromBuffer != _emptyAbyssalFlowBuffer)
+                    {
+                        maelstromBuffer = _boundSimulationMaelstromBuffer;
+                    }
+                    else
+                    {
+                        maelstromBuffer = ResolveMaelstromReadFallbackBuffer();
+                    }
+
+                    maelstromParams = new Vector4(
+                        uploadCount,
+                        math.max(0f, publishedMeta.y),
+                        math.max(0f, publishedMeta.z),
+                        publishedMeta.w);
+                }
+            }
+
+            if (maelstromParams.x <= 0f)
+            {
+                _boundMaelstromUploadHash = 0u;
+                _boundMaelstromUploadCount = 0;
+            }
+
+            if (maelstromBuffer != null && maelstromBuffer != _boundSimulationMaelstromBuffer)
+            {
+                marineSnowCompute.SetBuffer(_kernelIndex, ShaderIds.MaelstromsId, maelstromBuffer);
+                _boundSimulationMaelstromBuffer = maelstromBuffer;
+            }
+
+            SetComputeVectorIfChanged(ShaderIds.MaelstromParamsId, maelstromParams, ref _boundMaelstromParams);
+        }
+
+        private GraphicsBuffer ResolveMaelstromWriteBuffer()
+        {
+            return (_maelstromWriteBufferIndex & 1) == 0 ? _maelstromBufferA : _maelstromBufferB;
+        }
+
+        private GraphicsBuffer ResolveMaelstromReadFallbackBuffer()
+        {
+            return (_maelstromWriteBufferIndex & 1) == 0 ? _maelstromBufferB : _maelstromBufferA;
+        }
+
+        private static uint BuildMaelstromUploadHash(NativeArray<float4> maelstroms, int count, Vector4 meta)
+        {
+            uint hash = 2166136261u;
+            hash = MixMaelstromUploadHash(hash, unchecked((uint)count));
+            hash = MixMaelstromUploadHash(hash, math.asuint(meta.x));
+            hash = MixMaelstromUploadHash(hash, math.asuint(meta.y));
+            hash = MixMaelstromUploadHash(hash, math.asuint(meta.z));
+            hash = MixMaelstromUploadHash(hash, math.asuint(meta.w));
+            int safeCount = math.min(math.max(0, count), maelstroms.IsCreated ? maelstroms.Length : 0);
+            for (int i = 0; i < safeCount; i++)
+            {
+                float4 maelstrom = maelstroms[i];
+                hash = MixMaelstromUploadHash(hash, math.asuint(maelstrom.x));
+                hash = MixMaelstromUploadHash(hash, math.asuint(maelstrom.y));
+                hash = MixMaelstromUploadHash(hash, math.asuint(maelstrom.z));
+                hash = MixMaelstromUploadHash(hash, math.asuint(maelstrom.w));
+            }
+
+            return hash;
+        }
+
+        private static uint MixMaelstromUploadHash(uint hash, uint value)
+        {
+            unchecked
+            {
+                hash ^= value;
+                return hash * 16777619u;
+            }
         }
 
         private void RefreshCaveSdfBinding()
@@ -1684,6 +1816,8 @@ namespace Hecton8.Environment
             ReleaseBuffer(ref _visibleParticleIndexBuffer);
             ReleaseBuffer(ref _indirectArgsBuffer);
             ReleaseBuffer(ref _emptyAbyssalFlowBuffer);
+            ReleaseBuffer(ref _maelstromBufferA);
+            ReleaseBuffer(ref _maelstromBufferB);
             ReleaseEmptyCaveSdfTexture();
             ReleaseEmptyAbyssalFlowTexture();
             ReleaseQuadMesh();
@@ -1717,6 +1851,10 @@ namespace Hecton8.Environment
             _boundSimulationFlowFieldBuffer = null;
             _boundSimulationVisibleParticleIndexBuffer = null;
             _boundSimulationIndirectArgsBuffer = null;
+            _boundSimulationMaelstromBuffer = null;
+            _boundMaelstromUploadHash = 0u;
+            _boundMaelstromUploadCount = -1;
+            _maelstromWriteBufferIndex = 0;
             _boundMaterialParticlesBuffer = null;
             _boundMaterialVisibleParticleIndexBuffer = null;
             _boundSonarGlowParticlesWriteBuffer = null;
@@ -1728,6 +1866,7 @@ namespace Hecton8.Environment
             _boundAbyssalFlowCenter = Vector4.zero;
             _boundAbyssalFlowSpacing = Vector4.zero;
             _boundAbyssalFlowTextureParams = Vector4.zero;
+            _boundMaelstromParams = Vector4.zero;
             _boundCaveVoxelHalfExtents = Vector4.zero;
             _boundCaveVoxelInvDoubleHalfExtents = Vector4.zero;
             _boundTerrainHeightRect = Vector4.zero;

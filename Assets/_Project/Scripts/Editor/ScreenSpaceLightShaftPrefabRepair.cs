@@ -1,106 +1,103 @@
+#if UNITY_EDITOR
+
 using System;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 
 namespace Hecton8.Editor
 {
+    /// <summary>
+    /// Editor-only repair commands for the bounded screen-space light shaft runtime.
+    /// </summary>
     internal static class ScreenSpaceLightShaftPrefabRepair
     {
-        private const string PlayerPrefabPath = "Assets/_Project/Prefabs/Player.prefab";
-        private const string RuntimeTypeName = "Hecton8.Lighting.Shafts.ScreenSpaceLightShaftRuntime, Hecton8.Lighting.Shafts";
-        private const string SourceTypeName = "Hecton8.Lighting.Shafts.ScreenSpaceLightShaftSource, Hecton8.Lighting.Shafts";
-        private const string FlashlightObjectName = "DiveLamp_Light";
-        private const string ShallowSunObjectName = "Underwater_ShallowSunBeam";
+        private const string RuntimeObjectName = "H8_ScreenSpaceLightShaftRuntime";
+        private const string RuntimeTypeName = "Hecton8.Lighting.Shafts.ScreenSpaceLightShaftRuntime";
+        private const string SourceTypeName = "Hecton8.Lighting.Shafts.ScreenSpaceLightShaftSource";
 
-        public static void Run()
+        [MenuItem("Tools/Hecton/Lighting/Ensure Screen Space Light Shaft Runtime")]
+        private static void EnsureRuntime()
         {
-            Type runtimeType = Type.GetType(RuntimeTypeName);
-            Type sourceType = Type.GetType(SourceTypeName);
-            if (runtimeType == null || sourceType == null)
-                throw new InvalidOperationException("Light shaft types are not compiled.");
+            Type runtimeType = ResolveLightShaftType(RuntimeTypeName);
+            if (runtimeType == null || HasComponentInLoadedScenes(runtimeType))
+                return;
 
-            GameObject prefabRoot = PrefabUtility.LoadPrefabContents(PlayerPrefabPath);
-            if (prefabRoot == null)
-                throw new InvalidOperationException("Failed to load Player prefab.");
+            GameObject runtimeObject = new GameObject(RuntimeObjectName);
+            Undo.RegisterCreatedObjectUndo(runtimeObject, "Create screen-space light shaft runtime");
+            runtimeObject.AddComponent(runtimeType);
+            EditorSceneManager.MarkSceneDirty(runtimeObject.scene);
+        }
 
-            try
+        [MenuItem("Tools/Hecton/Lighting/Add Light Shaft Source To Selected Lights")]
+        private static void AddSourceToSelectedLights()
+        {
+            Type sourceType = ResolveLightShaftType(SourceTypeName);
+            if (sourceType == null)
+                return;
+
+            GameObject[] selected = Selection.gameObjects;
+            for (int i = 0; i < selected.Length; i++)
             {
-                int removed = RemoveVlbComponents(prefabRoot);
-                int added = EnsureLightShaftComponents(prefabRoot, runtimeType, sourceType);
-                PrefabUtility.SaveAsPrefabAsset(prefabRoot, PlayerPrefabPath);
-                AssetDatabase.ImportAsset(PlayerPrefabPath, ImportAssetOptions.ForceUpdate);
-                AssetDatabase.SaveAssets();
-                Debug.Log("[ScreenSpaceLightShaftPrefabRepair] removedVlb=" + removed + " addedShaftComponents=" + added);
-            }
-            finally
-            {
-                PrefabUtility.UnloadPrefabContents(prefabRoot);
+                GameObject target = selected[i];
+                if (target == null ||
+                    target.GetComponent<Light>() == null ||
+                    target.GetComponent(sourceType) != null)
+                {
+                    continue;
+                }
+
+                Undo.AddComponent(target, sourceType);
+                EditorSceneManager.MarkSceneDirty(target.scene);
             }
         }
 
-        private static int RemoveVlbComponents(GameObject prefabRoot)
+        [MenuItem("Tools/Hecton/Lighting/Add Light Shaft Source To Selected Lights", true)]
+        private static bool CanAddSourceToSelectedLights()
         {
-            int removed = 0;
-            Component[] components = prefabRoot.GetComponentsInChildren<Component>(true);
-            for (int i = components.Length - 1; i >= 0; i--)
-            {
-                Component component = components[i];
-                if (component == null)
-                    continue;
+            Type sourceType = ResolveLightShaftType(SourceTypeName);
+            if (sourceType == null)
+                return false;
 
-                Type type = component.GetType();
-                string fullName = type.FullName;
-                if (!string.IsNullOrEmpty(fullName) && fullName.StartsWith("VLB.", StringComparison.Ordinal))
+            GameObject[] selected = Selection.gameObjects;
+            for (int i = 0; i < selected.Length; i++)
+            {
+                GameObject target = selected[i];
+                if (target != null &&
+                    target.GetComponent<Light>() != null &&
+                    target.GetComponent(sourceType) == null)
                 {
-                    UnityEngine.Object.DestroyImmediate(component, true);
-                    removed++;
+                    return true;
                 }
             }
 
-            return removed;
+            return false;
         }
 
-        private static int EnsureLightShaftComponents(GameObject prefabRoot, Type runtimeType, Type sourceType)
+        private static Type ResolveLightShaftType(string fullName)
         {
-            int added = 0;
-            if (prefabRoot.GetComponent(runtimeType) == null)
+            foreach (Type type in TypeCache.GetTypesDerivedFrom<MonoBehaviour>())
             {
-                prefabRoot.AddComponent(runtimeType);
-                added++;
-            }
-
-            added += EnsureSourceOnNamedLight(prefabRoot, FlashlightObjectName, sourceType);
-            added += EnsureSourceOnNamedLight(prefabRoot, ShallowSunObjectName, sourceType);
-            return added;
-        }
-
-        private static int EnsureSourceOnNamedLight(GameObject prefabRoot, string objectName, Type sourceType)
-        {
-            Transform target = FindChildByName(prefabRoot.transform, objectName);
-            if (target == null || target.GetComponent<Light>() == null || target.GetComponent(sourceType) != null)
-                return 0;
-
-            target.gameObject.AddComponent(sourceType);
-            return 1;
-        }
-
-        private static Transform FindChildByName(Transform root, string objectName)
-        {
-            if (root == null)
-                return null;
-
-            if (root.name == objectName)
-                return root;
-
-            int childCount = root.childCount;
-            for (int i = 0; i < childCount; i++)
-            {
-                Transform found = FindChildByName(root.GetChild(i), objectName);
-                if (found != null)
-                    return found;
+                if (type != null && string.Equals(type.FullName, fullName, StringComparison.Ordinal))
+                    return type;
             }
 
             return null;
         }
+
+        private static bool HasComponentInLoadedScenes(Type componentType)
+        {
+            MonoBehaviour[] behaviours = UnityEngine.Object.FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Include);
+            for (int i = 0; i < behaviours.Length; i++)
+            {
+                MonoBehaviour behaviour = behaviours[i];
+                if (behaviour != null && behaviour.GetType() == componentType)
+                    return true;
+            }
+
+            return false;
+        }
     }
 }
+
+#endif

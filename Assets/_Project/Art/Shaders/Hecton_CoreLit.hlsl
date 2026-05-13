@@ -154,7 +154,7 @@ float3 HectonCoreLitSafeNormalize(float3 value)
         return float3(0.0, 1.0, 0.0);
 
 #if defined(_MATH_LOD_HIGH)
-    return normalize(value);
+    return value * rsqrt(lenSq);
 #else
     return HectonCoreLitDominantAxisOrDefault(value, float3(0.0, 1.0, 0.0));
 #endif
@@ -193,16 +193,12 @@ float HectonCoreLitEvaluateHullDentDepthOS(float3 positionOS)
     float3 safePositionOS = HectonCoreLitSanitizePositionOS(positionOS);
     float dentDepth = 0.0;
 
-    if (_HectonHullDentParams.y > 0.5)
-        return saturate(_HectonHullDentParams.z) * 0.04;
+    if (_HectonHullDentParams.y > 0.5 || _HectonHullDentParams.x <= 0.5)
+        return 0.0;
 
-    int activeCount = min((int)max(_HectonHullDentParams.x, 0.0), HECTON_HULL_DENT_MAX);
     [unroll]
     for (int i = 0; i < HECTON_HULL_DENT_MAX; i++)
     {
-        if (i >= activeCount)
-            continue;
-
         float4 dent = _HectonHullDents[i];
         float radius;
         float depth;
@@ -226,10 +222,16 @@ float HectonCoreLitEvaluateHullDentDepthOS(float3 positionOS)
 float3 HectonCoreLitApplyHullDentsOS(float3 positionOS, float3 normalOS, out half dentShadow)
 {
     float3 safePositionOS = HectonCoreLitSanitizePositionOS(positionOS);
-    float dentDepth = HectonCoreLitEvaluateHullDentDepthOS(safePositionOS);
-    dentShadow = (half)saturate(dentDepth * 4.0 + saturate(_HectonHullDentParams.z) * 0.2);
+    if (_HectonHullDentParams.y > 0.5 || _HectonHullDentParams.x <= 0.5)
+    {
+        dentShadow = 0.0h;
+        return safePositionOS;
+    }
 
-    if (_HectonHullDentParams.y > 0.5 || dentDepth <= 0.0001)
+    float dentDepth = HectonCoreLitEvaluateHullDentDepthOS(safePositionOS);
+    dentShadow = (half)saturate(dentDepth * 4.0);
+
+    if (dentDepth <= 0.0001)
         return safePositionOS;
 
     float3 safeNormalOS = HectonCoreLitSafeNormalize(normalOS);
@@ -1388,6 +1390,14 @@ float HectonCoreLitEvaluateActiveSonarTriplanarGrid(float3 positionWS, float gri
     float gridYZ = 1.0 - saturate(min(cellYZ.x, cellYZ.y) * 26.0);
     float gridZX = 1.0 - saturate(min(cellZX.x, cellZX.y) * 26.0);
     float grid = max(max(gridXY, gridYZ), gridZX);
+    if (gridEnabled > 1.5)
+    {
+        float2 fineCell = abs(frac((stablePosition.xy + stablePosition.zz * 0.37) * 0.17 + float2(5.1, 2.7)) - 0.5);
+        float fineGrid = 1.0 - saturate(min(fineCell.x, fineCell.y) * 42.0);
+        float rib = 1.0 - saturate(abs(frac(dot(stablePosition, float3(0.019, 0.031, 0.043))) - 0.5) * 10.0);
+        grid = saturate(max(grid, fineGrid * 0.72) + rib * 0.18);
+    }
+
     float scanNoise = abs(frac(dot(stablePosition, float3(0.037, 0.011, 0.029))) - 0.5) * 2.0;
     return saturate(0.62 + grid * 0.55 + (scanNoise - 0.5) * 0.18);
 #endif
@@ -1400,7 +1410,7 @@ float HectonCoreLitEvaluateActiveSonarGeoRing(float3 positionWS)
         return 0.0;
 
     float maxRange = max(_ActiveSonarGeoParams.y, 1.0);
-    float gridEnabled = saturate(_ActiveSonarGeoParams.z);
+    float gridEnabled = _ActiveSonarGeoParams.z;
     float ringAccum = 0.0;
     [unroll]
     for (int pingIndex = 0; pingIndex < HECTON_ACTIVE_SONAR_MAX_PINGS; pingIndex++)
@@ -1419,11 +1429,11 @@ float HectonCoreLitEvaluateActiveSonarGeoRing(float3 positionWS)
         float ring = 1.0 - saturate(abs(distSq - radiusSq) * 0.05);
         float fade = 1.0 - saturate(radius * rcp(maxRange));
         float intensity = saturate(_ActiveSonarParams[pingIndex].x);
-        float grid = HectonCoreLitEvaluateActiveSonarTriplanarGrid(positionWS, gridEnabled);
-        ringAccum = max(ringAccum, ring * grid * fade * intensity);
+        ringAccum = max(ringAccum, ring * fade * intensity);
     }
 
-    return saturate(ringAccum);
+    float grid = HectonCoreLitEvaluateActiveSonarTriplanarGrid(positionWS, gridEnabled);
+    return saturate(ringAccum * grid);
 }
 
 float3 HectonCoreLitEvaluateActiveSonarGeoEmission(float3 positionWS)

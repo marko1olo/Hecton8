@@ -50,5 +50,5 @@ MonoBehaviour:
     tableKey: ITEM_INTERACT_TAKE
     fallbackText: Harvest
     variants: []
-  worldPrefab: {fileID: 0}
+  worldPrefab: {fileID: 2572332944962446987, guid: c0a27162bed68b345b3aca43093fbaac, type: 3}
   worldBuoyancyProfile: {fileID: 0}

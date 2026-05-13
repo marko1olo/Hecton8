@@ -1218,6 +1218,28 @@ namespace Hecton8.Audio
         public void PlayAtPoint(
             AudioClip clip, Vector3 position, float volume, float pitch, AudioMixerGroup mixerGroup)
         {
+            ResolveSourceAupFrame(position, out AbsoluteUniversePosition sourceAup, out Vector3 sourceAbsolutePosition);
+            PlayAtPointResolved(
+                clip,
+                position,
+                in sourceAup,
+                sourceAbsolutePosition,
+                volume,
+                pitch,
+                mixerGroup,
+                0);
+        }
+
+        private void PlayAtPointResolved(
+            AudioClip clip,
+            Vector3 position,
+            in AbsoluteUniversePosition sourceAup,
+            Vector3 sourceAbsolutePosition,
+            float volume,
+            float pitch,
+            AudioMixerGroup mixerGroup,
+            int stationaryCacheKey)
+        {
             if (clip == null)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -1237,7 +1259,6 @@ namespace Hecton8.Audio
                 out AbsoluteUniversePosition listenerAup);
             ResolveListenerBasis(listener, out float3 listenerRight, out _, out float3 listenerForward);
             float3 listenerAcousticForward = listenerForward;
-            ResolveSourceAupFrame(position, out AbsoluteUniversePosition sourceAup, out Vector3 sourceAbsolutePosition);
             Vector3 audiblePosition = position;
             Vector3 audibleAbsolutePosition = sourceAbsolutePosition;
             AbsoluteUniversePosition audibleAup = sourceAup;
@@ -1249,6 +1270,7 @@ namespace Hecton8.Audio
                     listenerRight,
                     in sourceAup,
                     in listenerAup,
+                    stationaryCacheKey,
                     out acousticPortalResult);
             if (hasAcousticPortalPath)
             {
@@ -1401,12 +1423,19 @@ namespace Hecton8.Audio
 
             AbsoluteUniversePosition sourceAup = ToAbsoluteUniversePosition(in signal.SourceAup);
             Vector3 runtimePosition = ToRuntimeVector3(in sourceAup);
-            PlayAtPoint(
+            Vector3 absolutePosition = ToAbsoluteVector3(in sourceAup);
+            int stationaryCacheKey = (signal.Flags & AcousticPortalFlags.StationaryEmitter) != 0
+                ? signal.StationaryCacheKey
+                : 0;
+            PlayAtPointResolved(
                 clip,
                 runtimePosition,
+                in sourceAup,
+                absolutePosition,
                 signal.Volume,
                 signal.Pitch,
-                ResolvedDefaultWorldMixerGroup);
+                ResolvedDefaultWorldMixerGroup,
+                stationaryCacheKey);
         }
 
         private void DispatchQueuedAudioEvent(in CoreAudioEvent audioEvent)
@@ -1464,6 +1493,7 @@ namespace Hecton8.Audio
                     listenerRight,
                     in sourceAup,
                     in listenerAup,
+                    0,
                     out acousticPortalResult);
             if (hasAcousticPortalPath)
             {
@@ -3425,6 +3455,7 @@ namespace Hecton8.Audio
             float3 listenerRight,
             in AbsoluteUniversePosition sourceAup,
             in AbsoluteUniversePosition listenerAup,
+            int stationaryCacheKey,
             out AcousticPathResult result)
         {
             result = default;
@@ -3440,7 +3471,7 @@ namespace Hecton8.Audio
 
             AcousticAup acousticSource = ToAcousticAup(in sourceAup);
             AcousticAup acousticListener = ToAcousticAup(in listenerAup);
-            int cacheKey = ComputeAcousticPortalCacheKey(in acousticSource, in acousticListener);
+            int cacheKey = ComputeAcousticPortalCacheKey(in acousticSource, in acousticListener, stationaryCacheKey);
             if (TryReadAcousticPortalCache(cacheKey, in acousticSource, in acousticListener, out result))
             {
                 WriteAcousticPortalBlackBox(in result, Time.frameCount);
@@ -3832,13 +3863,17 @@ namespace Hecton8.Audio
             };
         }
 
-        private static int ComputeAcousticPortalCacheKey(in AcousticAup sourceAup, in AcousticAup listenerAup)
+        private static int ComputeAcousticPortalCacheKey(
+            in AcousticAup sourceAup,
+            in AcousticAup listenerAup,
+            int stationaryCacheKey)
         {
             unchecked
             {
                 uint hash = 2166136261u;
                 hash = HashAcousticAup(hash, in sourceAup);
                 hash = HashAcousticAup(hash, in listenerAup);
+                hash = (hash ^ (uint)stationaryCacheKey) * 16777619u;
                 return (int)hash;
             }
         }

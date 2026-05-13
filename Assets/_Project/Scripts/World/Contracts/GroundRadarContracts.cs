@@ -18,4 +18,13 @@ namespace Hecton8.World
         bool TryGetGprPingBuffer(out GraphicsBuffer buffer, out int activeCount, out int sequence);
         bool TryCopyGprPings(NativeArray<float4> destination, out int copiedCount);
     }
+
+    /// <summary>
+    /// Registry-facing ore SoA read model owned by the world resource spawner.
+    /// </summary>
+    public interface IWorldResourceSpawnerReadModel
+    {
+        int ActiveOreCount { get; }
+        bool TryGetOrePositions(out NativeArray<float3> orePositions, out int activeCount);
+    }
 }

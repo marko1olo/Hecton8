@@ -242,7 +242,7 @@ namespace Hecton8.Dev
             }
 
             if (starterConstructionItems.Length > 0 && starterConstructionItems[0] == null)
-                starterConstructionItems[0] = AssetDatabase.LoadAssetAtPath<ItemData>("Assets/_Project/Data/Items/Data_Copper.asset");
+                starterConstructionItems[0] = AssetDatabase.LoadAssetAtPath<ItemData>("Assets/_Project/Data/Items/Resources/Raw/Data_Copper.asset");
 
             if (starterConstructionAmounts.Length > 0 && starterConstructionAmounts[0] <= 0)
                 starterConstructionAmounts[0] = 12;

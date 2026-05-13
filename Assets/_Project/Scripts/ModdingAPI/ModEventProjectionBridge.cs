@@ -30,6 +30,8 @@ namespace Hecton8.Modding
         private const string ExceptionDisableReason = "Projected event callback exception.";
         private const uint GcCullEventHash = 0x4743414Cu; // GCAL
         private const uint ExceptionCullEventHash = 0x45584350u; // EXCP
+        private const uint ProjectionJobOverrunWarningHash = 0x4D504A4Fu; // MPJO
+        private const uint ProjectionBridgeContextHash = 0x4D504252u; // MPBR
         private static readonly long _watchdogTicks = Math.Max(1L, (long)(Stopwatch.Frequency * 0.002d));
         private static readonly float _stopwatchTicksToMilliseconds = (float)(1000.0d / Stopwatch.Frequency);
         // COLD ALLOC: ModEventProjectionBridge[1] - registry-owned mod event projection service - owner: ModEventProjectionBridge
@@ -48,6 +50,7 @@ namespace Hecton8.Modding
         private int _tickCount;
         private bool _projectionScheduled;
         private bool _needsCompaction;
+        private bool _lateFrameRegistered;
 
         public bool IsInitialized { get; private set; }
 
@@ -62,6 +65,7 @@ namespace Hecton8.Modding
             _globalBridge._dispatchDepth = 0;
             _globalBridge._activeSubscriptionCount = 0;
             _globalBridge._needsCompaction = false;
+            _globalBridge._lateFrameRegistered = false;
         }
 
         internal static void InstallGlobal()
@@ -99,6 +103,9 @@ namespace Hecton8.Modding
             if (IsInitialized)
                 return;
 
+            if (GlobalRegistry.Dispatcher == null)
+                return;
+
             _projectedEvents = new NativeQueue<ModEventDto>(Allocator.Persistent); // COLD ALLOC: NativeQueue<ModEventDto>[50] - projected public signal metadata for managed mods - owner: ModEventProjectionBridge
             NativeMemorySentinel.RegisterNativeQueue(_projectedEvents, HighTierProjectionCap, NativeMemoryOwner, nameof(_projectedEvents), NativeAllocationLifetime.Session);
             _cullTelemetry = new NativeArray<ModCullTelemetryEntry>(BlackboxCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ModCullTelemetryEntry>[300] - culled mod hash blackbox ring - owner: ModEventProjectionBridge
@@ -109,7 +116,16 @@ namespace Hecton8.Modding
 
             HectonEventBus.InstallNativeQueueBindings();
             GlobalRegistry.RegisterModdingBridgeRuntime(this);
-            GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Core);
+            _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Core);
+            if (!_lateFrameRegistered)
+            {
+                GlobalRegistry.UnregisterModdingBridgeRuntime(this);
+                HectonEventBus.UninstallNativeQueueBindings();
+                ReleaseNativeState();
+                return;
+            }
+
+            SystemDispatcher.SetModdingBridgeProjectionRuntime(this);
             IsInitialized = true;
         }
 
@@ -118,34 +134,50 @@ namespace Hecton8.Modding
             if (!IsInitialized)
                 return;
 
-            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Core);
+            if (_lateFrameRegistered)
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Core);
             GlobalRegistry.UnregisterModdingBridgeRuntime(this);
+            SystemDispatcher.ClearModdingBridgeProjectionRuntime(this);
             HectonEventBus.UninstallNativeQueueBindings();
+            _lateFrameRegistered = false;
 
             if (_projectionScheduled)
                 DispatcherJobSwap.TryComplete(ref _projectionHandle, forceComplete: true);
 
+            ReleaseNativeState();
+            IsInitialized = false;
+        }
+
+        private void ReleaseNativeState()
+        {
             _projectionScheduled = false;
             _queuedProjectedEventCount = 0;
             if (_projectedEvents.IsCreated)
             {
                 NativeMemorySentinel.UnregisterNativeQueue(NativeMemoryOwner, nameof(_projectedEvents));
                 _projectedEvents.Dispose();
+                _projectedEvents = default;
             }
 
             if (_cullTelemetry.IsCreated)
             {
                 NativeMemorySentinel.UnregisterNativeArray(_cullTelemetry);
                 _cullTelemetry.Dispose();
+                _cullTelemetry = default;
             }
-
-            IsInitialized = false;
         }
 
         public void ProjectPostSimulation()
         {
-            if (!IsInitialized || _activeSubscriptionCount <= 0 || _projectionScheduled || !_projectedEvents.IsCreated)
+            if (!IsInitialized ||
+                !_lateFrameRegistered ||
+                _activeSubscriptionCount <= 0 ||
+                _projectionScheduled ||
+                _queuedProjectedEventCount > 0 ||
+                !_projectedEvents.IsCreated)
+            {
                 return;
+            }
 
             int projectionCap = ResolveProjectionCap();
             int damageCount = math.min(SignalBus<CombatDamageSignal>.SnapshotCount, projectionCap);
@@ -199,8 +231,17 @@ namespace Hecton8.Modding
                 return;
 
             _tickCount++;
-            if (_projectionScheduled && !DispatcherJobSwap.TryComplete(ref _projectionHandle, forceComplete: false))
-                return;
+            if (_projectionScheduled)
+            {
+                if (!DispatcherJobSwap.TryComplete(ref _projectionHandle, forceComplete: false))
+                {
+                    DispatcherJobSwap.TryComplete(ref _projectionHandle, forceComplete: true);
+                    GlobalTelemetryBus.PublishPerformanceWarning(
+                        ProjectionJobOverrunWarningHash,
+                        ProjectionBridgeContextHash,
+                        _queuedProjectedEventCount);
+                }
+            }
 
             _projectionScheduled = false;
             int dispatchBudget = ResolveProjectionCap();
@@ -211,7 +252,10 @@ namespace Hecton8.Modding
                     return;
 
                 if (!_projectedEvents.TryDequeue(out ModEventDto dto))
+                {
+                    _queuedProjectedEventCount = 0;
                     break;
+                }
 
                 _queuedProjectedEventCount--;
                 dispatched++;

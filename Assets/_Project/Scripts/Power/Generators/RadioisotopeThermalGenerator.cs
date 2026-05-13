@@ -1,0 +1,1013 @@
+using System;
+using System.IO;
+using System.Runtime.InteropServices;
+using Hecton.Localization;
+using Hecton8.Core;
+using Hecton8.Core.Signals;
+using Hecton8.Gameplay;
+using Hecton8.Power;
+using Hecton8.Power.Generators.Contracts;
+using Hecton8.SaveSystem;
+using Hecton8.World;
+using Unity.Burst;
+using Unity.Collections;
+using Unity.Jobs;
+using Unity.Mathematics;
+using UnityEngine;
+
+namespace Hecton8.Power.Generators
+{
+    [DisallowMultipleComponent]
+    [RequireComponent(typeof(PowerNode))]
+    [AddComponentMenu("Hecton8/Power/Radioisotope Thermal Generator")]
+    public sealed class RadioisotopeThermalGenerator : MonoBehaviour,
+        IPowerComponent,
+        IColdTickable,
+        IFrostTickable,
+        ILateFrameTickable,
+        IPoolable,
+        ISaveable,
+        IRtgDecayOutputReader,
+        IRadioisotopeThermalReprocessable
+    {
+        private const int MaxRtgs = 128;
+        private const int TelemetryCapacity = 300;
+        private const int DecayBatchSize = 32;
+        private const float SecondsPerHour = 3600f;
+        private const float MinimumHalfLifeSeconds = 1f;
+        private const float DeadOutputThreshold01 = 0.05f;
+        private const float WarningOutputThreshold01 = 0.2f;
+        private const float DefaultHighTierCadenceSeconds = 1f;
+        private const float LowTierCadenceSeconds = 10f;
+        private const float PowerDirtyDeltaWatts = 0.01f;
+        private const float MinimumRadiationRadiusMeters = 0.5f;
+        private const string NativeMemoryOwner = nameof(RadioisotopeThermalGenerator);
+        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
+        private const string BlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_RTG_DECAY_SIMULATOR.bin";
+        private const uint BlackBoxMagic = 0x52475444u; // RGTD
+        private const uint BlackBoxVersion = 2u;
+        private const uint RtgTelemetryHash = 0x52544721u; // RTG!
+        private const uint ActiveRtgsHash = 0x41525447u; // ARTG
+        private const uint AverageRtgHealthHash = 0x41564821u; // AVH!
+        private static readonly uint RtgLowOutputMessageHash =
+            unchecked((uint)LocHash.Compute("Power.RTG.OutputBelowTwentyPercent"));
+        private static readonly uint RtgLowOutputContextHash =
+            unchecked((uint)LocHash.Compute(nameof(RadioisotopeThermalGenerator)));
+
+        private const byte FlagActive = RtgDecayMath.FlagActive;
+        private const byte FlagDead = RtgDecayMath.FlagDead;
+        private const byte FlagWarned20 = RtgDecayMath.FlagWarned20;
+        private const byte FlagReprocessed = RtgDecayMath.FlagReprocessed;
+
+        [SerializeField] private string stableRtgId = "rtg.core.00";
+        [SerializeField] private uint sourceIdOverride;
+        [SerializeField] private float baseOutputWatts = 180f;
+        [SerializeField] private float halfLifeHours = 180f;
+        [SerializeField] private float thermalRadiusMeters = 5f;
+        [SerializeField] private float thermalDeltaCelsiusAtFullOutput = 6f;
+        [SerializeField] private float radiationRadiusMeters = 6f;
+        [SerializeField] private float radiationIntensityAtFullOutput = 0.55f;
+        [SerializeField] private float deadRadiationIntensity = 0.35f;
+        [SerializeField] private string depletedIsotopeItemId = "item.depleted_rtg_isotope";
+        [SerializeField] private bool forceLowTierCadence;
+
+        private static NativeArray<float> s_rtgStartTimes;
+        private static NativeArray<float> s_rtgHalfLives;
+        private static NativeArray<float> s_rtgBaseOutput;
+        private static NativeArray<float> s_rtgCurrentOutput;
+        private static NativeArray<float> s_rtgOutputNormalized;
+        private static NativeArray<byte> s_rtgFlags;
+        private static NativeArray<RtgTelemetryEntry> s_telemetryRing;
+        private static RadioisotopeThermalGenerator[] s_instances;
+        private static JobHandle s_decayJobHandle;
+        private static bool s_decayJobPending;
+        private static bool s_blackBoxDumped;
+        private static int s_activeCount;
+        private static int s_leaderSlot = -1;
+        private static int s_telemetryCursor;
+        private static float s_averageRtgHealth01 = 1f;
+        private static float s_lastDecayEvaluationSeconds = float.NegativeInfinity;
+        private static IThermodynamicsService s_thermodynamics;
+
+        private PowerNode _powerNode;
+        private int _slot = -1;
+        private int _sourceId;
+        private uint _depletedIsotopeHash;
+        private float _startTimeSeconds = -1f;
+        private float _currentOutputWatts;
+        private float _outputNormalized01 = 1f;
+        private bool _isDead;
+        private bool _reprocessed;
+        private bool _registeredCold;
+        private bool _registeredFrost;
+        private bool _registeredLate;
+        private bool _registeredSave;
+
+        public int SavePriority => 53;
+        public int LoadPriority => 53;
+        public float PowerRating => _isDead || _reprocessed ? 0f : math.max(0f, _currentOutputWatts);
+        public int PowerPriority => 0;
+        public bool HasPower => !_isDead && !_reprocessed;
+        public float OutputNormalized01 => _outputNormalized01;
+        public float CurrentOutputWatts => _currentOutputWatts;
+        public int ActiveRtgCount => s_activeCount;
+        public float AverageRtgHealth01 => s_averageRtgHealth01;
+        public bool IsDeadRtg => _isDead;
+        public uint DepletedIsotopeHash => _depletedIsotopeHash;
+
+        public void OnPowerStatusChanged(bool hasPower)
+        {
+        }
+
+        public void OnSpawn()
+        {
+            TryRegisterRuntime();
+            TryRegisterSaveParticipant();
+        }
+
+        public void OnDespawn()
+        {
+            TryUnregisterRuntime();
+            TryUnregisterSaveParticipant();
+        }
+
+        public void ColdTick()
+        {
+            if (_slot != s_leaderSlot)
+                return;
+
+            TryRegisterSaveParticipant();
+            if (UsesLowTierCadence())
+                return;
+
+            TryRunDecayCadence(DefaultHighTierCadenceSeconds);
+        }
+
+        public void FrostTick()
+        {
+            if (_slot != s_leaderSlot)
+                return;
+
+            TryRegisterSaveParticipant();
+            if (!UsesLowTierCadence())
+                return;
+
+            TryRunDecayCadence(LowTierCadenceSeconds);
+        }
+
+        public void LateFrameTick()
+        {
+            if (_slot != s_leaderSlot)
+                return;
+
+            CompleteDecayJobIfReady(false);
+        }
+
+        public void PopulateSaveData(SaveData data)
+        {
+            if (data == null || _slot != s_leaderSlot)
+                return;
+
+            CompleteDecayJobIfReady(true);
+            EnsureRtgSaveArrays(data);
+            int writeCount = 0;
+            for (int i = 0; i < MaxRtgs; i++)
+            {
+                if ((s_rtgFlags[i] & FlagActive) == 0)
+                    continue;
+
+                RadioisotopeThermalGenerator instance = s_instances != null ? s_instances[i] : null;
+                instance?.WriteRtgSaveRecord(data, ref writeCount);
+            }
+
+            data.rtgDecayCount = writeCount;
+        }
+
+        public void LoadFromSaveData(SaveData data)
+        {
+            ResolveIdentity();
+            if (data == null || _sourceId == 0)
+                return;
+
+            int safeCount = math.clamp(data.rtgDecayCount, 0, SaveData.MaxRtgDecayRecords);
+            int sourceLength = data.rtgDecaySourceIds != null ? data.rtgDecaySourceIds.Length : 0;
+            int startLength = data.rtgStartTimesSeconds != null ? data.rtgStartTimesSeconds.Length : 0;
+            int flagLength = data.rtgDecayFlags != null ? data.rtgDecayFlags.Length : 0;
+            safeCount = math.min(safeCount, math.min(sourceLength, math.min(startLength, flagLength)));
+
+            for (int i = 0; i < safeCount; i++)
+            {
+                if (data.rtgDecaySourceIds[i] != _sourceId)
+                    continue;
+
+                double start = data.rtgStartTimesSeconds[i];
+                _startTimeSeconds = (!double.IsNaN(start) && !double.IsInfinity(start) && start > 0d)
+                    ? (float)math.min(start, (double)float.MaxValue)
+                    : ResolveCurrentTimeSeconds();
+                byte flags = data.rtgDecayFlags[i];
+                _reprocessed = (flags & FlagReprocessed) != 0;
+                _isDead = (flags & FlagDead) != 0;
+                ResolveLocalDecaySnapshot(ResolveCurrentTimeSeconds());
+                if ((flags & FlagWarned20) != 0 && _slot >= 0 && s_rtgFlags.IsCreated)
+                    s_rtgFlags[_slot] = (byte)(s_rtgFlags[_slot] | FlagWarned20);
+
+                WriteSlotStateFromInstance();
+                return;
+            }
+        }
+
+        public bool TryGetRtgCurrentOutput(uint sourceId, out float watts, out float normalized01)
+        {
+            return TryGetCurrentOutput(sourceId, out watts, out normalized01);
+        }
+
+        public bool TryMarkReprocessed()
+        {
+            if (!_isDead || _reprocessed)
+                return false;
+
+            _reprocessed = true;
+            _currentOutputWatts = 0f;
+            _outputNormalized01 = 0f;
+            if (_slot >= 0 && s_rtgFlags.IsCreated)
+            {
+                s_rtgFlags[_slot] = (byte)(s_rtgFlags[_slot] | FlagDead | FlagReprocessed);
+                s_rtgCurrentOutput[_slot] = 0f;
+                s_rtgOutputNormalized[_slot] = 0f;
+            }
+
+            RadiationHazardGrid.UnregisterSource(_sourceId);
+            MarkPowerGridDirty();
+            RecordTelemetry(_slot, ComposeRuntimeFlags());
+            return true;
+        }
+
+        public static bool TryGetCurrentOutput(uint sourceId, out float watts, out float normalized01)
+        {
+            watts = 0f;
+            normalized01 = 0f;
+            if (sourceId == 0u ||
+                s_instances == null ||
+                !s_rtgCurrentOutput.IsCreated ||
+                !s_rtgOutputNormalized.IsCreated)
+            {
+                return false;
+            }
+
+            int sourceInt = NormalizeSourceId(sourceId);
+            for (int i = 0; i < MaxRtgs; i++)
+            {
+                RadioisotopeThermalGenerator instance = s_instances[i];
+                if (instance == null || instance._sourceId != sourceInt)
+                    continue;
+
+                watts = s_rtgCurrentOutput[i];
+                normalized01 = s_rtgOutputNormalized[i];
+                return true;
+            }
+
+            return false;
+        }
+
+        public static bool TryReprocessForFabricator(Component candidate, out uint depletedIsotopeHash)
+        {
+            depletedIsotopeHash = 0u;
+            if (candidate == null)
+                return false;
+
+            if (!candidate.TryGetComponent(out IRadioisotopeThermalReprocessable reprocessable) ||
+                !reprocessable.IsDeadRtg)
+            {
+                return false;
+            }
+
+            depletedIsotopeHash = reprocessable.DepletedIsotopeHash;
+            return depletedIsotopeHash != 0u && reprocessable.TryMarkReprocessed();
+        }
+
+        public static bool TryGetTelemetry(int newestFirstIndex, out uint sourceId, out float outputWatts, out float normalized01)
+        {
+            sourceId = 0u;
+            outputWatts = 0f;
+            normalized01 = 0f;
+            if (newestFirstIndex < 0 ||
+                newestFirstIndex >= TelemetryCapacity ||
+                s_telemetryCursor <= 0 ||
+                !s_telemetryRing.IsCreated)
+            {
+                return false;
+            }
+
+            int index = (s_telemetryCursor - 1 - newestFirstIndex + TelemetryCapacity) % TelemetryCapacity;
+            RtgTelemetryEntry entry = s_telemetryRing[index];
+            sourceId = entry.SourceId;
+            outputWatts = entry.OutputWatts;
+            normalized01 = entry.NormalizedOutput01;
+            return sourceId != 0u;
+        }
+
+        private void Awake()
+        {
+            _powerNode = GetComponent<PowerNode>();
+            ResolveIdentity();
+            SanitizeInspectorValues();
+            _currentOutputWatts = math.max(0f, baseOutputWatts);
+            _outputNormalized01 = 1f;
+            EnsureNativeBuffers();
+        }
+
+        private void Start()
+        {
+            TryRegisterRuntime();
+            TryRegisterSaveParticipant();
+        }
+
+        private void OnEnable()
+        {
+            TryRegisterRuntime();
+            TryRegisterSaveParticipant();
+        }
+
+        private void OnDisable()
+        {
+            TryUnregisterRuntime();
+            TryUnregisterSaveParticipant();
+        }
+
+        private void OnDestroy()
+        {
+            TryUnregisterRuntime();
+            TryUnregisterSaveParticipant();
+        }
+
+        private void OnValidate()
+        {
+            SanitizeInspectorValues();
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            CompleteDecayJobIfReady(true);
+            DisposeNativeBuffers();
+            s_instances = null;
+            s_decayJobHandle = default;
+            s_decayJobPending = false;
+            s_blackBoxDumped = false;
+            s_activeCount = 0;
+            s_leaderSlot = -1;
+            s_telemetryCursor = 0;
+            s_averageRtgHealth01 = 1f;
+            s_lastDecayEvaluationSeconds = float.NegativeInfinity;
+            s_thermodynamics = null;
+        }
+
+        private static void EnsureNativeBuffers()
+        {
+            if (s_rtgStartTimes.IsCreated)
+                return;
+
+            s_rtgStartTimes = new NativeArray<float>(MaxRtgs, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            s_rtgHalfLives = new NativeArray<float>(MaxRtgs, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            s_rtgBaseOutput = new NativeArray<float>(MaxRtgs, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            s_rtgCurrentOutput = new NativeArray<float>(MaxRtgs, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            s_rtgOutputNormalized = new NativeArray<float>(MaxRtgs, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            s_rtgFlags = new NativeArray<byte>(MaxRtgs, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            s_telemetryRing = new NativeArray<RtgTelemetryEntry>(TelemetryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            s_instances = new RadioisotopeThermalGenerator[MaxRtgs];
+
+            NativeMemorySentinel.RegisterNativeArray(s_rtgStartTimes, NativeMemoryOwner, nameof(s_rtgStartTimes), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(s_rtgHalfLives, NativeMemoryOwner, nameof(s_rtgHalfLives), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(s_rtgBaseOutput, NativeMemoryOwner, nameof(s_rtgBaseOutput), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(s_rtgCurrentOutput, NativeMemoryOwner, nameof(s_rtgCurrentOutput), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(s_rtgOutputNormalized, NativeMemoryOwner, nameof(s_rtgOutputNormalized), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(s_rtgFlags, NativeMemoryOwner, nameof(s_rtgFlags), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(s_telemetryRing, NativeMemoryOwner, nameof(s_telemetryRing), NativeMemoryLifetime);
+        }
+
+        private static void DisposeNativeBuffers()
+        {
+            DisposeArray(ref s_rtgStartTimes);
+            DisposeArray(ref s_rtgHalfLives);
+            DisposeArray(ref s_rtgBaseOutput);
+            DisposeArray(ref s_rtgCurrentOutput);
+            DisposeArray(ref s_rtgOutputNormalized);
+            DisposeArray(ref s_rtgFlags);
+            DisposeArray(ref s_telemetryRing);
+        }
+
+        private static void DisposeArray<T>(ref NativeArray<T> array) where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeArray(array);
+            array.Dispose();
+            array = default;
+        }
+
+        private void TryRegisterRuntime()
+        {
+            if (!Application.isPlaying || _slot >= 0)
+                return;
+
+            EnsureNativeBuffers();
+            ResolveIdentity();
+            SanitizeInspectorValues();
+            int slot = AllocateSlot(this);
+            if (slot < 0)
+            {
+                DumpBlackBoxOnce(1u);
+                return;
+            }
+
+            _slot = slot;
+            if (_startTimeSeconds <= 0f || !math.isfinite(_startTimeSeconds))
+                _startTimeSeconds = ResolveCurrentTimeSeconds();
+
+            ResolveLocalDecaySnapshot(ResolveCurrentTimeSeconds());
+            WriteSlotStateFromInstance();
+            s_activeCount++;
+            PublishRadiationAndHeat();
+            MarkPowerGridDirty();
+            RefreshLeader();
+        }
+
+        private void TryUnregisterRuntime()
+        {
+            if (_slot < 0)
+                return;
+
+            CompleteDecayJobIfReady(true);
+            int slot = _slot;
+            if (slot == s_leaderSlot)
+                SetLeaderSlot(-1);
+
+            RadiationHazardGrid.UnregisterSource(_sourceId);
+            s_instances[slot] = null;
+            s_rtgFlags[slot] = 0;
+            s_rtgStartTimes[slot] = 0f;
+            s_rtgHalfLives[slot] = 0f;
+            s_rtgBaseOutput[slot] = 0f;
+            s_rtgCurrentOutput[slot] = 0f;
+            s_rtgOutputNormalized[slot] = 0f;
+            _slot = -1;
+            s_activeCount = math.max(0, s_activeCount - 1);
+            MarkPowerGridDirty();
+            RefreshLeader();
+        }
+
+        private static int AllocateSlot(RadioisotopeThermalGenerator instance)
+        {
+            for (int i = 0; i < MaxRtgs; i++)
+            {
+                if ((s_rtgFlags[i] & FlagActive) != 0)
+                    continue;
+
+                s_instances[i] = instance;
+                return i;
+            }
+
+            return -1;
+        }
+
+        private void WriteSlotStateFromInstance()
+        {
+            if (_slot < 0 || !s_rtgFlags.IsCreated)
+                return;
+
+            s_rtgStartTimes[_slot] = math.max(0f, _startTimeSeconds);
+            s_rtgHalfLives[_slot] = math.max(MinimumHalfLifeSeconds, halfLifeHours * SecondsPerHour);
+            s_rtgBaseOutput[_slot] = math.max(0f, baseOutputWatts);
+            s_rtgCurrentOutput[_slot] = _reprocessed || _isDead ? 0f : math.max(0f, _currentOutputWatts);
+            s_rtgOutputNormalized[_slot] = math.saturate(_outputNormalized01);
+            s_rtgFlags[_slot] = ComposeRuntimeFlags();
+        }
+
+        private void WriteRtgSaveRecord(SaveData data, ref int writeCount)
+        {
+            if (_sourceId == 0 || writeCount >= SaveData.MaxRtgDecayRecords)
+                return;
+
+            ResolveLocalDecaySnapshot(ResolveCurrentTimeSeconds());
+            data.rtgDecaySourceIds[writeCount] = _sourceId;
+            data.rtgStartTimesSeconds[writeCount] = math.max(0f, _startTimeSeconds);
+            data.rtgDecayFlags[writeCount] = ComposeRuntimeFlags();
+            writeCount++;
+        }
+
+        private void ResolveLocalDecaySnapshot(float currentTimeSeconds)
+        {
+            float halfLifeSeconds = math.max(MinimumHalfLifeSeconds, halfLifeHours * SecondsPerHour);
+            float factor = RtgDecayMath.ResolveDecayFactor(
+                currentTimeSeconds,
+                math.max(0f, _startTimeSeconds),
+                halfLifeSeconds);
+
+            _outputNormalized01 = math.saturate(factor);
+            _isDead |= _outputNormalized01 < DeadOutputThreshold01;
+            if (_reprocessed)
+                _isDead = true;
+
+            _currentOutputWatts = _isDead || _reprocessed
+                ? 0f
+                : math.max(0f, baseOutputWatts) * _outputNormalized01;
+        }
+
+        private byte ComposeRuntimeFlags()
+        {
+            byte flags = FlagActive;
+            if (_isDead)
+                flags |= FlagDead;
+            if (_outputNormalized01 <= WarningOutputThreshold01)
+                flags |= FlagWarned20;
+            if (_reprocessed)
+                flags |= FlagReprocessed;
+            return flags;
+        }
+
+        private void TryRunDecayCadence(float cadenceSeconds)
+        {
+            CompleteDecayJobIfReady(false);
+            if (s_decayJobPending || s_activeCount <= 0)
+                return;
+
+            float now = ResolveCurrentTimeSeconds();
+            float safeCadence = math.max(0.1f, cadenceSeconds);
+            if (math.isfinite(s_lastDecayEvaluationSeconds) &&
+                now - s_lastDecayEvaluationSeconds < safeCadence)
+            {
+                return;
+            }
+
+            s_lastDecayEvaluationSeconds = now;
+            s_decayJobHandle = new RtgDecayJob
+            {
+                CurrentTimeSeconds = now,
+                DeadThreshold01 = DeadOutputThreshold01,
+                RtgStartTimes = s_rtgStartTimes,
+                RtgHalfLifeSeconds = s_rtgHalfLives,
+                RtgBaseOutputWatts = s_rtgBaseOutput,
+                RtgCurrentOutputWatts = s_rtgCurrentOutput,
+                RtgOutputNormalized = s_rtgOutputNormalized,
+                RtgFlags = s_rtgFlags
+            }.Schedule(MaxRtgs, DecayBatchSize);
+            s_decayJobPending = true;
+        }
+
+        private static void CompleteDecayJobIfReady(bool force)
+        {
+            if (!s_decayJobPending)
+                return;
+
+            if (!force && !s_decayJobHandle.IsCompleted)
+                return;
+
+            s_decayJobHandle.Complete();
+            s_decayJobPending = false;
+            ApplyDecayResults();
+        }
+
+        private static void ApplyDecayResults()
+        {
+            if (!s_rtgFlags.IsCreated || s_instances == null)
+                return;
+
+            float healthSum = 0f;
+            int healthCount = 0;
+            for (int i = 0; i < MaxRtgs; i++)
+            {
+                if ((s_rtgFlags[i] & FlagActive) == 0)
+                    continue;
+
+                RadioisotopeThermalGenerator instance = s_instances[i];
+                if (instance == null)
+                    continue;
+
+                float normalized = math.saturate(s_rtgOutputNormalized[i]);
+                if (!math.isfinite(normalized))
+                {
+                    DumpBlackBoxOnce(2u);
+                    normalized = 0f;
+                }
+
+                healthSum += normalized;
+                healthCount++;
+            }
+
+            s_averageRtgHealth01 = healthCount > 0 ? math.saturate(healthSum * math.rcp((float)healthCount)) : 1f;
+
+            for (int i = 0; i < MaxRtgs; i++)
+            {
+                if ((s_rtgFlags[i] & FlagActive) == 0)
+                    continue;
+
+                RadioisotopeThermalGenerator instance = s_instances[i];
+                if (instance == null)
+                    continue;
+
+                float outputWatts = s_rtgCurrentOutput[i];
+                float normalized = math.saturate(s_rtgOutputNormalized[i]);
+                byte flags = s_rtgFlags[i];
+                if (!math.isfinite(outputWatts) || !math.isfinite(normalized))
+                {
+                    DumpBlackBoxOnce(2u);
+                    outputWatts = 0f;
+                    normalized = 0f;
+                    flags |= FlagDead;
+                }
+
+                instance.ApplyDecayResult(outputWatts, normalized, flags);
+            }
+
+            GlobalTelemetryBus.PublishModTelemetry(RtgTelemetryHash, ActiveRtgsHash, healthCount);
+            GlobalTelemetryBus.PublishModTelemetry(RtgTelemetryHash, AverageRtgHealthHash, s_averageRtgHealth01);
+        }
+
+        private void ApplyDecayResult(float outputWatts, float normalized01, byte flags)
+        {
+            bool wasDead = _isDead;
+            float previousWatts = _currentOutputWatts;
+            _isDead = (flags & FlagDead) != 0;
+            _reprocessed |= (flags & FlagReprocessed) != 0;
+            _outputNormalized01 = math.saturate(normalized01);
+            _currentOutputWatts = _isDead || _reprocessed ? 0f : math.max(0f, outputWatts);
+            if (_slot >= 0)
+                s_rtgFlags[_slot] = ComposeRuntimeFlags();
+
+            if (!_reprocessed && _outputNormalized01 <= WarningOutputThreshold01 && (flags & FlagWarned20) == 0)
+                PublishLowOutputHudWarning();
+
+            if (math.abs(previousWatts - _currentOutputWatts) > PowerDirtyDeltaWatts || wasDead != _isDead)
+                MarkPowerGridDirty();
+
+            PublishRadiationAndHeat();
+            RecordTelemetry(_slot, ComposeRuntimeFlags());
+        }
+
+        private void PublishRadiationAndHeat()
+        {
+            if (!Application.isPlaying || _sourceId == 0 || _reprocessed)
+                return;
+
+            Vector3 position = transform.position;
+            float normalized = math.saturate(_outputNormalized01);
+            float radiationIntensity = _isDead
+                ? math.max(0f, deadRadiationIntensity)
+                : math.max(0f, radiationIntensityAtFullOutput * math.max(DeadOutputThreshold01, normalized));
+            RadiationHazardGrid.RegisterSource(
+                _sourceId,
+                position,
+                radiationIntensity,
+                math.max(MinimumRadiationRadiusMeters, radiationRadiusMeters));
+
+            float heatDelta = math.max(0f, thermalDeltaCelsiusAtFullOutput * math.max(DeadOutputThreshold01, normalized));
+            if (heatDelta <= 0f)
+                return;
+
+            if (s_thermodynamics == null || !s_thermodynamics.IsInitialized)
+                GlobalRegistry.TryGet(out s_thermodynamics);
+
+            bool injected = s_thermodynamics != null &&
+                            s_thermodynamics.TryInjectTransientHeatSource(
+                                position,
+                                math.max(0.25f, thermalRadiusMeters),
+                                heatDelta,
+                                unchecked((uint)_sourceId));
+            if (injected)
+                return;
+
+            TemperatureChangedSignal signal = default;
+            signal.PositionAup = AbsoluteUniversePosition.FromRuntimePosition(position);
+            signal.TemperatureCelsius = heatDelta;
+            signal.DeltaCelsius = heatDelta;
+            signal.Frame = unchecked((uint)Time.frameCount);
+            signal.SourceId = (ushort)math.min(_sourceId, ushort.MaxValue);
+            signal.Flags = TemperatureChangedSignal.FlagSubmarineAmbient;
+            GlobalSignals.Publish(in signal);
+        }
+
+        private void PublishLowOutputHudWarning()
+        {
+            if (_slot >= 0 && s_rtgFlags.IsCreated)
+                s_rtgFlags[_slot] = (byte)(s_rtgFlags[_slot] | FlagWarned20);
+
+            HUDNotificationSignal signal = default;
+            signal.MessageHash = RtgLowOutputMessageHash;
+            signal.ContextHash = RtgLowOutputContextHash;
+            signal.SourceId = unchecked((uint)_sourceId);
+            signal.Frame = unchecked((uint)Time.frameCount);
+            signal.Severity = 2;
+            signal.Flags = 0;
+            GlobalSignals.Publish(in signal);
+        }
+
+        private void MarkPowerGridDirty()
+        {
+            PowerGrid grid = _powerNode != null ? _powerNode.Grid : null;
+            grid?.MarkDirty();
+        }
+
+        private void TryRegisterSaveParticipant()
+        {
+            if (_registeredSave || !Application.isPlaying)
+                return;
+
+            ISaveService save = GlobalRegistry.Save;
+            if (save == null)
+                return;
+
+            save.Register(this);
+            _registeredSave = true;
+        }
+
+        private void TryUnregisterSaveParticipant()
+        {
+            if (!_registeredSave)
+                return;
+
+            ISaveService save = GlobalRegistry.Save;
+            save?.Unregister(this);
+            _registeredSave = false;
+        }
+
+        private static void RefreshLeader()
+        {
+            int next = -1;
+            for (int i = 0; i < MaxRtgs; i++)
+            {
+                if ((s_rtgFlags[i] & FlagActive) != 0 && s_instances[i] != null)
+                {
+                    next = i;
+                    break;
+                }
+            }
+
+            SetLeaderSlot(next);
+        }
+
+        private static void SetLeaderSlot(int slot)
+        {
+            if (s_leaderSlot == slot)
+                return;
+
+            if (s_leaderSlot >= 0 && s_instances != null)
+                s_instances[s_leaderSlot]?.UnregisterLeaderLanes();
+
+            s_leaderSlot = slot;
+            if (s_leaderSlot >= 0 && s_instances != null)
+                s_instances[s_leaderSlot]?.RegisterLeaderLanes();
+        }
+
+        private void RegisterLeaderLanes()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            if (!_registeredCold)
+                _registeredCold = GlobalRegistry.TryRegisterColdTickable(this, PriorityLayer.Environment);
+            if (!_registeredFrost)
+                _registeredFrost = GlobalRegistry.TryRegisterFrostTickable(this, PriorityLayer.Environment);
+            if (!_registeredLate)
+                _registeredLate = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+        }
+
+        private void UnregisterLeaderLanes()
+        {
+            if (_registeredCold)
+            {
+                GlobalRegistry.UnregisterColdTickable(this, PriorityLayer.Environment);
+                _registeredCold = false;
+            }
+
+            if (_registeredFrost)
+            {
+                GlobalRegistry.UnregisterFrostTickable(this, PriorityLayer.Environment);
+                _registeredFrost = false;
+            }
+
+            if (_registeredLate)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _registeredLate = false;
+            }
+        }
+
+        private bool UsesLowTierCadence()
+        {
+            if (forceLowTierCadence)
+                return true;
+
+            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
+            return tier == HectonQualityTier.Unknown ||
+                   tier == HectonQualityTier.Low ||
+                   tier == HectonQualityTier.Mx350;
+        }
+
+        private void ResolveIdentity()
+        {
+            _sourceId = NormalizeSourceId(sourceIdOverride);
+            if (_sourceId == 0)
+            {
+                uint idHash = !string.IsNullOrWhiteSpace(stableRtgId)
+                    ? unchecked((uint)LocHash.Compute(stableRtgId))
+                    : 0u;
+                ulong entityId = EntityId.ToULong(gameObject.GetEntityId());
+                uint entityHash = unchecked((uint)(entityId ^ (entityId >> 32)));
+                if (entityHash == 0u)
+                    entityHash = 1u;
+                _sourceId = NormalizeSourceId(idHash != 0u ? idHash ^ entityHash : entityHash);
+            }
+
+            _depletedIsotopeHash = string.IsNullOrWhiteSpace(depletedIsotopeItemId)
+                ? 0u
+                : unchecked((uint)LocHash.Compute(depletedIsotopeItemId));
+        }
+
+        private static int NormalizeSourceId(uint sourceId)
+        {
+            int normalized = unchecked((int)(sourceId & 0x7FFFFFFFu));
+            return normalized == 0 ? 0 : normalized;
+        }
+
+        private void SanitizeInspectorValues()
+        {
+            baseOutputWatts = math.max(0f, baseOutputWatts);
+            halfLifeHours = math.max(MinimumHalfLifeSeconds * math.rcp(SecondsPerHour), halfLifeHours);
+            thermalRadiusMeters = math.max(0.25f, thermalRadiusMeters);
+            radiationRadiusMeters = math.max(MinimumRadiationRadiusMeters, radiationRadiusMeters);
+            radiationIntensityAtFullOutput = math.max(0f, radiationIntensityAtFullOutput);
+            deadRadiationIntensity = math.max(0f, deadRadiationIntensity);
+            thermalDeltaCelsiusAtFullOutput = math.max(0f, thermalDeltaCelsiusAtFullOutput);
+        }
+
+        private static float ResolveCurrentTimeSeconds()
+        {
+            double now = SystemDispatcher.CurrentUnscaledTimeSeconds;
+            if (double.IsNaN(now) || double.IsInfinity(now) || now < 0d)
+                return 0f;
+
+            return (float)math.min(now, (double)float.MaxValue);
+        }
+
+        private static void EnsureRtgSaveArrays(SaveData data)
+        {
+            data.EnsureRtgDecayCapacity();
+        }
+
+        private static void RecordTelemetry(int slot, byte flags)
+        {
+            if (slot < 0 || !s_telemetryRing.IsCreated || !s_rtgCurrentOutput.IsCreated)
+                return;
+
+            RadioisotopeThermalGenerator instance = s_instances != null ? s_instances[slot] : null;
+            if (instance == null)
+                return;
+
+            int index = s_telemetryCursor % TelemetryCapacity;
+            s_telemetryRing[index] = new RtgTelemetryEntry
+            {
+                Frame = unchecked((uint)Time.frameCount),
+                SourceId = unchecked((uint)instance._sourceId),
+                OutputWatts = s_rtgCurrentOutput[slot],
+                NormalizedOutput01 = s_rtgOutputNormalized[slot],
+                AverageHealth01 = s_averageRtgHealth01,
+                ActiveRtgs = (ushort)math.clamp(s_activeCount, 0, ushort.MaxValue),
+                Flags = flags
+            };
+            s_telemetryCursor = (s_telemetryCursor + 1) % TelemetryCapacity;
+        }
+
+        private static void DumpBlackBoxOnce(uint reasonFlags)
+        {
+            if (s_blackBoxDumped)
+                return;
+
+            s_blackBoxDumped = true;
+            if (!s_telemetryRing.IsCreated)
+                return;
+
+            try
+            {
+                string path = Path.GetFullPath(Path.Combine(Application.dataPath, "..", BlackBoxDumpRelativePath));
+                string directory = Path.GetDirectoryName(path);
+                if (!string.IsNullOrEmpty(directory))
+                    Directory.CreateDirectory(directory);
+
+                using (BinaryWriter writer = new BinaryWriter(File.Open(path, FileMode.Create, FileAccess.Write, FileShare.Read)))
+                {
+                    writer.Write(BlackBoxMagic);
+                    writer.Write(BlackBoxVersion);
+                    writer.Write(reasonFlags);
+                    writer.Write(TelemetryCapacity);
+                    writer.Write(Marshal.SizeOf<RtgTelemetryEntry>());
+                    writer.Write(s_telemetryCursor);
+                    for (int i = 0; i < TelemetryCapacity; i++)
+                    {
+                        int index = (s_telemetryCursor + i) % TelemetryCapacity;
+                        RtgTelemetryEntry entry = s_telemetryRing[index];
+                        writer.Write(entry.Frame);
+                        writer.Write(entry.SourceId);
+                        writer.Write(entry.OutputWatts);
+                        writer.Write(entry.NormalizedOutput01);
+                        writer.Write(entry.AverageHealth01);
+                        writer.Write(entry.ActiveRtgs);
+                        writer.Write(entry.Flags);
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                s_blackBoxDumped = true;
+            }
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct RtgTelemetryEntry
+        {
+            public uint Frame;
+            public uint SourceId;
+            public float OutputWatts;
+            public float NormalizedOutput01;
+            public float AverageHealth01;
+            public ushort ActiveRtgs;
+            public byte Flags;
+        }
+    }
+
+    public static class RtgDecayMath
+    {
+        internal const byte FlagActive = 1 << 0;
+        internal const byte FlagDead = 1 << 1;
+        internal const byte FlagWarned20 = 1 << 2;
+        internal const byte FlagReprocessed = 1 << 3;
+        private const float HalfLifeLambda = 0.6931471805599453f;
+        private const float PadeEpsilon = 0.000001f;
+        private const float PadeInputScale = 0.125f;
+        private const float PadeMaxInput = 80f;
+
+        public static float ResolvePadeExpNegative(float x)
+        {
+            float safeX = math.max(0f, math.isfinite(x) ? math.min(x, PadeMaxInput) : 0f);
+            float reducedX = safeX * PadeInputScale;
+            float denominator = 1f + reducedX + 0.5f * reducedX * reducedX;
+            float pade = math.saturate(math.rcp(math.max(PadeEpsilon, denominator)));
+            float pade2 = pade * pade;
+            float pade4 = pade2 * pade2;
+            return pade4 * pade4;
+        }
+
+        public static float ResolveDecayFactor(float currentTimeSeconds, float startTimeSeconds, float halfLifeSeconds)
+        {
+            float safeHalfLife = math.max(1f, math.isfinite(halfLifeSeconds) ? halfLifeSeconds : 1f);
+            float safeCurrentTime = math.max(0f, math.isfinite(currentTimeSeconds) ? currentTimeSeconds : 0f);
+            float safeStartTime = math.max(0f, math.isfinite(startTimeSeconds) ? startTimeSeconds : 0f);
+            float age = math.max(0f, safeCurrentTime - safeStartTime);
+            float lambda = HalfLifeLambda * math.rcp(safeHalfLife);
+            return ResolvePadeExpNegative(lambda * age);
+        }
+    }
+
+    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    internal struct RtgDecayJob : IJobParallelFor
+    {
+        public float CurrentTimeSeconds;
+        public float DeadThreshold01;
+
+        [ReadOnly] public NativeArray<float> RtgStartTimes;
+        [ReadOnly] public NativeArray<float> RtgHalfLifeSeconds;
+        [ReadOnly] public NativeArray<float> RtgBaseOutputWatts;
+        public NativeArray<float> RtgCurrentOutputWatts;
+        public NativeArray<float> RtgOutputNormalized;
+        public NativeArray<byte> RtgFlags;
+
+        public void Execute(int index)
+        {
+            byte flags = RtgFlags[index];
+            if ((flags & RtgDecayMath.FlagActive) == 0)
+                return;
+
+            if ((flags & RtgDecayMath.FlagReprocessed) != 0)
+            {
+                RtgCurrentOutputWatts[index] = 0f;
+                RtgOutputNormalized[index] = 0f;
+                RtgFlags[index] = (byte)(flags | RtgDecayMath.FlagDead);
+                return;
+            }
+
+            float baseOutput = math.max(0f, RtgBaseOutputWatts[index]);
+            float factor = RtgDecayMath.ResolveDecayFactor(
+                CurrentTimeSeconds,
+                RtgStartTimes[index],
+                RtgHalfLifeSeconds[index]);
+            float rawOutput = baseOutput * factor;
+            bool dead = (flags & RtgDecayMath.FlagDead) != 0 ||
+                        factor < math.max(0f, DeadThreshold01);
+            RtgOutputNormalized[index] = math.saturate(factor);
+            RtgCurrentOutputWatts[index] = dead ? 0f : rawOutput;
+            RtgFlags[index] = dead
+                ? (byte)(flags | RtgDecayMath.FlagDead)
+                : (byte)(flags & unchecked((byte)~RtgDecayMath.FlagDead));
+        }
+    }
+}

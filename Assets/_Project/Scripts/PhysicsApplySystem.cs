@@ -452,6 +452,12 @@ namespace Hecton8.Physics
             EnsureInitialized();
         }
 
+        /// <summary>Releases persistent physics event lanes during explicit bootstrap teardown.</summary>
+        public static void Shutdown()
+        {
+            ResetStaticState();
+        }
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
@@ -1779,6 +1785,8 @@ namespace Hecton8.Physics
                 _submarineImpactSignals = default;
                 _submarineImpactSignalCount = 0;
             }
+
+            PhysicsEventBus.Shutdown();
         }
 
         private void UnregisterRuntimeHooks()

@@ -75,6 +75,12 @@ namespace Hecton8.Core
             _shaderLodPushed = false;
         }
 
+        /// <summary>Releases persistent frame telemetry buffers during explicit bootstrap teardown.</summary>
+        public static void Shutdown()
+        {
+            ResetStaticState();
+        }
+
         /// <summary>
         /// Reports a subsystem cost sample for the current frame.
         /// </summary>

@@ -72,12 +72,17 @@ namespace Hecton8.World
         private const byte BiomassImpactKindFishing = 2;
         private const byte BiomassImpactKindPredation = 3;
         private const byte BiomassImpactKindApexKill = 4;
+        private const byte ItemAcquiredSourceUnknown = 0;
+        private const byte ItemAcquiredSourceResourceNode = 1;
         private const byte BiomassCellFlagSectorClearedPublished = 1 << 0;
+        private const byte BiomassCellFlagPredatorSeen = 1 << 1;
         private const uint BiomassSaveRecordMarker = 0x80000000u;
+        private const uint BiomassSaveAdaptationMarker = 0x42494F4Du;
         private const uint BiomassSaveRunLengthMask = 0x000000FFu;
         private const int BiomassSavePreyShift = 8;
         private const int BiomassSavePredatorShift = 16;
         private const int BiomassSaveCapacityShift = 24;
+        private const float MaxLotkaVolterraRatePerSecond = 0.2f;
         private const float DefaultHostilityPeakHoldSeconds = 18f;
         private const float LogicalLodFullSimDistanceMeters = 50f;
         private const float LogicalLodDataOnlyDistanceMeters = 150f;
@@ -125,7 +130,7 @@ namespace Hecton8.World
         private static readonly string[] ScavengerSpawnTokens = { "scavenger", "crab", "eel", "carrion", "cleaner" };
         private static readonly uint _FloraPredatorAupSaturationWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("EcosystemDirector.FloraPredatorAupSaturation"));
         private static readonly uint _BiomassTelemetryHash = unchecked((uint)Hecton.Localization.LocHash.Compute("EcosystemDirector.GlobalBiomassSum"));
-        private static readonly uint _EcologicalCollapseWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("Ecological Collapse"));
+        private static readonly uint _EcologicalCollapseWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("Warning: Ecological Collapse"));
         private static readonly uint _SectorClearedEventHash = unchecked((uint)Hecton.Localization.LocHash.Compute("EcosystemDirector.SectorCleared"));
         private static readonly uint _ItemCuredFishNameHash = unchecked((uint)Hecton.Localization.LocHash.Compute("ITEM_CURED_FISH_NAME"));
         private static readonly uint _ItemRawFishNameHash = unchecked((uint)Hecton.Localization.LocHash.Compute("ITEM_RAW_FISH_NAME"));
@@ -1964,10 +1969,10 @@ namespace Hecton8.World
             maxPredatorPopulation = math.max(math.max(1, leviathanPopulationPerSector), maxPredatorPopulation);
             baselineFitness = math.clamp(baselineFitness, 0f, 1f);
             maximumSpeedMultiplier = math.max(1f, maximumSpeedMultiplier);
-            preyBirthRatePerSecond = math.max(0f, preyBirthRatePerSecond);
-            predationRatePerSecond = math.max(0f, predationRatePerSecond);
-            predatorGrowthRatePerSecond = math.max(0f, predatorGrowthRatePerSecond);
-            predatorDeathRatePerSecond = math.max(0f, predatorDeathRatePerSecond);
+            preyBirthRatePerSecond = ClampLotkaVolterraRate(preyBirthRatePerSecond);
+            predationRatePerSecond = ClampLotkaVolterraRate(predationRatePerSecond);
+            predatorGrowthRatePerSecond = ClampLotkaVolterraRate(predatorGrowthRatePerSecond);
+            predatorDeathRatePerSecond = ClampLotkaVolterraRate(predatorDeathRatePerSecond);
             reproductionFoodThreshold01 = math.clamp(reproductionFoodThreshold01, 0f, 1f);
             reproductionPredatorThreshold = math.max(0, reproductionPredatorThreshold);
             if (generationMutationBitMask == 0)
@@ -3214,7 +3219,7 @@ namespace Hecton8.World
             _predatorBiomassBack[slotIndex] = predator;
             _biomassCarryingCapacity[slotIndex] = carryingCapacity01;
             _biomassSumScratch[slotIndex] = prey + predator;
-            _biomassCellFlags[slotIndex] = 0;
+            _biomassCellFlags[slotIndex] = predator > 0.0001f ? BiomassCellFlagPredatorSeen : (byte)0;
             return slotIndex;
         }
 
@@ -3352,7 +3357,7 @@ namespace Hecton8.World
             for (int i = 0; i < itemSignals.Length; i++)
             {
                 ItemAcquiredSignal signal = itemSignals[i];
-                if (!IsFishItemHash(signal.ItemHash))
+                if (!IsFishingBiomassSource(signal.SourceKind) || !IsFishItemHash(signal.ItemHash))
                     continue;
 
                 float quantity = math.max(1f, signal.Quantity);
@@ -3419,8 +3424,13 @@ namespace Hecton8.World
                 preySum += prey;
                 predatorSum += predator;
                 byte flags = _biomassCellFlags[i];
-                bool predatorCleared = predator <= 0.0001f;
-                if (predatorCleared && (flags & BiomassCellFlagSectorClearedPublished) == 0)
+                bool predatorPresent = predator > 0.0001f;
+                if (predatorPresent)
+                    flags |= BiomassCellFlagPredatorSeen;
+
+                bool predatorCleared = !predatorPresent;
+                bool predatorWasSeen = (flags & BiomassCellFlagPredatorSeen) != 0;
+                if (predatorCleared && predatorWasSeen && (flags & BiomassCellFlagSectorClearedPublished) == 0)
                 {
                     PublishPredatorClearedEvent(_biomassMacroCellCoords[i]);
                     flags |= BiomassCellFlagSectorClearedPublished;
@@ -3488,7 +3498,7 @@ namespace Hecton8.World
 
         private unsafe void DumpBiomassBlackBox()
         {
-            if (!_biomassBlackBox.IsCreated)
+            if (!_biomassBlackBox.IsCreated || _biomassBlackBox.Length <= 0)
                 return;
 
             try
@@ -3501,12 +3511,27 @@ namespace Hecton8.World
 
                 using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
                 {
-                    byte* headerPtr = stackalloc byte[sizeof(ulong)];
-                    UnsafeUtility.WriteArrayElement(headerPtr, 0, BiomassTelemetryDumpMagic);
-                    stream.Write(new ReadOnlySpan<byte>(headerPtr, sizeof(ulong)));
+                    int entrySize = UnsafeUtility.SizeOf<BiomassTelemetryEntry>();
+                    int entryCapacity = _biomassBlackBox.Length;
+                    int entryCount = math.min(math.max(0, _biomassBlackBoxCursor), entryCapacity);
+                    int oldestIndex = entryCount == entryCapacity ? _biomassBlackBoxCursor % entryCapacity : 0;
+                    const int headerBytes = sizeof(ulong) + (sizeof(int) * 4);
+                    byte* headerPtr = stackalloc byte[headerBytes];
+                    UnsafeUtility.WriteArrayElement<ulong>(headerPtr, 0, BiomassTelemetryDumpMagic);
+                    UnsafeUtility.WriteArrayElement<int>(headerPtr + sizeof(ulong), 0, entryCount);
+                    UnsafeUtility.WriteArrayElement<int>(headerPtr + sizeof(ulong) + sizeof(int), 0, entrySize);
+                    UnsafeUtility.WriteArrayElement<int>(headerPtr + sizeof(ulong) + (sizeof(int) * 2), 0, oldestIndex);
+                    UnsafeUtility.WriteArrayElement<int>(headerPtr + sizeof(ulong) + (sizeof(int) * 3), 0, entryCapacity);
+                    stream.Write(new ReadOnlySpan<byte>(headerPtr, headerBytes));
+                    if (entryCount <= 0)
+                        return;
+
                     byte* dataPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(_biomassBlackBox);
-                    int dataBytes = _biomassBlackBox.Length * UnsafeUtility.SizeOf<BiomassTelemetryEntry>();
-                    stream.Write(new ReadOnlySpan<byte>(dataPtr, dataBytes));
+                    int firstCount = math.min(entryCount, entryCapacity - oldestIndex);
+                    stream.Write(new ReadOnlySpan<byte>(dataPtr + oldestIndex * entrySize, firstCount * entrySize));
+                    int secondCount = entryCount - firstCount;
+                    if (secondCount > 0)
+                        stream.Write(new ReadOnlySpan<byte>(dataPtr, secondCount * entrySize));
                 }
             }
             catch (Exception)
@@ -3540,6 +3565,12 @@ namespace Hecton8.World
                    itemHash == _ItemCuredFishDisplayHash ||
                    itemHash == _ItemRawFishDisplayHash ||
                    itemHash == _ItemCookedFishDisplayHash;
+        }
+
+        private static bool IsFishingBiomassSource(byte sourceKind)
+        {
+            return sourceKind == ItemAcquiredSourceUnknown ||
+                   sourceKind == ItemAcquiredSourceResourceNode;
         }
 
         private static float ResolveFloraOvergrowth01(float preyBiomass01)
@@ -3590,18 +3621,39 @@ namespace Hecton8.World
                 return;
 
             _saveSnapshotBiomassRuns.Clear();
+            int emittedCount = 0;
+            bool hasLastSortedCoord = false;
+            int2 lastSortedCoord = int2.zero;
             int runLength = 0;
             int2 runStart = int2.zero;
             int2 previousCoord = int2.zero;
             sbyte runPrey = 0;
             sbyte runPredator = 0;
             sbyte runCapacity = 0;
-            for (int i = 0; i < _activeBiomassCellCount; i++)
+            while (emittedCount < _activeBiomassCellCount)
             {
-                int2 coord = _biomassMacroCellCoords[i];
-                sbyte preyQ = QuantizeBiomass01(_preyBiomassFront[i]);
-                sbyte predatorQ = QuantizeBiomass01(_predatorBiomassFront[i]);
-                sbyte capacityQ = QuantizeBiomass01(_biomassCarryingCapacity[i]);
+                int bestIndex = -1;
+                int2 bestCoord = int2.zero;
+                for (int i = 0; i < _activeBiomassCellCount; i++)
+                {
+                    int2 candidateCoord = _biomassMacroCellCoords[i];
+                    if (!IsBiomassCoordAfter(candidateCoord, lastSortedCoord, hasLastSortedCoord))
+                        continue;
+
+                    if (bestIndex < 0 || IsBiomassCoordBefore(candidateCoord, bestCoord))
+                    {
+                        bestIndex = i;
+                        bestCoord = candidateCoord;
+                    }
+                }
+
+                if (bestIndex < 0)
+                    break;
+
+                int2 coord = bestCoord;
+                sbyte preyQ = QuantizeBiomass01(_preyBiomassFront[bestIndex]);
+                sbyte predatorQ = QuantizeBiomass01(_predatorBiomassFront[bestIndex]);
+                sbyte capacityQ = QuantizeBiomass01(_biomassCarryingCapacity[bestIndex]);
                 bool canExtend =
                     runLength > 0 &&
                     runLength < byte.MaxValue &&
@@ -3625,6 +3677,9 @@ namespace Hecton8.World
                 }
 
                 previousCoord = coord;
+                lastSortedCoord = coord;
+                hasLastSortedCoord = true;
+                emittedCount++;
             }
 
             FlushBiomassSaveRun(runStart, runPrey, runPredator, runCapacity, runLength);
@@ -3676,6 +3731,7 @@ namespace Hecton8.World
                 _predatorBiomassFront[slotIndex] = predator;
                 _predatorBiomassBack[slotIndex] = predator;
                 _biomassSumScratch[slotIndex] = prey + predator;
+                _biomassCellFlags[slotIndex] = predator > 0.0001f ? BiomassCellFlagPredatorSeen : (byte)0;
             }
         }
 
@@ -3991,13 +4047,14 @@ namespace Hecton8.World
                                     (preyQ << BiomassSavePreyShift) |
                                     (predatorQ << BiomassSavePredatorShift) |
                                     (capacityQ << BiomassSaveCapacityShift),
-                PackedAdaptation = 0u
+                PackedAdaptation = BiomassSaveAdaptationMarker
             };
         }
 
         private static bool IsBiomassSaveRecord(in EcosystemSectorSaveRecord saveRecord)
         {
-            return (saveRecord.PackedPopulations & BiomassSaveRecordMarker) != 0u;
+            return (saveRecord.PackedPopulations & BiomassSaveRecordMarker) != 0u &&
+                   saveRecord.PackedAdaptation == BiomassSaveAdaptationMarker;
         }
 
         private static bool UnpackBiomassRun(in EcosystemSectorSaveRecord saveRecord, out EcosystemBiomassSaveRun run)
@@ -4018,6 +4075,24 @@ namespace Hecton8.World
         private static sbyte QuantizeBiomass01(float value)
         {
             return (sbyte)math.clamp(RoundPositiveToInt(math.saturate(value) * 100f), 0, 100);
+        }
+
+        private static float ClampLotkaVolterraRate(float value)
+        {
+            return math.select(0f, math.clamp(value, 0f, MaxLotkaVolterraRatePerSecond), math.isfinite(value));
+        }
+
+        private static bool IsBiomassCoordAfter(int2 coord, int2 lastCoord, bool hasLastCoord)
+        {
+            return !hasLastCoord ||
+                   coord.y > lastCoord.y ||
+                   (coord.y == lastCoord.y && coord.x > lastCoord.x);
+        }
+
+        private static bool IsBiomassCoordBefore(int2 coord, int2 other)
+        {
+            return coord.y < other.y ||
+                   (coord.y == other.y && coord.x < other.x);
         }
 
         private static float DequantizeBiomassQ(sbyte value)

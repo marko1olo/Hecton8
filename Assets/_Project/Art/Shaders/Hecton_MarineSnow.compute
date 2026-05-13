@@ -22,6 +22,7 @@ StructuredBuffer<Particle> _MarineSnowParticlesRead;
 RWStructuredBuffer<Particle> _MarineSnowParticlesWrite;
 StructuredBuffer<float2> _MarineSnowFlowField;
 StructuredBuffer<float4> _AbyssalFlowFieldResult;
+StructuredBuffer<float4> _MarineSnowMaelstroms;
 Texture3D<float4> _AbyssalFlowFieldTexture;
 SamplerState sampler_AbyssalFlowFieldTexture;
 RWStructuredBuffer<uint> _MarineSnowVisibleParticleIndices;
@@ -65,6 +66,7 @@ float4 _MarineSnowTerrainHeightRect;
 float4 _MarineSnowTerrainHeightScale;
 float4 _MarineSnowPropwashParams;
 float4 _MarineSnowScalabilityParams;
+float4 _MarineSnowMaelstromParams;
 float4 _HectonFlowSynchronyParams;
 float4 _AbyssalGridResolution;
 float4 _AbyssalFlowCenter;
@@ -177,7 +179,7 @@ float3 DominantAxisDirection3(float3 value)
 {
     float3 absValue = abs(value);
     if (absValue.x <= EPSILON && absValue.y <= EPSILON && absValue.z <= EPSILON)
-        return 0.0.xxx;
+        return float3(0.0, 0.0, 0.0);
 
     if (absValue.x >= absValue.y && absValue.x >= absValue.z)
         return float3(value.x >= 0.0 ? 1.0 : -1.0, 0.0, 0.0);
@@ -205,7 +207,7 @@ float3 ResolveFlowSynchronyOffset(float3 positionWS, float3 flowSample)
     float3 flowDirection = DominantAxisDirection3(flowSample);
     float flowMagnitude = DominantMagnitude2(flowSample.xz) * max(_HectonFlowSynchronyParams.x, 1.0);
     if (flowMagnitude <= EPSILON)
-        return 0.0.xxx;
+        return float3(0.0, 0.0, 0.0);
 
     float phase = ResolveFlowSynchronyPhase(positionWS);
     return flowDirection * (FastTriangleSigned(phase) * flowMagnitude);
@@ -260,23 +262,9 @@ float2 SampleFlowFieldXZ(float3 positionWS)
     return lerp(sample0, sample1, fracValue.y);
 }
 
-float3 SampleAbyssalFlowField(float3 positionWS);
-
-bool ShouldRunStaggeredRate(uint particleIndex)
-{
-    uint staggerMask = (uint)max(_MarineSnowScalabilityParams.y, 3.0);
-    return (((particleIndex + (uint)_MarineSnowMetaParams.z) & staggerMask) == 0u);
-}
-
-float3 ResolveFlowField(float3 positionWS, uint particleIndex)
-{
-    float2 flowXZ = _MarineSnowScalabilityParams.x > 0.5 ? SampleFlowFieldXZ(positionWS) : 0.0.xx;
-    float3 abyssalFlow = ShouldRunStaggeredRate(particleIndex) ? SampleAbyssalFlowField(positionWS) : 0.0.xxx;
-    return float3(flowXZ.x, 0.0, flowXZ.y) + abyssalFlow;
-}
-
 float3 SampleAbyssalFlowField(float3 positionWS)
 {
+    float3 resolvedFlow = float3(0.0, 0.0, 0.0);
     if (_AbyssalFlowTextureActive > 0.5 && _AbyssalFlowTextureParams.y > 0.001)
     {
         float3 uvw = (positionWS - _AbyssalFlowCenter.xyz) * rcp(_AbyssalFlowTextureParams.y) + 0.5;
@@ -286,7 +274,10 @@ float3 SampleAbyssalFlowField(float3 positionWS)
             int3 textureCoord = clamp((int3)floor(uvw * (float)textureResolution), int3(0, 0, 0), int3(textureResolution - 1, textureResolution - 1, textureResolution - 1));
             float3 textureFlow = _AbyssalFlowFieldTexture.Load(int4(textureCoord, 0)).xyz;
             if (dot(textureFlow, textureFlow) < 1.0e32)
-                return textureFlow;
+            {
+                resolvedFlow = textureFlow;
+                return resolvedFlow;
+            }
         }
     }
 
@@ -295,7 +286,7 @@ float3 SampleAbyssalFlowField(float3 positionWS)
     int resolutionZ = (int)max(_AbyssalGridResolution.z, 0.0);
     int nodeCount = (int)max(_AbyssalGridResolution.w, 0.0);
     if (resolutionX <= 0 || resolutionY <= 0 || resolutionZ <= 0 || nodeCount <= 0)
-        return 0.0.xxx;
+        return resolvedFlow;
 
     float horizontalCellSize = max(_AbyssalFlowSpacing.x, 0.001);
     float verticalCellSize = max(_AbyssalFlowSpacing.y, 0.001);
@@ -309,14 +300,30 @@ float3 SampleAbyssalFlowField(float3 positionWS)
         (int)floor(localPosition.z * invHorizontalCellSize + (float)halfExtent.z + 0.5));
 
     if (coord.x < 0 || coord.y < 0 || coord.z < 0 || coord.x >= resolutionX || coord.y >= resolutionY || coord.z >= resolutionZ)
-        return 0.0.xxx;
+        return resolvedFlow;
 
     int index = coord.y * resolutionX * resolutionZ + coord.z * resolutionX + coord.x;
     if (index < 0 || index >= nodeCount)
-        return 0.0.xxx;
+        return resolvedFlow;
 
     float3 flow = _AbyssalFlowFieldResult[index].xyz;
-    return dot(flow, flow) < 1.0e32 ? flow : 0.0.xxx;
+    if (dot(flow, flow) < 1.0e32)
+        resolvedFlow = flow;
+
+    return resolvedFlow;
+}
+
+bool ShouldRunStaggeredRate(uint particleIndex)
+{
+    uint staggerMask = (uint)max(_MarineSnowScalabilityParams.y, 3.0);
+    return (((particleIndex + (uint)_MarineSnowMetaParams.z) & staggerMask) == 0u);
+}
+
+float3 ResolveFlowField(float3 positionWS, uint particleIndex)
+{
+    float2 flowXZ = _MarineSnowScalabilityParams.x > 0.5 ? SampleFlowFieldXZ(positionWS) : 0.0.xx;
+    float3 abyssalFlow = ShouldRunStaggeredRate(particleIndex) ? SampleAbyssalFlowField(positionWS) : float3(0.0, 0.0, 0.0);
+    return float3(flowXZ.x, 0.0, flowXZ.y) + abyssalFlow;
 }
 
 float ResolveEyeDepth(float3 positionWS)
@@ -452,14 +459,14 @@ float2 DecodeShallowWaterVelocity(float2 encodedVelocity)
 float4 EvaluateShallowWaterFieldData(float3 positionWS)
 {
     if (_HectonShallowWaterFieldActive < 0.5)
-        return 0.0.xxxx;
+        return float4(0.0, 0.0, 0.0, 0.0);
 
     float2 uv = float2(
         (positionWS.x - _HectonShallowWaterFieldWorldRect.x) * _HectonShallowWaterFieldWorldRect.z,
         (positionWS.z - _HectonShallowWaterFieldWorldRect.y) * _HectonShallowWaterFieldWorldRect.w);
 
     if (any(uv < 0.0) || any(uv > 1.0))
-        return 0.0.xxxx;
+        return float4(0.0, 0.0, 0.0, 0.0);
 
     return _HectonShallowWaterFieldRT.SampleLevel(sampler_HectonShallowWaterFieldRT, uv, 0.0);
 }
@@ -506,6 +513,38 @@ float3 ApplyPropwashSandForce(float3 positionWS, float3 velocityWS, float dt)
     velocityWS += outward * (washSpeed * radialGain * attenuation * dt);
     velocityWS.y += washSpeed * liftGain * attenuation * dt;
     return velocityWS;
+}
+
+float3 ApplyMaelstromParticleForce(float3 positionWS, float3 velocityWS, float dt)
+{
+    uint maelstromCount = (uint)min(max(_MarineSnowMaelstromParams.x, 0.0), 2.0);
+    if (maelstromCount == 0u || dt <= 0.0)
+        return velocityWS;
+
+    float sharedRadius = max(_MarineSnowMaelstromParams.y, 1.0);
+    float radiusSq = sharedRadius * sharedRadius;
+    float lowTier = step(0.5, _MarineSnowMaelstromParams.w);
+    [loop]
+    for (uint maelstromIndex = 0u; maelstromIndex < maelstromCount; maelstromIndex++)
+    {
+        float4 maelstrom = _MarineSnowMaelstroms[maelstromIndex];
+        float3 toCenter = maelstrom.xyz - positionWS;
+        toCenter.y = 0.0;
+        float distanceSq = dot(toCenter, toCenter);
+        if (distanceSq <= EPSILON || distanceSq > radiusSq)
+            continue;
+
+        float invDistance = rsqrt(max(distanceSq, EPSILON));
+        float3 inward = toCenter * invDistance;
+        float3 tangent = cross(float3(0.0, 1.0, 0.0), toCenter) * invDistance * (1.0 - lowTier);
+        float falloff = saturate(1.0 - distanceSq * rcp(max(radiusSq, EPSILON)));
+        float strength = max(maelstrom.w * sharedRadius, 0.0);
+        float invSqGain = min(5.0, radiusSq * rcp(max(distanceSq, 1.0)));
+        velocityWS += (inward * strength + tangent * (strength * 0.7)) * (falloff * invSqGain * dt * 0.18);
+        velocityWS.y -= strength * falloff * dt * 0.015;
+    }
+
+    return dot(velocityWS, velocityWS) < 1.0e32 ? velocityWS : float3(0.0, 0.0, 0.0);
 }
 
 float SampleCaveSignedDistance(float3 positionWS)
@@ -783,6 +822,7 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     particle.Vel += (synchronizedFlow - particle.Vel) * (_MarineSnowFlowParams.x + densityScale * _MarineSnowFlowParams.y) * dt;
     particle.Vel.y += shallowWaterDisplacement * 0.025 * dt;
     particle.Vel = ApplyPropwashSandForce(particle.Pos, particle.Vel, dt);
+    particle.Vel = ApplyMaelstromParticleForce(particle.Pos, particle.Vel, dt);
 
     float3 flowDirN = DominantAxisDirection3(synchronizedFlow);
     if (dot(flowDirN, flowDirN) > EPSILON)

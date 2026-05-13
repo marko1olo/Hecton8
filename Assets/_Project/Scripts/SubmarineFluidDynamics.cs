@@ -3838,6 +3838,56 @@ namespace Hecton8.Physics
             _lastExternalBuoyancyTorque = ApplyHydrodynamicAngularInertiaScale(totalEquivalentTorque);
         }
 
+        private static bool TryResolveHullBrineLayer(Vector3 runtimePosition, out BrineLayerSample sample)
+        {
+            sample = default;
+            if (!IsFiniteVector(runtimePosition))
+                return false;
+
+            ResourceDistributionDirector director = GlobalRegistry.ResourceDistribution;
+            if (director == null || !director.TrySampleBrineLayer(runtimePosition, out sample))
+                return false;
+
+            Vector3 shiftOffset = HectonFloatingOrigin.CurrentTotalOffset;
+            return BrineLayerMath.IsRuntimeBelowAbsolutePlane(
+                runtimePosition.y,
+                sample.AbsoluteHeightY,
+                shiftOffset.y);
+        }
+
+        private void UpdateBrineHullBreachState(bool insideBrine, Vector3 runtimePosition)
+        {
+            _wasBrineSubmerged = _isBrineSubmerged;
+            _isBrineSubmerged = insideBrine;
+            if (_isBrineSubmerged)
+            {
+                _brineSubmersionTime += math.max(0f, Time.fixedDeltaTime);
+            }
+            else
+            {
+                _brineSubmersionTime = 0f;
+            }
+
+            if (_isBrineSubmerged == _wasBrineSubmerged || !IsFiniteVector(runtimePosition))
+                return;
+
+            AcousticPingSignal signal = default;
+            signal.PositionAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+            signal.RadiusMeters = 28f;
+            signal.Intensity01 = 0.85f;
+            signal.SourceId = SubmarineFluidDynamicsContextHash;
+            signal.Channel = BrineLayerConstants.AcousticThickFluidChannel;
+            signal.Flags = _isBrineSubmerged ? BrineLayerConstants.EnteredFlag : BrineLayerConstants.ExitedFlag;
+            GlobalSignals.Publish(in signal);
+        }
+
+        private void ResetBrineHullState()
+        {
+            _isBrineSubmerged = false;
+            _wasBrineSubmerged = false;
+            _brineSubmersionTime = 0f;
+        }
+
         private void ApplyAddedMassDamping()
         {
             if (_rigidbody == null)
@@ -5123,6 +5173,7 @@ namespace Hecton8.Physics
                 HydroAcceleration = ToFloat3(_debugHydroDragAcceleration),
                 HydroTorque = ToFloat3(_debugHydroTorque),
                 TowingTension = ToFloat3(_pendingTowingTensionVector),
+                BrineSubmersionTime = math.max(0f, _brineSubmersionTime),
                 Flags = flags,
                 StateHash = stateHash
             };
@@ -5141,6 +5192,8 @@ namespace Hecton8.Physics
                 flags |= HydroBlackBoxFlagTowingTension;
             if (_debugCavitationActive)
                 flags |= HydroBlackBoxFlagCavitation;
+            if (_isBrineSubmerged)
+                flags |= HydroBlackBoxFlagBrineSubmerged;
 
             return flags;
         }
@@ -5162,6 +5215,7 @@ namespace Hecton8.Physics
             hash = HashHydroBlackBox(hash, QuantizeHydroBlackBox(depthMeters));
             hash = HashHydroBlackBox(hash, QuantizeHydroBlackBox(_submersionFactor));
             hash = HashHydroBlackBox(hash, QuantizeHydroBlackBox(_floodFillRatio));
+            hash = HashHydroBlackBox(hash, QuantizeHydroBlackBox(_brineSubmersionTime));
             hash = HashHydroBlackBox(hash, flags);
             return hash;
         }
@@ -5184,29 +5238,35 @@ namespace Hecton8.Physics
             try
             {
                 string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-                string dumpPath = Path.Combine(projectRoot, HydroBlackBoxDumpRelativePath);
-                string directory = Path.GetDirectoryName(dumpPath);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
-                using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
-                using (BinaryWriter writer = new BinaryWriter(stream))
-                {
-                    writer.Write(HydroBlackBoxMagic);
-                    writer.Write((uint)HydroBlackBoxCapacity);
-                    writer.Write((uint)_hydroBlackBoxCursor);
-                    writer.Write(reasonFlags);
-
-                    for (int i = 0; i < _hydroBlackBox.Length; i++)
-                    {
-                        int index = (_hydroBlackBoxCursor + i) % _hydroBlackBox.Length;
-                        WriteHydroBlackBoxEntry(writer, _hydroBlackBox[index]);
-                    }
-                }
+                WriteHydroBlackBoxDumpFile(projectRoot, HydroBlackBoxDumpRelativePath, reasonFlags);
+                WriteHydroBlackBoxDumpFile(projectRoot, HydroBlackBoxBrineDumpRelativePath, reasonFlags);
             }
             catch (System.Exception ex)
             {
                 Debug.LogError("Submarine hydro black box dump failed: " + ex.Message);
+            }
+        }
+
+        private void WriteHydroBlackBoxDumpFile(string projectRoot, string relativePath, uint reasonFlags)
+        {
+            string dumpPath = Path.Combine(projectRoot, relativePath);
+            string directory = Path.GetDirectoryName(dumpPath);
+            if (!string.IsNullOrEmpty(directory))
+                Directory.CreateDirectory(directory);
+
+            using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
+            using (BinaryWriter writer = new BinaryWriter(stream))
+            {
+                writer.Write(HydroBlackBoxMagic);
+                writer.Write((uint)HydroBlackBoxCapacity);
+                writer.Write((uint)_hydroBlackBoxCursor);
+                writer.Write(reasonFlags);
+
+                for (int i = 0; i < _hydroBlackBox.Length; i++)
+                {
+                    int index = (_hydroBlackBoxCursor + i) % _hydroBlackBox.Length;
+                    WriteHydroBlackBoxEntry(writer, _hydroBlackBox[index]);
+                }
             }
         }
 
@@ -5227,6 +5287,7 @@ namespace Hecton8.Physics
             WriteFloat3(writer, entry.HydroAcceleration);
             WriteFloat3(writer, entry.HydroTorque);
             WriteFloat3(writer, entry.TowingTension);
+            writer.Write(entry.BrineSubmersionTime);
             writer.Write(entry.Flags);
             writer.Write(entry.StateHash);
         }

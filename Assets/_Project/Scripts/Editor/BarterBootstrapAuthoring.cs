@@ -18,7 +18,7 @@ namespace Hecton8.EditorTools
             EnsureFolder("Assets/_Project/Data");
             EnsureFolder(DataFolder);
 
-            ItemData copper = LoadItem("Assets/_Project/Data/Items/Data_Copper.asset");
+            ItemData copper = LoadItem("Assets/_Project/Data/Items/Resources/Raw/Data_Copper.asset");
             ItemData beacon = LoadItem("Assets/_Project/Data/Items/Tools/Item_Tool_BeaconDeployer.asset");
             ItemData flashlight = LoadItem("Assets/_Project/Data/Items/Tools/Item_Tool_Flashlight.asset");
             ItemData repair = LoadItem("Assets/_Project/Data/Items/Tools/Item_Tool_Repair.asset");

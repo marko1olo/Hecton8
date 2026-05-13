@@ -666,6 +666,7 @@ namespace Hecton8.Modding
 
         private static void HandleGameReady()
         {
+            ModEventProjectionBridge.InstallGlobal();
             ModItemRegistry.FlushPendingRegistrations();
             ModBuildableRegistry.FlushPendingRegistrations();
             ModLocalizationBridge.FlushPendingInjections();

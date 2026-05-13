@@ -35,6 +35,7 @@ namespace Hecton8.Gameplay
         private struct PidJobOutput
         {
             public float3 TorqueWorld;
+            public float3 MaelstromAcceleration;
             public float3 Integral;
             public float3 Error;
             public float3 Derivative;
@@ -69,7 +70,12 @@ namespace Hecton8.Gameplay
             public float Kd;
             public float IntegralClamp;
             public float MaxTorque;
+            public float MaelstromAccelerationClamp;
+            public float3 PositionWS;
             public byte ResetIntegral;
+            public byte LowMaelstromTier;
+            public int ActiveMaelstromCount;
+            [ReadOnly] public NativeArray<WhirlpoolFlow> ActiveMaelstroms;
             public NativeArray<PidJobOutput> Output;
 
             public void Execute()
@@ -113,14 +119,23 @@ namespace Hecton8.Gameplay
                 if (torqueLengthSq > maxTorque * maxTorque && torqueLengthSq > Epsilon)
                     torque *= maxTorque * math.rsqrt(torqueLengthSq);
 
+                float3 maelstromAcceleration = HectonAnalyticalFlowField.SampleWhirlpoolVelocity(
+                    PositionWS,
+                    ActiveMaelstroms,
+                    ActiveMaelstromCount,
+                    LowMaelstromTier,
+                    MaelstromAccelerationClamp);
+
                 uint flags = 0u;
                 if (!math.all(math.isfinite(error)) ||
                     !math.all(math.isfinite(integral)) ||
                     !math.all(math.isfinite(derivative)) ||
-                    !math.all(math.isfinite(torque)))
+                    !math.all(math.isfinite(torque)) ||
+                    !math.all(math.isfinite(maelstromAcceleration)))
                 {
                     flags |= PidTelemetryFlagInvalidOutput;
                     torque = float3.zero;
+                    maelstromAcceleration = float3.zero;
                     integral = float3.zero;
                     error = float3.zero;
                     derivative = float3.zero;
@@ -133,6 +148,7 @@ namespace Hecton8.Gameplay
                 Output[0] = new PidJobOutput
                 {
                     TorqueWorld = torque,
+                    MaelstromAcceleration = maelstromAcceleration,
                     Integral = integral,
                     Error = error,
                     Derivative = derivative,
@@ -154,6 +170,7 @@ namespace Hecton8.Gameplay
         private const uint PidTelemetryFlagPumpDenied = 1u << 3;
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_SUBMARINE_AUTOPILOT.bin";
         private const float WaterDensityKgPerCubicMeter = 1025f;
+        private const float MaelstromAccelerationClamp = 12f;
 
         [Header("Auto-Level")]
         [SerializeField] private bool autoLevelEnabled = true;
@@ -189,6 +206,7 @@ namespace Hecton8.Gameplay
 
         private SubmarineCoreDirector _core;
         private IPowerGridService _powerGrid;
+        private HectonFluidEngine _fluid;
         private Rigidbody _hull;
         private Transform _cachedTransform;
         private SubmarineStateSnapshot _snapshot;
@@ -307,6 +325,9 @@ namespace Hecton8.Gameplay
 
         public void SlowTick()
         {
+            if (_fluid == null)
+                _fluid = GlobalRegistry.Fluid;
+
             RefreshMathLodPolicyFromRegistrySlow();
         }
 
@@ -389,6 +410,7 @@ namespace Hecton8.Gameplay
         private void RegisterRuntime()
         {
             _powerGrid = GlobalRegistry.PowerGrid;
+            _fluid = GlobalRegistry.Fluid;
 
             TryRegisterStateReadModel();
 
@@ -760,6 +782,15 @@ namespace Hecton8.Gameplay
             Quaternion rotation = _hull.rotation;
             Vector3 angularVelocity = _hull.angularVelocity;
             float torqueScale = lowMathLod ? 0.65f : 1f;
+            NativeArray<WhirlpoolFlow> activeMaelstroms = default;
+            int activeMaelstromCount = 0;
+            if (_fluid != null &&
+                _fluid.TryGetActiveWhirlpoolFlows(out NativeArray<WhirlpoolFlow> maelstroms, out int maelstromCount))
+            {
+                activeMaelstroms = maelstroms;
+                activeMaelstromCount = maelstromCount;
+            }
+
             _pidHandle = new SubmarineAutoLevelPidJob
             {
                 CurrentRotation = new quaternion(rotation.x, rotation.y, rotation.z, rotation.w),
@@ -772,7 +803,12 @@ namespace Hecton8.Gameplay
                 Kd = derivativeGain * torqueScale,
                 IntegralClamp = integralClamp,
                 MaxTorque = maxTorqueNewtons * torqueScale,
+                MaelstromAccelerationClamp = MaelstromAccelerationClamp,
+                PositionWS = ToFloat3(_hull.worldCenterOfMass),
                 ResetIntegral = _resetIntegralPending ? (byte)1 : (byte)0,
+                LowMaelstromTier = lowMathLod ? (byte)1 : (byte)0,
+                ActiveMaelstromCount = activeMaelstromCount,
+                ActiveMaelstroms = activeMaelstroms,
                 Output = _pidOutput
             }.Schedule();
             _pidJobPending = true;
@@ -803,6 +839,9 @@ namespace Hecton8.Gameplay
 
             if (_hull != null && output.Flags == 0u && math.lengthsq(output.TorqueWorld) > 0.0001f)
                 PhysicsForceRouter.QueueTorque(_hull, ToVector3(output.TorqueWorld), ForceMode.Force);
+
+            if (_hull != null && output.Flags == 0u && math.lengthsq(output.MaelstromAcceleration) > 0.0001f)
+                PhysicsForceRouter.QueueAmbientForce(_hull, ToVector3(output.MaelstromAcceleration), ForceMode.Acceleration);
 
             return true;
         }

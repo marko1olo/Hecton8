@@ -750,24 +750,29 @@ namespace Hecton8.SaveSystem
                 return new NativeWriteResult(false, "Native write path is empty.");
             }
 
-            int totalBytes = math.max(firstByteCount, 0) + math.max(secondByteCount, 0);
-            if (totalBytes <= 0)
+            long totalBytesLong = (long)math.max(firstByteCount, 0) + math.max(secondByteCount, 0);
+            if (totalBytesLong <= 0L)
             {
                 return new NativeWriteResult(false, "Native write requested zero bytes.");
             }
 
-            FileStream fileStream = null;
+            if (totalBytesLong > int.MaxValue)
+            {
+                return new NativeWriteResult(false, "Native write exceeds the supported range.");
+            }
+
+            int totalBytes = (int)totalBytesLong;
             try
             {
                 InvalidateCachedReadWindows(absolutePath);
-                fileStream = new FileStream(absolutePath, FileMode.Create, FileAccess.Write, FileShare.None, FileWriteScratchBytes, FileOptions.Asynchronous | FileOptions.SequentialScan);
+                using FileStream fileStream = new FileStream(absolutePath, FileMode.Create, FileAccess.Write, FileShare.None, FileWriteScratchBytes, FileOptions.Asynchronous | FileOptions.SequentialScan);
                 TryEnableSparseFile(fileStream);
                 fileStream.SetLength(totalBytes);
 
-                if (!TryWritePointerSegment(fileStream, firstBuffer, firstByteCount, out string writeError))
+                if (!TryWritePointerSegmentAsync(fileStream, firstBuffer, firstByteCount, out string writeError))
                     return new NativeWriteResult(false, writeError);
 
-                if (!TryWritePointerSegment(fileStream, secondBuffer, secondByteCount, out writeError))
+                if (!TryWritePointerSegmentAsync(fileStream, secondBuffer, secondByteCount, out writeError))
                     return new NativeWriteResult(false, writeError);
 
                 if (!QueueThrottledFlush(absolutePath, totalBytes, out string flushError))
@@ -778,10 +783,6 @@ namespace Hecton8.SaveSystem
             catch (Exception ex)
             {
                 return new NativeWriteResult(false, $"Sequential native async write failed for '{absolutePath}': {ex.Message}");
-            }
-            finally
-            {
-                fileStream?.Dispose();
             }
         }
 
@@ -797,6 +798,49 @@ namespace Hecton8.SaveSystem
             Volatile.Write(ref s_fileWriteAsyncScratchBusy, 0);
         }
 
+        private static bool TryWritePointerSegmentAsync(FileStream stream, void* source, int byteCount, out string error)
+        {
+            error = string.Empty;
+            if (stream == null)
+            {
+                error = "Native async write stream is invalid.";
+                return false;
+            }
+
+            if (byteCount <= 0)
+                return true;
+
+            if (source == null)
+            {
+                stream.Position += byteCount;
+                return true;
+            }
+
+            byte* sourceBytes = (byte*)source;
+            int writtenBytes = 0;
+            while (writtenBytes < byteCount)
+            {
+                int chunkBytes = byteCount - writtenBytes;
+                if (chunkBytes > s_fileWriteAsyncScratch.Length)
+                    chunkBytes = s_fileWriteAsyncScratch.Length;
+
+                AcquireAsyncWriteScratch();
+                try
+                {
+                    Marshal.Copy((IntPtr)(sourceBytes + writtenBytes), s_fileWriteAsyncScratch, 0, chunkBytes);
+                    stream.WriteAsync(s_fileWriteAsyncScratch, 0, chunkBytes).GetAwaiter().GetResult();
+                }
+                finally
+                {
+                    ReleaseAsyncWriteScratch();
+                }
+
+                writtenBytes += chunkBytes;
+            }
+
+            return true;
+        }
+
         internal static bool OverwriteAll(string absolutePath, void* buffer, int byteCount, out string error)
         {
             error = string.Empty;
@@ -806,11 +850,10 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
-            FileStream fileStream = null;
             try
             {
                 InvalidateCachedReadWindows(absolutePath);
-                fileStream = new FileStream(absolutePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None, FileWriteScratchBytes, FileOptions.SequentialScan);
+                using FileStream fileStream = new FileStream(absolutePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None, FileWriteScratchBytes, FileOptions.SequentialScan);
                 TryEnableSparseFile(fileStream);
                 fileStream.SetLength(byteCount);
                 fileStream.Position = 0L;
@@ -827,10 +870,6 @@ namespace Hecton8.SaveSystem
             {
                 error = $"Sequential native overwrite failed for '{absolutePath}': {ex.Message}";
                 return false;
-            }
-            finally
-            {
-                fileStream?.Dispose();
             }
         }
 
@@ -2177,7 +2216,7 @@ namespace Hecton8.SaveSystem
             }
 
             string sceneName = string.IsNullOrEmpty(metadata.SceneName) ? "Unknown" : metadata.SceneName;
-            string gameVersion = string.IsNullOrEmpty(metadata.GameVersion) ? Application.version : metadata.GameVersion;
+            string gameVersion = string.IsNullOrEmpty(metadata.GameVersion) ? "Unknown" : metadata.GameVersion;
             int sceneBytesLength = checked(sceneName.Length * sizeof(char));
             int versionBytesLength = checked(gameVersion.Length * sizeof(char));
             if (sceneBytesLength > ushort.MaxValue || versionBytesLength > ushort.MaxValue)

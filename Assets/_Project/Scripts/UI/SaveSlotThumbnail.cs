@@ -29,6 +29,11 @@ namespace Hecton8.UI
             ShowNoThumbnail();
         }
 
+        private void OnDisable()
+        {
+            AdvanceLoadSequence();
+        }
+
         /// <summary>
         /// Requests a thumbnail capture for the provided save slot.
         /// </summary>
@@ -45,12 +50,7 @@ namespace Hecton8.UI
         /// </summary>
         public void LoadThumbnail(string slotName)
         {
-            unchecked
-            {
-                _loadSequence++;
-                if (_loadSequence == 0)
-                    _loadSequence = 1;
-            }
+            AdvanceLoadSequence();
 
             if (!SaveManager.IsSafeSlotName(slotName))
             {
@@ -82,11 +82,7 @@ namespace Hecton8.UI
         /// </summary>
         public void ClearThumbnail()
         {
-            unchecked
-            {
-                _loadSequence++;
-            }
-
+            AdvanceLoadSequence();
             ShowNoThumbnail();
         }
 
@@ -139,6 +135,16 @@ namespace Hecton8.UI
             canvasGroup.alpha = visible ? 1f : 0f;
             canvasGroup.interactable = visible;
             canvasGroup.blocksRaycasts = visible;
+        }
+
+        private void AdvanceLoadSequence()
+        {
+            unchecked
+            {
+                _loadSequence++;
+                if (_loadSequence == 0)
+                    _loadSequence = 1;
+            }
         }
     }
 }

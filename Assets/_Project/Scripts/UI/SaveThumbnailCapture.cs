@@ -4,34 +4,21 @@ using UnityEngine;
 namespace Hecton8.UI
 {
     /// <summary>
-    /// Save-event listener that delegates thumbnail capture to SaveThumbnailSystem.
+    /// Optional manual thumbnail trigger for legacy UI wiring. SaveManager owns save-request captures.
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Save Thumbnail Capture")]
-    public sealed class SaveThumbnailCapture : MonoBehaviour, ISaveEventListener
+    public sealed class SaveThumbnailCapture : MonoBehaviour
     {
         [Header("=== CAPTURE CAMERA ===")]
         [SerializeField] private Camera captureCamera;
 
-        private void OnEnable()
+        public void CaptureThumbnail(string slotName)
         {
-            SaveEvents.Register(this);
-        }
-
-        private void OnDisable()
-        {
-            SaveEvents.Unregister(this);
-        }
-
-        public void OnSaveEvent(in SaveEventPayload payload)
-        {
-            if (payload.Type != SaveEventType.SaveStarted || payload.SlotName.Length == 0)
+            if (!SaveManager.TryResolveSafeSlotName(slotName, out string safeSlotName))
                 return;
 
-            if (!SaveEvents.TryResolveKnownSlotName(in payload.SlotName, out string slotName))
-                return;
-
-            SaveThumbnailSystem.CaptureThumbnail(slotName, captureCamera);
+            SaveThumbnailSystem.CaptureThumbnail(safeSlotName, captureCamera);
         }
     }
 }

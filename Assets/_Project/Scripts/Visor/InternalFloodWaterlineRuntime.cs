@@ -2,6 +2,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Atmosphere;
 using Hecton8.Core;
+using Hecton8.Core.Signals;
 using Hecton8.Gameplay;
 using Hecton8.World;
 using Unity.Collections;
@@ -15,7 +16,7 @@ namespace Hecton8.Visor
     public sealed class InternalFloodWaterlineRuntime : MonoBehaviour, IFastTickable, IOriginShiftListener, IServiceHeartbeat, IServiceShutdown
     {
         private const int TelemetryCapacity = 300;
-        private const int TelemetryEntrySizeBytes = 48;
+        private const int TelemetryEntrySizeBytes = 40;
         private const uint DumpMagic = 0x4946574Cu; // IFWL
         private const int DumpVersion = 1;
         private const float FloodVisibleThreshold01 = 0.001f;
@@ -25,6 +26,8 @@ namespace Hecton8.Visor
         private const float LowTierRefractionStrength = 0f;
         private const float HighTierRefractionStrength = 0.0018f;
         private const float InternalWaterlineInvalidY = -100000f;
+        private const float ShaderFloatEpsilon = 0.0001f;
+        private const int DependencyRefreshTickInterval = 30;
         private const uint WaterSplashSourceHash = 0x49535753u; // ISWS
         private const uint ScreenBubbleSpeciesHash = 0x53434242u; // SCBB
         private const byte ScreenBubbleDebrisKind = 12;
@@ -59,13 +62,25 @@ namespace Hecton8.Visor
 
         private NativeArray<WaterlineTelemetryEntry> _telemetry;
         private HectonPlayerMovement _subscribedMovement;
+        private IHabitatGraphService _habitatGraph;
+        private IGasDynamicsSolver _gasDynamics;
         private AbsoluteUniversePosition _lastCameraAup;
         private int _telemetryCursor;
         private int _cachedRoomId = -1;
         private int _currentRoomId = -1;
+        private int _pendingGasRoomId = -1;
+        private int _nextDependencyRefreshTick;
         private float _currentWaterlineY = InternalWaterlineInvalidY;
         private float _targetWaterlineY = InternalWaterlineInvalidY;
+        private float _currentFill01;
+        private float _pendingGasFill01;
         private float _dropletSecondsRemaining;
+        private float _lastPublishedWaterlineY = float.PositiveInfinity;
+        private Color _lastPublishedWaterColor = Color.clear;
+        private Vector4 _lastPublishedRuntime = Vector4.positiveInfinity;
+        private Vector4 _lastPublishedDistortion = Vector4.positiveInfinity;
+        private HectonQualityTier _cachedQualityTier = HectonQualityTier.Unknown;
+        private bool _hasPendingGasSubmergedFraction;
         private bool _hasWaterline;
         private bool _cameraSubmerged;
         private bool _hasPreviousSubmergedState;
@@ -73,6 +88,7 @@ namespace Hecton8.Visor
         private bool _registeredOriginShift;
         private bool _isInitialized;
         private bool _blackBoxDumped;
+        private bool _shaderGlobalsDirty = true;
         private int _tickCount;
 
         public bool IsInitialized => _isInitialized && _telemetry.IsCreated;
@@ -91,7 +107,7 @@ namespace Hecton8.Visor
             if (ActiveRuntimeInstance != null)
                 return ActiveRuntimeInstance;
 
-            InternalFloodWaterlineRuntime existing = FindFirstObjectByType<InternalFloodWaterlineRuntime>();
+            InternalFloodWaterlineRuntime existing = FindAnyObjectByType<InternalFloodWaterlineRuntime>();
             if (existing != null)
                 return existing;
 
@@ -102,6 +118,8 @@ namespace Hecton8.Visor
         public void InitializeService()
         {
             EnsureNativeTelemetry();
+            _shaderGlobalsDirty = true;
+            RefreshCachedDependencies(force: true);
             _isInitialized = true;
             ActiveRuntimeInstance = this;
             RegisterRuntime();
@@ -116,6 +134,7 @@ namespace Hecton8.Visor
         private void OnEnable()
         {
             ActiveRuntimeInstance = this;
+            _shaderGlobalsDirty = true;
             if (_isInitialized)
                 RegisterRuntime();
         }
@@ -139,6 +158,11 @@ namespace Hecton8.Visor
             if (!_isInitialized || deltaTime <= 0f)
                 return;
 
+            RefreshCachedDependencies(force: false);
+            FlushPendingGasSubmergedFraction();
+            if (_dropletSecondsRemaining > 0f)
+                _dropletSecondsRemaining = math.max(0f, _dropletSecondsRemaining - deltaTime);
+
             if (!TryResolveRuntimeContext(out PlayerRuntimeContext runtimeContext))
             {
                 ClearWaterlineState();
@@ -147,7 +171,7 @@ namespace Hecton8.Visor
 
             SubscribeMovement(runtimeContext.PlayerMovement);
 
-            IHabitatGraphService habitatGraph = GlobalRegistry.HabitatGraph;
+            IHabitatGraphService habitatGraph = _habitatGraph;
             if (habitatGraph == null ||
                 !TryResolvePlayerRuntimePosition(in runtimeContext, out Vector3 playerRuntimePosition) ||
                 !habitatGraph.TryResolveRoomWaterline(playerRuntimePosition, _cachedRoomId, out HabitatRoomWaterlineSnapshot snapshot) ||
@@ -159,7 +183,8 @@ namespace Hecton8.Visor
 
             _cachedRoomId = snapshot.RoomId;
             _currentRoomId = snapshot.RoomId;
-            PushGasSubmergedFraction(snapshot.RoomId, snapshot.Fill01);
+            _currentFill01 = snapshot.Fill01;
+            QueueGasSubmergedFraction(snapshot.RoomId, snapshot.Fill01);
 
             if (snapshot.Fill01 <= FloodVisibleThreshold01)
             {
@@ -190,9 +215,6 @@ namespace Hecton8.Visor
                 PublishCrossingFeedback(cameraRuntimePosition, wasSubmerged);
             _hasPreviousSubmergedState = true;
 
-            if (_dropletSecondsRemaining > 0f)
-                _dropletSecondsRemaining = math.max(0f, _dropletSecondsRemaining - deltaTime);
-
             _hasWaterline = true;
             PublishShaderGlobals(snapshot.Fill01);
             WriteTelemetry(in snapshot, cameraRuntimePosition.y, 0);
@@ -209,7 +231,7 @@ namespace Hecton8.Visor
             if (math.isfinite(_targetWaterlineY))
                 _targetWaterlineY -= shiftY;
 
-            PublishShaderGlobals(_hasWaterline ? Shader.GetGlobalVector(InternalWaterlineRuntimeId).y : 0f);
+            PublishShaderGlobals(_hasWaterline ? _currentFill01 : 0f);
         }
 
         private void RegisterRuntime()
@@ -244,6 +266,10 @@ namespace Hecton8.Visor
             UnregisterRuntime();
             UnsubscribeMovement();
             _isInitialized = false;
+            _habitatGraph = null;
+            _gasDynamics = null;
+            _hasPendingGasSubmergedFraction = false;
+            _pendingGasRoomId = -1;
             if (_telemetry.IsCreated)
                 _telemetry.Dispose();
             _telemetry = default;
@@ -339,11 +365,44 @@ namespace Hecton8.Visor
             GlobalSignals.Publish(in signal);
         }
 
-        private static void PushGasSubmergedFraction(int roomId, float fill01)
+        private void QueueGasSubmergedFraction(int roomId, float fill01)
         {
-            IGasDynamicsSolver gasDynamics = GlobalRegistry.GasDynamics;
-            if (gasDynamics != null)
-                gasDynamics.TrySetRoomSubmergedFraction(roomId, fill01);
+            if (roomId < 0)
+                return;
+
+            float safeFill01 = math.isfinite(fill01) ? math.saturate(fill01) : 0f;
+            _pendingGasRoomId = roomId;
+            _pendingGasFill01 = safeFill01;
+            _hasPendingGasSubmergedFraction = !TryPushGasSubmergedFraction(roomId, safeFill01);
+        }
+
+        private void FlushPendingGasSubmergedFraction()
+        {
+            if (!_hasPendingGasSubmergedFraction)
+                return;
+
+            if (TryPushGasSubmergedFraction(_pendingGasRoomId, _pendingGasFill01))
+            {
+                _hasPendingGasSubmergedFraction = false;
+                _pendingGasRoomId = -1;
+            }
+        }
+
+        private bool TryPushGasSubmergedFraction(int roomId, float fill01)
+        {
+            IGasDynamicsSolver gasDynamics = _gasDynamics;
+            return gasDynamics != null && gasDynamics.TrySetRoomSubmergedFraction(roomId, fill01);
+        }
+
+        private void RefreshCachedDependencies(bool force)
+        {
+            if (!force && _tickCount < _nextDependencyRefreshTick)
+                return;
+
+            _habitatGraph = GlobalRegistry.HabitatGraph;
+            _gasDynamics = GlobalRegistry.GasDynamics;
+            _cachedQualityTier = GlobalRegistry.ScalabilityTier;
+            _nextDependencyRefreshTick = _tickCount + DependencyRefreshTickInterval;
         }
 
         private void PublishCrossingFeedback(Vector3 cameraRuntimePosition, bool wasSubmerged)
@@ -367,37 +426,91 @@ namespace Hecton8.Visor
         {
             float active01 = _hasWaterline ? 1f : 0f;
             float droplets01 = math.saturate(_dropletSecondsRemaining * math.rcp(DropletDurationSeconds));
-            bool lowTier = IsLowTier(GlobalRegistry.ScalabilityTier);
+            bool lowTier = IsLowTier(_cachedQualityTier);
             float refraction = lowTier ? LowTierRefractionStrength : HighTierRefractionStrength;
+            Vector4 runtime = new Vector4(active01, math.saturate(fill01), droplets01, _currentRoomId);
+            Vector4 distortion = new Vector4(refraction, math.saturate(tintStrength), math.max(0.001f, edgeSoftness), lowTier ? 1f : 0f);
 
-            Shader.SetGlobalFloat(InternalWaterlineYId, _hasWaterline ? _currentWaterlineY : InternalWaterlineInvalidY);
-            Shader.SetGlobalColor(InternalWaterColorId, internalWaterColor);
-            Shader.SetGlobalVector(InternalWaterlineRuntimeId, new Vector4(active01, math.saturate(fill01), droplets01, _currentRoomId));
-            Shader.SetGlobalVector(InternalWaterlineDistortionId, new Vector4(refraction, math.saturate(tintStrength), math.max(0.001f, edgeSoftness), lowTier ? 1f : 0f));
+            SetGlobalFloatIfChanged(InternalWaterlineYId, _hasWaterline ? _currentWaterlineY : InternalWaterlineInvalidY, ref _lastPublishedWaterlineY);
+            SetGlobalColorIfChanged(InternalWaterColorId, internalWaterColor, ref _lastPublishedWaterColor);
+            SetGlobalVectorIfChanged(InternalWaterlineRuntimeId, runtime, ref _lastPublishedRuntime);
+            SetGlobalVectorIfChanged(InternalWaterlineDistortionId, distortion, ref _lastPublishedDistortion);
+            _shaderGlobalsDirty = false;
         }
 
         private void PublishInactiveGlobals()
         {
-            Shader.SetGlobalFloat(InternalWaterlineYId, InternalWaterlineInvalidY);
-            Shader.SetGlobalColor(InternalWaterColorId, internalWaterColor);
-            Shader.SetGlobalVector(InternalWaterlineRuntimeId, Vector4.zero);
-            Shader.SetGlobalVector(InternalWaterlineDistortionId, new Vector4(0f, math.saturate(tintStrength), math.max(0.001f, edgeSoftness), 1f));
+            SetGlobalFloatIfChanged(InternalWaterlineYId, InternalWaterlineInvalidY, ref _lastPublishedWaterlineY);
+            SetGlobalColorIfChanged(InternalWaterColorId, internalWaterColor, ref _lastPublishedWaterColor);
+            SetGlobalVectorIfChanged(InternalWaterlineRuntimeId, Vector4.zero, ref _lastPublishedRuntime);
+            SetGlobalVectorIfChanged(InternalWaterlineDistortionId, new Vector4(0f, math.saturate(tintStrength), math.max(0.001f, edgeSoftness), 1f), ref _lastPublishedDistortion);
+            _shaderGlobalsDirty = false;
         }
 
         private void ClearWaterlineState()
         {
-            if (_currentRoomId >= 0)
-                PushGasSubmergedFraction(_currentRoomId, 0f);
+            if (!_hasWaterline &&
+                !_cameraSubmerged &&
+                !_hasPreviousSubmergedState &&
+                _cachedRoomId < 0 &&
+                _currentRoomId < 0 &&
+                _dropletSecondsRemaining <= 0f)
+            {
+                return;
+            }
 
+            bool hasDroplets = _dropletSecondsRemaining > 0f;
             _hasWaterline = false;
             _cameraSubmerged = false;
             _hasPreviousSubmergedState = false;
             _cachedRoomId = -1;
             _currentRoomId = -1;
+            _currentFill01 = 0f;
             _currentWaterlineY = InternalWaterlineInvalidY;
             _targetWaterlineY = InternalWaterlineInvalidY;
-            _dropletSecondsRemaining = 0f;
-            PublishInactiveGlobals();
+            if (hasDroplets)
+                PublishShaderGlobals(0f);
+            else
+                PublishInactiveGlobals();
+        }
+
+        private void SetGlobalFloatIfChanged(int shaderId, float value, ref float cachedValue)
+        {
+            if (!_shaderGlobalsDirty && math.abs(cachedValue - value) <= ShaderFloatEpsilon)
+                return;
+
+            Shader.SetGlobalFloat(shaderId, value);
+            cachedValue = value;
+        }
+
+        private void SetGlobalColorIfChanged(int shaderId, Color value, ref Color cachedValue)
+        {
+            if (!_shaderGlobalsDirty &&
+                math.abs(cachedValue.r - value.r) <= ShaderFloatEpsilon &&
+                math.abs(cachedValue.g - value.g) <= ShaderFloatEpsilon &&
+                math.abs(cachedValue.b - value.b) <= ShaderFloatEpsilon &&
+                math.abs(cachedValue.a - value.a) <= ShaderFloatEpsilon)
+            {
+                return;
+            }
+
+            Shader.SetGlobalColor(shaderId, value);
+            cachedValue = value;
+        }
+
+        private void SetGlobalVectorIfChanged(int shaderId, Vector4 value, ref Vector4 cachedValue)
+        {
+            if (!_shaderGlobalsDirty &&
+                math.abs(cachedValue.x - value.x) <= ShaderFloatEpsilon &&
+                math.abs(cachedValue.y - value.y) <= ShaderFloatEpsilon &&
+                math.abs(cachedValue.z - value.z) <= ShaderFloatEpsilon &&
+                math.abs(cachedValue.w - value.w) <= ShaderFloatEpsilon)
+            {
+                return;
+            }
+
+            Shader.SetGlobalVector(shaderId, value);
+            cachedValue = value;
         }
 
         private void WriteTelemetry(in HabitatRoomWaterlineSnapshot snapshot, float cameraY, byte flags)
@@ -406,6 +519,13 @@ namespace Hecton8.Visor
                 return;
 
             float droplets01 = math.saturate(_dropletSecondsRemaining * math.rcp(DropletDurationSeconds));
+            byte telemetryFlags = flags;
+            if (_cameraSubmerged)
+                telemetryFlags |= 2;
+            if (_hasPendingGasSubmergedFraction)
+                telemetryFlags |= 4;
+            if (IsLowTier(_cachedQualityTier))
+                telemetryFlags |= 8;
             WaterlineTelemetryEntry entry = new WaterlineTelemetryEntry
             {
                 Frame = (uint)math.max(0, Time.frameCount),
@@ -416,7 +536,7 @@ namespace Hecton8.Visor
                 TargetWaterlineY = _targetWaterlineY,
                 CameraY = cameraY,
                 Droplets01 = droplets01,
-                Flags = flags,
+                Flags = telemetryFlags,
                 Reserved0 = 0,
                 Reserved1 = 0,
                 StateHash = ResolveTelemetryHash(snapshot.RoomId, snapshot.Fill01, _currentWaterlineY, cameraY, droplets01)

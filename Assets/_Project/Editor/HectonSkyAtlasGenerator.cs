@@ -410,7 +410,7 @@ namespace Hecton8.Editor
                 RenderTextureFormat.ARGB32,
                 RenderTextureReadWrite.Linear);
 
-            Graphics.Blit(src, tmp);
+            UnityEngine.Graphics.Blit(src, tmp);
 
             RenderTexture prev = RenderTexture.active;
             RenderTexture.active = tmp;
@@ -440,7 +440,7 @@ namespace Hecton8.Editor
                 RenderTextureReadWrite.Linear);
             tmp.filterMode = FilterMode.Bilinear;
 
-            Graphics.Blit(src, tmp);
+            UnityEngine.Graphics.Blit(src, tmp);
 
             RenderTexture prev = RenderTexture.active;
             RenderTexture.active = tmp;

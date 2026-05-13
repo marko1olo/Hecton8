@@ -1,6 +1,7 @@
 using System;
 using Hecton8.Core;
 using Hecton8.Gameplay;
+using Hecton8.Physics;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
@@ -90,6 +91,12 @@ namespace Hecton8.Visor
 
             [Tooltip("Oxygen value below which hypoxia ramps when no stronger global signal is published.")]
             [Range(0.01f, 1f)] public float hypoxiaSafeOxygen01 = DefaultHypoxiaSafeOxygen01;
+
+            [Tooltip("Runtime Y delta to screen-space waterline scale for internal flood masking.")]
+            [Range(0.02f, 0.35f)] public float internalWaterlineMetersToScreen = 0.14f;
+
+            [Tooltip("Camera pitch compensation for the internal flood screen split.")]
+            [Range(0f, 1f)] public float internalWaterlinePitchScale = 0.52f;
         }
 
         private readonly struct RuntimeState
@@ -106,6 +113,8 @@ namespace Hecton8.Visor
                 uint aupShiftFrame,
                 float vrComfortVignette01,
                 Vector4 vrComfortJerkState,
+                Vector4 internalWaterlineParams,
+                Vector4 internalWaterlineDistortion,
                 bool lowTier)
             {
                 HealthFraction = healthFraction;
@@ -119,6 +128,8 @@ namespace Hecton8.Visor
                 AupShiftFrame = aupShiftFrame;
                 VrComfortVignette01 = vrComfortVignette01;
                 VrComfortJerkState = vrComfortJerkState;
+                InternalWaterlineParams = internalWaterlineParams;
+                InternalWaterlineDistortion = internalWaterlineDistortion;
                 LowTier = lowTier;
             }
 
@@ -133,6 +144,8 @@ namespace Hecton8.Visor
             public uint AupShiftFrame { get; }
             public float VrComfortVignette01 { get; }
             public Vector4 VrComfortJerkState { get; }
+            public Vector4 InternalWaterlineParams { get; }
+            public Vector4 InternalWaterlineDistortion { get; }
             public bool LowTier { get; }
         }
 
@@ -169,6 +182,8 @@ namespace Hecton8.Visor
             private float _lastAupShiftFrame = float.PositiveInfinity;
             private float _lastVrComfortVignette01 = float.PositiveInfinity;
             private Vector4 _lastVrComfortJerkState = Vector4.positiveInfinity;
+            private Vector4 _lastInternalWaterlineParams = Vector4.positiveInfinity;
+            private Vector4 _lastInternalWaterlineDistortion = Vector4.positiveInfinity;
             private float _lastLowTier = float.PositiveInfinity;
             private bool _materialDirty = true;
 
@@ -272,6 +287,8 @@ namespace Hecton8.Visor
                 SetMaterialFloatIfChanged(material, ShaderConstants.AupShiftFrameId, runtimeState.AupShiftFrame, ref _lastAupShiftFrame);
                 SetMaterialFloatIfChanged(material, ShaderConstants.VrComfortVignette01Id, Sanitize01(runtimeState.VrComfortVignette01), ref _lastVrComfortVignette01);
                 SetMaterialVectorIfChanged(material, ShaderConstants.VrComfortJerkStateId, SanitizeVrComfortJerkState(runtimeState.VrComfortJerkState), ref _lastVrComfortJerkState);
+                SetMaterialVectorIfChanged(material, ShaderConstants.InternalWaterlineParamsId, SanitizeInternalWaterlineParams(runtimeState.InternalWaterlineParams), ref _lastInternalWaterlineParams);
+                SetMaterialVectorIfChanged(material, ShaderConstants.InternalWaterlineDistortionId, SanitizeInternalWaterlineDistortion(runtimeState.InternalWaterlineDistortion), ref _lastInternalWaterlineDistortion);
                 SetMaterialFloatIfChanged(material, ShaderConstants.LowTierId, lowTier ? 1f : 0f, ref _lastLowTier);
 
                 Vector4 strengths0 = new Vector4(
@@ -326,6 +343,8 @@ namespace Hecton8.Visor
                 _lastAupShiftFrame = float.PositiveInfinity;
                 _lastVrComfortVignette01 = float.PositiveInfinity;
                 _lastVrComfortJerkState = Vector4.positiveInfinity;
+                _lastInternalWaterlineParams = Vector4.positiveInfinity;
+                _lastInternalWaterlineDistortion = Vector4.positiveInfinity;
                 _lastLowTier = float.PositiveInfinity;
                 _materialDirty = true;
             }
@@ -378,6 +397,10 @@ namespace Hecton8.Visor
             internal static readonly int VrComfortVignette01Id = Shader.PropertyToID("_VRComfortVignette01");
             internal static readonly int SomaticComfortVignetteId = Shader.PropertyToID("_VRComfortVignette");
             internal static readonly int VrComfortJerkStateId = Shader.PropertyToID("_HectonVRComfortJerkState");
+            internal static readonly int InternalWaterlineYId = Shader.PropertyToID("_InternalWaterlineY");
+            internal static readonly int InternalWaterlineRuntimeId = Shader.PropertyToID("_InternalWaterlineRuntime");
+            internal static readonly int InternalWaterlineParamsId = Shader.PropertyToID("_InternalWaterlineParams");
+            internal static readonly int InternalWaterlineDistortionId = Shader.PropertyToID("_InternalWaterlineDistortion");
             internal static readonly int LowTierId = Shader.PropertyToID("_HectonUberLowTier");
             internal static readonly int Strengths0Id = Shader.PropertyToID("_HectonUberStrengths0");
             internal static readonly int Strengths1Id = Shader.PropertyToID("_HectonUberStrengths1");
@@ -399,6 +422,8 @@ namespace Hecton8.Visor
 
         private VisorUberPostPass _pass;
         private Material _material;
+        private HectonFluidEngine _fluidEngine;
+        private int _nextFluidRebindFrame;
         private int _cachedLowTierThresholdMb = int.MinValue;
         private int _cachedGraphicsMemoryMb;
         private bool _cachedLowTier;
@@ -422,6 +447,7 @@ namespace Hecton8.Visor
             }
 
             RecreateMaterial(ref _material, shader);
+            RefreshFluidBinding(force: true);
         }
 
         /// <inheritdoc />
@@ -432,6 +458,7 @@ namespace Hecton8.Visor
 
             Camera renderCamera = renderingData.cameraData.camera;
             bool lowTier = ResolveLowTier(settings);
+            RefreshFluidBinding(force: false);
             if (!TryBuildRuntimeState(renderCamera, settings, lowTier, out RuntimeState runtimeState))
                 return;
 
@@ -444,9 +471,11 @@ namespace Hecton8.Visor
         {
             CoreUtils.Destroy(_material);
             _material = null;
+            _fluidEngine = null;
+            _nextFluidRebindFrame = 0;
         }
 
-        private static bool TryBuildRuntimeState(Camera renderCamera, FeatureSettings settings, bool lowTier, out RuntimeState runtimeState)
+        private bool TryBuildRuntimeState(Camera renderCamera, FeatureSettings settings, bool lowTier, out RuntimeState runtimeState)
         {
             runtimeState = default;
             if (renderCamera == null || settings == null)
@@ -483,7 +512,16 @@ namespace Hecton8.Visor
                 Sanitize01(Shader.GetGlobalFloat(ShaderConstants.VrComfortVignette01Id)),
                 Sanitize01(Shader.GetGlobalFloat(ShaderConstants.SomaticComfortVignetteId)));
             Vector4 vrComfortJerkState = SanitizeVrComfortJerkState(Shader.GetGlobalVector(ShaderConstants.VrComfortJerkStateId));
+            Vector4 internalWaterlineParams = ResolveInternalWaterlineParams(renderCamera, settings);
+            Vector4 internalWaterlineDistortion = ResolveInternalWaterlineDistortion(lowTier);
             float lightShaftActiveCount = math.max(0f, SanitizeFinite(Shader.GetGlobalVector(ShaderConstants.LightShaftParamsId).x, 0f));
+            float maelstromWarp01 = ResolveMaelstromWarp01(renderCamera);
+            if (maelstromWarp01 > 0.001f)
+            {
+                float invPressureRange = math.rcp(math.max(0.0001f, settings.pressureInvRange));
+                ambientPressure = math.max(ambientPressure, 1f + maelstromWarp01 * invPressureRange);
+            }
+
             float bulletTimeVisual01 = lowTier ? 0f : Sanitize01(GlobalSignals.BulletTimeVisualIntensity01);
             float playerStress = math.saturate(math.max(frequencyTuningError01, math.max(globalStress, math.max(hullStress, 1f - healthFraction))));
             playerStress = math.max(playerStress, bulletTimeVisual01);
@@ -503,7 +541,10 @@ namespace Hecton8.Visor
                 math.max(vrComfortJerkState.x, vrComfortJerkState.y) > 0.001f ||
                 statusMask != 0u ||
                 ambientPressure > 1.001f ||
+                maelstromWarp01 > 0.001f ||
                 lightShaftActiveCount > 0.001f ||
+                internalWaterlineParams.y > 0.001f ||
+                internalWaterlineParams.w > 0.001f ||
                 frequencyTuningError01 > 0.001f ||
                 math.abs(localTemperature) > TemperatureActivityThreshold ||
                 settings.lensDirtTexture != null;
@@ -522,8 +563,69 @@ namespace Hecton8.Visor
                 HectonFloatingOrigin.CurrentShiftSequence,
                 vrComfortVignette01,
                 vrComfortJerkState,
+                internalWaterlineParams,
+                internalWaterlineDistortion,
                 lowTier);
             return true;
+        }
+
+        private static Vector4 ResolveInternalWaterlineParams(Camera renderCamera, FeatureSettings settings)
+        {
+            Vector4 runtime = Shader.GetGlobalVector(ShaderConstants.InternalWaterlineRuntimeId);
+            float active01 = Sanitize01(runtime.x);
+            float droplets01 = Sanitize01(runtime.z);
+            if ((active01 <= 0.001f && droplets01 <= 0.001f) || renderCamera == null || settings == null)
+                return Vector4.zero;
+
+            float waterlineY = SanitizeFinite(Shader.GetGlobalFloat(ShaderConstants.InternalWaterlineYId), float.NegativeInfinity);
+            if (active01 <= 0.001f || !math.isfinite(waterlineY))
+                return new Vector4(0f, 0f, 0f, droplets01);
+
+            Transform cameraTransform = renderCamera.transform;
+            float cameraY = cameraTransform.position.y;
+            float pitchY = math.clamp(cameraTransform.forward.y, -1f, 1f);
+            float splitLine = cameraY < waterlineY - 0.03f
+                ? 1.08f
+                : math.saturate(
+                    0.5f +
+                    (waterlineY - cameraY) * math.max(0.02f, settings.internalWaterlineMetersToScreen) -
+                    pitchY * math.saturate(settings.internalWaterlinePitchScale));
+            float submerged01 = cameraY < waterlineY - 0.03f ? 1f : 0f;
+            return new Vector4(splitLine, active01, submerged01, droplets01);
+        }
+
+        private static Vector4 ResolveInternalWaterlineDistortion(bool lowTier)
+        {
+            Vector4 distortion = Shader.GetGlobalVector(ShaderConstants.InternalWaterlineDistortionId);
+            return new Vector4(
+                lowTier ? 0f : math.max(0f, SanitizeFinite(distortion.x, 0f)),
+                Sanitize01(distortion.y),
+                math.max(0.001f, SanitizeFinite(distortion.z, 0.018f)),
+                lowTier ? 1f : Sanitize01(distortion.w));
+        }
+
+        private float ResolveMaelstromWarp01(Camera renderCamera)
+        {
+            if (renderCamera == null)
+                return 0f;
+
+            HectonFluidEngine fluidEngine = _fluidEngine;
+            if (fluidEngine == null)
+                return 0f;
+
+            return fluidEngine.TrySampleMaelstromWarp(renderCamera.transform.position, out float warp01)
+                ? Sanitize01(warp01)
+                : 0f;
+        }
+
+        private void RefreshFluidBinding(bool force)
+        {
+            int frame = Time.frameCount;
+            if (!force && frame < _nextFluidRebindFrame)
+                return;
+
+            _fluidEngine = GlobalRegistry.Fluid;
+            _nextFluidRebindFrame = frame + 30;
         }
 
         private static bool TryResolvePlayerContext(out Camera playerCamera, out HectonPlayerMovement playerMovement, out uint statusMask)
@@ -606,6 +708,24 @@ namespace Hecton8.Visor
                 Sanitize01(value.x),
                 Sanitize01(value.y),
                 math.isfinite(value.z) ? math.max(0f, value.z) : 0f,
+                Sanitize01(value.w));
+        }
+
+        private static Vector4 SanitizeInternalWaterlineParams(Vector4 value)
+        {
+            return new Vector4(
+                math.isfinite(value.x) ? math.clamp(value.x, -0.1f, 1.1f) : 0f,
+                Sanitize01(value.y),
+                Sanitize01(value.z),
+                Sanitize01(value.w));
+        }
+
+        private static Vector4 SanitizeInternalWaterlineDistortion(Vector4 value)
+        {
+            return new Vector4(
+                math.isfinite(value.x) ? math.clamp(value.x, 0f, 0.006f) : 0f,
+                Sanitize01(value.y),
+                math.isfinite(value.z) ? math.clamp(value.z, 0.001f, 0.1f) : 0.018f,
                 Sanitize01(value.w));
         }
     }

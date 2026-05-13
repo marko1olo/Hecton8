@@ -236,12 +236,12 @@ Action:
 
 Gameplay economy / resource-loop findings:
 
-- Item/catalog data is real, not placeholder-only: `73` ItemData assets excluding `ItemCatalog.asset`, `69` unique catalog refs, `41` recipe assets, and `27` resource-node templates.
+- Item/catalog data is real, not placeholder-only: `73` ItemData assets excluding `ItemCatalog.asset`, `73` unique catalog refs after R21, `41` recipe assets, and `27` resource-node templates.
 - Recipe data is internally coherent in the static parse: `149` non-script recipe item refs resolve to current item assets, and no recipe ref points outside the catalog.
-- Resource-node data has a hard break candidate: `23 / 27` template harvest items have `worldPrefab: {fileID: 0}`.
+- Resource-node data had a hard break candidate at the R14 snapshot: `23 / 27` template harvest items had `worldPrefab: {fileID: 0}`. R19 reduced the current primary-harvest gap to `16 / 27`; R21 later reduced the current primary-harvest gap to `0 / 27` with existing pickup shells.
 - `ResourceNode.TrySpawnLoot()` returns success early for template-driven extractor items, so legacy pooled loot is skipped. Incremental yield calls `PersistentWorldRegistry.TryRegisterDroppedItem(itemData, ...)`, and that path rejects null `worldPrefab`.
-- Result: static source/data evidence supports "many resource nodes can take damage/deplete while pickup emission fails" until proven otherwise in Unity.
-- Copper is split across two ItemData assets with the same `stableId: Data_Copper`: root `Assets/_Project/Data/Items/Data_Copper.asset` is used by `ResourceNodeTemplate_CopperVein` / barter and is not in `ItemCatalog`; raw `Assets/_Project/Data/Items/Resources/Raw/Data_Copper.asset` is cataloged and used by recipes.
+- Result after R21: the specific static catalog/worldPrefab blocker is closed, but runtime pickup emission is still unproven until Unity shows hydration, interaction, inventory, quest, and save/load behavior.
+- At the R14 snapshot, copper was split across two ItemData assets with the same `stableId: Data_Copper`: root `Assets/_Project/Data/Items/Data_Copper.asset` was used by `ResourceNodeTemplate_CopperVein` / barter and was not in `ItemCatalog`; raw `Assets/_Project/Data/Items/Resources/Raw/Data_Copper.asset` was cataloged and used by recipes. R19 moved the checked copper node/barter refs to the raw cataloged asset, and R21 changed `BarterBootstrapAuthoring` to load raw cataloged copper.
 - PlayerInventory is substantial and load-bearing, not a toy list: native SOA mirrors, grid anchors, stack counts, condition, craft locks, genetics/quality, mass/volume/radiation caches, degradation, pressure crush, reactive chemistry, and save shadow state.
 - Crafting/fabricator code is substantial: bounded native recipe evaluation, scan locks, power/scarcity hooks, physical output emission, and scene string evidence for `Forward_Fabricator`, `Trial_Fabricator`, `HectonFabricatorUI`, and starter resource nodes.
 - Resource scarcity is runtime-installed by `EconomyRuntimeInstaller`, but authored scarcity directives are not proven populated. `ResourceDistributionDirector`, `ProceduralOreSpawner`, and `FluidPipeGraphRuntime` contain serious code, but static scans do not prove scene placement or bootstrap creation for the production route.
@@ -249,7 +249,7 @@ Gameplay economy / resource-loop findings:
 Action:
 
 - Promoted this to `Docs/PROJECT_STATE_STATIC_XRAY.md` as the stable gameplay-economy addendum.
-- Current verdict: the gameplay economy spine is real, but first-hour resource-loop readiness is `PENDING VERIFICATION` and likely blocked by authored data consistency before any GameObject polish matters.
+- Current verdict: the gameplay economy spine is real and the previously visible static resource-node catalog/worldPrefab hole is closed, but first-hour resource-loop readiness remains `PENDING VERIFICATION` until runtime route proof exists.
 
 ## Continuation R15 - 2026-05-13
 
@@ -280,8 +280,8 @@ Tools / PDA / first-hour interface findings:
 - `Player.prefab` owns the important runtime spine: `PlayerToolManager`, `PlayerPDA`, `ToolLoadoutProvisioner`, `ScanLogSystem`, `PDAExchangeSystem`, and `PlayerInteraction`.
 - `PlayerToolManager`, `PlayerTool`, `ModularEquipmentEngine`, `ScannerTool`, `ScanEvents`, `ScanLogSystem`, `PlayerInteraction`, `HectonItem`, `QuestStateManager`, and `QuestGraphEvaluator` are substantial source systems, not empty wrappers.
 - `ScannerTool.cs` is about `141 KB` and contains real scan execution, non-alloc spatial-hash contact collection, scan/discovery events, focused dispatcher raycast support, feedback, and scan-log hooks.
-- `Player.prefab` `ToolLoadoutProvisioner` is enabled with `provisionInventoryOnStart=1`, `assignCoreLoadoutOnStart=1`, and `provisionConstructionMaterialsOnStart=1`. It can grant the full tool kit and starter material on Start.
-- The provisioner starter material is root `Data_Copper` GUID `84877e24023afe648a6682f49f11defa`, the non-catalog copper asset already flagged in R14.
+- At the R16 snapshot, `Player.prefab` `ToolLoadoutProvisioner` was enabled with `provisionInventoryOnStart=1`, `assignCoreLoadoutOnStart=1`, and `provisionConstructionMaterialsOnStart=1`. It could grant the full tool kit and starter material on Start. R18 later disabled/gated this path.
+- At the R16 snapshot, the provisioner starter material was root `Data_Copper` GUID `84877e24023afe648a6682f49f11defa`, the non-catalog copper asset already flagged in R14. R18 moved the provisioner reference to cataloged raw copper.
 - `WorldShippingContentFilter` suppresses named trial/staging scene hierarchies. Static source did not show a strip path for player-attached `ToolLoadoutProvisioner` or smoke components.
 - `Player.prefab` `PlayerPDA` has null `pdaPanel`, null `pdaCanvasGroup`, and null tab refs. `PlayerPDA.Open()` can still switch input/cursor/depth-of-field/events with no panel/tabs configured.
 - Binary scene string scans found PDA tab components in `02_HECTON_WORLD.unity` and `03_HECTON_WORLD_CREST5.unity`, so the correct finding is not "no PDA UI assets".
@@ -291,8 +291,102 @@ Tools / PDA / first-hour interface findings:
 Action:
 
 - Promoted this to `Docs/PROJECT_STATE_STATIC_XRAY.md` as the stable tools/PDA/first-hour interface addendum.
-- Current verdict: tool/scan/interaction architecture is real, but first-hour truth is contaminated by startup dev provisioning and PDA bridge proof remains `PENDING VERIFICATION`.
+- Current verdict at R16: tool/scan/interaction architecture is real, but first-hour truth was contaminated by startup dev provisioning and PDA bridge proof remained `PENDING VERIFICATION`.
+- R18 later hardens the provisioning defect by disabling startup grants, release-guarding the dev helper, and switching starter copper to cataloged raw `Data_Copper`.
 - Required later runtime route: clean start with no dev all-tools grant -> acquire/craft/equip scanner -> open visible PDA shell -> scan resource/copper -> quest/log/inventory state updates.
+
+## Continuation R17 - 2026-05-13
+
+Rendering / visor / shader performance-boundary findings:
+
+- Static shader inventory under `Assets/_Project`: `136` shader-like files (`101` `.shader`, `31` `.compute`, `4` `.hlsl`), `191` `#pragma multi_compile` lines, `13` `#pragma shader_feature` lines, and `66` `numthreads` declarations.
+- `Mobile_Renderer.asset` currently has `8` active / `2` inactive features, `PC_Renderer.asset` has `8` active / `5` inactive features, and `PC_High_Renderer.asset` has `10` active / `2` inactive features.
+- URP assets have SRP Batcher enabled, but GPU Resident Drawer and GPU occlusion are disabled across the scanned tier assets (`m_GPUResidentDrawerMode: 0`, `m_GPUResidentDrawerEnableOcclusionCullingInCameras: 0`). Do not claim GRD/GPU occlusion savings.
+- `21` first-party visor `ScriptableRendererFeature` files implement `RecordRenderGraph`; `16` still use `AddUnsafePass`, `4` use `AddComputePass`, and `1` uses obsolete `AddRenderPass<T>`.
+- Active renderer YAML keeps the low/mobile path visually ambitious: VR brownout, scooter volumetric shafts, half-res particles, abyssal SSDO, Shapes, noir depth fog, visor uber post, and atmosphere soot are active on `Mobile_Renderer.asset`.
+- `HectonScooterVolumetricShaftsFeature` is fake-first in source: the settings tooltip says shaft generation performs zero world raymarch steps and the material upload sends `_HectonShaftRaymarchSteps = 0`; the serialized `raymarchSteps: 8` value in renderer YAML is legacy/compat state, not runtime proof of world volumetric raymarching.
+- `ScreenSpaceLightShaftRuntime`, `GroundPenetratingRadarRuntime`, and `InstanceCullingService` contain bounded source architecture and 300-frame black-box telemetry rings, but GUID scans did not prove those components serialized in `_Project` scenes/prefabs/assets.
+- `GroundPenetratingRadarRuntime` caps the fake sensor route at `64` max rays, `16` low-tier rays, `10` raymarch steps, `128` pings, and renders pings through `Graphics.RenderMeshIndirect` plus `Hecton_GroundRadarPingIndirect.shader`.
+
+Action:
+
+- Promoted the renderer/visor/shader boundary to `Docs/PROJECT_STATE_STATIC_XRAY.md`, `Docs/README.md`, `Docs/Reports/README.md`, `Docs/HECTON8_GLOBAL_ARCHITECTURE_MAP.md`, and `Docs/ARCHITECTURE/CINEMATIC_CHEATS_LEDGER.md`.
+- Current verdict: render architecture is substantial and fake-first in important places, but low-tier visual cost, RenderGraph optimality, GPU occlusion, shader variant pressure, and scene wiring remain `PENDING VERIFICATION`.
+- Required later proof: Frame Debugger / RenderGraph Viewer for active renderer features, Profiler GPU+CPU capture on Low/MX350 target, Memory Profiler VRAM snapshot, shader variant report, and a player-route visual capture for visor/noir/sonar/GPR/light-shaft states.
+
+## Continuation R18 - 2026-05-13
+
+First-hour dev provisioning hardening:
+
+- `Player.prefab` `ToolLoadoutProvisioner` startup flags are now `0`: `provisionInventoryOnStart`, `assignCoreLoadoutOnStart`, and `provisionConstructionMaterialsOnStart`.
+- `ToolLoadoutProvisioner` default `provisionConstructionMaterialsOnStart` is now `false`.
+- `ToolLoadoutProvisioner` now gates provisioning, construction-material grants, quick-slot assignment, and startup preset application behind `UNITY_EDITOR || DEVELOPMENT_BUILD`; non-development release builds return without mutating inventory/loadout.
+- Provisioner starter copper now resolves to cataloged raw `Data_Copper` GUID `7a9f752461931354e865d30b319c0f35` instead of root non-catalog GUID `84877e24023afe648a6682f49f11defa`.
+
+Action:
+
+- Patched `Assets/_Project/Scripts/ToolLoadoutProvisioner.cs`.
+- Patched `Assets/_Project/Prefabs/Player.prefab`.
+- Updated the project-state X-Ray and documentation indexes so the R16 risk does not remain current after the hardening.
+
+Remaining boundary:
+
+- This is source/prefab static proof only. Unity import, Play Mode, profiler, player build, clean first-hour route, and PDA shell proof remain `PENDING VERIFICATION`.
+
+## Continuation R19 - 2026-05-13
+
+Resource pickup data canonicalization:
+
+- `ResourceNodeTemplate_CopperVein` harvest output now references cataloged raw `Data_Copper` GUID `7a9f752461931354e865d30b319c0f35`, not root non-catalog GUID `84877e24023afe648a6682f49f11defa`.
+- `Offer_Illumination`, `Offer_RelayStarter`, and `Offer_RepairLoop` copper costs now also reference cataloged raw copper.
+- Existing matching pickup prefabs are now wired into `ItemData.worldPrefab` for `Data_Copper`, `Data_FiberKelp`, `Data_HydrocarbonResin`, `Data_MembraneTissue`, `Data_SilicaShards`, and `Data_SilverOre`.
+- Together with already-wired `Data_TitaniumScrap` and `Data_SulfurClumps`, the obvious early raw-resource pickup prefab pairs now have non-null `worldPrefab` refs.
+- Static harvest-ref recount at the R19 checkpoint: `16 / 27` primary harvest items still had null `worldPrefab`, and `3 / 27` still pointed at non-catalog ItemData. R21 later closed those static catalog/worldPrefab gaps.
+
+Action:
+
+- Patched six raw resource ItemData assets, `ResourceNodeTemplate_CopperVein`, and three barter offers.
+- Updated stable docs and indexes so R14's copper/worldPrefab finding is no longer treated as fully current.
+
+Remaining boundary:
+
+- This is static YAML/GUID proof only. Unity import, Play Mode pickup, `InteractionEvents.ItemCollected`, inventory acceptance, quest update, save/load, profiler, and player-build proof remain `PENDING VERIFICATION`.
+
+## Continuation R20 - 2026-05-13
+
+Resource content validator hardening:
+
+- `ContentSanityValidator.ValidateResourceNodeTemplates()` now loads the active `ItemCatalog` and inspects serialized `ResourceNodeTemplate.harvestYield` / `rarityDrops`.
+- Resource-node yield entries now error if the item ref is null, not `ItemData`, has empty `PersistentId`, is not the active `ItemCatalog` entry for its hash, has null `ItemData.worldPrefab`, or has a world prefab with no valid asset path.
+- The validator summary now includes `ResourceNodeYieldMissingWorldPrefab` and `ResourceNodeYieldNotCataloged` counters.
+
+Action:
+
+- Patched `Assets/_Project/Scripts/Editor/ContentSanityValidator.cs`.
+- Promoted the validator boundary into stable docs so resource gaps are enforced by tooling, not manual memory. R21 later expanded this contract check and closed the then-remaining static catalog/worldPrefab gaps.
+
+Remaining boundary:
+
+- This is static source proof only. The Unity editor validator menu was not run, no Console output was captured, and no compile/import proof exists in this pass.
+
+## Continuation R21 - 2026-05-13
+
+Resource pickup route closure:
+
+- Added `Data_CarbonGraphite`, `Data_PressureDiamond`, and `Data_VoidGlassMeteorite` to `ItemCatalog`. Current non-catalog ItemData count under `Data/Items` is now `1`: legacy root `Data_Copper.asset`.
+- Assigned existing pickup shells to the remaining resource-node harvest ItemData. Current resource-node primary harvest recount: `0 / 27` missing `worldPrefab`, `0 / 27` non-catalog.
+- `BarterBootstrapAuthoring` now loads `Assets/_Project/Data/Items/Resources/Raw/Data_Copper.asset`, not root `Assets/_Project/Data/Items/Data_Copper.asset`.
+- `ItemCatalog` now falls back to direct serialized `ItemData.worldPrefab` when Addressables world-prefab lookup has no usable entry or failed load result. This is required by current static reality: `com.unity.addressables` exists, but `Assets/AddressableAssetsData` is absent.
+- `ContentSanityValidator` now also validates resource-yield world-prefab contract: `PickupItem` or `HectonItem`, plus `Collider` and `Rigidbody`.
+
+Action:
+
+- Patched `ItemCatalog.asset`, ten raw resource ItemData assets, `ItemCatalog.cs`, `BarterBootstrapAuthoring.cs`, and `ContentSanityValidator.cs`.
+- Promoted the current `0 / 27` catalog/worldPrefab state into stable docs.
+
+Remaining boundary:
+
+- This is still static proof only. Unity import, Addressables catalog behavior, ObjectPool hydration, pickup interaction, inventory acceptance, quest completion, save/load, profiler, and player-build proof remain `PENDING VERIFICATION`.
 
 ## Broken Evidence References
 

@@ -517,7 +517,7 @@ Shader "Hecton8/BoidFishInstanced"
 
                     // Phase with body wave component
                     float freqAdjusted = (_TailFrequency + vatSpeed01 * _TailSpeedInfluence) * vatSpeed01 * aggressiveSpeedScale;
-                    float phase = _Time.y * freqAdjusted * _H8FoveatedVatTimeScale 
+                    float phase = _Time.y * freqAdjusted * _H8FoveatedVatTimeScale
                                 + aupPhase
                                 + float(instanceID) * _TailPhaseVariance;
                     

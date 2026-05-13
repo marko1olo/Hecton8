@@ -1381,7 +1381,7 @@ namespace Hecton8.AI
             return math.max(0f, light.Intensity) * math.max(0f, light.RangeSq);
         }
 
-        private static float3 ResolveRuntimePosition(in AbsoluteUniversePositionBlit128 positionAup, float3 floatingOriginOffset)
+        private static float3 ResolveTelemetryRuntimePosition(in AbsoluteUniversePositionBlit128 positionAup, float3 floatingOriginOffset)
         {
             double cellSize = AbsoluteUniversePosition.CellSizeMeters;
             double3 absolutePosition = new double3(
@@ -1488,7 +1488,7 @@ namespace Hecton8.AI
                     strongestScore = score;
                 }
 
-                hottestPosition = ResolveRuntimePosition(in strongest.PositionAup, telemetryOriginOffset);
+                hottestPosition = ResolveTelemetryRuntimePosition(in strongest.PositionAup, telemetryOriginOffset);
                 hottestSource = strongest.SourceId;
             }
 
@@ -2474,7 +2474,7 @@ namespace Hecton8.AI
                     if (light.Intensity <= DdaEpsilon || light.RangeSq <= DdaEpsilon)
                         continue;
 
-                    float3 lightPosition = PredatorCognitionDomain.ResolveRuntimePosition(in light.PositionAup, input.FloatingOriginOffset);
+                    float3 lightPosition = ResolveRuntimePosition(in light.PositionAup, input.FloatingOriginOffset);
                     float3 lightToPredator = input.Position - lightPosition;
                     float distanceSq = math.lengthsq(lightToPredator);
                     if (distanceSq > light.RangeSq || distanceSq <= DdaEpsilon)
@@ -2520,6 +2520,17 @@ namespace Hecton8.AI
                 result.Exposure01 = exposure;
                 result.BlindState = blindState;
                 return result;
+            }
+
+            private static float3 ResolveRuntimePosition(in AbsoluteUniversePositionBlit128 positionAup, float3 floatingOriginOffset)
+            {
+                double cellSize = AbsoluteUniversePosition.CellSizeMeters;
+                double3 absolutePosition = new double3(
+                    (positionAup.GridX * cellSize) + positionAup.Local.x,
+                    (positionAup.GridY * cellSize) + positionAup.Local.y,
+                    (positionAup.GridZ * cellSize) + positionAup.Local.z);
+                double3 runtimePosition = absolutePosition - new double3(floatingOriginOffset.x, floatingOriginOffset.y, floatingOriginOffset.z);
+                return new float3((float)runtimePosition.x, (float)runtimePosition.y, (float)runtimePosition.z);
             }
 
             private PackedCognitionOutput EvaluatePredator(

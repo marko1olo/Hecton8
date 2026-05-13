@@ -19,7 +19,7 @@ MonoBehaviour:
   requiredScanEntryId: 
   repeatLimit: 1
   costs:
-  - item: {fileID: 11400000, guid: 84877e24023afe648a6682f49f11defa, type: 2}
+  - item: {fileID: 11400000, guid: 7a9f752461931354e865d30b319c0f35, type: 2}
     amount: 3
   rewards:
   - item: {fileID: 11400000, guid: 2b9ecc74c262da64da17563638a017c1, type: 2}

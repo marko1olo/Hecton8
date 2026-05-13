@@ -39,14 +39,45 @@ MonoBehaviour:
     - Den.Tools
     - EasySave3
     - GPUInstancer
+    - Hecton8.AI.Foveated
+    - Hecton8.Audio.Propagation
     - Hecton8.Bootstrap.Contracts
+    - Hecton8.Cartography
     - Hecton8.Core
+    - Hecton8.Core.Contracts
+    - Hecton8.Core.Memory
+    - Hecton8.Core.Memory.Layout
+    - Hecton8.Core.Persistence
+    - Hecton8.Core.Scheduling
+    - Hecton8.Environment.Fluids
+    - Hecton8.Environment.Fluids.Contracts
+    - Hecton8.Graphics.Culling
     - Hecton8.Input
     - Hecton8.Input.Generated
+    - Hecton8.Inventory.Algorithms
+    - Hecton8.Inventory.Corrosion
+    - Hecton8.Inventory.Corrosion.Contracts
+    - Hecton8.Lighting
+    - Hecton8.Lighting.Shafts
+    - Hecton8.Logistics
+    - Hecton8.Narrative.Camera
+    - Hecton8.Physics.CCD
+    - Hecton8.Physics.Determinism
+    - Hecton8.Physics.Tethers.Contracts
+    - Hecton8.Physiology
     - Hecton8.PlayModeTests
     - Hecton8.Plugins
+    - Hecton8.Power.Generators
+    - Hecton8.Power.Generators.Contracts
+    - Hecton8.QA
     - Hecton8.SpaceEngine098Terrain
+    - Hecton8.Thermodynamics
+    - Hecton8.UI.Localization
+    - Hecton8.UI.Navigation
+    - Hecton8.Vehicles.VFX
+    - Hecton8.VFX.Sonar
     - Hecton8.World.Contracts
+    - Hecton8.World.GPR
     - JBooth.MicroSplat.Core
     - Lofelt.NiceVibrations
     - Lofelt.NiceVibrations.Demo

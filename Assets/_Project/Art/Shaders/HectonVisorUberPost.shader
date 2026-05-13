@@ -51,11 +51,14 @@ Shader "Hidden/Hecton8/VisorUberPost"
                 float4 _HectonUberWaveParams;
                 float4 _HectonUberTextureFlags;
                 float4 _HectonVRComfortJerkState;
+                float4 _InternalWaterlineParams;
+                float4 _InternalWaterlineDistortion;
             CBUFFER_END
 
             float _BrineHeightY;
             float4 _BrineColor;
             float _BrineFogHardClip;
+            float4 _InternalWaterColor;
 
             TEXTURE2D_X(_BlitTexture);
             float4 _BlitTexture_TexelSize;
@@ -129,6 +132,11 @@ Shader "Hidden/Hecton8/VisorUberPost"
                 return frac(p.x * p.y);
             }
 
+            float CheapSignedTriangle(float value)
+            {
+                return abs(frac(value) * 2.0 - 1.0) * 2.0 - 1.0;
+            }
+
             float FastEdge01(float2 uv)
             {
                 float2 centered = uv - 0.5;
@@ -154,6 +162,41 @@ Shader "Hidden/Hecton8/VisorUberPost"
                 wave.x = sin(uv.y * freq + _Time.y * speed);
                 wave.y = sin(uv.x * freq * 0.73 - _Time.y * speed * 0.71);
                 return wave * amplitude;
+            }
+
+            float ResolveInternalWaterMask(float2 uv)
+            {
+                float active = saturate(_InternalWaterlineParams.y);
+                float splitLine = _InternalWaterlineParams.x;
+                float softness = max(0.001, _InternalWaterlineDistortion.z);
+                return active * saturate(1.0 - smoothstep(splitLine - softness, splitLine + softness, uv.y));
+            }
+
+            float2 InternalWaterOffset(float2 uv, float mask)
+            {
+                float strength = max(0.0, _InternalWaterlineDistortion.x) * mask;
+                float droplets01 = saturate(_InternalWaterlineParams.w);
+                float2 wave;
+                wave.x = CheapSignedTriangle(uv.y * 7.31 + _Time.y * 0.28) + CheapSignedTriangle((uv.x + uv.y) * 3.67 - _Time.y * 0.15);
+                wave.y = CheapSignedTriangle(uv.x * 6.21 - _Time.y * 0.21) + CheapSignedTriangle((uv.x - uv.y) * 2.71 + _Time.y * 0.12);
+                return wave * strength * (0.55 + droplets01 * 0.65);
+            }
+
+            float ResolveInternalDropletMask(float2 uv, float droplets01)
+            {
+                float2 cell = floor(uv * float2(78.0, 44.0));
+                float seed = Hash21(cell);
+                float density = step(0.78, Hash21(cell + float2(19.17, 5.31)));
+                float streak = 1.0 - smoothstep(0.03, 0.18, abs(frac(uv.y * 44.0 + seed * 6.17 + (1.0 - droplets01) * 0.92) - 0.5));
+                return density * streak * saturate(droplets01 * 1.35 - seed * 0.28);
+            }
+
+            float2 InternalDropletOffset(float2 uv, float mask)
+            {
+                float2 offset;
+                offset.x = CheapSignedTriangle(uv.y * 19.0 + _Time.y * 0.11) * 0.0011;
+                offset.y = -abs(CheapSignedTriangle(uv.x * 11.0 + _Time.y * 0.07)) * 0.0014;
+                return offset * mask;
             }
 
             half3 ApplySingleSampleChroma(half3 color, float edge01, float damageDrive, float strength)
@@ -349,6 +392,39 @@ Shader "Hidden/Hecton8/VisorUberPost"
                 warpedUV = saturate(warpedUV);
 
                 half4 color = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, warpedUV);
+                float internalWaterMask = ResolveInternalWaterMask(uv);
+                [branch]
+                if (internalWaterMask > 0.001)
+                {
+                    float2 waterUV = saturate(warpedUV + InternalWaterOffset(uv, internalWaterMask));
+                    float refractionBlend = saturate(internalWaterMask * step(0.00001, _InternalWaterlineDistortion.x));
+                    [branch]
+                    if (refractionBlend > 0.001)
+                    {
+                        half4 refractedColor = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, waterUV);
+                        color = lerp(color, refractedColor, (half)refractionBlend);
+                    }
+
+                    half3 waterTint = lerp(color.rgb, (half3)_InternalWaterColor.rgb, (half)saturate(_InternalWaterlineDistortion.y));
+                    color.rgb = lerp(color.rgb, waterTint, (half)(internalWaterMask * _InternalWaterColor.a));
+                }
+                float droplets01 = saturate(_InternalWaterlineParams.w);
+                [branch]
+                if (droplets01 > 0.001)
+                {
+                    float dropletMask = ResolveInternalDropletMask(uv, droplets01) * (0.35 + edge01 * 0.65);
+                    float highTierDropletRefraction = (1.0 - step(0.5, _InternalWaterlineDistortion.w)) * step(0.00001, _InternalWaterlineDistortion.x);
+                    float dropletRefractBlend = saturate(dropletMask * highTierDropletRefraction);
+                    [branch]
+                    if (dropletRefractBlend > 0.001)
+                    {
+                        float2 dropletUV = saturate(warpedUV + InternalDropletOffset(uv, dropletRefractBlend));
+                        half4 dropletColor = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, dropletUV);
+                        color = lerp(color, dropletColor, (half)(dropletRefractBlend * 0.65));
+                    }
+
+                    color.rgb += (half3(0.09h, 0.13h, 0.14h) * (half)(dropletMask * droplets01));
+                }
                 color.rgb += ResolveLightShafts(uv, edge01);
 
                 float damageDrive = saturate(max(damage01, max(_HectonUberHullStress01, stress01)) + crackMask * 0.35);

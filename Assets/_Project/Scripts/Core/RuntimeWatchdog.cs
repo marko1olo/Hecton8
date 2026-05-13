@@ -382,9 +382,7 @@ namespace Hecton8.Core
 
         private void OnDestroy()
         {
-            OnDisable();
-            if (ReferenceEquals(GlobalRegistry.RuntimeWatchdog, this))
-                GlobalRegistry.UnregisterRuntimeWatchdogRuntime(this);
+            OnServiceShutdown();
         }
 
         public void OnServiceShutdown()
@@ -392,6 +390,8 @@ namespace Hecton8.Core
             OnDisable();
             if (ReferenceEquals(GlobalRegistry.RuntimeWatchdog, this))
                 GlobalRegistry.UnregisterRuntimeWatchdogRuntime(this);
+            FrameTimeWatchdog.Shutdown();
+            MathGuard.Dispose();
             _watchdogStateFlags = 0u;
             _consecutiveOverBudgetFrames = 0;
             _lastInputLatencySequence = 0u;

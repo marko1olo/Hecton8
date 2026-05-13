@@ -31,8 +31,6 @@ namespace Hecton8.Tools
         private const ushort DegradedFlag = 1 << 0;
         private const ushort BrokenFlag = 1 << 1;
 
-        public static ToolDurabilitySystem Instance => GlobalRegistry.ToolDurability;
-
         [Header("── Settings ────────────────────────────────")]
         [Tooltip("Enable runtime tool wear processing.")]
         [SerializeField] private bool enableDurabilityDrain = true;

@@ -105,7 +105,7 @@ namespace Hecton8.Inventory.Corrosion
 
             WriteResult(InventoryCorrosionConstants.ResultChangedCount, changedCount);
             WriteResult(InventoryCorrosionConstants.ResultBrokenCount, brokenCount);
-            WriteResult(InventoryCorrosionConstants.ResultAverageDurabilityMilli, equippedCount > 0 ? (int)math.round((totalDurability / equippedCount) * 1000f) : 1000);
+            WriteResult(InventoryCorrosionConstants.ResultAverageDurabilityMilli, equippedCount > 0 ? (int)math.round((totalDurability * math.rcp(equippedCount)) * 1000f) : 1000);
             WriteResult(InventoryCorrosionConstants.ResultEquippedCount, equippedCount);
             WriteResult(InventoryCorrosionConstants.ResultScannedCount, scannedCount);
         }

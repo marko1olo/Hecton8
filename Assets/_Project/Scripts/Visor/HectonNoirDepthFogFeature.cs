@@ -1,5 +1,7 @@
 using System;
 using System.Runtime.CompilerServices;
+using Hecton8.Core;
+using Hecton8.Gameplay;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
@@ -55,6 +57,12 @@ namespace Hecton8.Visor
 
             [Tooltip("Coverage noise amplitude. Applied to fog alpha only; no clip/discard.")]
             [Range(0f, 1f)] public float ditherStrength = 0.8f;
+
+            [Tooltip("Skips noir depth fog while the player camera is above water or inside the readable surface band.")]
+            public bool bypassNearSurface = true;
+
+            [Tooltip("Depth below waterline where surface readability still wins over noir fog.")]
+            [Range(0.05f, 4f)] public float nearSurfaceBypassDepthMeters = 0.85f;
         }
 
         private sealed class NoirDepthFogPass : ScriptableRenderPass
@@ -230,8 +238,38 @@ namespace Hecton8.Visor
             if (IsUnsupportedCameraType(renderingData.cameraData.cameraType))
                 return;
 
+            if (settings.bypassNearSurface &&
+                ShouldBypassForSurfaceReadability(renderingData.cameraData.camera, settings.nearSurfaceBypassDepthMeters))
+            {
+                return;
+            }
+
             _pass.Setup(settings, _material);
             renderer.EnqueuePass(_pass);
+        }
+
+        private static bool ShouldBypassForSurfaceReadability(Camera renderCamera, float nearSurfaceBypassDepthMeters)
+        {
+            if (renderCamera == null)
+                return false;
+
+            HectonPlayerMovement playerMovement = null;
+            if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext))
+                playerMovement = runtimeContext.PlayerMovement;
+
+            if (playerMovement == null)
+            {
+                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+                playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
+            }
+
+            if (playerMovement != null)
+            {
+                float safeDepth = math.max(0.05f, nearSurfaceBypassDepthMeters);
+                return !playerMovement.IsPlayerSubmerged || playerMovement.CurrentDepth <= safeDepth;
+            }
+
+            return renderCamera.transform.position.y >= -0.25f;
         }
 
         protected override void Dispose(bool disposing)

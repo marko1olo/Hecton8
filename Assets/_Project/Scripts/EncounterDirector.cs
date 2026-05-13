@@ -205,6 +205,7 @@ namespace Hecton8.Systems.AI
         private const int PredatorAupBufferCapacity = 16;
         private const float PlayerPredatorAupRadiusMeters = 70f;
         private const int HeadlessEntityIdBase = 0x68000000;
+        private const int HeadlessEntityIdLimit = HeadlessEntityIdBase + 0x01000000;
         private const float PredictiveSpawnLeadMeters = 200f;
         private const float StationaryVelocitySq = 0.25f;
         private const float HeadlessDespawnDistanceSq = 400f * 400f;
@@ -604,6 +605,11 @@ namespace Hecton8.Systems.AI
             _predatorAupGlobalsDirty = true;
         }
 
+        private void EnsurePredatorAupBuffers()
+        {
+            EnsureGpuResources();
+        }
+
         internal bool TryGetPredatorAupGpuBuffer(out GraphicsBuffer buffer, out int count)
         {
             buffer = _predatorAupPublishedBuffer;
@@ -627,6 +633,7 @@ namespace Hecton8.Systems.AI
             _lastPublishedPredatorAupCount = 0;
             _predatorAupPublishedBuffer = null;
             _predatorAupGlobalsDirty = true;
+            ClearPredatorAupSourceIds();
             Shader.SetGlobalInt(_PredatorAUPCountId, 0);
         }
 
@@ -1461,7 +1468,7 @@ namespace Hecton8.Systems.AI
             for (int i = 1; i < safeCount; i++)
             {
                 int sourceId = _predatorAupSourceIds[i];
-                if (sourceId == 0 || (sourceId & HeadlessEntityIdBase) == HeadlessEntityIdBase)
+                if (sourceId == 0 || IsHeadlessEntityId(sourceId))
                     continue;
 
                 int trackedSlot = FindTrackedSlot(sourceId);
@@ -1530,6 +1537,11 @@ namespace Hecton8.Systems.AI
         {
             for (int i = 0; i < PredatorAupBufferCapacity; i++)
                 _predatorAupSourceIds[i] = 0;
+        }
+
+        private static bool IsHeadlessEntityId(int sourceId)
+        {
+            return sourceId >= HeadlessEntityIdBase && sourceId < HeadlessEntityIdLimit;
         }
 
         private static float ResolvePredatorAupRadius(EncounterThreatClass threatClass)
@@ -1894,6 +1906,7 @@ namespace Hecton8.Systems.AI
             _predatorAupWriteToA = true;
             _lastPublishedPredatorAupCount = 0;
             _predatorAupGlobalsDirty = true;
+            ClearPredatorAupSourceIds();
             Shader.SetGlobalInt(_PredatorAUPCountId, 0);
         }
     }

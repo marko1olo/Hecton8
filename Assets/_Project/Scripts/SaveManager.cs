@@ -844,7 +844,8 @@ namespace Hecton8.SaveSystem
             if (bytes <= 0)
                 return 0;
 
-            return (bytes + 1023) >> 10;
+            long kilobytes = ((long)bytes + 1023L) >> 10;
+            return kilobytes > int.MaxValue ? int.MaxValue : (int)kilobytes;
         }
 
         private void DumpSaveBlackBox()
@@ -1258,6 +1259,7 @@ namespace Hecton8.SaveSystem
                 snapshotPauseActive = false;
                 WarnIfSnapshotBudgetExceeded(slotName, snapshotTimer.ElapsedMilliseconds);
 
+                int backupRetention = GetBackupRetentionCount(slotName);
                 string tempPath = GetTempSaveFilePath(slotName);
                 if (divergenceSnapshotTimer.ElapsedTicks > PreCompressionYieldBudgetTicks)
                     await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync();
@@ -1284,6 +1286,7 @@ namespace Hecton8.SaveSystem
                     voxelDeltaSnapshot,
                     _savePayloadBuffer,
                     _compressedSaveBuffer,
+                    backupRetention,
                     out payloadHash64,
                     out rawPayloadLength,
                     out long compressedSizeBytes);
@@ -1305,7 +1308,6 @@ namespace Hecton8.SaveSystem
                 PublishSaveStatus(slotIndex, operationId, SaveStatusSignal.Completed, 1f, 0u);
                 RequestVramAbortGcIfNeeded();
                 StageIntegrityPayload(_savePayloadBuffer, rawPayloadLength, payloadHash64, slotName);
-                int backupRetention = GetBackupRetentionCount(slotName);
                 SaveSlotIntegrityState savedIntegrity = backupRetention > 0
                     ? SaveSlotIntegrityState.HealthyWithBackup
                     : SaveSlotIntegrityState.Healthy;
@@ -1894,7 +1896,6 @@ namespace Hecton8.SaveSystem
 
                 if (ShouldSelfRepairSlot(loadedCandidate, usedLegacyFormat))
                 {
-                    await Awaitable.BackgroundThreadAsync();
                     SaveMetadata repairMetadata = loadedMetadata ?? new SaveMetadata
                     {
                         SlotName = slotName,
@@ -1906,7 +1907,9 @@ namespace Hecton8.SaveSystem
                         WorldSeed = data.ecosystemState.worldSeed,
                         WorldGenerationVersionId = data.ecosystemState.worldGenerationVersionId
                     };
-                    repairedPrimaryArtifacts = SelfRepairPrimaryArtifacts(slotName, data, repairMetadata, loadedQuestHeader, loadedQuestStateWords, loadedWorldDeltas, loadedEcosystemSectors, loadedVoxelDeltaSnapshot);
+                    int repairBackupRetention = GetBackupRetentionCount(slotName);
+                    await Awaitable.BackgroundThreadAsync();
+                    repairedPrimaryArtifacts = SelfRepairPrimaryArtifacts(slotName, data, repairMetadata, loadedQuestHeader, loadedQuestStateWords, loadedWorldDeltas, loadedEcosystemSectors, loadedVoxelDeltaSnapshot, repairBackupRetention);
                     await Awaitable.MainThreadAsync();
                 }
 
@@ -2245,7 +2248,22 @@ namespace Hecton8.SaveSystem
                 SaveSidecarStorage.SetPersistentDataPathRoot(root);
             }
 
-            return HectonPersistentPathPolicy.CombineFile(relativePath);
+            return Path.Combine(root, NormalizePersistentRelativeSegment(relativePath));
+        }
+
+        private static string NormalizePersistentRelativeSegment(string segment)
+        {
+            if (string.IsNullOrEmpty(segment))
+                return string.Empty;
+
+            string normalized = segment
+                .Replace('\\', Path.DirectorySeparatorChar)
+                .Replace('/', Path.DirectorySeparatorChar)
+                .TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+
+            return normalized.IndexOf("..", StringComparison.Ordinal) >= 0
+                ? Path.GetFileName(normalized)
+                : normalized;
         }
 
         private static void CachePersistentDataPathRoot()
@@ -2310,13 +2328,13 @@ namespace Hecton8.SaveSystem
             }
         }
 
-        private static void CommitTempSaveToPrimary(string slotName, string tempPath, string finalPath)
+        private static void CommitTempSaveToPrimary(string slotName, string tempPath, string finalPath, int backupRetentionCount)
         {
             if (!FileExists(tempPath))
                 throw new FileNotFoundException("Verified temp save was not found during final rotation.", GetPersistentAbsolutePath(tempPath));
 
             // Step 5: rotate the previously committed primary into the backup chain before overwrite.
-            RotateBackupChain(finalPath, generation => GetBackupSaveFilePath(slotName, generation), GetBackupRetentionCountStatic(slotName));
+            RotateBackupChain(finalPath, generation => GetBackupSaveFilePath(slotName, generation), math.clamp(backupRetentionCount, 1, 8));
 
             // Step 6: promote the verified temp artifact to the authoritative primary slot.
             File.Move(GetPersistentAbsolutePath(tempPath), GetPersistentAbsolutePath(finalPath));
@@ -2347,6 +2365,7 @@ namespace Hecton8.SaveSystem
             NativeArray<byte> voxelDeltaSnapshot,
             NativeArray<byte> rawBuffer,
             NativeArray<byte> compressedBuffer,
+            int backupRetentionCount,
             out ulong payloadHash64,
             out int rawPayloadLength,
             out long compressedSizeBytes)
@@ -2387,7 +2406,7 @@ namespace Hecton8.SaveSystem
                 ReportModPayloadCommitFailure(slotName, modPayloadCommitError);
 
             compressedSizeBytes = File.Exists(absoluteTempPath) ? new FileInfo(absoluteTempPath).Length : 0L;
-            CommitTempSaveToPrimary(slotName, tempPath, finalPath);
+            CommitTempSaveToPrimary(slotName, tempPath, finalPath, backupRetentionCount);
         }
 
         [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
@@ -2620,6 +2639,7 @@ namespace Hecton8.SaveSystem
                 persistentWorldItems,
                 ecosystemSectorStates,
                 voxelDeltaSnapshot,
+                GetBackupRetentionCountStatic(slotName),
                 shouldRewritePrimarySave);
 
             SaveSlotInfo afterInfo = BuildSaveSlotInfoInternal(slotName);
@@ -2808,7 +2828,8 @@ namespace Hecton8.SaveSystem
             uint[] packedQuestStateWords,
             PersistentWorldDeltaRecord[] persistentWorldItems,
             EcosystemSectorSaveRecord[] ecosystemSectorStates,
-            NativeArray<byte> voxelDeltaSnapshot)
+            NativeArray<byte> voxelDeltaSnapshot,
+            int backupRetentionCount)
         {
             return RepairPrimaryArtifacts(
                 slotName,
@@ -2819,6 +2840,7 @@ namespace Hecton8.SaveSystem
                 persistentWorldItems,
                 ecosystemSectorStates,
                 voxelDeltaSnapshot,
+                backupRetentionCount,
                 overwritePrimarySave: true);
         }
 
@@ -3128,6 +3150,7 @@ namespace Hecton8.SaveSystem
             PersistentWorldDeltaRecord[] persistentWorldItems,
             EcosystemSectorSaveRecord[] ecosystemSectorStates,
             NativeArray<byte> voxelDeltaSnapshot,
+            int backupRetentionCount,
             bool overwritePrimarySave)
         {
             string primarySavePath = GetPrimarySaveFilePath(slotName);
@@ -3189,6 +3212,7 @@ namespace Hecton8.SaveSystem
                         voxelDeltaSnapshot,
                         rawBuffer,
                         compressedBuffer,
+                        backupRetentionCount,
                         out _,
                         out _,
                         out _);
@@ -3221,7 +3245,7 @@ namespace Hecton8.SaveSystem
                 : "Unknown";
             string gameVersion = source != null && !string.IsNullOrEmpty(source.GameVersion)
                 ? source.GameVersion
-                : Application.version;
+                : "Unknown";
             float playTimeSeconds = data != null ? (float)data.totalPlayTime : 0f;
             Vector3 playerPosition = data != null ? data.playerStats.GetPosition() : Vector3.zero;
 
