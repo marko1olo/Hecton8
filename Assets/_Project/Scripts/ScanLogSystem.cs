@@ -554,7 +554,7 @@ namespace Hecton8.Gameplay
                 return value;
 
             int length = end - start + 1;
-            return string.Create(length, (value, start), static (buffer, state) =>
+            return string.Create(length, (value, start), (buffer, state) =>
             {
                 state.Item1.AsSpan(state.Item2, buffer.Length).CopyTo(buffer);
             });

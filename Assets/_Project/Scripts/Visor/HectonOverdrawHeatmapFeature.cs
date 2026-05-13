@@ -98,7 +98,7 @@ namespace Hecton8.EditorTools
                 builder.SetRenderAttachment(resourceData.activeColorTexture, 0, AccessFlags.ReadWrite);
                 builder.AllowPassCulling(false);
 
-                builder.SetRenderFunc(static (PassData data, RasterGraphContext context) =>
+                builder.SetRenderFunc((PassData data, RasterGraphContext context) =>
                 {
                     context.cmd.DrawRendererList(data.RendererList);
                 });

@@ -200,7 +200,7 @@ namespace Hecton8.Visor
                     builder.SetGlobalTextureAfterPass(historyWriteTexture, ShaderConstants.HistoryTextureId);
                     builder.SetGlobalTextureAfterPass(historyWriteTexture, ShaderConstants.PointCloudTextureId);
 
-                    builder.SetRenderFunc(static (HistoryWritePassData data, UnsafeGraphContext context) =>
+                    builder.SetRenderFunc((HistoryWritePassData data, UnsafeGraphContext context) =>
                     {
                         CommandBuffer cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
                         const RenderBufferLoadAction LoadAction = RenderBufferLoadAction.DontCare;
@@ -226,7 +226,7 @@ namespace Hecton8.Visor
                     builder.SetGlobalTextureAfterPass(worldHistoryWriteTexture, ShaderConstants.WorldHistoryTextureId);
                     builder.SetGlobalTextureAfterPass(worldHistoryWriteTexture, ShaderConstants.WorldPointCloudTextureId);
 
-                    builder.SetRenderFunc(static (WorldHistoryWritePassData data, UnsafeGraphContext context) =>
+                    builder.SetRenderFunc((WorldHistoryWritePassData data, UnsafeGraphContext context) =>
                     {
                         CommandBuffer cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
                         const RenderBufferLoadAction LoadAction = RenderBufferLoadAction.DontCare;
@@ -250,7 +250,7 @@ namespace Hecton8.Visor
                     builder.UseTexture(worldHistoryWriteTexture, AccessFlags.Read);
                     builder.UseTexture(compositeTexture, AccessFlags.Write);
 
-                    builder.SetRenderFunc(static (PassData data, UnsafeGraphContext context) =>
+                    builder.SetRenderFunc((PassData data, UnsafeGraphContext context) =>
                     {
                         CommandBuffer cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
                         const RenderBufferLoadAction LoadAction = RenderBufferLoadAction.DontCare;

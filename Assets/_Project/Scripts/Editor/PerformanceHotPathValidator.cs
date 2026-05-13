@@ -303,7 +303,7 @@ namespace Hecton8.EditorTools
                 return;
             }
 
-            issues.Sort(static (a, b) =>
+            issues.Sort((a, b) =>
             {
                 int pathCompare = string.CompareOrdinal(a.AssetPath, b.AssetPath);
                 if (pathCompare != 0)

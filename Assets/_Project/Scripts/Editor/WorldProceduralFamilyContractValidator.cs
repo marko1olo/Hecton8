@@ -95,7 +95,7 @@ namespace Hecton8.EditorTools
                 summaries[status.Vertical] = summary;
             }
 
-            statuses.Sort(static (a, b) =>
+            statuses.Sort((a, b) =>
             {
                 int verticalCompare = string.CompareOrdinal(a.Vertical, b.Vertical);
                 return verticalCompare != 0 ? verticalCompare : string.CompareOrdinal(a.FamilyId, b.FamilyId);

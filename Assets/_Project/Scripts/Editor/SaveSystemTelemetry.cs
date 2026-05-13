@@ -141,7 +141,7 @@ namespace Hecton8.Editor
                 });
             }
 
-            _sortedRows.Sort(static (left, right) => left.ByteOffset.CompareTo(right.ByteOffset));
+            _sortedRows.Sort((left, right) => left.ByteOffset.CompareTo(right.ByteOffset));
             long expectedOffset = long.MinValue;
             for (int i = 0; i < _sortedRows.Count; i++)
             {
@@ -159,7 +159,7 @@ namespace Hecton8.Editor
 
             _fragmentationAscii = BuildFragmentationAscii(_sortedRows);
             Debug.Log($"[SaveSystemTelemetry] Fragmentation {_fragmentationAscii}");
-            _sortedRows.Sort(static (left, right) => right.CompressedSize.CompareTo(left.CompressedSize));
+            _sortedRows.Sort((left, right) => right.CompressedSize.CompareTo(left.CompressedSize));
         }
 
         private void DrawHeatMap()

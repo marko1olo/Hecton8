@@ -1732,7 +1732,7 @@ namespace Hecton8.Gameplay
                     return cachedValue;
             }
 
-            string builtValue = string.Create(safePrefix.Length + safeSource.Length, (safePrefix, safeSource, foldAsciiLower), static (buffer, state) =>
+            string builtValue = string.Create(safePrefix.Length + safeSource.Length, (safePrefix, safeSource, foldAsciiLower), (buffer, state) =>
             {
                 string prefixValue = state.Item1;
                 string sourceValue = state.Item2;
@@ -1863,7 +1863,7 @@ namespace Hecton8.Gameplay
             if (string.IsNullOrEmpty(right))
                 return left;
 
-            return string.Create(left.Length + 1 + right.Length, (left, right), static (buffer, state) =>
+            return string.Create(left.Length + 1 + right.Length, (left, right), (buffer, state) =>
             {
                 string leftValue = state.Item1;
                 string rightValue = state.Item2;
@@ -1876,7 +1876,7 @@ namespace Hecton8.Gameplay
         private static string FormatIntegrityPair(string prefix, int current, int max, string suffix)
         {
             int length = prefix.Length + CountDecimalDigits(current) + 1 + CountDecimalDigits(max) + suffix.Length;
-            return string.Create(length, (prefix, current, max, suffix), static (buffer, state) =>
+            return string.Create(length, (prefix, current, max, suffix), (buffer, state) =>
             {
                 int write = 0;
                 AppendSpan(buffer, ref write, state.Item1);
@@ -1895,7 +1895,7 @@ namespace Hecton8.Gameplay
                          CountDecimalDigits(remainingCycles) +
                          WearRemainingSuffix.Length;
 
-            return string.Create(length, (lostIntegrity, remainingCycles), static (buffer, state) =>
+            return string.Create(length, (lostIntegrity, remainingCycles), (buffer, state) =>
             {
                 int write = 0;
                 AppendSpan(buffer, ref write, WearRemainingPrefix);
@@ -1912,7 +1912,7 @@ namespace Hecton8.Gameplay
             return string.Create(
                 BaseModuleArchivedPrefix.Length + safePowerRole.Length + BaseModuleArchivedSuffix.Length,
                 safePowerRole,
-                static (buffer, source) =>
+                (buffer, source) =>
                 {
                     int write = 0;
                     AppendSpan(buffer, ref write, BaseModuleArchivedPrefix);
@@ -1939,7 +1939,7 @@ namespace Hecton8.Gameplay
                 return value;
 
             int length = end - start + 1;
-            return string.Create(length, (value, start), static (buffer, state) =>
+            return string.Create(length, (value, start), (buffer, state) =>
             {
                 state.Item1.AsSpan(state.Item2, buffer.Length).CopyTo(buffer);
             });
@@ -2148,7 +2148,7 @@ namespace Hecton8.Gameplay
             return string.Create(
                 description.Length + PickupQuantitySummaryPrefix.Length + digitCount + 1,
                 (description, quantity),
-                static (buffer, state) =>
+                (buffer, state) =>
                 {
                     int write = 0;
                     AppendSpan(buffer, ref write, state.Item1);
@@ -2902,7 +2902,7 @@ namespace Hecton8.Gameplay
         {
             left ??= string.Empty;
             right ??= string.Empty;
-            return string.Create(left.Length + right.Length, (left, right), static (span, state) =>
+            return string.Create(left.Length + right.Length, (left, right), (span, state) =>
             {
                 state.left.AsSpan().CopyTo(span);
                 state.right.AsSpan().CopyTo(span.Slice(state.left.Length));

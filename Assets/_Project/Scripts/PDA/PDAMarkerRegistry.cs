@@ -606,7 +606,7 @@ namespace Hecton8.PDA
         {
             int sequence = _nextSequence;
             _nextSequence++;
-            return string.Create(15, sequence, static (buffer, value) =>
+            return string.Create(15, sequence, (buffer, value) =>
             {
                 buffer[0] = 'p';
                 buffer[1] = 'd';

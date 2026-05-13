@@ -132,7 +132,7 @@ namespace Hecton8.Visor
                     builder.UseTexture(depthTexture, AccessFlags.Read);
                     builder.UseTexture(destinationTexture, AccessFlags.Write);
 
-                    builder.SetRenderFunc(static (PassData data, UnsafeGraphContext context) =>
+                    builder.SetRenderFunc((PassData data, UnsafeGraphContext context) =>
                     {
                         CommandBuffer cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
                         const RenderBufferLoadAction LoadAction = RenderBufferLoadAction.DontCare;

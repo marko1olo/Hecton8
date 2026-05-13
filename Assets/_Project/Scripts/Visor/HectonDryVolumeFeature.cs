@@ -155,7 +155,7 @@ namespace Hecton8.Visor
                     builder.UseTexture(depthTexture, AccessFlags.ReadWrite);
                     builder.UseTexture(compositeTexture, AccessFlags.Write);
 
-                    builder.SetRenderFunc(static (PassData data, UnsafeGraphContext context) =>
+                    builder.SetRenderFunc((PassData data, UnsafeGraphContext context) =>
                     {
                         CommandBuffer cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
                         data.restoreMaterial.SetFloat(ShaderConstants.StencilRefId, data.stencilRef);
@@ -257,7 +257,7 @@ namespace Hecton8.Visor
                     builder.UseTexture(depthTexture, AccessFlags.ReadWrite);
                     builder.UseTexture(compositeTexture, AccessFlags.Write);
 
-                    builder.SetRenderFunc(static (PassData data, UnsafeGraphContext context) =>
+                    builder.SetRenderFunc((PassData data, UnsafeGraphContext context) =>
                     {
                         CommandBuffer cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
                         data.resolveMaterial.SetFloat(ShaderConstants.StencilRefId, data.stencilRef);

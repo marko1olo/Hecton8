@@ -393,7 +393,7 @@ namespace Hecton8.Visor
                         passData.histogram = histogramHandle;
 
                         builder.UseBuffer(histogramHandle, AccessFlags.Write);
-                        builder.SetRenderFunc(static (ExposureClearPassData data, ComputeGraphContext context) =>
+                        builder.SetRenderFunc((ExposureClearPassData data, ComputeGraphContext context) =>
                         {
                             context.cmd.SetComputeBufferParam(data.computeShader, data.kernelIndex, ShaderConstants.HistogramBufferId, data.histogram);
                             context.cmd.DispatchCompute(data.computeShader, data.kernelIndex, 1, 1, 1);
@@ -414,7 +414,7 @@ namespace Hecton8.Visor
 
                         builder.UseTexture(sourceTexture, AccessFlags.Read);
                         builder.UseBuffer(histogramHandle, AccessFlags.Read | AccessFlags.Write);
-                        builder.SetRenderFunc(static (ExposureBuildPassData data, ComputeGraphContext context) =>
+                        builder.SetRenderFunc((ExposureBuildPassData data, ComputeGraphContext context) =>
                         {
                             context.cmd.SetComputeTextureParam(data.computeShader, data.kernelIndex, ShaderConstants.SourceColorId, data.source);
                             context.cmd.SetComputeBufferParam(data.computeShader, data.kernelIndex, ShaderConstants.HistogramBufferId, data.histogram);
@@ -439,7 +439,7 @@ namespace Hecton8.Visor
 
                         builder.UseBuffer(histogramHandle, AccessFlags.Read);
                         builder.UseBuffer(exposureStateHandle, AccessFlags.Read | AccessFlags.Write);
-                        builder.SetRenderFunc(static (ExposureResolvePassData data, ComputeGraphContext context) =>
+                        builder.SetRenderFunc((ExposureResolvePassData data, ComputeGraphContext context) =>
                         {
                             context.cmd.SetComputeBufferParam(data.computeShader, data.kernelIndex, ShaderConstants.HistogramBufferId, data.histogram);
                             context.cmd.SetComputeBufferParam(data.computeShader, data.kernelIndex, ShaderConstants.ExposureStateBufferId, data.exposureState);
@@ -475,7 +475,7 @@ namespace Hecton8.Visor
                     builder.UseTexture(halfResDepthTexture, AccessFlags.Write);
                     builder.SetGlobalTextureAfterPass(halfResDepthTexture, ShaderConstants.HalfResDepthTextureId);
 
-                    builder.SetRenderFunc(static (FullscreenPassData data, UnsafeGraphContext context) =>
+                    builder.SetRenderFunc((FullscreenPassData data, UnsafeGraphContext context) =>
                     {
                         CommandBuffer cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
                         const RenderBufferLoadAction LoadAction = RenderBufferLoadAction.DontCare;
@@ -498,7 +498,7 @@ namespace Hecton8.Visor
                     if (exposureAvailable)
                         builder.UseBuffer(exposureStateHandle, AccessFlags.Read);
 
-                    builder.SetRenderFunc(static (FullscreenPassData data, UnsafeGraphContext context) =>
+                    builder.SetRenderFunc((FullscreenPassData data, UnsafeGraphContext context) =>
                     {
                         CommandBuffer cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
                         const RenderBufferLoadAction LoadAction = RenderBufferLoadAction.DontCare;
@@ -520,7 +520,7 @@ namespace Hecton8.Visor
                     if (exposureAvailable)
                         builder.UseBuffer(exposureStateHandle, AccessFlags.Read);
 
-                    builder.SetRenderFunc(static (FullscreenPassData data, UnsafeGraphContext context) =>
+                    builder.SetRenderFunc((FullscreenPassData data, UnsafeGraphContext context) =>
                     {
                         CommandBuffer cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
                         const RenderBufferLoadAction LoadAction = RenderBufferLoadAction.DontCare;
@@ -544,7 +544,7 @@ namespace Hecton8.Visor
                     builder.SetGlobalTextureAfterPass(shaftsTexture, ShaderConstants.ShaftTextureId);
                     builder.SetGlobalTextureAfterPass(shaftsTexture, ShaderConstants.HeadlightVolumetricsTextureId);
 
-                    builder.SetRenderFunc(static (FullscreenPassData data, UnsafeGraphContext context) =>
+                    builder.SetRenderFunc((FullscreenPassData data, UnsafeGraphContext context) =>
                     {
                         CommandBuffer cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
                         const RenderBufferLoadAction LoadAction = RenderBufferLoadAction.DontCare;
@@ -569,7 +569,7 @@ namespace Hecton8.Visor
                     if (exposureAvailable)
                         builder.UseBuffer(exposureStateHandle, AccessFlags.Read);
 
-                    builder.SetRenderFunc(static (CompositePassData data, UnsafeGraphContext context) =>
+                    builder.SetRenderFunc((CompositePassData data, UnsafeGraphContext context) =>
                     {
                         CommandBuffer cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
                         const RenderBufferLoadAction LoadAction = RenderBufferLoadAction.DontCare;

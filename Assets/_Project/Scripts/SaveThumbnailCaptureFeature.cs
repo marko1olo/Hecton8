@@ -89,7 +89,7 @@ namespace Hecton8.SaveSystem
                     builder.UseTexture(sourceTexture, AccessFlags.Read);
                     builder.UseTexture(captureTexture, AccessFlags.Write);
 
-                    builder.SetRenderFunc(static (PassData data, UnsafeGraphContext context) =>
+                    builder.SetRenderFunc((PassData data, UnsafeGraphContext context) =>
                     {
                         if (!SaveThumbnailSystem.TrySubmitGpuReadback(data.requestSequenceId))
                             return;

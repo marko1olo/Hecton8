@@ -362,7 +362,7 @@ namespace Hecton8.EditorTools
             if (parts.Count <= 1)
                 return;
 
-            parts.Sort(static (left, right) => right.Importance.CompareTo(left.Importance));
+            parts.Sort((left, right) => right.Importance.CompareTo(left.Importance));
             int keepCount = Mathf.Clamp((parts.Count + 1) / 2, 1, 3);
             if (parts.Count > keepCount)
                 parts.RemoveRange(keepCount, parts.Count - keepCount);

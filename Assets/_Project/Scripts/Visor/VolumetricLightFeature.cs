@@ -334,7 +334,7 @@ namespace Hecton8.Visor
                     builder.UseTexture(depthTexture, AccessFlags.Read);
                     builder.UseTexture(halfTexture, AccessFlags.Write);
 
-                    builder.SetRenderFunc(static (RaymarchPassData data, ComputeGraphContext context) =>
+                    builder.SetRenderFunc((RaymarchPassData data, ComputeGraphContext context) =>
                     {
                         int dispatchX = Mathf.CeilToInt(data.halfSize.x / Mathf.Max(1u, data.threadGroupSizeX));
                         int dispatchY = Mathf.CeilToInt(data.halfSize.y / Mathf.Max(1u, data.threadGroupSizeY));
@@ -386,7 +386,7 @@ namespace Hecton8.Visor
                     builder.UseTexture(halfTexture, AccessFlags.Read);
                     builder.UseTexture(compositeTexture, AccessFlags.Write);
 
-                    builder.SetRenderFunc(static (CompositePassData data, ComputeGraphContext context) =>
+                    builder.SetRenderFunc((CompositePassData data, ComputeGraphContext context) =>
                     {
                         int dispatchX = Mathf.CeilToInt(data.fullSize.x / Mathf.Max(1u, data.threadGroupSizeX));
                         int dispatchY = Mathf.CeilToInt(data.fullSize.y / Mathf.Max(1u, data.threadGroupSizeY));

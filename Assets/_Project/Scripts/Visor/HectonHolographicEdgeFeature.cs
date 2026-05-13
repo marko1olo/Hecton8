@@ -98,7 +98,7 @@ namespace Hecton8.Visor
                     builder.UseTexture(colorTexture, AccessFlags.ReadWrite);
                     builder.UseTexture(depthTexture, AccessFlags.Read);
 
-                    builder.SetRenderFunc(static (PassData data, UnsafeGraphContext context) =>
+                    builder.SetRenderFunc((PassData data, UnsafeGraphContext context) =>
                     {
                         CommandBuffer cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
                         CoreUtils.SetRenderTarget(cmd, data.color, data.depth, ClearFlag.None);

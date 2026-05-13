@@ -384,7 +384,7 @@ namespace Hecton8.Construction
             return string.Create(
                 prefix.Length + digitCount + suffix.Length,
                 (Prefix: prefix, Percent: percent, Suffix: suffix),
-                static (span, state) =>
+                (span, state) =>
                 {
                     state.Prefix.AsSpan().CopyTo(span);
                     int cursor = state.Prefix.Length;

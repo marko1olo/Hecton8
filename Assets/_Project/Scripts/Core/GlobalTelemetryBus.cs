@@ -1138,7 +1138,7 @@ namespace Hecton8.Core
             return string.Create(
                 pathLength,
                 (Directory: telemetryDirectory, Timestamp: generatedUtc, NeedsSeparator: needsSeparator),
-                static (span, state) =>
+                (span, state) =>
                 {
                     int cursor = 0;
                     state.Directory.AsSpan().CopyTo(span);

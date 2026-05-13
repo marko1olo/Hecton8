@@ -174,7 +174,7 @@ namespace Hecton8.Visor
                     builder.UseTexture(depthTexture, AccessFlags.Read);
                     builder.UseTexture(gatherTexture, AccessFlags.Write);
 
-                    builder.SetRenderFunc(static (ComputePassData data, ComputeGraphContext context) =>
+                    builder.SetRenderFunc((ComputePassData data, ComputeGraphContext context) =>
                     {
                         int dispatchX = Mathf.CeilToInt(data.outputSize.x / Mathf.Max(1u, data.threadGroupSizeX));
                         int dispatchY = Mathf.CeilToInt(data.outputSize.y / Mathf.Max(1u, data.threadGroupSizeY));
@@ -217,7 +217,7 @@ namespace Hecton8.Visor
                     builder.UseTexture(giTexture, AccessFlags.Write);
                     builder.SetGlobalTextureAfterPass(giTexture, ShaderConstants.GlobalGiTextureId);
 
-                    builder.SetRenderFunc(static (ComputePassData data, ComputeGraphContext context) =>
+                    builder.SetRenderFunc((ComputePassData data, ComputeGraphContext context) =>
                     {
                         int dispatchX = Mathf.CeilToInt(data.outputSize.x / Mathf.Max(1u, data.threadGroupSizeX));
                         int dispatchY = Mathf.CeilToInt(data.outputSize.y / Mathf.Max(1u, data.threadGroupSizeY));
@@ -255,7 +255,7 @@ namespace Hecton8.Visor
                     builder.UseTexture(giTexture, AccessFlags.Read);
                     builder.UseTexture(compositeTexture, AccessFlags.Write);
 
-                    builder.SetRenderFunc(static (CompositePassData data, UnsafeGraphContext context) =>
+                    builder.SetRenderFunc((CompositePassData data, UnsafeGraphContext context) =>
                     {
                         CommandBuffer cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
                         const RenderBufferLoadAction LoadAction = RenderBufferLoadAction.DontCare;

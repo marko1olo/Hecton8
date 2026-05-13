@@ -185,7 +185,7 @@ namespace Hecton8.UI
 
         private static string CreatePercentString(int value)
         {
-            return string.Create(CountPositiveDecimalDigits(value) + 1, value, static (buffer, number) =>
+            return string.Create(CountPositiveDecimalDigits(value) + 1, value, (buffer, number) =>
             {
                 number.TryFormat(buffer, out int written);
                 buffer[written] = '%';
@@ -194,7 +194,7 @@ namespace Hecton8.UI
 
         private static string CreateDegreeString(int value)
         {
-            return string.Create(CountPositiveDecimalDigits(value) + 1, value, static (buffer, number) =>
+            return string.Create(CountPositiveDecimalDigits(value) + 1, value, (buffer, number) =>
             {
                 number.TryFormat(buffer, out int written);
                 buffer[written] = '\u00B0';
@@ -203,7 +203,7 @@ namespace Hecton8.UI
 
         private static string CreateMeterString(int value)
         {
-            return string.Create(CountPositiveDecimalDigits(value) + 1, value, static (buffer, number) =>
+            return string.Create(CountPositiveDecimalDigits(value) + 1, value, (buffer, number) =>
             {
                 number.TryFormat(buffer, out int written);
                 buffer[written] = 'm';

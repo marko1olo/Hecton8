@@ -235,7 +235,7 @@ namespace Hecton8.Visor
                     builder.UseColorBuffer(destinationTexture, 0);
                     builder.UseDepthBuffer(depthTexture, DepthAccess.Read);
 
-                    builder.SetRenderFunc(static (PassData data, RenderGraphContext context) =>
+                    builder.SetRenderFunc((PassData data, RenderGraphContext context) =>
                     {
                         Blitter.BlitCameraTexture(
                             context.cmd,

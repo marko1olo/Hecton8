@@ -240,7 +240,7 @@ namespace Hecton8.Visor
                     builder.UseTexture(depthTexture, AccessFlags.Read);
                     builder.UseTexture(occlusionTexture, AccessFlags.Write);
 
-                    builder.SetRenderFunc(static (FullscreenPassData data, UnsafeGraphContext context) =>
+                    builder.SetRenderFunc((FullscreenPassData data, UnsafeGraphContext context) =>
                     {
                         CommandBuffer cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
                         const RenderBufferLoadAction LoadAction = RenderBufferLoadAction.DontCare;
@@ -259,7 +259,7 @@ namespace Hecton8.Visor
                     builder.UseTexture(occlusionTexture, AccessFlags.Read);
                     builder.UseTexture(blurTexture, AccessFlags.Write);
 
-                    builder.SetRenderFunc(static (FullscreenPassData data, UnsafeGraphContext context) =>
+                    builder.SetRenderFunc((FullscreenPassData data, UnsafeGraphContext context) =>
                     {
                         CommandBuffer cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
                         const RenderBufferLoadAction LoadAction = RenderBufferLoadAction.DontCare;
@@ -279,7 +279,7 @@ namespace Hecton8.Visor
                     builder.UseTexture(occlusionTexture, AccessFlags.Write);
                     builder.SetGlobalTextureAfterPass(occlusionTexture, ShaderConstants.SsdoTextureId);
 
-                    builder.SetRenderFunc(static (FullscreenPassData data, UnsafeGraphContext context) =>
+                    builder.SetRenderFunc((FullscreenPassData data, UnsafeGraphContext context) =>
                     {
                         CommandBuffer cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
                         const RenderBufferLoadAction LoadAction = RenderBufferLoadAction.DontCare;
@@ -300,7 +300,7 @@ namespace Hecton8.Visor
                     builder.UseTexture(occlusionTexture, AccessFlags.Read);
                     builder.UseTexture(compositeTexture, AccessFlags.Write);
 
-                    builder.SetRenderFunc(static (CompositePassData data, UnsafeGraphContext context) =>
+                    builder.SetRenderFunc((CompositePassData data, UnsafeGraphContext context) =>
                     {
                         CommandBuffer cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
                         const RenderBufferLoadAction LoadAction = RenderBufferLoadAction.DontCare;

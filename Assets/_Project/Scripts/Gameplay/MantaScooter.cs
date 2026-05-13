@@ -2176,7 +2176,7 @@ namespace Hecton8.Gameplay
 
             int clampedPercent = math.clamp(percent, 0, 100);
             int digitCount = CountUnsignedDigits(clampedPercent);
-            return string.Create(format.Length - 3 + digitCount, (format, clampedPercent, tokenIndex), static (buffer, state) =>
+            return string.Create(format.Length - 3 + digitCount, (format, clampedPercent, tokenIndex), (buffer, state) =>
             {
                 state.format.AsSpan(0, state.tokenIndex).CopyTo(buffer);
                 int cursor = state.tokenIndex;

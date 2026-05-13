@@ -153,7 +153,7 @@ namespace Hecton8.Visor
                     builder.UseTexture(maskTexture, AccessFlags.Write);
                     builder.SetGlobalTextureAfterPass(maskTexture, ShaderConstants.MaskTextureId);
 
-                    builder.SetRenderFunc(static (MaskPassData data, UnsafeGraphContext context) =>
+                    builder.SetRenderFunc((MaskPassData data, UnsafeGraphContext context) =>
                     {
                         CommandBuffer cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
                         const RenderBufferLoadAction LoadAction = RenderBufferLoadAction.DontCare;
@@ -174,7 +174,7 @@ namespace Hecton8.Visor
                     builder.UseTexture(maskTexture, AccessFlags.Read);
                     builder.UseTexture(destinationTexture, AccessFlags.Write);
 
-                    builder.SetRenderFunc(static (CompositePassData data, UnsafeGraphContext context) =>
+                    builder.SetRenderFunc((CompositePassData data, UnsafeGraphContext context) =>
                     {
                         CommandBuffer cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
                         const RenderBufferLoadAction LoadAction = RenderBufferLoadAction.DontCare;

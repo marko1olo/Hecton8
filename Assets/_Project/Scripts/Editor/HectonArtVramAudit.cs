@@ -66,7 +66,7 @@ namespace Hecton8.EditorTools
                 entries.Add(entry);
             }
 
-            entries.Sort(static (left, right) => right.EstimatedBytes.CompareTo(left.EstimatedBytes));
+            entries.Sort((left, right) => right.EstimatedBytes.CompareTo(left.EstimatedBytes));
 
             return new AuditResult(totalEstimatedBytes, entries.Count, entries);
         }

@@ -194,7 +194,7 @@ namespace Hecton8.Visor
                     builder.SetGlobalTextureAfterPass(particlesTexture, ShaderConstants.ParticlesTextureId);
                     builder.AllowPassCulling(false);
 
-                    builder.SetRenderFunc(static (DrawPassData data, RasterGraphContext context) =>
+                    builder.SetRenderFunc((DrawPassData data, RasterGraphContext context) =>
                     {
                         context.cmd.DrawRendererList(data.RendererList);
                     });
@@ -216,7 +216,7 @@ namespace Hecton8.Visor
                     builder.UseTexture(depthTexture, AccessFlags.Read);
                     builder.UseTexture(compositeTexture, AccessFlags.Write);
 
-                    builder.SetRenderFunc(static (CompositePassData data, UnsafeGraphContext context) =>
+                    builder.SetRenderFunc((CompositePassData data, UnsafeGraphContext context) =>
                     {
                         CommandBuffer cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
                         const RenderBufferLoadAction LoadAction = RenderBufferLoadAction.DontCare;

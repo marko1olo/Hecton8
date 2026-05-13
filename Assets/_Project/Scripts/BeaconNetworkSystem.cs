@@ -680,7 +680,7 @@ namespace Hecton8.Gameplay
             int safeSequence = math.max(0, sequence);
             int digitCount = safeSequence < 100 ? 2 : CountDecimalDigits(safeSequence);
             int prefixLength = prefix != null ? prefix.Length : 0;
-            return string.Create(prefixLength + 1 + digitCount, new BeaconLabelState(prefix, safeSequence), static (buffer, state) =>
+            return string.Create(prefixLength + 1 + digitCount, new BeaconLabelState(prefix, safeSequence), (buffer, state) =>
             {
                 string statePrefix = state.Prefix;
                 int statePrefixLength = statePrefix != null ? statePrefix.Length : 0;

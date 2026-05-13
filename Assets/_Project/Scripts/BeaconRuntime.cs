@@ -225,7 +225,7 @@ namespace Hecton8.Gameplay
         private static string CreateDeterministicBeaconId(in AbsoluteUniversePosition aup, int instanceId)
         {
             ulong hash = HashBeaconIdentity(in aup, instanceId);
-            return string.Create(BeaconIdLength, hash, static (buffer, value) =>
+            return string.Create(BeaconIdLength, hash, (buffer, value) =>
             {
                 buffer[0] = 'B';
                 buffer[1] = 'E';

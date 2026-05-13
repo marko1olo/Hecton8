@@ -23,7 +23,7 @@ namespace Hecton8.EditorTools
         public static void GenerateReport()
         {
             List<FamilyStatus> statuses = LoadStatuses();
-            statuses.Sort(static (a, b) => string.CompareOrdinal(a.FamilyId, b.FamilyId));
+            statuses.Sort((a, b) => string.CompareOrdinal(a.FamilyId, b.FamilyId));
 
             int explicitProfileCount = 0;
             int emergencyFallbackCount = 0;

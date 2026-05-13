@@ -210,7 +210,7 @@ namespace Hecton8.Gameplay
             hash = MixBeaconIdHash(hash, unchecked((uint)(int)math.round(aup.LocalZ * 100f)));
             hash = MixBeaconIdHash(hash, EntityId.ToULong(gameObject.GetEntityId()));
 
-            return string.Create(BeaconIdHexLength, hash, static (buffer, value) =>
+            return string.Create(BeaconIdHexLength, hash, (buffer, value) =>
             {
                 for (int i = 0; i < BeaconIdHexLength; i++)
                 {

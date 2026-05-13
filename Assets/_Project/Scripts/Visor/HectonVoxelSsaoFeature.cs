@@ -140,7 +140,7 @@ namespace Hecton8.Visor
                     builder.UseTexture(aoTexture, AccessFlags.Write);
                     builder.SetGlobalTextureAfterPass(aoTexture, ShaderConstants.GlobalTextureId);
 
-                    builder.SetRenderFunc(static (ComputePassData data, ComputeGraphContext context) =>
+                    builder.SetRenderFunc((ComputePassData data, ComputeGraphContext context) =>
                     {
                         var cmd = context.cmd;
                         cmd.SetComputeTextureParam(data.computeShader, data.kernelIndex, ShaderConstants.SourceDepthId, data.depth);
