@@ -36,3 +36,18 @@ Solution: Predator upload reconstructs headless runtime position from `AbsoluteU
 Rejected Alternatives: Shader-side global offset accumulation or duplicate `AupShiftSignal` consumption in Sargassum. Duplicate consumption was rejected because it can double-apply a shift.
 Scalability potential: Low/Middle/High/Ultra all use the same coordinate invariant; high tiers spend saved precision on visual density, not more CPU.
 Hardware Impact: Prevents rare catastrophic flee misalignment with one AUP conversion per predator publication. Cost is bounded by 15 predator slots in normal publication, not boid count.
+
+## OMEGA POLISH CHANGES
+Problem: The first scatter pass still had two honest calculations: a C# square-root for movement-noise radius and an HLSL divide for predator radius falloff.
+Solution: Replaced movement radius with a velocity-squared gate (`VelocitySq * 1/144`) and replaced HLSL `distSq / radiusSq` with `distSq * rcp(radiusSq)`. Scatter normalization already uses `rsqrt`.
+Rejected Alternatives: Exact player movement speed and exact division ratio. They do not improve the fish shatter read and spend cycles better used on visual density.
+Scalability potential: Low = squared-speed gate plus 4 threat loops; Middle = same gate with higher population; High = full 16 threat loop; Ultra = full loop plus acoustic shock visuals and fluid drift retained.
+Hardware Impact: Removes one CPU `sqrt` per consumed movement signal and one GPU divide per active predator-threat check. Estimated MX350 gain is small per event (<5 us CPU, shader ALU saved at scale), but it removes the avoidable slow-path.
+Final Git Diff: Boid scatter implementation paths are present in repository HEAD. Current working diff in shared files includes unrelated biomass/inventory changes from other agents; this agent's remaining diff is status/rationale/log reporting. Unrelated dirty work was not reverted.
+
+## Decision 5: Predator Buffer Binding Fallback
+Problem: Unity compute dispatch requires declared structured buffers to be bound before dispatch; `_PredatorAUPBuffer` could be absent during Sargassum startup if `EncounterDirector` registration lags.
+Solution: Added a zeroed 16-slot fallback `GraphicsBuffer` in Sargassum and bound it during static compute setup. The published `EncounterDirector` buffer still overrides it when valid, so active threat ownership remains with the director.
+Rejected Alternatives: Delaying all boid simulation until EncounterDirector exists, shader keyword branching, or creating a second active predator feed. Standard Unity service timing was too brittle because one missing buffer can fail dispatch even with loop count zero.
+Scalability potential: Low = fallback costs 256 B and zero threat loops until data arrives; Middle = director buffer overrides with capped loops; High = full 16-slot director buffer; Ultra = full slots plus acoustic panic visuals, no CPU boid path.
+Hardware Impact: Prevents a startup/scene-streaming dispatch failure for a fixed 256 B VRAM reserve. MX350 runtime cost is effectively 0 us after initialization because the fallback is only a binding target and is not read when count is zero.

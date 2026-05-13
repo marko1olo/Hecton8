@@ -111,7 +111,7 @@ This file is a historical short changelog, not current source authority.
 - **Battery drain:** integratsiya s `HectonSurvivalSystem`, nastraivaemyy `batteryDrainRate`
 - **Heat buildup:** nakoplenie tepla → flickering → overheat shutdown + cooldown period
 - **Flickering:** Perlin noise modulyatsiya intensivnosti pri low battery ILI high heat
-- **VolumetricLightBeam:** optsionalnaya integratsiya cherez reflection (no hard dependency)
+- **Screen-space light shafts:** post-process fake driven by registered light sources (no third-party beam dependency)
 - **Diagnostics:** `_debugIsOn`, `_debugHeatLevel`, `_debugBatteryDrainAccum`, `_debugIsFlickering`
 - **Zero GC:** pre-seeded Random, cached clips, struct math
 

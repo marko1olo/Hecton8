@@ -267,8 +267,9 @@ namespace Hecton8.AI
                 distSqrToPlayer = (float)math.min(
                     AbsoluteUniversePosition.DistanceSq(in _cachedSelfAup, in _cachedPlayerAup),
                     float.MaxValue);
-                lodDisabled = !forceLongRangeCognition && distSqrToPlayer > 150f * 150f;
-                isSleeping = !forceLongRangeCognition && distSqrToPlayer > sleepDistance * sleepDistance;
+                bool frozenByDirector = _foveatedTickRate == FoveatedTickRate.CulledEcosystemOnly;
+                lodDisabled = !forceLongRangeCognition && frozenByDirector;
+                isSleeping = !forceLongRangeCognition && frozenByDirector;
             }
             else
             {

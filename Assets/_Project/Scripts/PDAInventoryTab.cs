@@ -2051,7 +2051,7 @@ namespace Hecton8.UI
         {
             if (playerInventory == null) return;
             PlayUISound(sortSound);
-            playerInventory.SortInventory();
+            playerInventory.RequestSortInventory();
             ClearSelection();
             if (IsTabActive)
                 FlushPendingRefresh(forceAll: true);

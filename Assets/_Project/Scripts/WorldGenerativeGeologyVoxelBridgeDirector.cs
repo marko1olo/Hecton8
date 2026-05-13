@@ -1394,7 +1394,8 @@ namespace Hecton8.World
                 return;
 
             AbyssalThermalManager thermalManager = GlobalRegistry.Thermodynamics;
-            if (thermalManager == null)
+            PersistentWorldRegistry persistentRegistry = GlobalRegistry.PersistentWorldRegistry;
+            if (thermalManager == null && persistentRegistry == null)
                 return;
 
             Vector3 ventPosition = request.hasTerrainSample
@@ -1409,7 +1410,17 @@ namespace Hecton8.World
             float smokeDensity = Mathf.Lerp(0.75f, 1.35f, Mathf.Clamp01(request.planWeight));
             float cableRadius = Mathf.Max(radius * 1.8f, request.size.x * 0.22f);
 
-            thermalManager.RegisterRuntimeVent(
+            persistentRegistry?.RegisterActiveThermalVent(
+                request.runtimeKey,
+                ventPosition,
+                radius,
+                height,
+                updraft,
+                heat,
+                smokeDensity,
+                cableRadius);
+
+            thermalManager?.RegisterRuntimeVent(
                 request.runtimeKey,
                 ventPosition,
                 radius,
@@ -1624,6 +1635,8 @@ namespace Hecton8.World
             AbyssalThermalManager thermalManager = GlobalRegistry.Thermodynamics;
             if (thermalManager != null)
                 thermalManager.UnregisterRuntimeVent(runtimeKey);
+            PersistentWorldRegistry persistentRegistry = GlobalRegistry.PersistentWorldRegistry;
+            persistentRegistry?.UnregisterActiveThermalVent(runtimeKey);
 
             if (!_activeVolumes.TryGetValue(runtimeKey, out GameObject volume))
             {

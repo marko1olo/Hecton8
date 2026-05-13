@@ -1,6 +1,6 @@
 # ASYNC_PERSISTENCE_SURGEON Rationale
 
-Status: PENDING VERIFICATION
+Status: PENDING - GLOBAL COMPILE BLOCKED
 
 ## Decision 0: Batch Scope
 Problem: Save hitches are reported at 200ms from main-thread binary serialization and LZ4 work.
@@ -64,3 +64,32 @@ Solution: Attempt `dotnet build Hecton8.Core.csproj --no-restore`, record the ex
 Rejected Alternatives: Patch audio, physics, GPR, foveated simulation, and binary layout contracts from the persistence task. Rejected as architectural sabotage outside domain.
 Scalability potential: Keeping domain boundaries intact prevents persistence from becoming a hidden integrator for unrelated systems.
 Hardware Impact: No runtime impact; this is build integrity triage.
+
+## OMEGA POLISH CHANGES
+Problem: Final anti-bloat audit found repeated slot-name hashing in save telemetry and an inflated compressed-size telemetry value of `1` for failed saves.
+Solution: Cache the slot hash once inside `RecordAsyncPersistenceTelemetry`, store it in the black-box ring, and emit exact zero scalars for zero duration or zero compressed bytes. Screenshot/file-size telemetry from other active edits remains preserved.
+Rejected Alternatives: Leave repeated `ComputeSlotHash(slotName)` calls because save completion is cold. Rejected because the fix is trivial and makes telemetry more truthful.
+Scalability potential: Low tier avoids avoidable string traversal on save completion; High/Ultra keep the same telemetry contract with more accurate failure values.
+Hardware Impact: i3/MX350 gain is microsecond-scale only; value is accuracy and no avoidable CPU work.
+
+### Cinematic Cheats Used
+- Signal-only save presentation: the UI spinner/recovery feedback is a hash event, not a direct UI object walk.
+- Pause-window cheat: simulation is paused for the snapshot boundary only, then all expensive save work becomes background presentation cover.
+- VRAM pressure gate: GC is delayed until after save and frame delta is below the fixed threshold instead of pretending it is free.
+
+### Anti-Bloat Audit Result
+- No new `math.sqrt()` or `math.normalize()` in the persistence additions.
+- No new `foreach` or `string.Format` in the persistence additions.
+- No new direct UI dependency from persistence; recovery is `HUDNotificationSignal`.
+- Burst LZ4 remains blocked rather than faked because current protected compression has native LZ4 plus managed fallback.
+
+### Final Git Diff Evidence
+- `Assets/_Project/Scripts/SaveManager.cs`: async persistence service implementation, request/status/completion signal handling, snapshot pause/resume, native staging/telemetry buffers, recovery HUD signal, VRAM post-save GC gate, project-root black-box dump path, telemetry hash cleanup.
+- `Assets/_Project/Scripts/SaveBinaryStorage.cs`: background temp writer now uses `FileStream` async option and `WriteAsync` with fixed scratch.
+- `Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs`: `IAsyncPersistenceService` contract.
+- `Assets/_Project/Scripts/Core/GlobalRegistry.cs`: `AsyncPersistence` registry accessor and registration method.
+- `Assets/_Project/Scripts/Core/GlobalSignals.cs`: fixed-size save request/completed/status signal DTOs and lanes.
+- `Assets/_Project/Scripts/Core/Persistence/Hecton8.Core.Persistence.asmdef`: persistence asmdef boundary depending on contracts.
+- `Assets/_Project/Scripts/Core/Persistence/PersistenceAssemblyMarker.cs`: assembly marker.
+- `Docs/Tasks/Status_ASYNC_PERSISTENCE_SURGEON.md`: task evidence and blocked compile wall.
+- `Docs/AgentLogs/Rationale_ASYNC_PERSISTENCE_SURGEON.md`: decisions and Omega polish.

@@ -53,8 +53,7 @@ namespace Hecton8.Editor
                     if (string.IsNullOrEmpty(fullName))
                         continue;
 
-                    if (fullName == "VLB.VolumetricLightBeamHD" ||
-                        fullName == "UnityEngine.Rendering.Universal.UniversalAdditionalCameraData" ||
+                    if (fullName == "UnityEngine.Rendering.Universal.UniversalAdditionalCameraData" ||
                         fullName == "UnityEngine.Rendering.Universal.UniversalAdditionalLightData")
                     {
                         EditorUtility.SetDirty(component);

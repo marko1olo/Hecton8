@@ -78,9 +78,18 @@ Rejected Alternatives: editing unrelated Core/Scheduling/Memory/Audio domains to
 Scalability potential: No runtime effect.
 Hardware Impact: 0 us runtime.
 
+### D9: Fabricator-Local Clip Plane
+Problem: Preview-object local Y is not strict enough for assembly stations with rotated/scaled child preview meshes; it can make the build plane drift from the Fabricator frame after AUP origin shifts.
+Solution: Added `_AssemblyWorldToFabricator`, computed source mesh Y bounds through `previewTransform.localToWorldMatrix` into `transform.worldToLocalMatrix`, and refreshed the MPB matrix through `IOriginShiftListener`.
+Rejected Alternatives: absolute world Y plane, per-frame world-space rebuild mesh, or parenting restrictions that would break existing prefab layouts.
+Scalability potential: Low = one matrix set and no burn edge. Middle = stable station-local reveal. High = stable reveal plus burn edge. Ultra = stable reveal with denser material tuning; no CPU mesh work is added.
+Hardware Impact: Estimated 1-3 us CPU per active SlowTick for one MPB matrix write; avoids per-vertex CPU slicing and keeps MX350 path shader-only.
+
 ## OMEGA POLISH CHANGES
 
 - Removed shader `pow()` from the assembly fresnel and replaced it with multiply/lerp shaping. Cinematic cheat: polynomial rim, not physically correct fresnel. Hardware Impact: saves SFU work per visible hologram fragment on MX350.
 - Re-ran own-surface anti-bloat scan for `pow(`, `math.sqrt`, `math.normalize`, `foreach`, `new Material(`, `material.SetFloat`, and `renderer.material` on Fabricator plus the assembly shader. Result: no hits on the assembly implementation surface.
-- Final diff scope for this agent: `Fabricator.cs`, `GlobalSignals.cs`, `HectonFabricatorUI.cs`, `Hecton_HologramAssembly.shader`, `Status_CRAFTING_ASSEMBLY_PROGRAMMER.md`, and this rationale. GlobalSignals already contained unrelated concurrent edits; only crafting signal and power-drain lanes are part of this task.
+- Upgraded `_AssemblyHeightY` from preview-object local to Fabricator-transform local. The shader now transforms `positionWS` by `_AssemblyWorldToFabricator`, and Fabricator recomputes mesh bounds through the preview transform.
+- Registered active Fabricators as `IOriginShiftListener` only in play mode, then refreshed AUP cache and the MPB after a shift. This keeps the visual fake stable without global polling.
+- Final verified surface for this agent: `Fabricator.cs`, `GlobalSignals.cs`, `HectonFabricatorUI.cs`, `Hecton_HologramAssembly.shader`, `Status_CRAFTING_ASSEMBLY_PROGRAMMER.md`, and this rationale. Current `GlobalSignals.cs` working-tree diff contains unrelated concurrent inventory/acoustic edits; crafting start/completion and power-drain lanes are verified present and consumed by Fabricator.
 - Build status remains PENDING because the project compile is blocked by unrelated missing-domain contracts/types. Unity MCP script validation was unavailable because no Unity session was connected.

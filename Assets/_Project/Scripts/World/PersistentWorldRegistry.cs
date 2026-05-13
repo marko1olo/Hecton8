@@ -165,6 +165,19 @@ namespace Hecton8.World
         public ulong Reserved;
     }
 
+    [StructLayout(LayoutKind.Sequential)]
+    public struct PersistentThermalVentRecord
+    {
+        public long RuntimeKey;
+        public AbsoluteUniversePosition PositionAup;
+        public float RadiusWS;
+        public float HeightWS;
+        public float UpdraftVelocity;
+        public float HeatIntensity;
+        public float SmokeDensity;
+        public float CableRadiusWS;
+    }
+
     [Flags]
     internal enum PersistentWorldItemFlags : byte
     {
@@ -539,6 +552,7 @@ namespace Hecton8.World
         private const float WhaleFallDurationSeconds = 7200f;
         private const int MaxWhaleFallInfluenceScan = 64;
         private const int MaxApexMigrationVisitedUids = 256;
+        private const int MaxPersistentThermalVentRecords = 16;
         private const int EcosystemFaunaRecordBirthLimitPerSectorPass = 4;
         private const float EcosystemFaunaCloneJitterRadiusMeters = 180f;
         private const float HibernatedApexPredationBasePower = 0.65f;
@@ -587,8 +601,13 @@ namespace Hecton8.World
         private int _lastHydrationBudgetTelemetryFrame = int.MinValue;
         private int _lastEntityStateThrottleTelemetryFrame = int.MinValue;
         private int _lastEntityStateQueueOverflowTelemetryFrame = int.MinValue;
+        private PersistentThermalVentRecord[] _activeThermalVents;
+        private int _activeThermalVentCount;
+        private int _activeThermalVentRevision;
 
         internal int ChunkSizeMeters => chunkSizeMeters;
+        public int ActiveThermalVentCount => _activeThermalVentCount;
+        public int ActiveThermalVentRevision => _activeThermalVentRevision;
 
         internal static ushort PackFloraStateOverride(float normalizedHealth, byte harvestState)
         {
@@ -896,6 +915,8 @@ namespace Hecton8.World
             _whaleFallPoiInstanceUids = new uint[MaxWhaleFallInfluenceScan];
             // COLD ALLOC: uint[256] — per-pass apex migration uid de-duplication scratch — owner: PersistentWorldRegistry
             _apexMigrationVisitedUids = new uint[MaxApexMigrationVisitedUids];
+            // COLD ALLOC: PersistentThermalVentRecord[16] - active hydrothermal vent snapshot for thermodynamics - owner: PersistentWorldRegistry
+            _activeThermalVents = new PersistentThermalVentRecord[MaxPersistentThermalVentRecords];
             // COLD ALLOC: List<IndexedSectorEntryInfo>[256] Ã¢â‚¬â€ cached v8 sector directory entries for paged restore Ã¢â‚¬â€ owner: PersistentWorldRegistry
             _indexedSectorDirectory = new List<SaveBinaryStorage.IndexedSectorEntryInfo>(256);
             // COLD ALLOC: Dictionary<long,SectorOverrideState>[32] Ã¢â‚¬â€ paged sector temp-override residency map Ã¢â‚¬â€ owner: PersistentWorldRegistry
@@ -917,6 +938,85 @@ namespace Hecton8.World
         private void Start()
         {
             TryRegisterRuntimeLoops();
+        }
+
+        public bool TryGetActiveThermalVent(int index, out PersistentThermalVentRecord record)
+        {
+            record = default;
+            if (_activeThermalVents == null ||
+                index < 0 ||
+                index >= _activeThermalVentCount ||
+                index >= _activeThermalVents.Length)
+            {
+                return false;
+            }
+
+            record = _activeThermalVents[index];
+            return record.RuntimeKey != 0L;
+        }
+
+        public bool RegisterActiveThermalVent(
+            long runtimeKey,
+            Vector3 positionWS,
+            float radiusWS,
+            float heightWS,
+            float updraftVelocity,
+            float heatIntensity,
+            float smokeDensity,
+            float cableRadiusWS)
+        {
+            if (runtimeKey == 0L || _activeThermalVents == null)
+                return false;
+
+            PersistentThermalVentRecord record = new PersistentThermalVentRecord
+            {
+                RuntimeKey = runtimeKey,
+                PositionAup = AbsoluteUniversePosition.FromRuntimePosition(positionWS),
+                RadiusWS = math.max(2f, radiusWS),
+                HeightWS = math.max(4f, heightWS),
+                UpdraftVelocity = math.max(0.5f, updraftVelocity),
+                HeatIntensity = math.max(0.5f, heatIntensity),
+                SmokeDensity = math.max(0.1f, smokeDensity),
+                CableRadiusWS = math.max(2f, cableRadiusWS)
+            };
+
+            for (int i = 0; i < _activeThermalVentCount; i++)
+            {
+                if (_activeThermalVents[i].RuntimeKey != runtimeKey)
+                    continue;
+
+                _activeThermalVents[i] = record;
+                unchecked { _activeThermalVentRevision++; }
+                return true;
+            }
+
+            if (_activeThermalVentCount >= _activeThermalVents.Length)
+                return false;
+
+            _activeThermalVents[_activeThermalVentCount++] = record;
+            unchecked { _activeThermalVentRevision++; }
+            return true;
+        }
+
+        public bool UnregisterActiveThermalVent(long runtimeKey)
+        {
+            if (runtimeKey == 0L || _activeThermalVents == null || _activeThermalVentCount <= 0)
+                return false;
+
+            for (int i = 0; i < _activeThermalVentCount; i++)
+            {
+                if (_activeThermalVents[i].RuntimeKey != runtimeKey)
+                    continue;
+
+                int lastIndex = _activeThermalVentCount - 1;
+                _activeThermalVents[i] = _activeThermalVents[lastIndex];
+                _activeThermalVents[lastIndex] = default;
+                _activeThermalVentCount = lastIndex;
+                unchecked { _activeThermalVentRevision++; }
+                return true;
+            }
+
+            return false;
         }
 
         private void OnDisable()

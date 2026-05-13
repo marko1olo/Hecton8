@@ -20,6 +20,9 @@ namespace Hecton8.Visor
             [Tooltip("Fullscreen sonar point-cloud shader. Uses pass 0 for history accumulation and pass 1 for composite.")]
             public Shader shader = null;
 
+            [Tooltip("Legacy fullscreen sonar history/composite path. Active sonar geo illumination is now shader-global geometry emission.")]
+            public bool enableFullscreenSonarHistory = false;
+
             [Tooltip("Where the sonar point-cloud overlay is injected into URP.")]
             public RenderPassEvent injectionPoint = RenderPassEvent.BeforeRenderingPostProcessing;
 
@@ -135,7 +138,7 @@ namespace Hecton8.Visor
 
             public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
             {
-                if (_settings == null || _material == null)
+                if (_settings == null || !_settings.enableFullscreenSonarHistory || _material == null)
                     return;
 
                 UniversalResourceData resourceData = frameData.Get<UniversalResourceData>();

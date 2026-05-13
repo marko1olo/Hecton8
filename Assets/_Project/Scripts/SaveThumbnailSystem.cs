@@ -192,7 +192,7 @@ namespace Hecton8.SaveSystem
 
             if (ShouldSkipScreenshotForCurrentTier())
             {
-                DeleteThumbnail(slotName);
+                TryDeleteThumbnailNoThrow(slotName);
                 CompleteRequest(new CaptureCompletion(sequenceId, operationId, slotHash, 0, 0u, CaptureStatus.LowTierSkipped));
                 return new CaptureTicket(sequenceId, operationId, slotHash, CaptureStatus.LowTierSkipped);
             }
@@ -207,13 +207,33 @@ namespace Hecton8.SaveSystem
             if ((_hasPendingRequest && string.Equals(_pendingRequest.SlotName, slotName, StringComparison.OrdinalIgnoreCase)) ||
                 (_hasInflightRequest && string.Equals(_inflightRequest.SlotName, slotName, StringComparison.OrdinalIgnoreCase)))
             {
-                return new CaptureTicket(_hasPendingRequest ? _pendingRequest.SequenceId : _inflightRequest.SequenceId, operationId, slotHash, CaptureStatus.Queued);
+                if (_hasPendingRequest)
+                {
+                    CaptureRequest pending = _pendingRequest;
+                    if (operationId != 0u)
+                    {
+                        pending.OperationId = operationId;
+                        pending.SlotHash = slotHash;
+                        _pendingRequest = pending;
+                    }
+
+                    return new CaptureTicket(pending.SequenceId, pending.OperationId, pending.SlotHash, CaptureStatus.Queued);
+                }
+
+                CaptureRequest inflight = _inflightRequest;
+                if (operationId != 0u)
+                {
+                    inflight.OperationId = operationId;
+                    inflight.SlotHash = slotHash;
+                    _inflightRequest = inflight;
+                }
+
+                return new CaptureTicket(inflight.SequenceId, inflight.OperationId, inflight.SlotHash, CaptureStatus.Queued);
             }
 
             if (!HasCapturePoseChanged(captureCamera))
             {
-                int existingBytes = ResolveExistingThumbnailByteLength(slotName);
-                uint existingHash = existingBytes > 0 ? ComputeFileHash(ResolveExistingThumbnailPath(slotName)) : 0u;
+                TryGetExistingThumbnailStats(slotName, out int existingBytes, out uint existingHash);
                 CompleteRequest(new CaptureCompletion(sequenceId, operationId, slotHash, existingBytes, existingHash, CaptureStatus.ReusedExisting));
                 return new CaptureTicket(sequenceId, operationId, slotHash, CaptureStatus.ReusedExisting);
             }
@@ -344,6 +364,52 @@ namespace Hecton8.SaveSystem
                 return null;
 
             byte[] bytes = File.ReadAllBytes(path);
+            return LoadThumbnailTextureFromBytes(slotName, bytes);
+        }
+
+        /// <summary>
+        /// Reads thumbnail bytes off the main thread and decodes only the visible slot on the UI thread.
+        /// </summary>
+        public static async Awaitable<Texture2D> LoadThumbnailTextureAsync(string slotName, CancellationToken cancellationToken = default)
+        {
+            AssetLoadDispatcher.ForceEvaluateUiMipBiasGate();
+
+            if (!SaveManager.TryResolveSafeSlotName(slotName, out slotName))
+                return null;
+
+            if (_textureCache.TryGetValue(slotName, out Texture2D cached) && cached != null)
+            {
+                MarkCacheEntryAsMostRecent(_textureCacheOrder, slotName);
+                return cached;
+            }
+
+            string path = ResolveExistingThumbnailPath(slotName);
+            if (!File.Exists(path))
+                return null;
+
+            byte[] bytes = null;
+            bool readFailed = false;
+            await Awaitable.BackgroundThreadAsync();
+            try
+            {
+                bytes = File.ReadAllBytes(path);
+            }
+            catch (Exception)
+            {
+                readFailed = true;
+            }
+
+            await Awaitable.MainThreadAsync();
+            if (cancellationToken.IsCancellationRequested)
+                return null;
+
+            return readFailed || bytes == null || bytes.Length == 0
+                ? GetFallbackNoiseTexture()
+                : LoadThumbnailTextureFromBytes(slotName, bytes);
+        }
+
+        private static Texture2D LoadThumbnailTextureFromBytes(string slotName, byte[] bytes)
+        {
             Texture2D texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
             texture.hideFlags = HideFlags.HideAndDontSave;
             if (texture.LoadImage(bytes, true))
@@ -401,6 +467,20 @@ namespace Hecton8.SaveSystem
             string legacyPath = GetLegacyThumbnailPath(slotName);
             if (File.Exists(legacyPath))
                 File.Delete(legacyPath);
+        }
+
+        private static void TryDeleteThumbnailNoThrow(string slotName)
+        {
+            try
+            {
+                DeleteThumbnail(slotName);
+            }
+            catch (Exception)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogWarning("[SaveThumbnailSystem] Low-tier thumbnail purge failed.");
+#endif
+            }
         }
 
         /// <summary>
@@ -749,35 +829,46 @@ namespace Hecton8.SaveSystem
             return hash == 0u ? 1u : hash;
         }
 
-        private static uint ComputeFileHash(string path)
+        private static bool TryGetExistingThumbnailStats(string slotName, out int byteLength, out uint metadataHash)
         {
+            byteLength = 0;
+            metadataHash = 0u;
+            string path = ResolveExistingThumbnailPath(slotName);
             if (string.IsNullOrEmpty(path) || !File.Exists(path))
-                return 0u;
+                return false;
 
+            try
+            {
+                FileInfo info = new FileInfo(path);
+                long length = info.Length;
+                byteLength = length <= 0L ? 0 : length > int.MaxValue ? int.MaxValue : (int)length;
+                metadataHash = ComputeMetadataHash((uint)byteLength, info.LastWriteTimeUtc.Ticks);
+                return byteLength > 0;
+            }
+            catch (Exception)
+            {
+                byteLength = 0;
+                metadataHash = 0u;
+                return false;
+            }
+        }
+
+        private static uint ComputeMetadataHash(uint byteLength, long ticks)
+        {
             const uint fnvOffset = 2166136261u;
             const uint fnvPrime = 16777619u;
             uint hash = fnvOffset;
-            using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+            hash ^= byteLength;
+            hash *= fnvPrime;
+            unchecked
             {
-                int value;
-                while ((value = stream.ReadByte()) >= 0)
-                {
-                    hash ^= (byte)value;
-                    hash *= fnvPrime;
-                }
+                hash ^= (uint)ticks;
+                hash *= fnvPrime;
+                hash ^= (uint)(ticks >> 32);
+                hash *= fnvPrime;
             }
 
             return hash == 0u ? 1u : hash;
-        }
-
-        private static int ResolveExistingThumbnailByteLength(string slotName)
-        {
-            string path = ResolveExistingThumbnailPath(slotName);
-            if (string.IsNullOrEmpty(path) || !File.Exists(path))
-                return 0;
-
-            long length = new FileInfo(path).Length;
-            return length <= 0L ? 0 : length > int.MaxValue ? int.MaxValue : (int)length;
         }
 
         private static void CompleteRequest(CaptureCompletion completion)

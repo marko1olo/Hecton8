@@ -348,7 +348,7 @@ namespace Hecton8.AI
         private const float RetinalBlindThreshold = 1f;
         private const float RetinalBlindRecoveryThreshold = 0.28f;
         private const float RetinalExposureRiseScale = 0.72f;
-        private const float RetinalExposureDecayPerSecond = 0.42f;
+        private const float RetinalExposureDecayPerSecond = 0.1f;
         private const float RetinalBlindHoldSeconds = 2.25f;
         private const uint RetinalBlindPredatorsTelemetryHash = 0x5242544Cu; // RBTL
         private const uint RetinalTelemetryContextHash = 0x4641554Eu; // FAUN
@@ -465,6 +465,7 @@ namespace Hecton8.AI
         private static JobHandle _scheduledEvaluationHandle;
         private static long _evaluationScheduleTimestamp;
         private static bool _evaluationScheduled;
+        private static bool _predatorEvaluationJobScheduled;
         private static int _lastEvaluatedFrame = -1;
         private static int _lastScheduledFrame = -1;
         private static int _lastThreatVoxelBindFrame = -1;
@@ -495,10 +496,10 @@ namespace Hecton8.AI
                 _controls[i] = default;
                 _inputs[i] = default;
                 _outputs[i] = default;
-            _evaluationDueFlags[i] = 1;
-            _chosenStates[i] = 0;
-            _nextEvaluationTimes[i] = 0f;
-            _evaluationIntervals[i] = CenterEvaluationIntervalSeconds;
+                _evaluationDueFlags[i] = 1;
+                _chosenStates[i] = 0;
+                _nextEvaluationTimes[i] = 0f;
+                _evaluationIntervals[i] = CenterEvaluationIntervalSeconds;
                 _retinalExposure[i] = 0f;
                 _blindnessState[i] = 0;
                 _lastPublishedBlindnessState[i] = 0;
@@ -822,13 +823,16 @@ namespace Hecton8.AI
                 return;
 
             float chainMs = (float)((Stopwatch.GetTimestamp() - _evaluationScheduleTimestamp) * _StopwatchMillisecondsPerTick);
-            float perJobMs = chainMs * 0.5f;
+            float perJobMs = _predatorEvaluationJobScheduled ? chainMs * 0.5f : chainMs;
             JobAdmissionScheduleExtensions.ReportAdmittedJobCompleted<SwarmAnalysisJob>(JobAdmissionLane.Lane3_AI, perJobMs);
-            JobAdmissionScheduleExtensions.ReportAdmittedJobCompleted<PredatorCognitionJob>(JobAdmissionLane.Lane3_AI, perJobMs);
+            if (_predatorEvaluationJobScheduled)
+                JobAdmissionScheduleExtensions.ReportAdmittedJobCompleted<PredatorCognitionJob>(JobAdmissionLane.Lane3_AI, perJobMs);
             _scheduledSwarmHandle = default;
             _evaluationScheduled = false;
             _lastEvaluatedFrame = _lastScheduledFrame;
-            UpdateRetinalPostEvaluationTelemetry(_lastEvaluatedFrame);
+            if (_predatorEvaluationJobScheduled)
+                UpdateRetinalPostEvaluationTelemetry(_lastEvaluatedFrame);
+            _predatorEvaluationJobScheduled = false;
         }
 
         internal static unsafe void ScheduleFrameEvaluation(int frameId)
@@ -841,6 +845,7 @@ namespace Hecton8.AI
                 return;
             }
 
+            _predatorEvaluationJobScheduled = false;
             RefreshThreatVoxelSnapshot(frameId);
             bool hasDueEvaluations = PrepareEvaluationDueFlags();
             if (!hasDueEvaluations)
@@ -939,12 +944,16 @@ namespace Hecton8.AI
                 BlindnessState = _blindnessState
             };
 
-            if (!job.TryScheduleParallelAdmitted(
+            if (job.TryScheduleParallelAdmitted(
                     _activeSlots.Length,
                     EvaluationJobBatchSize,
                     JobAdmissionLane.Lane3_AI,
                     _scheduledSwarmHandle,
                     out _scheduledEvaluationHandle))
+            {
+                _predatorEvaluationJobScheduled = true;
+            }
+            else
             {
                 _scheduledEvaluationHandle = _scheduledSwarmHandle;
             }
@@ -1050,6 +1059,7 @@ namespace Hecton8.AI
             _scheduledSwarmHandle = default;
             _scheduledEvaluationHandle = default;
             _evaluationScheduled = false;
+            _predatorEvaluationJobScheduled = false;
             _lastEvaluatedFrame = -1;
             _lastScheduledFrame = -1;
             _lastThreatVoxelBindFrame = -1;
@@ -1371,6 +1381,17 @@ namespace Hecton8.AI
             return math.max(0f, light.Intensity) * math.max(0f, light.RangeSq);
         }
 
+        private static float3 ResolveRuntimePosition(in AbsoluteUniversePositionBlit128 positionAup, float3 floatingOriginOffset)
+        {
+            double cellSize = AbsoluteUniversePosition.CellSizeMeters;
+            double3 absolutePosition = new double3(
+                (positionAup.GridX * cellSize) + positionAup.Local.x,
+                (positionAup.GridY * cellSize) + positionAup.Local.y,
+                (positionAup.GridZ * cellSize) + positionAup.Local.z);
+            double3 runtimePosition = absolutePosition - new double3(floatingOriginOffset.x, floatingOriginOffset.y, floatingOriginOffset.z);
+            return new float3((float)runtimePosition.x, (float)runtimePosition.y, (float)runtimePosition.z);
+        }
+
         private static void RemoveRetinalLightSource(uint sourceId)
         {
             for (int i = _retinalLightCount - 1; i >= 0; i--)
@@ -1423,6 +1444,7 @@ namespace Hecton8.AI
             int totalBlind = 0;
             float maxExposure = 0f;
             float3 hottestPosition = float3.zero;
+            float3 telemetryOriginOffset = _activeSlots.Length > 0 ? _inputs[_activeSlots[0]].FloatingOriginOffset : float3.zero;
             uint hottestSource = 0u;
             bool foundFault = false;
             for (int i = 0; i < _activeSlots.Length; i++)
@@ -1466,7 +1488,7 @@ namespace Hecton8.AI
                     strongestScore = score;
                 }
 
-                hottestPosition = AUPMath.ToRuntimeFloat3(in strongest.PositionAup, float3.zero);
+                hottestPosition = ResolveRuntimePosition(in strongest.PositionAup, telemetryOriginOffset);
                 hottestSource = strongest.SourceId;
             }
 
@@ -2452,7 +2474,7 @@ namespace Hecton8.AI
                     if (light.Intensity <= DdaEpsilon || light.RangeSq <= DdaEpsilon)
                         continue;
 
-                    float3 lightPosition = ResolveRuntimePosition(in light.PositionAup, input.FloatingOriginOffset);
+                    float3 lightPosition = PredatorCognitionDomain.ResolveRuntimePosition(in light.PositionAup, input.FloatingOriginOffset);
                     float3 lightToPredator = input.Position - lightPosition;
                     float distanceSq = math.lengthsq(lightToPredator);
                     if (distanceSq > light.RangeSq || distanceSq <= DdaEpsilon)

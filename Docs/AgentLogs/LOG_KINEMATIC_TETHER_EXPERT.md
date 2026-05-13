@@ -52,3 +52,41 @@ Verification:
 Status:
 - Core tether work: done.
 - Build state: pending due global compile dependencies outside assigned domain.
+
+## 2026-05-13 - Second Audit / Tether Hardening
+
+What was wrong:
+- Fire signal sidecar requests could stay active if a manager never consumed a matching signal, risking a full 16-slot attach lane or stale attach execution.
+- `HeavyTowWinch.SetTargetLength` and `AdjustTargetLength` accepted nonfinite input, and release/reset did not clear `TargetLength`.
+- Two visual fallback paths still uploaded `_visualSegmentPositions` through direct `GraphicsBuffer.SetData`.
+- Extreme tow-load projection could publish a `VehicleCommandSignal` every fixed step under sustained tension.
+
+What was done:
+- Added an 8-frame TTL for `TetherFiredSignal`, pruned stale fire signals on publish and consume, and fixed `EnsureInitialized` to require both native queues.
+- Cleared same-version sidecar entries if the unmanaged signal matched a manager ID but the managed manager reference was no longer the same object.
+- Added finite guards to winch target length input and reset `TargetLength` on runtime state clear.
+- Replaced remaining `_visualSegmentPositions` direct uploads with `GraphicsBufferUploadUtility.UploadNativeArray`.
+- Added a 3-frame successful-publish cooldown around `VehicleCommandSignalFlags.TowLoadLimit`.
+
+Cinematic cheats used:
+- Stale attach work is dropped instead of simulated late; towing authority must be current-frame controllable, not historically "real."
+- Load limiting stays event-bus based and coarse. The vehicle domain decides how to consume it; the tether domain only projects a compact stress intent.
+
+Exact microseconds saved / avoided:
+- Fire lane TTL: avoids pathological stale-queue scans and blocked attach attempts; estimated under 1 us saved per affected attach event on i3/MX350.
+- Tow-load cooldown: avoids repeated command queue pressure under sustained heavy towing; estimated 1-2 us saved during overload bursts.
+- Upload path consistency: avoids policy drift toward direct managed buffer upload; expected runtime change is small, but it preserves the zero-GC/procedural render path.
+
+Verification:
+- Re-extracted `<AGENT_PROMPT id="KINEMATIC_TETHER_EXPERT"...>` from `Docs/Tasks/CURRENT_BATCH.md` by CLI after noticing the opening tag has extra attributes.
+- `rg "Schedule\\(|\\.Complete\\("` is clean for `TetherInstance.cs` and `TetherVerletJobs.cs`.
+- Touched-file scan found no `SetData(_visualSegmentPositions)`, `foreach`, `string.Format`, `.ToString()`, `math.sqrt`, `math.normalize`, `Vector3.Distance`, or `.magnitude`.
+- `rg` found no `TetherManager.Instance`, `ConfigurableJoint`, `SpringJoint`, or `HingeJoint` in first-party scripts/scenes/prefabs.
+- `git diff --check` on the touched tether files reports only existing LF-to-CRLF working-copy warnings, no whitespace errors.
+- Unity Roslyn direct compile of `Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.Physics.Tethers.Contracts.rsp` succeeded.
+- Unity Roslyn direct compile of `Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.Core.rsp` is blocked by an unrelated `GasDynamicsSolver` / `IGasDynamicsSolver.TrySetRoomSubmergedFraction(int, float)` interface mismatch.
+- Required `dotnet build Hecton8.Core.csproj --no-restore -v:minimal -m:1 /nr:false` was rerun. It remains red with 104 stale generated-project errors across missing external asmdefs and cannot see `TetherFiredSignal` because the tether contract csproj has not been regenerated while Unity MCP is unavailable. `dotnet build-server shutdown` was run afterward.
+
+Status:
+- Core tether work: done.
+- Build state: pending due global compile dependencies outside assigned domain.

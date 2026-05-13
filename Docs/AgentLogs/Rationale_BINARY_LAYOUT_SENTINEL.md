@@ -55,3 +55,30 @@ Solution: Attempted a direct `dotnet build` with no restore and single worker; s
 Rejected Alternatives: Reporting a clean compile without Unity/Bee completion was rejected. Reverting unrelated active work by other agents was rejected.
 Scalability potential: Blocker is integration-state only; runtime layout design still scales from low-end cold checks to high-end manifest expansion.
 Hardware Impact: No runtime impact. Verification wall cost was editor/build-machine time only.
+
+## OMEGA POLISH CHANGES
+
+Problem: Polish mandate required anti-bloat review for the sentinel implementation after all tasks were checked or blocked.
+Solution: Re-scanned task-owned implementation for `LayoutKind.Auto`, managed `foreach`, `string.Format`, interpolated strings, `.ToString()`, `math.sqrt`, and unconditional `math.normalize`. Sentinel-owned additions did not require a LUT, triangle wave, reciprocal rewrite, or bitmask rewrite because they are cold-boot layout checks and failure-only dump paths. Existing string interpolation hits in `PersistentWorldRegistry` and `FoveatedSimulationManager` predate this sentinel pass and were not modified.
+Rejected Alternatives: Editing unrelated runtime logging in files touched by other agents was rejected as cross-domain churn; converting manifest reflection to hot-path static tables was rejected because the reflection is cold boot only and the current manifest needs offset proof.
+Scalability potential: Low tier pays one cold manifest pass; Middle/High/Ultra can extend manifest coverage without touching gameplay frame cost. No "balanced" mid-path exists; the data contract is either verified or boot is stopped.
+Hardware Impact: 0 us/frame on i3/MX350. Cold boot verifier remains outside gameplay frame budget; no measured microsecond savings.
+
+Final Git Diff: Current sentinel-owned code diff is one deliberate hardening deletion in `BinaryLayoutManifest`: the private `_packedQuantityAndFlags` offset assertion was removed. Public `PersistentWorldItemRecord.InstanceUid` offset at 200 and total record size still prove the 196-byte packed field slot indirectly.
+Status: PENDING due global compile/session dependencies, not VERIFIED MASTER GRADE.
+
+## Loop 6 Private Metadata Hardening
+
+Problem: `BinaryLayoutManifest` asserted a private `PersistentWorldItemRecord._packedQuantityAndFlags` field by string name. That is brittle under IL2CPP/private metadata stripping and can create a false cold-boot layout failure even when the binary record is valid.
+Solution: Removed the private-field `Marshal.OffsetOf` assertion and retained public offset checks around it: `ItemPersistentId` at 68, `InstanceUid` at 200, and total `PersistentWorldItemRecord` size at 208. This still proves the packed 4-byte slot at 196 without private reflection.
+Rejected Alternatives: Making the packed field public was rejected because it would leak mutation surface into persistence callers. Keeping private-name reflection was rejected because the verifier must be stricter about ABI than about private CLR metadata availability.
+Scalability potential: Low/Middle/High/Ultra all remain cold-boot only; no frame-tier path changes. Ultra can add an editor-only manifest generator later if exact private-field evidence is required.
+Hardware Impact: 0 us/frame on i3/MX350. The gain is false-positive removal on IL2CPP boot, not measured frame time.
+
+## Loop 6 Verification Update
+
+Problem: Unity MCP telemetry responded, but script validation, console reads, and refresh returned `no_unity_session`.
+Solution: Ran the Unity Roslyn compiler directly against `Library\Bee\artifacts\1900b0aEDbg.dag\Hecton8.Core.rsp` with codexcheck outputs. Current sentinel-owned files produced no compiler errors; compile now stops on non-sentinel systems.
+Rejected Alternatives: Chasing Atmosphere/Audio/Save/UI/Fauna runtime errors was rejected as domain creep under the batch boundary. Claiming full verification was rejected because global compile still fails.
+Scalability potential: Sentinel runtime scalability remains unchanged: cached hot gate, cold manifest, failure-only dump.
+Hardware Impact: 0 us/frame. Verification cost was editor/build-machine time only.

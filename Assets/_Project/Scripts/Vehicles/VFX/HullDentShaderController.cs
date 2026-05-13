@@ -215,7 +215,7 @@ namespace Hecton8.Vehicles.VFX
 
         private float ResolveDentDepth(float magnitude)
         {
-            float intensity01 = math.saturate(math.max(0f, magnitude) / math.max(1f, fullIntensityMagnitude));
+            float intensity01 = math.saturate(math.max(0f, magnitude) * math.rcp(math.max(1f, fullIntensityMagnitude)));
             float rawDepth = math.max(0f, magnitude) * depthMetersPerMagnitude * math.max(0.25f, intensity01);
             return math.clamp(rawDepth, 0f, maxDentDepthMeters);
         }
@@ -342,7 +342,7 @@ namespace Hecton8.Vehicles.VFX
             for (int i = 0; i < MaxHullDents; i++)
                 scar = math.max(scar, UnpackDepth(_dentBuffer[i].w));
 
-            return math.saturate(scar / math.max(0.01f, maxDentDepthMeters));
+            return math.saturate(scar * math.rcp(math.max(0.01f, maxDentDepthMeters)));
         }
 
         private void ClearDentBuffer()
@@ -357,7 +357,7 @@ namespace Hecton8.Vehicles.VFX
 
         private void PublishHullDeformedSignal(in CombatDamageSignal signal, float3 localPoint, float radius, float depth)
         {
-            float intensity01 = math.saturate(depth / math.max(0.01f, maxDentDepthMeters));
+            float intensity01 = math.saturate(depth * math.rcp(math.max(0.01f, maxDentDepthMeters)));
             byte flags = 0;
             if (_lowTier)
                 flags |= HullDeformedSignal.LowTierVisualOnlyFlag;

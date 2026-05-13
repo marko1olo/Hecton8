@@ -49,7 +49,7 @@ namespace Hecton8.SaveSystem
         public double totalPlayTime;
 
         /// <summary>Tekuschaya versiya formata. Ispolzuetsya dlya migratsii.</summary>
-        public const int CurrentVersion = 68; // v68: radiation hazard grid sparse RLE payload.
+        public const int CurrentVersion = 69; // v69: inventory equipment durability RLE payload.
 
         // ─────────────────────── DTO Sections ────────────────────
 
@@ -476,11 +476,14 @@ namespace Hecton8.SaveSystem
         public byte[] itemGeneticsWords;
         public ushort[] qualityMilli;
         public uint[] lastUpdateUnixSeconds;
+        public byte[] itemDurabilityRle;
+        public int itemDurabilityRleLength;
         public float totalWeight;
         public int gridColumns;
         public int gridRows;
 
         public const int MaxCells = 128;
+        public const int MaxDurabilityRleBytes = MaxCells * 2;
 
         public void EnsureCapacity()
         {
@@ -504,6 +507,9 @@ namespace Hecton8.SaveSystem
 
             if (lastUpdateUnixSeconds == null || lastUpdateUnixSeconds.Length < MaxCells)
                 lastUpdateUnixSeconds = new uint[MaxCells];
+
+            if (itemDurabilityRle == null || itemDurabilityRle.Length < MaxDurabilityRleBytes)
+                itemDurabilityRle = new byte[MaxDurabilityRleBytes];
         }
 
         public static uint PackCellCoordinate(int x, int y)

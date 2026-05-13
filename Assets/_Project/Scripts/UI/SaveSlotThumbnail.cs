@@ -21,6 +21,7 @@ namespace Hecton8.UI
 
         private CanvasGroup _thumbnailCanvasGroup;
         private CanvasGroup _placeholderCanvasGroup;
+        private int _loadSequence;
 
         private void Awake()
         {
@@ -44,20 +45,36 @@ namespace Hecton8.UI
         /// </summary>
         public void LoadThumbnail(string slotName)
         {
+            unchecked
+            {
+                _loadSequence++;
+                if (_loadSequence == 0)
+                    _loadSequence = 1;
+            }
+
             if (!SaveManager.IsSafeSlotName(slotName))
             {
                 ShowNoThumbnail();
                 return;
             }
 
-            Sprite thumbnailSprite = SaveThumbnailSystem.LoadThumbnail(slotName);
-            if (thumbnailSprite == null || thumbnailSprite.texture == null)
+            ShowNoThumbnail();
+            _ = LoadThumbnailDeferredAsync(slotName, _loadSequence);
+        }
+
+        private async Awaitable LoadThumbnailDeferredAsync(string slotName, int sequence)
+        {
+            Texture2D thumbnailTexture = await SaveThumbnailSystem.LoadThumbnailTextureAsync(slotName, destroyCancellationToken);
+            if (sequence != _loadSequence || destroyCancellationToken.IsCancellationRequested)
+                return;
+
+            if (thumbnailTexture == null)
             {
                 ShowNoThumbnail();
                 return;
             }
 
-            ShowThumbnail(thumbnailSprite.texture);
+            ShowThumbnail(thumbnailTexture);
         }
 
         /// <summary>
@@ -65,6 +82,11 @@ namespace Hecton8.UI
         /// </summary>
         public void ClearThumbnail()
         {
+            unchecked
+            {
+                _loadSequence++;
+            }
+
             ShowNoThumbnail();
         }
 

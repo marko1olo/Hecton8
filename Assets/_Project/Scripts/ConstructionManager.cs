@@ -41,7 +41,7 @@ namespace Hecton8.Construction
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-7000)]
-    public sealed class ConstructionManager : MonoBehaviour, IUpdatable, ILateFrameTickable, ISaveable, ISlowTickable, ILogisticsService, IHabitatDeconstructionSystem, IGlobalRegistryHotSwapListener, IServiceHeartbeat, IServiceShutdown, IOriginShiftListener, IRandomEventListener
+    public sealed class ConstructionManager : MonoBehaviour, IUpdatable, ILateFrameTickable, ISaveable, ISlowTickable, ILogisticsService, IHabitatGraphService, IHabitatDeconstructionSystem, IGlobalRegistryHotSwapListener, IServiceHeartbeat, IServiceShutdown, IOriginShiftListener, IRandomEventListener
     {
         private const float SlowTickDeltaTime = 0.1f;
         private const int InitialJointRecoveryCapacity = 64;
@@ -134,6 +134,7 @@ namespace Hecton8.Construction
         private bool _tickRegistered;
         private bool _lateFrameTickRegistered;
         private bool _logisticsServiceRegistered;
+        private bool _habitatGraphServiceRegistered;
         private bool _habitatDeconstructionServiceRegistered;
         private bool _hotSwapListenerRegistered;
         private bool _originShiftListenerRegistered;
@@ -172,6 +173,37 @@ namespace Hecton8.Construction
         {
             graph = _habitatGraphManager;
             return graph != null && graph.NodeCount > 0;
+        }
+
+        /// <inheritdoc />
+        int IHabitatGraphService.RoomCount => _habitatGraphManager != null ? _habitatGraphManager.NodeCount : 0;
+
+        /// <inheritdoc />
+        NativeArray<float>.ReadOnly IHabitatGraphService.RoomWaterLevels =>
+            _habitatGraphManager != null && _habitatGraphManager.RoomWaterLevels.IsCreated
+                ? _habitatGraphManager.RoomWaterLevels.AsReadOnly()
+                : default;
+
+        /// <inheritdoc />
+        public uint FloodStateSequence => _habitatGraphManager != null ? _habitatGraphManager.FloodStateSequence : 0u;
+
+        /// <inheritdoc />
+        public bool TryResolveRoomWaterline(
+            Vector3 runtimePosition,
+            int cachedRoomId,
+            out HabitatRoomWaterlineSnapshot snapshot)
+        {
+            snapshot = default;
+            return _habitatGraphManager != null &&
+                   _habitatGraphManager.TryResolveRoomWaterline(runtimePosition, cachedRoomId, out snapshot);
+        }
+
+        /// <inheritdoc />
+        public bool TryGetRoomWaterline(int roomId, out HabitatRoomWaterlineSnapshot snapshot)
+        {
+            snapshot = default;
+            return _habitatGraphManager != null &&
+                   _habitatGraphManager.TryGetRoomWaterline(roomId, out snapshot);
         }
 
         /// <summary>Number of placed modules.</summary>
@@ -213,6 +245,7 @@ namespace Hecton8.Construction
             EnsureRuntimeStorage();
             _isInitialized = true;
             TryRegisterLogisticsService();
+            TryRegisterHabitatGraphService();
             TryRegisterHabitatDeconstructionService();
             TryRegisterTick();
             TryRegisterLateFrameTick();
@@ -270,6 +303,7 @@ namespace Hecton8.Construction
                 return;
 
             TryRegisterLogisticsService();
+            TryRegisterHabitatGraphService();
             TryRegisterHabitatDeconstructionService();
             TryRegisterTick();
             TryRegisterLateFrameTick();
@@ -327,6 +361,7 @@ namespace Hecton8.Construction
             TryUnregisterTick();
             TryUnregisterLateFrameTick();
             TryUnregisterHabitatDeconstructionService();
+            TryUnregisterHabitatGraphService();
             TryUnregisterLogisticsService();
             _slowTickAccumulator = 0f;
             TryUnregisterSaveParticipant();
@@ -1441,8 +1476,9 @@ namespace Hecton8.Construction
                 }
 
                 // Validate position.
+                float3 graphRuntimePosition = hasGraphTopology ? graphNodeDto.GetAup().ToRuntimeFloat3() : float3.zero;
                 Vector3 pos = hasGraphTopology
-                    ? graphNodeDto.GetAup().ToRuntimeFloat3()
+                    ? new Vector3(graphRuntimePosition.x, graphRuntimePosition.y, graphRuntimePosition.z)
                     : moduleDto.GetPosition();
                 Quaternion rot = hasGraphTopology
                     ? graphNodeDto.GetRotation()
@@ -1824,6 +1860,15 @@ namespace Hecton8.Construction
             _logisticsServiceRegistered = ReferenceEquals(GlobalRegistry.Logistics, this);
         }
 
+        private void TryRegisterHabitatGraphService()
+        {
+            if (_habitatGraphServiceRegistered || !Application.isPlaying)
+                return;
+
+            GlobalRegistry.RegisterHabitatGraphService(this);
+            _habitatGraphServiceRegistered = ReferenceEquals(GlobalRegistry.HabitatGraph, this);
+        }
+
         private void TryRegisterHabitatDeconstructionService()
         {
             if (_habitatDeconstructionServiceRegistered || !Application.isPlaying)
@@ -1873,6 +1918,15 @@ namespace Hecton8.Construction
 
             GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
             _lateFrameTickRegistered = false;
+        }
+
+        private void TryUnregisterHabitatGraphService()
+        {
+            if (!_habitatGraphServiceRegistered)
+                return;
+
+            GlobalRegistry.UnregisterHabitatGraphService(this);
+            _habitatGraphServiceRegistered = false;
         }
 
         /// <inheritdoc />

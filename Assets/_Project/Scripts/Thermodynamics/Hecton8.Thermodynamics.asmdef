@@ -1,0 +1,19 @@
+{
+    "name": "Hecton8.Thermodynamics",
+    "rootNamespace": "Hecton8.Thermodynamics",
+    "references": [
+        "Hecton8.Core.Contracts",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

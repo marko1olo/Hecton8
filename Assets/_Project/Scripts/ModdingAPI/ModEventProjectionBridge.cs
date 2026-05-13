@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Hecton8.Core;
+using Hecton8.Core.Signals;
 using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
@@ -30,6 +31,7 @@ namespace Hecton8.Modding
         private const uint GcCullEventHash = 0x4743414Cu; // GCAL
         private const uint ExceptionCullEventHash = 0x45584350u; // EXCP
         private static readonly long _watchdogTicks = Math.Max(1L, (long)(Stopwatch.Frequency * 0.002d));
+        private static readonly float _stopwatchTicksToMilliseconds = (float)(1000.0d / Stopwatch.Frequency);
         // COLD ALLOC: ModEventProjectionBridge[1] - registry-owned mod event projection service - owner: ModEventProjectionBridge
         private static readonly ModEventProjectionBridge _globalBridge = new ModEventProjectionBridge();
 
@@ -335,7 +337,7 @@ namespace Hecton8.Modding
 
                     if (elapsedTicks > _watchdogTicks)
                     {
-                        float elapsedMilliseconds = elapsedTicks * 1000f / Stopwatch.Frequency;
+                        float elapsedMilliseconds = elapsedTicks * _stopwatchTicksToMilliseconds;
                         CullEntry(
                             i,
                             ref entry,

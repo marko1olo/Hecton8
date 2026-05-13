@@ -368,11 +368,17 @@ namespace Hecton8.Gameplay
 
         public void SetTargetLength(float targetLength)
         {
+            if (!math.isfinite(targetLength))
+                return;
+
             TargetLength = math.clamp(targetLength, 1.25f, maxAttachDistance);
         }
 
         public void AdjustTargetLength(float deltaMeters)
         {
+            if (!math.isfinite(deltaMeters))
+                return;
+
             SetTargetLength(TargetLength + deltaMeters);
         }
 
@@ -623,6 +629,7 @@ namespace Hecton8.Gameplay
             _payloadName = null;
             _payloadNameUpper = null;
             _payloadMass = 0f;
+            TargetLength = 0f;
             _overrideTowAnchor = null;
             _overrideTowBody = null;
         }

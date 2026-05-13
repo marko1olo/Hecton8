@@ -26,6 +26,7 @@ using Hecton8.AI;
 using Hecton8.Audio;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
+using Hecton8.Core.Signals;
 using Hecton8.Gameplay;
 using Hecton8.Physics;
 using Hecton8.UI;
@@ -2723,9 +2724,13 @@ namespace Hecton8.Visor
                     _activeSonarGeoParams[writeIndex] = parameters;
                     _activeSonarGeoGlobalsDirty = true;
                 }
-                else if (!NearlyEqual(_activeSonarGeoCentersRadius[writeIndex], centerRadius, ShaderVectorPublishEpsilon))
+                else
                 {
-                    _activeSonarGeoGlobalsDirty = true;
+                    if (!NearlyEqual(_activeSonarGeoCentersRadius[writeIndex], centerRadius, ShaderVectorPublishEpsilon))
+                        _activeSonarGeoGlobalsDirty = true;
+
+                    _activeSonarGeoCentersRadius[writeIndex] = centerRadius;
+                    _activeSonarGeoParams[writeIndex] = parameters;
                 }
 
                 writeIndex++;

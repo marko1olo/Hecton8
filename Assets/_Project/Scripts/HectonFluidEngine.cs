@@ -181,7 +181,19 @@ namespace Hecton8.Physics
         private const int MaxCavitationBurstEvents = 8;
         public const int MaxAnalyticalThrusterCount = 4;
         public const int MaxAnalyticalWhirlpoolCount = 2;
+        public const int MaxActiveMaelstromCount = MaxAnalyticalWhirlpoolCount;
         public const int MaxDynamicViscosityRegionCount = 4;
+        private const int MaelstromTelemetryCapacity = 300;
+        private const string MaelstromDumpRelativePath = "Docs/AgentLogs/Dump_MAELSTROM_KINEMATICS.bin";
+        private const float MaelstromMinimumRadiusMeters = 0.5f;
+        private const float MaelstromEventHorizonRadiusFactor = 0.12f;
+        private const float MaelstromMaxVelocityMetersPerSecond = 18f;
+        private const float MaelstromLowTierMaxVelocityMetersPerSecond = 10f;
+        private const float MaelstromAudioIntervalSeconds = 0.45f;
+        private const float MaelstromDamageIntervalSeconds = 0.35f;
+        private const float MaelstromDamageMagnitude = 18f;
+        private const uint MaelstromSourceHash = 0x4D41454Cu;
+        private const byte MaelstromAcousticChannel = 12;
         private const int ViscosityGradientLutSize = 16;
         private const int FluidImpactEventQueueCapacity = 64;
         private const int MaxGerstnerWaveCount = 16;
@@ -244,6 +256,22 @@ namespace Hecton8.Physics
             public int HeatSourceCount;
             public uint Flags;
             public uint StateHash;
+        }
+
+        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 64)]
+        private struct MaelstromTelemetryEntry
+        {
+            public int Frame;
+            public float FixedTime;
+            public float3 PrimaryCenterWS;
+            public float PrimaryRadius;
+            public float4 PrimaryCompact;
+            public float Warp01;
+            public int ActiveCount;
+            public uint Flags;
+            public uint StateHash;
+            public float EscapeVelocityClamp;
+            public float EventHorizonRadius;
         }
 
         private struct AbyssalVortexImpulse
@@ -750,8 +778,10 @@ namespace Hecton8.Physics
                 return false;
             }
 
-            float safeRadius = math.max(0.01f, radius);
+            float safeRadius = math.max(MaelstromMinimumRadiusMeters, radius);
             float radiusSq = safeRadius * safeRadius;
+            float resolvedIntensity = ResolveMaelstromIntensity(tangentialStrength, centripetalStrength, verticalPull);
+            float eventHorizonRadius = math.max(0.25f, safeRadius * MaelstromEventHorizonRadiusFactor);
             _whirlpoolFlowBuffer[slot] = new WhirlpoolFlow
             {
                 CenterWS = new float3(center.x, center.y, center.z),
@@ -760,10 +790,26 @@ namespace Hecton8.Physics
                 TangentialStrength = tangentialStrength,
                 CentripetalStrength = centripetalStrength,
                 VerticalPull = math.max(0f, verticalPull),
-                Active = 1
+                Active = 1,
+                Padding0 = resolvedIntensity * math.rcp(safeRadius),
+                Padding1 = safeRadius,
+                Padding2 = eventHorizonRadius * eventHorizonRadius
             };
+            if (!_scheduledBuoyancyJobActive)
+                CopyAnalyticalFlowInputsToNative();
             OnCurrentSettingsChanged();
             return true;
+        }
+
+        public bool TrySetMaelstrom(
+            int slot,
+            Vector3 center,
+            float radius,
+            float pullStrength,
+            float spinStrength,
+            float verticalPull)
+        {
+            return TrySetWhirlpool(slot, center, radius, spinStrength, pullStrength, verticalPull);
         }
 
         public void ClearWhirlpool(int slot)
@@ -772,6 +818,8 @@ namespace Hecton8.Physics
                 return;
 
             _whirlpoolFlowBuffer[slot] = default;
+            if (!_scheduledBuoyancyJobActive)
+                CopyAnalyticalFlowInputsToNative();
             OnCurrentSettingsChanged();
         }
 
@@ -779,7 +827,56 @@ namespace Hecton8.Physics
         {
             for (int i = 0; i < MaxAnalyticalWhirlpoolCount; i++)
                 _whirlpoolFlowBuffer[i] = default;
+            if (!_scheduledBuoyancyJobActive)
+                CopyAnalyticalFlowInputsToNative();
             OnCurrentSettingsChanged();
+        }
+
+        public bool TryGetActiveMaelstroms(
+            out NativeArray<float4> maelstroms,
+            out int activeCount,
+            out Vector4 maelstromMeta)
+        {
+            maelstroms = _activeMaelstroms;
+            activeCount = _activeMaelstromCount;
+            maelstromMeta = _activeMaelstromMeta;
+            return maelstroms.IsCreated && activeCount > 0;
+        }
+
+        public bool TryGetActiveWhirlpoolFlows(out NativeArray<WhirlpoolFlow> whirlpools, out int activeCount)
+        {
+            whirlpools = _activeWhirlpools;
+            activeCount = _activeWhirlpoolFlowCount;
+            return whirlpools.IsCreated && activeCount > 0;
+        }
+
+        public bool TrySampleMaelstromWarp(Vector3 runtimePosition, out float warp01)
+        {
+            warp01 = 0f;
+            if (!IsFiniteVector(runtimePosition))
+                return false;
+
+            float3 sample = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            int cap = ResolveActiveMaelstromLoopCap();
+            for (int i = 0; i < cap; i++)
+            {
+                WhirlpoolFlow whirlpool = _whirlpoolFlowBuffer[i];
+                if (whirlpool.Active == 0 || whirlpool.RadiusSq <= 0f || whirlpool.InvRadiusSq <= 0f)
+                    continue;
+
+                float3 toCenter = whirlpool.CenterWS - sample;
+                toCenter.y = 0f;
+                float distanceSq = math.lengthsq(toCenter);
+                if (!math.isfinite(distanceSq) || distanceSq > whirlpool.RadiusSq)
+                    continue;
+
+                float inside01 = 1f - math.saturate(distanceSq * whirlpool.InvRadiusSq);
+                float intensity01 = math.saturate(whirlpool.Padding0 * 0.08f);
+                warp01 = math.max(warp01, inside01 * intensity01);
+            }
+
+            warp01 = math.saturate(warp01);
+            return warp01 > 0.0001f;
         }
 
         /// <summary>
@@ -958,6 +1055,8 @@ namespace Hecton8.Physics
         private NativeArray<GpuHeatSourceData> _gpuAbyssalHeatSourceUpload;
         private NativeArray<ActiveThrusterFlow> _activeThrusterFlows;
         private NativeArray<WhirlpoolFlow> _activeWhirlpools;
+        private NativeArray<float4> _activeMaelstroms;
+        private NativeArray<MaelstromTelemetryEntry> _maelstromTelemetry;
         private NativeArray<FluidViscosityRegion> _activeViscosityRegions;
         private NativeArray<float> _viscosityGradientLut;
         private NativeArray<float3> _prebakedVectorNoiseField;
@@ -965,8 +1064,10 @@ namespace Hecton8.Physics
         private int _prebakedVectorNoiseRuntimeSeed = int.MinValue;
         private int _activeThrusterFlowCount;
         private int _activeWhirlpoolFlowCount;
+        private int _activeMaelstromCount;
         private int _activeViscosityRegionCount;
         private int _activeGerstnerWaveCount;
+        private Vector4 _activeMaelstromMeta;
         private int _lastOceanSleepCount;
         private Vector4 _lastOceanSurfaceWave0A;
         private Vector4 _lastOceanSurfaceWave0B;
@@ -1042,6 +1143,10 @@ namespace Hecton8.Physics
         private NativeArray<AbyssalFlowTelemetryEntry> _abyssalFlowTelemetry;
         private int _abyssalFlowTelemetryCursor;
         private bool _abyssalFlowTelemetryDumped;
+        private int _maelstromTelemetryCursor;
+        private bool _maelstromTelemetryDumped;
+        private float _nextMaelstromAudioTime;
+        private float _nextMaelstromDamageTime;
         private bool _fluidRuntimeRegistered;
         private bool _fixedTickRegistered;
         private bool _postFixedRegistered;
@@ -1220,6 +1325,38 @@ namespace Hecton8.Physics
                 rebasedPosition.z += runtimeOffset.z;
                 impulse.PositionWS = rebasedPosition;
                 _abyssalVortexImpulses[i] = impulse;
+            }
+
+            for (int i = 0; i < MaxAnalyticalWhirlpoolCount; i++)
+            {
+                WhirlpoolFlow whirlpool = _whirlpoolFlowBuffer[i];
+                if (whirlpool.Active == 0)
+                    continue;
+
+                whirlpool.CenterWS += runtimeOffset;
+                _whirlpoolFlowBuffer[i] = whirlpool;
+            }
+
+            if (_activeWhirlpools.IsCreated)
+            {
+                int whirlpoolCount = math.min(_activeWhirlpoolFlowCount, _activeWhirlpools.Length);
+                for (int i = 0; i < whirlpoolCount; i++)
+                {
+                    WhirlpoolFlow whirlpool = _activeWhirlpools[i];
+                    whirlpool.CenterWS += runtimeOffset;
+                    _activeWhirlpools[i] = whirlpool;
+                }
+            }
+
+            if (_activeMaelstroms.IsCreated)
+            {
+                int maelstromCount = math.min(_activeMaelstromCount, _activeMaelstroms.Length);
+                for (int i = 0; i < maelstromCount; i++)
+                {
+                    float4 maelstrom = _activeMaelstroms[i];
+                    maelstrom.xyz += runtimeOffset;
+                    _activeMaelstroms[i] = maelstrom;
+                }
             }
         }
 
@@ -2064,6 +2201,7 @@ namespace Hecton8.Physics
         /// <inheritdoc />
         public void PostFixedTick(float fixedDeltaTime)
         {
+            PublishMaelstromRuntimeSignals(fixedDeltaTime);
             DrainCavitationBursts();
 
             TryDrainScheduledBuoyancyJob();
@@ -2675,8 +2813,11 @@ namespace Hecton8.Physics
             EnsureAbyssalFlowNativeState();
             _activeThrusterFlows = new NativeArray<ActiveThrusterFlow>(MaxAnalyticalThrusterCount, Allocator.Persistent,
                                  NativeArrayOptions.ClearMemory);
-            _activeWhirlpools = new NativeArray<WhirlpoolFlow>(MaxAnalyticalWhirlpoolCount, Allocator.Persistent,
-                                 NativeArrayOptions.ClearMemory);
+            if (!_activeWhirlpools.IsCreated)
+            {
+                _activeWhirlpools = new NativeArray<WhirlpoolFlow>(MaxAnalyticalWhirlpoolCount, Allocator.Persistent,
+                                     NativeArrayOptions.ClearMemory);
+            }
             _activeViscosityRegions = new NativeArray<FluidViscosityRegion>(MaxDynamicViscosityRegionCount, Allocator.Persistent,
                                  NativeArrayOptions.ClearMemory);
             _viscosityGradientLut = new NativeArray<float>(ViscosityGradientLutSize, Allocator.Persistent,
@@ -2725,6 +2866,8 @@ namespace Hecton8.Physics
             {
                 DisposeNativeArray(ref _gpuAbyssalHeatSourceUpload, dependency);
                 DisposeNativeArray(ref _abyssalFlowTelemetry, dependency);
+                DisposeNativeArray(ref _maelstromTelemetry, dependency);
+                DisposeNativeArray(ref _activeMaelstroms, dependency);
             }
             DisposeNativeArray(ref _activeThrusterFlows, dependency);
             DisposeNativeArray(ref _activeWhirlpools, dependency);
@@ -2734,10 +2877,13 @@ namespace Hecton8.Physics
             _fluidImpactQueuedCount = 0;
             _activeThrusterFlowCount = 0;
             _activeWhirlpoolFlowCount = 0;
+            _activeMaelstromCount = 0;
             _activeViscosityRegionCount = 0;
             _activeGerstnerWaveCount = 0;
+            _activeMaelstromMeta = Vector4.zero;
             _lastOceanSleepCount = 0;
             _oceanSurfaceTelemetryWriteIndex = 0;
+            _maelstromTelemetryCursor = 0;
             _scheduledBodies = null;
             _scheduledBuoyancyHandle = default;
             _scheduledBuoyancyJobActive = false;
@@ -2745,6 +2891,8 @@ namespace Hecton8.Physics
             _pendingOriginShiftOffset = Vector3.zero;
             _hasPendingOriginShiftRebase = false;
             _cavitationBurstCount = 0;
+            _nextMaelstromAudioTime = 0f;
+            _nextMaelstromDamageTime = 0f;
             ReleaseGpuBuoyancyBuffers();
             if (releaseAbyssalFlow)
                 ReleaseGpuAbyssalFlowBuffers();
@@ -2782,6 +2930,8 @@ namespace Hecton8.Physics
             NativeMemorySentinel.RegisterNativeArray(_abyssalFlowTelemetry, NativeMemoryOwner, nameof(_abyssalFlowTelemetry), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_activeThrusterFlows, NativeMemoryOwner, nameof(_activeThrusterFlows), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_activeWhirlpools, NativeMemoryOwner, nameof(_activeWhirlpools), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_activeMaelstroms, NativeMemoryOwner, nameof(_activeMaelstroms), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_maelstromTelemetry, NativeMemoryOwner, nameof(_maelstromTelemetry), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_activeViscosityRegions, NativeMemoryOwner, nameof(_activeViscosityRegions), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_viscosityGradientLut, NativeMemoryOwner, nameof(_viscosityGradientLut), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeQueue(
@@ -2810,6 +2960,32 @@ namespace Hecton8.Physics
                     NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<AbyssalFlowTelemetryEntry>[300] - abyssal flow black-box telemetry ring - owner: HectonFluidEngine
                 _abyssalFlowTelemetryCursor = 0;
                 _abyssalFlowTelemetryDumped = false;
+            }
+
+            if (!_activeWhirlpools.IsCreated)
+            {
+                _activeWhirlpools = new NativeArray<WhirlpoolFlow>(
+                    MaxAnalyticalWhirlpoolCount,
+                    Allocator.Persistent,
+                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<WhirlpoolFlow>[2] - active maelstrom physics inputs - owner: HectonFluidEngine
+            }
+
+            if (!_activeMaelstroms.IsCreated)
+            {
+                _activeMaelstroms = new NativeArray<float4>(
+                    MaxActiveMaelstromCount,
+                    Allocator.Persistent,
+                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float4>[2] - compact maelstrom GPU/AI SOA - owner: HectonFluidEngine
+            }
+
+            if (!_maelstromTelemetry.IsCreated)
+            {
+                _maelstromTelemetry = new NativeArray<MaelstromTelemetryEntry>(
+                    MaelstromTelemetryCapacity,
+                    Allocator.Persistent,
+                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<MaelstromTelemetryEntry>[300] - maelstrom black-box telemetry ring - owner: HectonFluidEngine
+                _maelstromTelemetryCursor = 0;
+                _maelstromTelemetryDumped = false;
             }
         }
 
@@ -2992,6 +3168,8 @@ namespace Hecton8.Physics
 
         private void CopyAnalyticalFlowInputsToNative()
         {
+            CopyActiveMaelstromsToNative();
+
             if (!_activeThrusterFlows.IsCreated || !_activeWhirlpools.IsCreated || !_activeViscosityRegions.IsCreated)
                 return;
 
@@ -3011,7 +3189,8 @@ namespace Hecton8.Physics
             _activeThrusterFlowCount = thrusterWriteIndex;
 
             int whirlpoolWriteIndex = 0;
-            for (int i = 0; i < MaxAnalyticalWhirlpoolCount; i++)
+            int whirlpoolLoopCap = ResolveActiveMaelstromLoopCap();
+            for (int i = 0; i < whirlpoolLoopCap; i++)
             {
                 WhirlpoolFlow whirlpool = _whirlpoolFlowBuffer[i];
                 if (whirlpool.Active == 0 || whirlpool.RadiusSq <= 0f || whirlpool.InvRadiusSq <= 0f)
@@ -3039,6 +3218,307 @@ namespace Hecton8.Physics
                 _activeViscosityRegions[i] = default;
 
             _activeViscosityRegionCount = viscosityWriteIndex;
+        }
+
+        private void CopyActiveMaelstromsToNative()
+        {
+            int maxCount = ResolveActiveMaelstromLoopCap();
+            int writeIndex = 0;
+            float maxRadius = 0f;
+            float maxIntensity = 0f;
+
+            for (int i = 0; i < maxCount; i++)
+            {
+                WhirlpoolFlow whirlpool = _whirlpoolFlowBuffer[i];
+                if (whirlpool.Active == 0 || whirlpool.RadiusSq <= 0f || whirlpool.InvRadiusSq <= 0f)
+                    continue;
+
+                float radius = math.max(MaelstromMinimumRadiusMeters, whirlpool.Padding1);
+                float intensityOverRadius = math.max(0f, whirlpool.Padding0);
+                if (_activeMaelstroms.IsCreated && writeIndex < _activeMaelstroms.Length)
+                {
+                    _activeMaelstroms[writeIndex] = new float4(
+                        whirlpool.CenterWS.x,
+                        whirlpool.CenterWS.y,
+                        whirlpool.CenterWS.z,
+                        intensityOverRadius);
+                }
+
+                maxRadius = math.max(maxRadius, radius);
+                maxIntensity = math.max(maxIntensity, intensityOverRadius * radius);
+                writeIndex++;
+            }
+
+            if (_activeMaelstroms.IsCreated)
+            {
+                for (int i = writeIndex; i < _activeMaelstroms.Length; i++)
+                    _activeMaelstroms[i] = default;
+            }
+
+            _activeMaelstromCount = writeIndex;
+            _activeMaelstromMeta = new Vector4(
+                writeIndex,
+                maxRadius,
+                maxIntensity,
+                IsLowMaelstromTier() ? 1f : 0f);
+        }
+
+        private int ResolveActiveMaelstromLoopCap()
+        {
+            return IsLowMaelstromTier() ? 1 : MaxAnalyticalWhirlpoolCount;
+        }
+
+        private static bool IsLowMaelstromTier()
+        {
+            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
+            return tier == HectonQualityTier.Unknown ||
+                   tier == HectonQualityTier.Low ||
+                   tier == HectonQualityTier.Mx350;
+        }
+
+        private static float ResolveMaelstromIntensity(float tangentialStrength, float centripetalStrength, float verticalPull)
+        {
+            return math.max(
+                math.abs(tangentialStrength),
+                math.max(math.abs(centripetalStrength), math.max(0f, verticalPull)));
+        }
+
+        private void PublishMaelstromRuntimeSignals(float fixedDeltaTime)
+        {
+            CopyActiveMaelstromsToNative();
+            int activeCount = _activeMaelstromCount;
+            if (activeCount <= 0)
+            {
+                WriteMaelstromTelemetry(default, default, 0f, 0u);
+                return;
+            }
+
+            WhirlpoolFlow primary = ResolvePrimaryMaelstrom();
+            float radius = math.max(MaelstromMinimumRadiusMeters, primary.Padding1);
+            float eventHorizonRadius = math.max(0.25f, radius * MaelstromEventHorizonRadiusFactor);
+            float intensity01 = math.saturate(ResolveMaelstromIntensity(
+                primary.TangentialStrength,
+                primary.CentripetalStrength,
+                primary.VerticalPull) * 0.04f);
+            float now = Time.fixedTime;
+
+            if (now >= _nextMaelstromAudioTime)
+            {
+                AcousticPingSignal acoustic = default;
+                acoustic.PositionAup = AbsoluteUniversePosition.FromRuntimePosition(new Vector3(
+                    primary.CenterWS.x,
+                    primary.CenterWS.y,
+                    primary.CenterWS.z));
+                acoustic.RadiusMeters = math.max(radius, radius * 2.5f);
+                acoustic.Intensity01 = math.max(0.2f, intensity01);
+                acoustic.SourceId = MaelstromSourceHash;
+                acoustic.Channel = MaelstromAcousticChannel;
+                acoustic.Flags = 1;
+                GlobalSignals.Publish(in acoustic);
+                _nextMaelstromAudioTime = now + MaelstromAudioIntervalSeconds;
+            }
+
+            uint telemetryFlags = 0u;
+            if (now >= _nextMaelstromDamageTime)
+            {
+                if (TryPublishMaelstromDamage(primary, eventHorizonRadius, intensity01))
+                    telemetryFlags |= 1u;
+
+                _nextMaelstromDamageTime = now + MaelstromDamageIntervalSeconds;
+            }
+
+            if (!math.all(math.isfinite(primary.CenterWS)) || !math.isfinite(radius))
+                telemetryFlags |= 0x80000000u;
+
+            WriteMaelstromTelemetry(primary, _activeMaelstroms.IsCreated ? _activeMaelstroms[0] : default, intensity01, telemetryFlags);
+        }
+
+        private WhirlpoolFlow ResolvePrimaryMaelstrom()
+        {
+            WhirlpoolFlow best = default;
+            float bestIntensity = -1f;
+            int cap = ResolveActiveMaelstromLoopCap();
+            for (int i = 0; i < cap; i++)
+            {
+                WhirlpoolFlow candidate = _whirlpoolFlowBuffer[i];
+                if (candidate.Active == 0 || candidate.RadiusSq <= 0f || candidate.InvRadiusSq <= 0f)
+                    continue;
+
+                float intensity = ResolveMaelstromIntensity(
+                    candidate.TangentialStrength,
+                    candidate.CentripetalStrength,
+                    candidate.VerticalPull);
+                if (intensity > bestIntensity)
+                {
+                    best = candidate;
+                    bestIntensity = intensity;
+                }
+            }
+
+            return best;
+        }
+
+        private bool TryPublishMaelstromDamage(WhirlpoolFlow whirlpool, float eventHorizonRadius, float intensity01)
+        {
+            if (whirlpool.Active == 0 || eventHorizonRadius <= 0f)
+                return false;
+
+            bool published = false;
+            float eventHorizonRadiusSq = eventHorizonRadius * eventHorizonRadius;
+            Vector3 center = new Vector3(whirlpool.CenterWS.x, whirlpool.CenterWS.y, whirlpool.CenterWS.z);
+
+            IPlayerRuntimeContext player = GlobalRegistry.Player;
+            Rigidbody playerBody = player != null ? player.PlayerRigidbody : null;
+            Transform playerTransform = player != null ? player.PlayerTransform : null;
+            Vector3 playerPosition = playerBody != null
+                ? playerBody.worldCenterOfMass
+                : playerTransform != null ? playerTransform.position : Vector3.positiveInfinity;
+            if (IsFiniteVector(playerPosition) && (playerPosition - center).sqrMagnitude <= eventHorizonRadiusSq)
+                published |= PublishMaelstromDamageSignal(center, playerPosition, playerBody != null ? playerBody.GetInstanceID() : 0, intensity01);
+
+            ISubmarineRuntimeContext submarine = GlobalRegistry.Submarine;
+            Rigidbody hull = submarine != null ? submarine.HullRigidbody : null;
+            if (hull != null)
+            {
+                Vector3 hullPosition = hull.worldCenterOfMass;
+                if (IsFiniteVector(hullPosition) && (hullPosition - center).sqrMagnitude <= eventHorizonRadiusSq)
+                    published |= PublishMaelstromDamageSignal(center, hullPosition, hull.GetInstanceID(), intensity01);
+            }
+
+            return published;
+        }
+
+        private static bool PublishMaelstromDamageSignal(Vector3 center, Vector3 targetPosition, int targetHash, float intensity01)
+        {
+            if (!IsFiniteVector(center) || !IsFiniteVector(targetPosition))
+                return false;
+
+            Vector3 direction = targetPosition - center;
+            float directionSq = direction.sqrMagnitude;
+            if (directionSq > 0.000001f)
+                direction *= math.rsqrt(directionSq);
+            else
+                direction = Vector3.up;
+
+            CombatDamageSignal damage = default;
+            damage.WorldPoint = new float3(center.x, center.y, center.z);
+            damage.Direction = new float3(direction.x, direction.y, direction.z);
+            damage.Magnitude = MaelstromDamageMagnitude * math.max(0.25f, math.saturate(intensity01));
+            damage.DamageType = CombatDamageTypes.Pressure;
+            damage.TargetHash = targetHash > 0 ? (uint)targetHash : 0u;
+            damage.SourceHash = MaelstromSourceHash;
+            damage.Frame = unchecked((uint)Time.frameCount);
+            damage.SourceId = (ushort)(MaelstromSourceHash & 0xffffu);
+            damage.TargetId = targetHash > 0 ? (ushort)math.min(targetHash, ushort.MaxValue) : (ushort)0;
+            damage.Channel = MaelstromAcousticChannel;
+            damage.Flags = CombatDamageSignal.DirectRuntimeFlag;
+            damage.IntegrityDelta = 1;
+            GlobalSignals.Publish(in damage);
+            return true;
+        }
+
+        private void WriteMaelstromTelemetry(WhirlpoolFlow primary, float4 compactPrimary, float warp01, uint flags)
+        {
+            if (!_maelstromTelemetry.IsCreated)
+                return;
+
+            bool invalid =
+                primary.Active != 0 &&
+                (!math.all(math.isfinite(primary.CenterWS)) ||
+                 !math.isfinite(primary.RadiusSq) ||
+                 !math.isfinite(compactPrimary.w));
+            if (invalid)
+                flags |= 0x80000000u;
+
+            int index = _maelstromTelemetryCursor;
+            if ((uint)index >= (uint)_maelstromTelemetry.Length)
+                index = 0;
+
+            float radius = primary.Active != 0 ? math.max(0f, primary.Padding1) : 0f;
+            float eventHorizonRadius = primary.Active != 0
+                ? math.max(0.25f, radius * MaelstromEventHorizonRadiusFactor)
+                : 0f;
+            _maelstromTelemetry[index] = new MaelstromTelemetryEntry
+            {
+                Frame = Time.frameCount,
+                FixedTime = Time.fixedTime,
+                PrimaryCenterWS = primary.CenterWS,
+                PrimaryRadius = radius,
+                PrimaryCompact = compactPrimary,
+                Warp01 = math.saturate(warp01),
+                ActiveCount = _activeMaelstromCount,
+                Flags = flags,
+                StateHash = BuildMaelstromTelemetryHash(primary, compactPrimary, flags),
+                EscapeVelocityClamp = IsLowMaelstromTier()
+                    ? MaelstromLowTierMaxVelocityMetersPerSecond
+                    : MaelstromMaxVelocityMetersPerSecond,
+                EventHorizonRadius = eventHorizonRadius
+            };
+            _maelstromTelemetryCursor = (index + 1) % _maelstromTelemetry.Length;
+
+            if (invalid)
+                DumpMaelstromTelemetryOnce(flags);
+        }
+
+        private static uint BuildMaelstromTelemetryHash(WhirlpoolFlow primary, float4 compactPrimary, uint flags)
+        {
+            uint hash = 2166136261u;
+            hash = HashAbyssalFlowTelemetry(hash, QuantizeAbyssalFlowTelemetry(primary.CenterWS.x));
+            hash = HashAbyssalFlowTelemetry(hash, QuantizeAbyssalFlowTelemetry(primary.CenterWS.y));
+            hash = HashAbyssalFlowTelemetry(hash, QuantizeAbyssalFlowTelemetry(primary.CenterWS.z));
+            hash = HashAbyssalFlowTelemetry(hash, QuantizeAbyssalFlowTelemetry(primary.Padding1));
+            hash = HashAbyssalFlowTelemetry(hash, QuantizeAbyssalFlowTelemetry(compactPrimary.w));
+            hash = HashAbyssalFlowTelemetry(hash, flags);
+            return hash;
+        }
+
+        private void DumpMaelstromTelemetryOnce(uint reasonFlags)
+        {
+            if (_maelstromTelemetryDumped || !_maelstromTelemetry.IsCreated)
+                return;
+
+            _maelstromTelemetryDumped = true;
+            try
+            {
+                string projectRoot = Directory.GetParent(Application.dataPath)?.FullName ?? Application.dataPath;
+                string dumpPath = Path.Combine(projectRoot, MaelstromDumpRelativePath);
+                string directory = Path.GetDirectoryName(dumpPath);
+                if (!string.IsNullOrEmpty(directory))
+                    Directory.CreateDirectory(directory);
+
+                using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
+                using (BinaryWriter writer = new BinaryWriter(stream))
+                {
+                    writer.Write(0x4D41454Cu);
+                    writer.Write(MaelstromTelemetryCapacity);
+                    writer.Write(_maelstromTelemetryCursor);
+                    writer.Write(reasonFlags);
+                    for (int i = 0; i < _maelstromTelemetry.Length; i++)
+                    {
+                        int index = (_maelstromTelemetryCursor + i) % _maelstromTelemetry.Length;
+                        MaelstromTelemetryEntry entry = _maelstromTelemetry[index];
+                        writer.Write(entry.Frame);
+                        writer.Write(entry.FixedTime);
+                        writer.Write(entry.PrimaryCenterWS.x);
+                        writer.Write(entry.PrimaryCenterWS.y);
+                        writer.Write(entry.PrimaryCenterWS.z);
+                        writer.Write(entry.PrimaryRadius);
+                        writer.Write(entry.PrimaryCompact.x);
+                        writer.Write(entry.PrimaryCompact.y);
+                        writer.Write(entry.PrimaryCompact.z);
+                        writer.Write(entry.PrimaryCompact.w);
+                        writer.Write(entry.Warp01);
+                        writer.Write(entry.ActiveCount);
+                        writer.Write(entry.Flags);
+                        writer.Write(entry.StateHash);
+                        writer.Write(entry.EscapeVelocityClamp);
+                        writer.Write(entry.EventHorizonRadius);
+                    }
+                }
+            }
+            catch (IOException)
+            {
+            }
         }
 
         private static bool IsFiniteVector(Vector3 value)

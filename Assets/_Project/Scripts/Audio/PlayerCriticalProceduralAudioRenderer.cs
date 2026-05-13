@@ -102,6 +102,7 @@ namespace Hecton8.Audio
         private const float AbyssalLowPassStartDepthMeters = 500f;
         private const float AbyssalLowPassFadeDepthMetersInv = 0.00022222222f;
         private const float AbyssalLowPassCutoffHertz = 380f;
+        private const float BrineLowPassMix = 0.92f;
         private const float PsychoacousticPressureReferenceDepthMeters = 500f;
         private const float PsychoacousticPressureMinimumCutoffHertz = 420f;
         private const float MinimumProbeDistanceMeters = 0.001f;
@@ -1803,7 +1804,12 @@ namespace Hecton8.Audio
                 _absoluteDepthTickValue,
                 _hullPressureDepthTickValue,
                 _targetEnclosureDensityIndex);
-            _targetAbyssalLowPassMix = ResolveAbyssalLowPassTarget(_absoluteDepthTickValue);
+            float brineLowPassMix = playerMovement.IsInsideBrineLayer
+                ? math.saturate(BrineLowPassMix * (playerMovement.CurrentBrineDensityMultiplier * 0.33333334f))
+                : 0f;
+            _targetAbyssalLowPassMix = math.max(
+                ResolveAbyssalLowPassTarget(_absoluteDepthTickValue),
+                brineLowPassMix);
             UpdateBubbleBoilTargets();
             UpdateSurvivalTargets(deltaTime);
 

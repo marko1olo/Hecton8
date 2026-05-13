@@ -4737,6 +4737,19 @@ namespace Hecton8.Gameplay
                 : 0f;
         }
 
+        internal bool TryResolveHostAtmosphereRoomIndex(out int roomIndex)
+        {
+            roomIndex = -1;
+            if (!TryResolveSubmarineAtmosphereSystem(out SubmarineAtmosphereSystem atmosphereSystem) ||
+                atmosphereSystem == null)
+            {
+                return false;
+            }
+
+            roomIndex = ResolveAtmosphereRoomIndex(atmosphereSystem);
+            return roomIndex >= 0;
+        }
+
         internal bool TryInjectHostRoomTemperatureDeltaCelsius(float deltaCelsius)
         {
             if (!(deltaCelsius > 0f) || !float.IsFinite(deltaCelsius))
@@ -4997,6 +5010,67 @@ namespace Hecton8.Gameplay
                 (math.abs(right.y) * orientedHalfExtents.x) + (math.abs(up.y) * orientedHalfExtents.y) + (math.abs(forward.y) * orientedHalfExtents.z),
                 (math.abs(right.z) * orientedHalfExtents.x) + (math.abs(up.z) * orientedHalfExtents.y) + (math.abs(forward.z) * orientedHalfExtents.z));
             return halfExtents.x > 0f && halfExtents.y > 0f && halfExtents.z > 0f;
+        }
+
+        internal bool TryContainsInteriorRuntimePoint(Vector3 runtimePosition)
+        {
+            if (!math.all(math.isfinite((float3)runtimePosition)))
+                return false;
+
+            if (!TryGetInteriorOverlapQuery(out Vector3 worldCenter, out Vector3 halfExtents, out Quaternion worldRotation))
+                return false;
+
+            Vector3 localDelta = Quaternion.Inverse(worldRotation) * (runtimePosition - worldCenter);
+            const float containmentPaddingMeters = 0.05f;
+            return math.abs(localDelta.x) <= halfExtents.x + containmentPaddingMeters &&
+                   math.abs(localDelta.y) <= halfExtents.y + containmentPaddingMeters &&
+                   math.abs(localDelta.z) <= halfExtents.z + containmentPaddingMeters;
+        }
+
+        internal bool TryBuildRoomWaterlineSnapshot(
+            int roomId,
+            float fill01,
+            uint sequence,
+            out HabitatRoomWaterlineSnapshot snapshot)
+        {
+            snapshot = default;
+            float safeFill01 = math.saturate(math.isfinite(fill01) ? fill01 : 0f);
+            float minimumLocalY = ResolveFloodSurfaceMinimumLocalY();
+            float maximumLocalY = ResolveFloodSurfaceMaximumLocalY();
+            if (!math.isfinite(minimumLocalY) || !math.isfinite(maximumLocalY) || maximumLocalY <= minimumLocalY)
+                return false;
+
+            float localSurfaceY = math.lerp(minimumLocalY, maximumLocalY, safeFill01);
+            Vector3 floorWorld = transform.TransformPoint(new Vector3(0f, minimumLocalY, 0f));
+            Vector3 ceilingWorld = transform.TransformPoint(new Vector3(0f, maximumLocalY, 0f));
+            Vector3 surfaceWorld = transform.TransformPoint(new Vector3(0f, localSurfaceY, 0f));
+            if (!math.isfinite(floorWorld.y) || !math.isfinite(ceilingWorld.y) || !math.isfinite(surfaceWorld.y))
+                return false;
+
+            float waterVolume = WaterVolumeM3;
+            if (waterVolume <= 0f && safeFill01 > 0f)
+                waterVolume = ResolveFloodCapacityM3() * safeFill01;
+
+            byte flags = 0;
+            if (IsBreached)
+                flags |= HabitatRoomWaterlineSnapshot.FlagBreached;
+            if (safeFill01 > 0.001f || IsFlooded)
+                flags |= HabitatRoomWaterlineSnapshot.FlagFlooded;
+            if (HasPower)
+                flags |= HabitatRoomWaterlineSnapshot.FlagPowered;
+            if (safeFill01 >= 0.8f)
+                flags |= HabitatRoomWaterlineSnapshot.FlagOxygenDisabled;
+
+            snapshot = new HabitatRoomWaterlineSnapshot(
+                roomId,
+                safeFill01,
+                surfaceWorld.y,
+                math.min(floorWorld.y, ceilingWorld.y),
+                math.max(floorWorld.y, ceilingWorld.y),
+                math.max(0f, waterVolume),
+                sequence,
+                flags);
+            return snapshot.IsValid;
         }
 
         private void EvaluateCatastrophicImplosion()

@@ -417,6 +417,7 @@ namespace Hecton8.Core
         private static IThermodynamicsService _thermodynamicsService;
         private static IFluidSim _fluidSimulation;
         private static ILogisticsService _logistics;
+        private static IHabitatGraphService _habitatGraph;
         private static IHabitatDeconstructionSystem _habitatDeconstruction;
         private static IFluidPipeGraphService _fluidPipeGraph;
         private static IGasDynamicsSolver _gasDynamics;
@@ -1065,6 +1066,11 @@ namespace Hecton8.Core
         /// Registered logistics/build-network service slot.
         /// </summary>
         public static ILogisticsService Logistics => _logistics;
+
+        /// <summary>
+        /// Registered habitat graph flood read model slot.
+        /// </summary>
+        public static IHabitatGraphService HabitatGraph => _habitatGraph;
 
         /// <summary>
         /// Registered habitat deconstruction validation and rollback service slot.
@@ -1932,6 +1938,7 @@ namespace Hecton8.Core
             _thermodynamicsService = null;
             _fluidSimulation = null;
             _logistics = null;
+            _habitatGraph = null;
             _habitatDeconstruction = null;
             _fluidPipeGraph = null;
             _gasDynamics = null;
@@ -2566,6 +2573,15 @@ namespace Hecton8.Core
         public static void RegisterLogisticsService(ILogisticsService instance)
         {
             RegisterServiceAllowSameInstance(ref _logistics, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative habitat graph flood read model.
+        /// </summary>
+        /// <param name="instance">Habitat graph service instance.</param>
+        public static void RegisterHabitatGraphService(IHabitatGraphService instance)
+        {
+            RegisterAllowSameInstance(ref _habitatGraph, instance);
         }
 
         /// <summary>
@@ -4086,6 +4102,15 @@ namespace Hecton8.Core
         public static void UnregisterLogisticsService(ILogisticsService instance)
         {
             UnregisterService(ref _logistics, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current habitat graph flood read model if the owner matches.
+        /// </summary>
+        /// <param name="instance">Service owner requesting unregistration.</param>
+        public static void UnregisterHabitatGraphService(IHabitatGraphService instance)
+        {
+            UnregisterService(ref _habitatGraph, instance);
         }
 
         /// <summary>
@@ -6595,6 +6620,7 @@ namespace Hecton8.Core
             if (serviceType == typeof(IThermodynamicsService)) return GlobalRegistryServiceSlot.ThermodynamicsService;
             if (serviceType == typeof(IFluidSim)) return GlobalRegistryServiceSlot.FluidSimulation;
             if (serviceType == typeof(ILogisticsService)) return GlobalRegistryServiceSlot.Logistics;
+            if (serviceType == typeof(IHabitatGraphService)) return GlobalRegistryServiceSlot.Logistics;
             if (serviceType == typeof(IHabitatDeconstructionSystem)) return GlobalRegistryServiceSlot.HabitatDeconstructionRuntime;
             if (serviceType == typeof(IFluidPipeGraphService)) return GlobalRegistryServiceSlot.FluidPipeGraph;
             if (serviceType == typeof(IGasDynamicsSolver)) return GlobalRegistryServiceSlot.GasDynamicsRuntime;

@@ -37,8 +37,10 @@
                        "errors":  0,
                        "firstPartyWarningLines":  0,
                        "firstPartyErrorLines":  0,
-                       "coveredCurrentSource":  true,
-                       "coverageNote":  "R186 dotnet build succeeded after R171-R185 live-churn invalidations and compile-surface repairs. R186 summary is Build succeeded, 0 Warning(s), 0 Error(s), DOTNET_EXIT_CODE=0, CS_WRITES_AFTER_START=0, CS_WRITES_AFTER_END=0. This is current local dotnet compile coverage for the sampled filesystem state. Unity Console/Play Mode/profiler/GCMonitor/player-build proof remains absent.",
+                       "coveredCurrentSource":  false,
+                       "originalSnapshotCoveredCurrentSource":  true,
+                       "coveredSnapshotSource":  true,
+                       "coverageNote":  "R186 dotnet build succeeded after R171-R185 live-churn invalidations and compile-surface repairs. R186 summary is Build succeeded, 0 Warning(s), 0 Error(s), DOTNET_EXIT_CODE=0, CS_WRITES_AFTER_START=0, CS_WRITES_AFTER_END=0. This is historical local dotnet compile coverage for the May 9 sampled filesystem state only, not current source coverage after later workspace churn. Unity Console/Play Mode/profiler/GCMonitor/player-build proof remains absent.",
                        "blockers":  [
                                         "PENDING_FINAL_UNITY_PROOF: Unity MCP/Console proof unavailable in this session",
                                         "UNITY_RUNTIME_PROOF_ABSENT: no Play Mode/profiler/GCMonitor/player-build evidence captured"

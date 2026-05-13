@@ -780,9 +780,9 @@ namespace Hecton8.Construction
             drone.DockControlP3 = drone.HomePosition;
 
             float estimate =
-                math.distance(drone.DockControlP0, drone.DockControlP1) +
-                math.distance(drone.DockControlP1, drone.DockControlP2) +
-                math.distance(drone.DockControlP2, drone.DockControlP3);
+                DockingStartForwardMeters +
+                DockingAirlockForwardMeters +
+                ApproximateDistanceNoSqrt(drone.DockControlP2 - drone.DockControlP1);
             drone.DockingPathLengthMeters = math.max(DockingMinimumPathLengthMeters, estimate);
         }
 
@@ -814,7 +814,7 @@ namespace Hecton8.Construction
                 float crossLengthSq = math.lengthsq(crossCurrent);
                 if (math.isfinite(crossLengthSq) && crossLengthSq > MinimumVectorLengthSq)
                 {
-                    float slip = math.saturate(math.sqrt(crossLengthSq) * DockingVisualSlipWeight);
+                    float slip = math.saturate(ApproximateDistanceNoSqrt(crossCurrent) * DockingVisualSlipWeight);
                     visualForward = SafeNormalize(tangent + (SafeNormalize(crossCurrent, tangent) * slip), tangent);
                 }
             }
@@ -1128,6 +1128,15 @@ namespace Hecton8.Construction
         private static bool IsFinite(float3 value)
         {
             return math.all(math.isfinite(value));
+        }
+
+        private static float ApproximateDistanceNoSqrt(float3 delta)
+        {
+            float3 absolute = math.abs(delta);
+            float maxAxis = math.cmax(absolute);
+            float minAxis = math.cmin(absolute);
+            float midAxis = (absolute.x + absolute.y + absolute.z) - maxAxis - minAxis;
+            return maxAxis + (midAxis * 0.375f) + (minAxis * 0.25f);
         }
 
         internal static int PackSpatialKey(float3 position)

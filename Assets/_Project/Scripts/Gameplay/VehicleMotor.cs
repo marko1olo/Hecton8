@@ -852,7 +852,10 @@ namespace Hecton8.Gameplay
                     projectedVelocity = Vector3.zero;
 
                 Vector3 rejectedVelocity = previousVelocity - projectedVelocity;
-                _lastBlockingImpactSpeedMetersPerSecond = math.sqrt(math.max(0f, rejectedVelocity.sqrMagnitude));
+                float rejectedVelocitySq = rejectedVelocity.sqrMagnitude;
+                _lastBlockingImpactSpeedMetersPerSecond = math.isfinite(rejectedVelocitySq) && rejectedVelocitySq > MinVectorMagnitudeSq
+                    ? rejectedVelocitySq * math.rsqrt(rejectedVelocitySq)
+                    : 0f;
                 _lastBlockingImpactPoint = blockingHit.point;
                 _lastBlockingImpactNormal = safeNormal;
                 float lostKineticEnergy = KinematicCcdMath.LostKineticEnergy(

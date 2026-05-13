@@ -76,6 +76,7 @@ namespace Hecton8.Atmosphere
         private NativeArray<float> _roomNitrogenBack;
         private NativeArray<float> _roomPressureBack;
         private NativeArray<float> _roomAmbientPressure;
+        private NativeArray<float> _roomSubmerged01;
         private NativeArray<float> _roomPlayerStress01;
         private NativeArray<float> _roomPlayerHeartRateBpm;
         private NativeArray<float> _roomTemperatureCelsius;
@@ -278,6 +279,34 @@ namespace Hecton8.Atmosphere
             return true;
         }
 
+        public bool TryApplyPlayerRoomCarbonDioxideEquivalentPressure(float carbonDioxideKPa)
+        {
+            if (_stepRunning ||
+                !RoomO2.IsCreated ||
+                !RoomCO2.IsCreated ||
+                !RoomPressure.IsCreated ||
+                !_roomCO2Back.IsCreated ||
+                !_roomPressureBack.IsCreated ||
+                _roomCount <= 0)
+                return false;
+
+            int roomId = _activePlayerRoom >= 0 ? _activePlayerRoom : 0;
+            if ((uint)roomId >= (uint)_roomCount)
+                return false;
+
+            float targetCarbonDioxide = StandardCarbonDioxideKPa + FiniteNonNegativeOrZero(carbonDioxideKPa);
+            float frontCarbonDioxide = math.max(FiniteNonNegativeOrZero(RoomCO2[roomId]), targetCarbonDioxide);
+            float backCarbonDioxide = math.max(FiniteNonNegativeOrZero(_roomCO2Back[roomId]), targetCarbonDioxide);
+            RoomCO2[roomId] = frontCarbonDioxide;
+            _roomCO2Back[roomId] = backCarbonDioxide;
+
+            float oxygen = FiniteNonNegativeOrZero(RoomO2[roomId]);
+            float nitrogen = _roomNitrogen.IsCreated ? FiniteNonNegativeOrZero(_roomNitrogen[roomId]) : StandardNitrogenKPa;
+            RoomPressure[roomId] = ResolveDaltonPressureKPa(oxygen, frontCarbonDioxide, nitrogen);
+            _roomPressureBack[roomId] = ResolveDaltonPressureKPa(oxygen, backCarbonDioxide, nitrogen);
+            return true;
+        }
+
         public bool TrySetRoomFlags(int roomId, ushort setMask, ushort clearMask)
         {
             if (_stepRunning || !_roomFlags.IsCreated || roomId < 0 || roomId >= _roomCount)
@@ -287,6 +316,15 @@ namespace Hecton8.Atmosphere
             if (_roomPlayerPresent.IsCreated && _roomPlayerPresent[roomId] != 0)
                 flags = (ushort)(flags | RoomFlagOccupied);
             _roomFlags[roomId] = flags;
+            return true;
+        }
+
+        public bool TrySetRoomSubmergedFraction(int roomId, float submerged01)
+        {
+            if (_stepRunning || !_roomSubmerged01.IsCreated || roomId < 0 || roomId >= _roomCount)
+                return false;
+
+            _roomSubmerged01[roomId] = FiniteSaturate01(submerged01);
             return true;
         }
 
@@ -341,6 +379,7 @@ namespace Hecton8.Atmosphere
             AccumulateAudit(_roomNitrogenBack, nameof(_roomNitrogenBack), ref accumulator);
             AccumulateAudit(_roomPressureBack, nameof(_roomPressureBack), ref accumulator);
             AccumulateAudit(_roomAmbientPressure, nameof(_roomAmbientPressure), ref accumulator);
+            AccumulateAudit(_roomSubmerged01, nameof(_roomSubmerged01), ref accumulator);
             AccumulateAudit(_roomPlayerStress01, nameof(_roomPlayerStress01), ref accumulator);
             AccumulateAudit(_roomPlayerHeartRateBpm, nameof(_roomPlayerHeartRateBpm), ref accumulator);
             AccumulateAudit(_roomTemperatureCelsius, nameof(_roomTemperatureCelsius), ref accumulator);
@@ -450,6 +489,7 @@ namespace Hecton8.Atmosphere
             _roomNitrogenBack = new NativeArray<float>(safeRoomCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _roomPressureBack = new NativeArray<float>(safeRoomCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _roomAmbientPressure = new NativeArray<float>(safeRoomCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _roomSubmerged01 = new NativeArray<float>(safeRoomCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _roomPlayerStress01 = new NativeArray<float>(safeRoomCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _roomPlayerHeartRateBpm = new NativeArray<float>(safeRoomCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _roomTemperatureCelsius = new NativeArray<float>(safeRoomCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
@@ -471,6 +511,7 @@ namespace Hecton8.Atmosphere
             RegisterNativeArray(_roomNitrogenBack, nameof(_roomNitrogenBack));
             RegisterNativeArray(_roomPressureBack, nameof(_roomPressureBack));
             RegisterNativeArray(_roomAmbientPressure, nameof(_roomAmbientPressure));
+            RegisterNativeArray(_roomSubmerged01, nameof(_roomSubmerged01));
             RegisterNativeArray(_roomPlayerStress01, nameof(_roomPlayerStress01));
             RegisterNativeArray(_roomPlayerHeartRateBpm, nameof(_roomPlayerHeartRateBpm));
             RegisterNativeArray(_roomTemperatureCelsius, nameof(_roomTemperatureCelsius));
@@ -482,6 +523,8 @@ namespace Hecton8.Atmosphere
             RegisterNativeArray(_bulkheadSealed, nameof(_bulkheadSealed));
             RegisterNativeArray(_telemetryRing, nameof(_telemetryRing));
             NativeMemorySentinel.RegisterNativeQueue(_toxicitySignals, ToxicitySignalSoftCapacity, NativeMemoryOwner, nameof(_toxicitySignals), NativeAllocationLifetime.Scene);
+            for (int i = 0; i < _roomCount; i++)
+                _roomTemperatureCelsius[i] = DefaultRoomTemperatureCelsius;
             PrewarmQueue(ref _toxicitySignals, ToxicitySignalSoftCapacity);
         }
 
@@ -501,6 +544,7 @@ namespace Hecton8.Atmosphere
                 _roomNitrogenBack[i] = _roomNitrogen[i];
                 _roomPressureBack[i] = RoomPressure[i];
                 _roomAmbientPressure[i] = RoomPressure[i];
+                _roomSubmerged01[i] = 0f;
                 _roomFlags[i] = 0;
                 _roomScrubberPowered[i] = 0;
                 _roomTemperatureCelsius[i] = DefaultRoomTemperatureCelsius;
@@ -548,6 +592,7 @@ namespace Hecton8.Atmosphere
                 RoomNitrogenBack = _roomNitrogenBack,
                 RoomPressureBack = _roomPressureBack,
                 RoomAmbientPressure = _roomAmbientPressure,
+                RoomSubmerged01 = _roomSubmerged01,
                 RoomPlayerStress01 = _roomPlayerStress01,
                 RoomPlayerHeartRateBpm = _roomPlayerHeartRateBpm,
                 RoomTemperatureCelsius = _roomTemperatureCelsius,
@@ -684,6 +729,7 @@ namespace Hecton8.Atmosphere
             DisposeArray(ref _roomNitrogenBack, ref disposeHandle, waitForStep);
             DisposeArray(ref _roomPressureBack, ref disposeHandle, waitForStep);
             DisposeArray(ref _roomAmbientPressure, ref disposeHandle, waitForStep);
+            DisposeArray(ref _roomSubmerged01, ref disposeHandle, waitForStep);
             DisposeArray(ref _roomPlayerStress01, ref disposeHandle, waitForStep);
             DisposeArray(ref _roomPlayerHeartRateBpm, ref disposeHandle, waitForStep);
             DisposeArray(ref _roomTemperatureCelsius, ref disposeHandle, waitForStep);
@@ -878,6 +924,7 @@ namespace Hecton8.Atmosphere
             public NativeArray<float> RoomNitrogenBack;
             public NativeArray<float> RoomPressureBack;
             [ReadOnly] public NativeArray<float> RoomAmbientPressure;
+            [ReadOnly] public NativeArray<float> RoomSubmerged01;
             [ReadOnly] public NativeArray<float> RoomPlayerStress01;
             [ReadOnly] public NativeArray<float> RoomPlayerHeartRateBpm;
             [ReadOnly] public NativeArray<float> RoomTemperatureCelsius;
@@ -996,6 +1043,12 @@ namespace Hecton8.Atmosphere
                         carbonDioxide = 0f;
                         nitrogen = FiniteNonNegativeOrZero(RoomAmbientPressure[room]);
                         telemetryFlags |= TelemetryFlagBreach;
+                    }
+
+                    if (RoomSubmerged01.IsCreated && room < RoomSubmerged01.Length)
+                    {
+                        float dryFraction01 = 1f - FiniteSaturate01(RoomSubmerged01[room]);
+                        oxygen = math.min(oxygen, StandardOxygenKPa * dryFraction01);
                     }
 
                     if (!math.isfinite(oxygen) || !math.isfinite(carbonDioxide) || !math.isfinite(nitrogen))

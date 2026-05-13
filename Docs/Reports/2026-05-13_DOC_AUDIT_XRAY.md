@@ -224,6 +224,7 @@ Active documentation manifest boundary findings:
 - `Docs/Reports/2026-05-06_ACTIVE_DOCUMENTATION_MANIFEST.json`, `2026-05-07_ACTIVE_DOCUMENTATION_MANIFEST.json`, `2026-05-08_ACTIVE_DOCUMENTATION_MANIFEST.json`, and `2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json` are generated snapshots, not evergreen authority.
 - Their count fields, `sourceCounts`, authority lists, `buildState`, and per-file `entries` are scoped to their generation timestamps only.
 - The May 9/R186 and May 11 build states do not become current compile/runtime proof after later workspace churn.
+- The May 9 manifest's `coveredCurrentSource` field was demoted to `false`; the original snapshot value is preserved as `originalSnapshotCoveredCurrentSource=true`.
 - The May 11 manifest references CodexArtifacts summary/log paths already demoted by R10 because the files are absent in the current filesystem.
 
 Action:
@@ -249,6 +250,49 @@ Action:
 
 - Promoted this to `Docs/PROJECT_STATE_STATIC_XRAY.md` as the stable gameplay-economy addendum.
 - Current verdict: the gameplay economy spine is real, but first-hour resource-loop readiness is `PENDING VERIFICATION` and likely blocked by authored data consistency before any GameObject polish matters.
+
+## Continuation R15 - 2026-05-13
+
+AI/Fauna data vs runtime-wiring findings:
+
+- Recursive static data inventory found `22` creature archetype assets under `Assets/_Project/Data/AI/CreatureArchetypes`, `22` fauna data templates under `Assets/_Project/Data/Fauna`, `108` fauna biome datasets, `13` fauna family profiles, and `6` generated proxy prefabs.
+- The `108` fauna biome datasets currently contain `432` `possibleCreatures` entries with non-null prefab references and `0` entries with `prefab: {fileID: 0}` under the actual spawn-entry field. They also contain `17` large-threat macro-zone archetype refs.
+- `FaunaDirector` is substantial runtime code: registry-backed `IFaunaSim` service registration, adaptive perf budgets, spawn ring/culling, biome/depth/zone scaling, spawn registry resolution, pool warmup, acoustic panic commands, resident data-only simulation, and dispatcher/late-frame lanes.
+- `WorldFaunaSpawnRegistry` is also real code: ordinary anchors, large-threat macro zones, runtime reef anchors, chunk/macro-zone buckets, procedural-state availability checks, and pooled anchor buckets.
+- Static script-GUID search found no serialized `FaunaDirector`, `WorldFaunaSpawnRegistry`, `FaunaRuntimeSmokeTester`, or `EcosystemRuntimeInstaller` hits in current `Assets` scenes/prefabs/assets. This is not runtime absence proof, but it does mean the current static scan cannot prove production-scene wiring.
+- `EcosystemRuntimeInstaller.EnsureRuntimeSystems()` creates `FaunaGeneticsManager`, `EcosystemHealthDirector`, and `MigrationDirector` under `__HECTON_ECOSYSTEM_RUNTIME`; it does not create `FaunaDirector` or `WorldFaunaSpawnRegistry`.
+- `GameBootstrapper.EnsureFaunaSimulationRegistered()` uses active `FaunaDirector` if one exists, but if no real fauna simulation registers, it registers `DemiurgeFaunaSimulationService.Shared`. That fallback reports ready and has `ResidentSlotCapacity = 0`, so it proves service-slot safety, not visible fauna.
+- `WorldRuntimeBootstrapAuthoring` can add/configure `WorldFaunaSpawnRegistry`, but `ConfigureFaunaDirector()` returns when no `FaunaDirector` already exists. That is editor authoring support, not proof the production scene currently owns the director.
+- `.codex-artifacts/fauna-omega-smoke-2026-05-05.log` is not a PASS artifact in the current filesystem. It reports `.codex-artifacts is not a valid directory name`, executes `FaunaRuntimeSmokeTesterRunner.RunOmegaHeadlessSmoke`, and exits with Unity return code `1` without a visible `FAUNA_OMEGA_SMOKE_RESULT` PASS line.
+
+Action:
+
+- Patched `Docs/AI_Fauna/*` to keep fauna roster/coverage useful while demoting it from runtime spawn proof.
+- Promoted the AI/Fauna data-vs-runtime-wiring boundary into `Docs/PROJECT_STATE_STATIC_XRAY.md`, this report, `Docs/README.md`, `Docs/Reports/README.md`, and `Docs/HECTON8_GLOBAL_ARCHITECTURE_MAP.md`.
+- Current verdict: AI/Fauna authored data is real and dense enough for a vertical-slice ecology pass, but visible production fauna remains `PENDING VERIFICATION` until a scene/runtime proof shows active `FaunaDirector`, active `WorldFaunaSpawnRegistry`, nonzero resident slots or active creatures, and a fresh PASS smoke/profiler artifact.
+
+## Continuation R16 - 2026-05-13
+
+Tools / PDA / first-hour interface findings:
+
+- Tool data is real and internally stronger than resource pickup data: `12` tool ItemData assets, `12` held prefabs, `12` world prefabs, and all tool ItemData `worldPrefab` refs are non-null.
+- Tool metadata has one orphan: `ToolMetadata_LogicSpanner.asset` and `LogicSpannerTool.cs` exist, but no `Item_Tool_LogicSpanner.asset`, held prefab, world prefab, catalog ref, or recipe ref was found.
+- `Player.prefab` owns the important runtime spine: `PlayerToolManager`, `PlayerPDA`, `ToolLoadoutProvisioner`, `ScanLogSystem`, `PDAExchangeSystem`, and `PlayerInteraction`.
+- `PlayerToolManager`, `PlayerTool`, `ModularEquipmentEngine`, `ScannerTool`, `ScanEvents`, `ScanLogSystem`, `PlayerInteraction`, `HectonItem`, `QuestStateManager`, and `QuestGraphEvaluator` are substantial source systems, not empty wrappers.
+- `ScannerTool.cs` is about `141 KB` and contains real scan execution, non-alloc spatial-hash contact collection, scan/discovery events, focused dispatcher raycast support, feedback, and scan-log hooks.
+- `Player.prefab` `ToolLoadoutProvisioner` is enabled with `provisionInventoryOnStart=1`, `assignCoreLoadoutOnStart=1`, and `provisionConstructionMaterialsOnStart=1`. It can grant the full tool kit and starter material on Start.
+- The provisioner starter material is root `Data_Copper` GUID `84877e24023afe648a6682f49f11defa`, the non-catalog copper asset already flagged in R14.
+- `WorldShippingContentFilter` suppresses named trial/staging scene hierarchies. Static source did not show a strip path for player-attached `ToolLoadoutProvisioner` or smoke components.
+- `Player.prefab` `PlayerPDA` has null `pdaPanel`, null `pdaCanvasGroup`, and null tab refs. `PlayerPDA.Open()` can still switch input/cursor/depth-of-field/events with no panel/tabs configured.
+- Binary scene string scans found PDA tab components in `02_HECTON_WORLD.unity` and `03_HECTON_WORLD_CREST5.unity`, so the correct finding is not "no PDA UI assets".
+- `DiegeticPDAController.cs` is the source bridge that calls `PlayerPDA.ConfigureUI(...)`, but its class string and MonoScript GUID `8f05da9f4a7a4158a04d6cc0e0f9d8c2` were not found in `_Project` scenes/prefabs.
+- `PDARuntimeInstaller` and `ProgressionRuntimeInstaller` add PDA/logbook/progression systems, but they do not add `DiegeticPDAController`.
+
+Action:
+
+- Promoted this to `Docs/PROJECT_STATE_STATIC_XRAY.md` as the stable tools/PDA/first-hour interface addendum.
+- Current verdict: tool/scan/interaction architecture is real, but first-hour truth is contaminated by startup dev provisioning and PDA bridge proof remains `PENDING VERIFICATION`.
+- Required later runtime route: clean start with no dev all-tools grant -> acquire/craft/equip scanner -> open visible PDA shell -> scan resource/copper -> quest/log/inventory state updates.
 
 ## Broken Evidence References
 

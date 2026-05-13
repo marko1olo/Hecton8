@@ -150,11 +150,24 @@ namespace Hecton8.SaveSystem
                 dto.qualityMilli == null ||
                 dto.qualityMilli.Length < InventoryDTO.MaxCells ||
                 dto.lastUpdateUnixSeconds == null ||
-                dto.lastUpdateUnixSeconds.Length < InventoryDTO.MaxCells)
+                dto.lastUpdateUnixSeconds.Length < InventoryDTO.MaxCells ||
+                dto.itemDurabilityRle == null ||
+                dto.itemDurabilityRle.Length < InventoryDTO.MaxDurabilityRleBytes)
             {
                 dto.EnsureCapacity();
                 changed = true;
                 steps.Add("inventory SOA capacity repaired");
+            }
+
+            int clampedDurabilityRleLength = math.clamp(
+                dto.itemDurabilityRleLength,
+                0,
+                dto.itemDurabilityRle != null ? dto.itemDurabilityRle.Length : 0);
+            if (clampedDurabilityRleLength != dto.itemDurabilityRleLength)
+            {
+                dto.itemDurabilityRleLength = clampedDurabilityRleLength;
+                changed = true;
+                steps.Add("inventory durability RLE length clamped");
             }
 
             int capacity = math.min(

@@ -10,6 +10,9 @@ Verification: PENDING VERIFICATION
 - Current manifest: `Docs/Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json`.
 - Current visual-realistic-fake doctrine: `Docs/Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md`.
 - May 13 DOC_AUDIT override: the cited May 11 compile artifact is absent from the current filesystem; treat the May 11 compile-success line as stale report text until restored or replaced. Runtime, Unity Console, Play Mode, profiler, GCMonitor, player build, frame-time, memory, import, scene wiring, and visual quality remain `PENDING VERIFICATION`.
+- May 13 DOC_AUDIT R15 fauna override: roster IDs currently align with a real static data set (`22` recursive creature archetype assets, `22` fauna data templates, `108` fauna biome datasets, `13` fauna family profiles, `6` generated proxy prefabs), but this document's encoding-damaged prose is not production writing, runtime truth, or scene-wiring proof.
+- R15 runtime boundary: `FaunaDirector` contains a real registry-backed `IFaunaSim` owner when active, but current static scene/prefab/asset GUID search did not prove it is serialized into production content. Bootstrap can fall back to `DemiurgeFaunaSimulationService.Shared`, which reports ready but has `ResidentSlotCapacity = 0`; that fallback proves service-slot safety, not visible creatures.
+- R15 smoke boundary: `.codex-artifacts/fauna-omega-smoke-2026-05-05.log` is a failed/invalid artifact in the current filesystem, not a PASS.
 - Existing May 4 boundary sections in this file are historical unless they describe local system intent not contradicted by newer reports.
 - Unity import, Unity Console, Play Mode, profiler, GCMonitor, player build, frame-time, memory, scene wiring, and visual quality remain `PENDING VERIFICATION`.
 ## 2026-05-04 Current-State Boundary

@@ -1,6 +1,7 @@
 using System;
 using Hecton8.Ecosystem;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.World;
 using Unity.Collections;
 using Unity.Mathematics;
@@ -19,7 +20,7 @@ namespace Hecton8.AI
         public float MaxHealth => _maxHealth;
         public float HealthNormalized => _maxHealth > 0.001f ? CurrentHealth / _maxHealth : 0f;
         public bool IsDead => _isDead || _currentHealth <= 0.001f;
-        public bool IsSleeping => _sensorSuite.distSqrToPlayer > _sensorSuite.sleepDistance * _sensorSuite.sleepDistance;
+        public bool IsSleeping => _foveatedSimulationTier == FoveatedSimulationTier.Frozen || _sensorSuite.isSleeping;
         public bool UsesPackHuntBehavior => _archetype != null && _archetype.usePackHunt;
         public bool UsesFeintRushBehavior => _archetype != null && _archetype.useFeintRush;
         public LeviathanEncounterType LeviathanEncounter => _archetype != null

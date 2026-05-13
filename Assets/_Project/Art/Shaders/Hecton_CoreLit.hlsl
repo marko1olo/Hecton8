@@ -4,9 +4,6 @@
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 
-#pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON _ADDITIONAL_LIGHT_SHADOWS
-#pragma multi_compile _ _MATH_LOD_LOW _MATH_LOD_HIGH
-
 #define HECTON_CORE_LIT_DECLARE_VERTEX_INPUT_INSTANCE_ID UNITY_VERTEX_INPUT_INSTANCE_ID
 #define HECTON_CORE_LIT_DECLARE_VERTEX_OUTPUT_STEREO UNITY_VERTEX_OUTPUT_STEREO
 #define HECTON_CORE_LIT_SETUP_INSTANCE_ID(input) UNITY_SETUP_INSTANCE_ID(input)
@@ -59,6 +56,8 @@ float4 _HectonGlowPointParams; // x=count, y=sonar pulse gain, z/w=reserved
 float4 _HectonProjectedCausticsWorldRect;
 float4 _HectonProjectedCausticsParams;
 float4 _HectonProjectedCausticsColor;
+float4 _BrineColor;
+float _BrineHeightY;
 float4 _FinalGiantAbyssLight;
 float4 _SunDirection;
 float4 _AegirDirection;
@@ -1166,6 +1165,9 @@ float HectonCoreLitEvaluateProjectedCausticsMaskFromUnitNormal(float3 positionWS
     if (_HectonProjectedCausticsParams.x <= 0.0001)
         return 0.0;
 
+    if (_BrineColor.a > 0.0001 && positionWS.y < _BrineHeightY)
+        return 0.0;
+
     if (normalizedNormalWS.y <= 0.0)
         return 0.0;
 
@@ -1386,14 +1388,14 @@ float HectonCoreLitEvaluateActiveSonarTriplanarGrid(float3 positionWS, float gri
     float gridYZ = 1.0 - saturate(min(cellYZ.x, cellYZ.y) * 26.0);
     float gridZX = 1.0 - saturate(min(cellZX.x, cellZX.y) * 26.0);
     float grid = max(max(gridXY, gridYZ), gridZX);
-    float noise = HectonCoreLitValueNoise2(stablePosition.xz * 0.037 + stablePosition.y * 0.011);
-    return saturate(0.62 + grid * 0.55 + (noise - 0.5) * 0.18);
+    float scanNoise = abs(frac(dot(stablePosition, float3(0.037, 0.011, 0.029))) - 0.5) * 2.0;
+    return saturate(0.62 + grid * 0.55 + (scanNoise - 0.5) * 0.18);
 #endif
 }
 
 float HectonCoreLitEvaluateActiveSonarGeoRing(float3 positionWS)
 {
-    int pingCount = clamp((int)round(_ActiveSonarGeoParams.x), 0, HECTON_ACTIVE_SONAR_MAX_PINGS);
+    int pingCount = clamp((int)_ActiveSonarGeoParams.x, 0, HECTON_ACTIVE_SONAR_MAX_PINGS);
     if (pingCount <= 0)
         return 0.0;
 

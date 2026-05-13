@@ -16,9 +16,11 @@ using System.Runtime.InteropServices;
 using Hecton8.Bootstrap;
 using Hecton8.Caves;
 using Hecton8.Core;
+using Hecton8.Core.Signals;
 using Hecton8.Gameplay;
 using Hecton8.Inventory;
 using Hecton8.Modding;
+using Hecton8.Optimization;
 using Hecton8.Quest;
 using Hecton8.UI;
 using Hecton8.World;
@@ -46,8 +48,10 @@ namespace Hecton8.SaveSystem
         private const uint AsyncPersistenceSourceHash = 0x41505953u; // APYS
         private const uint SaveRecoveredMessageHash = 0x53565243u; // SVRC
         private const uint SaveRecoveredContextHash = 0x42414B52u; // BAKR
+        private const uint SaveSynchronizedMessageHash = 0x53565359u; // SVSY
         private const uint SaveDurationTelemetryHash = 0x5356444Du; // SVDM
         private const uint SaveCompressedSizeTelemetryHash = 0x53564342u; // SVCB
+        private const uint ScreenshotSizeKbTelemetryHash = 0x53534B42u; // SSKB
         private const float SafeAupSnapGroundPaddingMeters = 0.28f;
         private const float SafeAupSnapMinimumLiftMeters = 0.35f;
         private const string CriticalSectorCorruptionMessage = "CRITICAL ERROR: LOCALIZED DATA CORRUPTION. TERRAIN RE-INITIALIZED.";
@@ -768,7 +772,7 @@ namespace Hecton8.SaveSystem
             GlobalSignals.Publish(in resume);
         }
 
-        private void StageSnapshotHeader(
+        private unsafe void StageSnapshotHeader(
             uint operationId,
             string slotName,
             NativeArray<PersistentWorldDeltaRecord> persistentWorldDeltas,
@@ -802,6 +806,7 @@ namespace Hecton8.SaveSystem
             long durationMs,
             long compressedSizeBytes,
             int rawPayloadBytes,
+            int screenshotBytes,
             uint flags)
         {
             if (!_saveTelemetryRing.IsCreated)
@@ -818,7 +823,7 @@ namespace Hecton8.SaveSystem
                 RawPayloadBytes = SaturateToUInt(rawPayloadBytes),
                 Flags = flags,
                 SlotHash = slotHash,
-                Reserved = 0u
+                Reserved = SaturateToUInt(BytesToKilobytesCeil(screenshotBytes))
             };
 
             index++;
@@ -828,8 +833,18 @@ namespace Hecton8.SaveSystem
 
             float durationScalar = durationMs > 0L ? (float)math.min(durationMs, int.MaxValue) : 0f;
             float compressedScalar = compressedSizeBytes > 0L ? (float)math.min(compressedSizeBytes, int.MaxValue) : 0f;
+            float screenshotScalar = screenshotBytes > 0 ? BytesToKilobytesCeil(screenshotBytes) : 0f;
             GlobalTelemetryBus.PublishPerformanceWarning(SaveDurationTelemetryHash, slotHash, durationScalar);
             GlobalTelemetryBus.PublishPerformanceWarning(SaveCompressedSizeTelemetryHash, slotHash, compressedScalar);
+            GlobalTelemetryBus.PublishPerformanceWarning(ScreenshotSizeKbTelemetryHash, slotHash, screenshotScalar);
+        }
+
+        private static int BytesToKilobytesCeil(int bytes)
+        {
+            if (bytes <= 0)
+                return 0;
+
+            return (bytes + 1023) >> 10;
         }
 
         private void DumpSaveBlackBox()
@@ -881,6 +896,20 @@ namespace Hecton8.SaveSystem
                 SourceId = AsyncPersistenceSourceHash,
                 Frame = unchecked((uint)Time.frameCount),
                 Severity = 1,
+                Flags = 0
+            };
+            GlobalSignals.Publish(in notification);
+        }
+
+        private static void PublishSaveSynchronizedNotification(string slotName)
+        {
+            HUDNotificationSignal notification = new HUDNotificationSignal
+            {
+                MessageHash = SaveSynchronizedMessageHash,
+                ContextHash = ComputeSlotHash(slotName),
+                SourceId = AsyncPersistenceSourceHash,
+                Frame = unchecked((uint)Time.frameCount),
+                Severity = 0,
                 Flags = 0
             };
             GlobalSignals.Publish(in notification);
@@ -1139,7 +1168,8 @@ namespace Hecton8.SaveSystem
                 return;
             }
 
-            SaveThumbnailSystem.CaptureThumbnail(slotName);
+            SaveThumbnailSystem.CaptureTicket thumbnailTicket =
+                SaveThumbnailSystem.CaptureThumbnailForSave(slotName, slotIndex, operationId);
             _isBusy = true;
             SaveEvents.RaiseSaveStarted(slotName);
             PublishSaveStatus(slotIndex, operationId, SaveStatusSignal.InProgress, 0.05f, 0u);
@@ -1261,7 +1291,16 @@ namespace Hecton8.SaveSystem
                 long compressionPipelineElapsedTicks = Stopwatch.GetTimestamp() - compressionPipelineStartTicks;
                 await Awaitable.MainThreadAsync();
                 RegisterCompressionPipelineElapsed(compressionPipelineElapsedTicks, in frameData);
-                RecordAsyncPersistenceTelemetry(operationId, slotName, totalTimer.ElapsedMilliseconds, compressedSizeBytes, rawPayloadLength, 0u);
+                SaveThumbnailSystem.CaptureCompletion thumbnailCompletion =
+                    await SaveThumbnailSystem.WaitForCompletionAsync(thumbnailTicket, destroyCancellationToken);
+                RecordAsyncPersistenceTelemetry(
+                    operationId,
+                    slotName,
+                    totalTimer.ElapsedMilliseconds,
+                    compressedSizeBytes,
+                    rawPayloadLength,
+                    thumbnailCompletion.ByteLength,
+                    thumbnailCompletion.Succeeded ? 0u : 2u);
                 PublishSaveCompleted(slotIndex, operationId, totalTimer.ElapsedMilliseconds, compressedSizeBytes, succeeded: true);
                 PublishSaveStatus(slotIndex, operationId, SaveStatusSignal.Completed, 1f, 0u);
                 RequestVramAbortGcIfNeeded();
@@ -1276,6 +1315,7 @@ namespace Hecton8.SaveSystem
                 LastOperationSucceeded = true;
                 LogInfo($"[SaveManager] Saved '{slotName}' (XXH3-64: {metadata.Checksum}) in {totalTimer.ElapsedMilliseconds}ms");
                 SaveEvents.RaiseSaveCompleted(slotName);
+                PublishSaveSynchronizedNotification(slotName);
             }
             catch (Exception ex)
             {
@@ -1286,7 +1326,7 @@ namespace Hecton8.SaveSystem
                     snapshotPauseActive = false;
                 }
 
-                RecordAsyncPersistenceTelemetry(operationId, slotName, totalTimer.ElapsedMilliseconds, 0L, 0, 1u);
+                RecordAsyncPersistenceTelemetry(operationId, slotName, totalTimer.ElapsedMilliseconds, 0L, 0, 0, 1u);
                 PublishSaveCompleted(slotIndex, operationId, totalTimer.ElapsedMilliseconds, 0L, succeeded: false);
                 PublishSaveStatus(slotIndex, operationId, SaveStatusSignal.Failed, 1f, 1u);
                 DumpSaveBlackBox();

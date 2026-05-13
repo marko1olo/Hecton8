@@ -1534,13 +1534,15 @@ namespace Hecton8.Construction
 
                 float3 p0 = IsFiniteFloat3(drone.DockControlP0) ? drone.DockControlP0 : drone.Position;
                 float3 p3 = IsFiniteFloat3(drone.DockControlP3) ? drone.DockControlP3 : drone.HomePosition;
-                Vector3 origin = ToVector3(p0);
-                Vector3 delta = ToVector3(p3 - p0);
-                float length = delta.magnitude;
-                if (!IsFiniteVector(origin) || !IsFiniteVector(delta) || length <= DockingMinimumProbeDistanceMeters)
+                float3 delta = p3 - p0;
+                float lengthSq = math.lengthsq(delta);
+                if (!IsFiniteFloat3(p0) || !IsFiniteFloat3(delta) || !math.isfinite(lengthSq) || lengthSq <= DockingMinimumProbeDistanceMeters * DockingMinimumProbeDistanceMeters)
                     continue;
 
-                Vector3 direction = delta * (1f / length);
+                float lengthInv = math.rsqrt(lengthSq);
+                float length = lengthSq * lengthInv;
+                Vector3 origin = ToVector3(p0);
+                Vector3 direction = ToVector3(delta * lengthInv);
                 float probeDistance = Mathf.Max(
                     DockingMinimumProbeDistanceMeters,
                     (length * DockingObstacleProbeFraction) - DockingObstacleProbeStartOffsetMeters);

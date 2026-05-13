@@ -143,7 +143,6 @@ namespace Hecton8.Core
             AssertOffset<PersistentWorldItemRecord>(nameof(PersistentWorldItemRecord.ChunkId), 48);
             AssertOffset<PersistentWorldItemRecord>(nameof(PersistentWorldItemRecord.ItemPersistentIdHash), 60);
             AssertOffset<PersistentWorldItemRecord>(nameof(PersistentWorldItemRecord.ItemPersistentId), 68);
-            AssertOffset<PersistentWorldItemRecord>("_packedQuantityAndFlags", 196);
             AssertOffset<PersistentWorldItemRecord>(nameof(PersistentWorldItemRecord.InstanceUid), 200);
 
             AssertSize<PersistentWorldCompactDeltaRecord>(16);

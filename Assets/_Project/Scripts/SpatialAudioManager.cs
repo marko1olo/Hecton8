@@ -1241,6 +1241,7 @@ namespace Hecton8.Audio
             Vector3 audiblePosition = position;
             Vector3 audibleAbsolutePosition = sourceAbsolutePosition;
             AbsoluteUniversePosition audibleAup = sourceAup;
+            AcousticPathResult acousticPortalResult = default;
             bool hasAcousticPortalPath = hasListener &&
                 TryResolveAcousticPortalPath(
                     position,
@@ -1248,7 +1249,7 @@ namespace Hecton8.Audio
                     listenerRight,
                     in sourceAup,
                     in listenerAup,
-                    out AcousticPathResult acousticPortalResult);
+                    out acousticPortalResult);
             if (hasAcousticPortalPath)
             {
                 audibleAup = ToAbsoluteUniversePosition(in acousticPortalResult.LastPortalAup);
@@ -1271,11 +1272,13 @@ namespace Hecton8.Audio
             source.enabled = true;
 
             // â”€â”€ ÐŸÐ¾Ð·Ð¸Ñ†Ð¸Ð¾Ð½Ð¸Ñ€Ð¾Ð²Ð°Ð½Ð¸Ðµ â”€â”€
-            source.transform.position = position;
+            source.transform.position = audiblePosition;
 
             // â”€â”€ ÐÐ°ÑÑ‚Ñ€Ð¾Ð¹ÐºÐ° â”€â”€
             source.clip = clip;
             float clampedVolume = math.saturate(volume);
+            if (hasAcousticPortalPath)
+                clampedVolume *= acousticPortalResult.Transmission01;
             source.volume = clampedVolume;
             float clampedPitch = math.clamp(pitch, 0.1f, 3f);
             _baseVolumes[index] = clampedVolume;
@@ -1453,6 +1456,7 @@ namespace Hecton8.Audio
             Vector3 audiblePosition = position;
             Vector3 audibleAbsolutePosition = sourceAbsolutePosition;
             AbsoluteUniversePosition audibleAup = sourceAup;
+            AcousticPathResult acousticPortalResult = default;
             bool hasAcousticPortalPath = hasListener &&
                 TryResolveAcousticPortalPath(
                     position,
@@ -1460,7 +1464,7 @@ namespace Hecton8.Audio
                     listenerRight,
                     in sourceAup,
                     in listenerAup,
-                    out AcousticPathResult acousticPortalResult);
+                    out acousticPortalResult);
             if (hasAcousticPortalPath)
             {
                 audibleAup = ToAbsoluteUniversePosition(in acousticPortalResult.LastPortalAup);
@@ -2075,11 +2079,9 @@ namespace Hecton8.Audio
             AudioSource source = _pool[index];
             ResetWorldSourceState(index, true);
             source.enabled = true;
-            source.transform.position = audiblePosition;
+            source.transform.position = position;
             source.clip = clip;
             float clampedVolume = math.saturate(volume);
-            if (hasAcousticPortalPath)
-                clampedVolume *= acousticPortalResult.Transmission01;
             source.volume = clampedVolume;
             float clampedPitch = math.clamp(pitch, 0.1f, 3f);
             _baseVolumes[index] = clampedVolume;
@@ -3408,7 +3410,7 @@ namespace Hecton8.Audio
             }
 
             if (result.RoomVolumeCubicMeters > SabineMinimumRoomVolumeCubicMeters)
-                source.reverbZoneMix = math.max(source.reverbZoneMix, ResolveAcousticPortalReverbMix(result.RoomVolumeCubicMeters));
+                source.reverbZoneMix = ResolveAcousticPortalReverbMix(result.RoomVolumeCubicMeters);
         }
 
         private static float ResolveAcousticPortalReverbMix(float roomVolumeCubicMeters)
@@ -3676,9 +3678,11 @@ namespace Hecton8.Audio
                         flags |= AcousticPortalFlags.SealedBulkhead;
                     }
 
+                    AcousticPortalNode localNode = _acousticPortalNodes[localIndex];
+                    AcousticPortalNode destinationNode = _acousticPortalNodes[destinationLocal];
                     float distance = AcousticAup.DistanceMeters(
-                        in _acousticPortalNodes[localIndex].Position,
-                        in _acousticPortalNodes[destinationLocal].Position);
+                        in localNode.Position,
+                        in destinationNode.Position);
                     if ((!math.isfinite(distance) || distance <= 0.001f) &&
                         edgeResistance.IsCreated &&
                         (uint)graphEdgeIndex < (uint)edgeResistance.Length)

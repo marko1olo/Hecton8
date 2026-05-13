@@ -1589,10 +1589,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Dev.ToolLoadoutProvisioner
   playerInventory: {fileID: 8889624962428220854}
   toolManager: {fileID: 3954223694506301739}
-  provisionInventoryOnStart: 1
-  assignCoreLoadoutOnStart: 1
+  provisionInventoryOnStart: 0
+  assignCoreLoadoutOnStart: 0
   holsterBeforeAssigning: 1
-  provisionConstructionMaterialsOnStart: 1
+  provisionConstructionMaterialsOnStart: 0
   startupPreset: {fileID: 0}
   coreQuickSlotPrefabs:
   - {fileID: 6235089691884310430, guid: 05435af412193ed4db5fc75a2598b92e, type: 3}

@@ -10,6 +10,9 @@ using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using UnityEngine;
 using BiomeChangedSignal = Hecton8.Core.Signals.BiomeChangedSignal;
+using CameraFrustumSignal = Hecton8.Core.Signals.CameraFrustumSignal;
+using CameraPositionSignal = Hecton8.Core.Signals.CameraPositionSignal;
+using CombatDamageSignal = Hecton8.Core.Signals.CombatDamageSignal;
 using FocusBrokenSignal = Hecton8.Core.Signals.FocusBrokenSignal;
 using MixerStateSignal = Hecton8.Core.Signals.MixerStateSignal;
 using NarrativeFocusSignal = Hecton8.Core.Signals.NarrativeFocusSignal;
@@ -565,8 +568,12 @@ namespace Hecton8.Core
         private const int CameraPositionSignalCapacity = 8;
         private const int CameraFrustumSignalCapacity = 8;
         private const int ItemDecaySignalCapacity = 64;
+        private const int InventoryCommandSignalCapacity = 16;
+        private const int InventoryChangedSignalCapacity = 64;
+        private const int ItemDurabilityChangedSignalCapacity = 64;
         private const int ItemAcquiredSignalCapacity = 128;
         private const int RadiationDoseSignalCapacity = 64;
+        private const int TemperatureChangedSignalCapacity = 64;
         private const int ResourceDepletionDeltaSignalCapacity = 64;
         private const int LightLevelSignalCapacity = 64;
         private const int SubmarineLightsChangedSignalCapacity = 64;
@@ -1157,8 +1164,10 @@ namespace Hecton8.Core
             ValidateSignalSize<BulletTimeVisualSignal>(32);
             ValidateSignalSize<WeatherStrengthSignal>(32);
             ValidateSignalSize<ItemDecaySignal>(64);
+            ValidateSignalSize<ItemDurabilityChangedSignal>(32);
             ValidateSignalSize<ItemAcquiredSignal>(64);
             ValidateSignalSize<RadiationDoseSignal>(64);
+            ValidateSignalSize<TemperatureChangedSignal>(64);
             ValidateSignalSize<ResourceDepletionDeltaSignal>(32);
             ValidateSignalSize<LightLevelSignal>(32);
             ValidateSignalSize<SubmarineLightsChangedSignal>(80);
@@ -1379,6 +1388,7 @@ namespace Hecton8.Core
         {
             EnsureInitialized();
             _brownoutSignals.Enqueue(signal);
+            SignalBus<BrownoutSignal>.Push(in signal);
         }
 
         /// <summary>Queues one ecosystem debris spawn packet from the main thread.</summary>
@@ -1522,6 +1532,7 @@ namespace Hecton8.Core
             _latestAcousticPingSignal = signal;
             AdvanceSignalSequence(ref _latestAcousticPingSignalSequence);
             _acousticPingSignals.Enqueue(signal);
+            SignalBus<AcousticPingSignal>.Push(in signal);
         }
 
         /// <summary>Queues one movement acoustic packet from the main thread.</summary>
@@ -1673,6 +1684,13 @@ namespace Hecton8.Core
         {
             EnsureInitialized();
             _hudNotificationSignals.Enqueue(signal);
+        }
+
+        /// <summary>Queues one inventory item durability update packet.</summary>
+        public static void Publish(in ItemDurabilityChangedSignal signal)
+        {
+            EnsureInitialized();
+            SignalBus<ItemDurabilityChangedSignal>.Push(in signal);
         }
 
         /// <summary>Queues one storage IO backpressure scalar packet from the streaming service.</summary>
@@ -2204,6 +2222,14 @@ namespace Hecton8.Core
             SignalBus<StreamingTurbulenceSignal>.EnsureInitialized();
             SignalBus<SwarmDispersedSignal>.Configure(SwarmDispersedSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(SwarmDispersedSignal)));
             SignalBus<SwarmDispersedSignal>.EnsureInitialized();
+            SignalBus<InventoryCommandSignal>.Configure(InventoryCommandSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(InventoryCommandSignal)));
+            SignalBus<InventoryCommandSignal>.EnsureInitialized();
+            SignalBus<InventoryChangedSignal>.Configure(InventoryChangedSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(InventoryChangedSignal)));
+            SignalBus<InventoryChangedSignal>.EnsureInitialized();
+            SignalBus<ItemDurabilityChangedSignal>.Configure(ItemDurabilityChangedSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(ItemDurabilityChangedSignal)));
+            SignalBus<ItemDurabilityChangedSignal>.EnsureInitialized();
+            SignalBus<TemperatureChangedSignal>.Configure(TemperatureChangedSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(TemperatureChangedSignal)));
+            SignalBus<TemperatureChangedSignal>.EnsureInitialized();
             SignalBus<CullingOverloadSignal>.Configure(CullingOverloadSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(CullingOverloadSignal)));
             SignalBus<CullingOverloadSignal>.EnsureInitialized();
         }
@@ -2460,6 +2486,51 @@ namespace Hecton8.Core.Signals
         [FieldOffset(16)] public uint Frame;
         [FieldOffset(20)] public byte Channel;
         [FieldOffset(21)] public byte Flags;
+    }
+
+    public static class InventoryCommandSignalCommands
+    {
+        public const byte Sort = 1;
+    }
+
+    /// <summary>Inventory command lane payload. Size: 32 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct InventoryCommandSignal : ISignal
+    {
+        [FieldOffset(0)] public uint InventoryHash;
+        [FieldOffset(4)] public uint Frame;
+        [FieldOffset(8)] public uint Sequence;
+        [FieldOffset(12)] public byte Command;
+        [FieldOffset(13)] public byte Flags;
+    }
+
+    /// <summary>Inventory mutation lane payload. Size: 32 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct InventoryChangedSignal : ISignal
+    {
+        [FieldOffset(0)] public uint InventoryHash;
+        [FieldOffset(4)] public uint Revision;
+        [FieldOffset(8)] public uint Frame;
+        [FieldOffset(12)] public ushort OccupiedCells;
+        [FieldOffset(14)] public byte Flags;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct ItemDurabilityChangedSignal : ISignal
+    {
+        public const byte ReasonCorrosion = 1;
+        public const byte ReasonRepair = 2;
+        public const byte ReasonBreak = 3;
+
+        [FieldOffset(0)] public uint InventoryHash;
+        [FieldOffset(4)] public uint ItemHash;
+        [FieldOffset(8)] public float Durability01;
+        [FieldOffset(12)] public float AverageEquippedDurability01;
+        [FieldOffset(16)] public uint Frame;
+        [FieldOffset(20)] public ushort SlotIndex;
+        [FieldOffset(22)] public byte Reason;
+        [FieldOffset(23)] public byte Flags;
+        [FieldOffset(24)] public uint BiomeHash;
     }
 
     /// <summary>Resource-to-inventory yield signal. Size: 64 bytes.</summary>

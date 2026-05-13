@@ -56,7 +56,7 @@ namespace Hecton8.Dev
                 ContainsAll(thumbnailSystem, "Extension = \".jpg\"", "EncodeNativeArrayToJPG", "Awaitable.BackgroundThreadAsync", "NativeMemorySentinel.RegisterNativeArray") &&
                 ContainsAll(thumbnailSystem, "MinPoseCaptureDistanceMeters = 5f", "MinPoseCaptureAngleDegrees = 5f", "MinPoseCaptureQuaternionDot", "HasCapturePoseChanged", "delta.sqrMagnitude > MinPoseCaptureDistanceSq", "Quaternion.Dot") &&
                 ContainsAll(captureFeature, "RequestAsyncReadback", "SaveThumbnailSystem.ReadbackCompletedCallback") &&
-                SourceIndex(saveManager, "SaveThumbnailSystem.CaptureThumbnail(slotName);") <
+                SourceIndex(saveManager, "SaveThumbnailSystem.CaptureThumbnailForSave(slotName, slotIndex, operationId)") <
                 SourceIndex(saveManager, "SaveEvents.RaiseSaveStarted(slotName);");
 
             bool loadingStagePass =
@@ -205,7 +205,7 @@ namespace Hecton8.Dev
                 CountOccurrences(thumbnailSystem, "SaveManager.TryResolveSafeSlotName(slotName, out slotName)") >= 4 &&
                 ContainsAll(thumbnailSystem, "AsyncWriteManager.WriteAll(tempPath, dataPtr, encodedJpg.Length, out string writeError)", "throw new IOException(writeError);", "bool encodedJpgRegistered = false", "encodedJpgRegistered = true", "File.Move(tempPath, path);", "await Awaitable.MainThreadAsync();") &&
                 ContainsAll(saveSidecarStorage, "NativeTempMemoryLifetime = NativeAllocationLifetime.Temp", "RegisterTempBuffer(buffer, \"metadataWriteBuffer\")", "RegisterTempBuffer(buffer, \"metadataReadBuffer\")", "RegisterTempBuffer(buffer, \"maintenanceWriteBuffer\")", "RegisterTempBuffer(buffer, \"maintenanceReadBuffer\")", "NativeMemorySentinel.RegisterNativeArray(buffer, NativeMemoryOwner, label, NativeTempMemoryLifetime)", "NativeMemorySentinel.UnregisterNativeArray(buffer)") &&
-                ContainsAll(saveSlotThumbnail, "SaveManager.IsSafeSlotName(slotName)", "SaveThumbnailSystem.CaptureThumbnail(slotName, captureCamera);", "SaveThumbnailSystem.LoadThumbnail(slotName)") &&
+                ContainsAll(saveSlotThumbnail, "SaveManager.IsSafeSlotName(slotName)", "SaveThumbnailSystem.CaptureThumbnail(slotName, captureCamera);", "SaveThumbnailSystem.LoadThumbnailTexture(slotName)") &&
                 SourceIndex(thumbnailSystem, "slotName + Extension") == int.MaxValue &&
                 SourceIndex(thumbnailSystem, "slotName + LegacyExtension") == int.MaxValue &&
                 SourceIndex(thumbnailSystem, "new FileStream(tempPath") == int.MaxValue &&

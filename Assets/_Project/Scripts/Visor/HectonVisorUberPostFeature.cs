@@ -392,6 +392,7 @@ namespace Hecton8.Visor
             internal static readonly int LocalTemperatureGlobalId = Shader.PropertyToID("_LocalTemperature");
             internal static readonly int AmbientPressureGlobalId = Shader.PropertyToID("_AmbientPressure");
             internal static readonly int FrequencyTuningErrorGlobalId = Shader.PropertyToID("_HectonFrequencyTuningError01");
+            internal static readonly int LightShaftParamsId = Shader.PropertyToID("_HectonLightShaftParams");
         }
 
         [SerializeField] private FeatureSettings settings = new FeatureSettings(); // COLD ALLOC: FeatureSettings[1] - serialized renderer feature settings - owner: HectonVisorUberPostFeature
@@ -482,6 +483,7 @@ namespace Hecton8.Visor
                 Sanitize01(Shader.GetGlobalFloat(ShaderConstants.VrComfortVignette01Id)),
                 Sanitize01(Shader.GetGlobalFloat(ShaderConstants.SomaticComfortVignetteId)));
             Vector4 vrComfortJerkState = SanitizeVrComfortJerkState(Shader.GetGlobalVector(ShaderConstants.VrComfortJerkStateId));
+            float lightShaftActiveCount = math.max(0f, SanitizeFinite(Shader.GetGlobalVector(ShaderConstants.LightShaftParamsId).x, 0f));
             float bulletTimeVisual01 = lowTier ? 0f : Sanitize01(GlobalSignals.BulletTimeVisualIntensity01);
             float playerStress = math.saturate(math.max(frequencyTuningError01, math.max(globalStress, math.max(hullStress, 1f - healthFraction))));
             playerStress = math.max(playerStress, bulletTimeVisual01);
@@ -501,6 +503,7 @@ namespace Hecton8.Visor
                 math.max(vrComfortJerkState.x, vrComfortJerkState.y) > 0.001f ||
                 statusMask != 0u ||
                 ambientPressure > 1.001f ||
+                lightShaftActiveCount > 0.001f ||
                 frequencyTuningError01 > 0.001f ||
                 math.abs(localTemperature) > TemperatureActivityThreshold ||
                 settings.lensDirtTexture != null;

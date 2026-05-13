@@ -297,6 +297,7 @@ namespace Hecton8.Construction
         internal NativeParallelMultiHashMap<int, HabitatFloodConnection> RoomConnections => _roomConnections;
         internal int FloodedRoomCount => _floodedRoomCount;
         internal float BaseTotalStress => _baseTotalStress;
+        internal uint FloodStateSequence => _floodBlackBoxStateHash;
         internal LogisticsNetworkGraph Graph => _graph;
 
         internal bool TryGetAcousticNodePosition(int nodeIndex, out float3 position)
@@ -307,6 +308,68 @@ namespace Hecton8.Construction
 
             position = _moduleBuffer[nodeIndex].Position;
             return math.all(math.isfinite(position));
+        }
+
+        internal bool TryResolveRoomWaterline(
+            Vector3 runtimePosition,
+            int cachedRoomId,
+            out HabitatRoomWaterlineSnapshot snapshot)
+        {
+            snapshot = default;
+            if (!math.all(math.isfinite((float3)runtimePosition)) || _moduleBuffer == null)
+                return false;
+
+            if (TryResolveCachedRoomWaterline(runtimePosition, cachedRoomId, out snapshot))
+                return true;
+
+            int roomLimit = math.min(math.max(0, _nodeCount), _moduleBuffer.Count);
+            for (int roomId = 0; roomId < roomLimit; roomId++)
+            {
+                if (roomId == cachedRoomId)
+                    continue;
+
+                BaseModule baseModule = _moduleBuffer[roomId].BaseModule;
+                if (baseModule == null || !baseModule.isActiveAndEnabled)
+                    continue;
+
+                if (!baseModule.TryContainsInteriorRuntimePoint(runtimePosition))
+                    continue;
+
+                return TryGetRoomWaterline(roomId, out snapshot);
+            }
+
+            return false;
+        }
+
+        internal bool TryGetRoomWaterline(int roomId, out HabitatRoomWaterlineSnapshot snapshot)
+        {
+            snapshot = default;
+            if (_moduleBuffer == null || (uint)roomId >= (uint)_moduleBuffer.Count)
+                return false;
+
+            BaseModule baseModule = _moduleBuffer[roomId].BaseModule;
+            if (baseModule == null || !baseModule.isActiveAndEnabled)
+                return false;
+
+            float fill01 = ResolveAuthoritativeRoomWaterLevel01(roomId, baseModule);
+            return baseModule.TryBuildRoomWaterlineSnapshot(roomId, fill01, _floodBlackBoxStateHash, out snapshot);
+        }
+
+        private bool TryResolveCachedRoomWaterline(
+            Vector3 runtimePosition,
+            int cachedRoomId,
+            out HabitatRoomWaterlineSnapshot snapshot)
+        {
+            snapshot = default;
+            if (cachedRoomId < 0 || _moduleBuffer == null || cachedRoomId >= _moduleBuffer.Count)
+                return false;
+
+            BaseModule baseModule = _moduleBuffer[cachedRoomId].BaseModule;
+            if (baseModule == null || !baseModule.isActiveAndEnabled)
+                return false;
+
+            return baseModule.TryContainsInteriorRuntimePoint(runtimePosition) &&
+                   TryGetRoomWaterline(cachedRoomId, out snapshot);
         }
 
         internal static bool TryGetLatestSiegeTargets(out NativeArray<HabitatSiegeTargetSnapshot> targets, out int count)

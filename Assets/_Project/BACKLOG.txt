@@ -29,7 +29,7 @@ HECTON8 — BACKLOG
     — FlashlightEvents: OnToggled, OnBatteryDepleted, OnOverheat, OnFlickerStart
     — Battery drain + Heat buildup + Flickering (Perlin noise)
     — Overheat shutdown + cooldown period
-    — VolumetricLightBeam integration (optional, via reflection)
+    — Screen-space light shaft fake (registered source + visor post)
     — Audio feedback (toggle/low battery/overheat)
     — Zero GC design
 

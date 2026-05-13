@@ -69,8 +69,11 @@ namespace Hecton8.UI
         private static readonly int PowerLevelId = Shader.PropertyToID("_PowerLevel");
         private static readonly int DamageFlickerId = Shader.PropertyToID("_DamageFlicker");
         private static readonly int HectonRadarBlipsId = Shader.PropertyToID("_HectonRadarBlips");
+        private static readonly int HectonGroundRadarPingsId = Shader.PropertyToID("_HectonGroundRadarPings");
         private static readonly int HectonRadarLocalToWorldId = Shader.PropertyToID("_HectonRadarLocalToWorld");
         private static readonly int HectonRadarProceduralId = Shader.PropertyToID("_HectonRadarProcedural");
+        private static readonly int HectonRadarGprProceduralId = Shader.PropertyToID("_HectonRadarGprProcedural");
+        private static readonly int HectonRadarGprOriginRadiusId = Shader.PropertyToID("_HectonRadarGprOriginRadius");
         private static readonly int MainTexId = Shader.PropertyToID("_MainTex");
         private static readonly int BaseMapId = Shader.PropertyToID("_BaseMap");
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
@@ -176,6 +179,7 @@ namespace Hecton8.UI
         private bool _resourcesReady;
         private bool _radarResourcesReady;
         private bool _radarMaterialBufferBound;
+        private bool _radarUsingGpr;
         private HectonQualityTier _lastScalabilityTier = HectonQualityTier.Unknown;
         private RenderTextureFormat _uiRenderTextureFormat = RenderTextureFormat.ARGB32;
         private int _radarKernel = -1;
@@ -183,6 +187,7 @@ namespace Hecton8.UI
         private int _radarPointsPerTap = LowRadarPointsPerTap;
         private int _radarActivePoints;
         private int _lastSonarSequence = -1;
+        private int _lastGprSequence = -1;
         private int _lastRadarDispatchSequence = -1;
         private int _lastRadarDispatchVisualPointCount;
         private int _lastRadarArgsInstanceCount = -1;
@@ -209,6 +214,7 @@ namespace Hecton8.UI
         private float _screenUpdateAccumulator;
         private Texture _lastScreenTexture;
         private GraphicsBuffer _lastRadarMaterialBlipBuffer;
+        private GraphicsBuffer _lastRadarMaterialGprBuffer;
 
         /// <summary>
         /// GPU matrix buffer for cockpit button presentation consumers.
@@ -974,6 +980,9 @@ namespace Hecton8.UI
                 return;
             }
 
+            if (TryUploadGroundRadarPingsAndDispatchRadar())
+                return;
+
             PlayerCriticalProceduralAudioRenderer audioRuntime = GlobalRegistry.PlayerCriticalAudio;
             if (audioRuntime == null ||
                 !audioRuntime.TryGetCockpitSonarEchoTaps(out NativeArray<SonarEchoTap>.ReadOnly taps, out int tapCount, out int sequence))
@@ -1004,6 +1013,7 @@ namespace Hecton8.UI
 
             bool dispatchDirty = IsRadarDispatchDirty(sequence, visualPointCount);
             _radarActivePoints = visualPointCount;
+            _radarUsingGpr = false;
             if (!dispatchDirty)
                 return;
 
@@ -1026,6 +1036,32 @@ namespace Hecton8.UI
 
             CacheRadarDispatchState(sequence, visualPointCount);
             UpdateRadarArgs(visualPointCount);
+        }
+
+        private bool TryUploadGroundRadarPingsAndDispatchRadar()
+        {
+            IGroundRadarService groundRadar = GlobalRegistry.GroundRadar;
+            if (groundRadar == null ||
+                !groundRadar.TryGetGprPingBuffer(out GraphicsBuffer buffer, out int activeCount, out int sequence) ||
+                buffer == null)
+            {
+                return false;
+            }
+
+            int visualPointCount = math.clamp(activeCount, 0, _radarCapacity);
+            if (visualPointCount <= 0)
+                return false;
+
+            _radarActivePoints = visualPointCount;
+            _radarUsingGpr = true;
+            if (sequence != _lastGprSequence)
+            {
+                _lastGprSequence = sequence;
+                _screenDirty = true;
+            }
+
+            UpdateRadarArgs(visualPointCount);
+            return true;
         }
 
         private bool IsRadarDispatchDirty(int sequence, int visualPointCount)
@@ -1054,6 +1090,7 @@ namespace Hecton8.UI
 
         private void ClearRadarDrawState()
         {
+            _radarUsingGpr = false;
             UpdateRadarArgs(0);
             InvalidateRadarDispatchCache();
         }
@@ -1103,6 +1140,7 @@ namespace Hecton8.UI
         {
             _radarMaterialBufferBound = false;
             _lastRadarMaterialBlipBuffer = null;
+            _lastRadarMaterialGprBuffer = null;
         }
 
         private void RenderRadarPointCloud()
@@ -1128,12 +1166,36 @@ namespace Hecton8.UI
             Vector4 anchorColumn = radarLocalToWorld.GetColumn(3);
             Vector3 anchorPosition = new Vector3(anchorColumn.x, anchorColumn.y, anchorColumn.z);
 
-            if (!_radarMaterialBufferBound || !ReferenceEquals(_lastRadarMaterialBlipBuffer, _radarBlipBuffer))
+            if (_radarUsingGpr && !TryResolveGroundRadarRenderBinding(out IGroundRadarService groundRadar, out GraphicsBuffer groundRadarBuffer))
+                return;
+
+            if (_radarUsingGpr)
+            {
+                if (!_radarMaterialBufferBound || !ReferenceEquals(_lastRadarMaterialGprBuffer, groundRadarBuffer))
+                {
+                    _radarRuntimeMaterial.SetBuffer(HectonGroundRadarPingsId, groundRadarBuffer);
+                    _radarRuntimeMaterial.SetFloat(HectonRadarProceduralId, 1f);
+                    _radarRuntimeMaterial.SetFloat(HectonRadarGprProceduralId, 1f);
+                    _lastRadarMaterialGprBuffer = groundRadarBuffer;
+                    _radarMaterialBufferBound = true;
+                }
+
+                float3 origin = groundRadar.LastProbeOrigin;
+                _radarRuntimeMaterial.SetVector(
+                    HectonRadarGprOriginRadiusId,
+                    new Vector4(origin.x, origin.y, origin.z, math.max(1f, groundRadar.ScanRadiusMeters)));
+            }
+            else if (!_radarMaterialBufferBound || !ReferenceEquals(_lastRadarMaterialBlipBuffer, _radarBlipBuffer))
             {
                 _radarRuntimeMaterial.SetBuffer(HectonRadarBlipsId, _radarBlipBuffer);
                 _radarRuntimeMaterial.SetFloat(HectonRadarProceduralId, 1f);
+                _radarRuntimeMaterial.SetFloat(HectonRadarGprProceduralId, 0f);
                 _lastRadarMaterialBlipBuffer = _radarBlipBuffer;
                 _radarMaterialBufferBound = true;
+            }
+            else
+            {
+                _radarRuntimeMaterial.SetFloat(HectonRadarGprProceduralId, 0f);
             }
 
             _radarRuntimeMaterial.SetMatrix(HectonRadarLocalToWorldId, radarLocalToWorld);
@@ -1148,6 +1210,16 @@ namespace Hecton8.UI
                 motionVectorMode = MotionVectorGenerationMode.ForceNoMotion
             };
             Graphics.RenderMeshIndirect(renderParams, mesh, _radarArgsBuffer, 1, 0);
+        }
+
+        private static bool TryResolveGroundRadarRenderBinding(out IGroundRadarService groundRadar, out GraphicsBuffer buffer)
+        {
+            groundRadar = GlobalRegistry.GroundRadar;
+            if (groundRadar != null && groundRadar.TryGetGprPingBuffer(out buffer, out int activeCount, out _) && activeCount > 0)
+                return true;
+
+            buffer = null;
+            return false;
         }
 
         private Mesh ResolveRadarMesh()

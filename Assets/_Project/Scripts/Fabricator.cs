@@ -59,12 +59,13 @@ namespace Hecton8.Crafting
 {
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Collider))]
-    public sealed class Fabricator : MonoBehaviour, IInteractable, ISlowTickable, IUpdatable, IPowerComponent, IFabricator, IModRegistryEventListener, ILocalizationLanguageChangedListener
+    public sealed class Fabricator : MonoBehaviour, IInteractable, ISlowTickable, IUpdatable, IPowerComponent, IFabricator, IModRegistryEventListener, ILocalizationLanguageChangedListener, IOriginShiftListener
     {
         // COLD ALLOC: List<Fabricator>[8] - active fabricator registry for cold-path recipe lookups - owner: Fabricator
         private static readonly List<Fabricator> _activeFabricators = new List<Fabricator>(8);
         private static readonly int _uiFabricatorLocalizationHash = LocHash.Compute(LocalizationKeys.UI_FABRICATOR);
         private static readonly int _interactUseFabricatorLocalizationHash = LocHash.Compute(LocalizationKeys.INTERACT_USE_FABRICATOR);
+        private static Mesh s_sharedAssemblyFallbackMesh;
         private static bool s_emergencyPowerLockActive;
         private const int InteractTextBufferCapacity = 96;
         private const float ExothermicRunningHeatDeltaCelsius = 20f;
@@ -132,6 +133,8 @@ namespace Hecton8.Crafting
         [SerializeField] private MeshRenderer assemblyPreviewRenderer;
         [Tooltip("Shared holographic material using Assets/_Project/Art/Shaders/Hecton_HologramAssembly.shader.")]
         [SerializeField] private Material hologramAssemblyMaterial;
+        [Tooltip("Optional authored fallback mesh for craftable items without a world prefab. If null, a tiny shared diamond mesh is generated once.")]
+        [SerializeField] private Mesh assemblyFallbackMesh;
         [SerializeField, Min(0f)] private float assemblyHeightPadding = 0.02f;
         [SerializeField] private Color assemblyBaseColor = new Color(0.05f, 0.86f, 1f, 0.72f);
         [SerializeField] private Color assemblyPausedColor = new Color(1f, 0.04f, 0.02f, 0.86f);
@@ -229,6 +232,7 @@ namespace Hecton8.Crafting
         private uint _assemblyTargetHash;
         private bool _assemblyPreviewActive;
         private bool _assemblyMaterialSwapped;
+        private bool _assemblyOriginShiftListenerRegistered;
 
         // ── Craft State ──
         private bool       _isCrafting;
@@ -306,6 +310,7 @@ namespace Hecton8.Crafting
         private static readonly int AssemblyPowerPauseId = Shader.PropertyToID("_PowerPause01");
         private static readonly int AssemblyBaseColorId = Shader.PropertyToID("_BaseColor");
         private static readonly int AssemblyPausedColorId = Shader.PropertyToID("_PausedColor");
+        private static readonly int AssemblyWorldToFabricatorId = Shader.PropertyToID("_AssemblyWorldToFabricator");
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC API — QUERIES
@@ -450,6 +455,8 @@ namespace Hecton8.Crafting
             _sparkProxyLightKey = unchecked((int)EntityId.ToULong(GetEntityId()) ^ 0x4641424C);
             _errorFeedbackBlock = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - fabricator error emission property staging - owner: Fabricator
             _assemblyPropertyBlock = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - hologram assembly shader staging - owner: Fabricator
+            if (assemblyFallbackMesh == null)
+                EnsureSharedAssemblyFallbackMesh();
             EndAssemblyVisual();
             ToolHapticsRuntime.EnsureRuntimeInstance();
             EnsureCraftingScratch();
@@ -475,6 +482,7 @@ namespace Hecton8.Crafting
             MarkRecipeCacheDirty();
             ApplyEmergencyPowerLock(s_emergencyPowerLockActive);
             CacheFabricatorAup();
+            TryRegisterAssemblyOriginShiftListener();
         }
 
         private void OnDisable()
@@ -484,6 +492,7 @@ namespace Hecton8.Crafting
             LocalizationEvents.UnregisterLanguageListener(this);
             ModRegistryEvents.Unregister(this);
             UnsubscribeFromScanLog();
+            TryUnregisterAssemblyOriginShiftListener();
 
             if (_isCrafting)
                 CancelCraft();
@@ -501,6 +510,7 @@ namespace Hecton8.Crafting
             UnregisterActiveFabricator(this);
             BaseLogisticsNetwork.UnregisterFabricator(this);
             TryUnregister();
+            TryUnregisterAssemblyOriginShiftListener();
             SetFabricationSparksActive(false);
             EndAssemblyVisual();
             UnregisterSparkProxyLight();
@@ -534,6 +544,20 @@ namespace Hecton8.Crafting
         public string GetInteractText()
         {
             return _interactText;
+        }
+
+        public void OnOriginShift(in OriginShiftEventData shiftData)
+        {
+            CacheFabricatorAup();
+            if (_assemblyPreviewActive && !_assemblyMaterialSwapped)
+            {
+                ApplyAssemblyVisualProgress(_assemblyProgress01, IsPausedNoPower);
+            }
+            else if (_assemblyPreviewActive && _assemblyActualMaterial == null && assemblyPreviewRenderer != null && _assemblyPropertyBlock != null)
+            {
+                _assemblyPropertyBlock.SetMatrix(AssemblyWorldToFabricatorId, transform.worldToLocalMatrix);
+                assemblyPreviewRenderer.SetPropertyBlock(_assemblyPropertyBlock);
+            }
         }
 
         // ══════════════════════════════════════════════════════════
@@ -1918,10 +1942,8 @@ namespace Hecton8.Crafting
             assemblyPreviewMeshFilter.sharedMesh = sourceMesh;
             _assemblyActualMaterial = actualMaterial;
 
-            Bounds localBounds = sourceMesh.bounds;
             float padding = Mathf.Max(0f, assemblyHeightPadding);
-            _assemblyBaseY = localBounds.min.y - padding;
-            _assemblyTopY = Mathf.Max(_assemblyBaseY + 0.001f, localBounds.max.y + padding);
+            ResolveAssemblyFabricatorLocalHeightBounds(sourceMesh, assemblyPreviewMeshFilter.transform, padding, out _assemblyBaseY, out _assemblyTopY);
             _assemblyCurrentHeightY = _assemblyBaseY;
             _assemblyQuality = ResolveAssemblyQuality();
 
@@ -1933,13 +1955,16 @@ namespace Hecton8.Crafting
             ApplyAssemblyVisualProgress(0f, false);
         }
 
-        private static bool TryResolveAssemblySource(ItemData item, out Mesh sourceMesh, out Material actualMaterial)
+        private bool TryResolveAssemblySource(ItemData item, out Mesh sourceMesh, out Material actualMaterial)
         {
             sourceMesh = null;
             actualMaterial = null;
             GameObject prefab = item != null ? item.worldPrefab : null;
             if (prefab == null)
-                return false;
+            {
+                sourceMesh = ResolveAssemblyFallbackMesh();
+                return sourceMesh != null;
+            }
 
             MeshFilter sourceFilter = prefab.GetComponent<MeshFilter>();
             MeshRenderer sourceRenderer = prefab.GetComponent<MeshRenderer>();
@@ -1959,11 +1984,132 @@ namespace Hecton8.Crafting
 
             SkinnedMeshRenderer skinnedRenderer = prefab.GetComponentInChildren<SkinnedMeshRenderer>(true);
             if (skinnedRenderer == null)
-                return false;
+            {
+                sourceMesh = ResolveAssemblyFallbackMesh();
+                return sourceMesh != null;
+            }
 
             sourceMesh = skinnedRenderer.sharedMesh;
             actualMaterial = skinnedRenderer.sharedMaterial;
+            if (sourceMesh != null)
+                return true;
+
+            sourceMesh = ResolveAssemblyFallbackMesh();
+            actualMaterial = null;
             return sourceMesh != null;
+        }
+
+        private Mesh ResolveAssemblyFallbackMesh()
+        {
+            if (assemblyFallbackMesh != null)
+                return assemblyFallbackMesh;
+
+            return EnsureSharedAssemblyFallbackMesh();
+        }
+
+        private static Mesh EnsureSharedAssemblyFallbackMesh()
+        {
+            if (s_sharedAssemblyFallbackMesh != null)
+                return s_sharedAssemblyFallbackMesh;
+
+            // COLD ALLOC: Mesh[1] - shared hologram fallback for craftables without world prefab - owner: Fabricator
+            Mesh mesh = new Mesh
+            {
+                name = "GEN_FabricatorAssemblyFallbackMesh",
+                hideFlags = HideFlags.HideAndDontSave
+            };
+
+            // COLD ALLOC: Vector3[6] - one-time octahedral fallback vertices - owner: Fabricator
+            Vector3[] vertices =
+            {
+                new Vector3(0f, 0.36f, 0f),
+                new Vector3(0f, -0.36f, 0f),
+                new Vector3(0f, 0f, 0.28f),
+                new Vector3(0.28f, 0f, 0f),
+                new Vector3(0f, 0f, -0.28f),
+                new Vector3(-0.28f, 0f, 0f)
+            };
+
+            // COLD ALLOC: int[24] - one-time octahedral fallback triangles - owner: Fabricator
+            int[] triangles =
+            {
+                0, 2, 3,
+                0, 3, 4,
+                0, 4, 5,
+                0, 5, 2,
+                1, 3, 2,
+                1, 4, 3,
+                1, 5, 4,
+                1, 2, 5
+            };
+
+            // COLD ALLOC: Vector3[6] - one-time octahedral fallback normals - owner: Fabricator
+            Vector3[] normals =
+            {
+                Vector3.up,
+                Vector3.down,
+                Vector3.forward,
+                Vector3.right,
+                Vector3.back,
+                Vector3.left
+            };
+
+            mesh.vertices = vertices;
+            mesh.triangles = triangles;
+            mesh.normals = normals;
+            mesh.RecalculateBounds();
+            mesh.UploadMeshData(false);
+            s_sharedAssemblyFallbackMesh = mesh;
+            return s_sharedAssemblyFallbackMesh;
+        }
+
+        private void ResolveAssemblyFabricatorLocalHeightBounds(
+            Mesh sourceMesh,
+            Transform previewTransform,
+            float padding,
+            out float baseY,
+            out float topY)
+        {
+            Bounds meshBounds = sourceMesh != null ? sourceMesh.bounds : new Bounds(Vector3.zero, Vector3.one);
+            if (sourceMesh == null || previewTransform == null)
+            {
+                baseY = meshBounds.min.y - padding;
+                topY = Mathf.Max(baseY + 0.001f, meshBounds.max.y + padding);
+                return;
+            }
+
+            Matrix4x4 meshToFabricator = transform.worldToLocalMatrix * previewTransform.localToWorldMatrix;
+            Vector3 center = meshBounds.center;
+            Vector3 extents = meshBounds.extents;
+            float minY = float.PositiveInfinity;
+            float maxY = float.NegativeInfinity;
+
+            AccumulateAssemblyCornerY(meshToFabricator, new Vector3(center.x - extents.x, center.y - extents.y, center.z - extents.z), ref minY, ref maxY);
+            AccumulateAssemblyCornerY(meshToFabricator, new Vector3(center.x + extents.x, center.y - extents.y, center.z - extents.z), ref minY, ref maxY);
+            AccumulateAssemblyCornerY(meshToFabricator, new Vector3(center.x - extents.x, center.y + extents.y, center.z - extents.z), ref minY, ref maxY);
+            AccumulateAssemblyCornerY(meshToFabricator, new Vector3(center.x + extents.x, center.y + extents.y, center.z - extents.z), ref minY, ref maxY);
+            AccumulateAssemblyCornerY(meshToFabricator, new Vector3(center.x - extents.x, center.y - extents.y, center.z + extents.z), ref minY, ref maxY);
+            AccumulateAssemblyCornerY(meshToFabricator, new Vector3(center.x + extents.x, center.y - extents.y, center.z + extents.z), ref minY, ref maxY);
+            AccumulateAssemblyCornerY(meshToFabricator, new Vector3(center.x - extents.x, center.y + extents.y, center.z + extents.z), ref minY, ref maxY);
+            AccumulateAssemblyCornerY(meshToFabricator, new Vector3(center.x + extents.x, center.y + extents.y, center.z + extents.z), ref minY, ref maxY);
+
+            if (minY > maxY)
+            {
+                minY = meshBounds.min.y;
+                maxY = meshBounds.max.y;
+            }
+
+            baseY = minY - padding;
+            topY = Mathf.Max(baseY + 0.001f, maxY + padding);
+        }
+
+        private static void AccumulateAssemblyCornerY(Matrix4x4 meshToFabricator, Vector3 corner, ref float minY, ref float maxY)
+        {
+            float y = meshToFabricator.MultiplyPoint3x4(corner).y;
+            if (y < minY)
+                minY = y;
+            if (y > maxY)
+                maxY = y;
         }
 
         private static float ResolveAssemblyQuality()
@@ -1991,6 +2137,7 @@ namespace Hecton8.Crafting
             _assemblyPropertyBlock.SetFloat(AssemblyPowerPauseId, paused ? 1f : 0f);
             _assemblyPropertyBlock.SetColor(AssemblyBaseColorId, assemblyBaseColor);
             _assemblyPropertyBlock.SetColor(AssemblyPausedColorId, assemblyPausedColor);
+            _assemblyPropertyBlock.SetMatrix(AssemblyWorldToFabricatorId, transform.worldToLocalMatrix);
             assemblyPreviewRenderer.SetPropertyBlock(_assemblyPropertyBlock);
         }
 
@@ -2002,9 +2149,11 @@ namespace Hecton8.Crafting
             ApplyAssemblyVisualProgress(1f, false);
             if (assemblyPreviewRenderer != null)
             {
-                assemblyPreviewRenderer.SetPropertyBlock(null);
                 if (_assemblyActualMaterial != null)
+                {
+                    assemblyPreviewRenderer.SetPropertyBlock(null);
                     assemblyPreviewRenderer.sharedMaterial = _assemblyActualMaterial;
+                }
 
                 assemblyPreviewRenderer.shadowCastingMode = ShadowCastingMode.Off;
                 assemblyPreviewRenderer.receiveShadows = false;
@@ -2135,6 +2284,24 @@ namespace Hecton8.Crafting
                 FabricatorTelemetryHash,
                 FabricatorActiveCountHash,
                 _activeFabricators.Count);
+        }
+
+        private void TryRegisterAssemblyOriginShiftListener()
+        {
+            if (_assemblyOriginShiftListenerRegistered || !Application.isPlaying)
+                return;
+
+            HectonFloatingOrigin.RegisterListener(this);
+            _assemblyOriginShiftListenerRegistered = HectonFloatingOrigin.IsListenerRegistered(this);
+        }
+
+        private void TryUnregisterAssemblyOriginShiftListener()
+        {
+            if (!_assemblyOriginShiftListenerRegistered)
+                return;
+
+            HectonFloatingOrigin.UnregisterListener(this);
+            _assemblyOriginShiftListenerRegistered = false;
         }
 
         private void SetFabricationSparksActive(bool active)

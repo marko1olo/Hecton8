@@ -245,6 +245,7 @@ namespace Hecton8.Gameplay
         private float[] _headlightBaseRanges;
         private bool _headlightsRegisteredForShadowBudget;
         private bool _headlightStateInitialized;
+        private byte _publishedHeadlightSignalMask;
         private float _headlightGlitchPhase;
         private Vector3 _lastPublishedVolumetricVelocity;
         private bool _hasLastPublishedVolumetricVelocity;
@@ -1815,6 +1816,7 @@ namespace Hecton8.Gameplay
                 _headlightColors == null ||
                 _headlightConeData == null)
             {
+                PublishHeadlightClearSignals();
                 return;
             }
 
@@ -1845,18 +1847,17 @@ namespace Hecton8.Gameplay
                 _headlightColors == null ||
                 _headlightConeData == null)
             {
+                PublishHeadlightClearSignals();
                 return;
             }
 
             uint sourceId = ResolveHeadlightSignalSourceId();
+            byte activeMask = 0;
             for (int payloadIndex = 0; payloadIndex < MaxHeadlights; payloadIndex++)
             {
                 bool hasPayload = allowHeadlights && payloadIndex < activeCount;
                 if (!hasPayload)
-                {
-                    PublishHeadlightRemoveSignal(sourceId, payloadIndex, SubmarineLightsChangedSignalFlags.BrownoutSuppressed);
                     continue;
-                }
 
                 Vector4 position = _headlightPositionsWs[payloadIndex];
                 Vector4 direction = _headlightDirectionsWs[payloadIndex];
@@ -1864,11 +1865,9 @@ namespace Hecton8.Gameplay
                 Vector4 cone = _headlightConeData[payloadIndex];
                 float intensity = math.max(0f, color.w * math.max(1f, cone.y));
                 if (position.w <= 0.1f || intensity <= HeadlightSignalMinIntensity)
-                {
-                    PublishHeadlightRemoveSignal(sourceId, payloadIndex, SubmarineLightsChangedSignalFlags.BrownoutSuppressed);
                     continue;
-                }
 
+                activeMask |= (byte)(1 << payloadIndex);
                 Vector3 positionWs = new Vector3(position.x, position.y, position.z);
                 float3 forward = NormalizeHeadlightSignalDirection(new float3(direction.x, direction.y, direction.z));
                 GlobalSignals.Publish(new SubmarineLightsChangedSignal
@@ -1884,15 +1883,40 @@ namespace Hecton8.Gameplay
                     SpotOuterCos = math.clamp(cone.x, -1f, 1f)
                 });
             }
+
+            PublishRetiredHeadlightSignals(sourceId, activeMask);
         }
 
         private void PublishHeadlightClearSignals()
         {
+            byte retiredMask = _publishedHeadlightSignalMask;
+            if (retiredMask == 0)
+                return;
+
             uint sourceId = ResolveHeadlightSignalSourceId();
             for (int payloadIndex = 0; payloadIndex < MaxHeadlights; payloadIndex++)
             {
+                if ((retiredMask & (1 << payloadIndex)) == 0)
+                    continue;
+
                 PublishHeadlightRemoveSignal(sourceId, payloadIndex, SubmarineLightsChangedSignalFlags.BrownoutSuppressed);
             }
+
+            _publishedHeadlightSignalMask = 0;
+        }
+
+        private void PublishRetiredHeadlightSignals(uint sourceId, byte activeMask)
+        {
+            byte retiredMask = (byte)(_publishedHeadlightSignalMask & ~activeMask);
+            for (int payloadIndex = 0; payloadIndex < MaxHeadlights; payloadIndex++)
+            {
+                if ((retiredMask & (1 << payloadIndex)) == 0)
+                    continue;
+
+                PublishHeadlightRemoveSignal(sourceId, payloadIndex, SubmarineLightsChangedSignalFlags.BrownoutSuppressed);
+            }
+
+            _publishedHeadlightSignalMask = activeMask;
         }
 
         private void PublishHeadlightRemoveSignal(uint sourceId, int payloadIndex, byte flags)
@@ -1908,7 +1932,7 @@ namespace Hecton8.Gameplay
 
         private uint ResolveHeadlightSignalSourceId()
         {
-            uint sourceId = unchecked((uint)GetInstanceID()) ^ HeadlightSignalSourceSalt;
+            uint sourceId = unchecked((uint)GetHashCode()) ^ HeadlightSignalSourceSalt;
             return sourceId != 0u ? sourceId : HeadlightSignalSourceSalt;
         }
 

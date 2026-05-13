@@ -728,21 +728,21 @@ namespace Hecton8.SaveSystem
             int secondByteCount,
             out string error)
         {
-            NativeWriteResult result = WriteAllAsync(
+            NativeWriteResult result = WriteAllSynchronous(
                 absolutePath,
-                (IntPtr)firstBuffer,
+                firstBuffer,
                 firstByteCount,
-                (IntPtr)secondBuffer,
-                secondByteCount).GetAwaiter().GetResult();
+                secondBuffer,
+                secondByteCount);
             error = result.Error;
             return result.Success;
         }
 
-        private static async Awaitable<NativeWriteResult> WriteAllAsync(
+        private static NativeWriteResult WriteAllSynchronous(
             string absolutePath,
-            IntPtr firstBuffer,
+            void* firstBuffer,
             int firstByteCount,
-            IntPtr secondBuffer,
+            void* secondBuffer,
             int secondByteCount)
         {
             if (string.IsNullOrEmpty(absolutePath))
@@ -764,13 +764,11 @@ namespace Hecton8.SaveSystem
                 TryEnableSparseFile(fileStream);
                 fileStream.SetLength(totalBytes);
 
-                NativeWriteResult firstWrite = await WritePointerSegmentAsync(fileStream, firstBuffer, firstByteCount);
-                if (!firstWrite.Success)
-                    return firstWrite;
+                if (!TryWritePointerSegment(fileStream, firstBuffer, firstByteCount, out string writeError))
+                    return new NativeWriteResult(false, writeError);
 
-                NativeWriteResult secondWrite = await WritePointerSegmentAsync(fileStream, secondBuffer, secondByteCount);
-                if (!secondWrite.Success)
-                    return secondWrite;
+                if (!TryWritePointerSegment(fileStream, secondBuffer, secondByteCount, out writeError))
+                    return new NativeWriteResult(false, writeError);
 
                 if (!QueueThrottledFlush(absolutePath, totalBytes, out string flushError))
                     return new NativeWriteResult(false, flushError);
@@ -785,44 +783,6 @@ namespace Hecton8.SaveSystem
             {
                 fileStream?.Dispose();
             }
-        }
-
-        private static async Awaitable<NativeWriteResult> WritePointerSegmentAsync(FileStream stream, IntPtr source, int byteCount)
-        {
-            if (stream == null)
-                return new NativeWriteResult(false, "Native write stream is invalid.");
-
-            if (byteCount <= 0)
-                return new NativeWriteResult(true, string.Empty);
-
-            if (source == IntPtr.Zero)
-            {
-                stream.Position += byteCount;
-                return new NativeWriteResult(true, string.Empty);
-            }
-
-            int writtenBytes = 0;
-            while (writtenBytes < byteCount)
-            {
-                int chunkBytes = byteCount - writtenBytes;
-                if (chunkBytes > s_fileWriteAsyncScratch.Length)
-                    chunkBytes = s_fileWriteAsyncScratch.Length;
-
-                AcquireAsyncWriteScratch();
-                try
-                {
-                    Marshal.Copy(IntPtr.Add(source, writtenBytes), s_fileWriteAsyncScratch, 0, chunkBytes);
-                    await stream.WriteAsync(s_fileWriteAsyncScratch, 0, chunkBytes);
-                }
-                finally
-                {
-                    ReleaseAsyncWriteScratch();
-                }
-
-                writtenBytes += chunkBytes;
-            }
-
-            return new NativeWriteResult(true, string.Empty);
         }
 
         private static void AcquireAsyncWriteScratch()

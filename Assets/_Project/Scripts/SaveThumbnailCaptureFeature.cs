@@ -151,6 +151,7 @@ namespace Hecton8.SaveSystem
         protected override void Dispose(bool disposing)
         {
             _pass?.Dispose();
+            SaveThumbnailSystem.NotifyCaptureFeatureDisposed();
         }
     }
 }

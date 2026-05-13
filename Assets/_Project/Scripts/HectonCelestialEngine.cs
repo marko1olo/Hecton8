@@ -3112,7 +3112,7 @@ namespace Hecton8.Celestial
             Shader.SetGlobalTexture(_ID_StarTwinkleLut, twinkleLut);
             Shader.SetGlobalTexture(_ID_BakedStarCubemap, hasBakedStars ? _bakedStarCubemap : null);
             Shader.SetGlobalFloat(_ID_BakedStarCubemapReady, hasBakedStars ? 1f : 0f);
-            Shader.SetGlobalTexture(_ID_HectonAtmosphereScatteringLut, hasAtmosphereLut ? _atmosphereScatteringLutTexture : Texture2D.blackTexture);
+            Shader.SetGlobalTexture(_ID_HectonAtmosphereScatteringLut, hasAtmosphereLut ? (Texture)_atmosphereScatteringLutTexture : Texture2D.blackTexture);
             Shader.SetGlobalFloat(_ID_HectonAtmosphereScatteringLutReady, hasAtmosphereLut ? 1f : 0f);
             ApplyFirmamentStaticMaterialBindings(_skyMaterial);
         }
@@ -3129,7 +3129,7 @@ namespace Hecton8.Celestial
             SetMaterialTexture(targetMaterial, _ID_StarTwinkleLut, twinkleLut);
             SetMaterialTexture(targetMaterial, _ID_BakedStarCubemap, hasBakedStars ? _bakedStarCubemap : null);
             SetMaterialFloat(targetMaterial, _ID_BakedStarCubemapReady, hasBakedStars ? 1f : 0f);
-            SetMaterialTexture(targetMaterial, _ID_HectonAtmosphereScatteringLut, hasAtmosphereLut ? _atmosphereScatteringLutTexture : Texture2D.blackTexture);
+            SetMaterialTexture(targetMaterial, _ID_HectonAtmosphereScatteringLut, hasAtmosphereLut ? (Texture)_atmosphereScatteringLutTexture : Texture2D.blackTexture);
             SetMaterialFloat(targetMaterial, _ID_HectonAtmosphereScatteringLutReady, hasAtmosphereLut ? 1f : 0f);
         }
 

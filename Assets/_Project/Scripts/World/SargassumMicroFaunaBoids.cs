@@ -607,6 +607,7 @@ namespace Hecton8.World
         private const uint FoodChainTelemetryFlagNonFinite = 1u << 31;
         private const uint FoodChainTelemetryAnomalyNonFinite = 0xEFC00001u;
         private const int PredatorAupBufferCapacity = 16;
+        private const int PredatorAupStride = sizeof(float) * 4;
         private const int PredatorAupLowTierThreatLoopCap = 4;
         private const int SwarmAcousticSignalConsumeLimit = 4;
         private const int SwarmMovementSignalConsumeLimit = 8;
@@ -1491,6 +1492,7 @@ namespace Hecton8.World
         private GraphicsBuffer _spatialGridCountBuffer;
         private GraphicsBuffer _spatialGridCellBuffer;
         private GraphicsBuffer _simulationFrameBuffer;
+        private GraphicsBuffer _predatorAupFallbackBuffer;
         private bool _latchStatsBufferRawTarget;
         private bool _pbdCorrectionBufferRawTarget;
         private bool _spatialGridCountBufferRawTarget;
@@ -2288,6 +2290,7 @@ namespace Hecton8.World
             buffersChanged |= EnsureRawBuffer(ref _spatialGridCountBuffer, ref _spatialGridCountBufferRawTarget, SpatialGridMaxCellCount, SpatialGridCountStride);
             buffersChanged |= EnsureBuffer(ref _spatialGridCellBuffer, SpatialGridMaxCellCount * SpatialGridMaxBoidsPerCell, SpatialGridCellEntryStride);
             buffersChanged |= EnsureBuffer(ref _simulationFrameBuffer, 1, SimulationFrameConstantsStride);
+            buffersChanged |= EnsurePredatorAupFallbackBuffer();
             EnsureFallbackAbyssalFlowTexture();
             if (buffersChanged)
                 _computeStaticBuffersBound = false;
@@ -3789,6 +3792,7 @@ namespace Hecton8.World
                 _formationObstacleBuffer == null ||
                 _leviathanNodeBuffer == null ||
                 _massiveThreatBuffer == null ||
+                _predatorAupFallbackBuffer == null ||
                 _threatGridBuffer == null ||
                 _threatVoxelBuffer == null)
             {
@@ -3806,6 +3810,7 @@ namespace Hecton8.World
                 boidCompute.SetBuffer(_kernelIndex, _FormationObstaclesId, _formationObstacleBuffer);
                 boidCompute.SetBuffer(_kernelIndex, _LeviathanNodesId, _leviathanNodeBuffer);
                 boidCompute.SetBuffer(_kernelIndex, _MassiveThreatsId, _massiveThreatBuffer);
+                boidCompute.SetBuffer(_kernelIndex, _PredatorAUPBufferId, _predatorAupFallbackBuffer);
                 boidCompute.SetBuffer(_kernelIndex, _ThreatGridId, _threatGridBuffer);
                 boidCompute.SetBuffer(_kernelIndex, _ThreatVoxelGridId, _threatVoxelBuffer);
 
@@ -3878,6 +3883,20 @@ namespace Hecton8.World
                 : math.min(safeCount, PredatorAupLowTierThreatLoopCap);
         }
 
+        private bool EnsurePredatorAupFallbackBuffer()
+        {
+            // COLD ALLOC: GraphicsBuffer[16 float4] - zero predator AUP fallback binding until EncounterDirector publishes active threats.
+            bool changed = EnsureBuffer(ref _predatorAupFallbackBuffer, PredatorAupBufferCapacity, PredatorAupStride);
+            if (!changed || _predatorAupFallbackBuffer == null)
+                return changed;
+
+            NativeArray<float4> mapped = _predatorAupFallbackBuffer.LockBufferForWrite<float4>(0, PredatorAupBufferCapacity);
+            for (int i = 0; i < PredatorAupBufferCapacity; i++)
+                mapped[i] = float4.zero;
+            _predatorAupFallbackBuffer.UnlockBufferAfterWrite<float4>(PredatorAupBufferCapacity);
+            return true;
+        }
+
         private bool BindSimulationUniforms(
             float simulationDt,
             Vector3 driftOffset,
@@ -3924,7 +3943,7 @@ namespace Hecton8.World
             Texture densityTexture = !_deepModeActive && dragManager != null ? dragManager.DensityFieldTexture : Texture2D.blackTexture;
             if (densityTexture == null)
                 densityTexture = Texture2D.blackTexture;
-            Texture activeCutMaskTexture = cutMaskActive && cutMaskTexture != null ? cutMaskTexture : Texture2D.blackTexture;
+            Texture activeCutMaskTexture = cutMaskActive && cutMaskTexture != null ? (Texture)cutMaskTexture : Texture2D.blackTexture;
             Vector3 abyssalFlowWeatherCurrent = Vector3.zero;
             HectonFluidEngine fluidRuntime = GlobalRegistry.Fluid;
             if (fluidRuntime != null &&
@@ -5949,6 +5968,7 @@ namespace Hecton8.World
             ReleaseBuffer(ref _spatialGridCountBuffer);
             ReleaseBuffer(ref _spatialGridCellBuffer);
             ReleaseBuffer(ref _simulationFrameBuffer);
+            ReleaseBuffer(ref _predatorAupFallbackBuffer);
             _latchStatsBufferRawTarget = false;
             _pbdCorrectionBufferRawTarget = false;
             _spatialGridCountBufferRawTarget = false;

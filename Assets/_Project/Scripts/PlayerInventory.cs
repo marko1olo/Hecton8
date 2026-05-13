@@ -61,13 +61,20 @@ namespace Hecton8.Inventory
         private const int InventoryBlackBoxCapacity = 300;
         private const int InventoryBlackBoxEntrySizeBytes = 64;
         private const string InventoryBlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_INVENTORY_SOA_BLITTER.bin";
-        private const string RadixSortBufferMismatchLog = "[PlayerInventory] Critical radix sort buffer mismatch. Sorting bypassed.";
-        private const string RadixSortEntriesTempLabel = "RadixSortEntriesTemp";
-        private const string RadixSortScratchTempLabel = "RadixSortScratchTemp";
-        private const string RadixSortCountsTempLabel = "RadixSortCountsTemp";
         private const string BulkTransferValidationTempLabel = "BulkTransferValidationTemp";
         private const string BulkTransferFailureTempLabel = "BulkTransferFailureTemp";
-        private const string BulkTransferCompactionTempLabel = "BulkTransferCompactionTemp";
+        private const string BulkTransferCompactionResultTempLabel = "BulkTransferCompactionResultTemp";
+        private const string BulkTransferCompactionHashTempLabel = "BulkTransferCompactionHashTemp";
+        private const string BulkTransferCompactionCountTempLabel = "BulkTransferCompactionCountTemp";
+        private const string BulkTransferCompactionConditionTempLabel = "BulkTransferCompactionConditionTemp";
+        private const string BulkTransferCompactionStateTempLabel = "BulkTransferCompactionStateTemp";
+        private const string BulkTransferCompactionGeneticsTempLabel = "BulkTransferCompactionGeneticsTemp";
+        private const string BulkTransferCompactionQualityTempLabel = "BulkTransferCompactionQualityTemp";
+        private const string BulkTransferCompactionDurabilityTempLabel = "BulkTransferCompactionDurabilityTemp";
+        private const string BulkTransferCompactionTimestampTempLabel = "BulkTransferCompactionTimestampTemp";
+        private const string BulkTransferCompactionMassTempLabel = "BulkTransferCompactionMassTemp";
+        private const string BulkTransferCompactionVolumeTempLabel = "BulkTransferCompactionVolumeTemp";
+        private const string BulkTransferCompactionRadiationTempLabel = "BulkTransferCompactionRadiationTemp";
         private const string NativeMemoryOwner = nameof(PlayerInventory);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
         private const int InventoryShadowBufferBytes = 16 * 1024;
@@ -107,13 +114,6 @@ namespace Hecton8.Inventory
             Harvestable = 1 << 3
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = 16)]
-        private struct InventorySortEntry
-        {
-            public ulong PackedKey;
-            public int OriginalIndex;
-        }
-
         [StructLayout(LayoutKind.Explicit, Size = InventoryBlackBoxEntrySizeBytes)]
         private struct InventoryTelemetryEntry
         {
@@ -133,69 +133,6 @@ namespace Hecton8.Inventory
             [FieldOffset(52)] public int Columns;
             [FieldOffset(56)] public int Rows;
             [FieldOffset(60)] public int DefragTimeMicroseconds;
-        }
-
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        private struct InventoryRadixSortJob : IJob
-        {
-            private const int ByteBucketCount = 256;
-            private const int PackedKeyPassCount = 6;
-
-            public NativeArray<InventorySortEntry> Entries;
-            public NativeArray<InventorySortEntry> Scratch;
-            public NativeArray<int> Counts;
-            public int Count;
-
-            public void Execute()
-            {
-                if (Count <= 1)
-                    return;
-
-                NativeArray<InventorySortEntry> source = Entries;
-                NativeArray<InventorySortEntry> destination = Scratch;
-                bool sourceIsEntries = true;
-
-                for (int pass = 0; pass < PackedKeyPassCount; pass++)
-                {
-                    for (int bucket = 0; bucket < ByteBucketCount; bucket++)
-                        Counts[bucket] = 0;
-
-                    int shift = pass * 8;
-                    for (int index = 0; index < Count; index++)
-                    {
-                        int bucket = (int)((source[index].PackedKey >> shift) & 0xFFuL);
-                        Counts[bucket]++;
-                    }
-
-                    int runningOffset = 0;
-                    for (int bucket = 0; bucket < ByteBucketCount; bucket++)
-                    {
-                        int bucketCount = Counts[bucket];
-                        Counts[bucket] = runningOffset;
-                        runningOffset += bucketCount;
-                    }
-
-                    for (int index = 0; index < Count; index++)
-                    {
-                        InventorySortEntry entry = source[index];
-                        int bucket = (int)((entry.PackedKey >> shift) & 0xFFuL);
-                        int writeIndex = Counts[bucket];
-                        destination[writeIndex] = entry;
-                        Counts[bucket] = writeIndex + 1;
-                    }
-
-                    NativeArray<InventorySortEntry> swap = source;
-                    source = destination;
-                    destination = swap;
-                    sourceIsEntries = !sourceIsEntries;
-                }
-
-                if (!sourceIsEntries)
-                {
-                    for (int index = 0; index < Count; index++)
-                        Entries[index] = source[index];
-                }
-            }
         }
 
         [BurstCompile]
@@ -498,8 +435,11 @@ namespace Hecton8.Inventory
             public ushort stateFlags;
             public byte geneticsMask;
             public ushort qualityMilli;
+            public byte durability;
             public uint lastUpdateUnixSeconds;
             public float weight;
+            public float unitVolumeM3;
+            public float unitRadiationSv;
             public byte categoryId;
             public byte rarity;
             public bool stackable;
@@ -580,7 +520,6 @@ namespace Hecton8.Inventory
         private NativeArray<float> _defragUnitRadiationSv;
         private NativeArray<int> _defragResult;
         private ItemPlacement[] _sortBuffer;
-        private ItemPlacement[] _sortedPlacements;
         private JobHandle _massVolumeJobHandle;
         private HectonPlayerMovement _movementLoadSink;
         private bool _registeredSlowTick;
@@ -722,8 +661,6 @@ namespace Hecton8.Inventory
             _defragResult = new NativeArray<int>(InventoryDefragResultSlots.RequiredLength, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: int[4] - native defrag result scratch - owner: PlayerInventory
             RegisterNativeMemorySentinel();
             _sortBuffer = new ItemPlacement[columns * rows];
-            // COLD ALLOC: ItemPlacement[columns * rows] — placement reorder buffer — owner: PlayerInventory
-            _sortedPlacements = new ItemPlacement[columns * rows];
             TryGetComponent(out _traumaDispatcher);
         }
 
@@ -2122,7 +2059,10 @@ namespace Hecton8.Inventory
                 return 0;
 
             long microseconds = (elapsedTicks * 1000000L) / System.Diagnostics.Stopwatch.Frequency;
-            return (int)math.min(int.MaxValue, math.max(0L, microseconds));
+            if (microseconds <= 0L)
+                return 0;
+
+            return microseconds >= int.MaxValue ? int.MaxValue : (int)microseconds;
         }
 
         private void PublishInventorySortAcousticSignal()
@@ -2138,26 +2078,6 @@ namespace Hecton8.Inventory
                 State = 1,
                 Flags = 0
             });
-        }
-
-        private bool TryValidateRadixSortBuffers(int itemCount)
-        {
-            if (_sortBuffer == null ||
-                _sortedPlacements == null ||
-                itemCount > _sortBuffer.Length ||
-                itemCount > _sortedPlacements.Length)
-            {
-                return false;
-            }
-
-            bool lengthMismatch = _sortBuffer.Length != _sortedPlacements.Length;
-            if (!lengthMismatch)
-                return true;
-
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogError(RadixSortBufferMismatchLog);
-#endif
-            return false;
         }
 
         internal bool TryMoveOrSwapAnchor(int sourceAnchorX, int sourceAnchorY, int targetCellX, int targetCellY)
@@ -2223,6 +2143,15 @@ namespace Hecton8.Inventory
             PrepareBulkTransferCaches();
             targetInventory.PrepareBulkTransferCaches();
 
+            if (!TryValidateBulkSourceFootprints(sourceStartIndex, slotCount, out bool hasSourceFootprint))
+            {
+                result = InventorySoAUtility.BulkTransferResult.Failed(
+                    hasSourceFootprint
+                        ? InventorySoAUtility.TransferFailureCode.PlacementRejected
+                        : InventorySoAUtility.TransferFailureCode.SourceEmpty);
+                return false;
+            }
+
             if (!TryValidateBulkTransferPlacement(targetInventory, sourceStartIndex, targetStartIndex, slotCount))
             {
                 result = InventorySoAUtility.BulkTransferResult.Failed(InventorySoAUtility.TransferFailureCode.PlacementRejected);
@@ -2263,10 +2192,21 @@ namespace Hecton8.Inventory
             out InventorySoAUtility.BulkTransferResult result)
         {
             result = InventorySoAUtility.BulkTransferResult.Failed(InventorySoAUtility.TransferFailureCode.InvalidInput);
-            if (!IsValidBulkSlice(sourceStartIndex, slotCount) || HasCraftLocksInSlice(sourceStartIndex, slotCount))
+            if (!IsValidBulkSlice(sourceStartIndex, slotCount) || !IsFiniteRuntimePosition(runtimePosition))
+                return false;
+
+            if (HasCraftLocksInSlice(sourceStartIndex, slotCount))
             {
-                if (HasCraftLocksInSlice(sourceStartIndex, slotCount))
-                    result = InventorySoAUtility.BulkTransferResult.Failed(InventorySoAUtility.TransferFailureCode.CraftLocked);
+                result = InventorySoAUtility.BulkTransferResult.Failed(InventorySoAUtility.TransferFailureCode.CraftLocked);
+                return false;
+            }
+
+            if (!TryValidateBulkSourceFootprints(sourceStartIndex, slotCount, out bool hasSourceFootprint))
+            {
+                result = InventorySoAUtility.BulkTransferResult.Failed(
+                    hasSourceFootprint
+                        ? InventorySoAUtility.TransferFailureCode.PlacementRejected
+                        : InventorySoAUtility.TransferFailureCode.SourceEmpty);
                 return false;
             }
 
@@ -2375,12 +2315,69 @@ namespace Hecton8.Inventory
             return false;
         }
 
+        private bool TryValidateBulkSourceFootprints(int startIndex, int slotCount, out bool hasSource)
+        {
+            hasSource = false;
+            if (_grid == null || !_itemHashes.IsCreated || !_stackCounts.IsCreated)
+                return false;
+
+            int end = startIndex + slotCount;
+            for (int index = startIndex; index < end; index++)
+            {
+                uint hash = _itemHashes[index];
+                ushort count = _stackCounts[index];
+                if (hash == 0u || count == 0)
+                    continue;
+
+                hasSource = true;
+                if (!_grid.TryGetAnchorDescriptor(index, out InventoryGrid.InventoryItemDescriptor descriptor) ||
+                    descriptor.HashId != unchecked((int)hash) ||
+                    !IsAnchorFootprintContainedInSlice(index, descriptor.Width, descriptor.Height, startIndex, slotCount))
+                {
+                    return false;
+                }
+            }
+
+            return hasSource;
+        }
+
+        private bool IsAnchorFootprintContainedInSlice(int anchorIndex, int width, int height, int sliceStartIndex, int slotCount)
+        {
+            if (!TryDecodeAnchorIndex(anchorIndex, out int anchorX, out int anchorY) ||
+                sliceStartIndex < 0 ||
+                slotCount <= 0 ||
+                sliceStartIndex > int.MaxValue - slotCount ||
+                width <= 0 ||
+                height <= 0 ||
+                anchorX + width > _grid.Columns ||
+                anchorY + height > _grid.Rows)
+            {
+                return false;
+            }
+
+            int sliceEnd = sliceStartIndex + slotCount;
+            for (int y = anchorY; y < anchorY + height; y++)
+            {
+                for (int x = anchorX; x < anchorX + width; x++)
+                {
+                    int cellIndex = AnchorIndex(x, y);
+                    if (cellIndex < sliceStartIndex || cellIndex >= sliceEnd)
+                        return false;
+                }
+            }
+
+            return true;
+        }
+
         private bool TryValidateBulkTransferPlacement(
             PlayerInventory targetInventory,
             int sourceStartIndex,
             int targetStartIndex,
             int slotCount)
         {
+            if (targetInventory == null || targetInventory._grid == null)
+                return false;
+
             bool hasSource = false;
             for (int offset = 0; offset < slotCount; offset++)
             {
@@ -2392,9 +2389,12 @@ namespace Hecton8.Inventory
 
                 hasSource = true;
                 int targetIndex = targetStartIndex + offset;
-                if (!targetInventory.TryDecodeAnchorIndex(targetIndex, out int targetX, out int targetY) ||
-                    !targetInventory.TryBuildDescriptor(unchecked((int)hash), out InventoryGrid.InventoryItemDescriptor descriptor) ||
-                    !targetInventory._grid.CheckFit(targetX, targetY, descriptor.Width, descriptor.Height))
+                if (!_grid.TryGetAnchorDescriptor(sourceIndex, out InventoryGrid.InventoryItemDescriptor sourceDescriptor) ||
+                    sourceDescriptor.HashId != unchecked((int)hash) ||
+                    !IsAnchorFootprintContainedInSlice(sourceIndex, sourceDescriptor.Width, sourceDescriptor.Height, sourceStartIndex, slotCount) ||
+                    !targetInventory.TryDecodeAnchorIndex(targetIndex, out int targetX, out int targetY) ||
+                    !targetInventory.IsAnchorFootprintContainedInSlice(targetIndex, sourceDescriptor.Width, sourceDescriptor.Height, targetStartIndex, slotCount) ||
+                    !targetInventory._grid.CheckFit(targetX, targetY, sourceDescriptor.Width, sourceDescriptor.Height))
                 {
                     return false;
                 }
@@ -2476,8 +2476,11 @@ namespace Hecton8.Inventory
                     continue;
 
                 int targetIndex = targetStartIndex + offset;
-                if (!targetInventory.TryDecodeAnchorIndex(targetIndex, out int targetX, out int targetY) ||
-                    !targetInventory.TryBuildDescriptor(unchecked((int)hash), out InventoryGrid.InventoryItemDescriptor descriptor) ||
+                if (!_grid.TryGetAnchorDescriptor(sourceIndex, out InventoryGrid.InventoryItemDescriptor descriptor) ||
+                    descriptor.HashId != unchecked((int)hash) ||
+                    !IsAnchorFootprintContainedInSlice(sourceIndex, descriptor.Width, descriptor.Height, sourceStartIndex, slotCount) ||
+                    !targetInventory.TryDecodeAnchorIndex(targetIndex, out int targetX, out int targetY) ||
+                    !targetInventory.IsAnchorFootprintContainedInSlice(targetIndex, descriptor.Width, descriptor.Height, targetStartIndex, slotCount) ||
                     !targetInventory._grid.PlaceAt(in descriptor, targetX, targetY))
                 {
                     return false;
@@ -2564,54 +2567,210 @@ namespace Hecton8.Inventory
                 return false;
             }
 
+            int compactionCapacity = ResolveBulkCompactionCapacity();
+            if (compactionCapacity <= 0)
+                return false;
+
+            NativeArray<uint> itemHashes = default;
+            NativeArray<ushort> itemCounts = default;
+            NativeArray<float> itemCondition = default;
+            NativeArray<ushort> itemStateFlags = default;
+            NativeArray<byte> itemGenetics = default;
+            NativeArray<ushort> qualityMilli = default;
+            NativeArray<byte> durabilities = default;
+            NativeArray<uint> lastUpdateUnixSeconds = default;
+            NativeArray<float> unitMassKg = default;
+            NativeArray<float> unitVolumeM3 = default;
+            NativeArray<float> unitRadiationSv = default;
             NativeArray<int> resultCount = default;
             try
             {
+                itemHashes = new NativeArray<uint>(compactionCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                itemCounts = new NativeArray<ushort>(compactionCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                itemCondition = new NativeArray<float>(compactionCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                itemStateFlags = new NativeArray<ushort>(compactionCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                itemGenetics = new NativeArray<byte>(compactionCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                qualityMilli = new NativeArray<ushort>(compactionCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                durabilities = new NativeArray<byte>(compactionCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                lastUpdateUnixSeconds = new NativeArray<uint>(compactionCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                unitMassKg = new NativeArray<float>(compactionCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                unitVolumeM3 = new NativeArray<float>(compactionCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                unitRadiationSv = new NativeArray<float>(compactionCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 resultCount = new NativeArray<int>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                RegisterTempJobArray(resultCount, BulkTransferCompactionTempLabel);
+                RegisterTempJobArray(itemHashes, BulkTransferCompactionHashTempLabel);
+                RegisterTempJobArray(itemCounts, BulkTransferCompactionCountTempLabel);
+                RegisterTempJobArray(itemCondition, BulkTransferCompactionConditionTempLabel);
+                RegisterTempJobArray(itemStateFlags, BulkTransferCompactionStateTempLabel);
+                RegisterTempJobArray(itemGenetics, BulkTransferCompactionGeneticsTempLabel);
+                RegisterTempJobArray(qualityMilli, BulkTransferCompactionQualityTempLabel);
+                RegisterTempJobArray(durabilities, BulkTransferCompactionDurabilityTempLabel);
+                RegisterTempJobArray(lastUpdateUnixSeconds, BulkTransferCompactionTimestampTempLabel);
+                RegisterTempJobArray(unitMassKg, BulkTransferCompactionMassTempLabel);
+                RegisterTempJobArray(unitVolumeM3, BulkTransferCompactionVolumeTempLabel);
+                RegisterTempJobArray(unitRadiationSv, BulkTransferCompactionRadiationTempLabel);
+                RegisterTempJobArray(resultCount, BulkTransferCompactionResultTempLabel);
+
+                if (!InventorySoAUtility.TryBulkCopySlice(_itemHashes, 0, itemHashes, 0, compactionCapacity) ||
+                    !InventorySoAUtility.TryBulkCopySlice(_stackCounts, 0, itemCounts, 0, compactionCapacity) ||
+                    !InventorySoAUtility.TryBulkCopySlice(_itemCondition, 0, itemCondition, 0, compactionCapacity) ||
+                    !InventorySoAUtility.TryBulkCopySlice(_itemStateFlags, 0, itemStateFlags, 0, compactionCapacity) ||
+                    !InventorySoAUtility.TryBulkCopySlice(_itemGenetics, 0, itemGenetics, 0, compactionCapacity) ||
+                    !InventorySoAUtility.TryBulkCopySlice(_qualityMilli, 0, qualityMilli, 0, compactionCapacity) ||
+                    !InventorySoAUtility.TryBulkCopySlice(_durabilities, 0, durabilities, 0, compactionCapacity) ||
+                    !InventorySoAUtility.TryBulkCopySlice(_lastUpdateUnixSeconds, 0, lastUpdateUnixSeconds, 0, compactionCapacity) ||
+                    !InventorySoAUtility.TryBulkCopySlice(_anchorUnitMassKg, 0, unitMassKg, 0, compactionCapacity) ||
+                    !InventorySoAUtility.TryBulkCopySlice(_anchorUnitVolumeM3, 0, unitVolumeM3, 0, compactionCapacity) ||
+                    !InventorySoAUtility.TryBulkCopySlice(_anchorUnitRadiationSv, 0, unitRadiationSv, 0, compactionCapacity))
+                {
+                    return false;
+                }
+
                 JobHandle compactionHandle = new InventorySoAUtility.InventoryCompactionJob
                 {
-                    ItemHashes = _itemHashes,
-                    ItemCounts = _stackCounts,
-                    ItemCondition = _itemCondition,
-                    ItemStateFlags = _itemStateFlags,
-                    ItemGenetics = _itemGenetics,
-                    QualityMilli = _qualityMilli,
-                    Durabilities = _durabilities,
-                    LastUpdateUnixSeconds = _lastUpdateUnixSeconds,
-                    UnitMassKg = _anchorUnitMassKg,
-                    UnitVolumeM3 = _anchorUnitVolumeM3,
-                    UnitRadiationSv = _anchorUnitRadiationSv,
+                    ItemHashes = itemHashes,
+                    ItemCounts = itemCounts,
+                    ItemCondition = itemCondition,
+                    ItemStateFlags = itemStateFlags,
+                    ItemGenetics = itemGenetics,
+                    QualityMilli = qualityMilli,
+                    Durabilities = durabilities,
+                    LastUpdateUnixSeconds = lastUpdateUnixSeconds,
+                    UnitMassKg = unitMassKg,
+                    UnitVolumeM3 = unitVolumeM3,
+                    UnitRadiationSv = unitRadiationSv,
                     MaxStackCounts = _grid.AnchorMaxStacks,
                     ResultCount = resultCount
                 }.Schedule();
 
                 // COLD SYNC JOB: command-path inventory compaction after bulk transfer; no Tick/SlowTick barrier.
                 DispatcherJobSwap.TryComplete(ref compactionHandle, forceComplete: true);
-                return TryRepackCompactedSoA(resultCount[0]);
+                return TryRepackCompactedSoA(
+                    itemHashes,
+                    itemCounts,
+                    itemCondition,
+                    itemStateFlags,
+                    itemGenetics,
+                    qualityMilli,
+                    durabilities,
+                    lastUpdateUnixSeconds,
+                    unitMassKg,
+                    unitVolumeM3,
+                    unitRadiationSv,
+                    resultCount[0]);
             }
             finally
             {
                 DisposeTempJobArray(ref resultCount);
+                DisposeTempJobArray(ref unitRadiationSv);
+                DisposeTempJobArray(ref unitVolumeM3);
+                DisposeTempJobArray(ref unitMassKg);
+                DisposeTempJobArray(ref lastUpdateUnixSeconds);
+                DisposeTempJobArray(ref durabilities);
+                DisposeTempJobArray(ref qualityMilli);
+                DisposeTempJobArray(ref itemGenetics);
+                DisposeTempJobArray(ref itemStateFlags);
+                DisposeTempJobArray(ref itemCondition);
+                DisposeTempJobArray(ref itemCounts);
+                DisposeTempJobArray(ref itemHashes);
             }
         }
 
-        private bool TryRepackCompactedSoA(int compactedCount)
+        private int ResolveBulkCompactionCapacity()
         {
-            if (_sortBuffer == null || compactedCount < 0)
+            int count = _itemHashes.Length;
+            count = math.min(count, _stackCounts.Length);
+            count = math.min(count, _itemCondition.Length);
+            count = math.min(count, _itemStateFlags.Length);
+            count = math.min(count, _itemGenetics.Length);
+            count = math.min(count, _qualityMilli.Length);
+            count = math.min(count, _durabilities.Length);
+            count = math.min(count, _lastUpdateUnixSeconds.Length);
+            count = math.min(count, _anchorUnitMassKg.Length);
+            count = math.min(count, _anchorUnitVolumeM3.Length);
+            return math.min(count, _anchorUnitRadiationSv.Length);
+        }
+
+        private bool TryRepackCompactedSoA(
+            NativeArray<uint> itemHashes,
+            NativeArray<ushort> itemCounts,
+            NativeArray<float> itemCondition,
+            NativeArray<ushort> itemStateFlags,
+            NativeArray<byte> itemGenetics,
+            NativeArray<ushort> qualityMilli,
+            NativeArray<byte> durabilities,
+            NativeArray<uint> lastUpdateUnixSeconds,
+            NativeArray<float> unitMassKg,
+            NativeArray<float> unitVolumeM3,
+            NativeArray<float> unitRadiationSv,
+            int compactedCount)
+        {
+            if (!TryBuildCompactedPlacements(
+                    itemHashes,
+                    itemCounts,
+                    itemCondition,
+                    itemStateFlags,
+                    itemGenetics,
+                    qualityMilli,
+                    durabilities,
+                    lastUpdateUnixSeconds,
+                    unitMassKg,
+                    unitVolumeM3,
+                    unitRadiationSv,
+                    compactedCount,
+                    out int placementCount))
+            {
+                return false;
+            }
+
+            if (!CanApplyPlacementsFirstFit(_sortBuffer, placementCount))
                 return false;
 
-            int placementCount = 0;
-            int count = math.min(compactedCount, _itemHashes.Length);
+            return TryApplyPlacementsFirstFit(_sortBuffer, placementCount);
+        }
+
+        private bool TryBuildCompactedPlacements(
+            NativeArray<uint> itemHashes,
+            NativeArray<ushort> itemCounts,
+            NativeArray<float> itemCondition,
+            NativeArray<ushort> itemStateFlags,
+            NativeArray<byte> itemGenetics,
+            NativeArray<ushort> qualityMilli,
+            NativeArray<byte> durabilities,
+            NativeArray<uint> lastUpdateUnixSeconds,
+            NativeArray<float> unitMassKg,
+            NativeArray<float> unitVolumeM3,
+            NativeArray<float> unitRadiationSv,
+            int compactedCount,
+            out int placementCount)
+        {
+            placementCount = 0;
+            if (_sortBuffer == null ||
+                compactedCount < 0 ||
+                !itemHashes.IsCreated ||
+                !itemCounts.IsCreated ||
+                !itemCondition.IsCreated ||
+                !itemStateFlags.IsCreated ||
+                !itemGenetics.IsCreated ||
+                !qualityMilli.IsCreated ||
+                !durabilities.IsCreated ||
+                !lastUpdateUnixSeconds.IsCreated ||
+                !unitMassKg.IsCreated ||
+                !unitVolumeM3.IsCreated ||
+                !unitRadiationSv.IsCreated)
+            {
+                return false;
+            }
+
+            int count = math.min(compactedCount, itemHashes.Length);
             for (int index = 0; index < count && placementCount < _sortBuffer.Length; index++)
             {
-                uint hash = _itemHashes[index];
-                ushort stackCount = _stackCounts[index];
+                uint hash = itemHashes[index];
+                ushort stackCount = itemCounts[index];
                 if (hash == 0u || stackCount == 0)
                     continue;
 
                 if (!TryBuildDescriptor(unchecked((int)hash), out InventoryGrid.InventoryItemDescriptor descriptor))
-                    continue;
+                    return false;
 
                 _sortBuffer[placementCount++] = new ItemPlacement
                 {
@@ -2623,18 +2782,43 @@ namespace Hecton8.Inventory
                     maxStack = descriptor.MaxStack,
                     stackCount = stackCount,
                     lockedCount = 0,
-                    stateFlags = _itemStateFlags[index],
-                    geneticsMask = _itemGenetics[index],
-                    qualityMilli = _qualityMilli[index] > 0 ? _qualityMilli[index] : DefaultQualityMilli,
-                    lastUpdateUnixSeconds = _lastUpdateUnixSeconds[index],
-                    weight = descriptor.Weight,
+                    stateFlags = itemStateFlags[index],
+                    geneticsMask = itemGenetics[index],
+                    qualityMilli = qualityMilli[index] > 0 ? qualityMilli[index] : DefaultQualityMilli,
+                    durability = durabilities[index],
+                    lastUpdateUnixSeconds = lastUpdateUnixSeconds[index],
+                    weight = math.max(0f, unitMassKg[index]),
+                    unitVolumeM3 = math.max(0f, unitVolumeM3[index]),
+                    unitRadiationSv = math.max(0f, unitRadiationSv[index]),
                     categoryId = descriptor.CategoryId,
                     rarity = descriptor.Rarity,
                     stackable = descriptor.Stackable
                 };
             }
 
-            return TryApplyPlacementsFirstFit(_sortBuffer, placementCount);
+            return true;
+        }
+
+        private bool CanApplyPlacementsFirstFit(ItemPlacement[] placements, int placementCount)
+        {
+            if (_grid == null ||
+                placements == null ||
+                !_simulationOccupiedCells.IsCreated ||
+                placementCount < 0 ||
+                placementCount > placements.Length)
+            {
+                return false;
+            }
+
+            ClearNativeArray(_simulationOccupiedCells);
+            for (int placementIndex = 0; placementIndex < placementCount; placementIndex++)
+            {
+                InventoryGrid.InventoryItemDescriptor descriptor = placements[placementIndex].Descriptor;
+                if (!descriptor.IsValid || !TryReservePlacementInSimulation(in descriptor))
+                    return false;
+            }
+
+            return true;
         }
 
         private bool TryApplyPlacementsFirstFit(ItemPlacement[] placements, int placementCount)
@@ -3248,13 +3432,6 @@ namespace Hecton8.Inventory
             return total;
         }
 
-        private static ulong PackInventorySortKey(byte categoryId, byte rarity, uint hashId)
-        {
-            return ((ulong)categoryId << 40)
-                | ((ulong)rarity << 32)
-                | hashId;
-        }
-
         private bool TryBuildDescriptor(int itemHashId, out InventoryGrid.InventoryItemDescriptor descriptor)
         {
             descriptor = default;
@@ -3333,24 +3510,6 @@ namespace Hecton8.Inventory
 
             placementIndex = -1;
             return false;
-        }
-
-        private static InventorySortEntry BuildInventorySortEntry(in ItemPlacement placement, int originalIndex)
-        {
-            if (placement.itemHashId == 0)
-            {
-                return new InventorySortEntry
-                {
-                    PackedKey = PackInventorySortKey(byte.MaxValue, byte.MaxValue, uint.MaxValue),
-                    OriginalIndex = originalIndex
-                };
-            }
-
-            return new InventorySortEntry
-            {
-                PackedKey = PackInventorySortKey(placement.categoryId, placement.rarity, unchecked((uint)placement.itemHashId)),
-                OriginalIndex = originalIndex
-            };
         }
 
         private void NotifyInventoryChanged(bool markDirty = true, bool massDirty = true)

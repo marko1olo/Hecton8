@@ -20,7 +20,7 @@ namespace Hecton8.EditorTools
         private const string GhostPrefabFolder = "Assets/_Project/Prefabs/Construction/Ghosts";
         private const string FinalPrefabFolder = "Assets/_Project/Prefabs/Construction/Final";
         private const string TitaniumPrefabPath = "Assets/_Project/Prefabs/Item_Titanium.prefab";
-        private const string DustParticlesPrefabPath = "Assets/VolumetricLightBeam/Resources/DustParticles.prefab";
+        private const string DustParticlesPrefabPath = "Assets/_Project/Prefabs/VFX/PFB_MarineSnowLeakParticles.prefab";
         private const string RuinSeepSheenMaterialPath = "Assets/_Project/Art/Materials/Construction/Mat_RuinSeepSheen.mat";
         private const string SupportCreaturePassiveMaterialPath = "Assets/_Project/Art/Materials/WorldSupport/Mat_Support_CreaturePassive.mat";
         private const string SupportCreaturePredatorMaterialPath = "Assets/_Project/Art/Materials/WorldSupport/Mat_Support_CreaturePredator.mat";

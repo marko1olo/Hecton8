@@ -252,6 +252,8 @@ namespace Hecton8.Systems.AI
         private readonly EncounterThreatClass[] _trackedThreatClasses;
         // COLD ALLOC: float[32] — tracked encounter token costs — owner: EncounterDirector
         private readonly float[] _trackedTokenCosts;
+        // COLD ALLOC: int[16] - published predator AUP source ids for in-place live threat refresh - owner: EncounterDirector
+        private readonly int[] _predatorAupSourceIds;
         private EncounterThreatAuthoringSnapshot _threatAuthoring;
 
         private JobHandle _activeJobHandle;
@@ -296,6 +298,7 @@ namespace Hecton8.Systems.AI
             _trackedEntityIds = new int[MaxActiveEnemies];
             _trackedThreatClasses = new EncounterThreatClass[MaxActiveEnemies];
             _trackedTokenCosts = new float[MaxActiveEnemies];
+            _predatorAupSourceIds = new int[PredatorAupBufferCapacity];
             _candidateCount = ResolveCandidateCount();
             _threatAuthoring = BuildDefaultThreatAuthoringSnapshot();
 
@@ -731,6 +734,17 @@ namespace Hecton8.Systems.AI
             EncounterDirectorState currentState = _frontState[0];
             currentState.PlayerPosition = new float4(frameContext.PlayerPosition, frameContext.PlayerDepth);
             currentState.PlayerVelocity = new float4(frameContext.PlayerVelocity, EstimateLength(frameContext.PlayerVelocity));
+            EncounterThreatAuthoringSnapshot threatAuthoring = _threatAuthoring;
+            IEcosystemDirectorService ecosystemDirector = GlobalRegistry.EcosystemDirector;
+            if (ecosystemDirector != null &&
+                ecosystemDirector.TryGetBiomassAvailability(
+                    new Vector3(frameContext.PlayerPosition.x, frameContext.PlayerPosition.y, frameContext.PlayerPosition.z),
+                    out float preyBiomass01,
+                    out float predatorBiomass01,
+                    out _))
+            {
+                ApplyBiomassThreatCostModifiers(ref threatAuthoring, preyBiomass01, predatorBiomass01);
+            }
 
             EncounterDirectorJob job = new EncounterDirectorJob
             {
@@ -751,7 +765,7 @@ namespace Hecton8.Systems.AI
                 SurfaceWorldY = frameContext.SurfaceWorldY,
                 ForcedThreatClass = _pendingForcedThreatClass,
                 ForcedThreatCount = _pendingForcedThreatCount,
-                ThreatAuthoring = _threatAuthoring,
+                ThreatAuthoring = threatAuthoring,
                 SpawnRequests = _spawnRequests,
                 DespawnRequests = _despawnRequests,
                 Output = _jobOutput
@@ -1278,11 +1292,13 @@ namespace Hecton8.Systems.AI
             if (!_predatorAupUpload.IsCreated)
                 return;
 
-            EnsurePredatorAupBuffers();
+            EnsureGpuResources();
             WritePlayerPredatorAupSlot(playerPosition);
+            ClearPredatorAupSourceIds();
+            _predatorAupSourceIds[0] = 0;
             int uploadCount = 1;
             int length = _headlessEntities.IsCreated ? _headlessEntities.Length : 0;
-            for (int i = 0; i < length && uploadCount < PredatorAupBufferCapacity; i++)
+            for (int i = 0; i < length; i++)
             {
                 HeadlessEntity entity = _headlessEntities[i];
                 if ((entity.Flags & (byte)HeadlessEntityFlags.Active) == 0 ||
@@ -1302,10 +1318,9 @@ namespace Hecton8.Systems.AI
                     _headlessEntities[i] = entity;
                 }
 
-                _predatorAupUpload[uploadCount] = new float4(position.x, position.y, position.z, radius);
-                uploadCount++;
+                InsertPredatorAupEntrySorted(ref uploadCount, entity.EntityId, playerPosition, position, radius);
             }
-            AppendTrackedPredatorAupEntries(ref uploadCount);
+            AppendTrackedPredatorAupEntries(ref uploadCount, playerPosition);
 
             GraphicsBuffer writeBuffer = ResolvePredatorAupWriteBuffer();
             if (writeBuffer != null && uploadCount > 0)
@@ -1337,9 +1352,10 @@ namespace Hecton8.Systems.AI
             if (!_predatorAupUpload.IsCreated)
                 return;
 
-            EnsurePredatorAupBuffers();
+            EnsureGpuResources();
             WritePlayerPredatorAupSlot(playerPosition);
             int uploadCount = math.max(1, math.clamp(_lastPublishedPredatorAupCount, 0, PredatorAupBufferCapacity));
+            RefreshPublishedTrackedPredatorAupSlots(playerPosition, uploadCount);
             GraphicsBuffer writeBuffer = ResolvePredatorAupWriteBuffer();
             if (writeBuffer != null)
             {
@@ -1377,9 +1393,9 @@ namespace Hecton8.Systems.AI
                 PlayerPredatorAupRadiusMeters);
         }
 
-        private void AppendTrackedPredatorAupEntries(ref int uploadCount)
+        private void AppendTrackedPredatorAupEntries(ref int uploadCount, float3 playerPosition)
         {
-            for (int i = 0; i < MaxActiveEnemies && uploadCount < PredatorAupBufferCapacity; i++)
+            for (int i = 0; i < MaxActiveEnemies; i++)
             {
                 if (_trackedEntityIds[i] == 0 || !WritesPredatorAup(_trackedThreatClasses[i]))
                     continue;
@@ -1390,9 +1406,130 @@ namespace Hecton8.Systems.AI
 
                 Vector3 position = trackedTransform.position;
                 float radius = ResolvePredatorAupRadius(_trackedThreatClasses[i]);
-                _predatorAupUpload[uploadCount] = new float4(position.x, position.y, position.z, radius);
+                InsertPredatorAupEntrySorted(ref uploadCount, _trackedEntityIds[i], playerPosition, position, radius);
+            }
+        }
+
+        private void InsertPredatorAupEntrySorted(ref int uploadCount, int sourceId, float3 playerPosition, float3 position, float radius)
+        {
+            if (!_predatorAupUpload.IsCreated ||
+                uploadCount <= 0 ||
+                radius <= 0f ||
+                !math.all(math.isfinite(position)))
+            {
+                return;
+            }
+
+            float candidateDistanceSq = math.lengthsq(position - playerPosition);
+            if (!math.isfinite(candidateDistanceSq))
+                return;
+
+            int insertIndex = uploadCount;
+            if (uploadCount >= PredatorAupBufferCapacity)
+            {
+                float4 farthest = _predatorAupUpload[PredatorAupBufferCapacity - 1];
+                float farthestDistanceSq = ResolvePredatorAupDistanceSq(farthest, playerPosition);
+                if (candidateDistanceSq >= farthestDistanceSq)
+                    return;
+
+                insertIndex = PredatorAupBufferCapacity - 1;
+            }
+            else
+            {
                 uploadCount++;
             }
+
+            while (insertIndex > 1)
+            {
+                float4 previous = _predatorAupUpload[insertIndex - 1];
+                float previousDistanceSq = ResolvePredatorAupDistanceSq(previous, playerPosition);
+                if (previousDistanceSq <= candidateDistanceSq)
+                    break;
+
+                _predatorAupUpload[insertIndex] = previous;
+                _predatorAupSourceIds[insertIndex] = _predatorAupSourceIds[insertIndex - 1];
+                insertIndex--;
+            }
+
+            _predatorAupUpload[insertIndex] = new float4(position.x, position.y, position.z, radius);
+            _predatorAupSourceIds[insertIndex] = sourceId;
+        }
+
+        private void RefreshPublishedTrackedPredatorAupSlots(float3 playerPosition, int uploadCount)
+        {
+            int safeCount = math.clamp(uploadCount, 1, PredatorAupBufferCapacity);
+            for (int i = 1; i < safeCount; i++)
+            {
+                int sourceId = _predatorAupSourceIds[i];
+                if (sourceId == 0 || (sourceId & HeadlessEntityIdBase) == HeadlessEntityIdBase)
+                    continue;
+
+                int trackedSlot = FindTrackedSlot(sourceId);
+                if (trackedSlot < 0 || !WritesPredatorAup(_trackedThreatClasses[trackedSlot]))
+                {
+                    _predatorAupUpload[i] = new float4(_predatorAupUpload[i].x, _predatorAupUpload[i].y, _predatorAupUpload[i].z, 0f);
+                    continue;
+                }
+
+                Transform trackedTransform = _trackedTransforms[trackedSlot];
+                if (trackedTransform == null || !trackedTransform.gameObject.activeInHierarchy)
+                {
+                    _predatorAupUpload[i] = new float4(_predatorAupUpload[i].x, _predatorAupUpload[i].y, _predatorAupUpload[i].z, 0f);
+                    continue;
+                }
+
+                float3 position = trackedTransform.position;
+                if (!math.all(math.isfinite(position)))
+                {
+                    _predatorAupUpload[i] = new float4(_predatorAupUpload[i].x, _predatorAupUpload[i].y, _predatorAupUpload[i].z, 0f);
+                    continue;
+                }
+
+                float radius = ResolvePredatorAupRadius(_trackedThreatClasses[trackedSlot]);
+                _predatorAupUpload[i] = new float4(position.x, position.y, position.z, radius);
+            }
+
+            SortPublishedPredatorAupEntries(playerPosition, safeCount);
+        }
+
+        private void SortPublishedPredatorAupEntries(float3 playerPosition, int uploadCount)
+        {
+            int safeCount = math.clamp(uploadCount, 1, PredatorAupBufferCapacity);
+            for (int i = 2; i < safeCount; i++)
+            {
+                float4 value = _predatorAupUpload[i];
+                int sourceId = _predatorAupSourceIds[i];
+                float distanceSq = ResolvePredatorAupDistanceSq(value, playerPosition);
+                int j = i - 1;
+                while (j >= 1 && ResolvePredatorAupDistanceSq(_predatorAupUpload[j], playerPosition) > distanceSq)
+                {
+                    _predatorAupUpload[j + 1] = _predatorAupUpload[j];
+                    _predatorAupSourceIds[j + 1] = _predatorAupSourceIds[j];
+                    j--;
+                }
+
+                _predatorAupUpload[j + 1] = value;
+                _predatorAupSourceIds[j + 1] = sourceId;
+            }
+        }
+
+        private static float ResolvePredatorAupDistanceSq(float4 entry, float3 playerPosition)
+        {
+            if (entry.w <= 0f)
+                return float.MaxValue;
+
+            float3 position = entry.xyz;
+            if (!math.all(math.isfinite(position)))
+                return float.MaxValue;
+
+            float distanceSq = math.lengthsq(position - playerPosition);
+            return math.isfinite(distanceSq) ? distanceSq : float.MaxValue;
+        }
+
+        private void ClearPredatorAupSourceIds()
+        {
+            for (int i = 0; i < PredatorAupBufferCapacity; i++)
+                _predatorAupSourceIds[i] = 0;
         }
 
         private static float ResolvePredatorAupRadius(EncounterThreatClass threatClass)
@@ -1580,6 +1717,18 @@ namespace Hecton8.Systems.AI
                 default:
                     return math.max(0f, authoring.DroneTokenCost);
             }
+        }
+
+        private static void ApplyBiomassThreatCostModifiers(
+            ref EncounterThreatAuthoringSnapshot authoring,
+            float preyBiomass01,
+            float predatorBiomass01)
+        {
+            if (math.saturate(predatorBiomass01) < 0.1f)
+                authoring.LeviathanTokenCost = math.max(0f, authoring.LeviathanTokenCost) * 2f;
+
+            if (math.saturate(preyBiomass01) > 0.9f)
+                authoring.SwarmTokenCost = math.max(0f, authoring.SwarmTokenCost) * 0.5f;
         }
 
         private static EncounterThreatAuthoringSnapshot BuildThreatAuthoringSnapshot(EncounterProfile encounterProfile, ThreatCostTable explicitThreatCostTable)

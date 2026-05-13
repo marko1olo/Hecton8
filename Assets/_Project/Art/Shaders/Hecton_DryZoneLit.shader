@@ -498,7 +498,9 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
                 }
                 ApplyModuleWaterline(moduleFloodLevel01, moduleSubmerged01, albedo, smoothness);
                 HectonCoreLitApplyEnvironmentalWear(input.positionWS, normalWS, (half)_EnvironmentalWear, (half3)_RustSaltColor.rgb, albedo, metallic, smoothness);
-                HectonCoreLitApplyHullDentSurfaceCheat(input.hullDentShadow, albedo, smoothness);
+                half lowTierScarTexture = SAMPLE_TEXTURE2D(_DetailMask, sampler_DetailMask, input.uv * 2.7).r;
+                half lowTierScar = (half)(_HectonHullDentParams.z * _HectonHullDentParams.y) * lowTierScarTexture * 0.28h;
+                HectonCoreLitApplyHullDentSurfaceCheat(max(input.hullDentShadow, lowTierScar), albedo, smoothness);
                 float parasitePulse = 1.0;
                 float thermalGrowthMask = 0.0;
                 float parasiteMask = HectonCoreLitEvaluateParasiteField(input.positionWS, parasitePulse, thermalGrowthMask);

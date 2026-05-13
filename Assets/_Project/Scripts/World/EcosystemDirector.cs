@@ -3,6 +3,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.AI;
 using Hecton8.Core;
+using Hecton8.Core.Signals;
 using Hecton8.Ecosystem;
 using Hecton8.Gameplay;
 using Hecton8.Physics;
@@ -129,6 +130,13 @@ namespace Hecton8.World
         private static readonly uint _ItemCuredFishNameHash = unchecked((uint)Hecton.Localization.LocHash.Compute("ITEM_CURED_FISH_NAME"));
         private static readonly uint _ItemRawFishNameHash = unchecked((uint)Hecton.Localization.LocHash.Compute("ITEM_RAW_FISH_NAME"));
         private static readonly uint _ItemCookedFishNameHash = unchecked((uint)Hecton.Localization.LocHash.Compute("ITEM_COOKED_FISH_NAME"));
+        private static readonly uint _ItemCuredFishStableHash = unchecked((uint)Hecton.Localization.LocHash.Compute("cured_fish"));
+        private static readonly uint _ItemRawFishStableHash = unchecked((uint)Hecton.Localization.LocHash.Compute("raw_fish"));
+        private static readonly uint _ItemCookedFishStableHash = unchecked((uint)Hecton.Localization.LocHash.Compute("cooked_fish"));
+        private static readonly uint _ItemFishStableHash = unchecked((uint)Hecton.Localization.LocHash.Compute("fish"));
+        private static readonly uint _ItemCuredFishDisplayHash = unchecked((uint)Hecton.Localization.LocHash.Compute("Cured Fish"));
+        private static readonly uint _ItemRawFishDisplayHash = unchecked((uint)Hecton.Localization.LocHash.Compute("Raw Fish"));
+        private static readonly uint _ItemCookedFishDisplayHash = unchecked((uint)Hecton.Localization.LocHash.Compute("Cooked Fish"));
         private static readonly uint _EcosystemDirectorContextHash = unchecked((uint)Hecton.Localization.LocHash.Compute(nameof(EcosystemDirector)));
         // COLD ALLOC: SpatialQueryHit[64] - non-alloc predator diet validation scratch for spawn gating - owner: EcosystemDirector
         private static readonly SpatialQueryHit[] _predatorSpawnValidationHits = new SpatialQueryHit[PredatorSpawnValidationHitCapacity];
@@ -3524,7 +3532,14 @@ namespace Hecton8.World
         {
             return itemHash == _ItemCuredFishNameHash ||
                    itemHash == _ItemRawFishNameHash ||
-                   itemHash == _ItemCookedFishNameHash;
+                   itemHash == _ItemCookedFishNameHash ||
+                   itemHash == _ItemCuredFishStableHash ||
+                   itemHash == _ItemRawFishStableHash ||
+                   itemHash == _ItemCookedFishStableHash ||
+                   itemHash == _ItemFishStableHash ||
+                   itemHash == _ItemCuredFishDisplayHash ||
+                   itemHash == _ItemRawFishDisplayHash ||
+                   itemHash == _ItemCookedFishDisplayHash;
         }
 
         private static float ResolveFloraOvergrowth01(float preyBiomass01)
@@ -3964,18 +3979,18 @@ namespace Hecton8.World
 
         private static EcosystemSectorSaveRecord PackBiomassRunAsSectorRecord(in EcosystemBiomassSaveRun run)
         {
-            uint runLength = math.clamp(run.RunLength, (byte)1, byte.MaxValue);
-            uint preyQ = (uint)(byte)math.clamp(run.PreyBiomassQ, (sbyte)0, (sbyte)100);
-            uint predatorQ = (uint)(byte)math.clamp(run.PredatorBiomassQ, (sbyte)0, (sbyte)100);
-            uint capacityQ = (uint)(byte)math.clamp(run.CarryingCapacityQ, (sbyte)0, (sbyte)100);
+            uint runLength = (uint)math.clamp((int)run.RunLength, 1, byte.MaxValue);
+            uint preyQ = (uint)math.clamp((int)run.PreyBiomassQ, 0, 100);
+            uint predatorQ = (uint)math.clamp((int)run.PredatorBiomassQ, 0, 100);
+            uint capacityQ = (uint)math.clamp((int)run.CarryingCapacityQ, 0, 100);
             return new EcosystemSectorSaveRecord
             {
                 SectorCoord = run.StartMacroCell,
                 PackedPopulations = BiomassSaveRecordMarker |
                                     (runLength & BiomassSaveRunLengthMask) |
-                                    (preyQ << (int)BiomassSavePreyShift) |
-                                    (predatorQ << (int)BiomassSavePredatorShift) |
-                                    (capacityQ << (int)BiomassSaveCapacityShift),
+                                    (preyQ << BiomassSavePreyShift) |
+                                    (predatorQ << BiomassSavePredatorShift) |
+                                    (capacityQ << BiomassSaveCapacityShift),
                 PackedAdaptation = 0u
             };
         }
@@ -3993,10 +4008,10 @@ namespace Hecton8.World
 
             uint packed = saveRecord.PackedPopulations;
             run.StartMacroCell = saveRecord.SectorCoord;
-            run.RunLength = (byte)math.max(1u, packed & BiomassSaveRunLengthMask);
-            run.PreyBiomassQ = (sbyte)math.clamp((int)((packed >> (int)BiomassSavePreyShift) & 0xFFu), 0, 100);
-            run.PredatorBiomassQ = (sbyte)math.clamp((int)((packed >> (int)BiomassSavePredatorShift) & 0xFFu), 0, 100);
-            run.CarryingCapacityQ = (sbyte)math.clamp((int)((packed >> (int)BiomassSaveCapacityShift) & 0x7Fu), 0, 100);
+            run.RunLength = (byte)math.max(1, (int)(packed & BiomassSaveRunLengthMask));
+            run.PreyBiomassQ = (sbyte)math.clamp((int)((packed >> BiomassSavePreyShift) & 0xFFu), 0, 100);
+            run.PredatorBiomassQ = (sbyte)math.clamp((int)((packed >> BiomassSavePredatorShift) & 0xFFu), 0, 100);
+            run.CarryingCapacityQ = (sbyte)math.clamp((int)((packed >> BiomassSaveCapacityShift) & 0x7Fu), 0, 100);
             return true;
         }
 
@@ -4007,7 +4022,7 @@ namespace Hecton8.World
 
         private static float DequantizeBiomassQ(sbyte value)
         {
-            return math.clamp(value, (sbyte)0, (sbyte)100) * 0.01f;
+            return math.clamp((int)value, 0, 100) * 0.01f;
         }
 
         private static int RoundPositiveToInt(float value)

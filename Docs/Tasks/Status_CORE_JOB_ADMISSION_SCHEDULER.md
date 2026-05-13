@@ -38,7 +38,7 @@ Task Count: 19
 
 - [x] 18. MATH LOD | Justification: Low tier uses 0.60 refill scalar; High/Ultra keep full budget for visual overkill lanes. DOD: low/mid/high/ultra policy in rationale. | Rejected: balanced middle refill | Estimate: cuts 40% background admission on i3/MX350.
 - [!] 19. OMEGA COMPILE CHECK | Justification: `Hecton8.Core.Scheduling.dll` compiled through Unity Bee and standalone csc; full Core compile blocked by unrelated shared dependency errors. DOD: scheduler wrapper compile verified, project compile blocked. | Rejected: editing Save/Audio/Power/Player domains to hide unrelated failures | Estimate: no scheduler boxing detected.
-- [!] OMEGA POLISH MANDATE | Justification: `CURRENT_BATCH.md` has no `<POLISH_MANDATE>` tag. Missing batch payload; no invented polish allowed. | Rejected: fabricating an anti-bloat mandate | Estimate: 0us code change.
+- [!] OMEGA POLISH MANDATE | Justification: First `<POLISH_MANDATE id="OMEGA_POLISH">` extracted after core tasks were done/blocked. Scheduler-owned anti-bloat scan found no `foreach`, string formatting/interpolation, `.ToString()`, `math.sqrt`, or `math.normalize`; division scan hit XML comments only. DOD: no extra runtime math expansion. | Rejected: `dotnet build` because the user explicitly forbade it and Unity MCP validation returned `no_unity_session` | Estimate: 0us extra hot-path cost.
 
 ## Verification Log
 
@@ -50,4 +50,7 @@ Task Count: 19
 - Loop 3 complete: voxel bake throttling, critical debt, zero-GC storage, kill switch installed.
 - Loop 4 complete: AUP barrier, blackbox telemetry, recon artifact installed.
 - Loop 5 compile: Unity Bee compiled `Hecton8.Core.Scheduling.dll`; `Hecton8.Core.dll` blocked by unrelated `SaveManager`, `PowerDrainSignal`, `EcosystemDirector`, and `HectonPlayerMovement` errors.
-- Omega polish parse attempted after tasks were checked/blocked; batch contains no `<POLISH_MANDATE>` tag.
+- Omega polish parse completed after tasks were checked/blocked; first `OMEGA_POLISH` mandate applied to scheduler-owned code. Build step remains PENDING because user forbade `dotnet build` and Unity MCP returned `no_unity_session`.
+- Continuation audit 2026-05-13: patched `BurstTokenBucketJobAdmissionService` so recovered critical lane debt clears the VFX kill mask, `Lane0_Critical` borrows only newly created debt instead of the full job cost, AUP/VFX denials report the current EWMA estimate, full EWMA tables fall back to a conservative overflow EWMA, and blackbox entries carry refill frame sequence. DOD: deterministic fixed storage, no dictionaries, no managed frame allocations. Rejected: broad schedule-site migration and `dotnet build`. Estimate: prevents unnecessary 50-200us/lane starvation bleed on normal critical admissions and reopens VFX after recovery.
+- Continuation verification 2026-05-13: `git diff --check` passed for the scheduler service. Unity MCP `validate_script` and console read both returned `no_unity_session`; no `dotnet build` was run per user instruction.
+- Continuation audit 2026-05-13B: split EWMA lookup from allocation so AUP/VFX-denied jobs do not consume the 256 fixed slots before they complete. DOD: table capacity is reserved for measured jobs, denied jobs still get default/overflow estimates. Rejected: growing the table or adding a dictionary. Estimate: protects 256-slot cost table on barrier-heavy frames; avoids false overflow under AUP churn.

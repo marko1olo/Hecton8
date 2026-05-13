@@ -8,6 +8,7 @@ using Hecton8.Bootstrap;
 using Hecton8.Construction;
 using Hecton8.Core;
 using Hecton8.Core.Signals;
+using Hecton8.Environment.Fluids;
 using Hecton8.Gameplay;
 using Hecton8.Inventory;
 using Hecton8.Tools;
@@ -105,7 +106,9 @@ namespace Hecton8.Physics
         private const uint HydroBlackBoxFlagInvalidVelocity = 1u << 5;
         private const uint HydroBlackBoxFlagInvalidBuoyancy = 1u << 6;
         private const uint HydroBlackBoxFlagEmergencyReset = 1u << 7;
+        private const uint HydroBlackBoxFlagBrineSubmerged = 1u << 8;
         private const string HydroBlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_KINEMATICS_HYDRO_DRAG.bin";
+        private const string HydroBlackBoxBrineDumpRelativePath = "Docs/AgentLogs/Dump_OCEAN_CHEMISTRY_ENGINEER.bin";
         private const float DefaultHydraulicLeakRateCubicMetersPerSecond = 0.006f;
         private const float DefaultMaximumHydraulicViscosity = 1f;
         private const float DefaultViscositySloshDampingScale = 0.85f;
@@ -596,6 +599,9 @@ namespace Hecton8.Physics
         private string _splashEventQueueSentinelLabel;
         private FluidMathCore _fluidMathCore;
         private bool _fluidSimulationRegistered;
+        private bool _isBrineSubmerged;
+        private bool _wasBrineSubmerged;
+        private float _brineSubmersionTime;
 
         [StructLayout(LayoutKind.Sequential, Pack = 4)]
         private struct HydroKinematicJobInput
@@ -650,6 +656,7 @@ namespace Hecton8.Physics
             public float3 HydroAcceleration;
             public float3 HydroTorque;
             public float3 TowingTension;
+            public float BrineSubmersionTime;
             public uint Flags;
             public uint StateHash;
         }
@@ -1051,6 +1058,7 @@ namespace Hecton8.Physics
             TryUnregisterOriginShiftListener();
             TryUnregister();
             ClearExteriorThermalAnomalies();
+            ResetBrineHullState();
             RestoreRigidbodyDynamics();
             DisposeNativeStateDeferred();
         }
@@ -1062,6 +1070,7 @@ namespace Hecton8.Physics
             TryUnregisterOriginShiftListener();
             TryUnregister();
             ClearExteriorThermalAnomalies();
+            ResetBrineHullState();
             RestoreRigidbodyDynamics();
             DisposeNativeStateDeferred();
         }
@@ -3682,7 +3691,17 @@ namespace Hecton8.Physics
                 return;
             }
 
-            float perSampleForceMagnitude = WaterDensityKgPerCubicMeter * sampleVolume * GravityMetersPerSecondSquared * crushBuoyancyScale;
+            bool hullInsideBrine = TryResolveHullBrineLayer(centerOfMassWorld, out BrineLayerSample brineSample);
+            float brineDensityMultiplier = hullInsideBrine
+                ? math.max(1f, brineSample.DensityMultiplier)
+                : 1f;
+            UpdateBrineHullBreachState(hullInsideBrine, centerOfMassWorld);
+
+            float perSampleForceMagnitude = WaterDensityKgPerCubicMeter *
+                brineDensityMultiplier *
+                sampleVolume *
+                GravityMetersPerSecondSquared *
+                crushBuoyancyScale;
             float rigidbodyMass = math.isfinite(_rigidbody.mass) ? math.max(_rigidbody.mass, Epsilon) : Epsilon;
             if (!TryResolveSafeQuotient(rigidbodyMass, ExteriorBuoyancySampleCount, out float sampleHullMass))
             {
@@ -3789,6 +3808,7 @@ namespace Hecton8.Physics
             }
 
             float maxForceMagnitude = WaterDensityKgPerCubicMeter *
+                brineDensityMultiplier *
                 displacementVolume *
                 GravityMetersPerSecondSquared *
                 math.max(1f, exteriorBuoyancyForceClampScale);

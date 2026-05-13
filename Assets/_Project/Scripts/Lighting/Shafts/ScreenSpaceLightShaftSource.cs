@@ -58,6 +58,8 @@ namespace Hecton8.Lighting.Shafts
 
         internal static int RegisteredCount => _registeredCount;
 
+        internal uint ResolvedSourceId => sourceId != 0u ? sourceId : unchecked((uint)GetInstanceID());
+
         internal static ScreenSpaceLightShaftSource GetRegisteredAt(int index)
         {
             return index >= 0 && index < _registeredCount ? _registeredSources[index] : null;
@@ -115,7 +117,7 @@ namespace Hecton8.Lighting.Shafts
                 math.saturate(sourceColor.b));
             float luma = math.dot(rgb, new float3(0.2126f, 0.7152f, 0.0722f));
 
-            contribution.SourceId = sourceId != 0u ? sourceId : unchecked((uint)GetInstanceID());
+            contribution.SourceId = ResolvedSourceId;
             contribution.ScreenUv = new float2(math.saturate(viewport.x), math.saturate(viewport.y));
             contribution.ColorRgb = rgb;
             contribution.Intensity = resolvedIntensity;

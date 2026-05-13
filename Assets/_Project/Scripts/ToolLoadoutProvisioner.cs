@@ -1,6 +1,6 @@
 // ============================================================================
 // HECTON-8 - ToolLoadoutProvisioner.cs
-// Safe provisioning helper for inventory + quick-slot loadouts.
+// Development provisioning helper for inventory + quick-slot loadouts.
 // Keeps player runtime integration deterministic without hand-wiring every test.
 // ============================================================================
 
@@ -30,7 +30,7 @@ namespace Hecton8.Dev
         [SerializeField] private bool provisionInventoryOnStart = false;
         [SerializeField] private bool assignCoreLoadoutOnStart = false;
         [SerializeField] private bool holsterBeforeAssigning = true;
-        [SerializeField] private bool provisionConstructionMaterialsOnStart = true;
+        [SerializeField] private bool provisionConstructionMaterialsOnStart = false;
         [SerializeField] private ToolLoadoutPreset startupPreset;
 
         [Header("Core Quick Slots")]
@@ -67,6 +67,12 @@ namespace Hecton8.Dev
             if (_appliedAtRuntime)
                 return;
 
+            if (!CanProvisionInCurrentBuild())
+            {
+                _appliedAtRuntime = true;
+                return;
+            }
+
             if (provisionInventoryOnStart)
                 ProvisionFullToolKit();
 
@@ -87,6 +93,9 @@ namespace Hecton8.Dev
         [ContextMenu("Provision Full Tool Kit")]
         public void ProvisionFullToolKit()
         {
+            if (!CanProvisionInCurrentBuild())
+                return;
+
             AutoResolveSceneReferences();
             if (playerInventory == null)
                 return;
@@ -107,6 +116,9 @@ namespace Hecton8.Dev
         [ContextMenu("Provision Construction Materials")]
         public void ProvisionConstructionMaterials()
         {
+            if (!CanProvisionInCurrentBuild())
+                return;
+
             AutoResolveSceneReferences();
             if (playerInventory == null)
                 return;
@@ -126,6 +138,9 @@ namespace Hecton8.Dev
         [ContextMenu("Assign Core Loadout")]
         public void AssignCoreLoadout()
         {
+            if (!CanProvisionInCurrentBuild())
+                return;
+
             AutoResolveSceneReferences();
             if (toolManager == null)
                 return;
@@ -150,6 +165,9 @@ namespace Hecton8.Dev
         [ContextMenu("Apply Startup Preset")]
         public void ApplyStartupPreset()
         {
+            if (!CanProvisionInCurrentBuild())
+                return;
+
             AutoResolveSceneReferences();
             if (toolManager == null || startupPreset == null)
                 return;
@@ -169,6 +187,15 @@ namespace Hecton8.Dev
                 if (toolManager == null)
                     toolManager = ((Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.ToolManager != null) ? Hecton8.Core.GlobalRegistry.Player.ToolManager : playerTransform.GetComponent<PlayerToolManager>());
             }
+        }
+
+        private static bool CanProvisionInCurrentBuild()
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            return true;
+#else
+            return false;
+#endif
         }
 
 #if UNITY_EDITOR

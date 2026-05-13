@@ -72,4 +72,28 @@ Scalability potential: Low = nlerp pull only and no FOV; Middle = nlerp plus squ
 
 Hardware Impact: Low-end estimate remains under 10 microseconds per active focus frame. Exact cheats used: rsqrt-backed nlerp, squared-distance fade, bitmask flags, NativeQueue decoupling, edge-only audio ducking, and fixed ring telemetry. `dotnet build Hecton8.Core.csproj` remains blocked by global baseline contract errors; Unity MCP validation is blocked by `no_unity_session`. STATUS: PENDING DUE GLOBAL COMPILE DEPENDENCIES.
 
-Final Git Diff: Current task footprint is `Assets/_Project/Scripts/HectonPlayerMovement.cs`, `Assets/_Project/Scripts/Core/GlobalSignals.cs`, `Assets/_Project/Scripts/Core/CinematicMath.cs`, `Assets/_Project/Scripts/HectonNarrativeDirector.cs`, `Assets/_Project/Scripts/Hecton8.Core.asmdef`, `Assets/_Project/Scripts/Narrative/Camera/CinematicMath.cs`, `Assets/_Project/Scripts/Narrative/Camera/Hecton8.Narrative.Camera.asmdef`, `Docs/Tasks/Status_CINEMATIC_FRAMER.md`, and `Docs/AgentLogs/Rationale_CINEMATIC_FRAMER.md`. `git diff --name-only` returned no pending local diff in the current workspace snapshot.
+Final Git Diff: Current pending CINEMATIC_FRAMER diff includes `Assets/_Project/Scripts/Core/GlobalSignals.cs`, `Assets/_Project/Scripts/HectonPlayerMovement.cs`, `Docs/Tasks/Status_CINEMATIC_FRAMER.md`, `Docs/AgentLogs/Rationale_CINEMATIC_FRAMER.md`, and `Docs/AgentLogs/LOG_CINEMATIC_FRAMER.md`. Earlier task footprint also included `Assets/_Project/Scripts/Core/CinematicMath.cs`, `Assets/_Project/Scripts/HectonNarrativeDirector.cs`, `Assets/_Project/Scripts/Narrative/Camera/CinematicMath.cs`, and `Assets/_Project/Scripts/Narrative/Camera/Hecton8.Narrative.Camera.asmdef`, which are currently not in the pending diff.
+
+## Continuation Hardening Decisions
+
+Problem: Re-review found Core referencing `Hecton8.Narrative.Camera`, disabled cinematic focus leaving `NarrativeFocusSignal` entries queued, and active focus direction deriving the player AUP from runtime rigidbody position instead of the locomotion AUP snapshot.
+
+Solution: Removed the Core-to-narrative asmdef reference so the narrative camera assembly remains isolated toward contracts. Changed signal drain to consume bounded focus signals even while focus is disabled and release active audio ducking. Changed player AUP source to `_playerState.AbsolutePosition` for focus direction math.
+
+Rejected Alternatives: Leaving the asmdef reference in place would invert the intended dependency. Clearing the full focus queue unbounded in one frame was rejected to preserve the existing drain budget. Reconstructing AUP from `_rb.position` was rejected because it depends on current floating-origin runtime space instead of the authoritative locomotion snapshot.
+
+Scalability potential: Low keeps the same budget and avoids stale disabled-state work. Middle/High/Ultra keep the same signal contract with less assembly coupling. Ultra visual overkill consumers can still live in `Hecton8.Narrative.Camera` without forcing Core to depend on them.
+
+Hardware Impact: Removes one runtime-position-to-AUP conversion per active focus frame and prevents stale disabled focus work. Runtime estimate tightens from 4-8 us to roughly 3-7 us for one active focus, still PENDING without profiler proof.
+
+## Second Continuation Hardening Decisions
+
+Problem: Re-review found a remaining cold-tier refresh call inside `ApplyNarrativeFocusSignal` and a scalar division inside active-frame subtitle fade. Both were small, but both violate the "keep upgrading/fixing/improving" pass because accepted focus signals and active fades are part of the presentation hot path.
+
+Solution: Removed `RefreshCinematicFocusTierGateCold` from signal acceptance and kept tier/VR gate refresh in cold lifecycle setup. Changed subtitle fade from `distanceSq / fadeSq` to `distanceSq * math.rcp(fadeSq)`.
+
+Rejected Alternatives: Per-signal `GlobalRegistry` polling was rejected because scalability tier changes do not need to be sampled inside a focus signal consumer. Leaving the division was rejected because reciprocal multiply is cheaper and keeps the same bounded, fake squared-distance fade.
+
+Scalability potential: Low = cached tier gate disables FOV narrowing with no per-focus registry read; Middle = same nlerp/fade path; High = future richer subtitle/material consumers receive the same alpha; Ultra = visual overkill remains downstream without making the player camera loop heavier.
+
+Hardware Impact: Removes one registry read per accepted focus signal and one scalar division per active focus frame with subtitle fade. Low-end estimate remains roughly 3-7 microseconds for one active focus, still PENDING without profiler/Unity session proof.

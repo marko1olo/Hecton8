@@ -19,3 +19,37 @@ Active focus path estimate on i3/MX350: 4-8 us per frame for one focus target. S
 
 Verification:
 Prompt re-read: `CURRENT_BATCH.md` lines 612-655. Static scans found no `Vector3.Distance` or `Quaternion.Slerp` in the focus path and found `CinematicMath.FastNlerp` at `HectonPlayerMovement.cs:7529`. `dotnet build Hecton8.Core.csproj` remains blocked by global baseline contract failures (`Hecton8.Core.Scheduling`, `Hecton8.Core.Memory.Layout`, `Hecton8.Audio.Propagation`, `IGroundRadarService`, `IInertialNavigationService`, `BinaryBlittableSafe`, `TetherFiredSignal`, acoustic contracts). Unity MCP script validation failed because no Unity session is available. Status remains PENDING due global compile/Unity validation blocks.
+
+## 2026-05-13 Continuation Hardening
+
+What was wrong:
+Re-review found three avoidable defects: Core had an unnecessary reference to `Hecton8.Narrative.Camera`, disabled focus stopped draining `NarrativeFocusSignal` entries, and active focus direction rebuilt player AUP from rigidbody runtime position instead of using the authoritative locomotion AUP snapshot.
+
+What was done:
+Removed `Hecton8.Narrative.Camera` from `Hecton8.Core.asmdef`. Updated `DrainNarrativeFocusSignals` to drain bounded focus signals while disabled and release active audio ducking. Updated `TryResolveCinematicFocusDirection` to use `_playerState.AbsolutePosition`.
+
+Cinematic Cheats used:
+No new visual cost. The system remains one AUP delta, rsqrt direction, nlerp pull, scalar FOV bias, edge-only signals, and fixed ring telemetry.
+
+Exact Microseconds saved:
+Removed one runtime-to-AUP conversion per active focus frame. Estimate improves from 4-8 us to 3-7 us per active focus frame on i3/MX350. Queue drain remains capped at four signals per frame.
+
+Verification:
+Static scan shows no `Vector3.Distance` or `Quaternion.Slerp` in touched focus files. `CinematicMath.FastNlerp` remains the only focus rotation blend. `Hecton8.Core.asmdef` no longer references `Hecton8.Narrative.Camera`. `dotnet build Hecton8.Core.csproj` still fails on global baseline missing contracts/asmdefs; Unity MCP validation still returns `no_unity_session`.
+
+## 2026-05-13 Hot-Path Purge
+
+What was wrong:
+The focus acceptance path still refreshed the cinematic focus tier gate through `GlobalRegistry`, and subtitle alpha still used a scalar division. Neither was catastrophic, but both were unnecessary hot-path work.
+
+What was done:
+Removed `RefreshCinematicFocusTierGateCold` from `ApplyNarrativeFocusSignal`; focus FOV permission now uses the cached gate initialized in lifecycle setup. Replaced subtitle fade division with `math.rcp(fadeSq)` reciprocal multiply.
+
+Cinematic Cheats used:
+No honest simulation added. The system stays on squared AUP distance, cached tier flags, nlerp pull, scalar FOV bias, NativeQueue events, and fixed ring telemetry.
+
+Exact Microseconds saved:
+Saved one `GlobalRegistry` read per accepted focus signal and one scalar division per active focus frame using subtitle fade. Updated estimate remains roughly 3-7 us per active focus frame on i3/MX350. Exact profiler proof is still blocked by no Unity session and global compile failures.
+
+Verification:
+`rg` confirms `RefreshCinematicFocusTierGateCold` is only called from cold lifecycle paths, `ApplyNarrativeFocusSignal` no longer calls it, and `ResolveCinematicSubtitleAlpha01` uses `math.rcp`. Final `dotnet build Hecton8.Core.csproj --no-restore` probe remains blocked by unrelated global baseline errors including missing fluids/CCD/audio/memory contracts and unrelated brine edits in `HectonPlayerMovement.cs`.

@@ -285,28 +285,19 @@ namespace Hecton8.World
             float sizeX = math.max(cellSizeMeters, maxWorldX - minWorldX);
             float sizeZ = math.max(cellSizeMeters, maxWorldZ - minWorldZ);
 
-            // COLD ALLOC: GameObject[1] - generated brine pool mesh and hazard - owner: HectonBrinePoolMeshGenerator
+            // COLD ALLOC: GameObject[1] - generated brine pool hazard anchor - owner: HectonBrinePoolMeshGenerator
             var poolObject = new GameObject(BrinePoolObjectName);
             poolObject.transform.SetParent(_poolRoot, false);
             poolObject.transform.position = runtimeCenter;
             poolObject.transform.localScale = new Vector3(sizeX, 1f, sizeZ);
             poolObject.layer = ResolveBrinePhysicsLayer();
 
-            MeshFilter meshFilter = poolObject.AddComponent<MeshFilter>();
-            MeshRenderer meshRenderer = poolObject.AddComponent<MeshRenderer>();
-            if (brineMaterial != null)
-                meshRenderer.sharedMaterial = brineMaterial;
-
-            Mesh poolMesh = EnsureSharedPoolMesh();
-            meshFilter.sharedMesh = poolMesh;
-            CreateFogVolume(poolObject.transform, poolMesh);
-
             float safeColliderDepth = math.max(0.001f, colliderDepthMeters);
             BoxCollider collider = poolObject.AddComponent<BoxCollider>();
             collider.center = new Vector3(0f, safeColliderDepth * -0.5f, 0f);
             collider.size = new Vector3(1f, safeColliderDepth, 1f);
             collider.isTrigger = true;
-            // Cinematic hazard fake: HazardZoneManager owns toxic incursion checks; this disabled trigger only satisfies ToxinHazard's collider contract.
+            // Cinematic hazard fake: the brine surface/fog are global shader planes; this disabled trigger only satisfies ToxinHazard's collider contract.
             collider.enabled = false;
             poolObject.AddComponent<ToxinHazard>();
             return poolObject;

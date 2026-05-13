@@ -6,6 +6,7 @@ using Hecton8.Caves;
 using UnityEngine;
 using UnityEngine.Serialization;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Signals;
 using Hecton8.Gameplay;
 using Hecton8.Interaction;
@@ -1030,6 +1031,14 @@ namespace Hecton8.AI
                 return;
             }
 
+            if (_foveatedSimulationTier == FoveatedSimulationTier.Frozen && !_foveatedTier0Locked)
+            {
+                AdvanceSlowTickCadence(dt);
+                ClearProceduralStrikeIntent();
+                ClearEcholocationMimicSignal();
+                return;
+            }
+
             bool forceAggroTick = ShouldForceAggroCognitionTick();
             ResolveLogicalLodTier();
             if (ShouldUseDeadZoneColdTick())
@@ -1232,7 +1241,8 @@ namespace Hecton8.AI
                 }
             }
 
-            float3 selfVelocity = _rb != null ? _rb.linearVelocity : float3.zero;
+            Vector3 rigidbodyVelocity = _rb != null ? _rb.linearVelocity : Vector3.zero;
+            float3 selfVelocity = new float3(rigidbodyVelocity.x, rigidbodyVelocity.y, rigidbodyVelocity.z);
             float3 selfForward = ResolveSelfLogicForward();
             float attackRange = _speciesProfile != null ? _speciesProfile.attackRadius : math.max(1f, _stateMachine.attackRadius);
             float wanderRadius = math.max(1f, _stateMachine.wanderRadius);
@@ -1288,7 +1298,7 @@ namespace Hecton8.AI
                 ToVector3(selfVelocity),
                 ToVector3(selfForward),
                 hasPlayerTarget ? playerPosition : default,
-                hasPlayerForward ? playerForward : selfForward,
+                hasPlayerForward ? playerForward : ToVector3(selfForward),
                 hasPlayerVelocity ? playerVelocity : default,
                 hasThreatTarget
                     ? (hasApexRivalTarget
@@ -1474,21 +1484,10 @@ namespace Hecton8.AI
 
         private bool ShouldUseDeadZoneColdTick()
         {
-            if (_isDead || _utilityBrain.IsActivePredator == false || _foveatedInsideFrustum)
-                return false;
-
-            bool hasRuntimeContext = TryResolveCachedPlayerRuntimeContext(out PlayerRuntimeContext runtimeContext) &&
-                                     runtimeContext != null &&
-                                     (runtimeContext.MovementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u;
-            if (!hasRuntimeContext)
-                return false;
-
-            if (!TryResolveSelfLogicAup(out AbsoluteUniversePosition selfAup))
-                return false;
-
-            AbsoluteUniversePosition playerAup = runtimeContext.MovementState.PredictedAup;
-            return AbsoluteUniversePosition.DistanceSq(in selfAup, in playerAup) >
-                   (double)PredatorDeadZoneCullDistanceMeters * PredatorDeadZoneCullDistanceMeters;
+            return !_isDead &&
+                   _utilityBrain.IsActivePredator &&
+                   !_foveatedInsideFrustum &&
+                   _foveatedSimulationTier == FoveatedSimulationTier.Peripheral;
         }
 
         private void ApplyVoxelPathGuidance(float3 selfPosition, AIState resolvedState)
@@ -3254,6 +3253,10 @@ namespace Hecton8.AI
                 point = _rb != null ? _rb.position : transform.position;
 
             float speedSq = impliedVelocity.sqrMagnitude;
+            if (!math.isfinite(speedSq))
+                speedSq = 0f;
+
+            float impactSpeed = speedSq > 0.000001f ? speedSq * math.rsqrt(speedSq) : 0f;
             float lostKineticEnergy = KinematicCcdMath.KineticEnergy(_rb != null ? _rb.mass : 1f, speedSq);
             byte flags = 0;
             if (cornerHalt)
@@ -3266,9 +3269,9 @@ namespace Hecton8.AI
             signal.PointAup = pointAup;
             signal.Normal = new float3(safeNormal.x, safeNormal.y, safeNormal.z);
             signal.LostKineticEnergy = lostKineticEnergy;
-            signal.ImpactSpeed = math.sqrt(math.max(0f, speedSq));
+            signal.ImpactSpeed = impactSpeed;
             signal.SourceHash = ResolveStableFaunaHash(FaunaLeviathanBiteHashSalt, 0u);
-            signal.TargetHash = hit.collider != null ? unchecked((uint)hit.collider.GetInstanceID()) : 0u;
+            signal.TargetHash = hit.collider != null ? unchecked((uint)EntityId.ToULong(hit.collider.GetEntityId())) : 0u;
             signal.Frame = unchecked((uint)Time.frameCount);
             signal.SourceKind = HighSpeedImpactSignal.SourceLeviathan;
             signal.Flags = flags;
@@ -4334,21 +4337,12 @@ namespace Hecton8.AI
             if (_rb == null || fdt <= 0f)
                 return;
 
-            bool hasRuntimeContext = TryResolveCachedPlayerRuntimeContext(out PlayerRuntimeContext runtimeContext) &&
-                                     runtimeContext != null &&
-                                     (runtimeContext.MovementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u;
-            if (hasRuntimeContext)
+            if (_foveatedSimulationTier == FoveatedSimulationTier.Frozen)
             {
-                AbsoluteUniversePosition selfAup = AbsoluteUniversePosition.FromRuntimePosition(_rb.worldCenterOfMass);
-                AbsoluteUniversePosition playerAup = runtimeContext.MovementState.PredictedAup;
-                double distanceToPlayerSqr = AbsoluteUniversePosition.DistanceSq(in selfAup, in playerAup);
-                if (distanceToPlayerSqr > AmbientCurrentCullDistanceSqr)
-                {
-                    if (_rb.linearVelocity.sqrMagnitude <= 0.04f && !_rb.IsSleeping())
-                        _rb.Sleep();
+                if (_rb.linearVelocity.sqrMagnitude <= 0.04f && !_rb.IsSleeping())
+                    _rb.Sleep();
 
-                    return;
-                }
+                return;
             }
 
             Vector3 sampledCurrent = CurrentVolume.SampleCombinedCurrent(_rb.worldCenterOfMass);
@@ -5164,6 +5158,7 @@ namespace Hecton8.AI
 
             float normalizedDamage = _maxHealth > 0.001f ? clampedDamage * math.rcp(_maxHealth) : 0f;
             _currentHealth = math.max(0f, _currentHealth - clampedDamage);
+            NotifyFoveatedCombatDamageLock();
             TriggerHitFlash(normalizedDamage);
 
             Vector3 resolvedSourcePosition = hasDamageSource

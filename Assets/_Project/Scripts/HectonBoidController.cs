@@ -61,6 +61,7 @@
 
 using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Optimization;
 using Hecton8.World;
 using Unity.Collections;
@@ -301,6 +302,7 @@ namespace Hecton8.AI.GPU
             public static readonly int AcousticPingParams = Shader.PropertyToID("_AcousticPingParams");
             public static readonly int PanicDecay = Shader.PropertyToID("_PanicDecay");
             public static readonly int PanicAccelerationThresholdSq = Shader.PropertyToID("_PanicAccelerationThresholdSq");
+            public static readonly int FoveatedVatTimeScale = Shader.PropertyToID("_H8FoveatedVatTimeScale");
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -394,6 +396,8 @@ namespace Hecton8.AI.GPU
 
         /// <summary>ÐšÑÑˆÐ¸Ñ€Ð¾Ð²Ð°Ð½Ð½Ð°Ñ ÐºÐ°Ð¼ÐµÑ€Ð°.</summary>
         private Camera _mainCamera;
+        private IFoveatedSimulationDirector _foveatedSimulationDirector;
+        private FoveatedSimulationTier _foveatedSimulationTier = FoveatedSimulationTier.Active;
 
         /// <summary>Is system initialized and ready.</summary>
         private bool _initialized;
@@ -485,6 +489,7 @@ namespace Hecton8.AI.GPU
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
             _registeredToTickManager = GlobalRegistry.Updatables.Contains(this);
+            _foveatedSimulationDirector = GlobalRegistry.FoveatedSimulationDirector;
             Hecton8.Physics.PhysicsEventBus.Register((Hecton8.Physics.IAcousticPingEventListener)this);
             _acousticPingSubscribed = true;
 
@@ -499,6 +504,9 @@ namespace Hecton8.AI.GPU
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
                 _registeredToTickManager = false;
             }
+
+            _foveatedSimulationDirector = null;
+            _foveatedSimulationTier = FoveatedSimulationTier.Active;
 
             if (_acousticPingSubscribed)
             {
@@ -549,12 +557,19 @@ namespace Hecton8.AI.GPU
 
             UpdateTarget();
             UpdateSpatialGridLayout();
+            if (_foveatedSimulationDirector == null)
+                _foveatedSimulationDirector = GlobalRegistry.FoveatedSimulationDirector;
+
+            if (_foveatedSimulationDirector != null)
+                _foveatedSimulationTier = _foveatedSimulationDirector.ResolveTierForPosition(boundsCenter);
+            bool simulateBoids = _foveatedSimulationTier != FoveatedSimulationTier.Frozen;
 
             // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             //  2. SET UNIFORMS (includes Ping-Pong buffer binding)
             // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-            SetComputeUniforms(deltaTime);
+            if (simulateBoids)
+                SetComputeUniforms(deltaTime);
 
             // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             //  3. DISPATCH COMPUTE
@@ -564,18 +579,22 @@ namespace Hecton8.AI.GPU
             float t0 = Time.realtimeSinceStartup;
 #endif
 
-            DispatchSpatialGridBuild();
-            boidShader.Dispatch(_kernelCSMain, _dispatchGroupCount, 1, 1);
+            if (simulateBoids)
+            {
+                DispatchSpatialGridBuild();
+                boidShader.Dispatch(_kernelCSMain, _dispatchGroupCount, 1, 1);
+            }
 
 #if UNITY_EDITOR
-            _debugComputeMs = (Time.realtimeSinceStartup - t0) * 1000f;
+            _debugComputeMs = simulateBoids ? (Time.realtimeSinceStartup - t0) * 1000f : 0f;
 #endif
 
             // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             //  4. INCREMENT FRAME INDEX (swap for next frame)
             // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-            _frameIndex++;
+            if (simulateBoids)
+                _frameIndex++;
 
             // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             //  5. FRUSTUM CULLING
@@ -942,6 +961,7 @@ namespace Hecton8.AI.GPU
             _materialProps.SetBuffer(ShaderProps.VisibleBoidIndices, _visibleBoidIndexBuffer);
             _materialProps.SetFloat(ShaderProps.BoidUseVisibleIndices, 1f);
             _materialProps.SetFloat("_FishScale", fishScale);
+            _materialProps.SetFloat(ShaderProps.FoveatedVatTimeScale, 1f);
 
             _renderParams = new RenderParams(fishMaterial)
             {
@@ -1336,6 +1356,8 @@ namespace Hecton8.AI.GPU
             _materialProps.SetBuffer(ShaderProps.BoidsBuffer, currentDataBuffer);
             _materialProps.SetBuffer(ShaderProps.VisibleBoidIndices, _visibleBoidIndexBuffer);
             _materialProps.SetFloat(ShaderProps.BoidUseVisibleIndices, 1f);
+            _materialProps.SetFloat(ShaderProps.FoveatedVatTimeScale,
+                _foveatedSimulationTier == FoveatedSimulationTier.Peripheral ? 0.5f : 1f);
             _renderParams.matProps = _materialProps;
 
             // Update world bounds in case center moved

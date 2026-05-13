@@ -20,6 +20,8 @@ Current static audit corrections:
 - R8 world/scatter correction: world runtime code and data are substantial, but `GameBootstrapper` only creates `PersistentWorldRegistry`; scatter/field/chunk/MapMagic/vegetation/streaming managers still require scene/editor-authoring proof and runtime validation
 - R9 root/atlas correction: root authority is only `AGENTS.md`, `MASTER_RELEASE_WORK_PLAN.md`, and `BUILD_PLAYTEST_ISSUES.md`; root `PROJECT_ATLAS.md` is a compatibility mirror and atlas data is asmdef graph evidence only, not package/config/runtime proof
 - R14 gameplay/economy correction: item/catalog/recipe/inventory/fabricator/scarcity/logistics code is real, but resource acquisition is not proven; `23 / 27` resource-node harvest items lack `worldPrefab`, template-driven `ResourceNode` drops depend on a registry path that rejects null prefabs, and duplicate `Data_Copper` assets split node/barter data from catalog/recipe data
+- R15 AI/Fauna correction: fauna archetype/template/biome/proxy data is real, but static scans did not prove production-scene `FaunaDirector` or `WorldFaunaSpawnRegistry` wiring; `GameBootstrapper` can register `DemiurgeFaunaSimulationService.Shared` as a ready `IFaunaSim` fallback with `ResidentSlotCapacity = 0`, so `IFaunaSim.IsReady` alone is not visible-fauna proof
+- R16 tools/PDA/first-hour correction: tool/scan/interaction architecture is real (`12` tool items, `12` held prefabs, `12` world prefabs, non-null tool worldPrefab refs, real scanner/scan-log/interaction/quest paths), but first-hour route truth is contaminated by enabled `ToolLoadoutProvisioner` startup grants on `Player.prefab`; `PlayerPDA` is prefab-headless and the `DiegeticPDAController` bridge placement remains unproven
 - source counts are volatile during active multi-agent work; exact counts are snapshot data, not permanent truth
 - runtime proof remains absent
 
@@ -225,7 +227,7 @@ Additional registry-backed contracts outside that 21-owner service list:
 
 - `IPDALogbookService` -> `PDA/PDALogbookManager`
 - `IPowerGridService` -> `PowerGridManager`
-- `IFaunaSim` -> `Fauna/FaunaSimulationEngine` plus bootstrap fallback `DemiurgeFaunaSimulationService`
+- `IFaunaSim` -> `Fauna/FaunaSimulationEngine` when an active `FaunaDirector` exists; bootstrap fallback `DemiurgeFaunaSimulationService` is headless/data-only and does not prove visible fauna or resident slots
 - `IFluidSim` -> `Physics/FluidMathCore`
 - `ISubmarineRuntimeContext` -> `SubmarineCoreDirector`
 - `ISubmarineHullBreachReadModel` -> `SubmarineStructuralGrid`

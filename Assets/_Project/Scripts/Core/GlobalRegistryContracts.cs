@@ -1863,6 +1863,73 @@ namespace Hecton8.Core
     }
 
     /// <summary>
+    /// Blittable flood readback for one habitat room, expressed in runtime-space meters.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    public readonly struct HabitatRoomWaterlineSnapshot
+    {
+        public const byte FlagBreached = 1 << 0;
+        public const byte FlagFlooded = 1 << 1;
+        public const byte FlagPowered = 1 << 2;
+        public const byte FlagOxygenDisabled = 1 << 3;
+
+        public HabitatRoomWaterlineSnapshot(
+            int roomId,
+            float fill01,
+            float surfaceY,
+            float floorY,
+            float ceilingY,
+            float waterVolumeM3,
+            uint sequence,
+            byte flags)
+        {
+            RoomId = roomId;
+            Fill01 = fill01;
+            SurfaceY = surfaceY;
+            FloorY = floorY;
+            CeilingY = ceilingY;
+            WaterVolumeM3 = waterVolumeM3;
+            Sequence = sequence;
+            Flags = flags;
+        }
+
+        public int RoomId { get; }
+        public float Fill01 { get; }
+        public float SurfaceY { get; }
+        public float FloorY { get; }
+        public float CeilingY { get; }
+        public float WaterVolumeM3 { get; }
+        public uint Sequence { get; }
+        public byte Flags { get; }
+
+        public bool IsValid =>
+            RoomId >= 0 &&
+            math.isfinite(Fill01) &&
+            math.isfinite(SurfaceY) &&
+            math.isfinite(FloorY) &&
+            math.isfinite(CeilingY) &&
+            CeilingY > FloorY;
+    }
+
+    /// <summary>
+    /// Authoritative habitat graph flood read model exposed through <see cref="GlobalRegistry"/>.
+    /// </summary>
+    public interface IHabitatGraphService : ISystem
+    {
+        bool IsInitialized { get; }
+        int RoomCount { get; }
+        NativeArray<float>.ReadOnly RoomWaterLevels { get; }
+        uint FloodStateSequence { get; }
+
+        bool TryResolveRoomWaterline(
+            Vector3 runtimePosition,
+            int cachedRoomId,
+            out HabitatRoomWaterlineSnapshot snapshot);
+
+        bool TryGetRoomWaterline(int roomId, out HabitatRoomWaterlineSnapshot snapshot);
+    }
+
+    /// <summary>
     /// Authoritative habitat module deconstruction service exposed through <see cref="GlobalRegistry"/>.
     /// Requests enter through a NativeQueue signal and are validated by the construction graph owner.
     /// </summary>
@@ -2283,7 +2350,9 @@ namespace Hecton8.Core
         bool TrySetBulkhead(int edgeIndex, int roomA, int roomB, bool sealedBulkhead);
         bool TrySetPlayerRoom(int roomId, float playerStress01, float heartRateBpm);
         bool TrySetRoomFlags(int roomId, ushort setMask, ushort clearMask);
+        bool TrySetRoomSubmergedFraction(int roomId, float submerged01);
         bool TrySetAmbientPressure(int roomId, float ambientPressureKPa);
+        bool TryApplyPlayerRoomCarbonDioxideEquivalentPressure(float carbonDioxideKPa);
         bool TrySetScrubberPowered(int roomId, bool powerActive);
         bool TrySetRoomTemperatureCelsius(int roomId, float temperatureCelsius);
         bool TryDequeueToxicitySignal(out ToxicitySignal signal);

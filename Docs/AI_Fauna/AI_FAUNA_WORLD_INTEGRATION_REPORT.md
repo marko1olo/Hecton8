@@ -10,6 +10,10 @@ Verification: PENDING VERIFICATION
 - Current manifest: `Docs/Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json`.
 - Current visual-realistic-fake doctrine: `Docs/Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md`.
 - May 13 DOC_AUDIT override: the cited May 11 compile artifact is absent from the current filesystem; treat the May 11 compile-success line as stale report text until restored or replaced. Runtime, Unity Console, Play Mode, profiler, GCMonitor, player build, frame-time, memory, import, scene wiring, and visual quality remain `PENDING VERIFICATION`.
+- May 13 DOC_AUDIT R15 fauna override: this report's biome coverage is still useful orientation, but it is not evidence that active scenes run visible fauna. Current static inventory found `22` recursive creature archetype assets, `22` fauna data templates, `108` fauna biome datasets, `13` fauna family profiles, `432` `possibleCreatures` entries with non-null prefab references, `17` large-threat macro-zone archetype refs, and `6` generated proxy prefabs.
+- R15 runtime boundary: `EcosystemRuntimeInstaller` creates genetics/health/migration ecosystem managers only. It does not instantiate `FaunaDirector` or `WorldFaunaSpawnRegistry`. `GameBootstrapper.EnsureFaunaSimulationRegistered()` uses active `FaunaDirector` if present, otherwise registers `DemiurgeFaunaSimulationService.Shared`, a ready headless sentinel with `ResidentSlotCapacity = 0`.
+- R15 scene/proof boundary: static script-GUID search did not find serialized `FaunaDirector`, `WorldFaunaSpawnRegistry`, `FaunaRuntimeSmokeTester`, or `EcosystemRuntimeInstaller` in current `Assets` scenes/prefabs/assets. `WorldRuntimeBootstrapAuthoring` can add/configure `WorldFaunaSpawnRegistry`, but `ConfigureFaunaDirector()` returns when no `FaunaDirector` already exists; this is editor authoring support, not production-scene runtime proof.
+- R15 smoke boundary: `.codex-artifacts/fauna-omega-smoke-2026-05-05.log` exits with return code `1` and contains `.codex-artifacts is not a valid directory name`; do not cite it as PASS.
 - Existing May 4 boundary sections in this file are historical unless they describe local system intent not contradicted by newer reports.
 - Unity import, Unity Console, Play Mode, profiler, GCMonitor, player build, frame-time, memory, scene wiring, and visual quality remain `PENDING VERIFICATION`.
 ## 2026-05-04 Current-State Boundary
@@ -20,9 +24,13 @@ Verification: PENDING VERIFICATION
 
 ## What Exists
 
-- Creature archetypes: `22`
-- Archetypes without prefab: `0`
+- Recursive creature archetype assets: `22`
+- Fauna data templates: `22`
 - Fauna datasets by biome: `108`
+- `possibleCreatures` entries with non-null prefab refs: `432`
+- `possibleCreatures` entries with null prefab refs: `0`
+- Large-threat macro-zone archetype refs: `17`
+- Generated fauna proxy prefabs: `6`
 
 ## Biomes Without Passive Life
 

@@ -48,6 +48,9 @@ namespace Hecton8.Gameplay
     [RequireComponent(typeof(Light))]
     public sealed class DeployableFlare : MonoBehaviour, ITickable, IUpdatable
     {
+        private const float FlareRetinalSignalMinIntensity = 0.0001f;
+        private const uint FlareRetinalSignalSourceSalt = 0x464C5245u; // FLRE
+
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — FUEL / LIFETIME
         // ══════════════════════════════════════════════════════════
@@ -134,6 +137,7 @@ namespace Hecton8.Gameplay
         private int _spatialHandle;
         private int _faunaSpatialHandle;
         private Vector3 _lastSpatialPosition;
+        private bool _flareRetinalSignalPublished;
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC ACCESSORS
@@ -189,6 +193,7 @@ namespace Hecton8.Gameplay
             // Unregister from tick system
             UnregisterFromTick();
             UnregisterSpatialHandle();
+            PublishFlareRetinalClearSignal();
             Hecton8.Core.HectonUrpShadowBudgetGuard.UnregisterDynamicShadowLight(pointLight);
         }
 
@@ -242,6 +247,8 @@ namespace Hecton8.Gameplay
                     ForceMode.VelocityChange);
             }
 
+            PublishFlareRetinalSignal();
+
             // Check for fuel depletion
             if (_fuelTimer <= 0f)
             {
@@ -268,6 +275,8 @@ namespace Hecton8.Gameplay
             {
                 _emissionModule.rateOverTime = particleEmissionRate * (1f - fadeProgress);
             }
+
+            PublishFlareRetinalSignal();
 
             // Check for complete fade
             if (fadeProgress >= 1f)
@@ -307,6 +316,7 @@ namespace Hecton8.Gameplay
             // Unregister from tick system to save performance
             UnregisterFromTick();
             UnregisterSpatialHandle();
+            PublishFlareRetinalClearSignal();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -358,6 +368,7 @@ namespace Hecton8.Gameplay
             // Register with tick system
             RegisterToTick();
             RegisterSpatialHandle();
+            PublishFlareRetinalSignal();
         }
 
         /// <summary>
@@ -384,6 +395,7 @@ namespace Hecton8.Gameplay
             // Unregister from tick
             UnregisterFromTick();
             UnregisterSpatialHandle();
+            PublishFlareRetinalClearSignal();
         }
 
         /// <summary>
@@ -413,6 +425,7 @@ namespace Hecton8.Gameplay
             // Unregister from tick
             UnregisterFromTick();
             UnregisterSpatialHandle();
+            PublishFlareRetinalClearSignal();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -503,6 +516,54 @@ namespace Hecton8.Gameplay
             if (_faunaSpatialHandle != 0)
                 FaunaSpatialHashRegistry.Refresh(_faunaSpatialHandle);
             _lastSpatialPosition = currentPosition;
+        }
+
+        private void PublishFlareRetinalSignal()
+        {
+            if ((_state != FlareState.Burning && _state != FlareState.Fading) ||
+                pointLight == null ||
+                !pointLight.enabled ||
+                _currentIntensity <= FlareRetinalSignalMinIntensity ||
+                lightRange <= 0.1f)
+            {
+                PublishFlareRetinalClearSignal();
+                return;
+            }
+
+            Vector3 positionWs = _transform != null ? _transform.position : transform.position;
+            GlobalSignals.Publish(new SubmarineLightsChangedSignal
+            {
+                PositionAup = AbsoluteUniversePosition.FromRuntimePosition(positionWs),
+                Forward = new float3(0f, 0f, 1f),
+                RangeMeters = math.max(0.1f, lightRange),
+                Intensity = math.max(0f, _currentIntensity),
+                SourceId = ResolveFlareRetinalSignalSourceId(),
+                Slot = 0,
+                Operation = SubmarineLightsChangedSignalOperations.Upsert,
+                Flags = SubmarineLightsChangedSignalFlags.Powered,
+                SpotOuterCos = -1f
+            });
+            _flareRetinalSignalPublished = true;
+        }
+
+        private void PublishFlareRetinalClearSignal()
+        {
+            if (!_flareRetinalSignalPublished)
+                return;
+
+            GlobalSignals.Publish(new SubmarineLightsChangedSignal
+            {
+                SourceId = ResolveFlareRetinalSignalSourceId(),
+                Slot = 0,
+                Operation = SubmarineLightsChangedSignalOperations.Remove
+            });
+            _flareRetinalSignalPublished = false;
+        }
+
+        private uint ResolveFlareRetinalSignalSourceId()
+        {
+            uint sourceId = unchecked((uint)GetHashCode()) ^ FlareRetinalSignalSourceSalt;
+            return sourceId != 0u ? sourceId : FlareRetinalSignalSourceSalt;
         }
 
         // ══════════════════════════════════════════════════════════

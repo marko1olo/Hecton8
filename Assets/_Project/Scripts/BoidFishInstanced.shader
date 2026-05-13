@@ -44,6 +44,7 @@ Shader "Hecton8/BoidFishInstanced"
         
         [Header(Fish Scale)]
         _FishScale ("Fish Scale", Float) = 0.3
+        _H8FoveatedVatTimeScale ("Foveated VAT Time Scale", Float) = 1
         
         [Header(Tail Animation)]
         _TailFrequency ("Tail Wag Frequency", Float) = 6.0
@@ -160,6 +161,7 @@ Shader "Hecton8/BoidFishInstanced"
                 float4 _BaseColor;
                 float4 _BaseMap_ST;
                 float  _FishScale;
+                float  _H8FoveatedVatTimeScale;
                 
                 // Tail animation
                 float  _TailFrequency;
@@ -484,7 +486,7 @@ Shader "Hecton8/BoidFishInstanced"
                     float invFrameCount = rcp(safeFrameCount);
                     float vertexU = (vertexID + 0.5) * rcp(max(_VatVertexCount, 1.0));
                     float vatMotionSpeed = max(_VatPlaybackSpeed, 0.0) * vatSpeed01 * aggressiveSpeedScale;
-                    float vatPhase = frac(_Phase + (_Time.y * vatMotionSpeed) + (float(instanceID) * max(_VatInstancePhaseScale, 0.0)) + aupPhase * 0.15915494);
+                    float vatPhase = frac(_Phase + (_Time.y * vatMotionSpeed * _H8FoveatedVatTimeScale) + (float(instanceID) * max(_VatInstancePhaseScale, 0.0)) + aupPhase * 0.15915494);
                     float vatFrame = vatPhase * safeFrameCount;
                     float vatFrameFloor = floor(vatFrame);
                     float vatFrameCeil = vatFrameFloor + 1.0;
@@ -515,7 +517,7 @@ Shader "Hecton8/BoidFishInstanced"
 
                     // Phase with body wave component
                     float freqAdjusted = (_TailFrequency + vatSpeed01 * _TailSpeedInfluence) * vatSpeed01 * aggressiveSpeedScale;
-                    float phase = _Time.y * freqAdjusted 
+                    float phase = _Time.y * freqAdjusted * _H8FoveatedVatTimeScale 
                                 + aupPhase
                                 + float(instanceID) * _TailPhaseVariance;
                     

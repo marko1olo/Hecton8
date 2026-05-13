@@ -22,6 +22,7 @@ using Hecton8.Core;
 using Hecton8.Core.Signals;
 using Hecton8.Audio;
 using Hecton8.Environment;
+using Hecton8.Environment.Fluids;
 using Hecton8.Interaction;
 using Hecton8.Physics;
 using Hecton8.Physics.CCD;
@@ -148,6 +149,9 @@ namespace Hecton8.Gameplay
         private static readonly int VrComfortSwayId = Shader.PropertyToID("_HectonVrComfortSway");
         private static readonly int VrComfortMotionId = Shader.PropertyToID("_HectonVrComfortMotion");
         private static readonly int VrComfortVignette01Id = Shader.PropertyToID("_VRComfortVignette01");
+        private static readonly int BrineHeightYId = Shader.PropertyToID("_BrineHeightY");
+        private static readonly int BrineColorId = Shader.PropertyToID("_BrineColor");
+        private static readonly int BrineFogHardClipId = Shader.PropertyToID("_BrineFogHardClip");
         private const int CrestBodySampleCount = 5;
         private const int CrestSampleCenter = 0;
         private const int CrestSampleHead = 1;
@@ -1154,6 +1158,12 @@ namespace Hecton8.Gameplay
         private float3 _lastPlayerKinematicsBurstDragVelocity;
         private float _lastPlayerKinematicsDragCoefficient;
         private float _lastPlayerKinematicsWaterDensityScale = 1f;
+        private BrineLayerSample _lastBrineLayerSample;
+        private bool _isInsideBrineLayer;
+        private bool _wasInsideBrineLayer;
+        private float _brineSubmersionSeconds;
+        private float _lastPublishedBrineRuntimeHeightY = float.NegativeInfinity;
+        private float _lastPublishedBrineFogHardClip = -1f;
         private readonly AbsoluteUniversePosition[] _lastValidAupRing = new AbsoluteUniversePosition[LastValidAupRingCapacity]; // COLD ALLOC: AbsoluteUniversePosition[16] - no-clip recovery ring - owner: HectonPlayerMovement
         private int _lastValidAupWriteIndex;
         private int _lastValidAupCount;
@@ -1228,6 +1238,7 @@ namespace Hecton8.Gameplay
         private NativeArray<CinematicFocusTelemetryEntry> _cinematicFocusBlackBox;
         private AbsoluteUniversePosition _cinematicFocusTargetAup;
         private int _cinematicFocusBlackBoxCursor;
+        private int _cinematicFocusBlackBoxCount;
         private int _cinematicFocusLastDumpFrame = -CinematicFocusBlackBoxDumpCooldownFrames;
         private uint _cinematicFocusHash;
         private uint _cinematicFocusSubtitleHash;
@@ -1758,6 +1769,10 @@ namespace Hecton8.Gameplay
 
         /// <summary>Currently active suit data driving mass, drag, and swim parameters.</summary>
         public SuitData CurrentSuit => currentSuitData;
+        public bool IsInsideBrineLayer => _isInsideBrineLayer;
+        public float CurrentBrineDensityMultiplier => _isInsideBrineLayer
+            ? math.max(1f, _lastBrineLayerSample.DensityMultiplier)
+            : 1f;
         /// <summary>0â€“1 ratio of the player body submerged below the water surface.</summary>
         public float WaterImmersionRatio => _waterImmersionRatio;
         /// <summary>True when the player is on solid ground and in a walking locomotion mode.</summary>
@@ -2576,6 +2591,7 @@ namespace Hecton8.Gameplay
             _cinematicFocusBlackBox.Dispose();
             _cinematicFocusBlackBox = default;
             _cinematicFocusBlackBoxCursor = 0;
+            _cinematicFocusBlackBoxCount = 0;
         }
 
         private void RefreshCinematicFocusTierGateCold()
@@ -2649,6 +2665,7 @@ namespace Hecton8.Gameplay
             flags |= math.select(0u, 4u, _lastPlayerKinematicsDragCoefficient > 0f && _waterImmersionRatio > 0.01f);
             flags |= math.select(0u, 8u, _ladderSplineSnapActive);
             flags |= math.select(0u, 16u, _isSurfaceSwimming);
+            flags |= math.select(0u, 32u, _isInsideBrineLayer);
             return flags;
         }
 
@@ -2666,6 +2683,108 @@ namespace Hecton8.Gameplay
             signal.LocomotionMode = (byte)_currentLocomotionMode;
             signal.SurfaceMode = (byte)math.select(0, 1, _isSurfaceSwimming);
             signal.Flags = (byte)(ResolvePlayerKinematicsTelemetryFlags() & 0xFFu);
+            GlobalSignals.Publish(in signal);
+        }
+
+        private void UpdateBrineLayerState(float fixedDeltaTime)
+        {
+            _wasInsideBrineLayer = _isInsideBrineLayer;
+            _isInsideBrineLayer = false;
+            _lastBrineLayerSample = default;
+
+            Vector3 runtimePosition = _rb != null ? _rb.position : ResolvePlayerAupRuntimePosition();
+            ResourceDistributionDirector director = GlobalRegistry.ResourceDistribution;
+            if (!IsInDryInterior() &&
+                director != null &&
+                director.TrySampleBrineLayer(runtimePosition, out BrineLayerSample sample))
+            {
+                Vector3 shiftOffset = HectonFloatingOrigin.CurrentTotalOffset;
+                bool submerged = BrineLayerMath.IsRuntimeBelowAbsolutePlane(
+                    runtimePosition.y,
+                    sample.AbsoluteHeightY,
+                    shiftOffset.y);
+                _lastBrineLayerSample = sample;
+                _isInsideBrineLayer = submerged;
+                PublishBrineShaderGlobals(sample, shiftOffset.y);
+                if (submerged)
+                {
+                    _brineSubmersionSeconds += math.max(0f, fixedDeltaTime);
+                    TryApplyBrineGasToxicity();
+                }
+                else
+                {
+                    _brineSubmersionSeconds = 0f;
+                }
+            }
+            else
+            {
+                _brineSubmersionSeconds = 0f;
+                PublishInactiveBrineShaderGlobals();
+            }
+
+            if (_isInsideBrineLayer != _wasInsideBrineLayer)
+                PublishFluidDensityChanged(runtimePosition, _lastBrineLayerSample, _isInsideBrineLayer);
+        }
+
+        private static void TryApplyBrineGasToxicity()
+        {
+            IGasDynamicsSolver gas = GlobalRegistry.GasDynamics;
+            gas?.TryApplyPlayerRoomCarbonDioxideEquivalentPressure(BrineLayerConstants.CarbonDioxideEquivalentKPa);
+        }
+
+        private void PublishBrineShaderGlobals(BrineLayerSample sample, float shiftOffsetY)
+        {
+            float runtimeHeightY = BrineLayerMath.ResolveRuntimeHeightY(sample.AbsoluteHeightY, shiftOffsetY);
+            if (!math.isfinite(runtimeHeightY))
+                return;
+
+            if (math.abs(runtimeHeightY - _lastPublishedBrineRuntimeHeightY) > 0.001f)
+            {
+                Shader.SetGlobalFloat(BrineHeightYId, runtimeHeightY);
+                _lastPublishedBrineRuntimeHeightY = runtimeHeightY;
+            }
+
+            float4 color = BrineLayerConstants.DefaultBrineColor;
+            Shader.SetGlobalVector(BrineColorId, new Vector4(color.x, color.y, color.z, color.w));
+
+            float hardClip = GlobalRegistry.ScalabilityTierProfileByte == 0
+                ? 1f
+                : BrineLayerConstants.DefaultBrineFogHardClip;
+            if (math.abs(hardClip - _lastPublishedBrineFogHardClip) > 0.001f)
+            {
+                Shader.SetGlobalFloat(BrineFogHardClipId, hardClip);
+                _lastPublishedBrineFogHardClip = hardClip;
+            }
+        }
+
+        private void PublishInactiveBrineShaderGlobals()
+        {
+            if (_lastPublishedBrineRuntimeHeightY > -999999f)
+            {
+                Shader.SetGlobalFloat(BrineHeightYId, -1000000f);
+                _lastPublishedBrineRuntimeHeightY = float.NegativeInfinity;
+            }
+
+            Shader.SetGlobalVector(BrineColorId, Vector4.zero);
+            if (_lastPublishedBrineFogHardClip != 0f)
+            {
+                Shader.SetGlobalFloat(BrineFogHardClipId, 0f);
+                _lastPublishedBrineFogHardClip = 0f;
+            }
+        }
+
+        private void PublishFluidDensityChanged(Vector3 runtimePosition, BrineLayerSample sample, bool entered)
+        {
+            FluidDensityChangedSignal signal = default;
+            signal.PositionAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+            signal.DensityMultiplier = entered ? BrineLayerConstants.DensityMultiplier : 1f;
+            signal.BrineHeightY = sample.AbsoluteHeightY;
+            signal.SubmersionSeconds = entered ? _brineSubmersionSeconds : 0f;
+            signal.Flags = entered
+                ? (byte)(BrineLayerConstants.SampleValidFlag | BrineLayerConstants.SubmergedFlag | BrineLayerConstants.EnteredFlag)
+                : BrineLayerConstants.ExitedFlag;
+            signal.FluidKind = BrineLayerConstants.FluidKindBrine;
+            signal.SectorHash = sample.SectorHash;
             GlobalSignals.Publish(in signal);
         }
 
@@ -6832,6 +6951,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
+            bool shouldPublishAudioDuck = !_cinematicFocusAudioDucked;
             _cinematicFocusTargetAup = signal.TargetAup;
             _cinematicFocusHash = signal.FocusHash;
             _cinematicFocusSubtitleHash = signal.SubtitleHash;
@@ -6842,8 +6962,8 @@ namespace Hecton8.Gameplay
             _cinematicFocusFlags = signal.Flags;
             _cinematicFocusBoneTarget = signal.BoneTarget;
             _cinematicFocusActive = true;
-            RefreshCinematicFocusTierGateCold();
-            PublishCinematicMixerState(_cinematicFocusIntensity01);
+            if (shouldPublishAudioDuck)
+                PublishCinematicMixerState(_cinematicFocusIntensity01);
             GlobalTelemetryBus.PublishPerformanceWarning(_cinematicFocusTelemetryHash, _cinematicFocusHash, _cinematicFocusIntensity01);
         }
 
@@ -6926,6 +7046,12 @@ namespace Hecton8.Gameplay
             _cinematicFocusPullSuppression01 = 0f;
             _cinematicFocusFlags = 0;
             _cinematicFocusBoneTarget = 0;
+            _cinematicFocusHash = 0u;
+            _cinematicFocusSubtitleHash = 0u;
+            _cinematicFocusTargetAup = default;
+            _cinematicFocusSubtitleFadeDistanceSq = CinematicFocusDefaultFadeDistanceSq;
+            _cinematicFocusLastDistanceSq = 0f;
+            _cinematicFocusLastSubtitleAlpha01 = 0f;
         }
 
         private void ApplyVrComfortLookInput(
@@ -7582,7 +7708,7 @@ namespace Hecton8.Gameplay
         private float ResolveCinematicSubtitleAlpha01(float distanceSq)
         {
             float fadeSq = math.max(0.01f, _cinematicFocusSubtitleFadeDistanceSq);
-            return math.saturate(1f - (math.max(0f, distanceSq) / fadeSq));
+            return math.saturate(1f - (math.max(0f, distanceSq) * math.rcp(fadeSq)));
         }
 
         private void WriteCinematicFocusBlackBoxSample(
@@ -7614,6 +7740,8 @@ namespace Hecton8.Gameplay
             _cinematicFocusBlackBoxCursor++;
             if (_cinematicFocusBlackBoxCursor >= CinematicFocusBlackBoxCapacity)
                 _cinematicFocusBlackBoxCursor = 0;
+            if (_cinematicFocusBlackBoxCount < CinematicFocusBlackBoxCapacity)
+                _cinematicFocusBlackBoxCount++;
         }
 
         private void DumpCinematicFocusBlackBox(uint reasonHash)
@@ -7642,9 +7770,17 @@ namespace Hecton8.Gameplay
                     writer.Write(CinematicFocusBlackBoxCapacity);
                     writer.Write(_cinematicFocusBlackBoxCursor);
                     writer.Write(reasonHash);
-                    for (int i = 0; i < CinematicFocusBlackBoxCapacity; i++)
+                    writer.Write(_cinematicFocusBlackBoxCount);
+                    int startIndex = _cinematicFocusBlackBoxCount >= CinematicFocusBlackBoxCapacity
+                        ? _cinematicFocusBlackBoxCursor
+                        : 0;
+                    for (int i = 0; i < _cinematicFocusBlackBoxCount; i++)
                     {
-                        CinematicFocusTelemetryEntry entry = _cinematicFocusBlackBox[i];
+                        int entryIndex = startIndex + i;
+                        if (entryIndex >= CinematicFocusBlackBoxCapacity)
+                            entryIndex -= CinematicFocusBlackBoxCapacity;
+
+                        CinematicFocusTelemetryEntry entry = _cinematicFocusBlackBox[entryIndex];
                         writer.Write(entry.Frame);
                         writer.Write(entry.FocusHash);
                         writer.Write(entry.PlayerGridX);
@@ -7910,6 +8046,8 @@ namespace Hecton8.Gameplay
                 _smoothedImmersionRatio = 0f;
                 _currentDepth = 0f;
             }
+
+            UpdateBrineLayerState(fixedDeltaTime);
 
             ApplyLadderSplineSnapFromAsyncProbe();
 
@@ -11429,6 +11567,8 @@ namespace Hecton8.Gameplay
             bool isSurfaceSwim = _isSurfaceSwimming;
             bool hasSurfaceDiveIntent = isSurfaceSwim && HasCommittedSurfaceDive(transportPreset);
             float shoreSwimBlend = isSurfaceSwim ? _shoreBuoyancyBlend : 1f;
+            float brineSwimSpeedMultiplier = _isInsideBrineLayer ? BrineLayerConstants.SwimSpeedMultiplier : 1f;
+            float brineWaterDensityScale = _isInsideBrineLayer ? BrineLayerConstants.DensityMultiplier : 1f;
 
             // Ã¢â€â‚¬Ã¢â€â‚¬ Depth-based drag increase (v7.0) Ã¢â€â‚¬Ã¢â€â‚¬
             float depthDragAdd = PlayerSwimMotor.ResolveDepthDragAdd(
@@ -11451,7 +11591,7 @@ namespace Hecton8.Gameplay
             effectiveDragCoeff *= math.lerp(1f, crushDepthDragMultiplier, _hullStressIntensity);
             effectiveDragCoeff *= ResolveEquipmentDragCoefficientMultiplier();
             _lastPlayerKinematicsDragCoefficient = effectiveDragCoeff;
-            _lastPlayerKinematicsWaterDensityScale = 1f;
+            _lastPlayerKinematicsWaterDensityScale = brineWaterDensityScale;
             // Burst scalar water drag: presentation sells turbulence, authority stays replayable.
             if (speedSq > 0.0001f && _surfaceBreachFluidDragBypassTimer <= 0f)
             {
@@ -11459,7 +11599,7 @@ namespace Hecton8.Gameplay
                     _velocity,
                     _lastPlayerKinematicsIntendedMovement,
                     effectiveDragCoeff,
-                    1f,
+                    brineWaterDensityScale,
                     fixedDeltaTime);
                 ApplyMotorVelocityChange(dampedVelocity - _velocity);
                 _velocity = dampedVelocity;
@@ -11490,7 +11630,7 @@ namespace Hecton8.Gameplay
 
             bool heavyCarryActive = IsHeavyCarryActive();
             float sprintMult = _isSprinting && !heavyCarryActive ? suit.sprintMultiplier : 1f;
-            float runtimeSwimSpeedScale = _runtimeSwimSpeedMultiplier * _runtimeVoxelBackpressureSwimSpeedMultiplier * _runtimeInjurySwimSpeedMultiplier * _runtimeEmergencyMovementMultiplier * _runtimeStaminaMultiplier * ResolveRuntimeInventoryLoadMovementMultiplier();
+            float runtimeSwimSpeedScale = _runtimeSwimSpeedMultiplier * _runtimeVoxelBackpressureSwimSpeedMultiplier * _runtimeInjurySwimSpeedMultiplier * _runtimeEmergencyMovementMultiplier * _runtimeStaminaMultiplier * ResolveRuntimeInventoryLoadMovementMultiplier() * brineSwimSpeedMultiplier;
             float effectiveSwimForce = suit.swimForce * depthSlowdown * sprintMult * runtimeSwimSpeedScale;
             float effectiveVerticalForce = suit.swimVerticalForce * depthSlowdown * sprintMult * runtimeSwimSpeedScale;
             effectiveVerticalForce *= _runtimeInventoryUpwardSwimMultiplier;
@@ -11708,11 +11848,16 @@ namespace Hecton8.Gameplay
             sinkMultiplier = 0f;
             ResourceDistributionDirector director = GlobalRegistry.ResourceDistribution;
             if (director == null ||
-                !director.TrySampleBrineFluidDensity(worldPosition, out float fluidDensityKgPerCubicMeter))
+                !director.TrySampleBrineLayer(worldPosition, out BrineLayerSample sample))
             {
                 return false;
             }
 
+            Vector3 shiftOffset = HectonFloatingOrigin.CurrentTotalOffset;
+            if (!BrineLayerMath.IsRuntimeBelowAbsolutePlane(worldPosition.y, sample.AbsoluteHeightY, shiftOffset.y))
+                return false;
+
+            float fluidDensityKgPerCubicMeter = ReferenceSeaWaterDensityKgPerCubicMeter * math.max(1f, sample.DensityMultiplier);
             sinkMultiplier = HectonPlayerMotor.ResolveHeavyBrineSinkMultiplier(
                 fluidDensityKgPerCubicMeter,
                 ReferenceSeaWaterDensityKgPerCubicMeter);

@@ -58,6 +58,18 @@ Rejected Alternatives: Wrapping managed formatting in runtime diagnostics was re
 Scalability potential: All tiers share no-allocation fixed-step solver behavior.
 Hardware Impact: No managed allocation spikes; expected GC cost is 0 bytes/frame in tether hot path.
 
+Problem: The fixed fire-signal sidecar could retain stale attach requests if a manager never consumed its queued signal, eventually starving the 16-slot fire lane or executing an old attach.
+Solution: Added an 8-frame fire-signal TTL, pruned on publish and manager consume, fixed initialization to require both NativeQueues, and cleared same-version wrong-manager sidecar entries.
+Rejected Alternatives: Growing the queue or using managed collections was rejected because attach plumbing must stay bounded and allocation-free after warm setup.
+Scalability potential: Low/Mid/High/Ultra all keep the same deterministic fixed-capacity signal lane; high-end devices spend saved complexity on visual tether stress, not attach retries.
+Hardware Impact: i3/MX350 avoids pathological full-queue scans after stale signals. Normal cost is bounded at 16 iterations only when publishing/consuming, estimated under 1 microsecond per attach event.
+
+Problem: Second-pass audit found edge spam and bandwidth policy defects: target-length input accepted nonfinite values, visual fallback still used direct `SetData`, and extreme tow command signals could publish every fixed step.
+Solution: Added finite guards and target reset in `HeavyTowWinch`, replaced fallback visual uploads with `GraphicsBufferUploadUtility.UploadNativeArray`, and throttled `TowLoadLimit` publishes to one successful command every 3 frames.
+Rejected Alternatives: Letting downstream systems sanitize NaNs, retaining direct buffer `SetData`, or issuing a command every fixed tick was rejected because all three leak avoidable instability into unrelated domains.
+Scalability potential: Low/MX350 avoids command bus spam and uses the same cheap upload path. High/Ultra keep stable authority and can spend budget on stronger tether visual stress.
+Hardware Impact: Command cooldown can save 1-2 microseconds during high-load towing bursts by avoiding repeated queue pressure; upload path keeps the render submission path policy-consistent.
+
 Final Git Diff:
 - Modified: `Assets/_Project/Scripts/Gameplay/HeavyTowWinch.cs`
 - Modified: `Assets/_Project/Scripts/Hecton8.Core.asmdef`

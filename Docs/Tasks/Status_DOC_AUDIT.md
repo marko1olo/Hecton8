@@ -15,6 +15,10 @@ Evidence class ceiling: STATIC_SOURCE / STATIC_DOC / FILESYSTEM / PACKAGE_LOCK u
 - `.agents-skills/OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt`
 - `.agents-skills/PROJECT_LTS_Compatibility_Layer.txt`
 - `.agents-skills/DBG_Telemetry_Crash_Reporting_PostMortem.txt`
+- `.agents-skills/CORE_Tools_Equipment_Interaction_Raycast_Heat.txt`
+- `.agents-skills/UI_Data_Streaming_ZeroGC_Optimization.txt`
+- `.agents-skills/PROG_Quest_State_Graph_Logic.txt`
+- `.agents-skills/UI_Diegetic_Physical_Interfaces.txt`
 
 ## Continuation R5 - 2026-05-13
 
@@ -81,7 +85,7 @@ Evidence class ceiling: STATIC_SOURCE / STATIC_DOC / FILESYSTEM / PACKAGE_LOCK u
 
 - [x] Audit active documentation manifest JSON files | Justification: DOD practice = generated manifests are evidence snapshots, not evergreen authority; found four `ACTIVE_DOCUMENTATION_MANIFEST` JSON files dated May 6, May 7, May 9, and May 11 with stale counts/build-state surfaces; estimate: 0 us/frame.
 - [x] Patch manifest top-level boundaries | Justification: DOD practice = preserve historical evidence while preventing false current-proof use; added `docAuditR13Boundary` to each manifest and demoted counts/build states to snapshot-only evidence; estimate: 0 us/frame.
-- [x] Promote R13 rationale/log/report and verify | Justification: DOD practice = JSON parse/readback/diff check before report; verified `docAuditR13Boundary` exists in all four active manifest JSON files and current reports/indexes carry the boundary; estimate: 0 us/frame.
+- [x] Promote R13 rationale/log/report and verify | Justification: DOD practice = JSON parse/readback/diff check before report; verified `docAuditR13Boundary` exists in all four active manifest JSON files, May 9 `coveredCurrentSource` is demoted to `false`, and current reports/indexes carry the boundary; estimate: 0 us/frame.
 
 ## Continuation R14 - Gameplay Economy / Resource Loop X-Ray - 2026-05-13
 
@@ -89,3 +93,21 @@ Evidence class ceiling: STATIC_SOURCE / STATIC_DOC / FILESYSTEM / PACKAGE_LOCK u
 - [x] Audit inventory, fabricator, scarcity, resource-node, and logistics code paths | Justification: DOD practice = source path from mining to quest/craft must close; found real inventory SOA/crafting/fabricator/scarcity/logistics code, but `ResourceNode` drop emission depends on `PersistentWorldRegistry.TryRegisterDroppedItem`, which refuses null `worldPrefab`; estimate: 0 us/frame static audit.
 - [x] Promote R14 gameplay-loop findings into durable docs | Justification: DOD practice = stable docs beat temporary chat/log memory; promoted the resource acquisition seam, duplicate copper data, and pipe/procedural wiring proof gaps to `PROJECT_STATE_STATIC_XRAY`, current X-Ray report, docs indexes, architecture map, rationale, and log; estimate: 0 us/frame.
 - [ ] Runtime gameplay proof remains blocked by user constraint | Justification: DOD practice = no fake PASS without Unity/PlayMode/profiler/player route; required later route is mine copper -> `InteractionEvents.ItemCollected` -> inventory contains `Data_Copper` -> `quest_copper_sample` completes -> craft `Copper Wire` -> save/load; estimate: pending.
+
+## Continuation R15 - AI/Fauna Data vs Runtime Wiring X-Ray - 2026-05-13
+
+- [x] Audit fauna authored data coverage | Justification: DOD practice = recursive asset/file inventory before trusting roster prose; found `22` creature archetype assets, `22` fauna data templates, `108` fauna biome datasets, `432` non-null biome spawn prefab entries, `17` large-threat macro-zone archetype refs, `13` fauna family profiles, and `6` generated proxy prefabs; estimate: 0 us/frame static audit.
+- [x] Audit fauna bootstrap and scene-wiring proof boundary | Justification: DOD practice = service readiness must be separated from visible runtime ownership; found `EcosystemRuntimeInstaller` creates genetics/health/migration managers but not `FaunaDirector`/`WorldFaunaSpawnRegistry`, while `GameBootstrapper` falls back to `DemiurgeFaunaSimulationService.Shared` with `ResidentSlotCapacity = 0`; estimate: 0 us/frame static audit.
+- [x] Audit current fauna smoke artifact | Justification: DOD practice = current artifact content beats intended runner output; `.codex-artifacts/fauna-omega-smoke-2026-05-05.log` reports invalid `.codex-artifacts` directory and ends with Unity return code `1`, so it is not PASS; estimate: 0 us/frame static audit.
+- [x] Promote R15 findings into durable docs | Justification: DOD practice = active docs must not let asset coverage masquerade as runtime proof; patched `Docs/AI_Fauna/*`, current X-Ray report, docs indexes, project-state X-Ray, architecture map, rationale, and log; estimate: 0 us/frame.
+- [ ] Runtime visible-fauna proof remains blocked by user constraint | Justification: DOD practice = no fake PASS without Unity scene load, active `FaunaDirector`, active `WorldFaunaSpawnRegistry`, nonzero real `IFaunaSim` resident capacity, visible spawn proof, profiler/GC data, and fresh `FAUNA_OMEGA_SMOKE_RESULT` PASS; estimate: pending.
+
+## Continuation R16 - Tools / PDA / First-Hour Interface X-Ray - 2026-05-13
+
+Note: current X-Ray report already contains a parallel `R15` AI/Fauna boundary; this tools/PDA layer uses `R16` to avoid overwriting concurrent work.
+
+- [x] Audit tool data, held prefabs, world prefabs, and metadata | Justification: DOD practice = data/prefab inventory before judging large files; found `12` tool ItemData assets, `12` held prefabs, `12` world prefabs, `13` ToolMetadata assets, all tool ItemData `worldPrefab` refs non-null, and orphan `LogicSpanner` metadata/source with no item/prefab/catalog/recipe route; estimate: 0 us/frame static audit.
+- [x] Audit player-prefab tool/PDA/dev wiring | Justification: DOD practice = serialized player prefab beats code intent; found `PlayerToolManager`, `PlayerPDA`, `ToolLoadoutProvisioner`, `ScanLogSystem`, `PDAExchangeSystem`, and `PlayerInteraction` on `Player.prefab`; also found `ToolLoadoutProvisioner` enabled with `provisionInventoryOnStart=1`, `assignCoreLoadoutOnStart=1`, `provisionConstructionMaterialsOnStart=1`, and root `Data_Copper` starter material; estimate: 0 us/frame static audit.
+- [x] Audit PDA shell placement and runtime installer boundaries | Justification: DOD practice = separate backend code from scene-mounted UI bridge; found PDA tab components in world scenes, `Player.prefab` `PlayerPDA` has null `pdaPanel`/`pdaCanvasGroup`/tabs, `DiegeticPDAController` source calls `PlayerPDA.ConfigureUI`, but its MonoScript GUID was not found in `_Project` scenes/prefabs; estimate: 0 us/frame static audit.
+- [x] Promote R16 tool/PDA/first-hour findings into durable docs | Justification: DOD practice = first-hour truth must survive AgentLogs cleanup; promoted the real tool/scan/interaction stack, dev loadout contamination, PDA bridge proof gap, and LogicSpanner orphan to `PROJECT_STATE_STATIC_XRAY`, current X-Ray report, docs indexes, architecture map, rationale, and log; estimate: 0 us/frame.
+- [ ] Runtime tool/PDA/first-hour proof remains blocked by user constraint | Justification: DOD practice = no fake PASS without Unity/PlayMode/profiler/player route; required later route is clean start with no dev inventory grant -> acquire/craft/equip scanner -> open PDA with visible diegetic shell -> scan copper/resource -> quest and inventory state update; estimate: pending.

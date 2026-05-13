@@ -64,6 +64,7 @@ Shader "Hecton8/Fabrication/HologramAssembly"
                 float _FresnelPower;
                 float _Alpha;
                 float _PulseSpeed;
+                float4x4 _AssemblyWorldToFabricator;
             CBUFFER_END
 
             struct Attributes
@@ -80,6 +81,7 @@ Shader "Hecton8/Fabrication/HologramAssembly"
                 float3 positionWS : TEXCOORD1;
                 float3 normalWS : TEXCOORD2;
                 float height01 : TEXCOORD3;
+                float fabricatorLocalY : TEXCOORD4;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
                 UNITY_VERTEX_OUTPUT_STEREO
             };
@@ -94,20 +96,22 @@ Shader "Hecton8/Fabrication/HologramAssembly"
                 float3 positionWS = TransformObjectToWorld(input.positionOS.xyz);
                 float bottomY = _AssemblyBaseY;
                 float topY = max(bottomY + 0.001, _AssemblyTopY);
+                float fabricatorLocalY = mul(_AssemblyWorldToFabricator, float4(positionWS, 1.0)).y;
 
                 output.positionCS = TransformWorldToHClip(positionWS);
                 output.positionOS = input.positionOS.xyz;
                 output.positionWS = positionWS;
                 output.normalWS = TransformObjectToWorldNormal(input.normalOS);
-                output.height01 = saturate((input.positionOS.y - bottomY) / (topY - bottomY));
+                output.height01 = saturate((fabricatorLocalY - bottomY) / (topY - bottomY));
+                output.fabricatorLocalY = fabricatorLocalY;
                 return output;
             }
 
             float HectonAssemblyGridLine(float2 localXZ, float density)
             {
                 float2 grid = abs(frac(localXZ * max(2.0, density)) - 0.5);
-                float line = max(grid.x, grid.y);
-                return 1.0 - smoothstep(0.44, 0.5, line);
+                float gridLine = max(grid.x, grid.y);
+                return 1.0 - smoothstep(0.44, 0.5, gridLine);
             }
 
             half4 Frag(Varyings input) : SV_Target
@@ -115,14 +119,14 @@ Shader "Hecton8/Fabrication/HologramAssembly"
                 UNITY_SETUP_INSTANCE_ID(input);
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
 
-                float localY = input.positionOS.y;
-                clip(_AssemblyHeightY - localY);
+                float fabricatorLocalY = input.fabricatorLocalY;
+                clip(_AssemblyHeightY - fabricatorLocalY);
 
                 float edgeMask = 0.0;
                 if (_AssemblyQuality > 0.5)
                 {
                     float edgeWidth = max(0.001, _AssemblyEdgeWidth);
-                    edgeMask = 1.0 - smoothstep(0.0, edgeWidth, abs(localY - _AssemblyHeightY));
+                    edgeMask = 1.0 - smoothstep(0.0, edgeWidth, abs(fabricatorLocalY - _AssemblyHeightY));
                 }
 
                 float3 normalWS = HectonCoreLitSafeNormalize(input.normalWS);

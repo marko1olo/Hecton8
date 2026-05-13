@@ -69,10 +69,34 @@ Rejected Alternatives: Fixing unrelated `SaveManager`, `PowerDrainSignal`, `Ecos
 Scalability potential: Scheduler work is ready for integration once shared compile wall is cleared.
 Hardware Impact: No runtime cost. Avoids churn and preserves other agents' ownership.
 
-## Decision 007: Missing Polish Mandate
+## Decision 007: Omega Polish Validation Boundary
 
-Problem: The batch protocol requires reading `<POLISH_MANDATE>` after core tasks are done or blocked, but `CURRENT_BATCH.md` does not contain that tag.
-Solution: Record the missing payload as blocked and do not invent requirements.
-Rejected Alternatives: Running arbitrary extra refactors was rejected because it would violate the anti-refactoring-loop mandate and introduce unrequested churn.
-Scalability potential: No runtime effect.
-Hardware Impact: 0us. No code touched for nonexistent polish.
+Problem: The batch protocol requires reading `<POLISH_MANDATE>` after core tasks are done or blocked. A continuation re-read found the first `OMEGA_POLISH` tag, but the mandate's `dotnet build` step conflicts with the user's explicit instruction not to run it, and Unity MCP validation is unavailable.
+Solution: Execute the anti-bloat audit with static scoped scans, keep scheduler edits local, and record verification as PENDING instead of fabricating a build result.
+Rejected Alternatives: Running `dotnet build` against the user's instruction was rejected. Broad refactors outside the scheduler were rejected because the polish mandate is for this agent's own implementation.
+Scalability potential: No new runtime feature. The audit preserves the existing Low/MX350 shed path and High/Ultra visual overkill recovery path.
+Hardware Impact: 0us from polish itself. The continuation code changes are covered in Decision 008.
+
+## Decision 008: Continuation Debt Recovery And EWMA Saturation
+
+Problem: Continuation audit found that sustained critical debt set the `Lane4_VFX` kill mask but recovery did not clear it, and `Lane0_Critical` borrowed the full estimated job cost from lower lanes even when the critical bucket had enough tokens or only created partial debt. Denial telemetry also reported the cold default estimate before consulting EWMA, and the fixed 256-slot EWMA table failed open with cold defaults after saturation.
+Solution: Clear only the VFX kill bit once critical lane budget is non-negative, borrow only the newly created critical debt, estimate cost before AUP/VFX denial, add a conservative overflow EWMA for table saturation, guard non-finite lane budgets, and stamp blackbox entries with refill frame sequence. DOD pattern: fixed NativeArray storage, reciprocal-free scalar math, no dictionaries, no managed frame allocations.
+Rejected Alternatives: A second dynamic dictionary for overflow costs was rejected because it violates zero-GC and fixed-capacity policy. Keeping the VFX kill mask latched forever was rejected because it turns a recovery circuit into a permanent presentation blackout. Borrowing full critical cost was rejected because it silently starves world/voxel/AI/IO lanes on normal player-critical work.
+Scalability potential: Low/MX350 sheds background work only when real debt is created, then restores VFX after recovery. Middle keeps stable world/AI cadence. High/Ultra can spend recovered tokens on visual overkill without waiting for a scene reload to clear the kill bit.
+Hardware Impact: On i3/MX350, expected gain is 50-200us avoided lower-lane bleed per critical admission that does not create full debt, plus restored VFX admission after recovery. Verification is pending because Unity MCP returned `no_unity_session`; no `dotnet build` was run per user instruction.
+
+## OMEGA POLISH CHANGES
+
+Problem: Final mandate required anti-bloat proof on scheduler-owned code and final diff evidence.
+Solution: Scoped scans over `Assets/_Project/Scripts/Core/Scheduling`, `JobAdmissionContracts.cs`, and `JobAdmissionTelemetryBridge.cs` found no runtime `foreach`, `string.Format`, interpolation, `.ToString()`, `math.sqrt`, or `math.normalize`. Division scan hits were XML comments, not executable math. Existing scheduler math uses precomputed `TargetFrameMillisecondsRcp`, scalar multiplies, bitmask kill-switch checks, fixed `NativeArray` storage, and FNV1a hashes.
+Rejected Alternatives: Replacing token buckets with LUTs was rejected because the current math is already scalar bucket accounting; a LUT would add indirection without visual gain. Running the mandated `dotnet build` was rejected because the user explicitly forbade it.
+Scalability potential: Low/MX350 still uses 40% reduced refill and real-debt shedding; Middle/High/Ultra retain visual admission after debt clears.
+Hardware Impact: No extra hot-path cost. Final Git Diff: `BurstTokenBucketJobAdmissionService.cs` plus status/rationale/log updates; static diff check passed, Unity validation blocked by `no_unity_session`.
+
+## Decision 009: EWMA Slot Hygiene Under Denial Storms
+
+Problem: The continuation fix resolved EWMA before AUP/VFX denial, but the resolver still allocated a new fixed-table slot for unknown jobs. During an origin-shift barrier or VFX kill window, repeated denied unknown jobs could fill the 256-slot EWMA table without ever producing a measured completion cost.
+Solution: Split lookup from allocation. `TryAdmitJob` and diagnostics now use `FindCostSlot` and only return default/overflow estimates for unknown jobs. `ReportJobCompleted` remains the allocation path because it has measured data. DOD pattern: fixed-capacity NativeArray table, no dynamic container, no denied-job slot pollution.
+Rejected Alternatives: Enlarging the table was rejected because it hides the admission-quality issue and costs more cold memory. Adding a secondary dictionary was rejected by zero-GC policy. Allocating on denial was rejected because it lets transient barrier churn evict useful measured slots by capacity pressure.
+Scalability potential: Low/MX350 origin-shift and debt windows can reject many background jobs without corrupting the cost model. High/Ultra keep measured EWMA slots focused on work that actually ran, preserving more accurate visual-overkill admission.
+Hardware Impact: Prevents false overflow/default churn after 256 denied unknown jobs. Hot path remains a bounded linear scan over existing measured slots; no extra allocation and no new managed memory.

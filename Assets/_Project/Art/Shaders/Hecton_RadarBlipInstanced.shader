@@ -56,8 +56,11 @@ Shader "HECTON/HUD/RadarBlipInstanced"
             };
 
             StructuredBuffer<HectonRadarBlipGpuData> _HectonRadarBlips;
+            StructuredBuffer<float4> _HectonGroundRadarPings;
             float4x4 _HectonRadarLocalToWorld;
+            float4 _HectonRadarGprOriginRadius;
             float _HectonRadarProcedural;
+            float _HectonRadarGprProcedural;
 
             struct Attributes
             {
@@ -99,6 +102,24 @@ Shader "HECTON/HUD/RadarBlipInstanced"
 
                 if (_HectonRadarProcedural > 0.5)
                 {
+                    if (_HectonRadarGprProcedural > 0.5)
+                    {
+                        float4 ping = _HectonGroundRadarPings[input.instanceId];
+                        float strength = saturate(ping.w);
+                        float radius = max(1.0, _HectonRadarGprOriginRadius.w);
+                        float3 delta = ping.xyz - _HectonRadarGprOriginRadius.xyz;
+                        float3 localCenter = float3(delta.x / radius * 0.42, delta.z / radius * 0.42, 0.0);
+                        float3 worldCenter = mul(_HectonRadarLocalToWorld, float4(localCenter, 1.0)).xyz;
+                        float3 cameraRight = HectonSafeNormalize(float3(UNITY_MATRIX_I_V._m00, UNITY_MATRIX_I_V._m10, UNITY_MATRIX_I_V._m20), float3(1.0, 0.0, 0.0));
+                        float3 cameraUp = HectonSafeNormalize(float3(UNITY_MATRIX_I_V._m01, UNITY_MATRIX_I_V._m11, UNITY_MATRIX_I_V._m21), float3(0.0, 1.0, 0.0));
+                        float gprSize = lerp(0.018, 0.055, strength);
+                        float3 worldPosition = worldCenter + (cameraRight * input.positionOS.x + cameraUp * input.positionOS.y) * gprSize;
+                        output.positionCS = TransformWorldToHClip(worldPosition);
+                        output.instanceAlpha = strength;
+                        output.instanceColor = lerp(float3(0.02, 0.1, 0.85), float3(0.08, 1.0, 0.28), strength);
+                        return output;
+                    }
+
                     HectonRadarBlipGpuData blip = _HectonRadarBlips[input.instanceId];
                     float3 worldCenter = mul(_HectonRadarLocalToWorld, float4(blip.LocalPositionSize.xyz, 1.0)).xyz;
                     float3 cameraRight = HectonSafeNormalize(float3(UNITY_MATRIX_I_V._m00, UNITY_MATRIX_I_V._m10, UNITY_MATRIX_I_V._m20), float3(1.0, 0.0, 0.0));

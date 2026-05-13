@@ -327,8 +327,8 @@ namespace Hecton8.Inventory
                         candidateCount = (ushort)(candidateCount - transfer);
                         ItemCounts[candidate] = candidateCount;
                         ItemCondition[primary] = math.max(ItemCondition[primary], ItemCondition[candidate]);
-                        QualityMilli[primary] = (ushort)math.max(QualityMilli[primary], QualityMilli[candidate]);
-                        Durabilities[primary] = (byte)math.max(Durabilities[primary], Durabilities[candidate]);
+                        QualityMilli[primary] = (ushort)math.max((int)QualityMilli[primary], (int)QualityMilli[candidate]);
+                        Durabilities[primary] = (byte)math.max((int)Durabilities[primary], (int)Durabilities[candidate]);
                         LastUpdateUnixSeconds[primary] = math.max(LastUpdateUnixSeconds[primary], LastUpdateUnixSeconds[candidate]);
 
                         if (candidateCount == 0)

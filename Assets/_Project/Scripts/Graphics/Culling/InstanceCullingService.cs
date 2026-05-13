@@ -357,8 +357,11 @@ namespace Hecton8.Graphics.Culling
                 return false;
             }
 
-            if (!math.all(math.isfinite((float3)_cameraPosition.Position)) ||
-                !math.all(math.isfinite((float3)_cameraPosition.Forward)))
+            Vector3 cameraPosition = _cameraPosition.Position;
+            Vector3 cameraForward = _cameraPosition.Forward;
+            float3 position = new float3(cameraPosition.x, cameraPosition.y, cameraPosition.z);
+            float3 forward = new float3(cameraForward.x, cameraForward.y, cameraForward.z);
+            if (!math.all(math.isfinite(position)) || !math.all(math.isfinite(forward)))
             {
                 WriteInvalidTelemetry();
                 return false;

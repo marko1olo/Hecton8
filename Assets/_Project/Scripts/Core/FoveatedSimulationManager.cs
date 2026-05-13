@@ -13,6 +13,9 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Jobs;
+using CameraFrustumSignal = Hecton8.Core.Signals.CameraFrustumSignal;
+using CameraPositionSignal = Hecton8.Core.Signals.CameraPositionSignal;
+using CombatDamageSignal = Hecton8.Core.Signals.CombatDamageSignal;
 
 namespace Hecton8.Core
 {
@@ -313,11 +316,12 @@ namespace Hecton8.Core
 
         public void InitializeRuntime()
         {
-            if (_originShiftListenerRegistered)
-                return;
+            if (!_originShiftListenerRegistered)
+            {
+                HectonFloatingOrigin.RegisterListener(this);
+                _originShiftListenerRegistered = HectonFloatingOrigin.IsListenerRegistered(this);
+            }
 
-            HectonFloatingOrigin.RegisterListener(this);
-            _originShiftListenerRegistered = HectonFloatingOrigin.IsListenerRegistered(this);
             GlobalRegistry.RegisterFoveatedSimulationDirector(this);
         }
 
@@ -460,6 +464,7 @@ namespace Hecton8.Core
         {
             TryCompleteFrameJobsInternal(true, forceComplete: false);
             EnsureNativeBuffersAllocated();
+            ConsumeAupShiftSignals();
             ConsumeCameraSignals();
             _importanceAccumulator += math.max(frameDeltaTime, 0.0f);
 
@@ -487,6 +492,12 @@ namespace Hecton8.Core
             {
                 effectiveDeltaTime = frameDeltaTime;
                 return true;
+            }
+
+            if (_simTiers[index] == FoveatedSimulationTier.Frozen)
+            {
+                effectiveDeltaTime = 0.0f;
+                return false;
             }
 
             _tickAccumulators[index] += frameDeltaTime;
@@ -985,6 +996,20 @@ namespace Hecton8.Core
             }
         }
 
+        private void ConsumeAupShiftSignals()
+        {
+            ReadOnlySpan<AupShiftSignal> shiftSignals = SignalBus<AupShiftSignal>.GetFrameSnapshot();
+            for (int i = 0; i < shiftSignals.Length; i++)
+            {
+                AupShiftSignal signal = shiftSignals[i];
+                if (!IsFinite(signal.ShiftMeters))
+                    continue;
+
+                _forceImmediateImportanceRefresh = true;
+                _importanceAccumulator = ImportanceEvaluationIntervalSeconds;
+            }
+        }
+
         private bool TryResolveScoringCamera(out Vector3 cameraPosition, out Vector3 cameraForward, out Vector3 cameraUp)
         {
             if (_hasSignalCameraPose)
@@ -1051,6 +1076,9 @@ namespace Hecton8.Core
         {
             if (!_telemetryRing.IsCreated)
                 return;
+
+            if (!IsFinite(cameraPosition) || !IsFinite(cameraForward))
+                DumpTelemetryBlackBoxOnce();
 
             int cursor = _telemetryCursor;
             _telemetryRing[cursor] = new FoveatedSimulationTelemetryEntry
@@ -1127,6 +1155,11 @@ namespace Hecton8.Core
         private static bool IsFinite(float3 value)
         {
             return math.all(math.isfinite(value));
+        }
+
+        private static bool IsFinite(Vector3 value)
+        {
+            return float.IsFinite(value.x) && float.IsFinite(value.y) && float.IsFinite(value.z);
         }
 
         private static Vector3 ToVector3(float3 value)
@@ -1351,9 +1384,12 @@ namespace Hecton8.Core
             MemoryBudgetTracker.Unregister(MemoryBudgetOwnerName);
             JobHandle disposeHandle = dependency;
             DisposeNativeArray(ref _jobScorePositions, ref disposeHandle);
+            DisposeNativeArray(ref _jobEntityAups, ref disposeHandle);
             DisposeNativeArray(ref _jobImportanceScores, ref disposeHandle);
             DisposeNativeArray(ref _jobTickRateCodes, ref disposeHandle);
             DisposeNativeArray(ref _jobInsideFrustumFlags, ref disposeHandle);
+            DisposeNativeArray(ref _jobEntitySimTiers, ref disposeHandle);
+            DisposeNativeArray(ref _jobDistancesMeters, ref disposeHandle);
             DisposeNativeArray(ref _jobFromPositions, ref disposeHandle);
             DisposeNativeArray(ref _jobToPositions, ref disposeHandle);
             DisposeNativeArray(ref _jobAlphas, ref disposeHandle);
@@ -1362,12 +1398,16 @@ namespace Hecton8.Core
             DisposeNativeArray(ref _pendingDeferredRaycastCommandIndices, ref disposeHandle);
             DisposeNativeList(ref _deferredRaycastCommands, ref disposeHandle);
             DisposeNativeArray(ref _deferredRaycastResults, ref disposeHandle);
+            DisposeNativeArray(ref _telemetryRing, ref disposeHandle);
             DispatcherJobSwap.TryComplete(ref disposeHandle, forceComplete: true);
 
             _jobScorePositions = default;
+            _jobEntityAups = default;
             _jobImportanceScores = default;
             _jobTickRateCodes = default;
             _jobInsideFrustumFlags = default;
+            _jobEntitySimTiers = default;
+            _jobDistancesMeters = default;
             _jobFromPositions = default;
             _jobToPositions = default;
             _jobAlphas = default;
@@ -1375,6 +1415,7 @@ namespace Hecton8.Core
             _pendingDeferredRaycastCommandIndices = default;
             _deferredRaycastCommands = default;
             _deferredRaycastResults = default;
+            _telemetryRing = default;
             DrainDeferredRaycastQueueResidue();
             _nativeMemorySentinelRegistered = false;
             _nativeMemoryBudgetRegistered = false;
@@ -1510,15 +1551,19 @@ namespace Hecton8.Core
         private void RegisterNativeMemoryBudget()
         {
             long totalBytes = GetNativeArrayBytes(_jobScorePositions) +
+                              GetNativeArrayBytes(_jobEntityAups) +
                               GetNativeArrayBytes(_jobImportanceScores) +
                               GetNativeArrayBytes(_jobTickRateCodes) +
                               GetNativeArrayBytes(_jobInsideFrustumFlags) +
+                              GetNativeArrayBytes(_jobEntitySimTiers) +
+                              GetNativeArrayBytes(_jobDistancesMeters) +
                               GetNativeArrayBytes(_jobFromPositions) +
                               GetNativeArrayBytes(_jobToPositions) +
                               GetNativeArrayBytes(_jobAlphas) +
                               GetNativeArrayBytes(_pendingDeferredRaycastCommands) +
                               GetNativeArrayBytes(_pendingDeferredRaycastCommandIndices) +
                               GetNativeArrayBytes(_deferredRaycastResults) +
+                              GetNativeArrayBytes(_telemetryRing) +
                               GetNativeListBytes(_deferredRaycastCommands);
             MemoryBudgetTracker.Register(MemoryBudgetOwnerName, totalBytes, PersistentNativeBudgetBytes);
             _nativeMemoryBudgetRegistered = true;
@@ -1686,6 +1731,10 @@ namespace Hecton8.Core
             _tickIntervals[index] = 0.0f;
             _lastTickDeltas[index] = 0.0f;
             _tickRates[index] = FoveatedTickRate.Center60Hz;
+            _simTiers[index] = FoveatedSimulationTier.Active;
+            _entityHashes[index] = 0u;
+            _entityIds[index] = 0;
+            _tier0LockUntilTimes[index] = 0.0f;
             _framesSinceTickRateChange[index] = 0;
         }
     }

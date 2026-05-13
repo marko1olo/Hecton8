@@ -49,6 +49,7 @@ namespace Hecton8.Physics
         private const float VerletNodeRadius = 0.035f;
         private const float TensionCreakSafeMargin01 = 0.68f;
         private const int TensionCreakCooldownFrames = 12;
+        private const int TowLoadLimitCommandCooldownFrames = 3;
         private const uint TetherCreakMaterialHash = 0x54455448u;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private const string TetherTelemetryDumpRelativePath = "Docs/AgentLogs/Dump_PHYSICS_TETHERS.bin";
@@ -194,6 +195,7 @@ namespace Hecton8.Physics
         private int _lastVerletIterationCount;
         private float _lastVerletPeakDelta;
         private int _lastTensionCreakFrame = -TensionCreakCooldownFrames;
+        private int _lastTowLoadLimitCommandFrame = -TowLoadLimitCommandCooldownFrames;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private bool _verletFaultDumpedThisActivation;
 #endif
@@ -250,7 +252,7 @@ namespace Hecton8.Physics
             _fullTensionExtension = owner != null ? owner.ResolveFullTensionExtension() : 1f;
             _maxBendPoints = owner != null ? owner.ResolveMaxBendPoints() : 0;
             _bendPointClearanceRadius = owner != null ? owner.ResolveBendPointClearanceRadius() : 0.3f;
-            _bendObstructionMask = owner != null ? owner.ResolveCableBendObstructionMask() : Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
+            _bendObstructionMask = owner != null ? owner.ResolveCableBendObstructionMask() : (LayerMask)Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
             _bendSurfaceOffset = owner != null ? owner.ResolveBendSurfaceOffset() : 0.12f;
             _bendEndpointInset = owner != null ? owner.ResolveBendEndpointInset() : 0.08f;
             _visualSegmentCount = owner != null ? owner.ResolveVisualSegmentCount() : 16;
@@ -280,6 +282,7 @@ namespace Hecton8.Physics
             _stressTimer = 0f;
             _tension01 = 0f;
             _stress01 = 0f;
+            _lastTowLoadLimitCommandFrame = -TowLoadLimitCommandCooldownFrames;
             _towDragMultiplier = 1f;
             _signedLateralPull01 = 0f;
             _backwardPull01 = 0f;
@@ -470,7 +473,7 @@ namespace Hecton8.Physics
             }
 
             _visualBounds.SetMinMax(minBounds, maxBounds);
-            VisualSegmentBuffer.SetData(_visualSegmentPositions);
+            GraphicsBufferUploadUtility.UploadNativeArray(VisualSegmentBuffer, _visualSegmentPositions, _visualSegmentPositions.Length);
             if (VisualSegmentTensionBuffer != null && _verletSegmentTensions.IsCreated)
                 GraphicsBufferUploadUtility.UploadNativeArray(VisualSegmentTensionBuffer, _verletSegmentTensions, _verletSegmentTensions.Length);
         }
@@ -489,7 +492,7 @@ namespace Hecton8.Physics
                 return;
 
             float pathLength = math.max(currentLength, MinDistance);
-            float step = pointCount > 1 ? pathLength / (pointCount - 1) : pathLength;
+            float step = pointCount > 1 ? pathLength * math.rcp(pointCount - 1) : pathLength;
             for (int index = 0; index < pointCount; index++)
             {
                 float travelDistance = step * index;
@@ -523,7 +526,7 @@ namespace Hecton8.Physics
                     continue;
                 }
 
-                float segmentT = math.saturate(remaining / segmentLength);
+                float segmentT = math.saturate(remaining * math.rcp(segmentLength));
                 float3 start = anchorPositions[segmentIndex];
                 float3 end = anchorPositions[segmentIndex + 1];
                 float3 basePoint = math.lerp(start, end, segmentT);
@@ -621,6 +624,7 @@ namespace Hecton8.Physics
             _lastVerletIterationCount = 0;
             _lastVerletPeakDelta = 0f;
             _lastTensionCreakFrame = -TensionCreakCooldownFrames;
+            _lastTowLoadLimitCommandFrame = -TowLoadLimitCommandCooldownFrames;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             _verletFaultDumpedThisActivation = false;
 #endif
@@ -1027,7 +1031,7 @@ namespace Hecton8.Physics
             if (!IsFinite(midpoint))
                 return;
 
-            float intensity = math.saturate((peakTension - safeMargin) / math.max(1f, snapThreshold - safeMargin));
+            float intensity = math.saturate((peakTension - safeMargin) * math.rcp(math.max(1f, snapThreshold - safeMargin)));
             ImpactSignal signal = new ImpactSignal
             {
                 PointAup = AbsoluteUniversePosition.FromRuntimePosition(midpoint),
@@ -1243,7 +1247,7 @@ namespace Hecton8.Physics
             if (currentForceSq > maxPayloadCurrentForceSq)
                 currentForce *= maxPayloadCurrentForce * math.rsqrt(currentForceSq);
 
-            _payloadDrift01 = math.saturate(ResolveMagnitude(currentDeltaSq) / math.max(1f, _maxCableAcceleration));
+            _payloadDrift01 = math.saturate(ResolveMagnitude(currentDeltaSq) * math.rcp(math.max(1f, _maxCableAcceleration)));
             return currentForce;
         }
 
@@ -1258,7 +1262,7 @@ namespace Hecton8.Physics
             if (_payloadAngularDamping > 0f)
             {
                 Vector3 angularVelocity = _payloadBody.angularVelocity;
-                float angularBlend = 1f / (1f + _payloadAngularDamping * fixedDeltaTime);
+                float angularBlend = math.rcp(1f + _payloadAngularDamping * fixedDeltaTime);
                 angularVelocity *= angularBlend;
                 float maxPayloadAngularSpeed = math.max(0f, _maxPayloadAngularSpeed);
                 float maxPayloadAngularSpeedSq = maxPayloadAngularSpeed * maxPayloadAngularSpeed;
@@ -1521,7 +1525,7 @@ namespace Hecton8.Physics
 
             if (totalLength <= MinDistance)
             {
-                float uniformLength = _restLength / segmentCount;
+                float uniformLength = _restLength * math.rcp(segmentCount);
                 for (int i = 0; i < segmentCount; i++)
                     _segmentRestLengths[i] = uniformLength;
                 _segmentRestLengthsDirty = false;
@@ -1530,7 +1534,7 @@ namespace Hecton8.Physics
 
             for (int i = 0; i < segmentCount; i++)
             {
-                float fraction = _segmentLengths[i] / totalLength;
+                float fraction = _segmentLengths[i] * math.rcp(totalLength);
                 _segmentRestLengths[i] = _restLength * fraction;
             }
 
@@ -1575,7 +1579,7 @@ namespace Hecton8.Physics
         private void UpdateConstraintTelemetry()
         {
             float extensionTotal = math.max(0f, _currentLength - _restLength);
-            _tension01 = math.saturate(extensionTotal / math.max(_fullTensionExtension, 0.01f));
+            _tension01 = math.saturate(extensionTotal * math.rcp(math.max(_fullTensionExtension, 0.01f)));
         }
 
         private bool UpdateStressAndSnap(float peakTension, float fixedDeltaTime)
@@ -1592,7 +1596,7 @@ namespace Hecton8.Physics
                 _stressTimer = math.max(0f, _stressTimer - (fixedDeltaTime * 0.5f));
             }
 
-            _stress01 = math.saturate(_stressTimer / snapDuration);
+            _stress01 = math.saturate(_stressTimer * math.rcp(snapDuration));
             if (_stressTimer < snapDuration)
                 return false;
 
@@ -1603,7 +1607,7 @@ namespace Hecton8.Physics
             Vector3 payloadSegmentDirection = _bendPointCount > 0
                 ? ResolveSafeDirection(_bendPoints[_bendPointCount - 1] - _payloadBody.worldCenterOfMass, Vector3.zero)
                 : ResolveSafeDirection(ownerAnchor - _payloadBody.worldCenterOfMass, Vector3.zero);
-            float snapSeverity = math.saturate(peakTension / snapThreshold);
+            float snapSeverity = math.saturate(peakTension * math.rcp(math.max(snapThreshold, 1f)));
             PublishTetherSnappedSignal(ownerAnchor, peakTension, snapThreshold, snapSeverity, 1);
             InvokeSnapProtocol(playerSegmentDirection, payloadSegmentDirection, snapSeverity, false);
             return true;
@@ -1888,7 +1892,11 @@ namespace Hecton8.Physics
 
         private void PublishTowLoadLimitIfNeeded(float peakTension)
         {
-            if (_payloadBody == null || _playerRigidbody == null || _payloadMass01 < 0.75f || peakTension <= 0f)
+            if (_payloadBody == null || _playerRigidbody == null || _payloadMass01 < 0.75f || peakTension <= 0f || !math.isfinite(peakTension))
+                return;
+
+            int frame = Time.frameCount;
+            if (frame - _lastTowLoadLimitCommandFrame < TowLoadLimitCommandCooldownFrames)
                 return;
 
             float threshold = ResolveSnapTensionThreshold();
@@ -1906,7 +1914,8 @@ namespace Hecton8.Physics
                 Sequence = 0u,
                 Flags = (byte)(VehicleCommandSignalFlags.ManualThrottle | VehicleCommandSignalFlags.TowLoadLimit)
             };
-            VehicleCommandSignalBus.Publish(in signal);
+            if (VehicleCommandSignalBus.Publish(in signal))
+                _lastTowLoadLimitCommandFrame = frame;
         }
 
         internal void CommitVisualRebaseUpload()
@@ -1921,7 +1930,7 @@ namespace Hecton8.Physics
             }
 
             if (_visualSegmentPositions.IsCreated)
-                VisualSegmentBuffer.SetData(_visualSegmentPositions);
+                GraphicsBufferUploadUtility.UploadNativeArray(VisualSegmentBuffer, _visualSegmentPositions, _visualSegmentPositions.Length);
         }
 
         internal void RetargetAnchorEndpoint(HectonPlayerMotor playerMotor, Rigidbody anchorBody)
@@ -2043,7 +2052,7 @@ namespace Hecton8.Physics
                 return;
             }
 
-            Vector3 requestedAccelerationVector = requestedForceVector / safeReducedMass;
+            Vector3 requestedAccelerationVector = requestedForceVector * math.rcp(safeReducedMass);
             _primaryConstraintForceMagnitude = requestedForceMagnitude;
             ApplyReducedMassReactionForce(anchorPositionWS, requestedForceVector);
             ApplyClampedAcceleration(_payloadBody, requestedAccelerationVector, _maxCableAcceleration);
@@ -2214,7 +2223,7 @@ namespace Hecton8.Physics
 
             Vector3 velocityError = currentVelocity - targetVelocity;
             float errorMagnitudeSq = velocityError.sqrMagnitude;
-            float maxVelocityError = safeMaxForce / safeDamping;
+            float maxVelocityError = safeMaxForce * math.rcp(safeDamping);
             float maxVelocityErrorSq = maxVelocityError * maxVelocityError;
             if (errorMagnitudeSq <= maxVelocityErrorSq)
                 return currentVelocity;

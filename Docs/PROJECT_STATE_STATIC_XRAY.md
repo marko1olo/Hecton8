@@ -850,6 +850,98 @@ Decision:
 - Do not spend time hand-polishing pipe GameObjects before the resource acquisition chain is clean. Pipes are deeper vertical-slice content; copper/resource pickup is first-hour progression.
 - Require one bounded runtime route later: mine/collect copper, observe `InteractionEvents.ItemCollected`, inventory contains `Data_Copper`, `quest_copper_sample` completes, craft `Copper Wire`, then save/load that state. Until that exists, gameplay loop readiness remains `PENDING VERIFICATION`.
 
+## Tools / PDA / First-Hour Interface Addendum
+
+Evidence type: `STATIC_SOURCE`, `FILESYSTEM`, `PREFAB_YAML`, `STATIC_SCENE_STRING`. No Unity, Play Mode, profiler, or dotnet verification was run for this addendum.
+
+Static inventory:
+
+- `Assets/_Project/Data/Items/Tools` contains `12` tool ItemData assets.
+- `Assets/_Project/Prefabs/Tools/Held` contains `12` held tool prefabs.
+- `Assets/_Project/Prefabs/Items/Tools` contains `12` tool world prefabs.
+- `Assets/_Project/Data/Tools` contains `13` `ToolMetadata_*.asset` files. The extra metadata is `ToolMetadata_LogicSpanner.asset`.
+- All `12` tool ItemData assets have non-null `worldPrefab` refs.
+- `LogicSpannerTool.cs` and `ToolMetadata_LogicSpanner.asset` exist, but static scan found no `Item_Tool_LogicSpanner.asset`, no held prefab, no world prefab, no catalog ref, and no recipe ref.
+- `Player.prefab` owns `PlayerToolManager`, `PlayerPDA`, `ToolLoadoutProvisioner`, `ScanLogSystem`, `PDAExchangeSystem`, and `PlayerInteraction`.
+- `Player.prefab` `ToolLoadoutProvisioner` is enabled with `provisionInventoryOnStart: 1`, `assignCoreLoadoutOnStart: 1`, `provisionConstructionMaterialsOnStart: 1`, `startupPreset: {fileID: 0}`, four core quick-slot prefabs, and `12` `allToolItems`.
+- `Player.prefab` starter construction material is root `Data_Copper` GUID `84877e24023afe648a6682f49f11defa`, the same non-catalog copper asset flagged in the gameplay economy addendum.
+- `Player.prefab` `PlayerPDA` has `pdaPanel: {fileID: 0}`, `pdaCanvasGroup: {fileID: 0}`, and all eight `tabs` entries `{fileID: 0}`.
+- Binary scene string scans found PDA tab component strings in `02_HECTON_WORLD.unity` and `03_HECTON_WORLD_CREST5.unity`.
+- `DiegeticPDAController.cs` calls `PlayerPDA.ConfigureUI(...)`, but static scene/prefab scans did not find the `DiegeticPDAController` class string or MonoScript GUID `8f05da9f4a7a4158a04d6cc0e0f9d8c2` in `_Project` scenes/prefabs.
+- `ProgressionRuntimeInstaller` boot-adds `HectonOSBootManager`; `PDARuntimeInstaller` boot-adds exploration/logbook/marker/intrusion systems. Neither installer adds `DiegeticPDAController`.
+- `Player.prefab` still contains multiple dev/smoke components with `runOnStart: 0`. That is lower risk than active provisioning, but it is production-prefab contamination.
+- `WorldShippingContentFilter` suppresses trial/staging scene hierarchies such as `Tool_Staging`, `Fabrication_Trial`, and `Tool_TrialRange`; static source does not show it stripping player-attached `ToolLoadoutProvisioner` or smoke components.
+
+Positive architecture:
+
+- `PlayerToolManager.cs` is load-bearing, not filler: inventory-gated quick slots, GlobalRegistry input, object-pool equip/despawn, pool warmup, break/replacement handling, runtime context publication, battery siphon, and module-status handling are present.
+- `PlayerTool.cs` and the equipment stack carry real metadata, durability, modular equipment, heat, battery, haptics, and operational summaries.
+- `ModularEquipmentEngine` owns native arrays for tool state/stats/type ids/heat/battery/status masks and boot-creates a runtime instance.
+- `EquipmentInteractionHandler` is boot-created by `GameBootstrapper`.
+- `PlayerInteraction` on `Player.prefab` routes non-alloc look queries through dispatcher/query caches and checks `IInventoryPickupSource` before physical/interactable fallback.
+- `HectonItem.TryHandleInventoryPickup(...)` and `PickupItem` raise `InteractionEvents.ItemCollected` and publish `ItemCollectedEvent`, which is the correct event family for first-hour/quest/resource progression.
+- `ScannerTool.cs` is serious code: cooldown/radius, `WorldSpatialHashGrid.CollectContactsNonAlloc(...)`, scan result aggregation, resource-node/pickup/module/scannable discoveries, focused dispatcher raycast path, scan audio/feedback, and `GlobalSignals.ScannerToolActiveSignal`.
+- `ScanEvents` has NativeQueue-backed pending and next-frame event lanes. `ScanLogSystem` is on `Player.prefab`, implements save/listener ownership, and registers through `GlobalRegistry.ScanLog`.
+- `QuestStateManager` and `QuestGraphEvaluator` contain a real packed/native quest signal path for item/scan/craft/narrative events.
+
+Risk:
+
+- The largest first-hour product risk in this layer is active dev provisioning on the player prefab. It grants the full toolkit and construction materials at Start, bypassing acquisition/crafting and masking the resource pickup break from the gameplay economy addendum.
+- Because `starterConstructionItems` uses the root non-catalog `Data_Copper`, the provisioner can inject exactly the copper authority that the data audit already flagged as split from catalog/recipe copper.
+- Shipping cleanup does not currently prove removal of player-attached `ToolLoadoutProvisioner`; it suppresses named scene hierarchies.
+- PDA backend and tab content exist, but the bridge is not proven. `PlayerPDA.Open()` can switch to UI input, cursor, depth of field, sound, and events even when `pdaPanel`/tabs are null. Without a mounted/configured shell before input, this is an input/UI trap risk, not a verified PDA UX.
+- Scene tab strings are positive evidence for authored PDA UI objects, but they do not prove that `PlayerPDA` is connected to them.
+- `LogicSpanner` is partial content: source and metadata exist, but no player acquisition or prefab path was found.
+- Dev/smoke components with `runOnStart: 0` are not hot by default, but they still pollute production-prefab verification and increase the chance of false positives in future smoke/readiness claims.
+
+Decision:
+
+- Classify the tool/scan/interaction stack as real, material architecture.
+- Do not classify the first-hour route as clean or proven while `ToolLoadoutProvisioner` is enabled on `Player.prefab` with startup grants.
+- Do not call PDA absent; call PDA shell wiring `PENDING VERIFICATION`. The backend, tabs, and installers exist, but the `DiegeticPDAController` bridge placement was not proven statically.
+- Next fix direction should be route hygiene, not GameObject polish: disable/strip or explicitly dev-gate `ToolLoadoutProvisioner`, canonicalize resource ItemData/worldPrefab/catalog data, then prove one clean route from empty-ish start -> acquire resource -> unlock/craft/equip scanner -> visible PDA/scan/log/quest update.
+- Add editor validators later for player-prefab dev provisioning, PDA shell bridge presence, `LogicSpanner` orphan content, and duplicate/cross-catalog starter materials.
+
+## AI / Fauna Data vs Runtime Wiring Addendum
+
+Evidence type: STATIC_SOURCE / FILESYSTEM / STATIC_DOC. No Unity, Play Mode, profiler, GCMonitor, player build, or scene load was run.
+
+Static inventory:
+
+- `Assets/_Project/Data/AI/CreatureArchetypes` contains `22` recursive creature archetype `.asset` files.
+- `Assets/_Project/Data/Fauna` contains `22` fauna data template `.asset` files.
+- `Assets/_Project/Data/AI/FaunaBiomes` contains `108` fauna biome datasets.
+- `Assets/_Project/Data/Biomes/FaunaFamilies` contains `13` fauna family profiles.
+- `Assets/_Project/Data/AI/GeneratedProxies/Prefabs` contains `6` generated proxy prefabs: small passive, territorial, hunter, heavy hunter, leviathan, and drone.
+- The `108` fauna biome datasets currently contain `432` `possibleCreatures` entries with non-null prefab references and `0` `possibleCreatures` prefab-null hits by static field scan.
+- The same biome datasets contain `17` large-threat macro-zone archetype references and `17` `useLargeThreatMacroZone: 1` flags.
+- `FaunaRuntimeSmokeTesterRunner.RunOmegaHeadlessSmoke()` exists and prints a `FAUNA_OMEGA_SMOKE_RESULT` JSON line on pass/fail when the runner reaches that point.
+
+Positive architecture:
+
+- The fauna data surface is real. It is not just concept prose: archetypes, fauna templates, biome spawn entries, family profiles, generated proxy prefabs, and large-threat macro-zone metadata exist on disk.
+- `FaunaDirector` is substantial runtime code: registry-backed `IFaunaSim` service registration, adaptive density budgets, spawn ring and culling controls, biome/depth/zone weighting, spawn registry resolution, pool warmup, acoustic panic commands, resident data-only simulation, dispatcher registration, and late-frame completion.
+- `WorldFaunaSpawnRegistry` is a real anchor registry: ordinary anchors, large-threat zones, runtime reef anchors, chunk/macro-zone buckets, procedural-state availability checks, and pooled anchor buckets.
+- `EcosystemRuntimeInstaller` does create ecosystem-adjacent runtime managers: `FaunaGeneticsManager`, `EcosystemHealthDirector`, and `MigrationDirector`.
+- `WorldRuntimeBootstrapAuthoring` can add/configure `WorldFaunaSpawnRegistry` and can wire an existing `FaunaDirector` to the chunk streaming profile, spawn registry, and procedural state registry.
+
+Risk:
+
+- Current static script-GUID search did not find serialized `FaunaDirector`, `WorldFaunaSpawnRegistry`, `FaunaRuntimeSmokeTester`, or `EcosystemRuntimeInstaller` hits in `Assets` scenes/prefabs/assets. This is not proof they are absent at runtime, but it is enough to reject any documentation claim that scene wiring is currently proven.
+- `EcosystemRuntimeInstaller.EnsureRuntimeSystems()` does not instantiate `FaunaDirector` or `WorldFaunaSpawnRegistry`; it only creates genetics/health/migration managers.
+- `GameBootstrapper.EnsureFaunaSimulationRegistered()` calls `FaunaDirector.InitializeService()` only if `FaunaDirector.ActiveRuntimeInstance` already exists. If no real fauna director registers `IFaunaSim`, bootstrap registers `DemiurgeFaunaSimulationService.Shared`, which reports ready but has `ResidentSlotCapacity = 0`.
+- The headless fallback is useful for service-slot safety, but it can make `GlobalRegistry.FaunaSimulation.IsReady` true while no visible fauna director, spawn registry, resident slots, or active creatures are proven.
+- `WorldRuntimeBootstrapAuthoring.ConfigureFaunaDirector()` returns immediately when no `FaunaDirector` exists. Therefore the editor tool can wire an existing director but does not prove one is present in production content.
+- `.codex-artifacts/fauna-omega-smoke-2026-05-05.log` is not usable PASS evidence. It reports `.codex-artifacts is not a valid directory name` and ends with Unity return code `1` without a visible `FAUNA_OMEGA_SMOKE_RESULT` PASS line.
+- `Docs/AI_Fauna/AI_CREATURE_ROSTER_ENTERPRISE.md` remains encoding-damaged. Stable IDs and family links are useful pointers; prose in that file is not final writing or runtime truth.
+
+Decision:
+
+- Classify AI/Fauna as "real authored data and real runtime code, unproven visible production runtime".
+- Keep `Docs/AI_Fauna` as an active coverage/reference pack, but never use it as scene-wiring, Play Mode, profiler, or spawn-readiness proof.
+- Highest-value runtime proof later: load production world, prove active `FaunaDirector`, active `WorldFaunaSpawnRegistry`, nonzero biome entries loaded into runtime, nonzero resident slot capacity from the real `IFaunaSim`, at least one ordinary spawn and one large-threat macro-zone path, and a fresh `FAUNA_OMEGA_SMOKE_RESULT` PASS artifact.
+- Low tier direction: use proxy-prefab and data-only fauna first; visible spawn caps and adaptive budget must shed density before frame time spikes. High/Ultra direction: spend saved cycles on richer visible ecology, longer large-threat residency, denser near-field schools, and stronger audio/biolum cues only after the real director path is proven.
+
 ## Save / Persistence Addendum
 
 Evidence type: `STATIC_SOURCE`, `FILESYSTEM`, `STATIC_DOC`. No Unity, Play Mode, profiler, or dotnet verification was run for this addendum.

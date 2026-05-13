@@ -4,6 +4,8 @@
     "references": [
         "Hecton8.Core.Contracts",
         "Hecton8.Inventory.Algorithms",
+        "Hecton8.Inventory.Corrosion",
+        "Hecton8.Inventory.Corrosion.Contracts",
         "Hecton8.Core.Scheduling",
         "Hecton8.Core.Memory",
         "Hecton8.Core.Memory.Layout",

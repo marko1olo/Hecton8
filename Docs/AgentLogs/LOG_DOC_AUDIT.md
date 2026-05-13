@@ -269,6 +269,7 @@ What was wrong:
 What was done:
 
 - Added `docAuditR13Boundary` to the May 6, May 7, May 9, and May 11 active documentation manifests.
+- Demoted the May 9 manifest's `coveredCurrentSource` to `false` and preserved the original value as `originalSnapshotCoveredCurrentSource=true`.
 - Scoped all manifest counts, `sourceCounts`, `currentAuthority*`, `buildState`, and `entries` to historical snapshot evidence only.
 - Pointed current authority to `Docs/Reports/README.md` and `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md`.
 
@@ -313,3 +314,62 @@ Verification:
 
 - Static only: file/YAML/source/string evidence. Required later runtime route is mine copper -> item collected event -> inventory contains `Data_Copper` -> `quest_copper_sample` completes -> craft `Copper Wire` -> save/load.
 - No Unity, `dotnet`, Play Mode, profiler, GCMonitor, or player build was run.
+
+## 2026-05-13 - AI/Fauna Data vs Runtime Wiring Boundary
+
+What was wrong:
+
+- AI/Fauna docs preserved real coverage data, but did not clearly separate authored fauna data from active production-scene runtime proof.
+- Current static inventory is strong: `22` recursive creature archetypes, `22` fauna data templates, `108` fauna biome datasets, `432` non-null biome spawn prefab entries, `17` large-threat macro-zone refs, `13` family profiles, and `6` generated proxy prefabs.
+- Static script-GUID scan did not prove serialized `FaunaDirector`, `WorldFaunaSpawnRegistry`, `FaunaRuntimeSmokeTester`, or `EcosystemRuntimeInstaller` in current scenes/prefabs/assets.
+- `EcosystemRuntimeInstaller` creates genetics/health/migration managers, not `FaunaDirector` or `WorldFaunaSpawnRegistry`.
+- `GameBootstrapper` can register `DemiurgeFaunaSimulationService.Shared` when no real fauna director registers `IFaunaSim`; that fallback is ready but has `ResidentSlotCapacity = 0`.
+- `.codex-artifacts/fauna-omega-smoke-2026-05-05.log` ends with Unity return code `1` and is not PASS evidence.
+
+What was done:
+
+- Patched `Docs/AI_Fauna/README.md`, `AI_FAUNA_WORLD_INTEGRATION_REPORT.md`, and `AI_CREATURE_ROSTER_ENTERPRISE.md` with the R15 proof boundary.
+- Promoted the same boundary to `Docs/PROJECT_STATE_STATIC_XRAY.md`, `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md`, `Docs/README.md`, `Docs/Reports/README.md`, and `Docs/HECTON8_GLOBAL_ARCHITECTURE_MAP.md`.
+- Updated DOC_AUDIT status and rationale with the data-vs-runtime distinction.
+
+Cinematic Cheats used:
+
+- Kept Low-tier direction on proxy-prefab/data-only fauna and adaptive density caps before any creature-simulation spending. High/Ultra visual overkill is allowed only after the real director path is proven.
+
+Exact Microseconds saved:
+
+- 0 us/frame. Documentation-only change.
+
+Verification:
+
+- Static only: filesystem counts, YAML field scan, source readback, script-GUID grep, and artifact log readback.
+- No Unity, `dotnet`, Play Mode, profiler, GCMonitor, player build, or live scene load was run.
+
+## 2026-05-13 - Tools / PDA / First-Hour Interface X-Ray
+
+What was wrong:
+
+- Tool and PDA code could be misread two wrong ways: either as giant-file bloat or as a proven first-hour route.
+- Static inventory shows the tool stack is real: `12` tool ItemData assets, `12` held prefabs, `12` world prefabs, `13` ToolMetadata assets, and all tool ItemData `worldPrefab` refs non-null.
+- `ToolMetadata_LogicSpanner.asset` and `LogicSpannerTool.cs` exist, but no `Item_Tool_LogicSpanner.asset`, held prefab, world prefab, catalog ref, or recipe ref was found.
+- `Player.prefab` carries `ToolLoadoutProvisioner` with `provisionInventoryOnStart=1`, `assignCoreLoadoutOnStart=1`, and `provisionConstructionMaterialsOnStart=1`; it grants all tool items plus root `Data_Copper` starter material.
+- `Player.prefab` `PlayerPDA` has null `pdaPanel`, null `pdaCanvasGroup`, and null tab refs. World scenes contain PDA tab components, but `DiegeticPDAController` placement was not proven by class string or MonoScript GUID scan.
+
+What was done:
+
+- Audited tool data, held/world prefabs, metadata, player prefab wiring, tool provisioning, scanner/scan-log/PDA event paths, interaction pickup path, PDA shell code, runtime installers, and shipping cleanup boundaries statically.
+- Promoted the findings to stable/current docs as R16 because the current X-Ray already has a parallel R15 AI/Fauna boundary.
+- Kept the verdict bounded: tools are real architecture; first-hour truth is currently contaminated by dev provisioning and PDA bridge proof gaps.
+
+Cinematic Cheats used:
+
+- Recommended first-hour proof through one deterministic, cheap route before visual overkill: no startup all-tools grant, canonical pickup/grant path, visible PDA shell, then scan/craft proof.
+
+Exact Microseconds saved:
+
+- 0 us/frame. No runtime code changed.
+
+Verification:
+
+- Static only: source, prefab YAML, filesystem inventory, and binary scene string scans.
+- No Unity, `dotnet`, Play Mode, profiler, GCMonitor, player build, or scene import validation was run.
