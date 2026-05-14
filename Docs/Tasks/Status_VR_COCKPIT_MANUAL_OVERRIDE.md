@@ -168,6 +168,12 @@ Execution lane: SIMULATION / `PriorityLayer.Player`
 - [x] Probe callsite centralized frame capture. DOD: `PhysicalInteractionHandler.TickPhysicalPanelButtons()` captures one `sampleFrame` at dispatch to the selected receiver and passes it through the decoupled interface; public receiver methods retain a fallback frame read only for external/manual callers that do not supply a sample. Rejected: removing compatibility defaults because existing inspector/tooling calls may still invoke concrete receiver APIs directly. Estimate: one frame read per accepted physical probe instead of receiver-local reads; external fallback unchanged.
 - [x] Reverification without dotnet. DOD: `git diff --check` passed with CRLF warnings only; scoped counter over five receiver files reports `ReceiverFrameParam=9`, `ExplicitOldSignature=0`, `HandlerFrameRead=1`, `ReceiverFallbackFrameReads=3`, `InterfaceCalls=1`, `LegacyBanned=0`. Rejected: dotnet rebuild/probe by explicit user instruction. Estimate: verification only.
 
+## Loop 25 - Lever Invalid-Delta Freeze
+
+- [x] Invalid dispatcher delta no longer advances lever simulation. DOD: `OpenXRManualOverrideLever.SanitizeDeltaSeconds()` now returns zero for non-finite deltas instead of manufacturing `0.016666668f`; normal positive deltas still clamp to `MaxDeltaSeconds`. Rejected: defaulting NaN/Inf to 60 Hz because invalid time must not advance spring, fallback pull, IK smoothing, ratchet checks, latch timing, or telemetry state. Estimate: saves a full false lever tick on invalid-delta frames; 0 B/frame.
+- [x] Dead default delta removed. DOD: `DefaultDeltaSeconds` is deleted from the lever after the sanitizer change, leaving no stale constant suggesting fake time is acceptable. Rejected: keeping unused timing constants because they invite regression. Estimate: compile-time hygiene only.
+- [x] Reverification without dotnet. DOD: `git diff --check` passed with CRLF warning only; scoped counter for `OpenXRManualOverrideLever.cs` reports `DefaultDeltaSeconds=0`, `InvalidDeltaToZero=1`, `QuaternionSlerp=0`, `Vector3Lerp=0`, `HingeJoint=0`, `UnityUpdateMethods=0`. Rejected: dotnet rebuild/probe by explicit user instruction. Estimate: verification only.
+
 STATUS: PENDING VERIFICATION - Unity editor/global Core compile dependency wall prevents full player compile proof in this session.
 
 ## Compile Attempts

@@ -158,3 +158,10 @@ Solution: Added `_boundTextArgsCount` and `_boundIconArgsCount`, reset them on a
 Rejected Alternatives: Updating args every draw for simplicity, splitting one args array per batch without dirty gating, or moving count into shader-side branching. Repeated uploads are unnecessary; shader-side count branching is the wrong layer for indirect draw submission state.
 Scalability potential: Low removes redundant CPU-to-GPU args traffic for the single normal prompt. Middle keeps dither fade. High and Ultra preserve upload budget for richer per-instance glyph visuals while keeping indirect draw state stable.
 Hardware Impact: Expected gain is sub-microsecond per visible prompt on i3/MX350, with lower driver/API traffic in steady hover. No runtime profiler proof.
+
+## Decision 22: Cached Input Determinism Service
+Problem: The tooltip checked input scheme every late frame and still fetched `GlobalRegistry.InputDeterminism` inside the resolver.
+Solution: Added `_inputDeterminism`, refreshed it on enable/start and `GlobalRegistryServiceSlot.Input` hot-swap, cleared it on disable, and made `ResolveCurrentSchemeHash()` read the cached interface.
+Rejected Alternatives: Polling `GlobalRegistry.InputDeterminism` every scheme check, subscribing to managed input events, or freezing the scheme after first resolve. Registry polling is avoidable; managed events add lifecycle coupling; frozen scheme would break device changes.
+Scalability potential: Low removes one registry access from steady hover checks. Middle, High, and Ultra preserve scheme responsiveness for richer glyph/material variants without adding managed routing.
+Hardware Impact: Expected gain is sub-microsecond per frame on i3/MX350, but deterministic: scheme checks use a cached interface and hot-swap keeps the cache correct. No runtime profiler proof.

@@ -26,7 +26,6 @@ namespace Hecton8.UI.VR
     {
         private const int LeverCount = 1;
         private const int BlackBoxFrameCount = 300;
-        private const float DefaultDeltaSeconds = 0.016666668f;
         private const float MaxDeltaSeconds = 0.05f;
         private const float MinAxisLengthSq = 0.000001f;
         private const float DegreesPerRadian = 57.29578f;
@@ -850,8 +849,7 @@ namespace Hecton8.UI.VR
 
         private static float SanitizeDeltaSeconds(float value)
         {
-            float resolved = math.isfinite(value) ? value : DefaultDeltaSeconds;
-            return math.clamp(resolved, 0f, MaxDeltaSeconds);
+            return math.isfinite(value) ? math.clamp(value, 0f, MaxDeltaSeconds) : 0f;
         }
 
         private static float SanitizeFloat(float value, float fallback)

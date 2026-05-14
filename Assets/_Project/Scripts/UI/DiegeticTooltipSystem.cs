@@ -152,6 +152,7 @@ namespace Hecton8.UI
         private NativeArray<TooltipBlackBoxEntry> _blackBox;
         private TMP_FontAsset _cachedAsciiFont;
         private Camera _cachedRenderCamera;
+        private IInputDeterminismService _inputDeterminism;
         private AbsoluteUniversePosition _activeTargetAup;
         private Vector3 _activeRuntimeAnchor;
         private Vector3 _diagnosticWorldAnchor;
@@ -317,6 +318,7 @@ namespace Hecton8.UI
             TryRegisterRuntime();
             TryRegisterHotSwapListener();
             RefreshScalabilityTier();
+            RefreshInputDeterminismService();
             _activeSchemeHash = ResolveCurrentSchemeHash();
         }
 
@@ -325,6 +327,7 @@ namespace Hecton8.UI
             TryRegisterRuntime();
             TryRegisterHotSwapListener();
             RefreshScalabilityTier();
+            RefreshInputDeterminismService();
             _activeSchemeHash = ResolveCurrentSchemeHash();
         }
 
@@ -334,6 +337,8 @@ namespace Hecton8.UI
             TryUnregisterHotSwapListener();
             ClearTooltipState();
             _promptLength = 0;
+            _cachedRenderCamera = null;
+            _inputDeterminism = null;
         }
 
         private void OnDestroy()
@@ -358,6 +363,7 @@ namespace Hecton8.UI
             if (serviceSlot != GlobalRegistryServiceSlot.Input)
                 return;
 
+            _inputDeterminism = currentService as IInputDeterminismService;
             _activeSchemeHash = 0u;
             if (_hasSignalTarget && !_diagnosticActive)
                 RebuildActiveTooltipLayout();
@@ -1054,7 +1060,7 @@ namespace Hecton8.UI
 
         private uint ResolveCurrentSchemeHash()
         {
-            IInputDeterminismService input = GlobalRegistry.InputDeterminism;
+            IInputDeterminismService input = _inputDeterminism;
             if (input == null)
                 return InputSchemeHashKeyboardMouse;
 
@@ -1062,6 +1068,11 @@ namespace Hecton8.UI
             return state.CurrentInputSchemeHash != 0u
                 ? state.CurrentInputSchemeHash
                 : InputSchemeHashKeyboardMouse;
+        }
+
+        private void RefreshInputDeterminismService()
+        {
+            _inputDeterminism = GlobalRegistry.InputDeterminism;
         }
 
         private bool IsLowTier()

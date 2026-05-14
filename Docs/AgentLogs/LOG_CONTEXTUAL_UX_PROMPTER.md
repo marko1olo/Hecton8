@@ -113,3 +113,14 @@ Cinematic cheats used: Same fake-first prompt path: atlas quads, integer UV look
 Exact microseconds saved: Estimate only. Expected gain is sub-1 us per steady visible prompt, mostly reduced CPU-to-GPU argument buffer traffic and driver-side work.
 
 Verification: No dotnet rebuilds were run. Static scans stayed clean for forbidden hot-path text/allocation/LINQ and old renderer/update/shader markers. Args scan shows `argsBuffer.SetData(_indirectArgs)` remains in buffer initialization and the new count-dirty branch only. `git diff --check` returned CRLF normalization warnings only.
+
+## 2026-05-15 Input Determinism Cache
+What was wrong: The tooltip scheme resolver still fetched `GlobalRegistry.InputDeterminism` during scheme checks instead of using a cached service reference maintained by lifecycle/hot-swap.
+
+What was done: Added `_inputDeterminism`, refreshed it on enable/start and input service hot-swap, cleared it on disable, and changed `ResolveCurrentSchemeHash()` to read the cached interface.
+
+Cinematic cheats used: No visual contract change. The same atlas-quad input prompt remains, with device glyphs resolved from deterministic scheme state.
+
+Exact microseconds saved: Estimate only. Expected gain is sub-1 us per active prompt frame by removing one registry access from scheme checks.
+
+Verification: No dotnet rebuilds were run. Static scans stayed clean for forbidden allocation/text/LINQ and old renderer/update/shared-buffer/matrix/shader markers. Input scan confirmed `GlobalRegistry.InputDeterminism` remains only in lifecycle refresh, while `ResolveCurrentSchemeHash()` reads `_inputDeterminism`. `git diff --check` returned CRLF normalization warnings only.

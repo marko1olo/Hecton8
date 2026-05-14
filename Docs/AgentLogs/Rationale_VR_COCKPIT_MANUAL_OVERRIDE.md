@@ -329,3 +329,15 @@ Rejected Alternatives: removing the optional fallback from public concrete APIs 
 Scalability potential: Low/toaster path gets fewer receiver callback property reads and no extra allocation. Middle/High keep consistent interaction packet frames across manual levers, panel buttons, switches, and strap latches. Ultra can layer denser cockpit feedback from the same frame stamp without introducing a frame-source race.
 
 Hardware Impact: i3/MX350 saves up to two redundant frame property reads on accepted panel/switch physical receiver callbacks and removes a stale explicit-interface compile-risk. Normal hot path still uses one stack int and existing NonAlloc overlap flow. 0 B/frame.
+
+## Decision 27 - Invalid lever delta must freeze instead of pretending 60 Hz passed
+
+Problem: `OpenXRManualOverrideLever.SanitizeDeltaSeconds()` treated non-finite dispatcher deltas as `0.016666668f`. That silently advanced the spring, non-VR fallback pull, IK target smoothing, ratchet/latch evaluation, and blackbox state during a frame whose time source was corrupt.
+
+Solution: return zero for non-finite deltas and keep the existing clamp for finite values. Delete the now-unused `DefaultDeltaSeconds` constant so fake time is not left as a future regression path.
+
+Rejected Alternatives: keeping a 60 Hz fallback was rejected because it hides upstream timing corruption and creates false cockpit motion. Dumping blackbox on every invalid delta was rejected because delta corruption is already contained by freezing and blackbox dumps are reserved for non-finite state entering native telemetry. Adding another native state flag was rejected because zero dt already records a stable frame without extra memory.
+
+Scalability potential: Low/toaster avoids accidental lever work during scheduler faults or pause-edge cases. Middle/High keep deterministic lever state under invalid timing input. Ultra can spend performance on presentation once a valid frame resumes, without latch state moving during corrupt time.
+
+Hardware Impact: i3/MX350 saves the entire false lever tick on invalid-delta frames: no spring integration progress, no fallback pull progress, no IK smoothing step, no ratchet movement, no latch advancement. Normal valid frames are unchanged. 0 B/frame.

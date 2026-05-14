@@ -246,6 +246,10 @@ namespace Hecton8.Editor.ProceduralGen
             material.SetTexture("_NormalAtlas", AssetDatabase.LoadAssetAtPath<Texture2D>(NormalAtlasPath));
             material.SetTexture("_ORMAtlas", AssetDatabase.LoadAssetAtPath<Texture2D>(OrmAtlasPath));
             material.SetTexture("_MatCap", AssetDatabase.LoadAssetAtPath<Texture2D>(MatCapPath));
+            SetMaterialTextureTransform(material, "_AlbedoAtlas");
+            SetMaterialTextureTransform(material, "_NormalAtlas");
+            SetMaterialTextureTransform(material, "_ORMAtlas");
+            SetMaterialTextureTransform(material, "_MatCap");
             material.SetColor("_BaseColor", new Color(0.64f, 0.82f, 0.62f, 1f));
             material.SetColor("_RootTint", new Color(0.10f, 0.22f, 0.14f, 1f));
             material.SetColor("_TipTint", new Color(0.28f, 0.92f, 0.84f, 1f));
@@ -418,6 +422,11 @@ namespace Hecton8.Editor.ProceduralGen
                 Debug.LogError("[ShallowsBioForgeBatchBaker] Shared atlas binding mismatch.");
             }
 
+            ValidateMaterialTextureTransform(material, "_AlbedoAtlas", ref failures);
+            ValidateMaterialTextureTransform(material, "_NormalAtlas", ref failures);
+            ValidateMaterialTextureTransform(material, "_ORMAtlas", ref failures);
+            ValidateMaterialTextureTransform(material, "_MatCap", ref failures);
+
             if (material.IsKeywordEnabled("_QUALITY_HIGH"))
             {
                 failures++;
@@ -463,6 +472,17 @@ namespace Hecton8.Editor.ProceduralGen
             {
                 failures++;
                 Debug.LogError($"[ShallowsBioForgeBatchBaker] Shared material custom render queue override is forbidden. Queue={(customRenderQueue != null ? customRenderQueue.intValue : int.MinValue)}.");
+            }
+
+            SerializedProperty validKeywords = serialized.FindProperty("m_ValidKeywords");
+            SerializedProperty invalidKeywords = serialized.FindProperty("m_InvalidKeywords");
+            if (validKeywords == null ||
+                invalidKeywords == null ||
+                validKeywords.arraySize != 0 ||
+                invalidKeywords.arraySize != 0)
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] Shared material keyword arrays must stay empty. Valid={(validKeywords != null ? validKeywords.arraySize : -1)}, Invalid={(invalidKeywords != null ? invalidKeywords.arraySize : -1)}.");
             }
         }
 
@@ -559,6 +579,23 @@ namespace Hecton8.Editor.ProceduralGen
             {
                 failures++;
                 Debug.LogError($"[ShallowsBioForgeBatchBaker] Shared material float contract failed for {propertyName}.");
+            }
+        }
+
+        private static void SetMaterialTextureTransform(Material material, string propertyName)
+        {
+            material.SetTextureScale(propertyName, Vector2.one);
+            material.SetTextureOffset(propertyName, Vector2.zero);
+        }
+
+        private static void ValidateMaterialTextureTransform(Material material, string propertyName, ref int failures)
+        {
+            if (!material.HasProperty(propertyName) ||
+                !Approximately(material.GetTextureScale(propertyName), Vector2.one) ||
+                !Approximately(material.GetTextureOffset(propertyName), Vector2.zero))
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] Shared material texture transform contract failed for {propertyName}.");
             }
         }
 

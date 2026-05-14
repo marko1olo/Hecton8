@@ -29,7 +29,7 @@ using UnityEditor;
 namespace Hecton8.Gameplay
 {
     [DisallowMultipleComponent]
-    public sealed class ScannerTool : PlayerTool, IBatteryTool, IDispatcherRaycastReceiver, IFastTickable, ISlowTickable, ILateFrameTickable, IScalabilityChangedEventListener
+    public sealed class ScannerTool : PlayerTool, IBatteryTool, IDispatcherRaycastReceiver, IFastTickable, ISlowTickable, ILateFrameTickable, IScalabilityChangedEventListener, IAtlasSignalEventListener
     {
         internal const string ScannerMarkerShaderPath = "Assets/_Project/Art/Shaders/Hecton_ScannerMarkerInstanced.shader";
         internal const string ScannerPulseShaderPath = "Assets/_Project/Art/Shaders/Hecton_ScannerPulseInstanced.shader";
@@ -661,6 +661,7 @@ namespace Hecton8.Gameplay
         private bool _registeredScientificSlowTick;
         private bool _registeredScientificLateFrame;
         private bool _registeredScalabilityListener;
+        private bool _registeredAtlasSignalListener;
         private float _cachedFocusedConeAngleDegrees = -1f;
         private float _cachedFocusedConeTanSq;
 
@@ -982,6 +983,11 @@ namespace Hecton8.Gameplay
         public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
         {
             QueueScannerQualityTierCandidate(payload.CurrentQualityTier);
+        }
+
+        public void OnAtlasSignalEvent(in AtlasSignalEventPayload payload)
+        {
+            InvalidateOperationalStringCache();
         }
 
         private void PublishScannerTuningSignal(bool forceInactive)

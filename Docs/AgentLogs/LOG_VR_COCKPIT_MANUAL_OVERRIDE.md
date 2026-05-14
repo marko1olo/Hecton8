@@ -241,3 +241,15 @@ Cinematic Cheats used: no new physical truth. This keeps the existing kinematic 
 Exact microseconds saved/spent: one stack int per accepted physical probe. Saves up to two redundant `Time.frameCount` property reads on panel/switch receiver callbacks and removes a stale explicit-interface compile-risk. 0 B/frame.
 
 Verification: `git diff --check` passed with CRLF warnings only. Scoped counter over five receiver files reports `ReceiverFrameParam=9`, `ExplicitOldSignature=0`, `HandlerFrameRead=1`, `ReceiverFallbackFrameReads=3`, `InterfaceCalls=1`, `LegacyBanned=0`. No dotnet rebuild/probe was run by user instruction.
+
+## 2026-05-15 - Lever Invalid-Delta Freeze
+
+What was wrong: the manual override lever converted non-finite dispatcher delta into a normal 60 Hz step. That allowed a corrupt scheduler frame to move the lever spring, advance non-VR fallback pull, smooth IK, evaluate ratchets/latch, and write telemetry as if valid time had passed.
+
+What was done: changed `OpenXRManualOverrideLever.SanitizeDeltaSeconds()` to return zero for non-finite deltas and removed the stale `DefaultDeltaSeconds` constant. Finite deltas still clamp to the existing `MaxDeltaSeconds`.
+
+Cinematic Cheats used: no extra simulation. This preserves the kinematic scalar lever and simply refuses fake time when the frame clock is invalid.
+
+Exact microseconds saved/spent: invalid-delta frames skip false lever progress instead of paying the full spring/fallback/IK/ratchet/latch path. Normal frames are unchanged. 0 B/frame.
+
+Verification: `git diff --check` passed with CRLF warning only. Scoped counter for `OpenXRManualOverrideLever.cs` reports `DefaultDeltaSeconds=0`, `InvalidDeltaToZero=1`, `QuaternionSlerp=0`, `Vector3Lerp=0`, `HingeJoint=0`, `UnityUpdateMethods=0`. No dotnet rebuild/probe was run by user instruction.

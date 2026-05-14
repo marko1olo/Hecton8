@@ -1,6 +1,6 @@
 # Rationale_SHADER_OVERKILL_ARCHITECT
 
-Status: PENDING VERIFICATION
+Status: CORE IMPLEMENTED / COMPILE BLOCKED BY EXTERNAL WORLD-GPR DEPENDENCY
 Agent: SHADER_OVERKILL_ARCHITECT
 
 ## Decision 001 - Active Dependency Logs Missing
@@ -16,3 +16,45 @@ Solution: Read `REND_Shader_Noir_Aesthetics_Dithering_Fog`, `REND_URP_Graphics_H
 Rejected Alternatives: Generic URP shader implementation was rejected because the project requires specific AUP and SRP/Resident Drawer constraints; adding a render pass was rejected because the prompt asks for shader core library first.
 Scalability potential: Low disables POM/caustics/bending; Middle enables cheaper caustic/detail; High enables POM/caustics/bending; Ultra increases visual overkill through stricter samples and richer emission without changing CPU path.
 Hardware Impact: Estimated low-end gain versus fragmented shader/material path is 30-120 us CPU SetPass overhead pending Frame Debugger proof; shader GPU cost remains tier-gated.
+
+## Decision 003 - Uber Library Instead Of Fragmented Shader Passes
+Problem: Caustics, rust, deformation, fog cutout, and emission were requested as one shader core to reduce pass and SetPass fragmentation.
+Solution: Created `Assets/_Project/Art/Shaders/Hecton8_UberNoir.hlsl` as a single URP-compatible HLSL library with feature branches and `_MATH_LOD_LOW` stripping. All material parameters live in one `UnityPerMaterial` CBUFFER.
+Rejected Alternatives: Separate rust/deformation/caustics shaders were rejected because they multiply SetPass calls; runtime material mutation was rejected because it damages SRP Batcher and Resident Drawer behavior.
+Scalability potential: Low returns albedo/roughness with no POM, caustics, bending, or biolum. Middle enables cheap surface detail. High enables caustics and deformation. Ultra/GOD spends saved CPU budget on POM, spectral emission, and denser fake lighting.
+Hardware Impact: Estimated i3/MX350 gain is 30-120 us CPU by avoiding pass churn; GPU load on low silicon is reduced by stripping the heavy branches.
+
+## Decision 004 - AUP Before Matrix World Position
+Problem: At 100 km scale, computing world position before applying the universe offset preserves float jitter in the matrix multiply.
+Solution: Subtract `_TotalUniverseOffset.xyz` from the instance/object matrix translation before multiplying object-space position.
+Rejected Alternatives: Subtracting after world position calculation was rejected because it cleans the final value but not the precision loss inside the multiply.
+Scalability potential: Low through Ultra use the same deterministic coordinate baseline; higher visual tiers do not buy precision with unstable world coordinates.
+Hardware Impact: Cost is three subtracts per vertex; estimated 0-5 us GPU per dense visible batch. Visual gain is stable sub-pixel hull/detail positioning on low-end and high-end hardware.
+
+## Decision 005 - GraphicsBuffer Path For Resident Drawing
+Problem: Per-renderer material values and CPU property writes fragment batches and create GC/driver pressure.
+Solution: Added `StructuredBuffer<H8UberNoirInstanceData>` carrying object/world matrices plus seed/fade/flags, gated by `H8_UBERNOIR_USE_INSTANCE_BUFFER`.
+Rejected Alternatives: MaterialPropertyBlock was rejected as a hot-path batch breaker; direct dependency on a future drawer class was rejected because 20+ agents are working in parallel.
+Scalability potential: Low devices use the same binding path with cheaper material math. Ultra devices can push more resident instances and per-instance seed variation without material clones.
+Hardware Impact: Estimated i3/MX350 benefit is 20-80 us CPU in dense resident draws, pending Profiler proof.
+
+## Decision 006 - Fake-First Caustics, Bending, Rust, And Biolum
+Problem: Physically correct refraction, corrosion growth, hull deformation, and spectral emission would exceed the 0.1 ms suspicion threshold.
+Solution: Use controlled cinematic cheats: analytical caustic waves with optional lookup texture, shader vertex bowing from stress fields, 16-tap rust POM only in high tiers, and phase-driven spectral emission.
+Rejected Alternatives: Screen-space fluid/refraction simulation, CPU mesh deformation, decal stacks, and script-animated emission were rejected as slower and less predictable.
+Scalability potential: Low disables all overkill. Middle can retain tint/detail. High/Ultra can spend ALU/texture budget where the camera sees it.
+Hardware Impact: Low-end avoids 80-500 us GPU pressure from heavy material branches; Ultra intentionally spends those cycles on visible surface richness.
+
+## Decision 007 - NaN And Texture Stall Discipline
+Problem: High-contrast lighting and POM can poison the frame with NaNs or repeated texture stalls if raw math and repeated ORM fetches are used.
+Solution: Wrapped all `pow()`/`rsqrt()` calls in safe helpers and sampled `_MaskMap` exactly once before distributing metallic/occlusion/smoothness.
+Rejected Alternatives: Raw HLSL intrinsics and separate M/R/O texture samples were rejected as fragile and bandwidth-wasteful.
+Scalability potential: Low uses the single packed ORM sample and avoids POM. Ultra keeps the packed ORM discipline while adding rust-detail taps only where the tier allows it.
+Hardware Impact: Estimated i3/MX350 savings from packed ORM discipline is 10-60 us GPU in material-heavy views; NaN guards are correctness insurance, not a measurable win.
+
+## Decision 008 - Compile Verification Boundary
+Problem: Unity batchmode could not complete because the project has existing `GroundPenetratingRadarRuntime.cs` compile errors in the World/GPR domain.
+Solution: Ran Unity 6000.4.1f1 batchmode, scanned the log for owned shader/C# names and shader errors, and marked Task 15 as blocked by dependency rather than editing another domain.
+Rejected Alternatives: Fixing World/GPR from the rendering task was rejected as domain breach; claiming a clean compile was rejected as fake reporting.
+Scalability potential: None until the external compile blocker is removed. The shader remains tiered and static-audited.
+Hardware Impact: 0 us direct gain. This prevents introducing unverified cross-domain edits on low-end targets.

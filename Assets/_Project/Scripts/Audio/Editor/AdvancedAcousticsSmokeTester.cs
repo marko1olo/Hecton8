@@ -39,6 +39,7 @@ namespace Hecton8.Audio.Editor
         private const string DeepPsychosisPath = "Assets/_Project/Scripts/Audio/DeepPsychosisController.cs";
         private const string HectonMusicDirectorPath = "Assets/_Project/Scripts/Audio/HectonMusicDirector.cs";
         private const string PrologueAcousticOrchestratorPath = "Assets/_Project/Scripts/Audio/Prologue/PrologueAcousticOrchestrator.cs";
+        private const string VocalWarningSystemPath = "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs";
 
         [MenuItem("Hecton8/Audio/Run Advanced Acoustics Smoke Test")]
         public static void RunMenuItem()
@@ -83,6 +84,7 @@ namespace Hecton8.Audio.Editor
             string deepPsychosis = ReadAssetText(DeepPsychosisPath, builder, ref failureCount);
             string musicDirector = ReadAssetText(HectonMusicDirectorPath, builder, ref failureCount);
             string prologueAcoustic = ReadAssetText(PrologueAcousticOrchestratorPath, builder, ref failureCount);
+            string vocalWarning = ReadAssetText(VocalWarningSystemPath, builder, ref failureCount);
 
             if (spatial.Length > 0)
             {
@@ -280,6 +282,26 @@ namespace Hecton8.Audio.Editor
                 AssertNotContains(prologueLateFrame, "GlobalRegistry.ScalabilityTierProfileByte", "Prologue acoustic LateFrameTick does not poll scalability profile byte directly", builder, ref failureCount);
                 AssertNotContains(prologueLateFrame, "GlobalRegistry.H8_LOW_MEMORY_PROFILE", "Prologue acoustic LateFrameTick does not poll low-memory registry directly", builder, ref failureCount);
                 AssertNotContains(prologueLateFrame, "RefreshQualityTier", "Prologue acoustic LateFrameTick has no periodic registry quality refresh", builder, ref failureCount);
+            }
+
+            if (vocalWarning.Length > 0)
+            {
+                string vocalTick = ExtractMethodBody(vocalWarning, "public void Tick(float deltaTime)");
+                string vocalSlowTick = ExtractMethodBody(vocalWarning, "public void SlowTick()");
+                string vocalColdServices = ExtractMethodBody(vocalWarning, "private void RefreshCachedServicesCold()");
+                AssertContains(vocalWarning, "ScalabilityEvents.Register(this)", "Vocal warning system registers for scalability events", builder, ref failureCount);
+                AssertContains(vocalWarning, "ScalabilityEvents.Unregister(this)", "Vocal warning system unregisters scalability events", builder, ref failureCount);
+                AssertContains(vocalWarning, "public void OnScalabilityChanged(in ScalabilityChangedEvent payload)", "Vocal warning quality tier updates through scalability payloads", builder, ref failureCount);
+                AssertContains(vocalColdServices, "GlobalRegistry.PlayerCriticalAudio", "Vocal warning renderer service is resolved only during cold cache refresh", builder, ref failureCount);
+                AssertContains(vocalColdServices, "GlobalRegistry.Subtitles", "Vocal warning subtitles service is resolved only during cold cache refresh", builder, ref failureCount);
+                AssertContains(vocalColdServices, "GlobalRegistry.Localization", "Vocal warning localization service is resolved only during cold cache refresh", builder, ref failureCount);
+                AssertContains(vocalColdServices, "GlobalRegistry.ScalabilityTier", "Vocal warning quality tier is seeded only during cold cache refresh", builder, ref failureCount);
+                AssertNotContains(vocalTick, "GlobalRegistry.", "Vocal warning Tick does not poll registry services directly", builder, ref failureCount);
+                AssertNotContains(vocalSlowTick, "GlobalRegistry.", "Vocal warning SlowTick does not poll registry services directly", builder, ref failureCount);
+                AssertNotContains(vocalTick, ".ToString(", "Vocal warning Tick has no string formatting", builder, ref failureCount);
+                AssertNotContains(vocalSlowTick, ".ToString(", "Vocal warning SlowTick has no string formatting", builder, ref failureCount);
+                AssertNotContains(vocalTick, "Debug.Log", "Vocal warning Tick has no debug log allocation path", builder, ref failureCount);
+                AssertNotContains(vocalSlowTick, "Debug.Log", "Vocal warning SlowTick has no debug log allocation path", builder, ref failureCount);
             }
 
             if (physicsApply.Length > 0)

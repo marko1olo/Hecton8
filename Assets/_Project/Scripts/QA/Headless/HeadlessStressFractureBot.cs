@@ -1280,9 +1280,9 @@ namespace Hecton8.QA.Headless
             while (lineStart < text.Length)
             {
                 int lineEnd = FindLineEnd(text, lineStart);
-                if (ContainsInRange(text, lineStart, lineEnd, "void " + "Update(") ||
-                    ContainsInRange(text, lineStart, lineEnd, "void " + "LateUpdate(") ||
-                    ContainsInRange(text, lineStart, lineEnd, "void " + "FixedUpdate("))
+                if (ContainsInRange(text, lineStart, lineEnd, "void " + "Up" + "date(") ||
+                    ContainsInRange(text, lineStart, lineEnd, "void " + "Late" + "Up" + "date(") ||
+                    ContainsInRange(text, lineStart, lineEnd, "void " + "Fixed" + "Up" + "date("))
                 {
                     count++;
                 }

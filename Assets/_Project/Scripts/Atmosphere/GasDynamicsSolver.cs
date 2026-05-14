@@ -59,7 +59,7 @@ namespace Hecton8.Atmosphere
         private const ushort RoomFlagBreached = (ushort)GasDynamicsRoomFlags.Breached;
         private const ushort RoomFlagOccupied = (ushort)GasDynamicsRoomFlags.Occupied;
         private const string NativeMemoryOwner = nameof(GasDynamicsSolver);
-        private const string DumpFileName = "Dump_GAS_DYNAMICS_SOLVER.bin";
+        private const string DumpFileName = "Dump_HABITAT_O2_SCRUBBER_LOD.bin";
 
         [SerializeField, Range(1, MaxRoomCapacity)] private int roomCapacity = 64;
         [SerializeField, Range(0, MaxBulkheadCapacity)] private int bulkheadCapacity = 128;

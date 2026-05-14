@@ -3106,6 +3106,11 @@ namespace Hecton8.World
             float3 sampleZ0 = math.lerp(sampleX00, sampleX10, fracZ);
             float3 sampleZ1 = math.lerp(sampleX01, sampleX11, fracZ);
             float3 sampledFlow = math.lerp(sampleZ0, sampleZ1, fracY);
+            if (!math.all(math.isfinite(sampledFlow)))
+            {
+                return false;
+            }
+
             flowVector = new Vector3(sampledFlow.x, sampledFlow.y, sampledFlow.z);
             return true;
         }
@@ -6972,7 +6977,8 @@ namespace Hecton8.World
             float sample11 = threatGrid[(nextCellZ * resolution) + nextCellX];
             float sampleX0 = math.lerp(sample00, sample10, fracX);
             float sampleX1 = math.lerp(sample01, sample11, fracX);
-            return math.lerp(sampleX0, sampleX1, fracZ);
+            float sampledThreat = math.lerp(sampleX0, sampleX1, fracZ);
+            return math.select(0f, sampledThreat, math.isfinite(sampledThreat));
         }
 
         private static int ComputeThreatGridCellIndex(float3 position, float3 gridCenter, float cellSize, int resolution)
