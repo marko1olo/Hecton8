@@ -204,3 +204,16 @@ Fixed-size prompt slab and four-way probing instead of passing managed prompt st
 
 Exact Microseconds saved:
 Prompt cache: no per-frame heap allocation; prompt read/write stays four scalar probes plus bounded char copy. Runtime: `GetVirtualKey` classification saves 0 us directly because it is editor-only, but avoids package drift and preserves error visibility.
+
+## 2026-05-14 - Loot Warning Cleanup
+What was wrong:
+Fresh Unity batchmode after the Burst ABI fix still had two project-owned `warning CS0618` entries in `LootMagnetSystem`: obsolete `FindFirstObjectByType` and obsolete `GetInstanceID`.
+
+What was done:
+Replaced cold bootstrap lookup with `Object.FindAnyObjectByType<LootMagnetSystem>()`. Replaced pickup identity with `pickup.GetEntityId()` plus `EntityId.ToULong()` so the active pickup vault keeps deterministic identity without deprecated Unity instance IDs. Ran temp-output Roslyn for `Hecton8.Gameplay.Loot.rsp`; exit code 0. Ran fresh Unity batchmode `Logs/Codex_UI_DIEGETIC_INPUT_CompileCheck_20260514_073000.log`; exit code 0, Tundra success, no project C# warnings/errors, no Burst ABI error, no shader failure.
+
+Cinematic Cheats used:
+None. This is API hygiene and deterministic identity cleanup.
+
+Exact Microseconds saved:
+0 us added in steady gameplay. Cold bootstrap lookup only. Active pickup refresh keeps one scalar entity-id conversion per pickup and no GC. External editor/package noise remains classified separately: licensing token refresh, headless shortcut `GetVirtualKey`, package/native extension probes, invalid package test assemblies, and MCP shutdown when port 8088 is closed.

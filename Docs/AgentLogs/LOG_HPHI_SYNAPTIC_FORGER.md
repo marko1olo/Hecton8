@@ -14,7 +14,7 @@ What was done:
 - Forged five unmanaged SignalBus lanes: PlayerActionProgressSignal, PlayerActionCompletedSignal, PlayerActionCancelledSignal, PdaExchangeStateChangedSignal, and VehicleUpgradesChangedSignal.
 - Forced all five payloads to 32-byte explicit Pack=1 layout and registered capacities, validation, initialization, and GlobalSignals.Publish overloads.
 - Removed selected public Action events and static Instance bridges from the converted cluster.
-- Rewired ActionProgressHUD and PDABarterTab to consume `ReadOnlySpan<T>` SignalBus snapshots during dispatcher ticks.
+- Rewired ActionProgressHUD and PDABarterTab to consume `ReadOnlySpan<T>` SignalBus snapshots; ActionProgressHUD now runs in the dispatcher late-frame visual lane, while PDABarterTab remains on the UI tick lane.
 - Rewired PDAExchangeSystem and VehicleUpgradeModule producers to emit numeric/hash packets with source ids, frames, masks, counts, flags, and reason bytes.
 - Verified SubmarineAutoLevelBallastController is already on GlobalDataVault-owned buffers and has no direct `new NativeArray<` in that system; rejected the broad 86-site Gameplay NativeArray rewrite as cross-domain sabotage.
 - Confirmed new signals carry no world coordinates, so AUP shift handling is unnecessary.

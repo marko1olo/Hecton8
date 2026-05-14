@@ -240,3 +240,17 @@ Solution: Kept the cache as a fixed 64-slot slab but audited it as 16-set/4-way 
 Rejected Alternatives: Managed dictionaries, per-frame string payloads in signals, unbounded caches, or increasing signal payload size was rejected because the look-target path must stay zero-GC and low-latency.
 Scalability potential: Low uses four scalar probes and no heap traffic. Middle/High/Ultra can reuse the same cache behavior while spending saved frame time on richer glyph/material treatment instead of data plumbing.
 Hardware Impact: Four scalar probes on prompt store/read; no per-frame GC. Focused Roslyn compile against Unity 6000.4.1f1 references passed.
+
+## Continuation Decision 35 - Loot Obsolete API Cleanup
+Problem: Fresh Unity batchmode after the Burst ABI fix still emitted two project-owned `warning CS0618` entries from `LootMagnetSystem`: `FindFirstObjectByType` and `GetInstanceID`.
+Solution: Replaced cold bootstrap lookup with `FindAnyObjectByType` and replaced pickup instance identity with `GetEntityId()`/`EntityId.ToULong()`, matching the wider project identity contract.
+Rejected Alternatives: Suppressing CS0618, keeping instance-order dependent lookup, or removing the pickup velocity reset key was rejected because warnings must remain actionable and deterministic identity matters for pull smoothing.
+Scalability potential: Low keeps the same active-pickup refresh loop. Middle/High/Ultra keep stable identity for richer magnet feedback without relying on deprecated engine instance ordering.
+Hardware Impact: Cold bootstrap lookup only. Pickup refresh pays one scalar entity-id conversion per active pickup; no GC and no job payload change.
+
+## Continuation Decision 36 - External Console Noise Classification
+Problem: After project C#/Burst/shader warnings were cleaned, batch logs still contain Unity/editor-environment noise: licensing token refresh, headless shortcut `GetVirtualKey`, package/native extension probes, invalid package test assemblies, and MCP shutdown notice when port 8088 is closed.
+Solution: Classified these separately from project compile/runtime defects and recorded the boundary. Fresh log `Logs/Codex_UI_DIEGETIC_INPUT_CompileCheck_20260514_073000.log` exits 0 and has no project C# warnings/errors, no Burst ABI failure, no shader failure, and Tundra success.
+Rejected Alternatives: Global log filters, PackageCache mutation, deleting package test assemblies, or claiming MCP screenshot/console proof without an MCP transport was rejected. Those would reduce observability or create package drift.
+Scalability potential: Low/Middle/High/Ultra runtime unchanged. Verification now distinguishes real HECTON defects from external editor setup noise.
+Hardware Impact: 0 us runtime. The only process impact was a fresh batchmode compile/import pass; no player-frame cost.

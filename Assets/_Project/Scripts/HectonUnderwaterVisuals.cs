@@ -2535,11 +2535,12 @@ namespace Hecton8.Environment
         private float ResolveSurfaceFogDensity()
         {
             if (HectonCelestialEngine.TryGetCurrentAtmosphericLightingState(out AtmosphericLightingState state))
-                return Mathf.Max(0.0001f, state.FogDensity);
+                return ResolveReadableSurfaceFogDensity(state.FogDensity);
 
-            return _surfaceWeatherOverrideActive
+            float density = _surfaceWeatherOverrideActive
                 ? _surfaceWeatherFogDensity
                 : surfaceFogDensity;
+            return ResolveReadableSurfaceFogDensity(density);
         }
 
         private Color ResolveSurfaceAmbientColor()
@@ -2706,12 +2707,12 @@ namespace Hecton8.Environment
                 RenderSettings.fogColor = _cachedUnderwaterFogColor;
                 RenderSettings.fogDensity = ResolvePerCameraUnderwaterFogDensity(cam);
             }
-            else if (HectonCelestialEngine.TryGetCurrentAtmosphericLightingState(out AtmosphericLightingState state))
+            else if (HectonCelestialEngine.TryGetCurrentAtmosphericLightingState(out _))
             {
                 RenderSettings.fog = true;
                 RenderSettings.fogMode = FogMode.ExponentialSquared;
-                RenderSettings.fogColor = state.FogColor;
-                RenderSettings.fogDensity = state.FogDensity;
+                RenderSettings.fogColor = ResolveSurfaceFogColor();
+                RenderSettings.fogDensity = ResolveSurfaceFogDensity();
             }
             else
             {
