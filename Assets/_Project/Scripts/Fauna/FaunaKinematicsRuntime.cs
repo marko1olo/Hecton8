@@ -110,7 +110,6 @@ namespace Hecton8.AI
         private int _pendingConstraintIterations = 1;
         private int _motionIntentFrame = -1;
         private float _constraintIterationSwitchTimer;
-        private float _solverTimeSeconds;
         private float _tailWhipSecondsRemaining;
         private float _strikeRange = 1f;
         private float _attackTelegraphBlend;
@@ -229,10 +228,6 @@ namespace Hecton8.AI
                 out int terrainResolution);
 
             float safeDeltaTime = math.isfinite(deltaTime) ? math.min(math.max(0f, deltaTime), 0.05f) : 0f;
-            _solverTimeSeconds += safeDeltaTime;
-            if (_solverTimeSeconds > 4096f)
-                _solverTimeSeconds -= 4096f;
-
             if (_tailWhipSecondsRemaining > 0f)
                 _tailWhipSecondsRemaining = math.max(0f, _tailWhipSecondsRemaining - safeDeltaTime);
 
@@ -258,7 +253,6 @@ namespace Hecton8.AI
                 SegmentLength = _segmentLength,
                 BodyRadius = _bodyRadius,
                 TerrainClearance = _terrainClearance,
-                PhaseTimeSeconds = _solverTimeSeconds,
                 TailWhipSecondsRemaining = _tailWhipSecondsRemaining,
                 TailWhipDurationSeconds = _tailWhipDurationSeconds,
                 TailWhipAmplitudeMeters = _tailWhipAmplitudeMeters,

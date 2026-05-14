@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Gameplay;
+using Hecton8.Narrative;
 using Hecton8.World;
 using Hecton.Localization;
 using Unity.Collections;

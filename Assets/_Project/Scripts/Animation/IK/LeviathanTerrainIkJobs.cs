@@ -64,7 +64,6 @@ namespace Hecton8.Animation.IK
         public float SegmentLength;
         public float BodyRadius;
         public float TerrainClearance;
-        public float PhaseTimeSeconds;
         public float TailWhipSecondsRemaining;
         public float TailWhipDurationSeconds;
         public float TailWhipAmplitudeMeters;

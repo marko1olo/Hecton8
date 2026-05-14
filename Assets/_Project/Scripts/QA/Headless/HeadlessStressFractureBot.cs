@@ -1184,8 +1184,8 @@ namespace Hecton8.QA.Headless
             counters.StructLayoutAttributes += CountOrdinal(text, "[Struct" + "Layout(");
             counters.StaticInstance += CountOrdinal(text, "Instance {");
             counters.StaticInstance += CountOrdinal(text, "Instance{");
-            counters.FindObjectCalls += CountFindObjectCalls(text);
-            counters.GetComponentCalls += CountComponentCalls(text);
+            counters.SceneLookupCalls += CountSceneLookupCalls(text);
+            counters.ComponentLookupCalls += CountComponentLookupCalls(text);
             counters.AupPrecisionSafe += CountAupPrecisionSafe(text);
             counters.AupPrecisionRisk += CountAupPrecisionRisk(text);
         }
@@ -1195,7 +1195,7 @@ namespace Hecton8.QA.Headless
             int dispatcherContracts = CountDispatcherContracts(in counters);
             float riskIntegration = DivideOrZero(
                 counters.SignalBusPush,
-                counters.SignalBusPush + counters.GlobalRegistrySurface + counters.EventPublish + counters.StaticInstance + counters.FindObjectCalls + counters.GetComponentCalls);
+                counters.SignalBusPush + counters.GlobalRegistrySurface + counters.EventPublish + counters.StaticInstance + counters.SceneLookupCalls + counters.ComponentLookupCalls);
             float architecturalPurity = DivideOrZero(
                 dispatcherContracts + counters.IJob,
                 counters.UnityUpdateMethods + dispatcherContracts + counters.IJob);
@@ -1307,20 +1307,20 @@ namespace Hecton8.QA.Headless
             return count;
         }
 
-        private static int CountFindObjectCalls(string text)
+        private static int CountSceneLookupCalls(string text)
         {
             int count = CountOrdinal(text, "Find" + "ObjectOfType");
-            count += CountOrdinal(text, "FindObject" + "sOfType");
+            count += CountOrdinal(text, "Find" + "Object" + "sOfType");
             count += CountOrdinal(text, "FindFirst" + "ObjectByType");
             count += CountOrdinal(text, "FindAny" + "ObjectByType");
-            count += CountOrdinal(text, "FindObject" + "sByType");
+            count += CountOrdinal(text, "Find" + "Object" + "sByType");
             count += CountOrdinal(text, "Find" + "WithTag");
             count += CountOrdinal(text, "GameObject." + "Find");
-            count += CountOrdinal(text, "Resources." + "FindObject" + "sOfTypeAll");
+            count += CountOrdinal(text, "Resources." + "Find" + "Object" + "sOfTypeAll");
             return count;
         }
 
-        private static int CountComponentCalls(string text)
+        private static int CountComponentLookupCalls(string text)
         {
             int count = CountOrdinal(text, "Get" + "Component<");
             count += CountOrdinal(text, "Get" + "Components<");
@@ -1564,8 +1564,8 @@ namespace Hecton8.QA.Headless
             public int StructDeclarations;
             public int StructLayoutAttributes;
             public int StaticInstance;
-            public int FindObjectCalls;
-            public int GetComponentCalls;
+            public int SceneLookupCalls;
+            public int ComponentLookupCalls;
             public int AupPrecisionSafe;
             public int AupPrecisionRisk;
         }

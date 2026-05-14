@@ -267,4 +267,4 @@ What was wrong -> External disposal during an active awaitable run could release
 What was done -> `AwaitableDropSequenceDirector.Dispose()` now requests explicit cancellation and calls the guarded input unlock helper before disposing the fixed black-box buffer when `_running` is true.
 Cinematic Cheats used -> None; this is teardown and forensic-state hardening for the prologue sequence owner.
 Exact Microseconds saved -> 0 us steady-state. Disposal-only branch cost is one bool check plus a guarded signal publish if teardown interrupts an active prologue run.
-Verification -> No dotnet rebuild/response-file compile was run per user constraint. Targeted scan confirms active disposal cancels and unlocks before black-box disposal; forbidden-pattern scan returned no hits. Initial git diff hygiene check timed out and was rerun after log update.
+Verification -> No dotnet rebuild/response-file compile was run per user constraint. Targeted scan confirms active disposal cancels and unlocks before black-box disposal; forbidden-pattern scan returned no hits; rerun `git diff --check` exits clean for the touched Loop 37 scope.

@@ -234,7 +234,7 @@ namespace Hecton8.SaveSystem
 
         private static ulong Hash64(void* ptr, int length)
         {
-            uint2 hash = Unity.Mathematics.xxHash3.Hash64(ptr, (long)length);
+            uint2 hash = xxHash3.Hash64(ptr, (long)length);
             return ((ulong)hash.y << 32) | hash.x;
         }
 
