@@ -11,17 +11,25 @@ namespace Hecton8.Gameplay
 
         public static float SmoothAlpha(float sharpness, float deltaTime)
         {
-            return 1.0f - ApproximateExpNegPositive(math.max(0.0f, sharpness) * math.max(0.0f, deltaTime));
+            float safeSharpness = SanitizeNonNegative(sharpness);
+            float safeDeltaTime = SanitizeNonNegative(deltaTime);
+            return SanitizeUnit(1.0f - ApproximateExpNegPositive(safeSharpness * safeDeltaTime));
         }
 
         public static float SmoothScalar(float current, float target, float sharpness, float deltaTime)
         {
-            return math.lerp(current, target, SmoothAlpha(sharpness, deltaTime));
+            float safeCurrent = math.select(current, 0.0f, !math.isfinite(current));
+            float safeTarget = math.select(target, 0.0f, !math.isfinite(target));
+            float value = math.lerp(safeCurrent, safeTarget, SmoothAlpha(sharpness, deltaTime));
+            return math.select(value, safeTarget, !math.isfinite(value));
         }
 
         public static float3 SmoothVector(float3 current, float3 target, float sharpness, float deltaTime)
         {
-            return math.lerp(current, target, SmoothAlpha(sharpness, deltaTime));
+            float3 safeCurrent = SanitizeFloat3(current, float3.zero);
+            float3 safeTarget = SanitizeFloat3(target, safeCurrent);
+            float3 value = math.lerp(safeCurrent, safeTarget, SmoothAlpha(sharpness, deltaTime));
+            return SanitizeFloat3(value, safeTarget);
         }
 
         public static float3 SafeNormalize(float3 value, float3 fallback)
@@ -46,7 +54,12 @@ namespace Hecton8.Gameplay
 
         public static float3 CatmullRom(float3 p0, float3 p1, float3 p2, float3 p3, float t)
         {
-            float safeT = math.saturate(t);
+            float3 safeP1 = SanitizeFloat3(p1, float3.zero);
+            p0 = SanitizeFloat3(p0, safeP1);
+            p1 = safeP1;
+            p2 = SanitizeFloat3(p2, safeP1);
+            p3 = SanitizeFloat3(p3, p2);
+            float safeT = SanitizeUnit(t);
             float t2 = safeT * safeT;
             float t3 = t2 * safeT;
             float3 value = 0.5f * (
@@ -60,15 +73,21 @@ namespace Hecton8.Gameplay
 
         public static float3 CatmullRomTangent(float3 p0, float3 p1, float3 p2, float3 p3, float t, float3 fallback)
         {
-            float safeT = math.saturate(t);
+            float3 safeFallback = SanitizeFloat3(fallback, new float3(0.0f, 0.0f, 1.0f));
+            float3 safeP1 = SanitizeFloat3(p1, float3.zero);
+            p0 = SanitizeFloat3(p0, safeP1);
+            p1 = safeP1;
+            p2 = SanitizeFloat3(p2, safeP1);
+            p3 = SanitizeFloat3(p3, p2);
+            float safeT = SanitizeUnit(t);
             float t2 = safeT * safeT;
             float3 tangent = 0.5f * (
                 (-p0 + p2) +
                 (2.0f * ((2.0f * p0) - (5.0f * p1) + (4.0f * p2) - p3) * safeT) +
                 (3.0f * ((-p0) + (3.0f * p1) - (3.0f * p2) + p3) * t2));
 
-            tangent = math.select(tangent, fallback, !math.all(math.isfinite(tangent)));
-            return SafeNormalize(tangent, fallback);
+            tangent = math.select(tangent, safeFallback, !math.all(math.isfinite(tangent)));
+            return SafeNormalize(tangent, safeFallback);
         }
 
         public static float3 EvaluateSpinePosition(
@@ -78,13 +97,17 @@ namespace Hecton8.Gameplay
             float3 headForward,
             float normalizedT)
         {
+            rootPosition = SanitizeFloat3(rootPosition, float3.zero);
+            chestTarget = SanitizeFloat3(chestTarget, rootPosition + new float3(0.0f, 0.25f, 0.1f));
+            headTarget = SanitizeFloat3(headTarget, chestTarget + new float3(0.0f, 0.25f, 0.1f));
+            headForward = SanitizeFloat3(headForward, new float3(0.0f, 0.0f, 1.0f));
             float3 rootToChest = chestTarget - rootPosition;
             float rootToChestLength = math.max(0.1f, ApproximateLengthNoSqrt(rootToChest));
             float3 rootForward = SafeNormalize(rootToChest, new float3(0.0f, 0.0f, 1.0f));
             float3 safeHeadForward = SafeNormalize(headForward, rootForward);
             float3 beforeRoot = rootPosition - (rootForward * (rootToChestLength * 0.25f));
             float3 afterHead = headTarget + (safeHeadForward * (rootToChestLength * 0.2f));
-            float clampedT = math.saturate(normalizedT);
+            float clampedT = SanitizeUnit(normalizedT);
 
             if (clampedT <= 0.5f)
                 return CatmullRom(beforeRoot, rootPosition, chestTarget, headTarget, clampedT * 2.0f);
@@ -100,13 +123,18 @@ namespace Hecton8.Gameplay
             float normalizedT,
             float3 fallback)
         {
+            fallback = SanitizeFloat3(fallback, new float3(0.0f, 0.0f, 1.0f));
+            rootPosition = SanitizeFloat3(rootPosition, float3.zero);
+            chestTarget = SanitizeFloat3(chestTarget, rootPosition + fallback * 0.25f);
+            headTarget = SanitizeFloat3(headTarget, chestTarget + fallback * 0.25f);
+            headForward = SanitizeFloat3(headForward, fallback);
             float3 rootToChest = chestTarget - rootPosition;
             float rootToChestLength = math.max(0.1f, ApproximateLengthNoSqrt(rootToChest));
             float3 rootForward = SafeNormalize(rootToChest, fallback);
             float3 safeHeadForward = SafeNormalize(headForward, rootForward);
             float3 beforeRoot = rootPosition - (rootForward * (rootToChestLength * 0.25f));
             float3 afterHead = headTarget + (safeHeadForward * (rootToChestLength * 0.2f));
-            float clampedT = math.saturate(normalizedT);
+            float clampedT = SanitizeUnit(normalizedT);
 
             if (clampedT <= 0.5f)
                 return CatmullRomTangent(beforeRoot, rootPosition, chestTarget, headTarget, clampedT * 2.0f, fallback);
@@ -134,9 +162,9 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            float safeDt = math.max(0.0001f, deltaTime);
-            float safeStiffness = math.max(0.0f, stiffness);
-            float safeDamping = math.max(0.0f, damping);
+            float safeDt = math.max(0.0001f, SanitizeNonNegative(deltaTime));
+            float safeStiffness = SanitizeNonNegative(stiffness);
+            float safeDamping = SanitizeNonNegative(damping);
             float3 acceleration = ((targetPosition - currentPosition) * safeStiffness) - (currentVelocity * safeDamping);
             acceleration = math.select(acceleration, float3.zero, !math.all(math.isfinite(acceleration)));
             currentVelocity += acceleration * safeDt;
@@ -147,28 +175,32 @@ namespace Hecton8.Gameplay
 
         public static float EvaluateExtensionResistance01(float distanceToTarget, float maxReach)
         {
-            float safeMaxReach = math.max(0.0001f, maxReach);
+            float safeDistanceToTarget = SanitizeNonNegative(distanceToTarget);
+            float safeMaxReach = math.max(0.0001f, SanitizeNonNegative(maxReach));
             float threshold = safeMaxReach * 0.98f;
             float falloff = math.max(0.0001f, safeMaxReach - threshold);
-            return math.saturate((distanceToTarget - threshold) * math.rcp(falloff));
+            return SanitizeUnit((safeDistanceToTarget - threshold) * math.rcp(falloff));
         }
 
         public static float EvaluateExtensionResistanceFromDistanceSq01(float distanceToTargetSq, float maxReach)
         {
-            float safeMaxReach = math.max(0.0001f, maxReach);
+            float safeDistanceToTargetSq = SanitizeNonNegative(distanceToTargetSq);
+            float safeMaxReach = math.max(0.0001f, SanitizeNonNegative(maxReach));
             float threshold = safeMaxReach * 0.98f;
             float thresholdSq = threshold * threshold;
             float maxReachSq = safeMaxReach * safeMaxReach;
             float falloffSq = math.max(0.0001f, maxReachSq - thresholdSq);
-            return math.saturate((distanceToTargetSq - thresholdSq) * math.rcp(falloffSq));
+            return SanitizeUnit((safeDistanceToTargetSq - thresholdSq) * math.rcp(falloffSq));
         }
 
         public static float EvaluateMuscleTension(float3 restPosition, float3 targetPosition, float maxReach)
         {
-            float safeMaxReach = math.max(0.0001f, maxReach);
+            restPosition = SanitizeFloat3(restPosition, float3.zero);
+            targetPosition = SanitizeFloat3(targetPosition, restPosition);
+            float safeMaxReach = math.max(0.0001f, SanitizeNonNegative(maxReach));
             float reachSq = safeMaxReach * safeMaxReach;
             float deltaSq = math.lengthsq(targetPosition - restPosition);
-            return math.saturate(deltaSq * math.rcp(reachSq));
+            return SanitizeUnit(deltaSq * math.rcp(reachSq));
         }
 
         public static quaternion FastDirectionDeltaNoTrig(float3 from, float3 to)
@@ -268,8 +300,15 @@ namespace Hecton8.Gameplay
 
         private static quaternion NormalizeQuaternionNoSqrt(quaternion value)
         {
+            if (!math.all(math.isfinite(value.value)))
+                return quaternion.identity;
+
             float4 v = value.value;
-            float lenSq = math.max(math.dot(v, v), MinimumLengthSq);
+            float rawLenSq = math.dot(v, v);
+            if (!math.isfinite(rawLenSq) || rawLenSq <= MinimumLengthSq)
+                return quaternion.identity;
+
+            float lenSq = math.max(rawLenSq, MinimumLengthSq);
             v *= math.rcp(math.max(0.0001f, 0.5f + (lenSq * 0.5f)));
             return new quaternion(v);
         }
@@ -290,26 +329,29 @@ namespace Hecton8.Gameplay
 
             int lastPointIndex = scratchStartIndex + boneCount - 1;
             float3 rootPosition = scratchPositions[scratchStartIndex];
+            targetPosition = SanitizeFloat3(targetPosition, scratchPositions[lastPointIndex]);
+            polePosition = SanitizeFloat3(polePosition, rootPosition + new float3(0.0f, 1.0f, 0.0f));
+
             float totalLength = 0.0f;
             for (int i = 0; i < boneCount - 1; i++)
-                totalLength += segmentLengths[lengthStartIndex + i];
+                totalLength += SanitizeNonNegative(segmentLengths[lengthStartIndex + i]);
 
             float3 rootToTarget = targetPosition - rootPosition;
-            float reachLimit = totalLength - 0.0001f;
+            float reachLimit = math.max(0.0001f, totalLength - 0.0001f);
             if (math.lengthsq(rootToTarget) >= reachLimit * reachLimit)
             {
                 float3 reachDirection = SafeNormalize(rootToTarget, new float3(0.0f, 0.0f, 1.0f));
                 scratchPositions[scratchStartIndex] = rootPosition;
                 for (int i = 1; i < boneCount; i++)
                 {
-                    float segmentLength = segmentLengths[lengthStartIndex + i - 1];
+                    float segmentLength = SanitizeNonNegative(segmentLengths[lengthStartIndex + i - 1]);
                     scratchPositions[scratchStartIndex + i] = scratchPositions[scratchStartIndex + i - 1] + (reachDirection * segmentLength);
                 }
 
                 return;
             }
 
-            float safeTolerance = math.max(0.0001f, tolerance);
+            float safeTolerance = math.max(0.0001f, SanitizeNonNegative(tolerance));
             float safeToleranceSq = safeTolerance * safeTolerance;
             int toleranceIterations = safeTolerance <= 0.0025f ? 5 : (safeTolerance <= 0.01f ? 4 : 3);
             int maxIterations = math.clamp(math.max(iterations, toleranceIterations), 3, 5);
@@ -321,7 +363,7 @@ namespace Hecton8.Gameplay
                 {
                     int currentIndex = scratchStartIndex + i;
                     int nextIndex = currentIndex + 1;
-                    float segmentLength = segmentLengths[lengthStartIndex + i];
+                    float segmentLength = SanitizeNonNegative(segmentLengths[lengthStartIndex + i]);
                     float3 direction = SafeNormalize(scratchPositions[currentIndex] - scratchPositions[nextIndex], new float3(0.0f, 0.0f, 1.0f));
                     scratchPositions[currentIndex] = scratchPositions[nextIndex] + (direction * segmentLength);
                 }
@@ -331,7 +373,7 @@ namespace Hecton8.Gameplay
                 {
                     int previousIndex = scratchStartIndex + i - 1;
                     int currentIndex = previousIndex + 1;
-                    float segmentLength = segmentLengths[lengthStartIndex + i - 1];
+                    float segmentLength = SanitizeNonNegative(segmentLengths[lengthStartIndex + i - 1]);
                     float3 direction = SafeNormalize(scratchPositions[currentIndex] - scratchPositions[previousIndex], new float3(0.0f, 0.0f, 1.0f));
                     scratchPositions[currentIndex] = scratchPositions[previousIndex] + (direction * segmentLength);
                 }
@@ -370,7 +412,7 @@ namespace Hecton8.Gameplay
             {
                 int previousIndex = scratchStartIndex + i - 1;
                 int currentIndex = previousIndex + 1;
-                float segmentLength = segmentLengths[lengthStartIndex + i - 1];
+                float segmentLength = SanitizeNonNegative(segmentLengths[lengthStartIndex + i - 1]);
                 float3 direction = SafeNormalize(scratchPositions[currentIndex] - scratchPositions[previousIndex], new float3(0.0f, 0.0f, 1.0f));
                 scratchPositions[currentIndex] = scratchPositions[previousIndex] + (direction * segmentLength);
             }
@@ -398,7 +440,7 @@ namespace Hecton8.Gameplay
 
         private static float ApproximateExpNegPositive(float value)
         {
-            float x = math.min(value, 24.0f);
+            float x = math.min(SanitizeNonNegative(value), 24.0f);
             float x2 = x * x;
             float x3 = x2 * x;
             return math.rcp(1.0f + x + (0.48f * x2) + (0.235f * x3));
@@ -406,11 +448,28 @@ namespace Hecton8.Gameplay
 
         private static float ApproximateLengthNoSqrt(float3 value)
         {
+            value = SanitizeFloat3(value, float3.zero);
             float3 absolute = math.abs(value);
             float max = math.cmax(absolute);
             float min = math.cmin(absolute);
             float mid = absolute.x + absolute.y + absolute.z - max - min;
             return max + (mid * 0.375f) + (min * 0.125f);
+        }
+
+        private static float SanitizeUnit(float value)
+        {
+            return math.select(math.saturate(value), 0.0f, !math.isfinite(value));
+        }
+
+        private static float SanitizeNonNegative(float value)
+        {
+            return math.select(math.max(0.0f, value), 0.0f, !math.isfinite(value));
+        }
+
+        private static float3 SanitizeFloat3(float3 value, float3 fallback)
+        {
+            float3 safeFallback = math.select(fallback, float3.zero, !math.all(math.isfinite(fallback)));
+            return math.select(value, safeFallback, !math.all(math.isfinite(value)));
         }
 
         private static float3 ResolvePerpendicularAxis(float3 direction)

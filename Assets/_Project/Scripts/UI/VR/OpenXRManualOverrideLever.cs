@@ -593,7 +593,7 @@ namespace Hecton8.UI.VR
         {
             _cachedTransform = transform;
             if (activationVolume == null)
-                activationVolume = GetComponent<BoxCollider>();
+                TryGetComponent(out activationVolume);
             if (leverVisual == null)
                 leverVisual = transform;
 

@@ -25,6 +25,8 @@ namespace Hecton8.Core
         private const uint ManualReleaseContextHash = 0x434F434Bu; // COCK
         private const uint ShallowWaterChunkHash = 0x53484C57u; // SHLW
         private const int LowTierHysteresisFrames = 150;
+        private const int LowTierProbeIntervalFrames = 30;
+        private const byte CriticalMemoryPressureSeverity = 2;
         private const float MassiveImpactSeverity = 1f;
 
         [SerializeField] private MonoBehaviour sequenceComponent;
@@ -45,10 +47,15 @@ namespace Hecton8.Core
         private bool _cachedLowTier;
         private bool _pendingLowTier;
         private bool _hasLowTierCache;
+        private bool _lastObservedLowTierPolicy;
+        private bool _lastObservedForcedLowMemory;
         private bool _skipRequested;
         private bool _observedHighResSurfaceReady;
         private bool _observedProxySurfaceReady;
         private int _lowTierCandidateFrame;
+        private int _lowTierPolicyProbeFrame = -1;
+        private int _memoryPressureSnapshotFrame = -1;
+        private int _memoryPressureSnapshotCursor;
         private int _atmosphereSnapshotFrame = -1;
         private int _completeSnapshotFrame = -1;
         private int _residencySnapshotFrame = -1;
@@ -503,7 +510,12 @@ namespace Hecton8.Core
             _cachedLowTier = false;
             _pendingLowTier = false;
             _hasLowTierCache = false;
+            _lastObservedLowTierPolicy = false;
+            _lastObservedForcedLowMemory = false;
             _lowTierCandidateFrame = 0;
+            _lowTierPolicyProbeFrame = -1;
+            _memoryPressureSnapshotFrame = -1;
+            _memoryPressureSnapshotCursor = 0;
         }
 
         private void BindInputIfAvailable()
@@ -556,9 +568,9 @@ namespace Hecton8.Core
 
         private bool ResolveLowTierWithHysteresis()
         {
-            bool forcedLowMemory;
-            bool requestedLowTier = ReadLowTierPolicy(out forcedLowMemory);
             int frame = Time.frameCount;
+            bool forcedLowMemory;
+            bool requestedLowTier = ResolveObservedLowTierPolicy(frame, out forcedLowMemory);
 
             if (!_hasLowTierCache)
             {
@@ -599,6 +611,49 @@ namespace Hecton8.Core
             }
 
             return _cachedLowTier;
+        }
+
+        private bool ResolveObservedLowTierPolicy(int frame, out bool forcedLowMemory)
+        {
+            if (TryObserveCriticalMemoryPressure(frame))
+            {
+                forcedLowMemory = true;
+                _lastObservedForcedLowMemory = true;
+                _lastObservedLowTierPolicy = true;
+                _lowTierPolicyProbeFrame = frame;
+                return true;
+            }
+
+            if (_lowTierPolicyProbeFrame < 0 ||
+                frame - _lowTierPolicyProbeFrame >= LowTierProbeIntervalFrames)
+            {
+                _lastObservedLowTierPolicy = ReadLowTierPolicy(out forcedLowMemory);
+                _lastObservedForcedLowMemory = forcedLowMemory;
+                _lowTierPolicyProbeFrame = frame;
+                return _lastObservedLowTierPolicy;
+            }
+
+            forcedLowMemory = _lastObservedForcedLowMemory;
+            return _lastObservedLowTierPolicy;
+        }
+
+        private bool TryObserveCriticalMemoryPressure(int frame)
+        {
+            ReadOnlySpan<MemoryPressureSignal> signals = SignalBus<MemoryPressureSignal>.GetFrameSnapshot();
+            if (_memoryPressureSnapshotFrame != frame)
+            {
+                _memoryPressureSnapshotFrame = frame;
+                _memoryPressureSnapshotCursor = 0;
+            }
+
+            while (_memoryPressureSnapshotCursor < signals.Length)
+            {
+                MemoryPressureSignal signal = signals[_memoryPressureSnapshotCursor++];
+                if (signal.Severity >= CriticalMemoryPressureSeverity)
+                    return true;
+            }
+
+            return false;
         }
 
         private static bool ReadLowTierPolicy(out bool forcedLowMemory)
