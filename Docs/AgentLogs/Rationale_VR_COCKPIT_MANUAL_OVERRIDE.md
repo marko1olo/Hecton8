@@ -197,3 +197,15 @@ Rejected Alternatives: deleting the dump was rejected because the blackbox rule 
 Scalability potential: Low/toaster path gets one bounded dump and no repeated disk churn. Middle/High stay deterministic. Ultra can spend saved failure-mode headroom on richer cockpit aftermath presentation while the same fault bit tells downstream diagnostics that the blackbox entered dump mode.
 
 Hardware Impact: normal frames pay no extra IO and only a telemetry flag branch. Persistent corrupt state avoids repeated 300-entry binary rewrites; on i3/MX350 this prevents multi-millisecond disk spikes during a fault loop. No numeric H-Phi score is claimed for this local robustness pass because the static formula does not measure fault-dump rate limiting directly.
+
+## Decision 16 - Cold component fallback still counts as H-Phi lookup debt
+
+Problem: scoped H-Phi hygiene found one `GetComponent<BoxCollider>()` fallback in `EnsureReferences()`. It is cold lifecycle code, not a Tick allocation, but the audit pattern treats `GetComponent<...>` as component lookup debt and the fallback is inside the owned VR lever file.
+
+Solution: replace the fallback with `TryGetComponent(out activationVolume)`. The serialized collider reference remains the preferred path, and `[RequireComponent(typeof(BoxCollider))]` still guarantees normal prefab safety.
+
+Rejected Alternatives: deleting the fallback was rejected because a scene instance with an unwired serialized field should still recover. Keeping `GetComponent<...>` was rejected because the H-Phi audit already has a safer lookup pattern available. Runtime scene search or `FindObject*` was rejected as architecture debt.
+
+Scalability potential: Low/Middle/High/Ultra all keep the same cold lifecycle behavior. The local H-Phi hygiene counter over the task scope now reports `GetComponentCalls=0`, `FindObjectCalls=0`, `UnityUpdateMethods=0`, `PublicEvents=0`, `HingeJoint=0`, and `DirectInput=0`.
+
+Hardware Impact: no steady-frame impact. Cold lifecycle cost is equivalent for the expected `RequireComponent` path, and the change removes one audit-counted lookup debt site from the VR lever domain.

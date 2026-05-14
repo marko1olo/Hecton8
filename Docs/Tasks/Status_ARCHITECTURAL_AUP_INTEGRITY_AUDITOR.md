@@ -3,7 +3,7 @@
 Agent: ARCHITECTURAL_AUP_INTEGRITY_AUDITOR
 Domain: ECHELON 1 / Origin Shift (AUP Manager), with audit reach into Physics, Voxel, Kinematics, AI trigger math, Biome trigger math, and deterministic seed callsites.
 Assignment Source: User-supplied XML block. `Docs/Tasks/CURRENT_BATCH.md` extraction returned `PROMPT_NOT_FOUND` for this ID on initial pass.
-Status: VERIFIED AUP INTEGRITY - LOOP 16 APPLIED; GLOBAL LEGACY HFO AUP SCAN CLEAN; CORE BUILD BLOCKED BY UNRELATED DEPENDENCY WALL; ASMDEF BLOCKED BY ARCHITECTURE
+Status: VERIFIED AUP INTEGRITY - LOOP 17 APPLIED; ORGANIC VEGETATION UNIVERSE-SPACE TRIGGERS DOUBLE-SAFE; GLOBAL LEGACY HFO AUP SCAN CLEAN; CORE BUILD BLOCKED BY UNRELATED DEPENDENCY WALL; ASMDEF BLOCKED BY ARCHITECTURE
 
 ## Selected Mandates
 
@@ -163,3 +163,17 @@ Loop 16 - Global Legacy Runtime-To-AUP Cleanup:
 - Re-ran mandatory `rg "\(float3\).*AUP|AupOffset|universe"`; residual hits are broad `universe` text, editor diagnostics, and final-cast fluid/scatter/shader payload names.
 - `git diff --check` on Loop 16 touched files reports line-ending warnings only, no whitespace errors.
 - `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -v:normal /m:1 /nr:false /p:UseSharedCompilation=false /flp:"logfile=Docs\AgentLogs\AUP_build_loop16.log;verbosity=normal"` failed with 0 warnings and 74 unrelated errors from active dependency work: residency/power/fauna native release signatures, `HardwareProfileCatalog`, save layout V10 types, `SystemID` vs `JobHandle`, `ContextualPhysicalIkRig.SpineTargetCountPerChain`, and `SubmarineAutoLevelBallastController` handle mismatch. A filtered build-log scan reports no errors for Loop 16 touched files.
+
+Loop 17 - Organic Vegetation Universe-Space Trigger Cleanup:
+- Re-read status/rationale before reporting and re-extracted `ARCHITECTURAL_AUP_INTEGRITY_AUDITOR` from `Docs/Tasks/CURRENT_BATCH.md`; result remains `PROMPT_NOT_FOUND`.
+- Patched `DestructibleOrganicManager.ApplyConstructionDecomposition` and `ApplyDefoliantDeadZone` to convert runtime centers through `HectonMapMagicVegetationBridge.ToUniverseSpaceDouble3`, reject non-finite radii, and compare squared distances in double.
+- Patched construction giant-kelp segment distance to use `double3` closest-point math with `math.rcp` instead of reducing the center/root/top to `Vector3` before the trigger check.
+- Patched defoliant lane checks to subtract `double3` roots from the `double3` center before radius comparison.
+- Added `HectonMapMagicVegetationBridge.ToRuntimeSpace(double3)` / `ToRuntimeSpaceDouble3(double3)` so stable-universe vegetation anchors can project to runtime without a legacy `Vector3` bridge hop.
+- Patched titan root mound voxel lookup to feed a `double3` stable-universe anchor through the new vegetation bridge overload and final-cast only for `TryGetNearestActiveVolume`.
+- Targeted DestructibleOrganicManager scan is clean: no legacy `HectonMapMagicVegetationBridge.ToUniverseSpace(` call, no `Vector3 universePosition`, no Vector3 lane signatures for construction/defoliant, and no `(rootPosition - centerUniversePosition).sqrMagnitude`.
+- Global legacy `HectonFloatingOrigin.ToAbsoluteUniversePosition(` scan remains clean under `Assets/_Project/Scripts --glob '*.cs'`.
+- Direct committed-offset scan remains clean.
+- Re-ran mandatory `rg "\(float3\).*AUP|AupOffset|universe"`; residual hits are broad `universe` text, editor diagnostics, final-cast fluid/scatter/shader payload names, and the new double-safe vegetation bridge/helper names.
+- `git diff --check` on Loop 17 touched files reports no whitespace errors.
+- `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -v:normal /m:1 /nr:false /p:UseSharedCompilation=false /flp:"logfile=Docs\AgentLogs\AUP_build_loop17.log;verbosity=normal"` completed in the log with 47 unrelated package warnings and 74 unrelated Core errors. Filtered build-log scan reports no errors or warnings for `DestructibleOrganicManager.cs` or `HectonMapMagicVegetationBridge.cs`.

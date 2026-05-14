@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.InteropServices;
 using System.Threading;
 using Unity.Burst;
 using Unity.Collections;
@@ -9,6 +10,7 @@ namespace Hecton8.Core
 {
     public delegate void BurstCallbackDelegate(int eventId);
 
+    [StructLayout(LayoutKind.Sequential)]
     public readonly struct BurstCallback
     {
         private readonly FunctionPointer<BurstCallbackDelegate> _function;
@@ -30,6 +32,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Persistent integer event queue for Burst-to-main-thread callback routing.
     /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
     public unsafe struct BurstCallbackQueue : IDisposable
     {
         private const string BudgetOwner = nameof(BurstCallbackQueue);
@@ -201,6 +204,7 @@ namespace Hecton8.Core
                 _events.TryDequeue(out _);
         }
 
+        [StructLayout(LayoutKind.Sequential)]
         public struct ParallelEventWriter
         {
             private NativeQueue<int>.ParallelWriter _events;

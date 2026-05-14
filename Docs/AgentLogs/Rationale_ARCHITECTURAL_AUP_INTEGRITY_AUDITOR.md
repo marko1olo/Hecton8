@@ -319,3 +319,19 @@ Solution: Re-run the global `HectonFloatingOrigin.ToAbsoluteUniversePosition(` s
 Rejected Alternatives: Chasing residency/power/fauna/core save-layout/hardware-profile/scheduler errors outside the AUP auditor domain, or reporting a fake green build.
 Scalability potential: Runtime unchanged beyond Loop 16 fixes; verification evidence proves Low/Middle/High/Ultra AUP edits are not the current compile blocker.
 Hardware Impact: 0 us runtime gain from verification. Developer-time gain on low-end machines is avoiding false attribution of 74 unrelated Core errors to this AUP patch.
+
+## Decision 40 - Organic Vegetation Trigger Double Space
+
+Problem: `DestructibleOrganicManager` construction decomposition and defoliant dead-zone checks converted runtime centers into stable vegetation universe coordinates as `Vector3`, then did radius math against matrix roots and giant-kelp segments in float.
+Solution: Route trigger centers through `HectonMapMagicVegetationBridge.ToUniverseSpaceDouble3`, compare construction/defoliant distance in double, add a double closest-point segment helper using `math.rcp`, and project titan root mound anchors through a new `ToRuntimeSpace(double3)` bridge overload before the final voxel lookup cast.
+Rejected Alternatives: Widening all vegetation matrix storage and public renderer contracts to double. Unity matrices, GPU instance payloads, and renderer contracts are float presentation surfaces; the authority leak was the trigger math and bridge hop, not the storage surface itself.
+Scalability potential: Low keeps existing matrix/renderer payloads and cheap trigger loops. Middle/High/Ultra get stable long-session construction cleanup, chemical dead-zone tombstoning, and titan root mound placement without increasing GPU payload size; saved stability can buy denser decomposition, wilt, and mound VFX.
+Hardware Impact: Expected i3/MX350 benefit is 2-7 us on construction/defoliant bursts by avoiding float-distance threshold churn and reprocessing near boundaries. Managed allocation remains 0 B/frame; changes use stack `double3`, existing NativeArrays, and existing compatibility wrappers.
+
+## Decision 41 - Loop 17 Verification Wall
+
+Problem: Loop 17 needed compile verification, but the current Core build still fails under unrelated dependency work and package warnings outside the touched vegetation/AUP files.
+Solution: Run mandatory AUP scan, targeted vegetation scans, global legacy HFO scan, direct committed-offset scan, `git diff --check`, and a constrained Core build log, then filter the build log for `DestructibleOrganicManager.cs` and `HectonMapMagicVegetationBridge.cs`.
+Rejected Alternatives: Reporting the build as green because touched files have no local errors, or chasing save-layout, scheduler-handle, hardware-profile, power, fauna, and package warning debt from the AUP auditor domain.
+Scalability potential: Runtime unchanged beyond the Loop 17 precision repair; verification keeps Low/Middle/High/Ultra risk scoped to actual blockers instead of burying precision fixes under unrelated compile noise.
+Hardware Impact: 0 us runtime gain from verification itself. Developer-time gain on low-end machines is avoiding false attribution of 74 unrelated Core errors and 47 package warnings to the organic vegetation AUP patch.

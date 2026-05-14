@@ -268,3 +268,19 @@ Solution: Add a 150-frame hysteresis band to `IsLowTier` in the bridge. A new lo
 Rejected Alternatives: One-shot quality sampling, or immediate per-frame switching. One-shot sampling traps constrained devices in high-res waits; immediate switching trades correctness for flicker.
 Scalability potential: Low/toaster path still reaches proxy water quickly under pressure. Middle/High/Ultra keep high-resolution hydration stable and avoid accidental proxy flicker, preserving expensive water/audio/VFX overkill only when the tier is stable.
 Hardware Impact: Adds a few scalar bool/int branches to hydration wait frames, estimated 1-2 us. Prevents repeated readiness churn and wasted transition work during unstable quality policy. Verification this pass is static only by user request; no dotnet rebuild or response-file compile was run.
+
+## Decision 32 - Low-Tier Policy Probe Cadence
+
+Problem: The first hysteresis pass still read global tier policy every hydration wait frame. That preserved dynamic behavior but kept registry coupling in the hot prologue wait path and weakened local H-Phi evidence.
+Solution: Sample the global low-tier policy at a 30-frame cadence and consume the existing `MemoryPressureSignal` snapshot lane for immediate critical-memory downshift. Hysteresis still owns upgrades and non-emergency low/high changes.
+Rejected Alternatives: Add a new prologue-only tier signal, or keep every-frame registry reads. A new one-off signal violates signal discipline; every-frame registry reads violate hot-path cache discipline.
+Scalability potential: Low/MX350 gets immediate proxy hydration on critical memory pressure. Middle/High/Ultra avoid quality flicker and keep the saved wait-loop budget for richer VWS/haptic/ocean responders.
+Hardware Impact: Estimated 1-3 us saved on most hydration wait frames by replacing every-frame registry reads with scalar cached state plus a small signal-lane scan. Verification this pass is static only by user request; no dotnet rebuild or response-file compile was run.
+
+## Decision 33 - Dev-Skip Unlock Idempotency
+
+Problem: Dev-skip handoff releases input immediately, then sequence `finally` can release input again. That spends a second `SystemPauseSignal` lane slot for no presentation gain.
+Solution: Add `_inputLockReleased` as a run-local latch. `ReleaseInputLockNoThrow()` now publishes unlock once, sets the latch only after a successful publish, and leaves fault retry behavior intact.
+Rejected Alternatives: Remove immediate dev-skip unlock, or accept duplicate unlocks. Removing immediate unlock delays dev ergonomics; accepting duplicates wastes a signal slot and undermines cleanup determinism.
+Scalability potential: Low/MX350 saves one control signal during dev skip. Middle/High/Ultra keep identical visible pacing and cleaner downstream pause consumers.
+Hardware Impact: Saves one unlock signal publish on dev skip, estimated 3-8 us and one lane slot. Normal completion cost adds one bool branch. Verification this pass is static only by user request; no dotnet rebuild or response-file compile was run.

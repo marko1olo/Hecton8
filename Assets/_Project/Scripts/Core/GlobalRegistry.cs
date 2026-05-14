@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using Hecton.Localization;
@@ -319,6 +320,7 @@ namespace Hecton8.Core
         private static int _currentDomain = (int)Domain.Unknown;
         private static object _currentDomainOwner;
 
+        [StructLayout(LayoutKind.Sequential)]
         public readonly struct ForceOverrideToken
         {
             internal readonly uint Value;

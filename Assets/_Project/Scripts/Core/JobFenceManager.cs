@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.InteropServices;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
@@ -8,6 +9,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Persistent non-allocating JobHandle fan-in buffer.
     /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
     public struct JobFenceManager : IDisposable
     {
         private const string BudgetOwner = nameof(JobFenceManager);

@@ -112,12 +112,12 @@ Verification: forbidden-pattern scan returned no matches. `git diff --check` pas
 
 ## 2026-05-15 - Blackbox Dump Rate Limit
 
-What was wrong: a persistent NaN/Inf state could call `DumpBlackBox()` every Tick. The 300-frame blackbox is required evidence, but repeated binary rewrites convert a fault artifact into frame-time damage.
+What was wrong: a persistent NaN/Inf state could call `DumpBlackBox()` every Tick. The 300-frame blackbox is required evidence, but repeated binary rewrites convert a fault artifact into frame-time damage. Scoped H-Phi hygiene also found one cold `GetComponent<BoxCollider>()` fallback in the VR lever domain.
 
-What was done: added `_blackBoxDumped` as a lifecycle-reset latch. The first corrupt state writes `Docs/AgentLogs/Dump_VR_COCKPIT_MANUAL_OVERRIDE.bin`; later corrupt ticks return without touching disk until `OnEnable()` or native-state initialization resets the latch. Telemetry flags now set bit 5 after a dump attempt.
+What was done: added `_blackBoxDumped` as a lifecycle-reset latch. The first corrupt state writes `Docs/AgentLogs/Dump_VR_COCKPIT_MANUAL_OVERRIDE.bin`; later corrupt ticks return without touching disk until `OnEnable()` or native-state initialization resets the latch. Telemetry flags now set bit 5 after a dump attempt. Replaced the cold collider fallback with `TryGetComponent(out activationVolume)`.
 
 Cinematic Cheats used: no additional simulation. The lever remains a scalar kinematic fake; this pass makes crash evidence bounded instead of simulating or logging fault detail every frame.
 
-Exact microseconds saved/spent: 0 us normal-path IO; one branch in fault handling and telemetry flag build. In persistent fault state, avoids repeated 300-entry binary file rewrites, which can otherwise cost milliseconds depending on disk/cache state. Static H-Phi formula movement is not claimed; local H-Phi evidence improves by bounding fault-side IO and preserving typed telemetry.
+Exact microseconds saved/spent: 0 us normal-path IO; one branch in fault handling and telemetry flag build. In persistent fault state, avoids repeated 300-entry binary file rewrites, which can otherwise cost milliseconds depending on disk/cache state. Static project-wide H-Phi movement is not claimed; local H-Phi evidence improves by bounding fault-side IO, preserving typed telemetry, and reducing scoped `GetComponentCalls` from 1 to 0.
 
-Verification: pending static scans in this pass. Dotnet rebuild/probe intentionally not run by user instruction.
+Verification: forbidden-pattern scan returned no matches, including `GetComponent<...>`, `FindObject*`, `Update(`, `HingeJoint`, direct input polling, `math.normalize`, and managed `foreach`. Scoped H-Phi hygiene over 4 task files reports `SignalBusPush=48`, `GlobalSignalsPublish=4`, `GlobalRegistrySurface=13`, `UnityUpdateMethods=0`, `FindObjectCalls=0`, `GetComponentCalls=0`, `PublicEvents=0`, `HingeJoint=0`, `DirectInput=0`. `git diff --check` passed for touched files with CRLF warnings only. `Tools/Architecture/HectonPhiAudit.ps1 -Json` timed out at 120 seconds, so no project-wide numeric H-Phi gain is claimed. Dotnet rebuild/probe intentionally not run by user instruction.

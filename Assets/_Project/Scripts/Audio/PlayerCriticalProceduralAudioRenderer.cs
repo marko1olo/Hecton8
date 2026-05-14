@@ -90,6 +90,8 @@ namespace Hecton8.Audio
         private const float ImpactEchoCarrierSecondaryHertz = 860f;
         private const float ImpactEchoNoiseBlend = 0.34f;
         private const int KineticImpactSignalScanLimit = 32;
+        private const int KineticImpactDuplicateHistoryCapacity = 8;
+        private const int KineticImpactDuplicateHistoryMask = KineticImpactDuplicateHistoryCapacity - 1;
         private const int SonarTriggerFlagKineticImpactEcho = 1 << 0;
         private const float KineticImpactMinimumEnergyJoules = 12f;
         private const float KineticImpactReferenceEnergyJoules = 42000f;
@@ -760,6 +762,9 @@ namespace Hecton8.Audio
         private int _lastConsumedAcousticPingSignalSequence;
         private uint _lastHighSpeedImpactFrame;
         private uint _lastHighSpeedImpactSignature;
+        // COLD ALLOC: HighSpeedImpactDuplicateEntry[8] - same-frame kinetic packet dedupe ring - owner: PlayerCriticalProceduralAudioRenderer
+        private readonly HighSpeedImpactDuplicateEntry[] _recentHighSpeedImpactSignals = new HighSpeedImpactDuplicateEntry[KineticImpactDuplicateHistoryCapacity];
+        private int _recentHighSpeedImpactSignalCursor;
         private int _lastDirectSonarPingFrame = -4096;
         private float _lastDirectSonarPingIntensity;
         private Vector3 _lastDirectSonarPingOrigin;
@@ -1029,6 +1034,12 @@ namespace Hecton8.Audio
                 HitCount = hitCount;
                 AudioMaterialId = audioMaterialId;
             }
+        }
+
+        private struct HighSpeedImpactDuplicateEntry
+        {
+            public uint Frame;
+            public uint Signature;
         }
 
         [StructLayout(LayoutKind.Sequential, Pack = 4)]
@@ -2950,7 +2961,8 @@ namespace Hecton8.Audio
 
         private bool TryHandleHighSpeedImpactSignal(in HighSpeedImpactSignal signal)
         {
-            if (IsDuplicateHighSpeedImpactSignal(in signal) ||
+            uint signalSignature = ResolveHighSpeedImpactSignature(in signal);
+            if (IsDuplicateHighSpeedImpactSignal(signal.Frame, signalSignature) ||
                 !math.isfinite(signal.ImpactSpeed) ||
                 !math.isfinite(signal.LostKineticEnergy))
             {
@@ -2995,10 +3007,7 @@ namespace Hecton8.Audio
             {
                 bool queued = TryQueueLowTierKineticImpactClip(runtimePosition, energy01, proximity);
                 if (queued)
-                {
-                    _lastHighSpeedImpactFrame = signal.Frame;
-                    _lastHighSpeedImpactSignature = ResolveHighSpeedImpactSignature(in signal);
-                }
+                    RecordHighSpeedImpactSignal(signal.Frame, signalSignature);
 
                 return queued;
             }
@@ -3060,15 +3069,37 @@ namespace Hecton8.Audio
                 _targetEardrumRuptureTinnitusValue = math.max(_targetEardrumRuptureTinnitusValue, distortion);
 
             _impactStressImpulseTickValue = math.max(_impactStressImpulseTickValue, impactStress);
-            _lastHighSpeedImpactFrame = signal.Frame;
-            _lastHighSpeedImpactSignature = ResolveHighSpeedImpactSignature(in signal);
+            RecordHighSpeedImpactSignal(signal.Frame, signalSignature);
             return true;
         }
 
-        private bool IsDuplicateHighSpeedImpactSignal(in HighSpeedImpactSignal signal)
+        private bool IsDuplicateHighSpeedImpactSignal(uint frame, uint signature)
         {
-            return signal.Frame == _lastHighSpeedImpactFrame &&
-                   ResolveHighSpeedImpactSignature(in signal) == _lastHighSpeedImpactSignature;
+            if (frame == _lastHighSpeedImpactFrame && signature == _lastHighSpeedImpactSignature)
+                return true;
+
+            for (int i = 0; i < KineticImpactDuplicateHistoryCapacity; i++)
+            {
+                HighSpeedImpactDuplicateEntry entry = _recentHighSpeedImpactSignals[i];
+                if (entry.Frame == frame && entry.Signature == signature)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private void RecordHighSpeedImpactSignal(uint frame, uint signature)
+        {
+            _lastHighSpeedImpactFrame = frame;
+            _lastHighSpeedImpactSignature = signature;
+
+            int slot = _recentHighSpeedImpactSignalCursor & KineticImpactDuplicateHistoryMask;
+            _recentHighSpeedImpactSignals[slot] = new HighSpeedImpactDuplicateEntry
+            {
+                Frame = frame,
+                Signature = signature
+            };
+            _recentHighSpeedImpactSignalCursor = (slot + 1) & KineticImpactDuplicateHistoryMask;
         }
 
         private static uint ResolveHighSpeedImpactSignature(in HighSpeedImpactSignal signal)

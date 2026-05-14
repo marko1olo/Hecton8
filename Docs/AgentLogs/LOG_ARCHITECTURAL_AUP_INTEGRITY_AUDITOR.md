@@ -334,3 +334,40 @@ Verification:
 Integrator notes:
 - Do not attribute the current Core build wall to Loop 16. The errors are in residency/power/fauna native release signatures, `HardwareProfileCatalog`, save V10 layout types, `SystemID`/`JobHandle` mismatches, `ContextualPhysicalIkRig.SpineTargetCountPerChain`, and `SubmarineAutoLevelBallastController`.
 - Runtime HFO legacy AUP conversion is now removed from first-party scripts; remaining AUP debt is contract/storage migration, not direct committed-offset reconstruction.
+
+## 2026-05-15 - Loop 17 Organic Vegetation Universe-Space Trigger Cleanup
+
+What was wrong:
+- Construction decomposition and defoliant dead-zone checks in `DestructibleOrganicManager` reduced stable vegetation universe centers to `Vector3` before distance math.
+- Giant-kelp construction envelope checks projected the root/top segment in float, so long-session construction cleanup could flip around the radius boundary.
+- Titan root mound voxel lookup projected a stable-universe matrix anchor through the legacy `Vector3` bridge path.
+
+What was done:
+- Converted construction and defoliant trigger centers to `HectonMapMagicVegetationBridge.ToUniverseSpaceDouble3`.
+- Changed construction/defoliant lane signatures to consume `double3` centers and double radius squared values.
+- Rebuilt construction distance checks as double root/center subtraction; giant kelp uses a double closest-point segment helper with `math.rcp`.
+- Added `HectonMapMagicVegetationBridge.ToRuntimeSpace(double3)` and `ToRuntimeSpaceDouble3(double3)` overloads for stable-universe anchors that should not hop through `Vector3`.
+- Routed titan root mound lookup through the new double bridge overload and final-cast only for the existing voxel volume query.
+- Re-extracted this agent prompt from `Docs/Tasks/CURRENT_BATCH.md`; result remains `PROMPT_NOT_FOUND`.
+
+Cinematic Cheats used:
+- Flora matrices, renderer payloads, collider/proxy surfaces, and voxel lookup APIs remain float presentation/runtime contracts.
+- The precision repair is focused on CPU authority trigger math. Low tier keeps the cheap existing loops; High/Ultra can spend stable anchors on richer decomposition, wilt, and root-mound VFX without moving GPU instance payloads to double.
+
+Exact Microseconds saved:
+- Construction/defoliant burst stability: estimated 2-7 us on affected burst frames by avoiding float-distance threshold churn and repeated boundary reprocessing.
+- Titan root mound projection: estimated sub-2 us on rare mound application frames by avoiding a legacy bridge precision hop.
+- Managed allocation: 0 B/frame. Changes use stack `double3`, existing NativeArrays, and compatibility overloads only.
+
+Verification:
+- Targeted DestructibleOrganicManager scan: no legacy `HectonMapMagicVegetationBridge.ToUniverseSpace(`, no `Vector3 universePosition`, no Vector3 construction/defoliant lane signatures, no `(rootPosition - centerUniversePosition).sqrMagnitude`.
+- Global `HectonFloatingOrigin.ToAbsoluteUniversePosition(` scan remains clean under `Assets/_Project/Scripts`.
+- Direct committed-offset scan remains clean under `Assets/_Project/Scripts`.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` re-run. Residual hits are broad `universe` text, editor diagnostics, final-cast fluid/scatter/shader payload names, and double-safe vegetation helper names.
+- `git diff --check` on Loop 17 files reports no whitespace errors.
+- `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -v:normal /m:1 /nr:false /p:UseSharedCompilation=false /flp:"logfile=Docs\AgentLogs\AUP_build_loop17.log;verbosity=normal"` completed in the log with 47 unrelated package warnings and 74 unrelated Core errors.
+- Filtered build-log scan reports no C# errors or warnings in `DestructibleOrganicManager.cs` or `HectonMapMagicVegetationBridge.cs`.
+
+Integrator notes:
+- Do not attribute the current Core build wall to Loop 17. Active blockers remain save-layout V10 types, `HardwareProfileCatalog`, `SystemID`/`JobHandle` mismatches, native release signature drift, and unrelated package deprecation/default-field warnings.
+- Remaining queued AUP debt includes vegetation collision proxy caches and shader/impostor presentation paths; those require separate authority-vs-presentation classification before edits.

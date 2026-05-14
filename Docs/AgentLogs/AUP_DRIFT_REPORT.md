@@ -177,3 +177,36 @@ Status: VERIFIED AUP INTEGRITY - CORE BUILD PASS; ASMDEF BLOCKED BY ARCHITECTURE
 - All runtime `HectonFloatingOrigin.ToAbsoluteUniversePosition(` callsites under `Assets/_Project/Scripts` are removed. Remaining text hits are local helper names, editor diagnostics, docs/comments, or final-cast payload names.
 - `InteractionPacket` remains float because it is a shared public contract; future contract migration should add a double/AUP lane rather than mutate existing fields in-place.
 - Geology seam-plan storage remains legacy `Vector3` for consumers; a future world-geometry batch can add explicit double plan fields if downstream consumers are ready.
+
+## Loop 17 Organic Vegetation Universe-Space Trigger Cleanup
+
+### Findings
+
+- `DestructibleOrganicManager.ApplyConstructionDecomposition` converted runtime construction centers through `HectonMapMagicVegetationBridge.ToUniverseSpace`, reducing stable universe coordinates to `Vector3` before construction cleanup radius checks.
+- `ApplyDefoliantDeadZone` had the same float-center path and compared active flora roots via `(rootPosition - centerUniversePosition).sqrMagnitude`.
+- Giant-kelp construction checks used a `Vector3` closest-point-on-segment calculation, so the stem/root distance gate lost committed-offset precision before trigger math completed.
+- Titan root mound lookup extracted a stable-universe matrix translation into `Vector3` and projected it through the legacy `ToRuntimeSpace(Vector3)` helper before voxel lookup.
+
+### Code Changes
+
+- `Assets/_Project/Scripts/World/DestructibleOrganicManager.cs`: construction and defoliant trigger centers now use `ToUniverseSpaceDouble3`; radii reject non-finite values and squared-radius math is `double`.
+- `Assets/_Project/Scripts/World/DestructibleOrganicManager.cs`: construction lane and defoliant lane signatures now consume `double3` centers and compare double squared distances against double radius thresholds.
+- `Assets/_Project/Scripts/World/DestructibleOrganicManager.cs`: giant-kelp construction distance now uses a `double3` root/top/center segment projection helper with `math.rcp`, then returns double squared length.
+- `Assets/_Project/Scripts/World/DestructibleOrganicManager.cs`: titan root mound voxel lookup now keeps the stable-universe anchor as `double3` and final-casts only through the bridge runtime projection boundary.
+- `Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs`: added `ToRuntimeSpace(double3)` and `ToRuntimeSpaceDouble3(double3)` overloads while keeping existing `Vector3` compatibility.
+
+### Verification
+
+- Prompt extraction from `Docs/Tasks/CURRENT_BATCH.md` still returns `PROMPT_NOT_FOUND`; user-supplied XML remains authoritative.
+- Targeted DestructibleOrganicManager scan is clean for legacy `HectonMapMagicVegetationBridge.ToUniverseSpace(`, `Vector3 universePosition`, Vector3 construction/defoliant lane signatures, and `(rootPosition - centerUniversePosition).sqrMagnitude`.
+- Global `rg -n "HectonFloatingOrigin\.ToAbsoluteUniversePosition\(" Assets/_Project/Scripts --glob '*.cs'` remains clean.
+- Direct committed-offset leak scan remains clean across `Assets/_Project/Scripts`.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` was re-run. Residual hits are broad `universe` text, editor diagnostics, final-cast fluid/scatter/shader payload names, and double-safe vegetation bridge/helper names.
+- `git diff --check -- Assets/_Project/Scripts/World/DestructibleOrganicManager.cs Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs` reports no whitespace errors.
+- Core build log `Docs/AgentLogs/AUP_build_loop17.log` completed with 47 unrelated package warnings and 74 unrelated Core errors; filtered scan for `DestructibleOrganicManager.cs` and `HectonMapMagicVegetationBridge.cs` reports no errors or warnings.
+
+### Evidence Queue
+
+- `HectonMapMagicVegetationBridgeFloraCollisionProxies` still owns a legacy `Vector3` proxy cache path for collision-proxy deactivation; that is a candidate for a future loop if it feeds authority distance math rather than presentation/collider toggling.
+- Editor-only `KinematicGhostDebugger` still has float universe preview history; it remains diagnostic presentation, not runtime AUP authority.
+- Octahedral impostor universe centers remain float shader presentation data and are outside this Loop 17 trigger-math repair.

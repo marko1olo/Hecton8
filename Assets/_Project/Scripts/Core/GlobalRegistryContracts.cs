@@ -319,6 +319,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Canonical damage packet routed through the global packet-based damage receiver contract.
     /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
     public struct DamagePacket
     {
         /// <summary>
@@ -3304,6 +3305,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Immutable ecosystem population sample returned by <see cref="IEcosystemDirectorService"/>.
     /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
     public struct EcosystemSectorPopulationSample
     {
         /// <summary>
@@ -3394,6 +3396,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Allocation-free global biomass audit sample returned by <see cref="IEcosystemDirectorService"/>.
     /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
     public struct EcosystemBiomassAuditSample
     {
         public float PreyBiomassSum;

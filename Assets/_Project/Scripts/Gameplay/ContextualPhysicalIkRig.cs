@@ -362,6 +362,9 @@ namespace Hecton8.Gameplay
                 chain.Tolerance,
                 polePosition);
 
+            if (!AreAppendageScratchPositionsFinite(in chain))
+                return;
+
             quaternion previousWorldRotation = parentWorldRotation;
             for (int boneIndex = 0; boneIndex < chain.BoneCount - 1; boneIndex++)
             {
@@ -446,7 +449,7 @@ namespace Hecton8.Gameplay
                     return;
 
                 float normalizedT = boneIndex * invBoneSpan;
-                float nextT = math.saturate((boneIndex + 1) * invBoneSpan);
+                float nextT = SanitizeBlend((boneIndex + 1) * invBoneSpan);
 
                 float3 currentBonePosition = ContextualPhysicalIkMath.ToFloat3(boneHandle.GetPosition(stream));
                 if (!IsFinite(currentBonePosition))
@@ -785,6 +788,17 @@ namespace Hecton8.Gameplay
             {
                 float length = AppendageSegmentLengths[chain.FirstLengthIndex + i];
                 if (!math.isfinite(length) || length <= 0.0001f)
+                    return false;
+            }
+
+            return true;
+        }
+
+        private bool AreAppendageScratchPositionsFinite(in ContextualPhysicalIkAppendageChainRuntime chain)
+        {
+            for (int i = 0; i < chain.BoneCount; i++)
+            {
+                if (!IsFinite(AppendageScratchPositions[chain.FirstScratchIndex + i]))
                     return false;
             }
 
