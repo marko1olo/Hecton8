@@ -377,6 +377,12 @@ namespace Hecton8.Editor.ProceduralGen
                 return;
 
             importer.wrapMode = TextureWrapMode.Repeat;
+            importer.wrapModeU = TextureWrapMode.Repeat;
+            importer.wrapModeV = TextureWrapMode.Repeat;
+            importer.wrapModeW = TextureWrapMode.Repeat;
+            importer.filterMode = FilterMode.Bilinear;
+            importer.anisoLevel = 1;
+            importer.mipMapBias = 0f;
             importer.mipmapEnabled = true;
             importer.isReadable = false;
             importer.textureCompression = TextureImporterCompression.Compressed;
@@ -384,6 +390,12 @@ namespace Hecton8.Editor.ProceduralGen
             importer.sRGBTexture = kind == AtlasKind.Albedo || kind == AtlasKind.MatCap;
             importer.textureType = kind == AtlasKind.Normal ? TextureImporterType.NormalMap : TextureImporterType.Default;
             importer.maxTextureSize = AtlasSize;
+
+            TextureImporterPlatformSettings defaultPlatform = importer.GetPlatformTextureSettings("DefaultTexturePlatform");
+            defaultPlatform.maxTextureSize = AtlasSize;
+            defaultPlatform.textureCompression = TextureImporterCompression.Compressed;
+            defaultPlatform.crunchedCompression = false;
+            importer.SetPlatformTextureSettings(defaultPlatform);
 
             TextureImporterPlatformSettings standalone = importer.GetPlatformTextureSettings("Standalone");
             standalone.overridden = true;
@@ -827,14 +839,36 @@ namespace Hecton8.Editor.ProceduralGen
 
             bool expectedSrgb = kind == AtlasKind.Albedo || kind == AtlasKind.MatCap;
             TextureImporterType expectedType = kind == AtlasKind.Normal ? TextureImporterType.NormalMap : TextureImporterType.Default;
-            if (importer.wrapMode != TextureWrapMode.Repeat || !importer.mipmapEnabled || importer.isReadable || importer.textureCompression != TextureImporterCompression.Compressed || importer.crunchedCompression || importer.sRGBTexture != expectedSrgb || importer.textureType != expectedType || importer.maxTextureSize != AtlasSize)
+            if (importer.wrapMode != TextureWrapMode.Repeat ||
+                importer.wrapModeU != TextureWrapMode.Repeat ||
+                importer.wrapModeV != TextureWrapMode.Repeat ||
+                importer.wrapModeW != TextureWrapMode.Repeat ||
+                importer.filterMode != FilterMode.Bilinear ||
+                importer.anisoLevel != 1 ||
+                !Approximately(importer.mipMapBias, 0f) ||
+                !importer.mipmapEnabled ||
+                importer.isReadable ||
+                importer.textureCompression != TextureImporterCompression.Compressed ||
+                importer.crunchedCompression ||
+                importer.sRGBTexture != expectedSrgb ||
+                importer.textureType != expectedType ||
+                importer.maxTextureSize != AtlasSize)
             {
                 failures++;
                 Debug.LogError($"[ShallowsBioForgeBatchBaker] Atlas importer contract failed at {path}.");
             }
 
-            TextureImporterPlatformSettings standalone = importer.GetPlatformTextureSettings("Standalone");
             TextureImporterFormat expectedFormat = kind == AtlasKind.Normal ? TextureImporterFormat.BC5 : TextureImporterFormat.BC7;
+            TextureImporterPlatformSettings defaultPlatform = importer.GetPlatformTextureSettings("DefaultTexturePlatform");
+            if (defaultPlatform.maxTextureSize != AtlasSize ||
+                defaultPlatform.textureCompression != TextureImporterCompression.Compressed ||
+                defaultPlatform.crunchedCompression)
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] Atlas DefaultTexturePlatform contract failed at {path}.");
+            }
+
+            TextureImporterPlatformSettings standalone = importer.GetPlatformTextureSettings("Standalone");
             if (!standalone.overridden || standalone.maxTextureSize != AtlasSize || standalone.textureCompression != TextureImporterCompression.Compressed || standalone.crunchedCompression || standalone.format != expectedFormat)
             {
                 failures++;

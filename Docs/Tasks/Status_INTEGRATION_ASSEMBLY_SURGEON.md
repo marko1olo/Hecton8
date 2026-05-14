@@ -4,7 +4,7 @@ Agent: INTEGRATION_ASSEMBLY_SURGEON
 Role: SYSTEMS_ARCHITECT
 Domain: Unity Compilation Graph / Integrator
 Prompt task count: 15 (current in-chat XML; older 17-task static pass retained below)
-Current state: BUILD SUCCESSFUL / PLATINUM GRADE (Fresh12: Hecton8.Core --no-restore 0 warnings / 0 errors)
+Current state: BUILD SUCCESSFUL / POST-GREEN STATIC H-PHI HARDENED (Fresh12 retained; no dotnet command run in this post-green pass)
 
 ## Mandates Read
 
@@ -138,3 +138,18 @@ Polish mandate extraction: `Docs/Tasks/CURRENT_BATCH.md` contains no `INTEGRATIO
 - Loop 16: Source bridge and contract visibility repair. Errors reduced through save/header/memory/IK/scanner clusters. Status: RED.
 - Loop 17: Restored assets and translated generated project-output references to Unity-built assemblies. Metadata wall cleared. Status: RED -> YELLOW.
 - Loop 18: Save/PDA source drift repair. `Fresh11` 3 errors -> `Fresh12` 0 warnings / 0 errors. Status: BUILD SUCCESSFUL / PLATINUM GRADE.
+
+## 2026-05-15 Post-Green Static H-Phi Hardening
+
+Directive: continue improving H-Phi without running dotnet rebuilds.
+Evidence boundary: STATIC_SOURCE / STATIC_DOC only for this post-green pass. The existing `Fresh12` compile artifact remains historical disk evidence; it was not regenerated here.
+
+- [x] State reloaded before work | Justification: `Status_INTEGRATION_ASSEMBLY_SURGEON.md` and `Rationale_INTEGRATION_ASSEMBLY_SURGEON.md` were read before edits | Alternatives rejected: relying on compressed chat memory | Estimate: 200 us process
+- [x] Optional unused Core reference scan added | Justification: `HectonPhiAudit.ps1 -IncludeUnusedCoreReferenceScan` now maps asmdef debt refs to source-backed asmdefs, declared types, and generated/source-backed Core compile-surface hits | Alternatives rejected: manual ad hoc grep for future pruning | Estimate: 0 us runtime
+- [x] Optional scan executed | Justification: scan covered 1065 Core compile-surface files and 25 asmdef debt refs; `CandidateCount=0`, so no further asmdef debt removal was justified without contract extraction | Alternatives rejected: blind leaf reference deletion | Estimate: 0 us runtime
+- [x] Bridge counter corrected | Justification: `<Reference Remove=...>` is no longer counted as a source-backed bridge reference; bridge rows now carry `CoreCompileBridge` or `ProjectReferenceReplacement` lane labels | Alternatives rejected: opaque total-only bridge count | Estimate: 0 us runtime
+- [x] Replacement bridge debt pruned | Justification: removed `Hecton8.Input.Generated` from the Core project-reference replacement group after static scans found `HectonInputActions` use only in `Hecton8.Input`, not generated Core source | Alternatives rejected: removing `Hecton8.Input` or package refs with live Core/package usage | Estimate: 0 us runtime
+- [x] Lane-specific budgets added | Justification: budget gate now supports total bridge debt, compile-bridge debt, and project-reference replacement debt; current static baseline passes at 25 asmdef, 10 generated-project, 20 total bridge, 8 compile-bridge, and 12 replacement debt refs | Alternatives rejected: hiding replacement debt by keeping the old 8-total budget | Estimate: 0 us runtime
+- [x] Failure paths verified | Justification: expected failures returned for asmdef 24, total bridge 19, compile-bridge 7, and replacement 11 budgets | Alternatives rejected: untested budget switches | Estimate: 0 us runtime
+- [x] H-Phi metric docs updated | Justification: `HECTON_PHI_STATIC_METRIC.md` now documents bridge lanes, optional unused-reference scan, and the current honest budget command | Alternatives rejected: stale budget docs | Estimate: 0 us runtime
+- [x] No-dotnet order honored in this pass | Justification: only PowerShell static audit, XML/JSON parsing, grep, and docs/log edits were run | Alternatives rejected: rerunning Fresh12 against current user instruction | Estimate: 0 us runtime

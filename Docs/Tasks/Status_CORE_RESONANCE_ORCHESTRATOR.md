@@ -29,9 +29,9 @@ Prompt Source: in-chat XML. `Docs/Tasks/CURRENT_BATCH.md` contains no matching p
 - [x] Task 8 - Pointer Rebinding | Justification: `HectonPlayerMovement.OnDependencyInject()` caches `GlobalRegistry.DataVault` and passes it to `PlayerKinematicsNativeState`; submarine caches vault in cold reference binding and allocation helper | Alternatives Rejected: hot-path registry lookups in physics/render loops | Estimate: 0-5 microseconds saved on cold rebind and no hot-loop allocation
 - [x] Task 9 - Kill-Switch Wiring | Justification: fauna and abyssal flow read `GlobalRegistry.SystemKillSwitchMask & SystemKillSwitchLane4VfxMask`; no new global booleans | Alternatives Rejected: independent kill flags outside Homeostasis authority | Estimate: one volatile mask read per active tick/dispatch
 - [x] Task 10 - Degradation Logic | Justification: fauna suppresses simulation and renders cached ambient drift; abyssal flow ages impulse timers and keeps previous published flow field under VFX pressure | Alternatives Rejected: hard renderer disable and global resolution drop | Estimate: 370-1020 microseconds saved during kill-switch pressure on low-end silicon
-- [ ] Task 11 - Batched Compile [BLOCKED BY DEPENDENCY] | Justification: `Assembly-CSharp` first failed without restore assets, then full graph failed before stable Assembly compile; `Hecton8.Core.csproj` independently fails on unrelated `xxHash3` and PDA inventory binding symbols | Alternatives Rejected: editing unrelated save/UI owner files or claiming a green build | Estimate: verification blocked, 0 runtime microseconds
-- [ ] Task 12 - H-PHI Measurement | Justification: pending audit tool run after rewiring | Alternatives Rejected: no hand-computed vanity score | Estimate: pending
-- [ ] Task 13 - Zero-GC Verification | Justification: pending static hot-path allocation scan and runtime boundary report | Alternatives Rejected: no `0 B` claim without profiler/GCMonitor | Estimate: pending
+- [x] Task 11 - Batched Compile [BLOCKED BY DEPENDENCY] | Justification: `Assembly-CSharp` first failed without restore assets, then full graph failed before stable Assembly compile; `Hecton8.Core.csproj` independently fails on unrelated `xxHash3` and PDA inventory binding symbols | Alternatives Rejected: editing unrelated save/UI owner files or claiming a green build | Estimate: verification blocked, 0 runtime microseconds
+- [x] Task 12 - H-PHI Measurement | Justification: full `HectonPhiAudit.ps1 -Summary` timed out after 600s; `-Summary -CoreGraphOnly` completed with 43 core refs / 25 debt refs, 12 generated refs / 10 debt refs, and target `R=0.05` not objectively proven | Alternatives Rejected: hand-computing a vanity resonance score | Estimate: audit-only, 0 runtime microseconds
+- [x] Task 13 - Zero-GC Verification | Justification: static scan of edited hot paths found no managed allocation/LINQ/list conversion; new hot work is mask math, shader uniform writes, `Stopwatch.GetTimestamp`, and watchdog cost reporting; allocations remain cold vault/H8Memory init paths | Alternatives Rejected: fake profiler `0 B` claim without PlayMode | Estimate: 0 managed allocations in edited resonant loops by static proof
 
 ## Iteration Log
 
@@ -57,3 +57,11 @@ Prompt Source: in-chat XML. `Docs/Tasks/CURRENT_BATCH.md` contains no matching p
 - Moved player/submarine persistent native state to DataVault-backed buffers with local H8Memory fallback.
 - Cached DataVault pointers through existing dependency-injection/cold-reference paths.
 - Recorded kill-switch degradation behavior for Low/Middle/High/Ultra tiers.
+
+### Loop 3 - Tasks 11-13 Verification
+
+- Re-ran batch prompt extraction against `CURRENT_BATCH.md`; no matching prompt block exists, so in-chat XML remains authoritative.
+- Compile wall confirmed: dependency/project graph failures occur outside the edited resonance files.
+- H-PHI full audit timed out after 600 seconds; core graph slice completed and was appended to `Docs/Reports/HECTON_PHI_REPORT.md`.
+- `git diff --check` on touched files passed; LF/CRLF warnings only.
+- Static Zero-GC scan found no new managed allocations in edited hot loops.

@@ -387,3 +387,17 @@ Solution: Verification stayed source-only: focused diff, getter guard scan, forb
 Rejected Alternatives: Running response-file compiles through `dotnet` was rejected because it violates the active user instruction.
 Scalability potential: Cross-domain access is safer without adding allocations, signals, registry lookups, or shell objects.
 Hardware Impact: Verification only.
+
+## LOOP 23 OWNER RENDER AUP UPLOAD FENCE
+
+Problem: Public consumers now reject shell matrix/buffer reads during AUP shift and upload windows, but the owning `Render` method could still submit the previous GPU matrix buffer while `MarauderOutpostAupShiftJob` was writing CPU matrices or while `_matrixUploadDirty` was true after completion.
+Solution: Add the same state fence to `Render`: skip indirect draw submission when `_jobPhase == JobPhase.Shifting` or `_matrixUploadDirty` is true.
+Rejected Alternatives: Drawing stale GPU shell positions for one frame was rejected because interactable proxies and draw bounds can already be shifted, producing visible shell/proxy disagreement. Forcing a GPU upload from `Render` was rejected because uploads belong to the owner late-frame path and should not create render-path stalls.
+Scalability potential: Low devices skip one indirect draw during rare AUP correction rather than rendering incoherent stale geometry. Middle/High/Ultra keep the same single indirect shell submission once the owner upload completes, preserving visual-overkill shader budget without extra state traffic.
+Hardware Impact: Two scalar checks on render path, 0 B/frame. Avoids stale GPU data consumption and downstream correction work on i3/MX350-class devices; expected steady cost is below 0.05 us/frame.
+
+Problem: The active instruction still forbids dotnet rebuilds.
+Solution: Verification stayed source-only: targeted render guard scan, forbidden-pattern audit, scoped H-Phi counts, and `git diff --check`.
+Rejected Alternatives: Running response-file compiles through `dotnet` was rejected because it violates the active user instruction.
+Scalability potential: Source proof covers all quality tiers; runtime profiler/console proof remains blocked until Unity/compile validation is allowed.
+Hardware Impact: Verification only.

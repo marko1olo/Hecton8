@@ -441,30 +441,6 @@ Verification:
 - `git diff --check` and `git diff --cached --check` on touched code/docs exit 0; output is only LF-to-CRLF warnings on touched runtime/docs files.
 - Runtime status remains pending until Unity Editor import, shader compile, play-mode behavior, GC, and profiler evidence exist.
 
-## 2026-05-15T03:03+04:00
-
-Status: PENDING VERIFICATION. Continued dispatcher lifecycle audit. No `dotnet` rebuild/compile was run.
-
-What was wrong:
-- `TryRegister()` treated `_registeredUpdate` alone as enough to skip registration.
-- If the late-frame registration flag was false, solver completion and GPU upload could stay stranded after an external lifecycle edge.
-
-What was done:
-- `TryRegister()` now exits only when both update and late-frame registrations are present.
-- Partial registration state is unregistered and retried from a clean pair.
-
-Cinematic cheats used:
-- None. Lifecycle wiring only.
-
-Exact microseconds saved:
-- 0 us hot-path impact.
-- Cold path may execute one unregister pair before retrying only when state is already inconsistent.
-
-Verification:
-- Static grep over IK runtime/job/shader scope found no `math.sqrt`, `math.normalize`, managed array creation, `foreach`, `string.Format`, `.ToString()`, `Debug.Log`, Unity Physics casts, `SkinnedMeshRenderer`, `renderer.material`, `Camera.main`, `GlobalRegistry.Get`, `GameObject.Find`, or `FindObject`.
-- `git diff --check` and `git diff --cached --check` on touched code/docs exit 0; output is only LF-to-CRLF warnings on touched runtime/docs files.
-- Runtime status remains pending until Unity Editor import, shader compile, play-mode behavior, GC, and profiler evidence exist.
-
 ## 2026-05-15T03:00+04:00
 
 Status: PENDING VERIFICATION. Continued AUP/terrain-contact audit. No `dotnet` rebuild/compile was run.
@@ -484,6 +460,30 @@ Exact microseconds saved:
 - No frame-time saving claimed.
 - Origin-shift fix is cold-path only.
 - SDF gradient correction adds under 0.1 us estimated on high-tier contact frames and buys contact quality.
+
+Verification:
+- Static grep over IK runtime/job/shader scope found no `math.sqrt`, `math.normalize`, managed array creation, `foreach`, `string.Format`, `.ToString()`, `Debug.Log`, Unity Physics casts, `SkinnedMeshRenderer`, `renderer.material`, `Camera.main`, `GlobalRegistry.Get`, `GameObject.Find`, or `FindObject`.
+- `git diff --check` and `git diff --cached --check` on touched code/docs exit 0; output is only LF-to-CRLF warnings on touched runtime/docs files.
+- Runtime status remains pending until Unity Editor import, shader compile, play-mode behavior, GC, and profiler evidence exist.
+
+## 2026-05-15T03:03+04:00
+
+Status: PENDING VERIFICATION. Continued dispatcher lifecycle audit. No `dotnet` rebuild/compile was run.
+
+What was wrong:
+- `TryRegister()` treated `_registeredUpdate` alone as enough to skip registration.
+- If the late-frame registration flag was false, solver completion and GPU upload could stay stranded after an external lifecycle edge.
+
+What was done:
+- `TryRegister()` now exits only when both update and late-frame registrations are present.
+- Partial registration state is unregistered and retried from a clean pair.
+
+Cinematic cheats used:
+- None. Lifecycle wiring only.
+
+Exact microseconds saved:
+- 0 us hot-path impact.
+- Cold path may execute one unregister pair before retrying only when state is already inconsistent.
 
 Verification:
 - Static grep over IK runtime/job/shader scope found no `math.sqrt`, `math.normalize`, managed array creation, `foreach`, `string.Format`, `.ToString()`, `Debug.Log`, Unity Physics casts, `SkinnedMeshRenderer`, `renderer.material`, `Camera.main`, `GlobalRegistry.Get`, `GameObject.Find`, or `FindObject`.

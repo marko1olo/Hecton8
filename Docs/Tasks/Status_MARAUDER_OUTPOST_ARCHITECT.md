@@ -173,9 +173,16 @@ State: PENDING VERIFICATION
 - [x] Re-ran source-only audits. DOD: diff shows only the two getter guards; forbidden-pattern audit found no raw hash, shader-global/material mutation, global publish wrapper, prefab shell instantiation, pow, telemetry modulo, or `foreach` in owned outpost files; scoped H-Phi counts remain `GlobalRegistrySurface=12`, `SignalBusPush=1`, `EventPublish=0`, `StructLayoutAttributes=6`; `git diff --check` passes with repository CRLF warning only. Alternative rejected: `dotnet` rebuild, forbidden by user. Estimate: verification only.
 - [ ] Compile proof [NOT RUN BY USER REQUEST]. DOD: no `dotnet` rebuild or response-file compile was executed in Loop 22. Alternative rejected: violating explicit "do not make dotnet rebuilds". Estimate: no runtime cost.
 
+### Loop 23 - Owner Render AUP Upload Fence
+
+- [x] Re-read persisted state/rationale and inspected the AUP shift/render lifecycle. DOD: compared public shell access guards against owner `Render` submission and found stale GPU matrix exposure during shift/upload windows. Alternative rejected: broad outpost refactor. Estimate: source audit only.
+- [x] Fenced owner indirect rendering during AUP shift/upload windows. DOD: `Render` now fails closed while `_jobPhase == JobPhase.Shifting` or `_matrixUploadDirty` is true, matching the public graphics-buffer contract and avoiding stale matrix submission. Alternative rejected: drawing old shell positions for one frame while proxies/bounds have already shifted. Estimate: two scalar checks on render path, 0 B/frame.
+- [x] Re-ran source-only audits. DOD: targeted render guard scan confirms `Render` includes `_jobPhase == JobPhase.Shifting` and `_matrixUploadDirty`; forbidden-pattern audit stayed clean; scoped H-Phi counts remain unchanged. Alternative rejected: `dotnet` rebuild, forbidden by user. Estimate: verification only.
+- [ ] Compile proof [NOT RUN BY USER REQUEST]. DOD: no `dotnet` rebuild or response-file compile was executed in Loop 23. Alternative rejected: violating explicit "do not make dotnet rebuilds". Estimate: no runtime cost.
+
 ## Verification Ledger
 
-- Compile status: NOT RUN IN LOOP 22 BY USER REQUEST / PRIOR BLOCKER STILL RECORDED. Last attempted compile path could not resolve `Hecton8.Core.ref.dll`; Core rebuild failed in `SaveMasterHashV10.cs(237,26)` on missing `xxHash3`, outside Habitat/Outposts ownership.
+- Compile status: NOT RUN IN LOOP 23 BY USER REQUEST / PRIOR BLOCKER STILL RECORDED. Last attempted compile path could not resolve `Hecton8.Core.ref.dll`; Core rebuild failed in `SaveMasterHashV10.cs(237,26)` on missing `xxHash3`, outside Habitat/Outposts ownership.
 - Unity Console status: MCP unavailable; console/scene validation not accessible from this session.
 - GC proof: code audit only; hot Tick/Render path uses spans/native buffers and no LINQ/managed allocation.
 - Frame/VRAM proof: static estimate only; runtime profiling blocked by Unity MCP transport failure; no console/profiler capture is available from this session.

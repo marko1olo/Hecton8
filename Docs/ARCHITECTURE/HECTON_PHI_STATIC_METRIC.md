@@ -50,6 +50,11 @@ Runtime H-Phi excludes files under `Scripts/Editor` and strips `#if UNITY_EDITOR
 blocks before runtime scoring. All-source and editor-only counters remain in the
 JSON output for hygiene review, but they are not shipped-runtime score inputs.
 
+By default the full source scan counts raw source text. `-LexicalScrub` masks
+comments and string/char literals before counting, but it is experimental in the
+PowerShell implementation and is not a monitoring default until a compiled or
+cached analyzer replaces it.
+
 ## Coefficients
 
 The audit computes these coefficients from static text counters.
@@ -63,12 +68,13 @@ The audit computes these coefficients from static text counters.
 | `DataSovereignty` | `GlobalDataVaultRefs / (GlobalDataVaultRefs + NativeArrayRefs)` | Visible Vault/access ownership versus scattered native buffer references. |
 | `MemoryAlignment` | `StructLayoutAttributes / StructDeclarations` | Explicit layout coverage for structs. |
 | `BinarySafeRatio` | `BinaryBlittableSafe / StructDeclarations` | Explicit binary-safe coverage. This is diagnostic, not part of the base product. |
+| `AupPrecisionIntegrity` | `AupPrecisionSafe / (AupPrecisionSafe + AupPrecisionRisk)` | Double-safe AUP bridge usage versus legacy float/offset-risk surfaces. |
 
 The current base products are:
 
 ```text
 HPhiStaticNarrow = NarrowIntegration * ArchitecturalPurity * DataSovereignty * MemoryAlignment
-HPhiStaticRisk   = RiskIntegration   * ArchitecturalPurity * DataSovereignty * MemoryAlignment
+HPhiStaticRisk   = RiskIntegration   * ArchitecturalPurity * DataSovereignty * MemoryAlignment * AupPrecisionIntegrity
 ```
 
 All ratios return `0.0` when the denominator is zero. Scores are rounded to
@@ -95,6 +101,13 @@ The tool uses regex-based static counters. Important surfaces:
 - `StructDeclarations`: `struct Name`
 - `StructLayoutAttributes`: `[StructLayout(...)]`
 - `BinaryBlittableSafe`: `[BinaryBlittableSafe]`
+- `AupPrecisionSafe`: double-safe AUP surfaces such as
+  `CurrentTotalOffsetDouble`, `ToAbsoluteUniversePositionDouble3`,
+  `ToUniverseSpaceDouble3`, `ToRuntimeSpaceDouble3`, `FromAbsolutePosition`,
+  AUP `DistanceSq(...)`, and `ToRuntimeSpace(double3)`.
+- `AupPrecisionRisk`: qualified legacy AUP bridge calls, direct committed-offset
+  component reads, explicit `(float3)AUP` casts, and `Vector3` universe root
+  declarations.
 - `FindObjectCalls`: Unity scene/resource discovery calls such as
   `FindObjectOfType`, `FindAnyObjectByType`, `GameObject.Find`, and related
   variants
@@ -177,7 +190,7 @@ verification focused when generated projects contain package/vendor references.
 Use explicit budgets to prevent new Core graph debt:
 
 ```powershell
-Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -RequireCoreBuildGate -MaxCoreAsmdefDebtReferences 25 -MaxGeneratedProjectDebtReferences 10 -MaxSourceBackedBridgeDebtReferences 20 -MaxSourceBackedCompileBridgeDebtReferences 8 -MaxProjectReferenceReplacementDebtReferences 12
+Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -RequireCoreBuildGate -MaxCoreAsmdefDebtReferences 25 -MaxGeneratedProjectDebtReferences 10 -MaxSourceBackedBridgeDebtReferences 21 -MaxSourceBackedCompileBridgeDebtReferences 8 -MaxProjectReferenceReplacementDebtReferences 13
 ```
 The numbers above are the 2026-05-15 known baseline after removing three
 unused Core asmdef debt references and three unused source-backed bridge
