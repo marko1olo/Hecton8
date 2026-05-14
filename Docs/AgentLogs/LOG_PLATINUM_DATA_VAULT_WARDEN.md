@@ -68,6 +68,44 @@ Verification:
 Status:
 - VERIFIED VAULT LOCK - COMPILE TARGET BLOCKED BY MISSING Hecton8.Core.Memory.rsp.
 
+## 2026-05-15 - Owner Release and H-Phi DataVault Cleanup
+
+What was wrong:
+- `H8Memory.Release<T>` still had legacy ownerless overloads, and created arrays/raw pointers could become silent no-ops if the H8 tracker was unavailable.
+- DataVault still advertised false relocation intent through a dead relocation-record NativeArray allocation, a `Relocatable` descriptor flag, and handle comments that implied live relocation.
+- `GlobalDataVault.GetBuffer` converted `SystemID.Unknown` into `CoreDataVault`, hiding caller ownership.
+
+What was done:
+- Added owner-tagged immediate and job-deferred `H8Memory.Release<T>` overloads.
+- Marked legacy `Release<T>` and raw `FreeRaw(pointer, allocator)` overloads `Obsolete(error: true)`.
+- Converted external `H8Memory.Release` call sites to explicit owners and made missing owner/tracker proof throw `FatalMemoryException`.
+- Removed the dead `_lastRelocationRecords` allocation/disposal, stopped setting `H8AllocationFlags.Relocatable` on vault descriptors, and kept relocation record reads as an empty compatibility surface.
+- Changed DataVault comments from relocatable to generation-checked handles.
+- Made `GetBuffer` reject `SystemID.Unknown` requesters instead of laundering them through `CoreDataVault`.
+
+Cinematic Cheats used:
+- DataVault remains a cheap fragmentation/gap telemetry system. Live heap relocation stays out of gameplay and out of descriptor metadata.
+- H-Phi improvement is data-sovereignty cleanup, not a fake global score claim.
+
+Exact Microseconds saved:
+- 0 us steady-frame change.
+- Removed one persistent 64 * 32 byte relocation-record NativeArray allocation, approximately 2048 bytes plus allocator overhead, during DataVault initialization.
+- Disposal/free paths add one owner/tracker branch and use the existing owner lookup only on cold disposal/free.
+
+Verification:
+- No dotnet build/rebuild was run, per user order.
+- Static `rg` found no live compaction, memmove job, stress gate, thread fence, BurstCompile, or Stopwatch symbols in `GlobalDataVault.cs`.
+- Static `rg` found no `_lastRelocationRecords`, `RelocationRecordCapacity`, DataVault `H8AllocationFlags.Relocatable`, or relocatable-handle wording in the touched memory files.
+- Static `rg` found no external legacy `H8Memory.Release` or two-argument `H8Memory.FreeRaw` call shapes.
+- Static `rg` found no direct unknown DataVault requester; only internal fail-fast guards and `GlobalRegistry` unknown-return fallback remain.
+- DTO marker scan still finds v72 `PlayerKinematicStateDTO`, `InventoryShadowDTO`, `HabitatFloodStateDTO`, codec tail read/write, and manifest size/offset checks.
+- `git diff --check` passed with CRLF warnings only.
+- `Tools/Architecture/HectonPhiAudit.ps1 -Json` timed out after 120 s, so this pass uses targeted static evidence instead of claiming a global H-Phi score.
+- Prompt re-extraction from current `Docs/Tasks/CURRENT_BATCH.md` returned `PROMPT_NOT_FOUND`; current batch file appears replaced by other agent prompts.
+
+Status:
+- VERIFIED VAULT LOCK - NO DOTNET REBUILD PER USER ORDER - EXACT MEMORY RSP TARGET STILL ABSENT FROM PRIOR CHECK.
+
 ## 2026-05-14 - Save Version Tail Symmetry
 
 What was wrong:
