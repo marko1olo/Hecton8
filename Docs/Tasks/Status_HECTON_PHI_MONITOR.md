@@ -37,18 +37,19 @@ Task Count: 6
 - [x] Task 16: Overseer owner-blocked backlog | DOD: audit JSON now emits `TopNativeArrayFiles` and `OwnerBlockedDataVaultCandidates`; log/report list the top heavy files that need domain-owner migration | Rejected: editing cross-domain NativeArray owners without BufferID/SystemID/generation/disposal proof | Estimate: 0 us runtime
 - [x] Task 17: Signal boundary layout cleanup | DOD: added sequential layout metadata to the remaining public signal ring buffer and AUP shift transformer in `GlobalSignals.cs`; verified no public/internal structs in that file remain without nearby `StructLayout` | Rejected: touching concurrent PlayerBase signal sanitizer edits or mutating signal runtime logic | Estimate: 0 us runtime
 - [x] Task 18: Core native container/job layout cleanup | DOD: added sequential layout metadata to targeted Core native containers, allocation records, DataVault audit job, and numeric hardware profile; verified remaining Core missing-layout structs are managed-reference or marker/bridge-only | Rejected: fake layout proof on `FixedCharBuffer`, `GameStartContext`, `ServiceReboundEvent`, `PersistenceAssemblyMarker`, and `MacroDatabaseSignalBridge` | Estimate: 0 us runtime
+- [x] Task 19: Typed signal metric correction and compact summary mode | DOD: H-Phi audit now counts typed `GlobalSignals.Publish(...)` as synaptic SignalBus traffic and narrows `EventPublish` to legacy/static event publish surfaces; `-Summary` emits compact overseer JSON | Rejected: classifying typed signal wrappers as generic event debt and forcing full JSON parsing for every status check | Estimate: 0 us runtime
 
 ## Latest Static Scores
-- H-Phi runtime static narrow: `0.009266939`
-- H-Phi runtime static risk-adjusted: `0.000124428`
-- H-Phi all-source static narrow: `0.008252504`
-- H-Phi all-source static risk-adjusted: `0.000102379`
+- H-Phi runtime static narrow: `0.009244029`
+- H-Phi runtime static risk-adjusted: `0.000468052`
+- H-Phi all-source static narrow: `0.008233393`
+- H-Phi all-source static risk-adjusted: `0.000385356`
 - Narrow integration: `1.0`
-- Risk integration: `0.013427110`
-- Architectural purity: `0.994680851`
-- Data sovereignty: `0.018593597`
-- Memory alignment: `0.501059322`
-- Binary-safe ratio: `0.018538136`
+- Risk integration: `0.050632911`
+- Architectural purity: `0.994690265`
+- Data sovereignty: `0.018557276`
+- Memory alignment: `0.500794071`
+- Binary-safe ratio: `0.018528322`
 
 ## Current Verification Notes
 - `Tools/Architecture/HectonPhiAudit.ps1 -Json` was corrected to count actual Unity `Update`/`LateUpdate`/`FixedUpdate` method declarations, not comments or editor calls such as `serializedObject.Update()`.
@@ -67,6 +68,9 @@ Task Count: 6
 - Data Sovereignty metric was corrected to count real Vault API usage, not only literal `GlobalDataVault` text. This is a model correction, not a runtime performance claim.
 - Audit JSON now includes `CoreGraphAudit`: current Core asmdef debt references `28`, generated project debt references `10`.
 - Audit JSON now includes `TopNativeArrayFiles`, `OwnerBlockedDataVaultCandidates`, `DisposeCalls`, and editor file rows for overseer routing.
+- Audit script now supports `-Summary` for compact status/overseer output; `-CoreGraphOnly -Summary -Json` completes quickly and keeps the Core graph budget visible without full source scan cost.
+- Typed `GlobalSignals.Publish(...)` now counts as SignalBus traffic in the static model. Latest full summary: `SignalBusPush=308`, `EventPublish=48`, `RiskIntegration=0.050632911`, `RuntimeHPhiRisk=0.000468052`.
+- Narrow runtime H-Phi moved `0.009266939 -> 0.009244029` in the current tree because concurrent/static counts added `NativeArray` and source lines; this is not a runtime regression claim.
 - Remaining runtime `Find*` debt is concentrated in `GameBootstrapper` bootstrap handoff, `HectonUrpShadowBudgetGuard` cold light scan, and `VRSomaticRuntimeBootstrap` decoupled root lookup; one textual `HectonUnderwaterVisuals` hit is editor-only and excluded from runtime score.
 - `git diff --check` on touched Core layout files reports only LF/CRLF normalization warnings.
 - Unity Console / PlayMode / Profiler / GCMonitor: PENDING VERIFICATION.

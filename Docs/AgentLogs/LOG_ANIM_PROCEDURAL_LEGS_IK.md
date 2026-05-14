@@ -120,6 +120,26 @@ Scoped forbidden-pattern scan over touched IK/KCC/signal files returned no match
 Status:
 PENDING VERIFICATION. Unity import, Burst compiler, Play Mode, GCMonitor, profiler proof, and full compile proof remain absent.
 
+## 2026-05-15 Recursive QA Addendum 9
+
+What was wrong:
+The downstream target and KCC paths were finite-gated, but two H-Phi edge cases remained in the animation/raycast boundary. A finite zero-length stream quaternion could pass a finite-only check before inverse math, and corrupt camera/probe/origin scalar data could still degrade IK ray commands or proxy blends into unsafe fallbacks.
+
+What was done:
+`ContextualPhysicalIkMath` now normalizes finite Unity quaternions through the no-sqrt `rsqrt` path while preserving zero/invalid quaternions for rejection. `ContextualPhysicalIkRig` now requires quaternions to be finite and non-zero length before treating them as valid. `ContextualPhysicalIkRuntime` now sanitizes brace directions, camera/tool/hand/foot ray origins, foot step cache state, tool retraction/recoil origins, contact offsets, max-delta heights, collision distances, smoothing fallbacks, and brace proxy distances before writing commands or targets.
+
+Cinematic cheats used:
+No physical gait, no extra rays, no new solver. The system remains a visual fake: batched hip-origin rays, squared thresholds, triangle-wave foot lift, planar swim posture, small pelvis yaw, and Burst two-bone solve.
+
+Exact microseconds saved:
+Added cost is finite checks, length-squared checks, and existing `rsqrt` quaternion normalization inside existing paths, estimated below 1 us/frame on i3/MX350. Prevented cost is NaN/zero-quaternion inverse fallout, zero-origin ray pollution, bad step cache replay, and expensive visual correction/debugging.
+
+Verification:
+No dotnet rebuild was run per user instruction. `git diff --check -- Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkMath.cs Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRuntime.cs Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRig.cs` passed with CRLF warnings only. Scoped forbidden-pattern scan over lower-body/signal files returned no matches for `sqrMagnitude`, `math.sqrt`, `math.normalize`, `foreach`, `string.Format`, interpolation strings, `OnAnimatorIK`, `SetIK`, `ikPass`, `StartCoroutine`, `GameObject.Find`, `FindObjectOfType`, or `Camera.main`. MCP resource listing returned no Unity resources.
+
+Status:
+PENDING VERIFICATION. Unity import, Burst compiler, Play Mode, GCMonitor, profiler proof, and full compile proof remain absent.
+
 ## 2026-05-14 Recursive QA Addendum 6
 
 What was wrong:

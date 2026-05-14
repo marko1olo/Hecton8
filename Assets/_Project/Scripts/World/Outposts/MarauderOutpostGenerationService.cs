@@ -384,29 +384,74 @@ namespace Hecton8.World.Outposts
 
         public bool TryGetWfcGrid(out NativeArray<byte>.ReadOnly cells, out int3 dimensions, out int cellCount, out uint gridHash, out uint generationSequence)
         {
-            cells = WfcGrid.IsCreated ? WfcGrid.AsReadOnly() : default;
-            dimensions = _activeDimensions;
-            cellCount = WfcGrid.IsCreated ? math.min(ResolveActiveCellCount(), WfcGrid.Length) : 0;
-            gridHash = _activeGridHash;
             generationSequence = _generationSequence;
-            return _generated && WfcGrid.IsCreated && cellCount > 0;
+            if (!_generated || !WfcGrid.IsCreated)
+            {
+                cells = default;
+                dimensions = default;
+                cellCount = 0;
+                gridHash = 0u;
+                return false;
+            }
+
+            cellCount = math.min(ResolveActiveCellCount(), WfcGrid.Length);
+            if (cellCount <= 0)
+            {
+                cells = default;
+                dimensions = default;
+                gridHash = 0u;
+                return false;
+            }
+
+            cells = WfcGrid.AsReadOnly();
+            dimensions = _activeDimensions;
+            gridHash = _activeGridHash;
+            return true;
         }
 
         public bool TryGetShellMatrices(out NativeArray<float4x4>.ReadOnly matrices, out int matrixCount, out uint generationSequence)
         {
-            matrices = _shellMatrices.IsCreated ? _shellMatrices.AsReadOnly() : default;
-            matrixCount = _shellMatrices.IsCreated ? math.min(math.max(0, _matrixCount), _shellMatrices.Length) : 0;
             generationSequence = _generationSequence;
-            return _generated && _shellMatrices.IsCreated && matrixCount > 0;
+            if (!_generated || !_shellMatrices.IsCreated)
+            {
+                matrices = default;
+                matrixCount = 0;
+                return false;
+            }
+
+            matrixCount = math.min(math.max(0, _matrixCount), _shellMatrices.Length);
+            if (matrixCount <= 0)
+            {
+                matrices = default;
+                return false;
+            }
+
+            matrices = _shellMatrices.AsReadOnly();
+            return true;
         }
 
         public bool TryGetShellGraphicsBuffer(out GraphicsBuffer matrixBuffer, out GraphicsBuffer argsBuffer, out int instanceCount, out uint generationSequence)
         {
+            generationSequence = _generationSequence;
+            if (!_generated || _matrixBuffer == null || _argsBuffer == null)
+            {
+                matrixBuffer = null;
+                argsBuffer = null;
+                instanceCount = 0;
+                return false;
+            }
+
+            instanceCount = math.min(math.max(0, _matrixCount), _matrixBuffer.count);
+            if (instanceCount <= 0)
+            {
+                matrixBuffer = null;
+                argsBuffer = null;
+                return false;
+            }
+
             matrixBuffer = _matrixBuffer;
             argsBuffer = _argsBuffer;
-            instanceCount = _matrixBuffer != null ? math.min(math.max(0, _matrixCount), _matrixBuffer.count) : 0;
-            generationSequence = _generationSequence;
-            return _generated && _matrixBuffer != null && _argsBuffer != null && instanceCount > 0;
+            return true;
         }
 
         public void ApplyAupShift(float3 shiftMeters, uint shiftFrameId)

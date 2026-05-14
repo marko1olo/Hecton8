@@ -148,3 +148,17 @@ Scalability potential: Low/MX350 benefits from less ambiguous native container/a
 Hardware Impact: Runtime hot path cost is 0 us; attributes and using directives do not change executable logic. Exact gameplay microseconds remain unmeasured because rebuild/profiler work is forbidden by user order.
 
 Verification: No rebuild was run. Static checks completed: `git diff --check` on the touched Core layout files, a Core public/internal struct-layout scan, and compact `Tools/Architecture/HectonPhiAudit.ps1 -Json` score extraction. Remaining Core missing-layout structs are managed-reference or marker/bridge-only. Latest runtime H-Phi narrow is `0.009266939`, risk-adjusted is `0.000124428`, Data Sovereignty is `0.018593597`, memory alignment is `0.501059322`. Runtime Unity evidence remains pending.
+
+## 2026-05-15 Typed Signal Publish Metric Correction And Summary Mode
+
+Problem: The risk-adjusted integration model still treated typed `GlobalSignals.Publish(...)` calls as generic publish/event debt. That punished the exact signal lane wrapper used by this codebase and made `SignalBusPush=84` / `EventPublish=450` materially misleading. The audit also forced full JSON output for routine overseer status checks, adding parsing friction after every long scan.
+
+Solution: Updated `Tools/Architecture/HectonPhiAudit.ps1` so `SignalBusPush` includes both direct `SignalBus<T>.Push` and typed `GlobalSignals.Publish(...)` call sites. Narrowed `EventPublish` to explicit legacy/static event surfaces such as `HectonEventBus`, `WaterTransitionEvents`, `SuitDamageEvents`, `LocalizationEvents`, `FluidFeedbackEvents`, `VehicleCommandSignalBus`, `PhysicsDeterminismSignals`, and `*Events.Publish*`. Added `-Summary` output for compact score/count/CoreGraph/top-owner-blocked JSON.
+
+Rejected Alternatives: Counting every `Publish(...)` as event debt was rejected because it misclassifies typed signal wrappers as architectural noise. Counting every possible `*.Publish` as signal traffic was rejected because it would hide real static event surfaces. Editing signal runtime logic was rejected because this pass is metric-domain only and no Unity Console/profiler evidence exists.
+
+Scalability potential: Low/MX350 benefits from a more truthful map of where direct coupling remains; domain owners can now target real event/static/registry debt instead of "fixing" typed signals that already follow the lane. Middle/High/Ultra benefit when the corrected risk map preserves signal architecture while allowing richer downstream systems to consume decoupled events without being mislabeled as debt.
+
+Hardware Impact: Runtime hot path cost is 0 us; only the CLI audit script changed. Static audit cost for a full source pass remains high at about 169.4 seconds in this workspace. `-CoreGraphOnly -Summary -Json` provides a fast graph-only status path, but full H-Phi still needs a cached or compiled analyzer before CI gating.
+
+Verification: No rebuild was run. Static checks completed: `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json`, `git diff --check -- Tools/Architecture/HectonPhiAudit.ps1`, and `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json`. Latest full summary reports `SignalBusPush=308`, `EventPublish=48`, `RiskIntegration=0.050632911`, `RuntimeHPhiRisk=0.000468052`, and `RuntimeHPhiNarrow=0.009244029`. Runtime Unity evidence remains pending.

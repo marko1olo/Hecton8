@@ -122,6 +122,14 @@ Rejected Alternatives: Dotnet rebuild was explicitly rejected by user instructio
 Scalability potential: Low keeps stable cheap KCC output for disabled/non-XR lower-body IK. Middle keeps two-bone stride prediction finite. High/Ultra can use velocity lead, swim posture, haptics, and secondary IK polish without amplifying corrupt input state.
 Hardware Impact: Added scalar finite checks are in existing player kinematic paths and estimated well below 1 us/frame on i3/MX350; no allocations, no new jobs, no new rays.
 
+## Decision 16: Quaternion/raycast command finite boundary
+
+Problem: `ContextualPhysicalIkApplyJob` rejected non-finite quaternions, but a finite zero-length stream rotation could still pass the check and reach `math.inverse`. The ground detection job also had defensive gaps where corrupt camera/probe/origin values could collapse command origins to zero or let NaN scalar inputs affect hand/foot proxy blends.
+Solution: Normalized finite Unity quaternions through the shared no-sqrt path, preserved zero/invalid quaternions for explicit rejection, upgraded quaternion validators to require finite non-zero length, sanitized brace directions and camera/tool/hand/foot ray origins, sanitized foot step cache state, and clamped contact offsets, max-delta heights, collision distances, and brace proxy distances before ray-response math.
+Rejected Alternatives: Dotnet rebuild was explicitly rejected by user instruction. Logging bad quaternions or ray inputs was rejected as GC/noise. Adding extra ray probes, a gait planner, or physical leg authority was rejected because this is an H-Phi boundary defect in the existing visual fake.
+Scalability potential: Low/MX350 keeps the same two foot rays and cheap hand rays without zero-origin command pollution. Middle keeps stable two-bone lower-body presence. High gets cleaner velocity-led foot placement and hand retraction. Ultra can spend saved trust on secondary/muscle visual overkill without amplifying corrupt stream rotations.
+Hardware Impact: Added work is branch/finite/length-squared checks and existing `rsqrt` quaternion normalization, estimated below 1 us/frame on i3/MX350 for the standard player rig. No allocations, no public API changes, no new jobs, no new ray lanes.
+
 ## OMEGA POLISH CHANGES
 
 Problem: Final anti-bloat pass required checking the lower-body implementation for honest simulation, unbounded math, GC leaks, and out-of-domain edits.

@@ -273,3 +273,28 @@ Verification:
 - `git diff --check` on scanner/UI/doc edits: pass, line-ending warnings only.
 - `rg Camera.main`, `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, and `.text =` over scanner/UI/target files: no matches.
 - `dotnet build` / rebuild: NOT RUN by explicit user order.
+
+## Follow-Up Hardening Pass 9
+
+What was wrong:
+- The previous scanner H-Phi tier fix still performed timed registry probes from helpers reached by active scanner/UI ticks.
+- Focused scanner acquisition read `GlobalRegistry.Player` while resolving the held-scan camera pose.
+
+What was done:
+- `ScannerTool` now consumes `ScalabilityEvents` through `IScalabilityChangedEventListener`, queues tier candidates, and accepts them after the existing 2s hysteresis.
+- `ToolDiegeticDisplayController` now consumes the same scalability event lane and removed its per-display tier probe countdown.
+- Scanner player-camera acquisition now uses a cached `IPlayerRuntimeContext` refreshed on Awake, OnSpawn, and OnEquip.
+
+Cinematic Cheats used:
+- Tier presentation remains a controlled lie: low hardware gets percentage/fallback after stable evidence; High/Ultra keeps richer scanner RT visual scalar without polling a global bus.
+
+Exact Microseconds saved:
+- Verified exact microseconds: PENDING PROFILER.
+- Active tier registry polling: 2 Hz -> event-only after cold initialization.
+- Focused acquisition: one `GlobalRegistry.Player` read removed per focused resample.
+
+Verification:
+- `git diff HEAD --check` and `git diff --cached --check` on scanner/UI edits: pass.
+- Scanner/UI/target banned-pattern scan for `Camera.main`, direct `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, and `.text =`: no matches.
+- Direct registry reads remaining in scanner-owned files are cold lifecycle seed reads only.
+- `dotnet build` / rebuild: NOT RUN by explicit user order.

@@ -218,8 +218,13 @@ namespace Hecton8.Core
             while (_completeSnapshotCursor < signals.Length)
             {
                 PrologueCompleteSignal signal = signals[_completeSnapshotCursor++];
-                if (signal.SourceHash != ManualOverrideSourceHash)
+                if (signal.SourceHash != ManualOverrideSourceHash ||
+                    signal.Phase != PrologueCompleteSignal.PhaseOceanHandoff ||
+                    (signal.Flags & PrologueCompleteSignal.FlagForceWhiteout) == 0 ||
+                    !math.isfinite(signal.WhiteoutHoldSeconds))
+                {
                     continue;
+                }
 
                 snapshot = new PrologueCompleteSnapshot(
                     signal.Frame,

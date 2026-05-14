@@ -21,8 +21,13 @@ namespace Hecton8.QA.Headless
         private const string AgentName = "HEADLESS_STRESS_FRACTURE_BOT";
         private const string RuntimeRootName = "[HeadlessStressFractureBot]";
         private const string CommandLineArg = "-h8fracturetest";
+        private const string CommandLineFramesArg = "-h8fractureFrames";
+        private const string CommandLineScratchMegabytesArg = "-h8fractureScratchMb";
+        private const string CommandLineStartupTimeoutSecondsArg = "-h8fractureStartupTimeoutSeconds";
         private const string EnvironmentFlagName = "H8_FRACTURE_TEST";
         private const string EnvironmentFramesName = "H8_FRACTURE_FRAMES";
+        private const string EnvironmentScratchMegabytesName = "H8_FRACTURE_SCRATCH_MB";
+        private const string EnvironmentStartupTimeoutSecondsName = "H8_FRACTURE_STARTUP_TIMEOUT_SECONDS";
         private const string FlagRelativePath = "Temp/H8_FRACTURE_TEST.flag";
         private const string ResultRelativePath = "Docs/AgentLogs/HeadlessStressFractureResult_HEADLESS_STRESS_FRACTURE_BOT.json";
         private const string BlackboxRelativePath = "Docs/AgentLogs/Dump_HEADLESS_STRESS_FRACTURE_BOT.bin";
@@ -30,15 +35,24 @@ namespace Hecton8.QA.Headless
         private const int BlackboxFrameCapacity = 300;
         private const int BlackboxEntrySizeBytes = 64;
         private const int DefaultTargetFrames = 50000;
+        private const int BytesPerMegabyte = 1024 * 1024;
+        private const int DefaultScratchMegabytes = 50;
+        private const int MinScratchMegabytes = 8;
+        private const int MaxScratchMegabytes = 256;
+        private const int DefaultStartupTimeoutSeconds = 60;
+        private const int MinStartupTimeoutSeconds = 5;
+        private const int MaxStartupTimeoutSeconds = 600;
+        private const int ActivationSourceNone = 0;
+        private const int ActivationSourceCommandLine = 1;
+        private const int ActivationSourceEnvironment = 2;
+        private const int ActivationSourceFlagFile = 3;
         private const int WarmupFrames = 120;
         private const int AupShiftIntervalFrames = 15;
         private const int ChunkUnloadIntervalFrames = 900;
         private const int ChunkLeakGraceFrames = 180;
-        private const int ScratchBlockBytes = 50 * 1024 * 1024;
         private const long LeakToleranceBytes = 1024L * 1024L;
         private const double FlagMaxAgeSeconds = 10800.0;
         private const double FlagFutureSkewToleranceSeconds = 300.0;
-        private const double StartupTimeoutSeconds = 60.0;
         private const float TimeDilationScalar = 100f;
         private const float StallThresholdMilliseconds = 16f;
         private const float NativeBytesToMegabytes = 1f / (1024f * 1024f);
@@ -78,6 +92,9 @@ namespace Hecton8.QA.Headless
         private string _blackboxPath;
         private string _h8MemoryDumpPath;
         private int _targetFrames;
+        private int _scratchBlockBytes;
+        private int _startupTimeoutSeconds;
+        private int _activationSource;
         private int _blackboxCursor;
         private int _extremeFrame;
         private int _phaseFrame;
@@ -246,7 +263,7 @@ namespace Hecton8.QA.Headless
                 return;
 
             CacheServices();
-            if (!_baselineCaptured && Time.realtimeSinceStartupAsDouble - _startupTime > StartupTimeoutSeconds)
+            if (!_baselineCaptured && Time.realtimeSinceStartupAsDouble - _startupTime > _startupTimeoutSeconds)
                 FailAndQuit(1, TimeoutHash, TimeoutToken);
         }
 
@@ -272,18 +289,20 @@ namespace Hecton8.QA.Headless
         private async Awaitable WaitForDispatcherAndStart(CancellationToken cancellationToken)
         {
             _startupTime = Time.realtimeSinceStartupAsDouble;
-            while (GlobalRegistry.Dispatcher == null && Time.realtimeSinceStartupAsDouble - _startupTime <= StartupTimeoutSeconds)
+            CacheServices();
+            while (_dispatcher == null && Time.realtimeSinceStartupAsDouble - _startupTime <= _startupTimeoutSeconds)
             {
                 if (cancellationToken.IsCancellationRequested || _finished)
                     return;
 
                 await AwaitableDebtMonitor.NextFrameAsync(cancellationToken);
+                CacheServices();
             }
 
             if (cancellationToken.IsCancellationRequested || _finished)
                 return;
 
-            if (GlobalRegistry.Dispatcher == null)
+            if (_dispatcher == null)
             {
                 FailAndQuit(1, TimeoutHash, TimeoutToken);
                 return;
@@ -306,7 +325,19 @@ namespace Hecton8.QA.Headless
         {
             string[] args = global::System.Environment.GetCommandLineArgs();
             int frameFallback = TryReadEnvironmentInt(EnvironmentFramesName, DefaultTargetFrames);
-            _targetFrames = math.max(1, TryReadInt(args, "-h8fractureFrames", frameFallback));
+            int scratchFallbackMegabytes = TryReadEnvironmentInt(EnvironmentScratchMegabytesName, DefaultScratchMegabytes);
+            int startupTimeoutFallbackSeconds = TryReadEnvironmentInt(EnvironmentStartupTimeoutSecondsName, DefaultStartupTimeoutSeconds);
+            _activationSource = ResolveActivationSourceStatic();
+            _targetFrames = math.max(1, TryReadInt(args, CommandLineFramesArg, frameFallback));
+            int scratchMegabytes = math.clamp(
+                TryReadInt(args, CommandLineScratchMegabytesArg, scratchFallbackMegabytes),
+                MinScratchMegabytes,
+                MaxScratchMegabytes);
+            _scratchBlockBytes = scratchMegabytes * BytesPerMegabyte;
+            _startupTimeoutSeconds = math.clamp(
+                TryReadInt(args, CommandLineStartupTimeoutSecondsArg, startupTimeoutFallbackSeconds),
+                MinStartupTimeoutSeconds,
+                MaxStartupTimeoutSeconds);
             _resultPath = ResolveProjectPath(ResultRelativePath);
             _blackboxPath = ResolveProjectPath(BlackboxRelativePath);
             _h8MemoryDumpPath = ResolveProjectPath(H8MemoryDumpRelativePath);
@@ -323,7 +354,7 @@ namespace Hecton8.QA.Headless
             SignalBus<SectorResidencyHydratedSignal>.EnsureInitialized();
             SignalBus<SwarmDispersedSignal>.EnsureInitialized();
             _staticHPhiMetric = ComputeStaticHPhiMetric();
-            Debug.LogWarning(FormatStaticHPhiLog(_staticHPhiMetric, _targetFrames));
+            Debug.LogWarning(FormatStaticHPhiLog(_staticHPhiMetric, _targetFrames, scratchMegabytes, _startupTimeoutSeconds));
         }
 
         private void ForceHeadlessRuntimePolicy()
@@ -486,7 +517,7 @@ namespace Hecton8.QA.Headless
             MemorySnapshot snapshot = CaptureMemorySnapshot();
             if (snapshot.NativeBytes > _chunkUnloadNativeBytesBaseline + LeakToleranceBytes ||
                 snapshot.H8Bytes > _chunkUnloadH8BytesBaseline + LeakToleranceBytes ||
-                snapshot.DataVaultBytes > _chunkUnloadDataVaultBytesBaseline + ScratchBlockBytes)
+                snapshot.DataVaultBytes > _chunkUnloadDataVaultBytesBaseline + _scratchBlockBytes)
             {
                 FailAndQuit(1, LeakHash, NativeLeakToken);
                 return;
@@ -502,7 +533,7 @@ namespace Hecton8.QA.Headless
                 _scratchBaselineH8Bytes = H8Memory.TotalBytes;
                 _scratchBaselineH8AllocationCount = H8Memory.ActiveAllocationCount;
                 _scratchBlock = H8Memory.Allocate<byte>(
-                    ScratchBlockBytes,
+                    _scratchBlockBytes,
                     SystemID.External,
                     Allocator.Persistent,
                     NativeArrayOptions.UninitializedMemory);
@@ -809,6 +840,12 @@ namespace Hecton8.QA.Headless
                     WriteInvariant(writer, _extremeFrame);
                     writer.Write(",\"targetFrames\":");
                     WriteInvariant(writer, _targetFrames);
+                    writer.Write(",\"activationSource\":");
+                    WriteInvariant(writer, _activationSource);
+                    writer.Write(",\"scratchBlockBytes\":");
+                    WriteInvariant(writer, _scratchBlockBytes);
+                    writer.Write(",\"startupTimeoutSeconds\":");
+                    WriteInvariant(writer, _startupTimeoutSeconds);
                     writer.Write(",\"aupShiftCount\":");
                     WriteInvariant(writer, _shiftSequence);
                     writer.Write(",\"originShiftCallbacks\":");
@@ -911,14 +948,21 @@ namespace Hecton8.QA.Headless
 
         private static bool ShouldRunStatic()
         {
+            return ResolveActivationSourceStatic() != ActivationSourceNone;
+        }
+
+        private static int ResolveActivationSourceStatic()
+        {
             if (HasCommandLineArg(CommandLineArg))
-                return true;
+                return ActivationSourceCommandLine;
 
             string value = global::System.Environment.GetEnvironmentVariable(EnvironmentFlagName);
             if (string.Equals(value, "1", StringComparison.Ordinal) || string.Equals(value, "true", StringComparison.OrdinalIgnoreCase))
-                return true;
+                return ActivationSourceEnvironment;
 
-            return HasFreshFlagFile(ResolveProjectPathStatic(FlagRelativePath));
+            return HasFreshFlagFile(ResolveProjectPathStatic(FlagRelativePath))
+                ? ActivationSourceFlagFile
+                : ActivationSourceNone;
         }
 
         private static bool HasFreshFlagFile(string path)
@@ -1268,9 +1312,9 @@ namespace Hecton8.QA.Headless
             return count;
         }
 
-        private static string FormatStaticHPhiLog(float metric, int targetFrames)
+        private static string FormatStaticHPhiLog(float metric, int targetFrames, int scratchMegabytes, int startupTimeoutSeconds)
         {
-            return "[H-PHI_STATIC] " + AgentName + " value=" + metric.ToString("F6", CultureInfo.InvariantCulture) + " model=runtime_aup_risk_adjusted requestedBoids=10000 frames=" + targetFrames.ToString(CultureInfo.InvariantCulture);
+            return "[H-PHI_STATIC] " + AgentName + " value=" + metric.ToString("F6", CultureInfo.InvariantCulture) + " model=runtime_aup_risk_adjusted requestedBoids=10000 frames=" + targetFrames.ToString(CultureInfo.InvariantCulture) + " scratchMb=" + scratchMegabytes.ToString(CultureInfo.InvariantCulture) + " startupTimeoutSec=" + startupTimeoutSeconds.ToString(CultureInfo.InvariantCulture);
         }
 
         private static float TicksToMilliseconds(long ticks)
