@@ -35,6 +35,13 @@ namespace Hecton8.Gameplay.Loot.Contracts
             }
 
             AbsoluteUniversePosition lootAup = EntityAups[index];
+            if (PullRadiusSq <= LootMagnetConstants.AupCellSizeSq &&
+                IsOutsideAdjacentAupCells(in lootAup, in PlayerAup))
+            {
+                EntityFlags[index] = flags & ~(LootEntityFlags.Pulling | LootEntityFlags.LowTierSnap);
+                return;
+            }
+
             float3 toPlayer = ResolveDeltaToPlayer(in lootAup, in PlayerAup);
             float distSq = math.lengthsq(toPlayer);
             if (!math.isfinite(distSq))
@@ -130,6 +137,25 @@ namespace Hecton8.Gameplay.Loot.Contracts
             return new float3((float)delta.x, (float)delta.y, (float)delta.z);
         }
 
+        private static bool IsOutsideAdjacentAupCells(
+            in AbsoluteUniversePosition lootAup,
+            in AbsoluteUniversePosition playerAup)
+        {
+            return IsAxisOutsideAdjacent(playerAup.GridX, lootAup.GridX) ||
+                   IsAxisOutsideAdjacent(playerAup.GridY, lootAup.GridY) ||
+                   IsAxisOutsideAdjacent(playerAup.GridZ, lootAup.GridZ);
+        }
+
+        private static bool IsAxisOutsideAdjacent(long playerGrid, long lootGrid)
+        {
+            if (playerGrid == lootGrid)
+                return false;
+
+            return playerGrid > lootGrid
+                ? playerGrid - 1L > lootGrid
+                : lootGrid - 1L > playerGrid;
+        }
+
         private static AbsoluteUniversePosition OffsetAup(in AbsoluteUniversePosition aup, float3 offsetMeters)
         {
             double cellSize = LootMagnetConstants.AupCellSizeMeters;
@@ -137,7 +163,27 @@ namespace Hecton8.Gameplay.Loot.Contracts
                 ((double)aup.GridX * cellSize) + aup.LocalX + offsetMeters.x,
                 ((double)aup.GridY * cellSize) + aup.LocalY + offsetMeters.y,
                 ((double)aup.GridZ * cellSize) + aup.LocalZ + offsetMeters.z);
-            return AbsoluteUniversePosition.FromAbsolutePosition(absolute);
+            return BuildAupFromAbsolute(absolute);
+        }
+
+        private static AbsoluteUniversePosition BuildAupFromAbsolute(double3 absolutePosition)
+        {
+            double cellSize = LootMagnetConstants.AupCellSizeMeters;
+            long gridX = (long)math.floor(absolutePosition.x / cellSize);
+            long gridY = (long)math.floor(absolutePosition.y / cellSize);
+            long gridZ = (long)math.floor(absolutePosition.z / cellSize);
+            double originX = gridX * cellSize;
+            double originY = gridY * cellSize;
+            double originZ = gridZ * cellSize;
+            return new AbsoluteUniversePosition
+            {
+                GridX = gridX,
+                GridY = gridY,
+                GridZ = gridZ,
+                LocalX = (float)(absolutePosition.x - originX),
+                LocalY = (float)(absolutePosition.y - originY),
+                LocalZ = (float)(absolutePosition.z - originZ)
+            };
         }
     }
 }

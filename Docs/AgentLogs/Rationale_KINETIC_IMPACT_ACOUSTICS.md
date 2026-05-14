@@ -152,3 +152,22 @@ Solution: Reapplied the renderer/smoke patch, verified the direct tap write by s
 Rejected Alternatives: Declaring Unity or local compile green from the earlier historical pass after the file overwrite was detected, or killing unrelated active dotnet work from other agents to force the lock clear.
 Scalability potential: No runtime effect.
 Hardware Impact: No runtime effect.
+
+## LOOP 8 DUPLICATE IMPACT ADMISSION H-PHI PASS
+Problem: The high-speed kinetic duplicate guard remembered only the immediately previous packet. Same-frame interleaving such as A/B/A could pass the second A, creating duplicate thuds, duplicate echo taps, and duplicate tinnitus impulse work.
+Solution: Added an 8-entry fixed duplicate ring beside the existing last-packet fast path. Each entry stores frame, signature, and an explicit valid byte so cold zeroed entries cannot suppress frame 0 or rare zero-signature packets. `TryHandleHighSpeedImpactSignal` now finite-checks first, computes the FNV signature once, and passes that precomputed value to both duplicate check and record.
+Rejected Alternatives: A managed `HashSet`/`List` would violate zero-GC and add resizing risk; widening the global signal packet would cross contract ownership; only raising `KineticImpactSignalScanLimit` would increase admission work without solving A/B/A duplication.
+Scalability potential: Low tier avoids repeated baked fallback clip triggers. Middle avoids repeated thud events. High avoids duplicate binaural echo taps. Ultra spends saved event budget on actual material color/distortion instead of replaying the same packet.
+Hardware Impact: Adds at most 8 struct comparisons per candidate under the existing 32-signal cap, estimated under 2 us worst-case scan on i3/MX350. Saves one 10-field FNV mix per accepted impact and prevents entire duplicate event/echo render windows when producers replay the same packet.
+
+Problem: Invalid packets were hashed before finite rejection.
+Solution: Moved `ImpactSpeed` and `LostKineticEnergy` finite guards before signature generation. Invalid producer spam is discarded without FNV work and without entering the duplicate history.
+Rejected Alternatives: Recording invalid packets for dedupe would contaminate admission state and mask producer bugs.
+Scalability potential: Same behavior across Low/Middle/High/Ultra; bad packets stay cheap and silent.
+Hardware Impact: Saves all duplicate-signature hashing on invalid packets; no memory growth and 0 B/frame.
+
+Problem: Compile verification cannot be repeated under the current user directive.
+Solution: Performed source readback, `git diff --check`, fixed-string smoke-anchor scans, and scoped forbidden-API scans only. Status remains PENDING VERIFICATION until Unity Editor compile/console logs are available.
+Rejected Alternatives: Running another dotnet build/rebuild would violate the user's explicit instruction; killing external dotnet/Unity processes would risk other agents' work.
+Scalability potential: No runtime effect.
+Hardware Impact: No runtime effect.

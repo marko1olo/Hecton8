@@ -25,6 +25,13 @@ namespace Hecton8.Editor.ProceduralGen
         private const int KelpCount = 100;
         private const int RockCount = 50;
         private const int MaxAllowedLod2Triangles = 149;
+        private const float Lod0ScreenHeight = 0.6f;
+        private const float Lod1ScreenHeight = 0.15f;
+        private const float Lod2ScreenHeight = 0.04f;
+        private const float Lod0FadeWidth = 0.08f;
+        private const float Lod1FadeWidth = 0.08f;
+        private const float Lod2FadeWidth = 0.04f;
+        private const float TransformEpsilonSq = 0.000001f;
 
         [MenuItem("HECTON-8/Bio-Forge/Bake Safe Shallows Assets", false, 172)]
         public static void BakeSafeShallowsAssets()
@@ -624,6 +631,16 @@ namespace Hecton8.Editor.ProceduralGen
                    Approximately(actual.a, expected.a);
         }
 
+        private static bool Approximately(Vector3 actual, Vector3 expected)
+        {
+            return (actual - expected).sqrMagnitude <= TransformEpsilonSq;
+        }
+
+        private static bool Approximately(Quaternion actual, Quaternion expected)
+        {
+            return Quaternion.Angle(actual, expected) <= 0.01f;
+        }
+
         private static void ValidateAtlasImporter(string path, AtlasKind kind, ref int failures)
         {
             TextureImporter importer = AssetImporter.GetAtPath(path) as TextureImporter;
@@ -722,6 +739,8 @@ namespace Hecton8.Editor.ProceduralGen
             }
 
             LOD[] lods = lodGroup.GetLODs();
+            ValidatePrefabTransformContract(path, prefab.transform, ref failures);
+            ValidateLodGroupContract(path, lodGroup, lods, ref failures);
             ValidateLodContract(path, lods, ref failures);
             ValidatePrefabMeshReferences(path, familyFolder, lods, ref failures);
 
@@ -752,6 +771,8 @@ namespace Hecton8.Editor.ProceduralGen
                     failures++;
                     Debug.LogError($"[ShallowsBioForgeBatchBaker] Renderer hot-path flags invalid at {path}.");
                 }
+
+                ValidateRendererTransformContract(path, renderer.transform, ref failures);
             }
 
             Mesh lod2Mesh = ResolveFirstMesh(lods[2].renderers);
@@ -783,6 +804,52 @@ namespace Hecton8.Editor.ProceduralGen
                 Debug.LogError($"[ShallowsBioForgeBatchBaker] Runtime script component found at {path}.");
             }
 
+        }
+
+        private static void ValidatePrefabTransformContract(string path, Transform root, ref int failures)
+        {
+            if (!Approximately(root.localPosition, Vector3.zero) || !Approximately(root.localRotation, Quaternion.identity) || !Approximately(root.localScale, Vector3.one))
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] Root transform contract failed at {path}.");
+            }
+        }
+
+        private static void ValidateLodGroupContract(string path, LODGroup lodGroup, LOD[] lods, ref int failures)
+        {
+            if (lodGroup.fadeMode != LODFadeMode.CrossFade || !lodGroup.animateCrossFading)
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] LOD crossfade mode contract failed at {path}.");
+            }
+
+            if (!Approximately(lods[0].screenRelativeTransitionHeight, Lod0ScreenHeight) ||
+                !Approximately(lods[1].screenRelativeTransitionHeight, Lod1ScreenHeight) ||
+                !Approximately(lods[2].screenRelativeTransitionHeight, Lod2ScreenHeight) ||
+                !Approximately(lods[0].fadeTransitionWidth, Lod0FadeWidth) ||
+                !Approximately(lods[1].fadeTransitionWidth, Lod1FadeWidth) ||
+                !Approximately(lods[2].fadeTransitionWidth, Lod2FadeWidth))
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] LOD distance/fade contract failed at {path}.");
+            }
+        }
+
+        private static void ValidateRendererTransformContract(string path, Transform rendererTransform, ref int failures)
+        {
+            if (!string.Equals(rendererTransform.name, "LOD0", StringComparison.Ordinal) &&
+                !string.Equals(rendererTransform.name, "LOD1", StringComparison.Ordinal) &&
+                !string.Equals(rendererTransform.name, "LOD2", StringComparison.Ordinal))
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] LOD child name contract failed at {path}. Child={rendererTransform.name}.");
+            }
+
+            if (!Approximately(rendererTransform.localRotation, Quaternion.identity) || !Approximately(rendererTransform.localScale, Vector3.one))
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] LOD child transform contract failed at {path}.");
+            }
         }
 
         private static void ValidatePrefabMeshReferences(string path, string familyFolder, LOD[] lods, ref int failures)
@@ -845,6 +912,14 @@ namespace Hecton8.Editor.ProceduralGen
             {
                 failures++;
                 Debug.LogError($"[ShallowsBioForgeBatchBaker] Rock collider offset mismatch at {path}. DeltaSq={delta.sqrMagnitude:0.000000}.");
+            }
+
+            if (!string.Equals(colliders[0].transform.name, "Collision_LOD2", StringComparison.Ordinal) ||
+                !Approximately(colliders[0].transform.localRotation, Quaternion.identity) ||
+                !Approximately(colliders[0].transform.localScale, Vector3.one))
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] Rock collider transform contract failed at {path}.");
             }
         }
 

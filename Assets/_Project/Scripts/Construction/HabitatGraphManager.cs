@@ -292,6 +292,7 @@ namespace Hecton8.Construction
         private int _lastProcessedModuleStressSignalFrame = -1;
         private GraphicsBuffer _moduleStressBuffer;
         private IAudioService _audioService;
+        private AbyssalFluidDecalManager _fluidDecals;
 
         internal HabitatGraphManager(int initialModuleCapacity)
         {
@@ -424,6 +425,7 @@ namespace Hecton8.Construction
             ClearVisualLinks();
             DisposeNativeBuffers();
             _audioService = null;
+            _fluidDecals = null;
             _graph.Dispose();
         }
 
@@ -439,6 +441,7 @@ namespace Hecton8.Construction
             _nodeCount = 0;
             _edgeCount = 0;
             ClearModuleStressState();
+            _runtimeSeaLevelY = ResolveRuntimeSeaLevelY();
             BaseDegradationSystem.BeginRuptureSync();
 
             if (modules == null || modules.Count <= 0)
@@ -682,7 +685,7 @@ namespace Hecton8.Construction
             TryPublishLowTierAnalyticalStressFeedback(center, stress01, scalabilityTier);
         }
 
-        private static float ResolveHighTierAnalyticalModuleStress(ModuleRecord module, BaseModule baseModule, float moduleIntegrity)
+        private float ResolveHighTierAnalyticalModuleStress(ModuleRecord module, BaseModule baseModule, float moduleIntegrity)
         {
             float depthMeters = ResolveAnalyticalModuleDepthMeters(module, baseModule);
             float depthScale = ResolveAnalyticalDepthScale(depthMeters);
@@ -3499,7 +3502,7 @@ namespace Hecton8.Construction
             if (_emittedRuptureEdgeVfxLookup.Contains(linkId))
                 return;
 
-            AbyssalFluidDecalManager fluidDecals = Hecton8.Core.GlobalRegistry.AbyssalFluidDecals;
+            AbyssalFluidDecalManager fluidDecals = ResolveFluidDecalManager();
             if (fluidDecals == null || _emittedRuptureEdgeVfxKeys.Count >= _emittedRuptureEdgeVfxKeys.Capacity)
                 return;
 
@@ -3514,6 +3517,15 @@ namespace Hecton8.Construction
             fluidDecals.RegisterRuptureFluid(midpointRuntime, radiusScale);
             _emittedRuptureEdgeVfxKeys.Add(linkId);
             _emittedRuptureEdgeVfxLookup.Add(linkId);
+        }
+
+        private AbyssalFluidDecalManager ResolveFluidDecalManager()
+        {
+            if (_fluidDecals != null)
+                return _fluidDecals;
+
+            _fluidDecals = Hecton8.Core.GlobalRegistry.AbyssalFluidDecals;
+            return _fluidDecals;
         }
 
         private void EvaluateAnchorReachability()

@@ -82,8 +82,6 @@ namespace Hecton8.Core.Memory
         Vault = 1 << 2,
         Alias = 1 << 3,
         Freed = 1 << 4,
-        // Reserved compatibility bit. Live DataVault descriptors do not set relocation ownership.
-        Relocatable = 1 << 5,
         SubAllocatorRoot = 1 << 6
     }
 
@@ -718,11 +716,6 @@ namespace Hecton8.Core.Memory
                 Flags = (ushort)flags,
                 State = (byte)H8BlockState.Occupied
             });
-        }
-
-        private static void UnregisterPointer(void* pointer)
-        {
-            UnregisterPointer(pointer, SystemID.Unknown, requireOwnerMatch: false);
         }
 
         private static void UnregisterPointer(void* pointer, SystemID requester)

@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Core.Signals;
+using Hecton8.UI.Diegetic.Contracts;
 using Hecton8.World;
 using TMPro;
 using Unity.Collections;
@@ -22,7 +23,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Diegetic Tooltip System")]
-    public sealed class DiegeticTooltipSystem : MonoBehaviour, ITickable, IUpdatable, IRenderable, IGlobalRegistryHotSwapListener
+    public sealed class DiegeticTooltipSystem : MonoBehaviour, ILateFrameTickable, IRenderable, IGlobalRegistryHotSwapListener
     {
         private const int MaxGlyphCount = 96;
         private const int MaxIconCount = 1;
@@ -32,14 +33,14 @@ namespace Hecton8.UI
         private const int AsciiCacheSize = 128;
         private const int UvTableCapacity = 128;
         private const int BlackBoxCapacity = 300;
-        private const uint InputSchemeHashKeyboardMouse = 0x4B424D21u;
-        private const uint InputSchemeHashGamepad = 0x47504144u;
-        private const uint InputSchemeHashSteamDeck = 0x5354444Bu;
-        private const uint InputSchemeHashXRTouch = 0x58525443u;
-        private const int KeyboardInteractGlyphIndex = 1;
-        private const int GamepadInteractGlyphIndex = 12;
-        private const int SteamDeckInteractGlyphIndex = 14;
-        private const int XRInteractGlyphIndex = 18;
+        private const uint InputSchemeHashKeyboardMouse = DiegeticTooltipInputSchemeHashes.KeyboardMouse;
+        private const uint InputSchemeHashGamepad = DiegeticTooltipInputSchemeHashes.Gamepad;
+        private const uint InputSchemeHashSteamDeck = DiegeticTooltipInputSchemeHashes.SteamDeck;
+        private const uint InputSchemeHashXRTouch = DiegeticTooltipInputSchemeHashes.XRTouch;
+        private const int KeyboardInteractGlyphIndex = DiegeticTooltipGlyphIndices.KeyboardInteract;
+        private const int GamepadInteractGlyphIndex = DiegeticTooltipGlyphIndices.GamepadInteract;
+        private const int SteamDeckInteractGlyphIndex = DiegeticTooltipGlyphIndices.SteamDeckInteract;
+        private const int XRInteractGlyphIndex = DiegeticTooltipGlyphIndices.XRInteract;
         private const float MinimumGlyphScale = 0.0001f;
         private const float IconScaleMultiplier = 1.06f;
         private const float IconVerticalBias = -0.002f;

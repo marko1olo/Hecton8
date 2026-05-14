@@ -180,3 +180,19 @@ What was done -> Added a 150-frame hysteresis band to bridge low-tier policy, wi
 Cinematic Cheats used -> Low-tier proxy hydration remains the deliberate fake; hysteresis prevents the fake from flickering against high-resolution readiness.
 Exact Microseconds saved -> No direct saving; adds roughly 1-2 us during hydration wait frames and avoids wasted transition churn from unstable readiness.
 Verification -> No dotnet rebuild/response-file compile was run per user constraint. Targeted scan confirms the hysteresis resolver is present; forbidden-pattern scan returned no hits; `git diff --check` reports line-ending warnings only.
+
+## 2026-05-15 - Loop 27 Low-Tier Policy Probe Cadence
+
+What was wrong -> The bridge still read global tier policy every hydration wait frame after adding hysteresis.
+What was done -> Tier policy is now sampled at a 30-frame cadence, while critical memory pressure uses the existing `MemoryPressureSignal` snapshot lane for immediate proxy downshift.
+Cinematic Cheats used -> Low-tier proxy hydration remains the cheap fake; critical memory pressure buys immediate fake water readiness instead of high-res wait.
+Exact Microseconds saved -> Estimated 1-3 us on most hydration wait frames by avoiding every-frame registry policy reads.
+Verification -> No dotnet rebuild/response-file compile was run per user constraint. Targeted scan confirms `MemoryPressureSignal` probing and 30-frame policy cadence; forbidden-pattern scan returned no hits; `git diff --check` reports no whitespace errors.
+
+## 2026-05-15 - Loop 28 Dev-Skip Unlock Idempotency
+
+What was wrong -> Dev-skip handoff could publish input unlock immediately and then publish the same unlock again from `finally`.
+What was done -> Added a run-local `_inputLockReleased` latch so unlock is published once unless the first publish fails.
+Cinematic Cheats used -> None; this is signal-lane cleanup.
+Exact Microseconds saved -> One `SystemPauseSignal` publish on dev skip, estimated 3-8 us and one signal-lane slot.
+Verification -> No dotnet rebuild/response-file compile was run per user constraint. Targeted scan confirms the unlock latch; forbidden-pattern scan returned no hits; `git diff --check` reports no whitespace errors.

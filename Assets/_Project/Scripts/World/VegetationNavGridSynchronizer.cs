@@ -214,8 +214,9 @@ namespace Hecton8.World
                     out navPassabilityCellSize);
             }
 
-            int smoothingPortalLookAhead = ResolveAbyssalPathPortalLookAhead(GlobalRegistry.ScalabilityTier);
-            int smoothingDdaSampleCap = ResolveAbyssalPathDdaSampleCap(GlobalRegistry.ScalabilityTier, abyssalPathSmoothingMaxSamples);
+            HectonQualityTier scalabilityTier = GlobalRegistry.ScalabilityTier;
+            int smoothingPortalLookAhead = ResolveAbyssalPathPortalLookAhead(scalabilityTier);
+            int smoothingDdaSampleCap = ResolveAbyssalPathDdaSampleCap(scalabilityTier, abyssalPathSmoothingMaxSamples);
             EnsureAbyssalPathTelemetry();
             _lastAbyssalPathPortalLookAhead = smoothingPortalLookAhead;
             _lastAbyssalPathMaxSamples = smoothingDdaSampleCap;

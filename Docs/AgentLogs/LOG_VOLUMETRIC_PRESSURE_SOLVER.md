@@ -160,3 +160,19 @@ Exact microseconds saved after follow-up 19:
 - Identity-free, no-worldpoint damage packets skip the 64-module scan entirely.
 - Identity-free world-point packets avoid runtime `EntityId` hashing and graph-record lookup until nearest fallback actually needs module positions.
 - Estimated 2-6 us saved per 64-module signal scan on i3/MX350-class hardware; 0 B/frame, no shader cost, no visual regression to High/Ultra localized deformation.
+
+Follow-up upgrade 20:
+- Reduced H-Phi registry coupling in `HabitatGraphManager`.
+- Scalability tier is sampled once per hydrodynamic stress pass and passed through analytical stress, graph flood, module stress upload, low-tier feedback, and compromised-module signal paths.
+- Runtime sea level is sampled once per rebuild/stress pass, then reused by depth fallback helpers instead of resolving atmosphere through `GlobalRegistry` inside module loops.
+- Hull stress audio routing caches the first available `IAudioService`; if unavailable, existing `ProceduralAudioEvents.RaiseHullStressSignal` fallback still fires.
+- Rupture edge fluid decals cache the first available `AbyssalFluidDecalManager`; null service still fails closed as before.
+- Static checks: managed-offender scans found no `string.Format`, `.ToString()`, interpolation, `foreach`, or LINQ offenders in `HabitatGraphManager.cs`; mesh mutation scan found no owned `Mesh.vertices` writes; exact shader `normalize()`/`sqrt()` scan produced no matches; `git diff --check` reports only repository CRLF normalization warnings.
+- Rebuild policy: no `dotnet` rebuild, no Unity rebuild, and no H-Phi global audit were run because the user explicitly prohibited dotnet rebuilds and the global score belongs to the H-Phi monitor.
+- Local H-Phi spot check for `HabitatGraphManager.cs`: `GlobalRegistry=4`, `SignalBus=2`, `GlobalSignals=1`, `NativeArray=81`, `GraphicsBuffer=3`, `FindCalls=0`, `UpdateMethods=0`.
+
+Exact microseconds saved after follow-up 20:
+- Per-module missing-depth fallback avoids repeated atmosphere service lookups after the rebuild/stress-pass sea-level sample.
+- Repeated hull groan events avoid registry audio lookup after warm cache.
+- Repeated severed-edge rupture VFX avoids registry fluid-decal lookup after warm cache.
+- Estimated 2-8 us saved on i3/MX350 stress-heavy frames; 0 B/frame, no shader cost, no change to High/Ultra visual deformation.

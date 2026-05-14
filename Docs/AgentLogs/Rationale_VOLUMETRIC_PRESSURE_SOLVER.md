@@ -225,3 +225,11 @@ Solution: Added a target-identity gate and an early false return for unresolvabl
 Rejected Alternatives: Leaving identity resolution unconditional, or splitting nearest fallback back into a second pass. Both waste CPU in damage-signal bursts and add no visual improvement.
 Scalability potential: Low/MX350 pays less CPU for pressure/impact spam while preserving crease response. Mid/High/Ultra keep exact/id priority and localized shader bowing when producers provide identity.
 Hardware Impact: Saves runtime `EntityId` hashing and graph lookup work for identity-free world-point signals; estimated 2-6 us per 64-module signal scan on i3/MX350-class hardware, with 0 B/frame and no shader cost.
+
+## Follow-Up Correction - H-Phi Registry Coupling Reduction
+
+Problem: The habitat stress owner still had avoidable hot/event-path `GlobalRegistry` reads for scalability tier, atmosphere sea level, audio, and rupture fluid decals. That weakens local H-Phi coupling and burns low-end CPU on repeated service lookups.
+Solution: Sampled scalability tier once per hydrodynamic stress pass and threaded it through private analytical/module stress methods. Cached runtime sea level once per rebuild/stress pass. Cached audio and rupture-fluid decal services after first successful lookup while preserving fallback signal/event behavior when a service is unavailable.
+Rejected Alternatives: Keeping registry reads inside per-module helpers, adding a new public dependency-injection interface in the middle of the batch, or claiming a project-wide H-Phi score without the H-Phi monitor. Per-module registry reads waste CPU; new public APIs violate interface immutability; fake global scores violate evidence rules.
+Scalability potential: Low/MX350 gets fewer service-locator reads during pressure/flood stress passes and rupture events. Mid/High/Ultra keep the same deformation, audio, and fluid decal behavior while spending saved CPU on shader pressure polish.
+Hardware Impact: Saves repeated atmosphere lookup on missing-depth module loops and repeated audio/decal lookups after warm cache; estimated 2-8 us on i3/MX350 stress-heavy frames, 0 B/frame, no shader cost. Local H-Phi evidence after the pass: `GlobalRegistry=4`, `SignalBus=2`, `GlobalSignals=1`, `NativeArray=81`, `GraphicsBuffer=3`, `FindCalls=0`, `UpdateMethods=0` in `HabitatGraphManager.cs`.

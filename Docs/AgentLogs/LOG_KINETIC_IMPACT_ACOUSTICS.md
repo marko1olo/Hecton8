@@ -109,3 +109,38 @@ Verification:
 - Final `Hecton8.Core.csproj` rerun after reapplying the patch failed with `CS2012` because `Unity.RenderPipelines.Universal.Runtime.dll` was locked by another process.
 - Unity MCP resources are empty/unavailable in this context.
 - `Assembly-CSharp.csproj` and `Assembly-CSharp-Editor.csproj` builds timed out; spawned dotnet build-server/processes were shut down or stopped. Unity compile remains PENDING VERIFICATION.
+
+## 2026-05-15 - DSP_ACOUSTIC_LEAD - Loop 8 Duplicate Impact Admission H-Phi Pass
+Status: PENDING VERIFICATION
+
+What was wrong:
+- Same-frame high-speed collision dedupe remembered only the immediately previous packet, so interleaved A/B/A producer output could play the same impact twice.
+- Accepted impacts computed the FNV signature twice: once for duplicate check and once when recording the last packet.
+- Invalid impact packets were hashed before finite rejection.
+
+What was done:
+- `PlayerCriticalProceduralAudioRenderer` now owns an 8-entry fixed `HighSpeedImpactDuplicateEntry` ring plus the existing last-packet fast path.
+- Each duplicate-ring entry has a valid byte so zeroed cold entries cannot suppress a legitimate frame 0 or zero-signature packet.
+- `TryHandleHighSpeedImpactSignal` finite-checks before hashing, computes `ResolveHighSpeedImpactSignature(in signal)` once, and records that precomputed signature on both low-tier and procedural accepted paths.
+- `AdvancedAcousticsSmokeTester` now asserts the fixed ring, precomputed-signature record call, and valid-entry guard.
+
+Cinematic cheats used:
+- Duplicate handling is packet-signature based, not a spatial contact solver.
+- The ring is fixed at 8 entries because the scan cap is 32 and the purpose is repeated packet suppression, not global collision history.
+- Low tier remains one baked clip; high/ultra get fewer false duplicate thuds/echo taps inside the same DSP lane.
+
+Exact microseconds saved:
+- Saves one 10-field FNV mix on every accepted impact.
+- Saves all signature hashing for invalid speed/energy packets.
+- Adds at most 8 struct comparisons per scanned signal, estimated under 2 us worst-case for the 32-signal cap on i3/MX350.
+- Prevents full duplicate thud/clang/echo render windows when a producer repeats A/B/A in one frame; runtime allocation delta remains 0 B/frame.
+
+Verification:
+- `git diff --check -- Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs` passed except CRLF normalization warnings.
+- `rg -n -F "KineticImpactDuplicateHistoryCapacity = 8"` found renderer and smoke tester anchors.
+- `rg -n -F "RecordHighSpeedImpactSignal(signal.Frame, signalSignature)"` found low-tier/procedural record calls and the smoke anchor.
+- `rg -n -F "entry.Valid != 0"` found renderer and smoke tester anchors.
+- `rg -n -F "IsDuplicateHighSpeedImpactSignal(in signal)"` returned no matches.
+- `rg -n -F "PlayClipAtPoint" Assets/_Project/Scripts/Audio Assets/_Project/Scripts/Gameplay Assets/_Project/Scripts/Core` returned no matches.
+- Targeted owned-file scan found only pre-existing cold/editor `Debug.Log`/`ToString()`/assertion text, not new hot-path allocation.
+- Dotnet build/rebuild was not run by explicit user order. Unity compile remains PENDING VERIFICATION until Editor console/MCP validation is available.

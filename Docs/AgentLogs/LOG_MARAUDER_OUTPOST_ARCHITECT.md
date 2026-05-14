@@ -229,6 +229,37 @@ Verification:
 
 Status: PENDING VERIFICATION. Static source audits pass; compile/runtime proof remains pending.
 
+## 2026-05-15 - WFC Outpost Loop 17 H-Phi Signal And Layout Pressure
+
+What was wrong:
+- Generated WFC outpost completion still used the `GlobalSignals.Publish(in signal)` wrapper in owned source, which registers as monolithic publish traffic in the H-Phi audit.
+- The three Burst outpost job structs were unmanaged/job-only in practice but did not carry explicit layout metadata.
+- The user explicitly forbade `dotnet` rebuilds again.
+
+What was done:
+- Replaced the generated-signal wrapper call with `GlobalSignals.InitializeAllQueues()` plus direct `SignalBus<WfcOutpostGeneratedSignal>.Push(in signal)`.
+- Added `[StructLayout(LayoutKind.Sequential)]` to `MarauderOutpostSolveJob`, `MarauderOutpostMatrixExtractionJob`, and `MarauderOutpostAupShiftJob`.
+- Re-ran source-only H-Phi, forbidden construct, publish-wrapper, and diff hygiene audits without any `dotnet` rebuild.
+
+Cinematic Cheats used:
+- No physical simulation change. The shell stays native WFC data plus GPU indirect rendering; the generation signal remains a bounded typed lane handoff.
+- Layout evidence improves static native/job confidence without adding runtime simulation, object proxies, or visual work.
+
+Exact Microseconds saved:
+- Removes one wrapper call on rare generation replay/heartbeat signal emission; estimated below 0.1 us per generated signal.
+- Struct layout attributes are metadata-only with no expected frame cost.
+- Hot Tick/Render allocation remains 0 B/frame by source audit.
+
+Verification:
+- Scoped H-Phi before/after counts: `SignalBusPush 0->1`, `GlobalSignalsPublish 1->0`, `GenericPublishCalls 1->0`, `StructLayoutAttributes 3->6` in owned outpost/contract files.
+- Full H-Phi after-patch scan: `SignalBusPush=80`, `EventPublish=447`, `StructLayoutAttributes=932`, `MemoryAlignment=0.495217853`, `HPhiStaticRisk=1.3482E-05`.
+- Forbidden construct audit: PASS; no managed LINQ/random/string interpolation, shell `Instantiate`, `BaseGenerator`, `math.pow`, telemetry modulo, hardcoded shift epsilon, or global publish wrapper remains in owned outpost files.
+- `git diff --check`: PASS with repository LF/CRLF warning only.
+- `dotnet` rebuilds/response-file compiles: NOT RUN by explicit user request.
+- Unity MCP console/profiler: unavailable from this session.
+
+Status: PENDING VERIFICATION. Static source audits pass; compile/runtime proof remains pending.
+
 ## 2026-05-14 - WFC Outpost Loop 14 Finite Scalar Payload Guard
 
 What was wrong:

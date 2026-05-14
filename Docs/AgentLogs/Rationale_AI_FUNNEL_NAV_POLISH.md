@@ -171,3 +171,9 @@ Solution: Record the audit timeout as attempted evidence and do not claim a proj
 Rejected Alternatives: Running dotnet rebuilds was rejected by explicit user instruction. Editing the central H-Phi report without a completed audit was rejected because it would create fake evidence.
 Scalability potential: Domain-local navigation hardening remains valid even without a fresh global score; project-wide H-Phi measurement belongs to a successful audit run or the H-Phi monitor owner.
 Hardware Impact: None; the timed-out audit was offline tooling only.
+
+Problem: The abyssal path scheduler read `GlobalRegistry.ScalabilityTier` twice in the same schedule pass, adding redundant registry surface to the navigation H-Phi pressure.
+Solution: Cache the tier once in a local `HectonQualityTier` and pass that primitive to both Math LOD resolvers.
+Rejected Alternatives: Moving tier ownership into the Burst job was rejected. Adding a new service dependency for one cached primitive was rejected as overengineering.
+Scalability potential: Low/Middle/High/Ultra behavior is unchanged; the scheduler now has one authoritative tier sample for both lookahead and DDA budgets.
+Hardware Impact: Removes one global property read per abyssal path schedule. Exact microseconds are below meaningful profiler resolution, but the H-Phi registry surface is cleaner.

@@ -226,13 +226,14 @@ What was done:
 - Added 64-bit complete-length proof for surface threat and voxel threat grids.
 - Changed corrupt threat voxel payloads to fail as max threat while preserving missing-grid and out-of-coverage behavior as zero threat.
 - Preserved predator fear outside the surface heatmap by returning `max(voxelThreat, predatorFearThreat)`.
+- Cached `GlobalRegistry.ScalabilityTier` once per abyssal path schedule before resolving lookahead and DDA Math LOD.
 
 Cinematic Cheats used:
 - Corrupt feeder proof becomes conservative route pressure instead of running expensive recovery or pretending the path is clear.
 - Low tier pays fixed cheap guards and reciprocal math; High/Ultra keep route fidelity for valid payloads and can spend saved cycles on smoothing budgets.
 
 Exact Microseconds saved:
-- PENDING RUNTIME PROFILER DATA. Static improvement is removal of four raw divide sites from `NativeAStarJob` plus exact rsqrt normalization for conduit alignment; predator-fear retention adds no loop because the sample was already computed.
+- PENDING RUNTIME PROFILER DATA. Static improvement is removal of four raw divide sites from `NativeAStarJob`, exact rsqrt normalization for conduit alignment, and one fewer registry property read per abyssal path schedule; predator-fear retention adds no loop because the sample was already computed.
 
 Verification:
 - Static scan passed for `NativeAStarJob`: no `math.normalize`, `math.length(`, `math.distance(`, `.normalized`, or raw `/`.

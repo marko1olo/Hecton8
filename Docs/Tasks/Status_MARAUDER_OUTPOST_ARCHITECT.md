@@ -126,9 +126,17 @@ State: PENDING VERIFICATION
 - [x] Re-ran source-only audits. DOD: `git diff --check` passed with repository LF/CRLF warning only; scoped forbidden audit passed; targeted audit found no hardcoded `new float3(0.0001f)`, no combined finite/tiny-shift early return, no old unsafe mesh-args ternary, and no stale pending-shift guard. Alternative rejected: `dotnet` rebuild, forbidden by user. Estimate: verification only.
 - [ ] Compile proof [NOT RUN BY USER REQUEST]. DOD: no `dotnet` rebuild or response-file compile was executed in Loop 16. Alternative rejected: violating explicit "do not make dotnet rebuilds". Estimate: no runtime cost.
 
+### Loop 17 - H-Phi Signal And Layout Pressure
+
+- [x] Re-read state, rationale, Unity MCP workflow, signal/native/zero-GC/telemetry mandates, domain boundary, and `CURRENT_BATCH.md`. DOD: `CURRENT_BATCH.md` still returns `PROMPT_NOT_FOUND`; persisted task files remain authoritative. Alternative rejected: acting from compressed chat state. Estimate: disk reads only.
+- [x] Replaced legacy generated-signal wrapper traffic in owned source. DOD: `PublishGeneratedSignalForHandle` now prewarms queues through `GlobalSignals.InitializeAllQueues()` and pushes `WfcOutpostGeneratedSignal` through `SignalBus<WfcOutpostGeneratedSignal>.Push(in signal)` directly. Alternative rejected: leaving `GlobalSignals.Publish(in signal)` as monolithic publish traffic, or bypassing queue initialization. Estimate: removes one wrapper call on rare generated-signal replay/heartbeat path; 0 B/frame.
+- [x] Added layout evidence to Burst job payload structs. DOD: `MarauderOutpostSolveJob`, `MarauderOutpostMatrixExtractionJob`, and `MarauderOutpostAupShiftJob` now declare `[StructLayout(LayoutKind.Sequential)]`, raising owned-file layout coverage from 3/6 to 6/6 structs. Alternative rejected: treating Burst job layout as implicit proof for H-Phi. Estimate: metadata-only runtime impact.
+- [x] Re-ran source-only H-Phi and forbidden-pattern audits. DOD: scoped counts changed `SignalBusPush 0->1`, `GlobalSignalsPublish 1->0`, `GenericPublishCalls 1->0`, `StructLayoutAttributes 3->6`; full H-Phi after-patch scan reports `SignalBusPush=80`, `EventPublish=447`, `StructLayoutAttributes=932`, `MemoryAlignment=0.495217853`, `HPhiStaticRisk=1.3482E-05`; forbidden hot-path and publish-wrapper audits are clean; `git diff --check` passed with repository LF/CRLF warnings only. Alternative rejected: `dotnet` rebuild, forbidden by user. Estimate: verification only.
+- [ ] Compile proof [NOT RUN BY USER REQUEST]. DOD: no `dotnet` rebuild or response-file compile was executed in Loop 17. Alternative rejected: violating explicit "do not make dotnet rebuilds". Estimate: no runtime cost.
+
 ## Verification Ledger
 
-- Compile status: NOT RUN IN LOOP 16 BY USER REQUEST / PRIOR BLOCKER STILL RECORDED. Last attempted compile path could not resolve `Hecton8.Core.ref.dll`; Core rebuild failed in `SaveMasterHashV10.cs(237,26)` on missing `xxHash3`, outside Habitat/Outposts ownership.
+- Compile status: NOT RUN IN LOOP 17 BY USER REQUEST / PRIOR BLOCKER STILL RECORDED. Last attempted compile path could not resolve `Hecton8.Core.ref.dll`; Core rebuild failed in `SaveMasterHashV10.cs(237,26)` on missing `xxHash3`, outside Habitat/Outposts ownership.
 - Unity Console status: MCP unavailable; console/scene validation not accessible from this session.
 - GC proof: code audit only; hot Tick/Render path uses spans/native buffers and no LINQ/managed allocation.
 - Frame/VRAM proof: static estimate only; runtime profiling blocked by Unity MCP transport failure; no console/profiler capture is available from this session.

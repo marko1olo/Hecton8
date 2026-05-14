@@ -102,9 +102,13 @@ Task Count: 15
 - [x] Threat payload completeness guards | DOD: surface threat and voxel threat grids now require complete native lengths with 64-bit expected-size checks before indexed sampling; rejected treating undersized payloads as valid open water; estimate 6 us.
 - [x] Predator fear retention | DOD: predator fear is preserved when a point is outside the 2D surface threat grid; rejected dropping species-specific fear just because the surface heatmap lacks coverage; estimate 4 us.
 
+## Loop 14 - H-Phi Registry Surface Trim
+
+- [x] Scheduler tier cache | DOD: `GlobalRegistry.ScalabilityTier` is read once per abyssal path schedule and passed as a primitive to both Math LOD resolvers; rejected duplicate registry surface in the scheduling path; estimate 2 us.
+
 ## Verification
 
-- [x] Static scan | PASS: `StringPullPathJob`, `NativeAStarJob`, and `TryResolveAbyssalNavNodeCandidate` regions have no `math.normalize`, `math.length(`, `math.distance(`, `.normalized`, or raw `/` matches after loop 13.
+- [x] Static scan | PASS: `StringPullPathJob`, `NativeAStarJob`, and `TryResolveAbyssalNavNodeCandidate` regions have no `math.normalize`, `math.length(`, `math.distance(`, `.normalized`, or raw `/` matches after loop 14.
 - [x] Diff hygiene | PASS: `git diff --check` passed for edited funnel/scheduler/status/log files; only LF-to-CRLF working-copy warnings were emitted.
 - [x] Static H-Phi audit | ATTEMPTED: `Tools/Architecture/HectonPhiAudit.ps1 -Json` timed out after 120 seconds under current repo load; no score claimed from this pass.
 - [x] Compile check | BLOCKED BY DEPENDENCY: bounded no-reference `dotnet build Hecton8.Core.csproj --no-restore /m:1 /nr:false /p:BuildProjectReferences=false` completed with 63 unrelated errors in `VRAMEnforcer`, `VoxelDeltaProcessor`, `SealedDoor`, `BinaryLayoutManifest`, and `HardwareTierDetector`; none were reported in `VegetationFlowFieldIntegrator.cs`, `VegetationNavGridSynchronizer.cs`, or `HectonMapMagicVegetationBridge.cs`.

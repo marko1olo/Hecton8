@@ -267,3 +267,23 @@ Solution: Verification stayed source-only with `git diff --check`, broad forbidd
 Rejected Alternatives: Running response-file compiles through `dotnet` was rejected because it violates the explicit user instruction.
 Scalability potential: Static coverage remains across Low 5x5x3 and full 10x10x5 topology paths; measured runtime data remains pending.
 Hardware Impact: Verification only.
+
+## LOOP 17 H-PHI SIGNAL AND LAYOUT PRESSURE
+
+Problem: The owned outpost source still emitted generation completion through `GlobalSignals.Publish(in signal)`, which the H-Phi audit treats as monolithic publish traffic even though the wrapper forwards to the typed WFC lane.
+Solution: Preserve initialization behavior with `GlobalSignals.InitializeAllQueues()` and push directly through `SignalBus<WfcOutpostGeneratedSignal>.Push(in signal)`.
+Rejected Alternatives: Leaving the wrapper was rejected because it keeps static event-pressure debt in the Habitat outpost source. Calling `SignalBus<WfcOutpostGeneratedSignal>.Push` without queue prewarm was rejected because it could initialize the lane with default capacity before `GlobalSignals` configures the WFC lane.
+Scalability potential: Low/Middle/High/Ultra keep the same generated-signal replay and heartbeat policy; the communication surface is now visibly typed and bounded for late consumers.
+Hardware Impact: Rare generated-signal publish path removes one wrapper call while keeping the same native queue. Estimated runtime gain is below 0.1 us per generated signal; the real gain is reduced H-Phi synaptic/event pressure with 0 B/frame.
+
+Problem: The three Burst job structs were unmanaged in practice but lacked explicit layout evidence, leaving static memory-alignment scoring weaker than the code's actual usage.
+Solution: Added `[StructLayout(LayoutKind.Sequential)]` to `MarauderOutpostSolveJob`, `MarauderOutpostMatrixExtractionJob`, and `MarauderOutpostAupShiftJob`.
+Rejected Alternatives: Treating Burst/IJob usage as implicit proof was rejected because H-Phi and the signal mandate require explicit layout evidence for payloads crossing native/job boundaries.
+Scalability potential: Low keeps the same 5x5x3 job data; Middle/High/Ultra keep 10x10x5 extraction and AUP shift behavior. Layout evidence does not change tier math or visual budget.
+Hardware Impact: Metadata-only change with no expected frame cost. It improves static memory-alignment evidence; scoped owned-file layout coverage changed from 3/6 to 6/6 structs.
+
+Problem: The user forbade dotnet rebuilds, while full H-Phi evidence was still useful for this loop.
+Solution: Verification used source-only scans. Scoped outpost counts changed `SignalBusPush 0->1`, `GlobalSignalsPublish 1->0`, `GenericPublishCalls 1->0`, and `StructLayoutAttributes 3->6`. Full project H-Phi after-patch scan completed in 110-119 seconds and reported `SignalBusPush=80`, `EventPublish=447`, `StructLayoutAttributes=932`, `MemoryAlignment=0.495217853`, and `HPhiStaticRisk=1.3482E-05`.
+Rejected Alternatives: Running response-file compiles through `dotnet` was rejected because it violates the active instruction. Updating the global H-Phi report was rejected because this agent owns Habitat/Outpost logs, not the project-wide audit report.
+Scalability potential: Static H-Phi pressure is improved without increasing runtime work on cheap devices or consuming visual-overkill budget on high-end devices.
+Hardware Impact: Verification-only. Runtime path remains one typed signal on rare generation/replay/heartbeat and zero shell GameObjects.
