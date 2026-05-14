@@ -99,3 +99,15 @@ Rejected Alternatives: Re-running only `Tools/AcousticValidator.py --verify-only
 Scalability potential: Tests are offline only. Runtime remains one fixed binary payload and one read-map contract.
 
 Hardware Impact: No runtime cost. The test prevents a corrupt or shape-drifted LUT from reaching low-end hardware unnoticed.
+
+## Decision 8 - Clean Remote Isolation
+
+Problem: Local `main` contained an unrelated encyclopedia commit above `origin/main`; pushing local HEAD would have bundled non-Sabine work.
+
+Solution: Create an index-only Git commit from `origin/main` using only the Sabine status, rationale, and log file blobs, then push that clean commit to `origin/main`.
+
+Rejected Alternatives: Pushing local `main` was rejected because it would publish unrelated files. Resetting local `main` was rejected because it would destroy another agent's local history.
+
+Scalability potential: No runtime change. This is repository hygiene only.
+
+Hardware Impact: None.

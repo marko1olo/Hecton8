@@ -48,3 +48,4 @@ Status: ACOUSTICS BAKED / UNITY RUNTIME PENDING VERIFICATION
 - `PYTHONDONTWRITEBYTECODE=1 python Tools/AcousticValidator.py --verify-only` returned `STATUS: ACOUSTICS BAKED` after test addition.
 - No `AcousticValidator.pyc` or `test_acoustic_validator.pyc` residue after the added test pass.
 - Regression test commit created and pushed: `b87d7e17` (`Add Sabine LUT regression tests`) to `origin/main`.
+- Clean isolated Sabine-only Unity-boundary commit pushed: `3b26e6af` to `origin/main`; unrelated local encyclopedia commit was not pushed.

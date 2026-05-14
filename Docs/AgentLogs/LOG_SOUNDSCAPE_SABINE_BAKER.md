@@ -27,6 +27,7 @@ Additional assurance added `Tools/test_acoustic_validator.py` to test determinis
 Regression test result: `PYTHONDONTWRITEBYTECODE=1 python Tools/test_acoustic_validator.py` ran `5` tests in `0.261s` on final rerun and passed.
 Post-test verify-only result: `STATUS: ACOUSTICS BAKED`.
 Regression test commit `b87d7e17` was pushed to `origin/main`.
+Clean isolated Sabine-only Unity-boundary commit `3b26e6af` was pushed to `origin/main`; unrelated local encyclopedia history was not pushed.
 
 Edge cases:
 Small locker error `0.00000439%`.
