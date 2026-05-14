@@ -260,3 +260,55 @@ Verification:
 - Static grep over IK runtime/job/shader scope found no `math.sqrt`, `math.normalize`, managed array creation, `foreach`, `string.Format`, `.ToString()`, `Debug.Log`, Unity Physics casts, `SkinnedMeshRenderer`, `renderer.material`, `Camera.main`, `GlobalRegistry.Get`, `GameObject.Find`, or `FindObject`.
 - `git diff --check` and `git diff --cached --check` on touched code/docs exit 0.
 - Runtime status remains pending until Unity Editor import, shader compile, play-mode behavior, GC, and profiler evidence exist.
+
+## 2026-05-15T01:51+04:00
+
+Status: PENDING VERIFICATION. Continued lifecycle/rebind audit. No `dotnet` rebuild/compile was run.
+
+What was wrong:
+- `SeedSpineFromOwner()` rewrote native bone matrices without explicitly dirtying GPU upload state.
+- Lifecycle force-complete did not run the normal invalid-telemetry blackbox check.
+
+What was done:
+- Reseed now sets `_gpuUploadDirty = true`.
+- Reseed resets `_motionIntentFrame` so fallback intent can refresh on the next tick.
+- Forced lifecycle completion now checks `TelemetryHasInvalidFrame()` and dumps the blackbox once if needed.
+
+Cinematic cheats used:
+- None. This is lifecycle integrity around the existing GPU matrix presentation.
+
+Exact microseconds saved:
+- Hot path: 0 us.
+- Lifecycle cost: one telemetry flag read only on force-complete, plus free dirty-bit assignment after the existing 20-matrix reseed loop.
+- Prevented fault: stale GPU bone upload or missed blackbox dump on bind/enable/shutdown boundaries.
+
+Verification:
+- Static grep over IK runtime/job/shader scope found no `math.sqrt`, `math.normalize`, managed array creation, `foreach`, `string.Format`, `.ToString()`, `Debug.Log`, Unity Physics casts, `SkinnedMeshRenderer`, `renderer.material`, `Camera.main`, `GlobalRegistry.Get`, `GameObject.Find`, or `FindObject`.
+- `git diff --check` and `git diff --cached --check` on touched code/docs exit 0; unstaged output is only LF-to-CRLF warnings for docs.
+- Runtime status remains pending until Unity Editor import, shader compile, play-mode behavior, GC, and profiler evidence exist.
+
+## 2026-05-15T02:00+04:00
+
+Status: PENDING VERIFICATION. Continued shader scalar contract audit. No `dotnet` rebuild/compile was run.
+
+What was wrong:
+- Shader deformation scalars were published from serialized floats without finite positive sanitization.
+- Runtime code can assign NaN or invalid values despite inspector `[Range]` metadata.
+
+What was done:
+- Added `SanitizePositiveFinite()`.
+- Published safe `_H8LeviathanSegmentLength`.
+- Normalized `_H8LeviathanTailWhip01` using a safe positive tail-whip duration.
+
+Cinematic cheats used:
+- None. Existing GPU deformation and tail-whip visual fake remain unchanged for valid data.
+
+Exact microseconds saved:
+- No frame-time saving claimed.
+- Upload path adds two finite/clamp checks, estimated under 0.1 us on upload frames.
+- Prevented fault: NaN or zero-duration shader deformation state.
+
+Verification:
+- Static grep over IK runtime/job/shader scope found no `math.sqrt`, `math.normalize`, managed array creation, `foreach`, `string.Format`, `.ToString()`, `Debug.Log`, Unity Physics casts, `SkinnedMeshRenderer`, `renderer.material`, `Camera.main`, `GlobalRegistry.Get`, `GameObject.Find`, or `FindObject`.
+- `git diff --check` and `git diff --cached --check` on touched code/docs exit 0; unstaged output is only LF-to-CRLF warnings.
+- Runtime status remains pending until Unity Editor import, shader compile, play-mode behavior, GC, and profiler evidence exist.

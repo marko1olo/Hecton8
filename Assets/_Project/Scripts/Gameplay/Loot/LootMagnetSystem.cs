@@ -10,6 +10,7 @@ using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Hecton8.Gameplay.Loot
 {
@@ -20,6 +21,7 @@ namespace Hecton8.Gameplay.Loot
         private const uint TelemetryFaultFlag = 1u;
 
         private static LootMagnetSystem _bootstrapRuntime;
+        private static bool _sceneLoadedHooked;
 
         [Header("Pull")]
         [SerializeField] private int maxLootEntities = LootMagnetConstants.DefaultMaxEntities;
@@ -66,18 +68,36 @@ namespace Hecton8.Gameplay.Loot
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetBootstrapState()
         {
+            if (_sceneLoadedHooked)
+                SceneManager.sceneLoaded -= HandleSceneLoaded;
+
             _bootstrapRuntime = null;
+            _sceneLoadedHooked = false;
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void EnsureRuntimeInstalled()
         {
+            EnsureSceneLoadedHook();
             if (_bootstrapRuntime != null)
                 return;
 
-            GameObject runtimeRoot = new GameObject(RuntimeObjectName); // COLD ALLOC: GameObject[1] - bootstrap-owned loot magnet scheduler - owner: LootMagnetSystem
-            Object.DontDestroyOnLoad(runtimeRoot);
+            GameObject runtimeRoot = new GameObject(RuntimeObjectName); // COLD ALLOC: GameObject[1] - scene-owned loot magnet scheduler - owner: LootMagnetSystem
             _bootstrapRuntime = runtimeRoot.AddComponent<LootMagnetSystem>();
+        }
+
+        private static void EnsureSceneLoadedHook()
+        {
+            if (_sceneLoadedHooked)
+                return;
+
+            SceneManager.sceneLoaded += HandleSceneLoaded;
+            _sceneLoadedHooked = true;
+        }
+
+        private static void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            EnsureRuntimeInstalled();
         }
 
         private void Awake()

@@ -550,3 +550,70 @@ Verification:
 - Core public/internal struct layout scan: only intentionally skipped managed/marker structs remain.
 - `git diff --check` on touched Core layout files: no whitespace errors; LF/CRLF warnings only.
 - Runtime H-Phi remains `PENDING VERIFICATION` until Unity Console, PlayMode, Profiler, and GCMonitor evidence exist.
+
+## 2026-05-15 Live Addendum 9
+
+Evidence class: `STATIC_SOURCE`.
+
+User constraint for this pass: no `dotnet build` and no rebuild.
+
+What changed:
+- Corrected the H-Phi audit model so typed `GlobalSignals.Publish(...)` and confirmed NativeQueue/SystemDispatcher-backed publish lanes count as synaptic signal traffic.
+- Narrowed generic event debt to explicit legacy/direct fan-out publisher surfaces.
+- Added `-Summary` output to `Tools/Architecture/HectonPhiAudit.ps1` for compact overseer review.
+- Did not change runtime signal dispatch, job scheduling, tick cadence, buffer ownership, or gameplay code.
+
+Current runtime static scores:
+
+| Coefficient | Score |
+|---|---:|
+| Narrow integration | 1.000000000 |
+| Risk-adjusted integration | 0.053947368 |
+| Architectural purity | 0.994708995 |
+| Data sovereignty | 0.018825826 |
+| Memory alignment | 0.500794071 |
+| Binary-safe ratio | 0.018528322 |
+| H-Phi runtime static narrow | 0.009377979 |
+| H-Phi runtime static risk-adjusted | 0.000505917 |
+
+Current runtime counts:
+
+| Counter | Value |
+|---|---:|
+| Runtime C# files | 1,275 |
+| Runtime source lines | 856,739 |
+| Typed/queued signal push surface | 328 |
+| Legacy/direct event publish surface | 28 |
+| `GlobalRegistry.` surface refs | 5,144 |
+| Unity `Update`/`LateUpdate`/`FixedUpdate` method declarations | 3 |
+| DataVault access surface refs | 135 |
+| `NativeArray<T>` refs | 7,036 |
+| Struct declarations | 1,889 |
+| `StructLayout(...)` attrs | 946 |
+| Runtime `Find*` calls | 5 |
+| Runtime `GetComponent*` calls | 542 |
+| `.Dispose(...)` calls | 1,261 |
+
+Comparison:
+- Previous runtime static narrow score: `0.009266939`.
+- Current runtime static narrow score: `0.009377979`.
+- Narrow score delta: about `+1.20%`.
+- Previous runtime static risk-adjusted score: `0.000124428`.
+- Current runtime static risk-adjusted score: `0.000505917`.
+- Risk-adjusted score delta: about `+306.59%`.
+- `RiskIntegration` improved `0.013427110 -> 0.053947368`.
+- `SignalBusPush` improved `84 -> 328`.
+- `EventPublish` reduced `450 -> 28`.
+- Compared with original dialogue baseline `0.00062`, current runtime static narrow is about `+1412.58%`.
+
+Residual bottlenecks:
+- Data Sovereignty remains the hard floor: `135 / (135 + 7,036) = 0.018825826`.
+- Core graph debt remains unchanged: Core asmdef debt references `28`, generated project debt references `10`.
+- Owner-blocked NativeArray migrations still require domain-owner BufferID/SystemID/generation/disposal proof before code migration.
+- Runtime verification remains absent by user order.
+
+Verification:
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json`: completed at local timestamp `2026-05-15 01:34:57 +04:00`.
+- `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json`: completed at local timestamp `2026-05-15 01:56:47 +04:00`.
+- `git diff --check -- Tools/Architecture/HectonPhiAudit.ps1`: no whitespace errors; LF/CRLF warning only.
+- Runtime H-Phi remains `PENDING VERIFICATION` until Unity Console, PlayMode, Profiler, and GCMonitor evidence exist.

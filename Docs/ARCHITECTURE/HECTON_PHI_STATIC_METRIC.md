@@ -78,10 +78,14 @@ nine decimals by the tool.
 
 The tool uses regex-based static counters. Important surfaces:
 
-- `SignalBusPush`: `SignalBus<T>.Push`
+- `SignalBusPush`: direct `SignalBus<T>.Push`, typed
+  `GlobalSignals.Publish(...)`, and confirmed NativeQueue/SystemDispatcher-backed
+  publish lanes (`VehicleCommandSignalBus`, `PhysicsDeterminismSignals`,
+  `FluidFeedbackEvents`, `LocalizationEvents`, `VoxelChunkModifiedEvents`).
 - `GlobalRegistryGet`: `GlobalRegistry.Get<T>`
 - `GlobalRegistrySurface`: any `GlobalRegistry.`
-- `EventPublish`: `Publish(...)`
+- `EventPublish`: remaining legacy/direct fan-out publisher surfaces:
+  `HectonEventBus`, `WaterTransitionEvents`, and `SuitDamageEvents`.
 - `UnityUpdateMethods`: method declarations for `Update`, `LateUpdate`, and
   `FixedUpdate`
 - `GlobalDataVaultRefs`: `GlobalDataVault`, `IDataVault`,
@@ -141,6 +145,14 @@ Generated-project graph debt is:
 FirstPartyLeaf + PackageOrGenerated
 ```
 
+Source-backed bridge references are read from the Core item group in
+`Directory.Build.targets`. They are classified with the same rules as Core
+asmdef references. Bridge graph debt is:
+
+```text
+LeafDomain + PackageOrUnity + Other
+```
+
 The graph audit also verifies the Core medic build gate in
 `Directory.Build.props`:
 
@@ -158,9 +170,11 @@ verification focused when generated projects contain package/vendor references.
 Use explicit budgets to prevent new Core graph debt:
 
 ```powershell
-Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -RequireCoreBuildGate -MaxCoreAsmdefDebtReferences 28 -MaxGeneratedProjectDebtReferences 10
+Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -RequireCoreBuildGate -MaxCoreAsmdefDebtReferences 25 -MaxGeneratedProjectDebtReferences 10 -MaxSourceBackedBridgeDebtReferences 8
 ```
-The numbers above are the 2026-05-15 known baseline for the integrator pass.
+The numbers above are the 2026-05-15 known baseline after removing three
+unused Core asmdef debt references and two unused source-backed bridge
+references from the integrator pass.
 They are not a target. Lower them only after staged contract extraction and
 compile verification.
 
@@ -218,14 +232,26 @@ JSON audit:
 Tools/Architecture/HectonPhiAudit.ps1 -Json
 ```
 
+Compact summary audit:
+
+```powershell
+Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json
+```
+
 Core graph only:
 
 ```powershell
 Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly
 ```
 
+Compact Core graph only:
+
+```powershell
+Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json
+```
+
 Core graph budget gate:
 
 ```powershell
-Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -RequireCoreBuildGate -MaxCoreAsmdefDebtReferences 28 -MaxGeneratedProjectDebtReferences 10
+Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -RequireCoreBuildGate -MaxCoreAsmdefDebtReferences 25 -MaxGeneratedProjectDebtReferences 10 -MaxSourceBackedBridgeDebtReferences 8
 ```

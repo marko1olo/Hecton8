@@ -375,3 +375,19 @@ Solution: Add `AupPrecisionSafe` and `AupPrecisionRisk` counters to `HeadlessStr
 Rejected Alternatives: Mutating `HphiReactiveUiTelemetry` or adding runtime UI counters. UI update cadence is outside AUP authority and would not catch precision drift. Adding allocations for detailed source reports was rejected; the static score remains scalar and bounded.
 Scalability potential: Low gets a cheap static gate that catches AUP regression before runtime tests. Middle/High/Ultra get cleaner precision hygiene data and can spend stable AUP anchors on richer visual feedback without hidden drift debt.
 Hardware Impact: 0 us gameplay-frame cost. Headless startup/source-scan cost increases by simple ordinal string scans only; expected low-end impact is negligible compared with the existing all-script `File.ReadAllText` pass.
+
+## Decision 47 - H-Phi AUP Precision Counter Export
+
+Problem: Loop 20 made the static H-Phi scalar AUP-risk-adjusted, but the result JSON still exposed only the scalar and model name. That hid whether a run changed because double-safe AUP patterns increased, legacy precision-risk patterns increased, or both.
+Solution: Carry the `HPhiStaticCounters` result out of `ComputeStaticHPhiMetric`, cache `staticHPhiAupPrecisionIntegrity`, `staticHPhiAupPrecisionSafe`, and `staticHPhiAupPrecisionRisk`, and write those values to both JSON output and the one-time `[H-PHI_STATIC]` startup log.
+Rejected Alternatives: Emit a per-file source report or mutate runtime `HphiReactiveUiTelemetry`. Per-file reports would allocate and bloat headless output; UI telemetry is not AUP authority and does not belong to this domain.
+Scalability potential: Low gets a compact static QA counter that can be parsed without opening source files. Middle/High/Ultra get better drift-hygiene attribution before spending saved AUP stability on denser visual feedback.
+Hardware Impact: 0 us gameplay-frame cost and 0 B/frame. Headless startup cost is only three primitive fields plus existing `StreamWriter` writes in the result-report path.
+
+## Decision 48 - Qualified H-Phi AUP Risk Patterns
+
+Problem: The first AUP H-Phi risk scan counted broad method names such as `ToAbsoluteUniversePosition(` and `ToUniverseSpace(`. That caught actual legacy calls, but it also caught private helper names that already route through double-backed AUP construction, creating noisy H-Phi debt.
+Solution: Restrict legacy bridge counting to fully qualified `HectonFloatingOrigin.ToAbsoluteUniversePosition(` and `HectonMapMagicVegetationBridge.ToUniverseSpace(` patterns while retaining explicit component-read and `Vector3 universe` risk patterns.
+Rejected Alternatives: Rename private helpers across CrashTelemetry/Fauna or keep broad string matches. Renaming safe helpers would be metric-chasing churn; broad matches punish correct local wrappers and make the H-Phi signal less useful.
+Scalability potential: Low gets less noisy static QA output. Middle/High/Ultra get clearer attribution when real legacy AUP bridge calls reappear, which protects drift-sensitive visual overkill work from false-positive audit debt.
+Hardware Impact: 0 us gameplay-frame cost and 0 B/frame. Headless scan cost is unchanged: the same ordinal count operations with longer, more specific literals.

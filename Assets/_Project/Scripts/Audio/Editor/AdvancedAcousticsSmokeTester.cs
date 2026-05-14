@@ -37,6 +37,7 @@ namespace Hecton8.Audio.Editor
         private const string PlayerPdaPath = "Assets/_Project/Scripts/PlayerPDA.cs";
         private const string PlayerStressVfxPath = "Assets/_Project/Scripts/Visor/PlayerStressVFX.cs";
         private const string DeepPsychosisPath = "Assets/_Project/Scripts/Audio/DeepPsychosisController.cs";
+        private const string HectonMusicDirectorPath = "Assets/_Project/Scripts/Audio/HectonMusicDirector.cs";
 
         [MenuItem("Hecton8/Audio/Run Advanced Acoustics Smoke Test")]
         public static void RunMenuItem()
@@ -79,6 +80,7 @@ namespace Hecton8.Audio.Editor
             string playerPda = ReadAssetText(PlayerPdaPath, builder, ref failureCount);
             string playerStressVfx = ReadAssetText(PlayerStressVfxPath, builder, ref failureCount);
             string deepPsychosis = ReadAssetText(DeepPsychosisPath, builder, ref failureCount);
+            string musicDirector = ReadAssetText(HectonMusicDirectorPath, builder, ref failureCount);
 
             if (spatial.Length > 0)
             {
@@ -212,6 +214,20 @@ namespace Hecton8.Audio.Editor
                 AssertNotContains(psychosisCue, "GlobalRegistry.AcousticZone", "Deep psychosis cue playback does not poll acoustic-zone registry directly", builder, ref failureCount);
             }
 
+            if (musicDirector.Length > 0)
+            {
+                string musicResolveDependencies = ExtractMethodBody(musicDirector, "private void ResolveDependencies()");
+                string musicResolveBaseContext = ExtractMethodBody(musicDirector, "private bool ResolveBaseContext()");
+                string musicResolveMixerGroup = ExtractMethodBody(musicDirector, "private AudioMixerGroup ResolveMusicMixerGroup()");
+                AssertContains(musicDirector, "ResolvePlayerRuntimeContext()", "Music director player context uses a bounded cached resolver", builder, ref failureCount);
+                AssertContains(musicDirector, "ResolveAudioService()", "Music director mixer routing uses cached audio-service resolution", builder, ref failureCount);
+                AssertContains(musicDirector, "ResolveAcousticZone()", "Music director base context uses cached acoustic-zone resolution", builder, ref failureCount);
+                AssertContains(musicDirector, "ClearCachedRuntimeServices()", "Music director clears cached runtime services on disable/destroy", builder, ref failureCount);
+                AssertNotContains(musicResolveDependencies, "GlobalRegistry.Player", "Music director dependency resolver does not poll player registry directly", builder, ref failureCount);
+                AssertNotContains(musicResolveBaseContext, "GlobalRegistry.AcousticZone", "Music director base-context resolver does not poll acoustic-zone registry directly", builder, ref failureCount);
+                AssertNotContains(musicResolveMixerGroup, "GlobalRegistry.Audio", "Music director mixer routing does not poll audio registry directly", builder, ref failureCount);
+            }
+
             if (physicsApply.Length > 0)
             {
                 AssertContains(physicsApply, "public readonly struct AcousticImpulseEvent", "Acoustic impulse event payload exists", builder, ref failureCount);
@@ -342,12 +358,20 @@ namespace Hecton8.Audio.Editor
 
             if (acousticZone.Length > 0)
             {
+                string acousticPlayMadness = ExtractMethodBody(acousticZone, "internal void PlayMadnessWhisperCue()");
+                string acousticEmitterOcclusion = ExtractMethodBody(acousticZone, "private void UpdateEmitterOcclusionState(AudioListener listener)");
                 AssertContains(acousticZone, "[StructLayout(LayoutKind.Sequential, Size = 1)]", "Acoustic-zone NativeQueue payload is a one-byte blittable event token", builder, ref failureCount);
                 AssertContains(acousticZone, "private readonly byte _isInterior", "Acoustic-zone payload avoids bool field layout ambiguity in native queues", builder, ref failureCount);
                 AssertContains(acousticZone, "NativeMemorySentinel.RegisterNativeQueue", "Acoustic-zone event lanes are registered with NativeMemorySentinel", builder, ref failureCount);
                 AssertContains(acousticZone, "PrewarmQueue(ref _pendingZoneChanges, PendingZoneChangeCapacity)", "Acoustic-zone front queue is cold-prewarmed before gameplay enqueue", builder, ref failureCount);
                 AssertContains(acousticZone, "PrewarmQueue(ref _nextFrameZoneChanges, PendingZoneChangeCapacity)", "Acoustic-zone reentrant queue is cold-prewarmed before gameplay enqueue", builder, ref failureCount);
                 AssertContains(acousticZone, "GlobalTelemetryBus.PublishPerformanceWarning(_overflowWarningHash, _zoneChangeQueueHash, PendingZoneChangeCapacity)", "Acoustic-zone overflow drop emits hash-only telemetry", builder, ref failureCount);
+                AssertContains(acousticZone, "AudioServiceResolveRetryFrames = 30", "Acoustic-zone audio service lookup is cadence-gated", builder, ref failureCount);
+                AssertContains(acousticZone, "ResolveAudioService()", "Acoustic-zone cue playback uses cached audio-service resolution", builder, ref failureCount);
+                AssertContains(acousticZone, "ResolveSpatialAudioManager()", "Acoustic-zone emitter occlusion uses cached spatial-audio resolution", builder, ref failureCount);
+                AssertContains(acousticZone, "ClearCachedAudioServices()", "Acoustic-zone clears cached audio services on disable/destroy", builder, ref failureCount);
+                AssertNotContains(acousticPlayMadness, "GlobalRegistry.Audio", "Acoustic-zone madness cue does not poll audio registry directly", builder, ref failureCount);
+                AssertNotContains(acousticEmitterOcclusion, "GlobalRegistry.Audio", "Acoustic-zone emitter occlusion does not poll audio registry directly", builder, ref failureCount);
             }
 
             if (audioLogEvents.Length > 0)

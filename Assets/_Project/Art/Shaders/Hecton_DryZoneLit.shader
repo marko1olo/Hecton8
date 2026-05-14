@@ -415,7 +415,10 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
                 half habitatBendShadow = 0.0h;
                 half habitatPanelMask01 = 0.0h;
                 half2 habitatPanelCenteredUv = half2(0.0h, 0.0h);
-                bool habitatVertexBendActive = _HectonHabitatModuleStressParams.z <= 0.5 && habitatStress01 > 0.0001;
+                bool habitatVertexBendActive =
+                    _HectonHabitatModuleStressParams.z <= 0.5 &&
+                    _HectonHabitatModuleStressParams.y > 0.00001 &&
+                    habitatStress01 > 0.0001;
                 if (habitatVertexBendActive)
                 {
                     safePositionOS = HectonHabitatInteriorApplyPanelBendOS(

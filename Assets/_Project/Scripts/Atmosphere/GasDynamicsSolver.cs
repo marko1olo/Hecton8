@@ -804,9 +804,7 @@ namespace Hecton8.Atmosphere
             if (_baseSignalLanesInitialized)
                 return;
 
-            SignalBus<PlayerBaseEnterSignal>.Configure(32, 256, 64);
             SignalBus<PlayerBaseEnterSignal>.EnsureInitialized();
-            SignalBus<PlayerBaseExitSignal>.Configure(32, 256, 64);
             SignalBus<PlayerBaseExitSignal>.EnsureInitialized();
             _baseSignalLanesInitialized = true;
         }
@@ -990,7 +988,7 @@ namespace Hecton8.Atmosphere
 
             double now = ResolveUnscaledTimeSeconds();
             bool hasPlayerAup = TryResolvePlayerAup(out AbsoluteUniversePosition playerAup);
-            float sleepDistance = ResolveHibernationDistanceMeters(ResolveMathLod(GlobalRegistry.ScalabilityTier));
+            float sleepDistance = ResolveHibernationDistanceMeters(_lastMathLod);
             float wakeDistance = math.max(0f, sleepDistance - math.max(3f, hibernationHysteresisMeters));
             double sleepDistanceSq = (double)sleepDistance * sleepDistance;
             double wakeDistanceSq = (double)wakeDistance * wakeDistance;

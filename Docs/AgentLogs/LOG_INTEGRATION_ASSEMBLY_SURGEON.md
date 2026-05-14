@@ -156,3 +156,35 @@ Verification:
 Residual risk:
 - Fresh compile remains pending by explicit user order.
 - The doc does not reduce existing Core graph debt; it defines the metric and the evidence boundary for reducing it later.
+
+## 2026-05-15 - Core Asmdef H-Phi Debt Prune
+
+What was wrong:
+- `Hecton8.Core.asmdef` still referenced three assemblies that static scans did not find in generated Core compile items: `Hecton8.Input.Generated`, `Hecton8.World.GPR`, and `Hecton8.SpaceEngine098Terrain`.
+- Those references kept Core asmdef H-Phi debt at 28 even though the referenced leaf systems are owned by Input, World/GPR, and SpaceEngine/MapMagic paths.
+
+What was done:
+- Removed the three unused references from `Assets/_Project/Scripts/Hecton8.Core.asmdef`.
+- Left `Hecton8.Input`, `Hecton8.World.Terrain`, and all references with live Core evidence untouched.
+- Updated the stable H-Phi metric doc budget example from 28 to 25 asmdef debt refs.
+
+Cinematic cheats used:
+- Static compile-graph reduction instead of DTO migration or generated project edits.
+- No runtime code, physics, rendering, audio, input, or gameplay path was changed.
+
+Exact microseconds saved:
+- Runtime frame time: 0 us changed.
+- Fresh build-time savings: not claimed because no compile lane was run.
+- Static H-Phi graph debt: Core asmdef debt refs reduced from 28 to 25.
+
+Verification:
+- Evidence class: STATIC_SOURCE.
+- Generated Core compile-item filter returned no `SpaceEngine098`, `GroundPenetratingRadar`, `HectonInputActions`, `Assets\_Project\Input`, `World\GPR`, `World\SpaceEngine098`, or `Input\InputManager` entries.
+- Type-name scan found no generated Core compile-item use of GPR or SpaceEngine098 public types.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -RequireCoreBuildGate -MaxCoreAsmdefDebtReferences 25 -MaxGeneratedProjectDebtReferences 10` passed.
+- Result: 43 Core asmdef refs, 25 Core asmdef H-Phi debt refs, 12 generated Core project refs, 10 generated project debt refs.
+- No `dotnet build`, `dotnet rebuild`, or `dotnet msbuild` was run.
+
+Residual risk:
+- Fresh compile remains pending by explicit user order.
+- Generated `Hecton8.Core.csproj` still has stale project references until Unity/project-generation evidence is refreshed.

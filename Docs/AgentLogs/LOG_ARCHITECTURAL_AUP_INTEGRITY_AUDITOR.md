@@ -477,3 +477,68 @@ Verification:
 Integrator notes:
 - Loop 20 is static-verified only. The new H-Phi scalar must be measured by a future headless run when execution is allowed.
 - Existing staged changes were present on `HeadlessStressFractureBot.cs`; do not discard them during integration.
+
+## 2026-05-15 - Loop 21 H-Phi AUP Precision Counter Export
+
+What was wrong:
+- The H-Phi static scalar was AUP-risk-adjusted, but the result artifact still hid the raw AUP precision evidence.
+- Reviewers could not distinguish safer double-bridge adoption from legacy precision-risk growth by reading the JSON alone.
+
+What was done:
+- Changed `ComputeStaticHPhiMetric` to return `HPhiStaticCounters` to startup state through an `out` parameter.
+- Cached `staticHPhiAupPrecisionIntegrity`, `staticHPhiAupPrecisionSafe`, and `staticHPhiAupPrecisionRisk`.
+- Wrote those three values to the headless JSON result next to `staticHPhi`.
+- Added the same values to the one-time `[H-PHI_STATIC]` startup log line.
+- Re-extracted this agent prompt from `Docs/Tasks/CURRENT_BATCH.md`; result remains `PROMPT_NOT_FOUND`.
+
+Cinematic Cheats used:
+- No runtime simulation or UI work was added. This is a compact static QA signal.
+- Low tier pays no gameplay-frame cost. High/Ultra get clearer AUP drift attribution before spending visual budget on AUP-stable effects.
+
+Exact Microseconds saved:
+- Gameplay frame time: 0 us; no hot path touched.
+- Headless report path: three primitive field writes and existing `StreamWriter` output only.
+- Debugging savings: reduces manual regex triage when H-Phi runs report AUP precision drift.
+
+Verification:
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` re-run. Residual hits remain broad `universe` text, editor diagnostics, and final-cast fluid/scatter/shader payload names.
+- Direct committed-offset leak scan returns `NO_MATCHES`.
+- Targeted H-Phi scan confirms `staticHPhiAupPrecisionIntegrity`, `staticHPhiAupPrecisionSafe`, `staticHPhiAupPrecisionRisk`, `ComputeStaticHPhiMetric(out ...)`, and `CalculateAupPrecisionIntegrity`.
+- Targeted scanner self-pollution scan in `HeadlessStressFractureBot.cs` returns `NO_MATCHES`.
+- `git diff --check -- Assets/_Project/Scripts/QA/Headless/HeadlessStressFractureBot.cs` reports line-ending warnings only, no whitespace errors.
+- No `dotnet build` or rebuild was run because the user explicitly forbade rebuilds.
+
+Integrator notes:
+- Loop 21 is static-verified only. Runtime H-Phi values require a future headless run.
+- The repository contains unrelated dirty files from other agents; this loop only changed the AUP auditor headless QA file and this agent's logs.
+
+## 2026-05-15 - Loop 22 H-Phi Qualified Legacy AUP Risk Scan
+
+What was wrong:
+- The AUP precision risk counter counted broad local method names.
+- Safe private helpers that already use double-backed AUP construction could inflate H-Phi debt.
+
+What was done:
+- Refined `CountAupPrecisionRisk` to count fully-qualified legacy calls: `HectonFloatingOrigin.ToAbsoluteUniversePosition(` and `HectonMapMagicVegetationBridge.ToUniverseSpace(`.
+- Kept explicit committed-offset, shift-offset, `(float3)AUP`, and `Vector3 universe` risk patterns.
+- Re-extracted this agent prompt from `Docs/Tasks/CURRENT_BATCH.md`; result remains `PROMPT_NOT_FOUND`.
+
+Cinematic Cheats used:
+- No runtime simulation or visual work was added. This is a tighter static QA filter.
+- Low tier gets less audit noise. High/Ultra get cleaner AUP drift attribution before visual-overkill systems trust the metric.
+
+Exact Microseconds saved:
+- Gameplay frame time: 0 us; no hot path touched.
+- Headless scan cost: unchanged ordinal string scanning.
+- Review-time savings: fewer false-positive AUP helper investigations when reading H-Phi output.
+
+Verification:
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` re-run. Residual hits remain broad `universe` text, editor diagnostics, and final-cast fluid/scatter/shader payload names.
+- Direct committed-offset leak scan returns `NO_MATCHES`.
+- Targeted scanner self-pollution scan in `HeadlessStressFractureBot.cs` returns `NO_MATCHES` for unsplit legacy bridge tokens.
+- `git diff --check -- Assets/_Project/Scripts/QA/Headless/HeadlessStressFractureBot.cs` reports line-ending warnings only, no whitespace errors.
+- No `dotnet build` or rebuild was run because the user explicitly forbade rebuilds.
+
+Integrator notes:
+- Loop 22 is static-verified only. Run headless H-Phi later to measure the new risk attribution.
+- This avoids metric-chasing renames in CrashTelemetry or Fauna helpers; no cross-domain runtime file was changed for naming alone.

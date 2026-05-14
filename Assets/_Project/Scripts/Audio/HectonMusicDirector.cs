@@ -322,9 +322,15 @@ namespace Hecton8.Audio
         private Transform _dependencyPlayerTransform;
         private HectonPlayerMovement _playerMovement;
         private HectonSurvivalSystem _survivalSystem;
+        private IPlayerRuntimeContext _playerRuntimeContext;
+        private IAudioService _cachedAudioService;
+        private AcousticZoneController _cachedAcousticZone;
         private bool _playerMovementLookupAttempted;
         private bool _survivalLookupAttempted;
         private int _nextDependencyRetryFrame;
+        private int _nextPlayerContextResolveFrame;
+        private int _nextAudioServiceResolveFrame;
+        private int _nextAcousticZoneResolveFrame;
         private AudioMixer _layerMixer;
         private float _layerRhythm01;
         private float _layerBass01;
@@ -449,6 +455,7 @@ namespace Hecton8.Audio
             AcousticZoneEvents.Unregister(this);
             TryUnregisterTickHandlers();
             TryUnregisterFromGlobalRegistry();
+            ClearCachedRuntimeServices();
         }
 
         private void OnDestroy()
@@ -460,6 +467,7 @@ namespace Hecton8.Audio
             BiomeMatrixEvents.Unregister(this);
             TryUnregisterTickHandlers();
             TryUnregisterFromGlobalRegistry();
+            ClearCachedRuntimeServices();
         }
 
         /// <summary>
@@ -846,6 +854,63 @@ namespace Hecton8.Audio
             _voicePool = ComponentReferenceUtility.ResolveOwnedComponent<MusicVoicePool>(transform);
         }
 
+        private void ClearCachedRuntimeServices()
+        {
+            _playerRuntimeContext = null;
+            _cachedAudioService = null;
+            _cachedAcousticZone = null;
+            _nextPlayerContextResolveFrame = 0;
+            _nextAudioServiceResolveFrame = 0;
+            _nextAcousticZoneResolveFrame = 0;
+        }
+
+        private IPlayerRuntimeContext ResolvePlayerRuntimeContext()
+        {
+            int frame = Time.frameCount;
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            if (playerContext != null && playerContext.IsInitialized && frame < _nextPlayerContextResolveFrame)
+                return playerContext;
+
+            if (frame < _nextPlayerContextResolveFrame)
+                return null;
+
+            _nextPlayerContextResolveFrame = frame + DependencyRetryFrameInterval;
+            playerContext = GlobalRegistry.Player;
+            _playerRuntimeContext = playerContext != null && playerContext.IsInitialized ? playerContext : null;
+            return _playerRuntimeContext;
+        }
+
+        private IAudioService ResolveAudioService()
+        {
+            int frame = Time.frameCount;
+            IAudioService audioService = _cachedAudioService;
+            if (audioService != null && audioService.IsInitialized && frame < _nextAudioServiceResolveFrame)
+                return audioService;
+
+            if (frame < _nextAudioServiceResolveFrame)
+                return null;
+
+            _nextAudioServiceResolveFrame = frame + DependencyRetryFrameInterval;
+            audioService = GlobalRegistry.Audio;
+            _cachedAudioService = audioService != null && audioService.IsInitialized ? audioService : null;
+            return _cachedAudioService;
+        }
+
+        private AcousticZoneController ResolveAcousticZone()
+        {
+            int frame = Time.frameCount;
+            AcousticZoneController acousticZone = _cachedAcousticZone;
+            if (acousticZone != null && frame < _nextAcousticZoneResolveFrame)
+                return acousticZone;
+
+            if (frame < _nextAcousticZoneResolveFrame)
+                return null;
+
+            _nextAcousticZoneResolveFrame = frame + DependencyRetryFrameInterval;
+            _cachedAcousticZone = GlobalRegistry.AcousticZone;
+            return _cachedAcousticZone;
+        }
+
         private void ResolveDependencies()
         {
             Scene activeScene = SceneManager.GetActiveScene();
@@ -873,7 +938,7 @@ namespace Hecton8.Audio
             if (_directorAI == null)
                 _directorAI = HectonDirectorAI.ActiveRuntimeInstance;
 
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = ResolvePlayerRuntimeContext();
             Transform resolvedPlayerTransform = playerContext != null && playerContext.PlayerTransform != null
                 ? playerContext.PlayerTransform
                 : _playerTransform;
@@ -1299,7 +1364,7 @@ namespace Hecton8.Audio
 
         private bool ResolveBaseContext()
         {
-            AcousticZoneController acoustic = GlobalRegistry.AcousticZone;
+            AcousticZoneController acoustic = ResolveAcousticZone();
             if (acoustic != null && acoustic.IsInterior)
                 return true;
 
@@ -2293,7 +2358,8 @@ namespace Hecton8.Audio
             if (_musicMixerGroup != null)
                 return _musicMixerGroup;
 
-            if (Hecton8.Core.GlobalRegistry.Audio is Hecton8.Core.IAudioService audioService)
+            IAudioService audioService = ResolveAudioService();
+            if (audioService != null)
                 return audioService.AmbientGroup;
 
             return null;

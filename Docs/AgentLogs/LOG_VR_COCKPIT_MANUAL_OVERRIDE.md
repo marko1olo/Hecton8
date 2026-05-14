@@ -181,3 +181,39 @@ Cinematic Cheats used: kept the existing fixed hash table and scalar physical-ha
 Exact microseconds saved/spent: one static integer comparison per active XR tick; one int increment/decrement on cold receiver lifecycle. Empty/transition states save one hand pose read, one interaction-signal service read, one `OverlapSphereNonAlloc`, and up to eight candidate bounds/hash checks per XR frame. 0 B/frame.
 
 Verification: forbidden-pattern scan over six physical-control files returned no matches. Scoped counter reports `LegacyRegister=0`, `TryRegister=4`, `HasReceivers=1`, `GetComponentCalls=0`, `TryGetComponentCalls=21`, `UnityUpdateMethods=0`, `DirectDeltaTime=0`, `PublicEvents=0`, `HingeJoint=0`. `git diff --check` passed. No dotnet rebuild/probe was run by user instruction.
+
+## 2026-05-15 - Physical Hand Zero-Time Containment
+
+What was wrong: the physical hand fixed-step sanitizer converted `dt=0` or invalid deltas into `0.0001f`. That made pause/time-dilation frames advance hand haptics, harvest snaps, recoil decay, finger/open pose blends, suit shell motion, virtual hand lag, articulation targets, and grabbed-body force application.
+
+What was done: changed `SanitizeFixedDeltaSeconds()` to return zero for non-finite or non-positive values, while retaining the minimum clamp for tiny positive deltas. `StepFixed()` now exits before the physical solve when sanitized dt is zero. It preserves the previous `_lastFingerPoseDeltaTime` if a finger pose job is already scheduled, so late-frame completion for an earlier valid fixed step is not damaged.
+
+Cinematic Cheats used: no new physics truth. This keeps the existing physical hand proxy, but stops manufacturing simulation time when the dispatcher says none passed.
+
+Exact microseconds saved/spent: one branch on zero-dt fixed frames. Zero-time frames skip haptic timers, harvest snap, recoil/open hand pose updates, suit shell, virtual hand lag, articulation drive writes, grabbed-body solve, and finger job scheduling. Positive fixed steps keep existing division safety. 0 B/frame.
+
+Verification: precise forbidden-pattern scan over seven physical-control files returned no matches. Scoped counter reports `LegacyRegister=0`, `TryRegister=4`, `HasReceivers=1`, `StepFixedZeroReturn=2`, `SanitizeZeroReturn=1`, `GetComponentCalls=0`, `UnityUpdateMethods=0`, `DirectDeltaTime=0`, `PublicEvents=0`, `HingeJoint=0`. `git diff --check` passed with only the expected CRLF warning on `PhysicalHandController.cs`. No dotnet rebuild/probe was run by user instruction.
+
+## 2026-05-15 - Finger Job Late-Frame And Hand-Side Hygiene
+
+What was wrong: physical hand late-frame ticking remained registered for the full grab lifetime, but late-frame only completes scheduled finger jobs. The idle XR bypass path read controller state during grabs, harvest snaps, suit shell, and suit contact even though those modes force the full hand solve. Suit-contact haptics still right-biased invalid hand-side values.
+
+What was done: changed `RequiresLateFrameTick` to `_fingerPoseScheduled`, moved active/contact gates before dispatcher access, added explicit XR controller-index resolution, and routed invalid/future hand-side haptics to both hands through `BothMotorMask`.
+
+Cinematic Cheats used: no new physical simulation. This preserves the existing kinematic hand proxy and deferred finger job, while stripping empty scheduler/input work from frames that already have a deterministic solve path.
+
+Exact microseconds saved/spent: saves one empty late-frame dispatcher callback per render frame during grabs with no pending finger job, and one dispatcher plus XR input-state lookup per fixed step during grab/snap/suit-contact modes. Haptic fallback adds branch work only when contact haptics dispatch. 0 B/frame.
+
+Verification: forbidden-pattern scan over seven physical-control files returned no matches, including legacy hand-side right-bias ternaries. Scoped counter reports `LegacyRegister=0`, `TryRegister=4`, `HasReceivers=1`, `StepFixedZeroReturn=2`, `SanitizeZeroReturn=1`, `BothMotorMask=6`, `XRControllerResolver=2`, `GetComponentCalls=0`, `UnityUpdateMethods=0`, `DirectDeltaTime=0`, `PublicEvents=0`, `HingeJoint=0`. `git diff --check` passed with CRLF warnings only. No dotnet rebuild/probe was run by user instruction.
+
+## 2026-05-15 - Lever IK Presentation Math LOD
+
+What was wrong: grabbed manual override IK target smoothing used `Vector3.Lerp` and `Quaternion.Slerp` in the presentation hot path. The IK target is visual follow-through; gameplay authority is the scalar lever angle, not spherical hand-target interpolation.
+
+What was done: replaced position interpolation with `math.lerp(float3)` and rotation interpolation with `ApproximateNlerp()` using shortest-arc sign correction and `math.rsqrt` normalization.
+
+Cinematic Cheats used: this is a deliberate presentation fake. It preserves smooth hand follow while avoiding high-cost spherical interpolation for a cockpit handle helper.
+
+Exact microseconds saved/spent: removes one `Quaternion.Slerp` and one `Vector3.Lerp` from grabbed lever presentation frames, replacing them with struct math and one reciprocal square root. 0 B/frame.
+
+Verification: scoped scan confirms `Quaternion.Slerp=0`, `Vector3.Lerp=0`, and `ApproximateNlerp=1` in `OpenXRManualOverrideLever.cs`. Broad forbidden-pattern scan over the seven physical-control files remains clean. No dotnet rebuild/probe was run by user instruction.

@@ -2,7 +2,7 @@
 
 Agent: INTEGRATION_ASSEMBLY_SURGEON
 Domain: Unity Compilation Graph / Integrator
-Status: STATIC H-PHI DOC VERIFIED / PENDING FRESH COMPILE (NO DOTNET ORDER)
+Status: STATIC H-PHI ASMDEF DEBT REDUCED / PENDING FRESH COMPILE (NO DOTNET ORDER)
 
 ## Decision 0 - Session Initialization
 
@@ -107,3 +107,11 @@ Solution: Narrowed the scan to owned/new H-Phi documentation and state/log edits
 Rejected Alternatives: Normalizing the unrelated mojibake line during this integrator pass was rejected as doc-history churn outside the H-Phi metric contract. Ignoring the scan without locating the line was rejected because it would leave ambiguity about whether the new doc introduced non-ASCII.
 Scalability potential: Low/Middle/High/Ultra runtime tiers unchanged. The decision preserves focused documentation scope under concurrent agents.
 Hardware Impact: Runtime impact 0 us. Tooling impact 0 us outside static text scan time.
+
+## Decision 13 - Unused Core Asmdef Reference Prune
+
+Problem: `Hecton8.Core.asmdef` still carried Core-to-leaf references that inflated H-Phi graph debt even when generated Core compile items did not use those assemblies.
+Solution: Removed `Hecton8.Input.Generated`, `Hecton8.World.GPR`, and `Hecton8.SpaceEngine098Terrain` from `Hecton8.Core.asmdef`. Static evidence: generated Core compile-item filter had no `HectonInputActions`, `GroundPenetratingRadar`, `World/GPR`, `World/SpaceEngine098`, `Input/InputManager`, or SpaceEngine098 entries; type-name scan found no generated Core compile-item use of GPR or SpaceEngine098 public job/payload types. `HectonInputActions` use remains in `Assets/_Project/Scripts/Input/InputManager.cs`, owned by `Hecton8.Input`, not Core.
+Rejected Alternatives: Removing references with live Core type hits was rejected. Editing generated `Hecton8.Core.csproj` was rejected because Unity overwrites it. Running dotnet compile was rejected by the current user no-dotnet order.
+Scalability potential: Low tier keeps Core less coupled to input codegen, GPR runtime jobs, and SpaceEngine terrain kernels; High/Ultra tiers keep those leaf assemblies available through their own asmdefs instead of contaminating Core.
+Hardware Impact: Runtime impact 0 us. Static graph debt changed from 28 to 25 Core asmdef debt refs. Fresh compile/runtime proof remains pending.

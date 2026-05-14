@@ -62,10 +62,21 @@ Verification: No dotnet rebuilds were run. Static scans remained clean for forbi
 ## 2026-05-15 Resource And Material Hardening
 What was wrong: The tooltip still performed full resource-object readiness checks in the visible render path, used `Marshal.SizeOf` in buffer allocation, and retained runtime `Shader.Find` plus `new Material` fallback code.
 
-What was done: Added explicit buffer strides and `_resourceObjectsReady`; split resource creation from material/property binding; added authored glyph and icon material assets in `Assets/_Project/Resources/UI`; replaced runtime material clone/search fallback with cold material resource loading; moved texture, buffer, SDF tuning, and dither binding into persistent per-draw `MaterialPropertyBlock`s.
+What was done: Added explicit buffer strides and `_resourceObjectsReady`; split resource creation from material/property binding; added authored glyph and icon material assets in `Assets/_Project/Resources/UI`; replaced runtime material clone/search fallback with cold material resource loading; moved texture, buffer, SDF tuning, and dither binding into persistent per-draw `MaterialPropertyBlock`s; added a fail-closed shader-contract check.
 
 Cinematic cheats used: Same fake-first implementation: one atlas quad per glyph, integer UV lookup, dithered alpha-test fade, Low-tier snap, and no Canvas overlay.
 
 Exact microseconds saved: Estimate only. Expected steady-frame gain is sub-1 us from readiness and stride cleanup; cold path removes two material allocations and one shader lookup fallback. No runtime profiler proof.
 
-Verification: No dotnet rebuilds were run. Static scans returned no forbidden hot-path text/allocation/LINQ patterns, no old update/shared-buffer/matrix/shader markers, and no `Marshal.SizeOf`, `Shader.Find`, or `new Material(` matches in the tooltip/shader scope. `git diff --check` produced only repository CRLF warnings.
+Verification: No dotnet rebuilds were run. Static scans returned no forbidden hot-path text/allocation/LINQ patterns, no old update/shared-buffer/matrix/shader markers, and no `Marshal.SizeOf`, `Shader.Find`, or `new Material(` matches in the tooltip/shader scope. `git diff --check` produced only repository CRLF warnings. `Tools/Architecture/HectonPhiAudit.ps1 -Json` completed at `2026-05-15 01:32:33 +04:00`; the second score-summary extraction timed out, so no exact H-Phi score delta is claimed here.
+
+## 2026-05-15 Material Readiness Latch
+What was wrong: Missing or mismatched authored tooltip materials could still cause repeated material readiness checks in visible frames, even though the renderer would fail closed and submit nothing.
+
+What was done: Added cached material-ready, material-resolve-attempted, and material-resolve-failed states. The tooltip now skips material setup after warmup and skips repeated resolve attempts after a failed authored material contract until resources are released.
+
+Cinematic cheats used: Same indirect atlas-quad prompt with dithered fade and Low-tier snap; this pass only hardens setup gates.
+
+Exact microseconds saved: Estimate only. Expected gain is sub-1 us in normal frames and prevents repeated cold-resource lookup/check work when authoring is invalid. No runtime profiler proof.
+
+Verification: No dotnet rebuilds were run. Static scans stayed clean for forbidden allocation/text/LINQ patterns and old renderer/update/shader markers. `git diff --check` returned only repository CRLF warnings.

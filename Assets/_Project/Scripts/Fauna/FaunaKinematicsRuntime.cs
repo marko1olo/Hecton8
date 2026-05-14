@@ -691,14 +691,16 @@ namespace Hecton8.AI
 
             GraphicsBufferUploadUtility.UploadNativeArray(writeBuffer, _leviathanBones, MaxSegments);
             float ikTier = IsLowTier(_qualityTier) ? 0f : 1f;
-            float tailWhip01 = math.saturate(_tailWhipSecondsRemaining * math.rcp(math.max(0.0001f, _tailWhipDurationSeconds)));
+            float safeSegmentLength = SanitizePositiveFinite(_segmentLength, 1f, 0.05f);
+            float safeTailWhipDuration = SanitizePositiveFinite(_tailWhipDurationSeconds, 1f, 0.0001f);
+            float tailWhip01 = math.saturate(_tailWhipSecondsRemaining * math.rcp(safeTailWhipDuration));
             if (_skinningMaterial != null)
             {
                 _skinningMaterial.SetBuffer(_LeviathanBonesId, writeBuffer);
                 _skinningMaterial.SetFloat(_LeviathanBoneCountId, _activeSegmentCount);
                 _skinningMaterial.SetFloat(_LeviathanIkTierId, ikTier);
                 _skinningMaterial.SetFloat(_LeviathanTailWhipId, tailWhip01);
-                _skinningMaterial.SetFloat(_LeviathanSegmentLengthId, _segmentLength);
+                _skinningMaterial.SetFloat(_LeviathanSegmentLengthId, safeSegmentLength);
                 _skinningMaterial.SetFloat(_LeviathanGpuSkinningId, 1f);
             }
 
@@ -708,7 +710,7 @@ namespace Hecton8.AI
                 Shader.SetGlobalFloat(_LeviathanBoneCountId, _activeSegmentCount);
                 Shader.SetGlobalFloat(_LeviathanIkTierId, ikTier);
                 Shader.SetGlobalFloat(_LeviathanTailWhipId, tailWhip01);
-                Shader.SetGlobalFloat(_LeviathanSegmentLengthId, _segmentLength);
+                Shader.SetGlobalFloat(_LeviathanSegmentLengthId, safeSegmentLength);
                 Shader.SetGlobalFloat(_LeviathanGpuSkinningId, 1f);
                 _globalGpuSkinningPublished = true;
             }
@@ -995,6 +997,11 @@ namespace Hecton8.AI
         private static float3 SanitizeFiniteInputFloat3(float3 value, float3 fallback)
         {
             return math.all(math.isfinite(value)) ? value : fallback;
+        }
+
+        private static float SanitizePositiveFinite(float value, float fallback, float minValue)
+        {
+            return math.isfinite(value) ? math.max(value, minValue) : fallback;
         }
 
         private static float3 NormalizeSafe(float3 value, float3 fallback)

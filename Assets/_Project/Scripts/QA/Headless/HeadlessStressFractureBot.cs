@@ -122,6 +122,9 @@ namespace Hecton8.QA.Headless
         private double _startupTime;
         private float _lastSimulationPhaseMs;
         private float _staticHPhiMetric;
+        private float _staticHPhiAupPrecisionIntegrity = 1f;
+        private int _staticHPhiAupPrecisionSafe;
+        private int _staticHPhiAupPrecisionRisk;
         private float3 _lastShiftMeters;
         private bool _started;
         private bool _finished;
@@ -353,8 +356,19 @@ namespace Hecton8.QA.Headless
             SignalBus<SectorDehydratedSignal>.EnsureInitialized();
             SignalBus<SectorResidencyHydratedSignal>.EnsureInitialized();
             SignalBus<SwarmDispersedSignal>.EnsureInitialized();
-            _staticHPhiMetric = ComputeStaticHPhiMetric();
-            Debug.LogWarning(FormatStaticHPhiLog(_staticHPhiMetric, _targetFrames, scratchMegabytes, _startupTimeoutSeconds));
+            HPhiStaticCounters staticHPhiCounters;
+            _staticHPhiMetric = ComputeStaticHPhiMetric(out staticHPhiCounters);
+            _staticHPhiAupPrecisionSafe = staticHPhiCounters.AupPrecisionSafe;
+            _staticHPhiAupPrecisionRisk = staticHPhiCounters.AupPrecisionRisk;
+            _staticHPhiAupPrecisionIntegrity = CalculateAupPrecisionIntegrity(in staticHPhiCounters);
+            Debug.LogWarning(FormatStaticHPhiLog(
+                _staticHPhiMetric,
+                _staticHPhiAupPrecisionIntegrity,
+                _staticHPhiAupPrecisionSafe,
+                _staticHPhiAupPrecisionRisk,
+                _targetFrames,
+                scratchMegabytes,
+                _startupTimeoutSeconds));
         }
 
         private void ForceHeadlessRuntimePolicy()
@@ -883,6 +897,12 @@ namespace Hecton8.QA.Headless
                     writer.Write(",\"staticHPhi\":");
                     WriteInvariant(writer, _staticHPhiMetric);
                     writer.Write(",\"staticHPhiModel\":\"runtime_aup_risk_adjusted\"");
+                    writer.Write(",\"staticHPhiAupPrecisionIntegrity\":");
+                    WriteInvariant(writer, _staticHPhiAupPrecisionIntegrity);
+                    writer.Write(",\"staticHPhiAupPrecisionSafe\":");
+                    WriteInvariant(writer, _staticHPhiAupPrecisionSafe);
+                    writer.Write(",\"staticHPhiAupPrecisionRisk\":");
+                    WriteInvariant(writer, _staticHPhiAupPrecisionRisk);
                     writer.Write(",\"lastFractureHash\":");
                     WriteInvariant(writer, _lastFractureHash);
                     writer.Write(",\"dataVaultFreeApi\":\"ABSENT_IDataVault_RELEASE\"");
@@ -1051,8 +1071,9 @@ namespace Hecton8.QA.Headless
                 : fallback;
         }
 
-        private static float ComputeStaticHPhiMetric()
+        private static float ComputeStaticHPhiMetric(out HPhiStaticCounters counters)
         {
+            counters = default;
             try
             {
                 string scriptsRoot = Path.Combine(ResolveProjectRootStatic(), "Assets", "_Project", "Scripts");
@@ -1060,7 +1081,6 @@ namespace Hecton8.QA.Headless
                     return 0f;
 
                 string[] files = Directory.GetFiles(scriptsRoot, "*.cs", SearchOption.AllDirectories);
-                HPhiStaticCounters counters = default;
                 for (int i = 0; i < files.Length; i++)
                 {
                     string file = files[i];
@@ -1123,10 +1143,15 @@ namespace Hecton8.QA.Headless
                 counters.DataVaultRefs,
                 counters.DataVaultRefs + counters.NativeArrayRefs);
             float memoryAlignment = DivideOrZero(counters.StructLayoutAttributes, counters.StructDeclarations);
-            float aupPrecisionIntegrity = DivideOrOne(
+            float aupPrecisionIntegrity = CalculateAupPrecisionIntegrity(in counters);
+            return riskIntegration * architecturalPurity * dataSovereignty * memoryAlignment * aupPrecisionIntegrity;
+        }
+
+        private static float CalculateAupPrecisionIntegrity(in HPhiStaticCounters counters)
+        {
+            return DivideOrOne(
                 counters.AupPrecisionSafe,
                 counters.AupPrecisionSafe + counters.AupPrecisionRisk);
-            return riskIntegration * architecturalPurity * dataSovereignty * memoryAlignment * aupPrecisionIntegrity;
         }
 
         private static float DivideOrZero(int numerator, int denominator)
@@ -1182,9 +1207,9 @@ namespace Hecton8.QA.Headless
             while (lineStart < text.Length)
             {
                 int lineEnd = FindLineEnd(text, lineStart);
-                if (ContainsInRange(text, lineStart, lineEnd, "void Update(") ||
-                    ContainsInRange(text, lineStart, lineEnd, "void LateUpdate(") ||
-                    ContainsInRange(text, lineStart, lineEnd, "void FixedUpdate("))
+                if (ContainsInRange(text, lineStart, lineEnd, "void " + "Update(") ||
+                    ContainsInRange(text, lineStart, lineEnd, "void " + "LateUpdate(") ||
+                    ContainsInRange(text, lineStart, lineEnd, "void " + "FixedUpdate("))
                 {
                     count++;
                 }
@@ -1249,8 +1274,8 @@ namespace Hecton8.QA.Headless
             count += CountOrdinal(text, "Current" + "TotalOffset.");
             count += CountOrdinal(text, "New" + "TotalOffset.");
             count += CountOrdinal(text, "Previous" + "TotalOffset.");
-            count += CountOrdinal(text, "ToAbsolute" + "UniversePosition(");
-            count += CountOrdinal(text, "ToUniverse" + "Space(");
+            count += CountOrdinal(text, "Hecton" + "FloatingOrigin.ToAbsolute" + "UniversePosition(");
+            count += CountOrdinal(text, "Hecton" + "MapMagicVegetationBridge.ToUniverse" + "Space(");
             count += CountOrdinal(text, "(float3)" + "AU" + "P");
             count += CountOrdinal(text, "Vector3 " + "uni" + "versePosition");
             count += CountOrdinal(text, "Vector3 stable" + "UniverseRoot");
@@ -1312,9 +1337,24 @@ namespace Hecton8.QA.Headless
             return count;
         }
 
-        private static string FormatStaticHPhiLog(float metric, int targetFrames, int scratchMegabytes, int startupTimeoutSeconds)
+        private static string FormatStaticHPhiLog(
+            float metric,
+            float aupPrecisionIntegrity,
+            int aupPrecisionSafe,
+            int aupPrecisionRisk,
+            int targetFrames,
+            int scratchMegabytes,
+            int startupTimeoutSeconds)
         {
-            return "[H-PHI_STATIC] " + AgentName + " value=" + metric.ToString("F6", CultureInfo.InvariantCulture) + " model=runtime_aup_risk_adjusted requestedBoids=10000 frames=" + targetFrames.ToString(CultureInfo.InvariantCulture) + " scratchMb=" + scratchMegabytes.ToString(CultureInfo.InvariantCulture) + " startupTimeoutSec=" + startupTimeoutSeconds.ToString(CultureInfo.InvariantCulture);
+            return "[H-PHI_STATIC] " + AgentName +
+                " value=" + metric.ToString("F6", CultureInfo.InvariantCulture) +
+                " model=runtime_aup_risk_adjusted" +
+                " aupIntegrity=" + aupPrecisionIntegrity.ToString("F6", CultureInfo.InvariantCulture) +
+                " aupSafe=" + aupPrecisionSafe.ToString(CultureInfo.InvariantCulture) +
+                " aupRisk=" + aupPrecisionRisk.ToString(CultureInfo.InvariantCulture) +
+                " requestedBoids=10000 frames=" + targetFrames.ToString(CultureInfo.InvariantCulture) +
+                " scratchMb=" + scratchMegabytes.ToString(CultureInfo.InvariantCulture) +
+                " startupTimeoutSec=" + startupTimeoutSeconds.ToString(CultureInfo.InvariantCulture);
         }
 
         private static float TicksToMilliseconds(long ticks)

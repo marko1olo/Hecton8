@@ -172,3 +172,19 @@ Solution: Track `_globalGpuSkinningPublished` separately from the serialized pub
 Rejected Alternatives: Clearing globals every upload was rejected as unnecessary render-state traffic. Leaving cleanup gated only by `_publishGlobalBoneBuffer` was rejected because it cannot represent previously-published global state after runtime/inspector changes.
 Scalability potential: Low/MX350/high/ultra visual tiers are unchanged. The fix improves global state hygiene for material-only or no-consumer configurations without touching the Burst solver.
 Hardware Impact: Stable hot-path cost is 0 us. Publish-off transition adds five `Shader.SetGlobalFloat` calls once; this prevents stale global GPU deformation rather than saving frame time.
+
+## Decision 15: Lifecycle Reseed Dirtiness And Telemetry
+
+Problem: `SeedSpineFromOwner()` rewrote the authoritative native bone matrices but did not explicitly mark GPU upload dirty, leaving correctness dependent on the next solver completion. Forced lifecycle completion also skipped the same invalid-telemetry check used by normal late-frame completion.
+Solution: Mark `_gpuUploadDirty` and reset `_motionIntentFrame` after reseed. After lifecycle force-complete, inspect the latest telemetry entry and dump the blackbox if invalid.
+Rejected Alternatives: Waiting for the next scheduled solver tick was rejected because other presentation systems can query native/GPU buffers immediately after bind/enable. Ignoring telemetry on lifecycle force-complete was rejected because shutdown/rebind is still a possible NaN boundary.
+Scalability potential: Low/MX350/high/ultra steady-state simulation is unchanged. The fix is cold lifecycle hygiene and keeps GPU-driven presentation coherent across enable/rebind.
+Hardware Impact: Hot-path cost is 0 us. Lifecycle adds one telemetry flag read only when force-completing a scheduled job; reseed already loops all 20 matrices, so dirty marking is free.
+
+## Decision 16: Shader Scalar Sanitization
+
+Problem: GPU deformation received `_H8LeviathanSegmentLength` and tail-whip normalization from serialized floats. `[Range]` protects inspector authoring, not runtime/programmatic NaN or zero-duration assignments.
+Solution: Add `SanitizePositiveFinite()` and publish safe segment length and safe tail-whip duration-derived intensity to material/global shader state.
+Rejected Alternatives: Relying on shader-side `max()` alone was rejected because NaN can propagate differently across graphics backends. Clamping only in the Burst job was rejected because shader globals are a separate contract.
+Scalability potential: Low/MX350/high/ultra visuals are unchanged for valid data. The fix protects all tiers from malformed tuning without adding allocations or changing GPU buffer layout.
+Hardware Impact: Upload path adds two finite checks and two clamps on frames where bones are uploaded; estimated under 0.1 us and not profiler-backed.

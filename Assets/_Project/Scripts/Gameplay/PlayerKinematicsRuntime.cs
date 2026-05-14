@@ -179,23 +179,23 @@ namespace Hecton8.Gameplay
             Velocities[0] = velocity;
             FaultFlags[0] = flags;
 
-            int writeIndex = TelemetryWriteIndex[0];
-            int telemetryLength = math.max(1, Telemetry.Length);
-            int wrappedIndex = writeIndex % telemetryLength;
-            Telemetry[wrappedIndex] = new PlayerKinematicsRuntimeTelemetryEntry
+            if (Telemetry.IsCreated && Telemetry.Length > 0 && TelemetryWriteIndex.IsCreated && TelemetryWriteIndex.Length > 0)
             {
-                Position = position,
-                Velocity = velocity,
-                IntendedMovement = intended,
-                DragCoefficient = drag,
-                WaterDensity = density,
-                SolidDensity = telemetrySolidDensity,
-                Frame = Frame,
-                Flags = (uint)flags,
-                SyncFenceHash = 0u,
-                AuxFlags = runtimeFlags
-            };
-            TelemetryWriteIndex[0] = (writeIndex + 1) % telemetryLength;
+                int wrappedIndex = ReserveTelemetrySlot(TelemetryWriteIndex, Telemetry.Length);
+                Telemetry[wrappedIndex] = new PlayerKinematicsRuntimeTelemetryEntry
+                {
+                    Position = position,
+                    Velocity = velocity,
+                    IntendedMovement = intended,
+                    DragCoefficient = drag,
+                    WaterDensity = density,
+                    SolidDensity = telemetrySolidDensity,
+                    Frame = Frame,
+                    Flags = (uint)flags,
+                    SyncFenceHash = 0u,
+                    AuxFlags = runtimeFlags
+                };
+            }
         }
 
         private static float3 SnapMillimeter(float3 value)
@@ -209,6 +209,15 @@ namespace Hecton8.Gameplay
         private static float SanitizeNonNegative(float value)
         {
             return math.select(math.max(0.0f, value), 0.0f, !math.isfinite(value));
+        }
+
+        private static int ReserveTelemetrySlot(NativeArray<int> writeCursor, int telemetryLength)
+        {
+            int safeLength = math.max(1, telemetryLength);
+            int writeIndex = math.max(0, writeCursor[0]);
+            int wrappedIndex = writeIndex % safeLength;
+            writeCursor[0] = (wrappedIndex + 1) % safeLength;
+            return wrappedIndex;
         }
 
         private static float3 SanitizeFloat3(float3 value, float3 fallback)
@@ -1741,7 +1750,7 @@ namespace Hecton8.Gameplay
 
         private void WriteSqueezeTelemetry(in PlayerStateSignal signal)
         {
-            if (!_telemetry.IsCreated || !_telemetryWriteIndex.IsCreated)
+            if (!TryReserveTelemetrySlot(out int wrappedIndex))
                 return;
 
             Vector3 runtimePosition = _body != null ? _body.position : Vector3.zero;
@@ -1753,14 +1762,11 @@ namespace Hecton8.Gameplay
             if ((signal.Flags & PlayerStateSignal.FlagLowTierGradient) != 0)
                 auxFlags |= BodyFlagSdfLowTierGradient;
 
-            int writeIndex = _telemetryWriteIndex[0];
-            int telemetryLength = math.max(1, _telemetry.Length);
-            int wrappedIndex = writeIndex % telemetryLength;
             _telemetry[wrappedIndex] = new PlayerKinematicsRuntimeTelemetryEntry
             {
-                Position = ToFloat3(runtimePosition),
-                Velocity = ToFloat3(runtimeVelocity),
-                IntendedMovement = _intendedMovement.IsCreated ? _intendedMovement[0] : float3.zero,
+                Position = SanitizeFloat3(ToFloat3(runtimePosition), float3.zero),
+                Velocity = SanitizeFloat3(ToFloat3(runtimeVelocity), float3.zero),
+                IntendedMovement = _intendedMovement.IsCreated ? SanitizeFloat3(_intendedMovement[0], float3.zero) : float3.zero,
                 DragCoefficient = SanitizeNonNegative(dragCoefficient),
                 WaterDensity = ResolveRuntimeWaterDensityScale(),
                 SolidDensity = SanitizeUnit(signal.Intensity01),
@@ -1769,7 +1775,6 @@ namespace Hecton8.Gameplay
                 SyncFenceHash = 0u,
                 AuxFlags = auxFlags
             };
-            _telemetryWriteIndex[0] = (writeIndex + 1) % telemetryLength;
         }
 
         private void TickStamina()
@@ -2119,9 +2124,6 @@ namespace Hecton8.Gameplay
             float activeBlend,
             bool scraped)
         {
-            if (!_telemetry.IsCreated || !_telemetryWriteIndex.IsCreated)
-                return;
-
             uint auxFlags = 0u;
             if (activeBlend > 0.0001f)
                 auxFlags |= IkBraceTelemetryFlag;
@@ -2139,14 +2141,14 @@ namespace Hecton8.Gameplay
             if (auxFlags == 0u)
                 return;
 
-            int writeIndex = _telemetryWriteIndex[0];
-            int telemetryLength = math.max(1, _telemetry.Length);
-            int wrappedIndex = writeIndex % telemetryLength;
+            if (!TryReserveTelemetrySlot(out int wrappedIndex))
+                return;
+
             _telemetry[wrappedIndex] = new PlayerKinematicsRuntimeTelemetryEntry
             {
-                Position = _positions.IsCreated ? _positions[0] : _lastProbeSourcePosition,
-                Velocity = _velocities.IsCreated ? _velocities[0] : _lastProbeVelocity,
-                IntendedMovement = _intendedMovement.IsCreated ? _intendedMovement[0] : float3.zero,
+                Position = SanitizeFloat3(_positions.IsCreated ? _positions[0] : _lastProbeSourcePosition, float3.zero),
+                Velocity = SanitizeFloat3(_velocities.IsCreated ? _velocities[0] : _lastProbeVelocity, float3.zero),
+                IntendedMovement = _intendedMovement.IsCreated ? SanitizeFloat3(_intendedMovement[0], float3.zero) : float3.zero,
                 DragCoefficient = SanitizeNonNegative(dragCoefficient),
                 WaterDensity = ResolveRuntimeWaterDensityScale(),
                 SolidDensity = activeBlend,
@@ -2155,7 +2157,6 @@ namespace Hecton8.Gameplay
                 SyncFenceHash = 0u,
                 AuxFlags = auxFlags
             };
-            _telemetryWriteIndex[0] = (writeIndex + 1) % telemetryLength;
         }
 
         private void PushVatScalar()
@@ -2321,17 +2322,14 @@ namespace Hecton8.Gameplay
 
         private void WriteSyncFenceTelemetry(in SyncFenceSignal signal)
         {
-            if (!_telemetry.IsCreated || !_telemetryWriteIndex.IsCreated)
+            if (!TryReserveTelemetrySlot(out int wrappedIndex))
                 return;
 
-            int writeIndex = _telemetryWriteIndex[0];
-            int telemetryLength = math.max(1, _telemetry.Length);
-            int wrappedIndex = writeIndex % telemetryLength;
             _telemetry[wrappedIndex] = new PlayerKinematicsRuntimeTelemetryEntry
             {
-                Position = signal.RuntimePosition,
-                Velocity = signal.Velocity,
-                IntendedMovement = _intendedMovement.IsCreated ? _intendedMovement[0] : float3.zero,
+                Position = SanitizeFloat3(signal.RuntimePosition, float3.zero),
+                Velocity = SanitizeFloat3(signal.Velocity, float3.zero),
+                IntendedMovement = _intendedMovement.IsCreated ? SanitizeFloat3(_intendedMovement[0], float3.zero) : float3.zero,
                 DragCoefficient = SanitizeNonNegative(dragCoefficient),
                 WaterDensity = ResolveRuntimeWaterDensityScale(),
                 SolidDensity = 0.0f,
@@ -2340,7 +2338,6 @@ namespace Hecton8.Gameplay
                 SyncFenceHash = signal.StateHash,
                 AuxFlags = HectonFloatingOrigin.CurrentShiftSequence
             };
-            _telemetryWriteIndex[0] = (writeIndex + 1) % telemetryLength;
         }
 
         private void EmitDesyncDetected(uint localHash, uint authoritativeHash, uint frame, byte flags)
@@ -2426,12 +2423,18 @@ namespace Hecton8.Gameplay
             {
                 writer.Write(magic);
                 writer.Write(_faultFlags[0]);
-                writer.Write(_telemetryWriteIndex.IsCreated ? _telemetryWriteIndex[0] : 0);
+                int telemetryHead = ResolveTelemetryHeadIndex();
+                writer.Write(telemetryHead);
                 writer.Write(_lastSyncFenceHash);
                 writer.Write(_lastSyncFenceFrame);
-                for (int i = 0; i < _telemetry.Length; i++)
+                int telemetryLength = _telemetry.Length;
+                for (int i = 0; i < telemetryLength; i++)
                 {
-                    PlayerKinematicsRuntimeTelemetryEntry entry = _telemetry[i];
+                    int telemetryIndex = telemetryHead + i;
+                    if (telemetryIndex >= telemetryLength)
+                        telemetryIndex -= telemetryLength;
+
+                    PlayerKinematicsRuntimeTelemetryEntry entry = _telemetry[telemetryIndex];
                     writer.Write(entry.Position.x);
                     writer.Write(entry.Position.y);
                     writer.Write(entry.Position.z);
@@ -2485,6 +2488,38 @@ namespace Hecton8.Gameplay
         {
             float3 safeFallback = math.select(fallback, float3.zero, !math.all(math.isfinite(fallback)));
             return math.select(value, safeFallback, !math.all(math.isfinite(value)));
+        }
+
+        private bool TryReserveTelemetrySlot(out int wrappedIndex)
+        {
+            wrappedIndex = 0;
+            if (!_telemetry.IsCreated ||
+                !_telemetryWriteIndex.IsCreated ||
+                _telemetry.Length <= 0 ||
+                _telemetryWriteIndex.Length <= 0)
+            {
+                return false;
+            }
+
+            int telemetryLength = _telemetry.Length;
+            int writeIndex = math.max(0, _telemetryWriteIndex[0]);
+            wrappedIndex = writeIndex % telemetryLength;
+            _telemetryWriteIndex[0] = (wrappedIndex + 1) % telemetryLength;
+            return true;
+        }
+
+        private int ResolveTelemetryHeadIndex()
+        {
+            if (!_telemetry.IsCreated ||
+                !_telemetryWriteIndex.IsCreated ||
+                _telemetry.Length <= 0 ||
+                _telemetryWriteIndex.Length <= 0)
+            {
+                return 0;
+            }
+
+            int writeIndex = math.max(0, _telemetryWriteIndex[0]);
+            return writeIndex % _telemetry.Length;
         }
 
         private static float SmoothScalar(float current, float target, float sharpness, float deltaTime)

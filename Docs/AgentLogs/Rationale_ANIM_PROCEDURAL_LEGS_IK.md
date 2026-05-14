@@ -125,10 +125,18 @@ Hardware Impact: Added scalar finite checks are in existing player kinematic pat
 ## Decision 16: Quaternion/raycast command finite boundary
 
 Problem: `ContextualPhysicalIkApplyJob` rejected non-finite quaternions, but a finite zero-length stream rotation could still pass the check and reach `math.inverse`. The ground detection job also had defensive gaps where corrupt camera/probe/origin values could collapse command origins to zero or let NaN scalar inputs affect hand/foot proxy blends.
-Solution: Normalized finite Unity quaternions through the shared no-sqrt path, preserved zero/invalid quaternions for explicit rejection, upgraded quaternion validators to require finite non-zero length, sanitized brace directions and camera/tool/hand/foot ray origins, sanitized foot step cache state, and clamped contact offsets, max-delta heights, collision distances, and brace proxy distances before ray-response math.
+Solution: Normalized finite Unity quaternions through the shared no-sqrt path, preserved zero/invalid quaternions for explicit rejection, upgraded quaternion validators to require finite non-zero length, sanitized brace directions and camera/tool/hand/foot ray origins, sanitized foot step cache state, clamped contact offsets, max-delta heights, collision distances, and brace proxy distances before ray-response math, and kept spine target range validation self-contained inside the Burst apply job.
 Rejected Alternatives: Dotnet rebuild was explicitly rejected by user instruction. Logging bad quaternions or ray inputs was rejected as GC/noise. Adding extra ray probes, a gait planner, or physical leg authority was rejected because this is an H-Phi boundary defect in the existing visual fake.
 Scalability potential: Low/MX350 keeps the same two foot rays and cheap hand rays without zero-origin command pollution. Middle keeps stable two-bone lower-body presence. High gets cleaner velocity-led foot placement and hand retraction. Ultra can spend saved trust on secondary/muscle visual overkill without amplifying corrupt stream rotations.
 Hardware Impact: Added work is branch/finite/length-squared checks and existing `rsqrt` quaternion normalization, estimated below 1 us/frame on i3/MX350 for the standard player rig. No allocations, no public API changes, no new jobs, no new ray lanes.
+
+## Decision 17: Black-box telemetry cursor hardening
+
+Problem: `PlayerKinematicsRuntime` black-box telemetry is the post-mortem source for KCC-to-IK faults, but its write cursor was read directly from a native int and modulo-indexed. If that cursor became negative or stale, the telemetry write itself could fault or skip chronology before the dump captured the bad lower-body/KCC state.
+Solution: Added bounded telemetry slot reservation in the Burst body job and shared main-thread telemetry writer, clamping negative cursors to zero, rejecting missing/zero-length buffers, advancing from the wrapped index, finite-sanitizing telemetry position/velocity/intended movement payloads before black-box writes, and dumping telemetry oldest-to-newest from a sanitized wrapped head.
+Rejected Alternatives: Dotnet rebuild was explicitly rejected by user instruction. Exceptions/logging on cursor corruption were rejected because telemetry is the fault path and must not allocate or cascade. A larger telemetry buffer was rejected because the existing 300-frame black box satisfies the mandate.
+Scalability potential: Low/MX350 keeps the same 300-entry telemetry footprint with safer writes. Middle/High/Ultra preserve chronological KCC/IK evidence under richer hand/leg presentation without increasing hot-path memory or event lanes.
+Hardware Impact: Added cost is integer bounds checks and finite vector selects only when telemetry is written, estimated below 0.5 us per telemetry event on i3/MX350. No allocations, no new native containers, no new public API.
 
 ## OMEGA POLISH CHANGES
 

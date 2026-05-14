@@ -94,6 +94,7 @@ namespace Hecton8.Gameplay
     internal struct ContextualPhysicalIkApplyJob : IAnimationJob
     {
         public const int PelvisHandleIndex = 0;
+        private const int SpineTargetCountPerChain = 3;
         private const float SpineSlopeLeanShare = 0.35f;
 
         [ReadOnly] public NativeArray<ContextualPhysicalIkTargetFrame> TargetFrames;

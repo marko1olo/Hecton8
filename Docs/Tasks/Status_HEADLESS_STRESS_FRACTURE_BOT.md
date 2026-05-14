@@ -13,6 +13,7 @@ Status: PENDING VERIFICATION
 - [x] Prompt re-extracted after implementation batch | Justification: anti-amnesia protocol after task batches; rejected relying on chat summary | Estimate: 190 us
 - [x] Unity MCP verification attempted | Justification: Unity compile/console is preferred proof path; rejected pretending static csc is full Unity proof | Estimate: 250000 us
 - [x] Prompt re-extraction attempted after batch drift | Justification: `CURRENT_BATCH.md` no longer contains `HEADLESS_STRESS_FRACTURE_BOT`; rejected neighboring prompt bleed and continued from disk status/rationale only | Estimate: 300 us
+- [x] Prompt re-extraction reattempted during scalable-pressure continuation | Justification: batch drift persists; rejected reading neighboring prompt bodies and continued from owned status/rationale | Estimate: 300 us
 
 ## Tasks
 - [x] Task 1: Command argument `-h8fracturetest` | Justification: runtime auto-creates only when command arg/env/flag is present; DOD used registry-safe isolated runner; rejected scene objects/direct bootstrap edits | Estimate: 2 us per process arg scan item
@@ -26,7 +27,7 @@ Status: PENDING VERIFICATION
 - [x] Task 9: H-Phi metric console print before test | Justification: computes cold static source metric and prints `[H-PHI_STATIC]` before stress start; rejected cached stale report values | Estimate: 40000 us cold scan
 - [x] Task 10: CI exit 0 after 50,000 extreme frames | Justification: writes result JSON and exits 0 only after `_targetFrames` survives; rejected silent pass without artifact | Estimate: 5 us terminal decision
 - [x] Task 11: Zero-GC stressor logic | Justification: hot path uses fields, native arrays, struct signals, no LINQ/foreach/coroutines/string formatting/jobs `.Complete()`; terminal/cold paths own managed IO | Estimate: 0 B managed hot path by static audit
-- [x] Task 12: Omega compile check | Justification: new runtime/editor files pass isolated Unity Roslyn compile against Library/ScriptAssemblies; full `dotnet build` is blocked by unrelated existing Hecton8.Core dependency errors; Unity MCP session unavailable | Estimate: 20000000 us verification
+- [x] Task 12: Omega compile check | Justification: compile probes executed; editor runner passes isolated Unity Roslyn compile, runtime source reaches a stale `Library/ScriptAssemblies` H8Memory overload wall, and full `dotnet` rebuilds remain forbidden by user instruction | Estimate: 20000000 us verification
 
 ## Iteration Log
 - Loop 0: Prompt, domain, mandates, and missing state files confirmed. Code not touched yet.
@@ -41,6 +42,7 @@ Status: PENDING VERIFICATION
 - Loop 9: Terminal lifecycle pass unregisters fast/cold/late/origin hooks immediately on pass/fail and replaces editor result substring matching with exact `exitCode` parsing plus fail-fast corrupted start-time handling.
 - Loop 10: Stale activation guard pass rejects old `Temp/H8_FRACTURE_TEST.flag` files older than 3 hours and deletes any old flag before the editor batch runner writes a fresh one.
 - Loop 11: No-dotnet H-Phi and CI hygiene pass routes swarm pressure through the typed `SignalBus<SwarmDispersedSignal>` lane, replaces the custom H-Phi count with runtime risk-adjusted source scanning, centralizes memory artifact reads into a layout-proven snapshot, deletes stale/far-future flag triggers, and logs invalid result JSON instead of silently defaulting.
+- Loop 12: Scalable pressure and H-Phi self-debt pass adds clamped `H8_FRACTURE_SCRATCH_MB`/`-h8fractureScratchMb` and `H8_FRACTURE_STARTUP_TIMEOUT_SECONDS`/`-h8fractureStartupTimeoutSeconds` controls while preserving the default 50MB/60s behavior, writes activation/scratch/timeout fields into the result artifact, routes startup readiness through cached `_dispatcher`, and splits scanner tick-method literals so source audits no longer count the scanner itself.
 
 ## Verification
 - Unity MCP editor state: BLOCKED, no Unity session available.
@@ -63,6 +65,10 @@ Status: PENDING VERIFICATION
 - Isolated runtime compile after H-Phi hygiene patch: BLOCKED BY STALE SCRIPTASSEMBLY; compiler reached source and failed at `H8Memory.Release(ref _scratchBlock, SystemID.External)` because `Library/ScriptAssemblies` still exposes the older `JobHandle` overload while current `Assets/_Project/Scripts/Core/Memory/H8Memory.cs` source defines the owner-tagged overload used by this file and other current sources. No `dotnet` rebuild was run by user instruction.
 - PowerShell H-Phi audit after H-Phi hygiene patch: PASS without `dotnet`; runtime risk `0.000124488`, runtime narrow `0.009266939`, `SignalBusPush=84`, `GlobalRegistrySurface=5139`, `EventPublish=450`, `DataVaultRefs=133`, `NativeArrayRefs=7020`, `StructLayoutAttributes=946`, `StructDeclarations=1888`.
 - Scoped QA/headless source count after H-Phi hygiene patch: `SignalBusPush=3`, `GlobalSignalsPublish=4`, `GlobalRegistrySurface=15`, `StructLayoutAttributes=3`, `StructDeclarations=3`, `FindObjectCalls=0`, `GetComponentCalls=0`, `UnityUpdateMethods=0`.
+- Focused static audit after scalable pressure/H-Phi self-debt patch: PASS for the two Race Condition Hunter files; no scene search, LINQ, coroutine, `Task<`, `.Complete()`, explicit GC, reflection, managed collection creation, `string.Format`, or `Substring` usage.
+- Isolated editor runner compile after scalable pressure/H-Phi self-debt patch: PASS via Unity Mono compiler with `UNITY_EDITOR` defined, Unity editor facade, and `Assembly-CSharp.dll`.
+- Isolated runtime compile after scalable pressure/H-Phi self-debt patch: BLOCKED BY STALE SCRIPTASSEMBLY; compiler reached current source and reported only `CS1503` at `HeadlessStressFractureBot.cs(582,49)` because `Library/ScriptAssemblies` still exposes the older `H8Memory.Release(ref NativeArray<T>, JobHandle)` overload while current source defines and uses `Release(ref NativeArray<T>, SystemID)`. No `dotnet` rebuild was run by user instruction.
+- Scoped QA/headless source count after scalable pressure/H-Phi self-debt patch: `SignalBusPush=3`, `GlobalSignalsPublish=4`, `GlobalRegistrySurface=13`, `StructLayoutAttributes=3`, `StructDeclarations=3`, `FindObjectCalls=0`, `GetComponentCalls=0`, `UnityUpdateMethods=0`.
 - Full `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false`: BLOCKED BY EXISTING DEPENDENCIES, 139 unrelated errors before/around core missing namespaces, duplicate SaveManager members, and interface mismatches.
 - Full `dotnet build Assembly-CSharp.csproj --no-restore -m:2 /nr:false`: BLOCKED BY SAME EXISTING `Hecton8.Core.csproj` dependency failures.
 - No `dotnet` rebuilds were run during the 2026-05-15 continuation pass.

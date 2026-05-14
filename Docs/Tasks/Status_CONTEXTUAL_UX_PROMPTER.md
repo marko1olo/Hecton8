@@ -56,7 +56,8 @@ Status: PENDING VERIFICATION
 - Loop 13: Scoped H-Phi micro pass. Cached Low-tier state once in lifecycle and late-frame lanes, made `IsLowTier()` registry-free during render/layout checks, and changed the 300-frame black-box ring cursor from modulo to branch wrap. No dotnet rebuilds run per user instruction.
 - Loop 14: Render-basis consolidation. Sampled `camera.transform` once per render, passed right/up/forward into icon and text batches, moved UV dirty upload to render scope, and removed per-batch camera basis reads. No dotnet rebuilds run per user instruction.
 - Loop 15: Resource readiness split. Added `_resourceObjectsReady`, fixed explicit compute-buffer strides, and removed `Marshal.SizeOf` from tooltip buffer allocation. No dotnet rebuilds run per user instruction.
-- Loop 16: Authored material fallback pass. Removed runtime `Shader.Find` and `new Material` fallback from `DiegeticTooltipSystem`, added two authored Resources materials for glyph/icon draws, and moved per-draw texture/buffer/fade binding into persistent `MaterialPropertyBlock`s. No dotnet rebuilds run per user instruction.
+- Loop 16: Authored material fallback pass. Removed runtime `Shader.Find` and `new Material` fallback from `DiegeticTooltipSystem`, added two authored Resources materials for glyph/icon draws, moved per-draw texture/buffer/fade binding into persistent `MaterialPropertyBlock`s, and added a fail-closed shader-contract check. No dotnet rebuilds run per user instruction.
+- Loop 17: Material readiness latch pass. Added cached material-ready and material-failed states so successful material setup is skipped after warmup and missing/mismatched authored materials fail closed once per resource lifetime. No dotnet rebuilds run per user instruction.
 
 ## Verification Notes
 - `dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary | Select-String ...`: no output for touched-file filter after final cache collision fix.
@@ -67,6 +68,8 @@ Status: PENDING VERIFICATION
 - Post Loop 13 static scan returned no matches for forbidden hot-path text/allocation/LINQ patterns, no old update/shared-buffer/matrix/shader patterns, and no `% BlackBoxCapacity` cursor modulo.
 - Post Loop 14 static scan stayed clean for forbidden text/allocation/LINQ patterns and old update/shared-buffer/matrix/shader markers after render-basis consolidation.
 - Post Loop 16 static scan stayed clean for forbidden text/allocation/LINQ patterns and old update/shared-buffer/matrix/shader markers, and returned no `Marshal.SizeOf`, `Shader.Find`, or `new Material(` matches in the tooltip/shader scope.
+- Post Loop 17 static scan stayed clean for forbidden text/allocation/LINQ patterns and old update/shared-buffer/matrix/shader markers, and `git diff --check` returned only repository CRLF warnings.
+- `Tools/Architecture/HectonPhiAudit.ps1 -Json` completed at `2026-05-15 01:32:33 +04:00` without invoking a rebuild. Follow-up summary extraction exceeded tool timeout; no score claim is recorded from that partial extraction.
 - `git diff --check` on `DiegeticTooltipSystem.cs` and `Hecton_DiegeticTooltipIndirect.shader` passed with repository CRLF warnings only.
 - Broad unfiltered `dotnet build Hecton8.Core.csproj` did not complete within the tool timeout in the current dirty multi-agent workspace; stale child processes from that verification run were stopped only when command lines proved they belonged to this `Hecton8.Core.csproj` build.
 - Unity MCP script refresh failed: HTTP transport to `http://127.0.0.1:8088/mcp` was unreachable. Editor console verification is therefore pending.

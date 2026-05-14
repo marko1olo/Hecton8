@@ -39,6 +39,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Memory;
 using Hecton8.Core.Signals;
 using Hecton8.Bootstrap;
@@ -207,7 +208,7 @@ namespace Hecton8.Physics
         private const uint SplashdownImpulseNoAffectedCellsFlag = 1u << 4;
         private const uint SplashdownImpulseJobInvalidFlag = 1u << 8;
         private const uint SplashdownImpulseInvalidInputFlag = 1u << 31;
-        private const uint PrologueSequenceSourceHash = 0x50524C47u; // PRLG
+        private const uint PrologueSequenceSourceHash = PrologueSignalSourceHashes.SequenceDirector;
         private const int AbyssalFlowTelemetryCapacity = 300;
         private const string AbyssalFlowDumpRelativePath = "Docs/AgentLogs/Dump_SPLASHDOWN_FLUID_DYNAMICS.bin";
         private const int GpuReadbackRingSize = 3;

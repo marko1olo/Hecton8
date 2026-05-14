@@ -301,14 +301,14 @@ Regression Model:
 ## 2026-05-15 Typed Signal Publish Metric Correction And Summary Mode
 
 What was wrong:
-- H-Phi risk integration counted typed `GlobalSignals.Publish(...)` as generic `Publish(...)` event debt.
-- That made the project look less signal-integrated than it is: previous summary showed `SignalBusPush=84` and `EventPublish=450`.
+- H-Phi risk integration counted typed `GlobalSignals.Publish(...)` and confirmed NativeQueue/SystemDispatcher-backed publish lanes as generic `Publish(...)` event debt.
+- That made the project look less signal-integrated than it is: the pre-correction summary showed `SignalBusPush=84` and `EventPublish=450`.
 - Overseer checks had no compact summary path; full JSON was too noisy for fast status review.
 
 What was done:
 - Updated `Tools/Architecture/HectonPhiAudit.ps1`:
-  - `SignalBusPush` now includes `SignalBus<T>.Push` and `GlobalSignals.Publish(...)`.
-  - `EventPublish` is narrowed to explicit legacy/static event publisher surfaces.
+  - `SignalBusPush` now includes `SignalBus<T>.Push`, `GlobalSignals.Publish(...)`, and confirmed queued lanes: `VehicleCommandSignalBus`, `PhysicsDeterminismSignals`, `FluidFeedbackEvents`, `LocalizationEvents`, and `VoxelChunkModifiedEvents`.
+  - `EventPublish` is narrowed to remaining legacy/direct fan-out publisher surfaces: `HectonEventBus`, `WaterTransitionEvents`, and `SuitDamageEvents`.
   - Added `-Summary` for compact scores, counts, Core graph debt, and top DataVault owner-blocked candidates.
 - Honored user instruction: no `dotnet build`, no rebuild.
 
@@ -329,14 +329,14 @@ Compile Status:
 
 Phi Gain:
 - Previous runtime narrow score: `0.009266939`.
-- Current runtime narrow score: `0.009244029`.
-- Narrow delta: `-0.000022910`, about `-0.25%`; this is concurrent/static counter movement, not a runtime regression claim.
+- Current runtime narrow score: `0.009377979`.
+- Narrow delta: `+0.000111040`, about `+1.20%`.
 - Previous runtime risk-adjusted score: `0.000124428`.
-- Current runtime risk-adjusted score: `0.000468052`.
-- Risk-adjusted delta: `+0.000343624`, about `+276.16%`.
-- Risk integration moved `0.013427110 -> 0.050632911`.
-- `SignalBusPush` moved `84 -> 308`; `EventPublish` moved `450 -> 48`.
-- Compared with original dialogue baseline `0.00062`, current runtime narrow is about `+1390.97%`.
+- Current runtime risk-adjusted score: `0.000505917`.
+- Risk-adjusted delta: `+0.000381489`, about `+306.59%`.
+- Risk integration moved `0.013427110 -> 0.053947368`.
+- `SignalBusPush` moved `84 -> 328`; `EventPublish` moved `450 -> 28`.
+- Compared with original dialogue baseline `0.00062`, current runtime narrow is about `+1412.58%`.
 - Important: this pass is a metric-model correction and evidence-routing improvement, not measured frame-time gain.
 
 Regression Model:

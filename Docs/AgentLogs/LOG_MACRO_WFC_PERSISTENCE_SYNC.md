@@ -352,3 +352,88 @@ Verification:
 - Static scans confirm the reset helper and call order before the looted/unlooted branch.
 - `git diff --check` reports no whitespace errors except Git CRLF normalization warnings.
 - No `dotnet` rebuild was run.
+
+## Recheck Report: AudioLog Datapad Active-State Restore
+Status: PENDING VERIFICATION.
+
+What was wrong:
+- `AudioLogPickup` is used as the WFC datapad fallback producer.
+- Looted WFC restore can deactivate a pooled pickup.
+- A later unlooted WFC configuration needed a sector-local reset/reactivation path; otherwise global audio-log discovery could keep the pickup inactive or discovered.
+
+What was done:
+- Added WFC-scoped baseline restore for audio-log pickups.
+- Invalid WFC config clears stale identity before any baseline reactivation.
+- Valid unlooted WFC config resets `_alreadyDiscovered`, rebuilds cache, and can reactivate inactive pooled pickups.
+- `OnEnable` now applies configured WFC state before consulting global `AudioLogs` discovery.
+
+Cinematic cheats used:
+- No collection-history replay.
+- No managed per-cell pickup map.
+- The physical outpost pickup follows the one-bit WFC looted truth and rebuilds only local presentation cache.
+
+Exact microseconds saved:
+- Measured savings: 0 us. No profiler or runtime trace.
+- Static cost: cold scalar reset, cache rebuild, and possible Unity reactivation on pooled unlooted restore.
+- Static gain: prevents stale pooled active/discovered state from forcing corrective interaction or save writes.
+
+Verification:
+- Static scans confirm `RestoreWfcOutpostDatapadBaselineState`, WFC-first `OnEnable`, and clear-before-invalid-reactivate ordering.
+- Targeted `git diff --check` reports no whitespace errors.
+- No `dotnet` rebuild was run.
+
+## Recheck Report: MessageTerminal Invalid WFC Fail-Closed Reset
+Status: PENDING VERIFICATION.
+
+What was wrong:
+- Valid WFC terminal config reset playback/read state.
+- Invalid WFC config only cleared persistence identity.
+- A pooled terminal could keep stale looted/read/playback state after an invalid hash or cell.
+
+What was done:
+- Invalid WFC config now resets transient playback first.
+- It then clears WFC identity.
+- It restores authored datapad baseline after identity is cleared, avoiding stale signal publication.
+
+Cinematic cheats used:
+- No interaction-history replay.
+- No broad terminal lifecycle reset.
+- The invalid WFC path snaps back to authored local baseline.
+
+Exact microseconds saved:
+- Measured savings: 0 us. No profiler or runtime trace.
+- Static cost: cold scalar reset plus existing baseline scan only on invalid config.
+- Static gain: prevents stale pooled terminal state from forcing corrective interaction or save writes.
+
+Verification:
+- Static scans confirm invalid branch order: reset, clear, restore.
+- Targeted `git diff --check` reports only CRLF normalization warnings.
+- No `dotnet` rebuild was run.
+
+## Recheck Report: SealedDoor Invalid WFC Fail-Closed Reset
+Status: PENDING VERIFICATION.
+
+What was wrong:
+- Valid WFC door config can restore an opened/unlocked/powered door.
+- Invalid WFC config only cleared persistence identity.
+- A pooled door could keep stale opened or unlocked state after bad WFC binding.
+
+What was done:
+- Invalid WFC door config now clears WFC identity.
+- It then calls `ResetState()` to restore authored baseline, collider state, and progress visuals.
+- It avoids `ResetDoor()` so no fake mutation signal is published for an invalid cell.
+
+Cinematic cheats used:
+- No door-history replay.
+- No persistence write for invalid cell state.
+- The invalid path snaps the physical proxy back to authored local baseline.
+
+Exact microseconds saved:
+- Measured savings: 0 us. No profiler or runtime trace.
+- Static cost: cold baseline reset plus optional animator rebind on invalid config only.
+- Static gain: prevents stale pooled door state from forcing corrective power/door signals.
+
+Verification:
+- Static scans confirm invalid branch order: clear identity, reset baseline.
+- Targeted `git diff --check` reports only CRLF normalization warnings.
+- No `dotnet` rebuild was run.

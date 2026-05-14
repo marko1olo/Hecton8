@@ -269,3 +269,39 @@ Rejected Alternatives: deregistering the interaction handler when the table is e
 Scalability potential: Low/toaster states skip panel physics probes when no usable receiver exists. Middle keeps the same fixed table and next-tick activation for late-spawned controls. High/Ultra can run denser cockpits because active receivers still use the same O(1) hash lookup while empty transitional periods avoid wasted physics queries.
 
 Hardware Impact: i3/MX350 pays one static integer comparison per active XR tick and one int increment/decrement on receiver lifecycle. Empty receiver states save one hand pose read, one interaction-signal service read, one `OverlapSphereNonAlloc`, and up to eight candidate bounds/registry checks per XR frame. Normal registered-control frames keep the existing NonAlloc path and 0 B/frame behavior.
+
+## Decision 22 - Physical hand fixed solve must obey zero dispatcher time
+
+Problem: `PhysicalHandController.SanitizeFixedDeltaSeconds()` converted non-finite or zero fixed-step deltas into `MinimumDeltaTime`. A dispatcher `dt=0` frame could therefore advance haptic cooldowns, harvest snap timers, recoil decay, open/finger pose blending, suit shell movement, virtual hand lag, articulation targets, and grabbed-body force solve despite no simulation time passing.
+
+Solution: sanitize non-finite or non-positive fixed deltas to zero, return early from `StepFixed()` on zero, and keep the positive-step minimum clamp for tiny positive deltas that feed velocity divisions. Preserve `_lastFingerPoseDeltaTime` when a finger pose job is already scheduled so the late-frame completion for a previous valid fixed step still uses its original blend delta.
+
+Rejected Alternatives: leaving `MinimumDeltaTime` as a universal fallback was rejected because it forces fake progress through pause/time-dilation. Allowing the rest of the fixed solve to run with `dt=0` was rejected because the hand solver divides by dt in virtual hand and angular velocity paths. Clearing scheduled finger jobs was rejected because job completion belongs to `LateFrameTick()`.
+
+Scalability potential: Low/toaster pause frames skip the full physical hand fixed solve. Middle keeps deterministic authored hand state during time dilation. High/Ultra can spend the saved zero-time frames on presentation without desynchronizing the physical hand proxy.
+
+Hardware Impact: i3/MX350 pays one zero-dt branch in `StepFixed()`. Zero-time frames avoid haptic cooldown work, harvest snap advance, recoil/open-pose solve, suit shell updates, virtual hand lag, articulation drive writes, grabbed-body force solve, and finger job scheduling. Normal positive fixed steps keep the existing minimum clamp and division safety. 0 B/frame.
+
+## Decision 23 - Late-frame hand work must be job-pending, not grab-lifetime
+
+Problem: `PhysicalHandController.RequiresLateFrameTick` stayed true for the whole grab lifetime even though `LateFrameTick()` only calls `CompleteScheduledFingerPose()`. The XR idle-bypass function also read `InputDispatcher` state before returning false for grabs, harvest snaps, suit shell, or active suit contact. Suit-contact haptics treated every non-left hand side as right-hand output.
+
+Solution: narrow `RequiresLateFrameTick` to `_fingerPoseScheduled`. Move active/contact solve gates before dispatcher access in `ShouldBypassXRHandKinematicUpdate()`. Add explicit XR controller-index resolution that rejects invalid hand side, and add `BothMotorMask`/`ResolveHandMotorMask()` so invalid/future hand sides generate non-localized both-hand contact feedback instead of right-biased feedback.
+
+Rejected Alternatives: leaving late-frame registered for all grabs was rejected because no late-frame work exists without a pending finger job. Keeping dispatcher reads before active solve gates was rejected because the solve state already proves the idle-bypass path cannot be used. Defaulting invalid side to right was rejected for the same reason as panel/switch haptics: bad identity should not create precise wrong tactile routing.
+
+Scalability potential: Low/toaster avoids empty late-frame calls and unnecessary XR input-state reads during active physical interactions. Middle keeps deterministic finger job completion because fixed tick still registers late-frame immediately after scheduling. High/Ultra can run richer hand/contact presentation without paying idle-probe overhead in every grabbed/contact frame.
+
+Hardware Impact: i3/MX350 saves one empty dispatcher late-frame callback per rendered frame during grabs with no pending finger job, and one dispatcher/input-state lookup per fixed step while grabbing, harvest-snapping, suit-shell-enabled, or in suit contact. Haptic fallback adds only branch work on contact haptic dispatch. 0 B/frame.
+
+## Decision 24 - Lever IK smoothing should use presentation-grade math, not spherical interpolation
+
+Problem: `OpenXRManualOverrideLever.UpdateIkTarget()` used `Vector3.Lerp` and `Quaternion.Slerp` every grabbed presentation tick. The target is an IK helper transform, not gameplay truth; the lever angle/latched state remains scalar and authoritative. Slerp buys precision that is not visible here while costing more than a normalized lerp.
+
+Solution: replace position interpolation with `math.lerp(float3)` and rotation interpolation with `ApproximateNlerp()`. The helper performs shortest-arc sign correction, blends quaternion components, validates length squared, and normalizes with `math.rsqrt`.
+
+Rejected Alternatives: keeping Slerp was rejected because this is presentation smoothing, not simulation authority. Snapping directly to the handle was rejected because prior work deliberately restored visible IK smoothing. Adding a Burst job was rejected because one IK transform blend is cheaper on the main thread.
+
+Scalability potential: Low/toaster saves grabbed-frame presentation math. Middle keeps smooth IK output. High/Ultra can spend the saved cycles on denser cockpit tactile/audio/visual feedback while the manual override lever remains a scalar kinematic control.
+
+Hardware Impact: i3/MX350 removes one `Quaternion.Slerp` and one `Vector3.Lerp` from grabbed lever presentation frames, replacing them with struct math and one `rsqrt`. 0 B/frame. Gameplay angle solve and blackbox telemetry are unchanged.

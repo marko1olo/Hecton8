@@ -186,6 +186,7 @@ namespace Hecton8.Gameplay
             if (sectorHash == 0UL || cellIndex >= WfcOutpostPersistenceConstants.CellCount)
             {
                 ClearWfcOutpostPersistence();
+                ResetState();
                 return;
             }
 

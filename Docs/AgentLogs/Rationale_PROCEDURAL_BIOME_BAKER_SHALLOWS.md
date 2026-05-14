@@ -243,3 +243,31 @@ Scalability potential: Low/MX350 keeps opaque, ZWrite-on, SRP-batcher-friendly f
 Hardware Impact: Runtime remains 0 us/frame and 0 bytes procedural allocation. The gain is prevention: no accidental alpha blend, missing instancing, missing CBUFFER, or disabled LOD crossfade can silently enter the Shallows library. Exact runtime microseconds are not profiled because this is editor validation.
 
 Verification: No dotnet rebuild was run. `git diff --check` passed for `ShallowsBioForgeBatchBaker.cs`. Source scan found `ValidateShaderSourceContract`, `ShaderPath`, and no `Shader.Find` in the Shallows baker. Shader token scan returned `Missing=0`, `ForbiddenHits=0`. Brace count is balanced.
+
+## Decision 18 - Validator Path Resolution And Readability Fail-Fast
+
+Problem: The shader source validator used `Path.GetFullPath(ShaderPath)`, which assumes the Unity process working directory is the project root. That is usually true but not a contract. Separately, `ValidateMeshGeometryContract` could flag a non-readable mesh, then `ValidateVertexColorGradient` could still call `mesh.GetColors`, risking an exception instead of a clean validation failure. The touched source also contained a non-ASCII separator in a cold-allocation comment while nearby ProceduralGen comments use ASCII separators.
+
+Solution: Resolve shader asset files from `Application.dataPath` by deriving the project root and combining the native asset path under it. Add an explicit `mesh.isReadable` fail-fast inside `ValidateVertexColorGradient` before calling `GetColors`. Normalize the touched cold-allocation comment to ASCII separators matching surrounding editor generator comments.
+
+Rejected Alternatives: Keeping current-working-directory resolution was rejected because batchmode/editor launchers can vary. Relying on `ValidateMeshGeometryContract` alone was rejected because validators should fail cleanly even when earlier checks already reported a bad asset. Rewriting mesh import settings was rejected because current generated assets already satisfy readability and no re-bake was required.
+
+Scalability potential: Low/MX350 runtime payload is unchanged. Middle/High/Ultra benefit through more reliable deterministic validation in future re-bakes. Editor validation now fails closed with deterministic paths and readable-mesh checks before expensive payload inspection.
+
+Hardware Impact: Runtime remains 0 us/frame and 0 bytes procedural allocation. The gain is prevention: validation no longer depends on process CWD and no longer risks exception-driven aborts on non-readable mesh drift. Exact editor microseconds are not profiled.
+
+Verification: No dotnet rebuild was run. `git diff --check` passed for `ShallowsBioForgeBatchBaker.cs`. Source scans found `ResolveProjectAssetAbsolutePath`, no Shallows `Shader.Find`, no `mesh.colors`, and `NonAscii=0`. Mesh readability YAML scan found `Count=600`, `Bad=0`, `MaxVertices=9243`, `ScratchCapacity=9600`. Shader token scan returned `Missing=0`, `ForbiddenHits=0`. Brace count is balanced.
+
+## Decision 19 - Atlas Texture Asset Dimension Contract
+
+Problem: Atlas importer validation proves compression, wrap, mipmaps, readability, sRGB policy, and platform format, while material validation proves texture binding identity. It still did not prove that the underlying atlas source assets are the exact expected `Texture2D` paths and dimensions. A wrong-size atlas could be imported down to max size or sampled differently while much of the prior contract still passed.
+
+Solution: Add `ValidateAtlasTextureAsset` and call it for Albedo, Normal, ORM, and MatCap before importer validation. Each atlas must load as `Texture2D`, resolve to the exact expected project path, and report `width == 1024` and `height == 1024`.
+
+Rejected Alternatives: Trusting importer `maxTextureSize` was rejected because it is a ceiling, not source truth. Rewriting or regenerating PNGs was rejected because current atlas files already satisfy the contract. Runtime texture validation was rejected because Shallows atlas payload must remain editor-authored and static.
+
+Scalability potential: Low/MX350 gets predictable 1024 shared atlases with compressed import settings and no unique per-instance textures. Middle/High/Ultra can intentionally upgrade atlas dimensions only by changing the constant, generator, validator, and performance rationale together.
+
+Hardware Impact: Runtime remains 0 us/frame and 0 bytes procedural allocation. The gain is prevention: no oversized, undersized, or wrong-path atlas can silently affect VRAM or visual sampling. Exact runtime microseconds are not profiled because this is editor validation.
+
+Verification: No dotnet rebuild was run. `git diff --check` passed for `ShallowsBioForgeBatchBaker.cs`. Source scan found `ValidateAtlasTextureAsset`; brace count is balanced and source `NonAscii=0`. PNG IHDR scan found all four Shallows atlas files are `1024x1024`, `AtlasPngDimensionScan Count=4 Bad=0`.

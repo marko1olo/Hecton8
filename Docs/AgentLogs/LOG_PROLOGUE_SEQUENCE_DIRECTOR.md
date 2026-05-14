@@ -228,3 +228,11 @@ What was done -> Added post-handoff guards. Audio ignores non-`PRLG` complete pa
 Cinematic Cheats used -> Pre-handoff whiteout remains the cheap concealment fake. Post-handoff fade/splash/audio overkill stays owned by the sequence handoff.
 Exact Microseconds saved -> Adds one byte compare on qualifying non-sequence packets; prevents portal-audio rollback, delayed splash/fade, and redundant whiteout hold work. Direct compare cost is below 1 us.
 Verification -> No dotnet rebuild/response-file compile was run per user constraint. Targeted scan confirms `StageOceanHandoff` and `ReentryPhase.HydratedFade` guards; forbidden-pattern scan returned no hits; `git diff --check` reports line-ending warnings only.
+
+## 2026-05-15 - Loop 33 Manual Complete Packet Shape Review
+
+What was wrong -> The sequence bridge accepted manual completion by `MOVR` source only. A malformed or future whiteout-only `MOVR` packet could advance impact sync.
+What was done -> The bridge now also requires `PhaseOceanHandoff`, `FlagForceWhiteout`, and finite `WhiteoutHoldSeconds` before returning a manual complete snapshot.
+Cinematic Cheats used -> None; this is gate validation for the manual override handoff.
+Exact Microseconds saved -> Adds two byte checks and one finite float check in the 8-slot complete lane, below 1 us. It prevents invalid impact/hydration transition work from a bad packet.
+Verification -> No dotnet rebuild/response-file compile was run per user constraint. Targeted scan confirms the new packet-shape checks; forbidden-pattern scan returned no hits; `git diff --check` reports no whitespace errors for the bridge patch.

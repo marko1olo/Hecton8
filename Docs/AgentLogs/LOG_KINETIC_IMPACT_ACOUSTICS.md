@@ -284,3 +284,67 @@ Verification:
 - Source counters for `DeepPsychosisController`: `GlobalRegistry=11`, `CachedResolvers=8`, `GetComponent=3`, `FindObject=0`, `UpdateMethods=0`, `NewHot=0`.
 - Scoped forbidden scan found no `PlayClipAtPoint`, `PlayOneShot`, coroutine, managed collection, or hot formatting in `DeepPsychosisController`.
 - Dotnet build/rebuild was not run by explicit user order. Unity compile remains PENDING VERIFICATION until Editor console/MCP validation is available.
+
+## 2026-05-15 - DSP_ACOUSTIC_LEAD - Loop 13 Acoustic Zone Audio Service Cache H-Phi Pass
+Status: PENDING VERIFICATION
+
+What was wrong:
+- `AcousticZoneController` scattered direct `GlobalRegistry.Audio` reads across transition, madness, vegetation, fatal-pressure, sonar, manta, storm, ambient-routing, and emitter-occlusion paths.
+- Emitter occlusion pattern-matched the concrete `SpatialAudioManager` from the registry every update.
+- The smoke tester only guarded acoustic-zone native queue payloads, not audio service lookup hygiene.
+
+What was done:
+- Added a 30-frame acoustic-zone audio service resolver cache.
+- Added cached concrete `SpatialAudioManager` resolution for emitter occlusion.
+- Replaced transition/static/sonar/vegetation/manta/storm cue service reads with `ResolveAudioService()`.
+- Replaced emitter-occlusion concrete service lookup with `ResolveSpatialAudioManager()`.
+- Cleared cached audio services on disable/destroy.
+- Added smoke assertions for resolver anchors and no-direct-registry method bodies.
+
+Cinematic cheats used:
+- Kept authored transition/static clips and pooled `PlayStatic2D`; no simulated acoustic fluid, coroutine, or AudioSource spawn was introduced.
+- Emitter occlusion still uses the existing fixed 24-sample active-emitter copy, not a new ray grid or acoustic solver.
+- Service rebinding is cadence-bound because these cues do not require frame-perfect registry polling.
+
+Exact microseconds saved:
+- Saves one audio-service registry read on each transition cue after warmup.
+- Saves one read on madness whispers, vegetation pulses, fatal-pressure pulses, sonar fallback, manta misfire, and storm pulses after warmup.
+- Saves one concrete audio-service registry read per emitter-occlusion update after warmup.
+- Runtime allocation delta remains 0 B/frame.
+
+Verification:
+- `git diff --check -- Assets/_Project/Scripts/AcousticZoneController.cs Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs` passed except CRLF normalization warnings.
+- `rg -n -F "GlobalRegistry.Audio" Assets/_Project/Scripts/AcousticZoneController.cs` returns only the resolver refresh body.
+- Source counters for `AcousticZoneController`: `GlobalRegistry.Audio=1`, `ResolveAudioService=10`, `ResolveSpatial=2`, `FindObject=0`, `UpdateMethods=0`, `PlayClipAtPoint=0`, `StartCoroutine=0`.
+- Scoped forbidden scan found only pre-existing cold/editor diagnostics and the cold `new List<AudioSource>(32)` bootstrap buffer.
+- Dotnet build/rebuild was not run by explicit user order. Unity compile remains PENDING VERIFICATION until Editor console/MCP validation is available.
+
+## 2026-05-15 - DSP_ACOUSTIC_LEAD - Loop 14 Music Director Runtime Resolver H-Phi Pass
+Status: PENDING VERIFICATION
+
+What was wrong:
+- `HectonMusicDirector` read player, acoustic-zone, and audio-service registry slots directly from dependency/base-context/mixer-routing methods.
+- Music resolver hygiene had no smoke coverage, so future changes could reintroduce direct polling in context reevaluation paths.
+
+What was done:
+- Added cached player runtime context, audio service, and acoustic-zone resolver helpers.
+- Routed dependency resolution, base-context detection, and mixer routing through those helpers.
+- Cleared music director runtime service caches on disable/destroy.
+- Added smoke assertions for resolver anchors and method-body no-direct-registry checks.
+
+Cinematic cheats used:
+- Kept authored music profiles, dual voice pool, and mixer group routing; no adaptive music solver or runtime clip generation was added.
+- Service rebinding is cadence-bound at 30 frames because music context does not require frame-perfect registry polling.
+
+Exact microseconds saved:
+- Saves one player registry read per dependency refresh after warmup.
+- Saves one acoustic-zone registry read per base-context evaluation after warmup.
+- Saves one audio-service registry read per mixer routing resolution after warmup.
+- Runtime allocation delta remains 0 B/frame.
+
+Verification:
+- `git diff --check -- Assets/_Project/Scripts/Audio/HectonMusicDirector.cs Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs` passed except CRLF normalization warnings.
+- Direct player/audio/acoustic registry reads in `HectonMusicDirector` are now confined to resolver refresh bodies.
+- Source counters for `HectonMusicDirector`: `GlobalRegistryPlayer=1`, `GlobalRegistryAudio=1`, `GlobalRegistryAcoustic=1`, `ResolverCalls=6`, `FindObject=0`, `UpdateMethods=0`, `StartCoroutine=0`.
+- Scoped forbidden scan found only editor/development diagnostics and editor smoke strings.
+- Dotnet build/rebuild was not run by explicit user order. Unity compile remains PENDING VERIFICATION until Editor console/MCP validation is available.

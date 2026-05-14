@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Signals;
 using Hecton8.World;
 using Unity.Collections;
@@ -24,7 +25,7 @@ namespace Hecton8.Prologue.VFX
         private const int TelemetryEntrySizeBytes = 48;
         private const uint DumpMagic = 0x4F525646u; // ORVF
         private const int DumpVersion = 1;
-        private const uint PrologueSequenceSourceHash = 0x50524C47u; // PRLG
+        private const uint PrologueSequenceSourceHash = PrologueSignalSourceHashes.SequenceDirector;
         private const uint PlasmaRoarHash = 0x50524F52u; // PROR
         private const uint OceanWavesHash = 0x4F574156u; // OWAV
         private const uint MassiveSplashHash = 0x4D53504Cu; // MSPL

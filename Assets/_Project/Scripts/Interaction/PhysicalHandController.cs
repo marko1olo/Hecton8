@@ -99,6 +99,7 @@ namespace Hecton8.Interaction
         private const float DegreesPerRadian = 57.29578f;
         private const byte LeftMotorMask = 0b0001;
         private const byte RightMotorMask = 0b0010;
+        private const byte BothMotorMask = LeftMotorMask | RightMotorMask;
         private const byte HandContactHapticPriority = 2;
         private const byte CriticalHapticPriority = 3;
         private const byte CriticalHapticBlendMode = ToolHapticsRuntime.BlendModeMax;
@@ -262,7 +263,7 @@ namespace Hecton8.Interaction
         public PhysicalHandSide HandSide => handSide;
 
         /// <summary>True while deferred finger jobs still need a dispatcher-owned late-frame completion pass.</summary>
-        internal bool RequiresLateFrameTick => IsGrabbing || _fingerPoseScheduled;
+        internal bool RequiresLateFrameTick => _fingerPoseScheduled;
 
         /// <summary>True when the grabbed mass exceeds the VR two-hand stabilization threshold.</summary>
         public bool RequiresTwoHandStabilization => _requiresTwoHandStabilization;
@@ -573,6 +574,13 @@ namespace Hecton8.Interaction
         public void StepFixed(float fixedDeltaTime, Vector3 controllerPosition, Quaternion controllerRotation)
         {
             float dt = SanitizeFixedDeltaSeconds(fixedDeltaTime);
+            if (dt <= 0f)
+            {
+                if (!_fingerPoseScheduled)
+                    _lastFingerPoseDeltaTime = 0f;
+                return;
+            }
+
             _lastFingerPoseDeltaTime = dt;
             AdvanceHandHapticCooldowns(dt);
             AdvanceHarvestSnap(dt);
@@ -638,6 +646,12 @@ namespace Hecton8.Interaction
             if (!HectonXRRuntimeState.IsXRActive)
                 return false;
 
+            if (IsGrabbing || _harvestSnapActive || enableSuitCollisionShell || _suitContactActive)
+            {
+                _hasXRIdleGripPoseSample = false;
+                return false;
+            }
+
             InputDispatcher dispatcher = InputDispatcher.ActiveRuntimeInstance;
             if (dispatcher == null)
             {
@@ -645,7 +659,12 @@ namespace Hecton8.Interaction
                 return true;
             }
 
-            byte controllerIndex = handSide == PhysicalHandSide.Left ? (byte)0 : (byte)1;
+            if (!TryResolveXRControllerIndex(handSide, out byte controllerIndex))
+            {
+                _hasXRIdleGripPoseSample = false;
+                return true;
+            }
+
             if (!dispatcher.TryGetXRInputState(controllerIndex, out XRInputState state))
             {
                 _hasXRIdleGripPoseSample = false;
@@ -658,14 +677,11 @@ namespace Hecton8.Interaction
                 return true;
             }
 
-            if (state.HasActiveInput || IsGrabbing || _harvestSnapActive)
+            if (state.HasActiveInput)
             {
                 _hasXRIdleGripPoseSample = false;
                 return false;
             }
-
-            if (enableSuitCollisionShell || _suitContactActive)
-                return false;
 
             float3 gripPosition = state.GripPositionWS;
             if (!math.all(math.isfinite(gripPosition)))
@@ -995,9 +1011,14 @@ namespace Hecton8.Interaction
             float hapticScale = ResolveSuitCollisionHapticScale(pressure01);
             if (routeHandCollisionHaptics && _handContactHapticCooldownTimer <= 0f)
             {
-                byte motorMask = handSide == PhysicalHandSide.Left ? LeftMotorMask : RightMotorMask;
-                float lowIntensity = handSide == PhysicalHandSide.Left ? hapticScale : hapticScale * 0.45f;
-                float highIntensity = handSide == PhysicalHandSide.Right ? hapticScale : hapticScale * 0.45f;
+                byte motorMask = ResolveHandMotorMask(handSide);
+                float lowIntensity = hapticScale;
+                float highIntensity = hapticScale;
+                if (motorMask == LeftMotorMask)
+                    highIntensity = hapticScale * 0.45f;
+                else if (motorMask == RightMotorMask)
+                    lowIntensity = hapticScale * 0.45f;
+
                 ToolHapticsRuntime.EnqueueCommand(
                     lowIntensity,
                     highIntensity,
@@ -1668,9 +1689,39 @@ namespace Hecton8.Interaction
 
         private static float SanitizeFixedDeltaSeconds(float value)
         {
-            return math.isfinite(value)
-                ? math.clamp(value, MinimumDeltaTime, MaximumSafeDeltaTime)
-                : MinimumDeltaTime;
+            if (!math.isfinite(value) || value <= 0f)
+                return 0f;
+
+            return math.clamp(value, MinimumDeltaTime, MaximumSafeDeltaTime);
+        }
+
+        private static bool TryResolveXRControllerIndex(PhysicalHandSide side, out byte controllerIndex)
+        {
+            if (side == PhysicalHandSide.Left)
+            {
+                controllerIndex = 0;
+                return true;
+            }
+
+            if (side == PhysicalHandSide.Right)
+            {
+                controllerIndex = 1;
+                return true;
+            }
+
+            controllerIndex = 0;
+            return false;
+        }
+
+        private static byte ResolveHandMotorMask(PhysicalHandSide side)
+        {
+            if (side == PhysicalHandSide.Left)
+                return LeftMotorMask;
+
+            if (side == PhysicalHandSide.Right)
+                return RightMotorMask;
+
+            return BothMotorMask;
         }
 
         private static float ResolveVirtualHandDamping(float virtualMass)

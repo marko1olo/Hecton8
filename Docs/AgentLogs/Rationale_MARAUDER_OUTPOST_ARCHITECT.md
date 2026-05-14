@@ -321,3 +321,23 @@ Solution: Verification stayed source-only: scoped H-Phi counts, forbidden-patter
 Rejected Alternatives: Running response-file compiles through `dotnet` was rejected because it violates the active instruction.
 Scalability potential: Static proof improves while runtime tier behavior remains unchanged.
 Hardware Impact: Verification only.
+
+## LOOP 20 BASE HASH AND ZERO-SECTOR GUARD
+
+Problem: `firstBaseHash` was a raw serialized `ulong`. If it was zeroed by editor/runtime data, the service could compare hydrated-sector signals against zero, seed WFC from an invalid base identity, and accept sector zero even though `RestoreWfcMutableState` treats zero as the "no persistence sector" sentinel.
+Solution: Route the public base hash, solve seed derivation, and sector-hydration gate through `ResolveFirstBaseHash()`, and restore `DefaultFirstBaseHash` during `OnValidate` when the serialized field is zero.
+Rejected Alternatives: Trusting the serialized value was rejected because zero has cross-domain sentinel meaning. Forcing a new public config dependency was rejected because the default base hash already exists and preserves the outpost identity.
+Scalability potential: Low/Middle/High/Ultra all generate from the same deterministic non-zero identity. Cheap devices avoid invalid cold generation/persistence work; top-tier devices keep the same visual-overkill path without risking a null-sector descriptor.
+Hardware Impact: One scalar branch on cold generation and sector-signal drain paths, estimated below 0.1 us per generation/drain pass and 0 B/frame.
+
+Problem: `TryRequestGeneration` accepted `sectorHash == 0UL`, which could allocate native/GPU resources, clear the live outpost state, and later publish or persist an ambiguous zero-sector descriptor.
+Solution: Reject zero-sector requests before allocation/resource setup, returning false and writing fault telemetry against the rejected sector hash when the telemetry ring is available.
+Rejected Alternatives: Dumping the blackbox on every bad external request was rejected because this is an invalid API input, not a crash/NaN event, and repeated bad callers could cause fault-path I/O spam. Mutating `_activeSectorHash` to record the rejected value was rejected because it would disturb a valid generated outpost.
+Scalability potential: Low blocks invalid generation before persistent allocations; Middle/High/Ultra preserve deterministic outpost state and signal contracts. Visual richness is unchanged because this is a fail-closed gate.
+Hardware Impact: Invalid input now costs one branch and a possible native telemetry write instead of cold native/GPU setup plus WFC scheduling. Normal valid generation adds no hot-frame allocation.
+
+Problem: The active instruction still forbids dotnet rebuilds.
+Solution: Verification stayed source-only: forbidden-pattern `rg` audit, targeted hash audit, scoped H-Phi count scan, and `git diff --check`.
+Rejected Alternatives: Running response-file compiles through `dotnet` was rejected because it directly violates the user's current instruction.
+Scalability potential: Static source proof improved for the Habitat/Outpost contract; runtime compile/profiler proof remains pending.
+Hardware Impact: Verification only.

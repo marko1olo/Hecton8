@@ -1,5 +1,6 @@
 using System;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Signals;
 using Unity.Mathematics;
 using UnityEngine;
@@ -13,7 +14,7 @@ namespace Hecton8.Audio.Prologue
     public sealed class PrologueAcousticOrchestrator : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
     {
         private const uint SourceHash = 0xAC0571C5u;
-        private const uint PrologueSequenceSourceHash = 0x50524C47u; // PRLG
+        private const uint PrologueSequenceSourceHash = PrologueSignalSourceHashes.SequenceDirector;
         private const float MinimumLowPassCutoffHertz = 80f;
         private const float CutoffPublishEpsilonHertz = 1f;
         private const float GainPublishEpsilon = 0.0005f;

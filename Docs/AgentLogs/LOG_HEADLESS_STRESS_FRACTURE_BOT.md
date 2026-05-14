@@ -209,3 +209,37 @@ Verification:
 - Editor runner isolated Unity compiler probe: PASS.
 - Runtime isolated Unity compiler probe: BLOCKED by stale `Library/ScriptAssemblies` H8Memory API. Current source defines `Release(ref NativeArray<T>, SystemID)`, but the referenced compiled assembly still exposes the older `JobHandle` overload. No `dotnet` rebuild was run by user instruction.
 - Full Unity/editor/player execution remains PENDING VERIFICATION.
+
+## 2026-05-15 - Scalable Pressure And H-Phi Self-Debt Addendum
+Status: PENDING VERIFICATION
+Evidence Class: STATIC_SOURCE_PLUS_EDITOR_ISOLATED_COMPILE
+
+What was wrong:
+- The fracture runner's memory pressure and bootstrap timeout were fixed at 50MB and 60s, leaving weak CI and high-end soak runs to edit source instead of setting bounded launch policy.
+- Startup readiness had two direct `GlobalRegistry.Dispatcher` reads even though the runner already owns a cached dispatcher field.
+- The H-Phi scanner could count its own `void Update`/`FixedUpdate`/`LateUpdate` string literals as false Unity tick debt.
+- Result artifacts did not state whether activation came from CLI, env, or flag, nor the exact scratch/timeout controls used.
+
+What was done:
+- Added clamped cold-path controls: `H8_FRACTURE_SCRATCH_MB`, `-h8fractureScratchMb`, `H8_FRACTURE_STARTUP_TIMEOUT_SECONDS`, and `-h8fractureStartupTimeoutSeconds`.
+- Preserved default DOD behavior: 50MB scratch pressure and 60s bootstrap timeout when no override is supplied.
+- Result JSON now records `activationSource`, `scratchBlockBytes`, and `startupTimeoutSeconds`.
+- Startup wait now uses cached `_dispatcher` through `CacheServices()` instead of direct `GlobalRegistry.Dispatcher` polling.
+- Split H-Phi scanner tick-method literals so source scans no longer count the scanner as three Unity update methods.
+
+Cinematic Cheats used:
+- Kept signal pressure and configurable scratch memory as the CI fake instead of mutating fauna, DataVault internals, or renderer systems.
+
+Exact Microseconds saved:
+- Removed two direct startup registry property reads from this runner; estimated 1-2 us per launch, below profiler resolution.
+- Avoided false H-Phi Unity tick debt: `UnityUpdateMethods` source count 3 -> 0.
+- Reduced local direct registry surface: `GlobalRegistrySurface` 15 -> 13.
+- Weak-machine CI can reduce scratch from 50MB to 8-32MB; prevented false memory pressure failures save an estimated 30000000+ us per avoided rerun.
+
+Verification:
+- Focused forbidden-pattern scan: PASS for both Race Condition Hunter files; no scene search, LINQ, coroutine, `Task<`, `.Complete()`, explicit GC, reflection, managed collection creation, `string.Format`, or `Substring`.
+- Scoped QA/headless source count: `SignalBusPush=3`, `GlobalSignalsPublish=4`, `GlobalRegistrySurface=13`, `StructLayoutAttributes=3`, `StructDeclarations=3`, `FindObjectCalls=0`, `GetComponentCalls=0`, `UnityUpdateMethods=0`.
+- Editor runner isolated Unity compiler probe: PASS with `UNITY_EDITOR` defined.
+- Runtime isolated Unity compiler probe: BLOCKED by stale `Library/ScriptAssemblies` H8Memory API at `HeadlessStressFractureBot.cs(582,49)`. Current source defines `Release(ref NativeArray<T>, SystemID)`, but the referenced compiled assembly still exposes the older `JobHandle` overload. No `dotnet` rebuild was run by user instruction.
+- Temp compile artifacts were removed.
+- Full Unity/editor/player execution remains PENDING VERIFICATION.

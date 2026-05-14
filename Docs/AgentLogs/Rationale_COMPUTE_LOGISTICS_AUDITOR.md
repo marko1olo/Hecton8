@@ -47,3 +47,87 @@ Rejected Alternatives: Hard-mapping every file into one of 85 domains by keyword
 Scalability potential: Low tier benefits from identifying large fused systems that are harder to budget. High/Ultra tiers can use the same map to target visual-overkill domains without bloating core execution.
 
 Hardware Impact: 0 direct runtime microseconds. Indirectly identifies risk surfaces where later profiling may recover frame time.
+
+## Decision 4 - Token Ledger Source
+
+Problem: `.codex` JSONL contains many repeated `token_count` events. Summing `last_token_usage` over every event overcounts the same turn.
+
+Solution: For each JSONL session, use the final `total_token_usage` and sum across sessions. Cross-check against `state_5.sqlite.threads.tokens_used`.
+
+Rejected Alternatives: The first naive `last_token_usage` sum was rejected because it reached 50.2B tokens by counting repeated telemetry snapshots. Estimating only from file bytes was rejected because `.codex` exposes a better token ledger.
+
+Scalability potential: Low/Middle/High/Ultra runtime tiers unaffected. Audit scalability improves because future reports can avoid the repeated-event trap.
+
+Hardware Impact: 0 runtime microseconds. Prevents false financial deltas in management reports.
+
+## Decision 5 - Shadow Cost Boundary
+
+Problem: The prompt provides GPT-5.5 Spud rates but does not specify cached-input discounts.
+
+Solution: Report raw sticker cost using all input tokens and a separate lower bound using non-cached input only. Output is charged once using `output_tokens`; `reasoning_output_tokens` is treated as a subset of output, not added a second time.
+
+Rejected Alternatives: Adding reasoning output on top of output would double-count. Claiming actual invoice cost would be false because no billing export was read.
+
+Scalability potential: Low tier: highlights context bloat as process debt. High/Ultra: supports deciding where expensive long-context agents are justified by visual or architectural yield.
+
+Hardware Impact: 0 runtime microseconds on i3/MX350. Process impact: exposes the economic cost of repeated full-context turns.
+
+## Decision 6 - Cadence Sources
+
+Problem: `Docs/Tasks` timestamps only show current batch/task file churn; they do not capture every interactive prompt.
+
+Solution: Report two cadence layers: `Docs/Tasks` filesystem bursts and `.codex` `user_message` bursts. Use `.codex` for human prompt frequency, and `Docs/Tasks` for current agent-workflow file churn.
+
+Rejected Alternatives: Treating LastWriteTime as full prompt truth was rejected because many prompts never write task files. Treating `.codex` alone as batch-agent truth was rejected because agent status files are the active workflow artifact.
+
+Scalability potential: Low tier process benefits from knowing whether pressure comes from actual user prompts or from agent bookkeeping. High/Ultra process can justify more parallel agents only when output yield beats prompt burst debt.
+
+Hardware Impact: 0 runtime microseconds. Audit impact: prevents false "prompts per minute" claims.
+
+## Decision 7 - Velocity Model
+
+Problem: The prompt asks for last-14-days compression, but filesystem state alone does not prove exact creation date for every LOC.
+
+Solution: Use a clearly labeled 14-day compression model: current 775,435 meaningful LOC divided by 14 days. Keep it as an economic model, not a git-proven LOC delta.
+
+Rejected Alternatives: Git-only LOC delta was rejected because active workspace churn and generated/uncommitted files are part of the project surface. Claiming exact historical authorship was rejected as unsupported.
+
+Scalability potential: Low/Middle/High/Ultra runtime tiers unaffected. Management-scale value: exposes that the code volume is beyond normal human cadence even under conservative meaningful-LOC counting.
+
+Hardware Impact: 0 runtime microseconds. Process savings quantified against human-year baselines only.
+
+## Decision 8 - H-Phi Correlation Verdict
+
+Problem: The mission asks whether higher H-Phi correlates with higher token burn.
+
+Solution: Scan `HECTON_PHI_REPORT.md` for H-Phi values and `.codex` SQLite/JSONL for token burn. Report the correlation as `NOT PROVEN` because the two datasets do not share a valid key: no thread id, agent id, timestamped H-Phi delta, or LOC delta joins token spend to score movement.
+
+Rejected Alternatives: A cumulative time plot was rejected because any cumulative token counter rises with time and would fake correlation. Assigning H-Phi gains to high-token threads by title was rejected as evidence fraud.
+
+Scalability potential: Low tier process avoids wasting agents on fake metric chasing. High/Ultra process can still use H-Phi as a static hygiene trend, but only when paired with token and code-delta attribution.
+
+Hardware Impact: 0 runtime microseconds. Prevents bad management decisions from a fake correlation.
+
+## Decision 9 - Waste Detection Boundary
+
+Problem: The prompt demands marking agents over 1M tokens without LOC or H-Phi gain as "Compute Thieves".
+
+Solution: Separate convictions from candidates. Current active Status/LOG/Rationale agent files do not show any named agent over 1M estimated document tokens. `.codex` threads do show massive burn, but the state DB does not prove which threads increased LOC or H-Phi. Therefore the report flags high-burn candidates and refuses hard accusation.
+
+Rejected Alternatives: Naming "Compute Thieves" from token count alone was rejected because token burn without output attribution is not proof of waste.
+
+Scalability potential: Low/Middle/High/Ultra process gains a real triage list: first investigate threads over 250M tokens, then bind them to diffs and metric deltas.
+
+Hardware Impact: 0 runtime microseconds. Process impact: reduces forensic noise and directs follow-up to measurable high-burn sessions.
+
+## Decision 10 - Verification Boundary
+
+Problem: The workflow asks for compile checks, but this task edited only Markdown audit artifacts and an unrelated `dotnet` process was already active in the shared workspace.
+
+Solution: Run `git diff --check` against touched files and avoid launching a competing compile owner. Record compile as not applicable to runtime code for this task.
+
+Rejected Alternatives: Running a parallel `dotnet build` was rejected because Unity-generated projects share temp outputs and another process was already active. Claiming compile verification without running it was rejected.
+
+Scalability potential: Low/Middle/High/Ultra runtime tiers unaffected. Process scalability improves by avoiding false build contention during documentation-only audits.
+
+Hardware Impact: 0 runtime microseconds. Avoided possible build-output lock noise.

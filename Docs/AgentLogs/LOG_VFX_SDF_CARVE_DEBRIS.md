@@ -322,3 +322,31 @@ Exact microseconds saved:
 Verification state:
 - PENDING: Unity import/compile and visual/profiler capture remain unverified.
 - No dotnet rebuild was run.
+
+## 2026-05-15 - H-Phi DataVault Lease and Generation Guard
+
+What was wrong:
+- The renderer cached DataVault-backed `NativeArray<float4>` aliases but did not prove those aliases were still current after vault relocation, compaction fencing, scene unload, or service replacement.
+- `IsGpuStateValid()` only checked GPU resources and fallback textures, so stale CPU mirror aliases could survive into mirror aging, injection, compute upload, cull, or render preparation.
+
+What was done:
+- Cached the bound `IDataVault` object when `CarveDebris` and `CarveDebrisVelocity` buffers are acquired.
+- Captured both buffer generations immediately after DataVault allocation/resolve.
+- Added `IsDataVaultLeaseValid()` into the GPU readiness gate.
+- The renderer now fails closed if the vault is under compaction, buffer generations change, aliases are missing/undersized, or the 30-frame service lease check detects a different `GlobalRegistry.DataVault`.
+- Reset the vault lease and generation IDs in `ReleaseGpuState()`.
+- Did not run dotnet build, dotnet rebuild, or Unity batch compile.
+
+Cinematic cheats used:
+- No physical debris truth was added. The system remains a GPU visual fake with fixed H-Phi storage and indirect rock-chip presentation.
+- Rebind clears and reuploads mirrors instead of trying to preserve visual debris across a memory-authority relocation; predictable disappearance is cheaper and safer than stale-memory continuity.
+
+Exact microseconds saved:
+- Direct runtime saving: 0 us; this is crash-containment and data-authority hardening.
+- Added steady cost: estimated sub-microsecond for two DataVault generation reads per frame plus one registry service lease comparison every 30 frames.
+- Avoided failure cost: prevents undefined native alias use that could lead to Burst/GPU upload crashes or corrupt visuals after vault lifecycle events.
+
+Verification state:
+- PENDING: Unity import/compile, visual capture, and profiler proof remain unverified.
+- Static verification completed after this entry was written: `git diff --check` had only LF/CRLF notices; forbidden hot-path pattern scan returned no matches; shader hot-math scan returned no matches; `CURRENT_BATCH.md` exact prompt tag count remains 0.
+- No dotnet rebuild was run.

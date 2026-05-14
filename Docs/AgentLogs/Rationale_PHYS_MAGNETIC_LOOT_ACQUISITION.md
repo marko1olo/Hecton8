@@ -211,3 +211,27 @@ Rejected Alternatives: Raising global signal capacities was rejected because tha
 Scalability potential: Low keeps minimal acoustic/wake feedback. Middle remains under shared lane capacity. High and Ultra spend more of the saved trigger budget on presentation without exceeding the prewarmed lane shape.
 
 Hardware Impact: MX350 avoids acoustic queue growth, limits wake work, and stops paying radius/intensity math after cosmetic acoustic budget is gone. High-end devices keep up to 64 acoustic and 128 wake loot packets per commit pass, matching the existing global queue prewarm ceilings.
+
+## Decision 16 - Scene Lifecycle Reinstall Hook
+
+Problem: A scene-authored `LootMagnetSystem` can set `_bootstrapRuntime` before the runtime installer runs. The installer then skips creating the persistent fallback, and the scene-authored instance can be destroyed on a later scene load, leaving no loot magnet scheduler.
+
+Solution: Add a static `SceneManager.sceneLoaded` hook installed from `EnsureRuntimeInstalled`. On every scene load, the hook calls the same installer. If a valid runtime exists, it returns. If the previous scene-owned runtime was destroyed, it creates a new scene-owned fallback without a scene search. Removed gameplay-owned `DontDestroyOnLoad`.
+
+Rejected Alternatives: Scene-wide object search was rejected because runtime `Find*` calls violate hot-path/static audit policy. Gameplay-owned `DontDestroyOnLoad` was rejected because project audit policy reserves persistence ownership for bootstrap/crash systems.
+
+Scalability potential: No frame behavior change. Low/Middle/High/Ultra all keep magnet scheduling alive across scene transitions without direct scene dependencies.
+
+Hardware Impact: No per-frame cost. One scene-load event callback, one branch per scene load, and one scene-owned cold GameObject when a scene has no authored runtime; no FastTick allocation.
+
+## Decision 17 - Dotnet Process Hygiene
+
+Problem: User explicitly forbids dotnet rebuilds. Pre-existing Hecton8 `dotnet build` processes were found running in the workspace during verification hygiene.
+
+Solution: Stop the existing processes and record that this pass did not start dotnet.
+
+Rejected Alternatives: Leaving the process running was rejected because it violates the current session constraint and can mutate build artifacts/noise. Running another build to verify was rejected by user instruction.
+
+Scalability potential: No runtime behavior change. This protects evidence quality during parallel-agent work.
+
+Hardware Impact: Removes build CPU pressure from the local machine; no gameplay microseconds claimed.

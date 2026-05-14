@@ -259,3 +259,41 @@ Solution: Ran source-only checks: `git diff --check`, fixed-string registry scan
 Rejected Alternatives: Running dotnet build/rebuild would violate explicit user order; claiming Unity compile green without Editor console/MCP data would be a fake report.
 Scalability potential: Verification only.
 Hardware Impact: Verification only.
+
+## LOOP 13 ACOUSTIC ZONE AUDIO SERVICE CACHE H-PHI PASS
+Problem: `AcousticZoneController` still fetched `GlobalRegistry.Audio` directly in transition sounds, madness whispers, ambient mixer routing, underwater vegetation pulses, fatal-pressure noise, sonar fallback, manta misfire, storm static, and emitter occlusion. These are audio-owned paths, but the repeated service locator reads were scattered across runtime methods.
+Solution: Added `AudioServiceResolveRetryFrames = 30`, `_cachedAudioService`, `_cachedSpatialAudioManager`, `ResolveAudioService()`, `ResolveSpatialAudioManager()`, and `ClearCachedAudioServices()`. All cue and routing methods now consume the cached service helper; `UpdateEmitterOcclusionState` consumes the cached concrete `SpatialAudioManager` helper.
+Rejected Alternatives: Leaving scattered direct registry reads was acceptable for correctness but poor H-Phi; injecting `SpatialAudioManager` through every caller would widen interfaces; using `FindObjectOfType` or a new singleton would violate registry authority and performance policy.
+Scalability potential: Low tier still gets the same cheap transition/static/vegetation cues with fewer service lookups. Middle/High/Ultra preserve emitter occlusion and storm/fatal-pressure audio while keeping service rebinding controllable at 30-frame cadence.
+Hardware Impact: Saves up to seven direct audio-service registry reads across active acoustic-zone cue paths after warmup, plus one concrete audio-service read per emitter-occlusion update. Runtime allocation remains 0 B/frame; added cost is integer stale checks and one refresh per 30 frames.
+
+Problem: The acoustic-zone smoke suite guarded native queue payloads but did not guard service lookup hygiene.
+Solution: Extended `AdvancedAcousticsSmokeTester` to assert the acoustic-zone audio resolver, cached spatial resolver, cache clearing, and method-body absence of `GlobalRegistry.Audio` in madness cue and emitter occlusion paths.
+Rejected Alternatives: No smoke anchor, or runtime tests unavailable in the current no-Unity-MCP/no-rebuild context.
+Scalability potential: Editor-only guard; protects the low-cost audio route from future service locator creep.
+Hardware Impact: 0 us runtime in player builds.
+
+Problem: Compile proof remains unavailable under the user's current constraint.
+Solution: Ran source-only checks: `git diff --check`, fixed-string registry scans, forbidden hot-path scans, and source counters. `AcousticZoneController` now shows `GlobalRegistry.Audio=1`, `ResolveAudioService=10`, `ResolveSpatial=2`, `FindObject=0`, `UpdateMethods=0`, `PlayClipAtPoint=0`, `StartCoroutine=0`.
+Rejected Alternatives: Running dotnet build/rebuild would violate explicit user order; claiming Unity compile green without Editor console/MCP data would be false.
+Scalability potential: Verification only.
+Hardware Impact: Verification only.
+
+## LOOP 14 MUSIC DIRECTOR RUNTIME RESOLVER H-PHI PASS
+Problem: `HectonMusicDirector` still read `GlobalRegistry.Player`, `GlobalRegistry.AcousticZone`, and `GlobalRegistry.Audio` directly in dependency resolution, base-context detection, and mixer routing. The methods are not sample-rate DSP, but they sit in the perception/audio domain and can run during reevaluation bursts.
+Solution: Added cached player, audio-service, and acoustic-zone resolvers using the existing `DependencyRetryFrameInterval = 30`. `ResolveDependencies()` now consumes `ResolvePlayerRuntimeContext()`, `ResolveBaseContext()` consumes `ResolveAcousticZone()`, and `ResolveMusicMixerGroup()` consumes `ResolveAudioService()`. Caches clear on disable/destroy.
+Rejected Alternatives: Direct registry polling was correct but scattered; pushing music state into player/acoustic packets would cross ownership; refactoring the music director state machine would exceed the bounded H-Phi pass.
+Scalability potential: Low tier keeps the same authored music routing with lower lookup pressure. Middle/High/Ultra keep base/cave/biome tension response while avoiding repeated optional service locator reads during context reevaluation.
+Hardware Impact: Saves up to three service-locator reads per music dependency/context refresh after warmup on i3/MX350. Runtime allocation remains 0 B/frame; added work is integer stale checks and one refresh per 30 frames.
+
+Problem: Music resolver hygiene needed static regression coverage.
+Solution: Extended `AdvancedAcousticsSmokeTester` to read `HectonMusicDirector.cs`, assert cached resolver helpers and cache clearing, and assert no direct player/audio/acoustic registry reads inside `ResolveDependencies`, `ResolveBaseContext`, or `ResolveMusicMixerGroup`.
+Rejected Alternatives: Trusting manual review, or trying to add a runtime music playmode test without Unity MCP/Editor validation.
+Scalability potential: Editor-only guard; protects the authored music LOD path from future resolver creep.
+Hardware Impact: 0 us runtime in player builds.
+
+Problem: Compile proof remains unavailable under the user's current constraint.
+Solution: Ran source-only checks: `git diff --check`, fixed-string scans, forbidden hot-path scans, and source counters. `HectonMusicDirector` now shows `GlobalRegistryPlayer=1`, `GlobalRegistryAudio=1`, `GlobalRegistryAcoustic=1`, `ResolverCalls=6`, `FindObject=0`, `UpdateMethods=0`, `StartCoroutine=0`.
+Rejected Alternatives: Running dotnet build/rebuild would violate explicit user order; claiming Unity compile green without Editor console/MCP data would be false.
+Scalability potential: Verification only.
+Hardware Impact: Verification only.

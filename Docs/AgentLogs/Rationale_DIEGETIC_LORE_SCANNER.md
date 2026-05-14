@@ -321,10 +321,10 @@ Hardware Impact: Exact microseconds PENDING PROFILER; expected low-end gain is s
 ## LOOP 13 EVENT-LANE H-PHI HARDENING
 
 Problem: The previous H-Phi pass still hid `GlobalRegistry.ScalabilityTier` reads behind helpers called by scanner fast/late/UI tick paths. The cadence was throttled, but it was still polling a global service from active presentation/acquisition loops.
-Solution: `ScannerTool` and `ToolDiegeticDisplayController` now implement `IScalabilityChangedEventListener` and consume the existing `ScalabilityEvents` NativeQueue lane. Cold lifecycle reads seed the tier, event callbacks queue candidates, and existing 2s hysteresis accepts stable changes.
-Rejected Alternatives: Adding a new scanner quality bus, editing core registry contracts, keeping 2 Hz polling, or changing the 32-byte `ToolStateChangedSignal` layout during a parallel batch.
+Solution: `ScannerTool` and `ToolDiegeticDisplayController` now implement `IScalabilityChangedEventListener` and consume the existing `ScalabilityEvents` NativeQueue lane. Cold lifecycle reads seed the tier, event callbacks queue candidates, and existing 2s hysteresis accepts stable changes. Both scanner and tool display also use `ISlowTickable` as a fallback for platform pressure code that currently applies `RegisterScalabilityTierOverride()` without raising a scalability event.
+Rejected Alternatives: Adding a new scanner quality bus, editing core registry contracts, keeping fast/late/UI registry polling, or changing the 32-byte `ToolStateChangedSignal` layout during a parallel batch.
 Scalability potential: Low/MX350 tier drops still shed scanner RT/scramble work after a stable event. High/Ultra keep visual-overkill shader scalar and faster scanner response without global polling in the active scanner/display paths.
-Hardware Impact: Active scanner/display tier registry polling goes from 2 Hz to event-only after cold initialization. Exact microseconds PENDING PROFILER; expected gain is small but removes a hot-path H-Phi violation.
+Hardware Impact: Active scanner/display tier registry polling leaves fast/late/UI tick paths; silent override checks run on dispatcher SlowTick only. Exact microseconds PENDING PROFILER; expected gain is small but removes a hot-path H-Phi violation while preserving thermal/battery downgrade correctness.
 
 Problem: Focused scanner acquisition read `GlobalRegistry.Player` inside the acquisition pose helper used by held scan resampling.
 Solution: Added `_cachedPlayerContext`, refreshed on Awake, OnSpawn, and OnEquip, and used that cached interface for player-camera pose resolution. Fallback remains the tool transform if the player camera/context is unavailable.

@@ -126,7 +126,14 @@ Hardware Impact: Estimated gain is sub-microsecond per visible prompt after warm
 
 ## Decision 17: Authored Tooltip Materials With MPB Draw Binding
 Problem: The tooltip still used runtime `Shader.Find` and `new Material` fallback, directly violating the diegetic UI/URP material mandates.
-Solution: Added authored glyph/icon material assets under `Assets/_Project/Resources/UI`, loaded them cold when serialized materials are absent, and moved per-draw texture/buffer/dither binding into persistent `MaterialPropertyBlock`s. Runtime no longer clones materials or searches shaders.
+Solution: Added authored glyph/icon material assets under `Assets/_Project/Resources/UI`, loaded them cold when serialized materials are absent, moved per-draw texture/buffer/dither binding into persistent `MaterialPropertyBlock`s, and added a fail-closed shader-contract check before property blocks are considered ready. Runtime no longer clones materials or searches shaders.
 Rejected Alternatives: Keeping runtime material clones, mutating shared material assets directly, or requiring all existing scenes to be manually rewired before the renderer can draw. MPBs are accepted for UI in the mandate and avoid shared asset mutation.
 Scalability potential: Low gets the same minimal draw path without material clone allocation. Middle keeps dither fade. High and Ultra can author richer material variants while the renderer still uses the same indirect payload contract.
 Hardware Impact: Expected low-end gain is cold-start and memory hygiene, not large frame-time reduction. Removes two runtime material allocations and one shader lookup fallback from the tooltip path.
+
+## Decision 18: Material Readiness Failure Latch
+Problem: After the authored material pass, the success path was clean, but missing or mismatched material assets would still re-enter material resolution checks every visible frame.
+Solution: Added `_materialsReady`, `_materialResolveAttempted`, and `_materialResolveFailed` gates. Material setup now runs once until success, and authoring failures fail closed once per resource lifetime instead of repeating `Resources.Load`/shader comparisons.
+Rejected Alternatives: Rechecking every frame, logging every failure, or falling back to runtime shader/material creation. Rechecking burns hot-path budget; repeated logging allocates/noises; runtime creation violates mandates.
+Scalability potential: Low avoids repeated failure work. Middle, High, and Ultra keep the same draw path once materials are ready.
+Hardware Impact: Expected gain is small but deterministic: zero repeated material-resolution work after warmup or after a failed material contract. No runtime profiler proof.

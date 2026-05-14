@@ -52,6 +52,21 @@ namespace Hecton8.SaveSystem
         /// <summary>Tekuschaya versiya formata. Ispolzuetsya dlya migratsii.</summary>
         public const int CurrentVersion = 72; // v72: first-hour DTO ABI lock.
 
+        internal static void EnsureExactArrayCapacity<T>(ref T[] values, int capacity)
+        {
+            if (values != null && values.Length == capacity)
+                return;
+
+            T[] replacement = new T[capacity];
+            if (values != null && values.Length > 0)
+            {
+                int copyCount = values.Length < capacity ? values.Length : capacity;
+                Array.Copy(values, replacement, copyCount);
+            }
+
+            values = replacement;
+        }
+
         // ─────────────────────── DTO Sections ────────────────────
 
         public PlayerStatsDTO playerStats;
@@ -400,12 +415,9 @@ namespace Hecton8.SaveSystem
 
         public void EnsureRtgDecayCapacity()
         {
-            if (rtgDecaySourceIds == null || rtgDecaySourceIds.Length < MaxRtgDecayRecords)
-                Array.Resize(ref rtgDecaySourceIds, MaxRtgDecayRecords);
-            if (rtgStartTimesSeconds == null || rtgStartTimesSeconds.Length < MaxRtgDecayRecords)
-                Array.Resize(ref rtgStartTimesSeconds, MaxRtgDecayRecords);
-            if (rtgDecayFlags == null || rtgDecayFlags.Length < MaxRtgDecayRecords)
-                Array.Resize(ref rtgDecayFlags, MaxRtgDecayRecords);
+            EnsureExactArrayCapacity(ref rtgDecaySourceIds, MaxRtgDecayRecords);
+            EnsureExactArrayCapacity(ref rtgStartTimesSeconds, MaxRtgDecayRecords);
+            EnsureExactArrayCapacity(ref rtgDecayFlags, MaxRtgDecayRecords);
         }
     }
 
@@ -589,45 +601,14 @@ namespace Hecton8.SaveSystem
 
         public void EnsureCapacity()
         {
-            if (itemHashIds == null)
-                itemHashIds = new int[MaxCells];
-            else if (itemHashIds.Length < MaxCells)
-                Array.Resize(ref itemHashIds, MaxCells);
-
-            if (packedCellCoordinates == null)
-                packedCellCoordinates = new uint[MaxCells];
-            else if (packedCellCoordinates.Length < MaxCells)
-                Array.Resize(ref packedCellCoordinates, MaxCells);
-
-            if (stackCounts == null)
-                stackCounts = new ushort[MaxCells];
-            else if (stackCounts.Length < MaxCells)
-                Array.Resize(ref stackCounts, MaxCells);
-
-            if (itemStateFlags == null)
-                itemStateFlags = new ushort[MaxCells];
-            else if (itemStateFlags.Length < MaxCells)
-                Array.Resize(ref itemStateFlags, MaxCells);
-
-            if (itemGeneticsWords == null)
-                itemGeneticsWords = new byte[MaxCells];
-            else if (itemGeneticsWords.Length < MaxCells)
-                Array.Resize(ref itemGeneticsWords, MaxCells);
-
-            if (qualityMilli == null)
-                qualityMilli = new ushort[MaxCells];
-            else if (qualityMilli.Length < MaxCells)
-                Array.Resize(ref qualityMilli, MaxCells);
-
-            if (lastUpdateUnixSeconds == null)
-                lastUpdateUnixSeconds = new uint[MaxCells];
-            else if (lastUpdateUnixSeconds.Length < MaxCells)
-                Array.Resize(ref lastUpdateUnixSeconds, MaxCells);
-
-            if (itemDurabilityRle == null)
-                itemDurabilityRle = new byte[MaxDurabilityRleBytes];
-            else if (itemDurabilityRle.Length < MaxDurabilityRleBytes)
-                Array.Resize(ref itemDurabilityRle, MaxDurabilityRleBytes);
+            SaveData.EnsureExactArrayCapacity(ref itemHashIds, MaxCells);
+            SaveData.EnsureExactArrayCapacity(ref packedCellCoordinates, MaxCells);
+            SaveData.EnsureExactArrayCapacity(ref stackCounts, MaxCells);
+            SaveData.EnsureExactArrayCapacity(ref itemStateFlags, MaxCells);
+            SaveData.EnsureExactArrayCapacity(ref itemGeneticsWords, MaxCells);
+            SaveData.EnsureExactArrayCapacity(ref qualityMilli, MaxCells);
+            SaveData.EnsureExactArrayCapacity(ref lastUpdateUnixSeconds, MaxCells);
+            SaveData.EnsureExactArrayCapacity(ref itemDurabilityRle, MaxDurabilityRleBytes);
         }
 
         public static uint PackCellCoordinate(int x, int y)
@@ -719,20 +700,11 @@ namespace Hecton8.SaveSystem
 
         public void EnsureCapacity()
         {
-            if (depletedNodeIds == null || depletedNodeIds.Length < MaxNodes)
-                depletedNodeIds = new string[MaxNodes];
-
-            if (depletedPickupChunkKeys == null || depletedPickupChunkKeys.Length < MaxPickupChunks)
-                depletedPickupChunkKeys = new long[MaxPickupChunks];
-
-            if (depletedPickupChunkWordStarts == null || depletedPickupChunkWordStarts.Length < MaxPickupChunks)
-                depletedPickupChunkWordStarts = new int[MaxPickupChunks];
-
-            if (depletedPickupChunkWordCounts == null || depletedPickupChunkWordCounts.Length < MaxPickupChunks)
-                depletedPickupChunkWordCounts = new int[MaxPickupChunks];
-
-            if (depletedPickupWords == null || depletedPickupWords.Length < MaxPickupWords)
-                depletedPickupWords = new long[MaxPickupWords];
+            SaveData.EnsureExactArrayCapacity(ref depletedNodeIds, MaxNodes);
+            SaveData.EnsureExactArrayCapacity(ref depletedPickupChunkKeys, MaxPickupChunks);
+            SaveData.EnsureExactArrayCapacity(ref depletedPickupChunkWordStarts, MaxPickupChunks);
+            SaveData.EnsureExactArrayCapacity(ref depletedPickupChunkWordCounts, MaxPickupChunks);
+            SaveData.EnsureExactArrayCapacity(ref depletedPickupWords, MaxPickupWords);
         }
     }
 
@@ -860,26 +832,11 @@ namespace Hecton8.SaveSystem
 
         public void EnsureCapacity()
         {
-            EnsureArrayCapacity(ref suppressedPlacementKeys, MaxSuppressedPlacements);
-            EnsureArrayCapacity(ref faunaStates, MaxFaunaStates);
-            EnsureArrayCapacity(ref hibernatedFaunaStates, MaxHibernatedFaunaStates);
-            EnsureArrayCapacity(ref geologySeamStates, MaxGeologySeamStates);
-            EnsureArrayCapacity(ref geologyCaveEntrances, MaxGeologyCaveEntrances);
-        }
-
-        private static void EnsureArrayCapacity<T>(ref T[] values, int capacity)
-        {
-            if (values != null && values.Length == capacity)
-                return;
-
-            T[] replacement = new T[capacity];
-            if (values != null && values.Length > 0)
-            {
-                int copyCount = values.Length < capacity ? values.Length : capacity;
-                Array.Copy(values, replacement, copyCount);
-            }
-
-            values = replacement;
+            SaveData.EnsureExactArrayCapacity(ref suppressedPlacementKeys, MaxSuppressedPlacements);
+            SaveData.EnsureExactArrayCapacity(ref faunaStates, MaxFaunaStates);
+            SaveData.EnsureExactArrayCapacity(ref hibernatedFaunaStates, MaxHibernatedFaunaStates);
+            SaveData.EnsureExactArrayCapacity(ref geologySeamStates, MaxGeologySeamStates);
+            SaveData.EnsureExactArrayCapacity(ref geologyCaveEntrances, MaxGeologyCaveEntrances);
         }
     }
 
@@ -906,26 +863,16 @@ namespace Hecton8.SaveSystem
 
         public void EnsureCapacity()
         {
-            if (modules == null || modules.Length < MaxModules)
-                modules = new ModuleDTO[MaxModules];
-
-            if (graphNodes == null || graphNodes.Length < MaxModules)
-                graphNodes = new ModuleGraphNodeDTO[MaxModules];
-
-            if (graphEdges == null || graphEdges.Length < MaxGraphEdges)
-                graphEdges = new ModuleGraphEdgeDTO[MaxGraphEdges];
-
-            if (moduleBlitRecords == null || moduleBlitRecords.Length < MaxModules)
-                moduleBlitRecords = new ModuleBlitDTO[MaxModules];
-
-            if (habitatFloodStates == null || habitatFloodStates.Length < MaxModules)
-                habitatFloodStates = new HabitatFloodStateDTO[MaxModules];
+            SaveData.EnsureExactArrayCapacity(ref modules, MaxModules);
+            SaveData.EnsureExactArrayCapacity(ref graphNodes, MaxModules);
+            SaveData.EnsureExactArrayCapacity(ref graphEdges, MaxGraphEdges);
+            SaveData.EnsureExactArrayCapacity(ref moduleBlitRecords, MaxModules);
+            SaveData.EnsureExactArrayCapacity(ref habitatFloodStates, MaxModules);
         }
 
         public void RefreshHabitatFloodStateMirrors()
         {
-            if (habitatFloodStates == null || habitatFloodStates.Length < MaxModules)
-                habitatFloodStates = new HabitatFloodStateDTO[MaxModules];
+            SaveData.EnsureExactArrayCapacity(ref habitatFloodStates, MaxModules);
 
             int safeCount = Math.Clamp(
                 moduleCount,
@@ -1032,11 +979,8 @@ namespace Hecton8.SaveSystem
 
         public void EnsureCapacity()
         {
-            if (entries == null || entries.Length < MaxEntries)
-                entries = new ScanEntryDTO[MaxEntries];
-
-            if (recentEntryIds == null || recentEntryIds.Length < MaxRecentEntries)
-                recentEntryIds = new string[MaxRecentEntries];
+            SaveData.EnsureExactArrayCapacity(ref entries, MaxEntries);
+            SaveData.EnsureExactArrayCapacity(ref recentEntryIds, MaxRecentEntries);
         }
     }
 
@@ -1073,10 +1017,8 @@ namespace Hecton8.SaveSystem
 
         public void EnsureCapacity()
         {
-            if (offerStates == null || offerStates.Length < MaxOffers)
-                offerStates = new BarterOfferStateDTO[MaxOffers];
-            if (recentTransactions == null || recentTransactions.Length < MaxRecentTransactions)
-                recentTransactions = new BarterTransactionDTO[MaxRecentTransactions];
+            SaveData.EnsureExactArrayCapacity(ref offerStates, MaxOffers);
+            SaveData.EnsureExactArrayCapacity(ref recentTransactions, MaxRecentTransactions);
         }
     }
 
@@ -1101,8 +1043,7 @@ namespace Hecton8.SaveSystem
 
         public void EnsureCapacity()
         {
-            if (recentEntries == null || recentEntries.Length < MaxRecentEntries)
-                recentEntries = new FieldOperationEntryDTO[MaxRecentEntries];
+            SaveData.EnsureExactArrayCapacity(ref recentEntries, MaxRecentEntries);
         }
     }
 
@@ -1152,8 +1093,7 @@ namespace Hecton8.SaveSystem
 
         public void EnsureCapacity()
         {
-            if (entries == null || entries.Length < MaxEntries)
-                entries = new BeaconEntryDTO[MaxEntries];
+            SaveData.EnsureExactArrayCapacity(ref entries, MaxEntries);
         }
     }
 
@@ -1197,36 +1137,11 @@ namespace Hecton8.SaveSystem
 
         public void EnsureCapacity()
         {
-            if (exploredChunkKeys == null || exploredChunkKeys.Length < MaxExploredChunks)
-                exploredChunkKeys = new long[MaxExploredChunks];
-
-            if (exploredMortonMaskWords == null || exploredMortonMaskWords.Length < MortonMaskWordCount)
-                exploredMortonMaskWords = new long[MortonMaskWordCount];
-
-            if (exploredMortonMaskBytes == null)
-            {
-                exploredMortonMaskBytes = new byte[MortonMaskByteCount];
-            }
-            else if (exploredMortonMaskBytes.Length < MortonMaskByteCount)
-            {
-                byte[] expandedBytes = new byte[MortonMaskByteCount];
-                Array.Copy(exploredMortonMaskBytes, expandedBytes, exploredMortonMaskBytes.Length);
-                exploredMortonMaskBytes = expandedBytes;
-            }
-
-            if (discoveredSectorMaskWords == null || discoveredSectorMaskWords.Length < CartographyMaskWordCount)
-                discoveredSectorMaskWords = new long[CartographyMaskWordCount];
-
-            if (discoveredSectorMaskBytes == null)
-            {
-                discoveredSectorMaskBytes = new byte[CartographyMaskByteCount];
-            }
-            else if (discoveredSectorMaskBytes.Length < CartographyMaskByteCount)
-            {
-                byte[] expandedBytes = new byte[CartographyMaskByteCount];
-                Array.Copy(discoveredSectorMaskBytes, expandedBytes, discoveredSectorMaskBytes.Length);
-                discoveredSectorMaskBytes = expandedBytes;
-            }
+            SaveData.EnsureExactArrayCapacity(ref exploredChunkKeys, MaxExploredChunks);
+            SaveData.EnsureExactArrayCapacity(ref exploredMortonMaskWords, MortonMaskWordCount);
+            SaveData.EnsureExactArrayCapacity(ref exploredMortonMaskBytes, MortonMaskByteCount);
+            SaveData.EnsureExactArrayCapacity(ref discoveredSectorMaskWords, CartographyMaskWordCount);
+            SaveData.EnsureExactArrayCapacity(ref discoveredSectorMaskBytes, CartographyMaskByteCount);
 
             chunkSizeMeters = DenseChunkSizeMeters;
             mortonMaskAxisBits = MortonMaskAxisBits;
@@ -1285,14 +1200,9 @@ namespace Hecton8.SaveSystem
 
         public void EnsureCapacity()
         {
-            if (entries == null || entries.Length < MaxEntries)
-                entries = new PDALogbookEntryDTO[MaxEntries];
-
-            if (seenOriginKeys == null || seenOriginKeys.Length < MaxSeenOrigins)
-                seenOriginKeys = new string[MaxSeenOrigins];
-
-            if (seenOriginHashes == null || seenOriginHashes.Length < MaxSeenOrigins)
-                seenOriginHashes = new int[MaxSeenOrigins];
+            SaveData.EnsureExactArrayCapacity(ref entries, MaxEntries);
+            SaveData.EnsureExactArrayCapacity(ref seenOriginKeys, MaxSeenOrigins);
+            SaveData.EnsureExactArrayCapacity(ref seenOriginHashes, MaxSeenOrigins);
         }
     }
 
@@ -1367,8 +1277,7 @@ namespace Hecton8.SaveSystem
 
         public void EnsureCapacity()
         {
-            if (entries == null || entries.Length < MaxEntries)
-                entries = new PDAMarkerEntryDTO[MaxEntries];
+            SaveData.EnsureExactArrayCapacity(ref entries, MaxEntries);
         }
     }
 
@@ -1424,8 +1333,7 @@ namespace Hecton8.SaveSystem
 
         public void EnsureCapacity()
         {
-            if (activePlacements == null || activePlacements.Length < MaxActivePlacements)
-                activePlacements = new ProceduralLorePlacementDTO[MaxActivePlacements];
+            SaveData.EnsureExactArrayCapacity(ref activePlacements, MaxActivePlacements);
         }
     }
 
@@ -1443,8 +1351,7 @@ namespace Hecton8.SaveSystem
 
         public void EnsureCapacity()
         {
-            if (unlockedIds == null || unlockedIds.Length < MaxUnlockedAchievements)
-                unlockedIds = new string[MaxUnlockedAchievements];
+            SaveData.EnsureExactArrayCapacity(ref unlockedIds, MaxUnlockedAchievements);
         }
     }
 
@@ -1482,29 +1389,8 @@ namespace Hecton8.SaveSystem
 
         public void EnsureCapacity()
         {
-            if (variableHashes == null || variableHashes.Length != MaxGlobalVariables)
-            {
-                uint[] replacement = new uint[MaxGlobalVariables];
-                if (variableHashes != null)
-                {
-                    int copyCount = variableHashes.Length < replacement.Length ? variableHashes.Length : replacement.Length;
-                    Array.Copy(variableHashes, replacement, copyCount);
-                }
-
-                variableHashes = replacement;
-            }
-
-            if (variableValues == null || variableValues.Length != MaxGlobalVariables)
-            {
-                int[] replacement = new int[MaxGlobalVariables];
-                if (variableValues != null)
-                {
-                    int copyCount = variableValues.Length < replacement.Length ? variableValues.Length : replacement.Length;
-                    Array.Copy(variableValues, replacement, copyCount);
-                }
-
-                variableValues = replacement;
-            }
+            SaveData.EnsureExactArrayCapacity(ref variableHashes, MaxGlobalVariables);
+            SaveData.EnsureExactArrayCapacity(ref variableValues, MaxGlobalVariables);
 
             int capacity = Math.Min(variableHashes.Length, variableValues.Length);
             variableCount = Math.Clamp(variableCount, 0, capacity);
@@ -1525,41 +1411,9 @@ namespace Hecton8.SaveSystem
 
         public void EnsureCapacity()
         {
-            if (itemHashIds == null || itemHashIds.Length != MaxTrackedResources)
-            {
-                int[] replacement = new int[MaxTrackedResources];
-                if (itemHashIds != null)
-                {
-                    int copyCount = itemHashIds.Length < replacement.Length ? itemHashIds.Length : replacement.Length;
-                    Array.Copy(itemHashIds, replacement, copyCount);
-                }
-
-                itemHashIds = replacement;
-            }
-
-            if (itemIds == null || itemIds.Length != MaxTrackedResources)
-            {
-                string[] replacement = new string[MaxTrackedResources];
-                if (itemIds != null)
-                {
-                    int copyCount = itemIds.Length < replacement.Length ? itemIds.Length : replacement.Length;
-                    Array.Copy(itemIds, replacement, copyCount);
-                }
-
-                itemIds = replacement;
-            }
-
-            if (collectedCounts == null || collectedCounts.Length != MaxTrackedResources)
-            {
-                int[] replacement = new int[MaxTrackedResources];
-                if (collectedCounts != null)
-                {
-                    int copyCount = collectedCounts.Length < replacement.Length ? collectedCounts.Length : replacement.Length;
-                    Array.Copy(collectedCounts, replacement, copyCount);
-                }
-
-                collectedCounts = replacement;
-            }
+            SaveData.EnsureExactArrayCapacity(ref itemHashIds, MaxTrackedResources);
+            SaveData.EnsureExactArrayCapacity(ref itemIds, MaxTrackedResources);
+            SaveData.EnsureExactArrayCapacity(ref collectedCounts, MaxTrackedResources);
         }
     }
 
@@ -1588,29 +1442,8 @@ namespace Hecton8.SaveSystem
 
         public void EnsureCapacity()
         {
-            if (infectedChunkKeys == null || infectedChunkKeys.Length != MaxInfectedZones)
-            {
-                long[] replacement = new long[MaxInfectedZones];
-                if (infectedChunkKeys != null)
-                {
-                    int copyCount = infectedChunkKeys.Length < replacement.Length ? infectedChunkKeys.Length : replacement.Length;
-                    Array.Copy(infectedChunkKeys, replacement, copyCount);
-                }
-
-                infectedChunkKeys = replacement;
-            }
-
-            if (infectedSeverities == null || infectedSeverities.Length != MaxInfectedZones)
-            {
-                float[] replacement = new float[MaxInfectedZones];
-                if (infectedSeverities != null)
-                {
-                    int copyCount = infectedSeverities.Length < replacement.Length ? infectedSeverities.Length : replacement.Length;
-                    Array.Copy(infectedSeverities, replacement, copyCount);
-                }
-
-                infectedSeverities = replacement;
-            }
+            SaveData.EnsureExactArrayCapacity(ref infectedChunkKeys, MaxInfectedZones);
+            SaveData.EnsureExactArrayCapacity(ref infectedSeverities, MaxInfectedZones);
         }
     }
 

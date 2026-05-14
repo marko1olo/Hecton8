@@ -130,7 +130,7 @@ namespace Hecton8.World.Outposts
 
         public bool IsGenerated => _generated;
         public bool IsBusy => _jobPhase != JobPhase.None;
-        public ulong FirstBaseHash => firstBaseHash;
+        public ulong FirstBaseHash => ResolveFirstBaseHash();
         public OutpostGenerationSnapshot LatestSnapshot => _latestSnapshot;
 
         private void OnEnable()
@@ -166,6 +166,8 @@ namespace Hecton8.World.Outposts
             floorHeightMeters = SanitizeMin(floorHeightMeters, 1f, DefaultFloorHeightMeters);
             stiltClearanceMeters = SanitizeMin(stiltClearanceMeters, 0.25f, DefaultStiltClearanceMeters);
             outpostAge01 = Sanitize01(outpostAge01, DefaultOutpostAge01);
+            if (firstBaseHash == 0UL)
+                firstBaseHash = DefaultFirstBaseHash;
             if (!IsFinite(localOriginOffsetMeters))
                 localOriginOffsetMeters = Vector3.zero;
         }
@@ -328,6 +330,12 @@ namespace Hecton8.World.Outposts
 
         public bool TryRequestGeneration(ulong sectorHash, float3 originMeters, uint worldSeed)
         {
+            if (sectorHash == 0UL)
+            {
+                WriteTelemetry(MarauderOutpostConstants.FaultFlag, sectorHash);
+                return false;
+            }
+
             if (!WfcGrid.IsCreated)
                 AllocatePersistentState();
 
@@ -356,7 +364,7 @@ namespace Hecton8.World.Outposts
             ReleasePublishedPowerGrid();
             _activeSectorHash = sectorHash;
             _activeWorldSeed = worldSeed;
-            _activeSolveSeed = MarauderOutpostHash.LcgHash((ulong)worldSeed + firstBaseHash);
+            _activeSolveSeed = MarauderOutpostHash.LcgHash((ulong)worldSeed + ResolveFirstBaseHash());
             _activeGridHash = 0u;
             _generationOrigin = originMeters;
             _qualityTier = ResolveQualityTier();
@@ -509,10 +517,11 @@ namespace Hecton8.World.Outposts
 
             ReadOnlySpan<Hecton8.Core.Signals.SectorHydratedSignal> signals =
                 SignalBus<Hecton8.Core.Signals.SectorHydratedSignal>.GetFrameSnapshot();
+            ulong targetBaseHash = ResolveFirstBaseHash();
             for (int i = 0; i < signals.Length; i++)
             {
                 Hecton8.Core.Signals.SectorHydratedSignal signal = signals[i];
-                if (!generateOnAnyHydratedSectorForDebug && signal.SectorHash != firstBaseHash)
+                if (!generateOnAnyHydratedSectorForDebug && signal.SectorHash != targetBaseHash)
                     continue;
 
                 TryRequestGeneration(signal.SectorHash, ResolveGenerationOriginMeters(), ResolveWorldSeed());
@@ -610,6 +619,11 @@ namespace Hecton8.World.Outposts
                 return unchecked((uint)seedProvider.RuntimeWorldSeed);
 
             return fallbackWorldSeed;
+        }
+
+        private ulong ResolveFirstBaseHash()
+        {
+            return firstBaseHash != 0UL ? firstBaseHash : DefaultFirstBaseHash;
         }
 
         private float3 ResolveGenerationOriginMeters()
@@ -1234,6 +1248,11 @@ namespace Hecton8.World.Outposts
 
         private void WriteTelemetry(uint flags)
         {
+            WriteTelemetry(flags, _activeSectorHash);
+        }
+
+        private void WriteTelemetry(uint flags, ulong sectorHash)
+        {
             if (!_telemetryRing.IsCreated || _telemetryRing.Length == 0)
                 return;
 
@@ -1246,7 +1265,7 @@ namespace Hecton8.World.Outposts
             {
                 Frame = (uint)Time.frameCount,
                 Flags = flags,
-                SectorHash = _activeSectorHash,
+                SectorHash = sectorHash,
                 Seed = _activeSolveSeed,
                 GenerationSequence = _generationSequence,
                 OriginMeters = _generationOrigin,

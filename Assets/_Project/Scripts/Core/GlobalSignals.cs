@@ -2357,6 +2357,7 @@ namespace Hecton8.Core
         {
             EnsureInitialized();
             _craftingCompletedSignals.Enqueue(signal);
+            SignalBus<CraftingCompletedSignal>.Push(in signal);
         }
 
         /// <summary>Queues one tool runtime state packet from the main thread.</summary>
@@ -3185,6 +3186,8 @@ namespace Hecton8.Core
             SignalBus<TemperatureChangedSignal>.EnsureInitialized();
             SignalBus<CullingOverloadSignal>.Configure(CullingOverloadSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(CullingOverloadSignal)));
             SignalBus<CullingOverloadSignal>.EnsureInitialized();
+            SignalBus<CraftingCompletedSignal>.Configure(CraftingCompletedSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(CraftingCompletedSignal)));
+            SignalBus<CraftingCompletedSignal>.EnsureInitialized();
             SignalBus<PlayerActionProgressSignal>.Configure(PlayerActionProgressSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(PlayerActionProgressSignal)));
             SignalBus<PlayerActionProgressSignal>.EnsureInitialized();
             SignalBus<PlayerActionCompletedSignal>.Configure(PlayerActionCompletedSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(PlayerActionCompletedSignal)));

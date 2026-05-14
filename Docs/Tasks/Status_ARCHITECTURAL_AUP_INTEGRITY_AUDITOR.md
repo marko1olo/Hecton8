@@ -3,7 +3,7 @@
 Agent: ARCHITECTURAL_AUP_INTEGRITY_AUDITOR
 Domain: ECHELON 1 / Origin Shift (AUP Manager), with audit reach into Physics, Voxel, Kinematics, AI trigger math, Biome trigger math, and deterministic seed callsites.
 Assignment Source: User-supplied XML block. `Docs/Tasks/CURRENT_BATCH.md` extraction returned `PROMPT_NOT_FOUND` for this ID on initial pass.
-Status: VERIFIED AUP INTEGRITY - LOOP 20 APPLIED; H-PHI STATIC QA NOW SCORES AUP PRECISION HYGIENE; VOXEL NAV MACRO-FLORA ROOT PROJECTION DOUBLE-SAFE; LARGE-FLORA COLLISION PROXY UNIVERSE CACHE DOUBLE-SAFE; GLOBAL LEGACY HFO AUP SCAN CLEAN; CORE BUILD BLOCKED BY UNRELATED DEPENDENCY WALL; ASMDEF BLOCKED BY ARCHITECTURE
+Status: VERIFIED AUP INTEGRITY - LOOP 22 APPLIED; H-PHI STATIC QA RISK SCAN NOW TARGETS QUALIFIED LEGACY AUP BRIDGES; H-PHI STATIC QA EXPORTS AUP PRECISION COUNTERS; GLOBAL LEGACY HFO AUP SCAN CLEAN; CORE BUILD BLOCKED BY UNRELATED DEPENDENCY WALL; ASMDEF BLOCKED BY ARCHITECTURE
 
 ## Selected Mandates
 
@@ -211,3 +211,26 @@ Loop 20 - H-Phi Static AUP Precision Hygiene:
 - Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` was re-run; residual hits remain broad `universe` text, editor diagnostics, and final-cast fluid/scatter/shader payload names.
 - `git diff --check -- Assets/_Project/Scripts/QA/Headless/HeadlessStressFractureBot.cs` reports line-ending warnings only, no whitespace errors.
 - No `dotnet build` or rebuild was run in Loop 20 because the user explicitly forbade rebuilds.
+
+Loop 21 - H-Phi AUP Precision Counter Export:
+- Re-read status/rationale and re-extracted `ARCHITECTURAL_AUP_INTEGRITY_AUDITOR` from `Docs/Tasks/CURRENT_BATCH.md`; result remains `PROMPT_NOT_FOUND`.
+- Patched `HeadlessStressFractureBot` so `ComputeStaticHPhiMetric` returns the collected static counters to startup state instead of discarding them after scalar calculation.
+- Added result JSON fields: `staticHPhiAupPrecisionIntegrity`, `staticHPhiAupPrecisionSafe`, and `staticHPhiAupPrecisionRisk`.
+- Added the same AUP integrity/safe/risk values to the one-time `[H-PHI_STATIC]` startup log line.
+- Kept all changes in headless startup/report generation; no gameplay Tick/FixedTick/Update path was touched.
+- Direct committed-offset leak scan remains clean across `Assets/_Project/Scripts`.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` was re-run; residual hits remain broad `universe` text, editor diagnostics, and final-cast fluid/scatter/shader payload names.
+- Targeted scanner self-pollution scan in `HeadlessStressFractureBot.cs` returns `NO_MATCHES` for the legacy AUP risk patterns.
+- `git diff --check -- Assets/_Project/Scripts/QA/Headless/HeadlessStressFractureBot.cs` reports line-ending warnings only, no whitespace errors.
+- No `dotnet build` or rebuild was run in Loop 21 because the user explicitly forbade rebuilds.
+
+Loop 22 - H-Phi Qualified Legacy AUP Risk Scan:
+- Re-read status/rationale and re-extracted `ARCHITECTURAL_AUP_INTEGRITY_AUDITOR` from `Docs/Tasks/CURRENT_BATCH.md`; result remains `PROMPT_NOT_FOUND`.
+- Refined `HeadlessStressFractureBot.CountAupPrecisionRisk` so legacy bridge calls are counted only when fully qualified as `HectonFloatingOrigin.ToAbsoluteUniversePosition(` or `HectonMapMagicVegetationBridge.ToUniverseSpace(`.
+- Kept component-read and explicit `Vector3 universe` risk patterns intact.
+- Removed false positives from private helper names that already route through double-backed AUP construction.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` was re-run; residual hits remain broad `universe` text, editor diagnostics, and final-cast fluid/scatter/shader payload names.
+- Direct committed-offset leak scan remains clean across `Assets/_Project/Scripts`.
+- Targeted scanner self-pollution scan in `HeadlessStressFractureBot.cs` returns `NO_MATCHES` for unsplit legacy AUP bridge literals.
+- `git diff --check -- Assets/_Project/Scripts/QA/Headless/HeadlessStressFractureBot.cs` reports line-ending warnings only, no whitespace errors.
+- No `dotnet build` or rebuild was run in Loop 22 because the user explicitly forbade rebuilds.

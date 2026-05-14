@@ -39,3 +39,6 @@ Batch hygiene: Fresh status file created; no prior Status_HABITAT_O2_SCRUBBER_LO
 - Iteration 2: Tasks 6-10 implemented. Static touched-file `git diff --check` passed; dotnet rebuild intentionally not run.
 - Iteration 2 Prompt Re-Extract: CLI regex still returned `PROMPT_NOT_FOUND`; continuing from persisted status/rationale and the originally extracted assignment.
 - Iteration 3: Tasks 11-15 completed or blocked honestly. H-Phi buffer id added; Burst compile proof remains blocked by explicit no-rebuild/no-Unity-tool constraint.
+- Iteration 4: Self-review fixed the wake catch-up to run through a real Burst `IJob` path and changed power graph binding to a read-only awake-mask alias. Also cleared stale graph binding if gas is present but not initialized.
+- Iteration 4 Polish Extraction: `<POLISH_MANDATE>` was not present in current `Docs/Tasks/CURRENT_BATCH.md`; batch file no longer contains this prompt family.
+- Iteration 5: Anti-bloat review removed FrostTick scalability registry access by using cached `_lastMathLod`, and avoided reconfiguring typed signal lane hashes from the solver. Static touched-file `git diff --check` remains clean except CRLF warnings.

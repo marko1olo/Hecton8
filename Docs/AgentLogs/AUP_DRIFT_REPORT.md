@@ -303,3 +303,58 @@ Status: VERIFIED AUP INTEGRITY - CORE BUILD PASS; ASMDEF BLOCKED BY ARCHITECTURE
 
 - Runtime AUP shift signal payloads still expose `ShiftMeters` as `float3`; most consumers are presentation/runtime rebase paths. A future signal-contract loop can add a double side lane if compile validation is allowed.
 - H-Phi now catches newly introduced AUP precision debt statically, but the scalar still requires actual headless execution to produce a measured value.
+
+## Loop 21 H-Phi AUP Precision Counter Export
+
+### Findings
+
+- Loop 20 adjusted the static H-Phi scalar for AUP precision hygiene, but the JSON result did not expose the raw AUP safe/risk evidence.
+- Without raw counters, a reviewer could see the score move but not identify whether the codebase gained double-safe AUP usage or added legacy precision-risk usage.
+
+### Code Changes
+
+- `Assets/_Project/Scripts/QA/Headless/HeadlessStressFractureBot.cs`: `ComputeStaticHPhiMetric` now returns `HPhiStaticCounters` through an `out` parameter.
+- Startup caches `staticHPhiAupPrecisionIntegrity`, `staticHPhiAupPrecisionSafe`, and `staticHPhiAupPrecisionRisk`.
+- Result JSON now writes those three fields next to `staticHPhi` and `staticHPhiModel`.
+- The one-time `[H-PHI_STATIC]` startup log now includes `aupIntegrity`, `aupSafe`, and `aupRisk`.
+
+### Verification
+
+- Prompt extraction from `Docs/Tasks/CURRENT_BATCH.md` still returns `PROMPT_NOT_FOUND`; user-supplied XML remains authoritative.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` was re-run. Residual hits remain broad `universe` text, editor diagnostics, and final-cast fluid/scatter/shader payload names.
+- Direct committed-offset leak scan returns `NO_MATCHES`.
+- Targeted H-Phi scan confirms `staticHPhiAupPrecisionIntegrity`, `staticHPhiAupPrecisionSafe`, `staticHPhiAupPrecisionRisk`, `ComputeStaticHPhiMetric(out ...)`, and `CalculateAupPrecisionIntegrity`.
+- Targeted scanner self-pollution scan returns `NO_MATCHES` for literal legacy AUP risk patterns in `HeadlessStressFractureBot.cs`.
+- `git diff --check -- Assets/_Project/Scripts/QA/Headless/HeadlessStressFractureBot.cs` reports line-ending warnings only, no whitespace errors.
+- No `dotnet build` or rebuild was run in Loop 21 because the latest user instruction explicitly forbids rebuilds.
+
+### Evidence Queue
+
+- This is static-source and report-path evidence only. Actual H-Phi values remain pending until a headless run is allowed.
+- Existing broad mandatory regex residuals are unchanged: final-cast fluid/scatter/shader payload names, editor diagnostics, and broad `universe` text.
+
+## Loop 22 H-Phi Qualified Legacy AUP Risk Scan
+
+### Findings
+
+- The AUP H-Phi risk counter was intentionally conservative, but the broad `ToAbsoluteUniversePosition(` / `ToUniverseSpace(` tokens also matched private helpers and wrapper definitions.
+- Those matches can be false positives when the helper body uses `ToAbsoluteUniversePositionDouble3`, `FromRuntimePosition`, or the double vegetation bridge internally.
+
+### Code Changes
+
+- `Assets/_Project/Scripts/QA/Headless/HeadlessStressFractureBot.cs`: `CountAupPrecisionRisk` now counts qualified legacy calls to `HectonFloatingOrigin.ToAbsoluteUniversePosition(` and `HectonMapMagicVegetationBridge.ToUniverseSpace(`.
+- Existing risk checks for committed-offset component reads, legacy shift offset component reads, `(float3)AUP`, `Vector3 universePosition`, and `Vector3 stableUniverseRoot` remain.
+- The scanner still splits literal tokens so mandatory AUP regex output is not polluted by the scanner's own source.
+
+### Verification
+
+- Prompt extraction from `Docs/Tasks/CURRENT_BATCH.md` still returns `PROMPT_NOT_FOUND`; user-supplied XML remains authoritative.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` was re-run. Residual hits remain broad `universe` text, editor diagnostics, and final-cast fluid/scatter/shader payload names.
+- Direct committed-offset leak scan returns `NO_MATCHES`.
+- Targeted scanner self-pollution scan in `HeadlessStressFractureBot.cs` returns `NO_MATCHES` for unsplit legacy AUP bridge literals.
+- `git diff --check -- Assets/_Project/Scripts/QA/Headless/HeadlessStressFractureBot.cs` reports line-ending warnings only, no whitespace errors.
+- No `dotnet build` or rebuild was run in Loop 22 because the latest user instruction explicitly forbids rebuilds.
+
+### Evidence Queue
+
+- H-Phi remains a static-source signal. It is now less noisy for AUP helper names, but measured values still require a future headless run.

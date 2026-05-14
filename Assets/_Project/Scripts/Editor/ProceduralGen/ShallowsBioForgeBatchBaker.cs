@@ -44,7 +44,7 @@ namespace Hecton8.Editor.ProceduralGen
         private const float Lod1FadeWidth = 0.08f;
         private const float Lod2FadeWidth = 0.04f;
         private const float TransformEpsilonSq = 0.000001f;
-        // COLD ALLOC: List<Color>[9600] — reusable editor vertex color validation scratch — owner: ShallowsBioForgeBatchBaker
+        // COLD ALLOC: List<Color>[9600] - reusable editor vertex color validation scratch - owner: ShallowsBioForgeBatchBaker
         private static readonly List<Color> VertexColorScratch = new List<Color>(MaxValidatedMeshVertices);
 
         [MenuItem("HECTON-8/Bio-Forge/Bake Safe Shallows Assets", false, 172)]
@@ -103,6 +103,10 @@ namespace Hecton8.Editor.ProceduralGen
 
             ValidateRuleAssets(material, ref failures);
             ValidateSharedMaterial(material, albedo, normal, orm, matCap, ref failures);
+            ValidateAtlasTextureAsset(albedo, AlbedoAtlasPath, ref failures);
+            ValidateAtlasTextureAsset(normal, NormalAtlasPath, ref failures);
+            ValidateAtlasTextureAsset(orm, OrmAtlasPath, ref failures);
+            ValidateAtlasTextureAsset(matCap, MatCapPath, ref failures);
             ValidateAtlasImporter(AlbedoAtlasPath, AtlasKind.Albedo, ref failures);
             ValidateAtlasImporter(NormalAtlasPath, AtlasKind.Normal, ref failures);
             ValidateAtlasImporter(OrmAtlasPath, AtlasKind.Orm, ref failures);
@@ -434,6 +438,24 @@ namespace Hecton8.Editor.ProceduralGen
             ValidateMaterialFloat(material, "_Cull", 0f, ref failures);
         }
 
+        private static void ValidateAtlasTextureAsset(Texture texture, string expectedPath, ref int failures)
+        {
+            Texture2D texture2D = texture as Texture2D;
+            if (texture2D == null)
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] Missing atlas texture asset at {expectedPath}.");
+                return;
+            }
+
+            string actualPath = AssetDatabase.GetAssetPath(texture2D);
+            if (!string.Equals(actualPath, expectedPath, StringComparison.Ordinal) || texture2D.width != AtlasSize || texture2D.height != AtlasSize)
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] Atlas texture contract failed at {expectedPath}. ActualPath={actualPath}, Size={texture2D.width}x{texture2D.height}.");
+            }
+        }
+
         private static void ValidateShaderSourceContract(Shader shader, ref int failures)
         {
             string shaderPath = AssetDatabase.GetAssetPath(shader);
@@ -444,7 +466,7 @@ namespace Hecton8.Editor.ProceduralGen
                 return;
             }
 
-            string absolutePath = Path.GetFullPath(ShaderPath);
+            string absolutePath = ResolveProjectAssetAbsolutePath(ShaderPath);
             if (!File.Exists(absolutePath))
             {
                 failures++;
@@ -466,6 +488,14 @@ namespace Hecton8.Editor.ProceduralGen
             ValidateShaderForbiddenToken(shaderPath, source, "ZWrite Off", ref failures);
             ValidateShaderForbiddenToken(shaderPath, source, "Blend SrcAlpha", ref failures);
             ValidateShaderForbiddenToken(shaderPath, source, "Blend One One", ref failures);
+        }
+
+        private static string ResolveProjectAssetAbsolutePath(string assetPath)
+        {
+            DirectoryInfo dataDirectory = Directory.GetParent(Application.dataPath);
+            string projectRoot = dataDirectory != null ? dataDirectory.FullName : Directory.GetCurrentDirectory();
+            string nativeAssetPath = assetPath.Replace('/', Path.DirectorySeparatorChar);
+            return Path.GetFullPath(Path.Combine(projectRoot, nativeAssetPath));
         }
 
         private static void ValidateShaderRequiredToken(string shaderPath, string source, string token, ref int failures)
@@ -1117,6 +1147,13 @@ namespace Hecton8.Editor.ProceduralGen
             {
                 failures++;
                 Debug.LogError($"[ShallowsBioForgeBatchBaker] Missing LOD{lodIndex} mesh for vertex color gradient at {path}.");
+                return;
+            }
+
+            if (!mesh.isReadable)
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] LOD{lodIndex} mesh is not readable for vertex color gradient validation at {path}.");
                 return;
             }
 

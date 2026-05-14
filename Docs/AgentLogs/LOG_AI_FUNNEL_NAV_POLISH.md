@@ -265,7 +265,7 @@ What was wrong:
 What was done:
 - Added path-list capacity proof inside `NativeAStarJob`.
 - Added finite checks for start heuristic, neighbor heuristic, resolved F-score, distance estimate, and current G-score.
-- Cleared partial A* output unless reconstruction reaches `StartNode` through bounded valid parents.
+- Cleared partial A* output unless reconstruction reaches `StartNode` through bounded valid parents; reconstruction is capped by `min(Nodes.Length, MaxPathReconstructionIterations)`.
 - Added a finite raw-waypoint scan and output-capacity guard before string-pull emits any path.
 - Added full raw-path finite telemetry scan when smoothed output is empty.
 - Recorded that current `Docs/Tasks/CURRENT_BATCH.md` no longer contains `AI_FUNNEL_NAV_POLISH`; this pass continued from persisted status/rationale rather than a neighboring prompt.
@@ -281,4 +281,29 @@ Verification:
 - Static scan passed for `NativeAStarJob` and `StringPullPathJob`: no `math.normalize`, `math.length(`, `math.distance(`, `.normalized`, or raw `/`.
 - Static scan passed for abyssal nav graph ingress, telemetry conversion, nav support/hash, terrain sampling, and candidate resolver regions.
 - `git diff --check` on touched files passed; LF/CRLF warnings only.
+- Dotnet rebuilds were not run because the user explicitly prohibited dotnet rebuilds.
+
+## 2026-05-15 - H-Phi Reciprocal Sweep
+
+What was wrong:
+- Shared direction helpers could derive axis signs from non-finite vectors.
+- Adjacent vegetation-navigation support jobs still used scalar floating division in speed gates, retention, flow sampling, structure-grid mapping, threat propagation, obstacle gating, thermal/depth bands, wake falloff, and HLOD fade.
+- Artificial-structure grid helpers did not fully reject non-finite transforms before cell/hash mapping.
+
+What was done:
+- Hardened `DominantAxisOrDefault(float2/float3)` against non-finite input and fallback vectors.
+- Replaced float divisions with `math.rcp` multiplies or literal reciprocal constants in the edited navigation-support code.
+- Added finite guards to structure cell range/index helpers before spatial hash lookup.
+- Re-ran broad division scan; remaining `/` matches in the two edited world navigation files are integer index decomposition only.
+
+Cinematic Cheats used:
+- Bad transforms now fail out of structure/navigation influence instead of creating plausible but false cells.
+- Low-tier math uses reciprocal gates and conservative fallbacks; high-tier visual density keeps the same valid-data behavior without paying avoidable scalar divides.
+
+Exact Microseconds saved:
+- PENDING RUNTIME PROFILER DATA. Static gain is removal of repeated scalar floating divisions across Burst jobs and one managed HLOD fade helper; no allocations or new containers added.
+
+Verification:
+- Broad scan of edited world navigation files reports only integer index decomposition divisions plus no `math.normalize`, `math.length(`, `math.distance(`, `.normalized`, `Mathf.Sqrt`, or `Math.Sqrt`.
+- `git diff --check` on touched source files passed; LF/CRLF warnings only.
 - Dotnet rebuilds were not run because the user explicitly prohibited dotnet rebuilds.

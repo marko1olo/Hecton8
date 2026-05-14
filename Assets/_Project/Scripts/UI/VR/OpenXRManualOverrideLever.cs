@@ -1,6 +1,7 @@
 using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Signals;
 using Hecton8.Input.Universal;
 using Hecton8.Interaction;
@@ -29,7 +30,7 @@ namespace Hecton8.UI.VR
         private const float MaxDeltaSeconds = 0.05f;
         private const float MinAxisLengthSq = 0.000001f;
         private const float DegreesPerRadian = 57.29578f;
-        private const uint SourceHash = 0x4D4F5652u;
+        private const uint SourceHash = PrologueSignalSourceHashes.ManualOverrideLever;
         private const uint GripActionMask = (uint)PlayerInputAction.Interact | (uint)PlayerInputAction.SecondaryFire;
         private const byte HapticPriorityCritical = 3;
         private const byte HapticLeftHandMask = 0b0001;
@@ -352,8 +353,8 @@ namespace Hecton8.UI.VR
                 return;
             }
 
-            Vector3 nextPosition = Vector3.Lerp(currentPosition, handlePosition, step);
-            Quaternion nextRotation = Quaternion.Slerp(currentRotation, handleRotation, step);
+            Vector3 nextPosition = (Vector3)math.lerp((float3)currentPosition, (float3)handlePosition, step);
+            Quaternion nextRotation = ApproximateNlerp(currentRotation, handleRotation, step);
             if (IsFiniteVector(nextPosition) && IsFiniteQuaternion(nextRotation))
                 handIkTarget.SetPositionAndRotation(nextPosition, nextRotation);
         }
@@ -893,6 +894,22 @@ namespace Hecton8.UI.VR
         {
             float4 q = new float4(value.x, value.y, value.z, value.w);
             return math.all(math.isfinite(q)) && math.lengthsq(q) > MinAxisLengthSq;
+        }
+
+        private static Quaternion ApproximateNlerp(Quaternion from, Quaternion to, float t)
+        {
+            quaternion fromQ = new quaternion(from.x, from.y, from.z, from.w);
+            quaternion toQ = new quaternion(to.x, to.y, to.z, to.w);
+            if (math.dot(fromQ.value, toQ.value) < 0f)
+                toQ.value = -toQ.value;
+
+            quaternion blended = new quaternion(math.lerp(fromQ.value, toQ.value, math.saturate(t)));
+            float lengthSq = math.dot(blended.value, blended.value);
+            if (!math.isfinite(lengthSq) || lengthSq < MinAxisLengthSq)
+                return to;
+
+            blended.value *= math.rsqrt(lengthSq);
+            return new Quaternion(blended.value.x, blended.value.y, blended.value.z, blended.value.w);
         }
 
         private static byte ResolveSignalHandSide(PhysicalHandSide side)

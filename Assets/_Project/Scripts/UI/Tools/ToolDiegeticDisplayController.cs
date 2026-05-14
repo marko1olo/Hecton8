@@ -14,7 +14,7 @@ namespace Hecton8.UI.Tools
     /// Drives a held-tool diegetic status screen from the native tool-state signal lane.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class ToolDiegeticDisplayController : MonoBehaviour, IUpdatable, IScalabilityChangedEventListener
+    public sealed class ToolDiegeticDisplayController : MonoBehaviour, IUpdatable, ISlowTickable, IScalabilityChangedEventListener
     {
         private const int RenderTextureSize = 256;
         private const int TextBufferCapacity = 96;
@@ -134,6 +134,7 @@ namespace Hecton8.UI.Tools
         private float _appliedFault01 = -1f;
         private float _appliedToolTypeHue01 = -1f;
         private int _toolUiMask;
+        private bool _registeredSlowTick;
 
         /// <summary>
         /// Last runtime tool hash accepted by this display.
@@ -154,6 +155,7 @@ namespace Hecton8.UI.Tools
             ResolveTierImmediate();
             TryRegisterScalabilityListener();
             TryRegisterUpdatable();
+            TryRegisterSlowTickable();
             ApplyScreenTexture(_fallbackEmissiveTexture, lowTierFallback: true);
             ApplyCameraRenderState(renderThisFrame: false);
         }
@@ -161,11 +163,13 @@ namespace Hecton8.UI.Tools
         private void Start()
         {
             TryRegisterUpdatable();
+            TryRegisterSlowTickable();
         }
 
         private void OnDisable()
         {
             TryUnregisterUpdatable();
+            TryUnregisterSlowTickable();
             TryUnregisterScalabilityListener();
             ApplyCameraRenderState(renderThisFrame: false);
             ReleaseRenderTexture();
@@ -188,6 +192,8 @@ namespace Hecton8.UI.Tools
         {
             if (!_registered)
                 TryRegisterUpdatable();
+            if (!_registeredSlowTick)
+                TryRegisterSlowTickable();
 
             float safeDeltaTime = SanitizeSeconds(deltaTime);
             if (_poolRetrySeconds > 0f)
@@ -240,6 +246,11 @@ namespace Hecton8.UI.Tools
                 ReleaseRenderTexture();
                 ApplyScreenTexture(_fallbackEmissiveTexture, lowTierFallback: true);
             }
+        }
+
+        public void SlowTick()
+        {
+            QueueTierCandidate(GlobalRegistry.ScalabilityTier);
         }
 
         /// <summary>
@@ -766,6 +777,23 @@ namespace Hecton8.UI.Tools
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
             _registered = false;
+        }
+
+        private void TryRegisterSlowTickable()
+        {
+            if (_registeredSlowTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI);
+        }
+
+        private void TryUnregisterSlowTickable()
+        {
+            if (!_registeredSlowTick)
+                return;
+
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI);
+            _registeredSlowTick = false;
         }
 
         private void TryRegisterScalabilityListener()

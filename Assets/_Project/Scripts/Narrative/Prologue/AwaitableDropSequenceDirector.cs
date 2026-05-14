@@ -19,7 +19,7 @@ namespace Hecton8.Narrative.Prologue
         private const int TelemetryCapacity = 300;
         private const double Mach10MetersPerSecond = 3430d;
         private const double Mach10MetersPerSecondSq = Mach10MetersPerSecond * Mach10MetersPerSecond;
-        private const uint SourceHash = 0x50524C47u; // PRLG
+        private const uint SourceHash = PrologueSignalSourceHashes.SequenceDirector;
         private const uint AwaitHash = 0x41574149u; // AWAI
         private const uint SilenceHash = 0x53494C45u; // SILE
         private const uint BurnHash = 0x4255524Eu; // BURN

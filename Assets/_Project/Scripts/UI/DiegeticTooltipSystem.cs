@@ -138,6 +138,12 @@ namespace Hecton8.UI
         private Material _runtimeIconMaterial;
         private MaterialPropertyBlock _textPropertyBlock;
         private MaterialPropertyBlock _iconPropertyBlock;
+        private Texture _boundTextTexture;
+        private Texture _boundIconTexture;
+        private ComputeBuffer _boundTextInstanceBuffer;
+        private ComputeBuffer _boundIconInstanceBuffer;
+        private ComputeBuffer _boundTextUvBuffer;
+        private ComputeBuffer _boundIconUvBuffer;
         private Mesh _runtimeQuadMesh;
         private ComputeBuffer _textInstanceBuffer;
         private ComputeBuffer _iconInstanceBuffer;
@@ -162,6 +168,12 @@ namespace Hecton8.UI
         private int _iconCount;
         private float _visibleAlpha;
         private float _nextCameraResolveTime;
+        private float _boundTextGradientScale = float.NaN;
+        private float _boundIconGradientScale = float.NaN;
+        private float _boundTextFaceDilate = float.NaN;
+        private float _boundIconFaceDilate = float.NaN;
+        private float _boundTextDitherEnabled = float.NaN;
+        private float _boundIconDitherEnabled = float.NaN;
         private bool _hasSignalTarget;
         private bool _diagnosticActive;
         private bool _registeredLateFrame;
@@ -170,6 +182,9 @@ namespace Hecton8.UI
         private bool _fontUvTableDirty;
         private bool _spriteUvTableDirty;
         private bool _resourceObjectsReady;
+        private bool _materialResolveAttempted;
+        private bool _materialResolveFailed;
+        private bool _materialsReady;
         private bool _lowTierActive;
 
         public void LateFrameTick()
@@ -251,6 +266,12 @@ namespace Hecton8.UI
                     _spriteUvBuffer,
                     spriteAsset != null ? spriteAsset.spriteSheet : null,
                     _iconPropertyBlock,
+                    ref _boundIconTexture,
+                    ref _boundIconInstanceBuffer,
+                    ref _boundIconUvBuffer,
+                    ref _boundIconGradientScale,
+                    ref _boundIconFaceDilate,
+                    ref _boundIconDitherEnabled,
                     _iconCount,
                     tint,
                     ditherEnabled);
@@ -274,6 +295,12 @@ namespace Hecton8.UI
                     _fontUvBuffer,
                     fontAsset != null ? fontAsset.atlasTexture : null,
                     _textPropertyBlock,
+                    ref _boundTextTexture,
+                    ref _boundTextInstanceBuffer,
+                    ref _boundTextUvBuffer,
+                    ref _boundTextGradientScale,
+                    ref _boundTextFaceDilate,
+                    ref _boundTextDitherEnabled,
                     _textGlyphCount,
                     tint,
                     ditherEnabled);
@@ -705,7 +732,8 @@ namespace Hecton8.UI
             if (!_resourceObjectsReady)
                 EnsureResourceObjects();
 
-            EnsureMaterials();
+            if (!_materialsReady && !_materialResolveFailed)
+                EnsureMaterials();
         }
 
         private void EnsureResourceObjects()
@@ -766,19 +794,34 @@ namespace Hecton8.UI
 
         private void EnsureMaterials()
         {
-            if (_runtimeGlyphMaterial == null)
-                _runtimeGlyphMaterial = ResolveTooltipMaterial(glyphMaterial, DefaultGlyphMaterialResourcePath);
+            if (!_materialResolveAttempted)
+            {
+                if (_runtimeGlyphMaterial == null)
+                    _runtimeGlyphMaterial = ResolveTooltipMaterial(glyphMaterial, DefaultGlyphMaterialResourcePath);
 
-            if (_runtimeIconMaterial == null)
-                _runtimeIconMaterial = ResolveTooltipMaterial(iconMaterial, DefaultIconMaterialResourcePath);
+                if (_runtimeIconMaterial == null)
+                    _runtimeIconMaterial = ResolveTooltipMaterial(iconMaterial, DefaultIconMaterialResourcePath);
+
+                _materialResolveAttempted = true;
+            }
 
             if (_runtimeGlyphMaterial == null || _runtimeIconMaterial == null)
+            {
+                _materialResolveFailed = true;
                 return;
+            }
 
-            if (glyphShader == null)
-                glyphShader = _runtimeGlyphMaterial.shader;
+            Shader resolvedShader = glyphShader != null ? glyphShader : _runtimeGlyphMaterial.shader;
+            if (resolvedShader == null || _runtimeGlyphMaterial.shader != resolvedShader || _runtimeIconMaterial.shader != resolvedShader)
+            {
+                _materialResolveFailed = true;
+                return;
+            }
+
+            glyphShader = resolvedShader;
 
             EnsurePropertyBlocks();
+            _materialsReady = _textPropertyBlock != null && _iconPropertyBlock != null;
         }
 
         private static Material ResolveTooltipMaterial(Material explicitMaterial, string resourcePath)
@@ -841,6 +884,12 @@ namespace Hecton8.UI
             ComputeBuffer uvBuffer,
             Texture mainTexture,
             MaterialPropertyBlock propertyBlock,
+            ref Texture boundTexture,
+            ref ComputeBuffer boundInstanceBuffer,
+            ref ComputeBuffer boundUvBuffer,
+            ref float boundGradientScale,
+            ref float boundFaceDilate,
+            ref float boundDitherEnabled,
             int count,
             Vector4 tint,
             float ditherEnabled)
@@ -864,13 +913,18 @@ namespace Hecton8.UI
             instanceBuffer.SetData(_instancePayloads, 0, 0, count);
             _indirectArgs[1] = (uint)count;
             argsBuffer.SetData(_indirectArgs);
-            propertyBlock.Clear();
-            propertyBlock.SetTexture(MainTexId, mainTexture);
-            propertyBlock.SetFloat(GradientScaleId, gradientScale);
-            propertyBlock.SetFloat(FaceDilateId, faceDilate);
-            propertyBlock.SetFloat(DitherEnabledId, ditherEnabled);
-            propertyBlock.SetBuffer(InstanceBufferId, instanceBuffer);
-            propertyBlock.SetBuffer(UvRectBufferId, uvBuffer);
+            BindPropertyBlockIfDirty(
+                propertyBlock,
+                mainTexture,
+                instanceBuffer,
+                uvBuffer,
+                ditherEnabled,
+                ref boundTexture,
+                ref boundInstanceBuffer,
+                ref boundUvBuffer,
+                ref boundGradientScale,
+                ref boundFaceDilate,
+                ref boundDitherEnabled);
 
             Graphics.DrawMeshInstancedIndirect(
                 _runtimeQuadMesh,
@@ -886,6 +940,42 @@ namespace Hecton8.UI
                 camera,
                 LightProbeUsage.Off,
                 null);
+        }
+
+        private void BindPropertyBlockIfDirty(
+            MaterialPropertyBlock propertyBlock,
+            Texture mainTexture,
+            ComputeBuffer instanceBuffer,
+            ComputeBuffer uvBuffer,
+            float ditherEnabled,
+            ref Texture boundTexture,
+            ref ComputeBuffer boundInstanceBuffer,
+            ref ComputeBuffer boundUvBuffer,
+            ref float boundGradientScale,
+            ref float boundFaceDilate,
+            ref float boundDitherEnabled)
+        {
+            if (ReferenceEquals(boundTexture, mainTexture)
+                && ReferenceEquals(boundInstanceBuffer, instanceBuffer)
+                && ReferenceEquals(boundUvBuffer, uvBuffer)
+                && boundGradientScale == gradientScale
+                && boundFaceDilate == faceDilate
+                && boundDitherEnabled == ditherEnabled)
+                return;
+
+            propertyBlock.Clear();
+            propertyBlock.SetTexture(MainTexId, mainTexture);
+            propertyBlock.SetFloat(GradientScaleId, gradientScale);
+            propertyBlock.SetFloat(FaceDilateId, faceDilate);
+            propertyBlock.SetFloat(DitherEnabledId, ditherEnabled);
+            propertyBlock.SetBuffer(InstanceBufferId, instanceBuffer);
+            propertyBlock.SetBuffer(UvRectBufferId, uvBuffer);
+            boundTexture = mainTexture;
+            boundInstanceBuffer = instanceBuffer;
+            boundUvBuffer = uvBuffer;
+            boundGradientScale = gradientScale;
+            boundFaceDilate = faceDilate;
+            boundDitherEnabled = ditherEnabled;
         }
 
         private Vector3 ResolveAnchorPosition(Vector3 cameraPosition)
@@ -1092,6 +1182,21 @@ namespace Hecton8.UI
             _runtimeIconMaterial = null;
             _textPropertyBlock = null;
             _iconPropertyBlock = null;
+            _boundTextTexture = null;
+            _boundIconTexture = null;
+            _boundTextInstanceBuffer = null;
+            _boundIconInstanceBuffer = null;
+            _boundTextUvBuffer = null;
+            _boundIconUvBuffer = null;
+            _boundTextGradientScale = float.NaN;
+            _boundIconGradientScale = float.NaN;
+            _boundTextFaceDilate = float.NaN;
+            _boundIconFaceDilate = float.NaN;
+            _boundTextDitherEnabled = float.NaN;
+            _boundIconDitherEnabled = float.NaN;
+            _materialResolveAttempted = false;
+            _materialResolveFailed = false;
+            _materialsReady = false;
 
             if (_runtimeQuadMesh != null)
             {

@@ -215,7 +215,7 @@ Scalability potential: Low avoids invalid heap churn and route crashes from corr
 Hardware Impact: Adds scalar guards inside A* expansion; expected savings come from early rejection of corrupt candidates and prevention of downstream steering/telemetry faults. Exact microseconds remain pending profiler data.
 
 Problem: `NativeAStarJob` still trusted raw path-list capacity and could append the requested start position after a broken or over-budget parent chain.
-Solution: Require native path capacity before `AddNoResize`, sanitize heuristic/F-score math before heap writes, and clear the path unless reconstruction proves a bounded parent chain back to `StartNode`.
+Solution: Require native path capacity before `AddNoResize`, sanitize heuristic/F-score math before heap writes, and clear the path unless reconstruction proves a bounded parent chain back to `StartNode`; reconstruction is capped by `min(Nodes.Length, MaxPathReconstructionIterations)` so a cyclic parent chain cannot outgrow the proven path-list capacity.
 Rejected Alternatives: Increasing `MaxPathReconstructionIterations` was rejected because it hides corrupt parent state with more work. Emitting partial paths was rejected because it creates visually smooth but unproven navigation authority.
 Scalability potential: Low/MX350 fails closed without invalid steering corrections. Middle/High/Ultra keep identical valid-path behavior and spend smoothing budget only after A* proof is complete.
 Hardware Impact: Adds cheap scalar checks and one capacity read; expected win is prevention of invalid path tails and downstream correction churn. Exact microseconds remain pending profiler data because dotnet rebuilds are prohibited.
@@ -231,3 +231,9 @@ Solution: Treat the persisted status, rationale, and log files as the authoritat
 Rejected Alternatives: Borrowing the active fauna/noise/mission prompts was rejected because that would violate strict prompt isolation. Fabricating a new XML extraction was rejected as false evidence.
 Scalability potential: No runtime effect; keeps parallel-agent documentation coherent under batch rotation.
 Hardware Impact: None; documentation integrity only.
+
+Problem: Adjacent vegetation-navigation support code still had floating divisions and weak finite handling in shared direction and structure-grid helpers.
+Solution: Replace float divisions in speed inverse-lerp, retention, flow-field sampling, structure-grid mapping, threat propagation, flow obstacle gating, thermal/depth bands, wake falloff, and HLOD fade with reciprocal/multiply or literal reciprocal constants. `DominantAxisOrDefault` now rejects non-finite input/fallback vectors, and structure-grid range/index helpers reject corrupt transforms before hash lookup.
+Rejected Alternatives: Rewriting integer index decomposition divisions was rejected because those are exact grid-coordinate operations, not scalar normalization. Adding new caches or containers was rejected because this is hot native code and the reciprocal sweep removes enough scalar cost without state.
+Scalability potential: Low/MX350 removes recurring divide latency and avoids corrupt structure-grid probes. Middle/High/Ultra keep identical valid-data behavior while retaining budget for denser flow/navigation visuals.
+Hardware Impact: Expected low-end gain is from replacing repeated scalar divides in Burst jobs with reciprocal multiplies and avoiding invalid hash probes. Exact microseconds remain pending profiler data because dotnet rebuilds are prohibited.

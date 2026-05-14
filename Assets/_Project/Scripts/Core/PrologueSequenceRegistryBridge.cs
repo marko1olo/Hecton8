@@ -14,8 +14,8 @@ namespace Hecton8.Core
     [DefaultExecutionOrder(-8540)]
     public sealed class PrologueSequenceRegistryBridge : MonoBehaviour, IPrologueSequenceRuntime, IGlobalRegistryHotSwapListener
     {
-        private const uint SourceHash = 0x50524C47u; // PRLG
-        private const uint ManualOverrideSourceHash = 0x4D4F5652u; // MOVR
+        private const uint SourceHash = PrologueSignalSourceHashes.SequenceDirector;
+        private const uint ManualOverrideSourceHash = PrologueSignalSourceHashes.ManualOverrideLever;
         private const uint MissingServiceHash = 0x50524D49u; // PRMI
         private const uint RegistrationRejectedHash = 0x5052524Au; // PRRJ
         private const uint CancellationFaultHash = 0x50524346u; // PRCF

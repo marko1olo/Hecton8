@@ -109,3 +109,11 @@ Solution: Added a one-shot pump gate: `NeedsScanLogSignalPump` is false once `Fi
 Rejected Alternatives: Keeping a permanent empty snapshot read was rejected because the journal trigger is one-shot. Moving the one-shot state into `ScanLogSystem` was rejected because the logbook owns PDA journal dedupe state and save data.
 Scalability potential: Low/toaster avoids idle UI work after completion. Middle/High/Ultra keep the same signal metadata for richer one-shot journal or cinematic events without keeping dormant consumers alive.
 Hardware Impact: Estimated i3/MX350 saving is below 0.05 us/frame after first leviathan scan, but it is permanent over long sessions. No new allocations and no dotnet build/restore/rebuild by user order.
+
+### 2026-05-15 - O(1) PDALogbook Pump Gate
+
+Problem: The one-shot PDALogbook scan pump used `ContainsSeenOriginHash(FirstLeviathanScanOriginHash)` inside `NeedsScanLogSignalPump`. Before the first leviathan scan, that property could scan up to `PDALogbookDTO.MaxSeenOrigins` entries every UI tick; the project max is 512.
+Solution: Added `_firstLeviathanScanLogged` as a cached milestone bit. `TryAppendSeenOriginHash()` sets it when the leviathan origin is inserted or discovered as already present. `ClearSeenOriginHashes()` resets it for null/new-game loads. `NeedsScanLogSignalPump` is now a single boolean read.
+Rejected Alternatives: Keeping the linear scan was rejected because this is a hot UI registration gate and the exact state already exists as a deterministic one-shot bit. Replacing the fixed array with a HashSet was rejected because it would add managed allocation and move away from the existing fixed-buffer save design.
+Scalability potential: Low/toaster avoids scanning 512 dedupe slots while waiting for the first leviathan scan. Middle/High/Ultra retain identical save layout and signal semantics while allowing more journal-origin dedupe entries without increasing pump-gate cost.
+Hardware Impact: Estimated i3/MX350 saving is 0.02-0.08 us/frame while the scan pump is active. No new allocation, no object payloads, and no dotnet build/restore/rebuild by user order.

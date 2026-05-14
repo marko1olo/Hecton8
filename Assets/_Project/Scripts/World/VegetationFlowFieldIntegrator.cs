@@ -62,8 +62,8 @@ namespace Hecton8.World
         private static float2 DominantAxisOrDefault(float2 value, float2 fallback)
         {
             float lengthSq = math.lengthsq(value);
-            if (lengthSq <= 0.000001f)
-                return fallback;
+            if (lengthSq <= 0.000001f || !math.all(math.isfinite(value)))
+                return math.all(math.isfinite(fallback)) ? fallback : float2.zero;
 
             float ax = math.abs(value.x);
             float ay = math.abs(value.y);
@@ -75,8 +75,8 @@ namespace Hecton8.World
         private static float3 DominantAxisOrDefault(float3 value, float3 fallback)
         {
             float lengthSq = math.lengthsq(value);
-            if (lengthSq <= 0.000001f)
-                return fallback;
+            if (lengthSq <= 0.000001f || !math.all(math.isfinite(value)))
+                return math.all(math.isfinite(fallback)) ? fallback : float3.zero;
 
             float3 absValue = math.abs(value);
             if (absValue.x >= absValue.y && absValue.x >= absValue.z)
@@ -101,7 +101,8 @@ namespace Hecton8.World
         {
             float minSq = minSpeed * minSpeed;
             float maxSq = maxSpeed * maxSpeed;
-            return math.saturate((math.max(0f, speedSq) - minSq) / math.max(0.000001f, maxSq - minSq));
+            float inverseRangeSq = math.rcp(math.max(0.000001f, maxSq - minSq));
+            return math.saturate((math.max(0f, speedSq) - minSq) * inverseRangeSq);
         }
 
         private static float LerpClamped(float a, float b, float t)
@@ -113,7 +114,7 @@ namespace Hecton8.World
         {
             decay = math.max(0f, decay);
             float decaySq = decay * decay;
-            return math.saturate(1f / (1f + decay + (decaySq * 0.48f) + (decaySq * decay * 0.235f)));
+            return math.saturate(math.rcp(1f + decay + (decaySq * 0.48f) + (decaySq * decay * 0.235f)));
         }
 
         /// <summary>
@@ -273,8 +274,9 @@ namespace Hecton8.World
             if (_lastThreatPropagationTime > float.NegativeInfinity)
                 deltaTime = math.clamp(Time.time - _lastThreatPropagationTime, 0.05f, 5f);
 
-            int shiftX = (int)math.round((targetCenter.x - previousCenter.x) / threatGridCellSize);
-            int shiftZ = (int)math.round((targetCenter.z - previousCenter.z) / threatGridCellSize);
+            float inverseThreatGridCellSize = math.rcp(threatGridCellSize);
+            int shiftX = (int)math.round((targetCenter.x - previousCenter.x) * inverseThreatGridCellSize);
+            int shiftZ = (int)math.round((targetCenter.z - previousCenter.z) * inverseThreatGridCellSize);
             float halfExtent = (_ecosystemThreatGridResolution - 1) * 0.5f * threatGridCellSize;
             Vector3 voxelOrigin = new Vector3(
                 targetCenter.x - halfExtent,
@@ -784,8 +786,15 @@ namespace Hecton8.World
             int resolution,
             NativeArray<float2> flowField)
         {
-            if (!flowField.IsCreated || resolution <= 0 || cellSize <= 0f)
+            if (!flowField.IsCreated ||
+                resolution <= 0 ||
+                cellSize <= 0f ||
+                !math.isfinite(cellSize) ||
+                !IsFinite(position) ||
+                !IsFinite(gridCenter))
+            {
                 return float2.zero;
+            }
 
             float halfExtent = (resolution - 1) * 0.5f * cellSize;
             float localX = position.x - (gridCenter.x - halfExtent);
@@ -793,8 +802,9 @@ namespace Hecton8.World
             if (localX < 0f || localZ < 0f || localX > halfExtent * 2f || localZ > halfExtent * 2f)
                 return float2.zero;
 
-            float normalizedX = math.clamp(localX / cellSize, 0f, resolution - 1);
-            float normalizedZ = math.clamp(localZ / cellSize, 0f, resolution - 1);
+            float inverseCellSize = math.rcp(cellSize);
+            float normalizedX = math.clamp(localX * inverseCellSize, 0f, resolution - 1);
+            float normalizedZ = math.clamp(localZ * inverseCellSize, 0f, resolution - 1);
             int cellX = math.clamp((int)math.floor(normalizedX), 0, resolution - 1);
             int cellZ = math.clamp((int)math.floor(normalizedZ), 0, resolution - 1);
             int nextCellX = math.min(cellX + 1, resolution - 1);
@@ -1014,7 +1024,7 @@ namespace Hecton8.World
                             else if (biomeLayer == (byte)VegetationBiomeLayer.DeadZone)
                             {
                                 float deadZoneDepth = math.max(0f, WaterLevel - worldY);
-                                float deadZoneDepthT = math.saturate((deadZoneDepth - DeadZoneStartDepth) / 2000f);
+                                float deadZoneDepthT = math.saturate((deadZoneDepth - DeadZoneStartDepth) * 0.0005f);
                                 float deadZoneThreshold = math.max(0f, TechnoJungleThreshold - (hasPermanentEcho ? EchoTechnoJungleThresholdBias * 0.75f : 0f));
                                 if (!TryEvaluateTechnoJungle(
                                         sampleX,
@@ -1161,6 +1171,20 @@ namespace Hecton8.World
                 out int minCellZ,
                 out int maxCellZ)
             {
+                if (ThreatGridResolution <= 0 ||
+                    ThreatGridCellSize <= 0f ||
+                    !math.isfinite(ThreatGridCellSize) ||
+                    !math.all(math.isfinite(ThreatGridCenter)) ||
+                    !math.all(math.isfinite(aabbMin)) ||
+                    !math.all(math.isfinite(aabbMax)))
+                {
+                    minCellX = 0;
+                    maxCellX = 0;
+                    minCellZ = 0;
+                    maxCellZ = 0;
+                    return false;
+                }
+
                 float halfExtent = (ThreatGridResolution - 1) * 0.5f * ThreatGridCellSize;
                 float minGridX = ThreatGridCenter.x - halfExtent;
                 float maxGridX = ThreatGridCenter.x + halfExtent;
@@ -1175,10 +1199,11 @@ namespace Hecton8.World
                     return false;
                 }
 
-                minCellX = math.clamp((int)math.floor((aabbMin.x - minGridX) / ThreatGridCellSize), 0, ThreatGridResolution - 1);
-                maxCellX = math.clamp((int)math.floor((aabbMax.x - minGridX) / ThreatGridCellSize), 0, ThreatGridResolution - 1);
-                minCellZ = math.clamp((int)math.floor((aabbMin.z - minGridZ) / ThreatGridCellSize), 0, ThreatGridResolution - 1);
-                maxCellZ = math.clamp((int)math.floor((aabbMax.z - minGridZ) / ThreatGridCellSize), 0, ThreatGridResolution - 1);
+                float inverseThreatGridCellSize = math.rcp(ThreatGridCellSize);
+                minCellX = math.clamp((int)math.floor((aabbMin.x - minGridX) * inverseThreatGridCellSize), 0, ThreatGridResolution - 1);
+                maxCellX = math.clamp((int)math.floor((aabbMax.x - minGridX) * inverseThreatGridCellSize), 0, ThreatGridResolution - 1);
+                minCellZ = math.clamp((int)math.floor((aabbMin.z - minGridZ) * inverseThreatGridCellSize), 0, ThreatGridResolution - 1);
+                maxCellZ = math.clamp((int)math.floor((aabbMax.z - minGridZ) * inverseThreatGridCellSize), 0, ThreatGridResolution - 1);
                 return minCellX <= maxCellX && minCellZ <= maxCellZ;
             }
 
@@ -1231,14 +1256,24 @@ namespace Hecton8.World
 
             private int ComputeStructureGridCellIndex(float3 position)
             {
+                if (ThreatGridResolution <= 0 ||
+                    ThreatGridCellSize <= 0f ||
+                    !math.isfinite(ThreatGridCellSize) ||
+                    !math.all(math.isfinite(ThreatGridCenter)) ||
+                    !math.all(math.isfinite(position)))
+                {
+                    return -1;
+                }
+
                 float halfExtent = (ThreatGridResolution - 1) * 0.5f * ThreatGridCellSize;
                 float localX = position.x - (ThreatGridCenter.x - halfExtent);
                 float localZ = position.z - (ThreatGridCenter.z - halfExtent);
                 if (localX < 0f || localZ < 0f || localX > halfExtent * 2f || localZ > halfExtent * 2f)
                     return -1;
 
-                int cellX = math.clamp((int)math.floor(localX / ThreatGridCellSize), 0, ThreatGridResolution - 1);
-                int cellZ = math.clamp((int)math.floor(localZ / ThreatGridCellSize), 0, ThreatGridResolution - 1);
+                float inverseThreatGridCellSize = math.rcp(ThreatGridCellSize);
+                int cellX = math.clamp((int)math.floor(localX * inverseThreatGridCellSize), 0, ThreatGridResolution - 1);
+                int cellZ = math.clamp((int)math.floor(localZ * inverseThreatGridCellSize), 0, ThreatGridResolution - 1);
                 return (cellZ * ThreatGridResolution) + cellX;
             }
         }
@@ -1505,7 +1540,7 @@ namespace Hecton8.World
                     float emissionRadiusSq = emissionRadius * emissionRadius;
                     if (distanceSq <= emissionRadiusSq)
                     {
-                        float falloff = 1f - math.saturate(distanceSq / emissionRadiusSq);
+                        float falloff = 1f - math.saturate(distanceSq * math.rcp(emissionRadiusSq));
                         float accumulationBoost = 1f + (attractor.x * SargassumAccumulationBoost) + (attractor.y * TechnoJungleAccumulationBoost);
                         localDeposit = EmissionStrength * DeltaTime * falloff * accumulationBoost;
                     }
@@ -1571,7 +1606,7 @@ namespace Hecton8.World
                 AccumulateThreatSample(x + 1, z - 1, 1f, ref weightedSum, ref totalWeight);
                 AccumulateThreatSample(x - 1, z + 1, 1f, ref weightedSum, ref totalWeight);
                 AccumulateThreatSample(x + 1, z + 1, 1f, ref weightedSum, ref totalWeight);
-                return weightedSum / math.max(1f, totalWeight);
+                return weightedSum * math.rcp(math.max(1f, totalWeight));
             }
 
             private void AccumulateThreatSample(int x, int z, float weight, ref float weightedSum, ref float totalWeight)
@@ -1850,7 +1885,8 @@ namespace Hecton8.World
 
                 float centerObstacle = SampleObstacle(position);
                 float2 obstacleGradient = ComputeObstacleGradient(position);
-                float obstacleFactor = math.saturate((centerObstacle - ObstacleSoftThreshold) / math.max(0.0001f, ObstacleHardThreshold - ObstacleSoftThreshold));
+                float obstacleRange = math.max(0.0001f, ObstacleHardThreshold - ObstacleSoftThreshold);
+                float obstacleFactor = math.saturate((centerObstacle - ObstacleSoftThreshold) * math.rcp(obstacleRange));
                 float2 avoidanceDir = DominantAxisOrDefault(-obstacleGradient, new float2(0f, 0f));
 
                 float navSupport = SampleNavSupport(cellX, cellZ);
@@ -1994,11 +2030,12 @@ namespace Hecton8.World
                     if (planarDistanceSq > radiusSq)
                         continue;
 
-                    float planarGate = math.saturate(1f - (planarDistanceSq / radiusSq));
+                    float inverseRadiusSq = math.rcp(radiusSq);
+                    float planarGate = math.saturate(1f - (planarDistanceSq * inverseRadiusSq));
                     if (planarGate <= 0f)
                         continue;
 
-                    float verticalGate = math.saturate(1f - (math.abs(position.y - impulse.Position.y) / radius));
+                    float verticalGate = math.saturate(1f - (math.abs(position.y - impulse.Position.y) * math.rcp(radius)));
                     float weight = planarGate * planarGate * verticalGate * impulse.Strength;
                     wake += DominantAxisOrDefault(new float2(impulse.FlowVector.x, impulse.FlowVector.z), float2.zero) * weight;
                 }
@@ -2068,15 +2105,16 @@ namespace Hecton8.World
 
             private float ResolveBaseTemperature(float depthMeters)
             {
-                float normalizedDepth = math.saturate(depthMeters / math.max(1f, GridDepthMeters));
+                float inverseGridDepth = math.rcp(math.max(1f, GridDepthMeters));
+                float normalizedDepth = math.saturate(depthMeters * inverseGridDepth);
                 float thermocline01 = ThermoclineDepth <= 0.01f
                     ? normalizedDepth
-                    : math.saturate(depthMeters / math.max(1f, ThermoclineDepth)) * 0.24f;
+                    : math.saturate(depthMeters * math.rcp(math.max(1f, ThermoclineDepth))) * 0.24f;
 
                 if (depthMeters > ThermoclineDepth)
                 {
                     float remainingDepth = math.max(1f, GridDepthMeters - ThermoclineDepth);
-                    float deep01 = math.saturate((depthMeters - ThermoclineDepth) / remainingDepth);
+                    float deep01 = math.saturate((depthMeters - ThermoclineDepth) * math.rcp(remainingDepth));
                     thermocline01 = 0.24f + (ApproximateDepthFalloff01(deep01, DepthFalloffExponent) * 0.76f);
                 }
 
@@ -2100,17 +2138,17 @@ namespace Hecton8.World
                 float2 attractor = ChunkCount > 0 && ThreatChunks.IsCreated && ThreatAttractorGrid.IsCreated
                     ? SampleThreatAttractorAtPosition(position, ThreatChunks, ThreatAttractorGrid, ChunkCount)
                     : float2.zero;
-                float colony01 = math.saturate((depthMeters - ColonyBiomeStartDepth) / math.max(1f, DeadZoneStartDepth - ColonyBiomeStartDepth));
+                float colony01 = math.saturate((depthMeters - ColonyBiomeStartDepth) * math.rcp(math.max(1f, DeadZoneStartDepth - ColonyBiomeStartDepth)));
                 colony01 *= math.saturate(attractor.y * ColonyPocketStrength);
 
-                float deadZone01 = math.saturate((depthMeters - DeadZoneStartDepth) / math.max(1f, GridDepthMeters - DeadZoneStartDepth));
+                float deadZone01 = math.saturate((depthMeters - DeadZoneStartDepth) * math.rcp(math.max(1f, GridDepthMeters - DeadZoneStartDepth)));
                 deadZone01 *= DeadZonePocketStrength;
 
                 float pocketNoise = SampleValueNoise(
                     ((position.x + (position.y * 0.37f)) * HotPocketNoiseScale) + 13.17f,
                     ((position.z - (position.y * 0.19f)) * HotPocketNoiseScale) + 29.41f,
                     0x91E10DA5u);
-                float pocketMask = math.saturate((pocketNoise - HotPocketThreshold) / math.max(0.0001f, 1f - HotPocketThreshold));
+                float pocketMask = math.saturate((pocketNoise - HotPocketThreshold) * math.rcp(math.max(0.0001f, 1f - HotPocketThreshold)));
                 float pocketBias = math.max(colony01, deadZone01);
                 return HotPocketBoostCelsius * pocketMask * pocketBias;
             }
@@ -2201,7 +2239,7 @@ namespace Hecton8.World
 
                 if ((WeatherStateMask & (uint)WeatherState.Storm) != 0u)
                 {
-                    float surfaceLayer01 = 1f - math.saturate(depthMeters / math.max(SurfaceStormLayerDepthMeters, 0.0001f));
+                    float surfaceLayer01 = 1f - math.saturate(depthMeters * math.rcp(math.max(SurfaceStormLayerDepthMeters, 0.0001f)));
                     float stormBiasScale = WeatherCurrentSpeed * math.max(0.35f, WeatherIntensity);
                     horizontalCurrent += weatherDirection * stormBiasScale;
                     if (surfaceLayer01 > 0.0001f)
@@ -2218,7 +2256,7 @@ namespace Hecton8.World
 
                 if ((WeatherStateMask & ((uint)WeatherState.ThermoclineActive | (uint)WeatherState.HaloclineActive)) != 0u)
                 {
-                    float thermoclineBand01 = 1f - math.saturate(math.abs(depthMeters - ThermoclineDepthMeters) / math.max(ThermoclineHalfBandMeters, 0.0001f));
+                    float thermoclineBand01 = 1f - math.saturate(math.abs(depthMeters - ThermoclineDepthMeters) * math.rcp(math.max(ThermoclineHalfBandMeters, 0.0001f)));
                     if (thermoclineBand01 > 0.0001f)
                         flow.y = math.lerp(flow.y, flow.y * ThermoclineVerticalAttenuation, thermoclineBand01);
                 }
@@ -2245,7 +2283,7 @@ namespace Hecton8.World
                     if (distanceSq > radiusSq)
                         continue;
 
-                    float weight = math.saturate(1f - (distanceSq / radiusSq));
+                    float weight = math.saturate(1f - (distanceSq * math.rcp(radiusSq)));
                     if (weight <= 0f)
                         continue;
 

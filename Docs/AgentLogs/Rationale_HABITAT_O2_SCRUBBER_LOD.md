@@ -74,3 +74,17 @@ Solution: Put the formula inside a `[BurstCompile]` `IJob` and marked compile ve
 Rejected Alternatives: Fake "Burst verified" report rejected. Running dotnet rebuild rejected by user instruction. Adding a decorative compile probe rejected unless it affects the real wake path.
 Scalability potential: Once Unity compilation is allowed, the same job validates Low through Ultra because it is the shared wake path.
 Hardware Impact: Pending real Burst console/profiler data; static model remains O(room), 0 B GC.
+
+## Self-Review 4 - Binding And Catch-Up Corrections
+Problem: The first implementation used a main-thread helper for `math.exp` and a power graph binding that expected a writable NativeArray, while the public gas contract exposes a read-only alias.
+Solution: Moved the wake formula into `BaseHibernationWakeCatchUpJob` and changed `LogisticsNetworkGraph.TryBindBaseAwakeState` to accept `NativeArray<byte>.ReadOnly`. WFC power boot now clears stale binding when gas exists but has not initialized its mask.
+Rejected Alternatives: Exposing writable `BaseAwakeState` through `IGasDynamicsSolver` rejected because external systems must not mutate the hibernation authority. Leaving `math.exp` outside Burst rejected because it weakened task 15.
+Scalability potential: Low keeps a single O(room) wake pass; High/Ultra keep identical authority and can layer visuals elsewhere.
+Hardware Impact: Same O(room), 0 B model; reduced integration risk for power graph consumers.
+
+## Self-Review 5 - Hot-Path Dependency Hygiene
+Problem: The hibernation FrostTick initially resolved quality tier through `GlobalRegistry` and the solver attempted to configure signal lanes that GlobalSignals already owns.
+Solution: FrostTick now reads cached `_lastMathLod` from the fixed-step cadence resolver, and the solver only ensures the base signal lanes exist without overwriting their lane hash/capacity.
+Rejected Alternatives: Keeping registry reads in FrostTick rejected by dependency-injection mandate. Reconfiguring signal lanes from the consumer rejected because GlobalSignals is the lane owner.
+Scalability potential: Low tier still receives 150m hibernation through `_lastMathLod`; High/Ultra keep the standard threshold.
+Hardware Impact: Removes a registry touch from FrostTick and avoids accidental large-lane/hash churn; microsecond gain is negligible but risk is lower.

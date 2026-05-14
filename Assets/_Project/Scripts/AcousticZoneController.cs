@@ -575,6 +575,7 @@ namespace Hecton8.Audio
         private const float AcousticEmitterOcclusionMaxDistanceMeters = 48f;
         private const float AcousticEmitterDistanceWeightScale = 0.05f;
         private const float AmbientSourceResolveRetryInterval = 0.5f;
+        private const int AudioServiceResolveRetryFrames = 30;
 
         private enum AcousticZoneState : byte
         {
@@ -1020,6 +1021,9 @@ namespace Hecton8.Audio
         /// </summary>
         private bool _registeredToTickManager;
         private bool _serviceRegistered;
+        private IAudioService _cachedAudioService;
+        private SpatialAudioManager _cachedSpatialAudioManager;
+        private int _nextAudioServiceResolveFrame;
         private float _nextPlayerResolveTime;
         private const float PlayerResolveRetryInterval = 1f;
         private const float SurfaceWeatherStateEpsilon = 0.001f;
@@ -1249,6 +1253,7 @@ namespace Hecton8.Audio
             ResetSourceLevelAcousticFallback();
             TryUnregister();
             TryUnregisterService();
+            ClearCachedAudioServices();
         }
 
         private void OnDestroy()
@@ -1260,6 +1265,7 @@ namespace Hecton8.Audio
             PhysicsEvents.Unregister(this);
             SpectrumEvents.UnregisterSonarPingListener(this);
             ResetSourceLevelAcousticFallback();
+            ClearCachedAudioServices();
 
         }
 
@@ -1317,6 +1323,42 @@ namespace Hecton8.Audio
 
             GlobalRegistry.UnregisterAcousticZoneRuntime(this);
             _serviceRegistered = false;
+        }
+
+        private void ClearCachedAudioServices()
+        {
+            _cachedAudioService = null;
+            _cachedSpatialAudioManager = null;
+            _nextAudioServiceResolveFrame = 0;
+        }
+
+        private IAudioService ResolveAudioService()
+        {
+            int frame = Time.frameCount;
+            IAudioService audioService = _cachedAudioService;
+            if (audioService != null && audioService.IsInitialized && frame < _nextAudioServiceResolveFrame)
+                return audioService;
+
+            if (frame < _nextAudioServiceResolveFrame)
+                return null;
+
+            _nextAudioServiceResolveFrame = frame + AudioServiceResolveRetryFrames;
+            audioService = GlobalRegistry.Audio;
+            _cachedAudioService = audioService != null && audioService.IsInitialized ? audioService : null;
+            _cachedSpatialAudioManager = _cachedAudioService as SpatialAudioManager;
+            return _cachedAudioService;
+        }
+
+        private SpatialAudioManager ResolveSpatialAudioManager()
+        {
+            IAudioService audioService = ResolveAudioService();
+            SpatialAudioManager spatialAudioManager = _cachedSpatialAudioManager;
+            if (spatialAudioManager != null)
+                return spatialAudioManager;
+
+            spatialAudioManager = audioService as SpatialAudioManager;
+            _cachedSpatialAudioManager = spatialAudioManager;
+            return spatialAudioManager;
         }
 
         public void Tick(float deltaTime)
@@ -1485,7 +1527,7 @@ namespace Hecton8.Audio
         {
             if (clip == null) return;
 
-            Hecton8.Core.IAudioService sam = Hecton8.Core.GlobalRegistry.Audio;
+            IAudioService sam = ResolveAudioService();
             if (sam == null)
                 return;
 
@@ -1494,7 +1536,7 @@ namespace Hecton8.Audio
 
         internal void PlayMadnessWhisperCue()
         {
-            Hecton8.Core.IAudioService sam = Hecton8.Core.GlobalRegistry.Audio;
+            IAudioService sam = ResolveAudioService();
             if (Time.unscaledTime < _nextMadnessWhisperTime || sam == null)
                 return;
 
@@ -2147,12 +2189,12 @@ namespace Hecton8.Audio
                 return;
             }
 
+            IAudioService audioService = ResolveAudioService();
             if (ambientSource.outputAudioMixerGroup == null &&
-                Hecton8.Core.GlobalRegistry.Audio is Hecton8.Core.IAudioService spatialAudioManager &&
-                spatialAudioManager != null &&
-                spatialAudioManager.AmbientGroup != null)
+                audioService != null &&
+                audioService.AmbientGroup != null)
             {
-                ambientSource.outputAudioMixerGroup = spatialAudioManager.AmbientGroup;
+                ambientSource.outputAudioMixerGroup = audioService.AmbientGroup;
             }
         }
 
@@ -2400,7 +2442,7 @@ namespace Hecton8.Audio
             AudioClip clip = acousticType == HectonMapMagicVegetationBridge.VegetationAcousticType.SargassumBubbles
                 ? underwaterSargassumBubblesClip
                 : underwaterGrassRustleClip;
-            Hecton8.Core.IAudioService sam = Hecton8.Core.GlobalRegistry.Audio;
+            IAudioService sam = ResolveAudioService();
             if (clip == null || sam == null)
                 return;
 
@@ -2444,7 +2486,7 @@ namespace Hecton8.Audio
                 clip = fatalPressureNoiseSecondary;
             }
 
-            Hecton8.Core.IAudioService sam = Hecton8.Core.GlobalRegistry.Audio;
+            IAudioService sam = ResolveAudioService();
             if (clip == null || sam == null)
                 return;
 
@@ -2466,7 +2508,7 @@ namespace Hecton8.Audio
             if (PlayerCriticalProceduralAudioRenderer.IsRuntimeInstalled)
                 return;
 
-            Hecton8.Core.IAudioService sam = Hecton8.Core.GlobalRegistry.Audio;
+            IAudioService sam = ResolveAudioService();
             if (sonarPingClip == null || sam == null)
                 return;
 
@@ -2507,7 +2549,7 @@ namespace Hecton8.Audio
 
         internal void PlayMantaMisfire(float intensity)
         {
-            Hecton8.Core.IAudioService sam = Hecton8.Core.GlobalRegistry.Audio;
+            IAudioService sam = ResolveAudioService();
             if (mantaMisfireClip == null || sam == null)
                 return;
 
@@ -2532,7 +2574,7 @@ namespace Hecton8.Audio
                 clip = stormStaticSecondary;
             }
 
-            Hecton8.Core.IAudioService sam = Hecton8.Core.GlobalRegistry.Audio;
+            IAudioService sam = ResolveAudioService();
             if (clip == null || sam == null)
                 return;
 
@@ -2739,7 +2781,11 @@ namespace Hecton8.Audio
             _emitterOcclusionTransmission01 = 1f;
             _emitterOcclusionLowPassCutoffHz = AcousticOcclusionUtility.OpenLowPassCutoffHertz;
 
-            if ((object)listener == null || listener == null || !(Hecton8.Core.GlobalRegistry.Audio is SpatialAudioManager spatialAudioManager))
+            if ((object)listener == null || listener == null)
+                return;
+
+            SpatialAudioManager spatialAudioManager = ResolveSpatialAudioManager();
+            if (spatialAudioManager == null)
                 return;
 
             if (_resolvedEmitterOcclusionLayerMask == 0)

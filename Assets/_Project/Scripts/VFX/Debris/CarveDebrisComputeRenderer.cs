@@ -41,6 +41,7 @@ namespace Hecton8.VFX.Debris
         private const int GlobalSdfRefreshStrideFrames = 4;
         private const int TierRefreshStrideFrames = 30;
         private const int TierSwitchConfirmFrames = 120;
+        private const int VaultLeaseCheckStrideFrames = 30;
         private const float MinimumCarveSpawnRadiusMeters = 0.05f;
 #if UNITY_EDITOR
         private const string FluidAdvectionComputeAssetPath = "Assets/_Project/Art/Shaders/Hecton_FluidAdvection.compute";
@@ -117,6 +118,7 @@ namespace Hecton8.VFX.Debris
         private NativeArray<CarveDebrisRequest> _carveRequests;
         private NativeArray<int> _jobState;
         private NativeArray<CarveDebrisTelemetryEntry> _blackBox;
+        private IDataVault _dataVault;
         private GraphicsBuffer _positionBufferA;
         private GraphicsBuffer _positionBufferB;
         private GraphicsBuffer _velocityBufferA;
@@ -139,6 +141,7 @@ namespace Hecton8.VFX.Debris
         private int _nextGlobalSdfRefreshFrame;
         private int _nextFluidRebindFrame;
         private int _nextTierRefreshFrame;
+        private int _nextVaultLeaseCheckFrame;
         private int _pendingTierFrames;
         private int _cachedDrawMeshFrame = -1;
         private int _bufferParity;
@@ -147,6 +150,8 @@ namespace Hecton8.VFX.Debris
         private int _lastTelemetryFrame = -1;
         private uint _lastProcessedAupShiftFrameId;
         private uint _frameSequence;
+        private uint _positionVaultGeneration;
+        private uint _velocityVaultGeneration;
         private uint _cachedDrawIndexCount;
         private uint _cachedDrawIndexStart;
         private uint _cachedDrawBaseVertex;
@@ -293,6 +298,12 @@ namespace Hecton8.VFX.Debris
                 return false;
             }
 
+            if (!TryCaptureVaultGenerations(vault))
+                return false;
+
+            _dataVault = vault;
+            _nextVaultLeaseCheckFrame = Time.frameCount + VaultLeaseCheckStrideFrames;
+
             if (!_jobState.IsCreated)
                 _jobState = H8Memory.Allocate<int>(JobStateLength, SystemID.Vfx, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             if (!_blackBox.IsCreated)
@@ -316,7 +327,8 @@ namespace Hecton8.VFX.Debris
 
         private bool IsGpuStateValid()
         {
-            return _positionBufferA != null && _positionBufferA.IsValid() &&
+            return IsDataVaultLeaseValid() &&
+                   _positionBufferA != null && _positionBufferA.IsValid() &&
                    _positionBufferB != null && _positionBufferB.IsValid() &&
                    _velocityBufferA != null && _velocityBufferA.IsValid() &&
                    _velocityBufferB != null && _velocityBufferB.IsValid() &&
@@ -324,6 +336,48 @@ namespace Hecton8.VFX.Debris
                    _indirectArgsBuffer != null && _indirectArgsBuffer.IsValid() &&
                    _emptyFlowBuffer != null && _emptyFlowBuffer.IsValid() &&
                    _emptyTexture3D != null;
+        }
+
+        private bool TryCaptureVaultGenerations(IDataVault vault)
+        {
+            if (vault == null ||
+                !vault.TryGetBufferGeneration(BufferID.CarveDebris, out _positionVaultGeneration) ||
+                !vault.TryGetBufferGeneration(BufferID.CarveDebrisVelocity, out _velocityVaultGeneration))
+            {
+                _positionVaultGeneration = 0u;
+                _velocityVaultGeneration = 0u;
+                return false;
+            }
+
+            return true;
+        }
+
+        private bool IsDataVaultLeaseValid()
+        {
+            if (_dataVault == null ||
+                !_debrisPositions.IsCreated ||
+                !_debrisVelocities.IsCreated ||
+                _debrisPositions.Length < MaxCarveDebrisCount ||
+                _debrisVelocities.Length < MaxCarveDebrisCount ||
+                _dataVault.IsCompactionFenceActive)
+            {
+                return false;
+            }
+
+            if (!_dataVault.TryGetBufferGeneration(BufferID.CarveDebris, out uint positionGeneration) ||
+                !_dataVault.TryGetBufferGeneration(BufferID.CarveDebrisVelocity, out uint velocityGeneration) ||
+                positionGeneration != _positionVaultGeneration ||
+                velocityGeneration != _velocityVaultGeneration)
+            {
+                return false;
+            }
+
+            int frame = Time.frameCount;
+            if (frame < _nextVaultLeaseCheckFrame)
+                return true;
+
+            _nextVaultLeaseCheckFrame = frame + VaultLeaseCheckStrideFrames;
+            return ReferenceEquals(_dataVault, GlobalRegistry.DataVault);
         }
 
         private void AllocateGraphicsBuffers()
@@ -1246,6 +1300,7 @@ namespace Hecton8.VFX.Debris
             _nextGlobalSdfRefreshFrame = 0;
             _nextFluidRebindFrame = 0;
             _nextTierRefreshFrame = 0;
+            _nextVaultLeaseCheckFrame = 0;
             _pendingTierFrames = 0;
             _cachedLowTier = true;
             _pendingLowTier = true;
@@ -1257,6 +1312,9 @@ namespace Hecton8.VFX.Debris
             _cachedDrawBaseVertex = 0u;
             _cachedDrawMeshValid = false;
             _fluidEngine = null;
+            _dataVault = null;
+            _positionVaultGeneration = 0u;
+            _velocityVaultGeneration = 0u;
             _emptyTexture3D = null;
             _debrisPositions = default;
             _debrisVelocities = default;

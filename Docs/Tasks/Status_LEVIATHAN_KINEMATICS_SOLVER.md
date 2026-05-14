@@ -156,3 +156,24 @@ Batch source: Docs/Tasks/CURRENT_BATCH.md
 - Static grep over IK runtime/job/shader scope still found no `math.sqrt`, `math.normalize`, managed array creation, `foreach`, `string.Format`, `.ToString()`, `Debug.Log`, Unity Physics casts, `SkinnedMeshRenderer`, `renderer.material`, `Camera.main`, `GlobalRegistry.Get`, `GameObject.Find`, or `FindObject`.
 - `git diff --check` and `git diff --cached --check` on touched code/docs exit 0.
 - No `dotnet` rebuild, compile, or response-file probe was run.
+
+### Loop 15: Lifecycle Seed Dirty Recheck
+
+- Updated lifecycle force-complete so a completed scheduled solver is checked for invalid telemetry before reseed/shutdown continues.
+- Updated `SeedSpineFromOwner()` so cold reseed marks GPU upload dirty and clears `_motionIntentFrame`, preventing one-frame stale fallback intent or stale bone upload after bind/enable.
+- DOD: bind/enable reseeds now produce explicit GPU dirty state and keep blackbox NaN detection active on forced lifecycle completion.
+- Alternative Rejected: relying on the next simulation tick to dirty GPU state because consumers can query the buffer between bind and the next successful solver frame.
+- Estimate: 0 us steady hot path; cold lifecycle only.
+- Static grep over IK runtime/job/shader scope still found no `math.sqrt`, `math.normalize`, managed array creation, `foreach`, `string.Format`, `.ToString()`, `Debug.Log`, Unity Physics casts, `SkinnedMeshRenderer`, `renderer.material`, `Camera.main`, `GlobalRegistry.Get`, `GameObject.Find`, or `FindObject`.
+- `git diff --check` and `git diff --cached --check` on touched code/docs exit 0; unstaged output is only LF-to-CRLF warnings for docs.
+- No `dotnet` rebuild, compile, or response-file probe was run.
+
+### Loop 16: Shader Scalar Sanitization Recheck
+
+- Added finite positive sanitization before `_H8LeviathanSegmentLength` and `_H8LeviathanTailWhip01` are published to material/global shader state.
+- DOD: malformed serialized/programmatic segment length or tail-whip duration cannot push NaN/zero scale into GPU deformation.
+- Alternative Rejected: trusting Unity `[Range]` attributes because runtime code can still assign non-finite values.
+- Estimate: under 0.1 us on upload frames; no Low/MX350 behavior change.
+- Static grep over IK runtime/job/shader scope still found no `math.sqrt`, `math.normalize`, managed array creation, `foreach`, `string.Format`, `.ToString()`, `Debug.Log`, Unity Physics casts, `SkinnedMeshRenderer`, `renderer.material`, `Camera.main`, `GlobalRegistry.Get`, `GameObject.Find`, or `FindObject`.
+- `git diff --check` and `git diff --cached --check` on touched code/docs exit 0; unstaged output is only LF-to-CRLF warnings.
+- No `dotnet` rebuild, compile, or response-file probe was run.

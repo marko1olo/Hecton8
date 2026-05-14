@@ -217,3 +217,27 @@ Verification:
 - No dotnet build, restore, or rebuild was run.
 - `rg` confirmed one-shot pump methods and no scan-log managed event remnants.
 - `git diff --check` reported no whitespace errors; only CRLF normalization warnings.
+
+## 2026-05-15 - O(1) PDALogbook Pump Gate Addendum
+
+What was wrong:
+- `NeedsScanLogSignalPump` called `ContainsSeenOriginHash(FirstLeviathanScanOriginHash)`.
+- That made the scan-log UI pump gate linear in `PDALogbookDTO.MaxSeenOrigins`, which is 512.
+
+What was done:
+- Added `_firstLeviathanScanLogged`.
+- `TryAppendSeenOriginHash()` now sets the cached bit when the leviathan origin is inserted or already present.
+- `ClearSeenOriginHashes()` resets the bit for null/new-game loads.
+- `NeedsScanLogSignalPump` is now O(1).
+
+Cinematic Cheats used:
+- One cached milestone bit replaces a 512-slot dedupe scan for deciding whether the leviathan journal signal pump should run.
+
+Exact microseconds saved:
+- 0.02-0.08 us/frame while the one-shot scan pump is active on i3/MX350-class hardware.
+- 0 allocation; save layout unchanged.
+
+Verification:
+- No dotnet build, restore, or rebuild was run.
+- `rg` confirmed `_firstLeviathanScanLogged`, O(1) `NeedsScanLogSignalPump`, and no scan-log managed callback remnants.
+- `git diff --check` reported no whitespace errors; only CRLF normalization warnings.

@@ -49,6 +49,13 @@ namespace Hecton8.Core.Contracts
         public const byte NonFinite = 4;
     }
 
+    public static class PrologueSignalSourceHashes
+    {
+        public const uint SequenceDirector = 0x50524C47u; // PRLG
+        public const uint ManualOverrideLever = 0x4D4F5652u; // MOVR
+        public const uint OrbitalRelativityDirector = 0x4F524249u; // ORBI
+    }
+
     [StructLayout(LayoutKind.Sequential)]
     public readonly struct PrologueOrbitalSnapshot
     {

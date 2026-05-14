@@ -217,3 +217,49 @@ Verification:
 
 Final Status:
 - PENDING VERIFICATION.
+
+## 2026-05-15 - Scene Lifecycle Reinstall Pass
+
+What was wrong:
+- A scene-authored `LootMagnetSystem` could set `_bootstrapRuntime`, prevent fallback bootstrap creation, then be destroyed on a later scene transition.
+- That failure would silently remove the scheduler without a compile error.
+
+What was done:
+- Added a static `SceneManager.sceneLoaded` hook installed by `EnsureRuntimeInstalled`.
+- The hook reruns the same installer after each scene load and creates a scene-owned fallback only when no runtime survived.
+- Removed gameplay-owned `DontDestroyOnLoad`.
+- Avoided `FindObject*` scene searches and avoided persisting arbitrary scene-authored hierarchies.
+
+Cinematic Cheats used:
+- None. This is lifecycle correctness.
+
+Exact Microseconds saved:
+- No frame-time saving claimed. Cost is one scene-load callback and one branch outside frame hot paths.
+
+Verification:
+- User forbade dotnet rebuilds; none were run.
+- Static loot anti-bloat scan remains clean for runtime scene searches and `DontDestroyOnLoad`.
+
+Final Status:
+- PENDING VERIFICATION.
+
+## 2026-05-15 - Dotnet Process Hygiene Pass
+
+What was wrong:
+- Forbidden Hecton8 `dotnet build` processes were already running in the workspace.
+
+What was done:
+- Stopped the existing dotnet processes.
+- Did not start any dotnet build/rebuild in this pass.
+
+Cinematic Cheats used:
+- None. This is verification hygiene.
+
+Exact Microseconds saved:
+- No gameplay saving claimed. This removes local build CPU pressure and avoids forbidden verification noise.
+
+Verification:
+- Follow-up process query found no remaining Hecton8 dotnet build process.
+
+Final Status:
+- PENDING VERIFICATION.

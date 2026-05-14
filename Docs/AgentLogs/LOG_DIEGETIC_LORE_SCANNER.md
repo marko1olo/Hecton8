@@ -283,6 +283,7 @@ What was wrong:
 What was done:
 - `ScannerTool` now consumes `ScalabilityEvents` through `IScalabilityChangedEventListener`, queues tier candidates, and accepts them after the existing 2s hysteresis.
 - `ToolDiegeticDisplayController` now consumes the same scalability event lane and removed its per-display tier probe countdown.
+- Both scanner systems use `ISlowTickable` as a fallback for platform pressure overrides that currently do not raise scalability events.
 - Scanner player-camera acquisition now uses a cached `IPlayerRuntimeContext` refreshed on Awake, OnSpawn, and OnEquip.
 
 Cinematic Cheats used:
@@ -290,7 +291,7 @@ Cinematic Cheats used:
 
 Exact Microseconds saved:
 - Verified exact microseconds: PENDING PROFILER.
-- Active tier registry polling: 2 Hz -> event-only after cold initialization.
+- Active fast/late/UI tier registry polling: removed. Silent override fallback runs on SlowTick only.
 - Focused acquisition: one `GlobalRegistry.Player` read removed per focused resample.
 
 Verification:

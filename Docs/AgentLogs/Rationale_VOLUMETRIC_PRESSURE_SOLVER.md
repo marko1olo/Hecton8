@@ -297,3 +297,11 @@ Solution: Initialized bend outputs to zero at the callsite and added `habitatVer
 Rejected Alternatives: Relying only on helper-internal guards, or duplicating deformation math in the shader body. Helper-only guards waste callsite setup; duplication makes future shader maintenance brittle.
 Scalability potential: Low/MX350 avoids all vertex bend helper setup and keeps crease-only feedback. Mid/High/Ultra still get localized sine bow and normal bias when stress exists.
 Hardware Impact: Saves two helper-entry branches plus normal-bias setup on low-tier/calm vertices; estimated 2-8 us per 1k interior vertices on MX350-class GPUs, 0 B/frame.
+
+## Follow-Up Correction - Vertex Amplitude Callsite Gate
+
+Problem: DryZone vertex deformation still entered the bend helper when non-low shader mode was active, stress was nonzero, but `_HectonHabitatModuleStressParams.y` carried no displacement budget. The helper rejected the state, but the vertex path still paid callsite setup.
+Solution: Added the same deformation-amplitude threshold to `habitatVertexBendActive`, so the shader calls bend and normal-bias helpers only when tier, stress, and amplitude all permit visible vertex deformation.
+Rejected Alternatives: Leaving amplitude validation only inside `HectonHabitatInteriorApplyPanelBendOS`, or hardwiring tier names in the shader. Helper-only validation wastes vertex branches; tier names belong on CPU quality policy, not shader branching.
+Scalability potential: Low/MX350 and transitional zero-amplitude states skip vertex deformation setup. Mid/High/Ultra keep full sine bow and normal bias when displacement is positive.
+Hardware Impact: Saves helper-entry setup on non-low zero-amplitude transitional states; estimated 1-3 us per 1k affected interior vertices on MX350-class GPUs, 0 B/frame.

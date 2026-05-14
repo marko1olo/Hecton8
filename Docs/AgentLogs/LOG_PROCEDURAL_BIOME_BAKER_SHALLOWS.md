@@ -153,3 +153,27 @@ Cinematic Cheats used: Opaque static flora meshes, shader math LOD, LOD crossfad
 Exact Microseconds saved: Runtime remains 0 us/frame and 0 bytes procedural allocation. The saved cost is avoided regression: no silent alpha blend, missing instancing, or lost crossfade path can add overdraw or draw-path churn later. Exact runtime microseconds were not profiled.
 
 Verification: No dotnet rebuild was run. `git diff --check` passed. Source scan found `ValidateShaderSourceContract`, `ShaderPath`, and no `Shader.Find` in the Shallows baker. Shader token scan returned `Missing=0`, `ForbiddenHits=0`; brace count is balanced.
+
+## 2026-05-15 Validator Path And Readability Fail-Fast
+
+What was wrong: Shader source validation resolved `Assets/...` through process current directory, which is weaker than deriving the project root from Unity. Vertex color validation also lacked its own non-readable mesh guard and could reach `GetColors` after another validator had already reported the readability failure.
+
+What was done: Added `ResolveProjectAssetAbsolutePath` using `Application.dataPath`, switched shader source reads to that path, added a `mesh.isReadable` early return in `ValidateVertexColorGradient`, and normalized the touched cold-allocation comment to ASCII style.
+
+Cinematic Cheats used: No runtime change. Static offline L-system/SDF meshes, shader masks, opaque math-LOD shader path, shared atlas/material, no flora collision, and rock-only convex collision remain the visual-fake strategy.
+
+Exact Microseconds saved: Runtime remains 0 us/frame and 0 bytes procedural allocation. This is validation reliability work; exact editor microseconds were not profiled.
+
+Verification: No dotnet rebuild was run. `git diff --check` passed for the touched source. Source scans found `ResolveProjectAssetAbsolutePath`, no Shallows `Shader.Find`, no `mesh.colors`, and `NonAscii=0`. Mesh readability YAML scan found `Count=600`, `Bad=0`, `MaxVertices=9243`, `ScratchCapacity=9600`; shader token scan returned `Missing=0`, `ForbiddenHits=0`.
+
+## 2026-05-15 Atlas Asset Dimension Contract
+
+What was wrong: The validator locked atlas importers and material bindings but did not verify that the actual texture assets are the expected paths and exact `1024x1024` source payloads.
+
+What was done: Added `ValidateAtlasTextureAsset` for Albedo, Normal, ORM, and MatCap. Each loaded atlas must be a `Texture2D`, resolve to the exact expected path, and report `1024x1024` dimensions before importer checks run.
+
+Cinematic Cheats used: Shared atlas/material, triplanar shader projection, MatCap fake lighting, vertex-color masks, static LOD payloads, no flora collision, and rock-only convex collision remain unchanged.
+
+Exact Microseconds saved: Runtime remains 0 us/frame and 0 bytes procedural allocation. This prevents texture-size or path drift from silently increasing VRAM or weakening visual sampling; exact runtime microseconds were not profiled.
+
+Verification: No dotnet rebuild was run. `git diff --check` passed. Source scan found `ValidateAtlasTextureAsset`; brace count is balanced and source `NonAscii=0`. PNG IHDR scan found all four atlases are `1024x1024`, `AtlasPngDimensionScan Count=4 Bad=0`.

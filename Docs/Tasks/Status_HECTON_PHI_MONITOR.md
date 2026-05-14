@@ -38,16 +38,17 @@ Task Count: 6
 - [x] Task 17: Signal boundary layout cleanup | DOD: added sequential layout metadata to the remaining public signal ring buffer and AUP shift transformer in `GlobalSignals.cs`; verified no public/internal structs in that file remain without nearby `StructLayout` | Rejected: touching concurrent PlayerBase signal sanitizer edits or mutating signal runtime logic | Estimate: 0 us runtime
 - [x] Task 18: Core native container/job layout cleanup | DOD: added sequential layout metadata to targeted Core native containers, allocation records, DataVault audit job, and numeric hardware profile; verified remaining Core missing-layout structs are managed-reference or marker/bridge-only | Rejected: fake layout proof on `FixedCharBuffer`, `GameStartContext`, `ServiceReboundEvent`, `PersistenceAssemblyMarker`, and `MacroDatabaseSignalBridge` | Estimate: 0 us runtime
 - [x] Task 19: Typed signal metric correction and compact summary mode | DOD: H-Phi audit now counts typed `GlobalSignals.Publish(...)` as synaptic SignalBus traffic and narrows `EventPublish` to legacy/static event publish surfaces; `-Summary` emits compact overseer JSON | Rejected: classifying typed signal wrappers as generic event debt and forcing full JSON parsing for every status check | Estimate: 0 us runtime
+- [x] Task 20: Queued signal-lane classification correction | DOD: H-Phi audit now counts confirmed NativeQueue/SystemDispatcher-backed publish lanes as signal traffic: `VehicleCommandSignalBus`, `PhysicsDeterminismSignals`, `FluidFeedbackEvents`, `LocalizationEvents`, and `VoxelChunkModifiedEvents`; direct fan-out and `HectonEventBus` remain event debt | Rejected: counting every `*Events.Publish*` as healthy signal flow | Estimate: 0 us runtime
 
 ## Latest Static Scores
-- H-Phi runtime static narrow: `0.009244029`
-- H-Phi runtime static risk-adjusted: `0.000468052`
-- H-Phi all-source static narrow: `0.008233393`
-- H-Phi all-source static risk-adjusted: `0.000385356`
+- H-Phi runtime static narrow: `0.009377979`
+- H-Phi runtime static risk-adjusted: `0.000505917`
+- H-Phi all-source static narrow: `0.008352967`
+- H-Phi all-source static risk-adjusted: `0.000418851`
 - Narrow integration: `1.0`
-- Risk integration: `0.050632911`
-- Architectural purity: `0.994690265`
-- Data sovereignty: `0.018557276`
+- Risk integration: `0.053947368`
+- Architectural purity: `0.994708995`
+- Data sovereignty: `0.018825826`
 - Memory alignment: `0.500794071`
 - Binary-safe ratio: `0.018528322`
 
@@ -69,8 +70,8 @@ Task Count: 6
 - Audit JSON now includes `CoreGraphAudit`: current Core asmdef debt references `28`, generated project debt references `10`.
 - Audit JSON now includes `TopNativeArrayFiles`, `OwnerBlockedDataVaultCandidates`, `DisposeCalls`, and editor file rows for overseer routing.
 - Audit script now supports `-Summary` for compact status/overseer output; `-CoreGraphOnly -Summary -Json` completes quickly and keeps the Core graph budget visible without full source scan cost.
-- Typed `GlobalSignals.Publish(...)` now counts as SignalBus traffic in the static model. Latest full summary: `SignalBusPush=308`, `EventPublish=48`, `RiskIntegration=0.050632911`, `RuntimeHPhiRisk=0.000468052`.
-- Narrow runtime H-Phi moved `0.009266939 -> 0.009244029` in the current tree because concurrent/static counts added `NativeArray` and source lines; this is not a runtime regression claim.
+- Typed `GlobalSignals.Publish(...)` and confirmed queued publish lanes now count as SignalBus traffic in the static model. Latest full summary: `SignalBusPush=328`, `EventPublish=28`, `RiskIntegration=0.053947368`, `RuntimeHPhiRisk=0.000505917`.
+- Narrow runtime H-Phi moved `0.009266939 -> 0.009377979` since the prior layout pass; this is static model/current-tree evidence, not runtime profiler proof.
 - Remaining runtime `Find*` debt is concentrated in `GameBootstrapper` bootstrap handoff, `HectonUrpShadowBudgetGuard` cold light scan, and `VRSomaticRuntimeBootstrap` decoupled root lookup; one textual `HectonUnderwaterVisuals` hit is editor-only and excluded from runtime score.
 - `git diff --check` on touched Core layout files reports only LF/CRLF normalization warnings.
 - Unity Console / PlayMode / Profiler / GCMonitor: PENDING VERIFICATION.

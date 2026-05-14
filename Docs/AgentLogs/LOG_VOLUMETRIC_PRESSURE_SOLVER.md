@@ -251,3 +251,24 @@ Follow-up upgrade 27:
 Exact microseconds saved after follow-up 27:
 - Rebuild/stress passes avoid repeated atmosphere service-locator reads after warm cache.
 - Estimated 1-3 us saved on i3/MX350 pressure-heavy frames; 0 B/frame and no loss of tide/sea-level freshness.
+
+Follow-up upgrade 28:
+- Added `habitatVertexBendActive` in `Hecton_DryZoneLit.shader`.
+- DryZone vertices now call `HectonHabitatInteriorApplyPanelBendOS` only for non-low stressed habitat vertices.
+- Cheap normal bias now runs only when vertex bend is active and the panel mask is nonzero.
+- Static checks: `rg` confirms `habitatVertexBendActive` gates bend and normal-bias helper calls; exact shader `normalize()`/`sqrt()` scan produced no matches; managed-offender scans found no C# string/LINQ/foreach offenders; mesh mutation scan found no owned `Mesh.vertices` writes; touched C#/shader brace counts are balanced; local H-Phi spot check remains `GlobalRegistry=4`, `SignalBus=2`, `GlobalSignals=1`, `NativeArray=81`, `GraphicsBuffer=3`, `FindCalls=0`, `UpdateMethods=0`; `git diff --check` reports only CRLF warnings.
+- Rebuild policy: no `dotnet` rebuild and no Unity rebuild were run by explicit user instruction.
+
+Exact microseconds saved after follow-up 28:
+- Low-tier and calm vertices skip bend helper setup and cheap-normal-bias helper entry.
+- Estimated 2-8 us saved per 1k interior vertices on MX350-class GPUs; 0 B/frame.
+
+Follow-up upgrade 29:
+- Added `_HectonHabitatModuleStressParams.y > 0.00001` to `habitatVertexBendActive` in `Hecton_DryZoneLit.shader`.
+- This mirrors the bend helper amplitude guard at the callsite, so zero-amplitude non-low states skip bend and normal-bias helper entry.
+- Static checks: `rg` confirms the amplitude guard is part of `habitatVertexBendActive` and still gates bend/normal-bias helper calls; exact shader `normalize()`/`sqrt()` scan produced no matches; managed-offender scans found no C# string/LINQ/foreach offenders; mesh mutation scan found no owned `Mesh.vertices` writes; touched C#/shader brace counts are balanced; `git diff --check` reports only CRLF warnings.
+- Rebuild policy: no `dotnet` rebuild and no Unity rebuild were run by explicit user instruction.
+
+Exact microseconds saved after follow-up 29:
+- Zero-amplitude transitional shader states skip vertex bend/normal helper setup.
+- Estimated 1-3 us saved per 1k affected interior vertices on MX350-class GPUs; 0 B/frame.

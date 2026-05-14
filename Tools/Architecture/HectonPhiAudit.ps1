@@ -4,7 +4,8 @@ param(
     [switch]$CoreGraphOnly,
     [switch]$RequireCoreBuildGate,
     [int]$MaxCoreAsmdefDebtReferences = -1,
-    [int]$MaxGeneratedProjectDebtReferences = -1
+    [int]$MaxGeneratedProjectDebtReferences = -1,
+    [int]$MaxSourceBackedBridgeDebtReferences = -1
 )
 
 $ErrorActionPreference = 'Stop'
@@ -272,6 +273,7 @@ function Get-CoreGraphAudit {
     $coreAsmdefPath = Join-Path $scope 'Hecton8.Core.asmdef'
     $coreCsprojPath = Join-Path $root 'Hecton8.Core.csproj'
     $propsPath = Join-Path $root 'Directory.Build.props'
+    $targetsPath = Join-Path $root 'Directory.Build.targets'
 
     $asmdefRows = @()
     if (Test-Path -LiteralPath $coreAsmdefPath) {
@@ -300,6 +302,27 @@ function Get-CoreGraphAudit {
         }
     }
 
+    $bridgeRows = @()
+    if (Test-Path -LiteralPath $targetsPath) {
+        $targetsProject = [xml](Get-Content -LiteralPath $targetsPath -Raw)
+        foreach ($itemGroup in @($targetsProject.Project.ItemGroup)) {
+            $condition = [string]$itemGroup.Condition
+            if ($condition.IndexOf("`$(MSBuildProjectName)' == 'Hecton8.Core'", [StringComparison]::Ordinal) -lt 0) {
+                continue
+            }
+
+            foreach ($node in @($itemGroup.Reference)) {
+                $include = [string]$node.Include
+                $kind = Get-CoreReferenceKind $include
+                $bridgeRows += [pscustomobject][ordered]@{
+                    Reference = $include
+                    Kind = $kind
+                    IsHPhiDebt = ($kind -eq 'LeafDomain' -or $kind -eq 'PackageOrUnity' -or $kind -eq 'Other')
+                }
+            }
+        }
+    }
+
     $propsText = ''
     if (Test-Path -LiteralPath $propsPath) {
         $propsText = Get-Content -LiteralPath $propsPath -Raw
@@ -316,10 +339,12 @@ function Get-CoreGraphAudit {
 
     $asmdefDebtRows = @($asmdefRows | Where-Object { $_.IsHPhiDebt })
     $projectDebtRows = @($projectRows | Where-Object { $_.IsHPhiDebt })
+    $bridgeDebtRows = @($bridgeRows | Where-Object { $_.IsHPhiDebt })
 
     [ordered]@{
         CoreAsmdef = if (Test-Path -LiteralPath $coreAsmdefPath) { ConvertTo-RelativeProjectPath $coreAsmdefPath } else { 'MISSING' }
         CoreProject = if (Test-Path -LiteralPath $coreCsprojPath) { ConvertTo-RelativeProjectPath $coreCsprojPath } else { 'MISSING' }
+        SourceBackedTargets = if (Test-Path -LiteralPath $targetsPath) { ConvertTo-RelativeProjectPath $targetsPath } else { 'MISSING' }
         BuildGraphGate = [ordered]@{
             CoreBuildProjectReferencesDisabledByDefault = $coreGatePresent
             CoreBuildInParallelDisabledByDefault = $coreParallelGatePresent
@@ -330,11 +355,15 @@ function Get-CoreGraphAudit {
             CoreAsmdefDebtReferenceCount = @($asmdefDebtRows).Count
             GeneratedProjectReferenceCount = @($projectRows).Count
             GeneratedProjectDebtReferenceCount = @($projectDebtRows).Count
+            SourceBackedBridgeReferenceCount = @($bridgeRows).Count
+            SourceBackedBridgeDebtReferenceCount = @($bridgeDebtRows).Count
         }
         CoreAsmdefReferences = @($asmdefRows)
         CoreAsmdefDebtReferences = @($asmdefDebtRows)
         GeneratedProjectReferences = @($projectRows)
         GeneratedProjectDebtReferences = @($projectDebtRows)
+        SourceBackedBridgeReferences = @($bridgeRows)
+        SourceBackedBridgeDebtReferences = @($bridgeDebtRows)
     }
 }
 
@@ -365,6 +394,14 @@ function Assert-CoreGraphBudget {
             'Generated Core project H-Phi debt refs {0} exceed budget {1}.' -f
             $counts.GeneratedProjectDebtReferenceCount,
             $MaxGeneratedProjectDebtReferences))
+    }
+
+    if ($MaxSourceBackedBridgeDebtReferences -ge 0 -and
+        [int]$counts.SourceBackedBridgeDebtReferenceCount -gt $MaxSourceBackedBridgeDebtReferences) {
+        [void]$violations.Add((
+            'Source-backed Core bridge H-Phi debt refs {0} exceed budget {1}.' -f
+            $counts.SourceBackedBridgeDebtReferenceCount,
+            $MaxSourceBackedBridgeDebtReferences))
     }
 
     if ($violations.Count -le 0) {
@@ -597,14 +634,17 @@ if ($CoreGraphOnly) {
     Write-Output ''
     Write-Output 'Generated Core project H-Phi debt references:'
     $coreGraphAudit.GeneratedProjectDebtReferences | Format-Table -AutoSize
+    Write-Output ''
+    Write-Output 'Source-backed Core bridge H-Phi debt references:'
+    $coreGraphAudit.SourceBackedBridgeDebtReferences | Format-Table -AutoSize
     return
 }
 
 $patternSource = [ordered]@{
-    SignalBusPush = '(?:SignalBus\s*<[^>]+>\s*\.\s*Push|GlobalSignals\s*\.\s*Publish\s*\()'
+    SignalBusPush = '(?:SignalBus\s*<[^>]+>\s*\.\s*Push|GlobalSignals\s*\.\s*Publish\s*\(|VehicleCommandSignalBus\s*\.\s*Publish\w*\s*\(|PhysicsDeterminismSignals\s*\.\s*Publish\w*\s*\(|FluidFeedbackEvents\s*\.\s*Publish\w*\s*\(|LocalizationEvents\s*\.\s*Publish\w*\s*\(|VoxelChunkModifiedEvents\s*\.\s*Publish\w*\s*\()'
     GlobalRegistryGet = 'GlobalRegistry\s*\.\s*Get\s*<'
     GlobalRegistrySurface = 'GlobalRegistry\s*\.'
-    EventPublish = '\b(?:HectonEventBus|WaterTransitionEvents|SuitDamageEvents|LocalizationEvents|FluidFeedbackEvents|VehicleCommandSignalBus|PhysicsDeterminismSignals|[A-Za-z_]\w*Events)\s*\.\s*Publish\w*\s*\('
+    EventPublish = '\b(?:HectonEventBus|WaterTransitionEvents|SuitDamageEvents)\s*\.\s*Publish\w*\s*\('
     UnityUpdateMethods = '^\s*(?:public|private|protected|internal)?\s*(?:static\s+)?void\s+(?:Update|LateUpdate|FixedUpdate)\s*\('
     ISlowTickable = '\bISlowTickable\b'
     IJob = '\bIJob(?:ParallelFor|For|Entity|Chunk)?\b'

@@ -120,13 +120,33 @@ Scoped forbidden-pattern scan over touched IK/KCC/signal files returned no match
 Status:
 PENDING VERIFICATION. Unity import, Burst compiler, Play Mode, GCMonitor, profiler proof, and full compile proof remain absent.
 
+## 2026-05-15 Recursive QA Addendum 10
+
+What was wrong:
+`PlayerKinematicsRuntime` black-box telemetry trusted `_telemetryWriteIndex` directly. A negative or stale native cursor could become an invalid modulo index, and some main-thread telemetry payloads could copy non-finite position/velocity/intended movement into the dump path.
+
+What was done:
+Added bounded telemetry slot reservation for the Burst body job and the main-thread squeeze, environment IK, and sync-fence telemetry writers. The cursor now clamps negative values to zero, rejects missing or zero-length buffers, advances from the wrapped slot, telemetry payloads finite-sanitize position, velocity, and intended movement before writing, and the binary dump emits oldest-to-newest entries from a sanitized wrapped head.
+
+Cinematic cheats used:
+No simulation change. This protects the 300-frame black box behind the existing KCC-driven lower-body visual fake so post-mortem evidence stays usable when stride/swim/hand IK data faults.
+
+Exact microseconds saved:
+Added cost is integer bounds checks and vector finite selects only on telemetry writes, estimated below 0.5 us/event on i3/MX350. Prevented cost is fault-path collapse from invalid telemetry indexing and unusable dump evidence.
+
+Verification:
+No dotnet rebuild was run per user instruction. `git diff --check -- Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs` passed with CRLF warnings only. Scoped forbidden-pattern scan over lower-body/signal files returned no matches for `sqrMagnitude`, `math.sqrt`, `math.normalize`, `foreach`, `string.Format`, interpolation strings, `OnAnimatorIK`, `SetIK`, `ikPass`, `StartCoroutine`, `GameObject.Find`, `FindObjectOfType`, or `Camera.main`. MCP resource listing returned no Unity resources.
+
+Status:
+PENDING VERIFICATION. Unity import, Burst compiler, Play Mode, GCMonitor, profiler proof, and full compile proof remain absent.
+
 ## 2026-05-15 Recursive QA Addendum 9
 
 What was wrong:
 The downstream target and KCC paths were finite-gated, but two H-Phi edge cases remained in the animation/raycast boundary. A finite zero-length stream quaternion could pass a finite-only check before inverse math, and corrupt camera/probe/origin scalar data could still degrade IK ray commands or proxy blends into unsafe fallbacks.
 
 What was done:
-`ContextualPhysicalIkMath` now normalizes finite Unity quaternions through the no-sqrt `rsqrt` path while preserving zero/invalid quaternions for rejection. `ContextualPhysicalIkRig` now requires quaternions to be finite and non-zero length before treating them as valid. `ContextualPhysicalIkRuntime` now sanitizes brace directions, camera/tool/hand/foot ray origins, foot step cache state, tool retraction/recoil origins, contact offsets, max-delta heights, collision distances, smoothing fallbacks, and brace proxy distances before writing commands or targets.
+`ContextualPhysicalIkMath` now normalizes finite Unity quaternions through the no-sqrt `rsqrt` path while preserving zero/invalid quaternions for rejection. `ContextualPhysicalIkRig` now requires quaternions to be finite and non-zero length before treating them as valid, and the apply job owns its spine target count for range validation. `ContextualPhysicalIkRuntime` now sanitizes brace directions, camera/tool/hand/foot ray origins, foot step cache state, tool retraction/recoil origins, contact offsets, max-delta heights, collision distances, smoothing fallbacks, and brace proxy distances before writing commands or targets.
 
 Cinematic cheats used:
 No physical gait, no extra rays, no new solver. The system remains a visual fake: batched hip-origin rays, squared thresholds, triangle-wave foot lift, planar swim posture, small pelvis yaw, and Burst two-bone solve.

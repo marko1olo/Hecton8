@@ -165,3 +165,17 @@ Status: PENDING VERIFICATION
 - Patched `ShallowsBioForgeBatchBaker` to validate the exact shader asset path, required source tokens, and forbidden alpha-blend/ZWrite-off tokens. Removed the `Shader.Find` fallback from the bake path and made material creation fail closed when the authored shader asset is missing.
 - Verification avoided dotnet rebuilds. `git diff --check` passed for the touched source; source scan found `ValidateShaderSourceContract`, no `Shader.Find` in the Shallows baker, and brace count is balanced. Shader token scan returned `Missing=0`, `ForbiddenHits=0`.
 - H-Phi impact remains local: stronger source-contract evidence and less fallback ambiguity without adding runtime coupling or render-path ownership.
+
+### Loop 17 - Validator Path And Readability Fail-Fast
+
+- Found two validator hygiene defects after rereading the current source: the shader source check resolved `Assets/...` through the process working directory, and vertex color validation could still call `GetColors` after the mesh-geometry validator had already detected a non-readable mesh.
+- Patched `ShallowsBioForgeBatchBaker` to resolve shader asset files from `Application.dataPath`/project root, add a readability fail-fast inside `ValidateVertexColorGradient`, and replace the non-ASCII cold-allocation separator in the touched source with ASCII style matching the surrounding ProceduralGen comments.
+- Verification avoided dotnet rebuilds. `git diff --check` passed for the touched source; source scan found `ResolveProjectAssetAbsolutePath`, no Shallows `Shader.Find`, no `mesh.colors`, and `NonAscii=0`. Mesh readability YAML scan found `Count=600`, `Bad=0`, `MaxVertices=9243`, `ScratchCapacity=9600`; shader token scan remained `Missing=0`, `ForbiddenHits=0`.
+- H-Phi impact remains domain-local static evidence: fewer fail-open assumptions and cleaner editor validation behavior, with no runtime ownership or cross-domain dependency added.
+
+### Loop 18 - Atlas Asset Dimension Contract
+
+- Found one remaining VRAM/visual drift gap: atlas importer settings and material bindings were locked, but the validator did not assert the actual atlas texture asset path and dimensions.
+- Patched `ShallowsBioForgeBatchBaker` to validate all four atlas `Texture2D` assets by exact path and exact `1024x1024` dimensions before importer validation.
+- Verification avoided dotnet rebuilds. `git diff --check` passed for the touched source; source scan found `ValidateAtlasTextureAsset`; brace count stayed balanced and source `NonAscii=0`. PNG IHDR scan found all four Shallows atlases are `1024x1024` with `AtlasPngDimensionScan Count=4 Bad=0`.
+- H-Phi impact remains editor/data-contract only: stricter texture payload evidence without runtime texture mutation, material clones, or additional renderer ownership.

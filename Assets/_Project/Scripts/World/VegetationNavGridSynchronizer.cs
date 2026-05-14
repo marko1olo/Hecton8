@@ -961,7 +961,7 @@ namespace Hecton8.World
             double fadeStartSq = fadeStart * fadeStart;
             double fadeEndSq = fadeEnd * fadeEnd;
             double rangeSq = math.max(1d, fadeEndSq - fadeStartSq);
-            return math.saturate((float)((distanceSq - fadeStartSq) / rangeSq));
+            return math.saturate((float)((distanceSq - fadeStartSq) * math.rcp(rangeSq)));
         }
 
         private static float EstimateLength3D(Vector3 value)
