@@ -95,3 +95,27 @@ Rejected Alternatives: `git add Docs` or committing all modified files was rejec
 Scalability potential: Source-control hygiene keeps parallel work separable across low/middle/high/ultra feature owners.
 
 Hardware Impact: 0 us runtime gain; repository hygiene only.
+
+## Decision 8 - Continuation After Batch Rotation
+
+Problem: On 2026-05-15 the current batch file no longer contains `<AGENT_PROMPT id="HECTON_ENCYCLOPEDIA_FINALIZER">`, so the original prompt cannot be re-extracted from the active file.
+
+Solution: Continue from the already-created status/rationale/log files as long-term memory and record the batch rotation as evidence. Evidence class: STATIC_DOC.
+
+Rejected Alternatives: Restarting under a different agent prompt or inventing a replacement prompt was rejected because it would violate the strict parsing rule.
+
+Scalability potential: No runtime tier impact; protects multi-agent documentation state from batch churn.
+
+Hardware Impact: 0 us runtime gain on i3/MX350; documentation continuity only.
+
+## Decision 9 - Complete Tracked Direct Report Inventory
+
+Problem: The README needed mechanical proof of coverage for every tracked direct `Docs/Reports/*.md` file.
+
+Solution: Verify `Docs/README.md` contains a complete tracked direct report inventory and validate that all 84 tracked direct reports are linked. Nested deprecated snapshots remain excluded by governance.
+
+Rejected Alternatives: Linking nested deprecated reports in the primary README was rejected because deprecated snapshots are not current project authority.
+
+Scalability potential: Low-context agents get direct report routing; high-tier feature owners still use current stable docs first.
+
+Hardware Impact: 0 us runtime gain; reduces documentation lookup cost only.

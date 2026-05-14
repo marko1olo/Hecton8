@@ -27,6 +27,7 @@ Scope: shared terminology for agents and developers. Runtime proof is out of sco
 | Signal lane | Typed bounded broadcast channel with unmanaged payload, owner, phase, capacity, overflow policy, and telemetry fields. |
 | SOA | Struct of Arrays. Data layout where each field is stored in a flat array for cache-friendly jobs and Burst access. |
 | SystemDispatcher phase | One of `PRE_SIMULATION`, `SIMULATION`, `POST_SIMULATION`, or `VISUAL_SYNC`. Runtime work must declare its phase. |
+| Vault | Short name for the DataVault-owned native buffer authority. If a runtime system says "the vault", it means the central owner of native memory handles, not a local cache. |
 | Vault handle | Stable reference to a DataVault-owned buffer with buffer id, system id, generation, count, capacity, and safety checks. |
 | Visual fake | Deterministic presentation shortcut that preserves player belief without simulating invisible physical causes. |
 | Visual overkill | High/ultra-tier spending of saved performance on richer presentation after gameplay truth stays within budget. |
@@ -38,4 +39,3 @@ Scope: shared terminology for agents and developers. Runtime proof is out of sco
 - Sentinel: fault/memory/health guard model.
 - SHI: system pressure scalar.
 - Bucketer: deterministic cadence distribution model.
-

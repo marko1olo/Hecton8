@@ -4,7 +4,7 @@ Agent: WRITER_ARCHITECT
 Domain: The Chronicler (Docs)
 Prompt source: `Docs/Tasks/CURRENT_BATCH.md`
 Prompt task count: 6
-Status: ENCYCLOPEDIA VERIFIED - committed
+Status: ENCYCLOPEDIA VERIFIED - continuation committed
 
 ## Mandates Loaded
 
@@ -35,3 +35,7 @@ Status: ENCYCLOPEDIA VERIFIED - committed
 - Iteration 4: Link-check script checked 149 markdown links in owned encyclopedia docs with 0 missing targets. `git diff --check` clean except CRLF normalization warnings.
 - Iteration 5: `<POLISH_MANDATE>` tag was absent in `Docs/Tasks/CURRENT_BATCH.md`; performed local anti-bloat scan: non-ASCII check clean for new docs, false-verification phrase scan clean, line counts bounded.
 - Iteration 6: Final log written to `Docs/AgentLogs/LOG_HECTON_ENCYCLOPEDIA_FINALIZER.md`; owned changes committed in the final HEAD commit with unrelated staged SOUNDSCAPE ledger paths excluded.
+- Iteration 7: Continuation request received on 2026-05-15. Current `Docs/Tasks/CURRENT_BATCH.md` rotated to a new batch and no longer contains this agent prompt; status file retains the original task count.
+- Iteration 8: Verified `Docs/README.md` contains the complete tracked direct `Docs/Reports/*.md` inventory, excluding nested deprecated snapshots.
+- Iteration 9: Structural gate passed: 20 FAQ entries, required glossary terms present, 85 domain ids, 84 tracked direct reports linked, 234 owned links checked with 0 missing.
+- Iteration 10: Python spellcheck rerun over current `Docs/`: 1507 files, 41520 unique tokens, 28 known typo hits in legacy/archive/deprecated surfaces, no owned encyclopedia typo requiring edit.

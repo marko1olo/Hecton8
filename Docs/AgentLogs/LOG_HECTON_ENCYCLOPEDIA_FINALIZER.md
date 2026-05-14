@@ -49,3 +49,35 @@ Status:
 - Unity status: PENDING VERIFICATION.
 - Profiler/GC/player-build status: PENDING VERIFICATION.
 - Final isolated commit: current HEAD after excluding unrelated staged SOUNDSCAPE ledger paths.
+
+## 2026-05-15 - Continuation Hardening
+
+What was wrong:
+
+- User requested another certainty pass after the first commit.
+- Current `Docs/Tasks/CURRENT_BATCH.md` had rotated and no longer contained this agent's prompt.
+- README needed mechanical proof for complete tracked direct report inventory coverage.
+- Glossary used `DataVault` and `Vault handle`, but the exact required term `Vault` needed a literal row for mechanical verification.
+
+What was done:
+
+- Added exact `Vault` glossary row.
+- Verified `Docs/README.md` contains the complete tracked direct `Docs/Reports/*.md` inventory; nested deprecated snapshots remain excluded.
+- Re-ran structural validation: status task count `6`, FAQ count `20`, required glossary terms present, architecture domain ids `1..85`, tracked direct reports `84`, missing direct report links `0`, owned links checked `234`, owned missing links `0`.
+- Re-ran Python spellcheck over current `Docs/`: `1507` files, `41520` unique tokens, `28` known typo hits in legacy/archive/deprecated surfaces, no owned encyclopedia typo requiring edit.
+
+Cinematic Cheats used:
+
+- Documentation-only continuation. No runtime simulation touched.
+
+Exact Microseconds saved:
+
+- Runtime measured saving: 0 us. No runtime code changed.
+- Documentation lookup improvement: direct report inventory removes report-hunting work, unmeasured.
+
+Verification:
+
+- `git diff --check` clean for owned docs except CRLF normalization warnings.
+- Structural Python gate exited `0`.
+- Spellcheck Python gate exited `0`.
+- Runtime/Unity/Profiler/GC/player-build proof remains `PENDING VERIFICATION`.

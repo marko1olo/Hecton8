@@ -45,3 +45,40 @@ Owned docs for this pass:
 - This is spellcheck evidence only. It is not Markdown-render proof, Unity proof, compile proof, runtime proof, or link-proof beyond filesystem checks run separately.
 - Historical docs still contain language variance and archive noise. Cleaning those files would be a separate archive/governance task.
 
+## 2026-05-15 Continuation Recheck
+
+The user requested a continuation pass after other agents changed the workspace. The spellcheck was rerun over the current `Docs/` working tree.
+
+| Metric | Value |
+|---|---:|
+| files scanned | 1507 |
+| unique tokens | 41520 |
+| unknown tokens after allowlist | 28623 |
+| suspicious tokens after project filter | 27681 |
+| owned-doc unique tokens | 1477 |
+| known typo hits | 28 |
+
+Owned-doc suspicious tokens after the project allowlist:
+
+- `allowlist`
+- `april`
+- `behaviour` from the Unity type `MonoBehaviour`
+- `navgrid`
+- `playtest`
+- `russian`
+- `urls`
+
+Known typo hits are in historical/reference surfaces such as `Docs/Legacy_Backlog/beklog.txt`, `_Archive`, and `DEPRECATED` external bundles. No owned encyclopedia prose typo requiring a content edit was found.
+
+Continuation structural gate:
+
+- status task count: `6`
+- FAQ count: `20`
+- required glossary terms present: `AUP`, `Vault`, `Sentinel`, `SHI`, `Bucketer`
+- architecture domain ids: `1..85`
+- tracked direct reports under `Docs/Reports/*.md`: `84`
+- missing tracked direct report links in `Docs/README.md`: `0`
+- owned markdown links checked: `234`
+- owned missing links: `0`
+
+Boundary: `Docs/Tasks/CURRENT_BATCH.md` rotated to a new batch and no longer contains `<AGENT_PROMPT id="HECTON_ENCYCLOPEDIA_FINALIZER">`. The original assignment remains captured in `Docs/Tasks/Status_HECTON_ENCYCLOPEDIA_FINALIZER.md`.
