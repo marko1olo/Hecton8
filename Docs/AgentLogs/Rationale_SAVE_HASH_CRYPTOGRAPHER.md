@@ -83,3 +83,27 @@ Rejected Alternatives: Leaving self-test as empty-vector plus range checks was r
 Scalability potential: Low/Middle/High/Ultra use the same deterministic vector set. Higher diagnostic tiers can add more vectors without touching save ABI.
 
 Hardware Impact: 0 us frame impact. The extra self-test vectors are offline-only.
+
+## Decision 8
+
+Problem: The first `MasterStateHash` contract existed only as prose and did not bind all current header fields. That left room for SHINOBU to implement a different byte preimage while still passing the shuffle-only tests.
+
+Solution: Added an executable `master` command to `ReplayHasher.py` and corrected the preimage to include `MagicValue`, `Version`, `CompatMask`, `Flags`, `TimestampUnixMs`, `Checksum`, counts, offsets, `HashPayload64`, `WorldSeed`, and `AUP.SectorHash`. `HashHeader64` and `MasterStateHashLo/Hi` remain excluded to avoid circular hashing.
+
+Rejected Alternatives: Keeping the master hash as documentation-only was rejected because it does not prove cross-platform byte order. Including `HashHeader64` was rejected because the existing header hash already depends on the header span and would create an ordering/circularity problem.
+
+Scalability potential: Low/Middle/High/Ultra use the same 16-byte stored master hash. Higher tiers can log the unshuffled plain lanes in development-only telemetry without changing the save ABI.
+
+Hardware Impact: 0 us gameplay impact. Save/load cold-path cost remains two XXH3 lanes plus the existing shuffle.
+
+## Decision 9
+
+Problem: Self-review caught a defect in my own edit: the executable `master` command returned the deterministic master vector, but the self-test still compared against stale placeholder lanes and failed.
+
+Solution: Patched the frozen self-test vector to the CLI-emitted lanes: `plain_lo=0x82C250ACAADCFCEE`, `plain_hi=0x750FEB3BE2F001A7`, `stored_lo=0x32C38E7EA8C9246D`, `stored_hi=0x8CB2B6D20A988126`.
+
+Rejected Alternatives: Weakening or removing the master self-test was rejected. A failing self-test is useful evidence; the correct fix is to freeze the real deterministic vector and rerun the suite.
+
+Scalability potential: Same as Decision 8; this is verification hardening only.
+
+Hardware Impact: 0 us frame impact. Offline self-test only.

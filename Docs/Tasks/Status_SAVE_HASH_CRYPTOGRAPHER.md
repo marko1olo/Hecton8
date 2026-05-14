@@ -4,7 +4,7 @@ Agent: SAVE_HASH_CRYPTOGRAPHER
 Role: CORE_ENGINEER
 Domain: Auxiliary Node (Math/Binary)
 Task Count: 6
-Status: INTEGRITY SECURED / PYTHON_REFERENCE_VERIFIED / PENDING UNITY VERIFICATION
+Status: INTEGRITY SECURED / PYTHON_REFERENCE_FUZZ_VERIFIED / PENDING UNITY VERIFICATION
 
 ## Prompt Source
 
@@ -37,12 +37,17 @@ Extracted from `Docs/Tasks/CURRENT_BATCH.md` because `CURRENT_BATCH_OSHINO.md` i
 - Loop 4: Header/bit-shuffle document pass; fixed `MasterStateHash` byte offset and endian rules.
 - Loop 5: DTO audit/report pass; flagged ARM-killer managed DTOs and evidence boundary.
 - Loop 6: Local anti-bloat/polish pass; no `<POLISH_MANDATE>` tag exists in `Docs/Tasks/CURRENT_BATCH.md`, so fixed XXH3 branch vectors and shuffle vectors were embedded into `ReplayHasher.py` self-test.
+- Loop 7: Professional self-review pass; added executable `master` command, corrected `MasterStateHash` preimage to bind the full current header prefix/body except circular result fields, and reran external XXH3/fuzz verification.
+- Loop 8: Self-review correction pass; caught stale placeholder master vector in `ReplayHasher.py` self-test, patched it to the CLI-emitted deterministic lanes, reran syntax/self-test/master/reference fuzz, and probed local compiler/editor availability.
 
 ## Verification
 
 - Python syntax: `python -m compileall .\Tools\Security\ReplayHasher.py` -> PASS.
-- Python self-test: `python .\Tools\Security\ReplayHasher.py self-test` -> PASS (`SELFTEST_OK`), including fixed zero-seed branch vectors, seeded branch vectors, shuffle mask vector, shuffle output vector, and inverse validation.
-- Reference comparison: local script vs isolated `xxhash.xxh3_64_intdigest` package across 136 vectors, seeds `0`, `1`, `0x9E3779B185EBCA87`, `0xFFFFFFFFFFFFFFFF`, lengths `0..100000` -> PASS (`XXH3_COMPARE_OK 136 vectors`).
+- Python self-test: `python .\Tools\Security\ReplayHasher.py self-test` -> PASS (`SELFTEST_OK`), including fixed zero-seed branch vectors, seeded branch vectors, shuffle mask vector, shuffle output vector, inverse validation, and master hash vector.
+- Master CLI vector: `python .\Tools\Security\ReplayHasher.py master ...` -> PASS, expected `stored_le=6d24c9a87e8ec3322681980ad2b6b28c`.
+- Reference comparison: local script vs isolated `xxhash.xxh3_64_intdigest` package across 136 deterministic vectors plus 128 randomized seeded/fuzz cases -> PASS (`XXH3_REFERENCE_AND_SHUFFLE_FUZZ_OK 264 cases`).
 - Omega polish extraction: `<POLISH_MANDATE>` tag not found in `Docs/Tasks/CURRENT_BATCH.md`; local anti-bloat pass completed on owned artifacts.
+- C# compile attempt: `dotnet build .\Hecton8.slnx --no-restore` -> BLOCKED, `dotnet` not found on PATH.
+- Unity editor compile/import attempt: `where.exe Unity` -> BLOCKED, `Unity.exe` not found on PATH. Standard Unity Hub scan from the prior pass also found no editor executable.
 - Unity compile/import: PENDING VERIFICATION; no C# runtime source was edited in this pass.
 - IL2CPP/ARM proof: PENDING VERIFICATION; DTO audit is static source review only.

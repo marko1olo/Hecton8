@@ -71,3 +71,21 @@ Solution: Added `profileTargetFpsKind`, `profileRefreshHzNominal`, and `profileR
 Rejected Alternatives: Raising Quest 3 target to 90 by default was rejected because thermal XR rendering budgets are not proven for HECTON-8 content.
 Scalability potential: Quest 3 can use Low/Medium 72 Hz sustained and spend higher refresh only after thermal/profiler proof; top-tier hardware still routes visual overkill separately.
 Hardware Impact: 0 us/frame; prevents a configuration consumer from treating conservative target as device ceiling.
+
+Problem: Source arrays mixed official vendor pages and secondary spec tables without machine-readable authority.
+Solution: Added flat `sourceAuthorityRank` values: 3 for vendor/official source, 2 for secondary spec/review source.
+Rejected Alternatives: Nested source metadata objects were rejected because the parser contract is flat arrays.
+Scalability potential: Cold validation can require high-authority sources for hard gates and tolerate secondary sources only for fields vendors do not expose.
+Hardware Impact: 0 us/frame.
+
+Problem: Quest 3 CPU count field could be misread as x86-style physical cores.
+Solution: Added `profileCpuCoreCountKind`; Quest 3 is labeled `QUALCOMM_KRYO_PERFORMANCE_CORES`, Steam Deck is labeled `X86_ZEN2_PHYSICAL_CORES`.
+Rejected Alternatives: Keeping a bare numeric core field was rejected because ARM SoC and x86 APU semantics are not equivalent.
+Scalability potential: Runtime and tooling can gate job workers conservatively without assuming SMT-like behavior on mobile.
+Hardware Impact: 0 us/frame; prevents over-scheduling on XR/mobile.
+
+Problem: `profileCpuHardwareThreads` also mixed mobile no-SMT core counts with Steam Deck SMT hardware threads.
+Solution: Added `profileCpuHardwareThreadKind` values: `NO_SMT_PERFORMANCE_CORE_COUNT` for Quest 3 and `SMT_HARDWARE_THREADS` for Steam Deck.
+Rejected Alternatives: Reusing one unlabeled thread count was rejected because scheduling workers from that field would be unsafe on XR.
+Scalability potential: Homeostasis can clamp Quest worker budget lower without assuming SMT headroom.
+Hardware Impact: 0 us/frame; expected gain is avoiding oversubscription under thermal pressure.

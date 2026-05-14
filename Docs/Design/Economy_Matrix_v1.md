@@ -3,7 +3,7 @@
 Date: 2026-05-14
 Agent: ECONOMY_DATA_BALANCER
 Domain: Auxiliary Node, text/data only
-Status: STATIC ECONOMY VALIDATED by `Tools/EconomyValidator.py`; literal energy pacing and runtime Unity proof remain PENDING VERIFICATION.
+Status: ECONOMY BALANCED by `Tools/EconomyValidator.py`; literal 30 kW energy pacing and runtime Unity proof remain PENDING VERIFICATION.
 
 ## Generated Files
 

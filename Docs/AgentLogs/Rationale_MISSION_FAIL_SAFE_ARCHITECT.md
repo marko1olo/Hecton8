@@ -30,7 +30,7 @@ Hardware Impact: Estimated 0 us hot-path change; any future runtime use must rem
 ## Decision 004 - Missing Meta Campaign Status
 
 Problem: The prompt required `Status_META_CAMPAIGN_DIRECTOR.md` and "20+ variables", but the status file is absent. Current `MetaCampaignService` source exposes four globals, not an outpost-specific variable set.
-Solution: Documented the absence as a source boundary and authored 30 explicit outpost DAG flags in `Docs/Design/Missions/Outpost_Failure_Modes.md`.
+Solution: Documented the absence as a source boundary and authored 32 explicit outpost DAG flags in `Docs/Design/Missions/Outpost_Failure_Modes.md`.
 Rejected Alternatives: Pretending the missing file exists; mutating `MetaCampaignService` during a documentation/logic prompt; creating new single-use event IDs.
 Scalability potential: Low tier evaluates one compact mission branch; High/Ultra can add richer presentation while keeping the same flag truth.
 Hardware Impact: 0 us runtime from this doc. Future runtime implementation should remain O(1) bit checks.
@@ -74,3 +74,11 @@ Solution: Added `Docs/Design/Missions/Outpost_FailSafe_Handoff.json` with exact 
 Rejected Alternatives: Editing generated localization keys by hand; patching English-only runtime data; editing ScriptableObject YAML for quest assets without Unity API validation.
 Scalability potential: Low tier can consume the same baked hash keys with no runtime strings. High/Ultra can add richer voice, panel animation, and VFX against the same static keys.
 Hardware Impact: 0 us runtime from this documentation pass. Future integration must be a bake/import step, not per-frame string lookup or English-only runtime patching.
+
+## Decision 010 - Canonical Flag Vocabulary After Self-Review
+
+Problem: The prose mission doc and JSON handoff drifted on several flag names: `*_found` versus `*_read`, `claim_complete` versus `mission_complete`, and different deadlock/save-restore labels. That would create implementation ambiguity for a future quest baker.
+Solution: Canonicalized both files to the same 32 outpost flags, including five explicit Marauder log commit flags, fire/breach observation flags, flood/fire fail-safe flags, `outpost.deadlock_revert_requested`, `outpost.state_restored_from_save`, and `outpost.mission_complete`.
+Rejected Alternatives: Keeping the 30-flag count to preserve the earlier report; accepting alias names; leaving the mismatch for a runtime integrator.
+Scalability potential: Low tier gets one stable bit vocabulary for O(1) checks. High/Ultra can add presentation systems without renaming quest truth.
+Hardware Impact: 0 us runtime from this documentation pass. Future runtime risk is reduced because hash constants can be generated from one canonical vocabulary.

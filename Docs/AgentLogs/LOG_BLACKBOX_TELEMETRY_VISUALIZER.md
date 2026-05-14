@@ -152,3 +152,29 @@ Verification:
 - `/`: HTTP 200, 14918 bytes.
 - Removed `.codex_tmp`; `Tools/TelemetryDashboard/__pycache__` absent after verification.
 - C# boundary: no `Assets/_Project/Scripts` edits.
+
+## 2026-05-14 - Read-Only Dump Collection Guard
+
+What was wrong:
+- The dashboard read path needed an explicit regression guard proving missing `Docs/AgentLogs` input stays read-only and returns empty telemetry instead of mutating disk or faulting.
+
+What was done:
+- Reviewed the current server read path: file metadata is guarded, binary parsing handles missing/unreadable files, and `collect_dumps()` does not create `AGENT_LOGS`.
+- Added a checked smoke-test assertion that calls `collect_dumps()` against a missing `MissingAgentLogs` directory and verifies `files == []` and the directory was not created.
+
+Cinematic Cheats used:
+- Synthetic missing-directory input replaces a live Unity telemetry rotation race. It proves the dashboard contract without requiring a crash producer.
+
+Exact Microseconds saved:
+- Unity gameplay frame: 0 us changed.
+- Dashboard/API: avoided potential filesystem write and exception path during polling; exact auxiliary-process savings are PENDING MEASUREMENT.
+
+Verification:
+- `python -B Tools\TelemetryDashboard\smoke_test.py`: PASS, output `telemetry dashboard smoke ok`.
+- `py_compile` for `server.py` and `smoke_test.py`: PASS.
+- `git diff --check -- Tools\TelemetryDashboard\server.py Tools\TelemetryDashboard\smoke_test.py`: PASS; Git reports only LF-to-CRLF warning for `smoke_test.py`.
+- Restarted dashboard on `http://127.0.0.1:8000`, Python PID `7244`.
+- `/api/summary`: `DASHBOARD OPERATIONAL`, `frameSeries=0`, `memoryMaps=0`, `files=0`, `HPHI=0.00062` with no active live dump/QA artifacts.
+- `/`: HTTP 200, 15327 bytes.
+- Removed `.codex_tmp`; `Tools/TelemetryDashboard/__pycache__` absent after verification.
+- C# boundary: no `Assets/_Project/Scripts` edits.

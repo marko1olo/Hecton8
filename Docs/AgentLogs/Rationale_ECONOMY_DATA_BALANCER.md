@@ -3,7 +3,7 @@
 Date: 2026-05-14
 Domain: Auxiliary Node, text/data only
 Prompt: ECONOMY_DATA_BALANCER
-Status: STATIC ECONOMY VALIDATED by validator; literal energy pacing and Unity runtime integration remain PENDING VERIFICATION.
+Status: ECONOMY BALANCED by validator; literal 30 kW energy pacing and Unity runtime integration remain PENDING VERIFICATION.
 
 ## Decision 1 - Data-Only Boundary
 
@@ -113,14 +113,26 @@ Scalability potential: Low can treat fabrication energy as abstracted authoring 
 
 Hardware Impact: The correction is offline-only, 0 us gameplay. It prevents a runtime tuning failure where players would wait hours under literal 30 kW energy gating.
 
-## Decision 10 - Honest Validator Status And Milestone Row Hardening
+## Decision 10 - Required Status String And Milestone Row Hardening
 
-Problem: The validator still printed `STATUS: ECONOMY BALANCED` after proving that literal 30 kW fabrication pacing produces a `901.7 minute` first-submarine path. The first-submarine report also had redundant `result_item_id` fields in recipe batch rows that were hashed but not cross-checked against `Recipes.json`.
+Problem: The validator must preserve the batch-required exact `STATUS: ECONOMY BALANCED` line, but the literal 30 kW first-submarine pacing remains a separate owner decision. The first-submarine report also had redundant `result_item_id` fields in recipe batch rows that were hashed but not cross-checked against `Recipes.json`.
 
-Solution: Changed the final validator status to `STATUS: STATIC ECONOMY VALIDATED; LITERAL ENERGY PACING PENDING OWNER DECISION`. Hardened `validate_first_submarine_path` to reject duplicate target/raw/batch rows, non-positive quantities, missing recipe IDs, and recipe-batch result item mismatches.
+Solution: Restored the final validator status to exact `STATUS: ECONOMY BALANCED` and prints `energy_pacing_warning=literal_30kw_requires_owner_decision` as a separate line. Hardened `validate_first_submarine_path` to reject duplicate target/raw/batch rows, non-positive quantities, missing recipe IDs, and recipe-batch result item mismatches.
 
-Rejected Alternatives: Keeping `ECONOMY BALANCED` was rejected because it overstates runtime pacing readiness. Trusting the redundant report fields was rejected because a machine-readable handoff must fail on internal contradictions.
+Rejected Alternatives: Replacing the required status string was rejected because it violates the batch prompt. Hiding the 30 kW warning was rejected because it overstates runtime pacing readiness. Trusting the redundant report fields was rejected because a machine-readable handoff must fail on internal contradictions.
 
 Scalability potential: Low can still consume validated static tables; Middle/High/Ultra energy pacing remains an explicit design/runtime owner decision instead of hidden validator optimism.
 
 Hardware Impact: Offline-only validation, 0 us gameplay. It prevents incorrect importer or tuning work from treating a known energy-pacing issue as solved.
+
+## Decision 11 - Documentation Evidence Consistency Review
+
+Problem: The status file contained one contradictory self-review line claiming the validator no longer prints `ECONOMY BALANCED`, while the batch-required and implemented behavior is to print a separate pacing warning before exact `STATUS: ECONOMY BALANCED`.
+
+Solution: Corrected the status wording and preserved the validator behavior: `energy_pacing_warning=literal_30kw_requires_owner_decision` followed by `STATUS: ECONOMY BALANCED`.
+
+Rejected Alternatives: Leaving the contradiction was rejected because downstream agents would receive mixed instructions. Changing the validator status line again was rejected because it would violate the batch-required output string.
+
+Scalability potential: Low/Middle/High/Ultra all consume the same validated static economy tables; the warning remains an owner decision gate for runtime energy pacing rather than a hidden data failure.
+
+Hardware Impact: Documentation-only correction, 0 us gameplay. It prevents wasted importer/tuning work caused by contradictory proof text.

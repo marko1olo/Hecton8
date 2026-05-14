@@ -1,7 +1,7 @@
 # Save Binary Header
 Date: 2026-05-14
 Owner: SAVE_HASH_CRYPTOGRAPHER
-Status: INTEGRITY SECURED / STATIC_SOURCE_ONLY / PENDING UNITY VERIFICATION
+Status: INTEGRITY SECURED / PYTHON_REFERENCE_FUZZ_VERIFIED / PENDING UNITY VERIFICATION
 
 ## Scope
 
@@ -49,7 +49,7 @@ The next ABI-compatible extension must keep the first `56` bytes intact and appe
 | 56 | 8 | `MasterStateHashLo` | little-endian `ulong` |
 | 64 | 8 | `MasterStateHashHi` | little-endian `ulong` |
 
-`CurrentHeaderSizeV10 = 72`.
+`CurrentHeaderSizeV10 = 72`. The first writer that emits this field must bump the save header version from `0x0009` to `0x000A`; version `0x0009` readers must continue treating byte `56+` as absent.
 
 `MasterStateHash` storage order is exactly `lo64` then `hi64`; the canonical byte dump is `BitConverter.GetBytes(lo64)` followed by `BitConverter.GetBytes(hi64)` on a little-endian writer. A Burst C# writer must not use platform-native struct dumps for this field unless the struct has explicit layout and the byte order is separately tested.
 
@@ -60,17 +60,26 @@ The plain 128-bit state hash is two XXH3-64 lanes:
 ```text
 preimage =
   ASCII("H8SAVE_MASTER_V1") ||
-  le_u64(HashPayload64) ||
+  le_u32(MagicValue) ||
+  le_u16(Version) ||
+  u8(CompatMask) ||
+  u8(Flags) ||
+  le_u64(TimestampUnixMs) ||
   le_u32(Checksum) ||
-  le_u32(EntityCount) ||
   le_u32(DeltaCount) ||
-  le_u32(Flags) ||
+  le_u32(EntityCount) ||
+  le_u32(PlayerOffset) ||
+  le_u32(DeltaOffset) ||
+  le_u32(EntityOffset) ||
+  le_u64(HashPayload64) ||
   le_u64(WorldSeed) ||
   le_i64(AUP.SectorHash)
 
 plain_lo = XXH3_64(preimage || ASCII("_LO"))
 plain_hi = XXH3_64(preimage || ASCII("_HI") || le_u64(plain_lo))
 ```
+
+`HashHeader64` is intentionally excluded to avoid a circular dependency with the existing header hash. `MasterStateHashLo/Hi` are also excluded because they are the result fields.
 
 For the global `.sav` metadata master, `AUP.SectorHash = 0`. For a paged sector or `.h8db` record, use the owning `SectorEntry.SectorHash`.
 
@@ -114,6 +123,23 @@ The SHINOBU Burst port must match it exactly:
 - Never hash `Transform.position`; hash AUP sector/local authority only.
 - Do not serialize a managed `struct` by raw memory unless it is `[StructLayout]` and has an explicit size/padding proof.
 
+CLI reference commands:
+
+```powershell
+python .\Tools\Security\ReplayHasher.py self-test
+python .\Tools\Security\ReplayHasher.py master --flags 0x0C --timestamp-unix-ms 0x0000018F3D123456 --checksum 0xDEADBEEF --delta-count 37 --entity-count 1024 --player-offset 72 --delta-offset 4096 --entity-offset 8192 --hash-payload64 0x0123456789ABCDEF --world-seed 123456789 --sector-hash -987654321
+```
+
+Expected master vector for the second command:
+
+```text
+plain_lo=0x82C250ACAADCFCEE
+plain_hi=0x750FEB3BE2F001A7
+stored_lo=0x32C38E7EA8C9246D
+stored_hi=0x8CB2B6D20A988126
+stored_le=6d24c9a87e8ec3322681980ad2b6b28c
+```
+
 ## DTO Padding Mandate
 
 Binary/native DTOs must obey these rules before PHI_VOD or any runtime writer blits them:
@@ -147,7 +173,8 @@ Commands used:
 - `Select-String` against `SaveData.cs` for `[StructLayout]`, `[BinaryBlittableSafe]`, `bool`, managed collections, and string fields.
 - `python -m compileall .\Tools\Security\ReplayHasher.py` -> PASS.
 - `python .\Tools\Security\ReplayHasher.py self-test` -> PASS, including embedded branch and shuffle vectors.
-- Isolated comparison against Python `xxhash.xxh3_64_intdigest` across 136 seed/length vectors -> PASS.
+- `python .\Tools\Security\ReplayHasher.py master ...` -> PASS, expected `stored_le=6d24c9a87e8ec3322681980ad2b6b28c`.
+- Isolated comparison against Python `xxhash.xxh3_64_intdigest` across 136 deterministic seed/length vectors plus 128 randomized seeded/fuzz cases -> PASS (`XXH3_REFERENCE_AND_SHUFFLE_FUZZ_OK 264 cases`).
 - `<POLISH_MANDATE>` extraction from `Docs/Tasks/CURRENT_BATCH.md` -> TAG ABSENT; local anti-bloat pass executed on owned artifacts.
 
 Unity import, Unity Console, Play Mode, GCMonitor, profiler, player build, and IL2CPP/ARM runtime proof remain `PENDING VERIFICATION`.

@@ -23,3 +23,27 @@ Cinematic Cheats used: None. This is deterministic offline validation, not simul
 Exact Microseconds saved: 0 measured runtime microseconds. The added checks run only during CLI self-test and consume no frame budget.
 
 Verification: `python -m compileall .\Tools\Security\ReplayHasher.py` passed. `python .\Tools\Security\ReplayHasher.py self-test` returned `SELFTEST_OK`. Isolated `xxhash.xxh3_64_intdigest` comparison still passed 136 vectors after the self-test hardening.
+
+## 2026-05-14 - Professional Self-Review Pass
+
+What was wrong: The master hash preimage was only documented and did not bind the full current header prefix/body. That was an accuracy gap: two agents could implement different master hashes while both claiming to follow the prose.
+
+What was done: Added the `master` CLI command to `Tools/Security/ReplayHasher.py`, added explicit little-endian pack helpers, removed the misleading chunk-join helper, and updated `Docs/Design/Save_Binary_Header.md` with the executable preimage and expected master vector.
+
+Cinematic Cheats used: The save hardening remains a deterministic tamper-friction fake, not encryption. No physical simulation and no runtime visual system changed.
+
+Exact Microseconds saved: 0 measured runtime microseconds. Static cold-path estimate remains sub-0.1 us for the shuffle itself; the master preimage adds two XXH3-64 lanes in save/load code only.
+
+Verification: `python -m compileall .\Tools\Security\ReplayHasher.py` passed. `python .\Tools\Security\ReplayHasher.py self-test` returned `SELFTEST_OK`. `python .\Tools\Security\ReplayHasher.py master ...` returned `stored_le=6d24c9a87e8ec3322681980ad2b6b28c`. External `xxhash.xxh3_64_intdigest` comparison plus randomized shuffle inverse fuzz passed 264 cases.
+
+## 2026-05-14 - Self-Review Correction And Tooling Probe
+
+What was wrong: My first master self-test patch still had stale placeholder lanes. The `master` CLI output was correct, but `self-test` failed until the expected tuple was corrected. Local compile evidence was also too vague without probing the actual tools.
+
+What was done: Replaced the stale master self-test vector with the deterministic CLI-emitted lanes. Probed `dotnet build .\Hecton8.slnx --no-restore` and `where.exe Unity` for local compile/import availability.
+
+Cinematic Cheats used: None. Verification and tooling probe only.
+
+Exact Microseconds saved: 0 runtime microseconds. No Unity runtime code changed.
+
+Verification: `python -m compileall .\Tools\Security\ReplayHasher.py` passed. `python .\Tools\Security\ReplayHasher.py self-test` returned `SELFTEST_OK`. `python .\Tools\Security\ReplayHasher.py master ...` returned `stored_le=6d24c9a87e8ec3322681980ad2b6b28c`. External reference/fuzz remained `XXH3_REFERENCE_AND_SHUFFLE_FUZZ_OK 264 cases`. `dotnet` is not available on PATH; `Unity.exe` is not available on PATH.

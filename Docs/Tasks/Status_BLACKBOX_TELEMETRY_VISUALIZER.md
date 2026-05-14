@@ -52,3 +52,4 @@ Source prompt: `Docs/Tasks/CURRENT_BATCH.md` / `<AGENT_PROMPT id="BLACKBOX_TELEM
 - [x] Source-contract parser extension verification for macro-swarm/fauna-mutation/live telemetry.
 - [x] H-Phi parser regression check: `Docs/Reports/HECTON_PHI_REPORT.md` returns `0.00062`, not report date or formula multiplier.
 - [x] Recreated and reverified `Tools/TelemetryDashboard` after directory loss during restart recovery.
+- [x] Read-only dump collection regression check: `collect_dumps()` on a missing `AgentLogs` path returns empty files and does not create the directory.

@@ -29,3 +29,11 @@ Hash metadata review -> Declared `stableHashAlgorithm=FNV1A32_ASCII` and correct
 Refresh metadata review -> Added `profileTargetFpsKind`, `profileRefreshHzNominal`, and `profileRefreshHzMax`. Validation: `REFRESH_METADATA_VALIDATION_OK`.
 
 Full field-count validation -> Every profile/tier/reference/source array matches declared row counts; refresh target bounds validated. Result: `FULL_PROFILE_FIELD_VALIDATION_OK`; ASCII final check `ASCII_FINAL_OK`. `git diff --check` still reports line-ending normalization warnings only.
+
+Source authority review -> Added flat `sourceAuthorityRank` values for all source rows. Validation: `SOURCE_AUTHORITY_RANK_VALIDATION_OK`.
+
+Exhaustive declared-array audit -> Every phase/profile/tier/pressure/kill/reference/source array count matches its declared count. Kill masks reconstruct exactly as `0x70`, `0x2007F0`, `0xF017F0`. `git diff --check` clean.
+
+CPU semantics review -> Added `profileCpuCoreCountKind` to distinguish Quest 3 Qualcomm performance-core count from Steam Deck x86 physical cores. Validation: `CPU_CORE_KIND_VALIDATION_OK`.
+
+CPU thread semantics review -> Added `profileCpuHardwareThreadKind` to distinguish Quest no-SMT performance cores from Deck SMT hardware threads. Validation: `CPU_THREAD_KIND_VALIDATION_OK`.

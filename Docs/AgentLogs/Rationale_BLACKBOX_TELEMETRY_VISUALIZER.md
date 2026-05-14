@@ -83,3 +83,10 @@ Solution: Recreate all dashboard files, rerun smoke/HTTP checks, and explicitly 
 Rejected Alternatives: Ignoring the stale ledger was rejected because project protocol treats disk files as long-term memory. Reverting C# or project settings was rejected because the task is Python/web only.
 Scalability potential: Low tier remains a bounded local dashboard. High/Ultra can extend panels later; recovery did not change Unity runtime.
 Hardware Impact: 0 us Unity frame impact. File recreation and status repair are external tooling operations only.
+
+## Decision 013 - Read-Only Dump Collection Regression Guard
+Problem: A dashboard GET path must not mutate `Docs/AgentLogs`, and missing or rotating telemetry files must not turn `/api/summary` into a fault.
+Solution: Verify the server read path uses guarded file metadata and add a smoke-test assertion that points `AGENT_LOGS` at a missing directory, calls `collect_dumps()`, and confirms the directory is still absent.
+Rejected Alternatives: Creating `Docs/AgentLogs` from the API was rejected because read endpoints should not repair filesystem layout. Letting missing files raise was rejected because telemetry writers can rotate or delete files while the browser polls.
+Scalability potential: Low tier avoids accidental disk writes during polling. Middle/High/Ultra can run continuous dashboard refreshes without the reader creating evidence folders or crashing on absent artifacts.
+Hardware Impact: 0 us Unity frame impact. Auxiliary Python behavior only; exact API timing remains PENDING MEASUREMENT.

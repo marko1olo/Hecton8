@@ -20,7 +20,7 @@ Status: SCENARIO STABILIZED - PENDING UNITY VERIFICATION
 
 ## Task Checklist
 
-- [x] Task 1: STATE DAG AUDIT | Justification: `Status_META_CAMPAIGN_DIRECTOR.md` is missing, current `MetaCampaignService` exposes only 4 globals, so the outpost doc defines 30 authored mission flags instead of inventing a missing campaign file. | Alternatives Rejected: claiming a non-existent 20+ variable status source; runtime API edits. | Estimate: STATIC_DOC, no measured microseconds.
+- [x] Task 1: STATE DAG AUDIT | Justification: `Status_META_CAMPAIGN_DIRECTOR.md` is missing, current `MetaCampaignService` exposes only 4 globals, so the outpost doc defines 32 authored mission flags instead of inventing a missing campaign file. | Alternatives Rejected: claiming a non-existent 20+ variable status source; runtime API edits. | Estimate: STATIC_DOC, no measured microseconds.
 - [x] Task 2: EDGE-CASE MATRIX | Justification: `Docs/Design/Missions/Outpost_Failure_Modes.md` now contains an explicit trigger/bad-result/fail-safe matrix for WFC, power, gas, lore, save/load, markers, and queue edges. | Alternatives Rejected: prose-only review with no guard column. | Estimate: STATIC_DOC, no measured microseconds.
 - [x] Task 3: SOFT-LOCK HUNT / Ghost Power | Justification: current WFC cell constants have no `Generator` kind; Ghost Power is documented as a deterministic mission-only reserve-bus flag, not fake full-grid power. | Alternatives Rejected: forcing WFC to always generate a Generator room; lying to `PowerGridTelemetrySnapshot.TotalGeneration`. | Estimate: 0 us steady-frame by design; future runtime work must measure.
 - [x] Task 4: DIEGETIC TUTORIAL TOOLTIP TEXT | Justification: 10 exact tooltip source strings are authored with localization keys, `LocHash`-compatible hashes, trigger flags, and suppressing flags in `Outpost_Failure_Modes.md` and `Outpost_FailSafe_Handoff.json`; no controls text, no screen-overlay dependency. | Alternatives Rejected: generic HUD tutorial copy, per-frame literal strings, English-only runtime localization patch. | Estimate: STATIC_DOC, no measured microseconds.
@@ -35,13 +35,17 @@ Status: SCENARIO STABILIZED - PENDING UNITY VERIFICATION
 - [x] Loop 4: Re-read mission doc against mandates and status; patched summaries into exact Marauder log text with physical flags.
 - [x] Loop 5: Static verification, report append, final status update.
 - [x] Loop 6: Re-opened localization/quest contracts; added machine-readable handoff JSON instead of unsafe partial runtime localization mutation.
+- [x] Loop 7: Self-review found prose/JSON flag drift; canonicalized both files to the same 32 outpost flags.
 
 ## Verification Ledger
 
 - Compile guard: BLOCKED BY TOOLCHAIN. `dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary` failed because `dotnet` is not available in the shell PATH.
 - Toolchain probe: BLOCKED BY TOOLCHAIN. `Get-Command dotnet` returned absent; `C:\Program Files\dotnet\dotnet.exe` and `C:\Program Files (x86)\dotnet\dotnet.exe` are also absent.
-- Handoff JSON validation: STATIC_DOC PASS. `ConvertFrom-Json` parsed `Outpost_FailSafe_Handoff.json`; result `flags=30`, `locEntries=15`, `hashMismatches=0`.
+- Handoff JSON validation: STATIC_DOC PASS. `ConvertFrom-Json` parsed `Outpost_FailSafe_Handoff.json`; result `flags=32`, `locEntries=15`, `hashMismatches=0`.
+- Flag vocabulary consistency: STATIC_DOC PASS. Regex extraction found `docUnique=32`, `jsonFlags=32`, `missingInJson=0`, `missingInDoc=0`.
 - ASCII hygiene: STATIC_DOC PASS. `rg -n "[^\x00-\x7F]"` over the authored mission/status/rationale/log/handoff files returned no matches.
+- Diff hygiene: STATIC_DOC PASS. `git diff --check` over authored files returned exit code 0; Git reported only local LF-to-CRLF normalization warnings for the three modified log/status files.
+- Prompt re-extract: STATIC_DOC PASS. `rg -n 'MISSION_FAIL_SAFE_ARCHITECT|AGENT_PROMPT' Docs/Tasks -g 'CURRENT_BATCH.md'` located the active prompt at lines 47-65.
 - Unity Console: PENDING VERIFICATION. No Unity/MCP session was invoked.
 - Runtime/GC proof: PENDING VERIFICATION. Documentation-only change, no profiler or GCMonitor artifact.
 - Polish mandate: NOT PRESENT. `Select-String -Path Docs\Tasks\CURRENT_BATCH.md -Pattern '<POLISH_MANDATE>' -Quiet` returned `False`.

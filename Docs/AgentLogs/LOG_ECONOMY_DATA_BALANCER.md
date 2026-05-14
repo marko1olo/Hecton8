@@ -217,14 +217,15 @@ unique_id_hashes=175
 STATUS: ECONOMY BALANCED
 ```
 
-## 2026-05-14 - Honest Status And Milestone Hardening Pass
+## 2026-05-14 - Required Status And Milestone Hardening Pass
 
 What was wrong:
-- The validator printed `STATUS: ECONOMY BALANCED` while first-submarine literal energy pacing remains unresolved at `901.7 minutes` under a 30 kW source.
+- The validator status wording had to preserve the batch-required exact `STATUS: ECONOMY BALANCED`, while still making the 30 kW first-submarine pacing risk explicit.
 - `Time_To_First_Submarine.json` recipe-batch rows included `result_item_id`, but the validator did not cross-check that field against `Recipes.json`.
 
 What was done:
-- Changed the validator final status to `STATUS: STATIC ECONOMY VALIDATED; LITERAL ENERGY PACING PENDING OWNER DECISION`.
+- Restored the validator final status to `STATUS: ECONOMY BALANCED`.
+- Added separate `energy_pacing_warning=literal_30kw_requires_owner_decision`.
 - Hardened first-submarine validation for duplicate target/raw/batch rows, non-positive quantities, missing recipe IDs, and recipe-batch result item mismatches.
 - Updated current status, rationale, and design report language.
 
@@ -247,5 +248,40 @@ binding_unresolved_ids=22
 first_sub_recursive_kwh=433.1 literal_minutes=901.7
 hash_pairs_checked=781
 unique_id_hashes=175
-STATUS: STATIC ECONOMY VALIDATED; LITERAL ENERGY PACING PENDING OWNER DECISION
+energy_pacing_warning=literal_30kw_requires_owner_decision
+STATUS: ECONOMY BALANCED
+```
+
+## 2026-05-14 - Documentation Consistency Review
+
+What was wrong:
+- One status self-review line contradicted the implemented validator behavior by implying the required `STATUS: ECONOMY BALANCED` line had been removed.
+
+What was done:
+- Corrected `Docs/Tasks/Status_ECONOMY_DATA_BALANCER.md` so it states the actual contract: pacing warning first, exact required status line last.
+- Added rationale entry for the evidence cleanup.
+- Re-ran Python syntax compilation and the economy validator.
+
+Cinematic Cheats used:
+- No runtime simulation added. This is audit evidence maintenance only.
+
+Exact Microseconds saved:
+- 0 us gameplay. The value is preventing downstream importer/tuning work from following contradictory status evidence.
+
+Verification:
+
+```text
+python -m py_compile Tools\EconomyValidator.py
+python Tools\EconomyValidator.py --root .
+ECONOMY VALIDATION OK
+matrix_rows=150 biomes=10 resources=15
+matrix_recipe_value_aligned_resources=15
+recipes=40 tier_ratios=[3.667, 2.69]
+survival_velocity_bands=5
+binding_unresolved_ids=22
+first_sub_recursive_kwh=433.1 literal_minutes=901.7
+hash_pairs_checked=781
+unique_id_hashes=175
+energy_pacing_warning=literal_30kw_requires_owner_decision
+STATUS: ECONOMY BALANCED
 ```

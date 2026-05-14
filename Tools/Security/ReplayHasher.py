@@ -624,10 +624,10 @@ def _command_self_test(_: argparse.Namespace) -> int:
         -987654321,
     )
     if master != (
-        0x9C8AF0A74A0E162F,
-        0xF2FC6BE87A8989C4,
-        0xCC1E64F20679F320,
-        0x93FE20B6E41490F5,
+        0x82C250ACAADCFCEE,
+        0x750FEB3BE2F001A7,
+        0x32C38E7EA8C9246D,
+        0x8CB2B6D20A988126,
     ):
         print("SELFTEST_FAIL master hash vector", file=sys.stderr)
         return 1

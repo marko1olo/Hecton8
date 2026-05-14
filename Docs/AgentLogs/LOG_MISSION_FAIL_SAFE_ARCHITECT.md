@@ -13,7 +13,7 @@ What was wrong:
 
 What was done:
 - Created `Docs/Design/Missions/Outpost_Failure_Modes.md`.
-- Authored 30 outpost DAG variables covering generation, connectivity, power relay repair, Ghost Power, gas safety, lore commits, deadlock revert, marker fallback, save restore, and mission completion.
+- Authored 32 outpost DAG variables covering generation, connectivity, power relay repair, Ghost Power, gas safety, lore commits, deadlock revert, marker fallback, save restore, and mission completion.
 - Wrote an edge-case matrix for WFC, power, gas, lore, save/load, signal, marker, and low-tier grid failures.
 - Defined Ghost Power as a deterministic mission-only reserve-bus fallback. It powers only the relay, door, terminal, optional scrubber, and entry marker. It does not publish fake full-grid generation.
 - Wrote 10 exact diegetic tooltip strings for the first outpost power-grid repair sequence.
@@ -58,7 +58,7 @@ What was wrong:
 
 What was done:
 - Added `Docs/Design/Missions/Outpost_FailSafe_Handoff.json`.
-- The handoff contains 30 mission flags, topological order, fallback rules, 10 tooltip entries, 5 Marauder log entries, `LocHash`-compatible FNV hashes, and gas constraints.
+- The handoff contains 32 mission flags, topological order, fallback rules, 10 tooltip entries, 5 Marauder log entries, `LocHash`-compatible FNV hashes, and gas constraints.
 - Updated `Docs/Design/Missions/Outpost_Failure_Modes.md` to point to the handoff and document why runtime localization assets were not mutated.
 - Updated status and rationale with Decision 009 covering the handoff choice.
 
@@ -73,8 +73,35 @@ Exact Microseconds saved:
 - Future runtime target remains O(1) hash/flag lookup after a proper localization/quest bake.
 
 Verification:
-- JSON parse/hash check: PASS. `Outpost_FailSafe_Handoff.json` parsed with `flags=30`, `locEntries=15`, `hashMismatches=0`.
+- JSON parse/hash check: PASS. `Outpost_FailSafe_Handoff.json` parsed with `flags=32`, `locEntries=15`, `hashMismatches=0`.
 - ASCII scan: PASS. Authored mission/status/rationale/log/handoff files returned no non-ASCII matches.
 - Toolchain probe: BLOCKED. `dotnet` is absent from PATH and standard `Program Files` dotnet install paths.
 - Polish mandate: NOT PRESENT in `Docs/Tasks/CURRENT_BATCH.md`.
 - Unity Console, Play Mode, profiler, GCMonitor, localization bake, quest asset bake, and save/load route remain PENDING VERIFICATION.
+
+## 2026-05-14 - Self-Review Flag Canonicalization
+
+Status: SCENARIO STABILIZED - PENDING UNITY VERIFICATION
+Evidence Class: STATIC_DOC
+
+What was wrong:
+- The prose mission doc and JSON handoff used different names for the same intended states: `*_found` versus `*_read`, `claim_complete` versus `mission_complete`, and different deadlock/save-restore labels.
+- The earlier 30-flag count forced omission or aliasing of useful state. That is not acceptable for a future hash-baked quest graph.
+
+What was done:
+- Canonicalized `Docs/Design/Missions/Outpost_Failure_Modes.md` and `Docs/Design/Missions/Outpost_FailSafe_Handoff.json` to the same 32 outpost flags.
+- Added explicit commit flags for all five Marauder logs.
+- Aligned JSON suppress/commit flags to the prose mission contract.
+- Added Decision 010 to the rationale file and Loop 7 to the status file.
+
+Cinematic Cheats used:
+- No new cinematic cheat. This was contract hygiene on the existing Ghost Power, scalar gas, and marker fallback cheats.
+
+Exact Microseconds saved:
+- Measured runtime savings: 0 us. This pass changed documentation and handoff JSON only.
+- Future runtime value: fewer hash aliases and fewer branch checks caused by mismatched authoring names. No profiler claim.
+
+Verification:
+- Flag vocabulary check: PASS. Doc and JSON both expose 32 canonical outpost flags with no missing flags in either direction.
+- JSON parse/hash check: PASS. `Outpost_FailSafe_Handoff.json` parsed with `flags=32`, `locEntries=15`, `hashMismatches=0`.
+- Runtime/Unity proof remains PENDING VERIFICATION.

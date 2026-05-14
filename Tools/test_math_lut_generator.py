@@ -3,11 +3,12 @@
 
 from __future__ import annotations
 
-import tempfile
-import unittest
+import hashlib
 import json
 import math
 import struct
+import tempfile
+import unittest
 from pathlib import Path
 
 import numpy as np
@@ -103,6 +104,33 @@ class MathLUTGeneratorTests(unittest.TestCase):
             ecosystem["FinalPredatorBiomass"],
             places=6,
         )
+
+    def test_generate_all_is_byte_deterministic(self) -> None:
+        generated_files = (
+            "sabine_reverb_rt60.bin",
+            "dalton_gas_toxicity.bin",
+            "gerstner_wave_weather.bin",
+            "caustics_dispersion_offsets.bin",
+            "ecosystem_coefficients.json",
+            "math_lut_manifest.json",
+        )
+
+        with tempfile.TemporaryDirectory() as first_dir, tempfile.TemporaryDirectory() as second_dir:
+            first_output = Path(first_dir)
+            second_output = Path(second_dir)
+
+            MathLUTGenerator.generate_all(first_output)
+            MathLUTGenerator.generate_all(second_output)
+
+            for file_name in generated_files:
+                first_bytes = (first_output / file_name).read_bytes()
+                second_bytes = (second_output / file_name).read_bytes()
+                self.assertEqual(
+                    hashlib.sha256(first_bytes).hexdigest(),
+                    hashlib.sha256(second_bytes).hexdigest(),
+                    file_name,
+                )
+                self.assertEqual(first_bytes, second_bytes, file_name)
 
 
 if __name__ == "__main__":

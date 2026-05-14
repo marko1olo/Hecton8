@@ -67,6 +67,10 @@
     6,
     4
   ],
+  "profileCpuCoreCountKind": [
+    "QUALCOMM_KRYO_PERFORMANCE_CORES",
+    "X86_ZEN2_PHYSICAL_CORES"
+  ],
   "profileDedicatedVramMb": [
     0,
     0
@@ -110,6 +114,10 @@
   "profileCpuHardwareThreads": [
     6,
     8
+  ],
+  "profileCpuHardwareThreadKind": [
+    "NO_SMT_PERFORMANCE_CORE_COUNT",
+    "SMT_HARDWARE_THREADS"
   ],
   "profileJobWorkerBudget": [
     4,
@@ -445,7 +453,7 @@
     2
   ],
   "sourceNote": [
-    "XR2 Gen 2 memory interface: 4x16 LPDDR5 up to 3.2 GHz; bandwidth in this JSON is derived as SoC maximum, not a Meta device disclosure.",
+    "XR2 Gen 2 CPU: 4+2 performance cores up to 2.4/2.0 GHz; memory interface: 4x16 LPDDR5 up to 3.2 GHz; bandwidth in this JSON is derived as SoC maximum, not a Meta device disclosure.",
     "Confirms Quest 3 uses Snapdragon XR2 Gen 2; page does not expose RAM bandwidth.",
     "Secondary source for Quest 3 8 GB RAM.",
     "Official Steam Deck LCD memory: 16 GB LPDDR5 5500 MT/s quad 32-bit channels; 88 GB/s is derived.",

@@ -88,7 +88,16 @@ def main() -> int:
         hphi_path.write_text("Date: 2026-05-13\nH-Phi_static = 0.973 * 0.996 * 0.001 * 0.535 = 0.00062\n", encoding="utf-8")
         assert server.parse_hphi_report(hphi_path)["value"] == 0.00062
 
+        missing_logs = root / "MissingAgentLogs"
         old_logs = server.AGENT_LOGS
+        server.AGENT_LOGS = missing_logs
+        try:
+            missing_data = server.collect_dumps()
+        finally:
+            server.AGENT_LOGS = old_logs
+        assert missing_data["files"] == []
+        assert not missing_logs.exists()
+
         server.AGENT_LOGS = root
         try:
             dump_data = server.collect_dumps()
