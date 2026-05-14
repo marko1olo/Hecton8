@@ -11,7 +11,7 @@ namespace Hecton8.Audio.Prologue
     /// Visual-sync bridge from orbital prologue stage signals into procedural helmet DSP.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class PrologueAcousticOrchestrator : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
+    public sealed class PrologueAcousticOrchestrator : MonoBehaviour, ILateFrameTickable, IScalabilityChangedEventListener, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
     {
         private const uint SourceHash = 0xAC0571C5u;
         private const uint PrologueSequenceSourceHash = PrologueSignalSourceHashes.SequenceDirector;
@@ -36,9 +36,10 @@ namespace Hecton8.Audio.Prologue
         private IAudioService _audioService;
         private bool _lateFrameRegistered;
         private bool _hotSwapRegistered;
+        private bool _scalabilityEventsRegistered;
+        private bool _lowMemoryProfile;
         private bool _lowTier;
         private byte _qualityTierByte;
-        private int _qualityRefreshFrame = -1024;
         private int _lastLateFrame = -1;
         private int _lastAtmosphericFrame = -1;
         private int _lastCompleteFrame = -1;
@@ -72,7 +73,7 @@ namespace Hecton8.Audio.Prologue
         private void OnEnable()
         {
             CacheAudioService(GlobalRegistry.Audio);
-            RefreshQualityTier(true);
+            RefreshQualityPolicyCold();
             _currentLowPassCutoffHertz = ClampCutoff(oceanLowPassCutoffHertz);
             _stage = AudioTransitionState.StageSpace;
             _sweepActive = false;
@@ -98,10 +99,14 @@ namespace Hecton8.Audio.Prologue
             {
                 _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
             }
+
+            TryRegisterScalabilityEvents();
         }
 
         private void OnDisable()
         {
+            TryUnregisterScalabilityEvents();
+
             if (_lateFrameRegistered)
             {
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
@@ -126,11 +131,16 @@ namespace Hecton8.Audio.Prologue
 
             _lastLateFrame = frame;
             _tickCount++;
-            RefreshQualityTier(false);
             ConsumeAtmosphericSignals();
             ConsumePrologueCompleteSignals();
             AdvanceFilterSweep(Time.unscaledDeltaTime);
             PublishAudioTransition(frame);
+        }
+
+        /// <inheritdoc />
+        public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
+        {
+            CacheQualityPolicy(payload.CurrentQualityTier, payload.CurrentTier, _lowMemoryProfile);
         }
 
         /// <inheritdoc />
@@ -342,19 +352,40 @@ namespace Hecton8.Audio.Prologue
             _audioService = audioService;
         }
 
-        private void RefreshQualityTier(bool force)
+        private void TryRegisterScalabilityEvents()
         {
-            int frame = Time.frameCount;
-            if (!force && frame - _qualityRefreshFrame < 60)
+            if (_scalabilityEventsRegistered || !Application.isPlaying)
                 return;
 
-            _qualityRefreshFrame = frame;
-            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
-            _qualityTierByte = GlobalRegistry.ScalabilityTierProfileByte;
+            ScalabilityEvents.Register(this);
+            _scalabilityEventsRegistered = true;
+        }
+
+        private void TryUnregisterScalabilityEvents()
+        {
+            if (!_scalabilityEventsRegistered)
+                return;
+
+            ScalabilityEvents.Unregister(this);
+            _scalabilityEventsRegistered = false;
+        }
+
+        private void RefreshQualityPolicyCold()
+        {
+            CacheQualityPolicy(
+                GlobalRegistry.ScalabilityTier,
+                GlobalRegistry.ScalabilityTierProfileByte,
+                GlobalRegistry.H8_LOW_MEMORY_PROFILE);
+        }
+
+        private void CacheQualityPolicy(HectonQualityTier tier, byte qualityTierByte, bool lowMemoryProfile)
+        {
+            _lowMemoryProfile = lowMemoryProfile;
+            _qualityTierByte = qualityTierByte;
             _lowTier = tier == HectonQualityTier.Unknown ||
                        tier == HectonQualityTier.Low ||
                        tier == HectonQualityTier.Mx350 ||
-                       GlobalRegistry.H8_LOW_MEMORY_PROFILE;
+                       _lowMemoryProfile;
         }
 
         private float ResolveHeat01(in AtmosphericReentrySignal signal)

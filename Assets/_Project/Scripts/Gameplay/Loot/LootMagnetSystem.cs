@@ -19,6 +19,8 @@ namespace Hecton8.Gameplay.Loot
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_PHYS_MAGNETIC_LOOT_ACQUISITION.bin";
         private const string RuntimeObjectName = "[LootMagnetSystem]";
         private const uint TelemetryFaultFlag = 1u;
+        private const uint TelemetryAcousticBudgetDropFlag = 1u << 1;
+        private const uint TelemetryWakeBudgetDropFlag = 1u << 2;
 
         private static LootMagnetSystem _bootstrapRuntime;
         private static bool _sceneLoadedHooked;
@@ -271,7 +273,8 @@ namespace Hecton8.Gameplay.Loot
                    _entityFlags.IsCreated &&
                    _entityVelocities.IsCreated &&
                    _entityItemHashes.IsCreated &&
-                   _entityQuantities.IsCreated;
+                   _entityQuantities.IsCreated &&
+                   _signalEvents.IsCreated;
         }
 
         private void EnsureManagedSidecars()
@@ -294,15 +297,11 @@ namespace Hecton8.Gameplay.Loot
             if (_telemetry.IsCreated)
                 return;
 
-            _telemetry = new NativeArray<LootMagnetTelemetryEntry>(
+            _telemetry = H8Memory.Allocate<LootMagnetTelemetryEntry>(
                 LootMagnetConstants.TelemetryFrameCount,
+                SystemID.GameplayLoot,
                 Allocator.Persistent,
-                NativeArrayOptions.ClearMemory);
-            NativeMemorySentinel.RegisterNativeArray(
-                _telemetry,
-                nameof(LootMagnetSystem),
-                nameof(_telemetry),
-                NativeAllocationLifetime.Scene);
+                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<LootMagnetTelemetryEntry>[300] - loot magnet black-box ring - owner: LootMagnetSystem
         }
 
         private void DisposeTelemetry()
@@ -310,9 +309,9 @@ namespace Hecton8.Gameplay.Loot
             if (!_telemetry.IsCreated)
                 return;
 
-            NativeMemorySentinel.UnregisterNativeArray(_telemetry);
-            _telemetry.Dispose();
-            _telemetry = default;
+            H8Memory.Release(ref _telemetry, SystemID.GameplayLoot);
+            _telemetryIndex = 0;
+            _lastTelemetryRecordedFrame = 0u;
         }
 
         private void EnsureSignalEvents()
@@ -323,19 +322,14 @@ namespace Hecton8.Gameplay.Loot
 
             if (_signalEvents.IsCreated)
             {
-                NativeMemorySentinel.UnregisterNativeArray(_signalEvents);
-                _signalEvents.Dispose();
+                H8Memory.Release(ref _signalEvents, SystemID.GameplayLoot);
             }
 
-            _signalEvents = new NativeArray<LootMagnetSignalEvent>(
+            _signalEvents = H8Memory.Allocate<LootMagnetSignalEvent>(
                 capacity,
+                SystemID.GameplayLoot,
                 Allocator.Persistent,
-                NativeArrayOptions.ClearMemory);
-            NativeMemorySentinel.RegisterNativeArray(
-                _signalEvents,
-                nameof(LootMagnetSystem),
-                nameof(_signalEvents),
-                NativeAllocationLifetime.Scene);
+                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<LootMagnetSignalEvent>[capacity] - Burst-to-managed loot signal lane - owner: LootMagnetSystem
         }
 
         private void DisposeSignalEvents()
@@ -343,9 +337,7 @@ namespace Hecton8.Gameplay.Loot
             if (!_signalEvents.IsCreated)
                 return;
 
-            NativeMemorySentinel.UnregisterNativeArray(_signalEvents);
-            _signalEvents.Dispose();
-            _signalEvents = default;
+            H8Memory.Release(ref _signalEvents, SystemID.GameplayLoot);
         }
 
         private void RefreshPickupVaultFromRegistry()
@@ -461,6 +453,7 @@ namespace Hecton8.Gameplay.Loot
             int acquisitionBudget = LootMagnetConstants.MaxAcquisitionsPerFrame;
             int acousticBudget = ResolveAcousticSignalBudget();
             int wakeBudget = ResolveWakeSignalBudget();
+            uint telemetryFlags = 0u;
             bool fault = false;
             for (int index = 0; index < count; index++)
             {
@@ -494,7 +487,7 @@ namespace Hecton8.Gameplay.Loot
                     {
                         acquiredCount++;
                         PublishItemAcquired(in signalEvent, addedQuantity);
-                        PublishPresentationSignals(in signalEvent, addedQuantity, ref acousticBudget, ref wakeBudget);
+                        telemetryFlags |= PublishPresentationSignals(in signalEvent, addedQuantity, ref acousticBudget, ref wakeBudget);
                     }
 
                     if (quantityAfter > 0)
@@ -515,7 +508,7 @@ namespace Hecton8.Gameplay.Loot
                     continue;
                 }
 
-                PublishPresentationSignals(in signalEvent, 0, ref acousticBudget, ref wakeBudget);
+                telemetryFlags |= PublishPresentationSignals(in signalEvent, 0, ref acousticBudget, ref wakeBudget);
                 if ((flags & LootEntityFlags.Pulling) == 0u || (flags & LootEntityFlags.Active) == 0u)
                     continue;
 
@@ -525,7 +518,7 @@ namespace Hecton8.Gameplay.Loot
 
             _lastCommittedAcquiredCount = acquiredCount;
             _lastCommittedFlagsHash = flagsHash;
-            _lastCommittedFlags = fault ? TelemetryFaultFlag : 0u;
+            _lastCommittedFlags = (fault ? TelemetryFaultFlag : 0u) | telemetryFlags;
             if (fault && !_dumpedFault)
             {
                 RecordTelemetry(_telemetryFrameCounter);
@@ -577,19 +570,28 @@ namespace Hecton8.Gameplay.Loot
             GlobalSignals.Publish(in itemSignal);
         }
 
-        private void PublishPresentationSignals(
+        private uint PublishPresentationSignals(
             in LootMagnetSignalEvent signalEvent,
             int addedQuantity,
             ref int acousticBudget,
             ref int wakeBudget)
         {
             if (signalEvent.Flags == 0u || signalEvent.ItemHash == 0u)
-                return;
+                return 0u;
 
-            bool publishAcoustic = (signalEvent.Flags & LootMagnetEventFlags.Acoustic) != 0u && acousticBudget > 0;
-            bool publishWake = (signalEvent.Flags & LootMagnetEventFlags.Wake) != 0u && wakeBudget > 0;
+            bool wantsAcoustic = (signalEvent.Flags & LootMagnetEventFlags.Acoustic) != 0u;
+            bool wantsWake = (signalEvent.Flags & LootMagnetEventFlags.Wake) != 0u;
+            uint droppedFlags = 0u;
+            if (wantsAcoustic && acousticBudget <= 0)
+                droppedFlags |= TelemetryAcousticBudgetDropFlag;
+
+            if (wantsWake && wakeBudget <= 0)
+                droppedFlags |= TelemetryWakeBudgetDropFlag;
+
+            bool publishAcoustic = wantsAcoustic && acousticBudget > 0;
+            bool publishWake = wantsWake && wakeBudget > 0;
             if (!publishAcoustic && !publishWake)
-                return;
+                return droppedFlags;
 
             if (publishAcoustic)
             {
@@ -622,6 +624,8 @@ namespace Hecton8.Gameplay.Loot
                 };
                 GlobalSignals.Publish(in wakeSignal);
             }
+
+            return droppedFlags;
         }
 
         private static int ResolveAcousticSignalBudget()

@@ -118,10 +118,17 @@ Mandates read:
 - [x] Cached player acquisition context | DOD: scanner focused acquisition caches `GlobalRegistry.Player` on Awake/OnSpawn/OnEquip and uses the cached `IPlayerRuntimeContext` during candidate pose resolution | Rejected: hot `GlobalRegistry.Player` read inside focused scan acquisition | Estimate: one registry read removed per focused resample
 - [x] Static no-regression checks after Loop 13 | DOD: `git diff HEAD --check`, `git diff --cached --check`, and scanner bans for `Camera.main`, direct `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, and `.text =` passed | Rejected: dotnet rebuild, explicitly forbidden by user | Estimate: 2600 us
 
+## Loop 14 - Atlas/Localization H-Phi Compile Guard
+
+- [x] Batch prompt re-check | DOD: raw PowerShell regex scan confirmed `DIEGETIC_LORE_SCANNER` is still absent from `CURRENT_BATCH.md`; neighboring prompts ignored | Rejected: adopting another agent's current batch task | Estimate: 1100 us
+- [x] Atlas signal cache audit | DOD: scanner operational summary/directive now resolve Atlas through `ResolveCachedAtlasSignalCold()` with only one cold `GlobalRegistry.AtlasSignal` ingress | Rejected: repeated service-locator reads from presentation text generation | Estimate: 3 hot refs -> 1 cold ref
+- [x] Localization compile-risk fix | DOD: replaced non-existent `ILocalizationService` local with concrete project `LocalizationManager` while preserving single registry lookup per localized string resolve | Rejected: two `GlobalRegistry.Localization` reads per call or introducing a new interface | Estimate: avoids compile wall; one registry read per localization call
+- [x] Static no-regression checks after Loop 14 | DOD: `git diff HEAD --check` passed; scanner banned-pattern scan found no `ILocalizationService`, `Camera.main`, direct `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, or `.text =` | Rejected: dotnet rebuild, explicitly forbidden by user | Estimate: 2100 us
+
 ## Verification
 
 - [x] Compile/source validation - `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:quiet -clp:Summary` passed with 0 warnings / 0 errors after Loop 10
-- [ ] Compile/source validation after Loops 11-13 - NOT RERUN: user explicitly ordered no dotnet rebuilds; static source checks only
+- [ ] Compile/source validation after Loops 11-14 - NOT RERUN: user explicitly ordered no dotnet rebuilds; static source checks only
 - [ ] Console check - BLOCKED BY UNITY SESSION: MCP validate/console calls cannot connect to Unity MCP HTTP endpoint / session
 - [x] Re-read prompt after core tasks
 - [x] Omega polish mandate after all tasks done or blocked

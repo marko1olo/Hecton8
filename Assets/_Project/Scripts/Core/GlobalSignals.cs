@@ -2366,7 +2366,7 @@ namespace Hecton8.Core
             AdvanceSignalSequence(ref _latestCraftingCompletedSignalSequence);
             sequencedSignal.Sequence = unchecked((uint)Volatile.Read(ref _latestCraftingCompletedSignalSequence));
             if (sequencedSignal.Quantity > 0)
-                AdvanceSignalSequence(ref _latestCraftingCompletedUnitCount, sequencedSignal.Quantity);
+                AdvanceSignalCounter(ref _latestCraftingCompletedUnitCount, sequencedSignal.Quantity);
 
             _craftingCompletedSignals.Enqueue(sequencedSignal);
             SignalBus<CraftingCompletedSignal>.Push(in sequencedSignal);
@@ -3273,16 +3273,13 @@ namespace Hecton8.Core
             Volatile.Write(ref sequence, next);
         }
 
-        private static void AdvanceSignalSequence(ref int sequence, int amount)
+        private static void AdvanceSignalCounter(ref int counter, int amount)
         {
             if (amount <= 0)
                 return;
 
-            int next = unchecked(Volatile.Read(ref sequence) + amount);
-            if (next == 0)
-                next = 1;
-
-            Volatile.Write(ref sequence, next);
+            int next = unchecked(Volatile.Read(ref counter) + amount);
+            Volatile.Write(ref counter, next);
         }
 
         private static void DisposeQueue<T>(ref NativeQueue<T> queue, string label)

@@ -1,6 +1,7 @@
 using System;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
+using Hecton8.Core.Signals;
 using Hecton8.Gameplay;
 using Hecton8.Inventory;
 using Hecton.Localization;
@@ -92,9 +93,10 @@ namespace Hecton8.UI
         private int _lastOxygenPercent = int.MinValue;
         private int _lastEnergyPercent = int.MinValue;
         private bool _lastPdaOpen;
-        private PlayerInventory _subscribedInventory;
         private PlayerToolManager _subscribedToolManager;
         private HectonSurvivalSystem _subscribedSurvivalSystem;
+        private uint _inventorySignalHash;
+        private uint _lastInventorySignalRevision;
         private string _localizedTitle = TitleTextValue;
         private string _localizedTabInventory = ActiveTabInventory;
         private string _localizedTabLoadout = ActiveTabLoadout;
@@ -233,17 +235,11 @@ namespace Hecton8.UI
 
         private void RefreshBindings()
         {
-            PlayerInventory previousInventory = playerInventory;
             PlayerToolManager previousToolManager = toolManager;
             HectonSurvivalSystem previousSurvivalSystem = survivalSystem;
 
             AutoResolve();
-
-            if (!ReferenceEquals(previousInventory, playerInventory))
-            {
-                UnsubscribeInventory(previousInventory);
-                SubscribeInventory(playerInventory);
-            }
+            RefreshInventorySignalBinding();
 
             if (!ReferenceEquals(previousToolManager, toolManager))
             {
@@ -263,7 +259,6 @@ namespace Hecton8.UI
             PDAEvents.Register(this);
             LocalizationEvents.RegisterLanguageListener(this);
 
-            SubscribeInventory(playerInventory);
             SubscribeToolManager(toolManager);
             SubscribeSurvival(survivalSystem);
         }
@@ -273,28 +268,8 @@ namespace Hecton8.UI
             PDAEvents.Unregister(this);
             LocalizationEvents.UnregisterLanguageListener(this);
 
-            UnsubscribeInventory(_subscribedInventory);
             UnsubscribeToolManager(_subscribedToolManager);
             UnsubscribeSurvival(_subscribedSurvivalSystem);
-        }
-
-        private void SubscribeInventory(PlayerInventory inventory)
-        {
-            if (inventory == null || ReferenceEquals(_subscribedInventory, inventory))
-                return;
-
-            inventory.InventoryChanged += HandleInventoryChanged;
-            _subscribedInventory = inventory;
-        }
-
-        private void UnsubscribeInventory(PlayerInventory inventory)
-        {
-            if (inventory == null)
-                return;
-
-            inventory.InventoryChanged -= HandleInventoryChanged;
-            if (ReferenceEquals(_subscribedInventory, inventory))
-                _subscribedInventory = null;
         }
 
         private void SubscribeToolManager(PlayerToolManager manager)
@@ -396,6 +371,23 @@ namespace Hecton8.UI
             int rebootProgressPercent = intrusionActive
                 ? (int)math.round(_intrusionManager.RebootProgressNormalized * 100f)
                 : 0;
+            bool inventoryDirty = ConsumeInventoryChangedSignals();
+
+            bool reactiveDirty = stressBucket != _lastStressCorruptionBucket ||
+                intrusionActive != _lastIntrusionActive ||
+                mechModeActive != _lastMechModeActive ||
+                dataLinkDegraded != _lastDataLinkDegraded ||
+                storageDebtBucket != _lastStorageDebtBucket ||
+                rebootProgressPercent != _lastRebootProgressPercent;
+
+            if (!inventoryDirty && !reactiveDirty)
+                return;
+
+            if (!reactiveDirty)
+            {
+                RefreshChrome();
+                return;
+            }
 
             if (stressBucket == _lastStressCorruptionBucket &&
                 intrusionActive == _lastIntrusionActive &&
@@ -420,12 +412,6 @@ namespace Hecton8.UI
             _lastOxygenPercent = int.MinValue;
             _lastEnergyPercent = int.MinValue;
             RefreshChrome();
-        }
-
-        private void HandleInventoryChanged()
-        {
-            if (PlayerPDA.IsOpen)
-                RefreshChrome();
         }
 
         private void HandleSlotChanged(int _)

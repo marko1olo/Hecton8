@@ -465,4 +465,5 @@ Exact microseconds saved:
 Verification:
 - `git diff --check -- Assets/_Project/Scripts/SaveManager.cs` reports no whitespace errors beyond Git CRLF normalization warning.
 - Static scans confirm WFC ring allocation/disposal, per-Tick frame records, event records, `Dump_MACRO_WFC_PERSISTENCE_SYNC.bin`, and corrupt-payload dump hook.
+- `Select-String` re-extraction found no `MACRO_WFC_PERSISTENCE_SYNC` tag in rotated `Docs/Tasks/CURRENT_BATCH.md`.
 - No `dotnet` rebuild was run.

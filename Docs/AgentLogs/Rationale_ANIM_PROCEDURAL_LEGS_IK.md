@@ -156,9 +156,13 @@ Hardware Impact: No new managed hot-path allocations. Runtime leg work is two fo
 
 Recursive Verification Addendum: after the user requested additional patience/professional polish, `CURRENT_BATCH.md` was re-extracted. `ContextualPhysicalIkRuntime` now removes the stale Gameplay dependency on `Hecton8.Animation.IK`, preserves foot-probe fore/aft stance in hip rays, adds finite-clamped planar velocity lead, uses planar velocity for swimming posture, stores finite-clamped velocity-scaled squared step thresholds, cancels stale dual-foot step state, rebases active SOA lanes safely under AUP shift, writes ordered black-box dumps, forces a cold pending-job completion before lifecycle slot reset/allocation, binds player KCC velocity only to rigs near the KCC body AUP, and rebases the cached KCC body position on origin shift. `ContextualPhysicalIkRig` now applies a 4m distance hysteresis band to IK cadence tiers. `dotnet build Hecton8.Core.csproj --no-restore -v:quiet /m:1 /p:UseSharedCompilation=false /clp:ErrorsOnly` remains a global dependency-wall check, but the changed-file filter completed with no matching errors. Unity MCP resources are unavailable in this session. Scoped `Select-String` anti-bloat scan over touched lower-body/signal files returned no matches for `math.sqrt`, `math.normalize`, `foreach`, `string.Format`, interpolation, `OnAnimatorIK`, `SetIK`, or `ikPass`.
 
-Final Git Diff: active diff now includes the recursive code polish and required evidence files:
+Final Evidence Scope: recursive code polish and required evidence files audited in this pass:
+`Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkMath.cs`
 `Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRuntime.cs`
 `Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRig.cs`
+`Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs`
+`Assets/_Project/Scripts/Physics/PhysicsDeterminismSignals.cs`
+`Assets/_Project/Scripts/Animation/IK/LowerBodyPresenceIkJobs.cs`
 `Docs/AgentLogs/Rationale_ANIM_PROCEDURAL_LEGS_IK.md`
 `Docs/Tasks/Status_ANIM_PROCEDURAL_LEGS_IK.md`
-`Docs/AgentLogs/LOG_ANIM_PROCEDURAL_LEGS_IK.md` (new)
+`Docs/AgentLogs/LOG_ANIM_PROCEDURAL_LEGS_IK.md`

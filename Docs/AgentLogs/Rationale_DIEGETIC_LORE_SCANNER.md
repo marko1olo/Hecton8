@@ -337,3 +337,17 @@ Solution: Ran `git diff HEAD --check`, `git diff --cached --check`, scanner bann
 Rejected Alternatives: Reporting compiler verification without running it, or modifying unrelated staged work from other agents.
 Scalability potential: Process hygiene only.
 Hardware Impact: No runtime impact.
+
+## LOOP 14 ATLAS/LOCALIZATION H-PHI COMPILE GUARD
+
+Problem: Scanner operational summary/directive generation still depended on Atlas service state, and the cached Atlas pass left a compile-risk local typed as `ILocalizationService`, which does not exist in this project.
+Solution: Funnel Atlas reads through `ResolveCachedAtlasSignalCold()` so presentation text uses the cached `AtlasSignalSystem` handle after first resolve. Correct the localization helper local to the actual `LocalizationManager` type while keeping the single registry lookup per call.
+Rejected Alternatives: Repeated `GlobalRegistry.AtlasSignal` reads from summary/directive hot paths; adding a new localization interface during a UX scanner pass; reverting to two `GlobalRegistry.Localization` property reads per localized string.
+Scalability potential: Low/MX350 avoids avoidable service-locator reads while rendering scanner text. High/Ultra keep Atlas signal-bearing presentation and richer scanner visuals without widening authority or adding a manager singleton.
+Hardware Impact: Source-level Atlas service refs in `ScannerTool.cs` are constrained to one cold helper. Localization resolves use one registry property read instead of repeated access; exact microseconds remain PENDING PROFILER.
+
+Problem: The current batch file still does not contain `DIEGETIC_LORE_SCANNER`, and the user explicitly forbids dotnet rebuilds.
+Solution: Re-ran raw PowerShell prompt extraction, confirmed absence, ignored neighboring prompts, and verified with static source checks only.
+Rejected Alternatives: Reading other agents' XML blocks; running `dotnet build`; claiming compiler proof without execution.
+Scalability potential: Process hygiene only.
+Hardware Impact: No runtime impact.

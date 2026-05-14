@@ -1168,10 +1168,16 @@ namespace Hecton8.QA.Headless
             counters.GlobalRegistrySurface += CountOrdinal(text, "Global" + "Registry.");
             counters.EventPublish += CountOrdinal(text, "Pub" + "lish(");
             counters.UnityUpdateMethods += CountUnityUpdateMethodDeclarations(text);
+            counters.IUpdatable += CountOrdinal(text, "IUp" + "datable");
+            counters.IFastTickable += CountOrdinal(text, "IFast" + "Tickable");
+            counters.IFixedTickable += CountOrdinal(text, "IFixed" + "Tickable");
             counters.ISlowTickable += CountOrdinal(text, "ISlow" + "Tickable");
+            counters.IColdTickable += CountOrdinal(text, "ICold" + "Tickable");
+            counters.IFrostTickable += CountOrdinal(text, "IFrost" + "Tickable");
+            counters.ILateFrameTickable += CountOrdinal(text, "ILate" + "FrameTickable");
+            counters.IPostFixedTickable += CountOrdinal(text, "IPost" + "FixedTickable");
             counters.IJob += CountOrdinal(text, "IJ" + "ob");
             counters.ITickable += CountOrdinal(text, "ITick" + "able");
-            counters.IFixedTickable += CountOrdinal(text, "IFixed" + "Tickable");
             counters.DataVaultRefs += CountDataVaultRefs(text);
             counters.NativeArrayRefs += CountOrdinal(text, "Native" + "Array<");
             counters.StructDeclarations += CountOrdinal(text, " str" + "uct ");
@@ -1186,18 +1192,32 @@ namespace Hecton8.QA.Headless
 
         private static float CalculateHPhiRisk(in HPhiStaticCounters counters)
         {
+            int dispatcherContracts = CountDispatcherContracts(in counters);
             float riskIntegration = DivideOrZero(
                 counters.SignalBusPush,
                 counters.SignalBusPush + counters.GlobalRegistrySurface + counters.EventPublish + counters.StaticInstance + counters.FindObjectCalls + counters.GetComponentCalls);
             float architecturalPurity = DivideOrZero(
-                counters.ISlowTickable + counters.IJob,
-                counters.UnityUpdateMethods + counters.ISlowTickable + counters.IJob);
+                dispatcherContracts + counters.IJob,
+                counters.UnityUpdateMethods + dispatcherContracts + counters.IJob);
             float dataSovereignty = DivideOrZero(
                 counters.DataVaultRefs,
                 counters.DataVaultRefs + counters.NativeArrayRefs);
             float memoryAlignment = DivideOrZero(counters.StructLayoutAttributes, counters.StructDeclarations);
             float aupPrecisionIntegrity = CalculateAupPrecisionIntegrity(in counters);
             return riskIntegration * architecturalPurity * dataSovereignty * memoryAlignment * aupPrecisionIntegrity;
+        }
+
+        private static int CountDispatcherContracts(in HPhiStaticCounters counters)
+        {
+            return counters.IUpdatable +
+                counters.ITickable +
+                counters.IFastTickable +
+                counters.IFixedTickable +
+                counters.ISlowTickable +
+                counters.IColdTickable +
+                counters.IFrostTickable +
+                counters.ILateFrameTickable +
+                counters.IPostFixedTickable;
         }
 
         private static float CalculateAupPrecisionIntegrity(in HPhiStaticCounters counters)
@@ -1395,6 +1415,8 @@ namespace Hecton8.QA.Headless
             float aupPrecisionIntegrity,
             int aupPrecisionSafe,
             int aupPrecisionRisk,
+            int dispatcherContracts,
+            int unityUpdateMethods,
             int targetFrames,
             int scratchMegabytes,
             int startupTimeoutSeconds)
@@ -1405,6 +1427,8 @@ namespace Hecton8.QA.Headless
                 " aupIntegrity=" + aupPrecisionIntegrity.ToString("F6", CultureInfo.InvariantCulture) +
                 " aupSafe=" + aupPrecisionSafe.ToString(CultureInfo.InvariantCulture) +
                 " aupRisk=" + aupPrecisionRisk.ToString(CultureInfo.InvariantCulture) +
+                " dispatcherContracts=" + dispatcherContracts.ToString(CultureInfo.InvariantCulture) +
+                " unityUpdateMethods=" + unityUpdateMethods.ToString(CultureInfo.InvariantCulture) +
                 " requestedBoids=10000 frames=" + targetFrames.ToString(CultureInfo.InvariantCulture) +
                 " scratchMb=" + scratchMegabytes.ToString(CultureInfo.InvariantCulture) +
                 " startupTimeoutSec=" + startupTimeoutSeconds.ToString(CultureInfo.InvariantCulture);
@@ -1525,10 +1549,16 @@ namespace Hecton8.QA.Headless
             public int GlobalRegistrySurface;
             public int EventPublish;
             public int UnityUpdateMethods;
+            public int IUpdatable;
+            public int IFastTickable;
+            public int IFixedTickable;
             public int ISlowTickable;
+            public int IColdTickable;
+            public int IFrostTickable;
+            public int ILateFrameTickable;
+            public int IPostFixedTickable;
             public int IJob;
             public int ITickable;
-            public int IFixedTickable;
             public int DataVaultRefs;
             public int NativeArrayRefs;
             public int StructDeclarations;

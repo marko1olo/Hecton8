@@ -3040,12 +3040,34 @@ namespace Hecton8.World
                 _abyssalThermalGridResolutionXZ <= 0 ||
                 _abyssalThermalGridResolutionY <= 0 ||
                 thermalGridHorizontalCellSize <= 0f ||
-                thermalGridVerticalCellSize <= 0f)
+                thermalGridVerticalCellSize <= 0f ||
+                !math.isfinite(thermalGridHorizontalCellSize) ||
+                !math.isfinite(thermalGridVerticalCellSize) ||
+                thermalGridDepthMeters <= 0f ||
+                !math.isfinite(thermalGridDepthMeters) ||
+                !math.isfinite(waterLevel) ||
+                !IsFinite(position) ||
+                !IsFinite(_abyssalThermalGridCenter))
+            {
+                return false;
+            }
+
+            long expectedFlowVolumeLength = (long)_abyssalThermalGridResolutionXZ *
+                                            _abyssalThermalGridResolutionXZ *
+                                            _abyssalThermalGridResolutionY;
+            if (expectedFlowVolumeLength <= 0L ||
+                expectedFlowVolumeLength > int.MaxValue ||
+                _nativeMemory.AbyssalFlowVolumeCurrentNative.Length < expectedFlowVolumeLength)
             {
                 return false;
             }
 
             float halfExtent = (_abyssalThermalGridResolutionXZ - 1) * 0.5f * thermalGridHorizontalCellSize;
+            if (!math.isfinite(halfExtent))
+            {
+                return false;
+            }
+
             float minX = _abyssalThermalGridCenter.x - halfExtent;
             float minZ = _abyssalThermalGridCenter.z - halfExtent;
             float maxY = waterLevel;
@@ -3054,9 +3076,11 @@ namespace Hecton8.World
                 return false;
 
             float clampedY = math.clamp(position.y, minY, maxY);
-            float normalizedX = math.clamp((position.x - minX) / thermalGridHorizontalCellSize, 0f, _abyssalThermalGridResolutionXZ - 1);
-            float normalizedZ = math.clamp((position.z - minZ) / thermalGridHorizontalCellSize, 0f, _abyssalThermalGridResolutionXZ - 1);
-            float normalizedY = math.clamp((maxY - clampedY) / thermalGridVerticalCellSize, 0f, _abyssalThermalGridResolutionY - 1);
+            float inverseHorizontalCellSize = math.rcp(thermalGridHorizontalCellSize);
+            float inverseVerticalCellSize = math.rcp(thermalGridVerticalCellSize);
+            float normalizedX = math.clamp((position.x - minX) * inverseHorizontalCellSize, 0f, _abyssalThermalGridResolutionXZ - 1);
+            float normalizedZ = math.clamp((position.z - minZ) * inverseHorizontalCellSize, 0f, _abyssalThermalGridResolutionXZ - 1);
+            float normalizedY = math.clamp((maxY - clampedY) * inverseVerticalCellSize, 0f, _abyssalThermalGridResolutionY - 1);
             int x0 = math.clamp((int)math.floor(normalizedX), 0, _abyssalThermalGridResolutionXZ - 1);
             int z0 = math.clamp((int)math.floor(normalizedZ), 0, _abyssalThermalGridResolutionXZ - 1);
             int y0 = math.clamp((int)math.floor(normalizedY), 0, _abyssalThermalGridResolutionY - 1);
@@ -3398,13 +3422,13 @@ namespace Hecton8.World
 
         private void InitializeThreatGridMetadata()
         {
-            int resolution = (int)math.round((threatGridRadius * 2f) / math.max(1f, threatGridCellSize)) + 1;
+            int resolution = (int)math.round((threatGridRadius * 2f) * math.rcp(math.max(1f, threatGridCellSize))) + 1;
             if ((resolution & 1) == 0)
                 resolution++;
 
             _ecosystemThreatGridResolution = math.max(3, resolution);
             _ecosystemThreatGridCellCount = _ecosystemThreatGridResolution * _ecosystemThreatGridResolution;
-            _ecosystemThreatGridResolutionY = math.max(2, (int)math.round(thermalGridDepthMeters / math.max(1f, thermalGridVerticalCellSize)) + 1);
+            _ecosystemThreatGridResolutionY = math.max(2, (int)math.round(thermalGridDepthMeters * math.rcp(math.max(1f, thermalGridVerticalCellSize))) + 1);
             long voxelCellCount = (long)_ecosystemThreatGridCellCount * _ecosystemThreatGridResolutionY;
             _ecosystemThreatVoxelCellCount = voxelCellCount > 0L && voxelCellCount <= int.MaxValue
                 ? (int)voxelCellCount
@@ -6905,17 +6929,36 @@ namespace Hecton8.World
             int resolution,
             NativeArray<float> threatGrid)
         {
-            if (!threatGrid.IsCreated || resolution <= 0 || cellSize <= 0f)
+            if (!threatGrid.IsCreated ||
+                resolution <= 0 ||
+                cellSize <= 0f ||
+                !math.isfinite(cellSize) ||
+                !IsFinite(position) ||
+                !IsFinite(gridCenter))
+            {
                 return 0f;
+            }
+
+            long expectedLength = (long)resolution * resolution;
+            if (expectedLength <= 0L || expectedLength > int.MaxValue || threatGrid.Length < expectedLength)
+            {
+                return 0f;
+            }
 
             float halfExtent = (resolution - 1) * 0.5f * cellSize;
+            if (!math.isfinite(halfExtent))
+            {
+                return 0f;
+            }
+
             float localX = position.x - (gridCenter.x - halfExtent);
             float localZ = position.z - (gridCenter.z - halfExtent);
             if (localX < 0f || localZ < 0f || localX > halfExtent * 2f || localZ > halfExtent * 2f)
                 return 0f;
 
-            float normalizedX = math.clamp(localX / cellSize, 0f, resolution - 1);
-            float normalizedZ = math.clamp(localZ / cellSize, 0f, resolution - 1);
+            float inverseCellSize = math.rcp(cellSize);
+            float normalizedX = math.clamp(localX * inverseCellSize, 0f, resolution - 1);
+            float normalizedZ = math.clamp(localZ * inverseCellSize, 0f, resolution - 1);
             int cellX = math.clamp((int)math.floor(normalizedX), 0, resolution - 1);
             int cellZ = math.clamp((int)math.floor(normalizedZ), 0, resolution - 1);
             int nextCellX = math.min(cellX + 1, resolution - 1);
@@ -6960,17 +7003,36 @@ namespace Hecton8.World
             int resolution,
             NativeArray<byte> echoFlags)
         {
-            if (!echoFlags.IsCreated || resolution <= 0 || cellSize <= 0f)
+            if (!echoFlags.IsCreated ||
+                resolution <= 0 ||
+                cellSize <= 0f ||
+                !math.isfinite(cellSize) ||
+                !IsFinite(position) ||
+                !IsFinite(gridCenter))
+            {
                 return 0;
+            }
+
+            long expectedLength = (long)resolution * resolution;
+            if (expectedLength <= 0L || expectedLength > int.MaxValue || echoFlags.Length < expectedLength)
+            {
+                return 0;
+            }
 
             float halfExtent = (resolution - 1) * 0.5f * cellSize;
+            if (!math.isfinite(halfExtent))
+            {
+                return 0;
+            }
+
             float localX = position.x - (gridCenter.x - halfExtent);
             float localZ = position.z - (gridCenter.z - halfExtent);
             if (localX < 0f || localZ < 0f || localX > halfExtent * 2f || localZ > halfExtent * 2f)
                 return 0;
 
-            int cellX = math.clamp((int)math.round(localX / cellSize), 0, resolution - 1);
-            int cellZ = math.clamp((int)math.round(localZ / cellSize), 0, resolution - 1);
+            float inverseCellSize = math.rcp(cellSize);
+            int cellX = math.clamp((int)math.round(localX * inverseCellSize), 0, resolution - 1);
+            int cellZ = math.clamp((int)math.round(localZ * inverseCellSize), 0, resolution - 1);
             return echoFlags[(cellZ * resolution) + cellX];
         }
 
@@ -6982,17 +7044,37 @@ namespace Hecton8.World
             int resolution,
             NativeArray<byte> echoFlags)
         {
-            if (!echoFlags.IsCreated || resolution <= 0 || cellSize <= 0f)
+            if (!echoFlags.IsCreated ||
+                resolution <= 0 ||
+                cellSize <= 0f ||
+                !math.isfinite(cellSize) ||
+                !math.isfinite(worldX) ||
+                !math.isfinite(worldZ) ||
+                !math.all(math.isfinite(gridCenter)))
+            {
                 return 0;
+            }
+
+            long expectedLength = (long)resolution * resolution;
+            if (expectedLength <= 0L || expectedLength > int.MaxValue || echoFlags.Length < expectedLength)
+            {
+                return 0;
+            }
 
             float halfExtent = (resolution - 1) * 0.5f * cellSize;
+            if (!math.isfinite(halfExtent))
+            {
+                return 0;
+            }
+
             float localX = worldX - (gridCenter.x - halfExtent);
             float localZ = worldZ - (gridCenter.z - halfExtent);
             if (localX < 0f || localZ < 0f || localX > halfExtent * 2f || localZ > halfExtent * 2f)
                 return 0;
 
-            int cellX = math.clamp((int)math.round(localX / cellSize), 0, resolution - 1);
-            int cellZ = math.clamp((int)math.round(localZ / cellSize), 0, resolution - 1);
+            float inverseCellSize = math.rcp(cellSize);
+            int cellX = math.clamp((int)math.round(localX * inverseCellSize), 0, resolution - 1);
+            int cellZ = math.clamp((int)math.round(localZ * inverseCellSize), 0, resolution - 1);
             return echoFlags[(cellZ * resolution) + cellX];
         }
 

@@ -348,3 +348,11 @@ Solution: Add shared `IsFiniteOrbital()` validation for velocity, planet distanc
 Rejected Alternatives: Keep validation only in burn, or hide invalid snapshots in the bridge. Burn-only validation delays fault evidence until after silence; hiding snapshots in the bridge would suppress the sequence black-box dump.
 Scalability potential: Low/MX350 avoids entering cinematic wait states from corrupted orbital telemetry. Middle/High/Ultra keep the same richer re-entry visuals while fault evidence remains deterministic.
 Hardware Impact: Adds four finite checks per orbital snapshot while prologue is waiting. Estimated cost is below 1 us on i3/MX350 and prevents invalid cinematic/audio/VFX transition work. Verification this pass is static only by user request; no dotnet rebuild or response-file compile was run.
+
+## Decision 42 - Active Dispose Cleanup Guard
+
+Problem: External disposal can happen while the awaitable director still considers a run active. If disposal releases the black-box buffer first, later cancellation cleanup has weaker forensic coverage and may leave input unlock dependent on the async `finally` path during teardown.
+Solution: `Dispose()` now detects `_running`, requests `ExplicitCancel`, and calls `ReleaseInputLockNoThrow()` before disposing the fixed black-box buffer. The release helper is already idempotent and fault-tolerant, so normal `finally` cleanup remains safe.
+Rejected Alternatives: Rely only on `OnDisable()` cancellation, rely only on the async `finally`, or dispose the buffer first. Disable ordering is not guaranteed for all external callers; async cleanup can be delayed by cancellation timing; disposing forensic state first weakens post-mortem evidence.
+Scalability potential: Low/MX350 gets deterministic input recovery during cheap-device teardown or scene churn. Middle/High/Ultra keep the same presentation flow while preventing teardown from orphaning the control lock before richer VFX/audio responders unwind.
+Hardware Impact: 0 us steady-state and 0 us wait-loop cost. Disposal-only branch adds one bool check plus a guarded signal publish only when teardown occurs during an active run. Verification this pass is static only by user request; no dotnet rebuild or response-file compile was run.

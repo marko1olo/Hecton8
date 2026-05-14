@@ -299,3 +299,27 @@ Verification:
 - Scanner/UI/target banned-pattern scan for `Camera.main`, direct `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, and `.text =`: no matches.
 - Direct registry reads remaining in scanner-owned files are cold lifecycle seed reads only.
 - `dotnet build` / rebuild: NOT RUN by explicit user order.
+
+## Follow-Up Hardening Pass 10
+
+What was wrong:
+- Scanner Atlas presentation had been moved behind a cached helper, but the localization helper used a non-existent `ILocalizationService` local type.
+- Operational summary/directive Atlas state needed verification that it now funnels through one cached ingress, not repeated presentation-path service locator calls.
+
+What was done:
+- Corrected scanner localization resolution to use the actual project `LocalizationManager` type while keeping one registry property read per localized string resolve.
+- Verified scanner Atlas reads now go through `ResolveCachedAtlasSignalCold()`; only the cold helper touches `GlobalRegistry.AtlasSignal`.
+- Re-ran the raw batch prompt search and confirmed this agent tag is still absent from `CURRENT_BATCH.md`.
+
+Cinematic Cheats used:
+- No new physical truth. Atlas scanner text remains a presentation fake over cached signal state; target authority stays in the spatial-hash/highest-dot scanner path.
+
+Exact Microseconds saved:
+- Verified exact microseconds: PENDING PROFILER.
+- Atlas service refs in scanner presentation: constrained to one cold helper ingress.
+- Localization helper: one registry property read per call, with compile-risk type fixed.
+
+Verification:
+- `git diff HEAD --check` on scanner/doc edits: pass.
+- Scanner banned-pattern scan for `ILocalizationService`, `Camera.main`, direct `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, and `.text =`: no matches.
+- `dotnet build` / rebuild: NOT RUN by explicit user order.

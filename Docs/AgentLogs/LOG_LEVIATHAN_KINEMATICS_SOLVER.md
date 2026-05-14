@@ -386,5 +386,6 @@ Exact microseconds saved:
 - Prevented fault: invalid segment positions reaching terrain native indexing.
 
 Verification:
-- Pending static checks after this edit.
+- Static grep over IK runtime/job/shader scope found no `math.sqrt`, `math.normalize`, managed array creation, `foreach`, `string.Format`, `.ToString()`, `Debug.Log`, Unity Physics casts, `SkinnedMeshRenderer`, `renderer.material`, `Camera.main`, `GlobalRegistry.Get`, `GameObject.Find`, or `FindObject`.
+- `git diff --check` and `git diff --cached --check` on touched code/docs exit 0; unstaged output is only LF-to-CRLF warnings.
 - Runtime status remains pending until Unity Editor import, shader compile, play-mode behavior, GC, and profiler evidence exist.

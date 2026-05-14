@@ -471,16 +471,26 @@ namespace Hecton8.SaveSystem
                 || !ReadStringFloatDictionary(ref reader, out data.toolDurabilityMap)
                 || !ReadStringBoolDictionary(ref reader, out data.toolBrokenMap)
                 || !ReadIntHashSet(ref reader, out data.discoveredBiomeIds)
-                || !reader.ReadStructArray(out data.discoveredBiomeBitWords)
+                || !reader.ReadStructArrayBounded(
+                    out data.discoveredBiomeBitWords,
+                    BiomeDiscoveryBitMask.WordCount,
+                    nameof(data.discoveredBiomeBitWords))
                 || !reader.ReadInt(out data.lastDiscoveredBiomeId)
                 || !reader.ReadInt(out data.narrativeDiscoveryCount)
-                || !ReadStringArray(ref reader, out data.narrativeDiscoveryIds)
+                || !ReadStringArray(
+                    ref reader,
+                    out data.narrativeDiscoveryIds,
+                    SaveData.MaxNarrativeDiscoveries,
+                    nameof(data.narrativeDiscoveryIds))
                 || !reader.ReadInt(out data.narrativeDepthTier)
                 || !ReadNarrativeAupTriggeredMask(ref reader, data.version, out data.narrativeAupTriggeredMask)
                 || !ReadStringList(ref reader, out data.audioLogDiscoveredIds)
                 || !ReadAudioLogDiscoveryBitWords(ref reader, data.version, data)
                 || !ReadEncryptedAudioLogFragments(ref reader, data.version, data)
-                || !reader.ReadStructArray(out data.industrialLoreUnlockWords)
+                || !reader.ReadStructArrayBounded(
+                    out data.industrialLoreUnlockWords,
+                    IndustrialLoreBitMask.WordCount,
+                    nameof(data.industrialLoreUnlockWords))
                 || !ReadDataArchaeology(ref reader, data.version, data)
                 || !ReadStringList(ref reader, out data.questActiveIds)
                 || !ReadStringList(ref reader, out data.questCompletedIds)
@@ -647,7 +657,10 @@ namespace Hecton8.SaveSystem
                 || !reader.ReadDouble(out data.radiationGridOriginZ)
                 || !reader.ReadFloat(out data.radiationGridCellSizeMeters)
                 || !reader.ReadInt(out data.radiationGridRleLength)
-                || !reader.ReadStructArray(out data.radiationGridRle))
+                || !reader.ReadStructArrayBounded(
+                    out data.radiationGridRle,
+                    SaveData.RadiationGridRleMaxBytes,
+                    nameof(data.radiationGridRle)))
             {
                 return false;
             }
@@ -686,9 +699,18 @@ namespace Hecton8.SaveSystem
             }
 
             if (!reader.ReadInt(out data.rtgDecayCount)
-                || !reader.ReadStructArray(out data.rtgDecaySourceIds)
-                || !reader.ReadStructArray(out data.rtgStartTimesSeconds)
-                || !reader.ReadStructArray(out data.rtgDecayFlags))
+                || !reader.ReadStructArrayBounded(
+                    out data.rtgDecaySourceIds,
+                    SaveData.MaxRtgDecayRecords,
+                    nameof(data.rtgDecaySourceIds))
+                || !reader.ReadStructArrayBounded(
+                    out data.rtgStartTimesSeconds,
+                    SaveData.MaxRtgDecayRecords,
+                    nameof(data.rtgStartTimesSeconds))
+                || !reader.ReadStructArrayBounded(
+                    out data.rtgDecayFlags,
+                    SaveData.MaxRtgDecayRecords,
+                    nameof(data.rtgDecayFlags)))
             {
                 return false;
             }
@@ -786,8 +808,14 @@ namespace Hecton8.SaveSystem
             }
 
             if (!reader.ReadInt(out int count) ||
-                !reader.ReadStructArray(out uint[] partialHashes) ||
-                !reader.ReadStructArray(out ushort[] partialProgress))
+                !reader.ReadStructArrayBounded(
+                    out uint[] partialHashes,
+                    SaveData.MaxDataArchaeologyPartialScans,
+                    nameof(data.dataArchaeologyPartialScanHashes)) ||
+                !reader.ReadStructArrayBounded(
+                    out ushort[] partialProgress,
+                    SaveData.MaxDataArchaeologyPartialScans,
+                    nameof(data.dataArchaeologyPartialScanProgressPermille)))
             {
                 return false;
             }
@@ -835,8 +863,14 @@ namespace Hecton8.SaveSystem
                 return true;
 
             if (!reader.ReadInt(out int count) ||
-                !reader.ReadStructArray(out int[] keys) ||
-                !reader.ReadStructArray(out byte[] values))
+                !reader.ReadStructArrayBounded(
+                    out int[] keys,
+                    SaveData.MaxDataArchaeologyScanStates,
+                    nameof(data.dataArchaeologyScanStateKeys)) ||
+                !reader.ReadStructArrayBounded(
+                    out byte[] values,
+                    SaveData.MaxDataArchaeologyScanStates,
+                    nameof(data.dataArchaeologyScanStateValues)))
             {
                 return false;
             }
@@ -938,8 +972,14 @@ namespace Hecton8.SaveSystem
             }
 
             if (!reader.ReadInt(out int count) ||
-                !reader.ReadStructArray(out data.audioLogEncryptedFragmentHashes) ||
-                !reader.ReadStructArray(out data.audioLogEncryptedFragmentBits))
+                !reader.ReadStructArrayBounded(
+                    out data.audioLogEncryptedFragmentHashes,
+                    SaveData.MaxEncryptedAudioLogFragments,
+                    nameof(data.audioLogEncryptedFragmentHashes)) ||
+                !reader.ReadStructArrayBounded(
+                    out data.audioLogEncryptedFragmentBits,
+                    SaveData.MaxEncryptedAudioLogFragments,
+                    nameof(data.audioLogEncryptedFragmentBits)))
             {
                 return false;
             }
@@ -1140,9 +1180,12 @@ namespace Hecton8.SaveSystem
 
             if (version >= 40)
             {
-                bool ok = reader.ReadStructArray(out value.itemHashIds)
-                    && reader.ReadStructArray(out value.packedCellCoordinates)
-                    && reader.ReadStructArray(out value.stackCounts)
+                bool ok = reader.ReadStructArrayBounded(out value.itemHashIds, InventoryDTO.MaxCells, nameof(value.itemHashIds))
+                    && reader.ReadStructArrayBounded(
+                        out value.packedCellCoordinates,
+                        InventoryDTO.MaxCells,
+                        nameof(value.packedCellCoordinates))
+                    && reader.ReadStructArrayBounded(out value.stackCounts, InventoryDTO.MaxCells, nameof(value.stackCounts))
                     && ReadInventoryStateArrays(ref reader, version, ref value)
                     && reader.ReadFloat(out value.totalWeight)
                     && reader.ReadInt(out value.gridColumns)
@@ -1184,17 +1227,26 @@ namespace Hecton8.SaveSystem
         {
             if (version >= 59)
             {
-                bool ok = reader.ReadStructArray(out value.itemStateFlags)
-                    && reader.ReadStructArray(out value.itemGeneticsWords)
-                    && reader.ReadStructArray(out value.qualityMilli)
-                    && reader.ReadStructArray(out value.lastUpdateUnixSeconds);
+                bool ok = reader.ReadStructArrayBounded(out value.itemStateFlags, InventoryDTO.MaxCells, nameof(value.itemStateFlags))
+                    && reader.ReadStructArrayBounded(
+                        out value.itemGeneticsWords,
+                        InventoryDTO.MaxCells,
+                        nameof(value.itemGeneticsWords))
+                    && reader.ReadStructArrayBounded(out value.qualityMilli, InventoryDTO.MaxCells, nameof(value.qualityMilli))
+                    && reader.ReadStructArrayBounded(
+                        out value.lastUpdateUnixSeconds,
+                        InventoryDTO.MaxCells,
+                        nameof(value.lastUpdateUnixSeconds));
 
                 if (!ok)
                     return false;
 
                 if (version >= 69)
                 {
-                    if (!reader.ReadStructArray(out value.itemDurabilityRle))
+                    if (!reader.ReadStructArrayBounded(
+                        out value.itemDurabilityRle,
+                        InventoryDTO.MaxDurabilityRleBytes,
+                        nameof(value.itemDurabilityRle)))
                         return false;
 
                     value.itemDurabilityRleLength = value.itemDurabilityRle != null
@@ -1207,25 +1259,34 @@ namespace Hecton8.SaveSystem
 
             if (version >= 53)
             {
-                return reader.ReadStructArray(out value.itemStateFlags)
-                    && ReadLegacyUInt64ArrayAsByte(ref reader, out value.itemGeneticsWords)
-                    && reader.ReadStructArray(out value.qualityMilli)
-                    && reader.ReadStructArray(out value.lastUpdateUnixSeconds);
+                return reader.ReadStructArrayBounded(out value.itemStateFlags, InventoryDTO.MaxCells, nameof(value.itemStateFlags))
+                    && ReadLegacyUInt64ArrayAsByte(ref reader, out value.itemGeneticsWords, InventoryDTO.MaxCells)
+                    && reader.ReadStructArrayBounded(out value.qualityMilli, InventoryDTO.MaxCells, nameof(value.qualityMilli))
+                    && reader.ReadStructArrayBounded(
+                        out value.lastUpdateUnixSeconds,
+                        InventoryDTO.MaxCells,
+                        nameof(value.lastUpdateUnixSeconds));
             }
 
             if (version >= 48)
             {
-                return reader.ReadStructArray(out value.itemStateFlags)
-                    && ReadLegacyUInt32ArrayAsByte(ref reader, out value.itemGeneticsWords)
-                    && reader.ReadStructArray(out value.qualityMilli)
-                    && reader.ReadStructArray(out value.lastUpdateUnixSeconds);
+                return reader.ReadStructArrayBounded(out value.itemStateFlags, InventoryDTO.MaxCells, nameof(value.itemStateFlags))
+                    && ReadLegacyUInt32ArrayAsByte(ref reader, out value.itemGeneticsWords, InventoryDTO.MaxCells)
+                    && reader.ReadStructArrayBounded(out value.qualityMilli, InventoryDTO.MaxCells, nameof(value.qualityMilli))
+                    && reader.ReadStructArrayBounded(
+                        out value.lastUpdateUnixSeconds,
+                        InventoryDTO.MaxCells,
+                        nameof(value.lastUpdateUnixSeconds));
             }
 
             if (version >= 43)
             {
-                return reader.ReadStructArray(out value.itemStateFlags)
-                    && reader.ReadStructArray(out value.qualityMilli)
-                    && reader.ReadStructArray(out value.lastUpdateUnixSeconds);
+                return reader.ReadStructArrayBounded(out value.itemStateFlags, InventoryDTO.MaxCells, nameof(value.itemStateFlags))
+                    && reader.ReadStructArrayBounded(out value.qualityMilli, InventoryDTO.MaxCells, nameof(value.qualityMilli))
+                    && reader.ReadStructArrayBounded(
+                        out value.lastUpdateUnixSeconds,
+                        InventoryDTO.MaxCells,
+                        nameof(value.lastUpdateUnixSeconds));
             }
 
             value.EnsureCapacity();
@@ -1240,10 +1301,13 @@ namespace Hecton8.SaveSystem
             return true;
         }
 
-        private static bool ReadLegacyUInt32ArrayAsUInt64(ref BufferReader reader, out ulong[] value)
+        private static bool ReadLegacyUInt32ArrayAsUInt64(
+            ref BufferReader reader,
+            out ulong[] value,
+            int maxCount = int.MaxValue)
         {
             value = null;
-            if (!reader.ReadStructArray(out uint[] legacyValues))
+            if (!reader.ReadStructArrayBounded(out uint[] legacyValues, maxCount, "Legacy uint array"))
                 return false;
 
             if (legacyValues == null)
@@ -1262,10 +1326,13 @@ namespace Hecton8.SaveSystem
             return true;
         }
 
-        private static bool ReadLegacyUInt32ArrayAsByte(ref BufferReader reader, out byte[] value)
+        private static bool ReadLegacyUInt32ArrayAsByte(
+            ref BufferReader reader,
+            out byte[] value,
+            int maxCount = int.MaxValue)
         {
             value = null;
-            if (!reader.ReadStructArray(out uint[] legacyValues))
+            if (!reader.ReadStructArrayBounded(out uint[] legacyValues, maxCount, "Legacy uint array"))
                 return false;
 
             if (legacyValues == null)
@@ -1284,10 +1351,13 @@ namespace Hecton8.SaveSystem
             return true;
         }
 
-        private static bool ReadLegacyUInt64ArrayAsByte(ref BufferReader reader, out byte[] value)
+        private static bool ReadLegacyUInt64ArrayAsByte(
+            ref BufferReader reader,
+            out byte[] value,
+            int maxCount = int.MaxValue)
         {
             value = null;
-            if (!reader.ReadStructArray(out ulong[] legacyValues))
+            if (!reader.ReadStructArrayBounded(out ulong[] legacyValues, maxCount, "Legacy ulong array"))
                 return false;
 
             if (legacyValues == null)
@@ -1377,7 +1447,10 @@ namespace Hecton8.SaveSystem
             if (version < 42)
                 return true;
 
-            return reader.ReadStructArray(out value);
+            return reader.ReadStructArrayBounded(
+                out value,
+                SaveData.MaxExternalScavengerSites,
+                nameof(SaveData.externalScavengerSites));
         }
 
         private static bool WriteWorldState(ref BufferWriter writer, WorldStateDTO value)
@@ -1396,13 +1469,25 @@ namespace Hecton8.SaveSystem
         {
             value = default;
             return reader.ReadInt(out value.depletedCount)
-                && ReadStringArray(ref reader, out value.depletedNodeIds)
+                && ReadStringArray(ref reader, out value.depletedNodeIds, WorldStateDTO.MaxNodes, nameof(value.depletedNodeIds))
                 && reader.ReadInt(out value.depletedPickupChunkCount)
-                && reader.ReadStructArray(out value.depletedPickupChunkKeys)
-                && reader.ReadStructArray(out value.depletedPickupChunkWordStarts)
-                && reader.ReadStructArray(out value.depletedPickupChunkWordCounts)
+                && reader.ReadStructArrayBounded(
+                    out value.depletedPickupChunkKeys,
+                    WorldStateDTO.MaxPickupChunks,
+                    nameof(value.depletedPickupChunkKeys))
+                && reader.ReadStructArrayBounded(
+                    out value.depletedPickupChunkWordStarts,
+                    WorldStateDTO.MaxPickupChunks,
+                    nameof(value.depletedPickupChunkWordStarts))
+                && reader.ReadStructArrayBounded(
+                    out value.depletedPickupChunkWordCounts,
+                    WorldStateDTO.MaxPickupChunks,
+                    nameof(value.depletedPickupChunkWordCounts))
                 && reader.ReadInt(out value.depletedPickupWordCount)
-                && reader.ReadStructArray(out value.depletedPickupWords);
+                && reader.ReadStructArrayBounded(
+                    out value.depletedPickupWords,
+                    WorldStateDTO.MaxPickupWords,
+                    nameof(value.depletedPickupWords));
         }
 
         private static bool WriteProceduralWorldState(ref BufferWriter writer, ProceduralWorldStateDTO value)
@@ -1726,7 +1811,10 @@ namespace Hecton8.SaveSystem
 
                 if (version >= 63)
                 {
-                    if (!reader.ReadStructArray(out value.moduleBlitRecords))
+                    if (!reader.ReadStructArrayBounded(
+                        out value.moduleBlitRecords,
+                        ConstructionDTO.MaxModules,
+                        nameof(value.moduleBlitRecords)))
                         return false;
 
                     value.moduleBlitCount = value.moduleBlitRecords != null
@@ -1758,7 +1846,11 @@ namespace Hecton8.SaveSystem
             return reader.ReadInt(out value.entryCount)
                 && ReadScanEntryArray(ref reader, out value.entries)
                 && reader.ReadInt(out value.recentCount)
-                && ReadStringArray(ref reader, out value.recentEntryIds);
+                && ReadStringArray(
+                    ref reader,
+                    out value.recentEntryIds,
+                    ScanLogDTO.MaxRecentEntries,
+                    nameof(value.recentEntryIds));
         }
 
         private static bool WriteBarter(ref BufferWriter writer, BarterDTO value)
@@ -1833,12 +1925,18 @@ namespace Hecton8.SaveSystem
                     && reader.ReadInt(out value.mortonMaskOriginOffset)
                     && reader.ReadUInt(out value.mortonBuildSalt)
                     && reader.ReadInt(out value.exploredMortonByteCount)
-                    && reader.ReadStructArray(out value.exploredMortonMaskBytes)
+                    && reader.ReadStructArrayBounded(
+                        out value.exploredMortonMaskBytes,
+                        ExplorationMapDTO.MortonMaskByteCount,
+                        nameof(value.exploredMortonMaskBytes))
                     && reader.ReadInt(out value.cartographyCellSizeMeters)
                     && reader.ReadInt(out value.cartographyMaskAxisBits)
                     && reader.ReadInt(out value.cartographyMaskOriginOffset)
                     && reader.ReadInt(out value.discoveredSectorByteCount)
-                    && reader.ReadStructArray(out value.discoveredSectorMaskBytes);
+                    && reader.ReadStructArrayBounded(
+                        out value.discoveredSectorMaskBytes,
+                        ExplorationMapDTO.CartographyMaskByteCount,
+                        nameof(value.discoveredSectorMaskBytes));
             }
 
             if (version >= 56)
@@ -1849,7 +1947,10 @@ namespace Hecton8.SaveSystem
                     && reader.ReadInt(out value.mortonMaskOriginOffset)
                     && reader.ReadUInt(out value.mortonBuildSalt)
                     && reader.ReadInt(out value.exploredMortonByteCount)
-                    && reader.ReadStructArray(out value.exploredMortonMaskBytes);
+                    && reader.ReadStructArrayBounded(
+                        out value.exploredMortonMaskBytes,
+                        ExplorationMapDTO.MortonMaskByteCount,
+                        nameof(value.exploredMortonMaskBytes));
             }
 
             if (version >= 52)
@@ -1859,13 +1960,19 @@ namespace Hecton8.SaveSystem
                     && reader.ReadInt(out value.mortonMaskAxisBits)
                     && reader.ReadInt(out value.mortonMaskOriginOffset)
                     && reader.ReadInt(out value.exploredMortonByteCount)
-                    && reader.ReadStructArray(out value.exploredMortonMaskBytes);
+                    && reader.ReadStructArrayBounded(
+                        out value.exploredMortonMaskBytes,
+                        ExplorationMapDTO.MortonMaskByteCount,
+                        nameof(value.exploredMortonMaskBytes));
                 value.mortonBuildSalt = SaveBinaryStorage.ExplorationMortonBuildSalt32;
                 return read;
             }
 
             if (!reader.ReadInt(out value.exploredChunkCount)
-                || !reader.ReadStructArray(out value.exploredChunkKeys))
+                || !reader.ReadStructArrayBounded(
+                    out value.exploredChunkKeys,
+                    ExplorationMapDTO.MaxExploredChunks,
+                    nameof(value.exploredChunkKeys)))
             {
                 return false;
             }
@@ -1884,7 +1991,10 @@ namespace Hecton8.SaveSystem
                 && reader.ReadInt(out value.mortonMaskAxisBits)
                 && reader.ReadInt(out value.mortonMaskOriginOffset)
                 && reader.ReadInt(out value.exploredMortonWordCount)
-                && reader.ReadStructArray(out value.exploredMortonMaskWords);
+                && reader.ReadStructArrayBounded(
+                    out value.exploredMortonMaskWords,
+                    ExplorationMapDTO.MortonMaskWordCount,
+                    nameof(value.exploredMortonMaskWords));
         }
 
         private static bool WritePdaLogbook(ref BufferWriter writer, PDALogbookDTO value)
@@ -1908,9 +2018,16 @@ namespace Hecton8.SaveSystem
             }
 
             if (version >= 54)
-                return reader.ReadStructArray(out value.seenOriginHashes);
+                return reader.ReadStructArrayBounded(
+                    out value.seenOriginHashes,
+                    PDALogbookDTO.MaxSeenOrigins,
+                    nameof(value.seenOriginHashes));
 
-            return ReadStringArray(ref reader, out value.seenOriginKeys);
+            return ReadStringArray(
+                ref reader,
+                out value.seenOriginKeys,
+                PDALogbookDTO.MaxSeenOrigins,
+                nameof(value.seenOriginKeys));
         }
 
         private static bool WritePdaMarkers(ref BufferWriter writer, PDAMarkerRegistryDTO value)
@@ -1959,7 +2076,11 @@ namespace Hecton8.SaveSystem
                 && reader.ReadInt(out value.craftedItemCount)
                 && reader.ReadInt(out value.discoveredBiomeCount)
                 && reader.ReadInt(out value.unlockedCount)
-                && ReadStringArray(ref reader, out value.unlockedIds);
+                && ReadStringArray(
+                    ref reader,
+                    out value.unlockedIds,
+                    AchievementRegistryDTO.MaxUnlockedAchievements,
+                    nameof(value.unlockedIds));
         }
 
         private static bool WriteRunModifiers(ref BufferWriter writer, RunModifiersDTO value)
@@ -2491,7 +2612,8 @@ namespace Hecton8.SaveSystem
                 ref reader,
                 out values,
                 ReadInventoryCell,
-                SerializedIntBytes + SerializedIntBytes + SerializedStringHeaderBytes + SerializedIntBytes);
+                SerializedIntBytes + SerializedIntBytes + SerializedStringHeaderBytes + SerializedIntBytes,
+                InventoryDTO.MaxCells);
         }
 
         private static bool WriteScanEntryArray(ref BufferWriter writer, ScanEntryDTO[] values)
@@ -2501,7 +2623,12 @@ namespace Hecton8.SaveSystem
 
         private static bool ReadScanEntryArray(ref BufferReader reader, out ScanEntryDTO[] values)
         {
-            return ReadCustomArray(ref reader, out values, ReadScanEntry, SerializedStringHeaderBytes * 4);
+            return ReadCustomArray(
+                ref reader,
+                out values,
+                ReadScanEntry,
+                SerializedStringHeaderBytes * 4,
+                ScanLogDTO.MaxEntries);
         }
 
         private static bool WriteBarterOfferStateArray(ref BufferWriter writer, BarterOfferStateDTO[] values)
@@ -2515,7 +2642,8 @@ namespace Hecton8.SaveSystem
                 ref reader,
                 out values,
                 ReadBarterOfferState,
-                SerializedStringHeaderBytes + SerializedIntBytes);
+                SerializedStringHeaderBytes + SerializedIntBytes,
+                BarterDTO.MaxOffers);
         }
 
         private static bool WriteBarterTransactionArray(ref BufferWriter writer, BarterTransactionDTO[] values)
@@ -2525,7 +2653,12 @@ namespace Hecton8.SaveSystem
 
         private static bool ReadBarterTransactionArray(ref BufferReader reader, out BarterTransactionDTO[] values)
         {
-            return ReadCustomArray(ref reader, out values, ReadBarterTransaction, SerializedStringHeaderBytes * 5);
+            return ReadCustomArray(
+                ref reader,
+                out values,
+                ReadBarterTransaction,
+                SerializedStringHeaderBytes * 5,
+                BarterDTO.MaxRecentTransactions);
         }
 
         private static bool WriteFieldOperationEntryArray(ref BufferWriter writer, FieldOperationEntryDTO[] values)
@@ -2535,7 +2668,12 @@ namespace Hecton8.SaveSystem
 
         private static bool ReadFieldOperationEntryArray(ref BufferReader reader, out FieldOperationEntryDTO[] values)
         {
-            return ReadCustomArray(ref reader, out values, ReadFieldOperationEntry, SerializedStringHeaderBytes * 4);
+            return ReadCustomArray(
+                ref reader,
+                out values,
+                ReadFieldOperationEntry,
+                SerializedStringHeaderBytes * 4,
+                FieldOperationLogDTO.MaxRecentEntries);
         }
 
         private static bool WriteBeaconEntryArray(ref BufferWriter writer, BeaconEntryDTO[] values)
@@ -2549,7 +2687,8 @@ namespace Hecton8.SaveSystem
                 ref reader,
                 out values,
                 ReadBeaconEntry,
-                (SerializedStringHeaderBytes * 2) + (SerializedFloatBytes * 12));
+                (SerializedStringHeaderBytes * 2) + (SerializedFloatBytes * 12),
+                BeaconNetworkDTO.MaxEntries);
         }
 
         private static bool WritePdaLogbookEntryArray(ref BufferWriter writer, PDALogbookEntryDTO[] values)
@@ -2569,6 +2708,12 @@ namespace Hecton8.SaveSystem
             if (count < 0)
             {
                 reader.SetError("Collection length is negative.");
+                return false;
+            }
+
+            if (count > PDALogbookDTO.MaxEntries)
+            {
+                reader.SetError(nameof(PDALogbookEntryDTO) + " length exceeds the supported range.");
                 return false;
             }
 
@@ -2614,6 +2759,12 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
+            if (count > PDAMarkerRegistryDTO.MaxEntries)
+            {
+                reader.SetError(nameof(PDAMarkerEntryDTO) + " length exceeds the supported range.");
+                return false;
+            }
+
             if (count == 0)
             {
                 values = Array.Empty<PDAMarkerEntryDTO>();
@@ -2647,7 +2798,8 @@ namespace Hecton8.SaveSystem
                 ref reader,
                 out values,
                 ReadProceduralLorePlacement,
-                (SerializedStringHeaderBytes * 2) + SerializedLongBytes + (SerializedFloatBytes * 3));
+                (SerializedStringHeaderBytes * 2) + SerializedLongBytes + (SerializedFloatBytes * 3),
+                ProceduralLoreStateDTO.MaxActivePlacements);
         }
 
         private static bool WriteModuleArray(ref BufferWriter writer, ModuleDTO[] values)
@@ -2667,6 +2819,12 @@ namespace Hecton8.SaveSystem
             if (count < 0)
             {
                 reader.SetError("Collection length is negative.");
+                return false;
+            }
+
+            if (count > ConstructionDTO.MaxModules)
+            {
+                reader.SetError(nameof(ModuleDTO) + " length exceeds the supported range.");
                 return false;
             }
 
@@ -2714,7 +2872,8 @@ namespace Hecton8.SaveSystem
                 ref reader,
                 out values,
                 ReadModuleGraphNode,
-                SerializedStringHeaderBytes + SerializedIntBytes + (SerializedLongBytes * 3) + (SerializedFloatBytes * 7));
+                SerializedStringHeaderBytes + SerializedIntBytes + (SerializedLongBytes * 3) + (SerializedFloatBytes * 7),
+                ConstructionDTO.MaxModules);
         }
 
         private static bool WriteModuleGraphEdgeArray(ref BufferWriter writer, ModuleGraphEdgeDTO[] values)
@@ -2724,7 +2883,12 @@ namespace Hecton8.SaveSystem
 
         private static bool ReadModuleGraphEdgeArray(ref BufferReader reader, out ModuleGraphEdgeDTO[] values)
         {
-            return ReadCustomArray(ref reader, out values, ReadModuleGraphEdge, SerializedIntBytes * 2);
+            return ReadCustomArray(
+                ref reader,
+                out values,
+                ReadModuleGraphEdge,
+                SerializedIntBytes * 2,
+                ConstructionDTO.MaxGraphEdges);
         }
 
         private static bool WriteStringArray(ref BufferWriter writer, string[] values)
@@ -2747,6 +2911,11 @@ namespace Hecton8.SaveSystem
 
         private static bool ReadStringArray(ref BufferReader reader, out string[] values)
         {
+            return ReadStringArray(ref reader, out values, int.MaxValue, "String array");
+        }
+
+        private static bool ReadStringArray(ref BufferReader reader, out string[] values, int maxCount, string collectionName)
+        {
             values = null;
             if (!reader.ReadInt(out int count))
                 return false;
@@ -2760,13 +2929,19 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
+            if (count > maxCount)
+            {
+                reader.SetError(collectionName + " length exceeds the supported range.");
+                return false;
+            }
+
             if (count == 0)
             {
                 values = Array.Empty<string>();
                 return true;
             }
 
-            if (!reader.CanConsumeCollectionItems(count, SerializedStringHeaderBytes, "String array"))
+            if (!reader.CanConsumeCollectionItems(count, SerializedStringHeaderBytes, collectionName))
                 return false;
 
             values = new string[count];
@@ -3102,6 +3277,21 @@ namespace Hecton8.SaveSystem
             ReadItemDelegate<T> readItem,
             int minimumBytesPerElement)
         {
+            return ReadCustomArray(
+                ref reader,
+                out values,
+                readItem,
+                minimumBytesPerElement,
+                int.MaxValue);
+        }
+
+        private static bool ReadCustomArray<T>(
+            ref BufferReader reader,
+            out T[] values,
+            ReadItemDelegate<T> readItem,
+            int minimumBytesPerElement,
+            int maxCount)
+        {
             values = null;
             if (!reader.ReadInt(out int count))
                 return false;
@@ -3112,6 +3302,12 @@ namespace Hecton8.SaveSystem
             if (count < 0)
             {
                 reader.SetError("Collection length is negative.");
+                return false;
+            }
+
+            if (count > maxCount)
+            {
+                reader.SetError(typeof(T).Name + " length exceeds the supported range.");
                 return false;
             }
 

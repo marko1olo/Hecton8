@@ -15,6 +15,11 @@ $root = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $scope = Join-Path $root 'Assets/_Project/Scripts'
 $regexOptions = [System.Text.RegularExpressions.RegexOptions]::Compiled -bor
     [System.Text.RegularExpressions.RegexOptions]::Multiline
+$codeSurfaceRegexOptions = [System.Text.RegularExpressions.RegexOptions]::Compiled -bor
+    [System.Text.RegularExpressions.RegexOptions]::Singleline
+$codeSurfaceNoiseRegex = [System.Text.RegularExpressions.Regex]::new(
+    '(//[^\r\n]*|/\*.*?\*/|(?:\$*)"{3,}.*?"{3,}|(?:\$@|@\$|@)"(?:""|[^"])*"|\$?"(?:\\.|[^"\\\r\n])*"|''(?:\\.|[^''\\\r\n])*'')',
+    $codeSurfaceRegexOptions)
 
 function New-CounterSet {
     [ordered]@{
@@ -178,7 +183,7 @@ function Remove-UnityEditorBlocks {
     return $builder.ToString()
 }
 
-function ConvertTo-CodeSurface {
+function ConvertTo-CodeSurfaceSlow {
     param([string]$Text)
 
     if ([string]::IsNullOrEmpty($Text)) {
@@ -438,6 +443,45 @@ function ConvertTo-CodeSurface {
     }
 
     return $builder.ToString()
+}
+
+function ConvertTo-MaskedCodeSurface {
+    param([System.Text.RegularExpressions.Match]$Match)
+
+    $value = $Match.Value
+    $builder = [System.Text.StringBuilder]::new($value.Length)
+    for ($i = 0; $i -lt $value.Length; $i++) {
+        $ch = $value[$i]
+        if ($ch -eq [char]13 -or $ch -eq [char]10) {
+            [void]$builder.Append($ch)
+        }
+        else {
+            [void]$builder.Append(' ')
+        }
+    }
+
+    return $builder.ToString()
+}
+
+function ConvertTo-CodeSurface {
+    param([string]$Text)
+
+    if ([string]::IsNullOrEmpty($Text)) {
+        return $Text
+    }
+
+    if ($Text.IndexOf('/') -lt 0 -and
+        $Text.IndexOf('"') -lt 0 -and
+        $Text.IndexOf("'") -lt 0) {
+        return $Text
+    }
+
+    return $codeSurfaceNoiseRegex.Replace(
+        $Text,
+        [System.Text.RegularExpressions.MatchEvaluator]{
+            param([System.Text.RegularExpressions.Match]$match)
+            ConvertTo-MaskedCodeSurface $match
+        })
 }
 
 function Get-DomainName {

@@ -206,4 +206,6 @@ Batch source: Docs/Tasks/CURRENT_BATCH.md
 - DOD: bad previous-frame segment data cannot flow into `floor`, clamp, SDF index, or heightmap index math.
 - Alternative Rejected: relying only on earlier constraint passes because the terrain loop is a separate native indexing boundary.
 - Estimate: under 0.1 us for the lower five terrain-contact segments.
-- Static grep over IK runtime/job/shader scope still found no `m
+- Static grep over IK runtime/job/shader scope still found no `math.sqrt`, `math.normalize`, managed array creation, `foreach`, `string.Format`, `.ToString()`, `Debug.Log`, Unity Physics casts, `SkinnedMeshRenderer`, `renderer.material`, `Camera.main`, `GlobalRegistry.Get`, `GameObject.Find`, or `FindObject`.
+- `git diff --check` and `git diff --cached --check` on touched code/docs exit 0; unstaged output is only LF-to-CRLF warnings.
+- No `dotnet` rebuild, compile, or response-file probe was run.

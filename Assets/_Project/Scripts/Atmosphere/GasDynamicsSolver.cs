@@ -135,7 +135,6 @@ namespace Hecton8.Atmosphere
         private bool _registeredTicks;
         private bool _registeredRegistry;
         private bool _baseAwakeVaultOwned;
-        private bool _baseSignalLanesInitialized;
         private bool _seededStandardAtmosphere;
         private bool _blackBoxDumped;
         private int _roomCount;
@@ -346,8 +345,23 @@ namespace Hecton8.Atmosphere
                 return false;
             }
 
+            int previousStart = 0;
+            int previousEnd = 0;
+            bool knownBase = baseId < _baseCount;
+            if (knownBase && _baseRoomStart.IsCreated && _baseRoomCount.IsCreated)
+            {
+                previousStart = math.clamp(_baseRoomStart[baseId], 0, math.max(0, _roomCount));
+                previousEnd = math.min(_roomCount, previousStart + math.max(0, _baseRoomCount[baseId]));
+            }
+
             int safeRoomStart = math.clamp(roomStart, 0, math.max(0, _roomCount - 1));
             int safeRoomCount = math.clamp(roomCount, 0, math.max(0, _roomCount - safeRoomStart));
+            for (int room = previousStart; room < previousEnd; room++)
+            {
+                if (_roomBaseIndex[room] == baseId)
+                    _roomBaseIndex[room] = 0;
+            }
+
             ConfigureBaseSlot(
                 baseId,
                 safeRoomStart,
@@ -360,6 +374,13 @@ namespace Hecton8.Atmosphere
 
             for (int room = safeRoomStart; room < safeRoomStart + safeRoomCount; room++)
                 _roomBaseIndex[room] = baseId;
+
+            if (!knownBase)
+            {
+                BaseAwakeState[baseId] = 1;
+                _basePlayerInside[baseId] = 0;
+                _baseHibernatedUnscaledTime[baseId] = ResolveUnscaledTimeSeconds();
+            }
 
             _baseCount = math.max(_baseCount, baseId + 1);
             return true;
@@ -722,7 +743,6 @@ namespace Hecton8.Atmosphere
             }
 
             InitializeBaseSlots(safeBaseCapacity, safeRoomCapacity);
-            EnsureBaseSignalLanesInitialized();
             PrewarmQueue(ref _toxicitySignals, ToxicitySignalSoftCapacity);
         }
 
@@ -797,16 +817,6 @@ namespace Hecton8.Atmosphere
             _baseIdleDrawWatts[baseId] = FiniteNonNegativeOrZero(idleDrawWatts);
             _baseLeakRatePerSecond[baseId] = FiniteNonNegativeOrZero(leakRatePerSecond);
             _baseAmbientOxygenKPa[baseId] = FiniteNonNegativeOrZero(ambientOxygenKPa);
-        }
-
-        private void EnsureBaseSignalLanesInitialized()
-        {
-            if (_baseSignalLanesInitialized)
-                return;
-
-            SignalBus<PlayerBaseEnterSignal>.EnsureInitialized();
-            SignalBus<PlayerBaseExitSignal>.EnsureInitialized();
-            _baseSignalLanesInitialized = true;
         }
 
         private void SeedStandardAtmosphereIfNeeded()

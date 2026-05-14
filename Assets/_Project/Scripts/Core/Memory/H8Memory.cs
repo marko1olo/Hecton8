@@ -73,7 +73,6 @@ namespace Hecton8.Core.Memory
         EntityItemHashes = 31,
         EntityQuantities = 32,
         EntityLootMagnetTelemetry = 33,
-        HabitatBaseAwakeState = 34,
         SubmarineFluidCompartmentFloodVolumes = 35,
         SubmarineFluidCompartmentViscosity01 = 36,
         SubmarineFluidCompartmentBaseMaxVolumes = 37,
@@ -101,7 +100,8 @@ namespace Hecton8.Core.Memory
         PlayerKinematicIntendedMovements = 59,
         PlayerKinematicDragSolvedVelocities = 60,
         PlayerKinematicTelemetryRing = 61,
-        PlayerCinematicFocusBlackBox = 62
+        PlayerCinematicFocusBlackBox = 62,
+        HabitatBaseAwakeState = 63
     }
 
     [Flags]
