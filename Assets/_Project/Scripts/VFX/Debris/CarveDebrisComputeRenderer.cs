@@ -1500,7 +1500,7 @@ namespace Hecton8.VFX.Debris
                 int dirtyMax = -1;
                 int flags = JobState[JobStateFlagsIndex];
                 int safeRequestCount = math.min(math.max(0, RequestCount), Requests.Length);
-                int scanStart = 0;
+                int requestedTotal = 0;
 
                 for (int requestIndex = 0; requestIndex < safeRequestCount; requestIndex++)
                 {
@@ -1514,17 +1514,71 @@ namespace Hecton8.VFX.Debris
                         continue;
                     }
 
+                    requestedTotal = math.min(count, requestedTotal + math.clamp(request.ParticlesToInject, 0, count));
+                }
+
+                // GPU advection owns live positions; the CPU upload may only cover one dead contiguous span.
+                int bestStart = -1;
+                int bestLength = 0;
+                int currentStart = -1;
+                int currentLength = 0;
+                for (int i = 0; i < count && bestLength < requestedTotal; i++)
+                {
+                    if (Positions[i].w <= 0f)
+                    {
+                        if (currentLength == 0)
+                            currentStart = i;
+
+                        currentLength++;
+                        if (currentLength > bestLength)
+                        {
+                            bestStart = currentStart;
+                            bestLength = currentLength;
+                        }
+
+                        continue;
+                    }
+
+                    currentStart = -1;
+                    currentLength = 0;
+                }
+
+                if (requestedTotal <= 0 || bestStart < 0 || bestLength <= 0)
+                {
+                    JobState[JobStateActiveIndex] = active;
+                    JobState[JobStateInjectedIndex] = 0;
+                    JobState[JobStateDirtyMinIndex] = dirtyMin;
+                    JobState[JobStateDirtyMaxIndex] = dirtyMax;
+                    JobState[JobStateFlagsIndex] = flags;
+                    return;
+                }
+
+                int writeIndex = bestStart;
+                int writeEnd = math.min(count, bestStart + math.min(bestLength, requestedTotal));
+                for (int requestIndex = 0; requestIndex < safeRequestCount && writeIndex < writeEnd; requestIndex++)
+                {
+                    CarveDebrisRequest request = Requests[requestIndex];
+                    if (!math.all(math.isfinite(request.Center)) ||
+                        !math.isfinite(request.Radius) ||
+                        request.Radius <= 0f ||
+                        request.ParticlesToInject <= 0)
+                    {
+                        continue;
+                    }
+
                     Unity.Mathematics.Random random = new Unity.Mathematics.Random(request.Seed == 0u ? 1u : request.Seed);
                     int requested = math.clamp(request.ParticlesToInject, 0, count);
                     int injectedForRequest = 0;
                     float safeRadius = math.max(0.025f, request.Radius);
                     float safeSpeed = math.max(0f, request.InitialSpeed);
                     float safeLife = math.max(0.001f, request.Life);
-                    int scanIndex = scanStart;
-                    for (; scanIndex < count && injectedForRequest < requested; scanIndex++)
+                    for (; writeIndex < writeEnd && injectedForRequest < requested; writeIndex++)
                     {
-                        if (Positions[scanIndex].w > 0f)
-                            continue;
+                        if (Positions[writeIndex].w > 0f)
+                        {
+                            flags |= (int)InvalidStateFlag;
+                            break;
+                        }
 
                         float3 raw = new float3(
                             random.NextFloat(-1f, 1f),
@@ -1542,18 +1596,14 @@ namespace Hecton8.VFX.Debris
                             continue;
                         }
 
-                        Positions[scanIndex] = new float4(position, safeLife);
-                        Velocities[scanIndex] = new float4(velocity, 0f);
-                        dirtyMin = math.min(dirtyMin, scanIndex);
-                        dirtyMax = math.max(dirtyMax, scanIndex);
+                        Positions[writeIndex] = new float4(position, safeLife);
+                        Velocities[writeIndex] = new float4(velocity, 0f);
+                        dirtyMin = math.min(dirtyMin, writeIndex);
+                        dirtyMax = math.max(dirtyMax, writeIndex);
                         injectedForRequest++;
                         injectedTotal++;
                         active = math.min(count, active + 1);
                     }
-
-                    scanStart = scanIndex;
-                    if (scanStart >= count)
-                        break;
                 }
 
                 JobState[JobStateActiveIndex] = active;

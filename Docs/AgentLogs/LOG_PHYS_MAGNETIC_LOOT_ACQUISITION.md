@@ -297,3 +297,34 @@ Verification:
 
 Final Status:
 - PENDING VERIFICATION.
+
+## 2026-05-15 - Scalability Hysteresis And Capacity Guard Pass
+
+What was wrong:
+- Scalability tier changes could immediately flip low-tier snap behavior and presentation budgets.
+- Runtime capacity edits between SlowTick and FastTick could make scheduling trust authored capacity instead of actual native lane lengths.
+- Serialized pull fields lacked inspector constraints even though runtime clamps existed.
+
+What was done:
+- Cached scalability tier inside the loot magnet and added slow-tick hysteresis before tier changes affect math LOD or presentation budgets.
+- Added a resolved writable-capacity guard from actual vault buffers, event lane, telemetry ring, and sidecar lengths.
+- Scheduling now caches the resolved capacity used by the job, and commit handoff uses that scheduled capacity.
+- Added `[DisallowMultipleComponent]`, serialized field ranges/minimums/tooltips, and XML inheritance docs for tick methods.
+- Stopped externally spawned dotnet build processes again; no dotnet build was started by this agent.
+
+Cinematic Cheats used:
+- Low tier remains the cheap snap/acquire fake after stable downgrade.
+- High/Ultra presentation budgets stay stable after tier upgrade instead of flickering visual density.
+
+Exact Microseconds saved:
+- No profiler claim. The change removes fast-path global tier budget reads and prevents out-of-range native lane faults under capacity churn.
+- Capacity guard is constant-time before scheduling; no per-entity loop cost added.
+
+Verification:
+- User forbade dotnet rebuilds; none were run.
+- `git diff --check` on loot files passed with line-ending warnings only.
+- Static loot anti-bloat scan remains clean for `foreach`, LINQ markers, runtime scene search, `DontDestroyOnLoad`, `math.sqrt`, `math.normalize`, `ToAbsoluteDouble3`, string formatting, and `.ToString()`.
+- Dotnet process query was clean after stopping external spawned builds.
+
+Final Status:
+- PENDING VERIFICATION.

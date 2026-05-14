@@ -127,7 +127,7 @@ namespace Hecton8.UI
     public sealed class DiegeticPanelController : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, ICursorHost, IDepthOcclusionReceiver, IDamageReceiver
     {
         private const string WorldGeometrySortingLayer = "WorldGeometry";
-        private const string PhosphorDecayShaderPath = "Assets/_Project/Art/Shaders/Hidden_Hecton_PDA_PhosphorDecay.shader";
+        private const string DefaultPhosphorDecayMaterialResourcePath = "UI/MAT_DiegeticPanelPhosphorDecay";
         private const float MinCanvasExtent = 0.0001f;
         private const float MaximumInteractionReachMeters = 2f;
         private const float DamageGlitchDecaySharpness = 16f;
@@ -297,6 +297,9 @@ namespace Hecton8.UI
         [SerializeField, Tooltip("Hidden full-screen material shader used to accumulate phosphor decay.")]
         private Shader phosphorDecayShader;
 
+        [SerializeField, Tooltip("Authored full-screen material used to accumulate phosphor decay. Runtime fallback loads Resources/UI/MAT_DiegeticPanelPhosphorDecay.")]
+        private Material phosphorDecayMaterial;
+
         [SerializeField, Range(0.1f, 0.98f), Tooltip("Multiplier applied to the previous PDA frame before adding the current panel frame.")]
         private float phosphorDecay = 0.85f;
 
@@ -371,6 +374,8 @@ namespace Hecton8.UI
         private bool _tickRegistered;
         private bool _lateFrameRegistered;
         private bool _renderPipelineHookRegistered;
+        private bool _phosphorMaterialResolveAttempted;
+        private bool _phosphorMaterialResolveFailed;
         private bool _wasPressedLastFrame;
         private bool _fingerPressedLastFrame;
         private bool _cursorVisible;
@@ -830,6 +835,8 @@ namespace Hecton8.UI
             depthFadeRange = math.max(0.001f, depthFadeRange);
             flashlightGlare = math.saturate(flashlightGlare);
             damageGlitchDurationSeconds = math.clamp(damageGlitchDurationSeconds, 0.02f, 1f);
+            _phosphorMaterialResolveAttempted = false;
+            _phosphorMaterialResolveFailed = false;
 
             RefreshFingertipBindingMask();
             ResolveSerializedReferences(resolveGraphicRaycaster: true);
@@ -1179,20 +1186,8 @@ namespace Hecton8.UI
             if (!enablePhosphorDecay || _panelRenderTexture == null)
                 return;
 
-#if UNITY_EDITOR
-            if (phosphorDecayShader == null)
-                phosphorDecayShader = UnityEditor.AssetDatabase.LoadAssetAtPath<Shader>(PhosphorDecayShaderPath);
-#endif
-            if (phosphorDecayShader == null)
-                phosphorDecayShader = Shader.Find("Hidden/Hecton8/PDA Phosphor Decay");
-
-            if (_phosphorDecayMaterial == null && phosphorDecayShader != null)
-            {
-                _phosphorDecayMaterial = new Material(phosphorDecayShader)
-                {
-                    name = "Runtime_PDA_PhosphorDecay"
-                }; // COLD ALLOC: Material[1] - PDA phosphor decay compositor - owner: DiegeticPanelController
-            }
+            if (!EnsurePhosphorMaterial())
+                return;
 
             if (_phosphorFrontTexture != null &&
                 _phosphorFrontTexture.width == _panelRenderTexture.width &&
@@ -1211,6 +1206,40 @@ namespace Hecton8.UI
             _phosphorFrontTexture = CreatePhosphorTexture(descriptor, "DiegeticPanel_PhosphorFront");
             _phosphorBackTexture = CreatePhosphorTexture(descriptor, "DiegeticPanel_PhosphorBack");
             ApplyMaterialState(forceTextureRefresh: true, forceDepthRefresh: false);
+        }
+
+        private bool EnsurePhosphorMaterial()
+        {
+            if (_phosphorDecayMaterial != null)
+                return true;
+
+            if (_phosphorMaterialResolveFailed)
+                return false;
+
+            if (!_phosphorMaterialResolveAttempted)
+            {
+                _phosphorDecayMaterial = phosphorDecayMaterial != null
+                    ? phosphorDecayMaterial
+                    : Resources.Load<Material>(DefaultPhosphorDecayMaterialResourcePath);
+                _phosphorMaterialResolveAttempted = true;
+            }
+
+            if (_phosphorDecayMaterial == null)
+            {
+                _phosphorMaterialResolveFailed = true;
+                return false;
+            }
+
+            Shader resolvedShader = phosphorDecayShader != null ? phosphorDecayShader : _phosphorDecayMaterial.shader;
+            if (resolvedShader == null || _phosphorDecayMaterial.shader != resolvedShader)
+            {
+                _phosphorDecayMaterial = null;
+                _phosphorMaterialResolveFailed = true;
+                return false;
+            }
+
+            phosphorDecayShader = resolvedShader;
+            return true;
         }
 
         private static RenderTexture CreatePhosphorTexture(RenderTextureDescriptor descriptor, string textureName)
@@ -1252,11 +1281,9 @@ namespace Hecton8.UI
         private void ReleasePhosphorResources()
         {
             ReleasePhosphorTextures();
-            if (_phosphorDecayMaterial != null)
-            {
-                Destroy(_phosphorDecayMaterial);
-                _phosphorDecayMaterial = null;
-            }
+            _phosphorDecayMaterial = null;
+            _phosphorMaterialResolveAttempted = false;
+            _phosphorMaterialResolveFailed = false;
         }
 
         private void ReleasePhosphorTextures()

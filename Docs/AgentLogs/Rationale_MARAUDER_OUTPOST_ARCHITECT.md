@@ -397,7 +397,7 @@ Scalability potential: Low devices skip one indirect draw during rare AUP correc
 Hardware Impact: Two scalar checks on render path, 0 B/frame. Avoids stale GPU data consumption and downstream correction work on i3/MX350-class devices; expected steady cost is below 0.05 us/frame.
 
 Problem: The active instruction still forbids dotnet rebuilds.
-Solution: Verification stayed source-only: targeted render guard scan, forbidden-pattern audit, scoped H-Phi counts, and `git diff --check`.
+Solution: Verification stayed source-only: targeted render guard scan, forbidden-pattern audit, scoped H-Phi counts, `git diff --check`, and `HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json`.
 Rejected Alternatives: Running response-file compiles through `dotnet` was rejected because it violates the active user instruction.
 Scalability potential: Source proof covers all quality tiers; runtime profiler/console proof remains blocked until Unity/compile validation is allowed.
 Hardware Impact: Verification only.

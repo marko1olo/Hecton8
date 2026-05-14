@@ -335,3 +335,56 @@ Verification:
 - Targeted forbidden hot-math scan passed for those same ranges: no `math.normalize`, `math.length(`, `math.distance(`, `.normalized`, `Mathf.Sqrt`, `Math.Sqrt`, `new List<`, `.ToList(`, or `foreach`.
 - `git diff --check` on target source/status/rationale/log files passed; only LF-to-CRLF working-copy warnings were emitted.
 - Dotnet rebuilds were not run because the user explicitly prohibited dotnet rebuilds.
+
+## 2026-05-15 - Threat Service And Nearest-Node Fail-Closed Pass
+
+What was wrong:
+- External threat pulses could write non-finite route-pressure inputs.
+- Artificial-structure registration could store corrupt bounds before later hash guards rejected them.
+- Public flow fallback and abyssal conduit queries could return NaN vectors or index stale managed conduit snapshots.
+- Threat hotspot scanning trusted grid resolution without proving native grid length.
+- Nearest abyssal-node lookup used `_abyssalNavNodeCount` directly against managed snapshots.
+
+What was done:
+- Added finite guards to external threat pulse ingress.
+- Added finite and positive-volume guards to artificial-structure registration.
+- Added finite input/output and managed/native length guards to flow/conduit query APIs.
+- Added complete-grid length, finite metadata, finite distance-band, and finite threat-sample proof to threat hotspot scans.
+- Clamped nearest-node linear/hash lookup count to both managed snapshot length and native snapshot length before indexing.
+
+Cinematic Cheats used:
+- Corrupt route pressure now disappears instead of mutating steering state or attempting expensive repair.
+- Valid Low-tier navigation remains cheap; High/Ultra can still spend route budget on richer threat/conduit visuals after payload proof.
+
+Exact Microseconds saved:
+- PENDING RUNTIME PROFILER DATA. Static gain is fault avoidance: fewer invalid O(N) hotspot scans, no stale-array conduit indexing, and no NaN steering recovery.
+
+Verification:
+- Targeted raw-division scan passed for `VegetationThreatAndStructureService.cs` and nearest-node lookup ranges.
+- Targeted forbidden hot-math/allocation scan passed for those same ranges: no `math.normalize`, `math.length(`, `math.distance(`, `.normalized`, `Mathf.Sqrt`, `Math.Sqrt`, `new List<`, `.ToList(`, or `foreach`.
+- `git diff --check` on touched source files passed; only LF-to-CRLF working-copy warnings were emitted.
+- Dotnet rebuilds were not run because the user explicitly prohibited dotnet rebuilds.
+
+## 2026-05-15 - Flow Sampler Payload Proof
+
+What was wrong:
+- `SampleFlowFieldAtPosition` guarded finite position and cell size, but did not prove the native flow buffer had `resolution * resolution` entries before bilinear reads.
+- Corrupt resolution/cell-size metadata could produce non-finite half extents and plausible-looking local indices.
+
+What was done:
+- Added 64-bit complete-grid length proof before reading the four flow samples.
+- Added finite half-extent proof before local coordinate mapping.
+- Kept the existing dominant-axis output sanitizer so non-finite sampled flow still collapses to zero.
+
+Cinematic Cheats used:
+- Corrupt flow payloads produce no steering influence instead of recovery simulation or fabricated current vectors.
+- Low tier stays O(1); High/Ultra can spend valid flow data on richer current visuals without changing the sampler.
+
+Exact Microseconds saved:
+- PENDING RUNTIME PROFILER DATA. Static gain is fault avoidance before four indexed native reads; no allocations or new containers.
+
+Verification:
+- Targeted raw-division scan passed for `SampleFlowFieldAtPosition`.
+- Targeted forbidden hot-math/allocation scan passed for `SampleFlowFieldAtPosition`.
+- `git diff --check` on touched source/status/rationale/log files passed; only LF-to-CRLF working-copy warnings were emitted.
+- Dotnet rebuilds were not run because the user explicitly prohibited dotnet rebuilds.

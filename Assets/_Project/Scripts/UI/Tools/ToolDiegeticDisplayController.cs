@@ -14,7 +14,7 @@ namespace Hecton8.UI.Tools
     /// Drives a held-tool diegetic status screen from the native tool-state signal lane.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class ToolDiegeticDisplayController : MonoBehaviour, IUpdatable, ISlowTickable, IScalabilityChangedEventListener
+    public sealed class ToolDiegeticDisplayController : MonoBehaviour, IUpdatable, ISlowTickable, IScalabilityChangedEventListener, IGlobalRegistryHotSwapListener
     {
         private const int RenderTextureSize = 256;
         private const int TextBufferCapacity = 96;
@@ -137,6 +137,7 @@ namespace Hecton8.UI.Tools
         private int _toolUiMask;
         private float _slowTickRetrySeconds;
         private bool _registeredSlowTick;
+        private bool _registeredHotSwapListener;
 
         /// <summary>
         /// Last runtime tool hash accepted by this display.
@@ -156,6 +157,7 @@ namespace Hecton8.UI.Tools
             _notRenderableSeconds = 0f;
             _slowTickRetrySeconds = 0f;
             ResolveTierImmediate();
+            TryRegisterHotSwapListener();
             TryRegisterScalabilityListener();
             TryRegisterUpdatable();
             TryRegisterSlowTickable(force: true);
@@ -165,6 +167,7 @@ namespace Hecton8.UI.Tools
 
         private void Start()
         {
+            TryRegisterHotSwapListener();
             TryRegisterUpdatable();
             TryRegisterSlowTickable(force: true);
         }
@@ -174,8 +177,10 @@ namespace Hecton8.UI.Tools
             TryUnregisterUpdatable();
             TryUnregisterSlowTickable();
             TryUnregisterScalabilityListener();
+            TryUnregisterHotSwapListener();
             ApplyCameraRenderState(renderThisFrame: false);
             ReleaseRenderTexture();
+            _cachedRenderTexturePool = null;
             _poolUnavailableFallback = false;
             _poolRetrySeconds = 0f;
             _slowTickRetrySeconds = 0f;
@@ -186,6 +191,30 @@ namespace Hecton8.UI.Tools
         public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
         {
             QueueTierCandidate(payload.CurrentQualityTier);
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.RenderTexturePoolRuntime)
+                return;
+
+            RenderTexturePool newPool = currentService as RenderTexturePool;
+            if (_renderTexture != null &&
+                _renderTextureOwnerPool != null &&
+                !ReferenceEquals(_renderTextureOwnerPool, newPool))
+            {
+                ReleaseRenderTexture();
+                ApplyScreenTexture(_fallbackEmissiveTexture, lowTierFallback: true);
+            }
+
+            _cachedRenderTexturePool = newPool;
+            _poolUnavailableFallback = false;
+            _poolRetrySeconds = 0f;
+            _stateDirty = true;
+            _renderRequested = true;
         }
 
         /// <summary>
@@ -813,6 +842,23 @@ namespace Hecton8.UI.Tools
             GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI);
             _registeredSlowTick = false;
             _slowTickRetrySeconds = 0f;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
         }
 
         private void TryRegisterScalabilityListener()

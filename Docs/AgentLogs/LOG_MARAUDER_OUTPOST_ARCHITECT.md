@@ -516,6 +516,7 @@ Verification:
 - Targeted render guard scan: PASS; `Render` includes `_jobPhase == JobPhase.Shifting` and `_matrixUploadDirty`.
 - Forbidden construct audit: PASS; no raw hash comparison, shader-global/material mutation, global publish wrapper, prefab shell `Instantiate`, `BaseGenerator`, `math.pow`, telemetry modulo, or `foreach` matches in owned outpost files.
 - Scoped H-Phi counts remain `GlobalRegistrySurface=12`, `SignalBusPush=1`, `EventPublish=0`, `StructLayoutAttributes=6`.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json`: PASS; `CoreAsmdefDebtReferenceCount=25`, `GeneratedProjectDebtReferenceCount=10`.
 - `git diff --check`: PASS with repository CRLF warning only.
 - `dotnet` rebuilds/response-file compiles: NOT RUN by explicit user request.
 - Unity MCP console/profiler: unavailable from this session.

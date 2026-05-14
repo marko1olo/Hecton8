@@ -796,7 +796,18 @@ namespace Hecton8.World
                 return float2.zero;
             }
 
+            long expectedLength = (long)resolution * resolution;
+            if (expectedLength <= 0L || expectedLength > int.MaxValue || flowField.Length < expectedLength)
+            {
+                return float2.zero;
+            }
+
             float halfExtent = (resolution - 1) * 0.5f * cellSize;
+            if (!math.isfinite(halfExtent))
+            {
+                return float2.zero;
+            }
+
             float localX = position.x - (gridCenter.x - halfExtent);
             float localZ = position.z - (gridCenter.z - halfExtent);
             if (localX < 0f || localZ < 0f || localX > halfExtent * 2f || localZ > halfExtent * 2f)

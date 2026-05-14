@@ -17,7 +17,7 @@ namespace Hecton8.Atmosphere
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton/Atmosphere/Gas Dynamics Solver")]
-    public sealed class GasDynamicsSolver : MonoBehaviour, IGasDynamicsSolver, IFixedTickable, IPostFixedTickable, IFrostTickable
+    public sealed class GasDynamicsSolver : MonoBehaviour, IGasDynamicsSolver, IUpdatable, IFixedTickable, IPostFixedTickable, IFrostTickable
     {
         private const int MaxRoomCapacity = 128;
         private const int MaxBulkheadCapacity = 256;
@@ -198,6 +198,23 @@ namespace Hecton8.Atmosphere
             DisposeNativeStateDeferred();
         }
 
+        public void Tick(float deltaTime)
+        {
+            if (!Application.isPlaying)
+                return;
+
+            if (!TryFinalizeDeferredNativeDisposal())
+                return;
+
+            if (!IsInitialized)
+                CacheColdDependencies();
+            EnsureNativeState();
+            bool canWake = !_stepRunning;
+            DrainBaseTransitionSignals(canWake);
+            if (canWake)
+                WakePlayerInsideSleepingBases(ResolveUnscaledTimeSeconds());
+        }
+
         public void FixedTick(float fixedDeltaTime)
         {
             if (fixedDeltaTime <= 0f)
@@ -206,6 +223,8 @@ namespace Hecton8.Atmosphere
             if (!TryFinalizeDeferredNativeDisposal())
                 return;
 
+            if (!IsInitialized)
+                CacheColdDependencies();
             EnsureNativeState();
             SeedStandardAtmosphereIfNeeded();
             TryRegisterRegistry();
@@ -215,6 +234,9 @@ namespace Hecton8.Atmosphere
                 return;
             }
 
+            double now = ResolveUnscaledTimeSeconds();
+            DrainBaseTransitionSignals(allowWake: true);
+            WakePlayerInsideSleepingBases(now);
             _lastMathLod = ResolveMathLod(GlobalRegistry.ScalabilityTier);
             _lastCadenceSeconds = ResolveCadenceSeconds(_lastMathLod);
             _tickAccumulator += math.max(0f, fixedDeltaTime);
@@ -239,9 +261,12 @@ namespace Hecton8.Atmosphere
             if (!TryFinalizeDeferredNativeDisposal() || !TryCompleteStep())
                 return;
 
+            if (!IsInitialized)
+                CacheColdDependencies();
             EnsureNativeState();
             SeedStandardAtmosphereIfNeeded();
-            DrainBaseTransitionSignals();
+            DrainBaseTransitionSignals(allowWake: true);
+            WakePlayerInsideSleepingBases(ResolveUnscaledTimeSeconds());
             ResolveBaseHibernationStates();
         }
 
@@ -629,11 +654,14 @@ namespace Hecton8.Atmosphere
             if (_registeredTicks)
                 return;
 
+            bool updateRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
             bool fixedRegistered = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Environment);
             bool postFixedRegistered = GlobalRegistry.TryRegisterPostFixedTickable(this, PriorityLayer.Environment);
             bool frostRegistered = GlobalRegistry.TryRegisterFrostTickable(this, PriorityLayer.Environment);
-            if (!fixedRegistered || !postFixedRegistered || !frostRegistered)
+            if (!updateRegistered || !fixedRegistered || !postFixedRegistered || !frostRegistered)
             {
+                if (updateRegistered)
+                    GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
                 if (fixedRegistered)
                     GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
                 if (postFixedRegistered)
@@ -651,6 +679,7 @@ namespace Hecton8.Atmosphere
             if (!_registeredTicks)
                 return;
 
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
             GlobalRegistry.UnregisterPostFixedTickable(this, PriorityLayer.Environment);
             GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
             GlobalRegistry.UnregisterFrostTickable(this, PriorityLayer.Environment);
@@ -930,16 +959,20 @@ namespace Hecton8.Atmosphere
             return true;
         }
 
-        private void DrainBaseTransitionSignals()
+        private void DrainBaseTransitionSignals(bool allowWake)
         {
             if (!BaseAwakeState.IsCreated || _baseCapacityLimit <= 0)
                 return;
 
-            double now = ResolveUnscaledTimeSeconds();
-            ReadOnlySpan<PlayerBaseExitSignal> exitSignals = SignalBus<PlayerBaseExitSignal>.GetFrameSnapshot();
-            for (int i = 0; i < exitSignals.Length; i++)
+            if (SignalBus<PlayerBaseExitSignal>.SnapshotCount <= 0 &&
+                SignalBus<PlayerBaseEnterSignal>.SnapshotCount <= 0)
             {
-                PlayerBaseExitSignal signal = exitSignals[i];
+                return;
+            }
+
+            double now = ResolveUnscaledTimeSeconds();
+            while (SignalBus<PlayerBaseExitSignal>.TryReadFrame(out PlayerBaseExitSignal signal))
+            {
                 if (!TryEnsureBaseSlotFromSignal(signal.BaseId, signal.RoomId, in signal.BaseCenterAup))
                     continue;
 
@@ -955,10 +988,8 @@ namespace Hecton8.Atmosphere
             }
 
             // Enter wins over exit for same-frame module-to-module trigger handoffs.
-            ReadOnlySpan<PlayerBaseEnterSignal> enterSignals = SignalBus<PlayerBaseEnterSignal>.GetFrameSnapshot();
-            for (int i = 0; i < enterSignals.Length; i++)
+            while (SignalBus<PlayerBaseEnterSignal>.TryReadFrame(out PlayerBaseEnterSignal signal))
             {
-                PlayerBaseEnterSignal signal = enterSignals[i];
                 if (!TryEnsureBaseSlotFromSignal(signal.BaseId, signal.RoomId, in signal.BaseCenterAup))
                     continue;
 
@@ -970,7 +1001,25 @@ namespace Hecton8.Atmosphere
 
                 _basePlayerInside[signal.BaseId] = 1;
                 _baseCenterAup[signal.BaseId] = signal.BaseCenterAup;
-                WakeBase(signal.BaseId, now);
+                if (allowWake)
+                    WakeBase(signal.BaseId, now);
+            }
+        }
+
+        private void WakePlayerInsideSleepingBases(double now)
+        {
+            if (_stepRunning ||
+                !BaseAwakeState.IsCreated ||
+                !_basePlayerInside.IsCreated ||
+                _baseCount <= 0)
+            {
+                return;
+            }
+
+            for (int baseId = 0; baseId < _baseCount; baseId++)
+            {
+                if (_basePlayerInside[baseId] != 0 && BaseAwakeState[baseId] == 0)
+                    WakeBase(baseId, now);
             }
         }
 

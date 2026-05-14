@@ -1550,6 +1550,7 @@ namespace Hecton8.Physics
         private void OnEnable()
         {
             EnsurePrebakedVectorNoiseField();
+            _simulationBucketer = GlobalRegistry.SimulationBucketer;
 
             if (Application.isPlaying && !_fluidRuntimeRegistered)
             {
@@ -1633,6 +1634,7 @@ namespace Hecton8.Physics
             DisposePrebakedVectorNoiseField();
             DisposeNativeArrays();
             DisposeFluidAdvectionState();
+            _simulationBucketer = null;
         }
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
@@ -1779,6 +1781,7 @@ namespace Hecton8.Physics
             DisposePrebakedVectorNoiseField();
             DisposeNativeArrays();
             DisposeFluidAdvectionState();
+            _simulationBucketer = null;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -5874,12 +5877,6 @@ namespace Hecton8.Physics
         private void ResolveAbyssalFlowBucketUniforms(out int updateBucket, out int updateBucketMask)
         {
             ISimulationBucketer bucketer = _simulationBucketer;
-            if (bucketer == null || !bucketer.IsInitialized)
-            {
-                bucketer = GlobalRegistry.SimulationBucketer;
-                _simulationBucketer = bucketer;
-            }
-
             int frameCount = bucketer != null && bucketer.IsInitialized
                 ? bucketer.CurrentFrameCount
                 : Time.frameCount;

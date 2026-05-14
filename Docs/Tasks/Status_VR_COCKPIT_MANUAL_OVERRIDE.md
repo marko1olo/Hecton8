@@ -190,6 +190,11 @@ Execution lane: SIMULATION / `PriorityLayer.Player`
 - [x] Dispatcher rebinding unregisters before re-registering. DOD: `OnGlobalRegistryServiceReplaced(GlobalRegistryServiceSlot.Dispatcher, ...)` now calls `TryUnregisterTick()` instead of blindly clearing `_registeredTick`; if a replacement dispatcher exists, lifecycle native state is ensured and normal guarded registration runs. Rejected: setting the local flag false while the lever could still be present in static dispatcher/GlobalRegistry buckets. Estimate: cold hot-swap only; prevents stale player-lane entries and missed teardown.
 - [x] Reverification without dotnet. DOD: `git diff --check` passed with CRLF warnings only; scoped forbidden-pattern counter reports `ForbiddenPatternTotal=0`; source counter reports `DispatcherHotSwapUnregister=1`, `BlindRegisteredTickFalse=0`, `LatchRefreshBeforeBlackbox=1`, `DotnetMention=0`. Rejected: dotnet rebuild/probe by explicit user instruction. Estimate: verification only.
 
+## Loop 29 - Stale Lifecycle Unregister Recovery
+
+- [x] Receiver unregister tolerates flag drift. DOD: `TryUnregisterReceiver()` now uses the cached registered collider as the source of truth, unregisters it when present even if `_receiverRegistered` was already false, and still clears local state if the flag was true but the collider cache was lost. Rejected: trusting the boolean guard alone after dispatcher hot-swap already proved local lifecycle flags can drift. Estimate: cold lifecycle only; no steady-frame cost.
+- [x] Tick unregister is idempotent. DOD: `TryUnregisterTick()` always calls `GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player)` and then clears `_registeredTick`, so disable/latch/hot-swap teardown cannot skip cleanup because of a stale local flag. Rejected: flag-gated unregister because it preserves stray player-lane entries after any flag corruption. Estimate: cold fixed-bucket scan only; prevents permanent inert ticks.
+
 STATUS: PENDING VERIFICATION - Unity editor/global Core compile dependency wall prevents full player compile proof in this session.
 
 ## Compile Attempts

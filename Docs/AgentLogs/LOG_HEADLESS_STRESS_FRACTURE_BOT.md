@@ -306,3 +306,36 @@ Verification:
 - `git diff --check`: PASS for whitespace on the QA runner, editor runner, and owned status/rationale/log files; Git emitted LF-to-CRLF normalization warnings on the owned markdown files only.
 - No `dotnet` rebuild was run.
 - Full Unity/editor/player execution remains PENDING VERIFICATION because no Unity MCP/editor session is available in this tool context.
+
+## 2026-05-15 - Hot-Path Memory Telemetry Cadence Addendum
+Status: PENDING VERIFICATION
+Evidence Class: CLI_COMPILE_PLUS_STATIC_SOURCE
+
+What was wrong:
+- `FastTick` still called the service-cache helper, leaving a hot-path registry-refresh shape even though most reads short-circuited after startup.
+- The blackbox refreshed memory counters every frame. That gave dense data but spent repeated static counter/property reads where a bounded cadence plus forced event samples is enough for postmortem evidence.
+- Result artifacts did not state the memory-sample cadence or which flag bit marks fresh memory samples.
+
+What was done:
+- Removed the `FastTick` call to `CacheServices`; service refresh now remains in startup and `ColdTick`.
+- Added a cached `MemorySnapshot` path for blackbox frame records. Routine frame entries refresh every 30 extreme frames; non-frame events force a fresh sample.
+- Added bit 6, `blackboxFlagMemorySampleFreshBit`, to mark entries that carry fresh memory data.
+- Result JSON now writes `blackboxMemorySnapshotIntervalFrames` and `blackboxFlagMemorySampleFreshBit`.
+
+Cinematic Cheats used:
+- Kept memory diagnostics as a sampled blackbox signal instead of adding heavier profiler or runtime instrumentation to the headless stress loop.
+
+Exact Microseconds saved:
+- Default 50,000-frame run: routine memory snapshot reads drop from 50,000 to roughly 1,667, plus forced event records.
+- Estimated saved work: 29 static memory-counter/property read groups per 30 frames; profiler proof absent, so this remains a static estimate.
+- Hot-path managed allocation remains static-audit 0 B.
+
+Verification:
+- Focused static audit: PASS for both Race Condition Hunter files; no contiguous scene search, component lookup, Unity `Update` method signature, LINQ `foreach`, coroutine, `Task<`, `.Complete()`, explicit GC, managed collection creation, `string.Format`, or `Substring` parser usage.
+- Scoped QA/headless source count: `SignalBusPush=3`, `GlobalSignalsPublish=4`, `GlobalRegistryDot=13`, `GlobalRegistryIdentifierTokens=18`, `StructLayoutAttributes=3`, `StructDeclarations=3`, `FindObjectCalls=0`, `GetComponentCalls=0`, `UnityUpdateMethods=0`, `FastTickRegistryRefresh=0`, `MemorySnapshotIntervalFields=1`.
+- Runtime isolated Unity compiler probe: PASS via Unity Mono/Roslyn with UnityJIT facades, Unity modules, current `Library/ScriptAssemblies`, and `Assembly-CSharp.dll`.
+- Editor runner isolated Unity compiler probe: PASS with `UNITY_EDITOR` defined, Unity editor facade, and `Assembly-CSharp.dll`.
+- `git diff --check`: PASS for whitespace on the QA runner/editor runner/status/rationale/log files; Git emitted LF-to-CRLF normalization warning on the touched runtime C# file only.
+- No temp `HeadlessStressFracture*MemoryCadence*.dll` probe artifacts remain.
+- No `dotnet` rebuild was run.
+- Full Unity/editor/player execution remains PENDING VERIFICATION because no Unity MCP/editor session is available in this tool context.

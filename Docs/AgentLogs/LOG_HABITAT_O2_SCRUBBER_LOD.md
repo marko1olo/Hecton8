@@ -136,3 +136,35 @@ Decision:
 
 Exact microseconds saved:
 - None claimed. This was audit evidence, not runtime work. No dotnet rebuild was run.
+
+## 2026-05-15 - Signal Drain Reliability Addendum
+STATUS: PENDING VERIFICATION
+
+What was wrong:
+- Base transition signals lived in frame snapshots, but gas consumed them only on FrostTick. The dispatcher clears snapshots every frame.
+
+What was done:
+- `GasDynamicsSolver` now registers as `IUpdatable`.
+- Per-frame `Tick` drains base transition snapshots destructively with `SignalBus.TryReadFrame`.
+- Wake catch-up runs only when the gas step is not active; otherwise inside state is retained and wake occurs after the step completes.
+
+Cinematic Cheats used:
+- None new.
+
+Exact microseconds saved:
+- No saving claimed. Empty-case cost is two snapshot-count checks per frame; this buys deterministic signal capture. No dotnet rebuild was run.
+
+## 2026-05-15 - Deferred Re-enable Addendum
+STATUS: PENDING VERIFICATION
+
+What was wrong:
+- A solver re-enable during deferred disposal could reach tick-created native state without fresh cached dependencies.
+
+What was done:
+- Tick, FixedTick, and FrostTick refresh cold dependencies before native state creation when `IsInitialized` is false.
+
+Cinematic Cheats used:
+- None new.
+
+Exact microseconds saved:
+- No frame saving claimed. This protects H-Phi `BaseAwakeState` allocation from falling back locally after a deferred disposal edge case. No dotnet rebuild was run.

@@ -22,7 +22,7 @@ Hardware Impact: Estimated low-end gain is proportional to sleeping base count; 
 ## Decision 1 - Signals Instead Of Concrete Habitat Hooks
 Problem: Base entry/exit ownership is outside the gas solver and other agents may rewrite airlocks/modules.
 Solution: Added typed unmanaged `PlayerBaseEnterSignal` and `PlayerBaseExitSignal` lanes, then consumed snapshots from `GasDynamicsSolver.FrostTick`.
-Rejected Alternatives: Direct `BaseAirlock` or `BaseModule` references were rejected because they would violate batch parallelism and create fragile compile dependencies. C# events were rejected because managed delegates are the wrong channel for a zero-GC runtime signal.
+Rejected Alternatives: Direct gas-side `BaseAirlock` or `BaseModule` polling was rejected because it would violate batch parallelism and create fragile compile dependencies. C# events were rejected because managed delegates are the wrong channel for a zero-GC runtime signal.
 Scalability potential: Low/MX350 reads at FrostTick only. Middle keeps 500m hibernation. High/Ultra can spend saved gas CPU on richer alarm/HUD presentation rather than more gas truth.
 Hardware Impact: Estimated 1-3us saved per transition batch compared with managed observer fanout; exact profiler proof absent.
 
@@ -130,3 +130,17 @@ Solution: Ran the source-only H-Phi summary script. It completed on the longer r
 Rejected Alternatives: Migrating all Dalton pressure arrays to DataVault in this pass was rejected because those arrays are swapped by jobs and require a wider generation/alias contract. Claiming H-Phi improvement from the timed-out first script run was rejected.
 Scalability potential: Current H-Phi win is narrow but real: power and gas share the awake mask without copies. Full gas-array sovereignty is a separate architecture pass.
 Hardware Impact: No additional runtime impact from the audit. Avoided an unverified high-risk memory ownership churn.
+
+## Self-Review 12 - Frame Snapshot Drain Reliability
+Problem: `GlobalSignals` snapshots are flushed and cleared every frame, while `IFrostTickable` runs on a slower cadence. A base transition could be published and cleared before `GasDynamicsSolver.FrostTick` observed it.
+Solution: Registered the gas solver as `IUpdatable` and switched transition draining to `SignalBus.TryReadFrame` so the per-frame dispatcher path consumes each packet once. If a gas step is running, the signal still updates inside-count state but wake catch-up is deferred until the step is complete.
+Rejected Alternatives: Keeping FrostTick-only signal consumption was rejected after reading `SystemDispatcher.Update` ordering. Polling `BaseModule` from gas was rejected for domain coupling. Forcing job completion on transition was rejected because base entry should not introduce a sync stall.
+Scalability potential: Low through Ultra pay two snapshot count checks per frame and packet work only when transitions exist.
+Hardware Impact: Negligible frame cost in the empty case; avoids lost wake events without blocking the job system.
+
+## Self-Review 13 - Deferred Re-enable Dependency Cache
+Problem: If `OnEnable` exits early while deferred native disposal is still finalizing, the next tick can create native state before `_dataVault`, `_tickDispatcher`, and movement contracts are recached.
+Solution: Tick, FixedTick, and FrostTick now refresh cold dependencies before `EnsureNativeState` whenever the solver is not initialized.
+Rejected Alternatives: Polling dependencies every frame was rejected. Moving fallback buffers into DataVault after allocation was rejected because ownership migration during live jobs is a separate contract.
+Scalability potential: Low through Ultra preserve the H-Phi `BaseAwakeState` path after re-enable instead of accidentally taking the local fallback.
+Hardware Impact: One cold registry refresh on uninitialized re-entry only; no steady-state frame cost.

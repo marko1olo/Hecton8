@@ -367,3 +367,22 @@ Solution: Ran source-only checks: `git diff --check`, fixed-symbol scans, method
 Rejected Alternatives: Running dotnet build/rebuild would violate explicit user order; claiming Unity compile or profiler status without Editor console/MCP data would be false.
 Scalability potential: Verification only.
 Hardware Impact: Verification only.
+
+## LOOP 19 SPATIAL AUDIO SCALABILITY EVENT H-PHI PASS
+Problem: `SpatialAudioManager` still used `RefreshSpatialAudioPolicyIfStale` to poll `GlobalRegistry.ScalabilityTier` and `GlobalRegistry.H8_LOW_MEMORY_PROFILE` on a 30-frame cadence from portal policy and virtual voice limit paths. The cadence was bounded, but it remained hidden registry work in central spatial audio.
+Solution: Converted `SpatialAudioManager` to `IScalabilityChangedEventListener`. `InitializeService` and initialized `OnEnable` cold-seed policy through `RefreshSpatialAudioPolicyCold()`, `OnScalabilityChanged` updates the cached tier from the typed event lane, and hot policy reads route through `EnsureSpatialAudioPolicyCached()` with no registry access.
+Rejected Alternatives: Leaving the 30-frame policy poll would continue H-Phi debt in the central audio service; folding optional player/weather/acoustic-zone lookups into the same change would overreach because those services have no shared scalability event; hot fallback registry reads would violate the exact policy being fixed.
+Scalability potential: Low/MX350 keeps virtual physical voice limits, low-memory muffle, and disabled portal overkill through cached policy. Middle/High/Ultra keep portal pathing and richer spatial virtualization without spending lookup budget every cadence window. Toaster path defaults to Unknown/low-memory true if bootstrap order is wrong; high-end path gets the event-updated tier after registration.
+Hardware Impact: Saves two registry reads every previous 30-frame spatial policy refresh window after warmup, plus removes hidden lookup spikes from virtual voice and portal policy paths. Runtime allocation remains 0 B/frame; added work is one event registration and one cache write on scalability changes.
+
+Problem: Spatial smoke coverage still described quality policy as cadence-gated.
+Solution: Updated `AdvancedAcousticsSmokeTester` to assert spatial scalability event registration, cold-only `GlobalRegistry.ScalabilityTier`/`H8_LOW_MEMORY_PROFILE` seeding, and no registry read in `EnsureSpatialAudioPolicyCached()`. Existing method-body guards still cover portal policy, voice-limit policy, listener AUP, water-density, weather target, and wind occlusion paths.
+Rejected Alternatives: Manual-only source review, or runtime Editor tests without a Unity MCP session.
+Scalability potential: Editor-only guard; protects both cheap low-tier virtualization and high-tier portal/pathing overkill from future lookup creep.
+Hardware Impact: 0 us runtime in player builds.
+
+Problem: Compile/profiler proof remains unavailable under the user's no-dotnet-rebuild order and missing Unity MCP resources.
+Solution: Ran source-only checks: `git diff --check`, fixed-symbol scans, method-body registry counters, and scoped forbidden-API scans. Old source symbols `SpatialAudioPolicyRefreshFrames` and `RefreshSpatialAudioPolicyIfStale` are absent. Method-body counters are `EnsureSpatialPolicyRegistry=0`, `ColdSpatialPolicyRegistry=2`, `ResolveCachedTierRegistry=0`, `ResolveCachedLowMemoryRegistry=0`, `VoiceLimitPolicyRegistry=0`, `PortalPolicyRegistry=0`.
+Rejected Alternatives: Running dotnet build/rebuild would violate explicit user order; claiming Unity compile or profiler status without Editor console/MCP data would be false.
+Scalability potential: Verification only.
+Hardware Impact: Verification only.

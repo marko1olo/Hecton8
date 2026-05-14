@@ -2,7 +2,7 @@
 
 Agent: INTEGRATION_ASSEMBLY_SURGEON
 Domain: Unity Compilation Graph / Integrator
-Status: BUILD SUCCESSFUL / POST-GREEN STATIC H-PHI HARDENED (Fresh12 retained; no dotnet command run in this post-green pass)
+Status: BUILD SUCCESSFUL / PLATINUM GRADE (Fresh19: Hecton8.Core --no-restore 0 warnings / 0 errors)
 
 ## Decision 0 - Session Initialization
 
@@ -127,10 +127,10 @@ Hardware Impact: Runtime impact 0 us. Static bridge graph after cleanup: 19 sour
 ## Decision 15 - Fresh XML Compile Authority Restored
 
 Problem: Disk history still contained a stale no-dotnet continuation, but the current in-chat XML ordered `dotnet build Hecton8.Core.csproj --no-restore` and made this agent final compile authority.
-Solution: Treated the current XML as the active directive, preserved older state as history, and used file-backed logs for every compile pass. `Fresh01` captured 79 filtered compiler entries; `Fresh12` closed at 0 warnings and 0 errors.
+Solution: Treated the current XML as the active directive, preserved older state as history, and used file-backed logs for every compile pass. `Fresh01` captured 79 filtered compiler entries; `Fresh19` closed current disk state at 0 warnings and 0 errors.
 Rejected Alternatives: Reusing old green logs was rejected by QA evidence law. Ignoring the current XML because older status said no-dotnet was rejected because the current user directive is newer and explicit.
 Scalability potential: Low tier benefits from a smaller deterministic Core medic lane; Middle/High/Ultra package-heavy visual assemblies remain referenced through Unity-built outputs instead of being rebuilt as part of this emergency lane.
-Hardware Impact: Runtime impact 0 us on i3/MX350 and high-end machines. Compile verification cost measured in `Fresh12`: 105,610,000 us.
+Hardware Impact: Runtime impact 0 us on i3/MX350 and high-end machines. Final compile verification cost measured in `Fresh19`: 81,710,000 us.
 
 ## Decision 16 - Source-Backed Project Output Translation
 
@@ -159,10 +159,18 @@ Hardware Impact: Expected low-end gain versus forced polling is small but real; 
 ## Decision 19 - Final Evidence Boundary
 
 Problem: The final status required 0 warnings and 0 errors while concurrent processes and an invalid blank `Fresh10` run created unreliable artifacts.
-Solution: Re-ran with build servers disabled, one worker, no restore, and MSBuild file logging. Accepted only `Fresh12`, which reports `Hecton8.Core -> Temp\bin\Debug\Hecton8.Core.dll`, `Build succeeded`, `0 Warning(s)`, `0 Error(s)`.
+Solution: Re-ran with build servers disabled, one worker, no restore, and direct log capture. Accepted only `Fresh19` as current-disk proof after concurrent edits; it reports `Hecton8.Core -> Temp\bin\Debug\Hecton8.Core.dll`, `Build succeeded`, `0 Warning(s)`, `0 Error(s)`.
 Rejected Alternatives: Treating blank logs or partial MSBuild diagnostic logs as final evidence was rejected. Running a broad Unity/player validation was rejected because the current objective was Core compile authority, not runtime QA.
 Scalability potential: Low/Middle/High/Ultra runtime tiers are unchanged; compile evidence is now reproducible for the Core medic lane.
-Hardware Impact: Runtime impact 0 us. Final compile verification time: 105,610,000 us. Exact runtime microseconds saved: 0 us.
+Hardware Impact: Runtime impact 0 us. Final compile verification time: 81,710,000 us. Exact runtime microseconds saved: 0 us.
+
+## Decision 21 - Concurrent Edit Revalidation
+
+Problem: After `Fresh12` succeeded, concurrent edits touched PDA/audio/save surfaces. Fresh verification then exposed a missing audio scalability listener, a duplicate listener during concurrent repair, and bounded save write helper drift.
+Solution: Preserved the richer concurrent `PlayerCriticalProceduralAudioRenderer.OnScalabilityChanged` implementation, removed the duplicate thin method, added a no-params-allocation `ClampPairedCollectionCount`, and added counted custom-array write overloads that route through `WriteCustomArraySlice`.
+Rejected Alternatives: Reverting concurrent edits was rejected. Changing read-side save format was rejected because existing readers already expect DTO counts plus array lengths. Using `params Array[]` for paired clamp was rejected because it would allocate on the save path.
+Scalability potential: Low tier retains bounded save serialization and cached audio quality updates; Middle/High/Ultra retain richer audio scalability behavior from the concurrent implementation.
+Hardware Impact: Runtime frame savings are not profiled and are reported as 0 us. The clamp/overloads avoid new managed allocations; final compile verification time was 81,710,000 us.
 
 ## Decision 20 - Optional Core Reference Candidate Scan
 

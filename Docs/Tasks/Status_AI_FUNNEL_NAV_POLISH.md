@@ -162,11 +162,18 @@ Task Count: 15
 - [x] Nearest-node count clamp | DOD: nearest-node linear and hash lookup now clamp `_abyssalNavNodeCount` to both managed snapshot length and native snapshot length before indexing; rejected assuming snapshot count stayed coherent under failed rebuilds; estimate 5 us.
 - [x] Service/hash static scan | DOD: `VegetationThreatAndStructureService.cs` and nearest-node ranges report no raw float division or forbidden hot-math/allocation matches after loop 21; estimate 5 us.
 
+## Loop 22 - Flow Sampler Payload Proof
+
+- [x] Flow-field complete-grid proof | DOD: shared flow-field sampler now requires 64-bit `resolution * resolution` length proof before bilinear native reads; rejected trusting created native array plus resolution metadata; estimate 4 us.
+- [x] Flow-field finite extent proof | DOD: sampler rejects non-finite half-extent before local coordinate mapping; rejected allowing corrupt cell size/resolution to fabricate indices; estimate 3 us.
+- [x] Flow sampler static scan | DOD: targeted flow sampler range reports no raw float division or forbidden hot-math/allocation matches after loop 22; estimate 3 us.
+
 ## Verification
 
 - [x] Static scan | PASS: `StringPullPathJob`, `NativeAStarJob`, `TryResolveAbyssalNavNodeCandidate`, abyssal nav support/hash, nav graph ingress, and funnel telemetry conversion regions have no `math.normalize`, `math.length(`, `math.distance(`, `.normalized`, or raw `/` code matches after loop 19.
 - [x] Bridge targeted scan | PASS: flow-volume, threat metadata, threat chunk hash, artificial-structure hash, threat sampler, and echo sampler ranges in `HectonMapMagicVegetationBridge.cs` have no raw float-division or forbidden hot-math matches after loop 20.
 - [x] Threat-service targeted scan | PASS: `VegetationThreatAndStructureService.cs` and nearest-node lookup ranges in `VegetationNavGridSynchronizer.cs` have no raw float-division or forbidden hot-math/allocation matches after loop 21.
+- [x] Flow sampler targeted scan | PASS: `SampleFlowFieldAtPosition` range has no raw float-division or forbidden hot-math/allocation matches after loop 22.
 - [x] Diff hygiene | PASS: `git diff --check` passed for edited funnel/scheduler/status/log files; only LF-to-CRLF working-copy warnings were emitted.
 - [x] Static H-Phi audit | ATTEMPTED: `Tools/Architecture/HectonPhiAudit.ps1 -Json` timed out after 120 seconds under current repo load; no score claimed from this pass.
 - [x] Compile check | BLOCKED BY DEPENDENCY: bounded no-reference `dotnet build Hecton8.Core.csproj --no-restore /m:1 /nr:false /p:BuildProjectReferences=false` completed with 63 unrelated errors in `VRAMEnforcer`, `VoxelDeltaProcessor`, `SealedDoor`, `BinaryLayoutManifest`, and `HardwareTierDetector`; none were reported in `VegetationFlowFieldIntegrator.cs`, `VegetationNavGridSynchronizer.cs`, or `HectonMapMagicVegetationBridge.cs`.

@@ -153,7 +153,17 @@ float3 H8UberNoirSafeNormalize(float3 value, float3 fallbackValue)
     if (!isfinite(lenSq) || lenSq <= H8_UBER_NOIR_EPS)
         return fallbackValue;
 
+#if defined(_MATH_LOD_LOW)
+    float3 absValue = abs(value);
+    float3 axisX = float3(value.x < 0.0 ? -1.0 : 1.0, 0.0, 0.0);
+    float3 axisY = float3(0.0, value.y < 0.0 ? -1.0 : 1.0, 0.0);
+    float3 axisZ = float3(0.0, 0.0, value.z < 0.0 ? -1.0 : 1.0);
+    return absValue.x >= absValue.y && absValue.x >= absValue.z
+        ? axisX
+        : (absValue.y >= absValue.z ? axisY : axisZ);
+#else
     return value * H8UberNoirSafeRsqrt(lenSq);
+#endif
 }
 
 half3 H8UberNoirSafeNormalizeHalf(half3 value, half3 fallbackValue)
@@ -162,7 +172,17 @@ half3 H8UberNoirSafeNormalizeHalf(half3 value, half3 fallbackValue)
     if (!isfinite(lenSq) || lenSq <= (half)H8_UBER_NOIR_EPS)
         return fallbackValue;
 
+#if defined(_MATH_LOD_LOW)
+    half3 absValue = abs(value);
+    half3 axisX = half3(value.x < 0.0h ? -1.0h : 1.0h, 0.0h, 0.0h);
+    half3 axisY = half3(0.0h, value.y < 0.0h ? -1.0h : 1.0h, 0.0h);
+    half3 axisZ = half3(0.0h, 0.0h, value.z < 0.0h ? -1.0h : 1.0h);
+    return absValue.x >= absValue.y && absValue.x >= absValue.z
+        ? axisX
+        : (absValue.y >= absValue.z ? axisY : axisZ);
+#else
     return value * (half)H8UberNoirSafeRsqrt((float)lenSq);
+#endif
 }
 
 float H8UberNoirTriangle01(float value)
@@ -207,8 +227,12 @@ half H8UberNoirBlueNoise(float4 positionCS)
 
 void H8UberNoirClipDitheredTransparency(half alpha, float4 positionCS)
 {
-    half featureMask = (half)step(0.5, _UberNoirFeatureFlags.w);
-    half threshold = lerp((half)_Cutoff, H8UberNoirBlueNoise(positionCS), featureMask);
+    half threshold = (half)_Cutoff;
+#if !defined(_MATH_LOD_LOW)
+    [branch]
+    if (_UberNoirFeatureFlags.w >= 0.5)
+        threshold = H8UberNoirBlueNoise(positionCS);
+#endif
     half coverage = saturate(alpha * (half)max(_UberNoirDitherParams.w, 0.0));
     clip(coverage - threshold);
 }
@@ -301,6 +325,11 @@ float3 H8UberNoirApplyDynamicHullBendingWS(float3 positionWS, float3 normalWS, h
 #endif
 }
 
+half H8UberNoirResolveRust01()
+{
+    return saturate((half)max(_HectonEquipmentRust01, _HectonMaterialDecayRuntime.x) * (half)max(_UberNoirRustParams.x, 0.0));
+}
+
 float2 H8UberNoirResolveRustPomUv(
     float2 rawUv,
     float2 baseUv,
@@ -310,18 +339,24 @@ float2 H8UberNoirResolveRustPomUv(
     out half4 rustPacked,
     out half rustMask)
 {
-    half rust01 = saturate((half)max(_HectonEquipmentRust01, _HectonMaterialDecayRuntime.x) * (half)max(_UberNoirRustParams.x, 0.0));
-    float rustStValid = step(H8_UBER_NOIR_EPS, abs(_RustDetailMap_ST.x) + abs(_RustDetailMap_ST.y));
-    float2 rustScale = lerp(float2(1.0, 1.0), _RustDetailMap_ST.xy, rustStValid);
-    float2 rustOffset = _RustDetailMap_ST.zw * rustStValid;
-    float2 rustUv = rawUv * rustScale + rustOffset;
-    rustPacked = SAMPLE_TEXTURE2D(_RustDetailMap, sampler_RustDetailMap, rustUv);
+    half rust01 = H8UberNoirResolveRust01();
+    rustPacked = half4(0.0h, 0.5h, 0.5h, 1.0h);
     rustMask = rust01;
 
 #if defined(_MATH_LOD_LOW)
     return baseUv;
 #else
-    float pomEnabled = step(_UberNoirRustParams.y, rust01) * step(0.5, _UberNoirFeatureFlags.x) * step(_HectonMaterialDecayRuntime.z, 0.5);
+    [branch]
+    if (rust01 <= (half)H8_UBER_NOIR_EPS)
+        return baseUv;
+
+    float rustStValid = step(H8_UBER_NOIR_EPS, abs(_RustDetailMap_ST.x) + abs(_RustDetailMap_ST.y));
+    float2 rustScale = lerp(float2(1.0, 1.0), _RustDetailMap_ST.xy, rustStValid);
+    float2 rustOffset = _RustDetailMap_ST.zw * rustStValid;
+    float2 rustUv = rawUv * rustScale + rustOffset;
+    rustPacked = SAMPLE_TEXTURE2D(_RustDetailMap, sampler_RustDetailMap, rustUv);
+
+    float pomEnabled = step(H8_UBER_NOIR_EPS, rust01) * step(_UberNoirRustParams.y, rust01) * step(0.5, _UberNoirFeatureFlags.x) * step(_HectonMaterialDecayRuntime.z, 0.5);
     if (pomEnabled <= 0.0)
         return baseUv;
 
@@ -454,11 +489,14 @@ half3 H8UberNoirEvaluateAnalyticalCaustics(float3 positionWS, half3 normalWS, Li
     float attenuation = saturate(mainLight.distanceAttenuation * lerp(1.0, mainLight.shadowAttenuation, saturate(_UberNoirCausticParams.z)));
     float caustic = H8UberNoirEvaluateProceduralCaustics(uv);
 
+#if defined(H8_UBERNOIR_CAUSTICS_TEXTURED)
+    [branch]
     if (_HectonCausticsRuntimeParams.x > 0.5)
     {
         float3 sampled = SAMPLE_TEXTURE2D(_HectonCausticsMap, sampler_HectonCausticsMap, uv).rgb;
         caustic = dot(sampled, float3(0.27, 0.54, 0.19));
     }
+#endif
 
     half intensity = (half)(featureMask * inside * depthFade * normalMask * attenuation * _UberNoirCausticParams.x * max(_HectonProjectedCausticsParams.x, 0.0));
     half3 tint = (half3)max(_HectonProjectedCausticsColor.rgb + _UberNoirCausticColor.rgb, _NoirAbyssFloorColor.rgb);
@@ -471,18 +509,29 @@ H8UberNoirSurface H8UberNoirSampleSurface(H8UberNoirVaryings input)
     H8UberNoirSurface surface;
     float2 baseUv = TRANSFORM_TEX(input.uv, _BaseMap);
     float2 wearUv = baseUv;
+#if !defined(_MATH_LOD_LOW)
     half4 rustPacked;
     half rustMask;
-
-#if !defined(_MATH_LOD_LOW)
     wearUv = H8UberNoirResolveRustPomUv(input.uv, baseUv, input.viewDirWS, input.normalWS, input.tangentWS, rustPacked, rustMask);
-#else
-    rustPacked = half4(0.0h, 0.5h, 0.5h, 1.0h);
-    rustMask = 0.0h;
 #endif
 
     half4 baseSample = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, wearUv) * _BaseColor;
     half4 ormSample = SAMPLE_TEXTURE2D(_MaskMap, sampler_MaskMap, wearUv);
+
+#if defined(_MATH_LOD_LOW)
+    half roughness = max(saturate(1.0h - ormSample.b * (half)_Smoothness), (half)_UberNoirLightingParams.y);
+    surface.albedo = baseSample.rgb;
+    surface.normalWS = input.normalWS;
+    surface.emission = half3(0.0h, 0.0h, 0.0h);
+    surface.metallic = 0.0h;
+    surface.occlusion = saturate(lerp(1.0h, ormSample.g, (half)_OcclusionStrength));
+    surface.smoothness = saturate(1.0h - roughness);
+    surface.roughness = roughness;
+    surface.alpha = baseSample.a;
+    surface.rustMask = 0.0h;
+    surface.orm = ormSample;
+    return surface;
+#else
     half3 normalTS = UnpackNormalScale(SAMPLE_TEXTURE2D(_BumpMap, sampler_BumpMap, wearUv), (half)_BumpScale);
 
     float3 safeNormalWS;
@@ -504,13 +553,6 @@ H8UberNoirSurface H8UberNoirSampleSurface(H8UberNoirVaryings input)
     surface.orm = ormSample;
     surface.emission = _EmissionColor.rgb * ormSample.a * (half)_UberNoirLightingParams.w;
 
-#if defined(_MATH_LOD_LOW)
-    surface.normalWS = input.normalWS;
-    surface.emission = half3(0.0h, 0.0h, 0.0h);
-    surface.metallic = 0.0h;
-    surface.smoothness = saturate(1.0h - surface.roughness);
-    return surface;
-#else
     H8UberNoirApplyRustCorrosion(wearUv, input.positionWS, input.viewDirWS, input.tangentWS, rustPacked, rustMask, surface);
     surface.emission += H8UberNoirResolveBiolumEmission(input.positionWS, ormSample.a, input.instanceSeed);
     return surface;
@@ -519,6 +561,17 @@ H8UberNoirSurface H8UberNoirSampleSurface(H8UberNoirVaryings input)
 
 half3 H8UberNoirEvaluateMainLighting(H8UberNoirVaryings input, H8UberNoirSurface surface)
 {
+#if defined(_MATH_LOD_LOW)
+    Light mainLight = GetMainLight();
+    half3 normalWS = H8UberNoirSafeNormalizeHalf(surface.normalWS, half3(0.0h, 1.0h, 0.0h));
+    half3 lightDir = H8UberNoirSafeNormalizeHalf((half3)mainLight.direction, half3(0.0h, 1.0h, 0.0h));
+    half nDotL = saturate(dot(normalWS, lightDir));
+    half attenuation = saturate((half)mainLight.distanceAttenuation);
+    half attenuationGate = (half)step(0.0001h, nDotL) * (half)step(0.0001h, attenuation);
+    half3 diffuse = surface.albedo * mainLight.color * (nDotL * attenuation * attenuationGate);
+    half3 ambient = SampleSH(normalWS) * surface.albedo * surface.occlusion * (half)_UberNoirLightingParams.z;
+    return ambient + diffuse * lerp(0.55h, 1.0h, 1.0h - surface.roughness);
+#else
     float4 shadowCoord = TransformWorldToShadowCoord(input.positionWS);
     Light mainLight = GetMainLight(shadowCoord);
     half3 normalWS = H8UberNoirSafeNormalizeHalf(surface.normalWS, half3(0.0h, 1.0h, 0.0h));
@@ -537,9 +590,6 @@ half3 H8UberNoirEvaluateMainLighting(H8UberNoirVaryings input, H8UberNoirSurface
     half3 f0 = lerp(half3(0.04h, 0.04h, 0.04h), surface.albedo, surface.metallic);
     half3 ambient = SampleSH(normalWS) * surface.albedo * surface.occlusion * (half)_UberNoirLightingParams.z;
 
-#if defined(_MATH_LOD_LOW)
-    return ambient + diffuse * lerp(0.55h, 1.0h, 1.0h - surface.roughness);
-#else
     half3 caustics = H8UberNoirEvaluateAnalyticalCaustics(input.positionWS, normalWS, mainLight) * surface.albedo;
     return ambient + diffuse + f0 * specular + caustics + surface.emission;
 #endif

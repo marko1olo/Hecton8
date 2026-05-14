@@ -297,3 +297,34 @@ Verification:
 - `Select-String` over touched runtime files found no `Subscribe<ItemCraftedEvent>`, `new ItemCraftedEvent`, `HandleItemCrafted`, `HandleCrafted(`, `_itemCraftedSubscription`, or `_craftedSubscription`.
 - Diff-only anti-bloat scan found no added `foreach`, `string.Format`, `.ToString(`, interpolation, LINQ, or `new List<`.
 - `git diff --check` on touched code reported only LF/CRLF notices.
+
+## 2026-05-15 - UI Inventory SignalLane Addendum
+
+What was wrong:
+- PDA/builder UI had inventory delegate remnants despite `InventoryChangedSignal` already being the project signal lane.
+- PDAConstructionTab contained a stale `_subscribedInventory`/`HandleInventoryChanged` unsubscribe block after signal conversion, which is a compile hazard.
+- UI panels should not directly bind to `PlayerInventory.InventoryChanged` when they already have active-tab or visible-overlay tick gates.
+
+What was done:
+- PDAShellChrome consumes `InventoryChangedSignal` in its late-frame PDA-open path.
+- PDAInventoryTab and PDALoadoutTab consume `InventoryChangedSignal` only while their PDA tabs are active, with forced refresh on open/tab activation.
+- PDAConstructionTab consumes `InventoryChangedSignal` in its active construction tick and the stale unsubscribe block was removed.
+- BuilderStatusOverlay consumes `InventoryChangedSignal` in its existing visible late-frame loop.
+- Static UI scan now has no `InventoryChanged +=`, `InventoryChanged -=`, `HandleInventoryChanged`, `OnInventoryChanged`, or `_subscribedInventory` hits in PDA/builder UI files.
+
+Cinematic Cheats used:
+- The existing 32-byte inventory packet replaces UI delegate fanout.
+- Closed PDA tabs do not poll; they take a forced refresh when opened or activated.
+- Builder overlay uses one revision integer to force a visual refresh instead of retaining an inventory callback.
+
+Exact microseconds saved:
+- Estimated 0.4-1.2 us on inventory UI bursts by removing PDA/builder delegate dispatch and subscription churn.
+- Idle cost remains near 0 for closed tabs because no inactive per-frame inventory scan was added.
+- Remaining non-UI inventory delegates are HectonPlayerMovement, SuitUpgradeManager, and PlayerToolManager; left for owner-domain validation.
+
+Verification:
+- No dotnet build, restore, or rebuild was run.
+- `rg` found no UI/PDA `InventoryChanged +=`, `InventoryChanged -=`, `HandleInventoryChanged`, `OnInventoryChanged`, or `_subscribedInventory` remnants in `Assets/_Project/Scripts/UI` plus `PDAInventoryTab.cs`.
+- Broad `rg` shows only non-UI inventory delegates remain: HectonPlayerMovement, SuitUpgradeManager, and PlayerToolManager.
+- Diff-only anti-bloat scan found no added `foreach`, `string.Format`, `.ToString(`, interpolation, LINQ, or `new List<`.
+- `git diff --check` on touched UI code reported only LF/CRLF notices.

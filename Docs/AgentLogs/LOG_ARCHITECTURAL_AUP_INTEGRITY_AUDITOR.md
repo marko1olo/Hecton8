@@ -665,3 +665,57 @@ Verification:
 
 Integrator notes:
 - H-Phi evidence is static-source only. Unity Console/import, PlayMode, profiler, and GCMonitor proof remain pending.
+
+## 2026-05-15 - Loop 27 AUP Precision H-Phi Budget Gate
+
+What was wrong:
+- AUP precision risk was measured but not enforceable from the static H-Phi command line.
+
+What was done:
+- Added `-MaxAupPrecisionRisk` to `Tools/Architecture/HectonPhiAudit.ps1`.
+- Added `Assert-AupPrecisionBudget` so the full source audit fails when runtime `AupPrecisionRisk` exceeds the configured budget.
+- Re-extracted this agent prompt from `Docs/Tasks/CURRENT_BATCH.md`; result remains `PROMPT_NOT_FOUND`.
+
+Cinematic Cheats used:
+- Static gate only. Runtime simulation and rendering are unchanged.
+- Low-tier machines get source-only regression rejection without Unity import or rebuild. High/Ultra pipelines keep the same AUP precision gate before visual-overkill systems depend on stable anchors.
+
+Exact Microseconds saved:
+- Gameplay frame time: 0 us.
+- Static command completed in 112.902 seconds with the zero-risk AUP budget enabled.
+
+Verification:
+- PowerShell parser reports `PARSE_OK`.
+- `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0` completed and reported `RuntimeHPhiRisk=0.000573523`, `RuntimeHPhiNarrow=0.010534799`, `AupPrecisionIntegrity=1`, `AupPrecisionSafe=363`, `AupPrecisionRisk=0`, `RuntimeFiles=1276`, `RuntimeLines=859722`.
+- Qualified AUP H-Phi risk scan returns `NO_MATCHES`.
+- Direct committed-offset leak scan returns `NO_MATCHES`.
+- Mandatory AUP regex scan re-run; residual hits remain broad `universe` text and known final-cast fluid/scatter/shader payload names.
+- Core graph summary mode completed successfully.
+- No `dotnet build` or rebuild was run because the user explicitly forbade rebuilds.
+
+Integrator notes:
+- H-Phi evidence is static-source only. Unity Console/import, PlayMode, profiler, and GCMonitor proof remain pending.
+
+## 2026-05-15 - Loop 28 AUP Budget CoreGraphOnly Fail-Fast Guard
+
+What was wrong:
+- `-MaxAupPrecisionRisk` could be combined with `-CoreGraphOnly`, even though graph-only mode does not scan source AUP patterns.
+
+What was done:
+- Added a fail-fast guard in `Tools/Architecture/HectonPhiAudit.ps1` for `-CoreGraphOnly -MaxAupPrecisionRisk`.
+
+Cinematic Cheats used:
+- Static tooling only. No runtime or render simulation changed.
+
+Exact Microseconds saved:
+- Gameplay frame time: 0 us.
+- Guard cost is one integer comparison before graph-only output.
+
+Verification:
+- PowerShell parser reports `PARSE_OK`.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json -MaxAupPrecisionRisk 0` returns the expected failure message.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json` still completes successfully without the source budget switch.
+- No `dotnet build` or rebuild was run because the user explicitly forbade rebuilds.
+
+Integrator notes:
+- Use full source mode for `-MaxAupPrecisionRisk`; CoreGraphOnly is graph debt only.

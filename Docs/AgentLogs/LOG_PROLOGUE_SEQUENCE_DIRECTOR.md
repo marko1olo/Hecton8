@@ -276,3 +276,19 @@ What was done -> Replaced the fluid-local literal with `PrologueSignalSourceHash
 Cinematic Cheats used -> None; this protects the existing signal-driven splashdown fake from source-ownership drift.
 Exact Microseconds saved -> 0 us runtime; compile-time constant remains inlined. Prevents invalid splashdown impulse, bubble spawn, and fluid responder work from hash drift.
 Verification -> No dotnet rebuild/response-file compile was run per user constraint. Raw `PRLG`/`MOVR`/`ORBI` literals now scan only inside `PrologueSignalSourceHashes`; all checked producers/consumers reference the shared contract; forbidden-pattern scan returned no hits; `git diff --check` reports line-ending warnings only for `HectonFluidEngine.cs`.
+
+## 2026-05-15 - Loop 39 Bridge Signal-Shape Gate Review
+
+What was wrong -> The bridge accepted finite atmospheric packets without requiring real plasma/whiteout re-entry phase or heat, and accepted manual complete packets with sequence zero or negative whiteout hold.
+What was done -> Added explicit bridge validators for atmospheric re-entry and manual completion. Atmospheric packets now require finite data, plasma/whiteout phase, and heat > 0.001. Manual packets now require `MOVR`, nonzero sequence, ocean-handoff phase, force-whiteout flag, and nonnegative finite hold.
+Cinematic Cheats used -> None; this keeps the existing cinematic fakes behind valid signal ownership and phase gates.
+Exact Microseconds saved -> Adds below-1-us scalar checks in 32-slot atmospheric and 8-slot complete lanes. Prevents false state-machine progression and the larger downstream VFX/audio/fluid work it would trigger.
+Verification -> No dotnet rebuild/response-file compile was run per user constraint. Targeted scan confirms both validators and their call sites; forbidden-pattern scan returned no hits; `git diff --check` reports line-ending warnings only for the bridge.
+
+## 2026-05-15 - Loop 40 Director Input-Lock Ownership Review
+
+What was wrong -> Final cleanup could publish an input unlock when no prologue lock had been acquired, while active `OnDisable()` only requested cancellation and waited for later awaitable cleanup to unlock.
+What was done -> Added `_inputLockAcquired`, routed lock acquisition through `PublishSequenceInputLock()`, made unlock conditional on real ownership, and released through the same guarded path during active disable/dispose/finally.
+Cinematic Cheats used -> None; this is control-lane ownership cleanup for the prologue pacing state machine.
+Exact Microseconds saved -> Saves one `SystemPauseSignal` publish on pre-lock cancellation, estimated 3-8 us and one lane slot. Adds one cleanup bool branch and two scalar writes on lock acquire/release.
+Verification -> No dotnet rebuild/response-file compile was run per user constraint. Targeted scan confirms input-lock ownership latch and active-disable guarded release; forbidden-pattern scan returned no hits; `git diff --check` reports line-ending warnings only.

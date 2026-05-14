@@ -157,3 +157,14 @@ Cinematic cheats used: No visual contract change. The same integer-index atlas q
 Exact microseconds saved: Estimate only. Expected gain is sub-1 us per visible prompt frame from fewer render-side property reads; no profiler proof is claimed.
 
 Verification: No dotnet rebuilds were run. Static scans stayed clean for forbidden allocation/text/LINQ and old renderer/update/shared-buffer/matrix/shader markers. Atlas/layer scan confirmed `_runtimeSpriteAtlasTexture`, `_runtimeFontAtlasTexture`, and `renderLayer` feed draw submission, with only one render-time `gameObject.layer` sample.
+
+## 2026-05-15 Diegetic Panel Phosphor Material
+What was wrong: `DiegeticPanelController` still used runtime shader lookup and material construction for the PDA/panel phosphor decay compositor.
+
+What was done: Added authored `Resources/UI/MAT_DiegeticPanelPhosphorDecay` and changed the controller to resolve, validate, and cache that material instead of calling `Shader.Find` or `new Material`.
+
+Cinematic cheats used: Preserved the same phosphor-history fake: previous RT decays into current RT, buying CRT persistence without simulating display electronics.
+
+Exact microseconds saved: Estimate only. No steady-frame win is claimed; cold path removes one shader lookup and one material allocation, and invalid authoring now fails closed instead of constructing fallback state.
+
+Verification: No dotnet rebuilds were run. Static scans found no `PhosphorDecayShaderPath`, `AssetDatabase`, `Shader.Find`, or `new Material(` markers in `DiegeticPanelController.cs`; hot-path text/LINQ marker scan for the same file returned no matches. `git diff --check` returned the repository CRLF warning only on the edited panel file.

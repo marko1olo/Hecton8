@@ -28,6 +28,7 @@ namespace Hecton8.Core
         private const int LowTierProbeIntervalFrames = 30;
         private const byte CriticalMemoryPressureSeverity = 2;
         private const float MassiveImpactSeverity = 1f;
+        private const float ReentryHeatStartThreshold01 = 0.001f;
 
         [SerializeField] private MonoBehaviour sequenceComponent;
         [SerializeField] private bool autoRunOnEnable = true;
@@ -191,12 +192,8 @@ namespace Hecton8.Core
             while (_atmosphereSnapshotCursor < signals.Length)
             {
                 AtmosphericReentrySignal signal = signals[_atmosphereSnapshotCursor++];
-                if (!math.isfinite(signal.AltitudeMeters) ||
-                    !math.isfinite(signal.UniverseVelocityMetersPerSecond) ||
-                    !math.isfinite(signal.Heat01))
-                {
+                if (!IsValidAtmosphericReentrySignal(in signal))
                     continue;
-                }
 
                 snapshot = new PrologueAtmosphericReentrySnapshot(
                     signal.AltitudeMeters,
@@ -225,13 +222,8 @@ namespace Hecton8.Core
             while (_completeSnapshotCursor < signals.Length)
             {
                 PrologueCompleteSignal signal = signals[_completeSnapshotCursor++];
-                if (signal.SourceHash != ManualOverrideSourceHash ||
-                    signal.Phase != PrologueCompleteSignal.PhaseOceanHandoff ||
-                    (signal.Flags & PrologueCompleteSignal.FlagForceWhiteout) == 0 ||
-                    !math.isfinite(signal.WhiteoutHoldSeconds))
-                {
+                if (!IsValidManualCompleteSignal(in signal))
                     continue;
-                }
 
                 snapshot = new PrologueCompleteSnapshot(
                     signal.Frame,
@@ -576,6 +568,26 @@ namespace Hecton8.Core
                 return true;
 
             return allowAnyHydratedChunkFallback && allowProxy && proxy;
+        }
+
+        private static bool IsValidAtmosphericReentrySignal(in AtmosphericReentrySignal signal)
+        {
+            return math.isfinite(signal.AltitudeMeters) &&
+                   math.isfinite(signal.UniverseVelocityMetersPerSecond) &&
+                   math.isfinite(signal.Heat01) &&
+                   (signal.Phase == AtmosphericReentrySignal.PhasePlasma ||
+                    signal.Phase == AtmosphericReentrySignal.PhaseWhiteout) &&
+                   signal.Heat01 > ReentryHeatStartThreshold01;
+        }
+
+        private static bool IsValidManualCompleteSignal(in PrologueCompleteSignal signal)
+        {
+            return signal.SourceHash == ManualOverrideSourceHash &&
+                   signal.Sequence != 0 &&
+                   signal.Phase == PrologueCompleteSignal.PhaseOceanHandoff &&
+                   (signal.Flags & PrologueCompleteSignal.FlagForceWhiteout) != 0 &&
+                   math.isfinite(signal.WhiteoutHoldSeconds) &&
+                   signal.WhiteoutHoldSeconds >= 0f;
         }
 
         private bool ResolveLowTierWithHysteresis()

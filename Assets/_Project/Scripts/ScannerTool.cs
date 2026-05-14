@@ -822,6 +822,7 @@ namespace Hecton8.Gameplay
         {
             base.OnEquip();
             PulseActive = false;
+            ClearCachedRuntimeServicesCold();
             ResolveCachedPlayerContextCold();
             RefreshModeStrings();
             TryRegisterScientificLanes();
@@ -835,6 +836,7 @@ namespace Hecton8.Gameplay
             ResetScientificFocus();
             PublishInactiveScannerTuningSignal();
             UnregisterScientificLanes();
+            ClearCachedRuntimeServicesCold();
             InvalidateOperationalStringCache();
         }
 
@@ -1009,6 +1011,7 @@ namespace Hecton8.Gameplay
             {
                 case GlobalRegistryServiceSlot.Player:
                     _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+                    _cachedSurvivalSystem = null;
                     break;
                 case GlobalRegistryServiceSlot.AtlasSignalRuntime:
                     _cachedAtlasSignal = currentService as AtlasSignalSystem;
@@ -1098,6 +1101,7 @@ namespace Hecton8.Gameplay
         public override void OnSpawn()
         {
             base.OnSpawn();
+            ClearCachedRuntimeServicesCold();
             ResolveCachedSurvivalSystem();
             ResolveCachedPlayerContextCold();
             ResetScientificFocus();
@@ -1108,6 +1112,7 @@ namespace Hecton8.Gameplay
             UnregisterScientificLanes();
             ResetScientificFocus();
             PublishInactiveScannerTuningSignal();
+            ClearCachedRuntimeServicesCold();
             base.OnDespawn();
         }
 
@@ -1125,6 +1130,7 @@ namespace Hecton8.Gameplay
             }
 
             UnregisterScientificLanes();
+            ClearCachedRuntimeServicesCold();
             DisposeScientificNativeState();
         }
 
@@ -3789,6 +3795,14 @@ namespace Hecton8.Gameplay
         private void ResolveCachedPlayerContextCold()
         {
             _cachedPlayerContext = GlobalRegistry.Player;
+        }
+
+        private void ClearCachedRuntimeServicesCold()
+        {
+            _cachedSurvivalSystem = null;
+            _cachedPlayerContext = null;
+            _cachedAtlasSignal = null;
+            _cachedLoreDatabase = null;
         }
 
         private AtlasSignalSystem ResolveCachedAtlasSignalCold()

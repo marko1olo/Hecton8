@@ -193,3 +193,10 @@ Solution: Cached the active font atlas and sprite atlas during layout rebuild, t
 Rejected Alternatives: Leaving per-submit property reads for simplicity or caching the layer only at enable time. Repeated property reads are unnecessary; enable-only layer cache can become stale if runtime layer ownership changes.
 Scalability potential: Low removes tiny repeated render-side property traffic. Middle, High, and Ultra keep the same atlas contract while freeing budget for richer glyph/material treatment.
 Hardware Impact: Expected gain is sub-microsecond per visible prompt frame on i3/MX350; measured proof absent because no rebuild/runtime verification was allowed.
+
+## Decision 27: Authored Diegetic Panel Phosphor Material
+Problem: `DiegeticPanelController` still resolved the phosphor compositor through runtime `Shader.Find` and constructed a material in code. That is cold-path work, but it violates the authored-material direction used for diegetic presentation systems.
+Solution: Added authored `Resources/UI/MAT_DiegeticPanelPhosphorDecay` and changed phosphor setup to resolve that material once, validate its shader contract, and fail closed if authoring is missing or mismatched.
+Rejected Alternatives: Keeping the runtime shader/material fallback, adding another per-panel material clone, or disabling phosphor decay entirely. Runtime lookup hides authoring faults; clones add memory churn; disabling the effect removes the intended CRT persistence cheat.
+Scalability potential: Low/MX350 keeps the same cheap RT history fake without runtime material creation. Middle/High/Ultra can tune the authored material or shader while preserving the same validation gate.
+Hardware Impact: Expected low-end gain is cold-start and memory hygiene, not a measurable steady-frame win. Removes one runtime shader lookup and one runtime material allocation from the physical panel phosphor path. No profiler proof.

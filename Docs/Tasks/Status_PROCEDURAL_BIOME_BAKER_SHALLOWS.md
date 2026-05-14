@@ -205,3 +205,12 @@ Status: PENDING VERIFICATION
 - Verification avoided dotnet rebuilds and Unity import. `AtlasImporterYamlScan Count=4 Bad=0`; `AtlasPngDimensionScan Count=4 Bad=0`; `git diff --check` passed for the four edited `.meta` files.
 - Rejected alternative: changing `AtlasSize` or validator expectations to `512` was rejected because it would silently downsample authored 1024 visual data and contradict the existing baker contract. Re-baking via Unity was rejected under the user's no-rebuild instruction.
 - H-Phi impact remains asset-contract only: the importer data now matches the exact texture payload and shader/material validator expectations, preventing silent VRAM/quality divergence.
+
+### Loop 22 - Rock Collision Proxy Mesh Contract
+
+- Re-read status/rationale, AGENTS, domain map, live batch extraction, Unity workflow skill, and flora/visual-fake/zero-GC/render-budget mandates before editing. Live `CURRENT_BATCH.md` still does not contain the Shallows agent tag.
+- Found a remaining gameplay-proxy drift path: rock prefabs validated one convex collider and transform alignment, but did not prove the collider was enabled, non-trigger, or using the exact LOD2 render mesh as the cheap collision proxy.
+- Patched `ShallowsBioForgeBatchBaker` so `ValidateRockCollider` now requires exactly one enabled non-trigger convex `MeshCollider`, a non-null shared mesh, and `collider.sharedMesh == ResolveFirstMesh(lods[2].renderers)`.
+- Verification avoided dotnet rebuilds and Unity import. `RockColliderLod2GuidYamlScan Count=50 Bad=0`; `ShallowsColliderCountYamlScan Count=200 Bad=0`; `git diff --check` passed for the baker; source brace balance stayed `Delta=0` with `NonAscii=0`; forbidden source scan found no Shallows `Shader.Find`, `mesh.colors`, `renderer.sharedMaterial`, `.material`, or hot-path update methods.
+- Rejected alternative: adding runtime collider correction or extra collider simplification jobs was rejected because the existing LOD2 convex proxy is the intended visual-fake physics boundary and current assets already satisfy the stronger contract.
+- H-Phi impact remains domain-local: rock collision is now tied to the deterministic low-cost LOD2 proxy, while flora remains collider-free and runtime procedural allocation stays 0 us/frame.

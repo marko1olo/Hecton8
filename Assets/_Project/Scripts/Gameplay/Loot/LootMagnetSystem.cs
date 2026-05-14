@@ -14,6 +14,10 @@ using UnityEngine.SceneManagement;
 
 namespace Hecton8.Gameplay.Loot
 {
+    /// <summary>
+    /// Burst-backed loot magnet scheduler that keeps acquisition truth in AUP-space vault buffers.
+    /// </summary>
+    [DisallowMultipleComponent]
     public sealed class LootMagnetSystem : MonoBehaviour, IFastTickable, ISlowTickable, ILateFrameTickable
     {
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_PHYS_MAGNETIC_LOOT_ACQUISITION.bin";
@@ -21,15 +25,20 @@ namespace Hecton8.Gameplay.Loot
         private const uint TelemetryFaultFlag = 1u;
         private const uint TelemetryAcousticBudgetDropFlag = 1u << 1;
         private const uint TelemetryWakeBudgetDropFlag = 1u << 2;
+        private const uint TelemetryInventoryMissingFlag = 1u << 3;
 
         private static LootMagnetSystem _bootstrapRuntime;
         private static bool _sceneLoadedHooked;
 
         [Header("Pull")]
-        [SerializeField] private int maxLootEntities = LootMagnetConstants.DefaultMaxEntities;
-        [SerializeField] private float pullRadiusMeters = LootMagnetConstants.DefaultPullRadiusMeters;
-        [SerializeField] private float pullStrength = LootMagnetConstants.DefaultPullStrength;
-        [SerializeField] private float maxVelocityMetersPerSecond = LootMagnetConstants.DefaultMaxVelocityMetersPerSecond;
+        [Tooltip("Maximum pickup proxies mirrored into loot vault buffers. Clamped again at runtime.")]
+        [SerializeField, Range(1, LootMagnetConstants.MaxEntitiesHardCap)] private int maxLootEntities = LootMagnetConstants.DefaultMaxEntities;
+        [Tooltip("Magnet acquisition radius in meters. Values below auto-stow distance are clamped at runtime.")]
+        [SerializeField, Min(LootMagnetConstants.AcquireDistanceMeters)] private float pullRadiusMeters = LootMagnetConstants.DefaultPullRadiusMeters;
+        [Tooltip("AUP-space pull acceleration scalar applied by the Burst job.")]
+        [SerializeField, Min(0f)] private float pullStrength = LootMagnetConstants.DefaultPullStrength;
+        [Tooltip("Maximum loot velocity applied by the Burst job in meters per second.")]
+        [SerializeField, Min(0.01f)] private float maxVelocityMetersPerSecond = LootMagnetConstants.DefaultMaxVelocityMetersPerSecond;
 
         private IDataVault _vault;
         private IPlayerRuntimeContext _playerContext;
@@ -151,6 +160,7 @@ namespace Hecton8.Gameplay.Loot
                 _bootstrapRuntime = null;
         }
 
+        /// <inheritdoc />
         public void FastTick(float dt)
         {
             if (IsLowTier || _pullScheduled || _activeCount <= 0)
@@ -162,6 +172,7 @@ namespace Hecton8.Gameplay.Loot
             SchedulePull(math.max(0.0001f, dt), playerAup, lowTierSnap: false);
         }
 
+        /// <inheritdoc />
         public void SlowTick()
         {
             RefreshDependencies();
@@ -179,6 +190,7 @@ namespace Hecton8.Gameplay.Loot
                 SchedulePull(0.1f, playerAup, lowTierSnap: true);
         }
 
+        /// <inheritdoc />
         public void LateFrameTick()
         {
             _telemetryFrameCounter++;
@@ -355,8 +367,8 @@ namespace Hecton8.Gameplay.Loot
                 return;
             }
 
-            _pickupRefs = new PickupItem[capacity];
-            _pickupEntityIds = new ulong[capacity];
+            _pickupRefs = new PickupItem[capacity]; // COLD ALLOC: PickupItem[capacity] - managed pickup sidecar for vault commit - owner: LootMagnetSystem
+            _pickupEntityIds = new ulong[capacity]; // COLD ALLOC: ulong[capacity] - pickup entity identity sidecar - owner: LootMagnetSystem
         }
 
         private void EnsureTelemetry()
@@ -545,6 +557,13 @@ namespace Hecton8.Gameplay.Loot
 
                 if ((flags & LootEntityFlags.Acquired) != 0u)
                 {
+                    if (_inventory == null)
+                    {
+                        telemetryFlags |= TelemetryInventoryMissingFlag;
+                        _entityFlags[index] = LootEntityFlags.Active | LootEntityFlags.IsLoot;
+                        continue;
+                    }
+
                     if (acquisitionBudget <= 0)
                     {
                         RestoreDeferredAcquisition(index, flags);

@@ -47,6 +47,7 @@ namespace Hecton8.SaveSystem
         private const int SaveStagingBufferBytes = 10 * 1024 * 1024;
         private const int SaveTelemetryCapacity = 300;
         private const int WfcOutpostTelemetryCapacity = 300;
+        private const int WfcOutpostEventTelemetryCapacity = 300;
         private const float SafeGcCollectFrameBudgetSeconds = 0.014f;
         private const long VramAbortThresholdBytes = 1800L * 1024L * 1024L;
         private const uint AsyncPersistenceSourceHash = 0x41505953u; // APYS
@@ -80,6 +81,7 @@ namespace Hecton8.SaveSystem
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
         private const NativeAllocationLifetime NativeTransientMemoryLifetime = NativeAllocationLifetime.TransientArena;
         private const uint WfcOutpostBlackBoxMagic = 0x57464342u; // WFCB
+        private const uint WfcOutpostBlackBoxVersion = 2u;
         private const uint WfcOutpostBlackBoxOperationPersist = 0x50525354u; // PRST
         private const uint WfcOutpostBlackBoxOperationRestore = 0x52535452u; // RSTR
         private const uint WfcOutpostBlackBoxOperationHydration = 0x48594452u; // HYDR
@@ -189,6 +191,7 @@ namespace Hecton8.SaveSystem
         private NativeArray<byte> _wfcOutpostPayloadBuffer;
         private NativeArray<AsyncPersistenceTelemetryEntry> _saveTelemetryRing;
         private NativeArray<WfcOutpostTelemetryEntry> _wfcOutpostTelemetryRing;
+        private NativeArray<WfcOutpostTelemetryEntry> _wfcOutpostEventTelemetryRing;
         private ulong _lastWfcOutpostSectorHash;
         private ulong _lastWfcOutpostPayloadHash;
         private ulong _wfcOutpostMutableGridSectorHash;
@@ -209,6 +212,7 @@ namespace Hecton8.SaveSystem
         private long _lastSaveCompressionPipelineTicks;
         private int _saveTelemetryWriteIndex;
         private int _wfcOutpostTelemetryWriteIndex;
+        private int _wfcOutpostEventTelemetryWriteIndex;
         private uint _operationSequence;
         private bool _postSaveVramGcPending;
         private bool _wfcOutpostBlackBoxDumped;
@@ -532,6 +536,7 @@ namespace Hecton8.SaveSystem
             DisposeNativeArray(ref _wfcOutpostPayloadBuffer);
             DisposeNativeArray(ref _saveTelemetryRing);
             DisposeNativeArray(ref _wfcOutpostTelemetryRing);
+            DisposeNativeArray(ref _wfcOutpostEventTelemetryRing);
             DisposeNativeArray(ref _loadCandidateScratch);
             DisposeStaticLoadCandidateScratch();
             _wfcOutpostGrid = default;
@@ -543,6 +548,7 @@ namespace Hecton8.SaveSystem
             _hasLastWfcOutpostSnapshot = false;
             _wfcOutpostDependenciesReady = false;
             _wfcOutpostTelemetryWriteIndex = 0;
+            _wfcOutpostEventTelemetryWriteIndex = 0;
             _wfcOutpostBlackBoxDumped = false;
 
             DisposeIntegrityResources();
@@ -616,21 +622,21 @@ namespace Hecton8.SaveSystem
             if (sectorHash == 0UL)
             {
                 status = WfcOutpostPersistenceStatus.Rejected;
-                RecordWfcOutpostBlackBox(WfcOutpostBlackBoxOperationPersist, status, sectorHash);
+                RecordWfcOutpostEventBlackBox(WfcOutpostBlackBoxOperationPersist, status, sectorHash);
                 return false;
             }
 
             if (!IsValidWfcOutpostGrid(wfcGrid))
             {
                 status = WfcOutpostPersistenceStatus.InvalidGrid;
-                RecordWfcOutpostBlackBox(WfcOutpostBlackBoxOperationPersist, status, sectorHash);
+                RecordWfcOutpostEventBlackBox(WfcOutpostBlackBoxOperationPersist, status, sectorHash);
                 return false;
             }
 
             if (!TryResolveWfcOutpostMacroDatabase(out IMacroDatabaseService macroDatabase))
             {
                 status = WfcOutpostPersistenceStatus.ServiceUnavailable;
-                RecordWfcOutpostBlackBox(WfcOutpostBlackBoxOperationPersist, status, sectorHash);
+                RecordWfcOutpostEventBlackBox(WfcOutpostBlackBoxOperationPersist, status, sectorHash);
                 return false;
             }
 
@@ -648,7 +654,7 @@ namespace Hecton8.SaveSystem
                 _lastWfcOutpostPayloadHash == packedHash)
             {
                 status = WfcOutpostPersistenceStatus.DirtySkippedUnchanged;
-                RecordWfcOutpostBlackBox(WfcOutpostBlackBoxOperationPersist, status, sectorHash, packedHash, frame: frame);
+                RecordWfcOutpostEventBlackBox(WfcOutpostBlackBoxOperationPersist, status, sectorHash, packedHash, frame: frame);
                 return true;
             }
 
@@ -660,7 +666,7 @@ namespace Hecton8.SaveSystem
                     out int payloadBytes))
             {
                 status = WfcOutpostPersistenceStatus.Rejected;
-                RecordWfcOutpostBlackBox(WfcOutpostBlackBoxOperationPersist, status, sectorHash, packedHash, frame: frame);
+                RecordWfcOutpostEventBlackBox(WfcOutpostBlackBoxOperationPersist, status, sectorHash, packedHash, frame: frame);
                 return false;
             }
 
@@ -671,7 +677,7 @@ namespace Hecton8.SaveSystem
                     0))
             {
                 status = WfcOutpostPersistenceStatus.Rejected;
-                RecordWfcOutpostBlackBox(WfcOutpostBlackBoxOperationPersist, status, sectorHash, packedHash, payloadBytes, frame: frame);
+                RecordWfcOutpostEventBlackBox(WfcOutpostBlackBoxOperationPersist, status, sectorHash, packedHash, payloadBytes, frame: frame);
                 return false;
             }
 
@@ -679,7 +685,7 @@ namespace Hecton8.SaveSystem
             _lastWfcOutpostSectorHash = sectorHash;
             _lastWfcOutpostPayloadHash = packedHash;
             status = WfcOutpostPersistenceStatus.DirtyQueued;
-            RecordWfcOutpostBlackBox(WfcOutpostBlackBoxOperationPersist, status, sectorHash, packedHash, payloadBytes, frame: frame);
+            RecordWfcOutpostEventBlackBox(WfcOutpostBlackBoxOperationPersist, status, sectorHash, packedHash, payloadBytes, frame: frame);
             PublishWfcBytesSaved(payloadBytes);
             QueueWfcOutpostDirtyAppend(sectorHash, frame);
             return true;
@@ -695,21 +701,21 @@ namespace Hecton8.SaveSystem
             if (sectorHash == 0UL)
             {
                 status = WfcOutpostPersistenceStatus.Rejected;
-                RecordWfcOutpostBlackBox(WfcOutpostBlackBoxOperationRestore, status, sectorHash);
+                RecordWfcOutpostEventBlackBox(WfcOutpostBlackBoxOperationRestore, status, sectorHash);
                 return false;
             }
 
             if (!IsValidWfcOutpostGrid(wfcGrid))
             {
                 status = WfcOutpostPersistenceStatus.InvalidGrid;
-                RecordWfcOutpostBlackBox(WfcOutpostBlackBoxOperationRestore, status, sectorHash);
+                RecordWfcOutpostEventBlackBox(WfcOutpostBlackBoxOperationRestore, status, sectorHash);
                 return false;
             }
 
             if (!TryResolveWfcOutpostMacroDatabase(out IMacroDatabaseService macroDatabase))
             {
                 status = WfcOutpostPersistenceStatus.ServiceUnavailable;
-                RecordWfcOutpostBlackBox(WfcOutpostBlackBoxOperationRestore, status, sectorHash);
+                RecordWfcOutpostEventBlackBox(WfcOutpostBlackBoxOperationRestore, status, sectorHash);
                 return false;
             }
 
@@ -717,7 +723,7 @@ namespace Hecton8.SaveSystem
             if (!macroDatabase.TryGetPayload(sectorHash, out MacroDatabasePayloadHandle handle))
             {
                 status = WfcOutpostPersistenceStatus.Missing;
-                RecordWfcOutpostBlackBox(WfcOutpostBlackBoxOperationRestore, status, sectorHash);
+                RecordWfcOutpostEventBlackBox(WfcOutpostBlackBoxOperationRestore, status, sectorHash);
                 return false;
             }
 
@@ -733,7 +739,7 @@ namespace Hecton8.SaveSystem
                 wordsRead != WfcOutpostPersistenceConstants.PackedWordCount)
             {
                 status = WfcOutpostPersistenceStatus.CorruptLength;
-                RecordWfcOutpostBlackBox(WfcOutpostBlackBoxOperationRestore, status, sectorHash, payloadBytes: handle.ByteLength);
+                RecordWfcOutpostEventBlackBox(WfcOutpostBlackBoxOperationRestore, status, sectorHash, payloadBytes: handle.ByteLength);
                 PublishWfcCorruptPayloadWarning();
                 return false;
             }
@@ -743,7 +749,7 @@ namespace Hecton8.SaveSystem
             _lastWfcOutpostSectorHash = sectorHash;
             _lastWfcOutpostPayloadHash = ComputeWfcOutpostPackedHash(_wfcOutpostRestoreWords);
             status = WfcOutpostPersistenceStatus.Ready;
-            RecordWfcOutpostBlackBox(WfcOutpostBlackBoxOperationRestore, status, sectorHash, _lastWfcOutpostPayloadHash, handle.ByteLength);
+            RecordWfcOutpostEventBlackBox(WfcOutpostBlackBoxOperationRestore, status, sectorHash, _lastWfcOutpostPayloadHash, handle.ByteLength);
             return true;
         }
 
@@ -1013,9 +1019,16 @@ namespace Hecton8.SaveSystem
         {
             if (!_wfcOutpostTelemetryRing.IsCreated)
             {
-                // COLD ALLOC: NativeArray<WfcOutpostTelemetryEntry>[300] - WFC outpost persistence black-box ring - owner: SaveManager
+                // COLD ALLOC: NativeArray<WfcOutpostTelemetryEntry>[300] - WFC outpost frame black-box ring - owner: SaveManager
                 _wfcOutpostTelemetryRing = new NativeArray<WfcOutpostTelemetryEntry>(WfcOutpostTelemetryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
                 NativeMemorySentinel.RegisterNativeArray(_wfcOutpostTelemetryRing, NativeMemoryOwner, nameof(_wfcOutpostTelemetryRing), NativeMemoryLifetime);
+            }
+
+            if (!_wfcOutpostEventTelemetryRing.IsCreated)
+            {
+                // COLD ALLOC: NativeArray<WfcOutpostTelemetryEntry>[300] - WFC outpost event black-box ring - owner: SaveManager
+                _wfcOutpostEventTelemetryRing = new NativeArray<WfcOutpostTelemetryEntry>(WfcOutpostEventTelemetryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                NativeMemorySentinel.RegisterNativeArray(_wfcOutpostEventTelemetryRing, NativeMemoryOwner, nameof(_wfcOutpostEventTelemetryRing), NativeMemoryLifetime);
             }
         }
 
@@ -1063,12 +1076,12 @@ namespace Hecton8.SaveSystem
 
         public void Tick(float deltaTime)
         {
-            RecordWfcOutpostBlackBox(
+            RecordWfcOutpostFrameBlackBox(
                 WfcOutpostBlackBoxOperationFrame,
                 WfcOutpostPersistenceStatus.None,
                 _lastWfcOutpostSectorHash,
                 _lastWfcOutpostPayloadHash,
-                flags: _hasLastWfcOutpostSnapshot ? 1u : 0u);
+                flags: BuildWfcOutpostFrameBlackBoxFlags());
             DrainSaveRequestSignals();
             DrainWfcOutpostStateChangedSignals();
             DrainWfcSectorHydratedSignals();
@@ -1186,7 +1199,7 @@ namespace Hecton8.SaveSystem
                 if (changedMask == 0)
                     continue;
 
-                RecordWfcOutpostBlackBox(
+                RecordWfcOutpostEventBlackBox(
                     WfcOutpostBlackBoxOperationSignal,
                     WfcOutpostPersistenceStatus.None,
                     signal.SectorHash,
@@ -1342,26 +1355,26 @@ namespace Hecton8.SaveSystem
         {
             if (sectorHash == 0UL)
             {
-                RecordWfcOutpostBlackBox(WfcOutpostBlackBoxOperationHydration, WfcOutpostPersistenceStatus.Rejected, sectorHash);
+                RecordWfcOutpostEventBlackBox(WfcOutpostBlackBoxOperationHydration, WfcOutpostPersistenceStatus.Rejected, sectorHash);
                 return false;
             }
 
             if (!IsValidWfcOutpostGrid(wfcGrid))
             {
-                RecordWfcOutpostBlackBox(WfcOutpostBlackBoxOperationHydration, WfcOutpostPersistenceStatus.InvalidGrid, sectorHash);
+                RecordWfcOutpostEventBlackBox(WfcOutpostBlackBoxOperationHydration, WfcOutpostPersistenceStatus.InvalidGrid, sectorHash);
                 return false;
             }
 
             if (!TryResolveWfcOutpostMacroDatabase(out IMacroDatabaseService macroDatabase))
             {
-                RecordWfcOutpostBlackBox(WfcOutpostBlackBoxOperationHydration, WfcOutpostPersistenceStatus.ServiceUnavailable, sectorHash);
+                RecordWfcOutpostEventBlackBox(WfcOutpostBlackBoxOperationHydration, WfcOutpostPersistenceStatus.ServiceUnavailable, sectorHash);
                 return false;
             }
 
             EnsureWfcOutpostNativeBuffers();
             if (!macroDatabase.TryGetPayload(sectorHash, out MacroDatabasePayloadHandle handle))
             {
-                RecordWfcOutpostBlackBox(WfcOutpostBlackBoxOperationHydration, WfcOutpostPersistenceStatus.Missing, sectorHash);
+                RecordWfcOutpostEventBlackBox(WfcOutpostBlackBoxOperationHydration, WfcOutpostPersistenceStatus.Missing, sectorHash);
                 return false;
             }
 
@@ -1377,7 +1390,7 @@ namespace Hecton8.SaveSystem
                     out int wordsRead) ||
                 wordsRead != WfcOutpostPersistenceConstants.PackedWordCount)
             {
-                RecordWfcOutpostBlackBox(WfcOutpostBlackBoxOperationHydration, WfcOutpostPersistenceStatus.CorruptLength, sectorHash, payloadBytes: handle.ByteLength);
+                RecordWfcOutpostEventBlackBox(WfcOutpostBlackBoxOperationHydration, WfcOutpostPersistenceStatus.CorruptLength, sectorHash, payloadBytes: handle.ByteLength);
                 PublishWfcCorruptPayloadWarning();
                 return false;
             }
@@ -1387,7 +1400,7 @@ namespace Hecton8.SaveSystem
             _lastWfcOutpostSectorHash = sectorHash;
             _lastWfcOutpostPayloadHash = ComputeWfcOutpostPackedHash(_wfcOutpostRestoreWords);
             _wfcOutpostMutableGridSectorHash = sectorHash;
-            RecordWfcOutpostBlackBox(WfcOutpostBlackBoxOperationHydration, WfcOutpostPersistenceStatus.Ready, sectorHash, _lastWfcOutpostPayloadHash, handle.ByteLength);
+            RecordWfcOutpostEventBlackBox(WfcOutpostBlackBoxOperationHydration, WfcOutpostPersistenceStatus.Ready, sectorHash, _lastWfcOutpostPayloadHash, handle.ByteLength);
             return true;
         }
 
@@ -1496,7 +1509,7 @@ namespace Hecton8.SaveSystem
             await Awaitable.MainThreadAsync();
             if (!appended)
             {
-                RecordWfcOutpostBlackBox(WfcOutpostBlackBoxOperationAppend, WfcOutpostPersistenceStatus.Rejected, sectorHash, frame: frame);
+                RecordWfcOutpostEventBlackBox(WfcOutpostBlackBoxOperationAppend, WfcOutpostPersistenceStatus.Rejected, sectorHash, frame: frame);
                 GlobalTelemetryBus.PublishPerformanceWarning(WfcCorruptPayloadTelemetryHash, WfcOutpostPersistenceSourceHash, frame);
             }
         }
@@ -1753,7 +1766,7 @@ namespace Hecton8.SaveSystem
             return kilobytes > int.MaxValue ? int.MaxValue : (int)kilobytes;
         }
 
-        private void RecordWfcOutpostBlackBox(
+        private void RecordWfcOutpostFrameBlackBox(
             uint operation,
             WfcOutpostPersistenceStatus status,
             ulong sectorHash,
@@ -1769,9 +1782,96 @@ namespace Hecton8.SaveSystem
             if (!_wfcOutpostTelemetryRing.IsCreated)
                 return;
 
-            uint resolvedFrame = frame != 0u ? frame : unchecked((uint)Time.frameCount);
             int index = _wfcOutpostTelemetryWriteIndex;
-            _wfcOutpostTelemetryRing[index] = new WfcOutpostTelemetryEntry
+            _wfcOutpostTelemetryRing[index] = BuildWfcOutpostTelemetryEntry(
+                operation,
+                status,
+                sectorHash,
+                payloadHash,
+                payloadBytes,
+                cellIndex,
+                previousFlags,
+                currentFlags,
+                signalSourceHash,
+                flags,
+                frame);
+
+            index++;
+            if (index >= WfcOutpostTelemetryCapacity)
+                index = 0;
+
+            _wfcOutpostTelemetryWriteIndex = index;
+        }
+
+        private uint BuildWfcOutpostFrameBlackBoxFlags()
+        {
+            uint flags = 0u;
+            if (_hasLastWfcOutpostSnapshot)
+                flags |= 1u << 0;
+            if (_wfcOutpostDependenciesReady)
+                flags |= 1u << 1;
+            if (_wfcOutpostGrid.IsCreated)
+                flags |= 1u << 2;
+            if (_macroDatabaseService != null && _macroDatabaseService.IsOpen)
+                flags |= 1u << 3;
+            if (_dataVault != null)
+                flags |= 1u << 4;
+
+            return flags;
+        }
+
+        private void RecordWfcOutpostEventBlackBox(
+            uint operation,
+            WfcOutpostPersistenceStatus status,
+            ulong sectorHash,
+            ulong payloadHash = 0UL,
+            int payloadBytes = 0,
+            int cellIndex = -1,
+            uint previousFlags = 0u,
+            uint currentFlags = 0u,
+            uint signalSourceHash = 0u,
+            uint flags = 0u,
+            uint frame = 0u)
+        {
+            if (!_wfcOutpostEventTelemetryRing.IsCreated)
+                return;
+
+            int index = _wfcOutpostEventTelemetryWriteIndex;
+            _wfcOutpostEventTelemetryRing[index] = BuildWfcOutpostTelemetryEntry(
+                operation,
+                status,
+                sectorHash,
+                payloadHash,
+                payloadBytes,
+                cellIndex,
+                previousFlags,
+                currentFlags,
+                signalSourceHash,
+                flags,
+                frame);
+
+            index++;
+            if (index >= WfcOutpostEventTelemetryCapacity)
+                index = 0;
+
+            _wfcOutpostEventTelemetryWriteIndex = index;
+        }
+
+        private WfcOutpostTelemetryEntry BuildWfcOutpostTelemetryEntry(
+            uint operation,
+            WfcOutpostPersistenceStatus status,
+            ulong sectorHash,
+            ulong payloadHash,
+            int payloadBytes,
+            int cellIndex,
+            uint previousFlags,
+            uint currentFlags,
+            uint signalSourceHash,
+            uint flags,
+            uint frame)
+        {
+            uint resolvedFrame = frame != 0u ? frame : unchecked((uint)Time.frameCount);
+            return new WfcOutpostTelemetryEntry
             {
                 Frame = resolvedFrame,
                 Operation = operation,
@@ -1788,18 +1888,16 @@ namespace Hecton8.SaveSystem
                 Reserved0 = 0u,
                 Reserved1 = 0u
             };
-
-            index++;
-            if (index >= WfcOutpostTelemetryCapacity)
-                index = 0;
-
-            _wfcOutpostTelemetryWriteIndex = index;
         }
 
         private void DumpWfcOutpostBlackBox()
         {
-            if (!_wfcOutpostTelemetryRing.IsCreated || _wfcOutpostBlackBoxDumped)
+            if (!_wfcOutpostTelemetryRing.IsCreated ||
+                !_wfcOutpostEventTelemetryRing.IsCreated ||
+                _wfcOutpostBlackBoxDumped)
+            {
                 return;
+            }
 
             _wfcOutpostBlackBoxDumped = true;
 
@@ -1814,27 +1912,24 @@ namespace Hecton8.SaveSystem
                 using (BinaryWriter writer = new BinaryWriter(stream))
                 {
                     writer.Write(WfcOutpostBlackBoxMagic);
+                    writer.Write(WfcOutpostBlackBoxVersion);
                     writer.Write(WfcOutpostTelemetryCapacity);
+                    writer.Write(WfcOutpostEventTelemetryCapacity);
                     writer.Write(UnsafeUtility.SizeOf<WfcOutpostTelemetryEntry>());
                     writer.Write(_wfcOutpostTelemetryWriteIndex);
+                    writer.Write(_wfcOutpostEventTelemetryWriteIndex);
                     for (int i = 0; i < WfcOutpostTelemetryCapacity; i++)
                     {
                         int index = (_wfcOutpostTelemetryWriteIndex + i) % WfcOutpostTelemetryCapacity;
                         WfcOutpostTelemetryEntry entry = _wfcOutpostTelemetryRing[index];
-                        writer.Write(entry.Frame);
-                        writer.Write(entry.Operation);
-                        writer.Write(entry.Status);
-                        writer.Write(entry.Flags);
-                        writer.Write(entry.SectorHash);
-                        writer.Write(entry.PayloadHash);
-                        writer.Write(entry.GridSectorHash);
-                        writer.Write(entry.PayloadBytes);
-                        writer.Write(entry.CellIndex);
-                        writer.Write(entry.PreviousFlags);
-                        writer.Write(entry.CurrentFlags);
-                        writer.Write(entry.SignalSourceHash);
-                        writer.Write(entry.Reserved0);
-                        writer.Write(entry.Reserved1);
+                        WriteWfcOutpostTelemetryEntry(writer, in entry);
+                    }
+
+                    for (int i = 0; i < WfcOutpostEventTelemetryCapacity; i++)
+                    {
+                        int index = (_wfcOutpostEventTelemetryWriteIndex + i) % WfcOutpostEventTelemetryCapacity;
+                        WfcOutpostTelemetryEntry entry = _wfcOutpostEventTelemetryRing[index];
+                        WriteWfcOutpostTelemetryEntry(writer, in entry);
                     }
                 }
             }
@@ -1842,6 +1937,24 @@ namespace Hecton8.SaveSystem
             {
                 LogWarning($"[SaveManager] WFC outpost black box dump failed: {exception.Message}");
             }
+        }
+
+        private static void WriteWfcOutpostTelemetryEntry(BinaryWriter writer, in WfcOutpostTelemetryEntry entry)
+        {
+            writer.Write(entry.Frame);
+            writer.Write(entry.Operation);
+            writer.Write(entry.Status);
+            writer.Write(entry.Flags);
+            writer.Write(entry.SectorHash);
+            writer.Write(entry.PayloadHash);
+            writer.Write(entry.GridSectorHash);
+            writer.Write(entry.PayloadBytes);
+            writer.Write(entry.CellIndex);
+            writer.Write(entry.PreviousFlags);
+            writer.Write(entry.CurrentFlags);
+            writer.Write(entry.SignalSourceHash);
+            writer.Write(entry.Reserved0);
+            writer.Write(entry.Reserved1);
         }
 
         private void DumpSaveBlackBox()

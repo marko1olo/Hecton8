@@ -423,3 +423,19 @@ Solution: Keep the existing regex patterns as the scoring authority, but add lit
 Rejected Alternatives: Replace the PowerShell audit with a new compiled analyzer or claim CoreGraphOnly as enough. A compiled analyzer is a larger tooling migration; CoreGraphOnly cannot report AUP precision integrity, safe/risk counts, or runtime source H-Phi.
 Scalability potential: Low machines get a cheaper static gate without gameplay runtime cost. Middle/High/Ultra keep the full static score path available, including AUP precision integrity, before visual-overkill systems depend on long-session anchor stability.
 Hardware Impact: Gameplay frame impact is 0 us. Static tool run completed in 127.735 seconds after the prefilter patch and reported `AupPrecisionIntegrity=1`, `AupPrecisionSafe=363`, and `AupPrecisionRisk=0`; no profiler/runtime claim is made.
+
+## Decision 53 - AUP Precision H-Phi Budget Gate
+
+Problem: The global H-Phi audit reported AUP precision risk, but CI/static users still had to inspect the summary manually to reject precision regressions.
+Solution: Add `-MaxAupPrecisionRisk` and `Assert-AupPrecisionBudget` to fail the full source audit when runtime AUP precision risk exceeds the configured budget.
+Rejected Alternatives: Rely on chat/log review or fold the budget into CoreGraphOnly. Manual review misses regressions; CoreGraphOnly cannot see source AUP bridge patterns.
+Scalability potential: Low machines get a single static command that rejects AUP drift regressions without launching Unity or rebuilding. Middle/High/Ultra keep the same gate before richer world-scale visuals depend on stable AUP anchors.
+Hardware Impact: Gameplay frame impact is 0 us. Full gated static run completed in 112.902 seconds with `AupPrecisionRisk=0`; no Unity profiler/runtime claim is made.
+
+## Decision 54 - AUP Budget CoreGraphOnly Fail-Fast Guard
+
+Problem: `-MaxAupPrecisionRisk` is a source-pattern budget, but `-CoreGraphOnly` does not scan source files. Allowing both switches together would create a false sense of AUP coverage.
+Solution: Fail immediately when `-CoreGraphOnly` is combined with `-MaxAupPrecisionRisk`, with an explicit instruction to remove `-CoreGraphOnly` for source AUP precision gating.
+Rejected Alternatives: Silently ignore the AUP budget in graph-only mode or run a full scan despite `-CoreGraphOnly`. Silent ignore is false evidence; overriding CoreGraphOnly violates the caller's requested fast graph path.
+Scalability potential: Low machines keep the fast CoreGraphOnly path for graph debt and get a separate explicit full-source path for AUP precision. Middle/High/Ultra CI scripts can compose the two checks without accidental false positives.
+Hardware Impact: Gameplay frame impact is 0 us. Guard cost is one integer comparison before returning CoreGraphOnly output.

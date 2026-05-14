@@ -44,6 +44,7 @@ namespace Hecton8.Narrative.Prologue
         private bool _disposed;
         private bool _blackBoxDumped;
         private bool _devSkipHandoffPublished;
+        private bool _inputLockAcquired;
         private bool _inputLockReleased;
         private byte _cancelReason;
         private PrologueAtmosphericReentrySnapshot _lastAtmosphericReentry;
@@ -80,6 +81,7 @@ namespace Hecton8.Narrative.Prologue
             _cancelReason = 0;
             _blackBoxDumped = false;
             _devSkipHandoffPublished = false;
+            _inputLockAcquired = false;
             _inputLockReleased = false;
             _hasLastOrbitalSnapshot = false;
             _lastAtmosphericReentry = default;
@@ -152,6 +154,8 @@ namespace Hecton8.Narrative.Prologue
         private void OnDisable()
         {
             CancelSequence(PrologueCancelReasons.ExplicitCancel);
+            if (_running)
+                ReleaseInputLockNoThrow();
         }
 
         private void OnDestroy()
@@ -225,7 +229,7 @@ namespace Hecton8.Narrative.Prologue
                 return false;
 
             RecordStage(PrologueStage.OrbitalSilence, SilenceHash, (byte)(PrologueInputLockFlags.Look | PrologueInputLockFlags.Translation));
-            _runtime.PublishInputLock(PrologueInputLockFlags.Look | PrologueInputLockFlags.Translation, paused: true);
+            PublishSequenceInputLock(PrologueInputLockFlags.Look | PrologueInputLockFlags.Translation, paused: true);
             _runtime.PublishMuffledBreathing(1f, 3f);
             await _runtime.DelayDilatedAsync(3f, cancellationToken);
             return !ShouldStopForCancellation(cancellationToken) && !TryHandleDevelopmentSkip();
@@ -277,7 +281,7 @@ namespace Hecton8.Narrative.Prologue
         private async Awaitable<bool> RunManualOverrideAsync(CancellationToken cancellationToken)
         {
             RecordStage(PrologueStage.ManualOverride, ManualHash, (byte)PrologueInputLockFlags.Translation);
-            _runtime.PublishInputLock(PrologueInputLockFlags.Translation, paused: true);
+            PublishSequenceInputLock(PrologueInputLockFlags.Translation, paused: true);
             _runtime.PublishManualReleasePrompt();
 
             while (true)
@@ -463,7 +467,7 @@ namespace Hecton8.Narrative.Prologue
 
         private void ReleaseInputLockNoThrow()
         {
-            if (_inputLockReleased)
+            if (_inputLockReleased || !_inputLockAcquired)
                 return;
 
             IPrologueSequenceRuntime runtime = _runtime;
@@ -474,12 +478,23 @@ namespace Hecton8.Narrative.Prologue
             {
                 runtime.PublishInputLock(PrologueInputLockFlags.None, paused: false);
                 _inputLockReleased = true;
+                _inputLockAcquired = false;
             }
             catch (Exception)
             {
                 DumpBlackBox();
                 TryDumpRuntimeBlackBox(runtime);
             }
+        }
+
+        private void PublishSequenceInputLock(PrologueInputLockFlags flags, bool paused)
+        {
+            _runtime.PublishInputLock(flags, paused);
+            if (flags == PrologueInputLockFlags.None || !paused)
+                return;
+
+            _inputLockAcquired = true;
+            _inputLockReleased = false;
         }
 
         private void TryDumpRuntimeBlackBox(IPrologueSequenceRuntime runtime)

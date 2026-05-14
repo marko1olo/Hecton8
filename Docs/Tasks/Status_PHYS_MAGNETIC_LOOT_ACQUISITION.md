@@ -59,3 +59,6 @@ Status: PENDING VERIFICATION
 - Loop 20: Rechecked black-box hard gate. `OnEnable` now exits before tick registration if either loot-owned native evidence lane fails allocation, preventing magnet truth from running without 300-frame telemetry.
 - Loop 21: Rechecked black-box state coverage. The telemetry hash now folds both vault flags and loot item hashes so dumps can distinguish different loot content under identical state flags.
 - Loop 22: Rechecked process hygiene again during final verification. A newly spawned Hecton8 `dotnet build Hecton8.Core.csproj` process was stopped; no dotnet build was initiated by this agent.
+- Loop 23: Rechecked scalability stability. Loot magnet now caches `ScalabilityTierProfileByte` behind a slow-tick hysteresis gate before low-tier snap or presentation budgets change.
+- Loop 24: Rechecked runtime capacity mutation. Scheduling now resolves writable capacity from actual vault/event/sidecar lengths, so authored capacity changes between SlowTick and FastTick cannot overrun native lanes.
+- Loop 25: Rechecked authoring hygiene. Added component multiplicity, inspector ranges/tooltips, and interface XML docs without changing hot-path behavior.

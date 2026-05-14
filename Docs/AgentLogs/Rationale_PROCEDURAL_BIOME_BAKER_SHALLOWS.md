@@ -313,3 +313,17 @@ Scalability potential: Low/MX350 gets predictable compressed 1024 shared atlases
 Hardware Impact: Runtime remains 0 us/frame and 0 bytes procedural allocation. The gain is prevention: no Standalone 512 downsample, top-level 2048 ambiguity, or sRGB ORM mistake can silently alter visual quality or material math. Exact runtime microseconds are not profiled because this is import metadata validation.
 
 Verification: No dotnet rebuild and no Unity import was run. `AtlasImporterYamlScan Count=4 Bad=0` and `AtlasPngDimensionScan Count=4 Bad=0`. `git diff --check` passed for the four edited Shallows atlas meta files.
+
+## Decision 23 - Rock Collider Proxy Mesh Contract
+
+Problem: The rock validation contract proved collider count, convex mode, transform name, and renderer alignment, but it did not prove the collider was enabled, non-trigger, or bound to the exact LOD2 render mesh. A rock prefab could silently use a stale or higher-cost collision mesh while passing most existing checks, weakening the visual-fake proxy rule.
+
+Solution: Extend `ValidateRockCollider` to resolve the LOD2 renderer mesh and require the single `MeshCollider` to be enabled, non-trigger, convex, non-null, and sharing that exact LOD2 mesh object. This keeps rock collision tied to the cheapest already-authored visible proxy.
+
+Rejected Alternatives: Adding runtime collider correction was rejected because generated Shallows prefabs must remain static data. Adding a new simplified collider bake was rejected because the current LOD2 mesh is already the deterministic cheap proxy and all 50 assets satisfy it. Adding flora colliders was rejected because flora remains visual-only and collider-free by mandate.
+
+Scalability potential: Low/MX350 keeps only 50 rock convex proxies and no flora colliders. Middle/High/Ultra can increase Shallows dressing density without hidden collider mesh bloat. If higher-tier rock collision ever needs more precision, it must be authored as a separate explicit tier contract.
+
+Hardware Impact: Runtime remains 0 us/frame and 0 bytes procedural allocation. The gain is prevention: no stale, disabled, trigger-only, or high-cost mesh collider can enter the Shallows rock library unnoticed. Exact runtime microseconds are not profiled because this is editor validation.
+
+Verification: No dotnet rebuild and no Unity import was run. `git diff --check` passed for `ShallowsBioForgeBatchBaker.cs`. Source scans found `colliders[0].enabled`, `colliders[0].isTrigger`, and `colliders[0].sharedMesh != lod2Mesh`; source brace count remained balanced and `NonAscii=0`. YAML scans found `RockColliderLod2GuidYamlScan Count=50 Bad=0` and `ShallowsColliderCountYamlScan Count=200 Bad=0`.

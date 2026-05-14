@@ -467,3 +467,33 @@ Verification:
 - Static scans confirm WFC ring allocation/disposal, per-Tick frame records, event records, `Dump_MACRO_WFC_PERSISTENCE_SYNC.bin`, and corrupt-payload dump hook.
 - `Select-String` re-extraction found no `MACRO_WFC_PERSISTENCE_SYNC` tag in rotated `Docs/Tasks/CURRENT_BATCH.md`.
 - No `dotnet` rebuild was run.
+
+## Recheck Report: WFC Black-Box Frame/Event Split
+Status: PENDING VERIFICATION.
+
+What was wrong:
+- The WFC black-box ring mixed frame snapshots and event records.
+- Dense WFC event bursts could evict frame snapshots before 300 frames elapsed.
+- That weakened the literal "last 300 frames" forensic requirement.
+
+What was done:
+- Kept the existing 300-entry WFC ring as the frame ring.
+- Added a separate 300-entry WFC event ring.
+- Tick writes `FRAM` records only to the frame ring.
+- Signal, persist, restore, hydration, and append records write to the event ring.
+- Versioned the dump header as `WfcOutpostBlackBoxVersion = 2` and serialized both rings.
+
+Cinematic cheats used:
+- Frame truth and event breadcrumbs are stored as compact binary records, not gameplay-history replay.
+- Corrupt-sector investigation gets hashes/flags/source IDs without managed log spam.
+
+Exact microseconds saved:
+- Measured savings: 0 us. No profiler or runtime trace.
+- Static cost: +19.2 KB persistent native memory for the event ring.
+- Static cost: unchanged one 64-byte frame-ring write per Tick; WFC event writes occur only on WFC activity.
+
+Verification:
+- `git diff --check -- Assets/_Project/Scripts/SaveManager.cs` reports no whitespace errors beyond Git CRLF normalization warning.
+- Static scans confirm frame records and event records use separate rings and no old shared `RecordWfcOutpostBlackBox` call remains.
+- `Select-String` re-extraction found no `MACRO_WFC_PERSISTENCE_SYNC` tag in rotated `Docs/Tasks/CURRENT_BATCH.md`.
+- No `dotnet` rebuild was run.

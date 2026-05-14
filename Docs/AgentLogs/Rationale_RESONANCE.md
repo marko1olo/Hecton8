@@ -2,7 +2,7 @@
 
 Agent: CORE_RESONANCE_ORCHESTRATOR
 Domain: SYSTEMS_ARCHITECT / Resonance Orchestration
-Status: ACTIVE / PENDING VERIFICATION
+Status: ENGINE RESONATING / COMPILE BLOCKED BY DEPENDENCY
 
 ## Mandate Set
 
@@ -136,3 +136,27 @@ Rejected Alternatives: Claiming profiler `0 B` without PlayMode proof would be f
 Scalability potential: Low avoids GC spikes during bucket pressure. Middle/High/Ultra preserve compute headroom for visuals instead of garbage collection.
 
 Hardware Impact: 0 managed allocations in the edited loops by static proof. Estimated GC spike avoidance: unbounded frame hitch prevention rather than deterministic microsecond gain.
+
+## Decision 10 - Signal Feedback Loop Audit
+
+Problem: Recursive verification requires proving the resonance wiring did not create System A triggers System B triggers System A feedback loops.
+
+Solution: Scan edited resonance files for `SignalBus<T>` writes and deferred-signal candidates. The touched systems contain frame-snapshot reads only in existing signal consumers. No new `SignalBus.Push` path was added, so no new loop requires `DeferredSignal`.
+
+Rejected Alternatives: Adding deferred queues without a producer loop would add dead structure and future ambiguity. Claiming feedback safety without a grep-backed pass would be fake.
+
+Scalability potential: Low/Middle avoid surprise frame spikes from recursive signal fan-out. High/Ultra retain deterministic signal flow while using saved compute for visuals.
+
+Hardware Impact: 0 runtime microseconds added. Prevents unbounded signal cascade risk.
+
+## Decision 11 - Omega Polish Mandate Absence
+
+Problem: The protocol requires reading `<POLISH_MANDATE>` only after all core tasks are checked or blocked, but `CURRENT_BATCH.md` contains no such tag.
+
+Solution: Record the missing tag as objective evidence and perform a manual anti-bloat pass against the edited systems, the loaded mandates, and the original in-chat task. No extra abstractions or cosmetic rewrites were added.
+
+Rejected Alternatives: Inventing a polish mandate would violate strict parsing. Editing neighboring code for polish would cross domain boundaries.
+
+Scalability potential: Low/Middle keep the smallest runtime surface. High/Ultra keep the same bucket contracts and can scale visual density without new dependency churn.
+
+Hardware Impact: 0 runtime microseconds added. No bloat introduced during final pass.

@@ -36,7 +36,16 @@ Status: SHADERS CRYSTALLIZED / VISUAL ORGASM READY - COMPILE BLOCKED BY EXTERNAL
 
 ## Verification Ledger
 - Compile: BLOCKED BY DEPENDENCY - Unity batchmode reports only existing `Assets/_Project/Scripts/World/GroundPenetratingRadarRuntime.cs` missing `Hecton8.World.GPR`, `GroundRadarTelemetryEntry`, and `GroundRadarConstants`.
-- Shader static audit: PASS - one `UnityPerMaterial` CBUFFER, one `_MaskMap` sample, guarded `pow()`/`rsqrt()`, balanced braces.
+- Shader static audit: PASS - one `UnityPerMaterial` CBUFFER, one `_MaskMap` sample, guarded `pow()`/`rsqrt()`, balanced braces. Follow-up low-tier pass strips normal-map, blue-noise dither, caustic texture, POM, shadow-coordinate, and specular work behind compile/runtime gates.
 - Unity import/Console: BLOCKED BY DEPENDENCY - owned shader/C# names absent from error scan.
 - Frame Debugger/RenderDoc/Profiler: NOT RUN - no runtime scene/clean compile available; microsecond figures are estimates until capture.
 - Final Report: APPENDED - `Docs/AgentLogs/LOG_SHADER_OVERKILL_ARCHITECT.md`.
+
+## Follow-Up Pass 2026-05-15
+- [x] Low-tier fragment texture budget tightened | Justification: `_MATH_LOD_LOW` now samples only base + packed ORM in UberNoir, skipping normal, rust/POM, blue-noise dither, and caustic texture work | Alternative rejected: one shader cost profile for MX350 and Ultra | Estimate: 20-120 us GPU saved in dense low-tier material views pending capture
+- [x] Low-tier lighting math tightened | Justification: `_MATH_LOD_LOW` now uses `GetMainLight()` without `TransformWorldToShadowCoord`, view half-vector, specular, or caustics | Alternative rejected: shadow/specular math whose result was discarded | Estimate: 10-80 us GPU saved in low-tier forward-lit batches pending capture
+- [x] Rust texture stall gate added | Justification: non-low clean materials return before `_RustDetailMap` sampling when global/material rust is effectively zero | Alternative rejected: unconditional rust detail sample on clean metal | Estimate: 10-90 us GPU saved on clean materials pending capture
+- [x] Caustic texture variant gate added | Justification: `_HectonCausticsMap` sample is compiled only when `H8_UBERNOIR_CAUSTICS_TEXTURED` is defined | Alternative rejected: compiling texture caustics into every non-low UberNoir variant | Estimate: 5-40 us GPU and variant pressure saved depending on scene
+- [x] Graphics Materials H-Phi dependency cleanup | Justification: removed unused `Hecton8.World.Contracts` asmdef reference from `Hecton8.Graphics.Materials` | Alternative rejected: carrying a false World dependency in a rendering material assembly | Estimate: 0 us runtime, static graph purity improvement
+- [x] No-rebuild verification | Justification: user forbade dotnet rebuilds; ran PowerShell static H-Phi and scoped `rg`/`git diff --check` only | Alternative rejected: build evidence that violates user order | Estimate: 0 us runtime
+- H-Phi static result: `RuntimeHPhiNarrow=0.010534799`, `RuntimeHPhiRisk=0.000573240` from `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json` at `2026-05-15 03:19:35 +04:00`.

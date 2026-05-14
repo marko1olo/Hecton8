@@ -307,3 +307,34 @@ Verification:
 Residual risk:
 - This pass is not new compile proof. Existing `Fresh12` remains the last disk compile artifact.
 - Remaining Core asmdef debt has static external hits; reducing it requires staged contract extraction and a compile-enabled lane.
+
+## 2026-05-15 - Concurrent Edit Revalidation Addendum
+
+Triage Record:
+- Errors Fixed: current-disk wall from `Fresh14`/`Fresh18`/`Fresh17` reduced to 0 in `Fresh19`.
+- Files Moved: none.
+- ASMDEFs Repaired: none.
+- Current Status: BUILD SUCCESSFUL / PLATINUM GRADE.
+
+What was wrong:
+- `Fresh12` was invalidated as final evidence by later concurrent source edits.
+- Audio scalability listener work briefly produced a duplicate `OnScalabilityChanged`; the richer concurrent implementation had to be preserved.
+- Save writer call sites passed bounded counts, but matching counted array writer overloads were missing.
+
+What was done:
+- Revalidated current disk state with fresh no-restore Core builds.
+- Removed the duplicate thin audio scalability listener and kept the fuller implementation.
+- Added no-allocation paired count clamp and counted custom-array writer overloads in `SaveBinaryPayloadCodec`.
+- Captured final proof in `Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh19.log`.
+
+Cinematic Cheats used:
+- None. Compile-contract repair only.
+
+Exact Microseconds saved:
+- Runtime frame time saved: 0 us.
+- Final build verification time: 81,710,000 us.
+
+Verification:
+- Command: `dotnet build Hecton8.Core.csproj --no-restore --disable-build-servers -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal`.
+- Result: `Build succeeded. 0 Warning(s). 0 Error(s).`
+- Output: `Temp/bin/Debug/Hecton8.Core.dll`.

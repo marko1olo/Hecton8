@@ -49,6 +49,7 @@ namespace Hecton8.QA.Headless
         private const int WarmupFrames = 120;
         private const int AupShiftIntervalFrames = 15;
         private const int AupSnapFenceFrames = 300;
+        private const int BlackboxMemorySnapshotIntervalFrames = 30;
         private const int ChunkUnloadIntervalFrames = 900;
         private const int ChunkLeakGraceFrames = 180;
         private const int BlackboxFlagScratchActiveBit = 0;
@@ -57,6 +58,7 @@ namespace Hecton8.QA.Headless
         private const int BlackboxFlagEcosystemStressIssuedBit = 3;
         private const int BlackboxFlagDataVaultMissingBit = 4;
         private const int BlackboxFlagAupSnapFenceActiveBit = 5;
+        private const int BlackboxFlagMemorySampleFreshBit = 6;
         private const long LeakToleranceBytes = 1024L * 1024L;
         private const double FlagMaxAgeSeconds = 10800.0;
         private const double FlagFutureSkewToleranceSeconds = 300.0;
@@ -135,7 +137,9 @@ namespace Hecton8.QA.Headless
         private int _staticHPhiAupPrecisionRisk;
         private int _staticHPhiDispatcherContracts;
         private int _staticHPhiUnityUpdateMethods;
+        private int _lastMemorySnapshotExtremeFrame;
         private float3 _lastShiftMeters;
+        private MemorySnapshot _lastMemorySnapshot;
         private bool _started;
         private bool _finished;
         private bool _registeredFast;
@@ -145,6 +149,7 @@ namespace Hecton8.QA.Headless
         private bool _runtimePolicyApplied;
         private bool _baselineCaptured;
         private bool _chunkUnloadPending;
+        private bool _memorySnapshotFreshForEntry;
         private bool _previousRunInBackground;
         private bool _previousAudioPause;
         private int _previousTargetFrameRate;
@@ -234,8 +239,6 @@ namespace Hecton8.QA.Headless
             }
 
             _extremeFrame++;
-
-            CacheServices();
 
             if (_ecosystemStressIssued == 0)
                 IssueEcosystemStressRequest();
@@ -354,6 +357,7 @@ namespace Hecton8.QA.Headless
             _resultPath = ResolveProjectPath(ResultRelativePath);
             _blackboxPath = ResolveProjectPath(BlackboxRelativePath);
             _h8MemoryDumpPath = ResolveProjectPath(H8MemoryDumpRelativePath);
+            _lastMemorySnapshotExtremeFrame = int.MinValue;
             EnsureParentDirectory(_resultPath);
             EnsureParentDirectory(_blackboxPath);
             EnsureParentDirectory(_h8MemoryDumpPath);
@@ -740,7 +744,7 @@ namespace Hecton8.QA.Headless
             if (!_blackbox.IsCreated)
                 return;
 
-            MemorySnapshot snapshot = CaptureMemorySnapshot();
+            MemorySnapshot snapshot = CaptureBlackboxMemorySnapshot(eventHash);
             int index = _blackboxCursor % _blackbox.Length;
             _blackbox[index] = new FractureTelemetryEntry
             {
@@ -774,6 +778,21 @@ namespace Hecton8.QA.Headless
             };
         }
 
+        private MemorySnapshot CaptureBlackboxMemorySnapshot(uint eventHash)
+        {
+            bool forceFresh = eventHash != FrameHash || _lastMemorySnapshotExtremeFrame == int.MinValue;
+            if (forceFresh || _extremeFrame - _lastMemorySnapshotExtremeFrame >= BlackboxMemorySnapshotIntervalFrames)
+            {
+                _lastMemorySnapshot = CaptureMemorySnapshot();
+                _lastMemorySnapshotExtremeFrame = _extremeFrame;
+                _memorySnapshotFreshForEntry = true;
+                return _lastMemorySnapshot;
+            }
+
+            _memorySnapshotFreshForEntry = false;
+            return _lastMemorySnapshot;
+        }
+
         private uint ComposeBlackboxFlags()
         {
             uint flags = 0u;
@@ -789,6 +808,8 @@ namespace Hecton8.QA.Headless
                 flags |= 1u << BlackboxFlagDataVaultMissingBit;
             if (IsAupSnapFenceActive())
                 flags |= 1u << BlackboxFlagAupSnapFenceActiveBit;
+            if (_memorySnapshotFreshForEntry)
+                flags |= 1u << BlackboxFlagMemorySampleFreshBit;
             return flags;
         }
 
@@ -894,6 +915,10 @@ namespace Hecton8.QA.Headless
                     WriteInvariant(writer, AupSnapFenceFrames);
                     writer.Write(",\"blackboxFlagAupSnapFenceBit\":");
                     WriteInvariant(writer, BlackboxFlagAupSnapFenceActiveBit);
+                    writer.Write(",\"blackboxMemorySnapshotIntervalFrames\":");
+                    WriteInvariant(writer, BlackboxMemorySnapshotIntervalFrames);
+                    writer.Write(",\"blackboxFlagMemorySampleFreshBit\":");
+                    WriteInvariant(writer, BlackboxFlagMemorySampleFreshBit);
                     writer.Write(",\"simulationPhaseMs\":");
                     WriteInvariant(writer, _lastSimulationPhaseMs);
                     writer.Write(",\"nativeBytesBaseline\":");

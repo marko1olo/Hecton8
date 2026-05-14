@@ -1522,6 +1522,7 @@ namespace Hecton8.World
         private int _boidIndirectArgsInstanceCount = -1;
         private int _frameParity;
         private ISimulationBucketer _simulationBucketer;
+        private bool _simulationBucketerProbeAttempted;
         private int _lastFieldRevision = -1;
         private float _simulationInterpolationAlpha = 1f;
         private bool _registeredTick;
@@ -2133,8 +2134,11 @@ namespace Hecton8.World
             if (_playerFlashlight != null)
                 _flashlightOn = _playerFlashlight.IsOn;
 
-            if (_simulationBucketer == null || !_simulationBucketer.IsInitialized)
+            if (!_simulationBucketerProbeAttempted)
+            {
                 _simulationBucketer = GlobalRegistry.SimulationBucketer;
+                _simulationBucketerProbeAttempted = true;
+            }
         }
 
         private void ResetDependencyProbeCache()
@@ -2142,6 +2146,7 @@ namespace Hecton8.World
             _playerTransformProbeAttempted = false;
             _viewCameraProbeAttempted = false;
             _runtimeServiceProbeAttempted = false;
+            _simulationBucketerProbeAttempted = false;
         }
 
         private void SanitizeSettings()
@@ -4275,12 +4280,6 @@ namespace Hecton8.World
         private void ResolveSimulationBucketUniforms(out int simulationBucketIndex, out int simulationBucketMask)
         {
             ISimulationBucketer bucketer = _simulationBucketer;
-            if (bucketer == null || !bucketer.IsInitialized)
-            {
-                bucketer = GlobalRegistry.SimulationBucketer;
-                _simulationBucketer = bucketer;
-            }
-
             int frameCount = bucketer != null && bucketer.IsInitialized
                 ? bucketer.CurrentFrameCount
                 : Time.frameCount;

@@ -375,6 +375,11 @@ namespace Hecton8.SaveSystem
 
         private static bool WriteSaveData(SaveData data, ref BufferWriter writer)
         {
+            int narrativeDiscoveryCount = ClampCollectionCount(
+                data.narrativeDiscoveryCount,
+                data.narrativeDiscoveryIds,
+                SaveData.MaxNarrativeDiscoveries);
+
             return writer.WriteInt(data.version)
                 && writer.WriteString(data.timestamp)
                 && writer.WriteDouble(data.totalPlayTime)
@@ -402,16 +407,20 @@ namespace Hecton8.SaveSystem
                 && WriteStringFloatDictionary(ref writer, data.toolDurabilityMap)
                 && WriteStringBoolDictionary(ref writer, data.toolBrokenMap)
                 && WriteIntHashSet(ref writer, data.discoveredBiomeIds)
-                && writer.WriteStructArray(data.discoveredBiomeBitWords)
+                && writer.WriteStructArraySlice(data.discoveredBiomeBitWords, BiomeDiscoveryBitMask.WordCount)
                 && writer.WriteInt(data.lastDiscoveredBiomeId)
-                && writer.WriteInt(data.narrativeDiscoveryCount)
-                && WriteStringArray(ref writer, data.narrativeDiscoveryIds)
+                && writer.WriteInt(narrativeDiscoveryCount)
+                && WriteStringArraySlice(
+                    ref writer,
+                    data.narrativeDiscoveryIds,
+                    narrativeDiscoveryCount,
+                    SaveData.MaxNarrativeDiscoveries)
                 && writer.WriteInt(data.narrativeDepthTier)
                 && writer.WriteStruct(data.narrativeAupTriggeredMask)
                 && WriteStringList(ref writer, data.audioLogDiscoveredIds)
                 && WriteAudioLogDiscoveryBitWords(ref writer, data)
                 && WriteEncryptedAudioLogFragments(ref writer, data)
-                && writer.WriteStructArray(data.industrialLoreUnlockWords)
+                && writer.WriteStructArraySlice(data.industrialLoreUnlockWords, IndustrialLoreBitMask.WordCount)
                 && WriteDataArchaeology(ref writer, data)
                 && WriteStringList(ref writer, data.questActiveIds)
                 && WriteStringList(ref writer, data.questCompletedIds)
@@ -1030,7 +1039,8 @@ namespace Hecton8.SaveSystem
 
         private static bool WriteExternalScavengerSites(ref BufferWriter writer, ExternalScavengerSiteDTO[] value)
         {
-            return writer.WriteStructArray(value);
+            int count = value != null ? Math.Min(value.Length, SaveData.MaxExternalScavengerSites) : 0;
+            return writer.WriteStructArraySlice(value, count);
         }
 
         private static bool WritePlayerStats(ref BufferWriter writer, PlayerStatsDTO value)
@@ -1595,6 +1605,13 @@ namespace Hecton8.SaveSystem
             return Math.Clamp(count, 0, upperBound);
         }
 
+        private static int ClampPairedCollectionCount(int count, int maxCount, Array first, Array second)
+        {
+            int upperBound = Math.Min(Math.Max(maxCount, 0), first != null ? first.Length : 0);
+            upperBound = Math.Min(upperBound, second != null ? second.Length : 0);
+            return Math.Clamp(count, 0, upperBound);
+        }
+
         private static int ClampPairedCollectionCount<T0, T1, T2>(
             int count,
             int maxCount,
@@ -1953,18 +1970,27 @@ namespace Hecton8.SaveSystem
 
         private static bool WriteExplorationMap(ref BufferWriter writer, ExplorationMapDTO value)
         {
+            int exploredMortonByteCount = ClampCollectionCount(
+                value.exploredMortonByteCount,
+                value.exploredMortonMaskBytes,
+                ExplorationMapDTO.MortonMaskByteCount);
+            int discoveredSectorByteCount = ClampCollectionCount(
+                value.discoveredSectorByteCount,
+                value.discoveredSectorMaskBytes,
+                ExplorationMapDTO.CartographyMaskByteCount);
+
             return writer.WriteInt(value.exploredChunkCount)
                 && writer.WriteInt(value.chunkSizeMeters)
                 && writer.WriteInt(value.mortonMaskAxisBits)
                 && writer.WriteInt(value.mortonMaskOriginOffset)
                 && writer.WriteUInt(value.mortonBuildSalt != 0u ? value.mortonBuildSalt : SaveBinaryStorage.ExplorationMortonBuildSalt32)
-                && writer.WriteInt(value.exploredMortonByteCount)
-                && writer.WriteStructArraySlice(value.exploredMortonMaskBytes, value.exploredMortonByteCount)
+                && writer.WriteInt(exploredMortonByteCount)
+                && writer.WriteStructArraySlice(value.exploredMortonMaskBytes, exploredMortonByteCount)
                 && writer.WriteInt(value.cartographyCellSizeMeters)
                 && writer.WriteInt(value.cartographyMaskAxisBits)
                 && writer.WriteInt(value.cartographyMaskOriginOffset)
-                && writer.WriteInt(value.discoveredSectorByteCount)
-                && writer.WriteStructArraySlice(value.discoveredSectorMaskBytes, value.discoveredSectorByteCount);
+                && writer.WriteInt(discoveredSectorByteCount)
+                && writer.WriteStructArraySlice(value.discoveredSectorMaskBytes, discoveredSectorByteCount);
         }
 
         private static bool ReadExplorationMap(ref BufferReader reader, int version, out ExplorationMapDTO value)
@@ -2052,11 +2078,17 @@ namespace Hecton8.SaveSystem
 
         private static bool WritePdaLogbook(ref BufferWriter writer, PDALogbookDTO value)
         {
-            return writer.WriteInt(value.entryCount)
+            int entryCount = ClampCollectionCount(value.entryCount, value.entries, PDALogbookDTO.MaxEntries);
+            int seenOriginCount = ClampCollectionCount(
+                value.seenOriginCount,
+                value.seenOriginHashes,
+                PDALogbookDTO.MaxSeenOrigins);
+
+            return writer.WriteInt(entryCount)
                 && writer.WriteInt(value.nextSequence)
-                && WritePdaLogbookEntryArray(ref writer, value.entries)
-                && writer.WriteInt(value.seenOriginCount)
-                && writer.WriteStructArray(value.seenOriginHashes);
+                && WritePdaLogbookEntryArray(ref writer, value.entries, entryCount)
+                && writer.WriteInt(seenOriginCount)
+                && writer.WriteStructArraySlice(value.seenOriginHashes, seenOriginCount);
         }
 
         private static bool ReadPdaLogbook(ref BufferReader reader, int version, out PDALogbookDTO value)
@@ -2085,9 +2117,11 @@ namespace Hecton8.SaveSystem
 
         private static bool WritePdaMarkers(ref BufferWriter writer, PDAMarkerRegistryDTO value)
         {
-            return writer.WriteInt(value.markerCount)
+            int markerCount = ClampCollectionCount(value.markerCount, value.entries, PDAMarkerRegistryDTO.MaxEntries);
+
+            return writer.WriteInt(markerCount)
                 && writer.WriteInt(value.nextSequence)
-                && WritePdaMarkerEntryArray(ref writer, value.entries);
+                && WritePdaMarkerEntryArray(ref writer, value.entries, markerCount);
         }
 
         private static bool ReadPdaMarkers(ref BufferReader reader, int version, out PDAMarkerRegistryDTO value)
@@ -2100,9 +2134,14 @@ namespace Hecton8.SaveSystem
 
         private static bool WriteProceduralLore(ref BufferWriter writer, ProceduralLoreStateDTO value)
         {
-            return writer.WriteInt(value.activeCount)
+            int activeCount = ClampCollectionCount(
+                value.activeCount,
+                value.activePlacements,
+                ProceduralLoreStateDTO.MaxActivePlacements);
+
+            return writer.WriteInt(activeCount)
                 && writer.WriteInt(value.nextSourceIndex)
-                && WriteProceduralLorePlacementArray(ref writer, value.activePlacements);
+                && WriteProceduralLorePlacementArray(ref writer, value.activePlacements, activeCount);
         }
 
         private static bool ReadProceduralLore(ref BufferReader reader, out ProceduralLoreStateDTO value)
@@ -2115,11 +2154,20 @@ namespace Hecton8.SaveSystem
 
         private static bool WriteAchievementRegistry(ref BufferWriter writer, AchievementRegistryDTO value)
         {
+            int unlockedCount = ClampCollectionCount(
+                value.unlockedCount,
+                value.unlockedIds,
+                AchievementRegistryDTO.MaxUnlockedAchievements);
+
             return writer.WriteFloat(value.swamDistanceMeters)
                 && writer.WriteInt(value.craftedItemCount)
                 && writer.WriteInt(value.discoveredBiomeCount)
-                && writer.WriteInt(value.unlockedCount)
-                && WriteStringArray(ref writer, value.unlockedIds);
+                && writer.WriteInt(unlockedCount)
+                && WriteStringArraySlice(
+                    ref writer,
+                    value.unlockedIds,
+                    unlockedCount,
+                    AchievementRegistryDTO.MaxUnlockedAchievements);
         }
 
         private static bool ReadAchievementRegistry(ref BufferReader reader, out AchievementRegistryDTO value)
@@ -2215,10 +2263,17 @@ namespace Hecton8.SaveSystem
 
         private static bool WriteResourceScarcity(ref BufferWriter writer, ResourceScarcityDTO value)
         {
-            return writer.WriteInt(value.entryCount)
-                && writer.WriteStructArray(value.itemHashIds)
-                && WriteStringArray(ref writer, value.itemIds)
-                && writer.WriteStructArray(value.collectedCounts);
+            int entryCount = ClampPairedCollectionCount(
+                value.entryCount,
+                ResourceScarcityDTO.MaxTrackedResources,
+                value.itemHashIds,
+                value.itemIds,
+                value.collectedCounts);
+
+            return writer.WriteInt(entryCount)
+                && writer.WriteStructArraySlice(value.itemHashIds, entryCount)
+                && WriteStringArraySlice(ref writer, value.itemIds, entryCount, ResourceScarcityDTO.MaxTrackedResources)
+                && writer.WriteStructArraySlice(value.collectedCounts, entryCount);
         }
 
         private static bool ReadResourceScarcity(ref BufferReader reader, int saveDataVersion, out ResourceScarcityDTO value)
@@ -2247,11 +2302,17 @@ namespace Hecton8.SaveSystem
 
         private static bool WriteEcosystemState(ref BufferWriter writer, EcosystemStateDTO value)
         {
+            int infectedZoneCount = ClampPairedCollectionCount(
+                value.infectedZoneCount,
+                EcosystemStateDTO.MaxInfectedZones,
+                value.infectedChunkKeys,
+                value.infectedSeverities);
+
             return writer.WriteInt(value.worldSeed)
                 && writer.WriteInt(value.worldGenerationVersionId)
-                && writer.WriteInt(value.infectedZoneCount)
-                && writer.WriteStructArray(value.infectedChunkKeys)
-                && writer.WriteStructArray(value.infectedSeverities);
+                && writer.WriteInt(infectedZoneCount)
+                && writer.WriteStructArraySlice(value.infectedChunkKeys, infectedZoneCount)
+                && writer.WriteStructArraySlice(value.infectedSeverities, infectedZoneCount);
         }
 
         private static bool ReadEcosystemState(ref BufferReader reader, int saveDataVersion, out EcosystemStateDTO value)
@@ -2507,6 +2568,18 @@ namespace Hecton8.SaveSystem
 
         private static bool WriteModule(ref BufferWriter writer, in ModuleDTO value)
         {
+            int sorterSlotCount = ClampPairedCollectionCount(
+                value.sorterBufferedSlotCount,
+                ModuleSorterBufferSlotMax,
+                value.sorterBufferedItemIds,
+                value.sorterBufferedQuantities);
+            int cultivationSlotCount = ClampPairedCollectionCount(
+                value.cultivationSlotCount,
+                ModuleCultivationSlotMax,
+                value.cultivationSeedItemIds,
+                value.cultivationGeneticsMasks,
+                value.cultivationGrowth01);
+
             return writer.WriteString(value.prefabId)
                 && writer.WriteString(value.slottedToolItemId)
                 && writer.WriteString(value.pipeInFlightItemId)
@@ -2516,9 +2589,13 @@ namespace Hecton8.SaveSystem
                 && writer.WriteString(value.drillBufferedItemId)
                 && writer.WriteInt(value.drillBufferedAmount)
                 && writer.WriteFloat(value.drillCycleTimerSeconds)
-                && writer.WriteInt(value.sorterBufferedSlotCount)
-                && WriteStringArray(ref writer, value.sorterBufferedItemIds)
-                && writer.WriteStructArray(value.sorterBufferedQuantities)
+                && writer.WriteInt(sorterSlotCount)
+                && WriteStringArraySlice(
+                    ref writer,
+                    value.sorterBufferedItemIds,
+                    sorterSlotCount,
+                    ModuleSorterBufferSlotMax)
+                && writer.WriteStructArraySlice(value.sorterBufferedQuantities, sorterSlotCount)
                 && writer.WriteFloat(value.posX)
                 && writer.WriteFloat(value.posY)
                 && writer.WriteFloat(value.posZ)
@@ -2535,11 +2612,15 @@ namespace Hecton8.SaveSystem
                 && writer.WriteByte(value.health)
                 && writer.WriteFloat(value.floodedReefFloodSeconds)
                 && writer.WriteBool(value.interiorReefInfestationActive)
-                && writer.WriteInt(value.cultivationSlotCount)
-                && WriteStringArray(ref writer, value.cultivationSeedItemIds)
-                && writer.WriteStructArray(value.cultivationGeneticsMasks)
-                && writer.WriteStructArray(value.cultivationGrowth01)
-                && writer.WriteStructArray(value.cultivationQuality01);
+                && writer.WriteInt(cultivationSlotCount)
+                && WriteStringArraySlice(
+                    ref writer,
+                    value.cultivationSeedItemIds,
+                    cultivationSlotCount,
+                    ModuleCultivationSlotMax)
+                && writer.WriteStructArraySlice(value.cultivationGeneticsMasks, cultivationSlotCount)
+                && writer.WriteStructArraySlice(value.cultivationGrowth01, cultivationSlotCount)
+                && writer.WriteStructArraySlice(value.cultivationQuality01, cultivationSlotCount);
         }
 
         private static bool ReadModule(ref BufferReader reader, int version, out ModuleDTO value)
@@ -2717,11 +2798,6 @@ namespace Hecton8.SaveSystem
                 InventoryDTO.MaxCells);
         }
 
-        private static bool WriteScanEntryArray(ref BufferWriter writer, ScanEntryDTO[] values)
-        {
-            return WriteCustomArray(ref writer, values, WriteScanEntry);
-        }
-
         private static bool WriteScanEntryArray(ref BufferWriter writer, ScanEntryDTO[] values, int count)
         {
             return WriteCustomArraySlice(ref writer, values, count, ScanLogDTO.MaxEntries, WriteScanEntry);
@@ -2735,11 +2811,6 @@ namespace Hecton8.SaveSystem
                 ReadScanEntry,
                 SerializedStringHeaderBytes * 4,
                 ScanLogDTO.MaxEntries);
-        }
-
-        private static bool WriteBarterOfferStateArray(ref BufferWriter writer, BarterOfferStateDTO[] values)
-        {
-            return WriteCustomArray(ref writer, values, WriteBarterOfferState);
         }
 
         private static bool WriteBarterOfferStateArray(ref BufferWriter writer, BarterOfferStateDTO[] values, int count)
@@ -2757,14 +2828,14 @@ namespace Hecton8.SaveSystem
                 BarterDTO.MaxOffers);
         }
 
-        private static bool WriteBarterTransactionArray(ref BufferWriter writer, BarterTransactionDTO[] values)
-        {
-            return WriteCustomArray(ref writer, values, WriteBarterTransaction);
-        }
-
         private static bool WriteBarterTransactionArray(ref BufferWriter writer, BarterTransactionDTO[] values, int count)
         {
-            return WriteCustomArraySlice(ref writer, values, count, BarterDTO.MaxRecentTransactions, WriteBarterTransaction);
+            return WriteCustomArraySlice(
+                ref writer,
+                values,
+                count,
+                BarterDTO.MaxRecentTransactions,
+                WriteBarterTransaction);
         }
 
         private static bool ReadBarterTransactionArray(ref BufferReader reader, out BarterTransactionDTO[] values)
@@ -2777,14 +2848,14 @@ namespace Hecton8.SaveSystem
                 BarterDTO.MaxRecentTransactions);
         }
 
-        private static bool WriteFieldOperationEntryArray(ref BufferWriter writer, FieldOperationEntryDTO[] values)
-        {
-            return WriteCustomArray(ref writer, values, WriteFieldOperationEntry);
-        }
-
         private static bool WriteFieldOperationEntryArray(ref BufferWriter writer, FieldOperationEntryDTO[] values, int count)
         {
-            return WriteCustomArraySlice(ref writer, values, count, FieldOperationLogDTO.MaxRecentEntries, WriteFieldOperationEntry);
+            return WriteCustomArraySlice(
+                ref writer,
+                values,
+                count,
+                FieldOperationLogDTO.MaxRecentEntries,
+                WriteFieldOperationEntry);
         }
 
         private static bool ReadFieldOperationEntryArray(ref BufferReader reader, out FieldOperationEntryDTO[] values)
@@ -2795,11 +2866,6 @@ namespace Hecton8.SaveSystem
                 ReadFieldOperationEntry,
                 SerializedStringHeaderBytes * 4,
                 FieldOperationLogDTO.MaxRecentEntries);
-        }
-
-        private static bool WriteBeaconEntryArray(ref BufferWriter writer, BeaconEntryDTO[] values)
-        {
-            return WriteCustomArray(ref writer, values, WriteBeaconEntry);
         }
 
         private static bool WriteBeaconEntryArray(ref BufferWriter writer, BeaconEntryDTO[] values, int count)
@@ -2817,9 +2883,9 @@ namespace Hecton8.SaveSystem
                 BeaconNetworkDTO.MaxEntries);
         }
 
-        private static bool WritePdaLogbookEntryArray(ref BufferWriter writer, PDALogbookEntryDTO[] values)
+        private static bool WritePdaLogbookEntryArray(ref BufferWriter writer, PDALogbookEntryDTO[] values, int count)
         {
-            return WriteCustomArray(ref writer, values, WritePdaLogbookEntry);
+            return WriteCustomArraySlice(ref writer, values, count, PDALogbookDTO.MaxEntries, WritePdaLogbookEntry);
         }
 
         private static bool ReadPdaLogbookEntryArray(ref BufferReader reader, int version, out PDALogbookEntryDTO[] values)
@@ -2865,9 +2931,9 @@ namespace Hecton8.SaveSystem
             return true;
         }
 
-        private static bool WritePdaMarkerEntryArray(ref BufferWriter writer, PDAMarkerEntryDTO[] values)
+        private static bool WritePdaMarkerEntryArray(ref BufferWriter writer, PDAMarkerEntryDTO[] values, int count)
         {
-            return WriteCustomArray(ref writer, values, WritePdaMarkerEntry);
+            return WriteCustomArraySlice(ref writer, values, count, PDAMarkerRegistryDTO.MaxEntries, WritePdaMarkerEntry);
         }
 
         private static bool ReadPdaMarkerEntryArray(ref BufferReader reader, int version, out PDAMarkerEntryDTO[] values)
@@ -2913,9 +2979,17 @@ namespace Hecton8.SaveSystem
             return true;
         }
 
-        private static bool WriteProceduralLorePlacementArray(ref BufferWriter writer, ProceduralLorePlacementDTO[] values)
+        private static bool WriteProceduralLorePlacementArray(
+            ref BufferWriter writer,
+            ProceduralLorePlacementDTO[] values,
+            int count)
         {
-            return WriteCustomArray(ref writer, values, WriteProceduralLorePlacement);
+            return WriteCustomArraySlice(
+                ref writer,
+                values,
+                count,
+                ProceduralLoreStateDTO.MaxActivePlacements,
+                WriteProceduralLorePlacement);
         }
 
         private static bool ReadProceduralLorePlacementArray(ref BufferReader reader, out ProceduralLorePlacementDTO[] values)
@@ -2926,11 +3000,6 @@ namespace Hecton8.SaveSystem
                 ReadProceduralLorePlacement,
                 (SerializedStringHeaderBytes * 2) + SerializedLongBytes + (SerializedFloatBytes * 3),
                 ProceduralLoreStateDTO.MaxActivePlacements);
-        }
-
-        private static bool WriteModuleArray(ref BufferWriter writer, ModuleDTO[] values)
-        {
-            return WriteCustomArray(ref writer, values, WriteModule);
         }
 
         private static bool WriteModuleArray(ref BufferWriter writer, ModuleDTO[] values, int count)
@@ -2992,11 +3061,6 @@ namespace Hecton8.SaveSystem
             return true;
         }
 
-        private static bool WriteModuleGraphNodeArray(ref BufferWriter writer, ModuleGraphNodeDTO[] values)
-        {
-            return WriteCustomArray(ref writer, values, WriteModuleGraphNode);
-        }
-
         private static bool WriteModuleGraphNodeArray(ref BufferWriter writer, ModuleGraphNodeDTO[] values, int count)
         {
             return WriteCustomArraySlice(ref writer, values, count, ConstructionDTO.MaxModules, WriteModuleGraphNode);
@@ -3010,11 +3074,6 @@ namespace Hecton8.SaveSystem
                 ReadModuleGraphNode,
                 SerializedStringHeaderBytes + SerializedIntBytes + (SerializedLongBytes * 3) + (SerializedFloatBytes * 7),
                 ConstructionDTO.MaxModules);
-        }
-
-        private static bool WriteModuleGraphEdgeArray(ref BufferWriter writer, ModuleGraphEdgeDTO[] values)
-        {
-            return WriteCustomArray(ref writer, values, WriteModuleGraphEdge);
         }
 
         private static bool WriteModuleGraphEdgeArray(ref BufferWriter writer, ModuleGraphEdgeDTO[] values, int count)

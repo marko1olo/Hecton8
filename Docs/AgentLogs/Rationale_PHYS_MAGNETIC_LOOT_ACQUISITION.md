@@ -283,3 +283,39 @@ Rejected Alternatives: Adding another telemetry field was rejected because it wo
 Scalability potential: Low/Middle/High/Ultra all keep the same 300-entry dump format. High-density authored loot fields gain better postmortem discrimination without larger telemetry memory.
 
 Hardware Impact: Adds one integer XOR/multiply per committed slot. MX350 cost is bounded by scheduled count and replaces ambiguity, not frame budget.
+
+## Decision 22 - Scalability Tier Hysteresis
+
+Problem: Low-tier snap behavior and presentation budgets were reading the global scalability tier directly around tick/commit decisions. Immediate tier flips can create visible behavior flicker and violate the state hysteresis mandate.
+
+Solution: Cache the scalability tier inside `LootMagnetSystem` and only accept a new tier after it remains stable for `ScalabilityTierHysteresisSlowTicks`. FastTick and LateFrame budget resolution now use the cached tier.
+
+Rejected Alternatives: Immediate global tier reads were rejected because they can flip math LOD in the same second. Per-frame timer hysteresis was rejected because the system already owns SlowTick cadence and does not need another time source.
+
+Scalability potential: Low tier keeps cheap snap/acquire behavior after stable downgrade. Middle/High/Ultra retain richer presentation budgets after stable upgrade, avoiding rapid budget oscillation on borderline hardware.
+
+Hardware Impact: Removes global tier reads from FastTick presentation decisions and adds a few byte comparisons on SlowTick only. MX350 gains stable low-tier behavior; high-end devices gain stable visual-overkill budgets.
+
+## Decision 23 - Native Lane Length Guard
+
+Problem: Runtime changes to `maxLootEntities` between SlowTick buffer refresh and FastTick scheduling could make the scheduler use an authored capacity larger than the current NativeArray/event/sidecar lanes.
+
+Solution: Add `ResolveWritableCapacity()` and base refresh/schedule readiness on actual vault buffer, signal-event, telemetry, and managed-sidecar lengths. Scheduling caches this resolved capacity for commit handoff.
+
+Rejected Alternatives: Trusting the serialized capacity was rejected because Inspector/runtime edits can happen between cadence points. Forcing an immediate buffer refresh in FastTick was rejected because it would move cold allocation/registry work into the fast path.
+
+Scalability potential: Low/Middle/High/Ultra can author different capacity targets without native lane overruns. High-density scenes fail closed if memory lanes are not actually available.
+
+Hardware Impact: Adds constant-time length checks before scheduling and refresh. No per-entity cost; prevents out-of-range job faults under capacity churn.
+
+## Decision 24 - Authoring Guardrails
+
+Problem: The runtime component had serialized pull fields without editor constraints or public interface docs. Invalid authoring values were clamped at runtime but not communicated in the inspector.
+
+Solution: Added `[DisallowMultipleComponent]`, serialized field tooltips/ranges/minimums, and XML inheritance docs for tick methods.
+
+Rejected Alternatives: Runtime-only clamps were rejected because they hide authoring mistakes until play mode. Custom editor validation was rejected because this pass does not need editor tooling or YAML mutation.
+
+Scalability potential: Low-to-Ultra authoring remains explicit: capacity, radius, pull strength, and speed limits are bounded before runtime.
+
+Hardware Impact: No frame cost. Metadata-only editor guardrails reduce bad scene data before it reaches runtime.

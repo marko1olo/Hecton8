@@ -34,6 +34,33 @@ Verification:
 
 STATUS: AUDIT COMPLETE.
 
+## 2026-05-15 - Top Thread Triage
+
+What was wrong:
+- The root brief identified top-100 `.codex` threads as the next audit target, but the concise evidence was not yet preserved near root.
+- The prior report listed high-burn candidates but did not isolate the top-heavy distribution as a separate working queue.
+
+What was done:
+- Queried `C:\Users\danat\.codex\state_5.sqlite` read-only.
+- Created `COMPUTE_THREAD_TRIAGE.md` at project root.
+- Recorded current live snapshot: 764 threads, 43,912,005,185 tokens.
+- Recorded concentration: top 30 = 9,492,793,103 tokens, 21.618%; top 100 = 21,944,967,637 tokens, 49.975%; top 250 = 33,698,725,001 tokens, 76.741%.
+- Recorded top-100 shape: 78.96% `gpt-5.5`, 21.04% `gpt-5.4`; 55.18% root `C:\hades` CWD; 44.82% `C:\hades\Hecton8` CWD.
+- Added top-30 thread queue with IDs, token counts, model, updated timestamp, CWD, and title hints.
+- Updated `COMPUTE_AUDIT_BRIEF.md` with a link and evidence warning.
+
+Cinematic Cheats used:
+- None.
+
+Exact microseconds saved:
+- Runtime: 0 us.
+- Process: not claimed.
+
+Verification:
+- Markdown-only triage. Compile not run.
+
+STATUS: AUDIT COMPLETE.
+
 ## 2026-05-15 - Root Brief Preservation
 
 What was wrong:

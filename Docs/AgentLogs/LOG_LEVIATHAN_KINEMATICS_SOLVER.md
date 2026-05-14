@@ -441,6 +441,36 @@ Verification:
 - `git diff --check` and `git diff --cached --check` on touched code/docs exit 0; output is only LF-to-CRLF warnings on touched runtime/docs files.
 - Runtime status remains pending until Unity Editor import, shader compile, play-mode behavior, GC, and profiler evidence exist.
 
+## 2026-05-15T03:20+04:00
+
+Status: PENDING VERIFICATION. Continued contract-surface and native ownership audit. No `dotnet` rebuild/compile was run.
+
+What was wrong:
+- `FaunaBrain` still computed and passed strike range into the new `FaunaKinematicsRuntime` path, but the Burst/GPU solver no longer used range.
+- `FaunaKinematicsRuntime` carried unused `NativeMemoryOwner` and `_faunaBrain` members.
+- GPU segment-length upload fallback was 1 m while seed and Burst solver fallback were 2.5 m.
+- `TryGetLeviathanBones()` exposed a mutable native matrix array.
+
+What was done:
+- Removed the dead strike range API parameter and direct call-site calculations.
+- Removed the unused runtime owner members.
+- Aligned shader segment-length upload fallback to 2.5 m.
+- Returned `NativeArray<float4x4>.ReadOnly` from the bone accessor.
+
+Cinematic cheats used:
+- None. Existing terrain fake, GPU deformation, and triangle-wave strike presentation are unchanged.
+
+Exact microseconds saved:
+- No frame-time saving claimed.
+- Removed one unnecessary range calculation per procedural strike-intent update.
+- Prevented fault: external future readers cannot mutate solver-owned bone matrices through this accessor.
+
+Verification:
+- `rg` confirms no `NativeMemoryOwner`, `_faunaBrain`, old four-argument `FaunaKinematicsRuntime.SetStrikeIntent`, or old 1 m segment upload fallback remains in the IK runtime/direct call site scope.
+- Static grep over IK runtime/job/shader scope found no `math.sqrt`, `math.normalize`, managed array creation, `foreach`, `string.Format`, `.ToString()`, `Debug.Log`, Unity Physics casts, `SkinnedMeshRenderer`, `renderer.material`, `Camera.main`, `GlobalRegistry.Get`, `GameObject.Find`, or `FindObject`.
+- `git diff --check` and `git diff --cached --check` on touched code/docs exit 0; output is only LF-to-CRLF warnings on touched runtime/docs files.
+- Runtime status remains pending until Unity Editor import, shader compile, play-mode behavior, GC, and profiler evidence exist.
+
 ## 2026-05-15T03:00+04:00
 
 Status: PENDING VERIFICATION. Continued AUP/terrain-contact audit. No `dotnet` rebuild/compile was run.

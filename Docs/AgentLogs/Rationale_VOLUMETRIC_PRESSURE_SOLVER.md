@@ -345,3 +345,11 @@ Solution: `PublishAnalyticalStressShader` now converts stress at or below `Analy
 Rejected Alternatives: Lowering the CPU epsilon to 0.0001, leaving the shader hardcoded, or releasing the whole analytical path on low tiers only. Lowering the CPU epsilon reintroduces global shader churn; hardcoded shader gates drift from CPU truth; tier-only gating misses near-calm high-tier states.
 Scalability potential: Low/MX350 and calm high-tier bases stay visually silent below the agreed pressure threshold. High/Ultra keep analytical deformation once stress is worth spending vertex ALU on.
 Hardware Impact: Saves CoreLit analytical habitat dent setup for sub-epsilon stress and prevents stale tiny stress globals. Estimated 2-8 us saved per 1k CoreLit vertices in near-calm habitat views on MX350-class GPUs; 0 B/frame.
+
+## Follow-Up Correction - Analytical Spatial Dirty Gate
+
+Problem: `_HectonHabitatStressCenterRadius` could remain stale when analytical stress and displacement stayed numerically stable while the base center/radius moved after topology, AUP, or module-position changes. Stable stress is not enough to skip spatial shader globals.
+Solution: Added cached analytical center/radius state and included 5cm center/radius tolerances in the visible-stress publish gate. The publisher now sanitizes non-finite center/radius/stress values into a zero-stress shader clear path before upload.
+Rejected Alternatives: Publishing analytical center/radius every tick, or keeping the stress-only dirty check. Every-tick global vectors waste driver bandwidth on calm frames; stress-only gating can put active deformation around the wrong world-space region.
+Scalability potential: Low/MX350 keeps cheap zero-stress skip behavior. Mid/High/Ultra keep accurate spatial analytical dents during active pressure while still skipping tiny sub-5cm shader churn.
+Hardware Impact: Prevents stale analytical deformation coordinates with one `lengthsq` and one radius compare in the dirty gate. Estimated saved integration/debug cost is high; runtime cost is under 1 us per analytical publish decision on i3/MX350, with avoided redundant shader globals when spatial movement is below tolerance.

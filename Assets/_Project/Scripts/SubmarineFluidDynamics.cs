@@ -5517,12 +5517,6 @@ namespace Hecton8.Physics
             int vaultFlag) where T : struct
         {
             IDataVault vault = _dataVault;
-            if (vault == null)
-            {
-                vault = GlobalRegistry.DataVault;
-                _dataVault = vault;
-            }
-
             if (vault != null)
             {
                 NativeArray<T> vaultArray = vault.GetBuffer<T>(

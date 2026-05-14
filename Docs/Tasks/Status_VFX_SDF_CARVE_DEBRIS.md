@@ -62,6 +62,9 @@ Status: PENDING VERIFICATION / STATIC CHECKS ONLY / UNITY COMPILE BLOCKED (NO DO
 - Loop 23: Static verification after scratch-state pass. DOD: `git diff --check` returned no whitespace errors, only Git LF/CRLF notice on the log file; VFX static scan found no `GetData`, `SetData`, `ParticleSystem`, `ComputeBuffer`, `foreach`, `.ToString`, `string.Format`, `Camera.main`, scene search, job scheduling fences, private `H8Memory.Allocate`, or private `H8Memory.Release`; shader hot-math scan returned no matches. Rejected alternative: dotnet rebuild or fake Unity compile pass. Estimate: verification saves 0 us.
 - Loop 24: GPU readiness flag fail-closed pass. DOD: `TryEnsureGpuState()` now clears `_gpuReady` immediately after a failed readiness/lease check before any rebind branch can return early. Rejected alternative: leaving a stale true flag while repeated bind attempts fail on missing compute/DataVault dependencies. Estimate: 0 us frame saving; prevents misleading readiness state after vault invalidation.
 - Loop 25: Static verification after readiness flag pass. DOD: `git diff --check` returned no whitespace errors, only Git LF/CRLF notices; VFX static scan again found no CPU readback, ParticleSystem, ComputeBuffer, scene search, job scheduling fences, private `H8Memory.Allocate`, or private `H8Memory.Release`; shader hot-math scan again returned no matches. Rejected alternative: dotnet rebuild or fake Unity compile pass. Estimate: verification saves 0 us.
+- Loop 26: Contiguous dead-span injection upload pass. DOD: `CarveDebrisInjectBatchJob` now finds one contiguous dead span before writing new particles, so the renderer's single CPU-to-GPU dirty upload cannot include live GPU-advection-owned slots with stale CPU mirror positions. Rejected alternative: keeping skip-over-active scan with min/max upload, because it can overwrite live GPU particles between dead holes. Estimate: prevents visual pops/corruption; CPU cost remains one bounded capacity scan, replacing the prior monotonic capacity scan.
+- Loop 27: Low-tier debris shadow-sample LOD pass. DOD: debris material keeps full main-light shadow attenuation only when the existing non-low visual flag is enabled; Low/MX350 uses `GetMainLight()` without shadow-coordinate generation or shadow attenuation dither. Rejected alternative: sampling shadows for every visible chip even when `receiveShadows` is false and low-tier visual-overkill branch is disabled. Estimate: visible-count-dependent fragment/vertex support ALU and shadow-map sample avoidance on MX350.
+- Loop 28: Static verification after contiguous-upload and shadow-LOD passes. DOD: `git diff --check` returned no whitespace errors, only Git LF/CRLF notices; VFX static scan again found no CPU readback, ParticleSystem, ComputeBuffer, scene search, job scheduling fences, private `H8Memory.Allocate`, or private `H8Memory.Release`; shader hot-math scan returned no matches; exact current batch prompt tag count remains 0. Rejected alternative: dotnet rebuild or fake Unity compile pass. Estimate: verification saves 0 us.
 
 ## Second-Pass Upgrade Status
 
@@ -78,7 +81,7 @@ Status: PENDING VERIFICATION / STATIC CHECKS ONLY / UNITY COMPILE BLOCKED (NO DO
 - [x] Flow payload binding locally validates `GraphicsBuffer` validity, grid resolution, center, spacing, and texture metadata before marking flow active or overwriting the buffer sampling center.
 - [x] Same-frame mirror/injection work now uses `IJob.Run()` instead of `Schedule()+Complete()`, preserving deterministic behavior without job-system fence overhead.
 - [x] Scalability tier selection uses a 30-frame cache and 120-frame confirmation window before low/high active-capacity switches.
-- [x] Batched injection uses one monotonic dead-slot cursor across the request batch to avoid repeated occupied-prefix scans during dense carve bursts.
+- [x] Batched injection uses one largest contiguous dead-slot span per frame to keep the single GPU upload range off live GPU-advection-owned slots.
 - [x] Flow texture binding disables structured-buffer fallback when their centers disagree, because the shared compute shader center uniform cannot represent two payload origins.
 - [x] Debris rendering caches mesh draw metadata per frame and uses hash-vector chip orientation instead of shader `sincos`.
 - [x] High/Ultra debris shader uses existing velocity buffer for fresh impact edge response; Low/MX350 keeps the branch disabled.
@@ -90,6 +93,8 @@ Status: PENDING VERIFICATION / STATIC CHECKS ONLY / UNITY COMPILE BLOCKED (NO DO
 - [x] DataVault partial-bind safety improved: failed alias/generation capture clears cached vault lease metadata immediately.
 - [x] H-Phi scratch ownership completed: job state, request batch, and telemetry blackbox buffers are DataVault-owned and generation-checked, not private persistent `H8Memory` arrays.
 - [x] GPU readiness flag now fails closed before dependency-null returns after an invalid cached state.
+- [x] Injection uploads now target one contiguous dead slot span, avoiding stale CPU mirror overwrites of live GPU-advection debris.
+- [x] Low-tier debris lighting skips main-light shadow-coordinate and shadow attenuation work; High/Ultra keeps the richer shadowed response.
 
 ## OMEGA Polish Status
 

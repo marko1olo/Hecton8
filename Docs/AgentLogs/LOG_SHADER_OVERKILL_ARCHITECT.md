@@ -39,3 +39,39 @@ Verification:
 - `git diff --check`: no whitespace errors; PowerShell reports LF-to-CRLF warnings for updated markdown only.
 - Unity batchmode: blocked by `GroundPenetratingRadarRuntime.cs` World/GPR missing references, not owned rendering files.
 - Frame Debugger/RenderDoc/Profiler: not run because the project does not reach a clean compile.
+
+## 2026-05-15 03:19:35 +04:00 - Follow-Up No-Rebuild Rendering/H-Phi Pass
+What was wrong:
+- `_MATH_LOD_LOW` still paid for normal-map sampling and unused specular/shadow setup.
+- Dithered transparency evaluated blue-noise even when the dither feature was disabled.
+- Clean materials sampled `_RustDetailMap` before proving rust was active.
+- Optional caustic texture sampling was compiled into every non-low UberNoir variant.
+- `Hecton8.Graphics.Materials.asmdef` carried an unused `Hecton8.World.Contracts` reference.
+
+What was done:
+- Low-tier UberNoir now returns from base+packed ORM surface sampling and skips normal/rust/POM/biolum sampling.
+- Low-tier lighting uses `GetMainLight()` without `TransformWorldToShadowCoord`, specular half-vector, caustics, or discarded view math.
+- Blue-noise dither is skipped under `_MATH_LOD_LOW` and only sampled when the dither feature flag is enabled.
+- Rust detail sampling now returns early when resolved rust is effectively zero.
+- Caustic map sampling is now behind `H8_UBERNOIR_CAUSTICS_TEXTURED`.
+- Removed the unused World contracts dependency from `Hecton8.Graphics.Materials.asmdef`.
+
+Cinematic Cheats used:
+- Low-tier normals degrade to dominant-axis safe normals instead of exact normalization.
+- Low-tier lighting keeps ambient + main diffuse only; visual belief is preserved by fog/ORM while expensive depth/specular detail is shed.
+- Procedural caustics remain the default; texture caustics are opt-in visual overkill.
+
+Exact Microseconds saved:
+- Measured: 0 us. User forbade rebuilds, and Unity/runtime capture remains blocked by World/GPR compile errors.
+- Estimated low-tier surface-sample savings: 20-120 us GPU in dense material views.
+- Estimated low-tier lighting savings: 10-80 us GPU in forward-lit batches.
+- Estimated clean-material rust gate savings: 10-90 us GPU when rust is zero.
+- Estimated caustic texture variant/sample savings: 5-40 us GPU plus lower variant pressure when procedural caustics are enough.
+- Asmdef cleanup runtime gain: 0 us; static architecture debt reduced.
+
+Verification:
+- `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json`: `RuntimeHPhiNarrow=0.010534799`, `RuntimeHPhiRisk=0.000573240`.
+- Scoped HLSL scan: braces `40/40`, one `UnityPerMaterial` CBUFFER, one `_MaskMap` sample, caustic texture sample guarded by `H8_UBERNOIR_CAUSTICS_TEXTURED`.
+- Scoped asmdef scan: no `Hecton8.World` / `World.Contracts` reference remains in `Assets/_Project/Scripts/Graphics/Materials`.
+- `git diff --check` on touched files: no whitespace errors; LF-to-CRLF warnings only.
+- No `dotnet build`, no `dotnet rebuild`, no Unity rebuild.

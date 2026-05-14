@@ -9,7 +9,8 @@ param(
     [int]$MaxGeneratedProjectDebtReferences = -1,
     [int]$MaxSourceBackedBridgeDebtReferences = -1,
     [int]$MaxSourceBackedCompileBridgeDebtReferences = -1,
-    [int]$MaxProjectReferenceReplacementDebtReferences = -1
+    [int]$MaxProjectReferenceReplacementDebtReferences = -1,
+    [int]$MaxAupPrecisionRisk = -1
 )
 
 $ErrorActionPreference = 'Stop'
@@ -1226,6 +1227,24 @@ function Assert-CoreGraphBudget {
         ($violations -join "`n"))
 }
 
+function Assert-AupPrecisionBudget {
+    param([System.Collections.Specialized.OrderedDictionary]$Counts)
+
+    if ($MaxAupPrecisionRisk -lt 0) {
+        return
+    }
+
+    $riskCount = [int]$Counts.AupPrecisionRisk
+    if ($riskCount -le $MaxAupPrecisionRisk) {
+        return
+    }
+
+    throw (
+        'AUP precision H-Phi budget failed: risk patterns {0} exceed budget {1}.' -f
+        $riskCount,
+        $MaxAupPrecisionRisk)
+}
+
 function Add-Count {
     param(
         [System.Collections.Specialized.OrderedDictionary]$Counters,
@@ -1453,6 +1472,8 @@ function New-AuditSummary {
             AupPrecisionRisk = $Audit.Counts.AupPrecisionRisk
         }
         CoreGraph = New-CoreGraphSummary $Audit.CoreGraphAudit
+        TopAupPrecisionRiskFiles = @($Audit.TopAupPrecisionRiskFiles |
+            Select-Object -First 10)
         TopOwnerBlockedDataVaultCandidates = @($Audit.OwnerBlockedDataVaultCandidates |
             Select-Object -First 10)
     }
@@ -1462,6 +1483,10 @@ $coreGraphAudit = Get-CoreGraphAudit
 Assert-CoreGraphBudget $coreGraphAudit
 
 if ($CoreGraphOnly) {
+    if ($MaxAupPrecisionRisk -ge 0) {
+        throw 'AUP precision budget requires full source scan. Remove -CoreGraphOnly when using -MaxAupPrecisionRisk.'
+    }
+
     $result = [ordered]@{
         Timestamp = (Get-Date).ToString('yyyy-MM-dd HH:mm:ss zzz')
         Scope = 'Core dependency graph'
@@ -1664,7 +1689,8 @@ foreach ($file in $files) {
     Add-DomainMetrics $runtimeDomainRows[$domain] $runtimeFileCounters $lineCount
     if ([int]$runtimeFileCounters['NativeArrayRefs'] -gt 0 -or
         [int]$runtimeFileCounters['GlobalDataVaultRefs'] -gt 0 -or
-        [int]$runtimeFileCounters['FindObjectCalls'] -gt 0) {
+        [int]$runtimeFileCounters['FindObjectCalls'] -gt 0 -or
+        [int]$runtimeFileCounters['AupPrecisionRisk'] -gt 0) {
         [void]$runtimeFileRows.Add([pscustomobject](New-FileRow $relativePath $domain $runtimeFileCounters $lineCount))
     }
 }
@@ -1672,6 +1698,8 @@ foreach ($file in $files) {
 $runtimeScores = New-Scores $runtimeCounters
 $allSourceScores = New-Scores $allCounters
 $editorScores = New-Scores $editorCounters
+
+Assert-AupPrecisionBudget $runtimeCounters
 
 $result = [ordered]@{
     Timestamp = (Get-Date).ToString('yyyy-MM-dd HH:mm:ss zzz')
@@ -1694,6 +1722,12 @@ $result = [ordered]@{
     OwnerBlockedDataVaultCandidates = @($runtimeFileRows |
         Where-Object { $_.NativeArrayRefs -gt 0 -and $_.GlobalDataVaultRefs -eq 0 } |
         Sort-Object NativeArrayRefs -Descending |
+        Select-Object -First 25)
+    TopAupPrecisionRiskFiles = @($runtimeFileRows |
+        Where-Object { $_.AupPrecisionRisk -gt 0 } |
+        Sort-Object -Property @(
+            @{ Expression = 'AupPrecisionRisk'; Descending = $true },
+            @{ Expression = 'AupPrecisionSafe'; Descending = $true }) |
         Select-Object -First 25)
     TopEditorNativeArrayDomains = @($editorDomainRows.Values |
         ForEach-Object { [pscustomobject]$_ } |
@@ -1724,6 +1758,11 @@ if ($Summary) {
     Write-Output ''
     Write-Output 'Core graph H-Phi debt counts:'
     [pscustomobject]$summaryResult.CoreGraph.Counts | Format-List
+    if (@($summaryResult.TopAupPrecisionRiskFiles).Count -gt 0) {
+        Write-Output ''
+        Write-Output 'Top AUP precision risk files:'
+        $summaryResult.TopAupPrecisionRiskFiles | Format-Table -AutoSize
+    }
     Write-Output ''
     Write-Output 'Top owner-blocked DataVault candidate files:'
     $summaryResult.TopOwnerBlockedDataVaultCandidates | Format-Table -AutoSize

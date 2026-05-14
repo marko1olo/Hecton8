@@ -243,6 +243,20 @@ Batch source: Docs/Tasks/CURRENT_BATCH.md
 - `git diff --check` and `git diff --cached --check` on touched code/docs exit 0; output is only LF-to-CRLF warnings on touched runtime/docs files.
 - No `dotnet` rebuild, compile, or response-file probe was run.
 
+### Loop 24: Strike Contract And Read-Only Bone API Recheck
+
+- Removed the dead `strikeRange` parameter from `FaunaKinematicsRuntime.SetStrikeIntent()` and the two `FaunaBrain` call sites.
+- Removed unused `NativeMemoryOwner` and `_faunaBrain` runtime members.
+- Aligned GPU upload `_H8LeviathanSegmentLength` fallback with seed/Burst fallback at 2.5 m.
+- Changed `TryGetLeviathanBones()` to expose `NativeArray<float4x4>.ReadOnly` instead of a mutable native array.
+- DOD: current Burst/GPU strike presentation carries no false range contract, segment length fallback is consistent across CPU/GPU, and external native bone readers cannot mutate solver-owned matrices.
+- Alternative Rejected: leaving dead parameters/fields for future use because they create false ownership surface and warning noise.
+- Estimate: 0 us hot-path meaningful savings; one removed strike-intent range calculation per `FaunaBrain` strike update and lower future mutation risk.
+- Static grep over IK runtime/job/shader scope still found no `math.sqrt`, `math.normalize`, managed array creation, `foreach`, `string.Format`, `.ToString()`, `Debug.Log`, Unity Physics casts, `SkinnedMeshRenderer`, `renderer.material`, `Camera.main`, `GlobalRegistry.Get`, `GameObject.Find`, or `FindObject`.
+- `rg` confirms no `NativeMemoryOwner`, `_faunaBrain`, old four-argument `FaunaKinematicsRuntime.SetStrikeIntent`, or old 1 m segment upload fallback remains in the IK runtime/direct call site scope.
+- `git diff --check` and `git diff --cached --check` on touched code/docs exit 0; output is only LF-to-CRLF warnings on touched runtime/docs files.
+- No `dotnet` rebuild, compile, or response-file probe was run.
+
 ### Loop 23: Dispatcher Registration Repair Recheck
 
 - Updated `TryRegister()` to repair partial update/late-frame registration state before retrying.

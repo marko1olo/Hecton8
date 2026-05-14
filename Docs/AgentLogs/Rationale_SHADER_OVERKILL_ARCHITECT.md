@@ -65,3 +65,24 @@ Solution: Mark the polish phase as blocked by batch-file input, record the absen
 Rejected Alternatives: Parsing unrelated neighboring batch content or fabricating polish requirements was rejected as prompt contamination.
 Scalability potential: Existing Low/Middle/High/Ultra gates remain intact; no additional polish commands can be executed without the missing tag.
 Hardware Impact: 0 us runtime gain. The decision prevents unscoped churn.
+
+## Decision 010 - Low-Tier UberNoir Cost Collapse
+Problem: `_MATH_LOD_LOW` still paid for normal-map sampling, shadow-coordinate setup, view half-vector/specular math, and unconditional blue-noise evaluation even though the low path only needs base albedo, packed roughness/occlusion, ambient, and main diffuse.
+Solution: Moved low-tier surface sampling into an early base+ORM-only path, changed low-tier lighting to `GetMainLight()` without shadow coordinates/specular/caustics, and gated blue-noise dither out of `_MATH_LOD_LOW`.
+Rejected Alternatives: Keeping a common fragment body was rejected because it hid discarded work on MX350. Full material split was rejected because it reintroduces SetPass/material fragmentation.
+Scalability potential: Low/TOASTER now buys stability with fewer samples and less ALU. High/Ultra retain normal maps, rust POM, caustics, spectral emission, and exact normals.
+Hardware Impact: Estimated low-end gain is 30-200 us GPU across dense material views, pending Unity/Profiler proof after the external compile blocker is removed.
+
+## Decision 011 - Rust And Caustic Texture Stall Gates
+Problem: Clean materials sampled `_RustDetailMap` before proving rust was active, and all non-low variants compiled optional caustic texture sampling.
+Solution: Added a rust scalar early-out before rust detail sampling and wrapped `_HectonCausticsMap` sampling behind `H8_UBERNOIR_CAUSTICS_TEXTURED`.
+Rejected Alternatives: Always sampling rust/caustics and trusting runtime multipliers was rejected because zero contribution still consumes texture bandwidth and contributes to variant pressure.
+Scalability potential: Low skips both paths. Middle/High can run procedural caustics only. Ultra/GOD can opt into texture caustics and 16-tap rust POM when visual payoff is visible.
+Hardware Impact: Estimated MX350 gain is 10-90 us on clean materials and 5-40 us where procedural caustics replace a texture lookup, pending GPU capture.
+
+## Decision 012 - Materials Asmdef H-Phi Cleanup
+Problem: `Hecton8.Graphics.Materials.asmdef` referenced `Hecton8.World.Contracts`, but the current materials code uses only `Hecton8.Core`, `Hecton8.Core.Signals`, and Unity shader APIs.
+Solution: Removed the unused World contract reference to reduce false domain coupling.
+Rejected Alternatives: Leaving the reference "just in case" was rejected because H-Phi tracks architectural coupling as debt, and future world dependencies should enter through explicit signals/contracts.
+Scalability potential: Runtime path unchanged; compile graph remains narrower for rendering materials.
+Hardware Impact: 0 us runtime. Static H-Phi audit after the no-rebuild pass reported `RuntimeHPhiNarrow=0.010534799` and `RuntimeHPhiRisk=0.000573240`.

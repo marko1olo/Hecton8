@@ -289,3 +289,15 @@ Cinematic Cheats used: no simulation change. This is lifecycle bookkeeping so th
 Exact microseconds saved/spent: no steady-frame cost. Cold dispatcher replacement pays one fixed-bucket unregister scan and prevents permanent stray tick slots after hot-swap.
 
 Verification: `git diff --check` passed with CRLF warnings only. Scoped forbidden-pattern counter reports `ForbiddenPatternTotal=0`; source counter reports `DispatcherHotSwapUnregister=1`, `BlindRegisteredTickFalse=0`, `LatchRefreshBeforeBlackbox=1`, `DotnetMention=0`. `CURRENT_BATCH.md` extraction still returns no matching prompt block. No dotnet rebuild/probe was run by user instruction.
+
+## 2026-05-15 - Stale Lifecycle Unregister Recovery
+
+What was wrong: receiver and tick teardown could still trust local lifecycle flags after those flags had already been proven vulnerable to hot-swap/order drift. A false local flag can leave the lever alive in a fixed dispatcher lane or receiver table.
+
+What was done: receiver unregister now removes the cached registered collider whenever that key exists, then clears local state. Tick unregister now always asks `GlobalRegistry` to remove the lever from the player lane before clearing `_registeredTick`.
+
+Cinematic Cheats used: no simulation change. This protects the existing kinematic lever by making lifecycle cleanup deterministic instead of adding runtime polling or physical simulation.
+
+Exact microseconds saved/spent: 0 us steady-state. Cold teardown pays one idempotent fixed-bucket unregister path and prevents a permanent stray tick plus one stale receiver slot per affected lever.
+
+Verification: pending in this pass. No dotnet rebuild/probe was run by user instruction.

@@ -139,6 +139,9 @@ namespace Hecton8.Construction
         private const float AnalyticalGroundedStressScale = 0.5f;
         private const float AnalyticalGroundProbeMeters = 1f;
         private const float AnalyticalShaderStressEpsilon = 0.0025f;
+        private const float AnalyticalShaderCenterEpsilonMeters = 0.05f;
+        private const float AnalyticalShaderCenterEpsilonSq = AnalyticalShaderCenterEpsilonMeters * AnalyticalShaderCenterEpsilonMeters;
+        private const float AnalyticalShaderRadiusEpsilonMeters = 0.05f;
         private const float AnalyticalShaderRadiusPaddingMeters = 2f;
         private const float AnalyticalShaderDisplacementMaxMeters = 0.055f;
         private const float ModuleStressMidDisplacementMaxMeters = 0.036f;
@@ -270,6 +273,8 @@ namespace Hecton8.Construction
         private float _analyticalIntegrity;
         private float _lastPublishedAnalyticalStress01 = -1f;
         private float _lastPublishedAnalyticalDisplacementMaxMeters = -1f;
+        private float3 _lastPublishedAnalyticalCenter;
+        private float _lastPublishedAnalyticalRadius = -1f;
         private float _nextAnalyticalLowTierFeedbackTime;
         private uint _lastPublishedAnalyticalBreachNodeId;
         private uint _analyticalBreachNodeId;
@@ -828,8 +833,18 @@ namespace Hecton8.Construction
 
         private void PublishAnalyticalStressShader(float3 center, float radius, float stress01, HectonQualityTier scalabilityTier, bool force = false)
         {
-            float visibleStress01 = stress01 > AnalyticalShaderStressEpsilon
-                ? stress01
+            bool validCenter = math.all(math.isfinite(center));
+            if (!validCenter)
+                center = float3.zero;
+
+            float safeRadius = math.isfinite(radius)
+                ? math.max(0f, radius)
+                : 0f;
+            float sourceStress01 = validCenter && math.isfinite(stress01)
+                ? math.saturate(stress01)
+                : 0f;
+            float visibleStress01 = sourceStress01 > AnalyticalShaderStressEpsilon
+                ? sourceStress01
                 : 0f;
             float displacementMaxMeters = IsAnalyticalHighScalabilityTier(scalabilityTier) && visibleStress01 > 0f
                 ? AnalyticalShaderDisplacementMaxMeters
@@ -837,9 +852,13 @@ namespace Hecton8.Construction
             bool stressStable = visibleStress01 > 0f
                 ? math.abs(visibleStress01 - _lastPublishedAnalyticalStress01) <= AnalyticalShaderStressEpsilon
                 : _lastPublishedAnalyticalStress01 == 0f;
+            bool spatialStable = visibleStress01 <= 0f ||
+                                 (math.lengthsq(center - _lastPublishedAnalyticalCenter) <= AnalyticalShaderCenterEpsilonSq &&
+                                  math.abs(safeRadius - _lastPublishedAnalyticalRadius) <= AnalyticalShaderRadiusEpsilonMeters);
             if (!force &&
                 _lastPublishedAnalyticalBreachNodeId == _analyticalBreachNodeId &&
                 stressStable &&
+                spatialStable &&
                 math.abs(displacementMaxMeters - _lastPublishedAnalyticalDisplacementMaxMeters) <= 0.00001f)
             {
                 return;
@@ -847,10 +866,12 @@ namespace Hecton8.Construction
 
             _lastPublishedAnalyticalStress01 = visibleStress01;
             _lastPublishedAnalyticalDisplacementMaxMeters = displacementMaxMeters;
+            _lastPublishedAnalyticalCenter = center;
+            _lastPublishedAnalyticalRadius = safeRadius;
             _lastPublishedAnalyticalBreachNodeId = _analyticalBreachNodeId;
             Shader.SetGlobalVector(
                 HabitatStressCenterRadiusId,
-                new Vector4(center.x, center.y, center.z, math.max(0f, radius)));
+                new Vector4(center.x, center.y, center.z, safeRadius));
             Shader.SetGlobalVector(
                 HabitatStressParamsId,
                 new Vector4(

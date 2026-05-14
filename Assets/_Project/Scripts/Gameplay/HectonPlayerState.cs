@@ -143,7 +143,6 @@ namespace Hecton8.Gameplay
         private const int VaultIntendedMovementsFlag = 1 << 2;
         private const int VaultDragSolvedVelocitiesFlag = 1 << 3;
         private const int VaultTelemetryRingFlag = 1 << 4;
-        private IDataVault _dataVault;
         private int _vaultNativeStateMask;
 
         public bool IsCreated =>
@@ -153,15 +152,9 @@ namespace Hecton8.Gameplay
             DragSolvedVelocities.IsCreated &&
             TelemetryRing.IsCreated;
 
-        public void OnDependencyInject(IDataVault dataVault)
+        public void EnsureCreated(IDataVault dataVault)
         {
-            _dataVault = dataVault;
-        }
-
-        public void EnsureCreated(IDataVault dataVault = null)
-        {
-            IDataVault vault = dataVault ?? _dataVault ?? GlobalRegistry.DataVault;
-            _dataVault = vault;
+            IDataVault vault = dataVault;
             EnsureFloat3Array(
                 ref Positions,
                 BufferID.PlayerKinematicPositions,

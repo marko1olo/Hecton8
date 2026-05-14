@@ -244,3 +244,11 @@ Solution: Treat only the fully registered pair as stable. If exactly one registr
 Rejected Alternatives: Trusting the original flags was rejected because lifecycle/event systems can be interrupted by parallel integration work, and this runtime needs both update and late-frame callbacks to stay coherent.
 Scalability potential: Low/MX350/high/ultra runtime behavior is unchanged. The fix protects cold lifecycle wiring without adding hot-path cost.
 Hardware Impact: Hot-path cost is 0 us. Cold registration may perform one unregister pair before retrying only when state is already partial.
+
+## Decision 24: Strike Contract And Native Bone Read Access
+
+Problem: The new Burst/GPU Leviathan presentation no longer consumes strike range, but `FaunaBrain` still computed and passed it into `FaunaKinematicsRuntime`. The runtime also kept unused owner fields and exposed mutable native bone matrices to potential external readers. Segment-length fallback differed between CPU seed/Burst paths and GPU upload.
+Solution: Remove the dead strike range parameter and call-site calculations, remove unused runtime owner fields, align segment-length upload fallback to 2.5 m, and return `NativeArray<float4x4>.ReadOnly` from the bone accessor.
+Rejected Alternatives: Keeping dead API surface for hypothetical future behavior was rejected because current contracts should describe current data flow. Returning mutable `NativeArray` was rejected because native matrix ownership belongs to the solver.
+Scalability potential: All tiers preserve valid behavior. Low/MX350 avoids dead call-site work; high/ultra keep identical GPU deformation with safer fallback consistency.
+Hardware Impact: Hot-path frame savings are not claimed. Strike updates remove one unnecessary range calculation in `FaunaBrain`; the read-only API reduces future corruption risk rather than measurable frame time.

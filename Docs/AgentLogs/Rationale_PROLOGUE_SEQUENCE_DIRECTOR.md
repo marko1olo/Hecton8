@@ -364,3 +364,19 @@ Solution: Replace the fluid-local magic literal with `PrologueSignalSourceHashes
 Rejected Alternatives: Leave the raw literal because it works today, or compute a hash at runtime. Local literals drift when source ownership expands; runtime hashing wastes work and can diverge by spelling.
 Scalability potential: Low/MX350 avoids accidental splashdown work from mismatched source ownership. Middle/High/Ultra preserve the expensive bubble/fluid overkill for the authoritative `PRLG` handoff while sharing one contract with audio, VFX, manual, and orbital producers.
 Hardware Impact: 0 us runtime change; the constant is inlined. The practical gain is preventing invalid splashdown impulse, bubble spawn, and fluid-advection work from contract drift. Verification this pass is static only by user request; no dotnet rebuild or response-file compile was run.
+
+## Decision 44 - Bridge Signal-Shape Gates
+
+Problem: The bridge atmospheric gate rejected NaN/Inf but still promoted any finite atmospheric packet, including future approach-phase or zero-heat packets. The manual complete gate also accepted finite negative whiteout hold and sequence zero. Both cases could advance the prologue state machine from malformed packets.
+Solution: Add `IsValidAtmosphericReentrySignal()` and `IsValidManualCompleteSignal()`. Atmospheric start now requires finite altitude/velocity/heat, exact plasma or whiteout phase, and heat above 0.001. Manual completion now requires `MOVR`, nonzero sequence, ocean-handoff phase, force-whiteout flag, finite hold, and hold >= 0.
+Rejected Alternatives: Keep finite-only filtering, or push every guard into the director. Finite-only filtering is too broad for a shared lane; director-side validation would duplicate bridge-owned signal-shape knowledge after snapshot creation.
+Scalability potential: Low/MX350 avoids wasting cheap-device presentation budget on false silence/burn/manual transitions. Middle/High/Ultra keep expensive VFX/audio/fluid overkill reserved for authoritative plasma and manual-latch packets.
+Hardware Impact: Adds two byte phase compares plus one heat threshold compare per atmospheric candidate, and one sequence/hold compare per manual candidate. Lane capacities are 32 and 8; normal cost is below 1 us and prevents much larger invalid transition work. Verification this pass is static only by user request; no dotnet rebuild or response-file compile was run.
+
+## Decision 45 - Director Input-Lock Ownership Latch
+
+Problem: The director's final cleanup published an input unlock even if the run cancelled before Stage 1 acquired any lock. Conversely, `OnDisable()` only requested cancellation and depended on later awaitable cleanup to release an already-owned lock.
+Solution: Add `_inputLockAcquired` and route lock acquisition through `PublishSequenceInputLock()`. `ReleaseInputLockNoThrow()` now publishes unlock only when the sequence actually owns a lock, clears ownership on success, and `OnDisable()` performs the same guarded release during active teardown.
+Rejected Alternatives: Keep unconditional final unlock, or release on disable without ownership tracking. Unconditional unlock wastes a signal slot on pre-lock cancellation; disable-only unlock without tracking can publish false unlock packets before the sequence owns input.
+Scalability potential: Low/MX350 avoids unnecessary control-lane traffic during cancellation churn and gets deterministic input recovery during scene disable. Middle/High/Ultra keep the same cinematic lock pacing while richer responders unwind.
+Hardware Impact: Saves one `SystemPauseSignal` publish on pre-lock cancellation, roughly 3-8 us and one lane slot. Adds one bool branch to cleanup and two scalar writes when acquiring/releasing a lock. Verification this pass is static only by user request; no dotnet rebuild or response-file compile was run.

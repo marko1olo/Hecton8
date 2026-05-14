@@ -139,15 +139,26 @@ Shader "Hecton8/VFX/CarveDebrisIndirect"
             {
                 half caveAmbientFactor = (half)HectonCoreLitEvaluateCaveAmbientFactor(positionWS, normalWS);
                 half3 color = SampleSH(normalWS) * albedo * caveAmbientFactor;
-                float4 shadowCoord = TransformWorldToShadowCoord(positionWS);
-                Light mainLight = GetMainLight(shadowCoord);
+                Light mainLight;
+                half mainShadow = 1.0h;
+                [branch]
+                if (_CarveDebrisMaterialParams.w > 0.5)
+                {
+                    float4 shadowCoord = TransformWorldToShadowCoord(positionWS);
+                    mainLight = GetMainLight(shadowCoord);
+                    mainShadow = HectonCoreLitResolveMx350ShadowDither((half)mainLight.shadowAttenuation, positionCS);
+                }
+                else
+                {
+                    mainLight = GetMainLight();
+                }
+
                 half3 lightDir = (half3)HectonCoreLitSafeNormalize(mainLight.direction);
                 half nDotL = saturate(dot(normalWS, lightDir));
                 half3 halfDir = (half3)HectonCoreLitSafeNormalize(lightDir + viewDirWS);
                 half specularBase = saturate(dot(normalWS, halfDir));
                 half specular = specularBase * specularBase;
                 specular *= specular * lerp(0.035h, 0.18h, _Smoothness);
-                half mainShadow = HectonCoreLitResolveMx350ShadowDither((half)mainLight.shadowAttenuation, positionCS);
                 color += (albedo * nDotL + specular) * mainLight.color * (mainLight.distanceAttenuation * mainShadow);
                 color += HectonCoreLitEvaluateProjectedCausticsScattering(positionWS, normalWS) * albedo;
                 return color;

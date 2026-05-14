@@ -757,10 +757,13 @@ namespace Hecton8.UI.VR
 
         private void TryUnregisterReceiver()
         {
-            if (!_receiverRegistered)
+            Collider registeredVolume = _registeredActivationVolume;
+            if (!_receiverRegistered && registeredVolume == null)
                 return;
 
-            PhysicalHandReceiverRegistry.Unregister(_registeredActivationVolume, this);
+            if (registeredVolume != null)
+                PhysicalHandReceiverRegistry.Unregister(registeredVolume, this);
+
             _registeredActivationVolume = null;
             _receiverRegistered = false;
         }
@@ -775,9 +778,6 @@ namespace Hecton8.UI.VR
 
         private void TryUnregisterTick()
         {
-            if (!_registeredTick)
-                return;
-
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
             _registeredTick = false;
         }

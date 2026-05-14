@@ -179,3 +179,15 @@ Rejected Alternatives: Duplicating the full report was rejected because it would
 Scalability potential: Low/Middle/High/Ultra process gains a stable audit entry point. Future agents can read one near-root file before drilling into detailed ledgers.
 
 Hardware Impact: 0 runtime microseconds on i3/MX350. No runtime asset, C# file, scene, prefab, or project setting changed.
+
+## Decision 15 - Top-Thread Triage
+
+Problem: The root brief named top-100 `.codex` threads as the next audit target, but the evidence was not yet preserved in a near-root artifact.
+
+Solution: Query `.codex/state_5.sqlite` read-only and create `COMPUTE_THREAD_TRIAGE.md`. Focus on concentration, top-100 shape, updated-day concentration, and top-30 thread IDs. Use `HIGH-BURN CANDIDATE` only.
+
+Rejected Alternatives: Scanning all 764 threads equally was rejected because top 100 holds about half the token mass. Calling expensive threads "waste" was rejected because the SQLite ledger does not prove file diffs, LOC delta, compile status, or H-Phi movement.
+
+Scalability potential: Low/Middle/High/Ultra process gains a concrete audit queue. Investigating the top 30 first covers 21.618% of total burn; top 100 covers 49.975%.
+
+Hardware Impact: 0 runtime microseconds on i3/MX350. No runtime code or Unity asset changed.

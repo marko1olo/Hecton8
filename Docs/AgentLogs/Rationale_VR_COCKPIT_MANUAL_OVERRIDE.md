@@ -377,3 +377,15 @@ Rejected Alternatives: keeping the blind flag clear was rejected because it can 
 Scalability potential: Low/toaster avoids hidden duplicate or stale update-lane work after service rebinding. Middle/High/Ultra keep deterministic bootstrap/hot-swap behavior as cockpit controls are streamed or service owners are replaced.
 
 Hardware Impact: no steady-frame impact. Cold dispatcher replacement pays one idempotent unregister scan across fixed buckets, preventing a permanent stray `Tick()` slot and missed teardown. 0 B/frame.
+
+## Decision 31 - Unregister helpers must recover from local flag drift
+
+Problem: the unregister helpers still treated local booleans as authoritative in some teardown cases. Previous dispatcher hot-swap work showed those flags can drift from fixed GlobalRegistry or receiver-table state, which means disable, latch, or hot-swap cleanup can leave stale entries alive.
+
+Solution: make receiver cleanup use `_registeredActivationVolume` as the removal key whenever it exists, independent of `_receiverRegistered`, then clear both local fields. Make tick cleanup unconditionally call `GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player)` before clearing `_registeredTick`. Both APIs are idempotent fixed-bucket removals and are only used on cold lifecycle/latch paths.
+
+Rejected Alternatives: keeping flag-only guards was rejected because it fails exactly when lifecycle state is already inconsistent. Searching receiver tables from the lever was rejected because the registry already owns exact-key removal. Raising receiver capacity was rejected because this is stale-state correctness, not density pressure.
+
+Scalability potential: Low/toaster avoids hidden inert lever ticks and stale receiver slots after latch or streamed-scene teardown. Middle/High keep predictable service rebinding under cockpit streaming. Ultra can stack more physical controls because spent or disabled levers vacate fixed tables deterministically.
+
+Hardware Impact: no steady-frame impact. Cold teardown pays at most one fixed-bucket unregister scan and one receiver-table exact-key removal. i3/MX350 gain is prevention of permanent stray work: one avoided player-lane tick and one freed receiver slot per affected lever.

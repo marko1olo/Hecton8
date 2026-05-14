@@ -79,7 +79,7 @@ namespace Hecton8.Audio
     /// Runtime audio service accessed through Hecton8.Core.GlobalRegistry.Audio.
     /// Zero-GC Ð² hot path. Ð–Ñ‘ÑÑ‚ÐºÐ¸Ð¹ Ð»Ð¸Ð¼Ð¸Ñ‚ Ð¾Ð´Ð½Ð¾Ð²Ñ€ÐµÐ¼ÐµÐ½Ð½Ñ‹Ñ… Ð¸ÑÑ‚Ð¾Ñ‡Ð½Ð¸ÐºÐ¾Ð².
     /// </summary>
-    public sealed class SpatialAudioManager : MonoBehaviour, IAudioService, IAudioVirtualizationService, IUpdatable, IFastTickable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IPhysicsImpactEventListener, IPhysicsAcousticImpulseEventListener, IRepairDroneTorchAcousticListener, IFatalPressureImplosionEventListener, IServiceHeartbeat, IServiceShutdown
+    public sealed class SpatialAudioManager : MonoBehaviour, IAudioService, IAudioVirtualizationService, IUpdatable, IFastTickable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IPhysicsImpactEventListener, IPhysicsAcousticImpulseEventListener, IRepairDroneTorchAcousticListener, IFatalPressureImplosionEventListener, IScalabilityChangedEventListener, IServiceHeartbeat, IServiceShutdown
     {
         private const float SoundSpeedWaterMetersPerSecond = 1480f;
         private const float MassiveDistanceFixedAudioDelayMeters = 740f;
@@ -155,7 +155,7 @@ namespace Hecton8.Audio
         private const float ParasiteRoomAudioReleaseSharpness = 3f;
         private const float EclipseAcousticPitchShiftMinCents = -300f;
         private const float EclipseAcousticPitchShiftMaxCents = 0f;
-        private const int SpatialAudioPolicyRefreshFrames = 30;
+        private const int SpatialAudioPolicyUninitializedFrame = -4096;
         private const int SpatialAudioRegistryRetryFrames = 30;
 
         internal static SpatialAudioManager ActiveRuntimeInstance { get; private set; }
@@ -585,13 +585,14 @@ namespace Hecton8.Audio
         private bool _isInitialized;
         private bool _runtimeResourcesInitialized;
         private bool _eventsSubscribed;
+        private bool _scalabilityEventsRegistered;
         private IPlayerRuntimeContext _cachedPlayerRuntimeContext;
         private IWeatherService _cachedWeatherService;
         private AcousticZoneController _cachedAcousticZone;
         private HectonSurfaceWeatherDirector _cachedSurfaceWeatherDirector;
         private HectonQualityTier _cachedScalabilityTier = HectonQualityTier.Unknown;
         private bool _cachedLowMemoryProfile;
-        private int _spatialAudioPolicyRefreshFrame = -4096;
+        private int _spatialAudioPolicyRefreshFrame = SpatialAudioPolicyUninitializedFrame;
         private int _playerRuntimeContextResolveFrame = -4096;
         private int _weatherServiceResolveFrame = -4096;
         private int _acousticZoneResolveFrame = -4096;
@@ -622,7 +623,11 @@ namespace Hecton8.Audio
             }
 
             if (_isInitialized)
+            {
+                RefreshSpatialAudioPolicyCold();
+                TryRegisterScalabilityEvents();
                 TrySubscribeAudioEvents();
+            }
             TryRegisterOriginShiftListener();
         }
 
@@ -646,6 +651,7 @@ namespace Hecton8.Audio
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
 
+            TryUnregisterScalabilityEvents();
             TryUnsubscribeAudioEvents();
             if (_isInitialized)
             {
@@ -693,7 +699,7 @@ namespace Hecton8.Audio
             _cachedSurfaceWeatherDirector = null;
             _cachedScalabilityTier = HectonQualityTier.Unknown;
             _cachedLowMemoryProfile = false;
-            _spatialAudioPolicyRefreshFrame = -4096;
+            _spatialAudioPolicyRefreshFrame = SpatialAudioPolicyUninitializedFrame;
             _playerRuntimeContextResolveFrame = -4096;
             _weatherServiceResolveFrame = -4096;
             _acousticZoneResolveFrame = -4096;
@@ -818,6 +824,8 @@ namespace Hecton8.Audio
         {
             EnsureRuntimeResourcesInitialized();
             TrySubscribeAudioEvents();
+            RefreshSpatialAudioPolicyCold();
+            TryRegisterScalabilityEvents();
             TryRegisterOriginShiftListener();
             RefreshVirtualPhysicalVoiceLimit(true);
             RefreshFoveatedDirector();
@@ -994,6 +1002,11 @@ namespace Hecton8.Audio
             UpdateDominantBinauralEmitterTelemetry(now, listener, in listenerAup, currentFrame);
             ApplyThreatBusDucking(threatActivity, safeDeltaTime);
             ApplyParasiteRoomAcousticState(safeDeltaTime);
+        }
+
+        public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
+        {
+            CacheSpatialAudioPolicy(payload.CurrentQualityTier, _cachedLowMemoryProfile, Time.frameCount);
         }
 
         /// <summary>
@@ -2390,25 +2403,56 @@ namespace Hecton8.Audio
                 _foveatedSimulationDirector = director;
         }
 
-        private void RefreshSpatialAudioPolicyIfStale(int frame)
+        private void EnsureSpatialAudioPolicyCached()
         {
-            if (frame - _spatialAudioPolicyRefreshFrame < SpatialAudioPolicyRefreshFrames)
+            if (_spatialAudioPolicyRefreshFrame >= 0)
                 return;
 
+            CacheSpatialAudioPolicy(HectonQualityTier.Unknown, lowMemoryProfile: true, Time.frameCount);
+        }
+
+        private void RefreshSpatialAudioPolicyCold()
+        {
+            CacheSpatialAudioPolicy(
+                GlobalRegistry.ScalabilityTier,
+                GlobalRegistry.H8_LOW_MEMORY_PROFILE,
+                Time.frameCount);
+        }
+
+        private void CacheSpatialAudioPolicy(HectonQualityTier scalabilityTier, bool lowMemoryProfile, int frame)
+        {
+            _cachedScalabilityTier = scalabilityTier;
+            _cachedLowMemoryProfile = lowMemoryProfile;
             _spatialAudioPolicyRefreshFrame = frame;
-            _cachedScalabilityTier = GlobalRegistry.ScalabilityTier;
-            _cachedLowMemoryProfile = GlobalRegistry.H8_LOW_MEMORY_PROFILE;
+        }
+
+        private void TryRegisterScalabilityEvents()
+        {
+            if (_scalabilityEventsRegistered || !Application.isPlaying)
+                return;
+
+            ScalabilityEvents.Register(this);
+            _scalabilityEventsRegistered = true;
+        }
+
+        private void TryUnregisterScalabilityEvents()
+        {
+            if (!_scalabilityEventsRegistered)
+                return;
+
+            ScalabilityEvents.Unregister(this);
+            _scalabilityEventsRegistered = false;
         }
 
         private HectonQualityTier ResolveCachedScalabilityTier()
         {
-            RefreshSpatialAudioPolicyIfStale(Time.frameCount);
+            EnsureSpatialAudioPolicyCached();
             return _cachedScalabilityTier;
         }
 
         private bool ResolveCachedLowMemoryProfile()
         {
-            RefreshSpatialAudioPolicyIfStale(Time.frameCount);
+            EnsureSpatialAudioPolicyCached();
             return _cachedLowMemoryProfile;
         }
 

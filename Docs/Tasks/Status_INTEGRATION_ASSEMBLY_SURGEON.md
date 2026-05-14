@@ -4,7 +4,7 @@ Agent: INTEGRATION_ASSEMBLY_SURGEON
 Role: SYSTEMS_ARCHITECT
 Domain: Unity Compilation Graph / Integrator
 Prompt task count: 15 (current in-chat XML; older 17-task static pass retained below)
-Current state: BUILD SUCCESSFUL / POST-GREEN STATIC H-PHI HARDENED (Fresh12 retained; no dotnet command run in this post-green pass)
+Current state: BUILD SUCCESSFUL / PLATINUM GRADE (Fresh19: Hecton8.Core --no-restore 0 warnings / 0 errors)
 
 ## Mandates Read
 
@@ -111,7 +111,7 @@ Directive source: in-chat `<AGENT_PROMPT id="INTEGRATION_ASSEMBLY_SURGEON">`.
 Task count: 15 numbered primary objectives.
 Domain: Echelon 9 / The Integrator (Compile Medic).
 Current state: BUILD SUCCESSFUL / PLATINUM GRADE.
-Final artifact: `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh12.log`.
+Final artifact: `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh19.log`.
 Final command: `dotnet build Hecton8.Core.csproj --no-restore --disable-build-servers -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal`.
 Final result: `Build succeeded. 0 Warning(s). 0 Error(s).`
 Polish mandate extraction: `Docs/Tasks/CURRENT_BATCH.md` contains no `INTEGRATION_ASSEMBLY_SURGEON` or `<POLISH_MANDATE>` tag in the current file; no borrowed mandate executed.
@@ -125,24 +125,26 @@ Polish mandate extraction: `Docs/Tasks/CURRENT_BATCH.md` contains no `INTEGRATIO
 - [x] Fresh Task 7: SIGNATURE RECONCILIATION | Justification: owner-aware `H8Memory.Release` drift was resolved through current source visibility, and `xxHash3` was aligned to the Unity Collections contract | Alternatives rejected: changing core API signatures or stubbing hash output | Estimate: 650 us patch
 - [x] Fresh Task 8: OPTIONAL SERVICE GUARDING | Justification: scanner/player context compile drift was repaired without adding per-frame service polling; PDA inventory dirtiness uses fixed `SignalBus<InventoryChangedSignal>` frame snapshots | Alternatives rejected: new managed events or hierarchy search in `LateFrameTick` | Estimate: 700 us patch
 - [x] Fresh Task 9: BATCHED FIXING | Justification: fixed wall in clusters: Core memory/source bridge, save contracts, IK count, scanner lookup, save codec, PDA signal bridge | Alternatives rejected: one monolithic rewrite | Estimate: 2200 us integration
-- [x] Fresh Task 10: RE-COMPILE | Justification: serial logs show wall decreased from source/metadata errors to `Fresh12` 0/0; invalid blank `Fresh10` was rejected as evidence | Alternatives rejected: claiming success from empty log | Estimate: 105610000 us final build time
+- [x] Fresh Task 10: RE-COMPILE | Justification: serial logs show wall decreased from source/metadata errors to `Fresh19` 0/0; invalid blank/incomplete `Fresh10` and `Fresh13` were rejected as evidence | Alternatives rejected: claiming success from empty or footerless logs | Estimate: 81710000 us final build time
 - [x] Fresh Task 11: ASMDEF REPAIR | Justification: no `.asmdef` edit was required in this closure; generated project-output leakage was contained by source-backed MSBuild references already present in `Directory.Build.targets` | Alternatives rejected: editing generated `.csproj` | Estimate: 0 us runtime
 - [x] Fresh Task 12: MEMORY SENTINEL SYNC | Justification: no new assembly/SystemID was introduced; current `H8Memory` source was compiled into Core and final build passed | Alternatives rejected: inventing new memory owner IDs | Estimate: 0 us runtime
 - [x] Fresh Task 13: NULLABLE ANNOTATION | Justification: final build emitted 0 warnings; no nullable warning remained in critical compile paths | Alternatives rejected: warning suppression without an emitted warning | Estimate: 0 us runtime
 - [x] Fresh Task 14: DEAD CODE EXTERMINATION | Justification: no unused interface/stub was a compile blocker in this pass; deletion/obsolete marking was rejected outside the wall | Alternatives rejected: vanity purge during integration | Estimate: 0 us runtime
-- [x] Fresh Task 15: OMEGA VERIFICATION | Justification: `Fresh12` produced `Temp/bin/Debug/Hecton8.Core.dll` with 0 warnings and 0 errors; `git diff --check` on owned compile-fix files reported no whitespace errors, only CRLF normalization warnings | Alternatives rejected: chat-only success claim | Estimate: 105610000 us final build time
+- [x] Fresh Task 15: OMEGA VERIFICATION | Justification: `Fresh19` produced `Temp/bin/Debug/Hecton8.Core.dll` with 0 warnings and 0 errors after concurrent edits invalidated `Fresh12`; `git diff --check` on owned compile-fix files reported no whitespace errors, only CRLF normalization warnings | Alternatives rejected: chat-only success claim | Estimate: 81710000 us final build time
 
 ### Fresh Loop Ledger
 
 - Loop 15: Fresh XML re-entry. Read wall: 79 filtered compiler entries. Status: RED.
 - Loop 16: Source bridge and contract visibility repair. Errors reduced through save/header/memory/IK/scanner clusters. Status: RED.
 - Loop 17: Restored assets and translated generated project-output references to Unity-built assemblies. Metadata wall cleared. Status: RED -> YELLOW.
-- Loop 18: Save/PDA source drift repair. `Fresh11` 3 errors -> `Fresh12` 0 warnings / 0 errors. Status: BUILD SUCCESSFUL / PLATINUM GRADE.
+- Loop 18: Save/PDA source drift repair. `Fresh11` 3 errors -> `Fresh12` 0 warnings / 0 errors. Status: temporarily green.
+- Loop 19: Concurrent-edit guard. `PDAShellChrome.cs` changed after `Fresh12`; `Fresh14` exposed a new audio scalability listener miss. A concurrent richer implementation was preserved and the duplicate patch was removed. Status: RED.
+- Loop 20: Save codec write-contract repair. Added bounded no-alloc paired count clamp and counted custom-array overloads. `Fresh19` produced 0 warnings / 0 errors. Status: BUILD SUCCESSFUL / PLATINUM GRADE.
 
 ## 2026-05-15 Post-Green Static H-Phi Hardening
 
 Directive: continue improving H-Phi without running dotnet rebuilds.
-Evidence boundary: STATIC_SOURCE / STATIC_DOC only for this post-green pass. The existing `Fresh12` compile artifact remains historical disk evidence; it was not regenerated here.
+Evidence boundary: STATIC_SOURCE / STATIC_DOC only for this post-green pass. Superseded by later compile artifact `Fresh19`, which revalidated current disk state after concurrent edits.
 
 - [x] State reloaded before work | Justification: `Status_INTEGRATION_ASSEMBLY_SURGEON.md` and `Rationale_INTEGRATION_ASSEMBLY_SURGEON.md` were read before edits | Alternatives rejected: relying on compressed chat memory | Estimate: 200 us process
 - [x] Optional unused Core reference scan added | Justification: `HectonPhiAudit.ps1 -IncludeUnusedCoreReferenceScan` now maps asmdef debt refs to source-backed asmdefs, declared types, and generated/source-backed Core compile-surface hits | Alternatives rejected: manual ad hoc grep for future pruning | Estimate: 0 us runtime

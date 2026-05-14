@@ -17,7 +17,6 @@ namespace Hecton8.AI
     [RequireComponent(typeof(FaunaBrain))]
     internal sealed class FaunaKinematicsRuntime : MonoBehaviour, IUpdatable, ILateFrameTickable, IOriginShiftListener, IDisposable
     {
-        private const string NativeMemoryOwner = nameof(FaunaKinematicsRuntime);
         private const string TelemetryDumpRelativePath = "Docs/AgentLogs/Dump_LEVIATHAN_KINEMATICS_SOLVER.bin";
         private const ulong TelemetryDumpMagic = 0x4C455649494B3031UL;
         private const int TelemetryEntryPayloadBytes = 96;
@@ -74,7 +73,6 @@ namespace Hecton8.AI
         [Tooltip("Also publish the current spine buffer as a global shader buffer for shared compute skinning.")]
         [SerializeField] private bool _publishGlobalBoneBuffer = true;
 
-        private FaunaBrain _faunaBrain;
         private Rigidbody _body;
         private Transform _cachedTransform;
         private IDataVault _dataVault;
@@ -121,7 +119,7 @@ namespace Hecton8.AI
         private Transform _strikeTarget;
         private Rigidbody _strikeTargetRigidbody;
 
-        internal bool TryGetLeviathanBones(out NativeArray<float4x4> bones, out int activeSegmentCount)
+        internal bool TryGetLeviathanBones(out NativeArray<float4x4>.ReadOnly bones, out int activeSegmentCount)
         {
             if (_disposed || _solverScheduled || !_leviathanBones.IsCreated || _activeSegmentCount <= 0)
             {
@@ -131,7 +129,7 @@ namespace Hecton8.AI
             }
 
             activeSegmentCount = math.min(_activeSegmentCount, _leviathanBones.Length);
-            bones = _leviathanBones;
+            bones = _leviathanBones.AsReadOnly();
             return activeSegmentCount > 0;
         }
 
@@ -152,7 +150,6 @@ namespace Hecton8.AI
         private void Awake()
         {
             _cachedTransform = transform;
-            TryGetComponent(out _faunaBrain);
             TryGetComponent(out _body);
             RefreshColdDependencies();
             EnsurePersistentBuffers();
@@ -333,7 +330,6 @@ namespace Hecton8.AI
 
         internal void BindFromFauna(FaunaBrain faunaBrain, Rigidbody body)
         {
-            _faunaBrain = faunaBrain;
             _body = body;
             _cachedTransform = faunaBrain != null ? faunaBrain.transform : transform;
             CompleteScheduledSolverForLifecycle();
@@ -360,7 +356,7 @@ namespace Hecton8.AI
             _motionIntentFrame = Time.frameCount;
         }
 
-        internal void SetStrikeIntent(Transform target, Vector3 targetWorldPosition, float strikeRange, bool strikeActive)
+        internal void SetStrikeIntent(Transform target, Vector3 targetWorldPosition, bool strikeActive)
         {
             _strikeActive = strikeActive && target != null;
             if (!_strikeActive)
@@ -697,7 +693,7 @@ namespace Hecton8.AI
 
             GraphicsBufferUploadUtility.UploadNativeArray(writeBuffer, _leviathanBones, MaxSegments);
             float ikTier = IsLowTier(_qualityTier) ? 0f : 1f;
-            float safeSegmentLength = SanitizePositiveFinite(_segmentLength, 1f, 0.05f);
+            float safeSegmentLength = SanitizePositiveFinite(_segmentLength, 2.5f, 0.05f);
             float safeTailWhipDuration = SanitizePositiveFinite(_tailWhipDurationSeconds, 1f, 0.0001f);
             float tailWhip01 = math.saturate(_tailWhipSecondsRemaining * math.rcp(safeTailWhipDuration));
             if (_skinningMaterial != null)

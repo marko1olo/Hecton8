@@ -408,3 +408,57 @@ Verification state:
 - Shader hot-math scan returned no matches for `sincos`, raw trig, `pow`, `exp`, `log`, or raw `normalize`.
 - Unity import/compile and profiler capture remain unverified.
 - No dotnet rebuild was run.
+
+## 2026-05-15 - Contiguous Dead-Span Injection Upload Guard
+
+What was wrong:
+- The injection job could skip active slots while tracking one dirty min/max upload range.
+- Since GPU advection owns live positions and velocities, uploading a range that includes active slots can overwrite live GPU debris with stale CPU mirror state.
+
+What was done:
+- Changed `CarveDebrisInjectBatchJob` to compute total requested particles and select the largest contiguous dead span before writing.
+- New debris is emitted only into that span, preserving one contiguous upload while avoiding live GPU-owned slots.
+- The invalid-state flag is raised if the selected span is unexpectedly not dead at write time.
+- Did not run dotnet build, dotnet rebuild, or Unity batch compile.
+
+Cinematic cheats used:
+- Fragmented buffers may under-inject for a frame instead of performing per-slot uploads or CPU/GPU readback.
+- Visual continuity is prioritized over physically exhaustive debris emission; stable chips matter more than exact requested particle count.
+
+Exact microseconds saved:
+- Direct CPU saving: not claimed; scan cost remains bounded by active capacity.
+- Avoided cost: no per-particle `LockBufferForWrite` calls during burst frames.
+- Visual correctness gain: prevents live chip snapback/stale velocity overwrite during fragmented dense carve bursts.
+
+Verification state:
+- Static verification completed: `git diff --check` returned no whitespace errors, only Git LF/CRLF notices.
+- Forbidden hot-path scan returned no matches for CPU readback, ParticleSystem, ComputeBuffer, scene search, job scheduling fences, private `H8Memory.Allocate`, or private `H8Memory.Release`.
+- Shader hot-math scan returned no matches for `sincos`, raw trig, `pow`, `exp`, `log`, or raw `normalize`.
+- Unity import/compile and profiler capture remain unverified.
+- No dotnet rebuild was run.
+
+## 2026-05-15 - Low-Tier Debris Shadow-Sample LOD
+
+What was wrong:
+- Low/MX350 debris still generated shadow coordinates and sampled main-light shadow attenuation even though the non-low visual overkill branch was disabled.
+
+What was done:
+- Reused `_CarveDebrisMaterialParams.w` as the uniform non-low gate in `EvaluateDebrisLighting`.
+- High/Ultra keeps `TransformWorldToShadowCoord`, `GetMainLight(shadowCoord)`, and shadow dither attenuation.
+- Low/MX350 uses `GetMainLight()` with `mainShadow = 1`, preserving basic lighting, fog, cave ambient, and caustics without shadow-map work.
+- Did not run dotnet build, dotnet rebuild, or Unity batch compile.
+
+Cinematic cheats used:
+- Low-tier debris uses unshadowed directional lighting as a controlled fake.
+- High-tier keeps shadowed fracture depth as visual overkill.
+
+Exact microseconds saved:
+- MX350 savings are visible-count dependent: each shaded debris fragment avoids main-light shadow-coordinate and shadow attenuation work.
+- CPU cost remains unchanged; no material variant or allocation was added.
+
+Verification state:
+- Static verification completed: `git diff --check` returned no whitespace errors, only Git LF/CRLF notices.
+- Forbidden hot-path scan returned no matches for CPU readback, ParticleSystem, ComputeBuffer, scene search, job scheduling fences, private `H8Memory.Allocate`, or private `H8Memory.Release`.
+- Shader hot-math scan returned no matches for `sincos`, raw trig, `pow`, `exp`, `log`, or raw `normalize`.
+- Unity import/compile and profiler capture remain unverified.
+- No dotnet rebuild was run.

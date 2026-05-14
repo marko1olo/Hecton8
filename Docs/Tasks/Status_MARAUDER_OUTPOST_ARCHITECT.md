@@ -177,7 +177,7 @@ State: PENDING VERIFICATION
 
 - [x] Re-read persisted state/rationale and inspected the AUP shift/render lifecycle. DOD: compared public shell access guards against owner `Render` submission and found stale GPU matrix exposure during shift/upload windows. Alternative rejected: broad outpost refactor. Estimate: source audit only.
 - [x] Fenced owner indirect rendering during AUP shift/upload windows. DOD: `Render` now fails closed while `_jobPhase == JobPhase.Shifting` or `_matrixUploadDirty` is true, matching the public graphics-buffer contract and avoiding stale matrix submission. Alternative rejected: drawing old shell positions for one frame while proxies/bounds have already shifted. Estimate: two scalar checks on render path, 0 B/frame.
-- [x] Re-ran source-only audits. DOD: targeted render guard scan confirms `Render` includes `_jobPhase == JobPhase.Shifting` and `_matrixUploadDirty`; forbidden-pattern audit stayed clean; scoped H-Phi counts remain unchanged. Alternative rejected: `dotnet` rebuild, forbidden by user. Estimate: verification only.
+- [x] Re-ran source-only audits. DOD: targeted render guard scan confirms `Render` includes `_jobPhase == JobPhase.Shifting` and `_matrixUploadDirty`; forbidden-pattern audit stayed clean; scoped H-Phi counts remain unchanged; `HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json` passed with `CoreAsmdefDebtReferenceCount=25` and `GeneratedProjectDebtReferenceCount=10`. Alternative rejected: `dotnet` rebuild, forbidden by user. Estimate: verification only.
 - [ ] Compile proof [NOT RUN BY USER REQUEST]. DOD: no `dotnet` rebuild or response-file compile was executed in Loop 23. Alternative rejected: violating explicit "do not make dotnet rebuilds". Estimate: no runtime cost.
 
 ## Verification Ledger

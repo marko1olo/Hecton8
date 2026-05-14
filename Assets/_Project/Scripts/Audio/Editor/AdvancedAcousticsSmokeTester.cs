@@ -95,6 +95,8 @@ namespace Hecton8.Audio.Editor
                 string spatialWindTarget = ExtractMethodBody(spatial, "private float ResolveGlobalWindHowlTarget01()");
                 string spatialWindOcclusion = ExtractMethodBody(spatial, "private bool ResolveGlobalWindHowlOccluded()");
                 string spatialWaterDensity = ExtractMethodBody(spatial, "private void UpdateListenerWaterDensityMul(float deltaTime)");
+                string spatialPolicyEnsure = ExtractMethodBody(spatial, "private void EnsureSpatialAudioPolicyCached()");
+                string spatialPolicyCold = ExtractMethodBody(spatial, "private void RefreshSpatialAudioPolicyCold()");
                 AssertContains(spatial, "TryResolveCinematicZoneMismatch", "Delayed world events apply deterministic zone muffle", builder, ref failureCount);
                 AssertContains(spatial, "CinematicZoneMuffleTransmission = 0.25118864f", "Cinematic zone muffle applies -12 dB transmission", builder, ref failureCount);
                 AssertContains(spatial, "CinematicZoneMuffleCutoffHertz = 800f", "Cinematic zone muffle applies 800 Hz LPF", builder, ref failureCount);
@@ -112,7 +114,14 @@ namespace Hecton8.Audio.Editor
                 AssertContains(spatial, "ResolveAupDelta", "Long-range spatial audio direction uses AUP delta helpers", builder, ref failureCount);
                 AssertContains(spatial, "AbsoluteUniversePosition.DistanceSq(in listenerAup, in sourceAup)", "Spatial audio distance uses int64-sector AUP distance math", builder, ref failureCount);
                 AssertContains(spatial, "AbsoluteUniversePosition.ToCameraRelativeFloat3(in sourceAup, in listenerAup)", "Doppler/radar direction uses AUP camera-relative math", builder, ref failureCount);
-                AssertContains(spatial, "SpatialAudioPolicyRefreshFrames = 30", "Spatial audio quality policy is cadence-gated", builder, ref failureCount);
+                AssertContains(spatial, "IScalabilityChangedEventListener", "Spatial audio receives scalability changes through the typed event lane", builder, ref failureCount);
+                AssertContains(spatial, "ScalabilityEvents.Register(this)", "Spatial audio registers for scalability events", builder, ref failureCount);
+                AssertContains(spatial, "ScalabilityEvents.Unregister(this)", "Spatial audio unregisters scalability events", builder, ref failureCount);
+                AssertContains(spatial, "public void OnScalabilityChanged(in ScalabilityChangedEvent payload)", "Spatial audio updates quality policy from scalability payloads", builder, ref failureCount);
+                AssertContains(spatial, "EnsureSpatialAudioPolicyCached()", "Spatial audio hot paths consume cached quality policy", builder, ref failureCount);
+                AssertContains(spatialPolicyCold, "GlobalRegistry.ScalabilityTier", "Spatial audio seeds scalability policy only during cold cache refresh", builder, ref failureCount);
+                AssertContains(spatialPolicyCold, "GlobalRegistry.H8_LOW_MEMORY_PROFILE", "Spatial audio seeds low-memory policy only during cold cache refresh", builder, ref failureCount);
+                AssertNotContains(spatialPolicyEnsure, "GlobalRegistry.", "Spatial audio hot quality-cache guard does not hide registry reads", builder, ref failureCount);
                 AssertContains(spatial, "SpatialAudioRegistryRetryFrames = 30", "Spatial audio optional service lookup is cadence-gated", builder, ref failureCount);
                 AssertContains(spatial, "ResolveCachedScalabilityTier()", "Spatial audio portal and virtualization policy use cached scalability tier", builder, ref failureCount);
                 AssertContains(spatial, "ResolvePlayerRuntimeContext()", "Spatial audio listener AUP and water-density state use cached player context", builder, ref failureCount);

@@ -1340,7 +1340,13 @@ namespace Hecton8.Editor.ProceduralGen
 
         private static void ValidateRockCollider(string path, MeshCollider[] colliders, LOD[] lods, ref int failures)
         {
-            if (colliders.Length != 1 || !colliders[0].convex || colliders[0].sharedMesh == null)
+            Mesh lod2Mesh = ResolveFirstMesh(lods[2].renderers);
+            if (colliders.Length != 1 ||
+                !colliders[0].enabled ||
+                colliders[0].isTrigger ||
+                !colliders[0].convex ||
+                colliders[0].sharedMesh == null ||
+                colliders[0].sharedMesh != lod2Mesh)
             {
                 failures++;
                 Debug.LogError($"[ShallowsBioForgeBatchBaker] Rock collider contract failed at {path}.");

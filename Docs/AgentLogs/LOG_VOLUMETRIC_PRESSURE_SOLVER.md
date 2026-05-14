@@ -328,3 +328,14 @@ Follow-up upgrade 34:
 Exact microseconds saved after follow-up 34:
 - Near-calm CoreLit vertices skip analytical habitat dent setup below the 0.0025 CPU visibility threshold.
 - Estimated 2-8 us saved per 1k CoreLit vertices in near-calm habitat views on MX350-class GPUs; 0 B/frame.
+
+Follow-up upgrade 35:
+- What was wrong: `_HectonHabitatStressCenterRadius` could stay stale when analytical stress/displacement were stable but the base center or radius moved. That is a correctness failure, not a polish issue.
+- What was done: cached the last analytical center/radius and added a visible-stress spatial dirty gate with 5cm center/radius tolerances. The analytical publisher now sanitizes non-finite center/radius/stress to a zero-stress shader clear path before upload.
+- Cinematic cheat used: sub-5cm analytical center/radius drift is visually ignored to avoid global shader churn; real spatial movement still refreshes the fake pressure dent coordinates.
+- Static checks: `rg` confirms `spatialStable`, `validCenter`, `sourceStress01`, and cached center/radius fields are wired; managed-offender scans found no C# string/LINQ/foreach offenders in `HabitatGraphManager.cs`; touched C# brace counts are balanced; `git diff --check` reports only CRLF normalization warnings.
+- Rebuild policy: no `dotnet` rebuild and no Unity rebuild were run by explicit user instruction.
+
+Exact microseconds saved after follow-up 35:
+- Stable sub-5cm analytical spatial jitter skips redundant shader global vectors; moved active pressure regions publish correctly.
+- Estimated gate cost under 1 us per analytical publish decision on i3/MX350; avoids stale deformation and unnecessary driver traffic.

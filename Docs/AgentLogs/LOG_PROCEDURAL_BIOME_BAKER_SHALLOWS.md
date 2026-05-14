@@ -213,3 +213,15 @@ Cinematic Cheats used: Shared 1024 atlases, compressed PC formats, triplanar sha
 Exact Microseconds saved: Runtime remains 0 us/frame and 0 bytes procedural allocation. This prevents silent Standalone downsample and gamma-space ORM errors; exact runtime microseconds were not profiled.
 
 Verification: No dotnet rebuild and no Unity import was run. `AtlasImporterYamlScan Count=4 Bad=0`; `AtlasPngDimensionScan Count=4 Bad=0`; `git diff --check` passed for the edited atlas meta files.
+
+## 2026-05-15 Rock Collision Proxy Mesh Contract
+
+What was wrong: Rock prefabs validated one convex collider and transform alignment, but did not prove the collider was enabled, non-trigger, or using the exact LOD2 mesh as the cheap physics proxy.
+
+What was done: Strengthened `ValidateRockCollider` to require exactly one enabled, non-trigger, convex collider whose `sharedMesh` equals the resolved LOD2 renderer mesh.
+
+Cinematic Cheats used: Rock collision stays a coarse LOD2 convex proxy. Flora remains visual-only with no colliders. No runtime physics correction, collider generation, or per-asset script was added.
+
+Exact Microseconds saved: Runtime remains 0 us/frame and 0 bytes procedural allocation. This prevents hidden collider mesh bloat or disabled/trigger-only proxy drift; exact runtime microseconds were not profiled.
+
+Verification: No dotnet rebuild and no Unity import was run. `RockColliderLod2GuidYamlScan Count=50 Bad=0`; `ShallowsColliderCountYamlScan Count=200 Bad=0`; `git diff --check` passed for the baker; source forbidden scan stayed clean.

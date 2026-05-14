@@ -2628,12 +2628,6 @@ namespace Hecton8.Gameplay
                 return;
 
             IDataVault vault = _dataVault;
-            if (vault == null)
-            {
-                vault = GlobalRegistry.DataVault;
-                _dataVault = vault;
-            }
-
             if (vault != null)
             {
                 NativeArray<CinematicFocusTelemetryEntry> vaultArray = vault.GetBuffer<CinematicFocusTelemetryEntry>(
@@ -3898,7 +3892,6 @@ namespace Hecton8.Gameplay
         public void OnDependencyInject()
         {
             _dataVault = GlobalRegistry.DataVault;
-            _playerKinematicsNativeState.OnDependencyInject(_dataVault);
             _audioService = GlobalRegistry.Audio;
             _settingsRuntime = GlobalRegistry.Settings;
             _localizationRuntime = GlobalRegistry.Localization;

@@ -479,3 +479,36 @@ Verification:
 - Method-body counters: `TickQualityRegistry=0`, `ReverbQualityRegistry=0`, `KineticFallbackQualityRegistry=0`, `SonarProbeQualityRegistry=0`, `EnsureQualityRegistry=0`, `ColdQualityRegistry=3`.
 - Scoped forbidden scan found only pre-existing editor/cold diagnostics and assertion text.
 - Dotnet build/rebuild was not run by explicit user order. Unity compile remains PENDING VERIFICATION until Editor console/MCP validation is available.
+
+## 2026-05-15 - DSP_ACOUSTIC_LEAD - Loop 19 Spatial Audio Scalability Event H-Phi Pass
+Status: PENDING VERIFICATION
+
+What was wrong:
+- `SpatialAudioManager` still used `RefreshSpatialAudioPolicyIfStale` to poll scalability and low-memory registry state every 30 frames.
+- The hidden reads were reachable from virtual voice limit and acoustic portal policy paths.
+- The smoke tester still described the spatial quality policy as cadence-gated instead of event/cold-cache driven.
+
+What was done:
+- Added `IScalabilityChangedEventListener` to `SpatialAudioManager`.
+- Added cold seeding through `RefreshSpatialAudioPolicyCold()` and event updates through `OnScalabilityChanged`.
+- Replaced hot policy refresh calls with `EnsureSpatialAudioPolicyCached()`, which has no registry reads.
+- Kept `SpatialAudioRegistryRetryFrames = 30` intact for optional player/weather/acoustic-zone/surface-weather service lookups.
+- Updated `AdvancedAcousticsSmokeTester` spatial assertions for event registration, cold-only policy seeding, and no hidden registry reads in the hot policy guard.
+
+Cinematic cheats used:
+- Spatial quality remains a scalar policy cache, not a frame-perfect hardware negotiation.
+- Unseeded policy defaults to Unknown/low-memory true, preserving the toaster path before visual/audio overkill.
+- High-tier portal and virtualization behavior keeps the saved budget for actual spatial audio work, not platform service lookup.
+
+Exact microseconds saved:
+- Saves two registry reads every previous 30-frame spatial policy refresh window after warmup.
+- Removes hidden scalability/low-memory lookup spikes from virtual voice and portal policy paths.
+- Runtime allocation delta remains 0 B/frame.
+
+Verification:
+- `git diff --check -- Assets/_Project/Scripts/SpatialAudioManager.cs Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs` passed except CRLF normalization warnings.
+- Old source symbols are absent: `SpatialAudioPolicyRefreshFrames` and `RefreshSpatialAudioPolicyIfStale`.
+- Direct spatial quality registry reads are confined to `RefreshSpatialAudioPolicyCold()`.
+- Method-body counters: `EnsureSpatialPolicyRegistry=0`, `ColdSpatialPolicyRegistry=2`, `ResolveCachedTierRegistry=0`, `ResolveCachedLowMemoryRegistry=0`, `VoiceLimitPolicyRegistry=0`, `PortalPolicyRegistry=0`.
+- Scoped forbidden scan found only pre-existing editor/cold diagnostics and assertion text.
+- Dotnet build/rebuild was not run by explicit user order. Unity compile remains PENDING VERIFICATION until Editor console/MCP validation is available.
