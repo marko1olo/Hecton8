@@ -2504,7 +2504,11 @@ namespace Hecton8.World
                 if (math.lengthsq(conduitVector) <= 0.0001f)
                     return 0f;
 
-                float3 edgeDirection = delta * math.rcp(math.max(distance, 0.0001f));
+                float edgeLengthSq = math.lengthsq(delta);
+                if (edgeLengthSq <= 0.000001f || !math.isfinite(edgeLengthSq))
+                    return 0f;
+
+                float3 edgeDirection = delta * math.rsqrt(edgeLengthSq);
                 float3 conduitDirection = DominantAxisOrDefault(conduitVector, edgeDirection);
                 conduitAlignment = math.saturate((math.dot(edgeDirection, conduitDirection) * 0.5f) + 0.5f);
                 verticalBonus = ConduitVerticalToleranceBonus * combinedStrength * conduitAlignment * math.abs(conduitDirection.y);
