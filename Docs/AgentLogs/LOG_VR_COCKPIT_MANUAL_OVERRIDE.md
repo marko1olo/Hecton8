@@ -324,4 +324,4 @@ Cinematic Cheats used: no simulation change. This preserves the scalar kinematic
 
 Exact microseconds saved/spent: one integer compare per receiver callback. Stale callbacks skip one transform conversion plus local/distance checks. No allocations, no new containers, no dispatcher cost.
 
-Verification: pending in this pass. No dotnet rebuild/probe was run by user instruction.
+Verification: `git diff --check` passed. Scoped source counter reports `ForbiddenPatternTotal=0`, `ResolvedSampleFrame=1`, `StaleSampleReject=1`, `FrameGuardBeforeWorldToLocal=1`, `LastHandFrameSingleWrite=1`, `OldFrameWrite=0`, `TryQueueLatchedGuard=1`, `DotnetMention=0`. `CURRENT_BATCH.md` extraction still returns no matching prompt block. No dotnet rebuild/probe was run by user instruction.

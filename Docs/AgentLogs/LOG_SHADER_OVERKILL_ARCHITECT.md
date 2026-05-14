@@ -75,3 +75,29 @@ Verification:
 - Scoped asmdef scan: no `Hecton8.World` / `World.Contracts` reference remains in `Assets/_Project/Scripts/Graphics/Materials`.
 - `git diff --check` on touched files: no whitespace errors; LF-to-CRLF warnings only.
 - No `dotnet build`, no `dotnet rebuild`, no Unity rebuild.
+
+## 2026-05-15 03:34:52 +04:00 - Follow-Up No-Rebuild Rendering/H-Phi Pass 2
+What was wrong:
+- Low-tier caustic compute shutdown did not fully guarantee global caustic consumers were dark; `_HectonProjectedCausticsParams.x` could remain nonzero.
+- Caustic GPU upload data, caustic black-box telemetry, and AUP culling job payloads relied on implicit layout in code crossing GPU/Burst/native boundaries.
+- Disposed NativeArray scratch fields were released but not default-reset, making long-session state inspection less deterministic.
+
+What was done:
+- `AnalyticalCausticsService` now passes `lowTier` into `PublishShaderGlobals` and forces caustic intensity to zero for low-tier/depth-disabled modes.
+- `CausticsWaveGpuData` and `CausticTelemetryEntry` now declare explicit sequential pack/size layout.
+- `ApplyAupShiftJob` now declares explicit sequential layout.
+- Disposed caustic black-box and wave-upload scratch NativeArrays are reset to default after release.
+
+Cinematic Cheats used:
+- Caustics remain fake-first analytical light contribution, and low-tier now kills the entire global contribution instead of paying for invisible ocean optics.
+- Rust, POM, biolum, caustics, and bending stay tier-gated: toaster path keeps material identity; high-end path keeps overkill.
+
+Exact Microseconds saved:
+- 15-80 us estimated GPU saved on low-tier caustic receiver views by forcing global intensity to zero. Pending real Profiler/GPU capture.
+- 0 us claimed for layout/default-reset changes; these are binary safety and black-box determinism improvements, not runtime speed claims.
+
+Verification:
+- No dotnet rebuild was executed.
+- `git diff --check` reported no whitespace errors for owned files.
+- Static brace scan passed for `Hecton8_UberNoir.hlsl`, `AnalyticalCausticsService.cs`, `InstanceCullingService.cs`, and `Hecton8.Graphics.Materials.asmdef`.
+- `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json` completed with `RuntimeHPhiNarrow=0.010496041`, `RuntimeHPhiRisk=0.000571225`, `ArchitecturalPurity=0.996460177`, `MemoryAlignment=0.503703704`, `UnityUpdateMethods=2`, `AupPrecisionRisk=0`.

@@ -86,3 +86,17 @@ Solution: Removed the unused World contract reference to reduce false domain cou
 Rejected Alternatives: Leaving the reference "just in case" was rejected because H-Phi tracks architectural coupling as debt, and future world dependencies should enter through explicit signals/contracts.
 Scalability potential: Runtime path unchanged; compile graph remains narrower for rendering materials.
 Hardware Impact: 0 us runtime. Static H-Phi audit after the no-rebuild pass reported `RuntimeHPhiNarrow=0.010534799` and `RuntimeHPhiRisk=0.000573240`.
+
+## Decision 013 - Low-Tier Caustic Publisher Gate
+Problem: Low-tier caustic compute resources were correctly released, but `AnalyticalCausticsService` could still publish nonzero `_HectonProjectedCausticsParams.x`, allowing procedural caustics in CoreLit consumers that do not compile the UberNoir low variant.
+Solution: Thread the `lowTier` decision into `PublishShaderGlobals` and force caustic intensity to zero when low tier or disabled depth is active.
+Rejected Alternatives: Shader-only stripping was rejected because global shader parameters are shared by multiple consumers; leaving intensity active after resource release was rejected as an invisible low-tier GPU tax.
+Scalability potential: Low/TOASTER gets no caustic ALU or texture pressure from global consumers. Middle/High/Ultra retain analytical caustics when budget and scene conditions justify them.
+Hardware Impact: Estimated i3/MX350 gain is 15-80 us GPU in water/hull views with caustic receivers, pending GPU capture after the external compile blocker is removed.
+
+## Decision 014 - Binary Layout And Native Lifetime Hardening
+Problem: Caustic GPU upload data, black-box telemetry entries, and the AUP culling job payload were structurally important but relied on implicit managed layout, and disposed NativeArray scratch handles were not reset to default.
+Solution: Added explicit sequential pack/size to caustic GPU and telemetry structs, explicit sequential layout to the AUP shift job payload, and default-reset disposed NativeArray fields after release.
+Rejected Alternatives: Relying on C# default layout was rejected because H-Phi rewards binary-safe rendering code and GPU upload payloads must be deterministic; allocation churn was rejected in favor of keeping existing persistent NativeArrays.
+Scalability potential: Low through Ultra share the same predictable upload and black-box memory model. Higher tiers can push more waves/instances without adding managed allocations or layout ambiguity.
+Hardware Impact: Runtime microsecond gain is 0 us claimed. The benefit is lower integration risk and cleaner H-Phi memory-alignment evidence; latest no-rebuild audit reports `MemoryAlignment=0.503703704` and `AupPrecisionRisk=0`.

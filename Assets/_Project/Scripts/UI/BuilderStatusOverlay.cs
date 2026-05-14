@@ -83,6 +83,8 @@ namespace Hecton8.UI
         private PlayerToolManager _subscribedToolManager;
         private uint _inventorySignalHash;
         private uint _lastInventorySignalRevision;
+        private uint _toolLoadoutSignalSourceId;
+        private uint _lastToolLoadoutSignalSequence;
         private int _inventoryRevision;
         private bool _lastVisibleState;
 
@@ -113,6 +115,13 @@ namespace Hecton8.UI
             if (ConsumeInventoryChangedSignals())
             {
                 _inventoryRevision++;
+                ForceRefresh();
+                return;
+            }
+
+            if (ConsumeToolLoadoutChangedSignals())
+            {
+                EvaluateTickRegistration();
                 ForceRefresh();
                 return;
             }
@@ -180,22 +189,8 @@ namespace Hecton8.UI
         private void RefreshSubscriptions()
         {
             RefreshInventorySignalBinding();
-
-            if (!ReferenceEquals(_subscribedToolManager, toolManager))
-            {
-                if (_subscribedToolManager != null)
-                {
-                    _subscribedToolManager.ActiveSlotChanged -= HandleActiveSlotChanged;
-                    _subscribedToolManager.ToolAssignmentsChanged -= HandleToolAssignmentsChanged;
-                }
-
-                _subscribedToolManager = toolManager;
-                if (_subscribedToolManager != null)
-                {
-                    _subscribedToolManager.ActiveSlotChanged += HandleActiveSlotChanged;
-                    _subscribedToolManager.ToolAssignmentsChanged += HandleToolAssignmentsChanged;
-                }
-            }
+            RefreshToolLoadoutSignalBinding();
+            _subscribedToolManager = toolManager;
         }
 
         private void Subscribe()
@@ -205,12 +200,7 @@ namespace Hecton8.UI
 
         private void Unsubscribe()
         {
-            if (_subscribedToolManager != null)
-            {
-                _subscribedToolManager.ActiveSlotChanged -= HandleActiveSlotChanged;
-                _subscribedToolManager.ToolAssignmentsChanged -= HandleToolAssignmentsChanged;
-                _subscribedToolManager = null;
-            }
+            _subscribedToolManager = null;
         }
 
         private bool ConsumeInventoryChangedSignals()
@@ -254,16 +244,45 @@ namespace Hecton8.UI
                 : 0u;
         }
 
-        private void HandleActiveSlotChanged(int _)
+        private bool ConsumeToolLoadoutChangedSignals()
         {
-            EvaluateTickRegistration();
-            ForceRefresh();
+            uint sourceId = _toolLoadoutSignalSourceId;
+            if (sourceId == 0u)
+                return false;
+
+            bool dirty = false;
+            ReadOnlySpan<ToolLoadoutChangedSignal> signals = SignalBus<ToolLoadoutChangedSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                ref readonly ToolLoadoutChangedSignal signal = ref signals[i];
+                if (signal.SourceId != sourceId)
+                    continue;
+
+                if (signal.Sequence == _lastToolLoadoutSignalSequence && _lastToolLoadoutSignalSequence != 0u)
+                    continue;
+
+                _lastToolLoadoutSignalSequence = signal.Sequence;
+                dirty = true;
+            }
+
+            return dirty;
         }
 
-        private void HandleToolAssignmentsChanged()
+        private void RefreshToolLoadoutSignalBinding()
         {
-            EvaluateTickRegistration();
-            ForceRefresh();
+            uint resolvedSourceId = ResolveToolLoadoutSignalSourceId(toolManager);
+            if (_toolLoadoutSignalSourceId == resolvedSourceId)
+                return;
+
+            _toolLoadoutSignalSourceId = resolvedSourceId;
+            _lastToolLoadoutSignalSequence = 0u;
+        }
+
+        private static uint ResolveToolLoadoutSignalSourceId(PlayerToolManager manager)
+        {
+            return manager != null && manager.gameObject != null
+                ? GlobalSignals.FoldEntityIdToSourceId(EntityId.ToULong(manager.gameObject.GetEntityId()))
+                : 0u;
         }
 
         private void EnsureBuilt()

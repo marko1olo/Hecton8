@@ -475,6 +475,8 @@ namespace Hecton8.UI
             UpdateCatalogTracking();
             if (ConsumeInventoryChangedSignals())
                 MarkAllDirty();
+            if (ConsumeToolLoadoutChangedSignals())
+                MarkSummaryDirty();
 
             _refreshTimer -= safeDeltaTime;
             if (_refreshTimer <= 0f)

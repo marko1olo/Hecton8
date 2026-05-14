@@ -19,6 +19,7 @@ namespace Hecton8.UI.Tools
         private const int RenderTextureSize = 256;
         private const int TextBufferCapacity = 96;
         private const int InvalidDisplayBucket = int.MinValue;
+        private const int ScannerTitleCacheMiss = -1;
         private const float TierHysteresisSeconds = 2f;
         private const float PoolRetrySeconds = 2f;
         private const float InvisibleReleaseSeconds = 0.75f;
@@ -497,8 +498,7 @@ namespace Hecton8.UI.Tools
 
             int titleVersion = ScannableTarget.LoreTitleLookupVersion;
             if (_scannerTitleCacheHash != artifactHash ||
-                _scannerTitleCacheVersion != titleVersion ||
-                _scannerTitleCacheLength <= 0)
+                _scannerTitleCacheVersion != titleVersion)
             {
                 _scannerTitleCacheHash = 0u;
                 _scannerTitleCacheVersion = titleVersion;
@@ -509,6 +509,9 @@ namespace Hecton8.UI.Tools
                         out int cachedLength) ||
                     cachedLength <= 0)
                 {
+                    _scannerTitleCacheHash = artifactHash;
+                    _scannerTitleCacheVersion = titleVersion;
+                    _scannerTitleCacheLength = ScannerTitleCacheMiss;
                     return false;
                 }
 
@@ -516,6 +519,9 @@ namespace Hecton8.UI.Tools
                 _scannerTitleCacheVersion = titleVersion;
                 _scannerTitleCacheLength = math.min(cachedLength, _scannerTitleCache.Length);
             }
+
+            if (_scannerTitleCacheLength == ScannerTitleCacheMiss)
+                return false;
 
             int length = math.min(_scannerTitleCacheLength, destination.Length);
             if (length <= 0)
