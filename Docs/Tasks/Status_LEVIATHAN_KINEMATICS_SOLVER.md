@@ -188,3 +188,12 @@ Batch source: Docs/Tasks/CURRENT_BATCH.md
 - Static grep over IK runtime/job/shader scope still found no `math.sqrt`, `math.normalize`, managed array creation, `foreach`, `string.Format`, `.ToString()`, `Debug.Log`, Unity Physics casts, `SkinnedMeshRenderer`, `renderer.material`, `Camera.main`, `GlobalRegistry.Get`, `GameObject.Find`, or `FindObject`.
 - `git diff --check` and `git diff --cached --check` on touched code/docs exit 0; unstaged output is only LF-to-CRLF warnings.
 - No `dotnet` rebuild, compile, or response-file probe was run.
+
+### Loop 18: Terrain Payload Finite Gate Recheck
+
+- Added finite gates for SDF origin, SDF cell size/range, Terrain origin, and Terrain size before terrain hugging samples execute.
+- Passed sanitized SDF range/cell values through trilinear density sampling, gradient sampling, and decode instead of reading raw job fields.
+- DOD: malformed terrain payloads cannot introduce NaN samples through SDF or height fallback contact math.
+- Alternative Rejected: trusting terrain/voxel producers because this Burst job is the last safety boundary before writing native matrices.
+- Estimate: under 0.3 us on terrain-contact solver frames; Low/MX350 still skips SDF.
+- No `dotnet` rebuild, compile, or response-file probe was run.

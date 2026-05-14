@@ -40,3 +40,63 @@ Rejected Alternatives: Creating only `Rationale_CORE_RESONANCE_ORCHESTRATOR.md` 
 Scalability potential: Low/Middle/High/Ultra unaffected at runtime.
 
 Hardware Impact: 0 microseconds at runtime. Documentation-only decision.
+
+## Decision 2 - Prompt Class Name Mismatch
+
+Problem: The batch names `BoidController`, `AbyssalFlowField`, and `SubmarinePhysics`, but repo scan found no exact runtime classes with those names.
+
+Solution: Bind the task to the actual owners: `SargassumMicroFaunaBoids` for GPU fauna, `HectonFluidEngine` plus `AbyssalFlowField.compute` for the 3D abyssal flow field, `HectonPlayerMovement` plus `PlayerKinematicsNativeState` for player movement native state, and `SubmarineFluidDynamics` for submarine physics/hydrodynamics.
+
+Rejected Alternatives: Creating adapter classes with the prompt names would add fake authority and direct dependencies. Editing unrelated neighboring systems would violate domain boundaries.
+
+Scalability potential: Low tier gets existing cached/fallback visuals. Middle/High/Ultra use the same owners with bucketed compute and richer active buckets.
+
+Hardware Impact: 0 microseconds from naming. Prevents future integration waste by mapping to concrete code.
+
+## Decision 3 - Fauna Bucketed Compute
+
+Problem: Sargassum micro-fauna ran the main GPU simulation over every boid whenever a simulation step dispatched.
+
+Solution: Feed `_SimulationBucketIndex` and `_SimulationBucketMask` from `ISimulationBucketer`/`GlobalRegistry.SimulationBucketer` and gate the main boid and PBD kernels to `index & 15`. Non-active boids copy their previous state to the write buffer to keep ping-pong buffers coherent. Renderer still receives `SimulationInterpolationAlpha`.
+
+Rejected Alternatives: Rewriting spawn ownership or CPU-side boid lists would allocate and break the GPU-first architecture. Skipping whole simulation frames would be cheaper but not the required 1/16 boid slicing.
+
+Scalability potential: Low uses 1/16 active boid math and ambient drift under VFX kill switch. Middle keeps bucketed full draw. High/Ultra spend saved compute on existing full LOD, PBD, leviathan/parasite behavior, and dense visual count.
+
+Hardware Impact: Main boid/PBD math is reduced by roughly 93.75 percent per active frame slice. Estimated low-end i3/MX350 save: 180-550 microseconds depending active boid count and PBD density.
+
+## Decision 4 - Abyssal Flow Bucketed Grid
+
+Problem: The abyssal flow compute updated the full structured grid and full 32^3 texture volume per dispatch.
+
+Solution: Add `_AbyssalFlowUpdateBucket` and `_AbyssalFlowUpdateBucketMask` and gate each flat voxel index to `index & 7`. Skipped texture voxels copy read to write so ping-pong textures do not stale-drop.
+
+Rejected Alternatives: Reducing texture resolution globally would cheapen all tiers and kill high-tier overkill. CPU noise generation is slower and violates GPU ownership.
+
+Scalability potential: Low updates 1/8 of flow voxels per frame. Middle/High retain wakes, splashdown, and thermocline detail. Ultra keeps full feature stack with time-sliced cost.
+
+Hardware Impact: Flow noise/curl work reduced by roughly 87.5 percent per dispatch. Estimated i3/MX350 save: 120-320 microseconds when high-tier flow texture is active.
+
+## Decision 5 - Kill Switch Degradation
+
+Problem: Fauna and abyssal flow did not directly honor `SystemKillSwitchMask` VFX lane pressure.
+
+Solution: Wire both systems to `GlobalRegistry.SystemKillSwitchLane4VfxMask`. Fauna drops to cached render/ambient drift by suppressing simulation dispatch. Abyssal flow ages impulse timers and leaves the previous published texture/buffer live instead of spending compute.
+
+Rejected Alternatives: Disabling renderers would produce visible popping. Adding per-system globals would fork homeostasis authority.
+
+Scalability potential: Low gets graceful cached motion. Middle recovers without visible hard off. High/Ultra resume full bucketed overkill once the mask clears.
+
+Hardware Impact: Under kill switch, fauna GPU dispatch savings can exceed 250-700 microseconds, and abyssal flow dispatch savings can exceed 120-320 microseconds on low-end silicon.
+
+## Decision 6 - DataVault Native Ownership
+
+Problem: Player kinematic state, cinematic focus black box, and submarine hydrodynamic state still allocated persistent `NativeArray` blocks locally.
+
+Solution: Extend stable `BufferID` and `SystemID` mappings, allocate those arrays from `IDataVault.GetBuffer<T>()`, and keep H8Memory local fallback only when the vault is unavailable. `OnDependencyInject()` now caches the DataVault pointer for player movement and player kinematic state.
+
+Rejected Alternatives: Disposing vault-owned arrays from component teardown would corrupt global state. Leaving local arrays untouched would keep H-PHI Data Sovereignty bottleneck intact.
+
+Scalability potential: Low avoids duplicate native blocks. Middle/High/Ultra gain unified buffer ownership for telemetry, player kinematics, and submarine hydrodynamic state.
+
+Hardware Impact: Runtime loop savings are indirect: 0-20 microseconds from fewer cold-path ownership lookups, with memory fragmentation reduced by centralized vault allocation.

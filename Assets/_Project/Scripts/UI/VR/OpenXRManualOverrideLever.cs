@@ -218,7 +218,8 @@ namespace Hecton8.UI.VR
             Vector3 handForward,
             IInteractionSignalService interactionSignals,
             Collider handSourceCollider,
-            PhysicalHandSide fallbackHandSide)
+            PhysicalHandSide fallbackHandSide,
+            int sampleFrame = -1)
         {
             if (!_nativeAllocated || _latched || !IsFiniteVector(handPosition))
                 return false;
@@ -237,7 +238,7 @@ namespace Hecton8.UI.VR
 
             _lastHandLocalPosition = localHand;
             _lastHandSide = fallbackHandSide;
-            _lastHandFrame = Time.frameCount;
+            _lastHandFrame = sampleFrame >= 0 ? sampleFrame : Time.frameCount;
             return true;
         }
 

@@ -84,7 +84,8 @@ namespace Hecton8.Interaction
             Vector3 handForward,
             IInteractionSignalService interactionSignals,
             Collider handSourceCollider,
-            PhysicalHandSide fallbackHandSide)
+            PhysicalHandSide fallbackHandSide,
+            int sampleFrame = -1)
         {
             if (activationVolume == null || !IsFiniteVector(handPosition))
                 return false;
@@ -101,7 +102,7 @@ namespace Hecton8.Interaction
             _targetAngle = _isOn ? ResolveSafeOnAngleDegrees() : ResolveSafeOffAngleDegrees();
             _snapCooldownRemaining = ResolveSafeSnapCooldownSeconds();
             TryRegister();
-            PublishSwitchSignal(handPosition, handForward, interactionSignals);
+            PublishSwitchSignal(handPosition, handForward, interactionSignals, sampleFrame >= 0 ? sampleFrame : Time.frameCount);
             EnqueueClickHaptic(handSourceCollider, fallbackHandSide);
             QueueSnapAudio(handPosition);
             return true;
@@ -114,7 +115,7 @@ namespace Hecton8.Interaction
             Collider handSourceCollider,
             PhysicalHandSide fallbackHandSide)
         {
-            return TryQueueHandPress(handPosition, handForward, interactionSignals, handSourceCollider, fallbackHandSide);
+            return TryQueueHandPress(handPosition, handForward, interactionSignals, handSourceCollider, fallbackHandSide, Time.frameCount);
         }
 
         private void Awake()
@@ -413,7 +414,7 @@ namespace Hecton8.Interaction
             cos = cosSign * (1f - (x2 * (0.5f - (x2 * 0.041666667f))));
         }
 
-        private void PublishSwitchSignal(Vector3 handPosition, Vector3 handForward, IInteractionSignalService interactionSignals)
+        private void PublishSwitchSignal(Vector3 handPosition, Vector3 handForward, IInteractionSignalService interactionSignals, int sampleFrame)
         {
             if (interactionSignals == null || !interactionSignals.IsInitialized || !IsFiniteVector(handPosition))
                 return;
@@ -436,7 +437,7 @@ namespace Hecton8.Interaction
                 signalRange,
                 (byte)ToolActionMode.Primary,
                 (byte)ToolStateBits.Active,
-                unchecked((uint)Time.frameCount));
+                unchecked((uint)sampleFrame));
             InteractionSignal signal = new InteractionSignal(
                 packet,
                 0,

@@ -26,7 +26,8 @@ namespace Hecton8.Interaction
             Vector3 handForward,
             IInteractionSignalService interactionSignals,
             Collider handSourceCollider,
-            PhysicalHandSide fallbackHandSide);
+            PhysicalHandSide fallbackHandSide,
+            int sampleFrame);
     }
 
     /// <summary>
@@ -547,7 +548,7 @@ namespace Hecton8.Interaction
             }
 
             if (bestButton != null)
-                bestButton.TryQueueHandPress(handPosition, handForward, interactionSignals, handSourceCollider, handSide);
+                bestButton.TryQueueHandPress(handPosition, handForward, interactionSignals, handSourceCollider, handSide, Time.frameCount);
         }
 
         private void HandleXRActiveChanged(bool isActive)

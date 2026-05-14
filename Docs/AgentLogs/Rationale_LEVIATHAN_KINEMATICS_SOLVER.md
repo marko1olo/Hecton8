@@ -196,3 +196,11 @@ Solution: Add Burst-compatible finite scalar sanitizers and consume sanitized da
 Rejected Alternatives: Sanitizing only at the MonoBehaviour upload boundary was rejected because the native solver owns the authoritative matrices. Removing runtime tunability was rejected because high/ultra visual overkill needs authored ranges.
 Scalability potential: Low/MX350/high/ultra behavior is unchanged for valid data. Invalid data now collapses to conservative defaults instead of breaking the IK ring or GPU deformation.
 Hardware Impact: Estimated cost is under 0.2 us per scheduled solver; scalar checks buy deterministic failure containment, not frame-time savings.
+
+## Decision 18: Terrain Payload Finite Gate
+
+Problem: The terrain contact path validated buffer lengths but still trusted SDF origin/cell/range and terrain origin/size values. A malformed producer could feed finite-length buffers with NaN transform metadata, contaminating density samples and matrix output.
+Solution: Gate SDF and height fallback on finite metadata. Sanitize SDF cell size/range once and pass those resolved values into trilinear sampling, gradient sampling, and SDF decode.
+Rejected Alternatives: Trusting upstream voxel/MapMagic producers was rejected because IK is the last native writer before GPU deformation. Disabling SDF on all questionable frames by broad exception handling was rejected because Burst has no managed exception path and predictable branch gates are cheaper.
+Scalability potential: Low/MX350 still disables SDF. High/ultra retain full SDF quality on valid data and fail closed to height fallback/no terrain push on malformed metadata.
+Hardware Impact: Estimated cost is under 0.3 us on terrain-contact solver frames; prevents NaN matrix writes rather than saving frame time.

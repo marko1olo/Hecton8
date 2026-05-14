@@ -245,7 +245,8 @@ namespace Hecton8.UI
             Vector3 handForward,
             IInteractionSignalService interactionSignals,
             Collider handSourceCollider,
-            PhysicalHandSide fallbackHandSide)
+            PhysicalHandSide fallbackHandSide,
+            int sampleFrame = -1)
         {
             if (activationVolume == null || interactionSignals == null || !interactionSignals.IsInitialized)
                 return false;
@@ -253,7 +254,8 @@ namespace Hecton8.UI
             if (!IsFinite(handPosition))
                 return false;
 
-            _lastHandInsideFrame = Time.frameCount;
+            int frame = sampleFrame >= 0 ? sampleFrame : Time.frameCount;
+            _lastHandInsideFrame = frame;
             TryRegister();
             if (_pressDispatched)
                 return true;
@@ -277,7 +279,7 @@ namespace Hecton8.UI
                 _resolvedPressDepthMeters,
                 (byte)ToolActionMode.Primary,
                 (byte)ToolStateBits.Active,
-                unchecked((uint)Time.frameCount));
+                unchecked((uint)frame));
             InteractionSignal signal = new InteractionSignal(
                 packet,
                 0,
@@ -302,7 +304,7 @@ namespace Hecton8.UI
             Collider handSourceCollider,
             PhysicalHandSide fallbackHandSide)
         {
-            return TryQueueHandPress(handPosition, handForward, interactionSignals, handSourceCollider, fallbackHandSide);
+            return TryQueueHandPress(handPosition, handForward, interactionSignals, handSourceCollider, fallbackHandSide, Time.frameCount);
         }
 
         private static Vector3 ResolveApproxPressDirection(Vector3 handForward, Vector3 fallbackForward)
