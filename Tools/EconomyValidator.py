@@ -10,6 +10,7 @@ Checks:
 - Three-to-one tier progression medians.
 - Survival O2/calorie table integrity, including fast swim = 3x slow swim.
 - Runtime binding review summary for economy-defined IDs.
+- Runtime binding plan coverage for unresolved IDs; no unresolved ID is approved for runtime use.
 - Time-to-first-submarine recursive recipe expansion.
 - Cross-file resource baseline value alignment.
 """
@@ -56,6 +57,22 @@ EXPECTED_RESOURCE_MATRIX_HEADERS = (
     "laser_hits_tier1",
     "laser_hits_tier2",
     "laser_hits_tier3",
+)
+EXPECTED_ITEMS_CSV_HEADERS = (
+    "item_id",
+    "item_hash32",
+    "display_name",
+    "item_kind",
+    "source_recipe_id",
+    "source_recipe_hash32",
+    "category_id",
+    "category_hash32",
+    "progression_tier",
+    "baseline_value_units",
+    "is_raw_resource",
+    "resource_tier",
+    "biome_count",
+    "positive_spawn_biome_count",
 )
 ASSET_SCAN_RELATIVE_DIRS = (
     "Assets/_Project/Data/Items",
@@ -169,7 +186,14 @@ def collect_csv_id_hashes(rows: list[dict[str, str]], pairs: dict[int, tuple[str
             hash_key = key[:-3] + "_hash32"
             if hash_key not in row:
                 continue
-            current_hash = int(row[hash_key])
+            hash_value = row[hash_key]
+            if value == "" and hash_value == "":
+                continue
+            require(value != "" and hash_value != "", f"CSV row {row_index}.{key}/{hash_key} must both be populated or both be empty")
+            try:
+                current_hash = int(hash_value)
+            except ValueError:
+                fail(f"CSV row {row_index}.{hash_key} is not an integer hash")
             previous = pairs.get(current_hash)
             if previous is not None and previous[0] != value:
                 fail(f"CSV hash collision: {previous[0]} at {previous[1]} and {value} at row {row_index}.{key}")
@@ -247,15 +271,105 @@ def validate_resource_value_alignment(matrix_path: Path, recipes_path: Path) -> 
     return len(resource_values)
 
 
+def validate_items_csv(path: Path, recipes_path: Path, matrix_path: Path) -> dict[str, int]:
+    require(path.exists(), f"missing {path}")
+    with path.open("r", encoding="utf-8", newline="") as handle:
+        reader = csv.DictReader(handle)
+        require(tuple(reader.fieldnames or ()) == EXPECTED_ITEMS_CSV_HEADERS, "Items.csv header mismatch")
+        rows = list(reader)
+
+    recipes_data = load_json(recipes_path)
+    item_values = {entry["item_id"]: entry for entry in recipes_data.get("item_values", [])}
+    recipes_by_result = {recipe["result"]["item_id"]: recipe for recipe in recipes_data.get("recipes", [])}
+    resource_biomes: dict[str, set[str]] = {}
+    positive_resource_biomes: dict[str, set[str]] = {}
+    resource_tiers: dict[str, int] = {}
+    with matrix_path.open("r", encoding="utf-8", newline="") as handle:
+        for matrix_row in csv.DictReader(handle):
+            resource_id = matrix_row["resource_id"]
+            resource_biomes.setdefault(resource_id, set()).add(matrix_row["biome_id"])
+            resource_tiers[resource_id] = int(matrix_row["resource_tier"])
+            if int(matrix_row["lcg_spawn_weight_u16"]) > 0:
+                positive_resource_biomes.setdefault(resource_id, set()).add(matrix_row["biome_id"])
+
+    expected_raw_ids = set(resource_biomes)
+    expected_crafted_ids = set(recipes_by_result)
+    expected_item_ids = expected_raw_ids.union(expected_crafted_ids)
+    require(expected_raw_ids.isdisjoint(expected_crafted_ids), "Items.csv raw resources and recipe outputs must not overlap")
+    require(set(item_values) == expected_item_ids, f"Recipes.item_values set must equal raw resources plus recipe outputs: got {len(item_values)}, expected {len(expected_item_ids)}")
+
+    seen: set[str] = set()
+    hash_checks = 0
+    raw_count = 0
+    crafted_count = 0
+    for row_index, row in enumerate(rows, start=2):
+        item_id = row["item_id"]
+        require(item_id not in seen, f"Items.csv row {row_index} duplicate item_id {item_id}")
+        require(item_id in item_values, f"Items.csv row {row_index} item {item_id} missing Recipes.item_values entry")
+        seen.add(item_id)
+
+        expected_item_hash = fnv1a32(item_id)
+        require(int(row["item_hash32"]) == expected_item_hash, f"Items.csv row {row_index} item hash mismatch")
+        hash_checks += 1
+        category_id = row["category_id"]
+        require(category_id, f"Items.csv row {row_index} category_id is empty")
+        require(int(row["category_hash32"]) == fnv1a32(category_id), f"Items.csv row {row_index} category hash mismatch")
+        hash_checks += 1
+
+        expected_value = float(item_values[item_id]["baseline_value_units"])
+        require(abs(float(row["baseline_value_units"]) - expected_value) <= 0.001, f"Items.csv row {row_index} baseline value mismatch")
+        source_recipe_id = row["source_recipe_id"]
+        source_recipe_hash = row["source_recipe_hash32"]
+        if source_recipe_id:
+            require(source_recipe_hash, f"Items.csv row {row_index} source recipe hash missing")
+            require(int(source_recipe_hash) == fnv1a32(source_recipe_id), f"Items.csv row {row_index} source recipe hash mismatch")
+            hash_checks += 1
+            require(item_id in recipes_by_result, f"Items.csv row {row_index} source recipe present but no recipe outputs {item_id}")
+            recipe = recipes_by_result[item_id]
+            require(recipe["recipe_id"] == source_recipe_id, f"Items.csv row {row_index} source recipe mismatch")
+            require(row["item_kind"] == "crafted", f"Items.csv row {row_index} crafted item_kind mismatch")
+            require(row["is_raw_resource"] == "false", f"Items.csv row {row_index} crafted is_raw_resource mismatch")
+            require(int(row["progression_tier"]) == int(recipe["progression_tier"]), f"Items.csv row {row_index} crafted tier mismatch")
+            crafted_count += 1
+        else:
+            require(not source_recipe_hash, f"Items.csv row {row_index} source recipe hash must be empty")
+            require(item_id not in recipes_by_result, f"Items.csv row {row_index} crafted item missing source recipe")
+
+        if item_id in resource_biomes:
+            require(row["item_kind"] == "raw_resource", f"Items.csv row {row_index} raw item_kind mismatch")
+            require(row["is_raw_resource"] == "true", f"Items.csv row {row_index} raw flag mismatch")
+            require(int(row["resource_tier"]) == resource_tiers[item_id], f"Items.csv row {row_index} resource tier mismatch")
+            require(int(row["biome_count"]) == len(resource_biomes[item_id]), f"Items.csv row {row_index} biome count mismatch")
+            require(int(row["positive_spawn_biome_count"]) == len(positive_resource_biomes.get(item_id, set())), f"Items.csv row {row_index} positive biome count mismatch")
+            raw_count += 1
+        else:
+            require(row["resource_tier"] == "", f"Items.csv row {row_index} non-resource tier must be empty")
+            require(row["biome_count"] == "", f"Items.csv row {row_index} non-resource biome count must be empty")
+            require(row["positive_spawn_biome_count"] == "", f"Items.csv row {row_index} non-resource positive biome count must be empty")
+
+    require(len(rows) == len(expected_item_ids), f"Items.csv row count mismatch: got {len(rows)}, expected {len(expected_item_ids)}")
+    require(seen == expected_item_ids, f"Items.csv item set mismatch: got {len(seen)}, expected {len(expected_item_ids)}")
+    require(raw_count == len(expected_raw_ids), f"Items.csv raw count mismatch: got {raw_count}, expected {len(expected_raw_ids)}")
+    require(crafted_count == len(expected_crafted_ids), f"Items.csv crafted count mismatch: got {crafted_count}, expected {len(expected_crafted_ids)}")
+    return {"rows": len(rows), "hashes": hash_checks, "raw": raw_count, "crafted": crafted_count}
+
+
 def validate_global_hash_collisions(economy_dir: Path) -> int:
     pairs: dict[int, tuple[str, str]] = {}
     with (economy_dir / "Resource_Distribution_Matrix.csv").open("r", encoding="utf-8", newline="") as handle:
         collect_csv_id_hashes(list(csv.DictReader(handle)), pairs)
+    items_path = economy_dir / "Items.csv"
+    if items_path.exists():
+        with items_path.open("r", encoding="utf-8", newline="") as handle:
+            collect_csv_id_hashes(list(csv.DictReader(handle)), pairs)
     collect_json_id_hashes(load_json(economy_dir / "Recipes.json"), "Recipes", pairs)
     collect_json_id_hashes(load_json(economy_dir / "Survival_Stats.json"), "Survival", pairs)
     binding_path = economy_dir / "Runtime_Binding_Review.json"
     if binding_path.exists():
         collect_json_id_hashes(load_json(binding_path), "RuntimeBinding", pairs)
+    binding_plan_path = economy_dir / "Runtime_Binding_Plan.json"
+    if binding_plan_path.exists():
+        collect_json_id_hashes(load_json(binding_plan_path), "RuntimeBindingPlan", pairs)
     first_sub_path = economy_dir / "Time_To_First_Submarine.json"
     if first_sub_path.exists():
         collect_json_id_hashes(load_json(first_sub_path), "FirstSubmarine", pairs)
@@ -458,6 +572,76 @@ def validate_runtime_binding_review(path: Path, recipes_path: Path, root: Path) 
     return {"hashes": hash_checks, "unresolved": len(unresolved)}
 
 
+def validate_runtime_binding_plan(path: Path, review_path: Path) -> dict[str, int]:
+    require(path.exists(), f"missing {path}")
+    data = load_json(path)
+    review = load_json(review_path)
+    hash_checks = check_hash_pairs(data, "RuntimeBindingPlan")
+
+    require(isinstance(data, dict), "binding plan root must be an object")
+    require(isinstance(review, dict), "runtime binding review root must be an object")
+    require(data.get("source_review_file") == "Data/Economy/Runtime_Binding_Review.json", "binding plan source_review_file mismatch")
+    require(data.get("status_id") == "economy.binding_plan.pending_owner_decision", "binding plan status must remain pending owner decision")
+    require(data.get("blocked_status_id") == "economy.binding.blocked_until_owner_confirmation", "binding plan blocked status drift")
+    require(data.get("new_asset_status_id") == "economy.binding.requires_new_authoring_asset", "binding plan new-asset status drift")
+
+    unresolved_bindings = review.get("unresolved_bindings")
+    plan_entries = data.get("bindings")
+    summary = data.get("summary")
+    require(isinstance(unresolved_bindings, list) and unresolved_bindings, "runtime binding review unresolved_bindings must be a non-empty list")
+    require(isinstance(plan_entries, list) and plan_entries, "binding plan bindings must be a non-empty list")
+    require(isinstance(summary, dict), "binding plan summary must be an object")
+    review_entries = {entry["economy_id"]: entry for entry in unresolved_bindings}
+    require(len(review_entries) == len(unresolved_bindings), "runtime binding review has duplicate economy IDs")
+    require(len(plan_entries) == int(summary["unresolved_economy_defined_ids"]), "binding plan summary unresolved count mismatch")
+    require(len(plan_entries) == len(review_entries), "binding plan does not cover runtime binding review")
+
+    seen: set[str] = set()
+    candidate_count = 0
+    author_count = 0
+    runtime_allowed_count = 0
+    owner_required_count = 0
+    for entry in plan_entries:
+        economy_id = entry["economy_id"]
+        require(economy_id not in seen, f"duplicate binding plan entry {economy_id}")
+        seen.add(economy_id)
+        require(economy_id in review_entries, f"binding plan entry {economy_id} is not in Runtime_Binding_Review.json")
+        review_entry = review_entries[economy_id]
+        require(entry["economy_hash32"] == review_entry["economy_hash32"], f"{economy_id} plan hash does not match review")
+        require(entry["owner_decision_required"] is True, f"{economy_id} must require owner decision")
+        require(entry["runtime_use_allowed"] is False, f"{economy_id} must not be approved for runtime use")
+        if entry["runtime_use_allowed"]:
+            runtime_allowed_count += 1
+        if entry["owner_decision_required"]:
+            owner_required_count += 1
+
+        suggested_id = review_entry["suggested_existing_id"]
+        suggested_hash = review_entry["suggested_existing_hash32"]
+        if suggested_id is None:
+            author_count += 1
+            require(entry["binding_strategy_id"] == "economy.binding_strategy.author_asset_required", f"{economy_id} must require new authoring")
+            require(entry["candidate_existing_id"] is None, f"{economy_id} must not invent a candidate id")
+            require(entry["candidate_existing_hash32"] is None, f"{economy_id} must not invent a candidate hash")
+        else:
+            candidate_count += 1
+            require(entry["binding_strategy_id"] == "economy.binding_strategy.candidate_alias_pending_owner", f"{economy_id} must remain candidate-only")
+            require(entry["candidate_existing_id"] == suggested_id, f"{economy_id} candidate id drift")
+            require(entry["candidate_existing_hash32"] == suggested_hash, f"{economy_id} candidate hash drift")
+
+    require(seen == set(review_entries), "binding plan entries do not match runtime binding review IDs")
+    require(candidate_count == int(summary["candidate_alias_pending_owner_count"]), "binding plan candidate count mismatch")
+    require(author_count == int(summary["author_asset_required_count"]), "binding plan authoring count mismatch")
+    require(runtime_allowed_count == int(summary["runtime_use_allowed_count"]), "binding plan runtime-use count mismatch")
+    require(owner_required_count == int(summary["owner_decision_required_count"]), "binding plan owner-decision count mismatch")
+    require(runtime_allowed_count == 0, "binding plan must not approve unresolved IDs for runtime use")
+    return {
+        "hashes": hash_checks,
+        "blocked": len(plan_entries),
+        "candidates": candidate_count,
+        "author_required": author_count,
+    }
+
+
 def expand_recipe_closure(item_id: str, quantity: int, recipes_by_output: dict[str, Any], raw: dict[str, int], recipe_batches: dict[str, int]) -> None:
     require(quantity > 0, f"recipe closure quantity for {item_id} must be positive")
     recipe = recipes_by_output.get(item_id)
@@ -545,11 +729,15 @@ def validate_first_submarine_path(path: Path, recipes_path: Path) -> dict[str, A
     expected_recursive_wait = recursive_kwh / generator_kw * 60.0
     expected_literal_total = static_minutes + expected_recursive_wait
     totals = data["totals"]
+    total_recursive_batches = sum(recipe_batches.values())
+    unique_recursive_recipes = len(recipe_batches)
     require(abs(float(totals["top_level_target_only_fabrication_kwh"]) - round(top_level_kwh, 3)) <= 0.001, "first submarine top-level kWh mismatch")
     require(abs(float(totals["top_level_target_only_craft_time_seconds"]) - round(top_level_seconds, 3)) <= 0.001, "first submarine top-level craft time mismatch")
     require(abs(float(totals["top_level_energy_wait_minutes_at_30kw"]) - round(expected_top_wait, 3)) <= 0.001, "first submarine top-level energy wait mismatch")
-    require(int(totals["recursive_recipe_batches"]) == sum(recipe_batches.values()), "first submarine recursive batch count mismatch")
-    require(int(totals["unique_recursive_recipes"]) == len(recipe_batches), "first submarine unique recipe count mismatch")
+    require(int(totals["recursive_recipe_batches"]) == total_recursive_batches, "first submarine recursive batch count mismatch")
+    require(int(totals["unique_recursive_recipes"]) == unique_recursive_recipes, "first submarine unique recipe count mismatch")
+    require(5 <= total_recursive_batches <= 50, f"first submarine total recipe batches {total_recursive_batches} outside [5, 50]")
+    require(unique_recursive_recipes >= 5, f"first submarine unique recipe count {unique_recursive_recipes} below 5")
     require(abs(float(totals["recursive_fabrication_kwh"]) - round(recursive_kwh, 3)) <= 0.001, "first submarine recursive kWh mismatch")
     require(abs(float(totals["recursive_craft_time_seconds"]) - round(recursive_seconds, 3)) <= 0.001, "first submarine recursive craft time mismatch")
     require(abs(float(totals["recursive_energy_wait_minutes_at_30kw"]) - round(expected_recursive_wait, 3)) <= 0.001, "first submarine recursive energy wait mismatch")
@@ -595,6 +783,65 @@ def choose_distinct_negative_item_id(original_id: str) -> str:
     fail("negative result item mismatch test requires a distinct replacement ID")
 
 
+def rebuild_first_submarine_report(data: dict[str, Any], recipes_data: dict[str, Any]) -> None:
+    recipes = recipes_data.get("recipes", [])
+    recipes_by_output = {recipe["result"]["item_id"]: recipe for recipe in recipes}
+    recipes_by_id = {recipe["recipe_id"]: recipe for recipe in recipes}
+    raw: dict[str, int] = {}
+    recipe_batches: dict[str, int] = {}
+    for target in data["target_items"]:
+        expand_recipe_closure(target["item_id"], int(target["quantity"]), recipes_by_output, raw, recipe_batches)
+
+    data["raw_resources"] = [
+        {
+            "item_id": item_id,
+            "item_hash32": fnv1a32(item_id),
+            "quantity": quantity,
+        }
+        for item_id, quantity in sorted(raw.items())
+    ]
+    data["recipe_batches"] = [
+        {
+            "recipe_id": recipe_id,
+            "recipe_hash32": fnv1a32(recipe_id),
+            "result_item_id": recipes_by_id[recipe_id]["result"]["item_id"],
+            "result_item_hash32": fnv1a32(recipes_by_id[recipe_id]["result"]["item_id"]),
+            "batches": batches,
+        }
+        for recipe_id, batches in sorted(recipe_batches.items())
+    ]
+
+    top_level_kwh = 0.0
+    top_level_seconds = 0.0
+    for target in data["target_items"]:
+        recipe = recipes_by_output[target["item_id"]]
+        quantity = int(target["quantity"])
+        result_quantity = int(recipe["result"]["quantity"])
+        batches = (quantity + result_quantity - 1) // result_quantity
+        top_level_kwh += float(recipe["fabrication_kwh"]) * batches
+        top_level_seconds += float(recipe["craft_time_seconds"]) * batches
+
+    recursive_kwh = 0.0
+    recursive_seconds = 0.0
+    for recipe_id, batches in recipe_batches.items():
+        recipe = recipes_by_id[recipe_id]
+        recursive_kwh += float(recipe["fabrication_kwh"]) * batches
+        recursive_seconds += float(recipe["craft_time_seconds"]) * batches
+
+    generator_kw = float(data["assumptions"]["generator_power_kw"])
+    static_minutes = float(data["assumptions"]["static_path_minutes_excluding_energy_wait"])
+    totals = data["totals"]
+    totals["top_level_target_only_fabrication_kwh"] = round(top_level_kwh, 3)
+    totals["top_level_target_only_craft_time_seconds"] = round(top_level_seconds, 3)
+    totals["top_level_energy_wait_minutes_at_30kw"] = round(top_level_kwh / generator_kw * 60.0, 3)
+    totals["recursive_recipe_batches"] = sum(recipe_batches.values())
+    totals["unique_recursive_recipes"] = len(recipe_batches)
+    totals["recursive_fabrication_kwh"] = round(recursive_kwh, 3)
+    totals["recursive_craft_time_seconds"] = round(recursive_seconds, 3)
+    totals["recursive_energy_wait_minutes_at_30kw"] = round(recursive_kwh / generator_kw * 60.0, 3)
+    totals["literal_total_minutes_at_30kw"] = round(static_minutes + recursive_kwh / generator_kw * 60.0, 3)
+
+
 def mutate_first_sub_result_item(tmp_dir: Path) -> None:
     path = tmp_dir / "Time_To_First_Submarine.json"
     data = load_json(path)
@@ -615,6 +862,18 @@ def mutate_first_sub_duplicate_raw(tmp_dir: Path) -> None:
     write_json(path, data)
 
 
+def mutate_first_sub_batch_band_overflow(tmp_dir: Path) -> None:
+    path = tmp_dir / "Time_To_First_Submarine.json"
+    recipes_path = tmp_dir / "Recipes.json"
+    data = load_json(path)
+    target_items = data.get("target_items")
+    require(isinstance(target_items, list) and target_items, "negative first-sub batch band test requires target rows")
+    for target in target_items:
+        target["quantity"] = int(target["quantity"]) + 1
+    rebuild_first_submarine_report(data, load_json(recipes_path))
+    write_json(path, data)
+
+
 def mutate_matrix_value_drift(tmp_dir: Path) -> None:
     path = tmp_dir / "Resource_Distribution_Matrix.csv"
     with path.open("r", encoding="utf-8", newline="") as handle:
@@ -628,6 +887,37 @@ def mutate_matrix_value_drift(tmp_dir: Path) -> None:
         writer = csv.DictWriter(handle, fieldnames=fieldnames)
         writer.writeheader()
         writer.writerows(rows)
+
+
+def mutate_items_missing_source_recipe(tmp_dir: Path) -> None:
+    path = tmp_dir / "Items.csv"
+    with path.open("r", encoding="utf-8", newline="") as handle:
+        reader = csv.DictReader(handle)
+        rows = list(reader)
+        fieldnames = reader.fieldnames
+    require(rows, "negative items source recipe test requires item rows")
+    require(fieldnames is not None, "negative items source recipe test requires CSV headers")
+    for row in rows:
+        if row["source_recipe_id"]:
+            row["source_recipe_id"] = ""
+            row["source_recipe_hash32"] = ""
+            break
+    else:
+        fail("negative items source recipe test requires a crafted item row")
+    with path.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(rows)
+
+
+def mutate_binding_plan_runtime_allowed(tmp_dir: Path) -> None:
+    path = tmp_dir / "Runtime_Binding_Plan.json"
+    data = load_json(path)
+    bindings = data.get("bindings")
+    require(isinstance(bindings, list) and bindings, "negative binding plan test requires binding rows")
+    bindings[0]["runtime_use_allowed"] = True
+    data["summary"]["runtime_use_allowed_count"] = 1
+    write_json(path, data)
 
 
 def run_negative_tests(economy_dir: Path) -> list[str]:
@@ -645,10 +935,28 @@ def run_negative_tests(economy_dir: Path) -> list[str]:
             "duplicate first submarine raw resource",
         ),
         (
+            "first_sub_batch_band_overflow",
+            mutate_first_sub_batch_band_overflow,
+            lambda tmp_dir: validate_first_submarine_path(tmp_dir / "Time_To_First_Submarine.json", tmp_dir / "Recipes.json"),
+            "outside [5, 50]",
+        ),
+        (
             "matrix_recipe_value_drift",
             mutate_matrix_value_drift,
             lambda tmp_dir: validate_resource_value_alignment(tmp_dir / "Resource_Distribution_Matrix.csv", tmp_dir / "Recipes.json"),
             "inconsistent matrix base values",
+        ),
+        (
+            "items_missing_source_recipe",
+            mutate_items_missing_source_recipe,
+            lambda tmp_dir: validate_items_csv(tmp_dir / "Items.csv", tmp_dir / "Recipes.json", tmp_dir / "Resource_Distribution_Matrix.csv"),
+            "crafted item missing source recipe",
+        ),
+        (
+            "binding_plan_runtime_allowed",
+            mutate_binding_plan_runtime_allowed,
+            lambda tmp_dir: validate_runtime_binding_plan(tmp_dir / "Runtime_Binding_Plan.json", tmp_dir / "Runtime_Binding_Review.json"),
+            "must not be approved for runtime use",
         ),
     )
     results: list[str] = []
@@ -679,19 +987,23 @@ def main() -> None:
     validate_hash_contract()
     matrix_result = validate_resource_matrix(economy_dir / "Resource_Distribution_Matrix.csv")
     recipe_result = validate_recipes(economy_dir / "Recipes.json")
+    items_result = validate_items_csv(economy_dir / "Items.csv", economy_dir / "Recipes.json", economy_dir / "Resource_Distribution_Matrix.csv")
     aligned_resources = validate_resource_value_alignment(economy_dir / "Resource_Distribution_Matrix.csv", economy_dir / "Recipes.json")
     survival_result = validate_survival(economy_dir / "Survival_Stats.json")
     binding_result = validate_runtime_binding_review(economy_dir / "Runtime_Binding_Review.json", economy_dir / "Recipes.json", root)
+    binding_plan_result = validate_runtime_binding_plan(economy_dir / "Runtime_Binding_Plan.json", economy_dir / "Runtime_Binding_Review.json")
     first_sub_result = validate_first_submarine_path(economy_dir / "Time_To_First_Submarine.json", economy_dir / "Recipes.json")
     unique_hashes = validate_global_hash_collisions(economy_dir)
-    total_hashes = matrix_result["hashes"] + recipe_result["hashes"] + survival_result["hashes"] + binding_result["hashes"] + first_sub_result["hashes"]
+    total_hashes = matrix_result["hashes"] + recipe_result["hashes"] + items_result["hashes"] + survival_result["hashes"] + binding_result["hashes"] + binding_plan_result["hashes"] + first_sub_result["hashes"]
     negative_results = run_negative_tests(economy_dir) if args.negative_tests else []
     print("ECONOMY VALIDATION OK")
     print(f"matrix_rows={matrix_result['rows']} biomes={matrix_result['biomes']} resources={matrix_result['resources']}")
+    print(f"items_rows={items_result['rows']} raw={items_result['raw']} crafted={items_result['crafted']}")
     print(f"matrix_recipe_value_aligned_resources={aligned_resources}")
     print(f"recipes={recipe_result['recipes']} tier_ratios={recipe_result['tier_ratios']}")
     print(f"survival_velocity_bands={survival_result['velocity_bands']}")
     print(f"binding_unresolved_ids={binding_result['unresolved']}")
+    print(f"binding_plan_blocked_ids={binding_plan_result['blocked']} candidates={binding_plan_result['candidates']} author_required={binding_plan_result['author_required']}")
     print(f"first_sub_recursive_kwh={first_sub_result['recursive_kwh']} literal_minutes={first_sub_result['literal_minutes']}")
     print(f"hash_pairs_checked={total_hashes}")
     print(f"unique_id_hashes={unique_hashes}")

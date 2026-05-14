@@ -1,0 +1,56 @@
+item_id,item_hash32,display_name,item_kind,source_recipe_id,source_recipe_hash32,category_id,category_hash32,progression_tier,baseline_value_units,is_raw_resource,resource_tier,biome_count,positive_spawn_biome_count
+Comp_BatteryCell,1562252576,Battery Cell,crafted,Recipe_BatteryCell,458473593,recipe.category.component,2984369858,1,5.20,false,,,
+Comp_CircuitBoard,71708594,Circuit Board,crafted,Recipe_CircuitBoard,458861155,recipe.category.component,2984369858,1,6.00,false,,,
+Comp_CopperWire,3187749649,Copper Wire,crafted,Recipe_CopperWire,1259281760,recipe.category.component,2984369858,1,3.50,false,,,
+Comp_FiberMesh,1095668018,Fiber Mesh,crafted,Recipe_FiberMesh,1651013131,recipe.category.component,2984369858,1,4.50,false,,,
+Comp_GlassPanel,1708824863,Glass Panel,crafted,Recipe_GlassPanel,3861079582,recipe.category.component,2984369858,1,3.00,false,,,
+Comp_LubricantResin,2880126392,Lubricant Resin,crafted,Recipe_LubricantResin,3795135593,recipe.category.component,2984369858,1,4.20,false,,,
+Comp_PowerCoupler,4027154086,Power Coupler,crafted,Recipe_PowerCoupler,3616742455,recipe.category.component,2984369858,1,10.70,false,,,
+Comp_PrecisionLens,3399578969,Precision Lens,crafted,Recipe_PrecisionLens,3000041024,recipe.category.component,2984369858,1,4.00,false,,,
+Comp_PumpRotor,2033101255,Pump Rotor,crafted,Recipe_PumpRotor,3001905566,recipe.category.component,2984369858,1,10.20,false,,,
+Comp_ReinforcedPlate,3550014518,Reinforced Plate,crafted,Recipe_ReinforcedPlate,2840072671,recipe.category.component,2984369858,1,12.00,false,,,
+Comp_SealantPack,3268286546,Sealant Pack,crafted,Recipe_SealantPack,3788947323,recipe.category.component,2984369858,1,3.90,false,,,
+Comp_StructuralBracket,2908503494,Structural Bracket,crafted,Recipe_StructuralBracket,2660799583,recipe.category.component,2984369858,1,4.00,false,,,
+Data_AbyssalCrystal,702456815,Abyssal Crystal,raw_resource,,,item.category.raw_resource,4056189889,3,12.00,true,3,10,10
+Data_CarbonGraphite,2008184373,Carbon Graphite,raw_resource,,,item.category.raw_resource,4056189889,3,6.00,true,3,10,10
+Data_CobaltAlloy,857583970,Cobalt Alloy,raw_resource,,,item.category.raw_resource,4056189889,2,5.00,true,2,10,10
+Data_Copper,2276338585,Copper Ore,raw_resource,,,item.category.raw_resource,4056189889,1,1.00,true,1,10,10
+Data_FiberKelp,2069849578,Fiber Kelp,raw_resource,,,item.category.raw_resource,4056189889,1,1.00,true,1,10,10
+Data_GoldOre,4056809162,Gold Ore,raw_resource,,,item.category.raw_resource,4056189889,2,3.00,true,2,10,10
+Data_HydrocarbonResin,248205602,Hydrocarbon Resin,raw_resource,,,item.category.raw_resource,4056189889,1,1.50,true,1,10,10
+Data_LithiumCrystal,3763503872,Lithium Crystal,raw_resource,,,item.category.raw_resource,4056189889,2,3.00,true,2,10,10
+Data_NickelOre,1037165092,Nickel Ore,raw_resource,,,item.category.raw_resource,4056189889,2,4.00,true,2,10,10
+Data_RareEarthDust,1997058338,Rare Earth Dust,raw_resource,,,item.category.raw_resource,4056189889,3,8.00,true,3,10,10
+Data_SilicaShards,3920354616,Silica Shards,raw_resource,,,item.category.raw_resource,4056189889,1,1.00,true,1,10,10
+Data_SilverOre,884621125,Silver Ore,raw_resource,,,item.category.raw_resource,4056189889,1,2.00,true,1,10,10
+Data_SulfurClumps,3346875565,Sulfur Clumps,raw_resource,,,item.category.raw_resource,4056189889,1,1.20,true,1,10,10
+Data_ThermalGel,1601052383,Thermal Gel,raw_resource,,,item.category.raw_resource,4056189889,2,5.00,true,2,10,10
+Data_TitaniumScrap,3511699502,Titanium Scrap,raw_resource,,,item.category.raw_resource,4056189889,1,1.00,true,1,10,10
+Item_Tool_EnvAnalyzer,2495175395,Environmental Analyzer,crafted,Recipe_EnvAnalyzer,130106729,recipe.category.tool,3320453461,2,16.00,false,,,
+Item_Tool_Flashlight,2093163854,Dive Flashlight,crafted,Recipe_Flashlight,1902931108,recipe.category.tool,3320453461,2,9.20,false,,,
+Item_Tool_LaserCutter,403113992,Laser Cutter,crafted,Recipe_LaserCutter,289684690,recipe.category.tool,3320453461,2,20.20,false,,,
+Item_Tool_Repair,3021274157,Repair Tool,crafted,Recipe_RepairTool,3444507111,recipe.category.tool,3320453461,2,18.60,false,,,
+Item_Tool_SalvageSampler,2737502431,Salvage Sampler,crafted,Recipe_SalvageSampler,60144597,recipe.category.tool,3320453461,2,17.70,false,,,
+Item_Tool_Scanner,2534372966,Survey Scanner,crafted,Recipe_Scanner,1119893084,recipe.category.tool,3320453461,2,15.20,false,,,
+Module_AirlockFrame,1235472580,Airlock Frame,crafted,Recipe_ModuleAirlockFrame,3914489556,recipe.category.base_module,4211523877,2,15.50,false,,,
+Module_FabricatorBench,1194003719,Fabricator Bench,crafted,Recipe_ModuleFabricatorBench,447016055,recipe.category.base_module,4211523877,2,16.70,false,,,
+Module_FoundationKit,972870237,Foundation Kit,crafted,Recipe_ModuleFoundationKit,4053661581,recipe.category.base_module,4211523877,2,15.90,false,,,
+Module_O2Recycler,1361286512,O2 Recycler Module,crafted,Recipe_ModuleO2Recycler,1145872896,recipe.category.base_module,4211523877,2,14.70,false,,,
+Module_PowerRelay,2185499708,Power Relay Module,crafted,Recipe_ModulePowerRelay,621889132,recipe.category.base_module,4211523877,2,19.40,false,,,
+Module_PressurizedContainer,2749184637,Pressurized Container Module,crafted,Recipe_ModulePressurizedContainer,3789307373,recipe.category.base_module,4211523877,2,18.90,false,,,
+Module_StorageLocker,4001448765,Storage Locker Module,crafted,Recipe_ModuleStorageLocker,1755589453,recipe.category.base_module,4211523877,2,11.00,false,,,
+Module_SumpPump,822934043,Sump Pump Module,crafted,Recipe_ModuleSumpPump,82512683,recipe.category.base_module,4211523877,2,14.10,false,,,
+Upgrade_AbyssPressureShell,932012347,Abyss Pressure Shell,crafted,Recipe_AbyssPressureShell,257314259,recipe.category.submarine_upgrade,4248040746,3,68.00,false,,,
+Upgrade_AbyssalStabilizer,3542071688,Abyssal Stabilizer,crafted,Recipe_AbyssalStabilizer,1997363424,recipe.category.submarine_upgrade,4248040746,3,65.70,false,,,
+Upgrade_BallastOptimizer,1231965596,Ballast Optimizer,crafted,Recipe_BallastOptimizer,531469028,recipe.category.submarine_upgrade,4248040746,3,45.80,false,,,
+Upgrade_DepthCompensator,1167658630,Depth Compensator,crafted,Recipe_DepthCompensator,2344520494,recipe.category.submarine_upgrade,4248040746,3,38.70,false,,,
+Upgrade_EmergencyO2Rack,2872587453,Emergency O2 Rack,crafted,Recipe_EmergencyO2Rack,2042781381,recipe.category.submarine_upgrade,4248040746,3,47.30,false,,,
+Upgrade_EngineOverdriveManifold,3136873884,Engine Overdrive Manifold,crafted,Recipe_EngineOverdriveManifold,1306256436,recipe.category.submarine_upgrade,4248040746,3,62.00,false,,,
+Upgrade_GuidanceModule,657239398,Guidance Module,crafted,Recipe_GuidanceModule,2196597006,recipe.category.submarine_upgrade,4248040746,3,37.00,false,,,
+Upgrade_HighCapacityCell,2083712206,High Capacity Cell,crafted,Recipe_HighCapacityCell,376833910,recipe.category.submarine_upgrade,4248040746,3,37.60,false,,,
+Upgrade_HullArmorLattice,1257718430,Hull Armor Lattice,crafted,Recipe_HullArmorLattice,3839810470,recipe.category.submarine_upgrade,4248040746,3,59.00,false,,,
+Upgrade_HydraulicActuator,1328461324,Hydraulic Actuator,crafted,Recipe_HydraulicActuator,2040131956,recipe.category.submarine_upgrade,4248040746,3,41.40,false,,,
+Upgrade_ReactorBypassCoupler,3833141382,Reactor Bypass Coupler,crafted,Recipe_ReactorBypassCoupler,4187834654,recipe.category.submarine_upgrade,4248040746,3,44.40,false,,,
+Upgrade_SilentRunningBaffle,3312055054,Silent Running Baffle,crafted,Recipe_SilentRunningBaffle,2948013318,recipe.category.submarine_upgrade,4248040746,3,39.40,false,,,
+Upgrade_SonarAmplifier,2406373322,Sonar Amplifier,crafted,Recipe_SonarAmplifier,3235962818,recipe.category.submarine_upgrade,4248040746,3,37.00,false,,,
+Upgrade_ThermalShielding,2908096734,Thermal Shielding,crafted,Recipe_ThermalShielding,504564630,recipe.category.submarine_upgrade,4248040746,3,39.00,false,,,

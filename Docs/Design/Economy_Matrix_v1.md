@@ -9,8 +9,10 @@ Status: ECONOMY BALANCED by `Tools/EconomyValidator.py`; literal 30 kW energy pa
 
 - `Data/Economy/Resource_Distribution_Matrix.csv`
 - `Data/Economy/Recipes.json`
+- `Data/Economy/Items.csv`
 - `Data/Economy/Survival_Stats.json`
 - `Data/Economy/Runtime_Binding_Review.json`
+- `Data/Economy/Runtime_Binding_Plan.json`
 - `Data/Economy/Time_To_First_Submarine.json`
 - `Tools/EconomyValidator.py`
 
@@ -38,6 +40,8 @@ Static data was checked against existing `stableId` / `m_Name` surfaces under `A
 This is not a Unity runtime proof. It is a static integration warning so the Data Monolith importer does not silently treat these IDs as current `ItemCatalog` entries.
 
 `Runtime_Binding_Review.json` records the 22 unresolved IDs as machine-readable data. Suggested IDs in that file are candidate bindings only; they are not declared valid runtime mappings. The validator re-scans current project asset IDs and fails if this binding report drifts from the asset tree.
+
+`Runtime_Binding_Plan.json` is the importer-block plan for those same 22 IDs. It marks 18 rows as `economy.binding_strategy.candidate_alias_pending_owner`, 4 rows as `economy.binding_strategy.author_asset_required`, and 0 rows as runtime-approved. The validator fails if any unresolved row is missing from the plan, if a candidate drifts from the review file, or if `runtime_use_allowed` becomes true before owner confirmation.
 
 ## Scarcity Formula
 
@@ -140,5 +144,5 @@ At a literal `30 kW` energy source, recursive fabrication alone waits `866.2 min
 - CPU: data files are offline tables. Runtime work should be integer hash lookup and table sampling only.
 - GC: no runtime strings are required if the engine consumes hash fields.
 - Memory: CSV/JSON are authoring/input assets; Data Monolith should bake them into contiguous runtime blobs.
-- Correctness: validator checks project-compatible hashes, row counts, duplicate biome/resource pairs, exact recipe category quotas, recipe cycles, value math, result value parity, no-profit deconstruction, tier progression, survival band ranges, runtime binding drift, time-to-first-submarine recursive expansion, milestone row/result consistency, and global generated-file hash collisions.
+- Correctness: validator checks project-compatible hashes, row counts, duplicate biome/resource pairs, exact recipe category quotas, recipe cycles, value math, result value parity, no-profit deconstruction, tier progression, `Items.csv` exact raw/crafted item set and source-recipe parity, survival band ranges, runtime binding drift, binding-plan blocked status, time-to-first-submarine recursive expansion, 5-50 recursive batch pacing, milestone row/result consistency, and global generated-file hash collisions.
 - Failure modes: missing engine importer, economy-defined IDs not mapped to runtime assets, or runtime system still reading strings would invalidate runtime integration.

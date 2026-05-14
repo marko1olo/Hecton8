@@ -196,3 +196,75 @@ Rejected Alternatives: Leaving raw Python exceptions was rejected because this t
 Scalability potential: Low/Middle/High/Ultra and CI get deterministic failure messages from the same offline gate.
 
 Hardware Impact: Offline-only validation, 0 us gameplay. It improves diagnosis before importer/runtime bake work.
+
+## Decision 17 - Runtime Binding Plan Gate
+
+Problem: `Runtime_Binding_Review.json` identified 22 unresolved economy-defined IDs, but it still mixed candidate existing IDs and missing-authoring cases in one review list. An importer owner could accidentally treat candidate suggestions as approved runtime mappings.
+
+Solution: Added `Data/Economy/Runtime_Binding_Plan.json` and validator coverage. The plan mirrors all 22 unresolved IDs, marks 18 as candidate aliases pending owner confirmation, marks 4 as requiring new authoring assets, and explicitly sets `runtime_use_allowed=false` for every unresolved ID.
+
+Rejected Alternatives: Directly replacing `Upgrade_*` with `Comp_*` or `Module_*` with `Build_*` was rejected because component items, buildables, and submarine upgrades are not proven equivalent runtime contracts. Editing Unity `.asset` files was rejected because this prompt remains text/data-only and Unity import proof is absent.
+
+Scalability potential: Low uses the plan as an import-block gate; Middle can convert approved rows into a compact binary alias table; High/Ultra can add richer unlock visuals after owner approval without changing the static economy graph.
+
+Hardware Impact: Offline-only validation, 0 us gameplay. Prevents runtime hash lookup retries/string fallbacks caused by unresolved IDs.
+
+## Decision 18 - Items Manifest Validator Dependency
+
+Problem: `Tools/EconomyValidator.py` now validates `Data/Economy/Items.csv`. Leaving that CSV untracked would make the committed validator fail on a clean checkout.
+
+Solution: Include `Data/Economy/Items.csv` as a first-class economy data artifact. The validator checks item hashes, category hashes, optional source recipe hashes, baseline value parity against `Recipes.json`, raw resource tier/biome counts from `Resource_Distribution_Matrix.csv`, and crafted item source recipe parity.
+
+Rejected Alternatives: Removing the Items.csv validator path was rejected because it is a useful flat manifest for zero-GC importer work. Committing the validator without the CSV was rejected because it would break the documented validation command.
+
+Scalability potential: Low can bake this manifest into contiguous item records; Middle/High/Ultra can add presentation metadata after importer approval without hot-path string lookup.
+
+Hardware Impact: Offline-only validation, 0 us gameplay. It preserves the expected hash/table lookup savings by preventing missing item-manifest bake inputs.
+
+## Decision 19 - Item Manifest CSV Generation
+
+Problem: The validator gained an `Items.csv` gate, but the manifest file was missing. Item values were spread across `Recipes.json` and `Resource_Distribution_Matrix.csv`, forcing importers to infer raw/crafted classification and resource biome coverage from multiple sources.
+
+Solution: Generated `Data/Economy/Items.csv` mechanically from existing economy data. It contains all 55 `Recipes.item_values` entries, classifies 15 matrix resources as `raw_resource`, classifies 40 recipe outputs as `crafted`, records source recipe hashes for crafted items, and records resource tier/biome counts for raw resources.
+
+Rejected Alternatives: Removing the validator gate was rejected because a flat item manifest is useful importer input. Hand-authoring the rows was rejected because it risks drift from existing authoritative data.
+
+Scalability potential: Low uses the CSV directly for importer preflight; Middle can bake it to a compact item catalog; High/Ultra can add richer item presentation without changing economy IDs.
+
+Hardware Impact: Offline-only data generation, 0 us gameplay. A flat manifest preserves catalog lookup savings by avoiding runtime cross-file inference.
+
+## Decision 20 - Item Manifest Exact Set Guard
+
+Problem: `Items.csv` could drift while still passing weak row-level checks if a crafted recipe output omitted its source recipe fields, or if `Recipes.item_values` stopped matching the exact union of matrix raw resources and recipe outputs.
+
+Solution: Hardened validation so `Recipes.item_values` must equal `Resource_Distribution_Matrix.csv` raw resources plus `Recipes.json` recipe outputs. The validator now enforces exact row/raw/crafted counts, rejects crafted rows without source recipe ownership, and `--negative-tests` includes `items_missing_source_recipe` alongside the binding-plan runtime-approval rejection.
+
+Rejected Alternatives: Row-count-only validation was rejected because it can miss wrong classification. Inferring crafted status during import was rejected because the flat manifest should be a deterministic importer input, not a runtime deduction surface.
+
+Scalability potential: Low bakes a fixed raw/crafted item table; Middle can add importer alias resolution; High/Ultra can add richer unlock and fabricator presentation after bindings are approved without changing the authoritative economy graph.
+
+Hardware Impact: Offline-only validation, 0 us gameplay. It preserves the intended hash/table lookup savings and prevents importer fallback logic from classifying item ownership at runtime.
+
+## Decision 21 - First-Submarine Batch-Band Gate
+
+Problem: The first-submarine handoff path sits inside the 5-50 recipe-batch band, but the primary `EconomyValidator.py` only checked the recorded recursive batch count for equality. A future data edit could keep the report internally consistent while becoming too short or too grindy.
+
+Solution: Added a direct 5-50 recursive batch-band guard and a minimum five unique recipe guard to `validate_first_submarine_path`. Added `first_sub_batch_band_overflow` to `--negative-tests`; it rebuilds a structurally consistent temporary first-submarine report with doubled target quantities and confirms the validator rejects the overflow through the pacing-band rule.
+
+Rejected Alternatives: Relying only on a separate graph-audit report was rejected because the primary balancer validator is the first gate most agents will run. Rejecting only mismatched totals was rejected because it does not prove the pacing boundary itself.
+
+Scalability potential: Low keeps the first submarine path bounded for MX350-era pacing; Middle can tune route/harvest assumptions; High/Ultra can spend saved runtime cost on richer fabricator presentation without altering the authoritative batch band.
+
+Hardware Impact: Offline-only validation, 0 us gameplay. It prevents late runtime balancing churn caused by a path that is mathematically valid but outside the intended progression band.
+
+## Decision 22 - Items CSV Global Collision Scan
+
+Problem: `Items.csv` hashes were validated row-by-row, but the global generated-file collision sweep did not scan that CSV directly. Adding it exposed an optional-field edge case: raw-resource rows have empty `source_recipe_id` and empty `source_recipe_hash32`, which must not be parsed as an integer hash.
+
+Solution: Added `Items.csv` to `validate_global_hash_collisions()` and made the CSV collector skip empty optional IDs only when the sibling hash is also empty. Missing hashes for non-empty IDs now fail through the validator's controlled `require()` path.
+
+Rejected Alternatives: Leaving `Items.csv` out of the global sweep was rejected because future importer metadata could add IDs not already duplicated in `Recipes.json`. Blindly ignoring empty hashes was rejected because it would hide malformed non-empty ID rows.
+
+Scalability potential: Low keeps a flat manifest with direct hash validation; Middle can add approved runtime alias IDs later; High/Ultra can add richer item presentation metadata while the collision gate remains deterministic.
+
+Hardware Impact: Offline-only validation, 0 us gameplay. It prevents runtime catalog fallback or misbinding caused by cross-file hash collisions before data reaches baked tables.

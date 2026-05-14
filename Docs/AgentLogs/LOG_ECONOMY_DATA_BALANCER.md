@@ -686,3 +686,60 @@ python -B Tools\EconomyValidator.py --root . --negative-tests
 negative_cases=3
 STATUS: ECONOMY BALANCED
 ```
+
+## 2026-05-14 - Final Scoped Commit Verification
+
+What was wrong:
+- Final log evidence had to match the current validator after the direct `Items.csv` global collision scan.
+
+What was done:
+- Re-ran normal validation, strict negative validation, Python compile, binding-plan JSON parse, and scoped whitespace check.
+- Confirmed `unique_id_hashes=188` and `negative_cases=6`.
+- Removed only `Tools/__pycache__/EconomyValidator.cpython-314.pyc`; left unrelated dirty files and other ignored bytecode caches untouched.
+
+Cinematic Cheats used:
+- No runtime simulation added. This remains offline deterministic economy data and importer guard work.
+
+Exact Microseconds saved:
+- 0 us measured gameplay. Static estimate only: flat numeric IDs and prevalidated item/resource tables preserve 5-120 us per lookup/craft/spawn burst by avoiding runtime string scans and cross-file inference.
+
+Verification:
+
+```text
+python -B Tools\EconomyValidator.py --root .
+ECONOMY VALIDATION OK
+matrix_rows=150 biomes=10 resources=15
+items_rows=55 raw=15 crafted=40
+matrix_recipe_value_aligned_resources=15
+recipes=40 tier_ratios=[3.667, 2.69]
+survival_velocity_bands=5
+binding_unresolved_ids=22
+binding_plan_blocked_ids=22 candidates=18 author_required=4
+first_sub_recursive_kwh=433.1 literal_minutes=901.7
+hash_pairs_checked=1041
+unique_id_hashes=188
+energy_pacing_warning=literal_30kw_requires_owner_decision
+STATUS: ECONOMY BALANCED
+
+python -B Tools\EconomyValidator.py --root . --negative-tests
+ECONOMY VALIDATION OK
+matrix_rows=150 biomes=10 resources=15
+items_rows=55 raw=15 crafted=40
+matrix_recipe_value_aligned_resources=15
+recipes=40 tier_ratios=[3.667, 2.69]
+survival_velocity_bands=5
+binding_unresolved_ids=22
+binding_plan_blocked_ids=22 candidates=18 author_required=4
+first_sub_recursive_kwh=433.1 literal_minutes=901.7
+hash_pairs_checked=1041
+unique_id_hashes=188
+negative_test_first_sub_result_item_mismatch=FAILED_AS_EXPECTED
+negative_test_first_sub_duplicate_raw_resource=FAILED_AS_EXPECTED
+negative_test_first_sub_batch_band_overflow=FAILED_AS_EXPECTED
+negative_test_matrix_recipe_value_drift=FAILED_AS_EXPECTED
+negative_test_items_missing_source_recipe=FAILED_AS_EXPECTED
+negative_test_binding_plan_runtime_allowed=FAILED_AS_EXPECTED
+negative_cases=6
+energy_pacing_warning=literal_30kw_requires_owner_decision
+STATUS: ECONOMY BALANCED
+```
