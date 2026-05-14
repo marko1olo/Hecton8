@@ -69,3 +69,27 @@ Cinematic Cheats used: Preserved the deterministic static mesh library, exact LO
 Exact Microseconds saved: Runtime remains 0 us/frame. The gain is preventing accidental wrong-LOD or cross-family geometry from entering low-tier prefabs, which protects LOD2 geometry budgets. Exact runtime microseconds not profiled because this is validator coverage.
 
 Verification: `dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary` returned `Build succeeded. 0 Warning(s). 0 Error(s).` A GUID scan checked all 200 prefabs against their expected three mesh `.meta` GUIDs and found `BadReferenceCount=0`.
+
+## 2026-05-14 Rule Asset Contract Lockdown
+
+What was wrong: The validator proved the generated payload but did not prove the source `BioRuleData` assets still matched the Safe Shallows bake contract. A drifted axiom, SDF profile, LOD budget, output folder, ribbon width, or porous rock pore setting could survive until the next bake.
+
+What was done: Added required-folder validation and exact rule-asset validation to `ShallowsBioForgeBatchBaker`. The validator now locks `Rule_Shallows_TubeCoral.asset`, `Rule_Shallows_Kelp.asset`, and `Rule_Shallows_PorousRock.asset` to the intended prefixes, material, axioms, one exact `F` replacement, SDF profiles, iteration/branch/SDF budgets, LOD budgets, ribbon scales, porous rock values, and deterministic output folders. The current live `CURRENT_BATCH.md` no longer contains this agent ID, so that drift was recorded and the preserved status/rationale prompt memory was used.
+
+Cinematic Cheats used: No runtime simulation added. This protects the existing offline SDF mesh cheat, shared atlas cheat, vertex color mask cheat, static LOD cheat, and rock-only convex collision cheat by locking the source rule assets that future bakes depend on.
+
+Exact Microseconds saved: Runtime remains 0 us/frame and 0 bytes allocation. The saved time is risk avoidance: no accidental high-budget rule setting can inflate future LOD meshes for low-tier devices without validation failure. Editor-only validation cost is cold-path only; exact microseconds not profiled.
+
+Verification: Unity Bee response-file Roslyn compile for `Hecton8.Editor.ProceduralGen` exited 0. Literal rule asset scan passed: `RuleAssetScan=PASS Rules=3 ContractFields=25`. `git diff --check` exited 0 with only the repo LF-to-CRLF warning. Full `dotnet build Hecton8.Core.csproj` is currently blocked outside this flora domain by `Assets/_Project/Scripts/SaveBinaryPayloadCodec.cs` errors for missing `BufferReader.CanConsumeCollectionItems` and `ReadCustomArray` overloads.
+
+## 2026-05-14 Shared Material Visual Contract Lockdown
+
+What was wrong: The Safe Shallows validator locked generated prefabs, meshes, rule assets, atlas bindings, importer settings, instancing, and GI flags, but it still allowed shared material scalar/color drift. A changed tint, emission value, cull mode, or `_QUALITY_HIGH` keyword could damage the intended underwater read or raise shader cost without failing validation.
+
+What was done: Added exact material contract validation in `ShallowsBioForgeBatchBaker` for `_BaseColor`, `_RootTint`, `_TipTint`, `_EmissionColor`, `_TriplanarScale`, `_TriplanarSharpness`, `_SeedOffsetScale`, `_NormalScale`, `_AmbientStrength`, `_SubsurfaceStrength`, `_RimStrength`, `_SmoothnessBoost`, `_MetallicBoost`, `_BiomeTintStrength`, `_EmissionStrength`, `_BiolumPulseSharpness`, `_MatCapStrength`, `_Cull`, and `_QUALITY_HIGH` disabled.
+
+Cinematic Cheats used: No runtime simulation added. The pass protects the existing shared material cheat, triplanar atlas cheat, MatCap fake-lighting cheat, vertex color mask cheat, static LOD cheat, and rock-only convex collision cheat.
+
+Exact Microseconds saved: Runtime remains 0 us/frame and 0 bytes allocation. The change prevents hidden shader keyword/scalar drift from spending GPU budget on low-end hardware or weakening bioluminescent readability. Exact runtime microseconds not profiled because the code executes only in editor validation.
+
+Verification: Unity Bee response-file Roslyn compile for `Hecton8.Editor.ProceduralGen` exited 0. Material scan passed `MaterialContractScan=PASS Fields=26`. `git diff --check` exited 0 with only the repo LF-to-CRLF warning. Full `dotnet build Hecton8.Core.csproj --no-restore` failed outside this flora domain on missing generated `Temp/obj/Hecton8.Core/.NETStandard,Version=v2.1.AssemblyAttributes.cs`; restore-enabled retry timed out and the timed-out build process is no longer running.

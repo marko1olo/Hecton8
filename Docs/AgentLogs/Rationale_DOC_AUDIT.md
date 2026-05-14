@@ -2,7 +2,7 @@
 
 Agent: DOC_AUDIT
 Domain: Documentation / Project Reality Audit / Editor Validation Tripwires
-Current continuation: R42
+Current continuation: R46
 Date: 2026-05-14
 
 Previous rationale history is archived under `Docs/Archive/Batch005/AgentLogs/Rationale_DOC_AUDIT.md`.
@@ -102,3 +102,27 @@ Rejected Alternatives: editing old dated reports was rejected because reports ar
 Scalability potential: Low/Middle/High/Ultra runtime tiers are unchanged. Process scalability improves because active reference docs now route readers to the same current compile/runtime boundary instead of forcing each agent to rediscover the May 13 -> R41 chain.
 
 Hardware Impact: Runtime impact 0.000 ms/frame. Documentation-only work. No profiler, GCMonitor, Unity Console, Play Mode, Memory Profiler, player build, or scene-wiring proof was captured.
+
+## Decision 048 - Concurrent Docs Need A R43/R45 Rebase Instead Of Trusting Prior Reports
+
+Problem: Concurrent documentation edits reintroduced stale R41/R38 current-state wording after the root compile surface had already been rechecked in R43. Some active docs again made the old full-Core-blocked R38 evidence sound current, while repeated reference docs carried the R41-only line without the later R43 `Temp\bin\Debug`, `Temp\obj`, and shared-lock caveats. The active DOC_AUDIT memory header also drifted behind the current continuation.
+
+Solution: treat docs as mutable evidence, not as settled truth. Re-read the active status/rationale, project authority, registry mandates, and Unity MCP workflow boundary; scan active docs for exact stale patterns; then reapply the R43 boundary across repeated reference docs and top-level authority surfaces. The current statement is narrow: eight root `Hecton8*.csproj` projects have single-project no-restore CLI compile evidence at `0 Warning(s)` / `0 Error(s)` with `LASTEXITCODE=0` only after restore assets and referenced `Temp\bin\Debug` DLLs exist. Missing `Temp\obj` assets, missing referenced DLLs, and shared `Temp\obj` locks are evidence hazards, not gameplay/runtime proof.
+
+Rejected Alternatives: trusting the previous R43/R44 report was rejected because the live files contradicted it. Editing dated report snapshots was rejected because snapshots must preserve historical evidence. Rerunning broad source fixes was rejected because this pass found documentation drift, not a new code defect. Claiming Unity runtime health from CLI compile was rejected because Unity MCP Console remains unavailable and no Play Mode, profiler, GCMonitor, player build, memory, scene-wiring, or visual-quality proof was captured.
+
+Scalability potential: Low/Middle/High/Ultra runtime tiers are unchanged. Process scalability improves because current docs now separate restore-state hazards, generated-project drift, vendor/package warnings, transient file locks, and actual source failures. Low-end and high-end device claims remain blocked until runtime captures exist.
+
+Hardware Impact: Runtime impact 0.000 ms/frame. Documentation-only work. No code path, allocation path, frame-time path, or render path was changed.
+
+## Decision 049 - Scatter Docs Must Distinguish Source-Present Refactor Pieces From Runtime Proof
+
+Problem: Active scatter docs had stale or contradictory current-state claims. `SCATTER_REFACTOR_EXECUTION_PLAN.md` still said `ScatterHeuristicsUtility`, `ScatterRescueContext`, and `GetGridPlacements()` were absent even though current source has `ScatterHeuristicsUtility.cs`, a private director-partial `ScatterRescueContext`, and `WorldProceduralScatterDirector.GetGridPlacements()`. The same docs also carried old file-size/line-count inventory. That creates two bad outcomes: future agents may re-create existing helpers, or may mark the refactor complete when it is only partially source-present.
+
+Solution: perform a source-backed R46 scatter reality pass. Measure the current file sizes/line counts with the filesystem, scan exact source symbols, and update the scatter docs plus static x-ray. The corrected boundary is narrow: `SamplingSnapshot.cs`, `ScatterHeuristicsUtility.cs`, `ScatterDiagnosticsTracker.cs`, and `WorldProceduralScatterWorkingMemory.cs` exist; `ScatterRescueContext` exists but is not the manifesto's standalone `ref struct`; `GetGridPlacements()` exists but returns bucketed placement lists; `ScatterSpawningService` was not found and spawn/reconcile remains director-owned. DOTS remains disabled/optional because `com.unity.entities` is absent from `Packages/manifest.json` and the DOTS asmdef is define-gated and auto-reference disabled.
+
+Rejected Alternatives: deleting or rewriting the manifesto was rejected because it is still useful as a target shape. Marking checked boxes as runtime proof was rejected because no Unity scene, profiler, GCMonitor, Memory Profiler, player build, or visual validation was captured. Editing source was rejected in this pass because the defect found was documentation truth drift, not a scoped code bug.
+
+Scalability potential: Low = agents stop duplicating helpers and keep MX350/GC claims pending until captures exist. Middle = refactor work can target the real remaining bottleneck, spawn/reconcile extraction, instead of already-existing heuristic/diagnostic files. High/Ultra = future visual-overkill scatter work can build on the same evidence boundary without faking DOTS readiness.
+
+Hardware Impact: Runtime impact 0.000 ms/frame. Documentation-only work. No managed allocation, NativeCollection, GPU buffer, or frame-time path was changed.

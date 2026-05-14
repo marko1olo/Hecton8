@@ -408,22 +408,23 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
                 if (_HectonHabitatModuleStressParams.z <= 0.5 && _HectonHabitatModuleStressParams.x > 0.5)
                 {
                     VertexPositionInputs preBendPositionInputs = GetVertexPositionInputs(safePositionOS);
-                    uint habitatStressIndex = HectonHabitatInteriorResolveStressIndex(preBendPositionInputs.positionWS);
-                    habitatStress01 = HectonHabitatInteriorReadStress01(habitatStressIndex);
+                    habitatStress01 = HectonHabitatInteriorResolveStress01(preBendPositionInputs.positionWS);
                 }
                 half habitatBendShadow;
                 half habitatPanelMask01;
+                half2 habitatPanelCenteredUv;
                 safePositionOS = HectonHabitatInteriorApplyPanelBendOS(
                     safePositionOS,
                     input.normalOS,
                     input.uv,
                     habitatStress01,
                     habitatBendShadow,
-                    habitatPanelMask01);
+                    habitatPanelMask01,
+                    habitatPanelCenteredUv);
                 VertexPositionInputs positionInputs = GetVertexPositionInputs(safePositionOS);
                 VertexNormalInputs normalInputs = GetVertexNormalInputs(input.normalOS);
                 half3 normalWS = SafeNormalize3(normalInputs.normalWS);
-                normalWS = HectonHabitatInteriorApplyCheapNormalBiasWS(normalWS, input.uv, habitatStress01, habitatPanelMask01);
+                normalWS = HectonHabitatInteriorApplyCheapNormalBiasWS(normalWS, habitatStress01, habitatPanelMask01, habitatPanelCenteredUv);
                 output.positionCS = positionInputs.positionCS;
                 output.positionWS = positionInputs.positionWS;
                 output.normalWS = normalWS;

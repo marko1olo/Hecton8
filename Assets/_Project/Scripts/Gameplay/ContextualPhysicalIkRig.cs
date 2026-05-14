@@ -644,6 +644,8 @@ namespace Hecton8.Gameplay
         private const float ExternalSqueezePoleLocalMeters = 0.075f;
         private const string NativeMemoryOwner = nameof(ContextualPhysicalIkRig);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
+        private const float MaxAcceptedOriginShiftMeters = 10000.0f;
+        private const float MaxAcceptedOriginShiftMetersSq = MaxAcceptedOriginShiftMeters * MaxAcceptedOriginShiftMeters;
         private static readonly float3 HeadToChestSocketLocalOffset = new float3(0.0f, -0.32f, -0.08f);
         private static readonly float3 HeadForwardReferenceLocalOffset = new float3(0.0f, 0.0f, 0.25f);
         private static readonly int MuscleBulgeShaderId = Shader.PropertyToID("_MuscleBulge");
@@ -1180,10 +1182,18 @@ namespace Hecton8.Gameplay
             _terminalRightHandSourceId = target.SourceId;
             _terminalRightHandPosition = target.WorldPosition;
             _terminalRightHandNormal = target.WorldRotation * Vector3.up;
-            if (!IsFiniteVector(_terminalRightHandNormal) || _terminalRightHandNormal.sqrMagnitude <= 0.0001f)
+            float3 terminalNormal = ContextualPhysicalIkMath.ToFloat3(_terminalRightHandNormal);
+            float terminalNormalLengthSq = math.lengthsq(terminalNormal);
+            if (!math.all(math.isfinite(terminalNormal)) ||
+                !math.isfinite(terminalNormalLengthSq) ||
+                terminalNormalLengthSq <= 0.0001f)
+            {
                 _terminalRightHandNormal = Vector3.up;
+            }
             else
+            {
                 _terminalRightHandNormal = NormalizeVectorNoSqrt(_terminalRightHandNormal, Vector3.up);
+            }
 
             _terminalRightHandHoldTimer = math.max(0.0f, target.HoldSeconds);
             _terminalRightHandTargetBlend = math.saturate(target.Blend);
@@ -1286,8 +1296,13 @@ namespace Hecton8.Gameplay
             TickToolHandTransientState(deltaTime);
             TickUpperArmFovCulling(deltaTime);
 
-            float3 rootPosition = ContextualPhysicalIkMath.ToFloat3(characterRoot.position);
-            quaternion rootRotation = ContextualPhysicalIkMath.ToMathematicsQuaternion(characterRoot.rotation);
+            Vector3 rootPositionUnity = characterRoot.position;
+            Quaternion rootRotationUnity = characterRoot.rotation;
+            if (!IsFiniteVector(rootPositionUnity) || !IsFiniteQuaternion(rootRotationUnity))
+                return false;
+
+            float3 rootPosition = ContextualPhysicalIkMath.ToFloat3(rootPositionUnity);
+            quaternion rootRotation = ContextualPhysicalIkMath.ToMathematicsQuaternion(rootRotationUnity);
             float3 rootRight = ContextualPhysicalIkMath.SafeNormalize(
                 math.mul(rootRotation, new float3(1.0f, 0.0f, 0.0f)),
                 new float3(1.0f, 0.0f, 0.0f));
@@ -1295,9 +1310,13 @@ namespace Hecton8.Gameplay
                 math.mul(rootRotation, new float3(0.0f, 1.0f, 0.0f)),
                 new float3(0.0f, 1.0f, 0.0f));
             ResolveColdShiverOffsets(rootRight, rootUp, out float3 leftColdShiverOffset, out float3 rightColdShiverOffset);
-            float viewerDistanceSq = hasViewerPosition
-                ? math.lengthsq(rootPosition - viewerPosition)
-                : 0.0f;
+            float viewerDistanceSq = 0.0f;
+            if (hasViewerPosition && math.all(math.isfinite(viewerPosition)))
+            {
+                viewerDistanceSq = math.lengthsq(rootPosition - viewerPosition);
+                viewerDistanceSq = math.select(viewerDistanceSq, 0.0f, !math.isfinite(viewerDistanceSq));
+            }
+
             ResolveThrottleState(frameIndex, _entitySlot, viewerDistanceSq, ref _stableThrottleTier, out int updateThisFrame, out byte throttleTier, out uint updateBitfield);
             entityState.IsActive = 1;
             entityState.EnableFootPlacement = lowerBodyIkEnabled ? 1 : 0;
@@ -1309,11 +1328,11 @@ namespace Hecton8.Gameplay
             entityState.DeltaTime = deltaTime;
             entityState.RootPosition = rootPosition;
             entityState.RootRotation = rootRotation;
-            entityState.PelvisPosition = pelvis != null ? ContextualPhysicalIkMath.ToFloat3(pelvis.position) : entityState.RootPosition;
-            entityState.LeftFootProbeOrigin = leftFootProbe != null ? ContextualPhysicalIkMath.ToFloat3(leftFootProbe.position) : entityState.RootPosition;
-            entityState.RightFootProbeOrigin = rightFootProbe != null ? ContextualPhysicalIkMath.ToFloat3(rightFootProbe.position) : entityState.RootPosition;
-            entityState.LeftHandProbeOrigin = leftHandProbe != null ? ContextualPhysicalIkMath.ToFloat3(leftHandProbe.position) : entityState.RootPosition;
-            entityState.RightHandProbeOrigin = rightHandProbe != null ? ContextualPhysicalIkMath.ToFloat3(rightHandProbe.position) : entityState.RootPosition;
+            entityState.PelvisPosition = ReadPositionOrFallback(pelvis, entityState.RootPosition);
+            entityState.LeftFootProbeOrigin = ReadPositionOrFallback(leftFootProbe, entityState.RootPosition);
+            entityState.RightFootProbeOrigin = ReadPositionOrFallback(rightFootProbe, entityState.RootPosition);
+            entityState.LeftHandProbeOrigin = ReadPositionOrFallback(leftHandProbe, entityState.RootPosition);
+            entityState.RightHandProbeOrigin = ReadPositionOrFallback(rightHandProbe, entityState.RootPosition);
             entityState.PredictiveLeftHandPosition = ContextualPhysicalIkMath.ToFloat3(_predictiveLeftHandPosition);
             entityState.PredictiveRightHandPosition = ContextualPhysicalIkMath.ToFloat3(_predictiveRightHandPosition);
             entityState.PredictiveLeftHandNormal = ContextualPhysicalIkMath.ToFloat3(_predictiveLeftHandNormal);
@@ -2504,10 +2523,17 @@ namespace Hecton8.Gameplay
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
             Vector3 shiftOffset = shiftData.ShiftOffset;
-            if (shiftOffset.sqrMagnitude <= 0.000001f)
+            float3 offset = new float3(shiftOffset.x, shiftOffset.y, shiftOffset.z);
+            if (!math.all(math.isfinite(offset)))
                 return;
 
-            float3 offset = new float3(shiftOffset.x, shiftOffset.y, shiftOffset.z);
+            float shiftDistanceSq = math.lengthsq(offset);
+            if (!math.isfinite(shiftDistanceSq) || shiftDistanceSq > MaxAcceptedOriginShiftMetersSq)
+                return;
+
+            if (shiftDistanceSq <= 0.000001f)
+                return;
+
             RebaseWorldSpaceFloat3Array(_spineTargets, offset);
             RebaseAppendageTargets(_appendageTargets, offset);
             RebaseSecondaryStates(_secondaryStates, offset);
@@ -2890,6 +2916,15 @@ namespace Hecton8.Gameplay
                      float.IsInfinity(value.x) || float.IsInfinity(value.y) || float.IsInfinity(value.z) || float.IsInfinity(value.w));
         }
 
+        private static float3 ReadPositionOrFallback(Transform source, float3 fallback)
+        {
+            if (source == null)
+                return fallback;
+
+            Vector3 position = source.position;
+            return IsFiniteVector(position) ? ContextualPhysicalIkMath.ToFloat3(position) : fallback;
+        }
+
         private static bool IsLowTier(HectonQualityTier tier)
         {
             return tier == HectonQualityTier.Unknown ||
@@ -2931,12 +2966,28 @@ namespace Hecton8.Gameplay
             if (parent == null || source == null)
                 return new float3(0.0f, 0.0f, 0.25f);
 
-            Quaternion inverseParentRotation = Quaternion.Inverse(parent.rotation);
-            Vector3 localOffset = inverseParentRotation * (source.position - parent.position);
-            if (localOffset.sqrMagnitude <= 0.0001f)
-                localOffset = new Vector3(0.0f, 0.0f, 0.25f);
+            Vector3 parentPosition = parent.position;
+            Vector3 sourcePosition = source.position;
+            Quaternion parentRotation = parent.rotation;
+            if (!IsFiniteVector(parentPosition) ||
+                !IsFiniteVector(sourcePosition) ||
+                !IsFiniteQuaternion(parentRotation))
+            {
+                return new float3(0.0f, 0.0f, 0.25f);
+            }
 
-            return ContextualPhysicalIkMath.ToFloat3(localOffset);
+            Quaternion inverseParentRotation = Quaternion.Inverse(parentRotation);
+            Vector3 localOffset = inverseParentRotation * (sourcePosition - parentPosition);
+            float3 localOffsetFloat3 = ContextualPhysicalIkMath.ToFloat3(localOffset);
+            float localOffsetLengthSq = math.lengthsq(localOffsetFloat3);
+            if (!math.all(math.isfinite(localOffsetFloat3)) ||
+                !math.isfinite(localOffsetLengthSq) ||
+                localOffsetLengthSq <= 0.0001f)
+            {
+                return new float3(0.0f, 0.0f, 0.25f);
+            }
+
+            return localOffsetFloat3;
         }
     }
 }

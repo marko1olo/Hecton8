@@ -20,6 +20,8 @@
 
 using Hecton.Localization;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
+using Hecton8.Core.Signals;
 using Hecton8.Interaction;
 using System.Collections.Generic;
 using UnityEngine;
@@ -69,6 +71,8 @@ namespace Hecton8.Gameplay
     [AddComponentMenu("Hecton/Gameplay/Message Terminal")]
     public sealed class MessageTerminal : MonoBehaviour, IInteractable, ITickable, IUpdatable, ILocalizationLanguageChangedListener
     {
+        private const uint WfcOutpostDatapadSourceHash = 0x57464350u; // WFCP
+        private const byte WfcDatapadLootedFlag = (byte)WfcOutpostCellStateFlags.DatapadLooted;
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
         // ══════════════════════════════════════════════════════════
@@ -136,6 +140,10 @@ namespace Hecton8.Gameplay
         private Transform _cachedTransform;
         private MaterialPropertyBlock _mpb;
         private static readonly int _EmissionColorID = Shader.PropertyToID("_EmissionColor");
+        private ulong _wfcOutpostSectorHash;
+        private ushort _wfcOutpostCellIndex;
+        private byte _wfcOutpostFlags;
+        private bool _wfcOutpostPersistenceConfigured;
 
         // Pre-cached interaction text
         private const string DefaultReadText = "Read Messages";
@@ -157,6 +165,31 @@ namespace Hecton8.Gameplay
 
         /// <summary>True if there are unread messages.</summary>
         public bool HasUnreadMessages => _pendingMessageIndex >= 0;
+
+        public void ConfigureWfcOutpostPersistence(ulong sectorHash, ushort cellIndex, byte initialFlags)
+        {
+            if (sectorHash == 0UL || cellIndex >= WfcOutpostPersistenceConstants.CellCount)
+            {
+                ClearWfcOutpostPersistence();
+                return;
+            }
+
+            _wfcOutpostSectorHash = sectorHash;
+            _wfcOutpostCellIndex = cellIndex;
+            _wfcOutpostFlags = (byte)(initialFlags & WfcOutpostPersistenceConstants.MutableFlagMask);
+            _wfcOutpostPersistenceConfigured = true;
+
+            if ((_wfcOutpostFlags & WfcDatapadLootedFlag) != 0)
+                ApplyWfcOutpostDatapadLootedState();
+        }
+
+        public void ClearWfcOutpostPersistence()
+        {
+            _wfcOutpostPersistenceConfigured = false;
+            _wfcOutpostSectorHash = 0UL;
+            _wfcOutpostCellIndex = 0;
+            _wfcOutpostFlags = 0;
+        }
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -204,6 +237,7 @@ namespace Hecton8.Gameplay
         {
             LocalizationEvents.UnregisterLanguageListener(this);
             TryUnregister();
+            ClearWfcOutpostPersistence();
         }
 
         private void OnDestroy()
@@ -350,6 +384,7 @@ namespace Hecton8.Gameplay
             }
 
             // Check if this is a new unread message
+            EnsureWfcOutpostReadMessageSet();
             if (!message.isRead && !string.IsNullOrEmpty(message.messageId) && !_readMessageIds.Contains(message.messageId))
             {
                 _pendingMessageIndex = messages.Length - 1;
@@ -374,6 +409,8 @@ namespace Hecton8.Gameplay
             if (string.IsNullOrEmpty(messageId))
                 return;
 
+            EnsureWfcOutpostReadMessageSet();
+            bool wasRead = _readMessageIds.Contains(messageId);
             _readMessageIds.Add(messageId);
 
             // Update the message entry
@@ -391,6 +428,9 @@ namespace Hecton8.Gameplay
 
             UpdatePendingMessage();
             UpdateState();
+
+            if (!wasRead)
+                SetWfcOutpostFlags((byte)(_wfcOutpostFlags | WfcDatapadLootedFlag), (uint)Time.frameCount);
         }
 
         /// <summary>
@@ -400,7 +440,7 @@ namespace Hecton8.Gameplay
         /// <returns>True if the message has been read.</returns>
         public bool IsMessageRead(string messageId)
         {
-            return !string.IsNullOrEmpty(messageId) && _readMessageIds.Contains(messageId);
+            return !string.IsNullOrEmpty(messageId) && _readMessageIds != null && _readMessageIds.Contains(messageId);
         }
 
         /// <summary>
@@ -419,6 +459,72 @@ namespace Hecton8.Gameplay
         //  MESSAGE LOGIC
         // ══════════════════════════════════════════════════════════
 
+        private void ApplyWfcOutpostDatapadLootedState()
+        {
+            EnsureWfcOutpostReadMessageSet();
+
+            if (messages != null)
+            {
+                for (int i = 0; i < messages.Length; i++)
+                {
+                    string messageId = messages[i].messageId;
+                    if (!string.IsNullOrEmpty(messageId))
+                        _readMessageIds.Add(messageId);
+
+                    messages[i].isRead = true;
+                }
+            }
+
+            _pendingMessageIndex = -1;
+            if (_state != TerminalState.Playing)
+            {
+                _state = TerminalState.Idle;
+                _blinkTimer = 0f;
+                _blinkOn = false;
+                UpdateStatusLight();
+            }
+        }
+
+        private void EnsureWfcOutpostReadMessageSet()
+        {
+            if (_readMessageIds != null)
+                return;
+
+            int readMessageCapacity = messages != null ? messages.Length : 0;
+            _readMessageIds = new HashSet<string>(readMessageCapacity);
+        }
+
+        private void SetWfcOutpostFlags(byte flags, uint frame)
+        {
+            byte previous = _wfcOutpostFlags;
+            byte current = (byte)(flags & WfcOutpostPersistenceConstants.MutableFlagMask);
+            _wfcOutpostFlags = current;
+            PublishWfcOutpostFlags(previous, current, frame);
+        }
+
+        private void PublishWfcOutpostFlags(byte previous, byte current, uint frame)
+        {
+            if (!_wfcOutpostPersistenceConfigured)
+                return;
+
+            previous = (byte)(previous & WfcOutpostPersistenceConstants.MutableFlagMask);
+            current = (byte)(current & WfcOutpostPersistenceConstants.MutableFlagMask);
+            if (previous == current)
+                return;
+
+            WfcOutpostStateChangedSignal signal = new WfcOutpostStateChangedSignal
+            {
+                SectorHash = _wfcOutpostSectorHash,
+                CellIndex = _wfcOutpostCellIndex,
+                PreviousFlags = previous,
+                CurrentFlags = current,
+                Frame = frame,
+                SourceHash = WfcOutpostDatapadSourceHash,
+                Flags = 0
+            };
+            GlobalSignals.Publish(in signal);
+        }
+
         private void UpdatePendingMessage()
         {
             _pendingMessageIndex = -1;
@@ -426,6 +532,7 @@ namespace Hecton8.Gameplay
             if (messages == null)
                 return;
 
+            EnsureWfcOutpostReadMessageSet();
             for (int i = 0; i < messages.Length; i++)
             {
                 if (!messages[i].isRead && !_readMessageIds.Contains(messages[i].messageId))

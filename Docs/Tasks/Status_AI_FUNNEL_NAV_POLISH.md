@@ -72,10 +72,32 @@ Task Count: 15
 - [x] Compaction tail fail-closed | DOD: if `MaxPathCompactionIterations` is exhausted before the final waypoint, the job now copies the remaining original path tail instead of appending only the final point; rejected dropping unverified waypoints; estimate 9 us.
 - [x] Chronological black-box dump | DOD: NaN dump now writes valid telemetry entries oldest-to-newest with capacity/cursor/sequence metadata; rejected raw circular-array order for postmortem review; estimate 6 us.
 
+## Loop 10 - Voxel Transform Contract Hardening
+
+- [x] Re-read status/rationale and source hot path | DOD: inspected `HasVoxelLineOfSight`, `TryWorldToVoxel`, and grid guards before editing; rejected stale chat assumptions; estimate 10 us.
+- [x] Cell-size finite proof | DOD: LOS compaction now trusts passability/threat grids only when their cell sizes are finite and positive; rejected `math.max` masking of corrupt cell sizes; estimate 5 us.
+- [x] World-to-voxel fail-closed transform | DOD: non-finite world positions, origins, or cell sizes now reject LOS instead of producing undefined voxel indices; rejected smoothing through invalid coordinate transforms; estimate 6 us.
+- [x] DDA cap overflow guard | DOD: grid traversal cap now sums dimensions in `long` before clamping to `MaxThreatDdaSteps`; rejected int overflow in hostile payload dimensions; estimate 3 us.
+- [x] Invalid sample solid fallback | DOD: bad flat indices return `SolidThreatVoxel`; rejected treating corrupt payload holes as open water; estimate 4 us.
+
+## Loop 11 - Fallback Direction Sanitation
+
+- [x] Re-read funnel normalization helper | DOD: self-read found `NormalizeRsqrtOrFallback` still returned raw fallbacks in the live file; rejected trusting prior status text; estimate 5 us.
+- [x] Rsqrt fallback normalization | DOD: valid primary vectors use one `math.rsqrt`, valid fallbacks are normalized with `math.rsqrt`, and only double-invalid inputs return +Z; rejected raw fallback propagation; estimate 4 us.
+
+## Loop 12 - Live Drift Reconciliation
+
+- [x] Re-read scheduler and telemetry source | DOD: compared live files against prior rationale claims and found missing ring written-count and conduit math sanitation; rejected trusting stale status; estimate 12 us.
+- [x] Telemetry valid-count hardening | DOD: added `_abyssalPathTelemetryWrittenCount` so dump valid entry count no longer depends on wrapping sequence IDs; rejected sequence-as-count coupling; estimate 3 us.
+- [x] Conduit scoring reciprocal pass | DOD: replaced average/current strength divisions with `math.rcp` multiplies and ignored non-finite flow vectors for conduit strength; rejected corrupt flow vectors influencing path weighting; estimate 6 us.
+- [x] Managed fallback vector sanitation | DOD: `NormalizeVector3Fast` now finite-checks primary/fallback vectors and normalizes fallback with `math.rsqrt`; rejected raw fallback propagation; estimate 4 us.
+- [x] Portal finite sanitation | DOD: `BuildNavPortal` now rejects whole non-finite portal endpoints and clamps non-finite width squared to epsilon; rejected component-spliced portal endpoints; estimate 4 us.
+
 ## Verification
 
-- [x] Static scan | PASS: `StringPullPathJob` region has no `math.normalize`, `math.length(`, `math.distance(`, or raw `/` matches after the LOD upgrade.
-- [x] Compile check | PASS: latest parsed `dotnet build Hecton8.Core.csproj --no-restore /m:1 /nr:false` succeeded with 0 warnings and 0 errors after the tail-safety pass.
-- [x] PlayMode test assembly build | PASS: `dotnet build Hecton8.PlayModeTests.csproj --no-restore /m:1 /nr:false` succeeded with 0 warnings and 0 errors.
+- [x] Static scan | PASS: `StringPullPathJob` and `TryResolveAbyssalNavNodeCandidate` regions have no `math.normalize`, `math.length(`, `math.distance(`, `.normalized`, or raw `/` matches after loop 12.
+- [x] Diff hygiene | PASS: `git diff --check` passed for edited funnel/scheduler/status/log files; only LF-to-CRLF working-copy warnings were emitted.
+- [x] Compile check | BLOCKED BY DEPENDENCY: bounded no-reference `dotnet build Hecton8.Core.csproj --no-restore /m:1 /nr:false /p:BuildProjectReferences=false` completed with 63 unrelated errors in `VRAMEnforcer`, `VoxelDeltaProcessor`, `SealedDoor`, `BinaryLayoutManifest`, and `HardwareTierDetector`; none were reported in `VegetationFlowFieldIntegrator.cs`, `VegetationNavGridSynchronizer.cs`, or `HectonMapMagicVegetationBridge.cs`.
+- [x] PlayMode test assembly build | NOT RERUN AFTER LOOP 12: Core source build is currently blocked by unrelated global dependency errors.
 - [x] Unity console | BLOCKED BY TOOLING: Unity MCP `validate_script` transport failed against `http://127.0.0.1:8088/mcp`.
-- [x] Omega polish mandate | COMPLETE WITH PENDING VERIFICATION: Core build is green; Unity/Burst editor validation remains blocked by MCP transport.
+- [x] Omega polish mandate | COMPLETE WITH PENDING VERIFICATION: static funnel checks pass; current Core/Unity validation is blocked by unrelated global compile errors and MCP transport.

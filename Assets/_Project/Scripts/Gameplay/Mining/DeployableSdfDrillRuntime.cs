@@ -990,13 +990,16 @@ namespace Hecton8.Gameplay.Mining
                 return false;
             }
 
-            Vector3 absolutePoint = HectonFloatingOrigin.ToAbsoluteUniversePosition(runtimePoint);
+            double3 absolutePoint = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimePoint);
+            double carveDepth = math.max(0.25f, carveRadiusMeters);
             VoxelCarveEvent carveEvent = new VoxelCarveEvent
             {
-                AbsoluteHitPoint = new float3(absolutePoint.x, absolutePoint.y, absolutePoint.z),
-                AbsoluteSegmentEnd = new float3(absolutePoint.x, absolutePoint.y - math.max(0.25f, carveRadiusMeters), absolutePoint.z),
+                AbsoluteHitPoint = new float3((float)absolutePoint.x, (float)absolutePoint.y, (float)absolutePoint.z),
+                AbsoluteSegmentEnd = new float3((float)absolutePoint.x, (float)(absolutePoint.y - carveDepth), (float)absolutePoint.z),
                 AbsoluteHalfExtents = new float3(carveRadiusMeters, carveRadiusMeters, carveRadiusMeters),
                 AbsoluteImpulseDirection = new float3(0f, -1f, 0f),
+                AbsoluteHitPointDouble = absolutePoint,
+                AbsoluteSegmentEndDouble = new double3(absolutePoint.x, absolutePoint.y - carveDepth, absolutePoint.z),
                 RadiusMeters = math.clamp(carveRadiusMeters, 0.9f, 4f),
                 BlendStrengthMeters = math.max(0.25f, carveBlendStrengthMeters),
                 Operation = (byte)VoxelCarveOperationType.Subtract,

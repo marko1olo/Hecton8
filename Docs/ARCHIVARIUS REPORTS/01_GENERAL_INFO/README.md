@@ -29,7 +29,7 @@ This folder is useful because it maps the project. It is not stronger than `AGEN
 
 - read `../../Reports/2026-05-13_DOC_AUDIT_XRAY.md` before trusting May 11 counters or build-artifact paths
 - the cited May 11 `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.*` files are absent from the current filesystem
-- current R41 external root `Hecton8*.csproj` no-restore CLI compile evidence is `0 Warning(s)` / `0 Error(s)` after restore assets exist; it is not Unity runtime proof
+- current R43 external root `Hecton8*.csproj` no-restore CLI compile evidence is `0 Warning(s)` / `0 Error(s)` after restore assets and referenced `Temp\bin\Debug` DLLs exist; it is not Unity runtime proof
 - current first-party asmdef count is `24`, not the older `13`, `22`, or `23` atlas values
 - latest R2 static counters are `1411` project C# files, `1365` script C# files, `866558` project source lines, `849012` script source lines, and `215` interface declaration hits
 

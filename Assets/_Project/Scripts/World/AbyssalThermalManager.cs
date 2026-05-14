@@ -2179,11 +2179,11 @@ namespace Hecton8.World
 
         private static float ResolveVoxelInsulation01(Vector3 runtimePosition)
         {
-            Vector3 absolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(runtimePosition);
+            double3 absolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimePosition);
             float density = HectonVoxelVolume.GetSDFDensity(new float3(
-                absolutePosition.x,
-                absolutePosition.y,
-                absolutePosition.z));
+                (float)absolutePosition.x,
+                (float)absolutePosition.y,
+                (float)absolutePosition.z));
             return density > 0f ? math.saturate(density) : 0f;
         }
 
@@ -3154,13 +3154,18 @@ namespace Hecton8.World
                 0,
                 heatIntensity * ventHeatToCelsiusScale);
 
+            double3 absoluteUniversePosition = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(positionWS);
             HectonVoxelEngine engine = HectonVoxelEngine.ActiveRuntimeInstance;
             VoxelDeltaProcessor deltaProcessor = engine != null ? engine.GetComponent<VoxelDeltaProcessor>() : null;
             if (deltaProcessor != null)
             {
                 deltaProcessor.AcceptThermalMeltEvent(new ThermalMeltEvent
                 {
-                    AbsoluteUniversePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(positionWS),
+                    AbsoluteUniversePosition = new Vector3(
+                        (float)absoluteUniversePosition.x,
+                        (float)absoluteUniversePosition.y,
+                        (float)absoluteUniversePosition.z),
+                    AbsoluteUniversePositionDouble = absoluteUniversePosition,
                     RadiusMeters = Mathf.Max(1f, radiusWS * 0.35f),
                     Heat01 = Mathf.Clamp01(heatIntensity / Mathf.Max(1f, ventHeatIntensity * seismicEruptionHeatMultiplier))
                 });

@@ -104,6 +104,42 @@ Rejected Alternatives: Keeping the stale blocked status was rejected because cur
 Scalability potential: Build-valid code can now enter Unity/Burst profiler verification without assembly noise.
 Hardware Impact: Runtime hardware claims still require Unity profiler capture; compile proof only verifies C# integration.
 
+Problem: LOS smoothing could still trust voxel transforms with non-finite origins, non-finite world positions, zero/NaN cell sizes, undersized payloads, or hostile dimensions that overflow an int DDA cap.
+Solution: Added complete-grid and finite positive cell-size guards, fail-closed `TryWorldToVoxel` checks, `long` dimension summing for DDA caps, and `SolidThreatVoxel` fallback for invalid flat samples.
+Rejected Alternatives: Letting `math.max(cellSize, epsilon)` hide corrupted cell sizes was rejected because it converts invalid payloads into plausible motion proof. Editing upstream voxel payload ownership was rejected because it is outside this agent domain.
+Scalability potential: Low/MX350 preserves raw waypoints when voxel proof is corrupt instead of spending cycles on invalid compaction. Middle keeps bounded DDA. High/Ultra still get aggressive smoothing only inside complete, finite voxel payloads.
+Hardware Impact: Normal valid payload cost is a few scalar finite/positive checks before DDA. Low-end gain is indirect but important: avoids downstream steering correction and repeated failed smoothing on corrupted grid payloads. Exact microseconds remain pending Unity profiler data.
+
+Problem: Latest Core compile verification is blocked again by unrelated global changes outside the funnel domain.
+Solution: Recorded the dependency wall and kept this patch scoped. The latest bounded no-reference Core build reports 63 unrelated errors in `VRAMEnforcer`, `VoxelDeltaProcessor`, `SealedDoor`, `BinaryLayoutManifest`, and `HardwareTierDetector`; no errors are reported in `VegetationFlowFieldIntegrator.cs`, `VegetationNavGridSynchronizer.cs`, or `HectonMapMagicVegetationBridge.cs`.
+Rejected Alternatives: Editing optimization, core save-layout, hardware-tier, or fluid-engine files from this AI navigation polish pass was rejected as cross-domain damage.
+Scalability potential: Funnel changes stay reviewable and can be Burst-verified once global compile owners clear their dependency breaks.
+Hardware Impact: Runtime hardware claims remain unfinalized until Unity/Burst validation and profiler capture are available.
+
+Problem: The live `NormalizeRsqrtOrFallback` returned fallback vectors raw, so a non-unit or non-finite fallback could leak into portal axes, winding axes, or DDA ray directions.
+Solution: Keep the common valid-vector path as `value * math.rsqrt(lengthSq)`, normalize finite fallback vectors with `math.rsqrt`, and return +Z only when both inputs are unusable.
+Rejected Alternatives: Returning raw fallbacks was rejected because secondary axes are still path authority. Branchlessly normalizing both primary and fallback every call was rejected because it burns math on the common valid path.
+Scalability potential: Low/MX350 pays no extra work on valid vectors. Middle/High/Ultra get deterministic axis sanitation in degenerate corridor corners without changing visual smoothing budgets.
+Hardware Impact: Normal path remains one rsqrt multiply. Extra fallback work only occurs on degenerate or non-finite inputs; exact microseconds remain pending Unity profiler data.
+
+Problem: The live black-box dump still derived valid telemetry count from `_abyssalPathTelemetrySequence`, which can wrap and is semantically an event ID, not a count.
+Solution: Added `_abyssalPathTelemetryWrittenCount`, reset it with the ring, increment it up to `AbyssalPathTelemetryFrameCount`, and use it for dump valid-entry count.
+Rejected Alternatives: Widening sequence to 64-bit was rejected because the dump needs valid occupancy, not only identity. Leaving sequence-as-count was rejected as long-soak postmortem drift.
+Scalability potential: No hot-path allocation. Low and High tiers get the same 300-frame diagnostic ring with stable oldest-to-newest dump semantics.
+Hardware Impact: One capped integer increment per completed path; negligible on i3/MX350 and no extra Burst-job work.
+
+Problem: The live conduit scorer still used raw managed divisions and allowed non-finite flow vectors to poison average-current and conduit-strength calculations.
+Solution: Ignore non-finite flow vectors for conduit strength, replace average and strength divisions with `math.rcp` multiplies, and keep obstacle/deep-affinity accumulation intact.
+Rejected Alternatives: Trusting managed compiler division lowering was rejected by the math gate. Treating non-finite flow as zero-length but still counting it was rejected because it biases conduit strength.
+Scalability potential: Low/MX350 avoids divide latency and corrupt flow amplification. Middle/High/Ultra retain visual conduit fidelity when flow payloads are valid.
+Hardware Impact: Two scalar divisions become reciprocal multiplies per conduit-qualified candidate; exact microseconds remain pending Unity profiler data.
+
+Problem: `NormalizeVector3Fast` and `BuildNavPortal` still had weak fallback/finite handling in live source.
+Solution: `NormalizeVector3Fast` now finite-checks and rsqrt-normalizes both primary and fallback vectors. `BuildNavPortal` rejects whole non-finite endpoints and clamps non-finite width squared to `FunnelEpsilon`.
+Rejected Alternatives: Component-splicing invalid portal endpoints with `math.select` was rejected because it can create artificial portal geometry. Raw fallback vectors were rejected because secondary axes are still path authority.
+Scalability potential: Valid-path cost remains the same for normal vectors and finite portals. Degenerate/corrupt inputs fail into deterministic cheap axes rather than heavier recovery logic.
+Hardware Impact: Normal paths remain one rsqrt or simple finite checks; extra branches only execute on corrupt/degenerate payloads.
+
 ## OMEGA POLISH CHANGES
 
 Problem: Final anti-bloat pass required checking for honest math, divisions, managed strings, and allocation paths after task completion/blocking.

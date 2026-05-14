@@ -90,6 +90,22 @@ Rejected Alternatives: Adding a direct `HectonPlayerMovement` or player-rig refe
 Scalability potential: Low keeps only the player rig velocity-driven. Middle/High/Ultra can register more contextual IK rigs without player-motion bleed. Future AI-specific velocity lanes can expand this without changing the lower-body solver.
 Hardware Impact: One finite check and one squared-distance compare per active rig. Estimated <0.1 us/frame on i3/MX350 for the current single-rig case; avoids visible stride/swim corruption when multiple rigs enter the shared runtime.
 
+## Decision 12: Source drift correction and fail-closed fade state
+
+Problem: Direct source readback showed the actual runtime/rig files still contained old `sqrMagnitude` origin-shift guards and the weak normal-only `HasHit` predicate. The fade-out path also copied previous target frames wholesale, allowing a stale non-finite hand or foot target to persist while blend decayed.
+Solution: Re-applied finite AUP shift rejection in runtime and rig code, including the 10km cap and runtime invalid-shift telemetry dump. Restored structural forced-completion swap/publish/log handling. `HasHit` now requires finite point, finite normal, finite distance, and non-negative distance. `FadeOutTarget`, `FadeFootLane`, and `WriteFootSoa` now fail closed to finite zero/up values before lower-body SOA lanes are written.
+Rejected Alternatives: Trusting persisted status was rejected because disk source is the runtime authority. Scattered checks in each caller were rejected in favor of shared boundary predicates. Adding ray lanes, synchronous physics, or physical leg simulation was rejected as unrelated cost.
+Scalability potential: Low/Middle/High/Ultra valid visuals are unchanged. Invalid physics, AUP, or stale target data now dies at the boundary instead of scaling into visible foot/hand spikes or richer high-tier secondary animation.
+Hardware Impact: Hot-path cost is a few finite checks around existing hit and target writes, estimated below 1 us for the active player rig on i3/MX350. No allocations, jobs, new ray lanes, or managed references were added.
+
+## Decision 13: Target-frame quarantine before AnimationJob exposure
+
+Problem: The telemetry path could detect invalid target values, but hand SOA writes, skipped-frame target reuse, and cold AUP rebase paths still trusted previous-frame floats. A NaN hand target or corrupt foot blend could therefore reach `ContextualPhysicalIkApplyJob` before the black-box dump became useful.
+Solution: Added a frame-level sanitizer inside `ContextualPhysicalIkGroundResponseJob` before SOA writes and target-frame publication. Hand SOA weights now drop to zero when position/blend is invalid. Foot fade/update paths sanitize previous blend before smoothing. AUP rebase clears invalid hand/foot lanes instead of subtracting shift from corrupt data. Rig capture now rejects non-finite root transforms and falls back probe positions to root when authored probe transforms are corrupt.
+Rejected Alternatives: Relying on telemetry-only detection was rejected because the animation job must not consume invalid state. Adding exception/log spam was rejected as GC and runtime noise. Extra raycasts or physical validation were rejected because this is a data-boundary defect, not a simulation problem.
+Scalability potential: Low/Middle/High/Ultra valid visuals are unchanged. Low-tier devices avoid catastrophic IK spikes; high-tier secondary-chain and muscle presentation receive only finite targets and can spend visual budget without amplifying invalid data.
+Hardware Impact: Added branch/finite checks are linear in two hands/two feet per active rig, estimated below 1 us on i3/MX350. No allocations, no extra jobs, no extra rays, no new managed owners.
+
 ## OMEGA POLISH CHANGES
 
 Problem: Final anti-bloat pass required checking the lower-body implementation for honest simulation, unbounded math, GC leaks, and out-of-domain edits.

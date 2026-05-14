@@ -1,4 +1,4 @@
-﻿# HECTON-8 Runtime Execution Master Plan
+# HECTON-8 Runtime Execution Master Plan
 
 Status: PENDING VERIFICATION
 Verification: `PENDING VERIFICATION`
@@ -9,7 +9,7 @@ This is the working execution plan for getting HECTON-8 to a stable, optimized, 
 Current-state boundary:
 
 - 2026-05-14 DOC_AUDIT override: read `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md` before treating May 11 counters or build-artifact paths as current evidence.
-- The May 11 compile artifact paths cited below are absent from the current filesystem. They are stale report text, not current artifact-backed proof. Current R41 external root `Hecton8*.csproj` no-restore CLI compile evidence is `0 Warning(s)` / `0 Error(s)` after restore assets exist; it is not Unity runtime proof.
+- The May 11 compile artifact paths cited below are absent from the current filesystem. They are stale report text, not current artifact-backed proof. Current R43 external root `Hecton8*.csproj` no-restore CLI compile evidence is `0 Warning(s)` / `0 Error(s)` after restore assets and referenced `Temp\bin\Debug` DLLs exist; it is not Unity runtime proof.
 - This stable plan is the runtime execution authority. Dated reports are evidence/counter snapshots only.
 - Read `Docs/README.md`, `.agents-skills/README.md`, `Docs/ARCHITECTURE/README.md`, current source, `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md`, and then older evidence reports before using this plan as execution guidance.
 - This plan is still directionally valid, but it is not a runtime verification report.

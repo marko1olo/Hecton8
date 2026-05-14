@@ -860,7 +860,7 @@ namespace Hecton8.Construction
                 float stress01 = 0f;
                 float depthMeters = 0f;
                 float3 modulePosition = float3.zero;
-                bool hasGraphRecord = TryResolveGraphModuleRecord(baseModule, out int graphNodeIndex, out ModuleRecord module);
+                bool hasGraphRecord = TryResolveGraphModuleRecord(baseModule, nodeIndex, out int graphNodeIndex, out ModuleRecord module);
                 if (baseModule != null && baseModule.isActiveAndEnabled)
                 {
                     modulePosition = hasGraphRecord ? module.Position : ResolveActiveModulePosition(baseModule);
@@ -966,7 +966,11 @@ namespace Hecton8.Construction
             }
 
             if (publishShaderClear && shouldPublishClear)
+            {
+                ReleaseModuleStressBuffer(false);
                 PublishModuleStressShader(0, 0f, HectonQualityTier.Unknown);
+                _lastUploadedModuleStressCount = 0;
+            }
         }
 
         private static float ResolveActiveModuleDepthMeters(BaseModule baseModule, float3 runtimePosition)
@@ -993,14 +997,33 @@ namespace Hecton8.Construction
 
         private bool TryResolveGraphModuleRecord(BaseModule baseModule, out int nodeIndex, out ModuleRecord module)
         {
+            return TryResolveGraphModuleRecord(baseModule, -1, out nodeIndex, out module);
+        }
+
+        private bool TryResolveGraphModuleRecord(BaseModule baseModule, int indexHint, out int nodeIndex, out ModuleRecord module)
+        {
             nodeIndex = -1;
             module = default;
             if (baseModule == null || _moduleBuffer == null)
                 return false;
 
             int moduleCount = math.min(_nodeCount, _moduleBuffer.Count);
+            if ((uint)indexHint < (uint)moduleCount)
+            {
+                ModuleRecord hinted = _moduleBuffer[indexHint];
+                if (hinted.BaseModule == baseModule)
+                {
+                    nodeIndex = indexHint;
+                    module = hinted;
+                    return true;
+                }
+            }
+
             for (int i = 0; i < moduleCount; i++)
             {
+                if (i == indexHint)
+                    continue;
+
                 ModuleRecord candidate = _moduleBuffer[i];
                 if (candidate.BaseModule != baseModule)
                     continue;
@@ -1019,7 +1042,7 @@ namespace Hecton8.Construction
             for (int i = 0; i < moduleCount; i++)
             {
                 BaseModule baseModule = BaseModule.GetActiveModuleAt(i);
-                bool hasGraphRecord = TryResolveGraphModuleRecord(baseModule, out _, out ModuleRecord module);
+                bool hasGraphRecord = TryResolveGraphModuleRecord(baseModule, i, out _, out ModuleRecord module);
                 uint moduleHash = ResolveModuleStressRuntimeKey(baseModule, module, hasGraphRecord);
                 if (moduleHash == 0u)
                     moduleHash = (uint)(i + 1);
@@ -1122,46 +1145,69 @@ namespace Hecton8.Construction
             if (moduleCount <= 0)
                 return false;
 
-            for (int nodeIndex = 0; nodeIndex < moduleCount; nodeIndex++)
-            {
-                BaseModule baseModule = BaseModule.GetActiveModuleAt(nodeIndex);
-                if (baseModule == null || !baseModule.isActiveAndEnabled)
-                    continue;
-
-                bool hasGraphRecord = TryResolveGraphModuleRecord(baseModule, out _, out ModuleRecord module);
-                uint moduleHash = ResolveModuleStressHash(baseModule, module, hasGraphRecord);
-                if (targetHash != 0u &&
-                    (moduleHash == targetHash || ResolveModuleStressEntityKey(baseModule) == targetHash))
-                {
-                    moduleIndex = nodeIndex;
-                    return true;
-                }
-
-                if (targetId != 0 && hasGraphRecord && (ushort)(module.NodeId & 0xFFFFu) == targetId)
-                {
-                    moduleIndex = nodeIndex;
-                    return true;
-                }
-            }
-
-            if (!allowNearest || !math.all(math.isfinite(worldPoint)))
+            int targetIdMatchIndex = -1;
+            int targetIdMatchCount = 0;
+            int interiorMatchIndex = -1;
+            int nearestMatchIndex = -1;
+            bool hasTargetIdentity = targetHash != 0u || targetId != 0;
+            bool canResolveNearest = allowNearest && math.all(math.isfinite(worldPoint));
+            if (!hasTargetIdentity && !canResolveNearest)
                 return false;
 
             float bestDistanceSq = float.MaxValue;
-            Vector3 runtimePoint = new Vector3(worldPoint.x, worldPoint.y, worldPoint.z);
+            Vector3 runtimePoint = canResolveNearest
+                ? new Vector3(worldPoint.x, worldPoint.y, worldPoint.z)
+                : Vector3.zero;
+
             for (int nodeIndex = 0; nodeIndex < moduleCount; nodeIndex++)
             {
                 BaseModule baseModule = BaseModule.GetActiveModuleAt(nodeIndex);
                 if (baseModule == null || !baseModule.isActiveAndEnabled)
                     continue;
 
-                if (baseModule.TryContainsInteriorRuntimePoint(runtimePoint))
+                bool hasGraphRecord = false;
+                ModuleRecord module = default;
+                if (hasTargetIdentity)
                 {
-                    moduleIndex = nodeIndex;
-                    return true;
+                    hasGraphRecord = TryResolveGraphModuleRecord(baseModule, nodeIndex, out _, out module);
+                    uint moduleHash = ResolveModuleStressHash(baseModule, module, hasGraphRecord);
+                    uint entityKey = ResolveModuleStressEntityKey(baseModule);
+                    if (targetHash != 0u &&
+                        (moduleHash == targetHash || entityKey == targetHash))
+                    {
+                        moduleIndex = nodeIndex;
+                        return true;
+                    }
+
+                    if (IsModuleStressTargetIdMatch(targetId, moduleHash, entityKey, module, hasGraphRecord))
+                    {
+                        targetIdMatchIndex = nodeIndex;
+                        targetIdMatchCount++;
+                    }
                 }
 
-                bool hasGraphRecord = TryResolveGraphModuleRecord(baseModule, out _, out ModuleRecord module);
+                if (!canResolveNearest)
+                    continue;
+
+                if (interiorMatchIndex < 0 &&
+                    baseModule.TryContainsInteriorRuntimePoint(runtimePoint))
+                {
+                    if (!hasTargetIdentity)
+                    {
+                        moduleIndex = nodeIndex;
+                        return true;
+                    }
+
+                    interiorMatchIndex = nodeIndex;
+                    continue;
+                }
+
+                if (interiorMatchIndex >= 0)
+                    continue;
+
+                if (!hasTargetIdentity)
+                    hasGraphRecord = TryResolveGraphModuleRecord(baseModule, nodeIndex, out _, out module);
+
                 float3 modulePosition = hasGraphRecord ? module.Position : ResolveActiveModulePosition(baseModule);
                 float allowedRadiusMeters = ModuleStressNearestSignalFallbackRadiusMeters;
                 if (baseModule.TryGetInteriorHazardBounds(out Vector3 interiorCenter, out float interiorRadius) &&
@@ -1182,10 +1228,28 @@ namespace Hecton8.Construction
                     continue;
 
                 bestDistanceSq = distanceSq;
-                moduleIndex = nodeIndex;
+                nearestMatchIndex = nodeIndex;
             }
 
-            return moduleIndex >= 0;
+            if (targetIdMatchCount == 1)
+            {
+                moduleIndex = targetIdMatchIndex;
+                return true;
+            }
+
+            if (interiorMatchIndex >= 0)
+            {
+                moduleIndex = interiorMatchIndex;
+                return true;
+            }
+
+            if (nearestMatchIndex >= 0)
+            {
+                moduleIndex = nearestMatchIndex;
+                return true;
+            }
+
+            return false;
         }
 
         private static uint ResolveModuleStressHash(BaseModule baseModule, ModuleRecord module, bool hasGraphRecord)
@@ -1206,6 +1270,25 @@ namespace Hecton8.Construction
                 return stableHash;
 
             return ResolveModuleStressEntityKey(baseModule);
+        }
+
+        private static bool IsModuleStressTargetIdMatch(
+            ushort targetId,
+            uint moduleHash,
+            uint entityKey,
+            ModuleRecord module,
+            bool hasGraphRecord)
+        {
+            if (targetId == 0)
+                return false;
+
+            if (moduleHash != 0u && (ushort)(moduleHash & 0xFFFFu) == targetId)
+                return true;
+
+            if (entityKey != 0u && (ushort)(entityKey & 0xFFFFu) == targetId)
+                return true;
+
+            return hasGraphRecord && (ushort)(module.NodeId & 0xFFFFu) == targetId;
         }
 
         private static uint ResolveModuleStressEntityKey(BaseModule baseModule)
@@ -1307,7 +1390,7 @@ namespace Hecton8.Construction
             if (_moduleStressBuffer != null && _moduleStressBuffer.count >= safeCount)
                 return;
 
-            ReleaseModuleStressBuffer();
+            ReleaseModuleStressBuffer(false);
             _moduleStressBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float>(
                 NextPowerOfTwo(math.max(safeCount, InitialNodeCapacity)));
             _lastUploadedModuleStressCount = -1;
@@ -4469,13 +4552,19 @@ namespace Hecton8.Construction
 
         private void ReleaseModuleStressBuffer()
         {
+            ReleaseModuleStressBuffer(true);
+        }
+
+        private void ReleaseModuleStressBuffer(bool clearShaderParams)
+        {
             if (_moduleStressBuffer == null)
                 return;
 
             _moduleStressBuffer.Release();
             _moduleStressBuffer = null;
             _lastUploadedModuleStressCount = -1;
-            Shader.SetGlobalVector(HabitatModuleStressParamsId, Vector4.zero);
+            if (clearShaderParams)
+                Shader.SetGlobalVector(HabitatModuleStressParamsId, Vector4.zero);
         }
 
         private static void DisposeNativeParallelMultiHashMap<TKey, TValue>(

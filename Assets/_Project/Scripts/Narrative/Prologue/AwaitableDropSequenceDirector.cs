@@ -80,9 +80,15 @@ namespace Hecton8.Narrative.Prologue
             _blackBoxDumped = false;
             _devSkipHandoffPublished = false;
             _hasLastOrbitalSnapshot = false;
+            _lastAtmosphericReentry = default;
+            _lastComplete = default;
+            _lastOrbital = default;
+            _hasPublishedTelemetry = false;
 
             try
             {
+                _runtime.PrepareSequenceRun();
+
                 if (!await AwaitAtmosphericReentryAsync(cancellationToken))
                     return;
 
@@ -118,12 +124,12 @@ namespace Hecton8.Narrative.Prologue
             {
                 RecordStage(PrologueStage.Faulted, FaultHash, PrologueCancelReasons.NonFinite);
                 DumpBlackBox();
-                _runtime.DumpBlackBox();
+                TryDumpRuntimeBlackBox(_runtime);
             }
             finally
             {
-                _runtime.PublishInputLock(PrologueInputLockFlags.None, paused: false);
                 _running = false;
+                ReleaseInputLockNoThrow();
             }
         }
 
@@ -269,19 +275,19 @@ namespace Hecton8.Narrative.Prologue
         private async Awaitable<bool> RunImpactSyncAsync(CancellationToken cancellationToken)
         {
             RecordStage(PrologueStage.ImpactSync, ImpactHash, _lastComplete.Flags);
+            if (ShouldStopForCancellation(cancellationToken))
+                return false;
+
+            if (TryHandleDevelopmentSkip())
+                return false;
+
             await _runtime.NextFrameAsync(cancellationToken);
             return !ShouldStopForCancellation(cancellationToken) && !TryHandleDevelopmentSkip();
         }
 
         private async Awaitable<bool> AwaitOceanHydrationAsync(CancellationToken cancellationToken)
         {
-            bool allowProxy = _runtime.IsLowTier;
-            RecordStage(
-                PrologueStage.AwaitOceanHydration,
-                HydrationHash,
-                allowProxy ? (byte)PrologueHydrationMode.LowTierProxySurface : (byte)PrologueHydrationMode.HighResolutionSurface);
-
-            while (!_runtime.IsOceanSurfaceReady(allowProxy))
+            while (true)
             {
                 if (ShouldStopForCancellation(cancellationToken))
                     return false;
@@ -289,14 +295,23 @@ namespace Hecton8.Narrative.Prologue
                 if (TryHandleDevelopmentSkip())
                     return false;
 
+                bool allowProxy = _runtime.IsLowTier;
+                byte hydrationMode = allowProxy
+                    ? (byte)PrologueHydrationMode.LowTierProxySurface
+                    : (byte)PrologueHydrationMode.HighResolutionSurface;
+
+                if (_runtime.IsOceanSurfaceReady(allowProxy))
+                {
+                    RecordStage(PrologueStage.AwaitOceanHydration, HydrationHash, hydrationMode);
+                    return true;
+                }
+
                 RecordStage(
                     PrologueStage.AwaitOceanHydration,
                     HydrationHash,
-                    allowProxy ? (byte)PrologueHydrationMode.LowTierProxySurface : (byte)PrologueHydrationMode.HighResolutionSurface);
+                    hydrationMode);
                 await _runtime.NextFrameAsync(cancellationToken);
             }
-
-            return true;
         }
 
         private void RunWaterTransition()
@@ -355,7 +370,7 @@ namespace Hecton8.Narrative.Prologue
             _runtime.ZeroUniverseVelocity();
             _runtime.PublishMassiveImpact();
             _runtime.PublishOceanHandoff();
-            _runtime.PublishInputLock(PrologueInputLockFlags.None, paused: false);
+            ReleaseInputLockNoThrow();
         }
 
         private void EnsureBlackBox()
@@ -397,11 +412,57 @@ namespace Hecton8.Narrative.Prologue
                  _lastPublishedStateHash != stateHash ||
                  _lastPublishedFlags != flags))
             {
-                _runtime.PushTelemetry(stage, stateHash, flags);
+                TryPushTelemetryNoThrow(stage, stateHash, flags);
                 _lastPublishedStage = stage;
                 _lastPublishedStateHash = stateHash;
                 _lastPublishedFlags = flags;
                 _hasPublishedTelemetry = true;
+            }
+        }
+
+        private void ReleaseInputLockNoThrow()
+        {
+            IPrologueSequenceRuntime runtime = _runtime;
+            if (runtime == null)
+                return;
+
+            try
+            {
+                runtime.PublishInputLock(PrologueInputLockFlags.None, paused: false);
+            }
+            catch (Exception)
+            {
+                DumpBlackBox();
+                TryDumpRuntimeBlackBox(runtime);
+            }
+        }
+
+        private void TryDumpRuntimeBlackBox(IPrologueSequenceRuntime runtime)
+        {
+            if (runtime == null)
+                return;
+
+            try
+            {
+                runtime.DumpBlackBox();
+            }
+            catch (Exception)
+            {
+            }
+        }
+
+        private void TryPushTelemetryNoThrow(PrologueStage stage, uint stateHash, byte flags)
+        {
+            IPrologueSequenceRuntime runtime = _runtime;
+            if (runtime == null)
+                return;
+
+            try
+            {
+                runtime.PushTelemetry(stage, stateHash, flags);
+            }
+            catch (Exception)
+            {
             }
         }
 
@@ -449,7 +510,7 @@ namespace Hecton8.Narrative.Prologue
             }
             catch (Exception)
             {
-                _runtime?.PushTelemetry(PrologueStage.Faulted, DumpFailedHash, 1);
+                TryPushTelemetryNoThrow(PrologueStage.Faulted, DumpFailedHash, 1);
             }
         }
 

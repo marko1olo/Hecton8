@@ -34,6 +34,7 @@ namespace Hecton8.Caves
     public struct ThermalMeltEvent
     {
         public Vector3 AbsoluteUniversePosition;
+        public double3 AbsoluteUniversePositionDouble;
         public float RadiusMeters;
         public float Heat01;
     }
@@ -63,6 +64,8 @@ namespace Hecton8.Caves
         public float3 AbsoluteSegmentEnd;
         public float3 AbsoluteHalfExtents;
         public float3 AbsoluteImpulseDirection;
+        public double3 AbsoluteHitPointDouble;
+        public double3 AbsoluteSegmentEndDouble;
         public float RadiusMeters;
         public float BlendStrengthMeters;
         public byte Operation;
@@ -438,7 +441,8 @@ namespace Hecton8.Caves
             if (radius <= 0f || heat01 < ThermalMeltMinimumHeat || _registeredVolumes.Count <= 0)
                 return false;
 
-            HectonVoxelVolume targetVolume = ResolveThermalMeltVolume(meltEvent.AbsoluteUniversePosition, radius);
+            double3 absolutePosition = ResolveThermalMeltPositionDouble(in meltEvent);
+            HectonVoxelVolume targetVolume = ResolveThermalMeltVolume(absolutePosition, radius);
             if (targetVolume == null)
                 return false;
 
@@ -449,10 +453,10 @@ namespace Hecton8.Caves
                     continue;
 
                 float mergeRadius = math.max(radius, existing.RadiusMeters);
-                if ((existing.AbsoluteCenter - meltEvent.AbsoluteUniversePosition).sqrMagnitude > mergeRadius * mergeRadius)
+                if (math.lengthsq(existing.AbsoluteCenter - absolutePosition) > (double)mergeRadius * mergeRadius)
                     continue;
 
-                existing.AbsoluteCenter = Vector3.Lerp(existing.AbsoluteCenter, meltEvent.AbsoluteUniversePosition, 0.5f);
+                existing.AbsoluteCenter = (existing.AbsoluteCenter + absolutePosition) * 0.5d;
                 existing.RadiusMeters = math.max(existing.RadiusMeters, radius);
                 existing.ElapsedSeconds = math.min(existing.ElapsedSeconds, ThermalMeltStepIntervalSeconds);
                 _thermalMeltEvents[i] = existing;
@@ -465,7 +469,7 @@ namespace Hecton8.Caves
             _thermalMeltEvents[_thermalMeltCount++] = new ThermalMeltRuntime
             {
                 Volume = targetVolume,
-                AbsoluteCenter = meltEvent.AbsoluteUniversePosition,
+                AbsoluteCenter = absolutePosition,
                 RadiusMeters = radius,
                 ElapsedSeconds = 0f,
                 StepAccumulatorSeconds = ThermalMeltStepIntervalSeconds
@@ -473,7 +477,7 @@ namespace Hecton8.Caves
             return true;
         }
 
-        private HectonVoxelVolume ResolveThermalMeltVolume(Vector3 absoluteCenter, float radius)
+        private HectonVoxelVolume ResolveThermalMeltVolume(double3 absoluteCenter, float radius)
         {
             float bestDistanceSq = float.MaxValue;
             HectonVoxelVolume bestVolume = null;
@@ -485,11 +489,13 @@ namespace Hecton8.Caves
 
                 float halfExtent = volume.GridDimension * volume.VoxelSize * 0.5f;
                 float acceptedRadius = halfExtent + radius;
-                float distanceSq = (volume.GenerationAbsoluteUniversePosition - absoluteCenter).sqrMagnitude;
-                if (distanceSq > acceptedRadius * acceptedRadius || distanceSq >= bestDistanceSq)
+                double3 delta = volume.GenerationAbsoluteUniversePositionDouble - absoluteCenter;
+                double distanceSq = math.lengthsq(delta);
+                double acceptedRadiusSq = (double)acceptedRadius * acceptedRadius;
+                if (distanceSq > acceptedRadiusSq || distanceSq >= bestDistanceSq)
                     continue;
 
-                bestDistanceSq = distanceSq;
+                bestDistanceSq = (float)math.min(distanceSq, float.MaxValue);
                 bestVolume = volume;
             }
 
@@ -739,44 +745,46 @@ namespace Hecton8.Caves
 
         private bool TryEnqueuePendingCarveFromEvent(in VoxelCarveEvent carveEvent)
         {
-            if (!IsFiniteCarveEvent(in carveEvent))
+            VoxelCarveEvent hydratedEvent = carveEvent;
+            NormalizeCarveEventDoubleCoordinates(ref hydratedEvent);
+            if (!IsFiniteCarveEvent(in hydratedEvent))
             {
-                WriteBlackBoxSample(carveEvent.VolumeInstanceId, VoxelBlackBoxInvalidCarveEventFlag);
+                WriteBlackBoxSample(hydratedEvent.VolumeInstanceId, VoxelBlackBoxInvalidCarveEventFlag);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 DumpBlackBoxOnce(VoxelBlackBoxInvalidCarveEventFlag);
 #endif
                 return true;
             }
 
-            HectonVoxelVolume volume = ResolveQueuedCarveVolume(carveEvent.VolumeInstanceId);
+            HectonVoxelVolume volume = ResolveQueuedCarveVolume(hydratedEvent.VolumeInstanceId);
             if (volume == null || !volume.HasRuntimeData)
                 return true;
 
             byte deltaFlags = 0;
-            if (carveEvent.Operation == (byte)VoxelCarveOperationType.Add)
+            if (hydratedEvent.Operation == (byte)VoxelCarveOperationType.Add)
                 deltaFlags = DeltaModeAdditive;
-            else if (carveEvent.Operation == (byte)VoxelCarveOperationType.Replace)
+            else if (hydratedEvent.Operation == (byte)VoxelCarveOperationType.Replace)
                 deltaFlags = DeltaModeReplace;
 
-            byte shape = carveEvent.Shape == (byte)VoxelCarveShapeType.Box
+            byte shape = hydratedEvent.Shape == (byte)VoxelCarveShapeType.Box
                 ? DeltaShapeBox
-                : carveEvent.Shape == (byte)VoxelCarveShapeType.Capsule
+                : hydratedEvent.Shape == (byte)VoxelCarveShapeType.Capsule
                     ? DeltaShapeCapsule
                     : DeltaShapeSphere;
 
             PendingCarveRequest request = new PendingCarveRequest
             {
                 Volume = volume,
-                AbsoluteHitPoint = ToVector3(carveEvent.AbsoluteHitPoint),
-                AbsoluteSegmentEnd = ToVector3(carveEvent.AbsoluteSegmentEnd),
-                AbsoluteHalfExtents = ToVector3(carveEvent.AbsoluteHalfExtents),
-                ExplicitRadiusMeters = carveEvent.RadiusMeters,
-                ExplicitBlendStrength = carveEvent.BlendStrengthMeters,
-                MaterialId = carveEvent.MaterialId,
+                AbsoluteHitPoint = ResolveCarveHitPointDouble(in hydratedEvent),
+                AbsoluteSegmentEnd = ResolveCarveSegmentEndDouble(in hydratedEvent),
+                AbsoluteHalfExtents = ToVector3(hydratedEvent.AbsoluteHalfExtents),
+                ExplicitRadiusMeters = hydratedEvent.RadiusMeters,
+                ExplicitBlendStrength = hydratedEvent.BlendStrengthMeters,
+                MaterialId = hydratedEvent.MaterialId,
                 DeltaFlags = deltaFlags,
-                SourceFlags = carveEvent.SourceFlags,
+                SourceFlags = hydratedEvent.SourceFlags,
                 Shape = shape,
-                AbsoluteImpulseDirection = ToVector3(carveEvent.AbsoluteImpulseDirection)
+                AbsoluteImpulseDirection = ToVector3(hydratedEvent.AbsoluteImpulseDirection)
             };
 
             return TryEnqueuePendingCarve(in request);
@@ -800,6 +808,75 @@ namespace Hecton8.Caves
         private static Vector3 ToVector3(float3 value)
         {
             return new Vector3(value.x, value.y, value.z);
+        }
+
+        private static Vector3 ToVector3(double3 value)
+        {
+            return new Vector3((float)value.x, (float)value.y, (float)value.z);
+        }
+
+        private static float3 ToFloat3(double3 value)
+        {
+            return new float3((float)value.x, (float)value.y, (float)value.z);
+        }
+
+        private static double3 ToDouble3(Vector3 value)
+        {
+            return new double3(value.x, value.y, value.z);
+        }
+
+        private static double3 ToDouble3(float3 value)
+        {
+            return new double3(value.x, value.y, value.z);
+        }
+
+        private static double3 ResolveThermalMeltPositionDouble(in ThermalMeltEvent meltEvent)
+        {
+            if (HasAuthoritativeDoubleCoordinate(meltEvent.AbsoluteUniversePositionDouble, meltEvent.AbsoluteUniversePosition))
+                return meltEvent.AbsoluteUniversePositionDouble;
+
+            return ToDouble3(meltEvent.AbsoluteUniversePosition);
+        }
+
+        private static double3 ResolveCarveHitPointDouble(in VoxelCarveEvent carveEvent)
+        {
+            return ResolveCarveCoordinateDouble(carveEvent.AbsoluteHitPointDouble, carveEvent.AbsoluteHitPoint);
+        }
+
+        private static double3 ResolveCarveSegmentEndDouble(in VoxelCarveEvent carveEvent)
+        {
+            return ResolveCarveCoordinateDouble(carveEvent.AbsoluteSegmentEndDouble, carveEvent.AbsoluteSegmentEnd);
+        }
+
+        private static double3 ResolveCarveCoordinateDouble(double3 preciseCoordinate, float3 legacyCoordinate)
+        {
+            if (HasAuthoritativeDoubleCoordinate(preciseCoordinate, legacyCoordinate))
+                return preciseCoordinate;
+
+            return ToDouble3(legacyCoordinate);
+        }
+
+        private static bool HasAuthoritativeDoubleCoordinate(double3 preciseCoordinate, Vector3 legacyCoordinate)
+        {
+            return math.all(math.isfinite(preciseCoordinate)) &&
+                   (math.any(preciseCoordinate != double3.zero) ||
+                    (legacyCoordinate.x == 0f && legacyCoordinate.y == 0f && legacyCoordinate.z == 0f));
+        }
+
+        private static bool HasAuthoritativeDoubleCoordinate(double3 preciseCoordinate, float3 legacyCoordinate)
+        {
+            return math.all(math.isfinite(preciseCoordinate)) &&
+                   (math.any(preciseCoordinate != double3.zero) || math.all(legacyCoordinate == float3.zero));
+        }
+
+        private static void NormalizeCarveEventDoubleCoordinates(ref VoxelCarveEvent carveEvent)
+        {
+            double3 absoluteHitPoint = ResolveCarveHitPointDouble(in carveEvent);
+            double3 absoluteSegmentEnd = ResolveCarveSegmentEndDouble(in carveEvent);
+            carveEvent.AbsoluteHitPointDouble = absoluteHitPoint;
+            carveEvent.AbsoluteSegmentEndDouble = absoluteSegmentEnd;
+            carveEvent.AbsoluteHitPoint = ToFloat3(absoluteHitPoint);
+            carveEvent.AbsoluteSegmentEnd = ToFloat3(absoluteSegmentEnd);
         }
 
         private void EnqueuePendingCompactionUnchecked(in PendingCompactionRequest request)
@@ -830,9 +907,9 @@ namespace Hecton8.Caves
             if (volume == null || damage <= 0f || !volume.HasRuntimeData)
                 return;
 
-            Vector3 absoluteHitPoint = HectonFloatingOrigin.ToAbsoluteUniversePosition(runtimeHitPoint);
+            double3 absoluteHitPoint = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimeHitPoint);
             float mergeDistance = math.max(volume.VoxelSize * 2f, MinCarveRadiusMeters);
-            float mergeDistanceSq = mergeDistance * mergeDistance;
+            double mergeDistanceSq = (double)mergeDistance * mergeDistance;
 
             for (int i = 0; i < _pendingCarveCount; i++)
             {
@@ -841,10 +918,10 @@ namespace Hecton8.Caves
                 if (!ReferenceEquals(existing.Volume, volume))
                     continue;
 
-                if ((existing.AbsoluteHitPoint - absoluteHitPoint).sqrMagnitude > mergeDistanceSq)
+                if (math.lengthsq(existing.AbsoluteHitPoint - absoluteHitPoint) > mergeDistanceSq)
                     continue;
 
-                existing.AbsoluteHitPoint = Vector3.Lerp(existing.AbsoluteHitPoint, absoluteHitPoint, 0.5f);
+                existing.AbsoluteHitPoint = (existing.AbsoluteHitPoint + absoluteHitPoint) * 0.5d;
                 existing.AccumulatedDamage += damage;
                 existing.MaterialId = materialId;
                 existing.SourceFlags |= CarveSourceLaser;
@@ -878,7 +955,7 @@ namespace Hecton8.Caves
             if (volume == null || radius <= 0f || !volume.HasRuntimeData)
                 return;
 
-            Vector3 absoluteHitPoint = HectonFloatingOrigin.ToAbsoluteUniversePosition(runtimeHitPoint);
+            double3 absoluteHitPoint = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimeHitPoint);
             ApplyImmediateAbsoluteCrater(volume, absoluteHitPoint, radius, materialId);
         }
 
@@ -897,12 +974,24 @@ namespace Hecton8.Caves
             byte sourceFlags = 0,
             Vector3 absoluteImpulseDirection = default)
         {
+            ApplyImmediateAbsoluteCrater(volume, ToDouble3(absoluteHitPoint), radius, materialId, sourceFlags, absoluteImpulseDirection);
+        }
+
+        public void ApplyImmediateAbsoluteCrater(
+            HectonVoxelVolume volume,
+            double3 absoluteHitPoint,
+            float radius,
+            byte materialId = DefaultMaterialId,
+            byte sourceFlags = 0,
+            Vector3 absoluteImpulseDirection = default)
+        {
             if (volume == null || radius <= 0f || !volume.HasRuntimeData)
                 return;
 
             VoxelCarveEvent carveEvent = new VoxelCarveEvent
             {
-                AbsoluteHitPoint = new float3(absoluteHitPoint.x, absoluteHitPoint.y, absoluteHitPoint.z),
+                AbsoluteHitPoint = ToFloat3(absoluteHitPoint),
+                AbsoluteHitPointDouble = absoluteHitPoint,
                 AbsoluteImpulseDirection = new float3(absoluteImpulseDirection.x, absoluteImpulseDirection.y, absoluteImpulseDirection.z),
                 RadiusMeters = radius,
                 MaterialId = materialId,
@@ -928,6 +1017,16 @@ namespace Hecton8.Caves
             Vector3 absoluteImpulseDirection,
             byte materialId = DefaultMaterialId)
         {
+            ApplyImmediateAbsoluteCrater(volume, ToDouble3(absoluteHitPoint), radius, materialId, CarveSourceLaser, absoluteImpulseDirection);
+        }
+
+        public void ApplyImmediateAbsoluteLaserCrater(
+            HectonVoxelVolume volume,
+            double3 absoluteHitPoint,
+            float radius,
+            Vector3 absoluteImpulseDirection,
+            byte materialId = DefaultMaterialId)
+        {
             ApplyImmediateAbsoluteCrater(volume, absoluteHitPoint, radius, materialId, CarveSourceLaser, absoluteImpulseDirection);
         }
 
@@ -941,6 +1040,15 @@ namespace Hecton8.Caves
         public void ApplyImmediateAbsoluteBoxCrater(
             HectonVoxelVolume volume,
             Vector3 absoluteCenter,
+            Vector3 halfExtents,
+            byte materialId = DefaultMaterialId)
+        {
+            ApplyImmediateAbsoluteBoxCrater(volume, ToDouble3(absoluteCenter), halfExtents, materialId);
+        }
+
+        public void ApplyImmediateAbsoluteBoxCrater(
+            HectonVoxelVolume volume,
+            double3 absoluteCenter,
             Vector3 halfExtents,
             byte materialId = DefaultMaterialId)
         {
@@ -960,7 +1068,8 @@ namespace Hecton8.Caves
 
             VoxelCarveEvent carveEvent = new VoxelCarveEvent
             {
-                AbsoluteHitPoint = new float3(absoluteCenter.x, absoluteCenter.y, absoluteCenter.z),
+                AbsoluteHitPoint = ToFloat3(absoluteCenter),
+                AbsoluteHitPointDouble = absoluteCenter,
                 AbsoluteHalfExtents = resolvedHalfExtents3,
                 BlendStrengthMeters = math.max(volume.VoxelSize, math.cmin(resolvedHalfExtents3) * 0.35f),
                 MaterialId = materialId,
@@ -980,12 +1089,18 @@ namespace Hecton8.Caves
         /// <param name="materialId">Material palette index for the modified cells.</param>
         public void ApplyImmediateAbsoluteWeld(HectonVoxelVolume volume, Vector3 absoluteHitPoint, float radius, float strength, byte materialId = DefaultMaterialId)
         {
+            ApplyImmediateAbsoluteWeld(volume, ToDouble3(absoluteHitPoint), radius, strength, materialId);
+        }
+
+        public void ApplyImmediateAbsoluteWeld(HectonVoxelVolume volume, double3 absoluteHitPoint, float radius, float strength, byte materialId = DefaultMaterialId)
+        {
             if (volume == null || radius <= 0f || !volume.HasRuntimeData)
                 return;
 
             VoxelCarveEvent carveEvent = new VoxelCarveEvent
             {
-                AbsoluteHitPoint = new float3(absoluteHitPoint.x, absoluteHitPoint.y, absoluteHitPoint.z),
+                AbsoluteHitPoint = ToFloat3(absoluteHitPoint),
+                AbsoluteHitPointDouble = absoluteHitPoint,
                 RadiusMeters = radius,
                 BlendStrengthMeters = math.max(volume.VoxelSize, strength),
                 MaterialId = materialId,
@@ -1012,10 +1127,21 @@ namespace Hecton8.Caves
             float strength,
             byte materialId = DefaultMaterialId)
         {
+            ApplyImmediateAbsoluteCapsuleWeld(volume, ToDouble3(absoluteStart), ToDouble3(absoluteEnd), radius, strength, materialId);
+        }
+
+        public void ApplyImmediateAbsoluteCapsuleWeld(
+            HectonVoxelVolume volume,
+            double3 absoluteStart,
+            double3 absoluteEnd,
+            float radius,
+            float strength,
+            byte materialId = DefaultMaterialId)
+        {
             if (volume == null || radius <= 0f || !volume.HasRuntimeData)
                 return;
 
-            if ((absoluteEnd - absoluteStart).sqrMagnitude <= 0.0001f)
+            if (math.lengthsq(absoluteEnd - absoluteStart) <= 0.0001d)
             {
                 ApplyImmediateAbsoluteWeld(volume, absoluteStart, radius, strength, materialId);
                 return;
@@ -1023,8 +1149,10 @@ namespace Hecton8.Caves
 
             VoxelCarveEvent carveEvent = new VoxelCarveEvent
             {
-                AbsoluteHitPoint = new float3(absoluteStart.x, absoluteStart.y, absoluteStart.z),
-                AbsoluteSegmentEnd = new float3(absoluteEnd.x, absoluteEnd.y, absoluteEnd.z),
+                AbsoluteHitPoint = ToFloat3(absoluteStart),
+                AbsoluteSegmentEnd = ToFloat3(absoluteEnd),
+                AbsoluteHitPointDouble = absoluteStart,
+                AbsoluteSegmentEndDouble = absoluteEnd,
                 RadiusMeters = radius,
                 BlendStrengthMeters = math.max(volume.VoxelSize, strength),
                 MaterialId = materialId,
@@ -1043,7 +1171,10 @@ namespace Hecton8.Caves
                 return false;
 
             ulong volumeId = EntityId.ToULong(volume.GetEntityId());
-            if (!IsFiniteCarveEvent(in carveEvent))
+            VoxelCarveEvent queuedEvent = carveEvent;
+            queuedEvent.VolumeInstanceId = volumeId;
+            NormalizeCarveEventDoubleCoordinates(ref queuedEvent);
+            if (!IsFiniteCarveEvent(in queuedEvent))
             {
                 WriteBlackBoxSample(volumeId, VoxelBlackBoxInvalidCarveEventFlag);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -1065,8 +1196,6 @@ namespace Hecton8.Caves
                 WriteBlackBoxSample(volumeId, VoxelBlackBoxQueueOverflowFlag);
             }
 
-            VoxelCarveEvent queuedEvent = carveEvent;
-            queuedEvent.VolumeInstanceId = volumeId;
             _queuedCarveEvents.Enqueue(queuedEvent);
             _queuedCarveEventCount++;
             SignalBus<VoxelCarveEvent>.Push(in queuedEvent);
@@ -2367,25 +2496,25 @@ namespace Hecton8.Caves
                     math.max(voxelSize, math.abs(request.AbsoluteHalfExtents.y)),
                     math.max(voxelSize, math.abs(request.AbsoluteHalfExtents.z)))
                 : new float3(radius);
-            float3 segmentStart = new float3(request.AbsoluteHitPoint.x, request.AbsoluteHitPoint.y, request.AbsoluteHitPoint.z);
-            float3 segmentEnd = shape == DeltaShapeCapsule
-                ? new float3(request.AbsoluteSegmentEnd.x, request.AbsoluteSegmentEnd.y, request.AbsoluteSegmentEnd.z)
+            double3 segmentStart = request.AbsoluteHitPoint;
+            double3 segmentEnd = shape == DeltaShapeCapsule
+                ? request.AbsoluteSegmentEnd
                 : segmentStart;
-            float3 boundsMin = shape == DeltaShapeCapsule
+            double3 boundsMin = shape == DeltaShapeCapsule
                 ? math.min(segmentStart, segmentEnd)
-                : segmentStart - halfExtents;
-            float3 boundsMax = shape == DeltaShapeCapsule
+                : segmentStart - new double3(halfExtents.x, halfExtents.y, halfExtents.z);
+            double3 boundsMax = shape == DeltaShapeCapsule
                 ? math.max(segmentStart, segmentEnd)
-                : segmentStart + halfExtents;
+                : segmentStart + new double3(halfExtents.x, halfExtents.y, halfExtents.z);
             float boundsPadding = shape == DeltaShapeCapsule ? radius + blendRadius : blendRadius;
             int3 minCell = new int3(
-                Mathf.FloorToInt((boundsMin.x - boundsPadding) / voxelSize),
-                Mathf.FloorToInt((boundsMin.y - boundsPadding) / voxelSize),
-                Mathf.FloorToInt((boundsMin.z - boundsPadding) / voxelSize));
+                FastFloorToInt((boundsMin.x - boundsPadding) / voxelSize),
+                FastFloorToInt((boundsMin.y - boundsPadding) / voxelSize),
+                FastFloorToInt((boundsMin.z - boundsPadding) / voxelSize));
             int3 maxCell = new int3(
-                Mathf.FloorToInt((boundsMax.x + boundsPadding) / voxelSize),
-                Mathf.FloorToInt((boundsMax.y + boundsPadding) / voxelSize),
-                Mathf.FloorToInt((boundsMax.z + boundsPadding) / voxelSize));
+                FastFloorToInt((boundsMax.x + boundsPadding) / voxelSize),
+                FastFloorToInt((boundsMax.y + boundsPadding) / voxelSize),
+                FastFloorToInt((boundsMax.z + boundsPadding) / voxelSize));
             ResolveVolumeCellBounds(volume, out int3 volumeMinCell, out int3 volumeMaxCell, out _, out _);
             if (!CellBoundsIntersect(minCell, maxCell, volumeMinCell, volumeMaxCell))
                 return;
@@ -2629,18 +2758,18 @@ namespace Hecton8.Caves
         {
             float voxelSize = math.max(volume.VoxelSize, MinRuntimeVoxelSize);
             float halfExtent = volume.GridDimension * voxelSize * 0.5f;
-            Vector3 absoluteCenter = volume.GenerationAbsoluteUniversePosition;
-            Vector3 minAbsolute = absoluteCenter - new Vector3(halfExtent, halfExtent, halfExtent);
-            Vector3 maxAbsolute = absoluteCenter + new Vector3(halfExtent, halfExtent, halfExtent);
+            double3 absoluteCenter = volume.GenerationAbsoluteUniversePositionDouble;
+            double3 minAbsolute = absoluteCenter - new double3(halfExtent, halfExtent, halfExtent);
+            double3 maxAbsolute = absoluteCenter + new double3(halfExtent, halfExtent, halfExtent);
 
             minCell = new int3(
-                Mathf.FloorToInt(minAbsolute.x / voxelSize),
-                Mathf.FloorToInt(minAbsolute.y / voxelSize),
-                Mathf.FloorToInt(minAbsolute.z / voxelSize));
+                FastFloorToInt(minAbsolute.x / voxelSize),
+                FastFloorToInt(minAbsolute.y / voxelSize),
+                FastFloorToInt(minAbsolute.z / voxelSize));
             maxCell = new int3(
-                Mathf.FloorToInt(maxAbsolute.x / voxelSize),
-                Mathf.FloorToInt(maxAbsolute.y / voxelSize),
-                Mathf.FloorToInt(maxAbsolute.z / voxelSize));
+                FastFloorToInt(maxAbsolute.x / voxelSize),
+                FastFloorToInt(maxAbsolute.y / voxelSize),
+                FastFloorToInt(maxAbsolute.z / voxelSize));
             minChunk = FloorDiv(minCell, ChunkResolution);
             maxChunk = FloorDiv(maxCell, ChunkResolution);
         }
@@ -3034,10 +3163,7 @@ namespace Hecton8.Caves
 
             if (volume != null)
             {
-                Vector3 absoluteCellCenter = new Vector3(
-                    (absoluteCell.x + 0.5f) * voxelSize,
-                    (absoluteCell.y + 0.5f) * voxelSize,
-                    (absoluteCell.z + 0.5f) * voxelSize);
+                double3 absoluteCellCenter = (new double3(absoluteCell.x, absoluteCell.y, absoluteCell.z) + 0.5d) * voxelSize;
                 Vector3 runtimeCellCenter = HectonFloatingOrigin.ToRuntimePosition(absoluteCellCenter);
                 if (volume.TrySampleDensity(runtimeCellCenter, out density))
                     return true;
@@ -3223,6 +3349,20 @@ namespace Hecton8.Caves
             return value >= 0f ? (int)(value + 0.5f) : (int)(value - 0.5f);
         }
 
+        private static int CastBiasInt(double value)
+        {
+            if (!math.isfinite(value))
+                return 0;
+
+            double rounded = value >= 0d ? value + 0.5d : value - 0.5d;
+            if (rounded >= int.MaxValue)
+                return int.MaxValue;
+            if (rounded <= int.MinValue)
+                return int.MinValue;
+
+            return (int)rounded;
+        }
+
         private static Vector3 ResolveDominantAxisDirection(Vector3 value)
         {
             float ax = math.abs(value.x);
@@ -3251,16 +3391,13 @@ namespace Hecton8.Caves
 
             float intensity01 = math.saturate(radius / math.max(MaxCarveRadiusMeters, MinCarveRadiusMeters));
             uint sourceId = (uint)math.hash(new int4(
-                CastBiasInt(request.AbsoluteHitPoint.x * 8f),
-                CastBiasInt(request.AbsoluteHitPoint.y * 8f),
-                CastBiasInt(request.AbsoluteHitPoint.z * 8f),
+                CastBiasInt(request.AbsoluteHitPoint.x * 8d),
+                CastBiasInt(request.AbsoluteHitPoint.y * 8d),
+                CastBiasInt(request.AbsoluteHitPoint.z * 8d),
                 request.Shape | (request.SourceFlags << 8)));
             DebrisSpawnSignal signal = new DebrisSpawnSignal
             {
-                PositionAup = AbsoluteUniversePosition.FromAbsolutePosition(new double3(
-                    request.AbsoluteHitPoint.x,
-                    request.AbsoluteHitPoint.y,
-                    request.AbsoluteHitPoint.z)),
+                PositionAup = AbsoluteUniversePosition.FromAbsolutePosition(request.AbsoluteHitPoint),
                 SpeciesHash = _VoxelDebrisSignalHash,
                 SourceEntityId = sourceId,
                 Intensity01 = intensity01,
@@ -3342,9 +3479,9 @@ namespace Hecton8.Caves
                 return;
 
             uint state = (uint)math.hash(new int4(
-                CastBiasInt(request.AbsoluteHitPoint.x * 10f),
-                CastBiasInt(request.AbsoluteHitPoint.y * 10f),
-                CastBiasInt(request.AbsoluteHitPoint.z * 10f),
+                CastBiasInt(request.AbsoluteHitPoint.x * 10d),
+                CastBiasInt(request.AbsoluteHitPoint.y * 10d),
+                CastBiasInt(request.AbsoluteHitPoint.z * 10d),
                 math.max(1, (int)((radius * 100f) + 0.5f))));
 
             float spawnRadius = math.max(radius * 0.35f, MinRuntimeVoxelSize);
@@ -3353,7 +3490,7 @@ namespace Hecton8.Caves
                 float3 direction = NextBurstDirection(ref state);
                 float distance01 = NextBurst01(ref state);
                 float impulse01 = NextBurst01(ref state);
-                Vector3 absoluteSpawnPosition = request.AbsoluteHitPoint + new Vector3(direction.x, direction.y, direction.z) * (spawnRadius * distance01);
+                double3 absoluteSpawnPosition = request.AbsoluteHitPoint + new double3(direction.x, direction.y, direction.z) * (spawnRadius * distance01);
                 Vector3 runtimeSpawnPosition = HectonFloatingOrigin.ToRuntimePosition(absoluteSpawnPosition);
                 Vector3 burstImpulse = new Vector3(direction.x, direction.y, direction.z) * math.lerp(carveDebrisImpulse * 0.55f, carveDebrisImpulse, impulse01);
                 float3 currentImpulse3 = ResolveCinematicDebrisDriftImpulse(ref state, carveDebrisImpulse);
@@ -3375,7 +3512,7 @@ namespace Hecton8.Caves
             Vector3 impulseDirection = ResolveDominantAxisDirection(request.AbsoluteImpulseDirection);
 
             fluidDecals.RegisterVoxelCaveInDustAup(
-                request.AbsoluteHitPoint,
+                ToVector3(request.AbsoluteHitPoint),
                 impulseDirection,
                 math.saturate(radius / math.max(MaxCarveRadiusMeters, MinCarveRadiusMeters)));
         }
@@ -3483,9 +3620,9 @@ namespace Hecton8.Caves
             Vector3 outwardNormal = -impulseDirection;
             Vector3 runtimeOrigin = runtimeHitPoint + outwardNormal * math.max(radius * 0.2f, MinRuntimeVoxelSize);
             uint seed = (uint)math.hash(new int4(
-                CastBiasInt(request.AbsoluteHitPoint.x * 8f),
-                CastBiasInt(request.AbsoluteHitPoint.y * 8f),
-                CastBiasInt(request.AbsoluteHitPoint.z * 8f),
+                CastBiasInt(request.AbsoluteHitPoint.x * 8d),
+                CastBiasInt(request.AbsoluteHitPoint.y * 8d),
+                CastBiasInt(request.AbsoluteHitPoint.z * 8d),
                     math.max(1, (int)((radius * 64f) + 0.5f))));
             Quaternion rotation = Quaternion.Euler(
                 (seed & 0xFFu) * (360f / 255f),
@@ -3519,12 +3656,15 @@ namespace Hecton8.Caves
             if (radius <= 0f)
                 return;
 
-            Vector3 absoluteHitPoint = request.AbsoluteHitPoint;
             int slot = s_recentCutHeatCursor;
             s_recentCutHeatCursor = (slot + 1) % RecentCutHeatMax;
             s_recentCutHeatCount = math.min(s_recentCutHeatCount + 1, RecentCutHeatMax);
             float shaderRadius = math.max(radius * LaserCutHeatRadiusScale, MinRuntimeVoxelSize);
-            s_recentCutHeatPositionRadius[slot] = new Vector4(absoluteHitPoint.x, absoluteHitPoint.y, absoluteHitPoint.z, shaderRadius);
+            s_recentCutHeatPositionRadius[slot] = new Vector4(
+                (float)request.AbsoluteHitPoint.x,
+                (float)request.AbsoluteHitPoint.y,
+                (float)request.AbsoluteHitPoint.z,
+                shaderRadius);
             s_recentCutHeatStrengthTime[slot] = new Vector4(LaserCutHeatStrength, Time.time, LaserCutHeatLifetimeSeconds, 0f);
             Shader.SetGlobalVector(_laserHitAupId, s_recentCutHeatPositionRadius[slot]);
             Shader.SetGlobalVector(_laserHitHeatId, s_recentCutHeatStrengthTime[slot]);
@@ -3646,9 +3786,9 @@ namespace Hecton8.Caves
                 Flags = flags,
                 FocusVolumeId = focusVolumeId,
                 LastHitAup = new float3(
-                    activeRequest.AbsoluteHitPoint.x,
-                    activeRequest.AbsoluteHitPoint.y,
-                    activeRequest.AbsoluteHitPoint.z),
+                    (float)activeRequest.AbsoluteHitPoint.x,
+                    (float)activeRequest.AbsoluteHitPoint.y,
+                    (float)activeRequest.AbsoluteHitPoint.z),
                 TouchedMinX = minCell.x,
                 TouchedMinY = minCell.y,
                 TouchedMinZ = minCell.z,
@@ -3681,19 +3821,26 @@ namespace Hecton8.Caves
                    math.all(math.isfinite(carveEvent.AbsoluteSegmentEnd)) &&
                    math.all(math.isfinite(carveEvent.AbsoluteHalfExtents)) &&
                    math.all(math.isfinite(carveEvent.AbsoluteImpulseDirection)) &&
+                   math.all(math.isfinite(carveEvent.AbsoluteHitPointDouble)) &&
+                   math.all(math.isfinite(carveEvent.AbsoluteSegmentEndDouble)) &&
                    math.isfinite(carveEvent.RadiusMeters) &&
                    math.isfinite(carveEvent.BlendStrengthMeters);
         }
 
         private static bool IsFinitePendingCarve(in PendingCarveRequest request)
         {
-            return IsFiniteVector3(request.AbsoluteHitPoint) &&
-                   IsFiniteVector3(request.AbsoluteSegmentEnd) &&
+            return IsFiniteDouble3(request.AbsoluteHitPoint) &&
+                   IsFiniteDouble3(request.AbsoluteSegmentEnd) &&
                    IsFiniteVector3(request.AbsoluteHalfExtents) &&
                    IsFiniteVector3(request.AbsoluteImpulseDirection) &&
                    math.isfinite(request.AccumulatedDamage) &&
                    math.isfinite(request.ExplicitRadiusMeters) &&
                    math.isfinite(request.ExplicitBlendStrength);
+        }
+
+        private static bool IsFiniteDouble3(double3 value)
+        {
+            return math.all(math.isfinite(value));
         }
 
         private static bool IsFiniteVector3(Vector3 value)
@@ -3833,14 +3980,14 @@ namespace Hecton8.Caves
             ref int3 maxCell,
             int3 volumeMinCell,
             int3 volumeMaxCell,
-            float3 center,
+            double3 center,
             float voxelSize)
         {
             float safeVoxelSize = math.max(voxelSize, MinRuntimeVoxelSize);
             int3 centerCell = new int3(
-                (int)math.floor(center.x / safeVoxelSize),
-                (int)math.floor(center.y / safeVoxelSize),
-                (int)math.floor(center.z / safeVoxelSize));
+                FastFloorToInt(center.x / safeVoxelSize),
+                FastFloorToInt(center.y / safeVoxelSize),
+                FastFloorToInt(center.z / safeVoxelSize));
             centerCell = math.clamp(centerCell, volumeMinCell, volumeMaxCell);
 
             int lowerHalf = MaxLaserCarveAxisCells / 2;
@@ -3850,6 +3997,18 @@ namespace Hecton8.Caves
 
             minCell = math.max(math.max(minCell, localizedMin), volumeMinCell);
             maxCell = math.min(math.min(maxCell, localizedMax), volumeMaxCell);
+        }
+
+        private static int FastFloorToInt(double value)
+        {
+            if (!math.isfinite(value))
+                return 0;
+            if (value >= int.MaxValue)
+                return int.MaxValue;
+            if (value <= int.MinValue)
+                return int.MinValue;
+
+            return (int)math.floor(value);
         }
 
         private static int FloorDiv(int value, int divisor)
@@ -3928,7 +4087,7 @@ namespace Hecton8.Caves
         private struct ThermalMeltRuntime
         {
             public HectonVoxelVolume Volume;
-            public Vector3 AbsoluteCenter;
+            public double3 AbsoluteCenter;
             public float RadiusMeters;
             public float ElapsedSeconds;
             public float StepAccumulatorSeconds;
@@ -3937,8 +4096,8 @@ namespace Hecton8.Caves
         private struct PendingCarveRequest
         {
             public HectonVoxelVolume Volume;
-            public Vector3 AbsoluteHitPoint;
-            public Vector3 AbsoluteSegmentEnd;
+            public double3 AbsoluteHitPoint;
+            public double3 AbsoluteSegmentEnd;
             public Vector3 AbsoluteHalfExtents;
             public float AccumulatedDamage;
             public float ExplicitRadiusMeters;
@@ -3959,8 +4118,8 @@ namespace Hecton8.Caves
             public float Radius;
             public float BlendRadius;
             public float BlendStrength;
-            public float3 Center;
-            public float3 SegmentEnd;
+            public double3 Center;
+            public double3 SegmentEnd;
             public float3 HalfExtents;
             public byte MaterialId;
             public byte DeltaFlags;
@@ -3977,8 +4136,8 @@ namespace Hecton8.Caves
                 int localY = remainder / Span.x;
                 int localX = remainder - (localY * Span.x);
                 int3 absoluteCell = MinCell + new int3(localX, localY, localZ);
-                float3 cellCenter = (new float3(absoluteCell.x, absoluteCell.y, absoluteCell.z) + 0.5f) * VoxelSize;
-                float signedDistance = Shape == DeltaShapeBox
+                double3 cellCenter = (new double3(absoluteCell.x, absoluteCell.y, absoluteCell.z) + 0.5d) * VoxelSize;
+                double signedDistance = Shape == DeltaShapeBox
                     ? BoxSdf(cellCenter - Center, HalfExtents)
                     : Shape == DeltaShapeCapsule
                         ? CapsuleSdf(cellCenter, Center, SegmentEnd, Radius)
@@ -3989,9 +4148,9 @@ namespace Hecton8.Caves
                     return;
                 }
 
-                float densityValue = (DeltaFlags & DeltaModeAdditive) != 0
-                    ? math.clamp(-signedDistance, -8f, 8f)
-                    : math.clamp(signedDistance, -8f, 8f);
+                float densityValue = (float)((DeltaFlags & DeltaModeAdditive) != 0
+                    ? math.clamp(-signedDistance, -8d, 8d)
+                    : math.clamp(signedDistance, -8d, 8d));
 
                 *write = new CarveCellWrite
                 {
@@ -4006,28 +4165,31 @@ namespace Hecton8.Caves
                 };
             }
 
-            private static float BoxSdf(float3 local, float3 halfExtents)
+            private static double BoxSdf(double3 local, float3 halfExtents)
             {
-                float3 q = math.abs(local) - math.max(halfExtents, new float3(0.001f));
-                return AxisWeightedLengthApprox(math.max(q, 0f)) + math.min(math.cmax(q), 0f);
+                double3 q = math.abs(local) - new double3(
+                    math.max(halfExtents.x, 0.001f),
+                    math.max(halfExtents.y, 0.001f),
+                    math.max(halfExtents.z, 0.001f));
+                return AxisWeightedLengthApprox(math.max(q, 0d)) + math.min(math.cmax(q), 0d);
             }
 
-            private static float CapsuleSdf(float3 point, float3 start, float3 end, float radius)
+            private static double CapsuleSdf(double3 point, double3 start, double3 end, float radius)
             {
-                float3 segment = end - start;
-                float segmentLengthSq = math.max(math.lengthsq(segment), 0.0001f);
-                float t = math.saturate(math.dot(point - start, segment) / segmentLengthSq);
+                double3 segment = end - start;
+                double segmentLengthSq = math.max(math.lengthsq(segment), 0.0001d);
+                double t = math.saturate(math.dot(point - start, segment) / segmentLengthSq);
                 return AxisWeightedLengthApprox(point - (start + segment * t)) - math.max(radius, 0.001f);
             }
 
-            private static float SphereSdfApprox(float3 local, float radius)
+            private static double SphereSdfApprox(double3 local, float radius)
             {
                 return AxisWeightedLengthApprox(local) - math.max(radius, 0.001f);
             }
 
-            private static float AxisWeightedLengthApprox(float3 value)
+            private static double AxisWeightedLengthApprox(double3 value)
             {
-                float3 axis = math.abs(value);
+                double3 axis = math.abs(value);
                 return math.cmax(axis) + (axis.x + axis.y + axis.z) * 0.33f;
             }
         }

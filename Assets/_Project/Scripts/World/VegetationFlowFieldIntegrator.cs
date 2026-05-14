@@ -3043,7 +3043,8 @@ namespace Hecton8.World
                 tDelta = math.select(new float3(1000000f, 1000000f, 1000000f), tDelta, activeAxisMask);
 
                 int sampleStepCap = math.clamp(MaxSamplesPerSegment, 1, MaxThreatDdaSteps);
-                int gridStepCap = math.min(activeVoxelDimensions.x + activeVoxelDimensions.y + activeVoxelDimensions.z + 1, MaxThreatDdaSteps);
+                long gridTraversalCap = (long)activeVoxelDimensions.x + activeVoxelDimensions.y + activeVoxelDimensions.z + 1L;
+                int gridStepCap = gridTraversalCap > MaxThreatDdaSteps ? MaxThreatDdaSteps : (int)gridTraversalCap;
                 int maxSteps = math.min(gridStepCap, sampleStepCap);
                 for (int stepIndex = 0; stepIndex < maxSteps; stepIndex++)
                 {
@@ -3067,6 +3068,14 @@ namespace Hecton8.World
             {
                 float3 activeVoxelOrigin = GetActiveVoxelOrigin();
                 float3 activeVoxelCellSize = GetActiveVoxelCellSize();
+                if (!math.all(math.isfinite(worldPosition)) ||
+                    !math.all(math.isfinite(activeVoxelOrigin)) ||
+                    !HasUsableVoxelCellSize(activeVoxelCellSize))
+                {
+                    voxel = int3.zero;
+                    return false;
+                }
+
                 float3 local = worldPosition - activeVoxelOrigin;
                 if (local.x < 0f || local.y < 0f || local.z < 0f)
                 {
@@ -3108,14 +3117,14 @@ namespace Hecton8.World
                 {
                     int flatIndex = FlattenThreatVoxelIndex(voxel, NavPassabilityDimensions);
                     if (flatIndex < 0 || flatIndex >= NavPassabilityGrid.Length)
-                        return 0;
+                        return SolidThreatVoxel;
 
                     return NavPassabilityGrid[flatIndex];
                 }
 
                 int legacyFlatIndex = FlattenThreatVoxelIndex(voxel, ThreatVoxelDimensions);
                 if (legacyFlatIndex < 0 || legacyFlatIndex >= ThreatVoxelGrid.Length)
-                    return 0;
+                    return SolidThreatVoxel;
 
                 return ThreatVoxelGrid[legacyFlatIndex];
             }
@@ -3128,19 +3137,44 @@ namespace Hecton8.World
             private bool HasAnyVoxelGrid()
             {
                 return HasNavPassabilityGrid() ||
-                       (ThreatVoxelGrid.IsCreated &&
-                        ThreatVoxelDimensions.x > 0 &&
-                        ThreatVoxelDimensions.y > 0 &&
-                        ThreatVoxelDimensions.z > 0);
+                       (HasCompleteVoxelGrid(ThreatVoxelGrid, ThreatVoxelDimensions) &&
+                        HasUsableVoxelCellSize(ThreatVoxelCellSize));
             }
 
             private bool HasNavPassabilityGrid()
             {
-                return NavPassabilityGrid.IsCreated &&
-                       NavPassabilityDimensions.x > 0 &&
-                       NavPassabilityDimensions.y > 0 &&
-                       NavPassabilityDimensions.z > 0 &&
-                       NavPassabilityCellSize > 0f;
+                return HasCompleteVoxelGrid(NavPassabilityGrid, NavPassabilityDimensions) &&
+                       HasUsableUniformVoxelCellSize(NavPassabilityCellSize);
+            }
+
+            private static bool HasCompleteVoxelGrid(NativeArray<byte> grid, int3 dimensions)
+            {
+                if (!grid.IsCreated ||
+                    dimensions.x <= 0 ||
+                    dimensions.y <= 0 ||
+                    dimensions.z <= 0)
+                {
+                    return false;
+                }
+
+                long expectedLength = (long)dimensions.x * dimensions.y * dimensions.z;
+                return expectedLength > 0L &&
+                       expectedLength <= int.MaxValue &&
+                       grid.Length >= expectedLength;
+            }
+
+            private static bool HasUsableUniformVoxelCellSize(float cellSize)
+            {
+                return cellSize > DdaEpsilon &&
+                       math.isfinite(cellSize);
+            }
+
+            private static bool HasUsableVoxelCellSize(float3 cellSize)
+            {
+                return math.all(math.isfinite(cellSize)) &&
+                       cellSize.x > DdaEpsilon &&
+                       cellSize.y > DdaEpsilon &&
+                       cellSize.z > DdaEpsilon;
             }
 
             private int3 GetActiveVoxelDimensions()
@@ -3212,9 +3246,15 @@ namespace Hecton8.World
 
             private static NavPortal BuildNavPortal(float3 left, float3 right)
             {
-                left = math.select(float3.zero, left, math.isfinite(left));
-                right = math.select(left, right, math.isfinite(right));
+                if (!math.all(math.isfinite(left)))
+                    left = float3.zero;
+                if (!math.all(math.isfinite(right)))
+                    right = left;
+
                 float widthSq = math.lengthsq(right - left);
+                if (!math.isfinite(widthSq))
+                    widthSq = FunnelEpsilon;
+
                 return new NavPortal
                 {
                     Left = left,
@@ -3227,10 +3267,14 @@ namespace Hecton8.World
             private static float3 NormalizeRsqrtOrFallback(float3 value, float3 fallback)
             {
                 float lengthSq = math.lengthsq(value);
-                bool useFallback = lengthSq <= FunnelEpsilon || !math.all(math.isfinite(value));
-                float safeLengthSq = math.max(lengthSq, FunnelEpsilon);
-                float3 normalized = value * math.rsqrt(safeLengthSq);
-                return math.select(normalized, fallback, useFallback);
+                if (lengthSq > FunnelEpsilon && math.all(math.isfinite(value)))
+                    return value * math.rsqrt(lengthSq);
+
+                float fallbackLengthSq = math.lengthsq(fallback);
+                if (fallbackLengthSq > FunnelEpsilon && math.all(math.isfinite(fallback)))
+                    return fallback * math.rsqrt(fallbackLengthSq);
+
+                return new float3(0f, 0f, 1f);
             }
 
             private static bool IsDegenerateRay(float3 apex, float3 point)

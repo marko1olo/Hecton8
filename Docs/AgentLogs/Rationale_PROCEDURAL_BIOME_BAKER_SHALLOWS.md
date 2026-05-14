@@ -145,3 +145,31 @@ Hardware Impact: Runtime procedural generation remains 0 us/frame and 0 bytes al
 Build Probe: Direct Roslyn compile of the isolated `Hecton8.Editor.ProceduralGen` assembly returned `CscExit=0`. Isolated Unity 6000.4.1f1 batchmode re-bake after the collider/path/validator pass logged `Validation passed. Coral=50, Kelp=100, Rocks=50, Total=200, LOD2<150`. Main `dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary` returned `Build succeeded. 0 Warning(s). 0 Error(s).`
 
 Final Git Diff: source diff stat is `BioForgeGenerator.cs | 49 +++++++--`, `BioForgeJobs.cs | 14 ++-`, `ShallowsBioForgeBatchBaker.cs | 110 +++++++++++++++------`. Generated payload scan: `Rules=3`, `MeshAssets=600`, `Prefabs=200`, `AtlasPng=4`, `CollisionChildren=50`, `MeshColliders=50`, `FloraColliders=0`, `BadShadowLines=0`, `MaterialRefs=600`, plus `MAT_ProceduralBio_Shallows.mat`.
+
+## Decision 11 - BioRuleData Contract Lockdown
+
+Problem: The Safe Shallows validator proved generated prefab counts, mesh counts, atlas importers, material settings, and exact prefab-to-mesh references. It still did not prove that the source `BioRuleData` assets retained the intended authoring contract. A future manual edit could change the TubeCoral axiom, Kelp ribbon profile, PorousRock pore settings, LOD budgets, or output folders while leaving old generated payloads apparently valid.
+
+Solution: Add rule-asset validation to `ShallowsBioForgeBatchBaker`. The validator now checks required generated folders, then validates all three Safe Shallows rule assets against literal expected data: asset prefix, material, axiom, one exact `F` replacement rule, SDF profile, iterations, max branches, SDF resolution, LOD budgets, branch shape values, ribbon scales, porous rock radius/noise/pore values, and mesh/prefab output folders. Non-rock rules now carry explicit rock-default expectations instead of helper fallback defaults, so the contract is literal.
+
+Rejected Alternatives: Re-baking the payload was rejected because no generated content changed. Raw YAML mutation was rejected under the prefab/asset safety rule. Relying on mesh/prefab counts alone was rejected because counts prove output quantity, not the authoring source of future deterministic bakes.
+
+Scalability potential: Low keeps static LOD prefabs, exact LOD2 budgets, shared atlas, and no runtime scripts. Middle/High keep deterministic variety and shader-readable masks. Ultra can spend saved CPU on denser flora and richer shader response because the source rules cannot silently drift into bloated SDF settings.
+
+Hardware Impact: Runtime remains 0 us/frame and 0 bytes allocation. The gain is prevention: MX350-class builds cannot silently inherit higher LOD budgets, wrong material paths, or non-porous rock settings from edited rule assets. Exact frame microseconds remain not profiled because this is editor validation.
+
+Verification: Unity Bee response-file Roslyn compile for `Hecton8.Editor.ProceduralGen` exited 0. Literal rule asset scan passed: `RuleAssetScan=PASS Rules=3 ContractFields=25`. `git diff --check` exited 0 with only the existing LF-to-CRLF warning. Full `dotnet build Hecton8.Core.csproj` is currently blocked outside this domain by `Assets/_Project/Scripts/SaveBinaryPayloadCodec.cs` errors for missing `BufferReader.CanConsumeCollectionItems` and `ReadCustomArray` overloads.
+
+## Decision 12 - Shared Material Scalar And Color Contract
+
+Problem: Shared material validation proved shader identity, atlas bindings, instancing, and GI flags, but not the actual Safe Shallows color/scalar contract. A material drift could flatten bioluminescence, change culling, or enable the high-quality keyword while the generated prefab and mesh contracts still pass.
+
+Solution: Add material property validation to `ShallowsBioForgeBatchBaker` for `_BaseColor`, `_RootTint`, `_TipTint`, `_EmissionColor`, every authored Shallows shader scalar, `_Cull=0`, and `_QUALITY_HIGH` disabled. The validator now treats the material as part of the baked asset contract, not a loose dependency.
+
+Rejected Alternatives: Re-baking the asset payload was rejected because no mesh or prefab content changed. Relying on a one-off YAML scan was rejected because it does not protect future bakes. Runtime material correction was rejected because this is an editor-authored asset library and runtime mutation would add hidden state and cost.
+
+Scalability potential: Low keeps cheap triplanar/MatCap tuning, no high-tier keyword, double-sided flora, and controlled emission values. Middle and High can raise density with the same material contract. Ultra can intentionally change material overkill values only by updating the bake contract and validator together.
+
+Hardware Impact: Runtime remains 0 us/frame and 0 bytes allocation. The gain is preventing silent shader keyword or scalar drift from increasing GPU cost or weakening the visual mask on i3/MX350-class hardware. Exact frame microseconds are not profiled because this is editor validation.
+
+Verification: Unity Bee response-file Roslyn compile for `Hecton8.Editor.ProceduralGen` exited 0. Material text scan passed `MaterialContractScan=PASS Fields=26`. `git diff --check` exited 0 with only the repo LF-to-CRLF warning. Full `dotnet build Hecton8.Core.csproj --no-restore` is currently blocked outside this domain by missing generated `Temp/obj/Hecton8.Core/.NETStandard,Version=v2.1.AssemblyAttributes.cs`; restore-enabled retry timed out and the timed-out build process is no longer running.

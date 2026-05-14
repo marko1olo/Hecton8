@@ -948,13 +948,13 @@ namespace Hecton8.World
             Vector3 terrainSize = terrainData.size;
             float denominator = Mathf.Max(1f, terrainData.heightmapResolution - 1f);
             float cellSize = Mathf.Max(0.05f, Mathf.Min(terrainSize.x, terrainSize.z) / denominator);
-            Vector3 originOffset = HectonFloatingOrigin.CurrentTotalOffset;
-            float minWorldX = terrainPosition.x + (applyRect.x / denominator) * terrainSize.x + originOffset.x;
-            float maxWorldX = terrainPosition.x + ((applyRect.x + applyRect.width) / denominator) * terrainSize.x + originOffset.x;
-            float minWorldY = terrainPosition.y + minHeight01 * terrainSize.y + originOffset.y;
-            float maxWorldY = terrainPosition.y + maxHeight01 * terrainSize.y + originOffset.y;
-            float minWorldZ = terrainPosition.z + (applyRect.y / denominator) * terrainSize.z + originOffset.z;
-            float maxWorldZ = terrainPosition.z + ((applyRect.y + applyRect.height) / denominator) * terrainSize.z + originOffset.z;
+            double3 originOffset = HectonFloatingOrigin.CurrentTotalOffsetDouble;
+            float minWorldX = (float)((double)terrainPosition.x + (applyRect.x / denominator) * terrainSize.x + originOffset.x);
+            float maxWorldX = (float)((double)terrainPosition.x + ((applyRect.x + applyRect.width) / denominator) * terrainSize.x + originOffset.x);
+            float minWorldY = (float)((double)terrainPosition.y + minHeight01 * terrainSize.y + originOffset.y);
+            float maxWorldY = (float)((double)terrainPosition.y + maxHeight01 * terrainSize.y + originOffset.y);
+            float minWorldZ = (float)((double)terrainPosition.z + (applyRect.y / denominator) * terrainSize.z + originOffset.z);
+            float maxWorldZ = (float)((double)terrainPosition.z + ((applyRect.y + applyRect.height) / denominator) * terrainSize.z + originOffset.z);
 
             int3 minCell = new int3(
                 Mathf.FloorToInt(minWorldX / cellSize),
@@ -1138,7 +1138,7 @@ namespace Hecton8.World
             if (!plan.hasAbsoluteVoxelVolumeCenterAup && plan.voxelVolumeSize.sqrMagnitude <= 0.0001f)
                 return false;
 
-            Vector3 committedOffset = HectonFloatingOrigin.CurrentTotalOffset;
+            double3 committedOffset = HectonFloatingOrigin.CurrentTotalOffsetDouble;
             double3 targetAbsolute = new double3(
                 (double)runtimeWorldX + committedOffset.x,
                 (double)runtimeTargetHeight + committedOffset.y,

@@ -99,3 +99,43 @@ Prompt re-extracted from `CURRENT_BATCH.md`. Targeted `dotnet build` filter comp
 
 Status:
 PENDING VERIFICATION. Unity import, Burst compiler, Play Mode, GCMonitor, and profiler proof remain absent.
+
+## 2026-05-14 Recursive QA Addendum 5
+
+What was wrong:
+The status/rationale and source code were not aligned. Direct reads of `ContextualPhysicalIkRuntime.cs` and `ContextualPhysicalIkRig.cs` showed old `sqrMagnitude` origin-shift checks, the old normal-only `HasHit` predicate, and fade paths that copied previous targets without finite validation. That made the report stronger than the executable code.
+
+What was done:
+Runtime and rig origin-shift handlers now convert shift vectors to `float3`, reject non-finite values, reject non-finite length-squared values, and reject shifts over 10km before rebasing. Runtime writes/dumps `TelemetryReasonInvalidOriginShift` on corrupt shift input. Structural forced-completion now swaps the completed target buffer, publishes it, logs the structural reason, and clears stale handles. `HasHit` requires finite point, normal, normal length, finite distance, and non-negative distance. `FadeOutTarget`, `FadeFootLane`, and `WriteFootSoa` now sanitize stale target data before lower-body SOA writes.
+
+Cinematic cheats used:
+No added simulation. The system remains the same lower-body visual fake: hip-origin batched rays, squared step triggers, triangle-wave lift, planar-velocity swim posture, pelvis yaw bias, and Burst two-bone solve.
+
+Exact microseconds saved:
+No new steady-state systems. Added work is a few finite checks around existing target writes and hit validation, estimated below 1 us on i3/MX350 for the active player rig. Prevented cost is NaN propagation through SOA lanes and animation jobs, plus wasted debugging caused by docs/source drift.
+
+Verification:
+Scoped forbidden-pattern scan over touched IK/KCC/signal files returned no matches for `sqrMagnitude`, `math.sqrt`, `math.normalize`, `foreach`, `string.Format`, `OnAnimatorIK`, `SetIK`, `ikPass`, `StartCoroutine`, `GameObject.Find`, `FindObjectOfType`, or `Camera.main`. `git diff --check` is clean. `dotnet build Hecton8.Core.csproj --no-restore -v:quiet /m:1 /p:UseSharedCompilation=false /clp:ErrorsOnly` timed out again; orphaned `Hecton8.Core.csproj` build children were terminated. A separate `Assembly-CSharp.csproj` build process remains outside this agent's ownership.
+
+Status:
+PENDING VERIFICATION. Unity import, Burst compiler, Play Mode, GCMonitor, profiler proof, and full compile proof remain absent.
+
+## 2026-05-14 Recursive QA Addendum 6
+
+What was wrong:
+Telemetry could detect invalid target state, but some executable boundaries still trusted previous-frame values. Specifically, skipped-frame target reuse could publish stale data, hand SOA writes could preserve a finite weight for an invalid hand position, foot fade/update could smooth from a non-finite packed blend, and cold AUP rebases could subtract shift from corrupt target lanes.
+
+What was done:
+`ContextualPhysicalIkRuntime` now sanitizes complete target frames before SOA publication and before `ContextualPhysicalIkApplyJob` can read them. Hand SOA positions zero and weights drop to zero on invalid position/blend. Foot fade/update uses sanitized packed blend inputs. AUP rebase now clears invalid hand/foot SOA lanes and invalid packed foot state instead of rebasing corrupt values. `ContextualPhysicalIkRig` now rejects non-finite root transform capture and falls back corrupt pelvis/foot/hand probe transforms to the root position.
+
+Cinematic cheats used:
+No new physical simulation. The implementation remains hip-origin batched rays, squared step thresholds, triangle-wave lift, planar swim posture, pelvis yaw bias, and the existing Burst two-bone solver.
+
+Exact microseconds saved:
+No new systems or ray lanes. Added finite checks are estimated below 1 us per active rig on i3/MX350. Avoided cost is NaN target propagation into the animation job and the visual/diagnostic damage from invalid rebases.
+
+Verification:
+Scoped forbidden-pattern scan returned no matches for `sqrMagnitude`, `math.sqrt`, `math.normalize`, `foreach`, `string.Format`, interpolation strings, `OnAnimatorIK`, `SetIK`, `ikPass`, `StartCoroutine`, `GameObject.Find`, `FindObjectOfType`, or `Camera.main`. `git diff --check` is clean except CRLF warnings. `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false /clp:ErrorsOnly` timed out again before diagnostics; this pass's orphaned `Hecton8.Core.csproj` build children were terminated.
+
+Status:
+PENDING VERIFICATION. Unity import, Burst compiler, Play Mode, GCMonitor, profiler proof, and full compile proof remain absent.

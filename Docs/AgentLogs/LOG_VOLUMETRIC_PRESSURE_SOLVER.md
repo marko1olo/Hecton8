@@ -132,3 +132,31 @@ Follow-up upgrade 10:
 
 Exact microseconds saved after follow-up 10:
 - No direct idle-frame savings claimed. This blocks false stress injections from unrelated far-field impacts while preserving local hull-surface spikes; fallback scan remains bounded to 64 modules and is estimated under 4 us on i3/MX350-class hardware.
+
+Follow-up upgrades 11-18:
+- Added unique-only 16-bit `TargetId` fallback across stable hash, runtime entity hash, and graph node id low bits.
+- Released stale stress GPU buffer on real zero-module clears while preserving no-clear paths for active-order rebuilds and buffer growth replacement.
+- Combined shader stress resolve/read, reused centered panel UV between bend and normal bias, and removed the unused panel-mask wrapper.
+- Added index-hinted graph-record lookup for active stress paths.
+- Collapsed `TryResolveModuleStressIndex` to one active-module pass for exact hash, `TargetId` counting, interior containment, and bounded nearest fallback collection.
+- Static checks: managed-offender scans found no `string.Format`, `.ToString()`, interpolation, `foreach`, or LINQ offenders in `HabitatGraphManager.cs`; mesh mutation scan found no owned `Mesh.vertices` writes; exact shader `normalize()`/`sqrt()` scan produced no matches; `git diff --check` reports only repository CRLF normalization warnings.
+- Verification block: latest constrained `dotnet build .\Hecton8.Core.csproj --no-restore --nologo -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -p:BuildProjectReferences=false -v:quiet -clp:ErrorsOnly` timed out before a clean result. The exact lingering `.\Hecton8.Core.csproj --no-restore --nologo` process from this probe was stopped; other shared-workspace `dotnet` builds were left untouched. Static touched-file checks remained clean.
+
+Exact microseconds saved after follow-ups 11-18:
+- Target-id and direct-runtime matching correctness: no idle savings claimed; avoids missed/wrong stress spikes under 2 us per 64-module signal scan.
+- Buffer lifetime/growth clear cleanup: estimated 5-20 us on teardown/startup clears and 1-4 us on growth replacement frames.
+- Shader resolver/panel reuse: estimated 2-5 us per 1k stressed interior vertices on MX350-class GPUs.
+- Index-hinted lookup plus single-pass fallback: estimated 8-22 us saved on i3/MX350 signal-heavy frames, with 0 B/frame and no shader cost.
+
+Follow-up upgrade 19:
+- Added a target-identity gate to `TryResolveModuleStressIndex`.
+- Signals with no `TargetHash`, no `TargetId`, and no finite nearest fallback now return before scanning active modules.
+- World-point-only signals now test direct interior containment before graph-record lookup or runtime entity-key resolution, and identity-free interior hits return immediately.
+- Static checks: managed-offender scans found no `string.Format`, `.ToString()`, interpolation, `foreach`, or LINQ offenders in `HabitatGraphManager.cs`; mesh mutation scan found no owned `Mesh.vertices` writes; exact shader `normalize()`/`sqrt()` scan produced no matches; `git diff --check` reports only repository CRLF normalization warnings.
+- Prompt re-extraction: `CURRENT_BATCH.md` was not present in the workspace during this loop.
+- Verification block: constrained `dotnet build .\Hecton8.Core.csproj --no-restore --nologo -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -p:BuildProjectReferences=false -v:quiet -clp:ErrorsOnly` returned `BUILD_EXIT=1 MATCH_COUNT=0`. No touched-file build errors were emitted; global build state remains outside-domain blocked.
+
+Exact microseconds saved after follow-up 19:
+- Identity-free, no-worldpoint damage packets skip the 64-module scan entirely.
+- Identity-free world-point packets avoid runtime `EntityId` hashing and graph-record lookup until nearest fallback actually needs module positions.
+- Estimated 2-6 us saved per 64-module signal scan on i3/MX350-class hardware; 0 B/frame, no shader cost, no visual regression to High/Ultra localized deformation.

@@ -108,3 +108,60 @@ Verification:
 - Unity MCP console/profiler: unavailable from this session.
 
 Status: PENDING VERIFICATION. Outpost source and assembly proof pass; full runtime proof is blocked by Unity access and unrelated Core compile drift.
+
+## 2026-05-14 - WFC Outpost Loop 10 Recovery And Replay
+
+What was wrong:
+- Source readback showed concurrent drift: previous origin/API/AUP/publish hardening was missing from `MarauderOutpostGenerationService.cs` while docs still described it.
+- `WfcOutpostGeneratedSignal` remained a one-frame handoff, which late logistics consumers can miss.
+- Stale grid handles and stale pooled door-controller references were not aggressively cleaned.
+
+What was done:
+- Restored authored origin override/offset, getter readiness guards, solve-phase AUP telemetry, descriptor flag freshness, publish retry, and telemetry branch wrapping.
+- Added four-frame generated-signal replay after successful grid publish.
+- Same-sector/same-seed requests now validate/re-announce handles through the publish helper.
+- Evicted registry handles republish from the existing native WFC grid.
+- `DespawnInteractables` clears door-controller slots even when the GameObject handle is already null.
+
+Cinematic Cheats used:
+- Late handoff recovery reuses the solved byte grid instead of physical rebuild or WFC re-solve.
+- Door power remains signal metadata over bounded proxies, not shell GameObjects.
+- Blackbox remains a fixed 300-entry native ring.
+
+Exact Microseconds saved:
+- Replay/revalidate avoids estimated 20-250 us WFC solve/extraction retry.
+- Telemetry branch wrap removes non-power-of-two modulo, estimated 0.1-0.8 us/frame on i3/MX350 class CPUs.
+- Door cleanup is cold only, 0 us/frame steady.
+
+Verification:
+- `Hecton8.World.Outposts` Unity Roslyn response-file compile: PASS.
+- Scoped forbidden construct audit: PASS; no managed LINQ/random, shell `Instantiate`, `BaseGenerator`, `pow`, `/255`, `/65535`, telemetry modulo, raw transform-origin fallback, or solve-phase zero-shift accumulation regression.
+- `git diff --check`: PASS with repository LF/CRLF warning only.
+
+Status: PENDING VERIFICATION. Source compile and static audits pass; runtime scene/profiler proof is still unavailable from this session.
+
+## 2026-05-14 - WFC Outpost Loop 11 Late Consumer Heartbeat
+
+What was wrong:
+- A four-frame replay protects normal order, but a late logistics consumer can still miss `WfcOutpostGeneratedSignal` after the burst window.
+
+What was done:
+- Added a 60 Tick-frame heartbeat after burst replay.
+- Heartbeat validates the registry handle before emitting.
+- If the registry slot was evicted, the outpost clears the stale handle and republishes from the existing native WFC grid.
+
+Cinematic Cheats used:
+- Reannounces byte-grid metadata by typed signal instead of re-solving WFC or rebuilding shell geometry.
+- Uses a countdown, not permanent per-frame spam.
+
+Exact Microseconds saved:
+- Avoids 20-250 us WFC solve/extraction retry for late handoff recovery.
+- Heartbeat steady cost is one integer countdown per Tick, estimated below 0.2 us/frame, 0 B/frame.
+- Signal cost is one `WfcOutpostGeneratedSignal` per second at 60 Hz after the initial four-frame burst.
+
+Verification:
+- `Hecton8.World.Outposts` Unity Roslyn response-file compile: PASS.
+- Scoped forbidden construct audit: PASS; no managed LINQ/random, shell `Instantiate`, `BaseGenerator`, `pow`, `/255`, `/65535`, telemetry modulo, raw transform-origin fallback, or solve-phase zero-shift accumulation regression.
+- `git diff --check`: PASS with repository LF/CRLF warning only.
+
+Status: PENDING VERIFICATION. Source compile and static audits pass; runtime scene/profiler proof is still unavailable from this session.

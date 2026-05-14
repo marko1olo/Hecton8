@@ -133,3 +133,22 @@ Solution: Ran `dotnet build Hecton8.Core.csproj --no-restore -v:minimal -p:UseSh
 Rejected Alternatives: Recreating/reverting unrelated UI files or patching global asmdef dependencies would overwrite other agents' work and exceed the kinetic audio directive.
 Scalability potential: No runtime effect.
 Hardware Impact: No runtime effect.
+
+## LOOP 7 ECHO TAP QUEUE CHURN RE-AUDIT
+Problem: The kinetic collision echo path generated exactly one `SonarEchoTap`, but still cleared the shared sonar upload queue, enqueued the tap, then drained it into the inactive buffer. That was unnecessary work and increased the chance of stomping an active-sonar upload if both paths ran in the same frame.
+Solution: Wrote the generated kinetic tap directly into the inactive pending tap buffer and published `tapCount = 1`. Active sonar remains on the `NativeQueue<SonarEchoTap>` batching route; the collision echo path uses the same final binaural/portal state but bypasses queue churn for its fixed-size payload.
+Rejected Alternatives: Keeping queue use for superficial consistency wastes dequeue/enqueue work for a known single tap; creating a second queue would add native lifetime ownership for no gameplay gain; broad sonar refactoring would exceed the kinetic audio prompt.
+Scalability potential: Low tier still exits to baked clip and pays nothing. Middle keeps procedural thud only. High/Ultra get collision echo with fewer admission instructions, leaving more budget for stronger material color/distortion without a new audio lane.
+Hardware Impact: Saves up to 32 guarded dequeue attempts plus one enqueue/dequeue per accepted high-tier kinetic echo. Expected i3/MX350 impact is micro-level, but the change removes avoidable native queue traffic and preserves 0 B/frame.
+
+Problem: Anti-amnesia prompt re-extraction no longer finds `KINETIC_IMPACT_ACOUSTICS` because `Docs/Tasks/CURRENT_BATCH.md` has rotated to unrelated prompt IDs.
+Solution: Recorded the mismatch and continued from persistent task files that already contain the original extracted task count, task list, and loop evidence. The unrelated current batch prompts were not used as design input.
+Rejected Alternatives: Reading neighboring prompts or stopping after the batch rotated would violate the active user request to keep improving the existing kinetic audio work.
+Scalability potential: No runtime effect.
+Hardware Impact: No runtime effect.
+
+Problem: Verification status changed twice: one local `Hecton8.Core.csproj` pass succeeded, then shared-workspace readback showed the code edits had been overwritten, and the final post-reapply compile rerun hit an external build file lock.
+Solution: Reapplied the renderer/smoke patch, verified the direct tap write by source readback, and downgraded compile status back to blocked. Final `Hecton8.Core.csproj` rerun fails with `CS2012` because `Unity.RenderPipelines.Universal.Runtime.dll` is locked by another process; Unity MCP remains unavailable, and `Assembly-CSharp`/Editor project builds timed out.
+Rejected Alternatives: Declaring Unity or local compile green from the earlier historical pass after the file overwrite was detected, or killing unrelated active dotnet work from other agents to force the lock clear.
+Scalability potential: No runtime effect.
+Hardware Impact: No runtime effect.

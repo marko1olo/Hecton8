@@ -23,6 +23,8 @@
 
 using Hecton8.Audio;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
+using Hecton8.Core.Signals;
 using Hecton8.Gameplay;
 using UnityEngine;
 using UnityEngine.Events;
@@ -55,6 +57,10 @@ namespace Hecton8.Gameplay
         private static readonly int _ProgressID = Shader.PropertyToID("_CutProgress");
         private static readonly int _GlowColorID = Shader.PropertyToID("_CutGlowColor");
         private const float ProgressPublishEpsilon = 0.01f;
+        private const uint WfcOutpostDoorSourceHash = 0x57464344u; // WFCD
+        private const byte WfcDoorOpenFlag = (byte)WfcOutpostCellStateFlags.DoorOpen;
+        private const byte WfcDoorUnlockedFlag = (byte)WfcOutpostCellStateFlags.DoorUnlocked;
+        private const byte WfcDoorPowerOnFlag = (byte)WfcOutpostCellStateFlags.PowerOn;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — CUTTING
@@ -140,6 +146,10 @@ namespace Hecton8.Gameplay
         private float _lastPublishedProgress = -1f;
         private float _lastVisualProgress = -1f;
         private bool _isBeingCut;
+        private ulong _wfcOutpostSectorHash;
+        private ushort _wfcOutpostCellIndex;
+        private byte _wfcOutpostFlags;
+        private bool _wfcOutpostPersistenceConfigured;
 
         /// <summary>
         /// Cached MaterialPropertyBlock for progress VFX.
@@ -170,6 +180,52 @@ namespace Hecton8.Gameplay
 
         /// <summary>Can the door be cut?</summary>
         public bool CanBeCut => canBeCut && _state == DoorState.Sealed;
+
+        public void ConfigureWfcOutpostPersistence(ulong sectorHash, ushort cellIndex, byte initialFlags)
+        {
+            if (sectorHash == 0UL || cellIndex >= WfcOutpostPersistenceConstants.CellCount)
+            {
+                ClearWfcOutpostPersistence();
+                return;
+            }
+
+            _wfcOutpostSectorHash = sectorHash;
+            _wfcOutpostCellIndex = cellIndex;
+            _wfcOutpostFlags = (byte)(initialFlags & WfcOutpostPersistenceConstants.MutableFlagMask);
+            _wfcOutpostPersistenceConfigured = true;
+            ApplyWfcOutpostFlagsToDoor(_wfcOutpostFlags);
+        }
+
+        public void ClearWfcOutpostPersistence()
+        {
+            _wfcOutpostPersistenceConfigured = false;
+            _wfcOutpostSectorHash = 0UL;
+            _wfcOutpostCellIndex = 0;
+            _wfcOutpostFlags = 0;
+        }
+
+        public void ApplyWfcOutpostPowerState(bool poweredAndUnlocked, uint frame)
+        {
+            if (!_wfcOutpostPersistenceConfigured)
+            {
+                if (poweredAndUnlocked)
+                    Unlock();
+                else if (_state != DoorState.Opened)
+                    Lock();
+                return;
+            }
+
+            byte nextFlags = _wfcOutpostFlags;
+            if (poweredAndUnlocked)
+                nextFlags = (byte)(nextFlags | WfcDoorUnlockedFlag | WfcDoorPowerOnFlag);
+            else
+                nextFlags = (byte)(nextFlags & ~(WfcDoorUnlockedFlag | WfcDoorPowerOnFlag));
+
+            if (((_wfcOutpostFlags ^ nextFlags) & WfcOutpostPersistenceConstants.MutableFlagMask) != 0)
+                ApplyWfcOutpostFlagsToDoor(nextFlags);
+
+            SetWfcOutpostFlags(nextFlags, frame);
+        }
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -202,6 +258,7 @@ namespace Hecton8.Gameplay
 
         private void OnDisable()
         {
+            ClearWfcOutpostPersistence();
         }
 
         private void OnDestroy()
@@ -314,6 +371,7 @@ namespace Hecton8.Gameplay
         public void ResetDoor()
         {
             ResetState();
+            SetWfcOutpostFlags(0, (uint)Time.frameCount);
         }
 
         /// <summary>
@@ -323,6 +381,7 @@ namespace Hecton8.Gameplay
         {
             _state = DoorState.Locked;
             StopCutting();
+            SetWfcOutpostFlags((byte)(_wfcOutpostFlags & ~WfcDoorUnlockedFlag), (uint)Time.frameCount);
         }
 
         /// <summary>
@@ -333,6 +392,7 @@ namespace Hecton8.Gameplay
             if (_state == DoorState.Locked)
             {
                 _state = DoorState.Sealed;
+                SetWfcOutpostFlags((byte)(_wfcOutpostFlags | WfcDoorUnlockedFlag), (uint)Time.frameCount);
             }
         }
 
@@ -400,6 +460,8 @@ namespace Hecton8.Gameplay
 
             // Optionally disable renderer (if no animation)
             // doorRenderer.enabled = false;
+
+            SetWfcOutpostFlags((byte)(_wfcOutpostFlags | WfcDoorOpenFlag), (uint)Time.frameCount);
 
             // Fire opened event
             OnDoorOpened?.Invoke();
@@ -488,6 +550,81 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
         //  PRIVATE HELPERS
         // ══════════════════════════════════════════════════════════
+
+        private void ApplyWfcOutpostFlagsToDoor(byte flags)
+        {
+            flags = (byte)(flags & WfcOutpostPersistenceConstants.MutableFlagMask);
+            if ((flags & WfcDoorOpenFlag) != 0)
+            {
+                ApplyOpenedStateFromPersistence();
+                return;
+            }
+
+            if ((flags & WfcDoorUnlockedFlag) != 0)
+            {
+                if (_state == DoorState.Locked)
+                    _state = DoorState.Sealed;
+            }
+            else if (_state != DoorState.Opened)
+            {
+                _state = DoorState.Locked;
+                StopCutting();
+            }
+
+            if (_collider != null)
+                _collider.enabled = true;
+        }
+
+        private void ApplyOpenedStateFromPersistence()
+        {
+            _state = DoorState.Opened;
+            _isBeingCut = false;
+            _currentProgress = requiredCuttingTime;
+            _lastPublishedProgress = 1f;
+            _lastVisualProgress = 1f;
+
+            if (cuttingSparks != null)
+                cuttingSparks.Stop();
+
+            UpdateProgressVisuals(1f);
+
+            if (animator != null)
+                animator.SetTrigger(_openTriggerHash);
+
+            if (_collider != null)
+                _collider.enabled = false;
+        }
+
+        private void SetWfcOutpostFlags(byte flags, uint frame)
+        {
+            byte previous = _wfcOutpostFlags;
+            byte current = (byte)(flags & WfcOutpostPersistenceConstants.MutableFlagMask);
+            _wfcOutpostFlags = current;
+            PublishWfcOutpostFlags(previous, current, frame);
+        }
+
+        private void PublishWfcOutpostFlags(byte previous, byte current, uint frame)
+        {
+            if (!_wfcOutpostPersistenceConfigured)
+                return;
+
+            previous = (byte)(previous & WfcOutpostPersistenceConstants.MutableFlagMask);
+            current = (byte)(current & WfcOutpostPersistenceConstants.MutableFlagMask);
+            if (previous == current)
+                return;
+
+            WfcOutpostStateChangedSignal signal = new WfcOutpostStateChangedSignal
+            {
+                SectorHash = _wfcOutpostSectorHash,
+                CellIndex = _wfcOutpostCellIndex,
+                PreviousFlags = previous,
+                CurrentFlags = current,
+                Frame = frame,
+                SourceHash = WfcOutpostDoorSourceHash,
+                Flags = 0
+            };
+            GlobalSignals.Publish(in signal);
+        }
 
         private static bool TryResolveOwnedComponent<T>(Transform root, out T component) where T : Component
         {

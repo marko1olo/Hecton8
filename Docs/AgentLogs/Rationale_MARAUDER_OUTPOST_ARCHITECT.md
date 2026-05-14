@@ -145,3 +145,43 @@ Solution: Re-ran Unity Roslyn response-file compiles. `Hecton8.World.Outposts` p
 Rejected Alternatives: Editing Ground Radar was rejected as cross-domain without critical interface justification. Reporting a clean global build was rejected because the current Core response file objectively fails.
 Scalability potential: Outpost scalability path remains valid; runtime profiling still waits on Unity console/profiler access and global compile stability.
 Hardware Impact: No outpost runtime change from the unrelated Core block.
+
+## LOOP 8-10 RECOVERED HARDENING AND SIGNAL REPLAY
+
+Problem: Source readback showed the outpost service had lost previously recorded origin/API/AUP/publish hardening while status/rationale still claimed it existed.
+Solution: Restored the missing code from disk-backed rationale/status evidence, then verified the actual source with `rg`, `git diff --check`, and the Unity Roslyn response-file compile for `Hecton8.World.Outposts`.
+Rejected Alternatives: Trusting the documents without rereading source was rejected because concurrent agents can overwrite files. Reverting the whole file was rejected because unrelated user/agent changes might be present.
+Scalability potential: No topology change. The recovery preserves Low 5x5x3 and full 10x10x5 behavior with the same native buffers.
+Hardware Impact: Recovery itself has no runtime cost; it prevents shipping the slower/staler fallback path.
+
+Problem: A generated signal is a frame-snapshot event. If logistics starts late or ticks after the publish frame, the power boot can miss a valid grid handle.
+Solution: Successful publication now replays `WfcOutpostGeneratedSignal` for four Tick frames. Same-sector/same-seed requests validate and re-announce existing handles. If a registry slot was evicted, the service clears the stale handle and republishes from the existing native WFC grid.
+Rejected Alternatives: Permanent per-frame signal spam was rejected because event capacity is finite. Re-solving WFC on stale handle was rejected because the solved byte grid remains authoritative.
+Scalability potential: Low retries 75 active cells; Middle/High/Ultra retry up to 500. All tiers avoid unnecessary shell reconstruction.
+Hardware Impact: Four cold signal writes after generation, 0 B/frame steady. Avoids estimated 20-250 us re-solve/extraction retry.
+
+Problem: Stale pooled door controller references could survive if an interactable GameObject handle was already null when cleanup ran.
+Solution: `DespawnInteractables` now clears `_spawnedDoorControllers` for every slot regardless of GameObject handle state, and door power signal filtering compares directly against the live published grid handle.
+Rejected Alternatives: Trusting pool lifetime was rejected because pooled/proxy systems are shared and can be touched by other agents.
+Scalability potential: Proxy cap remains 16 on every tier; no shell GameObjects are introduced.
+Hardware Impact: Cold cleanup only. Prevents invalid door state writes with no steady-frame cost.
+
+Problem: Hot telemetry modulo reappeared after source drift.
+Solution: Restored branch-wrapped 300-frame blackbox indexing and added the audit pattern for `% _telemetryRing.Length`.
+Rejected Alternatives: Keeping `%` was rejected because the telemetry write runs in Tick and the ring size is not power-of-two.
+Scalability potential: All tiers keep identical blackbox fidelity.
+Hardware Impact: Estimated 0.1-0.8 us/frame saved on i3/MX350 class CPUs.
+
+## LOOP 11 LATE CONSUMER HEARTBEAT
+
+Problem: The four-frame generated-signal replay protects normal boot ordering, but a late-loaded logistics consumer or a missed snapshot can still miss the grid handle after that window.
+Solution: Added a bounded heartbeat: once burst replay is exhausted, the outpost waits 60 Tick frames, validates `_publishedPowerGridHandle` against `WfcOutpostGridRegistry`, and emits one `WfcOutpostGeneratedSignal`. If the handle was evicted, it clears the handle and republishes from the existing native WFC byte grid.
+Rejected Alternatives: Per-frame generated-signal spam was rejected because `WfcOutpostGeneratedSignal` has finite lane capacity and unrelated systems share frame bandwidth. Forcing WFC re-solve was rejected because the native grid remains authoritative.
+Scalability potential: Low-tier reannounces a 75-cell descriptor; Middle/High/Ultra reannounce up to 500 cells by handle only. No tier pays shell extraction again.
+Hardware Impact: One integer countdown per Tick and one typed signal per second at 60 Hz. Estimated steady cost below 0.2 us/frame, 0 B/frame.
+
+Problem: Signal cadence changes can silently reintroduce prior hot-path violations.
+Solution: Re-ran `Hecton8.World.Outposts` response-file compile, scoped forbidden audit for managed/random/prefab/telemetry/origin/AUP regressions, and `git diff --check`.
+Rejected Alternatives: Relying on prior Loop 10 proof was rejected because the source file has already drifted under concurrent edits.
+Scalability potential: Verification covers the same Low/Middle/High/Ultra source path.
+Hardware Impact: Verification only.

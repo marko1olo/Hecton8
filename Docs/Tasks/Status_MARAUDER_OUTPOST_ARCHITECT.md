@@ -76,9 +76,22 @@ State: PENDING VERIFICATION
 - [x] Guarded stale generation and power-signal handling. DOD: same-sector reuse also requires same world seed; door power signals are ignored until a real published grid handle exists; registry publish failure dumps blackbox. Alternative rejected: stale seed reuse and accepting handle-less door signals. Estimate: 0 B/frame, avoids cross-outpost signal bleed.
 - [x] Re-ran compile and static audits. DOD: `Hecton8.World.Outposts` response-file compile passes; scoped forbidden construct audit and `git diff --check` pass. `Hecton8.Core` response-file compile is currently blocked by unrelated GPR symbol drift. Alternative rejected: editing Ground Radar from Habitat domain. Estimate: compile-only proof.
 
+### Loop 8-10 - Recovered Hardening And Replay
+
+- [x] Detected source/doc drift from concurrent overwrite. DOD: file readback showed prior origin/API/AUP/publish hardening missing while status/rationale described it; restored source instead of trusting stale docs. Alternative rejected: reporting completion without source verification. Estimate: prevents false-positive completion.
+- [x] Restored explicit generation-origin anchoring. DOD: `outpostOriginOverride` and finite `localOriginOffsetMeters` drive sector-hydration generation. Alternative rejected: raw `transform.position` fallback from `SectorHydratedSignal`. Estimate: 0 us/frame; below 1 us per generation request.
+- [x] Restored public API and AUP hardening. DOD: WFC count clamps to native buffer length, shell getters require `_generated`, and solve-phase AUP writes shift telemetry/snapshot. Alternative rejected: stale buffers and missing blackbox shift frame. Estimate: below 2 us on rare shift path.
+- [x] Added generated-signal replay and stale-handle recovery. DOD: successful grid publication replays `WfcOutpostGeneratedSignal` for four Tick frames; same-sector requests validate/re-announce handles; evicted registry handles republish from the existing native grid. Alternative rejected: one-frame-only signal and full WFC re-solve. Estimate: avoids 20-250 us retry solve, 0 B/frame steady.
+- [x] Re-ran compile and static audits. DOD: `Hecton8.World.Outposts` response-file compile passes; scoped audit found no managed/random/prefab wall/telemetry modulo/origin fallback regressions; `git diff --check` passes with repository LF/CRLF warning only. Alternative rejected: accepting restored code without source proof. Estimate: compile-only proof.
+
+### Loop 11 - Late Consumer Heartbeat
+
+- [x] Added bounded generated-signal heartbeat. DOD: after the four-frame burst replay, the outpost emits one `WfcOutpostGeneratedSignal` every 60 Tick frames while generated, validating the registry handle first and republishing from the native grid if evicted. Alternative rejected: permanent per-frame spam or one-frame-only handoff. Estimate: one typed signal per second at 60 Hz, 0 B/frame steady.
+- [x] Re-ran compile and static audits. DOD: `Hecton8.World.Outposts` response-file compile passes; scoped audit found no managed/random/prefab wall/telemetry modulo/origin fallback/solve zero-shift regressions; `git diff --check` passes with repository LF/CRLF warning only. Alternative rejected: accepting signal cadence changes without source proof. Estimate: compile-only proof.
+
 ## Verification Ledger
 
-- Compile status: SCOPED PASS / GLOBAL DEPENDENCY BLOCK. Unity Roslyn response-file compiles pass for `Hecton8.Logistics.Grid.Contracts`, `Hecton8.Logistics.Grid`, `Hecton8.World.Contracts`, `Hecton8.Core.Memory`, and `Hecton8.World.Outposts`. `Hecton8.Core` currently fails in unrelated `Assets/_Project/Scripts/World/GroundPenetratingRadarRuntime.cs(309,17)` because `GroundRadarRaymarchJob.GprOreTypes` is missing.
+- Compile status: SOURCE PASS / RUNTIME PENDING. Current targeted Unity Roslyn response-file compile passes for `Hecton8.World.Outposts`; prior targeted `Hecton8.Core` retry passed after a transient artifact lock.
 - Unity Console status: MCP unavailable; console/scene validation not accessible from this session.
 - GC proof: code audit only; hot Tick/Render path uses spans/native buffers and no LINQ/managed allocation.
-- Frame/VRAM proof: static estimate only; runtime profiling blocked by Unity MCP transport failure and current unrelated Core compile drift.
+- Frame/VRAM proof: static estimate only; runtime profiling blocked by Unity MCP transport failure; no console/profiler capture is available from this session.

@@ -75,3 +75,37 @@ Verification:
 - Unity MCP validation failed at transport level: `http://127.0.0.1:8088/mcp`.
 - First `dotnet build Hecton8.Core.csproj --no-restore -v:minimal -p:UseSharedCompilation=false -m:1` failed with `CS2001` because `Assets/_Project/Scripts/UI/DiegeticTooltipSystem.cs` was deleted while still referenced by the project file.
 - After another process restored that UI file, the rerun reached the existing 132-error global namespace/asmdef wall: examples include `Hecton8.Environment.Fluids`, `Hecton8.Physics.CCD`, `Hecton8.Audio.Propagation`, `Hecton8.Audio.Virtualization`, `MacroSwarm`, and `AcousticAup`.
+
+## 2026-05-14 - DSP_ACOUSTIC_LEAD - Loop 7 Echo Tap Queue Churn Re-Audit
+Status: PENDING VERIFICATION
+
+What was wrong:
+- Kinetic impact echoes generated one tap but still cleared, enqueued, and drained through the shared sonar upload queue.
+- That path added unnecessary native queue traffic and could discard unrelated pending active-sonar upload work if both paths touched the queue in the same frame.
+- `CURRENT_BATCH.md` has rotated and no longer contains `KINETIC_IMPACT_ACOUSTICS`; persistent task files remain the active memory for this prompt.
+
+What was done:
+- `TryPublishKineticImpactEchoTap` now writes the generated `SonarEchoTap` directly into `inactiveTapBuffer[0]` and publishes `tapCount = 1`.
+- Active sonar batching remains unchanged on `NativeQueue<SonarEchoTap>`.
+- `AdvancedAcousticsSmokeTester` now asserts the direct kinetic tap write.
+
+Cinematic cheats used:
+- Collision echo remains a single authored procedural tap into the existing binaural/portal echo lane.
+- No new acoustic ray solver, new queue, or material-specific PCM layer was added.
+- Low tier remains baked clip only; high/ultra spend the saved work on the existing material-colored thud/clang/echo stack.
+
+Exact microseconds saved:
+- Saves up to 32 guarded queue dequeue attempts from `ClearSonarEchoTapUploadQueue`.
+- Saves one `NativeQueue.Enqueue` plus one `TryDequeue` per accepted high-tier kinetic echo.
+- Removes one shared-queue contention/stomp surface for collision echo admission.
+- Runtime allocation delta: 0 B/frame.
+
+Verification:
+- `git diff --check -- Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs` passed except CRLF normalization warnings.
+- `rg -n "PlayClipAtPoint" Assets/_Project/Scripts` returned no matches.
+- Targeted owned-file scan found only editor/cold `AdvancedAcousticsSmokeTester` assertion text for `math.exp` and `builder.ToString()`.
+- Source readback after a shared-workspace overwrite confirms `inactiveTapBuffer[0] = tap` exists in both renderer and smoke tester.
+- Historical note: one `dotnet build Hecton8.Core.csproj --no-restore -v:minimal -p:UseSharedCompilation=false -m:1` pass succeeded before the overwrite was detected, but that is not final proof.
+- Final `Hecton8.Core.csproj` rerun after reapplying the patch failed with `CS2012` because `Unity.RenderPipelines.Universal.Runtime.dll` was locked by another process.
+- Unity MCP resources are empty/unavailable in this context.
+- `Assembly-CSharp.csproj` and `Assembly-CSharp-Editor.csproj` builds timed out; spawned dotnet build-server/processes were shut down or stopped. Unity compile remains PENDING VERIFICATION.

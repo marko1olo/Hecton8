@@ -132,3 +132,81 @@ Verification:
 - `dotnet build Hecton8.Core.csproj --no-restore /m:1 /nr:false` succeeded with 0 warnings and 0 errors.
 - `dotnet build Hecton8.PlayModeTests.csproj --no-restore /m:1 /nr:false` succeeded with 0 warnings and 0 errors.
 - Unity MCP `validate_script` remains unavailable in this session due prior `127.0.0.1:8088/mcp` transport failure.
+
+## 2026-05-14 - Voxel Transform Contract Hardening Pass
+
+What was wrong:
+- LOS compaction still accepted passability/threat voxel payloads with finite length proof missing in the live file, and cell sizes were only masked with epsilon during world-to-voxel conversion.
+- Non-finite world positions or origins could reach `math.floor` and produce undefined voxel candidates.
+- Invalid flat voxel samples returned open water in the live file, allowing corrupt payload holes to authorize smoothing.
+- DDA grid-step cap summed dimensions in `int`.
+
+What was done:
+- Restored complete native-grid length validation using 64-bit expected length.
+- Added finite positive cell-size guards for uniform passability grids and anisotropic threat grids.
+- Added fail-closed `TryWorldToVoxel` checks for non-finite world positions, origins, and cell sizes.
+- Changed invalid flat samples to `SolidThreatVoxel`.
+- Summed DDA dimension traversal cap in `long` before clamping to `MaxThreatDdaSteps`.
+
+Cinematic Cheats used:
+- Preserve raw waypoints when voxel proof is incomplete or corrupt; do not pay for heavier simulation to guess.
+- High/Ultra smoothing is still allowed only through verified voxel space, so visual polish never outranks path authority.
+
+Exact Microseconds saved:
+- PENDING RUNTIME PROFILER DATA. Normal valid grids pay a few scalar checks; the intended saving is avoiding invalid compaction and downstream steering correction on corrupt payloads.
+
+Verification:
+- Static scan remains clean inside `StringPullPathJob`: no `math.normalize`, `math.length(`, `math.distance(`, or raw `/`.
+- `git diff --check` passed for edited funnel/status/log files; only LF-to-CRLF warnings were emitted.
+- `dotnet build Hecton8.Core.csproj --no-restore /m:1 /nr:false` is currently blocked by 48 unrelated global errors in `VRAMEnforcer`, `BinaryLayoutManifest`, `HardwareTierDetector`, and `HectonFluidEngine`; no errors were reported in `VegetationFlowFieldIntegrator.cs`.
+- Unity MCP `validate_script` remains unavailable in this session due prior `127.0.0.1:8088/mcp` transport failure.
+
+## 2026-05-14 - Fallback Direction Sanitation Pass
+
+What was wrong:
+- `NormalizeRsqrtOrFallback` returned fallback vectors raw in the live file.
+- A non-unit or non-finite fallback axis could propagate into portal construction, winding selection, or DDA ray direction fallback.
+
+What was done:
+- Kept the valid primary-vector path as `value * math.rsqrt(lengthSq)`.
+- Added finite fallback validation and `fallback * math.rsqrt(fallbackLengthSq)`.
+- Added deterministic +Z fallback only when both primary and fallback vectors are unusable.
+
+Cinematic Cheats used:
+- Degenerate path corners get a cheap deterministic axis instead of paying for a heavier geometric recovery pass.
+
+Exact Microseconds saved:
+- PENDING RUNTIME PROFILER DATA. Normal path remains one rsqrt multiply; extra work exists only on degenerate or non-finite fallback cases.
+
+Verification:
+- Static scan remains clean inside `StringPullPathJob`: no `math.normalize`, `math.length(`, `math.distance(`, or raw `/`.
+- Post-fallback `dotnet build Hecton8.Core.csproj --no-restore /m:1 /nr:false` timed out after 120s under overlapping Unity/MSBuild load.
+- Prior completed Core build remains blocked by 48 unrelated global compile errors; edited funnel file reported no compiler errors in that failed Core build.
+
+## 2026-05-14 - Live Drift Reconciliation Pass
+
+What was wrong:
+- The live black-box ring used `_abyssalPathTelemetrySequence` as valid-entry count for dumps.
+- The live conduit scorer still used raw divisions and could include non-finite flow vectors in conduit weighting.
+- `NormalizeVector3Fast` returned fallback vectors raw.
+- `BuildNavPortal` component-spliced invalid endpoint components instead of rejecting whole corrupt endpoints.
+
+What was done:
+- Added `_abyssalPathTelemetryWrittenCount` and used it for dump valid-entry count.
+- Ignored non-finite flow vectors for conduit strength while preserving obstacle/deep-affinity accumulation.
+- Replaced conduit average/current strength divisions with `math.rcp` multiplies.
+- Hardened `NormalizeVector3Fast` fallback normalization with finite checks and `math.rsqrt`.
+- Hardened `BuildNavPortal` endpoint and width-squared sanitation.
+
+Cinematic Cheats used:
+- Corrupt voxel/flow/portal proof preserves deterministic conservative behavior instead of spending frame budget on speculative recovery.
+- High-tier smoothing still runs through valid payloads; invalid data is not allowed to buy visual smoothness.
+
+Exact Microseconds saved:
+- PENDING RUNTIME PROFILER DATA. Expected low-end savings are from removing two scalar divisions per conduit-qualified candidate and avoiding invalid compaction/steering correction paths.
+
+Verification:
+- Static scan passed for `StringPullPathJob`: no `math.normalize`, `math.length(`, `math.distance(`, or raw `/`.
+- Static scan passed for `TryResolveAbyssalNavNodeCandidate`: no `math.normalize`, `math.length(`, `math.distance(`, `.normalized`, or raw `/`.
+- `git diff --check` passed for edited funnel/scheduler/status/log files; only LF-to-CRLF warnings were emitted.
+- Bounded no-reference `dotnet build Hecton8.Core.csproj --no-restore /m:1 /nr:false /p:BuildProjectReferences=false` completed with 63 unrelated errors in `VRAMEnforcer`, `VoxelDeltaProcessor`, `SealedDoor`, `BinaryLayoutManifest`, and `HardwareTierDetector`; no errors were reported in edited funnel/navigation files.

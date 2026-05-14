@@ -73,3 +73,27 @@ Cinematic Cheats used: still kinematic scalar lever, no `HingeJoint`, no force s
 Exact microseconds saved/spent: blackbox modulo removal saves about 0.01 us per tick on weak CPUs; idle ratchet reset is one branch only while unheld; no new managed allocations.
 
 Verification: `git diff --check` passed with only CRLF warnings. Static scan found no `HingeJoint`, `math.normalize`, `.normalized`, managed `foreach`, `.ToArray()`, `FindObject`, `GetComponentInParent`, `new List`, `new Dictionary`, `.Dispose()`, `Time.deltaTime`, `StartCoroutine`, or `Update(` in the lever source. Direct Unity Roslyn probe for `Hecton8.UI.VR.rsp` still reports only stale Core reference symptoms: missing `ManualOverridePulledSignal` and inaccessible `PhysicalHandReceiverRegistry`.
+
+## 2026-05-14 - Source Drift Recovery / Re-Hardening
+
+What was wrong: `OpenXRManualOverrideLever.cs` was back at older world-hand solve and tick-side native recovery code while task evidence files described the hardened implementation.
+
+What was done: restored task-owned safeguards by forward patch only: local hand cache, singular projection hold, lifecycle-only native allocation, hotswap allocation recovery, cached XR/frame/basis state, invalid hand-side fallback, public XML docs, and IK handle pose cache. Also made `TryQueueHandPress()` skip handle-anchor transform resolution when pivot distance already accepts the hand.
+
+Cinematic Cheats used: preserved the kinematic local-space lever fake; no joint, no force solver, no direct OpenXR polling.
+
+Exact microseconds saved/spent: restores prior savings from local hand, XR, frame, basis, and IK caches; adds one saved handle transform conversion on pivot-close receiver callbacks; 0 B/frame.
+
+Verification: direct Unity Roslyn probe for `Hecton8.UI.VR.rsp` returned `EXIT=0`. Forbidden-pattern scan returned no matches. Source scan confirms no `_lastHandWorldPosition`, no tick-side `TryEnsureNativeState`, cached frame/XR/basis fields restored, and singular rejection present. STATUS remains `PENDING VERIFICATION` because full Unity/player compile is still blocked by the unrelated global Core dependency wall.
+
+## 2026-05-14 - Finite Containment / Blackbox Guard
+
+What was wrong: the receiver rejected non-finite world hand positions, but local Transform conversion, nested handle anchors, or inspector pivot corruption could still inject NaN/Inf into native state, solver input, visible rotation, or blackbox telemetry.
+
+What was done: added `IsFiniteFloat3()`, rejected non-finite local hand samples, sanitized pivot config before writing `_leverPivots`, made handle local resolution fall back to pivot on invalid Transform output, and made blackbox writes validate angle/target/velocity/hand/pivot before recording. Invalid telemetry state now dumps `Docs/AgentLogs/Dump_VR_COCKPIT_MANUAL_OVERRIDE.bin` and skips the corrupt entry.
+
+Cinematic Cheats used: no real joint or force solver; this keeps the deterministic kinematic lever fake and uses blackbox telemetry instead of verbose managed logs.
+
+Exact microseconds saved/spent: +0.04 us per tick for hand/pivot telemetry finite checks; +0.03 us only on receiver candidate callbacks; 0 B/frame; avoided unbounded crash-debug time by dumping the fixed 300-frame ring.
+
+Verification: forbidden-pattern scan over task files returned no matches. `git diff --check` passed with CRLF warnings only. Official UI response-file compile is blocked because the rsp references missing `Library/Bee/artifacts/1300b0aEDbg.dag/Hecton8.Core.ref.dll`; a temporary probe substituting the available `1900...Hecton8.Core.ref.dll` reached binding and failed only on stale Core metadata (`ManualOverridePulledSignal` absent, `PhysicalHandReceiverRegistry` inaccessible). Source scan confirms `ManualOverridePulledSignal` exists in `GlobalSignals.cs` and `PhysicalHandReceiverRegistry` is public in source.

@@ -41,4 +41,4 @@ This folder contains dated audits, patch artifacts, static scans, and investigat
 
 2026-05-14 DOC_AUDIT override: `../../Reports/2026-05-13_DOC_AUDIT_XRAY.md` now records that the May 11 `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.*` files are absent from the current filesystem, while R41 records the current external root `Hecton8*.csproj` no-restore CLI compile surface at `0 Warning(s)` / `0 Error(s)` after restore assets exist.
 
-May 11 compile-success evidence is not current artifact-backed proof in this workspace because the cited summary/raw log are absent. Current R41 evidence is external root-project CLI compile only; it does not certify Unity import, Console, Play Mode, profiler, GCMonitor, player build, frame-time, memory, scene wiring, or visual quality.
+May 11 compile-success evidence is not current artifact-backed proof in this workspace because the cited summary/raw log are absent. Current R43 evidence is external root-project CLI compile only; it does not certify Unity import, Console, Play Mode, profiler, GCMonitor, player build, frame-time, memory, scene wiring, or visual quality.

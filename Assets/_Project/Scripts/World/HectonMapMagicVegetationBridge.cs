@@ -1751,6 +1751,7 @@ namespace Hecton8.World
         private Vector3 _lastAbyssalPathTargetPosition;
         private NativeArray<AbyssalPathTelemetryEntry> _abyssalPathTelemetry;
         private int _abyssalPathTelemetryCursor;
+        private int _abyssalPathTelemetryWrittenCount;
         private uint _abyssalPathTelemetrySequence;
         private int _lastAbyssalPathPortalLookAhead;
         private int _lastAbyssalPathMaxSamples;

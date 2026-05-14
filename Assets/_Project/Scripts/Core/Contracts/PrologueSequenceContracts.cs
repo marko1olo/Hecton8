@@ -137,6 +137,7 @@ namespace Hecton8.Core.Contracts
         bool TryConsumePrologueComplete(out PrologueCompleteSnapshot snapshot);
         bool IsOceanSurfaceReady(bool allowProxy);
 
+        void PrepareSequenceRun();
         Awaitable DelayDilatedAsync(float seconds, CancellationToken cancellationToken);
         Awaitable NextFrameAsync(CancellationToken cancellationToken);
 

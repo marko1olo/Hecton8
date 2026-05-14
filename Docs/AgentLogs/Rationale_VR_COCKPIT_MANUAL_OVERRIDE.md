@@ -142,10 +142,34 @@ Hardware Impact: i3/MX350 pays one branch only on ratchet/latch dispatch frames,
 
 Problem: `ResolveReferenceVector()` used `handleAnchor.localPosition`, which is only correct when the handle anchor is parented directly under the lever root. Real cockpit art rigs often nest the visible handle under a rotating visual child, so the angular solver could be initialized with a reference vector in the wrong local space.
 
-Solution: derive the reference vector from `handleAnchor.position` transformed through the lever root with `InverseTransformPoint`, matching the existing handle-proximity path. Also reset ratchet step state when idle, track hot-swap listener registration locally, keep receiver registration play-mode-only, use increment/compare for blackbox ring wrap, and allow Tick to recover if deferred native disposal delays allocation.
+Solution: derive the reference vector from `handleAnchor.position` transformed through the lever root with `InverseTransformPoint`, matching the existing handle-proximity path. Also reset ratchet step state when idle, track hot-swap listener registration locally, keep receiver registration play-mode-only, use increment/compare for blackbox ring wrap, and keep deferred native recovery in lifecycle/hotswap paths only.
 
 Rejected Alternatives: constraining scene hierarchy was rejected because it makes authoring brittle. Recomputing the reference vector every Tick was rejected because the closed handle basis is static config, not frame state. Leaving modulo in telemetry was rejected because the branch wrap is simpler and cheaper.
 
 Scalability potential: Low/Middle get the same deterministic scalar solve under richer art hierarchy. High/Ultra can use nested mechanical linkages and animated handle meshes without changing the solver contract.
 
 Hardware Impact: i3/MX350 removes one integer modulo from the 60Hz telemetry path, estimated 0.01 us saved per tick. Other changes are cold lifecycle/configuration, edit-mode hygiene, or idle-only branches.
+
+## Decision 12 - Source drift must be corrected by forward patch only
+
+Problem: `OpenXRManualOverrideLever.cs` was observed back at older world-hand solver and tick-side native recovery code while the task evidence expected the hardened implementation. In a 20+ agent workspace, reset-style recovery can erase parallel work and hide drift.
+
+Solution: reapply only task-owned safeguards by forward patch: lifecycle-only native recovery, local hand sample cache, projection singularity hold, XR/frame/basis caches, invalid hand-side fallback, public XML docs, dispatcher hotswap allocation recovery, and IK handle pose caching. Also changed `TryQueueHandPress()` to resolve the handle anchor only when pivot distance already fails.
+
+Rejected Alternatives: `git reset`, checkout, or wholesale file replacement were rejected because they can erase parallel-agent changes. Leaving the regression was rejected because it reintroduced tick-side allocation reachability and false snap-to-min behavior.
+
+Scalability potential: Low/Middle keep the cheap local-space solve and fewer transform/XR/frame property crossings. High/Ultra can scale cockpit controls without multiplying avoidable receiver/telemetry/solver work.
+
+Hardware Impact: i3/MX350 restores the previous 0 B/frame proof, removes repeated transform conversions, and saves one handle transform conversion on pivot-close receiver callbacks. Direct UI response-file probe exits 0 after recovery.
+
+## Decision 13 - Native telemetry must reject corrupted transforms before writes
+
+Problem: world hand input was finite-checked, but transform matrices and inspector pivot values can still produce non-finite local coordinates. That violates the NaN/INF vaccination rule because local hand, pivot, target, and angle feed NativeArray state, visible transform rotation, and the blackbox ring.
+
+Solution: add a shared `IsFiniteFloat3()` guard, reject non-finite transformed hand samples, sanitize non-finite `pivotLocalPosition` during cold configuration, fall back to pivot when handle-anchor world-to-local conversion is non-finite, and validate hand/pivot telemetry before writing `_blackBox`. On invalid telemetry state, dump `Docs/AgentLogs/Dump_VR_COCKPIT_MANUAL_OVERRIDE.bin` and skip the corrupt frame entry.
+
+Rejected Alternatives: trusting Unity Transform output was rejected because corrupted parent transforms are exactly where VR rigs fail badly. Clamping NaN to zero inside the hot solver was rejected because it hides bad authoring and creates false lever motion. Recomputing handle/pivot every frame was rejected because the existing cold config and pivot-first receiver branch are cheaper and deterministic.
+
+Scalability potential: Low keeps the same cheap scalar solve with explicit invalid-state rejection. Middle/High gain stable cockpit interaction under nested rigs. Ultra can spend saved solver simplicity on richer haptic/audio/visual response while the blackbox still records deterministic state.
+
+Hardware Impact: i3/MX350 pays two extra `float3` finite checks in the 60Hz blackbox write and one receiver-side local-hand check only on hand candidate frames; estimated +0.04 us per tick and +0.03 us per receiver callback. This is accepted because it buys crash explainability without heap allocation or physics cost.

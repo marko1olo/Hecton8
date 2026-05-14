@@ -118,3 +118,62 @@ Correctness: compile is currently blocked before Unity verification. Representat
 Unity Console / PlayMode / Profiler / GCMonitor: not verified. Static scan cannot prove runtime 0 GC, frame time, scene wiring, or memory stability.
 
 Final status: H-PHI VERIFIED for static-source audit. Runtime H-Phi remains PENDING VERIFICATION until compile and Unity evidence exist.
+
+## 2026-05-14 Live Addendum 2
+
+Evidence class: `STATIC_SOURCE` + attempted `CLI_COMPILE`.
+
+Current scan command:
+
+```powershell
+Tools/Architecture/HectonPhiAudit.ps1 -Json
+```
+
+Current static counts:
+
+| Counter | Value |
+|---|---:|
+| C# files | 1,501 |
+| Source lines | 941,241 |
+| `SignalBus<T>.Push` | 79 |
+| `GlobalRegistry.Get<T>` | 0 |
+| `GlobalRegistry.` surface refs | 5,279 |
+| `Publish(...)` surface refs | 448 |
+| Unity `Update`/`LateUpdate`/`FixedUpdate` methods | 27 |
+| `ISlowTickable` refs | 228 |
+| `IJob*` refs | 354 |
+| `GlobalDataVault` refs | 15 |
+| `NativeArray<T>` refs | 7,444 |
+| Struct declarations | 2,040 |
+| `StructLayout(...)` attrs | 896 |
+| `BinaryBlittableSafe` refs | 33 |
+
+Current static scores:
+
+| Coefficient | Score |
+|---|---:|
+| Narrow integration | 1.000000000 |
+| Risk-adjusted integration | 0.011791045 |
+| Architectural purity | 0.955665025 |
+| Data sovereignty | 0.002010993 |
+| Memory alignment | 0.439215686 |
+| Binary-safe ratio | 0.016176471 |
+| H-Phi static narrow | 0.000844101 |
+| H-Phi static risk-adjusted | 0.000009953 |
+
+Comparison:
+- Original dialogue baseline: `0.00062`.
+- Current narrow score: `0.000844101`, about `+36.15%` versus baseline.
+- Earlier live score before concurrent workspace refresh: `0.000896018`. Current score is lower because the active tree changed: `Update` hits rose to 27, `StructLayout` ratio fell, and `BinaryBlittableSafe` count fell to 33.
+- Patch-local delta on the current tree: `0.000842629 -> 0.000844101` narrow, driven by two restored save DTO `StructLayout` attributes.
+
+What changed in this pass:
+- Restored `Tools/Architecture/HectonPhiAudit.ps1`.
+- Added fixed layouts for bool-containing procedural fauna save DTOs.
+- Replaced raw fauna DTO array blits with explicit fixed-stride field codecs.
+- Added minimum-payload checks before allocating variable-size save collections.
+
+Compile status:
+- `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal` failed with 72 Core errors outside the changed save codec files.
+- Representative blockers: unresolved existing `HardwareProfileCatalog`, `SaveMasterHashV10Result`, `SaveFileHeaderV10`, `SaveMasterHashV10`; unrelated `VoxelDeltaProcessor` double/float and `FastFloorToInt` errors.
+- Runtime H-Phi remains `PENDING VERIFICATION` until Unity Console, PlayMode, Profiler, and GCMonitor evidence exist.

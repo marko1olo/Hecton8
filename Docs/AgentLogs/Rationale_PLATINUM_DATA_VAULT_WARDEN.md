@@ -106,6 +106,18 @@ Rejected Alternatives: Reporting the previous clean scan while the current file 
 Scalability potential: Low/Middle devices keep deterministic maintenance and avoid memory-copy spikes; High/Ultra devices keep saved frame budget available for visible systems instead of heap movement.
 Hardware Impact: Maintains removal of the 512 KB live move slice and associated fences/timers. Final scan after build found no live relocation symbols in `GlobalDataVault.cs`.
 
+Problem: User-requested continued recheck found a new source snapshot where live DataVault compaction, stale-handle refresh, editor-only type validation, caller-trusted reallocation size, and raw macro payload version increments had drifted back into the locked scope.
+Solution: Removed the live relocation slice and recorder again, kept `FrostTickDefrag` as analyze/validate/record telemetry only, restored stale cached handle PHI/VOD dump plus `FatalMemoryException`, moved `ValidateType` out of editor-only compilation, made `H8Memory.ReallocateRaw` use tracked old byte counts before allocation/copy, and switched macro payload overwrites to `NextGeneration(existing.Version)`.
+Rejected Alternatives: Accepting stress-gated relocation; trusting caller-provided `oldBytes`; relying on Unity collection checks for type mismatch; using unchecked `existing.Version + 1u` that can wrap to zero.
+Scalability potential: Low keeps DataVault deterministic and cheap under weak hardware; Middle keeps ABI/type failures diagnosable; High and Ultra can spend the saved relocation budget on visible systems instead of heap movement. Macro cache versions remain monotonic across long sessions.
+Hardware Impact: Removes the reintroduced 512 KB live move path, Thread fences, and Stopwatch maintenance checks. `ReallocateRaw` adds one existing O(active allocations) ownership scan only on reallocation; valid handle resolves remain branch-only; macro version hardening is one overflow-safe increment on cache overwrite.
+
+Problem: `H8Memory.Allocate<T>` and the old-pointer branch of `ReallocateRaw` could still accept `SystemID.Unknown`, creating or mutating tracked native records with no accountable owner while `AllocateRaw` already rejected unknown owners.
+Solution: Added the same `FatalMemoryException.ThrowUnknownAllocationOwner()` gate to `Allocate<T>` and `ReallocateRaw`, then scanned project call sites for direct `SystemID.Unknown` use against `H8Memory.Allocate` and `H8Memory.AllocateRaw`.
+Rejected Alternatives: Relying on later `Release<T>` cleanup or leak reaping; both happen after accountability is already lost.
+Scalability potential: Low keeps native-array ownership deterministic; Middle/High/Ultra keep pool telemetry and leak attribution stable as larger systems allocate more SOA buffers.
+Hardware Impact: One branch on cold/native-array allocation only; 0 us steady-frame impact for already allocated buffers.
+
 ## OMEGA POLISH CHANGES
 
 Problem: Polish audit required removal of fake precision, managed iteration/string debt, and any code outside the DataVault domain without justification.
@@ -117,7 +129,7 @@ Hardware Impact: Direct habitat DTO write is 32 bytes per module and 0 B GC. Rem
 Final Git Diff Summary:
 - Assets/_Project/Scripts/Core/HectonArenaAllocator.cs: owner-tagged H8Memory.FreeRaw release.
 - Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs: GenerationID handle exposure, stale-handle fatal path, VaultGenerationID telemetry, owner-tagged macro/vault frees, macro copy switched to MemCpy, live defrag memmove code deleted.
-- Assets/_Project/Scripts/Core/Memory/H8Memory.cs: FatalMemoryException plus owner-checked FreeRaw.
+- Assets/_Project/Scripts/Core/Memory/H8Memory.cs: FatalMemoryException, owner-gated raw/native allocation, tracked-byte raw reallocation, and owner-checked FreeRaw.
 - Assets/_Project/Scripts/SaveBinaryPayloadCodec.cs: v72 first-hour DTO payload write/read, direct habitat flood struct loop.
 - Assets/_Project/Scripts/SaveData.cs: first-hour DTO mirrors and packed DTO definitions/metadata.
 - Assets/_Project/Scripts/Core/BinaryLayoutManifest.cs: first-hour DTO size/offset assertions.

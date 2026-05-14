@@ -70,7 +70,7 @@ float4 _DynamicWakeParams;           // x=slot limit, y=low tier, z=active count
 float4 _AbyssalGridResolution;       // xyz=grid resolution, w=flattened count
 float4 _AbyssalFlowCenter;           // xyz=center
 float4 _AbyssalFlowSpacing;          // xyz=spacing
-float4 _AbyssalFlowTextureParams;    // xyz=cell size, w=inv world size
+float4 _AbyssalFlowTextureParams;    // x=resolution, y=world size, z=source world size, w=inv world size
 float _AbyssalFlowTextureActive;
 float4x4 _VoxelSdfWorldToLocal;
 float4 _VoxelSdfInvDoubleHalfExtents;
