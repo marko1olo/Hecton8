@@ -146,3 +146,14 @@ Cinematic cheats used: No visual change. The same atlas-quad prompt, dither fade
 Exact microseconds saved: Estimate only. Expected gain is sub-1 us per visible prompt frame on i3/MX350 from fewer render-side property/math operations.
 
 Verification: No dotnet rebuilds were run. Static scans stayed clean for forbidden allocation/text/LINQ and old renderer/update/shared-buffer/matrix/shader markers. Cache scan confirmed render uses `_cachedRenderCameraTransform`, `_cachedMaxVisibleDistanceSq`, and `_cachedBoundsSize`; the only remaining `camera.transform` access is inside `CacheRenderCamera()`. `git diff --check` returned CRLF normalization warnings only.
+
+## 2026-05-15 Atlas Texture And Layer Cache
+What was wrong: Icon/text indirect submissions still read atlas texture properties at render time and fetched `gameObject.layer` inside each batch.
+
+What was done: Cached active font and sprite atlas textures during layout rebuild, then passed one sampled render layer into both icon/text indirect draw calls.
+
+Cinematic cheats used: No visual contract change. The same integer-index atlas quads, dither fade on non-Low tiers, Low-tier snap, and fail-closed camera/material gates remain.
+
+Exact microseconds saved: Estimate only. Expected gain is sub-1 us per visible prompt frame from fewer render-side property reads; no profiler proof is claimed.
+
+Verification: No dotnet rebuilds were run. Static scans stayed clean for forbidden allocation/text/LINQ and old renderer/update/shared-buffer/matrix/shader markers. Atlas/layer scan confirmed `_runtimeSpriteAtlasTexture`, `_runtimeFontAtlasTexture`, and `renderLayer` feed draw submission, with only one render-time `gameObject.layer` sample.

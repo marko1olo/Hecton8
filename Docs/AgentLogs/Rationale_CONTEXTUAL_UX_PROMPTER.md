@@ -186,3 +186,10 @@ Solution: Added `_cachedMaxVisibleDistance`, `_cachedMaxVisibleDistanceSq`, and 
 Rejected Alternatives: Recomputing every render for simplicity or hardcoding a bounds size. Recompute is tiny but avoidable; hardcoding removes designer control.
 Scalability potential: Low removes small repeated math. Middle, High, and Ultra preserve runtime tuning while keeping derived values stable.
 Hardware Impact: Expected gain is sub-microsecond per visible prompt frame. No runtime profiler proof.
+
+## Decision 26: Cached Atlas Textures And Render Layer
+Problem: The indirect submit path still read serialized font/sprite atlas texture properties at draw time and queried `gameObject.layer` inside each icon/text batch.
+Solution: Cached the active font atlas and sprite atlas during layout rebuild, then passed one sampled render layer into both indirect submissions.
+Rejected Alternatives: Leaving per-submit property reads for simplicity or caching the layer only at enable time. Repeated property reads are unnecessary; enable-only layer cache can become stale if runtime layer ownership changes.
+Scalability potential: Low removes tiny repeated render-side property traffic. Middle, High, and Ultra keep the same atlas contract while freeing budget for richer glyph/material treatment.
+Hardware Impact: Expected gain is sub-microsecond per visible prompt frame on i3/MX350; measured proof absent because no rebuild/runtime verification was allowed.

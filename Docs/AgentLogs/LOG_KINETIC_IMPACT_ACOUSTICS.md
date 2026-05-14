@@ -446,3 +446,36 @@ Verification:
 - Vocal counters: `VocalTickRegistry=0`, `VocalSlowRegistry=0`, `VocalTickStrings=0`, `VocalSlowStrings=0`, `SmokeVocalAsserts=13`, `VocalScalabilityEvents=3`.
 - Scoped forbidden scan found only editor smoke diagnostics and assertion text.
 - Dotnet build/rebuild was not run by explicit user order. Unity compile remains PENDING VERIFICATION until Editor console/MCP validation is available.
+
+## 2026-05-15 - DSP_ACOUSTIC_LEAD - Loop 18 Critical Renderer Scalability Event H-Phi Pass
+Status: PENDING VERIFICATION
+
+What was wrong:
+- `PlayerCriticalProceduralAudioRenderer` still hid quality-policy registry reads behind `RefreshAudioQualityPolicyIfStale`.
+- The helper was 30-frame cadence-gated, but it was still reachable from `Tick`, reverb tier selection, kinetic fallback, and sonar probe LOD.
+- `GlobalRegistry.ScalabilityTier`, `GlobalRegistry.QualityTier`, and `GlobalRegistry.H8_LOW_MEMORY_PROFILE` belonged in a cold seed/event path, not in a hot helper.
+
+What was done:
+- Added `IScalabilityChangedEventListener` to the renderer and registered/unregistered it with `ScalabilityEvents`.
+- Added `RefreshAudioQualityPolicyCold()` for cold seeding only.
+- Replaced hot cadence refresh calls with `EnsureAudioQualityPolicyCached()`, which contains no registry reads.
+- Preserved hardware `_cachedQualityTier` for native reverb tier instead of overwriting it from the two-profile scalability event byte.
+- Extended `AdvancedAcousticsSmokeTester` to guard cold-only registry seeding and no direct quality registry polling in renderer hot methods.
+
+Cinematic cheats used:
+- Quality state is a cached scalar policy, not a per-frame adaptive DSP negotiation.
+- If cache seeding is missed, the renderer falls back to Unknown/low-memory true so toaster behavior wins over accidental overkill.
+- High-tier audio still spends budget on native reverb, granular voice count, sonar probes, and kinetic impact polish rather than service lookup.
+
+Exact microseconds saved:
+- Saves up to three registry reads every previous 30-frame quality refresh window after warmup.
+- Removes hidden registry lookup spikes from kinetic impact fallback admission, reverb tier selection, and sonar probe LOD.
+- Runtime allocation delta remains 0 B/frame.
+
+Verification:
+- `git diff --check -- Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs` passed except CRLF normalization warnings.
+- Old cadence symbols are absent: `RefreshAudioQualityPolicyIfStale`, `RefreshKineticImpactQualityPolicyIfStale`, and `KineticImpactQualityPolicyRefreshFrames`.
+- Direct quality registry reads are confined to `RefreshAudioQualityPolicyCold()`.
+- Method-body counters: `TickQualityRegistry=0`, `ReverbQualityRegistry=0`, `KineticFallbackQualityRegistry=0`, `SonarProbeQualityRegistry=0`, `EnsureQualityRegistry=0`, `ColdQualityRegistry=3`.
+- Scoped forbidden scan found only pre-existing editor/cold diagnostics and assertion text.
+- Dotnet build/rebuild was not run by explicit user order. Unity compile remains PENDING VERIFICATION until Editor console/MCP validation is available.

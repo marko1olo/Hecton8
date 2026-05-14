@@ -1,7 +1,7 @@
 # AUP Drift Report
 
 Agent: ARCHITECTURAL_AUP_INTEGRITY_AUDITOR
-Status: VERIFIED AUP INTEGRITY - LOOP 25 QUALIFIED AUP H-PHI RISK SCAN CLEAN; CORE BUILD NOT RERUN PER USER; ASMDEF BLOCKED BY ARCHITECTURE
+Status: VERIFIED AUP INTEGRITY - LOOP 26 FULL H-PHI SOURCE SUMMARY COMPLETES; AUP PRECISION INTEGRITY 1.0; CORE BUILD NOT RERUN PER USER; ASMDEF BLOCKED BY ARCHITECTURE
 
 ## Authority
 
@@ -438,3 +438,29 @@ Status: VERIFIED AUP INTEGRITY - LOOP 25 QUALIFIED AUP H-PHI RISK SCAN CLEAN; CO
 
 - Unity import/Console verification remains pending because no Unity editor session is available.
 - Full `HectonPhiAudit.ps1 -Summary -Json` remains pending due the Loop 24 full source scan timeout.
+
+## Loop 26 H-Phi Full Source Scan Prefilter
+
+### Findings
+
+- Loop 24 classified full H-Phi source scan as timeout debt. After the qualified risk cleanup, the next improvement was tool cost, not gameplay math.
+
+### Tool Changes
+
+- `Tools/Architecture/HectonPhiAudit.ps1`: added literal prefilters to `Add-PatternCounts`.
+- Existing regex patterns still produce the counts; prefilters only skip impossible regex passes when a file lacks required seed text.
+
+### Verification
+
+- PowerShell parser reports `PARSE_OK`.
+- Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json` completed in 127.735 seconds.
+- Full static summary: `RuntimeHPhiRisk=0.000573763`, `RuntimeHPhiNarrow=0.010539206`, `AupPrecisionIntegrity=1`, `AupPrecisionSafe=363`, `AupPrecisionRisk=0`, `RuntimeFiles=1276`, `RuntimeLines=859399`.
+- Targeted qualified AUP H-Phi risk scan returns `NO_MATCHES`.
+- Direct committed-offset leak scan returns `NO_MATCHES`.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` was re-run. Residual hits remain broad `universe` text and known final-cast fluid/scatter/shader payload names.
+- No `dotnet build` or rebuild was run in Loop 26 because the latest user instruction explicitly forbids rebuilds.
+
+### Evidence Queue
+
+- Unity import/Console verification remains pending because no Unity editor session is available.
+- H-Phi result is static-source evidence, not profiler proof.

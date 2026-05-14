@@ -120,6 +120,26 @@ Scoped forbidden-pattern scan over touched IK/KCC/signal files returned no match
 Status:
 PENDING VERIFICATION. Unity import, Burst compiler, Play Mode, GCMonitor, profiler proof, and full compile proof remain absent.
 
+## 2026-05-15 Recursive QA Addendum 12
+
+What was wrong:
+The KCC-to-IK pipeline still had producer-side H-Phi holes. Raw Rigidbody position/velocity could enter NativeArrays before the Burst body job sanitizer ran. Origin-shift offsets could rebase KCC arrays with invalid data. Sync-fence hashes had raw fallbacks. The contextual IK black-box ring also trusted its private cursor/head and could dump non-finite first-sample vectors.
+
+What was done:
+`PlayerKinematicsRuntime` now sanitizes Rigidbody position/velocity before NativeArray writes, SDF sampling, advection, KCC signal publishing, reset/start state, staged sync-fence writes, and sync-fence hashing. Invalid raw body state flags `FaultNaN`; invalid or >10km origin-shift input flags `FaultInvalidOriginShift` and dumps without rebasing. `ContextualPhysicalIkRuntime` now bounds telemetry cursor/head against the actual ring length and sanitizes telemetry vectors/weights before hashing, ring writes, and binary dump serialization.
+
+Cinematic cheats used:
+No physical gait, no additional probes, no new solver. The lower-body remains the same visual fake: batched hip-origin rays, squared thresholds, triangle-wave lift, planar swim posture, small pelvis yaw, and Burst two-bone solve.
+
+Exact microseconds saved:
+Added cost is branch/finite checks at existing producer/sync-fence boundaries, estimated below 0.5 us/frame on i3/MX350, plus below 0.1 us/contextual telemetry sample. Prevented cost is NaN propagation into NativeArray-backed KCC/IK state and unusable black-box dumps.
+
+Verification:
+No dotnet rebuild was run per user instruction. `git diff --check` over touched IK/KCC files passed with CRLF warnings only. Scoped forbidden-pattern scan over lower-body/signal files returned no matches for `sqrMagnitude`, `math.sqrt`, `math.normalize`, `foreach`, `string.Format`, interpolation strings, `OnAnimatorIK`, `SetIK`, `ikPass`, `StartCoroutine`, `GameObject.Find`, `FindObjectOfType`, or `Camera.main`. Additional source scans found no remaining raw `SnapMillimeter(ToFloat3(_body.*))`, `_body.position` AUP hashing, direct position subtraction rebases, or direct `_telemetryRing[_telemetryCursor]` writes in the audited files.
+
+Status:
+PENDING VERIFICATION. Unity import, Burst compiler, Play Mode, GCMonitor, profiler proof, and full compile proof remain absent.
+
 ## 2026-05-14 Recursive QA Addendum 6
 
 What was wrong:

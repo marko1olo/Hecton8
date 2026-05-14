@@ -415,3 +415,11 @@ Solution: Route `KinematicGhostDebugger` through `ToUniverseSpaceDouble3` / `ToA
 Rejected Alternatives: Leave the risk scan noisy or widen editor Handles/history storage to double. Handles, SceneView drawing, and historical `Vector3` preview arrays are float presentation surfaces; the authority repair is the bridge hop and fallback, not an editor visualization contract rewrite.
 Scalability potential: Low/Middle/High/Ultra gameplay runtime is unchanged. Tooling gains a clean qualified AUP risk gate, while high-end visual debug workflows retain stable long-session ghost previews after origin shifts.
 Hardware Impact: Gameplay frame impact is 0 us. Editor-only preview adds a few double scalar ops per sample when the debugger is open; Burst runtime jobs only renamed fields, so runtime instruction flow is unchanged. H-Phi review-time gain is the removal of remaining qualified AUP risk hits from the static scan.
+
+## Decision 52 - H-Phi Regex Prefilter
+
+Problem: The full global H-Phi source scan previously exceeded a 240-second cap, making the AUP precision score hard to use as a practical static gate.
+Solution: Keep the existing regex patterns as the scoring authority, but add literal prefilters so a file only pays a regex scan when it contains a necessary literal seed for that counter.
+Rejected Alternatives: Replace the PowerShell audit with a new compiled analyzer or claim CoreGraphOnly as enough. A compiled analyzer is a larger tooling migration; CoreGraphOnly cannot report AUP precision integrity, safe/risk counts, or runtime source H-Phi.
+Scalability potential: Low machines get a cheaper static gate without gameplay runtime cost. Middle/High/Ultra keep the full static score path available, including AUP precision integrity, before visual-overkill systems depend on long-session anchor stability.
+Hardware Impact: Gameplay frame impact is 0 us. Static tool run completed in 127.735 seconds after the prefilter patch and reported `AupPrecisionIntegrity=1`, `AupPrecisionSafe=363`, and `AupPrecisionRisk=0`; no profiler/runtime claim is made.

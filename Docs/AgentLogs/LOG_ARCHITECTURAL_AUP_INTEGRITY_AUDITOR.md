@@ -637,3 +637,31 @@ Verification:
 Integrator notes:
 - No Unity Console/import verification was available in this pass.
 - Full global H-Phi source score is still pending because the Loop 24 full source scan exceeded 240 seconds.
+
+## 2026-05-15 - Loop 26 H-Phi Full Source Scan Prefilter
+
+What was wrong:
+- The full global H-Phi source scan had exceeded both 120-second and 240-second caps, so the AUP precision score could not be treated as a current static gate.
+
+What was done:
+- `Tools/Architecture/HectonPhiAudit.ps1` now uses literal prefilters before regex counting.
+- Regex definitions remain the scoring authority; the prefilter only avoids impossible regex scans on files without the required seed text.
+
+Cinematic Cheats used:
+- Static tooling cheat only: skip work that cannot produce a match.
+- Gameplay runtime cost remains zero. Low-tier hardware benefits when running local static QA; high-end machines keep the complete H-Phi/AUP summary.
+
+Exact Microseconds saved:
+- Gameplay frame time: 0 us.
+- Static tool wall time completed at 127.735 seconds in this workspace after previously exceeding 240 seconds.
+
+Verification:
+- PowerShell parser reports `PARSE_OK`.
+- Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json` completed and reported `RuntimeHPhiRisk=0.000573763`, `RuntimeHPhiNarrow=0.010539206`, `AupPrecisionIntegrity=1`, `AupPrecisionSafe=363`, `AupPrecisionRisk=0`, `RuntimeFiles=1276`, `RuntimeLines=859399`.
+- Qualified AUP H-Phi risk scan returns `NO_MATCHES`.
+- Direct committed-offset leak scan returns `NO_MATCHES`.
+- Mandatory AUP regex scan re-run; residual hits remain broad `universe` text and known final-cast fluid/scatter/shader payload names.
+- No `dotnet build` or rebuild was run because the user explicitly forbade rebuilds.
+
+Integrator notes:
+- H-Phi evidence is static-source only. Unity Console/import, PlayMode, profiler, and GCMonitor proof remain pending.
