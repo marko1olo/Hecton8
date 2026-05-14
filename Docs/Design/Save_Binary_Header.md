@@ -146,7 +146,8 @@ Commands used:
 - `Select-String` against `SaveBinaryStorage.cs` for `SaveFileHeader`, `CurrentHeaderSize`, `HashPayload64`, `HashHeader64`.
 - `Select-String` against `SaveData.cs` for `[StructLayout]`, `[BinaryBlittableSafe]`, `bool`, managed collections, and string fields.
 - `python -m compileall .\Tools\Security\ReplayHasher.py` -> PASS.
-- `python .\Tools\Security\ReplayHasher.py self-test` -> PASS.
+- `python .\Tools\Security\ReplayHasher.py self-test` -> PASS, including embedded branch and shuffle vectors.
 - Isolated comparison against Python `xxhash.xxh3_64_intdigest` across 136 seed/length vectors -> PASS.
+- `<POLISH_MANDATE>` extraction from `Docs/Tasks/CURRENT_BATCH.md` -> TAG ABSENT; local anti-bloat pass executed on owned artifacts.
 
 Unity import, Unity Console, Play Mode, GCMonitor, profiler, player build, and IL2CPP/ARM runtime proof remain `PENDING VERIFICATION`.

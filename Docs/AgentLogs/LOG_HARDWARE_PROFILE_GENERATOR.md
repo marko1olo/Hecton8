@@ -21,3 +21,5 @@ Final source hygiene -> Removed process-noise wording from the MX350 source note
 Encoding/mask review -> All four hardware profile artifacts are ASCII-only. Pressure masks and bit indexes print as expected: `0x0`, `0x70`, `0x2007F0`, `0xF017F0`; bits `4,5,6,7,8,9,10,12,20,21,22,23`.
 
 Runtime key review -> Added FNV-1a `StableHash32` arrays for phase/profile/tier/reference IDs. Validation after addition: `HASHED_PROFILE_VALIDATION_OK`.
+
+Final contract validation -> `FINAL_PROFILE_CONTRACT_VALIDATION_OK`; `ARTIFACT_ASCII_AND_EXISTS_OK`. `git diff --check` returned only line-ending normalization warnings, no whitespace errors.

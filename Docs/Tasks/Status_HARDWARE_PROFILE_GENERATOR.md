@@ -39,3 +39,4 @@ STATUS: HARDWARE PROFILED | COMPILE PENDING VERIFICATION
 - [x] Loop 7 - Source hygiene review: removed process-noise wording from source notes, revalidated source/profile/tier/reference array counts. Result: `FINAL_JSON_ARRAY_VALIDATION_OK`.
 - [x] Loop 8 - Encoding and mask review: all hardware profile artifacts are ASCII-only; pressure masks and bit indexes print as expected. Result: `ASCII_OK`, masks `0x0/0x70/0x2007F0/0xF017F0`.
 - [x] Loop 9 - Runtime key review: added FNV-1a `StableHash32` arrays for phases, profiles, tiers, and reference devices so C# consumers do not need string keys. Result: `HASHED_PROFILE_VALIDATION_OK`.
+- [x] Loop 10 - Final contract validation: no nested objects, declared counts match, artifacts exist and are ASCII-only. Result: `FINAL_PROFILE_CONTRACT_VALIDATION_OK`; `ARTIFACT_ASCII_AND_EXISTS_OK`.

@@ -71,3 +71,15 @@ Rejected Alternatives: Trusting only the empty-string vector was rejected becaus
 Scalability potential: Low/Middle/High/Ultra all keep the same deterministic hash oracle; higher tiers may add diagnostic hash lanes without changing the file ABI.
 
 Hardware Impact: 0 us frame impact. Verification is an offline tooling pass.
+
+## Decision 7
+
+Problem: The mandated `<POLISH_MANDATE>` tag is absent from `Docs/Tasks/CURRENT_BATCH.md`, and the first self-test pass depended on an external reference comparison for strong branch coverage.
+
+Solution: Treated the missing tag as a batch defect, then performed a local anti-bloat pass on owned artifacts. Embedded fixed expected XXH3 values for zero-seed branch boundaries, seeded branch boundaries, the shuffle mask, and the shuffled 128-bit output into `ReplayHasher.py` self-test.
+
+Rejected Alternatives: Leaving self-test as empty-vector plus range checks was rejected because it would not catch accidental drift in the 17-128, 129-240, or long custom-secret paths. Adding the `xxhash` package as a repo dependency was rejected because the oracle must run on clean agents.
+
+Scalability potential: Low/Middle/High/Ultra use the same deterministic vector set. Higher diagnostic tiers can add more vectors without touching save ABI.
+
+Hardware Impact: 0 us frame impact. The extra self-test vectors are offline-only.

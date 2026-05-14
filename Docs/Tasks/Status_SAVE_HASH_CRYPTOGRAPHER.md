@@ -36,11 +36,13 @@ Extracted from `Docs/Tasks/CURRENT_BATCH.md` because `CURRENT_BATCH_OSHINO.md` i
 - Loop 3: XXH3 oracle implementation; pinned official scalar constants and default secret.
 - Loop 4: Header/bit-shuffle document pass; fixed `MasterStateHash` byte offset and endian rules.
 - Loop 5: DTO audit/report pass; flagged ARM-killer managed DTOs and evidence boundary.
+- Loop 6: Local anti-bloat/polish pass; no `<POLISH_MANDATE>` tag exists in `Docs/Tasks/CURRENT_BATCH.md`, so fixed XXH3 branch vectors and shuffle vectors were embedded into `ReplayHasher.py` self-test.
 
 ## Verification
 
 - Python syntax: `python -m compileall .\Tools\Security\ReplayHasher.py` -> PASS.
-- Python self-test: `python .\Tools\Security\ReplayHasher.py self-test` -> PASS (`SELFTEST_OK`).
+- Python self-test: `python .\Tools\Security\ReplayHasher.py self-test` -> PASS (`SELFTEST_OK`), including fixed zero-seed branch vectors, seeded branch vectors, shuffle mask vector, shuffle output vector, and inverse validation.
 - Reference comparison: local script vs isolated `xxhash.xxh3_64_intdigest` package across 136 vectors, seeds `0`, `1`, `0x9E3779B185EBCA87`, `0xFFFFFFFFFFFFFFFF`, lengths `0..100000` -> PASS (`XXH3_COMPARE_OK 136 vectors`).
+- Omega polish extraction: `<POLISH_MANDATE>` tag not found in `Docs/Tasks/CURRENT_BATCH.md`; local anti-bloat pass completed on owned artifacts.
 - Unity compile/import: PENDING VERIFICATION; no C# runtime source was edited in this pass.
 - IL2CPP/ARM proof: PENDING VERIFICATION; DTO audit is static source review only.
