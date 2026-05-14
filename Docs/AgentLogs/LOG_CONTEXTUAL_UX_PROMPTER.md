@@ -91,3 +91,25 @@ Cinematic cheats used: Preserved the same fake-first diegetic prompt model: atla
 Exact microseconds saved: Estimate only. Expected gain is sub-1 us per visible prompt on i3/MX350, with the practical benefit that High/Ultra material polish can be layered without resetting identical MPB bindings every frame.
 
 Verification: No dotnet rebuilds were run. Static scans returned no forbidden hot-path text/allocation/LINQ patterns, no old update/shared-buffer/matrix/shader markers, and no runtime `Marshal.SizeOf`, `Shader.Find`, or `new Material(` markers in the tooltip/shader scope. `git diff --check` returned CRLF normalization warnings only on the tooltip/status/rationale/log scope. `Tools/Architecture/HectonPhiAudit.ps1 -Summary` was retried and timed out after 120 seconds without output, so no H-Phi score claim is made.
+
+## 2026-05-15 Registry Camera Resolution
+What was wrong: The diegetic tooltip renderer still had a fallback path that reached through `GameBootstrapper` and `GetComponentInChildren<Camera>()` if the authored camera and registry camera were missing. That hides broken registry wiring and keeps a component search in a renderer-owned camera resolver.
+
+What was done: Removed the bootstrap/component-search fallback and the `Time.unscaledTime` retry gate. Tooltip camera resolution is now authored `interactionCamera` first, then cached `GlobalRegistry.Player.PlayerCamera`, with cache reset on player service hot-swap.
+
+Cinematic cheats used: No visual change. This preserves the same indirect atlas-quad prompt and fail-closed camera gating; the change removes discovery work rather than adding rendering truth.
+
+Exact microseconds saved: Estimate only. Steady-frame savings are negligible when the camera is already cached. Worst-case cold-path search is eliminated, and missing registry wiring now fails closed instead of scanning hierarchy.
+
+Verification: No dotnet rebuilds were run. Focused scans found no `Hecton8.Bootstrap`, `GameBootstrapper`, `GetComponentInChildren`, `Time.unscaledTime`, `CameraResolveRetryIntervalSeconds`, `_nextCameraResolveTime`, or `interactionCamera = _cachedRenderCamera` markers in `DiegeticTooltipSystem.cs`. Existing forbidden hot-path allocation/text/LINQ and old renderer/update/shader scans stayed clean. `git diff --check` returned CRLF normalization warnings only.
+
+## 2026-05-15 Indirect Args Dirty Count
+What was wrong: The renderer still uploaded indirect argument buffers every visible icon/text draw even when the glyph count had not changed.
+
+What was done: Added cached icon/text args counts. The tooltip now updates indirect args only on count changes, while still uploading per-instance glyph transforms/tints every visible draw.
+
+Cinematic cheats used: Same fake-first prompt path: atlas quads, integer UV lookup, dithered alpha-test fade on non-Low tiers, Low-tier snap, and fail-closed camera ownership.
+
+Exact microseconds saved: Estimate only. Expected gain is sub-1 us per steady visible prompt, mostly reduced CPU-to-GPU argument buffer traffic and driver-side work.
+
+Verification: No dotnet rebuilds were run. Static scans stayed clean for forbidden hot-path text/allocation/LINQ and old renderer/update/shader markers. Args scan shows `argsBuffer.SetData(_indirectArgs)` remains in buffer initialization and the new count-dirty branch only. `git diff --check` returned CRLF normalization warnings only.

@@ -374,19 +374,19 @@ namespace Hecton8.Meta
 
         private void ProcessCraftingCompletions()
         {
-            uint currentSequence = GlobalSignals.LatestCraftingCompletedSequence;
+            uint currentSequence = GlobalSignals.LatestCraftingCompletedUnitCount;
             uint delta = currentSequence - _lastCraftingCompletedSequence;
             if (delta == 0u)
                 return;
 
             _lastCraftingCompletedSequence = currentSequence;
-            int amount = delta > int.MaxValue ? int.MaxValue : (int)delta;
+            int amount = delta > (uint)int.MaxValue ? int.MaxValue : (int)delta;
             AdvanceMarathonProgress(MarathonMetric.CraftedItems, amount);
         }
 
         private void SyncCraftingSignalBaseline()
         {
-            _lastCraftingCompletedSequence = GlobalSignals.LatestCraftingCompletedSequence;
+            _lastCraftingCompletedSequence = GlobalSignals.LatestCraftingCompletedUnitCount;
         }
 
         private void SubscribeToEventBus()

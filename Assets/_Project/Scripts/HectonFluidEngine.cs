@@ -185,6 +185,9 @@ namespace Hecton8.Physics
         private const float AbyssalFlowTextureWorldSizeMeters = 100f;
         private const float AbyssalFlowTextureCellSizeMeters = AbyssalFlowTextureWorldSizeMeters / AbyssalFlowTextureResolution;
         private const int AbyssalFlowTextureThreadGroupSize = 4;
+        private const int AbyssalFlowUpdateBucketMask = 7;
+        private const float AbyssalFlowUpdateBucketInvCount = 1f / (AbyssalFlowUpdateBucketMask + 1);
+        private const uint AbyssalFlowKillSwitchMask = GlobalRegistry.SystemKillSwitchLane4VfxMask;
         private const float AbyssalFlowWakeMinimumSpeedMetersPerSecond = 0.5f;
         private const int MaxAbyssalVortexImpulseCount = 4;
         private const float AbyssalVortexImpulseMinimumRadiusMeters = 0.5f;
@@ -446,6 +449,8 @@ namespace Hecton8.Physics
         private static readonly int _AbyssalFlowThermoclineYId = Shader.PropertyToID("_AbyssalFlowThermoclineY");
         private static readonly int _AbyssalFlowHeatSourceCountId = Shader.PropertyToID("_AbyssalFlowHeatSourceCount");
         private static readonly int _AbyssalFlowWeatherStateMaskId = Shader.PropertyToID("_AbyssalFlowWeatherStateMask");
+        private static readonly int _AbyssalFlowUpdateBucketId = Shader.PropertyToID("_AbyssalFlowUpdateBucket");
+        private static readonly int _AbyssalFlowUpdateBucketMaskId = Shader.PropertyToID("_AbyssalFlowUpdateBucketMask");
         private static readonly int _AbyssalFlowFieldTextureId = Shader.PropertyToID("_AbyssalFlowFieldTexture");
         private static readonly int _AbyssalFlowTextureReadId = Shader.PropertyToID("_AbyssalFlowTextureRead");
         private static readonly int _AbyssalFlowTextureWriteId = Shader.PropertyToID("_AbyssalFlowTextureWrite");
@@ -1386,6 +1391,8 @@ namespace Hecton8.Physics
         private RenderTexture _gpuAbyssalFlowWriteTexture;
         private RTHandle _gpuAbyssalFlowTextureAHandle;
         private RTHandle _gpuAbyssalFlowTextureBHandle;
+        private ISimulationBucketer _simulationBucketer;
+        private float _gpuAbyssalFlowInterpolationAlpha = 1f;
         private GraphicsBuffer _advectedSiltBufferA;
         private GraphicsBuffer _advectedSiltBufferB;
         private GraphicsBuffer _advectedBubbleBufferA;
@@ -1853,6 +1860,8 @@ namespace Hecton8.Physics
                    flowSpacing.y > 0f &&
                    flowSpacing.z > 0f;
         }
+
+        public float GpuAbyssalFlowInterpolationAlpha => _gpuAbyssalFlowInterpolationAlpha;
 
         /// <summary>
         /// Resolves the active 3D abyssal flow texture payload for GPU consumers.
@@ -5857,6 +5866,28 @@ namespace Hecton8.Physics
             _gpuAbyssalFlowWriteTexture = temp;
         }
 
+        private void ResolveAbyssalFlowBucketUniforms(out int updateBucket, out int updateBucketMask)
+        {
+            ISimulationBucketer bucketer = _simulationBucketer;
+            if (bucketer == null || !bucketer.IsInitialized)
+            {
+                bucketer = GlobalRegistry.SimulationBucketer;
+                _simulationBucketer = bucketer;
+            }
+
+            int frameCount = bucketer != null && bucketer.IsInitialized
+                ? bucketer.CurrentFrameCount
+                : Time.frameCount;
+            updateBucketMask = AbyssalFlowUpdateBucketMask;
+            updateBucket = frameCount & updateBucketMask;
+            _gpuAbyssalFlowInterpolationAlpha = (updateBucket + 1) * AbyssalFlowUpdateBucketInvCount;
+        }
+
+        private static bool IsAbyssalFlowKillSwitchActive()
+        {
+            return (GlobalRegistry.SystemKillSwitchMask & AbyssalFlowKillSwitchMask) != 0u;
+        }
+
         private void TryDispatchGpuAbyssalFlowField(
             in WeatherRuntimeSnapshot weatherSnapshot,
             float resolvedWaterLevel,
@@ -5878,6 +5909,13 @@ namespace Hecton8.Physics
             float currentFixedTime = Time.fixedTime;
             if (math.abs(_lastAbyssalFlowDispatchFixedTime - currentFixedTime) <= 0.000001f)
                 return;
+
+            if (IsAbyssalFlowKillSwitchActive())
+            {
+                _gpuAbyssalFlowInterpolationAlpha = 1f;
+                AgeAbyssalVortexImpulsesOnce(fixedDeltaTime);
+                return;
+            }
 
             EnsureGpuAbyssalFlowBuffers();
             if (_gpuAbyssalFlowResultBuffer == null ||
@@ -5905,6 +5943,7 @@ namespace Hecton8.Physics
             int textureGroupCount = math.max(
                 1,
                 (AbyssalFlowTextureResolution + AbyssalFlowTextureThreadGroupSize - 1) / AbyssalFlowTextureThreadGroupSize);
+            ResolveAbyssalFlowBucketUniforms(out int updateBucket, out int updateBucketMask);
             GraphicsBuffer splashdownImpulseBuffer = ResolveSplashdownImpulseBuffer();
             Vector4 splashdownParams = ResolveSplashdownImpulseParams();
 
@@ -5977,6 +6016,8 @@ namespace Hecton8.Physics
             abyssalFlowFieldCompute.SetFloat(_AbyssalFlowThermoclineYId, resolvedWaterLevel - AbyssalFlowThermoclineDepthMeters);
             abyssalFlowFieldCompute.SetInt(_AbyssalFlowHeatSourceCountId, heatSourceCount);
             abyssalFlowFieldCompute.SetInt(_AbyssalFlowWeatherStateMaskId, (int)weatherSnapshot.StateMask);
+            abyssalFlowFieldCompute.SetInt(_AbyssalFlowUpdateBucketId, updateBucket);
+            abyssalFlowFieldCompute.SetInt(_AbyssalFlowUpdateBucketMaskId, updateBucketMask);
 
             abyssalFlowFieldCompute.Dispatch(_gpuAbyssalUpdateKernel, groupCount, 1, 1);
 

@@ -437,3 +437,32 @@ Verification:
 - Static scans confirm invalid branch order: clear identity, reset baseline.
 - Targeted `git diff --check` reports only CRLF normalization warnings.
 - No `dotnet` rebuild was run.
+
+## Recheck Report: WFC Outpost Black Box
+Status: PENDING VERIFICATION.
+
+What was wrong:
+- WFC outpost persistence had corrupt-payload telemetry but no agent-owned fixed 300-entry post-mortem dump.
+- The generic async save dump did not contain WFC sector hash, payload hash, cell flags, or source signal context.
+- Corrupt restore/hydration failures could explain "what failed" only at the warning level, not with the preceding WFC state trail.
+
+What was done:
+- Added `NativeArray<WfcOutpostTelemetryEntry>[300]` in `SaveManager`.
+- Added one 64-byte WFC frame snapshot per Tick and richer records for WFC signal, persist, restore, hydration, and append-failure events.
+- Added one-shot corrupt-payload dump to `Docs/AgentLogs/Dump_MACRO_WFC_PERSISTENCE_SYNC.bin`.
+- Kept all public persistence contracts unchanged.
+
+Cinematic cheats used:
+- Binary sector/cell truth is logged directly instead of replaying door/datapad/power history.
+- The ring stores packed hashes, mutable flags, and source hashes instead of verbose managed logs.
+- Corruption writes one compact binary dump rather than spamming text output.
+
+Exact microseconds saved:
+- Measured savings: 0 us. No profiler or runtime trace.
+- Static cost: one 64-byte NativeArray write per Tick plus fixed event writes on WFC activity.
+- Static gain: post-mortem diagnosis avoids blind reruns and narrows corrupt-sector investigation to sector/payload/cell state.
+
+Verification:
+- `git diff --check -- Assets/_Project/Scripts/SaveManager.cs` reports no whitespace errors beyond Git CRLF normalization warning.
+- Static scans confirm WFC ring allocation/disposal, per-Tick frame records, event records, `Dump_MACRO_WFC_PERSISTENCE_SYNC.bin`, and corrupt-payload dump hook.
+- No `dotnet` rebuild was run.

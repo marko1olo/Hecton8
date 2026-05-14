@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using System.Runtime.InteropServices;
-using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Core.Signals;
 using Hecton8.UI.Diegetic.Contracts;
@@ -45,7 +44,6 @@ namespace Hecton8.UI
         private const float IconScaleMultiplier = 1.06f;
         private const float IconVerticalBias = -0.002f;
         private const float IconGapMultiplier = 0.42f;
-        private const float CameraResolveRetryIntervalSeconds = 0.5f;
         private const float DefaultFadeDurationSeconds = 0.2f;
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_CONTEXTUAL_UX_PROMPTER.bin";
         private const string DefaultGlyphMaterialResourcePath = "UI/MAT_DiegeticTooltipGlyph";
@@ -166,8 +164,9 @@ namespace Hecton8.UI
         private int _promptLength;
         private int _textGlyphCount;
         private int _iconCount;
+        private int _boundTextArgsCount = -1;
+        private int _boundIconArgsCount = -1;
         private float _visibleAlpha;
-        private float _nextCameraResolveTime;
         private float _boundTextGradientScale = float.NaN;
         private float _boundIconGradientScale = float.NaN;
         private float _boundTextFaceDilate = float.NaN;
@@ -272,6 +271,7 @@ namespace Hecton8.UI
                     ref _boundIconGradientScale,
                     ref _boundIconFaceDilate,
                     ref _boundIconDitherEnabled,
+                    ref _boundIconArgsCount,
                     _iconCount,
                     tint,
                     ditherEnabled);
@@ -301,6 +301,7 @@ namespace Hecton8.UI
                     ref _boundTextGradientScale,
                     ref _boundTextFaceDilate,
                     ref _boundTextDitherEnabled,
+                    ref _boundTextArgsCount,
                     _textGlyphCount,
                     tint,
                     ditherEnabled);
@@ -347,6 +348,13 @@ namespace Hecton8.UI
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
+            {
+                _cachedRenderCamera = null;
+                if (interactionCamera == null && currentService is IPlayerRuntimeContext playerContext)
+                    _cachedRenderCamera = playerContext.PlayerCamera;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.Input)
                 return;
 
@@ -758,12 +766,14 @@ namespace Hecton8.UI
             if (_textArgsBuffer == null)
             {
                 _textArgsBuffer = new ComputeBuffer(1, IndirectArgsStride, ComputeBufferType.IndirectArguments);
+                _boundTextArgsCount = -1;
                 argsDirty = true;
             }
 
             if (_iconArgsBuffer == null)
             {
                 _iconArgsBuffer = new ComputeBuffer(1, IndirectArgsStride, ComputeBufferType.IndirectArguments);
+                _boundIconArgsCount = -1;
                 argsDirty = true;
             }
 
@@ -890,6 +900,7 @@ namespace Hecton8.UI
             ref float boundGradientScale,
             ref float boundFaceDilate,
             ref float boundDitherEnabled,
+            ref int boundArgsCount,
             int count,
             Vector4 tint,
             float ditherEnabled)
@@ -911,8 +922,13 @@ namespace Hecton8.UI
             }
 
             instanceBuffer.SetData(_instancePayloads, 0, 0, count);
-            _indirectArgs[1] = (uint)count;
-            argsBuffer.SetData(_indirectArgs);
+            if (boundArgsCount != count)
+            {
+                _indirectArgs[1] = (uint)count;
+                argsBuffer.SetData(_indirectArgs);
+                boundArgsCount = count;
+            }
+
             BindPropertyBlockIfDirty(
                 propertyBlock,
                 mainTexture,
@@ -1015,23 +1031,8 @@ namespace Hecton8.UI
             if (_cachedRenderCamera != null)
                 return _cachedRenderCamera;
 
-            float now = Time.unscaledTime;
-            if (now < _nextCameraResolveTime)
-                return null;
-
-            _nextCameraResolveTime = now + CameraResolveRetryIntervalSeconds;
             IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
-            if (playerContext != null && playerContext.PlayerCamera != null)
-            {
-                _cachedRenderCamera = playerContext.PlayerCamera;
-                interactionCamera = _cachedRenderCamera;
-                return _cachedRenderCamera;
-            }
-
-            if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) && playerTransform != null)
-                _cachedRenderCamera = playerTransform.GetComponentInChildren<Camera>();
-
-            interactionCamera = _cachedRenderCamera;
+            _cachedRenderCamera = playerContext != null ? playerContext.PlayerCamera : null;
             return _cachedRenderCamera;
         }
 
@@ -1194,6 +1195,8 @@ namespace Hecton8.UI
             _boundIconFaceDilate = float.NaN;
             _boundTextDitherEnabled = float.NaN;
             _boundIconDitherEnabled = float.NaN;
+            _boundTextArgsCount = -1;
+            _boundIconArgsCount = -1;
             _materialResolveAttempted = false;
             _materialResolveFailed = false;
             _materialsReady = false;

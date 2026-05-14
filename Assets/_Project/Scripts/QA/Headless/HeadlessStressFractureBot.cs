@@ -133,6 +133,8 @@ namespace Hecton8.QA.Headless
         private float _staticHPhiAupPrecisionIntegrity = 1f;
         private int _staticHPhiAupPrecisionSafe;
         private int _staticHPhiAupPrecisionRisk;
+        private int _staticHPhiDispatcherContracts;
+        private int _staticHPhiUnityUpdateMethods;
         private float3 _lastShiftMeters;
         private bool _started;
         private bool _finished;
@@ -369,11 +371,15 @@ namespace Hecton8.QA.Headless
             _staticHPhiAupPrecisionSafe = staticHPhiCounters.AupPrecisionSafe;
             _staticHPhiAupPrecisionRisk = staticHPhiCounters.AupPrecisionRisk;
             _staticHPhiAupPrecisionIntegrity = CalculateAupPrecisionIntegrity(in staticHPhiCounters);
+            _staticHPhiDispatcherContracts = CountDispatcherContracts(in staticHPhiCounters);
+            _staticHPhiUnityUpdateMethods = staticHPhiCounters.UnityUpdateMethods;
             Debug.LogWarning(FormatStaticHPhiLog(
                 _staticHPhiMetric,
                 _staticHPhiAupPrecisionIntegrity,
                 _staticHPhiAupPrecisionSafe,
                 _staticHPhiAupPrecisionRisk,
+                _staticHPhiDispatcherContracts,
+                _staticHPhiUnityUpdateMethods,
                 _targetFrames,
                 scratchMegabytes,
                 _startupTimeoutSeconds));
@@ -927,6 +933,10 @@ namespace Hecton8.QA.Headless
                     WriteInvariant(writer, _staticHPhiAupPrecisionSafe);
                     writer.Write(",\"staticHPhiAupPrecisionRisk\":");
                     WriteInvariant(writer, _staticHPhiAupPrecisionRisk);
+                    writer.Write(",\"staticHPhiDispatcherContracts\":");
+                    WriteInvariant(writer, _staticHPhiDispatcherContracts);
+                    writer.Write(",\"staticHPhiUnityUpdateMethods\":");
+                    WriteInvariant(writer, _staticHPhiUnityUpdateMethods);
                     writer.Write(",\"lastFractureHash\":");
                     WriteInvariant(writer, _lastFractureHash);
                     writer.Write(",\"dataVaultFreeApi\":\"ABSENT_IDataVault_RELEASE\"");

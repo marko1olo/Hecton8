@@ -57,6 +57,8 @@ float _AbyssalFlowSurfaceY;
 float _AbyssalFlowThermoclineY;
 int _AbyssalFlowHeatSourceCount;
 int _AbyssalFlowWeatherStateMask;
+int _AbyssalFlowUpdateBucket;
+int _AbyssalFlowUpdateBucketMask;
 float4 _AbyssalFlowTextureParams;      // x: resolution, y: world size, z: dt, w: high-tier enabled
 float4 _AbyssalFlowNoiseOffset;        // xyz: absolute-universe offset, w: origin-shift sequence
 float4 _AbyssalFlowWakeSphere;         // xyz: submarine center, w: radius
@@ -90,6 +92,12 @@ static const float FlowTextureCurlStrength = 1.35;
 static const float FlowTextureGeyserThreshold = 0.80;
 static const float FlowTextureGeyserUpdraftScale = 7.5;
 static const float FlowTextureWakeStrength = 0.82;
+
+bool ShouldUpdateAbyssalFlowNode(uint flatIndex)
+{
+    uint mask = (uint)max(_AbyssalFlowUpdateBucketMask, 0);
+    return mask == 0u || ((flatIndex & mask) == ((uint)_AbyssalFlowUpdateBucket & mask));
+}
 
 float3 SafeNormalize(float3 value, float3 fallbackValue)
 {
@@ -293,6 +301,9 @@ void UpdateAbyssalFlowField(uint3 dispatchThreadId : SV_DispatchThreadID)
     if (nodeIndex >= (uint)_AbyssalGridResolution.w)
         return;
 
+    if (!ShouldUpdateAbyssalFlowNode(nodeIndex))
+        return;
+
     int3 coord = ResolveGridCoord(nodeIndex);
     float3 nodeWorldPos = ResolveNodeWorldPosition(coord);
     float3 flow = _AbyssalFlowWeatherCurrent.xyz;
@@ -360,9 +371,15 @@ void UpdateAbyssalFlowTexture(uint3 dispatchThreadId : SV_DispatchThreadID)
         return;
 
     int3 coord = int3(dispatchThreadId.xyz);
+    uint flatIndex = ResolveFlatIndex(coord);
+    if (!ShouldUpdateAbyssalFlowNode(flatIndex))
+    {
+        _AbyssalFlowTextureWrite[coord] = _AbyssalFlowTextureRead.Load(int4(coord, 0));
+        return;
+    }
+
     float3 nodeWorldPos = ResolveFlowTextureWorldPosition(dispatchThreadId);
     float3 baseFlow = ResolveBaseFlowTextureVelocity(nodeWorldPos);
-    uint flatIndex = ResolveFlatIndex(coord);
     float turbulenceScalar = 1.0;
     baseFlow = ApplySplashdownImpulse(flatIndex, baseFlow, turbulenceScalar);
     float3 previousFlow = _AbyssalFlowTextureRead.Load(int4(coord, 0)).xyz;

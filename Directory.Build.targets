@@ -130,6 +130,10 @@
     </Reference>
   </ItemGroup>
 
+  <ItemGroup Condition="'$(MSBuildProjectName)' == 'Hecton8.Core' And '$(HectonBuildProjectReferences)' != 'true'">
+    <ProjectReference Remove="@(ProjectReference)" />
+  </ItemGroup>
+
   <ItemGroup Condition="'$(MSBuildProjectName)' == 'Hecton8.World.Contracts'">
     <Compile Remove="Assets\_Project\Scripts\World\Contracts\GroundRadarContracts.cs" />
     <Compile Remove="Assets\_Project\Scripts\World\Contracts\OutpostGenerationContracts.cs" />

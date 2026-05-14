@@ -144,3 +144,17 @@ Solution: Added per-batch bound-state caches for texture, instance buffer, UV bu
 Rejected Alternatives: Rebinding every draw for simplicity, mutating shared material assets directly, or moving tint into the property block. Rebinding is avoidable CPU traffic; shared material mutation breaks authored asset ownership; tint must stay per instance.
 Scalability potential: Low removes repeated MPB setter work from the normal prompt. Middle keeps dither fade. High and Ultra can add authored material variants or extra per-instance visual treatment without paying redundant binding resets every frame.
 Hardware Impact: Expected gain is sub-microsecond per prompt on i3/MX350, but deterministic: after warmup the icon/text batches only rebind when texture, buffer, SDF tuning, or dither tier state changes. No runtime profiler proof.
+
+## Decision 20: Registry-Only Render Camera Resolution
+Problem: The tooltip renderer still had a cold fallback through `GameBootstrapper.TryGetCurrentPlayerTransform` and `GetComponentInChildren<Camera>()`, guarded by `Time.unscaledTime`. That is weak for a registry-owned diegetic UI system and leaves a component-search path in the render camera resolver.
+Solution: Removed the bootstrap/component-search fallback and retry timer. `ResolveCamera()` now uses only an authored `interactionCamera` or `GlobalRegistry.Player.PlayerCamera`; player service hot-swap clears the cached camera and accepts the new registry camera if present.
+Rejected Alternatives: Keeping the bootstrap fallback for convenience, using `Camera.main`, or doing a scene search when the registry is missing. Those hide broken player context wiring and add forbidden discovery work to a presentation system.
+Scalability potential: Low fails closed instead of searching scene hierarchy. Middle keeps the same prompt visuals. High and Ultra keep deterministic camera ownership for richer material/effect work without camera-pass ambiguity.
+Hardware Impact: Expected gain is cold-path hygiene and lower worst-case stall risk, not a measurable steady-frame win. It removes the component-search fallback and `Time.unscaledTime` retry branch from the tooltip camera resolver. No runtime profiler proof.
+
+## Decision 21: Indirect Args Dirty Count
+Problem: The tooltip still uploaded indirect argument buffers every visible icon/text draw even when the instance count was unchanged. For stable prompts, only the glyph payload changes per frame; the args count usually does not.
+Solution: Added `_boundTextArgsCount` and `_boundIconArgsCount`, reset them on args-buffer creation and resource release, and changed `DrawBatch` to call `argsBuffer.SetData(_indirectArgs)` only when the batch count changes.
+Rejected Alternatives: Updating args every draw for simplicity, splitting one args array per batch without dirty gating, or moving count into shader-side branching. Repeated uploads are unnecessary; shader-side count branching is the wrong layer for indirect draw submission state.
+Scalability potential: Low removes redundant CPU-to-GPU args traffic for the single normal prompt. Middle keeps dither fade. High and Ultra preserve upload budget for richer per-instance glyph visuals while keeping indirect draw state stable.
+Hardware Impact: Expected gain is sub-microsecond per visible prompt on i3/MX350, with lower driver/API traffic in steady hover. No runtime profiler proof.

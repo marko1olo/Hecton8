@@ -54,6 +54,9 @@ namespace Hecton8.World
         private const int ComputeDisableReasonZeroThreadGroup = 7;
         private const int ComputeDisableReasonKernelValidationFailure = 8;
         private const int ComputeDisableReasonOriginShiftFailure = 9;
+        private const int FaunaSimulationBucketMask = 15;
+        private const float FaunaSimulationBucketInvCount = 1f / (FaunaSimulationBucketMask + 1);
+        private const uint FaunaAmbientDriftKillSwitchMask = GlobalRegistry.SystemKillSwitchLane4VfxMask;
 #if UNITY_EDITOR
         private const int MaxEditorValidateDepth = 4;
         private static int _editorValidateDepth;
@@ -796,6 +799,8 @@ namespace Hecton8.World
         private static readonly int _AbyssalFlowSpacingId = Shader.PropertyToID("_AbyssalFlowSpacing");
         private static readonly int _AbyssalFlowActiveId = Shader.PropertyToID("_AbyssalFlowActive");
         private static readonly int _AbyssalFlowWeightId = Shader.PropertyToID("_AbyssalFlowWeight");
+        private static readonly int _SimulationBucketIndexId = Shader.PropertyToID("_SimulationBucketIndex");
+        private static readonly int _SimulationBucketMaskId = Shader.PropertyToID("_SimulationBucketMask");
 
         [Header("â”€â”€ Runtime Wiring â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [SerializeField]
@@ -1514,7 +1519,9 @@ namespace Hecton8.World
         private Mesh _boidIndirectArgsMesh;
         private int _boidIndirectArgsInstanceCount = -1;
         private int _frameParity;
+        private ISimulationBucketer _simulationBucketer;
         private int _lastFieldRevision = -1;
+        private float _simulationInterpolationAlpha = 1f;
         private bool _registeredTick;
         private bool _registeredFixedTick;
         private bool _registeredSlowTick;
@@ -1685,6 +1692,8 @@ namespace Hecton8.World
         /// </summary>
         public int ActiveBoidCount => _activeBoidCount;
 
+        public float SimulationInterpolationAlpha => _simulationInterpolationAlpha;
+
         private void Awake()
         {
             _computeDispatchDisabled = false;
@@ -1761,6 +1770,8 @@ namespace Hecton8.World
             _reportedWakeFleeCount = 0;
             _reportedWakeCenterWS = Vector3.zero;
             _reportedWakeFlowDirectionWS = Vector3.zero;
+            _simulationBucketer = null;
+            _simulationInterpolationAlpha = 1f;
             ClearStatisticalPopulationPoint();
             _leviathanModeActive = false;
             _leviathanThreatLevel = 0f;
@@ -1906,6 +1917,13 @@ namespace Hecton8.World
             bool shouldDispatchSimulation = dispatchedSimulation && (shouldRender || ShouldMaintainOffscreenBoidSimulation(simulationLodTier));
             bool leaderFollowerSchooling = _formationModeActive && !_parasiteModeActive && _leviathanModeBlend < 0.001f;
             bool shouldCollectLatchStats = ShouldCollectLatchStats(simulationLodTier, leaderFollowerSchooling);
+            if (IsFaunaAmbientDriftKillSwitchActive())
+            {
+                shouldDispatchSimulation = false;
+                shouldDispatchSleepVelocityWrite = false;
+                hibernation01 = math.max(hibernation01, 1f);
+            }
+
             if (shouldDispatchSimulation || shouldDispatchSleepVelocityWrite)
             {
                 if (simulationLodTier == SimulationLodTier.Full && !leaderFollowerSchooling)
@@ -2108,6 +2126,9 @@ namespace Hecton8.World
 
             if (_playerFlashlight != null)
                 _flashlightOn = _playerFlashlight.IsOn;
+
+            if (_simulationBucketer == null || !_simulationBucketer.IsInitialized)
+                _simulationBucketer = GlobalRegistry.SimulationBucketer;
         }
 
         private void ResetDependencyProbeCache()
@@ -3918,6 +3939,7 @@ namespace Hecton8.World
             if (!_simulationFrameNative.IsCreated || _simulationFrameBuffer == null)
                 return false;
 
+            ResolveSimulationBucketUniforms(out int simulationBucketIndex, out int simulationBucketMask);
             GraphicsBuffer readBuffer = _frameParity == 0 ? _boidsBufferA : _boidsBufferB;
             GraphicsBuffer writeBuffer = _frameParity == 0 ? _boidsBufferB : _boidsBufferA;
 
@@ -4221,6 +4243,8 @@ namespace Hecton8.World
                 boidCompute.SetVector(_AbyssalFlowSpacingId, abyssalFlowSpacing);
                 boidCompute.SetFloat(_AbyssalFlowActiveId, abyssalFlowActive);
                 boidCompute.SetFloat(_AbyssalFlowWeightId, 1f);
+                boidCompute.SetInt(_SimulationBucketIndexId, simulationBucketIndex);
+                boidCompute.SetInt(_SimulationBucketMaskId, simulationBucketMask);
 
                 boidCompute.SetBuffer(_buildSpatialGridKernelIndex, _BoidsBufferReadId, readBuffer);
 
@@ -4240,6 +4264,28 @@ namespace Hecton8.World
             _debugSonarScatter01 = sonarScatterStrength01;
             _debugPredatorAupThreatCount = predatorAupThreatLoopCap;
             return true;
+        }
+
+        private void ResolveSimulationBucketUniforms(out int simulationBucketIndex, out int simulationBucketMask)
+        {
+            ISimulationBucketer bucketer = _simulationBucketer;
+            if (bucketer == null || !bucketer.IsInitialized)
+            {
+                bucketer = GlobalRegistry.SimulationBucketer;
+                _simulationBucketer = bucketer;
+            }
+
+            int frameCount = bucketer != null && bucketer.IsInitialized
+                ? bucketer.CurrentFrameCount
+                : Time.frameCount;
+            simulationBucketMask = FaunaSimulationBucketMask;
+            simulationBucketIndex = frameCount & simulationBucketMask;
+            _simulationInterpolationAlpha = (simulationBucketIndex + 1) * FaunaSimulationBucketInvCount;
+        }
+
+        private static bool IsFaunaAmbientDriftKillSwitchActive()
+        {
+            return (GlobalRegistry.SystemKillSwitchMask & FaunaAmbientDriftKillSwitchMask) != 0u;
         }
 
         void ISargassumGlobalDragEventListener.OnSargassumEntanglementStrain(in SargassumGlobalDragManager.EntanglementStrainSignal signal)

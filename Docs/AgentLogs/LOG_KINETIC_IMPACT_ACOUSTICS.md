@@ -348,3 +348,37 @@ Verification:
 - Source counters for `HectonMusicDirector`: `GlobalRegistryPlayer=1`, `GlobalRegistryAudio=1`, `GlobalRegistryAcoustic=1`, `ResolverCalls=6`, `FindObject=0`, `UpdateMethods=0`, `StartCoroutine=0`.
 - Scoped forbidden scan found only editor/development diagnostics and editor smoke strings.
 - Dotnet build/rebuild was not run by explicit user order. Unity compile remains PENDING VERIFICATION until Editor console/MCP validation is available.
+
+## 2026-05-15 - DSP_ACOUSTIC_LEAD - Loop 15 Spatial Audio Service Policy Resolver H-Phi Pass
+Status: PENDING VERIFICATION
+
+What was wrong:
+- `SpatialAudioManager` owns repeated spatial policy and optional-service paths: virtual physical voice limit, listener AUP, acoustic-zone interior state, acoustic portal policy, global wind howl, and water-density muffle.
+- Those paths need hard smoke coverage so future edits do not reintroduce direct `GlobalRegistry` polling in the guarded method bodies.
+- The active `Docs/Tasks/CURRENT_BATCH.md` has rotated to unrelated agents, so the original assignment must remain sourced from the persistent kinetic status/rationale files.
+
+What was done:
+- Verified spatial policy caching through `SpatialAudioPolicyRefreshFrames = 30`.
+- Verified optional player/weather/acoustic-zone/surface-weather service lookup caching through `SpatialAudioRegistryRetryFrames = 30`.
+- Confirmed `RefreshVirtualPhysicalVoiceLimit`, `TryResolvePlayerListenerAup`, `IsListenerInteriorZoneActive`, `TryResolveAcousticPortalPath`, `ShouldUseAcousticPortalPath`, `ResolveGlobalWindHowlTarget01`, `ResolveGlobalWindHowlOccluded`, and `UpdateListenerWaterDensityMul` consume cached resolver helpers.
+- Extended `AdvancedAcousticsSmokeTester` with direct guards for portal policy, voice-limit policy, listener AUP, water-density update, wind target, and wind occlusion method bodies.
+
+Cinematic cheats used:
+- Spatial service rebinding is cadence-bound at 30 frames because audio LOD, portal policy, wind, and water muffle do not need frame-perfect registry refresh.
+- No new acoustic solver, object search, or event lane was added; the system spends saved lookup budget on existing portal/wind/virtualization effects.
+- Low tier remains cheap through cached policy and bounded optional-service fallback; high tier keeps the same richer spatial paths.
+
+Exact microseconds saved:
+- Saves two policy registry reads per virtual voice or acoustic portal policy refresh after warmup.
+- Saves one player registry read on listener AUP and water-density update paths after warmup.
+- Saves one acoustic-zone registry read in interior checks and wind occlusion paths after warmup.
+- Saves one weather and one surface-weather registry read in wind howl target/occlusion paths after warmup.
+- Runtime allocation delta remains 0 B/frame.
+
+Verification:
+- `git diff --check -- Assets/_Project/Scripts/SpatialAudioManager.cs Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs` passed except CRLF normalization warnings.
+- Direct spatial policy/service registry reads are confined to resolver refresh bodies: `GlobalRegistry.ScalabilityTier`, `GlobalRegistry.H8_LOW_MEMORY_PROFILE`, `GlobalRegistry.Player`, `GlobalRegistry.Weather`, `GlobalRegistry.AcousticZone`, and `GlobalRegistry.SurfaceWeather`.
+- Source counters for `SpatialAudioManager`: `PolicyDirect=2`, `RuntimeServiceDirect=4`, `PlayerCriticalAudioDirect=2`, `PolicyResolvers=6`, `RuntimeResolvers=12`, `FindObject=0`, `UpdateMethods=0`.
+- Source counters for the smoke tester: `SmokeSpatialResolverAsserts=16`.
+- Scoped forbidden scan found only pre-existing comments/cold diagnostics/editor smoke strings: no new runtime `PlayClipAtPoint`, coroutine, managed hot collection, `math.exp`, or string formatting was introduced by this pass.
+- Dotnet build/rebuild was not run by explicit user order. Unity compile remains PENDING VERIFICATION until Editor console/MCP validation is available.

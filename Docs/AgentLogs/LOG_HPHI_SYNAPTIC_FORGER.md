@@ -269,3 +269,31 @@ Verification:
 - Static `rg` found no `ItemCraftedEvent`, `_itemCraftedSubscription`, `HandleItemCrafted`, or logbook `HectonEventBus.Subscribe<ItemCraftedEvent>` remnants.
 - Static `rg` found no scan-log `ScanLogChanged`/`EntryUnlocked` subscription remnants in ScanLogSystem/Fabricator/PDALogbookManager.
 - `git diff --check` on touched code reported only LF/CRLF notices.
+
+## 2026-05-15 - Craft Progression Signal Counter Addendum
+
+What was wrong:
+- `ItemCraftedEvent` had no active project publisher.
+- PlayerAchievementRegistry and GlobalProfileManager still subscribed to that dead managed event for crafted-item progression.
+- GlobalProfileManager is a SlowTick owner, so direct frame-snapshot SignalBus consumption would either miss craft packets or require a new permanent per-frame meta registration.
+
+What was done:
+- `CraftingCompletedSignal` continues to feed the native queue and typed SignalBus lane.
+- `GlobalSignals.LatestCraftingCompletedUnitCount` advances by delivered nonzero `CraftingCompletedSignal.Quantity`.
+- PlayerAchievementRegistry and GlobalProfileManager consume unsigned deltas from that counter.
+- PDALogbookManager now ignores zero-quantity laser-cutter completions.
+- Removed the remaining project `ItemCraftedEvent` subscriber surfaces; the legacy event type itself remains isolated in ModdingAPI.
+
+Cinematic Cheats used:
+- Slow progression/meta systems use one delivered-unit counter instead of simulating or replaying craft events.
+- PDA still uses the richer SignalBus packet for the visual journal milestone.
+
+Exact microseconds saved:
+- Estimated 0.2-0.5 us per craft burst by avoiding remaining managed EventBus subscriber dispatch.
+- Avoided a permanent GlobalProfileManager per-frame SignalBus scan; slow tick pays one volatile read.
+
+Verification:
+- No dotnet build, restore, or rebuild was run.
+- `Select-String` over touched runtime files found no `Subscribe<ItemCraftedEvent>`, `new ItemCraftedEvent`, `HandleItemCrafted`, `HandleCrafted(`, `_itemCraftedSubscription`, or `_craftedSubscription`.
+- Diff-only anti-bloat scan found no added `foreach`, `string.Format`, `.ToString(`, interpolation, LINQ, or `new List<`.
+- `git diff --check` on touched code reported only LF/CRLF notices.

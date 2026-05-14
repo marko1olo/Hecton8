@@ -617,7 +617,7 @@ namespace Hecton8.PDA
             uint requiredItemHash = unchecked((uint)FirstLaserCutterPersistentHash);
             for (int i = 0; i < signals.Length; i++)
             {
-                if (signals[i].ResultItemHash != requiredItemHash)
+                if (signals[i].ResultItemHash != requiredItemHash || signals[i].Quantity == 0)
                     continue;
 
                 TryAppendEntry(FirstLaserCutterOriginHash, FirstLaserCutterTitleHash, FirstLaserCutterMessageHash);

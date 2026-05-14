@@ -325,12 +325,17 @@ namespace Hecton8.Audio
         private IPlayerRuntimeContext _playerRuntimeContext;
         private IAudioService _cachedAudioService;
         private AcousticZoneController _cachedAcousticZone;
+        private HectonSurfaceWeatherDirector _cachedSurfaceWeatherDirector;
+        private FirstHourDirector _cachedFirstHourDirector;
         private bool _playerMovementLookupAttempted;
         private bool _survivalLookupAttempted;
         private int _nextDependencyRetryFrame;
         private int _nextPlayerContextResolveFrame;
         private int _nextAudioServiceResolveFrame;
         private int _nextAcousticZoneResolveFrame;
+        private int _nextDepthZoneResolveFrame;
+        private int _nextSurfaceWeatherResolveFrame;
+        private int _nextFirstHourResolveFrame;
         private AudioMixer _layerMixer;
         private float _layerRhythm01;
         private float _layerBass01;
@@ -859,9 +864,14 @@ namespace Hecton8.Audio
             _playerRuntimeContext = null;
             _cachedAudioService = null;
             _cachedAcousticZone = null;
+            _cachedSurfaceWeatherDirector = null;
+            _cachedFirstHourDirector = null;
             _nextPlayerContextResolveFrame = 0;
             _nextAudioServiceResolveFrame = 0;
             _nextAcousticZoneResolveFrame = 0;
+            _nextDepthZoneResolveFrame = 0;
+            _nextSurfaceWeatherResolveFrame = 0;
+            _nextFirstHourResolveFrame = 0;
         }
 
         private IPlayerRuntimeContext ResolvePlayerRuntimeContext()
@@ -911,6 +921,50 @@ namespace Hecton8.Audio
             return _cachedAcousticZone;
         }
 
+        private DepthZoneDirector ResolveDepthZoneDirector()
+        {
+            if (_depthZoneDirector != null)
+                return _depthZoneDirector;
+
+            int frame = Time.frameCount;
+            if (frame < _nextDepthZoneResolveFrame)
+                return null;
+
+            _nextDepthZoneResolveFrame = frame + DependencyRetryFrameInterval;
+            _depthZoneDirector = GlobalRegistry.DepthZone;
+            return _depthZoneDirector;
+        }
+
+        private HectonSurfaceWeatherDirector ResolveSurfaceWeatherDirector()
+        {
+            int frame = Time.frameCount;
+            HectonSurfaceWeatherDirector surfaceWeather = _cachedSurfaceWeatherDirector;
+            if (surfaceWeather != null && frame < _nextSurfaceWeatherResolveFrame)
+                return surfaceWeather;
+
+            if (frame < _nextSurfaceWeatherResolveFrame)
+                return null;
+
+            _nextSurfaceWeatherResolveFrame = frame + DependencyRetryFrameInterval;
+            _cachedSurfaceWeatherDirector = GlobalRegistry.SurfaceWeather;
+            return _cachedSurfaceWeatherDirector;
+        }
+
+        private FirstHourDirector ResolveFirstHourDirector()
+        {
+            int frame = Time.frameCount;
+            FirstHourDirector firstHourDirector = _cachedFirstHourDirector;
+            if (firstHourDirector != null && frame < _nextFirstHourResolveFrame)
+                return firstHourDirector;
+
+            if (frame < _nextFirstHourResolveFrame)
+                return null;
+
+            _nextFirstHourResolveFrame = frame + DependencyRetryFrameInterval;
+            _cachedFirstHourDirector = GlobalRegistry.FirstHour;
+            return _cachedFirstHourDirector;
+        }
+
         private void ResolveDependencies()
         {
             Scene activeScene = SceneManager.GetActiveScene();
@@ -933,7 +987,7 @@ namespace Hecton8.Audio
                 _biomeMatrixDirector = BiomeMatrixDirector.ActiveRuntimeInstance;
 
             if (_depthZoneDirector == null)
-                _depthZoneDirector = GlobalRegistry.DepthZone;
+                _depthZoneDirector = ResolveDepthZoneDirector();
 
             if (_directorAI == null)
                 _directorAI = HectonDirectorAI.ActiveRuntimeInstance;
@@ -1152,7 +1206,7 @@ namespace Hecton8.Audio
 
         private float ResolveStormPressure01(float depthMeters)
         {
-            HectonSurfaceWeatherDirector weatherDirector = GlobalRegistry.SurfaceWeather;
+            HectonSurfaceWeatherDirector weatherDirector = ResolveSurfaceWeatherDirector();
             if (weatherDirector == null || depthMeters > 120f)
                 return 0f;
 
@@ -2415,7 +2469,7 @@ namespace Hecton8.Audio
             if (zone == null || _currentBaseContext)
                 return;
 
-            FirstHourDirector firstHourDirector = Hecton8.Core.GlobalRegistry.FirstHour;
+            FirstHourDirector firstHourDirector = ResolveFirstHourDirector();
             if (firstHourDirector != null && !firstHourDirector.IsMilestoneComplete(FirstHourMilestone.Orientation))
                 return;
 
@@ -2451,7 +2505,7 @@ namespace Hecton8.Audio
 
         private void HandleRareDiscoveryRequested(Vector3 position)
         {
-            FirstHourDirector firstHourDirector = Hecton8.Core.GlobalRegistry.FirstHour;
+            FirstHourDirector firstHourDirector = ResolveFirstHourDirector();
             if (firstHourDirector != null &&
                 !firstHourDirector.IsMilestoneComplete(FirstHourMilestone.FirstCraft))
             {
@@ -2546,7 +2600,7 @@ namespace Hecton8.Audio
             if (zone == null || _combatLatched || _overrideActive)
                 return false;
 
-            FirstHourDirector firstHourDirector = Hecton8.Core.GlobalRegistry.FirstHour;
+            FirstHourDirector firstHourDirector = ResolveFirstHourDirector();
             if (firstHourDirector != null &&
                 !firstHourDirector.IsMilestoneComplete(FirstHourMilestone.FirstCraft))
             {
@@ -2835,9 +2889,9 @@ namespace Hecton8.Audio
             return math.saturate(suppression01);
         }
 
-        private static float ResolveFirstHourPressureBoost01(HectonBiomeMatrixProfile matrixProfile, WorldZoneAnchor currentZone)
+        private float ResolveFirstHourPressureBoost01(HectonBiomeMatrixProfile matrixProfile, WorldZoneAnchor currentZone)
         {
-            FirstHourDirector firstHourDirector = Hecton8.Core.GlobalRegistry.FirstHour;
+            FirstHourDirector firstHourDirector = ResolveFirstHourDirector();
             if (firstHourDirector == null || firstHourDirector.IsFirstHourComplete)
                 return 0f;
 

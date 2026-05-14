@@ -413,6 +413,9 @@ namespace Hecton8.SaveSystem
         /// <summary>Maximum persisted RTG decay records. v70 RTG.</summary>
         public const int MaxRtgDecayRecords = 128;
 
+        /// <summary>Maximum persisted external scavenger sites. Runtime capacity is clamped to 16.</summary>
+        public const int MaxExternalScavengerSites = 16;
+
         public void EnsureRtgDecayCapacity()
         {
             EnsureExactArrayCapacity(ref rtgDecaySourceIds, MaxRtgDecayRecords);

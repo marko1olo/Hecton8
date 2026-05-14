@@ -125,19 +125,25 @@ namespace Hecton8.Animation.IK
                 PullDistanceConstraints(activeCount, segmentLength, ownerForward);
             }
 
+            float sdfRange = SanitizePositiveFinite(VoxelSdfRange, 0f, 0f);
+            float3 sdfCellSize = SanitizePositiveFinite(VoxelSdfCellSize, new float3(0.0001f), new float3(0.0001f));
+            float3 sdfGradientStep = math.max(sdfCellSize, new float3(0.05f));
             bool canUseSdf = !lowTier &&
                              (RuntimeFlags & LeviathanTerrainIkConstants.RuntimeFlagSdfHugging) != 0u &&
                              VoxelSdfTexture3D.IsCreated &&
+                             math.all(math.isfinite(VoxelSdfOrigin)) &&
                              TryResolveSdfVoxelCount(VoxelSdfDimensions, out int expectedSdfLength) &&
                              VoxelSdfTexture3D.Length >= expectedSdfLength &&
-                             VoxelSdfRange > 0.0001f;
+                             sdfRange > 0.0001f;
             float3 sdfInvCellSize = canUseSdf
-                ? math.rcp(math.max(VoxelSdfCellSize, new float3(0.0001f)))
+                ? math.rcp(sdfCellSize)
                 : float3.zero;
             bool canUseHeight = (RuntimeFlags & LeviathanTerrainIkConstants.RuntimeFlagTerrainFallback) != 0u &&
                                 TerrainHeightSamples.IsCreated &&
                                 TryResolveTerrainHeightSampleCount(TerrainResolution, out int expectedTerrainLength) &&
                                 TerrainHeightSamples.Length >= expectedTerrainLength &&
+                                math.all(math.isfinite(TerrainOrigin)) &&
+                                math.all(math.isfinite(TerrainSize)) &&
                                 TerrainSize.x > 0.0001f &&
                                 TerrainSize.y > 0.0001f &&
                                 TerrainSize.z > 0.0001f;
@@ -152,9 +158,9 @@ namespace Hecton8.Animation.IK
                 float3 position = SegmentPositions[index];
                 float appliedPush = 0f;
                 if (canUseSdf &&
-                    TrySampleSdfTrilinear(position, sdfInvCellSize, out float density) &&
+                    TrySampleSdfTrilinear(position, sdfInvCellSize, sdfRange, out float density) &&
                     density > 0f &&
-                    TryResolveSdfGradient(position, sdfInvCellSize, out float3 normal))
+                    TryResolveSdfGradient(position, sdfInvCellSize, sdfRange, sdfGradientStep, out float3 normal))
                 {
                     appliedPush = density + clearance;
                     SegmentPositions[index] = SanitizeFinite(position + normal * appliedPush, position);
@@ -280,14 +286,14 @@ namespace Hecton8.Animation.IK
             }
         }
 
-        private bool TrySampleSdfTrilinear(float3 worldPosition, float3 invCellSize, out float density)
+        private bool TrySampleSdfTrilinear(float3 worldPosition, float3 invCellSize, float sdfRange, out float density)
         {
             density = 0f;
             if (!VoxelSdfTexture3D.IsCreated ||
                 VoxelSdfDimensions.x <= 1 ||
                 VoxelSdfDimensions.y <= 1 ||
                 VoxelSdfDimensions.z <= 1 ||
-                VoxelSdfRange <= 0.0001f)
+                sdfRange <= 0.0001f)
             {
                 return false;
             }
@@ -309,14 +315,14 @@ namespace Hecton8.Animation.IK
             int y1 = math.min(y0 + 1, VoxelSdfDimensions.y - 1);
             int z1 = math.min(z0 + 1, VoxelSdfDimensions.z - 1);
             float3 f = sample - new float3(x0, y0, z0);
-            float c000 = DecodeSdf(SdfIndex(x0, y0, z0));
-            float c100 = DecodeSdf(SdfIndex(x1, y0, z0));
-            float c010 = DecodeSdf(SdfIndex(x0, y1, z0));
-            float c110 = DecodeSdf(SdfIndex(x1, y1, z0));
-            float c001 = DecodeSdf(SdfIndex(x0, y0, z1));
-            float c101 = DecodeSdf(SdfIndex(x1, y0, z1));
-            float c011 = DecodeSdf(SdfIndex(x0, y1, z1));
-            float c111 = DecodeSdf(SdfIndex(x1, y1, z1));
+            float c000 = DecodeSdf(SdfIndex(x0, y0, z0), sdfRange);
+            float c100 = DecodeSdf(SdfIndex(x1, y0, z0), sdfRange);
+            float c010 = DecodeSdf(SdfIndex(x0, y1, z0), sdfRange);
+            float c110 = DecodeSdf(SdfIndex(x1, y1, z0), sdfRange);
+            float c001 = DecodeSdf(SdfIndex(x0, y0, z1), sdfRange);
+            float c101 = DecodeSdf(SdfIndex(x1, y0, z1), sdfRange);
+            float c011 = DecodeSdf(SdfIndex(x0, y1, z1), sdfRange);
+            float c111 = DecodeSdf(SdfIndex(x1, y1, z1), sdfRange);
             float c00 = math.lerp(c000, c100, f.x);
             float c10 = math.lerp(c010, c110, f.x);
             float c01 = math.lerp(c001, c101, f.x);
@@ -327,16 +333,15 @@ namespace Hecton8.Animation.IK
             return math.isfinite(density);
         }
 
-        private bool TryResolveSdfGradient(float3 worldPosition, float3 invCellSize, out float3 normal)
+        private bool TryResolveSdfGradient(float3 worldPosition, float3 invCellSize, float sdfRange, float3 step, out float3 normal)
         {
             normal = new float3(0f, 1f, 0f);
-            float3 step = math.max(VoxelSdfCellSize, new float3(0.05f));
-            bool x0 = TrySampleSdfTrilinear(worldPosition - new float3(step.x, 0f, 0f), invCellSize, out float dx0);
-            bool x1 = TrySampleSdfTrilinear(worldPosition + new float3(step.x, 0f, 0f), invCellSize, out float dx1);
-            bool y0 = TrySampleSdfTrilinear(worldPosition - new float3(0f, step.y, 0f), invCellSize, out float dy0);
-            bool y1 = TrySampleSdfTrilinear(worldPosition + new float3(0f, step.y, 0f), invCellSize, out float dy1);
-            bool z0 = TrySampleSdfTrilinear(worldPosition - new float3(0f, 0f, step.z), invCellSize, out float dz0);
-            bool z1 = TrySampleSdfTrilinear(worldPosition + new float3(0f, 0f, step.z), invCellSize, out float dz1);
+            bool x0 = TrySampleSdfTrilinear(worldPosition - new float3(step.x, 0f, 0f), invCellSize, sdfRange, out float dx0);
+            bool x1 = TrySampleSdfTrilinear(worldPosition + new float3(step.x, 0f, 0f), invCellSize, sdfRange, out float dx1);
+            bool y0 = TrySampleSdfTrilinear(worldPosition - new float3(0f, step.y, 0f), invCellSize, sdfRange, out float dy0);
+            bool y1 = TrySampleSdfTrilinear(worldPosition + new float3(0f, step.y, 0f), invCellSize, sdfRange, out float dy1);
+            bool z0 = TrySampleSdfTrilinear(worldPosition - new float3(0f, 0f, step.z), invCellSize, sdfRange, out float dz0);
+            bool z1 = TrySampleSdfTrilinear(worldPosition + new float3(0f, 0f, step.z), invCellSize, sdfRange, out float dz1);
             if (!x0 || !x1 || !y0 || !y1 || !z0 || !z1)
                 return false;
 
@@ -388,12 +393,12 @@ namespace Hecton8.Animation.IK
             return TerrainHeightSamples[index] * (1f / 65535f) * TerrainSize.y;
         }
 
-        private float DecodeSdf(int index)
+        private float DecodeSdf(int index, float sdfRange)
         {
             if ((uint)index >= (uint)VoxelSdfTexture3D.Length)
-                return -VoxelSdfRange;
+                return -sdfRange;
 
-            return ((VoxelSdfTexture3D[index] * InvEncodedByteMax) * 2f - 1f) * VoxelSdfRange;
+            return ((VoxelSdfTexture3D[index] * InvEncodedByteMax) * 2f - 1f) * sdfRange;
         }
 
         private int SdfIndex(int x, int y, int z)
@@ -515,6 +520,11 @@ namespace Hecton8.Animation.IK
         private static float SanitizePositiveFinite(float value, float fallback, float minValue)
         {
             return math.isfinite(value) ? math.max(value, minValue) : fallback;
+        }
+
+        private static float3 SanitizePositiveFinite(float3 value, float3 fallback, float3 minValue)
+        {
+            return math.all(math.isfinite(value)) ? math.max(value, minValue) : fallback;
         }
 
         private static float SanitizeFiniteClamp(float value, float fallback, float minValue, float maxValue)

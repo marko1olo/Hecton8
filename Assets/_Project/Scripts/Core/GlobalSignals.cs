@@ -1234,6 +1234,7 @@ namespace Hecton8.Core
         private static int _latestScannerToolActiveSignalSequence;
         private static int _latestToolStateChangedSignalSequence;
         private static int _latestCraftingCompletedSignalSequence;
+        private static int _latestCraftingCompletedUnitCount;
         private static int _timeDilationScalarMilli = 1000;
         private static int _timeDilationSequence;
         private static int _simulationPaused;
@@ -1253,6 +1254,8 @@ namespace Hecton8.Core
         public static uint LatestStorageDebtSequence => unchecked((uint)Volatile.Read(ref _latestStorageDebtSequence));
 
         public static uint LatestCraftingCompletedSequence => unchecked((uint)Volatile.Read(ref _latestCraftingCompletedSignalSequence));
+
+        public static uint LatestCraftingCompletedUnitCount => unchecked((uint)Volatile.Read(ref _latestCraftingCompletedUnitCount));
 
         /// <summary>Damage routing writer for Burst jobs or background producers.</summary>
         public static NativeQueue<DamageSignal>.ParallelWriter DamageSignalWriter
@@ -2362,6 +2365,9 @@ namespace Hecton8.Core
             CraftingCompletedSignal sequencedSignal = signal;
             AdvanceSignalSequence(ref _latestCraftingCompletedSignalSequence);
             sequencedSignal.Sequence = unchecked((uint)Volatile.Read(ref _latestCraftingCompletedSignalSequence));
+            if (sequencedSignal.Quantity > 0)
+                AdvanceSignalSequence(ref _latestCraftingCompletedUnitCount, sequencedSignal.Quantity);
+
             _craftingCompletedSignals.Enqueue(sequencedSignal);
             SignalBus<CraftingCompletedSignal>.Push(in sequencedSignal);
         }
@@ -3250,6 +3256,7 @@ namespace Hecton8.Core
             Volatile.Write(ref _latestScannerToolActiveSignalSequence, 0);
             Volatile.Write(ref _latestToolStateChangedSignalSequence, 0);
             Volatile.Write(ref _latestCraftingCompletedSignalSequence, 0);
+            Volatile.Write(ref _latestCraftingCompletedUnitCount, 0);
             Volatile.Write(ref _timeDilationScalarMilli, 1000);
             Volatile.Write(ref _timeDilationSequence, 0);
             Volatile.Write(ref _simulationPaused, 0);
@@ -3260,6 +3267,18 @@ namespace Hecton8.Core
         private static void AdvanceSignalSequence(ref int sequence)
         {
             int next = unchecked(Volatile.Read(ref sequence) + 1);
+            if (next == 0)
+                next = 1;
+
+            Volatile.Write(ref sequence, next);
+        }
+
+        private static void AdvanceSignalSequence(ref int sequence, int amount)
+        {
+            if (amount <= 0)
+                return;
+
+            int next = unchecked(Volatile.Read(ref sequence) + amount);
             if (next == 0)
                 next = 1;
 

@@ -325,7 +325,7 @@ namespace Hecton8.Progression
 
         private void ProcessCraftingCompletions()
         {
-            uint currentSequence = GlobalSignals.LatestCraftingCompletedSequence;
+            uint currentSequence = GlobalSignals.LatestCraftingCompletedUnitCount;
             uint delta = currentSequence - _lastCraftingCompletedSequence;
             if (delta == 0u)
                 return;
@@ -339,7 +339,7 @@ namespace Hecton8.Progression
 
         private void SyncCraftingSignalBaseline()
         {
-            _lastCraftingCompletedSequence = GlobalSignals.LatestCraftingCompletedSequence;
+            _lastCraftingCompletedSequence = GlobalSignals.LatestCraftingCompletedUnitCount;
         }
 
         private void HandleGameLoaded(GameLoadedEvent gameLoadedEvent)

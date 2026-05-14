@@ -177,3 +177,15 @@ Cinematic Cheats used: Shared atlas/material, triplanar shader projection, MatCa
 Exact Microseconds saved: Runtime remains 0 us/frame and 0 bytes procedural allocation. This prevents texture-size or path drift from silently increasing VRAM or weakening visual sampling; exact runtime microseconds were not profiled.
 
 Verification: No dotnet rebuild was run. `git diff --check` passed. Source scan found `ValidateAtlasTextureAsset`; brace count is balanced and source `NonAscii=0`. PNG IHDR scan found all four atlases are `1024x1024`, `AtlasPngDimensionScan Count=4 Bad=0`.
+
+## 2026-05-15 Prefab Envelope And Vertex Stream Contract
+
+What was wrong: Generated Shallows prefabs could still drift by gaining extra components/children, renderers could carry extra material slots while the first material remained valid, and meshes could keep correct paths/triangle counts while losing normals, vertex colors, or UV0 required by the procedural bio shader.
+
+What was done: Added material asset identity/default render-queue validation, exact flora/rock prefab hierarchy and component envelope validation, enabled-renderer validation, single shared-material-slot validation through reusable `GetSharedMaterials` scratch, and mesh vertex stream checks for `Position`, `Normal`, `Color`, and `TexCoord0`.
+
+Cinematic Cheats used: Static L-system/SDF meshes, shared atlas/material, triplanar projection, vertex-color height masks, opaque math LOD, no flora collision, and rock-only convex collision remain the protected visual-fake strategy.
+
+Exact Microseconds saved: Runtime remains 0 us/frame and 0 bytes procedural allocation. Prevented cost class is hidden renderer/component/material-slot drift; exact runtime microseconds were not profiled.
+
+Verification: No dotnet rebuild was run. `git diff --check` passed. Source scan found `ValidateMaterialAssetContract`, `ValidatePrefabHierarchyContract`, `ValidateComponentEnvelope`, `ValidateRendererMaterialContract`, and `HasVertexAttribute`; forbidden scan found no Shallows `Shader.Find`, `mesh.colors`, `renderer.sharedMaterial`, `.material`, or hot-path update methods. `PrefabEnvelopeYamlScan Count=200 Bad=0`; material YAML confirms `m_CustomRenderQueue: -1`, instancing enabled, empty keyword arrays; `MeshVertexChannelYamlScan Count=600 Bad=0 MaxNonZeroChannels=5`.

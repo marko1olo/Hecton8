@@ -243,3 +243,34 @@ Verification:
 - Runtime isolated Unity compiler probe: BLOCKED by stale `Library/ScriptAssemblies` H8Memory API at `HeadlessStressFractureBot.cs(582,49)`. Current source defines `Release(ref NativeArray<T>, SystemID)`, but the referenced compiled assembly still exposes the older `JobHandle` overload. No `dotnet` rebuild was run by user instruction.
 - Temp compile artifacts were removed.
 - Full Unity/editor/player execution remains PENDING VERIFICATION.
+
+## 2026-05-15 - AUP Snap-Fence Telemetry Addendum
+Status: PENDING VERIFICATION
+Evidence Class: CLI_COMPILE_PLUS_STATIC_SOURCE
+
+What was wrong:
+- AUP shifts were emitted every 15 extreme frames, but the blackbox flags did not explicitly mark the mandated 300-frame post-shift snap-fence window.
+- Result artifacts exposed activation source only as an integer, slowing CI triage.
+- Previous runtime isolated compile evidence was blocked by stale `Library/ScriptAssemblies`; the current imported assemblies needed to be rechecked without `dotnet`.
+
+What was done:
+- Added `AupSnapFenceFrames=300` and bit 5 in the existing `FractureTelemetryEntry.Flags` word for active snap-fence frames.
+- Stored `_lastAupShiftExtremeFrame` when the runner emits a shift; no binary entry size change, still 64 bytes.
+- Result JSON now writes `activationSourceName`, `blackboxAupSnapFenceFrames`, and `blackboxFlagAupSnapFenceBit`.
+- Re-ran isolated runtime and editor compiler probes against current `Library/ScriptAssemblies`.
+
+Cinematic Cheats used:
+- Kept AUP validation as telemetry and signal pressure; no direct AUP owner mutation and no rendered/physical simulation added.
+
+Exact Microseconds saved:
+- Reused existing blackbox flags word: 0 bytes extra native memory.
+- Snap-fence marking adds one integer subtraction and bit set per blackbox write; estimated <1 us/frame on i3/MX350.
+- Activation source name avoids manual integer decoding in failed CI artifacts; estimated 3000000+ us saved per triage session.
+
+Verification:
+- Focused forbidden-pattern scan: PASS for both Race Condition Hunter files; no scene search, LINQ, coroutine, `Task<`, `.Complete()`, explicit GC, reflection, managed collection creation, `string.Format`, or `Substring`.
+- Scoped QA/headless source count: `SignalBusPush=3`, `GlobalSignalsPublish=4`, `GlobalRegistrySurface=13`, `StructLayoutAttributes=3`, `StructDeclarations=3`, `FindObjectCalls=0`, `GetComponentCalls=0`, `UnityUpdateMethods=0`.
+- Runtime isolated Unity compiler probe: PASS via Unity Mono/Roslyn with UnityJIT facades, Unity modules, current `Library/ScriptAssemblies`, and `Assembly-CSharp.dll`.
+- Editor runner isolated Unity compiler probe: PASS with `UNITY_EDITOR` defined, Unity editor facade, and `Assembly-CSharp.dll`.
+- No `dotnet` rebuild was run.
+- Full Unity/editor/player execution remains PENDING VERIFICATION because no Unity MCP/editor session is available in this tool context.

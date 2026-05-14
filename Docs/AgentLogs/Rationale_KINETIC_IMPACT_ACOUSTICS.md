@@ -297,3 +297,22 @@ Solution: Ran source-only checks: `git diff --check`, fixed-string scans, forbid
 Rejected Alternatives: Running dotnet build/rebuild would violate explicit user order; claiming Unity compile green without Editor console/MCP data would be false.
 Scalability potential: Verification only.
 Hardware Impact: Verification only.
+
+## LOOP 15 SPATIAL AUDIO SERVICE POLICY RESOLVER H-PHI PASS
+Problem: `SpatialAudioManager` is the central audio service and still had sensitive listener, portal, wind, water-density, and virtual voice policy paths that could drift back into direct cross-domain registry polling. Those paths are not sample synthesis, but they sit on repeated spatial update surfaces and affect low-tier audio cost.
+Solution: Verified and guarded the existing spatial resolver cache surface: `SpatialAudioPolicyRefreshFrames = 30` for scalability/low-memory policy and `SpatialAudioRegistryRetryFrames = 30` for player, weather, acoustic-zone, and surface-weather services. The call sites now route through `ResolveCachedScalabilityTier()`, `ResolveCachedLowMemoryProfile()`, `ResolvePlayerRuntimeContext()`, `ResolveWeatherService()`, `ResolveAcousticZone()`, and `ResolveSurfaceWeatherDirector()`.
+Rejected Alternatives: Per-call `GlobalRegistry` polling is simpler but spreads H-Phi debt through core audio update paths; constructor-only hard references would fail bootstrap swaps; adding a new spatial dependency interface would widen contracts without reducing runtime work.
+Scalability potential: Low/MX350 keeps virtual voice limits, water-density muffle, and portal policy cheap with cached tier and optional services. Middle/High/Ultra keep portal pathing, wind howl, and richer spatial response while avoiding repeated service-locator reads. Toaster path uses cheap stale checks; top-tier path spends saved budget on portal acoustics and wind occlusion instead of lookups.
+Hardware Impact: Saves two policy registry reads per virtual voice/portal policy refresh after warmup; saves one player service read in listener AUP and water-density paths, one acoustic-zone read in interior/wind occlusion paths, and one weather/surface-weather read in wind howl paths after warmup. Runtime allocation remains 0 B/frame; added work is integer stale checks plus one refresh per 30 frames.
+
+Problem: The editor smoke suite previously checked spatial AUP and acoustic features but did not fully guard the new resolver hygiene, especially portal policy, voice-limit policy, and water-density update bodies.
+Solution: Added smoke assertions for `SpatialAudioRegistryRetryFrames = 30`, portal policy, voice-limit policy, and water-density method bodies, alongside the existing listener/wind resolver checks. The smoke test now rejects direct `GlobalRegistry.ScalabilityTier`, `GlobalRegistry.H8_LOW_MEMORY_PROFILE`, `GlobalRegistry.Player`, `GlobalRegistry.Weather`, `GlobalRegistry.SurfaceWeather`, and `GlobalRegistry.AcousticZone` polling in the guarded spatial methods.
+Rejected Alternatives: Relying on manual source review would let future edits reintroduce lookup debt; runtime playmode tests cannot be executed honestly without Unity MCP/Editor validation in this context.
+Scalability potential: Editor-only guard; protects both the cheap low-tier route and the high-tier acoustic overkill route from service lookup creep.
+Hardware Impact: 0 us runtime in player builds.
+
+Problem: Compile/profiler proof remains unavailable under the user's current no-dotnet-rebuild instruction and the missing Unity MCP session.
+Solution: Performed source-only checks: `git diff --check`, PCRE2/direct registry scans, resolver-anchor scans, forbidden API scans, and source counters. Current spatial counts are `PolicyDirect=2`, `RuntimeServiceDirect=4`, `PlayerCriticalAudioDirect=2`, `PolicyResolvers=6`, `RuntimeResolvers=12`, `SmokeSpatialResolverAsserts=16`, `FindObject=0`, `UpdateMethods=0`.
+Rejected Alternatives: Running dotnet build/rebuild would violate explicit user order; claiming Unity compile or profiler status without Editor console/MCP data would be false.
+Scalability potential: Verification only.
+Hardware Impact: Verification only.
