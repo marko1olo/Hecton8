@@ -5510,6 +5510,46 @@ namespace Hecton8.Physics
             return unchecked((hash ^ value) * 16777619u);
         }
 
+        private NativeArray<T> AllocateNativeStateArray<T>(
+            BufferID bufferId,
+            int length,
+            string label,
+            int vaultFlag) where T : struct
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null)
+            {
+                vault = GlobalRegistry.DataVault;
+                _dataVault = vault;
+            }
+
+            if (vault != null)
+            {
+                NativeArray<T> vaultArray = vault.GetBuffer<T>(
+                    bufferId,
+                    length,
+                    SystemID.VehiclesPhysics,
+                    NativeArrayOptions.ClearMemory);
+                if (vaultArray.IsCreated)
+                {
+                    _vaultNativeStateMask |= vaultFlag;
+                    return vaultArray;
+                }
+            }
+
+            _vaultNativeStateMask &= ~vaultFlag;
+            NativeArray<T> array = H8Memory.Allocate<T>(
+                length,
+                SystemID.VehiclesPhysics,
+                Allocator.Persistent,
+                NativeArrayOptions.ClearMemory);
+            if (!array.IsCreated)
+                return default;
+
+            NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeMemoryLifetime);
+            return array;
+        }
+
         private void RegisterNativeStateBuffers()
         {
             RegisterNativeArray(_compartmentFloodVolumes, nameof(_compartmentFloodVolumes));
@@ -5541,14 +5581,20 @@ namespace Hecton8.Physics
             NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeMemoryLifetime);
         }
 
-        private void DisposeDeferred<T>(ref NativeArray<T> array) where T : struct
+        private void DisposeDeferred<T>(ref NativeArray<T> array, int vaultFlag) where T : struct
         {
             if (!array.IsCreated)
                 return;
 
+            if ((_vaultNativeStateMask & vaultFlag) != 0)
+            {
+                array = default;
+                _vaultNativeStateMask &= ~vaultFlag;
+                return;
+            }
+
             NativeMemorySentinel.UnregisterNativeArray(array);
-            _disposeHandle = array.Dispose(_disposeHandle);
-            array = default;
+            _disposeHandle = H8Memory.Release(ref array, _disposeHandle, SystemID.VehiclesPhysics);
         }
     }
 }

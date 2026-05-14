@@ -341,3 +341,29 @@ Solution: Verification stayed source-only: forbidden-pattern `rg` audit, targete
 Rejected Alternatives: Running response-file compiles through `dotnet` was rejected because it directly violates the user's current instruction.
 Scalability potential: Static source proof improved for the Habitat/Outpost contract; runtime compile/profiler proof remains pending.
 Hardware Impact: Verification only.
+
+## LOOP 21 RENDER PROPERTY ISOLATION
+
+Problem: The render path wrote `_OutpostAge01` and `_HectonMaterialDecayRuntime` through shader globals and rebound `_OutpostMatrices` / `_OutpostCellTypes` directly on the material every draw. With a shared material asset, this creates cross-outpost state pressure and unnecessary hot render mutation.
+Solution: Move the outpost draw payload into a cached per-service `MaterialPropertyBlock` passed through `RenderParams.matProps`. Buffer, age, and decay payload properties are rebound only when the cached values or buffer references change.
+Rejected Alternatives: Caching `material.SetBuffer` per service was rejected because a second outpost using the same material could overwrite the shared asset and leave the first service's cache falsely clean. Shader globals were rejected because they are process-wide state and not a per-outpost contract.
+Scalability potential: Low pays one cold property-block allocation and stable render properties; Middle/High/Ultra can run richer rust/silt response without extra global state churn. Multiple generated outposts can share a material without corrupting each other's buffer bindings.
+Hardware Impact: Removes four render-time global/material property writes after first bind on stable frames. Estimated MX350 CPU gain is small but deterministic, below 0.1 ms/frame, with 0 B/frame steady.
+
+Problem: `Render` checked `_matrixBuffer` and `_argsBuffer` but not `_cellTypeBuffer`, even though the shader indexes `_OutpostCellTypes[instanceID]`.
+Solution: Add `_cellTypeBuffer == null` to the render fail-closed guard before draw submission.
+Rejected Alternatives: Allowing a null cell-type buffer was rejected because the shader has no deterministic fallback for missing type metadata. Upload-path checks alone were rejected because resources can be released or invalidated after upload.
+Scalability potential: All tiers keep the same single indirect draw path; invalid render resources now skip cleanly instead of issuing undefined GPU work.
+Hardware Impact: One null check on render, 0 B/frame. Prevents undefined shader buffer access and possible driver-side recovery cost.
+
+Problem: Repeated enable/disable should not allocate a fresh property block if the component survives.
+Solution: `ClearRenderPropertyCache()` clears the existing block and cached references but preserves the managed block instance for reuse.
+Rejected Alternatives: Nulling the block on every dispose was rejected because a pooled or toggled service would allocate again on the next enable. Keeping stale buffer bindings was rejected because disposed graphics buffers must not remain referenced.
+Scalability potential: Low avoids avoidable managed churn during streaming/toggle churn; High/Ultra keep stable per-outpost draw payloads.
+Hardware Impact: Cold lifecycle improvement only; steady render remains 0 B/frame.
+
+Problem: The active instruction still forbids dotnet rebuilds.
+Solution: Verification stayed source-only: render binding scan, forbidden-pattern scan, scoped H-Phi counts, and `git diff --check`.
+Rejected Alternatives: Running response-file compiles through `dotnet` was rejected because it violates the user instruction.
+Scalability potential: Source-level render-state isolation improved; runtime frame/debugger capture remains pending.
+Hardware Impact: Verification only.

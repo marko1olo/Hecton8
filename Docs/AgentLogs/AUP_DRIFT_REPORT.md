@@ -358,3 +358,34 @@ Status: VERIFIED AUP INTEGRITY - CORE BUILD PASS; ASMDEF BLOCKED BY ARCHITECTURE
 ### Evidence Queue
 
 - H-Phi remains a static-source signal. It is now less noisy for AUP helper names, but measured values still require a future headless run.
+
+## Loop 23 Global H-Phi Audit AUP Precision Integrity
+
+### Findings
+
+- The headless H-Phi bot now includes AUP precision hygiene, but the global PowerShell H-Phi audit did not.
+- That created a model split: one H-Phi path would penalize precision leaks while the global architecture audit could still report a risk score without AUP drift context.
+
+### Code Changes
+
+- `Tools/Architecture/HectonPhiAudit.ps1`: added `AupPrecisionSafe` and `AupPrecisionRisk` counters.
+- Added `AupPrecisionIntegrity = safe / (safe + risk)`, defaulting to `1.0` when no AUP patterns are present.
+- `HPhiStaticRisk` now includes the AUP precision factor. `HPhiStaticNarrow` remains unchanged for historical trend continuity.
+- Summary JSON now exposes `AupPrecisionIntegrity`, `AupPrecisionSafe`, and `AupPrecisionRisk`.
+- Metric model text now states that the risk-adjusted score includes AUP precision integrity.
+
+### Verification
+
+- Prompt extraction from `Docs/Tasks/CURRENT_BATCH.md` still returns `PROMPT_NOT_FOUND`; user-supplied XML remains authoritative.
+- PowerShell parser reports `PARSE_OK` for `Tools/Architecture/HectonPhiAudit.ps1`.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json` completed successfully and emitted Core graph JSON.
+- Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json` timed out after 120 seconds in the current dirty workspace; no score result was claimed.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` was re-run. Residual hits remain broad `universe` text, editor diagnostics, and final-cast fluid/scatter/shader payload names.
+- Direct committed-offset leak scan returns `NO_MATCHES`.
+- `git diff --check -- Tools/Architecture/HectonPhiAudit.ps1` reports no whitespace errors.
+- No `dotnet build` or rebuild was run in Loop 23 because the latest user instruction explicitly forbids rebuilds.
+
+### Evidence Queue
+
+- The full global H-Phi score is still pending because the full PowerShell scan timed out after 120 seconds.
+- H-Phi remains static-source evidence only; Unity Console, PlayMode, profiler, GCMonitor, and player build evidence remain pending.

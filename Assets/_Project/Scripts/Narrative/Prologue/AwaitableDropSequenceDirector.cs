@@ -164,6 +164,12 @@ namespace Hecton8.Narrative.Prologue
             if (_disposed)
                 return;
 
+            if (_running)
+            {
+                CancelSequence(PrologueCancelReasons.ExplicitCancel);
+                ReleaseInputLockNoThrow();
+            }
+
             _disposed = true;
             if (_blackBox.IsCreated)
             {

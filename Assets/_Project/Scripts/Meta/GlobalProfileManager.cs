@@ -117,13 +117,13 @@ namespace Hecton8.Meta
         private HectonEventSubscription _gameLoadedSubscription;
         private HectonEventSubscription _playerDiedSubscription;
         private HectonEventSubscription _itemCollectedSubscription;
-        private HectonEventSubscription _itemCraftedSubscription;
         private HectonEventSubscription _itemRecycledSubscription;
         private bool _registeredToTick;
         private bool _registeredProfileService;
         private bool _dirty;
         private float _flushTimer;
         private float _nextLongestLifeRecordThreshold = LongestLifeRecordStepSeconds;
+        private uint _lastCraftingCompletedSequence;
         private int _currentRunBiomeDiscoveries;
 
         /// <summary>
@@ -241,6 +241,7 @@ namespace Hecton8.Meta
         {
             TryRegisterProfileService();
             TryRegisterWithTickManager();
+            SyncCraftingSignalBaseline();
             SubscribeToEventBus();
             RebindOwnerSubscriptions();
         }
@@ -280,6 +281,8 @@ namespace Hecton8.Meta
         /// <inheritdoc />
         public void SlowTick()
         {
+            ProcessCraftingCompletions();
+
             if (!ResolveOwnersHot())
                 return;
 
@@ -361,20 +364,29 @@ namespace Hecton8.Meta
             AdvanceMarathonProgress(MarathonMetric.StructuralMetalCollected, itemCollectedEvent.Quantity);
         }
 
-        private void HandleItemCrafted(ItemCraftedEvent itemCraftedEvent)
-        {
-            if (itemCraftedEvent == null || itemCraftedEvent.Item == null)
-                return;
-
-            AdvanceMarathonProgress(MarathonMetric.CraftedItems, 1);
-        }
-
         private void HandleItemRecycled(ItemRecycledEvent itemRecycledEvent)
         {
             if (itemRecycledEvent == null || itemRecycledEvent.Quantity <= 0)
                 return;
 
             AdvanceMarathonProgress(MarathonMetric.RecycledItems, itemRecycledEvent.Quantity);
+        }
+
+        private void ProcessCraftingCompletions()
+        {
+            uint currentSequence = GlobalSignals.LatestCraftingCompletedSequence;
+            uint delta = currentSequence - _lastCraftingCompletedSequence;
+            if (delta == 0u)
+                return;
+
+            _lastCraftingCompletedSequence = currentSequence;
+            int amount = delta > int.MaxValue ? int.MaxValue : (int)delta;
+            AdvanceMarathonProgress(MarathonMetric.CraftedItems, amount);
+        }
+
+        private void SyncCraftingSignalBaseline()
+        {
+            _lastCraftingCompletedSequence = GlobalSignals.LatestCraftingCompletedSequence;
         }
 
         private void SubscribeToEventBus()
@@ -391,9 +403,6 @@ namespace Hecton8.Meta
             if (_itemCollectedSubscription == null)
                 _itemCollectedSubscription = HectonEventBus.Subscribe<ItemCollectedEvent>(HandleItemCollected, "meta.profile");
 
-            if (_itemCraftedSubscription == null)
-                _itemCraftedSubscription = HectonEventBus.Subscribe<ItemCraftedEvent>(HandleItemCrafted, "meta.profile");
-
             if (_itemRecycledSubscription == null)
                 _itemRecycledSubscription = HectonEventBus.Subscribe<ItemRecycledEvent>(HandleItemRecycled, "meta.profile");
         }
@@ -408,8 +417,6 @@ namespace Hecton8.Meta
             _playerDiedSubscription = null;
             _itemCollectedSubscription?.Dispose();
             _itemCollectedSubscription = null;
-            _itemCraftedSubscription?.Dispose();
-            _itemCraftedSubscription = null;
             _itemRecycledSubscription?.Dispose();
             _itemRecycledSubscription = null;
         }

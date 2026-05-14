@@ -2,6 +2,7 @@ param(
     [switch]$Json,
     [switch]$Summary,
     [switch]$CoreGraphOnly,
+    [switch]$IncludeUnusedCoreReferenceScan,
     [switch]$RequireCoreBuildGate,
     [int]$MaxCoreAsmdefDebtReferences = -1,
     [int]$MaxGeneratedProjectDebtReferences = -1,
@@ -172,6 +173,268 @@ function Remove-UnityEditorBlocks {
         if ($skipDepth -lt 0) {
             [void]$builder.AppendLine($line)
         }
+    }
+
+    return $builder.ToString()
+}
+
+function ConvertTo-CodeSurface {
+    param([string]$Text)
+
+    if ([string]::IsNullOrEmpty($Text)) {
+        return $Text
+    }
+
+    $builder = [System.Text.StringBuilder]::new($Text.Length)
+    $length = $Text.Length
+    $i = 0
+
+    while ($i -lt $length) {
+        $ch = $Text[$i]
+        $next = if ($i + 1 -lt $length) { $Text[$i + 1] } else { [char]0 }
+
+        if ($ch -eq '/' -and $next -eq '/') {
+            [void]$builder.Append(' ')
+            [void]$builder.Append(' ')
+            $i += 2
+            while ($i -lt $length) {
+                $current = $Text[$i]
+                if ($current -eq [char]13 -or $current -eq [char]10) {
+                    [void]$builder.Append($current)
+                    $i++
+                    break
+                }
+
+                [void]$builder.Append(' ')
+                $i++
+            }
+
+            continue
+        }
+
+        if ($ch -eq '/' -and $next -eq '*') {
+            [void]$builder.Append(' ')
+            [void]$builder.Append(' ')
+            $i += 2
+            while ($i -lt $length) {
+                $current = $Text[$i]
+                $after = if ($i + 1 -lt $length) { $Text[$i + 1] } else { [char]0 }
+                if ($current -eq '*' -and $after -eq '/') {
+                    [void]$builder.Append(' ')
+                    [void]$builder.Append(' ')
+                    $i += 2
+                    break
+                }
+
+                if ($current -eq [char]13 -or $current -eq [char]10) {
+                    [void]$builder.Append($current)
+                }
+                else {
+                    [void]$builder.Append(' ')
+                }
+
+                $i++
+            }
+
+            continue
+        }
+
+        $rawPrefixLength = 0
+        $rawQuoteStart = $i
+        while ($rawQuoteStart -lt $length -and $Text[$rawQuoteStart] -eq '$') {
+            $rawPrefixLength++
+            $rawQuoteStart++
+        }
+
+        $rawQuoteCount = 0
+        while ($rawQuoteStart + $rawQuoteCount -lt $length -and
+            $Text[$rawQuoteStart + $rawQuoteCount] -eq '"') {
+            $rawQuoteCount++
+        }
+
+        if ($rawQuoteCount -ge 3) {
+            for ($j = 0; $j -lt $rawPrefixLength + $rawQuoteCount; $j++) {
+                [void]$builder.Append(' ')
+            }
+
+            $i = $rawQuoteStart + $rawQuoteCount
+            while ($i -lt $length) {
+                $matchedEnd = $true
+                for ($j = 0; $j -lt $rawQuoteCount; $j++) {
+                    if ($i + $j -ge $length -or $Text[$i + $j] -ne '"') {
+                        $matchedEnd = $false
+                        break
+                    }
+                }
+
+                if ($matchedEnd) {
+                    for ($j = 0; $j -lt $rawQuoteCount; $j++) {
+                        [void]$builder.Append(' ')
+                    }
+
+                    $i += $rawQuoteCount
+                    break
+                }
+
+                $current = $Text[$i]
+                if ($current -eq [char]13 -or $current -eq [char]10) {
+                    [void]$builder.Append($current)
+                }
+                else {
+                    [void]$builder.Append(' ')
+                }
+
+                $i++
+            }
+
+            continue
+        }
+
+        $verbatimStart = -1
+        $verbatimPrefixLength = 0
+        if ($ch -eq '@' -and $next -eq '"') {
+            $verbatimStart = $i + 1
+            $verbatimPrefixLength = 1
+        }
+        elseif ($ch -eq '$' -and $i + 2 -lt $length -and $Text[$i + 1] -eq '@' -and $Text[$i + 2] -eq '"') {
+            $verbatimStart = $i + 2
+            $verbatimPrefixLength = 2
+        }
+        elseif ($ch -eq '@' -and $i + 2 -lt $length -and $Text[$i + 1] -eq '$' -and $Text[$i + 2] -eq '"') {
+            $verbatimStart = $i + 2
+            $verbatimPrefixLength = 2
+        }
+
+        if ($verbatimStart -ge 0) {
+            for ($j = 0; $j -lt $verbatimPrefixLength + 1; $j++) {
+                [void]$builder.Append(' ')
+            }
+
+            $i = $verbatimStart + 1
+            while ($i -lt $length) {
+                $current = $Text[$i]
+                $after = if ($i + 1 -lt $length) { $Text[$i + 1] } else { [char]0 }
+                if ($current -eq '"' -and $after -eq '"') {
+                    [void]$builder.Append(' ')
+                    [void]$builder.Append(' ')
+                    $i += 2
+                    continue
+                }
+
+                if ($current -eq '"') {
+                    [void]$builder.Append(' ')
+                    $i++
+                    break
+                }
+
+                if ($current -eq [char]13 -or $current -eq [char]10) {
+                    [void]$builder.Append($current)
+                }
+                else {
+                    [void]$builder.Append(' ')
+                }
+
+                $i++
+            }
+
+            continue
+        }
+
+        $regularStringStart = -1
+        $regularPrefixLength = 0
+        if ($ch -eq '"') {
+            $regularStringStart = $i
+        }
+        elseif ($ch -eq '$' -and $next -eq '"') {
+            $regularStringStart = $i + 1
+            $regularPrefixLength = 1
+        }
+
+        if ($regularStringStart -ge 0) {
+            for ($j = 0; $j -lt $regularPrefixLength + 1; $j++) {
+                [void]$builder.Append(' ')
+            }
+
+            $i = $regularStringStart + 1
+            while ($i -lt $length) {
+                $current = $Text[$i]
+                if ($current -eq '\') {
+                    [void]$builder.Append(' ')
+                    if ($i + 1 -lt $length) {
+                        $escaped = $Text[$i + 1]
+                        if ($escaped -eq [char]13 -or $escaped -eq [char]10) {
+                            [void]$builder.Append($escaped)
+                        }
+                        else {
+                            [void]$builder.Append(' ')
+                        }
+
+                        $i += 2
+                        continue
+                    }
+                }
+
+                if ($current -eq '"') {
+                    [void]$builder.Append(' ')
+                    $i++
+                    break
+                }
+
+                if ($current -eq [char]13 -or $current -eq [char]10) {
+                    [void]$builder.Append($current)
+                }
+                else {
+                    [void]$builder.Append(' ')
+                }
+
+                $i++
+            }
+
+            continue
+        }
+
+        if ($ch -eq "'") {
+            [void]$builder.Append(' ')
+            $i++
+            while ($i -lt $length) {
+                $current = $Text[$i]
+                if ($current -eq '\') {
+                    [void]$builder.Append(' ')
+                    if ($i + 1 -lt $length) {
+                        $escaped = $Text[$i + 1]
+                        if ($escaped -eq [char]13 -or $escaped -eq [char]10) {
+                            [void]$builder.Append($escaped)
+                        }
+                        else {
+                            [void]$builder.Append(' ')
+                        }
+
+                        $i += 2
+                        continue
+                    }
+                }
+
+                if ($current -eq "'") {
+                    [void]$builder.Append(' ')
+                    $i++
+                    break
+                }
+
+                if ($current -eq [char]13 -or $current -eq [char]10) {
+                    [void]$builder.Append($current)
+                }
+                else {
+                    [void]$builder.Append(' ')
+                }
+
+                $i++
+            }
+
+            continue
+        }
+
+        [void]$builder.Append($ch)
+        $i++
     }
 
     return $builder.ToString()
@@ -711,12 +974,13 @@ $files = @(Get-ChildItem -LiteralPath $scope -Filter '*.cs' -Recurse -File |
 
 foreach ($file in $files) {
     $content = [System.IO.File]::ReadAllText($file)
+    $codeContent = ConvertTo-CodeSurface $content
     $lineCount = Count-Lines $content
     $isEditorFile = Test-IsEditorFile $file
     $fileCounters = New-CounterSet
     Add-Count $fileCounters 'CsFiles' 1
     Add-Count $fileCounters 'Lines' $lineCount
-    Add-PatternCounts $fileCounters $content $patterns
+    Add-PatternCounts $fileCounters $codeContent $patterns
 
     foreach ($key in $fileCounters.Keys) {
         Add-Count $allCounters $key $fileCounters[$key]
@@ -747,10 +1011,11 @@ foreach ($file in $files) {
     }
     else {
         $runtimeContent = Remove-UnityEditorBlocks $content
+        $runtimeCodeContent = ConvertTo-CodeSurface $runtimeContent
         $runtimeFileCounters = New-CounterSet
         Add-Count $runtimeFileCounters 'CsFiles' 1
         Add-Count $runtimeFileCounters 'Lines' $lineCount
-        Add-PatternCounts $runtimeFileCounters $runtimeContent $patterns
+        Add-PatternCounts $runtimeFileCounters $runtimeCodeContent $patterns
     }
 
     foreach ($key in $fileCounters.Keys) {

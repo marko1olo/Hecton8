@@ -542,3 +542,38 @@ Verification:
 Integrator notes:
 - Loop 22 is static-verified only. Run headless H-Phi later to measure the new risk attribution.
 - This avoids metric-chasing renames in CrashTelemetry or Fauna helpers; no cross-domain runtime file was changed for naming alone.
+
+## 2026-05-15 - Loop 23 Global H-Phi Audit AUP Precision Integrity
+
+What was wrong:
+- The headless H-Phi model included AUP precision hygiene, but `Tools/Architecture/HectonPhiAudit.ps1` did not.
+- That made the global static H-Phi tool capable of missing AUP drift-risk debt.
+
+What was done:
+- Added `AupPrecisionSafe`, `AupPrecisionRisk`, and `AupPrecisionIntegrity` counters to `Tools/Architecture/HectonPhiAudit.ps1`.
+- Multiplied `HPhiStaticRisk` by AUP precision integrity.
+- Left `HPhiStaticNarrow` unchanged for trend continuity.
+- Added the AUP precision fields to summary JSON and updated the metric model text.
+- Re-extracted this agent prompt from `Docs/Tasks/CURRENT_BATCH.md`; result remains `PROMPT_NOT_FOUND`.
+
+Cinematic Cheats used:
+- No gameplay simulation was added. This is a static architecture-health signal.
+- Low tier gets no runtime cost. High/Ultra get stronger static guardrails before AUP-stable visual systems trust the world anchor.
+
+Exact Microseconds saved:
+- Gameplay frame time: 0 us.
+- Tool path: two regex counters and one scalar multiply; full source scan timing remains pending because the full script timed out after 120 seconds.
+- Review-time savings: one global H-Phi artifact can now expose AUP precision drift context.
+
+Verification:
+- PowerShell parser reports `PARSE_OK` for `Tools/Architecture/HectonPhiAudit.ps1`.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json` completed successfully.
+- Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json` timed out after 120 seconds; no score result was claimed.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` re-run. Residual hits remain broad `universe` text, editor diagnostics, and final-cast fluid/scatter/shader payload names.
+- Direct committed-offset leak scan returns `NO_MATCHES`.
+- `git diff --check -- Tools/Architecture/HectonPhiAudit.ps1` reports no whitespace errors.
+- No `dotnet build` or rebuild was run because the user explicitly forbade rebuilds.
+
+Integrator notes:
+- `Tools/Architecture/HectonPhiAudit.ps1` already had unrelated active edits in this workspace. Review staged diff before integration.
+- The full H-Phi source scan needs a longer static-audit window or performance work in the tool; this loop does not claim a measured full score.

@@ -100,7 +100,6 @@ namespace Hecton8.Progression
         private HectonSurvivalSystem _survivalSystem;
         private HectonDiscoveryManager _discoveryManager;
         private HectonPlayerMovement _playerMovement;
-        private HectonEventSubscription _craftedSubscription;
         private HectonEventSubscription _gameLoadedSubscription;
         private bool _registeredToTick;
         private bool _registeredToSlowTick;
@@ -116,6 +115,7 @@ namespace Hecton8.Progression
         private int _lastUnlockedHashOverflowTelemetryFrame;
         private int _lastPendingUnlockOverflowTelemetryFrame;
         private int _lastAchievementNotificationMissTelemetryFrame;
+        private uint _lastCraftingCompletedSequence;
         private float _swamDistanceMeters;
         private int _craftedItemCount;
         private int _discoveredBiomeCount;
@@ -162,6 +162,7 @@ namespace Hecton8.Progression
             ResolveOwnersCold();
             TryRegisterWithTickManager();
             TryRegisterWithSaveManager();
+            SyncCraftingSignalBaseline();
             SubscribeToEventBus();
             RebindOwnerSubscriptions();
         }
@@ -195,6 +196,8 @@ namespace Hecton8.Progression
         /// <inheritdoc />
         public void Tick(float dt)
         {
+            ProcessCraftingCompletions();
+
             if (!ResolveOwnersHot() ||
                 _survivalSystem == null ||
                 !_survivalSystem.IsAlive ||
@@ -299,7 +302,10 @@ namespace Hecton8.Progression
             _hasAupSample = false;
 
             if (data == null)
+            {
+                SyncCraftingSignalBaseline();
                 return;
+            }
 
             _swamDistanceMeters = math.max(0f, data.achievements.swamDistanceMeters);
             _craftedItemCount = math.max(0, data.achievements.craftedItemCount);
@@ -313,18 +319,34 @@ namespace Hecton8.Progression
                 if (unlockedHash != 0u)
                     TryAddUnlockedHash(unlockedHash);
             }
+
+            SyncCraftingSignalBaseline();
         }
 
-        private void HandleCrafted(ItemCraftedEvent itemCraftedEvent)
+        private void ProcessCraftingCompletions()
         {
-            _craftedItemCount++;
+            uint currentSequence = GlobalSignals.LatestCraftingCompletedSequence;
+            uint delta = currentSequence - _lastCraftingCompletedSequence;
+            if (delta == 0u)
+                return;
+
+            _lastCraftingCompletedSequence = currentSequence;
+            int currentCount = math.max(0, _craftedItemCount);
+            uint maxDelta = unchecked((uint)(int.MaxValue - currentCount));
+            _craftedItemCount = delta >= maxDelta ? int.MaxValue : currentCount + (int)delta;
             EvaluateUnlocks(AchievementMetric.CraftedItems);
+        }
+
+        private void SyncCraftingSignalBaseline()
+        {
+            _lastCraftingCompletedSequence = GlobalSignals.LatestCraftingCompletedSequence;
         }
 
         private void HandleGameLoaded(GameLoadedEvent gameLoadedEvent)
         {
             RebindOwnerSubscriptions();
             RefreshDiscoveredBiomeTotalCold();
+            SyncCraftingSignalBaseline();
         }
 
         private void HandleBiomeDiscovered(int biomeId)
@@ -335,17 +357,12 @@ namespace Hecton8.Progression
 
         private void SubscribeToEventBus()
         {
-            if (_craftedSubscription == null)
-                _craftedSubscription = HectonEventBus.Subscribe<ItemCraftedEvent>(HandleCrafted, "progression.achievements");
-
             if (_gameLoadedSubscription == null)
                 _gameLoadedSubscription = HectonEventBus.Subscribe<GameLoadedEvent>(HandleGameLoaded, "progression.achievements");
         }
 
         private void UnsubscribeFromEventBus()
         {
-            _craftedSubscription?.Dispose();
-            _craftedSubscription = null;
             _gameLoadedSubscription?.Dispose();
             _gameLoadedSubscription = null;
         }

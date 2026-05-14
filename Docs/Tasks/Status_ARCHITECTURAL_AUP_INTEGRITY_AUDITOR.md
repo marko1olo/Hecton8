@@ -3,7 +3,7 @@
 Agent: ARCHITECTURAL_AUP_INTEGRITY_AUDITOR
 Domain: ECHELON 1 / Origin Shift (AUP Manager), with audit reach into Physics, Voxel, Kinematics, AI trigger math, Biome trigger math, and deterministic seed callsites.
 Assignment Source: User-supplied XML block. `Docs/Tasks/CURRENT_BATCH.md` extraction returned `PROMPT_NOT_FOUND` for this ID on initial pass.
-Status: VERIFIED AUP INTEGRITY - LOOP 22 APPLIED; H-PHI STATIC QA RISK SCAN NOW TARGETS QUALIFIED LEGACY AUP BRIDGES; H-PHI STATIC QA EXPORTS AUP PRECISION COUNTERS; GLOBAL LEGACY HFO AUP SCAN CLEAN; CORE BUILD BLOCKED BY UNRELATED DEPENDENCY WALL; ASMDEF BLOCKED BY ARCHITECTURE
+Status: VERIFIED AUP INTEGRITY - LOOP 23 APPLIED; GLOBAL H-PHI AUDIT TOOL NOW INCLUDES AUP PRECISION INTEGRITY; H-PHI HEADLESS QA EXPORTS AUP PRECISION COUNTERS; GLOBAL LEGACY HFO AUP SCAN CLEAN; CORE BUILD BLOCKED BY UNRELATED DEPENDENCY WALL; ASMDEF BLOCKED BY ARCHITECTURE
 
 ## Selected Mandates
 
@@ -234,3 +234,15 @@ Loop 22 - H-Phi Qualified Legacy AUP Risk Scan:
 - Targeted scanner self-pollution scan in `HeadlessStressFractureBot.cs` returns `NO_MATCHES` for unsplit legacy AUP bridge literals.
 - `git diff --check -- Assets/_Project/Scripts/QA/Headless/HeadlessStressFractureBot.cs` reports line-ending warnings only, no whitespace errors.
 - No `dotnet build` or rebuild was run in Loop 22 because the user explicitly forbade rebuilds.
+
+Loop 23 - Global H-Phi Audit AUP Precision Integrity:
+- Re-read status/rationale and re-extracted `ARCHITECTURAL_AUP_INTEGRITY_AUDITOR` from `Docs/Tasks/CURRENT_BATCH.md`; result remains `PROMPT_NOT_FOUND`.
+- Patched `Tools/Architecture/HectonPhiAudit.ps1` to add `AupPrecisionSafe`, `AupPrecisionRisk`, and `AupPrecisionIntegrity`.
+- Runtime `HPhiStaticRisk` now multiplies by AUP precision integrity; narrow H-Phi remains unchanged for trend continuity.
+- Added AUP precision counts to summary JSON and file/domain rows; metric model text now declares the AUP precision factor.
+- PowerShell parser reports `PARSE_OK`.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json` completed successfully.
+- Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json` timed out after 120 seconds; no result was claimed.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` was re-run; residual hits remain broad `universe` text, editor diagnostics, and final-cast fluid/scatter/shader payload names.
+- Direct committed-offset leak scan remains clean across `Assets/_Project/Scripts`.
+- No `dotnet build` or rebuild was run in Loop 23 because the user explicitly forbade rebuilds.

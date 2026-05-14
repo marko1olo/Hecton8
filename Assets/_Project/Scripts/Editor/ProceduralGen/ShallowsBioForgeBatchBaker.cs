@@ -1161,11 +1161,19 @@ namespace Hecton8.Editor.ProceduralGen
         private static void ValidateMeshGeometryContract(string path, int lodIndex, Mesh mesh, ref int failures)
         {
             Bounds bounds = mesh.bounds;
+            bool hasPosition = mesh.HasVertexAttribute(VertexAttribute.Position);
+            bool hasNormal = mesh.HasVertexAttribute(VertexAttribute.Normal);
+            bool hasColor = mesh.HasVertexAttribute(VertexAttribute.Color);
+            bool hasUv0 = mesh.HasVertexAttribute(VertexAttribute.TexCoord0);
             bool failed = mesh.vertexCount <= 0 ||
                           mesh.subMeshCount != 1 ||
                           mesh.GetIndexCount(0) == 0 ||
                           !mesh.isReadable ||
                           mesh.indexFormat != IndexFormat.UInt16 ||
+                          !hasPosition ||
+                          !hasNormal ||
+                          !hasColor ||
+                          !hasUv0 ||
                           !IsFinite(bounds.center) ||
                           !IsFinite(bounds.extents) ||
                           bounds.extents.sqrMagnitude <= TransformEpsilonSq;
@@ -1174,7 +1182,7 @@ namespace Hecton8.Editor.ProceduralGen
                 return;
 
             failures++;
-            Debug.LogError($"[ShallowsBioForgeBatchBaker] LOD{lodIndex} mesh geometry contract failed at {path}. Vertices={mesh.vertexCount}, SubMeshes={mesh.subMeshCount}, Readable={mesh.isReadable}, IndexFormat={mesh.indexFormat}, BoundsExtentSq={bounds.extents.sqrMagnitude:0.000000}.");
+            Debug.LogError($"[ShallowsBioForgeBatchBaker] LOD{lodIndex} mesh geometry contract failed at {path}. Vertices={mesh.vertexCount}, SubMeshes={mesh.subMeshCount}, Readable={mesh.isReadable}, IndexFormat={mesh.indexFormat}, Position={hasPosition}, Normal={hasNormal}, Color={hasColor}, Uv0={hasUv0}, BoundsExtentSq={bounds.extents.sqrMagnitude:0.000000}.");
         }
 
         private static void ValidateLodTriangleBudget(string path, string familyFolder, int lodIndex, Mesh mesh, ref int failures)

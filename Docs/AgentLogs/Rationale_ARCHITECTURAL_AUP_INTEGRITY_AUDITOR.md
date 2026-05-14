@@ -391,3 +391,11 @@ Solution: Restrict legacy bridge counting to fully qualified `HectonFloatingOrig
 Rejected Alternatives: Rename private helpers across CrashTelemetry/Fauna or keep broad string matches. Renaming safe helpers would be metric-chasing churn; broad matches punish correct local wrappers and make the H-Phi signal less useful.
 Scalability potential: Low gets less noisy static QA output. Middle/High/Ultra get clearer attribution when real legacy AUP bridge calls reappear, which protects drift-sensitive visual overkill work from false-positive audit debt.
 Hardware Impact: 0 us gameplay-frame cost and 0 B/frame. Headless scan cost is unchanged: the same ordinal count operations with longer, more specific literals.
+
+## Decision 49 - Global H-Phi AUP Precision Factor
+
+Problem: `HeadlessStressFractureBot` now scores and exports AUP precision hygiene, but `Tools/Architecture/HectonPhiAudit.ps1` remained blind to AUP precision. That could make the global H-Phi tool disagree with the headless H-Phi bot on drift-risk debt.
+Solution: Add `AupPrecisionSafe`, `AupPrecisionRisk`, and `AupPrecisionIntegrity` to the global audit tool. Keep `HPhiStaticNarrow` unchanged for trend continuity, and multiply `HPhiStaticRisk` by the AUP precision factor.
+Rejected Alternatives: Leave the two H-Phi paths divergent or force a full headless execution. Divergent H-Phi models create audit confusion; full execution is outside this static tool pass and the full source scan timed out at 120 seconds in the current workspace.
+Scalability potential: Low gets a single static audit signal that penalizes real AUP bridge regressions. Middle/High/Ultra get cleaner architecture hygiene before visual-overkill systems rely on long-session AUP stability.
+Hardware Impact: 0 us gameplay-frame cost and 0 B/frame. Tool-only overhead is two regex counters and one scalar multiply in the static audit path.
