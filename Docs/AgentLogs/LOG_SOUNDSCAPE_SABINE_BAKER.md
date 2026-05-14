@@ -19,6 +19,7 @@ Verification:
 `python Tools/AcousticValidator.py --verify-only` returned `STATUS: ACOUSTICS BAKED`.
 `python -m py_compile Tools/AcousticValidator.py` passed.
 `dotnet build --no-restore` could not run because `dotnet` is not installed in the shell PATH.
+Unity compile/PlayMode could not run because `Unity` is not in PATH and `C:\Program Files\Unity\Hub\Editor` is missing.
 Commit `8dc0eed5` was pushed to `origin/main`.
 `<POLISH_MANDATE>` was absent from `Docs/Tasks/CURRENT_BATCH.md`; no invented mandate was executed.
 Final anti-bloat pass found `Tools/AcousticValidator.py` at `11778` bytes, spec at `4810` bytes, binary at `262400` bytes, and no `AcousticValidator.pyc` residue.
@@ -26,6 +27,9 @@ Additional assurance added `Tools/test_acoustic_validator.py` to test determinis
 Regression test result: `PYTHONDONTWRITEBYTECODE=1 python Tools/test_acoustic_validator.py` ran `5` tests in `0.261s` on final rerun and passed.
 Post-test verify-only result: `STATUS: ACOUSTICS BAKED`.
 Regression test commit `b87d7e17` was pushed to `origin/main`.
+Clean isolated Sabine-only Unity-boundary commit `3b26e6af` was pushed to `origin/main`; unrelated local encyclopedia history was not pushed.
+2026-05-15 final rerun: `PYTHONDONTWRITEBYTECODE=1 python Tools/test_acoustic_validator.py` ran `5` tests in `2.187s` and passed; `PYTHONDONTWRITEBYTECODE=1 python Tools/AcousticValidator.py --verify-only` returned `STATUS: ACOUSTICS BAKED`.
+Remote proof: clean Sabine-only final rerun evidence pushed as `2fc81bd9a62895950a7810a96f962f32126eb9d6` to `origin/main`.
 
 Edge cases:
 Small locker error `0.00000439%`.
