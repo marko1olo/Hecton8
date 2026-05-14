@@ -2,7 +2,7 @@
 
 Agent: INTEGRATION_ASSEMBLY_SURGEON
 Domain: Unity Compilation Graph / Integrator
-Status: STATIC H-PHI ASMDEF DEBT REDUCED / PENDING FRESH COMPILE (NO DOTNET ORDER)
+Status: STATIC H-PHI CORE GRAPH DEBT REDUCED / PENDING FRESH COMPILE (NO DOTNET ORDER)
 
 ## Decision 0 - Session Initialization
 
@@ -115,3 +115,11 @@ Solution: Removed `Hecton8.Input.Generated`, `Hecton8.World.GPR`, and `Hecton8.S
 Rejected Alternatives: Removing references with live Core type hits was rejected. Editing generated `Hecton8.Core.csproj` was rejected because Unity overwrites it. Running dotnet compile was rejected by the current user no-dotnet order.
 Scalability potential: Low tier keeps Core less coupled to input codegen, GPR runtime jobs, and SpaceEngine terrain kernels; High/Ultra tiers keep those leaf assemblies available through their own asmdefs instead of contaminating Core.
 Hardware Impact: Runtime impact 0 us. Static graph debt changed from 28 to 25 Core asmdef debt refs. Fresh compile/runtime proof remains pending.
+
+## Decision 14 - Source-Backed Core Bridge Debt Gate
+
+Problem: `Directory.Build.targets` can inject Core references that are not visible in the generated `.csproj` or asmdef debt counts. After pruning asmdef references, the bridge still injected `Hecton8.World.GPR` and `Hecton8.SpaceEngine098Terrain`.
+Solution: Removed the matching `Hecton8.World.GPR` and `Hecton8.SpaceEngine098Terrain` bridge reference blocks from `Directory.Build.targets`. Extended `Tools/Architecture/HectonPhiAudit.ps1` with `SourceBackedBridgeReferenceCount`, `SourceBackedBridgeDebtReferenceCount`, bridge debt rows, and `-MaxSourceBackedBridgeDebtReferences`.
+Rejected Alternatives: Leaving bridge debt uncounted was rejected because it hides compile-graph coupling. Removing additional bridge references was rejected where live Core source evidence still exists or where the reference is a contract/Core-family dependency. Running dotnet compile was rejected by the current no-dotnet order.
+Scalability potential: Low-end machines avoid two unnecessary bridge references in Core medic mode; High/Ultra lanes keep GPR and SpaceEngine terrain in their leaf/adapter assemblies. The audit now catches future bridge widening before it becomes compile-wall noise.
+Hardware Impact: Runtime impact 0 us. Static bridge graph after cleanup: 19 source-backed Core bridge refs, 8 bridge debt refs. Fresh compile/runtime proof remains pending.

@@ -188,3 +188,34 @@ Verification:
 Residual risk:
 - Fresh compile remains pending by explicit user order.
 - Generated `Hecton8.Core.csproj` still has stale project references until Unity/project-generation evidence is refreshed.
+
+## 2026-05-15 - Source-Backed Core Bridge Debt Gate
+
+What was wrong:
+- `Directory.Build.targets` still injected `Hecton8.World.GPR` and `Hecton8.SpaceEngine098Terrain` references into the Core bridge after the asmdef cleanup.
+- `HectonPhiAudit.ps1` did not count source-backed bridge references, so bridge debt could bypass the visible Core graph budget.
+
+What was done:
+- Removed the two unused bridge reference blocks from `Directory.Build.targets`.
+- Extended `Tools/Architecture/HectonPhiAudit.ps1` to report source-backed Core bridge refs and bridge H-Phi debt refs.
+- Added `-MaxSourceBackedBridgeDebtReferences` to the same budget-gate path.
+- Updated `Docs/ARCHITECTURE/HECTON_PHI_STATIC_METRIC.md` with bridge-debt definition and the new budget command.
+
+Cinematic cheats used:
+- Source-backed graph cleanup and static budget gate instead of generated `.csproj` editing or broad contract migration.
+
+Exact microseconds saved:
+- Runtime frame time: 0 us changed.
+- Fresh build-time savings: not claimed because no compile lane was run.
+- Static Core bridge debt after cleanup: 19 source-backed bridge refs, 8 bridge debt refs.
+
+Verification:
+- Evidence class: STATIC_SOURCE + STATIC_DOC.
+- `Directory.Build.targets` scan found no remaining `Hecton8.World.GPR`, `Hecton8.SpaceEngine098Terrain`, or `Hecton8.Input.Generated` bridge references.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -RequireCoreBuildGate -MaxCoreAsmdefDebtReferences 25 -MaxGeneratedProjectDebtReferences 10 -MaxSourceBackedBridgeDebtReferences 8` passed.
+- Expected bridge-budget failure path returned `EXPECTED_BRIDGE_BUDGET_FAIL_PATH_OK` under zero bridge-debt budget.
+- No `dotnet build`, `dotnet rebuild`, or `dotnet msbuild` was run.
+
+Residual risk:
+- Static bridge pruning still needs compile confirmation once the no-dotnet order is lifted.
+- Generated project-reference debt remains at 10 until Unity project generation/compile evidence is refreshed.

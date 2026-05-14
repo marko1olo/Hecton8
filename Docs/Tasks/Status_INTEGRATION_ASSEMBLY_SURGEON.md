@@ -4,7 +4,7 @@ Agent: INTEGRATION_ASSEMBLY_SURGEON
 Role: SYSTEMS_ARCHITECT
 Domain: Unity Compilation Graph / Integrator
 Prompt task count: 17
-Current state: STATIC H-PHI ASMDEF DEBT REDUCED / PENDING FRESH COMPILE (NO DOTNET ORDER)
+Current state: STATIC H-PHI CORE GRAPH DEBT REDUCED / PENDING FRESH COMPILE (NO DOTNET ORDER)
 
 ## Mandates Read
 
@@ -58,6 +58,7 @@ Rule quote: `H-PHI DEFENSE: Do NOT solve missing dependencies by adding Hecton8.
 - Loop 10: Promoted H-Phi from report/addendum lore into stable architecture documentation. Added `Docs/ARCHITECTURE/HECTON_PHI_STATIC_METRIC.md`, linked it from `Docs/ARCHITECTURE/README.md`, and listed it in `Docs/README.md`. Status: STATIC H-PHI TOOLING DOCUMENTED / NO DOTNET.
 - Loop 11: Static no-dotnet verification after documentation. Core graph budget gate passed at 28 asmdef debt refs and 10 generated-project debt refs. Anchor scan found the H-Phi doc links and formula markers. `git diff --check` found no whitespace errors, only LF/CRLF normalization warnings. Owned ASCII scan passed; `Docs/README.md` has pre-existing mojibake at line 17 outside this edit. Status: STATIC H-PHI DOC VERIFIED / NO DOTNET.
 - Loop 12: Removed three unused Core asmdef debt references after static type-name and generated Core compile-item scans found no Core usage: `Hecton8.Input.Generated`, `Hecton8.World.GPR`, and `Hecton8.SpaceEngine098Terrain`. Core graph budget gate passed at 25 asmdef debt refs and 10 generated-project debt refs. Status: STATIC H-PHI ASMDEF DEBT REDUCED / NO DOTNET.
+- Loop 13: Removed matching unused source-backed bridge references for `Hecton8.World.GPR` and `Hecton8.SpaceEngine098Terrain` from `Directory.Build.targets`. Extended `HectonPhiAudit.ps1` to count and budget source-backed Core bridge debt. Budget gate passed at 25 asmdef debt refs, 10 generated-project debt refs, and 8 source-backed bridge debt refs. Status: STATIC H-PHI CORE GRAPH DEBT REDUCED / NO DOTNET.
 
 ## 2026-05-15 Continuation Checklist
 
@@ -99,3 +100,5 @@ Current state: PAUSED BY CURRENT NO-DOTNET ORDER / PENDING FRESH CLI_COMPILE ONL
 - [x] H-Phi doc static verification | Justification: ran Core graph budget gate, anchor `rg`, owned ASCII scan, and `git diff --check` without dotnet; Core graph baseline still passed and no whitespace errors were reported | Alternatives rejected: dotnet compile against explicit user order, global cleanup of unrelated pre-existing `Docs/README.md` mojibake | Estimate: 0 us runtime
 - [x] Unused Core asmdef debt pruned | Justification: generated Core compile-item scan had no `SpaceEngine098`, `GroundPenetratingRadar`, `HectonInputActions`, `World/GPR`, `World/SpaceEngine098`, or `Input/InputManager` entries; type-name scan found no generated Core compile-item use of GPR or SpaceEngine098 types; exact HectonInputActions use remains in `Hecton8.Input`, not Core | Alternatives rejected: removing debt refs with live Core type hits, editing generated `.csproj`, running dotnet against user order | Estimate: 0 us runtime
 - [x] Core graph budget lowered | Justification: `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -RequireCoreBuildGate -MaxCoreAsmdefDebtReferences 25 -MaxGeneratedProjectDebtReferences 10` passed after the asmdef cleanup | Alternatives rejected: keeping obsolete budget 28 after reducing debt | Estimate: 0 us runtime
+- [x] Source-backed bridge debt pruned | Justification: removed the matching `Hecton8.World.GPR` and `Hecton8.SpaceEngine098Terrain` reference-injection blocks from `Directory.Build.targets` after the same generated Core compile-item evidence showed no Core usage | Alternatives rejected: leaving source-backed MSBuild bridge wider than the asmdef graph | Estimate: 0 us runtime
+- [x] Source-backed bridge budget added | Justification: `HectonPhiAudit.ps1` now reports `SourceBackedBridgeReferenceCount` and `SourceBackedBridgeDebtReferenceCount`, and the budget gate passed with `-MaxSourceBackedBridgeDebtReferences 8` | Alternatives rejected: hidden MSBuild bridge debt outside the H-Phi tool | Estimate: 0 us runtime

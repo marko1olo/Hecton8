@@ -37,6 +37,8 @@ function New-CounterSet {
         FindObjectCalls = 0
         GetComponentCalls = 0
         DisposeCalls = 0
+        AupPrecisionSafe = 0
+        AupPrecisionRisk = 0
     }
 }
 
@@ -57,6 +59,8 @@ function New-DomainRow {
         FindObjectCalls = 0
         GetComponentCalls = 0
         DisposeCalls = 0
+        AupPrecisionSafe = 0
+        AupPrecisionRisk = 0
     }
 }
 
@@ -77,6 +81,8 @@ function New-FileRow {
         DisposeCalls = [int]$Counters['DisposeCalls']
         FindObjectCalls = [int]$Counters['FindObjectCalls']
         GetComponentCalls = [int]$Counters['GetComponentCalls']
+        AupPrecisionSafe = [int]$Counters['AupPrecisionSafe']
+        AupPrecisionRisk = [int]$Counters['AupPrecisionRisk']
     }
 }
 
@@ -454,6 +460,8 @@ function Add-DomainMetrics {
     $Row['FindObjectCalls'] = [int]$Row['FindObjectCalls'] + [int]$Counters['FindObjectCalls']
     $Row['GetComponentCalls'] = [int]$Row['GetComponentCalls'] + [int]$Counters['GetComponentCalls']
     $Row['DisposeCalls'] = [int]$Row['DisposeCalls'] + [int]$Counters['DisposeCalls']
+    $Row['AupPrecisionSafe'] = [int]$Row['AupPrecisionSafe'] + [int]$Counters['AupPrecisionSafe']
+    $Row['AupPrecisionRisk'] = [int]$Row['AupPrecisionRisk'] + [int]$Counters['AupPrecisionRisk']
 }
 
 function Divide-OrZero {
@@ -467,6 +475,19 @@ function Divide-OrZero {
     }
 
     return 0.0
+}
+
+function Divide-OrOne {
+    param(
+        [double]$Numerator,
+        [double]$Denominator
+    )
+
+    if ($Denominator -gt 0.0) {
+        return $Numerator / $Denominator
+    }
+
+    return 1.0
 }
 
 function New-Scores {
@@ -505,9 +526,11 @@ function New-Scores {
 
     $memoryAlignment = Divide-OrZero $Counts.StructLayoutAttributes $Counts.StructDeclarations
     $binarySafeRatio = Divide-OrZero $Counts.BinaryBlittableSafe $Counts.StructDeclarations
+    $aupPrecisionDenominator = [double]$Counts.AupPrecisionSafe + [double]$Counts.AupPrecisionRisk
+    $aupPrecisionIntegrity = Divide-OrOne $Counts.AupPrecisionSafe $aupPrecisionDenominator
 
     $hPhiStaticNarrow = $narrowIntegration * $architecturalPurity * $dataSovereignty * $memoryAlignment
-    $hPhiStaticRisk = $riskIntegration * $architecturalPurity * $dataSovereignty * $memoryAlignment
+    $hPhiStaticRisk = $riskIntegration * $architecturalPurity * $dataSovereignty * $memoryAlignment * $aupPrecisionIntegrity
 
     [ordered]@{
         NarrowIntegration = [Math]::Round($narrowIntegration, 9)
@@ -517,6 +540,7 @@ function New-Scores {
         DataSovereignty = [Math]::Round($dataSovereignty, 9)
         MemoryAlignment = [Math]::Round($memoryAlignment, 9)
         BinarySafeRatio = [Math]::Round($binarySafeRatio, 9)
+        AupPrecisionIntegrity = [Math]::Round($aupPrecisionIntegrity, 9)
         HPhiStaticNarrow = [Math]::Round($hPhiStaticNarrow, 9)
         HPhiStaticRisk = [Math]::Round($hPhiStaticRisk, 9)
     }
@@ -554,6 +578,7 @@ function New-AuditSummary {
             DataSovereignty = $Audit.Scores.DataSovereignty
             MemoryAlignment = $Audit.Scores.MemoryAlignment
             BinarySafeRatio = $Audit.Scores.BinarySafeRatio
+            AupPrecisionIntegrity = $Audit.Scores.AupPrecisionIntegrity
         }
         Counts = [ordered]@{
             RuntimeFiles = $Audit.Counts.CsFiles
@@ -569,6 +594,8 @@ function New-AuditSummary {
             FindObjectCalls = $Audit.Counts.FindObjectCalls
             GetComponentCalls = $Audit.Counts.GetComponentCalls
             DisposeCalls = $Audit.Counts.DisposeCalls
+            AupPrecisionSafe = $Audit.Counts.AupPrecisionSafe
+            AupPrecisionRisk = $Audit.Counts.AupPrecisionRisk
         }
         CoreGraph = New-CoreGraphSummary $Audit.CoreGraphAudit
         TopOwnerBlockedDataVaultCandidates = @($Audit.OwnerBlockedDataVaultCandidates |
@@ -659,6 +686,8 @@ $patternSource = [ordered]@{
     FindObjectCalls = '\b(?:FindObjectOfType|FindObjectsOfType|FindFirstObjectByType|FindAnyObjectByType|FindObjectsByType|FindWithTag)\s*(?:<|\()|GameObject\s*\.\s*Find(?:GameObjectWithTag|WithTag)?\s*\(|Resources\s*\.\s*FindObjectsOfTypeAll\s*(?:<|\()'
     GetComponentCalls = '\bGetComponent(?:s|InChildren|InParent)?\s*<'
     DisposeCalls = '\.Dispose\s*\('
+    AupPrecisionSafe = '\b(?:CurrentTotalOffsetDouble|ToAbsoluteUniversePositionDouble3|ToUniverseSpaceDouble3|ToRuntimeSpaceDouble3|FromAbsolutePosition|DistanceSq\s*\(|ToRuntimeSpace\s*\(\s*double3)'
+    AupPrecisionRisk = '\bHectonFloatingOrigin\s*\.\s*ToAbsoluteUniversePosition\s*\(|\bHectonMapMagicVegetationBridge\s*\.\s*ToUniverseSpace\s*\(|\bCurrentTotalOffset\s*(?:;|\.)|\b(?:New|Previous)TotalOffset\s*\.|\(float3\)\s*AUP|\bVector3\s+universePosition\b|\bVector3\s+stableUniverseRoot\b'
 }
 
 $patterns = @{}
@@ -747,7 +776,7 @@ $editorScores = New-Scores $editorCounters
 $result = [ordered]@{
     Timestamp = (Get-Date).ToString('yyyy-MM-dd HH:mm:ss zzz')
     Scope = 'Assets/_Project/Scripts'
-    MetricModel = 'Runtime H-Phi excludes Scripts/Editor from runtime debt counters; Data Sovereignty counts DataVault access surface including IDataVault, VaultBufferHandle, GetBuffer, TryGetBuffer, and GlobalDataVault; AllSourceCounts is retained for hygiene tracking.'
+    MetricModel = 'Runtime H-Phi excludes Scripts/Editor from runtime debt counters; Data Sovereignty counts DataVault access surface including IDataVault, VaultBufferHandle, GetBuffer, TryGetBuffer, and GlobalDataVault; risk-adjusted score includes AUP precision integrity from qualified legacy bridge and double-safe AUP patterns; AllSourceCounts is retained for hygiene tracking.'
     CoreGraphAudit = $coreGraphAudit
     Counts = $runtimeCounters
     Scores = $runtimeScores
