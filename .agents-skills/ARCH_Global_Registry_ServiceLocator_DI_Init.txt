@@ -1,10 +1,10 @@
-# GLOBAL_REGISTRY_DI — Hecton-8 Technical Mandate
+# GLOBAL_REGISTRY_DI - Hecton-8 Technical Mandate
 
 ---
 
-## RULE-01 · Static Service Locator Pattern
+## RULE-01 - Static Service Locator Pattern
 
-The `GlobalRegistry` is a static singleton accessor class — not a MonoBehaviour.
+The `GlobalRegistry` is a static singleton accessor class - not a MonoBehaviour.
 It provides the single, authoritative lookup point for all Hecton-8 runtime singletons.
 
 // CANONICAL DECLARATION
@@ -30,7 +30,7 @@ public static class GlobalRegistry
 
 ---
 
-## RULE-02 · Explicit Registration — OnEnable / OnDisable Contract
+## RULE-02 - Explicit Registration - OnEnable / OnDisable Contract
 
 Every component that participates in a registry bucket MUST follow this lifecycle contract.
 No exceptions. Registration happens in `OnEnable`. Unregistration happens in `OnDisable`.
@@ -57,7 +57,7 @@ public sealed class EnemyAI : MonoBehaviour, IUpdatable
 
 ---
 
-## RULE-03 · RegistryBucket — Dense Array with O(1) Swap-With-Last Removal
+## RULE-03 - RegistryBucket - Dense Array with O(1) Swap-With-Last Removal
 
 All multi-instance registries use `RegistryBucket<T>`, backed by a contiguous `T[]` array.
 Removal is O(1) via Swap-With-Last algorithm. No gaps, no null holes, no linked traversal.
@@ -78,7 +78,7 @@ public sealed class RegistryBucket<T> where T : class
         _count    = 0;
     }
 
-    // O(1) amortized — append to tail
+    // O(1) amortized - append to tail
     public void Register(T item)
     {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -102,7 +102,7 @@ public sealed class RegistryBucket<T> where T : class
             // SWAP-WITH-LAST
             _count--;
             _items[i]      = _items[_count];
-            _items[_count] = null;           // clear tail — prevent loitering reference
+            _items[_count] = null;           // clear tail - prevent loitering reference
             return true;
         }
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -127,13 +127,13 @@ public sealed class RegistryBucket<T> where T : class
     }
 }
 
-[DATA] Backing store is `T[]` — contiguous heap block. Cache-line friendly linear scan.
+[DATA] Backing store is `T[]` - contiguous heap block. Cache-line friendly linear scan.
 [FORBID] `List<T>`, `LinkedList<T>`, `HashSet<T>` as backing stores for tick-critical buckets.
-[SCALE] Capacity is set at construction. Silent resize is forbidden — capacity violations throw in dev builds.
+[SCALE] Capacity is set at construction. Silent resize is forbidden - capacity violations throw in dev builds.
 
 ---
 
-## RULE-04 · Singleton Service Registration — Initialize() Contract
+## RULE-04 - Singleton Service Registration - Initialize() Contract
 
 Singleton services (single-instance) use a dedicated typed slot, not a bucket.
 They are registered via an explicit `Initialize()` call, never via `Awake` auto-wire.
@@ -170,14 +170,14 @@ public static class GlobalRegistry
     }
 }
 
-// USAGE — inside a service MonoBehaviour:
+// USAGE - inside a service MonoBehaviour:
 public sealed class AudioService : MonoBehaviour, IAudioService
 {
-    // Called explicitly by GameBootstrapper.Initialize() — NOT Awake
+    // Called explicitly by GameBootstrapper.Initialize() - NOT Awake
     public void Initialize()
     {
         GlobalRegistry.RegisterService(ref GlobalRegistry.Audio, (IAudioService)this);
-        // ↑ requires: public static IAudioService Audio; (internal set)
+        //  requires: public static IAudioService Audio; (internal set)
     }
 
     private void OnDisable()
@@ -191,16 +191,16 @@ public sealed class AudioService : MonoBehaviour, IAudioService
 
 ---
 
-## RULE-05 · Initialization Order — GameBootstrapper Sequence
+## RULE-05 - Initialization Order - GameBootstrapper Sequence
 
 Initialization order is explicit and deterministic. Defined once. Changed only in `GameBootstrapper`.
 
 Priority Byte  Layer         Systems Initialized
 
-  0x00–0x1F    CORE          SceneService, EventBus, ConfigService
-  0x20–0x3F    ENVIRONMENT   PhysicsService, AudioService, VFXService
-  0x40–0x5F    PLAYER        InputService, PlayerController, CameraRig
-  0x60–0x7F    UI            UIService, HUDController, DialogueSystem
+  0x00-0x1F    CORE          SceneService, EventBus, ConfigService
+  0x20-0x3F    ENVIRONMENT   PhysicsService, AudioService, VFXService
+  0x40-0x5F    PLAYER        InputService, PlayerController, CameraRig
+  0x60-0x7F    UI            UIService, HUDController, DialogueSystem
 
 public sealed class GameBootstrapper : MonoBehaviour
 {
@@ -211,16 +211,16 @@ public sealed class GameBootstrapper : MonoBehaviour
 
     private void Start()
     {
-        // LAYER 0 — CORE (Priority 0x00)
+        // LAYER 0 - CORE (Priority 0x00)
         _sceneService.Initialize();
 
-        // LAYER 1 — ENVIRONMENT (Priority 0x20)
+        // LAYER 1 - ENVIRONMENT (Priority 0x20)
         _audioService.Initialize();
 
-        // LAYER 2 — PLAYER (Priority 0x40)
+        // LAYER 2 - PLAYER (Priority 0x40)
         _inputService.Initialize();
 
-        // LAYER 3 — UI (Priority 0x60)
+        // LAYER 3 - UI (Priority 0x60)
         _uiService.Initialize();
     }
 }
@@ -231,14 +231,14 @@ public sealed class GameBootstrapper : MonoBehaviour
 
 ---
 
-## RULE-06 · Priority-Sorted Tick Dispatch — O(N) Linear Scan
+## RULE-06 - Priority-Sorted Tick Dispatch - O(N) Linear Scan
 
 The `SystemDispatcher` iterates registered `IUpdatable` entries in priority order.
 Buckets are pre-sorted by layer. No runtime sort. No dictionary lookup per tick.
 
 public sealed class SystemDispatcher : MonoBehaviour
 {
-    // Four pre-allocated buckets, iterated in fixed order (Core→Environment→Player→UI)
+    // Four pre-allocated buckets, iterated in fixed order (Core->Environment->Player->UI)
     private static readonly RegistryBucket<IUpdatable>[] _priorityLanes =
     {
         new(capacity: 16),   // CORE        0x00
@@ -284,7 +284,7 @@ public enum PriorityLayer : byte
 
 ---
 
-## RULE-07 · Safe Cleanup — Registry Clear Before Scene Unload
+## RULE-07 - Safe Cleanup - Registry Clear Before Scene Unload
 
 Stale references after scene unload cause `MissingReferenceException` in `OnDestroy`.
 Registry clear MUST precede scene unload. This is enforced via a SceneService hook.
@@ -293,15 +293,15 @@ public sealed class SceneService : MonoBehaviour, ISceneService
 {
     public void LoadScene(string sceneName)
     {
-        // STEP 1 — Flush all multi-instance buckets before unload
+        // STEP 1 - Flush all multi-instance buckets before unload
         GlobalRegistry.Updatables.Clear();
         GlobalRegistry.Renderables.Clear();
         SystemDispatcher.ClearAllLanes();
 
-        // STEP 2 — Unregister singleton services (they'll re-register in next scene's Initialize)
-        // (singleton slots are cleared by each service's OnDisable — triggered by scene unload)
+        // STEP 2 - Unregister singleton services (they'll re-register in next scene's Initialize)
+        // (singleton slots are cleared by each service's OnDisable - triggered by scene unload)
 
-        // STEP 3 — Perform actual scene transition
+        // STEP 3 - Perform actual scene transition
         UnityEngine.SceneManagement.SceneManager.LoadScene(sceneName);
     }
 }
@@ -316,13 +316,13 @@ public sealed partial class SystemDispatcher
     }
 }
 
-[FLOW] Order is non-negotiable: Clear → Unload → Load → Initialize.
-[SAFE] `Array.Clear` in `RegistryBucket.Clear()` nulls all slots — no loitering Unity object references.
+[FLOW] Order is non-negotiable: Clear -> Unload -> Load -> Initialize.
+[SAFE] `Array.Clear` in `RegistryBucket.Clear()` nulls all slots - no loitering Unity object references.
 [FORBID] Relying on `OnDestroy` call order across objects for cleanup sequencing.
 
 ---
 
-## RULE-08 · Lifecycle Contract — No Hot-Loop Unity Null Checks
+## RULE-08 - Lifecycle Contract - No Hot-Loop Unity Null Checks
 
 Registered items must unregister in `OnDisable` / `OnDestroy` before destruction.
 The dispatcher does not poll `uObj == null` or `!uObj` in the tick path.
@@ -339,22 +339,22 @@ Canonical enforcement:
 
 ---
 
-## RULE-09 · Circular Dependency Defense
+## RULE-09 - Circular Dependency Defense
 
-If System A requires System B at init time, and System B requires System A — the system deadlocks.
+If System A requires System B at init time, and System B requires System A - the system deadlocks.
 Hecton-8 forbids direct circular references. Decouple via `EventBus`.
 
 FORBIDDEN PATTERN:
-  InputService.Initialize() → calls PlayerController.GetState()
-  PlayerController.Initialize() → calls InputService.RegisterHandler()
-  → Deadlock / NullRef on init
+  InputService.Initialize() -> calls PlayerController.GetState()
+  PlayerController.Initialize() -> calls InputService.RegisterHandler()
+  -> Deadlock / NullRef on init
 
 MANDATED PATTERN:
-  InputService.Initialize()    → publishes InputReadyEvent via EventBus
-  PlayerController.Initialize() → subscribes to InputReadyEvent via EventBus
-  → Zero direct coupling. Init order irrelevant.
+  InputService.Initialize()    -> publishes InputReadyEvent via EventBus
+  PlayerController.Initialize() -> subscribes to InputReadyEvent via EventBus
+  -> Zero direct coupling. Init order irrelevant.
 
-// EventBus usage — break circular dependency
+// EventBus usage - break circular dependency
 public sealed class InputService : MonoBehaviour, IInputService
 {
     public void Initialize()
@@ -380,7 +380,7 @@ public sealed class PlayerController : MonoBehaviour, IUpdatable
 
     private void OnInputReady(InputServiceReadyEvent _)
     {
-        // Safe to use GlobalRegistry.Input here — guaranteed non-null
+        // Safe to use GlobalRegistry.Input here - guaranteed non-null
     }
 }
 
@@ -434,7 +434,41 @@ public sealed class PlayerController : MonoBehaviour, IUpdatable
 
 ---
 
-## RULE-10 · Forbidden Patterns — Runtime Tick Violations
+### RULE-09D - Two-Phase Dependency Injection
+
+[RULE] Runtime systems use a strict two-phase dependency protocol: `OnRegister()` then `OnDependencyInject()`.
+[RULE] `OnRegister()` exposes the system's owned interfaces, typed signal lanes, and DataVault buffer requests. It does not read other systems.
+[RULE] `OnDependencyInject()` receives and caches all external interfaces required by Tick, FixedTick, LateFrameTick, Burst scheduling, renderer upload, save, and telemetry paths.
+[RULE] After `OnDependencyInject()` completes, hot paths use cached fields only. A dependency changing at runtime must publish a typed ready/changed/shutdown signal and refresh a cached field on that signal.
+[RULE] Bootstrap and SystemDispatcher own the order. Individual systems do not invent Awake dependency order.
+
+Canonical shape:
+
+```
+public void OnRegister(DependencyRegistry registry)
+{
+    registry.Register<IHullStressProvider>(this);
+    registry.RequestVaultBuffer(BufferID.HullStress, SystemID.Habitat);
+}
+
+public void OnDependencyInject(DependencySnapshot deps)
+{
+    _signals = deps.Get<ISignalLaneReader>();
+    _vault = deps.Get<IDataVault>();
+    _stressBuffer = _vault.Resolve<float>(BufferID.HullStress);
+}
+```
+
+[FORBID] Calling `GlobalRegistry.Get<T>()` inside `Update()`, `Tick()`, `FixedTick()`, `LateFrameTick()`, `OnUpdate()`, Burst jobs, jobs scheduled from those methods, or helpers called by those methods.
+[FORBID] Calling `GlobalRegistry.Get<T>()` from `Awake()` to wire another system.
+[FORBID] Direct concrete references to another domain when an interface, SignalBus lane, or DataVault handle exists.
+[FORBID] Lazy dependency lookup after the first gameplay frame. Missing dependency after injection is a fail-fast disable with telemetry, not a polling loop.
+
+Batch 004/005 evidence: GlobalDataVault and cross-domain signal edits repeatedly created circular dependency pressure. The registry is a cold dependency spine. It is not a live query bus.
+
+---
+
+## RULE-10 - Forbidden Patterns - Runtime Tick Violations
 
 The following patterns are unconditionally forbidden in any method called per-frame.
 
@@ -444,7 +478,7 @@ GameObject.Find("Name")                 O(N) scene graph string search. Allocate
 FindObjectOfType<T>()                   O(N) scene graph type scan. No caching.
 GetComponentInChildren<T>()             O(depth) tree traversal. Allocates array.
 Resources.Load(path)                    Synchronous disk I/O in tick. Hitches.
-new List<T>() / LINQ inside Tick()      Heap allocation → GC pressure.
+new List<T>() / LINQ inside Tick()      Heap allocation -> GC pressure.
 Dictionary lookup per registered item   Hash compute + potential collision chain.
 Nested registry bucket lookups          Breaks cache locality. Use flat arrays only.
 
@@ -453,7 +487,7 @@ Nested registry bucket lookups          Breaks cache locality. Use flat arrays o
 
 ---
 
-## SUMMARY — GLOBAL_REGISTRY_DI Contract Matrix
+## SUMMARY - GLOBAL_REGISTRY_DI Contract Matrix
 
 RULE   TOPIC                         CONSTRAINT TYPE
 
@@ -461,9 +495,9 @@ RULE   TOPIC                         CONSTRAINT TYPE
 02     OnEnable/OnDisable Contract   [RULE]  Mandatory paired register/unregister
 03     RegistryBucket Dense Array    [DATA]  T[] backing, O(1) Swap-With-Last
 04     Singleton Initialize()        [RULE]  Explicit call, no Awake auto-wire
-05     Init Order — Bootstrapper     [FLOW]  Core→Environment→Player→UI sequence
+05     Init Order - Bootstrapper     [FLOW]  Core->Environment->Player->UI sequence
 06     Priority Tick Dispatch        [MATH]  O(N) linear, 4 pre-sorted lanes
-07     Safe Cleanup Before Unload    [FLOW]  Clear→Unload→Load→Initialize order
+07     Safe Cleanup Before Unload    [FLOW]  Clear->Unload->Load->Initialize order
 08     Dead Reference Guard          [SAFE]  Unity null-operator check per dispatch
 09     Circular Dependency Defense   [SAFE]  EventBus decoupling, cycles forbidden
 10     Forbidden Runtime Patterns    [FORBID] Find/LINQ/Dictionary in tick paths

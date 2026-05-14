@@ -1,0 +1,1624 @@
+{
+  "conclusions": {
+    "acousticCompensationKillRatio": 0.56321,
+    "aggressionFearSweetSpot": "Aggression 1.38000, Fear 0.76000",
+    "linearVsQuadraticScoreDelta": 0.058491,
+    "noAcousticKillRatio": 0.08101,
+    "quadraticFearFinding": "Second-degree fear buildup damps late scarcity spikes while avoiding the linear curve's early hunt suppression.",
+    "retinalBlindnessFinding": "Acoustic tracking partially compensates; retinal blindness without acoustic tracking collapses hunt efficiency.",
+    "sensoryNoiseFinding": "Stable through 12 percent 1-bit radar noise; 18 percent starts scoring as degraded."
+  },
+  "elapsedSeconds": 221.349,
+  "evidenceClass": "CLI_PYTHON_SIMULATION",
+  "fearCurveComparison": {
+    "linear_fear": {
+      "frames": 120000,
+      "kills": {
+        "alphaLeviathan": 630.392,
+        "stalker": 3416.916
+      },
+      "population": {
+        "alphaLeviathan": 1.861,
+        "predatorMax": 36.0,
+        "predatorMin": 33.75,
+        "prey": 10099.238,
+        "preyMax": 10099.242,
+        "preyMin": 9200.0,
+        "stalker": 34.134
+      },
+      "profile": {
+        "acousticTracking": true,
+        "retinalBlindness": false,
+        "sensoryNoise": 0.06
+      },
+      "score": 0.426164,
+      "stability": {
+        "extinct": false,
+        "overpopulated": false,
+        "predatorStdDev": 0.796,
+        "preyStdDev": 288.275
+      },
+      "weights": {
+        "acousticTrackingWeight": 0.68,
+        "aggressionScalar": 1.38,
+        "fearCurvePower": 1.0,
+        "fearScalar": 0.76,
+        "fearWeight": 1.16,
+        "hungerWeight": 0.92,
+        "retinalTrackingWeight": 0.32,
+        "sensoryNoise": 0.06
+      }
+    },
+    "quadratic_fear": {
+      "frames": 120000,
+      "kills": {
+        "alphaLeviathan": 639.866,
+        "stalker": 4141.72
+      },
+      "population": {
+        "alphaLeviathan": 1.862,
+        "predatorMax": 39.581,
+        "predatorMin": 35.085,
+        "prey": 9495.785,
+        "preyMax": 9513.795,
+        "preyMin": 9199.732,
+        "stalker": 37.718
+      },
+      "profile": {
+        "acousticTracking": true,
+        "retinalBlindness": false,
+        "sensoryNoise": 0.06
+      },
+      "score": 0.367673,
+      "stability": {
+        "extinct": false,
+        "overpopulated": false,
+        "predatorStdDev": 1.448,
+        "preyStdDev": 99.725
+      },
+      "weights": {
+        "acousticTrackingWeight": 0.68,
+        "aggressionScalar": 1.38,
+        "fearCurvePower": 2.0,
+        "fearScalar": 0.76,
+        "fearWeight": 1.16,
+        "hungerWeight": 0.92,
+        "retinalTrackingWeight": 0.32,
+        "sensoryNoise": 0.06
+      }
+    }
+  },
+  "generatedBy": "FAUNA_BEHAVIOR_SIMULATOR",
+  "heatmapTop10": [
+    {
+      "frames": 24000,
+      "kills": {
+        "alphaLeviathan": 130.741,
+        "stalker": 788.23
+      },
+      "population": {
+        "alphaLeviathan": 1.938,
+        "predatorMax": 36.085,
+        "predatorMin": 35.103,
+        "prey": 9361.217,
+        "preyMax": 9361.217,
+        "preyMin": 9199.719,
+        "stalker": 34.148
+      },
+      "profile": {
+        "acousticTracking": true,
+        "retinalBlindness": false,
+        "sensoryNoise": 0.06
+      },
+      "score": 0.325747,
+      "stability": {
+        "extinct": false,
+        "overpopulated": false,
+        "predatorStdDev": 0.366,
+        "preyStdDev": 58.871
+      },
+      "weights": {
+        "acousticTrackingWeight": 0.68,
+        "aggressionScalar": 1.38,
+        "fearCurvePower": 2.0,
+        "fearScalar": 0.76,
+        "fearWeight": 1.16,
+        "hungerWeight": 0.92,
+        "retinalTrackingWeight": 0.32,
+        "sensoryNoise": 0.06
+      }
+    },
+    {
+      "frames": 24000,
+      "kills": {
+        "alphaLeviathan": 130.362,
+        "stalker": 784.545
+      },
+      "population": {
+        "alphaLeviathan": 1.936,
+        "predatorMax": 36.0,
+        "predatorMin": 35.066,
+        "prey": 9363.073,
+        "preyMax": 9363.073,
+        "preyMin": 9199.755,
+        "stalker": 34.061
+      },
+      "profile": {
+        "acousticTracking": true,
+        "retinalBlindness": false,
+        "sensoryNoise": 0.06
+      },
+      "score": 0.328471,
+      "stability": {
+        "extinct": false,
+        "overpopulated": false,
+        "predatorStdDev": 0.364,
+        "preyStdDev": 59.409
+      },
+      "weights": {
+        "acousticTrackingWeight": 0.68,
+        "aggressionScalar": 1.38,
+        "fearCurvePower": 2.0,
+        "fearScalar": 0.78,
+        "fearWeight": 1.16,
+        "hungerWeight": 0.92,
+        "retinalTrackingWeight": 0.32,
+        "sensoryNoise": 0.06
+      }
+    },
+    {
+      "frames": 24000,
+      "kills": {
+        "alphaLeviathan": 130.464,
+        "stalker": 784.383
+      },
+      "population": {
+        "alphaLeviathan": 1.936,
+        "predatorMax": 36.0,
+        "predatorMin": 35.066,
+        "prey": 9360.881,
+        "preyMax": 9360.881,
+        "preyMin": 9199.841,
+        "stalker": 34.035
+      },
+      "profile": {
+        "acousticTracking": true,
+        "retinalBlindness": false,
+        "sensoryNoise": 0.06
+      },
+      "score": 0.329228,
+      "stability": {
+        "extinct": false,
+        "overpopulated": false,
+        "predatorStdDev": 0.355,
+        "preyStdDev": 58.645
+      },
+      "weights": {
+        "acousticTrackingWeight": 0.68,
+        "aggressionScalar": 1.38,
+        "fearCurvePower": 2.0,
+        "fearScalar": 0.8,
+        "fearWeight": 1.16,
+        "hungerWeight": 0.92,
+        "retinalTrackingWeight": 0.32,
+        "sensoryNoise": 0.06
+      }
+    },
+    {
+      "frames": 24000,
+      "kills": {
+        "alphaLeviathan": 130.365,
+        "stalker": 782.623
+      },
+      "population": {
+        "alphaLeviathan": 1.936,
+        "predatorMax": 36.0,
+        "predatorMin": 35.048,
+        "prey": 9360.539,
+        "preyMax": 9360.539,
+        "preyMin": 9199.66,
+        "stalker": 33.989
+      },
+      "profile": {
+        "acousticTracking": true,
+        "retinalBlindness": false,
+        "sensoryNoise": 0.06
+      },
+      "score": 0.330764,
+      "stability": {
+        "extinct": false,
+        "overpopulated": false,
+        "predatorStdDev": 0.355,
+        "preyStdDev": 58.637
+      },
+      "weights": {
+        "acousticTrackingWeight": 0.68,
+        "aggressionScalar": 1.38,
+        "fearCurvePower": 2.0,
+        "fearScalar": 0.82,
+        "fearWeight": 1.16,
+        "hungerWeight": 0.92,
+        "retinalTrackingWeight": 0.32,
+        "sensoryNoise": 0.06
+      }
+    },
+    {
+      "frames": 24000,
+      "kills": {
+        "alphaLeviathan": 129.339,
+        "stalker": 775.821
+      },
+      "population": {
+        "alphaLeviathan": 1.934,
+        "predatorMax": 36.0,
+        "predatorMin": 35.019,
+        "prey": 9375.452,
+        "preyMax": 9375.452,
+        "preyMin": 9199.848,
+        "stalker": 33.932
+      },
+      "profile": {
+        "acousticTracking": true,
+        "retinalBlindness": false,
+        "sensoryNoise": 0.06
+      },
+      "score": 0.331225,
+      "stability": {
+        "extinct": false,
+        "overpopulated": false,
+        "predatorStdDev": 0.359,
+        "preyStdDev": 63.802
+      },
+      "weights": {
+        "acousticTrackingWeight": 0.68,
+        "aggressionScalar": 1.365,
+        "fearCurvePower": 2.0,
+        "fearScalar": 0.76,
+        "fearWeight": 1.16,
+        "hungerWeight": 0.92,
+        "retinalTrackingWeight": 0.32,
+        "sensoryNoise": 0.06
+      }
+    },
+    {
+      "frames": 24000,
+      "kills": {
+        "alphaLeviathan": 129.53,
+        "stalker": 776.274
+      },
+      "population": {
+        "alphaLeviathan": 1.934,
+        "predatorMax": 36.0,
+        "predatorMin": 35.021,
+        "prey": 9372.618,
+        "preyMax": 9372.618,
+        "preyMin": 9199.858,
+        "stalker": 33.918
+      },
+      "profile": {
+        "acousticTracking": true,
+        "retinalBlindness": false,
+        "sensoryNoise": 0.06
+      },
+      "score": 0.331818,
+      "stability": {
+        "extinct": false,
+        "overpopulated": false,
+        "predatorStdDev": 0.354,
+        "preyStdDev": 62.818
+      },
+      "weights": {
+        "acousticTrackingWeight": 0.68,
+        "aggressionScalar": 1.365,
+        "fearCurvePower": 2.0,
+        "fearScalar": 0.78,
+        "fearWeight": 1.16,
+        "hungerWeight": 0.92,
+        "retinalTrackingWeight": 0.32,
+        "sensoryNoise": 0.06
+      }
+    },
+    {
+      "frames": 24000,
+      "kills": {
+        "alphaLeviathan": 130.356,
+        "stalker": 781.546
+      },
+      "population": {
+        "alphaLeviathan": 1.935,
+        "predatorMax": 36.0,
+        "predatorMin": 35.043,
+        "prey": 9359.392,
+        "preyMax": 9359.392,
+        "preyMin": 9199.526,
+        "stalker": 33.953
+      },
+      "profile": {
+        "acousticTracking": true,
+        "retinalBlindness": false,
+        "sensoryNoise": 0.06
+      },
+      "score": 0.331938,
+      "stability": {
+        "extinct": false,
+        "overpopulated": false,
+        "predatorStdDev": 0.352,
+        "preyStdDev": 58.337
+      },
+      "weights": {
+        "acousticTrackingWeight": 0.68,
+        "aggressionScalar": 1.38,
+        "fearCurvePower": 2.0,
+        "fearScalar": 0.84,
+        "fearWeight": 1.16,
+        "hungerWeight": 0.92,
+        "retinalTrackingWeight": 0.32,
+        "sensoryNoise": 0.06
+      }
+    },
+    {
+      "frames": 24000,
+      "kills": {
+        "alphaLeviathan": 129.521,
+        "stalker": 775.152
+      },
+      "population": {
+        "alphaLeviathan": 1.934,
+        "predatorMax": 36.0,
+        "predatorMin": 34.99,
+        "prey": 9371.578,
+        "preyMax": 9371.578,
+        "preyMin": 9199.786,
+        "stalker": 33.881
+      },
+      "profile": {
+        "acousticTracking": true,
+        "retinalBlindness": false,
+        "sensoryNoise": 0.06
+      },
+      "score": 0.333111,
+      "stability": {
+        "extinct": false,
+        "overpopulated": false,
+        "predatorStdDev": 0.357,
+        "preyStdDev": 62.42
+      },
+      "weights": {
+        "acousticTrackingWeight": 0.68,
+        "aggressionScalar": 1.365,
+        "fearCurvePower": 2.0,
+        "fearScalar": 0.8,
+        "fearWeight": 1.16,
+        "hungerWeight": 0.92,
+        "retinalTrackingWeight": 0.32,
+        "sensoryNoise": 0.06
+      }
+    },
+    {
+      "frames": 24000,
+      "kills": {
+        "alphaLeviathan": 129.604,
+        "stalker": 774.962
+      },
+      "population": {
+        "alphaLeviathan": 1.934,
+        "predatorMax": 36.0,
+        "predatorMin": 35.021,
+        "prey": 9369.348,
+        "preyMax": 9369.348,
+        "preyMin": 9199.742,
+        "stalker": 33.854
+      },
+      "profile": {
+        "acousticTracking": true,
+        "retinalBlindness": false,
+        "sensoryNoise": 0.06
+      },
+      "score": 0.333839,
+      "stability": {
+        "extinct": false,
+        "overpopulated": false,
+        "predatorStdDev": 0.345,
+        "preyStdDev": 61.736
+      },
+      "weights": {
+        "acousticTrackingWeight": 0.68,
+        "aggressionScalar": 1.365,
+        "fearCurvePower": 2.0,
+        "fearScalar": 0.82,
+        "fearWeight": 1.16,
+        "hungerWeight": 0.92,
+        "retinalTrackingWeight": 0.32,
+        "sensoryNoise": 0.06
+      }
+    },
+    {
+      "frames": 24000,
+      "kills": {
+        "alphaLeviathan": 128.658,
+        "stalker": 768.849
+      },
+      "population": {
+        "alphaLeviathan": 1.933,
+        "predatorMax": 36.0,
+        "predatorMin": 34.985,
+        "prey": 9383.542,
+        "preyMax": 9383.542,
+        "preyMin": 9199.879,
+        "stalker": 33.806
+      },
+      "profile": {
+        "acousticTracking": true,
+        "retinalBlindness": false,
+        "sensoryNoise": 0.06
+      },
+      "score": 0.334155,
+      "stability": {
+        "extinct": false,
+        "overpopulated": false,
+        "predatorStdDev": 0.35,
+        "preyStdDev": 66.571
+      },
+      "weights": {
+        "acousticTrackingWeight": 0.68,
+        "aggressionScalar": 1.35,
+        "fearCurvePower": 2.0,
+        "fearScalar": 0.76,
+        "fearWeight": 1.16,
+        "hungerWeight": 0.92,
+        "retinalTrackingWeight": 0.32,
+        "sensoryNoise": 0.06
+      }
+    }
+  ],
+  "millionFrameRun": {
+    "frames": 1000000,
+    "kills": {
+      "alphaLeviathan": 4855.652,
+      "stalker": 36132.692
+    },
+    "population": {
+      "alphaLeviathan": 1.664,
+      "predatorMax": 39.951,
+      "predatorMin": 35.087,
+      "prey": 9436.618,
+      "preyMax": 9515.66,
+      "preyMin": 9199.621,
+      "stalker": 38.109
+    },
+    "profile": {
+      "acousticTracking": true,
+      "retinalBlindness": false,
+      "sensoryNoise": 0.06
+    },
+    "samples": [
+      {
+        "alphaLeviathan": 2.0,
+        "fear": 0.21849,
+        "frame": 0,
+        "prey": 9199.996,
+        "stalker": 34.0
+      },
+      {
+        "alphaLeviathan": 1.954,
+        "fear": 0.12039,
+        "frame": 10000,
+        "prey": 9258.332,
+        "stalker": 33.262
+      },
+      {
+        "alphaLeviathan": 1.941,
+        "fear": 0.1195,
+        "frame": 20000,
+        "prey": 9336.687,
+        "stalker": 33.875
+      },
+      {
+        "alphaLeviathan": 1.931,
+        "fear": 0.11757,
+        "frame": 30000,
+        "prey": 9396.656,
+        "stalker": 34.491
+      },
+      {
+        "alphaLeviathan": 1.921,
+        "fear": 0.11908,
+        "frame": 40000,
+        "prey": 9442.529,
+        "stalker": 35.043
+      },
+      {
+        "alphaLeviathan": 1.912,
+        "fear": 0.1198,
+        "frame": 50000,
+        "prey": 9475.773,
+        "stalker": 35.547
+      },
+      {
+        "alphaLeviathan": 1.904,
+        "fear": 0.11962,
+        "frame": 60000,
+        "prey": 9497.131,
+        "stalker": 36.024
+      },
+      {
+        "alphaLeviathan": 1.896,
+        "fear": 0.11926,
+        "frame": 70000,
+        "prey": 9509.136,
+        "stalker": 36.454
+      },
+      {
+        "alphaLeviathan": 1.889,
+        "fear": 0.12209,
+        "frame": 80000,
+        "prey": 9514.779,
+        "stalker": 36.807
+      },
+      {
+        "alphaLeviathan": 1.882,
+        "fear": 0.12054,
+        "frame": 90000,
+        "prey": 9514.485,
+        "stalker": 37.118
+      },
+      {
+        "alphaLeviathan": 1.876,
+        "fear": 0.12287,
+        "frame": 100000,
+        "prey": 9509.018,
+        "stalker": 37.398
+      },
+      {
+        "alphaLeviathan": 1.869,
+        "fear": 0.12296,
+        "frame": 110000,
+        "prey": 9502.608,
+        "stalker": 37.587
+      },
+      {
+        "alphaLeviathan": 1.863,
+        "fear": 0.12331,
+        "frame": 120000,
+        "prey": 9494.741,
+        "stalker": 37.735
+      },
+      {
+        "alphaLeviathan": 1.856,
+        "fear": 0.12444,
+        "frame": 130000,
+        "prey": 9486.367,
+        "stalker": 37.842
+      },
+      {
+        "alphaLeviathan": 1.85,
+        "fear": 0.12522,
+        "frame": 140000,
+        "prey": 9476.261,
+        "stalker": 37.954
+      },
+      {
+        "alphaLeviathan": 1.844,
+        "fear": 0.12595,
+        "frame": 150000,
+        "prey": 9466.957,
+        "stalker": 38.019
+      },
+      {
+        "alphaLeviathan": 1.838,
+        "fear": 0.12457,
+        "frame": 160000,
+        "prey": 9458.624,
+        "stalker": 38.057
+      },
+      {
+        "alphaLeviathan": 1.832,
+        "fear": 0.12559,
+        "frame": 170000,
+        "prey": 9450.444,
+        "stalker": 38.093
+      },
+      {
+        "alphaLeviathan": 1.826,
+        "fear": 0.1264,
+        "frame": 180000,
+        "prey": 9443.138,
+        "stalker": 38.11
+      },
+      {
+        "alphaLeviathan": 1.821,
+        "fear": 0.12624,
+        "frame": 190000,
+        "prey": 9437.341,
+        "stalker": 38.107
+      },
+      {
+        "alphaLeviathan": 1.815,
+        "fear": 0.12575,
+        "frame": 200000,
+        "prey": 9431.785,
+        "stalker": 38.114
+      },
+      {
+        "alphaLeviathan": 1.81,
+        "fear": 0.12793,
+        "frame": 210000,
+        "prey": 9428.019,
+        "stalker": 38.096
+      },
+      {
+        "alphaLeviathan": 1.805,
+        "fear": 0.12582,
+        "frame": 220000,
+        "prey": 9424.577,
+        "stalker": 38.085
+      },
+      {
+        "alphaLeviathan": 1.8,
+        "fear": 0.12775,
+        "frame": 230000,
+        "prey": 9422.037,
+        "stalker": 38.076
+      },
+      {
+        "alphaLeviathan": 1.795,
+        "fear": 0.12825,
+        "frame": 240000,
+        "prey": 9420.483,
+        "stalker": 38.059
+      },
+      {
+        "alphaLeviathan": 1.79,
+        "fear": 0.12492,
+        "frame": 250000,
+        "prey": 9419.241,
+        "stalker": 38.05
+      },
+      {
+        "alphaLeviathan": 1.785,
+        "fear": 0.12826,
+        "frame": 260000,
+        "prey": 9418.737,
+        "stalker": 38.033
+      },
+      {
+        "alphaLeviathan": 1.781,
+        "fear": 0.12654,
+        "frame": 270000,
+        "prey": 9417.531,
+        "stalker": 38.04
+      },
+      {
+        "alphaLeviathan": 1.777,
+        "fear": 0.12719,
+        "frame": 280000,
+        "prey": 9417.041,
+        "stalker": 38.034
+      },
+      {
+        "alphaLeviathan": 1.772,
+        "fear": 0.1251,
+        "frame": 290000,
+        "prey": 9416.998,
+        "stalker": 38.025
+      },
+      {
+        "alphaLeviathan": 1.768,
+        "fear": 0.12771,
+        "frame": 300000,
+        "prey": 9417.568,
+        "stalker": 38.012
+      },
+      {
+        "alphaLeviathan": 1.765,
+        "fear": 0.12768,
+        "frame": 310000,
+        "prey": 9417.371,
+        "stalker": 38.021
+      },
+      {
+        "alphaLeviathan": 1.761,
+        "fear": 0.12551,
+        "frame": 320000,
+        "prey": 9418.012,
+        "stalker": 38.014
+      },
+      {
+        "alphaLeviathan": 1.757,
+        "fear": 0.12419,
+        "frame": 330000,
+        "prey": 9418.197,
+        "stalker": 38.021
+      },
+      {
+        "alphaLeviathan": 1.754,
+        "fear": 0.12535,
+        "frame": 340000,
+        "prey": 9418.424,
+        "stalker": 38.026
+      },
+      {
+        "alphaLeviathan": 1.751,
+        "fear": 0.12489,
+        "frame": 350000,
+        "prey": 9418.914,
+        "stalker": 38.026
+      },
+      {
+        "alphaLeviathan": 1.747,
+        "fear": 0.12505,
+        "frame": 360000,
+        "prey": 9419.568,
+        "stalker": 38.021
+      },
+      {
+        "alphaLeviathan": 1.744,
+        "fear": 0.12785,
+        "frame": 370000,
+        "prey": 9420.804,
+        "stalker": 38.011
+      },
+      {
+        "alphaLeviathan": 1.741,
+        "fear": 0.12502,
+        "frame": 380000,
+        "prey": 9421.794,
+        "stalker": 38.009
+      },
+      {
+        "alphaLeviathan": 1.738,
+        "fear": 0.12408,
+        "frame": 390000,
+        "prey": 9422.331,
+        "stalker": 38.016
+      },
+      {
+        "alphaLeviathan": 1.736,
+        "fear": 0.12633,
+        "frame": 400000,
+        "prey": 9422.139,
+        "stalker": 38.036
+      },
+      {
+        "alphaLeviathan": 1.733,
+        "fear": 0.12499,
+        "frame": 410000,
+        "prey": 9422.928,
+        "stalker": 38.03
+      },
+      {
+        "alphaLeviathan": 1.73,
+        "fear": 0.12599,
+        "frame": 420000,
+        "prey": 9423.346,
+        "stalker": 38.034
+      },
+      {
+        "alphaLeviathan": 1.727,
+        "fear": 0.1252,
+        "frame": 430000,
+        "prey": 9424.887,
+        "stalker": 38.017
+      },
+      {
+        "alphaLeviathan": 1.725,
+        "fear": 0.12718,
+        "frame": 440000,
+        "prey": 9425.084,
+        "stalker": 38.03
+      },
+      {
+        "alphaLeviathan": 1.723,
+        "fear": 0.12584,
+        "frame": 450000,
+        "prey": 9426.416,
+        "stalker": 38.018
+      },
+      {
+        "alphaLeviathan": 1.72,
+        "fear": 0.12778,
+        "frame": 460000,
+        "prey": 9426.705,
+        "stalker": 38.033
+      },
+      {
+        "alphaLeviathan": 1.718,
+        "fear": 0.12521,
+        "frame": 470000,
+        "prey": 9427.328,
+        "stalker": 38.034
+      },
+      {
+        "alphaLeviathan": 1.716,
+        "fear": 0.12491,
+        "frame": 480000,
+        "prey": 9427.268,
+        "stalker": 38.047
+      },
+      {
+        "alphaLeviathan": 1.714,
+        "fear": 0.12722,
+        "frame": 490000,
+        "prey": 9427.636,
+        "stalker": 38.047
+      },
+      {
+        "alphaLeviathan": 1.712,
+        "fear": 0.1261,
+        "frame": 500000,
+        "prey": 9427.751,
+        "stalker": 38.055
+      },
+      {
+        "alphaLeviathan": 1.71,
+        "fear": 0.12513,
+        "frame": 510000,
+        "prey": 9428.765,
+        "stalker": 38.042
+      },
+      {
+        "alphaLeviathan": 1.708,
+        "fear": 0.12807,
+        "frame": 520000,
+        "prey": 9429.602,
+        "stalker": 38.037
+      },
+      {
+        "alphaLeviathan": 1.706,
+        "fear": 0.12668,
+        "frame": 530000,
+        "prey": 9429.979,
+        "stalker": 38.045
+      },
+      {
+        "alphaLeviathan": 1.705,
+        "fear": 0.12702,
+        "frame": 540000,
+        "prey": 9430.862,
+        "stalker": 38.04
+      },
+      {
+        "alphaLeviathan": 1.703,
+        "fear": 0.1247,
+        "frame": 550000,
+        "prey": 9430.712,
+        "stalker": 38.055
+      },
+      {
+        "alphaLeviathan": 1.701,
+        "fear": 0.12559,
+        "frame": 560000,
+        "prey": 9431.62,
+        "stalker": 38.044
+      },
+      {
+        "alphaLeviathan": 1.7,
+        "fear": 0.12632,
+        "frame": 570000,
+        "prey": 9432.708,
+        "stalker": 38.037
+      },
+      {
+        "alphaLeviathan": 1.698,
+        "fear": 0.12571,
+        "frame": 580000,
+        "prey": 9433.144,
+        "stalker": 38.045
+      },
+      {
+        "alphaLeviathan": 1.697,
+        "fear": 0.12525,
+        "frame": 590000,
+        "prey": 9432.715,
+        "stalker": 38.063
+      },
+      {
+        "alphaLeviathan": 1.695,
+        "fear": 0.12683,
+        "frame": 600000,
+        "prey": 9433.104,
+        "stalker": 38.06
+      },
+      {
+        "alphaLeviathan": 1.694,
+        "fear": 0.12569,
+        "frame": 610000,
+        "prey": 9433.941,
+        "stalker": 38.051
+      },
+      {
+        "alphaLeviathan": 1.693,
+        "fear": 0.12733,
+        "frame": 620000,
+        "prey": 9433.863,
+        "stalker": 38.061
+      },
+      {
+        "alphaLeviathan": 1.691,
+        "fear": 0.1255,
+        "frame": 630000,
+        "prey": 9433.617,
+        "stalker": 38.073
+      },
+      {
+        "alphaLeviathan": 1.69,
+        "fear": 0.12558,
+        "frame": 640000,
+        "prey": 9433.16,
+        "stalker": 38.087
+      },
+      {
+        "alphaLeviathan": 1.689,
+        "fear": 0.12783,
+        "frame": 650000,
+        "prey": 9432.714,
+        "stalker": 38.091
+      },
+      {
+        "alphaLeviathan": 1.688,
+        "fear": 0.12468,
+        "frame": 660000,
+        "prey": 9431.994,
+        "stalker": 38.102
+      },
+      {
+        "alphaLeviathan": 1.687,
+        "fear": 0.1245,
+        "frame": 670000,
+        "prey": 9430.93,
+        "stalker": 38.118
+      },
+      {
+        "alphaLeviathan": 1.686,
+        "fear": 0.12876,
+        "frame": 680000,
+        "prey": 9430.834,
+        "stalker": 38.112
+      },
+      {
+        "alphaLeviathan": 1.685,
+        "fear": 0.12739,
+        "frame": 690000,
+        "prey": 9430.713,
+        "stalker": 38.106
+      },
+      {
+        "alphaLeviathan": 1.684,
+        "fear": 0.12672,
+        "frame": 700000,
+        "prey": 9431.404,
+        "stalker": 38.088
+      },
+      {
+        "alphaLeviathan": 1.683,
+        "fear": 0.12478,
+        "frame": 710000,
+        "prey": 9431.147,
+        "stalker": 38.097
+      },
+      {
+        "alphaLeviathan": 1.682,
+        "fear": 0.12881,
+        "frame": 720000,
+        "prey": 9432.699,
+        "stalker": 38.07
+      },
+      {
+        "alphaLeviathan": 1.681,
+        "fear": 0.12524,
+        "frame": 730000,
+        "prey": 9433.57,
+        "stalker": 38.066
+      },
+      {
+        "alphaLeviathan": 1.68,
+        "fear": 0.12656,
+        "frame": 740000,
+        "prey": 9434.119,
+        "stalker": 38.069
+      },
+      {
+        "alphaLeviathan": 1.679,
+        "fear": 0.12506,
+        "frame": 750000,
+        "prey": 9434.158,
+        "stalker": 38.077
+      },
+      {
+        "alphaLeviathan": 1.678,
+        "fear": 0.12505,
+        "frame": 760000,
+        "prey": 9434.334,
+        "stalker": 38.082
+      },
+      {
+        "alphaLeviathan": 1.677,
+        "fear": 0.12607,
+        "frame": 770000,
+        "prey": 9433.935,
+        "stalker": 38.096
+      },
+      {
+        "alphaLeviathan": 1.676,
+        "fear": 0.12473,
+        "frame": 780000,
+        "prey": 9434.317,
+        "stalker": 38.09
+      },
+      {
+        "alphaLeviathan": 1.676,
+        "fear": 0.12673,
+        "frame": 790000,
+        "prey": 9433.621,
+        "stalker": 38.107
+      },
+      {
+        "alphaLeviathan": 1.675,
+        "fear": 0.12437,
+        "frame": 800000,
+        "prey": 9433.305,
+        "stalker": 38.111
+      },
+      {
+        "alphaLeviathan": 1.675,
+        "fear": 0.12479,
+        "frame": 810000,
+        "prey": 9432.487,
+        "stalker": 38.123
+      },
+      {
+        "alphaLeviathan": 1.674,
+        "fear": 0.12609,
+        "frame": 820000,
+        "prey": 9431.545,
+        "stalker": 38.131
+      },
+      {
+        "alphaLeviathan": 1.673,
+        "fear": 0.12641,
+        "frame": 830000,
+        "prey": 9431.606,
+        "stalker": 38.12
+      },
+      {
+        "alphaLeviathan": 1.673,
+        "fear": 0.12563,
+        "frame": 840000,
+        "prey": 9432.149,
+        "stalker": 38.108
+      },
+      {
+        "alphaLeviathan": 1.672,
+        "fear": 0.12694,
+        "frame": 850000,
+        "prey": 9433.396,
+        "stalker": 38.086
+      },
+      {
+        "alphaLeviathan": 1.671,
+        "fear": 0.12522,
+        "frame": 860000,
+        "prey": 9434.692,
+        "stalker": 38.072
+      },
+      {
+        "alphaLeviathan": 1.67,
+        "fear": 0.12645,
+        "frame": 870000,
+        "prey": 9435.786,
+        "stalker": 38.065
+      },
+      {
+        "alphaLeviathan": 1.67,
+        "fear": 0.1257,
+        "frame": 880000,
+        "prey": 9435.596,
+        "stalker": 38.085
+      },
+      {
+        "alphaLeviathan": 1.669,
+        "fear": 0.125,
+        "frame": 890000,
+        "prey": 9435.661,
+        "stalker": 38.092
+      },
+      {
+        "alphaLeviathan": 1.669,
+        "fear": 0.12663,
+        "frame": 900000,
+        "prey": 9436.332,
+        "stalker": 38.084
+      },
+      {
+        "alphaLeviathan": 1.668,
+        "fear": 0.1253,
+        "frame": 910000,
+        "prey": 9436.703,
+        "stalker": 38.087
+      },
+      {
+        "alphaLeviathan": 1.668,
+        "fear": 0.1262,
+        "frame": 920000,
+        "prey": 9436.891,
+        "stalker": 38.093
+      },
+      {
+        "alphaLeviathan": 1.667,
+        "fear": 0.12492,
+        "frame": 930000,
+        "prey": 9437.336,
+        "stalker": 38.091
+      },
+      {
+        "alphaLeviathan": 1.667,
+        "fear": 0.1258,
+        "frame": 940000,
+        "prey": 9436.854,
+        "stalker": 38.106
+      },
+      {
+        "alphaLeviathan": 1.666,
+        "fear": 0.12492,
+        "frame": 950000,
+        "prey": 9436.711,
+        "stalker": 38.108
+      },
+      {
+        "alphaLeviathan": 1.666,
+        "fear": 0.12721,
+        "frame": 960000,
+        "prey": 9436.847,
+        "stalker": 38.104
+      },
+      {
+        "alphaLeviathan": 1.665,
+        "fear": 0.12437,
+        "frame": 970000,
+        "prey": 9436.392,
+        "stalker": 38.115
+      },
+      {
+        "alphaLeviathan": 1.665,
+        "fear": 0.12783,
+        "frame": 980000,
+        "prey": 9436.263,
+        "stalker": 38.114
+      },
+      {
+        "alphaLeviathan": 1.664,
+        "fear": 0.12618,
+        "frame": 990000,
+        "prey": 9436.844,
+        "stalker": 38.101
+      },
+      {
+        "alphaLeviathan": 1.664,
+        "fear": 0.12495,
+        "frame": 1000000,
+        "prey": 9436.618,
+        "stalker": 38.109
+      }
+    ],
+    "score": 0.4471,
+    "stability": {
+      "extinct": false,
+      "overpopulated": false,
+      "predatorStdDev": 0.016,
+      "preyStdDev": 2.007
+    },
+    "weights": {
+      "acousticTrackingWeight": 0.68,
+      "aggressionScalar": 1.38,
+      "fearCurvePower": 2.0,
+      "fearScalar": 0.76,
+      "fearWeight": 1.16,
+      "hungerWeight": 0.92,
+      "retinalTrackingWeight": 0.32,
+      "sensoryNoise": 0.06
+    }
+  },
+  "noiseRobustness": [
+    {
+      "frames": 120000,
+      "kills": {
+        "alphaLeviathan": 661.904,
+        "stalker": 4321.485
+      },
+      "population": {
+        "alphaLeviathan": 1.891,
+        "predatorMax": 40.426,
+        "predatorMin": 35.288,
+        "prey": 9337.487,
+        "preyMax": 9400.524,
+        "preyMin": 9198.901,
+        "stalker": 38.534
+      },
+      "profile": {
+        "acousticTracking": true,
+        "retinalBlindness": false,
+        "sensoryNoise": 0.0
+      },
+      "score": 0.399033,
+      "stability": {
+        "extinct": false,
+        "overpopulated": false,
+        "predatorStdDev": 1.668,
+        "preyStdDev": 58.262
+      },
+      "weights": {
+        "acousticTrackingWeight": 0.68,
+        "aggressionScalar": 1.38,
+        "fearCurvePower": 2.0,
+        "fearScalar": 0.76,
+        "fearWeight": 1.16,
+        "hungerWeight": 0.92,
+        "retinalTrackingWeight": 0.32,
+        "sensoryNoise": 0.0
+      }
+    },
+    {
+      "frames": 120000,
+      "kills": {
+        "alphaLeviathan": 651.112,
+        "stalker": 4233.125
+      },
+      "population": {
+        "alphaLeviathan": 1.877,
+        "predatorMax": 40.02,
+        "predatorMin": 35.198,
+        "prey": 9415.656,
+        "preyMax": 9452.875,
+        "preyMin": 9199.28,
+        "stalker": 38.142
+      },
+      "profile": {
+        "acousticTracking": true,
+        "retinalBlindness": false,
+        "sensoryNoise": 0.03
+      },
+      "score": 0.38349,
+      "stability": {
+        "extinct": false,
+        "overpopulated": false,
+        "predatorStdDev": 1.553,
+        "preyStdDev": 77.307
+      },
+      "weights": {
+        "acousticTrackingWeight": 0.68,
+        "aggressionScalar": 1.38,
+        "fearCurvePower": 2.0,
+        "fearScalar": 0.76,
+        "fearWeight": 1.16,
+        "hungerWeight": 0.92,
+        "retinalTrackingWeight": 0.32,
+        "sensoryNoise": 0.03
+      }
+    },
+    {
+      "frames": 120000,
+      "kills": {
+        "alphaLeviathan": 639.27,
+        "stalker": 4136.535
+      },
+      "population": {
+        "alphaLeviathan": 1.861,
+        "predatorMax": 39.561,
+        "predatorMin": 35.096,
+        "prey": 9500.638,
+        "preyMax": 9518.976,
+        "preyMin": 9199.654,
+        "stalker": 37.699
+      },
+      "profile": {
+        "acousticTracking": true,
+        "retinalBlindness": false,
+        "sensoryNoise": 0.06
+      },
+      "score": 0.366554,
+      "stability": {
+        "extinct": false,
+        "overpopulated": false,
+        "predatorStdDev": 1.428,
+        "preyStdDev": 101.626
+      },
+      "weights": {
+        "acousticTrackingWeight": 0.68,
+        "aggressionScalar": 1.38,
+        "fearCurvePower": 2.0,
+        "fearScalar": 0.76,
+        "fearWeight": 1.16,
+        "hungerWeight": 0.92,
+        "retinalTrackingWeight": 0.32,
+        "sensoryNoise": 0.06
+      }
+    },
+    {
+      "frames": 120000,
+      "kills": {
+        "alphaLeviathan": 628.778,
+        "stalker": 4051.182
+      },
+      "population": {
+        "alphaLeviathan": 1.847,
+        "predatorMax": 39.119,
+        "predatorMin": 34.974,
+        "prey": 9575.417,
+        "preyMax": 9580.918,
+        "preyMin": 9199.82,
+        "stalker": 37.271
+      },
+      "profile": {
+        "acousticTracking": true,
+        "retinalBlindness": false,
+        "sensoryNoise": 0.09
+      },
+      "score": 0.351165,
+      "stability": {
+        "extinct": false,
+        "overpopulated": false,
+        "predatorStdDev": 1.336,
+        "preyStdDev": 122.972
+      },
+      "weights": {
+        "acousticTrackingWeight": 0.68,
+        "aggressionScalar": 1.38,
+        "fearCurvePower": 2.0,
+        "fearScalar": 0.76,
+        "fearWeight": 1.16,
+        "hungerWeight": 0.92,
+        "retinalTrackingWeight": 0.32,
+        "sensoryNoise": 0.09
+      }
+    },
+    {
+      "frames": 120000,
+      "kills": {
+        "alphaLeviathan": 617.979,
+        "stalker": 3963.239
+      },
+      "population": {
+        "alphaLeviathan": 1.833,
+        "predatorMax": 38.715,
+        "predatorMin": 34.838,
+        "prey": 9651.73,
+        "preyMax": 9653.585,
+        "preyMin": 9199.886,
+        "stalker": 36.881
+      },
+      "profile": {
+        "acousticTracking": true,
+        "retinalBlindness": false,
+        "sensoryNoise": 0.12
+      },
+      "score": 0.351261,
+      "stability": {
+        "extinct": false,
+        "overpopulated": false,
+        "predatorStdDev": 1.24,
+        "preyStdDev": 146.875
+      },
+      "weights": {
+        "acousticTrackingWeight": 0.68,
+        "aggressionScalar": 1.38,
+        "fearCurvePower": 2.0,
+        "fearScalar": 0.76,
+        "fearWeight": 1.16,
+        "hungerWeight": 0.92,
+        "retinalTrackingWeight": 0.32,
+        "sensoryNoise": 0.12
+      }
+    },
+    {
+      "frames": 120000,
+      "kills": {
+        "alphaLeviathan": 595.457,
+        "stalker": 3779.312
+      },
+      "population": {
+        "alphaLeviathan": 1.803,
+        "predatorMax": 37.76,
+        "predatorMin": 34.595,
+        "prey": 9812.926,
+        "preyMax": 9812.953,
+        "preyMin": 9199.962,
+        "stalker": 35.957
+      },
+      "profile": {
+        "acousticTracking": true,
+        "retinalBlindness": false,
+        "sensoryNoise": 0.18
+      },
+      "score": 0.365224,
+      "stability": {
+        "extinct": false,
+        "overpopulated": false,
+        "predatorStdDev": 1.005,
+        "preyStdDev": 197.674
+      },
+      "weights": {
+        "acousticTrackingWeight": 0.68,
+        "aggressionScalar": 1.38,
+        "fearCurvePower": 2.0,
+        "fearScalar": 0.76,
+        "fearWeight": 1.16,
+        "hungerWeight": 0.92,
+        "retinalTrackingWeight": 0.32,
+        "sensoryNoise": 0.18
+      }
+    },
+    {
+      "frames": 120000,
+      "kills": {
+        "alphaLeviathan": 574.278,
+        "stalker": 3606.598
+      },
+      "population": {
+        "alphaLeviathan": 1.774,
+        "predatorMax": 36.794,
+        "predatorMin": 34.228,
+        "prey": 9963.487,
+        "preyMax": 9963.507,
+        "preyMin": 9199.983,
+        "stalker": 35.02
+      },
+      "profile": {
+        "acousticTracking": true,
+        "retinalBlindness": false,
+        "sensoryNoise": 0.24
+      },
+      "score": 0.425027,
+      "stability": {
+        "extinct": false,
+        "overpopulated": false,
+        "predatorStdDev": 0.837,
+        "preyStdDev": 244.175
+      },
+      "weights": {
+        "acousticTrackingWeight": 0.68,
+        "aggressionScalar": 1.38,
+        "fearCurvePower": 2.0,
+        "fearScalar": 0.76,
+        "fearWeight": 1.16,
+        "hungerWeight": 0.92,
+        "retinalTrackingWeight": 0.32,
+        "sensoryNoise": 0.24
+      }
+    }
+  ],
+  "retinalBlindnessTests": {
+    "normal_retinal_and_acoustic": {
+      "frames": 120000,
+      "kills": {
+        "alphaLeviathan": 639.631,
+        "stalker": 4139.888
+      },
+      "population": {
+        "alphaLeviathan": 1.862,
+        "predatorMax": 39.559,
+        "predatorMin": 35.076,
+        "prey": 9497.595,
+        "preyMax": 9515.175,
+        "preyMin": 9199.809,
+        "stalker": 37.696
+      },
+      "profile": {
+        "acousticTracking": true,
+        "retinalBlindness": false,
+        "sensoryNoise": 0.06
+      },
+      "score": 0.367031,
+      "stability": {
+        "extinct": false,
+        "overpopulated": false,
+        "predatorStdDev": 1.445,
+        "preyStdDev": 100.147
+      },
+      "weights": {
+        "acousticTrackingWeight": 0.68,
+        "aggressionScalar": 1.38,
+        "fearCurvePower": 2.0,
+        "fearScalar": 0.76,
+        "fearWeight": 1.16,
+        "hungerWeight": 0.92,
+        "retinalTrackingWeight": 0.32,
+        "sensoryNoise": 0.06
+      }
+    },
+    "retinal_blind_acoustic_tracking": {
+      "frames": 120000,
+      "kills": {
+        "alphaLeviathan": 410.704,
+        "stalker": 2281.188
+      },
+      "population": {
+        "alphaLeviathan": 1.533,
+        "predatorMax": 36.0,
+        "predatorMin": 27.272,
+        "prey": 11078.725,
+        "preyMax": 11078.725,
+        "preyMin": 9200.0,
+        "stalker": 25.82
+      },
+      "profile": {
+        "acousticTracking": true,
+        "retinalBlindness": true,
+        "sensoryNoise": 0.06
+      },
+      "score": 1.00134,
+      "stability": {
+        "extinct": false,
+        "overpopulated": false,
+        "predatorStdDev": 2.306,
+        "preyStdDev": 595.243
+      },
+      "weights": {
+        "acousticTrackingWeight": 0.68,
+        "aggressionScalar": 1.38,
+        "fearCurvePower": 2.0,
+        "fearScalar": 0.76,
+        "fearWeight": 1.16,
+        "hungerWeight": 0.92,
+        "retinalTrackingWeight": 0.32,
+        "sensoryNoise": 0.06
+      }
+    },
+    "retinal_blind_no_acoustic": {
+      "frames": 120000,
+      "kills": {
+        "alphaLeviathan": 83.902,
+        "stalker": 303.285
+      },
+      "population": {
+        "alphaLeviathan": 0.693,
+        "predatorMax": 36.0,
+        "predatorMin": 3.661,
+        "prey": 13071.703,
+        "preyMax": 13071.703,
+        "preyMin": 9200.0,
+        "stalker": 2.968
+      },
+      "profile": {
+        "acousticTracking": false,
+        "retinalBlindness": true,
+        "sensoryNoise": 0.06
+      },
+      "score": 7.500572,
+      "stability": {
+        "extinct": true,
+        "overpopulated": false,
+        "predatorStdDev": 9.228,
+        "preyStdDev": 1227.815
+      },
+      "weights": {
+        "acousticTrackingWeight": 0.68,
+        "aggressionScalar": 1.38,
+        "fearCurvePower": 2.0,
+        "fearScalar": 0.76,
+        "fearWeight": 1.16,
+        "hungerWeight": 0.92,
+        "retinalTrackingWeight": 0.32,
+        "sensoryNoise": 0.06
+      }
+    }
+  },
+  "runtimeUnityProof": "PENDING VERIFICATION",
+  "schemaVersion": 1,
+  "selectedConstants": {
+    "acousticTrackingWeight": 0.68,
+    "aggressionScalar": 1.38,
+    "fearCurvePower": 2.0,
+    "fearScalar": 0.76,
+    "fearWeight": 1.16,
+    "hungerWeight": 0.92,
+    "retinalBlindnessAcousticCompensation": 2691.893,
+    "retinalTrackingWeight": 0.32,
+    "sensoryNoiseTolerance": 0.12
+  },
+  "speciesTargets": {
+    "alphaLeviathanIdealPopulation": 2.4,
+    "preyIdealPopulation": 9600.0,
+    "stalkerIdealPopulation": 36.0
+  },
+  "status": "AI BALANCED"
+}

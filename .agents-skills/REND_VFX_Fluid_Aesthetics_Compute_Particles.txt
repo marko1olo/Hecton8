@@ -6,30 +6,30 @@
 [RULE] Fluid VFX is presentation, not fluid truth.
 [RULE] Default water proof is screen-space depth fade, authored flow masks, GPU-side drift, and event-driven pooled emitters.
 [RULE] CPU never reads particle state except diagnostics; CPU also must not pretend particle motion is gameplay physics.
-[RULE] MX350 path must prefer sprite/impostor drift and shader wobble over compute-heavy particle simulation.
+[RULE] MX350 path must use sprite/impostor drift and shader wobble over compute-heavy particle simulation.
 [FORBID] Full bubble/debris/snow physical simulation as a default path.
 [FORBID] Per-cluster probe sampling on MX350 unless profiler proof shows it is below the 0.1ms suspicion threshold.
 
 ---
 
-## §0 — FOUNDATIONAL CONTRACTS
+## Section0 - FOUNDATIONAL CONTRACTS
 
 IMMUTABLE INVARIANTS:
 - All particle state lives GPU-side. CPU reads = forbidden except diagnostics.
 - All temporal state uses double-buffered UAV (ping-pong). Never read/write same buffer same dispatch.
 - Particle budget is a hard ceiling, not a suggestion. Overflow = silent discard, never stall.
-- Every dispatch group must be power-of-2. Non-aligned counts = pad with dead particles (Life ≤ 0).
+- Every dispatch group must be power-of-2. Non-aligned counts = pad with dead particles (Life <= 0).
 
-BUDGET ALLOCATION (VRAM =  1800MB CEILING):
+BUDGET ALLOCATION (VRAM <= 1800MB CEILING):
 
 | Pool | Max Count | Bytes/Particle | Total |
 |---|---|---|---|
 | Marine Snow | 32,768 | 48B | 1.5MB |
 | Bubbles | 4,096 | 64B | 256KB |
 | Debris | 1,024 | 96B | 96KB |
-| FlowField Cache | — | — | 512KB |
+| FlowField Cache | - | - | 512KB |
 
-Rule: Total VFX VRAM budget ≤  1800MB (includes CBs, indirect args, scratch buffers).
+Rule: Total VFX VRAM budget <= 1800MB (includes CBs, indirect args, scratch buffers).
 
 ---
 
@@ -37,72 +37,72 @@ CPU_NOISE = Unity.Mathematics.noise.snoise.
 GPU_DITHER_NOISE = Interleaved Gradient Noise (IGN).
 GPU_PROCEDURAL_NOISE = ALU-only hash function (no textures)
 
-## §1 — PARTICLE STRUCT SPECIFICATION
+## Section1 - PARTICLE STRUCT SPECIFICATION
 
-// GPU CANONICAL LAYOUT — DO NOT REORDER (alignment-critical)
+// GPU CANONICAL LAYOUT - DO NOT REORDER (alignment-critical)
 struct Particle {
     float3 Pos;       // World-space. 12B
     float  Life;      // [0..1] normalized. 0 = dead. 4B
     float3 Vel;       // m/s. 12B
     float  Size;      // World-space radius. 4B
-    float3 PrevPos;   // Verlet history. 12B — DEBRIS ONLY, zero-fill bubbles
+    float3 PrevPos;   // Verlet history. 12B - DEBRIS ONLY, zero-fill bubbles
     uint   Flags;     // Bitfield below. 4B
     float2 UV;        // Atlas tile selector [0..1]. 8B
-    float2 Pad;       // Align to 64B — fill with RNG seed for wobble phase
+    float2 Pad;       // Align to 64B - fill with RNG seed for wobble phase
 };
 // Flags bitfield:
-// bit0  → isBubble
-// bit1  → inCurrent
-// bit2  → isDebris
-// bit3  → isSnow
-// bit4  → collided (screen-space depth hit this frame)
-// bit5  → useVerlet
-// bit6  → clusterAnchor (probe approximation leader)
-// bit7  → reserved
+// bit0  -> isBubble
+// bit1  -> inCurrent
+// bit2  -> isDebris
+// bit3  -> isSnow
+// bit4  -> collided (screen-space depth hit this frame)
+// bit5  -> useVerlet
+// bit6  -> clusterAnchor (probe approximation leader)
+// bit7  -> reserved
 
 Dispatch group stride: 64 threads/group. Dead slots are managed via explicit `RWStructuredBuffer<uint>` plus `RWByteAddressBuffer` counters. No Append/Consume buffers.
 
 ---
 
-## §2 — COMPUTE SHADER PIPELINE TOPOLOGY
+## Section2 - COMPUTE SHADER PIPELINE TOPOLOGY
 
 [FRAME START]
 
-    ├► [DISPATCH: Emission.compute]
+    + [DISPATCH: Emission.compute]
            Acquire particle slot from explicit dead-list counter
            Write new particle state into pool
-           Read FlowFieldNative → cache local flow sample
+           Read FlowFieldNative -> cache local flow sample
 
-    ├► [DISPATCH: Simulate.compute]       ← MAIN KERNEL
+     [DISPATCH: Simulate.compute]       <- MAIN KERNEL
            Per-particle: integrate, drag, buoyancy, wobble, clamp
            Write PrevPos before integration (Verlet)
 
-    ├► [DISPATCH: VisibleMask.compute]
-           Frustum cull + distance cull (>15m → clear visible bit)
-           Near-camera cull (<0.4m → skip small debris only)
+    + [DISPATCH: VisibleMask.compute]
+           Frustum cull + distance cull (>15m -> clear visible bit)
+           Near-camera cull (<0.4m -> skip small debris only)
            Append visible particle indices into `VisibleIndices`
 
-    ├► [RENDERGRAPH DRAW: GPU-resident render]
+    + [RENDERGRAPH DRAW: GPU-resident render]
            Particle mesh = camera-facing quad (2 tris)
            Renderer consumes `VisibleIndices` directly
            No CPU draw calls. No IndirectArgs bubble.
 
-    ► [PROBE APPROX UPDATE]
+     [PROBE APPROX UPDATE]
             Per-cluster-anchor particle: sample approved probe approximation, write SH to CB
             Frequency: every 4 frames (jittered per cluster)
 
-Synchronization: Insert UAV barriers between Emission→Simulate→Cull. No implicit sync assumptions.
+Synchronization: Insert UAV barriers between Emission->Simulate->Cull. No implicit sync assumptions.
 
 Indirect Args Layout:
 
 uint VertexCountPerInstance = 6
-uint InstanceCount          ← written by Cull.compute
+uint InstanceCount          <- written by Cull.compute
 uint StartVertexLocation    = 0
 uint StartInstanceLocation  = 0
 
 ---
 
-## §3 — FLOW FIELD INTEGRATION
+## Section3 - FLOW FIELD INTEGRATION
 
 Source: Cartographer's `FlowFieldNative` (NativeArray<float3>, world-aligned 3D grid).
 
@@ -111,25 +111,25 @@ Sampling:
 GridCoord = floor((WorldPos - FieldOrigin) / CellSize)
 Clamp GridCoord to [0, FieldDims-1]
 FlowSample = trilinear_sample(FlowFieldNative, GridCoord)
-// Trilinear: 8-tap manual lerp in compute — no Texture3D overhead
+// Trilinear: 8-tap manual lerp in compute - no Texture3D overhead
 
 Caching: Each particle stores last-sampled FlowSample. Resample every N frames:
 
 ResampleMask = (ParticleID + FrameCount) % 4 == 0
-// Staggers resampling across 4 frames → 75% flow-sample cost reduction
+// Staggers resampling across 4 frames -> 75% flow-sample cost reduction
 
-FlowField Upload: CPU writes NativeArray → GPU StructuredBuffer<float3> via AsyncGPUReadback inverse (CPU→GPU only). Upload on dirty flag. Never per-frame if field is static.
+FlowField Upload: CPU writes NativeArray -> GPU StructuredBuffer<float3> via AsyncGPUReadback inverse (CPU->GPU only). Upload on dirty flag. Never per-frame if field is static.
 
 ---
 
-## §4 — ANISOTROPIC DRAG
+## Section4 - ANISOTROPIC DRAG
 
 Core Formula:
 
 FlowDir_N  = normalize(FlowSample)               // Unit flow direction
 ParticleDir_N = normalize(Vel)                   // Unit velocity direction
 Alignment  = dot(ParticleDir_N, FlowDir_N)       // [-1 .. 1]
-AlignmentN = saturate((Alignment + 1.0) * 0.5)  // remap → [0 .. 1]
+AlignmentN = saturate((Alignment + 1.0) * 0.5)  // remap -> [0 .. 1]
 
 // DragMultiplier: 0.1 = fully aligned (with flow), 1.0 = fully opposed
 DragMultiplier = lerp(1.0, 0.1, AlignmentN)
@@ -145,24 +145,24 @@ Turbulence injection on high drag:
 if (DragMultiplier > 0.7):
     TurbulenceScale = (DragMultiplier - 0.7) / 0.3   // [0..1]
     Vel += noise3D(Pos * 0.3 + Time) * TurbulenceScale * 0.15
-// noise3D: value noise via 3D hash — no Perlin texture dependency
+// noise3D: value noise via 3D hash - no Perlin texture dependency
 
 ---
 
-## §5 — BUOYANCY (BUBBLES)
+## Section5 - BUOYANCY (BUBBLES)
 
 Physics Formula:
 
 // Archimedes
-F_buoy = Volume * Gravity * (ρ_water - ρ_gas)
+F_buoy = Volume * Gravity * (rho_water - rho_gas)
 // Constants:
-//   ρ_water = 1025.0 kg/m³ (deep salt water)
-//   ρ_gas   = 1.2 kg/m³ (air)
-//   Gravity = 9.81 m/s²
-//   Volume  = (4/3)π * r³  where r = Particle.Size * 0.5
+//   _water = 1025.0 kg/m^3 (deep salt water)
+//   _gas   = 1.2 kg/m^3 (air)
+//   Gravity = 9.81 m/s^2
+//   Volume  = (4/3) * r^3  where r = Particle.Size * 0.5
 
 // Acceleration upward:
-A_buoy = F_buoy / BubbleMass   // BubbleMass ≈ ρ_gas * Volume
+A_buoy = F_buoy / BubbleMass   // BubbleMass ~= _gas * Volume
 
 // Integration:
 Vel.y += A_buoy * DeltaTime
@@ -176,24 +176,24 @@ Depth Pressure Compression:
 
 // Bubbles shrink with depth (approximation of Boyle's Law)
 SurfacePressure = 101325.0
-DepthPressure   = SurfacePressure + (ρ_water * Gravity * abs(Pos.y))
+DepthPressure   = SurfacePressure + (rho_water * Gravity * abs(Pos.y))
 Particle.Size  *= sqrt(SurfacePressure / DepthPressure)
 // Clamp: [0.005 .. 0.12] meters
 
 ---
 
-## §6 — BUBBLE WOBBLE (LATERAL OSCILLATION)
+## Section6 - BUBBLE WOBBLE (LATERAL OSCILLATION)
 
 Formula:
 
-// Phase: spatially varying → prevents lockstep visual
-φ = Particle.Pad.x   // RNG seed baked at emission [0..2π]
+// Phase: spatially varying -> prevents lockstep visual
+phi = Particle.Pad.x   // RNG seed baked at emission [0..2]
 
 WobbleFreq    = 2.1 + Particle.Size * 8.0   // Smaller bubbles wobble faster
 WobbleMag     = 0.12 * Particle.Size
 
-LateralOffset.x = sin(_SimulationTime * WobbleFreq + Pos.y * 1.7 + φ) * WobbleMag
-LateralOffset.z = cos(_SimulationTime * WobbleFreq * 0.83 + Pos.y * 1.3 + φ + 1.1) * WobbleMag
+LateralOffset.x = sin(_SimulationTime * WobbleFreq + Pos.y * 1.7 + phi) * WobbleMag
+LateralOffset.z = cos(_SimulationTime * WobbleFreq * 0.83 + Pos.y * 1.3 + phi + 1.1) * WobbleMag
 
 // Apply as velocity perturbation, not direct position write
 Vel.xz += LateralOffset * DeltaTime * 12.0
@@ -206,12 +206,12 @@ WobbleScale = 1.0 - saturate(CurrentStrength / 2.5)
 
 ---
 
-## §7 — MARINE SNOW SIMULATION
+## Section7 - MARINE SNOW SIMULATION
 
 Behavioral Contract:
 - Base drift: downward + slow random horizontal wander
 - Responds to FlowField anisotropic drag
-- Screen-space depth collision (§9)
+- Screen-space depth collision (Section9)
 - Pooled: dead particles recycled via counter, no realloc
 
 Descent Base Velocity:
@@ -237,7 +237,7 @@ Life -= DeltaTime * 0.5   // Faster decay when settled
 
 ---
 
-## §8 — DEBRIS (VERLET INTEGRATION)
+## Section8 - DEBRIS (VERLET INTEGRATION)
 
 Condition: bit2=1 (isDebris), bit5=1 (useVerlet).
 
@@ -248,7 +248,7 @@ Acceleration = Gravity_vector + DragForce + FlowForce
 // DragForce = -Vel * DragMultiplier * BaseDragCoeff_debris
 // FlowForce = (FlowSample - Vel) * FlowCoupling   // FlowCoupling = 0.3 for debris
 
-NewPos    = Pos + (Pos - PrevPos) + Acceleration * DeltaTime²
+NewPos    = Pos + (Pos - PrevPos) + Acceleration * DeltaTime^2
 PrevPos   = Pos
 Pos       = NewPos
 Vel       = (Pos - PrevPos) / DeltaTime   // Reconstruct for drag calc next frame
@@ -267,15 +267,15 @@ UV_rotated = rotate2D(UV, RotAngle)
 
 ---
 
-## §9 — SCREEN-SPACE DEPTH COLLISION
+## Section9 - SCREEN-SPACE DEPTH COLLISION
 
-Kernel (Cull/Simulate pass — runs after depth prepass):
+Kernel (Cull/Simulate pass - runs after depth prepass):
 
 // Project particle to clip space
 ClipPos   = mul(VP_matrix, float4(Pos, 1.0))
 ScreenUV  = ClipPos.xy / ClipPos.w * 0.5 + 0.5
 
-// Sample depth buffer (point sample — no bilinear on depth)
+// Sample depth buffer (point sample - no bilinear on depth)
 SceneDepth_raw  = _CameraDepthTexture.SampleLevel(PointClamp, ScreenUV, 0)
 SceneDepth_lin  = LinearEyeDepth(SceneDepth_raw)
 ParticleDepth   = ClipPos.w   // Eye-space depth
@@ -289,24 +289,24 @@ if (ParticleDepth < SceneDepth_lin && NextFrameParticleDepth > SceneDepth_lin) {
     Vel.y = abs(Vel.y) * Restitution
 
 MX350 Fillrate Protection:
-- ScreenUV outside [0,1] → skip collision entirely
+- ScreenUV outside [0,1] -> skip collision entirely
 - Skip if ParticleDepth > 15.0 (already culled by distance)
 - Skip debris with Size < 0.01 m (too small to matter)
 
 ---
 
-## §10 — VELOCITY CLAMPING & TUNNELING PREVENTION
+## Section10 - VELOCITY CLAMPING & TUNNELING PREVENTION
 
 Per-particle, post-integration:
 
 // Type-driven speed ceilings
 MaxSpeed = select(Flags):
-    isBubble  → 0.8 m/s
-    isSnow    → 0.15 m/s
-    isDebris  → 3.5 m/s
+    isBubble  -> 0.8 m/s
+    isSnow    -> 0.15 m/s
+    isDebris  -> 3.5 m/s
 
 SpeedSq = dot(Vel, Vel)
-if SpeedSq > MaxSpeed²:
+if SpeedSq > MaxSpeed^2:
     Vel *= MaxSpeed / sqrt(SpeedSq)   // Normalize + scale
 
 // Sub-step guard: if displacement > voxel size (assume 0.25m min wall)
@@ -320,7 +320,7 @@ if StepDist > MaxDisplacement:
 
 ---
 
-## §11 — CULLING PIPELINE
+## Section11 - CULLING PIPELINE
 
 Distance Cull (Cull.compute):
 
@@ -345,7 +345,7 @@ LOD Logic (Hardware Tier Flag, set CPU-side per session):
 if Tier == 0:
     Snow: visual drift only, no depth collision, no flow resample
     Bubble: no Boyle compression, simplified wobble (freq halved)
-    Debris: Verlet disabled → Euler only, no rotation
+    Debris: Verlet disabled -> Euler only, no rotation
 
 if Tier == 1:
     Snow: depth collision enabled, flow resample every 8 frames
@@ -356,11 +356,11 @@ if Tier == 2:
     All systems full fidelity
     Snow: accumulation persistence (Life drain on settle halved)
     Debris: sub-step enabled, 4-max
-    Bubble: turbulence injection enabled (§4)
+    Bubble: turbulence injection enabled (Section4)
 
 ---
 
-## §12 — PROBE APPROXIMATION (LIGHTING)
+## Section12 - PROBE APPROXIMATION (LIGHTING)
 
 Cluster Assignment (Emission.compute):
 
@@ -388,7 +388,7 @@ Fallback (Tier 0): Skip per-cluster SH. Sample single global ambient probe. Writ
 
 ---
 
-## §13 — EMISSION LOGIC
+## Section13 - EMISSION LOGIC
 
 Emission.compute kernel:
 
@@ -415,13 +415,13 @@ if hash2(uint2(ThreadID, FrameCount)) < EmitProb:
 
 Dead Slot Recycling:
 
-// Simulate.compute: if Life <= 0 → ConsumeBuffer.Append(ParticleID)
-// Emission.compute: prefer recycled slots before allocating new
+// Simulate.compute: if Life <= 0 -> ConsumeBuffer.Append(ParticleID)
+// Emission.compute: reuse recycled slots before allocating new
 // Counter buffer: InterlockedAdd on dead-slot counter
 
 ---
 
-## §14 — RENDERING CONTRACTS
+## Section14 - RENDERING CONTRACTS
 
 Particle Shader Inputs:
 
@@ -447,23 +447,23 @@ Alpha *= Fade
 
 Blend Mode: Premultiplied alpha. Bubbles: additive rim + alpha center. Snow: alpha blend only.
 
-Atlas Layout: 4×4 sprite atlas (16 tiles). Tile select via UV field. Snow: 4 unique flake shapes. Bubble: 2 specular variations. Debris: 10 organic shapes.
+Atlas Layout: 4x4 sprite atlas (16 tiles). Tile select via UV field. Snow: 4 unique flake shapes. Bubble: 2 specular variations. Debris: 10 organic shapes.
 
 ---
 
-## §15 — MEMORY & BUFFER MANAGEMENT
+## Section15 - MEMORY & BUFFER MANAGEMENT
 
 Buffer Topology:
 
-ParticleBuffer_A   (StructuredBuffer, full pool)   ← simulation reads
-ParticleBuffer_B   (RWStructuredBuffer, ping-pong) ← simulation writes
+ParticleBuffer_A   (StructuredBuffer, full pool)   <- simulation reads
+ParticleBuffer_B   (RWStructuredBuffer, ping-pong) <- simulation writes
 // Swap references each frame via CB constant (no copy)
 
-DeadListBuffer     (RWStructuredBuffer<uint>)      ← recycled slot indices
-CounterBuffer      (RWByteAddressBuffer)           ← offset 0: dead count, offset 4: visible count
-EmitRequestBuffer  (StructuredBuffer<EmitRequest>) ← debris event queue, max 64/frame
-VisibleIndexBuffer (StructuredBuffer<uint>)        ← written by visibility pass, read by RenderGraph
-ClusterSHBuffer    (StructuredBuffer<float4x4>)    ← 512 clusters × SH L1 = 32KB
+DeadListBuffer     (RWStructuredBuffer<uint>)      <- recycled slot indices
+CounterBuffer      (RWByteAddressBuffer)           <- offset 0: dead count, offset 4: visible count
+EmitRequestBuffer  (StructuredBuffer<EmitRequest>) <- debris event queue, max 64/frame
+VisibleIndexBuffer (StructuredBuffer<uint>)        <- written by visibility pass, read by RenderGraph
+ClusterSHBuffer    (StructuredBuffer<float4x4>)    <- 512 clusters x SH L1 = 32KB
 
 Initialization: Fill DeadList with [0..MaxParticles-1] at startup. Emission consumes indices; death appends.
 
@@ -475,7 +475,7 @@ Frame N+1: Simulate reads B, writes A
 
 ---
 
-## §16 — DIAGNOSTICS & SAFETY RAILS
+## Section16 - DIAGNOSTICS & SAFETY RAILS
 
 Overflow Guard:
 
@@ -503,12 +503,12 @@ Performance Circuit Breaker:
 
 // If GPU frame time > 16ms (detected via timestamp queries):
 // CB flag: EmergencyLOD = 1
-// Simulate.compute: if EmergencyLOD → skip turbulence, skip wobble, halve snow count
+// Simulate.compute: if EmergencyLOD -> skip turbulence, skip wobble, halve snow count
 // Reset after 30 stable frames
 
 ---
 
-## §17 — CONSTANTS REGISTRY
+## Section17 - CONSTANTS REGISTRY
 
 // Immutable physical constants (CB slot 0, global)
 WATER_DENSITY          = 1025.0f
@@ -536,7 +536,7 @@ SNOW_TERMINAL_MAX      = 0.035f
 
 ---
 
-## §18 — INTEGRATION CHECKLIST (PRE-SHIP GATE)
+## Section18 - INTEGRATION CHECKLIST (PRE-SHIP GATE)
 
 [ ] All particle updates zero CPU involvement per frame
 [ ] FlowFieldNative upload path: dirty-flag gated
@@ -552,7 +552,7 @@ SNOW_TERMINAL_MAX      = 0.035f
 [ ] Boyle size clamp enforced: [0.005 .. 0.12]m
 [ ] Screen-space depth collision skipped: Tier 0 snow path
 [ ] Atlas UV tile assignment set at emission, never mutated
-[ ] Debris rotation angular velocity clamped: ±720 deg/s max
+[ ] Debris rotation angular velocity clamped: +/-720 deg/s max
 
 ---
 

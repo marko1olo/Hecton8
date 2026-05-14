@@ -1,0 +1,239 @@
+{
+  "schema_id": "economy.first_submarine_path.v1",
+  "schema_hash32": 2997720753,
+  "hash_algorithm": "FNV-1a 32-bit via Hecton.Localization.LocHash.Compute (UTF-16 code units, case-preserving)",
+  "goal_id": "economy.goal.first_submarine_handoff",
+  "goal_hash32": 2918918850,
+  "status_id": "economy.path.requires_literal_energy_rebalance",
+  "status_hash32": 2176980181,
+  "target_items": [
+    {
+      "item_id": "Module_FoundationKit",
+      "item_hash32": 972870237,
+      "quantity": 1
+    },
+    {
+      "item_id": "Module_AirlockFrame",
+      "item_hash32": 1235472580,
+      "quantity": 1
+    },
+    {
+      "item_id": "Module_FabricatorBench",
+      "item_hash32": 1194003719,
+      "quantity": 1
+    },
+    {
+      "item_id": "Module_PowerRelay",
+      "item_hash32": 2185499708,
+      "quantity": 1
+    },
+    {
+      "item_id": "Module_O2Recycler",
+      "item_hash32": 1361286512,
+      "quantity": 1
+    },
+    {
+      "item_id": "Upgrade_DepthCompensator",
+      "item_hash32": 1167658630,
+      "quantity": 1
+    },
+    {
+      "item_id": "Upgrade_BallastOptimizer",
+      "item_hash32": 1231965596,
+      "quantity": 1
+    }
+  ],
+  "raw_resources": [
+    {
+      "item_id": "Data_Copper",
+      "item_hash32": 2276338585,
+      "quantity": 22
+    },
+    {
+      "item_id": "Data_FiberKelp",
+      "item_hash32": 2069849578,
+      "quantity": 3
+    },
+    {
+      "item_id": "Data_GoldOre",
+      "item_hash32": 4056809162,
+      "quantity": 1
+    },
+    {
+      "item_id": "Data_HydrocarbonResin",
+      "item_hash32": 248205602,
+      "quantity": 15
+    },
+    {
+      "item_id": "Data_LithiumCrystal",
+      "item_hash32": 3763503872,
+      "quantity": 6
+    },
+    {
+      "item_id": "Data_NickelOre",
+      "item_hash32": 1037165092,
+      "quantity": 9
+    },
+    {
+      "item_id": "Data_SilicaShards",
+      "item_hash32": 3920354616,
+      "quantity": 1
+    },
+    {
+      "item_id": "Data_SilverOre",
+      "item_hash32": 884621125,
+      "quantity": 5
+    },
+    {
+      "item_id": "Data_SulfurClumps",
+      "item_hash32": 3346875565,
+      "quantity": 11
+    },
+    {
+      "item_id": "Data_TitaniumScrap",
+      "item_hash32": 3511699502,
+      "quantity": 38
+    }
+  ],
+  "recipe_batches": [
+    {
+      "recipe_id": "Recipe_BallastOptimizer",
+      "recipe_hash32": 531469028,
+      "result_item_id": "Upgrade_BallastOptimizer",
+      "result_item_hash32": 1231965596,
+      "batches": 1
+    },
+    {
+      "recipe_id": "Recipe_BatteryCell",
+      "recipe_hash32": 458473593,
+      "result_item_id": "Comp_BatteryCell",
+      "result_item_hash32": 1562252576,
+      "batches": 6
+    },
+    {
+      "recipe_id": "Recipe_CircuitBoard",
+      "recipe_hash32": 458861155,
+      "result_item_id": "Comp_CircuitBoard",
+      "result_item_hash32": 71708594,
+      "batches": 1
+    },
+    {
+      "recipe_id": "Recipe_CopperWire",
+      "recipe_hash32": 1259281760,
+      "result_item_id": "Comp_CopperWire",
+      "result_item_hash32": 3187749649,
+      "batches": 7
+    },
+    {
+      "recipe_id": "Recipe_DepthCompensator",
+      "recipe_hash32": 2344520494,
+      "result_item_id": "Upgrade_DepthCompensator",
+      "result_item_hash32": 1167658630,
+      "batches": 1
+    },
+    {
+      "recipe_id": "Recipe_FiberMesh",
+      "recipe_hash32": 1651013131,
+      "result_item_id": "Comp_FiberMesh",
+      "result_item_hash32": 1095668018,
+      "batches": 1
+    },
+    {
+      "recipe_id": "Recipe_LubricantResin",
+      "recipe_hash32": 3795135593,
+      "result_item_id": "Comp_LubricantResin",
+      "result_item_hash32": 2880126392,
+      "batches": 3
+    },
+    {
+      "recipe_id": "Recipe_ModuleAirlockFrame",
+      "recipe_hash32": 3914489556,
+      "result_item_id": "Module_AirlockFrame",
+      "result_item_hash32": 1235472580,
+      "batches": 1
+    },
+    {
+      "recipe_id": "Recipe_ModuleFabricatorBench",
+      "recipe_hash32": 447016055,
+      "result_item_id": "Module_FabricatorBench",
+      "result_item_hash32": 1194003719,
+      "batches": 1
+    },
+    {
+      "recipe_id": "Recipe_ModuleFoundationKit",
+      "recipe_hash32": 4053661581,
+      "result_item_id": "Module_FoundationKit",
+      "result_item_hash32": 972870237,
+      "batches": 1
+    },
+    {
+      "recipe_id": "Recipe_ModuleO2Recycler",
+      "recipe_hash32": 1145872896,
+      "result_item_id": "Module_O2Recycler",
+      "result_item_hash32": 1361286512,
+      "batches": 1
+    },
+    {
+      "recipe_id": "Recipe_ModulePowerRelay",
+      "recipe_hash32": 621889132,
+      "result_item_id": "Module_PowerRelay",
+      "result_item_hash32": 2185499708,
+      "batches": 1
+    },
+    {
+      "recipe_id": "Recipe_PowerCoupler",
+      "recipe_hash32": 3616742455,
+      "result_item_id": "Comp_PowerCoupler",
+      "result_item_hash32": 4027154086,
+      "batches": 5
+    },
+    {
+      "recipe_id": "Recipe_PumpRotor",
+      "recipe_hash32": 3001905566,
+      "result_item_id": "Comp_PumpRotor",
+      "result_item_hash32": 2033101255,
+      "batches": 3
+    },
+    {
+      "recipe_id": "Recipe_ReinforcedPlate",
+      "recipe_hash32": 2840072671,
+      "result_item_id": "Comp_ReinforcedPlate",
+      "result_item_hash32": 3550014518,
+      "batches": 4
+    },
+    {
+      "recipe_id": "Recipe_SealantPack",
+      "recipe_hash32": 3788947323,
+      "result_item_id": "Comp_SealantPack",
+      "result_item_hash32": 3268286546,
+      "batches": 1
+    },
+    {
+      "recipe_id": "Recipe_StructuralBracket",
+      "recipe_hash32": 2660799583,
+      "result_item_id": "Comp_StructuralBracket",
+      "result_item_hash32": 2908503494,
+      "batches": 8
+    }
+  ],
+  "assumptions": {
+    "route_travel_minutes": 14.0,
+    "mixed_node_harvest_minutes": 15.0,
+    "inventory_return_and_handling_minutes": 6.5,
+    "static_path_minutes_excluding_energy_wait": 35.5,
+    "generator_power_kw": 30.0
+  },
+  "totals": {
+    "top_level_target_only_fabrication_kwh": 163.9,
+    "top_level_target_only_craft_time_seconds": 22.8,
+    "top_level_energy_wait_minutes_at_30kw": 327.8,
+    "recursive_recipe_batches": 46,
+    "unique_recursive_recipes": 17,
+    "recursive_fabrication_kwh": 433.1,
+    "recursive_craft_time_seconds": 81.3,
+    "recursive_energy_wait_minutes_at_30kw": 866.2,
+    "literal_total_minutes_at_30kw": 901.7,
+    "former_report_minutes_invalid_under_literal_kwh": 41.0
+  },
+  "conclusion": "The old 41 minute estimate is invalid if fabrication_kwh is literal energy gated by a 30 kW source. It only works as a route/harvest estimate with precharged or nonliteral fabrication energy."
+}

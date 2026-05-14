@@ -19,7 +19,7 @@ Sections below are retained as historical design context only where they do not 
 ## SECTION 0: AUTHORIZED AUTONOMY
 
 ### What You MAY Decide Without Asking
-- The number of visual catenary segments (within the 8–24 range defined in Section 4).
+- The number of visual catenary segments (within the 8-24 range defined in Section 4).
 - Lerp speed for visual segment position smoothing.
 - The specific LayerMask used for voxel-corner raycasts, provided it excludes Player and Payload layers.
 - Color/width of the debug Gizmo lines for bend points.
@@ -73,7 +73,7 @@ public class TetherProfileSO : ScriptableObject
     [Header("Damping")]
     // c is CALCULATED, not set directly. See Section 3.
     // This multiplier is applied ON TOP of critical damping.
-    // TowCable MUST be >= 1.2f. GrappleLine can be 1.0f–1.1f.
+    // TowCable MUST be >= 1.2f. GrappleLine can be 1.0f-1.1f.
     public float overDampingMultiplier = 1.2f;
 
     [Header("Constraint")]
@@ -129,7 +129,7 @@ public class TetherInstance : MonoBehaviour
 
 ### 2.4 Manager: `TetherManager`
 - Singleton. Owns all `TetherInstance` objects.
-- Exposes `AttachTether(Rigidbody player, Rigidbody payload, TetherProfileSO profile)` → returns `TetherInstance`.
+- Exposes `AttachTether(Rigidbody player, Rigidbody payload, TetherProfileSO profile)` -> returns `TetherInstance`.
 - Exposes `DetachTether(TetherInstance t)`.
 - Iterates all active instances in `FixedUpdate` via a direct `List<TetherInstance>`, not `FindObjectsOfType`.
 
@@ -142,7 +142,7 @@ Used to make the damping coefficient physically meaningful for a two-body system
 
 reducedMass = (m_player * m_payload) / (m_player + m_payload)
 
-If `payloadRb.isKinematic` is true (e.g., anchored grapple point), treat `m_payload = ∞`, so `reducedMass = m_player`.
+If `payloadRb.isKinematic` is true (e.g., anchored grapple point), treat `m_payload = infinity`, so `reducedMass = m_player`.
 
 ### 3.2 Critical Damping Coefficient
 Calculated once when the tether is attached, and recalculated if payload mass changes (e.g., voxel destruction lightens the wreck).
@@ -270,13 +270,13 @@ private void RecalculateBendPoints()
     }
 }
 
-`SnapToNearestVoxelCorner` must query the VoxelGrid system (Mandate #1) to find the nearest corner vertex of the intersected voxel cell. It does NOT use `closest.point` raw — raw hit points will drift mid-face, causing cable slide.
+`SnapToNearestVoxelCorner` must query the VoxelGrid system (Mandate #1) to find the nearest corner vertex of the intersected voxel cell. It does NOT use `closest.point` raw - raw hit points will drift mid-face, causing cable slide.
 
 ### 4.3 Single Line vs. Visual Segments
 
 | System | Representation | Update Rate | Purpose |
 |---|---|---|---|
-| Physics | Direct Rigidbody↔Rigidbody segments through bend points | Every `FixedUpdate` | Force, stress, constraint |
+| Physics | Direct Rigidbody<->Rigidbody segments through bend points | Every `FixedUpdate` | Force, stress, constraint |
 | Visual | `visualSegmentCount` interpolated points uploaded to `GraphicsBuffer` | Every `LateUpdate` | Rendering only |
 
 Visual catenary generation (LateUpdate):
@@ -296,16 +296,16 @@ Visual render law:
 ### 4.4 Budget
 | Active Tethers | Max Bend Points Each | Physics Segments | Max FixedUpdate Raycasts |
 |---|---|---|---|
-| 4 | 4 | 5 per tether = 20 | 4 × 1 amortized per 3 frames = ~1.3/frame |
+| 4 | 4 | 5 per tether = 20 | 4 x 1 amortized per 3 frames = ~1.3/frame |
 
 If active tether count exceeds 4, the 5th+ tethers use Single Line Approximation only (no bend detection) until count drops below 4.
 
 ---
 
-## SECTION 5: VOXEL INTEGRITY — ANTI-SLICING
+## SECTION 5: VOXEL INTEGRITY - ANTI-SLICING
 
 ### 5.1 The Problem
-A cable connecting Player at position A and Payload at position B will, in a single physics tick, have its endpoints move. If endpoint motion causes the straight-line segment A→B to pass through a voxel wall without a bend point registered, the cable visually "clips" through geometry. This is forbidden.
+A cable connecting Player at position A and Payload at position B will, in a single physics tick, have its endpoints move. If endpoint motion causes the straight-line segment A->B to pass through a voxel wall without a bend point registered, the cable visually "clips" through geometry. This is forbidden.
 
 ### 5.2 Sweep Validation (Post-Force, Pre-Render)
 
@@ -316,7 +316,7 @@ A cable connecting Player at position A and Payload at position B will, in a sin
 private void ValidateCableIntegrity()
 {
     Vector3 prev = playerRb.position;
-    List<Vector3> anchors = BuildAnchorChain(); // Player → BendPoints → Payload
+    List<Vector3> anchors = BuildAnchorChain(); // Player -> BendPoints -> Payload
 
     for (int i = 1; i < anchors.Count; i++)
     {
@@ -327,7 +327,7 @@ private void ValidateCableIntegrity()
         int hits = Physics.RaycastNonAlloc(prev, dir.normalized, _bendHitBuffer, dist, voxelLayerMask);
         if (hits > 0)
         {
-            // Flag: LOS broken in a segment that should be clear.
+            // Flag: LOS broken in a segment that must be clear.
             // Force an immediate RecalculateBendPoints() next FixedUpdate (bypass cooldown).
             losCheckCooldownFrames = 0;
             break;
@@ -341,13 +341,13 @@ A tether segment is considered "slicing" if:
 - A `Raycast` along any physics segment returns a voxel hit, AND
 - No bend point exists at or near that intersection.
 
-If slicing is detected for 3 consecutive FixedUpdate frames on the same segment (debounced to avoid false positives from ragged voxel geometry), the cable is force-snapped via `InvokeSnapProtocol()` with `wipeoutImpulseMagnitude = 0` (no player knockback — this is a safety release, not a gameplay event). Log a warning: `[TETHER] Anti-slice emergency detach on TetherInstance [{id}]`.
+If slicing is detected for 3 consecutive FixedUpdate frames on the same segment (debounced to avoid false positives from ragged voxel geometry), the cable is force-snapped via `InvokeSnapProtocol()` with `wipeoutImpulseMagnitude = 0` (no player knockback - this is a safety release, not a gameplay event). Log a warning: `[TETHER] Anti-slice emergency detach on TetherInstance [{id}]`.
 
 ---
 
 ## SECTION 6: SAFE PATTERNS & ANTI-PATTERNS
 
-### ✅ SAFE — Do This
+###  SAFE - Do This
 
 // CORRECT: Primary tether constraint uses owned physics constraint packets. No steady-state AddForce solver.
 
@@ -363,7 +363,7 @@ _stressTimer = Mathf.Max(0f, _stressTimer - Time.fixedDeltaTime * 0.5f);
 // CORRECT: Owned projection handles rare recovery cases.
 SolveOwnedTetherConstraint();
 
-### ❌ ANTI-PATTERNS — These Will Fail Code Review
+###  ANTI-PATTERNS - These Will Fail Code Review
 
 // FORBIDDEN: Unity Joint
 gameObject.AddComponent<SpringJoint>();
@@ -371,7 +371,7 @@ gameObject.AddComponent<SpringJoint>();
 
 // FORBIDDEN: ForceMode.Force for spring
 PublishSpringForcePacket(springForceVector);
-// REVIEWER NOTE: MANDATE #3 VIOLATION — ForceMode.
+// REVIEWER NOTE: MANDATE #3 VIOLATION - ForceMode.
 
 // FORBIDDEN: Instant snap on single high-tension frame
 if (tension > threshold) InvokeSnapProtocol();
@@ -412,7 +412,7 @@ c_actual             = c_critical * overDampingMultiplier     [TowCable: min 1.2
 extension            = currentDist - restLength               [cable: clamp to >= 0]
 F_spring             = k * extension
 F_damping            = c * dot(relVel, cableDir)
-acceleration_applied = (F_spring + F_damping) / 1.0           [ForceMode.Acceleration — Unity handles mass]
+acceleration_applied = (F_spring + F_damping) / 1.0           [ForceMode.Acceleration - Unity handles mass]
 
 hardConstraintFires  = currentDist > restLength * 1.10
 stressTimer         += deltaTime  if tension > threshold

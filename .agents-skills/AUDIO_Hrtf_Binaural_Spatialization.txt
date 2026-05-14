@@ -28,8 +28,8 @@ struct BinauralAudioState (128 bytes, cache-line aligned)
     float3 ListenerUp;           // 12b
     float3 SourcePosition;       // 12b
     float SourceDistance;        // 4b
-    float AzimuthRad;            // 4b (horizontal angle -π to π)
-    float ElevationRad;          // 4b (vertical angle -π/2 to π/2)
+    float AzimuthRad;            // 4b (horizontal angle -pi to pi)
+    float ElevationRad;          // 4b (vertical angle -pi/2 to pi/2)
     float WaterDensityMul;       // 4b (1.0 air, 0.2326 water = 1/4.3)
     uint FilterMask;             // 4b (bit0=ITD, bit1=ILD, bit2=HRTF, bit3=UnderwaterMode)
     ulong currentSampleCount;    // Native DSP clock. No managed AudioSettings access.
@@ -72,19 +72,19 @@ struct DelayLine (ring buffer per ear)
 **Physics:**
 - Head radius: r = 0.0875m (average human)
 - Speed of sound: c_air = 343 m/s, c_water = 1481 m/s
-- Max ITD air: τ_max = (r + r) / c = 0.175 / 343 = 0.00051s = 510μs
-- Max ITD water: τ_max = 0.175 / 1481 = 118μs (4.3x faster)
+- Max ITD air: tau_max = (r + r) / c = 0.175 / 343 = 0.00051s = 510us
+- Max ITD water: tau_max = 0.175 / 1481 = 118us (4.3x faster)
 
 **Woodworth Formula (low-frequency approximation):**
 ```
-θ = azimuth angle (-π to π, 0 = front)
-τ(θ) = (r/c) * (|θ| + sin(|θ|))
+theta = azimuth angle (-pi to pi, 0 = front)
+tau(theta) = (r/c) * (|theta| + sin(|theta|))
 ```
 
 **Discrete Sample Delay:**
 ```
 sampleRate = 48000
-delayAir_samples = τ(θ) * sampleRate
+delayAir_samples = tau(theta) * sampleRate
 delayWater_samples = delayAir_samples * 0.2326  // 1/4.3
 
 delaySamples = lerp(delayAir_samples, delayWater_samples, WaterDensityMul)
@@ -93,7 +93,7 @@ clamp(delaySamples, 0, 96)  // Max 2ms buffer
 
 **Channel Assignment:**
 ```
-if θ > 0:  // Source right of center
+if theta > 0:  // Source right of center
     delayLeft = delaySamples
     delayRight = 0
 else:
@@ -121,13 +121,13 @@ outputR = Buffer[ReadIndexR]
 
 **Frequency Dependency:**
 ```
-f < 500Hz:   ILD ≈ 0 dB (wavelength > head diameter, diffraction wraps)
-f > 4kHz:    ILD ≈ 20 dB (geometric shadow, -20dB at contralateral ear)
+f < 500Hz:   ILD ~= 0 dB (wavelength > head diameter, diffraction wraps)
+f > 4kHz:    ILD ~= 20 dB (geometric shadow, -20dB at contralateral ear)
 ```
 
 **Shadow Attenuation Function:**
 ```
-shadowGain(θ, f) = 1.0 - (|sin(θ)| * FrequencyRamp(f))
+shadowGain(theta, f) = 1.0 - (|sin(theta)| * FrequencyRamp(f))
 
 FrequencyRamp(f):
     if f < 500: return 0.0
@@ -138,21 +138,21 @@ FrequencyRamp(f):
 **Biquad Low-Pass (head shadow):**
 ```
 Cutoff frequency scales with angle:
-fc(θ) = lerp(8000, 1200, |sin(θ)|)  // Front=8kHz, Side=1.2kHz
+fc(theta) = lerp(8000, 1200, |sin(theta)|)  // Front=8kHz, Side=1.2kHz
 
 Q = 0.707  // Butterworth response
 
 Biquad coefficients (standard cookbook):
-ω0 = 2π * fc / sampleRate
-α = sin(ω0) / (2 * Q)
-cosω0 = cos(ω0)
+omega0 = 2*pi * fc / sampleRate
+alpha = sin(omega0) / (2 * Q)
+cosomega0 = cos(omega0)
 
-b0 = (1 - cosω0) / 2
-b1 = 1 - cosω0
-b2 = (1 - cosω0) / 2
-a0 = 1 + α
-a1 = -2 * cosω0
-a2 = 1 - α
+b0 = (1 - cosomega0) / 2
+b1 = 1 - cosomega0
+b2 = (1 - cosomega0) / 2
+a0 = 1 + alpha
+a1 = -2 * cosomega0
+a2 = 1 - alpha
 
 Normalize:
 b0 /= a0
@@ -167,9 +167,9 @@ a2 /= a0
 y[n] = b0*x[n] + b1*x[n-1] + b2*x[n-2] - a1*y[n-1] - a2*y[n-2]
 
 Apply to contralateral channel only:
-if θ > 0:
+if theta > 0:
 // Persist filter delay lines across DSP chunks
-struct BiquadState { float2 z1; float2 z2; } 
+struct BiquadState { float2 z1; float2 z2; }
 // Process
 outputL = biquad(inputL, ILD_Coeffs, ref state.leftEar);
 else:
@@ -178,7 +178,7 @@ else:
 ```
 
 [MATH] Update coefficients max 60Hz. Store in double-buffer. Swap on sample boundary modulo 800 (48000/60).
-[MATH] Underwater: Reduce ILD magnitude 50%. `fc(θ) = lerp(8000, 3000, |sin(θ)|)`. Less shadowing due to density.
+[MATH] Underwater: Reduce ILD magnitude 50%. `fc(theta) = lerp(8000, 3000, |sin(theta)|)`. Less shadowing due to density.
 
 ---
 
@@ -187,30 +187,30 @@ else:
 **Goal:** Insert spectral notches 4-16kHz depending on elevation to simulate ear shape reflections.
 
 **Pinna Reflection Physics:**
-- Sound above head: Notch ≈ 7-9kHz
+- Sound above head: Notch ~= 7-9kHz
 - Sound at ear level: Minimal notch
-- Sound below: Notch ≈ 5-6kHz
+- Sound below: Notch ~= 5-6kHz
 - Rear sounds: Additional 10-12kHz notch
 
 **Notch Frequency Mapping:**
 ```
-elevation = atan2(sourcePos.y - listenerPos.y, horizontalDist)  // -π/2 to π/2
+elevation = atan2(sourcePos.y - listenerPos.y, horizontalDist)  // -pi/2 to pi/2
 
 NotchHz(elev):
-    if elev > π/4:       // Above 45°
+    if elev > /4:       // Above 45 deg
         return 8500
     elif elev > 0:       // Above horizon
-        return lerp(7000, 8500, elev / (π/4))
-    elif elev > -π/4:    // Below horizon
-        return lerp(7000, 5500, -elev / (π/4))
-    else:                // Below -45°
+        return lerp(7000, 8500, elev / (pi/4))
+    elif elev > -pi/4:    // Below horizon
+        return lerp(7000, 5500, -elev / (pi/4))
+    else:                // Below -45 deg
         return 5500
 ```
 
 **Rear Hemisphere Modifier:**
 ```
 azimuth = atan2(sourceLocal.x, sourceLocal.z)  // Forward = 0
-if |azimuth| > π/2:  // Behind listener
+if |azimuth| > pi/2:  // Behind listener
     notchHz += 2500  // Add upper notch at ~11kHz
     notchGain *= 0.7  // Deeper cut
 ```
@@ -222,15 +222,15 @@ Q = 4.0  // Narrow notch
 peakGain_dB = -12.0  // Attenuation
 
 A = math.pow(10f, peakGain_dB / 40f);
-ω0 = 2π * fc / sampleRate
-α = sin(ω0) / (2 * Q)
+omega0 = 2*pi * fc / sampleRate
+alpha = sin(omega0) / (2 * Q)
 
-b0 = 1 + α * A
-b1 = -2 * cos(ω0)
-b2 = 1 - α * A
-a0 = 1 + α / A
-a1 = -2 * cos(ω0)
-a2 = 1 - α / A
+b0 = 1 + alpha * A
+b1 = -2 * cos(omega0)
+b2 = 1 - alpha * A
+a0 = 1 + alpha / A
+a1 = -2 * cos(omega0)
+a2 = 1 - alpha / A
 
 Normalize by a0.
 ```
@@ -260,8 +260,8 @@ ITD_underwater = ITD_air / c_ratio
 Water absorbs >10kHz aggressively. Apply global low-pass 8kHz.
 
 Biquad LP 8kHz, Q=0.5:
-ω0 = 2π * 8000 / 48000
-α = sin(ω0) / (2 * 0.5)
+omega0 = 2*pi * 8000 / 48000
+alpha = sin(omega0) / (2 * 0.5)
 [Standard cookbook coefficients]
 ```
 
@@ -345,7 +345,7 @@ if any(isnan(sourcePos)):
 ```
 
 **[SAFE] Extreme velocity (>100m/s):**
-- Clamp Doppler shift max ±2 semitones
+- Clamp Doppler shift max +/-2 semitones
 - ITD calculated from clamped position delta
 
 **[SAFE] Filter instability (a2 > 0.99):**
@@ -388,12 +388,12 @@ localDir = quaternion_rotate(inverse(listenerRot), sourcePos - listenerPos)
 
 // Azimuth approximation (x/z ratio)
 azimuthFast = localDir.x / (abs(localDir.z) + 0.001)  // -1 to 1
-azimuthRad = azimuthFast * (π/2)  // Good enough for LUT index
+azimuthRad = azimuthFast * (pi/2)  // Good enough for LUT index
 
 // Elevation approximation
-horizontalLen = sqrt(localDir.x² + localDir.z²)
+horizontalLen = sqrt(localDir.x^2 + localDir.z^2)
 elevationFast = localDir.y / (horizontalLen + 0.001)
-elevationRad = elevationFast * (π/2)
+elevationRad = elevationFast * (pi/2)
 ```
 
 Cost: 1 sqrt vs 2 atan2. 4x faster.
@@ -421,7 +421,7 @@ Halves memory bandwidth. Imperceptible quality loss.
 
 ### Underwater_Psychological_Trick
 
-Randomly modulate ITD ±10% at 0.3Hz (breathing rate):
+Randomly modulate ITD +/-10% at 0.3Hz (breathing rate):
 ```
 // In BinauralAudioState: increment ulong currentSampleCount
 double nativeDspTime = (double)currentSampleCount / 48000.0;

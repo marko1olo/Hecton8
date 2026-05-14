@@ -7,7 +7,7 @@
 ## [RULE] ZERO-GC CONTRACT
 - No `new` allocations post-Init. No LINQ. No boxing. No delegates in hot path.
 - All creature state evaluated inside Burst-compiled Jobs.
-NativeStream cognitionEventStream; 
+NativeStream cognitionEventStream;
 // Stream.AsWriter().BeginForEachIndex(creatureIndex)
 - Entity identity = `int creatureIndex`. No object refs cross job boundary.
 
@@ -15,7 +15,7 @@ NativeStream cognitionEventStream;
 
 ## [DATA] CORE STRUCT LAYOUT
 
-### CognitionBlob — Cache-line aligned (64 bytes target)
+### CognitionBlob - Cache-line aligned (64 bytes target)
 ```
 struct CognitionBlob {            // offset | size
   float3 position;               // 0      | 12
@@ -24,15 +24,15 @@ struct CognitionBlob {            // offset | size
   float  fatigue;                // 28     | 4
   float  fear;                   // 32     | 4
   float  threatLevel;            // 36     | 4
-  int    stateFlags;             // 40     | 4   ← bitmask
-  int    memoryHead;             // 44     | 4   ← ring ptr
-  int    claimedBoidIndex;       // 48     | 4   ← -1 = none
-  float  memoryTimestamps[5];    // 52     | 20  ← overflow: pad or split struct
+  int    stateFlags;             // 40     | 4   <- bitmask
+  int    memoryHead;             // 44     | 4   <- ring ptr
+  int    claimedBoidIndex;       // 48     | 4   <- -1 = none
+  float  memoryTimestamps[5];    // 52     | 20  <- overflow: pad or split struct
 }
 // SOLUTION: Split into CognitionCore (64B) + CognitionMemory (separate NativeArray)
 ```
 
-### CognitionCore — 64 bytes exact
+### CognitionCore - 64 bytes exact
 ```
 struct CognitionCore {
   float3 position;         // 12
@@ -41,25 +41,25 @@ struct CognitionCore {
   float  fatigue;          // 4
   float  fear;             // 4
   float  threatLevel;      // 4
-  int    stateFlags;       // 4   ← bitmask (see STATE FLAGS)
-  int    memoryHead;       // 4   ← [0..4] ring index
-  int    claimedBoidIndex; // 4   ← atomic lock target
-  int    speciesID;        // 4   ← drives curve selection
+  int    stateFlags;       // 4   <- bitmask (see STATE FLAGS)
+  int    memoryHead;       // 4   <- [0..4] ring index
+  int    claimedBoidIndex; // 4   <- atomic lock target
+  int    speciesID;        // 4   <- drives curve selection
   int    _pad;             // 4
-  // TOTAL: 60B → pad to 64
+  // TOTAL: 60B -> pad to 64
 }
 ```
 
-### SpatialMemoryBank — separate NativeArray, indexed by [creatureIndex * 5 + slot]
+### SpatialMemoryBank - separate NativeArray, indexed by [creatureIndex * 5 + slot]
 ```
 struct MemoryEntry {
-  float3 worldPos;    // 12 — position of stimulus
-  float  timestamp;   // 4  — Time.ElapsedTime at write
-  float  intensity;   // 4  — original stimulus magnitude
-  int    stimType;    // 4  — bitmask: VISUAL=1, ACOUSTIC=2, CHEMICAL=4
+  float3 worldPos;    // 12 - position of stimulus
+  float  timestamp;   // 4  - Time.ElapsedTime at write
+  float  intensity;   // 4  - original stimulus magnitude
+  int    stimType;    // 4  - bitmask: VISUAL=1, ACOUSTIC=2, CHEMICAL=4
   // TOTAL: 24B
 }
-// Total memory array: 100 creatures × 5 slots × 24B = 12,000B = ~12KB (hot in L2)
+// Total memory array: 100 creatures x 5 slots x 24B = 12,000B = ~12KB (hot in L2)
 ```
 
 ### STATE FLAGS (stateFlags bitmask)
@@ -80,7 +80,7 @@ PASSIVE_MASK = SLEEP | PATROL | DORMANT
 ### Double-Buffer Pattern (CognitionCore)
 ```
 NativeArray<CognitionCore> bufferA;  // read frame N
-NativeArray<CognitionCore> bufferB;  // write frame N → becomes read frame N+1
+NativeArray<CognitionCore> bufferB;  // write frame N -> becomes read frame N+1
 // Swap ptr at end of JobBatch. Zero copy. Dependency fence via JobHandle.
 ```
 
@@ -88,7 +88,7 @@ NativeArray<CognitionCore> bufferB;  // write frame N → becomes read frame N+1
 
 ## [MATH] UTILITY SCORING SYSTEM
 
-### Curve Registry — polynomial per drive
+### Curve Registry - polynomial per drive
 ```
 // x = normalized drive [0..1]
 Score_Hunger(x)  = x^2                          // accelerating urgency
@@ -111,7 +111,7 @@ if hunger < 0.1:          W[EAT]  *= 0.0     // already full
 ### Full Evaluation Per Creature
 ```
 1. Read CognitionCore[i]
-2. Normalize each drive → [0,1]:
+2. Normalize each drive -> [0,1]:
      hunger_n  = saturate(hunger / MAX_HUNGER)
      fatigue_n = saturate(fatigue / MAX_FATIGUE)
      fear_n    = saturate(fear / MAX_FEAR)
@@ -121,8 +121,8 @@ if hunger < 0.1:          W[EAT]  *= 0.0     // already full
      s[FLEE]  = threat_n^3   * W[1]
      s[EAT]   = hunger_n^2   * W[2] * (claimedBoidIndex >= 0 ? 1.5 : 0)
      s[SLEEP] = fatigue_n    * W[3] * (threatLevel < 0.1 ? 1 : 0)
-4. argmax(s[]) → winnerState
-5. Epsilon guard: if max(s) < 0.01 → fallback PATROL
+4. argmax(s[]) -> winnerState
+5. Epsilon guard: if max(s) < 0.01 -> fallback PATROL
 6. Write stateFlags = (stateFlags & ~ACTIVE_MASK) | winnerState
 ```
 
@@ -131,11 +131,11 @@ if hunger < 0.1:          W[EAT]  *= 0.0     // already full
 // Exponential decay, frame-rate independent
 hunger_new   = hunger  + (HUNGER_RATE  * dt)                // accumulates
 fatigue_new  = fatigue + (FATIGUE_RATE * dt)                // accumulates
-fear_new     = fear    * pow(FEAR_DECAY_BASE, dt)           // decays: base ≈ 0.1
-threat_new   = threat  * pow(THREAT_DECAY_BASE, dt)         // decays: base ≈ 0.05
+fear_new     = fear    * pow(FEAR_DECAY_BASE, dt)           // decays: base ~= 0.1
+threat_new   = threat  * pow(THREAT_DECAY_BASE, dt)         // decays: base ~= 0.05
 
 // FAST APPROX for Burst (replaces pow):
-// pow(base, dt) ≈ exp(log(base) * dt) → precompute log(base) as constant
+// pow(base, dt) ~= exp(log(base) * dt) -> precompute log(base) as constant
 FEAR_LOG_K   = log(0.1)   // = -2.302585
 fear_new     = fear * exp(FEAR_LOG_K * dt)
 ```
@@ -186,14 +186,14 @@ memoryHead = (memoryHead + 1) & 7;
      decayWeight = 1 - saturate(age / 120.0f)
      effectiveIntensity = entry.intensity * decayWeight * decayWeight  // quadratic fade
      // Accumulate into threat or navigation target
-2. Most intense non-decayed entry → navigation investigate target
-3. All valid entries → average position for patrol sweep
+2. Most intense non-decayed entry -> navigation investigate target
+3. All valid entries -> average position for patrol sweep
 ```
 
 ### Memory Decay Curve
 ```
-// age ∈ [0, 120]
-// decayWeight = 1 - (age/120)^2   ← quadratic, rapid fade near end
+// age  [0, 120]
+// decayWeight = 1 - (age/120)^2   <- quadratic, rapid fade near end
 // At age=0:   weight=1.0
 // At age=60:  weight=0.75
 // At age=108: weight=0.19
@@ -202,14 +202,14 @@ memoryHead = (memoryHead + 1) & 7;
 
 ---
 
-## [MATH] SENSORY MULTIPLEXING → ThreatLevel
+## [MATH] SENSORY MULTIPLEXING -> ThreatLevel
 
 ### Visual Component
 ```
 toTarget   = normalize(playerPos - creaturePos)
 forward    = normalize(creatureForward)
 dot        = dot(forward, toTarget)          // [-1, +1]
-inFOV      = dot > COS_HALF_FOV             // e.g. cos(70°) = 0.342
+inFOV      = dot > COS_HALF_FOV             // e.g. cos(70 deg) = 0.342
 distSq     = lengthsq(playerPos - creaturePos)
 
 visualScore = 0
@@ -223,7 +223,7 @@ if inFOV AND distSq < VISUAL_RANGE_SQ:
 ### Acoustic Component (Spatial Hash Ping)
 ```
 // Spatial hash: bucket = int3(floor(pos / CELL_SIZE))
-// Player movement generates acoustic ping: magnitude ∝ speed
+// Player movement generates acoustic ping: magnitude  speed
 playerNoiseMag = length(playerVelocity) * NOISE_COEFFICIENT
 
 bucketDist  = distance(creatureBucket, playerBucket)   // in cell units
@@ -241,17 +241,17 @@ chemScore = ChemicalGrid[bucketKey] * CHEM_SENSITIVITY
 chemScore = saturate(chemScore)
 ```
 
-### Combine → ThreatLevel
+### Combine -> ThreatLevel
 ```
 // Weighted sum, tunable per species
 raw = (W_VIS * visualScore) + (W_ACU * acousticScore) + (W_CHE * chemScore)
 
 // Non-linear emphasis: sharpen mid-range detection
-threatLevel_new = raw^0.7   // slight compression — feels more organic
+threatLevel_new = raw^0.7   // slight compression - feels more organic
 
 // Blend with previous (temporal smoothing, no spike jitter)
 threatLevel = lerp(threatLevel_prev, threatLevel_new, 1 - exp(-THREAT_SMOOTH * dt))
-// THREAT_SMOOTH ≈ 3.0 → 0.63 blend at t=0.33s
+// THREAT_SMOOTH ~= 3.0 -> 0.63 blend at t=0.33s
 
 // Write to CognitionCore
 core.threatLevel = saturate(threatLevel)
@@ -261,10 +261,10 @@ core.threatLevel = saturate(threatLevel)
 
 ## [DATA] ECOSYSTEM BOID CLAIM SYSTEM
 
-### BoidClaimTable — atomic lock array
+### BoidClaimTable - atomic lock array
 ```
 NativeArray<int> boidClaimTable;   // length = MAX_BOIDS (e.g. 500)
-// Value: -1 = unclaimed, ≥0 = claiming creatureIndex
+// Value: -1 = unclaimed, >=0 = claiming creatureIndex
 // Type: NativeArray<int> with Allocator.Persistent
 // Access via Interlocked CAS: guarantees single predator per boid
 ```
@@ -309,7 +309,7 @@ if core.claimedBoidIndex >= 0:
 
 ---
 
-## [JOB] IJobParallelFor — Utility Evaluation
+## [JOB] IJobParallelFor - Utility Evaluation
 
 ### Job Struct Logic Kernel
 ```
@@ -338,7 +338,7 @@ EXECUTE(i):
        Compute acousticScore (spatial hash formula above)
        threatLevel = blend(core.threatLevel, combine(vis,acu), dt)
 
-  3. [MEMORY WRITE — if new stimulus]
+  3. [MEMORY WRITE - if new stimulus]
        if visualScore > VIS_THRESHOLD OR acousticScore > ACU_THRESHOLD:
          WriteMemory(i, stimPos, stimIntensity, stimType, currentTime)
 
@@ -368,26 +368,26 @@ EXECUTE(i):
        chosenStates[i]    = winner
 ```
 
-### Scheduling — Time-Sliced Budget
+### Scheduling - Time-Sliced Budget
 ```
 // Full eval: all 100 creatures per frame
 // If CPU budget exceeded (frame >14ms): slice into 2 batches of 50, alternate frames
-// Use JobHandle chaining: sensorJob → utilityJob → steeringJob
+// Use JobHandle chaining: sensorJob -> utilityJob -> steeringJob
 
 JobHandle sensorHandle  = sensorJob.Schedule(CREATURE_COUNT, 16, default)
 JobHandle utilityHandle = utilityJob.Schedule(CREATURE_COUNT, 16, sensorHandle)
 JobHandle steeringHandle= steeringJob.Schedule(CREATURE_COUNT, 8, utilityHandle)
-// Batch size 16 = L1-friendly for 64B structs (16 × 64B = 1KB per batch)
+// Batch size 16 = L1-friendly for 64B structs (16 x 64B = 1KB per batch)
 ```
 
 ---
 
-## [SCALE] LOD TIERS — COGNITION QUALITY
+## [SCALE] LOD TIERS - COGNITION QUALITY
 
 ### Base (MX350 / 4-core i3)
 ```
 - Visual scoring only (no acoustic hash, no chemical grid)
-- Memory slots: 3 (not 5) — NativeArray stride unchanged, skip slots 3-4
+- Memory slots: 3 (not 5) - NativeArray stride unchanged, skip slots 3-4
 - Utility curves: linear only (hunger_n, no polynomial)
 - Fear decay: lerp instead of exp (cheap but less accurate)
 - Update frequency: every 2 frames for creatures >30m from player
@@ -414,8 +414,8 @@ JobHandle steeringHandle= steeringJob.Schedule(CREATURE_COUNT, 8, utilityHandle)
 ### VRAM Budget Note (MX350 = 2GB)
 ```
 - Cognition data: CPU-side only (NativeArrays in RAM, not GPU buffers)
-- GPU receives only: final position + animationStateID (2× float3 + 1× int per creature)
-- Creature GPU upload: 100 × 28B = 2,800B per frame → negligible
+- GPU receives only: final position + animationStateID (2x float3 + 1x int per creature)
+- Creature GPU upload: 100 x 28B = 2,800B per frame -> negligible
 - No StructuredBuffer for AI state on MX350: keep GPU for rendering only
 ```
 
@@ -434,55 +434,55 @@ JobHandle steeringHandle= steeringJob.Schedule(CREATURE_COUNT, 8, utilityHandle)
 ```
 - DORMANT bias: W[SLEEP] *= 2.0, W[HUNT] *= 0.1 (pressure simulates hibernation)
 - Visual range reduced: VISUAL_RANGE = base * exp(-depth / 2000)
-  → At 4km: VISUAL_RANGE ≈ base * 0.135
-- Acoustic: sound travels faster/farther — ACOUSTIC_RANGE_CELLS *= 1.5 beyond 3km
+  -> At 4km: VISUAL_RANGE ~= base * 0.135
+- Acoustic: sound travels faster/farther - ACOUSTIC_RANGE_CELLS *= 1.5 beyond 3km
 ```
 
 ### All Utility Scores == 0
 ```
-→ Default: PATROL state. Prevents stateFlags = 0 (undefined behavior in animation system)
+-> Default: PATROL state. Prevents stateFlags = 0 (undefined behavior in animation system)
 ```
 
 ### NaN in threatLevel
 ```
-→ Reset: threatLevel = 0. Log to NativeQueue<DebugEvent> (non-allocating).
+-> Reset: threatLevel = 0. Log to NativeQueue<DebugEvent> (non-allocating).
 ```
 
 ### CAS Contention (100 predators, 1 boid)
 ```
-→ Only 1 succeeds. Others get -1. No retry same frame.
-→ Next frame: spatial hash finds next nearest unclaimed. Distributes naturally.
-→ Deadlock impossible: no spin-wait, no blocking.
+-> Only 1 succeeds. Others get -1. No retry same frame.
+-> Next frame: spatial hash finds next nearest unclaimed. Distributes naturally.
+-> Deadlock impossible: no spin-wait, no blocking.
 ```
 
 ### Memory Decay Timestamp Overflow
 ```
-→ Use float elapsed time. float32 loses second-precision after ~16M seconds (185 days).
-→ Acceptable. For longer sessions: reset all timestamps on scene reload.
+-> Use float elapsed time. float32 loses second-precision after ~16M seconds (185 days).
+-> Acceptable. For longer sessions: reset all timestamps on scene reload.
 ```
 
 ### creatureIndex Out of Bounds
 ```
-→ Burst jobs: NativeArray auto-bounds-check in Debug. Disable in Release.
-→ Validate: all indices clamped to [0, CREATURE_COUNT-1] at write site only.
+-> Burst jobs: NativeArray auto-bounds-check in Debug. Disable in Release.
+-> Validate: all indices clamped to [0, CREATURE_COUNT-1] at write site only.
 ```
 
 ---
 
-## [MATH] SENIOR HACKS — Cheap Realism (MX350)
+## [MATH] SENIOR HACKS - Cheap Realism (MX350)
 
 ### Fast Dot-Product FOV (no acos)
 ```
 // Skip: acos(dot) comparison (expensive)
 // Use: dot > precomputed COS_HALF_FOV constant
-COS_HALF_FOV_70deg = 0.342f   // cos(70°), computed offline
+COS_HALF_FOV_70deg = 0.342f   // cos(70 deg), computed offline
 inFOV = dot(forward, toTarget) > COS_HALF_FOV_70deg
 // Cost: 3 muls + 2 adds vs full acos (~20 ops)
 ```
 
 ### Fast Exponential Decay (Burst)
 ```
-// math.exp is Burst-intrinsic SIMD → free on AVX2
+// math.exp is Burst-intrinsic SIMD -> free on AVX2
 // But: precompute log(decayBase) as static readonly float
 // Avoids log() at runtime entirely
 ```
@@ -508,7 +508,7 @@ int    winner = scores.x==best ? HUNT : scores.y==best ? FLEE : scores.z==best ?
 
 ---
 
-## [RULE] INTERFACE CONTRACTS (SRP — No Cross-System Coupling)
+## [RULE] INTERFACE CONTRACTS (SRP - No Cross-System Coupling)
 
 ```
 ICognitionReader:
@@ -525,20 +525,20 @@ ISensorySource:
   float  GetVisualScore(float3 creaturePos, float3 creatureForward, float3 targetPos)
   float  GetAcousticScore(int3 creatureBucket, int3 targetBucket, float targetNoise)
 
-ICognitionWriter:           // internal to Job only — not exposed
+ICognitionWriter:           // internal to Job only - not exposed
   void   WriteCore(int i, CognitionCore core)
 ```
 
 ### No direct cross-reference between:
 ```
-CognitionJob  → BoidFlockingJob   // communicate via boidClaimTable NativeArray only
-CognitionJob  → RenderingSystem   // communicate via chosenStates output array only
-CognitionJob  → PhysicsSystem     // communicate via position read-only snapshot
+CognitionJob  -> BoidFlockingJob   // communicate via boidClaimTable NativeArray only
+CognitionJob  -> RenderingSystem   // communicate via chosenStates output array only
+CognitionJob  -> PhysicsSystem     // communicate via position read-only snapshot
 ```
 
 ---
 
-## [RULE] CONSTANTS — Define as static readonly, never magic numbers
+## [RULE] CONSTANTS - Define as static readonly, never magic numbers
 ```
 MAX_HUNGER           = 1.0f
 MAX_FATIGUE          = 1.0f

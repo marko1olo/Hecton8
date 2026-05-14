@@ -3,7 +3,7 @@
 
 ---
 
-## §0 — FOUNDATIONAL INVARIANTS
+## Section0 - FOUNDATIONAL INVARIANTS
 
 [INVARIANT] All runtime asset access routes through `Addressables.LoadAssetAsync<T>`. Zero exceptions.
 [INVARIANT] Every handle issued = entry in global registry. No orphaned handles. Ever.
@@ -13,43 +13,43 @@
 
 ---
 
-## §1 — GLOBAL REGISTRY ARCHITECTURE
+## Section1 - GLOBAL REGISTRY ARCHITECTURE
 
 ### 1.1 Primary Store
 
 Registry:      Dictionary<uint, AssetRecord>
 AssetRecord:   { Handle: AsyncOperationHandle, RefCount: int, Priority: byte, LastAccessTick: long, SizeBytes: ulong }
 PriorityQueue: MinHeap<AssetRecord> keyed on (Priority ASC, LastAccessTick ASC)
-PendingRelease: Queue<uint> — populated end-of-frame, drained start-of-next-frame
+PendingRelease: Queue<uint> - populated end-of-frame, drained start-of-next-frame
 
 ### 1.2 Key Generation
 
 AssetKey(uint) = FNV-1a-32( guid_string + biome_id_byte + lod_level_nibble )
-Collision guard: if Registry.ContainsKey(key) && record.Handle.AssetGUID != incomingGUID → key ^= 0xDEAD_BEEF, retry once, else throw
+Collision guard: if Registry.ContainsKey(key) && record.Handle.AssetGUID != incomingGUID -> key ^= 0xDEAD_BEEF, retry once, else throw
 
 ### 1.3 Ref-Count Protocol
 
 Acquire(key):
-  if Registry[key].exists → RefCount++ → return Handle
-  else → LoadAsync → register → RefCount = 1 → return Handle
+  if Registry[key].exists -> RefCount++ -> return Handle
+  else -> LoadAsync -> register -> RefCount = 1 -> return Handle
 
 Release(key):
   RefCount--
-  if RefCount <= 0 → enqueue PendingRelease(key)
-  if RefCount < 0 → Assert.Fail("Double-release: " + key) → clamp to 0
+  if RefCount <= 0 -> enqueue PendingRelease(key)
+  if RefCount < 0 -> Assert.Fail("Double-release: " + key) -> clamp to 0
 
 ### 1.4 Tick Integration
 
 Every frame START:
-  drain PendingRelease → execute §4 RELEASE FLOW per entry
+  drain PendingRelease -> execute Section4 RELEASE FLOW per entry
 
 Every frame END:
   update LastAccessTick for all active queries
-  run §6 PRESSURE EVALUATION
+  run Section6 PRESSURE EVALUATION
 
 ---
 
-## §2 — PRIORITY QUEUE & LOAD ORDER
+## Section2 - PRIORITY QUEUE & LOAD ORDER
 
 ### 2.0 Unity Addressables 2.7 Residency / Asset Load Mode
 
@@ -76,24 +76,24 @@ Project evidence: package lock resolves `com.unity.addressables` to 2.7.6. Local
 
 ### 2.1 Priority Tiers (byte, lower = higher priority)
 
-TIER_0 = 0x00  → Player Suit, HUD assets, Dive Computer UI
-TIER_1 = 0x01  → Held Tools, Equipped items, Breath-system meshes
-TIER_2 = 0x10  → Proximity Chunks (radius ≤ StreamInner)
-TIER_3 = 0x20  → Ambient SFX banks, Reverb impulses
-TIER_4 = 0x30  → Mid-range fauna, interactive props
-TIER_5 = 0x40  → Distant HLODs, Biome skybox variants
-TIER_6 = 0xFF  → Preload speculative (background, never blocks frame)
+TIER_0 = 0x00  -> Player Suit, HUD assets, Dive Computer UI
+TIER_1 = 0x01  -> Held Tools, Equipped items, Breath-system meshes
+TIER_2 = 0x10  -> Proximity Chunks (radius <= StreamInner)
+TIER_3 = 0x20  -> Ambient SFX banks, Reverb impulses
+TIER_4 = 0x30  -> Mid-range fauna, interactive props
+TIER_5 = 0x40  -> Distant HLODs, Biome skybox variants
+TIER_6 = 0xFF  -> Preload speculative (background, never blocks frame)
 
 ### 2.2 Concurrent Load Slots
 
 MaxConcurrentLoads(tier):
-  TIER_0–1 → 8 slots  (dedicated, never pre-empted)
-  TIER_2   → 6 slots
-  TIER_3–4 → 4 slots
-  TIER_5–6 → 2 slots  (throttled under pressure)
+  TIER_0-1 -> 8 slots  (dedicated, never pre-empted)
+  TIER_2   -> 6 slots
+  TIER_3-4 -> 4 slots
+  TIER_5-6 -> 2 slots  (throttled under pressure)
 
-MemoryPressure > 0.75 → reduce TIER_5–6 slots to 0
-MemoryPressure > 0.85 → reduce TIER_3–4 slots to 1
+MemoryPressure > 0.75 -> reduce TIER_5-6 slots to 0
+MemoryPressure > 0.85 -> reduce TIER_3-4 slots to 1
 
 ### 2.3 Load Sequencer
 
@@ -101,33 +101,33 @@ Each frame budget: 2ms load-dispatch window on main thread
 Sequence:
   1. Service pending TIER_0 synchronously within 2ms budget
   2. Dispatch async ops in priority order until slot capacity hit
-  3. Remaining requests → stay in queue, re-evaluated next frame
-  4. Starvation guard: TIER ≥ 4 request age > 60 frames → priority--  (escalate)
+  3. Remaining requests -> stay in queue, re-evaluated next frame
+  4. Starvation guard: TIER >= 4 request age > 60 frames -> priority--  (escalate)
 
 ---
 
-## §3 — STREAMING ZONE MATH
+## Section3 - STREAMING ZONE MATH
 
 ### 3.1 Chunk Radius Definitions
 
-StreamInner  = BaseRadius × (1.0 - PressureFactor × 0.4)
-StreamOuter  = StreamInner × 1.6
-HLODRadius   = StreamOuter × 2.5
+StreamInner  = BaseRadius x (1.0 - PressureFactor x 0.4)
+StreamOuter  = StreamInner x 1.6
+HLODRadius   = StreamOuter x 2.5
 
 BaseRadius   = 80m  (default, designer-tunable per biome)
 
 ### 3.2 Player Velocity Predictive Pre-fetch
 
-LookAheadPoint = PlayerPos + (Velocity.normalized × Speed × 3.0s)
-ChunksToPreload = all chunks where dist(chunk.center, LookAheadPoint) ≤ StreamInner
-PreloadPriority = TIER_6 → escalates to TIER_2 when dist ≤ StreamInner + 10m
+LookAheadPoint = PlayerPos + (Velocity.normalized x Speed x 3.0s)
+ChunksToPreload = all chunks where dist(chunk.center, LookAheadPoint) <= StreamInner
+PreloadPriority = TIER_6 -> escalates to TIER_2 when dist <= StreamInner + 10m
 
 ### 3.3 Depth-Layer Biome Gating
 
 BiomeID derived from: depth_meters + biome_tag_byte
 Biome groups:
-  SHALLOW  [0–200m]  : group_shallow
-  TWILIGHT [200–600m]: group_twilight
+  SHALLOW  [0-200m]  : group_shallow
+  TWILIGHT [200-600m]: group_twilight
   ABYSSAL  [600m+]   : group_abyssal
   THERMAL  [special] : group_thermal_vent
 
@@ -138,13 +138,13 @@ Hysteresis formula:
 
 ### 3.4 Chunk LOD Selection
 
-DistanceFactor = dist(player, chunk.center) / StreamOuter   [0.0–1.0 clamped]
+DistanceFactor = dist(player, chunk.center) / StreamOuter   [0.0-1.0 clamped]
 
 LOD_level:
-  DistanceFactor ≤ 0.25 → LOD0
-  DistanceFactor ≤ 0.55 → LOD1
-  DistanceFactor ≤ 0.85 → LOD2
-  DistanceFactor >  0.85 → HLOD_impostor
+  DistanceFactor <= 0.25 -> LOD0
+  DistanceFactor <= 0.55 -> LOD1
+  DistanceFactor <= 0.85 -> LOD2
+  DistanceFactor >  0.85 -> HLOD_impostor
 
 VRAM_pressure > 0.88:
   force LOD_level++ for all non-TIER_0 assets
@@ -152,15 +152,15 @@ VRAM_pressure > 0.88:
 
 ---
 
-## §4 — ASSET RELEASE FLOW
+## Section4 - ASSET RELEASE FLOW
 
 ### 4.1 Ordered Teardown Protocol
 
 Step 1: Unregister from all engine tick systems (Update, FixedUpdate subscriptions)
 Step 2: Unsubscribe all event delegates (OnDamage, OnInteract, OnVisible callbacks)
-Step 3: Disable renderers / audio sources → prevents 1-frame ghost rendering
+Step 3: Disable renderers / audio sources -> prevents 1-frame ghost rendering
 Step 4: Return GameObject to pool (if pooled) OR Destroy (if non-pooled, confirmed by PoolRegistry)
-Step 5: Addressables.Release(handle) → decrements internal ref-count
+Step 5: Addressables.Release(handle) -> decrements internal ref-count
 Step 6: Registry.Remove(key)
 Step 7: Update PressureFactor (recalc freed bytes in SizeBytes accumulator)
 
@@ -177,32 +177,32 @@ Before pool return:
 
 Eviction candidates = PriorityQueue.GetLowestPriority(n=8) where RefCount == 0
 Sort candidates: LastAccessTick ASC (evict oldest-unused first)
-Execute §4.1 for each candidate until PressureFactor < 0.80
+Execute Section4.1 for each candidate until PressureFactor < 0.80
 Cap evictions per frame: 4 objects max (prevent hitch)
 
 ---
 
-## §5 — VRAM MANAGEMENT (MX350 GUARD)
+## Section5 - VRAM MANAGEMENT (MX350 GUARD)
 
 ### 5.1 VRAM Sampling
 
-Poll interval: every 90 frames (≈1.5s at 60fps)
+Poll interval: every 90 frames (~=1.5s at 60fps)
 Source: SystemInfo.graphicsMemorySize (static cap) + custom query via NativePlugin or GL.GetGPUMemory
-VRAM_Used   = tracked via custom VRAM_Ledger (sum of all registered texture SizeBytes × mip factor)
+VRAM_Used   = tracked via custom VRAM_Ledger (sum of all registered texture SizeBytes x mip factor)
 VRAM_Budget = 1.80 GB  (hard)
 VRAM_Warn   = 1.60 GB  (soft, begin preventive eviction)
 
 ### 5.2 Mip Streaming Integration
 
 Texture mip bias on pressure:
-  VRAM_Used > WARN  → GlobalMipBias = +1   (halve resident mips for non-proximal textures)
-  VRAM_Used > HARD  → GlobalMipBias = +2   → force LOD0 textures to LOD1 resolution
-  VRAM_Used < 1.40  → GlobalMipBias = 0    (restore)
+  VRAM_Used > WARN  -> GlobalMipBias = +1   (halve resident mips for non-proximal textures)
+  VRAM_Used > HARD  -> GlobalMipBias = +2   -> force LOD0 textures to LOD1 resolution
+  VRAM_Used < 1.40  -> GlobalMipBias = 0    (restore)
 
 QualitySettings.streamingMipmapsMemoryBudget = (VRAM_Budget - VRAM_Used_NonTex) in MB
 Texture2D.requestedMipmapLevel per atlas:
-  dist > StreamInner → requestedMipmapLevel = 2
-  dist > StreamOuter → requestedMipmapLevel = 4  (HLOD, near-black anyway)
+  dist > StreamInner -> requestedMipmapLevel = 2
+  dist > StreamOuter -> requestedMipmapLevel = 4  (HLOD, near-black anyway)
 
 ### 5.3 LOD0 Texture Forced Release
 
@@ -210,19 +210,19 @@ Trigger: VRAM_Used > 1.80 GB
 Targets: all TextureRecords where (Priority >= TIER_4) && (LOD_level == LOD0)
 Action:
   Swap to LOD1 texture handle
-  Release LOD0 handle via §4.1 partial (skip Steps 1–4, only Steps 5–7)
-  Log: "VRAM_EVICT LOD0→LOD1: {key} freed {bytes}MB"
-Recovery: re-queue LOD0 load at TIER_6 if dist returns ≤ StreamInner × 0.5
+  Release LOD0 handle via Section4.1 partial (skip Steps 1-4, only Steps 5-7)
+  Log: "VRAM_EVICT LOD0->LOD1: {key} freed {bytes}MB"
+Recovery: re-queue LOD0 load at TIER_6 if dist returns <= StreamInner x 0.5
 
 ---
 
-## §6 — RAM PRESSURE SYSTEM
+## Section6 - RAM PRESSURE SYSTEM
 
 ### 6.1 Pressure Calculation
 
 PressureFactor = CurrentReservedMemory_bytes / MaxSystemRAM_bytes
 
-MaxSystemRAM = SystemInfo.systemMemorySize × 1024 × 1024  [bytes]
+MaxSystemRAM = SystemInfo.systemMemorySize x 1024 x 1024  [bytes]
 CurrentReservedMemory = Profiler.GetTotalReservedMemory()  + NativeHeap_estimate
 
 // [FORBID] LINQ .Sum() in hot path.
@@ -230,11 +230,11 @@ CurrentReservedMemory = Profiler.GetTotalReservedMemory()  + NativeHeap_estimate
 
 ### 6.2 Graduated Response Thresholds
 
-PressureFactor < 0.60 → NORMAL:   all tiers active, full preload enabled
-PressureFactor ≥ 0.60 → CAUTION:  disable TIER_6 speculative loads
-PressureFactor ≥ 0.75 → WARNING:  evict TIER_5 RefCount==0, disable TIER_5–6 new loads
-PressureFactor ≥ 0.85 → CRITICAL: evict TIER_4–5, reduce StreamOuter by 30%
-PressureFactor ≥ 0.90 → EXTREME:  EvictQueue.DrainSynchronously()
+PressureFactor < 0.60 -> NORMAL:   all tiers active, full preload enabled
+PressureFactor >= 0.60 -> CAUTION:  disable TIER_6 speculative loads
+PressureFactor >= 0.75 -> WARNING:  evict TIER_5 RefCount==0, disable TIER_5-6 new loads
+PressureFactor >= 0.85 -> CRITICAL: evict TIER_4-5, reduce StreamOuter by 30%
+PressureFactor >= 0.90 -> EXTREME:  EvictQueue.DrainSynchronously()
                                     StreamInner reduced by 40%, HLOD-only mode for dist > 40m
 
 ### 6.3 Deterministic Eviction Gating
@@ -255,24 +255,24 @@ Post-execution: recalculate PressureFactor, log delta
 
 ### 6.4 Streaming Budget Allocator
 
-Total RAM budget allocated to streaming = MaxSystemRAM × 0.35  (35% ceiling)
-  Texture pool:  budget × 0.45
-  Mesh pool:     budget × 0.25
-  Audio bank:    budget × 0.15
-  Misc (VFX,SO): budget × 0.15
+Total RAM budget allocated to streaming = MaxSystemRAM x 0.35  (35% ceiling)
+  Texture pool:  budget x 0.45
+  Mesh pool:     budget x 0.25
+  Audio bank:    budget x 0.15
+  Misc (VFX,SO): budget x 0.15
 
-If any pool exceeds allocation → evict from that pool first before touching others
+If any pool exceeds allocation -> evict from that pool first before touching others
 
 ---
 
-## §7 — FAILURE MODES & SAFETY SYSTEMS
+## Section7 - FAILURE MODES & SAFETY SYSTEMS
 
 ### 7.1 Load Failure Handler
 
 OnLoadFailed(key, handle, error):
   Log.Error("ASSET_FAIL key={key} error={error}")
-  Assign fallback material → global CHECKERBOARD_MAT (pre-loaded at startup, never released)
-  Assign fallback mesh    → global UNIT_CUBE_MESH (collision proxy)
+  Assign fallback material -> global CHECKERBOARD_MAT (pre-loaded at startup, never released)
+  Assign fallback mesh    -> global UNIT_CUBE_MESH (collision proxy)
   Mark record: AssetRecord.IsFallback = true
   Do NOT throw. Do NOT return null. Continue execution.
   Schedule retry at TIER_6 with backoff: 5s, 15s, 60s (exponential, max 3 attempts)
@@ -283,10 +283,10 @@ TimeoutThreshold = 10.0 seconds
 
 Monitor: per-handle elapsed since LoadAsync dispatch
 At T+10s if !handle.IsDone:
-  Load LOD1_proxy_key (pre-registered lightweight stand-in, ≤ 50KB mesh, 128px texture)
-  Original load NOT cancelled (Addressables limitation) — monitor separately
-  If original eventually completes → hot-swap LOD1_proxy → original, Release proxy
-  If original fails → §7.1 applies
+  Load LOD1_proxy_key (pre-registered lightweight stand-in, <= 50KB mesh, 128px texture)
+  Original load NOT cancelled (Addressables limitation) - monitor separately
+  If original eventually completes -> hot-swap LOD1_proxy -> original, Release proxy
+  If original fails -> Section7.1 applies
 
 LOD1_proxy registration: mandatory at biome-group init, loaded synchronously at scene start
   (only synchronous load permitted in entire system, bounded at startup, never runtime)
@@ -303,15 +303,15 @@ Every 300 frames: audit Registry
 
 All asset accessors return via wrapper:
   T SafeGet<T>(uint key) where T: UnityEngine.Object
-    → returns Registry[key].Handle.Result if valid
-    → returns typed fallback (CHECKERBOARD, UNIT_CUBE, SILENT_CLIP) if IsFallback or null
-    → NEVER returns null to caller
+    -> returns Registry[key].Handle.Result if valid
+    -> returns typed fallback (CHECKERBOARD, UNIT_CUBE, SILENT_CLIP) if IsFallback or null
+    -> NEVER returns null to caller
 
 Callers must never cache raw handle.Result directly. Always route through SafeGet.
 
 ### 7.5 Async Scene Activation Gate
 
-Scene load progress reported as normalized float [0.0–1.0]
+Scene load progress reported as normalized float [0.0-1.0]
 Chunk/content activation uses `Object.InstantiateAsync(chunkPrefab)` or async prefab spawning.
 Do not stall on `allowSceneActivation`.
 The engine timeslices `Awake`/`OnEnable` across frames during async instantiation.
@@ -320,7 +320,7 @@ Forbid: any gameplay systems initializing before async instantiation completes
 
 ---
 
-## §8 — SCALABILITY PROFILES
+## Section8 - SCALABILITY PROFILES
 
 ### 8.1 Quality Tier Definitions
 
@@ -353,49 +353,49 @@ At startup, before any asset load:
   Detect CoreCount = SystemInfo.processorCount
 
 ProfileSelect:
-  VRAM <  1800MB  || RAM < 8GB  → TIER_MINIMAL
-  VRAM <  1800MB  || RAM < 16GB → TIER_MID
-  else                       → TIER_ULTRA
+  VRAM < 1800MB || RAM < 8GB  -> TIER_MINIMAL
+  VRAM < 6000MB || RAM < 16GB -> TIER_MID
+  else                       -> TIER_ULTRA
 
 Override: user settings file takes priority over auto-detect if present
 
 ### 8.3 Addressable Group Mapping
 
-group_core        → always loaded, never streamed (Player, HUD, Fallbacks, Proxies)
-group_shallow     → streamed, Biome-gated §3.3
-group_twilight    → streamed, Biome-gated
-group_abyssal     → streamed, Biome-gated, TIER_MINIMAL: 50% texture res reduction applied
-group_thermal     → streamed, event-triggered only
-group_horror_fx   → streamed, triggered by tension_state ≥ 0.7 (designer float param)
-group_audio_amb   → streamed, always 1 active bank max (swap on biome cross)
-group_audio_music → streamed, double-buffer: preload next track while current plays
+group_core        -> always loaded, never streamed (Player, HUD, Fallbacks, Proxies)
+group_shallow     -> streamed, Biome-gated Section3.3
+group_twilight    -> streamed, Biome-gated
+group_abyssal     -> streamed, Biome-gated, TIER_MINIMAL: 50% texture res reduction applied
+group_thermal     -> streamed, event-triggered only
+group_horror_fx   -> streamed, triggered by tension_state >= 0.7 (designer float param)
+group_audio_amb   -> streamed, always 1 active bank max (swap on biome cross)
+group_audio_music -> streamed, double-buffer: preload next track while current plays
 
 ---
 
-## §9 — AUDIO STREAMING SPECIFICS
+## Section9 - AUDIO STREAMING SPECIFICS
 
 ### 9.1 Audio Handle Integration
 
-AudioClip handles follow identical ref-count protocol (§1.3)
+AudioClip handles follow identical ref-count protocol (Section1.3)
 AudioClip key includes sample_rate_tag to prevent cross-rate collisions
 Streaming clips (duration > 10s): AudioClip.loadType = AudioClipLoadType.Streaming
-Short SFX (duration ≤ 2s):        AudioClip.loadType = AudioClipLoadType.DecompressOnLoad
-Medium (2–10s):                    AudioClip.loadType = AudioClipLoadType.CompressedInMemory
+Short SFX (duration <= 2s):        AudioClip.loadType = AudioClipLoadType.DecompressOnLoad
+Medium (2-10s):                    AudioClip.loadType = AudioClipLoadType.CompressedInMemory
 
 ### 9.2 Audio Budget Under Pressure
 
 PressureFactor > 0.80:
-  Reduce active AudioSource count to MaxAudioChannels × 0.5
+  Reduce active AudioSource count to MaxAudioChannels x 0.5
   Prioritize: player breath > proximity horror SFX > ambient loops > music
   Cull lowest-priority sources immediately (no fade, too costly under pressure)
 
 PressureFactor > 0.90:
-  Music bank → pause (not release), resume on pressure drop < 0.80
-  Ambient bank → 1 active loop only, all others released
+  Music bank -> pause (not release), resume on pressure drop < 0.80
+  Ambient bank -> 1 active loop only, all others released
 
 ---
 
-## §10 — THREADING & JOB INTEGRATION
+## Section10 - THREADING & JOB INTEGRATION
 
 ### 10.1 Worker Thread Allocation
 
@@ -407,26 +407,26 @@ PressureCalc:    scheduled as Unity Job (IJob), result written to NativeArray<fl
 ### 10.2 Addressables Async Continuation
 
 All handle.Completed callbacks scheduled on main thread (Addressables default)
-Heavy post-load work (mesh baking, texture compression queries) → offload via Job System
+Heavy post-load work (mesh baking, texture compression queries) -> offload via Job System
 Max job batch size: 4 assets per frame to prevent job scheduler saturation on 4C/4T targets
 
 ### 10.3 4C/4T Optimization Constraints
 
 Never spawn more than (CoreCount - 1) background jobs simultaneously
 Reserve 1 core headroom for OS + audio thread
-Job dependency chains: chain load → process → register to prevent false parallelism overhead
+Job dependency chains: chain load -> process -> register to prevent false parallelism overhead
 Profile target: load dispatch overhead < 0.3ms/frame on i3-10100
 
 ---
 
-## §11 — DEBUG & PROFILING INSTRUMENTATION
+## Section11 - DEBUG & PROFILING INSTRUMENTATION
 
 ### 11.1 Mandatory Markers
 
-ProfilerMarker: "HECTON.AssetLoad.Dispatch"    → wraps LoadAssetAsync call
-ProfilerMarker: "HECTON.AssetRelease.Execute"  → wraps §4.1 Steps 1–7
-ProfilerMarker: "HECTON.PressureEval"          → wraps §6.1–6.3
-ProfilerMarker: "HECTON.VRAM.Evict"            → wraps §5.3
+ProfilerMarker: "HECTON.AssetLoad.Dispatch"    -> wraps LoadAssetAsync call
+ProfilerMarker: "HECTON.AssetRelease.Execute"  -> wraps Section4.1 Steps 1-7
+ProfilerMarker: "HECTON.PressureEval"          -> wraps Section6.1-6.3
+ProfilerMarker: "HECTON.VRAM.Evict"            -> wraps Section5.3
 All markers: conditional compile #if DEVELOPMENT_BUILD || UNITY_EDITOR
 
 ### 11.2 Runtime Debug Overlay Data
@@ -450,32 +450,32 @@ HECTON_LEAK_REPORT_{timestamp}.txt:
 
 ---
 
-## §12 — STARTUP SEQUENCE (ORDERED)
+## Section12 - STARTUP SEQUENCE (ORDERED)
 
-Phase 0: Detect hardware profile → select scalability tier (§8.2)
+Phase 0: Detect hardware profile -> select scalability tier (Section8.2)
 Phase 1: Load group_core synchronously (permitted: startup only, bounded < 200ms)
           Includes: CHECKERBOARD_MAT, UNIT_CUBE_MESH, SILENT_CLIP, all LOD_proxies
 Phase 2: Initialize Registry, PriorityQueue, VRAM_Ledger, PressureFactor baseline
 Phase 3: Preload current biome group at TIER_2 priority (async, show BIOS overlay)
 Phase 4: Preload audio_amb bank for starting zone
-Phase 5: Await §7.5 scene activation gate (progress ≥ 0.90)
+Phase 5: Await Section7.5 scene activation gate (progress >= 0.90)
 Phase 6: Activate scene, remove overlay, enable gameplay systems
 Phase 7: Begin speculative preload of adjacent biome at TIER_6
 
 ---
 
-## §13 — FORBIDDEN PATTERNS (ENFORCEMENT)
+## Section13 - FORBIDDEN PATTERNS (ENFORCEMENT)
 
-[FORBID] Resources.Load           — any runtime path, zero tolerance
-[FORBID] Resources.LoadAll        — unconditional
-[FORBID] AssetDatabase.LoadAsset  — runtime (editor utility only)
-[FORBID] WWW class                — deprecated, replaced by UnityWebRequest if needed
+[FORBID] Resources.Load           - any runtime path, zero tolerance
+[FORBID] Resources.LoadAll        - unconditional
+[FORBID] AssetDatabase.LoadAsset  - runtime (editor utility only)
+[FORBID] WWW class                - deprecated, replaced by UnityWebRequest if needed
 [FORBID] Direct scene.Activate without progress gate
 [FORBID] Coroutine-based load without handle registration
 [FORBID] Caching handle.Result as persistent field without ref-count increment
 [FORBID] Calling Release() twice on same handle (double-release = crash vector)
-[FORBID] Loading next-biome group before current biome boundary confirmed (50m hysteresis §3.3)
+[FORBID] Loading next-biome group before current biome boundary confirmed (50m hysteresis Section3.3)
 [FORBID] Any asset load inside FixedUpdate or physics callbacks
-[FORBID] GC.Collect() outside §6.3 authorized trigger (causes 40ms+ hitch on 4C target)
+[FORBID] GC.Collect() outside Section6.3 authorized trigger (causes 40ms+ hitch on 4C target)
 
 ---

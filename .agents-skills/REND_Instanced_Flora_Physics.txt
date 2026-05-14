@@ -1,6 +1,6 @@
 ```markdown
 # REND_Instanced_Flora_Physics.md
-## Mandated Technical Specification — Underwater Flora Instancing, Physics & Culling
+## Mandated Technical Specification - Underwater Flora Instancing, Physics & Culling
 
 ---
 
@@ -37,7 +37,7 @@
 
 ## II. DATA ARCHITECTURE
 
-### II.A — CPU-Side Memory Layout (SoA, Cache-Aligned)
+### II.A - CPU-Side Memory Layout (SoA, Cache-Aligned)
 
 ```
 // Stride target: 64-byte cache-line aligned blocks per chunk
@@ -46,39 +46,39 @@
 NativeArray<float3>  flora_positions   // world XYZ root pivots
 NativeArray<float>   flora_radii       // bounding sphere radius (scalar, not float3)
 NativeArray<half2>   flora_uv_scale    // packed UV tiling per species (half = 2B each)
-NativeArray<byte>    flora_species_id  // 0-255 species index → shader variant LUT
+NativeArray<byte>    flora_species_id  // 0-255 species index -> shader variant LUT
 NativeArray<byte>    flora_state_mask  // bitfield: see II.B
-NativeArray<float>   flora_phase_seed  // per-instance random phase offset [0,2π]
+NativeArray<float>   flora_phase_seed  // per-instance random phase offset [0,2*pi]
 ```
 
 **Interleaved GPU Instance Struct (written once at chunk load, read-only on GPU):**
 ```
 struct FloraInstance  // 48 bytes, 16-byte aligned
 {
-    float3 worldPos;    // 12B — root pivot
+    float3 worldPos;    // 12B - root pivot
     float  boundRadius; //  4B
-    float4 rotation;    // 16B — quaternion (identity at spawn, updated by physics job)
-    uint   packedData;  // 4B — bits[0:7]=speciesID, bits[8:11]=LODhint, bits[12:15]=stateMask, bits[16:31]=reserved
+    float4 rotation;    // 16B - quaternion (identity at spawn, updated by physics job)
+    uint   packedData;  // 4B - bits[0:7]=speciesID, bits[8:11]=LODhint, bits[12:15]=stateMask, bits[16:31]=reserved
     float  phaseOffset; // 4B
-    float  pad;         //  4B — explicit pad, no compiler surprise
+    float  pad;         //  4B - explicit pad, no compiler surprise
 }
 // Total: 48B. Fits 1365 instances per 64KB L1 cache block.
 ```
 
-### II.B — State Bitmask Layout (`flora_state_mask`, 8-bit)
+### II.B - State Bitmask Layout (`flora_state_mask`, 8-bit)
 
 ```
-Bit 0 (0x01): VISIBLE          — set by FloraCull.compute output
-Bit 1 (0x02): PLAYER_CONTACT   — set by collision job when dist < playerRadius + floraRadius
-Bit 2 (0x04): FLOW_ACTIVE      — FlowField magnitude at position > epsilon threshold
-Bit 3 (0x08): ANCHORED         — rooted to terrain (vs. floating debris variant)
-Bit 4 (0x10): HIGH_LOD         — distance < LOD_HIGH_THRESH
-Bit 5 (0x20): ULTRA_LOD        — distance < LOD_ULTRA_THRESH
-Bit 6 (0x40): DEAD             — culled permanently (eaten by creature, etc.)
-Bit 7 (0x80): DIRTY            — GPU buffer needs re-upload this frame
+Bit 0 (0x01): VISIBLE          - set by FloraCull.compute output
+Bit 1 (0x02): PLAYER_CONTACT   - set by collision job when dist < playerRadius + floraRadius
+Bit 2 (0x04): FLOW_ACTIVE      - FlowField magnitude at position > epsilon threshold
+Bit 3 (0x08): ANCHORED         - rooted to terrain (vs. floating debris variant)
+Bit 4 (0x10): HIGH_LOD         - distance < LOD_HIGH_THRESH
+Bit 5 (0x20): ULTRA_LOD        - distance < LOD_ULTRA_THRESH
+Bit 6 (0x40): DEAD             - culled permanently (eaten by creature, etc.)
+Bit 7 (0x80): DIRTY            - GPU buffer needs re-upload this frame
 ```
 
-### II.C — GPU Buffer Set (Per Active Chunk)
+### II.C - GPU Buffer Set (Per Active Chunk)
 
 ```
 GraphicsBuffer instanceBuffer      // FloraInstance[], Structured - source of truth
@@ -89,7 +89,7 @@ GraphicsBuffer flowFieldBuffer     // float4[], 3D linearized grid - shared glob
 GraphicsBuffer playerDataBuffer    // float4[MAX_PLAYERS=4] - pos.xyz + radius.w
 ```
 
-### II.D — Ring Buffer for Chunk Stream Data (Zero-GC Handoff)
+### II.D - Ring Buffer for Chunk Stream Data (Zero-GC Handoff)
 
 ```
 // Pre-allocated at boot. Chunk loader writes into slots; GPU consumer reads.
@@ -102,7 +102,7 @@ ON_CHUNK_LOAD (worker thread):
   slot = Interlocked.Increment(writeHead) % RING_SIZE
   ASSERT chunkRing[slot].IsCreated == false OR slot != readHead  // overrun guard
   chunkRing[slot] = new NativeArray<FloraInstance>(count, Allocator.Persistent, NativeArrayOptions.UninitializedMemory)
-  // Fill via Burst job — no managed intermediary
+  // Fill via Burst job - no managed intermediary
   Interlocked.Increment(writeHead)
 
 ON_RENDER_TICK (main thread):
@@ -111,21 +111,21 @@ ON_RENDER_TICK (main thread):
     Interlocked.Increment(readHead)
 ```
 
-### II.E — MapMagic Zero-GC Position Handoff
+### II.E - MapMagic Zero-GC Position Handoff
 
 **Problem:** MapMagic outputs `TransformData[]` (managed) per chunk. Bridging to GPU without GC pressure.
 
-**Solution — UnsafeUtility Pin Pattern:**
+**Solution - UnsafeUtility Pin Pattern:**
 ```
 ALGORITHM:
 1. Hook MapMagic chunk callback (IMapMagicObject.Apply or custom ITileObject)
-2. Receive managed TransformData[] once — unavoidable at boundary
+2. Receive managed TransformData[] once - unavoidable at boundary
 3. Pin managed array: GCHandle handle = GCHandle.Alloc(managedArray, GCHandleType.Pinned)
 4. IntPtr ptr = handle.AddrOfPinnedObject()
 5. UnsafeUtility.MemCpy(nativeArray.GetUnsafePtr(), ptr.ToPointer(), byteCount)
-6. handle.Free() — pin released immediately, no long-lived GC root
+6. handle.Free() - pin released immediately, no long-lived GC root
 7. Managed array eligible for GC. Native copy now owns data.
-8. Schedule Burst job on NativeArray — zero further managed access
+8. Schedule Burst job on NativeArray - zero further managed access
 ```
 
 **Constraint:** Step 2-6 happens ONCE per chunk load event, not per frame. Acceptable boundary cost.
@@ -134,7 +134,7 @@ ALGORITHM:
 
 ## III. ALGORITHMIC & MATH TRUTH
 
-### III.A — FloraCull.compute: Frustum Culling Logic
+### III.A - FloraCull.compute: Frustum Culling Logic
 
 **Input:** `StructuredBuffer<FloraInstance> _Instances`, `float4 _FrustumPlanes[6]`, `uint _InstanceCount`
 
@@ -160,7 +160,7 @@ for p in 0..5:
     dist = dot(_FrustumPlanes[p].xyz, center) + _FrustumPlanes[p].w
     if dist < -r:
         visible = false
-        break  // early exit — hemisphere test optimization
+        break  // early exit - hemisphere test optimization
 
 if visible:
     _VisibleIDs.Append(threadID)
@@ -171,7 +171,7 @@ if visible:
 dispatchX = ceil(instanceCount / 64.0)  // ThreadGroupSize = (64,1,1)
 ```
 
-**SENIOR_HACK — Hierarchical Cull (MX350 ALU budget):**
+**SENIOR_HACK - Hierarchical Cull (MX350 ALU budget):**
 ```
 // Pre-sort instanceBuffer by morton code (z-order) at chunk load.
 // Run coarse 4x4x4 grid cull first (1 thread per grid cell).
@@ -188,7 +188,7 @@ mortonEncode3D(x,y,z):  // x,y,z are 10-bit integers (0-1023)
     return x | (y<<1) | (z<<2)
 ```
 
-### III.B — IndirectArguments Buffer Layout
+### III.B - IndirectArguments Buffer Layout
 
 ```
 // GraphicsBuffer.Target.IndirectArguments, stride=4, count=5
@@ -205,7 +205,7 @@ GraphicsBuffer.CopyCount(visibleIDBuffer, indirectArgsBuffer, 4)
 // No CPU readback. No Graphics.DrawMeshInstancedIndirect call.
 ```
 
-### III.C — FlowField Bending: HLSL Vertex Shader Math
+### III.C - FlowField Bending: HLSL Vertex Shader Math
 
 **FlowField Data:**
 ```
@@ -227,7 +227,7 @@ float4 flow = _MarineSnowFlowField.SampleLevel(sampler_linear_clamp, gridUVW, 0)
 float3 flowDir = flow.rgb  // already normalized in buffer
 float  flowMag = flow.a    // [0,1]
 
-// 3. Influence factor — root is pinned, tip bends fully
+// 3. Influence factor - root is pinned, tip bends fully
 float influence = uv.y * uv.y  // quadratic falloff: tip bends ~4x more than mid
 
 // 4. Temporal oscillation (cheap sinusoidal sway)
@@ -235,11 +235,11 @@ float wave = sin(_Time.y * _FloraSwayFreq + phaseOffset) * _FloraSwayAmplitude
 float totalMag = flowMag * _FlowBendScale + wave
 
 // 5. Rodrigues rotation around up-axis perpendicular to flow
-// Rotate vertex around root pivot by angle θ in flow direction plane
-// θ = totalMag (radians, clamped)
+// Rotate vertex around root pivot by angle theta in flow direction plane
+// theta = totalMag (radians, clamped)
 float theta = clamp(totalMag * influence, -_MaxBendAngle, _MaxBendAngle)
 
-// Rodrigues formula: v_rot = v*cos(θ) + (k×v)*sin(θ) + k*(k·v)*(1-cos(θ))
+// Rodrigues formula: v_rot = v*cos(theta) + (kxv)*sin(theta) + k*(k-v)*(1-cos(theta))
 // k = rotation axis = normalize(cross(float3(0,1,0), flowDir))
 // If flowDir == (0,1,0): k = float3(1,0,0) fallback
 
@@ -258,12 +258,12 @@ if dot(flowDir, flowDir) < 1e-6: flowDir = float3(0,0,1)  // zero flow fallback
 theta = isnan(theta) || isinf(theta) ? 0.0 : theta         // NaN/Inf kill
 ```
 
-### III.D — Player Collision Displacement: HLSL Logic
+### III.D - Player Collision Displacement: HLSL Logic
 
 **Player buffer:**
 ```
 // float4 _PlayerData[4]: xyz = world position, w = interaction radius
-// Upload via GraphicsBuffer.LockBufferForWrite + UnsafeUtility.MemCpy — zero-copy, zero GC
+// Upload via GraphicsBuffer.LockBufferForWrite + UnsafeUtility.MemCpy - zero-copy, zero GC
 ```
 
 **Vertex shader displacement (runs after FlowField bending):**
@@ -271,13 +271,13 @@ theta = isnan(theta) || isinf(theta) ? 0.0 : theta         // NaN/Inf kill
 // Accumulate displacement from all active players
 float3 totalDisplace = float3(0,0,0)
 
-for i in 0..3:  // unrolled by compiler — static count
+for i in 0..3:  // unrolled by compiler - static count
     float3 playerPos = _PlayerData[i].xyz
     float  playerRad = _PlayerData[i].w
     if playerRad < 0.001: continue  // inactive slot
 
     float3 delta = vertex.xyz - playerPos
-    delta.y = 0  // horizontal push only — prevent lifting flora off terrain
+    delta.y = 0  // horizontal push only - prevent lifting flora off terrain
     float dist = length(delta) + 1e-5  // epsilon prevents /0
 
     // Smooth step decay: full push at dist=0, zero at dist=playerRad*2
@@ -288,7 +288,7 @@ for i in 0..3:  // unrolled by compiler — static count
     float pushMag = influence * _PlayerPushStrength / dist
     totalDisplace += delta * pushMag
 
-// Clamp total displacement — prevent degenerate geometry at zero dist
+// Clamp total displacement - prevent degenerate geometry at zero dist
 float dispLen = length(totalDisplace)
 if dispLen > _MaxDisplacement:
     totalDisplace = totalDisplace / dispLen * _MaxDisplacement
@@ -296,7 +296,7 @@ if dispLen > _MaxDisplacement:
 vertex.xyz += totalDisplace
 ```
 
-**SENIOR_HACK — Fast `length` approximation for MX350 ALU:**
+**SENIOR_HACK - Fast `length` approximation for MX350 ALU:**
 ```
 float3 delta = vertex - playerPos
 float dist = math.length(delta); // Let Burst use RSQRTPS intrinsic
@@ -304,17 +304,17 @@ float3 dir = delta / max(dist, 1e-5)
 // [FORBID] Manual rsqrt cargo cult. Use the hardware path.
 ```
 
-### III.E — LOD Distance Math (CPU-Side Burst Job)
+### III.E - LOD Distance Math (CPU-Side Burst Job)
 
 ```
 // Run once per frame, time-sliced (see IV.B)
 // Per instance:
 
 float3 toCam = cameraPos - flora_positions[i]
-float distSq = dot(toCam, toCam)  // avoid sqrt — compare squared thresholds
+float distSq = dot(toCam, toCam)  // avoid sqrt - compare squared thresholds
 
-const float LOD_HIGH_SQ  = LOD_HIGH_DIST  * LOD_HIGH_DIST   // e.g. 15² = 225
-const float LOD_ULTRA_SQ = LOD_ULTRA_DIST * LOD_ULTRA_DIST  // e.g. 8²  = 64
+const float LOD_HIGH_SQ  = LOD_HIGH_DIST  * LOD_HIGH_DIST   // e.g. 15^2 = 225
+const float LOD_ULTRA_SQ = LOD_ULTRA_DIST * LOD_ULTRA_DIST  // e.g. 8^2  = 64
 
 byte mask = flora_state_mask[i]
 mask &= ~(0x10 | 0x20)  // clear LOD bits
@@ -323,44 +323,44 @@ else if distSq < LOD_HIGH_SQ: mask |= 0x10
 flora_state_mask[i] = mask
 ```
 
-### III.F — Numerical Stability Contracts
+### III.F - Numerical Stability Contracts
 
 ```
 // FlowField magnitude clamp:
 flowMag = clamp(flow.a, 0.0, 1.0)
 
 // Bend angle clamp (prevent gimbal/degenerate geometry):
-_MaxBendAngle default = 0.52 rad (~30°). Hard cap in shader: min(|theta|, 0.78) → 45° absolute
+_MaxBendAngle default = 0.52 rad (~30 deg). Hard cap in shader: min(|theta|, 0.78) -> 45 deg absolute
 
 // Phase offset: generated at spawn via seed:
 phaseOffset = frac(sin(instanceID * 127.1 + chunkSeed * 311.7) * 43758.5) * TWO_PI
-// Goldbacher-style hash — uniform distribution, no clustering
+// Goldbacher-style hash - uniform distribution, no clustering
 
-// Player dist guard: if distSq < 0.0001 (player inside pivot): 
-// override delta = float3(1,0,0) * 0.01 — deterministic push direction
+// Player dist guard: if distSq < 0.0001 (player inside pivot):
+// override delta = float3(1,0,0) * 0.01 - deterministic push direction
 ```
 
 ---
 
 ## IV. HARDWARE & SCALABILITY
 
-### IV.A — MX350 VRAM Budget (2GB Hard Limit)
+### IV.A - MX350 VRAM Budget (2GB Hard Limit)
 
 ```
 Budget allocation for flora system:
-  FloraInstance buffer (4096 * 48B * 16 active chunks) = ~3MB      ✓
-  VisibleID buffer     (4096 * 4B  * 16 chunks)        = ~256KB    ✓
-  IndirectArgs buffer  (5 * 4B     * 16 chunks)        = ~320B     ✓
-  FlowField Texture3D  (32³ * 8B R16G16B16A16)         = ~512KB    ✓ (global singleton)
+  FloraInstance buffer (4096 * 48B * 16 active chunks) = ~3MB      [OK]
+  VisibleID buffer     (4096 * 4B  * 16 chunks)        = ~256KB    [OK]
+  IndirectArgs buffer  (5 * 4B     * 16 chunks)        = ~320B     [OK]
+  FlowField Texture3D  (32^3 * 8B R16G16B16A16)         = ~512KB    [OK] (global singleton)
   Total flora VRAM: ~4MB
 
   Enforce: If VRAM_Available < 256MB (emergency threshold):
-    Reduce max active chunks: 16 → 8
-    Reduce max instances/chunk: 4096 → 2048
-    Downscale FlowField: 32³ → 16³ (halves to 64KB)
+    Reduce max active chunks: 16 -> 8
+    Reduce max instances/chunk: 4096 -> 2048
+    Downscale FlowField: 32^3 -> 16^3 (halves to 64KB)
 ```
 
-### IV.B — Time-Slicing CPU Budget
+### IV.B - Time-Slicing CPU Budget
 
 ```
 // Spread per-chunk updates across N frames to flatten CPU spike
@@ -383,7 +383,7 @@ UnsafeUtility.MemCpy(ptr.GetUnsafePtr(), nativeArray.GetUnsafePtr(), byteCount);
 buffer.UnlockBufferAfterWrite<FloraInstance>(count);
 ```
 
-### IV.C — LOD Tier Definitions
+### IV.C - LOD Tier Definitions
 
 ```
 BASE (< MX350 min, software fallback):
@@ -395,18 +395,18 @@ BASE (< MX350 min, software fallback):
 HIGH (MX350 standard):
   - Frustum cull + FlowField bending active.
   - Player displacement: 1 player slot only.
-  - FlowField sample: trilinear, 32³.
+  - FlowField sample: trilinear, 32^3.
   - Sway oscillation: 1 frequency term.
 
 ULTRA (RTX-class):
   - All 4 player slots active.
-  - FlowField: 64³, bicubic sample.
+  - FlowField: 64^3, bicubic sample.
   - Sway: 3 frequency terms (wind harmonics).
   - LOD_ULTRA_DIST = 12m (vs HIGH: 20m).
   - Vertex bending applies to sub-geometry (individual frond segments).
 ```
 
-### IV.D — Dispatch & Draw Call Budget
+### IV.D - Dispatch & Draw Call Budget
 
 ```
 Per active chunk per frame:
@@ -421,7 +421,7 @@ Group by species/material so GPU Resident Drawer keeps total submissions < 8
 
 ## V. INTEGRATION & FAILURE MODES
 
-### V.A — Interface Contracts (SRP Compliance)
+### V.A - Interface Contracts (SRP Compliance)
 
 ```
 IFloraChunkProvider:
@@ -441,18 +441,18 @@ IFloraCullDispatcher:
   GraphicsBuffer GetVisibleIDBuffer(ChunkID id)
 ```
 
-### V.B — Failure Mode Catalog
+### V.B - Failure Mode Catalog
 
 ```
 FAILURE: speed > 40 m/s (submarine boost / debug noclip)
   SYMPTOM: Player displacement delta exceeds shader _MaxDisplacement in single frame
-  GUARD: In IFloraPlayerInterface.GetPlayerData — clamp playerPos velocity contribution.
+  GUARD: In IFloraPlayerInterface.GetPlayerData - clamp playerPos velocity contribution.
          Previous frame pos stored. delta clamped: if |posDelta| > 2.0m: lerp toward newPos at rate 2m/frame
   RESULT: Flora bends catch up smoothly, no geometry explosion
 
 FAILURE: depth > 4km (depth value exceeds FlowField Z extent)
-  SYMPTOM: gridUVW.z > 1.0 → sampler_clamp returns boundary value. Flow artifacts.
-  GUARD: clamp(gridUVW, 0.001, 0.999) in shader — explicit, not relying on sampler state
+  SYMPTOM: gridUVW.z > 1.0 -> sampler_clamp returns boundary value. Flow artifacts.
+  GUARD: clamp(gridUVW, 0.001, 0.999) in shader - explicit, not relying on sampler state
   RESULT: Constant boundary flow value. Acceptable deep-ocean stillness. Intentional fallback.
 
 FAILURE: instanceCount = 0 (empty chunk / all culled)
@@ -462,11 +462,11 @@ FAILURE: instanceCount = 0 (empty chunk / all culled)
 FAILURE: GraphicsBuffer not initialized (chunk still loading)
   GUARD: IFloraChunkProvider.TryGetChunkInstanceBuffer returns false
          Dispatcher skips dispatch for that chunk. No null deref, no exception.
-         Frame skip budget: max 4 frames before chunk considered failed → log warning only.
+         Frame skip budget: max 4 frames before chunk considered failed -> log warning only.
 
 FAILURE: FlowField GPU buffer null (first frame / biome without flow)
   GUARD: Shader-side: if _FlowFieldExtents.x < 0.001: flowMag = 0.0, skip bending.
-         CPU-side: _FlowFieldExtents set to float3(−1,−1,−1) as sentinel → shader detects.
+         CPU-side: _FlowFieldExtents set to float3(1,1,1) as sentinel -> shader detects.
 
 FAILURE: NativeArray disposed mid-frame (race condition, worker teardown)
   GUARD: All NativeArray usage behind AtomicSafetyHandle (Unity enforces in editor).
@@ -476,27 +476,27 @@ FAILURE: NativeArray disposed mid-frame (race condition, worker teardown)
 FAILURE: VRAM OOM (> 1.8GB used, MX350 swaps to system RAM)
   DETECT: SystemInfo.graphicsMemorySize runtime check at boot.
           Threshold: if freeVRAM < 128MB: reduce to BASE tier immediately.
-  ACTION: IFloraCullDispatcher.SetQualityTier(FloraQuality.Base) — zero-alloc state change.
+  ACTION: IFloraCullDispatcher.SetQualityTier(FloraQuality.Base) - zero-alloc state change.
           Existing buffers not released mid-frame. Take effect next chunk load cycle.
 
 FAILURE: Rodrigues rotation with flowDir = (0,1,0) exactly (vertical flow)
-  SYMPTOM: cross(float3(0,1,0), float3(0,1,0)) = float3(0,0,0) → normalize → NaN
+  SYMPTOM: cross(float3(0,1,0), float3(0,1,0)) = float3(0,0,0) -> normalize -> NaN
   GUARD: k = normalize(cross(up, flowDir) + float3(1e-5, 0, 0))
          Epsilon bias guaranteed non-zero cross product. Bias magnitude < visual threshold.
 ```
 
-### V.C — Debug/Validation Hooks (Editor Only)
+### V.C - Debug/Validation Hooks (Editor Only)
 
 ```
 #if UNITY_EDITOR
-  // One-shot CPU readback for validation — never in playmode profiling:
+  // One-shot CPU readback for validation - never in playmode profiling:
   AsyncGPUReadback.Request(visibleIDBuffer, callback: ValidateVisibleCount)
   // Validates: count in [0, maxInstances], no out-of-bounds IDs
   // Trigger: Editor menu item only, not automatic
 #endif
 ```
 
-### V.D — Teardown Safety (Scene Unload / App Quit)
+### V.D - Teardown Safety (Scene Unload / App Quit)
 
 ```
 Disposal order (strict):
@@ -509,7 +509,7 @@ All Release/Dispose calls inside OnDestroy - guaranteed by IDisposable pattern o
 No static mutable state survives domain reload.
 ```
 
-## APPENDIX A — Shader Property Binding Reference
+## APPENDIX A - Shader Property Binding Reference
 
 ```
 // Set once at material init or via MaterialPropertyBlock (per-chunk, zero alloc):
@@ -527,7 +527,7 @@ _InstanceBuffer             : StructuredBuffer<FloraInstance>
 _VisibleIDs                 : StructuredBuffer<uint>         // read-only in vertex shader
 ```
 
-## APPENDIX B — Per-Frame Execution Order
+## APPENDIX B - Per-Frame Execution Order
 
 ```
 1. [CPU/Burst]  Player pos delta check -> conditional NativeArray write

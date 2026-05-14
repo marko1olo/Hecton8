@@ -3,15 +3,15 @@
 
 ---
 
-## §0 — FOUNDATIONAL CONTRACTS
+## Section0 - FOUNDATIONAL CONTRACTS
 
 ### Channel Separation (Non-Negotiable)
 Three independent damage channels. Never alias, never collapse:
-- INTEGRITY → Structural armor. Hull, frame, pressure-hull.
-- POWER → Energy systems. Propulsion, life-support, scanners.
-- CLARITY → Sensor fidelity. Sonar, HUD, visor rendering pipeline.
+- INTEGRITY -> Structural armor. Hull, frame, pressure-hull.
+- POWER -> Energy systems. Propulsion, life-support, scanners.
+- CLARITY -> Sensor fidelity. Sonar, HUD, visor rendering pipeline.
 
-Each channel: `float [0.0 .. 1.0]`. Each decays independently. Cross-channel bleed only via defined coupling rules (§3).
+Each channel: `float [0.0 .. 1.0]`. Each decays independently. Cross-channel bleed only via defined coupling rules (Section3).
 
 ### Event Contract
 All downstream systems (HUD, audio, VFX) subscribe ONLY via `IDamageReceiver`. No per-frame polling. Violating this = regression defect.
@@ -26,7 +26,7 @@ IDamageReceiver {
 
 ---
 
-## §1 — DATA STRUCTURES
+## Section1 - DATA STRUCTURES
 
 ### DamageSignal (Primary Packet)
 
@@ -60,16 +60,16 @@ Process in `SlowTick` (10Hz). Never process per-frame. Amortize cost.
 
 NONE = 0, MINOR = 1, SIGNIFICANT = 2, CRITICAL = 3, CATASTROPHIC = 4
 
-Threshold map: MINOR ≥ 0.15 damage burst, SIGNIFICANT ≥ 0.30, CRITICAL ≥ 0.55, CATASTROPHIC ≥ 0.80 (single-signal magnitude, post-resistance).
+Threshold map: MINOR >= 0.15 damage burst, SIGNIFICANT >= 0.30, CRITICAL >= 0.55, CATASTROPHIC >= 0.80 (single-signal magnitude, post-resistance).
 
 ---
 
-## §2 — CORE MATH KERNELS
+## Section2 - CORE MATH KERNELS
 
 ### Integrity Decay
 
 effectiveResistance = VulnerabilityProfile.resistances[typeIndex]
-                    * (1.0 + depthPressureModifier)   // See §4
+                    * (1.0 + depthPressureModifier)   // See Section4
 scaledDamage        = signal.magnitude / effectiveResistance
 Integrity           = math.max(0.0, Integrity - scaledDamage)
 
@@ -81,7 +81,7 @@ Integrity           = math.max(0.0, Integrity - scaledDamage)
 powerLoss = scaledDamage * 0.4 * (1.0 - PowerShielding)
 Power     = math.max(0.0, Power - powerLoss)
 
-`PowerShielding` ∈ [0.0..1.0], defaults to 0.6 (standard hull). Upgrade system modifies.
+`PowerShielding`  [0.0..1.0], defaults to 0.6 (standard hull). Upgrade system modifies.
 
 ### Clarity Degradation (Cross-Channel Bleed)
 
@@ -111,12 +111,12 @@ Clarity   += 0.018 per SlowTick   // Sensors = fastest recovery
 // Continuous slow drain, not burst. Applied each SlowTick while parasiteActive=true.
 Integrity -= 0.005 * parasiteIntensity
 Clarity   -= 0.008 * parasiteIntensity
-// parasiteIntensity ∈ [0.3 .. 1.0], set at attach event
+// parasiteIntensity  [0.3 .. 1.0], set at attach event
 // Counter: UV-scan pulse clears parasiteActive. Stacks up to 3 sources.
 
 ---
 
-## §3 — CROSS-CHANNEL COUPLING RULES
+## Section3 - CROSS-CHANNEL COUPLING RULES
 
 IF Power < 0.2:
     Clarity recovery rate *= 0.25   // Sensors starved of power
@@ -128,7 +128,7 @@ IF Integrity < 0.3:
 
 IF Clarity < 0.1:
     Disable sonar ping rendering entirely
-    Force HUD → BIOS_RECOVERY_MODE (§7)
+    Force HUD -> BIOS_RECOVERY_MODE (Section7)
     Sensor-derived navigation data = INVALID flag
 
 // Triple-failure state (all < 0.15):
@@ -137,13 +137,13 @@ IF Clarity < 0.1:
 
 ---
 
-## §4 — HULL BREACH SYSTEM
+## Section4 - HULL BREACH SYSTEM
 
 ### Breach Detection Flow
 
 1. Receive DamageSignal where bit0 (Pressure) set AND signal.depth > 200m
 2. Resolve breach point = signal.localPoint in hull-local space
-3. Map breach point → nearest HullZone (pre-baked zone map, 8 zones max)
+3. Map breach point -> nearest HullZone (pre-baked zone map, 8 zones max)
 4. Query: depthPressureDelta = (signal.depth / 1000.0) * BASE_PRESSURE_ATM
 5. If Integrity < 0.4 at breach zone:
        Confirm hull breach
@@ -153,16 +153,16 @@ IF Clarity < 0.1:
 ### Flood-Drain Logic (SlowTick, 10Hz)
 
 floodRate  = depthPressureDelta * 0.04 * (1.0 - zoneIntegrity)
-drainRate  = pumpPower * 0.015   // pumpPower ∈ [0..1], upgradeable
+drainRate  = pumpPower * 0.015   // pumpPower  [0..1], upgradeable
 netFlood   = floodRate - drainRate
 floodLevel = math.clamp(floodLevel + netFlood, 0.0, 1.0)
 
 // Effects cascade:
 IF floodLevel > 0.3: Power -= 0.003 per SlowTick (electrical short)
 IF floodLevel > 0.6: movement drag *= 1.4
-IF floodLevel > 0.9: BEGIN SurvivalGracePeriod (§6)
+IF floodLevel > 0.9: BEGIN SurvivalGracePeriod (Section6)
 
-### Pressure Depth Modifier (used in §2)
+### Pressure Depth Modifier (used in Section2)
 
 // Log-linear scale
 depthPressureModifier = math.log10(1.0 + (depth / 100.0)) * 0.42
@@ -170,7 +170,7 @@ depthPressureModifier = math.log10(1.0 + (depth / 100.0)) * 0.42
 
 ---
 
-## §5 — VFX / GLITCH EVENT PIPELINE
+## Section5 - VFX / GLITCH EVENT PIPELINE
 
 ### Trigger Conditions (Event-Driven, Not Polled)
 
@@ -203,7 +203,7 @@ Properties pushed: _GlitchIntensity, _ChromaOffset, _ScanlineFreq, _HUDOpacity, 
 
 ---
 
-## §6 — SURVIVAL GRACE & DEATH PREVENTION
+## Section6 - SURVIVAL GRACE & DEATH PREVENTION
 
 ### SurvivalGracePeriod
 
@@ -215,7 +215,7 @@ Behavior:    Incoming damage magnitude clamped to (currentHealth - 0.01) during 
 
 ### One-Shot Death Prevention
 
-// Pre-resolve check (before §2 math executes)
+// Pre-resolve check (before Section2 math executes)
 IF (scaledDamage >= currentHealth) AND (Health > 0.1):
     scaledDamage = currentHealth - 0.01
     Activate SurvivalGracePeriod
@@ -225,14 +225,14 @@ IF (scaledDamage >= currentHealth) AND (Health > 0.1):
 ### Death Eligibility
 
 Death permitted ONLY when:
-    Health ≤ 0.0
+    Health <= 0.0
     AND SurvivalGracePeriod inactive
     AND GraceLockout expired
     AND (floodLevel > 0.9 OR Integrity < 0.05 OR explicit lethal trigger)
 
 ---
 
-## §7 — BIOS RECOVERY MODE (Sensor Blackout State)
+## Section7 - BIOS RECOVERY MODE (Sensor Blackout State)
 
 ### Entry Condition
 
@@ -256,14 +256,14 @@ Exit: Crossfade to normal HUD over 1.5s
 
 ---
 
-## §8 — HARDWARE SCALABILITY TIERS
+## Section8 - HARDWARE SCALABILITY TIERS
 
 ### Tier Detection (Runtime, One-Time)
 
-LOW:    VRAM <  1800MB OR GPU score < threshold_MX350
-MID:    VRAM 2- 1800MB, CPU ≤ 4C/4T
-HIGH:   VRAM ≥  1800MB, CPU ≥ 6C/12T
-ULTRA:  VRAM ≥  1800MB + RT cores detected
+LOW:    VRAM <= 1800MB OR GPU score < threshold_MX350
+MID:    VRAM > 1800MB AND VRAM < 6000MB
+HIGH:   VRAM >= 6000MB AND CPU >= 6C/12T
+ULTRA:  VRAM >= 8000MB AND RT cores detected
 
 ### Per-Tier Glitch Feature Set
 
@@ -313,22 +313,22 @@ ULTRA: 15Hz
 
 ---
 
-## §9 — PERFORMANCE CONSTRAINTS & GOVERNORS
+## Section9 - PERFORMANCE CONSTRAINTS & GOVERNORS
 
 ### CPU Budget (per SlowTick)
 
-Signal queue drain + integrity math: ≤ 0.15ms
-Cross-channel bleed evaluation:      ≤ 0.05ms
-Flood-drain update:                  ≤ 0.08ms
-Event dispatch to subscribers:       ≤ 0.04ms
-Total SlowTick budget:               ≤ 0.35ms
+Signal queue drain + integrity math: <= 0.15ms
+Cross-channel bleed evaluation:      <= 0.05ms
+Flood-drain update:                  <= 0.08ms
+Event dispatch to subscribers:       <= 0.04ms
+Total SlowTick budget:               <= 0.35ms
 
 ### GPU Budget (per frame, LOW tier)
 
-Half-res glitch pass:      ≤ 0.4ms
-Dithered upscale:          ≤ 0.1ms
-BIOS_RECOVERY_MODE shader: ≤ 0.05ms
-HUD composite:             ≤ 0.2ms
+Half-res glitch pass:      <= 0.4ms
+Dithered upscale:          <= 0.1ms
+BIOS_RECOVERY_MODE shader: <= 0.05ms
+HUD composite:             <= 0.2ms
 
 ### Memory Layout Directives
 
@@ -346,25 +346,25 @@ IF fps < 18: Enter minimal-render emergency mode. Audio feedback only for damage
 
 ---
 
-## §10 — INTEGRATION CHECKPOINTS
+## Section10 - INTEGRATION CHECKPOINTS
 
 ### Mandatory Validation Gates
 
-[GATE-1] DamageSignal intake: Assert magnitude ∈ [0..1000]. Clamp + log if violated.
-[GATE-2] Integrity/Power/Clarity: Assert ∈ [0..1] after every mutation. NaN check.
-[GATE-3] GlitchVal: Assert ∈ [0..1] before shader push. NaN → push 0.0, log error.
+[GATE-1] DamageSignal intake: Assert magnitude in [0..1000]. Clamp + log if violated.
+[GATE-2] Integrity/Power/Clarity: Assert in [0..1] after every mutation. NaN check.
+[GATE-3] GlitchVal: Assert in [0..1] before shader push. NaN -> push 0.0, log error.
 [GATE-4] TraumaBuffer overflow: Log warning with sourceID. Never silently drop.
 [GATE-5] SurvivalGrace chain: Assert lockout timer active after each invocation.
 [GATE-6] BIOS_RECOVERY_MODE exit: Assert Clarity > 0.25 sustained. Debounce verified.
 
 ### Failure Mode Registry
 
-FAIL-01: glitchVal = NaN  → Source: noise(time*freq) if freq=0. Guard: freq floor = 0.1.
-FAIL-02: Integrity stuck at 0, no death  → Source: Grace lockout miscalculation. Audit §6.
-FAIL-03: Flood never drains  → Source: pumpPower=0 AND drainRate=0. Verify pump init.
-FAIL-04: HUD permanent blackout  → Source: BIOS exit condition never met. Audit §7 debounce.
-FAIL-05: Subscriber list overflow  → Source: dynamic subscribe in hot path. Enforce [8] cap.
-FAIL-06: SlowTick budget exceeded  → Source: subscriber event chain. Profile; break chain async.
+FAIL-01: glitchVal = NaN  -> Source: noise(time*freq) if freq=0. Guard: freq floor = 0.1.
+FAIL-02: Integrity stuck at 0, no death  -> Source: Grace lockout miscalculation. Audit Section6.
+FAIL-03: Flood never drains  -> Source: pumpPower=0 AND drainRate=0. Verify pump init.
+FAIL-04: HUD permanent blackout  -> Source: BIOS exit condition never met. Audit Section7 debounce.
+FAIL-05: Subscriber list overflow  -> Source: dynamic subscribe in hot path. Enforce [8] cap.
+FAIL-06: SlowTick budget exceeded  -> Source: subscriber event chain. Profile; break chain async.
 
 ### Prohibited Patterns (Enforced in Code Review)
 
@@ -374,7 +374,7 @@ FAIL-06: SlowTick budget exceeded  → Source: subscriber event chain. Profile; 
 [FORBID] SetGlobalFloat/SetGlobalVector per-frame for glitch properties.
 [FORBID] Permanent full-screen noise texture (alpha > 0.05) outside active glitch event.
 [FORBID] GlitchCascade triggered by single low-magnitude impact (< MINOR threshold).
-[FORBID] Physics collision → direct health modification (must route through DamageSignal).
+[FORBID] Physics collision -> direct health modification (must route through DamageSignal).
 
 ---
 

@@ -22,27 +22,27 @@
 
 ## II. DATA ARCHITECTURE
 
-### 2.1 DestructibleChunk — Blittable Struct (SOA layout)
+### 2.1 DestructibleChunk - Blittable Struct (SOA layout)
 
 ```
 // Memory Layout (Cache line = 64 bytes. Pack to fit 2 structs per line.)
 struct DestructibleChunkData  // 32 bytes
 {
-    float3 localPositionOffset   // 12B — baked offset from parent pivot
-    half   massKg                // 2B  — chunk mass fraction of parent
-    half   volumeM3              // 2B  — for yield calculation
-    ushort poolIndex             // 2B  — back-ref into ObjectPool
-    byte   densityClass          // 1B  — enum: Porous=0, Sediment=1, Basalt=2, Coral=3
-    byte   stateFlags            // 1B  — bit0=active, bit1=sinking, bit2=pooled, bit3=collidable
+    float3 localPositionOffset   // 12B - baked offset from parent pivot
+    half   massKg                // 2B  - chunk mass fraction of parent
+    half   volumeM3              // 2B  - for yield calculation
+    ushort poolIndex             // 2B  - back-ref into ObjectPool
+    byte   densityClass          // 1B  - enum: Porous=0, Sediment=1, Basalt=2, Coral=3
+    byte   stateFlags            // 1B  - bit0=active, bit1=sinking, bit2=pooled, bit3=collidable
     float  despawnTimer          // 4B
     ushort parentEntityID        // 2B
-    ushort _pad                  // 2B  — align to 32B
+    ushort _pad                  // 2B  - align to 32B
 }
 // Allocate: NativeArray<DestructibleChunkData>[MAX_DESTRUCTIBLES * MAX_CHUNKS_PER_OBJ]
 // MAX_DESTRUCTIBLES = 128. MAX_CHUNKS_PER_OBJ = 16. Total = 2048 structs = 65536B = 64KB hot-path budget.
 ```
 
-### 2.2 DestructibleParent — Blittable Struct
+### 2.2 DestructibleParent - Blittable Struct
 
 ```
 struct DestructibleParentData  // 24 bytes
@@ -51,24 +51,24 @@ struct DestructibleParentData  // 24 bytes
     float  hpMax                 // 4B
     float  massKgTotal           // 4B
     ushort entityID              // 2B
-    byte   chunkCount            // 1B — 5–15, defined at bake time
-    byte   materialClass         // 1B — mirrors densityClass
-    byte   stateFlags            // 1B — bit0=intact, bit1=damaged, bit2=destroyed, bit3=decalActive
-    byte   lodLevel              // 1B — 0=Base,1=High,2=Ultra
-    ushort chunkStartIndex       // 2B — index into flat ChunkData NativeArray
-    float  damageAccumulator     // 4B — for decal threshold tracking
+    byte   chunkCount            // 1B - 5-15, defined at bake time
+    byte   materialClass         // 1B - mirrors densityClass
+    byte   stateFlags            // 1B - bit0=intact, bit1=damaged, bit2=destroyed, bit3=decalActive
+    byte   lodLevel              // 1B - 0=Base,1=High,2=Ultra
+    ushort chunkStartIndex       // 2B - index into flat ChunkData NativeArray
+    float  damageAccumulator     // 4B - for decal threshold tracking
 }
 ```
 
-### 2.3 DropBuffer — Ring Buffer for Loot
+### 2.3 DropBuffer - Ring Buffer for Loot
 
 ```
 struct ItemDropData  // 16 bytes
 {
-    uint   itemID                // 4B — hash of item type
+    uint   itemID                // 4B - hash of item type
     ushort quantity              // 2B
-    half   qualityFactor         // 2B — 0.0–1.0, drives rarity roll
-    float3 worldSpawnPos         // 12B — pre-computed at destruction moment
+    half   qualityFactor         // 2B - 0.0-1.0, drives rarity roll
+    float3 worldSpawnPos         // 12B - pre-computed at destruction moment
 }
 NativeArray<ItemDropData> DropBuffer; // Fixed array
 int WriteHead; // Advanced via Interlocked.Increment(ref WriteHead) & 255
@@ -114,7 +114,7 @@ CHUNK_NOCOLLIDE  = 0b00001000
 // Two NativeArrays<float4x4> of size 256 (instanced renderer input)
 // Frame N:   write to buffer[writeIdx]
 // Frame N+1: GPU reads buffer[readIdx] via Graphics.DrawMeshInstanced
-// Swap: writeIdx ^= 1; readIdx ^= 1; — atomic at end of LateUpdate job
+// Swap: writeIdx ^= 1; readIdx ^= 1; - atomic at end of LateUpdate job
 // Eliminates CPU-GPU sync stall. MX350 critical.
 ```
 
@@ -133,8 +133,8 @@ Step 3: Guard: hpNew = max(hpNew, 0.0f)
 Step 4: damageAccumulator += (hpCurrent - hpNew)
 Step 5: Write hpNew back. Set hpCurrent = hpNew.
 Step 6: Branch-free state update:
-        isDamaged  = (hpNew < hpMax * 0.5f)        → 1 or 0
-        isDestroyed = (hpNew <= 0.0f)               → 1 or 0
+        isDamaged  = (hpNew < hpMax * 0.5f)        -> 1 or 0
+        isDestroyed = (hpNew <= 0.0f)               -> 1 or 0
         flags |= (isDamaged << 1)    // sets MASK_DAMAGED bit
         flags |= (isDestroyed << 2)  // sets MASK_DESTROYED bit
 Step 7: If isDestroyed: enqueue entityID into DestructionEventQueue (NativeQueue, lock-free SPSC)
@@ -144,11 +144,11 @@ Step 7: If isDestroyed: enqueue entityID into DestructionEventQueue (NativeQueue
 
 ```
 // Executed by EntropyYieldJob (Burst, single-threaded against event queue)
-// Inputs: parentMassKg, materialClass, drillPower, depthMeters, toolEfficiency ∈ [0,1]
+// Inputs: parentMassKg, materialClass, drillPower, depthMeters, toolEfficiency  [0,1]
 
-// Base yield volume (m³):
+// Base yield volume (m^3):
 yieldVolume = (drillPower * toolEfficiency * dt) / densityLUT[materialClass]
-// densityLUT[kg/m³]: Porous=800, Sediment=1400, Basalt=2900, Coral=1100
+// densityLUT[kg/m^3]: Porous=800, Sediment=1400, Basalt=2900, Coral=1100
 
 // Mass extracted this frame:
 massExtracted = yieldVolume * densityLUT[materialClass]
@@ -156,13 +156,13 @@ massExtracted = yieldVolume * densityLUT[materialClass]
 
 // Item count (discrete):
 rawCount = massExtracted / UNIT_ITEM_MASS[itemTypeForMaterial]
-// UNIT_ITEM_MASS: lookup by materialClass → itemType mapping (8-entry LUT)
-itemCount = (ushort)floor(rawCount)  // floor: conservation — never over-yield
+// UNIT_ITEM_MASS: lookup by materialClass -> itemType mapping (8-entry LUT)
+itemCount = (ushort)floor(rawCount)  // floor: conservation - never over-yield
 
 // Quality factor (depth-driven rarity):
 qualityFactor = saturate(depthMeters / MAX_DEPTH_RARITY_THRESHOLD)
 // MAX_DEPTH_RARITY_THRESHOLD = 3000.0f (meters)
-// qualityFactor drives rarity tier: 0.0–0.33=Common, 0.33–0.66=Uncommon, 0.66–1.0=Rare
+// qualityFactor drives rarity tier: 0.0-0.33=Common, 0.33-0.66=Uncommon, 0.66-1.0=Rare
 
 // Remainder accumulation (no float waste):
 yieldRemainder += (rawCount - floor(rawCount))
@@ -176,21 +176,21 @@ For i in [0, itemCount):
     dropEntry.quantity    = 1
     dropEntry.qualityFactor = (half)qualityFactor
     dropEntry.worldSpawnPos = parentWorldPos + RandomOnUnitSphere() * 0.3f
-    // RandomOnUnitSphere: use deterministic hash(entityID ^ frameCount ^ i) → spherical coords
+    // RandomOnUnitSphere: use deterministic hash(entityID ^ frameCount ^ i) -> spherical coords
     DropBuffer.Enqueue(dropEntry)
 ```
 
-### 3.3 Destruction Swap — Mesh Disable + Debris Spawn
+### 3.3 Destruction Swap - Mesh Disable + Debris Spawn
 
 ```
-// DestructionSwapJob — runs on DestructionEventQueue drain, main-thread-adjacent (requires Transform access)
+// DestructionSwapJob - runs on DestructionEventQueue drain, main-thread-adjacent (requires Transform access)
 // Per destroyed entity:
 Step 1: parentRenderer.enabled = false  // O(1) flag flip, no alloc
 Step 2: parentCollider.enabled = false
-Step 3: chunkCount = parentData.chunkCount  // 5–15 (baked)
+Step 3: chunkCount = parentData.chunkCount  // 5-15 (baked)
 Step 4: For i in [0, chunkCount):
     Step 4a: poolIdx = freeIndices.Dequeue()   // O(1)
-             Guard: if freeIndices.IsEmpty → log warning, skip chunk (graceful degrade)
+             Guard: if freeIndices.IsEmpty -> log warning, skip chunk (graceful degrade)
     Step 4b: rb = pooledRigidbodies[poolIdx]
     Step 4c: rb.position = parentWorldPos + chunkData[chunkStartIndex + i].localPositionOffset
     Step 4d: rb.rotation = parentWorldRot  // inherit parent orientation
@@ -210,17 +210,17 @@ Step 6: Push debris handle batch into instanced renderer batch list
 ### 3.4 Debris Despawn Hysteresis (5-Second Lifecycle)
 
 ```
-// DebrisDespawnJob — Burst, runs every FixedUpdate
+// DebrisDespawnJob - Burst, runs every FixedUpdate
 // Iterates active chunk entries only (filtered by CHUNK_ACTIVE bit)
 // Phase table:
-//   t ∈ [0.0, 3.0):  normal physics, full collision
-//   t ∈ [3.0, 5.0):  disable collision, begin kinematic sink
-//   t ∈ [5.0, ∞):    pool return
+//   t in [0.0, 3.0):  normal physics, full collision
+//   t in [3.0, 5.0):  disable collision, begin kinematic sink
+//   t in [5.0, infinity):    pool return
 
 For each active chunkData c:
     c.despawnTimer += dt
 
-    Phase 0→1 transition (t >= 3.0f):
+    Phase 0->1 transition (t >= 3.0f):
         if !(c.stateFlags & CHUNK_NOCOLLIDE):
 // Burst job writes to NativeArray<DebrisStateResult>.
 // Main thread applies to Rigidbody components post-JobHandle.Complete()
@@ -228,7 +228,7 @@ For each active chunkData c:
             c.stateFlags |= CHUNK_NOCOLLIDE | CHUNK_SINKING
             // Record sinkStartY = rb.position.y at this moment (stored in scratch NativeArray)
 
-    Phase 1 — kinematic sink lerp (t ∈ [3.0, 5.0)):
+    Phase 1 - kinematic sink lerp (t in [3.0, 5.0)):
         if c.stateFlags & CHUNK_SINKING:
             t_norm = (c.despawnTimer - 3.0f) / 2.0f          // [0,1]
             t_smooth = t_norm * t_norm * (3.0f - 2.0f*t_norm) // smoothstep
@@ -236,8 +236,8 @@ For each active chunkData c:
             rb.position.y = sinkStartY[poolIdx] + sinkDelta
             // Also drive alpha fade via MaterialPropertyBlock: _Opacity = 1.0 - t_smooth
 
-    Phase 2 — pool return (t >= 5.0f):
-        rb.position = POOL_GRAVEYARD_POS   // float3(0,-9999,0) — off-screen
+    Phase 2 - pool return (t >= 5.0f):
+        rb.position = POOL_GRAVEYARD_POS   // float3(0,-9999,0) - off-screen
         rb.velocity = float3.zero
         rb.isKinematic = true
         rb.detectCollisions = false
@@ -246,16 +246,16 @@ For each active chunkData c:
         freeIndices.Enqueue(c.poolIndex)   // return to pool O(1)
 ```
 
-### 3.5 Decal Projection — Damage Crack System
+### 3.5 Decal Projection - Damage Crack System
 
 ```
 // Trigger: (hpCurrent < hpMax * 0.5f) AND !(flags & MASK_DECAL_LIVE)
-// Execution: DecalSpawnJob — runs on damage event, NOT every frame
+// Execution: DecalSpawnJob - runs on damage event, NOT every frame
 
 // World-space projector approach (no screen-space dependency, MX350 safe):
 
 Step 1: Compute decalOrigin = impactPoint  // from DrillSystem hit data
-Step 2: Compute decalNormal = surfaceNormal at impactPoint (baked per-chunk — stored as byte3 in ChunkData, octahedral encoding)
+Step 2: Compute decalNormal = surfaceNormal at impactPoint (baked per-chunk - stored as byte3 in ChunkData, octahedral encoding)
         Decode: n.xy = (byte3.xy / 127.5f) - 1.0f
                 n.z  = sqrt(saturate(1 - dot(n.xy, n.xy)))  // reconstruct Z, guaranteed unit length
 
@@ -270,7 +270,7 @@ Step 4: Build decal OBB matrix (3x3 rotation, no scale branch):
 
 Step 5: Assign decal size:
         hpRatio = hpCurrent / hpMax                        // [0, 0.5] at this point
-        crackScale = lerp(CRACK_MAX, CRACK_MIN, hpRatio * 2.0f)  
+        crackScale = lerp(CRACK_MAX, CRACK_MIN, hpRatio * 2.0f)
         // CRACK_MAX = 0.8f, CRACK_MIN = 0.2f
         // Full damage (HP=0) = largest crack; 50% HP = smallest crack
 
@@ -285,7 +285,7 @@ Step 7: Write DecalData struct:
         decalData.entityID     = parentEntityID
         decalData.opacity      = 1.0f
 
-Step 8: Shader receives decalBasis + worldPos → reconstructs local UV:
+Step 8: Shader receives decalBasis + worldPos -> reconstructs local UV:
         // In surface shader (or URP decal pass):
         localPos  = transpose(decalBasis) * (fragWorldPos - decalOrigin)
         uv        = localPos.xy / crackScale + 0.5f          // [0,1]
@@ -302,8 +302,8 @@ Step 8: Shader receives decalBasis + worldPos → reconstructs local UV:
 // All lerps use exponential decay (dt-invariant):
 lerpedValue = target + (current - target) * exp(-lambda * dt)
 // lambda tuning:
-//   Sink lerp (cosmetic):  lambda = 3.0f  → 95% complete in ~1s
-//   Decal fade:            lambda = 1.0f  → gradual 3s fade post-destroy
+//   Sink lerp (cosmetic):  lambda = 3.0f  -> 95% complete in ~1s
+//   Decal fade:            lambda = 1.0f  -> gradual 3s fade post-destroy
 
 // NaN/Inf guards (applied at Burst job boundaries):
 Guard_Float(x):
@@ -313,7 +313,7 @@ Guard_Float(x):
 
 // Impulse magnitude clamp (prevents tunneling on MX350 physics):
 impulseMag = clamp(impulseMag, 0.0f, MAX_SAFE_IMPULSE)
-// MAX_SAFE_IMPULSE = 15.0f N·s (empirical for chunk mass range 2–30kg)
+// MAX_SAFE_IMPULSE = 15.0f N-s (empirical for chunk mass range 2-30kg)
 
 // Velocity clamp post-impulse (prevents physics explosion):
 rb.velocity = rb.velocity * min(1.0f, MAX_CHUNK_SPEED / length(rb.velocity))
@@ -329,7 +329,7 @@ rb.velocity = rb.velocity * min(1.0f, MAX_CHUNK_SPEED / length(rb.velocity))
 ```
 LOD_BASE (MX350 floor):
     - Max concurrent destructibles:  32
-    - Max active debris rigidbodies: 24 (3 chunks × 8 concurrent destroys)
+    - Max active debris rigidbodies: 24 (3 chunks x 8 concurrent destroys)
     - Decal system:                  disabled (MASK_DECAL_LIVE never set)
     - Debris sink:                   kinematic lerp only, no shader fade
     - Instanced draw calls/frame:    1 (single DrawMeshInstanced batch, all debris)
@@ -337,7 +337,7 @@ LOD_BASE (MX350 floor):
 
 LOD_HIGH (GTX 1060 class):
     - Max concurrent destructibles:  64
-    - Max active debris rigidbodies: 80 (8 chunks × 10 concurrent)
+    - Max active debris rigidbodies: 80 (8 chunks x 10 concurrent)
     - Decal system:                  enabled, max 32 concurrent
     - Debris sink:                   kinematic + MaterialPropertyBlock alpha fade
     - Instanced draw calls/frame:    2 (debris + decal projectors)
@@ -356,18 +356,18 @@ LOD_ULTRA (RTX 3070+):
 
 ```
 Chunk meshes (pre-baked, shared):
-    - 128 parent types × avg 10 chunks × 800 tris @ 16B/vert ≈ 20MB (static, shared GPU buffer)
+    - 128 parent types x avg 10 chunks x 800 tris @ 16B/vert ~= 20MB (static, shared GPU buffer)
 
 Instanced debris matrices:
-    - 256 slots × float4x4 × 2 (double buffer) = 256 × 64B × 2 = 32KB (negligible)
+    - 256 slots x float4x4 x 2 (double buffer) = 256 x 64B x 2 = 32KB (negligible)
 
 Decal atlas:
-    - 8 tiles × 256×256 px × BC3(DXT5) compressed = 8 × 85KB ≈ 700KB
+    - 8 tiles x 256x256 px x BC3(DXT5) compressed = 8 x 85KB ~= 700KB
 
 Debris mesh (single shared LOD mesh for all chunks):
     - 1 mesh, 200 tris, shared across all 256 instances = ~50KB
 
-Total entropy system VRAM: ≈ 21MB
+Total entropy system VRAM: ~= 21MB
 Budget headroom for main scene textures: ~1979MB remaining
 ```
 
@@ -376,15 +376,15 @@ Budget headroom for main scene textures: ~1979MB remaining
 ```
 Fixed budget per frame (16.67ms total @ 60fps target):
 
-EntropyYieldJob:        max 0.3ms  (Burst, processes ≤16 events/frame)
-DestructionSwapJob:     max 0.4ms  (max 2 simultaneous destructions/frame — queue throttle)
-DebrisDespawnJob:       max 0.2ms  (Burst, ≤256 chunks)
+EntropyYieldJob:        max 0.3ms  (Burst, processes <=16 events/frame)
+DestructionSwapJob:     max 0.4ms  (max 2 simultaneous destructions/frame - queue throttle)
+DebrisDespawnJob:       max 0.2ms  (Burst, <=256 chunks)
 DecalSpawnJob:          max 0.1ms  (max 2 decals/frame)
 Instanced render prep:  max 0.2ms  (matrix copy to GPU buffer)
 
 // Throttle valve: if DestructionEventQueue.Count > 2, defer excess to next frame.
 // MX350 physics: set Physics.defaultSolverIterations=4, defaultSolverVelocityIterations=1
-// Rigidbody Sleep: rb.sleepThreshold = 0.05f → chunks sleep fast, freeing solver budget
+// Rigidbody Sleep: rb.sleepThreshold = 0.05f -> chunks sleep fast, freeing solver budget
 ```
 
 ### 4.4 SIMD/Burst Hints
@@ -395,15 +395,15 @@ Instanced render prep:  max 0.2ms  (matrix copy to GPU buffer)
 // State check:  uint4 masks = (uint4)(timers >= 3.0f) | ((uint4)(timers >= 5.0f) << 1)
 // Avoids scalar branching across 256-entry loop.
 
-// Yield calculation: single-threaded (event-driven, low frequency) — Burst scalar sufficient.
-// Matrix build for instancing: Unity.Mathematics.float4x4.TRS() — Burst intrinsic, fast path.
+// Yield calculation: single-threaded (event-driven, low frequency) - Burst scalar sufficient.
+// Matrix build for instancing: Unity.Mathematics.float4x4.TRS() - Burst intrinsic, fast path.
 ```
 
 ---
 
 ## V. INTEGRATION & FAILURE MODES
 
-### 5.1 Interface Contracts (SRP — no concrete coupling)
+### 5.1 Interface Contracts (SRP - no concrete coupling)
 
 ```
 IDrillTarget:
@@ -420,7 +420,7 @@ IDebrisPoolConsumer:
 IDecalReceiver:
     void ProjectDamageDec(float3 worldPos, float3 normal, float hpRatio, uint entityID)
 
-// Communication flow: DrillSystem → IDrillTarget → internal state → events → IDropSource flush
+// Communication flow: DrillSystem -> IDrillTarget -> internal state -> events -> IDropSource flush
 // No direct struct access across system boundaries. Pass by entityID reference only.
 ```
 
@@ -434,7 +434,7 @@ RESPONSE: Skip chunk spawn for that index. Log once per second (time-gated log, 
 
 FAILURE: Simultaneous destructions > 2/frame (queue overflow)
 RESPONSE: DestructionEventQueue capped at 8. If full, new events dropped with warning.
-          Player cannot trigger >8 destructions in 16ms — physical constraint enforced upstream.
+          Player cannot trigger >8 destructions in 16ms - physical constraint enforced upstream.
 
 FAILURE: impactNormal = float3.zero (bad geometry / degenerate mesh)
 RESPONSE: Replace with float3(0,1,0) default. Guard before normalize:
@@ -445,8 +445,8 @@ RESPONSE: qualityFactor = 1.0f (clamp). No overflow. Rarity tier stays at Rare m
           No special-case branching. saturate() handles automatically.
 
 FAILURE: rb.velocity NaN post-impulse (degenerate physics state)
-RESPONSE: Each DebrisDespawnJob frame start: 
-          if isnan(rb.velocity.x) → rb.velocity = float3.zero; rb.isKinematic = true; force-pool.
+RESPONSE: Each DebrisDespawnJob frame start:
+          if isnan(rb.velocity.x) -> rb.velocity = float3.zero; rb.isKinematic = true; force-pool.
 
 FAILURE: drillPower = 0 or negative (bad tool state)
 RESPONSE: Guard at IDrillTarget boundary: power = max(power, 0.0f). Zero power = zero damage = no-op.
@@ -462,7 +462,7 @@ RESPONSE: chunkCount = clamp(chunkCount, 1, 16) at Init validation pass.
 FAILURE: Double-buffer swap while GPU still reading (rare on MX350 single queue)
 RESPONSE: Insert Graphics.ExecuteCommandBuffer fence before swap.
           If CommandBuffer unavailable (platform): skip swap that frame, write next frame instead.
-          Double-buffer write side always safe — only readIdx exposed to GPU.
+          Double-buffer write side always safe - only readIdx exposed to GPU.
 ```
 
 ### 5.3 Initialization Sequence (Scene Load)
@@ -470,7 +470,7 @@ RESPONSE: Insert Graphics.ExecuteCommandBuffer fence before swap.
 ```
 Order:
 1. Allocate NativeArrays (Persistent allocator). Register in DisposableRegistry for scene unload.
-2. Populate freeIndices queue: for i in [0,255] → freeIndices.Enqueue((ushort)i)
+2. Populate freeIndices queue: for i in [0,255] -> freeIndices.Enqueue((ushort)i)
 3. Pre-position all pooled rigidbodies at POOL_GRAVEYARD_POS. isKinematic=true. detectCollisions=false.
 4. Load densityLUT, materialToItemID, UNIT_ITEM_MASS tables into NativeArray<float/uint> (Persistent).
 5. Validate all DestructibleParentData baked assets: chunkCount, chunkStartIndex, densityClass in range.
@@ -485,9 +485,9 @@ Order:
 
 ```
 // Reverse init order. All NativeArrays: .Dispose() in OnDestroy.
-// DisposableRegistry pattern: List<IDisposable> — single loop, no missed leaks.
+// DisposableRegistry pattern: List<IDisposable> - single loop, no missed leaks.
 // Complete all scheduled jobs before Dispose: JobHandle.ScheduleBatchedJobs(); masterHandle.Complete();
-// Never dispose NativeArray with active job handle — deadlock or native crash.
+// Never dispose NativeArray with active job handle - deadlock or native crash.
 ```
 
 ---
@@ -500,18 +500,18 @@ Order:
 // Each destructible assigned seed = hash(entityID ^ sceneInstanceID) at bake time.
 // All randomness in debris impulse, drop quality, atlas tile derived from seed.
 // Enables: replays, save-state restoration, MP sync (future-proof).
-// Function: uint Hash(uint x) → x ^= x>>16; x*=0x45d9f3b; x^=x>>16; return x;
-// (Wang hash — single IMUL, excellent distribution, Burst-friendly)
+// Function: uint Hash(uint x) -> x ^= x>>16; x*=0x45d9f3b; x^=x>>16; return x;
+// (Wang hash - single IMUL, excellent distribution, Burst-friendly)
 ```
 
 ### 6.2 Impulse Budget Throttling (Prevents Physics Frame Spike)
 
 ```
 // Cap total impulse energy introduced per FixedUpdate:
-// FRAME_IMPULSE_BUDGET = 200.0f N·s
+// FRAME_IMPULSE_BUDGET = 200.0f N-s
 // Accumulate: frameImpulseSpent += impulseMag per chunk spawned
-// Gate: if frameImpulseSpent + nextImpulse > FRAME_IMPULSE_BUDGET → defer chunk to next frame
-// Effect: destruction of dense coral cluster never spikes physics solver > 2× normal cost
+// Gate: if frameImpulseSpent + nextImpulse > FRAME_IMPULSE_BUDGET -> defer chunk to next frame
+// Effect: destruction of dense coral cluster never spikes physics solver > 2x normal cost
 ```
 
 ### 6.3 Spatial Bucketing for Debris-to-Debris Collision Suppression
@@ -519,7 +519,7 @@ Order:
 ```
 // Debris chunks collide with terrain/player but NOT each other (costly, ugly, unnecessary).
 // Assign all debris rigidbodies to PhysicsLayer_Debris (layer 12).
-// Physics.IgnoreLayerCollision(12, 12, true) — set once at Init. O(1) broadphase win.
+// Physics.IgnoreLayerCollision(12, 12, true) - set once at Init. O(1) broadphase win.
 // Debris still collides with Layer_Terrain (8) and Layer_Player (9).
 ```
 
@@ -528,7 +528,7 @@ Order:
 ```
 // All debris chunks (regardless of parent type) use SAME shared mesh asset.
 // Mesh = generic rock fragment, 120 tris, authored once.
-// Visual variation via: MaterialPropertyBlock per instance → _ColorTint (4B, per instance CBUFFER)
+// Visual variation via: MaterialPropertyBlock per instance -> _ColorTint (4B, per instance CBUFFER)
 // colorTint = materialColorLUT[materialClass] + Hash(entityID^chunkIdx)*0.05f (noise offset)
 // Zero extra draw calls. Zero extra VRAM per variation. Single batch.
 ```
@@ -537,7 +537,7 @@ Order:
 
 ```
 // damageAccumulator (in ParentData) tracks total damage received across sessions (persistent save).
-// On load: if damageAccumulator > hpMax * 0.3f → spawn object pre-damaged (crack decal active, HP=70%)
+// On load: if damageAccumulator > hpMax * 0.3f -> spawn object pre-damaged (crack decal active, HP=70%)
 // Simulates underwater entropy / natural degradation without scripted events.
 // Formula: savedAccumulator decays between sessions: acc *= exp(-DECAY_RATE * hoursSinceSave)
 // DECAY_RATE = 0.01f (slow geological time). Prevents save-scumming fully-healed resources.

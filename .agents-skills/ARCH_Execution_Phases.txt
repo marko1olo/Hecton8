@@ -1,0 +1,136 @@
+# ARCH_EXECUTION_PHASES
+# HECTON-8 Batch 007 Mandate
+
+Status: ENFORCED / PENDING RUNTIME VERIFICATION
+Authority: AGENTS.md + Batch 007 mandate evolution
+Scope: every runtime system that schedules work, drains signals, mutates simulation state, uploads presentation buffers, or writes telemetry.
+
+---
+
+## 0. Prime Law
+
+[RULE] Systems do not tick randomly. Every runtime system is assigned one and only one dispatcher phase for each unit of work.
+[RULE] A phase assignment is architecture, not taste. Changing it is a contract change and requires rationale.
+[RULE] Phase boundaries are synchronization boundaries. No system may smuggle work across them through `Update()`, callbacks, hidden coroutines, or registry polling.
+
+[FORBID] Raw `Update()`, `LateUpdate()`, `FixedUpdate()`, or `OnUpdate()` as a private scheduler for gameplay logic.
+[FORBID] `Schedule()` then `Complete()` inside the same hot-path method as a fake job pipeline.
+[FORBID] Presentation writing simulation truth.
+
+---
+
+## 1. Phase Order
+
+The dispatcher phases are fixed:
+
+1. `PRE_SIMULATION`
+2. `SIMULATION`
+3. `POST_SIMULATION`
+4. `VISUAL_SYNC`
+
+No fifth phase exists without Integrator approval.
+
+---
+
+## 2. PRE_SIMULATION
+
+Purpose: collect inputs, drain previous-frame command lanes, validate dependencies, update time dilation and load-shed gates.
+
+Allowed:
+- input snapshots
+- command queue drain
+- DataVault handle validation
+- phase budget admission
+- previous-frame signal snapshot capture
+
+Forbidden:
+- physics/body mutation
+- renderer upload
+- save writes
+- live registry lookup loops
+
+---
+
+## 3. SIMULATION
+
+Purpose: mutate gameplay truth.
+
+Allowed:
+- Burst jobs that write owner BackBuffer
+- physics force packet generation
+- AI state transitions
+- survival, vehicle, voxel, economy, and damage state mutation
+
+Forbidden:
+- presentation-only shader or material writes
+- UI text mutation
+- `GlobalRegistry.Get<T>()`
+- completing unrelated jobs to make timing convenient
+
+Truth written in this phase must be finite, deterministic, and telemetry-addressable.
+
+---
+
+## 4. POST_SIMULATION
+
+Purpose: resolve fences, swap buffers, publish typed signals, write blackbox telemetry, and prepare read-only snapshots.
+
+Allowed:
+- designated end-of-frame job completion windows
+- Front/Back swap
+- `SignalBus<T>` publication
+- 300-frame blackbox ring writes
+- dirty-page marking for GPU upload
+
+Forbidden:
+- new simulation decisions that belong in `SIMULATION`
+- presentation uploads
+- unbounded event fan-out
+
+---
+
+## 5. VISUAL_SYNC
+
+Purpose: consume stable simulation snapshots and update presentation.
+
+Allowed:
+- GraphicsBuffer upload from dirty DataVault pages
+- material/global shader parameter sync
+- animation/VAT parameter sync
+- UI char-buffer flush
+- audio/haptic presentation requests
+
+Forbidden:
+- changing gameplay truth
+- polling simulation owners through GlobalRegistry
+- spawning GameObjects for repeated world items
+- material instantiation or per-renderer material mutation
+
+---
+
+## 6. Phase Ownership Record
+
+Every runtime system status/rationale must name:
+
+- phase
+- owner assembly
+- DataVault buffers read
+- DataVault buffers written
+- SignalBus lanes consumed
+- SignalBus lanes published
+- budget in microseconds on MX350/i3
+- load-shed fallback
+
+Missing phase record means the system is not accepted.
+
+---
+
+## 7. Scalability
+
+Low/MX350: skip optional jobs, use cached snapshots, reduce cadence, and keep visual belief through shader/audio fakes.
+
+Middle: run full gameplay truth at normal cadence with conservative visual sync.
+
+High: increase snapshot density and near-field detail only after simulation stays under budget.
+
+Ultra: spend saved CPU/GPU time on visual overkill in `VISUAL_SYNC`, not on unbounded simulation.

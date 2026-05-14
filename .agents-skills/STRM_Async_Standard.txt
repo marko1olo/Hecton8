@@ -81,6 +81,6 @@ These are not compile failures. They are mandate debt until the owners convert t
 - Persistent worker vs one Task per request vs Awaitable background transition.
 - Capture main-thread time, worker time, GC bytes, context switches, and tail latency.
 
-[EXPECTED] Awaitable should win Unity orchestration allocation pressure. A single persistent worker should win MMF paging stability. Transient Task storms should be rejected even if mean time looks acceptable.
+[EXPECTED] Awaitable wins Unity orchestration allocation pressure. A single persistent worker wins MMF paging stability. Transient Task storms are rejected even if mean time looks acceptable.
 
 [STATUS] Benchmark not run in this session. Result remains PENDING VERIFICATION.

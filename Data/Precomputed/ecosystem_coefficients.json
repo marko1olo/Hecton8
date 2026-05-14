@@ -1,0 +1,17 @@
+{
+  "BirthRate": 0.03,
+  "DeathRate": 0.018,
+  "DeltaTimeSeconds": 0.02,
+  "FeedRate": 6e-06,
+  "FinalPredatorBiomass": 714.2857142856506,
+  "FinalPreyBiomass": 8571.428571430466,
+  "IntegrationSteps": 1000000,
+  "ObservedPredatorMax": 714.2857142856506,
+  "ObservedPredatorMin": 453.91621734808143,
+  "ObservedPreyMax": 9020.165056350555,
+  "ObservedPreyMin": 4200.0,
+  "PredatorConversion": 0.35,
+  "PreyCarryingCapacity": 10000.0,
+  "StablePredatorBiomass": 714.2857142857139,
+  "StablePreyBiomass": 8571.428571428572
+}

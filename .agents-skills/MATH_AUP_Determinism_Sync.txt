@@ -1,0 +1,131 @@
+# MATH_AUP_DETERMINISM_SYNC
+# HECTON-8 Batch 007 Mandate
+
+Status: ENFORCED / PENDING RUNTIME VERIFICATION
+Authority: AGENTS.md + AUP drift report + Batch 007 mandate evolution
+Scope: Absolute Universe Position, floating origin shifts, rebase synchronization, physics/render/navigation/save position authority, and crash telemetry.
+
+---
+
+## 0. Prime Law
+
+[RULE] AUP is the only simulation-scale spatial authority.
+[RULE] AUP means `int64x3` sector/grid plus `float3` local offset. `Transform.position` is presentation only.
+[RULE] Every rebase creates a 300-frame Sync-Fence. No system may claim post-shift correctness before the fence resolves.
+[RULE] Millimeter quantization is mandatory at AUP commit boundaries. Float drift is not allowed to become save, physics, navigation, or render truth.
+
+[FORBID] Reconstructing AUP truth from camera-relative `Vector3` after a rebase.
+[FORBID] Saving or hashing world-space `Transform.position` as authority.
+[FORBID] Interpolating gameplay authority across pre-shift and post-shift coordinates.
+[FORBID] Accepting a stale shift generation id in physics, rendering, navigation, save, or telemetry.
+
+---
+
+## 1. AUP Commit Contract
+
+Every AUP write must carry:
+
+- `Sector` as signed 64-bit grid coordinates
+- `LocalMillimeters` or equivalent millimeter-quantized local offset
+- `ShiftFrameID`
+- `SourceSystemID`
+- `FiniteFlags`
+- optional presentation-only camera-relative cache
+
+[RULE] Quantize local offsets before persistence, telemetry hashing, native packet emission, and deterministic comparison.
+[RULE] Quantization error budget is tiered and explicit.
+[RULE] AUP conversion code must reject non-finite values before write and use a safe fallback.
+
+Tier budgets:
+
+| Tier | Commit Grid | Max Local Error | Probe Cadence |
+|---|---:|---:|---:|
+| Low/MX350 | 10 mm | 20 mm | 30 frames |
+| Middle | 5 mm | 10 mm | 15 frames |
+| High | 2 mm | 5 mm | 10 frames |
+| Ultra | 1 mm | 2 mm | every frame |
+
+Low tier is allowed to look smooth through presentation interpolation. Low tier is not allowed to corrupt authority.
+
+---
+
+## 2. 300-Frame Sync-Fence
+
+On every origin shift:
+
+1. Increment `ShiftFrameID`.
+2. Write a Sync-Fence entry to the 300-frame Black Box ring.
+3. Freeze gameplay-side physics integration for the shift boundary.
+4. Rebuild CPU-side AUP-derived world caches.
+5. Invalidate render matrices, navigation nodes, physics packet caches, and save-position snapshots carrying the old `ShiftFrameID`.
+6. Resume simulation only after owner systems acknowledge the new shift id.
+7. Keep fence telemetry alive for 300 frames.
+
+Fence telemetry fields:
+
+- `ShiftFrameID`
+- `FenceFrameIndex`
+- `CameraAupBefore`
+- `CameraAupAfter`
+- `ShiftVectorMillimeters`
+- `PhysicsHash`
+- `RenderHash`
+- `NavigationHash`
+- `SaveHash`
+- `NonFiniteFlags`
+- `MaxObservedErrorMillimeters`
+
+[RULE] Frame 300 closes only if every registered probe is finite and under tier error budget.
+[FORBID] Clearing the fence because the scene "looks fine".
+[FORBID] Dropping the fence when the player changes scene. Dump or carry the unresolved state.
+
+---
+
+## 3. Drift Probe Law
+
+[RULE] Every AUP-sensitive system owns a cheap drift probe.
+[RULE] Probes compare authority AUP against the current presentation cache using squared distance or integer millimeter delta. No sqrt in probe hot paths.
+[RULE] Probe output is a hash and max error, not a string log.
+
+Required probes:
+
+- physics body position
+- render matrix position
+- navigation node/sample position
+- world streaming chunk key
+- save snapshot position
+- telemetry blackbox position
+
+[FORBID] Probe allocation.
+[FORBID] probe string formatting in hot paths.
+[FORBID] relying on Unity inspector values as post-shift proof.
+
+---
+
+## 4. Failure Response
+
+[RULE] Non-finite or over-budget AUP drift writes a telemetry error hash and safe fallback.
+[RULE] Fatal AUP drift dumps `Docs/AgentLogs/Dump_[AgentID].bin`.
+[RULE] The owning system disables the unsafe path and preserves gameplay safety before presentation polish.
+
+Fallback priority:
+
+1. last valid AUP for same entity and same shift id
+2. owning sector origin plus safe local zero
+3. quarantine entity and remove it from physics/render/navigation until repaired
+
+No "unknown drift" reports are accepted.
+
+---
+
+## 5. Scalability
+
+Low/MX350: probe every 30 frames, commit at 10 mm, and hide snap with presentation interpolation only.
+
+Middle: probe every 15 frames, commit at 5 mm, and keep hash plus sample telemetry.
+
+High: probe every 10 frames, commit at 2 mm, and retain render matrix samples.
+
+Ultra: probe every frame, commit at 1 mm, and keep full 300-frame Sync-Fence debug payload.
+
+Saved low-tier CPU time buys more stable visual transition and better audio/haptic rebase masking, not weaker authority.

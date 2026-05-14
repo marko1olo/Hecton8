@@ -4,14 +4,14 @@
 
 ---
 
-## SECTION 0 — AUTHORIZED AUTONOMY
+## SECTION 0 - AUTHORIZED AUTONOMY
 
 MANDATE_ID       : NATIVE_MEMORY_JOBS
 MANDATE_VERSION  : 1.0.0
 AUTHORITY_LEVEL  : PRINCIPAL_ARCHITECT
 SCOPE            : ALL_HECTON8_SYSTEMS
-ENFORCEMENT      : BLOCKING — CI GATE + HUMAN REVIEW
-EXCEPTION_PROCESS: Written justification → CTO approval → Inline comment block
+ENFORCEMENT      : BLOCKING - CI GATE + HUMAN REVIEW
+EXCEPTION_PROCESS: Written justification -> CTO approval -> Inline comment block
 REVISION_CYCLE   : Per major Unity 6 LTS patch or when crash post-mortem demands it
 
 This mandate applies to:
@@ -26,7 +26,7 @@ This mandate applies to every engineer on project regardless of seniority.
 
 ---
 
-## SECTION 1 — EXECUTION POLICY
+## SECTION 1 - EXECUTION POLICY
 
 ### 1.1 Prime Directives (Memorize These)
 
@@ -84,7 +84,7 @@ Acceptance:
 
 ---
 
-## SECTION 2 — DATA ARCHITECTURE
+## SECTION 2 - DATA ARCHITECTURE
 
 ### 2.1 Canonical System Memory Layout
 
@@ -162,20 +162,20 @@ RULE_ARCH_05: All persistent allocations use Allocator.Persistent.
 
 ---
 
-## SECTION 3 — DOUBLE-BUFFERING PATTERN (MANDATORY)
+## SECTION 3 - DOUBLE-BUFFERING PATTERN (MANDATORY)
 
 ### 3.1 Rationale
 
 The Renderer and AI subsystems read entity transform and state data every frame.
 The World Streaming and Physics jobs write new state every frame. Without isolation,
-a reader can observe partially-written state — torn read — producing visual
+a reader can observe partially-written state - torn read - producing visual
 artifacts, incorrect AI decisions, or outright crashes.
 
 Double-buffering gives readers stable, immutable snapshot (Front) while writers
 produce next frame's data in isolation (Back). swap is atomic with respect
 to frame boundary.
 
-### 3.2 Buffer Roles — Non-Negotiable
+### 3.2 Buffer Roles - Non-Negotiable
 
 | Buffer | Role | Access | Writer | Reader |
 |--------|------|--------|--------|--------|
@@ -247,7 +247,7 @@ registeredReaderHandles.Clear();
 
 ---
 
-## SECTION 4 — JOBHANDLE DISCIPLINE
+## SECTION 4 - JOBHANDLE DISCIPLINE
 
 ### 4.1 Complete() Rule
 
@@ -341,7 +341,7 @@ private JobHandle BuildOutputFence()
 
 ### 4.4 Forbidden Patterns
 
-// ❌ FORBIDDEN — PRIME_01 VIOLATION
+//  FORBIDDEN - PRIME_01 VIOLATION
 void OnUpdate(ref SystemState state)
 {
     var handle = new SomeJob().Schedule(state.Dependency);
@@ -350,14 +350,14 @@ void OnUpdate(ref SystemState state)
     // Use deferred read mechanism or reactive event instead.
 }
 
-// ❌ FORBIDDEN — orphaned handle
+//  FORBIDDEN - orphaned handle
 void OnUpdate(ref SystemState state)
 {
     new SomeJob().Schedule(state.Dependency);
     // Handle discarded. Job runs untracked. Dispose() will race with it.
 }
 
-// ❌ FORBIDDEN — stale handle reuse
+//  FORBIDDEN - stale handle reuse
 void OnUpdate(ref SystemState state)
 {
     if (cachedHandle.IsCompleted)
@@ -367,7 +367,7 @@ void OnUpdate(ref SystemState state)
 
 ---
 
-## SECTION 5 — DEFERRED DISPOSAL PROTOCOL
+## SECTION 5 - DEFERRED DISPOSAL PROTOCOL
 
 ### 5.1 Disposal Problem
 
@@ -378,7 +378,7 @@ Silent memory corruption produces crash reports with no useful stack trace.
 That outcome is unacceptable.
 
 Never call `Dispose()` on any collection whose associated handle is not confirmed
-complete. This applies even when you "know" job should be done by now.
+complete. This applies even when you "know" job is probably done by now.
 Certainty is not knowledge. `handle.IsCompleted` is knowledge.
 
 ### 5.2 Zero-Poll Deferred Disposal
@@ -403,16 +403,16 @@ Result:
 
 // When retiring buffer (e.g., after chunk is unloaded):
 
-// ❌ WRONG:
+//  WRONG:
 oldBuffer.Dispose();  // Job may still be reading it. Use-After-Free.
 
-// ✅ CORRECT:
+//  CORRECT:
 oldBuffer.Dispose(activeWriteHandle);
 oldBuffer = default;  // Nullify local reference immediately to prevent accidental use.
 
 ---
 
-## SECTION 6 — RESIZING STRATEGY
+## SECTION 6 - RESIZING STRATEGY
 
 ### 6.1 Reallocation Problem
 
@@ -425,7 +425,7 @@ oldBuffer = default;  // Nullify local reference immediately to prevent accident
 This is expensive. It produces allocation spikes visible in memory profiler.
 Done frequently, it fragments native heap. Done naively, it causes Use-After-Free.
 
-The goal is to make reallocation rare, controlled event — not per-frame occurrence.
+The goal is to make reallocation rare, controlled event - not per-frame occurrence.
 
 ### 6.2 Pre-Allocation Rule
 
@@ -471,7 +471,7 @@ private JobHandle GrowNativeList<T>(
         newCapacity *= 2;  // Exponential growth. Always double.
 
     Debug.LogWarning(
-        $"[NativeGrowth] {debugTag}: {list.Capacity} → {newCapacity} " +
+        $"[NativeGrowth] {debugTag}: {list.Capacity} -> {newCapacity} " +
         $"(required: {requiredCapacity}). Frame: {Time.frameCount}");
 
     // NativeList.SetCapacity handles internal reallocation.
@@ -501,7 +501,7 @@ in `Systems/MemoryBudgets.cs` as compile-time constants, not magic numbers.
 
 ---
 
-## SECTION 7 — MEMORY BARRIERS & THREAD SAFETY (SPSC)
+## SECTION 7 - MEMORY BARRIERS & THREAD SAFETY (SPSC)
 
 ### 7.1 SPSC Contract
 
@@ -614,13 +614,13 @@ BARRIER_04: Upgrading SPSC to MPMC requires separate architecture review.
 
 ---
 
-## SECTION 8 — BURST SAFETY
+## SECTION 8 - BURST SAFETY
 
 ### 8.1 Managed Reference Prohibition
 
 Burst-compiled jobs operate on unmanaged code. Burst compiler rejects managed
 references because it cannot reason about GC interaction. Beyond compilation
-error, managed references inside jobs are architecturally wrong — they create hidden
+error, managed references inside jobs are architecturally wrong - they create hidden
 dependencies on main thread's managed heap from worker threads.
 
 RULE_BURST_01: No managed class references in any IJob, IJobParallelFor,
@@ -638,7 +638,7 @@ RULE_BURST_03: All job struct fields must be blittable value types or
 RULE_BURST_04: Function pointers in Burst use FunctionPointer<T> from Burst.
                Delegate types are FORBIDDEN in job structs.
 
-### 8.2 NativeDisableContainerSafetyRestriction — Last Resort Attribute
+### 8.2 NativeDisableContainerSafetyRestriction - Last Resort Attribute
 
 This attribute disables Unity's safety handle checking for specific field.
 It tells safety system: "Trust me, I know what I'm doing."
@@ -697,7 +697,7 @@ Burst-compiled is blocking issue unless mandate exception is filed.
 
 ---
 
-## SECTION 9 — SPATIAL LOCALITY & CACHE EFFICIENCY
+## SECTION 9 - SPATIAL LOCALITY & CACHE EFFICIENCY
 
 ### 9.1 Cache Reality
 
@@ -706,9 +706,9 @@ L2 cache: ~256 KB, ~12 cycle access latency.
 RAM: ~8 GB+, ~200 cycle access latency (with TLB miss: worse).
 
 A cache miss on 64-byte cache line that crosses 200 pointers to random
-heap locations costs 200 × 200 cycles = 40,000 cycles of stall time.
+heap locations costs 200 x 200 cycles = 40,000 cycles of stall time.
 The same 200 elements accessed sequentially in flat array cost
-~200 × 4 cycles (L1 hit after first load) = ~800 cycles.
+~200 x 4 cycles (L1 hit after first load) = ~800 cycles.
 
 The performance difference between pointer-chasing and linear access is 50x.
 This is not micro-optimization. It is dominant performance factor for
@@ -722,8 +722,8 @@ LOCALITY_01: All hot-path entity data lives in flat NativeArray<T> structures.
              in hot path.
 
 LOCALITY_02: Use Structure-of-Arrays (SoA) layout for entity data accessed
-             in parallel jobs. If only Position is needed by job, it should
-             iterate NativeArray<float3> positions — not NativeArray<Entity>
+             in parallel jobs. If only Position is needed by job, it must
+             iterate NativeArray<float3> positions - not NativeArray<Entity>
              where each Entity is 256-byte struct containing Position plus
              20 other fields job never touches.
 
@@ -734,7 +734,7 @@ LOCALITY_03: Group data by access pattern, not by logical entity.
 
 LOCALITY_04: Minimize indirection depth. Maximum two levels of indirection
              in any data structure accessed in Burst job's inner loop.
-             If you have Array → Struct → Pointer → Data, refactor.
+             If you have Array -> Struct -> Pointer -> Data, refactor.
 
 LOCALITY_05: Sort entities by spatial proximity (chunk, cell) before processing
              in spatial queries. Spatial sorting produces sequential access
@@ -748,11 +748,11 @@ LOCALITY_06: NativeArray initializations use NativeArrayOptions.UninitializedMem
 
 ### 9.3 SoA Layout Pattern
 
-// ❌ WRONG — Array of Structures (AoS) for hot-path parallel jobs.
+//  WRONG - Array of Structures (AoS) for hot-path parallel jobs.
 // position-only job loads 512 bytes per entity to get 12 bytes of position.
 public struct EntityData
 {
-    public float3   Position;        // 12 bytes  ← job needs this
+    public float3   Position;        // 12 bytes  <- job needs this
     public float3   Velocity;        // 12 bytes
     public float3   Acceleration;    // 12 bytes
     public float4   Orientation;     // 16 bytes
@@ -764,7 +764,7 @@ public struct EntityData
 }
 NativeArray<EntityData> entities;  // 512+ bytes per entity, 1/40 useful for pos job.
 
-// ✅ CORRECT — Structure of Arrays (SoA). Each array is tightly-packed stream.
+//  CORRECT - Structure of Arrays (SoA). Each array is tightly-packed stream.
 // position-only job loads 12 bytes per entity, nothing more.
 public struct WorldEntityBuffers
 {
@@ -773,8 +773,8 @@ public struct WorldEntityBuffers
     public NativeArray<float4>  Orientations;   // Render jobs use positions + orientations.
     public NativeArray<int>     TeamIds;        // AI jobs use positions + teamIds.
     public NativeArray<int>     HealthPoints;   // Damage jobs use this.
-    public NativeArray<float>   Aggressions;    // AI personality — infrequently accessed.
-    public NativeArray<bool>    IsAlive;        // Filter step — accessed before all others.
+    public NativeArray<float>   Aggressions;    // AI personality - infrequently accessed.
+    public NativeArray<bool>    IsAlive;        // Filter step - accessed before all others.
 }
 
 ### 9.4 False Sharing Prevention
@@ -785,7 +785,7 @@ false sharing between threads writing to adjacent memory:
 
 // When scheduling IJobParallelFor, choose innerLoopBatchCount to be a
 // multiple of (CacheLineSize / sizeof(T)).
-// For float3 (12 bytes): next power-of-2 alignment → batch of 8 (96 bytes > 64).
+// For float3 (12 bytes): next power-of-2 alignment -> batch of 8 (96 bytes > 64).
 // For int (4 bytes): batch of 16 (64 bytes exact).
 var handle = new PositionIntegrationJob().Schedule(
     entityCount,
@@ -795,7 +795,7 @@ var handle = new PositionIntegrationJob().Schedule(
 
 ---
 
-## SECTION 10 — SCALE & OPERATIONAL NOTES
+## SECTION 10 - SCALE & OPERATIONAL NOTES
 
 ### 10.1 Memory Budget Accounting
 
@@ -841,7 +841,7 @@ public struct BroadphaseUpdateJob : IJobParallelFor
 
 ---
 
-## SECTION 11 — SAFE OPERATING STANDARDS & EXCEPTION PROCESS
+## SECTION 11 - SAFE OPERATING STANDARDS & EXCEPTION PROCESS
 
 ### 11.1 What "Safe" Means in This Context
 

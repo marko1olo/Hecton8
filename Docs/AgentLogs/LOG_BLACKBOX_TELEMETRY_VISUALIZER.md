@@ -1,0 +1,144 @@
+# LOG - BLACKBOX_TELEMETRY_VISUALIZER
+
+## 2026-05-14 - FastAPI Telemetry Dashboard
+
+What was wrong:
+- The active project had no browser dashboard for `Docs/AgentLogs/Dump_*.bin`, `QA_Endurance_Log.csv`, or headless ecology telemetry.
+- Active `Docs/AgentLogs` currently contains no `Dump_*.bin` and no `QA_Endurance_Log.csv`, so the tool needed missing-file-safe startup.
+- Dump formats are not uniform. Current source shows generic HECTON8 64-byte records, Data Vault defrag raw rings, thermal manual binary records, biomass magic-header dumps, headless QA blackbox dumps, and H8Memory text allocation tables.
+
+What was done:
+- Added `Tools/TelemetryDashboard/server.py` with FastAPI endpoints `/`, `/api/summary`, and `/api/health`.
+- Added parsers for generic blackbox, memory defrag, thermal, biomass, headless QA, H8Memory text, CSV frame/ecology/thermal/H-Phi aliases, and static H-Phi report fallback.
+- Added `Tools/TelemetryDashboard/index.html` with dark dashboard UI, Chart.js frame/jitter graph, H-Phi gauge, ecology graph, thermal/battery KPI, dump/CSV file table, 2-second polling, and memory map.
+- Added `requirements.txt`, `start_dashboard.bat`, `start_dashboard.sh`, and `README.md`.
+- Installed FastAPI/uvicorn for local verification. Pandas remains conditional for Python versions below 3.13 because this environment is Python 3.14 and pandas is not required by the implemented stdlib CSV parser.
+- No C# files were edited.
+
+Cinematic Cheats used:
+- Dashboard uses aggregate telemetry and 2D canvas/grid visualization instead of opening Unity, Excel, or simulating runtime systems.
+- Memory defrag summaries are rendered as explicitly estimated free/occupied bands when exact block geometry is absent. No fake precision is presented.
+- Polling is used instead of WebSocket state because telemetry is file-backed, not a live event stream.
+
+Exact Microseconds saved:
+- Unity gameplay frame: 0 us changed; dashboard is an external Python/browser process.
+- Excel/Unity opening avoided: not measured. Operational latency reduction is expected but PENDING MEASUREMENT.
+- Parser refresh estimate: 2,000-8,000 us on local disk for current capped row/dump sizes, PENDING MEASUREMENT.
+- Browser chart update: not profiled; runs every 2 seconds outside Unity.
+
+Verification:
+- `python -m py_compile Tools\TelemetryDashboard\server.py`: PASS.
+- Synthetic parser smoke test for generic blackbox, memory defrag pack-1, thermal, biomass, headless QA, H8Memory text, and CSV: PASS.
+- `http://127.0.0.1:8000/`: HTTP 200, 16155 bytes.
+- `http://127.0.0.1:8000/api/summary`: `DASHBOARD OPERATIONAL`, `FRAMES=0`, `DUMPS=0`, `HPHI=0.00062`.
+- `git status --short -- Tools/TelemetryDashboard Docs/Tasks/Status_BLACKBOX_TELEMETRY_VISUALIZER.md Docs/AgentLogs/Rationale_BLACKBOX_TELEMETRY_VISUALIZER.md Assets/_Project/Scripts`: only dashboard/docs files; no C# edits.
+- `<POLISH_MANDATE>` extraction after all tasks: tag not found.
+
+Runtime:
+- Server is running at `http://127.0.0.1:8000` with Python PID 7420.
+
+Regression model:
+- CPU: external HTTP/file polling only; no Unity CPU path changed.
+- GC: no Unity managed allocation path changed.
+- Memory: no Unity memory path changed; Python process owns its own memory.
+- Cadence: browser polls every 2 seconds; no game tick cadence changed.
+- Correctness: parser smoke tests pass for observed source layouts; real dump content remains PENDING VERIFICATION until active dump files exist.
+
+## 2026-05-14 - Self Review Patch
+
+What was wrong:
+- Self-review found the frame graph used only CSV-derived frame samples. Generic HECTON8 blackbox dumps carry `DeltaTime`, so a dump-only forensic session would show no frame graph.
+- Requirements listed pandas conditionally for all Python `<3.14`; pinned pandas 2.2.3 is not safe for Python 3.13+ in this environment class.
+
+What was done:
+- Added dump-derived `frameSeries` from generic blackbox entries and wired the frontend to use top-level `summary.frameSeries`.
+- Tightened pandas marker to `python_version < "3.13"` while keeping FastAPI/uvicorn pinned.
+- Updated README and rationale with the fallback frame source and dependency guard.
+
+Cinematic Cheats used:
+- Reused existing blackbox aggregate `DeltaTime` instead of adding new Unity instrumentation.
+
+Exact Microseconds saved:
+- Unity gameplay frame: 0 us changed.
+- Dashboard parser cost: one extra linear pass over already-loaded generic dump entries, capped at 600 returned points; not profiled, PENDING MEASUREMENT.
+
+Verification:
+- `py_compile.compile(..., cfile=.codex_tmp\telemetry_server_compile.pyc, doraise=True)`: PASS.
+- Self-review parser smoke test with synthetic generic blackbox fallback frame series, defrag, thermal, biomass, headless, H8Memory text, and QA CSV: PASS.
+- `pip install -r Tools\TelemetryDashboard\requirements.txt`: PASS; pandas ignored on Python 3.14 by marker.
+- Restarted dashboard on `http://127.0.0.1:8000`, Python PID `10140`.
+- `/api/summary`: `DASHBOARD OPERATIONAL`, `frameSeries=0` with no live QA/dump artifacts, `HPHI=0.00062`.
+- `/`: HTTP 200, 16178 bytes.
+- Removed generated `Tools/TelemetryDashboard/__pycache__` after verification.
+
+## 2026-05-14 - Reproducible Smoke Test
+
+What was wrong:
+- Verification was accurate but not reproducible from a checked-in command; the parser smoke existed only as an inline shell snippet.
+
+What was done:
+- Added `Tools/TelemetryDashboard/smoke_test.py`.
+- Updated README with the smoke-test command and expected output.
+
+Cinematic Cheats used:
+- Synthetic little-endian test payloads stand in for Unity-produced files, proving parser layout without needing Unity or live crash artifacts.
+
+Exact Microseconds saved:
+- Unity gameplay frame: 0 us changed.
+- Future verification setup time: not measured. Removes manual reconstruction of binary test payloads.
+
+Verification:
+- `python -B Tools\TelemetryDashboard\smoke_test.py`: PASS, output `telemetry dashboard smoke ok`.
+- `py_compile` for `server.py` and `smoke_test.py`: PASS.
+- `Tools/TelemetryDashboard/__pycache__`: absent after verification.
+- `/api/summary` on running dashboard: `DASHBOARD OPERATIONAL`, `HPHI=0.00062`, `frameSeries=0` because no live QA/dump artifacts exist.
+- Python process review: only dashboard uvicorn process remains visible by WMI, PID `10140`.
+
+## 2026-05-14 - Payload Bound And Evidence Ordering Review
+
+What was wrong:
+- Dump parsers were bounded by file size but still exposed every decoded entry in the API JSON payload. A 10 MB file could produce a large browser update every 2 seconds.
+- Memory-map selection used first filename order. A fully estimated defrag map could be displayed ahead of a more exact H8Memory text allocation table.
+
+What was done:
+- Added `MAX_DUMP_ENTRIES = 600` and capped returned parser `entries` arrays while preserving `latest` from the full decoded set.
+- Sorted memory maps so source allocation tables win over fully estimated defrag summaries.
+- Updated the frontend memory-map status to show `source table` versus `estimated map`.
+- Updated the checked-in smoke test to cover cap behavior and exact-map priority.
+
+Cinematic Cheats used:
+- Kept the memory view as a labeled 2D block visualization. It does not invent exact defrag block geometry when the source dump only contains aggregate fragmentation telemetry.
+
+Exact Microseconds saved:
+- Unity gameplay frame: 0 us changed.
+- Dashboard browser/API polling: unbounded JSON/render growth removed beyond the latest 600 entries; exact auxiliary-process saving is PENDING MEASUREMENT.
+
+Verification:
+- `python -B Tools\TelemetryDashboard\smoke_test.py`: PASS, output `telemetry dashboard smoke ok`.
+- `py_compile` for `server.py` and `smoke_test.py`: PASS.
+- Unsafe-pattern scan: no `eval`, `exec`, `subprocess`, `shell=True`, `pickle`, `yaml.load`, `debugger`, or `console.log`; only fixed-container `innerHTML = ""` clears remain.
+- Restarted dashboard on `http://127.0.0.1:8000`, Python PID `9556`.
+- `/api/summary`: `DASHBOARD OPERATIONAL`, `frameSeries=0`, `memoryMaps=0`, `HPHI=0.00062` with no active live dump/QA artifacts.
+- `/`: HTTP 200, 16268 bytes.
+- Removed `.codex_tmp`; `Tools/TelemetryDashboard/__pycache__` absent after verification.
+- C# boundary scan remains clean for this task scope: only dashboard/docs/status/log paths are untracked or modified.
+
+## 2026-05-14 - Source-Contract Parser Extension
+
+What was wrong:
+- Active C# source audit found source-proven binary layouts that the dashboard still treated as unknown or did not collect: macro-swarm migration, fauna mutation, `.h8dump` crash exports, and `runtime_telemetry.bin`.
+
+What was done:
+- Added explicit parsers for `HECOSWM` macro-swarm telemetry, `HECOGUM` fauna-mutation telemetry, and `TELM` live crash telemetry.
+- Extended file collection to include `.h8dump`, `BLACKBOX_CRASH.*`, and `runtime_telemetry.bin` under `Docs/AgentLogs`.
+- Updated smoke-test payloads to prove those layouts decode.
+
+Cinematic Cheats used:
+- Kept macro/mutation data as compact source-labeled telemetry rather than inventing gameplay state or simulating ecology in the dashboard.
+
+Exact Microseconds saved:
+- Unity gameplay frame: 0 us changed.
+- Dashboard: unknown-file manual inspection avoided; exact auxiliary parser cost is PENDING MEASUREMENT.
+
+Verification:
+- Pending until smoke, compile, HTTP, and boundary scans are rerun after this patch.

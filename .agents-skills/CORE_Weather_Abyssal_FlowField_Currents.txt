@@ -13,7 +13,7 @@
 
 ---
 
-## SECTION 0 — CORE AXIOMS
+## SECTION 0 - CORE AXIOMS
 
 AXIOM-01: Weather state IS source of truth. All flow vectors derive from `WeatherState` bitmask.
 AXIOM-02: Flow Field is READ-ONLY at entity level. WRITE only from designated SlowTick Job.
@@ -23,7 +23,7 @@ AXIOM-05: All distance ops use squared distance. Sqrt forbidden in inner loops.
 
 ---
 
-## SECTION 1 — DATA ARCHITECTURE
+## SECTION 1 - DATA ARCHITECTURE
 
 ### 1.1 Core Structs
 
@@ -38,7 +38,7 @@ WeatherState : uint bitmask
     bit1 = STORM
     bit2 = UPDRAFT_ACTIVE
     bit3 = THERMOCLINE_ACTIVE
-    bit4 = HALOCLINE_ACTIVE    // salinity gradient layer — buoyancy modifier
+    bit4 = HALOCLINE_ACTIVE    // salinity gradient layer - buoyancy modifier
     bit5 = BIOLUME_SURGE       // bioluminescence pressure wave trigger
 
 CurrentMeta {
@@ -54,8 +54,8 @@ LAYER_SURFACE  : Y > -50m     | res: 32x8x32  cells | cell_size: 4m
 LAYER_MID      : Y [-50..-300]| res: 32x16x32 cells | cell_size: 6m
 LAYER_ABYSSAL  : Y < -300m    | res: 16x16x16 cells | cell_size: 12m
 
-Total nodes worst-case: 32*8*32 + 32*16*32 + 16*16*16 ≈ 28,672 FlowNode structs
-Memory: 28,672 * (12 + 4 + 4) bytes = ~572 KB NativeArray — fits MX350 budget
+Total nodes worst-case: 32*8*32 + 32*16*32 + 16*16*16 ~= 28,672 FlowNode structs
+Memory: 28,672 * (12 + 4 + 4) bytes = ~572 KB NativeArray - fits MX350 budget
 
 ### 1.3 NativeArray Declarations
 
@@ -68,7 +68,7 @@ SharedStatic<uint> WeatherStateBitmask    // Burst-accessible, no GC
 
 ---
 
-## SECTION 2 — WEATHER → FLOW DERIVATION
+## SECTION 2 - WEATHER -> FLOW DERIVATION
 
 ### 2.1 Base Vector Computation (SlowTick, max 5Hz)
 
@@ -85,7 +85,7 @@ IF bit1(W) == 1 (STORM):
     globalBaseVector = float3(cos(stormAngle), -0.05, sin(stormAngle))
     globalScale      = lerp(0.6, 1.0, snoise(float2(T*0.05, 3.1)))
 
-// Bit blending: CALM+STORM illegal — resolve via priority: STORM > CALM
+// Bit blending: CALM+STORM illegal - resolve via priority: STORM > CALM
 // UPDRAFT modifies Y component independently (see Section 3)
 // Final: globalBaseVector *= globalScale
 
@@ -114,7 +114,7 @@ IF bit4(W) == 1:
 
 ---
 
-## SECTION 3 — CONVECTION & UPDRAFT LOGIC
+## SECTION 3 - CONVECTION & UPDRAFT LOGIC
 
 ### 3.0 Thermodynamics / Logistics Boundary
 
@@ -146,7 +146,7 @@ HeatSource {
 
 // Registered sources: hydrothermal vents, active geothermal cracks
 // Max concurrent sources: 8 (NativeArray<HeatSource>[8])
-// Dead sources intensity lerps to 0 over 5s — avoid sudden field discontinuity
+// Dead sources intensity lerps to 0 over 5s - avoid sudden field discontinuity
 
 ### 3.2 Vertical Velocity from Heat (per FlowNode update)
 
@@ -154,7 +154,7 @@ FOR each HeatSource H:
     distSq = lengthsq(node.worldPos - H.worldPos)
     IF distSq > (H.radius * H.radius * 4.0): SKIP   // broad cull
 
-    dist = sqrt(distSq) + EPSILON                    // sqrt allowed here — once per node per source
+    dist = sqrt(distSq) + EPSILON                    // sqrt allowed here - once per node per source
     vertical_velocity = H.intensity / (dist * dist)  // inverse-square falloff
     vertical_velocity = min(vertical_velocity, 8.0)  // per-source cap 8m/s upward
 
@@ -189,7 +189,7 @@ bit2(WeatherState) = 1  WHEN:
 
 ---
 
-## SECTION 4 — TURBULENCE FIELD
+## SECTION 4 - TURBULENCE FIELD
 
 ### 4.1 Noise-Modulated Velocity
 
@@ -214,16 +214,16 @@ CONSTANTS:
 Surface  : turbulence base = 0.7 | TURB_SCALE = 0.12 | TURB_FREQ = 0.4
 Mid      : turbulence base = 0.4 | TURB_SCALE = 0.08 | TURB_FREQ = 0.25
 Abyssal  : turbulence base = 0.15| TURB_SCALE = 0.04 | TURB_FREQ = 0.1
-// Abyssal: near-laminar flow — horror effect from stillness, not chaos
+// Abyssal: near-laminar flow - horror effect from stillness, not chaos
 
 ---
 
-## SECTION 5 — WALL ATTENUATION (DISTANCE FIELD)
+## SECTION 5 - WALL ATTENUATION (DISTANCE FIELD)
 
 ### 5.1 Voxel Wall Distance Sampling
 
 // Pre-baked SDF volume: NativeArray<half> WallSDF [grid_total_nodes]
-// half precision sufficient — dist encoded in meters, max ~50m
+// half precision sufficient - dist encoded in meters, max ~50m
 
 // During FlowNode update:
 wallDist = WallSDF[nodeIndex]                      // meters to nearest solid
@@ -231,7 +231,7 @@ wallDist = max(wallDist, EPSILON)                  // zero-divide guard
 
 // Attenuation curve: smooth near walls
 attenFactor = saturate(wallDist / WALL_FADE_DIST)  // [0..1]
-attenFactor = attenFactor * attenFactor            // quadratic — sharper boundary
+attenFactor = attenFactor * attenFactor            // quadratic - sharper boundary
 
 node.velocity   *= attenFactor
 node.turbulence *= lerp(1.2, 0.8, attenFactor)    // turbulence SPIKES at walls (boundary layer)
@@ -250,7 +250,7 @@ IF wallDist < 1.5:
 
 ---
 
-## SECTION 6 — JOB ARCHITECTURE & SCHEDULING
+## SECTION 6 - JOB ARCHITECTURE & SCHEDULING
 
 ### 6.1 SlowTick Flow Update Job (5Hz max)
 
@@ -261,7 +261,7 @@ JOB: FlowFieldUpdateJob [IJobParallelFor]
 
     PER NODE EXECUTION ORDER:
         1. Compute layer depth_multiplier
-        2. Apply globalBaseVector * globalScale * depth_multiplier → direction, velocity
+        2. Apply globalBaseVector * globalScale * depth_multiplier -> direction, velocity
         3. FOR each HeatSource: compute vertical_velocity + vortex contribution
         4. Apply turbulence noise (Section 4.1)
         5. Apply wall attenuation (Section 5.1)
@@ -271,7 +271,7 @@ JOB: FlowFieldUpdateJob [IJobParallelFor]
         9. Write FlowNode
 
 // Use double-buffering. 60Hz job reads FrontBuffer unblocked. 5Hz job writes BackBuffer.
-// Fence: Complete before any entity sampling — use explicit JobHandle dependency chain
+// Fence: Complete before any entity sampling - use explicit JobHandle dependency chain
 
 ### 6.2 Entity Sampling Job (Per-Frame, ~60Hz)
 
@@ -286,11 +286,11 @@ JOB: EntityFlowSampleJob [IJobParallelFor]
             CONTINUE
 
         2. Determine layer from entityPos.y
-        3. worldToGrid(entityPos) → gridCoord (float3, fractional)
+        3. worldToGrid(entityPos) -> gridCoord (float3, fractional)
         4. Trilinear interpolation across 8 surrounding FlowNodes
         5. Write interpolated float3 (velocity * direction) to EntityFlowSamples[i]
 
-// Trilinear: standard 8-corner lerp — do NOT use bilinear (2D only)
+// Trilinear: standard 8-corner lerp - do NOT use bilinear (2D only)
 // Use pre-computed reciprocal cell_size to avoid division: cell_size_inv = 1.0/cell_size
 
 ### 6.3 Trilinear Interpolation Kernel
@@ -330,7 +330,7 @@ IF entity_Y in [-310..-300]: // Mid/Abyssal boundary
 
 ---
 
-## SECTION 7 — VFX SYNCHRONIZATION
+## SECTION 7 - VFX SYNCHRONIZATION
 
 ### 7.1 Particle Emitter Alignment
 
@@ -345,7 +345,7 @@ PER emitter:
        lifetime = lerp(4.0, 0.8, velocity / 20.0)   // fast current = short particles
 
 // Bioluminescence surge (bit5): spike particle emission rate * 3 for 2s, then lerp back
-// Threshold: bit5 check on weather state, trigger via event — no polling
+// Threshold: bit5 check on weather state, trigger via event - no polling
 
 ### 7.2 Bubble Column VFX (Hydrothermal)
 
@@ -356,7 +356,7 @@ PER emitter:
 
 ---
 
-## SECTION 8 — SAFETY & GUARD CONDITIONS
+## SECTION 8 - SAFETY & GUARD CONDITIONS
 
 ### 8.1 Velocity Cap
 
@@ -364,12 +364,12 @@ GLOBAL HARD CAP: node.velocity = min(node.velocity, 20.0)
 
 ### 8.2 Zero-Divide Guards
 
-MANDATORY epsilon list — all distance-based denominators:
+MANDATORY epsilon list - all distance-based denominators:
     HeatSource dist:          dist = max(dist, 0.01)
     Wall attenuation SDF:     wallDist = max(wallDist, 0.001)
-    normalizesafe:            use Unity.Mathematics.normalizesafe — built-in epsilon
-    Interpolation coords:     cell_size guaranteed > 0 at init — assert once, not per-frame
-    Noise input:              no divide — snoise safe at all float3 inputs
+    normalizesafe:            use Unity.Mathematics.normalizesafe - built-in epsilon
+    Interpolation coords:     cell_size guaranteed > 0 at init - assert once, not per-frame
+    Noise input:              no divide - snoise safe at all float3 inputs
 
 ### 8.3 NaN Propagation Guard
 
@@ -378,7 +378,7 @@ IF any(isnan(node.direction)):  node.direction = float3(0,0,1)
 IF isnan(node.velocity):        node.velocity  = 0.0
 IF isnan(node.turbulence):      node.turbulence = 0.0
 
-// math.isnan() is Burst-compatible — zero overhead in compiled form
+// math.isnan() is Burst-compatible - zero overhead in compiled form
 // Alternative: use math.select with nan-check for branchless version:
     node.velocity = math.select(node.velocity, 0.0, math.isnan(node.velocity))
 
@@ -386,28 +386,28 @@ IF isnan(node.turbulence):      node.turbulence = 0.0
 
 // FORBIDDEN: sampling EntityFlowSampleJob before FlowFieldUpdateJob.IsCompleted
 // ENFORCE: store FlowUpdateHandle, pass as dependency to EntitySampleJob.Schedule
-// On SlowTick miss (frame spike): use PREVIOUS frame FlowField — stale by 200ms max, acceptable
+// On SlowTick miss (frame spike): use PREVIOUS frame FlowField - stale by 200ms max, acceptable
 
 ---
 
-## SECTION 9 — PERFORMANCE BUDGET (MX350 / i3 TARGET)
+## SECTION 9 - PERFORMANCE BUDGET (MX350 / i3 TARGET)
 
 SlowTick (5Hz, 200ms interval):
     FlowFieldUpdateJob:  target < 8ms wall time
     Node count:          28,672 nodes, parallel 64-batch
-    Burst + SIMD:        float3 ops vectorized — 4x throughput on SSE2 minimum
+    Burst + SIMD:        float3 ops vectorized - 4x throughput on SSE2 minimum
 
 Per-Frame (60Hz):
     EntityFlowSampleJob: target < 2ms
     Max entities sampled: 200 (within 150m)
-    Per-entity ops:       ~24 lerps, 1 layer check — trivial
+    Per-entity ops:       ~24 lerps, 1 layer check - trivial
 
 Memory:
     FlowField NativeArrays: ~572 KB (see Section 1.2)
     WallSDF:                28,672 * 2 bytes (half) = ~57 KB
     HeatSources:            8 * 28 bytes = 224 bytes
     EntityFlowSamples:      200 * 12 bytes = 2.4 KB
-    TOTAL MANAGED BUDGET:   ~632 KB — leaves VRAM headroom
+    TOTAL MANAGED BUDGET:   ~632 KB - leaves VRAM headroom
 
 SlowTick frequency adaptation:
     IF frame_time > 22ms:  drop to 3Hz (333ms interval)
@@ -416,7 +416,7 @@ SlowTick frequency adaptation:
 
 ---
 
-## SECTION 10 — SCALABILITY TIERS
+## SECTION 10 - SCALABILITY TIERS
 
 TIER_LOW (MX350 / i3 target):
     Grid res:         as specified Section 1.2
@@ -448,9 +448,9 @@ TIER_ULTRA:
 
 ---
 
-## SECTION 11 — ABYSSAL HORROR DESIGN DIRECTIVES (Technical Encoding)
+## SECTION 11 - ABYSSAL HORROR DESIGN DIRECTIVES (Technical Encoding)
 
-// These are NOT aesthetic notes — they are physics parameter targets
+// These are NOT aesthetic notes - they are physics parameter targets
 
 DIRECTIVE-01: PREDATOR CURRENT MASKING
     // Apex predators manipulate local FlowNode turbulence within 20m radius
@@ -463,20 +463,20 @@ DIRECTIVE-02: PRESSURE WAVE PROPAGATION
     // Limit: max 4 concurrent impulse sources
 
 DIRECTIVE-03: DEAD ZONE CURRENTS
-    // Designated world regions: WeatherState has no effect — flows locked to eerie constant
-    // Implementation: per-node override flag (bit in packed uint) — skip weather derivation
+    // Designated world regions: WeatherState has no effect - flows locked to eerie constant
+    // Implementation: per-node override flag (bit in packed uint) - skip weather derivation
     // Dead zone nodes: velocity = 0.5, direction = constant creep, turbulence = 0.0
-    // Audio cue: silence correlates with turbulence == 0.0 — driven by same data
+    // Audio cue: silence correlates with turbulence == 0.0 - driven by same data
 
 DIRECTIVE-04: BIOLUMINESCENCE PRESSURE CORRELATION
     // bit5 (BIOLUME_SURGE): triggered when velocity delta > 8m/s in any 3x3x3 node cluster
-    // Detection: during SlowTick, track max velocity per cluster — compare prev/current frame
+    // Detection: during SlowTick, track max velocity per cluster - compare prev/current frame
     // Trigger threshold: delta_velocity > 8.0 sets bit5 for 4 seconds, then clear
     // VFX response: see Section 7.1 bit5 handling
 
 ---
 
-## SECTION 12 — COORDINATE CONVENTIONS
+## SECTION 12 - COORDINATE CONVENTIONS
 
 worldToGrid(worldPos, layer):
     localPos   = worldPos - layer.origin
@@ -490,5 +490,5 @@ worldToGrid(worldPos, layer):
     RETURN (index, frac)
 
 // Y-axis: world up. Depth increases as Y decreases (negative).
-// All depth comparisons: use world Y directly — no coordinate flip.
+// All depth comparisons: use world Y directly - no coordinate flip.
 // Grid origin per layer: defined at layer's shallowest corner, world-space.

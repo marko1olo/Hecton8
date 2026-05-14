@@ -8,7 +8,7 @@ Date: 2026-05-11
 
 ## Law
 
-[RULE] VR visor/HUD masking should use stencil when it rejects expensive fragments before they shade.
+[RULE] VR visor/HUD masking must use stencil when it rejects expensive fragments before they shade.
 [RULE] The mask writer must be cheap: `ColorMask 0`, no texture sampling, no lighting, no transparent blending.
 [RULE] The masked pass must use `Stencil Comp Equal` or equivalent and must not write stencil unless explicitly required.
 [RULE] XR camera ordering must prove the stencil buffer is preserved between the mask writer and the HUD/visor draw.

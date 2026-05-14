@@ -1,0 +1,76 @@
+# Rationale_MISSION_FAIL_SAFE_ARCHITECT
+
+Status: SCENARIO STABILIZED - PENDING UNITY VERIFICATION
+Evidence Class: STATIC_DOC unless explicitly upgraded by command output.
+
+## Decision 001 - Batch Source Fallback
+
+Problem: User requested CURRENT_BATCH_OSHINO.md, but workspace recursive scan found no file with that name. Active task prompt exists in Docs/Tasks/CURRENT_BATCH.md.
+Solution: Extracted the exact `<AGENT_PROMPT id="MISSION_FAIL_SAFE_ARCHITECT">` block from Docs/Tasks/CURRENT_BATCH.md using CLI `Select-String`.
+Rejected Alternatives: Waiting for a missing file would stall the batch; using neighboring prompts would violate strict parsing.
+Scalability potential: No runtime impact.
+Hardware Impact: 0 us runtime. Documentation-only routing.
+
+## Decision 002 - Task Count Interpretation
+
+Problem: Prompt header says "15 TITANIUM TASKS" but the XML block contains six numbered actionable tasks.
+Solution: Treat task count as 6 because the identification rule asks for total tasks in the XML tag, not the inconsistent section label.
+Rejected Alternatives: Reporting 15 would invent nine absent tasks.
+Scalability potential: No runtime impact.
+Hardware Impact: 0 us runtime. Prevents scope hallucination.
+
+## Decision 003 - Documentation-Only Execution Boundary
+
+Problem: Assignment asks to audit quest DAG and write tooltips, not implement runtime code.
+Solution: Keep edits in Docs/Design/Missions and agent status/log files unless existing mission data proves a direct data edit is required.
+Rejected Alternatives: Creating runtime quest classes or new EventIDs; public API churn during parallel batch is prohibited.
+Scalability potential: Authored fail-safes preserve low-tier cheap graph evaluation and allow high-tier presentation overkill without changing quest truth.
+Hardware Impact: Estimated 0 us hot-path change; any future runtime use must remain baked hash/flag driven.
+
+## Decision 004 - Missing Meta Campaign Status
+
+Problem: The prompt required `Status_META_CAMPAIGN_DIRECTOR.md` and "20+ variables", but the status file is absent. Current `MetaCampaignService` source exposes four globals, not an outpost-specific variable set.
+Solution: Documented the absence as a source boundary and authored 30 explicit outpost DAG flags in `Docs/Design/Missions/Outpost_Failure_Modes.md`.
+Rejected Alternatives: Pretending the missing file exists; mutating `MetaCampaignService` during a documentation/logic prompt; creating new single-use event IDs.
+Scalability potential: Low tier evaluates one compact mission branch; High/Ultra can add richer presentation while keeping the same flag truth.
+Hardware Impact: 0 us runtime from this doc. Future runtime implementation should remain O(1) bit checks.
+
+## Decision 005 - Ghost Power As Mission-Only Reserve Bus
+
+Problem: Current WFC outpost source has no `Generator` cell kind, so a mission that requires a generated Generator room can soft-lock.
+Solution: Defined Ghost Power as a deterministic quest/DAG fallback flag that powers only the relay, door, terminal, optional scrubber, and entry marker.
+Rejected Alternatives: Forcing the WFC solver to guarantee a Generator room; publishing false full-grid generation; spawning a new room at runtime.
+Scalability potential: Low = static panel glow and relay tick. Middle = brownout flicker. High = wet spark VFX. Ultra = richer arcing/audio/CRT decay. Quest truth remains unchanged.
+Hardware Impact: Estimated steady-frame cost 0 us until runtime implementation. Intended future path avoids full power solve changes and should be a local flag check plus dirty visual update.
+
+## Decision 006 - Gas/O2 Safety Boundaries
+
+Problem: Power repair text can accidentally imply scrubbers produce oxygen or force the player to read logs inside unsafe rooms.
+Solution: Bound mission constraints to `GasDynamicsSolver` constants: CO2 warning around 100 seconds in an unpowered sealed room, fire room excluded from critical path, breached/submerged rooms excluded from critical path, scrubber treated as CO2 removal only.
+Rejected Alternatives: Treating Ghost Power as oxygen production; requiring fire/breached room objectives for tension.
+Scalability potential: Low tier avoids expensive gas simulation by using scalar room flags. High/Ultra can buy better alarms, fog, panel decay, and audio without changing gas truth.
+Hardware Impact: Documentation-only. Future runtime should use existing scalar gas flags and avoid any particle/fluid/gas simulation.
+
+## Decision 007 - Compile Guard Blocked By Missing Dotnet
+
+Problem: Required compile guard could not execute because `dotnet` is not recognized in the current shell environment.
+Solution: Recorded the exact command and failure in the status ledger. Since only markdown/status/log files changed, source compilation is not affected by this pass, but compile proof remains absent.
+Rejected Alternatives: Claiming compile success from static docs; trying unrelated destructive environment changes.
+Scalability potential: No runtime impact.
+Hardware Impact: 0 us runtime.
+
+## Decision 008 - Exact Log Text Instead Of Summaries
+
+Problem: A summaries-only lore table left ambiguity about what the authored Marauder logs actually say.
+Solution: Replaced summaries with exact log strings and kept a required physical-state column for `InternalFire`, `Breached`, `ScrubberInstalled`, Ghost Power/generator state, and exit marker state.
+Rejected Alternatives: Leaving summaries for a later narrative pass; that would fail the prompt's lore-consistency requirement.
+Scalability potential: Static strings can be localized/baked once. High-tier presentation can add voice, panel decay, and audio treatment without changing mission flags.
+Hardware Impact: 0 us runtime from this doc. Future runtime must load these through hashed localization keys, not per-frame literals.
+
+## Decision 009 - Handoff JSON Instead Of Partial Runtime Localization Patch
+
+Problem: The tooltip/log payload needs to be actionable, but patching only the active English localization table would leave generated `LocKeys` and translated tables stale. The earlier assumed `Data/Localization/en_US.json` path is not present in this workspace; the active observed source is `Assets/_Project/Scripts/English.json`.
+Solution: Added `Docs/Design/Missions/Outpost_FailSafe_Handoff.json` with exact strings, trigger/suppress flags, fallback constraints, gas constraints, and `LocHash.Compute`-compatible FNV hashes.
+Rejected Alternatives: Editing generated localization keys by hand; patching English-only runtime data; editing ScriptableObject YAML for quest assets without Unity API validation.
+Scalability potential: Low tier can consume the same baked hash keys with no runtime strings. High/Ultra can add richer voice, panel animation, and VFX against the same static keys.
+Hardware Impact: 0 us runtime from this documentation pass. Future integration must be a bake/import step, not per-frame string lookup or English-only runtime patching.

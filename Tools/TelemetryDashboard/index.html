@@ -1,0 +1,409 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HECTON-8 Telemetry Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" defer></script>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #070a0d;
+      --panel: #10171d;
+      --line: #283946;
+      --text: #d9e6eb;
+      --muted: #7e909b;
+      --cyan: #59d3d8;
+      --amber: #e4b24e;
+      --red: #ff4f5f;
+      --green: #6ad07d;
+      --blue: #6a8cff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Segoe UI", Arial, sans-serif;
+      letter-spacing: 0;
+    }
+    main { width: min(1560px, calc(100vw - 32px)); margin: 0 auto; padding: 18px 0 28px; }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 14px;
+      margin-bottom: 16px;
+    }
+    h1 { margin: 0; font-size: 24px; line-height: 1.1; }
+    .subline, .fine { color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
+    .status {
+      min-width: 190px;
+      border: 1px solid var(--line);
+      background: #0b1116;
+      padding: 9px 12px;
+      font-size: 12px;
+      text-align: right;
+    }
+    .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 12px; }
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      min-width: 0;
+      padding: 12px;
+    }
+    .kpi { min-height: 102px; display: flex; flex-direction: column; justify-content: space-between; }
+    .span-3 { grid-column: span 3; }
+    .span-4 { grid-column: span 4; }
+    .span-6 { grid-column: span 6; }
+    .span-8 { grid-column: span 8; }
+    .span-12 { grid-column: span 12; }
+    .label { color: var(--muted); font-size: 12px; text-transform: uppercase; }
+    .value { font-family: Consolas, "Courier New", monospace; font-size: 30px; line-height: 1.05; margin-top: 10px; }
+    .chart-wrap { height: 300px; position: relative; }
+    .chart-wrap canvas { width: 100%; height: 100%; }
+    .gauge-row { display: grid; grid-template-columns: 160px 1fr; gap: 14px; align-items: center; min-height: 180px; }
+    .gauge { width: 150px; height: 150px; }
+    .bar { height: 12px; background: #071014; border: 1px solid var(--line); margin-top: 10px; }
+    .bar > div { height: 100%; width: 0%; background: var(--cyan); }
+    .memory-map {
+      display: grid;
+      grid-template-columns: repeat(32, 1fr);
+      grid-auto-rows: 13px;
+      gap: 2px;
+      min-height: 198px;
+      background: #05080a;
+      border: 1px solid var(--line);
+      padding: 8px;
+    }
+    .mem-cell { border-radius: 2px; background: #18232b; }
+    .mem-cell.occupied { background: var(--cyan); }
+    .mem-cell.free { background: #18232b; border: 1px solid #2d4853; }
+    .mem-cell.free-fragmented { background: var(--amber); }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th, td { border-bottom: 1px solid var(--line); text-align: left; padding: 8px 6px; vertical-align: top; }
+    th { color: var(--muted); font-weight: 600; text-transform: uppercase; }
+    .red { color: var(--red); }
+    .amber { color: var(--amber); }
+    .green { color: var(--green); }
+    @media (max-width: 980px) {
+      main { width: min(100vw - 18px, 760px); }
+      header { align-items: flex-start; flex-direction: column; }
+      .span-3, .span-4, .span-6, .span-8, .span-12 { grid-column: span 12; }
+      .gauge-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <div>
+      <h1>HECTON-8 Telemetry Dashboard</h1>
+      <div class="subline" id="projectRoot">--</div>
+    </div>
+    <div class="status">
+      <div id="statusText">BOOTING</div>
+      <div class="subline" id="updatedText">--</div>
+    </div>
+  </header>
+
+  <section class="grid">
+    <div class="panel kpi span-3">
+      <div class="label">Latest Frame</div>
+      <div class="value" id="latestFrame">-- ms</div>
+      <div class="fine" id="latestJitter">jitter -- ms</div>
+    </div>
+    <div class="panel kpi span-3">
+      <div class="label">Spikes &gt; 16.6 ms</div>
+      <div class="value red" id="spikeCount">0</div>
+      <div class="fine" id="frameSamples">0 samples</div>
+    </div>
+    <div class="panel kpi span-3">
+      <div class="label">Thermal / Battery</div>
+      <div class="value" id="thermalSeverity">--</div>
+      <div class="fine" id="batteryText">battery --%</div>
+    </div>
+    <div class="panel kpi span-3">
+      <div class="label">Files Loaded</div>
+      <div class="value" id="dumpCount">0</div>
+      <div class="fine" id="agentLogs">--</div>
+    </div>
+
+    <div class="panel span-8">
+      <div class="label">Frame Time / Jitter</div>
+      <div class="chart-wrap"><canvas id="frameChart"></canvas></div>
+    </div>
+    <div class="panel span-4">
+      <div class="label">H-Phi</div>
+      <div class="gauge-row">
+        <canvas id="hphiGauge" class="gauge" width="150" height="150"></canvas>
+        <div>
+          <div class="value" id="hphiValue">--</div>
+          <div class="bar"><div id="hphiBar"></div></div>
+          <div class="fine" id="hphiSource">--</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel span-6">
+      <div class="label">Ecology Biomass</div>
+      <div class="chart-wrap"><canvas id="ecologyChart"></canvas></div>
+    </div>
+    <div class="panel span-6">
+      <div class="label">H8Memory Map</div>
+      <div class="memory-map" id="memoryMap"></div>
+      <div class="fine" id="memoryMapStatus">No memory dump loaded.</div>
+    </div>
+
+    <div class="panel span-12">
+      <div class="label">Source Files</div>
+      <table>
+        <thead><tr><th>Name</th><th>Type</th><th>Bytes</th><th>Modified UTC</th><th>Status</th></tr></thead>
+        <tbody id="filesTable"></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<script>
+  const severityNames = ["Cool", "Warm", "Throttling", "Critical"];
+  let frameChart = null;
+  let ecologyChart = null;
+
+  function text(id, value) {
+    document.getElementById(id).textContent = value;
+  }
+
+  function fmtNumber(value, digits = 2) {
+    if (value === null || value === undefined || Number.isNaN(Number(value))) return "--";
+    return Number(value).toFixed(digits);
+  }
+
+  function drawFallbackLine(canvas, series, keys, colors) {
+    const ctx = canvas.getContext("2d");
+    const width = canvas.clientWidth || canvas.width;
+    const height = canvas.clientHeight || canvas.height;
+    canvas.width = width;
+    canvas.height = height;
+    ctx.clearRect(0, 0, width, height);
+    ctx.strokeStyle = "#152129";
+    ctx.lineWidth = 1;
+    for (let i = 0; i < 5; i++) {
+      const y = (height / 4) * i;
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(width, y);
+      ctx.stroke();
+    }
+    if (!series.length) return;
+    let maxY = 1;
+    series.forEach(point => keys.forEach(key => { maxY = Math.max(maxY, Number(point[key]) || 0); }));
+    keys.forEach((key, keyIndex) => {
+      ctx.strokeStyle = colors[keyIndex];
+      ctx.beginPath();
+      series.forEach((point, index) => {
+        const x = series.length === 1 ? 0 : (index / (series.length - 1)) * width;
+        const y = height - ((Number(point[key]) || 0) / maxY) * height;
+        if (index === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+    });
+  }
+
+  function chartBase(unit) {
+    return {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: false,
+      interaction: { intersect: false, mode: "index" },
+      plugins: {
+        legend: { labels: { color: "#d9e6eb", boxWidth: 12 } },
+        tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${fmtNumber(ctx.parsed.y, 3)} ${unit}` } }
+      },
+      scales: {
+        x: { ticks: { color: "#7e909b", maxTicksLimit: 8 }, grid: { color: "#152129" } },
+        y: { ticks: { color: "#7e909b" }, grid: { color: "#152129" }, beginAtZero: true }
+      }
+    };
+  }
+
+  function updateFrameChart(series) {
+    const canvas = document.getElementById("frameChart");
+    if (!window.Chart) {
+      drawFallbackLine(canvas, series, ["frameTimeMs", "jitterMs"], ["#59d3d8", "#e4b24e"]);
+      return;
+    }
+    const labels = series.map(point => point.frame ?? point.x);
+    const config = {
+      type: "line",
+      data: {
+        labels,
+        datasets: [
+          {
+            label: "Frame ms",
+            data: series.map(point => point.frameTimeMs),
+            borderColor: "#59d3d8",
+            pointBackgroundColor: series.map(point => point.spike ? "#ff4f5f" : "#59d3d8"),
+            pointRadius: series.map(point => point.spike ? 4 : 1),
+            tension: 0.15
+          },
+          { label: "Jitter ms", data: series.map(point => point.jitterMs), borderColor: "#e4b24e", pointRadius: 0, tension: 0.15 }
+        ]
+      },
+      options: chartBase("ms")
+    };
+    if (!frameChart) frameChart = new Chart(canvas, config);
+    else {
+      frameChart.data = config.data;
+      frameChart.update("none");
+    }
+  }
+
+  function updateEcologyChart(series) {
+    const canvas = document.getElementById("ecologyChart");
+    if (!window.Chart) {
+      drawFallbackLine(canvas, series, ["prey", "predator"], ["#6ad07d", "#ff4f5f"]);
+      return;
+    }
+    const labels = series.map(point => point.frame ?? point.x);
+    const config = {
+      type: "line",
+      data: {
+        labels,
+        datasets: [
+          { label: "Prey", data: series.map(point => point.prey), borderColor: "#6ad07d", pointRadius: 0, tension: 0.18 },
+          { label: "Predator", data: series.map(point => point.predator), borderColor: "#ff4f5f", pointRadius: 0, tension: 0.18 }
+        ]
+      },
+      options: chartBase("biomass")
+    };
+    if (!ecologyChart) ecologyChart = new Chart(canvas, config);
+    else {
+      ecologyChart.data = config.data;
+      ecologyChart.update("none");
+    }
+  }
+
+  function updateGauge(hphi) {
+    const value = Number(hphi.value);
+    const canvas = document.getElementById("hphiGauge");
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const center = canvas.width / 2;
+    const radius = 58;
+    const normalized = Number.isFinite(value) ? Math.max(0, Math.min(1, value * 1000)) : 0;
+    ctx.lineWidth = 13;
+    ctx.strokeStyle = "#1b2a33";
+    ctx.beginPath();
+    ctx.arc(center, center, radius, Math.PI * 0.75, Math.PI * 2.25);
+    ctx.stroke();
+    ctx.strokeStyle = normalized > 0.75 ? "#6ad07d" : normalized > 0.35 ? "#e4b24e" : "#59d3d8";
+    ctx.beginPath();
+    ctx.arc(center, center, radius, Math.PI * 0.75, Math.PI * (0.75 + normalized * 1.5));
+    ctx.stroke();
+    text("hphiValue", Number.isFinite(value) ? value.toFixed(6) : "--");
+    document.getElementById("hphiBar").style.width = `${normalized * 100}%`;
+    text("hphiSource", `${hphi.status || "--"} | ${hphi.evidenceClass || "--"}`);
+  }
+
+  function updateMemoryMap(memoryMaps) {
+    const container = document.getElementById("memoryMap");
+    container.replaceChildren();
+    if (!memoryMaps.length || !memoryMaps[0].blocks.length) {
+      text("memoryMapStatus", "No memory dump loaded.");
+      return;
+    }
+    const selected = memoryMaps[0];
+    const blocks = selected.blocks.filter(block => Number(block.bytes) > 0);
+    const total = blocks.reduce((sum, block) => sum + Number(block.bytes), 0) || 1;
+    const cells = 32 * 14;
+    blocks.forEach(block => {
+      const count = Math.max(1, Math.round((Number(block.bytes) / total) * cells));
+      for (let i = 0; i < count; i++) {
+        const cell = document.createElement("div");
+        cell.className = `mem-cell ${block.state}`;
+        cell.title = `${block.label || block.state}: ${block.bytes} bytes`;
+        container.appendChild(cell);
+      }
+    });
+    const evidence = selected.estimated ? "estimated map" : "source table";
+    text("memoryMapStatus", `${selected.name} | ${evidence} | ${blocks.length} blocks | ${total} bytes visualized`);
+  }
+
+  function updateFiles(summary) {
+    const tbody = document.getElementById("filesTable");
+    tbody.replaceChildren();
+    const rows = [];
+    summary.csv.sources.forEach(source => {
+      rows.push({
+        name: source.source,
+        type: "csv",
+        bytes: source.bytes || 0,
+        modifiedUtc: source.modifiedUtc || "--",
+        status: source.exists ? `${source.loadedRowCount || 0} rows` : "missing"
+      });
+    });
+    summary.dumps.files.forEach(file => {
+      rows.push({
+        name: file.name,
+        type: file.type || "dump",
+        bytes: file.bytes || 0,
+        modifiedUtc: file.modifiedUtc || "--",
+        status: (file.warnings || []).join(", ") || "loaded"
+      });
+    });
+    rows.forEach(row => {
+      const tr = document.createElement("tr");
+      ["name", "type", "bytes", "modifiedUtc", "status"].forEach(key => {
+        const td = document.createElement("td");
+        td.textContent = row[key];
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+  }
+
+  function updateDashboard(summary) {
+    const frames = summary.frameSeries || summary.csv.frameSeries || [];
+    const latest = frames[frames.length - 1] || null;
+    const spikeCount = frames.filter(point => point.spike).length;
+    const thermal = summary.thermal || {};
+    const severity = thermal.severity;
+    const severityName = severity === null || severity === undefined ? "--" : (severityNames[severity] || String(severity));
+    const battery = thermal.batteryPercent;
+    text("statusText", summary.status || "UNKNOWN");
+    text("updatedText", summary.generatedUtc || "--");
+    text("projectRoot", summary.projectRoot || "--");
+    text("latestFrame", latest ? `${fmtNumber(latest.frameTimeMs, 2)} ms` : "-- ms");
+    text("latestJitter", latest ? `jitter ${fmtNumber(latest.jitterMs, 2)} ms` : "jitter -- ms");
+    text("spikeCount", String(spikeCount));
+    text("frameSamples", `${frames.length} samples`);
+    text("thermalSeverity", severityName);
+    text("batteryText", battery === null || battery === undefined ? "battery --%" : `battery ${battery}%`);
+    text("dumpCount", String((summary.dumps.files || []).length));
+    text("agentLogs", summary.agentLogs || "--");
+    updateGauge(summary.hphi || {});
+    updateFrameChart(frames);
+    updateEcologyChart(summary.ecologySeries || []);
+    updateMemoryMap(summary.dumps.memoryMaps || []);
+    updateFiles(summary);
+  }
+
+  async function poll() {
+    try {
+      const response = await fetch("/api/summary", { cache: "no-store" });
+      updateDashboard(await response.json());
+    } catch (error) {
+      text("statusText", "API ERROR");
+      text("updatedText", error.message || "fetch failed");
+    }
+  }
+
+  poll();
+  setInterval(poll, 2000);
+</script>
+</body>
+</html>

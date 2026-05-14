@@ -1,0 +1,144 @@
+{
+  "binaryHeader": "none",
+  "byteOrder": "little-endian",
+  "files": {
+    "caustics_dispersion_offsets.bin": {
+      "axes": {
+        "depthMeters": {
+          "count": 101,
+          "max": -100,
+          "min": 0,
+          "step": -1
+        }
+      },
+      "bytes": 1212,
+      "columns": [
+        "redUvOffset",
+        "greenUvOffset",
+        "blueUvOffset"
+      ],
+      "shape": [
+        101,
+        3
+      ]
+    },
+    "dalton_gas_toxicity.bin": {
+      "axes": {
+        "depthMeters": {
+          "count": 2001,
+          "max": 2000,
+          "min": 0,
+          "step": 1
+        }
+      },
+      "bytes": 40020,
+      "columns": [
+        "ambientPressureAtm",
+        "oxygenPartialPressureAtm",
+        "nitrogenPartialPressureAtm",
+        "oxygenToxicity01",
+        "nitrogenNarcosisMultiplier"
+      ],
+      "shape": [
+        2001,
+        5
+      ]
+    },
+    "gerstner_wave_weather.bin": {
+      "axes": {
+        "waveIndex": {
+          "count": 16,
+          "max": 15,
+          "min": 0
+        },
+        "weatherState": {
+          "count": 100,
+          "max": 99,
+          "meaning": "calm_to_hurricane",
+          "min": 0
+        }
+      },
+      "bytes": 32000,
+      "columns": [
+        "speed",
+        "amplitude",
+        "steepness",
+        "directionX",
+        "directionZ"
+      ],
+      "shape": [
+        100,
+        16,
+        5
+      ]
+    },
+    "sabine_reverb_rt60.bin": {
+      "axes": {
+        "absorptionCoefficient": {
+          "count": 25,
+          "max": 0.95,
+          "min": 0.05,
+          "spacing": "linear"
+        },
+        "volumeM3": {
+          "count": 40,
+          "max": 10000.0,
+          "min": 10.0,
+          "spacing": "linear"
+        }
+      },
+      "bytes": 4000,
+      "columns": [
+        "rt60Seconds"
+      ],
+      "shape": [
+        40,
+        25
+      ]
+    }
+  },
+  "jsonFiles": {
+    "ecosystem_coefficients.json": {
+      "keys": [
+        "BirthRate",
+        "DeathRate",
+        "FeedRate",
+        "PredatorConversion",
+        "PreyCarryingCapacity",
+        "StablePreyBiomass",
+        "StablePredatorBiomass"
+      ],
+      "purpose": "Predator/prey biomass constants for the Ecosystem Director."
+    }
+  },
+  "scalarBytes": 4,
+  "scalarFormat": "float32",
+  "schema": "H8.MathLUTManifest.v1",
+  "structPackFormat": "<f",
+  "validation": {
+    "files": {
+      "caustics_dispersion_offsets.bin": {
+        "actualBytes": 1212,
+        "expectedBytes": 1212,
+        "matches": true
+      },
+      "dalton_gas_toxicity.bin": {
+        "actualBytes": 40020,
+        "expectedBytes": 40020,
+        "matches": true
+      },
+      "gerstner_wave_weather.bin": {
+        "actualBytes": 32000,
+        "expectedBytes": 32000,
+        "matches": true
+      },
+      "sabine_reverb_rt60.bin": {
+        "actualBytes": 4000,
+        "expectedBytes": 4000,
+        "matches": true
+      }
+    },
+    "status": "PASS"
+  },
+  "weatherRngSeed": 9357057
+}

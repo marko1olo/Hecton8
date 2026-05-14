@@ -1,8 +1,8 @@
 # LOGISTICS_ENERGY_NETWORKS.md
-# Hecton-8 | Deep-Sea Logistics Substrate 
+# Hecton-8 | Deep-Sea Logistics Substrate
 ---
 
-## §0 — AXIOMS
+## Section0 - AXIOMS
 
 - All networks: directed weighted graphs. No exceptions.
 - Flow is math. Visuals are decoupled proxies. Physics is irrelevant to throughput.
@@ -11,7 +11,7 @@
 
 ---
 
-## §1 — CANONICAL DATA STRUCTURES
+## Section1 - CANONICAL DATA STRUCTURES
 
 ### 1.1 Node Struct (pack to 32 bytes, cache-line aligned)
 
@@ -22,7 +22,7 @@ LogisticsNode {
     float32 CurrentLoad;  // real-time carried load
     float32 Potential;    // voltage (power) or pressure (oxygen/fluid)
     uint8   Priority;     // 0=critical(life-support), 1=essential, 2=operational, 3=ambient
-    uint8   Flags;        // bitfield — see §1.3
+    uint8   Flags;        // bitfield - see Section1.3
     uint8   NetworkID;    // island membership (DSU root compressed ID)
     uint8   _pad;         // alignment
 }
@@ -48,36 +48,36 @@ CSR law:
 
 ### 1.3 Flags Bitfield (uint8)
 
-bit 0 — ACTIVE
-bit 1 — RUPTURED
-bit 2 — BROWNOUT        // set by distributor when starved
-bit 3 — ISOLATED        // set by DSU when no path to producer
-bit 4 — BRIDGE_NODE     // articulation point — see §4.3
-bit 5 — OVERLOADED      // CurrentLoad > Capacity
-bit 6 — EMERGENCY_RSVD  // bypasses priority — hardcoded life-support
-bit 7 — DIRTY           // recalc pending; cleared after LogisticsTick
+bit 0 - ACTIVE
+bit 1 - RUPTURED
+bit 2 - BROWNOUT        // set by distributor when starved
+bit 3 - ISOLATED        // set by DSU when no path to producer
+bit 4 - BRIDGE_NODE     // articulation point - see Section4.3
+bit 5 - OVERLOADED      // CurrentLoad > Capacity
+bit 6 - EMERGENCY_RSVD  // bypasses priority - hardcoded life-support
+bit 7 - DIRTY           // recalc pending; cleared after LogisticsTick
 
 ---
 
-## §2 — MATHEMATICAL KERNEL
+## Section2 - MATHEMATICAL KERNEL
 
 ### 2.1 Flow Equation (Ohm / Hagen-Poiseuille unified form)
 
-FlowRate(A→B) = (Potential[A] - Potential[B]) / Resistance(edge_AB)
+FlowRate(A->B) = (Potential[A] - Potential[B]) / Resistance(edge_AB)
 
 Resistance(edge) = BaseResistance * Length * (1 + ThermalCoeff * Temperature)
                  + (RUPTURED flag ? RuptureResistanceMult : 1.0)
 
-Apply iteratively per edge during Jacobi relaxation (§3.2).
+Apply iteratively per edge during Jacobi relaxation (Section3.2).
 
 ### 2.2 Potential Normalization (per LogisticsTick)
 
-Σ_Production  = sum of ProducerMap values within NetworkID
-Σ_Demand      = sum of ConsumerMap values within NetworkID
+_Production  = sum of ProducerMap values within NetworkID
+_Demand      = sum of ConsumerMap values within NetworkID
 
-SupplyRatio   = Σ_Production / max(Σ_Demand, ε)    // ε=0.001, avoids div-zero
+SupplyRatio   = _Production / max(_Demand, epsilon)    // epsilon=0.001, avoids div-zero
 
-Potential[producer_node] = Σ_Production             // source potential
+Potential[producer_node] = _Production             // source potential
 Potential[consumer_node] = Potential[consumer_node] * SupplyRatio   // scaled sink
 
 ### 2.3 Brownout Threshold Logic
@@ -99,9 +99,9 @@ if CurrentLoad[node] > Capacity[node] * 1.15:
 
 ---
 
-## §3 — ALGORITHMIC KERNELS
+## Section3 - ALGORITHMIC KERNELS
 
-### 3.1 BFS Traversal (NO recursion — NativeQueue mandatory)
+### 3.1 BFS Traversal (NO recursion - NativeQueue mandatory)
 
 INIT:
     enqueue all producer-nodes
@@ -116,13 +116,13 @@ LOOP:
     for i in start..end-1:
         neighbor = EdgeDestinations[i]
         if NOT visited.IsSet(neighbor):
-            compute FlowRate(node→neighbor)          // §2.1
+            compute FlowRate(node->neighbor)          // Section2.1
             accumulate CurrentLoad[neighbor]
             enqueue neighbor
 
 TERMINATE: queue empty
 
-BFS completes in O(V+E). V≤4096, E≤~8192 (sparse base). Budget per tick: <0.3ms on i3-10gen.
+BFS completes in O(V+E). V<=4096, E<=~8192 (sparse base). Budget per tick: <0.3ms on i3-10gen.
 
 ### 3.2 Jacobi Relaxation (optional, for complex loops)
 
@@ -136,16 +136,16 @@ for i in 0..MAX_ITERATIONS:
         A = edge.A
         B = edge.B
         old_flow = EdgeFlow[edge]
-// [FORBID] Edge-based relaxation for closed loops. 
+// [FORBID] Edge-based relaxation for closed loops.
 // You MUST relax Node Potentials iteratively, then derive edge flow.
         max_delta = max(max_delta, abs(new_flow - old_flow))
     if max_delta < CONVERGENCE_DELTA: break
 
 ### 3.3 Priority-Sorted Greedy Distribution
 
-Sort ConsumerList by Priority byte ASC (insertion-sort safe at ≤512 consumers, stable)
+Sort ConsumerList by Priority byte ASC (insertion-sort safe at <=512 consumers, stable)
 
-remaining = Σ_Production
+remaining = _Production
 for consumerIndex = 0; consumerIndex < SortedConsumerCount; consumerIndex++:
     consumer = SortedConsumers[consumerIndex]
     alloc = min(ConsumerMap[consumer.ID], remaining)
@@ -154,7 +154,7 @@ for consumerIndex = 0; consumerIndex < SortedConsumerCount; consumerIndex++:
     if alloc < ConsumerMap[consumer.ID] * 0.95:
         set BROWNOUT flag on consumer
 
-### 3.4 Union-Find (DSU) — Island/Loop Detection
+### 3.4 Union-Find (DSU) - Island/Loop Detection
 
 // Path-compressed Find
 Find(x):
@@ -166,19 +166,19 @@ Find(x):
 // Union by rank
 Union(a, b):
     ra = Find(a); rb = Find(b)
-    if ra == rb: return false    // already same island → LOOP detected
+    if ra == rb: return false    // already same island -> LOOP detected
     if DSU_Rank[ra] < DSU_Rank[rb]: swap(ra, rb)
     DSU_Parent[rb] = ra
     if DSU_Rank[ra] == DSU_Rank[rb]: DSU_Rank[ra]++
     return true
 
-// Full rebuild cost: O(α(N)*E) ≈ O(E). Run on graph mutation only (not every tick).
+// Full rebuild cost: O((N)*E) ~= O(E). Run on graph mutation only (not every tick).
 
-Loop detection: Union returns false → cycle exists → flag both endpoints BRIDGE_NODE=0, log cycle for redundancy routing.
+Loop detection: Union returns false -> cycle exists -> flag both endpoints BRIDGE_NODE=0, log cycle for redundancy routing.
 
 ### 3.5 Articulation Point Detection (Bridge Nodes)
 
-// Iterative Tarjan — no recursion
+// Iterative Tarjan - no recursion
 stack = NativeStack<(nodeID, parentID, edgeIndex)>
 disc[] = NativeArray<int>   // discovery time
 low[]  = NativeArray<int>   // low-link value
@@ -204,7 +204,7 @@ Run articulation pass only on topology change events (cable placed/removed).
 
 ---
 
-## §4 — NETWORK TOPOLOGY OPERATIONS
+## Section4 - NETWORK TOPOLOGY OPERATIONS
 
 ### 4.1 Merge (O(1) amortized via DSU)
 
@@ -217,7 +217,7 @@ ON cable_placed(nodeA, nodeB):
         mark DIRTY on both nodes
         schedule partial BFS from nodeA next LogisticsTick
 
-### 4.2 Split (O(V+E) rebuild — amortize with dirty queue)
+### 4.2 Split (O(V+E) rebuild - amortize with dirty queue)
 
 ON cable_removed(nodeA, nodeB):
     remove edge from TopologyEdgeList
@@ -226,26 +226,26 @@ ON cable_removed(nodeA, nodeB):
     re-run articulation pass
     nodes with new ISOLATED flag: set BROWNOUT, trigger VFX_POWER_LOSS emitter
 
-Rebuild budget: 4096 nodes, sparse edges → <0.5ms. Acceptable as one-shot event.
+Rebuild budget: 4096 nodes, sparse edges -> <0.5ms. Acceptable as one-shot event.
 
 ### 4.3 Bridge Node Handling
 
 if player removes edge where both endpoints have BRIDGE_NODE:
     pre-warn: query articulation result BEFORE removal
     display "NETWORK SPLIT WARNING" in diegetic UI
-    on confirm: execute Split (§4.2)
+    on confirm: execute Split (Section4.2)
 
 ---
 
-## §5 — RUPTURE & FAILURE SYSTEM
+## Section5 - RUPTURE & FAILURE SYSTEM
 
 ### 5.1 Rupture State Machine
 
-States: NOMINAL → STRESSED → RUPTURED → SEVERED
+States: NOMINAL -> STRESSED -> RUPTURED -> SEVERED
 
 STRESSED  : ThermalDamage > BreakThreshold * 0.5
 RUPTURED  : ThermalDamage >= BreakThreshold
-SEVERED   : Capacity = 0, Resistance = ∞, ACTIVE flag cleared
+SEVERED   : Capacity = 0, Resistance = infinity, ACTIVE flag cleared
 
 ### 5.2 Rupture Flow Drain
 
@@ -255,7 +255,7 @@ ON RUPTURED flag set on node N:
         CurrentLoad[N] = max(0, CurrentLoad[N])
         emit VFX_FLUID_AESTHETICS at node world position (rate proportional to CurrentLoad)
         if CurrentLoad[N] == 0 AND Potential[N] < 0.01:
-            transition → SEVERED
+            transition -> SEVERED
 
 ### 5.3 Pressure Cascade (fluid networks only)
 
@@ -263,13 +263,13 @@ if node RUPTURED and NetworkType == FLUID_PRESSURE:
     backpropagate pressure drop:
         for upstreamIndex = 0; upstreamIndex < UpstreamCount[N]; upstreamIndex++:
             U = UpstreamNeighbors[N][upstreamIndex]
-            Potential[U] -= RupturePressureLoss * (1 / Resistance(U→N))
+            Potential[U] -= RupturePressureLoss * (1 / Resistance(U->N))
             if Potential[U] < MinOperatingPressure:
                 set BROWNOUT on U
 
 ---
 
-## §6 — TICK SCHEDULING & TIME-SLICING
+## Section6 - TICK SCHEDULING & TIME-SLICING
 
 ### 6.1 LogisticsTick Architecture
 
@@ -279,13 +279,13 @@ Main-thread cadence may only schedule/consume jobs and touch Unity-owned objects
 
 Tick N:   Networks 0,2,4,6... (even NetworkIDs)
 Tick N+1: Networks 1,3,5,7... (odd NetworkIDs)
-→ Effective per-network update: 2.5Hz. Imperceptible to player at this abstraction level.
+-> Effective per-network update: 2.5Hz. Imperceptible to player at this abstraction level.
 
 ### 6.2 Dirty-Flag Optimization
 
 Only process nodes where DIRTY flag set OR neighbors changed last tick
 DIRTY cleared at end of each LogisticsTick
-Estimated active nodes in typical scene: 60–120 → full 4096 budget rarely exercised
+Estimated active nodes in typical scene: 60-120 -> full 4096 budget rarely exercised
 
 ### 6.3 Frame Budget Targets
 
@@ -294,7 +294,7 @@ i3-10gen @ 5Hz tick:
     Jacobi 8 iterations:         <0.4ms
     DSU full rebuild (on event): <0.5ms (event-only, not per-tick)
     Priority sort + distribution:<0.1ms
-    Total LogisticsTick ceiling:  1.0ms per 200ms window → <0.5% CPU budget
+    Total LogisticsTick ceiling: <= 1.0ms per 200ms window -> <0.5% CPU budget
 
 ### 6.4 Current Source Alignment - Pipe Runtime Adapter Boundary
 
@@ -312,11 +312,11 @@ i3-10gen @ 5Hz tick:
 
 ---
 
-## §7 — GPU VISUAL PROXIES (MX350 COMPLIANT)
+## Section7 - GPU VISUAL PROXIES (MX350 COMPLIANT)
 
 ### 7.1 Flow Indicator Shader (zero CPU overhead)
 
-// All animation via shader_time — no CPU scroll updates
+// All animation via shader_time - no CPU scroll updates
 UV_offset = frac(shader_time * FlowSpeed * FlowDirection)
 // FlowSpeed and FlowDirection set ONCE when edge is created or load changes >10%
 // Threshold prevents per-frame material property updates
@@ -328,9 +328,9 @@ color = lerp(COLOR_IDLE, COLOR_ACTIVE, LoadNorm)
 if OVERLOADED: color = lerp(COLOR_ACTIVE, COLOR_DANGER, sin(time*8)*0.5+0.5)  // flicker GPU-side
 if RUPTURED:   color = COLOR_RUPTURE, enable particle emitter flag
 
-Property block update: batch all changed edges post-tick. Max ~50 dirty edges per tick → trivial draw call cost.
+Property block update: batch all changed edges post-tick. Max ~50 dirty edges per tick -> trivial draw call cost.
 
-### 7.3 VRAM Budget (MX350  1800MB constraint)
+### 7.3 VRAM Budget (MX350 <= 1800MB constraint)
 
 Flow textures: 1 tileable 256x256 per network type (power / fluid / oxygen) = 3 textures = ~768KB
 Node indicator sprites: 1 atlas 512x512 = ~1MB
@@ -338,7 +338,7 @@ Total logistics visual budget: <2MB VRAM
 
 ---
 
-## §8 — RESOURCE TYPE EXTENSIONS
+## Section8 - RESOURCE TYPE EXTENSIONS
 
 ### 8.0 Logistics / Thermodynamics Boundary
 
@@ -364,32 +364,32 @@ Total logistics visual budget: <2MB VRAM
 
 ### 8.1 Supported Network Types (NetworkType enum, uint8)
 
-0x00 — POWER_DC          // voltage model, Ohm's law
-0x01 — OXYGEN_PRESSURE   // Hagen-Poiseuille, viscosity factor
-0x02 — THERMAL_COOLANT   // pressure + heat capacity coefficient
-0x03 — DATA_SIGNAL       // binary: connected or not, no flow math needed
-0x04 — FUEL_LIQUID       // pressure + density, gravity-affected potential
+0x00 - POWER_DC          // voltage model, Ohm's law
+0x01 - OXYGEN_PRESSURE   // Hagen-Poiseuille, viscosity factor
+0x02 - THERMAL_COOLANT   // pressure + heat capacity coefficient
+0x03 - DATA_SIGNAL       // binary: connected or not, no flow math needed
+0x04 - FUEL_LIQUID       // pressure + density, gravity-affected potential
 
 ### 8.2 Type-Specific Resistance Modifiers
 
 POWER_DC:          Resistance *= (1 + 0.004 * (Temperature - 20))   // copper temp coeff
-OXYGEN_PRESSURE:   Resistance *= (PipeRadius^-4) * 8 * Viscosity * Length / π
+OXYGEN_PRESSURE:   Resistance *= (PipeRadius^-4) * 8 * Viscosity * Length /
 THERMAL_COOLANT:   Resistance *= (1 / FlowVelocity) * ThermalConductivity^-1
-DATA_SIGNAL:       Resistance = 0 if ACTIVE, ∞ if not (binary only)
+DATA_SIGNAL:       Resistance = 0 if ACTIVE, infinity if not (binary only)
 FUEL_LIQUID:       Resistance += Density * g * HeightDelta           // hydrostatic head
 
 ---
 
-## §9 — INTEGRATION CONTRACTS
+## Section9 - INTEGRATION CONTRACTS
 
 ### 9.1 External System Interfaces
 
-SubmarineHullSystem   → writes RUPTURED flags on hull breach events
-OxygenSystem          → reads CurrentLoad from OXYGEN_PRESSURE nodes
-PowerConsumerSystem   → reads BROWNOUT flags, adjusts device behavior
-PhysicsSystem         → NO ACCESS to LogisticsNode data. Zero coupling.
-VFXSystem             → reads: node world position, Flags, CurrentLoad. Read-only.
-SaveSystem            → serialize: NodeBuffer, Adjacency, DSU_Parent, EdgeWeight
+SubmarineHullSystem   -> writes RUPTURED flags on hull breach events
+OxygenSystem          -> reads CurrentLoad from OXYGEN_PRESSURE nodes
+PowerConsumerSystem   -> reads BROWNOUT flags, adjusts device behavior
+PhysicsSystem         -> NO ACCESS to LogisticsNode data. Zero coupling.
+VFXSystem             -> reads: node world position, Flags, CurrentLoad. Read-only.
+SaveSystem            -> serialize: NodeBuffer, Adjacency, DSU_Parent, EdgeWeight
 
 ### 9.2 Event Bus (no polling)
 
@@ -406,12 +406,12 @@ LogisticsEvents (NativeQueue<LogisticsEvent>, consumed main thread post-tick):
 
 Serialize NodeBuffer as raw bytes (4096 * 32 bytes = 128KB flat binary)
 Serialize Adjacency as edge-list: (uint16 A, uint16 B, float weight) * EdgeCount
-DSU rebuilt from edge-list on load (do not serialize DSU_Parent — recompute)
+DSU rebuilt from edge-list on load (do not serialize DSU_Parent - recompute)
 Total logistics save footprint: <200KB per world instance
 
 ---
 
-## §10 — FAILURE GUARDS & ASSERTIONS
+## Section10 - FAILURE GUARDS & ASSERTIONS
 
 ASSERT: Resistance[edge] > 0 before division. Clamp min: 0.0001.
 ASSERT: Capacity[node] > 0 at node creation.
@@ -419,11 +419,11 @@ ASSERT: NetworkID < 16 (4-bit field constraint).
 ASSERT: BFS visited count <= 4096 (overflow = graph corruption).
 GUARD:  Logistics graph solve never runs on main thread. Main-thread cadence may only schedule/consume jobs and touch Unity-owned objects/signals.
 GUARD:  TopologyEdgeList writes locked behind topology-change mutex. CSR snapshot is read-only during tick.
-GUARD:  If DSU_Parent rebuild exceeds 2ms wall clock → log warning, skip tick, force next-frame.
+GUARD:  If DSU_Parent rebuild exceeds 2ms wall clock -> log warning, skip tick, force next-frame.
 
 ---
 
-## §11 — PERFORMANCE SCALING PROFILE
+## Section11 - PERFORMANCE SCALING PROFILE
 
 LOW (MX350/i3):
     LogisticsTick: 5Hz, max 512 active nodes, Jacobi disabled (greedy-only)
@@ -444,12 +444,12 @@ ULTRA:
 
 ---
 
-## §12 — FORBIDDEN PATTERNS (ENFORCEMENT)
+## Section12 - FORBIDDEN PATTERNS (ENFORCEMENT)
 
 [FORBID] Per-segment MonoBehaviour simulation/update. Endpoint MonoBehaviours are cold adapters only; shared scheduler/job owns transport truth.
 [FORBID] Physics.Raycast or Rigidbody in any logistics path
 [FORBID] Recursive graph traversal (stack overflow risk on 4096-node dense graphs)
 [FORBID] Allocating List<T> or Dictionary<K,V> inside LogisticsTick job
 [FORBID] Cross-network direct node references (use NetworkID + local index only)
-[FORBID] Calling LogisticsTick from Update() or FixedUpdate() — dedicated scheduler only
-[FORBID] Storing world-space positions in LogisticsNode — spatial data belongs to visual proxy layer
+[FORBID] Calling LogisticsTick from Update() or FixedUpdate() - dedicated scheduler only
+[FORBID] Storing world-space positions in LogisticsNode - spatial data belongs to visual proxy layer

@@ -1,0 +1,133 @@
+# ARCH_SIGNAL_LANE_SEGREGATION
+# HECTON-8 Batch 007 Mandate
+
+Status: ENFORCED / PENDING RUNTIME VERIFICATION
+Authority: AGENTS.md + Batch 004/005 log evidence + Batch 007 mandate evolution
+Scope: all cross-domain broadcasts, state-change notifications, dirty flags, lifecycle events, telemetry signals, and command fan-out.
+
+---
+
+## 0. Prime Law
+
+[RULE] The monolithic EventBus is banned for new gameplay traffic.
+[RULE] Every broadcast uses a typed `SignalBus<T>` lane.
+[RULE] Consumers read stable frame snapshots as `ReadOnlySpan<T>` or an equivalent zero-allocation native/read-only span surface.
+[RULE] Lane payloads are unmanaged, finite, layout-stable, and versioned when persisted or used across native/binary boundaries.
+
+[FORBID] String event names.
+[FORBID] Single-use EventID creation for a private caller.
+[FORBID] Cross-domain concrete class callbacks.
+[FORBID] Managed delegates or C# events for hot gameplay broadcasts.
+[FORBID] Polling GlobalRegistry every frame to detect state changes.
+
+The legacy EventBus/GlobalSignals layer may remain as queue infrastructure. It is not a license to dump unrelated traffic into one cache-hostile lane.
+
+---
+
+## 1. Lane Shape
+
+Each lane declares:
+
+- payload struct
+- owner assembly
+- producer phase
+- consumer phase
+- max events per frame
+- overflow policy
+- retention policy
+- binary/native layout status
+- telemetry hash fields
+
+Canonical lane:
+
+```
+public struct HullStressChangedSignal : ISignal
+{
+    public uint EntityId;
+    public float Stress01;
+    public uint Flags;
+    public uint FrameId;
+}
+```
+
+Consumption:
+
+```
+ReadOnlySpan<HullStressChangedSignal> snapshot =
+    SignalBus<HullStressChangedSignal>.GetFrameSnapshot();
+
+for (int i = 0; i < snapshot.Length; i++)
+{
+    Consume(snapshot[i]);
+}
+```
+
+No LINQ. No foreach through interfaces. No allocations.
+
+---
+
+## 2. Lane Taxonomy
+
+Required lane families:
+
+- `SignalBus<CombatSignal>`
+- `SignalBus<EnvironmentSignal>`
+- `SignalBus<WorldStreamingSignal>`
+- `SignalBus<PhysicsSignal>`
+- `SignalBus<AudioSignal>`
+- `SignalBus<UISignal>`
+- `SignalBus<TelemetrySignal>`
+- domain-specific typed structs when a family base is too broad
+
+Do not fake segregation by creating one giant `RuntimeSignal` with a switch. That is a monolith with a mask.
+
+---
+
+## 3. Payload Law
+
+[RULE] Payload structs crossing native, Burst, binary, or persistence boundaries must have explicit layout or documented unmanaged field order.
+[RULE] Float fields must be finite before publish. Non-finite values write a telemetry hash and publish a safe fallback.
+[RULE] Payloads include entity id or AUP hash when the consumer needs spatial ownership.
+[RULE] Payloads include frame id when double-processing would corrupt state.
+
+[FORBID] `double3`, nested structs, or platform-sensitive layout inside a binary/native lane without explicit layout proof.
+[FORBID] Publishing UnityEngine.Object, GameObject, Transform, Material, Mesh, Texture, ScriptableObject, or managed collection references.
+[FORBID] Duplicating the same signal name in two assemblies.
+
+---
+
+## 4. Overflow And Backpressure
+
+[RULE] Every lane has a max events per frame.
+[RULE] Overflow policy is deterministic: drop newest, drop oldest, coalesce by entity id, or fail-fast. Pick one and document it.
+[RULE] Backpressure state is visible to telemetry.
+
+Default:
+
+- combat/damage: coalesce by entity id, keep highest severity
+- physics force packets: fail-fast in development, drop newest in release with telemetry
+- UI/audio presentation: drop oldest
+- telemetry: ring overwrite
+
+---
+
+## 5. Inquisition Prevention Rules
+
+Batch inquisition found duplicate signal names, false verification, and partial platform preservation. Prevent recurrence:
+
+[RULE] A new lane name must be globally unique under first-party assemblies.
+[RULE] A lane added to contracts is a public API expansion and must keep legacy wrappers until the next batch boundary.
+[RULE] `link.xml` or IL2CPP preservation claims require platform build evidence. Text preservation is not proof.
+[RULE] Signal completion claims require a source scan for duplicate names and a compile attempt.
+
+---
+
+## 6. Scalability
+
+Low/MX350: consume bounded snapshots, coalesce high-volume lanes, and use dirty flags over full payloads.
+
+Middle: consume full frame snapshots for nearby gameplay truth.
+
+High: keep richer telemetry fields for debugging and cinematic responses.
+
+Ultra: add visual overkill consumers only in `VISUAL_SYNC`; never increase gameplay broadcast cost without budget proof.

@@ -1,12 +1,12 @@
 # VOXEL_WORLD_LOGIC.md
-# Hecton-8 | Voxel Persistence · Carving · Dynamic Snapping
+# Hecton-8 | Voxel Persistence - Carving - Dynamic Snapping
 
 ---
 
-## §0 — FOUNDATIONAL CONTRACTS
+## Section0 - FOUNDATIONAL CONTRACTS
 
 [INVARIANT] Voxel SDF domain: signed distance field, negative=solid, positive=void, zero=surface.
-[INVARIANT] World partitioned into tiles: 32³ voxel chunks, 0.5m voxel pitch → 16m³ tile volume.
+[INVARIANT] World partitioned into tiles: 32^3 voxel chunks, 0.5m voxel pitch -> 16m^3 tile volume.
 [INVARIANT] Current runtime source uses float working SDF buffers plus sbyte quantized extraction for Marching Cubes. Persistent deltas may use `half` only where save compatibility and error bounds are proven.
 [INVARIANT] Coordinate authority: `AbsoluteAUPition (AUP)` = int3(tileID) * 16 + float3(localOffset).
 [INVARIANT] Single-writer rule per chunk. Never allow concurrent mesh-rebuild + SDF-edit on same chunk.
@@ -24,9 +24,9 @@ CPU_NOISE = Unity.Mathematics.noise.snoise.
 GPU_DITHER_NOISE = Interleaved Gradient Noise (IGN).
 GPU_PROCEDURAL_NOISE = ALU-only hash function (no textures)
 
-## §1 — SPATIAL HASH & ADDRESS MAPPING
+## Section1 - SPATIAL HASH & ADDRESS MAPPING
 
-### 1.1 World→Chunk Resolution
+### 1.1 World->Chunk Resolution
 
 tileID    : int3 = floor(worldPos / 16.0f)                       // integer tile address
 localPos  : float3 = worldPos - (float3(tileID) * 16.0f)        // signed-safe remainder
@@ -38,7 +38,7 @@ flatIdx   : int  = localIdx.x + localIdx.y*32 + localIdx.z*1024   // row-major, 
 // Pack signed int3 tileID into single uint64 morton key
 mortonKey : ulong = MortonEncodeSigned(tileID.x, tileID.y, tileID.z)
 // Use mortonKey as NativeParallelHashMap primary key for O(1) tile lookup
-// Morton encoding preserves spatial locality → cache-friendly neighbor queries
+// Morton encoding preserves spatial locality -> cache-friendly neighbor queries
 
 ### 1.3 Morton Encode (signed-safe kernel)
 
@@ -50,7 +50,7 @@ MortonEncodeSigned(x,y,z):
   uz = (uint)(z + MORTON_SIGN_OFFSET)
   return ExpandBits(ux) | (ExpandBits(uy) << 1) | (ExpandBits(uz) << 2)
 
-ExpandBits(v):             // 21-bit unsigned input → 63-bit spread
+ExpandBits(v):             // 21-bit unsigned input -> 63-bit spread
   v = (v | v<<32) & 0x001F00000000FFFF
   v = (v | v<<16) & 0x001F0000FF0000FF
   v = (v | v<< 8) & 0x100F00F00F00F00F
@@ -60,7 +60,7 @@ ExpandBits(v):             // 21-bit unsigned input → 63-bit spread
 
 ---
 
-## §2 — DELTA PERSISTENCE ARCHITECTURE
+## Section2 - DELTA PERSISTENCE ARCHITECTURE
 
 ### 2.1 Delta Store Schema
 
@@ -69,7 +69,7 @@ modifiedCells : NativeParallelHashMap<int3, half>
 // Value : delta SDF = (runtime_sdf - seed_sdf), NOT absolute value
 // Rationale: seed_sdf reconstructable from noise; store only deviation
 // Budget : 32MB per tile hard cap
-//   32MB / sizeof(half+int3) = 32MB / 14B ≈ 2.4M entries per tile
+//   32MB / sizeof(half+int3) = 32MB / 14B ~= 2.4M entries per tile
 //   Soft warn at 80% (1.9M). Hard evict oldest at 100%.
 
 ### 2.2 Delta Write Protocol
@@ -82,7 +82,7 @@ WriteDelta(worldVoxel: int3, newSDF: half):
 
 ### 2.3 Delta Read Protocol
 
-ReadSDF(worldVoxel: int3) → half:
+ReadSDF(worldVoxel: int3) -> half:
   base = SampleSeedNoise(worldVoxel)
   if modifiedCells.TryGetValue(worldVoxel, out delta): return base + delta
   return base
@@ -96,20 +96,20 @@ Serialize(tileID):
   write   : async FileStream, non-blocking main thread
 
 Deserialize(tileID):
-  read → LZ4 decompress → bulk NativeArray<(int3,half)> → parallel insert into modifiedCells
-  validate entryCount ≤ 1024 (hole cap) else clamp + log corruption flag
+  read -> LZ4 decompress -> bulk NativeArray<(int3,half)> -> parallel insert into modifiedCells
+  validate entryCount <= 1024 (hole cap) else clamp + log corruption flag
 
 ### 2.5 Hole Count Guard
 
 // Per-tile counter: holeCount : NativeArray<int>[tileCount]
 // Increment on each unique carving operation (not per-voxel, per operation)
 // Carving op rejected if holeCount[tileID] >= 1024
-// Log: "TILE {tileID} HOLE CAP REACHED — carve rejected"
+// Log: "TILE {tileID} HOLE CAP REACHED - carve rejected"
 // Visual feedback: tool sparks/failure FX on cap hit
 
 ---
 
-## §3 — CARVING & STAMPING PIPELINE
+## Section3 - CARVING & STAMPING PIPELINE
 
 ### 3.1 Batch Accumulation (Anti-Churn)
 
@@ -122,7 +122,7 @@ Deserialize(tileID):
 ### 3.2 Sphere Crater Stamp
 
 ApplySphereCarve(center: float3, radius: float, chunk: VoxelChunk):
-  for each voxel p in AABB(center-radius, center+radius) ∩ chunk.bounds:
+  for each voxel p in AABB(center-radius, center+radius)  chunk.bounds:
     sphere_sdf = length(p - center) - radius
     current    = ReadSDF(p)
     new_sdf    = min(current, sphere_sdf)          // CSG union-of-voids
@@ -140,7 +140,7 @@ ApplyBoxCarve(center: float3, halfExtents: float3, rot: quaternion):
 
 ### 3.4 Capsule Stamp Kernel
 
-CapsuleSDF(p: float3, a: float3, b: float3, r: float) → float:
+CapsuleSDF(p: float3, a: float3, b: float3, r: float) -> float:
   pa = p - a; ba = b - a
   h  = clamp(dot(pa,ba)/dot(ba,ba), 0, 1)
   return length(pa - ba*h) - r
@@ -149,8 +149,8 @@ CapsuleSDF(p: float3, a: float3, b: float3, r: float) → float:
 
 // After flush, detect newly-opened cavities for ambient sound + pressure system
 // BFS from carved voxels, flood void-connected voxels up to 512 cells
-// Tag connected void region with CavityID → register to PressureZoneManager
-// Cost: O(512) BFS per flush event → negligible
+// Tag connected void region with CavityID -> register to PressureZoneManager
+// Cost: O(512) BFS per flush event -> negligible
 
 ### 3.6 Chunk Dirty Propagation
 
@@ -161,12 +161,12 @@ MarkChunkDirty(chunk, flags):
   if flags has DirtyFlags.Collider:
     EnqueuePhysicsBake(chunk)
     chunk.bakeState = PhysicsBakeState.Pending
-    // BLOCK interaction until bakeState == Complete (§0 invariant)
+    // BLOCK interaction until bakeState == Complete (Section0 invariant)
   NotifyNeighborChunks(chunk)   // shared boundary voxels must re-mesh too
 
 ---
 
-## §4 — MESH RECONSTRUCTION PIPELINE
+## Section4 - MESH RECONSTRUCTION PIPELINE
 
 ### 4.1 Algorithm Selection
 
@@ -193,19 +193,19 @@ Normal(p):
     ReadSDF(p+float3(0,0,e)) - ReadSDF(p-float3(0,0,e))
   ))
 
-// LOD SKIP: chunks at dist > 150m skip normal recalc unless deformVolume > 8.0 voxels³
+// LOD SKIP: chunks at dist > 150m skip normal recalc unless deformVolume > 8.0 voxels^3
 // Use cached normals from last full rebuild for distant chunks
 
 ### 4.4 Rebuild Job Chain (Burst/Jobs)
 
-[Job A] SDF Sampling       → NativeArray<float> sdfGrid[34³] current source working buffer
-[Job B] Quantize           → NativeArray<sbyte> quantizedDensity current source extraction buffer
-[Job C] Marching Cubes     → NativeArray<float3> verts, NativeArray<int> tris  (depends A+B)
-[Job D] Normal Generation  → NativeArray<float3> normals  (depends C)
-[Job E] Tangent Generation → MikkTSpace or fast cross-product approx  (depends D)
-[Job F] Mesh Upload        → Mesh.ApplyAndDisposeWritableMeshData (main thread, minimal cost)
-[Job G] Physics Bake       → Physics.BakeMesh(meshID, convex:false) async  (depends F)
-         → on complete: chunk.bakeState = Complete; release interaction block
+[Job A] SDF Sampling       -> NativeArray<float> sdfGrid[34^3] current source working buffer
+[Job B] Quantize           -> NativeArray<sbyte> quantizedDensity current source extraction buffer
+[Job C] Marching Cubes     -> NativeArray<float3> verts, NativeArray<int> tris  (depends A+B)
+[Job D] Normal Generation  -> NativeArray<float3> normals  (depends C)
+[Job E] Tangent Generation -> MikkTSpace or fast cross-product approx  (depends D)
+[Job F] Mesh Upload        -> Mesh.ApplyAndDisposeWritableMeshData (main thread, minimal cost)
+[Job G] Physics Bake       -> Physics.BakeMesh(meshID, convex:false) async  (depends F)
+         -> on complete: chunk.bakeState = Complete; release interaction block
 
 ### 4.5 MX350 VRAM Budget per Active Chunk
 
@@ -213,20 +213,20 @@ Vertex buffer : ~200KB (worst case dense chunk, 16K verts)
 Index buffer  : ~100KB
 Normal/UV     : ~150KB
 Total/chunk   : ~450KB
-Active chunks : 2GB / 450KB ≈ 4681 theoretical max
+Active chunks : 2GB / 450KB ~= 4681 theoretical max
 Practical cap : 256 active render chunks (accounts for textures, shadow maps, framebuffer)
 Streaming     : beyond 256, swap to CPU-side NativeArray; re-upload on demand
 
 ---
 
-## §5 — LOD SYSTEM
+## Section5 - LOD SYSTEM
 
 ### 5.1 LOD Distance Bands
 
-LOD0 : dist < 32m   → full current MC pipeline, full normals, full collision
-LOD1 : 32-80m       → current MC pipeline, cached normals, simplified collision (convex hull)
-LOD2 : 80-150m      → Surface Nets, no normal recalc, no collision (static trigger only)
-LOD3 : >150m        → Impostor billboard / point cloud representation
+LOD0 : dist < 32m   -> full current MC pipeline, full normals, full collision
+LOD1 : 32-80m       -> current MC pipeline, cached normals, simplified collision (convex hull)
+LOD2 : 80-150m      -> Surface Nets, no normal recalc, no collision (static trigger only)
+LOD3 : >150m        -> Impostor billboard / point cloud representation
                        skip SDF-normal recalc entirely, use last-baked normal atlas
 
 ### 5.2 LOD Transition (Crack Prevention)
@@ -247,13 +247,13 @@ UpgradeLOD(chunk, newLOD):
 
 ---
 
-## §6 — DYNAMIC ITEM SNAPPING
+## Section6 - DYNAMIC ITEM SNAPPING
 
 ### 6.1 Surface Snap Pipeline
 
-Step 1: Raycast(origin, dir, mask: VoxelLayer) → RaycastHit hit
+Step 1: Raycast(origin, dir, mask: VoxelLayer) -> RaycastHit hit
 Step 2: surfaceNormal = hit.normal                        // mesh normal at hit point
-Step 3: refinedNormal = AnalyticalSDF_Normal(hit.point)  // re-derive from SDF gradient (§4.3)
+Step 3: refinedNormal = AnalyticalSDF_Normal(hit.point)  // re-derive from SDF gradient (Section4.3)
          // mesh normal may be interpolated artifact; SDF gradient is ground truth
 Step 4: item.transform.up    = refinedNormal
         item.transform.right = OrthoNormalize(camForward, refinedNormal)  // face camera-aligned
@@ -275,23 +275,23 @@ ValidSnap(hit):
 // Compute local curvature from SDF hessian approximation:
 CurvatureEstimate(p):
   H = (SDF(p+e)+SDF(p-e)-2*SDF(p)) / (e*e)   // second derivative, each axis
-  κ = (Hxx + Hyy + Hzz)                        // mean curvature scalar
-  sinkDepth = clamp(0.02 + κ*0.01, 0.01, 0.08) // 1-8cm adaptive range
+  kappa = (Hxx + Hyy + Hzz)                   // mean curvature scalar
+  sinkDepth = clamp(0.02 + kappa*0.01, 0.01, 0.08) // 1-8cm adaptive range
 
 ---
 
-## §7 — PHYSICS BAKE & INTERACTION GUARD
+## Section7 - PHYSICS BAKE & INTERACTION GUARD
 
 ### 7.1 Bake State Machine
 
-States: [Idle] → [Pending] → [Baking] → [Complete] → [Dirty→Pending]
+States: [Idle] -> [Pending] -> [Baking] -> [Complete] -> [Dirty->Pending]
 
 Transitions:
-  Idle    → Pending  : carve op touches chunk
-  Pending → Baking   : worker thread claims chunk from BakeQueue
-  Baking  → Complete : Physics.BakeMesh returns; collider hot-swapped
-  Complete→ Dirty    : new carve op invalidates mesh
-  Dirty   → Pending  : re-enqueue
+  Idle    -> Pending  : carve op touches chunk
+  Pending -> Baking   : worker thread claims chunk from BakeQueue
+  Baking  -> Complete : Physics.BakeMesh returns; collider hot-swapped
+  Complete-> Dirty    : new carve op invalidates mesh
+  Dirty   -> Pending  : re-enqueue
 
 Guard: PhysicsInteractionAllowed(chunk) = (chunk.bakeState == Complete)
 
@@ -303,7 +303,7 @@ Guard: PhysicsInteractionAllowed(chunk) = (chunk.bakeState == Complete)
 //   Shader param: _GhostDither = lerp(0, 0.3, bakingProgress)
 //   Audio cue: low hum "structural instability" SFX
 // On Complete: snap _GhostDither to 0 over 0.15s
-// Rationale: player reads "this surface is forming" — no confusion about phantom collisions
+// Rationale: player reads "this surface is forming" - no confusion about phantom collisions
 
 ### 7.3 Bake Priority Scoring
 
@@ -316,22 +316,22 @@ BakePriority(chunk):
 
 ---
 
-## §8 — OCCLUSION & LIGHTING INTEGRATION
+## Section8 - OCCLUSION & LIGHTING INTEGRATION
 
 ### 8.1 AbyssalLightManager Notification
 
 OnChunkDeformed(chunk, affectedVoxels: NativeArray<int3>):
   for each voxel v in affectedVoxels:
-    if SDF transition crossed zero (solid→void or void→solid):
+    if SDF transition crossed zero (solid->void or void->solid):
       AbyssalLightManager.InvalidateProbeCell(WorldToProbeCell(v))
   AbyssalLightManager.ScheduleRelight(chunk.bounds, priority: DEFERRED)
 
 ### 8.2 Probe Cell Mapping
 
-ProbeCell resolution : 1m³ (coarser than voxel 0.5m pitch)
+ProbeCell resolution : 1m^3 (coarser than voxel 0.5m pitch)
 WorldToProbeCell(p)  : int3(floor(p / 1.0f))
 // Invalidated cells re-baked in batches of 64 per frame via Light Probe proxy volumes
-// FORBID: full scene relight on single carve — catastrophic cost
+// FORBID: full scene relight on single carve - catastrophic cost
 
 ### 8.3 Ambient Occlusion (Voxel AO)
 
@@ -345,46 +345,46 @@ VoxelAO(v, n):                          // v=vertex, n=surface normal
 
 ---
 
-## §9 — MEMORY MANAGEMENT & MX350 CONSTRAINTS
+## Section9 - MEMORY MANAGEMENT & MX350 CONSTRAINTS
 
 ### 9.1 Active Tile Budget
 
-MaxActiveTiles      : 64                     // 64 × 32MB delta cap = 2GB theoretical
-                                             // practical: keep delta small via §2.2 pruning
-SDF Grid per tile   : 32³ × 2B (half) = 64KB uncompressed
-MeshData per tile   : ~450KB (§4.5)
+MaxActiveTiles      : 64                     // 64 x 32MB delta cap = 2GB theoretical
+                                             // practical: keep delta small via Section2.2 pruning
+SDF Grid per tile   : 32^3 x 2B (half) = 64KB uncompressed
+MeshData per tile   : ~450KB (Section4.5)
 TotalWorking/tile   : ~514KB
-64 tiles working    : ~33MB — fits within 6GB system RAM budget
+64 tiles working    : ~33MB - fits within 6GB system RAM budget
 
 ### 9.2 Tile Streaming LRU
 
 TileCache : LRU eviction, capacity = 64 tiles
 OnAccess(tileID)  : promote to MRU position
-OnEvict(tileID)   : Serialize(tileID) → disk; release NativeContainers
-OnRequest(tileID) : if on disk → Deserialize async; if not → generate from seed
+OnEvict(tileID)   : Serialize(tileID) -> disk; release NativeContainers
+OnRequest(tileID) : if on disk -> Deserialize async; if not -> generate from seed
 
 ### 9.3 NativeContainer Lifecycle
 
 Allocate: Allocator.Persistent for modifiedCells (long-lived tile data)
 Allocate: Allocator.TempJob for per-rebuild mesh arrays (auto-disposed after job)
-FORBID  : Allocator.Temp in jobs touching voxel data — 4-frame lifetime too short
+FORBID  : Allocator.Temp in jobs touching voxel data - 4-frame lifetime too short
 Dispose : explicit on tile evict; track via ChunkLifetimeToken to prevent double-free
 
 ### 9.4 Half-Precision SDF Error Analysis
 
-half range     : ±65504
+half range     : +/-65504
 half precision : ~0.1% relative error at magnitude 8.0
-SDF magnitude clamped ±8.0 → max absolute error ≈ 0.008 units (0.8mm at 0.5m voxel pitch)
-Surface zero-crossing error : ≤ 0.008 / (avg gradient ≈ 1.0) = 0.8mm positional error
+SDF magnitude clamped +/-8.0 -> max absolute error ~= 0.008 units (0.8mm at 0.5m voxel pitch)
+Surface zero-crossing error : <= 0.008 / (avg gradient ~= 1.0) = 0.8mm positional error
 Assessment: acceptable for 0.5m voxel pitch; imperceptible at gameplay distance
 
 ---
 
-## §10 — SEED NOISE ARCHITECTURE
+## Section10 - SEED NOISE ARCHITECTURE
 
 ### 10.1 Noise Stack (Deterministic, No Storage)
 
-SampleSeedNoise(worldVoxel: int3) → half:
+SampleSeedNoise(worldVoxel: int3) -> half:
   p = float3(worldVoxel) * 0.5          // world meters
   // Layered FBM:
   n  = Simplex3D(p * 0.04f)  * 1.0f    // macro terrain shape
@@ -398,24 +398,24 @@ SampleSeedNoise(worldVoxel: int3) → half:
 ### 10.2 Cave Worm Injection
 
 // Procedural cave tubes via domain-warped noise, no per-voxel iteration
-// Evaluate Worley noise at macro scale → identify cell centers as tunnel axes
+// Evaluate Worley noise at macro scale -> identify cell centers as tunnel axes
 // CaveSDF(p) = WorleyF1(p * 0.02) - 0.4    // negative inside tunnels
 // Final seed SDF = min(TerrainSDF(p), CaveSDF(p))  // CSG union
 
 ---
 
-## §11 — FAILURE MODES & SAFETY RAILS
+## Section11 - FAILURE MODES & SAFETY RAILS
 
 ### 11.1 Failure Catalog
 
-[FAIL-01] Chunk seam crack      → Verify neighbor-border sampling (§4.2); assert seam vertex count match
-[FAIL-02] Phantom collision     → bakeState guard (§7.1) catches 100% of cases if applied at interaction site
-[FAIL-03] Memory runaway        → holeCount cap (§2.5) + LRU eviction (§9.2) dual defense
-[FAIL-04] Save corruption       → validate entryCount on load (§2.4); fallback to seed-only on corrupt
-[FAIL-05] Infinite bake loop    → watchdog: if bakeTime > 5s, abort job, mark chunk CollisionFailed, log
-[FAIL-06] SDF discontinuity     → clamping in ReadSDF prevents NaN propagation; assert no NaN post-march
-[FAIL-07] Normal flip artifact  → dot(analyticalNormal, meshNormal) < 0 → negate; log mismatch frequency
-[FAIL-08] LOD crack at seam     → transition strip/skirt mandatory at all LOD boundaries; Transvoxel transition cells are future migration target only
+[FAIL-01] Chunk seam crack      -> Verify neighbor-border sampling (Section4.2); assert seam vertex count match
+[FAIL-02] Phantom collision     -> bakeState guard (Section7.1) catches 100% of cases if applied at interaction site
+[FAIL-03] Memory runaway        -> holeCount cap (Section2.5) + LRU eviction (Section9.2) dual defense
+[FAIL-04] Save corruption       -> validate entryCount on load (Section2.4); fallback to seed-only on corrupt
+[FAIL-05] Infinite bake loop    -> watchdog: if bakeTime > 5s, abort job, mark chunk CollisionFailed, log
+[FAIL-06] SDF discontinuity     -> clamping in ReadSDF prevents NaN propagation; assert no NaN post-march
+[FAIL-07] Normal flip artifact  -> dot(analyticalNormal, meshNormal) < 0 -> negate; log mismatch frequency
+[FAIL-08] LOD crack at seam     -> transition strip/skirt mandatory at all LOD boundaries; Transvoxel transition cells are future migration target only
 
 ### 11.2 Debug Visualization Modes (Editor Only)
 
@@ -428,7 +428,7 @@ SampleSeedNoise(worldVoxel: int3) → half:
 
 ---
 
-## §12 — SCALABILITY PROFILES
+## Section12 - SCALABILITY PROFILES
 
 ### 12.1 Quality Tiers
 
@@ -439,7 +439,7 @@ VoxelPitch          0.5m                 0.5m               0.25m
 PhysicsBake         async,1worker        async,2workers     async,4workers
 NormalQuality       cached LOD>80m       cached LOD>150m    always analytical
 AOSamples           8                    16                 32
-LightProbeRes       1m³                  0.5m³              0.25m³
+LightProbeRes       1m^3                  0.5m^3              0.25m^3
 ShadowChunks        16 nearest           48 nearest         all visible
 
 ### 12.2 Runtime Tier Detection
@@ -455,7 +455,7 @@ DetectTier():
 
 ---
 
-## §13 — PERFORMANCE BUDGETS (MINIMUM TIER)
+## Section13 - PERFORMANCE BUDGETS (MINIMUM TIER)
 
 Frame budget         : 33ms (30fps floor)
 Voxel SDF read       : < 0.1ms / 1000 reads (cached NativeArray access)
@@ -469,13 +469,13 @@ Total voxel overhead : < 12ms / frame sustained (leaves 21ms for rendering)
 
 ---
 
-## §14 — INTEGRATION CHECKLIST
+## Section14 - INTEGRATION CHECKLIST
 
 [ ] AUP coordinate system adopted engine-wide; no local-only chunk coords in external systems
 [ ] PhysicsInteractionAllowed() gated at all CharacterController, Rigidbody, and Raycast-to-collide sites
 [ ] FlushCarvingOps() called once per physics-step, not per-frame render
 [ ] AbyssalLightManager.InvalidateProbeCell() wired to OnChunkDeformed event
-[ ] PressureZoneManager receives CavityID from flood-fill post-carve (§3.5)
+[ ] PressureZoneManager receives CavityID from flood-fill post-carve (Section3.5)
 [ ] BakeQueue priority recalculated every 10 frames, not every frame
 [ ] holeCount persisted alongside delta data in save file
 [ ] Ghost dither shader compiled into all voxel surface material variants

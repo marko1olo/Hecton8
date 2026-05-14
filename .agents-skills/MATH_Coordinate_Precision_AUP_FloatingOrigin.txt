@@ -37,9 +37,9 @@ struct AUP {
 
 Conversion Logic:
 
-AUP → WorldPos:
+AUP -> WorldPos:
     worldPos = (gridXYZ * CELL_SIZE) + localXYZ - _GlobalFloatingOffset
-WorldPos → AUP:
+WorldPos -> AUP:
     gridXYZ = floor(absPos / CELL_SIZE)
     localXYZ = absPos - (gridXYZ * CELL_SIZE)
 
@@ -297,14 +297,14 @@ ENABLE_DOUBLE_PRECISION_EMULATION = true
 
 MX350 (2GB):
 
-Matrix Pool: 4096 instances × 64 bytes = 256KB
+Matrix Pool: 4096 instances x 64 bytes = 256KB
 Universe Grid Index: 64MB max (spatial hash)
 Waypoint Cache: 1MB
 Total Overhead: ~65MB
 
 Compression (If exceeding budget):
 
-// Half-precision for _GlobalFloatingOffset (range ±65504m)
+// Half-precision for _GlobalFloatingOffset (range +/-65504m)
 half3 _GlobalFloatingOffsetHalf;
 // Reconstruct in shader:
 float3 offset = float3(_GlobalFloatingOffsetHalf) * 1000.0;
@@ -319,12 +319,12 @@ IFloatingOriginEntity:
 
 OnBeforeShift(float3 shiftVector)  // Cache velocity, pause integrators
 OnAfterShift()                      // Resume, validate position
-GetAUPition() → AUP
+GetAUPition() -> AUP
 SetAUPition(AUP)
 
 IShaderOffsetReceiver:
 
-ValidateOffsetState(uint frameID) → bool
+ValidateOffsetState(uint frameID) -> bool
 Read from shared constant buffer only. No per-material push path.
 
 ### [SAFE] Failure Modes & Guards
@@ -427,7 +427,7 @@ Determinism for Multiplayer (Future):
 
 // All shifts must occur at identical simulation ticks
 // Use fixed timestep, deterministic snap grid
-SNAP_GRID must match across clients (100m recommended)
+SNAP_GRID must match across clients (100m default unless Integrator changes the authority)
 _TotalUniverseOffset transmitted as int64x3 (lossless)
 
 Profiling Targets (MX350):
@@ -452,7 +452,7 @@ Fixed-Point Alternative (Ultra-Low VRAM):
 
 // Replace float3 with int32 at 1mm resolution
 int3 fixedPointPos = floor(worldPos * 1000.0);
-// Range: ±2147km at 1mm precision
+// Range: +/-2147km at 1mm precision
 // GPU: Reconstruct float in vertex shader
 float3 worldPos = float3(fixedPointPos) * 0.001;
 

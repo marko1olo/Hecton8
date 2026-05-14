@@ -80,6 +80,16 @@ Current static evidence points to MicroSplat/Texture2DArray terrain paths.
 
 [BROKEN] "Pentarchy" is an incomplete architecture model. The authoritative project model is 9 echelons / 85 domains in `Docs/Actual Domains of Project.txt`.
 
+[UPDATED] Batch 007 adds execution phase authority: PRE_SIMULATION, SIMULATION, POST_SIMULATION, and VISUAL_SYNC. Runtime systems must name their phase and stop using private Unity loop schedulers.
+
+[UPDATED] Batch 007 adds signal lane segregation. New gameplay broadcasts use typed `SignalBus<T>` lanes and ReadOnlySpan-style snapshots. The monolithic EventBus is infrastructure only, not a dumping ground.
+
+[UPDATED] Batch 007 adds DataVault sovereignty. All NativeArrays must be requested from GlobalDataVault; local persistent NativeArray instantiation is banned outside the vault owner.
+
+[UPDATED] Batch 007 adds AUP Sync-Fence law. Every origin shift carries a 300-frame fence, millimeter quantization, drift probes, and dump-on-fault behavior.
+
+[UPDATED] Batch 007 inquisition rules reject false verification, duplicate signal names, layout-unsafe DTO claims, platform-hardening claims without platform build evidence, and microsecond claims without profiler context.
+
 ---
 
 ## Math Benchmark Guidance
