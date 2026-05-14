@@ -139,3 +139,30 @@ Verification:
 - `git diff --check` on scanner/UI/target edits: pass, line-ending warnings only.
 - `rg Camera.main`, `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, and `.text =` over scanner/UI/target files: no matches.
 - `dotnet build` verification remains pending: one filtered pass returned no scanner-file matches, but follow-up plain/minimal build behavior was inconsistent and a single-thread retry timed out. No leftover `dotnet` processes remained.
+
+## Follow-Up Hardening Pass 4
+
+What was wrong:
+- `OnUnequip()` cleared scanner RT state through an inactive signal, but `OnDespawn()` and non-quit `OnDestroy()` could reset the scanner without publishing that inactive packet.
+- Previous compile status was stale after the project graph recovered.
+
+What was done:
+- Added `PublishInactiveScannerTuningSignal()` with play-mode and application-quit guards.
+- Replaced direct unequip inactive publish with the helper.
+- Published inactive scanner state on despawn after focus reset.
+- Published inactive scanner state on destroy only during play and only when not application quitting.
+
+Cinematic Cheats used:
+- No new simulation. This preserves the existing latest-signal UI lie and clears stale decryption presentation through the signal lane.
+
+Exact Microseconds saved:
+- Verified exact microseconds: PENDING PROFILER.
+- Runtime steady-state cost: 0 us; this only runs on unequip/despawn/destroy.
+- Estimated UX gain: stale scanner RT lifetime reduced from indefinite until next scanner packet to one lifecycle signal.
+
+Verification:
+- Prompt re-extracted cover-to-cover with attribute-safe XML regex.
+- `git diff --check` on scanner/UI/target edits: pass, line-ending warnings only.
+- `rg Camera.main`, `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, and `.text =` over scanner/UI/target files: no matches.
+- Filtered `dotnet build Hecton8.Core.csproj`: exit 0, 0 error lines, 0 scanner-file matches.
+- Plain `dotnet build Hecton8.Core.csproj`: Build succeeded, 0 warnings, 0 errors, elapsed 00:01:36.62.

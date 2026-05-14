@@ -74,3 +74,31 @@ Verification:
 - `git diff --check` exits 0. Repo-wide line-ending warnings remain unrelated.
 - `dotnet build Hecton8.Core.csproj --no-restore -v:minimal` timed out after 94 seconds under the existing project compile wall.
 - Full shader import, `Hecton8.Core`, and runtime validation remain blocked by the existing project compile wall.
+
+## 2026-05-14T12:38+04:00
+
+Status: PENDING VERIFICATION. Continued lifecycle and Burst-contract audit after the shader contract pass.
+
+What was wrong:
+- `OnDisable` could leave the IK job alive while unregistering the runtime; `OnEnable` or `BindFromFauna` could then reseed native arrays before the old writer job completed.
+- The Burst tail whip normalized wave age against a hard-coded one-second duration instead of the serialized `_tailWhipDurationSeconds`.
+
+What was done:
+- Added `CompleteScheduledSolverForLifecycle()` and called it before lifecycle reseed/clear points.
+- Wired `TailWhipDurationSeconds` from `FaunaKinematicsRuntime` into `LeviathanTerrainIkJob`.
+- Re-ran isolated Unity Roslyn csc for `Hecton8.Animation.IK`; exit code 0.
+
+Cinematic cheats used:
+- Tail whip remains a deterministic triangle-wave visual impulse, now duration-correct.
+- Lifecycle completion is a teardown/rebind fence only; the steady simulation path remains asynchronous.
+
+Exact microseconds saved:
+- Hot-path savings: 0 us. This is a correctness fence outside steady frame execution.
+- Prevented failure cost: avoids native writer/read reseed race and possible crash/NaN dump.
+- Tail duration wiring cost: 0 us meaningful; one extra float in the job payload.
+
+Verification:
+- Scoped `Hecton8.Animation.IK` Roslyn csc pass exits 0 after the job field change.
+- Static grep found no `math.sqrt`, `math.normalize`, `foreach`, `string.Format`, `.ToString()`, `Debug.Log`, Unity Physics casts, Animator/SMR dependency, or `_H8LeviathanBodyRadius` in IK runtime/job/shader scope.
+- `git diff --check` on touched IK runtime/job/shader files exits 0; line-ending warnings only.
+- Full Unity/Core validation remains blocked by the existing project compile wall.

@@ -105,3 +105,16 @@ Hardware Impact: Expected MX350 gain versus CPU deformation remains 150-600 us/f
 
 Additional cinematic cheat:
 - Shader tail whip uses the existing cheap triangle-wave helper over the already-solved bone path instead of simulating extra physics or per-vertex springs.
+
+## Decision 8: Lifecycle Fence And Tail Duration
+
+Problem: `OnDisable` could unregister the runtime while a scheduled IK job still owned `_segmentPositions`, `_previousSegmentPositions`, and `_leviathanBones`; a later `OnEnable` or `BindFromFauna` could reseed those arrays before the job completed. The Burst tail whip also used a hard-coded one-second duration despite runtime exposing `_tailWhipDurationSeconds`.
+Solution: Add `CompleteScheduledSolverForLifecycle()` and call it before disable clear, re-enable reseed, and rebind reseed. Pass `TailWhipDurationSeconds` into `LeviathanTerrainIkJob` and normalize the cheap wave from that field.
+Rejected Alternatives: Leaving the job to finish asynchronously was rejected because native array reseed would race a writer job. Adding a second job-state buffer was rejected as overbuilt for a single Alpha Leviathan owner. Keeping the hard-coded duration was rejected because serialized tuning would lie to the solver.
+Scalability potential: Low/MX350 still runs eight segments and one constraint iteration; high/ultra keep 20 segments. Lifecycle completion is only on enable/disable/rebind, not the steady hot path, so it does not affect per-frame scalability.
+Hardware Impact: Hot-path cost is 0 us. Lifecycle stalls are bounded to one already-scheduled 8-20 segment job and occur only during teardown/rebind. Prevented race cost is crash avoidance, not frame-time gain.
+
+Scoped compile evidence:
+- Command: Unity 6000.4.1f1 Roslyn `csc.dll` with `Library/Bee/artifacts/1300b0aEDbg.dag/Hecton8.Animation.IK.rsp` and `.rsp2`.
+- Result: exit 0 after adding `TailWhipDurationSeconds`.
+- Boundary: validates `Hecton8.Animation.IK` only; `FaunaKinematicsRuntime` remains blocked behind the red `Hecton8.Core` assembly.

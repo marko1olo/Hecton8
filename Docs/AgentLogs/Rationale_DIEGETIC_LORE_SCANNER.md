@@ -193,3 +193,17 @@ Solution: Static scanner checks passed. A captured build filtered for scanner-ow
 Rejected Alternatives: Calling the project verified from one inconsistent pass; killing unrelated processes; marking Task 15 complete without stable compiler proof.
 Scalability potential: None; verification infrastructure state.
 Hardware Impact: No runtime impact.
+
+## LOOP 8 LIFECYCLE HARDENING
+
+Problem: `OnUnequip()` published an inactive scanner signal, but `OnDespawn()` and non-quit `OnDestroy()` could clear scanner state without notifying the diegetic RT consumer. That leaves stale decryption text until another scanner packet arrives.
+Solution: Added `PublishInactiveScannerTuningSignal()` and call it after focus reset on despawn. On destroy, it only runs in play mode and not after `OnApplicationQuit()` to avoid reinitializing signal queues during shutdown.
+Rejected Alternatives: Direct call into the UI controller; adding `ScannerManager.Instance`; unconditional `GlobalSignals.Publish()` from teardown.
+Scalability potential: UI consumers remain decoupled and pull from the latest scanner signal. Pool churn or scene swaps do not leave stale RT state on low-end or high-end devices.
+Hardware Impact: One completion-only/inactive signal on lifecycle exit; no steady-frame cost.
+
+Problem: Prior compile status was stale after the project graph recovered.
+Solution: Re-ran generated-project builds. Filtered build returned exit 0, zero error lines, and no scanner file matches. Plain summary build then passed with 0 warnings and 0 errors.
+Rejected Alternatives: Keeping Task 15 blocked after compiler evidence became available; ignoring the previous inconsistent build behavior.
+Scalability potential: None; verification state.
+Hardware Impact: No runtime impact.

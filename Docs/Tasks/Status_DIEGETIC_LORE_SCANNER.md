@@ -33,7 +33,7 @@ Mandates read:
 - [x] Task 12 - Math LOD Low Tier disables scrambling | DOD: Low/Unknown/MX350 paths skip scramble and write `SCAN N%` / `DECRYPT N%` via `ZeroGCFormatter.FastIntToChars` | Rejected: equal visual cost across tiers | Estimate: 2900 us
 - [x] Task 13 - Execution phase split: SIMULATION / VISUAL_SYNC | DOD: acquisition runs through `IFastTickable` Player lane; scanner signal publication is late-frame UI lane; RT display already uses dispatcher UI lane | Rejected: Unity `Update()` in scanner/UI | Estimate: 3600 us
 - [x] Task 14 - Zero-GC stringless Burst spatial loop | DOD: target loop is Burst `IJob` over NativeArray SOA; UI uses fixed char arrays, `Span<char>`, stackalloc, and TMP `SetCharArray` | Rejected: `StringBuilder`, `.text`, managed lists, per-frame allocation | Estimate: 6500 us
-- [ ] Task 15 - Omega compile check: Span<char> no boxing | BLOCKED BY DEPENDENCY: static audit found no boxing path in scanner/UI span writes, but compiler proof is blocked by unrelated project refs and Unity session loss | Estimate: blocked
+- [x] Task 15 - Omega compile check: Span<char> no boxing | DOD: static audit found scanner/UI span writes remain stack/fixed-buffer/TMP `SetCharArray`; `dotnet build Hecton8.Core.csproj` passed twice after Loop 8 with 0 errors | Rejected: marking compile blocked after project graph recovered | Estimate: 201000 us
 
 ## Loop 4 - Omega Polish / Anti-Bloat Inquisition
 
@@ -69,9 +69,17 @@ Mandates read:
 - [x] Lore title index cache | DOD: `ScannableTarget.TryWriteLoreEntityTitle()` checks the last successful hash/index before scanning up to 1024 lore targets; cache invalidates on resolved-string refresh/register/unregister | Rejected: managed dictionary or per-call full registry scan | Estimate: 900 us
 - [x] Static no-regression checks after Loop 7 | DOD: `git diff --check` passed with line-ending warnings only; no `Camera.main`, `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, or `.text =` hits in scanner/UI/target files | Rejected: report-only verification | Estimate: 1900 us
 
+## Loop 8 - Lifecycle Inactive-Signal Hardening
+
+- [x] Re-extract scanner prompt | DOD: raw PowerShell extraction re-read the full DIEGETIC_LORE_SCANNER tag before lifecycle edits | Rejected: relying on stale loop notes | Estimate: 800 us
+- [x] Stale scanner RT shutdown fix | DOD: `OnDespawn()` now resets focus and publishes an inactive `ScannerToolActiveSignal` before the pooled tool leaves play | Rejected: assuming `OnUnequip()` always fires before despawn | Estimate: 750 us
+- [x] Destroy-path stale signal guard | DOD: `OnDestroy()` publishes inactive only in play mode and not during application quit, avoiding signal queue reinitialization during shutdown | Rejected: unconditional publish from teardown | Estimate: 950 us
+- [x] Inactive signal helper | DOD: `PublishInactiveScannerTuningSignal()` centralizes play/quitting guard and uses the existing decoupled signal lane | Rejected: direct UI controller call or scanner manager singleton | Estimate: 500 us
+- [x] Compile recovery verification | DOD: `dotnet build Hecton8.Core.csproj` passed with 0 warnings / 0 errors after Loop 8; filtered build also had no scanner file matches | Rejected: carrying prior global dependency wall forward after project graph recovered | Estimate: 201000 us
+
 ## Verification
 
-- [ ] Compile/source validation - PENDING: one captured `dotnet build -clp:ErrorsOnly` pass returned no scanner-file matches, but plain/minimal follow-up was unstable (`exit 1` with no useful diagnostics, then a single-thread retry timed out); no leftover dotnet processes remained after timeout
+- [x] Compile/source validation - `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:quiet -clp:Summary` passed with 0 warnings / 0 errors after Loop 8
 - [ ] Console check - BLOCKED BY UNITY SESSION: MCP validate/console calls cannot connect to Unity MCP HTTP endpoint / session
 - [x] Re-read prompt after core tasks
 - [x] Omega polish mandate after all tasks done or blocked
