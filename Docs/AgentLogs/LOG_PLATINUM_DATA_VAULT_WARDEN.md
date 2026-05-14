@@ -79,6 +79,7 @@ What was done:
 - Added owner-tagged immediate and job-deferred `H8Memory.Release<T>` overloads.
 - Marked legacy `Release<T>` and raw `FreeRaw(pointer, allocator)` overloads `Obsolete(error: true)`.
 - Converted external `H8Memory.Release` call sites to explicit owners and made missing owner/tracker proof throw `FatalMemoryException`.
+- Stored and completed the final `WfcOutpostPowerBootRuntime` scheduled release handle instead of abandoning it.
 - Removed the dead `_lastRelocationRecords` allocation/disposal, stopped setting `H8AllocationFlags.Relocatable` on vault descriptors, and kept relocation record reads as an empty compatibility surface.
 - Changed DataVault comments from relocatable to generation-checked handles.
 - Made `GetBuffer` reject `SystemID.Unknown` requesters instead of laundering them through `CoreDataVault`.
@@ -90,13 +91,14 @@ Cinematic Cheats used:
 Exact Microseconds saved:
 - 0 us steady-frame change.
 - Removed one persistent 64 * 32 byte relocation-record NativeArray allocation, approximately 2048 bytes plus allocator overhead, during DataVault initialization.
-- Disposal/free paths add one owner/tracker branch and use the existing owner lookup only on cold disposal/free.
+- Disposal/free paths add one owner/tracker branch and use the existing owner lookup only on cold disposal/free. The added power boot `Complete()` is cold teardown-only.
 
 Verification:
 - No dotnet build/rebuild was run, per user order.
 - Static `rg` found no live compaction, memmove job, stress gate, thread fence, BurstCompile, or Stopwatch symbols in `GlobalDataVault.cs`.
 - Static `rg` found no `_lastRelocationRecords`, `RelocationRecordCapacity`, DataVault `H8AllocationFlags.Relocatable`, or relocatable-handle wording in the touched memory files.
 - Static `rg` found no external legacy `H8Memory.Release` or two-argument `H8Memory.FreeRaw` call shapes.
+- Static `rg` found no ignored job-deferred `H8Memory.Release` handle in project call sites.
 - Static `rg` found no direct unknown DataVault requester; only internal fail-fast guards and `GlobalRegistry` unknown-return fallback remain.
 - DTO marker scan still finds v72 `PlayerKinematicStateDTO`, `InventoryShadowDTO`, `HabitatFloodStateDTO`, codec tail read/write, and manifest size/offset checks.
 - `git diff --check` passed with CRLF warnings only.
