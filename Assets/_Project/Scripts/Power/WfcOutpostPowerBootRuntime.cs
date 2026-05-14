@@ -215,7 +215,8 @@ namespace Hecton8.Power
             dependency = H8Memory.Release(ref _cellToNode, dependency, LogisticsGridSystemId);
             dependency = H8Memory.Release(ref _counts, dependency, LogisticsGridSystemId);
             dependency = H8Memory.Release(ref _generatorNodeIndex, dependency, LogisticsGridSystemId);
-            H8Memory.Release(ref _blackBox, dependency, LogisticsGridSystemId);
+            dependency = H8Memory.Release(ref _blackBox, dependency, LogisticsGridSystemId);
+            dependency.Complete();
 
             _initialized = false;
             _hasActiveGraph = false;
