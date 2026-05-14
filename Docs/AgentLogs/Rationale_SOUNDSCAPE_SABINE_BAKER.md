@@ -87,3 +87,15 @@ Rejected Alternatives: Inventing a polish mandate was rejected because batch par
 Scalability potential: No runtime surface changed. The validator remains offline and the binary remains fixed-size.
 
 Hardware Impact: None. Anti-bloat verified the runtime payload remains `262400` bytes and no Python bytecode artifact was left for this agent.
+
+## Decision 7 - Independent Regression Tests
+
+Problem: A CLI validator can accidentally validate only its happy path. The batch demands recursive self-validation, and the user asked to continue until completion is not just a claim.
+
+Solution: Add `Tools/test_acoustic_validator.py` with independent unittest coverage for deterministic byte output, header constants, recursive edge-case validation, payload CRC failure, and truncated binary failure.
+
+Rejected Alternatives: Re-running only `Tools/AcousticValidator.py --verify-only` was rejected because it does not prove the failure paths or byte determinism across separate bakes.
+
+Scalability potential: Tests are offline only. Runtime remains one fixed binary payload and one read-map contract.
+
+Hardware Impact: No runtime cost. The test prevents a corrupt or shape-drifted LUT from reaching low-end hardware unnoticed.

@@ -125,6 +125,7 @@ Run:
 ```powershell
 python Tools/AcousticValidator.py
 python Tools/AcousticValidator.py --verify-only
+python Tools/test_acoustic_validator.py
 ```
 
 Validation checks:
@@ -135,6 +136,7 @@ Validation checks:
 - RT60 clamp range `[0.05, 12.0]`
 - recursive edge cases: Small locker, Crew compartment, Pressurized corridor, Mega-Cave, Giant Void
 - Mega-Cave error below `0.01%`
+- regression tests for deterministic byte output, header contract, recursive edge validation, CRC failure, and truncation failure
 
 Expected terminal status:
 
