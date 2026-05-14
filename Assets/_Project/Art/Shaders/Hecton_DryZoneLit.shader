@@ -405,7 +405,9 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
                 half hullDentShadow;
                 float3 safePositionOS = HectonCoreLitApplyHullDentsOS(input.positionOS.xyz, input.normalOS, hullDentShadow);
                 float habitatStress01 = saturate(_HectonHabitatModuleStressParams.w);
-                if (_HectonHabitatModuleStressParams.z <= 0.5 && _HectonHabitatModuleStressParams.x > 0.5)
+                if (_HectonHabitatModuleStressParams.z <= 0.5 &&
+                    _HectonHabitatModuleStressParams.x > 0.5 &&
+                    habitatStress01 > 0.0001)
                 {
                     VertexPositionInputs preBendPositionInputs = GetVertexPositionInputs(safePositionOS);
                     habitatStress01 = HectonHabitatInteriorResolveStress01(preBendPositionInputs.positionWS);

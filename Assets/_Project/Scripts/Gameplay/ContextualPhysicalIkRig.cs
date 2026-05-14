@@ -1444,7 +1444,7 @@ namespace Hecton8.Gameplay
             if (!math.all(math.isfinite(impulse)))
                 return;
 
-            float recoilCap = math.max(0.0f, toolRecoilMaxOffsetMeters);
+            float recoilCap = SanitizeNonNegativeScalar(toolRecoilMaxOffsetMeters);
             _rightToolRecoilOffset = ClampVectorNoSqrt(
                 _rightToolRecoilOffset + ContextualPhysicalIkMath.ToUnityVector3(impulse),
                 recoilCap);
@@ -1572,17 +1572,18 @@ namespace Hecton8.Gameplay
             bool xrActive = HectonXRRuntimeState.IsXRActive;
             bool lowerBodyIkEnabled = enableFootPlacement && (xrActive || !lowTier);
             bool wallTouchEnabled = enableHandBracing && (!disableWallTouchOnLowTier || !lowTier);
+            float safeDeltaTime = math.max(0.0001f, SanitizeNonNegativeScalar(deltaTime));
 
             RefreshPlayerStress();
-            TickBreathingState(deltaTime, lowTier);
-            TickExternalSqueezePoleState(deltaTime);
+            TickBreathingState(safeDeltaTime, lowTier);
+            TickExternalSqueezePoleState(safeDeltaTime);
             ApplyExternalSqueezePoleBias();
             CaptureSpineTargets(lowTier);
             CaptureAppendageTargets();
-            ApplyMuscleBulgeSignal(deltaTime);
-            CapturePredictiveRepairLatch(deltaTime, wallTouchEnabled);
-            TickToolHandTransientState(deltaTime);
-            TickUpperArmFovCulling(deltaTime);
+            ApplyMuscleBulgeSignal(safeDeltaTime);
+            CapturePredictiveRepairLatch(safeDeltaTime, wallTouchEnabled);
+            TickToolHandTransientState(safeDeltaTime);
+            TickUpperArmFovCulling(safeDeltaTime);
 
             Vector3 rootPositionUnity = characterRoot.position;
             Quaternion rootRotationUnity = characterRoot.rotation;
@@ -1591,6 +1592,9 @@ namespace Hecton8.Gameplay
 
             float3 rootPosition = ContextualPhysicalIkMath.ToFloat3(rootPositionUnity);
             quaternion rootRotation = ContextualPhysicalIkMath.ToMathematicsQuaternion(rootRotationUnity);
+            float3 rootForward = ContextualPhysicalIkMath.SafeNormalize(
+                math.mul(rootRotation, new float3(0.0f, 0.0f, 1.0f)),
+                new float3(0.0f, 0.0f, 1.0f));
             float3 rootRight = ContextualPhysicalIkMath.SafeNormalize(
                 math.mul(rootRotation, new float3(1.0f, 0.0f, 0.0f)),
                 new float3(1.0f, 0.0f, 0.0f));
@@ -1599,7 +1603,12 @@ namespace Hecton8.Gameplay
                 new float3(0.0f, 1.0f, 0.0f));
             ResolveColdShiverOffsets(rootRight, rootUp, out float3 leftColdShiverOffset, out float3 rightColdShiverOffset);
             float viewerDistanceSq = 0.0f;
-            if (hasViewerPosition && math.all(math.isfinite(viewerPosition)))
+            bool hasFiniteViewerPose = hasViewerPosition &&
+                math.all(math.isfinite(viewerPosition)) &&
+                math.all(math.isfinite(viewerForward)) &&
+                math.all(math.isfinite(viewerUp)) &&
+                math.all(math.isfinite(viewerRight));
+            if (hasFiniteViewerPose)
             {
                 viewerDistanceSq = math.lengthsq(rootPosition - viewerPosition);
                 viewerDistanceSq = math.select(viewerDistanceSq, 0.0f, !math.isfinite(viewerDistanceSq));
@@ -1612,8 +1621,8 @@ namespace Hecton8.Gameplay
             entityState.EnableWallTouch = wallTouchEnabled ? 1 : 0;
             entityState.LeftHandEmpty = leftHandEmptyForWallTouch ? 1 : 0;
             entityState.EnableToolRetraction = enableToolRetraction ? 1 : 0;
-            entityState.HasCameraPose = hasViewerPosition ? 1 : 0;
-            entityState.DeltaTime = deltaTime;
+            entityState.HasCameraPose = hasFiniteViewerPose ? 1 : 0;
+            entityState.DeltaTime = safeDeltaTime;
             entityState.RootPosition = rootPosition;
             entityState.RootRotation = rootRotation;
             entityState.PelvisPosition = ReadPositionOrFallback(pelvis, entityState.RootPosition);
@@ -1621,56 +1630,56 @@ namespace Hecton8.Gameplay
             entityState.RightFootProbeOrigin = ReadPositionOrFallback(rightFootProbe, entityState.RootPosition);
             entityState.LeftHandProbeOrigin = ReadPositionOrFallback(leftHandProbe, entityState.RootPosition);
             entityState.RightHandProbeOrigin = ReadPositionOrFallback(rightHandProbe, entityState.RootPosition);
-            entityState.PredictiveLeftHandPosition = ContextualPhysicalIkMath.ToFloat3(_predictiveLeftHandPosition);
-            entityState.PredictiveRightHandPosition = ContextualPhysicalIkMath.ToFloat3(_predictiveRightHandPosition);
-            entityState.PredictiveLeftHandNormal = ContextualPhysicalIkMath.ToFloat3(_predictiveLeftHandNormal);
-            entityState.PredictiveRightHandNormal = ContextualPhysicalIkMath.ToFloat3(_predictiveRightHandNormal);
-            entityState.CameraPosition = viewerPosition;
-            entityState.CameraForward = viewerForward;
-            entityState.CameraUp = viewerUp;
-            entityState.CameraRight = viewerRight;
-            entityState.LeftToolRecoilOffset = ContextualPhysicalIkMath.ToFloat3(_leftToolRecoilOffset);
-            entityState.RightToolRecoilOffset = ContextualPhysicalIkMath.ToFloat3(_rightToolRecoilOffset);
+            entityState.PredictiveLeftHandPosition = SanitizeFloat3Value(ContextualPhysicalIkMath.ToFloat3(_predictiveLeftHandPosition), rootPosition);
+            entityState.PredictiveRightHandPosition = SanitizeFloat3Value(ContextualPhysicalIkMath.ToFloat3(_predictiveRightHandPosition), rootPosition);
+            entityState.PredictiveLeftHandNormal = ContextualPhysicalIkMath.SafeNormalize(SanitizeFloat3Value(ContextualPhysicalIkMath.ToFloat3(_predictiveLeftHandNormal), new float3(0.0f, 1.0f, 0.0f)), new float3(0.0f, 1.0f, 0.0f));
+            entityState.PredictiveRightHandNormal = ContextualPhysicalIkMath.SafeNormalize(SanitizeFloat3Value(ContextualPhysicalIkMath.ToFloat3(_predictiveRightHandNormal), new float3(0.0f, 1.0f, 0.0f)), new float3(0.0f, 1.0f, 0.0f));
+            entityState.CameraPosition = hasFiniteViewerPose ? viewerPosition : rootPosition;
+            entityState.CameraForward = hasFiniteViewerPose ? ContextualPhysicalIkMath.SafeNormalize(viewerForward, rootForward) : rootForward;
+            entityState.CameraUp = hasFiniteViewerPose ? ContextualPhysicalIkMath.SafeNormalize(viewerUp, rootUp) : rootUp;
+            entityState.CameraRight = hasFiniteViewerPose ? ContextualPhysicalIkMath.SafeNormalize(viewerRight, rootRight) : rootRight;
+            entityState.LeftToolRecoilOffset = SanitizeFloat3Value(ContextualPhysicalIkMath.ToFloat3(_leftToolRecoilOffset), float3.zero);
+            entityState.RightToolRecoilOffset = SanitizeFloat3Value(ContextualPhysicalIkMath.ToFloat3(_rightToolRecoilOffset), float3.zero);
             entityState.LeftColdShiverOffset = leftColdShiverOffset;
             entityState.RightColdShiverOffset = rightColdShiverOffset;
-            entityState.DashboardRightHandPosition = ContextualPhysicalIkMath.ToFloat3(_terminalRightHandPosition);
-            entityState.DashboardRightHandNormal = ContextualPhysicalIkMath.ToFloat3(_terminalRightHandNormal);
-            entityState.LeftLegReach = _cachedLeftLegReach;
-            entityState.RightLegReach = _cachedRightLegReach;
-            entityState.LeftArmReach = _cachedLeftArmReach;
-            entityState.RightArmReach = _cachedRightArmReach;
-            entityState.PredictiveLeftHandBlend = _predictiveLeftHandBlend;
-            entityState.PredictiveRightHandBlend = _predictiveRightHandBlend;
-            entityState.CameraHandLateralOffset = cameraHandLateralOffset;
-            entityState.CameraHandVerticalOffset = cameraHandVerticalOffset;
-            entityState.ToolCollisionDistance = toolCollisionDistance;
-            entityState.ToolRetractionBackDistance = toolRetractionBackDistance;
-            entityState.ToolRetractionLiftDistance = toolRetractionLiftDistance;
-            entityState.ToolRetractionBlend = toolRetractionBlend;
-            entityState.ToolRecoilMaxOffset = toolRecoilMaxOffsetMeters;
-            entityState.DashboardRightHandBlend = _terminalRightHandBlend;
-            entityState.ColdShiverBlend = _coldShiverBlend;
-            entityState.FootContactOffset = footContactOffset;
-            entityState.HandContactOffset = handContactOffset;
-            entityState.FootProbeDistanceScale = footProbeDistanceScale;
-            entityState.HandProbeDistanceScale = handProbeDistanceScale;
+            entityState.DashboardRightHandPosition = SanitizeFloat3Value(ContextualPhysicalIkMath.ToFloat3(_terminalRightHandPosition), rootPosition);
+            entityState.DashboardRightHandNormal = ContextualPhysicalIkMath.SafeNormalize(SanitizeFloat3Value(ContextualPhysicalIkMath.ToFloat3(_terminalRightHandNormal), new float3(0.0f, 1.0f, 0.0f)), new float3(0.0f, 1.0f, 0.0f));
+            entityState.LeftLegReach = SanitizeNonNegativeScalar(_cachedLeftLegReach);
+            entityState.RightLegReach = SanitizeNonNegativeScalar(_cachedRightLegReach);
+            entityState.LeftArmReach = SanitizeNonNegativeScalar(_cachedLeftArmReach);
+            entityState.RightArmReach = SanitizeNonNegativeScalar(_cachedRightArmReach);
+            entityState.PredictiveLeftHandBlend = SanitizeUnitScalar(_predictiveLeftHandBlend);
+            entityState.PredictiveRightHandBlend = SanitizeUnitScalar(_predictiveRightHandBlend);
+            entityState.CameraHandLateralOffset = SanitizeNonNegativeScalar(cameraHandLateralOffset);
+            entityState.CameraHandVerticalOffset = math.select(cameraHandVerticalOffset, 0.0f, !math.isfinite(cameraHandVerticalOffset));
+            entityState.ToolCollisionDistance = SanitizeNonNegativeScalar(toolCollisionDistance);
+            entityState.ToolRetractionBackDistance = SanitizeNonNegativeScalar(toolRetractionBackDistance);
+            entityState.ToolRetractionLiftDistance = SanitizeNonNegativeScalar(toolRetractionLiftDistance);
+            entityState.ToolRetractionBlend = SanitizeUnitScalar(toolRetractionBlend);
+            entityState.ToolRecoilMaxOffset = SanitizeNonNegativeScalar(toolRecoilMaxOffsetMeters);
+            entityState.DashboardRightHandBlend = SanitizeUnitScalar(_terminalRightHandBlend);
+            entityState.ColdShiverBlend = SanitizeUnitScalar(_coldShiverBlend);
+            entityState.FootContactOffset = SanitizeNonNegativeScalar(footContactOffset);
+            entityState.HandContactOffset = SanitizeNonNegativeScalar(handContactOffset);
+            entityState.FootProbeDistanceScale = SanitizeNonNegativeScalar(footProbeDistanceScale);
+            entityState.HandProbeDistanceScale = SanitizeNonNegativeScalar(handProbeDistanceScale);
             entityState.GroundLayerMask = groundMask.value;
             entityState.WallLayerMask = wallMask.value;
-            entityState.TunnelClearanceDistance = tunnelClearanceDistance;
-            entityState.HandBraceFadeDistance = handBraceFadeDistance;
-            entityState.TargetPositionSharpness = targetPositionSharpness;
-            entityState.TargetNormalSharpness = targetNormalSharpness;
-            entityState.BlendFadeSharpness = blendFadeSharpness;
-            entityState.MaxDeltaHeight = maxDeltaHeight;
-            entityState.ComShiftLateralFactor = comShiftLateralFactor;
-            entityState.ComShiftForwardFactor = comShiftForwardFactor;
-            entityState.ComShiftVerticalFactor = comShiftVerticalFactor;
-            entityState.ComResponseSharpness = comResponseSharpness;
-            entityState.ComLeanPitchRadians = math.radians(comLeanPitchDegrees);
-            entityState.ComLeanRollRadians = math.radians(comLeanRollDegrees);
-            entityState.MaxComLateral = maxComLateral;
-            entityState.MaxComForward = maxComForward;
-            entityState.MaxComVertical = maxComVertical;
+            entityState.TunnelClearanceDistance = SanitizeNonNegativeScalar(tunnelClearanceDistance);
+            entityState.HandBraceFadeDistance = SanitizeNonNegativeScalar(handBraceFadeDistance);
+            entityState.TargetPositionSharpness = SanitizeNonNegativeScalar(targetPositionSharpness);
+            entityState.TargetNormalSharpness = SanitizeNonNegativeScalar(targetNormalSharpness);
+            entityState.BlendFadeSharpness = SanitizeNonNegativeScalar(blendFadeSharpness);
+            entityState.MaxDeltaHeight = SanitizeNonNegativeScalar(maxDeltaHeight);
+            entityState.ComShiftLateralFactor = SanitizeNonNegativeScalar(comShiftLateralFactor);
+            entityState.ComShiftForwardFactor = SanitizeNonNegativeScalar(comShiftForwardFactor);
+            entityState.ComShiftVerticalFactor = SanitizeNonNegativeScalar(comShiftVerticalFactor);
+            entityState.ComResponseSharpness = SanitizeNonNegativeScalar(comResponseSharpness);
+            entityState.ComLeanPitchRadians = SanitizeNonNegativeScalar(math.radians(comLeanPitchDegrees));
+            entityState.ComLeanRollRadians = SanitizeNonNegativeScalar(math.radians(comLeanRollDegrees));
+            entityState.MaxComLateral = SanitizeNonNegativeScalar(maxComLateral);
+            entityState.MaxComForward = SanitizeNonNegativeScalar(maxComForward);
+            entityState.MaxComVertical = SanitizeNonNegativeScalar(maxComVertical);
             entityState.UpdateThisFrame = updateThisFrame;
             entityState.ViewerDistanceSq = viewerDistanceSq;
             entityState.UpdateBitfield = updateBitfield;
@@ -1680,8 +1689,8 @@ namespace Hecton8.Gameplay
 
         private void TickToolHandTransientState(float deltaTime)
         {
-            float safeDeltaTime = math.max(0.0001f, deltaTime);
-            float recoilDecay = math.rcp(1.0f + (math.max(0.0f, toolRecoilDecaySharpness) * safeDeltaTime));
+            float safeDeltaTime = math.max(0.0001f, SanitizeNonNegativeScalar(deltaTime));
+            float recoilDecay = math.rcp(1.0f + (SanitizeNonNegativeScalar(toolRecoilDecaySharpness) * safeDeltaTime));
             _leftToolRecoilOffset *= recoilDecay;
             _rightToolRecoilOffset *= recoilDecay;
             TickColdShiverState(safeDeltaTime);
@@ -1722,7 +1731,7 @@ namespace Hecton8.Gameplay
 
         private void TickBreathingState(float deltaTime, bool lowTier)
         {
-            float safeDeltaTime = math.max(0.0001f, deltaTime);
+            float safeDeltaTime = math.max(0.0001f, SanitizeNonNegativeScalar(deltaTime));
             float targetBlend = enableProceduralBreathing ? 1.0f : 0.0f;
             _breathingBlend = ContextualPhysicalIkMath.SmoothScalar(
                 _breathingBlend,
@@ -1733,7 +1742,7 @@ namespace Hecton8.Gameplay
             if (_breathingBlend <= 0.0001f)
                 return;
 
-            float rate = math.max(0.0f, breathingBaseRateHz) + _playerStress01 * math.max(0.0f, breathingStressRateHz);
+            float rate = SanitizeNonNegativeScalar(breathingBaseRateHz) + _playerStress01 * SanitizeNonNegativeScalar(breathingStressRateHz);
             if (lowTier)
                 rate *= 0.75f;
             _breathingPhase += rate * safeDeltaTime;
@@ -1743,7 +1752,7 @@ namespace Hecton8.Gameplay
 
         private void TickExternalSqueezePoleState(float deltaTime)
         {
-            float safeDeltaTime = math.max(0.0001f, deltaTime);
+            float safeDeltaTime = math.max(0.0001f, SanitizeNonNegativeScalar(deltaTime));
             _externalSqueezePoleHoldTimer = math.max(0.0f, _externalSqueezePoleHoldTimer - safeDeltaTime);
             float targetBlend = _externalSqueezePoleHoldTimer > 0.0f ? 1.0f : 0.0f;
             _externalSqueezePoleBlend = ContextualPhysicalIkMath.SmoothScalar(
@@ -1803,7 +1812,7 @@ namespace Hecton8.Gameplay
             if (_coldShiverBlend <= 0.0001f)
                 return;
 
-            _coldShiverPhase += math.max(0.0f, coldShiverFrequencyHz) * deltaTime;
+            _coldShiverPhase += SanitizeNonNegativeScalar(coldShiverFrequencyHz) * SanitizeNonNegativeScalar(deltaTime);
             if (_coldShiverPhase >= ColdShiverPhaseWrap)
                 _coldShiverPhase -= ColdShiverPhaseWrap;
         }
@@ -1834,7 +1843,7 @@ namespace Hecton8.Gameplay
             leftOffset = float3.zero;
             rightOffset = float3.zero;
 
-            float amplitude = math.max(0.0f, coldShiverAmplitudeMeters);
+            float amplitude = SanitizeNonNegativeScalar(coldShiverAmplitudeMeters);
             if (amplitude <= 0.000001f || _coldShiverBlend <= 0.0001f)
                 return;
 
@@ -1859,7 +1868,7 @@ namespace Hecton8.Gameplay
 
             Vector3 leftVelocity = Vector3.zero;
             Vector3 rightVelocity = Vector3.zero;
-            float safeDeltaTime = math.max(deltaTime, 0.0001f);
+            float safeDeltaTime = math.max(SanitizeNonNegativeScalar(deltaTime), 0.0001f);
             if (_hasPreviousLeftPredictiveControllerPose && leftSource != null)
                 leftVelocity = ResolveAupVelocity(in leftAup, in _previousLeftControllerAup, safeDeltaTime);
             if (_hasPreviousRightPredictiveControllerPose && rightSource != null)
@@ -1939,7 +1948,7 @@ namespace Hecton8.Gameplay
             }
             else
             {
-                _externalWallLeftHandHoldTimer = math.max(0.0f, _externalWallLeftHandHoldTimer - math.max(0.0f, deltaTime));
+                _externalWallLeftHandHoldTimer = math.max(0.0f, _externalWallLeftHandHoldTimer - SanitizeNonNegativeScalar(deltaTime));
                 if (_externalWallLeftHandBlend > _predictiveLeftHandBlend && IsFiniteVector(_externalWallLeftHandPosition))
                 {
                     _predictiveLeftHandPosition = _externalWallLeftHandPosition;
@@ -1954,7 +1963,7 @@ namespace Hecton8.Gameplay
             }
             else
             {
-                _externalWallRightHandHoldTimer = math.max(0.0f, _externalWallRightHandHoldTimer - math.max(0.0f, deltaTime));
+                _externalWallRightHandHoldTimer = math.max(0.0f, _externalWallRightHandHoldTimer - SanitizeNonNegativeScalar(deltaTime));
                 if (_externalWallRightHandBlend > _predictiveRightHandBlend && IsFiniteVector(_externalWallRightHandPosition))
                 {
                     _predictiveRightHandPosition = _externalWallRightHandPosition;
@@ -2033,7 +2042,7 @@ namespace Hecton8.Gameplay
             in AbsoluteUniversePosition previousAup,
             float deltaTime)
         {
-            float safeDeltaTime = math.max(deltaTime, 0.0001f);
+            float safeDeltaTime = math.max(SanitizeNonNegativeScalar(deltaTime), 0.0001f);
             float3 currentRuntime = currentAup.ToRuntimeFloat3();
             float3 previousRuntime = previousAup.ToRuntimeFloat3();
             float3 velocity = (currentRuntime - previousRuntime) * math.rcp(safeDeltaTime);
@@ -2069,7 +2078,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            _upperArmCullTimer += math.max(0.0f, deltaTime);
+            _upperArmCullTimer += SanitizeNonNegativeScalar(deltaTime);
             if (_upperArmCullTimer >= math.max(0.01f, upperArmCullHysteresisSeconds) && _upperArmRenderersVisible)
                 SetUpperArmRenderersVisible(false);
         }
@@ -2574,9 +2583,9 @@ namespace Hecton8.Gameplay
                 float wave = lowTier
                     ? CinematicMath.FastTriangleWaveSigned(_breathingPhase)
                     : math.sin(_breathingPhase * 6.28318530718f);
-                float amplitude = math.max(0.0f, breathingAmplitudeMeters) * _breathingBlend * (0.45f + _playerStress01 * 0.55f);
+                float amplitude = SanitizeNonNegativeScalar(breathingAmplitudeMeters) * _breathingBlend * (0.45f + _playerStress01 * 0.55f);
                 float jitter = CinematicMath.FastTriangleWaveSigned((_breathingPhase * 3.17f) + 0.19f) *
-                    math.max(0.0f, breathingStressJitterMeters) *
+                    SanitizeNonNegativeScalar(breathingStressJitterMeters) *
                     _playerStress01 *
                     _breathingBlend;
                 float3 breathOffset = hmdUp * (wave * amplitude) + hmdRight * jitter;
@@ -2671,7 +2680,7 @@ namespace Hecton8.Gameplay
             if (!_muscleBulgeOutput.IsCreated || !_muscleBulgeMaterialInitialized || _muscleBulgeMaterialInstance == null)
                 return;
 
-            float safeDeltaTime = math.max(0.0001f, deltaTime);
+            float safeDeltaTime = math.max(0.0001f, SanitizeNonNegativeScalar(deltaTime));
             float targetBulge = SanitizeUnitScalar(_muscleBulgeOutput[0] * muscleBulgeScale);
             _muscleBulgeCurrent = ContextualPhysicalIkMath.SmoothScalar(_muscleBulgeCurrent, targetBulge, muscleBulgeSharpness, safeDeltaTime);
             _muscleBulgeMaterialInstance.SetFloat(MuscleBulgeShaderId, _muscleBulgeCurrent);
@@ -3219,6 +3228,12 @@ namespace Hecton8.Gameplay
             return math.select(math.max(0.0f, value), 0.0f, !math.isfinite(value));
         }
 
+        private static float3 SanitizeFloat3Value(float3 value, float3 fallback)
+        {
+            float3 safeFallback = math.select(fallback, float3.zero, !math.all(math.isfinite(fallback)));
+            return math.select(value, safeFallback, !math.all(math.isfinite(value)));
+        }
+
         private static float3 ReadPositionOrFallback(Transform source, float3 fallback)
         {
             if (source == null)
@@ -3250,7 +3265,7 @@ namespace Hecton8.Gameplay
             if (!IsFiniteVector(value))
                 return Vector3.zero;
 
-            float safeMaxLength = math.max(0.0f, maxLength);
+            float safeMaxLength = SanitizeNonNegativeScalar(maxLength);
             if (safeMaxLength <= 0.000001f)
                 return Vector3.zero;
 

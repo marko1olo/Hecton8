@@ -127,3 +127,39 @@ Rejected Alternatives: Letting NativeQueue growth handle overload violates zero-
 Scalability potential: Low remains 10Hz snap/acquire; Middle drains 64/frame; High/Ultra can raise presentation density downstream without changing the acquisition cap.
 
 Hardware Impact: MX350 avoids bursty inventory work. Sector-delta math saves two AUP absolute conversions per candidate and reduces per-entity math pressure before Burst verification.
+
+## Decision 9 - Continuation Source Boundary
+
+Problem: On the 2026-05-15 continuation, `Docs/Tasks/CURRENT_BATCH.md` no longer contains `<AGENT_PROMPT id="PHYS_MAGNETIC_LOOT_ACQUISITION">`. The batch protocol still requires re-extraction, but borrowing a neighboring prompt would corrupt scope.
+
+Solution: Treat the missing current-batch tag as an external batch rotation. Continue from persisted `Status_PHYS_MAGNETIC_LOOT_ACQUISITION.md`, this rationale file, and the user's repeated direct assignment. Record the missing extraction rather than inventing a new prompt.
+
+Rejected Alternatives: Using the active fauna/noise/data prompts would violate strict parsing. Stopping work would ignore the user's explicit continuation request.
+
+Scalability potential: No runtime behavior change. It protects H-Phi process integrity by keeping domain scope stable during parallel-agent batch churn.
+
+Hardware Impact: None.
+
+## Decision 10 - Fault Evidence And Entity Identity
+
+Problem: Fault dumps could be written before the current fault frame was recorded. Pickup slot identity also used a truncated `int` sidecar derived from an entity id, which creates avoidable collision risk over long sessions.
+
+Solution: Commit acquisition/hash/fault counters before dumping, record telemetry immediately on first fault, suppress duplicate same-frame telemetry writes, and store full `ulong` pickup entity ids in the sidecar.
+
+Rejected Alternatives: Duplicating fault frames wastes the fixed 300-entry black box. `GetInstanceID()` was rejected because engine object ids are runtime-local; truncated entity ids were rejected because collision risk is unnecessary.
+
+Scalability potential: Low/Middle/High/Ultra all keep the same fixed dump shape. Dense pickup fields preserve per-slot velocity only for the exact same entity.
+
+Hardware Impact: Adds one `uint` frame marker and increases the cold sidecar from 16 KB to 32 KB at 4096 slots. No FastTick allocation; SlowTick compare remains O(n).
+
+## Decision 11 - Burst Local Broadphase
+
+Problem: Far-sector loot still paid AUP delta math before the radius reject, and the integration path still exposed a cross-assembly AUP rebuild call to Burst.
+
+Solution: Add a guarded adjacent-cell reject when `PullRadiusSq <= AupCellSizeSq`, then rebuild integrated AUPs with local numeric math inside `LootMagnetPullJob`.
+
+Rejected Alternatives: A mutable spatial hash table was rejected because the prompt's architecture is vault SoA iteration and adding a hash owner creates new dependency and allocation risk. Unconditional cell rejection was rejected because oversized debug radii must still work.
+
+Scalability potential: Low-tier 10Hz scans skip far-cell math. Middle/High/Ultra retain exact nearby behavior while reducing math pressure in scattered loot fields.
+
+Hardware Impact: Adds three integer comparisons before double/float delta math. Saves sector-delta work for loot more than one 5 km AUP cell from the player. Exact profiler numbers remain pending Unity/Burst verification.

@@ -233,3 +233,11 @@ Solution: Sampled scalability tier once per hydrodynamic stress pass and threade
 Rejected Alternatives: Keeping registry reads inside per-module helpers, adding a new public dependency-injection interface in the middle of the batch, or claiming a project-wide H-Phi score without the H-Phi monitor. Per-module registry reads waste CPU; new public APIs violate interface immutability; fake global scores violate evidence rules.
 Scalability potential: Low/MX350 gets fewer service-locator reads during pressure/flood stress passes and rupture events. Mid/High/Ultra keep the same deformation, audio, and fluid decal behavior while spending saved CPU on shader pressure polish.
 Hardware Impact: Saves repeated atmosphere lookup on missing-depth module loops and repeated audio/decal lookups after warm cache; estimated 2-8 us on i3/MX350 stress-heavy frames, 0 B/frame, no shader cost. Local H-Phi evidence after the pass: `GlobalRegistry=4`, `SignalBus=2`, `GlobalSignals=1`, `NativeArray=81`, `GraphicsBuffer=3`, `FindCalls=0`, `UpdateMethods=0` in `HabitatGraphManager.cs`.
+
+## Follow-Up Correction - Calm-Stress Shader Resolver Skip
+
+Problem: Mid/High/Ultra DryZone vertices still entered the per-module stress resolver when module count was positive but global peak stress was zero. That means calm habitat walls could scan up to 64 module radii per vertex for no visible deformation.
+Solution: Added a peak-stress guard before `HectonHabitatInteriorResolveStress01`. The resolver now runs only when non-low mode has visible modules and peak stress exceeds 0.0001. Low-tier crease mode remains driven by peak stress, and stressed habitats still resolve localized per-module bowing.
+Rejected Alternatives: Always resolving to preserve theoretical zero-stress locality, or moving the guard into the include. The first wastes vertex ALU; the second hides callsite intent and still forces helper entry.
+Scalability potential: Low/MX350 already avoids the vertex resolver; Mid/High/Ultra calm interiors now also skip it until pressure actually buys visible bowing.
+Hardware Impact: Saves a 0-64 slot radius scan per DryZone vertex during calm module states; estimated 5-30 us per 1k interior vertices on MX350-class GPUs depending on visible module count, with no loss once stress is nonzero.

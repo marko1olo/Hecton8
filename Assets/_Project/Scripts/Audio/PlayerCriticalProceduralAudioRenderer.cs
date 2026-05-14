@@ -92,6 +92,7 @@ namespace Hecton8.Audio
         private const int KineticImpactSignalScanLimit = 32;
         private const int KineticImpactDuplicateHistoryCapacity = 8;
         private const int KineticImpactDuplicateHistoryMask = KineticImpactDuplicateHistoryCapacity - 1;
+        private const int KineticImpactQualityPolicyRefreshFrames = 30;
         private const int SonarTriggerFlagKineticImpactEcho = 1 << 0;
         private const float KineticImpactMinimumEnergyJoules = 12f;
         private const float KineticImpactReferenceEnergyJoules = 42000f;
@@ -766,6 +767,9 @@ namespace Hecton8.Audio
         // COLD ALLOC: HighSpeedImpactDuplicateEntry[8] - same-frame kinetic packet dedupe ring - owner: PlayerCriticalProceduralAudioRenderer
         private readonly HighSpeedImpactDuplicateEntry[] _recentHighSpeedImpactSignals = new HighSpeedImpactDuplicateEntry[KineticImpactDuplicateHistoryCapacity];
         private int _recentHighSpeedImpactSignalCursor;
+        private int _kineticImpactQualityPolicyFrame = -4096;
+        private bool _kineticImpactLowTierFallback;
+        private IAudioService _kineticLowTierAudioService;
         private int _lastDirectSonarPingFrame = -4096;
         private float _lastDirectSonarPingIntensity;
         private Vector3 _lastDirectSonarPingOrigin;
@@ -1661,6 +1665,7 @@ namespace Hecton8.Audio
             UnsubscribeTransportCoordinator();
             TryUnregister();
             TryUnregisterRuntimeService();
+            _kineticLowTierAudioService = null;
             bool producerStopped = StopAudioProducerThread();
             RestoreListenerReverbDefaults();
             if (producerStopped)
@@ -1700,6 +1705,7 @@ namespace Hecton8.Audio
             }
 
             TryUnregisterRuntimeService();
+            _kineticLowTierAudioService = null;
         }
 
         /// <summary>
@@ -1877,6 +1883,7 @@ namespace Hecton8.Audio
 
             TryBindFromBootstrap();
             UpdateCaveReverb(deltaTime);
+            RefreshKineticImpactQualityPolicyIfStale(Time.frameCount);
 
             if (playerMovement == null || _playerRigidbody == null)
             {
@@ -3189,13 +3196,30 @@ namespace Hecton8.Audio
             }
         }
 
-        private static bool IsLowTierKineticImpactFallback()
+        private bool IsLowTierKineticImpactFallback()
+        {
+            RefreshKineticImpactQualityPolicyIfStale(Time.frameCount);
+            return _kineticImpactLowTierFallback;
+        }
+
+        private void RefreshKineticImpactQualityPolicyIfStale(int frame)
+        {
+            if (frame < _kineticImpactQualityPolicyFrame ||
+                frame - _kineticImpactQualityPolicyFrame >= KineticImpactQualityPolicyRefreshFrames)
+            {
+                RefreshKineticImpactQualityPolicy(frame);
+            }
+        }
+
+        private void RefreshKineticImpactQualityPolicy(int frame)
         {
             HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
-            return GlobalRegistry.H8_LOW_MEMORY_PROFILE ||
-                   tier == HectonQualityTier.Low ||
-                   tier == HectonQualityTier.Mx350 ||
-                   tier == HectonQualityTier.Unknown;
+            _kineticImpactLowTierFallback =
+                GlobalRegistry.H8_LOW_MEMORY_PROFILE ||
+                tier == HectonQualityTier.Low ||
+                tier == HectonQualityTier.Mx350 ||
+                tier == HectonQualityTier.Unknown;
+            _kineticImpactQualityPolicyFrame = frame;
         }
 
         private bool TryQueueLowTierKineticImpactClip(Vector3 runtimePosition, float energy01, float proximity)
@@ -3203,7 +3227,7 @@ namespace Hecton8.Audio
             if (lowTierKineticImpactClip == null || !IsFiniteVector(runtimePosition))
                 return false;
 
-            IAudioService audio = GlobalRegistry.Audio;
+            IAudioService audio = ResolveKineticLowTierAudioService();
             if (audio == null || !audio.IsInitialized)
                 return false;
 
@@ -3211,6 +3235,17 @@ namespace Hecton8.Audio
             float pitch = math.clamp(math.lerp(0.82f, 1.08f, energy01), 0.1f, 3f);
             audio.PlayAtPoint(lowTierKineticImpactClip, runtimePosition, volume, pitch);
             return true;
+        }
+
+        private IAudioService ResolveKineticLowTierAudioService()
+        {
+            IAudioService audio = _kineticLowTierAudioService;
+            if (audio != null && audio.IsInitialized)
+                return audio;
+
+            audio = GlobalRegistry.Audio;
+            _kineticLowTierAudioService = audio != null && audio.IsInitialized ? audio : null;
+            return _kineticLowTierAudioService;
         }
 
         private float ResolveKineticImpactWaterlineY()

@@ -34,8 +34,13 @@ namespace Hecton8.World
         public bool TryBuildImmediateAbyssalVoxelRoute(Vector3 startPosition, Vector3 endPosition, Vector3[] outputWaypoints, out int waypointCount)
         {
             waypointCount = 0;
-            if (outputWaypoints == null || outputWaypoints.Length < 2)
+            if (outputWaypoints == null ||
+                outputWaypoints.Length < 2 ||
+                !IsFinite(startPosition) ||
+                !IsFinite(endPosition))
+            {
                 return false;
+            }
 
             float3 startProbe = new float3(startPosition.x, startPosition.y, startPosition.z);
             float3 endProbe = new float3(endPosition.x, endPosition.y, endPosition.z);
@@ -66,6 +71,9 @@ namespace Hecton8.World
         {
             handle = default;
             CompleteAbyssalPathJob(forceComplete: false);
+            if (!IsFinite(startPosition) || !IsFinite(endPosition))
+                return false;
+
             if (_abyssalPathScheduled ||
                 _abyssalNavNodeCount <= 0 ||
                 !_nativeMemory.AbyssalNavNodeSnapshotNative.IsCreated)
@@ -1380,16 +1388,29 @@ namespace Hecton8.World
 
         private void BuildFlowFieldNavSupportGrid(Vector3 gridCenter)
         {
-            if (!_nativeMemory.FlowNavSupportGridNative.IsCreated || _ecosystemThreatGridResolution <= 0 || _abyssalNavNodeCount <= 0)
+            if (!_nativeMemory.FlowNavSupportGridNative.IsCreated ||
+                _ecosystemThreatGridResolution <= 0 ||
+                _abyssalNavNodeCount <= 0 ||
+                threatGridCellSize <= 0f ||
+                !math.isfinite(threatGridCellSize) ||
+                !IsFinite(gridCenter))
+            {
                 return;
+            }
 
             int halfExtent = _ecosystemThreatGridResolution >> 1;
             int stencilRadius = math.max(0, flowFieldNavStencilRadiusCells);
+            float inverseThreatGridCellSize = math.rcp(math.max(0.0001f, threatGridCellSize));
+            float supportRadius = math.max(1f, stencilRadius + 0.25f);
+            float inverseSupportRadiusSq = math.rcp(math.max(1f, supportRadius * supportRadius));
             for (int i = 0; i < _abyssalNavNodeCount; i++)
             {
                 Vector3 node = _abyssalNavNodeSnapshot[i];
-                int centerX = (int)math.round((node.x - gridCenter.x) / threatGridCellSize) + halfExtent;
-                int centerZ = (int)math.round((node.z - gridCenter.z) / threatGridCellSize) + halfExtent;
+                if (!IsFinite(node))
+                    continue;
+
+                int centerX = (int)math.round((node.x - gridCenter.x) * inverseThreatGridCellSize) + halfExtent;
+                int centerZ = (int)math.round((node.z - gridCenter.z) * inverseThreatGridCellSize) + halfExtent;
                 if (centerX < 0 || centerZ < 0 || centerX >= _ecosystemThreatGridResolution || centerZ >= _ecosystemThreatGridResolution)
                     continue;
 
@@ -1406,8 +1427,7 @@ namespace Hecton8.World
                             continue;
 
                         float distanceSq = (offsetX * offsetX) + (offsetZ * offsetZ);
-                        float supportRadius = math.max(1f, stencilRadius + 0.25f);
-                        float support01 = 1f - math.saturate(distanceSq / (supportRadius * supportRadius));
+                        float support01 = 1f - math.saturate(distanceSq * inverseSupportRadiusSq);
                         int index = (cellZ * _ecosystemThreatGridResolution) + cellX;
                         float clampedSupport = math.saturate(support01);
                         if (_nativeMemory.FlowNavSupportGridNative[index] < clampedSupport)
@@ -1419,8 +1439,12 @@ namespace Hecton8.World
 
         private int FindNearestAbyssalNavNodeIndex(Vector3 position)
         {
-            if (_abyssalNavNodeCount <= 0 || !_nativeMemory.AbyssalNavNodeSnapshotNative.IsCreated)
+            if (_abyssalNavNodeCount <= 0 ||
+                !_nativeMemory.AbyssalNavNodeSnapshotNative.IsCreated ||
+                !IsFinite(position))
+            {
                 return -1;
+            }
 
             if (TryFindNearestAbyssalNavNodeIndexFromHash(position, out int hashedIndex))
                 return hashedIndex;
@@ -1430,6 +1454,9 @@ namespace Hecton8.World
             for (int i = 0; i < _abyssalNavNodeCount; i++)
             {
                 Vector3 candidate = _abyssalNavNodeSnapshot[i];
+                if (!IsFinite(candidate))
+                    continue;
+
                 float distanceSq = (candidate - position).sqrMagnitude;
                 if (distanceSq >= bestDistanceSq)
                     continue;
@@ -1446,16 +1473,20 @@ namespace Hecton8.World
             bestIndex = -1;
             if (!_nativeMemory.AbyssalNavGraphHashNative.IsCreated ||
                 _abyssalNavNodeCount <= 0 ||
-                abyssalNavGraphCellSize <= 0f)
+                abyssalNavGraphCellSize <= 0f ||
+                !math.isfinite(abyssalNavGraphCellSize) ||
+                !IsFinite(position) ||
+                !IsFinite(_abyssalNavGraphOrigin))
             {
                 return false;
             }
 
-            int baseCellX = (int)math.floor((position.x - _abyssalNavGraphOrigin.x) / abyssalNavGraphCellSize);
-            int baseCellY = (int)math.floor((position.y - _abyssalNavGraphOrigin.y) / abyssalNavGraphCellSize);
-            int baseCellZ = (int)math.floor((position.z - _abyssalNavGraphOrigin.z) / abyssalNavGraphCellSize);
+            float inverseCellSize = math.rcp(math.max(0.01f, abyssalNavGraphCellSize));
+            int baseCellX = (int)math.floor((position.x - _abyssalNavGraphOrigin.x) * inverseCellSize);
+            int baseCellY = (int)math.floor((position.y - _abyssalNavGraphOrigin.y) * inverseCellSize);
+            int baseCellZ = (int)math.floor((position.z - _abyssalNavGraphOrigin.z) * inverseCellSize);
             float bestDistanceSq = float.PositiveInfinity;
-            int searchRadiusCells = math.clamp((int)math.ceil(abyssalPathNeighborRadius / math.max(1f, abyssalNavGraphCellSize)), 1, 3);
+            int searchRadiusCells = math.clamp((int)math.ceil(abyssalPathNeighborRadius * math.rcp(math.max(1f, abyssalNavGraphCellSize))), 1, 3);
             for (int radius = 0; radius <= searchRadiusCells; radius++)
             {
                 bool foundAny = false;
@@ -1476,6 +1507,9 @@ namespace Hecton8.World
 
                                 foundAny = true;
                                 Vector3 candidate = _abyssalNavNodeSnapshot[nodeIndex];
+                                if (!IsFinite(candidate))
+                                    continue;
+
                                 float distanceSq = (candidate - position).sqrMagnitude;
                                 if (distanceSq >= bestDistanceSq)
                                     continue;
@@ -1497,10 +1531,13 @@ namespace Hecton8.World
 
         private static int ComputeAbyssalNavGraphHashKey(Vector3 position, Vector3 origin, float cellSize)
         {
-            float safeCellSize = math.max(0.01f, cellSize);
-            int cellX = (int)math.floor((position.x - origin.x) / safeCellSize);
-            int cellY = (int)math.floor((position.y - origin.y) / safeCellSize);
-            int cellZ = (int)math.floor((position.z - origin.z) / safeCellSize);
+            if (!IsFinite(position) || !IsFinite(origin) || !math.isfinite(cellSize))
+                return HashSpatialCell(0, 0, 0);
+
+            float inverseCellSize = math.rcp(math.max(0.01f, cellSize));
+            int cellX = (int)math.floor((position.x - origin.x) * inverseCellSize);
+            int cellY = (int)math.floor((position.y - origin.y) * inverseCellSize);
+            int cellZ = (int)math.floor((position.z - origin.z) * inverseCellSize);
             return HashSpatialCell(cellX, cellY, cellZ);
         }
 

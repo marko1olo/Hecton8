@@ -129,3 +129,11 @@ Solution: When a texture path validates, compare its center against the active b
 Rejected Alternatives: Adding a second shader center uniform was rejected for this pass because the shared advection shader also serves silt/bubble/debris paths and that change would widen the contract. Blindly trusting authored texture overrides was rejected because VFX consumers must fail closed at the boundary.
 Scalability potential: Low = flow disabled, no impact. Middle/High = valid texture gets correct center without wrong fallback fetches. Ultra = same-source fluid texture+buffer can still keep fallback richness when centers match.
 Hardware Impact: CPU cost is a few scalar comparisons only on flow bind. Correctness impact is higher: it prevents wrong-cell buffer sampling that can produce visually false debris drift with no readback or extra GPU branch.
+
+## Decision 16 - Render Basis Hot-Math and Draw Metadata Cache
+
+Problem: The indirect debris shader built every chip basis with `sincos` in the vertex path, and the C# renderer queried mesh index count/start/base vertex in both dispatch and render paths during the same active frame.
+Solution: Replace trigonometric yaw with a hash-vector basis that preserves deterministic chip orientation and uses existing safe normalization. Cache mesh draw metadata once per frame in `TryResolveDrawMesh`, then feed the cached draw args into compute and render with the same mesh validation result.
+Rejected Alternatives: Per-particle CPU rotation upload was rejected because it adds bandwidth and persistent state. Keeping `sincos` was rejected because rock chips do not need exact angular truth. Permanent mesh metadata caching was rejected because authored mesh data can change in Editor or at runtime; once-per-frame cache is safer.
+Scalability potential: Low/MX350 = cheaper vertex ALU and one mesh metadata query per active frame. Middle/High/Ultra = saved ALU buys denser visible chips and stronger CoreLit/caustic shading inside the same fixed storage cap.
+Hardware Impact: CPU saving is estimated sub-10 us on active frames from avoiding duplicate mesh index queries. GPU saving depends on visible count; replacing one `sincos` per debris vertex removes expensive transcendental ALU on MX350 while preserving deterministic per-chip variation.

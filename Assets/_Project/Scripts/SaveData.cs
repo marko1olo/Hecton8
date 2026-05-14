@@ -737,19 +737,39 @@ namespace Hecton8.SaveSystem
     }
 
     [Serializable]
+    [BinaryBlittableSafe]
     [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 16)]
     public struct ProceduralFaunaStateDTO
     {
+        public const byte FlagLargeThreatZone = 1 << 0;
+        public const byte FlagBlocked = 1 << 1;
+
         public long runtimeKey;
         public float cooldownUntilPlayTime;
-        public bool isLargeThreatZone;
-        public bool blocked;
+        public byte flags;
+        private byte _pad0;
+        private ushort _pad1;
+
+        public bool isLargeThreatZone
+        {
+            get => (flags & FlagLargeThreatZone) != 0;
+            set => flags = value ? (byte)(flags | FlagLargeThreatZone) : (byte)(flags & ~FlagLargeThreatZone);
+        }
+
+        public bool blocked
+        {
+            get => (flags & FlagBlocked) != 0;
+            set => flags = value ? (byte)(flags | FlagBlocked) : (byte)(flags & ~FlagBlocked);
+        }
     }
 
     [Serializable]
+    [BinaryBlittableSafe]
     [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 112)]
     public struct HibernatedFaunaStateDTO
     {
+        public const byte FlagLargeThreat = 1 << 0;
+
         public int speciesId;
         public int biomeIndex;
         public int creatureTypeIndex;
@@ -766,7 +786,15 @@ namespace Hecton8.SaveSystem
         public float angularVelocityY;
         public float angularVelocityZ;
         public uint uniqueInstanceUid;
-        public bool isLargeThreat;
+        public byte flags;
+        private byte _pad0;
+        private ushort _pad1;
+
+        public bool isLargeThreat
+        {
+            get => (flags & FlagLargeThreat) != 0;
+            set => flags = value ? (byte)(flags | FlagLargeThreat) : (byte)(flags & ~FlagLargeThreat);
+        }
     }
 
     [Serializable]

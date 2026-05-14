@@ -114,11 +114,43 @@ namespace Hecton8.Core
             AssertOffset<PlayerKinematicStateDTO>(nameof(PlayerKinematicStateDTO.velX), 28);
             AssertOffset<PlayerKinematicStateDTO>(nameof(PlayerKinematicStateDTO.flags), 40);
 
+            AssertSize<ExternalScavengerSiteDTO>(32);
+            AssertOffset<ExternalScavengerSiteDTO>(nameof(ExternalScavengerSiteDTO.chunkX), 0);
+            AssertOffset<ExternalScavengerSiteDTO>(nameof(ExternalScavengerSiteDTO.offsetX), 12);
+            AssertOffset<ExternalScavengerSiteDTO>(nameof(ExternalScavengerSiteDTO.remainingTime), 16);
+            AssertOffset<ExternalScavengerSiteDTO>(nameof(ExternalScavengerSiteDTO.seed), 20);
+
             AssertSize<InventoryShadowDTO>(32);
             AssertOffset<InventoryShadowDTO>(nameof(InventoryShadowDTO.cellCount), 0);
             AssertOffset<InventoryShadowDTO>(nameof(InventoryShadowDTO.payloadHash), 8);
             AssertOffset<InventoryShadowDTO>(nameof(InventoryShadowDTO.totalWeight), 20);
             AssertOffset<InventoryShadowDTO>(nameof(InventoryShadowDTO.flags), 24);
+
+            AssertSize<ProceduralFaunaStateDTO>(16);
+            AssertOffset<ProceduralFaunaStateDTO>(nameof(ProceduralFaunaStateDTO.runtimeKey), 0);
+            AssertOffset<ProceduralFaunaStateDTO>(nameof(ProceduralFaunaStateDTO.cooldownUntilPlayTime), 8);
+            AssertOffset<ProceduralFaunaStateDTO>(nameof(ProceduralFaunaStateDTO.flags), 12);
+
+            AssertSize<HibernatedFaunaStateDTO>(112);
+            AssertOffset<HibernatedFaunaStateDTO>(nameof(HibernatedFaunaStateDTO.position), 16);
+            AssertOffset<HibernatedFaunaStateDTO>(nameof(HibernatedFaunaStateDTO.rotationX), 64);
+            AssertOffset<HibernatedFaunaStateDTO>(nameof(HibernatedFaunaStateDTO.uniqueInstanceUid), 104);
+            AssertOffset<HibernatedFaunaStateDTO>(nameof(HibernatedFaunaStateDTO.flags), 108);
+
+            AssertSize<ProceduralGeologySeamStateDTO>(64);
+            AssertOffset<ProceduralGeologySeamStateDTO>(nameof(ProceduralGeologySeamStateDTO.runtimeKey), 0);
+            AssertOffset<ProceduralGeologySeamStateDTO>(nameof(ProceduralGeologySeamStateDTO.chunkX), 8);
+            AssertOffset<ProceduralGeologySeamStateDTO>(nameof(ProceduralGeologySeamStateDTO.absoluteTerrainHeight), 16);
+            AssertOffset<ProceduralGeologySeamStateDTO>(nameof(ProceduralGeologySeamStateDTO.terrainBlendWeight), 28);
+            AssertOffset<ProceduralGeologySeamStateDTO>(nameof(ProceduralGeologySeamStateDTO.absolutePositionX), 36);
+            AssertOffset<ProceduralGeologySeamStateDTO>(nameof(ProceduralGeologySeamStateDTO.absoluteVoxelCenterX), 48);
+
+            AssertSize<ProceduralGeologyCaveEntranceDTO>(48);
+            AssertOffset<ProceduralGeologyCaveEntranceDTO>(nameof(ProceduralGeologyCaveEntranceDTO.runtimeKey), 0);
+            AssertOffset<ProceduralGeologyCaveEntranceDTO>(nameof(ProceduralGeologyCaveEntranceDTO.surfacePositionX), 8);
+            AssertOffset<ProceduralGeologyCaveEntranceDTO>(nameof(ProceduralGeologyCaveEntranceDTO.inwardDirectionX), 20);
+            AssertOffset<ProceduralGeologyCaveEntranceDTO>(nameof(ProceduralGeologyCaveEntranceDTO.radius), 32);
+            AssertOffset<ProceduralGeologyCaveEntranceDTO>(nameof(ProceduralGeologyCaveEntranceDTO.innerRadius), 40);
 
             AssertSize<SaveMasterHashV10Result>(32);
             AssertOffset<SaveMasterHashV10Result>(nameof(SaveMasterHashV10Result.PlainLo), 0);
@@ -148,6 +180,25 @@ namespace Hecton8.Core
             AssertOffset<HabitatFloodStateDTO>(nameof(HabitatFloodStateDTO.airReserveNormalized), 12);
             AssertOffset<HabitatFloodStateDTO>(nameof(HabitatFloodStateDTO.floodedReefFloodSeconds), 20);
             AssertOffset<HabitatFloodStateDTO>(nameof(HabitatFloodStateDTO.flags), 24);
+
+            AssertSize<ModuleBlitDTO>(64);
+            AssertOffset<ModuleBlitDTO>(nameof(ModuleBlitDTO.prefabHashId), 0);
+            AssertOffset<ModuleBlitDTO>(nameof(ModuleBlitDTO.aupGridX), 8);
+            AssertOffset<ModuleBlitDTO>(nameof(ModuleBlitDTO.aupLocalX), 32);
+            AssertOffset<ModuleBlitDTO>(nameof(ModuleBlitDTO.rotX), 44);
+            AssertOffset<ModuleBlitDTO>(nameof(ModuleBlitDTO.health), 60);
+
+            AssertSize<PDAContextualAdvisoryDTO>(48);
+            AssertOffset<PDAContextualAdvisoryDTO>(nameof(PDAContextualAdvisoryDTO.issuedFlags), 0);
+            AssertOffset<PDAContextualAdvisoryDTO>(nameof(PDAContextualAdvisoryDTO.deepExposureSeconds), 32);
+
+            AssertSize<EnvironmentalStrainDTO>(16);
+            AssertOffset<EnvironmentalStrainDTO>(nameof(EnvironmentalStrainDTO.microplasticStrain), 0);
+            AssertOffset<EnvironmentalStrainDTO>(nameof(EnvironmentalStrainDTO.recycledPlasticItemCount), 8);
+
+            AssertSize<ModuleGraphEdgeDTO>(16);
+            AssertOffset<ModuleGraphEdgeDTO>(nameof(ModuleGraphEdgeDTO.sourceNodeIndex), 0);
+            AssertOffset<ModuleGraphEdgeDTO>(nameof(ModuleGraphEdgeDTO.destinationNodeIndex), 4);
 
             AssertSize<SaveChunkHeader32>(32);
             AssertOffset<SaveChunkHeader32>(nameof(SaveChunkHeader32.ChunkKey), 0);

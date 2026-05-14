@@ -57,10 +57,10 @@ Shader "Hecton8/UI/DiegeticTooltipIndirect"
 
             static const float HectonBayer4x4[16] =
             {
-                0.0 / 16.0,  8.0 / 16.0,  2.0 / 16.0, 10.0 / 16.0,
-               12.0 / 16.0,  4.0 / 16.0, 14.0 / 16.0,  6.0 / 16.0,
-                3.0 / 16.0, 11.0 / 16.0,  1.0 / 16.0,  9.0 / 16.0,
-               15.0 / 16.0,  7.0 / 16.0, 13.0 / 16.0,  5.0 / 16.0
+                0.0000, 0.5000, 0.1250, 0.6250,
+                0.7500, 0.2500, 0.8750, 0.3750,
+                0.1875, 0.6875, 0.0625, 0.5625,
+                0.9375, 0.4375, 0.8125, 0.3125
             };
 
             float HectonDitherCoverage(float2 positionCS)
@@ -91,7 +91,7 @@ Shader "Hecton8/UI/DiegeticTooltipIndirect"
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
 
                 TooltipGlyphInstance instance = _TooltipInstances[input.instanceID];
-                uint glyphIndex = min((uint)round(max(0.0, instance.GlyphIndex.x)), 127u);
+                uint glyphIndex = min((uint)max(0.0, instance.GlyphIndex.x), 127u);
                 float4 uvRect = _TooltipUvRects[glyphIndex];
                 float4 world = mul(instance.LocalToWorld, float4(input.positionOS, 1.0));
                 output.positionCS = TransformWorldToHClip(world.xyz);
@@ -107,7 +107,11 @@ Shader "Hecton8/UI/DiegeticTooltipIndirect"
                 float sdf = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, input.uv).a;
                 float alpha = saturate((sdf - 0.5 + _FaceDilate) * _GradientScale + 0.5);
                 float coverage = input.tint.a * alpha;
-                float threshold = _DitherEnabled > 0.5 ? HectonDitherCoverage(input.positionCS.xy) : 0.01;
+                float threshold = 0.01;
+                [branch]
+                if (_DitherEnabled > 0.5)
+                    threshold = HectonDitherCoverage(input.positionCS.xy);
+
                 clip(coverage - threshold);
                 return half4(input.tint.rgb, 1.0h);
             }

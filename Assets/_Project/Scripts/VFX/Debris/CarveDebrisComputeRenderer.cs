@@ -139,15 +139,20 @@ namespace Hecton8.VFX.Debris
         private int _nextFluidRebindFrame;
         private int _nextTierRefreshFrame;
         private int _pendingTierFrames;
+        private int _cachedDrawMeshFrame = -1;
         private int _bufferParity;
         private int _activeMirrorCount;
         private int _blackBoxCursor;
         private int _lastTelemetryFrame = -1;
         private uint _lastProcessedAupShiftFrameId;
         private uint _frameSequence;
+        private uint _cachedDrawIndexCount;
+        private uint _cachedDrawIndexStart;
+        private uint _cachedDrawBaseVertex;
         private float3 _pendingAupShift;
         private Matrix4x4 _cachedGlobalSdfWorldToLocal = Matrix4x4.identity;
         private Vector4 _cachedGlobalSdfInvDoubleHalfExtents;
+        private Mesh _cachedDrawMesh;
         private float _cachedGlobalSdfActive;
         private bool _registered;
         private bool _gpuReady;
@@ -155,6 +160,7 @@ namespace Hecton8.VFX.Debris
         private bool _materialFallbackAttempted;
         private bool _lastFlowActive;
         private bool _lastSdfActive;
+        private bool _cachedDrawMeshValid;
         private bool _cachedLowTier = true;
         private bool _pendingLowTier = true;
         private bool _tierCacheInitialized;
@@ -499,8 +505,7 @@ namespace Hecton8.VFX.Debris
                 return;
             }
 
-            Mesh mesh = ResolveMesh();
-            if (mesh == null || mesh.GetIndexCount(0) == 0)
+            if (!TryResolveDrawMesh(out _, out Vector4 drawArgsBase))
             {
                 _lastFlowActive = false;
                 _lastSdfActive = false;
@@ -513,7 +518,8 @@ namespace Hecton8.VFX.Debris
             GraphicsBuffer velocityRead = readA ? _velocityBufferA : _velocityBufferB;
             GraphicsBuffer velocityWrite = readA ? _velocityBufferB : _velocityBufferA;
             int dispatchGroups = lowTier ? _lowDispatchGroups : _maxDispatchGroups;
-            Vector4 drawArgs = new Vector4(mesh.GetIndexCount(0), mesh.GetIndexStart(0), mesh.GetBaseVertex(0), activeCapacity);
+            Vector4 drawArgs = drawArgsBase;
+            drawArgs.w = activeCapacity;
 
             BindSharedComputeParams(dt, lowTier, activeCapacity, drawArgs);
             fluidAdvectionCompute.SetBuffer(_clearArgsKernel, CarveDebrisIndirectArgsId, _indirectArgsBuffer);
@@ -866,9 +872,8 @@ namespace Hecton8.VFX.Debris
                 return;
             }
 
-            Mesh mesh = ResolveMesh();
             Material material = ResolveMaterial();
-            if (mesh == null || material == null || mesh.GetIndexCount(0) == 0)
+            if (!TryResolveDrawMesh(out Mesh mesh, out _) || material == null)
                 return;
 
             GraphicsBuffer currentPositionBuffer = (_bufferParity & 1) == 0 ? _positionBufferA : _positionBufferB;
@@ -896,6 +901,34 @@ namespace Hecton8.VFX.Debris
 
             _ownedMesh = BuildOctahedronMesh();
             return _ownedMesh;
+        }
+
+        private bool TryResolveDrawMesh(out Mesh mesh, out Vector4 drawArgsBase)
+        {
+            mesh = ResolveMesh();
+            drawArgsBase = Vector4.zero;
+            if (mesh == null || mesh.subMeshCount <= 0)
+            {
+                _cachedDrawMeshValid = false;
+                return false;
+            }
+
+            int frame = Time.frameCount;
+            if (!ReferenceEquals(mesh, _cachedDrawMesh) || _cachedDrawMeshFrame != frame)
+            {
+                _cachedDrawMesh = mesh;
+                _cachedDrawMeshFrame = frame;
+                _cachedDrawIndexCount = mesh.GetIndexCount(0);
+                _cachedDrawIndexStart = mesh.GetIndexStart(0);
+                _cachedDrawBaseVertex = (uint)math.max(0, mesh.GetBaseVertex(0));
+                _cachedDrawMeshValid = _cachedDrawIndexCount > 0u;
+            }
+
+            if (!_cachedDrawMeshValid)
+                return false;
+
+            drawArgsBase = new Vector4(_cachedDrawIndexCount, _cachedDrawIndexStart, _cachedDrawBaseVertex, 0f);
+            return true;
         }
 
         private void EnsureFallbackRenderResources()
@@ -1208,6 +1241,12 @@ namespace Hecton8.VFX.Debris
             _cachedLowTier = true;
             _pendingLowTier = true;
             _tierCacheInitialized = false;
+            _cachedDrawMesh = null;
+            _cachedDrawMeshFrame = -1;
+            _cachedDrawIndexCount = 0u;
+            _cachedDrawIndexStart = 0u;
+            _cachedDrawBaseVertex = 0u;
+            _cachedDrawMeshValid = false;
             _fluidEngine = null;
             _emptyTexture3D = null;
             _debrisPositions = default;

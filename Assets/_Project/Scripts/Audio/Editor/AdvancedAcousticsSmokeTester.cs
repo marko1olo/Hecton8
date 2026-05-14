@@ -169,6 +169,9 @@ namespace Hecton8.Audio.Editor
                 AssertContains(renderer, "KineticImpactDuplicateHistoryCapacity = 8", "Kinetic impact duplicate admission keeps a fixed recent-packet ring", builder, ref failureCount);
                 AssertContains(renderer, "RecordHighSpeedImpactSignal(signal.Frame, signalSignature)", "Kinetic impact duplicate admission records the precomputed signature", builder, ref failureCount);
                 AssertContains(renderer, "entry.Valid != 0", "Kinetic impact duplicate admission ignores cold zeroed ring entries", builder, ref failureCount);
+                AssertContains(renderer, "KineticImpactQualityPolicyRefreshFrames = 30", "Kinetic impact tier policy is cached instead of polled per packet", builder, ref failureCount);
+                AssertContains(renderer, "RefreshKineticImpactQualityPolicyIfStale(Time.frameCount)", "Kinetic impact tier policy refreshes on a bounded cadence before signal admission", builder, ref failureCount);
+                AssertContains(renderer, "ResolveKineticLowTierAudioService()", "Low-tier kinetic fallback uses cached audio-service resolution", builder, ref failureCount);
                 AssertNotContains(renderer, "OnAudioFilterRead", "Critical renderer has no managed Unity audio callback fallback", builder, ref failureCount);
             }
 

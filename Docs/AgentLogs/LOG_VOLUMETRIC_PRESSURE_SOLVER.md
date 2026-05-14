@@ -176,3 +176,16 @@ Exact microseconds saved after follow-up 20:
 - Repeated hull groan events avoid registry audio lookup after warm cache.
 - Repeated severed-edge rupture VFX avoids registry fluid-decal lookup after warm cache.
 - Estimated 2-8 us saved on i3/MX350 stress-heavy frames; 0 B/frame, no shader cost, no change to High/Ultra visual deformation.
+
+Follow-up upgrade 21:
+- Added a peak-stress guard before `HectonHabitatInteriorResolveStress01` in `Hecton_DryZoneLit.shader`.
+- Mid/High/Ultra vertices now skip the per-module radius resolver when `_HectonHabitatModuleStressParams.w` is effectively zero.
+- Low-tier crease mode remains unchanged: peak stress still feeds the fragment crease path.
+- Stressed Mid/High/Ultra modules remain unchanged: the shader still resolves localized module stress, applies sine panel bow, and reuses panel UV for normal bias.
+- Static checks: managed-offender scans found no `string.Format`, `.ToString()`, interpolation, `foreach`, or LINQ offenders in `HabitatGraphManager.cs`; mesh mutation scan found no owned `Mesh.vertices` writes; exact shader `normalize()`/`sqrt()` scan produced no matches; `rg` confirms resolver/bend/normal/crease call wiring; `git diff --check` reports only repository CRLF normalization warnings.
+- Rebuild policy: no `dotnet` rebuild and no Unity rebuild were run by explicit user instruction.
+
+Exact microseconds saved after follow-up 21:
+- Calm Mid/High/Ultra DryZone vertices skip up to 64 module-radius checks.
+- Estimated 5-30 us saved per 1k interior vertices on MX350-class GPUs during zero-stress habitat frames.
+- No visual regression: the skip only applies when peak stress is below 0.0001; visible deformation resumes once stress exists.

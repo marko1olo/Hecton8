@@ -213,3 +213,28 @@ Verification state:
 - Static code read confirms buffer fallback is disabled only when texture flow is active and centers differ.
 - Static shader read confirms the single-center constraint in `SampleAbyssalFlow`.
 - Unity compile remains PENDING/BLOCKED by local editor/license state; no fake pass recorded.
+
+## 2026-05-15 - Render Hot-Math Cache Pass
+
+What was wrong:
+- `Hecton_CarveDebrisIndirect.shader` used `sincos` in the vertex path to orient every debris chip.
+- `CarveDebrisComputeRenderer` read mesh index count/start/base vertex separately in dispatch and render paths on active frames.
+
+What was done:
+- Replaced trig yaw with deterministic hash-vector orientation and the existing CoreLit safe-normalize path.
+- Added `TryResolveDrawMesh()` and one-frame cached mesh draw metadata for indirect args.
+- Reset the draw cache on GPU state release.
+- Did not run dotnet build or rebuild.
+
+Cinematic cheats used:
+- Rock chip orientation is a deterministic visual fake; exact angular yaw is not gameplay truth.
+- Saved shader ALU is spent on keeping CoreLit caustics, edge tint, and fog response rather than uploading per-particle rotations.
+
+Exact microseconds saved:
+- Sub-10 us estimated CPU saving on active debris frames from removing duplicate mesh metadata queries.
+- GPU saving is visible-count dependent; one `sincos` per debris vertex is removed from the MX350 path.
+
+Verification state:
+- Static shader scan confirms `sincos`, `sin(`, and `cos(` are absent from `Hecton_CarveDebrisIndirect.shader`.
+- Static C# read confirms dispatch and render now share one-frame mesh draw metadata.
+- Unity compile remains PENDING/BLOCKED by local editor/license state; no fake pass recorded.

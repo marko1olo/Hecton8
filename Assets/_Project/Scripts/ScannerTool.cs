@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using Hecton8.AtlasSignal;
 using Hecton8.Core;
 using Hecton8.Core.Signals;
@@ -45,8 +46,12 @@ namespace Hecton8.Gameplay
         private const int OperationalStringCacheHz = 10;
         private const int PrefixedScannerStringCacheSize = 128;
         private const int ScientificRaycastRequestSalt = 0x5DA70000;
+        private const int ScannerBlackBoxCapacity = 300;
+        private const int ScannerBlackBoxInvalidStateHash = unchecked((int)0x53434E21); // SCN!
+        private const uint ScannerBlackBoxMagic = 0x53434242u; // SCBB
         private const uint ScannerToolTuningHash = 0x53434E52u; // SCNR
         private const uint FallbackScannerBlueprintHash = 0x534F5648u; // SOVH
+        private const string ScannerBlackBoxFileName = "Dump_DIEGETIC_LORE_SCANNER.bin";
         private const string ItemEntryPrefix = "item.";
         private const string ModuleEntryPrefix = "module.";
         private const string ConstructionCategoryPrefix = "Construction/";
@@ -459,6 +464,27 @@ namespace Hecton8.Gameplay
             public byte Found;
         }
 
+        private struct ScannerBlackBoxEntry
+        {
+            public uint Frame;
+            public uint ToolHash;
+            public uint ArtifactHash;
+            public uint BlueprintHash;
+            public uint ActiveEntityHash;
+            public uint PendingEntityHash;
+            public float Progress01;
+            public float Battery01;
+            public float DeltaTime;
+            public float LastContactAge;
+            public float PendingDistance;
+            public float3 ToolPosition;
+            public float3 ToolForward;
+            public float3 ActiveProbePosition;
+            public float3 PendingOcclusionPosition;
+            public ushort Flags;
+            public ushort QualityTier;
+        }
+
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct LoreCandidateDotProductJob : IJob
         {
@@ -602,11 +628,14 @@ namespace Hecton8.Gameplay
         private uint _pendingScientificOcclusionHash;
         private float _pendingScientificOcclusionDistance;
         private NativeArray<LoreCandidateResult> _scientificLoreCandidateResult;
+        private NativeArray<ScannerBlackBoxEntry> _scannerBlackBox;
         private uint _lastPublishedTuningToolHash;
         private uint _lastPublishedTuningArtifactHash;
         private uint _lastPublishedTuningBlueprintHash;
         private bool _lastPublishedTuningActive;
         private int _lastPublishedTuningProgressBucket = int.MinValue;
+        private int _scannerBlackBoxCursor;
+        private bool _scannerBlackBoxDumped;
         private bool _applicationQuitting;
         private int _scientificRaycastRequestSequence;
         private int _scientificRaycastPendingRequestId;

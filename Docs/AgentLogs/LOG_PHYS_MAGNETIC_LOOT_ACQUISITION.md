@@ -38,6 +38,38 @@ Verification:
 
 Final Status:
 - PENDING VERIFICATION.
+
+## 2026-05-15 - H-Phi Continuation Pass
+
+What was wrong:
+- Active `Docs/Tasks/CURRENT_BATCH.md` no longer contains `PHYS_MAGNETIC_LOOT_ACQUISITION`, so prompt re-extraction cannot succeed from the current batch file.
+- Fault dumps could be emitted before the fault frame entered the 300-frame telemetry ring.
+- Pickup sidecar identity was stored as a truncated `int`, creating avoidable collision risk.
+- `LootMagnetPullJob` still exposed a cross-assembly AUP rebuild call and did full delta math for far-sector loot.
+
+What was done:
+- Recorded the missing prompt extraction and continued from persisted task/rationale state plus the user's direct continuation.
+- Recorded fault-frame telemetry before binary dump and suppressed duplicate same-frame telemetry writes.
+- Changed the managed pickup sidecar to full `ulong` entity ids.
+- Added guarded AUP-cell broadphase for radii within the 5 km cell size.
+- Inlined AUP rebuild math inside the Burst job.
+
+Cinematic Cheats used:
+- No new visual dependency. Wake and acoustic presentation remain sparse signal fakes; low tier still snaps instead of integrating.
+
+Exact Microseconds saved:
+- Far-cell loot now avoids double/float sector-delta math before radius rejection.
+- One cross-assembly static AUP rebuild call is removed from each integrated loot update.
+- Sidecar identity hardening has no FastTick cost; cold memory rises by 16 KB at 4096 slots.
+
+Verification:
+- User forbade dotnet rebuilds; none were run.
+- Unity MCP console tool is unavailable in this session.
+- Static anti-bloat scan under `Assets/_Project/Scripts/Gameplay/Loot`: clean for direct native signal writers, `FromAbsolutePosition`, `ToAbsoluteDouble3`, `math.sqrt`, `math.normalize`, `foreach`, `string.Format`, `.ToString()`, and LINQ markers.
+- `git diff --check` on loot code: passed with line-ending warnings only.
+
+Final Status:
+- PENDING VERIFICATION.
 - Compile/Burst proof remains blocked by Unity session/global generated project state, not claimed.
 
 ## 2026-05-14 - Professional Recheck Pass

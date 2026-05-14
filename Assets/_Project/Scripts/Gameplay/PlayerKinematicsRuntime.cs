@@ -900,7 +900,7 @@ namespace Hecton8.Gameplay
                 ActiveMaelstromCount = activeMaelstromCount,
                 VoxelSdfDimensions = sdfDimensions,
                 DeltaTime = fixedDeltaTime,
-                DragCoefficient = math.max(0.0f, dragCoefficient),
+                DragCoefficient = SanitizeNonNegative(dragCoefficient),
                 WaterDensity = ResolveRuntimeWaterDensityScale(),
                 EquipmentDragMultiplier = ResolveEquipmentDragMultiplier(),
                 MaelstromVelocityClamp = MaelstromVelocityClamp,
@@ -950,7 +950,7 @@ namespace Hecton8.Gameplay
 
         public void FastTick(float deltaTime)
         {
-            float safeDeltaTime = math.max(0.0001f, deltaTime);
+            float safeDeltaTime = math.max(0.0001f, SanitizeNonNegative(deltaTime));
             _lastIkDeltaTime = safeDeltaTime;
             ConsumeEnvironmentIkSignals();
             TickEnvironmentIkState(safeDeltaTime);
@@ -1443,7 +1443,7 @@ namespace Hecton8.Gameplay
             gridDimensions = resolvedDimensions;
             volumeOrigin = ToFloat3(publishedOrigin);
             voxelCellSize = ToFloat3(publishedCellSize);
-            sdfRange = math.max(0.0f, publishedRange);
+            sdfRange = SanitizeNonNegative(publishedRange);
         }
 
         private static byte ResolveSdfGradientProbeRequest()
@@ -1536,7 +1536,7 @@ namespace Hecton8.Gameplay
 
         private float ResolveRuntimeWaterDensityScale()
         {
-            return math.max(0.0f, waterDensity) * ResolveRuntimeWaterImmersion01();
+            return SanitizeNonNegative(waterDensity) * ResolveRuntimeWaterImmersion01();
         }
 
         private float ResolveRuntimeWaterImmersion01()
@@ -1570,7 +1570,7 @@ namespace Hecton8.Gameplay
             {
                 float speed01 = SanitizeUnit((blockedSpeed - WallImpactRollThreshold) * 0.2f);
                 float side = math.sign(math.dot(ToFloat3(normal), SafeRight()));
-                _rollPhaseRadians = DeterministicPhysicsMath.WrapSignedPi(_rollPhaseRadians + math.max(0.0f, dt) * 28.0f);
+                _rollPhaseRadians = DeterministicPhysicsMath.WrapSignedPi(_rollPhaseRadians + SanitizeNonNegative(dt) * 28.0f);
                 float impactWave = IsHighScalabilityTier() ? DeterministicPhysicsMath.SinApprox(_rollPhaseRadians) : SignedTriangleWave(_rollPhaseRadians);
                 targetRoll = -side *
                     WallImpactRollDegrees *
@@ -1579,7 +1579,7 @@ namespace Hecton8.Gameplay
                     impactWave;
             }
 
-            float safeDt = math.max(0.0f, dt);
+            float safeDt = SanitizeNonNegative(dt);
             float spring = ((targetRoll - _rollDegrees) * 64.0f) - (_rollVelocityDegrees * WallImpactRollDecay);
             _rollVelocityDegrees += spring * safeDt;
             _rollDegrees += _rollVelocityDegrees * safeDt;
@@ -1674,15 +1674,16 @@ namespace Hecton8.Gameplay
 
         private void TickEnvironmentIkState(float deltaTime)
         {
-            _braceHoldTimer = math.max(0.0f, _braceHoldTimer - deltaTime);
-            _squeezeHoldTimer = math.max(0.0f, _squeezeHoldTimer - deltaTime);
-            _braceHapticCooldown = math.max(0.0f, _braceHapticCooldown - deltaTime);
-            _scrapeAcousticCooldown = math.max(0.0f, _scrapeAcousticCooldown - deltaTime);
+            float safeDeltaTime = SanitizeNonNegative(deltaTime);
+            _braceHoldTimer = math.max(0.0f, _braceHoldTimer - safeDeltaTime);
+            _squeezeHoldTimer = math.max(0.0f, _squeezeHoldTimer - safeDeltaTime);
+            _braceHapticCooldown = math.max(0.0f, _braceHapticCooldown - safeDeltaTime);
+            _scrapeAcousticCooldown = math.max(0.0f, _scrapeAcousticCooldown - safeDeltaTime);
 
             float braceTarget = _braceHoldTimer > 0.0f ? 1.0f : 0.0f;
             float squeezeTarget = _squeezeHoldTimer > 0.0f ? math.max(0.35f, _squeezeTargetBlend) : 0.0f;
-            _braceBlend = SmoothScalar(_braceBlend, braceTarget, HandBraceBlendSharpness, deltaTime);
-            _squeezeBlend = SmoothScalar(_squeezeBlend, squeezeTarget, SqueezeBlendSharpness, deltaTime);
+            _braceBlend = SmoothScalar(_braceBlend, braceTarget, HandBraceBlendSharpness, safeDeltaTime);
+            _squeezeBlend = SmoothScalar(_squeezeBlend, squeezeTarget, SqueezeBlendSharpness, safeDeltaTime);
             if (_squeezeHoldTimer <= 0.0f && _squeezeBlend <= 0.0001f)
                 _squeezeTargetBlend = 0.0f;
             if (_braceHoldTimer <= 0.0f && _braceBlend <= 0.0001f)
@@ -1738,7 +1739,7 @@ namespace Hecton8.Gameplay
                 Position = ToFloat3(runtimePosition),
                 Velocity = ToFloat3(runtimeVelocity),
                 IntendedMovement = _intendedMovement.IsCreated ? _intendedMovement[0] : float3.zero,
-                DragCoefficient = math.max(0.0f, dragCoefficient),
+                DragCoefficient = SanitizeNonNegative(dragCoefficient),
                 WaterDensity = ResolveRuntimeWaterDensityScale(),
                 SolidDensity = SanitizeUnit(signal.Intensity01),
                 Frame = signal.Frame != 0u ? signal.Frame : unchecked((uint)Time.frameCount),
@@ -2124,7 +2125,7 @@ namespace Hecton8.Gameplay
                 Position = _positions.IsCreated ? _positions[0] : _lastProbeSourcePosition,
                 Velocity = _velocities.IsCreated ? _velocities[0] : _lastProbeVelocity,
                 IntendedMovement = _intendedMovement.IsCreated ? _intendedMovement[0] : float3.zero,
-                DragCoefficient = math.max(0.0f, dragCoefficient),
+                DragCoefficient = SanitizeNonNegative(dragCoefficient),
                 WaterDensity = ResolveRuntimeWaterDensityScale(),
                 SolidDensity = activeBlend,
                 Frame = unchecked((uint)Time.frameCount),
@@ -2309,7 +2310,7 @@ namespace Hecton8.Gameplay
                 Position = signal.RuntimePosition,
                 Velocity = signal.Velocity,
                 IntendedMovement = _intendedMovement.IsCreated ? _intendedMovement[0] : float3.zero,
-                DragCoefficient = math.max(0.0f, dragCoefficient),
+                DragCoefficient = SanitizeNonNegative(dragCoefficient),
                 WaterDensity = ResolveRuntimeWaterDensityScale(),
                 SolidDensity = 0.0f,
                 Frame = signal.Frame,

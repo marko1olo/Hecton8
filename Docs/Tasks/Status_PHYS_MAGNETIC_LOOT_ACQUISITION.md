@@ -32,7 +32,7 @@ Status: PENDING VERIFICATION
 - [x] 12. MATH LOD | Justification: low tier uses SlowTick scheduling and instant acquisition/snap when loot enters radius | Alternative rejected: same integration cadence on MX350 | Estimate: saves ~50 FastTick jobs/sec on low tier
 - [x] 13. ZERO-GC | Justification: job uses only NativeArray vault buffers plus a persistent NativeArray event lane; managed sidecar allocation is OnEnable/capacity-change only | Alternative rejected: LINQ/list allocations, trigger callbacks, or unbounded native signal queue writes from Burst | Estimate: 0 B GC/frame by static inspection
 - [x] 14. H-PHI DATA SOVEREIGNTY | Justification: loot active/pull/acquired state is modified through vault buffers; managed pickup proxy only mirrors vault result after completion | Alternative rejected: component fields as simulation truth | Estimate: state mutation remains contiguous, cache-friendly
-- [ ] 15. OMEGA COMPILE CHECK [BLOCKED BY ENVIRONMENT] | Justification: Unity refresh timed out, MCP console unavailable, and `dotnet build Hecton8.Core.csproj` fails on pre-existing missing assembly references outside this task | Alternative rejected: claiming compile success without Unity/Burst evidence | Estimate: blocked
+- [ ] 15. OMEGA COMPILE CHECK [STATIC VERIFIED / BURST AOT PENDING] | Justification: current user explicitly forbids dotnet rebuilds; Unity MCP console tool is unavailable; static scans and `git diff --check` pass for loot code, but no fresh Burst AOT proof exists | Alternative rejected: claiming Burst success from stale DLL timestamps or running forbidden dotnet builds | Estimate: verification blocked
 
 ## Iteration Log
 
@@ -45,3 +45,6 @@ Status: PENDING VERIFICATION
 - Loop 6: Rechecked signal consumers. Replaced Burst direct global queue writes with NativeArray event records and late-frame `GlobalSignals.Publish` so SignalBus consumers receive loot acquisition/audio.
 - Loop 7: Rechecked AUP math and dense-field scaling. Replaced double absolute conversions with direct sector-delta math, added 50 ms integration clamp, required `PullEnabled`, and capped acquisition attempts to 64/frame.
 - Loop 8: Rechecked asmdef bloat and static hygiene. Removed unused runtime `Unity.Burst`/`Hecton8.Core.Contracts` references; asmdef JSON valid; anti-bloat scan still clean.
+- Loop 9: Continuation re-extraction attempted. Active `Docs/Tasks/CURRENT_BATCH.md` no longer contains `PHYS_MAGNETIC_LOOT_ACQUISITION`; continued from persisted status/rationale plus chat assignment instead of borrowing a neighboring prompt.
+- Loop 10: Rechecked H-Phi fault evidence and slot identity. Fault-frame telemetry is recorded before dump, duplicate same-frame telemetry is suppressed, and pickup sidecar identity now stores full `ulong` entity ids instead of truncating to `int`.
+- Loop 11: Rechecked Burst math surface and broadphase. Job now uses guarded AUP-cell adjacency reject for radii <= 5 km cell size and local AUP rebuild math; static anti-bloat scan is clean and `git diff --check` passes with line-ending warnings only.

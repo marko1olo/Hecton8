@@ -78,13 +78,13 @@ Shader "Hecton8/VFX/CarveDebrisIndirect"
 
             void BuildDebrisBasis(uint particleIndex, out float3 rightWS, out float3 upWS, out float3 forwardWS)
             {
-                float yaw = Hash11(particleIndex ^ 0x9E3779B9u) * 6.2831853;
-                float tilt = Hash11(particleIndex ^ 0x85EBCA6Bu) * 0.7 - 0.35;
-                float s;
-                float c;
-                sincos(yaw, s, c);
-                forwardWS = HectonCoreLitSafeNormalize(float3(s, tilt, c));
-                rightWS = HectonCoreLitSafeNormalize(cross(float3(0.0, 1.0, 0.0), forwardWS));
+                float3 rawForward = float3(
+                    Hash11(particleIndex ^ 0x9E3779B9u) * 2.0 - 1.0,
+                    Hash11(particleIndex ^ 0x85EBCA6Bu) * 0.7 - 0.35,
+                    Hash11(particleIndex ^ 0xC2B2AE35u) * 2.0 - 1.0);
+                forwardWS = HectonCoreLitSafeNormalize(rawForward);
+                float3 basisUp = abs(forwardWS.y) < 0.92 ? float3(0.0, 1.0, 0.0) : float3(1.0, 0.0, 0.0);
+                rightWS = HectonCoreLitSafeNormalize(cross(basisUp, forwardWS));
                 upWS = HectonCoreLitSafeNormalize(cross(forwardWS, rightWS));
             }
 

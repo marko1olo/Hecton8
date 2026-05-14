@@ -49,7 +49,12 @@ namespace Hecton8.SaveSystem
         private const uint WfcOutpostPayloadMagic = 0x57464342u; // WFCB
         private const ushort WfcOutpostPayloadVersion = 1;
         private const byte WfcOutpostPayloadFlagRle = 1 << 0;
-        private const uint WfcOutpostPayloadSupportedFlags = WfcOutpostPayloadFlagRle;
+        private const byte WfcOutpostPayloadFlagChecksum24 = 1 << 1;
+        private const uint WfcOutpostPayloadFlagMask = 0xFFu;
+        private const uint WfcOutpostPayloadSupportedFlags = WfcOutpostPayloadFlagRle | WfcOutpostPayloadFlagChecksum24;
+        private const int WfcOutpostPayloadChecksumShift = 8;
+        private const uint WfcOutpostPayloadChecksumMask = 0x00FFFFFFu;
+        private const uint WfcOutpostPayloadChecksumSeed = 2166136261u;
 
         internal static ulong BuildSectorEntitySpatialSortKey(in AbsoluteUniversePosition position, int chunkSizeMeters)
         {
@@ -108,19 +113,23 @@ namespace Hecton8.SaveSystem
             byte* rawPtr = (byte*)packedWords.GetUnsafeReadOnlyPtr();
             byte* payloadPtr = destination + WfcOutpostPersistenceConstants.PayloadHeaderBytes;
             int payloadCapacity = capacity - WfcOutpostPersistenceConstants.PayloadHeaderBytes;
-            uint flags = 0u;
+            uint payloadFlags = 0u;
             int storedBytes;
 
             if (TryWriteByteRle(rawPtr, rawBytes, payloadPtr, payloadCapacity, out int rleBytes))
             {
                 storedBytes = rleBytes;
-                flags |= WfcOutpostPayloadFlagRle;
+                payloadFlags |= WfcOutpostPayloadFlagRle;
             }
             else
             {
                 UnsafeUtility.MemCpy(payloadPtr, rawPtr, rawBytes);
                 storedBytes = rawBytes;
             }
+
+            payloadFlags |= WfcOutpostPayloadFlagChecksum24;
+            uint checksum24 = ComputeWfcOutpostPayloadChecksum24(payloadPtr, storedBytes, rawBytes, wordCount, payloadFlags);
+            uint headerFlags = payloadFlags | (checksum24 << WfcOutpostPayloadChecksumShift);
 
             UnsafeUtility.MemClear(destination, WfcOutpostPersistenceConstants.PayloadHeaderBytes);
             WriteUInt(destination, 0, WfcOutpostPayloadMagic);
@@ -133,7 +142,7 @@ namespace Hecton8.SaveSystem
             WriteInt(destination, 16, wordCount);
             WriteInt(destination, 20, rawBytes);
             WriteInt(destination, 24, storedBytes);
-            WriteUInt(destination, 28, flags);
+            WriteUInt(destination, 28, headerFlags);
             bytesWritten = WfcOutpostPersistenceConstants.PayloadHeaderBytes + storedBytes;
             return true;
         }
@@ -169,13 +178,17 @@ namespace Hecton8.SaveSystem
             int wordCount = ReadInt(source, 16);
             int rawBytes = ReadInt(source, 20);
             int storedBytes = ReadInt(source, 24);
-            uint flags = ReadUInt(source, 28);
-            bool isRle = (flags & WfcOutpostPayloadFlagRle) != 0u;
+            uint headerFlags = ReadUInt(source, 28);
+            uint payloadFlags = headerFlags & WfcOutpostPayloadFlagMask;
+            uint storedChecksum24 = (headerFlags >> WfcOutpostPayloadChecksumShift) & WfcOutpostPayloadChecksumMask;
+            bool isRle = (payloadFlags & WfcOutpostPayloadFlagRle) != 0u;
+            bool hasChecksum = (payloadFlags & WfcOutpostPayloadFlagChecksum24) != 0u;
             if (wordCount != expectedWordCount ||
                 rawBytes != expectedWordCount * sizeof(ulong) ||
                 storedBytes <= 0 ||
                 storedBytes > rawBytes ||
-                (flags & ~WfcOutpostPayloadSupportedFlags) != 0u ||
+                (payloadFlags & ~WfcOutpostPayloadSupportedFlags) != 0u ||
+                (!hasChecksum && storedChecksum24 != 0u) ||
                 (!isRle && storedBytes != rawBytes) ||
                 length != WfcOutpostPersistenceConstants.PayloadHeaderBytes + storedBytes)
             {
@@ -183,6 +196,18 @@ namespace Hecton8.SaveSystem
             }
 
             byte* payloadPtr = source + WfcOutpostPersistenceConstants.PayloadHeaderBytes;
+            if (hasChecksum)
+            {
+                uint computedChecksum24 = ComputeWfcOutpostPayloadChecksum24(
+                    payloadPtr,
+                    storedBytes,
+                    rawBytes,
+                    wordCount,
+                    payloadFlags);
+                if (storedChecksum24 == 0u || storedChecksum24 != computedChecksum24)
+                    return false;
+            }
+
             byte* destination = (byte*)packedWords.GetUnsafePtr();
             if (isRle)
             {
@@ -196,6 +221,46 @@ namespace Hecton8.SaveSystem
 
             wordsRead = wordCount;
             return true;
+        }
+
+        private static uint ComputeWfcOutpostPayloadChecksum24(
+            byte* payload,
+            int storedBytes,
+            int rawBytes,
+            int wordCount,
+            uint payloadFlags)
+        {
+            uint hash = WfcOutpostPayloadChecksumSeed;
+            hash = MixChecksum(hash, unchecked((uint)storedBytes));
+            hash = MixChecksum(hash, unchecked((uint)rawBytes));
+            hash = MixChecksum(hash, unchecked((uint)wordCount));
+            hash = MixChecksum(hash, payloadFlags & WfcOutpostPayloadFlagMask);
+            for (int i = 0; i < storedBytes; i++)
+                hash = MixChecksumByte(hash, payload[i]);
+
+            hash ^= hash >> 16;
+            uint checksum = hash & WfcOutpostPayloadChecksumMask;
+            return checksum != 0u ? checksum : 1u;
+        }
+
+        private static uint MixChecksum(uint hash, uint value)
+        {
+            hash ^= value & 0xFFu;
+            hash *= 16777619u;
+            hash ^= (value >> 8) & 0xFFu;
+            hash *= 16777619u;
+            hash ^= (value >> 16) & 0xFFu;
+            hash *= 16777619u;
+            hash ^= (value >> 24) & 0xFFu;
+            hash *= 16777619u;
+            return hash;
+        }
+
+        private static uint MixChecksumByte(uint hash, byte value)
+        {
+            hash ^= value;
+            hash *= 16777619u;
+            return hash;
         }
 
         private static bool TryWriteByteRle(byte* input, int inputBytes, byte* output, int outputCapacity, out int outputBytes)
@@ -1450,15 +1515,20 @@ namespace Hecton8.SaveSystem
             values = new ProceduralFaunaStateDTO[count];
             for (int i = 0; i < count; i++)
             {
+                bool isLargeThreatZone;
+                bool blocked;
                 if (!reader.ReadLong(out values[i].runtimeKey) ||
                     !reader.ReadFloat(out values[i].cooldownUntilPlayTime) ||
-                    !reader.ReadBool(out values[i].isLargeThreatZone) ||
-                    !reader.ReadBool(out values[i].blocked) ||
+                    !reader.ReadBool(out isLargeThreatZone) ||
+                    !reader.ReadBool(out blocked) ||
                     !reader.ReadByte(out _) ||
                     !reader.ReadByte(out _))
                 {
                     return false;
                 }
+
+                values[i].isLargeThreatZone = isLargeThreatZone;
+                values[i].blocked = blocked;
             }
 
             return true;
@@ -1538,6 +1608,7 @@ namespace Hecton8.SaveSystem
             values = new HibernatedFaunaStateDTO[count];
             for (int i = 0; i < count; i++)
             {
+                bool isLargeThreat;
                 if (!reader.ReadInt(out values[i].speciesId) ||
                     !reader.ReadInt(out values[i].biomeIndex) ||
                     !reader.ReadInt(out values[i].creatureTypeIndex) ||
@@ -1554,13 +1625,15 @@ namespace Hecton8.SaveSystem
                     !reader.ReadFloat(out values[i].angularVelocityY) ||
                     !reader.ReadFloat(out values[i].angularVelocityZ) ||
                     !reader.ReadUInt(out values[i].uniqueInstanceUid) ||
-                    !reader.ReadBool(out values[i].isLargeThreat) ||
+                    !reader.ReadBool(out isLargeThreat) ||
                     !reader.ReadByte(out _) ||
                     !reader.ReadByte(out _) ||
                     !reader.ReadByte(out _))
                 {
                     return false;
                 }
+
+                values[i].isLargeThreat = isLargeThreat;
             }
 
             return true;

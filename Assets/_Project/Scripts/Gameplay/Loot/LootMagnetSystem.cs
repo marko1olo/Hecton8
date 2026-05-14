@@ -42,7 +42,7 @@ namespace Hecton8.Gameplay.Loot
 
         // COLD ALLOC: managed sidecars mirror vault slots only for legacy visual proxy/inventory commit.
         private PickupItem[] _pickupRefs;
-        private int[] _pickupInstanceIds;
+        private ulong[] _pickupEntityIds;
         private JobHandle _pullHandle;
         private bool _pullScheduled;
         private bool _registeredFastTick;
@@ -52,6 +52,7 @@ namespace Hecton8.Gameplay.Loot
         private int _activeCount;
         private int _scheduledCount;
         private int _telemetryIndex;
+        private uint _lastTelemetryRecordedFrame;
         private uint _frameCounter;
         private AbsoluteUniversePosition _lastPlayerAup;
 
@@ -153,7 +154,8 @@ namespace Hecton8.Gameplay.Loot
 
             _pullScheduled = false;
             CommitVaultResultsToManagedProxies();
-            RecordTelemetry();
+            if (_lastTelemetryRecordedFrame != _frameCounter)
+                RecordTelemetry();
         }
 
         private void TryRegisterTicks()
@@ -245,14 +247,14 @@ namespace Hecton8.Gameplay.Loot
             int capacity = Capacity;
             if (_pickupRefs != null &&
                 _pickupRefs.Length == capacity &&
-                _pickupInstanceIds != null &&
-                _pickupInstanceIds.Length == capacity)
+                _pickupEntityIds != null &&
+                _pickupEntityIds.Length == capacity)
             {
                 return;
             }
 
             _pickupRefs = new PickupItem[capacity];
-            _pickupInstanceIds = new int[capacity];
+            _pickupEntityIds = new ulong[capacity];
         }
 
         private void EnsureTelemetry()
@@ -316,7 +318,7 @@ namespace Hecton8.Gameplay.Loot
 
         private void RefreshPickupVaultFromRegistry()
         {
-            if (_pullScheduled || !_entityAups.IsCreated || _pickupRefs == null || _pickupInstanceIds == null)
+            if (_pullScheduled || !_entityAups.IsCreated || _pickupRefs == null || _pickupEntityIds == null)
                 return;
 
             int capacity = Capacity;
@@ -334,12 +336,12 @@ namespace Hecton8.Gameplay.Loot
                 }
 
                 Transform pickupTransform = pickup.transform;
-                int instanceId = unchecked((int)EntityId.ToULong(pickup.GetEntityId()));
-                if (_pickupInstanceIds[activeCount] != instanceId)
+                ulong entityId = EntityId.ToULong(pickup.GetEntityId());
+                if (_pickupEntityIds[activeCount] != entityId)
                     _entityVelocities[activeCount] = float3.zero;
 
                 _pickupRefs[activeCount] = pickup;
-                _pickupInstanceIds[activeCount] = instanceId;
+                _pickupEntityIds[activeCount] = entityId;
                 _entityAups[activeCount] = AbsoluteUniversePosition.FromRuntimePosition(pickupTransform.position);
                 _entityItemHashes[activeCount] = unchecked((uint)pickup.ItemHashId);
                 _entityQuantities[activeCount] = (ushort)math.clamp(pickup.Quantity, 1, (int)ushort.MaxValue);
@@ -350,7 +352,7 @@ namespace Hecton8.Gameplay.Loot
             for (int index = activeCount; index < _activeCount && index < capacity; index++)
             {
                 _pickupRefs[index] = null;
-                _pickupInstanceIds[index] = 0;
+                _pickupEntityIds[index] = 0UL;
                 _entityFlags[index] = 0u;
                 _entityVelocities[index] = float3.zero;
                 _entityItemHashes[index] = 0u;
@@ -458,7 +460,7 @@ namespace Hecton8.Gameplay.Loot
                     else
                     {
                         _pickupRefs[index] = null;
-                        _pickupInstanceIds[index] = 0;
+                        _pickupEntityIds[index] = 0UL;
                     }
 
                     continue;
@@ -472,15 +474,15 @@ namespace Hecton8.Gameplay.Loot
                 pickup.transform.position = new Vector3(runtime.x, runtime.y, runtime.z);
             }
 
-            if (fault && !_dumpedFault)
-            {
-                _dumpedFault = true;
-                DumpTelemetryBuffer();
-            }
-
             _lastCommittedAcquiredCount = acquiredCount;
             _lastCommittedFlagsHash = flagsHash;
             _lastCommittedFlags = fault ? TelemetryFaultFlag : 0u;
+            if (fault && !_dumpedFault)
+            {
+                RecordTelemetry();
+                _dumpedFault = true;
+                DumpTelemetryBuffer();
+            }
         }
 
         private void RestoreDeferredAcquisition(int index, uint flags)
@@ -572,6 +574,7 @@ namespace Hecton8.Gameplay.Loot
             };
 
             _telemetryIndex = (writeIndex + 1) % _telemetry.Length;
+            _lastTelemetryRecordedFrame = _frameCounter;
         }
 
         private void ForceCompletePendingJob()

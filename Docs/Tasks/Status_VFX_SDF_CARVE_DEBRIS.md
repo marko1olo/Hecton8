@@ -50,6 +50,7 @@ Status: PENDING VERIFICATION
 - Loop 11: Scalability hysteresis pass. DOD: low-tier decision now samples registry state once every 30 frames and requires 120 frames of consistent opposite tier before changing active capacity. Rejected alternative: per-frame registry sampling with immediate low/high flip, because capacity shed/upload and dispatch group changes should not flicker. Estimate: removes 4-5 registry property reads per frame and prevents repeated 1024/4096 capacity churn during transient scalability changes.
 - Loop 12: Injection scan cursor pass. DOD: `CarveDebrisInjectBatchJob` now carries one monotonic `scanStart` across all requests in the batch, so 32 carve events do one forward dead-slot pass instead of rescanning occupied prefix slots per request. Rejected alternative: independent full-capacity scan per request, because dense active buffers turn that into avoidable O(requests * capacity) work. Estimate: saves 15-60 us on dense multi-carve frames on i3/MX350-class CPUs.
 - Loop 13: Flow center compatibility pass. DOD: when a texture flow path is valid but its center differs from the active structured-buffer payload, the renderer disables buffer fallback for that bind instead of feeding the shader mismatched center/spacing metadata. Rejected alternative: allowing one shared `_AbyssalFlowCenter` to drive two incompatible payloads. Estimate: correctness guard; avoids wrong-cell buffer fetches with negligible CPU cost.
+- Loop 14: Render hot-math/cache pass. DOD: debris shader no longer uses per-vertex `sincos` to build chip basis; renderer caches mesh indirect draw metadata once per frame so dispatch and render do not both query mesh index data. Rejected alternatives: keeping trigonometric basis in the vertex path and reading mesh index metadata twice per active frame. Estimate: saves sub-10 us CPU on active debris frames and removes per-visible-vertex trig ALU on MX350.
 
 ## Second-Pass Upgrade Status
 
@@ -68,6 +69,7 @@ Status: PENDING VERIFICATION
 - [x] Scalability tier selection uses a 30-frame cache and 120-frame confirmation window before low/high active-capacity switches.
 - [x] Batched injection uses one monotonic dead-slot cursor across the request batch to avoid repeated occupied-prefix scans during dense carve bursts.
 - [x] Flow texture binding disables structured-buffer fallback when their centers disagree, because the shared compute shader center uniform cannot represent two payload origins.
+- [x] Debris rendering caches mesh draw metadata per frame and uses hash-vector chip orientation instead of shader `sincos`.
 
 ## OMEGA Polish Status
 
