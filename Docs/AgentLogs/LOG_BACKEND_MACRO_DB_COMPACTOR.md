@@ -162,3 +162,43 @@ Verification:
   - `Assets/_Project/Scripts/Fauna/FaunaKinematicsRuntime.cs(242,17)`: missing `LeviathanTerrainIkJob.TailWhipDurationSeconds`.
   - `Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs(10002,31)`: missing `PrologueSplashdownSineSweepProbeJob`.
 - No compactor-owned compiler diagnostic surfaced before that dependency wall.
+
+## 2026-05-14 - Current Compile Evidence Refresh
+
+What was wrong:
+- The shared-tree compile wall changed after other agents modified Fauna code, making the prior blocker names stale.
+
+What was done:
+- Reran `dotnet build .\Hecton8.Core.csproj -v:minimal -m:1 /nr:false`.
+- Updated status/rationale evidence with the current dependency wall.
+- Left Fauna/AI code untouched because it is outside the Macro DB compactor domain.
+
+Cinematic cheats used:
+- None. This is evidence maintenance only.
+
+Exact microseconds saved:
+- 0 us runtime. Avoids stale integration evidence.
+
+Verification:
+- Current build is blocked by unrelated `Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs(1680,59)`: `AlphaLeviathanTelemetryFlags.NoPlayerTarget` is missing.
+- No Macro DB compiler diagnostic surfaced before that wall.
+
+## 2026-05-14 - Public Flush Idempotency Pass
+
+What was wrong:
+- A `SaveManager` async dirty append can run after compaction already committed the dirty sector and cleared `_dirtyPayloads`.
+- The public append API then returned false because there was no dirty entry left, causing a false corruption warning even though the payload was valid on disk.
+
+What was done:
+- `TryAppendDirtyPayload` now treats a no-dirty public flush as successful if the B-tree contains a valid committed payload for that sector.
+- The internal locked append method remains strict; eviction still refuses to drop pending dirty sectors unless they were written.
+
+Cinematic cheats used:
+- Idempotent commit acknowledgement instead of a managed recent-commit ledger or retry scheduler.
+
+Exact microseconds saved:
+- 0 us steady-frame cost.
+- Stale public flush calls pay one B-tree lookup and payload-header validation; false telemetry/retry investigation cost is removed.
+
+Verification:
+- Pending rerun. Current shared-tree compile wall is outside Macro DB in Fauna.

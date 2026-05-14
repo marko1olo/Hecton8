@@ -3020,6 +3020,18 @@ namespace Hecton8.Core
             return hash == 0u ? 1u : hash;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static uint FoldEntityIdToSourceId(ulong entityId)
+        {
+            uint hash = unchecked((uint)entityId ^ (uint)(entityId >> 32));
+            hash ^= hash >> 16;
+            hash *= 0x7FEB352Du;
+            hash ^= hash >> 15;
+            hash *= 0x846CA68Bu;
+            hash ^= hash >> 16;
+            return hash == 0u ? 1u : hash;
+        }
+
         private static void InitializeCategorySignalLanes()
         {
             SignalBus<InputStateSignal>.Configure(InputStateSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(InputStateSignal)));

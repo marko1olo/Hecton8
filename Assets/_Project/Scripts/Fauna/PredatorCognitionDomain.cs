@@ -371,6 +371,7 @@ namespace Hecton8.AI
         private const float AlphaDiveDepthMeters = 24f;
         private const float AlphaVeerDistanceMeters = 32f;
         private const float AlphaRingCorrectionScale = 0.08f;
+        private const byte AlphaLeviathanTelemetryNoPlayerTarget = 1 << 5;
         private const uint AlphaLeviathanPhaseTelemetryHash = 0x414C5048u; // ALPH
         private const uint AlphaLeviathanTelemetryContextHash = 0x4C564354u; // LVCT
         private const float PredatorInterceptLeadSeconds = 0.65f;
@@ -1674,16 +1675,22 @@ namespace Hecton8.AI
                 if ((output.OutputFlags & (uint)CognitionOutputFlags.EmitThreatPulse) != 0u)
                     flags |= AlphaLeviathanTelemetryFlags.RoarEmitted;
 
-                float3 playerPosition = hasPlayerTarget
-                    ? input.PlayerPosition
-                    : ResolveTelemetryRuntimePosition(in input.PlayerTargetAup, input.FloatingOriginOffset);
-                float3 awayFromPlayer = ResolveAlphaTelemetryDirection(core.Position - playerPosition, new float3(0f, 0f, 1f));
-                float3 playerForward = ResolveAlphaTelemetryDirection(input.PlayerForward, -awayFromPlayer);
-                if (math.dot(playerForward, awayFromPlayer) >= AlphaPlayerGazeDotThreshold)
-                    flags |= AlphaLeviathanTelemetryFlags.PlayerGazeBreak;
-                if (hasPlayerTarget && highTierSmoothSteering && phase == AlphaLeviathanPhase.Hidden)
-                    flags |= AlphaLeviathanTelemetryFlags.SdfDiveRequested;
-                float distanceSq = math.lengthsq(playerPosition - core.Position);
+                float3 playerPosition = hasPlayerTarget ? input.PlayerPosition : core.Position;
+                if (!hasPlayerTarget)
+                {
+                    flags |= AlphaLeviathanTelemetryNoPlayerTarget;
+                }
+                else
+                {
+                    float3 awayFromPlayer = ResolveAlphaTelemetryDirection(core.Position - playerPosition, new float3(0f, 0f, 1f));
+                    float3 playerForward = ResolveAlphaTelemetryDirection(input.PlayerForward, -awayFromPlayer);
+                    if (math.dot(playerForward, awayFromPlayer) >= AlphaPlayerGazeDotThreshold)
+                        flags |= AlphaLeviathanTelemetryFlags.PlayerGazeBreak;
+                    if (highTierSmoothSteering && phase == AlphaLeviathanPhase.Hidden)
+                        flags |= AlphaLeviathanTelemetryFlags.SdfDiveRequested;
+                }
+
+                float distanceSq = hasPlayerTarget ? math.lengthsq(playerPosition - core.Position) : 0f;
                 float distanceMeters = distanceSq > DdaEpsilon ? distanceSq * math.rsqrt(math.max(distanceSq, DdaEpsilon)) : 0f;
                 float fogRingDistance = math.max(
                     AlphaFalseChargeVeerDistanceMeters + 5f,

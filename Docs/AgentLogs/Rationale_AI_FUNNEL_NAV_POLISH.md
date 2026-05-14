@@ -98,6 +98,12 @@ Rejected Alternatives: Fixing Core/Audio/AI/Physics contracts from this task was
 Scalability potential: The funnel patch remains narrow and reviewable when the global build is repaired.
 Hardware Impact: No runtime hardware claim can be finalized until Burst compilation/profiling runs in Unity.
 
+Problem: The prior global compile wall cleared after neighboring dependency fixes, so the funnel patch needed a fresh evidence pass.
+Solution: Re-ran bounded `dotnet build Hecton8.Core.csproj --no-restore /m:1 /nr:false`; result is 0 warnings and 0 errors.
+Rejected Alternatives: Keeping the stale blocked status was rejected because current objective data supersedes the old dependency wall.
+Scalability potential: Build-valid code can now enter Unity/Burst profiler verification without assembly noise.
+Hardware Impact: Runtime hardware claims still require Unity profiler capture; compile proof only verifies C# integration.
+
 ## OMEGA POLISH CHANGES
 
 Problem: Final anti-bloat pass required checking for honest math, divisions, managed strings, and allocation paths after task completion/blocking.

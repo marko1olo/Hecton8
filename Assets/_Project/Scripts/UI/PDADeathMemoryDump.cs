@@ -15,7 +15,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/PDA Death Memory Dump")]
-    public sealed class PDADeathMemoryDump : MonoBehaviour, ITickable, IUpdatable
+    public sealed class PDADeathMemoryDump : MonoBehaviour, ILateFrameTickable
     {
         private enum DumpState : byte
         {
@@ -113,11 +113,12 @@ namespace Hecton8.UI
         }
 
         /// <inheritdoc />
-        public void Tick(float dt)
+        public void LateFrameTick()
         {
             if (_dumpLabel == null || _overlayGroup == null || _state == DumpState.Hidden)
                 return;
 
+            float dt = math.max(0f, SystemDispatcher.CurrentFrameDeltaTime);
             switch (_state)
             {
                 case DumpState.Revealing:
@@ -415,7 +416,7 @@ namespace Hecton8.UI
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            _tickRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+            _tickRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
         private void UnregisterFromTickManager()
@@ -423,7 +424,7 @@ namespace Hecton8.UI
             if (!_tickRegistered)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
             _tickRegistered = false;
         }
 

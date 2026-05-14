@@ -74,7 +74,7 @@ namespace Hecton8.Core.Memory
         /// <summary>Attempts to read an existing relocatable handle without creating or growing it.</summary>
         bool TryGetBufferHandle<T>(BufferID bufferId, out VaultBufferHandle<T> handle) where T : struct;
 
-        /// <summary>Validates a relocatable handle; stale cached handles throw instead of refreshing silently.</summary>
+        /// <summary>Validates a relocatable handle and refreshes stale pointer metadata.</summary>
         bool ResolveBuffer<T>(ref VaultBufferHandle<T> handle) where T : struct;
 
         /// <summary>Attempts to read the current generation for a buffer.</summary>
@@ -281,6 +281,8 @@ namespace Hecton8.Core.Memory
         internal const int VaultBlockAlignment = 64;
         private const long DefaultArenaBytes = 128L * 1024L * 1024L;
         private const float FragmentationRatioThreshold = 0.15f;
+        private const float CompactionStressThreshold = 0.5f;
+        private const long CompactionSoftMoveBudgetBytes = 512L * 1024L;
         private const long MassiveMoveThresholdBytes = 50L * 1024L * 1024L;
         private const int RelocationRecordCapacity = 64;
         internal const byte BlockStateFree = 0;
@@ -288,9 +290,13 @@ namespace Hecton8.Core.Memory
         private const byte BlockFlagExternalView = 1 << 0;
         private const byte BlockFlagLocked = 1 << 1;
         private const byte DefragFlagFragmented = 1 << 0;
+        private const byte DefragFlagMoved = 1 << 1;
+        private const byte DefragFlagWatchdogExceeded = 1 << 2;
         private const byte DefragFlagMassiveMovePending = 1 << 3;
         private const byte DefragFlagFault = 1 << 4;
+        private const byte DefragFlagStressBlocked = 1 << 5;
         private const byte DefragFlagUnaligned = 1 << 6;
+        private const byte DefragFlagLockedSkipped = 1 << 7;
         private const int DefragBlackBoxFrameCount = 300;
         private const string DefragDumpPath = "Docs/AgentLogs/Dump_VAULT_MEMORY_RELOCATOR.bin";
         private const string PhiVodDumpPath = "Docs/AgentLogs/Dump_PHI_VOD.bin";
@@ -650,20 +656,10 @@ namespace Hecton8.Core.Memory
         /// <inheritdoc />
         public bool ResolveBuffer<T>(ref VaultBufferHandle<T> handle) where T : struct
         {
-            bool hasCachedIdentity =
-                handle.ptr != null ||
-                handle.generation != 0u ||
-                handle.Length != 0 ||
-                handle.Stride != 0;
-
             if (!_initialized || _compactionFence != 0 || _arenaBase == null)
             {
-                if (hasCachedIdentity)
-                {
+                if (handle.ptr != null || handle.generation != 0u || handle.Length != 0 || handle.Stride != 0)
                     DumpPhiVodBlackBox();
-                    FatalMemoryException.ThrowStaleVaultHandle();
-                }
-
                 return false;
             }
 
@@ -676,8 +672,6 @@ namespace Hecton8.Core.Memory
             if (!hasPointer || !hasMeta || pointer == IntPtr.Zero || meta.Length <= 0)
             {
                 DumpPhiVodBlackBox();
-                if (hasCachedIdentity)
-                    FatalMemoryException.ThrowStaleVaultHandle();
                 return false;
             }
 
@@ -692,19 +686,9 @@ namespace Hecton8.Core.Memory
                 handle.Stride == meta.Stride;
             if (!matchesMetadata)
             {
-                bool isEmptyHandle =
-                    handle.ptr == null &&
-                    handle.generation == 0u &&
-                    handle.Length == 0 &&
-                    handle.Stride == 0;
-                if (!isEmptyHandle)
-                {
-                    DumpPhiVodBlackBox();
-                    FatalMemoryException.ThrowStaleVaultHandle();
-                }
-
                 handle.ptr = pointer.ToPointer();
                 handle.generation = meta.Version;
+                handle.BufferId = (BufferID)key;
                 handle.Length = meta.Length;
                 handle.Stride = meta.Stride;
             }
@@ -844,6 +828,26 @@ namespace Hecton8.Core.Memory
             if (!IsFragmented || _allocationLock != 0)
             {
                 RecordDefragBlackBox(sequence);
+                return;
+            }
+
+            PendingMassiveMoveBytes = EstimateLargestOccupiedMoveCandidate();
+            if (PendingMassiveMoveBytes >= MassiveMoveThresholdBytes)
+                LastDefragFlags |= DefragFlagMassiveMovePending;
+
+            if (float.IsNaN(systemStress01) || float.IsInfinity(systemStress01) || systemStress01 >= CompactionStressThreshold)
+            {
+                LastDefragFlags |= DefragFlagStressBlocked;
+                RecordDefragBlackBox(sequence);
+                return;
+            }
+
+            RunCompactionSlice();
+            AnalyzeGaps();
+            if (!ValidateDefragTelemetry() || !ValidateBlockMap())
+            {
+                RecordDefragBlackBox(sequence);
+                DumpDefragBlackBox();
                 return;
             }
 
@@ -1231,6 +1235,191 @@ namespace Hecton8.Core.Memory
             }
 
             return largest;
+        }
+
+        private void RunCompactionSlice()
+        {
+            if (!_blocks.IsCreated ||
+                _blocks.Length < 2 ||
+                !_lastRelocationRecords.IsCreated ||
+                _lastRelocationRecords.Length == 0)
+            {
+                return;
+            }
+
+            long startTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
+            long watchdogTicks = System.Diagnostics.Stopwatch.Frequency / 1000L;
+            if (watchdogTicks <= 0L)
+                watchdogTicks = 1L;
+
+            long movedBytesThisSlice = 0L;
+            System.Threading.Volatile.Write(ref _compactionFence, 1);
+            System.Threading.Thread.MemoryBarrier();
+            try
+            {
+                for (int i = 0; i + 1 < _blocks.Length; i++)
+                {
+                    if (_lastRelocationRecordCount >= _lastRelocationRecords.Length)
+                        break;
+                    if (movedBytesThisSlice >= CompactionSoftMoveBudgetBytes)
+                        break;
+
+                    long elapsedTicks = System.Diagnostics.Stopwatch.GetTimestamp() - startTimestamp;
+                    if (elapsedTicks >= watchdogTicks)
+                    {
+                        MarkCompactionWatchdogExceeded();
+                        break;
+                    }
+
+                    VaultArenaBlock freeBlock = _blocks[i];
+                    VaultArenaBlock occupiedBlock = _blocks[i + 1];
+                    if (freeBlock.State != BlockStateFree || occupiedBlock.State != BlockStateOccupied)
+                        continue;
+
+                    if (occupiedBlock.Bytes > CompactionSoftMoveBudgetBytes - movedBytesThisSlice)
+                    {
+                        LastDefragFlags |= DefragFlagMassiveMovePending;
+                        continue;
+                    }
+
+                    if (!TryCompactFreeGapAt(i, out long movedBytes))
+                        continue;
+
+                    movedBytesThisSlice += movedBytes;
+                    elapsedTicks = System.Diagnostics.Stopwatch.GetTimestamp() - startTimestamp;
+                    if (elapsedTicks >= watchdogTicks)
+                    {
+                        MarkCompactionWatchdogExceeded();
+                        break;
+                    }
+                }
+            }
+            finally
+            {
+                System.Threading.Thread.MemoryBarrier();
+                System.Threading.Volatile.Write(ref _compactionFence, 0);
+            }
+        }
+
+        private bool TryCompactFreeGapAt(int freeIndex, out long movedBytes)
+        {
+            movedBytes = 0L;
+            int occupiedIndex = freeIndex + 1;
+            if ((uint)freeIndex >= (uint)_blocks.Length || (uint)occupiedIndex >= (uint)_blocks.Length)
+                return false;
+            if (_lastRelocationRecordCount >= _lastRelocationRecords.Length)
+                return false;
+
+            VaultArenaBlock freeBlock = _blocks[freeIndex];
+            VaultArenaBlock occupiedBlock = _blocks[occupiedIndex];
+            if (freeBlock.State != BlockStateFree ||
+                occupiedBlock.State != BlockStateOccupied ||
+                freeBlock.Bytes <= 0L ||
+                occupiedBlock.Bytes <= 0L)
+            {
+                return false;
+            }
+
+            if ((occupiedBlock.Reserved0 & BlockFlagLocked) != 0 || occupiedBlock.Reserved1 != 0)
+            {
+                LastDefragFlags |= DefragFlagLockedSkipped;
+                return false;
+            }
+
+            long alignmentMask = VaultBlockAlignment - 1L;
+            if ((freeBlock.OffsetBytes & alignmentMask) != 0L ||
+                (occupiedBlock.OffsetBytes & alignmentMask) != 0L ||
+                (occupiedBlock.Bytes & alignmentMask) != 0L)
+            {
+                LastDefragFlags |= (byte)(DefragFlagFault | DefragFlagUnaligned);
+                return false;
+            }
+
+            int key = occupiedBlock.BufferKey;
+            if (key == 0 ||
+                !_metadata.TryGetValue(key, out VaultBufferMeta meta) ||
+                meta.OffsetBytes != occupiedBlock.OffsetBytes ||
+                meta.Bytes > occupiedBlock.Bytes)
+            {
+                LastDefragFlags |= DefragFlagFault;
+                return false;
+            }
+
+            IntPtr oldPointer = (IntPtr)((byte*)_arenaBase + occupiedBlock.OffsetBytes);
+            IntPtr newPointer = (IntPtr)((byte*)_arenaBase + freeBlock.OffsetBytes);
+            if (oldPointer == newPointer)
+                return false;
+
+            System.Threading.Thread.MemoryBarrier();
+            UnsafeUtility.MemMove(newPointer.ToPointer(), oldPointer.ToPointer(), occupiedBlock.Bytes);
+
+            VaultArenaBlock movedBlock = occupiedBlock;
+            movedBlock.OffsetBytes = freeBlock.OffsetBytes;
+            movedBlock.Version = NextGeneration(movedBlock.Version);
+
+            VaultArenaBlock newFreeBlock = freeBlock;
+            newFreeBlock.OffsetBytes = movedBlock.OffsetBytes + movedBlock.Bytes;
+            newFreeBlock.BufferKey = 0;
+            newFreeBlock.State = BlockStateFree;
+            newFreeBlock.Reserved0 = 0;
+            newFreeBlock.Reserved1 = 0;
+            newFreeBlock.Version = NextGeneration(newFreeBlock.Version);
+
+            _blocks[freeIndex] = movedBlock;
+            _blocks[occupiedIndex] = newFreeBlock;
+            UpdateH8Descriptor(in movedBlock);
+            UpdateH8Descriptor(in newFreeBlock);
+
+            meta.BlockIndex = freeIndex;
+            meta.OffsetBytes = movedBlock.OffsetBytes;
+            meta.Bytes = movedBlock.Bytes;
+            meta.Version = movedBlock.Version;
+            _metadata[key] = meta;
+            _buffers[key] = newPointer;
+            BumpVaultGeneration();
+
+            System.Threading.Thread.MemoryBarrier();
+            RecordRelocation(oldPointer, newPointer, in movedBlock, in meta);
+            LastDefragMovedBytes += movedBlock.Bytes;
+            _totalDefragMovedBytes += movedBlock.Bytes;
+            LastDefragFlags |= DefragFlagMoved;
+            movedBytes = movedBlock.Bytes;
+
+            if (occupiedIndex + 1 < _blocks.Length && IsFree(occupiedIndex) && IsFree(occupiedIndex + 1))
+                MergeFreeBlocks(occupiedIndex, occupiedIndex + 1);
+
+            return true;
+        }
+
+        private void RecordRelocation(
+            IntPtr oldPointer,
+            IntPtr newPointer,
+            in VaultArenaBlock movedBlock,
+            in VaultBufferMeta meta)
+        {
+            if (!_lastRelocationRecords.IsCreated || _lastRelocationRecordCount >= _lastRelocationRecords.Length)
+                return;
+
+            VaultRelocationRecord record = default;
+            record.OldPointer = oldPointer.ToInt64();
+            record.NewPointer = newPointer.ToInt64();
+            record.BufferId = movedBlock.BufferKey;
+            record.ByteLength = movedBlock.Bytes > int.MaxValue ? int.MaxValue : (int)movedBlock.Bytes;
+            record.Generation = movedBlock.Version;
+            record.Flags = (byte)(VaultRelocationRecord.FlagAddressChanged | VaultRelocationRecord.FlagFenceProtected);
+            if (LastDefragWatchdogExceeded)
+                record.Flags |= VaultRelocationRecord.FlagWatchdogBreached;
+            record.SystemId = (byte)meta.Owner;
+            _lastRelocationRecords[_lastRelocationRecordCount] = record;
+            _lastRelocationRecordCount++;
+        }
+
+        private void MarkCompactionWatchdogExceeded()
+        {
+            if (!LastDefragWatchdogExceeded)
+                _compactionWatchdogBreachCount++;
+            LastDefragWatchdogExceeded = true;
+            LastDefragFlags |= DefragFlagWatchdogExceeded;
         }
 
         private void MarkExternalView(int key, long offsetBytes)

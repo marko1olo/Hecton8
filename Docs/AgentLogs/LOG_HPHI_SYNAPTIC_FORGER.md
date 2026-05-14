@@ -80,3 +80,29 @@ Verification:
 - `git diff --check` reports no whitespace errors; only CRLF normalization warnings on touched tracked files.
 - `Docs/AgentLogs/Build_HPHI_SYNAPTIC_FORGER_latest.txt` captured the latest Core build wall: 128 unrelated global errors and no touched-file hits for GlobalSignals, PlayerActionController, ActionProgressHUD, PDAExchangeSystem, PDABarterTab, or VehicleUpgradeModule.
 - Unity MCP validation retry failed at transport level: `http://127.0.0.1:8088/mcp` was unavailable, so Editor-side validation remains blocked.
+
+## 2026-05-14 - Source ID Folding Addendum
+
+What was wrong:
+- PDA/vehicle signal sources had been stabilized away from `GetInstanceID()`, but the 64-bit Unity entity id was still truncated to `uint`.
+- Truncation is cheap but weak for reload-derived identities and long-session multi-consumer lanes.
+
+What was done:
+- Added `GlobalSignals.FoldEntityIdToSourceId(ulong)` as the shared zero-free 32-bit source-id fold.
+- Switched PDAExchangeSystem producer, PDABarterTab consumer, and VehicleUpgradeModule producer to that helper.
+- Kept packet layouts unchanged at 32 bytes; no `ulong` payload expansion, no managed object payloads, no per-system private hash drift.
+
+Cinematic Cheats used:
+- Treated source identity as a deterministic visual/notification key, not as a heavyweight object reference.
+- Preserved the cheap packet model: 32-bit source key, frame, masks, counts, flags, and byte reasons.
+
+Exact microseconds saved:
+- 0.0 us/frame steady-state. The fold happens when binding/caching, not during every snapshot scan.
+- Saved cost is architectural: lower source collision risk without increasing packet size or adding managed allocation.
+
+Verification:
+- `dotnet build Hecton8.Core.csproj --no-restore` now fails on one unrelated error only: `Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs(1680,59): AlphaLeviathanTelemetryFlags.NoPlayerTarget`.
+- Latest build log has no errors in `GlobalSignals.cs`, `PlayerActionController.cs`, `ActionProgressHUD.cs`, `PDAExchangeSystem.cs`, `PDABarterTab.cs`, or `VehicleUpgradeModule.cs`.
+- `git diff --check` returned no whitespace errors, only CRLF normalization warnings.
+- Targeted scans found no converted-lane `public event`, `event Action`, `UnityEvent`, `Action<`, `.Invoke(`, `GetInstanceID(`, `foreach`, `string.Format`, `$"` interpolation, `math.sqrt`, `math.normalize`, or raw lower-32 source-id casts in the H-Phi touched hot files.
+- Remaining expected hits: existing `SignalBus<T>` `new NativeArray<T>` owner allocation in Core and cold `PDAExchangeSystem.BuildBundleSummaryForSave()` `.ToString()` save serialization.

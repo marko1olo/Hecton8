@@ -86,7 +86,7 @@ What was wrong:
 The shared IK runtime consumed the latest player `KccVelocitySignal` and assigned that velocity to every registered rig. That works only while the player rig is the sole user. It is wrong for scalable shared IK because a future NPC/secondary rig would inherit player step lead, velocity-scaled step threshold, and swimming posture.
 
 What was done:
-`ContextualPhysicalIkRuntime` now caches the KCC body AUP runtime position when consuming `KccVelocitySignal`. Per entity, it applies the KCC velocity only when the rig root is finite and within 4m of the KCC body position. Non-matching rigs receive zero KCC velocity.
+`ContextualPhysicalIkRuntime` now caches the KCC body AUP runtime position when consuming `KccVelocitySignal`. Per entity, it applies the KCC velocity only when the rig root is finite and within 4m of the KCC body position. The cached KCC body position rebases on origin shift. Non-matching rigs receive zero KCC velocity.
 
 Cinematic cheats used:
 Kept the same presentation fake: two batched foot rays, planar velocity lead, squared thresholds, and triangle-wave stepping. Rejected direct player movement coupling and new rig ownership APIs.

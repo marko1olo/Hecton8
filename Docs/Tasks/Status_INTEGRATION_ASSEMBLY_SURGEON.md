@@ -4,7 +4,7 @@ Agent: INTEGRATION_ASSEMBLY_SURGEON
 Role: SYSTEMS_ARCHITECT
 Domain: Unity Compilation Graph / Integrator
 Prompt task count: 17
-Current state: PENDING VERIFICATION
+Current state: BUILD SUCCESSFUL (CLI_COMPILE: Core isolated)
 
 ## Mandates Read
 
@@ -25,24 +25,29 @@ Rule quote: `H-PHI DEFENSE: Do NOT solve missing dependencies by adding Hecton8.
 
 ## Checklist
 
-- [ ] Task 1: READ THE WALL | Justification: run `dotnet build Hecton8.Core.csproj --no-restore`; parse first 20 errors | Alternatives rejected: stale log trust | Estimate: pending
-- [ ] Task 2: ASMDEF REPAIR | Justification: ensure dependent asmdefs reference contracts without cycles | Alternatives rejected: Core referencing leaf assemblies | Estimate: pending
-- [ ] Task 3: STRUCT MIGRATION | Justification: shared data belongs in Contracts when Core needs it | Alternatives rejected: concrete leaf dependency | Estimate: pending
-- [ ] Task 4: NAMESPACE ALIGNMENT | Justification: moved contracts must compile from all consumers | Alternatives rejected: duplicate type aliases | Estimate: pending
-- [ ] Task 5: DUPLICATE MEMBER PURGE | Justification: stale duplicate methods are direct compile blockers | Alternatives rejected: partial-class masking | Estimate: pending
-- [ ] Task 6: PROJECT FILE SYNC | Justification: source tree and generated bridge must allow Bee/Roslyn discovery | Alternatives rejected: hand-editing generated root csproj unless unavoidable | Estimate: pending
-- [ ] Task 7: COMPILER DIRECTIVES | Justification: package-absent code must be isolated with explicit guards | Alternatives rejected: adding packages or fake package APIs | Estimate: pending
-- [ ] Task 8: H-PHI DEFENSE | Justification: break cycles by contracts/interfaces only | Alternatives rejected: leaf-to-Core back edges | Estimate: pending
-- [ ] Task 9: BATCHED COMPILE | Justification: fix small error batches and rebuild repeatedly | Alternatives rejected: one hallucinated mass patch | Estimate: pending
-- [ ] Task 10: OMEGA COMPILE CHECK | Justification: final target is CLI build success, zero warnings/errors if reachable | Alternatives rejected: partial success report | Estimate: pending
-- [ ] Task 11: RE-READ PROMPT | Justification: anti-amnesia after compile passes | Alternatives rejected: relying on chat memory | Estimate: pending
-- [ ] Task 12: RECHECK TASKS | Justification: every item must be verified or blocked | Alternatives rejected: checkbox-only reporting | Estimate: pending
-- [ ] Task 13: FLAW SWEEP | Justification: inspect own changes for architectural flaws | Alternatives rejected: compile-only tunnel vision | Estimate: pending
-- [ ] Task 14: ILateFrameTickable PATCH IF PRESENT | Justification: emergency compile directive allows empty contract body where required | Alternatives rejected: broad runtime logic invention | Estimate: pending
-- [ ] Task 15: FINAL STATUS BUILD SUCCESSFUL OR BLOCKED | Justification: exact evidence class and artifact path required | Alternatives rejected: optimistic status | Estimate: pending
-- [ ] Task 16: FINAL LOG APPEND | Justification: CTO reads disk logs, not chat | Alternatives rejected: chat-only report | Estimate: pending
-- [ ] Task 17: POLISH MANDATE AFTER CORE STATUS | Justification: only parse/execute after all core tasks checked or blocked | Alternatives rejected: premature polish scope creep | Estimate: pending
+- [x] Task 1: READ THE WALL | Justification: `Build_INTEGRATION_ASSEMBLY_SURGEON_01.log` parsed; first wall was 2 errors: missing `TailWhipDurationSeconds` and `PrologueSplashdownSineSweepProbeJob` | Alternatives rejected: stale May reports | Estimate: 580 us
+- [x] Task 2: ASMDEF REPAIR | Justification: opened `Hecton8.Core.asmdef`, `Hecton8.Core.Contracts.asmdef`, `Hecton8.Animation.IK.asmdef`, and fluid/audio contract asmdefs; no new asmdef cycle was added | Alternatives rejected: adding `Hecton8.Core` to leaf asmdefs | Estimate: 900 us
+- [x] Task 3: STRUCT MIGRATION CHECK | Justification: current compile did not require moving `MacroSwarm`, `BrineLayerSample`, or `SoundEmissionSignal`; moving them during a green emergency pass was rejected as a high-blast-radius refactor | Alternatives rejected: DTO migration after compile green | Estimate: 1100 us
+- [x] Task 4: NAMESPACE ALIGNMENT CHECK | Justification: no moved contracts means no namespace rewrite was required; current sources resolve under Core isolated compile | Alternatives rejected: duplicate aliases/type forwards | Estimate: 320 us
+- [x] Task 5: DUPLICATE MEMBER PURGE CHECK | Justification: `rg` found one `DrainChunkDehydratedSignals` implementation and one `OnGlobalRegistryServiceReplaced` implementation; no duplicate body remained to delete | Alternatives rejected: deleting live single implementation | Estimate: 260 us
+- [x] Task 6: PROJECT FILE SYNC | Justification: source-backed `Directory.Build.targets` bridge participates in generated project compile; Core isolated build found current files and produced `Temp\bin\Debug\Hecton8.Core.dll` | Alternatives rejected: raw generated `Hecton8.Core.csproj` edit | Estimate: 700 us
+- [x] Task 7: COMPILER DIRECTIVES CHECK | Justification: no package-absent first-party method remained in the Core compile wall; no `#if HECTON_HAS_PACKAGE` quarantine required | Alternatives rejected: fake package APIs | Estimate: 240 us
+- [x] Task 8: H-PHI DEFENSE | Justification: did not add `Hecton8.Core` as a reference to any leaf assembly and did not add concrete cross-domain code references | Alternatives rejected: leaf-to-Core back edge | Estimate: 350 us
+- [x] Task 9: BATCHED COMPILE | Justification: ran four serial build passes; wall moved from 2 errors to 0 errors, then from Core CS0436 warnings to Core isolated 0/0 | Alternatives rejected: parallel full builds and one mass patch | Estimate: 1750 us
+- [x] Task 10: OMEGA COMPILE CHECK | Justification: `Build_INTEGRATION_ASSEMBLY_SURGEON_04_CoreIsolated.log` reports `Build succeeded. 0 Warning(s). 0 Error(s).` | Alternatives rejected: claiming raw vendor-reference build as zero-warning | Estimate: 400 us
+- [x] Task 11: RE-READ PROMPT | Justification: re-extracted `<AGENT_PROMPT id="INTEGRATION_ASSEMBLY_SURGEON">` from `Docs/Tasks/CURRENT_BATCH.md` after compile passes | Alternatives rejected: chat memory | Estimate: 300 us
+- [x] Task 12: RECHECK TASKS | Justification: rechecked task list against build logs, duplicate-method scan, contract-symbol scan, and asmdef reads | Alternatives rejected: checkbox-only closure | Estimate: 800 us
+- [x] Task 13: FLAW SWEEP | Justification: inspected `Directory.Build.targets` around the removed duplicate IK reference area and confirmed no `Hecton8.Animation.IK` reference remains in the MSBuild bridge | Alternatives rejected: stopping at compile success | Estimate: 500 us
+- [x] Task 14: ILateFrameTickable PATCH IF PRESENT | Justification: no current `HectonFluidEngine`/`ILateFrameTickable` compile complaint remained in build logs; no empty implementation needed | Alternatives rejected: inventing logic | Estimate: 200 us
+- [x] Task 15: FINAL STATUS BUILD SUCCESSFUL OR BLOCKED | Justification: status is `BUILD SUCCESSFUL (CLI_COMPILE: Core isolated)` with artifact path; raw project-reference vendor warnings documented separately | Alternatives rejected: hiding vendor-warning boundary | Estimate: 200 us
+- [ ] Task 16: FINAL LOG APPEND | Justification: final report still pending append to `LOG_INTEGRATION_ASSEMBLY_SURGEON.md` | Alternatives rejected: chat-only report | Estimate: pending
+- [ ] Task 17: POLISH MANDATE AFTER CORE STATUS | Justification: core tasks checked; polish tag not yet parsed | Alternatives rejected: premature polish scope creep | Estimate: pending
 
 ## Loop Ledger
 
 - Loop 0: Initialized mandate/status state. Build wall not yet run. Status: PENDING VERIFICATION.
+- Loop 1: `Build_INTEGRATION_ASSEMBLY_SURGEON_01.log`; 2 errors, 0 warnings. Stale-current-source mismatch identified. Status: PENDING VERIFICATION.
+- Loop 2: `Build_INTEGRATION_ASSEMBLY_SURGEON_02.log`; 0 errors, 30 first-party CS0436 warnings from duplicate IK reference/source collision. Status: PENDING VERIFICATION.
+- Loop 3: `Build_INTEGRATION_ASSEMBLY_SURGEON_03.log`; 0 errors, 47 vendor/package warnings only after duplicate IK warning removal. Status: PENDING VERIFICATION for zero-warning Core.
+- Loop 4: `Build_INTEGRATION_ASSEMBLY_SURGEON_04_CoreIsolated.log`; Core isolated compile 0 warnings / 0 errors. Status: BUILD SUCCESSFUL (CLI_COMPILE).
+- Loop 5: Self-review scans: duplicate methods not duplicated; prompt re-extracted; `Directory.Build.targets` no longer contains `Hecton8.Animation.IK` bridge reference. Status: BUILD SUCCESSFUL (CLI_COMPILE).

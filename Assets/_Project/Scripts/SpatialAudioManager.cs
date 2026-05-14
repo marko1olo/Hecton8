@@ -1525,6 +1525,7 @@ namespace Hecton8.Audio
         public bool QueueSoundEmissionSignal(in SoundEmissionSignal signal)
         {
             if (!_virtualVoiceWriteQueue.IsCreated ||
+                _virtualVoiceWriteQueue.Length >= _virtualVoiceWriteQueue.Capacity ||
                 !TryResolveAudioEventClip(signal.EventID, out AudioClip clip) ||
                 !AcousticAup.IsFinite(in signal.SourceAup))
             {
@@ -1548,7 +1549,8 @@ namespace Hecton8.Audio
                 signal.StationaryCacheKey,
                 signal.Flags,
                 foveatedTier);
-            return EnqueueVirtualVoice(in request);
+            AppendVirtualVoice(in request);
+            return true;
         }
 
         public bool QueueHullStressSignal(in HullStressSignal signal)
@@ -1680,10 +1682,20 @@ namespace Hecton8.Audio
                 return false;
             }
 
+            AppendVirtualVoice(in request);
+            return true;
+        }
+
+        private void AppendVirtualVoice(in VirtualVoiceRequest request)
+        {
             float priority = request.FoveatedTier >= VirtualVoiceUtility.FoveatedTierFrozen
                 ? 0f
                 : math.max(0f, SanitizeFinite(request.Priority, 0f));
-            uint stableKey = VirtualVoiceUtility.ComputeStableKey(request.EventID, request.ClipHash, in request.SourceAup);
+            uint stableKey = ComputeVirtualVoiceStableKey(
+                request.EventID,
+                request.ClipHash,
+                request.StationaryCacheKey,
+                in request.SourceAup);
             _virtualVoiceWriteQueue.Add(new VirtualVoice
             {
                 EventID = request.EventID,
@@ -1701,7 +1713,6 @@ namespace Hecton8.Audio
                 PortalFlags = request.PortalFlags,
                 FoveatedTier = request.FoveatedTier
             });
-            return true;
         }
 
         /// <inheritdoc />
@@ -2445,6 +2456,31 @@ namespace Hecton8.Audio
                 hash = (hash ^ (uint)statistics.StolenVoices) * 16777619u;
                 hash = (hash ^ math.asuint(loudestWeight)) * 16777619u;
                 return hash;
+            }
+        }
+
+        private static uint ComputeVirtualVoiceStableKey(
+            uint eventId,
+            uint clipHash,
+            int stationaryCacheKey,
+            in AcousticAup sourceAup)
+        {
+            unchecked
+            {
+                uint hash = 2166136261u;
+                hash = (hash ^ eventId) * 16777619u;
+                hash = (hash ^ clipHash) * 16777619u;
+                hash = (hash ^ (uint)stationaryCacheKey) * 16777619u;
+                hash = (hash ^ (uint)sourceAup.GridX) * 16777619u;
+                hash = (hash ^ (uint)(sourceAup.GridX >> 32)) * 16777619u;
+                hash = (hash ^ (uint)sourceAup.GridY) * 16777619u;
+                hash = (hash ^ (uint)(sourceAup.GridY >> 32)) * 16777619u;
+                hash = (hash ^ (uint)sourceAup.GridZ) * 16777619u;
+                hash = (hash ^ (uint)(sourceAup.GridZ >> 32)) * 16777619u;
+                hash = (hash ^ (uint)math.round(sourceAup.Local.x)) * 16777619u;
+                hash = (hash ^ (uint)math.round(sourceAup.Local.y)) * 16777619u;
+                hash = (hash ^ (uint)math.round(sourceAup.Local.z)) * 16777619u;
+                return hash != 0u ? hash : 1u;
             }
         }
 

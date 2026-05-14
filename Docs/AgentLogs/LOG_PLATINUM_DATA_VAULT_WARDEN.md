@@ -68,6 +68,65 @@ Verification:
 Status:
 - VERIFIED VAULT LOCK - COMPILE TARGET BLOCKED BY MISSING Hecton8.Core.Memory.rsp.
 
+## 2026-05-14 - Final Drift Removal After Build Probe
+
+What was wrong:
+- A post-build drift scan found live compaction reintroduced again in `GlobalDataVault.cs`.
+- The reintroduced block contained `RunCompactionSlice`, `TryCompactFreeGapAt`, `UnsafeUtility.MemMove`, relocation recording, `System.Threading` fences, `Stopwatch` checks, stress-gated compaction constants, and stale-handle refresh semantics.
+
+What was done:
+- Removed the live relocation block again.
+- Restored telemetry-only `FrostTickDefrag`: analyze gaps, flag massive pending move risk, record black-box telemetry.
+- Restored stale cached handle throws in `ResolveBuffer`.
+
+Cinematic Cheats used:
+- Fragmentation remains reported as telemetry. Runtime heap relocation remains prohibited in the vertical slice.
+
+Exact Microseconds saved:
+- Maintains removal of the 512 KB live copy budget plus fence/timer overhead from the maintenance path.
+- Prevents pointer alias corruption cost, which is not a frame-time optimization; it is a correctness lock.
+
+Verification:
+- Exact `dotnet build Hecton8.Core.Memory.rsp` still fails with MSB1009 because the target file is missing.
+- Edited-file filtered `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 /nr:false /clp:ErrorsOnly` reports `NO_EDITED_FILE_ERRORS_IN_BUILD_OUTPUT`.
+- Final `rg` found no `MemMove`, `UnsafeUtility.MemMove`, compaction slice, free-gap compaction, Burst, thread fence, `System.Threading`, or `Stopwatch` symbols in `GlobalDataVault.cs`.
+- Final `rg` found no `GlobalSignals` imports in Core.Memory.
+
+Status:
+- VERIFIED VAULT LOCK - COMPILE TARGET BLOCKED BY MISSING Hecton8.Core.Memory.rsp.
+
+## 2026-05-14 - Post-Verification Hardening Pass
+
+What was wrong:
+- `H8Memory.ReallocateRaw` proved ownership after allocating/copying the replacement block, so a wrong-owner fault could leak the new native allocation.
+- `ResolveBuffer` returned `false` for non-default handles when the vault was unavailable, which could hide stale alias lifecycle bugs.
+- `InventoryShadowDTO` could set `FlagHasPayload` while persisting zero payload bytes.
+
+What was done:
+- Added pre-allocation tracked-owner validation for `ReallocateRaw` and rejected `SystemID.Unknown` raw allocation owners at allocation time.
+- Moved cached-handle identity detection ahead of DataVault availability checks. Non-default handles now dump PHI/VOD and throw on unavailable vault state; empty handles still return false.
+- Bound `InventoryShadowDTO.FlagHasPayload` to positive `payloadLength`.
+
+Cinematic Cheats used:
+- No physical memory movement was reintroduced. The vault remains a telemetry-only fragmentation reporter.
+- Error handling favors deterministic black-box failure over soft null behavior.
+
+Exact Microseconds saved:
+- Prevents wasted native allocation and copy work on wrong-owner `ReallocateRaw` faults; this path currently has no call sites.
+- Maintains the removed 512 KB live relocation slice and removes no visible-frame budget.
+- DTO flag fix is an assignment-only correction with no measurable frame cost.
+
+Verification:
+- Re-extracted `PLATINUM_DATA_VAULT_WARDEN` from `CURRENT_BATCH.md`.
+- Static `rg` found no live compaction, `MemMove`, Burst, thread fence, or `Stopwatch` symbols in `GlobalDataVault.cs`.
+- Static `rg` found no `GlobalSignals` imports in Core.Memory.
+- Static `rg` verified all `H8Memory.FreeRaw` call sites are owner-tagged outside the legacy wrapper.
+- Exact `dotnet build Hecton8.Core.Memory.rsp` still fails with MSB1009 because the target file is missing.
+- Edited-file filtered `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 /nr:false /clp:ErrorsOnly` reports `NO_EDITED_FILE_ERRORS_IN_BUILD_OUTPUT`.
+
+Status:
+- VERIFIED VAULT LOCK - COMPILE TARGET BLOCKED BY MISSING Hecton8.Core.Memory.rsp.
+
 ## 2026-05-14 - Verified Vault Lock Recovery
 
 What was wrong:

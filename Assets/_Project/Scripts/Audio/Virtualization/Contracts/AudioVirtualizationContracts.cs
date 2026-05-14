@@ -185,13 +185,14 @@ namespace Hecton8.Audio.Virtualization
         public const float MinimumDopplerRatio = 0.1f;
         public const float MaximumDopplerRatio = 3f;
 
-        public static uint ComputeStableKey(uint eventID, uint clipHash, in AcousticAup sourceAup)
+        public static uint ComputeStableKey(uint eventID, uint clipHash, int stationaryCacheKey, in AcousticAup sourceAup)
         {
             unchecked
             {
                 uint hash = 2166136261u;
                 hash = (hash ^ eventID) * 16777619u;
                 hash = (hash ^ clipHash) * 16777619u;
+                hash = (hash ^ (uint)stationaryCacheKey) * 16777619u;
                 hash = (hash ^ (uint)sourceAup.GridX) * 16777619u;
                 hash = (hash ^ (uint)(sourceAup.GridX >> 32)) * 16777619u;
                 hash = (hash ^ (uint)sourceAup.GridY) * 16777619u;

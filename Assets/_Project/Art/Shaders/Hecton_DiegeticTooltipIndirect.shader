@@ -55,10 +55,19 @@ Shader "Hecton8/UI/DiegeticTooltipIndirect"
             StructuredBuffer<TooltipGlyphInstance> _TooltipInstances;
             StructuredBuffer<float4> _TooltipUvRects;
 
+            static const float HectonBayer4x4[16] =
+            {
+                0.0 / 16.0,  8.0 / 16.0,  2.0 / 16.0, 10.0 / 16.0,
+               12.0 / 16.0,  4.0 / 16.0, 14.0 / 16.0,  6.0 / 16.0,
+                3.0 / 16.0, 11.0 / 16.0,  1.0 / 16.0,  9.0 / 16.0,
+               15.0 / 16.0,  7.0 / 16.0, 13.0 / 16.0,  5.0 / 16.0
+            };
+
             float HectonDitherCoverage(float2 positionCS)
             {
-                float2 pixel = floor(positionCS);
-                return frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
+                uint2 pixel = (uint2)positionCS;
+                uint index = (pixel.x & 3u) | ((pixel.y & 3u) << 2);
+                return HectonBayer4x4[index];
             }
 
             struct Attributes
@@ -82,7 +91,7 @@ Shader "Hecton8/UI/DiegeticTooltipIndirect"
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
 
                 TooltipGlyphInstance instance = _TooltipInstances[input.instanceID];
-                uint glyphIndex = (uint)round(max(0.0, instance.GlyphIndex.x));
+                uint glyphIndex = min((uint)round(max(0.0, instance.GlyphIndex.x)), 127u);
                 float4 uvRect = _TooltipUvRects[glyphIndex];
                 float4 world = mul(instance.LocalToWorld, float4(input.positionOS, 1.0));
                 output.positionCS = TransformWorldToHClip(world.xyz);

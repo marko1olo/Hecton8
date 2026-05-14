@@ -1,7 +1,7 @@
 # AUP Drift Report
 
 Agent: ARCHITECTURAL_AUP_INTEGRITY_AUDITOR
-Status: VERIFIED AUP INTEGRITY - COMPILE/ASMDEF BLOCKED BY DEPENDENCY/ARCHITECTURE
+Status: VERIFIED AUP INTEGRITY - CORE BUILD PASS; ASMDEF BLOCKED BY ARCHITECTURE
 
 ## Authority
 
@@ -42,6 +42,8 @@ Status: VERIFIED AUP INTEGRITY - COMPILE/ASMDEF BLOCKED BY DEPENDENCY/ARCHITECTU
 - `Assets/_Project/Scripts/Fauna/FaunaSensorSuite.cs`, `Assets/_Project/Scripts/Gameplay/HectonScanRenderRegistry.cs`, `Assets/_Project/Scripts/Gameplay/HectonScannerProjectionState.cs`, `Assets/_Project/Scripts/World/ScatterGPUIBackend.cs`, `Assets/_Project/Scripts/World/EcosystemDirector.cs`, and `Assets/_Project/Scripts/World/ResourceDistributionDirector.cs`: brine/scanner/scatter presentation helpers now use `CurrentTotalOffsetDouble` before final float output.
 - `Assets/_Project/Scripts/Environment/Fluids/BrineLayerMath.cs`: added double-offset overloads for future fluid-domain callers; current Core-facing callers use local double math because the Core project does not expose the new overload surface during `dotnet build`.
 - `Assets/_Project/Scripts/HectonFluidEngine.cs`: flow sampling, water-height sampling, buoyancy wave/vector-noise scheduling, brine shift scalar setup, and GPU abyssal flow noise offset upload now use `CurrentTotalOffsetDouble` until the final job/shader float payload boundary.
+- `Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs`: added a double vegetation universe-offset lane and double runtime/universe conversion helpers while preserving legacy `Vector3` APIs.
+- `Assets/_Project/Scripts/World/VegetationChunkResidencyDirector.cs`, `Assets/_Project/Scripts/World/VegetationDensityQueryService.cs`, `Assets/_Project/Scripts/World/VegetationTerrainHoleSynchronizer.cs`, and `Assets/_Project/Scripts/World/SargassumGlobalDragManager.cs`: stable matrix conversion, density-grid XZ tests, semantic anchor AUP reconstruction, and sargassum drag origins now use the double vegetation offset before final float presentation/storage.
 
 ## Verification
 
@@ -55,6 +57,8 @@ Status: VERIFIED AUP INTEGRITY - COMPILE/ASMDEF BLOCKED BY DEPENDENCY/ARCHITECTU
 - Loop 8 first build failed with 54 project errors and exposed three introduced CS1503 mismatches from brine double-overload calls; those callers were fixed. Follow-up build timed out after 124 seconds under the existing compile wall.
 - Loop 9 build recheck with `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false` failed with 0 warnings and 1 existing audio dependency error: `PlayerCriticalProceduralAudioRenderer.cs(10002,31)` missing `PrologueSplashdownSineSweepProbeJob`.
 - Loop 9 targeted fluid scan for legacy `HectonFloatingOrigin.CurrentTotalOffset`, direct `.x/.y/.z` reads, and `(float3)` casts against `CurrentTotalOffset` is clean in `HectonFluidEngine.cs`.
+- Loop 10 targeted scan for `_totalUniverseOffset.x/y/z`, `Vector3 universeOffset`, legacy `CurrentTotalOffset`, and Vector3 matrix conversion in patched vegetation/scatter/fluid files is clean.
+- Loop 10 Core build: `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false` succeeded with 0 warnings and 0 errors.
 - `dotnet build Assembly-CSharp.csproj`: timed out after 120s; timed-out build process and MSBuild servers were stopped.
 - Unity MCP script validation: unavailable (`no_unity_session`).
 - Unity MCP post-Loop-5 `validate_script` on `Assets/_Project/Scripts/World/AUPMath.cs`: unavailable (`no_unity_session`).
@@ -69,6 +73,7 @@ Status: VERIFIED AUP INTEGRITY - COMPILE/ASMDEF BLOCKED BY DEPENDENCY/ARCHITECTU
 - Continue scan of AI/Biome proximity callsites for silent `float3` seeds and presentation-only exceptions.
 - Future safe upgrade: convert explicit `AUPMath.ToRuntimeFloat3(..., float3 offset)` job payloads to `double3` only in their owning AI/fauna/vegetation batches.
 - Remaining fluid `AupOffsetXZ` and `vectorNoiseAupOffset` names are final-cast job payload fields after Loop 9, not current committed-offset authority sources.
+- Remaining vegetation `Vector3 universePosition` APIs are compatibility/presentation surfaces after Loop 10. True double vegetation storage would require a dedicated matrix/native buffer migration.
 - Voxel terrain-hole/spawn helper signatures now consume double committed offsets; remaining voxel `Vector3` absolute-position fields are compatibility/persistence boundaries pending a dedicated voxel storage migration.
 - Fauna cognition `FloatingOriginOffset` now uses `double3`; remaining `AUPMath.ToRuntimeFloat3(..., float3 offset)` hits are smoke tests or unowned presentation/job payloads.
 - Verify AUP shift consumer coverage across fluid, voxel, world streaming, scatter, foveated simulation, and GPR.

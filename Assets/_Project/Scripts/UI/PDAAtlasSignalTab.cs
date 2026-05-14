@@ -9,7 +9,7 @@
 //
 // ARHITEKTURA:
 //   • Protsedurnyy UI — sila signala, faza dekodirovaniya, napravlenie.
-//   • ITickable — obnovlenie taymera do sleduyuschego pulsa.
+//   • ILateFrameTickable — obnovlenie taymera do sleduyuschego pulsa.
 //   • Slushaet AtlasSignalEvents.
 //
 // ZERO GC:
@@ -32,7 +32,7 @@ namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/PDA Atlas Signal Tab")]
-    public sealed class PDAAtlasSignalTab : MonoBehaviour, ITickable, IUpdatable, IAtlasSignalEventListener, IPDAEventListener
+    public sealed class PDAAtlasSignalTab : MonoBehaviour, ILateFrameTickable, IAtlasSignalEventListener, IPDAEventListener
     {
         private const int DirectionDistanceNearStepMeters = 5;
         private const int DirectionDistanceMidStepMeters = 25;
@@ -219,12 +219,13 @@ namespace Hecton8.UI
         }
 
         // ══════════════════════════════════════════════════════════
-        //  ITickable
+        //  ILateFrameTickable
         // ══════════════════════════════════════════════════════════
 
-        public void Tick(float deltaTime)
+        public void LateFrameTick()
         {
-            _beaconTelemetryPollTimer -= math.max(0f, deltaTime);
+            float deltaTime = math.max(0f, SystemDispatcher.CurrentFrameDeltaTime);
+            _beaconTelemetryPollTimer -= deltaTime;
             if (_beaconTelemetryPollTimer <= 0f)
             {
                 _beaconTelemetryPollTimer = BeaconTelemetryPollInterval;
@@ -240,7 +241,7 @@ namespace Hecton8.UI
             // Update pulse countdown
             if (_signalDetected && _pulseCountdown > 0f)
             {
-                _pulseCountdown = math.max(0f, _pulseCountdown - math.max(0f, deltaTime));
+                _pulseCountdown = math.max(0f, _pulseCountdown - deltaTime);
                 UpdateCountdownDisplay();
             }
         }
@@ -305,7 +306,7 @@ namespace Hecton8.UI
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+            _registered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
         private void TryUnregister()
@@ -313,7 +314,7 @@ namespace Hecton8.UI
             if (!_registered)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
             _registered = false;
         }
 

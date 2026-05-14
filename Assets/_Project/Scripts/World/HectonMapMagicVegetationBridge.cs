@@ -4281,11 +4281,6 @@ namespace Hecton8.World
             return matrix;
         }
 
-        private static Matrix4x4 ConvertMatrixToStableUniverseSpace(Matrix4x4 matrix, Vector3 universeOffset)
-        {
-            return ApplyMatrixTranslationOffset(matrix, -universeOffset);
-        }
-
         private static Matrix4x4 ConvertMatrixToStableUniverseSpace(Matrix4x4 matrix, double3 universeOffset)
         {
             return ApplyMatrixTranslationOffset(matrix, ToVector3(-universeOffset));

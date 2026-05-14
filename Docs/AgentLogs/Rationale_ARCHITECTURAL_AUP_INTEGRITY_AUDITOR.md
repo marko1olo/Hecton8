@@ -207,3 +207,19 @@ Solution: Ran targeted legacy-offset scans, the mandatory AUP regex scan, `git d
 Rejected Alternatives: Reporting the build as green or chasing `PrologueSplashdownSineSweepProbeJob` from the audio domain inside an AUP audit loop.
 Scalability potential: Runtime unchanged beyond the Loop 9 precision fixes; build risk is isolated for Low/Middle/High/Ultra because the remaining error is a missing audio job type.
 Hardware Impact: 0 us runtime gain from verification itself; prevents low-end developer time loss by separating this patch from an unrelated compile-wall error.
+
+## Decision 26 - Vegetation Stable-Universe Double Bridge
+
+Problem: MapMagic vegetation used `_totalUniverseOffset` and `GlobalTotalUniverseOffset` as `Vector3` for stable universe conversion, chunk matrix conversion, density grids, semantic anchor AUP reconstruction, and sargassum drag origins.
+Solution: Add `_totalUniverseOffsetDouble`, `GlobalTotalUniverseOffsetDouble`, `TotalUniverseOffsetDouble`, and double conversion helpers. Sync the bridge from `OriginShiftEventData.NewTotalOffsetDouble`, use double offset math for stable matrix conversion and query decisions, then cast only at `Vector3`, `Matrix4x4`, or renderer payload boundaries.
+Rejected Alternatives: Replacing all vegetation matrix storage with double. Unity matrices, GPU instance data, and renderer payloads are float surfaces; changing them would be a broad vegetation storage migration outside the AUP bridge fix.
+Scalability potential: Low keeps cheap float instance buffers; Middle/High/Ultra get stable long-session vegetation anchors, density grids, and drag fields without increasing renderer payload cost.
+Hardware Impact: Expected i3/MX350 benefit is 3-9 us after origin shifts by reducing vegetation density/anchor correction churn; managed allocation remains 0 B/frame and native buffer layout stays unchanged.
+
+## Decision 27 - Loop 10 Core Build Pass
+
+Problem: Earlier Core builds were blocked by missing references and then by an audio job dependency, preventing a clean compile verdict for the cumulative AUP patch set.
+Solution: Re-ran the constrained Core build after Loop 10. `Hecton8.Core.csproj` built successfully with 0 warnings and 0 errors.
+Rejected Alternatives: Continuing to label compile as blocked after the local evidence changed, or expanding the verification scope into Unity Editor MCP while the endpoint remains unavailable.
+Scalability potential: Runtime unchanged; the integration gate is now factual for Low/Middle/High/Ultra Core code.
+Hardware Impact: 0 us runtime gain from verification; saves low-end developer iteration time by clearing the AUP patch set from compile suspicion.

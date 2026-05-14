@@ -46,10 +46,7 @@
     <Compile Include="Assets\_Project\Scripts\TerrainChunkGeneratedEvents.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\TerrainChunkGeneratedEvents.cs'))" />
     <Compile Include="Assets\_Project\Scripts\UI\HphiReactiveUiTelemetry.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\UI\HphiReactiveUiTelemetry.cs'))" />
     <Compile Include="Assets\_Project\Scripts\World\HectonOctahedralImpostorTypes.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\World\HectonOctahedralImpostorTypes.cs'))" />
-    <Reference Include="Hecton8.AI.Cognition" Condition="Exists('$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Hecton8.AI.Cognition.dll') And !$([System.String]::Copy('@(Reference)').Contains('Hecton8.AI.Cognition'))">
-      <HintPath>$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Hecton8.AI.Cognition.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
+    <Compile Include="Assets\_Project\Scripts\AI\Cognition\AlphaLeviathanCognitionContracts.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\AI\Cognition\AlphaLeviathanCognitionContracts.cs'))" />
     <Reference Include="Hecton8.AI.Ecology.Migration" Condition="Exists('$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Hecton8.AI.Ecology.Migration.dll') And !$([System.String]::Copy('@(Reference)').Contains('Hecton8.AI.Ecology.Migration'))">
       <HintPath>$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Hecton8.AI.Ecology.Migration.dll</HintPath>
       <Private>False</Private>
@@ -62,14 +59,8 @@
       <HintPath>$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Hecton8.Audio.Propagation.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Hecton8.Audio.Virtualization" Condition="Exists('$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Hecton8.Audio.Virtualization.dll') And !$([System.String]::Copy('@(Reference)').Contains('Hecton8.Audio.Virtualization'))">
-      <HintPath>$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Hecton8.Audio.Virtualization.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Hecton8.Audio.Virtualization.Contracts" Condition="Exists('$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Hecton8.Audio.Virtualization.Contracts.dll') And !$([System.String]::Copy('@(Reference)').Contains('Hecton8.Audio.Virtualization.Contracts'))">
-      <HintPath>$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Hecton8.Audio.Virtualization.Contracts.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
+    <Compile Include="Assets\_Project\Scripts\Audio\Virtualization\Contracts\AudioVirtualizationContracts.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Audio\Virtualization\Contracts\AudioVirtualizationContracts.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Audio\Virtualization\AudioVirtualizationJobs.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Audio\Virtualization\AudioVirtualizationJobs.cs'))" />
     <Reference Include="Hecton8.Core.Bucketing" Condition="Exists('$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Hecton8.Core.Bucketing.dll') And !$([System.String]::Copy('@(Reference)').Contains('Hecton8.Core.Bucketing'))">
       <HintPath>$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Hecton8.Core.Bucketing.dll</HintPath>
       <Private>False</Private>

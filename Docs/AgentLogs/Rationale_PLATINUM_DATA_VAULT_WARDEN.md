@@ -82,6 +82,30 @@ Rejected Alternatives: Leaving dead compaction methods because they were private
 Scalability potential: Low devices keep deterministic no-relocation maintenance; Middle gets fragmentation telemetry without alias corruption risk; High and Ultra can spend the saved 0.2-1.0 ms on visible systems once build infrastructure is repaired.
 Hardware Impact: Maintains removal of 512 KB live move slices, `System.Threading` fences, and `Stopwatch` maintenance checks. Valid handle resolution remains branch-only; stale handle failures dump PHI/VOD and throw only on defects.
 
+Problem: `H8Memory.ReallocateRaw` validated ownership after allocating and copying the replacement block, so a wrong-owner/untracked fault could leak the new native allocation on the exception path.
+Solution: Added pre-allocation tracked-owner validation and rejected `SystemID.Unknown` raw allocation owners at allocation time. The owner-tagged `FreeRaw` path remains fail-fast on unknown, wrong, or untracked frees.
+Rejected Alternatives: Catching the ownership exception after allocation and freeing the new pointer; that preserves a broader fault window and still performs copy work before proving ownership.
+Scalability potential: Low devices avoid native leak amplification during fault recovery; Middle keeps owner accounting exact; High and Ultra keep telemetry trustworthy under larger native pools.
+Hardware Impact: Adds one O(active allocations) scan only on `ReallocateRaw`, which currently has no call sites. Normal allocation/free hot paths stay unchanged except invalid unknown-owner allocations now fail immediately.
+
+Problem: `GlobalDataVault.ResolveBuffer` returned false for a non-default handle when the vault was unavailable, which can let stale alias users degrade into null-path behavior instead of a deterministic stale-handle failure.
+Solution: Moved cached-identity detection before availability checks. Non-default handles now dump PHI/VOD and throw `FatalMemoryException` if the vault is unavailable; empty handles still return false.
+Rejected Alternatives: Keeping unavailable vault as a soft miss; that hides stale pointer lifecycle bugs.
+Scalability potential: Low/Middle devices get deterministic crash diagnostics instead of silent data loss; High/Ultra systems can add richer consumers without weakening alias lifetime contracts.
+Hardware Impact: Valid handles pay the same branch-only path. Fault-only path writes the fixed black-box dump and throws.
+
+Problem: `InventoryShadowDTO` could set `FlagHasPayload` when the caller intended a shadow payload but the persisted payload length was zero.
+Solution: Tied `FlagHasPayload` to the computed positive `payloadLength`, matching the actual bytes that will be serialized.
+Rejected Alternatives: Trusting the caller intent bit; it creates contradictory DTO state with `flags=has payload`, `payloadLength=0`, and `payloadHash=0`.
+Scalability potential: Low keeps first-hour save ABI deterministic; Middle/High/Ultra avoid downstream branches interpreting phantom inventory payloads.
+Hardware Impact: No measurable runtime cost; one existing assignment now uses the already-computed payload length.
+
+Problem: A final drift scan caught live DataVault compaction reintroduced again after the hardening pass and build probe.
+Solution: Removed `RunCompactionSlice`, `TryCompactFreeGapAt`, relocation recording, stress-gated compaction constants, watchdog flags, `UnsafeUtility.MemMove`, `System.Threading` fences, and `Stopwatch` checks again. Restored telemetry-only `FrostTickDefrag` and stale cached handle throws.
+Rejected Alternatives: Reporting the previous clean scan while the current file contained live relocation; continuing with stress-gated relocation because it still invalidates aliases during gameplay.
+Scalability potential: Low/Middle devices keep deterministic maintenance and avoid memory-copy spikes; High/Ultra devices keep saved frame budget available for visible systems instead of heap movement.
+Hardware Impact: Maintains removal of the 512 KB live move slice and associated fences/timers. Final scan after build found no live relocation symbols in `GlobalDataVault.cs`.
+
 ## OMEGA POLISH CHANGES
 
 Problem: Polish audit required removal of fake precision, managed iteration/string debt, and any code outside the DataVault domain without justification.

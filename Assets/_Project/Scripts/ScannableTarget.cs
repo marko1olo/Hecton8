@@ -27,6 +27,7 @@ namespace Hecton8.Gameplay
         private static int s_loreEntitySyncFrame = int.MinValue;
         private static uint s_loreTitleLookupHash;
         private static int s_loreTitleLookupIndex = -1;
+        private static int s_loreTitleLookupVersion;
         private int _spatialHandle;
         private int _loreRegistryIndex = -1;
         private string _resolvedEntryId;
@@ -70,6 +71,8 @@ namespace Hecton8.Gameplay
                 return _resolvedEntrySummary;
             }
         }
+
+        public static int LoreTitleLookupVersion => s_loreTitleLookupVersion;
 
         /// <summary>Stable FNV-1a entity hash used by zero-GC scanner paths.</summary>
         public uint EntityHash
@@ -263,6 +266,12 @@ namespace Hecton8.Gameplay
         {
             s_loreTitleLookupHash = 0u;
             s_loreTitleLookupIndex = -1;
+            unchecked
+            {
+                s_loreTitleLookupVersion++;
+                if (s_loreTitleLookupVersion == 0)
+                    s_loreTitleLookupVersion = 1;
+            }
         }
 
         private static int RegisterLoreEntity(ScannableTarget target)

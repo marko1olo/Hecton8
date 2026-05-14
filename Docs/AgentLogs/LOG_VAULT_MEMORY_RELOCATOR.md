@@ -69,3 +69,22 @@ No frame-time saving claimed. The added checks are branch-level and estimated un
 
 Verification:
 Targeted Roslyn compile for `H8Memory.cs` + `GlobalDataVault.cs` passed. Initial no-restore build failed because `Temp\obj\Hecton8.Core\project.assets.json` had been removed; reran `dotnet build .\Hecton8.Core.csproj --nologo -v:minimal -p:UseSharedCompilation=false -p:BuildInParallel=false -m:1`, which restored assets and exited 0. Final strict `dotnet build .\Hecton8.Core.csproj --no-restore --nologo -v:minimal -p:UseSharedCompilation=false -p:BuildInParallel=false -m:1` exits 0 with 0 warnings and 0 errors.
+
+## 2026-05-14 - Hardening Pass 5
+What was wrong:
+Concurrent edits regressed `GlobalDataVault.cs` again. The current file had fatal stale-handle resolution and telemetry-only defrag, which breaks the assignment: moved buffers must heal handles, and fragmented gaps must be physically compacted.
+
+What was done:
+Restored stale-handle healing in `ResolveBuffer`, restored low-stress `FrostTickDefrag(elapsedSeconds, systemStress01)` compaction, added/verified stress-block flags, exact relocation-record capacity gates, 512 KB soft move budget, 1.0 ms watchdog breach flagging, locked-buffer skip flagging, 64-byte source/destination/span audit, direct `UnsafeUtility.MemMove`, and memory barriers around move publication and fence release.
+
+Cinematic Cheats used:
+No physical simulation. This remains deterministic cold-window memory surgery: move only bounded chunks during pre-simulation when stress is under 0.5, then emit exact address-shift records instead of forcing global cache rebuild.
+
+Exact Microseconds saved:
+No runtime profiler numbers are available. Static budget remains branch-level for stress/record/lock checks, stale handle repair is expected to be cold-path only, and compaction is capped by 512 KB soft movement plus the 1.0 ms watchdog. Full runtime proof requires Unity profiler/GCMonitor access.
+
+Verification:
+`rg` readback confirms `GlobalDataVault.cs` contains no `FatalMemoryException.ThrowStaleVaultHandle`, contains `RunCompactionSlice`, and contains direct `UnsafeUtility.MemMove`. Unity Roslyn response-file compile passed: `dotnet exec "C:\Program Files\Unity\Hub\Editor\6000.4.1f1\Editor\Data\DotNetSdkRoslyn\csc.dll" @Library\Bee\artifacts\1900b0aEDbg.dag\Hecton8.Core.Memory.rsp` exited 0. Full `dotnet build .\Hecton8.Core.csproj --no-restore --nologo -v:minimal -p:UseSharedCompilation=false -p:BuildInParallel=false -m:1` is currently blocked outside this domain by `Assets\_Project\Scripts\Fauna\PredatorCognitionDomain.cs(1680,59): error CS0117: 'AlphaLeviathanTelemetryFlags' does not contain a definition for 'NoPlayerTarget'`.
+
+Batch prompt extraction note:
+`Docs\Tasks\CURRENT_BATCH.md` currently does not contain `<AGENT_PROMPT id="VAULT_MEMORY_RELOCATOR">`; PowerShell regex extraction returned `PROMPT_NOT_FOUND`. The local status/rationale/log files and the chat assignment remain the active memory for this agent.

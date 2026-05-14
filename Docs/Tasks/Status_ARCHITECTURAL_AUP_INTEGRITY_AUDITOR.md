@@ -3,7 +3,7 @@
 Agent: ARCHITECTURAL_AUP_INTEGRITY_AUDITOR
 Domain: ECHELON 1 / Origin Shift (AUP Manager), with audit reach into Physics, Voxel, Kinematics, AI trigger math, Biome trigger math, and deterministic seed callsites.
 Assignment Source: User-supplied XML block. `Docs/Tasks/CURRENT_BATCH.md` extraction returned `PROMPT_NOT_FOUND` for this ID on initial pass.
-Status: VERIFIED AUP INTEGRITY - LOOP 9 APPLIED; COMPILE/ASMDEF BLOCKED BY DEPENDENCY/ARCHITECTURE
+Status: VERIFIED AUP INTEGRITY - LOOP 10 APPLIED; CORE BUILD PASS; ASMDEF BLOCKED BY ARCHITECTURE
 
 ## Selected Mandates
 
@@ -29,10 +29,10 @@ Status: VERIFIED AUP INTEGRITY - LOOP 9 APPLIED; COMPILE/ASMDEF BLOCKED BY DEPEN
 - [x] Task 9 - MATH LOD | Justification: verified low-tier math is explicitly tier-gated in KCC/fluid paths; no hidden AUP float fallback was introduced. Remaining fluid/scatter AUP float offsets are presentation/shader lanes and recorded in `AUP_DRIFT_REPORT.md`. Alternative rejected: silent float downgrade in AUP authority. Estimate: 0 us code change beyond audit.
 - [x] Task 10 - BLACKBOX DUMP | Justification: `CrashTelemetryBuffer.ReportAupMaxDriftError` now records max watchdog drift into the fixed telemetry ring without fault export. Alternative rejected: managed log strings or per-frame allocations. Estimate: below 1 us every 300 frames for two tracked entities.
 - [x] Task 11 - ZERO-GC | Justification: changed hot paths use fields, stack value math, ReadOnlySpan snapshots, existing NativeArrays, and existing telemetry ring writes. DOD: no managed allocation introduced in AUP/origin/residency/acoustic patches. Alternative rejected: managed debug logs or new per-frame containers. Estimate: 0 B/frame, sub-1 us normal frames.
-- [x] Task 12 - TRIPLE-STRIKE REPAIR [BLOCKED BY DEPENDENCY] | Justification: three verification attempts completed; Loop 5 recheck repeated the Core build. Core csproj build fails on existing missing references/interface drift; Assembly-CSharp build timed out; Unity MCP validation has no session. Alternative rejected: asmdef rewiring across unrelated domains. Estimate: dependency wall, not runtime.
+- [x] Task 12 - TRIPLE-STRIKE REPAIR | Justification: introduced brine overload mismatches were fixed instead of marked blocked; later dependency drift cleared and Loop 10 Core build passed. Alternative rejected: asmdef rewiring across unrelated domains. Estimate: 0 us direct runtime, prevents failed precision patch from entering integration.
 - [x] Task 13 - RSQRT AUDIT | Justification: scoped normalization/sqrt scan over AUP/origin/KCC/acoustic files found no `math.normalize`, `math.normalizesafe`, `.normalized`, or sqrt after patches; Kinematic CCD and AUP direction use `math.rsqrt`. Alternative rejected: sqrt normalization. Estimate: 1-4 us saved in drift/steering callsites.
 - [x] Task 14 - ASMDEF ISOLATION [BLOCKED BY ARCHITECTURE] | Justification: `rg` found no `Hecton8.Core.AUP` asmdef or namespace. Existing AUP struct is embedded in `PersistentWorldRegistry.cs`, which depends on UnityEngine. Alternative rejected: creating an empty asmdef or moving a shared public struct during an audit patch. Estimate: future migration required.
-- [x] Task 15 - OMEGA COMPILE [BLOCKED BY DEPENDENCY] | Justification: `dotnet build Hecton8.Core.csproj` returned 131 missing-reference errors initially and 140 existing missing-reference/interface errors on Loop 5 recheck before edited files could be isolated; `Assembly-CSharp.csproj` timed out; Unity MCP validation unavailable. Alternative rejected: fake green compile report. Estimate: external project-reference wall.
+- [x] Task 15 - OMEGA COMPILE | Justification: Loop 10 `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false` succeeded with 0 warnings and 0 errors. Alternative rejected: fake green compile report during earlier dependency wall. Estimate: 0 us runtime, integration gate cleared for Core.
 
 ## Iteration Log
 
@@ -113,3 +113,12 @@ Loop 9 - Fluid Presentation Offset Final Cast:
 - Re-ran mandatory `rg "\(float3\).*AUP|AupOffset|universe"`; residual fluid hits are named job fields (`AupOffsetXZ`, `vectorNoiseAupOffset`) that now receive final-cast float payloads, plus broad universe text and unowned vegetation/scatter presentation lanes.
 - `git diff --check -- Assets/_Project/Scripts/HectonFluidEngine.cs` reports line-ending warning only, no whitespace errors.
 - `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false` failed with 0 warnings and 1 existing dependency error: `PlayerCriticalProceduralAudioRenderer.cs(10002,31)` missing `PrologueSplashdownSineSweepProbeJob`.
+
+Loop 10 - Vegetation Stable-Universe Double Bridge:
+- Re-read status/rationale and re-extracted `ARCHITECTURAL_AUP_INTEGRITY_AUDITOR` from `Docs/Tasks/CURRENT_BATCH.md`; result remains `PROMPT_NOT_FOUND`.
+- Added a double-precision vegetation universe-offset lane to `HectonMapMagicVegetationBridge` while preserving legacy `Vector3` properties and conversion APIs for existing callers.
+- Routed vegetation origin-shift sync from `OriginShiftEventData.NewTotalOffsetDouble`, stable matrix conversion, runtime/universe bridge helpers, semantic anchor AUP reconstruction, density-grid XZ tests, and sargassum density origins through double offset math before final `Vector3`/matrix outputs.
+- Targeted scan for `_totalUniverseOffset.x/y/z`, `Vector3 universeOffset`, legacy `CurrentTotalOffset`, and Vector3 matrix conversion in patched vegetation/scatter/fluid files is clean.
+- Re-ran mandatory `rg "\(float3\).*AUP|AupOffset|universe"`; residual hits are broad text plus final-cast fluid/scatter payload names and explicit presentation/legacy `Vector3 universe` APIs.
+- `git diff --check` on Loop 10 files reports line-ending warnings only, no whitespace errors.
+- `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false` succeeded with 0 warnings and 0 errors.

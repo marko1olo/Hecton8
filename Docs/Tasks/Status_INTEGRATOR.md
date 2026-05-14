@@ -39,3 +39,5 @@ Started: 2026-05-14
 ## Loop Log
 
 - Loop 0: Authority files and relevant mandates read. Agent prompt not found in `CURRENT_BATCH.md`; user-supplied XML retained as primary assignment. Agent logs keyword-scanned for compile-wall evidence.
+- Loop 1: `Hecton8.Core.csproj` initially reported 0 errors/47 third-party warnings, then full `Hecton8.slnx` exposed stale AI cognition contract binding. Patched `Directory.Build.targets` so Core uses source `AlphaLeviathanCognitionContracts.cs` instead of stale `Library/ScriptAssemblies/Hecton8.AI.Cognition.dll`.
+- Loop 2: Full solution moved to editor/Core dependency errors. Patched `Directory.Build.targets` so Core uses source audio virtualization contracts/jobs instead of stale `Library/ScriptAssemblies` virtualizer binaries.

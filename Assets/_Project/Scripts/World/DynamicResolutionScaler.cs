@@ -630,7 +630,8 @@ namespace Hecton8.World
             _thermalOverrideActive = false;
             _systemOverridePressureLevel = 0;
             _systemOverrideFlags = 0;
-            float restoredScale = Mathf.Clamp(_defaultRenderScale, _minRenderScale, _maxRenderScale);
+            _systemOverrideFrameTimeEwmaMs = _targetFrameTime;
+            float restoredScale = _defaultRenderScale;
             _currentRenderScale = restoredScale;
             _targetRenderScale = restoredScale;
             if (_urpAsset != null)

@@ -552,6 +552,14 @@ namespace Hecton8.Core.Database
                            deferredDirty.ByteLength <= _config.MaxPayloadBytes;
                 }
 
+                if (!_dirtyPayloads.IsCreated ||
+                    !_dirtyPayloads.ContainsKey(sectorHash))
+                {
+                    return IsOpen &&
+                           TryFindPayloadOffset(sectorHash, out long committedOffset) &&
+                           TryReadPayloadPointer(committedOffset, sectorHash, out _, out _, out _);
+                }
+
                 return TryAppendDirtyPayloadLocked(sectorHash);
             }
         }

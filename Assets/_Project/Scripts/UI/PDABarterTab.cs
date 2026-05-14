@@ -167,7 +167,7 @@ namespace Hecton8.UI
 
             exchangeSystem = current;
             _boundExchangeSystem = current;
-            _exchangeSourceId = unchecked((uint)EntityId.ToULong(current.GetEntityId()));
+            _exchangeSourceId = GlobalSignals.FoldEntityIdToSourceId(EntityId.ToULong(current.GetEntityId()));
         }
 
         public void Tick(float deltaTime)

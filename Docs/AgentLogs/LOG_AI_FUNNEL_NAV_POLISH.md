@@ -128,4 +128,7 @@ Exact Microseconds saved:
 - PENDING RUNTIME PROFILER DATA. This pass is correctness-first; it prevents invalid tail collapse without increasing normal compaction budget.
 
 Verification:
-- Pending re-run after this pass.
+- Static scan remains clean inside `StringPullPathJob`: no `math.normalize`, `math.length(`, `math.distance(`, or raw `/`.
+- `dotnet build Hecton8.Core.csproj --no-restore /m:1 /nr:false` succeeded with 0 warnings and 0 errors.
+- `dotnet build Hecton8.PlayModeTests.csproj --no-restore /m:1 /nr:false` succeeded with 0 warnings and 0 errors.
+- Unity MCP `validate_script` remains unavailable in this session due prior `127.0.0.1:8088/mcp` transport failure.

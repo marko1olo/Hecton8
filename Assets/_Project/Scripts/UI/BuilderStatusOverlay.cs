@@ -15,10 +15,11 @@ namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Builder Status Overlay")]
-    public sealed class BuilderStatusOverlay : MonoBehaviour, ITickable, IUpdatable
+    public sealed class BuilderStatusOverlay : MonoBehaviour, ILateFrameTickable
     {
         private const float AutoResolveRetryInterval = 1f;
         private const string ModuleIndexTemplate = "MODULE {0}/{1}  //  BUILT {2}";
+        private static readonly char[] TitleChars = "CONSTRUCTION STATUS".ToCharArray();
         private static readonly char[] ModuleIndexTemplateChars = ModuleIndexTemplate.ToCharArray();
         private static readonly Color PanelColor = new Color(0.03f, 0.1f, 0.12f, 0.66f);
         private static readonly Color RuleColor = new Color(0.2f, 0.86f, 0.96f, 0.38f);
@@ -98,9 +99,9 @@ namespace Hecton8.UI
             UnregisterTick();
         }
 
-        public void Tick(float deltaTime)
+        public void LateFrameTick()
         {
-            float safeDeltaTime = math.max(0f, deltaTime);
+            float safeDeltaTime = math.max(0f, SystemDispatcher.CurrentFrameDeltaTime);
             if (!ShouldKeepTicking(safeDeltaTime))
             {
                 UnregisterTick();
@@ -289,7 +290,7 @@ namespace Hecton8.UI
 
             _title = CreateText("Title", _self, labelFont, 11f, FontStyles.Bold, TitleColor, TextAlignmentOptions.Left);
             Anchor(_title.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(14f, -10f), new Vector2(-14f, 18f));
-            _title.SetText("CONSTRUCTION STATUS");
+            _title.SetCharArray(TitleChars, 0, TitleChars.Length);
 
             _moduleName = CreateText("ModuleName", _self, labelFont, 18f, FontStyles.Bold, ValueColor, TextAlignmentOptions.Left);
             Anchor(_moduleName.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(14f, -40f), new Vector2(-14f, 24f));
@@ -481,7 +482,7 @@ namespace Hecton8.UI
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            _tickRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+            _tickRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
         private void UnregisterTick()
@@ -489,7 +490,7 @@ namespace Hecton8.UI
             if (!_tickRegistered)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
             _tickRegistered = false;
         }
 

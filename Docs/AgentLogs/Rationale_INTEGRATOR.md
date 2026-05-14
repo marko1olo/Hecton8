@@ -26,3 +26,19 @@ Solution: Process all `Docs/AgentLogs/*.md` through CLI keyword extraction for c
 Rejected Alternatives: Dumping every log verbatim into chat context was rejected because it truncates and loses actionable signal. Ignoring logs was rejected because previous agents documented broken dependencies and duplicate hazards.
 Scalability potential: Low = fastest route to red-build root causes; Middle = avoids reintroducing known signal/registry mistakes; High = preserves cross-domain boundaries; Ultra = broad compile graph repair restores verification for all visual systems.
 Hardware Impact: 0 us runtime impact. Reduces integration thrash.
+
+## Decision 3 - AI Cognition Contract Drift in Dotnet Build
+
+Problem: Full `dotnet build Hecton8.slnx` failed because `PredatorCognitionDomain.cs` referenced `AlphaLeviathanTelemetryFlags.NoPlayerTarget`, while `Hecton8.Core.csproj` was binding the stale `Library/ScriptAssemblies/Hecton8.AI.Cognition.dll` that predates the source contract update.
+Solution: Stop injecting the stale AI cognition binary into the Core MSBuild graph and include `AlphaLeviathanCognitionContracts.cs` directly for `Hecton8.Core.csproj` dotnet compatibility. Unity asmdef import remains governed by `Hecton8.AI.Cognition.asmdef`.
+Rejected Alternatives: Editing the public telemetry flag use site was rejected because the source contract already contains the field. Hand-copying a binary into `Library/ScriptAssemblies` was rejected because it is generated state and would rot on the next import. Creating a broad AI cognition csproj was rejected as larger build-system churn than needed for the compile wall.
+Scalability potential: Low = Core dotnet build no longer depends on stale generated binary state; Middle = AI telemetry flag additions stay source-authoritative; High = future Core compile probes are deterministic; Ultra = clean generated builds unlock domain verification for high-tier visual and AI systems.
+Hardware Impact: 0 us runtime impact. Compile-time compatibility only.
+
+## Decision 4 - Audio Virtualization Contract Drift in Dotnet Build
+
+Problem: After the AI cognition fix, `Hecton8.Editor.csproj` failed through Core because `SpatialAudioManager.cs` called the source `VirtualVoiceUtility.ComputeStableKey(eventID, clipHash, stationaryCacheKey, sourceAup)` overload, but Core was still binding stale `Library/ScriptAssemblies/Hecton8.Audio.Virtualization.Contracts.dll`.
+Solution: Replace the stale virtualizer binary references in the Core MSBuild compatibility target with source includes for `AudioVirtualizationContracts.cs` and `AudioVirtualizationJobs.cs`.
+Rejected Alternatives: Editing `SpatialAudioManager` to match stale binary state was rejected because it would throw away the stationary-cache key and regress voice stability. Rebuilding/copying generated binaries was rejected because Library state is disposable and not source authority.
+Scalability potential: Low = virtual voice compile probes now use the same source as Unity import; Middle = stable keys include stationary cache identity; High = virtualizer top-K job remains source-authoritative; Ultra = selected-voice budget can still buy richer acoustic presentation.
+Hardware Impact: 0 us runtime impact from this patch. It preserves the existing optimized virtual voice path instead of downgrading it.

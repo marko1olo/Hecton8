@@ -80,3 +80,35 @@ Brine conversion fix: compile-risk removal, no frame-time claim.
 Verification:
 Direct Roslyn probe still passes for `BiomeBoundarySdfContracts.cs` + `BiomeBoundarySdfJobs.cs`.
 `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false` no longer reports biome-gradient, `BiomeBoundarySdf`, or `EcosystemDirector` brine conversion errors. It remains red from unrelated missing `HectonBlueprintPreviewBatch` and `PlayerLookTargetPromptCache` symbols.
+
+## 2026-05-14 - Third Pass Runtime Presence
+
+What was wrong:
+The SDF producer could still be absent from a scene. The math and signal were present, but no authored or cold-start path guaranteed that `BiomeBoundarySdfRuntime` existed on `[MANAGERS]`. Generated project files also lagged Unity source import and did not list the new SDF source files, so a direct editor authoring reference created a stale-csproj compile hazard.
+
+What was done:
+Added guarded `ActiveRuntimeInstance` ownership to `BiomeBoundarySdfRuntime`.
+Added duplicate suppression and subsystem-registration reset for the runtime producer.
+Added `BiomeBoundarySdfRuntimeBootstrap` as a cold fail-safe that attaches one runtime producer only when no active instance exists.
+Updated `WorldRuntimeBootstrapAuthoring` to author the runtime onto `[MANAGERS]` using type-name resolution, avoiding generated `.csproj` surgery.
+Removed a stale unsafe-collections using from the runtime file.
+
+Cinematic cheats used:
+Kept one SlowTick SDF producer instead of scene-wide biome trigger volumes.
+Kept authoring/runtime fail-safe ownership instead of per-frame searches.
+Kept editor-only reflection for stale project-file tolerance instead of adding runtime indirection.
+
+Exact microseconds saved:
+Authored steady state: 0 us added versus the previous runtime sampler path.
+Runtime fail-safe: one cold GameObject/component attach only in mis-authored scenes; no hot-path cost.
+Duplicate suppression: prevents a second producer from double-publishing signals and doubling slow-tick sampler work, saving the full duplicate sampler cost when a scene is incorrectly authored.
+Generated-project fix: build hygiene only, no runtime frame-time claim.
+
+Verification:
+Re-extracted the exact `BIOME_TRANSITION_BLENDER` prompt from `Docs/Tasks/CURRENT_BATCH.md` using CLI.
+`dotnet build Hecton8.Core.csproj --no-restore -m:1 /nr:false /p:UseSharedCompilation=false /clp:ErrorsOnly` passed.
+`dotnet build Hecton8.Editor.csproj --no-restore -m:1 /nr:false /p:UseSharedCompilation=false /clp:ErrorsOnly` passed.
+Direct Roslyn probe passed for `BiomeBoundarySdfContracts.cs` + `BiomeBoundarySdfJobs.cs`.
+`git diff --check` passed for the touched biome/editor files.
+Source scan found no `Update()`, `BiomeManager.Instance`, biome trigger collider, `new List<`, or `new Dictionary<` in the SDF slice.
+Unity MCP validation remains unavailable in this session; status stays `PENDING VERIFICATION`.

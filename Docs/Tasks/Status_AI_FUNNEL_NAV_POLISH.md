@@ -75,6 +75,7 @@ Task Count: 15
 ## Verification
 
 - [x] Static scan | PASS: `StringPullPathJob` region has no `math.normalize`, `math.length(`, `math.distance(`, or raw `/` matches after the LOD upgrade.
-- [x] Compile check | BLOCKED BY DEPENDENCY: latest parsed `dotnet build Hecton8.Core.csproj --no-restore /m:1 /nr:false` summary failed with 128 unrelated missing namespace/type errors across Core, Audio, Physics, AI, Save, Inventory, and World contracts; parsed edited-file error count = 0.
+- [x] Compile check | PASS: latest parsed `dotnet build Hecton8.Core.csproj --no-restore /m:1 /nr:false` succeeded with 0 warnings and 0 errors after the tail-safety pass.
+- [x] PlayMode test assembly build | PASS: `dotnet build Hecton8.PlayModeTests.csproj --no-restore /m:1 /nr:false` succeeded with 0 warnings and 0 errors.
 - [x] Unity console | BLOCKED BY TOOLING: Unity MCP `validate_script` transport failed against `http://127.0.0.1:8088/mcp`.
-- [x] Omega polish mandate | COMPLETE WITH PENDING VERIFICATION: build remains red due global dependency wall.
+- [x] Omega polish mandate | COMPLETE WITH PENDING VERIFICATION: Core build is green; Unity/Burst editor validation remains blocked by MCP transport.

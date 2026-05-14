@@ -15,7 +15,7 @@ namespace Hecton8.UI
     [DisallowMultipleComponent]
     [RequireComponent(typeof(RectTransform))]
     [RequireComponent(typeof(CanvasGroup))]
-    public sealed class RelayHUDElement : MonoBehaviour, ITickable, IUpdatable
+    public sealed class RelayHUDElement : MonoBehaviour, ILateFrameTickable
     {
         private enum RelayMarkerVisibilityState : byte
         {
@@ -104,7 +104,7 @@ namespace Hecton8.UI
         {
             if (_registered)
             {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
                 _registered = false;
             }
 
@@ -154,8 +154,9 @@ namespace Hecton8.UI
         }
 
         /// <inheritdoc />
-        public void Tick(float dt)
+        public void LateFrameTick()
         {
+            float dt = math.max(0f, SystemDispatcher.CurrentFrameDeltaTime);
             if (!_isVisible)
             {
                 _hiddenPollTimer -= math.max(0f, dt);
@@ -488,7 +489,7 @@ namespace Hecton8.UI
             if (_registered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+            _registered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
     }
 }

@@ -293,6 +293,8 @@ namespace Hecton8.Graphics.DRS
         {
             byte pressureLevel = 0;
             bool pressureReceived = false;
+            byte foveatedPressureTier = 0;
+            bool foveatedPressureReceived = false;
             ReadOnlySpan<FrameTimeSignal> frameTimeSignals = SignalBus<FrameTimeSignal>.GetFrameSnapshot();
             for (int i = 0; i < frameTimeSignals.Length; i++)
             {
@@ -309,13 +311,16 @@ namespace Hecton8.Graphics.DRS
                 _latestSystemHealth01 = Sanitize01(signal.SystemHealthIndex01);
                 pressureLevel = MaxByte(pressureLevel, signal.PressureLevel);
                 pressureReceived = true;
-                _foveatedPressureTier = signal.FoveatedPressureTier;
+                foveatedPressureTier = MaxByte(foveatedPressureTier, signal.FoveatedPressureTier);
+                foveatedPressureReceived = true;
                 if (signal.FpsEwma > 0f)
                     _latestFrameTimeEwmaMs = 1000f * math.rcp(math.max(1f, signal.FpsEwma));
             }
 
             if (pressureReceived)
                 _pressureLevel = pressureLevel;
+            if (foveatedPressureReceived)
+                _foveatedPressureTier = foveatedPressureTier;
 
             ReadOnlySpan<ThermalStateChangedSignal> thermalSignals = SignalBus<ThermalStateChangedSignal>.GetFrameSnapshot();
             for (int i = 0; i < thermalSignals.Length; i++)

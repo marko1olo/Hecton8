@@ -255,7 +255,7 @@ namespace Hecton8.Gameplay
         private void PublishUpgradesChanged(byte reason)
         {
             if (_signalSourceId == 0u)
-                _signalSourceId = unchecked((uint)EntityId.ToULong(GetEntityId()));
+                _signalSourceId = GlobalSignals.FoldEntityIdToSourceId(EntityId.ToULong(GetEntityId()));
 
             VehicleUpgradesChangedSignal signal = new VehicleUpgradesChangedSignal
             {

@@ -107,6 +107,7 @@ namespace Hecton8.UI.Tools
         private int _lastScannerProgressBucket = InvalidDisplayBucket;
         private uint _lastScannerArtifactHash;
         private uint _scannerTitleCacheHash;
+        private int _scannerTitleCacheVersion;
         private int _scannerTitleCacheLength;
         private float _heat01;
         private float _battery01;
@@ -435,9 +436,13 @@ namespace Hecton8.UI.Tools
             if (artifactHash == 0u || destination.Length <= 0)
                 return false;
 
-            if (_scannerTitleCacheHash != artifactHash || _scannerTitleCacheLength <= 0)
+            int titleVersion = ScannableTarget.LoreTitleLookupVersion;
+            if (_scannerTitleCacheHash != artifactHash ||
+                _scannerTitleCacheVersion != titleVersion ||
+                _scannerTitleCacheLength <= 0)
             {
                 _scannerTitleCacheHash = 0u;
+                _scannerTitleCacheVersion = titleVersion;
                 _scannerTitleCacheLength = 0;
                 if (!ScannableTarget.TryWriteLoreEntityTitle(
                         artifactHash,
@@ -449,6 +454,7 @@ namespace Hecton8.UI.Tools
                 }
 
                 _scannerTitleCacheHash = artifactHash;
+                _scannerTitleCacheVersion = titleVersion;
                 _scannerTitleCacheLength = math.min(cachedLength, _scannerTitleCache.Length);
             }
 

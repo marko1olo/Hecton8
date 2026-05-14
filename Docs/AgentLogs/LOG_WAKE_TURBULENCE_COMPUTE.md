@@ -72,3 +72,62 @@ Verification:
 
 Status:
 - `PENDING VERIFICATION`. Code review and static scans passed for the wake hardening changes. Unity import/console/profiler proof is still absent.
+
+## 2026-05-14 - Verification Refresh
+
+What was wrong:
+- The status log still recorded a global compile wall, but the current workspace had moved forward under parallel-agent edits.
+- Two stale build errors were investigated and the referenced symbols were present in source. A fresh focused build was required before touching unrelated domains.
+
+What was done:
+- Re-inspected `LeviathanTerrainIkJob.TailWhipDurationSeconds` and `PrologueSplashdownSineSweepProbeJob`; both exist in current source.
+- Re-ran `dotnet build Hecton8.Core.csproj --no-restore -v:quiet -clp:ErrorsOnly`.
+- Re-read and rechecked the wake code path: dynamic wake queueing, fail-closed radius/lifetime guards, AUP shift, low-tier slot clearing, once-per-frame decay, A/B GPU wake buffer upload, RenderGraph payload binding, and shader wake advection.
+- Updated `Status_WAKE_TURBULENCE_COMPUTE.md` and `Rationale_WAKE_TURBULENCE_COMPUTE.md` with Loop 8 evidence.
+
+Cinematic cheats used:
+- No additional physical simulation was added. The wake remains a controlled visual velocity primitive over particles.
+- Low tier still uses two cheap wake turbines. High/Ultra keep the added billow/shear branch as visual overkill.
+
+Exact microseconds saved:
+- No new runtime optimization in this pass.
+- Static audit preserves prior savings: Low-tier avoids 6 of 8 wake checks per particle, no shader exact `length()`/built-in `normalize()`, and idle clean wake frames skip the two 8-float4 uploads.
+
+Verification:
+- `dotnet build Hecton8.Core.csproj --no-restore -v:quiet -clp:ErrorsOnly`: succeeded, 0 errors, 77 warnings.
+- Shader scan for `length(` and built-in `normalize(`: no matches.
+- Hot-path scan: only pre-existing reusable scratch `List<>` fields were found; no new managed wake container or formatting path.
+- `git diff --check` on wake-touched files: no whitespace errors.
+- Unity MCP/Editor validation: still unavailable in this shell session, so profiler and in-Editor console proof remain pending.
+
+Status:
+- `PENDING VERIFICATION` only because Unity Editor/MCP runtime proof is absent. Focused Core compile is no longer blocked.
+
+## 2026-05-14 - Compile Wall Cleanup
+
+What was wrong:
+- Solution-level build exposed three unrelated code symbol breaks after the wake path was focused-clean:
+- `PredatorCognitionDomain` emitted `AlphaLeviathanTelemetryFlags.NoPlayerTarget`, but the flag contract did not define it.
+- `RelayRouteAuthoringUtility` called `RelayHUDElement.Tick(float)`, but `RelayHUDElement` implements `ILateFrameTickable.LateFrameTick()`.
+- `SpatialAudioManager` called the newer four-argument `VirtualVoiceUtility.ComputeStableKey`, while the generated Core project referenced an older `Hecton8.Audio.Virtualization.Contracts.dll` surface.
+
+What was done:
+- Added `NoPlayerTarget = 1 << 5` to `AlphaLeviathanTelemetryFlags`.
+- Changed relay HUD authoring verification to call `LateFrameTick()`.
+- Added a local `ComputeVirtualVoiceStableKey` hash in `SpatialAudioManager` and routed virtual voice enqueue through it.
+- Killed an orphaned timed-out `dotnet build` process and reran focused Core with `-m:1 /nr:false`.
+
+Cinematic cheats used:
+- None in this cleanup. These were compile and verification unblocks, not wake visual changes.
+
+Exact microseconds saved:
+- No new wake runtime savings in this pass.
+- Audio stable-key hash remains integer-only and allocation-free; expected cost is below 1 us per queued virtual voice.
+
+Verification:
+- `dotnet build Hecton8.Core.csproj --no-restore -v:quiet -clp:ErrorsOnly -m:1 /nr:false`: succeeded, 0 errors, 0 warnings.
+- `dotnet build Hecton8.slnx --no-restore -v:quiet -clp:ErrorsOnly -m:1 /nr:false`: failed only on missing generated `Temp/obj/*/project.assets.json` restore artifacts across third-party/editor projects.
+- `git diff --check` on the cross-domain compile fixes: no whitespace errors, CRLF normalization warnings only.
+
+Status:
+- Wake implementation remains complete and focused Core compile-clean. Full solution verification is blocked by generated project restore artifacts and missing Unity Editor/MCP runtime proof.

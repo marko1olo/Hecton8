@@ -149,3 +149,24 @@ Solution: Classified the latest compile as dependency-blocked. The compactor pat
 Rejected Alternatives: Editing Fauna or Audio from the macro DB compactor task was rejected as domain breach and high regression risk.
 Scalability potential: No runtime change; this preserves domain isolation while keeping the compactor evidence honest.
 Hardware Impact: None.
+
+## Decision 20: Current Compile Wall Remains Outside Macro DB
+Problem: The current shared-tree build now fails earlier in `PredatorCognitionDomain.cs(1680,59)` because concurrent Fauna work references missing `AlphaLeviathanTelemetryFlags.NoPlayerTarget`.
+Solution: Refreshed the build log and status evidence while leaving Fauna ownership untouched. No Macro DB diagnostic appears before this dependency wall.
+Rejected Alternatives: Adding the missing Alpha Leviathan telemetry flag from the backend compactor task was rejected as a domain breach and would hide responsibility from the Fauna/AI owner.
+Scalability potential: No runtime change. The compactor remains isolated and ready for integration once the current Fauna compile wall is cleared.
+Hardware Impact: None.
+
+## Decision 21: Public Dirty Flush Is Idempotent After Commit
+Problem: `SaveManager` queues an async dirty append after `MarkDirty`. If compaction finalization commits that dirty payload and clears the queue before the async append runs, the public append call sees no dirty entry and previously returned false, publishing a false corrupt-payload warning.
+Solution: `TryAppendDirtyPayload` now returns success when no dirty entry remains but the sector has a valid committed payload in the B-tree. `TryAppendDirtyPayloadLocked` stays strict so eviction cannot drop a pending dirty sector.
+Rejected Alternatives: A managed recent-commit list was rejected for extra state and GC risk. A SaveManager retry loop was rejected because it duplicates database ownership and adds Awaitable churn.
+Scalability potential: Low/MicroSD avoids false telemetry during long compactions and slow worker scheduling; High/Ultra keep the same idempotent API semantics with no steady-frame cost.
+Hardware Impact: 0 us steady-frame cost. Only stale public flush calls pay one B-tree lookup and payload-header validation.
+
+## Decision 22: Post-Idempotency Build Pass
+Problem: The public flush idempotency patch touched unsafe Macro DB code and required a compiler verdict after earlier shared-tree compile walls.
+Solution: Reran `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -v:minimal -m:1 /nr:false /p:UseSharedCompilation=false`; it exited 0 with 36 warnings and 0 errors.
+Rejected Alternatives: Treating the earlier dependency-blocked build as sufficient was rejected because the unsafe discard call and B-tree validation branch needed direct compiler evidence.
+Scalability potential: No runtime change. The API race fix now has project-level compile evidence for integrator/runtime validation.
+Hardware Impact: No runtime cost. Verification-only.

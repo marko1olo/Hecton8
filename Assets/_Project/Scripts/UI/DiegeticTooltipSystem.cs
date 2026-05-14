@@ -139,6 +139,9 @@ namespace Hecton8.UI
         private ComputeBuffer _spriteUvBuffer;
         private NativeArray<TooltipBlackBoxEntry> _blackBox;
         private TMP_FontAsset _cachedAsciiFont;
+        private TMP_FontAsset _boundFontAsset;
+        private TMP_SpriteAsset _boundSpriteAsset;
+        private Shader _boundGlyphShader;
         private Camera _cachedRenderCamera;
         private AbsoluteUniversePosition _activeTargetAup;
         private Vector3 _activeRuntimeAnchor;
@@ -161,6 +164,9 @@ namespace Hecton8.UI
         private bool _hotSwapListenerRegistered;
         private bool _fontUvTableDirty;
         private bool _spriteUvTableDirty;
+        private bool _materialBindingsDirty = true;
+        private float _boundGradientScale = float.NaN;
+        private float _boundFaceDilate = float.NaN;
 
         public void Tick(float deltaTime)
         {
@@ -525,6 +531,12 @@ namespace Hecton8.UI
                     continue;
 
                 Glyph glyph = character.glyph;
+                if (c == ' ')
+                {
+                    penX += glyph.metrics.horizontalAdvance * glyphScale * glyphAdvanceScale;
+                    continue;
+                }
+
                 GlyphRect rect = glyph.glyphRect;
                 GlyphMetrics metrics = glyph.metrics;
                 float width = Mathf.Max(MinimumGlyphScale, metrics.width * glyphScale);
@@ -661,22 +673,40 @@ namespace Hecton8.UI
             if (spriteAsset == null)
                 spriteAsset = TMP_Settings.defaultSpriteAsset;
 
+            bool argsDirty = false;
             if (_runtimeQuadMesh == null)
+            {
                 _runtimeQuadMesh = CreateQuadMesh();
+                argsDirty = true;
+            }
 
             if (_instanceBuffer == null)
+            {
                 _instanceBuffer = new ComputeBuffer(MaxInstanceCount, Marshal.SizeOf<TooltipGlyphInstance>(), ComputeBufferType.Structured);
+                _materialBindingsDirty = true;
+            }
 
             if (_argsBuffer == null)
+            {
                 _argsBuffer = new ComputeBuffer(1, IndirectArgsCount * sizeof(uint), ComputeBufferType.IndirectArguments);
+                argsDirty = true;
+            }
 
             if (_fontUvBuffer == null)
+            {
                 _fontUvBuffer = new ComputeBuffer(UvTableCapacity, sizeof(float) * 4, ComputeBufferType.Structured);
+                _materialBindingsDirty = true;
+            }
 
             if (_spriteUvBuffer == null)
+            {
                 _spriteUvBuffer = new ComputeBuffer(UvTableCapacity, sizeof(float) * 4, ComputeBufferType.Structured);
+                _materialBindingsDirty = true;
+            }
 
-            RefreshIndirectArgs();
+            if (argsDirty)
+                RefreshIndirectArgs();
+
             EnsureMaterials();
         }
 
@@ -698,6 +728,7 @@ namespace Hecton8.UI
                         enableInstancing = true,
                         hideFlags = HideFlags.DontSave
                     };
+                    _materialBindingsDirty = true;
                 }
 
                 if (glyphShader != null && _runtimeIconMaterial == null)
@@ -707,8 +738,25 @@ namespace Hecton8.UI
                         enableInstancing = true,
                         hideFlags = HideFlags.DontSave
                     };
+                    _materialBindingsDirty = true;
                 }
             }
+
+            if (glyphShader == null && _runtimeGlyphMaterial != null)
+                glyphShader = _runtimeGlyphMaterial.shader;
+            if (glyphShader == null && _runtimeIconMaterial != null)
+                glyphShader = _runtimeIconMaterial.shader;
+            if (glyphShader == null)
+                return;
+
+            bool needsRebind = _materialBindingsDirty
+                || !ReferenceEquals(_boundFontAsset, fontAsset)
+                || !ReferenceEquals(_boundSpriteAsset, spriteAsset)
+                || !ReferenceEquals(_boundGlyphShader, glyphShader)
+                || _boundGradientScale != gradientScale
+                || _boundFaceDilate != faceDilate;
+            if (!needsRebind)
+                return;
 
             if (_runtimeGlyphMaterial != null && fontAsset != null)
             {
@@ -727,6 +775,13 @@ namespace Hecton8.UI
                 _runtimeIconMaterial.SetBuffer(InstanceBufferId, _instanceBuffer);
                 _runtimeIconMaterial.SetBuffer(UvRectBufferId, _spriteUvBuffer);
             }
+
+            _boundFontAsset = fontAsset;
+            _boundSpriteAsset = spriteAsset;
+            _boundGlyphShader = glyphShader;
+            _boundGradientScale = gradientScale;
+            _boundFaceDilate = faceDilate;
+            _materialBindingsDirty = false;
         }
 
         private void UploadUvTablesIfDirty()
@@ -1034,6 +1089,13 @@ namespace Hecton8.UI
 
             if (_blackBox.IsCreated)
                 _blackBox.Dispose();
+
+            _boundFontAsset = null;
+            _boundSpriteAsset = null;
+            _boundGlyphShader = null;
+            _boundGradientScale = float.NaN;
+            _boundFaceDilate = float.NaN;
+            _materialBindingsDirty = true;
         }
 
         private static float MoveTowardsFast(float current, float target, float maxDelta)

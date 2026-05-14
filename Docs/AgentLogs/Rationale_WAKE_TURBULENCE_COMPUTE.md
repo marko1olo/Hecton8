@@ -128,3 +128,31 @@ Solution: Moved the aging call into `LateFrameTick` and added `_dynamicWakeLastD
 Rejected Alternatives: Decaying only on dispatch couples simulation lifetime to visibility, which is wrong even for a visual fake. Uploading every no-particle frame would fix lifetime but waste bandwidth.
 Scalability potential: All tiers get deterministic lifetime. Low still avoids unnecessary GPU upload; High/Ultra gets accurate wake fade timing for layered turbulence.
 Hardware Impact: No-particle frames pay only an 8-slot native job when wake state is active; idle clean frames early-out before the job. Estimated active CPU cost remains ~2 us, idle cost ~0 us.
+
+## Loop 8 - Verification Refresh
+
+Problem: The project evidence still recorded a global compile wall even though parallel-agent fixes changed the current project state.
+Solution: Re-ran the focused Core build from the current workspace and updated the status/log with the actual result: `dotnet build Hecton8.Core.csproj --no-restore -v:quiet -clp:ErrorsOnly` succeeded with 0 errors and 77 warnings.
+Rejected Alternatives: Leaving the stale blocked status would hide real verification progress. Editing unrelated fauna/audio code to chase stale errors would violate domain boundaries because the current source already contains the reported symbols and the focused build is green.
+Scalability potential: Compile proof does not change tier behavior; Low remains 2 wakes with no idle upload, Middle/High/Ultra retain progressively richer wake density and high-tier billow/shear.
+Hardware Impact: No runtime change in this loop. Verification confirmed the optimized wake path still compiles in the focused Core project.
+
+Problem: A final audit needed to prove the hardening did not add hidden hot-path allocation or expensive shader intrinsics.
+Solution: Re-scanned `Hecton_FluidAdvection.compute` for `length(` and built-in `normalize(`, re-scanned touched runtime files for managed container/formatting hazards, and re-inspected the wake decay job, slot limiting, A/B buffer upload, and RenderGraph payload.
+Rejected Alternatives: Trusting previous scans after additional edits is not evidence. Broad profiler claims are not acceptable without a Unity Editor session.
+Scalability potential: Low = two active wake slots, active-slot clearing above the limit, dirty upload only when needed. High/Ultra = eight slots and high-tier visual-overkill branch.
+Hardware Impact: Static audit preserves the expected MX350 path: no per-frame managed wake allocation, no exact shader distance call, no idle wake GPU upload after zero state is resident.
+
+## Loop 9 - Cross-Domain Compile Unblockers
+
+Problem: Solution-level verification exposed unrelated compile blockers outside Environment.Fluids/VFX after the wake code was focused-clean.
+Solution: Applied three minimal compatibility fixes only where the compiler had concrete evidence: added `NoPlayerTarget` to `AlphaLeviathanTelemetryFlags`, changed editor relay verification to call `RelayHUDElement.LateFrameTick()`, and moved virtual voice stable-key hashing local to `SpatialAudioManager` to avoid a stale generated-project DLL surface.
+Rejected Alternatives: Editing generated `.csproj` references or reverting other agents' changes would be wider and less stable. Leaving obvious one-line contract/API mismatches unfixed would keep the verification wall artificial.
+Scalability potential: No change to wake scalability. The audio hash fix preserves source-AUP stable keys for virtual voice channel reuse; it does not allocate and does not increase voice count.
+Hardware Impact: No measurable frame cost. The stable-key helper is the same FNV-style integer hash previously intended by the contract source; expected cost is sub-microsecond per queued virtual voice.
+
+Problem: `dotnet build Hecton8.slnx --no-restore` still cannot complete after code symbol errors are cleared.
+Solution: Recorded the current hard wall exactly: missing `Temp/obj/*/project.assets.json` files for generated third-party/editor projects. Focused Core build succeeds with 0 errors and 0 warnings under `-m:1 /nr:false`.
+Rejected Alternatives: Running restore or rewriting generated Unity project files from this task would be outside the wake domain and may damage Unity-generated state.
+Scalability potential: None; this is build environment state.
+Hardware Impact: None at runtime.

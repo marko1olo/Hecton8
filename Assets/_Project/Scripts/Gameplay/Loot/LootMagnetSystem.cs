@@ -71,7 +71,7 @@ namespace Hecton8.Gameplay.Loot
             if (_bootstrapRuntime != null)
                 return;
 
-            LootMagnetSystem existing = Object.FindFirstObjectByType<LootMagnetSystem>();
+            LootMagnetSystem existing = Object.FindAnyObjectByType<LootMagnetSystem>();
             if (existing != null)
             {
                 _bootstrapRuntime = existing;
@@ -341,7 +341,7 @@ namespace Hecton8.Gameplay.Loot
                 }
 
                 Transform pickupTransform = pickup.transform;
-                int instanceId = pickup.GetInstanceID();
+                int instanceId = unchecked((int)EntityId.ToULong(pickup.GetEntityId()));
                 if (_pickupInstanceIds[activeCount] != instanceId)
                     _entityVelocities[activeCount] = float3.zero;
 

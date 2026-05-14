@@ -192,7 +192,7 @@ namespace Hecton8.Editor
             }
 
             relayOne.Interact(player);
-            marker.Tick(0.016f);
+            marker.LateFrameTick();
 
             CanvasGroup canvasGroup = marker.GetComponent<CanvasGroup>();
             EmergencyServiceRelay activeTarget = director.GetActiveRouteTarget();

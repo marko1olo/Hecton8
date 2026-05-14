@@ -196,3 +196,33 @@ Verification:
 
 Integrator notes:
 - `HectonFluidEngine.cs` contains unrelated dirty dynamic-wake/splashdown edits from another agent. This pass only changed committed-origin offset sourcing and final casts.
+
+## 2026-05-14 - Loop 10 Vegetation Stable-Universe Double Bridge
+
+What was wrong:
+- MapMagic vegetation tracked its stable universe offset as `Vector3` only.
+- Chunk matrix conversion, density-grid XZ tests, semantic anchor AUP reconstruction, and sargassum drag origins could start from a truncated bridge offset after origin shifts.
+
+What was done:
+- Added `_totalUniverseOffsetDouble`, `GlobalTotalUniverseOffsetDouble`, `TotalUniverseOffsetDouble`, `ToUniverseSpaceDouble3`, and `ToRuntimeSpaceDouble3`.
+- Synchronized the vegetation bridge from `OriginShiftEventData.NewTotalOffsetDouble` while keeping existing `Vector3` properties and APIs for compatibility.
+- Routed stable matrix conversion, density-grid decisions, semantic anchor AUP writes, and sargassum drag origin reconstruction through double offset math before final `Vector3`/`Matrix4x4` output.
+- Re-extracted this agent prompt from `Docs/Tasks/CURRENT_BATCH.md`; result remains `PROMPT_NOT_FOUND`.
+
+Cinematic Cheats used:
+- Vegetation renderer matrices and GPU instance payloads remain float. The double lane protects authority/query math while preserving the cheap renderer contract.
+- Low tier keeps the existing vegetation buffers; High/Ultra can spend the stable anchors on denser impostor/drag presentation later.
+
+Exact Microseconds saved:
+- Vegetation bridge double offset: estimated 3-9 us after origin shifts by avoiding density/anchor correction churn.
+- Managed allocation: 0 B/frame. Native buffer layout unchanged.
+
+Verification:
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe"` re-run. Residual hits are broad text plus final-cast fluid/scatter payload names and explicit presentation/legacy `Vector3 universe` APIs.
+- Targeted scan for `_totalUniverseOffset.x/y/z`, `Vector3 universeOffset`, legacy `CurrentTotalOffset`, and Vector3 matrix conversion in patched vegetation/scatter/fluid files is clean.
+- `git diff --check` on Loop 10 files: line-ending warnings only.
+- `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false`: build succeeded, 0 warnings, 0 errors.
+
+Integrator notes:
+- `Hecton8.Core.AUP` asmdef isolation is still blocked by architecture; Core compile is no longer blocked.
+- Full double vegetation matrix storage is a separate vegetation-native-buffer migration, not part of this AUP bridge patch.

@@ -1850,9 +1850,13 @@ namespace Hecton8.UI
             int hullStressPercent = _playerMovement != null
                 ? Mathf.RoundToInt(Mathf.Clamp01(_playerMovement.CurrentHullStress01) * 100f)
                 : 0;
-            Vector3 universeOffset = HectonFloatingOrigin.CurrentTotalOffset != Vector3.zero
-                ? HectonFloatingOrigin.CurrentTotalOffset
-                : HectonMapMagicVegetationBridge.GlobalTotalUniverseOffset;
+            double3 universeOffsetDouble = HectonFloatingOrigin.CurrentTotalOffsetDouble;
+            if (math.lengthsq(universeOffsetDouble) <= 0.000000001d)
+                universeOffsetDouble = HectonMapMagicVegetationBridge.GlobalTotalUniverseOffsetDouble;
+            Vector3 universeOffset = new Vector3(
+                (float)universeOffsetDouble.x,
+                (float)universeOffsetDouble.y,
+                (float)universeOffsetDouble.z);
 
             if (!force &&
                 fps == _lastFps &&

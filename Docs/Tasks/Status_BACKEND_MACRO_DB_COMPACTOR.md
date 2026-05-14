@@ -61,7 +61,10 @@ Task Count: 15
 ## Loop 9: Dirty Queue Commit Atomicity
 - [x] Preserve dirty queue until swap succeeds | Justification: finalization now copies dirty payloads into temp without removing them from the source queue; the dirty queue is cleared only after `File.Replace` and active DB reopen succeed. This prevents data loss if temp append, truncation, or atomic replace fails after some dirty payloads were copied. Alternatives Rejected: removing entries during temp copy, because temp is not authoritative until swap success. Estimate: no steady-frame cost; finalizer clears two native containers once after successful swap.
 
+## Loop 10: Public Flush Idempotency
+- [x] Avoid false corruption warnings after committed compaction flush | Justification: a queued `SaveManager` dirty append can execute after compaction has already copied that dirty payload into temp, swapped the file, and cleared the dirty queue. Public append now returns success when no dirty entry remains but a valid committed payload exists in the B-tree. The internal append path remains strict for eviction safety. Alternatives Rejected: keeping a managed recent-commit list or adding SaveManager retry loops, both of which add state/churn for a cold race. Estimate: one B-tree lookup only for public no-dirty flush calls; 0 us steady frame cost.
+
 ## Verification
-- Compile: BLOCKED BY DEPENDENCY in latest rerun. `dotnet build .\Hecton8.Core.csproj -v:minimal -m:1 /nr:false` now fails on unrelated concurrent changes in `Assets/_Project/Scripts/Fauna/FaunaKinematicsRuntime.cs(242,17)` and `Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs(10002,31)`. No compactor-owned diagnostic surfaced before the dependency wall. A prior no-reuse build passed before those unrelated errors appeared.
+- Compile: PASS. `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -v:minimal -m:1 /nr:false /p:UseSharedCompilation=false` exited 0 with 36 warnings, 0 errors after the public flush idempotency patch. Warnings are third-party/package or shared build-output lock retry warnings, not Macro DB diagnostics.
 - Unity Console: BLOCKED. Unity MCP validation/console tools are unavailable in this request (`unsupported call` placeholder).
 - Runtime / GCMonitor: PENDING VERIFICATION. Static scan confirms traversal has no managed allocation sites.

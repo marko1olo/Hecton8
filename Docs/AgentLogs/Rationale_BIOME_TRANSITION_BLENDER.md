@@ -103,3 +103,23 @@ Solution: Preserve the double shift math locally and compute the runtime brine h
 Rejected Alternatives: Reverting the AUP precision change or broad ecology/genome refactors.
 Scalability potential: Keeps AUP precision stable for large worlds without pulling biome code into ecology internals.
 Hardware Impact: No measurable frame cost; removes a compile blocker in the biome consumer file.
+
+## THIRD PASS RUNTIME PRESENCE UPGRADE
+
+Problem: The SDF sampler and signal were source-complete but not guaranteed to exist in every authored or cold-start scene, which would silently remove all biome transition consequences.
+Solution: Add a guarded `ActiveRuntimeInstance` to `BiomeBoundarySdfRuntime`, suppress duplicate runtimes, author the component onto `[MANAGERS]`, and add a cold `BiomeBoundarySdfRuntimeBootstrap` fail-safe that attaches the producer only when no active runtime exists.
+Rejected Alternatives: Relying on manual scene edits, adding a per-frame scene search, or modifying generated `.csproj` files. Generated project files explicitly drift from Unity source import and are not the ownership point.
+Scalability potential: Low/Middle/High/Ultra all share one producer; authored scenes pay 0 us extra, while mis-authored scenes pay one cold GameObject/component attach and then use the same SlowTick/Burst path.
+Hardware Impact: i3/MX350 steady-state impact is 0 us versus the previous sampler path; cold fail-safe allocation occurs once only in broken authoring and prevents the much larger visual failure of missing lighting/fauna/audio blending.
+
+Problem: Editor authoring initially referenced `BiomeBoundarySdfRuntime` directly, but the current generated `Hecton8.Editor.csproj` saw the editor file before the generated core project listed the new runtime source.
+Solution: Resolve the component by assembly-qualified type name inside authoring. Unity import still authors the real component when the source type exists, while stale generated projects compile without requiring direct csproj surgery.
+Rejected Alternatives: Editing generated project files or removing the authoring integration. The former is overwritten; the latter leaves scene setup brittle.
+Scalability potential: Authoring stays deterministic without expanding runtime dependencies; high-tier visual overkill still comes through the same signal.
+Hardware Impact: No runtime impact; editor-only reflection runs during authoring rebuild, not gameplay.
+
+Problem: Verification was previously polluted by parallel build invocations contending for the same `Temp/obj` outputs.
+Solution: Shut down build servers, reran builds sequentially with `/p:UseSharedCompilation=false`, then reran the direct Roslyn sampler probe and source scans.
+Rejected Alternatives: Accepting a file-lock failure as a real compile wall or reporting stale blocked status.
+Scalability potential: Clean generated-project verification gives integration a better baseline while runtime Unity validation remains pending.
+Hardware Impact: No runtime impact; build hygiene only.

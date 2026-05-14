@@ -3,7 +3,7 @@
 // HUD bars for survival stats (O2, Health, Hunger, Thirst).
 //
 // ARCHITECTURE:
-//   • ITickable for updates (no Update)
+//   • ILateFrameTickable for VISUAL_SYNC updates (no Update)
 //   • Zero GC: reads directly from HectonSurvivalSystem
 //   • UI Image fill patterns for bars
 //
@@ -26,7 +26,7 @@ namespace Hecton8.UI
     /// HUD controller for survival stat bars.
     /// Reads directly from HectonSurvivalSystem. Zero GC in hot paths.
     /// </summary>
-    public class SurvivalHUDController : MonoBehaviour, ITickable, IUpdatable
+    public class SurvivalHUDController : MonoBehaviour, ILateFrameTickable
     {
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -122,10 +122,15 @@ namespace Hecton8.UI
         }
 
         // ══════════════════════════════════════════════════════════
-        //  ITickable
+        //  ILateFrameTickable
         // ══════════════════════════════════════════════════════════
 
-        public void Tick(float deltaTime)
+        public void LateFrameTick()
+        {
+            RunVisualSync(math.max(0f, SystemDispatcher.CurrentFrameDeltaTime));
+        }
+
+        private void RunVisualSync(float deltaTime)
         {
             if (_survivalSystem == null)
                 ResolveSurvivalSystem(false);
@@ -285,7 +290,7 @@ namespace Hecton8.UI
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+            _registered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
         private void UnregisterFromTick()
@@ -293,7 +298,7 @@ namespace Hecton8.UI
             if (!_registered)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
             _registered = false;
         }
     }
