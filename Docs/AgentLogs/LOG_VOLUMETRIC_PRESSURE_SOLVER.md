@@ -201,3 +201,12 @@ Exact microseconds saved after follow-up 22:
 - Calm helper calls now return before count/ambience buffer resolution even if a future callsite misses the peak guard.
 - Zero-mask panel borders skip centered-UV, offset, shadow, and crease lerp setup.
 - Estimated 1-4 us saved per 1k affected interior vertices/fragments on i3/MX350-class hardware beyond the callsite guard; 0 B/frame.
+
+Follow-up upgrade 23:
+- Reordered `TryResolveModuleStressIndex` so stable graph-hash matches return before runtime `EntityId` key lookup.
+- Runtime entity-key fallback remains intact for direct runtime targets and unique `TargetId` matching when the graph hash does not match.
+- Rebuild policy: no `dotnet` rebuild and no Unity rebuild were run by explicit user instruction. Static checks are run separately in this loop.
+
+Exact microseconds saved after follow-up 23:
+- Graph-hash stress signal hits avoid one runtime entity-key read/hash per candidate.
+- Estimated 1-3 us saved on i3/MX350 signal-heavy frames with graph-backed module signals; 0 B/frame and no shader cost.

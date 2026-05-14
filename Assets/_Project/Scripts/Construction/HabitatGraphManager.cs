@@ -1184,9 +1184,7 @@ namespace Hecton8.Construction
                         return true;
                     }
 
-                    uint entityKey = targetHash != 0u || targetId != 0
-                        ? ResolveModuleStressEntityKey(baseModule)
-                        : 0u;
+                    uint entityKey = ResolveModuleStressEntityKey(baseModule);
                     if (targetHash != 0u && entityKey == targetHash)
                     {
                         moduleIndex = nodeIndex;

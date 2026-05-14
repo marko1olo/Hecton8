@@ -1264,7 +1264,10 @@ namespace Hecton8.SaveSystem
             }
 
             EnsureWfcOutpostNativeBuffers();
-            if (!macroDatabase.TryGetPayload(sectorHash, out MacroDatabasePayloadHandle handle) ||
+            if (!macroDatabase.TryGetPayload(sectorHash, out MacroDatabasePayloadHandle handle))
+                return false;
+
+            if (
                 handle.Pointer == IntPtr.Zero ||
                 handle.ByteLength < WfcOutpostPersistenceConstants.PayloadHeaderBytes ||
                 handle.ByteLength > WfcOutpostPersistenceConstants.PayloadMaxBytes ||
@@ -1276,6 +1279,7 @@ namespace Hecton8.SaveSystem
                     out int wordsRead) ||
                 wordsRead != WfcOutpostPersistenceConstants.PackedWordCount)
             {
+                PublishWfcCorruptPayloadWarning();
                 return false;
             }
 

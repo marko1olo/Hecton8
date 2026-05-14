@@ -249,3 +249,11 @@ Solution: Added a peak-stress early return to `HectonHabitatInteriorResolveStres
 Rejected Alternatives: Relying only on every shader callsite to remember the peak guard, or leaving zero-mask borders to fall through the helper math. Callsite-only guards are brittle under concurrent shader edits; border fallthrough spends cycles for invisible deformation.
 Scalability potential: Low/MX350 keeps cheap crease-only pressure feedback and skips dead crease work on panel borders. Mid/High/Ultra keep sine panel bowing where mask is visible and spend no vertex ALU on zero-mask borders.
 Hardware Impact: Calm helper calls now return before module buffer/radius work, and border vertices/fragments skip no-op deformation setup. Estimated 1-4 us per 1k stressed interior vertices/fragments on i3/MX350-class hardware beyond the callsite guard, with 0 B/frame and no visual regression.
+
+## Follow-Up Correction - Stable Hash Before Runtime Key
+
+Problem: `TryResolveModuleStressIndex` read the runtime `EntityId` key for every identity-targeted signal candidate before checking whether the cheaper graph-stable module hash already matched. That keeps an avoidable runtime-identity dependency in the signal resolver hot path.
+Solution: Reordered the resolver so nonzero `targetHash` compares against `ResolveModuleStressHash` first and returns immediately on exact graph-hash hits. `ResolveModuleStressEntityKey` is now called only after the graph hash fails and remains available for direct runtime targets and unique `TargetId` fallback.
+Rejected Alternatives: Removing runtime entity fallback, or caching entity keys in a managed dictionary. Removing fallback would miss producers that target Unity entities; a dictionary adds memory ownership and invalidation work under concurrent agents.
+Scalability potential: Low/MX350 avoids unnecessary runtime identity reads during signal bursts with graph-backed module ids. Mid/High/Ultra keep exact localized bowing for both stable graph targets and runtime entity targets.
+Hardware Impact: Saves one `GetEntityId`/hash path per graph-hash hit candidate in stress signal scans; estimated 1-3 us on i3/MX350 signal-heavy frames, 0 B/frame, no shader cost.

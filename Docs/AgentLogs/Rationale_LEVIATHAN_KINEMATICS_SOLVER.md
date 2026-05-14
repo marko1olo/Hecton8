@@ -118,3 +118,17 @@ Scoped compile evidence:
 - Command: Unity 6000.4.1f1 Roslyn `csc.dll` with `Library/Bee/artifacts/1300b0aEDbg.dag/Hecton8.Animation.IK.rsp` and `.rsp2`.
 - Result: exit 0 after adding `TailWhipDurationSeconds`.
 - Boundary: validates `Hecton8.Animation.IK` only; `FaunaKinematicsRuntime` remains blocked behind the red `Hecton8.Core` assembly.
+
+## Decision 9: H-Phi Domain Hygiene Without Dotnet Rebuild
+
+Problem: Current batch no longer contains the `LEVIATHAN_KINEMATICS_SOLVER` prompt, and the live status/rationale ended at Loop 8 while current source already contained later ownership hardening. `FaunaBrain.EnsureLeviathanPresentationOwner()` still had one concrete integration risk: if `_faunaKinematicsRuntime` was null but the component already existed, the method went straight to `AddComponent<FaunaKinematicsRuntime>()`.
+Solution: Treat disk source as authority, recheck the current IK runtime/job/shader scope, and add a cold `TryGetComponent(out _faunaKinematicsRuntime)` before adding the presentation owner. Record scoped H-Phi counters instead of claiming a global score.
+Rejected Alternatives: Running `dotnet build`/rebuild or a Roslyn response-file compile was rejected by explicit user instruction. Editing the global H-Phi report without a completed H-Phi audit was rejected as fake evidence. Leaving `AddComponent` as the only recovery path was rejected because `[DisallowMultipleComponent]` makes duplicate owner creation an avoidable integration fault.
+Scalability potential: Low/MX350 gains no hot-path cost; the fix runs in cold presentation binding only. High/Ultra preserve the same GPU-driven Leviathan path. Local H-Phi hygiene improves by reducing component-ownership ambiguity and keeping hot tier reads cached in `FaunaKinematicsRuntime`.
+Hardware Impact: Hot-path cost is 0 us. Cold-path added cost is one `TryGetComponent` only when `_faunaKinematicsRuntime` is null. Avoided failure is duplicate component/add failure on Alpha Leviathan presentation binding, not a measured frame-time gain.
+
+Scoped H-Phi evidence:
+- `FaunaKinematicsRuntime` counters: `GlobalRegistryRefs=11`, `ScalabilityTierRefs=2`, `NativeArrays=22`, `SignalBusRefs=0`, `UnityUpdateMethods=0`, `FindCalls=0`, `GetComponentCalls=3`.
+- Static grep over IK runtime/job/shader scope found no `math.sqrt`, `math.normalize`, managed array creation, `foreach`, `string.Format`, `.ToString()`, `Debug.Log`, Unity Physics casts, `SkinnedMeshRenderer`, `renderer.material`, `Camera.main`, `GlobalRegistry.Get`, `GameObject.Find`, or `FindObject`.
+- `git diff --check` on touched code exits 0 with LF-to-CRLF warning only.
+- Boundary: no runtime H-Phi or global H-Phi score is claimed; Unity Editor import, play mode, profiler, and GC evidence remain pending.

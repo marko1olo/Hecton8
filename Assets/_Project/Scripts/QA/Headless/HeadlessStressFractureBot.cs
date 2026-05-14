@@ -470,9 +470,10 @@ namespace Hecton8.QA.Headless
                 Flags = SectorDehydratedSignal.FlagPinned,
                 ResidencyState = 0
             });
-            _chunkUnloadNativeBytesBaseline = GlobalRegistry.NativeTrackedBytes;
-            _chunkUnloadH8BytesBaseline = H8Memory.TotalBytes;
-            _chunkUnloadDataVaultBytesBaseline = _dataVault != null ? _dataVault.AllocatedBytes : 0L;
+            MemorySnapshot snapshot = CaptureMemorySnapshot();
+            _chunkUnloadNativeBytesBaseline = snapshot.NativeBytes;
+            _chunkUnloadH8BytesBaseline = snapshot.H8Bytes;
+            _chunkUnloadDataVaultBytesBaseline = snapshot.DataVaultBytes;
             _chunkUnloadCheckFrame = _extremeFrame + ChunkLeakGraceFrames;
             _chunkUnloadPending = true;
         }
@@ -482,12 +483,10 @@ namespace Hecton8.QA.Headless
             if (!_chunkUnloadPending || _extremeFrame < _chunkUnloadCheckFrame)
                 return;
 
-            long nativeBytes = GlobalRegistry.NativeTrackedBytes;
-            long h8Bytes = H8Memory.TotalBytes;
-            long dataVaultBytes = _dataVault != null ? _dataVault.AllocatedBytes : 0L;
-            if (nativeBytes > _chunkUnloadNativeBytesBaseline + LeakToleranceBytes ||
-                h8Bytes > _chunkUnloadH8BytesBaseline + LeakToleranceBytes ||
-                dataVaultBytes > _chunkUnloadDataVaultBytesBaseline + ScratchBlockBytes)
+            MemorySnapshot snapshot = CaptureMemorySnapshot();
+            if (snapshot.NativeBytes > _chunkUnloadNativeBytesBaseline + LeakToleranceBytes ||
+                snapshot.H8Bytes > _chunkUnloadH8BytesBaseline + LeakToleranceBytes ||
+                snapshot.DataVaultBytes > _chunkUnloadDataVaultBytesBaseline + ScratchBlockBytes)
             {
                 FailAndQuit(1, LeakHash, NativeLeakToken);
                 return;
@@ -662,14 +661,15 @@ namespace Hecton8.QA.Headless
 
         private void PublishCrashSignal(int exitCode, uint reasonHash, byte severity)
         {
+            MemorySnapshot snapshot = CaptureMemorySnapshot();
             GlobalSignals.Publish(new CrashTelemetrySignal
             {
                 SystemHash = RunnerHash,
                 ReasonHash = reasonHash,
                 Frame = unchecked((uint)Time.frameCount),
                 ExitCode = exitCode,
-                NativeAllocationCount = GlobalRegistry.NativeAllocationCount,
-                NativeTrackedBytesMb = GlobalRegistry.NativeTrackedBytes * NativeBytesToMegabytes,
+                NativeAllocationCount = snapshot.NativeAllocations,
+                NativeTrackedBytesMb = snapshot.NativeBytes * NativeBytesToMegabytes,
                 Severity = severity,
                 Flags = exitCode == 0 ? (byte)0 : (byte)1
             });
@@ -680,6 +680,7 @@ namespace Hecton8.QA.Headless
             if (!_blackbox.IsCreated)
                 return;
 
+            MemorySnapshot snapshot = CaptureMemorySnapshot();
             int index = _blackboxCursor % _blackbox.Length;
             _blackbox[index] = new FractureTelemetryEntry
             {
@@ -687,16 +688,30 @@ namespace Hecton8.QA.Headless
                 ExtremeFrame = unchecked((uint)_extremeFrame),
                 ShiftSequence = _shiftSequence,
                 EventHash = eventHash,
-                NativeBytes = GlobalRegistry.NativeTrackedBytes,
-                H8Bytes = H8Memory.TotalBytes,
-                NativeAllocations = GlobalRegistry.NativeAllocationCount,
-                H8Allocations = H8Memory.ActiveAllocationCount,
+                NativeBytes = snapshot.NativeBytes,
+                H8Bytes = snapshot.H8Bytes,
+                NativeAllocations = snapshot.NativeAllocations,
+                H8Allocations = snapshot.H8Allocations,
                 DispatcherPhaseMs = _lastSimulationPhaseMs,
-                DataVaultFragmentation = _dataVault != null ? _dataVault.HeapFragmentationRatio : 0f,
+                DataVaultFragmentation = snapshot.DataVaultFragmentation,
                 LastShiftMeters = _lastShiftMeters,
                 Flags = ComposeBlackboxFlags()
             };
             _blackboxCursor++;
+        }
+
+        private MemorySnapshot CaptureMemorySnapshot()
+        {
+            IDataVault vault = _dataVault;
+            return new MemorySnapshot
+            {
+                NativeBytes = GlobalRegistry.NativeTrackedBytes,
+                H8Bytes = H8Memory.TotalBytes,
+                DataVaultBytes = vault != null ? vault.AllocatedBytes : 0L,
+                NativeAllocations = GlobalRegistry.NativeAllocationCount,
+                H8Allocations = H8Memory.ActiveAllocationCount,
+                DataVaultFragmentation = vault != null ? vault.HeapFragmentationRatio : 0f
+            };
         }
 
         private uint ComposeBlackboxFlags()

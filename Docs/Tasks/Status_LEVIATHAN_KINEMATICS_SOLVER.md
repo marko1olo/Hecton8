@@ -92,3 +92,15 @@ Batch source: Docs/Tasks/CURRENT_BATCH.md
 - Static check: no `math.sqrt`, `math.normalize`, `foreach`, `string.Format`, `.ToString()`, `Debug.Log`, Unity Physics casts, Animator/SMR dependency, or `_H8LeviathanBodyRadius` in IK runtime/job/shader scope.
 - `git diff --check` on touched IK runtime/job/shader files exits 0; line-ending warnings are repo-wide and unrelated.
 - Final status remains PENDING VERIFICATION because `FaunaKinematicsRuntime` is still inside the project-wide `Hecton8.Core` compile wall.
+
+### Loop 9: H-Phi Domain Hygiene Recheck
+
+- User explicitly prohibited `dotnet` rebuilds; no `dotnet build`, rebuild, or Roslyn response-file compile was run in this loop.
+- CLI prompt re-extraction from `Docs/Tasks/CURRENT_BATCH.md` returned `Prompt block not found`; current batch has rotated, so this loop used the persisted status/rationale and ignored unrelated prompts.
+- Re-read AGENTS, the domain file, H-Phi atlas section, and six relevant mandates before code: IK, zero-GC, native memory/jobs, AUP, blackbox, GPU-driven animation.
+- Rechecked current `FaunaKinematicsRuntime`: native bone accessor is gated against scheduled writers, AUP dirty upload is present, no-consumer GPU upload skip is present, material gate clearing is present, deferred dispose chaining is present, and hot `GlobalRegistry.ScalabilityTier` reads are cached to two source references.
+- Fixed `FaunaBrain.EnsureLeviathanPresentationOwner()` so it resolves an existing `FaunaKinematicsRuntime` with `TryGetComponent` before adding a new component.
+- Scoped H-Phi source counters for `FaunaKinematicsRuntime`: `GlobalRegistryRefs=11`, `ScalabilityTierRefs=2`, `NativeArrays=22`, `SignalBusRefs=0`, `UnityUpdateMethods=0`, `FindCalls=0`, `GetComponentCalls=3`.
+- Static grep over IK runtime/job/shader scope found no `math.sqrt`, `math.normalize`, managed array creation, `foreach`, `string.Format`, `.ToString()`, `Debug.Log`, Unity Physics casts, `SkinnedMeshRenderer`, `renderer.material`, `Camera.main`, `GlobalRegistry.Get`, `GameObject.Find`, or `FindObject`.
+- `git diff --check` on touched code exits 0; only LF-to-CRLF warnings on `FaunaBrain.cs`.
+- Final status remains PENDING VERIFICATION until Unity Editor import, shader compile, play-mode behavior, and profiler evidence exist.

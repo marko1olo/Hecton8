@@ -49,6 +49,7 @@ State: IMPLEMENTED - OWNED STATIC CHECKS CLEAN; LATEST BUILD BLOCKED OUTSIDE DOM
 - Loop 7: COMPLETE/NO REBUILD BY USER ORDER - H-Phi coupling reduced in habitat stress owner; scoped static checks clean; no `dotnet` or Unity rebuild command run.
 - Loop 8: COMPLETE/NO REBUILD BY USER ORDER - DryZone calm-stress shader resolver skip added; scoped shader/static checks clean; no `dotnet` or Unity rebuild command run.
 - Loop 9: COMPLETE/NO REBUILD BY USER ORDER - include-level peak-stress and zero-panel-mask gates added; scoped shader/static checks clean; no `dotnet` or Unity rebuild command run.
+- Loop 10: COMPLETE/NO REBUILD BY USER ORDER - stress signal resolver now returns on stable graph-hash hits before runtime entity-key lookup; scoped checks pending; no `dotnet` or Unity rebuild command run.
 
 ## Verification Notes
 
@@ -97,3 +98,4 @@ State: IMPLEMENTED - OWNED STATIC CHECKS CLEAN; LATEST BUILD BLOCKED OUTSIDE DOM
 - Latest shader verification after calm-stress resolver skip: no `dotnet` rebuild was run by explicit user instruction. Managed-offender scans still found no C# string/LINQ/foreach offenders; mesh mutation scan found no owned `Mesh.vertices` writes; exact shader normalize/sqrt scan produced no matches; `rg` confirms the peak-stress guard, resolver call, bend call, normal-bias call, and low-tier crease call remain wired; `git diff --check` reports only CRLF warnings.
 - Follow-up correction: `Hecton_HabitatInterior.hlsl` now has its own peak-stress early return inside `HectonHabitatInteriorResolveStress01`, plus zero-panel-mask exits in the bend and low-tier crease helpers. This keeps future shader callsites from reintroducing calm-state scans and avoids normal/crease setup work on panel borders.
 - Latest shader verification after include-level gates: no `dotnet` rebuild was run by explicit user instruction. Exact shader `normalize()`/`sqrt()` scan produced no matches; managed-offender scans still found no C# string/LINQ/foreach offenders; mesh mutation scan found no owned `Mesh.vertices` writes; `rg` confirms the include-level peak guard, panel-mask exits, resolver call, bend call, and low-tier crease call remain wired; brace count in `Hecton_HabitatInterior.hlsl` is balanced; `git diff --check` reports only CRLF warnings.
+- Follow-up correction: stable graph-hash module stress signals now return before `ResolveModuleStressEntityKey` is called. Runtime entity-key fallback still handles direct runtime targets and `TargetId` uniqueness when graph hash does not match.
