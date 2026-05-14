@@ -367,3 +367,23 @@ Solution: Verification stayed source-only: render binding scan, forbidden-patter
 Rejected Alternatives: Running response-file compiles through `dotnet` was rejected because it violates the user instruction.
 Scalability potential: Source-level render-state isolation improved; runtime frame/debugger capture remains pending.
 Hardware Impact: Verification only. Core graph summary reports `CoreAsmdefDebtReferenceCount=25` and `GeneratedProjectDebtReferenceCount=10`; these are project-level debts outside the outpost source edit.
+
+## LOOP 22 SHIFT-SAFE PUBLIC SHELL ACCESSORS
+
+Problem: `TryGetShellMatrices` could return `_shellMatrices.AsReadOnly()` while `MarauderOutpostAupShiftJob` was actively writing that NativeArray. `ReadOnly` does not make an active writer job safe for external readers.
+Solution: Fail closed from `TryGetShellMatrices` when `_jobPhase == JobPhase.Shifting`.
+Rejected Alternatives: Completing the shift job inside the getter was rejected because synchronous completion from a query path would violate native/job discipline and could cause a frame spike. Returning the buffer with a warning flag was rejected because consumers can still read racing data.
+Scalability potential: Low/Middle/High/Ultra retain the same AUP shift math and draw path. Consumers now retry after the shift commit instead of reading torn matrices.
+Hardware Impact: One scalar state check on a cold cross-domain query path, 0 B/frame. Avoids undefined CPU read/write overlap on MX350-class devices.
+
+Problem: `TryGetShellGraphicsBuffer` could return a GPU matrix buffer after a CPU shift completed but before `_matrixUploadDirty` was uploaded, exposing stale render data to cross-domain consumers.
+Solution: Fail closed from `TryGetShellGraphicsBuffer` while `_jobPhase == JobPhase.Shifting` or `_matrixUploadDirty` is true.
+Rejected Alternatives: Returning the stale buffer with the current generation sequence was rejected because generation sequence does not encode pending GPU upload state. Forcing an upload in the getter was rejected because graphics uploads belong to the owner late-frame path.
+Scalability potential: Low waits for the next owner upload instead of consuming stale shell positions; High/Ultra retain visual overkill once the owner upload completes.
+Hardware Impact: One dirty/state check on a cold query path, 0 B/frame. Avoids stale GPU data consumption and possible downstream correction work.
+
+Problem: The active instruction still forbids dotnet rebuilds.
+Solution: Verification stayed source-only: focused diff, getter guard scan, forbidden-pattern audit, scoped H-Phi counts, and `git diff --check`.
+Rejected Alternatives: Running response-file compiles through `dotnet` was rejected because it violates the active user instruction.
+Scalability potential: Cross-domain access is safer without adding allocations, signals, registry lookups, or shell objects.
+Hardware Impact: Verification only.

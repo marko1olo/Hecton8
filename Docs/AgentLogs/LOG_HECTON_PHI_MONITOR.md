@@ -345,3 +345,49 @@ Regression Model:
 - Memory: no buffer ownership changed; DataVault migration remains owner-blocked.
 - Cadence: no tick, signal flush, job schedule, or dispatch cadence changed.
 - Correctness: regex model risk remains because this is static text analysis; Unity import/compile and runtime evidence remain pending because rebuild is forbidden.
+
+## 2026-05-15 Lexical Scrub Containment And Full Scan Recovery
+
+What was wrong:
+- H-Phi static regex counters can count comments and smoke-test string literals as real architecture surfaces.
+- A first-pass PowerShell lexical scrubber was too slow for this repository: two full `-Summary -Json` runs exceeded a 420-second cap.
+- A default H-Phi path that times out is worse than a known regex limitation because it blocks every monitoring loop.
+
+What was done:
+- Gated lexical scrubbing behind explicit `-LexicalScrub`.
+- Restored default full-source summary to the raw-source counter path.
+- Re-ran graph-only and full default summaries after the containment patch.
+- Honored user instruction: no `dotnet build`, no rebuild.
+
+Cinematic Cheats used:
+- None. Static audit tooling only.
+
+Exact Microseconds saved:
+- Runtime gameplay: 0 us measured; no runtime code changed.
+- Tool lane: default full H-Phi summary recovered from `>420s timeout` to a completed run. Exact completed wall time from the shell was about 176.8 seconds for the latest full summary.
+
+Compile Status:
+- Not run by explicit user order.
+- Static checks run:
+  - `git diff --check -- Tools/Architecture/HectonPhiAudit.ps1`
+  - `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json`
+  - `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json`
+- `git diff --check`: no whitespace errors; LF/CRLF warning only.
+
+Phi Gain:
+- Previous current runtime narrow score: `0.009377979`.
+- Current runtime narrow score: `0.010531061`.
+- Previous current runtime risk-adjusted score: `0.000505917`.
+- Current runtime risk-adjusted score: `0.000560589`.
+- Data Sovereignty moved `0.018825826 -> 0.021062910` in the current tree.
+- Memory alignment moved `0.500794071 -> 0.502645503` in the current tree.
+- AUP precision integrity is now visible in the summary: `0.983739837`.
+- Current Core asmdef debt references: `25`; generated project debt references: `10`; source-backed bridge debt references: `21`.
+- Important: the score movement includes concurrent workspace changes and static model changes. It is not measured frame-time gain.
+
+Regression Model:
+- CPU: no gameplay code path changed.
+- GC: no gameplay allocation changed.
+- Memory: no buffer ownership changed by this pass.
+- Cadence: no Tick/FixedTick/Update/job schedule changed.
+- Correctness: lexical scrub remains experimental and explicitly gated; default H-Phi evidence remains static regex output.

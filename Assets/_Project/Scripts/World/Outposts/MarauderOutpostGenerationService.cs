@@ -310,7 +310,7 @@ namespace Hecton8.World.Outposts
 
         public void Render(float deltaTime)
         {
-            if (!_generated || _matrixCount <= 0 || _matrixBuffer == null || _cellTypeBuffer == null || _argsBuffer == null)
+            if (!_generated || _jobPhase == JobPhase.Shifting || _matrixUploadDirty || _matrixCount <= 0 || _matrixBuffer == null || _cellTypeBuffer == null || _argsBuffer == null)
                 return;
 
             Material material = ResolveRenderMaterial();
@@ -425,7 +425,7 @@ namespace Hecton8.World.Outposts
         public bool TryGetShellMatrices(out NativeArray<float4x4>.ReadOnly matrices, out int matrixCount, out uint generationSequence)
         {
             generationSequence = _generationSequence;
-            if (!_generated || !_shellMatrices.IsCreated)
+            if (!_generated || _jobPhase == JobPhase.Shifting || !_shellMatrices.IsCreated)
             {
                 matrices = default;
                 matrixCount = 0;
@@ -446,7 +446,7 @@ namespace Hecton8.World.Outposts
         public bool TryGetShellGraphicsBuffer(out GraphicsBuffer matrixBuffer, out GraphicsBuffer argsBuffer, out int instanceCount, out uint generationSequence)
         {
             generationSequence = _generationSequence;
-            if (!_generated || _matrixBuffer == null || _argsBuffer == null)
+            if (!_generated || _jobPhase == JobPhase.Shifting || _matrixUploadDirty || _matrixBuffer == null || _argsBuffer == null)
             {
                 matrixBuffer = null;
                 argsBuffer = null;

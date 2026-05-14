@@ -205,13 +205,21 @@ namespace Hecton8.AI
 
         public void Tick(float deltaTime)
         {
-            if (_disposed || !_segmentPositions.IsCreated || !_leviathanBones.IsCreated || _solverScheduled || deltaTime <= 0f)
+            if (_disposed ||
+                !_segmentPositions.IsCreated ||
+                !_leviathanBones.IsCreated ||
+                _solverScheduled ||
+                !math.isfinite(deltaTime) ||
+                deltaTime <= 0f)
+            {
                 return;
+            }
 
             HectonQualityTier qualityTier = GlobalRegistry.ScalabilityTier;
+            float safeDeltaTime = math.min(math.max(0f, deltaTime), 0.05f);
             _qualityTier = qualityTier;
             ApplyPendingOriginShiftRebase();
-            RefreshQualityState(deltaTime, qualityTier);
+            RefreshQualityState(safeDeltaTime, qualityTier);
             CaptureFallbackMotionIntent();
             ApplyPresentationIntentTargets();
             ResolveTerrainPayload(
@@ -226,7 +234,6 @@ namespace Hecton8.AI
                 out float3 terrainSize,
                 out int terrainResolution);
 
-            float safeDeltaTime = math.isfinite(deltaTime) ? math.min(math.max(0f, deltaTime), 0.05f) : 0f;
             if (_tailWhipSecondsRemaining > 0f)
                 _tailWhipSecondsRemaining = math.max(0f, _tailWhipSecondsRemaining - safeDeltaTime);
 
@@ -316,6 +323,9 @@ namespace Hecton8.AI
                 }
 
                 _solverScheduled = false;
+                _frameIndex = _frameIndex == int.MaxValue ? 0 : _frameIndex + 1;
+                if (TelemetryHasInvalidFrame())
+                    DumpTelemetryBlackBoxOnce();
             }
 
             ApplyOriginShiftRebase(offset);
@@ -369,18 +379,20 @@ namespace Hecton8.AI
             }
 
             _strikeTargetWorldPosition = _strikeTargetRigidbody != null
-                ? (float3)_strikeTargetRigidbody.position
-                : (float3)targetWorldPosition;
+                ? SanitizeFiniteInputFloat3((float3)_strikeTargetRigidbody.position, ResolveOwnerRuntimePosition())
+                : SanitizeFiniteInputFloat3((float3)targetWorldPosition, ResolveOwnerRuntimePosition());
 
             if (!_wasStrikeActiveLastTick)
-                _tailWhipSecondsRemaining = math.max(_tailWhipSecondsRemaining, _tailWhipDurationSeconds);
+                _tailWhipSecondsRemaining = math.max(
+                    SanitizePositiveFinite(_tailWhipSecondsRemaining, 0f, 0f),
+                    SanitizePositiveFinite(_tailWhipDurationSeconds, 1f, 0.0001f));
 
             _wasStrikeActiveLastTick = true;
         }
 
         internal void SetAttackTelegraph(float blend01)
         {
-            _attackTelegraphBlend = math.saturate(blend01);
+            _attackTelegraphBlend = math.isfinite(blend01) ? math.saturate(blend01) : 0f;
         }
 
         internal void SetHeadLookTarget(Vector3 worldPosition, bool active)
@@ -448,8 +460,8 @@ namespace Hecton8.AI
 
             float3 origin = ResolveOwnerRuntimePosition();
             float3 forward = ResolveOwnerForward();
-            float segmentLength = math.max(0.05f, _segmentLength);
-            float bodyRadius = math.max(0.01f, _bodyRadius);
+            float segmentLength = SanitizePositiveFinite(_segmentLength, 2.5f, 0.05f);
+            float bodyRadius = SanitizePositiveFinite(_bodyRadius, 1.15f, 0.01f);
             for (int i = 0; i < MaxSegments; i++)
             {
                 float3 position = origin - forward * (segmentLength * i);
@@ -476,11 +488,13 @@ namespace Hecton8.AI
             float3 velocity = _body != null
                 ? SanitizeFiniteInputFloat3((float3)_body.linearVelocity, float3.zero)
                 : float3.zero;
+            float bodySpeed = ResolveBodySpeed();
             if (math.lengthsq(velocity) <= MinVectorMagnitudeSq)
-                velocity = ownerForward * math.max(0.1f, ResolveBodySpeed());
+                velocity = ownerForward * math.max(0.1f, bodySpeed);
 
             _motionIntentVelocity = velocity;
-            _motionIntentHeadTarget = ownerPosition + NormalizeSafe(velocity, ownerForward) * math.max(_segmentLength, ResolveBodySpeed() * 0.35f);
+            float segmentLength = SanitizePositiveFinite(_segmentLength, 2.5f, 0.05f);
+            _motionIntentHeadTarget = ownerPosition + NormalizeSafe(velocity, ownerForward) * math.max(segmentLength, bodySpeed * 0.35f);
         }
 
         private void ApplyPresentationIntentTargets()
@@ -779,8 +793,14 @@ namespace Hecton8.AI
 
         private void TryRegister()
         {
-            if (_registeredUpdate || GlobalRegistry.Dispatcher == null)
+            if (GlobalRegistry.Dispatcher == null)
                 return;
+
+            if (_registeredUpdate && _registeredLateFrame)
+                return;
+
+            if (_registeredUpdate || _registeredLateFrame)
+                TryUnregister();
 
             _registeredUpdate = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
             _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
@@ -860,13 +880,16 @@ namespace Hecton8.AI
                 _previousSegmentPositions[i] = SanitizeFiniteInputFloat3(_previousSegmentPositions[i] - offset, _segmentPositions[i]);
                 float4x4 matrix = _leviathanBones[i];
                 float4 c3 = matrix.c3;
-                matrix.c3 = new float4(c3.x - offset.x, c3.y - offset.y, c3.z - offset.z, c3.w);
+                float3 matrixRawPosition = new float3(c3.x - offset.x, c3.y - offset.y, c3.z - offset.z);
+                float3 matrixPosition = SanitizeFiniteInputFloat3(matrixRawPosition, _segmentPositions[i]);
+                matrix.c3 = new float4(matrixPosition, math.isfinite(c3.w) ? c3.w : 1f);
                 _leviathanBones[i] = matrix;
             }
 
-            _motionIntentHeadTarget -= offset;
-            _headLookTargetWorldPosition -= offset;
-            _strikeTargetWorldPosition -= offset;
+            float3 ownerFallback = ResolveOwnerRuntimePosition();
+            _motionIntentHeadTarget = SanitizeFiniteInputFloat3(_motionIntentHeadTarget - offset, ownerFallback);
+            _headLookTargetWorldPosition = SanitizeFiniteInputFloat3(_headLookTargetWorldPosition - offset, _motionIntentHeadTarget);
+            _strikeTargetWorldPosition = SanitizeFiniteInputFloat3(_strikeTargetWorldPosition - offset, _motionIntentHeadTarget);
             _gpuUploadDirty = true;
         }
 

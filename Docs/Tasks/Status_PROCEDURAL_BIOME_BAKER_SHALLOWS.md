@@ -188,3 +188,20 @@ Status: PENDING VERIFICATION
 - Verification avoided dotnet rebuilds. `git diff --check` passed for the touched source; source scan found `ValidateMaterialAssetContract`, `ValidatePrefabHierarchyContract`, `ValidateComponentEnvelope`, `ValidateRendererMaterialContract`, and `HasVertexAttribute` checks, with no Shallows `Shader.Find`, `mesh.colors`, `renderer.sharedMaterial`, `.material`, or hot-path `Update/LateUpdate/FixedUpdate` hits. Brace count stayed balanced with `NonAscii=0`.
 - Asset evidence: `PrefabEnvelopeYamlScan Count=200 Bad=0 MaterialGuid=f669d8458f3703841b4ed34a8236b192`; material YAML reports `m_Name: MAT_ProceduralBio_Shallows`, `m_CustomRenderQueue: -1`, empty keyword arrays, and instancing enabled; `MeshVertexChannelYamlScan Count=600 Bad=0 MaxNonZeroChannels=5`.
 - H-Phi impact remains domain-local static evidence: stricter prefab/material/mesh contracts and fewer hidden renderer ownership risks, with no runtime scripts, no new cross-domain dependency, and no dotnet rebuild.
+
+### Loop 20 - Material Sampling State Contract
+
+- Re-read status/rationale, AGENTS, domain map, Unity workflow skill, Shallows batch extraction, and task-relevant flora/zero-GC/render-budget mandates before editing. Live `CURRENT_BATCH.md` still lacks the `PROCEDURAL_BIOME_BAKER_SHALLOWS` tag.
+- Found a remaining visual drift path: atlas texture references and scalar values were locked, but atlas texture scale/offset and serialized material keyword arrays could still drift without changing the referenced texture assets.
+- Patched `ShallowsBioForgeBatchBaker` so material creation explicitly writes identity atlas scale/offset for `_AlbedoAtlas`, `_NormalAtlas`, `_ORMAtlas`, and `_MatCap`; validation now rejects non-identity texture transforms plus non-empty serialized `m_ValidKeywords` or `m_InvalidKeywords`.
+- Verification avoided dotnet rebuilds. `git diff --check` passed for the baker; source scan found `SetMaterialTextureTransform`, `ValidateMaterialTextureTransform`, serialized keyword checks, and `Approximately(Vector2)`. Brace count stayed balanced with `NonAscii=0`; forbidden scan found no Shallows `Shader.Find`, `mesh.colors`, `renderer.sharedMaterial`, `.material`, or hot-path update methods.
+- Asset evidence: `MaterialTextureTransformYamlScan Props=4 Bad=0 ValidKeywordEmpty=1 InvalidKeywordEmpty=1 DefaultQueue=1`; material YAML shows all four atlas `m_Scale: {x: 1, y: 1}` and `m_Offset: {x: 0, y: 0}`.
+- H-Phi impact remains editor/data-contract only: atlas sampling and shader variant state are now fail-closed without runtime material mutation, material clones, or new render ownership.
+
+### Loop 21 - Atlas Import Metadata Alignment
+
+- Re-scanned the actual Shallows atlas `.png.meta` files against the baker contract and found hard drift: source PNGs are `1024x1024`, but importer metadata still carried top-level `maxTextureSize: 2048`, Default/Standalone `maxTextureSize: 512`, and ORM `sRGBTexture: 1`.
+- Patched the four Shallows atlas meta files so top-level, DefaultTexturePlatform, and Standalone max size are all `1024`; preserved Standalone BC7 for Albedo/ORM/MatCap and BC5 for Normal; corrected ORM to linear `sRGBTexture: 0`.
+- Verification avoided dotnet rebuilds and Unity import. `AtlasImporterYamlScan Count=4 Bad=0`; `AtlasPngDimensionScan Count=4 Bad=0`; `git diff --check` passed for the four edited `.meta` files.
+- Rejected alternative: changing `AtlasSize` or validator expectations to `512` was rejected because it would silently downsample authored 1024 visual data and contradict the existing baker contract. Re-baking via Unity was rejected under the user's no-rebuild instruction.
+- H-Phi impact remains asset-contract only: the importer data now matches the exact texture payload and shader/material validator expectations, preventing silent VRAM/quality divergence.

@@ -3,7 +3,7 @@
 Agent: ARCHITECTURAL_AUP_INTEGRITY_AUDITOR
 Domain: ECHELON 1 / Origin Shift (AUP Manager), with audit reach into Physics, Voxel, Kinematics, AI trigger math, Biome trigger math, and deterministic seed callsites.
 Assignment Source: User-supplied XML block. `Docs/Tasks/CURRENT_BATCH.md` extraction returned `PROMPT_NOT_FOUND` for this ID on initial pass.
-Status: VERIFIED AUP INTEGRITY - LOOP 24 APPLIED; GLOBAL H-PHI AUDIT TOOL NOW INCLUDES AUP PRECISION INTEGRITY; FULL H-PHI SOURCE SCAN TIMEOUT CLASSIFIED; GLOBAL LEGACY HFO AUP SCAN CLEAN; CORE BUILD BLOCKED BY UNRELATED DEPENDENCY WALL; ASMDEF BLOCKED BY ARCHITECTURE
+Status: VERIFIED AUP INTEGRITY - LOOP 25 APPLIED; QUALIFIED AUP H-PHI RISK SCAN CLEAN; EDITOR GHOST DEBUGGER DOUBLE-BRIDGED; INTERNAL DOUBLE OFFSET JOB FIELDS RENAMED; GLOBAL LEGACY HFO AUP SCAN CLEAN; CORE BUILD BLOCKED BY UNRELATED DEPENDENCY WALL; ASMDEF BLOCKED BY ARCHITECTURE
 
 ## Selected Mandates
 
@@ -253,3 +253,16 @@ Loop 24 - Full H-Phi Source Scan Timeout Classification:
 - Confirmed `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json` remains healthy; the timeout is isolated to the full source scan path.
 - Recorded the timeout as static-tool performance debt instead of fabricating H-Phi values.
 - No `dotnet build` or rebuild was run in Loop 24 because the user explicitly forbade rebuilds.
+
+Loop 25 - Qualified AUP H-Phi Risk Cleanup:
+- Re-read status/rationale and re-extracted `ARCHITECTURAL_AUP_INTEGRITY_AUDITOR` from `Docs/Tasks/CURRENT_BATCH.md`; result remains `PROMPT_NOT_FOUND`.
+- Patched `Assets/_Project/Scripts/Editor/KinematicGhostDebugger.cs` so editor ghost preview resolves vegetation bridge space through `HectonMapMagicVegetationBridge.ToUniverseSpaceDouble3` and falls back through `HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3` before the final `Vector3` Handles boundary.
+- Renamed local preview variables away from the generic `Vector3 universePosition` H-Phi risk token.
+- Renamed internal Burst job fields from `CurrentTotalOffset` to `CommittedTotalOffset` in `HectonFloatingOrigin.AupDriftCheckJob` and `WorldSpatialHashGrid.ValidateAupIntegrityJob`; both fields were already `double3`, and the rename prevents the AUP H-Phi scanner from classifying double authority lanes as legacy float offset risk.
+- Renamed `HectonMapMagicVegetationBridge` `Vector3 universePosition` wrapper parameters to `stableUniversePosition`; public method signatures are unchanged except parameter names.
+- Targeted qualified AUP H-Phi risk scan now returns `NO_MATCHES` across `Assets/_Project/Scripts`.
+- Direct committed-offset leak scan returns `NO_MATCHES`.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` was re-run; residual hits remain broad `universe` text plus known final-cast fluid/scatter/shader payload names.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json` completed successfully. Latest counts: Core asmdef refs 43, Core asmdef H-Phi debt refs 25, generated Core project refs 12, generated project debt refs 10, source-backed bridge refs 32, source-backed bridge debt refs 20.
+- `git diff --check` on the Loop 25 touched files reports line-ending warnings only, no whitespace errors.
+- No `dotnet build` or rebuild was run in Loop 25 because the user explicitly forbade rebuilds.

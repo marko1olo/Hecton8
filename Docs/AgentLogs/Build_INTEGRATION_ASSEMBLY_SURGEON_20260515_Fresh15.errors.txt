@@ -1,0 +1,4 @@
+C:\hades\Hecton8\Docs\AgentLogs\Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh15.log:1:C:\hades\Hecton8\Assets\_Project\Scripts\Audio\PlayerCriticalProceduralAudioRenderer.cs(3329,21): error CS0111: Type 'PlayerCriticalProceduralAudioRenderer' already defines a member called 'OnScalabilityChanged' with the same parameter types [C:\hades\Hecton8\Hecton8.Core.csproj]
+C:\hades\Hecton8\Docs\AgentLogs\Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh15.log:3:Build FAILED.
+C:\hades\Hecton8\Docs\AgentLogs\Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh15.log:5:C:\hades\Hecton8\Assets\_Project\Scripts\Audio\PlayerCriticalProceduralAudioRenderer.cs(3329,21): error CS0111: Type 'PlayerCriticalProceduralAudioRenderer' already defines a member called 'OnScalabilityChanged' with the same parameter types [C:\hades\Hecton8\Hecton8.Core.csproj]
+C:\hades\Hecton8\Docs\AgentLogs\Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh15.log:10:EXIT=1

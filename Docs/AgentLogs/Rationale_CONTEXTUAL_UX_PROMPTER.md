@@ -172,3 +172,17 @@ Solution: Added an immediate `_resourceObjectsReady`, `_materialsReady`, and `_r
 Rejected Alternatives: Letting `DrawBatch` null-check late, logging failures every frame, or creating runtime fallback materials. Late null-checks waste render CPU; repeated logs allocate/noise; runtime fallback materials violate authored material policy.
 Scalability potential: Low avoids wasted work in invalid authoring states. Middle, High, and Ultra keep the same visuals once resources are ready and preserve CPU for actual prompt rendering.
 Hardware Impact: Expected gain is only in degraded/missing-resource states, but deterministic: no camera/anchor/bounds work when the prompt cannot draw. No runtime profiler proof.
+
+## Decision 24: Render Camera Transform Cache
+Problem: Even after registry-only camera resolution, visible prompt frames still read `camera.transform` before sampling position/right/up/forward.
+Solution: Cached the camera transform together with the authored/registry camera reference. The cache handles explicit-camera changes, player service hot-swap, and disable cleanup.
+Rejected Alternatives: Reading `camera.transform` every render, caching a global transform singleton, or ignoring explicit-camera changes. Per-frame property access is avoidable; globals violate ownership; stale explicit cameras break scene authoring.
+Scalability potential: Low removes one render-side native property access. Middle, High, and Ultra keep deterministic camera ownership for richer prompt materials/effects.
+Hardware Impact: Expected gain is sub-microsecond per visible prompt frame on i3/MX350. No runtime profiler proof.
+
+## Decision 25: Visible Distance Derived Cache
+Problem: Each visible prompt frame recomputed max visible distance squared and the bounds-size expression from the serialized distance value.
+Solution: Added `_cachedMaxVisibleDistance`, `_cachedMaxVisibleDistanceSq`, and `_cachedBoundsSize`, refreshed only when `maxVisibleDistance` changes.
+Rejected Alternatives: Recomputing every render for simplicity or hardcoding a bounds size. Recompute is tiny but avoidable; hardcoding removes designer control.
+Scalability potential: Low removes small repeated math. Middle, High, and Ultra preserve runtime tuning while keeping derived values stable.
+Hardware Impact: Expected gain is sub-microsecond per visible prompt frame. No runtime profiler proof.

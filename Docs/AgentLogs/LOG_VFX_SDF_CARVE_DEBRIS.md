@@ -351,3 +351,60 @@ Verification state:
 - PENDING: Unity import/compile, visual capture, and profiler proof remain unverified.
 - Static verification completed after this entry was written: `git diff --check` had only LF/CRLF notices; forbidden hot-path pattern scan returned no matches; shader hot-math scan returned no matches; `CURRENT_BATCH.md` exact prompt tag count remains 0.
 - No dotnet rebuild was run.
+
+## 2026-05-15 - H-Phi Full Scratch State Vault Ownership
+
+What was wrong:
+- Position and velocity lanes were DataVault-owned and generation guarded, but job state, batched carve requests, and the 300-frame blackbox were still private persistent `H8Memory` arrays.
+- That split lifetime model left scratch aliases outside the same H-Phi lease checks as the particle lanes.
+
+What was done:
+- Added stable DataVault buffer IDs for `CarveDebrisJobState`, `CarveDebrisRequests`, and `CarveDebrisBlackBox`.
+- Acquired all three scratch buffers from `GlobalRegistry.DataVault` during GPU state binding.
+- Captured and validated their buffer generations together with `CarveDebris` and `CarveDebrisVelocity`.
+- Reworked release so the renderer drops vault aliases instead of freeing vault-owned scratch memory.
+- Cleared request slots, job state, blackbox payloads, cursor, and last telemetry frame on cold rebind before GPU mirror upload.
+- Did not run dotnet build, dotnet rebuild, or Unity batch compile.
+
+Cinematic cheats used:
+- No extra physical debris simulation was added.
+- Memory authority hardening preserves the existing visual fake: fixed GPU rock chips, SDF dissolve, flow drag, hash orientation, and indirect draw.
+- Rebind chooses deterministic visual reset over expensive continuity recovery across memory-authority changes.
+
+Exact microseconds saved:
+- Direct runtime saving: 0 us.
+- Added cost: three extra DataVault generation metadata reads in the readiness guard, estimated sub-microsecond on i3/MX350.
+- Lifecycle gain: removes three renderer-owned persistent native arrays and catches stale scratch-state aliases before Burst jobs, GPU uploads, or blackbox dumps touch them.
+
+Verification state:
+- Static verification completed: `git diff --check` returned no whitespace errors, only the existing Git LF/CRLF notice on this log file.
+- Forbidden hot-path scan returned no matches for CPU readback, ParticleSystem, ComputeBuffer, scene search, job scheduling fences, private `H8Memory.Allocate`, or private `H8Memory.Release` in the touched VFX lane.
+- Shader hot-math scan returned no matches for `sincos`, raw trig, `pow`, `exp`, `log`, or raw `normalize`.
+- Unity import/compile and profiler capture remain unverified.
+- `CURRENT_BATCH.md` exact prompt tag count for `VFX_SDF_CARVE_DEBRIS`: 0.
+- No dotnet rebuild was run.
+
+## 2026-05-15 - GPU Readiness Flag Fail-Closed Tightening
+
+What was wrong:
+- If a previously ready GPU state failed the DataVault/resource validity check, `TryEnsureGpuState()` could return on missing compute or DataVault services while `_gpuReady` still contained its old true value.
+
+What was done:
+- Cleared `_gpuReady` immediately after a failed readiness check and before any early dependency return.
+- Kept existing resource reuse behavior; no GraphicsBuffer churn is forced by transient service gaps.
+- Did not run dotnet build, dotnet rebuild, or Unity batch compile.
+
+Cinematic cheats used:
+- None added. This is state hygiene around the existing compute/indirect debris fake.
+
+Exact microseconds saved:
+- Direct runtime saving: 0 us.
+- Added cost: one boolean assignment only when readiness needs re-evaluation.
+- Correctness gain: stale true readiness state is removed after DataVault lease/resource invalidation.
+
+Verification state:
+- Static verification completed: `git diff --check` returned no whitespace errors, only Git LF/CRLF notices.
+- Forbidden hot-path scan returned no matches for CPU readback, ParticleSystem, ComputeBuffer, scene search, job scheduling fences, private `H8Memory.Allocate`, or private `H8Memory.Release`.
+- Shader hot-math scan returned no matches for `sincos`, raw trig, `pow`, `exp`, `log`, or raw `normalize`.
+- Unity import/compile and profiler capture remain unverified.
+- No dotnet rebuild was run.

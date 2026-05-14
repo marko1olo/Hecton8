@@ -85,3 +85,35 @@ Cinematic Cheats used:
 
 Exact microseconds saved:
 - No frame-time claim. This avoids gas polling gameplay modules and keeps wake override event-driven. No dotnet rebuild was run.
+
+## 2026-05-15 - Same-Frame Handoff Addendum
+STATUS: PENDING VERIFICATION
+
+What was wrong:
+- Enter and exit signals were drained in an order that could let a same-frame module exit override a same-frame module enter.
+
+What was done:
+- Gas drains exit packets first, then enter packets. Enter wins for module-to-module trigger handoffs.
+
+Cinematic Cheats used:
+- None new.
+
+Exact microseconds saved:
+- No runtime saving claimed; packet count is unchanged. No dotnet rebuild was run.
+
+## 2026-05-15 - Native Inside Count Addendum
+STATUS: PENDING VERIFICATION
+
+What was wrong:
+- A base-level boolean could still be wrong if enter and exit signals for overlapping modules arrived on adjacent frames.
+
+What was done:
+- Added `_basePlayerInsideCount` as a native per-base SOA lane.
+- Enter signals increment the count; exit signals decrement it with a zero clamp.
+- `_basePlayerInside` is now derived from count for signal traffic, while direct API setters remain explicit authority.
+
+Cinematic Cheats used:
+- None new.
+
+Exact microseconds saved:
+- No frame-time saving claimed. Cost is one int lane per base and one integer update per transition packet. No dotnet rebuild was run.

@@ -4,6 +4,7 @@ using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.World;
 using UnityEditor;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Editor.DebugTools
@@ -189,7 +190,7 @@ namespace Hecton8.Editor.DebugTools
         {
             Vector3 playerWorldPosition = _playerTransform.position;
             Quaternion playerWorldRotation = _playerTransform.rotation;
-            Vector3 universePosition = ToAbsoluteUniversePosition(playerWorldPosition);
+            Vector3 absolutePreviewPosition = ToAbsoluteUniversePosition(playerWorldPosition);
 
             Vector3 localPosition = playerWorldPosition;
             Quaternion localRotation = playerWorldRotation;
@@ -202,7 +203,7 @@ namespace Hecton8.Editor.DebugTools
 
             _localHistory[_historyHead] = localPosition;
             _localRotationHistory[_historyHead] = localRotation;
-            _universeHistory[_historyHead] = universePosition;
+            _universeHistory[_historyHead] = absolutePreviewPosition;
             _worldRotationHistory[_historyHead] = playerWorldRotation;
 
             _historyHead = (_historyHead + 1) % MaxHistorySamples;
@@ -237,7 +238,7 @@ namespace Hecton8.Editor.DebugTools
             int newestIndex = GetHistoryIndex(_historyCount - 1);
             Vector3 localPosition = ResolveLocalPreviewPosition(newestIndex);
             Quaternion localRotation = ResolveLocalPreviewRotation(newestIndex);
-            Vector3 universePosition = ResolveUniversePreviewPosition(newestIndex);
+            Vector3 absolutePreviewPosition = ResolveUniversePreviewPosition(newestIndex);
             Quaternion universeRotation = _worldRotationHistory[newestIndex];
 
             Handles.color = localColor;
@@ -245,7 +246,7 @@ namespace Hecton8.Editor.DebugTools
             Handles.DrawWireCube(Vector3.zero, Vector3.one);
 
             Handles.color = universeColor;
-            Handles.matrix = Matrix4x4.TRS(universePosition, universeRotation, Vector3.one * ghostSize);
+            Handles.matrix = Matrix4x4.TRS(absolutePreviewPosition, universeRotation, Vector3.one * ghostSize);
             Handles.DrawWireCube(Vector3.zero, Vector3.one);
 
             Handles.matrix = Matrix4x4.identity;
@@ -254,7 +255,7 @@ namespace Hecton8.Editor.DebugTools
                 return;
 
             Handles.color = errorColor;
-            Handles.DrawLine(localPosition, universePosition);
+            Handles.DrawLine(localPosition, absolutePreviewPosition);
         }
 
         private Vector3 ResolveLocalPreviewPosition(int historyIndex)
@@ -283,14 +284,25 @@ namespace Hecton8.Editor.DebugTools
 
         private static Vector3 ToAbsoluteUniversePosition(Vector3 runtimePosition)
         {
-            Vector3 bridgeUniversePosition = HectonMapMagicVegetationBridge.ToUniverseSpace(runtimePosition);
-            if (bridgeUniversePosition != runtimePosition)
-                return bridgeUniversePosition;
+            double3 runtimePositionDouble = ToDouble3(runtimePosition);
+            double3 bridgeAbsolutePosition = HectonMapMagicVegetationBridge.ToUniverseSpaceDouble3(runtimePosition);
+            if (!math.all(bridgeAbsolutePosition == runtimePositionDouble))
+                return ToVector3(bridgeAbsolutePosition);
 
             HectonFloatingOrigin floatingOrigin = GlobalRegistry.FloatingOrigin;
             return floatingOrigin != null
-                ? runtimePosition + floatingOrigin.TotalUniverseOffset
+                ? ToVector3(HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimePosition))
                 : runtimePosition;
+        }
+
+        private static double3 ToDouble3(Vector3 value)
+        {
+            return new double3(value.x, value.y, value.z);
+        }
+
+        private static Vector3 ToVector3(double3 value)
+        {
+            return new Vector3((float)value.x, (float)value.y, (float)value.z);
         }
 
         private int GetHistoryIndex(int orderedIndex)

@@ -1,7 +1,7 @@
 # AUP Drift Report
 
 Agent: ARCHITECTURAL_AUP_INTEGRITY_AUDITOR
-Status: VERIFIED AUP INTEGRITY - CORE BUILD PASS; ASMDEF BLOCKED BY ARCHITECTURE
+Status: VERIFIED AUP INTEGRITY - LOOP 25 QUALIFIED AUP H-PHI RISK SCAN CLEAN; CORE BUILD NOT RERUN PER USER; ASMDEF BLOCKED BY ARCHITECTURE
 
 ## Authority
 
@@ -409,3 +409,32 @@ Status: VERIFIED AUP INTEGRITY - CORE BUILD PASS; ASMDEF BLOCKED BY ARCHITECTURE
 
 - `Tools/Architecture/HectonPhiAudit.ps1` needs a future performance pass before full-source H-Phi can be treated as a fast CI/static gate.
 - A separate PowerShell process from another command was observed running a H-Phi summary write; it was not killed because process ownership was ambiguous in this multi-agent workspace.
+
+## Loop 25 Qualified AUP H-Phi Risk Cleanup
+
+### Findings
+
+- The qualified AUP H-Phi risk scan still found one real legacy vegetation bridge call in editor/debug code.
+- It also counted internal double-precision job fields named `CurrentTotalOffset` and public wrapper parameter names as legacy-risk text.
+
+### Code Changes
+
+- `KinematicGhostDebugger`: changed the ghost preview AUP bridge to use `HectonMapMagicVegetationBridge.ToUniverseSpaceDouble3` and fallback through `HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3` before final `Vector3` editor drawing.
+- `HectonFloatingOrigin.AupDriftCheckJob`: renamed `CurrentTotalOffset` to `CommittedTotalOffset`.
+- `WorldSpatialHashGrid.ValidateAupIntegrityJob`: renamed `CurrentTotalOffset` to `CommittedTotalOffset`.
+- `HectonMapMagicVegetationBridge`: renamed `Vector3 universePosition` wrapper parameters to `stableUniversePosition`.
+
+### Verification
+
+- Prompt extraction from `Docs/Tasks/CURRENT_BATCH.md` still returns `PROMPT_NOT_FOUND`; user-supplied XML remains authoritative.
+- Qualified AUP H-Phi risk scan returns `NO_MATCHES` across `Assets/_Project/Scripts`.
+- Direct committed-offset leak scan returns `NO_MATCHES`.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` was re-run. Residual hits remain broad `universe` text and final-cast fluid/scatter/shader payload names.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json` completed successfully.
+- `git diff --check` on the Loop 25 touched files reports line-ending warnings only, no whitespace errors.
+- No `dotnet build` or rebuild was run in Loop 25 because the latest user instruction explicitly forbids rebuilds.
+
+### Evidence Queue
+
+- Unity import/Console verification remains pending because no Unity editor session is available.
+- Full `HectonPhiAudit.ps1 -Summary -Json` remains pending due the Loop 24 full source scan timeout.

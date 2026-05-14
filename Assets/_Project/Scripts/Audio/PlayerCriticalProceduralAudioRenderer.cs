@@ -57,7 +57,7 @@ namespace Hecton8.Audio
     [DisallowMultipleComponent]
     [RequireComponent(typeof(AudioListener))]
     [RequireComponent(typeof(AudioReverbFilter))]
-    public sealed class PlayerCriticalProceduralAudioRenderer : MonoBehaviour, ITickable, ISlowTickable, ILateFrameTickable, IUpdatable, IProceduralAudioEventListener, IPhysicsImpactEventListener, IPhysicsAcousticImpulseEventListener, ISonarPingEventListener, IAcousticEchoEventListener, ILaserCutterEventListener
+    public sealed class PlayerCriticalProceduralAudioRenderer : MonoBehaviour, ITickable, ISlowTickable, ILateFrameTickable, IUpdatable, IProceduralAudioEventListener, IPhysicsImpactEventListener, IPhysicsAcousticImpulseEventListener, ISonarPingEventListener, IAcousticEchoEventListener, ILaserCutterEventListener, IScalabilityChangedEventListener
     {
         private const float TwoPi = 6.28318530718f;
         private const float InvTwoPi = 0.15915494309f;
@@ -92,7 +92,7 @@ namespace Hecton8.Audio
         private const int KineticImpactSignalScanLimit = 32;
         private const int KineticImpactDuplicateHistoryCapacity = 8;
         private const int KineticImpactDuplicateHistoryMask = KineticImpactDuplicateHistoryCapacity - 1;
-        private const int KineticImpactQualityPolicyRefreshFrames = 30;
+        private const int AudioQualityPolicyUninitializedFrame = -4096;
         private const int AudioServiceLookupRetryFrames = 30;
         private const int TransportCoordinatorLookupRetryFrames = 30;
         private const int SonarTriggerFlagKineticImpactEcho = 1 << 0;
@@ -769,7 +769,7 @@ namespace Hecton8.Audio
         // COLD ALLOC: HighSpeedImpactDuplicateEntry[8] - same-frame kinetic packet dedupe ring - owner: PlayerCriticalProceduralAudioRenderer
         private readonly HighSpeedImpactDuplicateEntry[] _recentHighSpeedImpactSignals = new HighSpeedImpactDuplicateEntry[KineticImpactDuplicateHistoryCapacity];
         private int _recentHighSpeedImpactSignalCursor;
-        private int _audioQualityPolicyFrame = -4096;
+        private int _audioQualityPolicyFrame = AudioQualityPolicyUninitializedFrame;
         private HectonQualityTier _cachedScalabilityTier = HectonQualityTier.Unknown;
         private HectonQualityTier _cachedQualityTier = HectonQualityTier.Unknown;
         private bool _cachedLowMemoryProfile;
@@ -784,6 +784,7 @@ namespace Hecton8.Audio
         private bool _registered;
         private bool _slowTickRegistered;
         private bool _lateFrameRegistered;
+        private bool _scalabilityEventsRegistered;
         private int _playerContextLookupFrame = -4096;
         private int _ecosystemDirectorLookupFrame = -4096;
         private int _structuralHullLookupFrame = -4096;
@@ -1657,6 +1658,8 @@ namespace Hecton8.Audio
 
             AcousticOcclusionUtility.AcquireRuntime();
             AudioSettings.OnAudioConfigurationChanged += HandleAudioConfigurationChanged;
+            RefreshAudioQualityPolicyCold();
+            TryRegisterScalabilityEvents();
             PhysicsEvents.Register(this);
             PhysicsEventBus.Register(this);
             ProceduralAudioEvents.Register(this);
@@ -1670,6 +1673,7 @@ namespace Hecton8.Audio
 
         private void OnDisable()
         {
+            TryUnregisterScalabilityEvents();
             LaserCutterEvents.Unregister(this);
             SpectrumEvents.UnregisterAcousticEchoListener(this);
             SpectrumEvents.UnregisterSonarPingListener(this);
@@ -1704,6 +1708,7 @@ namespace Hecton8.Audio
 
         private void OnDestroy()
         {
+            TryUnregisterScalabilityEvents();
             LaserCutterEvents.Unregister(this);
             PhysicsEventBus.Unregister(this);
             SpectrumEvents.UnregisterAcousticEchoListener(this);
@@ -1909,7 +1914,7 @@ namespace Hecton8.Audio
                 return;
 
             TryBindFromBootstrap();
-            RefreshAudioQualityPolicyIfStale(Time.frameCount);
+            EnsureAudioQualityPolicyCached();
             UpdateCaveReverb(deltaTime);
 
             if (playerMovement == null || _playerRigidbody == null)
@@ -2072,6 +2077,15 @@ namespace Hecton8.Audio
             FlushGranularTelemetryDumpRequest();
             FlushPrologueTransitionTelemetryDumpRequest();
             PublishAudioSpatializationBlackBoxFrame();
+        }
+
+        public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
+        {
+            CacheAudioQualityPolicy(
+                payload.CurrentQualityTier,
+                _cachedQualityTier,
+                _cachedLowMemoryProfile,
+                Time.frameCount);
         }
 
         private void StartAudioProducerThread()
@@ -2693,7 +2707,7 @@ namespace Hecton8.Audio
 
         private ReverbDspTier ResolveReverbDspTier()
         {
-            RefreshAudioQualityPolicyIfStale(Time.frameCount);
+            EnsureAudioQualityPolicyCached();
             HectonQualityTier qualityTier = _cachedQualityTier;
             if (qualityTier == HectonQualityTier.High ||
                 qualityTier == HectonQualityTier.Ultra)
@@ -3245,29 +3259,45 @@ namespace Hecton8.Audio
 
         private bool IsLowTierKineticImpactFallback()
         {
-            RefreshKineticImpactQualityPolicyIfStale(Time.frameCount);
+            EnsureKineticImpactQualityPolicyCached();
             return _kineticImpactLowTierFallback;
         }
 
-        private void RefreshKineticImpactQualityPolicyIfStale(int frame)
+        private void EnsureKineticImpactQualityPolicyCached()
         {
-            RefreshAudioQualityPolicyIfStale(frame);
+            EnsureAudioQualityPolicyCached();
         }
 
-        private void RefreshAudioQualityPolicyIfStale(int frame)
+        private void EnsureAudioQualityPolicyCached()
         {
-            if (frame < _audioQualityPolicyFrame ||
-                frame - _audioQualityPolicyFrame >= KineticImpactQualityPolicyRefreshFrames)
-            {
-                RefreshAudioQualityPolicy(frame);
-            }
+            if (_audioQualityPolicyFrame >= 0)
+                return;
+
+            CacheAudioQualityPolicy(
+                HectonQualityTier.Unknown,
+                HectonQualityTier.Unknown,
+                lowMemoryProfile: true,
+                Time.frameCount);
         }
 
-        private void RefreshAudioQualityPolicy(int frame)
+        private void RefreshAudioQualityPolicyCold()
         {
-            _cachedScalabilityTier = GlobalRegistry.ScalabilityTier;
-            _cachedQualityTier = GlobalRegistry.QualityTier;
-            _cachedLowMemoryProfile = GlobalRegistry.H8_LOW_MEMORY_PROFILE;
+            CacheAudioQualityPolicy(
+                GlobalRegistry.ScalabilityTier,
+                GlobalRegistry.QualityTier,
+                GlobalRegistry.H8_LOW_MEMORY_PROFILE,
+                Time.frameCount);
+        }
+
+        private void CacheAudioQualityPolicy(
+            HectonQualityTier scalabilityTier,
+            HectonQualityTier qualityTier,
+            bool lowMemoryProfile,
+            int frame)
+        {
+            _cachedScalabilityTier = scalabilityTier;
+            _cachedQualityTier = qualityTier;
+            _cachedLowMemoryProfile = lowMemoryProfile;
             _audioQualityPolicyFrame = frame;
 
             HectonQualityTier tier = _cachedScalabilityTier;
@@ -3276,6 +3306,24 @@ namespace Hecton8.Audio
                 tier == HectonQualityTier.Low ||
                 tier == HectonQualityTier.Mx350 ||
                 tier == HectonQualityTier.Unknown;
+        }
+
+        private void TryRegisterScalabilityEvents()
+        {
+            if (_scalabilityEventsRegistered || !Application.isPlaying)
+                return;
+
+            ScalabilityEvents.Register(this);
+            _scalabilityEventsRegistered = true;
+        }
+
+        private void TryUnregisterScalabilityEvents()
+        {
+            if (!_scalabilityEventsRegistered)
+                return;
+
+            ScalabilityEvents.Unregister(this);
+            _scalabilityEventsRegistered = false;
         }
 
         private bool TryQueueLowTierKineticImpactClip(Vector3 runtimePosition, float energy01, float proximity)
@@ -4095,7 +4143,7 @@ namespace Hecton8.Audio
 
         private int ResolveSonarSdfProbeCount()
         {
-            RefreshAudioQualityPolicyIfStale(Time.frameCount);
+            EnsureAudioQualityPolicyCached();
             switch (_cachedScalabilityTier)
             {
                 case HectonQualityTier.Low:

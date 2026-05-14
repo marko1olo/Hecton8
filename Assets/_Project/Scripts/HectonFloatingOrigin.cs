@@ -49,13 +49,13 @@ namespace Hecton8.Core
         {
             [ReadOnly] public NativeArray<double3> RuntimePositions;
             [ReadOnly] public NativeArray<double3> TrackedAbsolutePositions;
-            public double3 CurrentTotalOffset;
+            public double3 CommittedTotalOffset;
             public double MaxDeltaSq;
             [WriteOnly] public NativeArray<byte> InvalidMask;
 
             public void Execute(int index)
             {
-                double3 expectedRuntime = TrackedAbsolutePositions[index] - CurrentTotalOffset;
+                double3 expectedRuntime = TrackedAbsolutePositions[index] - CommittedTotalOffset;
                 double3 delta = expectedRuntime - RuntimePositions[index];
                 bool finite =
                     math.all(math.isfinite(expectedRuntime)) &&
@@ -1260,7 +1260,7 @@ namespace Hecton8.Core
             {
                 RuntimePositions = _driftCheckRuntimePositions,
                 TrackedAbsolutePositions = _driftCheckAbsolutePositions,
-                CurrentTotalOffset = _totalOffsetDouble,
+                CommittedTotalOffset = _totalOffsetDouble,
                 MaxDeltaSq = DriftCheckThresholdSq,
                 InvalidMask = _driftCheckInvalidMask
             }.Schedule(writeIndex, 1);

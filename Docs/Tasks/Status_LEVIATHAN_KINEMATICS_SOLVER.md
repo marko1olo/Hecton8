@@ -219,3 +219,36 @@ Batch source: Docs/Tasks/CURRENT_BATCH.md
 - Static grep over IK runtime/job/shader scope still found no `math.sqrt`, `math.normalize`, managed array creation, `foreach`, `string.Format`, `.ToString()`, `Debug.Log`, Unity Physics casts, `SkinnedMeshRenderer`, `renderer.material`, `Camera.main`, `GlobalRegistry.Get`, `GameObject.Find`, or `FindObject`.
 - `git diff --check` and `git diff --cached --check` on touched code/docs exit 0; output is only LF-to-CRLF warnings on docs.
 - No `dotnet` rebuild, compile, or response-file probe was run.
+
+### Loop 21: Runtime Finite Boundary Recheck
+
+- Removed dead `_strikeRange` state from the runtime-owned Burst path.
+- Hardened runtime float boundaries before scheduling: invalid delta-time skips scheduling, seed scale values are finite, fallback intent uses sanitized segment length, strike targets/tail duration are finite, attack telegraph clamps NaN to zero, and origin-shift targets/matrix translation get finite fallbacks.
+- DOD: invalid caller/inspector floats cannot poison cold seeding, fallback intent, strike target state, or AUP matrix rebasing before Burst-side sanitizers execute.
+- Alternative Rejected: relying only on Burst job sanitizers because lifecycle seeding and origin-shift rebasing also write GPU matrices outside the scheduled job.
+- Estimate: under 0.2 us on normal scheduling frames; cold/lifecycle branches only for seed/shift. No profiler-backed claim.
+- Static grep over IK runtime/job/shader scope still found no `math.sqrt`, `math.normalize`, managed array creation, `foreach`, `string.Format`, `.ToString()`, `Debug.Log`, Unity Physics casts, `SkinnedMeshRenderer`, `renderer.material`, `Camera.main`, `GlobalRegistry.Get`, `GameObject.Find`, or `FindObject`.
+- `rg` confirms no remaining `_strikeRange`, `PhaseTimeSeconds`, or `_solverTimeSeconds` references in the IK runtime/job scope.
+- `git diff --check` and `git diff --cached --check` on touched code/docs exit 0; output is only LF-to-CRLF warnings on touched runtime/docs files.
+- No `dotnet` rebuild, compile, or response-file probe was run.
+
+### Loop 22: Origin-Shift Completion And SDF Normal Recheck
+
+- Added frame-index advance and invalid-telemetry dump when `OnOriginShift` finalizes an already-completed solver job before LateFrame consumes it.
+- Corrected SDF central-difference gradient direction by scaling each axis delta by the reciprocal sample step.
+- DOD: completed solver jobs keep blackbox/frame bookkeeping even when an AUP shift interrupts the normal late-frame path, and anisotropic SDF cells produce correctly scaled terrain push normals.
+- Alternative Rejected: relying on LateFrame only because origin shift can legally consume a completed job first; unscaled SDF gradients were rejected because non-uniform voxel cells bias contact normals.
+- Estimate: 0 us on normal late-frame path; origin-shift parity is cold-path only. SDF gradient adds three reciprocal/multiply components on high-tier contact frames, estimated under 0.1 us.
+- Static grep over IK runtime/job/shader scope still found no `math.sqrt`, `math.normalize`, managed array creation, `foreach`, `string.Format`, `.ToString()`, `Debug.Log`, Unity Physics casts, `SkinnedMeshRenderer`, `renderer.material`, `Camera.main`, `GlobalRegistry.Get`, `GameObject.Find`, or `FindObject`.
+- `git diff --check` and `git diff --cached --check` on touched code/docs exit 0; output is only LF-to-CRLF warnings on touched runtime/docs files.
+- No `dotnet` rebuild, compile, or response-file probe was run.
+
+### Loop 23: Dispatcher Registration Repair Recheck
+
+- Updated `TryRegister()` to repair partial update/late-frame registration state before retrying.
+- DOD: the runtime cannot remain in a one-sided dispatcher registration state if an external lifecycle edge clears only one registration path.
+- Alternative Rejected: returning when `_registeredUpdate` is true because that preserves stale partial state and can strand GPU upload/telemetry completion.
+- Estimate: 0 us hot path; cold enable/rebind registration only.
+- Static grep over IK runtime/job/shader scope still found no `math.sqrt`, `math.normalize`, managed array creation, `foreach`, `string.Format`, `.ToString()`, `Debug.Log`, Unity Physics casts, `SkinnedMeshRenderer`, `renderer.material`, `Camera.main`, `GlobalRegistry.Get`, `GameObject.Find`, or `FindObject`.
+- `git diff --check` and `git diff --cached --check` on touched code/docs exit 0; output is only LF-to-CRLF warnings on touched runtime/docs files.
+- No `dotnet` rebuild, compile, or response-file probe was run.

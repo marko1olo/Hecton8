@@ -200,6 +200,7 @@ namespace Hecton8.UI.VR
             UpdateIkTarget(dt);
             EmitRatchetHaptic(currentAngle);
             TryLatch(currentAngle);
+            currentAngle = _leverAngles[0];
             WriteBlackBoxFrame(currentAngle);
         }
 
@@ -408,6 +409,9 @@ namespace Hecton8.UI.VR
 
             if (emitPrologueComplete)
                 PublishPrologueCompleteSignal();
+
+            TryUnregisterReceiver();
+            TryUnregisterTick();
         }
 
         private void PublishManualOverrideSignal(float latchVelocityDegreesPerSecond)
@@ -741,7 +745,7 @@ namespace Hecton8.UI.VR
 
         private void TryRegisterReceiver()
         {
-            if (_receiverRegistered || activationVolume == null || !Application.isPlaying)
+            if (_receiverRegistered || _latched || activationVolume == null || !Application.isPlaying)
                 return;
 
             if (!PhysicalHandReceiverRegistry.TryRegister(activationVolume, this))
@@ -763,7 +767,7 @@ namespace Hecton8.UI.VR
 
         private void TryRegisterTick()
         {
-            if (_registeredTick || !_nativeAllocated || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (_registeredTick || _latched || !_nativeAllocated || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);

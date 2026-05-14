@@ -34,6 +34,61 @@ Verification:
 
 STATUS: AUDIT COMPLETE.
 
+## 2026-05-15 - Root Brief Preservation
+
+What was wrong:
+- The complete compute report was detailed but buried under `Docs/Reports`.
+- The user requested concise hard facts closer to the root so future agents do not lose the audit state.
+
+What was done:
+- Created `COMPUTE_AUDIT_BRIEF.md` at project root.
+- Recorded the latest hard numbers: LOC, total tokens, cached input, cache-aware cost, no-cache equivalent, token flow rates, tokens per LOC, tokens per byte, and energy estimate.
+- Added evidence rules: no `last_token_usage` overcount, no double-counted reasoning output, no invoice claim, no proven H-Phi/token correlation, no proven Compute Thief convictions.
+- Linked the full report, status, rationale, and log files.
+
+Cinematic Cheats used:
+- None.
+
+Exact microseconds saved:
+- Runtime: 0 us.
+- Process: not claimed.
+
+Verification:
+- Markdown-only root preservation. Compile not run.
+
+STATUS: AUDIT COMPLETE.
+
+## 2026-05-15 - Cache-Aware Throughput Reprice
+
+What was wrong:
+- The earlier bill used the prompt's synthetic GPT-5.5 Spud constants and a zero-cost cached-input floor.
+- The user requested actual token flow rates and cache-aware pricing.
+- Repeated JSONL telemetry snapshots are still a trap: summing every usage event overcounts.
+
+What was done:
+- Re-read Status/Rationale before continuing.
+- Verified current OpenAI standard API pricing from official OpenAI pricing/model pages.
+- Ran a 348.7s JSONL positive-delta pass over `.codex`.
+- Latest JSONL final usage: 43,778,987,916 total tokens; 43,630,634,851 input; 41,886,807,040 cached input; 148,094,665 output.
+- Measured throughput: whole-period 12,291.36 tokens/sec, 737,481.59/min, 44,248,895.33/hour, 1,061,973,487.91/day.
+- Measured recent throughput: last 1h 92,800.69 tokens/sec; last 6h 61,645.10 tokens/sec; last 24h 28,037.81 tokens/sec.
+- Calculated cache-aware cost: USD 29,135.37. No-cache equivalent: USD 191,832.08. Cache avoided: USD 162,696.72, or 84.812%.
+- Calculated code ratios: 1,055.433 tokens per script source byte, 56,457.33 tokens per meaningful LOC, USD 0.037573 per meaningful LOC, USD 736.52 per script source MiB.
+- Updated `Docs/Reports/COMPUTE_DOMINANCE_REPORT.md`, `Docs/Tasks/Status_COMPUTE_LOGISTICS_AUDITOR.md`, and `Docs/AgentLogs/Rationale_COMPUTE_LOGISTICS_AUDITOR.md`.
+
+Cinematic Cheats used:
+- None.
+
+Exact microseconds saved:
+- Runtime: 0 us.
+- Process: not claimed.
+
+Verification:
+- Markdown report updated by `apply_patch`.
+- Compile not run; markdown-only audit continuation.
+
+STATUS: AUDIT COMPLETE.
+
 ## 2026-05-15 - Continuation Addendum
 
 What was wrong:

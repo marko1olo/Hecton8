@@ -264,6 +264,7 @@ namespace Hecton8.VFX.Debris
             if (_gpuReady && IsGpuStateValid())
                 return true;
 
+            _gpuReady = false;
             if (fluidAdvectionCompute == null)
                 return false;
 

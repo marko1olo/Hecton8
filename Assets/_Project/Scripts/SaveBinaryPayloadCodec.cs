@@ -1458,14 +1458,29 @@ namespace Hecton8.SaveSystem
 
         private static bool WriteWorldState(ref BufferWriter writer, WorldStateDTO value)
         {
-            return writer.WriteInt(value.depletedCount)
-                && WriteStringArray(ref writer, value.depletedNodeIds)
-                && writer.WriteInt(value.depletedPickupChunkCount)
-                && writer.WriteStructArray(value.depletedPickupChunkKeys)
-                && writer.WriteStructArray(value.depletedPickupChunkWordStarts)
-                && writer.WriteStructArray(value.depletedPickupChunkWordCounts)
-                && writer.WriteInt(value.depletedPickupWordCount)
-                && writer.WriteStructArray(value.depletedPickupWords);
+            int depletedNodeCount = ClampCollectionCount(
+                value.depletedCount,
+                value.depletedNodeIds,
+                WorldStateDTO.MaxNodes);
+            int pickupChunkCount = ClampPairedCollectionCount(
+                value.depletedPickupChunkCount,
+                WorldStateDTO.MaxPickupChunks,
+                value.depletedPickupChunkKeys,
+                value.depletedPickupChunkWordStarts,
+                value.depletedPickupChunkWordCounts);
+            int pickupWordCount = ClampCollectionCount(
+                value.depletedPickupWordCount,
+                value.depletedPickupWords,
+                WorldStateDTO.MaxPickupWords);
+
+            return writer.WriteInt(depletedNodeCount)
+                && WriteStringArraySlice(ref writer, value.depletedNodeIds, depletedNodeCount, WorldStateDTO.MaxNodes)
+                && writer.WriteInt(pickupChunkCount)
+                && writer.WriteStructArraySlice(value.depletedPickupChunkKeys, pickupChunkCount)
+                && writer.WriteStructArraySlice(value.depletedPickupChunkWordStarts, pickupChunkCount)
+                && writer.WriteStructArraySlice(value.depletedPickupChunkWordCounts, pickupChunkCount)
+                && writer.WriteInt(pickupWordCount)
+                && writer.WriteStructArraySlice(value.depletedPickupWords, pickupWordCount);
         }
 
         private static bool ReadWorldState(ref BufferReader reader, out WorldStateDTO value)
@@ -1784,13 +1799,18 @@ namespace Hecton8.SaveSystem
 
         private static bool WriteConstruction(ref BufferWriter writer, ConstructionDTO value)
         {
-            return writer.WriteInt(value.moduleCount)
-                && WriteModuleArray(ref writer, value.modules)
-                && writer.WriteInt(value.graphNodeCount)
-                && WriteModuleGraphNodeArray(ref writer, value.graphNodes)
-                && writer.WriteInt(value.graphEdgeCount)
-                && WriteModuleGraphEdgeArray(ref writer, value.graphEdges)
-                && writer.WriteStructArraySlice(value.moduleBlitRecords, value.moduleBlitCount);
+            int moduleCount = ClampCollectionCount(value.moduleCount, value.modules, ConstructionDTO.MaxModules);
+            int graphNodeCount = ClampCollectionCount(value.graphNodeCount, value.graphNodes, ConstructionDTO.MaxModules);
+            int graphEdgeCount = ClampCollectionCount(value.graphEdgeCount, value.graphEdges, ConstructionDTO.MaxGraphEdges);
+            int moduleBlitCount = ClampCollectionCount(value.moduleBlitCount, value.moduleBlitRecords, ConstructionDTO.MaxModules);
+
+            return writer.WriteInt(moduleCount)
+                && WriteModuleArray(ref writer, value.modules, moduleCount)
+                && writer.WriteInt(graphNodeCount)
+                && WriteModuleGraphNodeArray(ref writer, value.graphNodes, graphNodeCount)
+                && writer.WriteInt(graphEdgeCount)
+                && WriteModuleGraphEdgeArray(ref writer, value.graphEdges, graphEdgeCount)
+                && writer.WriteStructArraySlice(value.moduleBlitRecords, moduleBlitCount);
         }
 
         private static bool ReadConstruction(ref BufferReader reader, int version, out ConstructionDTO value)
@@ -1837,10 +1857,13 @@ namespace Hecton8.SaveSystem
 
         private static bool WriteScanLog(ref BufferWriter writer, ScanLogDTO value)
         {
-            return writer.WriteInt(value.entryCount)
-                && WriteScanEntryArray(ref writer, value.entries)
-                && writer.WriteInt(value.recentCount)
-                && WriteStringArray(ref writer, value.recentEntryIds);
+            int entryCount = ClampCollectionCount(value.entryCount, value.entries, ScanLogDTO.MaxEntries);
+            int recentCount = ClampCollectionCount(value.recentCount, value.recentEntryIds, ScanLogDTO.MaxRecentEntries);
+
+            return writer.WriteInt(entryCount)
+                && WriteScanEntryArray(ref writer, value.entries, entryCount)
+                && writer.WriteInt(recentCount)
+                && WriteStringArraySlice(ref writer, value.recentEntryIds, recentCount, ScanLogDTO.MaxRecentEntries);
         }
 
         private static bool ReadScanLog(ref BufferReader reader, out ScanLogDTO value)
@@ -1858,10 +1881,16 @@ namespace Hecton8.SaveSystem
 
         private static bool WriteBarter(ref BufferWriter writer, BarterDTO value)
         {
-            return writer.WriteInt(value.stateCount)
-                && WriteBarterOfferStateArray(ref writer, value.offerStates)
-                && writer.WriteInt(value.recentTransactionCount)
-                && WriteBarterTransactionArray(ref writer, value.recentTransactions);
+            int stateCount = ClampCollectionCount(value.stateCount, value.offerStates, BarterDTO.MaxOffers);
+            int transactionCount = ClampCollectionCount(
+                value.recentTransactionCount,
+                value.recentTransactions,
+                BarterDTO.MaxRecentTransactions);
+
+            return writer.WriteInt(stateCount)
+                && WriteBarterOfferStateArray(ref writer, value.offerStates, stateCount)
+                && writer.WriteInt(transactionCount)
+                && WriteBarterTransactionArray(ref writer, value.recentTransactions, transactionCount);
         }
 
         private static bool ReadBarter(ref BufferReader reader, out BarterDTO value)
@@ -1875,8 +1904,13 @@ namespace Hecton8.SaveSystem
 
         private static bool WriteFieldOperationLog(ref BufferWriter writer, FieldOperationLogDTO value)
         {
-            return writer.WriteInt(value.recentCount)
-                && WriteFieldOperationEntryArray(ref writer, value.recentEntries);
+            int recentCount = ClampCollectionCount(
+                value.recentCount,
+                value.recentEntries,
+                FieldOperationLogDTO.MaxRecentEntries);
+
+            return writer.WriteInt(recentCount)
+                && WriteFieldOperationEntryArray(ref writer, value.recentEntries, recentCount);
         }
 
         private static bool ReadFieldOperationLog(ref BufferReader reader, out FieldOperationLogDTO value)
@@ -1888,9 +1922,11 @@ namespace Hecton8.SaveSystem
 
         private static bool WriteBeaconNetwork(ref BufferWriter writer, BeaconNetworkDTO value)
         {
-            return writer.WriteInt(value.activeCount)
+            int activeCount = ClampCollectionCount(value.activeCount, value.entries, BeaconNetworkDTO.MaxEntries);
+
+            return writer.WriteInt(activeCount)
                 && writer.WriteInt(value.nextSequence)
-                && WriteBeaconEntryArray(ref writer, value.entries);
+                && WriteBeaconEntryArray(ref writer, value.entries, activeCount);
         }
 
         private static bool ReadBeaconNetwork(ref BufferReader reader, out BeaconNetworkDTO value)
@@ -2960,6 +2996,24 @@ namespace Hecton8.SaveSystem
             return true;
         }
 
+        private static bool WriteStringArraySlice(ref BufferWriter writer, string[] values, int count, int maxCount)
+        {
+            if (values == null)
+                return writer.WriteInt(NullCollectionCount);
+
+            int safeCount = ClampCollectionCount(count, values, maxCount);
+            if (!writer.WriteInt(safeCount))
+                return false;
+
+            for (int i = 0; i < safeCount; i++)
+            {
+                if (!writer.WriteString(values[i]))
+                    return false;
+            }
+
+            return true;
+        }
+
         private static bool ReadStringArray(ref BufferReader reader, out string[] values)
         {
             return ReadStringArray(ref reader, out values, int.MaxValue, "String array");
@@ -3307,13 +3361,24 @@ namespace Hecton8.SaveSystem
         private static bool WriteCustomArray<T>(ref BufferWriter writer, T[] values, WriteItemDelegate<T> writeItem)
         {
             int count = values != null ? values.Length : NullCollectionCount;
-            if (!writer.WriteInt(count))
+            return WriteCustomArraySlice(ref writer, values, count, values != null ? values.Length : 0, writeItem);
+        }
+
+        private static bool WriteCustomArraySlice<T>(
+            ref BufferWriter writer,
+            T[] values,
+            int count,
+            int maxCount,
+            WriteItemDelegate<T> writeItem)
+        {
+            if (values == null)
+                return writer.WriteInt(NullCollectionCount);
+
+            int safeCount = ClampCollectionCount(count, values, maxCount);
+            if (!writer.WriteInt(safeCount))
                 return false;
 
-            if (values == null)
-                return true;
-
-            for (int i = 0; i < values.Length; i++)
+            for (int i = 0; i < safeCount; i++)
             {
                 if (!writeItem(ref writer, values[i]))
                     return false;

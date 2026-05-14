@@ -2302,15 +2302,15 @@ namespace Hecton8.World
         }
 
         /// <summary>Converts stable universe coordinates into current runtime-local coordinates.</summary>
-        public static Vector3 ToRuntimeSpace(Vector3 universePosition) => ToVector3(ToRuntimeSpaceDouble3(universePosition));
+        public static Vector3 ToRuntimeSpace(Vector3 stableUniversePosition) => ToVector3(ToRuntimeSpaceDouble3(stableUniversePosition));
 
         /// <summary>Converts stable universe coordinates into current runtime-local coordinates.</summary>
         public static Vector3 ToRuntimeSpace(double3 universePosition) => ToVector3(ToRuntimeSpaceDouble3(universePosition));
 
         /// <summary>Converts stable universe coordinates into current runtime-local coordinates without reducing the bridge offset to float first.</summary>
-        public static double3 ToRuntimeSpaceDouble3(Vector3 universePosition)
+        public static double3 ToRuntimeSpaceDouble3(Vector3 stableUniversePosition)
         {
-            return ToRuntimeSpaceDouble3(ToDouble3(universePosition));
+            return ToRuntimeSpaceDouble3(ToDouble3(stableUniversePosition));
         }
 
         /// <summary>Converts stable universe coordinates into current runtime-local coordinates without reducing the bridge offset to float first.</summary>

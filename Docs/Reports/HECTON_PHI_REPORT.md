@@ -617,3 +617,99 @@ Verification:
 - `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json`: completed at local timestamp `2026-05-15 01:56:47 +04:00`.
 - `git diff --check -- Tools/Architecture/HectonPhiAudit.ps1`: no whitespace errors; LF/CRLF warning only.
 - Runtime H-Phi remains `PENDING VERIFICATION` until Unity Console, PlayMode, Profiler, and GCMonitor evidence exist.
+
+## 2026-05-15 Live Addendum 10
+
+Evidence class: `STATIC_SOURCE`.
+
+User constraint for this pass: no `dotnet build` and no rebuild.
+
+What changed:
+- Tested lexical comment/string scrubbing for H-Phi false-positive control.
+- The scrubbed full scan exceeded a 420-second cap twice, so the scrubber is not enabled by default.
+- Gated lexical scrubbing behind explicit `-LexicalScrub`.
+- Restored the default full `-Summary` path to a completed static scan.
+- No gameplay code, tick cadence, job scheduling, buffer ownership, or signal dispatch was changed in this pass.
+
+Current runtime static scores:
+
+| Coefficient | Score |
+|---|---:|
+| Narrow integration | 1.000000000 |
+| Risk-adjusted integration | 0.054111842 |
+| Architectural purity | 0.994699647 |
+| Data sovereignty | 0.021062910 |
+| Memory alignment | 0.502645503 |
+| Binary-safe ratio | 0.018518519 |
+| AUP precision integrity | 0.983739837 |
+| H-Phi runtime static narrow | 0.010531061 |
+| H-Phi runtime static risk-adjusted | 0.000560589 |
+
+Current runtime counts:
+
+| Counter | Value |
+|---|---:|
+| Runtime C# files | 1,276 |
+| Runtime source lines | 858,720 |
+| Typed/queued signal push surface | 329 |
+| Legacy/direct event publish surface | 28 |
+| `GlobalRegistry.` surface refs | 5,144 |
+| Unity `Update`/`LateUpdate`/`FixedUpdate` method declarations | 3 |
+| DataVault access surface refs | 151 |
+| `NativeArray<T>` refs | 7,018 |
+| Struct declarations | 1,890 |
+| `StructLayout(...)` attrs | 950 |
+| Runtime `Find*` calls | 5 |
+| Runtime `GetComponent*` calls | 541 |
+| `.Dispose(...)` calls | 1,251 |
+| AUP precision safe refs | 363 |
+| AUP precision risk refs | 6 |
+
+Comparison:
+- Previous runtime static narrow score: `0.009377979`.
+- Current runtime static narrow score: `0.010531061`.
+- Previous runtime static risk-adjusted score: `0.000505917`.
+- Current runtime static risk-adjusted score: `0.000560589`.
+- Compared with original dialogue baseline `0.00062`, current runtime static narrow is about `+1598.56%`.
+- Score movement includes concurrent workspace changes and static model changes; it is not runtime profiler evidence.
+
+Residual bottlenecks:
+- Data Sovereignty remains the hard floor: `151 / (151 + 7,018) = 0.021062910`.
+- Core graph debt remains: Core asmdef debt references `25`, generated project debt references `10`, source-backed bridge debt references `21`.
+- AUP precision risk remains low but nonzero: `6` risk refs.
+- Owner-blocked NativeArray migrations still require domain-owner BufferID/SystemID/generation/disposal proof before code migration.
+- Runtime verification remains absent by user order.
+
+Verification:
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json`: completed at local timestamp `2026-05-15 02:52:34 +04:00`.
+- `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json`: completed at local timestamp `2026-05-15 02:55:39 +04:00`.
+- `git diff --check -- Tools/Architecture/HectonPhiAudit.ps1`: no whitespace errors; LF/CRLF warning only.
+- Runtime H-Phi remains `PENDING VERIFICATION` until Unity Console, PlayMode, Profiler, and GCMonitor evidence exist.
+
+## 2026-05-15 CORE_RESONANCE_ORCHESTRATOR Addendum
+
+Evidence class: `STATIC_SOURCE / CORE_GRAPH_SLICE`.
+
+Command results:
+- `Tools/Architecture/HectonPhiAudit.ps1 -Summary`: timed out after 600 seconds.
+- `Tools/Architecture/HectonPhiAudit.ps1 -Summary -CoreGraphOnly`: completed at local timestamp `2026-05-15 03:02:14 +04:00`.
+
+Core graph counts:
+
+| Counter | Value |
+|---|---:|
+| Core asmdef references | 43 |
+| Core asmdef H-Phi debt references | 25 |
+| Generated project references | 12 |
+| Generated project debt references | 10 |
+| Source-backed bridge references | 31 |
+| Source-backed bridge debt references | 20 |
+| Source-backed compile bridge references | 18 |
+| Source-backed compile bridge debt references | 8 |
+| Project-reference replacement references | 13 |
+| Project-reference replacement debt references | 12 |
+
+Result:
+- Target `R = 0.05` is not objectively proven by this pass.
+- Core graph debt remains dominated by leaf-domain and package references.
+- Compile verification is blocked by unrelated errors in `SaveMasterHashV10.cs` and `PDAShellChrome.cs`, so runtime H-Phi remains `PENDING VERIFICATION`.

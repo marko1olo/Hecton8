@@ -413,3 +413,79 @@ Verification:
 - Static grep over IK runtime/job/shader scope found no `math.sqrt`, `math.normalize`, managed array creation, `foreach`, `string.Format`, `.ToString()`, `Debug.Log`, Unity Physics casts, `SkinnedMeshRenderer`, `renderer.material`, `Camera.main`, `GlobalRegistry.Get`, `GameObject.Find`, or `FindObject`.
 - `git diff --check` and `git diff --cached --check` on touched code/docs exit 0; output is only LF-to-CRLF warnings on docs.
 - Runtime status remains pending until Unity Editor import, shader compile, play-mode behavior, GC, and profiler evidence exist.
+
+## 2026-05-15T02:57+04:00
+
+Status: PENDING VERIFICATION. Continued runtime finite-boundary audit. No `dotnet` rebuild/compile was run.
+
+What was wrong:
+- `_strikeRange` was assigned but unused in the new Burst/GPU path.
+- Invalid caller or serialized floats could still affect runtime seeding, fallback intent, strike target state, attack telegraph, or origin-shift matrix rebasing before the Burst job clamps executed.
+
+What was done:
+- Removed `_strikeRange`.
+- Rejected non-finite `deltaTime` before scheduling.
+- Sanitized seed segment length/body radius, fallback intent segment length/body speed reuse, strike target position, tail-whip duration, attack telegraph, and AUP-rebased target/matrix translation values.
+
+Cinematic cheats used:
+- None. Existing Math LOD, height fallback, and triangle-wave tail whip behavior are unchanged.
+
+Exact microseconds saved:
+- No frame-time saving claimed.
+- Added finite gates are estimated under 0.2 us on normal scheduling frames; seed/shift work is cold-path only.
+- Removed dead `_strikeRange` state avoids one write per strike-intent update.
+
+Verification:
+- `rg` confirms no remaining `_strikeRange`, `PhaseTimeSeconds`, or `_solverTimeSeconds` references in the IK runtime/job scope.
+- Static grep over IK runtime/job/shader scope found no `math.sqrt`, `math.normalize`, managed array creation, `foreach`, `string.Format`, `.ToString()`, `Debug.Log`, Unity Physics casts, `SkinnedMeshRenderer`, `renderer.material`, `Camera.main`, `GlobalRegistry.Get`, `GameObject.Find`, or `FindObject`.
+- `git diff --check` and `git diff --cached --check` on touched code/docs exit 0; output is only LF-to-CRLF warnings on touched runtime/docs files.
+- Runtime status remains pending until Unity Editor import, shader compile, play-mode behavior, GC, and profiler evidence exist.
+
+## 2026-05-15T03:03+04:00
+
+Status: PENDING VERIFICATION. Continued dispatcher lifecycle audit. No `dotnet` rebuild/compile was run.
+
+What was wrong:
+- `TryRegister()` treated `_registeredUpdate` alone as enough to skip registration.
+- If the late-frame registration flag was false, solver completion and GPU upload could stay stranded after an external lifecycle edge.
+
+What was done:
+- `TryRegister()` now exits only when both update and late-frame registrations are present.
+- Partial registration state is unregistered and retried from a clean pair.
+
+Cinematic cheats used:
+- None. Lifecycle wiring only.
+
+Exact microseconds saved:
+- 0 us hot-path impact.
+- Cold path may execute one unregister pair before retrying only when state is already inconsistent.
+
+Verification:
+- Static grep over IK runtime/job/shader scope found no `math.sqrt`, `math.normalize`, managed array creation, `foreach`, `string.Format`, `.ToString()`, `Debug.Log`, Unity Physics casts, `SkinnedMeshRenderer`, `renderer.material`, `Camera.main`, `GlobalRegistry.Get`, `GameObject.Find`, or `FindObject`.
+- `git diff --check` and `git diff --cached --check` on touched code/docs exit 0; output is only LF-to-CRLF warnings on touched runtime/docs files.
+- Runtime status remains pending until Unity Editor import, shader compile, play-mode behavior, GC, and profiler evidence exist.
+
+## 2026-05-15T03:00+04:00
+
+Status: PENDING VERIFICATION. Continued AUP/terrain-contact audit. No `dotnet` rebuild/compile was run.
+
+What was wrong:
+- `OnOriginShift` could finalize a completed solver job before `LateFrameTick` without frame-index or invalid-telemetry bookkeeping.
+- SDF gradient normals used unscaled central differences, so non-uniform voxel cell steps could bias the terrain push direction.
+
+What was done:
+- Added frame-index advance and invalid telemetry dump check in the origin-shift finalize branch.
+- Scaled SDF gradient components by reciprocal axis step before normalization.
+
+Cinematic cheats used:
+- Existing SDF pushout remains the high-tier visual terrain fake; no Unity Physics or physical collision path was added.
+
+Exact microseconds saved:
+- No frame-time saving claimed.
+- Origin-shift fix is cold-path only.
+- SDF gradient correction adds under 0.1 us estimated on high-tier contact frames and buys contact quality.
+
+Verification:
+- Static grep over IK runtime/job/shader scope found no `math.sqrt`, `math.normalize`, managed array creation, `foreach`, `string.Format`, `.ToString()`, `Debug.Log`, Unity Physics casts, `SkinnedMeshRenderer`, `renderer.material`, `Camera.main`, `GlobalRegistry.Get`, `GameObject.Find`, or `FindObject`.
+- `git diff --check` and `git diff --cached --check` on touched code/docs exit 0; output is only LF-to-CRLF warnings on touched runtime/docs files.
+- Runtime status remains pending until Unity Editor import, shader compile, play-mode behavior, GC, and profiler evidence exist.

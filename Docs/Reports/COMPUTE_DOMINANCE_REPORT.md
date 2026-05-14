@@ -4,13 +4,15 @@ Status: AUDIT COMPLETE
 Agent: COMPUTE_LOGISTICS_AUDITOR
 Domain: Echelon 9 / Meta, Audit, Reporting, Evidence Accounting
 Audit timestamp: 2026-05-15T01:49:02+04:00
-Evidence class: FILESYSTEM / STATIC_DOC / SQLITE / JSONL. No Unity runtime, profiler, GCMonitor, or billing export proof.
+Evidence class: FILESYSTEM / STATIC_DOC / SQLITE / JSONL / WEB_OFFICIAL / CALC. No Unity runtime, profiler, GCMonitor, or billing export proof.
 
 ## Executive Verdict
 
 The current first-party script surface is not 1.63M meaningful LOC. It is 775,435 meaningful LOC under `Assets/_Project/Scripts`, 946,341 physical script LOC, and 1,581,522 physical C# LOC under all `Assets`. The 1.63M claim is close to all-Assets physical C# plus drift, not meaningful first-party logic.
 
 The `.codex` ledger is the economic anomaly: 764 thread rows in `state_5.sqlite`, 43.436B recorded `tokens_used`, and 765 JSONL session files occupying about 8.0GB. Final JSONL session totals cross-check at 43.423B total tokens. The raw sticker shadow bill at the supplied GPT-5.5 Spud rates is about USD 437,166.04. If cached input is treated as a zero-cost lower bound, the floor is still about USD 21,733.53.
+
+Continuation reprice on 2026-05-15T02:55+04:00 supersedes the prompt-constant bill for current market pricing. Latest JSONL final usage is 43,778,987,916 total tokens: 43,630,634,851 input, 41,886,807,040 cached input, and 148,094,665 output. Current standard API-rate cache-aware estimate is USD 29,135.37. No-cache equivalent is USD 191,832.08. Cache avoided USD 162,696.72, or 84.812%. Effective blended price is USD 0.6655 per 1M total tokens. This is still not an invoice.
 
 The prompt cadence is pathological by normal production standards: `.codex` shows peak user-message bursts of 13 prompts/sec, 40 prompts/min, 202 prompts/hour, 748 prompts/day, and 2,565 prompts/week. The last observed six-hour window contained 183 user prompts, or 30.5/hour.
 
@@ -34,8 +36,13 @@ No named active agent is convicted as a "Compute Thief" from current Status/LOG/
 | `.codex` JSONL bytes | 7,995,089,133 | FILESYSTEM | Not a token count |
 | `.codex` state token sum | 43,436,372,807 | SQLITE | Internal Codex accounting, not invoice |
 | JSONL final session token sum | 43,423,314,989 | JSONL | Final `total_token_usage` per session |
+| Latest JSONL final session token sum | 43,778,987,916 | JSONL | Continuation pass; ledger is live |
 | Raw shadow bill | USD 437,166.04 | CALC | Supplied rates, no real billing export |
 | Cached-input lower-bound bill | USD 21,733.53 | CALC | Assumes cached input free; prompt did not authorize that discount |
+| Cache-aware current API estimate | USD 29,135.37 | CALC | Standard model rates with cached-input pricing; not invoice |
+| No-cache current API equivalent | USD 191,832.08 | CALC | Same tokens, cached input priced as normal input |
+| Cache discount avoided | USD 162,696.72 | CALC | 84.812% reduction from no-cache equivalent |
+| Effective blended token price | USD 0.6655 / 1M tokens | CALC | Total cost divided by all latest JSONL final tokens |
 | Energy estimate | 2,171.17 MWh | CALC | Uses supplied 0.05 kWh/1K tokens, not OpenAI telemetry |
 | Peak `.codex` prompt burst | 13/sec | JSONL | User-message events only |
 | Last six hours prompt rate | 30.5/hour | JSONL | Latest observed `.codex` timestamp window |
@@ -147,6 +154,113 @@ Still no active named agent crosses a 1M estimated doc-token threshold. The thie
 ### `logs_2.sqlite` Boundary
 
 `logs_2.sqlite` exists and was previously schema-counted at 478,371 rows and 3,203,743,744 bytes. A full grouping pass over log targets timed out twice at 120 seconds. That means the log DB is heavy enough to require an indexed/offline extraction pass before it can be used as precise forensic evidence. This report does not pretend otherwise.
+
+## Throughput And Cache-Aware Reprice
+
+Recheck timestamp: 2026-05-15T02:55+04:00.
+
+Method: JSONL pass over `.codex` sessions, counting positive deltas of `total_token_usage` per session and retaining final session usage by model. Runtime: 348.7 seconds. Token events parsed: 345,347. Usage events parsed: 344,535. Parse errors: 0. Negative deltas observed: 8.
+
+Price source: OpenAI standard API pricing verified on 2026-05-15. GPT-5.5, GPT-5.4, and GPT-5.4 mini rates are from `https://openai.com/api/pricing/`. GPT-5.3-Codex, GPT-5.2-Codex, GPT-5.1-Codex-mini, and GPT-5.2 rates are from official OpenAI model pages under `https://developers.openai.com/api/docs/models/`. Batch, priority, enterprise, taxes, and subscription entitlements are excluded.
+
+### Latest JSONL Token Ledger
+
+| Metric | Value |
+|---|---:|
+| Final input tokens | 43,630,634,851 |
+| Cached input tokens | 41,886,807,040 |
+| Non-cached input tokens | 1,743,827,811 |
+| Output tokens | 148,094,665 |
+| Reasoning output tokens | 51,467,734 |
+| Final total tokens | 43,778,987,916 |
+| Positive-delta token sum | 43,790,642,941 |
+| Delta method vs final total | 100.0266% |
+| Cached-input ratio | 96.0032% |
+| Output/input ratio | 0.3394% |
+
+Reasoning output is treated as a subset of output, not an extra billable add-on. Adding it again would double-count.
+
+### Token Flow Rates
+
+Observation window: 2026-04-03T17:10:40.595Z to 2026-05-14T22:49:18.114Z, 3,562,717.519 seconds.
+
+| Window | Tokens | Tokens/sec | Tokens/min | Tokens/hour | Tokens/day equivalent |
+|---|---:|---:|---:|---:|---:|
+| Whole observed period | 43,790,642,941 | 12,291.36 | 737,481.59 | 44,248,895.33 | 1,061,973,487.91 |
+| Last 1h | 334,082,492 | 92,800.69 | 5,568,041.53 | 334,082,492.00 | 8,017,979,808.00 |
+| Last 6h | 1,331,534,247 | 61,645.10 | 3,698,706.24 | 221,922,374.50 | 5,326,136,988.00 |
+| Last 24h | 2,422,466,534 | 28,037.81 | 1,682,268.43 | 100,936,105.58 | 2,422,466,534.00 |
+| Last 7d | 18,498,354,270 | 30,585.90 | 1,835,154.19 | 110,109,251.61 | 2,642,622,038.57 |
+| Last 14d | 28,935,776,912 | 23,921.77 | 1,435,306.39 | 86,118,383.67 | 2,066,841,208.00 |
+
+### Peak Token Buckets
+
+These are token-accounting buckets, not raw request-arrival buckets. A one-second spike can include consolidated telemetry from a large turn.
+
+| Bucket | Peak label | Tokens | Equivalent rate |
+|---|---|---:|---:|
+| Second | 2026-04-11 19:12:43 UTC | 23,433,405 | 23,433,405 tokens/sec |
+| Minute | 2026-04-13 14:59 UTC | 36,323,325 | 605,388.75 tokens/sec |
+| Hour | 2026-05-14 21 UTC | 385,964,924 | 107,212.48 tokens/sec |
+| Day | 2026-05-13 | 3,951,756,366 | 45,737.92 tokens/sec |
+| Week | 2026-W19 | 14,308,828,640 | 23,658.78 tokens/sec |
+
+### Top Token Days
+
+| Rank | Day | Positive-delta tokens |
+|---:|---|---:|
+| 1 | 2026-05-13 | 3,951,756,366 |
+| 2 | 2026-05-08 | 3,187,635,852 |
+| 3 | 2026-05-11 | 2,610,546,071 |
+| 4 | 2026-05-12 | 2,415,939,777 |
+| 5 | 2026-04-29 | 2,403,482,481 |
+| 6 | 2026-05-09 | 2,353,206,029 |
+| 7 | 2026-05-14 | 2,215,708,707 |
+| 8 | 2026-05-07 | 2,196,754,809 |
+| 9 | 2026-05-05 | 1,915,455,339 |
+| 10 | 2026-05-01 | 1,815,908,075 |
+
+### Cache-Aware Bill By Model
+
+| Model | Input tokens | Cached input | Output tokens | Cache-aware cost | No-cache equivalent |
+|---|---:|---:|---:|---:|---:|
+| `gpt-5.5` | 31,793,537,853 | 30,575,045,120 | 99,707,533 | USD 24,371.21 | USD 161,958.92 |
+| `gpt-5.4` | 11,546,273,790 | 11,051,701,632 | 46,453,047 | USD 4,696.15 | USD 29,562.48 |
+| `gpt-5.4-mini` | 191,173,213 | 167,098,752 | 1,359,886 | USD 36.71 | USD 149.50 |
+| `gpt-5.2-codex` | 85,044,900 | 79,787,648 | 468,092 | USD 29.72 | USD 155.38 |
+| `gpt-5.1-codex-mini` | 13,374,833 | 12,237,952 | 98,097 | USD 0.79 | USD 3.54 |
+| `gpt-5.3-codex` | 1,088,533 | 879,744 | 7,580 | USD 0.63 | USD 2.01 |
+| `gpt-5.2` | 141,729 | 56,192 | 430 | USD 0.17 | USD 0.25 |
+| Total | 43,630,634,851 | 41,886,807,040 | 148,094,665 | USD 29,135.37 | USD 191,832.08 |
+
+Cash verdict: prompt-cache pricing avoided USD 162,696.72 against the no-cache equivalent, an 84.812% reduction. The blended effective price is USD 0.6655 per 1M total tokens, or 1,502,606 total tokens per USD.
+
+### Tokens Per Code Byte
+
+Live source-byte scan grew by one script file during continuation. LOC ratios below still use the earlier verified 775,435 meaningful LOC and 946,341 physical script LOC; LOC was not recomputed in this pass.
+
+| Scope | Files | Bytes | Tokens/source byte |
+|---|---:|---:|---:|
+| `Assets/_Project/Scripts/**/*.cs` | 1,502 | 41,479,641 | 1,055.433 |
+| `Assets/_Project/**/*.cs` | 1,550 | 42,191,109 | 1,037.635 |
+| `Assets/**/*.cs` | 4,113 | 66,465,190 | 658.675 |
+| `Packages/**/*.cs` | 984 | 5,549,590 | Not used for first-party ratio |
+
+| Ratio | Value |
+|---|---:|
+| Tokens per meaningful script LOC | 56,457.33 |
+| Tokens per physical script LOC | 46,261.32 |
+| Output tokens per meaningful script LOC | 190.98 |
+| Tokens per script source KiB | 1,080,763.54 |
+| Tokens per script source MiB | 1,106,701,864.49 |
+| Cache-aware cost per meaningful LOC | USD 0.037573 |
+| Cache-aware cost per physical script LOC | USD 0.030787 |
+| Cache-aware cost per script source byte | USD 0.0007024 |
+| Cache-aware cost per script source KiB | USD 0.7193 |
+| Cache-aware cost per script source MiB | USD 736.52 |
+| Context amplification vs 50-token/LOC heuristic | 1,129.15x |
+
+The interesting number is not output tokens per LOC. It is the 56,457 total tokens burned per meaningful LOC. That is the audit signature of long-context recursion.
 
 ## Code Metrics
 
@@ -268,6 +382,8 @@ The raw bill is the honest sticker shock under the prompt's constants. The lower
 | Basis | Tokens | Formula | Energy |
 |---|---:|---|---:|
 | Raw `.codex` JSONL total | 43,423,314,989 | `tokens / 1000 * 0.05 kWh` | 2,171.17 MWh |
+| Latest JSONL final total | 43,778,987,916 | `tokens / 1000 * 0.05 kWh` | 2,188.95 MWh |
+| Latest positive-delta total | 43,790,642,941 | `tokens / 1000 * 0.05 kWh` | 2,189.53 MWh |
 | LOC heuristic only | 38,771,750 | `775,435 LOC * 50 tokens / 1000 * 0.05 kWh` | 1.94 MWh |
 
 The gap between 2,171.17 MWh and 1.94 MWh is the cost of context recursion, repeated thread state, long prompts, retries, and agent sprawl. That is not "thinking". That is compute rent.
@@ -317,6 +433,9 @@ Using the explicit 14-day compression model:
 | Raw input tokens/meaningful LOC | 55,809.04 |
 | Output tokens/meaningful LOC | 189.28 |
 | Total tokens/meaningful LOC | 55,998.65 |
+| Latest total tokens/meaningful LOC | 56,457.33 |
+| Latest output tokens/meaningful LOC | 190.98 |
+| Latest context amplification vs 50-token/LOC heuristic | 1,129.15x |
 
 The project does not look like "AI writes 50 tokens per line". It looks like "AI drags an aircraft carrier of context behind every line".
 
@@ -349,6 +468,13 @@ Compared with cached-input lower bound:
 |---|---:|---:|---:|
 | Meaningful script LOC | USD 58.75M | USD 21,734 | 2,703.9x |
 | All `Assets` physical C# LOC | USD 119.81M | USD 21,734 | 5,512.8x |
+
+Compared with current cache-aware API estimate:
+
+| Scope | Midpoint replacement | Cache-aware AI estimate | Ratio |
+|---|---:|---:|---:|
+| Meaningful script LOC | USD 58.75M | USD 29,135 | 2,016.3x |
+| All `Assets` physical C# LOC | USD 119.81M | USD 29,135 | 4,112.3x |
 
 This is the compute gap: even the ugly raw sticker bill is cheap against human replacement cost. The actual risk is not price. The risk is hallucinated completion, compile churn, and context bloat hiding broken runtime proof.
 
@@ -417,6 +543,7 @@ Classification: COMPUTE THIEF CANDIDATES, PENDING ATTRIBUTION. Hard accusation r
 | Wider C# physical LOC | FILESYSTEM | `Assets`, `Packages` | PowerShell file line count | Physical lines only |
 | Docs token surface | FILESYSTEM | `Docs/AgentLogs`, `Docs/Tasks` | PowerShell char count / 4 | Tokenizer approximation |
 | `.codex` token ledger | JSONL/SQLITE | `C:/Users/danat/.codex` | Python JSONL parse; SQLite read-only query | Internal usage counters, not invoice |
+| Current model pricing | WEB_OFFICIAL | OpenAI pricing and model pages | Official OpenAI web docs checked 2026-05-15 | Not a billing export; excludes enterprise/tax/subscription effects |
 | Cadence | JSONL/FILESYSTEM | `.codex` JSONL and `Docs/Tasks` timestamps | Python/PowerShell timestamp buckets | Timestamps show local writes/messages, not all hidden work |
 | H-Phi values | STATIC_DOC | `Docs/Reports/HECTON_PHI_REPORT.md` | `rg`/PowerShell regex | Static metric only, no runtime proof |
 | Waste candidates | SQLITE | `state_5.sqlite.threads` | SQLite read-only threshold query | No diff/H-Phi attribution |

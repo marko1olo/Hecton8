@@ -460,3 +460,33 @@ Verification:
 - Unity MCP console/profiler: unavailable from this session.
 
 Status: PENDING VERIFICATION. Static source audits pass; compile/runtime proof remains pending by user instruction and external Core blocker.
+
+## 2026-05-15 - WFC Outpost Loop 22 Shift-Safe Public Shell Accessors
+
+What was wrong:
+- `TryGetShellMatrices` could expose `_shellMatrices.AsReadOnly()` while the AUP shift job was writing that same NativeArray.
+- `TryGetShellGraphicsBuffer` could expose a stale GPU matrix buffer while a shift was running or while `_matrixUploadDirty` was still waiting for the owner upload.
+- The user explicitly forbade `dotnet` rebuilds again.
+
+What was done:
+- Added a `JobPhase.Shifting` fail-closed guard to `TryGetShellMatrices`.
+- Added `JobPhase.Shifting` and `_matrixUploadDirty` fail-closed guards to `TryGetShellGraphicsBuffer`.
+- Re-ran source-only audits without any `dotnet` rebuild.
+
+Cinematic Cheats used:
+- No physical simulation change. AUP remains deterministic matrix offset math, and consumers retry after the owner finishes the shift/upload.
+- The shell remains one GPU indirect draw family, not Transform hierarchy correction.
+
+Exact Microseconds saved:
+- Avoids undefined NativeArray read/write overlap during AUP shifts; prevention cost is one scalar branch on cold query paths.
+- Avoids stale GPU buffer consumption and downstream correction work; steady Tick/Render remains 0 B/frame.
+
+Verification:
+- Diff contains only the two public getter guards.
+- Forbidden construct audit: PASS; no raw hash comparison, shader-global/material mutation, global publish wrapper, prefab shell `Instantiate`, `BaseGenerator`, `math.pow`, telemetry modulo, or `foreach` matches in owned outpost files.
+- Scoped H-Phi counts remain `GlobalRegistrySurface=12`, `SignalBusPush=1`, `EventPublish=0`, `StructLayoutAttributes=6`.
+- `git diff --check`: PASS with repository CRLF warning only.
+- `dotnet` rebuilds/response-file compiles: NOT RUN by explicit user request.
+- Unity MCP console/profiler: unavailable from this session.
+
+Status: PENDING VERIFICATION. Static source audits pass; compile/runtime proof remains pending by user instruction and external Core blocker.

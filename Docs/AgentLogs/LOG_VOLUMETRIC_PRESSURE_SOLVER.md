@@ -305,3 +305,15 @@ Follow-up upgrade 32:
 Exact microseconds saved after follow-up 32:
 - Calm/low habitat UberNoir deformation vertices skip one habitat radius-mask evaluation.
 - Estimated 1-4 us saved per 1k affected vertices on MX350-class GPUs; 0 B/frame.
+
+Follow-up upgrade 33:
+- What was wrong: analytical stress reset/commit paths wrote `_BaseEmergencyState` even when the integer state did not change, and habitat vibration could leave a tiny stale shader value after decay because the publish epsilon suppressed the final zero. The public deformation sample contract also had no explicit binary layout marker.
+- What was done: added cached `PublishBaseEmergencyState` with forced dispose clear; changed habitat vibration publish to snap values at or below 0.002 to zero while still forcing dispose cleanup; added `[StructLayout(LayoutKind.Sequential, Pack = 4)]` to `HabitatModuleDeformationSample`.
+- Cinematic cheat used: micro-vibration below the perceptual threshold is intentionally silent instead of burning global shader state; emergency pressure visuals still publish immediately on real state transitions.
+- Static checks: `rg` confirms the only `_BaseEmergencyState` and `_HectonHabitatVibration01` global writes are inside their publishers; managed-offender scans found no C# string/LINQ/foreach offenders in touched files; mesh mutation scan found no owned `Mesh.vertices` writes; touched C# brace counts are balanced; `git diff --check` reports only CRLF normalization warnings.
+- H-Phi local evidence: `HabitatGraphManager.cs` remains `StructLayout=4/StructDecl=9`, `GlobalRegistry=4`, `SignalBus=2`, `GlobalSignals=1`, `NativeArray=82`, `GraphicsBuffer=3`, `FindCalls=0`, `UpdateMethods=0`; `HabitatDeformationContracts.cs` is now `StructLayout=1/StructDecl=1`.
+- Rebuild policy: no `dotnet` rebuild and no Unity rebuild were run by explicit user instruction.
+
+Exact microseconds saved after follow-up 33:
+- Stable analytical reset/commit ticks skip redundant emergency-state shader global writes.
+- Estimated 1-3 us saved on i3/MX350 stress/reset-heavy frames; stale sub-epsilon vibration is cleared; contract layout cost is 0 us/frame.

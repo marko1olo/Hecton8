@@ -15,6 +15,7 @@ using Hecton8.Modding;
 using Hecton8.World;
 using Hecton.Localization;
 using Hecton8.Core;
+using Hecton8.Core.Signals;
 using Hecton8.Input;
 using TMPro;
 using Unity.Collections;
@@ -248,6 +249,8 @@ namespace Hecton8.UI
         private bool _gridDirty;
         private bool _detailsDirty;
         private bool _toolStripDirty;
+        private uint _inventorySignalHash;
+        private uint _lastInventorySignalRevision;
 
         private bool _registeredToUpdateLoop;
         private Transform _dropOrigin;
@@ -303,6 +306,12 @@ namespace Hecton8.UI
             {
                 Shader.SetGlobalVector(PdaInventoryParallaxId, Vector4.zero);
                 return;
+            }
+
+            if (ConsumeInventoryChangedSignals())
+            {
+                MarkInventoryDirty();
+                FlushPendingRefresh();
             }
 
             PublishInventoryUiParallax();
@@ -376,6 +385,8 @@ namespace Hecton8.UI
                 labelFont = TMP_Settings.defaultFontAsset;
             if (numericFont == null)
                 numericFont = labelFont;
+
+            RefreshInventorySignalBinding();
         }
 
         private void PublishInventoryUiParallax()
@@ -405,8 +416,6 @@ namespace Hecton8.UI
 
         private void Subscribe()
         {
-            if (playerInventory != null)
-                playerInventory.InventoryChanged += OnInventoryChanged;
             if (toolManager != null)
             {
                 toolManager.ActiveSlotChanged += OnToolSlotChanged;
@@ -418,8 +427,6 @@ namespace Hecton8.UI
 
         private void Unsubscribe()
         {
-            if (playerInventory != null)
-                playerInventory.InventoryChanged -= OnInventoryChanged;
             if (toolManager != null)
             {
                 toolManager.ActiveSlotChanged -= OnToolSlotChanged;
@@ -429,12 +436,51 @@ namespace Hecton8.UI
             LocalizationEvents.UnregisterCorruptionVisualStateListener(this);
         }
 
-        private void OnInventoryChanged()
+        private bool ConsumeInventoryChangedSignals()
+        {
+            uint inventoryHash = _inventorySignalHash;
+            if (inventoryHash == 0u)
+                return false;
+
+            bool dirty = false;
+            ReadOnlySpan<InventoryChangedSignal> signals = SignalBus<InventoryChangedSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                ref readonly InventoryChangedSignal signal = ref signals[i];
+                if (signal.InventoryHash != inventoryHash)
+                    continue;
+
+                if (signal.Revision == _lastInventorySignalRevision && _lastInventorySignalRevision != 0u)
+                    continue;
+
+                _lastInventorySignalRevision = signal.Revision;
+                dirty = true;
+            }
+
+            return dirty;
+        }
+
+        private void RefreshInventorySignalBinding()
+        {
+            uint resolvedHash = ResolveInventorySignalHash(playerInventory);
+            if (_inventorySignalHash == resolvedHash)
+                return;
+
+            _inventorySignalHash = resolvedHash;
+            _lastInventorySignalRevision = 0u;
+        }
+
+        private static uint ResolveInventorySignalHash(PlayerInventory inventory)
+        {
+            return inventory != null && inventory.gameObject != null
+                ? unchecked((uint)EntityId.ToULong(inventory.gameObject.GetEntityId()))
+                : 0u;
+        }
+
+        private void MarkInventoryDirty()
         {
             _gridDirty = true;
             _detailsDirty = true;
-            if (IsTabActive)
-                FlushPendingRefresh();
         }
 
         public void OnLocalizationCorruptionVisualStateChanged(in LocalizationEventPayload payload)
@@ -485,7 +531,10 @@ namespace Hecton8.UI
         private void OnPdaOpened(int tab)
         {
             if (tab == InventoryTabIndex)
+            {
+                AutoResolve();
                 FlushPendingRefresh(forceAll: true);
+            }
         }
 
         private void OnTabChanged(int oldTab, int newTab)
@@ -500,7 +549,10 @@ namespace Hecton8.UI
             }
 
             if (newTab == InventoryTabIndex)
+            {
+                AutoResolve();
                 FlushPendingRefresh(forceAll: true);
+            }
         }
 
         // ══════════════════════════════════════════════════════════

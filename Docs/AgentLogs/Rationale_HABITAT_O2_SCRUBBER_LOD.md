@@ -109,3 +109,17 @@ Solution: Added a narrow producer in `BaseModule`, the class already owning play
 Rejected Alternatives: Directly calling `IGasDynamicsSolver.TrySetBasePlayerInside` from `BaseModule` was rejected because it would create a concrete runtime dependency from gameplay modules into atmosphere authority. Publishing from `BaseAirlock` alone was rejected because module trigger enter/exit is the broader interior truth.
 Scalability potential: Low tier wakes the single base through one queued unmanaged signal. Middle/High/Ultra can later replace base id 0 with construction graph base identity without touching the gas solver.
 Hardware Impact: Trigger-only signal cost, not a frame path. It closes the decoupled wake path and avoids polling modules from the gas solver.
+
+## Self-Review 9 - Same-Frame Handoff Semantics
+Problem: If a player moved between two module triggers in one signal frame, processing all enter packets before all exit packets could leave `_basePlayerInside` false.
+Solution: Gas now drains exit packets first and enter packets second. Enter wins for same-frame handoffs, keeping the base awake while any interior enter signal exists.
+Rejected Alternatives: Adding a managed per-base occupant set was rejected as unnecessary GC-risk and larger architecture. Adding another native room-occupancy map was rejected until multi-base identity exists.
+Scalability potential: Low through Ultra share the same deterministic ordering with no additional buffers.
+Hardware Impact: No measurable cost change; same packet count, safer final state.
+
+## Self-Review 10 - Native Inside Count
+Problem: Same-frame ordering is not enough if Unity delivers an enter on one physics step and the matching old-module exit on the next step.
+Solution: Added `_basePlayerInsideCount` as a native per-base SOA lane. Signal enter increments, signal exit decrements with clamp to zero, and `_basePlayerInside` is derived from count > 0. Direct API writes remain authoritative and reset the count to either 0 or at least 1.
+Rejected Alternatives: Managed hash sets of module references rejected for GC and lifetime complexity. Polling active `BaseModule` instances from gas rejected because it violates domain decoupling.
+Scalability potential: Low stores one int per base. Middle/High/Ultra can later replace base id 0 with construction base ids while preserving the same count lane.
+Hardware Impact: Four bytes per base and one integer op per transition packet; no frame-path cost.

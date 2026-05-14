@@ -163,6 +163,7 @@ namespace Hecton8.Construction
         private const int AnalyticalBreachMaximumThreshold = 96;
         private const float HabitatVibrationDecayPerSecond = 0.75f;
         private const float HabitatVibrationImpulseScale = 0.0015f;
+        private const float HabitatVibrationPublishEpsilon = 0.002f;
         private const float PressureBucklingCompressionDeltaThreshold = 0.15f;
         private const float RuptureCascadeNeighborStressMultiplier = 0.5f;
         private const float StructuralGroanStressThreshold01 = 0.8f;
@@ -274,6 +275,7 @@ namespace Hecton8.Construction
         private uint _analyticalBreachNodeId;
         private float _habitatVibration01;
         private float _lastPublishedHabitatVibration01 = -1f;
+        private int _lastPublishedBaseEmergencyState = int.MinValue;
         private float _runtimeSeaLevelY;
         private int _graphFloodSliceCursor;
         private int _floodedRoomCount;
@@ -422,9 +424,10 @@ namespace Hecton8.Construction
 
         public void Dispose()
         {
-            PublishAnalyticalStressShader(float3.zero, 0f, 0f, HectonQualityTier.Unknown);
-            Shader.SetGlobalInt(BaseEmergencyStateId, 0);
-            Shader.SetGlobalFloat(HabitatVibrationId, 0f);
+            PublishAnalyticalStressShader(float3.zero, 0f, 0f, HectonQualityTier.Unknown, true);
+            PublishBaseEmergencyState(0, true);
+            _habitatVibration01 = 0f;
+            PublishHabitatVibration(true);
             ClearVisualLinks();
             DisposeNativeBuffers();
             _atmosphereManager = null;
@@ -554,13 +557,23 @@ namespace Hecton8.Construction
             PublishHabitatVibration();
         }
 
-        private void PublishHabitatVibration()
+        private void PublishHabitatVibration(bool force = false)
         {
-            if (math.abs(_habitatVibration01 - _lastPublishedHabitatVibration01) <= 0.002f)
+            float publishValue = _habitatVibration01 <= HabitatVibrationPublishEpsilon
+                ? 0f
+                : _habitatVibration01;
+            if (!force && publishValue > 0f)
+            {
+                if (math.abs(publishValue - _lastPublishedHabitatVibration01) <= HabitatVibrationPublishEpsilon)
+                    return;
+            }
+            else if (!force && _lastPublishedHabitatVibration01 == 0f)
+            {
                 return;
+            }
 
-            _lastPublishedHabitatVibration01 = _habitatVibration01;
-            Shader.SetGlobalFloat(HabitatVibrationId, _habitatVibration01);
+            _lastPublishedHabitatVibration01 = publishValue;
+            Shader.SetGlobalFloat(HabitatVibrationId, publishValue);
         }
 
         private void EvaluateAnalyticalIntegrityStress(HectonQualityTier scalabilityTier)
@@ -659,7 +672,7 @@ namespace Hecton8.Construction
             _analyticalStress = 0f;
             _analyticalIntegrity = 0f;
             _analyticalBreachNodeId = 0u;
-            Shader.SetGlobalInt(BaseEmergencyStateId, 0);
+            PublishBaseEmergencyState(0);
             PublishAnalyticalStressShader(float3.zero, 0f, 0f, scalabilityTier);
         }
 
@@ -682,9 +695,7 @@ namespace Hecton8.Construction
 
             float3 center = centerSum * math.rcp(activeModuleCount);
             float radius = ResolveAnalyticalBaseRadius(center, moduleCount) + AnalyticalShaderRadiusPaddingMeters;
-            Shader.SetGlobalInt(
-                BaseEmergencyStateId,
-                stress01 >= 1f - AnalyticalEmergencyRemainingIntegrityThreshold01 ? 1 : 0);
+            PublishBaseEmergencyState(stress01 >= 1f - AnalyticalEmergencyRemainingIntegrityThreshold01 ? 1 : 0);
             PublishAnalyticalStressShader(center, radius, stress01, scalabilityTier);
             TryPublishLowTierAnalyticalStressFeedback(center, stress01, scalabilityTier);
         }
@@ -805,20 +816,36 @@ namespace Hecton8.Construction
             return ResolveFastLengthFromSq(radiusSq);
         }
 
-        private void PublishAnalyticalStressShader(float3 center, float radius, float stress01, HectonQualityTier scalabilityTier)
+        private void PublishBaseEmergencyState(int emergencyState, bool force = false)
         {
-            float displacementMaxMeters = IsAnalyticalHighScalabilityTier(scalabilityTier)
+            int safeState = emergencyState != 0 ? 1 : 0;
+            if (!force && _lastPublishedBaseEmergencyState == safeState)
+                return;
+
+            _lastPublishedBaseEmergencyState = safeState;
+            Shader.SetGlobalInt(BaseEmergencyStateId, safeState);
+        }
+
+        private void PublishAnalyticalStressShader(float3 center, float radius, float stress01, HectonQualityTier scalabilityTier, bool force = false)
+        {
+            float visibleStress01 = stress01 > AnalyticalShaderStressEpsilon
+                ? stress01
+                : 0f;
+            float displacementMaxMeters = IsAnalyticalHighScalabilityTier(scalabilityTier) && visibleStress01 > 0f
                 ? AnalyticalShaderDisplacementMaxMeters
                 : 0f;
-            if (_lastPublishedAnalyticalBreachNodeId == _analyticalBreachNodeId &&
-                math.abs(stress01 - _lastPublishedAnalyticalStress01) <= AnalyticalShaderStressEpsilon &&
-                math.abs(displacementMaxMeters - _lastPublishedAnalyticalDisplacementMaxMeters) <= 0.00001f &&
-                stress01 > 0f)
+            bool stressStable = visibleStress01 > 0f
+                ? math.abs(visibleStress01 - _lastPublishedAnalyticalStress01) <= AnalyticalShaderStressEpsilon
+                : _lastPublishedAnalyticalStress01 == 0f;
+            if (!force &&
+                _lastPublishedAnalyticalBreachNodeId == _analyticalBreachNodeId &&
+                stressStable &&
+                math.abs(displacementMaxMeters - _lastPublishedAnalyticalDisplacementMaxMeters) <= 0.00001f)
             {
                 return;
             }
 
-            _lastPublishedAnalyticalStress01 = stress01;
+            _lastPublishedAnalyticalStress01 = visibleStress01;
             _lastPublishedAnalyticalDisplacementMaxMeters = displacementMaxMeters;
             _lastPublishedAnalyticalBreachNodeId = _analyticalBreachNodeId;
             Shader.SetGlobalVector(
@@ -827,7 +854,7 @@ namespace Hecton8.Construction
             Shader.SetGlobalVector(
                 HabitatStressParamsId,
                 new Vector4(
-                    stress01,
+                    visibleStress01,
                     displacementMaxMeters,
                     AnalyticalShaderGridScale,
                     (float)(_analyticalBreachNodeId & 1023u)));

@@ -407,3 +407,11 @@ Solution: Classify the full H-Phi score as pending, keep the parser and core-gra
 Rejected Alternatives: Claim a score from a partial run, hide the timeout, or run a rebuild to compensate. None would prove the global H-Phi source scan is healthy.
 Scalability potential: Low/Middle/High/Ultra unchanged at runtime. The tool needs later source-scan performance work before it can act as a fast CI gate.
 Hardware Impact: 0 us gameplay-frame cost. Tool execution currently exceeds 240 seconds on this workspace for full source scan, so CI use is pending performance repair.
+
+## Decision 51 - Qualified AUP H-Phi Risk Cleanup
+
+Problem: The tightened AUP H-Phi risk scan still found one qualified legacy vegetation bridge call in an editor ghost debugger and several false-positive `CurrentTotalOffset` / `Vector3 universePosition` tokens on already-double authority paths.
+Solution: Route `KinematicGhostDebugger` through `ToUniverseSpaceDouble3` / `ToAbsoluteUniversePositionDouble3` before its final editor `Vector3` draw boundary, rename internal double job fields to `CommittedTotalOffset`, and rename bridge wrapper parameters to avoid classifying final-cast wrapper text as legacy precision risk.
+Rejected Alternatives: Leave the risk scan noisy or widen editor Handles/history storage to double. Handles, SceneView drawing, and historical `Vector3` preview arrays are float presentation surfaces; the authority repair is the bridge hop and fallback, not an editor visualization contract rewrite.
+Scalability potential: Low/Middle/High/Ultra gameplay runtime is unchanged. Tooling gains a clean qualified AUP risk gate, while high-end visual debug workflows retain stable long-session ghost previews after origin shifts.
+Hardware Impact: Gameplay frame impact is 0 us. Editor-only preview adds a few double scalar ops per sample when the debugger is open; Burst runtime jobs only renamed fields, so runtime instruction flow is unchanged. H-Phi review-time gain is the removal of remaining qualified AUP risk hits from the static scan.

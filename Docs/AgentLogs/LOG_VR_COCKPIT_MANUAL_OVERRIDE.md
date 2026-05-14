@@ -253,3 +253,27 @@ Cinematic Cheats used: no extra simulation. This preserves the kinematic scalar 
 Exact microseconds saved/spent: invalid-delta frames skip false lever progress instead of paying the full spring/fallback/IK/ratchet/latch path. Normal frames are unchanged. 0 B/frame.
 
 Verification: `git diff --check` passed with CRLF warning only. Scoped counter for `OpenXRManualOverrideLever.cs` reports `DefaultDeltaSeconds=0`, `InvalidDeltaToZero=1`, `QuaternionSlerp=0`, `Vector3Lerp=0`, `HingeJoint=0`, `UnityUpdateMethods=0`. No dotnet rebuild/probe was run by user instruction.
+
+## 2026-05-15 - Latched Lever Idle Eviction
+
+What was wrong: the manual override lever is a one-shot control, but after latch it could stay registered in the player dispatcher lane and physical receiver table. That means permanent inert ticking and a consumed receiver slot after the control can no longer accept input.
+
+What was done: `TryLatch()` now unregisters the physical receiver and player tick after publishing manual override, haptic, and prologue signals. `TryRegisterReceiver()` and `TryRegisterTick()` now refuse registration once `_latched` is true, covering dispatcher hot-swap and lifecycle re-entry.
+
+Cinematic Cheats used: no new simulation. This keeps the kinematic scalar lever and treats the post-latch state as authored presentation, not an active physical control.
+
+Exact microseconds saved/spent: saves one inert dispatcher tick per latched lever per frame and frees one fixed receiver-table slot. Latch frame pays two unregister calls after signal publication; registration methods pay one cold `_latched` branch. 0 B/frame.
+
+Verification: `git diff --check` passed with CRLF warnings only. Forbidden-pattern scan over `OpenXRManualOverrideLever.cs` returned no matches. Source counter reports `TryLatchUnregisterPair=1`, `LatchedReceiverGuard=1`, `LatchedTickGuard=1`, `BlackBoxCallAfterLatch=1`, `DotnetMention=0`. `CURRENT_BATCH.md` extraction still returns no matching prompt block, so disk status/rationale remain authoritative. No dotnet rebuild/probe was run by user instruction.
+
+## 2026-05-15 - Latch Blackbox State Coherence
+
+What was wrong: the latch path forced native angle/target/velocity to the final max state, but the latch-frame blackbox write still received the pre-latch `currentAngle` local.
+
+What was done: refreshed `currentAngle` from `_leverAngles[0]` after `TryLatch(currentAngle)` and before `WriteBlackBoxFrame(currentAngle)`, so `FlagLatched` telemetry records the same angle state that signals and visuals own.
+
+Cinematic Cheats used: no new physical simulation. This preserves the scalar kinematic lever and only corrects crash-evidence bookkeeping.
+
+Exact microseconds saved/spent: spends one scalar NativeArray read on active lever ticks after latch evaluation. The cost is below measurement noise and adds 0 B/frame.
+
+Verification: `git diff --check` passed with CRLF warnings only. Forbidden-pattern scan over `OpenXRManualOverrideLever.cs` returned no matches. Source counter reports `LatchRefreshBeforeBlackbox=1`, `StaleLatchWriteSequence=0`, `TryLatchUnregisterPair=1`, `DotnetMention=0`. `CURRENT_BATCH.md` extraction still returns no matching prompt block. No dotnet rebuild/probe was run by user instruction.

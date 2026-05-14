@@ -279,6 +279,7 @@ What was done:
 - Made `OnEnable` exit before tick registration if the event lane or telemetry ring fails allocation.
 - Made vault readiness require both `_signalEvents.IsCreated` and `_telemetry.IsCreated` before Burst scheduling can proceed.
 - Stopped the respawned dotnet wrapper and child build processes without starting a build.
+- Stopped a later final-check `dotnet build Hecton8.Core.csproj` process that appeared after the first cleanup.
 
 Cinematic Cheats used:
 - Cosmetic zip/wake overload degrades by dropping surplus presentation signals while acquisition truth remains vault-driven.

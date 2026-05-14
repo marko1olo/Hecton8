@@ -29,7 +29,7 @@ using UnityEditor;
 namespace Hecton8.Gameplay
 {
     [DisallowMultipleComponent]
-    public sealed class ScannerTool : PlayerTool, IBatteryTool, IDispatcherRaycastReceiver, IFastTickable, ISlowTickable, ILateFrameTickable, IScalabilityChangedEventListener, IAtlasSignalEventListener
+    public sealed class ScannerTool : PlayerTool, IBatteryTool, IDispatcherRaycastReceiver, IFastTickable, ISlowTickable, ILateFrameTickable, IScalabilityChangedEventListener, IAtlasSignalEventListener, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
     {
         internal const string ScannerMarkerShaderPath = "Assets/_Project/Art/Shaders/Hecton_ScannerMarkerInstanced.shader";
         internal const string ScannerPulseShaderPath = "Assets/_Project/Art/Shaders/Hecton_ScannerPulseInstanced.shader";
@@ -626,6 +626,7 @@ namespace Hecton8.Gameplay
         private HectonSurvivalSystem _cachedSurvivalSystem;
         private IPlayerRuntimeContext _cachedPlayerContext;
         private AtlasSignalSystem _cachedAtlasSignal;
+        private LoreDatabaseManager _cachedLoreDatabase;
         private float _scientificNextResampleAt;
         private float _scientificLastContactTime = float.NegativeInfinity;
         private float3 _activeScientificProbePosition;
@@ -662,6 +663,8 @@ namespace Hecton8.Gameplay
         private bool _registeredScientificLateFrame;
         private bool _registeredScalabilityListener;
         private bool _registeredAtlasSignalListener;
+        private bool _registeredLocalizationListener;
+        private bool _registeredHotSwapListener;
         private float _cachedFocusedConeAngleDegrees = -1f;
         private float _cachedFocusedConeTanSq;
 
@@ -820,6 +823,7 @@ namespace Hecton8.Gameplay
             base.OnEquip();
             PulseActive = false;
             ResolveCachedPlayerContextCold();
+            RefreshModeStrings();
             TryRegisterScientificLanes();
             InvalidateOperationalStringCache();
         }
@@ -877,9 +881,9 @@ namespace Hecton8.Gameplay
                 Mathf.Min(1.25f, effectiveCooldown),
                 1f);
 
-            if (pingClip != null && Hecton8.Core.GlobalRegistry.Audio != null)
+            IAudioService audioService = pingClip != null ? Hecton8.Core.GlobalRegistry.Audio : null;
+            if (audioService != null)
             {
-                IAudioService audioService = Hecton8.Core.GlobalRegistry.Audio;
                 audioService.PlayAtPoint(pingClip, scanPosition, pingVolume, 1f, audioService.InterfaceGroup);
             }
 
@@ -988,6 +992,36 @@ namespace Hecton8.Gameplay
         public void OnAtlasSignalEvent(in AtlasSignalEventPayload payload)
         {
             InvalidateOperationalStringCache();
+        }
+
+        public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)
+        {
+            RefreshModeStrings();
+            InvalidateOperationalStringCache();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Player:
+                    _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+                    break;
+                case GlobalRegistryServiceSlot.AtlasSignalRuntime:
+                    _cachedAtlasSignal = currentService as AtlasSignalSystem;
+                    InvalidateOperationalStringCache();
+                    break;
+                case GlobalRegistryServiceSlot.LoreDatabaseRuntime:
+                    _cachedLoreDatabase = currentService as LoreDatabaseManager;
+                    break;
+                case GlobalRegistryServiceSlot.LocalizationRuntime:
+                    RefreshModeStrings();
+                    InvalidateOperationalStringCache();
+                    break;
+            }
         }
 
         private void PublishScannerTuningSignal(bool forceInactive)
@@ -1297,6 +1331,8 @@ namespace Hecton8.Gameplay
 
             TryRegisterScalabilityListener();
             TryRegisterAtlasSignalListener();
+            TryRegisterLocalizationListener();
+            TryRegisterHotSwapListener();
             if (!_registeredScientificFastTick)
                 _registeredScientificFastTick = GlobalRegistry.TryRegisterFastTickable(this, PriorityLayer.Player);
             if (!_registeredScientificSlowTick)
@@ -1327,6 +1363,8 @@ namespace Hecton8.Gameplay
 
             TryUnregisterScalabilityListener();
             TryUnregisterAtlasSignalListener();
+            TryUnregisterLocalizationListener();
+            TryUnregisterHotSwapListener();
         }
 
         private void TryRegisterScalabilityListener()
@@ -1364,6 +1402,41 @@ namespace Hecton8.Gameplay
 
             AtlasSignalEvents.Unregister(this);
             _registeredAtlasSignalListener = false;
+        }
+
+        private void TryRegisterLocalizationListener()
+        {
+            if (_registeredLocalizationListener || !Application.isPlaying)
+                return;
+
+            LocalizationEvents.RegisterLanguageListener(this);
+            _registeredLocalizationListener = true;
+        }
+
+        private void TryUnregisterLocalizationListener()
+        {
+            if (!_registeredLocalizationListener)
+                return;
+
+            LocalizationEvents.UnregisterLanguageListener(this);
+            _registeredLocalizationListener = false;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
         }
 
         public override string GetOperationalSummary()
@@ -3361,9 +3434,10 @@ namespace Hecton8.Gameplay
                 out float depthMeters);
 
             uint threatPredictionLoreHash = resolvedFauna != null ? resolvedFauna.ThreatPredictionLoreHash : 0u;
+            LoreDatabaseManager loreDatabase = threatPredictionLoreHash != 0u ? ResolveCachedLoreDatabaseCold() : null;
             bool threatPredictionUnlocked = threatPredictionLoreHash != 0u &&
-                                            Hecton8.Core.GlobalRegistry.LoreDatabase != null &&
-                                            Hecton8.Core.GlobalRegistry.LoreDatabase.IsUnlocked(threatPredictionLoreHash);
+                                            loreDatabase != null &&
+                                            loreDatabase.IsUnlocked(threatPredictionLoreHash);
             bool flankingManeuverDetected = resolvedFauna != null &&
                                             resolvedFauna.IsFlankingManeuverDetected &&
                                             threatPredictionUnlocked;
@@ -3726,6 +3800,17 @@ namespace Hecton8.Gameplay
             signal = Hecton8.Core.GlobalRegistry.AtlasSignal;
             _cachedAtlasSignal = signal;
             return signal;
+        }
+
+        private LoreDatabaseManager ResolveCachedLoreDatabaseCold()
+        {
+            LoreDatabaseManager database = _cachedLoreDatabase;
+            if (database != null)
+                return database;
+
+            database = Hecton8.Core.GlobalRegistry.LoreDatabase;
+            _cachedLoreDatabase = database;
+            return database;
         }
 
         private void ResolveScientificWaterMetrics(

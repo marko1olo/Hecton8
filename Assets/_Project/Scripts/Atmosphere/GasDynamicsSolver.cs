@@ -116,6 +116,7 @@ namespace Hecton8.Atmosphere
         private NativeArray<int> _roomBaseIndex;
         private NativeArray<byte> BaseAwakeState;
         private NativeArray<byte> _basePlayerInside;
+        private NativeArray<int> _basePlayerInsideCount;
         private NativeArray<int> _baseRoomStart;
         private NativeArray<int> _baseRoomCount;
         private NativeArray<AbsoluteUniversePosition> _baseCenterAup;
@@ -379,6 +380,7 @@ namespace Hecton8.Atmosphere
             {
                 BaseAwakeState[baseId] = 1;
                 _basePlayerInside[baseId] = 0;
+                _basePlayerInsideCount[baseId] = 0;
                 _baseHibernatedUnscaledTime[baseId] = ResolveUnscaledTimeSeconds();
             }
 
@@ -391,6 +393,8 @@ namespace Hecton8.Atmosphere
             if (_stepRunning || !_basePlayerInside.IsCreated || baseId < 0 || baseId >= _baseCount)
                 return false;
 
+            if (_basePlayerInsideCount.IsCreated)
+                _basePlayerInsideCount[baseId] = playerInside ? math.max(1, _basePlayerInsideCount[baseId]) : 0;
             _basePlayerInside[baseId] = (byte)(playerInside ? 1 : 0);
             if (playerInside && BaseAwakeState.IsCreated && BaseAwakeState[baseId] == 0)
                 WakeBase(baseId, ResolveUnscaledTimeSeconds());
@@ -559,6 +563,7 @@ namespace Hecton8.Atmosphere
             AccumulateAudit(_roomBaseIndex, nameof(_roomBaseIndex), ref accumulator);
             AccumulateAudit(BaseAwakeState, nameof(BaseAwakeState), ref accumulator);
             AccumulateAudit(_basePlayerInside, nameof(_basePlayerInside), ref accumulator);
+            AccumulateAudit(_basePlayerInsideCount, nameof(_basePlayerInsideCount), ref accumulator);
             AccumulateAudit(_baseRoomStart, nameof(_baseRoomStart), ref accumulator);
             AccumulateAudit(_baseRoomCount, nameof(_baseRoomCount), ref accumulator);
             AccumulateAudit(_baseCenterAup, nameof(_baseCenterAup), ref accumulator);
@@ -689,6 +694,7 @@ namespace Hecton8.Atmosphere
             _roomBaseIndex = new NativeArray<int>(safeRoomCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             BaseAwakeState = ResolveBaseAwakeStateBuffer(safeBaseCapacity);
             _basePlayerInside = new NativeArray<byte>(safeBaseCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _basePlayerInsideCount = new NativeArray<int>(safeBaseCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _baseRoomStart = new NativeArray<int>(safeBaseCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _baseRoomCount = new NativeArray<int>(safeBaseCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _baseCenterAup = new NativeArray<AbsoluteUniversePosition>(safeBaseCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
@@ -723,6 +729,7 @@ namespace Hecton8.Atmosphere
             if (!_baseAwakeVaultOwned)
                 RegisterNativeArray(BaseAwakeState, nameof(BaseAwakeState));
             RegisterNativeArray(_basePlayerInside, nameof(_basePlayerInside));
+            RegisterNativeArray(_basePlayerInsideCount, nameof(_basePlayerInsideCount));
             RegisterNativeArray(_baseRoomStart, nameof(_baseRoomStart));
             RegisterNativeArray(_baseRoomCount, nameof(_baseRoomCount));
             RegisterNativeArray(_baseCenterAup, nameof(_baseCenterAup));
@@ -796,6 +803,7 @@ namespace Hecton8.Atmosphere
                     safeAmbientOxygen);
                 BaseAwakeState[baseId] = (byte)(baseId == 0 ? 1 : 0);
                 _basePlayerInside[baseId] = 0;
+                _basePlayerInsideCount[baseId] = 0;
                 _baseHibernatedUnscaledTime[baseId] = 0d;
             }
         }
@@ -928,18 +936,6 @@ namespace Hecton8.Atmosphere
                 return;
 
             double now = ResolveUnscaledTimeSeconds();
-            ReadOnlySpan<PlayerBaseEnterSignal> enterSignals = SignalBus<PlayerBaseEnterSignal>.GetFrameSnapshot();
-            for (int i = 0; i < enterSignals.Length; i++)
-            {
-                PlayerBaseEnterSignal signal = enterSignals[i];
-                if (!TryEnsureBaseSlotFromSignal(signal.BaseId, signal.RoomId, in signal.BaseCenterAup))
-                    continue;
-
-                _basePlayerInside[signal.BaseId] = 1;
-                _baseCenterAup[signal.BaseId] = signal.BaseCenterAup;
-                WakeBase(signal.BaseId, now);
-            }
-
             ReadOnlySpan<PlayerBaseExitSignal> exitSignals = SignalBus<PlayerBaseExitSignal>.GetFrameSnapshot();
             for (int i = 0; i < exitSignals.Length; i++)
             {
@@ -947,8 +943,34 @@ namespace Hecton8.Atmosphere
                 if (!TryEnsureBaseSlotFromSignal(signal.BaseId, signal.RoomId, in signal.BaseCenterAup))
                     continue;
 
-                _basePlayerInside[signal.BaseId] = 0;
+                int insideCount = 0;
+                if (_basePlayerInsideCount.IsCreated)
+                {
+                    insideCount = math.max(0, _basePlayerInsideCount[signal.BaseId] - 1);
+                    _basePlayerInsideCount[signal.BaseId] = insideCount;
+                }
+
+                _basePlayerInside[signal.BaseId] = (byte)(insideCount > 0 ? 1 : 0);
                 _baseCenterAup[signal.BaseId] = signal.BaseCenterAup;
+            }
+
+            // Enter wins over exit for same-frame module-to-module trigger handoffs.
+            ReadOnlySpan<PlayerBaseEnterSignal> enterSignals = SignalBus<PlayerBaseEnterSignal>.GetFrameSnapshot();
+            for (int i = 0; i < enterSignals.Length; i++)
+            {
+                PlayerBaseEnterSignal signal = enterSignals[i];
+                if (!TryEnsureBaseSlotFromSignal(signal.BaseId, signal.RoomId, in signal.BaseCenterAup))
+                    continue;
+
+                if (_basePlayerInsideCount.IsCreated)
+                {
+                    int insideCount = _basePlayerInsideCount[signal.BaseId];
+                    _basePlayerInsideCount[signal.BaseId] = insideCount < int.MaxValue ? insideCount + 1 : int.MaxValue;
+                }
+
+                _basePlayerInside[signal.BaseId] = 1;
+                _baseCenterAup[signal.BaseId] = signal.BaseCenterAup;
+                WakeBase(signal.BaseId, now);
             }
         }
 
@@ -972,6 +994,7 @@ namespace Hecton8.Atmosphere
                         hibernationAmbientOxygenKPa);
                     BaseAwakeState[i] = 1;
                     _basePlayerInside[i] = 0;
+                    _basePlayerInsideCount[i] = 0;
                 }
 
                 _baseCount = baseId + 1;
@@ -1250,6 +1273,7 @@ namespace Hecton8.Atmosphere
             DisposeArray(ref _roomBaseIndex, ref disposeHandle, waitForStep);
             DisposeBaseAwakeState(ref disposeHandle, waitForStep);
             DisposeArray(ref _basePlayerInside, ref disposeHandle, waitForStep);
+            DisposeArray(ref _basePlayerInsideCount, ref disposeHandle, waitForStep);
             DisposeArray(ref _baseRoomStart, ref disposeHandle, waitForStep);
             DisposeArray(ref _baseRoomCount, ref disposeHandle, waitForStep);
             DisposeArray(ref _baseCenterAup, ref disposeHandle, waitForStep);

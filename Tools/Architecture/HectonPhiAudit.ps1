@@ -7,7 +7,9 @@ param(
     [switch]$RequireCoreBuildGate,
     [int]$MaxCoreAsmdefDebtReferences = -1,
     [int]$MaxGeneratedProjectDebtReferences = -1,
-    [int]$MaxSourceBackedBridgeDebtReferences = -1
+    [int]$MaxSourceBackedBridgeDebtReferences = -1,
+    [int]$MaxSourceBackedCompileBridgeDebtReferences = -1,
+    [int]$MaxProjectReferenceReplacementDebtReferences = -1
 )
 
 $ErrorActionPreference = 'Stop'
@@ -1072,16 +1074,27 @@ function Get-CoreGraphAudit {
     if (Test-Path -LiteralPath $targetsPath) {
         $targetsProject = [xml](Get-Content -LiteralPath $targetsPath -Raw)
         foreach ($itemGroup in @($targetsProject.Project.ItemGroup)) {
-            if (-not (Test-IsCoreMsBuildCondition ([string]$itemGroup.Condition))) {
+            $condition = [string]$itemGroup.Condition
+            if (-not (Test-IsCoreMsBuildCondition $condition)) {
                 continue
+            }
+
+            $bridgeLane = 'CoreCompileBridge'
+            if ($condition.IndexOf('HectonBuildProjectReferences', [StringComparison]::Ordinal) -ge 0) {
+                $bridgeLane = 'ProjectReferenceReplacement'
             }
 
             foreach ($node in @($itemGroup.Reference)) {
                 $include = [string]$node.Include
+                if ([string]::IsNullOrWhiteSpace($include)) {
+                    continue
+                }
+
                 $kind = Get-CoreReferenceKind $include
                 $bridgeRows += [pscustomobject][ordered]@{
                     Reference = $include
                     Kind = $kind
+                    BridgeLane = $bridgeLane
                     IsHPhiDebt = ($kind -eq 'LeafDomain' -or $kind -eq 'PackageOrUnity' -or $kind -eq 'Other')
                 }
             }
@@ -1105,6 +1118,10 @@ function Get-CoreGraphAudit {
     $asmdefDebtRows = @($asmdefRows | Where-Object { $_.IsHPhiDebt })
     $projectDebtRows = @($projectRows | Where-Object { $_.IsHPhiDebt })
     $bridgeDebtRows = @($bridgeRows | Where-Object { $_.IsHPhiDebt })
+    $compileBridgeRows = @($bridgeRows | Where-Object { $_.BridgeLane -eq 'CoreCompileBridge' })
+    $compileBridgeDebtRows = @($compileBridgeRows | Where-Object { $_.IsHPhiDebt })
+    $replacementBridgeRows = @($bridgeRows | Where-Object { $_.BridgeLane -eq 'ProjectReferenceReplacement' })
+    $replacementBridgeDebtRows = @($replacementBridgeRows | Where-Object { $_.IsHPhiDebt })
     $unusedCoreReferenceScan = [ordered]@{
         Enabled = $false
     }
@@ -1132,6 +1149,10 @@ function Get-CoreGraphAudit {
             GeneratedProjectDebtReferenceCount = @($projectDebtRows).Count
             SourceBackedBridgeReferenceCount = @($bridgeRows).Count
             SourceBackedBridgeDebtReferenceCount = @($bridgeDebtRows).Count
+            SourceBackedCompileBridgeReferenceCount = @($compileBridgeRows).Count
+            SourceBackedCompileBridgeDebtReferenceCount = @($compileBridgeDebtRows).Count
+            ProjectReferenceReplacementReferenceCount = @($replacementBridgeRows).Count
+            ProjectReferenceReplacementDebtReferenceCount = @($replacementBridgeDebtRows).Count
         }
         CoreAsmdefReferences = @($asmdefRows)
         CoreAsmdefDebtReferences = @($asmdefDebtRows)
@@ -1180,6 +1201,22 @@ function Assert-CoreGraphBudget {
             $MaxSourceBackedBridgeDebtReferences))
     }
 
+    if ($MaxSourceBackedCompileBridgeDebtReferences -ge 0 -and
+        [int]$counts.SourceBackedCompileBridgeDebtReferenceCount -gt $MaxSourceBackedCompileBridgeDebtReferences) {
+        [void]$violations.Add((
+            'Source-backed Core compile-bridge H-Phi debt refs {0} exceed budget {1}.' -f
+            $counts.SourceBackedCompileBridgeDebtReferenceCount,
+            $MaxSourceBackedCompileBridgeDebtReferences))
+    }
+
+    if ($MaxProjectReferenceReplacementDebtReferences -ge 0 -and
+        [int]$counts.ProjectReferenceReplacementDebtReferenceCount -gt $MaxProjectReferenceReplacementDebtReferences) {
+        [void]$violations.Add((
+            'Core project-reference replacement H-Phi debt refs {0} exceed budget {1}.' -f
+            $counts.ProjectReferenceReplacementDebtReferenceCount,
+            $MaxProjectReferenceReplacementDebtReferences))
+    }
+
     if ($violations.Count -le 0) {
         return
     }
@@ -1199,14 +1236,43 @@ function Add-Count {
     $Counters[$Name] = [int]$Counters[$Name] + $Value
 }
 
+function Test-ContainsAnyLiteral {
+    param(
+        [string]$Content,
+        [string[]]$Literals
+    )
+
+    if ([string]::IsNullOrEmpty($Content) -or
+        $null -eq $Literals -or
+        $Literals.Count -le 0) {
+        return $false
+    }
+
+    foreach ($literal in $Literals) {
+        if (-not [string]::IsNullOrEmpty($literal) -and
+            $Content.IndexOf($literal, [StringComparison]::Ordinal) -ge 0) {
+            return $true
+        }
+    }
+
+    return $false
+}
+
 function Add-PatternCounts {
     param(
         [System.Collections.Specialized.OrderedDictionary]$Counters,
         [string]$Content,
-        [hashtable]$Patterns
+        [hashtable]$Patterns,
+        [hashtable]$LiteralHints
     )
 
     foreach ($entry in $Patterns.GetEnumerator()) {
+        if ($null -ne $LiteralHints -and
+            $LiteralHints.ContainsKey($entry.Key) -and
+            -not (Test-ContainsAnyLiteral $Content $LiteralHints[$entry.Key])) {
+            continue
+        }
+
         Add-Count $Counters $entry.Key $entry.Value.Matches($Content).Count
     }
 }
@@ -1506,6 +1572,29 @@ foreach ($entry in $patternSource.GetEnumerator()) {
         $regexOptions)
 }
 
+$patternLiteralHints = @{
+    SignalBusPush = @('SignalBus', 'GlobalSignals', 'VehicleCommandSignalBus', 'PhysicsDeterminismSignals', 'FluidFeedbackEvents', 'LocalizationEvents', 'VoxelChunkModifiedEvents')
+    GlobalRegistryGet = @('GlobalRegistry')
+    GlobalRegistrySurface = @('GlobalRegistry')
+    EventPublish = @('HectonEventBus', 'WaterTransitionEvents', 'SuitDamageEvents')
+    UnityUpdateMethods = @('Update')
+    ISlowTickable = @('ISlowTickable')
+    IJob = @('IJob')
+    ITickable = @('ITickable')
+    IFixedTickable = @('IFixedTickable')
+    GlobalDataVaultRefs = @('GlobalDataVault', 'IDataVault', 'VaultBufferHandle', 'GetBuffer', 'TryGetBuffer', 'GetBufferHandle', 'TryGetBufferHandle', 'ResolveBuffer')
+    NativeArrayRefs = @('NativeArray')
+    StructDeclarations = @('struct')
+    StructLayoutAttributes = @('StructLayout')
+    BinaryBlittableSafe = @('BinaryBlittableSafe')
+    StaticInstance = @('Instance')
+    FindObjectCalls = @('FindObject', 'FindFirstObjectByType', 'FindAnyObjectByType', 'FindObjectsByType', 'FindWithTag', 'GameObject.Find', 'Resources.FindObjectsOfTypeAll')
+    GetComponentCalls = @('GetComponent')
+    DisposeCalls = @('.Dispose')
+    AupPrecisionSafe = @('CurrentTotalOffsetDouble', 'ToAbsoluteUniversePositionDouble3', 'ToUniverseSpaceDouble3', 'ToRuntimeSpaceDouble3', 'FromAbsolutePosition', 'DistanceSq', 'ToRuntimeSpace')
+    AupPrecisionRisk = @('HectonFloatingOrigin', 'HectonMapMagicVegetationBridge', 'CurrentTotalOffset', 'NewTotalOffset', 'PreviousTotalOffset', 'AUP', 'universePosition', 'stableUniverseRoot')
+}
+
 $allCounters = New-CounterSet
 $runtimeCounters = New-CounterSet
 $editorCounters = New-CounterSet
@@ -1526,7 +1615,7 @@ foreach ($file in $files) {
     $fileCounters = New-CounterSet
     Add-Count $fileCounters 'CsFiles' 1
     Add-Count $fileCounters 'Lines' $lineCount
-    Add-PatternCounts $fileCounters $codeContent $patterns
+    Add-PatternCounts $fileCounters $codeContent $patterns $patternLiteralHints
 
     foreach ($key in $fileCounters.Keys) {
         Add-Count $allCounters $key $fileCounters[$key]
@@ -1561,7 +1650,7 @@ foreach ($file in $files) {
         $runtimeFileCounters = New-CounterSet
         Add-Count $runtimeFileCounters 'CsFiles' 1
         Add-Count $runtimeFileCounters 'Lines' $lineCount
-        Add-PatternCounts $runtimeFileCounters $runtimeCodeContent $patterns
+        Add-PatternCounts $runtimeFileCounters $runtimeCodeContent $patterns $patternLiteralHints
     }
 
     foreach ($key in $fileCounters.Keys) {

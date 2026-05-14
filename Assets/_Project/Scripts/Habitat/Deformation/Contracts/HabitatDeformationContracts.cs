@@ -1,7 +1,9 @@
+using System.Runtime.InteropServices;
 using Unity.Mathematics;
 
 namespace Hecton8.Habitat.Deformation.Contracts
 {
+    [StructLayout(LayoutKind.Sequential, Pack = 4)]
     public readonly struct HabitatModuleDeformationSample
     {
         public readonly uint NodeId;

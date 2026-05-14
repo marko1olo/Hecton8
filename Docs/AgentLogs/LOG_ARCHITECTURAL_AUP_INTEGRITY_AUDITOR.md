@@ -604,3 +604,36 @@ Verification:
 Integrator notes:
 - Do not use current full H-Phi source score as evidence; no full score completed.
 - A separate H-Phi PowerShell process with ambiguous ownership was observed and left untouched.
+
+## 2026-05-15 - Loop 25 Qualified AUP H-Phi Risk Cleanup
+
+What was wrong:
+- One editor debug path still called `HectonMapMagicVegetationBridge.ToUniverseSpace`, which converts through the legacy `Vector3` bridge.
+- The AUP H-Phi risk scanner also flagged already-double job fields and wrapper parameter names, reducing signal quality.
+
+What was done:
+- `KinematicGhostDebugger` now uses `ToUniverseSpaceDouble3` and `ToAbsoluteUniversePositionDouble3` before final `Vector3` SceneView drawing.
+- Internal runtime job fields in `HectonFloatingOrigin` and `WorldSpatialHashGrid` were renamed from `CurrentTotalOffset` to `CommittedTotalOffset`.
+- `HectonMapMagicVegetationBridge` wrapper parameter names were changed to `stableUniversePosition`.
+- Re-extracted this agent prompt from `Docs/Tasks/CURRENT_BATCH.md`; result remains `PROMPT_NOT_FOUND`.
+
+Cinematic Cheats used:
+- Editor visualization stays as `Vector3` Handles output. The precision fix is in the authority bridge, not an overbuilt editor drawing model.
+- Low tier runtime pays nothing. High/Ultra debug workflows get cleaner long-session AUP ghost previews.
+
+Exact Microseconds saved:
+- Gameplay frame time: 0 us.
+- Editor-only debugger cost: a few double scalar ops per sample when the window is open.
+- Review-time savings: qualified AUP H-Phi risk scan now returns `NO_MATCHES`, so future drift regressions are easier to isolate.
+
+Verification:
+- Qualified AUP H-Phi risk scan across `Assets/_Project/Scripts` returns `NO_MATCHES`.
+- Direct committed-offset leak scan returns `NO_MATCHES`.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` re-run. Residual hits remain broad `universe` text and known final-cast fluid/scatter/shader payload names.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json` completed successfully with Core asmdef debt refs 25 and generated project debt refs 10.
+- `git diff --check` on touched files reports line-ending warnings only, no whitespace errors.
+- No `dotnet build` or rebuild was run because the user explicitly forbade rebuilds.
+
+Integrator notes:
+- No Unity Console/import verification was available in this pass.
+- Full global H-Phi source score is still pending because the Loop 24 full source scan exceeded 240 seconds.

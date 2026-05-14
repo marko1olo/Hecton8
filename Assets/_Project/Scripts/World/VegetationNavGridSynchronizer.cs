@@ -1523,17 +1523,24 @@ namespace Hecton8.World
         {
             if (_abyssalNavNodeCount <= 0 ||
                 !_nativeMemory.AbyssalNavNodeSnapshotNative.IsCreated ||
+                _abyssalNavNodeSnapshot == null ||
+                _abyssalNavNodeSnapshot.Length <= 0 ||
                 !IsFinite(position))
             {
                 return -1;
             }
+
+            int safeNodeCount = math.min(_abyssalNavNodeCount, _abyssalNavNodeSnapshot.Length);
+            safeNodeCount = math.min(safeNodeCount, _nativeMemory.AbyssalNavNodeSnapshotNative.Length);
+            if (safeNodeCount <= 0)
+                return -1;
 
             if (TryFindNearestAbyssalNavNodeIndexFromHash(position, out int hashedIndex))
                 return hashedIndex;
 
             int bestIndex = -1;
             float bestDistanceSq = float.PositiveInfinity;
-            for (int i = 0; i < _abyssalNavNodeCount; i++)
+            for (int i = 0; i < safeNodeCount; i++)
             {
                 Vector3 candidate = _abyssalNavNodeSnapshot[i];
                 if (!IsFinite(candidate))
@@ -1555,6 +1562,8 @@ namespace Hecton8.World
             bestIndex = -1;
             if (!_nativeMemory.AbyssalNavGraphHashNative.IsCreated ||
                 _abyssalNavNodeCount <= 0 ||
+                _abyssalNavNodeSnapshot == null ||
+                _abyssalNavNodeSnapshot.Length <= 0 ||
                 abyssalNavGraphCellSize <= 0f ||
                 !math.isfinite(abyssalNavGraphCellSize) ||
                 !IsFinite(position) ||
@@ -1562,6 +1571,13 @@ namespace Hecton8.World
             {
                 return false;
             }
+
+            int safeNodeCount = math.min(_abyssalNavNodeCount, _abyssalNavNodeSnapshot.Length);
+            safeNodeCount = math.min(safeNodeCount, _nativeMemory.AbyssalNavNodeSnapshotNative.IsCreated
+                ? _nativeMemory.AbyssalNavNodeSnapshotNative.Length
+                : 0);
+            if (safeNodeCount <= 0)
+                return false;
 
             float inverseCellSize = math.rcp(math.max(0.01f, abyssalNavGraphCellSize));
             int baseCellX = (int)math.floor((position.x - _abyssalNavGraphOrigin.x) * inverseCellSize);
@@ -1584,7 +1600,7 @@ namespace Hecton8.World
 
                             do
                             {
-                                if ((uint)nodeIndex >= _abyssalNavNodeCount)
+                                if ((uint)nodeIndex >= safeNodeCount)
                                     continue;
 
                                 foundAny = true;

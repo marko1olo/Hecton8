@@ -189,3 +189,27 @@ Cinematic Cheats used: Static L-system/SDF meshes, shared atlas/material, tripla
 Exact Microseconds saved: Runtime remains 0 us/frame and 0 bytes procedural allocation. Prevented cost class is hidden renderer/component/material-slot drift; exact runtime microseconds were not profiled.
 
 Verification: No dotnet rebuild was run. `git diff --check` passed. Source scan found `ValidateMaterialAssetContract`, `ValidatePrefabHierarchyContract`, `ValidateComponentEnvelope`, `ValidateRendererMaterialContract`, and `HasVertexAttribute`; forbidden scan found no Shallows `Shader.Find`, `mesh.colors`, `renderer.sharedMaterial`, `.material`, or hot-path update methods. `PrefabEnvelopeYamlScan Count=200 Bad=0`; material YAML confirms `m_CustomRenderQueue: -1`, instancing enabled, empty keyword arrays; `MeshVertexChannelYamlScan Count=600 Bad=0 MaxNonZeroChannels=5`.
+
+## 2026-05-15 Material Sampling State Contract
+
+What was wrong: The Shallows material locked atlas references and shader values, but not atlas texture scale/offset or serialized keyword arrays. That left a silent path for triplanar sampling drift and unintended shader variants.
+
+What was done: Added explicit identity atlas texture transforms during material creation, validation for identity scale/offset on all four atlases, validation for empty serialized `m_ValidKeywords` and `m_InvalidKeywords`, and a `Vector2` approximate comparison helper.
+
+Cinematic Cheats used: Shared atlas/material, triplanar projection, vertex-color height masks, opaque math LOD, no flora collision, static LOD meshes, and rock-only convex collision remain unchanged.
+
+Exact Microseconds saved: Runtime remains 0 us/frame and 0 bytes procedural allocation. This prevents asset drift from creating shader variant spread or sampling mismatch; exact runtime microseconds were not profiled.
+
+Verification: No dotnet rebuild was run. `git diff --check` passed. Source scan found `SetMaterialTextureTransform`, `ValidateMaterialTextureTransform`, serialized keyword checks, and `Approximately(Vector2)`; forbidden scan found no Shallows `Shader.Find`, `mesh.colors`, `renderer.sharedMaterial`, `.material`, or hot-path update methods. `MaterialTextureTransformYamlScan Props=4 Bad=0 ValidKeywordEmpty=1 InvalidKeywordEmpty=1 DefaultQueue=1`.
+
+## 2026-05-15 Atlas Import Metadata Alignment
+
+What was wrong: Shallows atlas PNGs are `1024x1024`, but their importer metadata still had top-level `maxTextureSize: 2048`, Default/Standalone `maxTextureSize: 512`, and ORM imported as sRGB.
+
+What was done: Patched the four Shallows atlas `.png.meta` files so top-level, DefaultTexturePlatform, and Standalone max size are `1024`; kept Standalone BC7 for Albedo/ORM/MatCap and BC5 for Normal; corrected ORM to linear import.
+
+Cinematic Cheats used: Shared 1024 atlases, compressed PC formats, triplanar shader projection, MatCap fake lighting, vertex-color masks, opaque math LOD, and static LOD payloads remain unchanged.
+
+Exact Microseconds saved: Runtime remains 0 us/frame and 0 bytes procedural allocation. This prevents silent Standalone downsample and gamma-space ORM errors; exact runtime microseconds were not profiled.
+
+Verification: No dotnet rebuild and no Unity import was run. `AtlasImporterYamlScan Count=4 Bad=0`; `AtlasPngDimensionScan Count=4 Bad=0`; `git diff --check` passed for the edited atlas meta files.

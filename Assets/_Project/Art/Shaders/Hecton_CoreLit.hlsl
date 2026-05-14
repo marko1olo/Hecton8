@@ -31,6 +31,14 @@
 #define HECTON_ACTIVE_SONAR_MAX_PINGS 4
 #endif
 
+#ifndef HECTON_CORE_LIT_HABITAT_STRESS_EPSILON
+#define HECTON_CORE_LIT_HABITAT_STRESS_EPSILON 0.0025
+#endif
+
+#ifndef HECTON_CORE_LIT_HABITAT_DISPLACEMENT_EPSILON
+#define HECTON_CORE_LIT_HABITAT_DISPLACEMENT_EPSILON 0.0001
+#endif
+
 float4 _HectonFlashlightPositionWS;
 float4 _HectonFlashlightDirectionWS;
 float4 _HectonFlashlightColor;
@@ -504,7 +512,8 @@ float3 HectonCoreLitApplyHabitatAnalyticalStress(float3 positionWS, float3 norma
 {
     float stress01 = saturate(_HectonHabitatStressParams.x);
     float displacementMax = max(_HectonHabitatStressParams.y, 0.0);
-    if (stress01 <= 0.0001 || displacementMax <= 0.0001)
+    if (stress01 <= HECTON_CORE_LIT_HABITAT_STRESS_EPSILON ||
+        displacementMax <= HECTON_CORE_LIT_HABITAT_DISPLACEMENT_EPSILON)
         return positionWS;
 
     float radius = max(_HectonHabitatStressCenterRadius.w, 0.0);

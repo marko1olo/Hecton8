@@ -162,3 +162,17 @@ Scalability potential: Low/MX350 benefits from a more truthful map of where dire
 Hardware Impact: Runtime hot path cost is 0 us; only the CLI audit script changed. Static audit cost for the latest full source pass is about 149.8 seconds in this workspace. `-CoreGraphOnly -Summary -Json` provides a fast graph-only status path, but full H-Phi still needs a cached or compiled analyzer before CI gating.
 
 Verification: No rebuild was run. Static checks completed: `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json`, `git diff --check -- Tools/Architecture/HectonPhiAudit.ps1`, and `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json`. Latest full summary reports `SignalBusPush=328`, `EventPublish=28`, `RiskIntegration=0.053947368`, `RuntimeHPhiRisk=0.000505917`, and `RuntimeHPhiNarrow=0.009377979`. Runtime Unity evidence remains pending.
+
+## 2026-05-15 Lexical Scrub Containment And Full Scan Recovery
+
+Problem: Static regex counters can be polluted by comments and smoke-test string literals. A first-pass lexical scrubber made the model more honest in theory, but in this PowerShell implementation it made the full source scan exceed a 420-second cap twice. Leaving that behavior as the default would make H-Phi unusable for iterative monitoring.
+
+Solution: Gate lexical comment/string scrubbing behind explicit `-LexicalScrub` and restore the default source counter path to the proven raw-source scan. Keep `-CoreGraphOnly -Summary -Json` for fast graph evidence and default `-Summary -Json` for full H-Phi evidence. Treat lexical scrubbing as future compiled-analyzer work, not a default PowerShell path.
+
+Rejected Alternatives: Claiming partial H-Phi output from the timed-out runs was rejected as false reporting. Leaving the slow scrubber enabled by default was rejected because it breaks the monitoring loop. Removing the false-positive concern entirely was rejected; it is now recorded as a tool accuracy backlog item.
+
+Scalability potential: Low/MX350 benefits from a H-Phi tool that completes reliably instead of becoming another long-running local build substitute. Middle/High/Ultra benefit from the same operational discipline: architecture metrics can be checked often enough to guide actual runtime work instead of being run only after large risky batches.
+
+Hardware Impact: Runtime hot path cost is 0 us. Tool-only impact: two lexical-scrub full scans timed out beyond 420 seconds; the restored default full summary completed at `2026-05-15 02:55:39 +04:00` with `RuntimeHPhiNarrow=0.010531061` and `RuntimeHPhiRisk=0.000560589`.
+
+Verification: No rebuild was run. Static checks completed: `git diff --check -- Tools/Architecture/HectonPhiAudit.ps1`, `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json`, and `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json`. Latest current-tree summary reports `SignalBusPush=329`, `EventPublish=28`, `DataVaultRefs=151`, `NativeArrayRefs=7018`, `AupPrecisionIntegrity=0.983739837`, Core asmdef debt `25`, generated project debt `10`, and source-backed bridge debt `21`. Runtime Unity evidence remains pending.

@@ -153,10 +153,20 @@ Task Count: 15
 - [x] Threat/echo sampler payload proof | DOD: surface threat and echo samplers now require 64-bit complete grid lengths and finite extents before indexed reads; non-finite interpolated threat resolves to zero influence instead of NaN; estimate 5 us.
 - [x] Targeted bridge scan | DOD: target-domain bridge ranges for flow volume, threat metadata, threat hashes, threat sampler, and echo samplers report no raw float division or forbidden hot-math matches; rejected claiming broad bridge purity because canopy/terrain code is outside this prompt; estimate 9 us.
 
+## Loop 21 - Threat Service And Nearest-Node Fail-Closed
+
+- [x] External threat pulse sanitation | DOD: threat pulse ingress rejects non-finite position/radius/strength/hold duration before writing route-pressure state; rejected clamping NaN into a live hotspot; estimate 3 us.
+- [x] Artificial-structure registration sanitation | DOD: structure bounds now require finite center/size and positive volume before insertion or invalidation; rejected storing corrupt damping bounds and relying on later hash guards; estimate 4 us.
+- [x] Flow/conduit API finite proof | DOD: public flow fallback and conduit-vector queries reject non-finite positions, non-finite player fallback, stale managed conduit arrays, non-finite conduit vectors, and non-finite strength; rejected returning NaN steering vectors to fauna consumers; estimate 6 us.
+- [x] Threat-hotspot complete-grid proof | DOD: hotspot scan requires finite grid metadata, finite distance band inputs, finite player position, complete native grid length, and finite threat samples; rejected trusting grid resolution alone before O(N) indexed scan; estimate 6 us.
+- [x] Nearest-node count clamp | DOD: nearest-node linear and hash lookup now clamp `_abyssalNavNodeCount` to both managed snapshot length and native snapshot length before indexing; rejected assuming snapshot count stayed coherent under failed rebuilds; estimate 5 us.
+- [x] Service/hash static scan | DOD: `VegetationThreatAndStructureService.cs` and nearest-node ranges report no raw float division or forbidden hot-math/allocation matches after loop 21; estimate 5 us.
+
 ## Verification
 
 - [x] Static scan | PASS: `StringPullPathJob`, `NativeAStarJob`, `TryResolveAbyssalNavNodeCandidate`, abyssal nav support/hash, nav graph ingress, and funnel telemetry conversion regions have no `math.normalize`, `math.length(`, `math.distance(`, `.normalized`, or raw `/` code matches after loop 19.
 - [x] Bridge targeted scan | PASS: flow-volume, threat metadata, threat chunk hash, artificial-structure hash, threat sampler, and echo sampler ranges in `HectonMapMagicVegetationBridge.cs` have no raw float-division or forbidden hot-math matches after loop 20.
+- [x] Threat-service targeted scan | PASS: `VegetationThreatAndStructureService.cs` and nearest-node lookup ranges in `VegetationNavGridSynchronizer.cs` have no raw float-division or forbidden hot-math/allocation matches after loop 21.
 - [x] Diff hygiene | PASS: `git diff --check` passed for edited funnel/scheduler/status/log files; only LF-to-CRLF working-copy warnings were emitted.
 - [x] Static H-Phi audit | ATTEMPTED: `Tools/Architecture/HectonPhiAudit.ps1 -Json` timed out after 120 seconds under current repo load; no score claimed from this pass.
 - [x] Compile check | BLOCKED BY DEPENDENCY: bounded no-reference `dotnet build Hecton8.Core.csproj --no-restore /m:1 /nr:false /p:BuildProjectReferences=false` completed with 63 unrelated errors in `VRAMEnforcer`, `VoxelDeltaProcessor`, `SealedDoor`, `BinaryLayoutManifest`, and `HardwareTierDetector`; none were reported in `VegetationFlowFieldIntegrator.cs`, `VegetationNavGridSynchronizer.cs`, or `HectonMapMagicVegetationBridge.cs`.

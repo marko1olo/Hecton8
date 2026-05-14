@@ -152,6 +152,7 @@ namespace Hecton8.UI
         private NativeArray<TooltipBlackBoxEntry> _blackBox;
         private TMP_FontAsset _cachedAsciiFont;
         private Camera _cachedRenderCamera;
+        private Transform _cachedRenderCameraTransform;
         private IInputDeterminismService _inputDeterminism;
         private AbsoluteUniversePosition _activeTargetAup;
         private Vector3 _activeRuntimeAnchor;
@@ -174,6 +175,9 @@ namespace Hecton8.UI
         private float _boundIconFaceDilate = float.NaN;
         private float _boundTextDitherEnabled = float.NaN;
         private float _boundIconDitherEnabled = float.NaN;
+        private float _cachedMaxVisibleDistance = float.NaN;
+        private float _cachedMaxVisibleDistanceSq;
+        private Vector3 _cachedBoundsSize;
         private bool _hasSignalTarget;
         private bool _diagnosticActive;
         private bool _registeredLateFrame;
@@ -186,6 +190,7 @@ namespace Hecton8.UI
         private bool _materialResolveFailed;
         private bool _materialsReady;
         private bool _lowTierActive;
+        private bool _cachedRenderCameraFromInteraction;
 
         public void LateFrameTick()
         {
@@ -227,14 +232,17 @@ namespace Hecton8.UI
             if (camera == null)
                 return;
 
-            Transform cameraTransform = camera.transform;
+            Transform cameraTransform = _cachedRenderCameraTransform;
+            if (cameraTransform == null)
+                return;
+
             Vector3 cameraPosition = cameraTransform.position;
             Vector3 cameraRight = cameraTransform.right;
             Vector3 cameraUp = cameraTransform.up;
             Vector3 cameraForward = cameraTransform.forward;
             Vector3 anchorPosition = ResolveAnchorPosition(cameraPosition);
-            float maxDistanceSq = maxVisibleDistance * maxVisibleDistance;
-            if ((anchorPosition - cameraPosition).sqrMagnitude > maxDistanceSq)
+            RefreshVisibleDistanceCache();
+            if ((anchorPosition - cameraPosition).sqrMagnitude > _cachedMaxVisibleDistanceSq)
                 return;
 
             if (!IsFinite(anchorPosition))
@@ -248,7 +256,7 @@ namespace Hecton8.UI
             Vector4 tint = new Vector4(resolvedColor.r, resolvedColor.g, resolvedColor.b, resolvedColor.a * _visibleAlpha);
             bool lowTier = IsLowTier();
             float ditherEnabled = lowTier ? 0f : 1f;
-            Bounds bounds = new Bounds(anchorPosition, Vector3.one * math.max(1f, maxVisibleDistance * 0.35f));
+            Bounds bounds = new Bounds(anchorPosition, _cachedBoundsSize);
             UploadUvTablesIfDirty();
 
             if (_iconCount > 0 && _runtimeIconMaterial != null)
@@ -340,7 +348,7 @@ namespace Hecton8.UI
             TryUnregisterHotSwapListener();
             ClearTooltipState();
             _promptLength = 0;
-            _cachedRenderCamera = null;
+            CacheRenderCamera(null, fromInteraction: false);
             _inputDeterminism = null;
         }
 
@@ -358,9 +366,10 @@ namespace Hecton8.UI
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Player)
             {
-                _cachedRenderCamera = null;
-                if (interactionCamera == null && currentService is IPlayerRuntimeContext playerContext)
-                    _cachedRenderCamera = playerContext.PlayerCamera;
+                CacheRenderCamera(interactionCamera == null && currentService is IPlayerRuntimeContext playerContext
+                    ? playerContext.PlayerCamera
+                    : null,
+                    fromInteraction: false);
             }
 
             if (serviceSlot != GlobalRegistryServiceSlot.Input)
@@ -1035,14 +1044,29 @@ namespace Hecton8.UI
         private Camera ResolveCamera()
         {
             if (interactionCamera != null)
+            {
+                if (!_cachedRenderCameraFromInteraction || !ReferenceEquals(_cachedRenderCamera, interactionCamera))
+                    CacheRenderCamera(interactionCamera, fromInteraction: true);
+
                 return interactionCamera;
+            }
+
+            if (_cachedRenderCameraFromInteraction)
+                CacheRenderCamera(null, fromInteraction: false);
 
             if (_cachedRenderCamera != null)
                 return _cachedRenderCamera;
 
             IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
-            _cachedRenderCamera = playerContext != null ? playerContext.PlayerCamera : null;
+            CacheRenderCamera(playerContext != null ? playerContext.PlayerCamera : null, fromInteraction: false);
             return _cachedRenderCamera;
+        }
+
+        private void CacheRenderCamera(Camera camera, bool fromInteraction)
+        {
+            _cachedRenderCamera = camera;
+            _cachedRenderCameraTransform = camera != null ? camera.transform : null;
+            _cachedRenderCameraFromInteraction = fromInteraction;
         }
 
         private Camera ResolveRenderCamera()
@@ -1081,6 +1105,17 @@ namespace Hecton8.UI
         private bool IsLowTier()
         {
             return _lowTierActive;
+        }
+
+        private void RefreshVisibleDistanceCache()
+        {
+            float distance = maxVisibleDistance;
+            if (_cachedMaxVisibleDistance == distance)
+                return;
+
+            _cachedMaxVisibleDistance = distance;
+            _cachedMaxVisibleDistanceSq = distance * distance;
+            _cachedBoundsSize = Vector3.one * math.max(1f, distance * 0.35f);
         }
 
         private void RefreshScalabilityTier()

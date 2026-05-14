@@ -174,6 +174,17 @@ Execution lane: SIMULATION / `PriorityLayer.Player`
 - [x] Dead default delta removed. DOD: `DefaultDeltaSeconds` is deleted from the lever after the sanitizer change, leaving no stale constant suggesting fake time is acceptable. Rejected: keeping unused timing constants because they invite regression. Estimate: compile-time hygiene only.
 - [x] Reverification without dotnet. DOD: `git diff --check` passed with CRLF warning only; scoped counter for `OpenXRManualOverrideLever.cs` reports `DefaultDeltaSeconds=0`, `InvalidDeltaToZero=1`, `QuaternionSlerp=0`, `Vector3Lerp=0`, `HingeJoint=0`, `UnityUpdateMethods=0`. Rejected: dotnet rebuild/probe by explicit user instruction. Estimate: verification only.
 
+## Loop 26 - Latched Lever Idle Eviction
+
+- [x] Latched lever leaves active dispatcher and receiver lanes. DOD: `TryLatch()` now unregisters the physical receiver and player tick after publishing manual override, haptic, and prologue signals; the current latch tick still writes its final blackbox frame before returning. Rejected: leaving a one-shot latched lever in the 60 Hz player lane and fixed collider receiver table forever. Estimate: saves one inert lever tick and one fixed receiver slot after latch; 0 B/frame added.
+- [x] Latched lifecycle rebind guards. DOD: `TryRegisterTick()` and `TryRegisterReceiver()` now refuse registration while `_latched` is true, so dispatcher hot-swap or lifecycle re-entry cannot revive a spent manual override. Rejected: relying on `Tick()`'s latched branch because it still pays input/XR/visual/telemetry work. Estimate: cold branch only; prevents post-latch re-registration drift.
+- [x] Reverification without dotnet. DOD: `git diff --check` passed with CRLF warnings only; forbidden-pattern scan over `OpenXRManualOverrideLever.cs` returned no matches; source counter reports `TryLatchUnregisterPair=1`, `LatchedReceiverGuard=1`, `LatchedTickGuard=1`, `BlackBoxCallAfterLatch=1`, `DotnetMention=0`. Rejected: dotnet rebuild/probe by explicit user instruction. Estimate: verification only.
+
+## Loop 27 - Latch Blackbox State Coherence
+
+- [x] Final latch telemetry angle refreshed from native state. DOD: after `TryLatch(currentAngle)` mutates `_leverAngles[0]` to `maxAngleDegrees`, `Tick()` refreshes `currentAngle` from `_leverAngles[0]` before `WriteBlackBoxFrame(currentAngle)`. Rejected: writing a latched telemetry flag with a pre-latch angle while target/velocity already reflect the forced max state. Estimate: one scalar native read on lever ticks; 0 B/frame allocations.
+- [x] Reverification without dotnet. DOD: `git diff --check` passed with CRLF warnings only; forbidden-pattern scan over `OpenXRManualOverrideLever.cs` returned no matches; source counter reports `LatchRefreshBeforeBlackbox=1`, `StaleLatchWriteSequence=0`, `TryLatchUnregisterPair=1`, `DotnetMention=0`. Rejected: dotnet rebuild/probe by explicit user instruction. Estimate: verification only.
+
 STATUS: PENDING VERIFICATION - Unity editor/global Core compile dependency wall prevents full player compile proof in this session.
 
 ## Compile Attempts

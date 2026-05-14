@@ -11,6 +11,7 @@ using Hecton8.Inventory;
 using Hecton8.Items;
 using Hecton8.Tools;
 using Hecton8.Core;
+using Hecton8.Core.Signals;
 using TMPro;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -109,6 +110,8 @@ namespace Hecton8.UI
         private ToolDurabilitySystem _subscribedDurabilitySystem;
         private PlayerInventoryManager _inventoryManager;
         private bool _registeredToDispatcher;
+        private uint _inventorySignalHash;
+        private uint _lastInventorySignalRevision;
         private bool _inventoryMassOverCapacity;
         private int _summaryMassCharStart = -1;
         private int _summaryMassCharLength;
@@ -165,6 +168,12 @@ namespace Hecton8.UI
         /// <inheritdoc />
         public void Tick(float deltaTime)
         {
+            if (IsTabActive && ConsumeInventoryChangedSignals())
+            {
+                _refreshDirty = true;
+                RefreshAll();
+            }
+
             UpdateSummaryMassPulse(deltaTime);
         }
 
@@ -206,6 +215,7 @@ namespace Hecton8.UI
                 HUDNotification.TryGetActive(out hudNotification);
             labelFont = LocalizedFontResolver.ResolveReadableFont(labelFont);
             numericFont = LocalizedFontResolver.ResolveNumericFont(numericFont, labelFont);
+            RefreshInventorySignalBinding();
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
@@ -238,8 +248,6 @@ namespace Hecton8.UI
 
         private void Subscribe()
         {
-            if (playerInventory != null)
-                playerInventory.InventoryChanged += HandleInventoryChanged;
             if (toolManager != null)
             {
                 toolManager.ActiveSlotChanged += HandleActiveSlotChanged;
@@ -252,8 +260,6 @@ namespace Hecton8.UI
 
         private void Unsubscribe()
         {
-            if (playerInventory != null)
-                playerInventory.InventoryChanged -= HandleInventoryChanged;
             if (toolManager != null)
             {
                 toolManager.ActiveSlotChanged -= HandleActiveSlotChanged;
@@ -298,11 +304,45 @@ namespace Hecton8.UI
             _subscribedDurabilitySystem = null;
         }
 
-        private void HandleInventoryChanged()
+        private bool ConsumeInventoryChangedSignals()
         {
-            _refreshDirty = true;
-            if (IsTabActive)
-                RefreshAll();
+            uint inventoryHash = _inventorySignalHash;
+            if (inventoryHash == 0u)
+                return false;
+
+            bool dirty = false;
+            ReadOnlySpan<InventoryChangedSignal> signals = SignalBus<InventoryChangedSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                ref readonly InventoryChangedSignal signal = ref signals[i];
+                if (signal.InventoryHash != inventoryHash)
+                    continue;
+
+                if (signal.Revision == _lastInventorySignalRevision && _lastInventorySignalRevision != 0u)
+                    continue;
+
+                _lastInventorySignalRevision = signal.Revision;
+                dirty = true;
+            }
+
+            return dirty;
+        }
+
+        private void RefreshInventorySignalBinding()
+        {
+            uint resolvedHash = ResolveInventorySignalHash(playerInventory);
+            if (_inventorySignalHash == resolvedHash)
+                return;
+
+            _inventorySignalHash = resolvedHash;
+            _lastInventorySignalRevision = 0u;
+        }
+
+        private static uint ResolveInventorySignalHash(PlayerInventory inventory)
+        {
+            return inventory != null && inventory.gameObject != null
+                ? unchecked((uint)EntityId.ToULong(inventory.gameObject.GetEntityId()))
+                : 0u;
         }
 
         private void HandleActiveSlotChanged(int _)
@@ -371,6 +411,7 @@ namespace Hecton8.UI
         private void HandlePdaOpened(int tab)
         {
             if (tab != loadoutTabIndex) return;
+            AutoResolve();
             RefreshDurabilityBindings();
             _refreshDirty = true;
             RefreshAll();
@@ -379,6 +420,7 @@ namespace Hecton8.UI
         private void HandlePdaTabChanged(int _, int newTab)
         {
             if (newTab != loadoutTabIndex) return;
+            AutoResolve();
             RefreshDurabilityBindings();
             _refreshDirty = true;
             RefreshAll();

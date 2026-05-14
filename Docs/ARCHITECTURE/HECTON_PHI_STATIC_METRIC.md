@@ -154,6 +154,12 @@ asmdef references. Bridge graph debt is:
 LeafDomain + PackageOrUnity + Other
 ```
 
+Bridge rows also carry a lane:
+
+- `CoreCompileBridge`: source-backed references used by the Core compile bridge.
+- `ProjectReferenceReplacement`: direct assembly references used when generated
+  project references are disabled for the medic lane.
+
 The graph audit also verifies the Core medic build gate in
 `Directory.Build.props`:
 
@@ -171,11 +177,12 @@ verification focused when generated projects contain package/vendor references.
 Use explicit budgets to prevent new Core graph debt:
 
 ```powershell
-Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -RequireCoreBuildGate -MaxCoreAsmdefDebtReferences 25 -MaxGeneratedProjectDebtReferences 10 -MaxSourceBackedBridgeDebtReferences 8
+Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -RequireCoreBuildGate -MaxCoreAsmdefDebtReferences 25 -MaxGeneratedProjectDebtReferences 10 -MaxSourceBackedBridgeDebtReferences 20 -MaxSourceBackedCompileBridgeDebtReferences 8 -MaxProjectReferenceReplacementDebtReferences 12
 ```
 The numbers above are the 2026-05-15 known baseline after removing three
-unused Core asmdef debt references and two unused source-backed bridge
-references from the integrator pass.
+unused Core asmdef debt references and three unused source-backed bridge
+references from the integrator pass. The total bridge debt is 20: 8
+Core-compile-bridge debt refs and 12 project-reference replacement debt refs.
 They are not a target. Lower them only after staged contract extraction and
 compile verification.
 
@@ -272,7 +279,7 @@ Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json
 Core graph budget gate:
 
 ```powershell
-Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -RequireCoreBuildGate -MaxCoreAsmdefDebtReferences 25 -MaxGeneratedProjectDebtReferences 10 -MaxSourceBackedBridgeDebtReferences 8
+Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -RequireCoreBuildGate -MaxCoreAsmdefDebtReferences 25 -MaxGeneratedProjectDebtReferences 10 -MaxSourceBackedBridgeDebtReferences 20 -MaxSourceBackedCompileBridgeDebtReferences 8 -MaxProjectReferenceReplacementDebtReferences 12
 ```
 
 Core graph with unused-reference candidates:

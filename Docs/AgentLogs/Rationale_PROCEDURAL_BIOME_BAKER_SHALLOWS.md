@@ -285,3 +285,31 @@ Scalability potential: Low/MX350 keeps component-minimal static prefabs, one sha
 Hardware Impact: Runtime remains 0 us/frame and 0 bytes procedural allocation. The gain is prevention: no extra components, extra material slots, transparent queue override, missing normals, missing color stream, or missing UV0 can enter the generated Shallows library unnoticed. Exact runtime microseconds are not profiled because this is editor validation.
 
 Verification: No dotnet rebuild was run. `git diff --check` passed for `ShallowsBioForgeBatchBaker.cs`. Source scans found the new material, prefab hierarchy, component envelope, renderer material slot, and mesh vertex attribute validators; source brace count remained balanced and `NonAscii=0`. Forbidden source scan found no Shallows `Shader.Find`, `mesh.colors`, `renderer.sharedMaterial`, `.material`, `Update`, `LateUpdate`, or `FixedUpdate` hits. YAML scans found `PrefabEnvelopeYamlScan Count=200 Bad=0 MaterialGuid=f669d8458f3703841b4ed34a8236b192`, material `m_CustomRenderQueue: -1` with instancing enabled and empty keyword arrays, and `MeshVertexChannelYamlScan Count=600 Bad=0 MaxNonZeroChannels=5`.
+
+## Decision 21 - Material Sampling State Lockdown
+
+Problem: The material validator locked shader identity, atlas object references, scalar/color values, default render queue, and renderer material slots. It still did not lock per-texture scale/offset or serialized material keyword arrays. A bad atlas transform would distort all triplanar sampling, and a stray keyword could create unwanted shader variants while every prior texture-reference check still passed.
+
+Solution: During material creation, explicitly set `_AlbedoAtlas`, `_NormalAtlas`, `_ORMAtlas`, and `_MatCap` texture scale to `Vector2.one` and offset to `Vector2.zero`. During validation, reject any atlas texture transform that is not identity and reject non-empty serialized `m_ValidKeywords` or `m_InvalidKeywords`. Add `Approximately(Vector2)` for the same epsilon-based contract style used by existing color and transform checks.
+
+Rejected Alternatives: Trusting Unity's default texture transform state was rejected because it is serialized mutable data. Runtime material correction was rejected because Shallows payloads must remain static and shared, with no material clone or runtime mutation. Adding shader-side compensation was rejected because it would spend ALU to hide an editor asset defect.
+
+Scalability potential: Low/MX350 keeps one shared atlas layout with no accidental tiling or offset blowups. Middle/High keep deterministic sampling and SRP-batcher-friendly variant state. Ultra can intentionally add higher-tier material keywords only by changing the material contract and rationale together.
+
+Hardware Impact: Runtime remains 0 us/frame and 0 bytes procedural allocation. The gain is prevention: no accidental atlas transform or keyword drift can silently create visual instability, shader variant spread, or sampling mismatch across 200 generated prefabs. Exact runtime microseconds are not profiled because this is editor validation.
+
+Verification: No dotnet rebuild was run. `git diff --check` passed for `ShallowsBioForgeBatchBaker.cs`. Source scans found `SetMaterialTextureTransform`, `ValidateMaterialTextureTransform`, serialized keyword checks, and `Approximately(Vector2)`; source brace count remained balanced and `NonAscii=0`. Forbidden source scan found no Shallows `Shader.Find`, `mesh.colors`, `renderer.sharedMaterial`, `.material`, `Update`, `LateUpdate`, or `FixedUpdate` hits. Material YAML scan found `MaterialTextureTransformYamlScan Props=4 Bad=0 ValidKeywordEmpty=1 InvalidKeywordEmpty=1 DefaultQueue=1`.
+
+## Decision 22 - Atlas Import Metadata Realignment
+
+Problem: The atlas source PNGs are exactly `1024x1024` and the baker contract uses `AtlasSize = 1024`, but the current Unity importer metadata did not match: top-level max size was `2048`, Default/Standalone platform max size was `512`, and ORM was imported as sRGB. That creates a real fail condition for the existing validator and a real visual/VRAM ambiguity: authored 1024 data could be sampled as downscaled 512 in Standalone while ORM roughness/emission data goes through gamma space.
+
+Solution: Patch only the four Shallows atlas `.png.meta` files. Top-level, DefaultTexturePlatform, and Standalone `maxTextureSize` now match `1024`. Albedo, ORM, and MatCap keep Standalone BC7; Normal keeps BC5. ORM is now linear (`sRGBTexture: 0`), matching the baker's `AtlasKind.Orm` importer contract.
+
+Rejected Alternatives: Lowering `AtlasSize` to `512` was rejected because it would discard authored source detail and contradict the status-established 1024 atlas payload. Leaving Default/Standalone at `512` was rejected because it would make the validator fail and silently downscale the shipped PC atlas. Running Unity reimport or any dotnet rebuild was rejected under the user's explicit constraint.
+
+Scalability potential: Low/MX350 gets predictable compressed 1024 shared atlases with no per-instance textures or material clones. Middle/High/Ultra preserve the same source detail and can intentionally change atlas size only through a contract update. ORM linear import keeps material response stable across tiers.
+
+Hardware Impact: Runtime remains 0 us/frame and 0 bytes procedural allocation. The gain is prevention: no Standalone 512 downsample, top-level 2048 ambiguity, or sRGB ORM mistake can silently alter visual quality or material math. Exact runtime microseconds are not profiled because this is import metadata validation.
+
+Verification: No dotnet rebuild and no Unity import was run. `AtlasImporterYamlScan Count=4 Bad=0` and `AtlasPngDimensionScan Count=4 Bad=0`. `git diff --check` passed for the four edited Shallows atlas meta files.

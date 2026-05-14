@@ -55,17 +55,22 @@ namespace Hecton8.Gameplay.Loot
         private bool _dumpedFault;
         private int _activeCount;
         private int _scheduledCount;
+        private int _scheduledCapacity;
         private int _telemetryIndex;
         private uint _telemetryFrameCounter;
         private uint _lastTelemetryRecordedFrame;
         private uint _frameCounter;
+        private byte _scalabilityTier;
+        private byte _pendingScalabilityTier;
+        private byte _pendingScalabilityTierTicks;
+        private bool _scalabilityTierInitialized;
         private AbsoluteUniversePosition _lastPlayerAup;
         private float _scheduledPullRadiusMeters;
         private float _scheduledPullRadiusSq;
 
         private int Capacity => math.clamp(maxLootEntities, 1, LootMagnetConstants.MaxEntitiesHardCap);
 
-        private bool IsLowTier => GlobalRegistry.ScalabilityTierProfileByte == 0;
+        private bool IsLowTier => _scalabilityTier == 0;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetBootstrapState()
@@ -236,6 +241,43 @@ namespace Hecton8.Gameplay.Loot
                 ? _playerContext.Inventory
                 : GlobalRegistry.PlayerInventoryRuntime;
             _playerTransform = _playerContext != null ? _playerContext.PlayerTransform : null;
+            RefreshScalabilityTier();
+        }
+
+        private void RefreshScalabilityTier()
+        {
+            byte requestedTier = GlobalRegistry.ScalabilityTierProfileByte;
+            if (!_scalabilityTierInitialized)
+            {
+                _scalabilityTier = requestedTier;
+                _pendingScalabilityTier = requestedTier;
+                _pendingScalabilityTierTicks = 0;
+                _scalabilityTierInitialized = true;
+                return;
+            }
+
+            if (requestedTier == _scalabilityTier)
+            {
+                _pendingScalabilityTier = requestedTier;
+                _pendingScalabilityTierTicks = 0;
+                return;
+            }
+
+            if (requestedTier != _pendingScalabilityTier)
+            {
+                _pendingScalabilityTier = requestedTier;
+                _pendingScalabilityTierTicks = 1;
+                return;
+            }
+
+            if (_pendingScalabilityTierTicks < LootMagnetConstants.ScalabilityTierHysteresisSlowTicks)
+            {
+                _pendingScalabilityTierTicks++;
+                return;
+            }
+
+            _scalabilityTier = requestedTier;
+            _pendingScalabilityTierTicks = 0;
         }
 
         private bool EnsureVaultBuffers()
@@ -416,11 +458,13 @@ namespace Hecton8.Gameplay.Loot
 
         private void SchedulePull(float dt, AbsoluteUniversePosition playerAup, bool lowTierSnap)
         {
-            int count = math.min(_activeCount, Capacity);
+            int scheduledCapacity = Capacity;
+            int count = math.min(_activeCount, scheduledCapacity);
             if (count <= 0)
                 return;
 
             _scheduledCount = count;
+            _scheduledCapacity = scheduledCapacity;
             _frameCounter++;
             float safeRadiusMeters = math.max(LootMagnetConstants.AcquireDistanceMeters, pullRadiusMeters);
             _scheduledPullRadiusMeters = safeRadiusMeters;
@@ -451,12 +495,12 @@ namespace Hecton8.Gameplay.Loot
 
         private void CommitVaultResultsToManagedProxies()
         {
-            int count = math.min(_scheduledCount, Capacity);
+            int count = math.min(_scheduledCount, _scheduledCapacity);
             uint acquiredCount = 0u;
             uint flagsHash = 2166136261u;
             int acquisitionBudget = LootMagnetConstants.MaxAcquisitionsPerFrame;
-            int acousticBudget = ResolveAcousticSignalBudget();
-            int wakeBudget = ResolveWakeSignalBudget();
+            int acousticBudget = ResolveAcousticSignalBudget(_scalabilityTier);
+            int wakeBudget = ResolveWakeSignalBudget(_scalabilityTier);
             uint telemetryFlags = 0u;
             bool fault = false;
             for (int index = 0; index < count; index++)
@@ -633,9 +677,8 @@ namespace Hecton8.Gameplay.Loot
             return droppedFlags;
         }
 
-        private static int ResolveAcousticSignalBudget()
+        private static int ResolveAcousticSignalBudget(byte tier)
         {
-            byte tier = GlobalRegistry.ScalabilityTierProfileByte;
             if (tier == 0)
                 return LootMagnetConstants.LowTierAcousticSignalsPerFrame;
 
@@ -647,9 +690,8 @@ namespace Hecton8.Gameplay.Loot
                 : LootMagnetConstants.DefaultAcousticSignalsPerFrame;
         }
 
-        private static int ResolveWakeSignalBudget()
+        private static int ResolveWakeSignalBudget(byte tier)
         {
-            byte tier = GlobalRegistry.ScalabilityTierProfileByte;
             if (tier == 0)
                 return LootMagnetConstants.LowTierWakeSignalsPerFrame;
 
@@ -688,14 +730,25 @@ namespace Hecton8.Gameplay.Loot
 
         private bool CanCommitCompletedJob()
         {
-            return _entityFlags.IsCreated &&
+            int count = math.min(_scheduledCount, _scheduledCapacity);
+            return count >= 0 &&
+                   _entityFlags.IsCreated &&
+                   _entityFlags.Length >= count &&
                    _entityAups.IsCreated &&
+                   _entityAups.Length >= count &&
                    _entityVelocities.IsCreated &&
+                   _entityVelocities.Length >= count &&
                    _entityItemHashes.IsCreated &&
+                   _entityItemHashes.Length >= count &&
                    _entityQuantities.IsCreated &&
+                   _entityQuantities.Length >= count &&
                    _signalEvents.IsCreated &&
+                   _signalEvents.Length >= count &&
+                   _telemetry.IsCreated &&
                    _pickupRefs != null &&
-                   _pickupEntityIds != null;
+                   _pickupRefs.Length >= count &&
+                   _pickupEntityIds != null &&
+                   _pickupEntityIds.Length >= count;
         }
 
         private bool ForceCompletePendingJob()

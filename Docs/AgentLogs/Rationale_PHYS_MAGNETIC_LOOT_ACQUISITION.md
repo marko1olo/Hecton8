@@ -264,7 +264,7 @@ Hardware Impact: No per-frame cost. Cold allocation/release now has H8Memory tra
 
 Problem: After the first dotnet processes were stopped, an external PowerShell wrapper respawned `dotnet build .\Assembly-CSharp.csproj` inside the workspace.
 
-Solution: Identified the parent PowerShell command line and stopped the wrapper plus its dotnet children. No dotnet build/rebuild was launched by this pass.
+Solution: Identified the parent PowerShell command line and stopped the wrapper plus its dotnet children. A later final-check `dotnet build Hecton8.Core.csproj` process was also stopped. No dotnet build/rebuild was launched by this pass.
 
 Rejected Alternatives: Letting the wrapper continue was rejected because it violates the user's active constraint and contaminates verification timing. Running our own dotnet command to compare output was rejected for the same reason.
 

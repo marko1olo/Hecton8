@@ -152,10 +152,6 @@
       <HintPath>$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Hecton8.Input.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Hecton8.Input.Generated" Condition="Exists('$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Hecton8.Input.Generated.dll') And !$([System.String]::Copy('@(Reference)').Contains('Hecton8.Input.Generated'))">
-      <HintPath>$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Hecton8.Input.Generated.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="ShapesRuntime" Condition="Exists('$(MSBuildThisFileDirectory)Library\ScriptAssemblies\ShapesRuntime.dll') And !$([System.String]::Copy('@(Reference)').Contains('ShapesRuntime'))">
       <HintPath>$(MSBuildThisFileDirectory)Library\ScriptAssemblies\ShapesRuntime.dll</HintPath>
       <Private>False</Private>

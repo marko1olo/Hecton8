@@ -348,7 +348,8 @@ namespace Hecton8.Animation.IK
             if (!x0 || !x1 || !y0 || !y1 || !z0 || !z1)
                 return false;
 
-            float3 gradient = new float3(dx1 - dx0, dy1 - dy0, dz1 - dz0);
+            float3 invStep = math.rcp(math.max(step, new float3(0.0001f)));
+            float3 gradient = new float3((dx1 - dx0) * invStep.x, (dy1 - dy0) * invStep.y, (dz1 - dz0) * invStep.z);
             normal = NormalizeSafe(gradient, new float3(0f, 1f, 0f));
             return math.all(math.isfinite(normal));
         }

@@ -220,3 +220,27 @@ Solution: Remove the runtime accumulator, wrap logic, and job scalar field so th
 Rejected Alternatives: Keeping the field as future reserve was rejected because unused time state becomes a false dependency and can drift from authored timing fields already used by tail whip.
 Scalability potential: All tiers preserve behavior. Low/MX350 carry one less scalar through scheduling; high/ultra keep their terrain/SDF/whip behavior unchanged.
 Hardware Impact: Estimated gain is 0.01-0.05 us per scheduled solver from removing one accumulator write and one job scalar copy. The more important effect is lower state surface, not measurable frame time.
+
+## Decision 21: Runtime Finite Boundary Hygiene
+
+Problem: Several Mono-side runtime paths still trusted caller or serialized floats before the Burst job could sanitize them: delta-time, seed segment scale, fallback intent distance, strike target state, tail-whip duration, attack telegraph, and AUP matrix translation.
+Solution: Reject non-finite delta-time before scheduling, sanitize seed/fallback lengths, sanitize strike target and tail duration values, clamp NaN telegraph to zero, sanitize origin-shift target vectors and matrix translation, and remove the now-unused `_strikeRange` state.
+Rejected Alternatives: Relying only on Burst-side clamps was rejected because seeding, origin-shift rebasing, and GPU upload can run outside the scheduled solver. Keeping `_strikeRange` as a future hook was rejected because the current GPU-driven path does not consume it.
+Scalability potential: Low/MX350/high/ultra behavior is unchanged for valid data. Invalid authoring/caller data now fails closed before native matrices or shader buffers are touched.
+Hardware Impact: Estimated normal scheduling cost is under 0.2 us for scalar finite gates; seed/shift sanitization is cold-path only. No profiler-backed frame-time claim.
+
+## Decision 22: Origin-Shift Completion Parity And SDF Gradient Scale
+
+Problem: `OnOriginShift` could finalize an already-completed solver job before `LateFrameTick`, but did not advance frame index or inspect invalid telemetry. The SDF central-difference normal also used raw density deltas, biasing contact normals when voxel cell steps are anisotropic.
+Solution: Mirror the late-frame completion bookkeeping inside the origin-shift finalize branch, then scale SDF gradient components by reciprocal axis step before normalization.
+Rejected Alternatives: Waiting for LateFrame was rejected because the origin-shift branch explicitly consumes the completed job. Leaving raw SDF deltas was rejected because high/ultra contact quality should not depend on cubic voxel cells.
+Scalability potential: Low/MX350 does not run SDF, so cost is unchanged. High/ultra get more stable terrain hugging on non-uniform SDF volumes; origin-shift bookkeeping is cold-path only for all tiers.
+Hardware Impact: Normal late-frame cost is 0 us. SDF gradient scaling adds three reciprocal/multiply components only on high-tier SDF contact frames, estimated under 0.1 us and not profiler-backed.
+
+## Decision 23: Dispatcher Registration Repair
+
+Problem: `TryRegister()` returned immediately when `_registeredUpdate` was true, even if `_registeredLateFrame` was false. A partial registration state would stop late-frame solver completion and GPU upload from being repaired on a later enable/rebind.
+Solution: Treat only the fully registered pair as stable. If exactly one registration flag is set, unregister both paths and retry registration from a clean state.
+Rejected Alternatives: Trusting the original flags was rejected because lifecycle/event systems can be interrupted by parallel integration work, and this runtime needs both update and late-frame callbacks to stay coherent.
+Scalability potential: Low/MX350/high/ultra runtime behavior is unchanged. The fix protects cold lifecycle wiring without adding hot-path cost.
+Hardware Impact: Hot-path cost is 0 us. Cold registration may perform one unregister pair before retrying only when state is already partial.

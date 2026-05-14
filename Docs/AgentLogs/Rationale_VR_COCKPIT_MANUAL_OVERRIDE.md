@@ -341,3 +341,27 @@ Rejected Alternatives: keeping a 60 Hz fallback was rejected because it hides up
 Scalability potential: Low/toaster avoids accidental lever work during scheduler faults or pause-edge cases. Middle/High keep deterministic lever state under invalid timing input. Ultra can spend performance on presentation once a valid frame resumes, without latch state moving during corrupt time.
 
 Hardware Impact: i3/MX350 saves the entire false lever tick on invalid-delta frames: no spring integration progress, no fallback pull progress, no IK smoothing step, no ratchet movement, no latch advancement. Normal valid frames are unchanged. 0 B/frame.
+
+## Decision 28 - Latched manual override must leave hot lanes
+
+Problem: after a successful latch, the manual override lever is a one-shot control, but it remained registered in the `PriorityLayer.Player` dispatcher lane and in `PhysicalHandReceiverRegistry`. Its next frames would still read input/XR state, run the latched branch, apply visual state, evaluate IK/ratchet/latch gates, and write telemetry even though no future hand sample can change the result.
+
+Solution: call `TryUnregisterReceiver()` and `TryUnregisterTick()` at the end of `TryLatch()` after manual override, haptic, and prologue signals are published. Guard `TryRegisterReceiver()` and `TryRegisterTick()` with `_latched` so dispatcher hot-swap or lifecycle re-entry cannot revive the spent control. The current latch tick still executes `WriteBlackBoxFrame(currentAngle)` after unregistering, preserving final-frame telemetry.
+
+Rejected Alternatives: leaving the latched branch in `Tick()` was rejected because it preserves permanent 60 Hz overhead for a one-shot cockpit action. Destroying/disabling the component was rejected because authored visuals, inspector state, and post-latch scene queries may still need the component alive. Unregistering before publishing signals was rejected because the latch event must remain ordered and observable.
+
+Scalability potential: Low/toaster stops paying idle lever work after the override is complete. Middle/High can run denser cockpit panels because spent controls free fixed receiver-table capacity. Ultra can layer persistent post-latch visuals elsewhere without keeping the manual lever simulation alive.
+
+Hardware Impact: i3/MX350 saves one dispatcher `Tick()` call plus one occupied receiver-table slot for every completed manual override lever after latch. On active frames before latch, added cost is two cold `_latched` guard checks in lifecycle registration methods and two unregister calls on the single latch frame. 0 B/frame allocations.
+
+## Decision 29 - Latch-frame telemetry must reflect forced native angle
+
+Problem: `TryLatch(currentAngle)` forces `_leverAngles[0]`, `_leverTargets[0]`, and `_leverVelocities[0]` into the final latched state, but the next `WriteBlackBoxFrame(currentAngle)` call still used the pre-latch local variable. A blackbox frame could therefore carry `FlagLatched` with a non-max angle while target and velocity already showed the forced latch state.
+
+Solution: refresh `currentAngle` from `_leverAngles[0]` immediately after `TryLatch(currentAngle)` and before `WriteBlackBoxFrame(currentAngle)`. This makes the final latch-frame telemetry internally coherent without moving signal publication order or changing latch mechanics.
+
+Rejected Alternatives: changing `TryLatch()` to return a bool/new angle was rejected as unnecessary surface area for one caller. Writing telemetry before latch was rejected because the blackbox must show the post-latch state on the latch frame. Duplicating a second telemetry write was rejected because it burns buffer entries and muddies the last-300-frame record.
+
+Scalability potential: Low/Middle/High/Ultra all get truthful crash evidence with no extra data structure. Ultra post-latch effects can trust the blackbox angle if later diagnostics correlate signal frames with telemetry frames.
+
+Hardware Impact: i3/MX350 pays one scalar NativeArray read per active lever tick after latch evaluation. The read is accepted because it prevents misleading blackbox evidence and adds 0 B/frame.

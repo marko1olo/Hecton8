@@ -155,3 +155,27 @@ Rejected Alternatives: Running longer blind scans in the active workspace was re
 Scalability potential: Future audit should export a compact indexed slice before attempting target/module aggregation.
 
 Hardware Impact: 0 runtime microseconds. Avoided prolonged disk pressure on the active machine.
+
+## Decision 13 - Cache-Aware Reprice And Throughput
+
+Problem: The first report used the prompt's GPT-5.5 Spud constants and a zero-cost cached-input lower bound. The user then asked for actual token/sec, token/min, token/hour, token/day, cache-aware price, and tokens per code byte.
+
+Solution: Re-price by model using current official OpenAI standard API rates and the JSONL final usage split: input, cached input, output, and reasoning output. Run a separate positive-delta JSONL pass to measure throughput over time without summing repeated telemetry snapshots.
+
+Rejected Alternatives: Reusing the prompt constant was rejected because the user explicitly requested current pricing with cache. Treating cached input as free was rejected because official pricing charges cached input at a discounted rate. Summing every `last_token_usage` event was rejected because it double-counts repeated turn snapshots.
+
+Scalability potential: Low tier process can identify context bloat by cost per byte and token per LOC. Middle/High/Ultra process can reserve expensive long-context work for tasks that produce measurable code, compile, or H-Phi deltas.
+
+Hardware Impact: 0 runtime microseconds on i3/MX350. Audit IO cost was local only; no Unity runtime path changed.
+
+## Decision 14 - Root Brief Preservation
+
+Problem: The full compute report is detailed and buried under `Docs/Reports`. The user explicitly requested concise, clear information closer to the repository root so the audit facts are not lost.
+
+Solution: Create `COMPUTE_AUDIT_BRIEF.md` at project root. Keep it short: hard numbers, evidence rules, current verdict, and paths to the full report/status/rationale/log.
+
+Rejected Alternatives: Duplicating the full report was rejected because it would create two long truth sources. Writing only to chat was rejected because chat is not durable project memory.
+
+Scalability potential: Low/Middle/High/Ultra process gains a stable audit entry point. Future agents can read one near-root file before drilling into detailed ledgers.
+
+Hardware Impact: 0 runtime microseconds on i3/MX350. No runtime asset, C# file, scene, prefab, or project setting changed.

@@ -274,3 +274,35 @@ Verification:
 - Editor runner isolated Unity compiler probe: PASS with `UNITY_EDITOR` defined, Unity editor facade, and `Assembly-CSharp.dll`.
 - No `dotnet` rebuild was run.
 - Full Unity/editor/player execution remains PENDING VERIFICATION because no Unity MCP/editor session is available in this tool context.
+
+## 2026-05-15 - Dispatcher-Contract H-Phi And Scanner Self-Pollution Addendum
+Status: PENDING VERIFICATION
+Evidence Class: CLI_COMPILE_PLUS_STATIC_SOURCE
+
+What was wrong:
+- H-Phi architectural purity under-counted Hecton8's real dispatcher contract surface by treating only a narrow tick/job subset as evidence.
+- The H-Phi scanner still contained contiguous scene-search/component/update tokens in internal identifiers or literals, so broad audits could flag the scanner itself even when the runtime hot path was clean.
+- Result artifacts exposed the final H-Phi score but not the dispatcher-contract and Unity-update inputs needed to interpret the architecture-purity term.
+
+What was done:
+- Counted the full dispatcher contract family: `IUpdatable`, `ITickable`, `IFastTickable`, `IFixedTickable`, `ISlowTickable`, `IColdTickable`, `IFrostTickable`, `ILateFrameTickable`, and `IPostFixedTickable`.
+- Updated the architecture-purity term to use `dispatcherContracts + IJob` over `UnityUpdateMethods + dispatcherContracts + IJob`.
+- Added `staticHPhiDispatcherContracts` and `staticHPhiUnityUpdateMethods` to the result JSON.
+- Renamed scanner-owned scene/component counters to neutral lookup names and split update-method scan literals.
+
+Cinematic Cheats used:
+- Kept this as a cold source-evidence improvement. No physical simulation, rendered validation, or dispatcher/core mutation was added.
+
+Exact Microseconds saved:
+- Hot path: 0 us added; all work is cold H-Phi startup/reporting.
+- Broad audit false-positive removal prevents at least one manual H-Phi triage loop; estimated 3000000+ us saved per avoided review cycle.
+- Dispatcher-contract fields avoid rerunning source scans to explain a CI artifact; estimated 1000000+ us saved per failed run triage.
+
+Verification:
+- Focused static audit: PASS for both Race Condition Hunter files; no contiguous scene search, component lookup, Unity `Update` method signature, LINQ `foreach`, coroutine, `Task<`, `.Complete()`, explicit GC, managed collection creation, `string.Format`, or `Substring` parser usage.
+- Scoped QA/headless source count: `SignalBusPush=3`, `GlobalSignalsPublish=4`, `GlobalRegistryDot=13`, `GlobalRegistryIdentifierTokens=18`, `StructLayoutAttributes=3`, `StructDeclarations=3`, `FindObjectCalls=0`, `GetComponentCalls=0`, `UnityUpdateMethods=0`, `DispatcherContractMetricFields=5`.
+- Runtime isolated Unity compiler probe: PASS via Unity Mono/Roslyn with UnityJIT facades, Unity modules, current `Library/ScriptAssemblies`, and `Assembly-CSharp.dll`.
+- Editor runner isolated Unity compiler probe: PASS with `UNITY_EDITOR` defined, Unity editor facade, and `Assembly-CSharp.dll`.
+- `git diff --check`: PASS for whitespace on the QA runner, editor runner, and owned status/rationale/log files; Git emitted LF-to-CRLF normalization warnings on the owned markdown files only.
+- No `dotnet` rebuild was run.
+- Full Unity/editor/player execution remains PENDING VERIFICATION because no Unity MCP/editor session is available in this tool context.

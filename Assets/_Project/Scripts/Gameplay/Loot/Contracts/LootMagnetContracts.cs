@@ -18,6 +18,7 @@ namespace Hecton8.Gameplay.Loot.Contracts
         public const float MaxIntegrationDeltaTimeSeconds = 0.05f;
         public const int PresentationSignalStride = 64;
         public const int MaxAcquisitionsPerFrame = 64;
+        public const byte ScalabilityTierHysteresisSlowTicks = 4;
         public const int LowTierAcousticSignalsPerFrame = 16;
         public const int DefaultAcousticSignalsPerFrame = 48;
         public const int HighTierAcousticSignalsPerFrame = 56;

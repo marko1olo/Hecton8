@@ -124,3 +124,15 @@ Rejected Alternatives: Editing unrelated save/UI dependencies would violate doma
 Scalability potential: Runtime unaffected. Integration risk is transparent.
 
 Hardware Impact: 0 microseconds. Verification blocker only.
+
+## Decision 9 - Zero-GC Verification Scope
+
+Problem: Runtime profiler evidence is unavailable because compile/playmode is blocked, but the new resonant loops still need static allocation proof.
+
+Solution: Static-scan the edited hot paths for managed allocations, LINQ, `ToArray`, `ToList`, `FindObject`, and dynamic collection creation. New hot-path work is bitmask math, shader uniform writes, `Stopwatch.GetTimestamp`, and `RuntimeWatchdog.ReportSubsystemCost`; DataVault/H8Memory allocation helpers remain cold init/dispose paths.
+
+Rejected Alternatives: Claiming profiler `0 B` without PlayMode proof would be fake. Moving cold allocations into hot paths would violate the Zero-GC mandate.
+
+Scalability potential: Low avoids GC spikes during bucket pressure. Middle/High/Ultra preserve compute headroom for visuals instead of garbage collection.
+
+Hardware Impact: 0 managed allocations in the edited loops by static proof. Estimated GC spike avoidance: unbounded frame hitch prevention rather than deterministic microsecond gain.

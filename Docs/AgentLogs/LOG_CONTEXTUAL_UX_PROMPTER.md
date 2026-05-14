@@ -135,3 +135,14 @@ Cinematic cheats used: No visual change. The same atlas-quad diegetic prompt pat
 Exact microseconds saved: Estimate only. No normal ready-frame gain is claimed; invalid authoring states avoid unnecessary camera/anchor/bounds work.
 
 Verification: No dotnet rebuilds were run. Static scans stayed clean for forbidden hot-path allocation/text/LINQ and old renderer/update/shared-buffer/matrix/shader markers. Render gate scan confirmed readiness checks happen before `ResolveRenderCamera()`. `git diff --check` returned CRLF normalization warnings only.
+
+## 2026-05-15 Render Cache Tightening
+What was wrong: Visible prompt frames still read `camera.transform` and recomputed derived max-distance/bounds values every render.
+
+What was done: Cached the render camera transform with the resolved camera reference, including explicit-camera stale-cache handling and player hot-swap reset. Added derived caches for max visible distance squared and bounds size, refreshed only when `maxVisibleDistance` changes.
+
+Cinematic cheats used: No visual change. The same atlas-quad prompt, dither fade, Low-tier snap, and fail-closed material/camera gates remain.
+
+Exact microseconds saved: Estimate only. Expected gain is sub-1 us per visible prompt frame on i3/MX350 from fewer render-side property/math operations.
+
+Verification: No dotnet rebuilds were run. Static scans stayed clean for forbidden allocation/text/LINQ and old renderer/update/shared-buffer/matrix/shader markers. Cache scan confirmed render uses `_cachedRenderCameraTransform`, `_cachedMaxVisibleDistanceSq`, and `_cachedBoundsSize`; the only remaining `camera.transform` access is inside `CacheRenderCamera()`. `git diff --check` returned CRLF normalization warnings only.
