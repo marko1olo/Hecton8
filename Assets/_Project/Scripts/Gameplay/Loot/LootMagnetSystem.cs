@@ -314,13 +314,34 @@ namespace Hecton8.Gameplay.Loot
                 capacity,
                 SystemID.GameplayLoot,
                 NativeArrayOptions.ClearMemory);
-            return _entityAups.IsCreated &&
-                   _entityFlags.IsCreated &&
-                   _entityVelocities.IsCreated &&
-                   _entityItemHashes.IsCreated &&
-                   _entityQuantities.IsCreated &&
-                   _signalEvents.IsCreated &&
-                   _telemetry.IsCreated;
+            return ResolveWritableCapacity() >= capacity;
+        }
+
+        private int ResolveWritableCapacity()
+        {
+            if (!_entityAups.IsCreated ||
+                !_entityFlags.IsCreated ||
+                !_entityVelocities.IsCreated ||
+                !_entityItemHashes.IsCreated ||
+                !_entityQuantities.IsCreated ||
+                !_signalEvents.IsCreated ||
+                !_telemetry.IsCreated ||
+                _pickupRefs == null ||
+                _pickupEntityIds == null)
+            {
+                return 0;
+            }
+
+            int capacity = Capacity;
+            capacity = math.min(capacity, _entityAups.Length);
+            capacity = math.min(capacity, _entityFlags.Length);
+            capacity = math.min(capacity, _entityVelocities.Length);
+            capacity = math.min(capacity, _entityItemHashes.Length);
+            capacity = math.min(capacity, _entityQuantities.Length);
+            capacity = math.min(capacity, _signalEvents.Length);
+            capacity = math.min(capacity, _pickupRefs.Length);
+            capacity = math.min(capacity, _pickupEntityIds.Length);
+            return capacity;
         }
 
         private void EnsureManagedSidecars()
@@ -391,7 +412,10 @@ namespace Hecton8.Gameplay.Loot
             if (_pullScheduled || !_entityAups.IsCreated || _pickupRefs == null || _pickupEntityIds == null)
                 return;
 
-            int capacity = Capacity;
+            int capacity = ResolveWritableCapacity();
+            if (capacity <= 0)
+                return;
+
             int registryCount = PickupItem.WorldStateRegistryCount;
             int activeCount = 0;
             for (int registryIndex = 0; registryIndex < registryCount && activeCount < capacity; registryIndex++)
@@ -458,7 +482,7 @@ namespace Hecton8.Gameplay.Loot
 
         private void SchedulePull(float dt, AbsoluteUniversePosition playerAup, bool lowTierSnap)
         {
-            int scheduledCapacity = Capacity;
+            int scheduledCapacity = ResolveWritableCapacity();
             int count = math.min(_activeCount, scheduledCapacity);
             if (count <= 0)
                 return;

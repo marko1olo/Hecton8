@@ -4,6 +4,7 @@ Status: AUDIT COMPLETE
 Snapshot: 2026-05-15T03:02:21+04:00
 Agent: COMPUTE_LOGISTICS_AUDITOR
 Full report: `Docs/Reports/COMPUTE_DOMINANCE_REPORT.md`
+Thread triage: `COMPUTE_THREAD_TRIAGE.md`
 Status/Rationale/Log:
 - `Docs/Tasks/Status_COMPUTE_LOGISTICS_AUDITOR.md`
 - `Docs/AgentLogs/Rationale_COMPUTE_LOGISTICS_AUDITOR.md`
@@ -53,3 +54,5 @@ The codebase is not 1.63M meaningful first-party LOC. It is 775,435 meaningful s
 The economic anomaly is context recursion: 43.78B total tokens against 775,435 meaningful LOC equals 56,457 tokens per meaningful line. Cache pricing makes the bill survivable; it does not make the workflow clean.
 
 Next audit target: top 100 `.codex` threads. They hold about half of the recorded token mass. Broad scanning below that is low-yield.
+
+Thread triage has been written to `COMPUTE_THREAD_TRIAGE.md`. The valid label is `HIGH-BURN CANDIDATE`, not `waste`, until a thread is joined to changed files, meaningful LOC delta, compile/test result, and H-Phi or equivalent quality delta.

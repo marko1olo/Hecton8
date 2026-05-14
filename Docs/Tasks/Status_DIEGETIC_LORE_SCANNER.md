@@ -125,10 +125,18 @@ Mandates read:
 - [x] Localization compile-risk fix | DOD: replaced non-existent `ILocalizationService` local with concrete project `LocalizationManager` while preserving single registry lookup per localized string resolve | Rejected: two `GlobalRegistry.Localization` reads per call or introducing a new interface | Estimate: avoids compile wall; one registry read per localization call
 - [x] Static no-regression checks after Loop 14 | DOD: `git diff HEAD --check` passed; scanner banned-pattern scan found no `ILocalizationService`, `Camera.main`, direct `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, or `.text =` | Rejected: dotnet rebuild, explicitly forbidden by user | Estimate: 2100 us
 
+## Loop 15 - Registration Retry and Cache Rebind Hygiene
+
+- [x] Re-read authority and mandates | DOD: reread status/rationale, AGENTS.md, domain map, Unity MCP skill, and UI/Registry/ZeroGC/Diegetic/Telemetry mandates before edits | Rejected: coding from compressed memory | Estimate: 12800 us
+- [x] Diegetic RT slow-tick retry throttle | DOD: `ToolDiegeticDisplayController` now retries failed slow-tick registration at 0.5s cadence instead of every UI tick; OnEnable/Start still force an immediate attempt | Rejected: hot per-frame dispatcher/service-locator retry when slow-tick bucket is unavailable | Estimate: worst-case 60Hz -> 2Hz retry
+- [x] Scanner service ingress cleanup | DOD: scanner ping audio now uses one local `GlobalRegistry.Audio` read; threat prediction uses cached `LoreDatabaseManager` with hot-swap rebinding | Rejected: duplicate audio/lore service property reads in active scanner paths or stale permanent lore cache | Estimate: removes duplicate lookups per pulse/threat sample
+- [x] Scanner localization/cache rebind | DOD: equipped scanner registers for localization language and GlobalRegistry hot-swap events; mode strings and operational caches refresh on language, player, Atlas, lore, or localization service replacement | Rejected: stale mode labels after language switch and cached service handles without rebind path | Estimate: event-only cost while equipped
+- [x] Static no-regression checks after Loop 15 | DOD: `git diff --check` passed with line-ending warnings only; scanner banned-pattern scan found no `ILocalizationService`, `Camera.main`, direct `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, or `.text =` | Rejected: dotnet rebuild, explicitly forbidden by user | Estimate: 2600 us
+
 ## Verification
 
 - [x] Compile/source validation - `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:quiet -clp:Summary` passed with 0 warnings / 0 errors after Loop 10
-- [ ] Compile/source validation after Loops 11-14 - NOT RERUN: user explicitly ordered no dotnet rebuilds; static source checks only
+- [ ] Compile/source validation after Loops 11-15 - NOT RERUN: user explicitly ordered no dotnet rebuilds; static source checks only
 - [ ] Console check - BLOCKED BY UNITY SESSION: MCP validate/console calls cannot connect to Unity MCP HTTP endpoint / session
 - [x] Re-read prompt after core tasks
 - [x] Omega polish mandate after all tasks done or blocked

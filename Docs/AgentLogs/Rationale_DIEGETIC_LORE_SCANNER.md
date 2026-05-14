@@ -351,3 +351,29 @@ Solution: Re-ran raw PowerShell prompt extraction, confirmed absence, ignored ne
 Rejected Alternatives: Reading other agents' XML blocks; running `dotnet build`; claiming compiler proof without execution.
 Scalability potential: Process hygiene only.
 Hardware Impact: No runtime impact.
+
+## LOOP 15 REGISTRATION RETRY AND CACHE REBIND HYGIENE
+
+Problem: `ToolDiegeticDisplayController` attempted slow-tick registration from UI `Tick()` whenever `_registeredSlowTick` was false. If the slow-tick bucket or dispatcher was temporarily unavailable, this degraded into a per-frame service-locator/registration retry.
+Solution: Add a 0.5s retry fence for failed slow-tick registration while keeping forced immediate attempts from OnEnable/Start. Successful registration clears the retry timer; disable clears the timer and unregisters normally.
+Rejected Alternatives: Leaving a hot retry loop; removing the SlowTick fallback and losing silent scalability override handling; adding a new central registration manager.
+Scalability potential: Low/MX350 avoids pointless per-frame dispatcher probes under bucket pressure. High/Ultra still receive event/SlowTick quality updates without UI tick registry polling.
+Hardware Impact: Worst-case failed retry cadence drops from 60Hz UI tick to 2Hz. Exact microseconds remain PENDING PROFILER.
+
+Problem: Scanner active paths still had avoidable duplicate service-property reads: audio ping read `GlobalRegistry.Audio` twice, and threat-prediction sampling read `GlobalRegistry.LoreDatabase` twice.
+Solution: Collapse audio ping to one local service read. Cache `LoreDatabaseManager` behind `ResolveCachedLoreDatabaseCold()` and register the equipped scanner as a `IGlobalRegistryHotSwapListener` so lore, Atlas, player, and localization service replacements rebind cached scanner dependencies.
+Rejected Alternatives: Permanent cached service handles without hot-swap invalidation; duplicate service locator reads in the active scanner sample path; direct narrative service dependency outside GlobalRegistry.
+Scalability potential: Toaster path sheds duplicate lookups during pulse/threat sampling. High/Ultra keep richer scientific scanner presentation without coupling scanner authority to narrative internals.
+Hardware Impact: One duplicate audio property read removed per pulse and one duplicate lore property read removed per threat prediction sample; hot-swap listener is lifecycle-scoped to equipped scanner use.
+
+Problem: Scanner mode labels and summaries are cached strings. A runtime language change while the scanner is held or stowed could leave the operational text in the previous language until mode changed manually.
+Solution: `ScannerTool` now implements `ILocalizationLanguageChangedListener`, refreshes mode strings on language events, refreshes on equip, and invalidates operational string caches.
+Rejected Alternatives: Rebuilding strings every summary call; keeping stale localized mode strings; polling localization state from `GetOperationalSummary()`.
+Scalability potential: Low tier keeps cached text and zero-GC display behavior. High/Ultra presentation stays responsive to language changes through events rather than polling.
+Hardware Impact: No per-frame cost. Event-only string refresh when language changes or scanner equips.
+
+Problem: Verification remains source-only by user order.
+Solution: Ran `git diff --check` and scanner banned-pattern scans over scanner/UI/target files. No dotnet or Unity rebuild was run.
+Rejected Alternatives: Running prohibited dotnet rebuilds; reporting Unity/compiler verification without evidence.
+Scalability potential: Process hygiene only.
+Hardware Impact: No runtime impact.

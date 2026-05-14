@@ -326,3 +326,32 @@ Verification:
 - `git diff HEAD --check` on scanner/doc edits: pass.
 - Scanner banned-pattern scan for `ILocalizationService`, `Camera.main`, direct `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, and `.text =`: no matches.
 - `dotnet build` / rebuild: NOT RUN by explicit user order.
+
+## Follow-Up Hardening Pass 11
+
+What was wrong:
+- Diegetic tool RT slow-tick fallback could retry registration from UI `Tick()` every frame if the slow-tick lane was unavailable.
+- Scanner pulse audio and threat-prediction lore checks still had duplicate service property reads.
+- Scanner cached mode labels/summaries could survive a runtime language change in the old language.
+- Cached Atlas/lore/player handles needed a hot-swap rebind path to avoid stale service references.
+
+What was done:
+- Added a 0.5s retry fence for failed `ToolDiegeticDisplayController` slow-tick registration; OnEnable/Start still force immediate registration attempts.
+- Collapsed scanner ping audio to one local `GlobalRegistry.Audio` read.
+- Added cached lore database resolution and equipped-scanner hot-swap listener rebinding for player, Atlas, lore, and localization service replacements.
+- Added scanner localization-language listener; language changes refresh cached mode strings and invalidate operational text caches.
+
+Cinematic Cheats used:
+- No new physical truth. The scanner still uses spatial-hash/highest-dot target authority and one occlusion command; these edits only protect presentation/cache plumbing.
+
+Exact Microseconds saved:
+- Verified exact microseconds: PENDING PROFILER.
+- Failed slow-tick registration retry: worst-case 60Hz UI tick -> 2Hz retry.
+- Audio pulse: one duplicate service property read removed per pulse.
+- Threat prediction: one duplicate lore service property read removed per sampled threat hash.
+- Localization/hot-swap handling: event-only while equipped, no per-frame polling.
+
+Verification:
+- `git diff --check` on scanner/UI/doc edits: pass, line-ending warnings only.
+- Scanner banned-pattern scan for `ILocalizationService`, `Camera.main`, direct `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, and `.text =`: no matches.
+- `dotnet build` / rebuild: NOT RUN by explicit user order.

@@ -2722,6 +2722,11 @@ namespace Hecton8.SaveSystem
             return WriteCustomArray(ref writer, values, WriteScanEntry);
         }
 
+        private static bool WriteScanEntryArray(ref BufferWriter writer, ScanEntryDTO[] values, int count)
+        {
+            return WriteCustomArraySlice(ref writer, values, count, ScanLogDTO.MaxEntries, WriteScanEntry);
+        }
+
         private static bool ReadScanEntryArray(ref BufferReader reader, out ScanEntryDTO[] values)
         {
             return ReadCustomArray(
@@ -2735,6 +2740,11 @@ namespace Hecton8.SaveSystem
         private static bool WriteBarterOfferStateArray(ref BufferWriter writer, BarterOfferStateDTO[] values)
         {
             return WriteCustomArray(ref writer, values, WriteBarterOfferState);
+        }
+
+        private static bool WriteBarterOfferStateArray(ref BufferWriter writer, BarterOfferStateDTO[] values, int count)
+        {
+            return WriteCustomArraySlice(ref writer, values, count, BarterDTO.MaxOffers, WriteBarterOfferState);
         }
 
         private static bool ReadBarterOfferStateArray(ref BufferReader reader, out BarterOfferStateDTO[] values)
@@ -2752,6 +2762,11 @@ namespace Hecton8.SaveSystem
             return WriteCustomArray(ref writer, values, WriteBarterTransaction);
         }
 
+        private static bool WriteBarterTransactionArray(ref BufferWriter writer, BarterTransactionDTO[] values, int count)
+        {
+            return WriteCustomArraySlice(ref writer, values, count, BarterDTO.MaxRecentTransactions, WriteBarterTransaction);
+        }
+
         private static bool ReadBarterTransactionArray(ref BufferReader reader, out BarterTransactionDTO[] values)
         {
             return ReadCustomArray(
@@ -2767,6 +2782,11 @@ namespace Hecton8.SaveSystem
             return WriteCustomArray(ref writer, values, WriteFieldOperationEntry);
         }
 
+        private static bool WriteFieldOperationEntryArray(ref BufferWriter writer, FieldOperationEntryDTO[] values, int count)
+        {
+            return WriteCustomArraySlice(ref writer, values, count, FieldOperationLogDTO.MaxRecentEntries, WriteFieldOperationEntry);
+        }
+
         private static bool ReadFieldOperationEntryArray(ref BufferReader reader, out FieldOperationEntryDTO[] values)
         {
             return ReadCustomArray(
@@ -2780,6 +2800,11 @@ namespace Hecton8.SaveSystem
         private static bool WriteBeaconEntryArray(ref BufferWriter writer, BeaconEntryDTO[] values)
         {
             return WriteCustomArray(ref writer, values, WriteBeaconEntry);
+        }
+
+        private static bool WriteBeaconEntryArray(ref BufferWriter writer, BeaconEntryDTO[] values, int count)
+        {
+            return WriteCustomArraySlice(ref writer, values, count, BeaconNetworkDTO.MaxEntries, WriteBeaconEntry);
         }
 
         private static bool ReadBeaconEntryArray(ref BufferReader reader, out BeaconEntryDTO[] values)
@@ -2908,6 +2933,11 @@ namespace Hecton8.SaveSystem
             return WriteCustomArray(ref writer, values, WriteModule);
         }
 
+        private static bool WriteModuleArray(ref BufferWriter writer, ModuleDTO[] values, int count)
+        {
+            return WriteCustomArraySlice(ref writer, values, count, ConstructionDTO.MaxModules, WriteModule);
+        }
+
         private static bool ReadModuleArray(ref BufferReader reader, int version, out ModuleDTO[] values)
         {
             values = null;
@@ -2967,6 +2997,11 @@ namespace Hecton8.SaveSystem
             return WriteCustomArray(ref writer, values, WriteModuleGraphNode);
         }
 
+        private static bool WriteModuleGraphNodeArray(ref BufferWriter writer, ModuleGraphNodeDTO[] values, int count)
+        {
+            return WriteCustomArraySlice(ref writer, values, count, ConstructionDTO.MaxModules, WriteModuleGraphNode);
+        }
+
         private static bool ReadModuleGraphNodeArray(ref BufferReader reader, out ModuleGraphNodeDTO[] values)
         {
             return ReadCustomArray(
@@ -2980,6 +3015,11 @@ namespace Hecton8.SaveSystem
         private static bool WriteModuleGraphEdgeArray(ref BufferWriter writer, ModuleGraphEdgeDTO[] values)
         {
             return WriteCustomArray(ref writer, values, WriteModuleGraphEdge);
+        }
+
+        private static bool WriteModuleGraphEdgeArray(ref BufferWriter writer, ModuleGraphEdgeDTO[] values, int count)
+        {
+            return WriteCustomArraySlice(ref writer, values, count, ConstructionDTO.MaxGraphEdges, WriteModuleGraphEdge);
         }
 
         private static bool ReadModuleGraphEdgeArray(ref BufferReader reader, out ModuleGraphEdgeDTO[] values)
