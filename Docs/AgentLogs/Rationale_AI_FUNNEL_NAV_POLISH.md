@@ -165,3 +165,9 @@ Solution: Outside-surface-grid sampling now returns `max(voxelThreat, predatorFe
 Rejected Alternatives: Forcing predator fear into the 2D grid was rejected because it creates a coupling to heatmap coverage. A second fear field resample was rejected as waste.
 Scalability potential: Low gets correct cheap fear avoidance without more containers. High/Ultra keep stronger route intent while still using the same fixed snapshots.
 Hardware Impact: No extra loop was added; predator fear was already sampled before the branch. The change prevents bad routes rather than claiming a measurable CPU save.
+
+Problem: The project-level static H-Phi audit was requested by context but current user instruction prohibits rebuilds and the PowerShell audit exceeded the 120 second tool window under repo load.
+Solution: Record the audit timeout as attempted evidence and do not claim a project-wide H-Phi score from this navigation pass. Use domain-local static scans and code deltas as the valid evidence.
+Rejected Alternatives: Running dotnet rebuilds was rejected by explicit user instruction. Editing the central H-Phi report without a completed audit was rejected because it would create fake evidence.
+Scalability potential: Domain-local navigation hardening remains valid even without a fresh global score; project-wide H-Phi measurement belongs to a successful audit run or the H-Phi monitor owner.
+Hardware Impact: None; the timed-out audit was offline tooling only.

@@ -124,6 +124,18 @@ Rejected Alternatives: Writing `SaveData.CurrentVersion` only in the header with
 Scalability potential: Low keeps save repair deterministic; Middle/High/Ultra avoid backup promotion loops caused by self-created payload length mismatches.
 Hardware Impact: One cold save-path integer compare/assign; 0 us frame impact and 0 B GC.
 
+Problem: NativeArray disposal through `H8Memory.Release<T>` was still a weak ownership lane: legacy overloads could unregister without an explicit owner, and created arrays/raw pointers became silent no-ops if the H8 tracker had already been shut down.
+Solution: Added owner-tagged immediate and job-deferred `Release<T>` overloads, marked legacy release/free overloads `Obsolete(error: true)`, converted external call sites to explicit owners, and made created arrays/raw pointers throw `FatalMemoryException` when owner or tracker proof is missing.
+Rejected Alternatives: Keeping legacy release overloads for convenience; relying on NativeMemorySentinel after disposal; dropping created arrays when `_initialized` is false. Those hide ownership defects and can turn leaks into non-reproducible shutdown behavior.
+Scalability potential: Low devices get deterministic native ownership and fewer silent leaks; Middle keeps pool accounting stable across scene churn; High and Ultra can run larger SOA buffers and visual caches without corrupting the memory budget model.
+Hardware Impact: 0 us steady-frame cost. Disposal/free paths add one owner branch and the existing O(active allocations) owner lookup; failures now stop immediately instead of losing native memory silently.
+
+Problem: DataVault still carried false relocation signals after live compaction was locked out: a dead `_lastRelocationRecords` NativeArray was allocated every vault init, descriptors were flagged `Relocatable`, comments described handles as relocatable, and `GetBuffer` mapped `SystemID.Unknown` to `CoreDataVault`.
+Solution: Removed the dead relocation-record allocation/disposal path, kept `TryGetLastRelocationRecord` as an empty compatibility surface, stopped setting the `Relocatable` descriptor flag, renamed comments to generation-checked handles, and made unknown `GetBuffer` requesters fail fast.
+Rejected Alternatives: Leaving unused relocation storage for future work; keeping misleading descriptor flags; silently assigning unknown callers to CoreDataVault. All three weaken H-Phi data sovereignty by hiding true ownership.
+Scalability potential: Low saves persistent native memory and avoids false relocation expectations; Middle gets cleaner telemetry; High and Ultra can reserve memory budget for real visual systems instead of dead bookkeeping.
+Hardware Impact: Removes one 64 * 32 byte persistent relocation-record allocation, approximately 2048 bytes plus allocator overhead, at vault init. Runtime hot path impact is one cold requester-owner branch on `GetBuffer`; no dotnet rebuild was run per user order.
+
 ## OMEGA POLISH CHANGES
 
 Problem: Polish audit required removal of fake precision, managed iteration/string debt, and any code outside the DataVault domain without justification.

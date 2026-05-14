@@ -42,7 +42,7 @@ namespace Hecton8.Gameplay
             }
 
             float lengthSq = math.lengthsq(value);
-            if (lengthSq <= MinimumLengthSq)
+            if (!math.isfinite(lengthSq) || lengthSq <= MinimumLengthSq)
             {
                 return (math.any(math.isnan(fallback)) || !math.all(math.isfinite(fallback)))
                     ? new float3(0.0f, 0.0f, 1.0f)
@@ -225,6 +225,7 @@ namespace Hecton8.Gameplay
 
         public static quaternion AlignEndEffectorToNormal(quaternion currentWorldRotation, float3 targetNormal)
         {
+            currentWorldRotation = NormalizeQuaternionNoSqrt(currentWorldRotation);
             float3 safeNormal = SafeNormalize(targetNormal, new float3(0.0f, 1.0f, 0.0f));
             float3 currentUp = math.mul(currentWorldRotation, new float3(0.0f, 1.0f, 0.0f));
             quaternion normalDelta = FastDirectionDeltaNoTrig(currentUp, safeNormal);
@@ -246,9 +247,20 @@ namespace Hecton8.Gameplay
             out quaternion lowerWorldRotation,
             out float3 solvedEndPosition)
         {
+            rootPosition = SanitizeFloat3(rootPosition, float3.zero);
+            middlePosition = SanitizeFloat3(middlePosition, rootPosition + new float3(0.0f, -0.35f, 0.0f));
+            endPosition = SanitizeFloat3(endPosition, middlePosition + new float3(0.0f, -0.35f, 0.0f));
+            targetPosition = SanitizeFloat3(targetPosition, endPosition);
+            polePosition = SanitizeFloat3(polePosition, rootPosition + new float3(0.0f, 0.0f, 1.0f));
+            currentUpperWorldRotation = NormalizeQuaternionNoSqrt(currentUpperWorldRotation);
+            currentLowerWorldRotation = NormalizeQuaternionNoSqrt(currentLowerWorldRotation);
+            upperLength = math.max(MinimumDistance, SanitizeNonNegative(upperLength));
+            lowerLength = math.max(MinimumDistance, SanitizeNonNegative(lowerLength));
+            reachSafetyMargin = SanitizeNonNegative(reachSafetyMargin);
+
             float3 toTarget = targetPosition - rootPosition;
             float targetDistanceSq = math.lengthsq(toTarget);
-            if (targetDistanceSq <= MinimumLengthSq)
+            if (!math.isfinite(targetDistanceSq) || targetDistanceSq <= MinimumLengthSq)
             {
                 upperWorldRotation = currentUpperWorldRotation;
                 lowerWorldRotation = currentLowerWorldRotation;
@@ -278,7 +290,7 @@ namespace Hecton8.Gameplay
             upperCos = math.select(upperCos, 1.0f, !math.isfinite(upperCos));
 
             float bendCos = upperCos;
-            float bendSinSq = math.saturate(1.0f - (bendCos * bendCos));
+            float bendSinSq = SanitizeUnit(1.0f - (bendCos * bendCos));
             float bendSin = bendSinSq * math.rsqrt(math.max(bendSinSq, MinimumLengthSq));
             bendSin = math.select(bendSin, 0.0f, bendSinSq <= MinimumLengthSq || !math.isfinite(bendSin));
 
@@ -328,7 +340,9 @@ namespace Hecton8.Gameplay
                 return;
 
             int lastPointIndex = scratchStartIndex + boneCount - 1;
-            float3 rootPosition = scratchPositions[scratchStartIndex];
+            float3 rootPosition = SanitizeFloat3(scratchPositions[scratchStartIndex], float3.zero);
+            scratchPositions[scratchStartIndex] = rootPosition;
+            scratchPositions[lastPointIndex] = SanitizeFloat3(scratchPositions[lastPointIndex], rootPosition);
             targetPosition = SanitizeFloat3(targetPosition, scratchPositions[lastPointIndex]);
             polePosition = SanitizeFloat3(polePosition, rootPosition + new float3(0.0f, 1.0f, 0.0f));
 
@@ -420,6 +434,7 @@ namespace Hecton8.Gameplay
 
         public static Quaternion ToUnityQuaternion(quaternion value)
         {
+            value = NormalizeQuaternionNoSqrt(value);
             return new Quaternion(value.value.x, value.value.y, value.value.z, value.value.w);
         }
 
@@ -430,6 +445,7 @@ namespace Hecton8.Gameplay
 
         public static Vector3 ToUnityVector3(float3 value)
         {
+            value = SanitizeFloat3(value, float3.zero);
             return new Vector3(value.x, value.y, value.z);
         }
 

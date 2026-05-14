@@ -235,4 +235,6 @@ Exact Microseconds saved:
 
 Verification:
 - Static scan passed for `NativeAStarJob`: no `math.normalize`, `math.length(`, `math.distance(`, `.normalized`, or raw `/`.
+- `git diff --check` on touched files passed; LF/CRLF warnings only.
+- `Tools/Architecture/HectonPhiAudit.ps1 -Json` was attempted and timed out after 120 seconds; no global H-Phi score is claimed from this pass.
 - Dotnet rebuilds were not run after this pass because the user explicitly prohibited dotnet rebuilds.

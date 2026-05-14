@@ -44,6 +44,7 @@ namespace Hecton8.Narrative.Prologue
         private bool _disposed;
         private bool _blackBoxDumped;
         private bool _devSkipHandoffPublished;
+        private bool _inputLockReleased;
         private byte _cancelReason;
         private PrologueAtmosphericReentrySnapshot _lastAtmosphericReentry;
         private PrologueCompleteSnapshot _lastComplete;
@@ -79,6 +80,7 @@ namespace Hecton8.Narrative.Prologue
             _cancelReason = 0;
             _blackBoxDumped = false;
             _devSkipHandoffPublished = false;
+            _inputLockReleased = false;
             _hasLastOrbitalSnapshot = false;
             _lastAtmosphericReentry = default;
             _lastComplete = default;
@@ -444,6 +446,9 @@ namespace Hecton8.Narrative.Prologue
 
         private void ReleaseInputLockNoThrow()
         {
+            if (_inputLockReleased)
+                return;
+
             IPrologueSequenceRuntime runtime = _runtime;
             if (runtime == null)
                 return;
@@ -451,6 +456,7 @@ namespace Hecton8.Narrative.Prologue
             try
             {
                 runtime.PublishInputLock(PrologueInputLockFlags.None, paused: false);
+                _inputLockReleased = true;
             }
             catch (Exception)
             {

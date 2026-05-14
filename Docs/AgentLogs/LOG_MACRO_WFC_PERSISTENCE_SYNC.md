@@ -211,3 +211,32 @@ Verification:
 - Static scans confirm the datapad `return` after `MessageTerminal` configuration.
 - `git diff --check` reports no whitespace errors for the touched code/log files, aside from Git CRLF normalization warnings.
 - No `dotnet` rebuild was run after the user's explicit instruction.
+
+## Recheck Report: Hot-Path Registry Decoupling
+Status: PENDING VERIFICATION.
+
+What was wrong:
+- WFC Tick drains could still reach `GlobalRegistry.DataVault` or `GlobalRegistry.MacroDatabase` through lazy dependency refresh when cached services were missing.
+- That kept a service-locator fallback in a hot persistence path and reduced H-Phi quality even though the signal lane itself was typed.
+
+What was done:
+- Added cached WFC dependency readiness state in `SaveManager`.
+- Moved refresh to service initialization, public cold persistence calls, and `SlowTick`.
+- Split public `TryPersistWfcOutpostStateSnapshot` from private `TryPersistWfcOutpostStateSnapshotInternal` so Tick batching persists through cached services only.
+- Kept public restore/persist behavior robust for cold world-generation calls without changing `IAsyncPersistenceService`.
+
+Cinematic cheats used:
+- No simulation replay, no managed event bridge, no registry polling during WFC mutation drain.
+- The same four-plane bitmask remains the only save truth.
+
+Exact microseconds saved:
+- Measured savings: 0 us. No profiler or runtime trace.
+- Static estimate: worst-case missing-cache Tick no longer performs `GlobalRegistry` dependency lookups; normal cached path is unchanged.
+- Static cost: one SlowTick dependency-readiness branch group plus occasional refresh outside hot mutation drain.
+
+Verification:
+- Static scans confirm `GlobalRegistry.DataVault` and `GlobalRegistry.MacroDatabase` only appear in `RefreshWfcOutpostDependencies`.
+- Static scans confirm `DrainWfcOutpostStateChangedSignals` calls `TryPersistWfcOutpostStateSnapshotInternal`, not the public refresh path.
+- Static scans confirm public persist/restore still call `RefreshWfcOutpostDependencies` for cold callers.
+- `git diff --check` reports no whitespace errors except Git CRLF normalization warnings.
+- No `dotnet` rebuild was run.

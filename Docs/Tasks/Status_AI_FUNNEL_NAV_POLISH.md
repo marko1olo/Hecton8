@@ -105,6 +105,7 @@ Task Count: 15
 
 - [x] Static scan | PASS: `StringPullPathJob`, `NativeAStarJob`, and `TryResolveAbyssalNavNodeCandidate` regions have no `math.normalize`, `math.length(`, `math.distance(`, `.normalized`, or raw `/` matches after loop 13.
 - [x] Diff hygiene | PASS: `git diff --check` passed for edited funnel/scheduler/status/log files; only LF-to-CRLF working-copy warnings were emitted.
+- [x] Static H-Phi audit | ATTEMPTED: `Tools/Architecture/HectonPhiAudit.ps1 -Json` timed out after 120 seconds under current repo load; no score claimed from this pass.
 - [x] Compile check | BLOCKED BY DEPENDENCY: bounded no-reference `dotnet build Hecton8.Core.csproj --no-restore /m:1 /nr:false /p:BuildProjectReferences=false` completed with 63 unrelated errors in `VRAMEnforcer`, `VoxelDeltaProcessor`, `SealedDoor`, `BinaryLayoutManifest`, and `HardwareTierDetector`; none were reported in `VegetationFlowFieldIntegrator.cs`, `VegetationNavGridSynchronizer.cs`, or `HectonMapMagicVegetationBridge.cs`.
 - [x] Dotnet rebuilds | NOT RERUN AFTER LOOP 13: user explicitly prohibited dotnet rebuilds; static scans and diff hygiene only.
 - [x] PlayMode test assembly build | NOT RERUN AFTER LOOP 12: Core source build is currently blocked by unrelated global dependency errors.
