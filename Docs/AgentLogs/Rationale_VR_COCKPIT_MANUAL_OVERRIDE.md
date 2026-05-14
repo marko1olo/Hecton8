@@ -99,3 +99,41 @@ Rejected Alternatives: claiming compile success from file inspection; killing ac
 Scalability potential: once Core compiles, UI.VR should bind to the public registry and signal lane through normal asmdef references.
 
 Hardware Impact: no runtime impact; verification-only action.
+
+## Decision 8 - Reject stale hand lock and untracked dispose jobs
+
+Problem: a held grip could keep the lever grabbed while no fresh physical hand sample arrived, causing the solver to reuse stale pose data. Cleanup also scheduled NativeArray disposal without keeping or completing the returned handle.
+
+Solution: release grab after more than 3 stale frames; during short 2-3 frame gaps, hold the current target angle instead of advancing against stale data. Dispose the five persistent native arrays through tracked deferred `Dispose(JobHandle)` after sentinel unregister, store `_disposeHandle`, null the arrays, and schedule batched jobs.
+
+Rejected Alternatives: polling XR hands directly would bypass the physical hand receiver contract and create a new dependency. Keeping asynchronous disposal was unnecessary for arrays of size 1/300 and made ownership harder to prove.
+
+Scalability potential: Low/Middle get stable release behavior when tracking drops. High/Ultra can add visual IK reacquire effects later without changing the deterministic lever solver.
+
+Hardware Impact: i3/MX350 pays one branch per tick, estimated 0.05 us. Deferred disposal is cold path only and avoids blocking teardown while preserving owner-visible disposal state.
+
+Correction Note: The previous pass briefly used synchronous `NativeArray.Dispose()`. That violates the active `AGENTS.md` native-memory rule. It was corrected to the project pattern before closeout.
+
+## Decision 9 - Registry rebound without tick polling
+
+Problem: the lever cached `IInputService` at `OnEnable`. Bootstrap or service hot-swap could replace Input or Dispatcher after the lever enabled, leaving the lever bound to a no-op/stale service or registered against an obsolete dispatcher.
+
+Solution: implement `IGlobalRegistryHotSwapListener`. On Input rebound, replace the cached `IInputService`. On Dispatcher rebound, clear the local registration flag and try to register against the new dispatcher. Registration/unregistration remains cold lifecycle work.
+
+Rejected Alternatives: polling `GlobalRegistry.Input` every tick wastes a hot-path branch and can trigger fallback-warning behavior. Direct dependency on bootstrap ordering would make scene placement brittle.
+
+Scalability potential: Low/Middle/High/Ultra all keep zero steady-frame cost. Hot-swap resilience matters most in VR because input backends and OpenXR runtime availability can change during startup.
+
+Hardware Impact: 0 us steady-state. Cold rebound path only; avoids a dead lever caused by stale no-op input cache.
+
+## Decision 10 - Localized haptics without per-frame hand polling
+
+Problem: ratchet and latch haptic tool commands were broadcast to both XR motors. That is acceptable for non-VR fallback, but wrong for a grabbed cockpit lever because a left-hand pull should not feel centered or right-biased.
+
+Solution: add explicit left/right motor masks and resolve `ToolHapticsRuntime` motor routing from the owning `PhysicalHandSide` or latched signal hand side. Unknown/non-VR keeps the existing both-hands mask. Also removed the last `.normalized` fallback and made `OnDestroy` unregister the hot-swap listener idempotently.
+
+Rejected Alternatives: adding per-frame XR controller polling was rejected because the physical hand receiver already owns hand identity. Broadcasting both controllers was rejected because it spends haptic bandwidth and lowers tactile clarity. Adding a new haptic service dependency was rejected because `ToolHapticsRuntime` already supplies fixed queue semantics.
+
+Scalability potential: Low keeps the same event frequency and cheaper IK smoothing. Middle/High get correctly localized gear clicks. Ultra can layer secondary cockpit shake/audio from the same ratchet steps without changing the solver.
+
+Hardware Impact: i3/MX350 pays one branch only on ratchet/latch dispatch frames, estimated 0.02 us. No added steady-frame polling or allocation.

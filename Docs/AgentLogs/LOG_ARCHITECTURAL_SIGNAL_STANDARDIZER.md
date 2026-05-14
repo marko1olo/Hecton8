@@ -89,3 +89,71 @@ Cinematic cheats used:
 Exact microseconds saved:
 - Measured proof absent.
 - Static estimate: sub-1us cost per affected publish; saves undefined debug time by preventing NaN propagation into old queues and shader/control mirrors.
+
+## Entry - Look Target String Poison Hardening
+
+Status: PENDING VERIFICATION. `dotnet build Hecton8.Core.csproj -v:minimal /nr:false /p:UseSharedCompilation=false` exits 1 with 17 neighbor dependency errors. Filtered output shows no touched-file errors for `GlobalSignals.cs`, `PlayerInteraction.cs`, `DiegeticTooltipSystem.cs`, or `PlayerLookTargetPromptCache.cs`.
+
+What was wrong:
+- `PlayerLookTargetSignal` carried `FixedString64Bytes Prompt`; that violates the hash-only signal lane rule.
+- Prompt text was being copied into the signal packet, even though UI copy is presentation state and the signal already had `PromptHash`.
+
+What was done:
+- Removed the `FixedString64Bytes` field from `PlayerLookTargetSignal`; retained 160-byte explicit size for ABI/stride stability.
+- Added `PlayerLookTargetPromptCache` with fixed 64-slot x 64-char sidecar storage and a Unity `.meta`.
+- `PlayerInteraction` now stores prompt text by hash before `SignalBus<PlayerLookTargetSignal>.Push()`.
+- `DiegeticTooltipSystem` now resolves prompt text by `PromptHash` and falls back to the default prompt if the sidecar misses.
+
+Cinematic cheats used:
+- Prompt copy remains a UI fake keyed by stable hash. The bus carries identity, not text.
+- Low tier gets deterministic fallback text; high/ultra can spend the same hash on richer tooltip layout/localization/audio cue mapping later.
+
+Exact microseconds saved:
+- Measured proof absent.
+- Static estimate: sub-1us per hover acquisition on i3/MX350 by dropping fixed-string signal copy work; frame bus stride intentionally unchanged for contract stability.
+
+## Entry - Compile Convergence / Prompt Cache Project Drift
+
+Status: CORE CLI BUILD VERIFIED. `dotnet build Hecton8.Core.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false /p:UseSharedCompilation=false` succeeds with 0 warnings / 0 errors.
+
+What was wrong:
+- The Unity asset database could see `PlayerLookTargetPromptCache.cs`, but the stale generated `Hecton8.Core.csproj` could not, so CLI verification was not representing the current source tree.
+- Neighbor WFC/blueprint sources also existed on disk but were absent from the CLI project include list.
+- WFC allocation code referenced `SystemID.LogisticsGrid`, while the compiled memory assembly visible to the CLI build did not expose that enum name.
+
+What was done:
+- Added existing Unity source files to the Core CLI project include list, including `PlayerLookTargetPromptCache.cs`.
+- Preserved WFC memory ownership with a local constant cast to numeric `SystemID` value 512 instead of switching to an unrelated owner.
+- Re-ran focused static scans: no `FixedString`/`signal.Prompt` payload in the look-target path, no `new ...Signal` bridge constructor text in `GlobalSignals.cs`, and explicit signal sizes remain 16-byte multiples.
+
+Cinematic cheats used:
+- Prompt text remains a bounded presentation sidecar keyed by hash; the signal lane carries identity only.
+- WFC compile repair keeps allocation telemetry deterministic without simulating new runtime behavior.
+
+Exact microseconds saved:
+- Runtime measured proof absent.
+- 0us claimed for project-file repair.
+- Static runtime estimate remains sub-1us per hover acquisition from removing fixed-string signal copy work; global legacy event gains are not claimed while the mandatory scan still reports 2108 hits.
+
+## Entry - Prompt Cache Four-Way Hardening / Compile Repair
+
+Status: CORE CLI BUILD GREEN WITH WARNINGS. `dotnet build Hecton8.Core.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false /p:UseSharedCompilation=false` succeeds with 30 generated-project CS0436 warnings / 0 errors. Mandatory communication scan now reports 2106 legacy hits, still not zero.
+
+What was wrong:
+- `PlayerLookTargetPromptCache` had become a full 64-slot linear scan. It was bounded and zero-GC, but wasteful and avoidable.
+- A concurrent compile wall appeared: `PlayerCriticalProceduralAudioRenderer` referenced a missing private Burst probe job, and the ignored CLI project could not see the updated IK job field used by `FaunaKinematicsRuntime`.
+
+What was done:
+- Converted the prompt sidecar to a 16-set x 4-way fixed hash cache with byte-age replacement.
+- Kept prompt text outside the signal payload; `PlayerLookTargetSignal` remains hash-only.
+- Restored `PrologueSplashdownSineSweepProbeJob` as the referenced private cold Burst prewarm job.
+- Added the existing `LeviathanTerrainIkJobs.cs` source to the ignored/generated CLI project so the current `TailWhipDurationSeconds` source field is visible to the CLI compiler.
+
+Cinematic cheats used:
+- Prompt text remains presentation-side lookup keyed by hash. The signal lane carries identity only.
+- Tail-whip duration remains scalar authored control, not a heavier physical animation truth model.
+
+Exact microseconds saved:
+- Measured proof absent.
+- Static estimate: prompt cache lookup/store path reduced from O(64) comparisons to O(4), sub-1us expected on i3/MX350 during hover acquisition.
+- Compile repairs claim 0us runtime savings.

@@ -60,3 +60,65 @@ Final diff scope:
 - `Assets/_Project/Scripts/Physics/FluidFeedbackListener.cs`
 - `Docs/Tasks/Status_ACOUSTIC_OCCLUSION_CULLING.md`
 - `Docs/AgentLogs/Rationale_ACOUSTIC_OCCLUSION_CULLING.md`
+
+## 2026-05-14 - Continuation Upgrade
+What was wrong:
+- The virtualizer still refreshed foveated/scalability dependencies too close to FastTick/enqueue.
+- Explicit AUP rebase covered queued voices but not selected and pending fade payloads.
+- During a 10 ms steal fade, a still-pending stable key could be treated as absent and assigned to another channel.
+- Public dropped-count telemetry could hide drops after the sort pass reset the live counter.
+- Focused compile had not isolated the Burst job from the broken generated project graph.
+
+What was done:
+- Moved virtualizer dependency/tier refresh to initialization and SlowTick.
+- Added 25 slow ticks of hysteresis before post-init 8/16 physical voice cap changes.
+- Expanded explicit `ApplyVirtualVoiceAupShift` to selected voices and pending channel payloads.
+- Added pending stable-key lookup before free-channel selection.
+- Changed `DroppedVoiceCount` to report last-sort drops plus current-frame drops.
+- Fixed `FixedList512Bytes<int>.Add` calls to use `ref int`, matching this Unity.Collections version.
+
+Cinematic Cheats used:
+- Still uses squared-distance priority and hard audible floor, not honest acoustic ray truth.
+- Low/MX350 remains 8 physical voices; High/Ultra spend saved budget on richer selected-voice presentation, not wider chaos.
+- Hysteresis prevents visible/audible tier twitching during thermal/profile churn.
+
+Exact microseconds saved:
+- Measured profiler data is still unavailable.
+- The upgrade removes per-emission registry fallback work and prevents duplicate pending voice assignment during fades.
+- Channel guard remains fixed 16-slot work; expected cost stays under the previous 10 us fade-loop estimate.
+
+Verification:
+- Focused Mono compile against Unity 6000.4.1f1 assemblies passes for `AcousticPortalPropagation.cs`, virtualizer contracts, and `AudioVirtualizationJobs.cs`.
+- Roslyn syntax parse passes for the changed C# files.
+- Static scans still show no managed sort, `math.sqrt`, `math.normalize`, `foreach`, string formatting, `GlobalRegistry.Get<T>`, `VoiceManager`, or `PlayOneShot` inside `Assets/_Project/Scripts/Audio/Virtualization`.
+- Full `dotnet build Hecton8.Core.csproj` remains blocked by 130 stale/generated project reference errors. Unity MCP remains unavailable.
+
+## 2026-05-14 - Continuation Upgrade Pass 2
+What was wrong:
+- The Burst job was still doing full audible-list quicksort even though only the top 8/16 voices are ever consumed by physical channel injection.
+- The fixed-stack sorter carried extra branch and stack fallback code for an output shape that does not need full ordering.
+- One anti-bloat scan used a shell regex that polluted the result set; it was replaced with explicit file-scoped checks.
+
+What was done:
+- Replaced native quicksort with bounded top-K insertion selection in `AudioVirtualizationJobs.cs`.
+- Kept compacted `NativeList<VirtualVoice>` for stats/ownership, but made `NativeArray<VirtualVoiceSelection>[16]` the only ranked output.
+- Cleared all stale selection slots after active selections, protecting Low/MX350 8-voice cap transitions.
+- Rechecked `SpatialAudioManager` injection: it reads only `_virtualVoiceSelections` and `_lastVirtualVoiceStatistics`, so unsorted compacted voices are not a behavioral dependency.
+- Stopped stale MSBuild node-reuse child processes left by my timed-out broad build attempt; left a different active `dotnet build --disable-build-servers /nr:false` process alone as unrelated concurrent work.
+
+Cinematic Cheats used:
+- Same perceptual fake stack: squared-distance ranking, reciprocal attenuation, hard audible floor, foveated Tier 2 silence, 8-channel Low cap, 10 ms steal fade.
+- New cheat: do not sort reality. Keep only the voices the player can physically hear and discard ordering information nobody consumes.
+
+Exact microseconds saved:
+- Profiler data remains unavailable because Unity MCP/console is not connected and the generated project graph blocks full verification.
+- Mechanical estimate at 8192 audible candidates: Low cap maintains 8 sorted candidates; Mid/High/Ultra maintains 16. This removes full-list partitioning and sorter stack work while preserving 0 B managed allocation.
+- Expected low-end gain is lower CPU variance under swarm bursts, not a guaranteed measured frame-time number.
+
+Verification:
+- Focused Mono compile passes against Unity 6000.4.1f1 assemblies for `AcousticPortalPropagation.cs`, `AudioVirtualizationContracts.cs`, and `AudioVirtualizationJobs.cs`.
+- Roslyn parse probe passes after rebuilding the temp probe.
+- File-scoped scans over `AudioVirtualizationJobs.cs` and `AudioVirtualizationContracts.cs` report no `.Sort(`, `List<T>.Sort`, `FixedList`, `foreach`, `math.sqrt`, `math.normalize`, `StartCoroutine`, `PlayOneShot`, `string.Format`, `$"..."`, or `.ToString(`.
+- `git diff --check` reports no whitespace errors, only CRLF conversion warnings for touched files.
+- Unity MCP validate/read_console failed with HTTP transport failure to `127.0.0.1:8088`; editor-side proof remains unavailable.
+- Full `dotnet build Hecton8.Core.csproj --no-restore -v:quiet -clp:ErrorsOnly /m:1 /p:UseSharedCompilation=false` timed out after 184 s; status remains PENDING VERIFICATION.

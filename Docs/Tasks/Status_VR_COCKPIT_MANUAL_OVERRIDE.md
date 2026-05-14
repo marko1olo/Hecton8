@@ -51,11 +51,30 @@ Execution lane: SIMULATION / `PriorityLayer.Player`
 - [x] Ratchet haptic polish. DOD: first observed ratchet step seeds state without firing, so the first click requires real angular movement. Rejected: bogus 0-degree click on grab. Estimate: no steady cost.
 - [x] Generated rsp compile probe. DOD: invoked Unity-generated `Hecton8.UI.VR.rsp`; errors are stale Core reference symptoms (`ManualOverridePulledSignal` missing, registry still internal in `Hecton8.Core.ref.dll`). Rejected: claiming full compile success while Core ref is stale. Estimate: verification only.
 
-STATUS: PENDING VERIFICATION - global compile dependency wall prevents full Unity/Core compile proof in this session.
+## Loop 7 - Stale Sample / Dispose Hardening
+
+- [x] Stale hand guard. DOD: VR grab now releases after more than 3 frames without a fresh physical hand sample and freezes target during short 2-3 frame sample gaps. Rejected: solving indefinitely against a stale hand pose while grip remains held. Estimate: 0.05 us branch per tick.
+- [x] Native cleanup hardening. DOD: persistent arrays use tracked deferred disposal on destroy after sentinel unregister, matching `DispatcherJobSwap`/JobHandle patterns. Rejected: synchronous disposal and untracked fire-and-forget disposal. Estimate: cold destroy only; 0 runtime us.
+- [x] Rechecked source and compile wall. DOD: `git diff --check` passed; static scan found no banned hot-path constructs; direct Core rsp compile fails before task code on unrelated missing Audio.Virtualization, AI.Cognition, OutpostGeneration, PrologueSequence, and ore contracts. Rejected: editing cross-domain missing systems. Estimate: verification only.
+
+## Loop 8 - Registry Rebind Hardening
+
+- [x] GlobalRegistry hot-swap listener. DOD: lever implements `IGlobalRegistryHotSwapListener`, rebinds cached `IInputService`, and re-registers with a replaced dispatcher without per-frame polling. Rejected: polling `GlobalRegistry.Input` every tick and ignoring dispatcher rebound. Estimate: 0 us steady; cold rebound only.
+
+## Loop 9 - Haptic Channel / Cold Math Hardening
+
+- [x] Grabbing-hand haptic routing. DOD: ratchet and latch `ToolHapticsRuntime` commands now target the active left/right motor mask when a VR hand owns the lever; non-VR/unknown keeps both hands. Rejected: broadcasting all cockpit gear clicks to both controllers because it degrades tactile localization. Estimate: 0.02 us branch only on haptic dispatch frames.
+- [x] Cold lifecycle cleanup. DOD: `OnDestroy` now idempotently unregisters the GlobalRegistry hot-swap listener in addition to `OnDisable`. Rejected: relying purely on Unity `OnDisable` ordering for service listener cleanup. Estimate: cold teardown only.
+- [x] Normalization fallback audit. DOD: `NormalizeOr` no longer calls `.normalized`; both primary and fallback vectors use guarded `math.rsqrt`. Rejected: hidden Unity `Vector3.normalized` sqrt path. Estimate: cold config path only; scan now covers `.normalized`.
+- [x] Direct UI assembly probe. DOD: Unity-generated `Hecton8.UI.VR.rsp` was invoked after the haptic pass; reported errors remain the same stale Core reference symptoms (`ManualOverridePulledSignal` absent and `PhysicalHandReceiverRegistry` still internal in the ref). Rejected: claiming compile success when the response-file probe still sees stale Core metadata. Estimate: verification only.
+
+STATUS: PENDING VERIFICATION - Unity editor/global Core compile dependency wall prevents full player compile proof in this session.
 
 ## Compile Attempts
 
 - Unity MCP refresh requested with compile; timed out after 60s and subsequent console reads returned `no_unity_session`.
 - Dotnet Core compile blocked by unrelated project dependency wall after task-local signal error was fixed. New `Hecton8.UI.VR` assembly compile remains pending because Unity did not generate the csproj during the lost-session compile refresh.
-- Unity-generated `Hecton8.UI.VR.rsp` compile now fails only because `Hecton8.Core.ref.dll` is stale: it does not yet expose `ManualOverridePulledSignal` or public `PhysicalHandReceiverRegistry`.
+- Unity-generated `Hecton8.UI.VR.rsp` compile still fails only because `Hecton8.Core.ref.dll` is stale: it does not yet expose `ManualOverridePulledSignal` or public `PhysicalHandReceiverRegistry`. The haptic-mask pass did not add new compiler categories.
+- Direct Unity Roslyn Core rsp compile (`Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.Core.rsp`) fails before manual override on unrelated missing types: `Hecton8.Audio.Virtualization`, `Hecton8.AI.Cognition`, `IOutpostGenerationService`, `IPrologueSequenceService`, `WorldOreTypeIds`, and related audio/fauna payloads.
+- Latest direct Core rsp probe timed out after 60s while unrelated Core/MSBuild processes were already active; those processes were not killed to avoid interfering with parallel agents.
 - Latest Core build attempt timed out after two minutes; `dotnet build-server shutdown` executed. Some `dotnet build Hecton8.Core.csproj` processes remain active but command lines indicate separate quiet builds, so they were not killed to avoid interfering with parallel agents.

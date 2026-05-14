@@ -1094,8 +1094,8 @@ namespace Hecton8.Gameplay
                 math.abs(clampedProgress - _lastScannerShaderProgress) < 0.01f)
                 return;
 
-            float3 absolutePosition = runtimePosition + (float3)HectonFloatingOrigin.CurrentTotalOffset;
-            _scannerShaderPoints[0] = new Vector4(absolutePosition.x, absolutePosition.y, absolutePosition.z, clampedProgress);
+            double3 absolutePosition = new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z) + HectonFloatingOrigin.CurrentTotalOffsetDouble;
+            _scannerShaderPoints[0] = new Vector4((float)absolutePosition.x, (float)absolutePosition.y, (float)absolutePosition.z, clampedProgress);
             _lastScannerShaderPoint = runtimePosition;
             _lastScannerShaderProgress = clampedProgress;
             Shader.SetGlobalInt(_HectonScannerPointCountId, 1);

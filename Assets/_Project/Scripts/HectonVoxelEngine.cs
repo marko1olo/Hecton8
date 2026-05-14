@@ -3338,6 +3338,7 @@ public class HectonVoxelEngine : MonoBehaviour
         public int SourceRuntimeStamp;
         public Vector3 WorldCenter;
         public Vector3 AbsoluteUniverseOffsetAtStart;
+        public double3 AbsoluteUniverseOffsetAtStartDouble;
         public uint ShiftEpochAtStart;
         public float TerrainHeightCenter;
         public int LODLevel;
@@ -3581,7 +3582,8 @@ public class HectonVoxelEngine : MonoBehaviour
             float3 volumeOrigin = (float3)worldCenter - actualSize * 0.5f;
             float lodTransitionBand = clampedLodLevel > 0 ? math.max(baseVoxelStep * 2f, voxelStep * 1.25f) : 0f;
             float effectiveSealMargin = math.max(sealMargin, TerrainVoxelSeamTransitionBand) + lodTransitionBand;
-            Vector3 absoluteUniverseOffsetAtStart = HectonFloatingOrigin.CurrentTotalOffset;
+            double3 absoluteUniverseOffsetAtStartDouble = HectonFloatingOrigin.CurrentTotalOffsetDouble;
+            Vector3 absoluteUniverseOffsetAtStart = ToVector3(absoluteUniverseOffsetAtStartDouble);
             uint shiftEpochAtStart = HectonFloatingOrigin.CurrentShiftSequence;
 
             float terrainHeightCenter = worldCenter.y - 10f;
@@ -3617,6 +3619,7 @@ public class HectonVoxelEngine : MonoBehaviour
             {
                 WorldCenter = worldCenter,
                 AbsoluteUniverseOffsetAtStart = absoluteUniverseOffsetAtStart,
+                AbsoluteUniverseOffsetAtStartDouble = absoluteUniverseOffsetAtStartDouble,
                 ShiftEpochAtStart = shiftEpochAtStart,
                 TerrainHeightCenter = terrainHeightCenter,
                 LODLevel = clampedLodLevel,
@@ -3650,7 +3653,7 @@ public class HectonVoxelEngine : MonoBehaviour
             targetGO.name = RuntimeCaveVolumeName;
 
             OriginShiftEventData stableShift = await HectonFloatingOrigin.WaitForShiftStabilityAsync(ct);
-            targetGO.transform.position = stableShift.RebaseCapturedRuntimePosition(Vector3.zero, absoluteUniverseOffsetAtStart);
+            targetGO.transform.position = stableShift.RebaseCapturedRuntimePosition(Vector3.zero, absoluteUniverseOffsetAtStartDouble);
 
             if (!await ApplyVolumeMeshAsync(targetGO, pipelineData, stableShift, ct))
             {
@@ -3668,9 +3671,9 @@ public class HectonVoxelEngine : MonoBehaviour
                 (Vector3)pipelineData.VolumeOrigin,
                 pipelineData.VoxelStep,
                 pipelineData.BuildCollider);
-            RegisterEntranceTerrainHoles(targetGO, caveEntrances, voxelStep, absoluteUniverseOffsetAtStart, postMeshShift.NewTotalOffset);
+            RegisterEntranceTerrainHoles(targetGO, caveEntrances, voxelStep, absoluteUniverseOffsetAtStartDouble, postMeshShift.NewTotalOffsetDouble);
             RegisterActiveVolume(targetGO);
-            RegisterPipelineSpawnPoints(worldCenter, caveParams.spawnContext, pipelineData.SpawnPointList, absoluteUniverseOffsetAtStart, postMeshShift.NewTotalOffset);
+            RegisterPipelineSpawnPoints(worldCenter, caveParams.spawnContext, pipelineData.SpawnPointList, absoluteUniverseOffsetAtStartDouble, postMeshShift.NewTotalOffsetDouble);
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.Log("[HectonVoxel] Cave volume generated.");
@@ -3807,7 +3810,8 @@ public class HectonVoxelEngine : MonoBehaviour
             float effectiveSealMargin = math.max(sealMargin, TerrainVoxelSeamTransitionBand) + lodTransitionBand;
             float3 actualSize = new float3(gridDim, gridDim, gridDim) * voxelStep;
             float3 volumeOrigin = (float3)worldCenter - actualSize * 0.5f;
-            Vector3 absoluteUniverseOffsetAtStart = HectonFloatingOrigin.CurrentTotalOffset;
+            double3 absoluteUniverseOffsetAtStartDouble = HectonFloatingOrigin.CurrentTotalOffsetDouble;
+            Vector3 absoluteUniverseOffsetAtStart = ToVector3(absoluteUniverseOffsetAtStartDouble);
             uint shiftEpochAtStart = HectonFloatingOrigin.CurrentShiftSequence;
 
             float terrainHeightCenter = worldCenter.y - 10f;
@@ -3818,6 +3822,7 @@ public class HectonVoxelEngine : MonoBehaviour
             {
                 WorldCenter = worldCenter,
                 AbsoluteUniverseOffsetAtStart = absoluteUniverseOffsetAtStart,
+                AbsoluteUniverseOffsetAtStartDouble = absoluteUniverseOffsetAtStartDouble,
                 ShiftEpochAtStart = shiftEpochAtStart,
                 TerrainHeightCenter = terrainHeightCenter,
                 LODLevel = clampedLodLevel,
@@ -3869,7 +3874,7 @@ public class HectonVoxelEngine : MonoBehaviour
             targetGO.name = RuntimeCaveVolumeName;
 
             OriginShiftEventData stableShift = await HectonFloatingOrigin.WaitForShiftStabilityAsync(ct);
-            targetGO.transform.position = stableShift.RebaseCapturedRuntimePosition(Vector3.zero, absoluteUniverseOffsetAtStart);
+            targetGO.transform.position = stableShift.RebaseCapturedRuntimePosition(Vector3.zero, absoluteUniverseOffsetAtStartDouble);
 
             if (!await ApplyVolumeMeshAsync(targetGO, pipelineData, stableShift, ct))
             {
@@ -3887,9 +3892,9 @@ public class HectonVoxelEngine : MonoBehaviour
                 (Vector3)pipelineData.VolumeOrigin,
                 pipelineData.VoxelStep,
                 pipelineData.BuildCollider);
-            RegisterEntranceTerrainHoles(targetGO, entrances, voxelStep, absoluteUniverseOffsetAtStart, postMeshShift.NewTotalOffset);
+            RegisterEntranceTerrainHoles(targetGO, entrances, voxelStep, absoluteUniverseOffsetAtStartDouble, postMeshShift.NewTotalOffsetDouble);
             RegisterActiveVolume(targetGO);
-            RegisterPipelineSpawnPoints(worldCenter, caveParams.spawnContext, pipelineData.SpawnPointList, absoluteUniverseOffsetAtStart, postMeshShift.NewTotalOffset);
+            RegisterPipelineSpawnPoints(worldCenter, caveParams.spawnContext, pipelineData.SpawnPointList, absoluteUniverseOffsetAtStartDouble, postMeshShift.NewTotalOffsetDouble);
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (RuntimeDiagnosticsTrace.IsActive)
@@ -3941,8 +3946,9 @@ public class HectonVoxelEngine : MonoBehaviour
             int lodLevel = math.clamp(volume.LODLevel, 0, 2);
             int gridDim = math.clamp(volume.GridDimension, 16, 128);
             float voxelStep = math.max(volume.VoxelSize, 0.25f);
-            Vector3 committedTotalOffset = stableShift.NewTotalOffset;
-            Vector3 worldCenter = HectonFloatingOrigin.ToRuntimePosition(volume.GenerationAbsoluteUniversePosition, committedTotalOffset);
+            double3 committedTotalOffsetDouble = stableShift.NewTotalOffsetDouble;
+            Vector3 committedTotalOffset = ToVector3(committedTotalOffsetDouble);
+            Vector3 worldCenter = HectonFloatingOrigin.ToRuntimePosition(ToDouble3(volume.GenerationAbsoluteUniversePosition), committedTotalOffsetDouble);
             CaveGenerationParams caveParams = volume.CaveParams;
             float lodTransitionBand = lodLevel > 0 ? math.max(voxelStep * 1.25f, 0.5f) : 0f;
             float effectiveSealMargin = math.max(sealMargin, TerrainVoxelSeamTransitionBand) + lodTransitionBand;
@@ -4032,6 +4038,7 @@ public class HectonVoxelEngine : MonoBehaviour
                 SourceRuntimeStamp = expectedRuntimeStamp,
                 WorldCenter = worldCenter,
                 AbsoluteUniverseOffsetAtStart = committedTotalOffset,
+                AbsoluteUniverseOffsetAtStartDouble = committedTotalOffsetDouble,
                 ShiftEpochAtStart = stableShift.Sequence,
                 TerrainHeightCenter = terrainHeightCenter,
                 LODLevel = lodLevel,
@@ -5532,7 +5539,7 @@ public class HectonVoxelEngine : MonoBehaviour
         if (!TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
             return false;
 
-        AbsoluteUniversePosition volumeAup = BuildCapturedAup(data.WorldCenter, data.AbsoluteUniverseOffsetAtStart);
+        AbsoluteUniversePosition volumeAup = BuildCapturedAup(data.WorldCenter, data.AbsoluteUniverseOffsetAtStartDouble);
         double distanceSq = AbsoluteUniversePosition.DistanceSq(in volumeAup, in playerAup);
         float colliderDisableDistance = VoxelLodColliderDisableDistanceMeters;
         VRAMPressureMonitor pressureMonitor = GlobalRegistry.VRAMPressure;
@@ -5579,10 +5586,32 @@ public class HectonVoxelEngine : MonoBehaviour
 
     private static AbsoluteUniversePosition BuildCapturedAup(Vector3 runtimePosition, Vector3 capturedOffset)
     {
-        return AbsoluteUniversePosition.FromAbsolutePosition(new double3(
-            (double)runtimePosition.x + capturedOffset.x,
-            (double)runtimePosition.y + capturedOffset.y,
-            (double)runtimePosition.z + capturedOffset.z));
+        return BuildCapturedAup(runtimePosition, ToDouble3(capturedOffset));
+    }
+
+    private static AbsoluteUniversePosition BuildCapturedAup(Vector3 runtimePosition, double3 capturedOffset)
+    {
+        return AbsoluteUniversePosition.FromAbsolutePosition(ToDouble3(runtimePosition) + capturedOffset);
+    }
+
+    private static double3 ToDouble3(Vector3 value)
+    {
+        return new double3(value.x, value.y, value.z);
+    }
+
+    private static double3 ToDouble3(float3 value)
+    {
+        return new double3(value.x, value.y, value.z);
+    }
+
+    private static float3 ToFloat3(double3 value)
+    {
+        return new float3((float)value.x, (float)value.y, (float)value.z);
+    }
+
+    private static Vector3 ToVector3(double3 value)
+    {
+        return new Vector3((float)value.x, (float)value.y, (float)value.z);
     }
 
     private static bool ResolveDeferredVoxelPhysicsBakeBackpressureState(int pendingCount, bool currentlyActive)
@@ -6010,7 +6039,7 @@ public class HectonVoxelEngine : MonoBehaviour
             return true;
 
         AbsoluteUniversePosition playerAup = playerContext.MovementState.PredictedAup;
-        AbsoluteUniversePosition chunkCenterAup = BuildCapturedAup(data.WorldCenter, data.AbsoluteUniverseOffsetAtStart);
+        AbsoluteUniversePosition chunkCenterAup = BuildCapturedAup(data.WorldCenter, data.AbsoluteUniverseOffsetAtStartDouble);
         float3 cameraToChunk = AbsoluteUniversePosition.ToCameraRelativeFloat3(in chunkCenterAup, in playerAup);
         float cameraToChunkSq = math.lengthsq(cameraToChunk);
         if (cameraToChunkSq <= 0.0001f)
@@ -6070,7 +6099,8 @@ public class HectonVoxelEngine : MonoBehaviour
 
         float fallbackHeight = data.TerrainHeightCenter;
         bool sampledHeightGrid = false;
-        Vector3 absoluteGridOrigin = new Vector3(data.VolumeOrigin.x, 0f, data.VolumeOrigin.z) + data.AbsoluteUniverseOffsetAtStart;
+        double3 absoluteGridOriginDouble = new double3(data.VolumeOrigin.x, 0d, data.VolumeOrigin.z) + data.AbsoluteUniverseOffsetAtStartDouble;
+        Vector3 absoluteGridOrigin = ToVector3(absoluteGridOriginDouble);
         HectonMapMagicVegetationBridge vegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
         if (vegetationBridge != null)
         {
@@ -6093,7 +6123,7 @@ public class HectonVoxelEngine : MonoBehaviour
                     float wz = data.VolumeOrigin.z + iz * data.VoxelStep;
                     int hi = ix + iz * data.PtsX;
 
-                    Vector3 absoluteSamplePosition = new Vector3(wx, 0f, wz) + data.AbsoluteUniverseOffsetAtStart;
+                    Vector3 absoluteSamplePosition = ToVector3(new double3(wx, 0d, wz) + data.AbsoluteUniverseOffsetAtStartDouble);
                     if (mapMagicBridge.TryGetHeightAUP(absoluteSamplePosition, out float sampledHeight))
                         terrainHeights[hi] = sampledHeight;
                     else
@@ -6140,7 +6170,7 @@ public class HectonVoxelEngine : MonoBehaviour
             tunnelBucketOffsets = data.TunnelBucketOffsets,
             tunnelBucketIndices = data.TunnelBucketIndices,
             caveParams = data.CaveParams,
-            absoluteNoiseOffset = (float3)data.AbsoluteUniverseOffsetAtStart,
+            absoluteNoiseOffset = ToFloat3(data.AbsoluteUniverseOffsetAtStartDouble),
             partitionDimX = data.PartitionDimX,
             partitionDimY = data.PartitionDimY,
             partitionDimZ = data.PartitionDimZ,
@@ -6158,11 +6188,8 @@ public class HectonVoxelEngine : MonoBehaviour
         }.Schedule(data.TotalPts, JOB_BATCH);
         long anomalySolveStartTimestamp = Stopwatch.GetTimestamp();
 
-        double3 terrainOriginAup = new double3(absoluteGridOrigin.x, 0d, absoluteGridOrigin.z);
-        double3 sdfOriginAup = new double3(
-            data.VolumeOrigin.x + data.AbsoluteUniverseOffsetAtStart.x,
-            data.VolumeOrigin.y + data.AbsoluteUniverseOffsetAtStart.y,
-            data.VolumeOrigin.z + data.AbsoluteUniverseOffsetAtStart.z);
+        double3 terrainOriginAup = absoluteGridOriginDouble;
+        double3 sdfOriginAup = ToDouble3(data.VolumeOrigin) + data.AbsoluteUniverseOffsetAtStartDouble;
         JobHandle pillarDetectionHandle = HectonAnomalyEngine.ScheduleRidgeFeatureDetection(
             terrainHeights,
             anomalyFeatureRecords,
@@ -6514,7 +6541,7 @@ public class HectonVoxelEngine : MonoBehaviour
             ptsX = data.PtsX,
             ptsZ = data.PtsZ,
             volumeOrigin = data.VolumeOrigin,
-            absoluteUniverseOffset = (float3)data.AbsoluteUniverseOffsetAtStart,
+            absoluteUniverseOffset = ToFloat3(data.AbsoluteUniverseOffsetAtStartDouble),
             voxelStep = data.VoxelStep,
             seamTransitionBand = TerrainVoxelSeamTransitionBand,
             seamOverlap = VoxelSeamDirector.TerrainOverlapMeters,
@@ -6556,7 +6583,7 @@ public class HectonVoxelEngine : MonoBehaviour
             ptsX = data.PtsX,
             ptsZ = data.PtsZ,
             volumeOrigin = data.VolumeOrigin,
-            absoluteUniverseOffset = (float3)data.AbsoluteUniverseOffsetAtStart,
+            absoluteUniverseOffset = ToFloat3(data.AbsoluteUniverseOffsetAtStartDouble),
             voxelStep = data.VoxelStep,
             seamTransitionBand = TerrainVoxelSeamTransitionBand,
             positions = data.WeldedPositions,
@@ -6597,7 +6624,7 @@ public class HectonVoxelEngine : MonoBehaviour
             biomeValues = data.BiomeValues,
             caveEntrances = data.Entrances,
             modifiedCells = data.ModifiedCells,
-            absoluteUniverseOffset = (float3)data.AbsoluteUniverseOffsetAtStart,
+            absoluteUniverseOffset = ToFloat3(data.AbsoluteUniverseOffsetAtStartDouble),
             colors = data.Colors,
             skirtAlphaValues = data.SkirtAlphaValues
         }.Schedule(data.WeldedCount, JOB_BATCH, colorDeps);
@@ -6610,7 +6637,7 @@ public class HectonVoxelEngine : MonoBehaviour
                 positions = data.WeldedPositions,
                 modifiedCells = data.ModifiedCells,
                 voxelStep = data.VoxelStep,
-                absoluteUniverseOffset = (float3)data.AbsoluteUniverseOffsetAtStart,
+                absoluteUniverseOffset = ToFloat3(data.AbsoluteUniverseOffsetAtStartDouble),
                 dirtyBlendValues = data.DirtyBlendValues
             }.Schedule(data.WeldedCount, JOB_BATCH, skirtHandle);
 
@@ -6666,20 +6693,20 @@ public class HectonVoxelEngine : MonoBehaviour
 
         for (int iz = 0; iz < data.PtsZ; iz++)
         {
-            float absoluteZ = data.VolumeOrigin.z + iz * data.VoxelStep + data.AbsoluteUniverseOffsetAtStart.z;
+            double absoluteZ = (double)data.VolumeOrigin.z + iz * data.VoxelStep + data.AbsoluteUniverseOffsetAtStartDouble.z;
             for (int ix = 0; ix < data.PtsX; ix++)
             {
                 int gridIndex = ix + iz * data.PtsX;
                 float modifier = 0f;
                 if (monolithReady)
                 {
-                    float absoluteX = data.VolumeOrigin.x + ix * data.VoxelStep + data.AbsoluteUniverseOffsetAtStart.x;
+                    double absoluteX = (double)data.VolumeOrigin.x + ix * data.VoxelStep + data.AbsoluteUniverseOffsetAtStartDouble.x;
                     float u = hasHeightPayload
-                        ? math.saturate((absoluteX - terrainPosition.x) * invTerrainSizeX)
-                        : math.frac(absoluteX * fallbackInvTileSize);
+                        ? math.saturate((float)((absoluteX - terrainPosition.x) * invTerrainSizeX))
+                        : math.frac((float)(absoluteX * fallbackInvTileSize));
                     float v = hasHeightPayload
-                        ? math.saturate((absoluteZ - terrainPosition.z) * invTerrainSizeZ)
-                        : math.frac(absoluteZ * fallbackInvTileSize);
+                        ? math.saturate((float)((absoluteZ - terrainPosition.z) * invTerrainSizeZ))
+                        : math.frac((float)(absoluteZ * fallbackInvTileSize));
                     int heatmapX = math.clamp((int)(u * BiomeHeatmapMaxIndex + 0.5f), 0, BiomeHeatmapMaxIndex);
                     int heatmapY = math.clamp((int)(v * BiomeHeatmapMaxIndex + 0.5f), 0, BiomeHeatmapMaxIndex);
                     if (H8StaticDataArena.TryGetBiomeHeatmapCell(heatmapX, heatmapY, out uint biomeHash))
@@ -7373,9 +7400,11 @@ public class HectonVoxelEngine : MonoBehaviour
             ShiftEpochChanged = shiftEpochChanged;
         }
 
-        public float3 AbsolutePositionOffset => (float3)(StableShift.NewTotalOffset + RootRuntimePosition);
+        public double3 AbsolutePositionOffsetDouble => StableShift.NewTotalOffsetDouble + ToDouble3(RootRuntimePosition);
 
-        public float3 ProjectRuntimePositionToLocal(Vector3 capturedRuntimePosition, Vector3 capturedTotalOffset)
+        public float3 AbsolutePositionOffset => ToFloat3(AbsolutePositionOffsetDouble);
+
+        public float3 ProjectRuntimePositionToLocal(Vector3 capturedRuntimePosition, double3 capturedTotalOffset)
         {
             Vector3 rebasedRuntimePosition = StableShift.RebaseCapturedRuntimePosition(capturedRuntimePosition, capturedTotalOffset);
             return (float3)(rebasedRuntimePosition - RootRuntimePosition);
@@ -7431,9 +7460,9 @@ public class HectonVoxelEngine : MonoBehaviour
         return math.saturate(1f - nearestEdgeDistance / stitchWidth);
     }
 
-    static bool OffsetsApproximatelyMatch(Vector3 lhs, Vector3 rhs)
+    static bool OffsetsApproximatelyMatch(double3 lhs, double3 rhs)
     {
-        return (lhs - rhs).sqrMagnitude <= 0.000001f;
+        return math.lengthsq(lhs - rhs) <= 0.000001d;
     }
 
     Awaitable<NativeArray<float3>> BuildShiftAwareLocalPositionBufferAsync(
@@ -7447,7 +7476,7 @@ public class HectonVoxelEngine : MonoBehaviour
         {
             bool needsProjection =
                 projectionState.ShiftEpochChanged ||
-                !OffsetsApproximatelyMatch(data.AbsoluteUniverseOffsetAtStart, projectionState.StableShift.NewTotalOffset) ||
+                !OffsetsApproximatelyMatch(data.AbsoluteUniverseOffsetAtStartDouble, projectionState.StableShift.NewTotalOffsetDouble) ||
                 projectionState.RootRuntimePosition.sqrMagnitude > 0.000001f;
 
             if (!needsProjection)
@@ -7459,9 +7488,10 @@ public class HectonVoxelEngine : MonoBehaviour
             // COLD ALLOC: NativeArray<float3>[data.WeldedCount] - shift-aware voxel local-space projection buffer for async finalize - owner: HectonVoxelEngine
             NativeArray<float3> projectedPositions = new NativeArray<float3>(data.WeldedCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
             RegisterTrackedNativeArray(projectedPositions, nameof(projectedPositions));
+            double3 rebaseDeltaDouble = data.AbsoluteUniverseOffsetAtStartDouble - projectionState.StableShift.NewTotalOffsetDouble;
             JobHandle projectionHandle = new VoxelShiftAwareProjectionJob
             {
-                rebaseDelta = (float3)(data.AbsoluteUniverseOffsetAtStart - projectionState.StableShift.NewTotalOffset),
+                rebaseDelta = ToFloat3(rebaseDeltaDouble),
                 rootRuntimePosition = (float3)projectionState.RootRuntimePosition,
                 sourcePositions = data.WeldedPositions,
                 projectedPositions = projectedPositions
@@ -7733,7 +7763,7 @@ public class HectonVoxelEngine : MonoBehaviour
             Mesh reservedSurfaceMesh = null;
             try
             {
-                Vector3 rootRuntimePosition = stableShift.RebaseCapturedRuntimePosition(Vector3.zero, data.AbsoluteUniverseOffsetAtStart);
+                Vector3 rootRuntimePosition = stableShift.RebaseCapturedRuntimePosition(Vector3.zero, data.AbsoluteUniverseOffsetAtStartDouble);
                 VoxelFinalizeProjectionState projectionState = new VoxelFinalizeProjectionState(
                     stableShift,
                     rootRuntimePosition,
@@ -7741,7 +7771,7 @@ public class HectonVoxelEngine : MonoBehaviour
 
                 projectedLocalPositions = await BuildShiftAwareLocalPositionBufferAsync(data, projectionState, ct);
                 NativeArray<float3> meshLocalPositions = projectedLocalPositions.IsCreated ? projectedLocalPositions : data.WeldedPositions;
-                float3 localVolumeOrigin = projectionState.ProjectRuntimePositionToLocal((Vector3)data.VolumeOrigin, data.AbsoluteUniverseOffsetAtStart);
+                float3 localVolumeOrigin = projectionState.ProjectRuntimePositionToLocal((Vector3)data.VolumeOrigin, data.AbsoluteUniverseOffsetAtStartDouble);
 
                 if (NeedsVoxelSurfaceMeshAcquire(go) &&
                     (reservedSurfaceMesh = await AcquireVoxelSurfaceMeshAsync(ct)) == null)
@@ -8003,10 +8033,7 @@ public class HectonVoxelEngine : MonoBehaviour
             return false;
 
         double3 baseAup = new double3(record.AupX, record.AupY, record.AupZ);
-        double3 chunkMinAup = new double3(
-            data.VolumeOrigin.x + data.AbsoluteUniverseOffsetAtStart.x,
-            data.VolumeOrigin.y + data.AbsoluteUniverseOffsetAtStart.y,
-            data.VolumeOrigin.z + data.AbsoluteUniverseOffsetAtStart.z);
+        double3 chunkMinAup = ToDouble3(data.VolumeOrigin) + data.AbsoluteUniverseOffsetAtStartDouble;
         double3 chunkMaxAup = chunkMinAup + new double3(
             math.max(1, data.PtsX) - 1,
             math.max(1, data.PtsY) - 1,
@@ -8037,10 +8064,7 @@ public class HectonVoxelEngine : MonoBehaviour
         RegisterTrackedNativeArray(positions, "SmoothChthonicPillarColliderPositions");
         RegisterTrackedNativeArray(indices, "SmoothChthonicPillarColliderIndices");
 
-        double3 localOffset = new double3(
-            projectionState.AbsolutePositionOffset.x,
-            projectionState.AbsolutePositionOffset.y,
-            projectionState.AbsolutePositionOffset.z);
+        double3 localOffset = projectionState.AbsolutePositionOffsetDouble;
         float localBottomY = (float)(bottom - localOffset.y);
         float localTopY = (float)(top - localOffset.y);
         float localCenterX = (float)(baseAup.x - localOffset.x);
@@ -8510,8 +8534,8 @@ public class HectonVoxelEngine : MonoBehaviour
         GameObject go,
         NativeArray<CaveEntrance> entrances,
         float voxelSize,
-        Vector3 capturedTotalOffset,
-        Vector3 committedTotalOffset)
+        double3 capturedTotalOffset,
+        double3 committedTotalOffset)
     {
         HectonMapMagicVegetationBridge vegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
         if (vegetationBridge == null || go == null || !entrances.IsCreated || entrances.Length <= 0)
@@ -8526,7 +8550,7 @@ public class HectonVoxelEngine : MonoBehaviour
         {
             CaveEntrance entrance = entrances[i];
             float radius = math.max(entrance.radius, entrance.innerRadius) + holePadding;
-            Vector3 runtimeSurfacePosition = (Vector3)entrance.surfacePosition + capturedTotalOffset - committedTotalOffset;
+            Vector3 runtimeSurfacePosition = ToVector3(ToDouble3(entrance.surfacePosition) + capturedTotalOffset - committedTotalOffset);
             int holeHandle = vegetationBridge.RegisterTerrainHoleHandle(runtimeSurfacePosition, radius);
             volume.TrackTerrainHoleHandle(holeHandle);
         }
@@ -8536,14 +8560,14 @@ public class HectonVoxelEngine : MonoBehaviour
         Vector3 worldCenter,
         SpawnContext caveContext,
         NativeList<CaveSpawnData> spawnPointList,
-        Vector3 capturedTotalOffset,
-        Vector3 committedTotalOffset)
+        double3 capturedTotalOffset,
+        double3 committedTotalOffset)
     {
         ScavengePopulator scavengePopulator = null;
         if (!spawnPointList.IsCreated || spawnPointList.Length <= 0 || !WorldRuntimeReferenceUtility.TryResolveScavengePopulator(ref scavengePopulator))
             return;
 
-        Vector3 absoluteUniverseCenter = worldCenter + capturedTotalOffset;
+        double3 absoluteUniverseCenter = ToDouble3(worldCenter) + capturedTotalOffset;
         float tileSize = mapMagicTileSize > 0f ? mapMagicTileSize : 999f;
         Vector2Int chunkCoord = new Vector2Int(
             (int)math.floor(absoluteUniverseCenter.x / tileSize),
@@ -8552,7 +8576,7 @@ public class HectonVoxelEngine : MonoBehaviour
         for (int sp = 0; sp < spawnPointList.Length; sp++)
         {
             CaveSpawnData spawnData = spawnPointList[sp];
-            Vector3 runtimeSpawnPosition = (Vector3)spawnData.position + capturedTotalOffset - committedTotalOffset;
+            Vector3 runtimeSpawnPosition = ToVector3(ToDouble3(spawnData.position) + capturedTotalOffset - committedTotalOffset);
             scavengePopulator.RegisterSpawnPoint(
                 runtimeSpawnPosition,
                 Quaternion.identity,

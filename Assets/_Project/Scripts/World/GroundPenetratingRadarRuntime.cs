@@ -28,7 +28,7 @@ namespace Hecton8.World
         private static readonly int GroundRadarScaleId = Shader.PropertyToID("_GroundRadarScale");
 
         [Header("Dependencies")]
-        [SerializeField] private ProceduralOreSpawner worldResourceSpawner;
+        [SerializeField] private MonoBehaviour worldResourceSpawner;
         [SerializeField] private Mesh radarPingMesh;
         [SerializeField] private Material radarPingMaterial;
 
@@ -47,6 +47,7 @@ namespace Hecton8.World
         [NonSerialized] public NativeArray<float> GprSignalStrength;
 
         private NativeArray<float> _gprAgeSeconds;
+        private NativeArray<int> _gprOreTypes;
         private NativeArray<float4> _gprPingGpu;
         private NativeArray<int> _gprCounters;
         private NativeArray<float> _maxSignalStrength;
@@ -56,6 +57,7 @@ namespace Hecton8.World
         private Mesh _runtimeQuadMesh;
         private Material _runtimeMaterial;
         private IEcosystemDirectorService _ecosystemDirector;
+        private IWorldResourceSpawnerReadModel _worldResourceSpawnerReadModel;
         private JobHandle _scanJobHandle;
         private Bounds _drawBounds;
         private Transform _cachedPlayerTransform;
@@ -63,6 +65,7 @@ namespace Hecton8.World
         private int _gprSequence;
         private int _telemetryWriteIndex;
         private int _lastScannerSignalSequence;
+        private int _oreFilterType;
         private int _registeredUpdate;
         private int _registeredLateFrame;
         private int _registeredRenderable;
@@ -73,6 +76,7 @@ namespace Hecton8.World
 
         public int ActiveGprPings => _activeGprPings;
         public int GprSequence => _gprSequence;
+        public int OreFilterType => _oreFilterType;
         public float3 LastProbeOrigin => _lastProbeOrigin;
         public float ScanRadiusMeters => scanRadiusMeters;
         public NativeArray<float3>.ReadOnly GprHitsReadOnly => GprHits.IsCreated ? GprHits.AsReadOnly() : default;
@@ -80,8 +84,7 @@ namespace Hecton8.World
 
         private void Awake()
         {
-            if (worldResourceSpawner == null)
-                TryGetComponent(out worldResourceSpawner);
+            ResolveConfiguredOreReadModel();
         }
 
         private void OnEnable()
@@ -92,6 +95,7 @@ namespace Hecton8.World
             AllocatePersistentState();
             EnsureRuntimeDrawResources();
             GlobalRegistry.RegisterGroundRadarService(this);
+            ResolveConfiguredOreReadModel();
             _registeredUpdate = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment) ? 1 : 0;
             _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment) ? 1 : 0;
             _registeredRenderable = GlobalRegistry.Renderables.TryRegister(this) ? 1 : 0;
@@ -143,6 +147,7 @@ namespace Hecton8.World
             DisposeNativeArray(ref GprHits);
             DisposeNativeArray(ref GprSignalStrength);
             DisposeNativeArray(ref _gprAgeSeconds);
+            DisposeNativeArray(ref _gprOreTypes);
             DisposeNativeArray(ref _gprPingGpu);
             DisposeNativeArray(ref _gprCounters);
             DisposeNativeArray(ref _maxSignalStrength);
@@ -247,6 +252,11 @@ namespace Hecton8.World
             return copiedCount > 0;
         }
 
+        public void SetOreFilterType(int oreType)
+        {
+            _oreFilterType = math.clamp(oreType, WorldOreTypeIds.None, WorldOreTypeIds.Silver);
+        }
+
         private void AllocatePersistentState()
         {
             if (GprHits.IsCreated)
@@ -255,6 +265,7 @@ namespace Hecton8.World
             GprHits = new NativeArray<float3>(GroundRadarConstants.MaxPings, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float3>[128] - subsurface GPR hit positions - owner: TERRAIN_GPR_SYSTEM
             GprSignalStrength = new NativeArray<float>(GroundRadarConstants.MaxPings, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[128] - subsurface GPR signal strengths - owner: TERRAIN_GPR_SYSTEM
             _gprAgeSeconds = new NativeArray<float>(GroundRadarConstants.MaxPings, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[128] - subsurface GPR decay age - owner: TERRAIN_GPR_SYSTEM
+            _gprOreTypes = new NativeArray<int>(GroundRadarConstants.MaxPings, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[128] - ore type lane for GPR refiltering - owner: TERRAIN_GPR_SYSTEM
             _gprPingGpu = new NativeArray<float4>(GroundRadarConstants.MaxPings, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float4>[128] - GPU GPR ping payload - owner: TERRAIN_GPR_SYSTEM
             _gprCounters = new NativeArray<int>(4, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[4] - GPR job counters - owner: TERRAIN_GPR_SYSTEM
             _maxSignalStrength = new NativeArray<float>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[1] - strongest GPR return - owner: TERRAIN_GPR_SYSTEM
@@ -262,6 +273,7 @@ namespace Hecton8.World
             RegisterNativeArray(GprHits, nameof(GprHits));
             RegisterNativeArray(GprSignalStrength, nameof(GprSignalStrength));
             RegisterNativeArray(_gprAgeSeconds, nameof(_gprAgeSeconds));
+            RegisterNativeArray(_gprOreTypes, nameof(_gprOreTypes));
             RegisterNativeArray(_gprPingGpu, nameof(_gprPingGpu));
             RegisterNativeArray(_gprCounters, nameof(_gprCounters));
             RegisterNativeArray(_maxSignalStrength, nameof(_maxSignalStrength));
@@ -283,16 +295,18 @@ namespace Hecton8.World
             if (scanDue)
                 TryResolveNearestSdf(probeOrigin, out encodedSdf, out gridDimensions, out volumeOrigin, out cellSize, out sdfRange);
 
-            TryResolveOreSource(out NativeArray<float3> orePositions, out int oreCount);
+            TryResolveOreSource(out NativeArray<float3> orePositions, out NativeArray<int> oreTypes, out int oreCount);
 
             _maxSignalStrength[0] = 0f;
             GroundRadarRaymarchJob job = new GroundRadarRaymarchJob
             {
                 EncodedSdf = encodedSdf,
                 OrePositions = orePositions,
+                OreTypes = oreTypes,
                 GprHits = GprHits,
                 GprSignalStrength = GprSignalStrength,
                 GprAgeSeconds = _gprAgeSeconds,
+                GprOreTypes = _gprOreTypes,
                 GprPingGpu = _gprPingGpu,
                 Counters = _gprCounters,
                 MaxSignalStrength = _maxSignalStrength,
@@ -301,6 +315,7 @@ namespace Hecton8.World
                 CellSize = cellSize,
                 SdfRange = sdfRange,
                 OreScanCount = oreCount,
+                OreFilterType = _oreFilterType,
                 PreviousActiveCount = _activeGprPings,
                 RequestedRayCount = ResolveRayCount(),
                 MaxSteps = math.min(maxRaymarchSteps, GroundRadarConstants.MaxRaymarchSteps),
@@ -384,6 +399,17 @@ namespace Hecton8.World
                 return 0;
 
             copiedCount = math.clamp(copiedCount, 0, remaining);
+            int startIndex = _activeGprPings;
+            for (int i = 0; i < copiedCount; i++)
+            {
+                int pingIndex = startIndex + i;
+                float4 ping = _gprPingGpu[pingIndex];
+                GprHits[pingIndex] = ping.xyz;
+                GprSignalStrength[pingIndex] = math.saturate(ping.w);
+                _gprAgeSeconds[pingIndex] = 0f;
+                _gprOreTypes[pingIndex] = WorldOreTypeIds.None;
+            }
+
             _activeGprPings += copiedCount;
             return copiedCount;
         }
@@ -505,19 +531,48 @@ namespace Hecton8.World
                 : GroundRadarConstants.MaxRays;
         }
 
-        private bool TryResolveOreSource(out NativeArray<float3> orePositions, out int oreCount)
+        private void ResolveConfiguredOreReadModel()
         {
-            if (worldResourceSpawner != null &&
-                worldResourceSpawner.TryGetOrePositions(out orePositions, out oreCount))
+            _worldResourceSpawnerReadModel = worldResourceSpawner as IWorldResourceSpawnerReadModel;
+            if (_worldResourceSpawnerReadModel != null)
+                return;
+
+            MonoBehaviour[] components = GetComponents<MonoBehaviour>();
+            for (int i = 0; i < components.Length; i++)
             {
-                return true;
+                if (ReferenceEquals(components[i], this))
+                    continue;
+                _worldResourceSpawnerReadModel = components[i] as IWorldResourceSpawnerReadModel;
+                if (_worldResourceSpawnerReadModel != null)
+                {
+                    worldResourceSpawner = components[i];
+                    return;
+                }
+            }
+        }
+
+        private bool TryResolveOreSource(out NativeArray<float3> orePositions, out NativeArray<int> oreTypes, out int oreCount)
+        {
+            IWorldResourceSpawnerReadModel configuredSpawner = _worldResourceSpawnerReadModel;
+            if (configuredSpawner != null &&
+                configuredSpawner.TryGetOrePositions(out orePositions, out oreCount) &&
+                configuredSpawner.TryGetOreTypes(out oreTypes, out int typeCount))
+            {
+                oreCount = math.min(oreCount, typeCount);
+                return orePositions.IsCreated && oreTypes.IsCreated && oreCount > 0;
             }
 
             IWorldResourceSpawnerReadModel resourceSpawner = GlobalRegistry.WorldResourceSpawner;
-            if (resourceSpawner != null && resourceSpawner.TryGetOrePositions(out orePositions, out oreCount))
-                return true;
+            if (resourceSpawner != null &&
+                resourceSpawner.TryGetOrePositions(out orePositions, out oreCount) &&
+                resourceSpawner.TryGetOreTypes(out oreTypes, out int typeCountFromRegistry))
+            {
+                oreCount = math.min(oreCount, typeCountFromRegistry);
+                return orePositions.IsCreated && oreTypes.IsCreated && oreCount > 0;
+            }
 
             orePositions = default;
+            oreTypes = default;
             oreCount = 0;
             return false;
         }

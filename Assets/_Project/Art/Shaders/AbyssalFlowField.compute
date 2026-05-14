@@ -138,12 +138,15 @@ uint ResolveFlatIndex(int3 coord)
 
 float3 ResolveNodeWorldPosition(int3 coord)
 {
-    int3 halfExtent = int3(_AbyssalGridResolution.x >> 1, _AbyssalGridResolution.y >> 1, _AbyssalGridResolution.z >> 1);
-    float3 offset = float3(
-        (coord.x - halfExtent.x) * _AbyssalFlowSpacing.x,
-        (coord.y - halfExtent.y) * _AbyssalFlowSpacing.y,
-        (coord.z - halfExtent.z) * _AbyssalFlowSpacing.x);
-    return _AbyssalFlowCenter.xyz + offset;
+    float3 resolution = max(
+        float3(_AbyssalGridResolution.x, _AbyssalGridResolution.y, _AbyssalGridResolution.z),
+        float3(1.0, 1.0, 1.0));
+    float3 uvw = ((float3)coord + 0.5) * rcp(resolution);
+    float3 worldSize = float3(
+        _AbyssalFlowSpacing.x * resolution.x,
+        _AbyssalFlowSpacing.y * resolution.y,
+        _AbyssalFlowSpacing.x * resolution.z);
+    return _AbyssalFlowCenter.xyz + (uvw - 0.5) * worldSize;
 }
 
 uint HashUint3(uint3 value)
@@ -359,7 +362,7 @@ void UpdateAbyssalFlowTexture(uint3 dispatchThreadId : SV_DispatchThreadID)
     int3 coord = int3(dispatchThreadId.xyz);
     float3 nodeWorldPos = ResolveFlowTextureWorldPosition(dispatchThreadId);
     float3 baseFlow = ResolveBaseFlowTextureVelocity(nodeWorldPos);
-    uint flatIndex = dispatchThreadId.x + dispatchThreadId.y * resolution + dispatchThreadId.z * resolution * resolution;
+    uint flatIndex = ResolveFlatIndex(coord);
     float turbulenceScalar = 1.0;
     baseFlow = ApplySplashdownImpulse(flatIndex, baseFlow, turbulenceScalar);
     float3 previousFlow = _AbyssalFlowTextureRead.Load(int4(coord, 0)).xyz;

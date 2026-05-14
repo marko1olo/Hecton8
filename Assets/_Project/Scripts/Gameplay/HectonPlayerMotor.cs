@@ -1198,6 +1198,19 @@ namespace Hecton8.Gameplay
             return unchecked((int)EntityId.ToULong(hit.colliderEntityId));
         }
 
+        private static byte ResolveHighSpeedImpactTargetMaterialId(in RaycastHit hit, byte fallbackMaterialId)
+        {
+            Collider hitCollider = hit.collider;
+            if (hitCollider == null)
+                return fallbackMaterialId;
+
+            if (hitCollider.TryGetComponent(out IPhysicsImpactMaterialProvider directProvider))
+                return directProvider.ImpactAudioMaterialId;
+
+            IPhysicsImpactMaterialProvider parentProvider = hitCollider.GetComponentInParent<IPhysicsImpactMaterialProvider>();
+            return parentProvider != null ? parentProvider.ImpactAudioMaterialId : fallbackMaterialId;
+        }
+
         private void TryEmitWakeSiltDecal(float fixedDeltaTime)
         {
             if (_body == null)
@@ -1282,6 +1295,8 @@ namespace Hecton8.Gameplay
             ulong bodyId = _body != null ? EntityId.ToULong(_body.GetEntityId()) : 0UL;
             uint sourceHash = _kinematicCcdSourceHash;
             uint targetHash = unchecked((uint)GetHitColliderInstanceId(in hit));
+            byte targetMaterialId = ResolveHighSpeedImpactTargetMaterialId(in hit, HighSpeedImpactSignal.MaterialMetal);
+            byte sourceMaterialId = HighSpeedImpactSignal.MaterialMetal;
             byte flags = 0;
             if (cornerHalt)
                 flags |= HighSpeedImpactSignal.FlagCornerHalt;
@@ -1298,6 +1313,10 @@ namespace Hecton8.Gameplay
             highSpeedImpact.Frame = unchecked((uint)Time.frameCount);
             highSpeedImpact.SourceKind = HighSpeedImpactSignal.SourcePlayer;
             highSpeedImpact.Flags = flags;
+            highSpeedImpact.PrimaryMaterialId = targetMaterialId;
+            highSpeedImpact.SecondaryMaterialId = sourceMaterialId;
+            highSpeedImpact.EffectiveMass = _body != null ? math.max(0f, _body.mass) : 0f;
+            highSpeedImpact.MaterialHash = HighSpeedImpactSignal.ComposeMaterialHash(targetHash, targetMaterialId, sourceMaterialId);
             GlobalSignals.Publish(in highSpeedImpact);
 
             ImpactSignal impact = default;

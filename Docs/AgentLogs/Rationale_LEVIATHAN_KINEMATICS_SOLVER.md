@@ -64,7 +64,7 @@ Hardware Impact: Estimated cost is under 4 us on MX350-class CPU for the tail ha
 ## Decision 6: Verification State
 
 Problem: Full project compile cannot be treated as clean evidence because unrelated assemblies are currently broken and multiple Unity instances are open.
-Solution: Treat the post-polish Unity Roslyn response-file pass for `Hecton8.Animation.IK` as scoped evidence that the Burst IK asmdef syntax compiles, but mark the end-to-end Omega compile check as `[BLOCKED BY DEPENDENCY]` until the existing project compile wall clears.
+Solution: Treat the post-polish Unity Roslyn response-file pass for `Hecton8.Animation.IK` as scoped evidence that the Burst IK asmdef syntax compiles, but mark the end-to-end Omega compile check as `[BLOCKED BY DEPENDENCY]` until the existing project compile wall clears. A continuation `dotnet build Hecton8.Core.csproj --no-restore -v:minimal` probe timed out after 94 seconds.
 Rejected Alternatives: Reporting a green build from stale/dotnet project files was rejected. Reverting this IK code was rejected because observed compile blockers are in unrelated files/assemblies, not this runtime.
 Scalability potential: Verification block does not change runtime scalability. Low/Middle/High/Ultra behavior is encoded in the runtime and still needs in-editor execution proof.
 Hardware Impact: No profiler-backed microsecond savings can be claimed. All microsecond values in this rationale are estimates pending Unity profiler capture.
@@ -94,3 +94,14 @@ Scoped compile evidence:
 - Command: Unity 6000.4.1f1 Roslyn `csc.dll` with `Library/Bee/artifacts/1300b0aEDbg.dag/Hecton8.Animation.IK.rsp` and `.rsp2`.
 - Result: exit 0 after Omega polish.
 - Boundary: validates the isolated IK job assembly only; it does not validate `FaunaKinematicsRuntime` inside the currently red `Hecton8.Core` assembly.
+
+## Decision 7: Organic Shader Consumption
+
+Problem: The runtime published `_H8LeviathanBones`, but `Hecton_LeviathanOrganic.shader` did not consume those matrices. That left Task 10 as a contract publication, not visible GPU deformation, and hidden shader `Properties` would have risked material defaults shadowing global runtime uniforms.
+Solution: Add shader-side GPU matrix deformation for forward and shadow vertices, sample two bone matrices by body Z, blend centers/axes, blend normals/tangents, and apply a bounded tail-whip triangle-wave layer from `_H8LeviathanTailWhip01`. Runtime now publishes `_H8LeviathanSegmentLength` and `_H8LeviathanGpuSkinning`, reuses upload scalars, and clears the shader gate on disable/dispose.
+Rejected Alternatives: CPU mesh deformation was rejected because it violates the GPU-driven presentation mandate. Keeping hidden material properties was rejected because serialized defaults can override globals. Publishing `_H8LeviathanBodyRadius` to the shader was rejected as dead contract surface; the mesh authored radius is preserved by local vertex offsets.
+Scalability potential: Low keeps eight matrices and a 0.08 m max shader whip layer; Middle/High/Ultra can use 20 matrices and a 0.18 m max visual whip layer without increasing CPU segment count. Cheap devices get bounded deformation; top-tier devices get stronger visible strike staging from the same matrix buffer.
+Hardware Impact: Expected MX350 gain versus CPU deformation remains 150-600 us/frame depending mesh density, unmeasured. Removing duplicate shadow-pass skinning saves one extra matrix blend per shadow vertex, roughly 5-25 us on dense shadow casters, unmeasured.
+
+Additional cinematic cheat:
+- Shader tail whip uses the existing cheap triangle-wave helper over the already-solved bone path instead of simulating extra physics or per-vertex springs.

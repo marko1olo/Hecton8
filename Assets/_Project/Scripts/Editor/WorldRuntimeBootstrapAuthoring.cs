@@ -3,6 +3,7 @@ using Hecton8.Core;
 using Hecton8.AI;
 using Hecton8.UI;
 using Hecton8.World;
+using Hecton8.World.Biomes;
 using Hecton8.Dev;
 using Hecton8.Environment;
 using Hecton8.Biolum;
@@ -116,6 +117,7 @@ namespace Hecton8.EditorTools
             WorldFaunaSpawnRegistry faunaSpawnRegistry = GetOrAddComponent<WorldFaunaSpawnRegistry>(managersRoot);
             WorldProceduralStateRegistry proceduralStateRegistry = GetOrAddComponent<WorldProceduralStateRegistry>(managersRoot);
             BiomeMatrixDirector biomeMatrixDirector = GetOrAddComponent<BiomeMatrixDirector>(managersRoot);
+            BiomeBoundarySdfRuntime biomeBoundarySdfRuntime = GetOrAddComponent<BiomeBoundarySdfRuntime>(managersRoot);
             WorldReadabilityDirector readabilityDirector = GetOrAddComponent<WorldReadabilityDirector>(managersRoot);
             GetOrAddComponent<EmergencyServiceRelayDirector>(managersRoot);
             WorldCaveDirector caveDirector = GetOrAddComponent<WorldCaveDirector>(managersRoot);
@@ -181,6 +183,7 @@ namespace Hecton8.EditorTools
                 FindSceneObjectIncludingInactive<HectonVoxelEngine>());
             ConfigureSedimentAccumulationManager(sedimentAccumulationManager);
             ConfigureBiomeMatrixDirector(biomeMatrixDirector, playerTransform, biomeMatrixCatalog);
+            ConfigureBiomeBoundarySdfRuntime(biomeBoundarySdfRuntime, playerTransform);
             ConfigureWorldReadabilityDirector(readabilityDirector, zoneDirector, biomeMatrixDirector);
             EnsureRelayHudMarker();
             ConfigureWorldCaveDirector(
@@ -499,6 +502,16 @@ namespace Hecton8.EditorTools
             so.FindProperty("matrixCatalog").objectReferenceValue = catalog;
             so.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(director);
+        }
+
+        private static void ConfigureBiomeBoundarySdfRuntime(
+            BiomeBoundarySdfRuntime runtime,
+            Transform playerTransform)
+        {
+            SerializedObject so = new SerializedObject(runtime);
+            so.FindProperty("playerTransform").objectReferenceValue = playerTransform;
+            so.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(runtime);
         }
 
         private static void ConfigureWorldReadabilityDirector(

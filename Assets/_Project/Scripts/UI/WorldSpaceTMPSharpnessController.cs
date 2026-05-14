@@ -10,7 +10,7 @@ namespace Hecton8.UI
     /// CanvasRenderer does not expose MaterialPropertyBlock, so SDF tuning must occur on a dedicated material instance.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class WorldSpaceTMPSharpnessController : MonoBehaviour, ITickable, IUpdatable
+    public sealed class WorldSpaceTMPSharpnessController : MonoBehaviour, ILateFrameTickable
     {
         private static readonly int FaceDilateId = Shader.PropertyToID("_FaceDilate");
         private static readonly int OutlineSoftnessId = Shader.PropertyToID("_OutlineSoftness");
@@ -106,9 +106,9 @@ namespace Hecton8.UI
         }
 
         /// <inheritdoc />
-        public void Tick(float dt)
+        public void LateFrameTick()
         {
-            ApplySharpness(force: false, deltaTime: dt);
+            ApplySharpness(force: false, deltaTime: SystemDispatcher.CurrentFrameDeltaTime);
         }
 
         private void ApplySharpness(bool force, float deltaTime = 0f)
@@ -282,7 +282,7 @@ namespace Hecton8.UI
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+            _registered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
         private void UnregisterFromTickManager()
@@ -290,7 +290,7 @@ namespace Hecton8.UI
             if (!_registered)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
             _registered = false;
         }
 

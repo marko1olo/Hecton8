@@ -5,12 +5,12 @@ namespace Hecton8.UI
 {
     /// <summary>
     /// Generic fade transition for UI elements.
-    /// Zero-GC: ITickable state machine, CanvasGroup alpha, no coroutines.
+    /// Zero-GC: late-frame state machine, CanvasGroup alpha, no coroutines.
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(CanvasGroup))]
     [AddComponentMenu("Hecton8/UI/UI Fade Transition")]
-    public sealed class UIFadeTransition : MonoBehaviour, ITickable, IUpdatable
+    public sealed class UIFadeTransition : MonoBehaviour, ILateFrameTickable
     {
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         // INSPECTOR
@@ -45,7 +45,8 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
-            TryRegister();
+            if (_state != State.Idle)
+                TryRegister();
         }
 
         private void OnDisable()
@@ -59,24 +60,32 @@ namespace Hecton8.UI
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-        // ITICKABLE
+        // LATE FRAME
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-        public void Tick(float dt)
+        public void LateFrameTick()
         {
             if (_state == State.Idle || _canvasGroup == null)
+            {
+                Unregister();
                 return;
+            }
 
+            float dt = Mathf.Max(0f, SystemDispatcher.CurrentFrameDeltaTime);
             _timer += dt;
 
             float duration = _state == State.FadingIn ? fadeInDuration : fadeOutDuration;
-            float t = Mathf.Clamp01(_timer / duration);
-            float curveT = fadeCurve.Evaluate(t);
+            float safeDuration = Mathf.Max(0.0001f, duration);
+            float t = Mathf.Clamp01(_timer / safeDuration);
+            float curveT = fadeCurve != null ? fadeCurve.Evaluate(t) : t;
 
             _canvasGroup.alpha = _startAlpha + ((_targetAlpha - _startAlpha) * curveT);
 
             if (t >= 1f)
+            {
                 _state = State.Idle;
+                Unregister();
+            }
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -138,6 +147,7 @@ namespace Hecton8.UI
 
             _canvasGroup.alpha = Mathf.Clamp01(alpha);
             _state = State.Idle;
+            Unregister();
         }
 
         /// <summary>
@@ -157,7 +167,7 @@ namespace Hecton8.UI
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+            _registered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
         private void Unregister()
@@ -165,7 +175,7 @@ namespace Hecton8.UI
             if (!_registered)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
             _registered = false;
         }
     }

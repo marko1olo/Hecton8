@@ -13,7 +13,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Hecton Submarine OS Display")]
-    public sealed class HectonSubmarineOsDisplay : MonoBehaviour, IUpdatable, ISubmarineOsEventListener
+    public sealed class HectonSubmarineOsDisplay : MonoBehaviour, ILateFrameTickable, ISubmarineOsEventListener
     {
         private const int HistoryLineCount = 16;
         private const int HistoryLineCapacity = 64;
@@ -186,7 +186,7 @@ namespace Hecton8.UI
         }
 
         /// <inheritdoc />
-        public void Tick(float deltaTime)
+        public void LateFrameTick()
         {
             if (!EnsureUiBuilt(allowCreate: false))
             {
@@ -201,6 +201,7 @@ namespace Hecton8.UI
                 return;
             }
 
+            float deltaTime = math.max(0f, SystemDispatcher.CurrentFrameDeltaTime);
             _typingAccumulator += deltaTime * CharactersPerSecond;
             int nextVisibleLength = math.min(_typingSourceLength, (int)math.floor(_typingAccumulator));
             if (nextVisibleLength == _typingVisibleLength)
@@ -230,7 +231,7 @@ namespace Hecton8.UI
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            _registeredUpdatable = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+            _registeredUpdatable = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
         private void TryUnregister()
@@ -238,7 +239,7 @@ namespace Hecton8.UI
             if (!_registeredUpdatable)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
             _registeredUpdatable = false;
         }
 

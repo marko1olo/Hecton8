@@ -119,7 +119,7 @@ namespace Hecton8.AI
         public float3 Velocity;
         public float3 Forward;
         public float3 PlayerPosition;
-        public float3 FloatingOriginOffset;
+        public double3 FloatingOriginOffset;
         public float3 PlayerVelocity;
         public float3 PlayerForward;
         public float3 ThreatPosition;
@@ -271,6 +271,7 @@ namespace Hecton8.AI
         HasPackTarget = 1 << 15,
         HighTierSmoothSteering = 1 << 16,
         RetinalBlind = 1 << 17,
+        UseAlphaLeviathanCognition = 1 << 18,
     }
 
     [System.Flags]
@@ -363,6 +364,7 @@ namespace Hecton8.AI
         private const float AlphaFalseChargeVeerDistanceMeters = 15f;
         private const float AlphaFalseChargeMaxSeconds = 2.5f;
         private const float AlphaCirclingHoldSeconds = 2.0f;
+        private const float AlphaHiddenHoldSeconds = 1.15f;
         private const float AlphaVeerHoldSeconds = 1.25f;
         private const float AlphaPlayerGazeDotThreshold = 0.8f;
         private const float AlphaRetinalDiveThreshold = 0.35f;
@@ -1308,7 +1310,7 @@ namespace Hecton8.AI
 
                 float currentTime = math.max(0f, input.CurrentTime);
                 bool predatorRole = (input.Flags & (int)CognitionInputFlags.PredatorRole) != 0;
-                bool alphaLeviathan = predatorRole && (input.Flags & (int)CognitionInputFlags.IsApexPredator) != 0;
+                bool alphaLeviathan = predatorRole && (input.Flags & (int)CognitionInputFlags.UseAlphaLeviathanCognition) != 0;
                 float interval = predatorRole
                     ? math.select(
                         math.select(PredatorUtilityEvaluationIntervalSeconds, RetinalLowTierEvaluationIntervalSeconds, lowTierRetina),
@@ -1440,14 +1442,14 @@ namespace Hecton8.AI
             return math.max(0f, light.Intensity) * math.max(0f, light.RangeSq);
         }
 
-        private static float3 ResolveTelemetryRuntimePosition(in AbsoluteUniversePositionBlit128 positionAup, float3 floatingOriginOffset)
+        private static float3 ResolveTelemetryRuntimePosition(in AbsoluteUniversePositionBlit128 positionAup, double3 floatingOriginOffset)
         {
             double cellSize = AbsoluteUniversePosition.CellSizeMeters;
             double3 absolutePosition = new double3(
                 (positionAup.GridX * cellSize) + positionAup.Local.x,
                 (positionAup.GridY * cellSize) + positionAup.Local.y,
                 (positionAup.GridZ * cellSize) + positionAup.Local.z);
-            double3 runtimePosition = absolutePosition - new double3(floatingOriginOffset.x, floatingOriginOffset.y, floatingOriginOffset.z);
+            double3 runtimePosition = absolutePosition - floatingOriginOffset;
             return new float3((float)runtimePosition.x, (float)runtimePosition.y, (float)runtimePosition.z);
         }
 
@@ -1503,7 +1505,7 @@ namespace Hecton8.AI
             int totalBlind = 0;
             float maxExposure = 0f;
             float3 hottestPosition = float3.zero;
-            float3 telemetryOriginOffset = _activeSlots.Length > 0 ? _inputs[_activeSlots[0]].FloatingOriginOffset : float3.zero;
+            double3 telemetryOriginOffset = _activeSlots.Length > 0 ? _inputs[_activeSlots[0]].FloatingOriginOffset : double3.zero;
             uint hottestSource = 0u;
             bool foundFault = false;
             for (int i = 0; i < _activeSlots.Length; i++)
@@ -1656,7 +1658,7 @@ namespace Hecton8.AI
                 CognitionInput input = _inputs[slot];
                 bool isAlpha = (input.Flags & (int)CognitionInputFlags.Active) != 0 &&
                                (input.Flags & (int)CognitionInputFlags.PredatorRole) != 0 &&
-                               (input.Flags & (int)CognitionInputFlags.IsApexPredator) != 0;
+                               (input.Flags & (int)CognitionInputFlags.UseAlphaLeviathanCognition) != 0;
                 if (!isAlpha)
                     continue;
 
@@ -1665,16 +1667,22 @@ namespace Hecton8.AI
                 PackedCognitionOutput output = _outputs[slot];
                 byte phase = _stalkingPhases[slot];
                 byte flags = 0;
-                if ((input.Flags & (int)CognitionInputFlags.HighTierSmoothSteering) == 0)
+                bool highTierSmoothSteering = (input.Flags & (int)CognitionInputFlags.HighTierSmoothSteering) != 0;
+                bool hasPlayerTarget = (input.Flags & (int)CognitionInputFlags.HasPlayerTarget) != 0;
+                if (!highTierSmoothSteering)
                     flags |= AlphaLeviathanTelemetryFlags.LowTierRadialFallback;
-                if ((input.Flags & (int)CognitionInputFlags.RetinalBlind) != 0 || input.RetinalExposure01 >= AlphaRetinalDiveThreshold)
-                    flags |= AlphaLeviathanTelemetryFlags.SdfDiveRequested;
                 if ((output.OutputFlags & (uint)CognitionOutputFlags.EmitThreatPulse) != 0u)
                     flags |= AlphaLeviathanTelemetryFlags.RoarEmitted;
 
-                float3 playerPosition = (input.Flags & (int)CognitionInputFlags.HasPlayerTarget) != 0
+                float3 playerPosition = hasPlayerTarget
                     ? input.PlayerPosition
                     : ResolveTelemetryRuntimePosition(in input.PlayerTargetAup, input.FloatingOriginOffset);
+                float3 awayFromPlayer = ResolveAlphaTelemetryDirection(core.Position - playerPosition, new float3(0f, 0f, 1f));
+                float3 playerForward = ResolveAlphaTelemetryDirection(input.PlayerForward, -awayFromPlayer);
+                if (math.dot(playerForward, awayFromPlayer) >= AlphaPlayerGazeDotThreshold)
+                    flags |= AlphaLeviathanTelemetryFlags.PlayerGazeBreak;
+                if (hasPlayerTarget && highTierSmoothSteering && phase == AlphaLeviathanPhase.Hidden)
+                    flags |= AlphaLeviathanTelemetryFlags.SdfDiveRequested;
                 float distanceSq = math.lengthsq(playerPosition - core.Position);
                 float distanceMeters = distanceSq > DdaEpsilon ? distanceSq * math.rsqrt(math.max(distanceSq, DdaEpsilon)) : 0f;
                 float fogRingDistance = math.max(
@@ -1735,6 +1743,18 @@ namespace Hecton8.AI
             hash ^= (uint)flags * 0xC2B2AE35u;
             hash ^= (uint)state * 0x27D4EB2Du;
             return hash == 0u ? AlphaLeviathanPhaseTelemetryHash : hash;
+        }
+
+        private static float3 ResolveAlphaTelemetryDirection(float3 direction, float3 fallback)
+        {
+            if (!MathGuard.IsFinite(direction) || math.lengthsq(direction) <= DdaEpsilon)
+                direction = fallback;
+
+            float lengthSq = math.lengthsq(direction);
+            if (!MathGuard.IsFinite(direction) || lengthSq <= DdaEpsilon)
+                return float3.zero;
+
+            return direction * math.rsqrt(math.max(lengthSq, DdaEpsilon));
         }
 
         private static void DumpAlphaLeviathanBlackBoxCold(int frameId)
@@ -2424,14 +2444,14 @@ namespace Hecton8.AI
                 return false;
             }
 
-            private static float3 ResolveRuntimePosition(in AbsoluteUniversePositionBlit128 positionAup, float3 floatingOriginOffset)
+            private static float3 ResolveRuntimePosition(in AbsoluteUniversePositionBlit128 positionAup, double3 floatingOriginOffset)
             {
                 double cellSize = AbsoluteUniversePosition.CellSizeMeters;
                 double3 absolutePosition = new double3(
                     (positionAup.GridX * cellSize) + positionAup.Local.x,
                     (positionAup.GridY * cellSize) + positionAup.Local.y,
                     (positionAup.GridZ * cellSize) + positionAup.Local.z);
-                double3 runtimePosition = absolutePosition - new double3(floatingOriginOffset.x, floatingOriginOffset.y, floatingOriginOffset.z);
+                double3 runtimePosition = absolutePosition - floatingOriginOffset;
                 return new float3((float)runtimePosition.x, (float)runtimePosition.y, (float)runtimePosition.z);
             }
         }
@@ -2756,14 +2776,14 @@ namespace Hecton8.AI
                 return result;
             }
 
-            private static float3 ResolveRuntimePosition(in AbsoluteUniversePositionBlit128 positionAup, float3 floatingOriginOffset)
+            private static float3 ResolveRuntimePosition(in AbsoluteUniversePositionBlit128 positionAup, double3 floatingOriginOffset)
             {
                 double cellSize = AbsoluteUniversePosition.CellSizeMeters;
                 double3 absolutePosition = new double3(
                     (positionAup.GridX * cellSize) + positionAup.Local.x,
                     (positionAup.GridY * cellSize) + positionAup.Local.y,
                     (positionAup.GridZ * cellSize) + positionAup.Local.z);
-                double3 runtimePosition = absolutePosition - new double3(floatingOriginOffset.x, floatingOriginOffset.y, floatingOriginOffset.z);
+                double3 runtimePosition = absolutePosition - floatingOriginOffset;
                 return new float3((float)runtimePosition.x, (float)runtimePosition.y, (float)runtimePosition.z);
             }
 
@@ -2837,6 +2857,7 @@ namespace Hecton8.AI
                 float acousticScore = math.max(directAcousticScore, acousticMemoryScore);
                 bool hasScavengeTarget = (input.Flags & (int)CognitionInputFlags.HasScavengeTarget) != 0;
                 bool isApexPredator = (input.Flags & (int)CognitionInputFlags.IsApexPredator) != 0;
+                bool useAlphaLeviathanCognition = (input.Flags & (int)CognitionInputFlags.UseAlphaLeviathanCognition) != 0;
                 bool isAmbusher = (input.Flags & (int)CognitionInputFlags.IsAmbusher) != 0;
                 bool hasApexRivalTarget = (input.Flags & (int)CognitionInputFlags.HasApexRivalTarget) != 0;
                 bool hasChemicalTrail = TryResolveChemicalGradient(input.Position, input.CurrentTime, out float attractantSignal, out float fearPheromoneSignal, out float3 scentGradient);
@@ -3010,7 +3031,7 @@ namespace Hecton8.AI
 
                 AlphaLeviathanDirective alphaDirective = default;
                 bool alphaOverrideActive = false;
-                if (isApexPredator && hasPlayerTarget && !rivalApexVisible)
+                if (useAlphaLeviathanCognition && hasPlayerTarget && !rivalApexVisible)
                 {
                     alphaDirective = ResolveAlphaLeviathanDirective(
                         slot,
@@ -3358,6 +3379,12 @@ namespace Hecton8.AI
                 float phaseAge = startTime > DdaEpsilon ? math.max(0f, input.CurrentTime - startTime) : 0f;
                 byte phase = priorPhase;
                 if (playerGazeBreak || retinalBreak)
+                {
+                    phase = AlphaLeviathanPhase.Hidden;
+                }
+                else if (priorPhase == AlphaLeviathanPhase.Hidden &&
+                         startTime > DdaEpsilon &&
+                         phaseAge < AlphaHiddenHoldSeconds)
                 {
                     phase = AlphaLeviathanPhase.Hidden;
                 }

@@ -41,7 +41,6 @@ namespace Hecton8.Audio.Prologue
         private int _lastAtmosphericFrame = -1;
         private int _lastCompleteFrame = -1;
         private uint _transitionSequence;
-        private ushort _lastAtmosphericSequence;
         private ushort _lastCompleteSequence;
         private byte _stage = AudioTransitionState.StageSpace;
         private byte _lastPublishedStage;
@@ -161,17 +160,12 @@ namespace Hecton8.Audio.Prologue
                 if (!math.isfinite(signal.UniverseVelocityMetersPerSecond) || !math.isfinite(signal.Heat01))
                     continue;
 
-                bool newSequence = !_prologueArmed || signal.Sequence != _lastAtmosphericSequence;
                 _prologueArmed = true;
-                _lastAtmosphericSequence = signal.Sequence;
                 _velocityMetersPerSecond = math.max(0f, signal.UniverseVelocityMetersPerSecond);
                 _heat01 = ResolveHeat01(in signal);
 
                 if (_stage == AudioTransitionState.StageOceanHandoff)
                     continue;
-
-                if (newSequence)
-                    _forcePublishTransition = true;
 
                 if (signal.Phase >= AtmosphericReentrySignal.PhaseWhiteout ||
                     (signal.Flags & AtmosphericReentrySignal.FlagWhiteoutRequested) != 0)
@@ -205,6 +199,11 @@ namespace Hecton8.Audio.Prologue
                 PrologueCompleteSignal signal = signals[i];
                 if (!math.isfinite(signal.WhiteoutHoldSeconds))
                     continue;
+                if (signal.Phase != PrologueCompleteSignal.PhaseOceanHandoff &&
+                    (signal.Flags & PrologueCompleteSignal.FlagForceWhiteout) == 0)
+                {
+                    continue;
+                }
 
                 bool newCompleteSequence = !_hasCompleteSequence || signal.Sequence != _lastCompleteSequence;
                 _prologueArmed = true;

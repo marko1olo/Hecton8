@@ -68,6 +68,7 @@ namespace Hecton8.UI
         private PDAExchangeSystem.OfferSnapshot[] _snapshotBuffer;
         private PDAExchangeSystem.TransactionSnapshot[] _transactionBuffer;
         private bool _registered;
+        private PDAExchangeSystem _boundExchangeSystem;
         private uint _exchangeSourceId;
 
         private bool IsTabActive =>
@@ -145,16 +146,28 @@ namespace Hecton8.UI
 
         private void Unsubscribe()
         {
+            _boundExchangeSystem = null;
             _exchangeSourceId = 0u;
             PDAEvents.Unregister(this);
         }
 
         private void RefreshExchangeBinding()
         {
-            if (exchangeSystem == null)
-                exchangeSystem = GlobalRegistry.PDAExchange;
+            PDAExchangeSystem current = exchangeSystem != null ? exchangeSystem : GlobalRegistry.PDAExchange;
+            if (current == null)
+            {
+                exchangeSystem = null;
+                _boundExchangeSystem = null;
+                _exchangeSourceId = 0u;
+                return;
+            }
 
-            _exchangeSourceId = exchangeSystem != null ? unchecked((uint)exchangeSystem.GetInstanceID()) : 0u;
+            if (ReferenceEquals(_boundExchangeSystem, current) && _exchangeSourceId != 0u)
+                return;
+
+            exchangeSystem = current;
+            _boundExchangeSystem = current;
+            _exchangeSourceId = unchecked((uint)EntityId.ToULong(current.GetEntityId()));
         }
 
         public void Tick(float deltaTime)
@@ -172,10 +185,13 @@ namespace Hecton8.UI
                 return;
 
             uint sourceId = _exchangeSourceId;
+            if (sourceId == 0u)
+                return;
+
             ReadOnlySpan<PdaExchangeStateChangedSignal> signals = SignalBus<PdaExchangeStateChangedSignal>.GetFrameSnapshot();
             for (int i = 0; i < signals.Length; i++)
             {
-                if (sourceId != 0u && signals[i].SourceId != sourceId)
+                if (signals[i].SourceId != sourceId)
                     continue;
 
                 RefreshAll(true);

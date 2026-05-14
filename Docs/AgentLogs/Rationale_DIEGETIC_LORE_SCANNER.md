@@ -141,3 +141,55 @@ Solution: Attempted `validate_script`; transport failed against `127.0.0.1:8088/
 Rejected Alternatives: Reporting Unity-verified status without a live editor session.
 Scalability potential: None; blocked infrastructure.
 Hardware Impact: No runtime impact.
+
+## LOOP 6 CAMERA/TIER HARDENING
+
+Problem: Scanner acquisition used the held tool transform as the forward authority. That can disagree with the player's actual camera/crosshair, causing the "highest dot" lie to feel wrong even if the math is cheap.
+Solution: Resolve the acquisition pose from `GlobalRegistry.Player.PlayerCamera.transform` first, then fall back to the cached tool transform only when the player camera is unavailable.
+Rejected Alternatives: `Camera.main` lookup, pixel-perfect projection, or returning to continuous raycast authority.
+Scalability potential: Low/Middle/High/Ultra share the same camera-space target authority, so presentation quality can scale without changing what gets selected.
+Hardware Impact: Expected low-end impact is one registry property read and transform read per resample, replacing no added physics work; exact microseconds PENDING VERIFICATION.
+
+Problem: Focused scanner resampling treated MX350 and Ultra the same.
+Solution: Added tiered resample intervals: Low/Unknown/MX350 clamp to a slower cadence, High/Ultra may resample faster for responsiveness while retaining one selected candidate and one occlusion command.
+Rejected Alternatives: A balanced middle cadence for every device; more physics queries on high-end hardware.
+Scalability potential: Toaster path spends fewer CPU slices on acquisition. High/Ultra spend saved cycles on responsiveness and scanner RT polish without changing deterministic scan completion.
+Hardware Impact: Estimated i3/MX350 gain is fewer acquisition resamples under held scan; exact profiler delta PENDING VERIFICATION.
+
+Problem: Prompt extraction initially failed after hardening because the XML tag includes role/chat attributes.
+Solution: Switched the verification regex to `<AGENT_PROMPT\s+id="DIEGETIC_LORE_SCANNER"[^>]*>.*?</AGENT_PROMPT>` and re-read the complete assignment.
+Rejected Alternatives: Reading neighboring prompts; assuming the task from memory.
+Scalability potential: None; process correctness.
+Hardware Impact: No runtime impact.
+
+Problem: Build proof still cannot complete after the camera/tier patch.
+Solution: Re-ran `dotnet build Hecton8.Core.csproj`; global missing contracts now report 132 errors. A scanner-file filter over the build output returned no `ScannerTool.cs`, `ScannableTarget.cs`, or `ToolDiegeticDisplayController.cs` matches.
+Rejected Alternatives: Calling the build green; reverting scanner work for unrelated global dependency failures.
+Scalability potential: None; project integration state.
+Hardware Impact: No runtime impact.
+
+## LOOP 7 CONTACT/TITLE HARDENING
+
+Problem: Low-tier resampling was deliberately slowed, but the scan contact grace window still used the serialized base interval. With a small configured interval, MX350/Low could lose held contact between resamples.
+Solution: Compute hold timeout from `ResolveFocusedScanResampleInterval()` so contact grace tracks the effective tier cadence.
+Rejected Alternatives: Raising the serialized interval globally; increasing ray/occlusion frequency; making low tier use the high-tier cadence.
+Scalability potential: Low/Unknown/MX350 get stable held scans at lower sampling cadence. High/Ultra keep tighter acquisition without changing scan authority.
+Hardware Impact: Expected low-end gain is stable progress with fewer resamples; exact profiler delta PENDING VERIFICATION.
+
+Problem: `ScheduleScientificConeBatch()` recomputed tier cadence after candidate selection instead of treating it as one per-pass decision.
+Solution: Resolve `resampleInterval` once per acquisition pass and reuse it for lore and fallback paths.
+Rejected Alternatives: Repeated registry/tier reads within one pass; hardcoding tier cadence at startup.
+Scalability potential: Runtime tier changes still apply on the next resample while avoiding duplicate work in the current pass.
+Hardware Impact: Estimated gain is one avoided tier lookup per scanner resample; exact microseconds PENDING VERIFICATION.
+
+Problem: The scanner operational summary path could still scan up to 1024 lore targets for the same active artifact title, even though the RT display has its own char cache.
+Solution: Added a static last hash/index cache inside `ScannableTarget.TryWriteLoreEntityTitle()`, invalidated when strings refresh or lore registry membership changes.
+Rejected Alternatives: Managed dictionary cache; storing managed localized strings in the scanner tool; leaving every summary repaint to full-scan the registry.
+Scalability potential: Low tier still bypasses title resolve. Middle/High/Ultra title display resolves the common same-target path in O(1).
+Hardware Impact: Estimated low-end gain is avoiding repeated 1024-entry title scans while holding a lore target; exact microseconds PENDING VERIFICATION.
+
+Problem: Build verification became inconsistent after this pass.
+Solution: Static scanner checks passed. A captured build filtered for scanner-owned files returned no matches, but a plain minimal build returned `exit 1` without useful diagnostics and a single-thread retry timed out. Verified no leftover dotnet processes remained.
+Rejected Alternatives: Calling the project verified from one inconsistent pass; killing unrelated processes; marking Task 15 complete without stable compiler proof.
+Scalability potential: None; verification infrastructure state.
+Hardware Impact: No runtime impact.

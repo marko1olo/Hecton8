@@ -42,3 +42,36 @@ Verification:
 
 Integrator note:
 - Do not treat this as verified green. Unity compile remains PENDING VERIFICATION until the editor session and global asmdef dependency wall are fixed.
+
+## 2026-05-14 - DSP_ACOUSTIC_LEAD - Loop 6 Material/Mass Upgrade
+Status: PENDING VERIFICATION
+
+What was wrong:
+- The renderer still inferred high-speed material from source kind, which made player/vehicle/leviathan impacts too generic.
+- Player and vehicle high-speed packets were not writing authored material IDs, effective mass, or material hash even though the signal contract supports them.
+- Mass reconstruction from lost energy was acceptable fallback behavior, but not the best path for AAA scaling when actual rigidbody mass exists.
+
+What was done:
+- `HectonPlayerMotor` and `VehicleMotor` now resolve target impact material through `IPhysicsImpactMaterialProvider`, set source material as metal, write `EffectiveMass`, and compose `MaterialHash`.
+- `PlayerCriticalProceduralAudioRenderer` now prefers `signal.EffectiveMass` for `0.5 * mass * speedSq`, keeps lost-energy fallback for legacy packets, and routes material IDs into clang, echo, hollow resonance, pitch, and duplicate hashing.
+- `AdvancedAcousticsSmokeTester` now asserts effective-mass and high-speed material consumption.
+- Verified `FaunaBrain` already writes equivalent high-speed material/mass fields in HEAD.
+
+Cinematic cheats used:
+- Material is a compact byte family, not a surface-accurate contact solver.
+- Organic/metal/glass switches scale existing clang/echo/pitch multipliers instead of adding new PCM layers.
+- Low tier still exits to one baked clip; material work only improves high-speed packet admission and DSP scalar mapping.
+
+Exact microseconds saved:
+- Avoided a new material resolver service: 0 extra persistent allocations and no new queue.
+- Reused existing `IPhysicsImpactMaterialProvider`: one event-only lookup per emitted high-speed impact.
+- Renderer material blend: byte switches and scalar multipliers, estimated <2 us per accepted impact.
+- Kept signal size at 96 bytes: no lane memory growth.
+
+Verification:
+- `git diff --check` passed except CRLF normalization warnings.
+- `rg PlayClipAtPoint` returned no matches.
+- Owned kinetic scans found no new `foreach`, `math.exp`, `math.normalize`, `.ToString()`, `string.Format`, or interpolation hits.
+- Unity MCP validation failed at transport level: `http://127.0.0.1:8088/mcp`.
+- First `dotnet build Hecton8.Core.csproj --no-restore -v:minimal -p:UseSharedCompilation=false -m:1` failed with `CS2001` because `Assets/_Project/Scripts/UI/DiegeticTooltipSystem.cs` was deleted while still referenced by the project file.
+- After another process restored that UI file, the rerun reached the existing 132-error global namespace/asmdef wall: examples include `Hecton8.Environment.Fluids`, `Hecton8.Physics.CCD`, `Hecton8.Audio.Propagation`, `Hecton8.Audio.Virtualization`, `MacroSwarm`, and `AcousticAup`.

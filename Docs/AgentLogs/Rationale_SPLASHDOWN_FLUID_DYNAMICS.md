@@ -121,3 +121,35 @@ Solution: Add `SplashdownImpulseNoAffectedCellsFlag`, skip the upload when affec
 Rejected Alternatives: Upload zeros to sanitize stale GPU memory. The active param gate already prevents reads; zero upload spends bandwidth without visible output.
 Scalability potential: All tiers avoid wasted bandwidth on edge cases. High/Ultra still upload normally when at least one cell is affected.
 Hardware Impact: Saves one 512 KB upload and one GPU synchronization point on no-cell/invalid edge cases.
+
+## SPLASH BUFFER LAYOUT DECISION
+
+Problem: `FluidImpulseJob` wrote splash cells in texture order (`x + y*res + z*res^2`), while `UpdateAbyssalFlowField` resolves structured node indices as `x + z*res + y*res^2`. The structured buffer and 3D texture could read different impulse cells from the same splash buffer.
+Solution: Change `FluidImpulseJob` decomposition to the structured flow layout and make `UpdateAbyssalFlowTexture` call `ResolveFlatIndex(coord)` instead of carrying a duplicate texture-order formula.
+Rejected Alternatives: Keep two impulse buffers, one per consumer, or transpose on upload. Both add memory/bandwidth for a single cinematic event; a single canonical layout is cheaper and less error-prone.
+Scalability potential: Low tier unchanged because it does not sample the vector field. Middle/High/Ultra now share one spatially coherent splash impulse between structured flow and the 3D flow texture.
+Hardware Impact: No extra runtime cost. Removes wrong-cell reads without additional dispatches, buffers, or 512 KB duplicate uploads.
+
+## LOW TIER COMPLETION CULL DECISION
+
+Problem: A non-low splash job could be scheduled, then finish after the runtime scalability state drops to Low/MX350/low-memory. The previous gate suppressed shader sampling but still allowed a 512 KB upload and retained the lazy vector buffer.
+Solution: After completing `FluidImpulseJob` and reading stats, `TryCompleteSplashdownImpulseJobForUpload()` now re-checks `IsLowFluidMathTier()`, marks the Low-tier flag, clears active timing/count, releases `_gpuSplashdownImpulseBuffer`, publishes telemetry, and dumps only if the job also reported invalid math.
+Rejected Alternatives: Upload the field and rely on `_AbyssalSplashdownParams` staying zero, cancel the Burst job mid-flight, or keep the buffer in case quality recovers. Uploading violates bandwidth discipline on weak hardware; cancellation is not a safe Unity job primitive here; keeping the buffer spends VRAM on the tier that explicitly bypasses vector overwrite.
+Scalability potential: Low/toaster path remains bubble-only and releases the high-tier vector buffer on a quality-drop edge. Middle/High/Ultra are unchanged unless the tier drops mid-splash; the next non-low splash lazily recreates the buffer and still buys the visual pressure wave.
+Hardware Impact: Saves one 512 KB GPU upload and about 512 KB VRAM retention on i3/MX350 quality-drop cases. Estimated edge savings: 120-350 us plus reduced PCIe/driver pressure; profiler proof remains PENDING VERIFICATION.
+
+## GRID CENTER COORDINATE DECISION
+
+Problem: The structured abyssal flow shader converted node indices with integer half-extents. At 32 cells and 100m world size that places the sampled volume from -50m to 46.875m around the center, while `FluidImpulseJob` and `ResolveFlowTextureWorldPosition()` use cell centers from -48.4375m to 48.4375m. The same splash buffer could therefore be layout-correct but still spatially half-cell biased against the structured flow.
+Solution: Change `ResolveNodeWorldPosition()` to compute `uvw = (coord + 0.5) / resolution` and derive world position from `(uvw - 0.5) * worldSize`, using `_AbyssalFlowSpacing` to reconstruct axis extents.
+Rejected Alternatives: Leave the bias as visually minor, move the job back to node-corner positions, or create separate coordinate paths for texture and structured consumers. The bias weakens deterministic spatial reasoning; moving the job breaks texture-center sampling; duplicate paths add maintenance risk.
+Scalability potential: Low remains unaffected when vector splash is bypassed. Middle/High/Ultra now get centered structured flow, texture flow, and splash impulses from the same convention, enabling richer visual overkill later without adding memory or dispatches.
+Hardware Impact: No added buffers, no added branches, and no extra dispatch cost. Removes a half-cell spatial error with only a few ALU ops replacing equivalent ALU in an existing shader helper; profiler proof remains PENDING VERIFICATION.
+
+## ONCE PER IMPACT SIGNAL GATE DECISION
+
+Problem: `PrologueCompleteSignal` has several producers in the project, including the orbital director, registry bridge, and manual override path. The fluid drain loop could process multiple valid signals from one snapshot, and sequence-zero publishers could repeat the 500-bubble burst on later frames.
+Solution: Add `_splashdownImpactConsumed`, track the source hash with the last processed sequence, and make `QueueSplashdownFluidImpulse()` return whether a valid splashdown was handled. The drain now stops after the first valid handled signal; invalid coordinate packets do not consume the event, so a later valid packet in the same snapshot can still create the effect.
+Rejected Alternatives: Rely on sequence alone, process every valid signal, or hard-code one prologue producer. Sequence values are independent per producer and may be zero; processing every signal violates the task's one-impact requirement; hard-coding a producer creates cross-domain coupling.
+Scalability potential: Low avoids repeated 500-bubble uploads from duplicate handoff packets. Middle/High/Ultra avoid duplicate job scheduling attempts and busy fallback telemetry while preserving the first cinematic pressure wave.
+Hardware Impact: Prevents each duplicate valid signal from writing 500 bubble records and uploading both 2000-slot bubble buffers. Estimated duplicate-edge saving: 80-250 us CPU/driver time plus avoided GPU buffer traffic; profiler proof remains PENDING VERIFICATION.

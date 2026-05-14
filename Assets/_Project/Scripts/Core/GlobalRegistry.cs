@@ -96,7 +96,7 @@ namespace Hecton8.Core
         private static readonly long[] _requestedServiceSlotMask = new long[ServiceSlotMaskWordCount];
         // COLD ALLOC: long[4] - registered service-slot bitset for ghost-service detection - owner: GlobalRegistry
         private static readonly long[] _registeredServiceSlotMask = new long[ServiceSlotMaskWordCount];
-        // COLD ALLOC: string[167] - allocation-free ghost-service slot names; index matches GlobalRegistryServiceSlot numeric value - owner: GlobalRegistry
+        // COLD ALLOC: string[168] - allocation-free ghost-service slot names; index matches GlobalRegistryServiceSlot numeric value - owner: GlobalRegistry
         private static readonly string[] _serviceSlotNames =
         {
             nameof(GlobalRegistryServiceSlot.Input),
@@ -265,7 +265,8 @@ namespace Hecton8.Core
             nameof(GlobalRegistryServiceSlot.PlayerMovementContracts),
             nameof(GlobalRegistryServiceSlot.HardwareThermalService),
             nameof(GlobalRegistryServiceSlot.AudioVirtualization),
-            nameof(GlobalRegistryServiceSlot.OutpostGenerationRuntime)
+            nameof(GlobalRegistryServiceSlot.OutpostGenerationRuntime),
+            nameof(GlobalRegistryServiceSlot.PrologueSequenceRuntime)
         };
         private static int _registryPhase = (int)RegistryPhase.Uninitialized;
         private static int _systemKillSwitchMask;
@@ -335,6 +336,18 @@ namespace Hecton8.Core
         public static bool IsSafeModeBootRequested => _safeModeBootRequested;
 
         public static bool H8_LOW_MEMORY_PROFILE => _lowMemoryProfileEnabled;
+
+        public static bool IsDevelopmentBuild
+        {
+            get
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                return true;
+#else
+                return Debug.isDebugBuild;
+#endif
+            }
+        }
 
         public static uint ActiveServiceTypeHash => _activeServiceTypeHash;
 
@@ -461,6 +474,7 @@ namespace Hecton8.Core
         private static IProfileService _profile;
         private static HectonCelestialEngine _celestialEngineRuntime;
         private static IOrbitalDirector _orbitalDirectorRuntime;
+        private static IPrologueSequenceService _prologueSequenceRuntime;
         private static EclipseGameplaySystem _eclipseGameplayRuntime;
         private static RandomEventSystem _randomEventRuntime;
         private static HectonFluidEngine _fluidRuntime;
@@ -1702,6 +1716,11 @@ namespace Hecton8.Core
         public static IOrbitalDirector OrbitalDirector => _orbitalDirectorRuntime;
 
         /// <summary>
+        /// Registered awaitable prologue sequence runtime owner.
+        /// </summary>
+        public static IPrologueSequenceService PrologueSequence => _prologueSequenceRuntime;
+
+        /// <summary>
         /// Registered adaptive music director runtime owner.
         /// </summary>
         public static HectonMusicDirector MusicDirector => _musicDirectorRuntime;
@@ -2138,6 +2157,7 @@ namespace Hecton8.Core
             _profile = null;
             _celestialEngineRuntime = null;
             _orbitalDirectorRuntime = null;
+            _prologueSequenceRuntime = null;
             _fluidRuntime = null;
             _thermodynamicsRuntime = null;
             _narrativeDirectorRuntime = null;
@@ -2251,6 +2271,7 @@ namespace Hecton8.Core
             _worldResourceSpawnerRuntime = null;
             _instanceCullingRuntime = null;
             _outpostGenerationRuntime = null;
+            _prologueSequenceRuntime = null;
             _hardwareProfile = default;
             _scalabilityTierOverride = -1;
             _hasHardwareProfile = false;
@@ -2982,6 +3003,14 @@ namespace Hecton8.Core
         public static void RegisterOrbitalDirectorRuntime(IOrbitalDirector instance)
         {
             RegisterServiceAllowSameInstance(ref _orbitalDirectorRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the awaitable prologue sequence runtime owner.
+        /// </summary>
+        public static void RegisterPrologueSequenceRuntime(IPrologueSequenceService instance)
+        {
+            RegisterServiceAllowSameInstance(ref _prologueSequenceRuntime, instance);
         }
 
         /// <summary>
@@ -4632,6 +4661,14 @@ namespace Hecton8.Core
         public static void UnregisterOrbitalDirectorRuntime(IOrbitalDirector instance)
         {
             UnregisterService(ref _orbitalDirectorRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the awaitable prologue sequence runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterPrologueSequenceRuntime(IPrologueSequenceService instance)
+        {
+            UnregisterService(ref _prologueSequenceRuntime, instance);
         }
 
         /// <summary>
@@ -6822,6 +6859,7 @@ namespace Hecton8.Core
                 case GlobalRegistryServiceSlot.EclipseGameplayRuntime: return _eclipseGameplayRuntime;
                 case GlobalRegistryServiceSlot.CelestialEngineRuntime: return _celestialEngineRuntime;
                 case GlobalRegistryServiceSlot.OrbitalDirectorRuntime: return _orbitalDirectorRuntime;
+                case GlobalRegistryServiceSlot.PrologueSequenceRuntime: return _prologueSequenceRuntime;
                 case GlobalRegistryServiceSlot.WorldSeedProvider: return _worldSeedProvider;
                 case GlobalRegistryServiceSlot.GeologyTerrainSeamRuntime: return _geologyTerrainSeamRuntime;
                 case GlobalRegistryServiceSlot.GeologyVoxelBridgeRuntime: return _geologyVoxelBridgeRuntime;
@@ -7018,6 +7056,7 @@ namespace Hecton8.Core
             if (serviceType == typeof(IProfileService)) return GlobalRegistryServiceSlot.Profile;
             if (serviceType == typeof(HectonCelestialEngine)) return GlobalRegistryServiceSlot.CelestialEngineRuntime;
             if (serviceType == typeof(IOrbitalDirector)) return GlobalRegistryServiceSlot.OrbitalDirectorRuntime;
+            if (serviceType == typeof(IPrologueSequenceService)) return GlobalRegistryServiceSlot.PrologueSequenceRuntime;
             if (serviceType == typeof(EclipseGameplaySystem)) return GlobalRegistryServiceSlot.EclipseGameplayRuntime;
             if (serviceType == typeof(RandomEventSystem)) return GlobalRegistryServiceSlot.RandomEventRuntime;
             if (serviceType == typeof(HectonFluidEngine)) return GlobalRegistryServiceSlot.FluidRuntime;

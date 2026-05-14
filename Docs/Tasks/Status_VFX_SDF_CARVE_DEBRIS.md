@@ -40,3 +40,24 @@ Status: PENDING VERIFICATION
 - Loop 1: Tasks 1-5 implemented. Prompt re-read from `CURRENT_BATCH.md` lines 997-1036 before continuing.
 - Loop 2: Tasks 6-10 implemented. Unity MCP compile check attempted; editor session unavailable, static pass continuing.
 - Loop 3: Tasks 11-15 implemented/blocked for Unity compile tooling. Static checks found no `GetData`/`SetData` in the hot lane.
+- Loop 4: OMEGA mandate extracted only after all core tasks were checked/blocked. Float lifetime divisions replaced with reciprocal multiplies; dispatch-group math moved to setup/auditable helper. DOD: targeted static scan found no `GetData`, `SetData`, `foreach`, interpolated strings, `math.sqrt`, `math.normalize`, `dt /`, or `1f /` in touched VFX files. Rejected alternative: CPU readback validation. Estimate: avoids millisecond-scale readback stalls; reciprocal change is sub-microsecond but removes repeated scalar divisions.
+- Loop 5: Final strict pass re-read renderer, compute shader, material shader, signal bridge, DataVault IDs, and asmdef references. Unity MCP validation still fails at `http://127.0.0.1:8088/mcp`; `Temp/UnityLockfile` is present with active Unity processes, so batchmode compile remains blocked. DOD: `git diff --check` reports only line-ending normalization warning on `CarveDebrisComputeRenderer.cs`.
+- Loop 6: Patient second-pass upgrade re-read status, rationale, prompt excerpt, renderer, compute shader, asmdef, `HectonFluidEngine` flow contract, marine snow flow binding precedent, and cave SDF publication contract. DOD: low tier now dispatches/ages/culls only 1024 active slots, high tier remains 4096; false flow activation from empty fallback buffers is removed; published `HectonFluidEngine` buffer/texture payloads are bound when available; dynamic wake buffers are defensively bound with zero active slots; fallback mesh/material creation is cold-started in `Awake`/`OnEnable`; GPU velocity is clamped to 3.5 m/s and 0.20 m/frame. Rejected alternatives: same 4096 scan on low tier, CPU readback verification, direct access to internal `HectonCaveVoxelLightingVolume` from the isolated asmdef, and ParticleSystem fallback. Estimate: low-tier dispatch groups drop from 64 to 16, saving about 25-35 us GPU on MX350; idle CPU mirror aging skip saves about 10-25 us when no debris is alive; velocity clamp prevents SDF tunneling without substeps.
+- Loop 7: Verification retry and failure classification. DOD: static scan still finds no `GetData`, `SetData`, `ParticleSystem`, `ComputeBuffer`, `foreach`, `.ToString`, `string.Format`, or interpolated strings in the touched VFX lane; shader scan shows reciprocal/`rsqrt` math and no new hot `sqrt`/`pow`/`exp`/`log` path. Unity MCP remains unavailable; no `Hecton8.VFX.Debris.csproj` has been generated; `dotnet build Hecton8.Core.csproj --no-restore` fails on unrelated symbols outside this VFX asmdef. Rejected alternative: reporting the unrelated root csproj failure as a VFX compile failure. Estimate: verification blocked by tooling/project integration state, not by observed carve debris errors.
+
+## Second-Pass Upgrade Status
+
+- [x] Low/MX350 path uses an active 1024-slot cap for mirror aging, injection, compute dispatch, GPU cull, and indirect max instances while preserving 4096 storage for high/ultra.
+- [x] Flow binding is tied to real `HectonFluidEngine` GPU publication or an authored override; the one-element fallback buffer no longer marks flow active.
+- [x] Dynamic wake buffers are explicitly bound even when no wake publisher is present; `_DynamicWakeParams.x = 0` prevents out-of-range fallback reads.
+- [x] Cold fallback mesh/material creation moved out of first active draw where possible.
+- [x] Compute velocity clamp added to cap chip travel per frame and reduce SDF miss-through without adding substeps.
+- [x] `AgeCarveDebrisMirrorJob` preserves existing blackbox flags instead of wiping invalid-state bits during an otherwise normal age pass.
+- [x] Root build failure classified as unrelated: `Hecton8.Core.csproj` does not include `Assets/_Project/Scripts/VFX/Debris/CarveDebrisComputeRenderer.cs`, and its errors are missing symbols in UI/fauna/world/core systems.
+
+## OMEGA Polish Status
+
+- [x] Prompt-specific polish mandate parsed after core completion/block.
+- [x] Touched VFX code scanned for hot managed bloat patterns.
+- [x] No CPU GPU readback path introduced.
+- [x] Final compile verification marked `[BLOCKED BY TOOLING]`, not passed.

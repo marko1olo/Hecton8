@@ -11,10 +11,12 @@ namespace Hecton8.World
     {
         int ActiveGprPings { get; }
         int GprSequence { get; }
+        int OreFilterType { get; }
         float3 LastProbeOrigin { get; }
         float ScanRadiusMeters { get; }
         NativeArray<float3>.ReadOnly GprHitsReadOnly { get; }
         NativeArray<float>.ReadOnly GprSignalStrengthReadOnly { get; }
+        void SetOreFilterType(int oreType);
         bool TryGetGprPingBuffer(out GraphicsBuffer buffer, out int activeCount, out int sequence);
         bool TryCopyGprPings(NativeArray<float4> destination, out int copiedCount);
     }
@@ -25,6 +27,22 @@ namespace Hecton8.World
     public interface IWorldResourceSpawnerReadModel
     {
         int ActiveOreCount { get; }
-        bool TryGetOrePositions(out NativeArray<float3> orePositions, out int activeCount);
+        int LocalTitaniumCount { get; }
+        /// <summary>Returns the sparse ore position lane plus the valid scan window length; zero-type slots inside the window are holes.</summary>
+        bool TryGetOrePositions(out NativeArray<float3> orePositions, out int scanCount);
+        /// <summary>Returns the sparse ore type lane plus the valid scan window length; zero means no live ore in that slot.</summary>
+        bool TryGetOreTypes(out NativeArray<int> oreTypes, out int scanCount);
+    }
+
+    /// <summary>
+    /// Stable ore ids shared by ore authority, GPR filtering, HUD controls, and telemetry.
+    /// </summary>
+    public static class WorldOreTypeIds
+    {
+        public const int None = 0;
+        public const int BasaltIron = 1;
+        public const int Copper = 2;
+        public const int Titanium = 3;
+        public const int Silver = 4;
     }
 }

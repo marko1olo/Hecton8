@@ -164,7 +164,7 @@ namespace Hecton8.UI
                     }
                     else
                     {
-                        SetCanvasAlphaIfChanged(math.saturate(_fadeTimer / fadeInDuration));
+                        SetCanvasAlphaIfChanged(math.saturate(_fadeTimer * math.rcp(fadeInDuration)));
                     }
                     break;
 
@@ -177,7 +177,7 @@ namespace Hecton8.UI
                     }
                     else
                     {
-                        SetCanvasAlphaIfChanged(1f - math.saturate(_fadeTimer / fadeOutDuration));
+                        SetCanvasAlphaIfChanged(1f - math.saturate(_fadeTimer * math.rcp(fadeOutDuration)));
                     }
                     break;
             }
@@ -218,6 +218,9 @@ namespace Hecton8.UI
         private void HandleActionCancelled(in PlayerActionCancelledSignal signal)
         {
             // Snap to current progress then fade out
+            if (progressImage != null)
+                progressImage.fillAmount = math.saturate(signal.Progress01);
+
             StartFadeOut();
         }
 

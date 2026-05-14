@@ -72,3 +72,127 @@ Verification:
 - `git diff --check` on changed code files reports line-ending warnings only.
 - `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -v:quiet -clp:ErrorsOnly /m:1 /nr:false /p:UseSharedCompilation=false` is still blocked by 140 existing missing-reference/interface errors before these AUP files can be isolated.
 - Unity MCP `validate_script` on `Assets/_Project/Scripts/World/AUPMath.cs` returned `no_unity_session`.
+
+## 2026-05-14 - Loop 6 Shift Payload Double Fence
+
+What was wrong:
+- `OriginShiftEventData` still carried previous/new committed offsets only as `Vector3`.
+- Sector-delta calculation for AUP shift signals used those truncated offsets.
+- Fauna route/hunt target rebases, corpse-resource rebases, and corpse-sink AUP reconstruction used `float3` committed offsets.
+- Several scalar absolute-depth/height/shader helpers read `CurrentTotalOffset` before final presentation output.
+
+What was done:
+- Added `PreviousTotalOffsetDouble` and `NewTotalOffsetDouble` to `OriginShiftEventData` without removing legacy `Vector3` fields.
+- Routed `HectonFloatingOrigin` shift payload creation, safe teleport payload creation, wait-for-stability payload creation, sector-delta calculation, and `ToRuntimePosition` helpers through double committed offsets.
+- Upgraded fauna route/hunt target rebases, corpse-resource rebases, and corpse-sink job input to `double3` committed offsets.
+- Swapped scalar offset helpers in audio, scanner shader point upload, Crest depth cache bridge, geology seam plan, GPU scatter grid offset, and brine shader globals to double committed offsets before final float output.
+
+Cinematic Cheats used:
+- Final Unity transform, shader, audio, and GPU buffer payloads remain float where the engine requires float.
+- Fluid/vector-noise AUP offsets remain presentation-domain debt instead of forcing a cross-domain rendering rewrite.
+
+Exact Microseconds saved:
+- Double shift payload: estimated 3-10 us on shift frames by avoiding listener-local rebase correction.
+- Listener rebase precision: estimated 2-6 us in fauna/organic rebase-heavy scenes.
+- Scalar offset cleanup: sub-2 us; precision stability rather than CPU savings.
+- Added memory: two `double3` values per shift payload and +12 bytes in the one-record corpse-sink input.
+
+Verification:
+- Mandatory AUP scan re-run; remaining hits are broad `universe` text and fluid/presentation AUP offset lanes.
+- Direct scan for `CurrentTotalOffset.x/y/z`, `(float3)CurrentTotalOffset`, and `NewTotalOffset.x/y/z` under `Assets/_Project/Scripts` is clean.
+- `git diff --check` on touched Loop 6 code reports line-ending warnings only.
+- `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -v:quiet -clp:ErrorsOnly /m:1 /nr:false /p:UseSharedCompilation=false` timed out after 94 seconds; the process started by this agent was stopped. Another Core build process from a different parent remained running and was not touched.
+
+Integrator notes:
+- `FaunaBrain.cs` already contains unrelated dirty changes from another agent; this pass only changed committed-origin offset handling in AUP rebase/corpse-sink paths.
+- `HectonVoxelEngine` still passes legacy `Vector3 NewTotalOffset` into voxel terrain-hole/spawn helper signatures; migrate under voxel ownership, not in this AUP shared-kernel patch.
+
+## 2026-05-14 - Loop 7 Voxel Finalization Double Capture
+
+What was wrong:
+- `HectonVoxelEngine` captured async pipeline origin offset as `Vector3` only.
+- Voxel mesh root rebase, shift-aware local projection, terrain-hole registration, spawn-point registration, biome heatmap coordinates, anomaly origins, and chthonic pillar collider bounds could all consume that truncated offset after an origin shift.
+
+What was done:
+- Added `AbsoluteUniverseOffsetAtStartDouble` to `VoxelPipelineData` and populated it from `HectonFloatingOrigin.CurrentTotalOffsetDouble` or `OriginShiftEventData.NewTotalOffsetDouble`.
+- Routed `RebaseCapturedRuntimePosition`, voxel projection delta comparison, terrain-hole/spawn helper signatures, collider fake distance checks, overhang-facing AUP checks, anomaly origins, biome coordinate math, and chthonic pillar local offsets through double offsets.
+- Kept legacy `Vector3 AbsoluteUniverseOffsetAtStart` for existing volume/runtime persistence calls and final Unity presentation boundaries.
+
+Cinematic Cheats used:
+- Final mesh/job/shader/Unity transform payloads remain float where Unity requires float.
+- Low-tier collider fake behavior is preserved; the patch fixes AUP stability without adding heavier collider simulation.
+
+Exact Microseconds saved:
+- Voxel finalization rebase stability: estimated 4-14 us on origin-shifted voxel finalization frames by avoiding correction churn in terrain-hole/spawn registration and local projection drift.
+- Normal-frame overhead: 0 B/frame managed allocation; one extra `double3` per active pipeline data object and stack-only conversion math.
+
+Verification:
+- Direct scan for `StableShift.NewTotalOffset`, `postMeshShift.NewTotalOffset`, `(float3)data.AbsoluteUniverseOffsetAtStart`, and `AbsoluteUniverseOffsetAtStart.x/y/z` in `HectonVoxelEngine.cs` is clean except legacy field storage.
+- Mandatory AUP scan re-run; residual hits remain broad `universe` text plus fluid/scatter/presentation AUP offset lanes.
+- `git diff --check -- Assets/_Project/Scripts/HectonVoxelEngine.cs`: line-ending warning only, no whitespace errors.
+- `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -v:quiet -clp:ErrorsOnly /m:1 /nr:false /p:UseSharedCompilation=false` failed with 128 existing missing-reference/interface errors. The only `HectonVoxelEngine.cs` error is the known pre-existing line 21 missing `Hecton8.Core.Scheduling` namespace.
+- Unity MCP `validate_script` on `Assets/_Project/Scripts/HectonVoxelEngine.cs` failed because the local MCP endpoint was unavailable.
+
+Integrator notes:
+- The prior voxel helper debt is resolved for committed-origin rebase math.
+- Remaining voxel `Vector3` absolute-position storage is compatibility/persistence debt and should be migrated only in a dedicated voxel storage batch.
+
+## 2026-05-14 - Loop 8 Fauna/Brine/Scanner Offset Double Lane
+
+What was wrong:
+- Predator cognition carried `FloatingOriginOffset` as `float3` through Burst input, pack target projection, retinal telemetry, and acoustic/player fallback projection.
+- Brine, scanner, scan-render, and scatter helper paths added `CurrentTotalOffset` as `Vector3` before shader centers, brine height tests, cartography sector keys, and origin-relative matrices.
+
+What was done:
+- Widened predator cognition `FloatingOriginOffset` to `double3` and sourced it from `HectonFloatingOrigin.CurrentTotalOffsetDouble`.
+- Changed cognition runtime projection helpers to subtract the double committed offset before final `float3` steering/telemetry output.
+- Changed fauna brine checks, ecosystem brine mutation checks, resource brine sector quantization, scan-render shader center, scanner projection origin, and Scatter GPUI origin-relative matrices to use double committed offsets before final float presentation.
+- Added `BrineLayerMath` double-offset overloads for future fluid-domain ownership, then removed Core-facing dependency on those overloads after the build showed current assembly layout could not see them.
+
+Cinematic Cheats used:
+- Final shader, matrix, steering, and brine scalar outputs remain float; only the authority reconstruction before that boundary was upgraded.
+- Low-tier cognition and collider/scanner fakes remain cheap. High/Ultra get stable long-session targets without a heavier simulation.
+
+Exact Microseconds saved:
+- Predator cognition offset stability: estimated 2-7 us in rebase-heavy predator scenes by reducing steering/telemetry correction churn.
+- Brine/scanner/scatter scalar cleanup: sub-3 us; primarily threshold and presentation stability, not raw CPU.
+- Managed allocation: 0 B/frame. Native cognition input grows by 12 bytes per slot.
+
+Verification:
+- Mandatory AUP scan re-run; residual hits are broad text plus fluid/scatter/presentation lanes.
+- Targeted scan for `CurrentTotalOffset;`, `CurrentTotalOffset.x/y/z`, `AUPMath.ToRuntimeFloat3(... float3 offset)`, and brine helper calls with double offsets is clean in patched fauna/gameplay/world paths except intentional double validation fields.
+- `git diff --check` on Loop 8 files reports line-ending warnings only, no whitespace errors.
+- First Loop 8 Core build failed with 54 project errors and exposed three introduced CS1503 mismatches from brine overload use. Those were fixed.
+- Follow-up Core build timed out after 124 seconds under the existing compile wall; separate build processes from other parents were not touched.
+
+Integrator notes:
+- `PredatorCognitionDomain.cs` contains unrelated dirty Alpha Leviathan changes from another agent; this pass only widened and consumed the AUP offset lane.
+- Brine double overloads should be adopted by fluid-domain owners once asmdef exposure is corrected; Core-facing callers already use local double math.
+
+## 2026-05-14 - Loop 9 Fluid Presentation Offset Final Cast
+
+What was wrong:
+- `HectonFluidEngine` read `HectonFloatingOrigin.CurrentTotalOffset` as `Vector3` for analytical flow sampling, water height, buoyancy wave/noise jobs, brine shift scalar setup, and GPU abyssal noise offsets.
+- Those lanes are presentation/job payloads, but the committed offset was being reduced before absolute coordinate reconstruction.
+
+What was done:
+- Changed those fluid paths to source `HectonFloatingOrigin.CurrentTotalOffsetDouble`.
+- Kept addition/subtraction with the committed origin offset in double, then cast once into `float2`, `float3`, or `Vector4` at the Unity job/shader/GPU boundary.
+- Re-extracted this agent prompt from `Docs/Tasks/CURRENT_BATCH.md`; result is still `PROMPT_NOT_FOUND`, so the user-supplied XML remains the assignment source.
+
+Cinematic Cheats used:
+- Water and abyssal flow still ship float shader/job payloads. The cheat is deliberate: the visual surface stays cheap, while AUP authority remains double until the last CPU-side conversion.
+- Low tier keeps the same cheap water path. Middle/High/Ultra get more stable long-session flow/noise sampling and can spend the saved stability budget on denser visual water effects later.
+
+Exact Microseconds saved:
+- Fluid offset final-cast cleanup: estimated 2-6 us on origin-shifted buoyancy/fluid frames by avoiding downstream correction and threshold wobble.
+- Managed allocation: 0 B/frame. No new per-frame containers or strings were introduced.
+
+Verification:
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe"` re-run. Residual fluid `AupOffsetXZ`/`vectorNoiseAupOffset` hits are final-cast float job payload fields; broad `universe` text and unowned vegetation/scatter presentation lanes remain.
+- Targeted scan for legacy `HectonFloatingOrigin.CurrentTotalOffset`, direct `.x/.y/.z` reads, and `(float3)` casts against `CurrentTotalOffset` is clean in `HectonFluidEngine.cs`.
+- `git diff --check -- Assets/_Project/Scripts/HectonFluidEngine.cs`: line-ending warning only.
+- `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false`: 0 warnings, 1 error. The error is existing audio dependency `PlayerCriticalProceduralAudioRenderer.cs(10002,31)` missing `PrologueSplashdownSineSweepProbeJob`; no AUP/fluid compile error was reported.
+
+Integrator notes:
+- `HectonFluidEngine.cs` contains unrelated dirty dynamic-wake/splashdown edits from another agent. This pass only changed committed-origin offset sourcing and final casts.

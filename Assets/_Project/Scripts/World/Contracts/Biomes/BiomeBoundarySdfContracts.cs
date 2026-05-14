@@ -12,7 +12,8 @@ namespace Hecton8.World.Biomes.Contracts
         ExactCellCenter = 1 << 1,
         MissingMap = 1 << 2,
         InvalidInput = 1 << 3,
-        HasSecondaryBiome = 1 << 4
+        HasSecondaryBiome = 1 << 4,
+        OutOfBounds = 1 << 5
     }
 
     [StructLayout(LayoutKind.Sequential)]

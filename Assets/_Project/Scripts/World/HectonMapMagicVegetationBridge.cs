@@ -119,6 +119,8 @@ namespace Hecton8.World
         private const int LowTierAbyssalPathPortalLookAhead = 4;
         private const int MidTierAbyssalPathPortalLookAhead = 8;
         private const int HighTierAbyssalPathPortalLookAhead = 16;
+        private const int LowTierAbyssalPathDdaSamples = 32;
+        private const int MidTierAbyssalPathDdaSamples = 64;
         private const int AbyssalPathTelemetryFrameCount = 300;
         private const int DefaultMaxAbyssalNavNodeCapacity = 8192;
         private const int DefaultMaxAbyssalPathWaypointCapacity = 8192;
@@ -1563,6 +1565,7 @@ namespace Hecton8.World
         public static int GlobalArtificialInteriorId { get; private set; } = int.MinValue;
         public static Bounds GlobalArtificialInteriorBounds { get; private set; }
         public static Vector3 GlobalTotalUniverseOffset { get; private set; }
+        public static double3 GlobalTotalUniverseOffsetDouble { get; private set; }
         internal static HectonMapMagicVegetationBridge ActiveRuntimeInstance => GlobalRegistry.MapMagicVegetation;
         public FloraDataTemplate[] FloraTemplates => floraTemplates;
 
@@ -1731,6 +1734,7 @@ namespace Hecton8.World
         private Vector3 _currentThreatHotspotPosition;
         private Vector3 _externalThreatPulsePosition;
         private Vector3 _totalUniverseOffset;
+        private double3 _totalUniverseOffsetDouble;
         private float _externalThreatPulseRadius;
         private float _externalThreatPulseStrength;
         private float _externalThreatPulseHoldTimer;
@@ -1748,7 +1752,6 @@ namespace Hecton8.World
         private NativeArray<AbyssalPathTelemetryEntry> _abyssalPathTelemetry;
         private int _abyssalPathTelemetryCursor;
         private uint _abyssalPathTelemetrySequence;
-        private long _abyssalPathSmoothingStartTicks;
         private int _lastAbyssalPathPortalLookAhead;
         private int _lastAbyssalPathMaxSamples;
         private bool _abyssalPathTelemetryDumpedForFault;
@@ -1771,7 +1774,9 @@ namespace Hecton8.World
         private void Awake()
         {
             _totalUniverseOffset = Vector3.zero;
+            _totalUniverseOffsetDouble = double3.zero;
             GlobalTotalUniverseOffset = Vector3.zero;
+            GlobalTotalUniverseOffsetDouble = double3.zero;
             RebuildFloraTemplateRuntimeDescriptors();
             if (_surfaceNativeBufferSource == null)
                 _surfaceNativeBufferSource = new IndirectVegetationNativeBufferSource(this, false); // COLD ALLOC: IndirectVegetationNativeBufferSource[1] - surface native vegetation renderer seam - owner: HectonMapMagicVegetationBridge
@@ -2058,7 +2063,9 @@ namespace Hecton8.World
             ClearArtificialInteriorState();
             ClearVegetationAudioHandoff();
             _totalUniverseOffset = Vector3.zero;
+            _totalUniverseOffsetDouble = double3.zero;
             GlobalTotalUniverseOffset = Vector3.zero;
+            GlobalTotalUniverseOffsetDouble = double3.zero;
             ResetDeferredStartupWork();
             GlobalRegistry.UnregisterMapMagicVegetationRuntime(this);
             _runtimeTeardownComplete = true;
@@ -2106,7 +2113,9 @@ namespace Hecton8.World
             ClearArtificialInteriorState();
             ClearVegetationAudioHandoff();
             _totalUniverseOffset = Vector3.zero;
+            _totalUniverseOffsetDouble = double3.zero;
             GlobalTotalUniverseOffset = Vector3.zero;
+            GlobalTotalUniverseOffsetDouble = double3.zero;
             GlobalRegistry.UnregisterMapMagicVegetationRuntime(this);
             _runtimeTeardownComplete = true;
             _runtimeLifecycleActive = false;
@@ -2279,11 +2288,26 @@ namespace Hecton8.World
         /// <summary>Accumulated floating-origin offset applied at render/query time instead of rewriting chunk-pool matrices.</summary>
         public Vector3 TotalUniverseOffset => _totalUniverseOffset;
 
+        /// <summary>Accumulated vegetation universe offset in double precision for AUP reconstruction.</summary>
+        public double3 TotalUniverseOffsetDouble => _totalUniverseOffsetDouble;
+
         /// <summary>Converts current runtime-local coordinates into stable universe coordinates.</summary>
-        public static Vector3 ToUniverseSpace(Vector3 runtimePosition) => runtimePosition - GlobalTotalUniverseOffset;
+        public static Vector3 ToUniverseSpace(Vector3 runtimePosition) => ToVector3(ToUniverseSpaceDouble3(runtimePosition));
+
+        /// <summary>Converts current runtime-local coordinates into stable universe coordinates without reducing the bridge offset to float first.</summary>
+        public static double3 ToUniverseSpaceDouble3(Vector3 runtimePosition)
+        {
+            return ToDouble3(runtimePosition) - GlobalTotalUniverseOffsetDouble;
+        }
 
         /// <summary>Converts stable universe coordinates into current runtime-local coordinates.</summary>
-        public static Vector3 ToRuntimeSpace(Vector3 universePosition) => universePosition + GlobalTotalUniverseOffset;
+        public static Vector3 ToRuntimeSpace(Vector3 universePosition) => ToVector3(ToRuntimeSpaceDouble3(universePosition));
+
+        /// <summary>Converts stable universe coordinates into current runtime-local coordinates without reducing the bridge offset to float first.</summary>
+        public static double3 ToRuntimeSpaceDouble3(Vector3 universePosition)
+        {
+            return ToDouble3(universePosition) + GlobalTotalUniverseOffsetDouble;
+        }
 
         private static bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
         {
@@ -3941,6 +3965,11 @@ namespace Hecton8.World
         /// </summary>
         public void ApplyWorldOffsetToAllChunks(Vector3 offset)
         {
+            ApplyWorldOffsetToAllChunks(offset, _totalUniverseOffsetDouble - ToDouble3(offset));
+        }
+
+        private void ApplyWorldOffsetToAllChunks(Vector3 offset, double3 newTotalUniverseOffsetDouble)
+        {
             if (offset.sqrMagnitude <= 0.000001f)
                 return;
 
@@ -3951,8 +3980,12 @@ namespace Hecton8.World
             CompleteThermalGridJob(forceComplete: true);
             CompleteAbyssalPathJob(forceComplete: true);
             CompleteHLODCullJob(forceComplete: true);
-            _totalUniverseOffset += appliedOffset;
+            _totalUniverseOffsetDouble = math.all(math.isfinite(newTotalUniverseOffsetDouble))
+                ? newTotalUniverseOffsetDouble
+                : _totalUniverseOffsetDouble + ToDouble3(appliedOffset);
+            _totalUniverseOffset = ToVector3(_totalUniverseOffsetDouble);
             GlobalTotalUniverseOffset = _totalUniverseOffset;
+            GlobalTotalUniverseOffsetDouble = _totalUniverseOffsetDouble;
             RebaseLargeFloraCollisionProxyRuntimePositions();
 
             _evictionKeys.Clear();
@@ -4253,9 +4286,25 @@ namespace Hecton8.World
             return ApplyMatrixTranslationOffset(matrix, -universeOffset);
         }
 
+        private static Matrix4x4 ConvertMatrixToStableUniverseSpace(Matrix4x4 matrix, double3 universeOffset)
+        {
+            return ApplyMatrixTranslationOffset(matrix, ToVector3(-universeOffset));
+        }
+
         private Vector3 ResolveRuntimePosition(Matrix4x4 matrix)
         {
-            return new Vector3(matrix.m03 + _totalUniverseOffset.x, matrix.m13 + _totalUniverseOffset.y, matrix.m23 + _totalUniverseOffset.z);
+            double3 runtimePosition = new double3(matrix.m03, matrix.m13, matrix.m23) + _totalUniverseOffsetDouble;
+            return ToVector3(runtimePosition);
+        }
+
+        private static double3 ToDouble3(Vector3 value)
+        {
+            return new double3(value.x, value.y, value.z);
+        }
+
+        private static Vector3 ToVector3(double3 value)
+        {
+            return new Vector3((float)value.x, (float)value.y, (float)value.z);
         }
 
         private static NativeArray<JobInstanceRecord> AllocateJobRecordArray(int count)
@@ -6183,7 +6232,7 @@ namespace Hecton8.World
             if (!isActiveAndEnabled)
                 return;
 
-            ApplyWorldOffsetToAllChunks(shiftData.ShiftOffset);
+            ApplyWorldOffsetToAllChunks(shiftData.ShiftOffset, -shiftData.NewTotalOffsetDouble);
             if (_predatorFearNodeCount > 0)
             {
                 float3 offset = -shiftData.ShiftOffset;

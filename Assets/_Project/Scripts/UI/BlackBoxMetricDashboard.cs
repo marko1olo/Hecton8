@@ -11,7 +11,7 @@ namespace Hecton8.UI
     /// Development-only black-box metric dashboard using caller-owned char buffers.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class BlackBoxMetricDashboard : MonoBehaviour, IUpdatable, IGlobalRegistryHotSwapListener
+    public sealed class BlackBoxMetricDashboard : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const int BufferCapacity = 128;
         private const int RefreshIntervalFrames = 30;
@@ -65,7 +65,7 @@ namespace Hecton8.UI
 
             if (_registered)
             {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
                 _registered = false;
             }
         }
@@ -74,11 +74,12 @@ namespace Hecton8.UI
         /// Dispatcher tick; toggles visibility and refreshes metrics at low cadence.
         /// </summary>
         /// <param name="deltaTime">Dispatcher delta.</param>
-        public void Tick(float deltaTime)
+        public void LateFrameTick()
         {
             if (!_visible || metricText == null)
                 return;
 
+            float deltaTime = Mathf.Max(0f, SystemDispatcher.CurrentFrameDeltaTime);
             _accumulatedFrames++;
             _accumulatedSeconds += deltaTime > 0f ? deltaTime : 0f;
 
@@ -151,7 +152,7 @@ namespace Hecton8.UI
             if (_registered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+            _registered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
         private void TryRegisterHotSwapListener()

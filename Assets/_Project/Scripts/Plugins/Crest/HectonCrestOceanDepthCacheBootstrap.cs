@@ -995,7 +995,7 @@ namespace Hecton8.World
 
         private static float ResolveAbsoluteUniverseY(float runtimeY)
         {
-            return runtimeY + HectonFloatingOrigin.CurrentTotalOffset.y;
+            return (float)(runtimeY + HectonFloatingOrigin.CurrentTotalOffsetDouble.y);
         }
     }
 }

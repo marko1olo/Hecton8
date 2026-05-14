@@ -11,7 +11,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(UIDocument))]
-    public sealed class EngineHealthOverlay : MonoBehaviour, IUpdatable, IGlobalRegistryHotSwapListener
+    public sealed class EngineHealthOverlay : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const int SampleCapacity = 64;
         private const int SampleIntervalFrames = 10;
@@ -68,7 +68,7 @@ namespace Hecton8.UI
             TeardownVisualTree();
         }
 
-        public void Tick(float deltaTime)
+        public void LateFrameTick()
         {
             if (!_visible)
                 return;
@@ -116,8 +116,7 @@ namespace Hecton8.UI
             if (_registered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _registered = SystemDispatcher.GetLane(PriorityLayer.UI).Contains(this);
+            _registered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
         private void TryRegisterHotSwapListener()
@@ -173,7 +172,7 @@ namespace Hecton8.UI
             if (!_registered)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
             _registered = false;
         }
 

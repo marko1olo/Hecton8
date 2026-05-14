@@ -7,7 +7,6 @@ using Hecton8.Data;
 using Hecton8.World;
 using Hecton8.World.Biomes.Contracts;
 using Unity.Collections;
-using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
@@ -18,6 +17,8 @@ namespace Hecton8.World.Biomes
     [DefaultExecutionOrder(-4310)]
     public sealed class BiomeBoundarySdfRuntime : MonoBehaviour, ISlowTickable, IOriginShiftListener
     {
+        internal static BiomeBoundarySdfRuntime ActiveRuntimeInstance { get; private set; }
+
         private const int BiomeHeatmapResolution = 256;
         private const int BiomeHeatmapPixelCount = BiomeHeatmapResolution * BiomeHeatmapResolution;
         private const int TelemetryCapacity = 300;
@@ -58,13 +59,25 @@ namespace Hecton8.World.Biomes
         private uint _lastOriginShiftSequence;
         private uint _sequence;
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            ActiveRuntimeInstance = null;
+        }
+
         private void Awake()
         {
+            if (!TryClaimActiveRuntime())
+                return;
+
             EnsureNativeStorage();
         }
 
         private void OnEnable()
         {
+            if (!TryClaimActiveRuntime())
+                return;
+
             EnsureNativeStorage();
             TryRegister();
             TryRegisterOriginShift();
@@ -81,6 +94,9 @@ namespace Hecton8.World.Biomes
         {
             TryUnregister();
             TryUnregisterOriginShift();
+
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                ActiveRuntimeInstance = null;
         }
 
         private void OnDestroy()
@@ -88,6 +104,9 @@ namespace Hecton8.World.Biomes
             TryUnregister();
             TryUnregisterOriginShift();
             DisposeNativeStorage();
+
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                ActiveRuntimeInstance = null;
         }
 
         public void SlowTick()
@@ -127,8 +146,7 @@ namespace Hecton8.World.Biomes
                 SampleAupXZ = new double2(absolute.x, absolute.z)
             };
 
-            JobHandle handle = job.Schedule();
-            handle.Complete();
+            job.Run();
 
             BiomeBoundarySdfResult result = _sampleResult[0];
             if (!IsFiniteResult(in result))
@@ -151,6 +169,24 @@ namespace Hecton8.World.Biomes
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
             _lastOriginShiftSequence = shiftData.Sequence;
+        }
+
+        private bool TryClaimActiveRuntime()
+        {
+            if (!Application.isPlaying)
+                return true;
+
+            if (ActiveRuntimeInstance == null)
+            {
+                ActiveRuntimeInstance = this;
+                return true;
+            }
+
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                return true;
+
+            enabled = false;
+            return false;
         }
 
         private void TryRegister()

@@ -1744,6 +1744,19 @@ namespace Hecton8.Gameplay
             return unchecked((int)EntityId.ToULong(hit.colliderEntityId));
         }
 
+        private static byte ResolveHighSpeedImpactTargetMaterialId(in RaycastHit hit, byte fallbackMaterialId)
+        {
+            Collider hitCollider = hit.collider;
+            if (hitCollider == null)
+                return fallbackMaterialId;
+
+            if (hitCollider.TryGetComponent(out IPhysicsImpactMaterialProvider directProvider))
+                return directProvider.ImpactAudioMaterialId;
+
+            IPhysicsImpactMaterialProvider parentProvider = hitCollider.GetComponentInParent<IPhysicsImpactMaterialProvider>();
+            return parentProvider != null ? parentProvider.ImpactAudioMaterialId : fallbackMaterialId;
+        }
+
         private bool HasScheduledSweepCornerHit(int nearestIndex, Vector3 primaryNormal, float nearestDistance)
         {
             float distanceWindow = math.max(_scheduledSweepState.SkinWidth + 0.05f, 0.1f);
@@ -1785,6 +1798,8 @@ namespace Hecton8.Gameplay
             AbsoluteUniversePosition pointAup = AbsoluteUniversePosition.FromRuntimePosition(point);
             ulong bodyId = _body != null ? EntityId.ToULong(_body.GetEntityId()) : 0UL;
             uint targetHash = unchecked((uint)GetHitColliderInstanceId(in hit));
+            byte targetMaterialId = ResolveHighSpeedImpactTargetMaterialId(in hit, HighSpeedImpactSignal.MaterialMetal);
+            byte sourceMaterialId = HighSpeedImpactSignal.MaterialMetal;
             byte flags = 0;
             if (cornerHalt)
                 flags |= HighSpeedImpactSignal.FlagCornerHalt;
@@ -1801,6 +1816,10 @@ namespace Hecton8.Gameplay
             highSpeedImpact.Frame = unchecked((uint)Time.frameCount);
             highSpeedImpact.SourceKind = HighSpeedImpactSignal.SourceVehicle;
             highSpeedImpact.Flags = flags;
+            highSpeedImpact.PrimaryMaterialId = targetMaterialId;
+            highSpeedImpact.SecondaryMaterialId = sourceMaterialId;
+            highSpeedImpact.EffectiveMass = _body != null ? math.max(0f, _body.mass) : 0f;
+            highSpeedImpact.MaterialHash = HighSpeedImpactSignal.ComposeMaterialHash(targetHash, targetMaterialId, sourceMaterialId);
             GlobalSignals.Publish(in highSpeedImpact);
 
             ImpactSignal impact = default;

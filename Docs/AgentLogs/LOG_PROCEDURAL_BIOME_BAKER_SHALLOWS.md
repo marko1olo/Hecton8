@@ -9,3 +9,39 @@ What was done: Extracted the XML prompt via CLI, read AGENTS/domain docs, read 8
 Cinematic Cheats used: Static authored SDF meshes, vertex color R height masks, shared material/atlas path, LODGroup cross-fade. No runtime flora physics.
 
 Exact Microseconds saved: PENDING VERIFICATION. Static estimate: removing runtime procedural generation and per-object flora physics avoids >100 us spikes per streamed placement batch and 200-600 us/frame if 200 animated plant scripts had existed.
+
+## 2026-05-14 Safe Shallows Bio-Forge Bake
+
+What was wrong: The vertical slice had a Bio-Forge generator but no Safe Shallows `BioRuleData` rules or exact 50/100/50 generated asset set. The existing generator also lacked exact batch counts, porous subtraction controls, broad-leaf ribbon SDF support, final-span vertex color normalization, rock-only collider baking, and clean Burst write-range annotation for LOD decimation.
+
+What was done: Added/used Shallows rule authoring for `Rule_Shallows_TubeCoral.asset`, `Rule_Shallows_Kelp.asset`, and `Rule_Shallows_PorousRock.asset`; generated `MAT_ProceduralBio_Shallows` and four shared atlas textures; baked and copied back 50 TubeCoral prefabs, 100 Kelp prefabs, 50 PorousRock prefabs, and 600 LOD mesh assets. Main copied output scan: `LODGroup=200`, `m_LODs=200`, `badShadows=0`, `floraColliders=0`, `rockColliders=50`, `rockConvex=50`, `materialRefs=600`.
+
+Cinematic Cheats used: Offline SDF meshes instead of runtime L-system growth; thick capsule SDF for coral mass; ribbon SDF for kelp leaves instead of cloth/physics; deterministic Simplex plus subtractive pore spheres for porous rocks; vertex color R height masks instead of runtime probes; shared triplanar atlas instead of per-prefab textures; LOD2 impostors under 150 triangles with cast shadows disabled; flora collision removed, rocks get convex LOD2 mesh colliders only.
+
+Exact Microseconds saved: Runtime procedural generation path is 0 us/frame and 0 bytes because all generation remains editor-only. Estimated low-end i3/MX350 savings: >100 us per streamed placement batch by removing runtime generation; 200-600 us/frame avoided versus 200 active plant animation scripts; 20-60 us/frame avoided versus runtime height-mask reconstruction; broadphase/collider cost removed from 150 flora prefabs. Exact profiler capture is not available because the main project compile is currently blocked outside this domain.
+
+Verification: Isolated Unity 6000.4.1f1 validation passed after OMEGA polish: `Validation passed. Coral=50, Kelp=100, Rocks=50, Total=200, LOD2<150`. `dotnet build Hecton8.Core.csproj` is blocked by unrelated `CS2001` missing `Assets/_Project/Scripts/UI/DiegeticTooltipSystem.cs`; no ProceduralGen syntax error appeared in the isolated compile/validate path.
+
+## 2026-05-14 Second-Pass Safe Shallows Upgrade
+
+What was wrong: The first completed payload was functional, but the second-pass audit found two content-grade defects: `ShallowsBioForgeBatchBaker` used `Assets/_Project/Art/Textures/...` while the project folder is `TEXTURES`, and rock colliders were on the prefab root while visible LOD renderers were offset for pivot cleanup. That could create rock collision drift. The previous bake also deleted generated folders before every run, which risks GUID churn after other systems start referencing the flora library.
+
+What was done: Patched the bake to use the correct `TEXTURES` path, preserve generated folders on re-bake, generate rock colliders as aligned `Collision_LOD2` children, and validate MatCap atlas binding, exact one-renderer-per-LOD contract, non-null meshes, zero cast shadows, aligned convex rock colliders, and zero flora colliders. Reran isolated Unity 6000.4.1f1 batchmode bake from source and copied the staged outputs back without deleting main target folders. Final main scan: `Rules=3`, `Prefabs=200`, `MeshAssets=600`, `Textures=4`, `RockPrefabs=50`, `CollisionChildren=50`, `MeshColliders=50`, `FloraColliders=0`, `LODGroups=200`, `MeshRenderers=600`, `BadShadowLines=0`, `MaterialRefs=600`.
+
+Cinematic Cheats used: Static offline SDF/L-system meshes, deterministic variants, shader-readable vertex color R masks, shared triplanar atlas plus MatCap, no runtime plant scripts, no flora collision, convex LOD2 rock collision only, LOD2 shadow casting disabled across all assets.
+
+Exact Microseconds saved: Runtime generation remains 0 us/frame and 0 bytes. Estimated low-end i3/MX350 savings retained: >100 us per streamed placement batch from no runtime generation, 200-600 us/frame versus per-object plant animation scripts, 20-60 us/frame versus runtime height-mask reconstruction, and broadphase/collider work removed from 150 flora prefabs. The collider alignment fix prevents later gameplay correction casts or duplicate proxy colliders.
+
+Verification: Direct Roslyn compile of isolated `Hecton8.Editor.ProceduralGen` returned `CscExit=0`. Isolated Unity log `Logs/ShallowsBioForgeStageBake_Rerun4.log` contains `Validation passed. Coral=50, Kelp=100, Rocks=50, Total=200, LOD2<150`. Main `dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary` returned `Build succeeded. 0 Warning(s). 0 Error(s).`
+
+## 2026-05-14 Batchmode Log Hygiene Pass
+
+What was wrong: The core XML prompt still requires `PENDING VERIFICATION`, so the previous `VERIFIED MASTER GRADE` status header was not aligned with the extracted agent assignment. The isolated Unity bake log also showed successful generated-prefab messages carrying full stack traces per asset. That is useless for green-path bakes and inflates editor log I/O. Validation also did not explicitly reject renderer count drift or hot-path renderer flag drift beyond shadow casting.
+
+What was done: Restored `Status_PROCEDURAL_BIOME_BAKER_SHALLOWS.md` and rationale status to `PENDING VERIFICATION` while keeping the pass/fail evidence. Patched `BioForgeGenerator` so batchmode skips cancelable progress bar work and successful generated-prefab summaries use `LogOption.NoStacktrace`. Patched `ShallowsBioForgeBatchBaker` validation to require exactly three renderers per prefab and reject receive shadows, motion vectors, light probes, reflection probes, dynamic occlusion, and cast shadows.
+
+Cinematic Cheats used: No runtime change. This preserves the existing static offline mesh cheat, shared atlas cheat, shader mask cheat, LOD2 no-shadow cheat, and rock-only convex collision cheat.
+
+Exact Microseconds saved: Runtime remains 0 us/frame. Editor-authoring savings are from skipping headless progress UI/string work and avoiding green-path stack trace emission for 200 generated prefabs. Exact microseconds not profiled; prior proof log was 681 KB with repeated success stack traces, which future bakes now avoid.
+
+Verification: `dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary` returned `Build succeeded. 0 Warning(s). 0 Error(s).` Main prefab scan returned `Prefabs=200`, `LodGroups=200`, `MeshRenderers=600`, `BadCastShadows=0`, `BadReceiveShadows=0`, `BadDynamicOccludee=0`, `BadLightProbeUsage=0`, `BadReflectionProbeUsage=0`, `MeshColliders=50`, `CollisionChildren=50`.

@@ -66,27 +66,37 @@ float HectonHabitatInteriorPanelMask(float2 uv)
     return saturate(sx * sy);
 }
 
+half HectonHabitatInteriorCheapPanelMask(float2 uv)
+{
+    half2 panelUv = (half2)(saturate(frac(abs(uv))));
+    half2 triangle = 1.0h - abs(panelUv * 2.0h - 1.0h);
+    return saturate(triangle.x * triangle.y);
+}
+
 float3 HectonHabitatInteriorApplyPanelBendOS(
     float3 positionOS,
     float3 normalOS,
     float2 uv,
     float stress01,
-    out half shadow01)
+    out half shadow01,
+    out half panelMask01)
 {
     shadow01 = 0.0h;
+    panelMask01 = 0.0h;
     float maxDeformation = max(_HectonHabitatModuleStressParams.y, 0.0);
     if (_HectonHabitatModuleStressParams.z > 0.5 || maxDeformation <= 0.00001 || stress01 <= 0.0001)
         return positionOS;
 
     float panelMask = HectonHabitatInteriorPanelMask(uv);
+    panelMask01 = (half)panelMask;
     float offsetMeters = panelMask * saturate(stress01) * maxDeformation;
     shadow01 = (half)saturate(panelMask * stress01 * 0.45);
     return positionOS + HectonHabitatInteriorSafeNormalize3(normalOS) * offsetMeters;
 }
 
-half3 HectonHabitatInteriorApplyCheapNormalBiasWS(half3 normalWS, float2 uv, float stress01)
+half3 HectonHabitatInteriorApplyCheapNormalBiasWS(half3 normalWS, float2 uv, float stress01, half panelMask01)
 {
-    if (_HectonHabitatModuleStressParams.z > 0.5 || stress01 <= 0.0001)
+    if (_HectonHabitatModuleStressParams.z > 0.5 || stress01 <= 0.0001 || panelMask01 <= 0.0001h)
         return normalWS;
 
     half3 baseNormal = HectonHabitatInteriorSafeNormalizeHalf3(normalWS);
@@ -95,7 +105,7 @@ half3 HectonHabitatInteriorApplyCheapNormalBiasWS(half3 normalWS, float2 uv, flo
         : half3(1.0h, 0.0h, 0.0h);
     half3 bitangentWS = HectonHabitatInteriorSafeNormalizeHalf3(cross(baseNormal, tangentWS));
     half2 centeredUv = (half2)(saturate(frac(abs(uv))) * 2.0 - 1.0);
-    half slopeStrength = (half)(saturate(stress01) * HectonHabitatInteriorPanelMask(uv) * 0.08);
+    half slopeStrength = (half)(saturate(stress01) * panelMask01 * 0.08);
     return HectonHabitatInteriorSafeNormalizeHalf3(baseNormal - tangentWS * centeredUv.x * slopeStrength - bitangentWS * centeredUv.y * slopeStrength);
 }
 
@@ -110,7 +120,7 @@ void HectonHabitatInteriorApplyLowTierCrease(
     if (_HectonHabitatModuleStressParams.z <= 0.5 || stress01 <= 0.0001h)
         return;
 
-    half panelMask = (half)HectonHabitatInteriorPanelMask(uv);
+    half panelMask = HectonHabitatInteriorCheapPanelMask(uv);
     half crease = saturate(stress01 * panelMask * lerp(0.38h, 1.0h, detailMask));
     hullDentShadow = max(hullDentShadow, crease * 0.32h);
     albedo *= lerp(1.0h, 0.74h, crease);

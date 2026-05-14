@@ -63,7 +63,7 @@ namespace Hecton8.AI
             public float InterceptTimeSeconds;
             public float FlankDistanceMeters;
 
-            public float3 ResolveFlankRuntimePosition(float3 predatorPosition, int packOrdinal, float3 floatingOriginOffset)
+            public float3 ResolveFlankRuntimePosition(float3 predatorPosition, int packOrdinal, double3 floatingOriginOffset)
             {
                 float3 targetPosition = AUPMath.ToRuntimeFloat3(in TargetAup, floatingOriginOffset);
                 float3 projectedTarget = targetPosition + (TargetVelocity * math.max(0f, InterceptTimeSeconds));
@@ -1294,6 +1294,7 @@ namespace Hecton8.AI
             float wanderRadius = math.max(1f, _stateMachine.wanderRadius);
             float patrolRadius = math.max(1f, _stateMachine.patrolRadius);
             bool isApexPredator = IsApexPredator();
+            bool useAlphaLeviathanCognition = ShouldUseAlphaLeviathanCognition();
             float apexTerritoryRadius = ResolveApexTerritoryRadius();
             float apexAggressionMultiplier = ResolveApexAggressionMultiplier();
             float playerLightExposure01 = ResolvePlayerLightExposure01(
@@ -1385,7 +1386,8 @@ namespace Hecton8.AI
                 _stateMachine.isFlockingFish,
                 hasHazardScatterDirection,
                 isAggressive,
-                isApexPredator);
+                isApexPredator,
+                useAlphaLeviathanCognition);
 
             CreatureUtilityEvaluation evaluation = _utilityBrain.Evaluate(frameId, dt, _cognitionTimeSeconds, in context);
             Transform scavengeTargetTransform = ResolveSensorTargetTransform(_sensorSuite.currentScavengeTargetOwner);
@@ -2361,6 +2363,22 @@ namespace Hecton8.AI
         {
             return (_speciesProfile != null && _speciesProfile.isLeviathan) ||
                    (_archetype != null && _archetype.roleType == CreatureRoleType.Leviathan);
+        }
+
+        private bool ShouldUseAlphaLeviathanCognition()
+        {
+            if (!IsApexPredator())
+                return false;
+
+            if (_archetype == null)
+                return _speciesProfile != null && _speciesProfile.isLeviathan;
+
+            if (_archetype.roleType != CreatureRoleType.Leviathan)
+                return _speciesProfile != null && _speciesProfile.isLeviathan && _archetype.useLeviathanPresence;
+
+            return _archetype.useFeintRush ||
+                   (_archetype.useLeviathanPresence &&
+                    _archetype.leviathanEncounterType == LeviathanEncounterType.PresenceCircle);
         }
 
         private bool IsLeviathan()
@@ -4485,7 +4503,7 @@ namespace Hecton8.AI
             if (pulseDirection.sqrMagnitude <= 0.0001f)
                 pulseDirection = Vector3.forward;
 
-            if (evaluation.LegacyState == AIState.Feint)
+            if (evaluation.LegacyState == AIState.Feint && ShouldUseAlphaLeviathanCognition())
             {
                 PublishAlphaLeviathanRoarSignal(pulsePosition);
                 EmitLeviathanAttackTelegraphPing(pulsePosition);

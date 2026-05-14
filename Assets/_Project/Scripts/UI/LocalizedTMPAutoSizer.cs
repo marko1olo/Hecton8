@@ -11,7 +11,7 @@ namespace Hecton8.UI
     [DisallowMultipleComponent]
     [RequireComponent(typeof(TMP_Text))]
     [AddComponentMenu("Hecton/UI/Localized TMP Auto Sizer")]
-    public sealed class LocalizedTMPAutoSizer : MonoBehaviour, IUpdatable, ILocalizationLanguageChangedListener
+    public sealed class LocalizedTMPAutoSizer : MonoBehaviour, ILateFrameTickable, ILocalizationLanguageChangedListener
     {
         private const float CollapsedRectThreshold = 0.5f;
         private const int MaxRectRepairPasses = 4;
@@ -150,7 +150,7 @@ namespace Hecton8.UI
         }
 
         /// <inheritdoc />
-        public void Tick(float deltaTime)
+        public void LateFrameTick()
         {
             if (!_configurationApplyPending)
             {
@@ -170,8 +170,7 @@ namespace Hecton8.UI
             if (_registeredForTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _registeredForTick = GlobalRegistry.Updatables.Contains(this);
+            _registeredForTick = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
         private void TryUnregisterFromTick()
@@ -179,7 +178,7 @@ namespace Hecton8.UI
             if (!_registeredForTick)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
             _registeredForTick = false;
         }
 

@@ -126,7 +126,7 @@ Current root text scan saw `5` root `.md` files and `0` root `.txt`/`.log` files
 Latest documentation/data continuation: `Docs/Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md`.
 Latest `.agents-skills` doctrine update: `Docs/Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md`.
 Latest active documentation manifest: `Docs/Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json`.
-May 11 report text claimed completed Core build evidence at `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.summary.txt`, but the May 13 DOC_AUDIT filesystem check did not find that summary or raw log. Treat it as stale report text until restored or replaced; it is not Unity Console, Play Mode, profiler, GCMonitor, player-build, frame-time, memory, import, scene-wiring, or visual-quality proof.
+May 11 report text claimed completed Core build evidence at `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.summary.txt`, but DOC_AUDIT did not find that summary or raw log. Treat it as stale report text. Current May 14/R41 evidence is the external root `Hecton8*.csproj` no-restore CLI sweep at `0 Warning(s)` / `0 Error(s)` after restore assets exist; it is not Unity Console, Play Mode, profiler, GCMonitor, player-build, frame-time, memory, import, scene-wiring, or visual-quality proof.
 Current Unity MCP proof was not run in the May 11 continuation; older MCP editor-console readbacks are historical only.
 
 ## 2026-05-13 R2 Check

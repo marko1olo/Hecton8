@@ -100,3 +100,19 @@ Status: PENDING VERIFICATION
 - Shader `length(` scan returned no matches.
 - Verified the named evidence points: `DynamicWakeDecayJob`, `FluidImpulseSignal` drain, 50m splash radius, Leviathan tail threshold, `ActiveTurbulenceWakes`, and GPU wake bindings.
 - Remaining verification block is external: no Unity MCP session, and dotnet builds fail on unrelated project reference/generated asset faults.
+
+### Loop 6 - Bandwidth / Stability Hardening
+
+- Re-read status/rationale and audited wake upload ownership against the Bandwidth Discipline and State Hysteresis mandates.
+- Upgraded dynamic wake GPU data from single buffers to A/B double-buffered `_DynamicWakes` and `_DynamicWakeVectors` buffers.
+- Added dirty/active/zero-state gating so idle frames skip wake buffer uploads after both GPU buffers contain zero wake state.
+- Added a 2.5s high-tier upgrade hysteresis. Low/MX350/low-memory downgrades remain immediate; upgrades to full 8-wake mode wait for stability.
+- Added high-tier-only shader billow/shear inside `ApplyDynamicWakes`; low tier keeps the original cheap push/vortex path.
+- Verification: shader `length(` and built-in `normalize(` scans returned no matches. `git diff --check` returned CRLF warnings only.
+
+### Loop 7 - Lifetime Correctness Hardening
+
+- Found a real lifecycle flaw: wake lifetime decayed only when the RenderGraph payload was built, so no-particle frames could preserve stale wakes.
+- Moved wake decay into `LateFrameTick` with a per-frame guard (`_dynamicWakeLastDecayFrame`) so CPU wake state ages once per frame even if no camera/render pass consumes it.
+- RenderGraph payload now uploads the already-aged wake state without double-decaying in the same frame.
+- Build check: `dotnet build Hecton8.Core.csproj --no-restore -v:quiet -clp:ErrorsOnly` still fails on the pre-existing global reference wall (`Hecton8.Environment.Fluids`, `Core.Scheduling`, `Audio.Virtualization`, `Physics.CCD`, `MacroSwarm`, `AcousticAup`, etc.). No new wake-specific syntax error surfaced before the wall.

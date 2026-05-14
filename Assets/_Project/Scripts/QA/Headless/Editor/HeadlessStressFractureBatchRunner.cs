@@ -21,6 +21,7 @@ namespace Hecton8.QA.Headless.Editor
         private const string BlackboxRelativePath = "Docs/AgentLogs/Dump_HEADLESS_STRESS_FRACTURE_BOT.bin";
         private const string H8MemoryDumpRelativePath = "Docs/AgentLogs/H8Memory_HEADLESS_STRESS_FRACTURE_BOT.txt";
         private const string RunnerStatusRelativePath = "Docs/AgentLogs/HeadlessStressFractureBatchRunner_HEADLESS_STRESS_FRACTURE_BOT.txt";
+        private const string ExitCodeJsonKey = "\"exitCode\"";
         private const double TimeoutSeconds = 7200.0;
         private static readonly byte[] FlagBytes = { (byte)'1' };
 
@@ -39,6 +40,7 @@ namespace Hecton8.QA.Headless.Editor
             TryDeleteFile(ResolveProjectPath(ResultRelativePath + ".tmp"));
             TryDeleteFile(ResolveProjectPath(BlackboxRelativePath));
             TryDeleteFile(ResolveProjectPath(H8MemoryDumpRelativePath));
+            TryDeleteFile(ResolveProjectPath(FlagRelativePath));
             if (!TryWriteFlagFile())
             {
                 WriteFallbackResult(1, "FLAG_WRITE_FAILED");
@@ -120,7 +122,10 @@ namespace Hecton8.QA.Headless.Editor
         {
             string raw = SessionState.GetString(StartTimeKey, "0");
             if (!double.TryParse(raw, NumberStyles.Float, CultureInfo.InvariantCulture, out double startTime))
-                startTime = EditorApplication.timeSinceStartup;
+            {
+                WriteRunnerStatus("start_time_invalid");
+                return true;
+            }
 
             return EditorApplication.timeSinceStartup - startTime > TimeoutSeconds;
         }
@@ -160,7 +165,7 @@ namespace Hecton8.QA.Headless.Editor
             try
             {
                 string result = File.ReadAllText(resultPath);
-                exitCode = result.IndexOf("\"exitCode\":0", StringComparison.Ordinal) >= 0 ? 0 : 1;
+                TryParseExitCode(result, out exitCode);
                 return true;
             }
             catch (IOException)
@@ -173,6 +178,38 @@ namespace Hecton8.QA.Headless.Editor
                 WriteRunnerStatus("result_read_pending");
                 return false;
             }
+        }
+
+        private static bool TryParseExitCode(string result, out int exitCode)
+        {
+            exitCode = 1;
+            if (string.IsNullOrEmpty(result))
+                return false;
+
+            int keyIndex = result.IndexOf(ExitCodeJsonKey, StringComparison.Ordinal);
+            if (keyIndex < 0)
+                return false;
+
+            int colonIndex = result.IndexOf(':', keyIndex + ExitCodeJsonKey.Length);
+            if (colonIndex < 0)
+                return false;
+
+            int valueStart = colonIndex + 1;
+            while (valueStart < result.Length && char.IsWhiteSpace(result[valueStart]))
+                valueStart++;
+
+            int valueEnd = valueStart;
+            if (valueEnd < result.Length && (result[valueEnd] == '-' || result[valueEnd] == '+'))
+                valueEnd++;
+
+            int digitStart = valueEnd;
+            while (valueEnd < result.Length && result[valueEnd] >= '0' && result[valueEnd] <= '9')
+                valueEnd++;
+
+            if (valueEnd == digitStart)
+                return false;
+
+            return int.TryParse(result.AsSpan(valueStart, valueEnd - valueStart), NumberStyles.Integer, CultureInfo.InvariantCulture, out exitCode);
         }
 
         private static bool TryWriteFlagFile()
@@ -229,9 +266,9 @@ namespace Hecton8.QA.Headless.Editor
                     writer.Write('{');
                     writer.Write("\"agent\":\"HEADLESS_STRESS_FRACTURE_BOT\"");
                     writer.Write(",\"status\":\"");
-                    writer.Write(status);
+                    WriteJsonEscaped(writer, status);
                     writer.Write("\",\"exitCode\":");
-                    writer.Write(exitCode.ToString(CultureInfo.InvariantCulture));
+                    WriteInvariant(writer, exitCode);
                     writer.Write(",\"source\":\"HeadlessStressFractureBatchRunner\"");
                     writer.Write('}');
                 }
@@ -273,12 +310,69 @@ namespace Hecton8.QA.Headless.Editor
                     writer.Write(DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture));
                     writer.Write(' ');
                     writer.Write(status);
-                    writer.Write(Environment.NewLine);
+                    writer.Write(System.Environment.NewLine);
                 }
             }
             catch (Exception)
             {
             }
+        }
+
+        private static void WriteJsonEscaped(StreamWriter writer, string value)
+        {
+            if (string.IsNullOrEmpty(value))
+                return;
+
+            for (int i = 0; i < value.Length; i++)
+            {
+                char c = value[i];
+                switch (c)
+                {
+                    case '\\':
+                        writer.Write("\\\\");
+                        break;
+                    case '"':
+                        writer.Write("\\\"");
+                        break;
+                    case '\n':
+                        writer.Write("\\n");
+                        break;
+                    case '\r':
+                        writer.Write("\\r");
+                        break;
+                    case '\t':
+                        writer.Write("\\t");
+                        break;
+                    default:
+                        if (c < ' ')
+                        {
+                            writer.Write("\\u00");
+                            WriteJsonHexNibble(writer, c >> 4);
+                            WriteJsonHexNibble(writer, c);
+                        }
+                        else
+                        {
+                            writer.Write(c);
+                        }
+
+                        break;
+                }
+            }
+        }
+
+        private static void WriteJsonHexNibble(StreamWriter writer, int value)
+        {
+            int nibble = value & 0xF;
+            writer.Write((char)(nibble < 10 ? '0' + nibble : 'A' + (nibble - 10)));
+        }
+
+        private static void WriteInvariant(StreamWriter writer, int value)
+        {
+            Span<char> scratch = stackalloc char[16];
+            if (value.TryFormat(scratch, out int written, default, CultureInfo.InvariantCulture))
+                writer.Write(scratch.Slice(0, written));
+            else
+                writer.Write('0');
         }
 
         private static void TryDeleteFile(string path)

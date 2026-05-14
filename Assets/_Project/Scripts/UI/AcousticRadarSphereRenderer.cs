@@ -17,7 +17,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Acoustic Radar Sphere Renderer")]
-    public sealed class AcousticRadarSphereRenderer : MonoBehaviour, ITickable, ILateFrameTickable
+    public sealed class AcousticRadarSphereRenderer : MonoBehaviour, ILateFrameTickable
     {
         private const int MaxBlips = 64;
 #if UNITY_EDITOR
@@ -53,7 +53,6 @@ namespace Hecton8.UI
         // COLD ALLOC: Matrix4x4[64] -- DrawMeshInstanced payload -- owner: AcousticRadarSphereRenderer
         private readonly Matrix4x4[] _matrices = new Matrix4x4[MaxBlips];
 
-        private bool _registeredToTick;
         private bool _registeredLateFrame;
         private bool _ownsRuntimeVoxelMesh;
         private int _matrixCount;
@@ -96,36 +95,24 @@ namespace Hecton8.UI
             }
         }
 
-        /// <inheritdoc />
-        public void Tick(float deltaTime)
+        private void RefreshMatricesForLateFrame()
         {
+            EnsureResources();
             _matrixCount = 0;
             if (_runtimeMaterial == null || _runtimeVoxelMesh == null)
-            {
-                RefreshLateFrameRegistration();
                 return;
-            }
 
             if (!(GlobalRegistry.Audio is SpatialAudioManager audioManager))
-            {
-                RefreshLateFrameRegistration();
                 return;
-            }
 
             Transform anchor = radarAnchor != null ? radarAnchor : transform;
             Transform listener = ResolveListenerTransform();
             if (anchor == null || listener == null)
-            {
-                RefreshLateFrameRegistration();
                 return;
-            }
 
             int sampleCount = audioManager.CopyActiveImpactEmitterSamples(_samples);
             if (sampleCount <= 0)
-            {
-                RefreshLateFrameRegistration();
                 return;
-            }
 
             Vector3 listenerPosition = listener.position;
             Quaternion listenerRotation = listener.rotation;
@@ -135,10 +122,7 @@ namespace Hecton8.UI
             Quaternion anchorRotation = anchor.rotation;
             Vector3 anchorPosition = anchor.position;
             if (!TryResolveListenerAup(listenerPosition, out AbsoluteUniversePosition listenerAup))
-            {
-                RefreshLateFrameRegistration();
                 return;
-            }
 
             Transform forwardReference = submarineForwardReference != null ? submarineForwardReference : listener;
             float3 submarineForward = object.ReferenceEquals(forwardReference, listener)
@@ -184,8 +168,6 @@ namespace Hecton8.UI
                 _matrices[_matrixCount] = Matrix4x4.TRS(position, anchorRotation, scale);
                 _matrixCount++;
             }
-
-            RefreshLateFrameRegistration();
         }
 
         private static float3 ResolveForwardUnitVector(Transform reference)
@@ -280,6 +262,7 @@ namespace Hecton8.UI
         /// <inheritdoc />
         public void LateFrameTick()
         {
+            RefreshMatricesForLateFrame();
             if (_matrixCount <= 0 || _runtimeMaterial == null || _runtimeVoxelMesh == null)
                 return;
 
@@ -379,40 +362,13 @@ namespace Hecton8.UI
 
         private void TryRegisterTickManager()
         {
-            if (_registeredToTick || !Application.isPlaying)
+            if (_registeredLateFrame || !Application.isPlaying)
                 return;
 
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            _registeredToTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
-            RefreshLateFrameRegistration();
-        }
-
-        private void RefreshLateFrameRegistration()
-        {
-            bool shouldRegisterLateFrame =
-                isActiveAndEnabled &&
-                Application.isPlaying &&
-                GlobalRegistry.Dispatcher != null &&
-                _matrixCount > 0 &&
-                _runtimeMaterial != null &&
-                _runtimeVoxelMesh != null;
-
-            if (shouldRegisterLateFrame)
-            {
-                if (_registeredLateFrame)
-                    return;
-
-                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
-                return;
-            }
-
-            if (_registeredLateFrame)
-            {
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
-                _registeredLateFrame = false;
-            }
+            _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
         private void TryUnregisterTickManager()
@@ -421,12 +377,6 @@ namespace Hecton8.UI
             {
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
                 _registeredLateFrame = false;
-            }
-
-            if (_registeredToTick)
-            {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
-                _registeredToTick = false;
             }
         }
 

@@ -3963,7 +3963,7 @@ namespace Hecton8.Gameplay
             _scalabilityTierProfileByte = payload.CurrentTier;
             RefreshCinematicFocusTierGateCold();
             if (_isInsideBrineLayer)
-                PublishBrineShaderGlobals(_lastBrineLayerSample, HectonFloatingOrigin.CurrentTotalOffset.y);
+                PublishBrineShaderGlobals(_lastBrineLayerSample, (float)HectonFloatingOrigin.CurrentTotalOffsetDouble.y);
             else
                 PublishInactiveBrineShaderGlobals();
 

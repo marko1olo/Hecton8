@@ -2,12 +2,12 @@
 
 Date: 2026-05-13
 Status: PENDING VERIFICATION
-Evidence class: STATIC_SOURCE / STATIC_DOC / FILESYSTEM / PACKAGE_LOCK / UNITY_BATCHMODE_IMPORT_COMPILE
+Evidence class: STATIC_SOURCE / STATIC_DOC / FILESYSTEM / PACKAGE_LOCK / UNITY_BATCHMODE_IMPORT_COMPILE / CLI_COMPILE
 Scope: documentation authority, root/doc surface, package pins, build-settings text, asmdef graph, and stale proof references.
 
 ## Current Boundary
 
-This report now includes one Unity `6000.4.1f1` batchmode import/script-compilation artifact from DOC_AUDIT R29 plus static async pager / save-buffer hardening from R30/R31/R32/R33/R36/R37/R38, generated-project/asmdef drift validation from R39, player-movement ladder hot-path cache hardening from R34, and HLOD PDA upload version gating from R35. R37 added local Unity Bee/Roslyn temp-output probes for `Hecton8.Core.Memory` and `Hecton8.Core` with exit code `0`, R38 demoted the full-Core success as stale under active churn, and R39 now narrows the current first external-build blocker to generated `Hecton8.Core.csproj` missing `23` first-party references from `Hecton8.Core.asmdef`. It still does not claim Play Mode, profiler, GCMonitor, player build, frame-time, memory, scene wiring, save/load correctness, WFC outpost restore correctness, locomotion correctness, PDA map correctness, or visual quality proof.
+This report now includes one Unity `6000.4.1f1` batchmode import/script-compilation artifact from DOC_AUDIT R29 plus static async pager / save-buffer hardening from R30/R31/R32/R33/R36/R37/R38, generated-project/asmdef drift validation from R39, source-backed CLI compile recovery from R40, root `Hecton8*.csproj` CLI compile sweep from R41, active reference-doc propagation from R42, player-movement ladder hot-path cache hardening from R34, and HLOD PDA upload version gating from R35. R37 added local Unity Bee/Roslyn temp-output probes for `Hecton8.Core.Memory` and `Hecton8.Core` with exit code `0`, R38 demoted the full-Core success as stale under active churn, R39 narrowed the first external-build blocker to generated `Hecton8.Core.csproj` missing `23` first-party references from `Hecton8.Core.asmdef`, R40 bridged the stale generated project surface without editing generated `.csproj` files, R41 records all root `Hecton8*.csproj` projects at `0 Warning(s)` / `0 Error(s)` under the final serial no-restore CLI compile surface, and R42 propagates that boundary into active reference docs that still carried the older May 13 missing-artifact-only line. It still does not claim Play Mode, profiler, GCMonitor, player build, frame-time, memory, scene wiring, save/load correctness, WFC outpost restore correctness, locomotion correctness, PDA map correctness, or visual quality proof.
 
 Build errors are not the center of this audit. The center is whether documentation still matches current disk reality.
 
@@ -646,11 +646,56 @@ Generated project / asmdef drift tripwire:
 - `Assets/_Project/Scripts/Hecton8.Core.asmdef` already references the relevant first-party assemblies. The current generated `Hecton8.Core.csproj` does not contain `23` of those first-party references.
 - Missing generated references found by live comparison: `Hecton8.AI.Cognition`, `Hecton8.AI.Ecology.Migration`, `Hecton8.Animation.IK`, `Hecton8.Audio.Echolocation`, `Hecton8.Audio.Propagation`, `Hecton8.Audio.Virtualization`, `Hecton8.Audio.Virtualization.Contracts`, `Hecton8.Core.Bucketing`, `Hecton8.Core.Database`, `Hecton8.Core.Persistence.Paging`, `Hecton8.Core.Scheduling`, `Hecton8.Environment.Fluids`, `Hecton8.Environment.Fluids.Contracts`, `Hecton8.Inventory.Algorithms`, `Hecton8.Inventory.Corrosion`, `Hecton8.Inventory.Corrosion.Contracts`, `Hecton8.Physics.CCD`, `Hecton8.Physics.Tethers.Contracts`, `Hecton8.SpaceEngine098Terrain`, `Hecton8.UI.Diegetic.Contracts`, `Hecton8.Vehicles.Physics.Contracts`, `Hecton8.World.GPR`, and `Hecton8.World.Terrain`.
 - `HectonComplianceValidator` now has an editor-only `CSPROJ001` validation step that compares `Hecton8.Core.asmdef` against the generated `Hecton8.Core.csproj` and reports missing generated references before external `dotnet build` output is accepted as source evidence.
-- `git diff --check` on the validator is clean except LF/CRLF conversion warning. `dotnet build Hecton8.Editor.csproj --no-restore -v:minimal -p:BuildProjectReferences=false -clp:ErrorsOnly` is blocked before syntax proof by missing `Temp/bin/Debug/Hecton8.Core.dll`.
+- `git diff --check` on the validator is clean except LF/CRLF conversion warning. `dotnet build Hecton8.Editor.csproj --no-restore -v:minimal -p:BuildProjectReferences=false -clp:ErrorsOnly` is blocked before syntax proof by missing `Temp/bin/Debug/Hecton8.Core.dll`. Unity MCP `read_console` fails at `127.0.0.1:8088/mcp`.
 
 Remaining boundary:
 
 - R39 is editor/source validation only. Unity MCP Console is unavailable, Unity menu validation was not run, and the generated project files were not regenerated in this pass.
+
+## Continuation R40 - 2026-05-14
+
+Source-backed MSBuild bridge / Core CLI compile recovery:
+
+- Non-destructive Unity batchmode project-refresh attempt: `Unity.exe -batchmode -quit -nographics -projectPath C:\hades\Hecton8 -logFile Library\Codex_DOC_AUDIT_ProjectRefresh_R40.log`. The log connected licensing and set the project path, but terminated early and did not regenerate the stale root `.csproj` files.
+- Current Bee response files expose newer source truth than the root generated projects: `Hecton8.Core.rsp` includes current Core-side files missing from `Hecton8.Core.csproj`, and `Hecton8.World.Contracts.rsp` includes contract files missing from `Hecton8.World.Contracts.csproj`.
+- `Directory.Build.targets` now bridges the stale generated project surface without directly editing generated `.csproj` files. It adds missing source includes and existing first-party `Library/ScriptAssemblies` references for `Hecton8.Core`, plus missing contract source includes for `Hecton8.World.Contracts`.
+- `PlayerLookTargetPromptCache` is restored as a real fixed cache under `Hecton8.Core`; the previous file content was only an empty comment claiming the type lived in `GlobalSignals.cs`, while current source search found no such type there.
+- One first-party warning exposed after dependency rebuild, `PlayerCriticalProceduralAudioRenderer.PrologueSplashdownSineSweepProbeJob.NormalizedTime`, was removed by deleting an unused private probe job. The active splashdown audio path remains `RenderPrologueSplashdownSample()`.
+- Controlled serial CLI compile now passes: `dotnet build Hecton8.Core.csproj --no-restore -m:1 /nr:false -p:BuildProjectReferences=false -p:UseSharedCompilation=false -v:minimal -clp:Summary` -> `Build succeeded`, `0 Warning(s)`, `0 Error(s)`.
+- Controlled serial CLI compile for `Hecton8.World.Contracts.csproj` now also passes with `0 Warning(s)` and `0 Error(s)`.
+- Unity MCP `read_console` was rechecked after the CLI compile pass and still fails at `http://127.0.0.1:8088/mcp`.
+
+Remaining boundary:
+
+- R40 is `CLI_COMPILE` plus `STATIC_SOURCE` evidence only. It is not Unity import, Unity Console, Play Mode, save/load route proof, WFC runtime proof, profiler, GCMonitor, Memory Profiler, player build, frame-time proof, or scene/prefab wiring proof.
+
+## Continuation R41 - 2026-05-14
+
+Root `Hecton8*.csproj` compile sweep:
+
+- Initial `--no-restore` attempts for `Hecton8.Editor.csproj`, `Hecton8.PlayModeTests.csproj`, and `Hecton8.World.Dots.csproj` failed on missing `Temp\obj\...\project.assets.json`. This was restore-state evidence, not C# source failure.
+- Serial restore/build recreated the missing MSBuild assets and referenced temp DLLs. The Editor restore/build reached `0 Error(s)` with one vendor warning in `Assets\MapMagic\Tools\Extensions\Texture2DExtensions.cs`; PlayModeTests and World.Dots restore/builds reached `0 Warning(s)` / `0 Error(s)`.
+- A later post-doc sanity rerun showed the same restore-state volatility can recur for `Hecton8.Core.csproj`: first no-restore pass failed on missing `Temp\obj\Hecton8.Core\project.assets.json`, then serial restore/build recreated the assets. The full restore graph emitted vendor/package warnings from URP/GPUInstancer/Crest/ShaderGraph plus the MapMagic/Den.Tools warning; these are not first-party root no-restore warnings.
+- Final serial no-restore compile with `-m:1 /nr:false -p:BuildProjectReferences=false -p:UseSharedCompilation=false -v:minimal -clp:Summary` returned `0 Warning(s)` / `0 Error(s)` for every root Hecton8 project: `Hecton8.Core.csproj`, `Hecton8.Editor.csproj`, `Hecton8.PlayModeTests.csproj`, `Hecton8.World.Contracts.csproj`, `Hecton8.World.Dots.csproj`, `Hecton8.Bootstrap.Contracts.csproj`, `Hecton8.Input.Generated.csproj`, and `Hecton8.Input.csproj`.
+- The sweep was deliberately serial. Parallel Unity-generated project builds can create false evidence through shared `Temp\obj` lock/output races.
+- Unity MCP `read_console` still fails at `http://127.0.0.1:8088/mcp`.
+
+Remaining boundary:
+
+- R41 is `CLI_COMPILE` evidence only. It is not Unity Console, Play Mode, Unity test execution, profiler, GCMonitor, Memory Profiler, player build, frame-time proof, scene/prefab wiring proof, or visual-quality proof.
+
+## Continuation R42 - 2026-05-14
+
+Active reference-doc override propagation:
+
+- Scan scope: active non-archive/non-deprecated markdown, excluding dated report snapshots.
+- Finding: `35` active reference docs still had the old one-line May 13 override that only demoted the missing May 11 compile artifact and kept runtime proof pending. Three additional Archivarius/architecture surfaces carried equivalent May 11 artifact wording.
+- Action: `38` active markdown files were mechanically updated to say the May 11 artifact remains absent/stale, while May 14 R41 is the current external root `Hecton8*.csproj` no-restore CLI compile boundary at `0 Warning(s)` / `0 Error(s)` after restore assets exist.
+- Boundary preserved: these docs still say full restore graphs can carry vendor/package warnings, and Unity Console, Play Mode, profiler, GCMonitor, player build, scene wiring, frame-time, memory, import, and visual quality remain `PENDING VERIFICATION`.
+
+Remaining boundary:
+
+- R42 is `STATIC_DOC` synchronization only. It adds no new runtime, Unity Console, Play Mode, profiler, GCMonitor, player-build, or visual proof.
 
 ## Broken Evidence References
 
@@ -698,16 +743,16 @@ Consequence: those labels are target-contract names, not implemented-file proof.
 
 ## Risk Model
 
-CPU: R29 adds fail-closed persistence initialization and a bounded world-pager dehydration drain; R30/R31/R36/R37 remove the per-dehydrated-chunk global voxel snapshot write attempt and restore joinable pager worker ownership; R38 adds cold-path pager fault accounting and WFC outpost MacroDB bit packing without adding normal-frame work outside WFC signal drain/service calls; R39 adds editor-only generated-project reference validation and no runtime work; R32 moves large save-buffer allocation from boot to first persistence use; R33 avoids staging allocation on pager fault path; R34 removes repeated ladder component resolution for the same collider in the fixed ladder-snap path; R35 skips unchanged PDA HLOD fixed-buffer uploads. No profiler measurement was captured.
-GC: R30/R31/R36/R37 remove one potentially large cold-path native snapshot capture from chunk dehydration. R38 uses existing native staging/packed-word scratch for WFC outpost persistence and does not add managed hot-path allocations by source inspection. R32 changes NativeArray allocation timing, not managed DTO save/load allocation behavior. No GCMonitor proof was captured.
+CPU: R29 adds fail-closed persistence initialization and a bounded world-pager dehydration drain; R30/R31/R36/R37 remove the per-dehydrated-chunk global voxel snapshot write attempt and restore joinable pager worker ownership; R38 adds cold-path pager fault accounting and WFC outpost MacroDB bit packing without adding normal-frame work outside WFC signal drain/service calls; R39 adds editor-only generated-project reference validation and no runtime work; R40 adds a build-surface `Directory.Build.targets` bridge and a bounded prompt cache used by existing prompt call sites; R41 adds no runtime work and only reclassifies external compile evidence after a serial root-project sweep; R32 moves large save-buffer allocation from boot to first persistence use; R33 avoids staging allocation on pager fault path; R34 removes repeated ladder component resolution for the same collider in the fixed ladder-snap path; R35 skips unchanged PDA HLOD fixed-buffer uploads. No profiler measurement was captured.
+GC: R30/R31/R36/R37 remove one potentially large cold-path native snapshot capture from chunk dehydration. R38 uses existing native staging/packed-word scratch for WFC outpost persistence and does not add managed hot-path allocations by source inspection. R40's restored prompt cache owns fixed cold arrays and copies caller-provided strings into fixed char storage; it does not allocate on the copy path by source inspection. R32 changes NativeArray allocation timing, not managed DTO save/load allocation behavior. No GCMonitor proof was captured.
 Memory: normal pager initialization owns fixed native arenas/queues and telemetry, but R31 makes that initialization lazy instead of part of `InitializeNativeBuffers()`. R32 also makes the 64 MB raw, about 68 MB compressed, and 10 MB staging save buffers first-use allocations; R33 prevents the 10 MB staging allocation when the pager is faulted/uninitialized. Memory Profiler proof remains absent.
 Cadence: chunk dehydration ingestion is capped at `2` signals/tick. R35 PDA HLOD uploads now follow point-version/count changes instead of every unchanged map build. R38 WFC outpost state signal drain is capped at `8` state-change signals/tick and `4` sector-hydration signals/tick by current source.
-Correctness: documentation trust improved by demoting missing artifacts/stale navigation claims, recording the current Unity batch compile/import boundary, correcting the false chunk-local voxel pager readiness claim, recording that the R38 full Core probe was blocked by unrelated active churn, and recording that the current R39 first external Core blocker is generated `Hecton8.Core.csproj` drift against `Hecton8.Core.asmdef`.
+Correctness: documentation trust improved by demoting missing artifacts/stale navigation claims, recording the current Unity batch compile/import boundary, correcting the false chunk-local voxel pager readiness claim, recording that the R38 full Core probe was blocked by unrelated active churn, recording that the R39 first external Core blocker was generated `Hecton8.Core.csproj` drift against `Hecton8.Core.asmdef`, recording that R40 recovered controlled external `Hecton8.Core` / `Hecton8.World.Contracts` CLI compile through a source-backed bridge rather than generated-project edits, recording that R41 serially confirms the current root `Hecton8*.csproj` CLI compile surface is clean while Unity runtime/editor-console proof remains absent, and propagating that current boundary into active reference docs through R42.
 
 ## Non-Claims
 
 - A Unity batchmode import/script-compilation run was performed for R29 only; it is not runtime proof.
-- Unity MCP was used earlier in this continuation but the live MCP editor session disappeared; final verification used batchmode log evidence.
+- Unity MCP was used earlier in this continuation but the live MCP editor session disappeared; final runtime/editor verification is still unavailable. R40/R41 verification used controlled local `dotnet build` evidence only.
 - No profiler/GC/runtime data was captured.
 - No claim of PlayMode-clean Console, save/load correctness, player build, profiler-clean frame time, or working gameplay is made.
 

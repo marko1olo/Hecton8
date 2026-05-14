@@ -45,6 +45,7 @@ namespace Hecton8.Core.Database
         private int _dirtyAppendCount;
         private int _asyncHydrationActive;
         private int _compactionActive;
+        private int _compactionCopyActive;
         private int _compactionState;
         private int _compactionPersistenceGate;
         private int _compactionMemoryResumeTickMs;
@@ -542,6 +543,15 @@ namespace Hecton8.Core.Database
         {
             lock (_fileGate)
             {
+                if (_dirtyPayloads.IsCreated &&
+                    _dirtyPayloads.TryGetValue(sectorHash, out MacroDatabasePayloadHandle deferredDirty) &&
+                    IsCompactionWriteLocked())
+                {
+                    return deferredDirty.Pointer != IntPtr.Zero &&
+                           deferredDirty.ByteLength > 0 &&
+                           deferredDirty.ByteLength <= _config.MaxPayloadBytes;
+                }
+
                 return TryAppendDirtyPayloadLocked(sectorHash);
             }
         }
@@ -670,6 +680,7 @@ namespace Hecton8.Core.Database
                 _compactionState = (int)MacroDatabaseCompactionState.Swapping;
                 long startTimestamp = Stopwatch.GetTimestamp();
                 bool swapped = false;
+                int flushedDirtyPayloads = 0;
                 H8MacroDatabaseService target = new H8MacroDatabaseService();
                 try
                 {
@@ -681,14 +692,19 @@ namespace Hecton8.Core.Database
                         return false;
                     }
 
-                    if (!FlushDirtyPayloadsIntoTargetLocked(target))
+                    if (!FlushDirtyPayloadsIntoTargetLocked(target, out flushedDirtyPayloads))
                     {
                         MarkCompactionFaultLocked();
                         return false;
                     }
 
                     target.WriteDeadBytes(0L);
-                    target.TruncateToAppendOffset();
+                    if (!target.TruncateToAppendOffset())
+                    {
+                        MarkCompactionFaultLocked();
+                        return false;
+                    }
+
                     target.Flush();
                     target.Shutdown();
                     target = null;
@@ -698,10 +714,15 @@ namespace Hecton8.Core.Database
                     File.Replace(_compactionTempPath, activePath, null, true);
                     swapped = TryOpenExistingFile(activePath, true);
                     if (!swapped)
+                    {
+                        MarkCompactionFaultLocked();
                         return false;
+                    }
 
                     _deadBytes = 0L;
                     WriteDeadBytes(0L);
+                    ClearDirtyPayloadQueueLocked();
+                    _dirtyAppendCount += flushedDirtyPayloads;
                     _compactionTempBytes = 0L;
                     _compactionTempPath = null;
                     _compactionFlags = 0;
@@ -721,8 +742,12 @@ namespace Hecton8.Core.Database
                 }
                 finally
                 {
+                    bool faulted = _compactionState == (int)MacroDatabaseCompactionState.Faulted;
                     if (target != null)
                         target.Shutdown();
+
+                    if (faulted)
+                        CleanupCompactionTemp(_path);
 
                     long elapsedTicks = Stopwatch.GetTimestamp() - startTimestamp;
                     _lastCompactionStallMicroseconds = elapsedTicks > 0L
@@ -740,7 +765,9 @@ namespace Hecton8.Core.Database
             Volatile.Write(ref _compactionPersistenceGate, blocked ? 1 : 0);
             lock (_fileGate)
             {
-                _frameIndex = math.max(_frameIndex, frame);
+                if (frame > _frameIndex)
+                    _frameIndex = frame;
+
                 if (blocked)
                     _compactionFlags = (byte)(_compactionFlags | MacroDatabaseCompactionFlags.PersistenceGate);
                 else
@@ -754,7 +781,9 @@ namespace Hecton8.Core.Database
             Volatile.Write(ref _compactionMemoryResumeTickMs, resumeTick);
             lock (_fileGate)
             {
-                _frameIndex = math.max(_frameIndex, frame);
+                if (frame > _frameIndex)
+                    _frameIndex = frame;
+
                 _compactionFlags = (byte)(_compactionFlags | MacroDatabaseCompactionFlags.MemoryPressurePaused);
                 if (_compactionState == (int)MacroDatabaseCompactionState.Copying)
                     _compactionState = (int)MacroDatabaseCompactionState.Paused;
@@ -793,9 +822,12 @@ namespace Hecton8.Core.Database
 
         public void Shutdown()
         {
+            Volatile.Write(ref _compactionActive, 0);
+            while (Volatile.Read(ref _compactionCopyActive) != 0)
+                Thread.Sleep(1);
+
             lock (_fileGate)
             {
-                Volatile.Write(ref _compactionActive, 0);
                 _compactionState = (int)MacroDatabaseCompactionState.Idle;
                 FlushDirtyPayloadsLocked();
                 CloseFileHandles();
@@ -824,6 +856,7 @@ namespace Hecton8.Core.Database
                 _evictedSectors = 0;
                 _dirtyAppendCount = 0;
                 _asyncHydrationActive = 0;
+                _compactionCopyActive = 0;
                 _frameIndex = 0u;
                 _deadBytes = 0L;
                 ResetCompactionStateLocked();
@@ -835,8 +868,15 @@ namespace Hecton8.Core.Database
             Shutdown();
         }
 
-        private bool CopyNodePayloadsTo(long nodeOffset, H8MacroDatabaseService target)
+        private bool CopyNodePayloadsTo(long nodeOffset, H8MacroDatabaseService target, bool respectCompactionPause = false)
         {
+            if (respectCompactionPause)
+            {
+                WaitForCompactionResume();
+                if (Volatile.Read(ref _compactionActive) == 0)
+                    return false;
+            }
+
             byte* node = NodeAt(nodeOffset);
             if (node == null)
                 return false;
@@ -848,7 +888,7 @@ namespace Hecton8.Core.Database
             bool isLeaf = IsLeaf(node);
             for (int i = 0; i < keyCount; i++)
             {
-                if (!isLeaf && !CopyNodePayloadsTo(H8MacroDatabaseFileFormat.ReadNodeChildOffset(node, i), target))
+                if (!isLeaf && !CopyNodePayloadsTo(H8MacroDatabaseFileFormat.ReadNodeChildOffset(node, i), target, respectCompactionPause))
                     return false;
 
                 ulong sectorHash = H8MacroDatabaseFileFormat.ReadNodeSectorHash(node, i);
@@ -863,7 +903,7 @@ namespace Hecton8.Core.Database
                 }
             }
 
-            return isLeaf || CopyNodePayloadsTo(H8MacroDatabaseFileFormat.ReadNodeChildOffset(node, keyCount), target);
+            return isLeaf || CopyNodePayloadsTo(H8MacroDatabaseFileFormat.ReadNodeChildOffset(node, keyCount), target, respectCompactionPause);
         }
 
         internal bool CopyLivePayloadsToCompactTempThreadSafe(MacroDatabaseTier tier)
@@ -873,6 +913,7 @@ namespace Hecton8.Core.Database
             lock (_fileGate)
             {
                 if (!IsOpen ||
+                    Volatile.Read(ref _compactionActive) == 0 ||
                     _compactionState != (int)MacroDatabaseCompactionState.Copying &&
                     _compactionState != (int)MacroDatabaseCompactionState.Paused ||
                     Volatile.Read(ref _compactionPersistenceGate) != 0)
@@ -881,11 +922,12 @@ namespace Hecton8.Core.Database
                 }
 
                 tempPath = _compactionTempPath;
-                rootOffset = ReadRootNodeOffset();
-            }
+                if (string.IsNullOrEmpty(tempPath))
+                    return false;
 
-            if (string.IsNullOrEmpty(tempPath))
-                return false;
+                rootOffset = ReadRootNodeOffset();
+                Volatile.Write(ref _compactionCopyActive, 1);
+            }
 
             H8MacroDatabaseService target = new H8MacroDatabaseService();
             try
@@ -896,14 +938,15 @@ namespace Hecton8.Core.Database
                     return false;
 
                 WaitForCompactionResume();
-                if (!CopyNodePayloadsTo(rootOffset, target))
+                if (!CopyNodePayloadsTo(rootOffset, target, true))
                     return false;
 
                 target.WriteDeadBytes(0L);
-                target.TruncateToAppendOffset();
+                if (!target.TruncateToAppendOffset())
+                    return false;
+
                 target.Flush();
-                FileInfo info = new FileInfo(tempPath);
-                long tempBytes = info.Exists ? info.Length : 0L;
+                long tempBytes = target._mappedBytes;
                 lock (_fileGate)
                 {
                     _compactionTempBytes = tempBytes;
@@ -918,6 +961,7 @@ namespace Hecton8.Core.Database
             }
             finally
             {
+                Volatile.Write(ref _compactionCopyActive, 0);
                 target.Shutdown();
             }
         }
@@ -926,6 +970,12 @@ namespace Hecton8.Core.Database
         {
             lock (_fileGate)
             {
+                if (Volatile.Read(ref _compactionActive) == 0 &&
+                    _compactionState == (int)MacroDatabaseCompactionState.Idle)
+                {
+                    return;
+                }
+
                 if (!copied ||
                     _compactionState != (int)MacroDatabaseCompactionState.Copying &&
                     _compactionState != (int)MacroDatabaseCompactionState.Paused)
@@ -939,13 +989,14 @@ namespace Hecton8.Core.Database
             }
         }
 
-        private bool FlushDirtyPayloadsIntoTargetLocked(H8MacroDatabaseService target)
+        private bool FlushDirtyPayloadsIntoTargetLocked(H8MacroDatabaseService target, out int flushedDirtyPayloads)
         {
+            flushedDirtyPayloads = 0;
             if (target == null || !target.IsOpen)
                 return false;
 
-            int index = 0;
-            while (_dirtyPayloadKeys.IsCreated && index < _dirtyPayloadKeys.Length)
+            int dirtyCount = _dirtyPayloadKeys.IsCreated ? _dirtyPayloadKeys.Length : 0;
+            for (int index = 0; index < dirtyCount; index++)
             {
                 ulong sectorHash = _dirtyPayloadKeys[index];
                 if (!_dirtyPayloads.TryGetValue(sectorHash, out MacroDatabasePayloadHandle dirty) ||
@@ -953,7 +1004,6 @@ namespace Hecton8.Core.Database
                     dirty.ByteLength <= 0 ||
                     dirty.ByteLength > _config.MaxPayloadBytes)
                 {
-                    index++;
                     continue;
                 }
 
@@ -968,12 +1018,18 @@ namespace Hecton8.Core.Database
                     return false;
                 }
 
-                _dirtyPayloads.Remove(sectorHash);
-                RemoveDirtyPayloadKey(sectorHash);
-                _dirtyAppendCount++;
+                flushedDirtyPayloads++;
             }
 
             return true;
+        }
+
+        private void ClearDirtyPayloadQueueLocked()
+        {
+            if (_dirtyPayloads.IsCreated)
+                _dirtyPayloads.Clear();
+            if (_dirtyPayloadKeys.IsCreated)
+                _dirtyPayloadKeys.Clear();
         }
 
         private bool TryMeasureLiveTreeLocked(long nodeOffset, ref long nodeBytes, ref long livePayloadBytes)
@@ -1078,17 +1134,29 @@ namespace Hecton8.Core.Database
             if (remaining > 0)
                 return true;
 
-            Volatile.Write(ref _compactionMemoryResumeTickMs, 0);
-            _compactionFlags = (byte)(_compactionFlags & ~MacroDatabaseCompactionFlags.MemoryPressurePaused);
-            if (_compactionState == (int)MacroDatabaseCompactionState.Paused)
-                _compactionState = (int)MacroDatabaseCompactionState.Copying;
+            if (Interlocked.CompareExchange(ref _compactionMemoryResumeTickMs, 0, resumeTick) == resumeTick)
+            {
+                lock (_fileGate)
+                {
+                    _compactionFlags = (byte)(_compactionFlags & ~MacroDatabaseCompactionFlags.MemoryPressurePaused);
+                    if (_compactionState == (int)MacroDatabaseCompactionState.Paused &&
+                        Volatile.Read(ref _compactionActive) != 0)
+                    {
+                        _compactionState = (int)MacroDatabaseCompactionState.Copying;
+                    }
+                }
+            }
+
             return false;
         }
 
         private void WaitForCompactionResume()
         {
-            while (IsMemoryPressurePauseActive() || Volatile.Read(ref _compactionPersistenceGate) != 0)
+            while (Volatile.Read(ref _compactionActive) != 0 &&
+                   (IsMemoryPressurePauseActive() || Volatile.Read(ref _compactionPersistenceGate) != 0))
+            {
                 Thread.Sleep(16);
+            }
         }
 
         private long ResolveCompactionThresholdBytes(MacroDatabaseTier tier)
@@ -1103,6 +1171,7 @@ namespace Hecton8.Core.Database
             _compactionState = (int)MacroDatabaseCompactionState.Faulted;
             Volatile.Write(ref _compactionActive, 0);
             _compactionTempBytes = 0L;
+            CleanupCompactionTemp(_path);
         }
 
         private void ResetCompactionStateLocked()
@@ -1131,6 +1200,14 @@ namespace Hecton8.Core.Database
 
         private static void CleanupCompactionTemp(string activePath)
         {
+            if (string.Equals(
+                    Path.GetFileName(activePath),
+                    H8MacroDatabaseFileFormat.CompactionTempFileName,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
             string tempPath = ResolveCompactionTempPath(activePath);
             if (string.IsNullOrEmpty(tempPath))
                 return;

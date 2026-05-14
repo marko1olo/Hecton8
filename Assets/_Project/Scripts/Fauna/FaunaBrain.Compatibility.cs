@@ -165,7 +165,8 @@ namespace Hecton8.AI
             bool isFlocking,
             bool hasScatterDirection,
             bool isAggressive,
-            bool isApexPredator)
+            bool isApexPredator,
+            bool useAlphaLeviathanCognition)
         {
             SelfPosition = selfPosition;
             SelfVelocity = selfVelocity;
@@ -209,6 +210,7 @@ namespace Hecton8.AI
             HasScatterDirection = hasScatterDirection;
             IsAggressive = isAggressive;
             IsApexPredator = isApexPredator;
+            UseAlphaLeviathanCognition = useAlphaLeviathanCognition;
         }
 
         public Vector3 SelfPosition { get; }
@@ -253,6 +255,7 @@ namespace Hecton8.AI
         public bool HasScatterDirection { get; }
         public bool IsAggressive { get; }
         public bool IsApexPredator { get; }
+        public bool UseAlphaLeviathanCognition { get; }
     }
 
     /// <summary>
@@ -619,11 +622,7 @@ namespace Hecton8.AI
             }
 
             float3 fallbackForward = (float3)context.SelfForward;
-            Vector3 floatingOriginOffsetVector = Hecton8.Core.HectonFloatingOrigin.CurrentTotalOffset;
-            float3 floatingOriginOffset = new float3(
-                floatingOriginOffsetVector.x,
-                floatingOriginOffsetVector.y,
-                floatingOriginOffsetVector.z);
+            double3 floatingOriginOffset = Hecton8.Core.HectonFloatingOrigin.CurrentTotalOffsetDouble;
             float acousticPingStrength01 = 0f;
             float acousticTransmission01 = 0f;
             bool hasNoisePlayerTarget = false;
@@ -828,6 +827,8 @@ namespace Hecton8.AI
                 input.Flags |= (int)CognitionInputFlags.HasVisualPlayerHint;
             if (context.IsApexPredator)
                 input.Flags |= (int)CognitionInputFlags.IsApexPredator;
+            if (context.UseAlphaLeviathanCognition)
+                input.Flags |= (int)CognitionInputFlags.UseAlphaLeviathanCognition;
             if (UsesHighTierApexCognitionSteering(context.IsApexPredator))
                 input.Flags |= (int)CognitionInputFlags.HighTierSmoothSteering;
             if ((_speciesProfile != null && _speciesProfile.isAmbusher) ||

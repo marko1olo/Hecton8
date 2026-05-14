@@ -201,10 +201,15 @@ namespace Hecton8.Core.Memory
             UnityEditor.AssemblyReloadEvents.beforeAssemblyReload -= Shutdown;
             UnityEditor.EditorApplication.quitting -= Shutdown;
             UnityEditor.EditorApplication.playModeStateChanged -= HandleEditorPlayModeStateChanged;
+            UnityEditor.AssemblyReloadEvents.beforeAssemblyReload += Shutdown;
+            UnityEditor.EditorApplication.quitting += Shutdown;
+            UnityEditor.EditorApplication.playModeStateChanged += HandleEditorPlayModeStateChanged;
         }
 
         private static void HandleEditorPlayModeStateChanged(UnityEditor.PlayModeStateChange state)
         {
+            if (state == UnityEditor.PlayModeStateChange.ExitingPlayMode)
+                Shutdown();
         }
 #endif
 
@@ -265,6 +270,11 @@ namespace Hecton8.Core.Memory
         {
             if (!array.IsCreated)
                 return;
+            if (!_initialized)
+            {
+                array = default;
+                return;
+            }
 
             void* pointer = NativeArrayUnsafeUtility.GetUnsafePtr(array);
             UnregisterPointer(pointer);
@@ -279,6 +289,11 @@ namespace Hecton8.Core.Memory
         {
             if (!array.IsCreated)
                 return dependency;
+            if (!_initialized)
+            {
+                array = default;
+                return dependency;
+            }
 
             void* pointer = NativeArrayUnsafeUtility.GetUnsafePtr(array);
             UnregisterPointer(pointer);
@@ -362,7 +377,7 @@ namespace Hecton8.Core.Memory
         }
 
         /// <summary>
-        /// Frees raw native memory and removes it from the leak tracker.
+        /// Legacy raw free entry point. Tracked memory must use the owner-tagged overload.
         /// </summary>
         public static void FreeRaw(void* pointer, Allocator allocator)
         {
@@ -374,7 +389,7 @@ namespace Hecton8.Core.Memory
         /// </summary>
         public static void FreeRaw(void* pointer, Allocator allocator, SystemID requester)
         {
-            if (pointer == null)
+            if (pointer == null || !_initialized)
                 return;
 
             UnregisterPointer(pointer, requester);

@@ -626,8 +626,11 @@ namespace Hecton8.Gameplay
         private const int SpineTargetCountPerChain = 3;
         private const float Tier0DistanceMax = 10.0f;
         private const float Tier1DistanceMax = 25.0f;
-        private const float Tier0DistanceMaxSq = Tier0DistanceMax * Tier0DistanceMax;
-        private const float Tier1DistanceMaxSq = Tier1DistanceMax * Tier1DistanceMax;
+        private const float ThrottleHysteresisMeters = 4.0f;
+        private const float Tier0UpgradeDistanceSq = (Tier0DistanceMax - ThrottleHysteresisMeters) * (Tier0DistanceMax - ThrottleHysteresisMeters);
+        private const float Tier0DowngradeDistanceSq = (Tier0DistanceMax + ThrottleHysteresisMeters) * (Tier0DistanceMax + ThrottleHysteresisMeters);
+        private const float Tier1UpgradeDistanceSq = (Tier1DistanceMax - ThrottleHysteresisMeters) * (Tier1DistanceMax - ThrottleHysteresisMeters);
+        private const float Tier1DowngradeDistanceSq = (Tier1DistanceMax + ThrottleHysteresisMeters) * (Tier1DistanceMax + ThrottleHysteresisMeters);
         private const int MaxRendererSearchDepth = 32;
         private const int MaxRendererSearchNodes = 512;
         private const float PredictiveRepairLatchDistance = 0.3f;
@@ -1086,6 +1089,7 @@ namespace Hecton8.Gameplay
         private int _terminalRightHandSourceId;
         private int _spineHandleStartIndex = BaseHandleCount;
         private int _secondaryHandleStartIndex = BaseHandleCount;
+        private byte _stableThrottleTier;
         private bool _runtimeInitialized;
         private bool _animationInjected;
         private bool _registered;
@@ -1294,7 +1298,7 @@ namespace Hecton8.Gameplay
             float viewerDistanceSq = hasViewerPosition
                 ? math.lengthsq(rootPosition - viewerPosition)
                 : 0.0f;
-            ResolveThrottleState(frameIndex, _entitySlot, viewerDistanceSq, out int updateThisFrame, out byte throttleTier, out uint updateBitfield);
+            ResolveThrottleState(frameIndex, _entitySlot, viewerDistanceSq, ref _stableThrottleTier, out int updateThisFrame, out byte throttleTier, out uint updateBitfield);
             entityState.IsActive = 1;
             entityState.EnableFootPlacement = lowerBodyIkEnabled ? 1 : 0;
             entityState.EnableHandBracing = enableHandBracing ? 1 : 0;
@@ -2721,31 +2725,58 @@ namespace Hecton8.Gameplay
             uint frameIndex,
             int entityId,
             float viewerDistanceSq,
+            ref byte stableThrottleTier,
             out int updateThisFrame,
             out byte throttleTier,
             out uint updateBitfield)
         {
             uint entityBits = (uint)math.max(0, entityId);
+            stableThrottleTier = ResolveHystereticThrottleTier(viewerDistanceSq, stableThrottleTier);
+            throttleTier = stableThrottleTier;
 
-            if (viewerDistanceSq > Tier1DistanceMaxSq)
+            if (throttleTier == 2)
             {
-                throttleTier = 2;
                 updateBitfield = 0x3u;
                 updateThisFrame = ((entityBits & updateBitfield) == (frameIndex & updateBitfield)) ? 1 : 0;
                 return;
             }
 
-            if (viewerDistanceSq > Tier0DistanceMaxSq)
+            if (throttleTier == 1)
             {
-                throttleTier = 1;
                 updateBitfield = 0x1u;
                 updateThisFrame = ((entityBits & updateBitfield) == (frameIndex & updateBitfield)) ? 1 : 0;
                 return;
             }
 
-            throttleTier = 0;
             updateBitfield = 0u;
             updateThisFrame = 1;
+        }
+
+        private static byte ResolveHystereticThrottleTier(float viewerDistanceSq, byte stableThrottleTier)
+        {
+            if (!math.isfinite(viewerDistanceSq) || viewerDistanceSq <= Tier0UpgradeDistanceSq)
+                return 0;
+
+            if (stableThrottleTier == 0)
+            {
+                if (viewerDistanceSq > Tier1DowngradeDistanceSq)
+                    return 2;
+
+                return viewerDistanceSq > Tier0DowngradeDistanceSq ? (byte)1 : (byte)0;
+            }
+
+            if (stableThrottleTier == 1)
+            {
+                if (viewerDistanceSq < Tier0UpgradeDistanceSq)
+                    return 0;
+
+                return viewerDistanceSq > Tier1DowngradeDistanceSq ? (byte)2 : (byte)1;
+            }
+
+            if (viewerDistanceSq < Tier0UpgradeDistanceSq)
+                return 0;
+
+            return viewerDistanceSq < Tier1UpgradeDistanceSq ? (byte)1 : (byte)2;
         }
 
         private static bool IsValidAppendageChain(AppendageChainAuthoring chain)

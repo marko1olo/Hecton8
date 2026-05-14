@@ -161,6 +161,7 @@ namespace Hecton8.Gameplay
         private int _catalogRuntimeHashCount;
         private int _recentTransactionCount;
         private bool _serviceRegistered;
+        private uint _signalSourceId;
 
         public int SavePriority => 36;
         public int LoadPriority => 36;
@@ -176,6 +177,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
+            _signalSourceId = unchecked((uint)EntityId.ToULong(GetEntityId()));
             AutoResolve();
             CacheCatalogRuntimeHashes();
         }
@@ -599,9 +601,12 @@ namespace Hecton8.Gameplay
 
         private void PublishExchangeStateChanged(byte reason)
         {
+            if (_signalSourceId == 0u)
+                _signalSourceId = unchecked((uint)EntityId.ToULong(GetEntityId()));
+
             PdaExchangeStateChangedSignal signal = new PdaExchangeStateChangedSignal
             {
-                SourceId = unchecked((uint)GetInstanceID()),
+                SourceId = _signalSourceId,
                 Frame = unchecked((uint)Time.frameCount),
                 OfferCount = OfferCount,
                 RecentTransactionCount = _recentTransactionCount,

@@ -182,6 +182,7 @@ namespace Hecton8.SaveSystem
         private NativeArray<AsyncPersistenceTelemetryEntry> _saveTelemetryRing;
         private ulong _lastWfcOutpostSectorHash;
         private ulong _lastWfcOutpostPayloadHash;
+        private ulong _wfcOutpostMutableGridSectorHash;
         private IMacroDatabaseService _macroDatabaseService;
         private IDataVault _dataVault;
         private bool _hasLastWfcOutpostSnapshot;
@@ -506,6 +507,7 @@ namespace Hecton8.SaveSystem
             _dataVault = null;
             _lastWfcOutpostSectorHash = 0UL;
             _lastWfcOutpostPayloadHash = 0UL;
+            _wfcOutpostMutableGridSectorHash = 0UL;
             _hasLastWfcOutpostSnapshot = false;
 
             DisposeIntegrityResources();
@@ -678,7 +680,7 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
-            UnpackWfcOutpostGrid(_wfcOutpostRestoreWords, wfcGrid);
+            UnpackWfcOutpostMutableStateGrid(_wfcOutpostRestoreWords, wfcGrid);
             _hasLastWfcOutpostSnapshot = true;
             _lastWfcOutpostSectorHash = sectorHash;
             _lastWfcOutpostPayloadHash = ComputeWfcOutpostPackedHash(_wfcOutpostRestoreWords);
@@ -1102,9 +1104,9 @@ namespace Hecton8.SaveSystem
                 if (!TryEnsureWfcOutpostGrid(out NativeArray<byte> wfcGrid))
                     continue;
 
-                byte immutableMask = unchecked((byte)~WfcOutpostPersistenceConstants.MutableFlagMask);
+                PrepareWfcOutpostMutableGridForSector(signal.SectorHash, wfcGrid);
                 byte mutableFlags = (byte)(signal.CurrentFlags & WfcOutpostPersistenceConstants.MutableFlagMask);
-                wfcGrid[signal.CellIndex] = (byte)((wfcGrid[signal.CellIndex] & immutableMask) | mutableFlags);
+                wfcGrid[signal.CellIndex] = mutableFlags;
 
                 TryPersistWfcOutpostStateSnapshot(signal.SectorHash, wfcGrid, signal.Frame, out _);
             }
@@ -1239,11 +1241,29 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
-            UnpackWfcOutpostGrid(_wfcOutpostRestoreWords, wfcGrid);
+            UnpackWfcOutpostMutableStateGrid(_wfcOutpostRestoreWords, wfcGrid);
             _hasLastWfcOutpostSnapshot = true;
             _lastWfcOutpostSectorHash = sectorHash;
             _lastWfcOutpostPayloadHash = ComputeWfcOutpostPackedHash(_wfcOutpostRestoreWords);
+            _wfcOutpostMutableGridSectorHash = sectorHash;
             return true;
+        }
+
+        private void PrepareWfcOutpostMutableGridForSector(ulong sectorHash, NativeArray<byte> wfcGrid)
+        {
+            if (_wfcOutpostMutableGridSectorHash == sectorHash)
+                return;
+
+            ClearWfcOutpostMutableStateGrid(wfcGrid);
+            TryApplyWfcOutpostStateOverrideFromHydration(sectorHash, wfcGrid);
+            _wfcOutpostMutableGridSectorHash = sectorHash;
+        }
+
+        private static void ClearWfcOutpostMutableStateGrid(NativeArray<byte> wfcGrid)
+        {
+            int count = math.min(wfcGrid.Length, WfcOutpostPersistenceConstants.CellCount);
+            for (int i = 0; i < count; i++)
+                wfcGrid[i] = 0;
         }
 
         private static bool IsValidWfcOutpostGrid(NativeArray<byte> wfcGrid)
@@ -1251,22 +1271,23 @@ namespace Hecton8.SaveSystem
             return wfcGrid.IsCreated && wfcGrid.Length >= WfcOutpostPersistenceConstants.CellCount;
         }
 
-        private static unsafe void UnpackWfcOutpostGrid(NativeArray<ulong> packedWords, NativeArray<byte> wfcGrid)
+        private static unsafe void UnpackWfcOutpostMutableStateGrid(NativeArray<ulong> packedWords, NativeArray<byte> wfcGrid)
         {
             ulong* words = (ulong*)packedWords.GetUnsafeReadOnlyPtr();
             byte* cells = (byte*)wfcGrid.GetUnsafePtr();
-            byte immutableMask = unchecked((byte)~WfcOutpostPersistenceConstants.MutableFlagMask);
             for (int cell = 0; cell < WfcOutpostPersistenceConstants.CellCount; cell++)
             {
-                byte flags = 0;
-                for (int bit = 0; bit < WfcOutpostPersistenceConstants.MutableBitPlaneCount; bit++)
-                {
-                    int bitIndex = cell + (bit * WfcOutpostPersistenceConstants.CellCount);
-                    if ((words[bitIndex >> 6] & (1UL << (bitIndex & 63))) != 0UL)
-                        flags |= (byte)(1 << bit);
-                }
+                int doorOpenBit = cell;
+                int doorUnlockedBit = cell + WfcOutpostPersistenceConstants.CellCount;
+                int powerOnBit = cell + (WfcOutpostPersistenceConstants.CellCount * 2);
+                int datapadLootedBit = cell + (WfcOutpostPersistenceConstants.CellCount * 3);
+                byte flags = (byte)(
+                    (((words[doorOpenBit >> 6] >> (doorOpenBit & 63)) & 1UL) << 0) |
+                    (((words[doorUnlockedBit >> 6] >> (doorUnlockedBit & 63)) & 1UL) << 1) |
+                    (((words[powerOnBit >> 6] >> (powerOnBit & 63)) & 1UL) << 2) |
+                    (((words[datapadLootedBit >> 6] >> (datapadLootedBit & 63)) & 1UL) << 3));
 
-                cells[cell] = (byte)((cells[cell] & immutableMask) | flags);
+                cells[cell] = flags;
             }
         }
 
@@ -1910,6 +1931,7 @@ namespace Hecton8.SaveSystem
             SaveThumbnailSystem.CaptureTicket thumbnailTicket =
                 SaveThumbnailSystem.CaptureThumbnailForSave(slotName, slotIndex, operationId);
             _isBusy = true;
+            NotifyMacroDatabasePersistenceGate(true);
             SaveEvents.RaiseSaveStarted(slotName);
             PublishSaveStatus(slotIndex, operationId, SaveStatusSignal.InProgress, 0.05f, 0u);
 
@@ -2088,6 +2110,7 @@ namespace Hecton8.SaveSystem
                     DisposeNativeArray(ref voxelDeltaSnapshot);
 
                 _isBusy = false;
+                NotifyMacroDatabasePersistenceGate(false);
             }
         }
 
@@ -2411,6 +2434,7 @@ namespace Hecton8.SaveSystem
             }
 
             _isBusy = true;
+            NotifyMacroDatabasePersistenceGate(true);
             SaveEvents.RaiseLoadStarted(slotName);
             ReportLoadPipelineStage(LoadingPipelineStage.PagingSectors, 0.08f);
             var totalTimer = Stopwatch.StartNew();
@@ -2697,6 +2721,7 @@ namespace Hecton8.SaveSystem
                     DisposeNativeArray(ref loadedVoxelDeltaSnapshot);
 
                 _isBusy = false;
+                NotifyMacroDatabasePersistenceGate(false);
             }
         }
 

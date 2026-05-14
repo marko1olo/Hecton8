@@ -62,3 +62,51 @@ Verification:
 - Static scan remains clean inside `StringPullPathJob`: no `math.normalize`, `math.length(`, `math.distance(`, or raw `/`.
 - `dotnet build Hecton8.Core.csproj --no-restore /m:1 /nr:false` still fails due unrelated global dependency errors. Latest run: 128 errors, none reported in the edited funnel files.
 - Unity MCP `validate_script` failed due editor transport error at `127.0.0.1:8088/mcp`.
+
+## 2026-05-14 - Timing Semantics / Conservative LOS Pass
+
+What was wrong:
+- `FunnelMs` timing used schedule-to-completion latency, which can include normal async frame delay and produce false over-budget telemetry.
+- Finite waypoint detection walked the completed path after the copy loop, duplicating O(n) work.
+- Missing voxel coverage and out-of-grid DDA movement still returned visible, which could over-smooth through unknown space.
+
+What was done:
+- Moved stopwatch measurement to the `DispatcherJobSwap.TryComplete` call.
+- Fused NaN/Infinity detection into the existing result-copy loop.
+- Changed missing voxel conversion and out-of-grid DDA steps to fail closed.
+
+Cinematic Cheats used:
+- Conservative waypoint preservation when spatial proof is missing.
+- Main-thread completion timing instead of trying to instrument Burst internals.
+
+Exact Microseconds saved:
+- PENDING RUNTIME PROFILER DATA. The redundant finite scan was removed, so savings scale with completed waypoint count, but no measured value is available.
+
+Verification:
+- Static scan remains clean inside `StringPullPathJob`: no `math.normalize`, `math.length(`, `math.distance(`, or raw `/`.
+- `dotnet build Hecton8.Core.csproj --no-restore /m:1 /nr:false` still fails due unrelated global dependency errors. Latest run: 132 errors, none reported in the edited funnel files.
+- Unity MCP `validate_script` still fails due editor transport error at `127.0.0.1:8088/mcp`.
+
+## 2026-05-14 - DDA Tier Cap / Attribute-Safe Recheck
+
+What was wrong:
+- The prompt re-extraction command used an exact opening-tag regex, but the live batch tag includes `role` and `chat_name` attributes.
+- The DDA LOS sample budget still inherited the authored cap on every tier.
+
+What was done:
+- Re-extracted the full `AI_FUNNEL_NAV_POLISH` XML block with an attribute-aware CLI regex.
+- Added `ResolveAbyssalPathDdaSampleCap`: Low/Unknown/MX350 <= 32, Mid <= 64, High/Ultra = authored cap bounded by `MaxThreatDdaSteps`.
+- Passed the resolved primitive sample cap into `StringPullPathJob` and telemetry.
+
+Cinematic Cheats used:
+- Low-tier keeps more raw waypoints instead of paying for long LOS proof.
+- High/Ultra retains the expensive smoothing budget where visual polish can justify it.
+
+Exact Microseconds saved:
+- PENDING RUNTIME PROFILER DATA. Worst-case low-tier DDA steps per LOS segment are now bounded lower, but no Unity profiler capture is available in this session.
+
+Verification:
+- Attribute-aware prompt extraction succeeded.
+- Static scan remains clean inside `StringPullPathJob`: no `math.normalize`, `math.length(`, `math.distance(`, or raw `/`.
+- Latest parsed `dotnet build Hecton8.Core.csproj --no-restore /m:1 /nr:false` summary still fails with 128 global dependency errors; parsed edited-file error count = 0.
+- Unity MCP `validate_script` still fails due editor transport error at `127.0.0.1:8088/mcp`.

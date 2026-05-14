@@ -129,6 +129,12 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
         float4 _HectonSonarColor;
         float _HectonSonarNoirHideDistance;
         float _SonarActive;
+        StructuredBuffer<float4x4> _H8LeviathanBones;
+        float _H8LeviathanBoneCount;
+        float _H8LeviathanIkTier;
+        float _H8LeviathanTailWhip01;
+        float _H8LeviathanSegmentLength;
+        float _H8LeviathanGpuSkinning;
 
         struct Attributes
         {
@@ -225,6 +231,59 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
                 positionOS.x += lateralWave * mutationTwitch * 0.018 * tailMask;
             }
             return positionOS;
+        }
+
+        float3 ResolveLeviathanBoneCenterWS(float4x4 boneMatrix)
+        {
+            return mul(boneMatrix, float4(0.0, 0.0, 0.0, 1.0)).xyz;
+        }
+
+        float3 ResolveLeviathanBoneAxisWS(float4x4 boneMatrix, float3 axis)
+        {
+            return NormalizeApprox3D(mul((float3x3)boneMatrix, axis));
+        }
+
+        void ApplyLeviathanGpuSkinning(
+            float3 sourcePositionOS,
+            float3 presentedPositionOS,
+            float3 sourceNormalOS,
+            float3 sourceTangentOS,
+            inout float3 positionWS,
+            inout float3 normalWS,
+            inout float3 tangentWS)
+        {
+            if (_H8LeviathanGpuSkinning < 0.5 || _H8LeviathanBoneCount < 1.5)
+                return;
+
+            int boneCount = min(max((int)_H8LeviathanBoneCount, 2), 20);
+            float segmentLength = max(_H8LeviathanSegmentLength, 0.001);
+            float bodyLength = segmentLength * max((float)(boneCount - 1), 1.0);
+            float bodyT = saturate(-sourcePositionOS.z * rcp(bodyLength));
+            float segment = bodyT * (float)(boneCount - 1);
+            int boneAIndex = clamp((int)floor(segment), 0, boneCount - 1);
+            int boneBIndex = min(boneAIndex + 1, boneCount - 1);
+            float blend01 = saturate(segment - (float)boneAIndex);
+            float4x4 boneA = _H8LeviathanBones[boneAIndex];
+            float4x4 boneB = _H8LeviathanBones[boneBIndex];
+            float3 centerWS = lerp(ResolveLeviathanBoneCenterWS(boneA), ResolveLeviathanBoneCenterWS(boneB), blend01);
+            float3 rightWS = NormalizeApprox3D(lerp(ResolveLeviathanBoneAxisWS(boneA, float3(1.0, 0.0, 0.0)), ResolveLeviathanBoneAxisWS(boneB, float3(1.0, 0.0, 0.0)), blend01));
+            float3 upWS = NormalizeApprox3D(lerp(ResolveLeviathanBoneAxisWS(boneA, float3(0.0, 1.0, 0.0)), ResolveLeviathanBoneAxisWS(boneB, float3(0.0, 1.0, 0.0)), blend01));
+            float3 forwardWS = NormalizeApprox3D(lerp(ResolveLeviathanBoneAxisWS(boneA, float3(0.0, 0.0, 1.0)), ResolveLeviathanBoneAxisWS(boneB, float3(0.0, 0.0, 1.0)), blend01));
+            float3 bindCenterOS = float3(0.0, 0.0, -bodyT * bodyLength);
+            float3 localOffsetOS = presentedPositionOS - bindCenterOS;
+            float tierBlend = lerp(0.72, 1.0, saturate(_H8LeviathanIkTier));
+            float3 targetPositionWS = centerWS + rightWS * localOffsetOS.x + upWS * localOffsetOS.y + forwardWS * localOffsetOS.z;
+            float tailWhipMask = bodyT * bodyT;
+            float tailWhipAmplitude = saturate(_H8LeviathanTailWhip01) * tailWhipMask * lerp(0.08, 0.18, saturate(_H8LeviathanIkTier));
+            targetPositionWS += rightWS * (CheapSignedWave(_Time.y * 11.0 + bodyT * 9.0) * tailWhipAmplitude);
+            positionWS = lerp(
+                positionWS,
+                targetPositionWS,
+                tierBlend);
+            float3 skinnedNormalWS = NormalizeApprox3D(rightWS * sourceNormalOS.x + upWS * sourceNormalOS.y + forwardWS * sourceNormalOS.z);
+            float3 skinnedTangentWS = NormalizeApprox3D(rightWS * sourceTangentOS.x + upWS * sourceTangentOS.y + forwardWS * sourceTangentOS.z);
+            normalWS = NormalizeApprox3D(lerp(normalWS, skinnedNormalWS, tierBlend));
+            tangentWS = NormalizeApprox3D(lerp(tangentWS, skinnedTangentWS, tierBlend));
         }
 
         half2 EvaluateWoundMask(float3 positionWS)
@@ -347,12 +406,16 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
             float3 deformedPositionOS = HectonCoreLitSanitizePositionOS(ApplyFaunaVertexPresentation(input.positionOS.xyz, input.normalOS));
             VertexPositionInputs positionInputs = GetVertexPositionInputs(deformedPositionOS);
             VertexNormalInputs normalInputs = GetVertexNormalInputs(input.normalOS, input.tangentOS);
-            output.positionWS = positionInputs.positionWS;
+            float3 positionWS = positionInputs.positionWS;
+            float3 normalWS = normalInputs.normalWS;
+            float3 tangentWS = normalInputs.tangentWS;
+            ApplyLeviathanGpuSkinning(input.positionOS.xyz, deformedPositionOS, input.normalOS, input.tangentOS.xyz, positionWS, normalWS, tangentWS);
+            output.positionWS = positionWS;
             output.positionOS = deformedPositionOS;
-            output.normalWS = normalInputs.normalWS;
-            output.tangentWS = float4(normalInputs.tangentWS, input.tangentOS.w);
-            output.positionCS = HectonCoreLitApplyClipSpaceDepthBias(positionInputs.positionCS, _DepthBias, 1.0);
-            output.viewDirWS = NormalizeApprox3D(GetWorldSpaceViewDir(positionInputs.positionWS));
+            output.normalWS = normalWS;
+            output.tangentWS = float4(tangentWS, input.tangentOS.w);
+            output.positionCS = HectonCoreLitApplyClipSpaceDepthBias(TransformWorldToHClip(positionWS), _DepthBias, 1.0);
+            output.viewDirWS = NormalizeApprox3D(GetWorldSpaceViewDir(positionWS));
             output.uv = TRANSFORM_TEX(input.uv, _BaseMap);
             output.fogFactor = ComputeFogFactor(output.positionCS.z);
             output.ambientSH = SampleSH(output.normalWS);
@@ -462,13 +525,10 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
             return half4(finalColor, 1.0h);
         }
 
-        float4 GetShadowPositionHClip(Attributes input)
+        float4 GetShadowPositionHClip(float3 positionWS, float3 normalWS)
         {
-            float3 deformedPositionOS = HectonCoreLitSanitizePositionOS(ApplyFaunaVertexPresentation(input.positionOS.xyz, input.normalOS));
-            VertexPositionInputs positionInputs = GetVertexPositionInputs(deformedPositionOS);
-            VertexNormalInputs normalInputs = GetVertexNormalInputs(input.normalOS, input.tangentOS);
             float3 lightDirectionWS = _MainLightPosition.xyz;
-            float4 positionCS = TransformWorldToHClip(ApplyShadowBias(positionInputs.positionWS, normalInputs.normalWS, lightDirectionWS));
+            float4 positionCS = TransformWorldToHClip(ApplyShadowBias(positionWS, normalWS, lightDirectionWS));
         #if UNITY_REVERSED_Z
             positionCS.z = min(positionCS.z, UNITY_NEAR_CLIP_VALUE);
         #else
@@ -519,8 +579,14 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
                 UNITY_SETUP_INSTANCE_ID(input);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
                 float3 deformedPositionOS = HectonCoreLitSanitizePositionOS(ApplyFaunaVertexPresentation(input.positionOS.xyz, input.normalOS));
-                output.positionCS = GetShadowPositionHClip(input);
-                output.positionWS = TransformObjectToWorld(deformedPositionOS);
+                VertexPositionInputs positionInputs = GetVertexPositionInputs(deformedPositionOS);
+                VertexNormalInputs normalInputs = GetVertexNormalInputs(input.normalOS, input.tangentOS);
+                float3 positionWS = positionInputs.positionWS;
+                float3 normalWS = normalInputs.normalWS;
+                float3 tangentWS = normalInputs.tangentWS;
+                ApplyLeviathanGpuSkinning(input.positionOS.xyz, deformedPositionOS, input.normalOS, input.tangentOS.xyz, positionWS, normalWS, tangentWS);
+                output.positionCS = GetShadowPositionHClip(positionWS, normalWS);
+                output.positionWS = positionWS;
                 return output;
             }
 

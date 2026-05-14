@@ -49,6 +49,8 @@ namespace Hecton8.Graphics.DRS
         private const byte FlagThermalOverride = 1 << 0;
         private const byte FlagFramePressure = 1 << 1;
         private const byte FlagNotification = 1 << 2;
+        private const byte FlagInvalidState = 1 << 3;
+        private const int TelemetryReportCooldownFrames = 30;
 
         private static readonly PerformDynamicRes s_systemScaler = ResolveSystemScalePercentage;
         private static readonly PerformDynamicRes s_nativeScale = ResolveNativeScalePercentage;
@@ -61,6 +63,7 @@ namespace Hecton8.Graphics.DRS
         private int _telemetryCursor;
         private uint _sequence;
         private uint _notificationMessageHash;
+        private float _defaultRenderScale = MaxScale;
         private float _currentScale = 1f;
         private float _targetScale = 1f;
         private float _latestFrameTimeEwmaMs = TargetFrameTimeMs;
@@ -68,9 +71,11 @@ namespace Hecton8.Graphics.DRS
         private byte _pressureLevel;
         private byte _thermalSeverity;
         private byte _foveatedPressureTier;
-        private int _lastTelemetryScaleMilli = -1;
+        private int _lastObservedScaleMilli = -1;
+        private int _lastTelemetryReportFrame = -TelemetryReportCooldownFrames;
         private bool _registered;
         private bool _hotSwapRegistered;
+        private bool _systemScalerInstalled;
         private bool _notificationArmed = true;
         private bool _blackBoxDumped;
 
@@ -100,6 +105,8 @@ namespace Hecton8.Graphics.DRS
         {
             s_activeAdapter = null;
             s_systemScalePercentage = 100f;
+            DynamicResolutionHandler.SetSystemDynamicResScaler(s_nativeScale, DynamicResScalePolicyType.ReturnsPercentage);
+            DynamicResolutionHandler.SetActiveDynamicScalerSlot(DynamicResScalerSlot.User);
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -133,8 +140,10 @@ namespace Hecton8.Graphics.DRS
 
             s_activeAdapter = this;
             _urpAsset = UniversalRenderPipeline.asset;
-            _currentScale = _urpAsset != null ? math.clamp(_urpAsset.renderScale, MinScale, MaxScale) : MaxScale;
+            _defaultRenderScale = _urpAsset != null ? math.clamp(_urpAsset.renderScale, MinScale, MaxScale) : MaxScale;
+            _currentScale = _defaultRenderScale;
             _targetScale = _currentScale;
+            _lastObservedScaleMilli = ScaleToMilli(_currentScale);
             s_systemScalePercentage = _currentScale * 100f;
             _notificationMessageHash = NotificationEvents.RegisterMessage(NotificationMessage);
             EnsureTelemetry();
@@ -145,36 +154,58 @@ namespace Hecton8.Graphics.DRS
 
         private void OnEnable()
         {
+            if (!ReferenceEquals(s_activeAdapter, this))
+                return;
+
+            if (Application.isPlaying)
+            {
+                InstallSystemDynamicResolutionScaler();
+                CommitRenderScale(0);
+            }
+
+            TryRegister();
+            TryRegisterHotSwap();
+        }
+
+        private void Start()
+        {
+            if (!ReferenceEquals(s_activeAdapter, this))
+                return;
+
             TryRegister();
             TryRegisterHotSwap();
         }
 
         private void OnDisable()
         {
+            bool ownsAdapter = ReferenceEquals(s_activeAdapter, this);
             TryUnregister();
             TryUnregisterHotSwap();
-            if (_dynamicResolutionRuntime != null)
-                _dynamicResolutionRuntime.ClearSystemOverrideRenderScale();
+            if (!ownsAdapter)
+                return;
+
+            ClearSystemOverrideRenderScale();
+            ReleaseSystemDynamicResolutionScaler();
         }
 
         private void OnDestroy()
         {
             Dispose();
             if (ReferenceEquals(s_activeAdapter, this))
-            {
                 s_activeAdapter = null;
-                DynamicResolutionHandler.SetSystemDynamicResScaler(s_nativeScale, DynamicResScalePolicyType.ReturnsPercentage);
-                DynamicResolutionHandler.SetActiveDynamicScalerSlot(DynamicResScalerSlot.User);
-                s_systemScalePercentage = 100f;
-            }
         }
 
         public void Dispose()
         {
+            bool ownsAdapter = ReferenceEquals(s_activeAdapter, this);
             TryUnregister();
             TryUnregisterHotSwap();
-            if (_dynamicResolutionRuntime != null)
-                _dynamicResolutionRuntime.ClearSystemOverrideRenderScale();
+            if (ownsAdapter)
+            {
+                ClearSystemOverrideRenderScale();
+                ReleaseSystemDynamicResolutionScaler();
+            }
+
             if (_telemetryRing.IsCreated)
             {
                 NativeMemorySentinel.UnregisterNativeArray(_telemetryRing);
@@ -185,7 +216,14 @@ namespace Hecton8.Graphics.DRS
 
         public void Tick(float deltaTime)
         {
+            if (!ReferenceEquals(s_activeAdapter, this))
+                return;
+
             ConsumeSignals();
+            _latestFrameTimeEwmaMs = SanitizePositive(_latestFrameTimeEwmaMs, TargetFrameTimeMs);
+            _latestSystemHealth01 = Sanitize01(_latestSystemHealth01);
+            if (RecoverInvalidScaleState())
+                return;
 
             byte flags = 0;
             float frameTimeMs = SanitizePositive(_latestFrameTimeEwmaMs, TargetFrameTimeMs);
@@ -208,6 +246,9 @@ namespace Hecton8.Graphics.DRS
                 : math.min(targetScale, _currentScale + RecoveryStepPerTick);
             nextScale = math.clamp(nextScale, MinScale, MaxScale);
             _targetScale = targetScale;
+            bool notifyScale = nextScale < NotificationThreshold;
+            if (notifyScale)
+                flags |= FlagNotification;
 
             if (math.abs(nextScale - _currentScale) > ScaleEpsilon)
             {
@@ -219,9 +260,8 @@ namespace Hecton8.Graphics.DRS
                 CommitRuntimeSnapshot(flags);
             }
 
-            if (_currentScale < NotificationThreshold)
+            if (notifyScale)
             {
-                flags |= FlagNotification;
                 PublishScaleNotificationOnce();
             }
             else if (_currentScale > NotificationResetThreshold)
@@ -251,24 +291,31 @@ namespace Hecton8.Graphics.DRS
 
         private void ConsumeSignals()
         {
+            byte pressureLevel = 0;
+            bool pressureReceived = false;
             ReadOnlySpan<FrameTimeSignal> frameTimeSignals = SignalBus<FrameTimeSignal>.GetFrameSnapshot();
             for (int i = 0; i < frameTimeSignals.Length; i++)
             {
                 FrameTimeSignal signal = frameTimeSignals[i];
                 _latestFrameTimeEwmaMs = SanitizePositive(signal.FrameTimeEwmaMs, _latestFrameTimeEwmaMs);
-                _pressureLevel = signal.PressureLevel;
+                pressureLevel = MaxByte(pressureLevel, signal.PressureLevel);
+                pressureReceived = true;
             }
 
             ReadOnlySpan<SystemHealthSignal> healthSignals = SignalBus<SystemHealthSignal>.GetFrameSnapshot();
             for (int i = 0; i < healthSignals.Length; i++)
             {
                 SystemHealthSignal signal = healthSignals[i];
-                _latestSystemHealth01 = math.saturate(signal.SystemHealthIndex01);
-                _pressureLevel = signal.PressureLevel;
+                _latestSystemHealth01 = Sanitize01(signal.SystemHealthIndex01);
+                pressureLevel = MaxByte(pressureLevel, signal.PressureLevel);
+                pressureReceived = true;
                 _foveatedPressureTier = signal.FoveatedPressureTier;
                 if (signal.FpsEwma > 0f)
                     _latestFrameTimeEwmaMs = 1000f * math.rcp(math.max(1f, signal.FpsEwma));
             }
+
+            if (pressureReceived)
+                _pressureLevel = pressureLevel;
 
             ReadOnlySpan<ThermalStateChangedSignal> thermalSignals = SignalBus<ThermalStateChangedSignal>.GetFrameSnapshot();
             for (int i = 0; i < thermalSignals.Length; i++)
@@ -280,13 +327,15 @@ namespace Hecton8.Graphics.DRS
             s_systemScalePercentage = _currentScale * 100f;
             DynamicResolutionHandler.SetActiveDynamicScalerSlot(DynamicResScalerSlot.System);
 
-            if (_urpAsset != null)
+            if (_dynamicResolutionRuntime != null)
             {
-                _urpAsset.renderScale = _currentScale;
-                ScalableBufferManager.ResizeBuffers(_currentScale, _currentScale);
+                CommitRuntimeSnapshot(flags);
+            }
+            else if (_urpAsset != null)
+            {
+                ApplyDirectRenderScale(_currentScale, _currentScale);
             }
 
-            CommitRuntimeSnapshot(flags);
             CommitQuestXrScale();
             PublishScaleTelemetryIfChanged();
         }
@@ -337,8 +386,40 @@ namespace Hecton8.Graphics.DRS
 
         private void InstallSystemDynamicResolutionScaler()
         {
+            if (_systemScalerInstalled)
+                return;
+
             DynamicResolutionHandler.SetSystemDynamicResScaler(s_systemScaler, DynamicResScalePolicyType.ReturnsPercentage);
             DynamicResolutionHandler.SetActiveDynamicScalerSlot(DynamicResScalerSlot.System);
+            _systemScalerInstalled = true;
+        }
+
+        private void ReleaseSystemDynamicResolutionScaler()
+        {
+            if (!_systemScalerInstalled || !ReferenceEquals(s_activeAdapter, this))
+                return;
+
+            DynamicResolutionHandler.SetSystemDynamicResScaler(s_nativeScale, DynamicResScalePolicyType.ReturnsPercentage);
+            DynamicResolutionHandler.SetActiveDynamicScalerSlot(DynamicResScalerSlot.User);
+            s_systemScalePercentage = 100f;
+            _systemScalerInstalled = false;
+        }
+
+        private void ClearSystemOverrideRenderScale()
+        {
+            if (_dynamicResolutionRuntime != null)
+            {
+                _dynamicResolutionRuntime.ClearSystemOverrideRenderScale();
+            }
+            else if (_urpAsset != null)
+            {
+                ApplyDirectRenderScale(_defaultRenderScale, MaxScale);
+            }
+
+            _currentScale = _defaultRenderScale;
+            _targetScale = _defaultRenderScale;
+            _lastObservedScaleMilli = ScaleToMilli(_currentScale);
+            s_systemScalePercentage = _currentScale * 100f;
         }
 
         private void TryRegister()
@@ -377,6 +458,9 @@ namespace Hecton8.Graphics.DRS
 
         private void RebindDynamicResolutionRuntime(IDynamicResolutionRuntime runtime)
         {
+            if (ReferenceEquals(_dynamicResolutionRuntime, runtime))
+                return;
+
             _dynamicResolutionRuntime = runtime;
             if (_dynamicResolutionRuntime != null)
             {
@@ -387,6 +471,24 @@ namespace Hecton8.Graphics.DRS
                     _pressureLevel,
                     0);
             }
+            else
+            {
+                ApplyDirectRenderScale(_currentScale, _currentScale);
+            }
+        }
+
+        private bool RecoverInvalidScaleState()
+        {
+            if (math.isfinite(_currentScale) && math.isfinite(_targetScale))
+                return false;
+
+            WriteTelemetry(FlagInvalidState);
+            _currentScale = MaxScale;
+            _targetScale = MaxScale;
+            _latestFrameTimeEwmaMs = TargetFrameTimeMs;
+            s_systemScalePercentage = 100f;
+            CommitRenderScale(FlagInvalidState);
+            return true;
         }
 
         private void PublishScaleNotificationOnce()
@@ -407,13 +509,31 @@ namespace Hecton8.Graphics.DRS
             GlobalSignals.Publish(in signal);
         }
 
-        private void PublishScaleTelemetryIfChanged()
+        private void ApplyDirectRenderScale(float renderScale, float bufferScale)
         {
-            int scaleMilli = (int)math.round(_currentScale * 1000f);
-            if (scaleMilli == _lastTelemetryScaleMilli)
+            if (_urpAsset == null)
                 return;
 
-            _lastTelemetryScaleMilli = scaleMilli;
+            _urpAsset.renderScale = renderScale;
+            ScalableBufferManager.ResizeBuffers(bufferScale, bufferScale);
+        }
+
+        private void PublishScaleTelemetryIfChanged()
+        {
+            int scaleMilli = ScaleToMilli(_currentScale);
+            if (scaleMilli == _lastObservedScaleMilli)
+                return;
+
+            bool scaleDropped = _lastObservedScaleMilli < 0 || scaleMilli < _lastObservedScaleMilli;
+            _lastObservedScaleMilli = scaleMilli;
+            if (_currentScale >= MaxScale - ScaleEpsilon)
+                return;
+
+            int frame = Time.frameCount;
+            if (!scaleDropped && frame - _lastTelemetryReportFrame < TelemetryReportCooldownFrames)
+                return;
+
+            _lastTelemetryReportFrame = frame;
             GlobalTelemetryBus.PublishPerformanceWarning(DrsWarningHash, ScaleContextHash, _currentScale);
         }
 
@@ -426,14 +546,6 @@ namespace Hecton8.Graphics.DRS
                 !math.isfinite(_currentScale) ||
                 !math.isfinite(_targetScale) ||
                 !math.isfinite(_latestFrameTimeEwmaMs);
-            if (nonFinite)
-            {
-                DumpBlackBoxOnce();
-                _currentScale = MaxScale;
-                _targetScale = MaxScale;
-                s_systemScalePercentage = 100f;
-                flags = 0;
-            }
 
             int index = _telemetryCursor;
             _telemetryRing[index] = new DrsTelemetryEntry
@@ -452,6 +564,15 @@ namespace Hecton8.Graphics.DRS
 
             index++;
             _telemetryCursor = index >= TelemetryCapacity ? 0 : index;
+
+            if (nonFinite)
+            {
+                DumpBlackBoxOnce();
+                _currentScale = MaxScale;
+                _targetScale = MaxScale;
+                _latestFrameTimeEwmaMs = TargetFrameTimeMs;
+                s_systemScalePercentage = 100f;
+            }
         }
 
         private void DumpBlackBoxOnce()
@@ -498,6 +619,21 @@ namespace Hecton8.Graphics.DRS
         private static float SanitizePositive(float value, float fallback)
         {
             return math.isfinite(value) && value > 0f ? value : fallback;
+        }
+
+        private static float Sanitize01(float value)
+        {
+            return math.isfinite(value) ? math.saturate(value) : 0f;
+        }
+
+        private static byte MaxByte(byte a, byte b)
+        {
+            return a > b ? a : b;
+        }
+
+        private static int ScaleToMilli(float scale)
+        {
+            return (int)math.round(scale * 1000f);
         }
 
         private void CommitQuestXrScale()

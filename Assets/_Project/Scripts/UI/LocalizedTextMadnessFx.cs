@@ -10,7 +10,7 @@ namespace Hecton8.UI
     /// CanvasRenderer does not expose MaterialPropertyBlock, so this owner maintains a per-label material instance.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class LocalizedTextMadnessFx : MonoBehaviour, ITickable, IUpdatable
+    public sealed class LocalizedTextMadnessFx : MonoBehaviour, ILateFrameTickable
     {
         private static readonly int UnderlayColorId = Shader.PropertyToID("_UnderlayColor");
         private static readonly int UnderlayOffsetXId = Shader.PropertyToID("_UnderlayOffsetX");
@@ -88,7 +88,7 @@ namespace Hecton8.UI
         }
 
         /// <inheritdoc />
-        public void Tick(float deltaTime)
+        public void LateFrameTick()
         {
             if (!_effectActive || _materialInstance == null || _target == null)
             {
@@ -96,6 +96,7 @@ namespace Hecton8.UI
                 return;
             }
 
+            float deltaTime = math.max(0f, SystemDispatcher.CurrentFrameDeltaTime);
             _waveTime += deltaTime;
             float phase = EvaluateCheapWaveSigned(_waveTime * OffsetFrequency);
             ApplyActiveState(phase);
@@ -211,7 +212,7 @@ namespace Hecton8.UI
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+            _registered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
         private void UnregisterFromTickManager()
@@ -219,7 +220,7 @@ namespace Hecton8.UI
             if (!_registered)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
             _registered = false;
         }
     }

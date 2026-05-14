@@ -6,11 +6,11 @@ namespace Hecton8.UI
 {
     /// <summary>
     /// Settings panel animator — staggered fade-in for UI elements.
-    /// Zero-GC: ITickable state machine, cached CanvasGroup references, no coroutines.
+    /// Zero-GC: late-frame state machine, cached CanvasGroup references, no coroutines.
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Settings Panel Animator")]
-    public sealed class SettingsPanelAnimator : MonoBehaviour, ITickable
+    public sealed class SettingsPanelAnimator : MonoBehaviour, ILateFrameTickable
     {
         // ══════════════════════════════════════════════════════════
         // INSPECTOR
@@ -91,10 +91,10 @@ namespace Hecton8.UI
         }
 
         // ══════════════════════════════════════════════════════════
-        // ITICKABLE
+        // LATE FRAME
         // ══════════════════════════════════════════════════════════
 
-        public void Tick(float dt)
+        public void LateFrameTick()
         {
             if (_state == State.Idle)
             {
@@ -102,6 +102,7 @@ namespace Hecton8.UI
                 return;
             }
 
+            float dt = Mathf.Max(0f, SystemDispatcher.CurrentFrameDeltaTime);
             _timer += dt;
 
             if (_state == State.FadingIn)
@@ -432,15 +433,11 @@ namespace Hecton8.UI
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            if (GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI))
+            if (GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI))
             {
                 _registered = true;
                 return;
             }
-
-            _registered =
-                GlobalRegistry.Updatables.Contains(this) ||
-                SystemDispatcher.GetLane(PriorityLayer.UI).Contains(this);
         }
 
         private void Unregister()
@@ -448,7 +445,7 @@ namespace Hecton8.UI
             if (!_registered)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
 
             _registered = false;
         }

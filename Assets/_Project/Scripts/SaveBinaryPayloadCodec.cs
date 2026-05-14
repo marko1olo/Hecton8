@@ -42,6 +42,7 @@ namespace Hecton8.SaveSystem
         private const uint WfcOutpostPayloadMagic = 0x57464342u; // WFCB
         private const ushort WfcOutpostPayloadVersion = 1;
         private const byte WfcOutpostPayloadFlagRle = 1 << 0;
+        private const uint WfcOutpostPayloadSupportedFlags = WfcOutpostPayloadFlagRle;
 
         internal static ulong BuildSectorEntitySpatialSortKey(in AbsoluteUniversePosition position, int chunkSizeMeters)
         {
@@ -162,27 +163,27 @@ namespace Hecton8.SaveSystem
             int rawBytes = ReadInt(source, 20);
             int storedBytes = ReadInt(source, 24);
             uint flags = ReadUInt(source, 28);
+            bool isRle = (flags & WfcOutpostPayloadFlagRle) != 0u;
             if (wordCount != expectedWordCount ||
                 rawBytes != expectedWordCount * sizeof(ulong) ||
                 storedBytes <= 0 ||
                 storedBytes > rawBytes ||
-                length < WfcOutpostPersistenceConstants.PayloadHeaderBytes + storedBytes)
+                (flags & ~WfcOutpostPayloadSupportedFlags) != 0u ||
+                (!isRle && storedBytes != rawBytes) ||
+                length != WfcOutpostPersistenceConstants.PayloadHeaderBytes + storedBytes)
             {
                 return false;
             }
 
             byte* payloadPtr = source + WfcOutpostPersistenceConstants.PayloadHeaderBytes;
             byte* destination = (byte*)packedWords.GetUnsafePtr();
-            if ((flags & WfcOutpostPayloadFlagRle) != 0u)
+            if (isRle)
             {
                 if (!TryReadByteRle(payloadPtr, storedBytes, destination, rawBytes))
                     return false;
             }
             else
             {
-                if (storedBytes != rawBytes)
-                    return false;
-
                 UnsafeUtility.MemCpy(destination, payloadPtr, rawBytes);
             }
 

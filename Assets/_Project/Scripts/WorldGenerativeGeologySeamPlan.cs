@@ -63,7 +63,7 @@ namespace Hecton8.World
         public float RuntimeTerrainHeight => hasTerrainSample
             ? hasAbsoluteTerrainContactAup
                 ? absoluteTerrainContactAup.ToRuntimeFloat3().y
-                : absoluteTerrainHeight - HectonFloatingOrigin.CurrentTotalOffset.y
+                : (float)(absoluteTerrainHeight - HectonFloatingOrigin.CurrentTotalOffsetDouble.y)
             : RuntimeWorldPosition.y;
         public Vector3 TerrainContactPosition => hasAbsoluteTerrainContactAup
             ? (Vector3)absoluteTerrainContactAup.ToRuntimeFloat3()

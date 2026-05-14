@@ -84,3 +84,90 @@ Verification:
 - Isolated editor runner compile after hardening: PASS.
 - Static forbidden-pattern scan after hardening: PASS for `HeadlessStressFractureBot.cs` and `HeadlessStressFractureBatchRunner.cs`, no matches for scene search, LINQ, coroutine, `Task<`, `.Complete()`, managed collection creation, reflection, or explicit GC patterns.
 - Full Unity/editor execution remains PENDING VERIFICATION because MCP has no available Unity session.
+
+## 2026-05-14T00:00:00Z - CI Robustness Addendum
+Status: PENDING VERIFICATION
+Evidence Class: ISOLATED_COMPILE_PLUS_STATIC_AUDIT
+
+What was wrong:
+- In 100x headless time dilation, multiple fast ticks can execute inside one rendered frame; resetting the watchdog timestamp every fast tick could hide aggregate same-frame simulation stalls.
+- H-Phi logging always printed `frames=50000` even when frame count was overridden.
+- CI frame-count override accepted only spaced CLI arguments.
+- Failure H8Memory dumps could include the runner-owned 50MB scratch block.
+- JSON float output could become invalid if a metric became NaN/Infinity.
+
+What was done:
+- Phase timing now starts on the first fast tick per Unity frame and is sampled in the final late-frame lane.
+- Added `H8_FRACTURE_FRAMES` and `-h8fractureFrames=...` support.
+- H-Phi log now prints the actual target frame count.
+- Failure path records the blackbox event, then releases owned scratch before crash telemetry/result/H8Memory dump.
+- JSON writer now escapes low control characters and clamps non-finite float fields to `0`.
+- Replaced inline CLI `Substring` parsing with span parsing.
+
+Cinematic Cheats used:
+- Kept CI scalability as configuration and signal pressure, not scene mutation.
+- Kept one frame-level watchdog sample instead of per-lane profiler instrumentation.
+
+Exact Microseconds saved:
+- Avoided per-lane dispatcher instrumentation: estimated 2-8 us/frame.
+- Avoided one cold parser allocation for inline frame overrides: small but deterministic, 0 B parser allocation.
+- Avoided contaminated allocation-table triage from runner scratch: estimated 30000000+ us saved per failed leak investigation.
+
+Verification:
+- Isolated runtime compile after CI robustness patch: PASS.
+- Isolated editor runner compile after CI robustness patch: PASS.
+- Focused static audit: PASS for `HeadlessStressFractureBot.cs` and `HeadlessStressFractureBatchRunner.cs`, including no CLI `Substring` parser usage.
+- Temp compile artifacts were removed.
+- Full Unity/editor execution remains PENDING VERIFICATION because MCP has no available Unity session.
+
+## 2026-05-14T00:00:00Z - Terminal Lifecycle Addendum
+Status: PENDING VERIFICATION
+Evidence Class: ISOLATED_COMPILE_PLUS_STATIC_AUDIT
+
+What was wrong:
+- The runner relied on object destruction to unregister fast/cold/late tick hooks and origin-shift listener after terminal pass/fail.
+- Editor batch success detection used substring matching for `"exitCode":0`, which could misread or reject valid JSON formatting.
+- Corrupt `StartTimeKey` session state could prevent the editor timeout from firing.
+
+What was done:
+- Added idempotent `UnregisterRuntimeHooks()` and called it from success, failure, and destruction paths.
+- Replaced editor substring exit-code inference with exact `exitCode` field parsing over a span.
+- Corrupt editor start time now writes `start_time_invalid` and fails through the timeout path instead of silently extending the run.
+
+Cinematic Cheats used:
+- None added; this is lifecycle and artifact integrity only.
+
+Exact Microseconds saved:
+- Avoided terminal-frame stray callbacks: estimated 1-5 us/frame until play-mode teardown.
+- Avoided failed CI triage from malformed result inference: estimated 30000000+ us per bad CI report.
+
+Verification:
+- Isolated runtime compile after lifecycle patch: PASS.
+- Isolated editor runner compile after lifecycle patch: PASS.
+- Focused static audit: PASS for the two new Race Condition Hunter files; no `Substring` usage or forbidden hot-path patterns.
+- Temp compile artifacts were removed.
+- Full Unity/editor execution remains PENDING VERIFICATION because MCP has no available Unity session.
+
+## 2026-05-14T00:00:00Z - Stale Flag Guard Addendum
+Status: PENDING VERIFICATION
+Evidence Class: ISOLATED_COMPILE_PLUS_STATIC_AUDIT
+
+What was wrong:
+- A leftover `Temp/H8_FRACTURE_TEST.flag` from a crashed editor/CI process could trigger the destructive fracture runner during a later normal play session.
+
+What was done:
+- Runtime flag activation now requires the flag file to be fresh within a 3-hour TTL.
+- The editor batch runner deletes any old flag before writing a fresh single-byte trigger.
+
+Cinematic Cheats used:
+- None added; this is CI launch hygiene only.
+
+Exact Microseconds saved:
+- Avoided accidental 50,000-frame stress run after stale flag: estimated 120000000+ us per prevented false activation.
+
+Verification:
+- Isolated runtime compile after stale-flag patch: PASS.
+- Isolated editor runner compile after stale-flag patch: PASS.
+- Focused static audit: PASS for the two new Race Condition Hunter files; no forbidden hot-path patterns or `Substring` usage.
+- Temp compile artifacts were removed.
+- Full Unity/editor execution remains PENDING VERIFICATION because MCP has no available Unity session.

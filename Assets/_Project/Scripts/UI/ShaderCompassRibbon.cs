@@ -10,7 +10,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Shader Compass Ribbon")]
-    public sealed class ShaderCompassRibbon : MonoBehaviour, IUpdatable
+    public sealed class ShaderCompassRibbon : MonoBehaviour, ILateFrameTickable
     {
         private const string RootName = "ShaderCompassRibbon";
         private const float RootWidth = 420f;
@@ -67,8 +67,9 @@ namespace Hecton8.UI
             }
         }
 
-        public void Tick(float deltaTime)
+        public void LateFrameTick()
         {
+            float deltaTime = SystemDispatcher.CurrentFrameDeltaTime;
             float safeDeltaTime = SanitizeDeltaTime(deltaTime);
             ResolveViewCamera(safeDeltaTime);
             if (!EnsureUiBuilt(allowCreate: false))
@@ -191,7 +192,7 @@ namespace Hecton8.UI
             if (_registered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+            _registered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
         private void TryUnregister()
@@ -199,7 +200,7 @@ namespace Hecton8.UI
             if (!_registered)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
             _registered = false;
         }
 

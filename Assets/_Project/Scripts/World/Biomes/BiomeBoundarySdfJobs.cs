@@ -58,12 +58,21 @@ namespace Hecton8.World.Biomes
                     return;
                 }
 
-                int2 maxCell = new int2(resolution.x - 1, resolution.y - 1);
-                int2 centerCell = new int2((int)math.floor(localCellsD.x), (int)math.floor(localCellsD.y));
-                centerCell = math.clamp(centerCell, int2.zero, maxCell);
-                float2 sampleMeters = new float2((float)(localCellsD.x * cellSize), (float)(localCellsD.y * cellSize));
-                int radius = math.clamp(Settings.SampleRadiusCells, 1, 2);
                 byte flags = Settings.Flags;
+                double2 mapMaxExclusive = new double2(resolution.x, resolution.y) - 0.000001d;
+                bool outOfBounds = localCellsD.x < 0d ||
+                                   localCellsD.y < 0d ||
+                                   localCellsD.x >= resolution.x ||
+                                   localCellsD.y >= resolution.y;
+                if (outOfBounds)
+                    flags |= (byte)BiomeBoundarySdfFlags.OutOfBounds;
+
+                double2 sampleCellsD = math.clamp(localCellsD, double2.zero, mapMaxExclusive);
+                int2 maxCell = new int2(resolution.x - 1, resolution.y - 1);
+                int2 centerCell = new int2((int)math.floor(sampleCellsD.x), (int)math.floor(sampleCellsD.y));
+                centerCell = math.clamp(centerCell, int2.zero, maxCell);
+                float2 sampleMeters = new float2((float)(sampleCellsD.x * cellSize), (float)(sampleCellsD.y * cellSize));
+                int radius = math.clamp(Settings.SampleRadiusCells, 1, 2);
 
                 FixedList512Bytes<BiomeWeightEntry> weights = default;
                 float nearestBoundaryMeters = DistanceToCellBoundaryMeters(sampleMeters, centerCell, cellSize);
@@ -139,7 +148,7 @@ namespace Hecton8.World.Biomes
             for (int i = 0; i < weights.Length; i++)
             {
                 BiomeWeightEntry entry = weights[i];
-                if (entry.Biome != biome)
+                if (!IsSameBiomeKey(entry, biome, hash))
                     continue;
 
                 entry.Weight += weight;
@@ -174,9 +183,17 @@ namespace Hecton8.World.Biomes
                     continue;
                 }
 
-                if (candidate.Biome != primary.Biome && candidate.Weight > secondary.Weight)
+                if (!IsSameBiomeKey(candidate, primary.Biome, primary.Hash) && candidate.Weight > secondary.Weight)
                     secondary = candidate;
             }
+        }
+
+        private static bool IsSameBiomeKey(in BiomeWeightEntry entry, byte biome, uint hash)
+        {
+            if (entry.Biome != biome)
+                return false;
+
+            return hash == 0u || entry.Hash == 0u || entry.Hash == hash;
         }
 
         private static float DistanceToCellBoundaryMeters(float2 sampleMeters, int2 cell, float cellSize)

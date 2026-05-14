@@ -6,22 +6,31 @@ Mandates read: ANIM_Contextual_Physical_IK, ANIM_IK_FABRIK_GroundSnapping_Proced
 
 ## Checklist
 
-- [ ] Task 1: SINGLETON ERADICATION / extend `ContextualPhysicalIkRuntime` | DOD: no new singleton owner; integrate lower-body data into existing runtime registry | Rejected: new IK manager | Estimate: 0.0 us/frame extra ownership overhead.
-- [ ] Task 2: SIGNAL MIGRATION / consume `KccVelocitySignal` | DOD: NativeQueue-backed typed velocity signal, latest snapshot consumed by IK | Rejected: direct `HectonPlayerMovement` dependency | Estimate: <1.0 us/frame.
-- [ ] Task 3: ASMDEF ISOLATION / `Hecton8.Animation.IK` -> Contracts | DOD: lower-body data lives in Animation.IK, asmdef already references Core.Contracts | Rejected: Gameplay-only private struct | Estimate: 0.0 us/frame.
-- [ ] Task 4: DEAD CODE HUNT / eradicate Unity Animator foot IK passes | DOD: static scan for `OnAnimatorIK` and `SetIK*`; no foot IK pass found | Rejected: editing unrelated Animator parameter drivers | Estimate: 0.0 us/frame.
-- [ ] Task 5: S.O.A. LEG TARGETS | DOD: persistent `NativeArray<float3>` foot target/current lanes | Rejected: deriving from target frame only | Estimate: <2.0 us/frame.
-- [ ] Task 6: RAYCAST BATCH | DOD: existing batched foot raycasts retained, ground-contact gated by 3m seabed distance | Rejected: synchronous `Physics.RaycastNonAlloc` | Estimate: existing batch cost unchanged.
-- [ ] Task 7: STEP TRIGGER | DOD: squared-distance threshold per foot, alternating phase lock | Rejected: simultaneous foot stepping | Estimate: <2.0 us/frame.
-- [ ] Task 8: STEP CURVE | DOD: triangle-wave +Y lift over nlerp/lerp foot path | Rejected: physical leg simulation | Estimate: <2.0 us/frame.
-- [ ] Task 9: COSINE RULE IK | DOD: existing Burst `SolveTwoBone` path consumes stepped foot frames | Rejected: Unity Animator IK | Estimate: existing animation job cost.
-- [ ] Task 10: SWIMMING POSTURE | DOD: no-ground or >3m ground distance blends feet backward with KCC velocity | Rejected: full swim-body solver | Estimate: <2.0 us/frame.
-- [ ] Task 11: BODY ROTATION | DOD: pelvis yaw bias follows camera forward through target frame | Rejected: full spine twist solve | Estimate: <1.0 us/frame.
-- [ ] Task 12: AUP SHIFT SAFETY | DOD: all new foot lanes rebase on origin shift | Rejected: cached world-space foot targets across shift | Estimate: shift-only.
-- [ ] Task 13: H-PHI ALIGNMENT | DOD: `FootIKData` `[StructLayout(Pack=1)]` | Rejected: bool fields/default layout | Estimate: 0.0 us/frame.
-- [ ] Task 14: MATH LOD | DOD: Low/MX350 non-XR disables foot IK; XR remains mandatory | Rejected: always-on desktop low-tier IK | Estimate: saves batched foot solve on low non-XR.
-- [ ] Task 15: OMEGA COMPILE CHECK | DOD: compile attempted and failures fixed or blocked after 3 strikes | Rejected: chat-only verification | Estimate: verification-only.
+- [x] Task 1: SINGLETON ERADICATION / extend `ContextualPhysicalIkRuntime` | DOD: no new singleton owner; integrated lower-body data into existing runtime registry | Rejected: new IK manager | Estimate: 0.0 us/frame extra ownership overhead.
+- [x] Task 2: SIGNAL MIGRATION / consume `KccVelocitySignal` | DOD: NativeQueue-backed typed velocity signal, latest snapshot consumed by IK | Rejected: direct `HectonPlayerMovement` dependency | Estimate: <1.0 us/frame.
+- [x] Task 3: ASMDEF ISOLATION / `Hecton8.Animation.IK` -> Contracts | DOD: `FootIKData` lives under `Assets/_Project/Scripts/Animation/IK`; runtime uses an internal mirror because generated dotnet csproj cannot see the asmdef | Rejected: editing generated csproj | Estimate: 0.0 us/frame.
+- [x] Task 4: DEAD CODE HUNT / eradicate Unity Animator foot IK passes | DOD: static scan for `OnAnimatorIK`, `SetIK*`, `ikPass`; no Unity Animator foot IK pass found | Rejected: editing unrelated Animator parameter drivers | Estimate: 0.0 us/frame.
+- [x] Task 5: S.O.A. LEG TARGETS | DOD: persistent `NativeArray<float3>` foot target/current lanes and packed foot data lanes | Rejected: deriving only from target frame | Estimate: <2.0 us/frame.
+- [x] Task 6: RAYCAST BATCH | DOD: existing batched foot rays now originate from pelvis/hip offsets, preserve authored fore/aft stance, add finite-clamped planar velocity lead, and accept ground only within 3m | Rejected: synchronous `Physics.RaycastNonAlloc` | Estimate: existing batch cost plus <1.0 us math.
+- [x] Task 7: STEP TRIGGER | DOD: squared-distance threshold per foot, velocity-scaled hysteresis, alternating phase lock, stale dual-step breaker | Rejected: simultaneous foot stepping | Estimate: <2.5 us/frame.
+- [x] Task 8: STEP CURVE | DOD: lerp/nlerp-style foot path with triangle-wave +Y lift | Rejected: physical leg simulation | Estimate: <2.0 us/frame.
+- [x] Task 9: COSINE RULE IK | DOD: existing Burst `SolveTwoBone` law-of-cosines path consumes stepped foot frames | Rejected: Unity Animator IK | Estimate: existing animation job cost.
+- [x] Task 10: SWIMMING POSTURE | DOD: no-ground or >3m ground distance blends feet backward/down using planar KCC velocity | Rejected: full swim-body solver | Estimate: <2.0 us/frame.
+- [x] Task 11: BODY ROTATION | DOD: pelvis yaw bias follows camera-forward dot/right without spine twist | Rejected: full spine twist solve | Estimate: <1.0 us/frame.
+- [x] Task 12: AUP SHIFT SAFETY | DOD: target frames, weighted IK SOA lanes, foot SOA lanes, and packed foot states rebase on origin shift without skipping active near-origin targets | Rejected: cached world-space foot targets across shift | Estimate: shift-only.
+- [x] Task 13: H-PHI ALIGNMENT | DOD: `FootIKData` `[StructLayout(LayoutKind.Sequential, Pack=1)]` plus internal packed runtime mirror | Rejected: bool fields/default layout | Estimate: 0.0 us/frame.
+- [x] Task 14: MATH LOD | DOD: Low/MX350 non-XR disables lower-body foot IK; XR remains mandatory; distance cadence has a 4m hysteresis band | Rejected: always-on desktop low-tier IK and instant throttle flipping | Estimate: saves batched foot solve on low non-XR.
+- [BLOCKED BY DEPENDENCY] Task 15: OMEGA COMPILE CHECK | DOD: full compile attempted; direct new-file errors removed; full build blocked by unrelated missing assemblies/types and duplicate SaveManager members | Rejected: fixing cross-domain dependency wall | Estimate: verification-only.
 
 ## Iteration Log
 
 - Loop 0: Prompt extracted from `CURRENT_BATCH.md`; existing IK/KCC systems inspected. Status: PENDING VERIFICATION.
+- Loop 1: Tasks 1-3 implemented. Runtime owner extended, KCC velocity signal lane added, asmdef data added with internal runtime mirror. Compile check found direct asmdef namespace dependency and removed it from Gameplay.
+- Loop 2: Tasks 4-6 implemented. Static Animator IK scan found no `OnAnimatorIK`/`SetIK*` foot pass. SOA foot lanes allocated. Foot rays moved to pelvis/hip-offset origins with 3m seabed gate.
+- Loop 3: Tasks 7-9 implemented. Per-foot threshold stepping added. Alternating phase lock prevents left/right simultaneous step starts. Existing Burst two-bone solver remains the law-of-cosines consumer.
+- Loop 4: Tasks 10-12 implemented. Swimming fallback uses KCC velocity, pelvis yaw bias follows camera look, new foot lanes rebase under origin shift.
+- Loop 5: Tasks 13-15 reviewed. H-PHI packed struct added. Low/MX350 non-XR disables foot IK. Full dotnet compile remains `[BLOCKED BY DEPENDENCY]`; targeted changed-file build filter reports no errors from modified files.
+- OMEGA: Polish mandate read after checklist completion/blocked state. Anti-bloat scan found no managed string/foreach/sqrt/normalize/Animator IK in touched lower-body files. Status remains PENDING VERIFICATION because Unity MCP is unreachable and global compile is red outside this domain.
+- Loop 6: Recursive re-verification pass after user request. Prompt re-extracted from `CURRENT_BATCH.md`. Upgraded hip rays to preserve forward stance and add finite-clamped velocity lead, moved swim direction to planar velocity, added finite-clamped velocity-scaled step hysteresis, removed stale Gameplay using of `Hecton8.Animation.IK`, and hardened stale dual-foot stepping. Targeted changed-file build filter returned no matching errors; Unity MCP validation still fails at `127.0.0.1:8088/mcp`.
+- Loop 7: Additional self-audit. Reworked AUP rebasing so active weighted SOA targets rebase even near world origin, while inactive zero lanes stay untouched. Black-box dump now writes magic/header/head and oldest-to-newest entries. IK distance cadence now uses a 4m hysteresis band to prevent throttle flicker. Targeted changed-file build filter returned no matching errors; Unity MCP validation still fails at `127.0.0.1:8088/mcp`.
+- Loop 8: Structural lifecycle audit. Found that register/unregister could mutate slot-owned NativeArrays while an IK ground response job was still pending. Added a cold forced completion gate before slot allocation/free/reset. Static anti-bloat scan stayed clean. First changed-file build filter timed out; second pass completed with no matching errors for touched IK/KCC/signal files. MCP resource check returned no Unity resources.

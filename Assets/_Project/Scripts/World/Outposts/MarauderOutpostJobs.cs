@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using Hecton8.Logistics.Grid.Contracts;
 using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
@@ -21,27 +22,29 @@ namespace Hecton8.World.Outposts
         public const int MaxInteractables = 16;
         public const int CounterCount = 8;
         public const int TelemetryFrames = 300;
-        public const float HeightUShortToUnit = 1f / 65535f;
+        public const float HeightUShortToUnit = 0.0000152590219f;
 
-        public const byte Empty = 0;
-        public const byte Corridor = 1;
-        public const byte Room = 2;
-        public const byte Hatch = 3;
-        public const byte Datapad = 4;
-        public const byte SealedDoor = 5;
-        public const byte Window = 6;
-        public const byte Pillar = 7;
+        public const byte Empty = WfcOutpostGridConstants.Empty;
+        public const byte Corridor = WfcOutpostGridConstants.Corridor;
+        public const byte Room = WfcOutpostGridConstants.Room;
+        public const byte Hatch = WfcOutpostGridConstants.Hatch;
+        public const byte Datapad = WfcOutpostGridConstants.Datapad;
+        public const byte SealedDoor = WfcOutpostGridConstants.SealedDoor;
+        public const byte Window = WfcOutpostGridConstants.Window;
+        public const byte Pillar = WfcOutpostGridConstants.Pillar;
+        public const byte Generator = WfcOutpostGridConstants.Generator;
 
-        public const byte CellMask = 0x0F;
-        public const byte North = 1 << 4;
-        public const byte East = 1 << 5;
-        public const byte South = 1 << 6;
-        public const byte West = 1 << 7;
+        public const byte CellMask = WfcOutpostGridConstants.CellMask;
+        public const byte North = WfcOutpostGridConstants.North;
+        public const byte East = WfcOutpostGridConstants.East;
+        public const byte South = WfcOutpostGridConstants.South;
+        public const byte West = WfcOutpostGridConstants.West;
+        public const byte MutableStateMask = 0x0F;
 
         public const uint FaultFlag = 1u << 31;
-        public const uint LowTierFlag = 1u << 0;
-        public const uint AupShiftFlag = 1u << 1;
-        public const uint HeightmapFallbackFlag = 1u << 2;
+        public const uint LowTierFlag = WfcOutpostGridConstants.DescriptorFlagLowTier;
+        public const uint HeightmapFallbackFlag = WfcOutpostGridConstants.DescriptorFlagHeightmapFallback;
+        public const uint AupShiftFlag = 1u << 2;
 
         public static int Flatten(int x, int y, int z, int3 dimensions)
         {
@@ -56,7 +59,7 @@ namespace Hecton8.World.Outposts
         public static bool IsRoomLike(byte kind)
         {
             byte cell = (byte)(kind & CellMask);
-            return cell == Room || cell == Hatch || cell == Datapad || cell == SealedDoor || cell == Window;
+            return cell == Room || cell == Hatch || cell == Datapad || cell == SealedDoor || cell == Window || cell == Generator;
         }
     }
 
@@ -155,6 +158,9 @@ namespace Hecton8.World.Outposts
 
             if (y == 0)
             {
+                if (x == centerX && z == centerZ)
+                    return MarauderOutpostConstants.Generator;
+
                 if (edge && spine)
                     return MarauderOutpostConstants.SealedDoor;
 
@@ -249,6 +255,7 @@ namespace Hecton8.World.Outposts
     internal struct MarauderOutpostMatrixExtractionJob : IJob
     {
         [ReadOnly] public NativeArray<byte> WfcGrid;
+        [ReadOnly] public NativeArray<byte> MutableGrid;
         [ReadOnly] public NativeArray<ushort> HeightSamples;
         public NativeArray<float4x4> ShellMatrices;
         public NativeArray<uint> CellTypes;
@@ -271,9 +278,19 @@ namespace Hecton8.World.Outposts
             for (int i = 0; i < Counters.Length; i++)
                 Counters[i] = 0;
 
+            bool hasHeightmap = HeightSamples.IsCreated &&
+                                HeightResolution > 1 &&
+                                HeightResolution <= 46340 &&
+                                HeightSamples.Length >= HeightResolution * HeightResolution &&
+                                TerrainSize.x > 0.001f &&
+                                TerrainSize.y > 0.001f &&
+                                TerrainSize.z > 0.001f;
+            float invTerrainSizeX = hasHeightmap ? math.rcp(TerrainSize.x) : 0f;
+            float invTerrainSizeZ = hasHeightmap ? math.rcp(TerrainSize.z) : 0f;
+            float heightScale = hasHeightmap ? TerrainSize.y * MarauderOutpostConstants.HeightUShortToUnit : 0f;
             float halfWidth = (Dimensions.x - 1) * CellSizeMeters * 0.5f;
             float halfDepth = (Dimensions.z - 1) * CellSizeMeters * 0.5f;
-            float baseTerrain = SampleHeight(OriginMeters, OriginMeters.y - StiltClearanceMeters);
+            float baseTerrain = SampleHeight(OriginMeters, OriginMeters.y - StiltClearanceMeters, hasHeightmap, invTerrainSizeX, invTerrainSizeZ, heightScale);
             float baseFloorY = baseTerrain + StiltClearanceMeters;
 
             for (int y = 0; y < Dimensions.y; y++)
@@ -288,35 +305,39 @@ namespace Hecton8.World.Outposts
                         if (kind == MarauderOutpostConstants.Empty)
                             continue;
 
+                        byte mutable = (byte)(MutableGrid[cellIndex] & MarauderOutpostConstants.MutableStateMask);
+
                         float3 position = new float3(
                             OriginMeters.x + x * CellSizeMeters - halfWidth,
                             baseFloorY + y * FloorHeightMeters,
                             OriginMeters.z + z * CellSizeMeters - halfDepth);
 
-                        float terrainHeight = SampleHeight(position, baseTerrain);
+                        float terrainHeight = SampleHeight(position, baseTerrain, hasHeightmap, invTerrainSizeX, invTerrainSizeZ, heightScale);
                         if (y == 0)
                             AppendSupportPillars(position, terrainHeight, baseFloorY);
 
-                        AppendShellMatrix(position, kind, packed);
+                        AppendShellMatrix(position, x, z, kind, packed, mutable);
                         if (kind == MarauderOutpostConstants.Datapad || kind == MarauderOutpostConstants.SealedDoor)
-                            AppendInteractable(position, cellIndex, kind, packed);
+                            AppendInteractable(position, x, z, cellIndex, kind, packed, mutable);
                     }
                 }
             }
 
-            Counters[4] = HeightSamples.IsCreated && HeightResolution > 1 ? 0 : 1;
+            Counters[4] = hasHeightmap ? 0 : 1;
         }
 
-        private void AppendShellMatrix(float3 position, byte kind, byte packed)
+        private void AppendShellMatrix(float3 position, int x, int z, byte kind, byte packed, byte mutable)
         {
             int index = Counters[0];
             if (index >= ShellMatrices.Length)
                 return;
 
             float3 scale = ResolveShellScale(kind);
-            ShellMatrices[index] = float4x4.TRS(position, quaternion.identity, scale);
+            quaternion rotation = ResolveShellRotation(kind, packed, x, z);
+            ShellMatrices[index] = float4x4.TRS(position, rotation, scale);
             CellTypes[index] = (uint)kind |
                                ((uint)packed << 8) |
+                               ((uint)mutable << 16) |
                                ((uint)math.round(math.saturate(OutpostAge01) * 255f) << 24);
             Counters[0] = index + 1;
             Counters[2] = Counters[2] + 1;
@@ -342,7 +363,7 @@ namespace Hecton8.World.Outposts
             Counters[3] = Counters[3] + 1;
         }
 
-        private void AppendInteractable(float3 position, int cellIndex, byte kind, byte packed)
+        private void AppendInteractable(float3 position, int x, int z, int cellIndex, byte kind, byte packed, byte mutable)
         {
             int index = Counters[1];
             if (index >= InteractableSpawns.Length)
@@ -351,10 +372,10 @@ namespace Hecton8.World.Outposts
             InteractableSpawns[index] = new OutpostInteractableSpawn
             {
                 PositionMeters = position + new float3(0f, 0.1f, 0f),
-                RotationYRadians = ResolveFacingRadians(packed),
+                RotationYRadians = ResolveFacingRadians(packed, x, z),
                 CellIndex = (ushort)math.min(cellIndex, ushort.MaxValue),
                 Kind = kind,
-                Flags = packed
+                Flags = (byte)((packed & ~MarauderOutpostConstants.MutableStateMask) | mutable)
             };
             Counters[1] = index + 1;
         }
@@ -373,13 +394,30 @@ namespace Hecton8.World.Outposts
                     return new float3(xy * 0.62f, height * 0.95f, xy * 0.28f);
                 case MarauderOutpostConstants.Datapad:
                     return new float3(xy * 0.74f, height * 0.7f, xy * 0.74f);
+                case MarauderOutpostConstants.Generator:
+                    return new float3(xy * 1.08f, height * 0.92f, xy * 1.08f);
                 default:
                     return new float3(xy, height, xy);
             }
         }
 
-        private static float ResolveFacingRadians(byte packed)
+        private quaternion ResolveShellRotation(byte kind, byte packed, int x, int z)
         {
+            return kind == MarauderOutpostConstants.SealedDoor
+                ? quaternion.RotateY(ResolveFacingRadians(packed, x, z))
+                : quaternion.identity;
+        }
+
+        private float ResolveFacingRadians(byte packed, int x, int z)
+        {
+            if (z <= 0)
+                return math.PI;
+            if (x >= Dimensions.x - 1)
+                return math.PI * 0.5f;
+            if (z >= Dimensions.z - 1)
+                return 0f;
+            if (x <= 0)
+                return math.PI * 1.5f;
             if ((packed & MarauderOutpostConstants.North) == 0)
                 return 0f;
             if ((packed & MarauderOutpostConstants.East) == 0)
@@ -391,13 +429,11 @@ namespace Hecton8.World.Outposts
             return 0f;
         }
 
-        private float SampleHeight(float3 position, float fallbackHeight)
+        private float SampleHeight(float3 position, float fallbackHeight, bool hasHeightmap, float invTerrainSizeX, float invTerrainSizeZ, float heightScale)
         {
-            if (!HeightSamples.IsCreated || HeightResolution <= 1 || TerrainSize.x <= 0.001f || TerrainSize.z <= 0.001f)
+            if (!hasHeightmap)
                 return fallbackHeight;
 
-            float invTerrainSizeX = math.rcp(TerrainSize.x);
-            float invTerrainSizeZ = math.rcp(TerrainSize.z);
             float u = math.saturate((position.x - TerrainPosition.x) * invTerrainSizeX);
             float v = math.saturate((position.z - TerrainPosition.z) * invTerrainSizeZ);
             int maxPixel = HeightResolution - 1;
@@ -405,7 +441,7 @@ namespace Hecton8.World.Outposts
             int iz = math.clamp((int)math.round(v * maxPixel), 0, maxPixel);
             int sampleIndex = iz * HeightResolution + ix;
             ushort sample = HeightSamples[sampleIndex];
-            return TerrainPosition.y + sample * MarauderOutpostConstants.HeightUShortToUnit * TerrainSize.y;
+            return TerrainPosition.y + sample * heightScale;
         }
     }
 

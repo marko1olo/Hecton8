@@ -23,7 +23,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/PDA Map Tab")]
-    public sealed class PDAMapTab : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IPDAEventListener
+    public sealed class PDAMapTab : MonoBehaviour, ILateFrameTickable, IPDAEventListener
     {
         private const string SonarPointCloudShaderPath = "Assets/_Project/Art/Shaders/Hecton_PDA_SonarPointCloud.shader";
         private const string SonarMapComputePath = "Assets/_Project/Art/Shaders/Hecton_MapMesh.compute";
@@ -127,7 +127,6 @@ namespace Hecton8.UI
         private readonly Vector4[] _emptyPredatorAupUpload = new Vector4[1]; // COLD ALLOC: Vector4[1] — zero fallback predator AUP buffer upload — owner: PDAMapTab
         private readonly Vector4[] _hlodImpostorAupUpload = new Vector4[MaxHlodImpostorAupPoints]; // COLD ALLOC: Vector4[16] - distant HLOD POI upload cache - owner: PDAMapTab
         private readonly SonarMapConstants[] _sonarMapConstantsUpload = new SonarMapConstants[1]; // COLD ALLOC: SonarMapConstants[1] — PDA compute constant-buffer upload lane — owner: PDAMapTab
-        private bool _registered;
         private bool _registeredLateFrame;
         private bool _pdaEventsRegistered;
         private float _refreshCountdown;
@@ -210,26 +209,11 @@ namespace Hecton8.UI
         }
 
         /// <summary>
-        /// Updates the PDA sonar-map material state and refreshes the packed cartography source at a bounded cadence.
-        /// </summary>
-        public void Tick(float deltaTime)
-        {
-            EnsureBuilt();
-            _animationTime += deltaTime;
-            _refreshCountdown -= deltaTime;
-
-            if (_refreshCountdown <= 0f)
-            {
-                _refreshCountdown = math.max(0.05f, sourceRefreshInterval);
-                RefreshMapSource();
-            }
-        }
-
-        /// <summary>
         /// Renders the GPU point-cloud cartography pass during the dispatcher LateUpdate lane.
         /// </summary>
         public void LateFrameTick()
         {
+            RunVisualSync(SystemDispatcher.CurrentFrameDeltaTime);
             RenderPointCloud();
             ProcessPendingMarkerUpdates(MaxMarkerUiUpdatesPerLateFrame);
         }
@@ -274,27 +258,11 @@ namespace Hecton8.UI
 
         private void RegisterToTickManager()
         {
-            if (_registered || !Application.isPlaying)
-            {
-                TryRegisterLateFrame();
-                return;
-            }
-
-            if (GlobalRegistry.Dispatcher == null)
-                return;
-
-            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
             TryRegisterLateFrame();
         }
 
         private void UnregisterFromTickManager()
         {
-            if (_registered)
-            {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
-                _registered = false;
-            }
-
             if (_registeredLateFrame)
             {
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
@@ -308,6 +276,20 @@ namespace Hecton8.UI
                 return;
 
             _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+        }
+
+        private void RunVisualSync(float deltaTime)
+        {
+            EnsureBuilt();
+            float dt = math.max(0f, deltaTime);
+            _animationTime += dt;
+            _refreshCountdown -= dt;
+
+            if (_refreshCountdown <= 0f)
+            {
+                _refreshCountdown = math.max(0.05f, sourceRefreshInterval);
+                RefreshMapSource();
+            }
         }
 
         private void TryRegisterPDAEvents()

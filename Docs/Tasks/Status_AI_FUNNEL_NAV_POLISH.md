@@ -53,9 +53,22 @@ Task Count: 15
 - [x] Conservative LOS budget | DOD: `MaxSamplesPerSegment` now caps DDA work and exhausted LOS checks fail closed instead of claiming visibility; rejected over-smoothing through unknown voxels; estimate 14 us.
 - [x] Black Box upgrade | DOD: added persistent native telemetry ring, over-budget telemetry, finite-point scan, and NaN dump; rejected Stopwatch/file IO inside Burst; estimate 38 us.
 
+## Loop 7 - Timing Semantics And Fail-Closed Review
+
+- [x] Re-read prompt/status/rationale | DOD: anti-amnesia files and XML prompt reloaded before continuing; rejected stale chat memory; estimate 9 us.
+- [x] Stopwatch correction | DOD: `FunnelMs` now measures `DispatcherJobSwap.TryComplete` wall time instead of schedule-to-completion latency; rejected false over-budget warnings from async frame delay; estimate 12 us.
+- [x] NaN scan fusion | DOD: finite waypoint scan now piggybacks on the existing result-copy loop; rejected a second full traversal of the smoothed path; estimate 11 us.
+- [x] Voxel uncertainty fail-closed | DOD: missing voxel coverage or out-of-grid DDA step now preserves waypoints instead of declaring LOS visible; rejected over-smoothing through unknown space; estimate 8 us.
+
+## Loop 8 - DDA Tier Cap And Attribute-Safe Recheck
+
+- [x] Re-read prompt/status/rationale | DOD: attribute-aware CLI regex extracted `<AGENT_PROMPT id="AI_FUNNEL_NAV_POLISH" ...>` cover-to-cover; rejected the stale strict opening-tag regex; estimate 10 us.
+- [x] DDA sample Math LOD | DOD: scheduler now clamps LOS DDA samples by quality tier: Low/Unknown/MX350 <= 32, Mid <= 64, High/Ultra = authored cap clamped to `MaxThreatDdaSteps`; rejected a universal high cap on low silicon; estimate 13 us.
+- [x] Static re-scan | DOD: re-scanned `StringPullPathJob` region after DDA cap patch and found no `math.normalize`, `math.length(`, `math.distance(`, or raw `/`; rejected trusting prior scan after edits; estimate 15 us.
+
 ## Verification
 
 - [x] Static scan | PASS: `StringPullPathJob` region has no `math.normalize`, `math.length(`, `math.distance(`, or raw `/` matches after the LOD upgrade.
-- [x] Compile check | BLOCKED BY DEPENDENCY: latest `dotnet build Hecton8.Core.csproj --no-restore /m:1 /nr:false` failed with 128 unrelated missing namespace/type errors across Core, Audio, Physics, AI, Save, Inventory, and World contracts; no reported error referenced the edited funnel files.
+- [x] Compile check | BLOCKED BY DEPENDENCY: latest parsed `dotnet build Hecton8.Core.csproj --no-restore /m:1 /nr:false` summary failed with 128 unrelated missing namespace/type errors across Core, Audio, Physics, AI, Save, Inventory, and World contracts; parsed edited-file error count = 0.
 - [x] Unity console | BLOCKED BY TOOLING: Unity MCP `validate_script` transport failed against `http://127.0.0.1:8088/mcp`.
 - [x] Omega polish mandate | COMPLETE WITH PENDING VERIFICATION: build remains red due global dependency wall.

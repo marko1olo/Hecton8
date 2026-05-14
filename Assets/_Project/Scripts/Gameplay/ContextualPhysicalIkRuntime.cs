@@ -1,5 +1,4 @@
 using Hecton8.Core;
-using Hecton8.Animation.IK;
 using Hecton8.Physics;
 using Hecton8.World;
 using System.IO;
@@ -235,8 +234,8 @@ namespace Hecton8.Gameplay
                 math.select(0.0f, 1.0f, entity.EnableToolRetraction != 0 && entity.HasCameraPose != 0);
             float3 leftToolRayOrigin = cameraPosition - (cameraRight * cameraHandLateralOffset) + (cameraUp * cameraHandVerticalOffset);
             float3 rightToolRayOrigin = cameraPosition + (cameraRight * cameraHandLateralOffset) + (cameraUp * cameraHandVerticalOffset);
-            float3 leftFootRayOrigin = ResolveHipFootRayOrigin(in entity, rootRight, -1.0f);
-            float3 rightFootRayOrigin = ResolveHipFootRayOrigin(in entity, rootRight, 1.0f);
+            float3 leftFootRayOrigin = ResolveHipFootRayOrigin(in entity, rootRight, rootForward, rootUp, -1.0f);
+            float3 rightFootRayOrigin = ResolveHipFootRayOrigin(in entity, rootRight, rootForward, rootUp, 1.0f);
 
             Commands[baseCommandIndex + 0] = new RaycastCommand(
                 ContextualPhysicalIkMath.ToUnityVector3(leftFootRayOrigin),
@@ -315,12 +314,25 @@ namespace Hecton8.Gameplay
         private static float3 ResolveHipFootRayOrigin(
             in ContextualPhysicalIkEntityState entity,
             float3 rootRight,
+            float3 rootForward,
+            float3 rootUp,
             float side)
         {
             float3 authoredProbe = side < 0.0f ? entity.LeftFootProbeOrigin : entity.RightFootProbeOrigin;
             float3 pelvisToProbe = authoredProbe - entity.PelvisPosition;
             float lateral = math.clamp(math.abs(math.dot(pelvisToProbe, rootRight)), 0.08f, 0.45f);
-            float3 hipOrigin = entity.PelvisPosition + (rootRight * (side * lateral));
+            float forward = math.clamp(math.dot(pelvisToProbe, rootForward), -0.35f, 0.45f);
+            float3 planarVelocity = entity.KccVelocity - (rootUp * math.dot(entity.KccVelocity, rootUp));
+            float planarSpeedSq = math.lengthsq(planarVelocity);
+            planarSpeedSq = math.select(0.0f, planarSpeedSq, math.isfinite(planarSpeedSq));
+            float velocityLeadMeters = math.min(
+                ContextualPhysicalIkRuntime.FootRayVelocityLeadMaxMeters,
+                planarSpeedSq * ContextualPhysicalIkRuntime.FootRayVelocityLeadScale);
+            float3 velocityLead = ContextualPhysicalIkMath.SafeNormalize(planarVelocity, float3.zero) * velocityLeadMeters;
+            float3 hipOrigin = entity.PelvisPosition +
+                (rootRight * (side * lateral)) +
+                (rootForward * forward) +
+                velocityLead;
             return math.select(hipOrigin, authoredProbe, !math.all(math.isfinite(hipOrigin)));
         }
     }
@@ -649,8 +661,24 @@ namespace Hecton8.Gameplay
             ContextualPhysicalIkFootData rightData = ReadFootData(rightFootIndex);
             bool leftStepping = IsStepping(in leftData);
             bool rightStepping = IsStepping(in rightData);
-            bool leftWantsStep = leftGrounded && ShouldTriggerStep(in leftData, in previous.LeftFoot, leftTarget);
-            bool rightWantsStep = rightGrounded && ShouldTriggerStep(in rightData, in previous.RightFoot, rightTarget);
+            if (leftStepping && rightStepping)
+            {
+                bool keepLeft = leftData.StepProgress01 <= rightData.StepProgress01;
+                if (keepLeft)
+                {
+                    CancelStep(ref rightData);
+                    rightStepping = false;
+                }
+                else
+                {
+                    CancelStep(ref leftData);
+                    leftStepping = false;
+                }
+            }
+
+            float stepThresholdSq = ResolveStepThresholdSq(in entity);
+            bool leftWantsStep = leftGrounded && ShouldTriggerStep(in leftData, in previous.LeftFoot, leftTarget, stepThresholdSq);
+            bool rightWantsStep = rightGrounded && ShouldTriggerStep(in rightData, in previous.RightFoot, rightTarget, stepThresholdSq);
 
             if (leftStepping)
                 rightWantsStep = false;
@@ -674,6 +702,7 @@ namespace Hecton8.Gameplay
                 leftFlags,
                 leftWantsStep,
                 !leftGrounded,
+                stepThresholdSq,
                 in entity,
                 in previous.LeftFoot,
                 out next.LeftFoot);
@@ -688,6 +717,7 @@ namespace Hecton8.Gameplay
                 rightFlags,
                 rightWantsStep,
                 !rightGrounded,
+                stepThresholdSq,
                 in entity,
                 in previous.RightFoot,
                 out next.RightFoot);
@@ -730,6 +760,7 @@ namespace Hecton8.Gameplay
             byte candidateFlags,
             bool allowStep,
             bool directSwim,
+            float stepThresholdSq,
             in ContextualPhysicalIkEntityState entity,
             in ContextualPhysicalIkContactTarget previousTarget,
             out ContextualPhysicalIkContactTarget resolvedTarget)
@@ -744,7 +775,7 @@ namespace Hecton8.Gameplay
                 flags |= ContextualPhysicalIkLowerBodyConstants.FlagInvalid;
             }
 
-            data.StepThresholdSq = ContextualPhysicalIkRuntime.StepTriggerDistanceMeters * ContextualPhysicalIkRuntime.StepTriggerDistanceMeters;
+            data.StepThresholdSq = stepThresholdSq;
             data.StepHeightMeters = ContextualPhysicalIkRuntime.StepHeightMeters;
             if (directSwim)
             {
@@ -864,8 +895,9 @@ namespace Hecton8.Gameplay
             float3 rootUp = ContextualPhysicalIkMath.SafeNormalize(
                 math.mul(entity.RootRotation, new float3(0.0f, 1.0f, 0.0f)),
                 new float3(0.0f, 1.0f, 0.0f));
-            float3 swimDirection = ContextualPhysicalIkMath.SafeNormalize(entity.KccVelocity, rootForward);
-            if (math.lengthsq(entity.KccVelocity) <= 0.0025f)
+            float3 planarVelocity = entity.KccVelocity - (rootUp * math.dot(entity.KccVelocity, rootUp));
+            float3 swimDirection = ContextualPhysicalIkMath.SafeNormalize(planarVelocity, rootForward);
+            if (math.lengthsq(planarVelocity) <= 0.0025f)
                 swimDirection = rootForward;
 
             targetNormal = rootUp;
@@ -899,14 +931,36 @@ namespace Hecton8.Gameplay
         private static bool ShouldTriggerStep(
             in ContextualPhysicalIkFootData data,
             in ContextualPhysicalIkContactTarget previousTarget,
-            float3 targetPosition)
+            float3 targetPosition,
+            float thresholdSq)
         {
             float3 currentPosition = ResolveFootCurrentPosition(in data, in previousTarget, targetPosition);
             if (!math.all(math.isfinite(currentPosition)) || !math.all(math.isfinite(targetPosition)))
                 return false;
 
-            float thresholdSq = ContextualPhysicalIkRuntime.StepTriggerDistanceMeters * ContextualPhysicalIkRuntime.StepTriggerDistanceMeters;
             return math.lengthsq(currentPosition - targetPosition) > thresholdSq;
+        }
+
+        private static float ResolveStepThresholdSq(in ContextualPhysicalIkEntityState entity)
+        {
+            float3 rootUp = ContextualPhysicalIkMath.SafeNormalize(
+                math.mul(entity.RootRotation, new float3(0.0f, 1.0f, 0.0f)),
+                new float3(0.0f, 1.0f, 0.0f));
+            float3 planarVelocity = entity.KccVelocity - (rootUp * math.dot(entity.KccVelocity, rootUp));
+            float planarSpeedSq = math.lengthsq(planarVelocity);
+            planarSpeedSq = math.select(0.0f, planarSpeedSq, math.isfinite(planarSpeedSq));
+            float velocityAllowance = math.min(
+                ContextualPhysicalIkRuntime.StepVelocityThresholdMaxMeters,
+                planarSpeedSq * ContextualPhysicalIkRuntime.StepVelocityThresholdScale);
+            float threshold = ContextualPhysicalIkRuntime.StepTriggerDistanceMeters + velocityAllowance;
+            return threshold * threshold;
+        }
+
+        private static void CancelStep(ref ContextualPhysicalIkFootData data)
+        {
+            data.Flags = (byte)(data.Flags & ~ContextualPhysicalIkLowerBodyConstants.FlagStepping);
+            data.StepProgress01 = 1.0f;
+            data.StepStartPosition = data.CurrentPosition;
         }
 
         private static bool IsStepping(in ContextualPhysicalIkFootData data)
@@ -1206,12 +1260,19 @@ namespace Hecton8.Gameplay
         internal const int LeftHandIndex = 0;
         internal const int RightHandIndex = 1;
         private const int TelemetryCapacity = 300;
+        private const int TelemetryEntrySizeBytes = 96;
         private const int MinCommandsPerJob = 32;
         private const float CameraResolveRetryInterval = 1.0f;
         internal const float GroundPresenceDistanceMeters = 3.0f;
         internal const float StepTriggerDistanceMeters = 0.22f;
+        internal const float StepVelocityThresholdScale = 0.025f;
+        internal const float StepVelocityThresholdMaxMeters = 0.10f;
         internal const float StepHeightMeters = 0.11f;
         internal const float StepDurationSeconds = 0.22f;
+        internal const float FootRayVelocityLeadScale = 0.01f;
+        internal const float FootRayVelocityLeadMaxMeters = 0.18f;
+        private const float KccVelocityBindingDistanceMeters = 4.0f;
+        private const float KccVelocityBindingDistanceSq = KccVelocityBindingDistanceMeters * KccVelocityBindingDistanceMeters;
         internal const float SwimFootBlend = 0.68f;
         internal const float SwimBackDistanceMeters = 0.42f;
         internal const float SwimDownDistanceMeters = 0.55f;
@@ -1219,6 +1280,7 @@ namespace Hecton8.Gameplay
         internal const float PelvisCameraYawMaxRadians = 0.18f;
         private const string NativeMemoryOwner = nameof(ContextualPhysicalIkRuntime);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
+        private const ulong TelemetryDumpMagic = 0x314753454C4B4948UL;
         private const string TelemetryDumpRelativePath = "Docs/AgentLogs/Dump_ANIM_PROCEDURAL_LEGS_IK.bin";
 
         // COLD ALLOC: ContextualPhysicalIkRig[128] - stable slot owner registry for contextual IK entities - owner: ContextualPhysicalIkRuntime
@@ -1251,6 +1313,7 @@ namespace Hecton8.Gameplay
         private int _freeSlotCount;
         private float _cameraResolveRetryTimer;
         private float3 _lastKccVelocity;
+        private float3 _lastKccBodyPosition;
         private uint _lastKccVelocityFrame;
         private uint _frameIndex;
         private int _telemetryCursor;
@@ -1319,9 +1382,8 @@ namespace Hecton8.Gameplay
             RebaseScheduledEntityStates(offset);
             RebaseTargetFrames(_frontTargetFrames, offset);
             RebaseTargetFrames(_backTargetFrames, offset);
-            RebaseFloat3Lanes(_ikTargets, offset);
-            RebaseFloat3Lanes(_footTargets, offset);
-            RebaseFloat3Lanes(_footCurrentPos, offset);
+            RebaseWeightedIkTargetLanes(offset);
+            RebaseFootSoaLanes(offset);
             RebaseFootData(offset);
         }
 
@@ -1368,6 +1430,8 @@ namespace Hecton8.Gameplay
             if (rig == null || _freeSlotCount <= 0)
                 return false;
 
+            CompletePendingGroundResponseForStructuralMutation();
+
             int freeStackIndex = _freeSlotCount - 1;
             slotIndex = _freeSlots[freeStackIndex];
             _freeSlotCount = freeStackIndex;
@@ -1386,6 +1450,8 @@ namespace Hecton8.Gameplay
 
             if (!ReferenceEquals(_registeredRigs[slotIndex], rig))
                 return;
+
+            CompletePendingGroundResponseForStructuralMutation();
 
             _registeredRigs[slotIndex] = null;
             _slotActive[slotIndex] = false;
@@ -1602,6 +1668,17 @@ namespace Hecton8.Gameplay
             _groundResponseScheduled = false;
         }
 
+        private void CompletePendingGroundResponseForStructuralMutation()
+        {
+            if (!_groundResponseScheduled)
+                return;
+
+            // COLD SYNC JOB: lifecycle slot mutation must not race pending IK writes.
+            DispatcherJobSwap.TryComplete(ref _pendingGroundResponseHandle, forceComplete: true);
+            _groundResponseScheduled = false;
+            _pendingGroundResponseHandle = default;
+        }
+
         private void RebaseScheduledEntityStates(float3 shiftOffset)
         {
             if (!_scheduledEntityStates.IsCreated)
@@ -1658,18 +1735,50 @@ namespace Hecton8.Gameplay
             target.WorldPosition -= shiftOffset;
         }
 
-        private void RebaseFloat3Lanes(NativeArray<float3> lanes, float3 shiftOffset)
+        private void RebaseWeightedIkTargetLanes(float3 shiftOffset)
         {
-            if (!lanes.IsCreated)
+            if (!_ikTargets.IsCreated || !_ikWeights.IsCreated)
                 return;
 
-            for (int laneIndex = 0; laneIndex < lanes.Length; laneIndex++)
+            int laneCount = math.min(_ikTargets.Length, _ikWeights.Length);
+            for (int laneIndex = 0; laneIndex < laneCount; laneIndex++)
             {
-                float3 value = lanes[laneIndex];
-                if (math.lengthsq(value) <= 0.000001f)
+                if (_ikWeights[laneIndex] <= 0.0001f)
                     continue;
 
-                lanes[laneIndex] = value - shiftOffset;
+                float3 value = _ikTargets[laneIndex];
+                if (!math.all(math.isfinite(value)))
+                    continue;
+
+                _ikTargets[laneIndex] = value - shiftOffset;
+            }
+        }
+
+        private void RebaseFootSoaLanes(float3 shiftOffset)
+        {
+            if (!_footIkData.IsCreated)
+                return;
+
+            int footLaneCount = _footIkData.Length;
+            for (int laneIndex = 0; laneIndex < footLaneCount; laneIndex++)
+            {
+                ContextualPhysicalIkFootData data = _footIkData[laneIndex];
+                if (data.Blend <= 0.0001f)
+                    continue;
+
+                if (_footTargets.IsCreated && laneIndex < _footTargets.Length)
+                {
+                    float3 target = _footTargets[laneIndex];
+                    if (math.all(math.isfinite(target)))
+                        _footTargets[laneIndex] = target - shiftOffset;
+                }
+
+                if (_footCurrentPos.IsCreated && laneIndex < _footCurrentPos.Length)
+                {
+                    float3 current = _footCurrentPos[laneIndex];
+                    if (math.all(math.isfinite(current)))
+                        _footCurrentPos[laneIndex] = current - shiftOffset;
+                }
             }
         }
 
@@ -1723,7 +1832,7 @@ namespace Hecton8.Gameplay
                             hasViewerPosition,
                             ref entityState))
                     {
-                        entityState.KccVelocity = kccVelocity;
+                        entityState.KccVelocity = ResolveKccVelocityForEntity(in entityState, kccVelocity);
                         entityState.FrameIndex = frameIndex;
                         entityState.EntitySlot = slotIndex;
                         entityState.IsXrActive = HectonXRRuntimeState.IsXRActive ? 1 : 0;
@@ -1744,9 +1853,13 @@ namespace Hecton8.Gameplay
             {
                 uint signalFrame = signal.Frame != 0u ? signal.Frame : currentFrame;
                 uint signalAge = currentFrame >= signalFrame ? currentFrame - signalFrame : 0u;
-                if (signalAge <= 8u && math.all(math.isfinite(signal.Velocity)))
+                float3 bodyPosition = signal.BodyAup.ToRuntimeFloat3();
+                if (signalAge <= 8u &&
+                    math.all(math.isfinite(signal.Velocity)) &&
+                    math.all(math.isfinite(bodyPosition)))
                 {
                     _lastKccVelocity = signal.Velocity;
+                    _lastKccBodyPosition = bodyPosition;
                     _lastKccVelocityFrame = signalFrame != 0u ? signalFrame : fallbackFrame;
                 }
             }
@@ -1754,6 +1867,22 @@ namespace Hecton8.Gameplay
             uint cachedAge = currentFrame >= _lastKccVelocityFrame ? currentFrame - _lastKccVelocityFrame : 0u;
             return _lastKccVelocityFrame != 0u && cachedAge <= 8u && math.all(math.isfinite(_lastKccVelocity))
                 ? _lastKccVelocity
+                : float3.zero;
+        }
+
+        private float3 ResolveKccVelocityForEntity(in ContextualPhysicalIkEntityState entity, float3 kccVelocity)
+        {
+            if (_lastKccVelocityFrame == 0u ||
+                !math.all(math.isfinite(kccVelocity)) ||
+                !math.all(math.isfinite(_lastKccBodyPosition)) ||
+                !math.all(math.isfinite(entity.RootPosition)))
+            {
+                return float3.zero;
+            }
+
+            float distanceSq = math.lengthsq(entity.RootPosition - _lastKccBodyPosition);
+            return math.isfinite(distanceSq) && distanceSq <= KccVelocityBindingDistanceSq
+                ? kccVelocity
                 : float3.zero;
         }
 
@@ -1965,18 +2094,37 @@ namespace Hecton8.Gameplay
                 return;
 
             _telemetryDumped = true;
-            string path = Path.GetFullPath(Path.Combine(Application.dataPath, "..", TelemetryDumpRelativePath));
-            string directory = Path.GetDirectoryName(path);
-            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
-                Directory.CreateDirectory(directory);
-
-            using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-            using (BinaryWriter writer = new BinaryWriter(stream))
+            try
             {
-                writer.Write(reasonFlags);
-                writer.Write((uint)TelemetryCapacity);
-                for (int i = 0; i < TelemetryCapacity; i++)
-                    WriteTelemetryEntry(writer, _telemetryRing[i]);
+                string path = Path.GetFullPath(Path.Combine(Application.dataPath, "..", TelemetryDumpRelativePath));
+                string directory = Path.GetDirectoryName(path);
+                if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+                    Directory.CreateDirectory(directory);
+
+                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+                using (BinaryWriter writer = new BinaryWriter(stream))
+                {
+                    int capacity = _telemetryRing.Length;
+                    int head = _telemetryCursor;
+                    writer.Write(TelemetryDumpMagic);
+                    writer.Write((uint)capacity);
+                    writer.Write((uint)TelemetryEntrySizeBytes);
+                    writer.Write((uint)head);
+                    writer.Write(reasonFlags);
+
+                    for (int i = 0; i < capacity; i++)
+                    {
+                        int ringIndex = head + i;
+                        if (ringIndex >= capacity)
+                            ringIndex -= capacity;
+
+                        WriteTelemetryEntry(writer, _telemetryRing[ringIndex]);
+                    }
+                }
+            }
+            catch
+            {
+                // Fault-path export must not trigger a second gameplay failure.
             }
         }
 

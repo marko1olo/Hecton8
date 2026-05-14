@@ -1,0 +1,17 @@
+{
+    "name": "Hecton8.Logistics.Grid.Contracts",
+    "rootNamespace": "Hecton8.Logistics.Grid.Contracts",
+    "references": [
+        "Hecton8.Core.Contracts",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

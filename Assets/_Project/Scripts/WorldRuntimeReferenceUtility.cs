@@ -13,7 +13,7 @@ namespace Hecton8.World
     /// Keeps player resolution aligned with bootstrap runtime state and reduces duplicated
     /// scene-wide fallback searches during runtime startup.
     /// </summary>
-    internal static class WorldRuntimeReferenceUtility
+    public static class WorldRuntimeReferenceUtility
     {
         private static Transform _CachedPlayerTransform;
         private static MapMagicBridge _CachedMapMagicBridge;

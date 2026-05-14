@@ -24,7 +24,7 @@ Batch source: Docs/Tasks/CURRENT_BATCH.md
 - [x] Task 7: SDF terrain hugging for lower five segments | DOD: lower five segments sample `VoxelSdfTexture3D`, calculate gradient, and push out of positive density | Alternative Rejected: Unity Physics casts | Estimate: 20-60 us high tier only
 - [x] Task 8: MapMagic 2D height fallback through vault interface | DOD: `MapMagicBridge.QuantizedHeightmapPayload` plus `BufferID.TerrainSeamHeightmap` fallback prevent seabed clipping when SDF is absent | Alternative Rejected: `Terrain.SampleHeight` managed calls | Estimate: 4-12 us
 - [x] Task 9: Upload LeviathanBones to GraphicsBuffer | DOD: double-buffered `GraphicsBuffer` upload through `GraphicsBufferUploadUtility.UploadNativeArray` | Alternative Rejected: per-frame managed arrays | Estimate: 3-10 us upload overhead
-- [x] Task 10: Hook existing compute/GPU skinning path where available | DOD: material/global shader buffers `_H8LeviathanBones`, `_H8LeviathanBoneCount`, `_H8LeviathanIkTier`, `_H8LeviathanTailWhip01` are published for existing GPU deformation code | Alternative Rejected: CPU mesh deformation | Estimate: saves 150-600 us versus CPU skinning, unmeasured
+- [x] Task 10: Hook existing compute/GPU skinning path where available | DOD: material/global shader buffers are published and `Hecton_LeviathanOrganic.shader` consumes `_H8LeviathanBones` in forward and shadow passes | Alternative Rejected: CPU mesh deformation and serialized material defaults that shadow globals | Estimate: saves 150-600 us versus CPU skinning, unmeasured
 - [x] Task 11: Strike tail whip impulse with one-second terrain bypass | DOD: strike starts `_tailWhipSecondsRemaining`, applies tail-half wave impulse, bypasses terrain constraints during active timer | Alternative Rejected: physical joints/impulses | Estimate: under 4 us
 - [x] Task 12: AUP shift safety for all segments | DOD: `OnOriginShift` rebases segment positions, previous positions, matrices, and target positions | Alternative Rejected: reseeding spine after shift | Estimate: 5-15 us per shift only
 - [x] Task 13: Math LOD: Low tier eight segments and SDF disabled | DOD: `HectonQualityTier.Unknown/Low/Mx350` clamps active segments to 8 and disables SDF terrain hugging | Alternative Rejected: balanced middle path | Estimate: saves 20-60 us versus high tier
@@ -71,3 +71,14 @@ Batch source: Docs/Tasks/CURRENT_BATCH.md
 - Static polish grep: no `math.sqrt`, `math.normalize`, `foreach`, `string.Format`, `.ToString()`, Unity Physics casts, Animator/SMR dependency, managed Update loop, or Debug.Log in the IK runtime/job files.
 - Scoped compile: polished `Hecton8.Animation.IK` csc pass exited 0.
 - Final status remains PENDING VERIFICATION because full project compile is blocked outside this task.
+
+### Loop 7: GPU Shader Contract Recheck
+
+- Re-extracted the LEVIATHAN_KINEMATICS_SOLVER prompt with CLI regex before continuing.
+- Fixed the presentation gap: the organic Leviathan shader now deforms forward and shadow vertices from the published bone buffer, not only from local vertex sways.
+- Removed the dead body-radius shader uniform and removed hidden material properties for IK gates to prevent material defaults from shadowing global runtime uniforms.
+- Added runtime shutdown gating so disable/dispose sets `_H8LeviathanGpuSkinning`, `_H8LeviathanBoneCount`, and `_H8LeviathanTailWhip01` to zero.
+- Static check: no `math.sqrt`, `math.normalize`, `foreach`, `string.Format`, `.ToString()`, `Debug.Log`, Unity Physics casts, Animator/SMR dependency, or `_H8LeviathanBodyRadius` remains in IK runtime/job/shader scope.
+- `git diff --check` exits 0; line-ending warnings are repo-wide and unrelated.
+- Compile probe: `dotnet build Hecton8.Core.csproj --no-restore -v:minimal` timed out after 94 seconds under the known project compile wall.
+- Final status remains PENDING VERIFICATION because shader import/full Unity compile is still blocked by the known project compile wall.

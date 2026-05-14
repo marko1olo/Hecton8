@@ -107,6 +107,7 @@ namespace Hecton8.Prologue.Space
         private bool _telemetryDumped;
         private bool _domainExitHandled;
         private bool _aborted;
+        private bool _velocityZeroForced;
         private Quaternion _capsuleLockedRotation = Quaternion.identity;
         private float3 _capsuleLeadingEdgeLocalNormalized = new float3(0f, -1f, 0f);
         private IInputService _inputService;
@@ -127,6 +128,18 @@ namespace Hecton8.Prologue.Space
         public void SetInputEnabled(bool enabled)
         {
             consumeInput = enabled;
+        }
+
+        public void ForceZeroUniverseVelocity(byte reason)
+        {
+            consumeInput = false;
+            _velocityZeroForced = true;
+            _universeVelocity = double3.zero;
+            CacheUniverseSpeed(0d);
+            PublishSnapshot();
+            RecordTelemetry();
+            if (reason != 0)
+                PublishTelemetryAnomaly(AbortHash, reason);
         }
 
         public void ForceAbortReentry(byte reason)
@@ -389,6 +402,7 @@ namespace Hecton8.Prologue.Space
             _telemetryDumped = false;
             _domainExitHandled = false;
             _aborted = false;
+            _velocityZeroForced = false;
             _mathLod = byte.MaxValue;
             PublishSnapshot();
             if (applyPresentation)
@@ -424,6 +438,13 @@ namespace Hecton8.Prologue.Space
 
         private void IntegrateUniverse(float thrust01, float dt)
         {
+            if (_velocityZeroForced)
+            {
+                _universeVelocity = double3.zero;
+                CacheUniverseSpeed(0d);
+                return;
+            }
+
             double targetPassiveSpeed = math.max(1d, passiveApproachSpeedMetersPerSecond);
             double maxSpeed = math.max(targetPassiveSpeed, maxUniverseSpeedMetersPerSecond);
             double thrustDelta = (double)thrust01 * math.max(0f, thrustAccelerationMetersPerSecondSq) * dt;

@@ -25,3 +25,39 @@ Cinematic Cheats used: same kinematic lever and scalar spring, now with cleaner 
 Exact microseconds saved/spent: +0.2 us only during receiver candidate checks for handle-or-pivot distance; 0 us steady-frame cost; avoided false 0-degree haptic dispatch; preserved latch velocity without extra allocation.
 
 Verification: static task scan remains clean for `HingeJoint`, `math.normalize`, managed `foreach`, `.ToArray()`, `FindObject`, and `GetComponentInParent` except the required interface parameter name `handForward`. Unity-generated `Hecton8.UI.VR.rsp` compile probe reports only stale Core reference errors: missing `ManualOverridePulledSignal` and internal `PhysicalHandReceiverRegistry` in `Hecton8.Core.ref.dll`.
+
+## 2026-05-14 - Stale Sample / Dispose Hardening
+
+What was wrong: the lever could remain grabbed against stale hand pose data if the grip stayed held but the physical receiver stopped providing hand samples. Native cleanup briefly regressed to synchronous array disposal, which violates the active native-memory teardown rule.
+
+What was done: VR grab now releases after more than 3 frames without a fresh hand sample and holds the current target during short 2-3 frame gaps. Persistent native arrays now use tracked deferred `Dispose(JobHandle)` after sentinel unregister, store `_disposeHandle`, and clear array fields immediately.
+
+Cinematic Cheats used: still no joint or physics solve; stale tracking uses a deterministic hold/release gate instead of attempting to simulate hand inertia.
+
+Exact microseconds saved/spent: +0.05 us branch per tick for stale-sample safety; 0 us steady cleanup cost; teardown avoids main-thread native free and keeps disposal ownership visible.
+
+Verification: `git diff --check` passed. Static scan remains clean for `HingeJoint`, `math.normalize`, managed `foreach`, `.ToArray()`, `FindObject`, `GetComponentInParent`, `new List`, and `new Dictionary`. Direct Core rsp compile fails before task code on unrelated missing `Audio.Virtualization`, `AI.Cognition`, `IOutpostGenerationService`, `IPrologueSequenceService`, and `WorldOreTypeIds` symbols, so Unity/Core verification remains dependency-blocked.
+
+## 2026-05-14 - Registry Rebind Hardening
+
+What was wrong: the lever cached Input and dispatcher registration only during `OnEnable`. A bootstrap or hot-swap rebound could leave the VR lever reading a no-op input service or believing it was registered to a dispatcher that had been replaced.
+
+What was done: implemented `IGlobalRegistryHotSwapListener`; Input rebound now refreshes the cached `IInputService`, and Dispatcher rebound clears the local registration flag before re-registering against the new dispatcher.
+
+Cinematic Cheats used: no new simulation; this is service-binding hardening for the existing kinematic lever fake.
+
+Exact microseconds saved/spent: 0 us steady-state cost; avoids per-frame registry polling; cold rebound only.
+
+Verification: source diff reviewed; pending compiler proof remains blocked by stale Core references and unrelated global compile wall.
+
+## 2026-05-14 - Haptic Channel / Cold Math Hardening
+
+What was wrong: ratchet and latch tool-haptic commands were broadcast to both controllers, which weakens VR tactile localization. `OnDestroy` depended on `OnDisable` for hot-swap listener cleanup, and `NormalizeOr` still had a cold `.normalized` fallback.
+
+What was done: added left/right haptic motor masks; ratchet commands now use the grabbed hand, latch commands use the latched signal hand, and non-VR/unknown keeps both motors. Added idempotent hot-swap unregister in `OnDestroy`. Replaced `.normalized` fallback with guarded `math.rsqrt`.
+
+Cinematic Cheats used: localized gear-click pulses instead of continuous mechanical vibration; scalar kinematic lever remains unchanged.
+
+Exact microseconds saved/spent: +0.02 us branch only on haptic dispatch frames; 0 us steady frame; removed hidden cold normalization sqrt/division path.
+
+Verification: `git diff --check` passed with only CRLF warning. Static scan found no `HingeJoint`, `math.normalize`, `.normalized`, managed `foreach`, `.ToArray()`, `FindObject`, `GetComponentInParent`, `new List`, `new Dictionary`, or `.Dispose()`. Direct Unity Roslyn probe for `Hecton8.UI.VR.rsp` still reports only stale Core reference symptoms: missing `ManualOverridePulledSignal` and inaccessible `PhysicalHandReceiverRegistry`. Direct Core rsp probe still timed out behind the unrelated global Core/MSBuild wall; active parallel build processes were left alone.

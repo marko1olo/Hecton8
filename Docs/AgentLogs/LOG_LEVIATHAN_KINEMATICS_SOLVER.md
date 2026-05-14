@@ -37,3 +37,40 @@ Exact microseconds saved:
 Integrator notes:
 - Do not treat this as green full-project compile. Current project wall is outside this task, with errors observed in unrelated assemblies/files including `HectonUnderwaterVisuals`, `PlayerKinematicsRuntime`, `GlobalDataVault`, and missing contract assets.
 - `Hecton8.Animation.IK` validates in isolation after polish. `FaunaKinematicsRuntime` still needs the global `Hecton8.Core` compile wall to clear for authoritative validation.
+
+## 2026-05-14T04:40+04:00
+
+Status: PENDING VERIFICATION. This continuation rechecked the GPU presentation contract after the core 15-task pass. No green full-project compile is claimed.
+
+What was wrong:
+- The runtime published `_H8LeviathanBones`, but `Hecton_LeviathanOrganic.shader` did not deform vertices from the buffer.
+- Hidden IK shader properties would risk material-local defaults overriding globals when `_publishGlobalBoneBuffer` is used.
+- Shadow caster deformation briefly duplicated the GPU skinning math per vertex.
+- Disable/dispose did not explicitly drop the shader skinning gate, so stale global state was possible after runtime teardown.
+
+What was done:
+- Added forward and shadow-pass GPU matrix deformation in `Hecton_LeviathanOrganic.shader`.
+- Bound runtime-published `_H8LeviathanSegmentLength` and `_H8LeviathanGpuSkinning` without adding serialized material properties.
+- Added shader-side normal/tangent blending so lighting follows the spine, not only position.
+- Added a bounded `_H8LeviathanTailWhip01` visual layer using the existing cheap triangle wave.
+- Removed dead `_H8LeviathanBodyRadius` shader/runtime publication.
+- Added `ClearGpuSkinningBinding()` to zero material/global gate, bone count, and tail whip on disable/dispose.
+- Removed duplicate shadow-pass skinning work by reusing one deformed world position for shadow bias and silhouette clipping.
+
+Cinematic cheats used:
+- Shader tail whip is a cheap triangle-wave visual overlay capped at 0.08 m low tier and 0.18 m high tier.
+- Global/material GPU gate enables matrix deformation only when the runtime has uploaded a valid buffer.
+- Low-tier CPU behavior still clamps to eight solved spine matrices.
+
+Exact microseconds saved:
+- CPU skinning/mesh deformation still avoided: estimated 150-600 us/frame, unmeasured.
+- Duplicate shadow vertex deformation removed: estimated 5-25 us on dense shadow casters, unmeasured.
+- Dead shader/runtime property removed: negligible frame cost; reduces contract surface and material override risk.
+- Upload scalar reuse avoids one duplicate tier branch and reciprocal per frame: less than 1 us, unmeasured.
+
+Verification:
+- Prompt re-extracted from `Docs/Tasks/CURRENT_BATCH.md` with CLI regex.
+- Static grep found no `math.sqrt`, `math.normalize`, `foreach`, `string.Format`, `.ToString()`, `Debug.Log`, Unity Physics casts, Animator/SMR dependency, or `_H8LeviathanBodyRadius` in the IK runtime/job/shader scope.
+- `git diff --check` exits 0. Repo-wide line-ending warnings remain unrelated.
+- `dotnet build Hecton8.Core.csproj --no-restore -v:minimal` timed out after 94 seconds under the existing project compile wall.
+- Full shader import, `Hecton8.Core`, and runtime validation remain blocked by the existing project compile wall.

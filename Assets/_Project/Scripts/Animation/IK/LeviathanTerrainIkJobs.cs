@@ -66,6 +66,7 @@ namespace Hecton8.Animation.IK
         public float TerrainClearance;
         public float PhaseTimeSeconds;
         public float TailWhipSecondsRemaining;
+        public float TailWhipDurationSeconds;
         public float TailWhipAmplitudeMeters;
         public float3 HeadTargetPosition;
         public float3 IntendedVelocity;
@@ -225,7 +226,7 @@ namespace Hecton8.Animation.IK
 
         private void ApplyTailWhip(int activeCount, float segmentLength, float3 ownerForward, float3 up)
         {
-            float duration = math.max(0.1f, 1f);
+            float duration = math.max(0.1f, TailWhipDurationSeconds);
             float normalizedAge = math.saturate(1f - TailWhipSecondsRemaining * math.rcp(duration));
             float3 side = NormalizeSafe(math.cross(up, ownerForward), new float3(1f, 0f, 0f));
             float amplitude = math.max(0f, TailWhipAmplitudeMeters);

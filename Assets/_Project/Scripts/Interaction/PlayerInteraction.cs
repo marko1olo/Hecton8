@@ -43,9 +43,11 @@
 namespace Hecton8.Interaction
 {
     using Hecton8.Core;
+    using Hecton8.Core.Signals;
     using Hecton8.Gameplay;
     using Hecton8.Inventory;
     using Hecton8.UI;
+    using Hecton8.World;
     using Unity.Mathematics;
     using UnityEngine;
     using Hecton8.Audio;
@@ -532,10 +534,13 @@ namespace Hecton8.Interaction
                 {
                     IInteractable interactable = targetInfo.Interactable;
                     if (ReferenceEquals(interactable, _currentHovered))
+                    {
+                        PublishLookTargetSignal(interactable, in qResult.hit, PlayerLookTargetSignalStates.Acquired);
                         return;
+                    }
 
                     ClearHover();
-                    SetHover(interactable, targetInfo.PickupSource);
+                    SetHover(interactable, targetInfo.PickupSource, in qResult.hit);
                     return;
                 }
             }
@@ -554,7 +559,7 @@ namespace Hecton8.Interaction
         // HOVER STATE MANAGEMENT
         // ====================================================================
 
-        private void SetHover(IInteractable target, IInventoryPickupSource pickupSource)
+        private void SetHover(IInteractable target, IInventoryPickupSource pickupSource, in RaycastHit hit)
         {
             _currentHovered = target;
             _currentPickupSource = pickupSource;
@@ -569,6 +574,7 @@ namespace Hecton8.Interaction
             }
 
             InteractionEvents.RaiseHoverChanged(_currentHovered);
+            PublishLookTargetSignal(_currentHovered, in hit, PlayerLookTargetSignalStates.Acquired);
         }
 
         private void ClearHover()
@@ -576,11 +582,80 @@ namespace Hecton8.Interaction
             if (_currentHovered == null)
                 return;
 
+            PublishLookTargetSignal(_currentHovered, default, PlayerLookTargetSignalStates.Cleared);
             _currentHovered.OnHoverEnd();
             _currentHovered = null;
             _currentPickupSource = null;
 
             InteractionEvents.RaiseHoverChanged(null);
+        }
+
+        private static void PublishLookTargetSignal(IInteractable target, in RaycastHit hit, byte state)
+        {
+            PlayerLookTargetSignal signal = default;
+            signal.State = state;
+            signal.Frame = unchecked((uint)Time.frameCount);
+
+            if (state == PlayerLookTargetSignalStates.Cleared || target == null)
+            {
+                SignalBus<PlayerLookTargetSignal>.Push(in signal);
+                return;
+            }
+
+            Vector3 anchor = ResolveLookTargetAnchor(target, in hit);
+            signal.RuntimeAnchor = new float3(anchor.x, anchor.y, anchor.z);
+            signal.TargetAup = AbsoluteUniversePosition.FromRuntimePosition(anchor);
+            signal.DistanceMeters = math.isfinite(hit.distance) && hit.distance >= 0f ? hit.distance : 0f;
+            signal.SurfaceNormal = ResolveLookTargetNormal(in hit);
+            signal.TargetHash = ResolveTargetHash(target);
+            signal.ColliderHash = hit.collider != null ? unchecked((uint)EntityId.ToULong(hit.collider.GetEntityId())) : 0u;
+
+            string prompt = target.GetInteractText();
+            if (string.IsNullOrEmpty(prompt))
+                prompt = "OPEN HATCH";
+
+            signal.PromptHash = ComputePromptHash(prompt);
+            PlayerLookTargetPromptCache.Store(signal.PromptHash, prompt);
+            SignalBus<PlayerLookTargetSignal>.Push(in signal);
+        }
+
+        private static Vector3 ResolveLookTargetAnchor(IInteractable target, in RaycastHit hit)
+        {
+            if (hit.collider != null && math.all(math.isfinite(new float3(hit.point.x, hit.point.y, hit.point.z))))
+                return hit.point;
+
+            Component component = target as Component;
+            return component != null ? component.transform.position : Vector3.zero;
+        }
+
+        private static float3 ResolveLookTargetNormal(in RaycastHit hit)
+        {
+            Vector3 normal = hit.collider != null ? hit.normal : Vector3.up;
+            float3 resolved = new float3(normal.x, normal.y, normal.z);
+            return math.all(math.isfinite(resolved)) ? resolved : new float3(0f, 1f, 0f);
+        }
+
+        private static uint ResolveTargetHash(IInteractable target)
+        {
+            Component component = target as Component;
+            return component != null ? unchecked((uint)EntityId.ToULong(component.GetEntityId())) : 0u;
+        }
+
+        private static uint ComputePromptHash(string prompt)
+        {
+            const uint fnvOffset = 2166136261u;
+            const uint fnvPrime = 16777619u;
+            uint hash = fnvOffset;
+            if (string.IsNullOrEmpty(prompt))
+                return hash;
+
+            for (int i = 0; i < prompt.Length; i++)
+            {
+                hash ^= prompt[i];
+                hash *= fnvPrime;
+            }
+
+            return hash != 0u ? hash : 1u;
         }
 
         // ====================================================================

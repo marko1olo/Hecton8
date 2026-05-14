@@ -7,6 +7,8 @@
 #define HECTON_BUBBLE_POPPED_FLAG 256u
 #define HECTON_DEBRIS_RESTING_FLAG 512u
 #define HECTON_DYNAMIC_WAKE_CAPACITY 8
+#define HECTON_CARVE_DEBRIS_MAX_SPEED 3.5
+#define HECTON_CARVE_DEBRIS_MAX_STEP 0.20
 
 struct Silt
 {
@@ -85,6 +87,18 @@ float3 SafeNormalize(float3 value, float3 fallback)
     return lengthSq > 0.000001 ? value * rsqrt(lengthSq) : fallback;
 }
 
+float3 ClampCarveDebrisVelocity(float3 velocity, float dt)
+{
+    float maxStepSpeed = HECTON_CARVE_DEBRIS_MAX_STEP * rcp(max(dt, 0.0001));
+    float maxSpeed = min(HECTON_CARVE_DEBRIS_MAX_SPEED, maxStepSpeed);
+    float maxSpeedSq = maxSpeed * maxSpeed;
+    float speedSq = dot(velocity, velocity);
+    if (speedSq > maxSpeedSq && speedSq > 0.000001)
+        velocity *= maxSpeed * rsqrt(speedSq);
+
+    return Sanitize(velocity);
+}
+
 float3 SampleAbyssalFlow(float3 positionWS)
 {
     if (_FluidAdvectionParams.z <= 0.5)
@@ -141,6 +155,15 @@ float3 ApplyDynamicWakes(float3 positionWS, float3 flow)
         float3 vortex = cross(pushAxis, radial) * (intensity * falloff * 0.45);
         float3 push = pushAxis * (intensity * falloff * (0.55 + directionalGate * 0.45));
         flow += push + vortex;
+
+        if (_DynamicWakeParams.y <= 0.5)
+        {
+            float core = saturate(1.0 - distSq * rcp(max(radiusSq * 0.18, 0.0001)));
+            float3 sheetAxis = SafeNormalize(cross(pushAxis, float3(0.0, 1.0, 0.0)), float3(1.0, 0.0, 0.0));
+            float3 shear = cross(radial, sheetAxis) * (intensity * falloff * core * 0.22);
+            float3 billow = radial * (intensity * falloff * core * 0.18);
+            flow += shear + billow;
+        }
     }
 
     return Sanitize(flow);
@@ -291,6 +314,7 @@ void AdvectCarveDebris(uint3 id : SV_DispatchThreadID)
     flow = ApplyDynamicWakes(previousPosition, flow);
     float flowBlend = saturate(max(0.0, _CarveDebrisParams.w) * dt);
     velocity = Sanitize(lerp(velocity, flow, flowBlend) + _CarveDebrisForces.xyz * dt);
+    velocity = ClampCarveDebrisVelocity(velocity, dt);
     float3 nextPosition = previousPosition + velocity * dt;
     float lifeDecay = max(0.0, _CarveDebrisForces.w) * dt;
 

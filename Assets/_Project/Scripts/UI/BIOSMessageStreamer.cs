@@ -12,7 +12,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Submarine/BIOS Message Streamer")]
-    public sealed class BIOSMessageStreamer : MonoBehaviour, IUpdatable, ISubmarineOsEventListener
+    public sealed class BIOSMessageStreamer : MonoBehaviour, ILateFrameTickable, ISubmarineOsEventListener
     {
         private const int HistoryLineCount = 16;
         private const int HistoryLineCapacity = 64;
@@ -79,8 +79,9 @@ namespace Hecton8.UI
         }
 
         /// <inheritdoc />
-        public void Tick(float deltaTime)
+        public void LateFrameTick()
         {
+            float deltaTime = math.max(0f, SystemDispatcher.CurrentFrameDeltaTime);
             if (!_typingActive)
             {
                 TryStartNextEntry();
@@ -169,8 +170,7 @@ namespace Hecton8.UI
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _registeredUpdatable = GlobalRegistry.Updatables.Contains(this);
+            _registeredUpdatable = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
         private void RefreshTickRegistration()
@@ -189,7 +189,7 @@ namespace Hecton8.UI
             if (!_registeredUpdatable)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
             _registeredUpdatable = false;
         }
 

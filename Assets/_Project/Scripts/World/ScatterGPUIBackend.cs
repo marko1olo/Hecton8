@@ -28,11 +28,7 @@ namespace Hecton8.World
                 absolutePosition.x,
                 absolutePosition.y,
                 absolutePosition.z));
-            Vector3 committedOffset = HectonFloatingOrigin.CurrentTotalOffset;
-            AbsoluteUniversePosition origin = AbsoluteUniversePosition.FromAbsolutePosition(new double3(
-                committedOffset.x,
-                committedOffset.y,
-                committedOffset.z));
+            AbsoluteUniversePosition origin = AbsoluteUniversePosition.FromAbsolutePosition(HectonFloatingOrigin.CurrentTotalOffsetDouble);
             float3 originRelative = AUPMath.ResolveCameraRelative(in target, in origin);
             return Matrix4x4.TRS(
                 new Vector3(originRelative.x, originRelative.y, originRelative.z),

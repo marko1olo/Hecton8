@@ -812,10 +812,7 @@ namespace Hecton8.World
             if (_corpseResourceNodes == null || _corpseResourceNodeCount <= 0)
                 return;
 
-            float3 committedOriginOffset = new float3(
-                shiftData.NewTotalOffset.x,
-                shiftData.NewTotalOffset.y,
-                shiftData.NewTotalOffset.z);
+            double3 committedOriginOffset = shiftData.NewTotalOffsetDouble;
 
             for (int i = 0; i < _corpseResourceNodeCount; i++)
             {

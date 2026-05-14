@@ -3,7 +3,7 @@
 Agent: ARCHITECTURAL_AUP_INTEGRITY_AUDITOR
 Domain: ECHELON 1 / Origin Shift (AUP Manager), with audit reach into Physics, Voxel, Kinematics, AI trigger math, Biome trigger math, and deterministic seed callsites.
 Assignment Source: User-supplied XML block. `Docs/Tasks/CURRENT_BATCH.md` extraction returned `PROMPT_NOT_FOUND` for this ID on initial pass.
-Status: VERIFIED AUP INTEGRITY - LOOP 6 APPLIED; COMPILE/ASMDEF BLOCKED BY DEPENDENCY/ARCHITECTURE
+Status: VERIFIED AUP INTEGRITY - LOOP 9 APPLIED; COMPILE/ASMDEF BLOCKED BY DEPENDENCY/ARCHITECTURE
 
 ## Selected Mandates
 
@@ -87,3 +87,29 @@ Loop 6 - Shift Payload Double Fence:
 - Swapped scalar absolute-depth/height/shader offset helpers to `CurrentTotalOffsetDouble` before final float presentation output.
 - Direct scan for `CurrentTotalOffset.x/y/z`, `(float3)CurrentTotalOffset`, and `NewTotalOffset.x/y/z` is clean under `Assets/_Project/Scripts`; remaining mandatory regex hits are broader `universe` text and fluid/presentation AUP offset lanes.
 - Post-edit Core build attempt timed out after 94 seconds; stopped only the timed-out `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers ...` process started by this agent. Another Core build process from a different parent remained running and was not touched.
+
+Loop 7 - Voxel Finalization Double Capture:
+- Re-read status/rationale before patching and re-extracted `ARCHITECTURAL_AUP_INTEGRITY_AUDITOR` from `Docs/Tasks/CURRENT_BATCH.md`; result remains `PROMPT_NOT_FOUND`.
+- Patched `HectonVoxelEngine` pipeline data to preserve `AbsoluteUniverseOffsetAtStartDouble` beside the legacy `Vector3` compatibility field.
+- Routed voxel async root rebase, shift-aware local projection, terrain-hole registration, spawn-point registration, collider fake distance checks, overhang facing AUP checks, anomaly origins, biome heatmap coordinate math, and chthonic pillar bounds through the double captured offset before final `Vector3`/`float3` presentation casts.
+- Direct scan for `StableShift.NewTotalOffset`, `postMeshShift.NewTotalOffset`, `(float3)data.AbsoluteUniverseOffsetAtStart`, and `AbsoluteUniverseOffsetAtStart.x/y/z` in `HectonVoxelEngine.cs` is clean except the legacy field storage itself.
+- Re-ran mandatory `rg "\(float3\).*AUP|AupOffset|universe"`; residual hits remain broad `universe` text plus fluid/scatter/presentation AUP offset lanes.
+- `git diff --check -- Assets/_Project/Scripts/HectonVoxelEngine.cs` reports line-ending warning only, no whitespace errors.
+- `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -v:quiet -clp:ErrorsOnly /m:1 /nr:false /p:UseSharedCompilation=false` failed with 128 existing missing-reference/interface errors; only `HectonVoxelEngine.cs` error reported is the known pre-existing line 21 `Hecton8.Core.Scheduling` missing namespace. Unity MCP validation failed because the local MCP endpoint was unavailable.
+
+Loop 8 - Fauna/Brine/Scanner Offset Double Lane:
+- Re-read status/rationale and re-ran prompt extraction; `Docs/Tasks/CURRENT_BATCH.md` still has no matching `ARCHITECTURAL_AUP_INTEGRITY_AUDITOR` block.
+- Upgraded predator cognition input `FloatingOriginOffset` from `float3` to `double3`; fauna compatibility now sources `HectonFloatingOrigin.CurrentTotalOffsetDouble`, and telemetry/runtime AUP projection subtracts the double offset before final `float3`.
+- Upgraded fauna sensor brine-plane checks, ecosystem brine mutation sampling, resource brine cartography sector math, scan render shader centers, scanner projection shader origin, and Scatter GPUI origin-relative matrices to use double committed offsets before final float presentation output.
+- Added double-offset overloads to `BrineLayerMath`; Core compile could not see that surface through current assembly layout, so Core-facing callers now perform double subtraction locally instead of depending on the overload.
+- Re-ran mandatory `rg "\(float3\).*AUP|AupOffset|universe"`; remaining hits are broad text plus fluid/scatter/presentation lanes.
+- Targeted scan for `CurrentTotalOffset;`, `CurrentTotalOffset.x/y/z`, `AUPMath.ToRuntimeFloat3(... float3 offset)`, and brine helper calls with double offsets is clean in patched fauna/gameplay/world paths except intentional double validation fields.
+- First Loop 8 build failed with 54 project errors and exposed three caller type mismatches from the new brine overload use; those were fixed. The follow-up constrained Core build timed out after 124 seconds under the existing compile wall, with a separate build from another parent left untouched.
+
+Loop 9 - Fluid Presentation Offset Final Cast:
+- Re-read status/rationale, re-opened the AUP mandate, and re-extracted `ARCHITECTURAL_AUP_INTEGRITY_AUDITOR` from `Docs/Tasks/CURRENT_BATCH.md`; result remains `PROMPT_NOT_FOUND`.
+- Patched `HectonFluidEngine` flow sampling, water-height sampling, buoyancy wave/vector-noise scheduling, brine shift scalar setup, and GPU abyssal flow noise offset upload to source `HectonFloatingOrigin.CurrentTotalOffsetDouble` and cast only at the job/shader float payload boundary.
+- Targeted fluid scan for legacy `HectonFloatingOrigin.CurrentTotalOffset`, direct `.x/.y/.z` reads, and `(float3)` casts against `CurrentTotalOffset` is clean in `HectonFluidEngine.cs`.
+- Re-ran mandatory `rg "\(float3\).*AUP|AupOffset|universe"`; residual fluid hits are named job fields (`AupOffsetXZ`, `vectorNoiseAupOffset`) that now receive final-cast float payloads, plus broad universe text and unowned vegetation/scatter presentation lanes.
+- `git diff --check -- Assets/_Project/Scripts/HectonFluidEngine.cs` reports line-ending warning only, no whitespace errors.
+- `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false` failed with 0 warnings and 1 existing dependency error: `PlayerCriticalProceduralAudioRenderer.cs(10002,31)` missing `PrologueSplashdownSineSweepProbeJob`.

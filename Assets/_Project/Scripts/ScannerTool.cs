@@ -2428,7 +2428,8 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            float holdTimeout = Mathf.Max(focusedScanResampleInterval * ScientificScanHoldGraceMultiplier, 0.1f);
+            float effectiveResampleInterval = ResolveFocusedScanResampleInterval();
+            float holdTimeout = math.max(effectiveResampleInterval * ScientificScanHoldGraceMultiplier, 0.1f);
             if (_activeScientificFragment != null &&
                 Time.time - _scientificLastContactTime <= holdTimeout &&
                 heldDeltaTime > 0f)
@@ -2488,18 +2489,16 @@ namespace Hecton8.Gameplay
 
         private void ScheduleScientificConeBatch()
         {
-            if (_cachedTransform == null)
+            if (!TryResolveScientificAcquisitionPose(out Vector3 origin, out Vector3 forward))
                 return;
 
-            Transform cachedTransform = _cachedTransform;
-            Vector3 origin = cachedTransform.position;
-            Vector3 forward = cachedTransform.forward;
             float range = math.max(1f, focusedScanRange);
             float coneAngle = math.clamp(focusedScanConeAngleDegrees, 0.1f, 45f);
             if (coneAngle <= 0f)
                 return;
             float coneTanSq = ResolveFocusedConeTanSq(coneAngle);
 
+            float resampleInterval = ResolveFocusedScanResampleInterval();
             float loreRange = math.min(15f, range);
             if (TryResolveScientificLoreCandidate(
                     origin,
@@ -2511,7 +2510,7 @@ namespace Hecton8.Gameplay
                     out uint loreHash))
             {
                 QueueScientificOcclusionRaycast(origin, loreTarget, lorePosition, loreHash);
-                _scientificNextResampleAt = Time.time + math.max(0.05f, focusedScanResampleInterval);
+                _scientificNextResampleAt = Time.time + resampleInterval;
                 return;
             }
 
@@ -2530,7 +2529,48 @@ namespace Hecton8.Gameplay
                 ConsumeScientificSpatialHit(in hit);
             }
 
-            _scientificNextResampleAt = Time.time + math.max(0.05f, focusedScanResampleInterval);
+            _scientificNextResampleAt = Time.time + resampleInterval;
+        }
+
+        private bool TryResolveScientificAcquisitionPose(out Vector3 origin, out Vector3 forward)
+        {
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            Camera playerCamera = playerContext != null ? playerContext.PlayerCamera : null;
+            Transform viewTransform = playerCamera != null ? playerCamera.transform : null;
+            if (viewTransform == null)
+                viewTransform = _cachedTransform;
+
+            if (viewTransform == null)
+            {
+                origin = Vector3.zero;
+                forward = Vector3.forward;
+                return false;
+            }
+
+            origin = viewTransform.position;
+            Vector3 fallbackForward = _cachedTransform != null ? _cachedTransform.forward : Vector3.forward;
+            forward = ResolveSafeDirection(viewTransform.forward, fallbackForward);
+            return true;
+        }
+
+        private float ResolveFocusedScanResampleInterval()
+        {
+            float configured = math.max(0.05f, focusedScanResampleInterval);
+            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
+            if (tier == HectonQualityTier.Unknown ||
+                tier == HectonQualityTier.Low ||
+                tier == HectonQualityTier.Mx350)
+            {
+                return math.max(configured, 0.18f);
+            }
+
+            if (tier == HectonQualityTier.Ultra)
+                return math.min(configured, 0.06f);
+
+            if (tier == HectonQualityTier.High)
+                return math.min(configured, 0.09f);
+
+            return configured;
         }
 
         private void QueueScientificOcclusionRaycast(

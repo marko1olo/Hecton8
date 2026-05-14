@@ -72,6 +72,7 @@ namespace Hecton8.World
         OutpostGenerationSnapshot LatestSnapshot { get; }
 
         bool TryRequestGeneration(ulong sectorHash, float3 originMeters, uint worldSeed);
+        bool TryGetWfcGrid(out NativeArray<byte>.ReadOnly cells, out int3 dimensions, out int cellCount, out uint gridHash, out uint generationSequence);
         bool TryGetShellMatrices(out NativeArray<float4x4>.ReadOnly matrices, out int matrixCount, out uint generationSequence);
         bool TryGetShellGraphicsBuffer(out GraphicsBuffer matrixBuffer, out GraphicsBuffer argsBuffer, out int instanceCount, out uint generationSequence);
         void ApplyAupShift(float3 shiftMeters, uint shiftFrameId);

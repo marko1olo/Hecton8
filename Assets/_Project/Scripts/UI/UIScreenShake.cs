@@ -7,11 +7,11 @@ namespace Hecton8.UI
     /// <summary>
     /// UI screen shake for destructive actions (delete save, reset settings).
     /// EXCEEDS SUBNAUTICA: Subnautica has no screen shake on UI actions.
-    /// Zero-GC: ITickable state machine, cached RectTransform, no coroutines.
+    /// Zero-GC: late-frame state machine, cached RectTransform, no coroutines.
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/UI Screen Shake")]
-    public sealed class UIScreenShake : MonoBehaviour, ITickable, IUpdatable
+    public sealed class UIScreenShake : MonoBehaviour, ILateFrameTickable
     {
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         // INSPECTOR
@@ -30,6 +30,7 @@ namespace Hecton8.UI
         private Vector2 _originalPosition;
         private bool _isShaking;
         private float _shakeTimer;
+        private float _activeShakeIntensity;
         private bool _registered;
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -41,16 +42,19 @@ namespace Hecton8.UI
             TryGetComponent(out _rectTransform);
             if (_rectTransform != null)
                 _originalPosition = _rectTransform.anchoredPosition;
+            _activeShakeIntensity = shakeIntensity;
         }
 
         private void OnEnable()
         {
-            TryRegister();
+            if (_isShaking)
+                TryRegister();
         }
 
         private void OnDisable()
         {
             Unregister();
+            _isShaking = false;
             ResetPosition();
         }
 
@@ -60,20 +64,23 @@ namespace Hecton8.UI
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-        // ITICKABLE
+        // LATE FRAME
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-        public void Tick(float dt)
+        public void LateFrameTick()
         {
             if (!_isShaking)
+            {
+                Unregister();
                 return;
+            }
 
-            float safeDeltaTime = math.max(0f, dt);
+            float safeDeltaTime = math.max(0f, SystemDispatcher.CurrentFrameDeltaTime);
             float safeDuration = math.max(0.0001f, shakeDuration);
             _shakeTimer += safeDeltaTime;
             float t = math.saturate(_shakeTimer / safeDuration);
             float envelope = shakeCurve != null ? shakeCurve.Evaluate(t) : 1f - t;
-            float intensity = envelope * shakeIntensity;
+            float intensity = envelope * _activeShakeIntensity;
 
             if (_rectTransform != null)
             {
@@ -88,6 +95,7 @@ namespace Hecton8.UI
             {
                 _isShaking = false;
                 ResetPosition();
+                Unregister();
             }
         }
 
@@ -100,13 +108,7 @@ namespace Hecton8.UI
         /// </summary>
         public void Shake()
         {
-            if (_rectTransform == null)
-                return;
-
-            _originalPosition = _rectTransform.anchoredPosition;
-            _isShaking = true;
-            _shakeTimer = 0f;
-            TryRegister();
+            BeginShake(shakeIntensity);
         }
 
         /// <summary>
@@ -114,10 +116,7 @@ namespace Hecton8.UI
         /// </summary>
         public void Shake(float customIntensity)
         {
-            float originalIntensity = shakeIntensity;
-            shakeIntensity = customIntensity;
-            Shake();
-            shakeIntensity = originalIntensity;
+            BeginShake(customIntensity);
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -128,6 +127,18 @@ namespace Hecton8.UI
         {
             if (_rectTransform != null)
                 _rectTransform.anchoredPosition = _originalPosition;
+        }
+
+        private void BeginShake(float intensity)
+        {
+            if (_rectTransform == null)
+                return;
+
+            _originalPosition = _rectTransform.anchoredPosition;
+            _activeShakeIntensity = math.max(0f, intensity);
+            _isShaking = true;
+            _shakeTimer = 0f;
+            TryRegister();
         }
 
         private static float CheapSignedNoise(float value, float seed)
@@ -146,7 +157,7 @@ namespace Hecton8.UI
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+            _registered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
         private void Unregister()
@@ -154,7 +165,7 @@ namespace Hecton8.UI
             if (!_registered)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
             _registered = false;
         }
     }

@@ -15,6 +15,7 @@ namespace Hecton8.World.GPR
         public const float SolidDensityThreshold = 0.5f;
         public const float OreMatchDistanceMeters = 5f;
         public const float OreMatchDistanceSq = OreMatchDistanceMeters * OreMatchDistanceMeters;
+        public const float FilteredOreAlphaScale = 0.1f;
         public const float ScanDecaySeconds = 3f;
         public const uint ScanFlag = 1u << 0;
         public const uint AupShiftFlag = 1u << 1;
@@ -36,10 +37,12 @@ namespace Hecton8.World.GPR
     {
         [ReadOnly] public NativeArray<byte> EncodedSdf;
         [ReadOnly] public NativeArray<float3> OrePositions;
+        [ReadOnly] public NativeArray<int> OreTypes;
 
         public NativeArray<float3> GprHits;
         public NativeArray<float> GprSignalStrength;
         public NativeArray<float> GprAgeSeconds;
+        public NativeArray<int> GprOreTypes;
         public NativeArray<float4> GprPingGpu;
         public NativeArray<int> Counters;
         public NativeArray<float> MaxSignalStrength;
@@ -49,6 +52,7 @@ namespace Hecton8.World.GPR
         public float3 CellSize;
         public float SdfRange;
         public int OreScanCount;
+        public int OreFilterType;
         public int PreviousActiveCount;
         public int RequestedRayCount;
         public int MaxSteps;
@@ -69,13 +73,13 @@ namespace Hecton8.World.GPR
 
             int rayCount = math.clamp(RequestedRayCount, 1, GroundRadarConstants.MaxRays);
             int maxSteps = math.clamp(MaxSteps, 1, GroundRadarConstants.MaxRaymarchSteps);
-            if ((Flags & GroundRadarConstants.ScanFlag) != 0u && HasValidSdf() && OrePositions.IsCreated && OreScanCount > 0)
+            if ((Flags & GroundRadarConstants.ScanFlag) != 0u && HasWritablePingStorage() && HasValidSdf() && OrePositions.IsCreated && OreTypes.IsCreated && OreScanCount > 0)
             {
                 float scanRadius = math.max(1f, ScanRadiusMeters);
                 float stepMeters = math.max(0.5f, StepMeters);
                 int side = rayCount <= GroundRadarConstants.LowTierRays ? 4 : 8;
                 float invSideMinusOne = math.rcp(math.max(1, side - 1));
-                int oreCount = math.min(OreScanCount, OrePositions.Length);
+                int oreCount = math.min(math.min(OreScanCount, OrePositions.Length), OreTypes.Length);
 
                 for (int rayIndex = 0; rayIndex < rayCount; rayIndex++)
                 {
@@ -93,17 +97,19 @@ namespace Hecton8.World.GPR
                         if (density <= GroundRadarConstants.SolidDensityThreshold)
                             continue;
 
-                        if (!TryResolveOreHit(samplePosition, oreCount, out float3 orePosition))
+                        if (!TryResolveOreHit(samplePosition, oreCount, out float3 orePosition, out int oreType))
                             break;
 
                         if (writeIndex < GprHits.Length)
                         {
                             float signalStrength = math.saturate(math.rcp(math.max(1f, depth * depth)));
+                            float displayStrength = ApplyOreFilter(signalStrength, oreType);
                             GprHits[writeIndex] = orePosition;
                             GprSignalStrength[writeIndex] = signalStrength;
                             GprAgeSeconds[writeIndex] = 0f;
-                            GprPingGpu[writeIndex] = new float4(orePosition, signalStrength);
-                            highestSignal = math.max(highestSignal, signalStrength);
+                            GprOreTypes[writeIndex] = oreType;
+                            GprPingGpu[writeIndex] = new float4(orePosition, displayStrength);
+                            highestSignal = math.max(highestSignal, displayStrength);
                             writeIndex++;
                             addedCount++;
                         }
@@ -131,7 +137,7 @@ namespace Hecton8.World.GPR
 
         private int CompactExistingPings()
         {
-            if (!GprHits.IsCreated || !GprSignalStrength.IsCreated || !GprAgeSeconds.IsCreated || !GprPingGpu.IsCreated)
+            if (!HasWritablePingStorage())
                 return 0;
 
             int previousCount = math.min(math.max(0, PreviousActiveCount), GprHits.Length);
@@ -153,10 +159,12 @@ namespace Hecton8.World.GPR
                 if (!math.all(math.isfinite(hit)) || !math.isfinite(strength))
                     continue;
 
+                int oreType = GprOreTypes[i];
                 GprHits[writeIndex] = hit;
                 GprSignalStrength[writeIndex] = strength;
                 GprAgeSeconds[writeIndex] = age;
-                GprPingGpu[writeIndex] = new float4(hit, strength);
+                GprOreTypes[writeIndex] = oreType;
+                GprPingGpu[writeIndex] = new float4(hit, ApplyOreFilter(strength, oreType));
                 writeIndex++;
             }
 
@@ -174,6 +182,15 @@ namespace Hecton8.World.GPR
                    math.isfinite(SdfRange) &&
                    SdfRange > 0f &&
                    math.all(math.isfinite(ProbeOrigin));
+        }
+
+        private bool HasWritablePingStorage()
+        {
+            return GprHits.IsCreated &&
+                   GprSignalStrength.IsCreated &&
+                   GprAgeSeconds.IsCreated &&
+                   GprOreTypes.IsCreated &&
+                   GprPingGpu.IsCreated;
         }
 
         private float SampleDensity(float3 runtimePosition)
@@ -199,13 +216,26 @@ namespace Hecton8.World.GPR
             return math.saturate(0.5f - signedDistance * math.rcp(math.max(0.001f, SdfRange)));
         }
 
-        private bool TryResolveOreHit(float3 samplePosition, int oreCount, out float3 orePosition)
+        private float ApplyOreFilter(float signalStrength, int oreType)
+        {
+            if (OreFilterType == 0 || oreType == OreFilterType)
+                return signalStrength;
+
+            return signalStrength * GroundRadarConstants.FilteredOreAlphaScale;
+        }
+
+        private bool TryResolveOreHit(float3 samplePosition, int oreCount, out float3 orePosition, out int oreType)
         {
             orePosition = default;
+            oreType = 0;
             float bestDistanceSq = GroundRadarConstants.OreMatchDistanceSq;
             int bestIndex = -1;
             for (int i = 0; i < oreCount; i++)
             {
+                int candidateType = OreTypes[i];
+                if (candidateType == 0)
+                    continue;
+
                 float3 candidate = OrePositions[i];
                 float distanceSq = math.lengthsq(candidate - samplePosition);
                 if (distanceSq >= bestDistanceSq)
@@ -214,6 +244,7 @@ namespace Hecton8.World.GPR
                 bestDistanceSq = distanceSq;
                 bestIndex = i;
                 orePosition = candidate;
+                oreType = candidateType;
             }
 
             return bestIndex >= 0;

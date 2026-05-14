@@ -1,5 +1,6 @@
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 
@@ -32,12 +33,16 @@ namespace Hecton8.Editor.ProceduralGen
     [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     internal struct BioForgeSdfBuildJob : IJobParallelFor
     {
+        public const int ModeFlagRock = 1 << 0;
+        public const int ModeFlagRibbon = 1 << 1;
+        public const int ModeFlagPorous = 1 << 2;
+
         [ReadOnly] public NativeArray<BioForgeBranch> Branches;
         [WriteOnly] public NativeArray<float> Density;
 
         public int PointResolution;
         public int BranchCount;
-        public int Mode;
+        public int ModeFlags;
         public uint Seed;
         public float3 BoundsMin;
         public float3 Step;
@@ -58,7 +63,10 @@ namespace Hecton8.Editor.ProceduralGen
             int z = index / (PointResolution * PointResolution);
 
             float3 p = BoundsMin + new float3(x, y, z) * Step;
-            float density = Mode == 1 ? EvaluateRock(p, false) : Mode == 2 ? EvaluateRibbonBranches(p) : Mode == 3 ? EvaluateRock(p, true) : EvaluateBranches(p);
+            bool rockMode = (ModeFlags & ModeFlagRock) != 0;
+            bool ribbonMode = (ModeFlags & ModeFlagRibbon) != 0;
+            bool porousMode = (ModeFlags & ModeFlagPorous) != 0;
+            float density = rockMode ? EvaluateRock(p, porousMode) : ribbonMode ? EvaluateRibbonBranches(p) : EvaluateBranches(p);
             Density[index] = math.isfinite(density) ? density : 1f;
         }
 
@@ -448,7 +456,7 @@ namespace Hecton8.Editor.ProceduralGen
     internal struct BioForgeEdgeCollapseDecimationJob : IJobParallelFor
     {
         [ReadOnly] public NativeArray<BioForgeMeshVertex> SourceVertices;
-        [WriteOnly] public NativeArray<BioForgeMeshVertex> OutputVertices;
+        [WriteOnly, NativeDisableParallelForRestriction] public NativeArray<BioForgeMeshVertex> OutputVertices;
 
         public int SourceTriangleCount;
         public int OutputTriangleCount;

@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e08a52eea4d9c8942a854b235d80b27d, type: 3}
+  m_Name: Rule_Shallows_TubeCoral
+  m_EditorClassIdentifier: Hecton8.Editor.ProceduralGen::Hecton8.Editor.ProceduralGen.BioRuleData
+  _assetPrefix: GEN_Shallows_TubeCoral
+  _material: {fileID: 2100000, guid: f669d8458f3703841b4ed34a8236b192, type: 2}
+  _axiom: 'F[+F][-F][^F][&F][/F][\F]'
+  _rules:
+  - _symbol: F
+    _replacement: 'F[+F][-F][^F][&F][/F][\F]'
+  _iterations: 2
+  _maxBranches: 1800
+  _angleDegrees: 42
+  _stepLength: 0.24
+  _lengthTaper: 0.76
+  _rootRadius: 0.24
+  _radiusTaper: 0.78
+  _minimumRadius: 0.055
+  _sdfResolution: 40
+  _boundsPadding: 0.32
+  _smoothMinK: 5.5
+  _sdfProfile: 0
+  _ribbonThicknessScale: 0.18
+  _ribbonWidthScale: 2.4
+  _lod0TriangleBudget: 2600
+  _lod1TriangleBudget: 620
+  _lod2TriangleBudget: 120
+  _rockRadius: 1.4
+  _rockNoiseAmplitude: 0.22
+  _rockNoiseFrequency: 3.5
+  _rockPoreCount: 0
+  _rockPoreRadius: 0.35
+  _rockPoreSurfaceBias: 0.72
+  _meshOutputFolder: Assets/_Project/Art/Generated/Flora/BioForge/Shallows/TubeCoral
+  _prefabOutputFolder: Assets/_Project/Prefabs/Nature/Flora/BioForge/Shallows/TubeCoral

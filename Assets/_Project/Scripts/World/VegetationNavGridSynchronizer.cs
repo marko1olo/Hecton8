@@ -215,10 +215,10 @@ namespace Hecton8.World
             }
 
             int smoothingPortalLookAhead = ResolveAbyssalPathPortalLookAhead(GlobalRegistry.ScalabilityTier);
+            int smoothingDdaSampleCap = ResolveAbyssalPathDdaSampleCap(GlobalRegistry.ScalabilityTier, abyssalPathSmoothingMaxSamples);
             EnsureAbyssalPathTelemetry();
             _lastAbyssalPathPortalLookAhead = smoothingPortalLookAhead;
-            _lastAbyssalPathMaxSamples = abyssalPathSmoothingMaxSamples;
-            _abyssalPathSmoothingStartTicks = Stopwatch.GetTimestamp();
+            _lastAbyssalPathMaxSamples = smoothingDdaSampleCap;
             var smoothingJob = new StringPullPathJob
             {
                 InputPath = _nativeMemory.AbyssalPathRawResultNative.AsDeferredJobArray(),
@@ -241,7 +241,7 @@ namespace Hecton8.World
                 ThreatVoxelOrigin = new float3(_ecosystemThreatVoxelOrigin.x, _ecosystemThreatVoxelOrigin.y, _ecosystemThreatVoxelOrigin.z),
                 ThreatVoxelCellSize = new float3(threatGridCellSize, thermalGridVerticalCellSize, threatGridCellSize),
                 SampleSpacing = abyssalPathSmoothingSampleSpacing,
-                MaxSamplesPerSegment = abyssalPathSmoothingMaxSamples,
+                MaxSamplesPerSegment = smoothingDdaSampleCap,
                 MaxPortalLookAhead = smoothingPortalLookAhead,
                 KelpWeight = abyssalPathSmoothingKelpWeight,
                 SargassumWeight = abyssalPathSmoothingSargassumWeight,
@@ -269,6 +269,21 @@ namespace Hecton8.World
                     return MidTierAbyssalPathPortalLookAhead;
                 default:
                     return LowTierAbyssalPathPortalLookAhead;
+            }
+        }
+
+        private static int ResolveAbyssalPathDdaSampleCap(HectonQualityTier tier, int configuredSampleCap)
+        {
+            int safeCap = math.clamp(configuredSampleCap, 1, MaxThreatDdaSteps);
+            switch (tier)
+            {
+                case HectonQualityTier.High:
+                case HectonQualityTier.Ultra:
+                    return safeCap;
+                case HectonQualityTier.Mid:
+                    return math.min(safeCap, MidTierAbyssalPathDdaSamples);
+                default:
+                    return math.min(safeCap, LowTierAbyssalPathDdaSamples);
             }
         }
 
@@ -1012,29 +1027,38 @@ namespace Hecton8.World
             if (!_abyssalPathScheduled)
                 return;
 
+            long completeStartTicks = Stopwatch.GetTimestamp();
             if (!DispatcherJobSwap.TryComplete(ref _abyssalPathHandle, forceComplete))
                 return;
 
+            float funnelMs = ResolveAbyssalPathElapsedMs(Stopwatch.GetTimestamp() - completeStartTicks);
             _abyssalPathScheduled = false;
-            float funnelMs = ResolveAbyssalPathElapsedMs();
             int rawPathCount = _nativeMemory.AbyssalPathRawResultNative.IsCreated ? _nativeMemory.AbyssalPathRawResultNative.Length : 0;
             _abyssalPathCount = _nativeMemory.AbyssalPathResultNative.IsCreated ? _nativeMemory.AbyssalPathResultNative.Length : 0;
             if (_abyssalPathCount <= 0)
             {
-                RecordAbyssalPathTelemetry(funnelMs, rawPathCount, 0);
+                RecordAbyssalPathTelemetry(funnelMs, rawPathCount, 0, default, default, true);
                 return;
             }
 
             EnsureVector3Capacity(ref _abyssalPathSnapshot, _abyssalPathCount);
             EnsureVector3NativeCapacity(ref _nativeMemory.AbyssalPathSnapshotNative, _abyssalPathCount);
+            Vector3 start = default;
+            Vector3 end = default;
+            bool finite = true;
             for (int i = 0; i < _abyssalPathCount; i++)
             {
                 Vector3 waypoint = _nativeMemory.AbyssalPathResultNative[i];
+                if (i == 0)
+                    start = waypoint;
+                end = waypoint;
+                if (!IsFinite(waypoint))
+                    finite = false;
                 _abyssalPathSnapshot[i] = waypoint;
                 _nativeMemory.AbyssalPathSnapshotNative[i] = waypoint;
             }
 
-            RecordAbyssalPathTelemetry(funnelMs, rawPathCount, _abyssalPathCount);
+            RecordAbyssalPathTelemetry(funnelMs, rawPathCount, _abyssalPathCount, start, end, finite);
         }
 
         private void EnsureAbyssalPathTelemetry()
@@ -1052,34 +1076,26 @@ namespace Hecton8.World
             _abyssalPathTelemetryDumpedForFault = false;
         }
 
-        private float ResolveAbyssalPathElapsedMs()
+        private static float ResolveAbyssalPathElapsedMs(long elapsedTicks)
         {
-            long startTicks = _abyssalPathSmoothingStartTicks;
-            if (startTicks <= 0)
-                return 0f;
-
-            long elapsedTicks = Stopwatch.GetTimestamp() - startTicks;
-            _abyssalPathSmoothingStartTicks = 0;
             if (elapsedTicks <= 0)
                 return 0f;
 
             return (float)(elapsedTicks * 1000.0 / Stopwatch.Frequency);
         }
 
-        private void RecordAbyssalPathTelemetry(float funnelMs, int rawCount, int outputCount)
+        private void RecordAbyssalPathTelemetry(
+            float funnelMs,
+            int rawCount,
+            int outputCount,
+            Vector3 start,
+            Vector3 end,
+            bool finite)
         {
             EnsureAbyssalPathTelemetry();
-            bool finite = true;
-            Vector3 start = default;
-            Vector3 end = default;
-            if (_nativeMemory.AbyssalPathResultNative.IsCreated && outputCount > 0)
-            {
-                start = _nativeMemory.AbyssalPathResultNative[0];
-                end = _nativeMemory.AbyssalPathResultNative[outputCount - 1];
-                for (int i = 0; i < outputCount; i++)
-                    finite &= IsFinite(_nativeMemory.AbyssalPathResultNative[i]);
-            }
-            else if (_nativeMemory.AbyssalPathRawResultNative.IsCreated && rawCount > 0)
+            if (outputCount <= 0 &&
+                _nativeMemory.AbyssalPathRawResultNative.IsCreated &&
+                rawCount > 0)
             {
                 start = _nativeMemory.AbyssalPathRawResultNative[0];
                 end = _nativeMemory.AbyssalPathRawResultNative[rawCount - 1];
@@ -1155,9 +1171,20 @@ namespace Hecton8.World
                     writer.Write(AbyssalPathTelemetryFrameCount);
                     writer.Write(_abyssalPathTelemetryCursor);
                     writer.Write(_abyssalPathTelemetrySequence);
-                    for (int i = 0; i < AbyssalPathTelemetryFrameCount; i++)
+                    int validEntryCount = _abyssalPathTelemetrySequence < (uint)AbyssalPathTelemetryFrameCount
+                        ? (int)_abyssalPathTelemetrySequence
+                        : AbyssalPathTelemetryFrameCount;
+                    writer.Write(validEntryCount);
+                    int firstEntryIndex = validEntryCount < AbyssalPathTelemetryFrameCount
+                        ? 0
+                        : _abyssalPathTelemetryCursor;
+                    for (int dumpOffset = 0; dumpOffset < validEntryCount; dumpOffset++)
                     {
-                        AbyssalPathTelemetryEntry entry = _abyssalPathTelemetry[i];
+                        int entryIndex = firstEntryIndex + dumpOffset;
+                        if (entryIndex >= AbyssalPathTelemetryFrameCount)
+                            entryIndex -= AbyssalPathTelemetryFrameCount;
+
+                        AbyssalPathTelemetryEntry entry = _abyssalPathTelemetry[entryIndex];
                         writer.Write(entry.Frame);
                         writer.Write(entry.RawCount);
                         writer.Write(entry.OutputCount);
@@ -1201,7 +1228,6 @@ namespace Hecton8.World
             _lastAbyssalPathEndNode = -1;
             _abyssalPathTelemetryCursor = 0;
             _abyssalPathTelemetrySequence = 0;
-            _abyssalPathSmoothingStartTicks = 0;
             _lastAbyssalPathPortalLookAhead = 0;
             _lastAbyssalPathMaxSamples = 0;
             _abyssalPathTelemetryDumpedForFault = false;

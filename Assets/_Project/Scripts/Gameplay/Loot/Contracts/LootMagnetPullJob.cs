@@ -1,5 +1,3 @@
-using Hecton8.Core;
-using Hecton8.Core.Signals;
 using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
@@ -24,16 +22,14 @@ namespace Hecton8.Gameplay.Loot.Contracts
         public NativeArray<float3> EntityVelocities;
         [ReadOnly] public NativeArray<uint> EntityItemHashes;
         [ReadOnly] public NativeArray<ushort> EntityQuantities;
-
-        public NativeQueue<ItemAcquiredSignal>.ParallelWriter ItemAcquiredWriter;
-        public NativeQueue<AcousticPingSignal>.ParallelWriter AcousticPingWriter;
-        public NativeQueue<WakeGeneratedSignal>.ParallelWriter WakeGeneratedWriter;
+        public NativeArray<LootMagnetSignalEvent> SignalEvents;
 
         public void Execute(int index)
         {
+            SignalEvents[index] = default;
             uint flags = EntityFlags[index];
-            if ((flags & (LootEntityFlags.Active | LootEntityFlags.IsLoot)) !=
-                (LootEntityFlags.Active | LootEntityFlags.IsLoot))
+            const uint requiredFlags = LootEntityFlags.Active | LootEntityFlags.IsLoot | LootEntityFlags.PullEnabled;
+            if ((flags & requiredFlags) != requiredFlags)
             {
                 return;
             }
@@ -49,7 +45,7 @@ namespace Hecton8.Gameplay.Loot.Contracts
 
             if (distSq > PullRadiusSq)
             {
-                EntityFlags[index] = flags & ~LootEntityFlags.Pulling;
+                EntityFlags[index] = flags & ~(LootEntityFlags.Pulling | LootEntityFlags.LowTierSnap);
                 return;
             }
 
@@ -61,7 +57,12 @@ namespace Hecton8.Gameplay.Loot.Contracts
                                      LootEntityFlags.Pulling |
                                      (LowTierSnap != 0 ? LootEntityFlags.LowTierSnap : 0u);
                 EntityAups[index] = LowTierSnap != 0 ? PlayerAup : lootAup;
-                EmitAcquired(index, LowTierSnap != 0 ? PlayerAup : lootAup, distSq);
+                WriteSignalEvent(
+                    index,
+                    LowTierSnap != 0 ? PlayerAup : lootAup,
+                    float3.zero,
+                    distSq,
+                    LootMagnetEventFlags.Acquired | LootMagnetEventFlags.Acoustic | LootMagnetEventFlags.Wake);
                 return;
             }
 
@@ -87,85 +88,55 @@ namespace Hecton8.Gameplay.Loot.Contracts
             EntityAups[index] = nextAup;
             EntityFlags[index] = flags | LootEntityFlags.Pulling |
                                  (LowTierSnap != 0 ? LootEntityFlags.LowTierSnap : 0u);
-            EmitPresentationSignals(index, nextAup, velocity, distSq);
+            if ((index & (LootMagnetConstants.PresentationSignalStride - 1)) == 0)
+            {
+                WriteSignalEvent(
+                    index,
+                    nextAup,
+                    velocity,
+                    distSq,
+                    LootMagnetEventFlags.Acoustic | LootMagnetEventFlags.Wake);
+            }
         }
 
-        private void EmitAcquired(int index, AbsoluteUniversePosition positionAup, float distSq)
+        private void WriteSignalEvent(
+            int index,
+            AbsoluteUniversePosition positionAup,
+            float3 velocity,
+            float distSq,
+            uint eventFlags)
         {
-            uint itemHash = EntityItemHashes[index];
-            ushort quantity = EntityQuantities[index];
-            ItemAcquiredWriter.Enqueue(new ItemAcquiredSignal
-            {
-                PositionAup = positionAup,
-                ItemHash = itemHash,
-                OreHash = itemHash,
-                Quantity = quantity,
-                SourceKind = LootMagnetConstants.ItemSourceLootMagnet,
-                Flags = LootMagnetConstants.SignalFlagLootMagnet,
-                Frame = Frame
-            });
-
-            AcousticPingWriter.Enqueue(new AcousticPingSignal
-            {
-                PositionAup = positionAup,
-                RadiusMeters = math.sqrt(PullRadiusSq),
-                Intensity01 = ResolveIntensity(distSq),
-                SourceId = itemHash,
-                Channel = AcousticPingSignal.ChannelLootZip,
-                Flags = AcousticPingSignal.FlagLootZip
-            });
-
-            WakeGeneratedWriter.Enqueue(new WakeGeneratedSignal
-            {
-                PositionAup = positionAup,
-                Velocity = float3.zero,
-                SourceFlags = LootMagnetConstants.WakeSourceLootZip
-            });
-        }
-
-        private void EmitPresentationSignals(int index, AbsoluteUniversePosition positionAup, float3 velocity, float distSq)
-        {
-            if ((index & (LootMagnetConstants.PresentationSignalStride - 1)) != 0)
-                return;
-
-            uint itemHash = EntityItemHashes[index];
-            AcousticPingWriter.Enqueue(new AcousticPingSignal
-            {
-                PositionAup = positionAup,
-                RadiusMeters = math.sqrt(PullRadiusSq),
-                Intensity01 = ResolveIntensity(distSq),
-                SourceId = itemHash,
-                Channel = AcousticPingSignal.ChannelLootZip,
-                Flags = AcousticPingSignal.FlagLootZip
-            });
-
-            WakeGeneratedWriter.Enqueue(new WakeGeneratedSignal
+            SignalEvents[index] = new LootMagnetSignalEvent
             {
                 PositionAup = positionAup,
                 Velocity = velocity,
-                SourceFlags = LootMagnetConstants.WakeSourceLootZip
-            });
-        }
-
-        private float ResolveIntensity(float distSq)
-        {
-            float radiusSq = math.max(PullRadiusSq, LootMagnetConstants.MinDistanceSq);
-            return math.saturate(1f - (distSq * math.rcp(radiusSq)));
+                ItemHash = EntityItemHashes[index],
+                Quantity = EntityQuantities[index],
+                DistanceSq = distSq,
+                Frame = Frame,
+                Flags = eventFlags
+            };
         }
 
         private static float3 ResolveDeltaToPlayer(
             in AbsoluteUniversePosition lootAup,
             in AbsoluteUniversePosition playerAup)
         {
-            double3 lootAbsolute = lootAup.ToAbsoluteDouble3();
-            double3 playerAbsolute = playerAup.ToAbsoluteDouble3();
-            double3 delta = playerAbsolute - lootAbsolute;
+            double cellSize = LootMagnetConstants.AupCellSizeMeters;
+            double3 delta = new double3(
+                (((double)playerAup.GridX - lootAup.GridX) * cellSize) + playerAup.LocalX - lootAup.LocalX,
+                (((double)playerAup.GridY - lootAup.GridY) * cellSize) + playerAup.LocalY - lootAup.LocalY,
+                (((double)playerAup.GridZ - lootAup.GridZ) * cellSize) + playerAup.LocalZ - lootAup.LocalZ);
             return new float3((float)delta.x, (float)delta.y, (float)delta.z);
         }
 
         private static AbsoluteUniversePosition OffsetAup(in AbsoluteUniversePosition aup, float3 offsetMeters)
         {
-            double3 absolute = aup.ToAbsoluteDouble3() + new double3(offsetMeters.x, offsetMeters.y, offsetMeters.z);
+            double cellSize = LootMagnetConstants.AupCellSizeMeters;
+            double3 absolute = new double3(
+                ((double)aup.GridX * cellSize) + aup.LocalX + offsetMeters.x,
+                ((double)aup.GridY * cellSize) + aup.LocalY + offsetMeters.y,
+                ((double)aup.GridZ * cellSize) + aup.LocalZ + offsetMeters.z);
             return AbsoluteUniversePosition.FromAbsolutePosition(absolute);
         }
     }

@@ -90,6 +90,7 @@ rg -l "<pattern>" Assets/_Project/Scripts --glob "*.cs"
 - Cached combat runtime math/scalability policy outside `ResolveRuntimeMathLod()`.
 - Padded `HighSpeedImpactSignal` from 88 to 96 bytes; static scan found no remaining non-16-byte `StructLayout(Size=...)` values in `GlobalSignals.cs`.
 - Replaced bridge `new ...Signal` object-initializer text with `default` plus explicit field assignment in signal mirror paths.
+- Removed `FixedString64Bytes Prompt` from `PlayerLookTargetSignal`; the signal now carries `PromptHash` and reserved uint args only. Prompt text lives in bounded `PlayerLookTargetPromptCache` sidecar storage keyed by hash.
 
 ## Remaining Legacy Evidence
 
@@ -104,6 +105,7 @@ Status: BLOCKED BY DOMAIN BLAST RADIUS for global eradication. This pass only st
 
 - `SignalPayloadFiniteGuards` contains no `new` and no `string`.
 - `GlobalSignals.cs` string hits are SignalBus cold labels or method parameters (`OwnerLabel`, `ResolveQueueLabel`, `ComputeStableSignalLaneHash`, native sentinel labels), not signal DTO payload fields.
+- Focused scan found no `FixedString` in `GlobalSignals.cs`, `PlayerInteraction.cs`, or `DiegeticTooltipSystem.cs` after the look-target prompt rewrite.
 - `new` hits in `GlobalSignals.cs` are cold static arrays/adapters or native collection allocation; hot bridge signal DTO construction was removed from mirror paths. Runtime GC proof remains unavailable without Unity Profiler/GCMonitor.
 
 ## Compile Evidence
@@ -111,9 +113,9 @@ Status: BLOCKED BY DOMAIN BLAST RADIUS for global eradication. This pass only st
 Command:
 
 ```powershell
-dotnet build Hecton8.Core.csproj
+dotnet build Hecton8.Core.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false /p:UseSharedCompilation=false
 ```
 
-Result: failed with 129 errors / 47 warnings on the latest attempt. Current visible errors are missing external/neighbor assemblies and types (`Hecton8.Environment.Fluids`, `Hecton8.Audio.Virtualization`, `MacroSwarm`, `BrineLayerSample`, `SoundEmissionSignal`, `AcousticAup`, `VirtualVoice*`, etc.). A filtered build scan for `GlobalSignals.cs`, `CombatDamageRuntime.cs`, and `SoundscapeSystem.cs` returned no matches.
+Result: latest errors-only run succeeded with 0 warnings / 0 errors after repairing concurrent compile breaks. A separate warnings-only compile pass recorded 30 CS0436 generated-project duplicate-type warnings from the ignored CLI project after including IK job source beside a stale imported assembly. The repair included existing Unity-imported source paths for the prompt-cache, WFC/blueprint, and IK job source, plus restoration of a referenced private audio Burst probe job; no stub contracts were invented.
 
-Evidence class: CLI_COMPILE for failure state only. Runtime GC and Unity Console remain PENDING VERIFICATION.
+Evidence class: CLI_COMPILE for `Hecton8.Core.csproj`. Runtime GC, Unity Console, and full global event eradication remain PENDING because Unity MCP refresh was unavailable and the mandatory legacy scan still returns 2106 non-zero hits.

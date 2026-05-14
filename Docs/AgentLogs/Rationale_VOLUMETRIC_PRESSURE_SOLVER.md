@@ -121,3 +121,51 @@ Solution: Split `ClearModuleStressState` into publish/no-publish paths and used 
 Rejected Alternatives: Always publishing zero before replacement upload, or accepting slot-index fallback. The first burns driver traffic; the second hides real order changes.
 Scalability potential: Low/MX350 avoids unnecessary shader parameter churn; Mid/High/Ultra keep localized stress stable during pooled-module activation/reorder.
 Hardware Impact: Saves one redundant `Shader.SetGlobalVector` on active-order rebuild ticks and prevents false stress migration with one native instance-id read per no-graph module.
+
+## Follow-Up Correction - Tiered Deformation Amplitude
+
+Problem: Module deformation used a binary low/non-low switch, so Mid paid full high-tier bow cost and Ultra had no visual overkill path.
+Solution: Added tier-specific displacement amplitudes: Low/MX350/Unknown keep 0m vertex bow with crease-only feedback, Mid uses 0.036m, High uses 0.055m, and Ultra uses 0.075m. Shader params now dirty on any quality-tier change, not only low-tier transitions.
+Rejected Alternatives: Keeping one non-low amplitude or driving amplitude from material instances. One amplitude violates the scalability pillar; material instances break batching.
+Scalability potential: Low remains toaster-safe, Mid gets restrained deformation, High gets the original AAA bend, Ultra spends saved cycles on stronger pressure hallucination.
+Hardware Impact: No extra per-frame allocation and no extra shader fetch. CPU cost is one enum compare in the dirty check; GPU cost is unchanged ALU with a tier-adjusted scalar.
+
+## Follow-Up Correction - Shared Sine Panel Mask
+
+Problem: Mid/High/Ultra vertices computed the same sine panel mask once for object-space bow and again for cheap normal bias.
+Solution: `HectonHabitatInteriorApplyPanelBendOS` now outputs the panel mask, and `HectonHabitatInteriorApplyCheapNormalBiasWS` reuses it.
+Rejected Alternatives: Replacing sine with triangle waves would violate the prompt's sine-panel bow requirement; leaving duplicate sine calls wastes ALU on every stressed vertex.
+Scalability potential: Low/MX350 is unaffected because vertex bow is disabled. Mid/High/Ultra keep the same look with less vertex ALU.
+Hardware Impact: Saves two sine evaluations per stressed vertex normal-bias path, estimated 2-6 us per 1k affected interior vertices on MX350-class GPUs.
+
+## Follow-Up Correction - Low-Tier Triangle Crease Mask
+
+Problem: The MX350 crease fallback still used the sine panel mask per fragment, which is expensive in the exact tier where vertex deformation is disabled for cost.
+Solution: Added `HectonHabitatInteriorCheapPanelMask` and routed only `HectonHabitatInteriorApplyLowTierCrease` through it. The required sine mask remains on the Mid/High/Ultra vertex bow path.
+Rejected Alternatives: Keeping per-fragment sine on low tier, or replacing all panel masks with triangle waves. The first wastes fragment ALU on MX350; the second weakens the instructed sine bow.
+Scalability potential: Low/MX350 gets cheaper crease-only pressure feedback; Mid/High/Ultra keep premium sine bow and shared-mask normal bias.
+Hardware Impact: Removes two sine evaluations per affected low-tier fragment; estimated 8-25 us saved on dense interior wall views on MX350-class GPUs.
+
+## Follow-Up Correction - Gated Low-Tier Detail Sample
+
+Problem: `Hecton_DryZoneLit` sampled `_DetailMask` for habitat crease feedback before the low-tier helper could reject Mid/High/Ultra or zero-stress pixels.
+Solution: Moved the detail-mask sample inside a `[branch]` gated by `_HectonHabitatModuleStressParams.z > 0.5` and `input.habitatStress01 > 0.0001h`.
+Rejected Alternatives: Leaving the guard only inside `HectonHabitatInteriorApplyLowTierCrease`, or removing the detail mask entirely. The first still pays the texture sample; the second damages low-tier visual readability.
+Scalability potential: Low/MX350 still gets readable crease feedback under pressure. Mid/High/Ultra skip the unused fragment texture fetch and spend their budget on vertex bow and normal bias.
+Hardware Impact: Removes one detail texture sample per non-low or zero-stress DryZone fragment; estimated 10-40 us saved in dense interior wall views on MX350-class GPUs.
+
+## Follow-Up Correction - Zero-Count Upload Clamp
+
+Problem: Publishing zero visible modules still created the module stress `GraphicsBuffer`, and `Unknown` quality tier could mark an empty shader state as low-tier mode.
+Solution: `UploadModuleStressMatrix` now skips buffer creation/upload when the clamped module count is zero; `PublishModuleStressShader` publishes zero deformation and inactive low-tier mode for zero-count states; DryZone vertex lookup now requires a positive shader module count.
+Rejected Alternatives: Keeping an eagerly allocated buffer for future modules, or relying on `stress01 == 0` to hide stale shader params. The first wastes VRAM in empty habitats; the second leaves misleading global state and still calls the zero-count resolver.
+Scalability potential: Low/MX350 avoids useless global buffer allocation and vertex resolver calls in empty/boot states. Mid/High/Ultra get exact deformation amplitude only when visible module data exists.
+Hardware Impact: Saves one structured buffer allocation in empty stress states and removes zero-count resolver work from DryZone vertices; estimated 5-20 us startup/rebuild savings plus small VRAM reduction on i3/MX350-class hardware.
+
+## Follow-Up Correction - Runtime Target Hash Resolution
+
+Problem: Graph-backed modules matched stress signals only against habitat marker/node hashes. Direct combat and hull deformation producers often carry Unity `EntityId`-derived target hashes, so a real impact could miss the module stress spike.
+Solution: `TryResolveModuleStressIndex` now checks the stable graph hash and the runtime entity hash. `BaseModuleCompromisedSignal.ModuleHash` uses the stable-or-runtime key so no-graph modules do not publish zero identity.
+Rejected Alternatives: Forcing all producers to emit habitat graph ids, or scanning only nearest world point. Producer coupling violates the signal-bus contract; nearest-only matching is less deterministic and can hit the wrong room in tight interiors.
+Scalability potential: Low/MX350 gets reliable crease/spike feedback from direct impacts. Mid/High/Ultra get localized bowing from the same signal without extra shader data.
+Hardware Impact: Adds one `EntityId` hash compare only while processing impact signals, not per vertex or per frame in the idle path; estimated under 2 us for 64 modules on i3/MX350-class hardware while recovering missed cinematic spikes.

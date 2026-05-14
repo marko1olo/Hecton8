@@ -79,6 +79,8 @@ namespace Hecton8.UI.Tools
         private readonly char[] _primaryBuffer = new char[TextBufferCapacity];
         // COLD ALLOC: char[96] - secondary TMP SetCharArray staging buffer - owner: ToolDiegeticDisplayController
         private readonly char[] _secondaryBuffer = new char[TextBufferCapacity];
+        // COLD ALLOC: char[96] - scanner title cache to avoid hash-registry scans per repaint - owner: ToolDiegeticDisplayController
+        private readonly char[] _scannerTitleCache = new char[TextBufferCapacity];
 
         private RenderTexture _renderTexture;
         private RenderTexturePool _cachedRenderTexturePool;
@@ -104,6 +106,8 @@ namespace Hecton8.UI.Tools
         private int _lastDistanceBucket = InvalidDisplayBucket;
         private int _lastScannerProgressBucket = InvalidDisplayBucket;
         private uint _lastScannerArtifactHash;
+        private uint _scannerTitleCacheHash;
+        private int _scannerTitleCacheLength;
         private float _heat01;
         private float _battery01;
         private float _distanceMeters;
@@ -394,7 +398,7 @@ namespace Hecton8.UI.Tools
             int cursor = 0;
             bool lowTier = IsLowTier(_currentTier);
             if (lowTier ||
-                !ScannableTarget.TryWriteLoreEntityTitle(artifactHash, span, out cursor) ||
+                !TryResolveScannerTitle(artifactHash, span, out cursor) ||
                 cursor <= 0)
             {
                 cursor = 0;
@@ -423,6 +427,38 @@ namespace Hecton8.UI.Tools
             ZeroGCFormatter.AppendToSpan("  ".AsSpan(), span, ref cursor);
             AppendStatusToken(statusBucket, span, ref cursor);
             _secondaryLabel.SetCharArray(_secondaryBuffer, 0, math.max(0, cursor));
+        }
+
+        private bool TryResolveScannerTitle(uint artifactHash, Span<char> destination, out int written)
+        {
+            written = 0;
+            if (artifactHash == 0u || destination.Length <= 0)
+                return false;
+
+            if (_scannerTitleCacheHash != artifactHash || _scannerTitleCacheLength <= 0)
+            {
+                _scannerTitleCacheHash = 0u;
+                _scannerTitleCacheLength = 0;
+                if (!ScannableTarget.TryWriteLoreEntityTitle(
+                        artifactHash,
+                        _scannerTitleCache.AsSpan(),
+                        out int cachedLength) ||
+                    cachedLength <= 0)
+                {
+                    return false;
+                }
+
+                _scannerTitleCacheHash = artifactHash;
+                _scannerTitleCacheLength = math.min(cachedLength, _scannerTitleCache.Length);
+            }
+
+            int length = math.min(_scannerTitleCacheLength, destination.Length);
+            if (length <= 0)
+                return false;
+
+            _scannerTitleCache.AsSpan(0, length).CopyTo(destination);
+            written = length;
+            return true;
         }
 
         private static void ScrambleDecryptionSpan(Span<char> span, uint hash, int frame, float progress01)

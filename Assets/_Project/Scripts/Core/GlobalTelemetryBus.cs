@@ -45,7 +45,8 @@ namespace Hecton8.Core
         MemoryBreach = 25,
         DominantAxisTelemetry = 26,
         UnityLogFault = 27,
-        InputSchemeHash = 28
+        InputSchemeHash = 28,
+        PrologueStage = 29
     }
 
     [StructLayout(LayoutKind.Sequential, Size = 64)]
@@ -388,6 +389,14 @@ namespace Hecton8.Core
         public static void PublishInputSchemeHash(uint schemeHash, uint flags, uint frame)
         {
             Publish(TelemetryEventType.InputSchemeHash, schemeHash, flags, frame, default);
+        }
+
+        /// <summary>
+        /// Publishes prologue sequence state transitions as hash-only stage telemetry.
+        /// </summary>
+        public static void PublishPrologueStage(uint stageHash, uint stateHash, uint flags)
+        {
+            Publish(TelemetryEventType.PrologueStage, stageHash, stateHash, flags, default);
         }
 
         /// <summary>

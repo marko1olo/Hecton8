@@ -12,8 +12,6 @@ namespace Hecton8.Audio.Virtualization
     [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard, CompileSynchronously = true)]
     public struct VirtualVoiceSortJob : IJob
     {
-        private const int FixedSortStackSafeLimit = 120;
-
         public NativeList<VirtualVoice> Voices;
         public NativeArray<VirtualVoiceSelection> Selections;
         public NativeArray<VirtualVoiceStatistics> Statistics;
@@ -28,6 +26,8 @@ namespace Hecton8.Audio.Virtualization
             int totalVoices = Voices.Length;
             int culledVoices = 0;
             int audibleCount = 0;
+            int safeLimit = math.clamp(PhysicalVoiceLimit, 0, Selections.Length);
+            int selectedCount = 0;
             float minAudibleEnergy = math.max(0f, MinimumAudibleEnergy);
 
             for (int i = 0; i < totalVoices; i++)
@@ -67,38 +67,13 @@ namespace Hecton8.Audio.Virtualization
                 voice.Weight = priority * attenuation;
                 Voices[audibleCount] = voice;
                 audibleCount++;
+                selectedCount = InsertSelectionCandidate(in voice, Selections, safeLimit, selectedCount);
             }
 
             if (audibleCount < totalVoices)
                 Voices.ResizeUninitialized(audibleCount);
 
-            if (audibleCount > 1)
-                QuickSortByWeightDescending(ref Voices, audibleCount);
-
-            int safeLimit = math.clamp(PhysicalVoiceLimit, 0, Selections.Length);
-            int activePhysical = math.min(safeLimit, audibleCount);
-            for (int i = 0; i < activePhysical; i++)
-            {
-                VirtualVoice voice = Voices[i];
-                Selections[i] = new VirtualVoiceSelection
-                {
-                    EventID = voice.EventID,
-                    ClipHash = voice.ClipHash,
-                    StableKey = voice.StableKey,
-                    SourceAup = voice.SourceAup,
-                    Volume = voice.Volume,
-                    Pitch = voice.Pitch,
-                    DopplerRatio = voice.DopplerRatio,
-                    Attenuation = voice.Attenuation,
-                    Weight = voice.Weight,
-                    DistanceSq = voice.DistanceSq,
-                    StationaryCacheKey = voice.StationaryCacheKey,
-                    PortalFlags = voice.PortalFlags,
-                    FoveatedTier = voice.FoveatedTier
-                };
-            }
-
-            for (int i = activePhysical; i < safeLimit; i++)
+            for (int i = selectedCount; i < Selections.Length; i++)
                 Selections[i] = default;
 
             if (Statistics.Length > 0)
@@ -109,9 +84,9 @@ namespace Hecton8.Audio.Virtualization
                     TotalVoices = totalVoices,
                     AudibleVoices = audibleCount,
                     CulledVoices = culledVoices,
-                    ActivePhysicalVoices = activePhysical,
+                    ActivePhysicalVoices = selectedCount,
                     PhysicalVoiceLimit = safeLimit,
-                    StolenVoices = math.max(0, audibleCount - activePhysical),
+                    StolenVoices = math.max(0, audibleCount - selectedCount),
                     DroppedVoices = math.max(0, DroppedVoiceCount)
                 };
             }
@@ -122,98 +97,54 @@ namespace Hecton8.Audio.Virtualization
             return math.isfinite(value) ? value : fallback;
         }
 
-        private static void QuickSortByWeightDescending(ref NativeList<VirtualVoice> voices, int count)
+        private static int InsertSelectionCandidate(
+            in VirtualVoice voice,
+            NativeArray<VirtualVoiceSelection> selections,
+            int safeLimit,
+            int selectedCount)
         {
-            FixedList512Bytes<int> stack = default;
-            PushRange(ref stack, 0, count - 1);
+            if (safeLimit <= 0)
+                return selectedCount;
 
-            while (stack.Length >= 2)
+            if (selectedCount == safeLimit && voice.Weight <= selections[safeLimit - 1].Weight)
+                return selectedCount;
+
+            int insertIndex = selectedCount;
+            while (insertIndex > 0 && selections[insertIndex - 1].Weight < voice.Weight)
+                insertIndex--;
+
+            if (insertIndex >= safeLimit)
+                return selectedCount;
+
+            int moveStart = math.min(selectedCount, safeLimit - 1);
+            for (int moveIndex = moveStart; moveIndex > insertIndex; moveIndex--)
+                selections[moveIndex] = selections[moveIndex - 1];
+
+            selections[insertIndex] = CreateSelection(in voice);
+            if (selectedCount < safeLimit)
+                selectedCount++;
+
+            return selectedCount;
+        }
+
+        private static VirtualVoiceSelection CreateSelection(in VirtualVoice voice)
+        {
+            return new VirtualVoiceSelection
             {
-                int rightIndex = stack.Length - 1;
-                int right = stack[rightIndex];
-                stack.RemoveAt(rightIndex);
-                int leftIndex = stack.Length - 1;
-                int left = stack[leftIndex];
-                stack.RemoveAt(leftIndex);
-
-                if (right <= left)
-                    continue;
-
-                if (right - left <= 12)
-                {
-                    InsertionSortRange(ref voices, left, right);
-                    continue;
-                }
-
-                int i = left;
-                int j = right;
-                float pivot = voices[(left + right) >> 1].Weight;
-                while (i <= j)
-                {
-                    while (voices[i].Weight > pivot)
-                        i++;
-                    while (voices[j].Weight < pivot)
-                        j--;
-
-                    if (i > j)
-                        continue;
-
-                    Swap(ref voices, i, j);
-                    i++;
-                    j--;
-                }
-
-                if (left < j)
-                    PushRangeOrSort(ref stack, ref voices, left, j);
-                if (i < right)
-                    PushRangeOrSort(ref stack, ref voices, i, right);
-            }
-        }
-
-        private static void PushRangeOrSort(
-            ref FixedList512Bytes<int> stack,
-            ref NativeList<VirtualVoice> voices,
-            int left,
-            int right)
-        {
-            if (stack.Length + 2 <= FixedSortStackSafeLimit)
-                PushRange(ref stack, left, right);
-            else
-                InsertionSortRange(ref voices, left, right);
-        }
-
-        private static void PushRange(ref FixedList512Bytes<int> stack, int left, int right)
-        {
-            int leftValue = left;
-            int rightValue = right;
-            stack.Add(leftValue);
-            stack.Add(rightValue);
-        }
-
-        private static void InsertionSortRange(ref NativeList<VirtualVoice> voices, int left, int right)
-        {
-            for (int i = left + 1; i <= right; i++)
-            {
-                VirtualVoice value = voices[i];
-                int j = i - 1;
-                while (j >= left && voices[j].Weight < value.Weight)
-                {
-                    voices[j + 1] = voices[j];
-                    j--;
-                }
-
-                voices[j + 1] = value;
-            }
-        }
-
-        private static void Swap(ref NativeList<VirtualVoice> voices, int a, int b)
-        {
-            if (a == b)
-                return;
-
-            VirtualVoice tmp = voices[a];
-            voices[a] = voices[b];
-            voices[b] = tmp;
+                EventID = voice.EventID,
+                ClipHash = voice.ClipHash,
+                StableKey = voice.StableKey,
+                SourceAup = voice.SourceAup,
+                Volume = voice.Volume,
+                Pitch = voice.Pitch,
+                DopplerRatio = voice.DopplerRatio,
+                Attenuation = voice.Attenuation,
+                Weight = voice.Weight,
+                DistanceSq = voice.DistanceSq,
+                StationaryCacheKey = voice.StationaryCacheKey,
+                PortalFlags = voice.PortalFlags,
+                FoveatedTier = voice.FoveatedTier
+            };
         }
     }
 }

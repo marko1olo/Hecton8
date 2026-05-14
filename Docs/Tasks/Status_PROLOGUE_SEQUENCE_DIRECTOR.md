@@ -23,26 +23,36 @@ Status: PENDING VERIFICATION.
 
 ## Primary Tasks
 
-- [ ] Task 1 - Singleton eradication | Justification pending. Estimate pending.
-- [ ] Task 2 - Signal migration | Justification pending. Estimate pending.
-- [ ] Task 3 - ASMDEF isolation | Justification pending. Estimate pending.
-- [ ] Task 4 - Awaitable sequence runner | Justification pending. Estimate pending.
-- [ ] Task 5 - Stage 1 orbital silence | Justification pending. Estimate pending.
-- [ ] Task 6 - Stage 2 re-entry burn | Justification pending. Estimate pending.
-- [ ] Task 7 - Stage 3 manual override | Justification pending. Estimate pending.
-- [ ] Task 8 - Impact synchronization | Justification pending. Estimate pending.
-- [ ] Task 9 - Chunk hydration wait | Justification pending. Estimate pending.
-- [ ] Task 10 - Water transition | Justification pending. Estimate pending.
-- [ ] Task 11 - Dev skip protocol | Justification pending. Estimate pending.
-- [ ] Task 12 - Zero-GC waiting loops | Justification pending. Estimate pending.
-- [ ] Task 13 - Blackbox dump | Justification pending. Estimate pending.
-- [ ] Task 14 - Math LOD hydration bypass | Justification pending. Estimate pending.
-- [ ] Task 15 - Omega compile check | Justification pending. Estimate pending.
+- [x] Task 1 - Singleton eradication | DOD: `IPrologueSequenceService` added to Core.Contracts and registered through `GlobalRegistry.RegisterPrologueSequenceRuntime`; no `PrologueManager.Instance` path introduced. Alternative rejected: scene singleton/FindObject polling. Estimate: 14 us cold registration, 0 us wait-loop cost.
+- [x] Task 2 - Signal migration | DOD: Core bridge consumes `AtmosphericReentrySignal` through `SignalBus` snapshots and emits direct `SystemPauseSignal` for input lock flags. Alternative rejected: destructive legacy dequeue cursor shared with VFX. Estimate: 2-5 us per polled frame.
+- [x] Task 3 - ASMDEF isolation | DOD: `Hecton8.Narrative.Prologue.asmdef` references only `Hecton8.Core.Contracts`, `Unity.Collections`, and `Unity.Mathematics`; concrete domains live in Core bridge. Alternative rejected: direct Core/World/Audio refs from narrative assembly. Estimate: 0 us runtime, compile boundary only.
+- [x] Task 4 - Awaitable sequence runner | DOD: `AwaitableDropSequenceDirector.RunPrologueSequenceAsync(CancellationToken)` implements the state machine and passes tokens to every Awaitable wait. Alternative rejected: coroutine/Update runner. Estimate: 4-12 us per frame while waiting.
+- [x] Task 5 - Stage 1 orbital silence | DOD: sequence locks look+translation flags, publishes muffled breathing through mixer/acoustic DSP signals, and waits 3 seconds via `DelayDilatedAsync`. Alternative rejected: `Task.Delay` or hard-coded unscaled timer. Estimate: 6 us start cost, 0 allocations in wait loop.
+- [x] Task 6 - Stage 2 re-entry burn | DOD: emits `VocalWarningSignal` with `HullTempCritical` hash mapped to VWS, emits `HapticRequest` heavy rumble, and awaits Mach 10 via orbital snapshot/atmospheric fallback. Alternative rejected: adding a new VWS clip table dependency or blind timer. Estimate: 5-14 us per wait frame.
+- [x] Task 7 - Stage 3 manual override | DOD: look-input is unlocked by only retaining translation lock and `DiegeticHudSignal`/HUD hash prompt requests manual release. Alternative rejected: world-space UI prefab direct reference. Estimate: 4 us publish cost.
+- [x] Task 8 - Impact synchronization | DOD: `PrologueCompleteSignal` snapshot gates impact and then awaits exactly one `NextFrameAsync(ct)`. Alternative rejected: same-frame water swap or hard-coded delay. Estimate: one frame, 0 allocations.
+- [x] Task 9 - Chunk hydration wait | DOD: bridge checks configured `IStreamingBackpressureService.IsChunkResident(oceanSurfaceChunkId)` and `SectorResidencyHydratedSignal` snapshots; no N-second wait. Alternative rejected: scene load sleep or concrete world-manager dependency in the bridge. Estimate: 3-12 us per wait frame.
+- [x] Task 10 - Water transition | DOD: calls `ForceZeroUniverseVelocity`, `CameraJuiceSignals.PublishImpact(1f)`, and emits ocean-handoff `PrologueCompleteSignal` consumed by `HectonFluidEngine`. Alternative rejected: direct fluid engine mutation from narrative. Estimate: 10-20 us transition publish cost.
+- [x] Task 11 - Dev skip protocol | DOD: dev-only skip reads `GlobalRegistry.IsDevelopmentBuild`, input cancel/chord, cancels sequence, forces shallow-water hydration proxy, zeros velocity, and publishes ocean handoff. Alternative rejected: scene-search skip button or release-only skip path. Estimate: 8-18 us on skip poll, 0 us when non-dev gated.
+- [x] Task 12 - Zero-GC waiting loops | DOD: wait loops use interface reads, `ReadOnlySpan` signal snapshots, fixed `NativeArray` black-box, and existing Awaitable frame/dilated waits; allocations are cold setup or fault-only dump IO. Alternative rejected: LINQ, managed timers, per-frame subscriptions, string stage names. Estimate: 4-14 us per polled frame; profiler proof absent, status remains PENDING VERIFICATION.
+- [x] Task 13 - Blackbox dump | DOD: `PrologueStage` telemetry is published hash-only through `GlobalTelemetryBus.PublishPrologueStage`, and the last 300 sequence samples dump to `Docs/AgentLogs/Dump_PROLOGUE_SEQUENCE_DIRECTOR.bin` on fault/NaN. Alternative rejected: managed log lists or chat-only forensic state. Estimate: 3-8 us on stage change, fault dump off hot path.
+- [x] Task 14 - Math LOD hydration bypass | DOD: low-tier path allows `ActiveImpostorCount`/proxy residency to resume before high-res ocean chunk hydration; high tier keeps high-res residency gate. Alternative rejected: one-size blind black-screen delay. Estimate: avoids unbounded wait on MX350/i3; per-frame check 2-6 us.
+- [x] Task 15 - Omega compile check | DOD: static scan found no `Task.Delay`, coroutine, `StartCoroutine`, or gameplay `Update` in prologue path; delay uses `AwaitableExtension.DelayDilated` via runtime port. Alternative rejected: managed timer or coroutine. Estimate: 0 B managed timer avoided; compile remains blocked by unrelated project failures.
+
+## Iterative Self-Review
+
+- [x] Loop 1 - Tasks 1-5 contract/readback | Result: verified registry slot, asmdef isolation, Awaitable signature, Stage 1 input/audio/dilated wait. Fixes: none. Estimate: 1400 us.
+- [x] Loop 2 - Tasks 6-10 signal/readback | Result: verified VWS/haptics/manual prompt/impact/hydration/water handoff signal paths. Fixes: added black-box samples in wait loops before this checkpoint. Estimate: 1800 us.
+- [x] Loop 3 - Tasks 11-15 zero-GC/static scan | Result: verified skip path, telemetry path, low-tier proxy gate, and no forbidden delay/coroutine/update tokens. Fixes: none. Estimate: 1100 us.
+- [x] Loop 4 - Cross-domain decoupling review | Result: concrete `WorldChunkResidencyManager` bridge dependency was removed; `IStreamingBackpressureService.IsChunkResident` now carries residency read model. Alternative rejected: keeping type-check in Core bridge. Estimate: saves compile coupling, same runtime cost.
+- [x] Loop 5 - Verification hygiene review | Result: `git diff --check` passes for touched files except line-ending warnings; MCP console is unreachable; owned timed-out MSBuild root was terminated. Alternative rejected: launching a second Unity editor over active project. Estimate: 900 us.
+- [x] Loop 6 - Dev skip interruption recheck | Result: Stage 1 dilated silence no longer traps dev skip for the full 3 seconds; bridge uses a dev-only linked cancellation token and interruptible dilated wait, while release builds keep `AwaitableExtension.DelayDilated`. Alternative rejected: accepting delayed skip during cinematic silence. Estimate: 5-10 us per dev-only wait frame, 0 us release overhead.
 
 ## Verification
 
-- [ ] Compile verification pass after Tasks 1-5.
-- [ ] Compile verification pass after Tasks 6-10.
-- [ ] Compile verification pass after Tasks 11-15.
-- [ ] Five strict iterative self-review loops.
-- [ ] Polish mandate read and executed only after all tasks are checked or blocked.
+- [x] Compile verification pass after Tasks 1-5. BLOCKED BY UNRELATED DEPENDENCY: Unity batch compile copied Core.Contracts and Narrative.Prologue assemblies, then failed in `ShallowsBioForgeBatchBaker.cs`, `DiegeticTooltipSystem.cs`, and `GlobalDataVault.cs`.
+- [x] Compile verification pass after Tasks 6-10. BLOCKED BY UNRELATED DEPENDENCY: no prologue errors in Unity compile log; global errors remain outside this domain. Second batch attempt stalled in Unity after asmdef refresh and was terminated to avoid leaving an owned batch process running.
+- [x] Compile verification pass after Tasks 11-15. BLOCKED BY UNRELATED DEPENDENCY / ACTIVE EDITOR: MCP console still fails at `127.0.0.1:8088`; active Unity editor already owns the project; narrow `dotnet build Hecton8.Core.csproj --no-restore -v:minimal` timed out and its owned root process was terminated. Static scans found no prologue forbidden wait patterns.
+- [x] Response-file compile pass after dev-skip upgrade. PARTIAL PASS: Unity Roslyn `Hecton8.Core.Contracts.rsp` and `Hecton8.Narrative.Prologue.rsp` compile clean after sequencing. `Hecton8.Core.rsp` fails in unrelated `GroundPenetratingRadarRuntime.cs(309,17)` on missing `GroundRadarRaymarchJob.GprOreTypes`; no prologue errors emitted before that wall.
+- [x] Five strict iterative self-review loops.
+- [x] Polish mandate read and executed only after all tasks were checked or blocked. DOD: OMEGA audit removed telemetry `math.sqrt`, removed concrete world residency dependency, rescanned forbidden wait/string/iteration patterns, and documented final scoped diff in rationale. Status remains PENDING VERIFICATION due unrelated compile wall.

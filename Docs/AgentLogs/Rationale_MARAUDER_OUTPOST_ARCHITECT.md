@@ -17,3 +17,105 @@ Solution: Use contracts and GlobalRegistry/signal lanes for discovery, generatio
 Rejected Alternatives: Direct concrete calls into MapMagic bridge, construction managers, or singleton base owners were rejected because that creates compile fragility and violates domain isolation.
 Scalability potential: Same contract can serve cheap deterministic fallback height on low devices and richer height/terrain sampling on high devices.
 Hardware Impact: Interface query is cold/lifecycle path. No per-frame registry polling is planned.
+
+## Registry Contract Decision
+
+Problem: The outpost runtime needs global discovery without `BaseGenerator.Instance` or concrete cross-domain ownership.
+Solution: Added `IOutpostGenerationService` in `Hecton8.World.Contracts` and routed it through `GlobalRegistryServiceSlot.OutpostGenerationRuntime`. Runtime consumers can resolve the interface; the world owner still owns generation, rendering, and disposal.
+Rejected Alternatives: A scene singleton and direct prefab base generator were rejected because they create ordering dependencies and force all other agents to know the concrete owner.
+Scalability potential: Low/Middle/High/Ultra all share one contract; only the service implementation changes its grid dimensions and visual budget.
+Hardware Impact: Slot lookup is lifecycle/cold path. Hot render path does not query registry.
+
+## WFC Solver Decision
+
+Problem: A visual outpost must be deterministic and cheap, but a full entropy WFC solver would spend CPU on realism the player cannot inspect frame-by-frame.
+Solution: Used a Burst `IJob` over a 10x10x5 `NativeArray<byte>` with bit-packed cell kind and N/E/S/W adjacency masks. The seed is `LCG_Hash(WorldSeed + FirstBaseHash)`. Low tier switches to 5x5x3 before the job is scheduled.
+Rejected Alternatives: Managed cell objects, recursive WFC backtracking, and Unity `Random` were rejected because they add GC, nondeterminism risk, and unnecessary failure states.
+Scalability potential: Low uses reduced dimensions and fewer upper-floor rooms. Middle/High/Ultra keep 10x10x5 and spend saved CPU on denser rust/support presentation, not topology complexity.
+Hardware Impact: MX350 path caps cells at 75 versus 500; estimated solve drops from roughly 120-250 us to 20-60 us depending Burst warm state.
+
+## Height And Support Decision
+
+Problem: Bottom cells must meet seabed height without running a physical settlement simulation.
+Solution: Matrix extraction samples the MapMagic quantized height payload and emits stretched pillar matrices from seabed to the base floor. If the payload is unavailable, the system flags height fallback in telemetry and still produces deterministic geometry.
+Rejected Alternatives: Rigidbody settling, per-pillar raycasts, or terrain scans were rejected because they would turn a cold generation pass into physics work and create frame spikes.
+Scalability potential: Low uses shorter support clamp and fewer cells. High/Ultra can afford more visual support matrices without changing gameplay.
+Hardware Impact: One native height sample per bottom cell; estimated 20-80 us full grid, under 15 us low tier.
+
+## Rendering Decision
+
+Problem: The prompt forbids hundreds of shell GameObjects but still needs a visible base.
+Solution: Extracted `WfcGrid` to `NativeArray<float4x4>` and `NativeArray<uint>` metadata, uploaded them to persistent `GraphicsBuffer`s, and submitted the shell with `Graphics.RenderMeshIndirect`.
+Rejected Alternatives: Instantiating wall, room, corridor, and pillar prefabs was rejected because it multiplies transforms, renderers, culling, and lifecycle overhead.
+Scalability potential: Low can draw the same shader with fewer matrices. High/Ultra can increase material detail using `_OutpostAge01` and typed cell metadata.
+Hardware Impact: CPU shell draw cost is one indirect submission after generation; estimated steady-state shell CPU cost below 0.05 ms and 0 B/frame managed allocation.
+
+## Interactable Proxy Decision
+
+Problem: Doors and datapads need physics/interactions, but shell pieces do not.
+Solution: Extraction emits bounded native `OutpostInteractableSpawn` packets for `Datapad` and `SealedDoor`. Runtime spawns only those through `GlobalRegistry.ObjectPool`, with cold `Physics.BakeMesh` on proxy prefab meshes.
+Rejected Alternatives: Generating proxy GameObjects for every cell was rejected because it violates the prompt and wastes CPU on non-interactive shell.
+Scalability potential: Low and Ultra use the same max proxy cap, preserving gameplay consistency while shell visuals scale separately.
+Hardware Impact: Maximum 16 pooled proxy spawns on generation; no per-frame proxy allocation.
+
+## AUP And Blackbox Decision
+
+Problem: Floating origin shifts can desync GPU matrices from the rest of the world, and post-crash diagnosis requires state history.
+Solution: `AupShiftSignal` schedules a Burst parallel matrix offset job and shifts pooled proxies. A fixed 300-entry native telemetry ring records sector, seed, dimensions, counts, flags, origin, and shift frame; NaN/empty faults dump to `Docs/AgentLogs/Dump_MARAUDER_OUTPOST_ARCHITECT.bin`.
+Rejected Alternatives: Moving a parent transform was rejected because the shell has no GameObject hierarchy. Debug logging was rejected as non-forensic and allocation-heavy.
+Scalability potential: Low shifts fewer matrices; High/Ultra can retain more support/decay metadata with the same telemetry surface.
+Hardware Impact: Rare shift pass is O(matrix count), estimated 10-40 us low tier and 40-120 us full grid, outside normal frame work.
+
+## Compile Verification Note
+
+Problem: The previous verification ledger was based on stale Bee response files where `Hecton8.Core.ref.dll` had not been emitted yet.
+Solution: Re-ran the actual Unity Roslyn response-file chain after Bee refreshed: `Hecton8.Logistics.Grid.Contracts`, `Hecton8.Logistics.Grid`, `Hecton8.World.Contracts`, `Hecton8.Core.Memory`, `Hecton8.Core`, and `Hecton8.World.Outposts` now compile. Runtime proof is still pending because Unity MCP console/profiler transport fails at `http://127.0.0.1:8088/mcp`.
+Rejected Alternatives: Treating the old missing-ref state as current was rejected because it would be a false report. Claiming full runtime validation was rejected because console and profiler evidence are not available.
+Scalability potential: Compile pass unlocks the logistics/power handoff path, but measured Low/Middle/High/Ultra timing remains pending runtime access.
+Hardware Impact: No new runtime cost. The compiled path preserves one cold 500-byte grid copy, bounded 16-door scan, and GPU-only shell rendering.
+
+## OMEGA POLISH CHANGES
+
+Problem: The first outpost pass still had honest floating divisions in height sampling and age decoding.
+Solution: Replaced terrain-size and ushort/byte normalization divisions with `math.rcp` or precomputed reciprocal constants. Bitwise WFC masks remain packed into one byte per cell, and shader age uses a reciprocal multiply.
+Rejected Alternatives: Keeping `/ TerrainSize`, `/ 65535f`, and `/ 255.0` was rejected because the Polish mandate explicitly demands reciprocal multiplication where exact precision is not required.
+Scalability potential: Low keeps 5x5x3 and fewer support matrices. Middle/High/Ultra keep 10x10x5 and use saved CPU for rust/silt/material overkill rather than topology complexity.
+Hardware Impact: i3/MX350 saves an estimated 2-8 us during full matrix extraction and avoids scalar division latency in the shader path. High-end hardware gets the same deterministic shell with more visual budget available for material response.
+
+Problem: Forbidden managed constructs can reappear during late polish.
+Solution: Scoped `rg` audit found no `foreach`, `string.Format`, string interpolation, `.ToString()`, `math.sqrt`, `math.normalize`, LINQ, `System.Random`, `UnityEngine.Random`, `BaseGenerator`, or shell `Instantiate` in `Assets/_Project/Scripts/World/Outposts`. The only managed array remains the cold fixed proxy handle cache; native allocations are explicit persistent owner data.
+Rejected Alternatives: Trusting visual inspection was rejected because this project is running concurrent agent edits.
+Scalability potential: Low/Middle/High/Ultra all preserve 0 B/frame hot path behavior; only cold generation scale changes.
+Hardware Impact: Prevents GC spikes on cheap CPUs and keeps renderer submission predictable on high-refresh devices.
+
+Problem: Outside-domain edits were required for service discovery.
+Solution: Limited cross-domain changes to `GlobalRegistryContracts.cs` enum slot and `GlobalRegistry.cs` registration/resolve plumbing for `IOutpostGenerationService`.
+Rejected Alternatives: Direct singleton or concrete scene reference was rejected because it would violate the prompt and create hard dependency ordering.
+Scalability potential: Registry integration is a cold lifecycle dependency; all device tiers share it without per-frame polling.
+Hardware Impact: Negligible hot-path impact; unlocks decoupled integration after Core publishes.
+
+## LOOP 6 INTEGRATION HARDENING
+
+Problem: The generation-complete signal existed, but logistics could not resolve the byte grid if the outpost emitted only a hash-shaped placeholder.
+Solution: Register the solved WFC byte grid with `WfcOutpostGridRegistry`, publish the returned `GridHandle`, and expose `TryGetWfcGrid` on `IOutpostGenerationService` for registry consumers. The grid copy is cold, bounded at 500 bytes, and the shell still stays GPU-only.
+Rejected Alternatives: Publishing `_activeGridHash` as `GridHandle` was rejected because `WfcOutpostPowerBootRuntime` expects `WfcOutpostGridRegistry.TryGetGrid(handle)`. Creating power nodes as GameObjects was rejected because it violates the shell proxy cap.
+Scalability potential: Low copies 75 active cells into the 500-byte slot with the remainder zeroed; Middle/High/Ultra use full 10x10x5 topology and can spend saved shell CPU on richer power/gas presentation.
+Hardware Impact: i3/MX350 pays one cold 500-byte copy and one signal push on generation. Steady frame cost remains 0 B managed and no shell Transform work.
+
+Problem: The logistics graph has an explicit missing-generator fault path, and an abandoned outpost without a power root cannot drive door brownout storytelling.
+Solution: Align outpost constants with `WfcOutpostGridConstants`, add a deterministic center-bottom `Generator` cell, tint generator cells in the shader, and keep generator topology in the same byte grid.
+Rejected Alternatives: Letting the logistics boot choose the first arbitrary power node was rejected because it hides a topology defect and weakens deterministic narrative state.
+Scalability potential: Low still has one generator in 5x5x3; Ultra keeps the same gameplay graph and spends extra budget on shader wear and powered-door response.
+Hardware Impact: No extra GameObject or per-frame CPU. Solver adds one equality branch per bottom-center candidate, estimated below 1 us.
+
+Problem: Sealed doors were spawned as bounded proxies but not connected to the outpost power signal lane.
+Solution: Cache at most 16 `SealedDoor` components from pooled proxies, lock them on spawn, and process `WfcOutpostDoorPowerSignal` in `LateFrameTick` by sector/handle/cell index.
+Rejected Alternatives: Per-door polling into the power graph or shell-side door GameObjects were rejected because they create direct dependencies and object churn.
+Scalability potential: Low/High/Ultra keep the same proxy cap; high-end devices can increase visual overkill in shader/power feedback without changing interaction count.
+Hardware Impact: Worst-case per-frame scan is signal count times 16 cached proxies, no allocation. Estimated below 5 us in normal signal volume.
+
+Problem: The final verification pass needed to distinguish source compile proof from runtime scene proof.
+Solution: Recompiled the dependency chain with Unity's Roslyn response files and kept project state at `PENDING VERIFICATION` until MCP console and profiler capture are available.
+Rejected Alternatives: Marking the status fully done was rejected because the batch protocol requires objective console/runtime evidence. Reopening source changes after compile pass was rejected because scoped audits showed no forbidden construct regressions.
+Scalability potential: Source path is ready for runtime tier measurement: Low 5x5x3, Middle/High/Ultra 10x10x5 with visual overkill in shader metadata.
+Hardware Impact: Compile proof confirms the intended i3/MX350 path is present; measured frame/VRAM impact remains pending Unity transport access.

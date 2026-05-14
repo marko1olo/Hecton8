@@ -163,3 +163,66 @@ Solution: Updated the reset path to the readable abyss floor, lower noir exponen
 Rejected Alternatives: Removing the reset was rejected because stale globals must still be cleaned. Leaving old black-crush defaults was rejected because it can reintroduce the exact surface darkness being fixed.
 Scalability potential: Low/Middle/High/Ultra all get safe fallback shader globals if the visual owner is disabled or reloaded.
 Hardware Impact: Disable/reload scalar writes only; 0 frame cost, 0 GC.
+
+## Continuation Decision 24 - Core Memory Compaction Compile Closure
+Problem: `GlobalDataVault` referenced missing compaction stress thresholds, slice caps, memmove path, and defrag result flags, stopping `Hecton8.Core.Memory` and every downstream assembly.
+Solution: Restored a bounded unsafe memmove path over `UnsafeUtility.MemMove` plus explicit constants and bit flags. The repair keeps compaction as capped chunk movement instead of managed buffer reshaping.
+Rejected Alternatives: Removing compaction paths, disabling defrag telemetry, or replacing unsafe copies with managed arrays was rejected because it would hide allocator pressure and violate zero-GC memory policy.
+Scalability potential: Low uses conservative slice budgets; Middle/High/Ultra can increase scheduled relocation throughput without changing public contracts.
+Hardware Impact: 0 us steady frame when inactive. Active compaction stays bounded to the existing scheduler budget; no managed allocation added.
+
+## Continuation Decision 25 - Explicit Asmdef Dependency Repair
+Problem: Split assemblies compiled only when stale transitive references existed. `World.Outposts` needed Core.Contracts/Grid.Contracts and `Gameplay.Loot` needed Core.Contracts because Core.Memory exposes `IMacroDatabaseNativeCacheOwner` from that assembly.
+Solution: Added direct asmdef references and verified with Unity/Bee generated response files plus temp-output Roslyn compiles.
+Rejected Alternatives: Depending on transitive reference leakage, moving files back into Core, or adding duplicate interface shims was rejected because it would make future assembly regeneration nondeterministic.
+Scalability potential: Low/Middle/High/Ultra unaffected at runtime; compile graph becomes deterministic for all build machines.
+Hardware Impact: 0 us runtime. Faster developer iteration by avoiding repeated failed compile passes.
+
+## Continuation Decision 26 - Runtime Bridge Boundary Repair
+Problem: Split world/resource assemblies could not call an internal `WorldRuntimeReferenceUtility`, and prologue bridge AUP calls collided with missing namespace resolution in generated Core response files.
+Solution: Made the utility public and fully-qualified `Hecton8.World.AbsoluteUniversePosition` call sites in `PrologueSequenceRegistryBridge`.
+Rejected Alternatives: Merging asmdefs, adding duplicate bridge helpers, or relying on using directives that had already drifted under concurrent edits was rejected.
+Scalability potential: Runtime Low/Middle/High/Ultra unchanged; public helper keeps cross-assembly bridge code centralized.
+Hardware Impact: 0 us runtime. Compile-only boundary fix.
+
+## Continuation Decision 27 - Empty Assembly Warning Guards
+Problem: `Hecton8.Core.Time` and `Hecton8.World.Streaming` were valid ownership placeholders but emitted empty-assembly warnings during import.
+Solution: Added zero-runtime `AssemblyInfo` markers so the assembly definitions remain stable without pretending a runtime system exists.
+Rejected Alternatives: Deleting asmdefs or moving unrelated code into them was rejected because other agents own those domains and placeholder removal would churn the graph.
+Scalability potential: All tiers unaffected; assembly topology remains stable for future work.
+Hardware Impact: 0 us runtime; import warning removed.
+
+## Continuation Decision 28 - Warning Source Cleanup
+Problem: Runtime files still used obsolete `GetInstanceID()` entity keys and QA editor status logging resolved `Environment.NewLine` to `Hecton8.Environment.NewLine` inside the Hecton8 namespace.
+Solution: Replaced entity hash sources with `GetEntityId()`/`EntityId.ToULong()` and wrote `System.Environment.NewLine` explicitly in the QA batch runner.
+Rejected Alternatives: Global warning suppression, deleting status logging, or using random IDs was rejected because diagnostics and deterministic entity identity matter.
+Scalability potential: All tiers use the same stable entity ID path; editor-only newline fix has no player impact.
+Hardware Impact: Scalar-only hash source change; 0 GC. QA fix is editor-only.
+
+## Continuation Decision 29 - DryZone Shader Import Hygiene
+Problem: Fresh batch import reported mixed line endings in `Hecton_DryZoneLit.shader`, creating non-actionable console noise after C# compile errors were fixed.
+Solution: Mechanically normalized the shader to CRLF with no lone LF and reran Unity batchmode import.
+Rejected Alternatives: Ignoring importer warnings or changing shader logic during an import hygiene pass was rejected.
+Scalability potential: Runtime Low/Middle/High/Ultra shader behavior unchanged; import logs become cleaner.
+Hardware Impact: 0 us runtime. Asset text format only.
+
+## Continuation Decision 30 - MCP Boundary Kept Honest
+Problem: Unity-MCP calls fail against `http://127.0.0.1:8088/mcp`, and batchmode shutdown also reports no local process listening on port 8088.
+Solution: Used temp-output Roslyn and Unity batchmode logs for compile/import proof and recorded live MCP screenshot/console as blocked.
+Rejected Alternatives: Claiming live console proof from unavailable MCP, editing PackageCache MCP shutdown code, or fabricating screenshot evidence was rejected.
+Scalability potential: Runtime unaffected; verification remains evidence-based until MCP reconnects.
+Hardware Impact: 0 us runtime.
+
+## Continuation Decision 31 - Diagnostic Tooltip Layout Guard
+Problem: Static audit found that input-scheme or input-service replacement could rebuild an active diagnostic tooltip through the normal interaction-prompt layout path, adding a binding icon to diagnostics.
+Solution: Scheme/service rebuild now only calls `RebuildActiveTooltipLayout()` when a real look-target prompt is active and no diagnostic overlay is overriding it.
+Rejected Alternatives: Leaving the edge case was rejected because it creates visible UI state corruption during controller changes; adding a separate diagnostic rebuild method was unnecessary because diagnostic layout has no scheme-dependent icon.
+Scalability potential: Low/Middle/High/Ultra keep the same zero-GC prompt buffers and indirect draw path. The branch runs only on scheme/service change, not per glyph.
+Hardware Impact: One branch on input-scheme changes; 0 steady frame cost and 0 GC.
+
+## Continuation Decision 32 - Loot Magnet Burst ABI Repair
+Problem: A live Editor probe exposed Burst `BC0101`: `LootMagnetSignalEvent` calculated layout size 82 did not match explicit size 80. Roslyn and batchmode C# compile were clean, but Burst rejected the `ushort` quantity field inside the NativeArray payload.
+Solution: Widened `LootMagnetSignalEvent.Quantity` to `uint` so the payload stays 80 bytes with explicit 4-byte lanes after `ItemHash`; the producer already reads a `ushort` quantity and implicit-widens it.
+Rejected Alternatives: Disabling Burst, removing `StructLayout(Size=80)`, changing the NativeArray to managed events, or ignoring live Editor Burst output was rejected. The job must remain deterministic, blittable, and Burst-safe.
+Scalability potential: Low keeps the same compact signal stride; Middle/High/Ultra keep Burst compilation for the pull job instead of falling back to managed execution.
+Hardware Impact: No stride increase versus the existing explicit 80-byte payload. Prevents Burst fallback/error spam and preserves jobified loot magnet performance on low-end CPUs.

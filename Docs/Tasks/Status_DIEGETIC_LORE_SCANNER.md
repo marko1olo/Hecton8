@@ -53,9 +53,25 @@ Mandates read:
 - [x] Lore SOA sync debounce | DOD: added same-frame debounce in `ScannableTarget.SyncLoreEntityVaultAups()` so multiple scanner reads in one frame do not rewrite all lore AUP/hash slots twice | Rejected: blind full SOA rewrite on every same-frame consumer | Estimate: 900 us
 - [x] Static scanner-path checks | DOD: `git diff --check` passed; no scanner `Update`, `.text =`, `foreach`, `.ToString()`, or direct `Physics.Raycast` hits in edited scanner/UI/target files | Rejected: relying on visual inspection only | Estimate: 2200 us
 
+## Loop 6 - Camera-Origin and Tier Scaling Hardening
+
+- [x] Re-extract prompt with attribute-safe XML regex | DOD: raw PowerShell extraction matched `<AGENT_PROMPT id="DIEGETIC_LORE_SCANNER" role="UX_ENGINEER"...>` cover-to-cover | Rejected: exact-tag regex that fails when role/chat attributes exist | Estimate: 800 us
+- [x] Camera-origin acquisition pose | DOD: scanner candidate selection now uses `GlobalRegistry.Player.PlayerCamera.transform` when available, falling back to the tool transform only when the player camera is unavailable | Rejected: tool-forward acquisition that can drift from the player's crosshair | Estimate: 1100 us
+- [x] Tiered focused scan resample interval | DOD: Low/Unknown/MX350 clamp to slower resample, High/Ultra allow tighter visual responsiveness while retaining one-candidate/one-occlusion authority | Rejected: identical resample cadence across toaster and high-end machines | Estimate: 700 us
+- [x] Static no-regression checks after camera patch | DOD: `git diff --check` passed with only line-ending warnings; no `Camera.main`, `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, or `.text =` hits in scanner/UI/target files | Rejected: visual review without command evidence | Estimate: 1800 us
+- [x] Build wall re-check after camera patch | DOD: `dotnet build Hecton8.Core.csproj` still fails globally; filtered build output has no `ScannerTool.cs`, `ScannableTarget.cs`, or `ToolDiegeticDisplayController.cs` matches | Rejected: marking verified compile without a clean project graph | Estimate: 32000 us
+
+## Loop 7 - Contact Stability and Title Lookup Hardening
+
+- [x] Re-extract scanner prompt | DOD: raw PowerShell extraction re-read the full DIEGETIC_LORE_SCANNER tag before additional edits | Rejected: continuing from chat memory | Estimate: 800 us
+- [x] Low-tier hold-window fix | DOD: scanner contact grace now derives from `ResolveFocusedScanResampleInterval()` so slowed Low/MX350 cadence does not drop held scan contact between resamples | Rejected: serialized base interval as hidden authority | Estimate: 650 us
+- [x] Single resample interval per acquisition pass | DOD: `ScheduleScientificConeBatch()` resolves the effective interval once and reuses it for lore and fallback target paths | Rejected: repeated tier lookup in the same resample pass | Estimate: 250 us
+- [x] Lore title index cache | DOD: `ScannableTarget.TryWriteLoreEntityTitle()` checks the last successful hash/index before scanning up to 1024 lore targets; cache invalidates on resolved-string refresh/register/unregister | Rejected: managed dictionary or per-call full registry scan | Estimate: 900 us
+- [x] Static no-regression checks after Loop 7 | DOD: `git diff --check` passed with line-ending warnings only; no `Camera.main`, `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, or `.text =` hits in scanner/UI/target files | Rejected: report-only verification | Estimate: 1900 us
+
 ## Verification
 
-- [ ] Compile/source validation - BLOCKED BY DEPENDENCY: `dotnet build Hecton8.Core.csproj` still fails with global missing-contract errors unrelated to scanner; latest count 128 errors, no scanner/UI/target syntax errors surfaced before dependency wall
+- [ ] Compile/source validation - PENDING: one captured `dotnet build -clp:ErrorsOnly` pass returned no scanner-file matches, but plain/minimal follow-up was unstable (`exit 1` with no useful diagnostics, then a single-thread retry timed out); no leftover dotnet processes remained after timeout
 - [ ] Console check - BLOCKED BY UNITY SESSION: MCP validate/console calls cannot connect to Unity MCP HTTP endpoint / session
 - [x] Re-read prompt after core tasks
 - [x] Omega polish mandate after all tasks done or blocked

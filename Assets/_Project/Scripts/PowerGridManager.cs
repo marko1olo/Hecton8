@@ -15,7 +15,7 @@ namespace Hecton8.Power
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-5500)]
-    public sealed class PowerGridManager : MonoBehaviour, ISlowTickable, ILateFrameTickable, IPowerGridService, IServiceHeartbeat, IServiceShutdown
+    public sealed class PowerGridManager : MonoBehaviour, ISlowTickable, ILateFrameTickable, IPowerGridService, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
     {
         private static List<PowerGrid> _allGrids;
 
@@ -54,9 +54,11 @@ namespace Hecton8.Power
         private bool _dispatcherRegistered;
         private bool _lateFrameRegistered;
         private bool _serviceRegistered;
+        private bool _hotSwapRegistered;
         private bool _slowTickFinalizationPending;
         private float _pendingWirelessToolDemandWattSeconds;
         private float _nextPowerColdTickTime;
+        private WfcOutpostPowerBootRuntime _wfcOutpostPowerBoot; // COLD ALLOC: WfcOutpostPowerBootRuntime[1] - WFC outpost signal boot owner - owner: PowerGridManager
         private const float PowerGridColdTickSeconds = 1f;
         private const float MaxPendingWirelessToolDemandWattSeconds = 4096f;
 
@@ -80,6 +82,7 @@ namespace Hecton8.Power
         public void InitializeService()
         {
             EnsureStorage();
+            EnsureWfcOutpostPowerBoot();
             TryRegister();
             TryRegisterService();
         }
@@ -125,11 +128,14 @@ namespace Hecton8.Power
 
             if (_allGrids == null)
                 _allGrids = new List<PowerGrid>(math.max(1, initialGridCapacity));
+
+            EnsureWfcOutpostPowerBoot();
         }
 
         private void OnEnable()
         {
             ActiveRuntimeInstance = this;
+            EnsureWfcOutpostPowerBoot();
             TryRegister();
             TryRegisterService();
         }
@@ -153,6 +159,8 @@ namespace Hecton8.Power
         {
             UnregisterRuntimeHooks();
             DisposeAllGrids();
+            _wfcOutpostPowerBoot?.Dispose();
+            _wfcOutpostPowerBoot = null;
             _pendingWirelessToolDemandWattSeconds = 0f;
             _debugPendingWirelessToolDemandWattSeconds = 0f;
             _slowTickFinalizationPending = false;
@@ -172,13 +180,15 @@ namespace Hecton8.Power
         /// <inheritdoc />
         public void SlowTick()
         {
-            if (_allGrids == null)
-                return;
+            float now = Time.unscaledTime;
+            _wfcOutpostPowerBoot?.SlowTick(now);
 
             if (_slowTickFinalizationPending)
                 return;
 
-            float now = Time.unscaledTime;
+            if (_allGrids == null)
+                return;
+
             if (now + 0.0001f < _nextPowerColdTickTime)
                 return;
 
@@ -202,6 +212,7 @@ namespace Hecton8.Power
         /// <inheritdoc />
         public void LateFrameTick()
         {
+            _wfcOutpostPowerBoot?.LateFrameTick(Time.unscaledTime);
             if (!_slowTickFinalizationPending)
                 return;
 
@@ -211,6 +222,15 @@ namespace Hecton8.Power
             ProcessPendingSplitChecks();
             PublishTelemetrySnapshot();
             _slowTickFinalizationPending = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.GasDynamicsRuntime)
+                _wfcOutpostPowerBoot?.BindGasDynamics(currentService as IGasDynamicsSolver);
         }
 
         public static PowerGrid CreateGrid(PowerNode initialNode)
@@ -574,6 +594,8 @@ namespace Hecton8.Power
 
             GlobalRegistry.RegisterPowerGridService(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.PowerGrid, this);
+            TryRegisterHotSwapListener();
+            _wfcOutpostPowerBoot?.BindGasDynamics(GlobalRegistry.GasDynamics);
         }
 
         private void TryUnregister()
@@ -593,11 +615,34 @@ namespace Hecton8.Power
 
         private void TryUnregisterService()
         {
+            if (_hotSwapRegistered)
+            {
+                GlobalRegistry.UnregisterHotSwapListener(this);
+                _hotSwapRegistered = false;
+            }
+
             if (!_serviceRegistered)
                 return;
 
             GlobalRegistry.UnregisterPowerGridService(this);
             _serviceRegistered = false;
+        }
+
+        private void EnsureWfcOutpostPowerBoot()
+        {
+            if (_wfcOutpostPowerBoot != null)
+                return;
+
+            _wfcOutpostPowerBoot = new WfcOutpostPowerBootRuntime();
+            _wfcOutpostPowerBoot.Initialize();
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
         }
 
         private void ConsumePendingWirelessToolDemand()

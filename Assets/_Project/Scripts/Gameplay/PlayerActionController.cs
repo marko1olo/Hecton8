@@ -157,8 +157,7 @@ namespace Hecton8.Gameplay
             _cameraBobPhase = 0f;
 
             // Ð—Ð°Ð¿Ð¾Ð¼Ð¸Ð½Ð°ÐµÐ¼ Ñ‚ÐµÐºÑƒÑ‰Ð¸Ð¹ ÑÐ»Ð¾Ñ‚ Ð¸Ð½ÑÑ‚Ñ€ÑƒÐ¼ÐµÐ½Ñ‚Ð° Ð´Ð»Ñ Ð¿Ñ€ÐµÑ€Ñ‹Ð²Ð°Ð½Ð¸Ñ
-            if (_toolManager != null)
-                _lastToolSlotIndex = _toolManager.CurrentSlotIndex;
+            _lastToolSlotIndex = _toolManager != null ? _toolManager.CurrentSlotIndex : -1;
 
             return true;
         }
@@ -295,7 +294,7 @@ namespace Hecton8.Gameplay
         private float ResolveProgress01()
         {
             return _state == ActionState.InProgress && _actionDuration > 0.0001f
-                ? math.saturate(_actionTimer / _actionDuration)
+                ? math.saturate(_actionTimer * math.rcp(_actionDuration))
                 : 0f;
         }
 
@@ -307,7 +306,7 @@ namespace Hecton8.Gameplay
                 Progress01 = math.saturate(progress01),
                 ItemHash = ResolveItemHash(item),
                 Frame = unchecked((uint)Time.frameCount),
-                ActiveToolSlot = _lastToolSlotIndex >= 0 ? (ushort)math.min(_lastToolSlotIndex, ushort.MaxValue) : ushort.MaxValue,
+                ActiveToolSlot = PackActiveToolSlot(_lastToolSlotIndex),
                 ActionKind = ResolveActionKind(item),
                 Flags = item != null ? PlayerActionProgressSignal.FlagHasItem : (byte)0
             };
@@ -370,6 +369,11 @@ namespace Hecton8.Gameplay
         private static ushort PackInventoryAnchor(int anchor)
         {
             return anchor >= 0 ? (ushort)math.min(anchor, ushort.MaxValue - 1) : ushort.MaxValue;
+        }
+
+        private static ushort PackActiveToolSlot(int slotIndex)
+        {
+            return slotIndex >= 0 ? (ushort)math.min(slotIndex, ushort.MaxValue - 1) : ushort.MaxValue;
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•

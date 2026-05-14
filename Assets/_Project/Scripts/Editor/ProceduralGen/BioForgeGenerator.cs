@@ -55,8 +55,8 @@ namespace Hecton8.Editor.ProceduralGen
                 }
 
                 BuildBounds(branches.AsArray(), rule.BoundsPadding, out float3 boundsMin, out float3 boundsMax);
-                int sdfMode = rule.SdfProfile == BioForgeSdfProfile.RibbonFlora ? 2 : 0;
-                Mesh[] lodMeshes = BuildMeshesFromSdf(rule, seed, branches.AsArray(), boundsMin, boundsMax, sdfMode);
+                int sdfModeFlags = rule.SdfProfile == BioForgeSdfProfile.RibbonFlora ? BioForgeSdfBuildJob.ModeFlagRibbon : 0;
+                Mesh[] lodMeshes = BuildMeshesFromSdf(rule, seed, branches.AsArray(), boundsMin, boundsMax, sdfModeFlags);
                 SaveMeshesAndPrefab(rule, assetStem, lodMeshes, boundsMin, boundsMax, false);
             }
         }
@@ -76,8 +76,10 @@ namespace Hecton8.Editor.ProceduralGen
 
             using (NativeArray<BioForgeBranch> emptyBranches = new NativeArray<BioForgeBranch>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory))
             {
-                int sdfMode = rule.SdfProfile == BioForgeSdfProfile.PorousRock ? 3 : 1;
-                Mesh[] lodMeshes = BuildMeshesFromSdf(rule, seed, emptyBranches, boundsMin, boundsMax, sdfMode);
+                int sdfModeFlags = BioForgeSdfBuildJob.ModeFlagRock;
+                if (rule.SdfProfile == BioForgeSdfProfile.PorousRock)
+                    sdfModeFlags |= BioForgeSdfBuildJob.ModeFlagPorous;
+                Mesh[] lodMeshes = BuildMeshesFromSdf(rule, seed, emptyBranches, boundsMin, boundsMax, sdfModeFlags);
                 SaveMeshesAndPrefab(rule, assetStem, lodMeshes, boundsMin, boundsMax, true);
             }
         }
@@ -110,8 +112,7 @@ namespace Hecton8.Editor.ProceduralGen
                 for (int i = 0; i < safeCount; i++)
                 {
                     int variationSeed = unchecked(seed + (i * 265443576));
-                    bool cancel = EditorUtility.DisplayCancelableProgressBar("Bio-Forge", $"Generating flora {i + 1}/{safeCount}", (i + 1f) * math.rcp(safeCount));
-                    if (cancel)
+                    if (!Application.isBatchMode && EditorUtility.DisplayCancelableProgressBar("Bio-Forge", $"Generating flora {i + 1}/{safeCount}", (i + 1f) * math.rcp(safeCount)))
                     {
                         Debug.LogWarning($"[BioForge] Flora batch cancelled after {i} generated variants.");
                         break;
@@ -123,7 +124,8 @@ namespace Hecton8.Editor.ProceduralGen
             finally
             {
                 _deferAssetSave = previousDefer;
-                EditorUtility.ClearProgressBar();
+                if (!Application.isBatchMode)
+                    EditorUtility.ClearProgressBar();
                 if (startedAssetEditing)
                     AssetDatabase.StopAssetEditing();
                 if (!previousDefer)
@@ -159,8 +161,7 @@ namespace Hecton8.Editor.ProceduralGen
                 for (int i = 0; i < safeCount; i++)
                 {
                     int variationSeed = unchecked(seed + 0x51ED270B + (i * 1103515245));
-                    bool cancel = EditorUtility.DisplayCancelableProgressBar("Bio-Forge", $"Generating rock {i + 1}/{safeCount}", (i + 1f) * math.rcp(safeCount));
-                    if (cancel)
+                    if (!Application.isBatchMode && EditorUtility.DisplayCancelableProgressBar("Bio-Forge", $"Generating rock {i + 1}/{safeCount}", (i + 1f) * math.rcp(safeCount)))
                     {
                         Debug.LogWarning($"[BioForge] Rock batch cancelled after {i} generated variants.");
                         break;
@@ -172,7 +173,8 @@ namespace Hecton8.Editor.ProceduralGen
             finally
             {
                 _deferAssetSave = previousDefer;
-                EditorUtility.ClearProgressBar();
+                if (!Application.isBatchMode)
+                    EditorUtility.ClearProgressBar();
                 if (startedAssetEditing)
                     AssetDatabase.StopAssetEditing();
                 if (!previousDefer)
@@ -180,7 +182,7 @@ namespace Hecton8.Editor.ProceduralGen
             }
         }
 
-        private static Mesh[] BuildMeshesFromSdf(BioRuleData rule, int seed, NativeArray<BioForgeBranch> branches, float3 boundsMin, float3 boundsMax, int sdfMode)
+        private static Mesh[] BuildMeshesFromSdf(BioRuleData rule, int seed, NativeArray<BioForgeBranch> branches, float3 boundsMin, float3 boundsMax, int sdfModeFlags)
         {
             int cells = rule.SdfResolution;
             int points = cells + 1;
@@ -209,10 +211,10 @@ namespace Hecton8.Editor.ProceduralGen
                 var sdfJob = new BioForgeSdfBuildJob
                 {
                     Branches = branches,
-                    BranchCount = sdfMode == 1 || sdfMode == 3 ? 0 : branches.Length,
+                    BranchCount = (sdfModeFlags & BioForgeSdfBuildJob.ModeFlagRock) != 0 ? 0 : branches.Length,
                     Density = density,
                     PointResolution = points,
-                    Mode = sdfMode,
+                    ModeFlags = sdfModeFlags,
                     Seed = (uint)seed,
                     BoundsMin = boundsMin,
                     Step = step,
@@ -361,6 +363,8 @@ namespace Hecton8.Editor.ProceduralGen
                 dst += 3;
             }
 
+            NormalizeColorGradientFromFinalBounds(positions, colors);
+
             Mesh mesh = new Mesh
             {
                 name = $"BioForge_{lodName}",
@@ -375,6 +379,32 @@ namespace Hecton8.Editor.ProceduralGen
             mesh.RecalculateBounds();
             mesh.RecalculateTangents();
             return mesh;
+        }
+
+        private static void NormalizeColorGradientFromFinalBounds(Vector3[] positions, Color[] colors)
+        {
+            if (positions == null || colors == null || positions.Length == 0 || colors.Length != positions.Length)
+                return;
+
+            float minY = positions[0].y;
+            float maxY = positions[0].y;
+            for (int i = 1; i < positions.Length; i++)
+            {
+                float y = positions[i].y;
+                if (y < minY) minY = y;
+                if (y > maxY) maxY = y;
+            }
+
+            float invRange = 1f / Mathf.Max(0.0001f, maxY - minY);
+            for (int i = 0; i < colors.Length; i++)
+            {
+                Color color = colors[i];
+                color.r = Mathf.Clamp01((positions[i].y - minY) * invRange);
+                color.g = 0f;
+                color.b = 0f;
+                color.a = 1f;
+                colors[i] = color;
+            }
         }
 
         private static bool IsValidTriangle(BioForgeMeshVertex a, BioForgeMeshVertex b, BioForgeMeshVertex c)
@@ -440,7 +470,16 @@ namespace Hecton8.Editor.ProceduralGen
             if (!_deferAssetSave)
                 AssetDatabase.SaveAssets();
 
-            Debug.Log($"[BioForge] Generated {assetStem}: LOD0={ResolveTriangleCount(lodMeshes[0])}, LOD1={ResolveTriangleCount(lodMeshes[1])}, LOD2={ResolveTriangleCount(lodMeshes[2])}, prefab={prefabPath}");
+            Debug.LogFormat(
+                LogType.Log,
+                LogOption.NoStacktrace,
+                null,
+                "[BioForge] Generated {0}: LOD0={1}, LOD1={2}, LOD2={3}, prefab={4}",
+                assetStem,
+                ResolveTriangleCount(lodMeshes[0]),
+                ResolveTriangleCount(lodMeshes[1]),
+                ResolveTriangleCount(lodMeshes[2]),
+                prefabPath);
         }
 
         private static GameObject BuildPrefabRoot(BioRuleData rule, string assetStem, Mesh[] lodMeshes, float3 boundsMin, float3 boundsMax, bool addRockCollider)
@@ -472,7 +511,10 @@ namespace Hecton8.Editor.ProceduralGen
             lodGroup.RecalculateBounds();
             if (addRockCollider)
             {
-                MeshCollider collider = root.AddComponent<MeshCollider>();
+                GameObject colliderObject = new GameObject("Collision_LOD2");
+                colliderObject.transform.SetParent(root.transform, false);
+                colliderObject.transform.localPosition = geometryOffset;
+                MeshCollider collider = colliderObject.AddComponent<MeshCollider>();
                 collider.sharedMesh = lodMeshes != null && lodMeshes.Length > 2 ? lodMeshes[2] : null;
                 collider.convex = true;
             }

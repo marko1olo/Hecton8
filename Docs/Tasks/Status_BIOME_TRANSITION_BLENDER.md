@@ -37,7 +37,8 @@ Status: PENDING VERIFICATION
 - [x] Loop 2: Tasks 6-10, compile, update. Result: consumers read `SignalBus<BiomeGradientSignal>`; no direct dependency added.
 - [x] Loop 3: Tasks 11-15, compile, update. Result: AUP, low-tier, PRE_SIM signal lane, zero-GC sampler, exact-center guard checked.
 - [x] Loop 4: Re-read implementation, fix omissions, compile, update. Result: fixed unsafe `in default` telemetry call and guarded job result output before map checks.
-- [ ] Loop 5: Final verification, status/log update.
+- [x] Loop 5: Final verification, status/log update. Result: OMEGA polish applied; full runtime verification remains blocked by no Unity MCP session and global compile dependency wall.
+- [x] Loop 6: Patient recheck and upgrade pass. Result: map-edge AUP samples now clamp sample coordinates and flag `OutOfBounds`; IDW aggregation is hash-aware so byte ID collisions do not merge biomes; runtime uses synchronous `job.Run()` instead of schedule/complete; dev smoke tester added for boundary, low-tier, out-of-bounds, and hash-collision cases; `EcosystemDirector` brine-height precision conversion errors removed. DOD: contracts/job Roslyn probe passes; full `Hecton8.Core` build now has no biome-gradient or brine conversion errors and remains blocked by unrelated `HectonBlueprintPreviewBatch` / `PlayerLookTargetPromptCache` symbols. Rejected: broad cross-domain refactor and csproj dependency surgery. Estimate: 45 us saved on low-tier edge/error cases, 2-6 us saved per synchronous slow-tick sample by avoiding worker schedule/sync overhead.
 
 ## Notes
 

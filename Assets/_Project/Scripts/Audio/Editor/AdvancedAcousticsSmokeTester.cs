@@ -161,6 +161,9 @@ namespace Hecton8.Audio.Editor
                 AssertContains(renderer, "KineticImpactThudEndHertz = 40f", "Kinetic thud descends to 40 Hz", builder, ref failureCount);
                 AssertContains(renderer, "KineticImpactWaterLowPassHertz = 800f", "Underwater kinetic impacts use 800 Hz low-pass", builder, ref failureCount);
                 AssertContains(renderer, "KineticImpactMaximumSafeEnergyJoules", "Kinetic energy is clamped before DSP gain mapping", builder, ref failureCount);
+                AssertContains(renderer, "signal.EffectiveMass", "High-speed kinetic audio consumes authored effective mass when available", builder, ref failureCount);
+                AssertContains(renderer, "ResolveHighSpeedImpactMaterialIds", "High-speed kinetic audio consumes material IDs instead of only source kind", builder, ref failureCount);
+                AssertContains(renderer, "ResolveHighSpeedImpactMaterialPitchScale", "High-speed kinetic audio pitch responds to impact material", builder, ref failureCount);
                 AssertContains(renderer, "NativeQueue<SonarEchoTap>", "Kinetic impact echo uses the existing native echo-tap bridge", builder, ref failureCount);
                 AssertNotContains(renderer, "OnAudioFilterRead", "Critical renderer has no managed Unity audio callback fallback", builder, ref failureCount);
             }

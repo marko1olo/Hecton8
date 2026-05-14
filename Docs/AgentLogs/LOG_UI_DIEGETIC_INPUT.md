@@ -143,3 +143,51 @@ Exact Microseconds saved:
 
 Verification:
 `Hecton8.Core.rsp` direct compile passed after the patch.
+
+## 2026-05-14 Continuation - Build/Asmdef Medic Bottom Ledger
+What was wrong:
+Current Unity compile/import was blocked by Core.Memory missing compaction symbols, diegetic tooltip definite assignment, incomplete split-asmdef references, prologue AUP namespace resolution, Gameplay.Loot contract exposure through Core.Memory, QA editor `Environment.NewLine` namespace collision, and `Hecton_DryZoneLit.shader` mixed line endings. MCP live console/screenshot still cannot connect to port 8088.
+
+What was done:
+Repaired compaction constants/flags and bounded memmove path in `GlobalDataVault`, initialized tooltip glyph index, exposed `WorldRuntimeReferenceUtility`, fully-qualified prologue AUP calls, added explicit asmdef references, added zero-runtime empty-assembly markers, replaced obsolete `GetInstanceID()` identity sources with `GetEntityId()`/`EntityId.ToULong()`, fixed QA editor newline qualification, normalized `Hecton_DryZoneLit.shader` to CRLF, and recorded MCP as blocked instead of fabricating proof.
+
+Cinematic Cheats used:
+None added. This pass is compile graph, import hygiene, scalar identity cleanup, and bounded memory-copy restoration only.
+
+Exact Microseconds saved:
+0 us player-frame cost added. Low-end i3/MX350 benefit is cleaner import/boot and no managed allocation churn from the repaired paths; high-end behavior unchanged.
+
+Verification:
+Temp-output Roslyn chain passed through Core.Memory, Logistics.Grid.*, World.Contracts, Core, World.Outposts, Gameplay.Loot.*, Audio.Prologue, Graphics.DRS, UI.VR.*, VFX.Debris, World.Economy, World.Streaming, Assembly-CSharp, Hecton8.Editor, and QA.Headless.Editor. Unity batchmode log `Logs/Codex_UI_DIEGETIC_INPUT_CompileCheck_20260514_062030.log` exits return code 0 with no `error CS`, `warning CS`, shader errors/warnings, Tundra failure, or mixed-line-ending warning. Remaining log entries are environment/package level: Unity licensing token, native extension probes, and MCP shutdown message.
+
+## 2026-05-14 Continuation - UI Diagnostic Layout Hygiene
+What was wrong:
+The previous report pass duplicated the build-medic ledger. Static UI audit also found a rare diagnostic-tooltip correctness issue: input scheme/service changes could rebuild diagnostics through the interaction-prompt path and attach a stray binding icon.
+
+What was done:
+Removed duplicate report blocks, normalized touched files to CRLF, and gated input-scheme/service layout rebuilds so only non-diagnostic look-target prompts get binding-icon rebuilds.
+
+Cinematic Cheats used:
+None. UI correctness and artifact hygiene only.
+
+Exact Microseconds saved:
+0 us steady frame. The new branch runs only on input scheme/service changes; no allocations, no new render pass.
+
+Verification:
+`git diff --check` returns no output. Temp-output Roslyn passed for `Assembly-CSharp` and `Hecton8.Editor`. Unity batchmode log `Logs/Codex_UI_DIEGETIC_INPUT_CompileCheck_20260514_063805.log` exits return code 0 with no CS or shader failures. Remaining batch log noise is Unity licensing and MCP shutdown state, not project compile errors.
+
+## 2026-05-14 Continuation - Live Editor Burst Probe
+What was wrong:
+Live Editor startup exposed a Burst ABI failure that C# compile/batchmode did not catch: `LootMagnetSignalEvent` calculated struct-layout size 82 while explicit size was 80.
+
+What was done:
+Changed `LootMagnetSignalEvent.Quantity` from `ushort` to `uint`, keeping the payload at 80 bytes while removing ambiguous 2-byte padding from the Burst NativeArray element layout. Started a fresh live Editor after the fix and closed it after verification.
+
+Cinematic Cheats used:
+None. This is a Burst payload ABI repair that preserves the jobified loot magnet path.
+
+Exact Microseconds saved:
+0 us added. Prevents Burst failure/fallback and keeps loot magnet pull/acquisition on the compiled job path; no payload stride increase.
+
+Verification:
+Roslyn temp-output compile passed for `Hecton8.Gameplay.Loot.Contracts`, `Hecton8.Gameplay.Loot`, `Assembly-CSharp`, and `Hecton8.Editor`. Fresh live Editor log `Logs/Codex_UI_DIEGETIC_INPUT_LiveEditorProbe_20260514_065227.log` reaches scene load; grep finds no Burst error, CS error/warning, shader error/warning, or Tundra failure. Batchmode log `Logs/Codex_UI_DIEGETIC_INPUT_CompileCheck_20260514_065653.log` exits return code 0 after the expected Bee rerun. Port 8088 remains closed, so MCP screenshot/console is still blocked by MCP setup.

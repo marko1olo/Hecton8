@@ -81,3 +81,61 @@ Verification:
 - `rg foreach`, `.ToString(`, `.text =`, `void Update(`, and `Physics.Raycast` over scanner/UI/target files: no hot-path regression hits.
 - `dotnet build Hecton8.Core.csproj`: still fails on global missing contracts, latest observed count 128 errors.
 - Unity MCP `validate_script`: transport/session unavailable at `127.0.0.1:8088/mcp`.
+
+## Follow-Up Hardening Pass 2
+
+What was wrong:
+- Scanner acquisition still used the tool transform as the primary forward source, which can diverge from the player camera/crosshair.
+- Focused scanner resampling used a single cadence across low-end and high-end tiers.
+- Prompt re-extraction logic needed to tolerate role/chat attributes on the XML tag.
+
+What was done:
+- Changed focused scanner acquisition to use `GlobalRegistry.Player.PlayerCamera.transform` first, with cached tool transform fallback.
+- Added `ResolveFocusedScanResampleInterval()` so Low/Unknown/MX350 resample slower and High/Ultra can resample tighter without increasing occlusion count.
+- Re-extracted the full DIEGETIC_LORE_SCANNER prompt with an attribute-safe regex.
+- Re-ran scanner-path static checks and a post-patch build attempt.
+
+Cinematic Cheats used:
+- Kept the camera-space highest-dot selection as the target lie.
+- Kept exactly one `RaycastCommand` after candidate selection.
+- Scaled cadence, not authority complexity, between toaster and high-end devices.
+
+Exact Microseconds saved:
+- Verified exact microseconds: PENDING VERIFICATION.
+- Estimated low-end saving: fewer focused acquisition resamples on Low/Unknown/MX350.
+- Estimated high-end spend: tighter resample cadence for responsiveness, still bounded to one selected candidate and one occlusion check.
+
+Verification:
+- `git diff --check` on scanner/UI/target/status/rationale/log: pass, line-ending warnings only.
+- `rg Camera.main`, `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, and `.text =` over scanner/UI/target files: no matches.
+- `dotnet build Hecton8.Core.csproj`: still fails globally, latest observed count 132 errors.
+- Build output filtered for `ScannerTool.cs`, `ScannableTarget.cs`, and `ToolDiegeticDisplayController.cs`: no matches.
+
+## Follow-Up Hardening Pass 3
+
+What was wrong:
+- Low/MX350 scan cadence was slowed, but contact grace still used the serialized base interval, risking progress dropouts between resamples.
+- The scheduler recalculated the effective resample interval more than once in a single acquisition pass.
+- The non-RT scanner summary path could still perform repeated lore title registry scans for the same active target.
+
+What was done:
+- Made scan hold timeout derive from `ResolveFocusedScanResampleInterval()`.
+- Resolved the effective resample interval once per `ScheduleScientificConeBatch()` pass and reused it.
+- Added last hash/index caching in `ScannableTarget.TryWriteLoreEntityTitle()`, with invalidation on resolved string refresh, lore register, and lore unregister.
+
+Cinematic Cheats used:
+- Preserved highest-dot camera-space target selection.
+- Preserved exactly one post-selection `RaycastCommand`.
+- Improved low-tier stability by timing, not by spending more physics work.
+
+Exact Microseconds saved:
+- Verified exact microseconds: PENDING VERIFICATION.
+- Estimated saved work: one avoided duplicate tier lookup per acquisition pass.
+- Estimated saved work: repeated same-target title lookup reduced from O(1024) worst case to O(1).
+- Estimated low-tier benefit: stable held scan contact at slower resample cadence instead of raising sampling cost.
+
+Verification:
+- Prompt re-extracted cover-to-cover with attribute-safe XML regex.
+- `git diff --check` on scanner/UI/target edits: pass, line-ending warnings only.
+- `rg Camera.main`, `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, and `.text =` over scanner/UI/target files: no matches.
+- `dotnet build` verification remains pending: one filtered pass returned no scanner-file matches, but follow-up plain/minimal build behavior was inconsistent and a single-thread retry timed out. No leftover `dotnet` processes remained.

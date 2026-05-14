@@ -19,7 +19,7 @@ namespace Hecton8.UI.VR
     [DisallowMultipleComponent]
     [RequireComponent(typeof(BoxCollider))]
     [AddComponentMenu("Hecton8/UI/VR/OpenXR Manual Override Lever")]
-    public sealed class OpenXRManualOverrideLever : MonoBehaviour, IUpdatable, IPhysicalPanelButtonReceiver, IManualOverrideLeverReadModel
+    public sealed class OpenXRManualOverrideLever : MonoBehaviour, IUpdatable, IPhysicalPanelButtonReceiver, IManualOverrideLeverReadModel, IGlobalRegistryHotSwapListener
     {
         private const int LeverCount = 1;
         private const int BlackBoxFrameCount = 300;
@@ -30,7 +30,10 @@ namespace Hecton8.UI.VR
         private const uint SourceHash = 0x4D4F5652u;
         private const uint GripActionMask = (uint)PlayerInputAction.Interact | (uint)PlayerInputAction.SecondaryFire;
         private const byte HapticPriorityCritical = 3;
-        private const byte HapticBothHandsMask = 0b0011;
+        private const byte HapticLeftHandMask = 0b0001;
+        private const byte HapticRightHandMask = 0b0010;
+        private const byte HapticBothHandsMask = HapticLeftHandMask | HapticRightHandMask;
+        private const int MaxStaleGrabFrames = 3;
         private const string NativeMemoryOwner = nameof(OpenXRManualOverrideLever);
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_VR_COCKPIT_MANUAL_OVERRIDE.bin";
 
@@ -79,7 +82,9 @@ namespace Hecton8.UI.VR
         private int _lastRatchetStep = -1;
         private uint _inputSequence;
         private ushort _signalSequence;
+        private JobHandle _disposeHandle;
         private bool _registeredTick;
+        private bool _registeredHotSwapListener;
         private bool _receiverRegistered;
         private bool _grabbed;
         private bool _latched;
@@ -106,9 +111,7 @@ namespace Hecton8.UI.VR
             _closedLocalRotation = IsFiniteQuaternion(_resolvedVisual.localRotation)
                 ? _resolvedVisual.localRotation
                 : Quaternion.identity;
-            _leverAngles[0] = math.clamp(minAngleDegrees, math.min(minAngleDegrees, maxAngleDegrees), math.max(minAngleDegrees, maxAngleDegrees));
-            _leverTargets[0] = _leverAngles[0];
-            ApplyLeverVisual(_leverAngles[0]);
+            InitializeLeverStateAfterAllocation();
         }
 
         private void OnEnable()
@@ -117,6 +120,7 @@ namespace Hecton8.UI.VR
             CacheConfiguration();
             _inputService = GlobalRegistry.Input;
             _lowTierMath = ResolveLowTierMath();
+            TryRegisterHotSwapListener();
             TryRegisterReceiver();
             TryRegisterTick();
         }
@@ -126,25 +130,27 @@ namespace Hecton8.UI.VR
             _grabbed = false;
             TryUnregisterTick();
             TryUnregisterReceiver();
+            TryUnregisterHotSwapListener();
         }
 
         private void OnDestroy()
         {
             TryUnregisterTick();
             TryUnregisterReceiver();
+            TryUnregisterHotSwapListener();
             DisposeNativeState();
         }
 
         public void Tick(float deltaTime)
         {
-            if (!_nativeAllocated)
+            if (!TryEnsureNativeState())
                 return;
 
             float dt = SanitizeDeltaSeconds(deltaTime);
             _lastInputSignal = BuildUniversalInputSignal();
             bool gripHeld = (_lastInputSignal.ActionsBitmask & GripActionMask) != 0u;
             bool xrActive = XRSettings.enabled && XRSettings.isDeviceActive;
-            bool hasFreshHand = (Time.frameCount - _lastHandFrame) <= 1;
+            int handAgeFrames = Time.frameCount - _lastHandFrame;
 
             if (_latched)
             {
@@ -153,7 +159,7 @@ namespace Hecton8.UI.VR
             }
             else if (xrActive)
             {
-                UpdateVrGrab(gripHeld, hasFreshHand);
+                UpdateVrGrab(gripHeld, handAgeFrames);
             }
             else
             {
@@ -191,7 +197,7 @@ namespace Hecton8.UI.VR
             return true;
         }
 
-        private void UpdateVrGrab(bool gripHeld, bool hasFreshHand)
+        private void UpdateVrGrab(bool gripHeld, int handAgeFrames)
         {
             if (!gripHeld)
             {
@@ -199,8 +205,19 @@ namespace Hecton8.UI.VR
                 return;
             }
 
-            if (!hasFreshHand && !_grabbed)
+            if (handAgeFrames > MaxStaleGrabFrames)
+            {
+                _grabbed = false;
                 return;
+            }
+
+            if (handAgeFrames > 1)
+            {
+                if (_grabbed)
+                    _leverTargets[0] = _leverAngles[0];
+
+                return;
+            }
 
             _grabbed = true;
             _latchedHandSide = ResolveSignalHandSide(_lastHandSide);
@@ -282,7 +299,10 @@ namespace Hecton8.UI.VR
             }
 
             if (!_grabbed && _nonVrHold01 <= 0f)
+            {
+                _lastRatchetStep = -1;
                 return;
+            }
 
             _lastRatchetStep = step;
             HapticRequest request = default;
@@ -293,7 +313,8 @@ namespace Hecton8.UI.VR
             request.Frame = unchecked((uint)Time.frameCount);
             request.Channel = HapticRequest.ChannelGearScrape;
             GlobalSignals.Publish(in request);
-            ToolHapticsRuntime.EnqueueSinusoidalCommand(0.18f, 0.28f, 0.025f, 28f, HapticPriorityCritical, HapticBothHandsMask);
+            byte motorMask = _grabbed ? ResolveHapticMotorMask(_lastHandSide) : HapticBothHandsMask;
+            ToolHapticsRuntime.EnqueueSinusoidalCommand(0.18f, 0.28f, 0.025f, 28f, HapticPriorityCritical, motorMask);
         }
 
         private void TryLatch(float currentAngle)
@@ -366,7 +387,8 @@ namespace Hecton8.UI.VR
             request.Frame = unchecked((uint)Time.frameCount);
             request.Channel = HapticRequest.ChannelVehicleCritical;
             GlobalSignals.Publish(in request);
-            ToolHapticsRuntime.EnqueueSinusoidalCommand(0.75f, 0.95f, 0.11f, 42f, HapticPriorityCritical, HapticBothHandsMask);
+            byte motorMask = ResolveHapticMotorMask(_latchedHandSide);
+            ToolHapticsRuntime.EnqueueSinusoidalCommand(0.75f, 0.95f, 0.11f, 42f, HapticPriorityCritical, motorMask);
         }
 
         private UniversalInputStateSignal BuildUniversalInputSignal()
@@ -382,6 +404,27 @@ namespace Hecton8.UI.VR
             signal.Sequence = ++_inputSequence;
             signal.Flags = (byte)((state.ActionsBitmask & GripActionMask) != 0u ? 1 : 0);
             return signal;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(GlobalRegistryServiceSlot serviceSlot, object previousService, object currentService)
+        {
+            if (!isActiveAndEnabled)
+                return;
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Input)
+            {
+                _inputService = currentService as IInputService ?? GlobalRegistry.Input;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                _registeredTick = false;
+                if (currentService == null)
+                    return;
+
+                TryRegisterTick();
+            }
         }
 
         private void WriteBlackBoxFrame(float angleDegrees)
@@ -403,7 +446,9 @@ namespace Hecton8.UI.VR
             entry.Frame = unchecked((uint)Time.frameCount);
             entry.Flags = BuildTelemetryFlags();
             _blackBox[_blackBoxWriteIndex] = entry;
-            _blackBoxWriteIndex = (_blackBoxWriteIndex + 1) % BlackBoxFrameCount;
+            _blackBoxWriteIndex++;
+            if (_blackBoxWriteIndex >= BlackBoxFrameCount)
+                _blackBoxWriteIndex = 0;
         }
 
         private byte BuildTelemetryFlags()
@@ -452,7 +497,7 @@ namespace Hecton8.UI.VR
                     }
                 }
             }
-            catch (IOException)
+            catch
             {
             }
         }
@@ -491,7 +536,15 @@ namespace Hecton8.UI.VR
 
         private Vector3 ResolveReferenceVector()
         {
-            Vector3 raw = handleAnchor != null ? handleAnchor.localPosition - pivotLocalPosition : Vector3.forward;
+            Vector3 raw = Vector3.forward;
+            if (handleAnchor != null)
+            {
+                Vector3 handleLocal = _cachedTransform != null
+                    ? _cachedTransform.InverseTransformPoint(handleAnchor.position)
+                    : handleAnchor.localPosition;
+                raw = handleLocal - pivotLocalPosition;
+            }
+
             Vector3 axisScaled = _resolvedLocalAxis * Vector3.Dot(raw, _resolvedLocalAxis);
             Vector3 projected = raw - axisScaled;
             if (projected.sqrMagnitude < MinAxisLengthSq)
@@ -505,14 +558,18 @@ namespace Hecton8.UI.VR
 
         private void AllocateNativeState()
         {
+            DispatcherJobSwap.TryFinalizeCompleted(ref _disposeHandle);
+            if (!_disposeHandle.IsCompleted)
+                return;
+
             if (_nativeAllocated)
                 return;
 
-            _leverAngles = new NativeArray<float>(LeverCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _leverVelocities = new NativeArray<float>(LeverCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _leverTargets = new NativeArray<float>(LeverCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _leverPivots = new NativeArray<float3>(LeverCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _blackBox = new NativeArray<ManualOverrideLeverTelemetryEntry>(BlackBoxFrameCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _leverAngles = new NativeArray<float>(LeverCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[1] - lever angle state - owner: OpenXRManualOverrideLever
+            _leverVelocities = new NativeArray<float>(LeverCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[1] - lever spring velocity state - owner: OpenXRManualOverrideLever
+            _leverTargets = new NativeArray<float>(LeverCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[1] - lever target angle state - owner: OpenXRManualOverrideLever
+            _leverPivots = new NativeArray<float3>(LeverCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float3>[1] - local pivot state - owner: OpenXRManualOverrideLever
+            _blackBox = new NativeArray<ManualOverrideLeverTelemetryEntry>(BlackBoxFrameCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ManualOverrideLeverTelemetryEntry>[300] - crash telemetry ring - owner: OpenXRManualOverrideLever
             NativeMemorySentinel.RegisterNativeArray(_leverAngles, NativeMemoryOwner, nameof(_leverAngles), NativeAllocationLifetime.Scene);
             NativeMemorySentinel.RegisterNativeArray(_leverVelocities, NativeMemoryOwner, nameof(_leverVelocities), NativeAllocationLifetime.Scene);
             NativeMemorySentinel.RegisterNativeArray(_leverTargets, NativeMemoryOwner, nameof(_leverTargets), NativeAllocationLifetime.Scene);
@@ -522,30 +579,67 @@ namespace Hecton8.UI.VR
             _nativeAllocated = true;
         }
 
+        private bool TryEnsureNativeState()
+        {
+            if (_nativeAllocated)
+                return true;
+
+            AllocateNativeState();
+            if (!_nativeAllocated)
+                return false;
+
+            CacheConfiguration();
+            InitializeLeverStateAfterAllocation();
+            return true;
+        }
+
+        private void InitializeLeverStateAfterAllocation()
+        {
+            if (!_nativeAllocated)
+                return;
+
+            float initialAngle = math.clamp(minAngleDegrees, math.min(minAngleDegrees, maxAngleDegrees), math.max(minAngleDegrees, maxAngleDegrees));
+            _leverAngles[0] = initialAngle;
+            _leverVelocities[0] = 0f;
+            _leverTargets[0] = initialAngle;
+            _blackBoxWriteIndex = 0;
+            _lastRatchetStep = -1;
+            ApplyLeverVisual(initialAngle);
+        }
+
         private void DisposeNativeState()
         {
             if (!_nativeAllocated)
                 return;
 
-            UnregisterNativeArray(_leverAngles);
-            UnregisterNativeArray(_leverVelocities);
-            UnregisterNativeArray(_leverTargets);
-            UnregisterNativeArray(_leverPivots);
-            UnregisterNativeArray(_blackBox);
-            JobHandle disposeHandle = default;
-            disposeHandle = _leverAngles.Dispose(disposeHandle);
-            disposeHandle = _leverVelocities.Dispose(disposeHandle);
-            disposeHandle = _leverTargets.Dispose(disposeHandle);
-            disposeHandle = _leverPivots.Dispose(disposeHandle);
-            disposeHandle = _blackBox.Dispose(disposeHandle);
-            JobHandle.ScheduleBatchedJobs();
+            DispatcherJobSwap.TryFinalizeCompleted(ref _disposeHandle);
+            bool hasPendingDispose = !_disposeHandle.IsCompleted;
+            JobHandle disposeHandle = hasPendingDispose ? _disposeHandle : default;
+            bool scheduledDispose = false;
+
+            DisposeNativeArray(ref _leverAngles, ref disposeHandle, ref scheduledDispose);
+            DisposeNativeArray(ref _leverVelocities, ref disposeHandle, ref scheduledDispose);
+            DisposeNativeArray(ref _leverTargets, ref disposeHandle, ref scheduledDispose);
+            DisposeNativeArray(ref _leverPivots, ref disposeHandle, ref scheduledDispose);
+            DisposeNativeArray(ref _blackBox, ref disposeHandle, ref scheduledDispose);
             _nativeAllocated = false;
+
+            if (!scheduledDispose)
+                return;
+
+            _disposeHandle = disposeHandle;
+            JobHandle.ScheduleBatchedJobs();
         }
 
-        private static void UnregisterNativeArray<T>(NativeArray<T> array) where T : struct
+        private static void DisposeNativeArray<T>(ref NativeArray<T> array, ref JobHandle disposeHandle, ref bool scheduledDispose) where T : struct
         {
-            if (array.IsCreated)
-                NativeMemorySentinel.UnregisterNativeArray(array);
+            if (!array.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeArray(array);
+            disposeHandle = array.Dispose(disposeHandle);
+            array = default;
+            scheduledDispose = true;
         }
 
         private void TryRegisterReceiver()
@@ -581,6 +675,23 @@ namespace Hecton8.UI.VR
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
             _registeredTick = false;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
         }
 
         private bool ResolveLowTierMath()
@@ -632,10 +743,14 @@ namespace Hecton8.UI.VR
         private static Vector3 NormalizeOr(Vector3 value, Vector3 fallback)
         {
             float lengthSq = value.sqrMagnitude;
-            if (!math.isfinite(lengthSq) || lengthSq < MinAxisLengthSq)
-                return fallback.normalized;
+            if (math.isfinite(lengthSq) && lengthSq >= MinAxisLengthSq)
+                return value * math.rsqrt(lengthSq);
 
-            return value * math.rsqrt(lengthSq);
+            float fallbackLengthSq = fallback.sqrMagnitude;
+            if (math.isfinite(fallbackLengthSq) && fallbackLengthSq >= MinAxisLengthSq)
+                return fallback * math.rsqrt(fallbackLengthSq);
+
+            return Vector3.forward;
         }
 
         private static bool IsFiniteVector(Vector3 value)
@@ -654,6 +769,22 @@ namespace Hecton8.UI.VR
             return side == PhysicalHandSide.Left
                 ? ManualOverridePulledSignal.HandLeft
                 : ManualOverridePulledSignal.HandRight;
+        }
+
+        private static byte ResolveHapticMotorMask(PhysicalHandSide side)
+        {
+            return side == PhysicalHandSide.Left ? HapticLeftHandMask : HapticRightHandMask;
+        }
+
+        private static byte ResolveHapticMotorMask(byte signalHandSide)
+        {
+            if (signalHandSide == ManualOverridePulledSignal.HandLeft)
+                return HapticLeftHandMask;
+
+            if (signalHandSide == ManualOverridePulledSignal.HandRight)
+                return HapticRightHandMask;
+
+            return HapticBothHandsMask;
         }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD

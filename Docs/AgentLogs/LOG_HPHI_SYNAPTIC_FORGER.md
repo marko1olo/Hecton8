@@ -48,3 +48,35 @@ Verification:
 - `dotnet build Assembly-CSharp.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary` timed out at 124 seconds.
 - Unity MCP script validation returned `Unity session not available; please retry`.
 - Status is PENDING - GLOBAL COMPILE DEPENDENCY BLOCK. It is not VERIFIED MASTER GRADE until the global dependency wall is repaired and compile can reach these surfaces.
+
+## 2026-05-14 - Recursive Reverification Addendum
+
+What was wrong:
+- PlayerActionController could carry a previous active tool slot into a later signal if the tool manager reference was absent during the new action.
+- Converted HUD/action progress paths still used scalar division where `math.rcp` multiplication is sufficient.
+- ActionProgressHUD cancellation handler claimed it snapped to current progress but did not write the cancelled progress value to the image.
+- PDAExchangeSystem and VehicleUpgradeModule recomputed `GetInstanceID()` on every signal publish.
+- PDABarterTab recomputed source ids during tick and needed explicit stale-source invalidation.
+
+What was done:
+- Added `PackActiveToolSlot()` and reset `_lastToolSlotIndex` to the sentinel when no tool manager is available.
+- Replaced converted hot-path divisions with reciprocal multiplication in `PlayerActionController.ResolveProgress01()` and ActionProgressHUD fade math.
+- Wrote cancelled progress into `progressImage.fillAmount` before fade-out.
+- Cached producer `_signalSourceId` in PDAExchangeSystem and VehicleUpgradeModule with lazy fallback if Unity lifecycle order leaves it zero.
+- Added `_boundExchangeSystem` in PDABarterTab so source id recomputation happens only when the bound exchange system changes.
+
+Cinematic Cheats used:
+- No physical truth added. The upgrade keeps the existing dear-lie packet model: byte reasons, masks, hashes, source ids, and scalar progress.
+- Reciprocal math replaces exact division where visual precision is not player-critical.
+
+Exact microseconds saved:
+- Reciprocal conversion: estimated 0.1-0.2 us/frame in active action/HUD frames.
+- Cached source ids: estimated 0.1-0.3 us per PDA/vehicle mutation burst.
+- Stale tool/source fixes are correctness and determinism gains, not large frame-time wins.
+
+Verification:
+- Targeted rg remains clean for converted hot lanes: no managed event remnants, no foreach, no string.Format, no interpolation, no math.sqrt, no math.normalize, no old progress/fade division patterns.
+- Only `.ToString()` hit remains `PDAExchangeSystem.BuildBundleSummaryForSave`, a cold save serialization path.
+- `git diff --check` reports no whitespace errors; only CRLF normalization warnings on touched tracked files.
+- `Docs/AgentLogs/Build_HPHI_SYNAPTIC_FORGER_latest.txt` captured the latest Core build wall: 128 unrelated global errors and no touched-file hits for GlobalSignals, PlayerActionController, ActionProgressHUD, PDAExchangeSystem, PDABarterTab, or VehicleUpgradeModule.
+- Unity MCP validation retry failed at transport level: `http://127.0.0.1:8088/mcp` was unavailable, so Editor-side validation remains blocked.

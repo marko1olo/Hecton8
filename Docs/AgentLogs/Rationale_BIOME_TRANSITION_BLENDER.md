@@ -51,3 +51,55 @@ Solution: Ran targeted `dotnet build Hecton8.Core.csproj` to expose the dependen
 Rejected Alternatives: Claiming a clean compile or reverting other agents' files.
 Scalability potential: Integrator can verify this slice once global assembly references are repaired; the local job contract already compiles in isolation.
 Hardware Impact: No runtime impact; prevents a false green report from hiding integration risk.
+
+## OMEGA POLISH CHANGES
+
+Problem: The first Burst sampler version used direct divisions and an unconditional distance helper path.
+Solution: Converted blend/weight math to `math.rcp` multiplications and replaced helper distance with `distanceSq * math.rsqrt(max(distanceSq, epsilon))`.
+Rejected Alternatives: Leaving divisions in the kernel because it is "only SlowTick". SlowTick still runs on weak CPUs and should stay cheap.
+Scalability potential: Low tier now gets the 3x3 kernel plus reciprocal math; High/Ultra keep 5x5 and can spend saved cycles in GI/audio/ecology consumers.
+Hardware Impact: Estimated MX350/i3 gain is 1-4 us per biome sample job versus division-heavy 5x5 math; no change in memory footprint.
+
+Problem: The job wrote to `Result[0]` even when a caller supplied no result array.
+Solution: Guarded the output array before all map checks.
+Rejected Alternatives: Assuming only the production runtime will ever schedule the job.
+Scalability potential: Safer test harness and integrator use without adding branches to the valid hot path after the initial guard.
+Hardware Impact: No meaningful runtime cost; prevents invalid memory access in bad harnesses.
+
+Problem: Cross-domain edits were required for visible consequences.
+Solution: Justified them as signal consumers only: GI relay, ecosystem, and music read `SignalBus<BiomeGradientSignal>` without owning biome data.
+Rejected Alternatives: Direct dependencies from biome runtime into render/fauna/audio managers.
+Scalability potential: Consumers can independently increase visual/audio overkill on higher tiers.
+Hardware Impact: Existing tick paths pay only span read plus scalar math; no new GameObjects, AudioSources, or allocations.
+
+## SECOND PASS QUALITY UPGRADE
+
+Problem: Out-of-map AUP samples clamped the macro-cell index but still used unclamped sample coordinates, which could inflate distance math and weaken edge-biome determinism.
+Solution: Clamp the sample coordinate to the heatmap domain and add an `OutOfBounds` flag to the contract/signal.
+Rejected Alternatives: Letting huge outside-map distances bleed into the IDW math or failing the sample as missing data.
+Scalability potential: Low tier gets deterministic edge results with 3x3; High/Ultra can still render a deliberate boundary effect from the flag.
+Hardware Impact: i3/MX350 avoids wasted large-distance math and branchy failure recovery; estimated 1-3 us saved on out-of-domain slow-tick samples.
+
+Problem: `byte` biome IDs can collide when record indices exceed 255 or fallback hash folding lands on the same byte.
+Solution: Keep byte IDs for compact signal/UI lanes but aggregate IDW weights with hash-aware biome keys.
+Rejected Alternatives: Widening the hot map to `uint` only, which would quadruple map memory, or accepting visually wrong blends between colliding biomes.
+Scalability potential: Low keeps the 64 KB byte map; High/Ultra preserve hash fidelity for richer material/audio responses.
+Hardware Impact: Maintains the 65,536-byte map footprint instead of moving to 262,144 bytes; collision check is a cheap integer comparison inside an already bounded 9/25-sample kernel.
+
+Problem: The runtime scheduled an `IJob` and immediately completed it, paying worker scheduling overhead for a slow-tick scalar result.
+Solution: Switch to `job.Run()` for synchronous Burst execution.
+Rejected Alternatives: Leaving schedule/complete because the job is small, or moving sampling into `Update`.
+Scalability potential: Low saves scheduler overhead; High/Ultra retain the same Burst math and can spend saved time in visual consumers.
+Hardware Impact: Estimated 2-6 us saved per slow-tick sample on low-end CPUs by avoiding schedule/sync overhead.
+
+Problem: No dev-only deterministic probe existed for edge cases.
+Solution: Added `BiomeBoundarySdfSmokeTester` covering normal boundary blend, low-tier 3x3, out-of-bounds clamping, and same-byte/different-hash biome collisions.
+Rejected Alternatives: Manual scene-only verification. Scene verification is still required, but it is not enough for deterministic math.
+Scalability potential: The smoke catches low-tier and collision regressions before expensive scene testing.
+Hardware Impact: No runtime impact; code compiles only under editor/development defines and allocates only during explicit smoke execution.
+
+Problem: A neighboring `EcosystemDirector` brine sample path had double/float conversion compile errors after an AUP precision change.
+Solution: Preserve the double shift math locally and compute the runtime brine height without calling float-only compiled APIs.
+Rejected Alternatives: Reverting the AUP precision change or broad ecology/genome refactors.
+Scalability potential: Keeps AUP precision stable for large worlds without pulling biome code into ecology internals.
+Hardware Impact: No measurable frame cost; removes a compile blocker in the biome consumer file.

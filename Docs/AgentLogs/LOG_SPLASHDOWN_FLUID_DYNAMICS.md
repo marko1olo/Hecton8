@@ -85,3 +85,94 @@ Verification:
 - `dotnet build Hecton8.Core.csproj --no-restore /p:UseSharedCompilation=false`: TIMED OUT after 120s; log shows the same generated-project missing-reference wall, with `HectonFluidEngine.cs(47,27)` still the only HectonFluidEngine line before timeout.
 - Unity MCP `read_console`: BLOCKED by HTTP transport failure to `127.0.0.1:8088/mcp`.
 - Killed leftover `dotnet` build child processes from the timed-out verification run.
+
+## Follow-up Audit - Splash Buffer Layout
+
+What was wrong: `FluidImpulseJob` wrote the impulse buffer in texture flat-index order while `UpdateAbyssalFlowField` reads structured nodes in the existing `ResolveGridCoord` order. The 3D flow texture and structured flow buffer could sample different splash cells, bending particles and flow-field consumers away from the visible pressure wave.
+
+What was done:
+- Changed `FluidImpulseJob` index decomposition to `x + z*res + y*res^2`, matching the structured abyssal flow node layout.
+- Replaced the duplicated texture flat-index formula in `AbyssalFlowField.compute` with `ResolveFlatIndex(coord)`, so structured and texture consumers use the same canonical layout.
+
+Cinematic Cheats used: one canonical visual impulse buffer shared by both consumers; no duplicate texture-order buffer and no transpose upload.
+
+Exact Microseconds saved:
+- Avoided a second 512 KB impulse buffer or transpose upload.
+- No additional dispatches or shader branches added.
+- Corrected spatial reads with effectively zero frame-time cost.
+
+Verification:
+- `git diff --check` on splashdown C#/compute paths: PASS except Git LF-to-CRLF warnings.
+- Isolated `FluidImpulseJob.cs` compile through .NET Roslyn with Unity references: PASS.
+- Unity MCP `read_console`: BLOCKED by HTTP transport failure to `127.0.0.1:8088/mcp`.
+
+## Follow-up Audit - Quality-Drop Upload Cull
+
+What was wrong: A splash vector job scheduled on a non-low tier could finish after runtime quality dropped to Low/MX350/low-memory. Shader params already suppressed reads in that state, but completion still uploaded the 512 KB vector field and retained the lazy GPU buffer.
+
+What was done:
+- Added a Low-tier completion check inside `TryCompleteSplashdownImpulseJobForUpload()`.
+- On that edge, the system now clears active splash timing/count, marks Low-tier telemetry, releases `_gpuSplashdownImpulseBuffer`, and skips the upload.
+- Invalid job math still triggers the blackbox dump path after the Low-tier cull.
+
+Cinematic Cheats used: bubble-only Low-tier presentation remains the truth on weak hardware; the vector pressure field is discarded when the player cannot afford to sample it.
+
+Exact Microseconds saved:
+- Avoids one 512 KB GPU upload on quality-drop completion cases.
+- Releases about 512 KB VRAM instead of retaining a suppressed vector field on Low/MX350.
+- Estimated edge saving: 120-350 us on i3/MX350, plus lower PCIe/driver pressure. Measured profiler proof is still unavailable.
+
+Verification:
+- `git diff --check` on splashdown paths: PASS except Git LF-to-CRLF warnings.
+- Static allocation scan on touched C# files: only pre-existing field-level `List<T>` allocations at `HectonFluidEngine.cs:1262` and `HectonFluidEngine.cs:1266`; no new splashdown hot-path allocation pattern found.
+- Isolated `FluidImpulseJob.cs` compile through .NET Roslyn with live `Library/ScriptAssemblies` Unity references: PASS.
+- `dotnet build Hecton8.Core.csproj --no-restore /p:UseSharedCompilation=false /m:1`: TIMED OUT after 94s against the known generated-project dependency wall; build children were terminated afterward.
+- Unity MCP `read_console`: BLOCKED by HTTP transport failure to `127.0.0.1:8088/mcp`.
+
+## Follow-up Audit - Centered Flow Coordinates
+
+What was wrong: The structured abyssal flow shader used integer half-extents for node world positions. With a 32-cell, 100m field, that samples `[-50m, 46.875m]` around the center. The 3D flow texture and `FluidImpulseJob` use cell centers, `[-48.4375m, 48.4375m]`. The buffer layout was fixed, but the structured path still carried a half-cell spatial bias.
+
+What was done:
+- Changed `ResolveNodeWorldPosition()` in `AbyssalFlowField.compute` to use cell-center UVW math.
+- Reconstructed structured world extents from `_AbyssalFlowSpacing` and `_AbyssalGridResolution`.
+- Kept the single canonical splash impulse buffer; no duplicate texture-layout or structured-layout buffer was introduced.
+
+Cinematic Cheats used: one centered vector-field coordinate convention instead of separate physical grids; no extra simulation truth.
+
+Exact Microseconds saved:
+- No direct CPU saving; shader ALU cost is equivalent to the prior helper.
+- Avoids future duplicate 512 KB buffers or transpose uploads needed to compensate for biased coordinates.
+- Removes a half-cell visual/current mismatch at zero memory cost.
+
+Verification:
+- `git diff --check` on splashdown C#/compute/doc paths: PASS except Git LF-to-CRLF warnings.
+- Isolated `FluidImpulseJob.cs` compile through .NET Roslyn with live `Library/ScriptAssemblies` Unity references: PASS.
+- Local shader compiler lookup: no `dxc` or `fxc` executable found in PATH or Unity `Editor/Data/Tools`; shader compile remains Unity-import blocked.
+- Unity MCP `read_console`: BLOCKED by HTTP transport failure to `127.0.0.1:8088/mcp`.
+- Leftover `dotnet` compiler worker processes from the isolated compile probe were terminated.
+
+## Follow-up Audit - Duplicate Completion Guard
+
+What was wrong: Multiple systems can publish `PrologueCompleteSignal`. The fluid drain loop could process more than one valid handoff in a single snapshot, and a sequence-zero publisher could repeat the splash on later frames. That violates the one-impact requirement and can duplicate the 500-bubble burst plus vector scheduling attempts.
+
+What was done:
+- Added `_splashdownImpactConsumed` as a one-shot gate for the prologue splashdown event.
+- Added source-hash tracking beside `_lastProcessedSplashdownSequence`.
+- Changed `QueueSplashdownFluidImpulse()` to return whether a valid signal was handled.
+- The drain now breaks after the first valid handled splashdown; invalid coordinate packets do not consume the event.
+- Reset the one-shot state when splashdown impulse state is disposed.
+
+Cinematic Cheats used: one authored pressure-wave event instead of repeated physical truth from duplicate broadcasts.
+
+Exact Microseconds saved:
+- Prevents each duplicate valid signal from writing 500 bubble records.
+- Prevents two full 2000-slot bubble-buffer uploads per duplicate signal.
+- Estimated duplicate-edge saving: 80-250 us CPU/driver time, plus avoided GPU buffer traffic. Measured profiler proof is still unavailable.
+
+Verification:
+- `git diff --check` on splashdown C#/compute/doc paths: PASS except Git LF-to-CRLF warnings.
+- Isolated `FluidImpulseJob.cs` compile through .NET Roslyn with live `Library/ScriptAssemblies` Unity references: PASS.
+- Static allocation scan on touched C# files: only pre-existing field-level `List<T>` allocations at `HectonFluidEngine.cs:1264` and `HectonFluidEngine.cs:1268`; no new splashdown hot-path allocation pattern found.
+- Unity MCP `read_console`: BLOCKED; only placeholder tool available in this request and it reported unsupported/unavailable.
+- Leftover `dotnet` compiler worker processes from the isolated compile probe were terminated.

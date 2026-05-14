@@ -22,6 +22,7 @@ namespace Hecton8.QA.Headless
         private const string RuntimeRootName = "[HeadlessStressFractureBot]";
         private const string CommandLineArg = "-h8fracturetest";
         private const string EnvironmentFlagName = "H8_FRACTURE_TEST";
+        private const string EnvironmentFramesName = "H8_FRACTURE_FRAMES";
         private const string FlagRelativePath = "Temp/H8_FRACTURE_TEST.flag";
         private const string ResultRelativePath = "Docs/AgentLogs/HeadlessStressFractureResult_HEADLESS_STRESS_FRACTURE_BOT.json";
         private const string BlackboxRelativePath = "Docs/AgentLogs/Dump_HEADLESS_STRESS_FRACTURE_BOT.bin";
@@ -35,6 +36,7 @@ namespace Hecton8.QA.Headless
         private const int ChunkLeakGraceFrames = 180;
         private const int ScratchBlockBytes = 50 * 1024 * 1024;
         private const long LeakToleranceBytes = 1024L * 1024L;
+        private const double FlagMaxAgeSeconds = 10800.0;
         private const double StartupTimeoutSeconds = 60.0;
         private const float TimeDilationScalar = 100f;
         private const float StallThresholdMilliseconds = 16f;
@@ -177,16 +179,7 @@ namespace Hecton8.QA.Headless
             }
 
             ReleaseScratchBlock();
-
-            if (_registeredFast)
-                GlobalRegistry.UnregisterFastTickable(this, PriorityLayer.Core);
-            if (_registeredCold)
-                GlobalRegistry.UnregisterColdTickable(this, PriorityLayer.Core);
-            if (_registeredLate)
-                GlobalRegistry.UnregisterLateFrameTickable(this, LateSamplingLayer);
-            if (_originListenerRegistered)
-                HectonFloatingOrigin.UnregisterListener(this);
-
+            UnregisterRuntimeHooks();
             RestoreRuntimePolicy();
             DisposeNativeArray(ref _blackbox);
             _cameraScratch = null;
@@ -201,8 +194,14 @@ namespace Hecton8.QA.Headless
             if (!_started || _finished)
                 return;
 
-            _phaseStartTimestamp = Stopwatch.GetTimestamp();
-            _phaseFrame = Time.frameCount;
+            long phaseTimestamp = Stopwatch.GetTimestamp();
+            int unityFrame = Time.frameCount;
+            if (_phaseStartTimestamp == 0L || _phaseFrame != unityFrame)
+            {
+                _phaseStartTimestamp = phaseTimestamp;
+                _phaseFrame = unityFrame;
+            }
+
             _extremeFrame++;
 
             CacheServices();
@@ -305,7 +304,8 @@ namespace Hecton8.QA.Headless
         private void InitializeColdState()
         {
             string[] args = global::System.Environment.GetCommandLineArgs();
-            _targetFrames = math.max(1, TryReadInt(args, "-h8fractureFrames", DefaultTargetFrames));
+            int frameFallback = TryReadEnvironmentInt(EnvironmentFramesName, DefaultTargetFrames);
+            _targetFrames = math.max(1, TryReadInt(args, "-h8fractureFrames", frameFallback));
             _resultPath = ResolveProjectPath(ResultRelativePath);
             _blackboxPath = ResolveProjectPath(BlackboxRelativePath);
             _h8MemoryDumpPath = ResolveProjectPath(H8MemoryDumpRelativePath);
@@ -322,7 +322,7 @@ namespace Hecton8.QA.Headless
             SignalBus<SectorResidencyHydratedSignal>.EnsureInitialized();
             SignalBus<SwarmDispersedSignal>.EnsureInitialized();
             _staticHPhiMetric = ComputeStaticHPhiMetric();
-            Debug.LogWarning(FormatStaticHPhiLog(_staticHPhiMetric));
+            Debug.LogWarning(FormatStaticHPhiLog(_staticHPhiMetric, _targetFrames));
         }
 
         private void ForceHeadlessRuntimePolicy()
@@ -605,6 +605,7 @@ namespace Hecton8.QA.Headless
             _lastFractureHash = SuccessHash;
             ReleaseScratchBlock();
             RecordBlackbox(SuccessHash);
+            UnregisterRuntimeHooks();
             PublishCrashSignal(0, SuccessHash, 0);
             TryDumpBlackbox();
             TryWriteResult(0, SuccessToken);
@@ -620,11 +621,40 @@ namespace Hecton8.QA.Headless
             _lastFractureHash = reasonHash;
             UnityEngine.Debug.LogError(status);
             RecordBlackbox(reasonHash);
+            UnregisterRuntimeHooks();
+            ReleaseScratchBlock();
             PublishCrashSignal(exitCode, reasonHash, 2);
             TryDumpBlackbox();
             TryDumpH8Memory();
             TryWriteResult(exitCode, status);
             Application.Quit(exitCode);
+        }
+
+        private void UnregisterRuntimeHooks()
+        {
+            if (_registeredFast)
+            {
+                GlobalRegistry.UnregisterFastTickable(this, PriorityLayer.Core);
+                _registeredFast = false;
+            }
+
+            if (_registeredCold)
+            {
+                GlobalRegistry.UnregisterColdTickable(this, PriorityLayer.Core);
+                _registeredCold = false;
+            }
+
+            if (_registeredLate)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, LateSamplingLayer);
+                _registeredLate = false;
+            }
+
+            if (_originListenerRegistered)
+            {
+                HectonFloatingOrigin.UnregisterListener(this);
+                _originListenerRegistered = false;
+            }
         }
 
         private void PublishCrashSignal(int exitCode, uint reasonHash, byte severity)
@@ -837,10 +867,26 @@ namespace Hecton8.QA.Headless
                         writer.Write("\\t");
                         break;
                     default:
-                        writer.Write(c);
+                        if (c < ' ')
+                        {
+                            writer.Write("\\u00");
+                            WriteJsonHexNibble(writer, c >> 4);
+                            WriteJsonHexNibble(writer, c);
+                        }
+                        else
+                        {
+                            writer.Write(c);
+                        }
+
                         break;
                 }
             }
+        }
+
+        private static void WriteJsonHexNibble(StreamWriter writer, int value)
+        {
+            int nibble = value & 0xF;
+            writer.Write((char)(nibble < 10 ? '0' + nibble : 'A' + (nibble - 10)));
         }
 
         private static bool ShouldRunStatic()
@@ -852,7 +898,27 @@ namespace Hecton8.QA.Headless
             if (string.Equals(value, "1", StringComparison.Ordinal) || string.Equals(value, "true", StringComparison.OrdinalIgnoreCase))
                 return true;
 
-            return File.Exists(ResolveProjectPathStatic(FlagRelativePath));
+            return HasFreshFlagFile(ResolveProjectPathStatic(FlagRelativePath));
+        }
+
+        private static bool HasFreshFlagFile(string path)
+        {
+            try
+            {
+                if (!File.Exists(path))
+                    return false;
+
+                DateTime lastWriteUtc = File.GetLastWriteTimeUtc(path);
+                DateTime nowUtc = DateTime.UtcNow;
+                if (lastWriteUtc > nowUtc)
+                    return true;
+
+                return (nowUtc - lastWriteUtc).TotalSeconds <= FlagMaxAgeSeconds;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
         }
 
         private static bool HasCommandLineArg(string commandLineArg)
@@ -869,14 +935,45 @@ namespace Hecton8.QA.Headless
 
         private static int TryReadInt(string[] args, string name, int fallback)
         {
-            for (int i = 0; i < args.Length - 1; i++)
+            if (args == null || string.IsNullOrEmpty(name))
+                return fallback;
+
+            for (int i = 0; i < args.Length; i++)
             {
-                if (string.Equals(args[i], name, StringComparison.OrdinalIgnoreCase) &&
-                    int.TryParse(args[i + 1], NumberStyles.Integer, CultureInfo.InvariantCulture, out int value))
-                    return value;
+                string arg = args[i];
+                if (string.IsNullOrEmpty(arg))
+                    continue;
+
+                if (string.Equals(arg, name, StringComparison.OrdinalIgnoreCase))
+                {
+                    if (i < args.Length - 1 &&
+                        int.TryParse(args[i + 1], NumberStyles.Integer, CultureInfo.InvariantCulture, out int separatedValue))
+                    {
+                        return separatedValue;
+                    }
+
+                    continue;
+                }
+
+                int separatorIndex = name.Length;
+                if (arg.Length > separatorIndex + 1 &&
+                    arg[separatorIndex] == '=' &&
+                    string.Compare(arg, 0, name, 0, separatorIndex, StringComparison.OrdinalIgnoreCase) == 0 &&
+                    int.TryParse(arg.AsSpan(separatorIndex + 1), NumberStyles.Integer, CultureInfo.InvariantCulture, out int inlineValue))
+                {
+                    return inlineValue;
+                }
             }
 
             return fallback;
+        }
+
+        private static int TryReadEnvironmentInt(string name, int fallback)
+        {
+            string value = global::System.Environment.GetEnvironmentVariable(name);
+            return int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int parsed)
+                ? parsed
+                : fallback;
         }
 
         private static float ComputeStaticHPhiMetric()
@@ -944,9 +1041,9 @@ namespace Hecton8.QA.Headless
             return count;
         }
 
-        private static string FormatStaticHPhiLog(float metric)
+        private static string FormatStaticHPhiLog(float metric, int targetFrames)
         {
-            return "[H-PHI_STATIC] " + AgentName + " value=" + metric.ToString("F6", CultureInfo.InvariantCulture) + " requestedBoids=10000 frames=50000";
+            return "[H-PHI_STATIC] " + AgentName + " value=" + metric.ToString("F6", CultureInfo.InvariantCulture) + " requestedBoids=10000 frames=" + targetFrames.ToString(CultureInfo.InvariantCulture);
         }
 
         private static float TicksToMilliseconds(long ticks)
@@ -1032,6 +1129,12 @@ namespace Hecton8.QA.Headless
 
         private static void WriteInvariant(StreamWriter writer, float value)
         {
+            if (!math.isfinite(value))
+            {
+                writer.Write('0');
+                return;
+            }
+
             Span<char> scratch = stackalloc char[32];
             if (value.TryFormat(scratch, out int written, default, CultureInfo.InvariantCulture))
                 writer.Write(scratch.Slice(0, written));

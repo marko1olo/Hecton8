@@ -11,7 +11,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton/UI/Localized Layout Mirror")]
-    public sealed class LocalizedLayoutMirror : MonoBehaviour, IUpdatable, ILocalizationLanguageChangedListener
+    public sealed class LocalizedLayoutMirror : MonoBehaviour, ILateFrameTickable, ILocalizationLanguageChangedListener
     {
         private static bool s_isRebuildingLayout;
 
@@ -103,7 +103,7 @@ namespace Hecton8.UI
         }
 
         /// <inheritdoc />
-        public void Tick(float deltaTime)
+        public void LateFrameTick()
         {
             if (!_applyMirroringPending)
             {
@@ -122,8 +122,7 @@ namespace Hecton8.UI
             if (_registeredForTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _registeredForTick = GlobalRegistry.Updatables.Contains(this);
+            _registeredForTick = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
         private void TryUnregisterFromTick()
@@ -131,7 +130,7 @@ namespace Hecton8.UI
             if (!_registeredForTick)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
             _registeredForTick = false;
         }
 

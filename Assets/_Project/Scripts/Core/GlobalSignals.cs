@@ -15,6 +15,7 @@ using CameraFrustumSignal = Hecton8.Core.Signals.CameraFrustumSignal;
 using CameraPositionSignal = Hecton8.Core.Signals.CameraPositionSignal;
 using CombatDamageSignal = Hecton8.Core.Signals.CombatDamageSignal;
 using CrashTelemetrySignal = Hecton8.Core.Signals.CrashTelemetrySignal;
+using DiegeticHudSignal = Hecton8.Core.Signals.DiegeticHudSignal;
 using FocusBrokenSignal = Hecton8.Core.Signals.FocusBrokenSignal;
 using MixerStateSignal = Hecton8.Core.Signals.MixerStateSignal;
 using NarrativeFocusSignal = Hecton8.Core.Signals.NarrativeFocusSignal;
@@ -110,7 +111,7 @@ namespace Hecton8.Core.Signals
         public const byte Acquired = 1;
     }
 
-    /// <summary>Player kinematics look-target lane for diegetic prompts. Size: 160 bytes.</summary>
+    /// <summary>Player kinematics look-target lane for diegetic prompts. Hash-only payload. Size: 160 bytes.</summary>
     [StructLayout(LayoutKind.Explicit, Size = 160)]
     public struct PlayerLookTargetSignal : ISignal
     {
@@ -125,7 +126,10 @@ namespace Hecton8.Core.Signals
         [FieldOffset(92)] public byte State;
         [FieldOffset(93)] public byte Flags;
         [FieldOffset(94)] private ushort _reserved;
-        [FieldOffset(96)] public FixedString64Bytes Prompt;
+        [FieldOffset(96)] public uint PromptArg0;
+        [FieldOffset(100)] public uint PromptArg1;
+        [FieldOffset(104)] public uint PromptArg2;
+        [FieldOffset(108)] public uint PromptArg3;
     }
 
     internal interface ISignalLane
@@ -981,6 +985,7 @@ namespace Hecton8.Core
         private const int PlayerStateSignalCapacity = 64;
         private const int AupPreShiftSignalCapacity = 64;
         private const int AupShiftSignalCapacity = 64;
+        private const int DropPodLandedSignalCapacity = 8;
         private const int BrownoutSignalCapacity = 64;
         private const int DebrisSpawnSignalCapacity = 128;
         private const int DeflectSignalCapacity = 128;
@@ -1035,6 +1040,8 @@ namespace Hecton8.Core
         private const int BatteryLevelSignalCapacity = 32;
         private const int ReconDataSignalCapacity = 128;
         private const int SaveLifecycleSignalCapacity = 16;
+        private const int WfcOutpostGeneratedSignalCapacity = 16;
+        private const int WfcOutpostDoorPowerSignalCapacity = 64;
         private const int ComplianceViolationSignalCapacity = 64;
         private const int GlobalTimeSyncSignalCapacity = 16;
         private const int SeismicSignalCapacity = 64;
@@ -1067,6 +1074,7 @@ namespace Hecton8.Core
         private const int NarrativeFocusSignalCapacity = 64;
         private const int FocusBrokenSignalCapacity = 32;
         private const int MixerStateSignalCapacity = 32;
+        private const int DiegeticHudSignalCapacity = 32;
         private const int NarrativeHudWaypointSignalCapacity = 64;
         private const int SoundscapeProfileSignalCapacity = 64;
         private const int NarrativePoiStateSignalCapacity = 64;
@@ -1642,6 +1650,7 @@ namespace Hecton8.Core
             ValidateSignalSize<PlayerStateSignal>(64);
             ValidateSignalPayload<AupPreShiftSignal>(32);
             ValidateSignalPayload<AupShiftSignal>(32);
+            ValidateSignalSize<DropPodLandedSignal>(64);
             ValidateSignalSize<PlayerLookTargetSignal>(160);
             ValidateSignalSize<BrownoutSignal>(32);
             ValidateSignalSize<DebrisSpawnSignal>(64);
@@ -1724,6 +1733,7 @@ namespace Hecton8.Core
             ValidateSignalSize<NarrativeFocusSignal>(80);
             ValidateSignalSize<FocusBrokenSignal>(32);
             ValidateSignalSize<MixerStateSignal>(32);
+            ValidateSignalSize<DiegeticHudSignal>(32);
             ValidateSignalSize<NarrativeHudWaypointSignal>(64);
             ValidateSignalSize<SoundscapeProfileSignal>(64);
             ValidateSignalSize<NarrativePoiStateSignal>(32);
@@ -1956,6 +1966,13 @@ namespace Hecton8.Core
             GlobalRegistry.JobAdmission?.SetAupBarrierActive(false);
             _aupShiftSignals.Enqueue(signal);
             SignalBus<AupShiftSignal>.Push(in signal);
+        }
+
+        /// <summary>Queues one drop-pod landing anchor packet with AUP precision.</summary>
+        public static void Publish(in DropPodLandedSignal signal)
+        {
+            EnsureInitialized();
+            SignalBus<DropPodLandedSignal>.Push(in signal);
         }
 
         /// <summary>Queues one absolute-position temperature change packet.</summary>
@@ -2319,6 +2336,13 @@ namespace Hecton8.Core
             _hudNotificationSignals.Enqueue(signal);
         }
 
+        /// <summary>Queues one diegetic HUD prompt packet from the main thread.</summary>
+        public static void Publish(in DiegeticHudSignal signal)
+        {
+            EnsureInitialized();
+            SignalBus<DiegeticHudSignal>.Push(in signal);
+        }
+
         /// <summary>Queues one cached platform thermal state packet.</summary>
         public static void Publish(in ThermalStateChangedSignal signal)
         {
@@ -2434,11 +2458,25 @@ namespace Hecton8.Core
             SignalBus<SectorHydratedSignal>.Push(in signal);
         }
 
+        /// <summary>Queues one WFC outpost generation completion packet on the typed native lane.</summary>
+        public static void Publish(in WfcOutpostGeneratedSignal signal)
+        {
+            EnsureInitialized();
+            SignalBus<WfcOutpostGeneratedSignal>.Push(in signal);
+        }
+
         /// <summary>Queues one WFC outpost mutable-cell state change on the typed native lane.</summary>
         public static void Publish(in WfcOutpostStateChangedSignal signal)
         {
             EnsureInitialized();
             SignalBus<WfcOutpostStateChangedSignal>.Push(in signal);
+        }
+
+        /// <summary>Queues one WFC outpost door-power packet on the typed native lane.</summary>
+        public static void Publish(in WfcOutpostDoorPowerSignal signal)
+        {
+            EnsureInitialized();
+            SignalBus<WfcOutpostDoorPowerSignal>.Push(in signal);
         }
 
         /// <summary>Queues one compliance violation packet from the main thread.</summary>
@@ -2497,6 +2535,13 @@ namespace Hecton8.Core
             pauseSignal.Flags = sanitizedSignal.Flags;
             pauseSignal.RestoreScalar = sanitizedSignal.RestoreScalar;
             SignalBus<SystemPauseSignal>.Push(in pauseSignal);
+        }
+
+        /// <summary>Queues one system-pause/input-lock packet without mutating simulation time state.</summary>
+        public static void Publish(in SystemPauseSignal signal)
+        {
+            EnsureInitialized();
+            SignalBus<SystemPauseSignal>.Push(in signal);
         }
 
         /// <summary>Queues one bullet-time post-process fake packet from the main thread.</summary>
@@ -2700,6 +2745,7 @@ namespace Hecton8.Core
         public static bool TryDequeueImpact(out ImpactSignal signal) => TryDequeue(ref _impactSignals, out signal);
         public static bool TryDequeueAupPreShift(out AupPreShiftSignal signal) => TryDequeue(ref _aupPreShiftSignals, out signal);
         public static bool TryDequeueAupShift(out AupShiftSignal signal) => TryDequeue(ref _aupShiftSignals, out signal);
+        public static bool TryDequeueDropPodLanded(out DropPodLandedSignal signal) => SignalBus<DropPodLandedSignal>.TryReadFrame(out signal);
         public static bool TryDequeueBrownout(out BrownoutSignal signal) => TryDequeue(ref _brownoutSignals, out signal);
         public static bool TryDequeueDebrisSpawn(out DebrisSpawnSignal signal) => TryDequeue(ref _debrisSpawnSignals, out signal);
         public static bool TryDequeueDeflect(out DeflectSignal signal) => TryDequeue(ref _deflectSignals, out signal);
@@ -2748,6 +2794,7 @@ namespace Hecton8.Core
         public static bool TryDequeueAtmosphericReentry(out AtmosphericReentrySignal signal) => SignalBus<AtmosphericReentrySignal>.TryReadFrame(out signal);
         public static bool TryDequeuePrologueComplete(out PrologueCompleteSignal signal) => SignalBus<PrologueCompleteSignal>.TryReadFrame(out signal);
         public static bool TryDequeueManualOverridePulled(out ManualOverridePulledSignal signal) => SignalBus<ManualOverridePulledSignal>.TryReadFrame(out signal);
+        public static bool TryDequeueDiegeticHud(out DiegeticHudSignal signal) => SignalBus<DiegeticHudSignal>.TryReadFrame(out signal);
         public static bool TryDequeueReconData(out ReconDataSignal signal) => TryDequeue(ref _reconDataSignals, out signal);
         public static bool TryDequeueSaveLifecycle(out SaveLifecycleSignal signal) => TryDequeue(ref _saveLifecycleSignals, out signal);
         public static bool TryDequeueComplianceViolation(out ComplianceViolationSignal signal) => TryDequeue(ref _complianceViolationSignals, out signal);
@@ -2987,6 +3034,8 @@ namespace Hecton8.Core
             SignalBus<BatteryLevelSignal>.EnsureInitialized();
             SignalBus<PlayerStateSignal>.Configure(PlayerStateSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(PlayerStateSignal)));
             SignalBus<PlayerStateSignal>.EnsureInitialized();
+            SignalBus<DropPodLandedSignal>.Configure(DropPodLandedSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(DropPodLandedSignal)));
+            SignalBus<DropPodLandedSignal>.EnsureInitialized();
             SignalBus<CameraPositionSignal>.Configure(CameraPositionSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(CameraPositionSignal)));
             SignalBus<CameraPositionSignal>.EnsureInitialized();
             SignalBus<CameraFrustumSignal>.Configure(CameraFrustumSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(CameraFrustumSignal)));
@@ -2995,6 +3044,8 @@ namespace Hecton8.Core
             SignalBus<WeatherChangedSignal>.EnsureInitialized();
             SignalBus<SystemPauseSignal>.Configure(SimulationPauseSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(SystemPauseSignal)));
             SignalBus<SystemPauseSignal>.EnsureInitialized();
+            SignalBus<DiegeticHudSignal>.Configure(DiegeticHudSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(DiegeticHudSignal)));
+            SignalBus<DiegeticHudSignal>.EnsureInitialized();
             SignalBus<SaveRequestSignal>.Configure(SaveLifecycleSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(SaveRequestSignal)));
             SignalBus<SaveRequestSignal>.EnsureInitialized();
             SignalBus<SaveCompletedSignal>.Configure(SaveLifecycleSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(SaveCompletedSignal)));
@@ -3029,8 +3080,12 @@ namespace Hecton8.Core
             SignalBus<FluidImpulseSignal>.EnsureInitialized();
             SignalBus<SectorHydratedSignal>.Configure(64, laneHash: ComputeStableSignalLaneHash(nameof(SectorHydratedSignal)));
             SignalBus<SectorHydratedSignal>.EnsureInitialized();
+            SignalBus<WfcOutpostGeneratedSignal>.Configure(WfcOutpostGeneratedSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(WfcOutpostGeneratedSignal)));
+            SignalBus<WfcOutpostGeneratedSignal>.EnsureInitialized();
             SignalBus<WfcOutpostStateChangedSignal>.Configure(128, laneHash: ComputeStableSignalLaneHash(nameof(WfcOutpostStateChangedSignal)));
             SignalBus<WfcOutpostStateChangedSignal>.EnsureInitialized();
+            SignalBus<WfcOutpostDoorPowerSignal>.Configure(WfcOutpostDoorPowerSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(WfcOutpostDoorPowerSignal)));
+            SignalBus<WfcOutpostDoorPowerSignal>.EnsureInitialized();
             SignalBus<SectorResidencyHydratedSignal>.Configure(64, laneHash: ComputeStableSignalLaneHash(nameof(SectorResidencyHydratedSignal)));
             SignalBus<SectorResidencyHydratedSignal>.EnsureInitialized();
             SignalBus<SectorDehydratedSignal>.Configure(64, laneHash: ComputeStableSignalLaneHash(nameof(SectorDehydratedSignal)));
@@ -3542,6 +3597,16 @@ namespace Hecton8.Core.Signals
         public uint Flags;
     }
 
+    /// <summary>Drop-pod landing anchor for first-hour economy weighting. Size: 64 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct DropPodLandedSignal : ISignal
+    {
+        [FieldOffset(0)] public AbsoluteUniversePosition PositionAup;
+        [FieldOffset(48)] public uint Frame;
+        [FieldOffset(52)] public uint SourceHash;
+        [FieldOffset(56)] public byte Flags;
+    }
+
     /// <summary>Procedural instance culling overload signal. Size: 32 bytes.</summary>
     [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct CullingOverloadSignal : ISignal
@@ -3631,6 +3696,7 @@ namespace Hecton8.Core.Signals
         public const byte FlagMissingMap = 1 << 2;
         public const byte FlagInvalidInput = 1 << 3;
         public const byte FlagHasSecondaryBiome = 1 << 4;
+        public const byte FlagOutOfBounds = 1 << 5;
 
         [FieldOffset(0)] public AbsoluteUniversePosition PositionAup;
         [FieldOffset(48)] public uint BiomeAHash;
@@ -4511,6 +4577,22 @@ namespace Hecton8.Core.Signals
         [FieldOffset(17)] public byte Flags;
     }
 
+    /// <summary>Diegetic physical-HUD prompt signal. Size: 32 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct DiegeticHudSignal : ISignal
+    {
+        public const byte PromptManualRelease = 1;
+        public const byte FlagPersistent = 1 << 0;
+
+        [FieldOffset(0)] public uint MessageHash;
+        [FieldOffset(4)] public uint ContextHash;
+        [FieldOffset(8)] public uint SourceHash;
+        [FieldOffset(12)] public uint Frame;
+        [FieldOffset(16)] public byte PromptKind;
+        [FieldOffset(17)] public byte Priority;
+        [FieldOffset(18)] public byte Flags;
+    }
+
     /// <summary>PDA exchange dirty-state signal for barter UI and relay consumers. Size: 32 bytes.</summary>
     [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 32)]
     public struct PdaExchangeStateChangedSignal : ISignal
@@ -4611,6 +4693,23 @@ namespace Hecton8.Core.Signals
         [FieldOffset(25)] public byte Flags;
     }
 
+    /// <summary>WFC outpost generation completion lane. GridHandle resolves native packed cell data. Size: 128 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = 128)]
+    public struct WfcOutpostGeneratedSignal : ISignal
+    {
+        [FieldOffset(0)] public AbsoluteUniversePosition OriginAup;
+        [FieldOffset(48)] public ulong SectorHash;
+        [FieldOffset(56)] public uint GridHandle;
+        [FieldOffset(60)] public uint GenerationSequence;
+        [FieldOffset(64)] public int3 Dimensions;
+        [FieldOffset(76)] public float CellSizeMeters;
+        [FieldOffset(80)] public float FloorHeightMeters;
+        [FieldOffset(84)] public uint GridHash;
+        [FieldOffset(88)] public uint Frame;
+        [FieldOffset(92)] public ushort CellCount;
+        [FieldOffset(94)] public ushort Flags;
+    }
+
     /// <summary>WFC outpost mutable-cell state change lane. Size: 32 bytes.</summary>
     [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct WfcOutpostStateChangedSignal : ISignal
@@ -4622,6 +4721,22 @@ namespace Hecton8.Core.Signals
         [FieldOffset(12)] public uint Frame;
         [FieldOffset(16)] public uint SourceHash;
         [FieldOffset(20)] public byte Flags;
+    }
+
+    /// <summary>WFC outpost door power state lane. Size: 96 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = 96)]
+    public struct WfcOutpostDoorPowerSignal : ISignal
+    {
+        [FieldOffset(0)] public AbsoluteUniversePosition DoorAup;
+        [FieldOffset(48)] public ulong SectorHash;
+        [FieldOffset(56)] public uint GridHandle;
+        [FieldOffset(60)] public uint NodeId;
+        [FieldOffset(64)] public ushort CellIndex;
+        [FieldOffset(66)] public ushort DoorId;
+        [FieldOffset(68)] public float Voltage;
+        [FieldOffset(72)] public uint Frame;
+        [FieldOffset(76)] public byte Unlocked;
+        [FieldOffset(77)] public byte Flags;
     }
 
     /// <summary>Async persistence save request lane payload. Size: 32 bytes.</summary>

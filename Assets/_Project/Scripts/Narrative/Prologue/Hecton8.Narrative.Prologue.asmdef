@@ -1,0 +1,18 @@
+{
+    "name": "Hecton8.Narrative.Prologue",
+    "rootNamespace": "Hecton8.Narrative.Prologue",
+    "references": [
+        "Hecton8.Core.Contracts",
+        "Unity.Collections",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

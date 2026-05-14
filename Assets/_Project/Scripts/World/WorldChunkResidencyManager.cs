@@ -913,6 +913,15 @@ namespace Hecton8.World
         /// Returns true when the chunk is currently resident.
         /// </summary>
         /// <param name="chunkId">Deterministic chunk id.</param>
+        public bool IsChunkResident(long chunkId)
+        {
+            return IsResident(chunkId);
+        }
+
+        /// <summary>
+        /// Returns true when the chunk is currently resident.
+        /// </summary>
+        /// <param name="chunkId">Deterministic chunk id.</param>
         public bool IsResident(long chunkId)
         {
             if (_residencyJobScheduled)

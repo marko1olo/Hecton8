@@ -80,3 +80,54 @@ Scalability potential: Low/MX350 keeps exact bit truth with the cheapest branchl
 Hardware Impact: Expected i3/MX350 gain is small but real: four branch tests per 500 cells removed from the pack pass, plus one unused interlocked counter path removed. Measured microseconds absent; target remains under 10 microseconds for the 500-cell pack.
 Cinematic Cheats Used: Exact mutable-state bitmask instead of resimulating outpost internals; byte-RLE over the bitmask instead of full grid blob; dirty-on-transition snapshot hash instead of always-writing; restore injection into DataVault grid instead of rerunning loot/power history.
 Final Git Diff: Key changed files are `Assets/_Project/Scripts/SaveManager.cs`, `Assets/_Project/Scripts/SaveBinaryPayloadCodec.cs`, `Assets/_Project/Scripts/Core/Contracts/PersistencePagingContracts.cs`, `Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs`, `Assets/_Project/Scripts/Core/GlobalSignals.cs`, `Assets/_Project/Scripts/Core/Memory/H8Memory.cs`, `Docs/Tasks/Status_MACRO_WFC_PERSISTENCE_SYNC.md`, and this rationale log. Full diff remains in the worktree for integrator review.
+
+## POST-COMPACTION RECHECK
+Problem: The current World outpost runtime packs topology kind in the low nibble and adjacency in the high nibble of `WfcGrid`. The persistence mutable flags also occupy four low bits. Directly applying saved mutable bits into the topology grid would corrupt rooms, doors, datapads, and adjacency masks.
+Solution: Keep backend persistence as a separate mutable-state truth grid. Add World-side `_wfcMutableStateGrid`, restore it through `GlobalRegistry.AsyncPersistence` before solve scheduling, and pass it into `MarauderOutpostMatrixExtractionJob`. Extraction merges mutable bits into cell/proxy metadata while leaving the solver topology byte untouched.
+Rejected Alternatives: Applying `TryApplyWfcOutpostStateOverride` directly to `MarauderOutpostGenerationService.WfcGrid`; changing the topology byte layout; adding a managed dictionary keyed by cell; replaying interaction history during generation. The first corrupts topology, the second breaks the World owner's packed renderer contract, the third allocates/boxes under pressure, and the fourth is slow and nondeterministic under missing history.
+Scalability potential: Low clears/restores one 500-byte mutable grid and extracts only 5x5x3 topology. Middle/High/Ultra keep exact mutable truth while spending visuals on richer shell/proxy metadata and powered/looted presentation. Persistence truth stays invariant across tiers.
+Hardware Impact: Low-end i3/MX350 cost is one 500-byte native clear plus a bounded <=288-byte decode on cold generation only; no new steady-frame work. Visual metadata packing adds one byte read and one mask operation per extracted solid cell.
+
+Problem: The DataVault WFC mutable grid is a single buffer, but mutation signals carry sector hashes. Reusing the grid across sectors can leak one sector's mutable cells into another sector's payload.
+Solution: Track `_wfcOutpostMutableGridSectorHash`; on sector switch, clear the 500-cell mutable grid, attempt MacroDB restore for the incoming sector, then apply the changed cell before packing.
+Rejected Alternatives: Persisting a full managed per-sector cache; ignoring multi-sector signals because current first outpost is singular; allocating one DataVault buffer per sector without a registry contract. Those choices either add memory churn, hide correctness risk, or invent ownership outside this pass.
+Scalability potential: Low pays only on rare sector switch. Middle/High/Ultra can add keyed native cache later behind DataVault without changing payload format.
+Hardware Impact: Sector switch clear is 500 byte writes; restore remains <=288 bytes. Expected impact is below 20 microseconds on i3/MX350 in the bounded signal path; measured proof absent.
+
+Problem: Payload reader accepted any future flag bits as long as RLE bit semantics passed, and restore unpack still used a branch loop.
+Solution: Reject unknown WFC payload flags and raw payloads whose stored byte length does not equal raw bitmask length. Replace restore unpack loop with direct bit-plane shifts and ORs.
+Rejected Alternatives: Forward-compatible silent flags; branch loop for readability. Silent flags risk mis-decoding future payloads, and branch loops cost unnecessary instructions in a fixed four-plane format.
+Scalability potential: Low gets fail-closed loads and branchless restore. High/Ultra can add future planes through a version bump, not hidden flag behavior.
+Hardware Impact: Unknown-flag validation adds one bitmask check; branchless restore removes 2,000 branch checks per full 500-cell restore. Measured microseconds absent.
+
+Verification Update: `dotnet build Hecton8.Core.csproj --no-restore --disable-build-servers -v:quiet -clp:ErrorsOnly /m:1 /nr:false /p:UseSharedCompilation=false` still fails on unrelated missing Audio/AI/Physics/World contracts. Unity/Bee support checks now fail earlier in `Hecton8.Core.Memory` on unrelated GlobalDataVault defrag symbols (`DefragFlagStressBlocked`, `CompactionStressThreshold`, `VaultMemMoveJob`, etc.). `Hecton8.World.Outposts` response-file check is blocked by missing stale `Library/Bee/artifacts/1300b0aEDbg.dag/Hecton8.Core.ref.dll`. No green runtime claim is made.
+
+## MUTABLE-STATE PURITY RECHECK
+Problem: `RestoreWfcMutableState` cleared the World mutable grid only after accepting a nonzero sector hash. A zero-hash debug or invalid generation request could preserve previous restored mutable bits.
+Solution: Clear `_wfcMutableStateGrid` first, then reject `sectorHash == 0UL` before querying persistence.
+Rejected Alternatives: Treating zero hash as impossible; clearing only on successful restore. The service accepts a `ulong` sector hash and debug generation paths exist, so stale state must be removed at the local owner.
+Scalability potential: All tiers pay only one 500-byte clear on cold generation. High/Ultra visual metadata remains deterministic because stale low-nibble flags are not carried forward.
+Hardware Impact: 500 byte writes on cold generation only; expected below 1 microsecond on i3/MX350, measured proof absent.
+
+Problem: SaveManager restore and signal mutation still preserved non-mutable bits even after the contract became "mutable-state grid only." Preserving bits is now a stale-data hazard, not a topology feature.
+Solution: Write exact mutable flags into the mutable grid: changed-cell signal assignment is `wfcGrid[cell] = mutableFlags`, and restore writes `cells[cell] = flags`.
+Rejected Alternatives: Keeping the old topology-preserving mask/OR for backwards compatibility; accepting caller garbage outside the mutable nibble. The contract now explicitly forbids passing topology/adjacency-packed grids.
+Scalability potential: Low/Middle/High/Ultra all use clean four-plane truth. Future planes must version the payload rather than hiding state in preserved high bits.
+Hardware Impact: Removes one mask/OR on each changed-cell write and each restored cell write. Small but deterministic; measured proof absent.
+
+Verification Update 2: `Hecton8.Core.Contracts` response-file compile still exits 0. Full `dotnet build Hecton8.Core.csproj` timed out at 132 seconds under the existing dependency wall; follow-up process scan found no lingering `dotnet` or `MSBuild` process.
+
+## BINARY BOUNDARY AND EXTRACTION COST RECHECK
+Problem: The WFC payload reader rejected short payloads but still accepted a valid WFC header/body with trailing bytes. For this fixed binary format, a valid prefix with extra bytes is still corrupted storage.
+Solution: Require exact payload record length: `length == PayloadHeaderBytes + storedBytes`.
+Rejected Alternatives: Prefix-tolerant decoding for future extension. Future WFC payloads must use a version bump; hidden trailing bytes would make corruption and compatibility indistinguishable.
+Scalability potential: Low devices get fail-closed save loading with one cheap integer comparison. High/Ultra can extend payloads through versioned format changes, not ambiguous trailing bytes.
+Hardware Impact: One equality check on restore. Expected impact below measurement noise on i3/MX350.
+
+Problem: `MarauderOutpostMatrixExtractionJob` checked `MutableGrid.IsCreated` and `cellIndex < MutableGrid.Length` for every solid extracted cell, but this service allocates `_wfcMutableStateGrid` alongside `WfcGrid` and active dimensions are bounded to 500 cells.
+Solution: Read `MutableGrid[cellIndex]` directly and keep bounds guaranteed by service-owned allocation and active dimension constants.
+Rejected Alternatives: Keeping defensive per-cell checks; copying mutable flags into topology to avoid a second grid. The first spends branch budget in a cold Burst extraction loop; the second corrupts topology.
+Scalability potential: Low removes the branch from up to 75 cells; Middle/High/Ultra remove it from up to 500 cells while keeping exact mutable truth.
+Hardware Impact: Removes one `IsCreated` branch and one length compare per solid extracted cell. Measured proof absent.
+
+Verification Update 3: Static scans confirm exact-length WFC payload guard, no `MutableGrid.IsCreated` branch in outpost extraction, no old `UnpackWfcOutpostGrid`, and no `immutableMask` in SaveManager WFC path. `Hecton8.Core.Contracts` response-file compile still exits 0.

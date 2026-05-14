@@ -1874,9 +1874,8 @@ namespace Hecton8.World
 
             AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
             int2 sector = QuantizeSector(in aup);
-            Vector3 shiftOffset = HectonFloatingOrigin.CurrentTotalOffset;
+            double3 shiftOffset = HectonFloatingOrigin.CurrentTotalOffsetDouble;
             float3 runtime = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
-            float3 shift = new float3(shiftOffset.x, shiftOffset.y, shiftOffset.z);
 
             for (int offsetX = -1; offsetX <= 1; offsetX++)
             {
@@ -1890,11 +1889,15 @@ namespace Hecton8.World
                     if (!brinePool.IsValid || !IsInsideBrinePool(in brinePool, runtimePosition))
                         continue;
 
-                    float absoluteHeightY = brinePool.SurfaceHeight + shift.y;
+                    float absoluteHeightY = (float)(brinePool.SurfaceHeight + shiftOffset.y);
                     if (!math.isfinite(absoluteHeightY))
                         continue;
 
-                    int2 cartographySector = BrineLayerMath.ResolveCartographySector(runtime, shift);
+                    double3 absoluteRuntime = new double3(runtime.x, runtime.y, runtime.z) + shiftOffset;
+                    double invCartographySectorSize = math.rcp((double)BrineLayerConstants.CartographySectorSizeMeters);
+                    int2 cartographySector = new int2(
+                        (int)math.floor(absoluteRuntime.x * invCartographySectorSize),
+                        (int)math.floor(absoluteRuntime.z * invCartographySectorSize));
                     sample = new BrineLayerSample
                     {
                         CartographySector = cartographySector,

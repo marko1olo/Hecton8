@@ -2,18 +2,18 @@
 
 Status: PENDING VERIFICATION
 Verification: `PENDING VERIFICATION`
-Date: 2026-05-11
+Date: 2026-05-14
 
 This is the working execution plan for getting HECTON-8 to a stable, optimized, verifiable runtime state.
 
 Current-state boundary:
 
-- 2026-05-13 DOC_AUDIT override: read `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md` before treating May 11 counters or build-artifact paths as current evidence.
-- The May 11 compile artifact paths cited below are absent from the current filesystem. They are not current artifact-backed proof until restored or replaced.
+- 2026-05-14 DOC_AUDIT override: read `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md` before treating May 11 counters or build-artifact paths as current evidence.
+- The May 11 compile artifact paths cited below are absent from the current filesystem. They are stale report text, not current artifact-backed proof. Current R41 external root `Hecton8*.csproj` no-restore CLI compile evidence is `0 Warning(s)` / `0 Error(s)` after restore assets exist; it is not Unity runtime proof.
 - This stable plan is the runtime execution authority. Dated reports are evidence/counter snapshots only.
 - Read `Docs/README.md`, `.agents-skills/README.md`, `Docs/ARCHITECTURE/README.md`, current source, `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md`, and then older evidence reports before using this plan as execution guidance.
 - This plan is still directionally valid, but it is not a runtime verification report.
-- May 11 report text claimed current compile evidence at `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.summary.txt`, but the May 13 DOC_AUDIT filesystem check did not find that summary or raw log. Treat it as stale report text until restored or replaced.
+- May 11 report text claimed current compile evidence at `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.summary.txt`, but DOC_AUDIT did not find that summary or raw log. Treat it as stale report text.
 - Current Unity MCP, Unity Console, Play Mode, profiler, GCMonitor, player build, import, scene wiring, visual quality, zero-GC, frame time, and memory retention remain `PENDING VERIFICATION`.
 - Older May 4/May 8/May 9/May 11 builds remain historical only where newer May 13 docs do not cover the question.
 - DOTS remains optional/prototype-only until source and profiler evidence prove otherwise.

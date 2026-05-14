@@ -2960,8 +2960,10 @@ namespace Hecton8.Audio
             float speed = math.max(0f, signal.ImpactSpeed);
             float speedSq = speed * speed;
             float lostEnergy = math.max(0f, signal.LostKineticEnergy);
-            float mass = speedSq > 0.0001f ? (lostEnergy + lostEnergy) * math.rcp(speedSq) : 0f;
-            float kineticEnergy = 0.5f * mass * speedSq;
+            float effectiveMass = math.isfinite(signal.EffectiveMass) ? math.max(0f, signal.EffectiveMass) : 0f;
+            float derivedMass = speedSq > 0.0001f ? (lostEnergy + lostEnergy) * math.rcp(speedSq) : 0f;
+            float mass = effectiveMass > 0.0001f ? effectiveMass : derivedMass;
+            float kineticEnergy = math.max(0.5f * mass * speedSq, lostEnergy);
             if (!math.isfinite(kineticEnergy) || kineticEnergy < KineticImpactMinimumEnergyJoules)
                 return false;
 
@@ -3003,7 +3005,14 @@ namespace Hecton8.Audio
 
             float waterlineY = ResolveKineticImpactWaterlineY();
             bool underwater = runtime.y < waterlineY;
-            bool metalImpact = ResolveHighSpeedImpactMetal(in signal);
+            ResolveHighSpeedImpactMaterialIds(in signal, out byte primaryMaterialId, out byte secondaryMaterialId);
+            ResolveImpactMaterialBlend(
+                primaryMaterialId,
+                secondaryMaterialId,
+                out float clangMaterialMultiplier,
+                out float echoMaterialMultiplier,
+                out float hollowMaterialMultiplier);
+            bool metalImpact = ResolveHighSpeedImpactMetal(primaryMaterialId, secondaryMaterialId);
             float lowPassCutoffHz = underwater
                 ? KineticImpactWaterLowPassHertz
                 : AcousticOcclusionUtility.OpenLowPassCutoffHertz;
@@ -3012,14 +3021,20 @@ namespace Hecton8.Audio
                 (kineticEnergy - KineticImpactExtremeEnergyJoules) *
                 math.rcp(math.max(1f, KineticImpactMaximumSafeEnergyJoules - KineticImpactExtremeEnergyJoules)));
             float impactStress = math.saturate(thudExcitation * math.lerp(0.36f, 0.72f, energy01));
-            float metallic = metalImpact ? math.saturate(thudExcitation * 0.92f) : math.saturate(thudExcitation * 0.24f);
+            float metallic = metalImpact
+                ? math.saturate(thudExcitation * 0.92f * hollowMaterialMultiplier)
+                : math.saturate(thudExcitation * 0.24f);
             float clangExcitation = metalImpact
-                ? math.saturate(thudExcitation * math.lerp(0.42f, 0.86f, energy01))
+                ? math.saturate(thudExcitation * math.lerp(0.42f, 0.86f, energy01) * clangMaterialMultiplier)
                 : 0f;
-            float echoExcitation = math.saturate(thudExcitation * math.lerp(0.35f, 0.78f, energy01));
+            float echoExcitation = math.saturate(thudExcitation * math.lerp(0.35f, 0.78f, energy01) * echoMaterialMultiplier);
             float echoDelaySeconds = math.clamp(distance * SoundSpeedWaterMetersPerSecondInv, 0f, SonarEchoMaximumDelaySeconds);
             float echoAttenuation = math.saturate(math.max(0.12f, proximity) * math.lerp(0.24f, 0.9f, energy01));
-            float pitchScale = math.lerp(0.82f, 1.18f, energy01);
+            float pitchScale = math.clamp(
+                math.lerp(0.82f, 1.18f, energy01) *
+                ResolveHighSpeedImpactMaterialPitchScale(primaryMaterialId, secondaryMaterialId),
+                0.65f,
+                1.45f);
 
             bool accepted = TryEnqueueImpactAudioEvent(
                 impactStress,
@@ -3063,16 +3078,74 @@ namespace Hecton8.Audio
             hash = (hash ^ signal.TargetHash) * 16777619u;
             hash = (hash ^ math.asuint(signal.ImpactSpeed)) * 16777619u;
             hash = (hash ^ math.asuint(signal.LostKineticEnergy)) * 16777619u;
+            hash = (hash ^ math.asuint(signal.EffectiveMass)) * 16777619u;
             hash = (hash ^ signal.SourceKind) * 16777619u;
             hash = (hash ^ signal.Flags) * 16777619u;
+            hash = (hash ^ signal.MaterialHash) * 16777619u;
+            hash = (hash ^ signal.PrimaryMaterialId) * 16777619u;
+            hash = (hash ^ signal.SecondaryMaterialId) * 16777619u;
             return hash;
         }
 
-        private static bool ResolveHighSpeedImpactMetal(in HighSpeedImpactSignal signal)
+        private static void ResolveHighSpeedImpactMaterialIds(
+            in HighSpeedImpactSignal signal,
+            out byte primaryMaterialId,
+            out byte secondaryMaterialId)
         {
-            return signal.SourceKind == HighSpeedImpactSignal.SourcePlayer ||
-                   signal.SourceKind == HighSpeedImpactSignal.SourceVehicle ||
-                   signal.SourceKind == HighSpeedImpactSignal.SourceLeviathan;
+            bool hasAuthoredMaterial =
+                signal.MaterialHash != 0u ||
+                signal.PrimaryMaterialId != 0 ||
+                signal.SecondaryMaterialId != 0;
+            if (hasAuthoredMaterial)
+            {
+                primaryMaterialId = NormalizeHighSpeedImpactMaterialId(signal.PrimaryMaterialId);
+                secondaryMaterialId = NormalizeHighSpeedImpactMaterialId(signal.SecondaryMaterialId);
+                return;
+            }
+
+            byte fallback = signal.SourceKind == HighSpeedImpactSignal.SourceLeviathan
+                ? (byte)ItemAudioMaterialId.Organic
+                : (byte)ItemAudioMaterialId.Metal;
+            primaryMaterialId = fallback;
+            secondaryMaterialId = fallback;
+        }
+
+        private static byte NormalizeHighSpeedImpactMaterialId(byte materialId)
+        {
+            switch ((ItemAudioMaterialId)materialId)
+            {
+                case ItemAudioMaterialId.Metal:
+                case ItemAudioMaterialId.Glass:
+                case ItemAudioMaterialId.Organic:
+                    return materialId;
+
+                default:
+                    return (byte)ItemAudioMaterialId.Metal;
+            }
+        }
+
+        private static bool ResolveHighSpeedImpactMetal(byte primaryMaterialId, byte secondaryMaterialId)
+        {
+            return primaryMaterialId == (byte)ItemAudioMaterialId.Metal ||
+                   secondaryMaterialId == (byte)ItemAudioMaterialId.Metal ||
+                   primaryMaterialId == (byte)ItemAudioMaterialId.Glass ||
+                   secondaryMaterialId == (byte)ItemAudioMaterialId.Glass;
+        }
+
+        private static float ResolveHighSpeedImpactMaterialPitchScale(byte primaryMaterialId, byte secondaryMaterialId)
+        {
+            byte dominantMaterialId = ResolveDominantImpactMaterialId(primaryMaterialId, secondaryMaterialId);
+            switch ((ItemAudioMaterialId)dominantMaterialId)
+            {
+                case ItemAudioMaterialId.Glass:
+                    return 1.14f;
+
+                case ItemAudioMaterialId.Metal:
+                    return 1.04f;
+
+                default:
+                    return 0.88f;
+            }
         }
 
         private static bool IsLowTierKineticImpactFallback()
@@ -5101,6 +5174,8 @@ namespace Hecton8.Audio
             _granularTelemetryRing = new NativeArray<GranularAudioTelemetryEntry>(GranularTelemetryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<GranularAudioTelemetryEntry>[300] - fixed granular DSP black-box ring - owner: PlayerCriticalProceduralAudioRenderer
             _prologueTransitionTelemetryRing = new NativeArray<PrologueAudioTransitionTelemetryEntry>(PrologueTransitionTelemetryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<PrologueAudioTransitionTelemetryEntry>[300] - fixed prologue transition black-box ring - owner: PlayerCriticalProceduralAudioRenderer
             _prologueTransitionQueue = new NativeQueue<AudioTransitionState>(Allocator.Persistent); // COLD ALLOC: NativeQueue<AudioTransitionState>[32 soft-cap] - prologue visual-sync to DSP command lane - owner: PlayerCriticalProceduralAudioRenderer
+            PrewarmPrologueTransitionQueue();
+            WarmPrologueSplashdownBurstProbeCold();
             _vwsClipSamplesA = new NativeArray<float>(VwsClipSampleCapacity, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[262144] - VWS PCM clip lane A - owner: PlayerCriticalProceduralAudioRenderer
             _vwsClipSamplesB = new NativeArray<float>(VwsClipSampleCapacity, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[262144] - VWS PCM clip lane B - owner: PlayerCriticalProceduralAudioRenderer
             _vwsClipManagedScratch ??= new float[VwsClipSampleCapacity]; // COLD ALLOC: float[262144] - VWS AudioClip PCM staging - owner: PlayerCriticalProceduralAudioRenderer
@@ -7072,7 +7147,7 @@ namespace Hecton8.Audio
 
             AbsoluteUniversePosition playerAup = playerMovement.CurrentAup;
             double absolutePlayerY = playerAup.ToAbsoluteDouble3().y;
-            double absoluteSurfaceY = (double)playerMovement.CurrentWaterSurfaceY + HectonFloatingOrigin.CurrentTotalOffset.y;
+            double absoluteSurfaceY = (double)playerMovement.CurrentWaterSurfaceY + HectonFloatingOrigin.CurrentTotalOffsetDouble.y;
             return (float)math.max(0d, absoluteSurfaceY - absolutePlayerY);
         }
 
@@ -9916,6 +9991,39 @@ namespace Hecton8.Audio
                 _prologueTransitionQueueCount = math.max(0, _prologueTransitionQueueCount - 1);
                 ApplyPrologueTransitionState(in state);
                 RecordPrologueTransitionTelemetry(in state);
+            }
+        }
+
+        private void PrewarmPrologueTransitionQueue()
+        {
+            if (!_prologueTransitionQueue.IsCreated)
+                return;
+
+            for (int i = 0; i < PrologueTransitionQueueCapacity; i++)
+                _prologueTransitionQueue.Enqueue(default);
+
+            int guard = PrologueTransitionQueueCapacity;
+            while (guard-- > 0 && _prologueTransitionQueue.TryDequeue(out _))
+            {
+            }
+        }
+
+        private static void WarmPrologueSplashdownBurstProbeCold()
+        {
+            var output = new NativeArray<float>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<float>[1] - Burst compile probe scratch - owner: PlayerCriticalProceduralAudioRenderer
+            try
+            {
+                var job = new PrologueSplashdownSineSweepProbeJob
+                {
+                    Output = output,
+                    NormalizedTime = 0.5f
+                };
+                job.Schedule().Complete();
+            }
+            finally
+            {
+                if (output.IsCreated)
+                    output.Dispose();
             }
         }
 

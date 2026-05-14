@@ -300,3 +300,33 @@ Solution: Add a bounded signature punchline layer in `mode_punchup.py`: `6` per-
 Rejected Alternatives: More regex vocabulary expansion was rejected because the hot path is already measured. Image generation was rejected because it belongs in a sidecar/cache path, not message delivery. Raw ethnicity/religion caricature was rejected because it is low-effort liability, not creative mode design.
 Scalability potential: Low: cheap in-process punchlines. Middle: per-mode signature packs in a registry. High: per-board content packs and timing histograms. Ultra: isolated creative sidecar with cached Telegram file IDs for heavier visual flavor.
 Hardware Impact: Fresh 1200-call source-trigger benchmark measured short text p95 about `0.09-0.34ms` and 4x repeated text p95 about `0.34-0.84ms`. Live verification after queue-safe restart: chain `58540 -> 20412 -> 20888 -> 48028 -> 8176`, runtime `private_mb~=509.02`, queues `0`, `mode_punchup.enabled=true`, SQLite `quick_check=ok`.
+
+## Decision 44: Operator-owned command semantics beat unilateral content narrowing
+Problem: The temporary anime hardening changed `/loli` into a safe cute/chibi alias and reduced `/b/` stacked image requests to `4`. The user explicitly rejected that behavior. Separately, live evidence showed `ThreadingHTTPServer` still accepted TCP connections but failed to answer `/health`, producing false health panic while heartbeat and delivery were alive.
+Solution: Revert only the self-willed behavior: `/loli` again uses loli-tag sources with non-explicit ratings and no-shota negative tags; `/b/` stacked image cap is back to `10`; broad yande.re/konachan negative tag injection is removed. Keep the important engineering protections: bounded URL/download fetch, media concurrency gate, redacted URL logs, heartbeat, visible watchdog. Replace the flaky threaded HTTP handler with `_RawHealthcheckServer`, a minimal socket responder returning the same JSON health body.
+Rejected Alternatives: Full rollback was rejected because it would remove the anti-deadlock work that fixed real stalls. Keeping the safe cute/chibi alias was rejected because it violated command semantics. Trusting `ThreadingHTTPServer` was rejected after raw socket evidence showed accepted connections with no response.
+Scalability potential: Low: current raw health and bounded media path. Middle: per-command image-source metrics and admin-visible health samples. High: durable media jobs and cached Telegram file IDs. Ultra: separate media service and delivery service with resumable fanout.
+Hardware Impact: Raw health response measured `0.004..0.039s` in five raw socket samples and avoids multi-second HTTP timeout cycles. `/loli` URL probe and NSFW probe returned OK. Live chain `59928 -> 47372 -> 42924 -> 10272 -> 2564` reports heartbeat queues `0`, site `200`, SQLite `quick_check=ok`, `/b/ active_total=3986`, runtime `/b/ Telegram active `623`, `Posts=150905`, `PostCopies=1614691`.
+## Decision 45: `/loli` Slot Refill Without Re-Restricting Tags
+
+Problem: Operator correctly rejected the temporary `/loli` safe cute/chibi behavior and reported a real count-integrity issue: requested slots could shrink when one URL/API/download failed.
+
+Solution: Keep the restored loli-tag source mix and add bounded missing-slot refill around the media pipeline. The helper retries only failed slots, preserves the requested command slot count up to the board cap, uses existing per-item/total timeouts, and logs `anime_media_refill` instead of hiding partial success.
+
+Rejected Alternatives: Full media rollback would re-open the previous external API deadlock class. Unbounded retry would let bad booru/network states monopolize the bot. Changing tags again would violate the operator's explicit revert order.
+
+Scalability potential: low-end device sees no extra work on successful API calls; bad API calls pay bounded retries only for missing slots. High-end/network-good path can satisfy stacked requests more completely without increasing normal delivery fanout pressure.
+
+Hardware Impact: In normal path, expected CPU delta is near zero because the same fetch/download count is used. In degraded API path, extra cost is network wait bounded by existing async timeouts, not event-loop blocking.
+
+## Decision 46: Explicit EOF For Raw Health
+
+Problem: The raw health responder fixed the old threaded server timeout for simple socket probes, but normal HTTP/1.1 clients still waited for connection close and timed out.
+
+Solution: Emit an HTTP/1.1 response with `Content-Length` and `Connection: close`, then explicitly call `socket.shutdown()` after `sendall()`. This makes EOF visible to PowerShell, urllib, and raw keep-alive clients.
+
+Rejected Alternatives: Reverting to `ThreadingHTTPServer` was rejected because that implementation already accepted TCP while failing to respond under live load. Relying only on heartbeat was rejected because operator/admin tooling still needs a truthful HTTP endpoint.
+
+Scalability potential: Health probe cost remains constant and tiny. Low-end machines avoid stuck health worker buildup; high-end machines get deterministic external health signals without touching bot delivery throughput.
+
+Hardware Impact: Estimated CPU effect is negligible. The gain is operational: no false health timeout loops while the event loop and heartbeat are healthy.

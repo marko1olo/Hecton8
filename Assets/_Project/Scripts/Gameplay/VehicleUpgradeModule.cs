@@ -99,6 +99,7 @@ namespace Hecton8.Gameplay
 
         private uint _runtimeInstalledUpgradeMask;
         private float _permanentSafeDepthPenaltyMeters;
+        private uint _signalSourceId;
 
         /// <summary>Combined authored plus runtime-installed upgrade bitmask.</summary>
         public uint ActiveUpgradeBitmask => ComposeAuthoredBitmask() | _runtimeInstalledUpgradeMask;
@@ -253,9 +254,12 @@ namespace Hecton8.Gameplay
 
         private void PublishUpgradesChanged(byte reason)
         {
+            if (_signalSourceId == 0u)
+                _signalSourceId = unchecked((uint)EntityId.ToULong(GetEntityId()));
+
             VehicleUpgradesChangedSignal signal = new VehicleUpgradesChangedSignal
             {
-                SourceId = unchecked((uint)GetInstanceID()),
+                SourceId = _signalSourceId,
                 UpgradeMask = ActiveUpgradeBitmask,
                 Frame = unchecked((uint)Time.frameCount),
                 SafeDepthBonusMeters = SafeDepthBonusMeters,

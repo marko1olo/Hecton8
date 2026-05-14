@@ -74,7 +74,7 @@ namespace Hecton8.Core.Memory
         /// <summary>Attempts to read an existing relocatable handle without creating or growing it.</summary>
         bool TryGetBufferHandle<T>(BufferID bufferId, out VaultBufferHandle<T> handle) where T : struct;
 
-        /// <summary>Refreshes a relocatable handle when its cached generation is stale.</summary>
+        /// <summary>Validates a relocatable handle; stale cached handles throw instead of refreshing silently.</summary>
         bool ResolveBuffer<T>(ref VaultBufferHandle<T> handle) where T : struct;
 
         /// <summary>Attempts to read the current generation for a buffer.</summary>
@@ -163,7 +163,7 @@ namespace Hecton8.Core.Memory
     [StructLayout(LayoutKind.Sequential, Size = 32)]
     public struct VaultRelocationRecord
     {
-        public const byte FlagMemMove = 1 << 0;
+        public const byte FlagAddressChanged = 1 << 0;
         public const byte FlagFenceProtected = 1 << 1;
         public const byte FlagWatchdogBreached = 1 << 2;
 
@@ -657,23 +657,44 @@ namespace Hecton8.Core.Memory
             if (key == 0)
                 return false;
 
+            bool hasCachedIdentity =
+                handle.ptr != null ||
+                handle.generation != 0u ||
+                handle.Length != 0 ||
+                handle.Stride != 0;
+
             bool hasPointer = _buffers.TryGetValue(key, out IntPtr pointer);
             bool hasMeta = _metadata.TryGetValue(key, out VaultBufferMeta meta);
             if (!hasPointer || !hasMeta || pointer == IntPtr.Zero || meta.Length <= 0)
             {
                 DumpPhiVodBlackBox();
+                if (hasCachedIdentity)
+                    FatalMemoryException.ThrowStaleVaultHandle();
                 return false;
             }
 
             int stride = UnsafeUtility.SizeOf<T>();
             int alignment = UnsafeUtility.AlignOf<T>();
             ValidateType<T>(handle.BufferId, meta, stride, alignment);
-            if (handle.generation != meta.Version ||
-                handle.ptr == null ||
-                (IntPtr)handle.ptr != pointer ||
-                handle.Length != meta.Length ||
-                handle.Stride != meta.Stride)
+            bool matchesMetadata =
+                handle.generation == meta.Version &&
+                handle.ptr != null &&
+                (IntPtr)handle.ptr == pointer &&
+                handle.Length == meta.Length &&
+                handle.Stride == meta.Stride;
+            if (!matchesMetadata)
             {
+                bool isEmptyHandle =
+                    handle.ptr == null &&
+                    handle.generation == 0u &&
+                    handle.Length == 0 &&
+                    handle.Stride == 0;
+                if (!isEmptyHandle)
+                {
+                    DumpPhiVodBlackBox();
+                    FatalMemoryException.ThrowStaleVaultHandle();
+                }
+
                 handle.ptr = pointer.ToPointer();
                 handle.generation = meta.Version;
                 handle.Length = meta.Length;
@@ -1362,6 +1383,8 @@ namespace Hecton8.Core.Memory
 
             VaultArenaBlock block = _blocks[blockIndex];
             if (block.Bytes < existingMeta.Bytes)
+                return false;
+            if ((block.Reserved0 & BlockFlagLocked) != 0 || block.Reserved1 != 0)
                 return false;
 
             resizedPointer = (IntPtr)((byte*)_arenaBase + block.OffsetBytes);

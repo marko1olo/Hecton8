@@ -36,6 +36,9 @@ Status: PENDING VERIFICATION
 - Loop 5: Isolated Unity Roslyn compile found and fixed `ILateFrameTickable` signature, int bool check, and `Debug` ambiguity; new files now compile in isolation.
 - Loop 6: OMEGA polish read after 100% task coverage; replaced hot stopwatch division with precomputed reciprocal and recompiled runtime script in isolation.
 - Loop 7: Hardening pass moved late-frame stall sampling to the final UI lane, preserved/restored active camera state after headless policy, reduced allocator false positives, escaped JSON status strings, recompiled runtime/editor scripts, and re-ran forbidden-pattern audit on the new Race Condition Hunter files.
+- Loop 8: CI robustness pass widened stall timing to the first fast tick of each rendered frame, added `H8_FRACTURE_FRAMES`/`-h8fractureFrames=...` support, scrubbed runner-owned scratch before failure dumps, hardened JSON control/non-finite output, removed CLI substring allocation, recompiled, and re-ran focused static audit.
+- Loop 9: Terminal lifecycle pass unregisters fast/cold/late/origin hooks immediately on pass/fail and replaces editor result substring matching with exact `exitCode` parsing plus fail-fast corrupted start-time handling.
+- Loop 10: Stale activation guard pass rejects old `Temp/H8_FRACTURE_TEST.flag` files older than 3 hours and deletes any old flag before the editor batch runner writes a fresh one.
 
 ## Verification
 - Unity MCP editor state: BLOCKED, no Unity session available.
@@ -44,5 +47,14 @@ Status: PENDING VERIFICATION
 - Isolated runtime compile after hardening patch: PASS via Unity Roslyn/Mono using ScriptAssemblies references.
 - Isolated editor runner compile after hardening patch: PASS via Unity Roslyn/Mono using UnityEditor references.
 - Static hot-path forbidden-pattern scan after hardening patch: PASS for `HeadlessStressFractureBot.cs` and `HeadlessStressFractureBatchRunner.cs`; no matches for scene search, LINQ, coroutines, `Task<`, `.Complete()`, managed collection creation, reflection, or explicit GC.
+- Isolated runtime compile after CI robustness patch: PASS via Unity Mono compiler with Unity 4.8 API facade, Unity modules, and Hecton8 script assemblies.
+- Isolated editor runner compile after CI robustness patch: PASS via Unity Mono compiler with Unity 4.8 API facade, `UnityEditor.dll`, Unity modules, and script assemblies.
+- Focused static audit after CI robustness patch: PASS for the two new Race Condition Hunter files; no scene search, LINQ, coroutine, `Task<`, `.Complete()`, explicit GC, reflection, managed collection creation, `string.Format`, or CLI `Substring` parser usage.
+- Isolated runtime compile after lifecycle patch: PASS via Unity Mono compiler with Unity 4.8 API facade, Unity modules, and Hecton8 script assemblies.
+- Isolated editor runner compile after lifecycle patch: PASS via Unity Mono compiler with Unity 4.8 API facade and `UnityEditor.dll`.
+- Focused static audit after lifecycle patch: PASS for the two new Race Condition Hunter files; no scene search, LINQ, coroutine, `Task<`, `.Complete()`, explicit GC, reflection, managed collection creation, `string.Format`, or `Substring` usage.
+- Isolated runtime compile after stale-flag patch: PASS via Unity Mono compiler with Unity 4.8 API facade, Unity modules, and Hecton8 script assemblies.
+- Isolated editor runner compile after stale-flag patch: PASS via Unity Mono compiler with Unity 4.8 API facade and `UnityEditor.dll`.
+- Focused static audit after stale-flag patch: PASS for the two new Race Condition Hunter files; no scene search, LINQ, coroutine, `Task<`, `.Complete()`, explicit GC, reflection, managed collection creation, `string.Format`, or `Substring` usage.
 - Full `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false`: BLOCKED BY EXISTING DEPENDENCIES, 139 unrelated errors before/around core missing namespaces, duplicate SaveManager members, and interface mismatches.
 - Full `dotnet build Assembly-CSharp.csproj --no-restore -m:2 /nr:false`: BLOCKED BY SAME EXISTING `Hecton8.Core.csproj` dependency failures.

@@ -9,11 +9,11 @@ namespace Hecton8.UI
     /// Settings comparison view â€” shows before/after performance estimates.
     /// EXCEEDS SUBNAUTICA: Subnautica has no performance comparison, only apply/revert.
     /// Estimates FPS impact based on quality preset changes.
-    /// Zero-GC: ITickable, cached strings, dirty flags.
+    /// Zero-GC: late-frame state machine, cached strings, dirty flags.
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Settings Comparison View")]
-    public sealed class SettingsComparisonView : MonoBehaviour, ITickable, IUpdatable
+    public sealed class SettingsComparisonView : MonoBehaviour, ILateFrameTickable
     {
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         // INSPECTOR
@@ -80,11 +80,12 @@ namespace Hecton8.UI
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-        // ITICKABLE
+        // LATE FRAME
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-        public void Tick(float dt)
+        public void LateFrameTick()
         {
+            float dt = Mathf.Max(0f, SystemDispatcher.CurrentFrameDeltaTime);
             _timer += dt;
             if (_timer >= updateInterval)
             {
@@ -262,7 +263,7 @@ namespace Hecton8.UI
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+            _registered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
         private void Unregister()
@@ -270,7 +271,7 @@ namespace Hecton8.UI
             if (!_registered)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
             _registered = false;
         }
     }

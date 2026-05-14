@@ -114,3 +114,22 @@ Final Git Diff:
 
 Diff Stat At Omega:
 `5 files changed, 138 insertions(+), 35 deletions(-)` before the final LOG file append.
+
+## LOOP 6 MATERIAL/MASS RE-AUDIT
+Problem: The prior kinetic renderer path still contained a quality shortcut: high-speed material was inferred from source kind, and mass was reconstructed from lost energy even though the 96-byte high-speed packet already had contract space for authored mass/material data.
+Solution: Kept the existing `HighSpeedImpactSignal` layout size and used its material/mass fields. `HectonPlayerMotor` and `VehicleMotor` now populate target/source material IDs, material hash, and effective rigidbody mass. `PlayerCriticalProceduralAudioRenderer` consumes `EffectiveMass` for `0.5 * mass * speedSq`, falls back to lost energy for legacy packets, and runs the material through existing impact clang/echo/hollow multipliers.
+Rejected Alternatives: Expanding the packet size would invalidate signal-size checks; continuing to classify every player/vehicle/leviathan hit as metal was a fake report against the prompt's material requirement; adding a per-impact material database would be slower and more brittle than the existing `IPhysicsImpactMaterialProvider`.
+Scalability potential: Low tier still uses baked clip volume scaling. Middle gets correct mass/material thud and clang. High adds material-scaled echo taps. Ultra can push stronger distortion and pitch color while staying within the same packet and DSP lane.
+Hardware Impact: Event-only material provider lookup on high-speed impacts, not per frame; renderer cost is scalar byte switches and multipliers, expected under 2 us per accepted impact on i3/MX350.
+
+Problem: Material-aware producer lookup crosses gameplay/vehicle code, which is outside the narrow renderer file.
+Solution: Used the existing `IPhysicsImpactMaterialProvider` interface already consumed by physics/audio systems, and only touched the two high-speed producers that lacked authored material writes. `FaunaBrain` already had equivalent fields in HEAD, so it was verified but not modified.
+Rejected Alternatives: New direct audio dependency in gameplay, new singleton material resolver, or per-frame collider material cache.
+Scalability potential: Toaster path remains one clip; high-end path receives better material color without extra queues.
+Hardware Impact: No hot-path allocation; provider lookup occurs only when a high-speed CCD consequence packet is emitted.
+
+Problem: Compile proof remained blocked by shared project state, and the blocker changed during verification.
+Solution: Ran `dotnet build Hecton8.Core.csproj --no-restore -v:minimal -p:UseSharedCompilation=false -m:1` twice. First pass hit `CS2001` for missing `Assets/_Project/Scripts/UI/DiegeticTooltipSystem.cs`; after another process restored that file, the second pass reached the existing 132-error namespace/asmdef wall (`Hecton8.Environment.Fluids`, `Hecton8.Physics.CCD`, `Hecton8.Audio.Propagation`, `Hecton8.Audio.Virtualization`, `MacroSwarm`, `AcousticAup`, etc.).
+Rejected Alternatives: Recreating/reverting unrelated UI files or patching global asmdef dependencies would overwrite other agents' work and exceed the kinetic audio directive.
+Scalability potential: No runtime effect.
+Hardware Impact: No runtime effect.

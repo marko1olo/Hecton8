@@ -17,27 +17,42 @@ Status: PENDING VERIFICATION
 - OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt
 
 ## Phase 1: Purge & Isolation
-- [ ] 1. SINGLETON ERADICATION | Justification: PENDING | Alternatives Rejected: PENDING | Estimate: PENDING us
-- [ ] 2. SIGNAL MIGRATION | Justification: PENDING | Alternatives Rejected: PENDING | Estimate: PENDING us
-- [ ] 3. ASMDEF ISOLATION | Justification: PENDING | Alternatives Rejected: PENDING | Estimate: PENDING us
+- [x] 1. SINGLETON ERADICATION | Justification: Removed `DiegeticTooltipSystem.ActiveRuntimeInstance`; `RepairTool` resolves the active tooltip through `GlobalRegistry.Renderables` instead of static owner state. | Alternatives Rejected: `TooltipManager.Instance`, `ActiveRuntimeInstance`, scene-wide `FindObjectOfType`. | Estimate: 3-8 us only when diagnostics request a tooltip; normal interact prompt hot path 0 us for singleton lookup.
+- [x] 2. SIGNAL MIGRATION | Justification: Added unmanaged `PlayerLookTargetSignal` and published it from the existing player look raycast; tooltip consumes `SignalBus<PlayerLookTargetSignal>` instead of `InteractionEvents`. | Alternatives Rejected: Managed hover listener sidecar, direct `PlayerInteraction` reference, polling collider state from UI. | Estimate: 8-18 us per raycast transition/update; no per-frame managed target dispatch.
+- [x] 3. ASMDEF ISOLATION | Justification: Preserved `Hecton8.UI.Diegetic -> Hecton8.UI.Diegetic.Contracts` isolation and added diegetic glyph contract constants under Contracts; runtime component stays scene-compatible in the existing core assembly. | Alternatives Rejected: Moving the MonoBehaviour namespace/assembly, which would break serialized scene references. | Estimate: 0 us runtime.
 
 ## Phase 2: Spatial UI Draw
-- [ ] 4. GLYPH RESOLVER | Justification: PENDING | Alternatives Rejected: PENDING | Estimate: PENDING us
-- [ ] 5. HOVER MATH | Justification: PENDING | Alternatives Rejected: PENDING | Estimate: PENDING us
-- [ ] 6. BRG TEXT RENDERING | Justification: PENDING | Alternatives Rejected: PENDING | Estimate: PENDING us
-- [ ] 7. TMP SPRITE ATLAS | Justification: PENDING | Alternatives Rejected: PENDING | Estimate: PENDING us
+- [x] 4. GLYPH RESOLVER | Justification: Tooltip queries `GlobalRegistry.InputDeterminism.GetState().CurrentInputSchemeHash`; Steam Deck maps Interact to direct TMP sprite index 14 (`pad_west` / X glyph). | Alternatives Rejected: `InputManager.TryGetPreferredBindingPath`, string sprite-name lookup, dictionary lookup in the draw path. | Estimate: 1-3 us on scheme check; 0 dictionary allocations.
+- [x] 5. HOVER MATH | Justification: Player look raycast converts the hit anchor to `AbsoluteUniversePosition`; renderer resolves `AUP + float3(0, 0.5f, 0)` back to runtime space. | Alternatives Rejected: Transform-following UI anchors, screen-space projection, stale world-position-only prompts. | Estimate: 4-10 us per signal consume and render-anchor resolve.
+- [x] 6. BRG TEXT RENDERING | Justification: Replaced `Graphics.DrawMeshInstanced`/MPB arrays with `Graphics.DrawMeshInstancedIndirect` using persistent compute buffers and camera-facing quad matrices. | Alternatives Rejected: Canvas, per-object TMP text, `DrawMeshInstanced` property-block arrays. | Estimate: 18-45 us for one icon plus short text on i3/MX350; GPU handles quads.
+- [x] 7. TMP SPRITE ATLAS | Justification: Shader binds the TMP atlas texture and reads per-instance UV rects from `_TooltipInstances`; icon index is selected before upload by array index, not name lookup. | Alternatives Rejected: TMP rich-text sprite tags, sprite-name scans, separate Canvas icon. | Estimate: 2-5 us CPU for direct index/UV setup on prompt rebuild.
 
 ## Phase 3: Formatting & VR
-- [ ] 8. ZERO-GC SPAN | Justification: PENDING | Alternatives Rejected: PENDING | Estimate: PENDING us
-- [ ] 9. VR DEPTH OFFSET | Justification: PENDING | Alternatives Rejected: PENDING | Estimate: PENDING us
-- [ ] 10. FADE IN/OUT | Justification: PENDING | Alternatives Rejected: PENDING | Estimate: PENDING us
+- [x] 8. ZERO-GC SPAN | Justification: Signal carries a prompt hash; bounded `PlayerLookTargetPromptCache` copies into fixed `char[64]`; `"OPEN HATCH"` fallback is preallocated and optional world-space TMP sink uses `SetCharArray`. | Alternatives Rejected: `TMP_Text.text`, string interpolation, Canvas label, managed prompt object in the signal lane. | Estimate: 2-6 us on signal; 0 per-frame text allocations.
+- [x] 9. VR DEPTH OFFSET | Justification: XRTouch scheme pushes the resolved anchor 0.1m toward the camera before drawing to reduce stereo-depth clipping. | Alternatives Rejected: ZTest disabled overlay, screen-space VR panel, object surface z-fighting. | Estimate: 1-2 us when XR scheme is active.
+- [x] 10. FADE IN/OUT | Justification: Middle+ tiers use 0.2s alpha dither fade in shader; Low tier snaps to avoid dither cost. Target-loss keeps glyph payload alive until alpha reaches zero. | Alternatives Rejected: Animator, coroutine, CanvasGroup alpha, clearing geometry immediately. | Estimate: 3-7 us CPU; shader dither is a cheap visual fake.
 
 ## Phase 4: Safety & LOD
-- [ ] 11. AUP SHIFT SAFETY | Justification: PENDING | Alternatives Rejected: PENDING | Estimate: PENDING us
-- [ ] 12. MATH LOD | Justification: PENDING | Alternatives Rejected: PENDING | Estimate: PENDING us
-- [ ] 13. EXECUTION PHASE | Justification: PENDING | Alternatives Rejected: PENDING | Estimate: PENDING us
-- [ ] 14. ZERO-GC | Justification: PENDING | Alternatives Rejected: PENDING | Estimate: PENDING us
-- [ ] 15. OMEGA COMPILE CHECK | Justification: PENDING | Alternatives Rejected: PENDING | Estimate: PENDING us
+- [x] 11. AUP SHIFT SAFETY | Justification: Tooltip consumes `AupShiftSignal`; cached runtime anchors are shifted and AUP is resolved through current floating-origin offset every render. | Alternatives Rejected: stale `Transform.position`, delayed re-query, screen projection. | Estimate: 1-3 us per shift packet.
+- [x] 12. MATH LOD | Justification: `GlobalRegistry.ScalabilityTierProfileByte == 0` snaps alpha and disables shader dither; higher tiers keep 0.2s dither fade. | Alternatives Rejected: one-size fade, Animator quality tiers, GPU dither on low silicon. | Estimate: Low saves 3-7 us CPU/GPU equivalent versus fade/dither path.
+- [x] 13. EXECUTION PHASE | Justification: Target resolution runs in `Tick` via `GlobalRegistry.TryRegisterUpdatable(..., PriorityLayer.UI)` after player lane; drawing runs through `IRenderable.Render` registered in `GlobalRegistry.Renderables`. | Alternatives Rejected: `Update`, `LateUpdate`, render from signal producer, Canvas rebuild phase. | Estimate: No native Unity message dispatch; work stays in project dispatcher lanes.
+- [x] 14. ZERO-GC | Justification: Persistent arrays, `ComputeBuffer`s, `NativeArray` black box, direct ASCII glyph table, direct sprite index table, and prompt hash cache; no per-frame string/dictionary lookup in render. | Alternatives Rejected: TMP rich-text, binding strings, sprite name lookup, per-frame allocations, managed prompt object in signal. | Estimate: 0 managed allocations in prompt render path; measured profiler proof unavailable.
+- [x] 15. OMEGA COMPILE CHECK | Justification: Static shader orientation verified: quad winding front faces `-Z`, `Quaternion.LookRotation(camera.forward, camera.up)` makes front face the camera; filtered `dotnet build` shows no touched-file errors. | Alternatives Rejected: assuming old shader orientation, ignoring compile filters. | Estimate: 0 us runtime; verification-only.
 
 ## Iteration Log
 - Loop 0: Prompt extracted. Domain and mandates identified. No code touched.
+- Loop 1: Implemented tasks 1-5. Prompt re-extracted after task 3. Compile attempt: `dotnet build Hecton8.Core.csproj` is blocked by pre-existing project reference/type failures; filtered output showed no errors in touched files. Unity MCP compile unavailable at `127.0.0.1:8088`.
+- Loop 2: Implemented tasks 6-10. Prompt re-extracted around tasks 6 and 9. Re-read tooltip render/fade code and fixed premature geometry clearing on fade-out. Filtered `dotnet build` output again: no touched-file errors surfaced, while full project remains blocked by unrelated references.
+- Loop 3: Implemented tasks 11-15. Added explicit AUP shift cache adjustment, Low tier dither bypass, `IRenderable` draw phase, zero-GC glyph index buffers, and static quad orientation proof.
+- Loop 4: Re-read the tooltip file for forbidden Canvas/singleton/Update/coroutine/SetActive patterns. Hits are comments or the explicit `TextMeshProUGUI` rejection guard only.
+- Loop 5: Re-read shader and indirect draw code after converting atlas selection to an integer glyph index plus `_TooltipUvRects` buffer. Filtered compile output still has no touched-file errors; Unity MCP compile remains unreachable.
+- Loop 6: OMEGA polish pass. Re-read assignment, re-read touched files, removed the prompt-cache namespace collision, preserved hash-only sidecar storage under `Hecton8.Core.PlayerLookTargetPromptCache`, and re-ran filtered compile. Result: no touched-file errors in `GlobalSignals`, `PlayerLookTargetPromptCache`, `PlayerInteraction`, `DiegeticTooltipSystem`, `RepairTool`, or tooltip shader references.
+- Loop 7: Patient recheck pass. Re-read tooltip, interaction, signal, shader, and cache code. Replaced direct `promptHash & 63` prompt-cache placement with bounded lookup/free-slot/rollover storage to avoid unrelated prompts evicting each other. Re-ran touched-file build filter; no touched-file errors emitted.
+
+## Verification Notes
+- `dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary | Select-String ...`: no output for touched-file filter after final cache collision fix.
+- Re-run after Loop 7 cache upgrade used the same filter and emitted no touched-file matches.
+- Broad unfiltered `dotnet build Hecton8.Core.csproj` did not complete within the tool timeout in the current dirty multi-agent workspace; stale child processes from that verification run were stopped only when command lines proved they belonged to this `Hecton8.Core.csproj` build.
+- Unity MCP script refresh failed: HTTP transport to `http://127.0.0.1:8088/mcp` was unreachable. Editor console verification is therefore pending.
+- Later Unity MCP placeholder calls were unavailable from the current tool surface, so no Editor refresh/console read was possible.
+- Status remains `PENDING VERIFICATION` as required by the extracted prompt.

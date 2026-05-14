@@ -9,7 +9,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Analog Gauge Needle 3D")]
-    public sealed class AnalogGaugeNeedle3D : MonoBehaviour, ITickable, ILateFrameTickable
+    public sealed class AnalogGaugeNeedle3D : MonoBehaviour, ILateFrameTickable
     {
         private const float AngleWriteEpsilonDegrees = 0.001f;
         private const float SettleEpsilonDegrees = 0.01f;
@@ -33,7 +33,6 @@ namespace Hecton8.UI
         [SerializeField, Range(0f, 180f)] private float maxOvershootKickDegreesPerSecond = 48f;
         [SerializeField, Range(0f, 1f)] private float target01 = 0f;
 
-        private bool _registeredToTick;
         private bool _registeredLateFrame;
         private bool _initialized;
         private Quaternion _initialLocalRotation;
@@ -42,7 +41,6 @@ namespace Hecton8.UI
         private float _overshootAngle;
         private float _lastTargetAngle;
         private float _lastAppliedAngle;
-        private float _lastDeltaTime;
         private bool _rotationApplied;
 
         private void OnEnable()
@@ -63,12 +61,6 @@ namespace Hecton8.UI
         }
 
         /// <inheritdoc />
-        public void Tick(float deltaTime)
-        {
-            _lastDeltaTime = math.max(0f, deltaTime);
-        }
-
-        /// <inheritdoc />
         public void LateFrameTick()
         {
             if (needle == null)
@@ -78,7 +70,7 @@ namespace Hecton8.UI
             }
 
             CaptureInitialState();
-            float dt = _lastDeltaTime;
+            float dt = math.max(0f, SystemDispatcher.CurrentFrameDeltaTime);
             if (dt <= 0f)
                 return;
 
@@ -187,7 +179,7 @@ namespace Hecton8.UI
 
         private void TryRegisterTickManager()
         {
-            if (_registeredToTick || !Application.isPlaying)
+            if (_registeredLateFrame || !Application.isPlaying)
                 return;
 
             if (needle == null)
@@ -196,16 +188,7 @@ namespace Hecton8.UI
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            _registeredToTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
-            if (!_registeredToTick)
-                return;
-
             _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
-            if (!_registeredLateFrame)
-            {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
-                _registeredToTick = false;
-            }
         }
 
         private void TryUnregisterTickManager()
@@ -216,11 +199,6 @@ namespace Hecton8.UI
                 _registeredLateFrame = false;
             }
 
-            if (_registeredToTick)
-            {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
-                _registeredToTick = false;
-            }
         }
 
         private bool IsNeedleSettled(float targetAngle)

@@ -51,10 +51,10 @@ namespace Hecton8.Environment.Fluids
 
             for (int index = 0; index < cellCount; index++)
             {
-                int z = index / (resolution * resolution);
-                int remainder = index - z * resolution * resolution;
-                int y = remainder / resolution;
-                int x = remainder - y * resolution;
+                int y = index / (resolution * resolution);
+                int remainder = index - y * resolution * resolution;
+                int z = remainder / resolution;
+                int x = remainder - z * resolution;
 
                 float3 uvw = (new float3(x, y, z) + 0.5f) * inverseResolution;
                 float3 cellPosition = FieldCenterWS + (uvw - 0.5f) * worldSize;

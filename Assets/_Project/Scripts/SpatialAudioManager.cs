@@ -180,7 +180,6 @@ namespace Hecton8.Audio
         private const float PoolFullEditorLogIntervalSeconds = 5f;
         private const float NullClipEditorLogIntervalSeconds = 5f;
         private const int MaxQueuedAudioEvents = 32;
-        private const int MaxQueuedSoundEmissionSignals = 32;
         private const int MaxVirtualVoiceCapacity = 8192;
         private const int MaxVirtualPhysicalVoices = 16;
         private const int LowTierVirtualPhysicalVoices = 8;
@@ -544,9 +543,6 @@ namespace Hecton8.Audio
         private int _audioEventQueueCount;
         private int _audioEventQueueDroppedCount;
         private NativeQueue<CoreAudioEvent> _audioEventQueue;
-        private int _soundEmissionSignalQueueCount;
-        private int _soundEmissionSignalDroppedCount;
-        private NativeQueue<SoundEmissionSignal> _soundEmissionSignals;
         private NativeList<VirtualVoice> _virtualVoiceWriteQueue;
         private NativeList<VirtualVoice> _virtualVoiceSortQueue;
         private NativeArray<VirtualVoiceSelection> _virtualVoiceSelections;
@@ -1077,7 +1073,6 @@ namespace Hecton8.Audio
             AcousticOcclusionUtility.LateFrameTick();
             CompleteVirtualVoiceSort();
             InjectVirtualVoiceSelections();
-            DrainSoundEmissionSignals();
             DrainAudioEventQueue();
         }
 
@@ -1544,7 +1539,7 @@ namespace Hecton8.Audio
             float priority = ResolveVirtualVoicePriority(signal.Volume, signal.Flags, foveatedTier);
             var request = new VirtualVoiceRequest(
                 signal.EventID,
-                unchecked((uint)clip.GetInstanceID()),
+                unchecked((uint)EntityId.ToULong(clip.GetEntityId())),
                 in signal.SourceAup,
                 signal.Volume,
                 priority,
@@ -1670,43 +1665,6 @@ namespace Hecton8.Audio
 
             if (_audioEventQueueCount < 0)
                 _audioEventQueueCount = 0;
-        }
-
-        private void DrainSoundEmissionSignals()
-        {
-            if (!_soundEmissionSignals.IsCreated || _soundEmissionSignalQueueCount <= 0)
-                return;
-
-            while (_soundEmissionSignalQueueCount > 0 && _soundEmissionSignals.TryDequeue(out SoundEmissionSignal signal))
-            {
-                _soundEmissionSignalQueueCount--;
-                DispatchSoundEmissionSignal(in signal);
-            }
-
-            if (_soundEmissionSignalQueueCount < 0)
-                _soundEmissionSignalQueueCount = 0;
-        }
-
-        private void DispatchSoundEmissionSignal(in SoundEmissionSignal signal)
-        {
-            if (!TryResolveAudioEventClip(signal.EventID, out AudioClip clip))
-                return;
-
-            AbsoluteUniversePosition sourceAup = ToAbsoluteUniversePosition(in signal.SourceAup);
-            Vector3 runtimePosition = ToRuntimeVector3(in sourceAup);
-            Vector3 absolutePosition = ToAbsoluteVector3(in sourceAup);
-            int stationaryCacheKey = (signal.Flags & AcousticPortalFlags.StationaryEmitter) != 0
-                ? signal.StationaryCacheKey
-                : 0;
-            PlayAtPointResolved(
-                clip,
-                runtimePosition,
-                in sourceAup,
-                absolutePosition,
-                signal.Volume,
-                signal.Pitch,
-                ResolvedDefaultWorldMixerGroup,
-                stationaryCacheKey);
         }
 
         /// <inheritdoc />
@@ -3707,15 +3665,6 @@ namespace Hecton8.Audio
             }
 
             _audioEventQueueCount = 0;
-            if (_soundEmissionSignals.IsCreated)
-            {
-                while (_soundEmissionSignals.TryDequeue(out _))
-                {
-                }
-            }
-
-            _soundEmissionSignalQueueCount = 0;
-            _soundEmissionSignalDroppedCount = 0;
         }
 
         private void ApplyHaasMask(
@@ -5254,18 +5203,6 @@ namespace Hecton8.Audio
                 NativeAllocationLifetime.Session);
             }
 
-            if (!_soundEmissionSignals.IsCreated)
-            {
-                _soundEmissionSignals = new NativeQueue<SoundEmissionSignal>(Allocator.Persistent); // COLD ALLOC: NativeQueue<SoundEmissionSignal>[32] - AUP acoustic emission ingress - owner: SpatialAudioManager
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _soundEmissionSignals,
-                    MaxQueuedSoundEmissionSignals,
-                    nameof(SpatialAudioManager),
-                    nameof(_soundEmissionSignals),
-                    NativeAllocationLifetime.Session);
-                PrewarmSoundEmissionSignalQueue();
-            }
-
             if (!_virtualVoiceWriteQueue.IsCreated)
             {
                 _virtualVoiceWriteQueue = new NativeList<VirtualVoice>(MaxVirtualVoiceCapacity, Allocator.Persistent); // COLD ALLOC: NativeList<VirtualVoice>[8192] - virtual acoustic emission write buffer - owner: SpatialAudioManager
@@ -5416,22 +5353,6 @@ namespace Hecton8.Audio
             _audioEventQueueDroppedCount = 0;
         }
 
-        private void PrewarmSoundEmissionSignalQueue()
-        {
-            if (!_soundEmissionSignals.IsCreated)
-                return;
-
-            for (int i = 0; i < MaxQueuedSoundEmissionSignals; i++)
-                _soundEmissionSignals.Enqueue(default);
-
-            while (_soundEmissionSignals.TryDequeue(out _))
-            {
-            }
-
-            _soundEmissionSignalQueueCount = 0;
-            _soundEmissionSignalDroppedCount = 0;
-        }
-
         private void ReleaseTelemetryCaches()
         {
             CompleteVirtualVoiceSort();
@@ -5475,13 +5396,6 @@ namespace Hecton8.Audio
                 NativeMemorySentinel.UnregisterNativeList(nameof(SpatialAudioManager), nameof(_pendingDelayedAudioEvents));
                 _pendingDelayedAudioEvents.Dispose();
                 _pendingDelayedAudioEvents = default;
-            }
-
-            if (_soundEmissionSignals.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(SpatialAudioManager), nameof(_soundEmissionSignals));
-                _soundEmissionSignals.Dispose();
-                _soundEmissionSignals = default;
             }
 
             if (_virtualVoiceWriteQueue.IsCreated)
@@ -5585,8 +5499,6 @@ namespace Hecton8.Audio
             _delayedAudioIngressCount = 0;
             _audioEventQueueCount = 0;
             _audioEventQueueDroppedCount = 0;
-            _soundEmissionSignalQueueCount = 0;
-            _soundEmissionSignalDroppedCount = 0;
             _virtualVoiceDroppedCount = 0;
             _virtualVoiceBlackBoxCursor = 0;
             _lastVirtualVoiceStatistics = default;

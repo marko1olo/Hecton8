@@ -82,6 +82,46 @@ Rejected Alternatives: Editing generated `.csproj` files was rejected because Un
 Scalability potential: No runtime impact.
 Hardware Impact: No runtime impact.
 
+## Decision 11
+
+Problem: Acoustic ping consumption converted AUP with the implicit current floating-origin state, while the later cognition input captured the origin separately.
+Solution: Capture `HectonFloatingOrigin.CurrentTotalOffset` once at evaluation start and use `AUPMath.ToRuntimeFloat3(in acousticSignal.PositionAup, floatingOriginOffset)` for acoustic targets and `CognitionInput.FloatingOriginOffset`.
+Rejected Alternatives: Keeping `PositionAup.ToRuntimeFloat3()` was rejected because an origin shift between acoustic conversion and input packing can produce a mixed-frame target. Caching a Transform-only position was rejected because it discards AUP authority.
+Scalability potential: Low, Middle, High, and Ultra use the same deterministic coordinate basis; high-tier presentation can add more fog and audio without changing target authority.
+Hardware Impact: i3/MX350 cost is one captured `Vector3` and one `float3` assignment per slow evaluation; no heap allocation and no extra per-frame work.
+
+## Decision 12
+
+Problem: The batch contract says phase 3 is `Strike`, but the gameplay DOD requires that phase to veer off and avoid damage.
+Solution: Expose `AlphaLeviathanPhase.Strike = 3` and alias `VeerOff` to `Strike`, preserving the existing no-hit behavior while matching the byte contract.
+Rejected Alternatives: Renaming all behavior to real `Strike` was rejected because it implies impact damage. Leaving only `VeerOff = 3` was rejected because it weakens prompt conformance for telemetry and external readers.
+Scalability potential: No runtime change; telemetry remains stable across device tiers and can be interpreted by tools as phase 3.
+Hardware Impact: Compile-time alias only; 0 us runtime.
+
+## Decision 13
+
+Problem: The false charge must maximize `PlayerStress01`, but relying only on the acoustic roar makes stress timing dependent on the physiology slow tick ordering.
+Solution: Publish a one-shot `PlayerStressSignal` at roar emission through `GlobalSignals`, using apex/acoustic flags and no direct physiology state mutation.
+Rejected Alternatives: Directly modifying `PlayerStressMetricsRuntime` was rejected as cross-domain ownership. Publishing every frame during Feint was rejected as queue spam. A custom stress interface was rejected because `GlobalSignals` already has the decoupled contract.
+Scalability potential: Low receives the same immediate visor/audio stress cue with one queued signal. High and Ultra can layer richer chromatic/audio presentation on the same `Stress01=1` event.
+Hardware Impact: One 32-byte signal on false-charge transition only; 0 B/frame hot-path cost.
+
+## Decision 14
+
+Problem: A gaze/headlight break could force Hidden for only one 10Hz evaluation before circling resumed, making the vanish readable in code but weak in play.
+Solution: Add `AlphaHiddenHoldSeconds = 1.15f` and hold phase 0 after a gaze/retinal break before returning to circling.
+Rejected Alternatives: Holding Hidden indefinitely was rejected because it can stall the first-hour stalking beat. Adding a new timer lane was rejected because `StalkingPhaseStartTimes` already carries phase age without extra memory.
+Scalability potential: Low keeps the cheap radial fake for a readable disappearance. High and Ultra use the same authority window to sell a longer SDF/fog dive with richer presentation.
+Hardware Impact: One scalar comparison on the 10Hz Alpha branch; 0 B/frame.
+
+## Decision 15
+
+Problem: Alpha black-box telemetry marked SDF dive from retinal exposure even on low tier, and did not recompute the player gaze break bit for postmortem dumps.
+Solution: Recompute gaze dot in telemetry with `math.rsqrt`; set `PlayerGazeBreak` when dot >= 0.8, and set `SdfDiveRequested` only when the Alpha is Hidden, has a player target, and high-tier smooth steering is active.
+Rejected Alternatives: Trusting directive-local flags was rejected because they are not persisted in the output packet. Marking every retinal event as SDF was rejected because low-tier deliberately uses radial fake steering.
+Scalability potential: Low telemetry now proves the cheap radial path. High/Ultra telemetry proves when the expensive SDF visual fake was actually requested.
+Hardware Impact: Two rsqrt-normalized vectors per active Alpha telemetry write; slow-path post-evaluation only, no heap allocation.
+
 ## OMEGA POLISH CHANGES
 
 Problem: Anti-bloat audit required proof that stalking math did not become an honest simulation.
@@ -109,5 +149,11 @@ Final Git Diff:
 
 Verification:
 - `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false` failed behind 131 global generated-reference errors.
+- Second-pass `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false` failed behind 127 global generated/cross-asmdef reference errors, including stale project generation for `Hecton8.AI.Cognition`.
+- Third-pass `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false` failed behind 132 generated/cross-asmdef reference errors. The Alpha-facing compiler line remains stale generated project visibility for `AlphaLeviathanTelemetryEntry`; no new local syntax error was isolated before the reference wall.
 - Unity MCP refresh timed out after 60s; console was unavailable because no Unity session was attached.
+- Second-pass Unity MCP refresh and console read failed at transport level: HTTP request to `127.0.0.1:8088/mcp` could not be sent.
+- Third-pass Unity MCP refresh and console read failed at the same `127.0.0.1:8088/mcp` transport.
 - Static scans found Alpha distance/direction code using `math.rsqrt` and no new managed collection/LINQ path in the Alpha hot branch.
+- Second-pass static scans found no remaining `PositionAup.ToRuntimeFloat3()` call in `FaunaBrain.Compatibility.cs`; acoustic AUP now uses the explicit captured origin.
+- Third-pass static scans found no `math.sqrt`, `math.normalize`, `.normalized`, `Mathf.Sqrt`, or `math.length(...)` in the Alpha-scoped files.

@@ -39,7 +39,7 @@ Hardware Impact: Native ring writes are one struct copy per transition command, 
 
 ## Verification Blocker
 Problem: Compile verification is required, but Unity MCP reports no active session while Unity batchmode refuses to open because another Unity instance owns the project lock.
-Solution: Record verification as blocked by external editor lock. Local dotnet build was attempted and rejected as authoritative because generated csproj references are stale and fail on pre-existing missing asmdef references.
+Solution: Record verification as blocked by external editor lock. Local dotnet build was attempted and rejected as authoritative because generated csproj references are stale and fail on pre-existing missing asmdef/namespace references before the prologue compile proof is reachable.
 Rejected Alternatives: Claiming stale Library/ScriptAssemblies binaries as proof, or closing another user's Unity process.
 Scalability potential: No runtime impact; compile proof still required when the active editor is available.
 Hardware Impact: None until verification can run.
@@ -60,3 +60,50 @@ Hardware Impact: One MonoBehaviour component in the audio root; no frame cost be
 Cinematic Cheats used: 400Hz LPF vacuum fake, 40Hz LFE bone-conduction fake, structural-granular plasma scream driven by UniverseVelocity, 100ms 40->56Hz splashdown sine sweep, scalar portal blend instead of physical capsule acoustic propagation.
 
 Final Git Diff: relevant owned files show PFB_SpatialAudioManagerRoot.prefab +21, PrologueAcousticOrchestrator.cs +2, Status_PROLOGUE_ACOUSTIC_ORCHESTRATOR.md updated, Rationale_PROLOGUE_ACOUSTIC_ORCHESTRATOR.md updated, LOG_PROLOGUE_ACOUSTIC_ORCHESTRATOR.md added. Existing dirty files from other agents remain untouched.
+
+## SECOND QUALITY PASS - SCALABLE ACTIVATION
+Problem: PrologueAcousticOrchestrator is now attached to the global audio root. Defaulting to StageSpace plus immediate publishing could clamp normal gameplay audio to 400Hz before any prologue signal exists.
+Solution: Added signal-armed neutral startup. The orchestrator now starts at open LPF, publishes nothing until AtmosphericReentrySignal or PrologueCompleteSignal is observed, and dirty-state throttles commands after the renderer has the current target.
+Rejected Alternatives: Keeping the component disabled in prefab and relying on another prologue system to enable it; that creates a direct cross-domain dependency and a missed-activation risk.
+Scalability potential: Low tier avoids all seam queue/telemetry writes outside the actual prologue. Middle/High/Ultra preserve the same DSP quality when armed.
+Hardware Impact: Normal gameplay cost drops from one NativeQueue command and telemetry write per late frame to zero until prologue is armed. Estimated saving is 1-3 us/frame and prevents unintended 400Hz global muffling.
+
+Problem: Repeated PrologueCompleteSignal packets can reset the LPF sweep to 400Hz every frame, turning a 3s opening into a stuck muffled state.
+Solution: Added `_hasCompleteSequence` and only arms splashdown/sweep on first-seen completion sequence. OceanHandoff remains sticky.
+Rejected Alternatives: Trusting publisher one-shot behavior; SignalBus snapshots do not guarantee neighboring systems will never repeat a packet.
+Scalability potential: All tiers get deterministic handoff timing. Low remains LPF/LFE only; High/Ultra keep portal blend without redundant command churn.
+Hardware Impact: Removes repeated sweep restarts and reduces queue writes after handoff. Estimated saving is proportional to repeated completion packets, usually 1-3 us per suppressed command.
+
+Problem: Burst proof job existed but did not request synchronous Burst compilation.
+Solution: Added CompileSynchronously=true to PrologueSplashdownSineSweepProbeJob so Unity/Burst reports the sine-sweep compile failure early when the editor is available.
+Rejected Alternatives: Leaving proof as a passive `[BurstCompile]` marker or claiming verification from stale assemblies.
+Scalability potential: No runtime quality impact; compile-time proof becomes stricter.
+Hardware Impact: No frame cost. Compile-time only.
+
+## THIRD QUALITY PASS - SIGNAL VALIDITY
+Problem: A proposed replay rearm path used AtmosphericReentrySignal.Sequence as a session discriminator, but OrbitalRelativityDirector increments that sequence per atmospheric packet. That would let lingering post-handoff packets downgrade OceanHandoff again.
+Solution: Keep OceanHandoff hard-sticky after completion and reject sequence-based replay guessing until a real lifecycle/reset signal exists. Also filter PrologueCompleteSignal by PhaseOceanHandoff or FlagForceWhiteout before firing splashdown/ocean DSP, matching the fluid impulse consumer.
+Rejected Alternatives: Treating every new atmospheric packet as a new prologue run, or accepting every PrologueCompleteSignal regardless of phase.
+Scalability potential: Low/Middle/High/Ultra preserve deterministic handoff with no extra allocations; invalid/non-handoff complete packets now cost one branch and do not wake the renderer queue.
+Hardware Impact: Prevents redundant queue writes and sweep restarts from irrelevant complete packets; estimated saving is 1-3 us per rejected packet and no steady-state cost outside signal consumption.
+
+## FOURTH QUALITY PASS - QUEUE PREWARM
+Problem: The prologue NativeQueue had a 32-command soft cap but no cold prewarm. The first Enqueue could force an internal native queue block allocation during the cinematic seam.
+Solution: Added PrewarmPrologueTransitionQueue(), mirroring the existing sonar tap upload queue pattern: enqueue 32 default states at buffer initialization and drain them immediately while the renderer is still in cold setup.
+Rejected Alternatives: Trusting NativeQueue first-use allocation timing, or replacing the queue with direct volatile fields.
+Scalability potential: Low/Middle/High/Ultra all get deterministic first-command cost; high-end devices spend saved jitter budget on the actual DSP fakes instead of allocator work.
+Hardware Impact: Moves queue block allocation out of the hot transition path. Estimated first-transition saving is tens of microseconds on i3/MX350 if Unity's NativeQueue would otherwise allocate its first block lazily.
+
+## FIFTH QUALITY PASS - ATMOSPHERIC DIRTY GATE
+Problem: AtmosphericReentrySignal.Sequence increments per packet in OrbitalRelativityDirector, so using it to force publish bypassed the dirty-state gate and queued a transition command for every atmospheric packet.
+Solution: Removed the atmospheric sequence force-publish path. First publish still happens through unset cache sentinels, and subsequent atmospheric updates publish only when stage, flags, cutoff, LFE, granular stress, splash, or portal blend actually changes beyond epsilon.
+Rejected Alternatives: Keeping packet sequence as a pseudo-session ID, or adding a new replay/session dependency outside the audio domain.
+Scalability potential: Low/Middle/High/Ultra all retain the same sonic behavior; packet-heavy reentry now scales by actual DSP deltas instead of signal cadence.
+Hardware Impact: Suppresses redundant NativeQueue commands, telemetry writes, and producer wakes during reentry. Expected saving is 1-3 us per unchanged atmospheric packet on i3/MX350, with 0 B/frame maintained.
+
+## SIXTH QUALITY PASS - BURST PROBE EXECUTION
+Problem: The sine-sweep proof job had CompileSynchronously=true, but a passive Burst attribute is weaker than a scheduled cold probe because Unity may not compile the job until first use.
+Solution: Added WarmPrologueSplashdownBurstProbeCold(), which allocates a one-float TempJob scratch, schedules PrologueSplashdownSineSweepProbeJob once during renderer buffer initialization, completes it immediately, and disposes the scratch.
+Rejected Alternatives: Leaving the job unscheduled, or scheduling the proof in the active prologue path.
+Scalability potential: Low/Middle/High/Ultra all pay the proof cost only during cold renderer setup; runtime DSP path remains unchanged.
+Hardware Impact: Moves Burst compile/proof work out of the cinematic seam. Runtime cost is 0 B/frame; cold setup has one TempJob NativeArray<float>[1] allocation and immediate disposal.

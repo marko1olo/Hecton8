@@ -24,42 +24,53 @@ State: PENDING VERIFICATION
 
 ### Loop 1 - Tasks 1-5
 
-- [ ] Task 1 - SINGLETON ERADICATION: No BaseGenerator.Instance; register IOutpostGenerationService.
-- [ ] Task 2 - SIGNAL MIGRATION: Consume SectorHydratedSignal and trigger on FirstBaseHash.
-- [ ] Task 3 - ASMDEF ISOLATION: Hecton8.World.Outposts -> Contracts.
-- [ ] Task 4 - GRID S.O.A.: 10x10x5 NativeArray<byte> WfcGrid.
-- [ ] Task 5 - DETERMINISTIC SEED: LCG_Hash(WorldSeed + FirstBaseHash).
+- [x] Task 1 - SINGLETON ERADICATION: `IOutpostGenerationService` is published through `GlobalRegistry.OutpostGeneration`. DOD: registry interface slot, no `BaseGenerator.Instance`. Alternative rejected: concrete singleton owner. Estimate: 0 us hot path.
+- [x] Task 2 - SIGNAL MIGRATION: Runtime drains `SignalBus<SectorHydratedSignal>` and triggers only when `SectorHash == FirstBaseHash` unless debug override is enabled. DOD: native signal snapshot consumption. Alternative rejected: polling world generator singleton. Estimate: 1-5 us per hydration frame.
+- [x] Task 3 - ASMDEF ISOLATION: `Hecton8.World.Outposts.asmdef` references `Hecton8.World.Contracts` and `Hecton8.Core`; contract lives in `World/Contracts`. DOD: isolated assembly boundary. Alternative rejected: dropping runtime into core assembly. Estimate: 0 us runtime.
+- [x] Task 4 - GRID S.O.A.: `MarauderOutpostGenerationService.WfcGrid` is a persistent `NativeArray<byte>` sized 10x10x5. DOD: byte grid SoA, no managed cells. Alternative rejected: class-per-cell graph. Estimate: 500 B grid payload plus native header.
+- [x] Task 5 - DETERMINISTIC SEED: Solver seed is `MarauderOutpostHash.LcgHash((ulong)WorldSeed + FirstBaseHash)`. DOD: deterministic LCG hash. Alternative rejected: `UnityEngine.Random` and `System.Random`. Estimate: 1-3 us cold generation seed.
 
 ### Loop 2 - Tasks 6-10
 
-- [ ] Task 6 - STRUCTURAL RULES: Burst bitwise adjacency and floor support rules.
-- [ ] Task 7 - HEIGHTMAP ADAPTATION: Bottom nodes project to MapMagic/GlobalDataVault height; stilts/pillars generated.
-- [ ] Task 8 - MATRIX EXTRACTION: WfcGrid to NativeArray<float4x4>.
-- [ ] Task 9 - INDIRECT RENDERING: Dispatch matrices to GPU, zero CPU shell draw loop.
-- [ ] Task 10 - INTERACTABLE SPAWNING: Minimal proxy GameObjects only for Datapad/SealedDoor via pool path.
+- [x] Task 6 - STRUCTURAL RULES: `MarauderOutpostSolveJob` applies bitwise N/E/S/W masks, corridor room/hatch contact, and upper-floor support checks. DOD: Burst `IJob`, byte flags. Alternative rejected: managed adjacency arrays/backtracking. Estimate: 20-250 us by tier.
+- [x] Task 7 - HEIGHTMAP ADAPTATION: `MarauderOutpostMatrixExtractionJob` samples MapMagic quantized height payload and emits pillar/stilt matrices; telemetry flags fallback. DOD: native height samples, visual fake supports. Alternative rejected: raycast/rigidbody settlement. Estimate: 20-80 us full grid, lower on MX350.
+- [x] Task 8 - MATRIX EXTRACTION: Solved cells become `_shellMatrices : NativeArray<float4x4>` plus `_shellCellTypes`. DOD: no Transform shell. Alternative rejected: prefab shell hierarchy. Estimate: 40-120 us full grid extraction.
+- [x] Task 9 - INDIRECT RENDERING: Matrices/types upload to `GraphicsBuffer`s and shell draws through `Graphics.RenderMeshIndirect`. DOD: one indirect shell path, no CPU shell draw loop. Alternative rejected: 500 renderer submissions. Estimate: steady CPU submit below 0.05 ms.
+- [x] Task 10 - INTERACTABLE SPAWNING: Only `Datapad` and `SealedDoor` spawn packets hit `GlobalRegistry.ObjectPool`; proxy meshes are baked cold. DOD: bounded pooled proxies. Alternative rejected: proxy for every cell. Estimate: max 16 cold pooled spawns.
 
 ### Loop 3 - Tasks 11-15
 
-- [ ] Task 11 - RUST & WEAR: _OutpostAge01 scalar path for decay shader.
-- [ ] Task 12 - AUP SHIFT SAFETY: Native matrix offsets on AupShiftSignal.
-- [ ] Task 13 - MATH LOD: Low tier grid constrained to 5x5x3.
-- [ ] Task 14 - ZERO-GC: Solver uses Native/TempJob and 0 managed bytes in hot path.
-- [ ] Task 15 - OMEGA COMPILE CHECK: WFC constraints use bitwise operations, not managed arrays.
+- [x] Task 11 - RUST & WEAR: `Hecton_MarauderOutpostIndirect.shader` reads `_OutpostAge01` and calls the Hecton procedural rust/silt path; runtime also writes `_HectonMaterialDecayRuntime`. DOD: shader scalar path. Alternative rejected: per-instance material clones. Estimate: 0 B/frame, shader ALU only.
+- [x] Task 12 - AUP SHIFT SAFETY: `AupShiftSignal` schedules `MarauderOutpostAupShiftJob` over native matrices and shifts pooled proxies. DOD: native matrix offset. Alternative rejected: parent transform shell shift. Estimate: 10-120 us rare shift by matrix count.
+- [x] Task 13 - MATH LOD: Low/MX350/Unknown quality selects 5x5x3 before solving; other tiers use 10x10x5. DOD: dimension branch before Burst schedule. Alternative rejected: full grid on low then cull visually. Estimate: 75 cells low vs 500 full.
+- [x] Task 14 - ZERO-GC: Solver/extractor/shift are NativeArray/Burst jobs; Tick/Render use spans/native buffers and no LINQ. Cold managed arrays exist only for fallback mesh/proxy handles. DOD: 0 managed bytes hot path by code audit. Alternative rejected: managed WFC arrays. Estimate: 0 B/frame hot path.
+- [x] Task 15 - OMEGA COMPILE CHECK: Code audit and Unity Roslyn response-file compiles confirm constraints are bitwise byte operations and the outpost dependency chain emits. DOD: Logistics.Grid.Contracts, Logistics.Grid, World.Contracts, Core.Memory, Core, and World.Outposts compile from Bee response files. Alternative rejected: changing task to managed arrays. Estimate: no runtime cost.
 
 ### Loop 4 - Re-Read And Self-Review
 
-- [ ] Re-extract prompt after task 3 cadence.
-- [ ] Re-read code for singleton, managed allocation, Instantiate wall, and public API drift.
-- [ ] Verify compile and console status.
+- [x] Re-extract prompt after task 3 cadence. DOD: raw regex extraction from `CURRENT_BATCH.md`. Alternative rejected: memory recall. Estimate: 40 us parse after disk read.
+- [x] Re-read code for singleton, managed allocation, Instantiate wall, and public API drift. DOD: `rg` audit found no `BaseGenerator`, no shell `Instantiate`, no LINQ/random; only cold fallback mesh arrays and bounded proxy handle array. Estimate: 0 us runtime.
+- [x] Verify compile and console status. DOD: refreshed Bee response files now compile through `Hecton8.World.Outposts`; Unity MCP console remains unavailable. Alternative rejected: claiming runtime proof without console/profiler access. Estimate: 0 us runtime.
 
 ### Loop 5 - Polish Mandate
 
-- [ ] Read POLISH_MANDATE only after tasks complete or blocked.
-- [ ] Append final report to Docs/AgentLogs/LOG_MARAUDER_OUTPOST_ARCHITECT.md.
+- [x] Read POLISH_MANDATE only after tasks complete or blocked. DOD: core tasks were checked/blocked before mandate parsing. Alternative rejected: premature anti-bloat work before contract completion. Estimate: 40 us parse after disk read.
+- [x] OMEGA reciprocal pass. DOD: height sampling and packed-age conversion use precomputed reciprocal constants/multiplication, not runtime floating division. Alternative rejected: honest `/ TerrainSize` and `/ 65535f` math. Estimate: 2-8 us saved per full extraction depending Burst/backend.
+- [x] OMEGA forbidden construct audit. DOD: scoped `rg` found no `foreach`, `string.Format`, string interpolation, `.ToString()`, `math.sqrt`, `math.normalize`, LINQ, `System.Random`, `UnityEngine.Random`, `BaseGenerator`, or shell `Instantiate` in the outpost runtime path. Alternative rejected: manual eyeballing only. Estimate: 0 B/frame preserved.
+- [x] Append final report to Docs/AgentLogs/LOG_MARAUDER_OUTPOST_ARCHITECT.md. DOD: report includes wrong/done/cheats/microseconds/diff/compile wall. Alternative rejected: chat-only report. Estimate: 0 us runtime.
+
+### Loop 6 - Patient Re-Audit And Integration Upgrade
+
+- [x] Re-extracted prompt with attribute-safe XML regex. DOD: `<AGENT_PROMPT ... id="MARAUDER_OUTPOST_ARCHITECT" ...>` block parsed cover-to-cover. Alternative rejected: brittle exact opening-tag regex. Estimate: 40 us parse after disk read.
+- [x] Hardened job teardown. DOD: `Dispose()` defers native array disposal behind the active `JobHandle` instead of blocking on `Complete()`. Alternative rejected: main-thread shutdown stall. Estimate: saves 20-250 us worst-case generation wait on teardown.
+- [x] Upgraded logistics handoff. DOD: generated WFC byte grid registers through `WfcOutpostGridRegistry`, publishes a real `WfcOutpostGeneratedSignal.GridHandle`, and exposes `TryGetWfcGrid` on `IOutpostGenerationService`. Alternative rejected: signal with fake hash handle. Estimate: one 500-byte cold copy, 0 B/frame.
+- [x] Added deterministic generator cell and door power bridge. DOD: center-bottom WFC cell uses shared logistics `Generator` kind; sealed-door proxies consume `WfcOutpostDoorPowerSignal` without creating shell GameObjects. Alternative rejected: missing-generator graph fallback and per-cell power objects. Estimate: avoids graph fault pass and keeps proxy cap at 16.
+- [x] Re-ran scoped audits. DOD: no forbidden managed constructs or runtime division/pow hits in owned outpost/shader paths; only `_jobHandle.Complete()` calls are post-`IsCompleted` commit points. Alternative rejected: manual-only review. Estimate: 0 B/frame preserved.
+- [x] Re-ran dependency-chain compile. DOD: Unity Roslyn response-file compiles PASS for `Hecton8.Logistics.Grid.Contracts`, `Hecton8.Logistics.Grid`, `Hecton8.World.Contracts`, `Hecton8.Core.Memory`, `Hecton8.Core`, and `Hecton8.World.Outposts`. Alternative rejected: relying on stale missing-ref result. Estimate: compile-only proof.
 
 ## Verification Ledger
 
-- Compile status: PENDING VERIFICATION.
-- Unity Console status: PENDING VERIFICATION.
-- GC proof: measured proof absent.
-- Frame/VRAM proof: measured proof absent.
+- Compile status: PASS for scoped dependency chain. Unity Roslyn response-file compiles pass for `Hecton8.Logistics.Grid.Contracts`, `Hecton8.Logistics.Grid`, `Hecton8.World.Contracts`, `Hecton8.Core.Memory`, `Hecton8.Core`, and `Hecton8.World.Outposts`.
+- Unity Console status: MCP unavailable at `http://127.0.0.1:8088/mcp`; console/scene validation not accessible from this session.
+- GC proof: code audit only; hot Tick/Render path uses spans/native buffers and no LINQ/managed allocation.
+- Frame/VRAM proof: static estimate only; runtime profiling blocked by Unity MCP transport failure, not by compile.

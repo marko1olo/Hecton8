@@ -1,6 +1,6 @@
 # ARCHITECTURAL_SIGNAL_STANDARDIZER Status
 
-Status: PENDING VERIFICATION
+Status: CORE CLI BUILD GREEN / GENERATED-PROJECT WARNINGS RECORDED / GLOBAL LEGACY BLOCKED
 Domain: Echelon 1 Core & Memory Infrastructure / Global EventBus + Signal Lanes
 Task count: 15
 Prompt source: User-provided XML for ARCHITECTURAL_SIGNAL_STANDARDIZER. `Docs/Tasks/CURRENT_BATCH.md` does not contain this ID in the current workspace scan.
@@ -24,11 +24,11 @@ Selected mandates:
 - [x] Task 8 - Consumer purge | Justification: combat damage and soundscape impact consumers now pull `SignalBus<T>.GetFrameSnapshot()` spans. Alternative rejected: destructive `GlobalSignals.TryDequeueDamage/TryDequeueImpact` drains. Microsecond estimate: 1-4us saved in burst frames, PENDING PROFILER.
 - [x] Task 9 - Delegate eradication | Justification: touched hot signal paths contain no `Action<T>`, `delegate`, `UnityEvent`, or `EventBus.Publish`; global eradication remains BLOCKED BY DOMAIN BLAST RADIUS because static scan still finds 59 Action/delegate files and 30 UnityEvent files. Alternative rejected: deleting UI/input/cold async delegate surfaces without owner review. Microsecond estimate: 0us claimed outside touched paths.
 - [x] Task 10 - Contract pinning | Justification: `SoundscapeSystem.DrainSignals()` and `CombatDamageRuntime.ResolveRuntimeMathLod()` no longer poll `GlobalRegistry` in their hot/cadenced logic; values are cached via enable-time/service-event/cold refresh paths. Alternative rejected: per-signal registry property resolution. Microsecond estimate: sub-1us per slow tick/schedule pass, PENDING PROFILER.
-- [x] Task 11 - Batched compile | Justification: `dotnet build Hecton8.Core.csproj -v:minimal` executed after signal batch, after omega padding, after guard-cache polish, and after legacy scalar-source sanitization. Latest full build fails with 129 dependency errors outside the touched signal files. Alternative rejected: claiming green from partial static source review. Microsecond estimate: 0us; verification-only.
-- [x] Task 12 - Triple-strike fix | Justification: no filtered build error referenced `GlobalSignals.cs`, `CombatDamageRuntime.cs`, or `SoundscapeSystem.cs` after the latest pass; compile wall is missing neighbor domains/types (`Fluids`, `Audio.Virtualization`, `MacroSwarm`, `BrineLayerSample`, `SoundEmissionSignal`, etc.). Alternative rejected: fixing unrelated dependency architecture from this signal-standardizer slice. Microsecond estimate: 0us.
-- [x] Task 13 - Zero-GC verification | Justification: static scan found no signal DTO `new` construction and no string payload fields inside touched signal logic; remaining `new` hits in `GlobalSignals.cs` are cold static arrays/adapters or native collection allocation. Runtime GC remains PENDING without Unity profiler/GCMonitor. Alternative rejected: fake 0B/frame claim. Microsecond estimate: not measured.
+- [x] Task 11 - Batched compile | Justification: latest `dotnet build Hecton8.Core.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false /p:UseSharedCompilation=false` succeeds with 0 warnings / 0 errors after concurrent compile breaks were repaired; a warnings-only compile pass recorded 30 generated-project CS0436 duplicate-type warnings from the ignored CLI project. Alternative rejected: claiming Unity/import verification from CLI-only generated project evidence. Microsecond estimate: 0us; verification-only.
+- [x] Task 12 - Triple-strike fix | Justification: fixed local compile neighbors caused by stale generated project metadata and stale enum surface: existing WFC/blueprint/prompt-cache source files are included in the CLI project, and WFC allocations use the preserved `SystemID` numeric owner value 512. Alternative rejected: inventing missing contracts or reverting unrelated agents' source. Microsecond estimate: 0us.
+- [x] Task 13 - Zero-GC verification | Justification: static scan found no signal DTO `new` construction and no string payload fields inside touched signal logic; `PlayerLookTargetSignal` no longer carries `FixedString64Bytes` and resolves prompt text through a bounded hash sidecar. Remaining `new` hits in `GlobalSignals.cs` are cold static arrays/adapters or native collection allocation. Runtime GC remains PENDING without Unity profiler/GCMonitor. Alternative rejected: fake 0B/frame claim. Microsecond estimate: not measured.
 - [x] Task 14 - Blackbox dump | Justification: Signal NaN vaccination publishes numeric telemetry via `GlobalTelemetryBus.PublishMathGuardInvalidNumber`; synaptic-density gain and failure mode are logged in rationale. Alternative rejected: chat-only blackbox statement. Microsecond estimate: invalid-number crash investigation saved, not runtime-profiler measured.
-- [x] Task 15 - Omega polish | Justification: `HighSpeedImpactSignal` padded from 88 to 96 bytes and static scan found no `StructLayout(Size=...)` value in `GlobalSignals.cs` that is not a 16-byte multiple. String poison scan found only SignalBus cold labels/method parameters, no signal payload strings. Alternative rejected: parsing neighboring `<POLISH_MANDATE>` tags from `CURRENT_BATCH.md` because this agent ID is absent. Microsecond estimate: cache-stride alignment gain PENDING PROFILER.
+- [x] Task 15 - Omega polish | Justification: `HighSpeedImpactSignal` padded from 88 to 96 bytes and static scan found no `StructLayout(Size=...)` value in `GlobalSignals.cs` that is not a 16-byte multiple. String poison scan found no `FixedString`/string payload on the look-target signal path; remaining SignalBus string hits are cold labels/method parameters. Alternative rejected: parsing neighboring `<POLISH_MANDATE>` tags from `CURRENT_BATCH.md` because this agent ID is absent. Microsecond estimate: cache-stride alignment gain PENDING PROFILER.
 
 ## Iteration Log
 
@@ -73,3 +73,26 @@ Selected mandates:
 - Mirrored `SystemPauseSignal` and `WeatherChangedSignal` now use the sanitized source packet.
 - Static scans: no signal DTO constructor `new` text for guarded bridge packets; `SignalPayloadFiniteGuards` contains no `new` or `string`.
 - Latest full build: `dotnet build Hecton8.Core.csproj -v:minimal` fails with 129 errors / 47 warnings from neighbor missing types and assemblies.
+
+### Loop 8 - String poison hardening
+- Removed `FixedString64Bytes Prompt` from `PlayerLookTargetSignal`; the lane now carries `PromptHash` and reserved uint prompt args only while retaining its 160-byte stride.
+- Added `PlayerLookTargetPromptCache` as a bounded, hash-keyed presentation sidecar with a Unity `.meta` file for source control stability.
+- `PlayerInteraction` stores prompt text by hash before pushing the signal; `DiegeticTooltipSystem` resolves text by `PromptHash` and falls back to the default prompt on cache miss.
+- Static scans: no `FixedString` remains in `GlobalSignals.cs`, `PlayerInteraction.cs`, or `DiegeticTooltipSystem.cs`; no non-16-byte explicit `StructLayout(Size=...)` values in `GlobalSignals.cs`.
+- Build evidence: `dotnet build Hecton8.Core.csproj -v:minimal /nr:false /p:UseSharedCompilation=false` exits 1 with 17 neighbor dependency errors; filtered output shows no errors for `GlobalSignals.cs`, `PlayerInteraction.cs`, `DiegeticTooltipSystem.cs`, or `PlayerLookTargetPromptCache.cs`.
+
+### Loop 9 - Compile convergence
+- Re-read prompt-cache, interaction, UI, WFC, and generated project metadata after the previous compile wall.
+- Added the existing prompt-cache source to the generated Core project include list; previous CLI build could not see the Unity-imported file.
+- Preserved WFC memory ownership with numeric `SystemID` value 512 while the stale referenced memory assembly exposed no `SystemID.LogisticsGrid` enum name.
+- Verification: `dotnet build Hecton8.Core.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false /p:UseSharedCompilation=false` succeeded with 0 warnings / 0 errors.
+- Static evidence: focused look-target scan finds no `FixedString` or `signal.Prompt` payload; `GlobalSignals.cs` has no `new ...Signal` bridge constructor text; explicit signal sizes are 16-byte multiples.
+- Mandatory global scan still returns 2108 legacy communication hits, so "0 legacy events found" and `VERIFIED SYNAPTIC UNITY` are not claimed.
+
+### Loop 10 - Prompt cache collision hardening and compile repair
+- Re-extracted status/rationale and mandatory communication scan; current global legacy hit count is 2106, still non-zero.
+- Replaced `PlayerLookTargetPromptCache` full 64-slot scan with a fixed 16-set x 4-way cache using byte age replacement. This keeps storage fixed and bounds read/store probes to four slots.
+- Preserved hash-only signal payload; prompt text remains outside `PlayerLookTargetSignal` and uses caller-owned `char[]` copies.
+- Repaired concurrent compile breaks without reverting neighboring work: restored the referenced private `PrologueSplashdownSineSweepProbeJob` in the audio renderer and added the existing IK job source to the ignored/generated CLI project so the new `TailWhipDurationSeconds` field is visible to CLI compile.
+- Verification: `dotnet build Hecton8.Core.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false /p:UseSharedCompilation=false` succeeded with 0 warnings / 0 errors; separate warnings-only compile output recorded 30 CS0436 generated-project duplicate-type warnings.
+- Static evidence: focused look-target scan still finds no `FixedString`, `signal.Prompt`, or `new ...Signal` text in the touched signal path.

@@ -10,7 +10,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Audio Waveform Animator")]
-    public sealed class AudioWaveformAnimator : MonoBehaviour, ITickable, IUpdatable
+    public sealed class AudioWaveformAnimator : MonoBehaviour, ILateFrameTickable
     {
         private const int MaxCueTextChars = 1024;
         private const float AmplitudeIdleEpsilon = 0.001f;
@@ -80,8 +80,9 @@ namespace Hecton8.UI
         }
 
         /// <inheritdoc />
-        public void Tick(float deltaTime)
+        public void LateFrameTick()
         {
+            float deltaTime = math.max(0f, SystemDispatcher.CurrentFrameDeltaTime);
             if (!_subscribed)
             {
                 _pollTimer -= deltaTime;
@@ -347,7 +348,7 @@ namespace Hecton8.UI
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            _tickRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+            _tickRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
         private void UnregisterFromTickManager()
@@ -355,7 +356,7 @@ namespace Hecton8.UI
             if (!_tickRegistered)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
             _tickRegistered = false;
         }
     }

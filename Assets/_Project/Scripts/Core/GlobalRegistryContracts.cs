@@ -222,6 +222,9 @@ namespace Hecton8.Core
         /// <summary>Enables or disables player thrust consumption without disabling telemetry.</summary>
         void SetInputEnabled(bool enabled);
 
+        /// <summary>Forces the prologue universe velocity to rest for splashdown handoff without aborting telemetry.</summary>
+        void ForceZeroUniverseVelocity(byte reason);
+
         /// <summary>Fail-fast hook used by bootstrap/integrator code to abort the prologue lane.</summary>
         void ForceAbortReentry(byte reason);
     }
@@ -269,6 +272,7 @@ namespace Hecton8.Core
         bool DataLinkDegraded { get; }
         int ActiveImpostorCount { get; }
         uint ActiveImpostorVersion { get; }
+        bool IsChunkResident(long chunkId);
         bool TryGetActiveImpostors(out NativeArray<float4x4> matrices, out NativeArray<int> impostorTypes, out int count);
         bool TryGetActiveImpostorPoints(out NativeArray<StreamingHlodImpostorPoint> points, out int count);
         bool IsChunkImpostorAudioMuted(long chunkId);
@@ -1170,6 +1174,7 @@ namespace Hecton8.Core
     {
         public const uint CrushDepth = 0x43525348u; // CRSH
         public const uint HullBreach = 0x48554C4Cu; // HULL
+        public const uint HullTempCritical = 0x4854454Du; // HTEM
         public const uint OxygenLow = 0x4F584C4Fu; // OXLO
         public const uint Radiation = 0x52414449u; // RADI
         public const uint PowerLow = 0x5057524Cu; // PWRL
@@ -1180,6 +1185,7 @@ namespace Hecton8.Core
             {
                 case CrushDepth: return (byte)VocalWarningId.CrushDepth;
                 case HullBreach: return (byte)VocalWarningId.HullBreach;
+                case HullTempCritical: return (byte)VocalWarningId.HullBreach;
                 case OxygenLow: return (byte)VocalWarningId.OxygenLow;
                 case Radiation: return (byte)VocalWarningId.Radiation;
                 case PowerLow: return (byte)VocalWarningId.PowerLow;
@@ -1340,10 +1346,10 @@ namespace Hecton8.Core
             out WfcOutpostPersistenceStatus status);
 
         /// <summary>
-        /// Applies a saved WFC outpost mutable-grid override before procedural WFC collapse runs.
+        /// Applies a saved WFC outpost mutable-grid override before procedural outpost extraction consumes it.
         /// </summary>
         /// <param name="sectorHash">Absolute AUP-derived sector hash.</param>
-        /// <param name="wfcGrid">Destination grid that receives mutable state bits.</param>
+        /// <param name="wfcGrid">Destination mutable-state grid; do not pass a topology/adjacency-packed WFC cell grid.</param>
         /// <param name="status">Restore result; corrupt length means caller must generate a fresh base.</param>
         /// <returns>True only when saved state was copied into <paramref name="wfcGrid"/>.</returns>
         bool TryApplyWfcOutpostStateOverride(
@@ -3085,6 +3091,7 @@ namespace Hecton8.Core
         HardwareThermalService = 164,
         AudioVirtualization = 165,
         OutpostGenerationRuntime = 166,
+        PrologueSequenceRuntime = 167,
         Unknown = 255
     }
 

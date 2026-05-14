@@ -1,8 +1,8 @@
 # HECTON-8 Project State Static X-Ray
 
-Date: 2026-05-13
+Date: 2026-05-14
 Status: PENDING VERIFICATION
-Evidence class: STATIC_SOURCE / STATIC_DOC / FILESYSTEM / PACKAGE_LOCK / UNITY_BATCHMODE_IMPORT_COMPILE
+Evidence class: STATIC_SOURCE / STATIC_DOC / FILESYSTEM / PACKAGE_LOCK / UNITY_BATCHMODE_IMPORT_COMPILE / CLI_COMPILE
 
 This file is a durable project-state risk register. It is not an AgentLog and must not be treated as runtime proof.
 
@@ -10,7 +10,7 @@ This file is a durable project-state risk register. It is not an AgentLog and mu
 
 User request: ignore easy build bugs, audit deeper project health, and keep documentation current under concurrent agent churn.
 
-Most commands were static filesystem and source scans. DOC_AUDIT R29 added one Unity `6000.4.1f1` batchmode import/script-compilation artifact at `Library/Codex_DOC_AUDIT_UnityBatchCompile.log`; no Play Mode, profiler, GCMonitor, player build, Memory Profiler, RenderDoc, save/load roundtrip, visual capture, or runtime benchmark was run. DOC_AUDIT R5/R6 added package-lock, BuildSettings, URP asset, PlayerSettings, and script-local docs checks; R8 added the world/scatter/streaming wiring addendum; R17 added the renderer/visor/shader proof boundary; R21 closed the static resource-node catalog/worldPrefab gaps; R22 added the PDA fail-closed guard; R23 hardened editor validation for duplicate item identity/catalog ambiguity.
+Most commands were static filesystem and source scans. DOC_AUDIT R29 added one Unity `6000.4.1f1` batchmode import/script-compilation artifact at `Library/Codex_DOC_AUDIT_UnityBatchCompile.log`; R40/R41 added controlled external CLI compile evidence through a source-backed generated-project bridge and a serial root `Hecton8*.csproj` sweep; R42 propagated that current compile boundary into active reference docs that still carried the older May 13 missing-artifact-only override. No Play Mode, profiler, GCMonitor, player build, Memory Profiler, RenderDoc, save/load roundtrip, visual capture, or runtime benchmark was run. DOC_AUDIT R5/R6 added package-lock, BuildSettings, URP asset, PlayerSettings, and script-local docs checks; R8 added the world/scatter/streaming wiring addendum; R17 added the renderer/visor/shader proof boundary; R21 closed the static resource-node catalog/worldPrefab gaps; R22 added the PDA fail-closed guard; R23 hardened editor validation for duplicate item identity/catalog ambiguity.
 
 Mandates used:
 
@@ -29,7 +29,7 @@ Current static estimate: roughly 70% engineering infrastructure, 30% proven game
 
 ## Non-Claims
 
-- No clean compile is claimed.
+- No Unity Console / Play Mode / player-build clean compile is claimed. Current clean compile evidence is limited to the root `Hecton8*.csproj` external CLI surface.
 - No 0 GC/frame is claimed.
 - No frame-time budget compliance is claimed.
 - No MX350 compliance is claimed.
@@ -1003,7 +1003,7 @@ Positive architecture:
 - DOC_AUDIT R29 added a `SaveManager` async world-pager bridge for chunk page writes/reads/copy/retire/telemetry/flush. DOC_AUDIT R30/R31 corrected the overclaim: chunk dehydration is now bounded to at most `2` signals per tick and stages inventory shadow plus chunk metadata only. It no longer captures the entire global `VoxelDeltaProcessor` snapshot per dehydrated chunk.
 - `H8BinaryWorldPager` now fail-closes on `IOException` / `UnauthorizedAccessException` while opening `world_data.h8bin`: it records an initialization fault and rejects pager IO instead of throwing through bootstrap. R30 also changes page-file sharing to `FileShare.Read` for single-writer semantics, adds a bounded worker-stop handshake before native disposal, releases invalid read results, and treats sparse/collided page headers as `Missing` rather than `Corrupt`. R31 removes pager initialization from `SaveManager.InitializeNativeBuffers()`, so the sidecar page file is opened only on first actual chunk page IO.
 - DOC_AUDIT R32 splits `SaveManager` boot buffers from persistence working buffers: boot now keeps the save telemetry ring and tiny load-candidate scratch only, while the 64 MB raw payload, about 68 MB compressed payload, and 10 MB staging arenas allocate on first save/load/chunk-sidecar use. R33 tightens the fault path so a faulted/uninitialized pager does not allocate the 10 MB staging arena, and load first-use allocation sits inside the normal failure/cleanup envelope. R36 re-removed a concurrent regression where chunk dehydration captured the global voxel snapshot as `worldPagerVoxelDeltaSnapshot`; R37 rechecked the latest churn, restored a joinable pager worker thread, and locally compiled `Hecton8.Core.Memory` plus `Hecton8.Core` through Unity Bee/Roslyn temp response files with exit code `0`. R38 hardens unexpected pager worker command faults so dequeued pending counters decrement in `finally`, records current WFC outpost MacroDB bitmask persist/restore contract coverage in `SaveManager`, and demotes the old full-Core success as stale because the current full `Hecton8.Core` probe is blocked by unrelated active churn in audio/scanner/submarine-buffer/arena/fluid/UI/fauna files.
-- DOC_AUDIT R39 identifies the current first blocker for external Core builds as generated-project drift: `Hecton8.Core.asmdef` references `23` first-party assemblies that are absent from generated `Hecton8.Core.csproj`. `HectonComplianceValidator` now has an editor-only `CSPROJ001` tripwire for this exact mismatch. Do not create duplicate namespaces or placeholder contracts for this class of error; regenerate Unity project files / repair asmdef project generation first.
+- DOC_AUDIT R39 identified the first blocker for external Core builds as generated-project drift: `Hecton8.Core.asmdef` references `23` first-party assemblies that were absent from generated `Hecton8.Core.csproj`. `HectonComplianceValidator` now has an editor-only `CSPROJ001` tripwire for this exact mismatch. R40 attempted a non-destructive Unity batchmode project refresh, found the root generated projects still stale, and added a source-backed `Directory.Build.targets` bridge instead of editing generated `.csproj` files. R41 serially rechecked the root `Hecton8*.csproj` compile surface after restoring missing MSBuild assets for Editor/PlayModeTests/World.Dots, then re-ran after `Temp\obj\Hecton8.Core\project.assets.json` also disappeared. Final no-restore CLI builds now pass for `Hecton8.Core.csproj`, `Hecton8.Editor.csproj`, `Hecton8.PlayModeTests.csproj`, `Hecton8.World.Contracts.csproj`, `Hecton8.World.Dots.csproj`, `Hecton8.Bootstrap.Contracts.csproj`, `Hecton8.Input.Generated.csproj`, and `Hecton8.Input.csproj` at `0 Warning(s)` / `0 Error(s)`. Full restore graphs still emit vendor/package warnings from URP/GPUInstancer/Crest/ShaderGraph and MapMagic/Den.Tools. This is external compile evidence only, not Unity Console, Play Mode, profiler, GCMonitor, player build, or scene wiring proof.
 - `PersistentWorldRegistry` is a real persistence authority, not a thin list dump. It owns save snapshots, tombstone preload, indexed-sector restore, paging disable/fallback, sector override temp files, and corruption/quarantine surfaces.
 - `ISaveable` documents ownership rules: each owner writes only its own DTO section, validates on load, and should avoid new array allocation in the contract.
 - PlayMode and smoke surfaces exist: `SmokeTests_SaveLoad.cs`, `InquisitionStabilityPlayModeTests.cs`, `SavePersistenceOmegaSmokeTester`, `SaveRecoverySmokeTester`, and `SaveSystemRuntimeSmokeTester`.

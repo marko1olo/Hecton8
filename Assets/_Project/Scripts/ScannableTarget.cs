@@ -24,6 +24,9 @@ namespace Hecton8.Gameplay
         private static NativeArray<AbsoluteUniversePosition> s_loreEntityAups;
         private static NativeArray<uint> s_loreEntityHashes;
         private static int s_loreEntityCount;
+        private static int s_loreEntitySyncFrame = int.MinValue;
+        private static uint s_loreTitleLookupHash;
+        private static int s_loreTitleLookupIndex = -1;
         private int _spatialHandle;
         private int _loreRegistryIndex = -1;
         private string _resolvedEntryId;
@@ -178,6 +181,7 @@ namespace Hecton8.Gameplay
                 ? "Passive scan profile has been captured."
                 : entrySummary.Trim();
             _entityHash = H8DataHash.ComputeFnv1A32(_resolvedEntryId);
+            InvalidateLoreTitleLookupCache();
         }
 
         public static bool TryGetLoreEntityBuffers(
@@ -214,20 +218,51 @@ namespace Hecton8.Gameplay
             if (hash == 0u || destination.Length <= 0)
                 return false;
 
+            if (s_loreTitleLookupHash == hash &&
+                (uint)s_loreTitleLookupIndex < (uint)s_loreEntityCount &&
+                TryCopyLoreEntityTitle(s_loreEntityTargets[s_loreTitleLookupIndex], hash, destination, out written))
+            {
+                return true;
+            }
+
             for (int i = 0; i < s_loreEntityCount; i++)
             {
                 ScannableTarget target = s_loreEntityTargets[i];
-                if (target == null || target.EntityHash != hash)
+                if (!TryCopyLoreEntityTitle(target, hash, destination, out written))
                     continue;
 
-                ReadOnlySpan<char> title = target.EntryTitle.AsSpan();
-                int length = math.min(title.Length, destination.Length);
-                title.Slice(0, length).CopyTo(destination);
-                written = length;
-                return written > 0;
+                s_loreTitleLookupHash = hash;
+                s_loreTitleLookupIndex = i;
+                return true;
             }
 
             return false;
+        }
+
+        private static bool TryCopyLoreEntityTitle(
+            ScannableTarget target,
+            uint hash,
+            Span<char> destination,
+            out int written)
+        {
+            written = 0;
+            if (target == null || target.EntityHash != hash)
+                return false;
+
+            ReadOnlySpan<char> title = target.EntryTitle.AsSpan();
+            int length = math.min(title.Length, destination.Length);
+            if (length <= 0)
+                return false;
+
+            title.Slice(0, length).CopyTo(destination);
+            written = length;
+            return true;
+        }
+
+        private static void InvalidateLoreTitleLookupCache()
+        {
+            s_loreTitleLookupHash = 0u;
+            s_loreTitleLookupIndex = -1;
         }
 
         private static int RegisterLoreEntity(ScannableTarget target)
@@ -247,6 +282,7 @@ namespace Hecton8.Gameplay
             int index = s_loreEntityCount++;
             s_loreEntityTargets[index] = target;
             WriteLoreEntitySlot(index, target);
+            InvalidateLoreTitleLookupCache();
             return index;
         }
 
@@ -282,6 +318,7 @@ namespace Hecton8.Gameplay
 
             ClearLoreEntitySlot(lastIndex);
             target._loreRegistryIndex = -1;
+            InvalidateLoreTitleLookupCache();
         }
 
         private static int FindLoreEntityIndex(ScannableTarget target)
@@ -299,6 +336,15 @@ namespace Hecton8.Gameplay
         {
             if (!EnsureLoreEntityVaultBuffers())
                 return;
+
+            if (Application.isPlaying)
+            {
+                int frame = Time.frameCount;
+                if (s_loreEntitySyncFrame == frame)
+                    return;
+
+                s_loreEntitySyncFrame = frame;
+            }
 
             for (int i = 0; i < s_loreEntityCount; i++)
             {

@@ -64,3 +64,61 @@ Follow-up upgrade 3:
 Exact microseconds saved after follow-up 3:
 - Removed redundant zero shader publication on stress order rebuild ticks; estimated 1-4 us saved on driver-bound MX350 frames during pooled module activation or graph rebuild.
 - Runtime-key fallback prevents spike/hysteresis migration for no-graph modules without adding managed state; cost is one instance-id read only on fallback modules.
+
+Follow-up upgrade 4:
+- Added quality-tier-specific module deformation amplitudes: Low/MX350/Unknown = 0m vertex bow and crease-only, Mid = 0.036m, High = 0.055m, Ultra = 0.075m.
+- Added `_lastUploadedModuleStressTier` so Mid/High/Ultra transitions force shader-param upload even when stress values are numerically stable.
+- Static scans remain clean: no mesh mutation, no exact normalize/sqrt, no managed collection/string offenders in the stress methods, and `git diff --check` reports only repository CRLF normalization warnings.
+- Filtered `dotnet build` timed out at 180s without touched-file errors emitted before timeout; `dotnet build-server shutdown` cleared stale MSBuild/compiler workers.
+- Unity MCP console read failed via local transport to `127.0.0.1:8088/mcp`; runtime/editor verification remains blocked by infrastructure/global compile state.
+
+Exact microseconds saved after follow-up 4:
+- Mid tier avoids full high-tier bow amplitude with no extra branch in shader; expected lower overdraw/near-clip deformation artifacts on MX350-adjacent hardware.
+- Tier dirty tracking prevents stale visual mode after quality switches with one enum compare; avoids unconditional shader param writes.
+
+Follow-up upgrade 5:
+- Reused the sine panel mask from `HectonHabitatInteriorApplyPanelBendOS` in `HectonHabitatInteriorApplyCheapNormalBiasWS`.
+- Updated `Hecton_DryZoneLit.shader` vertex callsite to pass the shared panel mask.
+- Static shader checks: updated signature/callsite matches, exact normalize/sqrt scan remains clean, `git diff --check` reports only repository CRLF normalization warnings.
+- Unity MCP console read still fails at local transport to `127.0.0.1:8088/mcp`; no editor/runtime proof claimed.
+
+Exact microseconds saved after follow-up 5:
+- Removed duplicate sine panel-mask evaluation from stressed vertex normal-bias path. Estimated 2-6 us saved per 1k affected interior vertices on MX350-class GPUs, with identical visual output.
+
+Follow-up upgrade 6:
+- Added `HectonHabitatInteriorCheapPanelMask` for the low-tier crease overlay.
+- Kept `HectonHabitatInteriorPanelMask` sine math on the Mid/High/Ultra vertex bow path, preserving the task-required sine panel bulge.
+- Static shader checks: `rg` confirms sine mask stays on `HectonHabitatInteriorApplyPanelBendOS` and cheap mask is used by `HectonHabitatInteriorApplyLowTierCrease`; exact normalize/sqrt scan remains clean; `git diff --check` reports only repository CRLF normalization warnings.
+
+Exact microseconds saved after follow-up 6:
+- Removed two sine evaluations per affected low-tier crease fragment. Estimated 8-25 us saved in dense interior wall views on MX350-class GPUs, while preserving crease readability.
+
+Follow-up upgrade 7:
+- Gated the habitat crease `_DetailMask` sample in `Hecton_DryZoneLit.shader` behind low-tier mode and non-zero habitat stress.
+- Kept the defensive guard inside `HectonHabitatInteriorApplyLowTierCrease`; the callsite now avoids the texture fetch before the helper is reached.
+- Static shader checks: exact `normalize()`/`sqrt()` scan with `rg --pcre2` produced no matches; `rg` confirms the crease detail sample is inside the low-tier stress branch; `git diff --check` reports only repository CRLF normalization warnings.
+- Unity MCP console read still fails through `127.0.0.1:8088/mcp`; no editor shader compile proof claimed.
+
+Exact microseconds saved after follow-up 7:
+- Removed one unused detail texture sample per Mid/High/Ultra or zero-stress DryZone fragment. Estimated 10-40 us saved in dense interior wall views on MX350-class GPUs.
+
+Follow-up upgrade 8:
+- Changed `UploadModuleStressMatrix` so a zero visible module count publishes shader params but does not allocate or upload `_HectonHabitatModuleStressBuffer`.
+- Changed `PublishModuleStressShader` so zero-count states publish zero max deformation and inactive low-tier visual mode, even when the quality tier is `Unknown`.
+- Added a shader count guard to the DryZone vertex path so `_HectonHabitatModuleStressParams.x <= 0.5` skips stress-index resolution.
+- Static checks: managed-offender scan found no `string.Format`, `.ToString()`, interpolation, `foreach`, or LINQ offenders in `HabitatGraphManager.cs`; mesh mutation scan found no owned `Mesh.vertices` writes; exact shader `normalize()`/`sqrt()` scan produced no matches; `git diff --check` reports only repository CRLF normalization warnings.
+- Verification block: filtered `dotnet build` timed out at 180s before producing a touched-file match list; stale workers from that probe were stopped, and later/external dotnet build activity in the shared workspace was left untouched. Unity MCP console still fails through `127.0.0.1:8088/mcp`.
+
+Exact microseconds saved after follow-up 8:
+- Skipped structured buffer allocation/upload for zero visible stress modules; estimated 5-20 us saved during empty habitat startup/rebuild ticks plus one buffer worth of transient VRAM.
+- Removed zero-count module resolver calls from DryZone vertices; estimated 1-3 us per 1k interior vertices during empty/boot shader states.
+
+Follow-up upgrade 9:
+- Changed stress signal resolution so graph-backed modules can match both stable habitat marker/node hashes and direct runtime `EntityId` hashes.
+- Added `ResolveModuleStressEntityKey` for direct runtime target matching without changing the shader buffer layout.
+- Changed `BaseModuleCompromisedSignal.ModuleHash` to use the stable-or-runtime module key, preventing no-graph modules from emitting zero identity.
+- Static checks: context review confirms `CombatDamageSignal`/`HullDeformedSignal` producers can carry `EntityId`-derived target hashes; managed-offender scans found no `string.Format`, `.ToString()`, interpolation, `foreach`, or LINQ offenders in `HabitatGraphManager.cs`; mesh mutation scan found no owned `Mesh.vertices` writes; exact shader `normalize()`/`sqrt()` scan produced no matches; `git diff --check` reports only repository CRLF normalization warnings.
+- Verification block: constrained `dotnet build` timed out at 120s without usable output. A separate external `Hecton8.Core.csproj` build command remains active in the shared workspace and was left untouched. Unity MCP read-console is unavailable in this session.
+
+Exact microseconds saved after follow-up 9:
+- No direct frame-time savings claimed. This recovers missed stress spikes from direct runtime target hashes with one signal-path entity-hash compare per candidate module, estimated under 2 us for a 64-module scan on i3/MX350-class hardware.

@@ -6,6 +6,7 @@ using Hecton8.Core.Signals;
 using Hecton8.Gameplay;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
@@ -31,9 +32,15 @@ namespace Hecton8.World
         private const float SlopeRejectNormalY = 0.5f;
         private const float ProxyHydrateDistanceSq = 9f;
         private const float ProxyDehydrateDistanceSq = 16f;
-        private const int OreTypeBasaltIron = 1;
-        private const int OreTypeCopper = 2;
-        private const int OreTypeTitanium = 3;
+        private const int OreTypeBasaltIron = WorldOreTypeIds.BasaltIron;
+        private const int OreTypeCopper = WorldOreTypeIds.Copper;
+        private const int OreTypeTitanium = WorldOreTypeIds.Titanium;
+        private const int OreTypeSilver = WorldOreTypeIds.Silver;
+        private const float NearDropPodDistanceSq = 2500f;
+        private const float FarDropPodDistanceSq = 10000f;
+        private const float DropPodBandInvDistanceSq = 1f / (FarDropPodDistanceSq - NearDropPodDistanceSq);
+        private const float CopperClumpDistanceSq = 4f;
+        private const int CopperClumpBiasPercent = 85;
         private static readonly int _OreMatricesId = Shader.PropertyToID("_OreMatrices");
 
         [Header("Generation")]
@@ -57,6 +64,7 @@ namespace Hecton8.World
         [SerializeField, Tooltip("Inventory item hash emitted for basalt iron ore yields.")] private int basaltIronItemHash;
         [SerializeField, Tooltip("Inventory item hash emitted for copper ore yields.")] private int copperItemHash;
         [SerializeField, Tooltip("Inventory item hash emitted for titanium ore yields.")] private int titaniumItemHash;
+        [SerializeField, Tooltip("Inventory item hash emitted for silver ore yields.")] private int silverItemHash;
 
         /// <summary>Authoritative runtime ore positions for the current deterministic sector.</summary>
         [NonSerialized] public NativeArray<float3> OrePositions;
@@ -105,19 +113,33 @@ namespace Hecton8.World
         private float3 _pendingRuntimeShift;
         private bool _hasPendingRuntimeShift;
         private uint _lastAppliedAupShiftFrameId;
+        private AbsoluteUniversePosition _dropPodAup;
+        private float3 _dropPodRuntimePosition;
+        private uint _lastDropPodSignalFrame;
+        private bool _hasDropPodAnchor;
+        private bool _dropPodAnchorFromSignal;
+        private int _localTitaniumCount;
 
         /// <summary>Number of non-depleted ore slots currently alive in the active sector.</summary>
         public int ActiveOreCount => _activeOreCount;
+        public int LocalTitaniumCount => _localTitaniumCount;
         /// <summary>Number of hydrated collider proxies currently active near the player.</summary>
         public int ActiveProxyCount => _activeProxyCount;
         /// <summary>Stable hash for the currently loaded AUP sector.</summary>
         public long CurrentSectorHash => _currentSectorHash;
 
-        public bool TryGetOrePositions(out NativeArray<float3> orePositions, out int activeCount)
+        public bool TryGetOrePositions(out NativeArray<float3> orePositions, out int scanCount)
         {
             orePositions = OrePositions;
-            activeCount = _activeOreCount;
-            return OrePositions.IsCreated && _activeOreCount > 0;
+            scanCount = _renderInstanceCount;
+            return OrePositions.IsCreated && _renderInstanceCount > 0 && _activeOreCount > 0;
+        }
+
+        public bool TryGetOreTypes(out NativeArray<int> oreTypes, out int scanCount)
+        {
+            oreTypes = OreTypes;
+            scanCount = _renderInstanceCount;
+            return OreTypes.IsCreated && _renderInstanceCount > 0 && _activeOreCount > 0;
         }
 
         private void Awake()
@@ -198,6 +220,8 @@ namespace Hecton8.World
             if (!DrainAupShiftSignals())
                 return;
 
+            DrainDropPodLandingSignals();
+
             if (!WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform) || playerTransform == null)
                 return;
 
@@ -218,6 +242,8 @@ namespace Hecton8.World
 
             if (!DrainAupShiftSignals())
                 return;
+
+            DrainDropPodLandingSignals();
 
             if (TryCompleteFinishedSpawnJob())
             {
@@ -265,6 +291,12 @@ namespace Hecton8.World
             _pendingRuntimeShift = default;
             _hasPendingRuntimeShift = false;
             _lastAppliedAupShiftFrameId = 0u;
+            _dropPodAup = default;
+            _dropPodRuntimePosition = default;
+            _lastDropPodSignalFrame = 0u;
+            _hasDropPodAnchor = false;
+            _dropPodAnchorFromSignal = false;
+            _localTitaniumCount = 0;
             _discardSpawnJobOutput = false;
         }
 
@@ -278,7 +310,7 @@ namespace Hecton8.World
             DepletionMasks = new NativeArray<ulong>(_depletionWordCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<ulong>[wordCount] - ore depletion bitmasks - owner: ProceduralOreSpawner
             _oreMatrices = new NativeArray<float4x4>(_oreCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float4x4>[oreCapacity] - indirect render matrices - owner: ProceduralOreSpawner
             _biomeHeatmap = new NativeArray<byte>(BiomeHeatmapResolution * BiomeHeatmapResolution, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<byte>[16x16] - ore biome heatmap lane - owner: ProceduralOreSpawner
-            _spawnCounts = new NativeArray<int>(2, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[2] - Burst spawn counters - owner: ProceduralOreSpawner
+            _spawnCounts = new NativeArray<int>(3, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[3] - Burst spawn counters incl. titanium telemetry - owner: ProceduralOreSpawner
             _telemetryRing = new NativeArray<ProceduralOreTelemetryEntry>(TelemetryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ProceduralOreTelemetryEntry>[300] - blackbox ring - owner: ProceduralOreSpawner
             _sectorDepletionWords = new NativeParallelHashMap<ulong, ulong>(_depletionWordCount * 16, Allocator.Persistent); // COLD ALLOC: NativeParallelHashMap<ulong,ulong> - session sector depletion cache - owner: ProceduralOreSpawner
             _oreProxySlots = new int[_oreCapacity]; // COLD ALLOC: int[oreCapacity] - ore index to hydrated proxy slot lookup - owner: ProceduralOreSpawner
@@ -303,9 +335,9 @@ namespace Hecton8.World
                 return;
 
             if (_matrixBufferA == null)
-                _matrixBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4x4>(_oreCapacity); // COLD ALLOC: GraphicsBuffer[oreCapacity] - ore matrix upload buffer A - owner: ProceduralOreSpawner
+                _matrixBufferA = CreateStructuredLockBuffer<float4x4>(_oreCapacity); // COLD ALLOC: GraphicsBuffer[oreCapacity] - ore matrix upload buffer A - owner: ProceduralOreSpawner
             if (_matrixBufferB == null)
-                _matrixBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4x4>(_oreCapacity); // COLD ALLOC: GraphicsBuffer[oreCapacity] - ore matrix upload buffer B - owner: ProceduralOreSpawner
+                _matrixBufferB = CreateStructuredLockBuffer<float4x4>(_oreCapacity); // COLD ALLOC: GraphicsBuffer[oreCapacity] - ore matrix upload buffer B - owner: ProceduralOreSpawner
             if (_argsBuffer == null)
                 _argsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments, GraphicsBuffer.UsageFlags.LockBufferForWrite, 1, GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] - ore indirect draw args - owner: ProceduralOreSpawner
 
@@ -413,10 +445,12 @@ namespace Hecton8.World
 
         private void ScheduleSpawnJob(double3 playerAbsolute)
         {
+            EnsureDropPodAnchor(playerAbsolute);
             int scanCount = ResolveIterationBudget();
             float safeSectorSize = math.max(16f, sectorSizeMeters);
             float2 sectorOrigin = new float2(_currentSector.x * safeSectorSize, _currentSector.y * safeSectorSize);
             MapMagicBridge.QuantizedHeightmapPayload payload = _heightPayload;
+            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
             ClearPresentationState(false);
             _drawBounds = new Bounds(transform.position, Vector3.one * safeSectorSize);
             _discardSpawnJobOutput = false;
@@ -441,7 +475,10 @@ namespace Hecton8.World
                 Seed = unchecked((uint)_currentSectorHash ^ (uint)(_currentSectorHash >> 32) ^ worldSeed),
                 DominantBiomeId = _currentBiomeId,
                 CopperBiomeId = CopperBiomeId,
-                SlopeRejectNormalY = SlopeRejectNormalY
+                SlopeRejectNormalY = SlopeRejectNormalY,
+                DropPodAbsolutePosition = _hasDropPodAnchor ? _dropPodAup.ToAbsoluteDouble3() : playerAbsolute,
+                HasDropPodAnchor = _hasDropPodAnchor ? 1 : 0,
+                LowTierClumpMode = tier == HectonQualityTier.Low || tier == HectonQualityTier.Mx350 || tier == HectonQualityTier.Unknown ? 1 : 0
             };
 
             _spawnJob = job.Schedule();
@@ -462,6 +499,44 @@ namespace Hecton8.World
             return clamped;
         }
 
+        private void EnsureDropPodAnchor(double3 playerAbsolute)
+        {
+            if (_hasDropPodAnchor)
+                return;
+
+            _dropPodAup = AbsoluteUniversePosition.FromAbsolutePosition(playerAbsolute);
+            _dropPodRuntimePosition = playerTransform != null
+                ? new float3(playerTransform.position.x, playerTransform.position.y, playerTransform.position.z)
+                : _dropPodAup.ToRuntimeFloat3();
+            _hasDropPodAnchor = math.all(math.isfinite(_dropPodRuntimePosition));
+            _dropPodAnchorFromSignal = false;
+        }
+
+        private void DrainDropPodLandingSignals()
+        {
+            ReadOnlySpan<DropPodLandedSignal> dropPodSignals = SignalBus<DropPodLandedSignal>.GetFrameSnapshot();
+            for (int i = 0; i < dropPodSignals.Length; i++)
+            {
+                DropPodLandedSignal signal = dropPodSignals[i];
+                if (_dropPodAnchorFromSignal && !IsNewAupShift(signal.Frame, _lastDropPodSignalFrame))
+                    continue;
+
+                double3 absolute = signal.PositionAup.ToAbsoluteDouble3();
+                if (!math.all(math.isfinite(absolute)))
+                    continue;
+
+                float3 runtime = signal.PositionAup.ToRuntimeFloat3();
+                if (!math.all(math.isfinite(runtime)))
+                    continue;
+
+                _dropPodAup = signal.PositionAup;
+                _dropPodRuntimePosition = runtime;
+                _lastDropPodSignalFrame = signal.Frame;
+                _hasDropPodAnchor = true;
+                _dropPodAnchorFromSignal = true;
+            }
+        }
+
         private bool TryCompleteFinishedSpawnJob()
         {
             if (!_spawnJobScheduled)
@@ -478,6 +553,7 @@ namespace Hecton8.World
         {
             _activeOreCount = math.max(0, _spawnCounts[0]);
             _renderInstanceCount = math.clamp(_spawnCounts[1], 0, _oreCapacity);
+            _localTitaniumCount = _spawnCounts.Length > 2 ? math.max(0, _spawnCounts[2]) : 0;
             if (_hasPendingRuntimeShift)
             {
                 ApplyRuntimeShift(_pendingRuntimeShift, false);
@@ -504,6 +580,7 @@ namespace Hecton8.World
         {
             _activeOreCount = 0;
             _renderInstanceCount = 0;
+            _localTitaniumCount = 0;
             _drawBounds = new Bounds(transform.position, Vector3.one);
             _renderUploadDirty = false;
             if (forgetLoadedSector)
@@ -684,10 +761,11 @@ namespace Hecton8.World
 
             uint oreHash = ComputeOreHash(_currentSectorHash, oreIndex);
             float3 position = OrePositions[oreIndex];
+            int depletedOreType = OreTypes[oreIndex];
             ItemAcquiredSignal acquiredSignal = new ItemAcquiredSignal
             {
                 PositionAup = AbsoluteUniversePosition.FromRuntimePosition(new Vector3(position.x, position.y, position.z)),
-                ItemHash = unchecked((uint)ResolveItemHash(OreTypes[oreIndex])),
+                ItemHash = unchecked((uint)ResolveItemHash(depletedOreType)),
                 OreHash = oreHash,
                 Quantity = 1,
                 SourceKind = 2,
@@ -711,6 +789,8 @@ namespace Hecton8.World
             OreTypes[oreIndex] = 0;
             _oreMatrices[oreIndex] = default;
             _activeOreCount = math.max(0, _activeOreCount - 1);
+            if (depletedOreType == OreTypeTitanium)
+                _localTitaniumCount = math.max(0, _localTitaniumCount - 1);
             int proxySlot = ResolveProxySlot(oreIndex);
             if (proxySlot >= 0)
                 DisableProxy(proxySlot);
@@ -724,6 +804,8 @@ namespace Hecton8.World
                 return copperItemHash;
             if (oreType == OreTypeTitanium && titaniumItemHash != 0)
                 return titaniumItemHash;
+            if (oreType == OreTypeSilver && silverItemHash != 0)
+                return silverItemHash;
             return basaltIronItemHash;
         }
 
@@ -795,6 +877,9 @@ namespace Hecton8.World
                     _oreMatrices[i] = BuildMatrix(OrePositions[i], ResolveOreScale(i));
             }
 
+            if (_hasDropPodAnchor)
+                _dropPodRuntimePosition -= totalShift;
+
             if (_proxyObjects != null)
             {
                 Vector3 shift = new Vector3(totalShift.x, totalShift.y, totalShift.z);
@@ -819,7 +904,7 @@ namespace Hecton8.World
             }
 
             GraphicsBuffer writeBuffer = ReferenceEquals(_activeMatrixBuffer, _matrixBufferA) ? _matrixBufferB : _matrixBufferA;
-            GraphicsBufferUploadUtility.UploadNativeArray(writeBuffer, _oreMatrices, _renderInstanceCount);
+            UploadNativeArray(writeBuffer, _oreMatrices, _renderInstanceCount);
             _activeMatrixBuffer = writeBuffer;
             if (oreMaterial != null)
                 oreMaterial.SetBuffer(_OreMatricesId, _activeMatrixBuffer);
@@ -931,7 +1016,8 @@ namespace Hecton8.World
                 FirstOrePosition = firstOre,
                 Flags = flags,
                 DepletionWord0 = _depletionWordCount > 0 ? (uint)DepletionMasks[0] : 0u,
-                DepletionWord1 = _depletionWordCount > 0 ? (uint)(DepletionMasks[0] >> 32) : 0u
+                DepletionWord1 = _depletionWordCount > 0 ? (uint)(DepletionMasks[0] >> 32) : 0u,
+                LocalTitaniumCount = _localTitaniumCount
             };
         }
 
@@ -962,6 +1048,7 @@ namespace Hecton8.World
                     writer.Write(entry.Flags);
                     writer.Write(entry.DepletionWord0);
                     writer.Write(entry.DepletionWord1);
+                    writer.Write(entry.LocalTitaniumCount);
                     writer.Write(entry.Reserved);
                 }
             }
@@ -1065,6 +1152,47 @@ namespace Hecton8.World
             buffer = null;
         }
 
+        private static GraphicsBuffer CreateStructuredLockBuffer<T>(int count) where T : struct
+        {
+            return new GraphicsBuffer(
+                GraphicsBuffer.Target.Structured,
+                GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                count,
+                UnsafeUtility.SizeOf<T>());
+        }
+
+        private static void UploadNativeArray<T>(GraphicsBuffer destination, NativeArray<T> source, int count) where T : struct
+        {
+            int safeCount = ResolveSafeWriteCount<T>(destination, source.IsCreated ? source.Length : 0, count);
+            if (safeCount <= 0)
+                return;
+
+            NativeArray<T> mapped = destination.LockBufferForWrite<T>(0, safeCount);
+            unsafe
+            {
+                void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(source);
+                void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
+                long copyBytes = (long)UnsafeUtility.SizeOf<T>() * safeCount;
+                long destinationBytes = (long)UnsafeUtility.SizeOf<T>() * mapped.Length;
+                if (!UnsafeMemoryCopyGuard.TryMemCpy(destinationPtr, destinationBytes, sourcePtr, copyBytes))
+                    UnsafeMemoryCopyGuard.ReportRejectedCopy(OwnerName);
+            }
+
+            destination.UnlockBufferAfterWrite<T>(safeCount);
+        }
+
+        private static int ResolveSafeWriteCount<T>(GraphicsBuffer destination, int sourceLength, int requestedCount) where T : struct
+        {
+            if (destination == null || requestedCount <= 0 || sourceLength <= 0 || destination.count <= 0)
+                return 0;
+
+            int stride = UnsafeUtility.SizeOf<T>();
+            if (destination.stride != stride)
+                return 0;
+
+            return math.min(math.min(requestedCount, sourceLength), destination.count);
+        }
+
         [StructLayout(LayoutKind.Sequential)]
         private struct ProceduralOreTelemetryEntry
         {
@@ -1078,6 +1206,7 @@ namespace Hecton8.World
             public uint Flags;
             public uint DepletionWord0;
             public uint DepletionWord1;
+            public int LocalTitaniumCount;
             public uint Reserved;
         }
 
@@ -1104,12 +1233,19 @@ namespace Hecton8.World
             public int DominantBiomeId;
             public int CopperBiomeId;
             public float SlopeRejectNormalY;
+            public double3 DropPodAbsolutePosition;
+            public int HasDropPodAnchor;
+            public int LowTierClumpMode;
 
             public void Execute()
             {
                 int safeCapacity = math.max(0, math.min(Capacity, OrePositions.Length));
                 int safeScanCount = math.clamp(ScanCount, 0, safeCapacity);
                 int activeCount = 0;
+                int localTitaniumCount = 0;
+                int previousOreType = OreTypeBasaltIron;
+                float3 previousOrePosition = default;
+                bool hasPreviousOre = false;
 
                 for (int slot = 0; slot < safeCapacity; slot++)
                 {
@@ -1129,16 +1265,27 @@ namespace Hecton8.World
                     if (normalY < SlopeRejectNormalY)
                         continue;
 
-                    int oreType = ResolveOreType(ref state, SampleBiomeId(uv));
                     float3 position = new float3(x, y + 0.08f, z);
+                    double3 oreAbsolute = new double3(x, y, z);
+                    float dropPodDistanceSq = ResolveDropPodDistanceSq(oreAbsolute);
+                    int oreType = ResolveOreType(ref state, SampleBiomeId(uv), dropPodDistanceSq, position, previousOrePosition, previousOreType, hasPreviousOre, slot);
                     OrePositions[slot] = position;
                     OreTypes[slot] = oreType;
                     OreMatrices[slot] = BuildMatrix(position, ResolveSlotScale(slot, ref state));
+                    if (oreType == OreTypeTitanium)
+                        localTitaniumCount++;
+                    previousOreType = oreType;
+                    previousOrePosition = position;
+                    hasPreviousOre = true;
                     activeCount++;
                 }
 
-                SpawnCounts[0] = activeCount;
-                SpawnCounts[1] = safeScanCount;
+                if (SpawnCounts.IsCreated && SpawnCounts.Length > 0)
+                    SpawnCounts[0] = activeCount;
+                if (SpawnCounts.IsCreated && SpawnCounts.Length > 1)
+                    SpawnCounts[1] = safeScanCount;
+                if (SpawnCounts.IsCreated && SpawnCounts.Length > 2)
+                    SpawnCounts[2] = localTitaniumCount;
             }
 
             private bool IsBitSet(int slot)
@@ -1151,7 +1298,105 @@ namespace Hecton8.World
                 return (DepletionMasks[word] & bit) != 0UL;
             }
 
-            private int ResolveOreType(ref uint state, int dominantBiomeId)
+            private float ResolveDropPodDistanceSq(double3 oreAbsolute)
+            {
+                if (HasDropPodAnchor == 0 || !math.all(math.isfinite(DropPodAbsolutePosition)) || !math.all(math.isfinite(oreAbsolute)))
+                    return FarDropPodDistanceSq;
+
+                double distanceSq = math.distancesq(oreAbsolute, DropPodAbsolutePosition);
+                if (!math.isfinite(distanceSq) || distanceSq <= 0.0)
+                    return 0f;
+
+                return (float)math.min(distanceSq, (double)float.MaxValue);
+            }
+
+            private int ResolveOreType(
+                ref uint state,
+                int dominantBiomeId,
+                float dropPodDistanceSq,
+                float3 position,
+                float3 previousPosition,
+                int previousOreType,
+                bool hasPreviousOre,
+                int slot)
+            {
+                if (hasPreviousOre &&
+                    previousOreType == OreTypeCopper &&
+                    ShouldBiasCopperClump(ref state, position, previousPosition, slot))
+                {
+                    return OreTypeCopper;
+                }
+
+                if (HasDropPodAnchor == 0)
+                    return ResolveLegacyOreType(ref state, dominantBiomeId);
+
+                int titaniumWeight;
+                int copperWeight;
+                int silverWeight;
+                ResolveOreWeights(dropPodDistanceSq, out titaniumWeight, out copperWeight, out silverWeight);
+
+                int totalWeight = titaniumWeight + copperWeight + silverWeight;
+                if (totalWeight != 100)
+                {
+                    titaniumWeight = 40;
+                    copperWeight = 40;
+                    silverWeight = 20;
+                    totalWeight = 100;
+                }
+
+                int roll = MapToPercent(Next(ref state));
+                if (roll < titaniumWeight)
+                    return OreTypeTitanium;
+                if (roll < titaniumWeight + copperWeight)
+                    return OreTypeCopper;
+                return silverWeight > 0 && totalWeight == 100 ? OreTypeSilver : OreTypeCopper;
+            }
+
+            private bool ShouldBiasCopperClump(
+                ref uint state,
+                float3 position,
+                float3 previousPosition,
+                int slot)
+            {
+                bool inClumpRange;
+                if (LowTierClumpMode != 0)
+                {
+                    uint sectorHashModulus = (Seed ^ unchecked((uint)slot * 2654435761u)) & 3u;
+                    inClumpRange = sectorHashModulus == 0u;
+                }
+                else
+                {
+                    inClumpRange = math.distancesq(position, previousPosition) <= CopperClumpDistanceSq;
+                }
+
+                return inClumpRange && MapToPercent(Next(ref state)) < CopperClumpBiasPercent;
+            }
+
+            private static void ResolveOreWeights(float dropPodDistanceSq, out int titaniumWeight, out int copperWeight, out int silverWeight)
+            {
+                if (dropPodDistanceSq < NearDropPodDistanceSq)
+                {
+                    titaniumWeight = 70;
+                    copperWeight = 30;
+                    silverWeight = 0;
+                    return;
+                }
+
+                if (dropPodDistanceSq > FarDropPodDistanceSq)
+                {
+                    titaniumWeight = 40;
+                    copperWeight = 40;
+                    silverWeight = 20;
+                    return;
+                }
+
+                float gradient01 = math.saturate((dropPodDistanceSq - NearDropPodDistanceSq) * DropPodBandInvDistanceSq);
+                titaniumWeight = 70 - (int)math.round(30f * gradient01);
+                copperWeight = 30 + (int)math.round(10f * gradient01);
+                silverWeight = 100 - titaniumWeight - copperWeight;
+            }
+
+            private int ResolveLegacyOreType(ref uint state, int dominantBiomeId)
             {
                 uint roll = Next(ref state);
                 if (dominantBiomeId == CopperBiomeId && (roll & 3u) == 0u)
@@ -1159,6 +1404,11 @@ namespace Hecton8.World
                 if ((roll & 7u) == 0u)
                     return OreTypeTitanium;
                 return OreTypeBasaltIron;
+            }
+
+            private static int MapToPercent(uint value)
+            {
+                return (int)(((ulong)value * 100UL) >> 32);
             }
 
             private int SampleBiomeId(float2 uv)

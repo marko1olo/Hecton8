@@ -100,3 +100,31 @@ Solution: Re-extracted the wake prompt after task closure, rescanned shader `len
 Rejected Alternatives: Relying on chat memory or a single final scan would violate the batch protocol.
 Scalability potential: Final state remains Low/Middle/High/Ultra tiered through slot count and visual strength, not separate code paths.
 Hardware Impact: No new recurring CPU allocation; Low-tier ALU is capped by the two-slot shader limit.
+
+## Loop 6 - Bandwidth and Hysteresis Hardening
+
+Problem: The wake path uploaded the two wake buffers every visual payload and used a single GPU buffer pair, which violates the bandwidth discipline under the strict reading of the project rules.
+Solution: Replaced the single dynamic wake buffers with A/B `_DynamicWakes` and `_DynamicWakeVectors` buffers. Uploads now use the existing `GraphicsBufferUploadUtility.UploadNativeArray` LockBufferForWrite path, flip parity only when new data is written, and skip idle uploads once zero state is resident.
+Rejected Alternatives: Keeping single buffers was simpler but risks CPU/GPU contention. Uploading every frame was harmless at 256 bytes but still wastes PCIe bandwidth and violates the mandate.
+Scalability potential: Low = two wake checks and no idle upload. Middle = same data path with partial occupancy. High = eight active wakes. Ultra = eight active wakes plus high-tier shader billow/shear.
+Hardware Impact: Idle MX350 path saves the recurring 256-byte wake upload and avoids a synchronous write to the buffer most recently read by GPU. Active-frame cost remains bounded to two 8-float4 uploads.
+
+Problem: Local wake tier selection could flip immediately when global scalability changed, causing active slot limits and shader loop counts to oscillate.
+Solution: Added a 2.5 second high-tier upgrade hysteresis. Low-tier requests still apply immediately; upgrade to 8 wakes waits until the high-tier request is stable.
+Rejected Alternatives: Trusting the global tier alone would not satisfy the local State Hysteresis mandate. A longer visual fade was unnecessary because slot-count stability is the actual problem.
+Scalability potential: Low/toaster stays conservative immediately. High/Ultra unlocks full wake violence only after stability, preventing flicker.
+Hardware Impact: Avoids repeated buffer-slot churn and shader loop changes during thermal or memory pressure oscillation.
+
+Problem: High-tier visuals were capped at the same push/vortex response as low tier, leaving saved low-tier cycles unused on expensive hardware.
+Solution: Added a uniform high-tier branch in `ApplyDynamicWakes` that contributes radial billow and cross-shear from squared-distance core falloff. Low tier still executes the original cheap push/vortex path only.
+Rejected Alternatives: Adding the extra terms unconditionally would tax MX350. Adding a physical solver would be slower and less controllable.
+Scalability potential: Low = cheap shove/vortex. Middle = same if tier held low. High/Ultra = billow/shear overkill around tail whips and splashdown.
+Hardware Impact: MX350 ALU unchanged; high-tier pays a few extra cross/dot/rsqrt operations per active wake for visibly denser turbulence.
+
+## Loop 7 - Lifetime Correctness Hardening
+
+Problem: Wake lifetime decayed only during RenderGraph payload construction. If no active fluid particles or no consuming camera pass existed, a wake could remain alive longer than its requested lifetime.
+Solution: Moved the aging call into `LateFrameTick` and added `_dynamicWakeLastDecayFrame` so wake state decays once per frame. RenderGraph upload reuses the already-aged state and only uploads when dispatch will consume it or when a later clean zero upload is required.
+Rejected Alternatives: Decaying only on dispatch couples simulation lifetime to visibility, which is wrong even for a visual fake. Uploading every no-particle frame would fix lifetime but waste bandwidth.
+Scalability potential: All tiers get deterministic lifetime. Low still avoids unnecessary GPU upload; High/Ultra gets accurate wake fade timing for layered turbulence.
+Hardware Impact: No-particle frames pay only an 8-slot native job when wake state is active; idle clean frames early-out before the job. Estimated active CPU cost remains ~2 us, idle cost ~0 us.

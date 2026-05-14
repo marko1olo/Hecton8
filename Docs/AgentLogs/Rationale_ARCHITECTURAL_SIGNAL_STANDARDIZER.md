@@ -1,7 +1,7 @@
 # Rationale - ARCHITECTURAL_SIGNAL_STANDARDIZER
 
-Status: PENDING VERIFICATION
-Evidence class: STATIC_SOURCE / STATIC_DOC until compile or Unity logs exist.
+Status: CORE CLI BUILD GREEN / GENERATED-PROJECT WARNINGS RECORDED / GLOBAL LEGACY BLOCKED
+Evidence class: CLI_COMPILE for Core project; STATIC_SOURCE for global legacy eradication and runtime GC until Unity profiler/console artifacts exist.
 
 ## Intake Decisions
 
@@ -94,6 +94,36 @@ Solution: Sanitize the source packets inside their `GlobalSignals.Publish` metho
 Rejected Alternatives: Only sanitizing the typed mirror was rejected because legacy readers could still observe poisoned values; deleting compatibility queues was rejected because unknown consumers remain during multi-agent integration.
 Scalability potential: Low tier avoids NaN-sensitive shader/control spikes; High/Ultra can drive stronger weather/time presentation without defensive checks in every consumer.
 Hardware Impact: Adds finite scalar checks only on four scalar-control publish paths. Expected cost sub-1us per affected publish on i3/MX350, with crash/debug containment gain on invalid payloads.
+
+Problem: `PlayerLookTargetSignal` carried `FixedString64Bytes Prompt`, violating the hash-only signal rule and copying prompt bytes through the bus even though the prompt is presentation data.
+Solution: Remove the prompt string payload from the signal, keep `PromptHash` plus reserved uint prompt args, and add `PlayerLookTargetPromptCache` as a bounded 64-slot sidecar. Producer stores prompt chars by hash before pushing; UI copies them into its existing prompt buffer by hash and falls back to the default prompt if the sidecar misses.
+Rejected Alternatives: Keeping `FixedString64Bytes` was rejected because it violates string-poisoning rules; defaulting every prompt to one literal was rejected as a visible UX regression; a managed dictionary cache was rejected because rehash/allocation behavior is not acceptable in this path.
+Scalability potential: Low tier uses the cached prompt or deterministic default with no dynamic lookup; Middle uses the same path with richer layout; High/Ultra can later attach localized copy, haptic labels, or audio cue hashes to the reserved uint args without changing the lane contract.
+Hardware Impact: Bus stride is preserved for ABI stability, but the signal no longer performs per-publish fixed-string copy. Estimated gain is sub-1us on i3/MX350 during hover changes, with stronger audit compliance and no per-frame managed allocation.
+
+Problem: CLI compilation used stale generated project metadata that did not include Unity-imported source files needed by the current signal slice and neighboring WFC/blueprint code.
+Solution: Add the existing source files to `Hecton8.Core.csproj`, including `PlayerLookTargetPromptCache.cs`, so the CLI build reflects the Unity asset database closely enough for this verification pass.
+Rejected Alternatives: Inventing stub contracts was rejected because it would hide real architecture; waiting for Unity project regeneration was rejected because MCP/Unity refresh was unavailable in this session and the open Editor blocked batch sync.
+Scalability potential: N/A at runtime; build determinism lets low-tier/high-tier runtime changes be verified without stale harness noise.
+Hardware Impact: 0us runtime. Verification impact: converts the Core project from a stale dependency wall to a green CLI compile.
+
+Problem: WFC outpost allocation code referenced `SystemID.LogisticsGrid`, but the referenced compiled memory assembly used by the CLI build did not expose that enum member even though source defines the intended owner value as 512.
+Solution: Preserve the allocation owner by casting the numeric owner ID, `private const SystemID LogisticsGridSystemId = (SystemID)512`, and route WFC allocations through that constant.
+Rejected Alternatives: Adding a new enum member in this slice was rejected because the stale assembly reference, not the source file, was the immediate compile surface; changing owners to an unrelated existing ID was rejected because it would poison memory telemetry.
+Scalability potential: Low/Middle/High/Ultra tiers keep the same memory owner for WFC graph allocations; later telemetry aggregation remains stable.
+Hardware Impact: 0us runtime. It preserves black-box/memory-accounting correctness instead of losing allocation attribution.
+
+Problem: The prompt sidecar avoided string payloads but had drifted into a full 64-slot linear scan for every prompt store/read, trading correctness for unnecessary bounded work.
+Solution: Replace full scan with a fixed 16-set x 4-way hash cache and byte-age replacement. The sidecar still uses only cold static arrays and copies into caller-owned buffers.
+Rejected Alternatives: Managed dictionary or unbounded cache growth was rejected because rehash/allocation behavior is not acceptable; direct-map cache was rejected because collisions can visibly drop hover prompts.
+Scalability potential: Low tier resolves prompts with four probes and deterministic fallback; High/Ultra can attach richer localized/layout/audio metadata behind the same hash without widening the signal lane.
+Hardware Impact: Static estimate: O(64) probe path reduced to O(4), sub-1us expected on i3/MX350 during hover acquisition. Profiler proof remains absent.
+
+Problem: A concurrent compile wall appeared after the previous green build: the generated CLI project could not see the updated `LeviathanTerrainIkJob.TailWhipDurationSeconds`, and `PlayerCriticalProceduralAudioRenderer` referenced a private Burst probe job that had been removed.
+Solution: Restore the referenced private `PrologueSplashdownSineSweepProbeJob` without reverting other audio edits, and include the existing IK job source in the generated CLI project so the new field is visible to the CLI compiler.
+Rejected Alternatives: Removing the tail-whip duration assignment would discard another agent's authored behavior; deleting the warm-up call would hide a Burst compilation prewarm path; broad generated-project suppression was rejected because warnings must remain visible.
+Scalability potential: Low tier keeps the cheap tail segment count; High/Ultra retains authored tail-whip duration control for richer leviathan presentation.
+Hardware Impact: 0us claimed for project-file repair. Audio probe remains cold prewarm only; no hot-path allocation added.
 
 ## Mandates Loaded
 

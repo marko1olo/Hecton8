@@ -2987,6 +2987,22 @@ namespace Hecton8.World
                     anchorIndex = farthestVisibleIndex;
                 }
 
+                if (anchorIndex < lastIndex)
+                {
+                    for (int remainingIndex = anchorIndex; remainingIndex <= lastIndex && writeIndex < sourceLength; remainingIndex++)
+                    {
+                        Vector3 remainingPoint = OutputPath[remainingIndex];
+                        if (writeIndex == 0 || !Approximately(OutputPath[writeIndex - 1], remainingPoint))
+                        {
+                            OutputPath[writeIndex] = remainingPoint;
+                            writeIndex++;
+                        }
+                    }
+
+                    OutputPath.Length = writeIndex;
+                    return;
+                }
+
                 Vector3 finalPoint = OutputPath[lastIndex];
                 if (writeIndex == 0 || !Approximately(OutputPath[writeIndex - 1], finalPoint))
                 {
@@ -3007,7 +3023,7 @@ namespace Hecton8.World
                 if (!TryWorldToVoxel(start, out int3 currentVoxel) ||
                     !TryWorldToVoxel(end, out int3 targetVoxel))
                 {
-                    return true;
+                    return false;
                 }
 
                 float3 activeVoxelOrigin = GetActiveVoxelOrigin();
@@ -3041,7 +3057,7 @@ namespace Hecton8.World
                     tMax += math.select(float3.zero, tDelta, axisMask);
                     currentVoxel += math.select(int3.zero, step, axisMask);
                     if (!IsVoxelInside(currentVoxel))
-                        return true;
+                        return false;
                 }
 
                 return false;

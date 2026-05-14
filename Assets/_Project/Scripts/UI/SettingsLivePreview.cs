@@ -9,11 +9,11 @@ namespace Hecton8.UI
     /// <summary>
     /// Live preview for settings changes (Subnautica-style).
     /// Updates graphics/audio in real-time as user drags sliders.
-    /// Zero-GC: ITickable, cached references, no coroutines.
+    /// Zero-GC: late-frame state machine, cached references, no coroutines.
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Settings Live Preview")]
-    public sealed class SettingsLivePreview : MonoBehaviour, ITickable, IUpdatable
+    public sealed class SettingsLivePreview : MonoBehaviour, ILateFrameTickable
     {
         private const float MainCameraResolveRetryInterval = 1f;
 
@@ -121,11 +121,12 @@ namespace Hecton8.UI
         }
 
         // ══════════════════════════════════════════════════════════
-        // ITICKABLE
+        // LATE FRAME
         // ══════════════════════════════════════════════════════════
 
-        public void Tick(float dt)
+        public void LateFrameTick()
         {
+            float dt = Mathf.Max(0f, SystemDispatcher.CurrentFrameDeltaTime);
             if (_mainCameraResolveRetryTimer > 0f)
                 _mainCameraResolveRetryTimer -= dt;
 
@@ -252,7 +253,7 @@ namespace Hecton8.UI
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+            _registered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
         private void TryUnregister()
@@ -260,7 +261,7 @@ namespace Hecton8.UI
             if (!_registered)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
             _registered = false;
         }
 

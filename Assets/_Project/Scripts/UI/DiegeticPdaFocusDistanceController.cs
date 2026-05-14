@@ -10,7 +10,7 @@ namespace Hecton8.UI
     /// PDA close-focus controller. Performs at most one non-alloc raycast per frame while armed.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class DiegeticPdaFocusDistanceController : MonoBehaviour, IUpdatable
+    public sealed class DiegeticPdaFocusDistanceController : MonoBehaviour, ILateFrameTickable
     {
         [SerializeField] private Camera targetCamera;
         [SerializeField] private Volume targetVolume;
@@ -40,7 +40,8 @@ namespace Hecton8.UI
         {
             ResolveReferences();
             _focusActive = focusActiveOnEnable;
-            TryRegisterTick();
+            if (_focusActive)
+                TryRegisterTick();
         }
 
         private void OnDisable()
@@ -61,17 +62,24 @@ namespace Hecton8.UI
             {
                 _nextResolveFrame = 0;
                 _lastRaycastFrame = -1;
+                TryRegisterTick();
             }
-            else if (disableDepthOfFieldWhenNoHit && _depthOfField != null)
+            else
             {
-                _depthOfField.active = false;
+                if (disableDepthOfFieldWhenNoHit && _depthOfField != null)
+                    _depthOfField.active = false;
+
+                TryUnregisterTick();
             }
         }
 
-        public void Tick(float deltaTime)
+        public void LateFrameTick()
         {
             if (!_focusActive)
+            {
+                TryUnregisterTick();
                 return;
+            }
 
             int frame = Time.frameCount;
             if ((_cameraTransform == null || _depthOfField == null) && frame >= _nextResolveFrame)
@@ -101,6 +109,7 @@ namespace Hecton8.UI
 
             float targetDistance = math.clamp(_hitBuffer[0].distance, minFocusDistanceMeters, maxFocusDistanceMeters);
             float current = _lastFocusDistance > 0f ? _lastFocusDistance : targetDistance;
+            float deltaTime = math.max(0f, SystemDispatcher.CurrentFrameDeltaTime);
             float blend = ResolvePadeApproach01(blendSharpness, math.max(0f, deltaTime));
             _lastFocusDistance = math.lerp(current, targetDistance, blend);
             _depthOfField.focusDistance.value = _lastFocusDistance;
@@ -128,10 +137,10 @@ namespace Hecton8.UI
 
         private void TryRegisterTick()
         {
-            if (_registered)
+            if (_registered || !_focusActive)
                 return;
 
-            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+            _registered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
         private void TryUnregisterTick()
@@ -139,7 +148,7 @@ namespace Hecton8.UI
             if (!_registered)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
             _registered = false;
         }
 

@@ -10,11 +10,11 @@ namespace Hecton8.UI
     /// <summary>
     /// Tooltip system for UI elements (Subnautica-style).
     /// Shows contextual help text on hover.
-    /// Zero-GC: ITickable, cached strings, no LINQ.
+    /// Zero-GC: late-frame state machine, cached strings, no LINQ.
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/UI Tooltip")]
-    public sealed class UITooltip : MonoBehaviour, ITickable, IUpdatable, IServiceHeartbeat, IServiceShutdown
+    public sealed class UITooltip : MonoBehaviour, ILateFrameTickable, IServiceHeartbeat, IServiceShutdown
     {
         // ══════════════════════════════════════════════════════════
         // REGISTRY SERVICE
@@ -147,11 +147,12 @@ namespace Hecton8.UI
         }
 
         // ══════════════════════════════════════════════════════════
-        // ITICKABLE
+        // LATE FRAME
         // ══════════════════════════════════════════════════════════
 
-        public void Tick(float dt)
+        public void LateFrameTick()
         {
+            float dt = Mathf.Max(0f, SystemDispatcher.CurrentFrameDeltaTime);
             if (_isVisible)
             {
                 UpdatePosition();
@@ -226,7 +227,7 @@ namespace Hecton8.UI
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+            _registered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
         private void TryUnregister()
@@ -234,7 +235,7 @@ namespace Hecton8.UI
             if (!_registered)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
 
             _registered = false;
         }

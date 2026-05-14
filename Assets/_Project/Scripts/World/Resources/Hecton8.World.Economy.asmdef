@@ -1,0 +1,22 @@
+{
+    "name": "Hecton8.World.Economy",
+    "rootNamespace": "Hecton8.World",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.World.Contracts",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics",
+        "Unity.RenderPipelines.Core.Runtime"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

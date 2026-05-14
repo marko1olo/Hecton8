@@ -866,8 +866,8 @@ namespace Hecton8.World
 
         private void RefreshAupGridOffsetFromOrigin()
         {
-            Vector3 currentOffset = HectonFloatingOrigin.CurrentTotalOffset;
-            _scatterAupGenerationOffsetXZ = new Vector2(currentOffset.x, currentOffset.z);
+            double3 currentOffset = HectonFloatingOrigin.CurrentTotalOffsetDouble;
+            _scatterAupGenerationOffsetXZ = new Vector2((float)currentOffset.x, (float)currentOffset.z);
             _lastOriginShiftSequence = HectonFloatingOrigin.CurrentShiftSequence;
             Shader.SetGlobalVector(_ScatterAupGridOffsetId, new Vector4(_scatterAupGenerationOffsetXZ.x, _scatterAupGenerationOffsetXZ.y, _lastOriginShiftSequence, 0f));
         }
@@ -877,7 +877,7 @@ namespace Hecton8.World
             if (!isActiveAndEnabled)
                 return;
 
-            _scatterAupGenerationOffsetXZ = new Vector2(shiftData.NewTotalOffset.x, shiftData.NewTotalOffset.z);
+            _scatterAupGenerationOffsetXZ = new Vector2((float)shiftData.NewTotalOffsetDouble.x, (float)shiftData.NewTotalOffsetDouble.z);
             _lastOriginShiftSequence = shiftData.Sequence;
             _depthPyramidInvalidatedFrame = shiftData.Frame;
             _scatterFrameIndex = 0;

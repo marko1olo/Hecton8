@@ -257,8 +257,11 @@ namespace Hecton8.Gameplay
 
                 float radius = cachedRadius + math.max(0f, radiusPadding);
                 float3 runtimeCenter = centerAup.ToRuntimeFloat3();
-                Vector3 totalOffset = HectonFloatingOrigin.CurrentTotalOffset;
-                float3 shaderCenter = runtimeCenter + new float3(totalOffset.x, totalOffset.y, totalOffset.z);
+                double3 totalOffset = HectonFloatingOrigin.CurrentTotalOffsetDouble;
+                float3 shaderCenter = new float3(
+                    (float)(runtimeCenter.x + totalOffset.x),
+                    (float)(runtimeCenter.y + totalOffset.y),
+                    (float)(runtimeCenter.z + totalOffset.z));
                 if (!math.all(math.isfinite(shaderCenter)))
                     continue;
 

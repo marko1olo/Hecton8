@@ -830,7 +830,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            DiegeticTooltipSystem tooltipSystem = DiegeticTooltipSystem.ActiveRuntimeInstance;
+            DiegeticTooltipSystem tooltipSystem = ResolveDiegeticTooltipSystem();
             if (tooltipSystem == null)
                 return;
 
@@ -840,9 +840,22 @@ namespace Hecton8.Gameplay
 
         private void ClearIntegrityDiagnostic()
         {
-            DiegeticTooltipSystem tooltipSystem = DiegeticTooltipSystem.ActiveRuntimeInstance;
+            DiegeticTooltipSystem tooltipSystem = ResolveDiegeticTooltipSystem();
             if (tooltipSystem != null)
                 tooltipSystem.ClearDiagnostic();
+        }
+
+        private static DiegeticTooltipSystem ResolveDiegeticTooltipSystem()
+        {
+            RegistryBucket<IRenderable> renderables = GlobalRegistry.Renderables;
+            int count = renderables.Count;
+            for (int i = 0; i < count; i++)
+            {
+                if (renderables.GetAt(i) is DiegeticTooltipSystem tooltipSystem)
+                    return tooltipSystem;
+            }
+
+            return null;
         }
 
         private bool TryBuildIntegrityDiagnosticBuffer(BaseModule module, out int length)

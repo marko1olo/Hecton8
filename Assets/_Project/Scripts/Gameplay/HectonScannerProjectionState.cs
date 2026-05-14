@@ -65,8 +65,11 @@ namespace Hecton8.Gameplay
                 rightAxis = NormalizeVectorRsqrt(math.cross(new float3(0f, 0f, 1f), forwardAxis), new float3(1f, 0f, 0f));
 
             float3 upAxis = NormalizeVectorRsqrt(math.cross(forwardAxis, rightAxis), new float3(0f, 1f, 0f));
-            Vector3 committedOffset = HectonFloatingOrigin.CurrentTotalOffset;
-            float3 shaderOrigin = originRuntime + new float3(committedOffset.x, committedOffset.y, committedOffset.z);
+            double3 committedOffset = HectonFloatingOrigin.CurrentTotalOffsetDouble;
+            float3 shaderOrigin = new float3(
+                (float)(originRuntime.x + committedOffset.x),
+                (float)(originRuntime.y + committedOffset.y),
+                (float)(originRuntime.z + committedOffset.z));
             if (!math.all(math.isfinite(shaderOrigin)))
             {
                 s_state = default;

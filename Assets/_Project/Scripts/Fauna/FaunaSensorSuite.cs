@@ -1091,11 +1091,11 @@ namespace Hecton8.AI
             if (director != null &&
                 director.TrySampleBrineLayer(runtimePosition, out BrineLayerSample brineSample))
             {
-                Vector3 shiftOffset = HectonFloatingOrigin.CurrentTotalOffset;
-                if (BrineLayerMath.IsRuntimeBelowAbsolutePlane(
-                        runtimePosition.y,
-                        brineSample.AbsoluteHeightY,
-                        shiftOffset.y))
+                double shiftOffsetY = HectonFloatingOrigin.CurrentTotalOffsetDouble.y;
+                double runtimeHeightY = math.isfinite(brineSample.AbsoluteHeightY) && math.isfinite(shiftOffsetY)
+                    ? brineSample.AbsoluteHeightY - shiftOffsetY
+                    : double.NegativeInfinity;
+                if (math.isfinite(runtimePosition.y) && runtimePosition.y < runtimeHeightY)
                 {
                     return true;
                 }

@@ -50,11 +50,35 @@ Rejected Alternatives: Leaving exhausted DDA as visible was rejected because it 
 Scalability potential: Low keeps more raw waypoints instead of risking geometry violation. High/Ultra can raise the inspector sample cap to buy smoother lines through sparse spaces.
 Hardware Impact: Low-end silicon gets bounded DDA traversal per segment and avoids pathological long voxel walks.
 
+Problem: The LOS DDA sample cap was still driven by one authored inspector value, so low-tier hardware could pay high-tier traversal cost.
+Solution: Resolve the DDA sample cap beside the portal lookahead budget: Low/Unknown/MX350 clamps to 32, Mid clamps to 64, High/Ultra uses the authored cap bounded by `MaxThreatDdaSteps`.
+Rejected Alternatives: A fixed universal cap was rejected because it either wastes low-end frame time or under-delivers high-end smoothing. Reading scalability globals inside the Burst job was rejected.
+Scalability potential: Low keeps short, predictable LOS probes. Middle gets moderate smoothing. High/Ultra can spend the authored budget on cleaner motion silhouettes through verified voxel space.
+Hardware Impact: MX350/i3 worst-case DDA work per LOS segment is capped lower before the job runs; exact microseconds remain pending runtime telemetry.
+
 Problem: Black Box telemetry could not be written from inside Burst, but the owner can safely record completed path states.
 Solution: Added a 300-entry persistent `NativeArray<AbyssalPathTelemetryEntry>` on `HectonMapMagicVegetationBridge`, schedule/complete timing via `Stopwatch.GetTimestamp`, over-budget telemetry through `GlobalTelemetryBus`, and `Dump_AI_FUNNEL_NAV_POLISH.bin` on NaN.
 Rejected Alternatives: `Stopwatch` and file IO inside the Burst job were rejected. Managed per-frame lists were rejected. Chat-only failure notes were rejected.
 Scalability potential: Low records compact fixed telemetry. High/Ultra get the same diagnostic coverage while spending the variable budget on smoothing, not logging.
 Hardware Impact: Runtime hot path adds fixed native writes at completion only; no managed allocation during normal path solves after the initial persistent ring allocation.
+
+Problem: Schedule-to-completion timing measures async latency, not funnel completion overhead, and can false-alarm if a path completes on a later frame.
+Solution: Move `Stopwatch.GetTimestamp` to the `DispatcherJobSwap.TryComplete` call and record that wall time as `FunnelMs`.
+Rejected Alternatives: Keeping schedule latency was rejected because it corrupts performance telemetry. Timing inside Burst was rejected because managed timers are invalid there.
+Scalability potential: Low-tier telemetry now reports actual completion pressure instead of frame-delay noise. High/Ultra can use the same signal to decide if extra lookahead is affordable.
+Hardware Impact: MX350/i3 avoids false 16 ms warnings from normal async delay; recorded overhead now reflects actual main-thread completion/blocking cost.
+
+Problem: Telemetry finite checking performed a second pass over the smoothed path after the result was already copied.
+Solution: Fuse NaN/Infinity detection into the existing result-copy loop and pass endpoints/finite state into the telemetry writer.
+Rejected Alternatives: A second full traversal was rejected because long path results are exactly the spike case this task is reducing.
+Scalability potential: Low avoids duplicate O(n) work. High/Ultra retain full finite coverage without extra traversal.
+Hardware Impact: Saves one completed-path scan on low-end silicon, proportional to waypoint count.
+
+Problem: LOS compaction still trusted missing voxel coverage and out-of-grid traversal as visible.
+Solution: Missing voxel conversion and out-of-grid DDA movement now fail closed, preserving waypoints rather than smoothing through unknown space.
+Rejected Alternatives: Treating unknown space as visible was rejected because it buys visual smoothness by risking geometry violation.
+Scalability potential: Low keeps more conservative paths. High/Ultra still smooth aggressively inside verified voxel coverage.
+Hardware Impact: Reduces invalid long compaction attempts and avoids route artifacts that cause downstream steering correction.
 
 Problem: Compile verification is blocked by global dependency errors outside the funnel domain.
 Solution: Ran a bounded `dotnet build` and Unity MCP script validation; recorded the compile wall and tool session failure without claiming success.

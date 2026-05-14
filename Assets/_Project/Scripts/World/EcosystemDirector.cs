@@ -2126,8 +2126,11 @@ namespace Hecton8.World
                 return;
             }
 
-            Vector3 shiftOffset = HectonFloatingOrigin.CurrentTotalOffset;
-            if (!BrineLayerMath.IsRuntimeBelowAbsolutePlane(runtimePosition.y, brineSample.AbsoluteHeightY, shiftOffset.y))
+            double shiftOffsetY = HectonFloatingOrigin.CurrentTotalOffsetDouble.y;
+            double brineRuntimeHeightY = math.isfinite(brineSample.AbsoluteHeightY) && math.isfinite(shiftOffsetY)
+                ? brineSample.AbsoluteHeightY - shiftOffsetY
+                : double.NegativeInfinity;
+            if (!math.isfinite(runtimePosition.y) || runtimePosition.y >= brineRuntimeHeightY)
             {
                 invalidScalar |= !math.isfinite(brineSample.Toxicity01);
                 toxicity01 = math.max(toxicity01, SanitizeMutationScalar01(brineSample.Toxicity01));
@@ -2137,8 +2140,7 @@ namespace Hecton8.World
                 return;
             }
 
-            float runtimeBrineHeight = BrineLayerMath.ResolveRuntimeHeightY(brineSample.AbsoluteHeightY, shiftOffset.y);
-            float resolvedBrineDepth01 = (runtimeBrineHeight - runtimePosition.y) * 0.1f;
+            float resolvedBrineDepth01 = (float)((brineRuntimeHeightY - runtimePosition.y) * 0.1d);
             invalidScalar |= !math.isfinite(resolvedBrineDepth01) || !math.isfinite(brineSample.Toxicity01);
             brineDepth01 = SanitizeMutationScalar01(resolvedBrineDepth01);
             toxicity01 = math.max(toxicity01, SanitizeMutationScalar01(brineSample.Toxicity01));

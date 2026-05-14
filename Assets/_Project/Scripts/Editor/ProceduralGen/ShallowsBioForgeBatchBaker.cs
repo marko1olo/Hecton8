@@ -15,7 +15,7 @@ namespace Hecton8.Editor.ProceduralGen
         private const string MeshRoot = "Assets/_Project/Art/Generated/Flora/BioForge/Shallows";
         private const string PrefabRoot = "Assets/_Project/Prefabs/Nature/Flora/BioForge/Shallows";
         private const string MaterialPath = "Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_ProceduralBio_Shallows.mat";
-        private const string TextureRoot = "Assets/_Project/Art/Textures/WorldProceduralFlora";
+        private const string TextureRoot = "Assets/_Project/Art/TEXTURES/WorldProceduralFlora";
         private const string AlbedoAtlasPath = TextureRoot + "/TX_ProceduralBio_Shallows_AlbedoAtlas.png";
         private const string NormalAtlasPath = TextureRoot + "/TX_ProceduralBio_Shallows_NormalAtlas.png";
         private const string OrmAtlasPath = TextureRoot + "/TX_ProceduralBio_Shallows_ORMAtlas.png";
@@ -41,12 +41,12 @@ namespace Hecton8.Editor.ProceduralGen
             BioRuleData kelpRule = CreateOrUpdateKelpRule(material);
             BioRuleData rockRule = CreateOrUpdatePorousRockRule(material);
 
-            ResetGeneratedFolder($"{MeshRoot}/TubeCoral");
-            ResetGeneratedFolder($"{MeshRoot}/Kelp");
-            ResetGeneratedFolder($"{MeshRoot}/PorousRock");
-            ResetGeneratedFolder($"{PrefabRoot}/TubeCoral");
-            ResetGeneratedFolder($"{PrefabRoot}/Kelp");
-            ResetGeneratedFolder($"{PrefabRoot}/PorousRock");
+            EnsureFolder($"{MeshRoot}/TubeCoral");
+            EnsureFolder($"{MeshRoot}/Kelp");
+            EnsureFolder($"{MeshRoot}/PorousRock");
+            EnsureFolder($"{PrefabRoot}/TubeCoral");
+            EnsureFolder($"{PrefabRoot}/Kelp");
+            EnsureFolder($"{PrefabRoot}/PorousRock");
 
             BioForgeGenerator.GenerateFloraBatch(coralRule, unchecked((int)0x5A110001u), "GEN_Shallows_TubeCoral", CoralCount);
             BioForgeGenerator.GenerateFloraBatch(kelpRule, unchecked((int)0x5A110101u), "GEN_Shallows_Kelp", KelpCount);
@@ -64,11 +64,24 @@ namespace Hecton8.Editor.ProceduralGen
             Texture albedo = AssetDatabase.LoadAssetAtPath<Texture2D>(AlbedoAtlasPath);
             Texture normal = AssetDatabase.LoadAssetAtPath<Texture2D>(NormalAtlasPath);
             Texture orm = AssetDatabase.LoadAssetAtPath<Texture2D>(OrmAtlasPath);
+            Texture matCap = AssetDatabase.LoadAssetAtPath<Texture2D>(MatCapPath);
 
             int failures = 0;
-            int coral = ValidateFamily("TubeCoral", CoralCount, material, albedo, normal, orm, false, ref failures);
-            int kelp = ValidateFamily("Kelp", KelpCount, material, albedo, normal, orm, false, ref failures);
-            int rocks = ValidateFamily("PorousRock", RockCount, material, albedo, normal, orm, true, ref failures);
+            if (material == null || albedo == null || normal == null || orm == null || matCap == null)
+            {
+                failures++;
+                Debug.LogError("[ShallowsBioForgeBatchBaker] Missing shared material or atlas texture dependency.");
+            }
+
+            ValidateSharedMaterial(material, albedo, normal, orm, matCap, ref failures);
+            ValidateAtlasImporter(AlbedoAtlasPath, AtlasKind.Albedo, ref failures);
+            ValidateAtlasImporter(NormalAtlasPath, AtlasKind.Normal, ref failures);
+            ValidateAtlasImporter(OrmAtlasPath, AtlasKind.Orm, ref failures);
+            ValidateAtlasImporter(MatCapPath, AtlasKind.MatCap, ref failures);
+
+            int coral = ValidateFamily("TubeCoral", CoralCount, material, false, ref failures);
+            int kelp = ValidateFamily("Kelp", KelpCount, material, false, ref failures);
+            int rocks = ValidateFamily("PorousRock", RockCount, material, true, ref failures);
             if (failures > 0)
             {
                 Debug.LogError($"[ShallowsBioForgeBatchBaker] Validation failed. Failures={failures}, Coral={coral}, Kelp={kelp}, Rocks={rocks}.");
@@ -341,7 +354,58 @@ namespace Hecton8.Editor.ProceduralGen
             importer.SaveAndReimport();
         }
 
-        private static int ValidateFamily(string familyFolder, int expectedCount, Material material, Texture albedo, Texture normal, Texture orm, bool rocks, ref int failures)
+        private static void ValidateSharedMaterial(Material material, Texture albedo, Texture normal, Texture orm, Texture matCap, ref int failures)
+        {
+            if (material == null)
+                return;
+
+            if (material.shader == null || material.shader.name != "Hecton8/Flora/ProceduralBio")
+            {
+                failures++;
+                Debug.LogError("[ShallowsBioForgeBatchBaker] Shared material shader contract failed.");
+            }
+
+            if (!material.enableInstancing || material.doubleSidedGI || material.globalIlluminationFlags != MaterialGlobalIlluminationFlags.None)
+            {
+                failures++;
+                Debug.LogError("[ShallowsBioForgeBatchBaker] Shared material batching/GI contract failed.");
+            }
+
+            if (material.GetTexture("_AlbedoAtlas") != albedo || material.GetTexture("_NormalAtlas") != normal || material.GetTexture("_ORMAtlas") != orm || material.GetTexture("_MatCap") != matCap)
+            {
+                failures++;
+                Debug.LogError("[ShallowsBioForgeBatchBaker] Shared atlas binding mismatch.");
+            }
+        }
+
+        private static void ValidateAtlasImporter(string path, AtlasKind kind, ref int failures)
+        {
+            TextureImporter importer = AssetImporter.GetAtPath(path) as TextureImporter;
+            if (importer == null)
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] Missing atlas importer at {path}.");
+                return;
+            }
+
+            bool expectedSrgb = kind == AtlasKind.Albedo || kind == AtlasKind.MatCap;
+            TextureImporterType expectedType = kind == AtlasKind.Normal ? TextureImporterType.NormalMap : TextureImporterType.Default;
+            if (importer.wrapMode != TextureWrapMode.Repeat || !importer.mipmapEnabled || importer.isReadable || importer.textureCompression != TextureImporterCompression.Compressed || importer.crunchedCompression || importer.sRGBTexture != expectedSrgb || importer.textureType != expectedType || importer.maxTextureSize != AtlasSize)
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] Atlas importer contract failed at {path}.");
+            }
+
+            TextureImporterPlatformSettings standalone = importer.GetPlatformTextureSettings("Standalone");
+            TextureImporterFormat expectedFormat = kind == AtlasKind.Normal ? TextureImporterFormat.BC5 : TextureImporterFormat.BC7;
+            if (!standalone.overridden || standalone.maxTextureSize != AtlasSize || standalone.textureCompression != TextureImporterCompression.Compressed || standalone.crunchedCompression || standalone.format != expectedFormat)
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] Atlas Standalone platform contract failed at {path}.");
+            }
+        }
+
+        private static int ValidateFamily(string familyFolder, int expectedCount, Material material, bool rocks, ref int failures)
         {
             string folder = $"{PrefabRoot}/{familyFolder}";
             string[] guids = AssetDatabase.FindAssets("t:Prefab", new[] { folder });
@@ -356,13 +420,45 @@ namespace Hecton8.Editor.ProceduralGen
             {
                 string path = AssetDatabase.GUIDToAssetPath(guids[i]);
                 GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
-                ValidatePrefab(path, prefab, material, albedo, normal, orm, rocks, ref failures);
+                ValidatePrefab(path, prefab, material, rocks, ref failures);
             }
 
+            ValidateMeshFamily(familyFolder, expectedCount, ref failures);
             return count;
         }
 
-        private static void ValidatePrefab(string path, GameObject prefab, Material material, Texture albedo, Texture normal, Texture orm, bool rock, ref int failures)
+        private static void ValidateMeshFamily(string familyFolder, int expectedCount, ref int failures)
+        {
+            string folder = $"{MeshRoot}/{familyFolder}";
+            string[] meshGuids = AssetDatabase.FindAssets("t:Mesh", new[] { folder });
+            int expectedMeshCount = expectedCount * 3;
+            if (meshGuids.Length != expectedMeshCount)
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] {familyFolder} mesh count mismatch. Expected={expectedMeshCount}, Actual={meshGuids.Length}.");
+            }
+
+            int lod0 = 0;
+            int lod1 = 0;
+            int lod2 = 0;
+            int unexpected = 0;
+            for (int i = 0; i < meshGuids.Length; i++)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(meshGuids[i]);
+                if (path.EndsWith("_LOD0.asset", StringComparison.Ordinal)) lod0++;
+                else if (path.EndsWith("_LOD1.asset", StringComparison.Ordinal)) lod1++;
+                else if (path.EndsWith("_LOD2.asset", StringComparison.Ordinal)) lod2++;
+                else unexpected++;
+            }
+
+            if (lod0 != expectedCount || lod1 != expectedCount || lod2 != expectedCount || unexpected != 0)
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] {familyFolder} LOD mesh distribution mismatch. LOD0={lod0}, LOD1={lod1}, LOD2={lod2}, Unexpected={unexpected}.");
+            }
+        }
+
+        private static void ValidatePrefab(string path, GameObject prefab, Material material, bool rock, ref int failures)
         {
             if (prefab == null)
             {
@@ -380,7 +476,15 @@ namespace Hecton8.Editor.ProceduralGen
             }
 
             LOD[] lods = lodGroup.GetLODs();
+            ValidateLodContract(path, lods, ref failures);
+
             Renderer[] renderers = prefab.GetComponentsInChildren<Renderer>(true);
+            if (renderers.Length != 3)
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] Renderer count mismatch at {path}. Expected=3, Actual={renderers.Length}.");
+            }
+
             for (int i = 0; i < renderers.Length; i++)
             {
                 Renderer renderer = renderers[i];
@@ -394,6 +498,12 @@ namespace Hecton8.Editor.ProceduralGen
                 {
                     failures++;
                     Debug.LogError($"[ShallowsBioForgeBatchBaker] Shadow caster enabled at {path}.");
+                }
+
+                if (renderer.receiveShadows || renderer.motionVectorGenerationMode != MotionVectorGenerationMode.ForceNoMotion || renderer.lightProbeUsage != LightProbeUsage.Off || renderer.reflectionProbeUsage != ReflectionProbeUsage.Off || renderer.allowOcclusionWhenDynamic)
+                {
+                    failures++;
+                    Debug.LogError($"[ShallowsBioForgeBatchBaker] Renderer hot-path flags invalid at {path}.");
                 }
             }
 
@@ -411,11 +521,7 @@ namespace Hecton8.Editor.ProceduralGen
             MeshCollider[] colliders = prefab.GetComponentsInChildren<MeshCollider>(true);
             if (rock)
             {
-                if (colliders.Length != 1 || !colliders[0].convex || colliders[0].sharedMesh == null)
-                {
-                    failures++;
-                    Debug.LogError($"[ShallowsBioForgeBatchBaker] Rock collider contract failed at {path}.");
-                }
+                ValidateRockCollider(path, colliders, lods, ref failures);
             }
             else if (colliders.Length != 0)
             {
@@ -430,13 +536,52 @@ namespace Hecton8.Editor.ProceduralGen
                 Debug.LogError($"[ShallowsBioForgeBatchBaker] Runtime script component found at {path}.");
             }
 
-            if (material != null)
+        }
+
+        private static void ValidateLodContract(string path, LOD[] lods, ref int failures)
+        {
+            for (int i = 0; i < lods.Length; i++)
             {
-                if (material.GetTexture("_AlbedoAtlas") != albedo || material.GetTexture("_NormalAtlas") != normal || material.GetTexture("_ORMAtlas") != orm)
+                Renderer[] renderers = lods[i].renderers;
+                if (renderers == null || renderers.Length != 1)
                 {
                     failures++;
-                    Debug.LogError($"[ShallowsBioForgeBatchBaker] Shared atlas binding mismatch at {path}.");
+                    Debug.LogError($"[ShallowsBioForgeBatchBaker] LOD{i} renderer contract failed at {path}.");
+                    continue;
                 }
+
+                Renderer renderer = renderers[0];
+                MeshFilter meshFilter = renderer != null ? renderer.GetComponent<MeshFilter>() : null;
+                if (renderer == null || meshFilter == null || meshFilter.sharedMesh == null)
+                {
+                    failures++;
+                    Debug.LogError($"[ShallowsBioForgeBatchBaker] LOD{i} mesh contract failed at {path}.");
+                }
+            }
+        }
+
+        private static void ValidateRockCollider(string path, MeshCollider[] colliders, LOD[] lods, ref int failures)
+        {
+            if (colliders.Length != 1 || !colliders[0].convex || colliders[0].sharedMesh == null)
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] Rock collider contract failed at {path}.");
+                return;
+            }
+
+            Renderer anchor = ResolveFirstRenderer(lods[0].renderers);
+            if (anchor == null)
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] Rock collider anchor missing at {path}.");
+                return;
+            }
+
+            Vector3 delta = colliders[0].transform.localPosition - anchor.transform.localPosition;
+            if (delta.sqrMagnitude > 0.0001f)
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] Rock collider offset mismatch at {path}. DeltaSq={delta.sqrMagnitude:0.000000}.");
             }
         }
 
@@ -475,6 +620,16 @@ namespace Hecton8.Editor.ProceduralGen
 
         private static Mesh ResolveFirstMesh(Renderer[] renderers)
         {
+            Renderer renderer = ResolveFirstRenderer(renderers);
+            if (renderer == null)
+                return null;
+
+            MeshFilter meshFilter = renderer.GetComponent<MeshFilter>();
+            return meshFilter != null ? meshFilter.sharedMesh : null;
+        }
+
+        private static Renderer ResolveFirstRenderer(Renderer[] renderers)
+        {
             if (renderers == null)
                 return null;
 
@@ -486,7 +641,7 @@ namespace Hecton8.Editor.ProceduralGen
 
                 MeshFilter meshFilter = renderer.GetComponent<MeshFilter>();
                 if (meshFilter != null && meshFilter.sharedMesh != null)
-                    return meshFilter.sharedMesh;
+                    return renderer;
             }
 
             return null;
@@ -506,14 +661,6 @@ namespace Hecton8.Editor.ProceduralGen
             rule = ScriptableObject.CreateInstance<BioRuleData>();
             AssetDatabase.CreateAsset(rule, path);
             return rule;
-        }
-
-        private static void ResetGeneratedFolder(string folder)
-        {
-            if (AssetDatabase.IsValidFolder(folder))
-                AssetDatabase.DeleteAsset(folder);
-
-            EnsureFolder(folder);
         }
 
         private static void EnsureFolder(string folder)

@@ -30,6 +30,8 @@ namespace Hecton8.AI
         private static readonly int _LeviathanBoneCountId = Shader.PropertyToID("_H8LeviathanBoneCount");
         private static readonly int _LeviathanIkTierId = Shader.PropertyToID("_H8LeviathanIkTier");
         private static readonly int _LeviathanTailWhipId = Shader.PropertyToID("_H8LeviathanTailWhip01");
+        private static readonly int _LeviathanSegmentLengthId = Shader.PropertyToID("_H8LeviathanSegmentLength");
+        private static readonly int _LeviathanGpuSkinningId = Shader.PropertyToID("_H8LeviathanGpuSkinning");
 
         [Header("Spine")]
         [Tooltip("High-tier spine segment count. Low tier is hard-gated to eight segments.")]
@@ -146,6 +148,7 @@ namespace Hecton8.AI
             if (_disposed || !Application.isPlaying)
                 return;
 
+            CompleteScheduledSolverForLifecycle();
             RefreshColdDependencies();
             EnsurePersistentBuffers();
             SeedSpineFromOwner();
@@ -161,8 +164,8 @@ namespace Hecton8.AI
 
             TryUnregisterOriginShiftListener();
             TryUnregister();
-            DispatcherJobSwap.TryFinalizeCompleted(ref _pendingHandle);
-            _solverScheduled = !_pendingHandle.IsCompleted;
+            CompleteScheduledSolverForLifecycle();
+            ClearGpuSkinningBinding();
         }
 
         private void OnDestroy()
@@ -179,6 +182,7 @@ namespace Hecton8.AI
             TryUnregisterOriginShiftListener();
             TryUnregister();
             JobHandle dependency = _solverScheduled ? _pendingHandle : default;
+            ClearGpuSkinningBinding();
             DisposePersistentBuffers(dependency);
             ReleaseGraphicsBuffers();
         }
@@ -235,6 +239,7 @@ namespace Hecton8.AI
                 TerrainClearance = _terrainClearance,
                 PhaseTimeSeconds = _solverTimeSeconds,
                 TailWhipSecondsRemaining = _tailWhipSecondsRemaining,
+                TailWhipDurationSeconds = _tailWhipDurationSeconds,
                 TailWhipAmplitudeMeters = _tailWhipAmplitudeMeters,
                 HeadTargetPosition = _motionIntentHeadTarget,
                 IntendedVelocity = _motionIntentVelocity,
@@ -306,6 +311,7 @@ namespace Hecton8.AI
             _faunaBrain = faunaBrain;
             _body = body;
             _cachedTransform = faunaBrain != null ? faunaBrain.transform : transform;
+            CompleteScheduledSolverForLifecycle();
             RefreshColdDependencies();
             EnsurePersistentBuffers();
             SeedSpineFromOwner();
@@ -398,6 +404,15 @@ namespace Hecton8.AI
             _disposeHandle = H8Memory.Release(ref _telemetryCursor, JobHandle.CombineDependencies(_disposeHandle, dependency));
             DispatcherJobSwap.TryFinalizeCompleted(ref _disposeHandle);
             _pendingHandle = default;
+            _solverScheduled = false;
+        }
+
+        private void CompleteScheduledSolverForLifecycle()
+        {
+            if (!_solverScheduled)
+                return;
+
+            DispatcherJobSwap.TryComplete(ref _pendingHandle, forceComplete: true);
             _solverScheduled = false;
         }
 
@@ -627,23 +642,46 @@ namespace Hecton8.AI
                 return;
 
             GraphicsBufferUploadUtility.UploadNativeArray(writeBuffer, _leviathanBones, MaxSegments);
+            float ikTier = IsLowTier(GlobalRegistry.ScalabilityTier) ? 0f : 1f;
+            float tailWhip01 = math.saturate(_tailWhipSecondsRemaining * math.rcp(math.max(0.0001f, _tailWhipDurationSeconds)));
             if (_skinningMaterial != null)
             {
                 _skinningMaterial.SetBuffer(_LeviathanBonesId, writeBuffer);
                 _skinningMaterial.SetFloat(_LeviathanBoneCountId, _activeSegmentCount);
-                _skinningMaterial.SetFloat(_LeviathanIkTierId, IsLowTier(GlobalRegistry.ScalabilityTier) ? 0f : 1f);
-                _skinningMaterial.SetFloat(_LeviathanTailWhipId, math.saturate(_tailWhipSecondsRemaining * math.rcp(math.max(0.0001f, _tailWhipDurationSeconds))));
+                _skinningMaterial.SetFloat(_LeviathanIkTierId, ikTier);
+                _skinningMaterial.SetFloat(_LeviathanTailWhipId, tailWhip01);
+                _skinningMaterial.SetFloat(_LeviathanSegmentLengthId, _segmentLength);
+                _skinningMaterial.SetFloat(_LeviathanGpuSkinningId, 1f);
             }
 
             if (_publishGlobalBoneBuffer)
             {
                 Shader.SetGlobalBuffer(_LeviathanBonesId, writeBuffer);
                 Shader.SetGlobalFloat(_LeviathanBoneCountId, _activeSegmentCount);
-                Shader.SetGlobalFloat(_LeviathanIkTierId, IsLowTier(GlobalRegistry.ScalabilityTier) ? 0f : 1f);
-                Shader.SetGlobalFloat(_LeviathanTailWhipId, math.saturate(_tailWhipSecondsRemaining * math.rcp(math.max(0.0001f, _tailWhipDurationSeconds))));
+                Shader.SetGlobalFloat(_LeviathanIkTierId, ikTier);
+                Shader.SetGlobalFloat(_LeviathanTailWhipId, tailWhip01);
+                Shader.SetGlobalFloat(_LeviathanSegmentLengthId, _segmentLength);
+                Shader.SetGlobalFloat(_LeviathanGpuSkinningId, 1f);
             }
 
             _gpuUploadBufferIndex ^= 1;
+        }
+
+        private void ClearGpuSkinningBinding()
+        {
+            if (_skinningMaterial != null)
+            {
+                _skinningMaterial.SetFloat(_LeviathanBoneCountId, 0f);
+                _skinningMaterial.SetFloat(_LeviathanTailWhipId, 0f);
+                _skinningMaterial.SetFloat(_LeviathanGpuSkinningId, 0f);
+            }
+
+            if (_publishGlobalBoneBuffer)
+            {
+                Shader.SetGlobalFloat(_LeviathanBoneCountId, 0f);
+                Shader.SetGlobalFloat(_LeviathanTailWhipId, 0f);
+                Shader.SetGlobalFloat(_LeviathanGpuSkinningId, 0f);
+            }
         }
 
         private void EnsureGraphicsBuffers()

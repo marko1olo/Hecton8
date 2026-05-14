@@ -31,6 +31,7 @@ using UnityEngine.Rendering.Universal;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.SaveSystem;
+using Unity.Mathematics;
 
 namespace Hecton8.World
 {
@@ -377,6 +378,7 @@ namespace Hecton8.World
             if (!_enabled && _urpAsset != null)
             {
                 _currentRenderScale = _defaultRenderScale;
+                _targetRenderScale = _defaultRenderScale;
                 ApplyRenderScale();
             }
         }
@@ -453,7 +455,7 @@ namespace Hecton8.World
                 if (_consecutiveSlowFrames >= _slowFrameThreshold)
                 {
                     float pressureRange = Mathf.Max(0.01f, _criticalFrameTime - _targetFrameTime);
-                    float pressureLerp = Mathf.Clamp01((effectiveFrameTime - _targetFrameTime) / pressureRange);
+                    float pressureLerp = Mathf.Clamp01((effectiveFrameTime - _targetFrameTime) * math.rcp(pressureRange));
                     float adaptiveReductionPercent = _scaleReductionPercent +
                         (_criticalScaleReductionPercent - _scaleReductionPercent) * pressureLerp;
                     ApplyScaleReduction(adaptiveReductionPercent);
@@ -628,8 +630,14 @@ namespace Hecton8.World
             _thermalOverrideActive = false;
             _systemOverridePressureLevel = 0;
             _systemOverrideFlags = 0;
-            _targetRenderScale = _currentRenderScale;
-            UpdateSnapshot();
+            float restoredScale = Mathf.Clamp(_defaultRenderScale, _minRenderScale, _maxRenderScale);
+            _currentRenderScale = restoredScale;
+            _targetRenderScale = restoredScale;
+            if (_urpAsset != null)
+                ApplyRenderScale();
+            else
+                UpdateSnapshot();
+
             UpdatePressureDiagnostics();
         }
 
@@ -745,7 +753,7 @@ namespace Hecton8.World
         private void ApplyScaleReduction(float reductionPercent)
         {
             float safeReductionPercent = Mathf.Max(0f, reductionPercent);
-            float reductionFactor = 1f - (safeReductionPercent / 100f);
+            float reductionFactor = 1f - safeReductionPercent * 0.01f;
             float targetScale = _currentRenderScale * reductionFactor;
             float nextScale = Mathf.Max(targetScale, _minRenderScale);
             if (Mathf.Abs(nextScale - _currentRenderScale) <= 0.0001f)
@@ -761,7 +769,7 @@ namespace Hecton8.World
         private void ApplyScaleIncrease(float increasePercent)
         {
             float safeIncreasePercent = Mathf.Max(0f, increasePercent);
-            float increaseFactor = 1f + (safeIncreasePercent / 100f);
+            float increaseFactor = 1f + safeIncreasePercent * 0.01f;
             float targetScale = _currentRenderScale * increaseFactor;
             float nextScale = Mathf.Min(targetScale, _maxRenderScale);
             if (Mathf.Abs(nextScale - _currentRenderScale) <= 0.0001f)

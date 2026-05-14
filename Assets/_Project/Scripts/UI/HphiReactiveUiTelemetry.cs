@@ -1,4 +1,5 @@
 using Hecton8.Core;
+using Hecton.Localization;
 using UnityEngine;
 
 namespace Hecton8.UI

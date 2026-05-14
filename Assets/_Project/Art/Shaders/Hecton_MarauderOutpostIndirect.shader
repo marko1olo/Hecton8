@@ -79,9 +79,11 @@ Shader "Hecton8/Environment/MarauderOutpostIndirect"
                 half door = kind == 5 ? 1.0h : 0.0h;
                 half data = kind == 4 ? 1.0h : 0.0h;
                 half pillar = kind == 7 ? 1.0h : 0.0h;
+                half generator = kind == 8 ? 1.0h : 0.0h;
                 half3 color = lerp(baseColor, panelColor, corridor * 0.65h + pillar * 0.45h);
                 color = lerp(color, half3(0.36h, 0.38h, 0.34h), door);
                 color = lerp(color, half3(0.12h, 0.23h, 0.22h), data * 0.5h);
+                color = lerp(color, half3(0.10h, 0.18h, 0.20h), generator);
                 return color;
             }
 
@@ -110,7 +112,10 @@ Shader "Hecton8/Environment/MarauderOutpostIndirect"
                 Light mainLight = GetMainLight(TransformWorldToShadowCoord(positionWS));
                 half nDotL = saturate(dot(normalWS, (half3)mainLight.direction));
                 half specularBase = 0.04h + metallic * 0.18h;
-                half specular = pow(max(nDotL, 0.0h), lerp(8.0h, 42.0h, smoothness)) * specularBase * smoothness;
+                half specularQuad = nDotL * nDotL;
+                half specularSharp = specularQuad * specularQuad;
+                specularSharp *= specularSharp;
+                half specular = lerp(specularQuad, specularSharp, smoothness) * specularBase * smoothness;
                 color += (albedo * nDotL + specular) * mainLight.color * mainLight.distanceAttenuation * mainLight.shadowAttenuation;
                 color += HectonCoreLitEvaluateProjectedCausticsScattering(positionWS, normalWS) * albedo;
                 return color;
@@ -120,7 +125,7 @@ Shader "Hecton8/Environment/MarauderOutpostIndirect"
             {
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
                 uint kind = input.typePacked & 15u;
-                half encodedAge = (half)(((input.typePacked >> 24) & 255u) / 255.0);
+                half encodedAge = (half)(((input.typePacked >> 24) & 255u) * 0.00392156863);
                 half age01 = saturate(max((half)_OutpostAge01, encodedAge));
                 half3 normalWS = (half3)HectonCoreLitSafeNormalize(input.normalWS);
                 half3 albedo = ResolveTypeColor(kind, (half3)_BaseColor.rgb, (half3)_PanelColor.rgb);
@@ -130,7 +135,8 @@ Shader "Hecton8/Environment/MarauderOutpostIndirect"
                 half sideWear = saturate(1.0h - abs(normalWS.y));
                 half doorWear = kind == 5u ? 0.35h : 0.0h;
                 half pillarWear = kind == 7u ? 0.45h : 0.0h;
-                half edgeWear = saturate(sideWear * 0.55h + age01 * 0.35h + doorWear + pillarWear);
+                half generatorWear = kind == 8u ? 0.28h : 0.0h;
+                half edgeWear = saturate(sideWear * 0.55h + age01 * 0.35h + doorWear + pillarWear + generatorWear);
                 HectonCoreLitApplyProceduralRustSilt(
                     input.positionWS,
                     normalWS,

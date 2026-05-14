@@ -15,7 +15,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Submarine Sonar Holo Map Renderer")]
-    public sealed class SubmarineSonarHoloMapRenderer : MonoBehaviour, ITickable, ILateFrameTickable
+    public sealed class SubmarineSonarHoloMapRenderer : MonoBehaviour, ILateFrameTickable
     {
         private const int MaxGridCells = 18;
         private const int MaxGridVerticesPerAxis = MaxGridCells + 1;
@@ -24,6 +24,8 @@ namespace Hecton8.UI
         private const float LowTierUpdateIntervalSeconds = 0.1f;
         private const float MidTierUpdateIntervalSeconds = 0.06666667f;
         private const float HighTierUpdateIntervalSeconds = 0.03333334f;
+        private const float QualityTierProbeIntervalSeconds = 0.5f;
+        private const float QualityTierHysteresisSeconds = 2f;
         private const float VisibilityDotThreshold = 0.035f;
         private const float MinimumDirectionLengthSq = 0.0001f;
         private const string RuntimeMeshName = "Runtime_SubmarineSonarHoloMap";
@@ -62,21 +64,28 @@ namespace Hecton8.UI
         private Mesh _runtimeMesh;
         private Material _runtimeMaterial;
         private Camera _viewCamera;
-        private bool _registeredTick;
         private bool _registeredLateFrame;
         private bool _hasCurrentSample;
         private bool _hasPreviousSample;
         private bool _visibleToPlayer;
         private bool _interpolationEnabled;
+        private bool _qualityTierInitialized;
         private float _sampleAccumulator;
         private float _interpolationAgeSeconds;
+        private float _qualityTierProbeCountdown;
+        private float _qualityTierCandidateAge;
         private float _activeUpdateIntervalSeconds = LowTierUpdateIntervalSeconds;
         private int _activeGridCells = -1;
         private int _activeIndexCount;
+        private HectonQualityTier _cachedQualityTier = HectonQualityTier.Low;
+        private HectonQualityTier _qualityTierCandidate = HectonQualityTier.Low;
 
         private void OnEnable()
         {
             EnsureResources();
+            _qualityTierInitialized = false;
+            _qualityTierProbeCountdown = 0f;
+            _qualityTierCandidateAge = 0f;
             TryRegisterTick();
         }
 
@@ -98,25 +107,24 @@ namespace Hecton8.UI
             DestroyRuntimeResources();
         }
 
-        public void Tick(float deltaTime)
+        private void RunVisualSync(float deltaTime)
         {
             EnsureResources();
             ResolveViewCamera();
             _visibleToPlayer = ResolveVisibleToPlayer();
             if (!_visibleToPlayer || _runtimeMesh == null || _runtimeMaterial == null)
             {
-                RefreshLateFrameRegistration();
                 return;
             }
 
-            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
+            float safeDeltaTime = math.max(0f, deltaTime);
+            HectonQualityTier tier = ResolveCachedQualityTier(safeDeltaTime);
             int gridCells = ResolveGridCells(tier);
             float updateInterval = ResolveUpdateIntervalSeconds(tier);
             _interpolationEnabled = ResolveInterpolationEnabled(tier);
             if (_activeGridCells != gridCells)
                 RebuildLineIndices(gridCells);
 
-            float safeDeltaTime = math.max(0f, deltaTime);
             _sampleAccumulator += safeDeltaTime;
             _interpolationAgeSeconds += safeDeltaTime;
             if (!_hasCurrentSample || _sampleAccumulator >= updateInterval)
@@ -126,11 +134,11 @@ namespace Hecton8.UI
                 RefreshMapSample(gridCells);
             }
 
-            RefreshLateFrameRegistration();
         }
 
         public void LateFrameTick()
         {
+            RunVisualSync(SystemDispatcher.CurrentFrameDeltaTime);
             if (!_visibleToPlayer || _runtimeMesh == null || _runtimeMaterial == null || !_hasCurrentSample)
                 return;
 
@@ -314,6 +322,50 @@ namespace Hecton8.UI
             return tier == HectonQualityTier.High || tier == HectonQualityTier.Ultra;
         }
 
+        private HectonQualityTier ResolveCachedQualityTier(float deltaTime)
+        {
+            if (!_qualityTierInitialized)
+            {
+                HectonQualityTier observedTier = GlobalRegistry.ScalabilityTier;
+                _cachedQualityTier = observedTier;
+                _qualityTierCandidate = observedTier;
+                _qualityTierInitialized = true;
+                _qualityTierProbeCountdown = QualityTierProbeIntervalSeconds;
+                _qualityTierCandidateAge = 0f;
+                return _cachedQualityTier;
+            }
+
+            _qualityTierProbeCountdown -= math.max(0f, deltaTime);
+            if (_qualityTierProbeCountdown > 0f)
+                return _cachedQualityTier;
+
+            _qualityTierProbeCountdown = QualityTierProbeIntervalSeconds;
+            HectonQualityTier currentTier = GlobalRegistry.ScalabilityTier;
+            if (currentTier == _cachedQualityTier)
+            {
+                _qualityTierCandidate = currentTier;
+                _qualityTierCandidateAge = 0f;
+                return _cachedQualityTier;
+            }
+
+            if (currentTier != _qualityTierCandidate)
+            {
+                _qualityTierCandidate = currentTier;
+                _qualityTierCandidateAge = 0f;
+                return _cachedQualityTier;
+            }
+
+            _qualityTierCandidateAge += QualityTierProbeIntervalSeconds;
+            if (_qualityTierCandidateAge >= QualityTierHysteresisSeconds)
+            {
+                _cachedQualityTier = currentTier;
+                _qualityTierCandidate = currentTier;
+                _qualityTierCandidateAge = 0f;
+            }
+
+            return _cachedQualityTier;
+        }
+
         private bool ResolveVisibleToPlayer()
         {
             if (_viewCamera == null)
@@ -387,7 +439,7 @@ namespace Hecton8.UI
                     MeshUpdateFlags.DontValidateIndices |
                     MeshUpdateFlags.DontNotifyMeshUsers);
                 _runtimeMesh.bounds = new Bounds(Vector3.zero, new Vector3(displayRadiusMeters * 2f, displayRadiusMeters, displayRadiusMeters * 2f));
-                RebuildLineIndices(ResolveGridCells(GlobalRegistry.ScalabilityTier));
+                RebuildLineIndices(ResolveGridCells(ResolveCachedQualityTier(0f)));
             }
 
 #if UNITY_EDITOR
@@ -412,36 +464,10 @@ namespace Hecton8.UI
 
         private void TryRegisterTick()
         {
-            if (_registeredTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (_registeredLateFrame || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
-            RefreshLateFrameRegistration();
-        }
-
-        private void RefreshLateFrameRegistration()
-        {
-            bool shouldRegister = isActiveAndEnabled &&
-                                  Application.isPlaying &&
-                                  GlobalRegistry.Dispatcher != null &&
-                                  _visibleToPlayer &&
-                                  _runtimeMesh != null &&
-                                  _runtimeMaterial != null &&
-                                  _hasCurrentSample;
-            if (shouldRegister)
-            {
-                if (_registeredLateFrame)
-                    return;
-
-                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
-                return;
-            }
-
-            if (_registeredLateFrame)
-            {
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
-                _registeredLateFrame = false;
-            }
+            _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
         private void TryUnregister()
@@ -452,11 +478,6 @@ namespace Hecton8.UI
                 _registeredLateFrame = false;
             }
 
-            if (_registeredTick)
-            {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
-                _registeredTick = false;
-            }
         }
 
         private void DestroyRuntimeResources()
