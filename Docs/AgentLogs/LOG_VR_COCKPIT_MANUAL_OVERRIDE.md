@@ -313,3 +313,15 @@ Cinematic Cheats used: no simulation change. This keeps the latch as authored po
 Exact microseconds saved/spent: 0 us steady-state. The latch frame pays one fixed-table listener removal and avoids future cold hot-swap callbacks for a spent lever.
 
 Verification: `git diff --check` passed. Scoped source counter reports `ForbiddenPatternTotal=0`, `LatchCleanupSequence=1`, `HotSwapUnregisterAlways=1`, `HotSwapFlagGate=0`, `LatchGuardPreventsTickRegister=1`, `LatchGuardPreventsReceiverRegister=1`, `LatchGuardPreventsHotSwapRegister=1`, `DotnetMention=0`. `CURRENT_BATCH.md` extraction still returns no matching prompt block. No dotnet rebuild/probe was run by user instruction.
+
+## 2026-05-15 - Physical Hand Sample Monotonicity
+
+What was wrong: the manual override receiver accepted valid hand callbacks in arrival order only. An older sample arriving after a newer one could overwrite `_lastHandLocalPosition`, `_lastHandSide`, and `_lastHandFrame`.
+
+What was done: `TryQueueHandPress()` now resolves the sample frame once and rejects samples older than the currently cached hand frame before mutating state.
+
+Cinematic Cheats used: no simulation change. This preserves the scalar kinematic lever and treats the newest hand pose as the only physical truth needed by the cockpit control.
+
+Exact microseconds saved/spent: one integer compare per receiver callback. No allocations, no new containers, no dispatcher cost.
+
+Verification: `git diff --check` passed. Scoped source counter reports `ForbiddenPatternTotal=0`, `ResolvedSampleFrame=1`, `StaleSampleReject=1`, `LastHandFrameSingleWrite=1`, `OldFrameWrite=0`, `TryQueueLatchedGuard=1`, `DotnetMention=0`. `CURRENT_BATCH.md` extraction still returns no matching prompt block. No dotnet rebuild/probe was run by user instruction.

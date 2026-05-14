@@ -1440,8 +1440,23 @@ namespace Hecton8.Construction
             if (!_moduleImpactStressSpikes.IsCreated || (uint)moduleIndex >= (uint)_moduleImpactStressSpikes.Length)
                 return;
 
+            if (!math.isfinite(magnitude))
+            {
+                WriteFloodBlackBoxSample(FloodBlackBoxModuleStressInvalidFlag);
+                DumpModuleStressBlackBoxOnce(FloodBlackBoxModuleStressInvalidFlag);
+                return;
+            }
+
+            float previousSpike01 = _moduleImpactStressSpikes[moduleIndex];
+            if (!math.isfinite(previousSpike01))
+            {
+                WriteFloodBlackBoxSample(FloodBlackBoxModuleStressInvalidFlag);
+                DumpModuleStressBlackBoxOnce(FloodBlackBoxModuleStressInvalidFlag);
+                previousSpike01 = 0f;
+            }
+
             float spike01 = math.saturate(math.max(0f, magnitude) * ModuleStressImpactSpikeStrength);
-            _moduleImpactStressSpikes[moduleIndex] = math.max(_moduleImpactStressSpikes[moduleIndex], spike01);
+            _moduleImpactStressSpikes[moduleIndex] = math.max(previousSpike01, spike01);
         }
 
         private void TryPublishBaseModuleCompromisedSignal(
@@ -2152,6 +2167,11 @@ namespace Hecton8.Construction
 
             if (_roomConnections.IsCreated)
                 _roomConnections.Clear();
+        }
+
+        private void RecordNonFinitePressureIngress()
+        {
+            WriteFloodBlackBoxSample(FloodBlackBoxNonFiniteFlag);
         }
 
         private void WriteFloodBlackBoxSample(uint reasonFlags)

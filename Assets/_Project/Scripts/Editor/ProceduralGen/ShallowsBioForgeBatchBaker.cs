@@ -36,6 +36,9 @@ namespace Hecton8.Editor.ProceduralGen
         private const int RockLod0TriangleBudget = 3200;
         private const int RockLod1TriangleBudget = 720;
         private const int RockLod2TriangleBudget = 128;
+        private const float CoralMaxBoundsExtentSq = 4f;
+        private const float KelpMaxBoundsExtentSq = 121f;
+        private const float RockMaxBoundsExtentSq = 9f;
         private const int MaxValidatedMeshVertices = RockLod0TriangleBudget * 3;
         private const int MaxAllowedLod2Triangles = 149;
         private const float Lod0ScreenHeight = 0.6f;
@@ -1255,19 +1258,27 @@ namespace Hecton8.Editor.ProceduralGen
                     continue;
                 }
 
-                ValidateMeshGeometryContract(path, i, mesh, ref failures);
+                ValidateMeshGeometryContract(path, familyFolder, i, mesh, ref failures);
                 ValidateLodTriangleBudget(path, familyFolder, i, mesh, ref failures);
                 ValidateVertexColorGradient(path, i, mesh, ref failures);
             }
         }
 
-        private static void ValidateMeshGeometryContract(string path, int lodIndex, Mesh mesh, ref int failures)
+        private static void ValidateMeshGeometryContract(string path, string familyFolder, int lodIndex, Mesh mesh, ref int failures)
         {
+            if (!TryResolveMaxBoundsExtentSq(familyFolder, out float maxBoundsExtentSq))
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] Missing mesh bounds budget for family={familyFolder}, LOD={lodIndex}, Prefab={path}.");
+                return;
+            }
+
             Bounds bounds = mesh.bounds;
             bool hasPosition = mesh.HasVertexAttribute(VertexAttribute.Position);
             bool hasNormal = mesh.HasVertexAttribute(VertexAttribute.Normal);
             bool hasColor = mesh.HasVertexAttribute(VertexAttribute.Color);
             bool hasUv0 = mesh.HasVertexAttribute(VertexAttribute.TexCoord0);
+            float boundsExtentSq = bounds.extents.sqrMagnitude;
             bool failed = mesh.vertexCount <= 0 ||
                           mesh.subMeshCount != 1 ||
                           mesh.GetIndexCount(0) == 0 ||
@@ -1279,13 +1290,14 @@ namespace Hecton8.Editor.ProceduralGen
                           !hasUv0 ||
                           !IsFinite(bounds.center) ||
                           !IsFinite(bounds.extents) ||
-                          bounds.extents.sqrMagnitude <= TransformEpsilonSq;
+                          boundsExtentSq <= TransformEpsilonSq ||
+                          boundsExtentSq > maxBoundsExtentSq;
 
             if (!failed)
                 return;
 
             failures++;
-            Debug.LogError($"[ShallowsBioForgeBatchBaker] LOD{lodIndex} mesh geometry contract failed at {path}. Vertices={mesh.vertexCount}, SubMeshes={mesh.subMeshCount}, Readable={mesh.isReadable}, IndexFormat={mesh.indexFormat}, Position={hasPosition}, Normal={hasNormal}, Color={hasColor}, Uv0={hasUv0}, BoundsExtentSq={bounds.extents.sqrMagnitude:0.000000}.");
+            Debug.LogError($"[ShallowsBioForgeBatchBaker] LOD{lodIndex} mesh geometry contract failed at {path}. Vertices={mesh.vertexCount}, SubMeshes={mesh.subMeshCount}, Readable={mesh.isReadable}, IndexFormat={mesh.indexFormat}, Position={hasPosition}, Normal={hasNormal}, Color={hasColor}, Uv0={hasUv0}, BoundsExtentSq={boundsExtentSq:0.000000}, MaxBoundsExtentSq={maxBoundsExtentSq:0.000000}.");
         }
 
         private static void ValidateLodTriangleBudget(string path, string familyFolder, int lodIndex, Mesh mesh, ref int failures)
@@ -1332,6 +1344,25 @@ namespace Hecton8.Editor.ProceduralGen
                         out triangleBudget);
                 default:
                     triangleBudget = 0;
+                    return false;
+            }
+        }
+
+        private static bool TryResolveMaxBoundsExtentSq(string familyFolder, out float maxBoundsExtentSq)
+        {
+            switch (familyFolder)
+            {
+                case "TubeCoral":
+                    maxBoundsExtentSq = CoralMaxBoundsExtentSq;
+                    return true;
+                case "Kelp":
+                    maxBoundsExtentSq = KelpMaxBoundsExtentSq;
+                    return true;
+                case "PorousRock":
+                    maxBoundsExtentSq = RockMaxBoundsExtentSq;
+                    return true;
+                default:
+                    maxBoundsExtentSq = 0f;
                     return false;
             }
         }

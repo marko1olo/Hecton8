@@ -780,3 +780,32 @@ Verification:
 - `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -RequireCoreBuildGate -MaxCoreAsmdefDebtReferences 25 -MaxGeneratedProjectDebtReferences 10 -MaxSourceBackedBridgeDebtReferences 16 -MaxSourceBackedCompileBridgeDebtReferences 8 -MaxProjectReferenceReplacementDebtReferences 8 -Summary -Json`: completed at local timestamp `2026-05-15 03:26:30 +04:00`.
 - `git diff --check` on touched H-Phi files: no whitespace errors; LF/CRLF warnings only.
 - Runtime H-Phi remains `PENDING VERIFICATION` until Unity Console, PlayMode, Profiler, and GCMonitor evidence exist.
+
+## 2026-05-15 Resonance Addendum - No-Rebuild Core Graph
+
+Evidence class: `STATIC_SOURCE`.
+
+Constraint: user explicitly ordered no `dotnet build` or rebuild.
+
+Change:
+- Cached `IEcosystemDirectorService` in `SargassumMicroFaunaBoids` and removed the direct ecosystem registry read from runtime population resolution.
+- No public API, asmdef, package, scene, prefab, or generated project file was changed by this resonance pass.
+
+Core graph audit:
+
+| Counter | Previous Resonance Pass | Current |
+|---|---:|---:|
+| Core asmdef references | 43 | 43 |
+| Core asmdef debt references | 25 | 25 |
+| Generated project references | 12 | 12 |
+| Generated project debt references | 10 | 10 |
+| Source-backed bridge references | 31 | 27 |
+| Source-backed bridge debt references | 20 | 16 |
+| Source-backed compile bridge references | 18 | 18 |
+| Source-backed compile bridge debt references | 8 | 8 |
+| Project-reference replacement references | 13 | 9 |
+| Project-reference replacement debt references | 12 | 8 |
+
+Verification:
+- `Tools/Architecture/HectonPhiAudit.ps1 -Summary -CoreGraphOnly`: completed at local timestamp `2026-05-15 03:40:33 +04:00`.
+- Improvement is static graph evidence only. Runtime H-Phi remains `PENDING VERIFICATION`.

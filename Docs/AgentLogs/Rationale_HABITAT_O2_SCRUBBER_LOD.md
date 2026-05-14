@@ -21,10 +21,10 @@ Hardware Impact: Estimated low-end gain is proportional to sleeping base count; 
 
 ## Decision 1 - Signals Instead Of Concrete Habitat Hooks
 Problem: Base entry/exit ownership is outside the gas solver and other agents may rewrite airlocks/modules.
-Solution: Added typed unmanaged `PlayerBaseEnterSignal` and `PlayerBaseExitSignal` lanes, then consumed snapshots from `GasDynamicsSolver.FrostTick`.
+Solution: Added typed unmanaged `PlayerBaseEnterSignal` and `PlayerBaseExitSignal` lanes, then consumed frame snapshots from `GasDynamicsSolver.Tick` with FixedTick/FrostTick post-step safety drains.
 Rejected Alternatives: Direct gas-side `BaseAirlock` or `BaseModule` polling was rejected because it would violate batch parallelism and create fragile compile dependencies. C# events were rejected because managed delegates are the wrong channel for a zero-GC runtime signal.
-Scalability potential: Low/MX350 reads at FrostTick only. Middle keeps 500m hibernation. High/Ultra can spend saved gas CPU on richer alarm/HUD presentation rather than more gas truth.
-Hardware Impact: Estimated 1-3us saved per transition batch compared with managed observer fanout; exact profiler proof absent.
+Scalability potential: Low/MX350 pays only empty snapshot-count checks in normal frames. Middle keeps 500m hibernation. High/Ultra can spend saved gas CPU on richer alarm/HUD presentation rather than more gas truth.
+Hardware Impact: Estimated transition batches remain cheaper than managed observer fanout; exact profiler proof absent.
 
 ## Decision 2 - Awake Mask As Native SOA
 Problem: A far base should not keep paying O(room + edge) gas and power solve cost.
@@ -144,3 +144,10 @@ Solution: Tick, FixedTick, and FrostTick now refresh cold dependencies before `E
 Rejected Alternatives: Polling dependencies every frame was rejected. Moving fallback buffers into DataVault after allocation was rejected because ownership migration during live jobs is a separate contract.
 Scalability potential: Low through Ultra preserve the H-Phi `BaseAwakeState` path after re-enable instead of accidentally taking the local fallback.
 Hardware Impact: One cold registry refresh on uninitialized re-entry only; no steady-state frame cost.
+
+## Self-Review 14 - Cold Registry Publication
+Problem: After deferred native disposal finalizes, Tick or FrostTick can be the first lane to recreate native state. Before this pass, registry publication still waited for FixedTick.
+Solution: Tick and FrostTick now seed standard atmosphere and call `TryRegisterRegistry` immediately after `EnsureNativeState`, matching the OnEnable/FixedTick publication contract.
+Rejected Alternatives: Waiting for the next FixedTick was rejected because paused or highly dilated frames can leave `IGasDynamicsSolver` invisible despite valid native state. Registering before seeding was rejected because consumers could observe zeroed room pressure.
+Scalability potential: Low through Ultra keep identical native buffers; this only closes a lifecycle visibility gap.
+Hardware Impact: Two steady-state guarded calls in Tick/FrostTick; cold-start correctness gain only, no runtime microsecond saving claimed.

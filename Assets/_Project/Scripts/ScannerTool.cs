@@ -472,6 +472,7 @@ namespace Hecton8.Gameplay
             public byte Found;
         }
 
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         private struct ScannerBlackBoxEntry
         {
             public uint Frame;
@@ -646,6 +647,7 @@ namespace Hecton8.Gameplay
         private bool _lastPublishedTuningActive;
         private int _lastPublishedTuningProgressBucket = int.MinValue;
         private int _scannerBlackBoxCursor;
+        private int _scannerBlackBoxRecordedCount;
         private ushort _scannerBlackBoxQualityTier;
         private HectonQualityTier _scannerQualityTier = HectonQualityTier.Unknown;
         private HectonQualityTier _scannerQualityTierCandidate = HectonQualityTier.Unknown;
@@ -1161,6 +1163,7 @@ namespace Hecton8.Gameplay
                     nameof(_scannerBlackBox),
                     NativeAllocationLifetime.Scene);
                 _scannerBlackBoxCursor = 0;
+                _scannerBlackBoxRecordedCount = 0;
                 _scannerBlackBoxDumped = false;
             }
         }
@@ -1179,6 +1182,8 @@ namespace Hecton8.Gameplay
                 NativeMemorySentinel.UnregisterNativeArray(_scannerBlackBox);
                 _scannerBlackBox.Dispose();
                 _scannerBlackBox = default;
+                _scannerBlackBoxCursor = 0;
+                _scannerBlackBoxRecordedCount = 0;
             }
         }
 
@@ -1263,6 +1268,9 @@ namespace Hecton8.Gameplay
                 QualityTier = _scannerBlackBoxQualityTier
             };
 
+            if (_scannerBlackBoxRecordedCount < _scannerBlackBox.Length)
+                _scannerBlackBoxRecordedCount++;
+
             _scannerBlackBoxCursor++;
             if (_scannerBlackBoxCursor >= _scannerBlackBox.Length)
                 _scannerBlackBoxCursor = 0;
@@ -1293,9 +1301,15 @@ namespace Hecton8.Gameplay
                     writer.Write(1);
                     writer.Write(ScannerBlackBoxCapacity);
                     writer.Write(_scannerBlackBoxCursor);
-                    for (int i = 0; i < _scannerBlackBox.Length; i++)
+                    int entryCount = _scannerBlackBox.Length;
+                    int validCount = math.clamp(_scannerBlackBoxRecordedCount, 0, entryCount);
+                    int startIndex = validCount >= entryCount ? _scannerBlackBoxCursor : 0;
+                    for (int i = 0; i < entryCount; i++)
                     {
-                        ScannerBlackBoxEntry entry = _scannerBlackBox[i];
+                        int sourceIndex = startIndex + i;
+                        if (sourceIndex >= entryCount)
+                            sourceIndex -= entryCount;
+                        ScannerBlackBoxEntry entry = _scannerBlackBox[sourceIndex];
                         writer.Write(entry.Frame);
                         writer.Write(entry.ToolHash);
                         writer.Write(entry.ArtifactHash);

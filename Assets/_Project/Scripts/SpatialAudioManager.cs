@@ -79,7 +79,7 @@ namespace Hecton8.Audio
     /// Runtime audio service accessed through Hecton8.Core.GlobalRegistry.Audio.
     /// Zero-GC Ð² hot path. Ð–Ñ‘ÑÑ‚ÐºÐ¸Ð¹ Ð»Ð¸Ð¼Ð¸Ñ‚ Ð¾Ð´Ð½Ð¾Ð²Ñ€ÐµÐ¼ÐµÐ½Ð½Ñ‹Ñ… Ð¸ÑÑ‚Ð¾Ñ‡Ð½Ð¸ÐºÐ¾Ð².
     /// </summary>
-    public sealed class SpatialAudioManager : MonoBehaviour, IAudioService, IAudioVirtualizationService, IUpdatable, IFastTickable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IPhysicsImpactEventListener, IPhysicsAcousticImpulseEventListener, IRepairDroneTorchAcousticListener, IFatalPressureImplosionEventListener, IScalabilityChangedEventListener, IServiceHeartbeat, IServiceShutdown
+    public sealed class SpatialAudioManager : MonoBehaviour, IAudioService, IAudioVirtualizationService, IUpdatable, IFastTickable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IPhysicsImpactEventListener, IPhysicsAcousticImpulseEventListener, IRepairDroneTorchAcousticListener, IFatalPressureImplosionEventListener, IScalabilityChangedEventListener, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener, IServiceHeartbeat, IServiceShutdown
     {
         private const float SoundSpeedWaterMetersPerSecond = 1480f;
         private const float MassiveDistanceFixedAudioDelayMeters = 740f;
@@ -586,10 +586,12 @@ namespace Hecton8.Audio
         private bool _runtimeResourcesInitialized;
         private bool _eventsSubscribed;
         private bool _scalabilityEventsRegistered;
+        private bool _hotSwapRegistered;
         private IPlayerRuntimeContext _cachedPlayerRuntimeContext;
         private IWeatherService _cachedWeatherService;
         private AcousticZoneController _cachedAcousticZone;
         private HectonSurfaceWeatherDirector _cachedSurfaceWeatherDirector;
+        private PlayerCriticalProceduralAudioRenderer _cachedPlayerCriticalAudio;
         private HectonQualityTier _cachedScalabilityTier = HectonQualityTier.Unknown;
         private bool _cachedLowMemoryProfile;
         private int _spatialAudioPolicyRefreshFrame = SpatialAudioPolicyUninitializedFrame;
@@ -625,6 +627,8 @@ namespace Hecton8.Audio
 
             if (_isInitialized)
             {
+                RefreshCachedAudioRuntimeServicesCold();
+                TryRegisterHotSwapListener();
                 RefreshSpatialAudioPolicyCold();
                 TryRegisterScalabilityEvents();
                 TrySubscribeAudioEvents();
@@ -653,6 +657,7 @@ namespace Hecton8.Audio
                 ActiveRuntimeInstance = null;
 
             TryUnregisterScalabilityEvents();
+            TryUnregisterHotSwapListener();
             TryUnsubscribeAudioEvents();
             if (_isInitialized)
             {
@@ -694,6 +699,7 @@ namespace Hecton8.Audio
             ClearVirtualVoiceQueues();
             _listenerPlayerMovement = null;
             _foveatedSimulationDirector = null;
+            _cachedPlayerCriticalAudio = null;
             _cachedPlayerRuntimeContext = null;
             _cachedWeatherService = null;
             _cachedAcousticZone = null;
@@ -826,6 +832,8 @@ namespace Hecton8.Audio
         {
             EnsureRuntimeResourcesInitialized();
             TrySubscribeAudioEvents();
+            RefreshCachedAudioRuntimeServicesCold();
+            TryRegisterHotSwapListener();
             RefreshSpatialAudioPolicyCold();
             TryRegisterScalabilityEvents();
             TryRegisterOriginShiftListener();
@@ -1009,6 +1017,23 @@ namespace Hecton8.Audio
         public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
         {
             CacheSpatialAudioPolicy(payload.CurrentQualityTier, _cachedLowMemoryProfile, Time.frameCount);
+        }
+
+        public void OnGlobalRegistryServiceRebound(
+            GlobalRegistryServiceSlot serviceSlot,
+            ref object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.PlayerCriticalAudioRuntime)
+                _cachedPlayerCriticalAudio = currentService as PlayerCriticalProceduralAudioRenderer;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.PlayerCriticalAudioRuntime)
+                _cachedPlayerCriticalAudio = currentService as PlayerCriticalProceduralAudioRenderer;
         }
 
         /// <summary>

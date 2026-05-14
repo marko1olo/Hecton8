@@ -190,12 +190,12 @@ verification focused when generated projects contain package/vendor references.
 Use explicit budgets to prevent new Core graph debt:
 
 ```powershell
-Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -RequireCoreBuildGate -MaxCoreAsmdefDebtReferences 25 -MaxGeneratedProjectDebtReferences 10 -MaxSourceBackedBridgeDebtReferences 16 -MaxSourceBackedCompileBridgeDebtReferences 8 -MaxProjectReferenceReplacementDebtReferences 8
+Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -RequireCoreBuildGate -MaxCoreAsmdefDebtReferences 25 -MaxGeneratedProjectDebtReferences 10 -MaxSourceBackedBridgeDebtReferences 14 -MaxSourceBackedCompileBridgeDebtReferences 8 -MaxProjectReferenceReplacementDebtReferences 6
 ```
 The numbers above are the 2026-05-15 known baseline after removing three
-unused Core asmdef debt references and seven unused source-backed bridge
-references from the integrator pass. The total bridge debt is 16: 8
-Core-compile-bridge debt refs and 8 project-reference replacement debt refs.
+unused Core asmdef debt references and nine unused source-backed bridge
+references from the integrator pass. The total bridge debt is 14: 8
+Core-compile-bridge debt refs and 6 project-reference replacement debt refs.
 They are not a target. Lower them only after staged contract extraction and
 compile verification.
 
@@ -296,7 +296,7 @@ Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json
 Core graph budget gate:
 
 ```powershell
-Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -RequireCoreBuildGate -MaxCoreAsmdefDebtReferences 25 -MaxGeneratedProjectDebtReferences 10 -MaxSourceBackedBridgeDebtReferences 16 -MaxSourceBackedCompileBridgeDebtReferences 8 -MaxProjectReferenceReplacementDebtReferences 8
+Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -RequireCoreBuildGate -MaxCoreAsmdefDebtReferences 25 -MaxGeneratedProjectDebtReferences 10 -MaxSourceBackedBridgeDebtReferences 14 -MaxSourceBackedCompileBridgeDebtReferences 8 -MaxProjectReferenceReplacementDebtReferences 6
 ```
 
 AUP precision budget gate:

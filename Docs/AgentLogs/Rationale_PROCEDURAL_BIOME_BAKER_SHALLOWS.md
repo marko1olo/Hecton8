@@ -355,3 +355,17 @@ Scalability potential: Low/MX350 gets deterministic LOD bounds data with no disa
 Hardware Impact: Runtime remains 0 us/frame and 0 bytes procedural allocation. The gain is prevention and editor hygiene: no invalid LOD bounds can enter the asset library unnoticed, and the validator scratch ownership is explicit. Exact runtime microseconds are not profiled because this is editor validation.
 
 Verification: No dotnet rebuild and no Unity import was run. `LodGroupBoundsYamlScan Count=200 Bad=0 MinSize=1.665000 MaxSize=18.835001`; `git diff --check` passed for `ShallowsBioForgeBatchBaker.cs` with only the repo CRLF warning. Source scans found canonical scratch capacities `List<Transform>[8]`, `List<Component>[8]`, `List<Material>[4]`, `lodGroup.localReferencePoint`, and `lodGroup.size <= 0f`; source brace count remained balanced and `NonAscii=0`. Forbidden source scan remained clean.
+
+## Decision 26 - Mesh Bounds Budget Contract
+
+Problem: The mesh validator proved non-empty geometry, one submesh, UInt16 indices, readable data, required vertex streams, finite non-degenerate bounds, family triangle ceilings, and vertex color gradients. It still allowed a mesh to carry very large but finite bounds. Oversized bounds can make culling and LOD decisions conservative, keep flora rendered when it should be culled, and weaken GPU Resident Drawer/LOD efficiency without changing triangle counts or material references.
+
+Solution: Add family-specific bounds extent-squared budgets to `ShallowsBioForgeBatchBaker`: TubeCoral `4`, Kelp `121`, PorousRock `9`. Extend `ValidateMeshGeometryContract` to receive `familyFolder`, resolve the family budget through `TryResolveMaxBoundsExtentSq`, and reject bounds with non-positive, non-finite, or over-budget extents.
+
+Rejected Alternatives: Relying only on triangle counts was rejected because culling cost is driven by bounds as well as geometry. Runtime `mesh.RecalculateBounds` or renderer bounds correction was rejected because generated Shallows assets must be correct editor-authored data. Tighter exact per-mesh hashes were rejected because deterministic generation already owns identity; this pass needed a scalable culling budget guard, not brittle serialization hashes.
+
+Scalability potential: Low/MX350 gets compact renderer bounds that preserve culling and LOD early-out behavior. Middle/High/Ultra can use the same deterministic payload with denser dressing while validation prevents malformed bounds from inflating visible renderer sets.
+
+Hardware Impact: Runtime remains 0 us/frame and 0 bytes procedural allocation. The gain is prevention: no oversized Shallows mesh bounds can silently inflate renderer visibility, LOD residency, or culling work on i3/MX350. Exact runtime microseconds are not profiled because this is editor validation.
+
+Verification: No dotnet rebuild and no Unity import was run. `MeshBoundsBudgetYamlScan TotalBad=0`; family maxima were Kelp `93.313505/121`, TubeCoral `2.168438/4`, PorousRock `5.143031/9`. `git diff --check` passed for `ShallowsBioForgeBatchBaker.cs` with only the repo CRLF warning. Source scans found `CoralMaxBoundsExtentSq`, `KelpMaxBoundsExtentSq`, `RockMaxBoundsExtentSq`, `TryResolveMaxBoundsExtentSq`, and `MaxBoundsExtentSq`; source brace count remained balanced and `NonAscii=0`. Forbidden source scan remained clean.

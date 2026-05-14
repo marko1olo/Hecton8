@@ -81,7 +81,7 @@ namespace Hecton8.SaveSystem
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
         private const NativeAllocationLifetime NativeTransientMemoryLifetime = NativeAllocationLifetime.TransientArena;
         private const uint WfcOutpostBlackBoxMagic = 0x57464342u; // WFCB
-        private const uint WfcOutpostBlackBoxVersion = 2u;
+        private const uint WfcOutpostBlackBoxVersion = 3u;
         private const uint WfcOutpostBlackBoxOperationPersist = 0x50525354u; // PRST
         private const uint WfcOutpostBlackBoxOperationRestore = 0x52535452u; // RSTR
         private const uint WfcOutpostBlackBoxOperationHydration = 0x48594452u; // HYDR
@@ -253,7 +253,6 @@ namespace Hecton8.SaveSystem
             public uint CurrentFlags;
             public uint SignalSourceHash;
             public uint Reserved0;
-            public uint Reserved1;
         }
 
         [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 32)]
@@ -1893,8 +1892,7 @@ namespace Hecton8.SaveSystem
                 PreviousFlags = previousFlags,
                 CurrentFlags = currentFlags,
                 SignalSourceHash = signalSourceHash,
-                Reserved0 = 0u,
-                Reserved1 = 0u
+                Reserved0 = 0u
             };
         }
 
@@ -1962,7 +1960,6 @@ namespace Hecton8.SaveSystem
             writer.Write(entry.CurrentFlags);
             writer.Write(entry.SignalSourceHash);
             writer.Write(entry.Reserved0);
-            writer.Write(entry.Reserved1);
         }
 
         private void DumpSaveBlackBox()

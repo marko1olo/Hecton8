@@ -102,6 +102,7 @@ namespace Hecton8.AI
         private bool _wasStrikeActiveLastTick;
         private bool _headLookTargetActive;
         private bool _globalGpuSkinningPublished;
+        private bool _gpuBufferDataValid;
         private int _frameIndex;
         private int _activeSegmentCount = LowTierSegments;
         private int _resolvedConstraintIterations = 1;
@@ -144,7 +145,7 @@ namespace Hecton8.AI
 
             activeSegmentCount = math.min(_activeSegmentCount, MaxSegments);
             buffer = _gpuUploadBufferIndex == 0 ? _bonesGraphicsBufferB : _bonesGraphicsBufferA;
-            return HasValidGraphicsBuffer(buffer, activeSegmentCount);
+            return !_gpuUploadDirty && _gpuBufferDataValid && HasValidGraphicsBuffer(buffer, activeSegmentCount);
         }
 
         private void Awake()
@@ -347,6 +348,8 @@ namespace Hecton8.AI
             _skinningMaterial = material;
             ClearMaterialGpuSkinningBinding(_skinningMaterial);
             _gpuUploadDirty = material != null || _publishGlobalBoneBuffer;
+            if (!_gpuUploadDirty)
+                _gpuBufferDataValid = false;
         }
 
         internal void SetMotionIntent(Vector3 intendedVelocity, Vector3 headTargetWorldPosition)
@@ -436,6 +439,7 @@ namespace Hecton8.AI
             _pendingHandle = default;
             _solverScheduled = false;
             _gpuUploadDirty = false;
+            _gpuBufferDataValid = false;
         }
 
         private void CompleteScheduledSolverForLifecycle()
@@ -472,6 +476,7 @@ namespace Hecton8.AI
             _strikeTargetWorldPosition = _motionIntentHeadTarget;
             _motionIntentFrame = -1;
             _gpuUploadDirty = true;
+            _gpuBufferDataValid = false;
         }
 
         private void CaptureFallbackMotionIntent()
@@ -689,18 +694,27 @@ namespace Hecton8.AI
         private bool UploadBonesToGpu()
         {
             if (!_leviathanBones.IsCreated)
+            {
+                _gpuBufferDataValid = false;
                 return false;
+            }
 
             if (!_publishGlobalBoneBuffer && _globalGpuSkinningPublished)
                 ClearGlobalGpuSkinningBinding();
 
             if (_skinningMaterial == null && !_publishGlobalBoneBuffer)
+            {
+                _gpuBufferDataValid = false;
                 return true;
+            }
 
             EnsureGraphicsBuffers();
             GraphicsBuffer writeBuffer = _gpuUploadBufferIndex == 0 ? _bonesGraphicsBufferA : _bonesGraphicsBufferB;
             if (!HasValidGraphicsBuffer(writeBuffer, MaxSegments))
+            {
+                _gpuBufferDataValid = false;
                 return false;
+            }
 
             GraphicsBufferUploadUtility.UploadNativeArray(writeBuffer, _leviathanBones, MaxSegments);
             float ikTier = IsLowTier(_qualityTier) ? 0f : 1f;
@@ -729,11 +743,13 @@ namespace Hecton8.AI
             }
 
             _gpuUploadBufferIndex ^= 1;
+            _gpuBufferDataValid = true;
             return true;
         }
 
         private void ClearGpuSkinningBinding()
         {
+            _gpuBufferDataValid = false;
             ClearMaterialGpuSkinningBinding(_skinningMaterial);
 
             if (_publishGlobalBoneBuffer || _globalGpuSkinningPublished)
@@ -781,6 +797,7 @@ namespace Hecton8.AI
         {
             ReleaseGraphicsBuffer(ref _bonesGraphicsBufferA);
             ReleaseGraphicsBuffer(ref _bonesGraphicsBufferB);
+            _gpuBufferDataValid = false;
         }
 
         private static void ReleaseGraphicsBuffer(ref GraphicsBuffer buffer)
@@ -898,6 +915,7 @@ namespace Hecton8.AI
             _headLookTargetWorldPosition = SanitizeFiniteInputFloat3(_headLookTargetWorldPosition - offset, _motionIntentHeadTarget);
             _strikeTargetWorldPosition = SanitizeFiniteInputFloat3(_strikeTargetWorldPosition - offset, _motionIntentHeadTarget);
             _gpuUploadDirty = true;
+            _gpuBufferDataValid = false;
         }
 
         private bool TelemetryHasInvalidFrame()

@@ -7,6 +7,7 @@ Full report: `Docs/Reports/COMPUTE_DOMINANCE_REPORT.md`
 Thread triage: `COMPUTE_THREAD_TRIAGE.md`
 Thread attribution: `COMPUTE_THREAD_ATTRIBUTION.md`
 Collision risk: `COMPUTE_COLLISION_RISK.md`
+Validation forensics: `COMPUTE_VALIDATION_FORENSICS.md`
 Status/Rationale/Log:
 - `Docs/Tasks/Status_COMPUTE_LOGISTICS_AUDITOR.md`
 - `Docs/AgentLogs/Rationale_COMPUTE_LOGISTICS_AUDITOR.md`
@@ -45,6 +46,11 @@ Status/Rationale/Log:
 | Dirty paths observed, 03:24 snapshot | 45 |
 | Dirty script paths observed | 10 |
 | Hot attribution targets currently dirty | 1 |
+| Top-30 validation outputs inspected | 17,885 |
+| Top-30 non-zero validation outputs | 2,374 |
+| Top-30 outputs with `error CS####` | 1,297 |
+| Top-30 compile-fail signals | 935 |
+| Top-30 test-success signals | 0 |
 
 ## Evidence Rules
 
@@ -69,3 +75,5 @@ Thread triage has been written to `COMPUTE_THREAD_TRIAGE.md`. The valid label is
 Thread attribution has been written to `COMPUTE_THREAD_ATTRIBUTION.md`. It identifies visible patch targets from top-30 rollout JSONL. This is work-trace attribution, not final value proof.
 
 Collision snapshot has been written to `COMPUTE_COLLISION_RISK.md`. Current hot-target intersection is `Assets/_Project/Scripts/SpatialAudioManager.cs`.
+
+Validation forensics has been written to `COMPUTE_VALIDATION_FORENSICS.md`. Top-30 threads show real validation effort, but also 13.274% non-zero validation output rate and no reliable test-success signal.

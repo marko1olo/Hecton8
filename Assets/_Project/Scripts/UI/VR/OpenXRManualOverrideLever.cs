@@ -229,6 +229,10 @@ namespace Hecton8.UI.VR
             if (!IsFiniteFloat3(localHand))
                 return false;
 
+            int resolvedSampleFrame = sampleFrame >= 0 ? sampleFrame : Time.frameCount;
+            if (resolvedSampleFrame < _lastHandFrame)
+                return false;
+
             float pivotDistanceSq = math.lengthsq(localHand - _leverPivots[0]);
             if (pivotDistanceSq > _grabRadiusSq)
             {
@@ -239,7 +243,7 @@ namespace Hecton8.UI.VR
 
             _lastHandLocalPosition = localHand;
             _lastHandSide = fallbackHandSide;
-            _lastHandFrame = sampleFrame >= 0 ? sampleFrame : Time.frameCount;
+            _lastHandFrame = resolvedSampleFrame;
             return true;
         }
 

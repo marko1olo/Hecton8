@@ -106,3 +106,28 @@ Verification:
 - `git fetch origin` after push succeeded.
 - `git rev-list --left-right --count origin/main...HEAD` returned `0 0`.
 - New dirty worktree files after the second push are live parallel-agent edits, not unpushed committed history.
+
+## 2026-05-15 - Honest Continuation Pass
+
+What was wrong:
+- After the last pushed head, another live dirty tail appeared from parallel agent work.
+- The local branch itself was not divergent: `origin/main...HEAD` returned `0 0`.
+- The dirty tail included runtime scripts, compute audit docs, agent logs, rationale files, and a new `COMPUTE_VALIDATION_FORENSICS.md` file.
+
+What was done:
+- Fetched `origin` before staging.
+- Verified no unmerged paths.
+- Ran `git diff --check`; only LF/CRLF normalization warnings were present.
+- Ran a strict conflict-marker scan for `<<<<<<<` / `>>>>>>>`; no active conflict markers were found.
+- Recorded this operator pass before checkpointing the live snapshot.
+
+Cinematic Cheats used:
+- None. Git-only operation.
+
+Exact Microseconds saved:
+- Runtime saved: 0 us. Dev-path saved: current tail is separated from already-pushed history; exact wall-clock savings not benchmarked.
+
+Verification:
+- `git rev-list --left-right --count origin/main...HEAD` returned `0 0` before staging.
+- `git diff --check` produced no semantic whitespace errors, only CRLF warnings.
+- Conflict-marker scan returned no active merge markers.

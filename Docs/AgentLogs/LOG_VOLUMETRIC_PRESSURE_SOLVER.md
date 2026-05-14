@@ -350,3 +350,14 @@ Follow-up upgrade 36:
 Exact microseconds saved after follow-up 36:
 - Invalid frame time skips the entire hydrodynamic stress pass; invalid seismic epicenters skip one active-module scan.
 - Estimated 10-80 us saved on i3/MX350 invalid-input frames/events; valid-frame overhead is one finite check plus three event-ingress component checks.
+
+Follow-up upgrade 37:
+- What was wrong: non-finite hydrodynamic/seismic ingress could be rejected without recording the fault into the 300-frame blackbox. Corrupted native module spike/integrity/flood scalar lanes could also feed the stress solver until the outer finite guard caught the final result.
+- What was done: added `RecordNonFinitePressureIngress`; non-finite `deltaTime`, seismic epicenter/radius, direct spike magnitude, and native stress scalar corruption now write the blackbox path. `ResolveModuleStress01` sanitizes non-finite depth, integrity, joint, compression, flood, and spike inputs before shader-facing stress upload.
+- Cinematic cheat used: one corrupt lane is isolated to zero visual stress instead of clearing the whole habitat deformation field. Valid rooms keep their pressure bowing/crease feedback.
+- Static checks: `rg` confirms blackbox ingress recording, `SaturateFinite01`, invalid-state reporting, and native spike sanitation are wired. Managed-offender scans found no C# string/LINQ/foreach offenders in `HabitatGraphManager.cs`; touched C# brace count is balanced.
+- Rebuild policy: no `dotnet` rebuild and no Unity rebuild were run by explicit user instruction.
+
+Exact microseconds saved after follow-up 37:
+- Fault frames avoid repeated NaN propagation through flood, pressure, module stress and shader upload state.
+- Estimated 5-20 us saved on i3/MX350 recovery frames; valid-frame overhead is bounded finite checks inside the existing 64-module stress loop and remains 0 B/frame.

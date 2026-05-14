@@ -91,6 +91,8 @@ Status: PENDING VERIFICATION
 - Isolated runtime compile after CI artifact schema clarity pass: PASS via Unity Mono/Roslyn using UnityJIT facades, Unity modules, current `Library/ScriptAssemblies`, and `Assembly-CSharp.dll`.
 - Isolated editor runner compile after CI artifact schema clarity pass: PASS via Unity Mono/Roslyn with `UNITY_EDITOR` defined, Unity editor facade, and `Assembly-CSharp.dll`.
 - Scoped QA/headless source count after CI artifact schema clarity pass: `SignalBusPush=3`, `GlobalSignalsPublish=4`, `GlobalRegistryDot=13`, `GlobalRegistryIdentifierTokens=18`, `StructLayoutAttributes=3`, `StructDeclarations=3`, `FindObjectCalls=0`, `GetComponentCalls=0`, `UnityUpdateMethods=0`, `ResultSchemaVersion=1`, `BlackboxMetadataFields=3`.
+- `git diff --check` after CI artifact schema clarity pass: PASS for whitespace on the QA runner, editor runner, and owned status/rationale/log files.
+- Temp SchemaClarity compiler artifacts after CI artifact schema clarity pass: PASS, no `*SchemaClarity*.dll` files remain in `Temp`.
 - Full `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false`: BLOCKED BY EXISTING DEPENDENCIES, 139 unrelated errors before/around core missing namespaces, duplicate SaveManager members, and interface mismatches.
 - Full `dotnet build Assembly-CSharp.csproj --no-restore -m:2 /nr:false`: BLOCKED BY SAME EXISTING `Hecton8.Core.csproj` dependency failures.
 - No `dotnet` rebuilds were run during the 2026-05-15 continuation pass.

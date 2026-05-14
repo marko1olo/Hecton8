@@ -1601,6 +1601,7 @@ namespace Hecton8.World
         private HectonFluidEngine _fluidEngine;
         private ISubmarineRuntimeContext _submarineRuntime;
         private IEncounterDirectorService _encounterDirector;
+        private IEcosystemDirectorService _ecosystemDirector;
         private BeaconNetworkSystem _beaconNetworkRuntime;
         private AbyssalFluidDecalManager _abyssalFluidDecals;
         private bool _flashlightOn;
@@ -1784,6 +1785,7 @@ namespace Hecton8.World
             _fluidEngine = null;
             _submarineRuntime = null;
             _encounterDirector = null;
+            _ecosystemDirector = null;
             _beaconNetworkRuntime = null;
             _abyssalFluidDecals = null;
             _simulationBucketer = null;
@@ -1827,6 +1829,7 @@ namespace Hecton8.World
             _fluidEngine = null;
             _submarineRuntime = null;
             _encounterDirector = null;
+            _ecosystemDirector = null;
             _beaconNetworkRuntime = null;
             _abyssalFluidDecals = null;
             _simulationBucketer = null;
@@ -2078,6 +2081,7 @@ namespace Hecton8.World
                                           _fluidEngine == null ||
                                           _submarineRuntime == null ||
                                           _encounterDirector == null ||
+                                          _ecosystemDirector == null ||
                                           _beaconNetworkRuntime == null ||
                                           _abyssalFluidDecals == null;
             if (!_runtimeServiceProbeAttempted && missingRuntimeServices)
@@ -2108,6 +2112,9 @@ namespace Hecton8.World
 
                 if (_encounterDirector == null)
                     _encounterDirector = GlobalRegistry.EncounterDirector;
+
+                if (_ecosystemDirector == null)
+                    _ecosystemDirector = GlobalRegistry.EcosystemDirector;
 
                 if (_beaconNetworkRuntime == null)
                     _beaconNetworkRuntime = GlobalRegistry.BeaconNetwork;
@@ -2525,7 +2532,7 @@ namespace Hecton8.World
         private bool TryResolveEcosystemPopulationCount(out int ecosystemPopulationCount)
         {
             ecosystemPopulationCount = 0;
-            IEcosystemDirectorService ecosystemDirector = GlobalRegistry.EcosystemDirector;
+            IEcosystemDirectorService ecosystemDirector = _ecosystemDirector;
             if (ecosystemDirector == null || !ecosystemDirector.IsInitialized)
             {
                 _ecosystemFitness = 0f;
@@ -4794,7 +4801,7 @@ namespace Hecton8.World
             return drainedCount;
         }
 
-        private static void PublishPredatorKillDebris(in BoidKillSignal killSignal, Vector3 killPositionWS, int boidId)
+        private void PublishPredatorKillDebris(in BoidKillSignal killSignal, Vector3 killPositionWS, int boidId)
         {
             uint sourceId = killSignal.PredatorId != 0u
                 ? killSignal.PredatorId

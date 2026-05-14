@@ -62,10 +62,13 @@ These files preserve the short operational view outside the long report:
 | `COMPUTE_THREAD_TRIAGE.md` | Top-heavy `.codex` thread queue by token concentration |
 | `COMPUTE_THREAD_ATTRIBUTION.md` | Top-30 rollout JSONL work-trace attribution |
 | `COMPUTE_COLLISION_RISK.md` | Current dirty-tree intersection with hot attribution targets |
+| `COMPUTE_VALIDATION_FORENSICS.md` | Top-30 validation command/output forensic scan |
 
 Latest attribution pass parsed top-30 rollout JSONL files: 490,220 events, 14,015 `apply_patch` calls, 86,616 `shell_command` calls, 1,647 unique patch targets, and patch churn of +354,203/-75,895 lines. This is work-trace evidence, not final value proof.
 
 Current collision snapshot observed 45 dirty/untracked paths and 10 dirty `Assets/_Project/Scripts/*` paths. Hot-target intersection: `Assets/_Project/Scripts/SpatialAudioManager.cs`.
+
+Validation forensics scanned 17,885 validation-relevant outputs in top-30 rollout JSONL: 15,510 exit-code-zero outputs, 2,374 non-zero outputs, 1,297 outputs with `error CS####`, 935 compile-fail signals, 746 build-success signals, and 0 reliable test-success signals. This proves validation effort existed. It does not prove final correctness.
 
 ## Continuation Addendum - Live Ledger Recheck
 

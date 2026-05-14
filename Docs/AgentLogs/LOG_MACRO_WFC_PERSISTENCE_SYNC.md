@@ -575,3 +575,30 @@ Verification:
 - Static scans confirm no stale append-specific helper name remains.
 - `git diff --check` reports no whitespace errors beyond Git CRLF normalization warnings.
 - No `dotnet` rebuild was run.
+
+## Recheck Report: WFC Black-Box Entry Size Correction
+Status: PENDING VERIFICATION.
+
+What was wrong:
+- `WfcOutpostTelemetryEntry` was annotated as 64 bytes but statically totaled 68 bytes.
+- The extra unused reserved `uint` invalidated the stated cache-line and dump-size contract.
+
+What was done:
+- Removed the unused `Reserved1` field.
+- Removed the extra `Reserved1` binary writer output.
+- Bumped `WfcOutpostBlackBoxVersion` from 2 to 3.
+
+Cinematic cheats used:
+- Kept compact binary forensic truth instead of verbose managed logs or replay history.
+
+Exact microseconds saved:
+- Measured savings: 0 us. No profiler or runtime trace.
+- Static memory correction: each WFC ring returns to the intended 300 x 64-byte footprint.
+- Hot path cost: unchanged one native frame-entry write per Tick.
+
+Verification:
+- Static scans confirm WFC version 3.
+- Static scans confirm the WFC telemetry struct contains no `Reserved1`.
+- Static scans confirm the WFC writer emits 13 fields and ends at `Reserved0`.
+- `git diff --check` reports no whitespace errors beyond Git CRLF normalization warnings.
+- No `dotnet` rebuild was run.

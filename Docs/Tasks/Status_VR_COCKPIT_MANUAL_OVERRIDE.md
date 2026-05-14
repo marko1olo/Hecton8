@@ -203,6 +203,11 @@ Execution lane: SIMULATION / `PriorityLayer.Player`
 - [x] Hot-swap unregister tolerates flag drift. DOD: `TryUnregisterHotSwapListener()` now always asks `GlobalRegistry.TryUnregisterHotSwapListener(this)` to remove the listener before clearing `_registeredHotSwapListener`, matching the idempotent tick cleanup pattern. Rejected: local flag-gated unregister because it fails exactly when lifecycle state is already inconsistent. Estimate: cold fixed-bucket scan only.
 - [x] Reverification without dotnet. DOD: `git diff --check` passed; scoped counter reports `ForbiddenPatternTotal=0`, `LatchCleanupSequence=1`, `HotSwapUnregisterAlways=1`, `LatchGuardPreventsTickRegister=1`, `LatchGuardPreventsReceiverRegister=1`, `LatchGuardPreventsHotSwapRegister=1`, `DotnetMention=0`. `CURRENT_BATCH.md` extraction still returns no matching prompt block. Rejected: dotnet rebuild/probe by explicit user instruction. Estimate: verification only.
 
+## Loop 31 - Physical Hand Sample Monotonicity
+
+- [x] Out-of-order hand samples rejected. DOD: `TryQueueHandPress()` resolves the sample frame once and refuses callbacks older than `_lastHandFrame`, preventing stale receiver callbacks from overwriting newer local hand pose/side state. Rejected: accepting last-writer-wins samples because callback order is not a gameplay truth source. Estimate: one integer compare per accepted receiver candidate; 0 B/frame allocations.
+- [x] Reverification without dotnet. DOD: `git diff --check` passed; scoped counter reports `ForbiddenPatternTotal=0`, `ResolvedSampleFrame=1`, `StaleSampleReject=1`, `LastHandFrameSingleWrite=1`, `OldFrameWrite=0`, `TryQueueLatchedGuard=1`, `DotnetMention=0`. `CURRENT_BATCH.md` extraction still returns no matching prompt block. Rejected: dotnet rebuild/probe by explicit user instruction. Estimate: verification only.
+
 STATUS: PENDING VERIFICATION - Unity editor/global Core compile dependency wall prevents full player compile proof in this session.
 
 ## Compile Attempts

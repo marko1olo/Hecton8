@@ -29,3 +29,9 @@ Solution: Treat each verified clean staged snapshot as an atomic checkpoint: run
 Rejected Alternatives: Killing GitHub Desktop, force pushing, resetting the worktree, or claiming a clean tree while files were still changing. These either destroy active work or produce false repository state.
 Scalability potential: Not a runtime system. Gameplay Low/Middle/High/Ultra behavior unchanged; repository operations only.
 Hardware Impact: 0 us runtime impact on i3/MX350. Dev-path gain is bounded conflict exposure by publishing completed checkpoint batches instead of leaving all active work local.
+
+Problem: The user asked to continue honestly while other agents were still producing live changes after the last pushed head.
+Solution: Fetch first, prove committed history is synchronized, classify the new dirty tail with diff/stat/check scans, then checkpoint only the current evidence-backed snapshot.
+Rejected Alternatives: Reporting "clean" because pushed history matched remote, or chasing an infinite stream without marking it as live parallel work. Both misrepresent the actual local state.
+Scalability potential: Not a runtime system. Repository state tracking only; gameplay tier behavior unchanged.
+Hardware Impact: 0 us runtime impact. Dev-path gain is clearer separation between pushed commits and live post-push edits.

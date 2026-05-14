@@ -401,3 +401,15 @@ Rejected Alternatives: keeping the listener until `OnDisable()` was rejected bec
 Scalability potential: Low/toaster avoids dead service callback work in long sessions. Middle/High keep fixed GlobalRegistry listener tables available for streamed cockpit controls. Ultra can stack more animated post-latch presentation without keeping the spent control in service lifecycle machinery.
 
 Hardware Impact: no steady-frame impact. The latch frame pays one idempotent fixed-table listener removal and prevents future hot-swap callback dispatch for the spent lever. i3/MX350 gain is freed listener capacity plus avoided cold callback work during service rebinding.
+
+## Decision 33 - Physical hand sample frames must be monotonic
+
+Problem: `TryQueueHandPress()` accepted any valid local hand position and wrote `_lastHandFrame` afterward. If a bridge, test harness, or future two-hand probe path delivered an older callback after a newer one, the lever could regress to stale hand pose/side data and then release or haptically localize against the wrong hand.
+
+Solution: resolve the incoming sample frame once, using the probe-supplied frame when present and `Time.frameCount` only for direct compatibility callers. Reject samples older than `_lastHandFrame` before distance checks mutate state. The current frame and same-frame samples are still accepted.
+
+Rejected Alternatives: last-writer-wins was rejected because callback order is not authoritative interaction time. A per-hand sample queue was rejected because the manual override lever only needs the freshest physical grab pose, and queues would add unnecessary state. Rejecting same-frame duplicates was rejected because future left/right probes may legitimately report in one frame.
+
+Scalability potential: Low/toaster gets stable hand ownership without extra containers. Middle/High keep deterministic haptic side routing under denser cockpit probes. Ultra can layer richer IK/haptic presentation on the freshest sample without solving a multi-sample history.
+
+Hardware Impact: one integer compare on receiver callbacks only, no steady dispatcher cost, no allocation. i3/MX350 avoids false stale-grab release and wrong-hand haptic work after callback reordering.

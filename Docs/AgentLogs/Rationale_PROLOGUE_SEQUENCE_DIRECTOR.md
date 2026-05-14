@@ -404,3 +404,11 @@ Solution: Add `IsValidPrologueSplashdownSignal()` before `QueueSplashdownFluidIm
 Rejected Alternatives: Keep source+phase-only gating because current bridge output is valid, or duplicate the full sequence bridge inside fluid. Current output is not a long-term guarantee on a shared lane; duplicating bridge logic would spread ownership. A local shape guard is the narrowest cross-domain contract check.
 Scalability potential: Low/MX350 avoids accidental bubble-ring and impulse-field work from malformed handoff packets. Middle/High/Ultra keep expensive splashdown overkill reserved for the authoritative sequence handoff shape.
 Hardware Impact: Adds one flag check and two float checks per complete packet in an 8-slot lane before fluid work. Normal cost is below 1 us; avoided work includes up to 500 bubble slots and potential impulse-field scheduling. Verification this pass is static only by user request; no dotnet rebuild or response-file compile was run.
+
+## Decision 49 - Re-entry VFX AUP Guard
+
+Problem: `OrbitalDropReentryVfxController` validated scalar atmospheric and complete packet data but then copied `CapsuleAup` directly into later acoustic, debris, droplet, and state signals. A corrupted AUP could propagate NaN/Inf runtime positions into multiple presentation consumers.
+Solution: Add `IsFiniteRuntimeAup()` and call it after phase/shape acceptance but before `_lastCapsuleAup` assignment for atmospheric and complete packets. Invalid AUP packets write the existing NaN telemetry flag and dump the VFX black box.
+Rejected Alternatives: Trust producers to provide valid AUP, or validate only at the later debris/audio publish sites. Producer trust is weak on shared signal lanes; late validation would duplicate checks across every downstream publish and allow contaminated controller state.
+Scalability potential: Low/MX350 avoids wasting shader/audio/debris work on invalid spatial payloads. Middle/High/Ultra keep plasma roar, ocean waves, splash debris, visor droplets, and hydrated fade aligned to valid capsule positions.
+Hardware Impact: Adds one AUP-to-runtime finite check per accepted atmospheric/complete packet, below the cost of downstream acoustic/debris fan-out and fault-only black-box dump. Verification this pass is static only by user request; no dotnet rebuild or response-file compile was run.

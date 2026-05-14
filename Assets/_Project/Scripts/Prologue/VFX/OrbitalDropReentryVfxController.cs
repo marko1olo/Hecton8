@@ -304,6 +304,13 @@ namespace Hecton8.Prologue.VFX
                 if (!IsRecognizedAtmosphericPhase(signal.Phase))
                     continue;
 
+                if (!IsFiniteRuntimeAup(in signal.CapsuleAup))
+                {
+                    WriteTelemetry(ReentryVfxStateSignal.FlagNaNGuard);
+                    DumpBlackBoxOnce();
+                    continue;
+                }
+
                 _lastCapsuleAup = signal.CapsuleAup;
                 _altitudeMeters = math.max(0f, signal.AltitudeMeters);
                 _velocityMetersPerSecond = math.max(0f, signal.UniverseVelocityMetersPerSecond);
@@ -350,6 +357,13 @@ namespace Hecton8.Prologue.VFX
 
                 if (!sequenceOceanHandoff && _phase >= ReentryPhase.HydratedFade)
                     continue;
+
+                if (!IsFiniteRuntimeAup(in signal.CapsuleAup))
+                {
+                    WriteTelemetry(ReentryVfxStateSignal.FlagNaNGuard);
+                    DumpBlackBoxOnce();
+                    continue;
+                }
 
                 _lastCapsuleAup = signal.CapsuleAup;
                 _whiteoutHoldSecondsRemaining = math.max(_whiteoutHoldSecondsRemaining, math.max(0f, signal.WhiteoutHoldSeconds));
@@ -812,6 +826,12 @@ namespace Hecton8.Prologue.VFX
 
             return signal.Phase == PrologueCompleteSignal.PhaseOceanHandoff &&
                    (signal.Flags & PrologueCompleteSignal.FlagForceWhiteout) != 0;
+        }
+
+        private static bool IsFiniteRuntimeAup(in AbsoluteUniversePosition position)
+        {
+            float3 runtimePosition = position.ToRuntimeFloat3();
+            return math.all(math.isfinite(runtimePosition));
         }
 
         private bool IsFiniteRuntimeState()

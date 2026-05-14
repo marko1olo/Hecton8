@@ -11,6 +11,8 @@ param(
     [int]$MaxSourceBackedCompileBridgeDebtReferences = -1,
     [int]$MaxProjectReferenceReplacementDebtReferences = -1,
     [int]$MaxAupPrecisionRisk = -1,
+    [int]$MaxFindObjectCalls = -1,
+    [int]$MaxLegacyEventPublish = -1,
     [int]$MaxDuplicateSignalNames = -1
 )
 
@@ -87,6 +89,10 @@ function New-FileRow {
         File = $RelativePath
         Domain = $Domain
         Lines = $LineCount
+        SignalBusPush = [int]$Counters['SignalBusPush']
+        GlobalRegistrySurface = [int]$Counters['GlobalRegistrySurface']
+        EventPublish = [int]$Counters['EventPublish']
+        StaticInstance = [int]$Counters['StaticInstance']
         NativeArrayRefs = [int]$Counters['NativeArrayRefs']
         GlobalDataVaultRefs = [int]$Counters['GlobalDataVaultRefs']
         DisposeCalls = [int]$Counters['DisposeCalls']
@@ -94,6 +100,11 @@ function New-FileRow {
         GetComponentCalls = [int]$Counters['GetComponentCalls']
         AupPrecisionSafe = [int]$Counters['AupPrecisionSafe']
         AupPrecisionRisk = [int]$Counters['AupPrecisionRisk']
+        CouplingRisk = [int]$Counters['GlobalRegistrySurface'] +
+            [int]$Counters['EventPublish'] +
+            [int]$Counters['StaticInstance'] +
+            [int]$Counters['FindObjectCalls'] +
+            [int]$Counters['GetComponentCalls']
     }
 }
 
@@ -1354,6 +1365,53 @@ function Assert-DuplicateSignalNameBudget {
         $MaxDuplicateSignalNames) +
         "`nDuplicate signal names:`n" +
         ($lines -join "`n")
+}
+
+function Assert-StaticCounterBudget {
+    param(
+        [System.Collections.Specialized.OrderedDictionary]$Counts,
+        [System.Collections.IEnumerable]$FileRows,
+        [string]$CounterName,
+        [int]$MaxValue,
+        [string]$Label
+    )
+
+    if ($MaxValue -lt 0) {
+        return
+    }
+
+    $actual = [int]$Counts[$CounterName]
+    if ($actual -le $MaxValue) {
+        return
+    }
+
+    $message = '{0} H-Phi budget failed: count {1} exceeds budget {2}.' -f
+        $Label,
+        $actual,
+        $MaxValue
+
+    $topFiles = @($FileRows |
+        Where-Object { [int]$_.PSObject.Properties[$CounterName].Value -gt 0 } |
+        Sort-Object -Property @(
+            @{ Expression = { [int]$_.PSObject.Properties[$CounterName].Value }; Descending = $true },
+            @{ Expression = 'CouplingRisk'; Descending = $true }) |
+        Select-Object -First 8)
+
+    if ($topFiles.Count -gt 0) {
+        $lines = [System.Collections.Generic.List[string]]::new()
+        foreach ($file in $topFiles) {
+            [void]$lines.Add((
+                '{0} {1}={2} coupling={3}' -f
+                $file.File,
+                $CounterName,
+                [int]$file.PSObject.Properties[$CounterName].Value,
+                $file.CouplingRisk))
+        }
+
+        $message += "`nTop files:`n" + ($lines -join "`n")
+    }
+
+    throw $message
 }
 
 function Add-Count {

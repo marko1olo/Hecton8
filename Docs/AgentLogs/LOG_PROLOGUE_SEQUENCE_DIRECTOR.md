@@ -316,3 +316,11 @@ What was done -> Added `IsValidPrologueSplashdownSignal()` so fluid splashdown r
 Cinematic Cheats used -> The splashdown remains a controlled fake: low tier keeps cheap bubble telemetry, high/ultra reserve impulse-field overkill for valid sequence handoff only.
 Exact Microseconds saved -> Adds below-1-us checks in the 8-slot complete lane. Prevents malformed packets from spending up to 500 bubble slots and potential impulse-field scheduling.
 Verification -> No dotnet rebuild/response-file compile was run per user constraint. Targeted scan confirms the fluid helper gate; `git diff --check` reports line-ending warnings only for the fluid patch.
+
+## 2026-05-15 - Loop 44 VFX AUP Finite Guard Review
+
+What was wrong -> Re-entry VFX copied `CapsuleAup` from accepted atmospheric/complete packets into later acoustic, debris, droplet, and VFX state signals without proving the AUP resolves to finite runtime space.
+What was done -> Added `IsFiniteRuntimeAup()` and guarded atmospheric and complete packet consumption before `_lastCapsuleAup` is updated. Bad AUP packets now write NaN telemetry and dump the VFX black box.
+Cinematic Cheats used -> None; this protects the existing plasma, whiteout, splash, and visor-droplet fakes from corrupted spatial payloads.
+Exact Microseconds saved -> Adds one finite AUP check per accepted packet, below normal fan-out cost. Prevents invalid spatial packets from triggering acoustic/debris/state work.
+Verification -> No dotnet rebuild/response-file compile was run per user constraint. Targeted scan confirms VFX AUP guards; forbidden-pattern scan returned no hits; `git diff --check` reports line-ending warnings only.

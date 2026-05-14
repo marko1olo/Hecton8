@@ -249,3 +249,15 @@ Cinematic Cheats used: Static authored LOD prefabs, dithered crossfade, shader m
 Exact Microseconds saved: Runtime remains 0 us/frame and 0 bytes procedural allocation. This prevents invalid LOD bounds or ambiguous editor scratch ownership from entering the Shallows asset library; exact runtime microseconds were not profiled.
 
 Verification: No dotnet rebuild and no Unity import was run. `LodGroupBoundsYamlScan Count=200 Bad=0 MinSize=1.665000 MaxSize=18.835001`; `git diff --check` passed for the baker with only the repo CRLF warning; source brace balance stayed `Delta=0`, `NonAscii=0`, and forbidden source scan stayed clean.
+
+## 2026-05-15 Mesh Bounds Budget Contract
+
+What was wrong: Mesh geometry validation allowed finite but oversized bounds. That can keep flora visible too long, break LOD residency assumptions, and reduce culling efficiency while triangle budgets and mesh references still look correct.
+
+What was done: Added family-specific max mesh bounds extent-squared budgets and `TryResolveMaxBoundsExtentSq`. `ValidateMeshGeometryContract` now receives the family name and rejects zero, non-finite, or over-budget mesh bounds.
+
+Cinematic Cheats used: Static authored LOD meshes, dithered crossfade, shader masks, shared atlas/material, no flora colliders, and rock-only LOD2 convex proxies remain unchanged.
+
+Exact Microseconds saved: Runtime remains 0 us/frame and 0 bytes procedural allocation. This prevents malformed bounds from inflating renderer visibility and LOD residency; exact runtime microseconds were not profiled.
+
+Verification: No dotnet rebuild and no Unity import was run. `MeshBoundsBudgetYamlScan TotalBad=0`; family maxima were Kelp `93.313505/121`, TubeCoral `2.168438/4`, PorousRock `5.143031/9`; `git diff --check` passed for the baker with only the repo CRLF warning; source brace balance stayed `Delta=0`, `NonAscii=0`, and forbidden source scan stayed clean.

@@ -1422,7 +1422,13 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            if (!IsFinite(gridResolution) || !IsFinite(flowCenter) || !IsFinite(flowSpacing))
+            float3 flowResolution = new float3(gridResolution.x, gridResolution.y, gridResolution.z);
+            float3 flowSpacingMeters = new float3(flowSpacing.x, flowSpacing.y, flowSpacing.z);
+            if (!IsFinite(gridResolution) ||
+                !IsFinite(flowCenter) ||
+                !IsFinite(flowSpacing) ||
+                math.any(flowResolution < new float3(1.0f)) ||
+                math.any(math.abs(flowSpacingMeters) <= new float3(0.0001f)))
             {
                 _lastGpuFlowResolution = Vector4.zero;
                 _lastGpuFlowCenter = Vector4.zero;
@@ -1525,6 +1531,7 @@ namespace Hecton8.Gameplay
             float safeRange = SanitizeNonNegative(publishedRange);
             if (!math.all(math.isfinite(safeOrigin)) ||
                 !math.all(math.isfinite(safeCellSize)) ||
+                math.any(math.abs(safeCellSize) <= new float3(0.0001f)) ||
                 safeRange <= 0.0001f)
             {
                 sdfTexture3D = default;

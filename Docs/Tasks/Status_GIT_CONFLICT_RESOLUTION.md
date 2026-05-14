@@ -27,3 +27,8 @@ Task loop 3:
 - [x] Commit active agent tail | DOD: `git diff --cached --check` passed after fixing Unity meta trailing whitespace; committed `29d517219` and `73ca61c58` | Rejected: reset/discard, force push, deleting Desktop state | Estimate: 0 us runtime.
 - [x] Push checkpoint commits | DOD: `git push origin main:main` succeeded for both checkpoint commits; post-fetch divergence returned `0 0` | Rejected: GitHub Desktop-only visual confirmation | Estimate: 0 us runtime.
 - [x] Record continuing dirty tail | DOD: post-push `git status` and `git diff --stat` captured ongoing parallel-agent edits | Rejected: pretending worktree was clean while other agents kept writing | Estimate: 0 us runtime.
+
+Task loop 4:
+- [x] Continue from pushed head | DOD: `git fetch origin`; `rev-list origin/main...HEAD` returned `0 0` before staging | Rejected: assuming Desktop visual state was authoritative | Estimate: 0 us runtime.
+- [x] Validate live dirty tail | DOD: `git diff --stat`, `git diff --check`, unmerged-path scan, and strict conflict-marker scan | Rejected: blind checkpointing without evidence | Estimate: 0 us runtime.
+- [x] Record operator evidence | DOD: appended this loop to `Status`, `Rationale`, and `LOG` before commit | Rejected: chat-only report | Estimate: 0 us runtime.

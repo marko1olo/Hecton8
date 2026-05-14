@@ -179,3 +179,25 @@ Cinematic cheats used: No visual change. The same physical panel cursor projecti
 Exact microseconds saved: Estimate only. Steady-frame gain is small; cold/worst-case path avoids one bootstrap call chain, one component probe, and one retry-timer branch.
 
 Verification: No dotnet rebuilds were run. Static scans found no `Hecton8.Bootstrap`, `GameBootstrapper`, `_cameraRetryTimer`, `TryGetCurrentPlayerTransform`, old phosphor fallback markers, or hot-path text/LINQ markers in `DiegeticPanelController.cs`.
+
+## 2026-05-15 Diegetic Panel Tick Time Cache
+What was wrong: Physical panel tick work read unscaled time separately for interaction freshness, proxy-light flicker, and queued input-event timestamps.
+
+What was done: Sampled dispatcher unscaled time once per active panel tick into `_tickUnscaledTime` and reused it across the tick call stack.
+
+Cinematic cheats used: No visual change. The same proxy-light flicker fake remains; it now uses the same sampled frame timestamp as panel input events.
+
+Exact microseconds saved: Estimate only. Expected gain is sub-1 us per active panel tick by removing repeated native time property reads.
+
+Verification: No dotnet rebuilds were run. Static scan found no direct `Time.unscaledTime` or `Time.realtimeSinceStartup` markers in `DiegeticPanelController.cs`.
+
+## 2026-05-15 Diegetic Panel Camera Transform Cache
+What was wrong: Physical panel distance refresh and ray projection still read `resolvedCamera.transform` directly after camera ownership was moved to the registry path.
+
+What was done: Cached the resolved interaction camera transform with the camera reference, tracked explicit-camera ownership, and cleared the cache on disable.
+
+Cinematic cheats used: No visual change. The same physical panel projection math remains; the change removes repeated transform property access and stale explicit-camera ownership risk.
+
+Exact microseconds saved: Estimate only. Expected gain is sub-1 us per active physical panel frame, with cleaner camera ownership for future panel effects.
+
+Verification: No dotnet rebuilds were run. Static scan found no `resolvedCamera.transform` markers; the only remaining `camera.transform` marker in `DiegeticPanelController.cs` is inside `CacheInteractionCamera()`.

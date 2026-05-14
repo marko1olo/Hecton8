@@ -462,3 +462,33 @@ Verification state:
 - Shader hot-math scan returned no matches for `sincos`, raw trig, `pow`, `exp`, `log`, or raw `normalize`.
 - Unity import/compile and profiler capture remain unverified.
 - No dotnet rebuild was run.
+
+## 2026-05-15 - Per-Draw Material Binding Isolation
+
+What was wrong:
+- The indirect debris draw wrote per-frame buffers and material parameters onto the resolved `Material`.
+- Shared authored materials or multiple active debris renderers could overwrite each other's position, velocity, visible-index, or low/high material flags before `Graphics.RenderMeshIndirect`.
+
+What was done:
+- Added one persistent `MaterialPropertyBlock` owned by `CarveDebrisComputeRenderer`.
+- Moved `_CarveDebrisRead`, `_CarveDebrisVelocityRead`, `_CarveDebrisVisibleIndices`, and `_CarveDebrisMaterialParams` binding from shared material mutation to the property block.
+- Passed the property block through `RenderParams.matProps` for the indirect draw.
+- Cleared the property block during GPU-state release before buffers are released.
+- Did not run dotnet build, dotnet rebuild, or Unity batch compile.
+
+Cinematic cheats used:
+- No physical simulation was added.
+- This preserves the existing fixed GPU rock-chip fake and prevents renderer state cross-talk while Low/MX350 and High/Ultra keep their current visual split.
+
+Exact microseconds saved:
+- Direct frame-time saving: 0 us.
+- Added hot cost: reused `MaterialPropertyBlock.Clear()` plus existing property writes; no per-frame allocation.
+- Avoided cost: no material clone per renderer, no per-frame property block allocation, and no shared-material GPU-buffer corruption.
+
+Verification state:
+- Static verification completed: `git diff --check` returned no whitespace errors, only Git LF/CRLF notices.
+- Forbidden hot-path scan returned no matches for CPU readback, ParticleSystem, ComputeBuffer, scene search, job scheduling fences, private `H8Memory.Allocate`, private `H8Memory.Release`, `material.SetBuffer`, or `material.SetVector`.
+- Shader hot-math scan returned no matches for `sincos`, raw trig, `pow`, `exp`, `log`, or raw `normalize`.
+- `CURRENT_BATCH.md` exact prompt tag count for `VFX_SDF_CARVE_DEBRIS`: 0.
+- Unity import/compile and profiler capture remain unverified.
+- No dotnet rebuild was run.

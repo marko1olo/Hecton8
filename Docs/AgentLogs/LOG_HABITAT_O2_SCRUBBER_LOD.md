@@ -168,3 +168,19 @@ Cinematic Cheats used:
 
 Exact microseconds saved:
 - No frame saving claimed. This protects H-Phi `BaseAwakeState` allocation from falling back locally after a deferred disposal edge case. No dotnet rebuild was run.
+
+## 2026-05-15 - Cold Registry Publication Addendum
+STATUS: PENDING VERIFICATION
+
+What was wrong:
+- Tick or FrostTick could be the first lane to recreate native gas state after deferred disposal, but `IGasDynamicsSolver` publication still waited for FixedTick.
+
+What was done:
+- Tick and FrostTick now seed standard atmosphere and call `TryRegisterRegistry` immediately after native state creation.
+- This keeps GlobalRegistry visibility aligned with OnEnable and FixedTick even under pause/time-dilation edges.
+
+Cinematic Cheats used:
+- None new.
+
+Exact microseconds saved:
+- No frame saving claimed. This is lifecycle correctness and H-Phi visibility hygiene; no dotnet rebuild was run.

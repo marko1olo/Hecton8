@@ -231,3 +231,11 @@ Status: PENDING VERIFICATION
 - Verification avoided dotnet rebuilds and Unity import. `LodGroupBoundsYamlScan Count=200 Bad=0 MinSize=1.665000 MaxSize=18.835001`; `git diff --check` passed for the baker with only the repo CRLF warning; source brace balance stayed `Delta=0` with `NonAscii=0`; forbidden source scan remained clean.
 - Rejected alternative: runtime LODGroup repair or re-baking was rejected because this is static prefab contract drift prevention and the existing assets already satisfy the stricter check.
 - H-Phi impact remains domain-local evidence only: validation coverage and allocation documentation improved without adding runtime ownership, runtime allocations, extra components, or cross-domain dependencies.
+
+### Loop 25 - Mesh Bounds Budget Contract
+
+- Found a remaining geometry drift path: generated meshes could pass path, vertex stream, index format, triangle budget, and LOD reference checks while carrying oversized bounds that damage renderer culling, LOD decisions, and GPU Resident Drawer efficiency.
+- Patched `ShallowsBioForgeBatchBaker` with family-specific mesh bounds extent-squared budgets and a `TryResolveMaxBoundsExtentSq` validator path. `ValidateMeshGeometryContract` now rejects non-finite, zero, or over-budget bounds per family.
+- Verification avoided dotnet rebuilds and Unity import. `MeshBoundsBudgetYamlScan TotalBad=0`; family maxima were Kelp `93.313505/121`, TubeCoral `2.168438/4`, PorousRock `5.143031/9`; `git diff --check` passed for the baker with only the repo CRLF warning; source brace balance stayed `Delta=0` with `NonAscii=0`; forbidden source scan remained clean.
+- Rejected alternative: relying only on triangle counts was rejected because bounds bloat can break culling/LOD without increasing triangles. Runtime bounds repair was rejected because generated meshes must be correct static assets.
+- H-Phi impact remains domain-local evidence only: stronger culling/LOD payload contracts without new runtime systems, scripts, allocations, or cross-domain dependencies.

@@ -160,3 +160,15 @@ Rejected Alternatives: Inventing a polish mandate would violate strict parsing. 
 Scalability potential: Low/Middle keep the smallest runtime surface. High/Ultra keep the same bucket contracts and can scale visual density without new dependency churn.
 
 Hardware Impact: 0 runtime microseconds added. No bloat introduced during final pass.
+
+## Decision 12 - Continued H-Phi Hardening Without Rebuild
+
+Problem: Follow-up instruction required more honest H-Phi improvement while explicitly forbidding `dotnet build`. Static review found one remaining Sargassum population path reading `GlobalRegistry.EcosystemDirector` inside runtime population resolution.
+
+Solution: Cache `IEcosystemDirectorService` beside the other Sargassum runtime services and resolve it through the existing dependency probe cadence. Hot population resolution now reads `_ecosystemDirector` directly.
+
+Rejected Alternatives: Running `dotnet build` violated the user order. Moving ecosystem ownership into fauna would cross domain boundaries. Adding a new SignalBus lane for a private immediate query would violate signal discipline.
+
+Scalability potential: Low/Middle avoid repeated service lookup in swarm budget refresh. High/Ultra keep the same ecosystem-driven population fidelity without extra hot-path registry traffic.
+
+Hardware Impact: Estimated 1-4 microseconds saved during Sargassum population refresh on low-end silicon; 0 managed allocations added.

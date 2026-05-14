@@ -207,3 +207,17 @@ Solution: Removed the bootstrap fallback and retry timer. Physical panels now re
 Rejected Alternatives: Keeping the bootstrap fallback for convenience, using `Camera.main`, or searching player children for a camera. Those hide broken player context wiring and add discovery work to a diegetic UI system.
 Scalability potential: Low fails closed instead of searching. Middle/High/Ultra keep deterministic camera ownership for richer physical panel effects without camera-source ambiguity.
 Hardware Impact: Expected gain is cold-path hygiene and lower worst-case discovery work, not a large steady-frame win. Removes one bootstrap call chain, one component probe, and one retry timer from panel camera resolution. No profiler proof.
+
+## Decision 29: Diegetic Panel Tick Time Cache
+Problem: Physical panel `Tick` read Unity unscaled time separately for last-interact state, proxy-light flicker, and queued input timestamps.
+Solution: Sampled `SystemDispatcher.CurrentUnscaledTimeSeconds` once per active panel tick into `_tickUnscaledTime`, then reused that value through the panel tick call stack.
+Rejected Alternatives: Keeping repeated `Time.unscaledTime` property reads or moving panel timing to a new service. Repeated reads are avoidable; a new timing service would be disproportionate when the dispatcher already publishes frame time.
+Scalability potential: Low removes tiny repeated native time reads. Middle/High/Ultra keep deterministic panel timing and can spend saved budget on richer CRT/panel effects.
+Hardware Impact: Expected gain is sub-microsecond per active panel tick on i3/MX350. No profiler proof.
+
+## Decision 30: Diegetic Panel Interaction Camera Transform Cache
+Problem: After registry camera resolution, distance refresh and ray projection still read `resolvedCamera.transform` directly.
+Solution: Cached the resolved interaction camera transform with the authored/registry camera reference, including explicit-camera ownership tracking and disable cleanup.
+Rejected Alternatives: Reading `resolvedCamera.transform` in each panel path, caching a global camera transform, or leaving stale explicit camera references after authoring changes. Per-path property reads are avoidable; globals violate ownership; stale explicit cameras break physical panel authoring.
+Scalability potential: Low removes small render/input-side property traffic. Middle/High/Ultra keep deterministic camera ownership for richer physical panel projection and CRT effects.
+Hardware Impact: Expected gain is sub-microsecond per active physical panel frame and removes a stale-camera edge case. No profiler proof.

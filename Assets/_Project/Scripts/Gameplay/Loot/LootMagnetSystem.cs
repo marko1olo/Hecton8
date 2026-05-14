@@ -26,7 +26,7 @@ namespace Hecton8.Gameplay.Loot
         private const uint TelemetryAcousticBudgetDropFlag = 1u << 1;
         private const uint TelemetryWakeBudgetDropFlag = 1u << 2;
         private const uint TelemetryInventoryMissingFlag = 1u << 3;
-        private const uint TelemetryAcquisitionBudgetDropFlag = 1u << 4;
+        private const uint TelemetryAcquisitionBudgetDeferFlag = 1u << 4;
 
         private static LootMagnetSystem _bootstrapRuntime;
         private static bool _sceneLoadedHooked;
@@ -164,7 +164,7 @@ namespace Hecton8.Gameplay.Loot
         /// <inheritdoc />
         public void FastTick(float dt)
         {
-            if (IsLowTier || _pullScheduled || _activeCount <= 0)
+            if (IsLowTier || _pullScheduled || _activeCount <= 0 || _inventory == null)
                 return;
 
             if (!TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
@@ -178,6 +178,9 @@ namespace Hecton8.Gameplay.Loot
         {
             RefreshDependencies();
             if (_pullScheduled)
+                return;
+
+            if (_inventory == null)
                 return;
 
             if (!EnsureVaultBuffers())
@@ -199,7 +202,7 @@ namespace Hecton8.Gameplay.Loot
             {
                 TryResolvePlayerAup(out _);
                 _lastCommittedAcquiredCount = 0u;
-                _lastCommittedFlags = 0u;
+                _lastCommittedFlags = _inventory == null ? TelemetryInventoryMissingFlag : 0u;
                 RecordTelemetry(_telemetryFrameCounter);
                 return;
             }
@@ -567,7 +570,7 @@ namespace Hecton8.Gameplay.Loot
 
                     if (acquisitionBudget <= 0)
                     {
-                        telemetryFlags |= TelemetryAcquisitionBudgetDropFlag;
+                        telemetryFlags |= TelemetryAcquisitionBudgetDeferFlag;
                         RestoreDeferredAcquisition(index, flags);
                         continue;
                     }

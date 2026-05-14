@@ -148,16 +148,8 @@
       <HintPath>$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Hecton8.Input.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="ShapesRuntime" Condition="Exists('$(MSBuildThisFileDirectory)Library\ScriptAssemblies\ShapesRuntime.dll') And !$([System.String]::Copy('@(Reference)').Contains('ShapesRuntime'))">
-      <HintPath>$(MSBuildThisFileDirectory)Library\ScriptAssemblies\ShapesRuntime.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="Unity.RenderPipelines.Universal.Runtime" Condition="Exists('$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Unity.RenderPipelines.Universal.Runtime.dll') And !$([System.String]::Copy('@(Reference)').Contains('Unity.RenderPipelines.Universal.Runtime'))">
       <HintPath>$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Unity.RenderPipelines.Universal.Runtime.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="VolumetricLightBeam" Condition="Exists('$(MSBuildThisFileDirectory)Library\ScriptAssemblies\VolumetricLightBeam.dll') And !$([System.String]::Copy('@(Reference)').Contains('VolumetricLightBeam'))">
-      <HintPath>$(MSBuildThisFileDirectory)Library\ScriptAssemblies\VolumetricLightBeam.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="WaveHarmonic.Crest" Condition="Exists('$(MSBuildThisFileDirectory)Library\ScriptAssemblies\WaveHarmonic.Crest.dll') And !$([System.String]::Copy('@(Reference)').Contains('WaveHarmonic.Crest'))">

@@ -215,3 +215,15 @@ Rejected Alternatives: Running a compile immediately was rejected because the wo
 Scalability potential: Low/Middle/High/Ultra process gains a live collision gate. The next integrator can prioritize `SpatialAudioManager.cs` because it is both historically hot and currently dirty.
 
 Hardware Impact: 0 runtime microseconds on i3/MX350. This is a documentation-only risk snapshot.
+
+## Decision 18 - Validation Forensics
+
+Problem: Rollout attribution proves patch activity, but not whether the expensive threads attempted or passed validation.
+
+Solution: Parse validation-relevant calls and outputs from the top-30 rollout JSONL files. Count `git diff --check`, `dotnet`/`msbuild`, Unity-related commands/tools, exit codes, CS compiler errors, compile-fail strings, build-success strings, and test-success/fail strings. Preserve the result in `COMPUTE_VALIDATION_FORENSICS.md`.
+
+Rejected Alternatives: The first broad parse attempted to inspect too much shell output and timed out. Re-running the same broad parser was rejected. Claiming current compile status from historical logs was rejected because the workspace is now dirty and concurrent agents have changed files since those rollouts.
+
+Scalability potential: Low/Middle/High/Ultra process gains a validation debt map. Future integration should prioritize threads with both high token burn and high non-zero validation output.
+
+Hardware Impact: 0 runtime microseconds on i3/MX350. No runtime file changed.

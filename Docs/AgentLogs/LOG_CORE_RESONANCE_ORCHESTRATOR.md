@@ -40,3 +40,34 @@ Verification:
 
 Status:
 - ENGINE RESONATING / COMPILE BLOCKED BY DEPENDENCY.
+
+## 2026-05-15 03:40 +04:00 - Continued H-Phi Hardening
+
+What was wrong:
+- Sargassum population resolution still read `GlobalRegistry.EcosystemDirector` directly in the runtime path.
+- H-Phi was still blocked mostly by source-backed bridge and project-reference replacement debt, not by a single compile issue.
+- Runtime verification remained forbidden for this pass by user order: no `dotnet build`, no rebuild.
+
+What was done:
+- Added cached `IEcosystemDirectorService _ecosystemDirector` to `SargassumMicroFaunaBoids`.
+- Resolved it through the existing dependency-probe cadence with the other runtime services.
+- Cleared the cached ecosystem service on disable/destroy with the other cached runtime service fields.
+- Replaced the direct population-path lookup with `_ecosystemDirector`.
+- Re-ran H-Phi core graph audit only.
+
+Cinematic Cheats used:
+- No new simulation truth was added. The existing ecosystem population fake remains: swarm count is budgeted through cached ecosystem sector data instead of per-fish world truth.
+
+Exact Microseconds saved:
+- Ecosystem director cached lookup: estimated 1-4 microseconds saved during Sargassum population refresh on i3/MX350 class hardware.
+- GC impact: 0 managed allocations added by static scan.
+
+Verification:
+- `git diff --check` on touched source passed; LF/CRLF warnings only.
+- Static allocation scan found no new hot-path containers, LINQ, `ToArray`, `FindObject`, coroutine, or string formatting in touched resonance files.
+- `Tools/Architecture/HectonPhiAudit.ps1 -Summary -CoreGraphOnly` completed at `2026-05-15 03:40:33 +04:00`.
+- Core graph counts: core asmdef debt `25`, generated project debt `10`, source-backed bridge debt `16`, compile-bridge debt `8`, project-reference replacement debt `8`.
+- No `dotnet build` was run.
+
+Status:
+- ENGINE RESONATING / COMPILE BLOCKED BY DEPENDENCY / RUNTIME PENDING VERIFICATION.

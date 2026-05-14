@@ -34,6 +34,33 @@ Verification:
 
 STATUS: AUDIT COMPLETE.
 
+## 2026-05-15 - Validation Forensics
+
+What was wrong:
+- Top-30 attribution showed patch churn but did not quantify validation attempts or failure signals.
+- A broad validation parse timed out, so the parser needed to be narrowed to validation-relevant calls and outputs only.
+
+What was done:
+- Parsed top-30 rollout JSONL files read-only for validation-relevant calls/outputs.
+- Created `COMPUTE_VALIDATION_FORENSICS.md` at project root.
+- Recorded live SQLite all-thread token mass: 44,119,468,183.
+- Inspected 17,885 validation outputs: 15,510 exit-code-zero, 2,374 non-zero, 1 no-exit.
+- Counted 1,297 outputs containing `error CS####`.
+- Counted 935 compile-fail signals, 746 build-success signals, 327 test-fail signals, and 0 reliable test-success signals.
+- Updated `COMPUTE_AUDIT_BRIEF.md`, `COMPUTE_DOMINANCE_REPORT.md`, Status, and Rationale.
+
+Cinematic Cheats used:
+- None.
+
+Exact microseconds saved:
+- Runtime: 0 us.
+- Process: not claimed.
+
+Verification:
+- Markdown-only validation forensics. Compile not run.
+
+STATUS: AUDIT COMPLETE.
+
 ## 2026-05-15 - Collision Risk Snapshot
 
 What was wrong:
