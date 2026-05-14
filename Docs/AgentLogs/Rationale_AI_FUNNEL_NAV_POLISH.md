@@ -207,3 +207,9 @@ Solution: Convert ticks to milliseconds with `math.rcp((double)Stopwatch.Frequen
 Rejected Alternatives: Leaving `/` was rejected by the reciprocal math gate. Caching a mutable managed timing service was rejected as unnecessary registry surface.
 Scalability potential: All tiers keep identical telemetry semantics with cleaner scalar math.
 Hardware Impact: Removes one scalar division per completed abyssal path timing sample; exact microseconds are below practical profiler resolution.
+
+Problem: `NativeAStarJob` trusted scheduler-provided workspace arrays and finite node data before writing scores, parents, closed flags, and heap positions.
+Solution: Add a complete-workspace guard for all native arrays, reject non-finite start/end payloads, skip non-finite current/neighbor nodes, reject non-finite edge distance/cost, clamp threat weighting non-negative, and clamp vertical allowance to non-negative.
+Rejected Alternatives: Relying on `EnsureAbyssalPathBuffers` alone was rejected because Burst jobs must fail closed when called with corrupted or stale native state. Letting negative threat weights invert edge costs was rejected by the pathfinding mandate.
+Scalability potential: Low avoids invalid heap churn and route crashes from corrupt graph payloads. High/Ultra keep the same A* behavior on valid data and spend smoothing budget only after route authority is proven.
+Hardware Impact: Adds scalar guards inside A* expansion; expected savings come from early rejection of corrupt candidates and prevention of downstream steering/telemetry faults. Exact microseconds remain pending profiler data.
