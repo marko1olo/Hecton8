@@ -39,6 +39,7 @@ Status: ACOUSTICS BAKED / UNITY RUNTIME PENDING VERIFICATION
 - `python -m py_compile Tools/AcousticValidator.py` passed.
 - `dotnet build --no-restore` could not run: `dotnet` is not installed in PATH.
 - No C# runtime file changed in loops 1-4, so Unity compile impact is source-review-only until Unity/CLI tooling is available.
+- Unity editor unavailable in this shell: `Unity` not in PATH and `C:\Program Files\Unity\Hub\Editor` is missing.
 - Commit created and pushed: `8dc0eed5` (`Bake Sabine reverb LUT`) to `origin/main`.
 - `<POLISH_MANDATE>` tag absent from `Docs/Tasks/CURRENT_BATCH.md`; final static anti-bloat pass executed anyway.
 - Anti-bloat pass: validator size `11778` bytes, spec size `4810` bytes, binary size `262400` bytes, no `AcousticValidator.pyc`, verify-only still returns `STATUS: ACOUSTICS BAKED`.
