@@ -254,42 +254,6 @@ namespace Hecton8.UI
             }
         }
 
-        private void RefreshInventorySignalBinding()
-        {
-            uint inventoryHash = playerInventory != null && playerInventory.gameObject != null
-                ? unchecked((uint)EntityId.ToULong(playerInventory.gameObject.GetEntityId()))
-                : 0u;
-
-            if (inventoryHash == _inventorySignalHash)
-                return;
-
-            _inventorySignalHash = inventoryHash;
-            _lastInventorySignalRevision = 0u;
-        }
-
-        private bool ConsumeInventoryChangedSignals()
-        {
-            uint inventoryHash = _inventorySignalHash;
-            if (inventoryHash == 0u)
-                return false;
-
-            ReadOnlySpan<InventoryChangedSignal> signals = SignalBus<InventoryChangedSignal>.GetFrameSnapshot();
-            for (int i = 0; i < signals.Length; i++)
-            {
-                InventoryChangedSignal signal = signals[i];
-                if (signal.InventoryHash != inventoryHash)
-                    continue;
-
-                if (signal.Revision == _lastInventorySignalRevision && _lastInventorySignalRevision != 0u)
-                    continue;
-
-                _lastInventorySignalRevision = signal.Revision;
-                return true;
-            }
-
-            return false;
-        }
-
         private void Subscribe()
         {
             PDAEvents.Register(this);
@@ -425,14 +389,6 @@ namespace Hecton8.UI
                 return;
             }
 
-            if (stressBucket == _lastStressCorruptionBucket &&
-                intrusionActive == _lastIntrusionActive &&
-                mechModeActive == _lastMechModeActive &&
-                dataLinkDegraded == _lastDataLinkDegraded &&
-                storageDebtBucket == _lastStorageDebtBucket &&
-                rebootProgressPercent == _lastRebootProgressPercent)
-                return;
-
             _lastStressCorruptionBucket = stressBucket;
             _lastIntrusionActive = intrusionActive;
             _lastMechModeActive = mechModeActive;
@@ -448,6 +404,46 @@ namespace Hecton8.UI
             _lastOxygenPercent = int.MinValue;
             _lastEnergyPercent = int.MinValue;
             RefreshChrome();
+        }
+
+        private bool ConsumeInventoryChangedSignals()
+        {
+            uint inventoryHash = _inventorySignalHash;
+            if (inventoryHash == 0u)
+                return false;
+
+            ReadOnlySpan<InventoryChangedSignal> signals = SignalBus<InventoryChangedSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                ref readonly InventoryChangedSignal signal = ref signals[i];
+                if (signal.InventoryHash != inventoryHash)
+                    continue;
+
+                if (signal.Revision == _lastInventorySignalRevision && _lastInventorySignalRevision != 0u)
+                    continue;
+
+                _lastInventorySignalRevision = signal.Revision;
+                return true;
+            }
+
+            return false;
+        }
+
+        private void RefreshInventorySignalBinding()
+        {
+            uint resolvedHash = ResolveInventorySignalHash(playerInventory);
+            if (_inventorySignalHash == resolvedHash)
+                return;
+
+            _inventorySignalHash = resolvedHash;
+            _lastInventorySignalRevision = 0u;
+        }
+
+        private static uint ResolveInventorySignalHash(PlayerInventory inventory)
+        {
+            return inventory != null && inventory.gameObject != null
+                ? unchecked((uint)EntityId.ToULong(inventory.gameObject.GetEntityId()))
+                : 0u;
         }
 
         private void HandleSlotChanged(int _)

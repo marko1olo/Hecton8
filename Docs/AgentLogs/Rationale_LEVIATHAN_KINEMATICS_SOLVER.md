@@ -220,11 +220,3 @@ Solution: Remove the runtime accumulator, wrap logic, and job scalar field so th
 Rejected Alternatives: Keeping the field as future reserve was rejected because unused time state becomes a false dependency and can drift from authored timing fields already used by tail whip.
 Scalability potential: All tiers preserve behavior. Low/MX350 carry one less scalar through scheduling; high/ultra keep their terrain/SDF/whip behavior unchanged.
 Hardware Impact: Estimated gain is 0.01-0.05 us per scheduled solver from removing one accumulator write and one job scalar copy. The more important effect is lower state surface, not measurable frame time.
-
-## Decision 20: Dead Phase Job Payload
-
-Problem: `FaunaKinematicsRuntime` maintained `_solverTimeSeconds` only to assign `PhaseTimeSeconds` into `LeviathanTerrainIkJob`, but the Burst solver did not consume that field.
-Solution: Remove the runtime accumulator, wrap logic, and job scalar field so the scheduled payload matches the actual solver contract.
-Rejected Alternatives: Keeping the field as future reserve was rejected because unused time state becomes a false dependency and can drift from authored timing fields already used by tail whip.
-Scalability potential: All tiers preserve behavior. Low/MX350 carry one less scalar through scheduling; high/ultra keep their terrain/SDF/whip behavior unchanged.
-Hardware Impact: Estimated gain is 0.01-0.05 us per scheduled solver from removing one accumulator write and one job scalar copy. The more important effect is lower state surface, not measurable frame time.

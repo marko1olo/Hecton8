@@ -42,6 +42,8 @@ namespace Hecton8.SaveSystem
         private const int FirstHourDtoLockSaveVersion = 72;
         private const int ProceduralFaunaStateStrideBytes = 16;
         private const int HibernatedFaunaStateStrideBytes = 112;
+        private const int ModuleSorterBufferSlotMax = 8;
+        private const int ModuleCultivationSlotMax = 4;
         private const int SerializedStringHeaderBytes = sizeof(int);
         private const int SerializedIntBytes = sizeof(int);
         private const int SerializedLongBytes = sizeof(long);
@@ -1451,7 +1453,7 @@ namespace Hecton8.SaveSystem
             return reader.ReadStructArrayBounded(
                 out value,
                 SaveData.MaxExternalScavengerSites,
-                nameof(SaveData.externalScavengerSites));
+                "externalScavengerSites");
         }
 
         private static bool WriteWorldState(ref BufferWriter writer, WorldStateDTO value)
@@ -2503,8 +2505,15 @@ namespace Hecton8.SaveSystem
                 && reader.ReadInt(out value.drillBufferedAmount)
                 && reader.ReadFloat(out value.drillCycleTimerSeconds)
                 && reader.ReadInt(out value.sorterBufferedSlotCount)
-                && ReadStringArray(ref reader, out value.sorterBufferedItemIds)
-                && reader.ReadStructArray(out value.sorterBufferedQuantities)
+                && ReadStringArray(
+                    ref reader,
+                    out value.sorterBufferedItemIds,
+                    ModuleSorterBufferSlotMax,
+                    nameof(value.sorterBufferedItemIds))
+                && reader.ReadStructArrayBounded(
+                    out value.sorterBufferedQuantities,
+                    ModuleSorterBufferSlotMax,
+                    nameof(value.sorterBufferedQuantities))
                 && reader.ReadFloat(out value.posX)
                 && reader.ReadFloat(out value.posY)
                 && reader.ReadFloat(out value.posZ)
@@ -2556,16 +2565,34 @@ namespace Hecton8.SaveSystem
             }
 
             ok = reader.ReadInt(out value.cultivationSlotCount)
-                && ReadStringArray(ref reader, out value.cultivationSeedItemIds)
+                && ReadStringArray(
+                    ref reader,
+                    out value.cultivationSeedItemIds,
+                    ModuleCultivationSlotMax,
+                    nameof(value.cultivationSeedItemIds))
                 && (version >= 53
-                    ? reader.ReadStructArray(out value.cultivationGeneticsMasks)
-                    : ReadLegacyUInt32ArrayAsUInt64(ref reader, out value.cultivationGeneticsMasks))
-                && reader.ReadStructArray(out value.cultivationGrowth01);
+                    ? reader.ReadStructArrayBounded(
+                        out value.cultivationGeneticsMasks,
+                        ModuleCultivationSlotMax,
+                        nameof(value.cultivationGeneticsMasks))
+                    : ReadLegacyUInt32ArrayAsUInt64(
+                        ref reader,
+                        out value.cultivationGeneticsMasks,
+                        ModuleCultivationSlotMax))
+                && reader.ReadStructArrayBounded(
+                    out value.cultivationGrowth01,
+                    ModuleCultivationSlotMax,
+                    nameof(value.cultivationGrowth01));
             if (!ok)
                 return false;
 
             if (version >= 51)
-                return reader.ReadStructArray(out value.cultivationQuality01);
+            {
+                return reader.ReadStructArrayBounded(
+                    out value.cultivationQuality01,
+                    ModuleCultivationSlotMax,
+                    nameof(value.cultivationQuality01));
+            }
 
             value.cultivationQuality01 = null;
             return true;

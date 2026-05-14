@@ -275,7 +275,8 @@ What was done:
 - Added fixed telemetry bits for acoustic and wake presentation budget drops.
 - Changed `PublishPresentationSignals` to return drop flags and commit them into the 300-frame telemetry ring.
 - Moved `_signalEvents` and `_telemetry` allocation/release to `H8Memory` with `SystemID.GameplayLoot`.
-- Made vault readiness require `_signalEvents.IsCreated` before Burst scheduling can proceed.
+- Made `OnEnable` exit before tick registration if the event lane or telemetry ring fails allocation.
+- Made vault readiness require both `_signalEvents.IsCreated` and `_telemetry.IsCreated` before Burst scheduling can proceed.
 - Stopped the respawned dotnet wrapper and child build processes without starting a build.
 
 Cinematic Cheats used:

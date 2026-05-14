@@ -307,3 +307,31 @@ Verification:
 - Broad scan of edited world navigation files reports only integer index decomposition divisions plus no `math.normalize`, `math.length(`, `math.distance(`, `.normalized`, `Mathf.Sqrt`, or `Math.Sqrt`.
 - `git diff --check` on touched source files passed; LF/CRLF warnings only.
 - Dotnet rebuilds were not run because the user explicitly prohibited dotnet rebuilds.
+
+## 2026-05-15 - Bridge Sampler And Hash Payload Proof
+
+What was wrong:
+- Bridge threat/flow sampling could trust initialized native arrays without proving that the current resolution metadata fit the backing buffers.
+- Threat chunk and artificial-structure hash feeders could map corrupt grid centers, cell sizes, or bounds into plausible buckets.
+- Abyssal flow sampling could emit non-finite trilinear output if the volume payload contained corrupt values.
+- Surface threat interpolation could propagate NaN into route pressure.
+
+What was done:
+- Added finite guards and reciprocal mapping to threat-sampling chunk hash rebuild/estimate/stamp paths.
+- Added finite guards and reciprocal mapping to artificial-structure hash estimate/stamp paths.
+- Added water/depth finite checks, 64-bit complete-volume length proof, finite half-extent proof, and finite sampled-output proof to abyssal flow sampling.
+- Added 64-bit complete-grid length proof and finite half-extent proof to surface threat and echo samplers.
+- Changed non-finite interpolated threat to return zero influence instead of propagating NaN.
+
+Cinematic Cheats used:
+- Bad feeder payloads fail out of influence rather than simulating repair or fabricating a smooth path through corrupt data.
+- Low tier gets conservative cheap proof; High/Ultra keep richer visuals only when native payloads are complete and finite.
+
+Exact Microseconds saved:
+- PENDING RUNTIME PROFILER DATA. Static gain is removal of target-domain scalar divisions in bridge hash/sampler paths and prevention of NaN/undersized-grid recovery churn.
+
+Verification:
+- Targeted raw-division scan passed for bridge flow volume, threat metadata, threat hashes, artificial-structure hashes, threat sampler, and echo sampler ranges.
+- Targeted forbidden hot-math scan passed for those same ranges: no `math.normalize`, `math.length(`, `math.distance(`, `.normalized`, `Mathf.Sqrt`, `Math.Sqrt`, `new List<`, `.ToList(`, or `foreach`.
+- `git diff --check` on target source/status/rationale/log files passed; only LF-to-CRLF working-copy warnings were emitted.
+- Dotnet rebuilds were not run because the user explicitly prohibited dotnet rebuilds.

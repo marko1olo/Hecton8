@@ -1,6 +1,7 @@
 param(
     [switch]$Json,
     [switch]$Summary,
+    [switch]$LexicalScrub,
     [switch]$CoreGraphOnly,
     [switch]$IncludeUnusedCoreReferenceScan,
     [switch]$RequireCoreBuildGate,
@@ -582,6 +583,458 @@ function Get-ProjectReferenceKind {
     return 'PackageOrGenerated'
 }
 
+function Test-IsCoreMsBuildCondition {
+    param([string]$Condition)
+
+    if ([string]::IsNullOrWhiteSpace($Condition)) {
+        return $false
+    }
+
+    return (
+        $Condition.IndexOf("'`$(MSBuildProjectName)' == 'Hecton8.Core'", [StringComparison]::Ordinal) -ge 0 -or
+        $Condition.IndexOf("`$(MSBuildProjectName)' == 'Hecton8.Core'", [StringComparison]::Ordinal) -ge 0)
+}
+
+function ConvertTo-FullProjectPath {
+    param([string]$Path)
+
+    if ([string]::IsNullOrWhiteSpace($Path)) {
+        return ''
+    }
+
+    $separator = [System.IO.Path]::DirectorySeparatorChar.ToString()
+    $expanded = $Path.Replace('$(MSBuildThisFileDirectory)', ($root + $separator))
+    $normalized = $expanded.Replace('/', $separator).Replace('\', $separator)
+
+    if ([System.IO.Path]::IsPathRooted($normalized)) {
+        return [System.IO.Path]::GetFullPath($normalized)
+    }
+
+    return [System.IO.Path]::GetFullPath((Join-Path $root $normalized))
+}
+
+function Add-CompileSurfacePath {
+    param(
+        [hashtable]$PathMap,
+        [string]$Include
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Include) -or
+        $Include.IndexOf('$(', [StringComparison]::Ordinal) -ge 0) {
+        return
+    }
+
+    $fullPath = ConvertTo-FullProjectPath $Include
+    if ([string]::IsNullOrWhiteSpace($fullPath) -or
+        -not (Test-Path -LiteralPath $fullPath -PathType Leaf)) {
+        return
+    }
+
+    $key = $fullPath.ToLowerInvariant()
+    if (-not $PathMap.ContainsKey($key)) {
+        $PathMap[$key] = $fullPath
+    }
+}
+
+function Get-CoreCompileSurfaceFiles {
+    param(
+        [string]$CoreProjectPath,
+        [string]$TargetsPath
+    )
+
+    $pathMap = @{}
+
+    if (Test-Path -LiteralPath $CoreProjectPath) {
+        $coreProject = [xml](Get-Content -LiteralPath $CoreProjectPath -Raw)
+        foreach ($node in @($coreProject.SelectNodes('//Compile'))) {
+            Add-CompileSurfacePath $pathMap ([string]$node.Include)
+        }
+    }
+
+    if (Test-Path -LiteralPath $TargetsPath) {
+        $targetsProject = [xml](Get-Content -LiteralPath $TargetsPath -Raw)
+        foreach ($itemGroup in @($targetsProject.Project.ItemGroup)) {
+            if (-not (Test-IsCoreMsBuildCondition ([string]$itemGroup.Condition))) {
+                continue
+            }
+
+            foreach ($node in @($itemGroup.Compile)) {
+                Add-CompileSurfacePath $pathMap ([string]$node.Include)
+            }
+        }
+    }
+
+    return @($pathMap.Values | Sort-Object)
+}
+
+function Get-AsmdefInventory {
+    $inventory = @{}
+    $asmdefFiles = @(Get-ChildItem -LiteralPath $scope -Filter '*.asmdef' -Recurse -File |
+        Sort-Object FullName)
+
+    foreach ($file in $asmdefFiles) {
+        try {
+            $asmdef = Get-Content -LiteralPath $file.FullName -Raw | ConvertFrom-Json
+        }
+        catch {
+            continue
+        }
+
+        $name = [string]$asmdef.name
+        if ([string]::IsNullOrWhiteSpace($name)) {
+            continue
+        }
+
+        $inventory[$name] = [pscustomobject][ordered]@{
+            Name = $name
+            Path = ConvertTo-RelativeProjectPath $file.FullName
+            Directory = $file.DirectoryName
+            RootNamespace = [string]$asmdef.rootNamespace
+        }
+    }
+
+    return $inventory
+}
+
+function Test-IsPathUnderDirectory {
+    param(
+        [string]$Path,
+        [string]$Directory
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Path) -or
+        [string]::IsNullOrWhiteSpace($Directory)) {
+        return $false
+    }
+
+    $separator = [System.IO.Path]::DirectorySeparatorChar.ToString()
+    $fullPath = [System.IO.Path]::GetFullPath($Path).TrimEnd([char]'\', [char]'/')
+    $fullDirectory = [System.IO.Path]::GetFullPath($Directory).TrimEnd([char]'\', [char]'/')
+
+    return (
+        $fullPath.Equals($fullDirectory, [StringComparison]::OrdinalIgnoreCase) -or
+        ($fullPath + $separator).StartsWith(
+            $fullDirectory + $separator,
+            [StringComparison]::OrdinalIgnoreCase))
+}
+
+function Get-AsmdefSourceFiles {
+    param(
+        [object]$AsmdefInfo,
+        [hashtable]$Inventory
+    )
+
+    $nestedDirectories = @()
+    foreach ($candidate in $Inventory.Values) {
+        if ($candidate.Directory.Equals($AsmdefInfo.Directory, [StringComparison]::OrdinalIgnoreCase)) {
+            continue
+        }
+
+        if (Test-IsPathUnderDirectory $candidate.Directory $AsmdefInfo.Directory) {
+            $nestedDirectories += $candidate.Directory
+        }
+    }
+
+    $sourceFiles = [System.Collections.Generic.List[string]]::new()
+    foreach ($file in @(Get-ChildItem -LiteralPath $AsmdefInfo.Directory -Filter '*.cs' -Recurse -File |
+        Sort-Object FullName)) {
+        $isNested = $false
+        foreach ($nestedDirectory in $nestedDirectories) {
+            if (Test-IsPathUnderDirectory $file.FullName $nestedDirectory) {
+                $isNested = $true
+                break
+            }
+        }
+
+        if (-not $isNested) {
+            [void]$sourceFiles.Add($file.FullName)
+        }
+    }
+
+    return @($sourceFiles)
+}
+
+function Remove-CSharpCommentNoise {
+    param([string]$Text)
+
+    if ([string]::IsNullOrEmpty($Text)) {
+        return ''
+    }
+
+    $withoutBlockComments = [System.Text.RegularExpressions.Regex]::Replace(
+        $Text,
+        '/\*.*?\*/',
+        '',
+        [System.Text.RegularExpressions.RegexOptions]::Singleline)
+
+    return [System.Text.RegularExpressions.Regex]::Replace(
+        $withoutBlockComments,
+        '//.*?$',
+        '',
+        [System.Text.RegularExpressions.RegexOptions]::Multiline)
+}
+
+function Get-DeclaredTypeNames {
+    param([string[]]$SourceFiles)
+
+    $typeMap = @{}
+    $declarationRegex = [System.Text.RegularExpressions.Regex]::new(
+        '\b(?:class|struct|interface|enum|record(?:\s+struct|\s+class)?)\s+([A-Za-z_][A-Za-z0-9_]*)',
+        $regexOptions)
+
+    foreach ($file in $SourceFiles) {
+        try {
+            $content = Remove-CSharpCommentNoise ([System.IO.File]::ReadAllText($file))
+        }
+        catch {
+            continue
+        }
+
+        foreach ($match in $declarationRegex.Matches($content)) {
+            $typeName = [string]$match.Groups[1].Value
+            if (-not [string]::IsNullOrWhiteSpace($typeName)) {
+                $typeMap[$typeName] = $true
+            }
+        }
+    }
+
+    return @($typeMap.Keys | Sort-Object)
+}
+
+function Get-CoreTextCache {
+    param([string[]]$CoreCompileFiles)
+
+    $textByPath = @{}
+    foreach ($file in $CoreCompileFiles) {
+        try {
+            $textByPath[$file.ToLowerInvariant()] =
+                Remove-CSharpCommentNoise ([System.IO.File]::ReadAllText($file))
+        }
+        catch {
+            continue
+        }
+    }
+
+    return $textByPath
+}
+
+function Get-IdentifierHitCount {
+    param(
+        [string]$Text,
+        [string]$Identifier
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Text) -or
+        [string]::IsNullOrWhiteSpace($Identifier)) {
+        return 0
+    }
+
+    $pattern = '(?<![A-Za-z0-9_])' +
+        [System.Text.RegularExpressions.Regex]::Escape($Identifier) +
+        '(?![A-Za-z0-9_])'
+
+    return [System.Text.RegularExpressions.Regex]::Matches($Text, $pattern).Count
+}
+
+function Get-LiteralHitsInCoreSurface {
+    param(
+        [hashtable]$CoreTextByPath,
+        [hashtable]$ExcludedPathSet,
+        [string]$Literal
+    )
+
+    $hitCount = 0
+    if ([string]::IsNullOrWhiteSpace($Literal)) {
+        return $hitCount
+    }
+
+    foreach ($entry in $CoreTextByPath.GetEnumerator()) {
+        if ($ExcludedPathSet.ContainsKey($entry.Key)) {
+            continue
+        }
+
+        $hitCount += Get-IdentifierHitCount $entry.Value $Literal
+    }
+
+    return $hitCount
+}
+
+function Get-TypeHitsInCoreSurface {
+    param(
+        [hashtable]$CoreTextByPath,
+        [hashtable]$ExcludedPathSet,
+        [string[]]$TypeNames
+    )
+
+    $distinctTypes = @{}
+    $hitCount = 0
+
+    if ($null -eq $TypeNames -or $TypeNames.Count -le 0) {
+        return [ordered]@{
+            HitCount = 0
+            DistinctTypeCount = 0
+            Types = @()
+        }
+    }
+
+    $escapedNames = @($TypeNames |
+        Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
+        ForEach-Object { [System.Text.RegularExpressions.Regex]::Escape($_) })
+
+    if ($escapedNames.Count -le 0) {
+        return [ordered]@{
+            HitCount = 0
+            DistinctTypeCount = 0
+            Types = @()
+        }
+    }
+
+    $typeRegex = [System.Text.RegularExpressions.Regex]::new(
+        '(?<![A-Za-z0-9_])(?:' + ($escapedNames -join '|') + ')(?![A-Za-z0-9_])',
+        $regexOptions)
+
+    foreach ($entry in $CoreTextByPath.GetEnumerator()) {
+        if ($ExcludedPathSet.ContainsKey($entry.Key)) {
+            continue
+        }
+
+        foreach ($match in $typeRegex.Matches([string]$entry.Value)) {
+            $hitCount++
+            $distinctTypes[[string]$match.Value] = $true
+        }
+    }
+
+    return [ordered]@{
+        HitCount = $hitCount
+        DistinctTypeCount = $distinctTypes.Count
+        Types = @($distinctTypes.Keys | Sort-Object)
+    }
+}
+
+function Get-UnusedCoreReferenceScan {
+    param(
+        [object[]]$DebtRows,
+        [string]$CoreProjectPath,
+        [string]$TargetsPath
+    )
+
+    $inventory = Get-AsmdefInventory
+    $coreCompileFiles = @(Get-CoreCompileSurfaceFiles $CoreProjectPath $TargetsPath)
+    $coreTextByPath = Get-CoreTextCache $coreCompileFiles
+    $rows = @()
+
+    foreach ($debtRow in @($DebtRows | Sort-Object Reference)) {
+        $reference = [string]$debtRow.Reference
+        $kind = [string]$debtRow.Kind
+        $asmdefInfo = $null
+        $assemblyFound = $inventory.ContainsKey($reference)
+
+        if ($assemblyFound) {
+            $asmdefInfo = $inventory[$reference]
+        }
+
+        $sourceFiles = @()
+        $sourcePathSet = @{}
+        $declaredTypes = @()
+        $sourceInCoreSurfaceCount = 0
+        $externalTypeHits = [ordered]@{
+            HitCount = 0
+            DistinctTypeCount = 0
+            Types = @()
+        }
+        $externalNamespaceHitCount = 0
+        $externalAssemblyLiteralHitCount = 0
+        $candidateForRemoval = $false
+        $confidence = 'NotScanned'
+
+        if ($kind -ne 'LeafDomain') {
+            $confidence = 'NotLeafDomain'
+        }
+        elseif (-not $assemblyFound) {
+            $confidence = 'AsmdefMissing'
+        }
+        else {
+            $sourceFiles = @(Get-AsmdefSourceFiles $asmdefInfo $inventory)
+            foreach ($sourceFile in $sourceFiles) {
+                $sourcePathSet[$sourceFile.ToLowerInvariant()] = $true
+                if ($coreTextByPath.ContainsKey($sourceFile.ToLowerInvariant())) {
+                    $sourceInCoreSurfaceCount++
+                }
+            }
+
+            $declaredTypes = @(Get-DeclaredTypeNames $sourceFiles)
+            $externalTypeHits = Get-TypeHitsInCoreSurface `
+                $coreTextByPath `
+                $sourcePathSet `
+                $declaredTypes
+
+            $namespaceLiteral = [string]$asmdefInfo.RootNamespace
+            if ([string]::IsNullOrWhiteSpace($namespaceLiteral)) {
+                $namespaceLiteral = $reference
+            }
+
+            $externalNamespaceHitCount = Get-LiteralHitsInCoreSurface `
+                $coreTextByPath `
+                $sourcePathSet `
+                $namespaceLiteral
+
+            $externalAssemblyLiteralHitCount = Get-LiteralHitsInCoreSurface `
+                $coreTextByPath `
+                $sourcePathSet `
+                $reference
+
+            $candidateForRemoval =
+                $declaredTypes.Count -gt 0 -and
+                [int]$externalTypeHits.HitCount -eq 0 -and
+                $externalNamespaceHitCount -eq 0 -and
+                $externalAssemblyLiteralHitCount -eq 0
+
+            if ($candidateForRemoval -and $sourceInCoreSurfaceCount -eq 0) {
+                $confidence = 'High'
+            }
+            elseif ($candidateForRemoval) {
+                $confidence = 'ReviewSourceBackedCompile'
+            }
+            elseif ($declaredTypes.Count -le 0) {
+                $confidence = 'NoDeclaredTypes'
+            }
+            else {
+                $confidence = 'BlockedByExternalHits'
+            }
+        }
+
+        $rows += [pscustomobject][ordered]@{
+            Reference = $reference
+            Kind = $kind
+            AssemblyFound = $assemblyFound
+            AssemblyPath = if ($assemblyFound) { $asmdefInfo.Path } else { '' }
+            SourceFileCount = @($sourceFiles).Count
+            SourceInCoreCompileSurfaceCount = $sourceInCoreSurfaceCount
+            DeclaredTypeCount = @($declaredTypes).Count
+            ExternalTypeHitCount = [int]$externalTypeHits.HitCount
+            ExternalDistinctTypeHitCount = [int]$externalTypeHits.DistinctTypeCount
+            ExternalNamespaceHitCount = $externalNamespaceHitCount
+            ExternalAssemblyLiteralHitCount = $externalAssemblyLiteralHitCount
+            CandidateForRemoval = $candidateForRemoval
+            Confidence = $confidence
+            ExternalTypeHits = @($externalTypeHits.Types)
+        }
+    }
+
+    $candidates = @($rows | Where-Object { $_.CandidateForRemoval })
+
+    return [ordered]@{
+        Enabled = $true
+        EvidenceClass = 'STATIC_SOURCE'
+        Model = 'Optional Core asmdef debt scan. Candidate means generated/source-backed Core compile surface has no external text hit for declared candidate types, namespace, or assembly literal. It is not compile proof.'
+        CoreCompileSurfaceFileCount = @($coreCompileFiles).Count
+        ScannedDebtReferenceCount = @($rows).Count
+        CandidateCount = @($candidates).Count
+        Candidates = @($candidates)
+        Rows = @($rows)
+    }
+}
+
 function Get-CoreGraphAudit {
     $coreAsmdefPath = Join-Path $scope 'Hecton8.Core.asmdef'
     $coreCsprojPath = Join-Path $root 'Hecton8.Core.csproj'
@@ -619,8 +1072,7 @@ function Get-CoreGraphAudit {
     if (Test-Path -LiteralPath $targetsPath) {
         $targetsProject = [xml](Get-Content -LiteralPath $targetsPath -Raw)
         foreach ($itemGroup in @($targetsProject.Project.ItemGroup)) {
-            $condition = [string]$itemGroup.Condition
-            if ($condition.IndexOf("`$(MSBuildProjectName)' == 'Hecton8.Core'", [StringComparison]::Ordinal) -lt 0) {
+            if (-not (Test-IsCoreMsBuildCondition ([string]$itemGroup.Condition))) {
                 continue
             }
 
@@ -653,6 +1105,16 @@ function Get-CoreGraphAudit {
     $asmdefDebtRows = @($asmdefRows | Where-Object { $_.IsHPhiDebt })
     $projectDebtRows = @($projectRows | Where-Object { $_.IsHPhiDebt })
     $bridgeDebtRows = @($bridgeRows | Where-Object { $_.IsHPhiDebt })
+    $unusedCoreReferenceScan = [ordered]@{
+        Enabled = $false
+    }
+
+    if ($IncludeUnusedCoreReferenceScan) {
+        $unusedCoreReferenceScan = Get-UnusedCoreReferenceScan `
+            $asmdefDebtRows `
+            $coreCsprojPath `
+            $targetsPath
+    }
 
     [ordered]@{
         CoreAsmdef = if (Test-Path -LiteralPath $coreAsmdefPath) { ConvertTo-RelativeProjectPath $coreAsmdefPath } else { 'MISSING' }
@@ -677,6 +1139,7 @@ function Get-CoreGraphAudit {
         GeneratedProjectDebtReferences = @($projectDebtRows)
         SourceBackedBridgeReferences = @($bridgeRows)
         SourceBackedBridgeDebtReferences = @($bridgeDebtRows)
+        CoreAsmdefUnusedReferenceScan = $unusedCoreReferenceScan
     }
 }
 
@@ -1018,7 +1481,7 @@ $files = @(Get-ChildItem -LiteralPath $scope -Filter '*.cs' -Recurse -File |
 
 foreach ($file in $files) {
     $content = [System.IO.File]::ReadAllText($file)
-    $codeContent = ConvertTo-CodeSurface $content
+    $codeContent = if ($LexicalScrub) { ConvertTo-CodeSurface $content } else { $content }
     $lineCount = Count-Lines $content
     $isEditorFile = Test-IsEditorFile $file
     $fileCounters = New-CounterSet
@@ -1055,7 +1518,7 @@ foreach ($file in $files) {
     }
     else {
         $runtimeContent = Remove-UnityEditorBlocks $content
-        $runtimeCodeContent = ConvertTo-CodeSurface $runtimeContent
+        $runtimeCodeContent = if ($LexicalScrub) { ConvertTo-CodeSurface $runtimeContent } else { $runtimeContent }
         $runtimeFileCounters = New-CounterSet
         Add-Count $runtimeFileCounters 'CsFiles' 1
         Add-Count $runtimeFileCounters 'Lines' $lineCount

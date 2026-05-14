@@ -2,7 +2,7 @@
 
 Agent: INTEGRATION_ASSEMBLY_SURGEON
 Domain: Unity Compilation Graph / Integrator
-Status: STATIC H-PHI CORE GRAPH DEBT REDUCED / PENDING FRESH COMPILE (NO DOTNET ORDER)
+Status: BUILD SUCCESSFUL / PLATINUM GRADE (Fresh12: Hecton8.Core --no-restore 0 warnings / 0 errors)
 
 ## Decision 0 - Session Initialization
 
@@ -123,3 +123,43 @@ Solution: Removed the matching `Hecton8.World.GPR` and `Hecton8.SpaceEngine098Te
 Rejected Alternatives: Leaving bridge debt uncounted was rejected because it hides compile-graph coupling. Removing additional bridge references was rejected where live Core source evidence still exists or where the reference is a contract/Core-family dependency. Running dotnet compile was rejected by the current no-dotnet order.
 Scalability potential: Low-end machines avoid two unnecessary bridge references in Core medic mode; High/Ultra lanes keep GPR and SpaceEngine terrain in their leaf/adapter assemblies. The audit now catches future bridge widening before it becomes compile-wall noise.
 Hardware Impact: Runtime impact 0 us. Static bridge graph after cleanup: 19 source-backed Core bridge refs, 8 bridge debt refs. Fresh compile/runtime proof remains pending.
+
+## Decision 15 - Fresh XML Compile Authority Restored
+
+Problem: Disk history still contained a stale no-dotnet continuation, but the current in-chat XML ordered `dotnet build Hecton8.Core.csproj --no-restore` and made this agent final compile authority.
+Solution: Treated the current XML as the active directive, preserved older state as history, and used file-backed logs for every compile pass. `Fresh01` captured 79 filtered compiler entries; `Fresh12` closed at 0 warnings and 0 errors.
+Rejected Alternatives: Reusing old green logs was rejected by QA evidence law. Ignoring the current XML because older status said no-dotnet was rejected because the current user directive is newer and explicit.
+Scalability potential: Low tier benefits from a smaller deterministic Core medic lane; Middle/High/Ultra package-heavy visual assemblies remain referenced through Unity-built outputs instead of being rebuilt as part of this emergency lane.
+Hardware Impact: Runtime impact 0 us on i3/MX350 and high-end machines. Compile verification cost measured in `Fresh12`: 105,610,000 us.
+
+## Decision 16 - Source-Backed Project Output Translation
+
+Problem: After restore, generated `ProjectReference` outputs pointed at missing `Temp\bin\Debug\*.dll` files and created CS0006 metadata failures. Removing all project references without replacement exposed real source dependencies on URP, GPUInstancer, Input, Bootstrap Contracts, Crest, Shapes, EasySave, VLB, and WaveHarmonic assemblies.
+Solution: Use source-backed MSBuild policy: suppress generated project outputs for `Hecton8.Core` medic builds and resolve the same contracts from existing `Library\ScriptAssemblies` DLLs. This keeps Core compile evidence deterministic without editing Unity-generated `.csproj` files.
+Rejected Alternatives: Building every vendor/package project was rejected because it reintroduces third-party warning noise and missing metadata churn. Stubbing URP/GPUInstancer/Input APIs was rejected as fake compilation. Editing `Hecton8.Core.csproj` was rejected because Unity regenerates it.
+Scalability potential: Low-end developer machines avoid vendor rebuild fanout; Middle/High/Ultra visual packages remain available as prebuilt Unity assemblies and can still be validated in their own owner lanes.
+Hardware Impact: Runtime impact 0 us. Editor compile impact is avoidance of generated project-output CS0006 churn; exact player-frame savings are 0 us because no runtime loop was changed.
+
+## Decision 17 - Save Hash Contract Alignment
+
+Problem: `SaveMasterHashV10` used the Unity Collections `xxHash3` API but only imported `Unity.Mathematics`, producing a missing symbol in the isolated Core build.
+Solution: Import `Unity.Collections` and keep the established `xxHash3.Hash64` call shape used by `SaveBinaryStorage`.
+Rejected Alternatives: Replacing the hash with ad hoc FNV, `HashCode`, or managed crypto was rejected because save identity must stay deterministic and allocation-free. Qualifying it as `Unity.Mathematics.xxHash3` was rejected after the compiler proved that namespace was wrong for the installed package.
+Scalability potential: Low/Middle/High/Ultra save validation keeps the same deterministic hash path; no visual-tier behavior changes.
+Hardware Impact: Runtime impact 0 us relative to intended hash path. The fix restores the existing native hash API; no new managed allocation path was introduced.
+
+## Decision 18 - PDA Inventory Signal Bridge
+
+Problem: `PDAShellChrome` called `RefreshInventorySignalBinding` and `ConsumeInventoryChangedSignals`, but the methods were absent. That broke compile and would have forced dirty UI polling if fixed lazily.
+Solution: Added a fixed `SignalBus<InventoryChangedSignal>` frame-snapshot consumer keyed by the bound `PlayerInventory` entity hash, with `_lastInventorySignalRevision` suppressing duplicate work.
+Rejected Alternatives: Polling inventory every late frame was rejected as managed/UI churn. Adding a new event contract was rejected because the global inventory signal lane already exists. Changing `SignalBus` was rejected because call-site repair was sufficient.
+Scalability potential: Low tier gets cheap dirty-bit UI refresh; Middle/High/Ultra keep reactive PDA chrome without extra per-frame hierarchy search or inventory scans.
+Hardware Impact: Expected low-end gain versus forced polling is small but real; exact measured runtime saving in this compile pass is 0 us because no profiler run was performed. The implementation is allocation-free and bounded by the current frame signal snapshot.
+
+## Decision 19 - Final Evidence Boundary
+
+Problem: The final status required 0 warnings and 0 errors while concurrent processes and an invalid blank `Fresh10` run created unreliable artifacts.
+Solution: Re-ran with build servers disabled, one worker, no restore, and MSBuild file logging. Accepted only `Fresh12`, which reports `Hecton8.Core -> Temp\bin\Debug\Hecton8.Core.dll`, `Build succeeded`, `0 Warning(s)`, `0 Error(s)`.
+Rejected Alternatives: Treating blank logs or partial MSBuild diagnostic logs as final evidence was rejected. Running a broad Unity/player validation was rejected because the current objective was Core compile authority, not runtime QA.
+Scalability potential: Low/Middle/High/Ultra runtime tiers are unchanged; compile evidence is now reproducible for the Core medic lane.
+Hardware Impact: Runtime impact 0 us. Final compile verification time: 105,610,000 us. Exact runtime microseconds saved: 0 us.

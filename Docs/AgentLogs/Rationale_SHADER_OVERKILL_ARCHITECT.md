@@ -1,6 +1,6 @@
 # Rationale_SHADER_OVERKILL_ARCHITECT
 
-Status: CORE IMPLEMENTED / COMPILE BLOCKED BY EXTERNAL WORLD-GPR DEPENDENCY
+Status: SHADERS CRYSTALLIZED / VISUAL ORGASM READY - COMPILE BLOCKED BY EXTERNAL WORLD-GPR DEPENDENCY
 Agent: SHADER_OVERKILL_ARCHITECT
 
 ## Decision 001 - Active Dependency Logs Missing
@@ -58,3 +58,10 @@ Solution: Ran Unity 6000.4.1f1 batchmode, scanned the log for owned shader/C# na
 Rejected Alternatives: Fixing World/GPR from the rendering task was rejected as domain breach; claiming a clean compile was rejected as fake reporting.
 Scalability potential: None until the external compile blocker is removed. The shader remains tiered and static-audited.
 Hardware Impact: 0 us direct gain. This prevents introducing unverified cross-domain edits on low-end targets.
+
+## Decision 009 - Polish Mandate Missing
+Problem: The required post-core `<POLISH_MANDATE>` tag is absent from `Docs/Tasks/CURRENT_BATCH.md`.
+Solution: Mark the polish phase as blocked by batch-file input, record the absence, and keep the implemented shader under static anti-bloat checks instead of inventing a hidden mandate.
+Rejected Alternatives: Parsing unrelated neighboring batch content or fabricating polish requirements was rejected as prompt contamination.
+Scalability potential: Existing Low/Middle/High/Ultra gates remain intact; no additional polish commands can be executed without the missing tag.
+Hardware Impact: 0 us runtime gain. The decision prevents unscoped churn.

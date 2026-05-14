@@ -800,6 +800,11 @@ namespace Hecton8.Editor.ProceduralGen
                    Approximately(actual.a, expected.a);
         }
 
+        private static bool Approximately(Vector2 actual, Vector2 expected)
+        {
+            return (actual - expected).sqrMagnitude <= TransformEpsilonSq;
+        }
+
         private static bool Approximately(Vector3 actual, Vector3 expected)
         {
             return (actual - expected).sqrMagnitude <= TransformEpsilonSq;

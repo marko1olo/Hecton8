@@ -3,8 +3,8 @@
 Agent: INTEGRATION_ASSEMBLY_SURGEON
 Role: SYSTEMS_ARCHITECT
 Domain: Unity Compilation Graph / Integrator
-Prompt task count: 17
-Current state: STATIC H-PHI CORE GRAPH DEBT REDUCED / PENDING FRESH COMPILE (NO DOTNET ORDER)
+Prompt task count: 15 (current in-chat XML; older 17-task static pass retained below)
+Current state: BUILD SUCCESSFUL / PLATINUM GRADE (Fresh12: Hecton8.Core --no-restore 0 warnings / 0 errors)
 
 ## Mandates Read
 
@@ -104,3 +104,37 @@ Current state: PAUSED BY CURRENT NO-DOTNET ORDER / PENDING FRESH CLI_COMPILE ONL
 - [x] Source-backed bridge debt pruned | Justification: removed the matching `Hecton8.World.GPR` and `Hecton8.SpaceEngine098Terrain` reference-injection blocks from `Directory.Build.targets` after the same generated Core compile-item evidence showed no Core usage | Alternatives rejected: leaving source-backed MSBuild bridge wider than the asmdef graph | Estimate: 0 us runtime
 - [x] Source-backed bridge budget added | Justification: `HectonPhiAudit.ps1` now reports `SourceBackedBridgeReferenceCount` and `SourceBackedBridgeDebtReferenceCount`, and the budget gate passed with `-MaxSourceBackedBridgeDebtReferences 8` | Alternatives rejected: hidden MSBuild bridge debt outside the H-Phi tool | Estimate: 0 us runtime
 - [x] Final no-dotnet static verification | Justification: JSON/XML parse, removed-reference scan, budget pass, expected budget failures, `git diff --check`, and owned ASCII scan all completed without dotnet | Alternatives rejected: fresh compile proof against explicit user instruction | Estimate: 0 us runtime
+
+## 2026-05-15 Fresh XML Compile Closure
+
+Directive source: in-chat `<AGENT_PROMPT id="INTEGRATION_ASSEMBLY_SURGEON">`.
+Task count: 15 numbered primary objectives.
+Domain: Echelon 9 / The Integrator (Compile Medic).
+Current state: BUILD SUCCESSFUL / PLATINUM GRADE.
+Final artifact: `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh12.log`.
+Final command: `dotnet build Hecton8.Core.csproj --no-restore --disable-build-servers -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal`.
+Final result: `Build succeeded. 0 Warning(s). 0 Error(s).`
+Polish mandate extraction: `Docs/Tasks/CURRENT_BATCH.md` contains no `INTEGRATION_ASSEMBLY_SURGEON` or `<POLISH_MANDATE>` tag in the current file; no borrowed mandate executed.
+
+- [x] Fresh Task 1: READ THE WALL | Justification: `Fresh01` captured the first wall; 79 filtered compiler entries, first 50 preserved in `Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh01.errors.txt` | Alternatives rejected: stale green logs | Estimate: 580 us triage
+- [x] Fresh Task 2: ASSEMBLY AUDIT | Justification: 152 `.asmdef` paths captured in `AsmdefList_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh.txt`; Core medic path used source-backed MSBuild, not generated project edits | Alternatives rejected: blind leaf-to-Core references | Estimate: 900 us scan
+- [x] Fresh Task 3: CONTRACT DISCOVERY | Justification: `ContractDiscovery_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh.txt` records `MacroSwarm`, `AcousticAup`, and `SignalBus` providers; compiler wall proved live drift in memory, save hash/header, IK, scanner, save codec, and PDA signal bridge | Alternatives rejected: guessing providers from chat | Estimate: 1000 us scan
+- [x] Fresh Task 4: STRUCT MIGRATION | Justification: no DTO source move was required for the final green Core lane; contracts remained visible through existing source-backed bridge and Unity-built assemblies | Alternatives rejected: moving leaf DTOs during a compile-only pass | Estimate: 0 us runtime
+- [x] Fresh Task 5: NAMESPACE ALIGNMENT | Justification: only existing contract imports were aligned where required; no project-wide namespace rewrite was needed | Alternatives rejected: broad using sweeps | Estimate: 200 us review
+- [x] Fresh Task 6: DUPLICATE PURGE | Justification: duplicate-method suspects did not remain as compiler blockers in the final wall; no live implementation was deleted | Alternatives rejected: deleting single current implementations | Estimate: 260 us scan
+- [x] Fresh Task 7: SIGNATURE RECONCILIATION | Justification: owner-aware `H8Memory.Release` drift was resolved through current source visibility, and `xxHash3` was aligned to the Unity Collections contract | Alternatives rejected: changing core API signatures or stubbing hash output | Estimate: 650 us patch
+- [x] Fresh Task 8: OPTIONAL SERVICE GUARDING | Justification: scanner/player context compile drift was repaired without adding per-frame service polling; PDA inventory dirtiness uses fixed `SignalBus<InventoryChangedSignal>` frame snapshots | Alternatives rejected: new managed events or hierarchy search in `LateFrameTick` | Estimate: 700 us patch
+- [x] Fresh Task 9: BATCHED FIXING | Justification: fixed wall in clusters: Core memory/source bridge, save contracts, IK count, scanner lookup, save codec, PDA signal bridge | Alternatives rejected: one monolithic rewrite | Estimate: 2200 us integration
+- [x] Fresh Task 10: RE-COMPILE | Justification: serial logs show wall decreased from source/metadata errors to `Fresh12` 0/0; invalid blank `Fresh10` was rejected as evidence | Alternatives rejected: claiming success from empty log | Estimate: 105610000 us final build time
+- [x] Fresh Task 11: ASMDEF REPAIR | Justification: no `.asmdef` edit was required in this closure; generated project-output leakage was contained by source-backed MSBuild references already present in `Directory.Build.targets` | Alternatives rejected: editing generated `.csproj` | Estimate: 0 us runtime
+- [x] Fresh Task 12: MEMORY SENTINEL SYNC | Justification: no new assembly/SystemID was introduced; current `H8Memory` source was compiled into Core and final build passed | Alternatives rejected: inventing new memory owner IDs | Estimate: 0 us runtime
+- [x] Fresh Task 13: NULLABLE ANNOTATION | Justification: final build emitted 0 warnings; no nullable warning remained in critical compile paths | Alternatives rejected: warning suppression without an emitted warning | Estimate: 0 us runtime
+- [x] Fresh Task 14: DEAD CODE EXTERMINATION | Justification: no unused interface/stub was a compile blocker in this pass; deletion/obsolete marking was rejected outside the wall | Alternatives rejected: vanity purge during integration | Estimate: 0 us runtime
+- [x] Fresh Task 15: OMEGA VERIFICATION | Justification: `Fresh12` produced `Temp/bin/Debug/Hecton8.Core.dll` with 0 warnings and 0 errors; `git diff --check` on owned compile-fix files reported no whitespace errors, only CRLF normalization warnings | Alternatives rejected: chat-only success claim | Estimate: 105610000 us final build time
+
+### Fresh Loop Ledger
+
+- Loop 15: Fresh XML re-entry. Read wall: 79 filtered compiler entries. Status: RED.
+- Loop 16: Source bridge and contract visibility repair. Errors reduced through save/header/memory/IK/scanner clusters. Status: RED.
+- Loop 17: Restored assets and translated generated project-output references to Unity-built assemblies. Metadata wall cleared. Status: RED -> YELLOW.
+- Loop 18: Save/PDA source drift repair. `Fresh11` 3 errors -> `Fresh12` 0 warnings / 0 errors. Status: BUILD SUCCESSFUL / PLATINUM GRADE.

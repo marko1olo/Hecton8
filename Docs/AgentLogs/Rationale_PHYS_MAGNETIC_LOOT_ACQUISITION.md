@@ -252,7 +252,7 @@ Hardware Impact: Adds two branch checks and one `uint` OR path per presentation 
 
 Problem: Loot-owned persistent NativeArrays for signal events and telemetry were registered through `NativeMemorySentinel`, but current project rules require `H8Memory.Allocate` ownership with a concrete `SystemID`.
 
-Solution: Allocate and release `_signalEvents` and `_telemetry` through `H8Memory` using `SystemID.GameplayLoot`. `EnsureVaultBuffers` now fails closed unless `_signalEvents` is created, preventing a Burst schedule with a missing event lane.
+Solution: Allocate and release `_signalEvents` and `_telemetry` through `H8Memory` using `SystemID.GameplayLoot`. `OnEnable` exits before tick registration if either lane is missing, and `EnsureVaultBuffers` now fails closed unless both `_signalEvents` and `_telemetry` are created.
 
 Rejected Alternatives: Leaving direct `new NativeArray` allocations was rejected because it bypasses owner byte accounting. Falling back to managed arrays was rejected because it would break Burst and zero-GC guarantees.
 

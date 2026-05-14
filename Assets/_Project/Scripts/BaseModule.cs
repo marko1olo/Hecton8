@@ -260,6 +260,7 @@ namespace Hecton8.Gameplay
         private const string PylonPersistentId = "Build_Utility_Pylon";
         private const string AirlockPersistentId = "Build_Airlock_Hatch";
         private const string LegacyAirlockPersistentId = "base.module.airlock";
+        private const int DefaultHabitatBaseId = 0;
 
         /// <summary>
         /// Koeffitsient vozvrata resursov pri dekonstruktsii.
@@ -1374,7 +1375,10 @@ namespace Hecton8.Gameplay
             {
                 ResyncInteriorOccupants(false);
                 if (_trackedPlayerSurvival == null)
+                {
                     ModuleStatusEvents.NotifyExit(this);
+                    PublishPlayerBaseTransitionSignal(false);
+                }
             }
         }
 
@@ -4136,7 +4140,10 @@ namespace Hecton8.Gameplay
             _trackedPlayerSurvival = resolvedSurvival;
             _trackedPlayerMovement = other.GetComponentInParent<HectonPlayerMovement>();
             if (notifyEnter)
+            {
                 ModuleStatusEvents.NotifyEnter(this);
+                PublishPlayerBaseTransitionSignal(true);
+            }
         }
 
         private bool IsTrackedPlayerCollider(Collider other)
@@ -4177,6 +4184,48 @@ namespace Hecton8.Gameplay
             _trackedPlayerSurvival = null;
             _trackedPlayerMovement = null;
             ModuleStatusEvents.NotifyExit(this);
+            PublishPlayerBaseTransitionSignal(false);
+        }
+
+        private void PublishPlayerBaseTransitionSignal(bool playerInside)
+        {
+            if (!Application.isPlaying)
+                return;
+
+            int roomId = -1;
+            TryResolveHostAtmosphereRoomIndex(out roomId);
+
+            Vector3 center = ResolveAtmosphereRoomProbeWorldPosition();
+            if (!IsFiniteVector(center))
+                center = transform.position;
+            if (!IsFiniteVector(center))
+                return;
+
+            AbsoluteUniversePosition centerAup = AbsoluteUniversePosition.FromRuntimePosition(center);
+            uint frame = (uint)math.max(0, Time.frameCount);
+            if (playerInside)
+            {
+                PlayerBaseEnterSignal signal = new PlayerBaseEnterSignal
+                {
+                    BaseCenterAup = centerAup,
+                    BaseId = DefaultHabitatBaseId,
+                    RoomId = roomId,
+                    Frame = frame,
+                    Flags = PlayerBaseEnterSignal.DirectPlayerInsideFlag
+                };
+                GlobalSignals.Publish(in signal);
+                return;
+            }
+
+            PlayerBaseExitSignal exitSignal = new PlayerBaseExitSignal
+            {
+                BaseCenterAup = centerAup,
+                BaseId = DefaultHabitatBaseId,
+                RoomId = roomId,
+                Frame = frame,
+                Flags = PlayerBaseExitSignal.DirectPlayerOutsideFlag
+            };
+            GlobalSignals.Publish(in exitSignal);
         }
 
         private void ReadBuildablePower()
