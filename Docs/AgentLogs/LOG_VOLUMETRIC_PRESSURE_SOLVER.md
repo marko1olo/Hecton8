@@ -293,3 +293,15 @@ Follow-up upgrade 31:
 Exact microseconds saved after follow-up 31:
 - Near-calm Mid/High/Ultra interior vertices skip stale-prone resolver/bend work below the CPU upload epsilon.
 - Estimated 5-30 us saved per 1k calm or near-calm interior vertices on MX350-class GPUs, plus avoided 6-18 us CPU/driver upload churn on near-threshold dirty ticks; 0 B/frame.
+
+Follow-up upgrade 32:
+- What was wrong: `Hecton8_UberNoir.hlsl` computed the habitat analytical radius mask even when habitat displacement was zero. `DeconstructionDfsValidationJob` was a Burst/native payload without explicit sequential layout evidence.
+- What was done: gated `H8UberNoirRadiusMask(positionWS, _HectonHabitatStressCenterRadius)` behind `habitatDisplacement > H8_UBER_NOIR_EPS`; added `[StructLayout(LayoutKind.Sequential)]` to `DeconstructionDfsValidationJob` with natural packing.
+- Cinematic cheat used: inactive habitat pressure stays visually silent; active Mid/High/Ultra pressure still gets noir analytical bend, while low/calm states skip dead mask math.
+- Static checks: `rg` confirms the UberNoir habitat mask gate and job layout attribute; exact shader `normalize()`/`sqrt()` scan produced no matches across touched habitat/DryZone/UberNoir shader files; managed-offender scans found no C# string/LINQ/foreach offenders; mesh mutation scan found no owned `Mesh.vertices` writes; touched C#/shader brace counts are balanced; `git diff --check` reports only CRLF normalization warnings.
+- H-Phi local evidence: `HabitatGraphManager.cs` now has `StructLayout=4/StructDecl=9`; `GlobalRegistry=4`, `SignalBus=2`, `GlobalSignals=1`, `NativeArray=82`, `GraphicsBuffer=3`, `FindCalls=0`, `UpdateMethods=0`.
+- Rebuild policy: no `dotnet` rebuild and no Unity rebuild were run by explicit user instruction.
+
+Exact microseconds saved after follow-up 32:
+- Calm/low habitat UberNoir deformation vertices skip one habitat radius-mask evaluation.
+- Estimated 1-4 us saved per 1k affected vertices on MX350-class GPUs; 0 B/frame.

@@ -47,3 +47,24 @@ What was found:
 
 Exact microseconds saved:
 - No additional runtime saving claimed; this pass was risk reduction. Dotnet rebuild was not run.
+
+## 2026-05-15 - H-Phi Hygiene Addendum
+STATUS: PENDING VERIFICATION
+
+What was wrong:
+- Gas solver cold-initialized base transition signal lanes even though `GlobalSignals` owns lane capacity/hash configuration.
+- `TryConfigureBase` could leave stale room-to-base mappings when a nonzero base was reconfigured.
+- A newly configured base could inherit a sleeping byte and old hibernation timestamp, causing first wake to charge against full session uptime.
+- Black-box dump filename was generic instead of agent-specific.
+
+What was done:
+- Removed consumer-side signal lane initialization; empty snapshot reads remain safe until owner initialization.
+- Kept `HabitatBaseAwakeState` on append-only `BufferID` 63.
+- Cleared stale nonzero base room mappings before remap and initialized new bases awake at dispatcher time.
+- Changed gas black-box output to `Docs/AgentLogs/Dump_HABITAT_O2_SCRUBBER_LOD.bin`.
+
+Cinematic Cheats used:
+- None new. This was H-Phi and cold-path correctness work.
+
+Exact microseconds saved:
+- Frame-time saving not claimed. Cold allocation pressure is lower because the solver no longer prewarms two signal lanes in scenes without base transition traffic. No dotnet rebuild was run.

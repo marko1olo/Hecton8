@@ -124,3 +124,14 @@ Cinematic cheats used: No visual contract change. The same atlas-quad input prom
 Exact microseconds saved: Estimate only. Expected gain is sub-1 us per active prompt frame by removing one registry access from scheme checks.
 
 Verification: No dotnet rebuilds were run. Static scans stayed clean for forbidden allocation/text/LINQ and old renderer/update/shared-buffer/matrix/shader markers. Input scan confirmed `GlobalRegistry.InputDeterminism` remains only in lifecycle refresh, while `ResolveCurrentSchemeHash()` reads `_inputDeterminism`. `git diff --check` returned CRLF normalization warnings only.
+
+## 2026-05-15 Render Resource Fail-Closed Gate
+What was wrong: Missing compute buffers or authored materials could still let `Render()` perform camera resolution, anchor math, bounds creation, and telemetry before the batch calls failed closed.
+
+What was done: Added an immediate readiness gate after `EnsureResources()`. If resource objects, materials, or the quad mesh are not ready, the renderer returns before camera/anchor work.
+
+Cinematic cheats used: No visual change. The same atlas-quad diegetic prompt path remains; invalid resource states now fail closed earlier.
+
+Exact microseconds saved: Estimate only. No normal ready-frame gain is claimed; invalid authoring states avoid unnecessary camera/anchor/bounds work.
+
+Verification: No dotnet rebuilds were run. Static scans stayed clean for forbidden hot-path allocation/text/LINQ and old renderer/update/shared-buffer/matrix/shader markers. Render gate scan confirmed readiness checks happen before `ResolveRenderCamera()`. `git diff --check` returned CRLF normalization warnings only.

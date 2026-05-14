@@ -57,6 +57,7 @@ namespace Hecton8.World
         private const int FaunaSimulationBucketMask = 15;
         private const float FaunaSimulationBucketInvCount = 1f / (FaunaSimulationBucketMask + 1);
         private const uint FaunaAmbientDriftKillSwitchMask = GlobalRegistry.SystemKillSwitchLane4VfxMask;
+        private const uint FaunaBucketedSimulationCostHash = 0x46534255u; // FSBU
 #if UNITY_EDITOR
         private const int MaxEditorValidateDepth = 4;
         private static int _editorValidateDepth;
@@ -801,6 +802,7 @@ namespace Hecton8.World
         private static readonly int _AbyssalFlowWeightId = Shader.PropertyToID("_AbyssalFlowWeight");
         private static readonly int _SimulationBucketIndexId = Shader.PropertyToID("_SimulationBucketIndex");
         private static readonly int _SimulationBucketMaskId = Shader.PropertyToID("_SimulationBucketMask");
+        private static readonly int _SimulationInterpolationAlphaId = Shader.PropertyToID("_SimulationInterpolationAlpha");
 
         [Header("â”€â”€ Runtime Wiring â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [SerializeField]
@@ -1572,6 +1574,7 @@ namespace Hecton8.World
         private float _renderPropertiesVatInstancePhaseScale;
         private float _renderPropertiesVatPositionScale;
         private float _renderPropertiesVatNormalBlend;
+        private float _renderPropertiesSimulationInterpolationAlpha = -1f;
         private float _spatialGridCellSizeWS = 1f;
         private Vector3 _spatialGridOriginWS = Vector3.zero;
         private Vector3Int _spatialGridResolution = Vector3Int.one;
@@ -1931,6 +1934,7 @@ namespace Hecton8.World
 
                 if (BindSimulationUniforms(simulationDeltaTime, currentDriftOffset, driftDelta, hibernation01, simulationLodTier, shouldRender))
                 {
+                    long watchdogStart = System.Diagnostics.Stopwatch.GetTimestamp();
                     try
                     {
                         if (shouldCollectLatchStats)
@@ -1956,6 +1960,8 @@ namespace Hecton8.World
                     {
                         DisableComputeDispatch(ComputeDisableReasonDispatchFailure);
                     }
+
+                    ReportWatchdogCost(FaunaBucketedSimulationCostHash, watchdogStart);
                 }
             }
 
@@ -4288,6 +4294,16 @@ namespace Hecton8.World
             return (GlobalRegistry.SystemKillSwitchMask & FaunaAmbientDriftKillSwitchMask) != 0u;
         }
 
+        private static void ReportWatchdogCost(uint subsystemHash, long startTimestamp)
+        {
+            long elapsedTicks = System.Diagnostics.Stopwatch.GetTimestamp() - startTimestamp;
+            if (elapsedTicks <= 0L)
+                return;
+
+            float elapsedMilliseconds = (float)(elapsedTicks * 1000.0 / System.Diagnostics.Stopwatch.Frequency);
+            RuntimeWatchdog.ReportSubsystemCost(subsystemHash, elapsedMilliseconds);
+        }
+
         void ISargassumGlobalDragEventListener.OnSargassumEntanglementStrain(in SargassumGlobalDragManager.EntanglementStrainSignal signal)
         {
         }
@@ -5952,6 +5968,8 @@ namespace Hecton8.World
                 _materialPropertyBlock.SetFloat(_VatPositionScaleId, vatPositionScale);
             if (ShouldUploadRenderFloat(boidVatNormalBlend, ref _renderPropertiesVatNormalBlend))
                 _materialPropertyBlock.SetFloat(_VatNormalBlendId, boidVatNormalBlend);
+            if (ShouldUploadRenderFloat(_simulationInterpolationAlpha, ref _renderPropertiesSimulationInterpolationAlpha))
+                _materialPropertyBlock.SetFloat(_SimulationInterpolationAlphaId, _simulationInterpolationAlpha);
 
             if (vatEnabled)
             {

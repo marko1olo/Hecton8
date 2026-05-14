@@ -290,7 +290,10 @@ float3 H8UberNoirApplyDynamicHullBendingWS(float3 positionWS, float3 normalWS, h
 
     float habitatStress01 = saturate(_HectonHabitatStressParams.x);
     float habitatDisplacement = max(_HectonHabitatStressParams.y, 0.0) * habitatStress01;
-    float habitatMask = H8UberNoirRadiusMask(positionWS, _HectonHabitatStressCenterRadius);
+    float habitatMask = 0.0;
+    [branch]
+    if (habitatDisplacement > H8_UBER_NOIR_EPS)
+        habitatMask = H8UberNoirRadiusMask(positionWS, _HectonHabitatStressCenterRadius);
 
     float buckle = H8UberNoirBucklingMask(positionWS, instanceSeed) * 2.0 - 1.0;
     float displacement = (crushDisplacement * crushMask + habitatDisplacement * habitatMask) * buckle * localStrength * featureMask;

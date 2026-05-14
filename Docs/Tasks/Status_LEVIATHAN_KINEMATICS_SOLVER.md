@@ -209,3 +209,22 @@ Batch source: Docs/Tasks/CURRENT_BATCH.md
 - Static grep over IK runtime/job/shader scope still found no `math.sqrt`, `math.normalize`, managed array creation, `foreach`, `string.Format`, `.ToString()`, `Debug.Log`, Unity Physics casts, `SkinnedMeshRenderer`, `renderer.material`, `Camera.main`, `GlobalRegistry.Get`, `GameObject.Find`, or `FindObject`.
 - `git diff --check` and `git diff --cached --check` on touched code/docs exit 0; unstaged output is only LF-to-CRLF warnings.
 - No `dotnet` rebuild, compile, or response-file probe was run.
+
+### Loop 20: Dead Phase Payload Recheck
+
+- Removed the unused `_solverTimeSeconds` runtime accumulator and `PhaseTimeSeconds` Burst job field.
+- DOD: `rg` confirms no remaining `PhaseTimeSeconds` or `_solverTimeSeconds` references in the IK runtime/job scope.
+- Alternative Rejected: keeping a reserved phase field because dead scheduled payload increases state coherence risk without current solver value.
+- Estimate: 0.01-0.05 us saved per schedule from one less accumulator write and one less job scalar copy; primary gain is state removal.
+- Static grep over IK runtime/job/shader scope still found no `math.sqrt`, `math.normalize`, managed array creation, `foreach`, `string.Format`, `.ToString()`, `Debug.Log`, Unity Physics casts, `SkinnedMeshRenderer`, `renderer.material`, `Camera.main`, `GlobalRegistry.Get`, `GameObject.Find`, or `FindObject`.
+- `git diff --check` and `git diff --cached --check` on touched code/docs exit 0; output is only LF-to-CRLF warnings on docs.
+- No `dotnet` rebuild, compile, or response-file probe was run.
+
+### Loop 20: Dead Phase Payload Recheck
+
+- Removed the unused `_solverTimeSeconds` runtime accumulator and `PhaseTimeSeconds` Burst job field.
+- DOD: `rg` confirms no remaining `PhaseTimeSeconds` or `_solverTimeSeconds` references in the IK runtime/job scope.
+- Alternative Rejected: keeping a reserved phase field because dead scheduled payload increases state coherence risk without current solver value.
+- Estimate: 0.01-0.05 us saved per schedule from one less accumulator write and one less job scalar copy; primary gain is state removal.
+- Static verification: PENDING.
+- No `dotnet` rebuild, compile, or response-file probe was run.

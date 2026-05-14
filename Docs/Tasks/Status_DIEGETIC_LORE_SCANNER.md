@@ -121,7 +121,7 @@ Mandates read:
 ## Loop 14 - Atlas/Localization H-Phi Compile Guard
 
 - [x] Batch prompt re-check | DOD: raw PowerShell regex scan confirmed `DIEGETIC_LORE_SCANNER` is still absent from `CURRENT_BATCH.md`; neighboring prompts ignored | Rejected: adopting another agent's current batch task | Estimate: 1100 us
-- [x] Atlas signal cache audit | DOD: scanner operational summary/directive now resolve Atlas through `ResolveCachedAtlasSignalCold()` with only one cold `GlobalRegistry.AtlasSignal` ingress | Rejected: repeated service-locator reads from presentation text generation | Estimate: 3 hot refs -> 1 cold ref
+- [x] Atlas signal cache/event audit | DOD: scanner operational summary/directive now resolve Atlas through `ResolveCachedAtlasSignalCold()` and equipped scanners register with `AtlasSignalEvents` to invalidate cached text on Atlas state changes | Rejected: repeated service-locator reads from presentation text generation or unregistered inert event callbacks | Estimate: 3 hot refs -> 1 cold ref; event invalidation only while equipped
 - [x] Localization compile-risk fix | DOD: replaced non-existent `ILocalizationService` local with concrete project `LocalizationManager` while preserving single registry lookup per localized string resolve | Rejected: two `GlobalRegistry.Localization` reads per call or introducing a new interface | Estimate: avoids compile wall; one registry read per localization call
 - [x] Static no-regression checks after Loop 14 | DOD: `git diff HEAD --check` passed; scanner banned-pattern scan found no `ILocalizationService`, `Camera.main`, direct `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, or `.text =` | Rejected: dotnet rebuild, explicitly forbidden by user | Estimate: 2100 us
 

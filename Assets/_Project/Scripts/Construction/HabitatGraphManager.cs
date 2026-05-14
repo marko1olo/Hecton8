@@ -4646,6 +4646,7 @@ namespace Hecton8.Construction
             return power > 0 ? power : int.MaxValue;
         }
 
+        [StructLayout(LayoutKind.Sequential)]
         [BurstCompile(FloatPrecision.Low, FloatMode.Fast, CompileSynchronously = false)]
         private struct DeconstructionDfsValidationJob : IJob
         {

@@ -389,3 +389,51 @@ Verification:
 - Static grep over IK runtime/job/shader scope found no `math.sqrt`, `math.normalize`, managed array creation, `foreach`, `string.Format`, `.ToString()`, `Debug.Log`, Unity Physics casts, `SkinnedMeshRenderer`, `renderer.material`, `Camera.main`, `GlobalRegistry.Get`, `GameObject.Find`, or `FindObject`.
 - `git diff --check` and `git diff --cached --check` on touched code/docs exit 0; unstaged output is only LF-to-CRLF warnings.
 - Runtime status remains pending until Unity Editor import, shader compile, play-mode behavior, GC, and profiler evidence exist.
+
+## 2026-05-15T02:45+04:00
+
+Status: PENDING VERIFICATION. Continued dead-payload audit. No `dotnet` rebuild/compile was run.
+
+What was wrong:
+- `_solverTimeSeconds` was maintained every tick solely to fill `PhaseTimeSeconds`.
+- `LeviathanTerrainIkJob` did not consume `PhaseTimeSeconds`, so the field added schedule payload and state coherence surface without behavior.
+
+What was done:
+- Removed `_solverTimeSeconds` and its wrap logic.
+- Removed `PhaseTimeSeconds` from the Burst job payload and job initializer.
+
+Cinematic cheats used:
+- None. This is state removal only; terrain hugging, tail whip, and GPU deformation behavior are unchanged.
+
+Exact microseconds saved:
+- Estimated 0.01-0.05 us per scheduled solver from one less accumulator write and one less scalar copied into the job payload.
+- No profiler-backed frame-time claim.
+
+Verification:
+- `rg` confirms no remaining `PhaseTimeSeconds` or `_solverTimeSeconds` references in the IK runtime/job scope.
+- Static grep over IK runtime/job/shader scope found no `math.sqrt`, `math.normalize`, managed array creation, `foreach`, `string.Format`, `.ToString()`, `Debug.Log`, Unity Physics casts, `SkinnedMeshRenderer`, `renderer.material`, `Camera.main`, `GlobalRegistry.Get`, `GameObject.Find`, or `FindObject`.
+- `git diff --check` and `git diff --cached --check` on touched code/docs exit 0; output is only LF-to-CRLF warnings on docs.
+- Runtime status remains pending until Unity Editor import, shader compile, play-mode behavior, GC, and profiler evidence exist.
+
+## 2026-05-15T02:40+04:00
+
+Status: PENDING VERIFICATION. Continued dead-payload audit. No `dotnet` rebuild/compile was run.
+
+What was wrong:
+- `_solverTimeSeconds` was maintained every tick solely to fill `PhaseTimeSeconds`.
+- `LeviathanTerrainIkJob` did not consume `PhaseTimeSeconds`, so the field added schedule payload and state coherence surface without behavior.
+
+What was done:
+- Removed `_solverTimeSeconds` and its wrap logic.
+- Removed `PhaseTimeSeconds` from the Burst job payload and job initializer.
+
+Cinematic cheats used:
+- None. This is state removal only; terrain hugging, tail whip, and GPU deformation behavior are unchanged.
+
+Exact microseconds saved:
+- Estimated 0.01-0.05 us per scheduled solver from one less accumulator write and one less scalar copied into the job payload.
+- No profiler-backed frame-time claim.
+
+Verification:
+- PENDING static checks after doc update.
+- Runtime status remains pending until Unity Editor import, shader compile, play-mode behavior, GC, and profiler evidence exist.

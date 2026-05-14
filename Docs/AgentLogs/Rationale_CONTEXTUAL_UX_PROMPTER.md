@@ -165,3 +165,10 @@ Solution: Added `_inputDeterminism`, refreshed it on enable/start and `GlobalReg
 Rejected Alternatives: Polling `GlobalRegistry.InputDeterminism` every scheme check, subscribing to managed input events, or freezing the scheme after first resolve. Registry polling is avoidable; managed events add lifecycle coupling; frozen scheme would break device changes.
 Scalability potential: Low removes one registry access from steady hover checks. Middle, High, and Ultra preserve scheme responsiveness for richer glyph/material variants without adding managed routing.
 Hardware Impact: Expected gain is sub-microsecond per frame on i3/MX350, but deterministic: scheme checks use a cached interface and hot-swap keeps the cache correct. No runtime profiler proof.
+
+## Decision 23: Render Resource Fail-Closed Gate
+Problem: If tooltip buffers or authored materials were unavailable, `Render()` could still resolve camera, anchor, bounds, tint, and telemetry before both batch submissions failed closed.
+Solution: Added an immediate `_resourceObjectsReady`, `_materialsReady`, and `_runtimeQuadMesh` gate after `EnsureResources()` so missing resources return before camera/anchor work.
+Rejected Alternatives: Letting `DrawBatch` null-check late, logging failures every frame, or creating runtime fallback materials. Late null-checks waste render CPU; repeated logs allocate/noise; runtime fallback materials violate authored material policy.
+Scalability potential: Low avoids wasted work in invalid authoring states. Middle, High, and Ultra keep the same visuals once resources are ready and preserve CPU for actual prompt rendering.
+Hardware Impact: Expected gain is only in degraded/missing-resource states, but deterministic: no camera/anchor/bounds work when the prompt cannot draw. No runtime profiler proof.

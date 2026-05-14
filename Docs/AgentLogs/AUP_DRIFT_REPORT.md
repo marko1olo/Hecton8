@@ -389,3 +389,23 @@ Status: VERIFIED AUP INTEGRITY - CORE BUILD PASS; ASMDEF BLOCKED BY ARCHITECTURE
 
 - The full global H-Phi score is still pending because the full PowerShell scan timed out after 120 seconds.
 - H-Phi remains static-source evidence only; Unity Console, PlayMode, profiler, GCMonitor, and player build evidence remain pending.
+
+## Loop 24 Full H-Phi Source Scan Timeout Classification
+
+### Findings
+
+- The full global H-Phi source scan did not complete under a 120-second cap.
+- A second full run with a 240-second cap also timed out.
+- Core graph summary mode still completes, so the failure is isolated to the full source scan path.
+
+### Verification
+
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json` completed successfully.
+- Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json` timed out after both 120 and 240 seconds.
+- No global H-Phi score was claimed from partial output.
+- No `dotnet build` or rebuild was run in Loop 24 because the latest user instruction explicitly forbids rebuilds.
+
+### Evidence Queue
+
+- `Tools/Architecture/HectonPhiAudit.ps1` needs a future performance pass before full-source H-Phi can be treated as a fast CI/static gate.
+- A separate PowerShell process from another command was observed running a H-Phi summary write; it was not killed because process ownership was ambiguous in this multi-agent workspace.

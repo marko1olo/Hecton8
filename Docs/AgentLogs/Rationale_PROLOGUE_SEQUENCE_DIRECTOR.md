@@ -356,3 +356,11 @@ Solution: `Dispose()` now detects `_running`, requests `ExplicitCancel`, and cal
 Rejected Alternatives: Rely only on `OnDisable()` cancellation, rely only on the async `finally`, or dispose the buffer first. Disable ordering is not guaranteed for all external callers; async cleanup can be delayed by cancellation timing; disposing forensic state first weakens post-mortem evidence.
 Scalability potential: Low/MX350 gets deterministic input recovery during cheap-device teardown or scene churn. Middle/High/Ultra keep the same presentation flow while preventing teardown from orphaning the control lock before richer VFX/audio responders unwind.
 Hardware Impact: 0 us steady-state and 0 us wait-loop cost. Disposal-only branch adds one bool check plus a guarded signal publish only when teardown occurs during an active run. Verification this pass is static only by user request; no dotnet rebuild or response-file compile was run.
+
+## Decision 43 - Fluid Handoff Source-Hash Contract Drift
+
+Problem: `HectonFluidEngine` was already source-gating splashdown to the prologue sequence, but it kept its own raw `PRLG` literal. That creates a low-H-Phi drift point between the sequence owner and a high-cost cross-domain fluid responder.
+Solution: Replace the fluid-local magic literal with `PrologueSignalSourceHashes.SequenceDirector`. The field remains a compile-time constant and the splashdown drain still performs the same uint compare.
+Rejected Alternatives: Leave the raw literal because it works today, or compute a hash at runtime. Local literals drift when source ownership expands; runtime hashing wastes work and can diverge by spelling.
+Scalability potential: Low/MX350 avoids accidental splashdown work from mismatched source ownership. Middle/High/Ultra preserve the expensive bubble/fluid overkill for the authoritative `PRLG` handoff while sharing one contract with audio, VFX, manual, and orbital producers.
+Hardware Impact: 0 us runtime change; the constant is inlined. The practical gain is preventing invalid splashdown impulse, bubble spawn, and fluid-advection work from contract drift. Verification this pass is static only by user request; no dotnet rebuild or response-file compile was run.

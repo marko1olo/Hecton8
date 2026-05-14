@@ -220,8 +220,11 @@ namespace Hecton8.UI
                 return;
 
             EnsureResources();
+            if (!_resourceObjectsReady || !_materialsReady || _runtimeQuadMesh == null)
+                return;
+
             Camera camera = ResolveRenderCamera();
-            if (camera == null || _runtimeQuadMesh == null)
+            if (camera == null)
                 return;
 
             Transform cameraTransform = camera.transform;

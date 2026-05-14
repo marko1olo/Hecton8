@@ -2130,8 +2130,14 @@ namespace Hecton8.SaveSystem
                 || !reader.ReadStruct(out value.currentStageHash)
                 || !reader.ReadInt(out value.currentStage)
                 || !reader.ReadInt(out value.toxicityPermille)
-                || !reader.ReadStructArray(out uint[] hashes)
-                || !reader.ReadStructArray(out int[] values)
+                || !reader.ReadStructArrayBounded(
+                    out uint[] hashes,
+                    MetaCampaignDTO.MaxGlobalVariables,
+                    nameof(value.variableHashes))
+                || !reader.ReadStructArrayBounded(
+                    out int[] values,
+                    MetaCampaignDTO.MaxGlobalVariables,
+                    nameof(value.variableValues))
                 || !reader.ReadInt(out int flags))
             {
                 return false;
@@ -2169,11 +2175,22 @@ namespace Hecton8.SaveSystem
             if (!reader.ReadInt(out value.entryCount))
                 return false;
 
-            if (saveDataVersion >= 60 && !reader.ReadStructArray(out value.itemHashIds))
+            if (saveDataVersion >= 60 &&
+                !reader.ReadStructArrayBounded(
+                    out value.itemHashIds,
+                    ResourceScarcityDTO.MaxTrackedResources,
+                    nameof(value.itemHashIds)))
                 return false;
 
-            return ReadStringArray(ref reader, out value.itemIds)
-                && reader.ReadStructArray(out value.collectedCounts);
+            return ReadStringArray(
+                    ref reader,
+                    out value.itemIds,
+                    ResourceScarcityDTO.MaxTrackedResources,
+                    nameof(value.itemIds))
+                && reader.ReadStructArrayBounded(
+                    out value.collectedCounts,
+                    ResourceScarcityDTO.MaxTrackedResources,
+                    nameof(value.collectedCounts));
         }
 
         private static bool WriteEcosystemState(ref BufferWriter writer, EcosystemStateDTO value)
@@ -2195,8 +2212,14 @@ namespace Hecton8.SaveSystem
                 return false;
 
             return reader.ReadInt(out value.infectedZoneCount)
-                && reader.ReadStructArray(out value.infectedChunkKeys)
-                && reader.ReadStructArray(out value.infectedSeverities);
+                && reader.ReadStructArrayBounded(
+                    out value.infectedChunkKeys,
+                    EcosystemStateDTO.MaxInfectedZones,
+                    nameof(value.infectedChunkKeys))
+                && reader.ReadStructArrayBounded(
+                    out value.infectedSeverities,
+                    EcosystemStateDTO.MaxInfectedZones,
+                    nameof(value.infectedSeverities));
         }
 
         private static bool WriteInventoryCell(ref BufferWriter writer, in InventoryCellDTO value)

@@ -254,6 +254,42 @@ namespace Hecton8.UI
             }
         }
 
+        private void RefreshInventorySignalBinding()
+        {
+            uint inventoryHash = playerInventory != null && playerInventory.gameObject != null
+                ? unchecked((uint)EntityId.ToULong(playerInventory.gameObject.GetEntityId()))
+                : 0u;
+
+            if (inventoryHash == _inventorySignalHash)
+                return;
+
+            _inventorySignalHash = inventoryHash;
+            _lastInventorySignalRevision = 0u;
+        }
+
+        private bool ConsumeInventoryChangedSignals()
+        {
+            uint inventoryHash = _inventorySignalHash;
+            if (inventoryHash == 0u)
+                return false;
+
+            ReadOnlySpan<InventoryChangedSignal> signals = SignalBus<InventoryChangedSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                InventoryChangedSignal signal = signals[i];
+                if (signal.InventoryHash != inventoryHash)
+                    continue;
+
+                if (signal.Revision == _lastInventorySignalRevision && _lastInventorySignalRevision != 0u)
+                    continue;
+
+                _lastInventorySignalRevision = signal.Revision;
+                return true;
+            }
+
+            return false;
+        }
+
         private void Subscribe()
         {
             PDAEvents.Register(this);

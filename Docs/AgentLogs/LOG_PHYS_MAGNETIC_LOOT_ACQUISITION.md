@@ -263,3 +263,34 @@ Verification:
 
 Final Status:
 - PENDING VERIFICATION.
+
+## 2026-05-15 - Black-Box And H8Memory Ownership Pass
+
+What was wrong:
+- Dense loot presentation budget clipping was invisible in the black-box flags.
+- Loot-owned persistent NativeArrays used direct allocation plus `NativeMemorySentinel` instead of `H8Memory` owner accounting.
+- External PowerShell wrappers respawned forbidden `dotnet build` commands during static verification hygiene.
+
+What was done:
+- Added fixed telemetry bits for acoustic and wake presentation budget drops.
+- Changed `PublishPresentationSignals` to return drop flags and commit them into the 300-frame telemetry ring.
+- Moved `_signalEvents` and `_telemetry` allocation/release to `H8Memory` with `SystemID.GameplayLoot`.
+- Made vault readiness require `_signalEvents.IsCreated` before Burst scheduling can proceed.
+- Stopped the respawned dotnet wrapper and child build processes without starting a build.
+
+Cinematic Cheats used:
+- Cosmetic zip/wake overload degrades by dropping surplus presentation signals while acquisition truth remains vault-driven.
+- Low tier keeps cheaper acquisition cadence; High/Ultra can still spend budget on denser acoustic/wake feedback up to explicit caps.
+
+Exact Microseconds saved:
+- No fake profiler numbers. The change avoids unbounded queue growth under dense presentation pressure and preserves frame predictability.
+- H8Memory ownership adds no per-frame cost; tracking cost is cold enable/capacity-change only.
+
+Verification:
+- User forbade dotnet rebuilds; none were run.
+- `git diff --check` on `LootMagnetSystem.cs` passed.
+- Static anti-bloat scan under `Assets/_Project/Scripts/Gameplay/Loot` remains clean for `foreach`, LINQ markers, runtime scene search, `DontDestroyOnLoad`, `math.sqrt`, `math.normalize`, `ToAbsoluteDouble3`, string formatting, and `.ToString()`.
+- Process query after stopping the wrapper found no remaining dotnet processes.
+
+Final Status:
+- PENDING VERIFICATION.

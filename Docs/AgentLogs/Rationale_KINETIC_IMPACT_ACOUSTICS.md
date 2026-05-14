@@ -335,3 +335,16 @@ Solution: Ran source-only checks: `git diff --check`, direct registry scans, res
 Rejected Alternatives: Running dotnet build/rebuild would violate explicit user order; claiming Unity compile/profiler status without Editor console/MCP data would be false.
 Scalability potential: Verification only.
 Hardware Impact: Verification only.
+
+## LOOP 17 PROLOGUE AND VOCAL WARNING REGRESSION GUARD H-PHI PASS
+Problem: The prologue acoustic bridge is a visual-sync audio path. It previously had a quality policy risk surface because `LateFrameTick` could regress into periodic scalability/low-memory registry reads. The vocal warning system already used cold service caching and scalability events, but its hot `Tick`/`SlowTick` paths did not have explicit source smoke coverage.
+Solution: Verified `PrologueAcousticOrchestrator` quality policy seeding through `RefreshQualityPolicyCold()` and event updates through `IScalabilityChangedEventListener`, with no quality-policy registry polling in `LateFrameTick`. Extended `AdvancedAcousticsSmokeTester` to guard prologue policy handoff and vocal-warning hot-path hygiene.
+Rejected Alternatives: Continuing to trust cadence-gated registry reads in prologue audio would violate the hot-path service-cache mandate; adding a new prologue quality bus would be overreach because `ScalabilityEvents` already exists; changing VWS runtime code was unnecessary because its hot paths already use cached fields.
+Scalability potential: Low/MX350 prologue keeps cheap low-tier proxy flags and avoids quality lookup churn during late-frame transition publishing. Middle/High/Ultra keep plasma granular stress and splashdown polish through cached tier state. VWS keeps authored warning playback, priority queues, and telemetry hot paths guarded from future registry/string/log allocations.
+Hardware Impact: Prologue saves three registry reads every previous 60-frame quality refresh window after warmup. VWS runtime CPU is unchanged; editor smoke coverage prevents future hot-path regressions. Runtime allocation remains 0 B/frame in guarded paths.
+
+Problem: Evidence had to stay honest without Unity MCP and without dotnet rebuilds.
+Solution: Ran source-only checks: `git diff --check`, direct registry scans, method-body smoke anchor scans, forbidden API scans, and source counters. Prologue counts are `PrologueDirectQuality=3`, `PrologueLateFrameQualityPoll=0`, `ScalabilityEventCalls=3`, `SmokePrologueAsserts=9`, `FindObject=0`, `UpdateMethods=0`, `StartCoroutine=0`. Vocal counts are `VocalTickRegistry=0`, `VocalSlowRegistry=0`, `VocalTickStrings=0`, `VocalSlowStrings=0`, `SmokeVocalAsserts=13`, `VocalScalabilityEvents=3`.
+Rejected Alternatives: Running dotnet build/rebuild would violate explicit user order; claiming Unity compile/profiler status without Editor console/MCP data would be false.
+Scalability potential: Verification only.
+Hardware Impact: Verification only.

@@ -212,3 +212,19 @@ Solution: Sanitize the segment position in-place with a parent-derived fallback 
 Rejected Alternatives: Adding checks inside only the SDF sampler was rejected because height fallback also consumes `position.xz`. Re-running a full constraint pass before terrain was rejected as unnecessary cost.
 Scalability potential: All tiers preserve behavior for valid data. Low/MX350 pays only the cheap finite check on fallback-contact segments; high/ultra protect SDF indexing.
 Hardware Impact: Estimated cost is under 0.1 us for the terrain-hug segment set; it prevents invalid native indexing and NaN matrix propagation.
+
+## Decision 20: Dead Phase Job Payload
+
+Problem: `FaunaKinematicsRuntime` maintained `_solverTimeSeconds` only to assign `PhaseTimeSeconds` into `LeviathanTerrainIkJob`, but the Burst solver did not consume that field.
+Solution: Remove the runtime accumulator, wrap logic, and job scalar field so the scheduled payload matches the actual solver contract.
+Rejected Alternatives: Keeping the field as future reserve was rejected because unused time state becomes a false dependency and can drift from authored timing fields already used by tail whip.
+Scalability potential: All tiers preserve behavior. Low/MX350 carry one less scalar through scheduling; high/ultra keep their terrain/SDF/whip behavior unchanged.
+Hardware Impact: Estimated gain is 0.01-0.05 us per scheduled solver from removing one accumulator write and one job scalar copy. The more important effect is lower state surface, not measurable frame time.
+
+## Decision 20: Dead Phase Job Payload
+
+Problem: `FaunaKinematicsRuntime` maintained `_solverTimeSeconds` only to assign `PhaseTimeSeconds` into `LeviathanTerrainIkJob`, but the Burst solver did not consume that field.
+Solution: Remove the runtime accumulator, wrap logic, and job scalar field so the scheduled payload matches the actual solver contract.
+Rejected Alternatives: Keeping the field as future reserve was rejected because unused time state becomes a false dependency and can drift from authored timing fields already used by tail whip.
+Scalability potential: All tiers preserve behavior. Low/MX350 carry one less scalar through scheduling; high/ultra keep their terrain/SDF/whip behavior unchanged.
+Hardware Impact: Estimated gain is 0.01-0.05 us per scheduled solver from removing one accumulator write and one job scalar copy. The more important effect is lower state surface, not measurable frame time.

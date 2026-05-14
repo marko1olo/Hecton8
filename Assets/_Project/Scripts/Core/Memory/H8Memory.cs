@@ -101,7 +101,10 @@ namespace Hecton8.Core.Memory
         PlayerKinematicDragSolvedVelocities = 60,
         PlayerKinematicTelemetryRing = 61,
         PlayerCinematicFocusBlackBox = 62,
-        HabitatBaseAwakeState = 63
+        HabitatBaseAwakeState = 63,
+        CarveDebrisJobState = 64,
+        CarveDebrisRequests = 65,
+        CarveDebrisBlackBox = 66
     }
 
     [Flags]

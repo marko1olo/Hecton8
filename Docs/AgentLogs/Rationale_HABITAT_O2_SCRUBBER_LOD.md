@@ -95,3 +95,10 @@ Solution: Re-read the modified gas solver, global signal payloads, H-Phi buffer 
 Rejected Alternatives: Adding another abstraction or expanding vault ownership was rejected because the code already meets the prompt surface and further uncompiled movement would be risk-positive. Running dotnet rebuild remains rejected by explicit user instruction.
 Scalability potential: Low keeps only a byte mask and O(room) wake catch-up. Middle/High/Ultra keep the same native authority and can spend saved cycles in presentation systems.
 Hardware Impact: No new microsecond claim; this pass reduced compile/integration risk only. Last touched-file whitespace check exits 0 with CRLF warnings only.
+
+## Self-Review 7 - H-Phi Identifier And Cold Allocation Hygiene
+Problem: Continued audit found two non-frame defects: the gas solver was initializing base signal queues as a consumer, and the habitat awake buffer needed append-only ID placement to avoid H-Phi identifier churn.
+Solution: Removed consumer-side `SignalBus<PlayerBaseEnterSignal>` / `SignalBus<PlayerBaseExitSignal>` initialization from the gas solver, leaving `GlobalSignals` as lane owner. Kept `HabitatBaseAwakeState` at append-only `BufferID` 63. Also hardened cold `TryConfigureBase` remapping and aligned the black-box dump filename with the agent ID.
+Rejected Alternatives: Leaving the solver to allocate signal lanes was rejected because empty snapshot reads are already safe and owner-side lane configuration is cleaner. Reusing a low occupied buffer value was rejected because H-Phi IDs must be stable. Running a rebuild remains rejected by user instruction.
+Scalability potential: Low avoids two unnecessary cold signal allocations in scenes without base transitions. Middle/High/Ultra keep deterministic hibernation authority and stable H-Phi aliasing.
+Hardware Impact: Cold allocation reduction only; no new frame-time microsecond claim. Room remap fix prevents stale sleeping-base masks from incorrectly gating rooms after procedural base reconfiguration.

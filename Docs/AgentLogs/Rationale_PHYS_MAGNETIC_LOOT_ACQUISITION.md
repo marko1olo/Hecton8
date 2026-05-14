@@ -235,3 +235,39 @@ Rejected Alternatives: Leaving the process running was rejected because it viola
 Scalability potential: No runtime behavior change. This protects evidence quality during parallel-agent work.
 
 Hardware Impact: Removes build CPU pressure from the local machine; no gameplay microseconds claimed.
+
+## Decision 18 - Presentation Drop Telemetry
+
+Problem: Dense loot fields can legitimately exhaust the tiered acoustic or wake presentation budgets. Before this pass, the black-box flags only distinguished non-finite fault frames, so a dump could not show whether the system clipped cosmetic output to preserve shared signal lane budgets.
+
+Solution: `PublishPresentationSignals` now returns fixed telemetry bits for acoustic and wake budget drops. `CommitVaultResultsToManagedProxies` ORs those bits into the last committed telemetry flags while keeping the non-finite fault bit separate.
+
+Rejected Alternatives: Raising global queue capacity was rejected because it is a core memory policy decision outside this domain. Logging each dropped presentation signal was rejected because it would allocate/noise and punish the exact dense-field scenario being protected.
+
+Scalability potential: Low tier can show frequent cosmetic clipping without changing acquisition truth. Middle/High/Ultra can spend larger budgets on richer zip/wake presentation while black-box evidence still records when authored density exceeds the budget.
+
+Hardware Impact: Adds two branch checks and one `uint` OR path per presentation event. MX350 gains diagnosable load shedding without queue growth; high-end devices retain visual overkill up to the explicit acoustic/wake ceilings.
+
+## Decision 19 - H8Memory Ownership
+
+Problem: Loot-owned persistent NativeArrays for signal events and telemetry were registered through `NativeMemorySentinel`, but current project rules require `H8Memory.Allocate` ownership with a concrete `SystemID`.
+
+Solution: Allocate and release `_signalEvents` and `_telemetry` through `H8Memory` using `SystemID.GameplayLoot`. `EnsureVaultBuffers` now fails closed unless `_signalEvents` is created, preventing a Burst schedule with a missing event lane.
+
+Rejected Alternatives: Leaving direct `new NativeArray` allocations was rejected because it bypasses owner byte accounting. Falling back to managed arrays was rejected because it would break Burst and zero-GC guarantees.
+
+Scalability potential: Low/Middle/High/Ultra keep the same runtime behavior, but native ownership is now visible to the global memory ledger. High-density authored capacity cannot silently allocate outside the gameplay loot owner.
+
+Hardware Impact: No per-frame cost. Cold allocation/release now has H8Memory tracking overhead only at enable/capacity changes; MX350 benefits from owner-capped failure behavior instead of unchecked persistent memory.
+
+## Decision 20 - Respawned Dotnet Wrapper Hygiene
+
+Problem: After the first dotnet processes were stopped, an external PowerShell wrapper respawned `dotnet build .\Assembly-CSharp.csproj` inside the workspace.
+
+Solution: Identified the parent PowerShell command line and stopped the wrapper plus its dotnet children. No dotnet build/rebuild was launched by this pass.
+
+Rejected Alternatives: Letting the wrapper continue was rejected because it violates the user's active constraint and contaminates verification timing. Running our own dotnet command to compare output was rejected for the same reason.
+
+Scalability potential: No gameplay behavior change. This protects process hygiene while other agents run in parallel.
+
+Hardware Impact: Removes local build CPU pressure. No frame microseconds claimed.

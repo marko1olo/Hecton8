@@ -1296,6 +1296,7 @@ namespace Hecton8.Gameplay
                 return;
 
             TryRegisterScalabilityListener();
+            TryRegisterAtlasSignalListener();
             if (!_registeredScientificFastTick)
                 _registeredScientificFastTick = GlobalRegistry.TryRegisterFastTickable(this, PriorityLayer.Player);
             if (!_registeredScientificSlowTick)
@@ -1325,6 +1326,7 @@ namespace Hecton8.Gameplay
             }
 
             TryUnregisterScalabilityListener();
+            TryUnregisterAtlasSignalListener();
         }
 
         private void TryRegisterScalabilityListener()
@@ -1344,6 +1346,24 @@ namespace Hecton8.Gameplay
 
             ScalabilityEvents.Unregister(this);
             _registeredScalabilityListener = false;
+        }
+
+        private void TryRegisterAtlasSignalListener()
+        {
+            if (_registeredAtlasSignalListener || !Application.isPlaying)
+                return;
+
+            AtlasSignalEvents.Register(this);
+            _registeredAtlasSignalListener = AtlasSignalEvents.IsRegistered(this);
+        }
+
+        private void TryUnregisterAtlasSignalListener()
+        {
+            if (!_registeredAtlasSignalListener)
+                return;
+
+            AtlasSignalEvents.Unregister(this);
+            _registeredAtlasSignalListener = false;
         }
 
         public override string GetOperationalSummary()

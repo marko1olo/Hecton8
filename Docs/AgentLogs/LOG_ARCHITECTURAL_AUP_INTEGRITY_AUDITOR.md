@@ -577,3 +577,30 @@ Verification:
 Integrator notes:
 - `Tools/Architecture/HectonPhiAudit.ps1` already had unrelated active edits in this workspace. Review staged diff before integration.
 - The full H-Phi source scan needs a longer static-audit window or performance work in the tool; this loop does not claim a measured full score.
+
+## 2026-05-15 - Loop 24 Full H-Phi Source Scan Timeout Classification
+
+What was wrong:
+- Full global H-Phi source scan did not complete under the first 120-second cap.
+- A longer 240-second static-only run also timed out.
+
+What was done:
+- Classified the full source scan result as pending instead of inventing a score.
+- Kept parser and core-graph execution evidence as the valid verification subset.
+- Recorded the timeout as H-Phi tool performance debt for the Integrator/QA owner.
+
+Cinematic Cheats used:
+- None. This is static tooling verification, not runtime presentation.
+
+Exact Microseconds saved:
+- Gameplay frame time: 0 us.
+- Tool performance remains unresolved; full source scan exceeds 240 seconds in this workspace.
+
+Verification:
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json` completed successfully.
+- Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json` timed out after both 120 and 240 seconds.
+- No `dotnet build` or rebuild was run because the user explicitly forbade rebuilds.
+
+Integrator notes:
+- Do not use current full H-Phi source score as evidence; no full score completed.
+- A separate H-Phi PowerShell process with ambiguous ownership was observed and left untouched.

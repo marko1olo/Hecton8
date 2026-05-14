@@ -229,47 +229,6 @@ Verification:
 
 Status: PENDING VERIFICATION. Static source audits pass; compile/runtime proof remains pending.
 
-## 2026-05-15 - WFC Outpost Loops 20-21 Base Hash Guard And Render Property Isolation
-
-What was wrong:
-- `firstBaseHash` was a raw serialized `ulong`; zero could be accepted even though sector zero is already treated as the no-persistence sentinel.
-- `TryRequestGeneration(0, ...)` could enter cold resource setup and later publish/persist an ambiguous zero-sector outpost.
-- The render path wrote outpost payload through shader globals and shared `Material.SetBuffer` calls every draw.
-- `Render` checked `_matrixBuffer` and `_argsBuffer` but not `_cellTypeBuffer`, while the shader indexes `_OutpostCellTypes[instanceID]`.
-
-What was done:
-- Routed `FirstBaseHash`, sector hydration gating, and solve seed derivation through `ResolveFirstBaseHash()`.
-- Restored `DefaultFirstBaseHash` in `OnValidate` when serialized data contains zero.
-- Rejected zero-sector generation before native/GPU allocation and wrote fault telemetry against the rejected hash when the telemetry ring exists.
-- Moved render payload into a cached per-service `MaterialPropertyBlock` passed via `RenderParams.matProps`.
-- Rebound matrix/cell buffers, outpost age, and decay runtime only when the cached references or values change.
-- Added `_cellTypeBuffer == null` to the render fail-closed guard.
-- Preserved the property block across disable/enable by clearing cached bindings instead of nulling the block.
-
-Cinematic Cheats used:
-- No physical simulation change. The outpost remains deterministic WFC bytes, native extraction, bounded interactable proxies, and one GPU indirect shell draw.
-- The render upgrade preserves shader rust/silt/wear as scalar payloads instead of material clones or per-shell renderers.
-- The zero-sector gate protects deterministic identity without spending visual or simulation budget.
-
-Exact Microseconds saved:
-- Invalid zero-sector requests now cost one branch and optional telemetry write instead of cold native/GPU setup and WFC scheduling; avoided cold work is estimated at 20-250 us depending tier.
-- Render steady frames remove four global/material property writes after the first stable bind; estimated MX350 CPU gain is small but deterministic and below 0.1 ms/frame.
-- Added `_cellTypeBuffer` render guard costs one null branch and prevents undefined GPU buffer access/driver recovery.
-- Hot Tick/Render remains 0 B/frame by source audit.
-
-Verification:
-- Targeted hash audit: PASS; no raw `FirstBaseHash => firstBaseHash`, raw `+ firstBaseHash`, or raw `signal.SectorHash != firstBaseHash` remains.
-- Targeted render audit: PASS; no `Shader.SetGlobal*` or `material.SetBuffer` remains in the owned outpost render path; `RenderParams.matProps` and cached `MaterialPropertyBlock` are present.
-- Scoped H-Phi counts remain `GlobalRegistrySurface=12`, `SignalBusPush=1`, `EventPublish=0`, `StructLayoutAttributes=6`.
-- Forbidden construct audit: PASS; no managed LINQ/random/string interpolation, shell `Instantiate`, `BaseGenerator`, `math.pow`, or telemetry modulo matches in owned outpost files.
-- `git diff --check`: PASS.
-- Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json`: TIMEOUT at 240 seconds; no fresh full-project H-Phi score claimed.
-- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json`: PASS; `CoreAsmdefDebtReferenceCount=25`, `GeneratedProjectDebtReferenceCount=10`.
-- `dotnet` rebuilds/response-file compiles: NOT RUN by explicit user request.
-- Unity MCP console/profiler: unavailable from this session.
-
-Status: PENDING VERIFICATION. Static source audits pass; compile/runtime proof remains pending by user instruction and external Core blocker.
-
 ## 2026-05-14 - WFC Outpost Loop 14 Finite Scalar Payload Guard
 
 What was wrong:
@@ -460,3 +419,44 @@ Verification:
 - Unity MCP console/profiler: unavailable from this session.
 
 Status: PENDING VERIFICATION. Static source audits pass; compile/runtime proof remains pending.
+
+## 2026-05-15 - WFC Outpost Loops 20-21 Base Hash Guard And Render Property Isolation
+
+What was wrong:
+- `firstBaseHash` was a raw serialized `ulong`; zero could be accepted even though sector zero is already treated as the no-persistence sentinel.
+- `TryRequestGeneration(0, ...)` could enter cold resource setup and later publish/persist an ambiguous zero-sector outpost.
+- The render path wrote outpost payload through shader globals and shared `Material.SetBuffer` calls every draw.
+- `Render` checked `_matrixBuffer` and `_argsBuffer` but not `_cellTypeBuffer`, while the shader indexes `_OutpostCellTypes[instanceID]`.
+
+What was done:
+- Routed `FirstBaseHash`, sector hydration gating, and solve seed derivation through `ResolveFirstBaseHash()`.
+- Restored `DefaultFirstBaseHash` in `OnValidate` when serialized data contains zero.
+- Rejected zero-sector generation before native/GPU allocation and wrote fault telemetry against the rejected hash when the telemetry ring exists.
+- Moved render payload into a cached per-service `MaterialPropertyBlock` passed via `RenderParams.matProps`.
+- Rebound matrix/cell buffers, outpost age, and decay runtime only when the cached references or values change.
+- Added `_cellTypeBuffer == null` to the render fail-closed guard.
+- Preserved the property block across disable/enable by clearing cached bindings instead of nulling the block.
+
+Cinematic Cheats used:
+- No physical simulation change. The outpost remains deterministic WFC bytes, native extraction, bounded interactable proxies, and one GPU indirect shell draw.
+- The render upgrade preserves shader rust/silt/wear as scalar payloads instead of material clones or per-shell renderers.
+- The zero-sector gate protects deterministic identity without spending visual or simulation budget.
+
+Exact Microseconds saved:
+- Invalid zero-sector requests now cost one branch and optional telemetry write instead of cold native/GPU setup and WFC scheduling; avoided cold work is estimated at 20-250 us depending tier.
+- Render steady frames remove four global/material property writes after the first stable bind; estimated MX350 CPU gain is small but deterministic and below 0.1 ms/frame.
+- Added `_cellTypeBuffer` render guard costs one null branch and prevents undefined GPU buffer access/driver recovery.
+- Hot Tick/Render remains 0 B/frame by source audit.
+
+Verification:
+- Targeted hash audit: PASS; no raw `FirstBaseHash => firstBaseHash`, raw `+ firstBaseHash`, or raw `signal.SectorHash != firstBaseHash` remains.
+- Targeted render audit: PASS; no `Shader.SetGlobal*` or `material.SetBuffer` remains in the owned outpost render path; `RenderParams.matProps` and cached `MaterialPropertyBlock` are present.
+- Scoped H-Phi counts remain `GlobalRegistrySurface=12`, `SignalBusPush=1`, `EventPublish=0`, `StructLayoutAttributes=6`.
+- Forbidden construct audit: PASS; no managed LINQ/random/string interpolation, shell `Instantiate`, `BaseGenerator`, `math.pow`, or telemetry modulo matches in owned outpost files.
+- `git diff --check`: PASS.
+- Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json`: TIMEOUT at 240 seconds; no fresh full-project H-Phi score claimed.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json`: PASS; `CoreAsmdefDebtReferenceCount=25`, `GeneratedProjectDebtReferenceCount=10`.
+- `dotnet` rebuilds/response-file compiles: NOT RUN by explicit user request.
+- Unity MCP console/profiler: unavailable from this session.
+
+Status: PENDING VERIFICATION. Static source audits pass; compile/runtime proof remains pending by user instruction and external Core blocker.

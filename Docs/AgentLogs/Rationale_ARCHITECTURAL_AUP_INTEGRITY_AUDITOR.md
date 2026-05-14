@@ -399,3 +399,11 @@ Solution: Add `AupPrecisionSafe`, `AupPrecisionRisk`, and `AupPrecisionIntegrity
 Rejected Alternatives: Leave the two H-Phi paths divergent or force a full headless execution. Divergent H-Phi models create audit confusion; full execution is outside this static tool pass and the full source scan timed out at 120 seconds in the current workspace.
 Scalability potential: Low gets a single static audit signal that penalizes real AUP bridge regressions. Middle/High/Ultra get cleaner architecture hygiene before visual-overkill systems rely on long-session AUP stability.
 Hardware Impact: 0 us gameplay-frame cost and 0 B/frame. Tool-only overhead is two regex counters and one scalar multiply in the static audit path.
+
+## Decision 50 - Full H-Phi Source Scan Timeout Classification
+
+Problem: After adding AUP precision counters to the global H-Phi tool, the full source scan did not finish under a 120-second cap, and a follow-up 240-second cap also timed out.
+Solution: Classify the full H-Phi score as pending, keep the parser and core-graph validation as successful evidence, and record the full scan as static-tool performance debt.
+Rejected Alternatives: Claim a score from a partial run, hide the timeout, or run a rebuild to compensate. None would prove the global H-Phi source scan is healthy.
+Scalability potential: Low/Middle/High/Ultra unchanged at runtime. The tool needs later source-scan performance work before it can act as a fast CI gate.
+Hardware Impact: 0 us gameplay-frame cost. Tool execution currently exceeds 240 seconds on this workspace for full source scan, so CI use is pending performance repair.

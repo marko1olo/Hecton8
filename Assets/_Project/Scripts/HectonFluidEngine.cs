@@ -188,6 +188,7 @@ namespace Hecton8.Physics
         private const int AbyssalFlowUpdateBucketMask = 7;
         private const float AbyssalFlowUpdateBucketInvCount = 1f / (AbyssalFlowUpdateBucketMask + 1);
         private const uint AbyssalFlowKillSwitchMask = GlobalRegistry.SystemKillSwitchLane4VfxMask;
+        private const uint AbyssalFlowBucketedCostHash = 0x41424642u; // ABFB
         private const float AbyssalFlowWakeMinimumSpeedMetersPerSecond = 0.5f;
         private const int MaxAbyssalVortexImpulseCount = 4;
         private const float AbyssalVortexImpulseMinimumRadiusMeters = 0.5f;
@@ -211,7 +212,7 @@ namespace Hecton8.Physics
         private const uint SplashdownImpulseNoAffectedCellsFlag = 1u << 4;
         private const uint SplashdownImpulseJobInvalidFlag = 1u << 8;
         private const uint SplashdownImpulseInvalidInputFlag = 1u << 31;
-        private const uint PrologueSequenceSourceHash = 0x50524C47u;
+        private const uint PrologueSequenceSourceHash = PrologueSignalSourceHashes.SequenceDirector;
         private const int AbyssalFlowTelemetryCapacity = 300;
         private const string AbyssalFlowDumpRelativePath = "Docs/AgentLogs/Dump_SPLASHDOWN_FLUID_DYNAMICS.bin";
         private const int GpuReadbackRingSize = 3;
@@ -456,6 +457,7 @@ namespace Hecton8.Physics
         private static readonly int _AbyssalFlowTextureWriteId = Shader.PropertyToID("_AbyssalFlowTextureWrite");
         private static readonly int _AbyssalFlowTextureRWId = Shader.PropertyToID("_AbyssalFlowTextureRW");
         private static readonly int _AbyssalFlowTextureParamsId = Shader.PropertyToID("_AbyssalFlowTextureParams");
+        private static readonly int _AbyssalFlowInterpolationAlphaId = Shader.PropertyToID("_AbyssalFlowInterpolationAlpha");
         private static readonly int _AbyssalFlowNoiseOffsetId = Shader.PropertyToID("_AbyssalFlowNoiseOffset");
         private static readonly int _AbyssalFlowWakeSphereId = Shader.PropertyToID("_AbyssalFlowWakeSphere");
         private static readonly int _AbyssalFlowWakeVelocityId = Shader.PropertyToID("_AbyssalFlowWakeVelocity");
@@ -704,6 +706,7 @@ namespace Hecton8.Physics
             public Vector4 AbyssalFlowSpacing;
             public Vector4 AbyssalFlowTextureParams;
             public float AbyssalFlowTextureActive;
+            public float AbyssalFlowInterpolationAlpha;
             public Matrix4x4 VoxelSdfWorldToLocal;
             public Vector4 VoxelSdfInvDoubleHalfExtents;
             public Vector4 SdfParams;
@@ -2793,6 +2796,7 @@ namespace Hecton8.Physics
                 AbyssalFlowSpacing = flowSpacing,
                 AbyssalFlowTextureParams = hasFlowTexture ? textureSpacing : Vector4.zero,
                 AbyssalFlowTextureActive = hasFlowTexture ? 1f : 0f,
+                AbyssalFlowInterpolationAlpha = _gpuAbyssalFlowInterpolationAlpha,
                 VoxelSdfWorldToLocal = sdfWorldToLocal,
                 VoxelSdfInvDoubleHalfExtents = sdfInvDoubleHalfExtents,
                 SdfParams = new Vector4(sdfActive, FluidAdvectionSdfSolidThreshold, 0f, 0f)
@@ -2829,6 +2833,7 @@ namespace Hecton8.Physics
             cmd.SetComputeVectorParam(compute, _AbyssalFlowSpacingId, payload.AbyssalFlowSpacing);
             cmd.SetComputeVectorParam(compute, _AbyssalFlowTextureParamsId, payload.AbyssalFlowTextureParams);
             cmd.SetComputeFloatParam(compute, _AbyssalFlowTextureActiveId, payload.AbyssalFlowTextureActive);
+            cmd.SetComputeFloatParam(compute, _AbyssalFlowInterpolationAlphaId, payload.AbyssalFlowInterpolationAlpha);
             cmd.SetComputeMatrixParam(compute, _VoxelSdfWorldToLocalId, payload.VoxelSdfWorldToLocal);
             cmd.SetComputeVectorParam(compute, _VoxelSdfInvDoubleHalfExtentsId, payload.VoxelSdfInvDoubleHalfExtents);
             cmd.SetComputeVectorParam(compute, _FluidAdvectionSdfParamsId, payload.SdfParams);
@@ -5929,6 +5934,7 @@ namespace Hecton8.Physics
             }
 
             _lastAbyssalFlowDispatchFixedTime = currentFixedTime;
+            long watchdogStart = System.Diagnostics.Stopwatch.GetTimestamp();
 
             float3 flowCenter = ResolveAbyssalFlowCenter(resolvedWaterLevel);
             bool highTier = DistanceMath.IsHighQualityTier(GlobalRegistry.ScalabilityTier);
@@ -6060,6 +6066,17 @@ namespace Hecton8.Physics
             if (splashdownParams.x > 0.5f)
                 telemetryFlags |= 4u;
             WriteAbyssalFlowTelemetry(flowCenter, wakeSphere, wakeVelocity, heatSourceCount, _lastSplashdownFluidImpulseCount, telemetryFlags);
+            ReportWatchdogCost(AbyssalFlowBucketedCostHash, watchdogStart);
+        }
+
+        private static void ReportWatchdogCost(uint subsystemHash, long startTimestamp)
+        {
+            long elapsedTicks = System.Diagnostics.Stopwatch.GetTimestamp() - startTimestamp;
+            if (elapsedTicks <= 0L)
+                return;
+
+            float elapsedMilliseconds = (float)(elapsedTicks * 1000.0 / System.Diagnostics.Stopwatch.Frequency);
+            RuntimeWatchdog.ReportSubsystemCost(subsystemHash, elapsedMilliseconds);
         }
 
         private void ClearAbyssalVortexImpulses()

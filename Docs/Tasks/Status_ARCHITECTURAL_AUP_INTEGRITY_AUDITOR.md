@@ -3,7 +3,7 @@
 Agent: ARCHITECTURAL_AUP_INTEGRITY_AUDITOR
 Domain: ECHELON 1 / Origin Shift (AUP Manager), with audit reach into Physics, Voxel, Kinematics, AI trigger math, Biome trigger math, and deterministic seed callsites.
 Assignment Source: User-supplied XML block. `Docs/Tasks/CURRENT_BATCH.md` extraction returned `PROMPT_NOT_FOUND` for this ID on initial pass.
-Status: VERIFIED AUP INTEGRITY - LOOP 23 APPLIED; GLOBAL H-PHI AUDIT TOOL NOW INCLUDES AUP PRECISION INTEGRITY; H-PHI HEADLESS QA EXPORTS AUP PRECISION COUNTERS; GLOBAL LEGACY HFO AUP SCAN CLEAN; CORE BUILD BLOCKED BY UNRELATED DEPENDENCY WALL; ASMDEF BLOCKED BY ARCHITECTURE
+Status: VERIFIED AUP INTEGRITY - LOOP 24 APPLIED; GLOBAL H-PHI AUDIT TOOL NOW INCLUDES AUP PRECISION INTEGRITY; FULL H-PHI SOURCE SCAN TIMEOUT CLASSIFIED; GLOBAL LEGACY HFO AUP SCAN CLEAN; CORE BUILD BLOCKED BY UNRELATED DEPENDENCY WALL; ASMDEF BLOCKED BY ARCHITECTURE
 
 ## Selected Mandates
 
@@ -246,3 +246,10 @@ Loop 23 - Global H-Phi Audit AUP Precision Integrity:
 - Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` was re-run; residual hits remain broad `universe` text, editor diagnostics, and final-cast fluid/scatter/shader payload names.
 - Direct committed-offset leak scan remains clean across `Assets/_Project/Scripts`.
 - No `dotnet build` or rebuild was run in Loop 23 because the user explicitly forbade rebuilds.
+
+Loop 24 - Full H-Phi Source Scan Timeout Classification:
+- Re-ran full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json` with a 240-second cap after the initial 120-second timeout.
+- The full source scan timed out again after 240 seconds; no global H-Phi score was claimed.
+- Confirmed `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json` remains healthy; the timeout is isolated to the full source scan path.
+- Recorded the timeout as static-tool performance debt instead of fabricating H-Phi values.
+- No `dotnet build` or rebuild was run in Loop 24 because the user explicitly forbade rebuilds.

@@ -415,3 +415,34 @@ Verification:
 - Source counters for the smoke tester: `SmokeMusicResolverAsserts=16`.
 - Scoped forbidden scan found only existing editor/development diagnostics and editor smoke strings.
 - Dotnet build/rebuild was not run by explicit user order. Unity compile remains PENDING VERIFICATION until Editor console/MCP validation is available.
+
+## 2026-05-15 - DSP_ACOUSTIC_LEAD - Loop 17 Prologue And Vocal Warning Regression Guard H-Phi Pass
+Status: PENDING VERIFICATION
+
+What was wrong:
+- `PrologueAcousticOrchestrator` is a late-frame audio bridge and must not drift back into live quality-policy registry polling.
+- `VocalWarningSystem` already used cached services and scalability events, but its `Tick`/`SlowTick` hot paths lacked explicit smoke guards against future registry/string/log regressions.
+- The active batch file remains rotated to unrelated agents, so this loop stayed sourced from persistent kinetic audio task files.
+
+What was done:
+- Verified prologue quality policy seeding through `RefreshQualityPolicyCold()` and live tier updates through `IScalabilityChangedEventListener`.
+- Verified `LateFrameTick` has no direct `GlobalRegistry.ScalabilityTier`, `GlobalRegistry.ScalabilityTierProfileByte`, or `GlobalRegistry.H8_LOW_MEMORY_PROFILE` polling.
+- Extended `AdvancedAcousticsSmokeTester` prologue assertions for scalability event registration, cache updates, and no late-frame quality refresh.
+- Extended `AdvancedAcousticsSmokeTester` vocal-warning assertions for cold service seeding, scalability event registration, and hot-path absence of registry polling, `.ToString()`, and `Debug.Log`.
+
+Cinematic cheats used:
+- Prologue audio keeps a scalar low-tier/proxy flag and authored transition state instead of any physical re-entry acoustic simulation.
+- Quality rebinding is event/cold-cache driven because prologue audio transition publishing does not require frame-perfect policy polling.
+- VWS remains an authored warning queue with native byte/cooldown buffers, not a dynamic speech synthesis system.
+
+Exact microseconds saved:
+- Prologue saves three registry reads every previous 60-frame quality refresh window after warmup.
+- VWS runtime cost is unchanged; the saved cost is future-risk prevention in `Tick` and `SlowTick`.
+- Runtime allocation delta remains 0 B/frame in guarded paths.
+
+Verification:
+- `git diff --check -- Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs Assets/_Project/Scripts/Audio/VocalWarningSystem.cs Assets/_Project/Scripts/Audio/Prologue/PrologueAcousticOrchestrator.cs` passed except CRLF normalization warning on the editor smoke file.
+- Prologue counters: `PrologueDirectQuality=3`, `PrologueLateFrameQualityPoll=0`, `ScalabilityEventCalls=3`, `SmokePrologueAsserts=9`, `FindObject=0`, `UpdateMethods=0`, `StartCoroutine=0`.
+- Vocal counters: `VocalTickRegistry=0`, `VocalSlowRegistry=0`, `VocalTickStrings=0`, `VocalSlowStrings=0`, `SmokeVocalAsserts=13`, `VocalScalabilityEvents=3`.
+- Scoped forbidden scan found only editor smoke diagnostics and assertion text.
+- Dotnet build/rebuild was not run by explicit user order. Unity compile remains PENDING VERIFICATION until Editor console/MCP validation is available.

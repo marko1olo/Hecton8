@@ -268,3 +268,11 @@ What was done -> `AwaitableDropSequenceDirector.Dispose()` now requests explicit
 Cinematic Cheats used -> None; this is teardown and forensic-state hardening for the prologue sequence owner.
 Exact Microseconds saved -> 0 us steady-state. Disposal-only branch cost is one bool check plus a guarded signal publish if teardown interrupts an active prologue run.
 Verification -> No dotnet rebuild/response-file compile was run per user constraint. Targeted scan confirms active disposal cancels and unlocks before black-box disposal; forbidden-pattern scan returned no hits; rerun `git diff --check` exits clean for the touched Loop 37 scope.
+
+## 2026-05-15 - Loop 38 Fluid Handoff Source-Hash Drift Review
+
+What was wrong -> `HectonFluidEngine` still carried a local raw `PRLG` hash for prologue splashdown gating while the rest of the prologue handoff lane used `PrologueSignalSourceHashes`.
+What was done -> Replaced the fluid-local literal with `PrologueSignalSourceHashes.SequenceDirector`, preserving the existing uint compare and sequence-owned splashdown gate.
+Cinematic Cheats used -> None; this protects the existing signal-driven splashdown fake from source-ownership drift.
+Exact Microseconds saved -> 0 us runtime; compile-time constant remains inlined. Prevents invalid splashdown impulse, bubble spawn, and fluid responder work from hash drift.
+Verification -> No dotnet rebuild/response-file compile was run per user constraint. Raw `PRLG`/`MOVR`/`ORBI` literals now scan only inside `PrologueSignalSourceHashes`; all checked producers/consumers reference the shared contract; forbidden-pattern scan returned no hits; `git diff --check` reports line-ending warnings only for `HectonFluidEngine.cs`.

@@ -100,3 +100,27 @@ Rejected Alternatives: Disposing vault-owned arrays from component teardown woul
 Scalability potential: Low avoids duplicate native blocks. Middle/High/Ultra gain unified buffer ownership for telemetry, player kinematics, and submarine hydrodynamic state.
 
 Hardware Impact: Runtime loop savings are indirect: 0-20 microseconds from fewer cold-path ownership lookups, with memory fragmentation reduced by centralized vault allocation.
+
+## Decision 7 - Renderer Interpolation Surface
+
+Problem: Bucketed simulation can create visible stepping if render consumers cannot see bucket progress.
+
+Solution: Expose `SimulationInterpolationAlpha` on fauna, push `_SimulationInterpolationAlpha` into the material property block, expose `GpuAbyssalFlowInterpolationAlpha` on fluids, and carry `AbyssalFlowInterpolationAlpha` in the fluid render-graph payload.
+
+Rejected Alternatives: Smoothing boid positions on CPU would allocate or duplicate GPU state. Recomputing skipped flow voxels for interpolation would erase the point of bucketing.
+
+Scalability potential: Low/Middle use cached alpha to hide bucket cadence. High/Ultra can bind the alpha in richer materials/compute consumers without a contract change.
+
+Hardware Impact: 1-2 property writes when changed; under 3 microseconds estimated. Prevents visual jitter without restoring full simulation cost.
+
+## Decision 8 - Compile Wall
+
+Problem: Batch compile cannot reach this agent's edited Assembly-CSharp code because project compilation is already blocked upstream.
+
+Solution: Record the dependency wall with exact failures: `Hecton8.Core.csproj` fails on `SaveMasterHashV10.cs` missing `xxHash3` and `PDAShellChrome.cs` missing `RefreshInventorySignalBinding`/`ConsumeInventoryChangedSignals`. `Assembly-CSharp` also cannot build in isolation because many generated dependency DLLs are absent unless the full project graph builds.
+
+Rejected Alternatives: Editing unrelated save/UI dependencies would violate domain ownership. Reporting a green build would be fake.
+
+Scalability potential: Runtime unaffected. Integration risk is transparent.
+
+Hardware Impact: 0 microseconds. Verification blocker only.
