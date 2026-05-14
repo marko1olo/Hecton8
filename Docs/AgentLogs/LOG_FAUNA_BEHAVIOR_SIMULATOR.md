@@ -15,6 +15,7 @@ What was done:
 - Exported `Data/AI/Fauna_Global_Weights.json`.
 - Exported matching detailed report `Tools/AI_Sim/FaunaBalanceSim_Report.json`.
 - Polish pass compacted `Data/AI/Fauna_Global_Weights.json` to a runtime handoff and left detailed telemetry in `Tools/AI_Sim/FaunaBalanceSim_Report.json`.
+- Added repeat-seed validation mode and wrote `Tools/AI_Sim/FaunaBalanceSim_ReplicateValidation.json`.
 
 Cinematic Cheats used:
 - Aggregate prey/predator biomass simulation instead of per-creature truth.
@@ -50,16 +51,23 @@ Exact microseconds saved:
 - Runtime cost introduced by this task: `0 us` until a runtime owner consumes the JSON.
 - Static estimate versus per-creature runtime ecology truth: savings are material but unmeasured; profiler proof remains `PENDING VERIFICATION`.
 - File bloat removed: constants handoff reduced from full-report duplicate to `1812` bytes; detailed report remains `40188` bytes.
+- After adding replicate summary, constants handoff is `2250` bytes and replicate validation report is `5683` bytes.
+- Repeat-seed validation: `5` replicates x `200000` frames, `0` failures, status `REPLICATE_STABLE`.
+- Repeat-seed population range: prey `9434.857..9439.544`, stalker `38.061..38.093`, alpha `1.814..1.815`.
 
 Verification:
 - `python -m py_compile Tools\AI_Sim\FaunaBalanceSim.py` -> pass.
 - `python -m json.tool Data\AI\Fauna_Global_Weights.json` -> pass.
 - `python -m json.tool Tools\AI_Sim\FaunaBalanceSim_Report.json` -> pass.
-- Compact constants JSON size -> `1812` bytes.
+- Compact constants JSON size -> `2250` bytes after replicate summary.
 - Detailed report JSON size -> `40188` bytes with `101` samples.
+- Repeat validation JSON size -> `5683` bytes.
 - Required compact JSON keys present.
-- Static self-review for `TODO`, Dotnet, subprocess, `os.system`, `eval`, `exec`, `random.` -> no matches.
+- Source self-review for `TODO`, Dotnet, subprocess, `os.system`, `eval`, `exec`, `random.` -> no matches in `Tools/AI_Sim/FaunaBalanceSim.py`.
 - `<POLISH_MANDATE>` lookup -> `POLISH_MANDATE_NOT_FOUND`.
+- Hard self-audit invariant check -> constants/report match, replicate summary/report match, `failureCount=0`.
+- Removed generated `Tools/AI_Sim/__pycache__`.
+- Corrected stale evidence wording in rationale and changed overstated CLI completion wording to `FINISHED`.
 
 Regression model:
 - CPU: no Unity runtime code changed; offline Python run elapsed 226.3 s.

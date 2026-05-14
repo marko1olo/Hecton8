@@ -33,20 +33,22 @@
     { "flag": "outpost.sealed_door_powered", "band": "door", "description": "Door motor has enough feed for the critical route." },
     { "flag": "outpost.sealed_door_opened", "band": "door", "description": "Critical sealed door opened once." },
     { "flag": "outpost.datapad_found", "band": "evidence", "description": "Player found a data pad or evidence terminal." },
-    { "flag": "outpost.marauder_log_power_found", "band": "lore", "description": "Power fallback log found." },
-    { "flag": "outpost.marauder_log_air_found", "band": "lore", "description": "Air and scrubber log found." },
-    { "flag": "outpost.marauder_log_fire_found", "band": "lore", "description": "Internal fire log found." },
-    { "flag": "outpost.marauder_log_breach_found", "band": "lore", "description": "Breach log found." },
-    { "flag": "outpost.marauder_log_exit_found", "band": "lore", "description": "Exit discipline log found." },
-    { "flag": "outpost.roomflag_internal_fire_seen", "band": "physical", "description": "Observed room state includes InternalFire." },
-    { "flag": "outpost.roomflag_breached_seen", "band": "physical", "description": "Observed room state includes Breached." },
+    { "flag": "outpost.marauder_log_power_read", "band": "lore", "description": "Power fallback log committed." },
+    { "flag": "outpost.marauder_log_air_read", "band": "lore", "description": "Air and scrubber log committed." },
+    { "flag": "outpost.marauder_log_fire_read", "band": "lore", "description": "Internal fire log committed." },
+    { "flag": "outpost.marauder_log_breach_read", "band": "lore", "description": "Breach log committed." },
+    { "flag": "outpost.marauder_log_exit_read", "band": "lore", "description": "Exit discipline log committed." },
+    { "flag": "outpost.internal_fire_seen", "band": "physical", "description": "Observed room state includes InternalFire." },
+    { "flag": "outpost.fire_route_optional", "band": "physical", "description": "Fire room route is optional or blocked from the critical path." },
+    { "flag": "outpost.breached_room_seen", "band": "physical", "description": "Observed room state includes Breached." },
+    { "flag": "outpost.flooded_room_bypassed", "band": "physical", "description": "Flooded/submerged room is bypassed or external-suit-only optional content." },
     { "flag": "outpost.exit_route_marked", "band": "route", "description": "Return marker or route claim exists before the prize step." },
     { "flag": "outpost.critical_item_lost", "band": "deadlock", "description": "Critical coupler/evidence item was destroyed, dropped into unreachable state, or invalidated." },
-    { "flag": "outpost.deadlock_revert_triggered", "band": "deadlock", "description": "Quest graph reverted the critical item or completion state." },
+    { "flag": "outpost.deadlock_revert_requested", "band": "deadlock", "description": "Quest graph requested a critical-item revert or fallback grant." },
     { "flag": "outpost.marker_fallback_active", "band": "deadlock", "description": "Fallback marker points to an alternate reachable node." },
-    { "flag": "outpost.state_restored_after_revert", "band": "deadlock", "description": "Player recovered the critical item or alternate path after revert." },
+    { "flag": "outpost.state_restored_from_save", "band": "deadlock", "description": "WFC mutable state has been restored or verified after save/load." },
     { "flag": "outpost.evidence_uploaded", "band": "completion", "description": "Evidence has been copied to player/system ownership." },
-    { "flag": "outpost.claim_complete", "band": "completion", "description": "Outpost claim and fail-safe mission branch are complete." }
+    { "flag": "outpost.mission_complete", "band": "completion", "description": "Outpost claim and fail-safe mission branch are complete." }
   ],
   "topologicalOrder": [
     "outpost.generated",
@@ -65,8 +67,13 @@
     "outpost.sealed_door_powered",
     "outpost.sealed_door_opened",
     "outpost.datapad_found",
+    "outpost.marauder_log_power_read",
+    "outpost.marauder_log_air_read",
+    "outpost.marauder_log_fire_read",
+    "outpost.marauder_log_breach_read",
+    "outpost.marauder_log_exit_read",
     "outpost.evidence_uploaded",
-    "outpost.claim_complete"
+    "outpost.mission_complete"
   ],
   "fallbacks": [
     {
@@ -78,7 +85,7 @@
     {
       "risk": "critical_item_lost",
       "trigger": "outpost.critical_item_lost",
-      "setFlag": "outpost.deadlock_revert_triggered",
+      "setFlag": "outpost.deadlock_revert_requested",
       "constraint": "Clear the dependent completion flag, activate fallback marker, and reissue the coupler/evidence through a reachable node."
     },
     {
@@ -167,7 +174,7 @@
       "layer": "Narrative",
       "category": "outpost_tooltip",
       "triggerFlag": "outpost.datapad_found",
-      "suppressFlag": "outpost.evidence_uploaded",
+      "suppressFlag": "outpost.marauder_log_exit_read",
       "text": "MARAUDER RULE: A log is not loot until its room agrees with it. Check scorch, breach, and gauge."
     },
     {
@@ -176,7 +183,7 @@
       "layer": "Narrative",
       "category": "outpost_tooltip",
       "triggerFlag": "outpost.evidence_uploaded",
-      "suppressFlag": "outpost.claim_complete",
+      "suppressFlag": "outpost.mission_complete",
       "text": "CLAIM MARK: Evidence copied. The outpost can keep its dead power. You keep the route home."
     },
     {
@@ -185,6 +192,7 @@
       "layer": "Narrative",
       "category": "outpost_log",
       "requiredState": "outpost.ghost_power_enabled || !outpost.generator_room_present",
+      "commitFlag": "outpost.marauder_log_power_read",
       "text": "Generator bay is missing from the company map. Not sealed. Missing. We found a reserve bus under deck two, warm enough to twitch a relay and honest enough to die after it opens one door."
     },
     {
@@ -193,6 +201,7 @@
       "layer": "Narrative",
       "category": "outpost_log",
       "requiredState": "outpost.scrubber_powered || roomflag.ScrubberInstalled",
+      "commitFlag": "outpost.marauder_log_air_read",
       "text": "Air count starts when the panel wakes. Scrubber cuts CO2, it does not give oxygen back. Ninety seconds for the read, less if your hands shake."
     },
     {
@@ -201,6 +210,7 @@
       "layer": "Narrative",
       "category": "outpost_log",
       "requiredState": "roomflag.InternalFire",
+      "commitFlag": "outpost.marauder_log_fire_read",
       "text": "Red load line burned clean through the paint. We sealed that room and left the coupler teeth on the deck. Anyone sending a diver through fire wants the diver dead."
     },
     {
@@ -209,6 +219,7 @@
       "layer": "Narrative",
       "category": "outpost_log",
       "requiredState": "roomflag.Breached",
+      "commitFlag": "outpost.marauder_log_breach_read",
       "text": "Pressure door held. Wall did not. The gauge hit ambient and nobody argued with it. If your map points through that room, your map is lying."
     },
     {
@@ -217,6 +228,7 @@
       "layer": "Narrative",
       "category": "outpost_log",
       "requiredState": "outpost.exit_route_marked",
+      "commitFlag": "outpost.marauder_log_exit_read",
       "text": "Claim marker is on the return rail. Prize waits after the exit is marked twice. Marauders do not get paid for dying in rooms they already understood."
     }
   ],

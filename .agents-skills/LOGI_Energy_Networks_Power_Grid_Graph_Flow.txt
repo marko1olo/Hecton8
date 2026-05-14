@@ -72,12 +72,12 @@ Apply iteratively per edge during Jacobi relaxation (Section3.2).
 
 ### 2.2 Potential Normalization (per LogisticsTick)
 
-sum_Production  = sum of ProducerMap values within NetworkID
-sum_Demand      = sum of ConsumerMap values within NetworkID
+TotalProduction = sum of ProducerMap values within NetworkID
+TotalDemand     = sum of ConsumerMap values within NetworkID
 
-SupplyRatio   = _Production / max(_Demand, epsilon)    // epsilon=0.001, avoids div-zero
+SupplyRatio   = TotalProduction / max(TotalDemand, epsilon)    // epsilon=0.001, avoids div-zero
 
-Potential[producer_node] = sum_Production             // source potential
+Potential[producer_node] = TotalProduction            // source potential
 Potential[consumer_node] = Potential[consumer_node] * SupplyRatio   // scaled sink
 
 ### 2.3 Brownout Threshold Logic
@@ -145,7 +145,7 @@ for i in 0..MAX_ITERATIONS:
 
 Sort ConsumerList by Priority byte ASC (insertion-sort safe at <=512 consumers, stable)
 
-remaining = sum_Production
+remaining = TotalProduction
 for consumerIndex = 0; consumerIndex < SortedConsumerCount; consumerIndex++:
     consumer = SortedConsumers[consumerIndex]
     alloc = min(ConsumerMap[consumer.ID], remaining)

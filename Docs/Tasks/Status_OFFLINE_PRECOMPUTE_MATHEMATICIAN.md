@@ -47,10 +47,12 @@ Prompt Source: `Docs/Tasks/CURRENT_BATCH.md`
 - `<POLISH_MANDATE>` tag: absent from `Docs/Tasks/CURRENT_BATCH.md`; anti-bloat scan still performed.
 - Anti-bloat: no baker-owned `Tools/__pycache__` remains; unrelated `Tools/TelemetryDashboard/__pycache__` exists and was left untouched.
 - Boundary check: no Unity C# file was created.
-- Repository publication: local feature branch `feature/ai-offline-precompute-math-luts-20260514` exists with the selected offline-precompute files; remote push timed out twice and is not confirmed.
-- Branch integrity: working files match branch object hashes for all 12 selected paths.
-- Final review: post-regeneration branch object check still matches all 12 selected paths.
-- Final review: feature commit vs parent changes exactly 12 selected paths and contains no `.cs` files.
+- Repository publication: local feature branch `feature/ai-offline-precompute-math-luts-20260514` exists with the selected offline-precompute files; multiple remote push attempts timed out and remote publication is not confirmed.
+- Branch integrity: current feature branch contains all 12 selected paths; working files match branch object hashes when checked with Git path-aware clean filters.
+- Final review: post-regeneration branch object check still matches all 12 selected paths with Git clean filters applied.
+- Final review: latest commit-vs-parent diff may vary because shared `HEAD` moves, but it contains no `.cs` files and the branch retains all selected offline-precompute paths.
+- Final review: guarded temp-index refresh passed; missing selected paths or failed `git add` now abort before `update-ref`.
+- Final verification after guarded refresh: generator PASS, 4 Python tests OK, path-aware branch object check PASS, no `.cs` files in commit-vs-parent diff.
 - Remote diagnostics: `github.com:443` TCP succeeds; git remote commands hang in this environment. Bounded non-interactive push timed out after 60 seconds with no stdout/stderr; orphaned `remote-https`, `send-pack`, and `pack-objects` children were killed.
 - Unity compile/profiler proof: not applicable to this Python/data-only task; runtime savings remain PENDING VERIFICATION.
 
@@ -66,5 +68,9 @@ Prompt Source: `Docs/Tasks/CURRENT_BATCH.md`
 - Loop 8: Verified branch object hashes against working files. Confirmed GitHub TCP connectivity, but git remote calls still hang; killed leftover git processes.
 - Loop 9: Rebuilt into a clean temp directory and verified all output hashes match checked files. Killed leftover git processes after local branch checks.
 - Loop 10: Replaced NumPy RNG jitter with local integer-hash jitter, added table content-range tests, regenerated outputs, and verified clean-temp deterministic rebuild again.
-- Loop 11: Refreshed the local feature branch after the hash-jitter patch, reran generator/tests/syntax checks, verified the commit-vs-parent diff has exactly 12 selected paths and no C# files, and confirmed post-regeneration branch object matches.
+- Loop 11: Refreshed the local feature branch after the hash-jitter patch, reran generator/tests/syntax checks, verified the then-current commit-vs-parent diff had exactly 12 selected paths and no C# files, and confirmed post-regeneration branch object matches.
 - Loop 12: Retried remote publication with terminal prompts disabled and a 60 second timeout. Push hung with no stdout/stderr; killed the exact orphaned Git children and kept remote publication unconfirmed.
+- Loop 13: Rechecked the latest feature branch after logging the push retry. Because shared `HEAD` moves, commit-vs-parent path counts are evidence snapshots only; the branch still contains all 12 selected paths and no C# diff.
+- Loop 14: Corrected branch-integrity wording to require Git path-aware clean-filter hashing, then guarded the branch refresh so a missing selected path or failed `git add` cannot advance the publication ref.
+- Loop 15: Verified the guarded refresh: all 12 selected paths match branch objects with Git clean filters, generator PASS, tests OK, and commit-vs-parent diff has no C# files.
+- Loop 16: Self-review found stale "timed out twice" wording after later bounded push retries. Corrected status/rationale/log wording to "multiple remote push attempts timed out" and preserved remote publication as unconfirmed.

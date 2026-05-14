@@ -49,14 +49,31 @@ Relevant mandates loaded:
 - `python -m py_compile Tools\AI_Sim\FaunaBalanceSim.py` -> pass.
 - `python -m json.tool Data\AI\Fauna_Global_Weights.json` -> pass.
 - `python -m json.tool Tools\AI_Sim\FaunaBalanceSim_Report.json` -> pass.
-- Compact constants JSON size -> `1812` bytes.
+- Compact constants JSON size -> `2250` bytes after replicate summary.
 - Detailed report JSON size -> `40188` bytes with `101` million-frame samples.
+- Replicate validation JSON size -> `5683` bytes.
 - Required compact JSON keys present -> `conclusions`, `detailedReport`, `evidenceClass`, `generatedBy`, `millionFrameSummary`, `runtimeUnityProof`, `schemaVersion`, `selectedConstants`, `speciesTargets`, `status`.
 - Prompt re-extraction -> `PROMPT_REEXTRACTED length=1622`.
-- Static self-review for `TODO`, Dotnet, subprocess, `os.system`, `eval`, `exec`, `random.` -> no matches.
+- Source self-review for `TODO`, Dotnet, subprocess, `os.system`, `eval`, `exec`, `random.` -> no matches in `Tools/AI_Sim/FaunaBalanceSim.py`.
 
 ## Loop 6 - Polish
 
 - [x] Read `<POLISH_MANDATE>` after core tasks reached 100% -> `POLISH_MANDATE_NOT_FOUND`.
 - [x] Anti-bloat pass -> compacted `Data/AI/Fauna_Global_Weights.json` from full report duplicate to runtime handoff; retained detailed telemetry in `Tools/AI_Sim/FaunaBalanceSim_Report.json`.
 - [x] Post-polish validation -> Python compile pass, both JSON files parse, no banned Python process/random/Dotnet patterns found.
+
+## Loop 7 - Repeat-Seed Hardening
+
+- [x] Added `--validate-selected` mode to `Tools/AI_Sim/FaunaBalanceSim.py`.
+- [x] Ran `python Tools\AI_Sim\FaunaBalanceSim.py --validate-selected --validation-frames 200000 --replicates 5 --validation-output Tools\AI_Sim\FaunaBalanceSim_ReplicateValidation.json`.
+- [x] Result -> `REPLICATE_STABLE`, `5` replicates, `200000` frames each, `0` failures.
+- [x] Population range across replicates -> prey `9434.857..9439.544`, stalker `38.061..38.093`, alpha `1.814..1.815`.
+- [x] Compact constants handoff updated with `replicateValidation` summary and pointer to `Tools/AI_Sim/FaunaBalanceSim_ReplicateValidation.json`.
+- [x] Final validation -> Python compile pass; constants JSON, detailed report JSON, and replicate JSON all parse.
+
+## Loop 8 - Hard Self-Audit
+
+- [x] Invariant check -> constants match detailed report; compact replicate summary matches replicate report; `failureCount=0`.
+- [x] Removed generated `Tools/AI_Sim/__pycache__` artifact from the workspace.
+- [x] Corrected stale rationale evidence line from doc-only evidence wording to `CLI_PYTHON_SIMULATION` for Python/JSON artifacts.
+- [x] Replaced overstated CLI completion wording with `FINISHED` to avoid implying Unity runtime verification.

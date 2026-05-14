@@ -3,7 +3,7 @@
 Date: 2026-05-14
 Domain: Auxiliary Node, text/data only
 Prompt: ECONOMY_DATA_BALANCER
-Status: ECONOMY BALANCED by validator; Unity runtime integration remains PENDING VERIFICATION.
+Status: STATIC ECONOMY VALIDATED by validator; literal energy pacing and Unity runtime integration remain PENDING VERIFICATION.
 
 ## Decision 1 - Data-Only Boundary
 
@@ -71,7 +71,7 @@ Problem: Static data can silently rot: missing hashes, recipe cycles, resource r
 
 Solution: Added `Tools/EconomyValidator.py` to parse all generated files and check JSON syntax, project-compatible FNV hashes, global generated-file hash collisions, resource matrix dimensions, duplicate biome/resource rows, positive LCG weights, exact recipe category quotas, recipe cycles, value math, result value parity, no-profit deconstruction, tier ratios, and survival burn rules.
 
-Rejected Alternatives: Manual inspection was rejected because it cannot prove 727 hash pairs or graph acyclicity. Unity C# validator was rejected because prompt explicitly forbids C# work.
+Rejected Alternatives: Manual inspection was rejected because it cannot prove 781 hash pairs or graph acyclicity. Unity C# validator was rejected because prompt explicitly forbids C# work.
 
 Scalability potential: Low uses this script in CI; Middle adds binary bake checks; High/Ultra can add simulation path timing without changing static data.
 
@@ -112,3 +112,15 @@ Rejected Alternatives: Keeping the old `41 minute` report was rejected because i
 Scalability potential: Low can treat fabrication energy as abstracted authoring cost; Middle can gate energy by base battery state; High/Ultra can use richer charging VFX and fabricator staging after the energy model is approved.
 
 Hardware Impact: The correction is offline-only, 0 us gameplay. It prevents a runtime tuning failure where players would wait hours under literal 30 kW energy gating.
+
+## Decision 10 - Honest Validator Status And Milestone Row Hardening
+
+Problem: The validator still printed `STATUS: ECONOMY BALANCED` after proving that literal 30 kW fabrication pacing produces a `901.7 minute` first-submarine path. The first-submarine report also had redundant `result_item_id` fields in recipe batch rows that were hashed but not cross-checked against `Recipes.json`.
+
+Solution: Changed the final validator status to `STATUS: STATIC ECONOMY VALIDATED; LITERAL ENERGY PACING PENDING OWNER DECISION`. Hardened `validate_first_submarine_path` to reject duplicate target/raw/batch rows, non-positive quantities, missing recipe IDs, and recipe-batch result item mismatches.
+
+Rejected Alternatives: Keeping `ECONOMY BALANCED` was rejected because it overstates runtime pacing readiness. Trusting the redundant report fields was rejected because a machine-readable handoff must fail on internal contradictions.
+
+Scalability potential: Low can still consume validated static tables; Middle/High/Ultra energy pacing remains an explicit design/runtime owner decision instead of hidden validator optimism.
+
+Hardware Impact: Offline-only validation, 0 us gameplay. It prevents incorrect importer or tuning work from treating a known energy-pacing issue as solved.

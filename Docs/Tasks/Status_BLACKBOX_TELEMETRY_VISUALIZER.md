@@ -49,4 +49,6 @@ Source prompt: `Docs/Tasks/CURRENT_BATCH.md` / `<AGENT_PROMPT id="BLACKBOX_TELEM
 - [x] Self-review patch verification rerun after frame-series fallback.
 - [x] Checked-in smoke-test script verification.
 - [x] Self-review patch verification added for dump payload caps and memory-map evidence ordering.
-- [ ] Source-contract parser extension verification for macro-swarm/fauna-mutation/live telemetry.
+- [x] Source-contract parser extension verification for macro-swarm/fauna-mutation/live telemetry.
+- [x] H-Phi parser regression check: `Docs/Reports/HECTON_PHI_REPORT.md` returns `0.00062`, not report date or formula multiplier.
+- [x] Recreated and reverified `Tools/TelemetryDashboard` after directory loss during restart recovery.

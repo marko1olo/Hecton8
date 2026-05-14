@@ -202,7 +202,7 @@ DeviceType check before trigger write:
 // OUTPUT: motorIntensity  in  [0,1]
 
 // Exponential decay (primary):
-motorIntensity(t) = signal x exp(-t x lambda)
+motorIntensity(t) = signal * exp(-t * lambda)
 
 // NaN/Inf guard:
 if isnan(motorIntensity) || isinf(motorIntensity): motorIntensity = 0.0f
@@ -219,7 +219,7 @@ signal = clamp(PowerDelivered / RatedPower, 0.0f, 1.0f)
 
 // AnimationCurve variant (designer-tunable, evaluated once at trigger):
 // curveIntensity = HapticCurve.Evaluate(signal)  <- baked float, not re-evaluated per frame
-// motorIntensity(t) = curveIntensity x exp(-t x lambda)
+// motorIntensity(t) = curveIntensity * exp(-t * lambda)
 
 // Additive blend (when BlendMode==1):
 finalMotor = clamp(existing + motorIntensity(t), 0.0f, 1.0f)
@@ -242,8 +242,8 @@ HAPTIC UPDATE (end-of-frame, after gameplay writes to front buffer):
 1. Scan front buffer[0..15]:
    For each HapticCommand where DurationRemaining > 0:
      a. Compute t = CommandLifetime - DurationRemaining
-     b. LowFreq_out  = (MotorMask & 0b01) ? cmd.LowFreqIntensity  x exp(-t x cmd.DecayRate) : 0
-     c. HighFreq_out = (MotorMask & 0b10) ? cmd.HighFreqIntensity x exp(-t x cmd.DecayRate) : 0
+     b. LowFreq_out  = (MotorMask & 0b01) ? cmd.LowFreqIntensity  * exp(-t * cmd.DecayRate) : 0
+     c. HighFreq_out = (MotorMask & 0b10) ? cmd.HighFreqIntensity * exp(-t * cmd.DecayRate) : 0
      d. Accumulate into FrameMotorAccum[Left], FrameMotorAccum[Right] via BlendMode logic
      e. DurationRemaining -= dt
      f. if DurationRemaining <= 0: mark slot inactive
@@ -262,8 +262,8 @@ HAPTIC UPDATE (end-of-frame, after gameplay writes to front buffer):
 
 6. Swap double-buffer: atomically flip active buffer index
 
-// exp(-txlambda) fast approx for MX350 CPU budget:
-// Use: 1/(1 + txlambda + 0.5x(txlambda)^2)  (Pad [1/2] - valid for txlambda < 3.0)
+// exp(-tLambda) fast approx for MX350 CPU budget:
+// Use: 1/(1 + tLambda + 0.5*tLambda^2)  (Pade [1/2] - valid for tLambda < 3.0)
 // Error: <2% vs true exp in range. No libm call. Pure ALU.
 ```
 
@@ -274,7 +274,7 @@ HAPTIC UPDATE (end-of-frame, after gameplay writes to front buffer):
 math.exp(-x);
 
 // Valid range: x  in  [0, 3]. Clamp x before call:
-x = clamp(t x lambda, 0.0f, 3.0f)
+x = clamp(t * lambda, 0.0f, 3.0f)
 
 // Bitmask IsPressed - branchless (SIMD-friendly unroll for 12 actions):
 // Process all 12 action bits in single uint32 op. No loop branches.
@@ -295,7 +295,7 @@ x = clamp(t x lambda, 0.0f, 3.0f)
 ```
 BASE (i3-10gen / MX350 / mandatory):
   Haptic: Left+Right motor only. Binary decay curve (linear falloff).
-  motorIntensity(t) = signal x max(0, 1 - txlambda)  // linear, no exp, cheapest
+  motorIntensity(t) = signal * max(0, 1 - t*lambda)  // linear, no exp, cheapest
   Buffer: 15-frame window active. Full agnostic input system.
   Update rate: Haptic tick every frame.
 
@@ -307,7 +307,7 @@ HIGH (i5-11gen / GTX 1660 class):
 
 ULTRA (i7+ / RTX 2060+):
   Haptic: DualSense adaptive trigger resistance (L2/R2 via DSX/SteamInput API).
-  True exp(-txlambda) via libm (CPU budget allows).
+  True exp(-tLambda) via libm (CPU budget allows).
   Ambient haptic layers (creature proximity gradient).
   Update rate: Haptic tick at 120Hz via fixed-step accumulator if game runs >60fps.
 ```
@@ -374,7 +374,7 @@ FAILURE: Haptic buffer full (all 16 slots active simultaneously):
   If Priority equal: evict oldest slot (smallest DurationRemaining).
   No exception. No allocation.
 
-FAILURE: exp(-txlambda) with t=NaN (dt spike causing NaN propagation):
+FAILURE: exp(-tLambda) with t=NaN (dt spike causing NaN propagation):
   Guard: dt = clamp(dt, 0.0001f, 0.05f) before all haptic math.
   Caps frame spike at 50ms. Prevents runaway decay on stutter frame.
 
@@ -452,9 +452,9 @@ SHUTDOWN:
 ```
 // Constant high-frequency haptic desensitizes player. Horror impact diminishes.
 // Per-motor accumulated exposure tracker:
-ExposureAccum[Left]  += FinalLeft  x dt  // joule-equivalent metric
-ExposureAccum[Right] += FinalRight x dt
-ExposureAccum decays: ExposureAccum[m] *= exp(-dt x 0.5f)  //  = 2 seconds recovery
+ExposureAccum[Left]  += FinalLeft  * dt  // joule-equivalent metric
+ExposureAccum[Right] += FinalRight * dt
+ExposureAccum decays: ExposureAccum[m] *= exp(-dt * 0.5f)  // tau = 2 seconds recovery
 
 // Fatigue attenuation multiplier:
 fatigueScale[m] = 1.0f - clamp(ExposureAccum[m] / ExposureThreshold, 0.0f, 0.6f)

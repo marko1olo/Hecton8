@@ -14,7 +14,7 @@ import argparse
 import pathlib
 import struct
 import sys
-from typing import Iterable, Tuple
+from typing import Tuple
 
 
 MASK32 = 0xFFFFFFFF
@@ -45,6 +45,9 @@ SECRET_MERGEACCS_START = 11
 
 SHUFFLE_DOMAIN_LO = b"H8SAVE_SHUFFLE_LO_V1"
 SHUFFLE_DOMAIN_HI = b"H8SAVE_SHUFFLE_HI_V1"
+MASTER_DOMAIN = b"H8SAVE_MASTER_V1"
+MASTER_DOMAIN_LO = b"_LO"
+MASTER_DOMAIN_HI = b"_HI"
 
 XXH3_SECRET = bytes(
     [
@@ -112,6 +115,18 @@ def _read_u64(data: bytes, offset: int) -> int:
 
 def _pack_u64(value: int) -> bytes:
     return struct.pack("<Q", value & MASK64)
+
+
+def _pack_u32(value: int) -> bytes:
+    return struct.pack("<I", value & MASK32)
+
+
+def _pack_u16(value: int) -> bytes:
+    return struct.pack("<H", value & 0xFFFF)
+
+
+def _pack_u8(value: int) -> bytes:
+    return struct.pack("<B", value & 0xFF)
 
 
 def _mul128_fold64(lhs: int, rhs: int) -> int:
@@ -354,6 +369,85 @@ def unshuffle_hash128(lo: int, hi: int, world_seed: int, sector_hash: int) -> Tu
     return _split_u128(value ^ _join_u128(mask_lo, mask_hi))
 
 
+def build_master_preimage(
+    magic_value: int,
+    version: int,
+    compat_mask: int,
+    flags: int,
+    timestamp_unix_ms: int,
+    checksum: int,
+    delta_count: int,
+    entity_count: int,
+    player_offset: int,
+    delta_offset: int,
+    entity_offset: int,
+    hash_payload64: int,
+    world_seed: int,
+    sector_hash: int,
+) -> bytes:
+    """Return the canonical V10 MasterStateHash preimage bytes."""
+
+    return b"".join(
+        (
+            MASTER_DOMAIN,
+            _pack_u32(magic_value),
+            _pack_u16(version),
+            _pack_u8(compat_mask),
+            _pack_u8(flags),
+            _pack_u64(timestamp_unix_ms),
+            _pack_u32(checksum),
+            _pack_u32(delta_count),
+            _pack_u32(entity_count),
+            _pack_u32(player_offset),
+            _pack_u32(delta_offset),
+            _pack_u32(entity_offset),
+            _pack_u64(hash_payload64),
+            _pack_u64(world_seed),
+            _pack_u64(sector_hash),
+        )
+    )
+
+
+def compute_master_state_hash(
+    magic_value: int,
+    version: int,
+    compat_mask: int,
+    flags: int,
+    timestamp_unix_ms: int,
+    checksum: int,
+    delta_count: int,
+    entity_count: int,
+    player_offset: int,
+    delta_offset: int,
+    entity_offset: int,
+    hash_payload64: int,
+    world_seed: int,
+    sector_hash: int,
+) -> Tuple[int, int, int, int]:
+    """Return (plain_lo, plain_hi, stored_lo, stored_hi) for the V10 master hash."""
+
+    preimage = build_master_preimage(
+        magic_value,
+        version,
+        compat_mask,
+        flags,
+        timestamp_unix_ms,
+        checksum,
+        delta_count,
+        entity_count,
+        player_offset,
+        delta_offset,
+        entity_offset,
+        hash_payload64,
+        world_seed,
+        sector_hash,
+    )
+    plain_lo = xxh3_64(preimage + MASTER_DOMAIN_LO)
+    plain_hi = xxh3_64(preimage + MASTER_DOMAIN_HI + _pack_u64(plain_lo))
+    stored_lo, stored_hi = shuffle_hash128(plain_lo, plain_hi, world_seed, sector_hash)
+    return plain_lo, plain_hi, stored_lo, stored_hi
+
+
 def lanes_to_le_hex(lo: int, hi: int) -> str:
     return (_pack_u64(lo) + _pack_u64(hi)).hex()
 
@@ -370,18 +464,13 @@ def parse_lanes(value: str) -> Tuple[int, int]:
     return int.from_bytes(raw[:8], "little"), int.from_bytes(raw[8:], "little")
 
 
-def _iter_chunks(path: pathlib.Path, chunk_size: int = 1024 * 1024) -> Iterable[bytes]:
-    with path.open("rb") as handle:
-        while True:
-            chunk = handle.read(chunk_size)
-            if not chunk:
-                break
-            yield chunk
+def parse_int(value: str) -> int:
+    return int(value, 0)
 
 
 def _command_hash(args: argparse.Namespace) -> int:
     path = pathlib.Path(args.path)
-    data = b"".join(_iter_chunks(path))
+    data = path.read_bytes()
     digest = xxh3_64(data)
     print(f"xxh3_64=0x{digest:016X}")
     print(f"low32=0x{digest & MASK32:08X}")
@@ -407,6 +496,31 @@ def _command_shuffle(args: argparse.Namespace) -> int:
     print(f"out_lo=0x{out_lo:016X}")
     print(f"out_hi=0x{out_hi:016X}")
     print(f"out_le={lanes_to_le_hex(out_lo, out_hi)}")
+    return 0
+
+
+def _command_master(args: argparse.Namespace) -> int:
+    plain_lo, plain_hi, stored_lo, stored_hi = compute_master_state_hash(
+        args.magic,
+        args.version,
+        args.compat_mask,
+        args.flags,
+        args.timestamp_unix_ms,
+        args.checksum,
+        args.delta_count,
+        args.entity_count,
+        args.player_offset,
+        args.delta_offset,
+        args.entity_offset,
+        args.hash_payload64,
+        args.world_seed,
+        args.sector_hash,
+    )
+    print(f"plain_lo=0x{plain_lo:016X}")
+    print(f"plain_hi=0x{plain_hi:016X}")
+    print(f"stored_lo=0x{stored_lo:016X}")
+    print(f"stored_hi=0x{stored_hi:016X}")
+    print(f"stored_le={lanes_to_le_hex(stored_lo, stored_hi)}")
     return 0
 
 
@@ -493,6 +607,31 @@ def _command_self_test(_: argparse.Namespace) -> int:
         print("SELFTEST_FAIL shuffle inverse", file=sys.stderr)
         return 1
 
+    master = compute_master_state_hash(
+        0x48454354,
+        0x000A,
+        0x07,
+        0x0C,
+        0x0000018F3D123456,
+        0xDEADBEEF,
+        37,
+        1024,
+        72,
+        4096,
+        8192,
+        0x0123456789ABCDEF,
+        123456789,
+        -987654321,
+    )
+    if master != (
+        0x9C8AF0A74A0E162F,
+        0xF2FC6BE87A8989C4,
+        0xCC1E64F20679F320,
+        0x93FE20B6E41490F5,
+    ):
+        print("SELFTEST_FAIL master hash vector", file=sys.stderr)
+        return 1
+
     print("SELFTEST_OK")
     return 0
 
@@ -506,16 +645,33 @@ def build_parser() -> argparse.ArgumentParser:
     hash_parser.set_defaults(func=_command_hash)
 
     mask_parser = sub.add_parser("mask", help="derive the 128-bit save shuffle mask")
-    mask_parser.add_argument("--world-seed", type=int, required=True)
-    mask_parser.add_argument("--sector-hash", type=int, required=True)
+    mask_parser.add_argument("--world-seed", type=parse_int, required=True)
+    mask_parser.add_argument("--sector-hash", type=parse_int, required=True)
     mask_parser.set_defaults(func=_command_mask)
 
     shuffle_parser = sub.add_parser("shuffle", help="shuffle or unshuffle a 128-bit hash")
-    shuffle_parser.add_argument("--world-seed", type=int, required=True)
-    shuffle_parser.add_argument("--sector-hash", type=int, required=True)
+    shuffle_parser.add_argument("--world-seed", type=parse_int, required=True)
+    shuffle_parser.add_argument("--sector-hash", type=parse_int, required=True)
     shuffle_parser.add_argument("--hash128", required=True, help="16-byte little-endian hex or lo64:hi64")
     shuffle_parser.add_argument("--reverse", action="store_true")
     shuffle_parser.set_defaults(func=_command_shuffle)
+
+    master_parser = sub.add_parser("master", help="compute the V10 shuffled MasterStateHash")
+    master_parser.add_argument("--magic", type=parse_int, default=0x48454354)
+    master_parser.add_argument("--version", type=parse_int, default=0x000A)
+    master_parser.add_argument("--compat-mask", type=parse_int, default=0x07)
+    master_parser.add_argument("--flags", type=parse_int, required=True)
+    master_parser.add_argument("--timestamp-unix-ms", type=parse_int, required=True)
+    master_parser.add_argument("--checksum", type=parse_int, required=True)
+    master_parser.add_argument("--delta-count", type=parse_int, required=True)
+    master_parser.add_argument("--entity-count", type=parse_int, required=True)
+    master_parser.add_argument("--player-offset", type=parse_int, required=True)
+    master_parser.add_argument("--delta-offset", type=parse_int, required=True)
+    master_parser.add_argument("--entity-offset", type=parse_int, required=True)
+    master_parser.add_argument("--hash-payload64", type=parse_int, required=True)
+    master_parser.add_argument("--world-seed", type=parse_int, required=True)
+    master_parser.add_argument("--sector-hash", type=parse_int, required=True)
+    master_parser.set_defaults(func=_command_master)
 
     test_parser = sub.add_parser("self-test", help="run deterministic local checks")
     test_parser.set_defaults(func=_command_self_test)

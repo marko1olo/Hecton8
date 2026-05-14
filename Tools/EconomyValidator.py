@@ -11,6 +11,7 @@ Checks:
 - Survival O2/calorie table integrity, including fast swim = 3x slow swim.
 - Runtime binding review summary for economy-defined IDs.
 - Time-to-first-submarine recursive recipe expansion.
+- Cross-file resource baseline value alignment.
 """
 
 from __future__ import annotations
@@ -32,6 +33,28 @@ EXPECTED_RECIPE_CATEGORY_COUNTS = {
     "recipe.category.base_module": 8,
     "recipe.category.submarine_upgrade": 14,
 }
+EXPECTED_RESOURCE_MATRIX_HEADERS = (
+    "biome_id",
+    "biome_hash32",
+    "biome_display_name",
+    "depth_min_m",
+    "depth_max_m",
+    "distance_from_origin_m",
+    "depth_multiplier",
+    "resource_id",
+    "resource_hash32",
+    "resource_display_name",
+    "resource_tier",
+    "base_value_units",
+    "base_rarity",
+    "rarity_formula",
+    "resource_depth_bias",
+    "rarity_score",
+    "lcg_spawn_weight_u16",
+    "laser_hits_tier1",
+    "laser_hits_tier2",
+    "laser_hits_tier3",
+)
 ASSET_SCAN_RELATIVE_DIRS = (
     "Assets/_Project/Data/Items",
     "Assets/_Project/Data/Construction",
@@ -148,7 +171,9 @@ def collect_csv_id_hashes(rows: list[dict[str, str]], pairs: dict[int, tuple[str
 def validate_resource_matrix(path: Path) -> dict[str, int]:
     require(path.exists(), f"missing {path}")
     with path.open("r", encoding="utf-8", newline="") as handle:
-        rows = list(csv.DictReader(handle))
+        reader = csv.DictReader(handle)
+        require(tuple(reader.fieldnames or ()) == EXPECTED_RESOURCE_MATRIX_HEADERS, "Resource_Distribution_Matrix.csv header mismatch")
+        rows = list(reader)
 
     require(len(rows) == 150, f"Resource_Distribution_Matrix.csv must have 150 data rows, got {len(rows)}")
     hash_checks = check_csv_hashes(rows)
@@ -166,6 +191,13 @@ def validate_resource_matrix(path: Path) -> dict[str, int]:
         require(pair not in pairs, f"CSV row {row_index} duplicate biome/resource pair {pair}")
         pairs.add(pair)
         per_biome_counts[row["biome_id"]] += 1
+        depth_min = float(row["depth_min_m"])
+        depth_max = float(row["depth_max_m"])
+        require(depth_max > depth_min >= 0.0, f"CSV row {row_index} invalid biome depth range")
+        resource_tier = int(row["resource_tier"])
+        require(1 <= resource_tier <= 3, f"CSV row {row_index} invalid resource tier {resource_tier}")
+        base_value = float(row["base_value_units"])
+        require(base_value > 0.0, f"CSV row {row_index} base_value_units must be positive")
         weight = int(row["lcg_spawn_weight_u16"])
         require(1 <= weight <= 65535, f"CSV row {row_index} invalid LCG weight {weight}")
         h1 = int(row["laser_hits_tier1"])
@@ -183,6 +215,26 @@ def validate_resource_matrix(path: Path) -> dict[str, int]:
         require(row_count == 15, f"{biome_id} must have 15 resource rows, got {row_count}")
 
     return {"rows": len(rows), "biomes": len(biome_ids), "resources": len(resource_ids), "hashes": hash_checks}
+
+
+def validate_resource_value_alignment(matrix_path: Path, recipes_path: Path) -> int:
+    with matrix_path.open("r", encoding="utf-8", newline="") as handle:
+        rows = list(csv.DictReader(handle))
+    recipes_data = load_json(recipes_path)
+    item_values = {entry["item_id"]: float(entry["baseline_value_units"]) for entry in recipes_data.get("item_values", [])}
+    resource_values: dict[str, float] = {}
+    for row in rows:
+        resource_id = row["resource_id"]
+        matrix_value = float(row["base_value_units"])
+        previous_value = resource_values.get(resource_id)
+        if previous_value is None:
+            resource_values[resource_id] = matrix_value
+        else:
+            require(abs(previous_value - matrix_value) <= 0.001, f"{resource_id} has inconsistent matrix base values")
+    for resource_id, matrix_value in resource_values.items():
+        require(resource_id in item_values, f"{resource_id} from matrix missing Recipes.item_values entry")
+        require(abs(item_values[resource_id] - matrix_value) <= 0.001, f"{resource_id} matrix value {matrix_value} differs from Recipes.item_values {item_values[resource_id]}")
+    return len(resource_values)
 
 
 def validate_global_hash_collisions(economy_dir: Path) -> int:
@@ -397,12 +449,14 @@ def validate_runtime_binding_review(path: Path, recipes_path: Path, root: Path) 
 
 
 def expand_recipe_closure(item_id: str, quantity: int, recipes_by_output: dict[str, Any], raw: dict[str, int], recipe_batches: dict[str, int]) -> None:
+    require(quantity > 0, f"recipe closure quantity for {item_id} must be positive")
     recipe = recipes_by_output.get(item_id)
     if recipe is None:
         raw[item_id] = raw.get(item_id, 0) + quantity
         return
 
     result_quantity = int(recipe["result"]["quantity"])
+    require(result_quantity > 0, f"{recipe['recipe_id']} result quantity must be positive")
     batches = (quantity + result_quantity - 1) // result_quantity
     recipe_id = recipe["recipe_id"]
     recipe_batches[recipe_id] = recipe_batches.get(recipe_id, 0) + batches
@@ -423,13 +477,35 @@ def validate_first_submarine_path(path: Path, recipes_path: Path) -> dict[str, A
     recipe_batches: dict[str, int] = {}
     target_items = data["target_items"]
     require(len(target_items) == 7, "first submarine path must have 7 target items")
+    seen_targets: set[str] = set()
     for target in target_items:
-        expand_recipe_closure(target["item_id"], int(target["quantity"]), recipes_by_output, raw, recipe_batches)
+        target_id = target["item_id"]
+        require(target_id not in seen_targets, f"duplicate first submarine target {target_id}")
+        seen_targets.add(target_id)
+        target_quantity = int(target["quantity"])
+        require(target_quantity > 0, f"first submarine target {target_id} quantity must be positive")
+        expand_recipe_closure(target_id, target_quantity, recipes_by_output, raw, recipe_batches)
 
-    recorded_raw = {entry["item_id"]: int(entry["quantity"]) for entry in data["raw_resources"]}
+    recorded_raw: dict[str, int] = {}
+    for entry in data["raw_resources"]:
+        item_id = entry["item_id"]
+        quantity = int(entry["quantity"])
+        require(quantity > 0, f"first submarine raw resource {item_id} quantity must be positive")
+        require(item_id not in recorded_raw, f"duplicate first submarine raw resource {item_id}")
+        recorded_raw[item_id] = quantity
     require(recorded_raw == raw, "first submarine raw resource expansion mismatch")
 
-    recorded_batches = {entry["recipe_id"]: int(entry["batches"]) for entry in data["recipe_batches"]}
+    recorded_batches: dict[str, int] = {}
+    for entry in data["recipe_batches"]:
+        recipe_id = entry["recipe_id"]
+        batches = int(entry["batches"])
+        require(batches > 0, f"first submarine recipe batch {recipe_id} must be positive")
+        require(recipe_id not in recorded_batches, f"duplicate first submarine recipe batch {recipe_id}")
+        require(recipe_id in recipes_by_id, f"first submarine recipe batch {recipe_id} not found in Recipes.json")
+        recipe = recipes_by_id[recipe_id]
+        result_id = recipe["result"]["item_id"]
+        require(entry["result_item_id"] == result_id, f"first submarine recipe batch {recipe_id} result item mismatch")
+        recorded_batches[recipe_id] = batches
     require(recorded_batches == recipe_batches, "first submarine recipe batch expansion mismatch")
 
     top_level_kwh = 0.0
@@ -438,8 +514,11 @@ def validate_first_submarine_path(path: Path, recipes_path: Path) -> dict[str, A
         recipe = recipes_by_output.get(target["item_id"])
         require(recipe is not None, f"first submarine target {target['item_id']} has no recipe")
         quantity = int(target["quantity"])
-        top_level_kwh += float(recipe["fabrication_kwh"]) * quantity
-        top_level_seconds += float(recipe["craft_time_seconds"]) * quantity
+        result_quantity = int(recipe["result"]["quantity"])
+        require(result_quantity > 0, f"{recipe['recipe_id']} result quantity must be positive")
+        batches = (quantity + result_quantity - 1) // result_quantity
+        top_level_kwh += float(recipe["fabrication_kwh"]) * batches
+        top_level_seconds += float(recipe["craft_time_seconds"]) * batches
 
     recursive_kwh = 0.0
     recursive_seconds = 0.0
@@ -498,6 +577,7 @@ def main() -> None:
 
     matrix_result = validate_resource_matrix(economy_dir / "Resource_Distribution_Matrix.csv")
     recipe_result = validate_recipes(economy_dir / "Recipes.json")
+    aligned_resources = validate_resource_value_alignment(economy_dir / "Resource_Distribution_Matrix.csv", economy_dir / "Recipes.json")
     survival_result = validate_survival(economy_dir / "Survival_Stats.json")
     binding_result = validate_runtime_binding_review(economy_dir / "Runtime_Binding_Review.json", economy_dir / "Recipes.json", root)
     first_sub_result = validate_first_submarine_path(economy_dir / "Time_To_First_Submarine.json", economy_dir / "Recipes.json")
@@ -505,12 +585,14 @@ def main() -> None:
     total_hashes = matrix_result["hashes"] + recipe_result["hashes"] + survival_result["hashes"] + binding_result["hashes"] + first_sub_result["hashes"]
     print("ECONOMY VALIDATION OK")
     print(f"matrix_rows={matrix_result['rows']} biomes={matrix_result['biomes']} resources={matrix_result['resources']}")
+    print(f"matrix_recipe_value_aligned_resources={aligned_resources}")
     print(f"recipes={recipe_result['recipes']} tier_ratios={recipe_result['tier_ratios']}")
     print(f"survival_velocity_bands={survival_result['velocity_bands']}")
     print(f"binding_unresolved_ids={binding_result['unresolved']}")
     print(f"first_sub_recursive_kwh={first_sub_result['recursive_kwh']} literal_minutes={first_sub_result['literal_minutes']}")
     print(f"hash_pairs_checked={total_hashes}")
     print(f"unique_id_hashes={unique_hashes}")
+    print("energy_pacing_warning=literal_30kw_requires_owner_decision")
     print("STATUS: ECONOMY BALANCED")
 
 

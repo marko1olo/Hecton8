@@ -43,7 +43,7 @@ Hardware Impact: Expected low-end gain is avoiding expensive runtime coefficient
 
 Problem: Task 14 requests commit/push, but the repository is on `main` with unrelated dirty files from other active agents. Project contract forbids direct push to main, and committing from a shared dirty worktree risks packaging unrelated work or disrupting other agents.
 
-Solution: Bake the artifacts, then use a temporary git index to create a local feature-branch commit containing only the selected offline-precompute files. Direct `main` mutation remained rejected. Remote push was attempted twice and timed out, so remote publication is not confirmed.
+Solution: Bake the artifacts, then use a temporary git index to create a local feature-branch commit containing only the selected offline-precompute files. Direct `main` mutation remained rejected. Initial remote push attempts timed out, and a later bounded non-interactive push also timed out, so remote publication is not confirmed.
 
 Rejected Alternatives: Direct `git push origin main` was rejected by policy. Staging all untracked files was rejected because it would capture unrelated agent artifacts. A full alternate worktree was attempted but rejected after checkout was incomplete and reported mass deletions unrelated to this task.
 
@@ -91,7 +91,7 @@ Hardware Impact: None.
 
 Problem: Remote publication still could not be confirmed. `git push` and `git ls-remote` hang, while raw TCP connectivity to `github.com:443` succeeds.
 
-Solution: Stop treating the push as completed. Keep the local feature branch as the publication artifact, verify branch object hashes against the working files, and kill hung git child processes rather than leaving background work running.
+Solution: Stop treating the push as completed. Keep the local feature branch as the publication artifact, verify branch object hashes against the working files with Git path-aware clean filters, and kill hung git child processes rather than leaving background work running.
 
 Rejected Alternatives: Waiting indefinitely was rejected because it leaves unmanaged git processes. Retrying blind push loops was rejected because no new evidence indicates success. Reporting remote success was rejected because there is no remote confirmation.
 
@@ -130,6 +130,18 @@ Problem: Remote publication was still the only incomplete part of Task 14, but p
 Solution: Run a single HTTPS push attempt for `feature/ai-offline-precompute-math-luts-20260514` with `GIT_TERMINAL_PROMPT=0`, `GCM_INTERACTIVE=Never`, and a 60 second process timeout. The push timed out with no stdout/stderr. The orphaned `remote-https`, `send-pack`, and `pack-objects` children were killed by PID and remote publication remains unconfirmed.
 
 Rejected Alternatives: Direct `main` push remained rejected. Infinite retry loops were rejected because they already produced hung Git processes. Reporting success without remote confirmation was rejected.
+
+Scalability potential: Repository-only concern. No runtime tier behavior changes.
+
+Hardware Impact: None.
+
+## Decision 12: Stale Publication Wording Correction
+
+Problem: Earlier report text said remote push timed out twice, but later bounded push attempts made that wording stale and undercounted the evidence.
+
+Solution: Replace the stale count with "multiple remote push attempts timed out" and keep the only defensible state: local feature branch is valid, remote publication is unconfirmed.
+
+Rejected Alternatives: Leaving the stale count was rejected because the final report must match the actual command history. Claiming a successful push was rejected because there is still no remote confirmation.
 
 Scalability potential: Repository-only concern. No runtime tier behavior changes.
 

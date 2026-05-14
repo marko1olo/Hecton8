@@ -84,3 +84,40 @@ Exact Microseconds saved -> Measured runtime savings remain unavailable. This pa
 Verification -> `EXACT_STRIP_REMAINING=0`. `.agents-skills` non-ASCII count is 0. Malformed-token target scan has no matches. `git diff --check` is clean except CRLF warnings. Scoped mandate-edit paths have no `.cs`, `.shader`, `.asset`, `.prefab`, or `.unity` diffs. Global worktree does contain unrelated `.codex_tmp` deleted `.cs`/`.prefab` entries; those were not touched or reverted. `dotnet --info` still fails because `dotnet` is unavailable on PATH.
 
 Batch rotation note -> Final readback of `Docs/Tasks/CURRENT_BATCH.md` returned `PROMPT_NOT_FOUND` for `MANDATE_EVOLUTION_CHRONICLER`; the active batch file has changed to a different agent set. Original assignment evidence remains in this agent's status/rationale/log from earlier successful extraction.
+
+## 2026-05-14 Fourth-Pass Self-Review
+
+What was wrong -> The previous ASCII/non-ASCII gate was not rigorous enough. A corrected UTF-8 scan and HEAD-vs-working-tree detector exposed residual stripped semantics: 77 lines had lost tokens such as `in`, `proportional_to`, checklist markers, `O2`, state arrows, subtraction, and range/binding operators. During the review, shared Git history rebased at `2026-05-14 13:44:24 +0300`, so earlier patch evidence had to be revalidated against the new base.
+
+What was done -> Repaired the stripped-line losses and then corrected high-risk formula corruption:
+- `.agents-skills/LOGI_Energy_Networks_Power_Grid_Graph_Flow.txt:75` - `TotalProduction`.
+- `.agents-skills/LOGI_Energy_Networks_Power_Grid_Graph_Flow.txt:76` - `TotalDemand`.
+- `.agents-skills/LOGI_Energy_Networks_Power_Grid_Graph_Flow.txt:78` - `SupplyRatio = TotalProduction / max(TotalDemand, epsilon)`.
+- `.agents-skills/CORE_Tools_Equipment_Interaction_Raycast_Heat.txt:138` - beam attenuation uses `*`.
+- `.agents-skills/CORE_Tools_Equipment_Interaction_Raycast_Heat.txt:205` - Verlet constraint uses `node[i+1].pos -= delta * error`.
+- `.agents-skills/CORE_Tools_Equipment_Interaction_Raycast_Heat.txt:264` - cutter density uses `d - CutStrength * power_final * marchStepSize`.
+- `.agents-skills/CTRL_Device_Abstraction_Haptics.txt:205` - haptic decay uses `signal * exp(-t * lambda)`.
+- `.agents-skills/CTRL_Device_Abstraction_Haptics.txt:277` - Pade input clamps `t * lambda`.
+- `.agents-skills/CTRL_Device_Abstraction_Haptics.txt:457` - exposure decay uses `exp(-dt * 0.5f)`.
+- `.agents-skills/STRM_Asset_Lifecycle_Addressables_Loading_Memory.txt:113` - streaming radius formulas use `*`.
+- `.agents-skills/DBG_Telemetry_Crash_Reporting_PostMortem.txt:290` - fillrate denominator uses `*`.
+- `.agents-skills/OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt:542` - tier limit checks use `* 1.1`.
+- `.agents-skills/REND_URP_Graphics_HotPath_Optimization_HLOD.txt:440` - bioluminescence formula uses `*`.
+
+Cinematic Cheats used -> Documentation-only. This pass protects the mandate layer that downstream agents use to choose cheap visual fakes, load-shed thresholds, and visual-overkill paths. No runtime visual cheat was implemented here.
+
+Exact Microseconds saved -> Measured runtime savings remain unavailable. Direct runtime impact is 0 us. The value is preventing corrupted formulas from becoming runtime code.
+
+Verification -> Target malformed math scan has no hits. `SET_STRIP_REMAINING=0`. `.agents-skills` `NON_ASCII_COUNT=0`. Scoped no-code guard has no `.cs`, `.shader`, `.asset`, `.prefab`, or `.unity` matches. `git diff --check` is clean except CRLF warnings. `dotnet --info` still fails because `dotnet` is unavailable on PATH. Unity import/runtime/profiler proof remains PENDING VERIFICATION.
+
+## 2026-05-14 Fifth-Pass Self-Review
+
+What was wrong -> Regex gates were clean, but manual dirty-diff review found one meaning-level formula error: voxel-beam "attenuation" used `exp(+density*distance)`, which increases power through denser material.
+
+What was done -> Patched `.agents-skills/CORE_Tools_Equipment_Interaction_Raycast_Heat.txt:138` to `power_final = power_init * exp(-voxel_density * travel_distance)` and `.agents-skills/CORE_Tools_Equipment_Interaction_Raycast_Heat.txt:142` to `power_out = power_in * exp(-d_i * deltaDistance_i)`.
+
+Cinematic Cheats used -> Documentation-only. The corrected attenuation mandate supports predictable cheap beam/cutter truth with visual intensity layered separately.
+
+Exact Microseconds saved -> 0 runtime us measured. This prevents downstream runtime code from implementing an exploding attenuation curve.
+
+Verification -> Readback confirms negative-exponent attenuation and haptic decay. Broad malformed math scan has only known false positives: `2x expected average` and `readIdx`. `NON_ASCII_COUNT=0`. `git diff --check` remains clean except CRLF warnings. Runtime proof remains PENDING VERIFICATION because `dotnet` is unavailable and Unity was not run.

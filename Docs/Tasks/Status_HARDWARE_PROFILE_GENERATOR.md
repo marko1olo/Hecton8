@@ -40,3 +40,6 @@ STATUS: HARDWARE PROFILED | COMPILE PENDING VERIFICATION
 - [x] Loop 8 - Encoding and mask review: all hardware profile artifacts are ASCII-only; pressure masks and bit indexes print as expected. Result: `ASCII_OK`, masks `0x0/0x70/0x2007F0/0xF017F0`.
 - [x] Loop 9 - Runtime key review: added FNV-1a `StableHash32` arrays for phases, profiles, tiers, and reference devices so C# consumers do not need string keys. Result: `HASHED_PROFILE_VALIDATION_OK`.
 - [x] Loop 10 - Final contract validation: no nested objects, declared counts match, artifacts exist and are ASCII-only. Result: `FINAL_PROFILE_CONTRACT_VALIDATION_OK`; `ARTIFACT_ASCII_AND_EXISTS_OK`.
+- [x] Loop 11 - Hash metadata review: declared `stableHashAlgorithm=FNV1A32_ASCII` and corrected `generatedUtc` from placeholder midnight to actual UTC generation time. Result: `HASH_ALGORITHM_DECLARED_OK`.
+- [x] Loop 12 - Refresh-rate ambiguity review: added `profileTargetFpsKind`, `profileRefreshHzNominal`, and `profileRefreshHzMax` so Quest 3 project target is not confused with hardware maximum. Result: `REFRESH_METADATA_VALIDATION_OK`.
+- [x] Loop 13 - Full field-count validation: every profile/tier/reference/source array matches declared row counts; refresh target bounds validated. Result: `FULL_PROFILE_FIELD_VALIDATION_OK`; ASCII final check `ASCII_FINAL_OK`.

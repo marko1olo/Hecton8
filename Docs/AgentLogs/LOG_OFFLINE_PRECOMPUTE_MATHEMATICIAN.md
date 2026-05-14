@@ -70,7 +70,7 @@ Blocked:
 
 - Task 14 remote push is blocked by timeout. A local feature branch commit was created through a temporary git index:
   - Branch: `feature/ai-offline-precompute-math-luts-20260514`
-- Direct push to `main` was not attempted. Remote `git push origin feature/ai-offline-precompute-math-luts-20260514` timed out twice, so remote publication is not confirmed.
+- Direct push to `main` was not attempted. Multiple remote pushes for `feature/ai-offline-precompute-math-luts-20260514` timed out, so remote publication is not confirmed.
 - A later non-interactive remote check also hung and left git child processes; those processes were stopped. Remote publication remains unconfirmed.
 - The attempted scratch worktree at `C:\Hecton8__offline_precompute_publish` was incomplete and was removed. Worktree metadata was pruned; no worktree entry remains.
 - Unrelated `Tools/TelemetryDashboard/__pycache__` exists and was not touched.
@@ -144,3 +144,91 @@ Verification:
 Blocked:
 
 - Remote push remains unconfirmed. The reliable artifact is still the local feature branch.
+
+## 2026-05-14 - Final Diff Correction
+
+What was wrong:
+
+- The latest branch refresh used a newer shared `HEAD` where most offline-precompute files were already present, so saying the latest commit-vs-parent diff changed exactly 12 paths was no longer accurate.
+
+What was done:
+
+- Corrected the status wording: the current feature branch contains all 12 selected paths and matches the working objects when checked with Git path-aware clean filters. Commit-vs-parent path counts are treated as evidence snapshots because shared `HEAD` moves during parallel agent work.
+
+Cinematic Cheats used:
+
+- None. This was report correction.
+
+Exact Microseconds saved:
+
+- None. No runtime code changed.
+
+Verification:
+
+- Current feature branch contains all 12 selected offline-precompute paths.
+- Working files match branch object hashes with Git clean filters applied.
+- Latest commit-vs-parent diff contains no `.cs` files.
+
+Blocked:
+
+- Remote push remains unconfirmed.
+
+## 2026-05-14 - Guarded Refresh Verification
+
+What was wrong:
+
+- A prior temp-index refresh advanced the local branch after a failed `git add`, because PowerShell did not throw on Git's nonzero exit code. That is unacceptable for publication integrity.
+
+What was done:
+
+- Replaced the refresh path with explicit selected-path existence checks and explicit `$LASTEXITCODE` checks after every Git command.
+- Verified branch object matches using `git hash-object --path=<path>` so line-ending clean filters are included in the comparison.
+- Reran the generator and Python validation tests after the guarded refresh.
+
+Cinematic Cheats used:
+
+- None. This was repository integrity work.
+
+Exact Microseconds saved:
+
+- None. No runtime code changed.
+
+Verification:
+
+- Guarded refresh completed without missing selected paths.
+- All 12 selected paths match the feature branch with Git clean filters applied.
+- Commit-vs-parent diff contains no `.cs` files.
+- `python -B Tools/MathLUTGenerator.py`: PASS.
+- `python -B Tools/test_math_lut_generator.py`: OK, 4 tests.
+
+Blocked:
+
+- Remote push remains unconfirmed after bounded HTTPS timeout.
+
+## 2026-05-14 - Stale Publication Wording Correction
+
+What was wrong:
+
+- Earlier status/log text said remote push timed out twice. Later bounded push retries made that wording stale.
+
+What was done:
+
+- Replaced the stale count with "multiple remote push attempts timed out" in status, rationale, and final log wording.
+- Kept remote publication marked unconfirmed.
+
+Cinematic Cheats used:
+
+- None. This was report hygiene.
+
+Exact Microseconds saved:
+
+- None. No runtime code changed.
+
+Verification:
+
+- Report wording no longer undercounts remote push attempts.
+- The local feature branch remains the reliable publication artifact until a remote push is confirmed.
+
+Blocked:
+
+- Remote push remains unconfirmed.

@@ -55,9 +55,12 @@ def utc_now_iso() -> str:
 
 
 def file_stamp(path: Path) -> dict[str, Any]:
-    if not path.exists():
+    try:
+        stat = path.stat()
+    except FileNotFoundError:
         return {"exists": False, "path": str(path)}
-    stat = path.stat()
+    except OSError as exc:
+        return {"exists": False, "path": str(path), "warnings": [f"stat_failed:{exc.__class__.__name__}"]}
     return {
         "exists": True,
         "path": str(path),
@@ -580,12 +583,18 @@ def parse_dump_file(path: Path) -> dict[str, Any]:
         return {**base, "type": "json_manifest", "manifest": parsed_json, "warnings": []}
     if path.suffix.lower() not in {".bin", ".h8dump"}:
         return {**base, "type": "unsupported", "warnings": ["unsupported_extension"]}
-    if path.stat().st_size > MAX_DUMP_BYTES:
+    warnings = list(base.get("warnings", []))
+    byte_count = base.get("bytes")
+    if byte_count is None:
+        warnings.append("missing_or_unreadable")
+        return {**base, "type": "unsupported", "warnings": warnings}
+    if byte_count > MAX_DUMP_BYTES:
         return {**base, "type": "unsupported", "warnings": ["dump_over_size_cap"]}
     try:
         data = path.read_bytes()
     except OSError as exc:
-        return {**base, "type": "unsupported", "warnings": [f"read_failed:{exc.__class__.__name__}"]}
+        warnings.append(f"read_failed:{exc.__class__.__name__}")
+        return {**base, "type": "unsupported", "warnings": warnings}
 
     name = path.name.upper()
     if len(data) >= GENERIC_BLACKBOX_HEADER.size:
@@ -610,7 +619,6 @@ def parse_dump_file(path: Path) -> dict[str, Any]:
 
 
 def collect_dumps() -> dict[str, Any]:
-    AGENT_LOGS.mkdir(parents=True, exist_ok=True)
     candidate_paths = {path for path in AGENT_LOGS.glob("Dump_*")}
     candidate_paths.update(AGENT_LOGS.glob("*.h8dump"))
     for file_name in ("BLACKBOX_CRASH.bin", "BLACKBOX_CRASH.h8dump", "runtime_telemetry.bin"):

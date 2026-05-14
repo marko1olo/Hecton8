@@ -185,3 +185,67 @@ hash_pairs_checked=663
 unique_id_hashes=151
 STATUS: ECONOMY BALANCED
 ```
+
+## 2026-05-14 - Evidence Reconciliation Pass
+
+What was wrong:
+- Status and rationale still referenced older validator evidence counts after `Time_To_First_Submarine.json` was added.
+- Historical log blocks above show previous `663` / `727` hash-pair runs, which remain snapshots but are not current proof.
+
+What was done:
+- Updated current status and rationale to the active validator evidence: `781` hash pairs and `175` unique generated ID hashes.
+- Re-ran `Tools/EconomyValidator.py` after the text correction.
+
+Cinematic Cheats used:
+- No runtime simulation added. This is audit-trail cleanup for offline data proof.
+
+Exact Microseconds saved:
+- 0 us gameplay. This prevents false verification evidence from being copied into the importer handoff.
+
+Verification:
+
+```text
+python Tools/EconomyValidator.py --root .
+ECONOMY VALIDATION OK
+matrix_rows=150 biomes=10 resources=15
+recipes=40 tier_ratios=[3.667, 2.69]
+survival_velocity_bands=5
+binding_unresolved_ids=22
+first_sub_recursive_kwh=433.1 literal_minutes=901.7
+hash_pairs_checked=781
+unique_id_hashes=175
+STATUS: ECONOMY BALANCED
+```
+
+## 2026-05-14 - Honest Status And Milestone Hardening Pass
+
+What was wrong:
+- The validator printed `STATUS: ECONOMY BALANCED` while first-submarine literal energy pacing remains unresolved at `901.7 minutes` under a 30 kW source.
+- `Time_To_First_Submarine.json` recipe-batch rows included `result_item_id`, but the validator did not cross-check that field against `Recipes.json`.
+
+What was done:
+- Changed the validator final status to `STATUS: STATIC ECONOMY VALIDATED; LITERAL ENERGY PACING PENDING OWNER DECISION`.
+- Hardened first-submarine validation for duplicate target/raw/batch rows, non-positive quantities, missing recipe IDs, and recipe-batch result item mismatches.
+- Updated current status, rationale, and design report language.
+
+Cinematic Cheats used:
+- No runtime simulation added. This is offline truth maintenance.
+
+Exact Microseconds saved:
+- 0 us gameplay. It prevents bad runtime tuning work from starting from a false "balanced" signal.
+
+Verification:
+
+```text
+python Tools/EconomyValidator.py --root .
+ECONOMY VALIDATION OK
+matrix_rows=150 biomes=10 resources=15
+matrix_recipe_value_aligned_resources=15
+recipes=40 tier_ratios=[3.667, 2.69]
+survival_velocity_bands=5
+binding_unresolved_ids=22
+first_sub_recursive_kwh=433.1 literal_minutes=901.7
+hash_pairs_checked=781
+unique_id_hashes=175
+STATUS: STATIC ECONOMY VALIDATED; LITERAL ENERGY PACING PENDING OWNER DECISION
+```

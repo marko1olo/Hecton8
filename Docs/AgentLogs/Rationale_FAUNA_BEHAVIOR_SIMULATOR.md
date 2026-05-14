@@ -1,6 +1,6 @@
 # Rationale_FAUNA_BEHAVIOR_SIMULATOR
 
-Evidence class: STATIC_DOC until recreated Python tool is executed. Runtime Unity/profiler proof remains absent.
+Evidence class: CLI_PYTHON_SIMULATION for generated Python/JSON artifacts. Runtime Unity/profiler proof remains absent.
 
 ## Mandate Selection
 
@@ -83,3 +83,17 @@ Solution: Changed `FaunaBalanceSim.py` so the `Data/AI` output is a compact 1812
 Rejected Alternatives: Keeping duplicate report data in the runtime-facing constants file. It is avoidable bloat.
 Scalability potential: Low-end devices parse the compact handoff; high-end tooling can inspect the detailed report offline.
 Hardware Impact: Runtime cost is still unmeasured and PENDING VERIFICATION; file-size reduction is static evidence only.
+
+## Repeat-Seed Validation Decisions
+
+Problem: A single deterministic seed can hide coefficient fragility.
+Solution: Added `--validate-selected` mode and ran 5 deterministic replicates at 200,000 frames each using the selected constants.
+Rejected Alternatives: Rerunning full heatmap discovery for each seed. That is offline-expensive and does not change the selected constants unless a failure is found.
+Scalability potential: Low-end runtime still consumes the same constants; validation data stays offline. High-end tooling can raise replicate count or frames without changing runtime contract.
+Hardware Impact: Runtime impact remains 0 microseconds. Offline replicate validation elapsed under 30 seconds in this environment.
+
+Problem: Replicate evidence must be visible in the compact constants file without bloating it with full per-replicate rows.
+Solution: Store only `replicateValidation` summary in `Data/AI/Fauna_Global_Weights.json` and write full rows to `Tools/AI_Sim/FaunaBalanceSim_ReplicateValidation.json`.
+Rejected Alternatives: Embedding all replicate rows in the runtime-facing constants file. It repeats the earlier bloat problem.
+Scalability potential: Runtime consumers parse a bounded summary; balancing tools can inspect the detailed file.
+Hardware Impact: Static file-size impact only: compact constants file is `2250` bytes after summary; runtime parsing cost remains unmeasured.

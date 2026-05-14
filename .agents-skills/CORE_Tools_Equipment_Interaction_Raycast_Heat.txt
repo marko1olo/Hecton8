@@ -135,16 +135,16 @@ IsValidHit(RaycastHit h):
 
 ### 3.1 Voxel-Beam Attenuation
 
-power_final = power_init x exp(voxel_density x travel_distance)
+power_final = power_init * exp(-voxel_density * travel_distance)
 
 - `voxel_density`: sampled from `VoxelSDF.DensityField[voxelCoord]` (float, [0..1] normalized)
 - `travel_distance`: accumulated per voxel traversal step (DDA march, see Section5.2)
-- Chain multiple voxels: `power_out = power_in * exp(d_i * deltaT_i)` per step, multiplicative
+- Chain multiple voxels: `power_out = power_in * exp(-d_i * deltaDistance_i)` per step, multiplicative
 - Early-exit if `power_final < 0.02f`: beam considered blocked, emit `BlockedSignal`
 
 ### 3.2 Tool Recoil Impulse
 
-impulse_vector = packet.Direction x packet.Power x BasePower x (1.0 / max(rigidbody.mass, 0.1))
+impulse_vector = packet.Direction * packet.Power * BasePower * (1.0 / max(rigidbody.mass, 0.1))
 // [FORBID] Direct player-only recoil inside moving structures.
 // If on a platform, apply the inverse impulse to the Submarine Rigidbody to ensure conservation of momentum.
 - Scale by `underwater_drag_factor` (0.4 - 0.8 based on water viscosity zone)
@@ -153,10 +153,10 @@ impulse_vector = packet.Direction x packet.Power x BasePower x (1.0 / max(rigidb
 ### 3.3 Heat Accumulation & Cooldown
 
 // Per FixedUpdate while Active:
-heat += HeatGenerationRate x power x fixedDeltaTime
+heat += HeatGenerationRate * power * fixedDeltaTime
 
 // Cooldown (Idle or Deactivated):
-heat -= CooldownRate x fixedDeltaTime x (1 + passive_water_cooling_bonus)
+heat -= CooldownRate * fixedDeltaTime * (1 + passive_water_cooling_bonus)
 
 // Overheat trigger:
 if heat >= 1.0:
@@ -174,13 +174,13 @@ if heat <= 0.0:
 ### 3.4 Power Draw from Energy System
 
 // Per Active tick:
-energy_cost = BasePower x packet.Power x ActiveDrainMultiplier x deltaTime
+energy_cost = BasePower * packet.Power * ActiveDrainMultiplier * deltaTime
 EnergySystem.Drain(ToolID, energy_cost)
 
 // Low-power detection:
 if EnergySystem.GetLevel() < 0.12f:
   flags |= 0x10  // LowPower set
-  effective_power = packet.Power x 0.35f  // force-reduce output
+  effective_power = packet.Power * 0.35f  // force-reduce output
 
 if EnergySystem.GetLevel() <= 0.0f:
   CancelAction()
@@ -191,7 +191,7 @@ if EnergySystem.GetLevel() <= 0.0f:
 for each node i in cable[1..N-1]:
   velocity    = node[i].pos - node[i].prev_pos
   node[i].prev_pos = node[i].pos
-  node[i].pos += velocity + gravity x dt^2
+  node[i].pos += velocity + gravity * dt^2
 
 // Constraint solve (Jakobsen, 4 iterations):
 for iter in 0..3:
@@ -201,8 +201,8 @@ for iter in 0..3:
 // [FORBID] Naked division in distance constraints. Guard it:
 float safe_dist = math.max(dist, 1e-5f);
 error = (safe_dist - rest_length) / safe_dist * 0.5f;
-    node[i].pos   += delta x error
-    node[i+1].pos = delta x error
+    node[i].pos   += delta * error
+    node[i+1].pos -= delta * error
 // Anchor node[0] to harpoon tip (world), node[N] to target hit-point
 
 ---
@@ -248,12 +248,12 @@ ACTIVE (sustained beam):
 1. RaycastScheduler: continuous slot request, 1/FixedUpdate
 2. Hit required on WeldableLayer mask
 3. power_final via Section3.1 attenuation
-4. WeldProgress += power_final x fixedDeltaTime
+4. WeldProgress += power_final * fixedDeltaTime
 5. At WeldProgress >= WeldThreshold:
    EventBus->StructureSystem: RegisterWeldJoint(hitPoint, hitNormal, toolID)
    StructureSystem: create deterministic structure edge or owned anchor constraint between surfaces
 6. Visual: lerp beam width (0.01->0.04m) over first 0.3s via AnimationCurve sample
-7. Overheat accumulation rate x 1.4 multiplier (welder runs hot)
+7. Overheat accumulation rate * 1.4 multiplier (welder runs hot)
 
 ### 4.4 Plasma Cutter
 
@@ -261,7 +261,7 @@ ACTIVE (sustained cut):
 1. DDA ray-march through VoxelSDF (Section5.2) along packet.Direction
 2. Per voxel step:
    a. Sample density: d = VoxelSDF.SampleDensity(voxelCoord)
-   b. d_new = d  CutStrength x power_final x marchStepSize
+   b. d_new = d - CutStrength * power_final * marchStepSize
    c. VoxelSDF.WriteDensity(voxelCoord, clamp(d_new, -1, 1))
    d. Mark chunk dirty
 3. After march completes: EventBus->VoxelSystem: ScheduleAsyncRebuild(affectedChunks[])
@@ -274,7 +274,7 @@ ACTIVE (sustained cut):
 ACTIVE:
 1. SphereCast (radius=0.15m) into _rayBuffer -> closest hit
 2. power_final = Section3.1 (short range: <=3m, density effect minimal)
-3. EventBus->MaterialSystem: ApplyHeatStamp(hitPoint, 0.15, power_final x dt)
+3. EventBus->MaterialSystem: ApplyHeatStamp(hitPoint, 0.15, power_final * dt)
    MaterialSystem: update HeatMap texture (R8 channel, GPU-side)
    Shader samples HeatMap -> drives thermal distortion + material state blend
 4. If target material = Ice/Frozen: EventBus->VoxelSystem: MeltStamp(hitPoint, meltRate)
@@ -347,9 +347,9 @@ TIER_ULTRA -> RTX3070+, 8GB+ VRAM
 ### 6.2 SlowTick Particle Throttle
 
 // Computed in ToolParticleController (1/Update):
-frameTime_ms    = Time.deltaTime x 1000f
+frameTime_ms    = Time.deltaTime * 1000f
 budget_scalar   = clamp(16.67f / frameTime_ms, 0.1f, 1.0f)  // 60fps = 1.0
-emission_rate   = base_emission x budget_scalar
+emission_rate   = base_emission * budget_scalar
 
 // Per-tier emission caps (particles/frame):
 TIER_LOW:   max 24   (sparks), 12 (bubbles), 8  (smoke)
@@ -369,8 +369,8 @@ TIER_HIGH:  Tube mesh, 8-sided + volumetric light contribution
 TIER_ULTRA: Volumetric beam (ray-marched), caustic interaction
 
 // Beam interpolation:
-visual_origin = lerp(visual_origin, logic_origin, min(lerpSpeed x dt, 1.0))
-visual_end    = lerp(visual_end,    logic_end,    min(lerpSpeed x dt, 1.0))
+visual_origin = lerp(visual_origin, logic_origin, min(lerpSpeed * dt, 1.0))
+visual_end    = lerp(visual_end,    logic_end,    min(lerpSpeed * dt, 1.0))
 // lerpSpeed = 18.0 (snappy, lag < 55ms at 60fps)
 
 ### 6.4 VRAM Budget - Tool Visual Assets
@@ -484,7 +484,7 @@ BreakLink triggers on ANY of:
 
 AudioSystem.OnDrillSignal(s):
   pitch  = lerp(0.85, 1.15, s.PowerDelivered)
-  volume = s.PowerDelivered x depthAttenuation   // deeper = more muffled
+  volume = s.PowerDelivered * depthAttenuation   // deeper = more muffled
   Filter: LowpassCutoff = lerp(800, 4000, 1-(depth/maxDepth))
 
 AudioSystem.OnHarpoonSignal(s):

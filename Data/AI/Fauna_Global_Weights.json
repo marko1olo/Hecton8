@@ -30,6 +30,21 @@
       "preyStdDev": 2.007
     }
   },
+  "replicateValidation": {
+    "detailedReport": "Tools/AI_Sim/FaunaBalanceSim_ReplicateValidation.json",
+    "failureCount": 0,
+    "framesPerReplicate": 200000,
+    "replicates": 5,
+    "status": "REPLICATE_STABLE",
+    "summary": {
+      "alphaLeviathanMax": 1.815,
+      "alphaLeviathanMin": 1.814,
+      "preyMax": 9439.544,
+      "preyMin": 9434.857,
+      "stalkerMax": 38.093,
+      "stalkerMin": 38.061
+    }
+  },
   "runtimeUnityProof": "PENDING VERIFICATION",
   "schemaVersion": 1,
   "selectedConstants": {

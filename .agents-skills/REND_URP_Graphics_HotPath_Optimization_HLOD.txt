@@ -437,7 +437,7 @@ IN.positionCS.z += _DepthBias * IN.positionCS.w * decalMask;
 
 ## Section17 - BIOLUMINESCENCE & HORROR LIGHTING CONTRACT
 
-[RULE] Bioluminescent emission: emissive mask (A-channel PBR texture) x pulsed intensity only.
+[RULE] Bioluminescent emission: emissive mask (A-channel PBR texture) * pulsed intensity only.
 [MATH] Biological pulse:
   pulse = pow(abs(sin(_Time.y * _PulseFreq + _PhaseOffset)), _PulseSharpness)
   emission = _EmissionColor * _EmissionIntensity * pulse

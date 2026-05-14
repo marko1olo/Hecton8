@@ -3,7 +3,7 @@
 Date: 2026-05-14
 Agent: ECONOMY_DATA_BALANCER
 Domain: Auxiliary Node, text/data only
-Status: ECONOMY BALANCED by `Tools/EconomyValidator.py`; runtime Unity proof remains PENDING VERIFICATION.
+Status: STATIC ECONOMY VALIDATED by `Tools/EconomyValidator.py`; literal energy pacing and runtime Unity proof remain PENDING VERIFICATION.
 
 ## Generated Files
 
@@ -140,5 +140,5 @@ At a literal `30 kW` energy source, recursive fabrication alone waits `866.2 min
 - CPU: data files are offline tables. Runtime work should be integer hash lookup and table sampling only.
 - GC: no runtime strings are required if the engine consumes hash fields.
 - Memory: CSV/JSON are authoring/input assets; Data Monolith should bake them into contiguous runtime blobs.
-- Correctness: validator checks project-compatible hashes, row counts, duplicate biome/resource pairs, exact recipe category quotas, recipe cycles, value math, result value parity, no-profit deconstruction, tier progression, survival band ranges, runtime binding drift, time-to-first-submarine recursive expansion, and global generated-file hash collisions.
+- Correctness: validator checks project-compatible hashes, row counts, duplicate biome/resource pairs, exact recipe category quotas, recipe cycles, value math, result value parity, no-profit deconstruction, tier progression, survival band ranges, runtime binding drift, time-to-first-submarine recursive expansion, milestone row/result consistency, and global generated-file hash collisions.
 - Failure modes: missing engine importer, economy-defined IDs not mapped to runtime assets, or runtime system still reading strings would invalidate runtime integration.

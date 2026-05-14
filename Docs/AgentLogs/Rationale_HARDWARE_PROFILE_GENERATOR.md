@@ -59,3 +59,15 @@ Solution: Added FNV-1a 32-bit stable hash arrays for phases, profiles, tiers, an
 Rejected Alternatives: Removing names entirely was rejected because logs and design review need readable labels. Nested key/value dictionaries were rejected because they are worse for zero-GC parsing.
 Scalability potential: C# side can load hashes into fixed `uint` arrays and branch on integers without heap string work.
 Hardware Impact: Expected hot-path impact remains 0 us/frame; cold parse avoids string-key dependency.
+
+Problem: Hash arrays were present but the JSON did not declare the hash algorithm, and `generatedUtc` still had a placeholder midnight value.
+Solution: Added `stableHashAlgorithm=FNV1A32_ASCII` and replaced the timestamp with the actual UTC generation value used in this pass.
+Rejected Alternatives: Leaving the algorithm implicit was rejected because another agent could regenerate different hashes and silently break lookups.
+Scalability potential: Stable hash metadata lets cold boot validators check parser compatibility without managed string lookup in hot paths.
+Hardware Impact: 0 us/frame.
+
+Problem: `profileTargetFps=72` for Quest 3 could be misread as a hardware refresh maximum.
+Solution: Added `profileTargetFpsKind`, `profileRefreshHzNominal`, and `profileRefreshHzMax`. The target is now explicitly a project sustained budget, while nominal/max refresh remain separate hardware capability fields.
+Rejected Alternatives: Raising Quest 3 target to 90 by default was rejected because thermal XR rendering budgets are not proven for HECTON-8 content.
+Scalability potential: Quest 3 can use Low/Medium 72 Hz sustained and spend higher refresh only after thermal/profiler proof; top-tier hardware still routes visual overkill separately.
+Hardware Impact: 0 us/frame; prevents a configuration consumer from treating conservative target as device ceiling.

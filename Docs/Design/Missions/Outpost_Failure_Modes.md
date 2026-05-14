@@ -61,24 +61,26 @@ These are authored logical flags. Runtime implementation must compile them into 
 | 14 | `outpost.sealed_door_powered` | Quest | voltage stable at door relay | sealed door interaction |
 | 15 | `outpost.sealed_door_opened` | Quest | door open event | evidence room |
 | 16 | `outpost.datapad_found` | Narrative | datapad scan or fallback terminal scan | Marauder log chain |
-| 17 | `outpost.marauder_log_power_read` | Narrative | log 1 committed | lore continuity |
-| 18 | `outpost.marauder_log_air_read` | Narrative | log 2 committed | O2 sanity branch |
-| 19 | `outpost.marauder_log_exit_read` | Narrative | log 3 committed | mission complete |
-| 20 | `outpost.internal_fire_seen` | Location | room flag `InternalFire` observed | fire-route blocker |
-| 21 | `outpost.fire_route_optional` | Quest | alternate route exists or fire door stays locked | prevents fire soft-lock |
-| 22 | `outpost.breached_room_seen` | Location | room flag `Breached` observed | breached-room blocker |
-| 23 | `outpost.flooded_room_bypassed` | Quest | alternate route or marker reroute active | prevents submerged O2 trap |
-| 24 | `outpost.exit_route_marked` | Location | entrance marker or emergency hatch marked | retreat guarantee |
-| 25 | `outpost.critical_item_lost` | Deadlock | coupler/key discarded or destroyed | revert kernel |
-| 26 | `outpost.deadlock_revert_requested` | Deadlock | quest revert emitted | respawn/fallback grant |
-| 27 | `outpost.marker_fallback_active` | Quest | marker target unresolved | no-marker recovery |
-| 28 | `outpost.state_restored_from_save` | Quest | WFC state override applied | post-load validation |
-| 29 | `outpost.evidence_uploaded` | Narrative | final evidence terminal committed | completion gate |
-| 30 | `outpost.mission_complete` | Quest | evidence uploaded and exit known | reward/unlock |
+| 17 | `outpost.marauder_log_power_read` | Narrative | power fallback log committed | lore continuity |
+| 18 | `outpost.marauder_log_air_read` | Narrative | air/scrubber log committed | O2 sanity branch |
+| 19 | `outpost.marauder_log_fire_read` | Narrative | fire log committed | fire lore branch |
+| 20 | `outpost.marauder_log_breach_read` | Narrative | breach log committed | breach lore branch |
+| 21 | `outpost.marauder_log_exit_read` | Narrative | exit discipline log committed | mission complete |
+| 22 | `outpost.internal_fire_seen` | Location | room flag `InternalFire` observed | fire-route blocker |
+| 23 | `outpost.fire_route_optional` | Quest | alternate route exists or fire door stays locked | prevents fire soft-lock |
+| 24 | `outpost.breached_room_seen` | Location | room flag `Breached` observed | breached-room blocker |
+| 25 | `outpost.flooded_room_bypassed` | Quest | alternate route or marker reroute active | prevents submerged O2 trap |
+| 26 | `outpost.exit_route_marked` | Location | entrance marker or emergency hatch marked | retreat guarantee |
+| 27 | `outpost.critical_item_lost` | Deadlock | coupler/key discarded or destroyed | revert kernel |
+| 28 | `outpost.deadlock_revert_requested` | Deadlock | quest revert emitted | respawn/fallback grant |
+| 29 | `outpost.marker_fallback_active` | Quest | marker target unresolved | no-marker recovery |
+| 30 | `outpost.state_restored_from_save` | Quest | WFC state override applied | post-load validation |
+| 31 | `outpost.evidence_uploaded` | Narrative | final evidence terminal committed | completion gate |
+| 32 | `outpost.mission_complete` | Quest | evidence uploaded and exit known | reward/unlock |
 
 Required topological ordering:
 
-`outpost.generated` -> `outpost.entry_reached` -> `outpost.power_relay_found` -> `outpost.power_coupler_acquired` -> `outpost.power_coupler_installed` -> `outpost.bus_voltage_stable` -> `outpost.sealed_door_powered` -> `outpost.sealed_door_opened` -> `outpost.datapad_found` -> Marauder logs -> `outpost.evidence_uploaded` -> `outpost.mission_complete`
+`outpost.generated` -> `outpost.entry_reached` -> `outpost.power_relay_found` -> `outpost.power_coupler_acquired` -> `outpost.power_coupler_installed` -> `outpost.bus_voltage_stable` -> `outpost.sealed_door_powered` -> `outpost.sealed_door_opened` -> `outpost.datapad_found` -> Marauder log reads -> `outpost.evidence_uploaded` -> `outpost.mission_complete`
 
 Fallback branch:
 

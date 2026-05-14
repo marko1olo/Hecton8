@@ -368,7 +368,7 @@ SEQUENCE (execute in order, stop when pressure relieved):
           -> Expected relief: 200-400MB
   Step 2: EvictQueue.DrainSynchronously() on released Addressables only
           -> Expected relief: 50-150MB
-  Step 3: Reduce RenderTexture resolution x 0.75 for non-primary cameras
+  Step 3: Reduce RenderTexture resolution * 0.75 for non-primary cameras
           -> Expected relief: 80-200MB
   Step 4: Force LOD bias += 0.5 globally (objects LOD earlier)
   Step 5: If still > 0.90 after 5 frames -> drop to MINIMAL render tier
@@ -490,8 +490,8 @@ GPU particles (Compute):       MINIMAL=OFF, MED=OFF, ULTRA=ON (up to 100K)
 
 Emitter rules:
   > 80m from camera -> disable emitter entirely
-  > 50m -> reduce emission rate x 0.1
-  > 30m -> reduce emission rate x 0.5
+  > 50m -> reduce emission rate * 0.1
+  > 30m -> reduce emission rate * 0.5
   < 30m -> full rate
 
 Bioluminescence pulse VFX:
@@ -539,8 +539,8 @@ MANDATORY GATES (fail build if exceeded):
   vram_peak_mb            > 1900    -> FAIL
   ram_peak_mb             > 6000    -> FAIL
   gc_alloc_hot_path_bytes > 0       -> FAIL
-  draw_calls_peak         > (tier_limit x 1.1) -> FAIL
-  triangle_count_peak     > (tier_limit x 1.1) -> FAIL
+  draw_calls_peak         > (tier_limit * 1.1) -> FAIL
+  triangle_count_peak     > (tier_limit * 1.1) -> FAIL
 
 BENCHMARK SCENE REQUIREMENTS:
   Scene must include: 20 creatures active, 3 chunk transitions, 1 particle storm zone

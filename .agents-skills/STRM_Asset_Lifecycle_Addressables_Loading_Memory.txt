@@ -110,15 +110,15 @@ Sequence:
 
 ### 3.1 Chunk Radius Definitions
 
-StreamInner  = BaseRadius x (1.0 - PressureFactor x 0.4)
-StreamOuter  = StreamInner x 1.6
-HLODRadius   = StreamOuter x 2.5
+StreamInner  = BaseRadius * (1.0 - PressureFactor * 0.4)
+StreamOuter  = StreamInner * 1.6
+HLODRadius   = StreamOuter * 2.5
 
 BaseRadius   = 80m  (default, designer-tunable per biome)
 
 ### 3.2 Player Velocity Predictive Pre-fetch
 
-LookAheadPoint = PlayerPos + (Velocity.normalized x Speed x 3.0s)
+LookAheadPoint = PlayerPos + (Velocity.normalized * Speed * 3.0s)
 ChunksToPreload = all chunks where dist(chunk.center, LookAheadPoint) <= StreamInner
 PreloadPriority = TIER_6 -> escalates to TIER_2 when dist <= StreamInner + 10m
 
@@ -188,7 +188,7 @@ Cap evictions per frame: 4 objects max (prevent hitch)
 
 Poll interval: every 90 frames (~=1.5s at 60fps)
 Source: SystemInfo.graphicsMemorySize (static cap) + custom query via NativePlugin or GL.GetGPUMemory
-VRAM_Used   = tracked via custom VRAM_Ledger (sum of all registered texture SizeBytes x mip factor)
+VRAM_Used   = tracked via custom VRAM_Ledger (sum of all registered texture SizeBytes * mip factor)
 VRAM_Budget = 1.80 GB  (hard)
 VRAM_Warn   = 1.60 GB  (soft, begin preventive eviction)
 
@@ -212,7 +212,7 @@ Action:
   Swap to LOD1 texture handle
   Release LOD0 handle via Section4.1 partial (skip Steps 1-4, only Steps 5-7)
   Log: "VRAM_EVICT LOD0->LOD1: {key} freed {bytes}MB"
-Recovery: re-queue LOD0 load at TIER_6 if dist returns <= StreamInner x 0.5
+Recovery: re-queue LOD0 load at TIER_6 if dist returns <= StreamInner * 0.5
 
 ---
 
@@ -222,7 +222,7 @@ Recovery: re-queue LOD0 load at TIER_6 if dist returns <= StreamInner x 0.5
 
 PressureFactor = CurrentReservedMemory_bytes / MaxSystemRAM_bytes
 
-MaxSystemRAM = SystemInfo.systemMemorySize x 1024 x 1024  [bytes]
+MaxSystemRAM = SystemInfo.systemMemorySize * 1024 * 1024  [bytes]
 CurrentReservedMemory = Profiler.GetTotalReservedMemory()  + NativeHeap_estimate
 
 // [FORBID] LINQ .Sum() in hot path.
@@ -255,11 +255,11 @@ Post-execution: recalculate PressureFactor, log delta
 
 ### 6.4 Streaming Budget Allocator
 
-Total RAM budget allocated to streaming = MaxSystemRAM x 0.35  (35% ceiling)
-  Texture pool:  budget x 0.45
-  Mesh pool:     budget x 0.25
-  Audio bank:    budget x 0.15
-  Misc (VFX,SO): budget x 0.15
+Total RAM budget allocated to streaming = MaxSystemRAM * 0.35  (35% ceiling)
+  Texture pool:  budget * 0.45
+  Mesh pool:     budget * 0.25
+  Audio bank:    budget * 0.15
+  Misc (VFX,SO): budget * 0.15
 
 If any pool exceeds allocation -> evict from that pool first before touching others
 
@@ -385,7 +385,7 @@ Medium (2-10s):                    AudioClip.loadType = AudioClipLoadType.Compre
 ### 9.2 Audio Budget Under Pressure
 
 PressureFactor > 0.80:
-  Reduce active AudioSource count to MaxAudioChannels x 0.5
+  Reduce active AudioSource count to MaxAudioChannels * 0.5
   Prioritize: player breath > proximity horror SFX > ambient loops > music
   Cull lowest-priority sources immediately (no fade, too costly under pressure)
 

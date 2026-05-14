@@ -23,3 +23,9 @@ Encoding/mask review -> All four hardware profile artifacts are ASCII-only. Pres
 Runtime key review -> Added FNV-1a `StableHash32` arrays for phase/profile/tier/reference IDs. Validation after addition: `HASHED_PROFILE_VALIDATION_OK`.
 
 Final contract validation -> `FINAL_PROFILE_CONTRACT_VALIDATION_OK`; `ARTIFACT_ASCII_AND_EXISTS_OK`. `git diff --check` returned only line-ending normalization warnings, no whitespace errors.
+
+Hash metadata review -> Declared `stableHashAlgorithm=FNV1A32_ASCII` and corrected `generatedUtc` from a placeholder to `2026-05-14T11:03:24Z`. Validation: `HASH_ALGORITHM_DECLARED_OK`.
+
+Refresh metadata review -> Added `profileTargetFpsKind`, `profileRefreshHzNominal`, and `profileRefreshHzMax`. Validation: `REFRESH_METADATA_VALIDATION_OK`.
+
+Full field-count validation -> Every profile/tier/reference/source array matches declared row counts; refresh target bounds validated. Result: `FULL_PROFILE_FIELD_VALIDATION_OK`; ASCII final check `ASCII_FINAL_OK`. `git diff --check` still reports line-ending normalization warnings only.

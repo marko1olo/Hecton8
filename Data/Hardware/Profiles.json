@@ -1,8 +1,9 @@
 {
   "schemaVersion": 1,
   "status": "HARDWARE PROFILED",
-  "generatedUtc": "2026-05-14T00:00:00Z",
+  "generatedUtc": "2026-05-14T11:03:24Z",
   "layout": "flat_columnar_arrays_row_major",
+  "stableHashAlgorithm": "FNV1A32_ASCII",
   "phaseOrder": "row-major_outer-profile-or-tier_inner-phase",
   "phaseCount": 4,
   "phaseName": [
@@ -44,6 +45,18 @@
   ],
   "profileTargetFps": [
     72,
+    60
+  ],
+  "profileTargetFpsKind": [
+    "PROJECT_SUSTAINED_BUDGET",
+    "PROJECT_SUSTAINED_BUDGET"
+  ],
+  "profileRefreshHzNominal": [
+    90,
+    60
+  ],
+  "profileRefreshHzMax": [
+    120,
     60
   ],
   "profileFrameBudgetMs": [
@@ -420,6 +433,16 @@
     "https://www.tomsguide.com/reviews/oculus-quest-2-review",
     "https://laptopmedia.com/video-card/nvidia-geforce-mx350/",
     "https://www.techpowerup.com/gpu-specs/geforce-mx350.c3494"
+  ],
+  "sourceAuthorityRank": [
+    3,
+    3,
+    2,
+    3,
+    3,
+    2,
+    2,
+    2
   ],
   "sourceNote": [
     "XR2 Gen 2 memory interface: 4x16 LPDDR5 up to 3.2 GHz; bandwidth in this JSON is derived as SoC maximum, not a Meta device disclosure.",

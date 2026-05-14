@@ -69,3 +69,17 @@ Solution: Add explicit little-endian parsers for macro-swarm, fauna-mutation, an
 Rejected Alternatives: Scanning arbitrary user profile folders for persistent data was rejected as fragile and outside the prompt's `Docs/AgentLogs` workflow. Guessing every `Dump_*.bin` layout was rejected; only source-proven writer contracts were added.
 Scalability potential: Low tier still receives capped JSON and one live telemetry record. High/Ultra can add dedicated macro/mutation panels later without changing the parser contract.
 Hardware Impact: 0 us Unity frame impact. External parser cost grows only when those files exist and remains bounded by `MAX_DUMP_BYTES` and `MAX_DUMP_ENTRIES`; exact auxiliary-process cost is PENDING MEASUREMENT.
+
+## Decision 011 - H-Phi Report Parsing Recovery
+Problem: Reconstructing the missing dashboard directory introduced an H-Phi parser regression: the first HTTP check reported `2026.0` from the report date, and the first regex fix captured the formula multiplier `0.535` instead of the final assigned score.
+Solution: Replace broad document-wide regex parsing with line-based parsing that only considers lines containing `H-Phi`/`HPhi` and reads the numeric value after the final equals sign.
+Rejected Alternatives: Hardcoding `0.00062` was rejected because future reports may change. Keeping broad regex was rejected because it demonstrably accepted dates and intermediate formula operands.
+Scalability potential: All tiers get the same evidence-labeled scalar. High/Ultra visual density is separate from metric truth.
+Hardware Impact: 0 us Unity frame impact. One short text scan in the external dashboard process; exact auxiliary cost is PENDING MEASUREMENT.
+
+## Decision 012 - Ledger Recovery After Directory Loss
+Problem: During restart recovery, the untracked `Tools/TelemetryDashboard` directory disappeared from the filesystem while the dashboard task was still active. Reconstructed code passed, but the task ledger reverted to a stale pending verification line.
+Solution: Recreate all dashboard files, rerun smoke/HTTP checks, and explicitly update status/rationale/log so disk state matches verified tool state.
+Rejected Alternatives: Ignoring the stale ledger was rejected because project protocol treats disk files as long-term memory. Reverting C# or project settings was rejected because the task is Python/web only.
+Scalability potential: Low tier remains a bounded local dashboard. High/Ultra can extend panels later; recovery did not change Unity runtime.
+Hardware Impact: 0 us Unity frame impact. File recreation and status repair are external tooling operations only.

@@ -287,8 +287,8 @@ Budget reference lines:
 MX350 fillrate at 1080p:
 
 pixels_per_frame = 1920 x 1080 = 2,073,600
-fillrate_budget_overdraw = GPU_FILLRATE_GB / (bpp x res_in_Gpx)
-                         = 12e9 / (4 x 2.07e6) ~= 1,449 overdraw passes/frame
+fillrate_budget_overdraw = GPU_FILLRATE_GB / (bpp * res_in_Gpx)
+                         = 12e9 / (4 * 2.07e6) ~= 1,449 overdraw passes/frame
 // Realistic usable: ~8-12x accounting for bandwidth contention
 
 Flag scenes exceeding 8x average overdraw for optimization pass.

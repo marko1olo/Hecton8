@@ -191,3 +191,43 @@ Solution: Recorded that final re-extraction now returns `PROMPT_NOT_FOUND` for `
 Rejected Alternatives: Claim live batch prompt is still available; read another agent's active prompt as substitute.
 Scalability potential: Prevents cross-batch prompt contamination during parallel-agent handoff.
 Hardware Impact: No runtime impact.
+
+## Fourth-Pass Self-Review Decisions
+
+Problem: The earlier ASCII gate was invalid. The PowerShell regex was over-escaped, so it could report `NON_ASCII_COUNT=0` while a correct UTF-8 scan still saw non-ASCII or while exact stripped-line semantics remained damaged.
+Solution: Rebuilt the verification with UTF-8 file reads and a HEAD-vs-working-tree stripped-line detector. The corrected gate now reports `NON_ASCII_COUNT=0` and `SET_STRIP_REMAINING=0`.
+Rejected Alternatives: Keep the stale third-pass claim; count character class only and ignore semantic losses.
+Scalability potential: Mandate ingestion remains deterministic on terminal-only agents and low-context workers without stripping math meaning.
+Hardware Impact: Documentation-only. No runtime gain measured.
+
+Problem: The corrected detector found 77 lines where symbols had been stripped instead of transliterated, including `in` ranges, proportional relationships, checkbox markers, state arrows, `O2`, subtraction, and intersection/binding operators.
+Solution: Repaired those lines from committed originals using ASCII tokens: `in`, `proportional_to`, `[ ]`, `->`, `O2`, `-`, `AND`, and named totals where Greek sigma was ambiguous.
+Rejected Alternatives: Treat checklist/diagram loss as cosmetic; leave formulas with missing operators.
+Scalability potential: Downstream agents now read unambiguous ranges, state transitions, and formulas without relying on Unicode support.
+Hardware Impact: No runtime impact until downstream code follows the repaired mandates.
+
+Problem: A shared Git rebase changed `HEAD` while verification was running, causing earlier applied fixes to disappear from the diff and making the previous patch evidence invalid.
+Solution: Detected the reflog event (`2026-05-14 13:44:24 +0300`), re-applied the math repairs on the new base, and verified the six mandate files are dirty after the re-application.
+Rejected Alternatives: Assume patch success from tool output; revert or interfere with other agents' rebase.
+Scalability potential: Protects parallel-agent work by adapting to the new base instead of fighting shared repository state.
+Hardware Impact: No runtime impact.
+
+Problem: Plain `x` remained in executable-looking formulas after the ASCII cleanup and was ambiguous or wrong in several mandates.
+Solution: Repaired high-risk formulas in `CORE_Tools_Equipment_Interaction_Raycast_Heat.txt`, `CTRL_Device_Abstraction_Haptics.txt`, `STRM_Asset_Lifecycle_Addressables_Loading_Memory.txt`, `OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`, `DBG_Telemetry_Crash_Reporting_PostMortem.txt`, `REND_URP_Graphics_HotPath_Optimization_HLOD.txt`, and `LOGI_Energy_Networks_Power_Grid_Graph_Flow.txt`.
+Rejected Alternatives: Leave `x` as multiplication notation in formula blocks; it is too easy for code agents to misread or preserve literally.
+Scalability potential: Low tier gets correct load-shed and cost formulas; high tier keeps visual-overkill formulas without malformed math.
+Hardware Impact: Documentation-only. Runtime impact is 0 us until downstream implementation.
+
+## Fifth-Pass Self-Review Decisions
+
+Problem: Diff review found that the tool "attenuation" formula still used a positive exponent after multiplication repair: `exp(voxel_density * travel_distance)`. That increases beam power through denser material, contradicting the section name, the blocked-beam early exit, and the density clamp.
+Solution: Changed the formula to `power_final = power_init * exp(-voxel_density * travel_distance)` and the per-voxel step to `power_out = power_in * exp(-d_i * deltaDistance_i)`.
+Rejected Alternatives: Treat the issue as inherited mandate debt; leave the formula mathematically wrong because it was not introduced by the fourth-pass `x` cleanup.
+Scalability potential: Low tier avoids downstream systems using an exploding cutter/drill power curve; high tier can still buy richer visuals from correct attenuation truth.
+Hardware Impact: Documentation-only. Runtime impact is 0 us until downstream implementation.
+
+Problem: Regex gates can miss meaning-level mistakes after mechanical repair.
+Solution: Added manual dirty-diff review to the evidence chain and reran formula scans after the sign fix.
+Rejected Alternatives: Rely only on `NON_ASCII_COUNT`, `SET_STRIP_REMAINING`, and malformed-token scans.
+Scalability potential: Reduces risk of bad doctrine being converted into runtime code by later agents.
+Hardware Impact: No runtime impact.

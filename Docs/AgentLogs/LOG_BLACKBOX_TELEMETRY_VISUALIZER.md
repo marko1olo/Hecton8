@@ -141,4 +141,14 @@ Exact Microseconds saved:
 - Dashboard: unknown-file manual inspection avoided; exact auxiliary parser cost is PENDING MEASUREMENT.
 
 Verification:
-- Pending until smoke, compile, HTTP, and boundary scans are rerun after this patch.
+- `python -B Tools\TelemetryDashboard\smoke_test.py`: PASS, output `telemetry dashboard smoke ok`.
+- `py_compile` for `server.py` and `smoke_test.py`: PASS.
+- Magic constant audit: `BIOMASS=b'HECSMB8\0'`, `MACRO=b'HECOSWM\0'`, `MUT=b'HECOGUM\0'`, `HECTON8=b'HECTON8\0'`, `LIVE=b'TELM'`.
+- Safety scan: no `eval`, `exec`, `subprocess`, `shell=True`, `pickle`, `yaml.load`, `debugger`, `console.log`, or `innerHTML`; fixed DOM clearing uses `replaceChildren()`.
+- Rebuilt `Tools/TelemetryDashboard` after the directory disappeared during restart recovery.
+- H-Phi regression caught and fixed: direct parse of `Docs\Reports\HECTON_PHI_REPORT.md` returns `0.00062`; smoke test asserts this formula case.
+- Restarted dashboard on `http://127.0.0.1:8000`, Python PID `9804`.
+- `/api/summary`: `DASHBOARD OPERATIONAL`, `frameSeries=0`, `memoryMaps=0`, `files=0`, `HPHI=0.00062` with no active live dump/QA artifacts.
+- `/`: HTTP 200, 14918 bytes.
+- Removed `.codex_tmp`; `Tools/TelemetryDashboard/__pycache__` absent after verification.
+- C# boundary: no `Assets/_Project/Scripts` edits.

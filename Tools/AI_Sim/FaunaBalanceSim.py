@@ -419,6 +419,90 @@ def constants_payload(payload: Dict[str, object]) -> Dict[str, object]:
     }
 
 
+def load_selected_weights(path: Path) -> UtilityWeights:
+    data = json.loads(path.read_text(encoding="utf-8"))
+    constants = data["selectedConstants"]
+    return UtilityWeights(
+        aggression_scalar=float(constants["aggressionScalar"]),
+        fear_scalar=float(constants["fearScalar"]),
+        hunger_weight=float(constants["hungerWeight"]),
+        fear_weight=float(constants["fearWeight"]),
+        acoustic_tracking_weight=float(constants["acousticTrackingWeight"]),
+        retinal_tracking_weight=float(constants["retinalTrackingWeight"]),
+        sensory_noise=0.06,
+        fear_curve_power=float(constants["fearCurvePower"]),
+    )
+
+
+def validate_replicates(weights: UtilityWeights, frames: int, replicates: int, seed: int) -> Dict[str, object]:
+    profile = SensoryProfile(0.06, False, True)
+    rows = []
+    prey_values: List[float] = []
+    stalker_values: List[float] = []
+    alpha_values: List[float] = []
+    failures = 0
+    for index in range(max(1, replicates)):
+        result = run_simulation(frames, weights, profile, stable_seed(seed, 0x5245504C, index), max(5_000, frames // 20))
+        failed = (
+            result.extinct
+            or result.overpopulated
+            or result.final_prey < 8_000.0
+            or result.final_prey > 11_000.0
+            or result.final_stalker < 25.0
+            or result.final_stalker > 50.0
+            or result.final_alpha < 1.0
+            or result.final_alpha > 3.5
+        )
+        if failed:
+            failures += 1
+        prey_values.append(result.final_prey)
+        stalker_values.append(result.final_stalker)
+        alpha_values.append(result.final_alpha)
+        rows.append(result_to_dict(result, include_samples=False))
+
+    return {
+        "schemaVersion": 1,
+        "status": "REPLICATE_STABLE" if failures == 0 else "REPLICATE_DEGRADED",
+        "generatedBy": "FAUNA_BEHAVIOR_SIMULATOR",
+        "evidenceClass": "CLI_PYTHON_SIMULATION",
+        "runtimeUnityProof": "PENDING VERIFICATION",
+        "framesPerReplicate": frames,
+        "replicates": max(1, replicates),
+        "failureCount": failures,
+        "summary": {
+            "preyMin": round(min(prey_values), 3),
+            "preyMax": round(max(prey_values), 3),
+            "stalkerMin": round(min(stalker_values), 3),
+            "stalkerMax": round(max(stalker_values), 3),
+            "alphaLeviathanMin": round(min(alpha_values), 3),
+            "alphaLeviathanMax": round(max(alpha_values), 3),
+        },
+        "weights": {
+            "aggressionScalar": weights.aggression_scalar,
+            "fearScalar": weights.fear_scalar,
+            "hungerWeight": weights.hunger_weight,
+            "fearWeight": weights.fear_weight,
+            "acousticTrackingWeight": weights.acoustic_tracking_weight,
+            "retinalTrackingWeight": weights.retinal_tracking_weight,
+            "fearCurvePower": weights.fear_curve_power,
+        },
+        "results": rows,
+    }
+
+
+def update_constants_with_validation(constants_path: Path, validation_path: Path, validation: Dict[str, object]) -> None:
+    data = json.loads(constants_path.read_text(encoding="utf-8"))
+    data["replicateValidation"] = {
+        "status": validation["status"],
+        "framesPerReplicate": validation["framesPerReplicate"],
+        "replicates": validation["replicates"],
+        "failureCount": validation["failureCount"],
+        "summary": validation["summary"],
+        "detailedReport": str(validation_path).replace("\\", "/"),
+    }
+    write_json(constants_path, data)
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="HECTON-8 fauna behavior balance simulator.")
     parser.add_argument("--frames", type=int, default=DEFAULT_FRAMES)
@@ -427,11 +511,34 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output", default="Data/AI/Fauna_Global_Weights.json")
     parser.add_argument("--report", default="Tools/AI_Sim/FaunaBalanceSim_Report.json")
     parser.add_argument("--quick", action="store_true")
+    parser.add_argument("--validate-selected", action="store_true")
+    parser.add_argument("--validation-frames", type=int, default=200_000)
+    parser.add_argument("--replicates", type=int, default=5)
+    parser.add_argument("--validation-output", default="Tools/AI_Sim/FaunaBalanceSim_ReplicateValidation.json")
     return parser.parse_args()
 
 
 def main() -> int:
     args = parse_args()
+    if args.validate_selected:
+        start = time.perf_counter()
+        weights = load_selected_weights(Path(args.output))
+        validation = validate_replicates(weights, max(1, args.validation_frames), max(1, args.replicates), args.seed)
+        validation["elapsedSeconds"] = round(time.perf_counter() - start, 3)
+        validation_path = Path(args.validation_output)
+        write_json(validation_path, validation)
+        update_constants_with_validation(Path(args.output), validation_path, validation)
+        print("FAUNA REPLICATE VALIDATION FINISHED")
+        print(
+            f"status={validation['status']} "
+            f"replicates={validation['replicates']} "
+            f"frames={validation['framesPerReplicate']} "
+            f"failures={validation['failureCount']}"
+        )
+        print(f"summary={validation['summary']}")
+        print(f"wrote={args.validation_output}")
+        return 0
+
     frames = 20_000 if args.quick else max(1, args.frames)
     discovery_frames = 2_000 if args.quick else max(1, args.discovery_frames)
     start = time.perf_counter()
@@ -445,7 +552,7 @@ def main() -> int:
     write_json(Path(args.output), constants_payload(payload))
     write_json(Path(args.report), payload)
 
-    print("FAUNA BALANCE SIMULATION COMPLETE")
+    print("FAUNA BALANCE SIMULATION FINISHED")
     print(f"status={payload['status']} evidence={payload['evidenceClass']} unity={payload['runtimeUnityProof']}")
     print(
         "selected "
