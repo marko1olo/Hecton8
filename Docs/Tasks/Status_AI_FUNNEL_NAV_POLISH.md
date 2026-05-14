@@ -143,11 +143,20 @@ Task Count: 15
 - [x] Dominant-axis finite fallback | DOD: shared `DominantAxisOrDefault` helpers now reject non-finite input vectors and non-finite fallbacks instead of fabricating axis signs from NaN; rejected raw NaN comparisons; estimate 4 us.
 - [x] Navigation-support reciprocal cleanup | DOD: speed inverse-lerp, retention, flow-field sampling, structure-grid mapping, threat propagation, flow obstacle gating, thermal/depth bands, wake gates, and HLOD fade now use reciprocal/multiply or literal reciprocal constants; rejected hot scalar `/`; estimate 12 us.
 - [x] Structure-grid finite guards | DOD: artificial-structure cell range/index helpers reject non-finite grid centers, positions, AABBs, or bad cell sizes before hashing; rejected epsilon-masking corrupt transforms into plausible cells; estimate 5 us.
-- [x] Raw division audit | DOD: broad scan of edited world navigation files now reports only integer index decomposition divisions; rejected changing integral grid math to approximate reciprocal; estimate 8 us.
+- [x] Raw division audit | DOD: broad scan of `VegetationFlowFieldIntegrator.cs` and `VegetationNavGridSynchronizer.cs` now reports only integer index decomposition divisions; rejected changing integral grid math to approximate reciprocal; estimate 8 us.
+
+## Loop 20 - Bridge Sampler And Hash Payload Proof
+
+- [x] Threat-sampling chunk hash finite proof | DOD: bridge threat chunk hash estimation/stamping rejects non-finite grid centers, cell sizes, and bounds before reciprocal cell mapping; rejected hashing corrupt chunks into plausible threat buckets; estimate 6 us.
+- [x] Artificial-structure hash finite proof | DOD: structure hash estimation/stamping rejects non-finite grid centers, cell sizes, chunk bounds, and record bounds before reciprocal cell mapping; rejected epsilon-masking bad transforms; estimate 6 us.
+- [x] Abyssal flow-volume sampler proof | DOD: public flow sampling now requires finite water/depth extents, finite sampled output, and a 64-bit complete native-volume length before trilinear reads; rejected trusting initialization flags alone; estimate 5 us.
+- [x] Threat/echo sampler payload proof | DOD: surface threat and echo samplers now require 64-bit complete grid lengths and finite extents before indexed reads; non-finite interpolated threat resolves to zero influence instead of NaN; estimate 5 us.
+- [x] Targeted bridge scan | DOD: target-domain bridge ranges for flow volume, threat metadata, threat hashes, threat sampler, and echo samplers report no raw float division or forbidden hot-math matches; rejected claiming broad bridge purity because canopy/terrain code is outside this prompt; estimate 9 us.
 
 ## Verification
 
 - [x] Static scan | PASS: `StringPullPathJob`, `NativeAStarJob`, `TryResolveAbyssalNavNodeCandidate`, abyssal nav support/hash, nav graph ingress, and funnel telemetry conversion regions have no `math.normalize`, `math.length(`, `math.distance(`, `.normalized`, or raw `/` code matches after loop 19.
+- [x] Bridge targeted scan | PASS: flow-volume, threat metadata, threat chunk hash, artificial-structure hash, threat sampler, and echo sampler ranges in `HectonMapMagicVegetationBridge.cs` have no raw float-division or forbidden hot-math matches after loop 20.
 - [x] Diff hygiene | PASS: `git diff --check` passed for edited funnel/scheduler/status/log files; only LF-to-CRLF working-copy warnings were emitted.
 - [x] Static H-Phi audit | ATTEMPTED: `Tools/Architecture/HectonPhiAudit.ps1 -Json` timed out after 120 seconds under current repo load; no score claimed from this pass.
 - [x] Compile check | BLOCKED BY DEPENDENCY: bounded no-reference `dotnet build Hecton8.Core.csproj --no-restore /m:1 /nr:false /p:BuildProjectReferences=false` completed with 63 unrelated errors in `VRAMEnforcer`, `VoxelDeltaProcessor`, `SealedDoor`, `BinaryLayoutManifest`, and `HardwareTierDetector`; none were reported in `VegetationFlowFieldIntegrator.cs`, `VegetationNavGridSynchronizer.cs`, or `HectonMapMagicVegetationBridge.cs`.

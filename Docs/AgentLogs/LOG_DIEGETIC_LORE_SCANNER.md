@@ -305,10 +305,12 @@ Verification:
 What was wrong:
 - Scanner Atlas presentation had been moved behind a cached helper, but the localization helper used a non-existent `ILocalizationService` local type.
 - Operational summary/directive Atlas state needed verification that it now funnels through one cached ingress, not repeated presentation-path service locator calls.
+- `ScannerTool` already implemented `IAtlasSignalEventListener`, but the equipped scanner lanes did not register/unregister that listener, so the callback could remain inert.
 
 What was done:
 - Corrected scanner localization resolution to use the actual project `LocalizationManager` type while keeping one registry property read per localized string resolve.
 - Verified scanner Atlas reads now go through `ResolveCachedAtlasSignalCold()`; only the cold helper touches `GlobalRegistry.AtlasSignal`.
+- Registered equipped scanners with `AtlasSignalEvents` and unregister on scientific lane shutdown, using `AtlasSignalEvents.IsRegistered()` to avoid unregister-miss spam if listener capacity rejects the scanner.
 - Re-ran the raw batch prompt search and confirmed this agent tag is still absent from `CURRENT_BATCH.md`.
 
 Cinematic Cheats used:
@@ -317,6 +319,7 @@ Cinematic Cheats used:
 Exact Microseconds saved:
 - Verified exact microseconds: PENDING PROFILER.
 - Atlas service refs in scanner presentation: constrained to one cold helper ingress.
+- Atlas cache invalidation: event-driven while equipped, no extra per-frame polling.
 - Localization helper: one registry property read per call, with compile-risk type fixed.
 
 Verification:

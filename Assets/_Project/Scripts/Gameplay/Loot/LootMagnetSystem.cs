@@ -121,6 +121,9 @@ namespace Hecton8.Gameplay.Loot
             EnsureManagedSidecars();
             EnsureSignalEvents();
             EnsureTelemetry();
+            if (!_signalEvents.IsCreated || !_telemetry.IsCreated)
+                return;
+
             RefreshDependencies();
             if (EnsureVaultBuffers())
                 RefreshPickupVaultFromRegistry();
@@ -274,7 +277,8 @@ namespace Hecton8.Gameplay.Loot
                    _entityVelocities.IsCreated &&
                    _entityItemHashes.IsCreated &&
                    _entityQuantities.IsCreated &&
-                   _signalEvents.IsCreated;
+                   _signalEvents.IsCreated &&
+                   _telemetry.IsCreated;
         }
 
         private void EnsureManagedSidecars()
