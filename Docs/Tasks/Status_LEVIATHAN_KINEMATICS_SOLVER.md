@@ -266,3 +266,18 @@ Batch source: Docs/Tasks/CURRENT_BATCH.md
 - `rg` confirms no `NativeMemoryOwner`, `_faunaBrain`, old four-argument `FaunaKinematicsRuntime.SetStrikeIntent`, or old 1 m segment upload fallback remains in the IK runtime/direct call site scope.
 - `git diff --check` and `git diff --cached --check` on touched code/docs exit 0; output is only LF-to-CRLF warnings on touched runtime/docs files.
 - No `dotnet` rebuild, compile, or response-file probe was run.
+
+### Loop 25: Terrain Bounds And Low-Tier First Upload Recheck
+
+- Set the pre-first-tick active Leviathan segment count to the low-tier eight-segment contract instead of the max 20-segment path.
+- Added reset-time active segment resolution so enable/rebind uploads respect the current scalability tier before the first solver tick.
+- Added shared segment-length constants for CPU seed, Burst solve, shader upload, and shader clear state.
+- Added runtime finite/positive MapMagic terrain metadata filtering before passing height buffers into the Burst job.
+- Updated the Burst height sampler to reject non-finite/out-of-tile XZ samples instead of clamping them to the terrain edge.
+- DOD: Unknown/Low/MX350 cannot publish a 20-bone first upload, malformed terrain payload metadata fails closed before native sampling, and terrain contact no longer uses edge-clamped heights for segments outside the owning tile.
+- Alternative Rejected: keeping edge clamp as a seam hide because it can push the tail against an unrelated border height; relying only on Tick-time quality resolution because GPU consumers can query after enable/rebind before Tick.
+- Estimate: 0 us hot-path meaningful savings; prevents false 20-matrix low-tier upload and wrong edge-height push. In-bounds height fallback adds only scalar bounds checks already aligned with existing MapMagic consumers.
+- Static grep over IK runtime/job/shader scope still found no `math.sqrt`, `math.normalize`, managed array creation, `foreach`, `string.Format`, `.ToString()`, `Debug.Log`, Unity Physics casts, `SkinnedMeshRenderer`, `renderer.material`, `Camera.main`, `GlobalRegistry.Get`, `GameObject.Find`, or `FindObject`.
+- `rg` confirms no old segment-length clear fallback, old raw terrain-edge clamp pattern, or old `2.5f, 0.05f` segment fallback pair remains in the IK runtime/job scope.
+- `git diff --check` and `git diff --cached --check` on touched code/docs exit 0.
+- No `dotnet` rebuild, compile, Unity import, or response-file probe was run.

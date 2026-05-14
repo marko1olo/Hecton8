@@ -237,3 +237,15 @@ Cinematic Cheats used: Static offline L-system/SDF prefabs, MeshRenderer-owned G
 Exact Microseconds saved: Runtime remains 0 us/frame and 0 bytes procedural allocation. This prevents future runtime fix-up scripts, wrong-layer collision/filtering work, invisible inactive payloads, and disabled LOD switching from entering the asset library. Exact runtime microseconds were not profiled.
 
 Verification: No dotnet rebuild and no Unity import was run. `PrefabGameObjectStateYamlScan Count=200 Bad=0`; `LodGroupEnabledYamlScan Count=200 Bad=0`; `git diff --check` passed for the baker with only the repo CRLF warning; source brace balance stayed `Delta=0`, `NonAscii=0`, and forbidden source scan stayed clean.
+
+## 2026-05-15 LODGroup Bounds And Scratch Allocation Hygiene
+
+What was wrong: The baker still had generic scratch-list allocation comments for prefab/component/material validation, and `LODGroup` bounds data was trusted implicitly even though zero-size or non-finite bounds would break LOD switching without changing renderer or material counts.
+
+What was done: Converted scratch-list comments to explicit capacity/reason/owner cold-allocation annotations, widened the small scratch capacities for corrupted prefab inspection, and added finite positive `LODGroup.size` plus finite `localReferencePoint` validation.
+
+Cinematic Cheats used: Static authored LOD prefabs, dithered crossfade, shader masks, shared atlas/material, no flora colliders, and rock-only LOD2 convex proxies remain unchanged.
+
+Exact Microseconds saved: Runtime remains 0 us/frame and 0 bytes procedural allocation. This prevents invalid LOD bounds or ambiguous editor scratch ownership from entering the Shallows asset library; exact runtime microseconds were not profiled.
+
+Verification: No dotnet rebuild and no Unity import was run. `LodGroupBoundsYamlScan Count=200 Bad=0 MinSize=1.665000 MaxSize=18.835001`; `git diff --check` passed for the baker with only the repo CRLF warning; source brace balance stayed `Delta=0`, `NonAscii=0`, and forbidden source scan stayed clean.

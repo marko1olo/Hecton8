@@ -2879,7 +2879,7 @@ namespace Hecton8.World
             cellSize = threatGridCellSize;
             return _threatGridInitialized &&
                    threatLevels.IsCreated &&
-                   HasCompleteSquareGridLength(gridResolution, threatLevels.Length) &&
+                   HasCompleteEcosystemSquareGridState(threatLevels.Length) &&
                    cellSize > 0f &&
                    math.isfinite(cellSize) &&
                    IsFinite(gridCenter);
@@ -2894,13 +2894,13 @@ namespace Hecton8.World
             out Vector3 gridCenter,
             out float cellSize)
         {
-            threatLevels = _nativeMemory.EcosystemThreatGridCompressedCurrentNative;
+            threatLevels = GetThreatGridByteView(_nativeMemory.EcosystemThreatGridCompressedCurrentNative);
             gridResolution = _ecosystemThreatGridResolution;
             gridCenter = _ecosystemThreatGridCenter;
             cellSize = threatGridCellSize;
             return _threatGridInitialized &&
                    threatLevels.IsCreated &&
-                   HasCompleteSquareGridLength(gridResolution, threatLevels.Length) &&
+                   HasCompleteEcosystemSquareGridState(threatLevels.Length) &&
                    cellSize > 0f &&
                    math.isfinite(cellSize) &&
                    IsFinite(gridCenter);
@@ -2922,7 +2922,8 @@ namespace Hecton8.World
             voxelCellSize = new Vector3(threatGridCellSize, thermalGridVerticalCellSize, threatGridCellSize);
             return _threatGridInitialized &&
                    threatVoxels.IsCreated &&
-                   HasCompleteVoxelGridLength(gridDimensions, threatVoxels.Length) &&
+                   TryResolveVoxelGridCellCount(gridDimensions, threatVoxels.Length, out int threatVoxelCellCount) &&
+                   _ecosystemThreatVoxelCellCount >= threatVoxelCellCount &&
                    voxelCellSize.x > 0f &&
                    voxelCellSize.y > 0f &&
                    voxelCellSize.z > 0f &&
@@ -2939,13 +2940,13 @@ namespace Hecton8.World
             out Vector3 gridCenter,
             out float cellSize)
         {
-            echoFlags = _nativeMemory.EcosystemThreatEchoCurrentNative;
+            echoFlags = GetThreatGridByteView(_nativeMemory.EcosystemThreatEchoCurrentNative);
             gridResolution = _ecosystemThreatGridResolution;
             gridCenter = _ecosystemThreatGridCenter;
             cellSize = threatGridCellSize;
             return _threatGridInitialized &&
                    echoFlags.IsCreated &&
-                   HasCompleteSquareGridLength(gridResolution, echoFlags.Length) &&
+                   HasCompleteEcosystemSquareGridState(echoFlags.Length) &&
                    cellSize > 0f &&
                    math.isfinite(cellSize) &&
                    IsFinite(gridCenter);

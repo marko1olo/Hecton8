@@ -1671,6 +1671,7 @@ namespace Hecton8.World
         private bool _viewPoseCacheValid;
         private Vector3 _viewPoseCachePosition;
         private Vector3 _viewPoseCacheForward;
+        private bool _playerRuntimeContextProbeAttempted;
         private int _playerRuntimeSnapshotCacheFrame = -1;
         private bool _playerRuntimeSnapshotCacheValid;
         private PlayerMovementRuntimeState _playerRuntimeSnapshotMovement;
@@ -2132,7 +2133,7 @@ namespace Hecton8.World
                 _playerHealth ??= runtimeContext.PlayerHealth;
                 _playerFlashlight ??= runtimeContext.Flashlight;
             }
-            else
+            else if (!_playerRuntimeContextProbeAttempted)
             {
                 IPlayerRuntimeContext playerContext = Hecton8.Core.GlobalRegistry.Player;
                 if (playerContext != null && playerContext.IsInitialized)
@@ -2144,6 +2145,8 @@ namespace Hecton8.World
                     _playerHealth ??= playerContext.PlayerHealth;
                     _playerFlashlight ??= playerContext.Flashlight;
                 }
+
+                _playerRuntimeContextProbeAttempted = true;
             }
 
             if (playerTransform == null && !_playerTransformProbeAttempted)
@@ -2181,6 +2184,7 @@ namespace Hecton8.World
             _playerTransformProbeAttempted = false;
             _viewCameraProbeAttempted = false;
             _runtimeServiceProbeAttempted = false;
+            _playerRuntimeContextProbeAttempted = false;
         }
 
         private void SanitizeSettings()

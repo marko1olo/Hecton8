@@ -223,3 +223,11 @@ Status: PENDING VERIFICATION
 - Verification avoided dotnet rebuilds and Unity import. `PrefabGameObjectStateYamlScan Count=200 Bad=0`; `LodGroupEnabledYamlScan Count=200 Bad=0`; `git diff --check` passed for the baker with only the repo CRLF warning; source brace balance stayed `Delta=0` with `NonAscii=0`; forbidden source scan found no Shallows `Shader.Find`, `mesh.colors`, `renderer.sharedMaterial`, `.material`, or hot-path update methods.
 - Rejected alternative: runtime activation/layer/tag repair was rejected because generated Shallows prefabs must stay static data and because current assets already satisfy the stricter editor contract.
 - H-Phi impact remains domain-local evidence only: the prefab state surface is now fail-closed without adding runtime scripts, Update cadence, registry polling, material clones, or cross-domain ownership.
+
+### Loop 24 - LODGroup Bounds And Scratch Allocation Hygiene
+
+- Found two remaining editor-pipeline hygiene risks in the current baker source: scratch-list cold allocations were not all documented in the project canonical shape, and `LODGroup` bounds state was still implicitly trusted after enabled/crossfade/transition checks.
+- Patched `ShallowsBioForgeBatchBaker` to document every reusable editor scratch list with explicit capacity/reason/owner, widened small scratch capacities for corrupted prefab inspection, and added finite positive `LODGroup.size` plus finite `localReferencePoint` validation.
+- Verification avoided dotnet rebuilds and Unity import. `LodGroupBoundsYamlScan Count=200 Bad=0 MinSize=1.665000 MaxSize=18.835001`; `git diff --check` passed for the baker with only the repo CRLF warning; source brace balance stayed `Delta=0` with `NonAscii=0`; forbidden source scan remained clean.
+- Rejected alternative: runtime LODGroup repair or re-baking was rejected because this is static prefab contract drift prevention and the existing assets already satisfy the stricter check.
+- H-Phi impact remains domain-local evidence only: validation coverage and allocation documentation improved without adding runtime ownership, runtime allocations, extra components, or cross-domain dependencies.

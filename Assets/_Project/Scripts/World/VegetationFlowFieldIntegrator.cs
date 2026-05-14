@@ -28,7 +28,7 @@ namespace Hecton8.World
             cellSize = threatGridCellSize;
             return _flowFieldInitialized &&
                    flowVectors.IsCreated &&
-                   HasCompleteSquareGridLength(gridResolution, flowVectors.Length) &&
+                   HasCompleteEcosystemSquareGridState(flowVectors.Length) &&
                    cellSize > 0f &&
                    math.isfinite(cellSize) &&
                    IsFinite(gridCenter);
@@ -818,12 +818,7 @@ namespace Hecton8.World
         {
             if (!_threatGridInitialized ||
                 !_nativeMemory.EcosystemThreatGridCurrentNative.IsCreated ||
-                _ecosystemThreatGridCellCount <= 0 ||
-                !TryResolveSquareGridCellCount(
-                    _ecosystemThreatGridResolution,
-                    _nativeMemory.EcosystemThreatGridCurrentNative.Length,
-                    out int threatGridCellCount) ||
-                _ecosystemThreatGridCellCount < threatGridCellCount)
+                !HasCompleteEcosystemSquareGridState(_nativeMemory.EcosystemThreatGridCurrentNative.Length))
             {
                 return default;
             }
@@ -835,12 +830,7 @@ namespace Hecton8.World
         {
             if (!_threatGridInitialized ||
                 !threatGrid.IsCreated ||
-                _ecosystemThreatGridCellCount <= 0 ||
-                !TryResolveSquareGridCellCount(
-                    _ecosystemThreatGridResolution,
-                    threatGrid.Length,
-                    out int threatGridCellCount) ||
-                _ecosystemThreatGridCellCount < threatGridCellCount)
+                !HasCompleteEcosystemSquareGridState(threatGrid.Length))
             {
                 return default;
             }
@@ -848,9 +838,14 @@ namespace Hecton8.World
             return threatGrid;
         }
 
-        private static bool HasCompleteSquareGridLength(int resolution, int payloadLength)
+        private bool HasCompleteEcosystemSquareGridState(int payloadLength)
         {
-            return TryResolveSquareGridCellCount(resolution, payloadLength, out _);
+            return _ecosystemThreatGridCellCount > 0 &&
+                   TryResolveSquareGridCellCount(
+                       _ecosystemThreatGridResolution,
+                       payloadLength,
+                       out int threatGridCellCount) &&
+                   _ecosystemThreatGridCellCount >= threatGridCellCount;
         }
 
         private static bool TryResolveSquareGridCellCount(int resolution, int payloadLength, out int cellCount)
@@ -869,8 +864,9 @@ namespace Hecton8.World
             return true;
         }
 
-        private static bool HasCompleteVoxelGridLength(Vector3Int dimensions, int payloadLength)
+        private static bool TryResolveVoxelGridCellCount(Vector3Int dimensions, int payloadLength, out int cellCount)
         {
+            cellCount = 0;
             if (dimensions.x <= 0 ||
                 dimensions.y <= 0 ||
                 dimensions.z <= 0)
@@ -879,9 +875,15 @@ namespace Hecton8.World
             }
 
             long expectedLength = (long)dimensions.x * dimensions.y * dimensions.z;
-            return expectedLength > 0L &&
-                   expectedLength <= int.MaxValue &&
-                   payloadLength >= expectedLength;
+            if (expectedLength <= 0L ||
+                expectedLength > int.MaxValue ||
+                payloadLength < expectedLength)
+            {
+                return false;
+            }
+
+            cellCount = (int)expectedLength;
+            return true;
         }
 
         private static float2 SampleFlowFieldAtPosition(

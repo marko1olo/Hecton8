@@ -519,3 +519,35 @@ Verification:
 - Static grep over IK runtime/job/shader scope found no `math.sqrt`, `math.normalize`, managed array creation, `foreach`, `string.Format`, `.ToString()`, `Debug.Log`, Unity Physics casts, `SkinnedMeshRenderer`, `renderer.material`, `Camera.main`, `GlobalRegistry.Get`, `GameObject.Find`, or `FindObject`.
 - `git diff --check` and `git diff --cached --check` on touched code/docs exit 0; output is only LF-to-CRLF warnings on touched runtime/docs files.
 - Runtime status remains pending until Unity Editor import, shader compile, play-mode behavior, GC, and profiler evidence exist.
+
+## 2026-05-15T03:36+04:00
+
+Status: PENDING VERIFICATION. Continued terrain/LOD boundary audit. No `dotnet` rebuild/compile, Unity import, or response-file probe was run.
+
+What was wrong:
+- `_activeSegmentCount` defaulted to 20 until the first solver Tick, so enable/rebind could publish a max-count buffer before low-tier policy resolved.
+- MapMagic height fallback accepted finite-length buffers before checking terrain origin/size metadata on the runtime side.
+- The Burst height sampler clamped out-of-tile XZ positions to terrain edges, which can push tail segments with unrelated border heights.
+- Segment-length fallback was still expressed as repeated literals across runtime/job boundaries.
+
+What was done:
+- Set the cold active segment default to `LowTierSegments` and resolved active segment count during reset.
+- Added shared `DefaultSegmentLength`, `MinSegmentLength`, and `MinTerrainSize` constants in the IK contract.
+- Added runtime finite/positive terrain metadata filtering before passing MapMagic payloads into the job.
+- Changed the Burst height sampler to reject non-finite/out-of-tile XZ samples instead of edge-clamping them.
+
+Cinematic cheats used:
+- Existing 2D MapMagic seabed fallback remains a cheap terrain-contact fake when 3D SDF is unavailable.
+- Low tier continues to spend only eight matrices and disables SDF contact.
+
+Exact microseconds saved:
+- No measured frame-time saving claimed.
+- Prevented one false first-upload 20-matrix low-tier exposure.
+- Prevented wrong edge-height terrain pushes for out-of-tile tail samples.
+- Added scalar bounds checks estimated below 0.05 us on terrain-contact frames; profiler proof absent.
+
+Verification:
+- Static grep over IK runtime/job/shader scope found no `math.sqrt`, `math.normalize`, managed array creation, `foreach`, `string.Format`, `.ToString()`, `Debug.Log`, Unity Physics casts, `SkinnedMeshRenderer`, `renderer.material`, `Camera.main`, `GlobalRegistry.Get`, `GameObject.Find`, or `FindObject`.
+- `rg` confirms no old segment-length clear fallback, old raw terrain-edge clamp pattern, or old `2.5f, 0.05f` segment fallback pair remains in the IK runtime/job scope.
+- `git diff --check` and `git diff --cached --check` on touched code/docs exit 0.
+- Runtime status remains pending until Unity Editor import, shader compile, play-mode behavior, GC, and profiler evidence exist.

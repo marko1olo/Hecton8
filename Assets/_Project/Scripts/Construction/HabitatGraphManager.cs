@@ -497,7 +497,13 @@ namespace Hecton8.Construction
 
         internal void ApplyHydrodynamicStress(float deltaTime)
         {
-            if (!math.isfinite(deltaTime) || deltaTime <= 0f || _moduleBuffer.Count <= 0)
+            if (!math.isfinite(deltaTime))
+            {
+                RecordNonFinitePressureIngress();
+                return;
+            }
+
+            if (deltaTime <= 0f || _moduleBuffer.Count <= 0)
                 return;
 
             HectonQualityTier scalabilityTier = GlobalRegistry.ScalabilityTier;
@@ -527,13 +533,21 @@ namespace Hecton8.Construction
         internal void RegisterSeismicVibration(Vector3 epicenter, float radiusMeters, float impulseMagnitude)
         {
             if (!float.IsFinite(impulseMagnitude) ||
-                impulseMagnitude <= 0f ||
                 !float.IsFinite(epicenter.x) ||
                 !float.IsFinite(epicenter.y) ||
-                !float.IsFinite(epicenter.z) ||
-                _moduleBuffer.Count <= 0)
+                !float.IsFinite(epicenter.z))
             {
+                RecordNonFinitePressureIngress();
                 return;
+            }
+
+            if (impulseMagnitude <= 0f || _moduleBuffer.Count <= 0)
+                return;
+
+            if (!float.IsFinite(radiusMeters))
+            {
+                RecordNonFinitePressureIngress();
+                radiusMeters = 1f;
             }
 
             float safeRadiusMeters = float.IsFinite(radiusMeters) && radiusMeters > 0f ? radiusMeters : 1f;
@@ -941,7 +955,12 @@ namespace Hecton8.Construction
                     modulePosition = hasGraphRecord ? module.Position : ResolveActiveModulePosition(baseModule);
                     depthMeters = ResolveActiveModuleDepthMeters(baseModule, modulePosition);
                     float floodStress01 = ResolveActiveModuleFloodStress01(baseModule, graphNodeIndex, hasGraphRecord);
-                    stress01 = ResolveModuleStress01(nodeIndex, baseModule, depthMeters, floodStress01, safeDeltaTime);
+                    stress01 = ResolveModuleStress01(nodeIndex, baseModule, depthMeters, floodStress01, safeDeltaTime, out bool invalidStressInput);
+                    if (invalidStressInput)
+                    {
+                        WriteFloodBlackBoxSample(FloodBlackBoxModuleStressInvalidFlag);
+                        DumpModuleStressBlackBoxOnce(FloodBlackBoxModuleStressInvalidFlag);
+                    }
                 }
 
                 bool finiteStress = math.isfinite(stress01);
@@ -1137,28 +1156,64 @@ namespace Hecton8.Construction
             return baseModule != null && baseModule.IsFlooded ? 1f : 0f;
         }
 
-        private float ResolveModuleStress01(int nodeIndex, BaseModule baseModule, float depthMeters, float floodStress01, float deltaTime)
+        private float ResolveModuleStress01(
+            int nodeIndex,
+            BaseModule baseModule,
+            float depthMeters,
+            float floodStress01,
+            float deltaTime,
+            out bool invalidState)
         {
+            invalidState = false;
+            if (!math.isfinite(depthMeters))
+            {
+                invalidState = true;
+                depthMeters = 0f;
+            }
+
             float depth01 = math.saturate(depthMeters * AnalyticalFullStressDepthInv);
             float ambientPressure01 = math.saturate(ResolveAnalyticalDepthScale(depthMeters) * depth01);
-            float integrity01 = baseModule.MaxIntegrity > 0.01f
-                ? math.saturate(baseModule.CurrentIntegrity * math.rcp(baseModule.MaxIntegrity))
-                : 1f;
-            float impactDamage01 = math.saturate(1f - integrity01);
-            impactDamage01 = math.max(impactDamage01, math.saturate(baseModule.JointShearStress01));
-            impactDamage01 = math.max(impactDamage01, math.saturate(baseModule.PressureCompressionAlpha01));
+            float maxIntegrity = baseModule.MaxIntegrity;
+            float currentIntegrity = baseModule.CurrentIntegrity;
+            float integrity01 = 1f;
+            if (math.isfinite(maxIntegrity) && maxIntegrity > 0.01f && math.isfinite(currentIntegrity))
+                integrity01 = math.saturate(currentIntegrity * math.rcp(maxIntegrity));
+            else if (!math.isfinite(maxIntegrity) || !math.isfinite(currentIntegrity))
+                invalidState = true;
 
-            impactDamage01 = math.max(impactDamage01, math.saturate(floodStress01) * ModuleStressFloodWeight);
+            float impactDamage01 = math.saturate(1f - integrity01);
+            impactDamage01 = math.max(impactDamage01, SaturateFinite01(baseModule.JointShearStress01, ref invalidState));
+            impactDamage01 = math.max(impactDamage01, SaturateFinite01(baseModule.PressureCompressionAlpha01, ref invalidState));
+
+            impactDamage01 = math.max(impactDamage01, SaturateFinite01(floodStress01, ref invalidState) * ModuleStressFloodWeight);
 
             float spike01 = 0f;
-            if (_moduleImpactStressSpikes.IsCreated && nodeIndex < _moduleImpactStressSpikes.Length)
+            if (_moduleImpactStressSpikes.IsCreated && (uint)nodeIndex < (uint)_moduleImpactStressSpikes.Length)
             {
-                spike01 = math.saturate(_moduleImpactStressSpikes[nodeIndex]);
-                _moduleImpactStressSpikes[nodeIndex] = math.max(0f, spike01 - ModuleStressImpactSpikeDecayPerSecond * deltaTime);
+                float storedSpike01 = _moduleImpactStressSpikes[nodeIndex];
+                if (math.isfinite(storedSpike01))
+                {
+                    spike01 = math.saturate(storedSpike01);
+                    _moduleImpactStressSpikes[nodeIndex] = math.max(0f, spike01 - ModuleStressImpactSpikeDecayPerSecond * deltaTime);
+                }
+                else
+                {
+                    invalidState = true;
+                    _moduleImpactStressSpikes[nodeIndex] = 0f;
+                }
             }
 
             float stress01 = (ambientPressure01 * ModuleStressDepthWeight) + (impactDamage01 * ModuleStressDamageWeight) + spike01;
             return math.saturate(stress01);
+        }
+
+        private static float SaturateFinite01(float value, ref bool invalidState)
+        {
+            if (math.isfinite(value))
+                return math.saturate(value);
+
+            invalidState = true;
+            return 0f;
         }
 
         private void ConsumeModuleStressSignals(int moduleCount)

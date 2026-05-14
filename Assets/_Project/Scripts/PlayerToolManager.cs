@@ -134,6 +134,9 @@ namespace Hecton8.Gameplay
         private BaseModule _currentInteriorModule;
         private Rigidbody _currentInteriorCarrierBody;
         private bool _suppressInventoryChangedHandling;
+        private bool _suppressToolLoadoutSignal;
+        private uint _toolLoadoutSignalSourceId;
+        private uint _toolLoadoutSignalSequence;
         private PlayerRuntimeContext _runtimeContext;
         private PlayerTool _externallyDockedTool;
         private PlayerTool _batterySiphonTool;
@@ -654,6 +657,95 @@ namespace Hecton8.Gameplay
             return toolPrefabs[slotIndex];
         }
 
+        private void PublishToolLoadoutChanged(byte reason)
+        {
+            if (_suppressToolLoadoutSignal || !Application.isPlaying)
+                return;
+
+            uint sourceId = ResolveToolLoadoutSignalSourceId();
+            if (sourceId == 0u)
+                return;
+
+            uint nextSequence = unchecked(_toolLoadoutSignalSequence + 1u);
+            if (nextSequence == 0u)
+                nextSequence = 1u;
+
+            _toolLoadoutSignalSequence = nextSequence;
+            ToolLoadoutChangedSignal signal = new ToolLoadoutChangedSignal
+            {
+                SourceId = sourceId,
+                Sequence = nextSequence,
+                Frame = unchecked((uint)Time.frameCount),
+                ActiveToolHash = ResolveActiveToolHash(),
+                AssignedSlotMask = ComputeAssignedSlotMask(),
+                ActiveSlot = ResolveActiveSlotSignalValue(),
+                SlotCount = ResolveSlotCountSignalValue(),
+                Reason = reason,
+                Flags = ResolveToolLoadoutFlags()
+            };
+
+            GlobalSignals.Publish(in signal);
+        }
+
+        private uint ResolveToolLoadoutSignalSourceId()
+        {
+            if (_toolLoadoutSignalSourceId == 0u && gameObject != null)
+                _toolLoadoutSignalSourceId = GlobalSignals.FoldEntityIdToSourceId(EntityId.ToULong(gameObject.GetEntityId()));
+
+            return _toolLoadoutSignalSourceId;
+        }
+
+        private uint ResolveActiveToolHash()
+        {
+            if (_currentTool == null || _currentTool.ToolData == null)
+                return 0u;
+
+            string persistentId = _currentTool.ToolData.PersistentId;
+            return string.IsNullOrEmpty(persistentId)
+                ? 0u
+                : unchecked((uint)LocHash.Compute(persistentId));
+        }
+
+        private uint ComputeAssignedSlotMask()
+        {
+            if (toolPrefabs == null)
+                return 0u;
+
+            uint mask = 0u;
+            int count = Mathf.Min(toolPrefabs.Length, 32);
+            for (int i = 0; i < count; i++)
+            {
+                if (toolPrefabs[i] != null)
+                    mask |= 1u << i;
+            }
+
+            return mask;
+        }
+
+        private ushort ResolveActiveSlotSignalValue()
+        {
+            return _currentSlotIndex >= 0 && _currentSlotIndex <= ushort.MaxValue
+                ? (ushort)_currentSlotIndex
+                : ToolLoadoutChangedSignal.NoActiveSlot;
+        }
+
+        private ushort ResolveSlotCountSignalValue()
+        {
+            int slotCount = SlotCount;
+            return slotCount > ushort.MaxValue ? ushort.MaxValue : (ushort)slotCount;
+        }
+
+        private byte ResolveToolLoadoutFlags()
+        {
+            byte flags = 0;
+            if (_currentTool != null)
+                flags |= ToolLoadoutChangedSignal.FlagHasActiveTool;
+            if (_swapState != SwapState.Idle)
+                flags |= ToolLoadoutChangedSignal.FlagSwapInProgress;
+
+            return flags;
+        }
+
         public bool SetAssignedToolPrefab(int slotIndex, GameObject prefab, bool holsterIfCurrentInvalid = true)
         {
             if (toolPrefabs == null || slotIndex < 0 || slotIndex >= toolPrefabs.Length)
@@ -666,6 +758,7 @@ namespace Hecton8.Gameplay
             EnsurePoolWarmup(prefab, toolPoolWarmupCount);
             RefreshSlotNameCacheSlot(slotIndex);
             ToolAssignmentsChanged?.Invoke();
+            PublishToolLoadoutChanged(ToolLoadoutChangedSignal.ReasonAssignmentsChanged);
 
             if (!holsterIfCurrentInvalid || slotIndex != _currentSlotIndex)
                 return true;
@@ -814,11 +907,21 @@ namespace Hecton8.Gameplay
                 Holster();
 
             int count = Mathf.Min(toolPrefabs.Length, preset.slotPrefabs != null ? preset.slotPrefabs.Length : 0);
-            for (int i = 0; i < count; i++)
-                SetAssignedToolPrefab(i, preset.slotPrefabs[i], holsterIfCurrentInvalid: false);
+            bool previousSignalSuppression = _suppressToolLoadoutSignal;
+            _suppressToolLoadoutSignal = true;
+            try
+            {
+                for (int i = 0; i < count; i++)
+                    SetAssignedToolPrefab(i, preset.slotPrefabs[i], holsterIfCurrentInvalid: false);
+            }
+            finally
+            {
+                _suppressToolLoadoutSignal = previousSignalSuppression;
+            }
 
             RefreshSlotNameCache();
             ToolAssignmentsChanged?.Invoke();
+            PublishToolLoadoutChanged(ToolLoadoutChangedSignal.ReasonAssignmentsChanged);
             return true;
         }
 
@@ -1184,6 +1287,7 @@ namespace Hecton8.Gameplay
             _pendingSlotIndex = -1;
             LogToolDebug("PerformSwap assigned current slot");
             ActiveSlotChanged?.Invoke(_currentSlotIndex);
+            PublishToolLoadoutChanged(ToolLoadoutChangedSignal.ReasonActiveSlotChanged);
 
             // Esli spavnili novyy — zapuskaem animatsiyu podema
             if (_currentTool != null)
@@ -1370,6 +1474,7 @@ namespace Hecton8.Gameplay
             _currentSlotIndex = -1;
             LogToolDebug("DespawnCurrentTool complete currentSlot=-1");
             ActiveSlotChanged?.Invoke(_currentSlotIndex);
+            PublishToolLoadoutChanged(ToolLoadoutChangedSignal.ReasonActiveSlotChanged);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -1774,6 +1879,7 @@ namespace Hecton8.Gameplay
                 handAnchor.localPosition = _anchorRestPosition;
 
             ActiveSlotChanged?.Invoke(_currentSlotIndex);
+            PublishToolLoadoutChanged(ToolLoadoutChangedSignal.ReasonActiveSlotChanged);
         }
 
         private void HandleInventoryChanged()

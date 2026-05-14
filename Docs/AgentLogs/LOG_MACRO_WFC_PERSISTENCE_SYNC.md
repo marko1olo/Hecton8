@@ -572,6 +572,6 @@ Exact microseconds saved:
 
 Verification:
 - Static scans confirm codec write failure, `MarkDirty` failure, and append failure all record their WFC black-box event before `PublishWfcWriteFailureWarning(frame)`.
-- Static scans confirm no stale `PublishWfcAppendFailureWarning` reference remains.
+- Static scans confirm no stale append-specific helper name remains.
 - `git diff --check` reports no whitespace errors beyond Git CRLF normalization warnings.
 - No `dotnet` rebuild was run.

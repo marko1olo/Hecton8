@@ -209,6 +209,8 @@ namespace Hecton8.Atmosphere
             if (!IsInitialized)
                 CacheColdDependencies();
             EnsureNativeState();
+            SeedStandardAtmosphereIfNeeded();
+            TryRegisterRegistry();
             bool canWake = !_stepRunning;
             DrainBaseTransitionSignals(canWake);
             if (canWake)
@@ -265,6 +267,7 @@ namespace Hecton8.Atmosphere
                 CacheColdDependencies();
             EnsureNativeState();
             SeedStandardAtmosphereIfNeeded();
+            TryRegisterRegistry();
             DrainBaseTransitionSignals(allowWake: true);
             WakePlayerInsideSleepingBases(ResolveUnscaledTimeSeconds());
             ResolveBaseHibernationStates();

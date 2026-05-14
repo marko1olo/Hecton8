@@ -347,6 +347,7 @@ namespace Hecton8.UI
         private Renderer _cursorRenderer;
         private Collider _cursorCollider;
         private Camera _resolvedInteractionCamera;
+        private Transform _resolvedInteractionCameraTransform;
         private GraphicRaycaster _cachedGraphicRaycaster;
         private Canvas _cachedGraphicRaycasterCanvas;
         private IPanelInteractable _panelInteractable;
@@ -375,6 +376,7 @@ namespace Hecton8.UI
         private bool _renderPipelineHookRegistered;
         private bool _phosphorMaterialResolveAttempted;
         private bool _phosphorMaterialResolveFailed;
+        private bool _resolvedInteractionCameraFromExplicit;
         private bool _wasPressedLastFrame;
         private bool _fingerPressedLastFrame;
         private bool _cursorVisible;
@@ -440,6 +442,7 @@ namespace Hecton8.UI
             UnregisterRenderPipelineHook();
             UnregisterProxyLight();
             ClearHoverState();
+            CacheInteractionCamera(null, fromExplicit: false);
             _cursorStateInitialized = false;
             _canvasSettingsApplied = false;
             if (panelCamera != null && panelCamera.enabled)
@@ -1035,9 +1038,12 @@ namespace Hecton8.UI
             Camera resolvedCamera = ResolveInteractionCamera();
             if (resolvedCamera == null)
                 return;
+            Transform cameraTransform = _resolvedInteractionCameraTransform;
+            if (cameraTransform == null)
+                return;
 
             Vector3 panelOrigin = (Vector3)_panelData.LocalToWorld.c3.xyz;
-            Vector3 cameraPosition = resolvedCamera.transform.position;
+            Vector3 cameraPosition = cameraTransform.position;
             _panelData.DistToCameraSq = ResolveAupDistanceSqClamped(panelOrigin, cameraPosition);
             EnsureRenderTexture(forceRefresh: false);
         }
@@ -1458,9 +1464,12 @@ namespace Hecton8.UI
             Camera resolvedCamera = ResolveInteractionCamera();
             if (resolvedCamera == null)
                 return false;
+            Transform cameraTransform = _resolvedInteractionCameraTransform;
+            if (cameraTransform == null)
+                return false;
 
-            Transform originTransform = rayOrigin != null ? rayOrigin : resolvedCamera.transform;
-            Transform directionTransform = rayDirectionSource != null ? rayDirectionSource : resolvedCamera.transform;
+            Transform originTransform = rayOrigin != null ? rayOrigin : cameraTransform;
+            Transform directionTransform = rayDirectionSource != null ? rayDirectionSource : cameraTransform;
             rayOriginWs = originTransform.position;
             rayDirectionWs = directionTransform.forward;
             return math.lengthsq(rayDirectionWs) > 0.0001f;
@@ -1835,20 +1844,30 @@ namespace Hecton8.UI
         {
             if (interactionCamera != null && interactionCamera.isActiveAndEnabled)
             {
-                _resolvedInteractionCamera = interactionCamera;
+                if (!_resolvedInteractionCameraFromExplicit || !ReferenceEquals(_resolvedInteractionCamera, interactionCamera))
+                    CacheInteractionCamera(interactionCamera, fromExplicit: true);
+
                 return _resolvedInteractionCamera;
             }
+
+            if (_resolvedInteractionCameraFromExplicit)
+                CacheInteractionCamera(null, fromExplicit: false);
 
             if (_resolvedInteractionCamera != null && _resolvedInteractionCamera.isActiveAndEnabled)
                 return _resolvedInteractionCamera;
 
             IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
             Camera playerCamera = playerContext != null ? playerContext.PlayerCamera : null;
-            _resolvedInteractionCamera = playerCamera != null && playerCamera.isActiveAndEnabled
-                ? playerCamera
-                : null;
+            CacheInteractionCamera(playerCamera != null && playerCamera.isActiveAndEnabled ? playerCamera : null, fromExplicit: false);
 
             return _resolvedInteractionCamera;
+        }
+
+        private void CacheInteractionCamera(Camera camera, bool fromExplicit)
+        {
+            _resolvedInteractionCamera = camera;
+            _resolvedInteractionCameraTransform = camera != null ? camera.transform : null;
+            _resolvedInteractionCameraFromExplicit = fromExplicit;
         }
 
         private void SetCursorVisible(bool visible)

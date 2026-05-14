@@ -341,3 +341,17 @@ Scalability potential: Low/MX350 keeps active, default-layer, untagged MeshRende
 Hardware Impact: Runtime remains 0 us/frame and 0 bytes procedural allocation. The gain is prevention: no inactive renderer object, wrong layer/tag, or disabled LODGroup can enter the Shallows library unnoticed and force runtime fix-up or visual/collision debugging on i3/MX350. Exact runtime microseconds are not profiled because this is editor validation.
 
 Verification: No dotnet rebuild and no Unity import was run. `PrefabGameObjectStateYamlScan Count=200 Bad=0`; `LodGroupEnabledYamlScan Count=200 Bad=0`; `git diff --check` passed for `ShallowsBioForgeBatchBaker.cs` with only the repo CRLF warning. Source scans found `DefaultLayer`, `UntaggedTag`, `ValidateGameObjectStateContract`, and `lodGroup.enabled`; source brace count remained balanced and `NonAscii=0`. Forbidden source scan found no Shallows `Shader.Find`, `mesh.colors`, `renderer.sharedMaterial`, `.material`, `Update`, `LateUpdate`, or `FixedUpdate` hits.
+
+## Decision 25 - LODGroup Bounds And Scratch Allocation Hygiene
+
+Problem: The current Shallows validator carried two remaining editor-pipeline hygiene issues. First, only one reusable scratch list had a capacity/reason/owner cold-allocation comment, while the prefab/component/material scratch lists shared a generic comment. Second, the `LODGroup` contract rejected disabled state, crossfade drift, and transition drift, but did not reject invalid bounds state such as zero size or non-finite local reference data.
+
+Solution: Convert the three generic scratch-list comments into explicit capacity/reason/owner cold-allocation annotations, and widen the small editor scratch capacities to tolerate common corrupted prefab inspection without immediate list growth. Extend `ValidateLodGroupContract` to require finite `localReferencePoint`, finite `size`, and `size > 0`.
+
+Rejected Alternatives: Leaving the comments generic was rejected because the local mandate requires explicit allocation evidence. Runtime LOD bounds correction was rejected because generated Shallows prefabs must be authored correctly and remain scriptless. Re-baking was rejected because the existing prefab YAML already satisfies the stronger contract and the user prohibited rebuild-style validation.
+
+Scalability potential: Low/MX350 gets deterministic LOD bounds data with no disabled or zero-size LODGroup surprises. Middle/High/Ultra can raise density or visual quality while the editor validator continues to reject bounds drift that would break LOD switching or renderer ownership.
+
+Hardware Impact: Runtime remains 0 us/frame and 0 bytes procedural allocation. The gain is prevention and editor hygiene: no invalid LOD bounds can enter the asset library unnoticed, and the validator scratch ownership is explicit. Exact runtime microseconds are not profiled because this is editor validation.
+
+Verification: No dotnet rebuild and no Unity import was run. `LodGroupBoundsYamlScan Count=200 Bad=0 MinSize=1.665000 MaxSize=18.835001`; `git diff --check` passed for `ShallowsBioForgeBatchBaker.cs` with only the repo CRLF warning. Source scans found canonical scratch capacities `List<Transform>[8]`, `List<Component>[8]`, `List<Material>[4]`, `lodGroup.localReferencePoint`, and `lodGroup.size <= 0f`; source brace count remained balanced and `NonAscii=0`. Forbidden source scan remained clean.

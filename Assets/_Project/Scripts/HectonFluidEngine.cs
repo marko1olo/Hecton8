@@ -2878,11 +2878,8 @@ namespace Hecton8.Physics
             for (int i = 0; i < signals.Length; i++)
             {
                 PrologueCompleteSignal signal = signals[i];
-                if (signal.Phase != PrologueCompleteSignal.PhaseOceanHandoff ||
-                    signal.SourceHash != PrologueSequenceSourceHash)
-                {
+                if (!IsValidPrologueSplashdownSignal(in signal))
                     continue;
-                }
 
                 if (signal.Sequence != 0 &&
                     signal.Sequence == _lastProcessedSplashdownSequence &&
@@ -2899,6 +2896,15 @@ namespace Hecton8.Physics
                 _splashdownImpactConsumed = true;
                 break;
             }
+        }
+
+        private static bool IsValidPrologueSplashdownSignal(in PrologueCompleteSignal signal)
+        {
+            return signal.Phase == PrologueCompleteSignal.PhaseOceanHandoff &&
+                   signal.SourceHash == PrologueSequenceSourceHash &&
+                   (signal.Flags & PrologueCompleteSignal.FlagForceWhiteout) != 0 &&
+                   math.isfinite(signal.WhiteoutHoldSeconds) &&
+                   signal.WhiteoutHoldSeconds >= 0f;
         }
 
         private bool QueueSplashdownFluidImpulse(in PrologueCompleteSignal signal, float cinematicWaterLevel)

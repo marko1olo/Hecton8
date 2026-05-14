@@ -308,3 +308,11 @@ What was done -> Audio now rejects non-finite or negative complete hold values. 
 Cinematic Cheats used -> Whiteout remains the cheap concealment fake, but only for recognized complete-packet shapes. Hydrated fade remains owned by the `PRLG` sequence handoff.
 Exact Microseconds saved -> Adds below-1-us scalar checks in the 8-slot complete lane. Prevents malformed packets from triggering DSP state, whiteout hold, shader fade, and splash timing work.
 Verification -> No dotnet rebuild/response-file compile was run per user constraint. Targeted scan confirms complete-packet helpers in audio/VFX; forbidden-pattern scan returned no hits; `git diff --check` reports line-ending warnings only.
+
+## 2026-05-15 - Loop 43 Fluid Splashdown Complete-Shape Review
+
+What was wrong -> Fluid splashdown used `PRLG` source and ocean-handoff phase, but still accepted missing force-whiteout or invalid hold data before queuing bubbles and the abyssal impulse path.
+What was done -> Added `IsValidPrologueSplashdownSignal()` so fluid splashdown requires `PRLG`, `PhaseOceanHandoff`, `FlagForceWhiteout`, and nonnegative finite `WhiteoutHoldSeconds`.
+Cinematic Cheats used -> The splashdown remains a controlled fake: low tier keeps cheap bubble telemetry, high/ultra reserve impulse-field overkill for valid sequence handoff only.
+Exact Microseconds saved -> Adds below-1-us checks in the 8-slot complete lane. Prevents malformed packets from spending up to 500 bubble slots and potential impulse-field scheduling.
+Verification -> No dotnet rebuild/response-file compile was run per user constraint. Targeted scan confirms the fluid helper gate; `git diff --check` reports line-ending warnings only for the fluid patch.
