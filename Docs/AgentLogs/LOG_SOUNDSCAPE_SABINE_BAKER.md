@@ -19,6 +19,9 @@ Verification:
 `python Tools/AcousticValidator.py --verify-only` returned `STATUS: ACOUSTICS BAKED`.
 `python -m py_compile Tools/AcousticValidator.py` passed.
 `dotnet build --no-restore` could not run because `dotnet` is not installed in the shell PATH.
+Commit `8dc0eed5` was pushed to `origin/main`.
+`<POLISH_MANDATE>` was absent from `Docs/Tasks/CURRENT_BATCH.md`; no invented mandate was executed.
+Final anti-bloat pass found `Tools/AcousticValidator.py` at `11778` bytes, spec at `4810` bytes, binary at `262400` bytes, and no `AcousticValidator.pyc` residue.
 
 Edge cases:
 Small locker error `0.00000439%`.

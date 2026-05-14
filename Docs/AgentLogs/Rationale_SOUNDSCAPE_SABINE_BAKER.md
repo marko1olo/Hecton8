@@ -68,10 +68,22 @@ Hardware Impact: No runtime cost. Prevents shipping a corrupt LUT that would cau
 
 Problem: The batch asks for compile verification and push, but this workspace has many unrelated concurrent changes and the shell does not expose `dotnet`.
 
-Solution: Run Python validation and `py_compile` for the authored script. Attempt VCS staging only for this agent's files. Do not stage unrelated agent work.
+Solution: Run Python validation and `py_compile` for the authored script. Stage only this agent's six files, commit `8dc0eed5`, and push that commit to `origin/main`. Do not stage unrelated agent work.
 
 Rejected Alternatives: Blind full-worktree commit was rejected because it would capture other agents' changes. Claiming Unity compile success was rejected because no Unity Console/PlayMode/compiler log was produced.
 
 Scalability potential: The binary/spec are cold data; no runtime scalability gate is altered by VCS handling.
 
 Hardware Impact: None. Toolchain limitation only affects verification evidence.
+
+## Decision 6 - Polish Mandate Absence
+
+Problem: Status is fully checked, but `Docs/Tasks/CURRENT_BATCH.md` contains no `<POLISH_MANDATE>` tag to execute.
+
+Solution: Record the absence and run a bounded anti-bloat pass on authored files: size check, pycache check, and verify-only acoustic validation.
+
+Rejected Alternatives: Inventing a polish mandate was rejected because batch parsing rules require evidence from the XML tag. Skipping polish evidence entirely was rejected because final anti-bloat is still required by AGENTS.md.
+
+Scalability potential: No runtime surface changed. The validator remains offline and the binary remains fixed-size.
+
+Hardware Impact: None. Anti-bloat verified the runtime payload remains `262400` bytes and no Python bytecode artifact was left for this agent.
