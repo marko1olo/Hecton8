@@ -196,3 +196,19 @@ What was done -> Added a run-local `_inputLockReleased` latch so unlock is publi
 Cinematic Cheats used -> None; this is signal-lane cleanup.
 Exact Microseconds saved -> One `SystemPauseSignal` publish on dev skip, estimated 3-8 us and one signal-lane slot.
 Verification -> No dotnet rebuild/response-file compile was run per user constraint. Targeted scan confirms the unlock latch; forbidden-pattern scan returned no hits; `git diff --check` reports no whitespace errors.
+
+## 2026-05-15 - Loop 29 Re-entry VFX Handoff Lane Review
+
+What was wrong -> The re-entry VFX fade listened to macro-database `SectorHydratedSignal` instead of the prologue/world residency lane, and any `PhaseOceanHandoff` packet could trigger fade. That allowed manual `MOVR` or autonomous `ORBI` packets to outrun the awaitable sequence owner.
+What was done -> Reset transient VFX state on enable, keep non-`PRLG` complete packets as whiteout-only requests, enter hydrated fade only from the `PRLG` sequence handoff, and remove the redundant VFX-side hydration scan.
+Cinematic Cheats used -> The whiteout remains the shader-only concealment fake. The fade now waits for the sequence-owned handoff instead of pretending a macro database sector load is ocean readiness.
+Exact Microseconds saved -> Adds one uint source-hash compare in an 8-packet lane; removes wrong-lane coupling and prevents early splash/audio/debris work before authoritative handoff.
+Verification -> No dotnet rebuild/response-file compile was run per user constraint. Targeted scans confirm `PrologueSequenceSourceHash` and no `SectorHydratedSignal`/`SectorResidencyHydratedSignal` use in the VFX controller; forbidden-pattern scan returned no hits; `git diff --check` reports line-ending warnings only.
+
+## 2026-05-15 - Loop 30 Audio/Fluid Handoff Source Review
+
+What was wrong -> Prologue audio and fluid splashdown also accepted `PrologueCompleteSignal` by phase/force flag only. Manual `MOVR` and autonomous `ORBI` packets could therefore trigger ocean audio sweep or fluid impulse before the awaitable sequence completed hydration.
+What was done -> Added `PRLG` source gating to `PrologueAcousticOrchestrator` and `HectonFluidEngine`. Audio treats non-`PRLG` complete packets as whiteout-only; fluid queues splashdown impulse only from the sequence-owned handoff.
+Cinematic Cheats used -> Whiteout remains the cheap concealment layer. Splash audio/fluid overkill is reserved for the sequence-owned water-transition moment.
+Exact Microseconds saved -> Adds one uint compare in an 8-packet lane. Prevents premature DSP sweep, splash gain, bubble ring, and fluid impulse work before real handoff.
+Verification -> No dotnet rebuild/response-file compile was run per user constraint. Targeted scans confirm `PRLG` source gates across VFX, acoustic, and fluid consumers; forbidden-pattern scan returned no hits; `git diff --check` reports line-ending warnings only.

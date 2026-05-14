@@ -128,6 +128,9 @@ namespace Hecton8.Animation.IK
                              TryResolveSdfVoxelCount(VoxelSdfDimensions, out int expectedSdfLength) &&
                              VoxelSdfTexture3D.Length >= expectedSdfLength &&
                              VoxelSdfRange > 0.0001f;
+            float3 sdfInvCellSize = canUseSdf
+                ? math.rcp(math.max(VoxelSdfCellSize, new float3(0.0001f)))
+                : float3.zero;
             bool canUseHeight = (RuntimeFlags & LeviathanTerrainIkConstants.RuntimeFlagTerrainFallback) != 0u &&
                                 TerrainHeightSamples.IsCreated &&
                                 TerrainResolution > 1 &&
@@ -146,9 +149,9 @@ namespace Hecton8.Animation.IK
                 float3 position = SegmentPositions[index];
                 float appliedPush = 0f;
                 if (canUseSdf &&
-                    TrySampleSdfTrilinear(position, out float density) &&
+                    TrySampleSdfTrilinear(position, sdfInvCellSize, out float density) &&
                     density > 0f &&
-                    TryResolveSdfGradient(position, out float3 normal))
+                    TryResolveSdfGradient(position, sdfInvCellSize, out float3 normal))
                 {
                     appliedPush = density + clearance;
                     SegmentPositions[index] = SanitizeFinite(position + normal * appliedPush, position);
@@ -269,19 +272,19 @@ namespace Hecton8.Animation.IK
             }
         }
 
-        private bool TrySampleSdfTrilinear(float3 worldPosition, out float density)
+        private bool TrySampleSdfTrilinear(float3 worldPosition, float3 invCellSize, out float density)
         {
             density = 0f;
-            if (!TryResolveSdfVoxelCount(VoxelSdfDimensions, out int expectedLength) ||
-                !VoxelSdfTexture3D.IsCreated ||
-                VoxelSdfTexture3D.Length < expectedLength ||
+            if (!VoxelSdfTexture3D.IsCreated ||
+                VoxelSdfDimensions.x <= 1 ||
+                VoxelSdfDimensions.y <= 1 ||
+                VoxelSdfDimensions.z <= 1 ||
                 VoxelSdfRange <= 0.0001f)
             {
                 return false;
             }
 
-            float3 safeCell = math.max(VoxelSdfCellSize, new float3(0.0001f));
-            float3 sample = (worldPosition - VoxelSdfOrigin) * math.rcp(safeCell);
+            float3 sample = (worldPosition - VoxelSdfOrigin) * invCellSize;
             if (sample.x < 0f || sample.y < 0f || sample.z < 0f ||
                 sample.x > VoxelSdfDimensions.x - 1f ||
                 sample.y > VoxelSdfDimensions.y - 1f ||
@@ -316,16 +319,16 @@ namespace Hecton8.Animation.IK
             return math.isfinite(density);
         }
 
-        private bool TryResolveSdfGradient(float3 worldPosition, out float3 normal)
+        private bool TryResolveSdfGradient(float3 worldPosition, float3 invCellSize, out float3 normal)
         {
             normal = new float3(0f, 1f, 0f);
             float3 step = math.max(VoxelSdfCellSize, new float3(0.05f));
-            bool x0 = TrySampleSdfTrilinear(worldPosition - new float3(step.x, 0f, 0f), out float dx0);
-            bool x1 = TrySampleSdfTrilinear(worldPosition + new float3(step.x, 0f, 0f), out float dx1);
-            bool y0 = TrySampleSdfTrilinear(worldPosition - new float3(0f, step.y, 0f), out float dy0);
-            bool y1 = TrySampleSdfTrilinear(worldPosition + new float3(0f, step.y, 0f), out float dy1);
-            bool z0 = TrySampleSdfTrilinear(worldPosition - new float3(0f, 0f, step.z), out float dz0);
-            bool z1 = TrySampleSdfTrilinear(worldPosition + new float3(0f, 0f, step.z), out float dz1);
+            bool x0 = TrySampleSdfTrilinear(worldPosition - new float3(step.x, 0f, 0f), invCellSize, out float dx0);
+            bool x1 = TrySampleSdfTrilinear(worldPosition + new float3(step.x, 0f, 0f), invCellSize, out float dx1);
+            bool y0 = TrySampleSdfTrilinear(worldPosition - new float3(0f, step.y, 0f), invCellSize, out float dy0);
+            bool y1 = TrySampleSdfTrilinear(worldPosition + new float3(0f, step.y, 0f), invCellSize, out float dy1);
+            bool z0 = TrySampleSdfTrilinear(worldPosition - new float3(0f, 0f, step.z), invCellSize, out float dz0);
+            bool z1 = TrySampleSdfTrilinear(worldPosition + new float3(0f, 0f, step.z), invCellSize, out float dz1);
             if (!x0 || !x1 || !y0 || !y1 || !z0 || !z1)
                 return false;
 
@@ -415,7 +418,18 @@ namespace Hecton8.Animation.IK
                 TailWhipSecondsRemaining = math.max(0f, TailWhipSecondsRemaining)
             };
             TelemetryRing[index] = entry;
-            TelemetryCursor[0] = cursor == int.MaxValue ? 0 : cursor + 1;
+            if (cursor == int.MaxValue)
+            {
+                int nextIndex = index + 1;
+                if (nextIndex >= TelemetryRing.Length)
+                    nextIndex = 0;
+
+                TelemetryCursor[0] = TelemetryRing.Length + nextIndex;
+            }
+            else
+            {
+                TelemetryCursor[0] = cursor + 1;
+            }
         }
 
         private bool HasInvalidSegment(int activeCount)

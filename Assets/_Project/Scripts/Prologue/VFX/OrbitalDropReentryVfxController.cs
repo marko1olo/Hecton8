@@ -24,6 +24,7 @@ namespace Hecton8.Prologue.VFX
         private const int TelemetryEntrySizeBytes = 48;
         private const uint DumpMagic = 0x4F525646u; // ORVF
         private const int DumpVersion = 1;
+        private const uint PrologueSequenceSourceHash = 0x50524C47u; // PRLG
         private const uint PlasmaRoarHash = 0x50524F52u; // PROR
         private const uint OceanWavesHash = 0x4F574156u; // OWAV
         private const uint MassiveSplashHash = 0x4D53504Cu; // MSPL
@@ -103,11 +104,9 @@ namespace Hecton8.Prologue.VFX
         private int _telemetryCursor;
         private int _lastProcessedAtmosphericFrame = int.MinValue;
         private int _lastProcessedCompleteFrame = int.MinValue;
-        private int _lastProcessedHydrationFrame = int.MinValue;
         private int _qualityRefreshFrame = int.MinValue;
         private ushort _stateSequence;
         private ushort _hydrationSequence;
-        private ulong _lastSectorHash;
         private float _heat01;
         private float _targetHeat01;
         private float _opacity01;
@@ -142,6 +141,7 @@ namespace Hecton8.Prologue.VFX
         {
             EnsureNativeTelemetry();
             PrologueReentrySignalLanes.Warm();
+            ResetTransientState();
             ResolveDependencies();
             ApplyConfiguredMaterial();
             RefreshQualityTier(force: true);
@@ -188,7 +188,6 @@ namespace Hecton8.Prologue.VFX
                 float deltaTime = ResolveUnscaledDeltaTime();
                 ConsumeAtmosphericSignals();
                 ConsumePrologueCompleteSignals();
-                ConsumeHydrationSignals();
                 UpdateTargetsFromPhase();
                 IntegrateState(deltaTime);
                 MaintainCameraLocalOverlay();
@@ -204,6 +203,30 @@ namespace Hecton8.Prologue.VFX
                 return;
 
             _telemetry = new NativeArray<ReentryVfxTelemetryEntry>(TelemetryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ReentryVfxTelemetryEntry>[300] - fixed re-entry VFX blackbox ring - owner: OrbitalDropReentryVfxController
+        }
+
+        private void ResetTransientState()
+        {
+            _lastCapsuleAup = default;
+            _phase = ReentryPhase.Idle;
+            _lastProcessedAtmosphericFrame = int.MinValue;
+            _lastProcessedCompleteFrame = int.MinValue;
+            _hydrationSequence = 0;
+            _heat01 = 0f;
+            _targetHeat01 = 0f;
+            _opacity01 = 0f;
+            _targetOpacity01 = 0f;
+            _altitudeMeters = float.PositiveInfinity;
+            _velocityMetersPerSecond = 0f;
+            _ambientBlend01 = 0f;
+            _whiteoutHoldSecondsRemaining = 0f;
+            _audioCrossfadeElapsedSeconds = 0f;
+            _audioCrossfadeTimer = 0f;
+            _audioCrossfadeActive = false;
+            _blackBoxDumped = false;
+            _plasmaRoarPublished = false;
+            _oceanWavesPublished = false;
+            _splashPublished = false;
         }
 
         private void ResolveDependencies()
@@ -311,30 +334,20 @@ namespace Hecton8.Prologue.VFX
                     continue;
                 }
 
+                bool sequenceOceanHandoff = signal.Phase == PrologueCompleteSignal.PhaseOceanHandoff &&
+                                             signal.SourceHash == PrologueSequenceSourceHash;
+                if (!sequenceOceanHandoff &&
+                    (signal.Flags & PrologueCompleteSignal.FlagForceWhiteout) == 0 &&
+                    signal.Phase != PrologueCompleteSignal.PhaseWhiteout)
+                {
+                    continue;
+                }
+
                 _lastCapsuleAup = signal.CapsuleAup;
                 _whiteoutHoldSecondsRemaining = math.max(_whiteoutHoldSecondsRemaining, math.max(0f, signal.WhiteoutHoldSeconds));
                 EnterWhiteout();
-            }
-        }
-
-        private void ConsumeHydrationSignals()
-        {
-            int frame = Time.frameCount;
-            if (_lastProcessedHydrationFrame == frame)
-                return;
-
-            _lastProcessedHydrationFrame = frame;
-            ReadOnlySpan<SectorHydratedSignal> signals = SignalBus<SectorHydratedSignal>.GetFrameSnapshot();
-            if (signals.Length == 0)
-                return;
-
-            SectorHydratedSignal signal = signals[signals.Length - 1];
-            _lastSectorHash = signal.SectorHash;
-            _hydrationSequence++;
-            if (_phase == ReentryPhase.Whiteout)
-            {
-                _phase = ReentryPhase.HydratedFade;
-                BeginAudioCrossfade();
+                if (sequenceOceanHandoff)
+                    EnterHydratedFade();
             }
         }
 
@@ -351,6 +364,18 @@ namespace Hecton8.Prologue.VFX
 
             _targetOpacity01 = 1f;
             PublishPlasmaRoar();
+        }
+
+        private void EnterHydratedFade()
+        {
+            if (_phase < ReentryPhase.Whiteout)
+                EnterWhiteout();
+
+            if (_phase != ReentryPhase.HydratedFade)
+                _hydrationSequence++;
+
+            _phase = ReentryPhase.HydratedFade;
+            BeginAudioCrossfade();
         }
 
         private void UpdateTargetsFromPhase()
@@ -647,7 +672,7 @@ namespace Hecton8.Prologue.VFX
                 Flags = flags,
                 Reserved = 0,
                 StateHash = ResolveStateHash(),
-                SectorHashLo = (uint)_lastSectorHash,
+                SectorHashLo = 0u,
                 Reserved2 = 0
             };
 

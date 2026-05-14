@@ -189,3 +189,21 @@ Solution: Precompute reciprocal cell/radius terms with `math.rcp`, reject invali
 Rejected Alternatives: Leaving `/` in managed route support was rejected by the math gate. Masking bad cell sizes with epsilon only was rejected because it fabricates plausible coordinates from invalid transforms.
 Scalability potential: Low/MX350 gets fewer scalar divisions and safer hash lookups. High/Ultra can reuse the same clean support grid for denser visual navigation without corrupting path authority.
 Hardware Impact: Removes repeated divisions from nav support and hash lookup paths. Exact microseconds remain pending Unity profiler data because dotnet rebuilds are prohibited.
+
+Problem: Abyssal chunk node generation still divided by sample step/count and trusted terrain cache dimensions before sampling height.
+Solution: Validate finite chunk bounds and positive finite node step, use `math.rcp` for sample counts and per-sample step, and require finite terrain transforms plus complete heightmap length before sampling.
+Rejected Alternatives: Letting `math.max` hide invalid terrain dimensions was rejected because it creates route nodes from corrupt tile transforms. Rebuilding terrain caches here was rejected as outside the AI navigation domain.
+Scalability potential: Low avoids wasting nodes on invalid chunks and removes warm-path divides. Middle/High/Ultra get cleaner source nodes for smoother pathing without extra containers.
+Hardware Impact: Removes four graph-generation divisions and prevents corrupt heightmap reads. Exact microseconds remain pending Unity profiler data because dotnet rebuilds are prohibited.
+
+Problem: The node candidate resolver indexed biome, semantic, and flow arrays using only matrix length and computed slice end with `payload.UnderwaterOffset + payload.UnderwaterCount` in `int`.
+Solution: Require complete matrix/biome/semantic arrays, clamp candidate and deep-biome slice bounds with a `long` requested end, and treat flow vectors as optional zero vectors when the flow array is absent or shorter.
+Rejected Alternatives: Indexing parallel arrays by matrix length alone was rejected because mismatched native payloads can crash the route snapshot pass. Int `offset + count` slice math was rejected because corrupted chunk metadata can overflow. Requiring flow vectors for obstacle/deep-affinity evaluation was rejected because flow is conduit polish, not baseline passability.
+Scalability potential: Low keeps route graph rebuilds from crashing on partial payloads. High/Ultra still get conduit quality when flow data exists.
+Hardware Impact: Adds fixed scalar bounds checks per snapshot rebuild and avoids invalid memory reads; exact microseconds remain pending Unity profiler data.
+
+Problem: Abyssal funnel completion timing still used a raw division by `Stopwatch.Frequency`.
+Solution: Convert ticks to milliseconds with `math.rcp((double)Stopwatch.Frequency)` inside `ResolveAbyssalPathElapsedMs`.
+Rejected Alternatives: Leaving `/` was rejected by the reciprocal math gate. Caching a mutable managed timing service was rejected as unnecessary registry surface.
+Scalability potential: All tiers keep identical telemetry semantics with cleaner scalar math.
+Hardware Impact: Removes one scalar division per completed abyssal path timing sample; exact microseconds are below practical profiler resolution.

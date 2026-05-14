@@ -197,9 +197,11 @@ namespace Hecton8.Power
             public const float FloodedShortCircuitPotentialThreshold = 0.5f;
 
             public int NodeCount;
+            public int BaseAwakeIndex;
 
             [ReadOnly] public NativeParallelMultiHashMap<int, int> Connections;
             [ReadOnly] public NativeArray<float> PowerCapacities;
+            [ReadOnly] public NativeArray<byte> BaseAwakeState;
 
             public NativeArray<float> PowerPotentials;
             public NativeArray<float> NextPowerPotentials;
@@ -207,6 +209,9 @@ namespace Hecton8.Power
 
             public void Execute()
             {
+                if (IsBoundBaseHibernating())
+                    return;
+
                 if (NodeCount <= 0 ||
                     !Connections.IsCreated ||
                     !PowerCapacities.IsCreated ||
@@ -297,6 +302,13 @@ namespace Hecton8.Power
 
                 return math.saturate(safePotential);
             }
+
+            private bool IsBoundBaseHibernating()
+            {
+                return BaseAwakeState.IsCreated &&
+                       (uint)BaseAwakeIndex < (uint)BaseAwakeState.Length &&
+                       BaseAwakeState[BaseAwakeIndex] == 0;
+            }
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
@@ -378,6 +390,7 @@ namespace Hecton8.Power
             public int ConsumerCount;
             public int SolveStartNode;
             public int SolveNodeCount;
+            public int BaseAwakeIndex;
             public byte RelaxationSliceOnly;
 
             public NativeArray<LogisticsNode> Nodes;
@@ -389,6 +402,7 @@ namespace Hecton8.Power
             [ReadOnly] public NativeList<ProducerRecord> Producers;
             [ReadOnly] public NativeList<ConsumerRecord> Consumers;
             [ReadOnly] public NativeParallelHashMap<int, float> ProducerMap;
+            [ReadOnly] public NativeArray<byte> BaseAwakeState;
 
             public NativeArray<int> Parents;
             public NativeArray<int> Ranks;
@@ -424,6 +438,12 @@ namespace Hecton8.Power
 
             public void Execute()
             {
+                if (IsBoundBaseHibernating())
+                {
+                    CommitHibernatingEvaluation();
+                    return;
+                }
+
                 if (RelaxationSliceOnly != 0)
                 {
                     int topologyCycleCount = TopologySummaryBuffer.IsCreated && TopologySummaryBuffer.Length > 0
@@ -510,6 +530,28 @@ namespace Hecton8.Power
 
                 TopologySummaryBuffer[0] = topology;
                 DistributionSummaryBuffer[0] = distribution;
+            }
+
+            private void CommitHibernatingEvaluation()
+            {
+                ClearEdgeFlows();
+                if (TopologySummaryBuffer.IsCreated && TopologySummaryBuffer.Length > 0)
+                {
+                    TopologySummaryBuffer[0] = new TopologySummary
+                    {
+                        NodeCount = NodeCount,
+                        EdgeCount = EdgeCount
+                    };
+                }
+
+                if (DistributionSummaryBuffer.IsCreated && DistributionSummaryBuffer.Length > 0)
+                {
+                    DistributionSummaryBuffer[0] = new DistributionSummary
+                    {
+                        SupplyRatio = 1f,
+                        BrownoutTier = LogisticsBrownoutTier.None
+                    };
+                }
             }
 
             private DistributionSummary EvaluateDistribution(int topologyCycleCount)
@@ -1257,6 +1299,13 @@ namespace Hecton8.Power
                 return nodeIndex >= 0 && nodeIndex < NodeCount;
             }
 
+            private bool IsBoundBaseHibernating()
+            {
+                return BaseAwakeState.IsCreated &&
+                       (uint)BaseAwakeIndex < (uint)BaseAwakeState.Length &&
+                       BaseAwakeState[BaseAwakeIndex] == 0;
+            }
+
             private bool IsEdgeRuptured(int edgeIndex)
             {
                 return (EdgeStates[edgeIndex] & (byte)LogisticsEdgeState.Ruptured) != 0;
@@ -1334,6 +1383,7 @@ namespace Hecton8.Power
         private NativeArray<float> _potentialBack;
         private NativeArray<float> _powerCapacities;
         private NativeArray<byte> _powerNodeFlags;
+        private NativeArray<byte> _baseAwakeState;
         private NativeArray<float> _edgeFlow;
         private NativeArray<byte> _edgeStates;
         private NativeArray<int2> _edgeKeys;
@@ -1368,6 +1418,7 @@ namespace Hecton8.Power
         private int _scheduledSolveNodeCount;
         private int _lastPowerBlackBoxSolveStartNode;
         private int _lastPowerBlackBoxSolveNodeCount;
+        private int _baseAwakeIndex;
         private int _powerBlackBoxCursor;
         private bool _scheduledAdaptiveSolveSlice;
         private bool _powerBlackBoxDumped;
@@ -1507,6 +1558,32 @@ namespace Hecton8.Power
             return _powerNodeFlags.AsReadOnly();
         }
 
+        /// <summary>
+        /// Binds this power graph to a habitat base awake mask. The graph does not own the supplied buffer.
+        /// </summary>
+        /// <param name="baseAwakeState">Native awake mask from the atmosphere/base authority.</param>
+        /// <param name="baseAwakeIndex">Base index controlling this graph.</param>
+        /// <returns>True when the binding was accepted or cleared.</returns>
+        public bool TryBindBaseAwakeState(NativeArray<byte> baseAwakeState, int baseAwakeIndex)
+        {
+            if (_evaluateGraphPending || _publishNodeStatesPending)
+                return false;
+
+            if (!baseAwakeState.IsCreated)
+            {
+                _baseAwakeState = default;
+                _baseAwakeIndex = 0;
+                return true;
+            }
+
+            if ((uint)baseAwakeIndex >= (uint)baseAwakeState.Length)
+                return false;
+
+            _baseAwakeState = baseAwakeState;
+            _baseAwakeIndex = baseAwakeIndex;
+            return true;
+        }
+
         public bool TryGetNodePotential(int nodeIndex, out float potential)
         {
             potential = 0f;
@@ -1627,6 +1704,8 @@ namespace Hecton8.Power
             DisposeNativeArray(ref _potentialBack, disposeDependency);
             DisposeNativeArray(ref _powerCapacities, disposeDependency);
             DisposeNativeArray(ref _powerNodeFlags, disposeDependency);
+            _baseAwakeState = default;
+            _baseAwakeIndex = 0;
             DisposeNativeArray(ref _nodeConductanceSum, disposeDependency);
             DisposeNativeArray(ref _nodeConductanceInverseSum, disposeDependency);
             DisposeNativeArray(ref _runtimeConductiveEdgeCount, disposeDependency);
@@ -2285,6 +2364,7 @@ namespace Hecton8.Power
                 ConsumerCount = ConsumerCount,
                 SolveStartNode = solveStartNode,
                 SolveNodeCount = solveNodeCount,
+                BaseAwakeIndex = _baseAwakeIndex,
                 RelaxationSliceOnly = relaxationSliceOnly ? (byte)1 : (byte)0,
                 Nodes = _nodeBuffer,
                 EdgeOffsets = _edgeOffsets,
@@ -2294,6 +2374,7 @@ namespace Hecton8.Power
                 Producers = _producers,
                 Consumers = _consumers,
                 ProducerMap = _producerMap,
+                BaseAwakeState = _baseAwakeState,
                 Parents = _parents,
                 Ranks = _ranks,
                 ComponentIds = _componentIds,

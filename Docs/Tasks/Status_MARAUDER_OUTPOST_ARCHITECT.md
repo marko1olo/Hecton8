@@ -134,9 +134,16 @@ State: PENDING VERIFICATION
 - [x] Re-ran source-only H-Phi and forbidden-pattern audits. DOD: scoped counts changed `SignalBusPush 0->1`, `GlobalSignalsPublish 1->0`, `GenericPublishCalls 1->0`, `StructLayoutAttributes 3->6`; full H-Phi after-patch scan reports `SignalBusPush=80`, `EventPublish=447`, `StructLayoutAttributes=932`, `MemoryAlignment=0.495217853`, `HPhiStaticRisk=1.3482E-05`; forbidden hot-path and publish-wrapper audits are clean; `git diff --check` passed with repository LF/CRLF warnings only. Alternative rejected: `dotnet` rebuild, forbidden by user. Estimate: verification only.
 - [ ] Compile proof [NOT RUN BY USER REQUEST]. DOD: no `dotnet` rebuild or response-file compile was executed in Loop 17. Alternative rejected: violating explicit "do not make dotnet rebuilds". Estimate: no runtime cost.
 
+### Loop 18 - Cached Registry Surface Reduction
+
+- [x] Re-read persisted task state, rationale, Unity workflow, global registry, signal lane, zero-GC, native/job, and H-Phi mandates. DOD: selected 6 relevant mandates before coding and kept work inside Habitat/Outposts. Alternative rejected: broad project refactor. Estimate: disk reads only.
+- [x] Reduced outpost registry surface. DOD: render bucket and optional MapMagic/world-seed/persistence/object-pool dependencies now resolve through cached cold handles; outpost unregister uses `_registeredOutpostGeneration` instead of reading `GlobalRegistry.OutpostGeneration`; render unregister uses the bucket registered in `OnEnable`. Alternative rejected: per-use global service lookup and disposal-time registry slot probing. Estimate: removes three static registry-surface hits in owned files and avoids one disposal registry read.
+- [x] Re-ran source-only H-Phi and safety audits. DOD: scoped owned-file count changed `GlobalRegistrySurface 15->12`, `SignalBusPush=1`, `EventPublish=0`, `StructLayoutAttributes=6`; full project H-Phi source scan after this pass reports `SignalBusPush=84`, `EventPublish=450`, `GlobalRegistrySurface=5141`, `StructLayoutAttributes=940`, `MemoryAlignment=0.497881356`, `RiskIntegration=0.013429257`, `HPhiStaticRisk=0.000122175`; forbidden-pattern audits and `git diff --check` pass with repository LF/CRLF warnings only. Alternative rejected: `dotnet` rebuild, forbidden by user. Estimate: verification only.
+- [ ] Compile proof [NOT RUN BY USER REQUEST]. DOD: no `dotnet` rebuild or response-file compile was executed in Loop 18. Alternative rejected: violating explicit "do not make dotnet rebuilds". Estimate: no runtime cost.
+
 ## Verification Ledger
 
-- Compile status: NOT RUN IN LOOP 17 BY USER REQUEST / PRIOR BLOCKER STILL RECORDED. Last attempted compile path could not resolve `Hecton8.Core.ref.dll`; Core rebuild failed in `SaveMasterHashV10.cs(237,26)` on missing `xxHash3`, outside Habitat/Outposts ownership.
+- Compile status: NOT RUN IN LOOP 18 BY USER REQUEST / PRIOR BLOCKER STILL RECORDED. Last attempted compile path could not resolve `Hecton8.Core.ref.dll`; Core rebuild failed in `SaveMasterHashV10.cs(237,26)` on missing `xxHash3`, outside Habitat/Outposts ownership.
 - Unity Console status: MCP unavailable; console/scene validation not accessible from this session.
 - GC proof: code audit only; hot Tick/Render path uses spans/native buffers and no LINQ/managed allocation.
 - Frame/VRAM proof: static estimate only; runtime profiling blocked by Unity MCP transport failure; no console/profiler capture is available from this session.

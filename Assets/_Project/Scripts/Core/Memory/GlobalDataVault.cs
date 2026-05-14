@@ -234,6 +234,7 @@ namespace Hecton8.Core.Memory
         public int UnalignedOccupiedCount;
     }
 
+    [StructLayout(LayoutKind.Sequential)]
     internal struct VaultGapAuditJob : IJob
     {
         [ReadOnly] public NativeArray<VaultArenaBlock> Blocks;

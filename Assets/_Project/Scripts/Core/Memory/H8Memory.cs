@@ -24,6 +24,7 @@ namespace Hecton8.Core.Memory
         VehiclesPhysics = 65,
         Fluid = 66,
         GameplayLoot = 67,
+        HabitatAtmosphere = 68,
         WorldStreaming = 128,
         TerrainSeams = 129,
         SimulationBucketer = 161,
@@ -70,7 +71,8 @@ namespace Hecton8.Core.Memory
         EntityVelocities = 30,
         EntityItemHashes = 31,
         EntityQuantities = 32,
-        EntityLootMagnetTelemetry = 33
+        EntityLootMagnetTelemetry = 33,
+        HabitatBaseAwakeState = 34
     }
 
     [Flags]

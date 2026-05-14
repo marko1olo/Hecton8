@@ -3,7 +3,7 @@
 Agent: VFX_TECHNICAL_ARTIST
 Domain: ECHELON 7 #66 Marine Snow/Silt Compute VFX with ECHELON 2 SDF/Carve/Flow integration
 Prompt: `Docs/Tasks/CURRENT_BATCH.md` / `<AGENT_PROMPT id="VFX_SDF_CARVE_DEBRIS">`
-Status: PENDING VERIFICATION
+Status: STATIC VERIFIED / UNITY COMPILE BLOCKED (NO DOTNET REBUILD RUN)
 
 ## Mandates Read Before Coding
 
@@ -52,6 +52,7 @@ Status: PENDING VERIFICATION
 - Loop 13: Flow center compatibility pass. DOD: when a texture flow path is valid but its center differs from the active structured-buffer payload, the renderer disables buffer fallback for that bind instead of feeding the shader mismatched center/spacing metadata. Rejected alternative: allowing one shared `_AbyssalFlowCenter` to drive two incompatible payloads. Estimate: correctness guard; avoids wrong-cell buffer fetches with negligible CPU cost.
 - Loop 14: Render hot-math/cache pass. DOD: debris shader no longer uses per-vertex `sincos` to build chip basis; renderer caches mesh indirect draw metadata once per frame so dispatch and render do not both query mesh index data. Rejected alternatives: keeping trigonometric basis in the vertex path and reading mesh index metadata twice per active frame. Estimate: saves sub-10 us CPU on active debris frames and removes per-visible-vertex trig ALU on MX350.
 - Loop 15: High-tier visual currency pass. DOD: render path now binds the existing velocity lane and enables velocity-driven fresh-edge response only when cached tier is non-low. Rejected alternative: uploading per-particle color/rotation or enabling extra reads on MX350. Estimate: low-tier unchanged; high/ultra spends one velocity read per visible vertex for stronger impact readability.
+- Loop 16: Static verification closeout under no-dotnet constraint. DOD: `git diff --check` reports no whitespace errors beyond Git LF/CRLF notices; VFX static scan finds no `GetData`, `SetData`, `ParticleSystem`, `ComputeBuffer`, `foreach`, `.ToString`, `string.Format`, `Camera.main`, scene search, `JobHandle`, `.Schedule()`, or `.Complete()` in the touched lane; shader scan finds no `sincos`, raw `sin`, raw `cos`, `pow`, `exp`, `log`, or raw `normalize` in the debris/flow shaders; `CURRENT_BATCH.md` currently contains 0 matching `VFX_SDF_CARVE_DEBRIS` prompt tags. Rejected alternative: dotnet rebuild or fake Unity compile pass. Estimate: verification saves no frame time; it prevents shipping a false build claim.
 
 ## Second-Pass Upgrade Status
 
@@ -79,3 +80,4 @@ Status: PENDING VERIFICATION
 - [x] Touched VFX code scanned for hot managed bloat patterns.
 - [x] No CPU GPU readback path introduced.
 - [x] Final compile verification marked `[BLOCKED BY TOOLING]`, not passed.
+- [x] Final no-dotnet closeout completed: static verification passed; Unity compile remains blocked/unclaimed.

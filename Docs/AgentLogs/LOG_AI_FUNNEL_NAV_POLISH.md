@@ -228,21 +228,25 @@ What was done:
 - Preserved predator fear outside the surface heatmap by returning `max(voxelThreat, predatorFearThreat)`.
 - Cached `GlobalRegistry.ScalabilityTier` once per abyssal path schedule before resolving lookahead and DDA Math LOD.
 - Rejected non-finite path request endpoints before voxel/terrain sampling and nearest-node lookup.
+- Replaced abyssal chunk node sample-step divisions with reciprocal math and finite chunk-bound guards.
+- Hardened cached terrain height sampling with finite transform checks and complete heightmap length proof.
+- Hardened abyssal candidate and deep-biome pool slicing with complete matrix/biome/semantic array proof and `long` slice-end clamping.
 - Clamped abyssal nav payload counting/iteration to the actual native node buffer length.
 - Rejected non-finite abyssal nav payload nodes before snapshot/hash insertion.
 - Sanitized non-finite conduit vectors/strengths at nav graph ingress.
 - Replaced abyssal spatial-hash and flow-support divisions with reciprocal precomputes plus finite transform guards.
+- Replaced raw stopwatch-frequency division in abyssal funnel timing with `math.rcp`.
 
 Cinematic Cheats used:
 - Corrupt feeder proof becomes conservative route pressure instead of running expensive recovery or pretending the path is clear.
 - Low tier pays fixed cheap guards and reciprocal math; High/Ultra keep route fidelity for valid payloads and can spend saved cycles on smoothing budgets.
 
 Exact Microseconds saved:
-- PENDING RUNTIME PROFILER DATA. Static improvement is removal of four raw divide sites from `NativeAStarJob`, exact rsqrt normalization for conduit alignment, reciprocal nav hash/support math, and one fewer registry property read per abyssal path schedule; predator-fear retention adds no loop because the sample was already computed.
+- PENDING RUNTIME PROFILER DATA. Static improvement is removal of four raw divide sites from `NativeAStarJob`, exact rsqrt normalization for conduit alignment, reciprocal chunk sampling/nav hash/support/timing math, and one fewer registry property read per abyssal path schedule; predator-fear retention adds no loop because the sample was already computed.
 
 Verification:
 - Static scan passed for `NativeAStarJob`: no `math.normalize`, `math.length(`, `math.distance(`, `.normalized`, or raw `/`.
-- Static scan passed for abyssal nav support/hash and graph ingress regions: no hot-code raw `/`, `math.normalize`, `math.length(`, `math.distance(`, or `.normalized`.
+- Static scan passed for abyssal chunk sampling, terrain sampling, candidate pool, nav support/hash, graph ingress, and funnel telemetry conversion regions: no hot-code raw `/`, `math.normalize`, `math.length(`, `math.distance(`, or `.normalized`.
 - `git diff --check` on touched files passed; LF/CRLF warnings only.
 - `Tools/Architecture/HectonPhiAudit.ps1 -Json` was attempted and timed out after 120 seconds; no global H-Phi score is claimed from this pass.
 - Dotnet rebuilds were not run after this pass because the user explicitly prohibited dotnet rebuilds.

@@ -134,6 +134,7 @@ namespace Hecton8.Gameplay
 
         // Track read messages (for persistence)
         private HashSet<string> _readMessageIds;
+        private bool[] _initialReadStates;
         private int _pendingMessageIndex = -1;
 
         // Cached references
@@ -181,6 +182,8 @@ namespace Hecton8.Gameplay
 
             if ((_wfcOutpostFlags & WfcDatapadLootedFlag) != 0)
                 ApplyWfcOutpostDatapadLootedState();
+            else
+                RestoreWfcOutpostDatapadBaselineState();
         }
 
         public void ClearWfcOutpostPersistence()
@@ -204,21 +207,12 @@ namespace Hecton8.Gameplay
             if (statusLightRenderer == null)
                 statusLightRenderer = GetComponent<Renderer>();
 
+            CaptureInitialReadStates();
+
             // Initialize read messages tracking
             int readMessageCapacity = messages != null ? messages.Length : 0;
             _readMessageIds = new HashSet<string>(readMessageCapacity); // COLD ALLOC: HashSet<string>[messages.Length] - track read messages - owner: MessageTerminal
-
-            // Mark already-read messages
-            if (messages != null)
-            {
-                for (int i = 0; i < messages.Length; i++)
-                {
-                    if (messages[i].isRead && !string.IsNullOrEmpty(messages[i].messageId))
-                    {
-                        _readMessageIds.Add(messages[i].messageId);
-                    }
-                }
-            }
+            RebuildReadMessageSetFromMessageStates();
 
             // Find first unread message
             UpdatePendingMessage();
@@ -373,6 +367,9 @@ namespace Hecton8.Gameplay
         /// <param name="message">The message to add.</param>
         public void AddMessage(MessageEntry message)
         {
+            if (message == null)
+                return;
+
             if (messages == null)
             {
                 messages = new MessageEntry[] { message };
@@ -383,9 +380,17 @@ namespace Hecton8.Gameplay
                 messages[messages.Length - 1] = message;
             }
 
+            EnsureInitialReadStateCapacity(messages.Length);
+            _initialReadStates[messages.Length - 1] = message.isRead;
+
             // Check if this is a new unread message
             EnsureWfcOutpostReadMessageSet();
-            if (!message.isRead && !string.IsNullOrEmpty(message.messageId) && !_readMessageIds.Contains(message.messageId))
+            if (message.isRead)
+            {
+                if (!string.IsNullOrEmpty(message.messageId))
+                    _readMessageIds.Add(message.messageId);
+            }
+            else if (!string.IsNullOrEmpty(message.messageId) && !_readMessageIds.Contains(message.messageId))
             {
                 _pendingMessageIndex = messages.Length - 1;
                 UpdateState();
@@ -418,9 +423,10 @@ namespace Hecton8.Gameplay
             {
                 for (int i = 0; i < messages.Length; i++)
                 {
-                    if (messages[i].messageId == messageId)
+                    MessageEntry entry = messages[i];
+                    if (entry != null && entry.messageId == messageId)
                     {
-                        messages[i].isRead = true;
+                        entry.isRead = true;
                         break;
                     }
                 }
@@ -467,11 +473,15 @@ namespace Hecton8.Gameplay
             {
                 for (int i = 0; i < messages.Length; i++)
                 {
-                    string messageId = messages[i].messageId;
+                    MessageEntry entry = messages[i];
+                    if (entry == null)
+                        continue;
+
+                    string messageId = entry.messageId;
                     if (!string.IsNullOrEmpty(messageId))
                         _readMessageIds.Add(messageId);
 
-                    messages[i].isRead = true;
+                    entry.isRead = true;
                 }
             }
 
@@ -485,6 +495,32 @@ namespace Hecton8.Gameplay
             }
         }
 
+        private void RestoreWfcOutpostDatapadBaselineState()
+        {
+            if (_initialReadStates == null && messages != null)
+                CaptureInitialReadStates();
+
+            if (messages != null)
+            {
+                EnsureInitialReadStateCapacity(messages.Length);
+                for (int i = 0; i < messages.Length; i++)
+                {
+                    MessageEntry entry = messages[i];
+                    if (entry == null)
+                        continue;
+
+                    bool baselineRead = _initialReadStates != null &&
+                                        i < _initialReadStates.Length &&
+                                        _initialReadStates[i];
+                    entry.isRead = baselineRead;
+                }
+            }
+
+            RebuildReadMessageSetFromMessageStates();
+            UpdatePendingMessage();
+            UpdateState();
+        }
+
         private void EnsureWfcOutpostReadMessageSet()
         {
             if (_readMessageIds != null)
@@ -492,6 +528,54 @@ namespace Hecton8.Gameplay
 
             int readMessageCapacity = messages != null ? messages.Length : 0;
             _readMessageIds = new HashSet<string>(readMessageCapacity);
+        }
+
+        private void CaptureInitialReadStates()
+        {
+            int count = messages != null ? messages.Length : 0;
+            if (count <= 0)
+            {
+                _initialReadStates = null;
+                return;
+            }
+
+            _initialReadStates = new bool[count]; // COLD ALLOC: bool[messages.Length] - WFC pooled datapad read-state baseline - owner: MessageTerminal
+            for (int i = 0; i < count; i++)
+            {
+                MessageEntry entry = messages[i];
+                _initialReadStates[i] = entry != null && entry.isRead;
+            }
+        }
+
+        private void EnsureInitialReadStateCapacity(int count)
+        {
+            if (count <= 0)
+                return;
+
+            if (_initialReadStates == null)
+            {
+                _initialReadStates = new bool[count];
+                return;
+            }
+
+            if (_initialReadStates.Length < count)
+                System.Array.Resize(ref _initialReadStates, count);
+        }
+
+        private void RebuildReadMessageSetFromMessageStates()
+        {
+            EnsureWfcOutpostReadMessageSet();
+            _readMessageIds.Clear();
+
+            if (messages == null)
+                return;
+
+            for (int i = 0; i < messages.Length; i++)
+            {
+                MessageEntry entry = messages[i];
+                if (entry != null && entry.isRead && !string.IsNullOrEmpty(entry.messageId))
+                    _readMessageIds.Add(entry.messageId);
+            }
         }
 
         private void SetWfcOutpostFlags(byte flags, uint frame)
@@ -535,7 +619,10 @@ namespace Hecton8.Gameplay
             EnsureWfcOutpostReadMessageSet();
             for (int i = 0; i < messages.Length; i++)
             {
-                if (!messages[i].isRead && !_readMessageIds.Contains(messages[i].messageId))
+                MessageEntry entry = messages[i];
+                if (entry != null &&
+                    !entry.isRead &&
+                    (string.IsNullOrEmpty(entry.messageId) || !_readMessageIds.Contains(entry.messageId)))
                 {
                     _pendingMessageIndex = i;
                     return;
@@ -578,6 +665,8 @@ namespace Hecton8.Gameplay
                 return;
 
             MessageEntry message = messages[messageIndex];
+            if (message == null)
+                return;
 
             _currentMessageIndex = messageIndex;
             _state = TerminalState.Playing;
@@ -612,7 +701,8 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            string messageId = messages[_currentMessageIndex].messageId;
+            MessageEntry message = messages[_currentMessageIndex];
+            string messageId = message != null ? message.messageId : string.Empty;
 
             // Reset state
             _currentMessageIndex = -1;
@@ -679,10 +769,9 @@ namespace Hecton8.Gameplay
             {
                 for (int i = 0; i < messages.Length; i++)
                 {
-                    if (messages[i].audioClip != null)
-                    {
-                        messages[i].duration = messages[i].audioClip.length;
-                    }
+                    MessageEntry entry = messages[i];
+                    if (entry != null && entry.audioClip != null)
+                        entry.duration = entry.audioClip.length;
                 }
             }
 

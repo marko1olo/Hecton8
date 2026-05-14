@@ -1407,23 +1407,47 @@ namespace Hecton8.SaveSystem
 
         private static bool WriteProceduralWorldState(ref BufferWriter writer, ProceduralWorldStateDTO value)
         {
-            return writer.WriteInt(value.suppressedPlacementCount)
-                && writer.WriteStructArray(value.suppressedPlacementKeys)
-                && writer.WriteInt(value.faunaStateCount)
-                && WriteProceduralFaunaStateArray(ref writer, value.faunaStates)
-                && writer.WriteInt(value.geologySeamStateCount)
-                && writer.WriteStructArray(value.geologySeamStates)
-                && writer.WriteInt(value.geologyCaveEntranceCount)
-                && writer.WriteStructArray(value.geologyCaveEntrances)
-                && writer.WriteInt(value.hibernatedFaunaCount)
-                && WriteHibernatedFaunaStateArray(ref writer, value.hibernatedFaunaStates);
+            int suppressedCount = ClampCollectionCount(
+                value.suppressedPlacementCount,
+                value.suppressedPlacementKeys,
+                ProceduralWorldStateDTO.MaxSuppressedPlacements);
+            int faunaCount = ClampCollectionCount(
+                value.faunaStateCount,
+                value.faunaStates,
+                ProceduralWorldStateDTO.MaxFaunaStates);
+            int seamStateCount = ClampCollectionCount(
+                value.geologySeamStateCount,
+                value.geologySeamStates,
+                ProceduralWorldStateDTO.MaxGeologySeamStates);
+            int caveEntranceCount = ClampCollectionCount(
+                value.geologyCaveEntranceCount,
+                value.geologyCaveEntrances,
+                ProceduralWorldStateDTO.MaxGeologyCaveEntrances);
+            int hibernatedFaunaCount = ClampCollectionCount(
+                value.hibernatedFaunaCount,
+                value.hibernatedFaunaStates,
+                ProceduralWorldStateDTO.MaxHibernatedFaunaStates);
+
+            return writer.WriteInt(suppressedCount)
+                && writer.WriteStructArraySlice(value.suppressedPlacementKeys, suppressedCount)
+                && writer.WriteInt(faunaCount)
+                && WriteProceduralFaunaStateArray(ref writer, value.faunaStates, faunaCount)
+                && writer.WriteInt(seamStateCount)
+                && writer.WriteStructArraySlice(value.geologySeamStates, seamStateCount)
+                && writer.WriteInt(caveEntranceCount)
+                && writer.WriteStructArraySlice(value.geologyCaveEntrances, caveEntranceCount)
+                && writer.WriteInt(hibernatedFaunaCount)
+                && WriteHibernatedFaunaStateArray(ref writer, value.hibernatedFaunaStates, hibernatedFaunaCount);
         }
 
         private static bool ReadProceduralWorldState(ref BufferReader reader, int version, out ProceduralWorldStateDTO value)
         {
             value = default;
             if (!reader.ReadInt(out value.suppressedPlacementCount)
-                || !reader.ReadStructArray(out value.suppressedPlacementKeys)
+                || !reader.ReadStructArrayBounded(
+                    out value.suppressedPlacementKeys,
+                    ProceduralWorldStateDTO.MaxSuppressedPlacements,
+                    "Suppressed placement keys")
                 || !reader.ReadInt(out value.faunaStateCount)
                 || !ReadProceduralFaunaStateArray(ref reader, out value.faunaStates))
             {
@@ -1434,7 +1458,10 @@ namespace Hecton8.SaveSystem
                 return true;
 
             if (!reader.ReadInt(out value.geologySeamStateCount)
-                || !reader.ReadStructArray(out value.geologySeamStates))
+                || !reader.ReadStructArrayBounded(
+                    out value.geologySeamStates,
+                    ProceduralWorldStateDTO.MaxGeologySeamStates,
+                    "Procedural geology seam states"))
             {
                 return false;
             }
@@ -1443,7 +1470,10 @@ namespace Hecton8.SaveSystem
                 return true;
 
             if (!reader.ReadInt(out value.geologyCaveEntranceCount)
-                || !reader.ReadStructArray(out value.geologyCaveEntrances))
+                || !reader.ReadStructArrayBounded(
+                    out value.geologyCaveEntrances,
+                    ProceduralWorldStateDTO.MaxGeologyCaveEntrances,
+                    "Procedural geology cave entrances"))
             {
                 return false;
             }
@@ -1455,16 +1485,26 @@ namespace Hecton8.SaveSystem
                 && ReadHibernatedFaunaStateArray(ref reader, out value.hibernatedFaunaStates);
         }
 
-        private static bool WriteProceduralFaunaStateArray(ref BufferWriter writer, ProceduralFaunaStateDTO[] values)
+        private static int ClampCollectionCount<T>(int count, T[] values, int maxCount)
         {
-            int count = values != null ? values.Length : NullCollectionCount;
-            if (!writer.WriteInt(count))
+            int length = values != null ? values.Length : 0;
+            int upperBound = Math.Min(Math.Max(maxCount, 0), length);
+            return Math.Clamp(count, 0, upperBound);
+        }
+
+        private static bool WriteProceduralFaunaStateArray(ref BufferWriter writer, ProceduralFaunaStateDTO[] values, int count)
+        {
+            if (values == null)
+                return writer.WriteInt(NullCollectionCount);
+
+            int safeCount = ClampCollectionCount(count, values, ProceduralWorldStateDTO.MaxFaunaStates);
+            if (!writer.WriteInt(safeCount))
                 return false;
 
-            if (values == null || values.Length == 0)
+            if (safeCount == 0)
                 return true;
 
-            for (int i = 0; i < values.Length; i++)
+            for (int i = 0; i < safeCount; i++)
             {
                 ProceduralFaunaStateDTO value = values[i];
                 if (!writer.WriteLong(value.runtimeKey) ||
@@ -1502,6 +1542,12 @@ namespace Hecton8.SaveSystem
                 return true;
             }
 
+            if (count > ProceduralWorldStateDTO.MaxFaunaStates)
+            {
+                reader.SetError("Procedural fauna state count exceeds the supported range.");
+                return false;
+            }
+
             if (count > int.MaxValue / ProceduralFaunaStateStrideBytes)
             {
                 reader.SetError("Procedural fauna state payload exceeds the supported range.");
@@ -1534,16 +1580,19 @@ namespace Hecton8.SaveSystem
             return true;
         }
 
-        private static bool WriteHibernatedFaunaStateArray(ref BufferWriter writer, HibernatedFaunaStateDTO[] values)
+        private static bool WriteHibernatedFaunaStateArray(ref BufferWriter writer, HibernatedFaunaStateDTO[] values, int count)
         {
-            int count = values != null ? values.Length : NullCollectionCount;
-            if (!writer.WriteInt(count))
+            if (values == null)
+                return writer.WriteInt(NullCollectionCount);
+
+            int safeCount = ClampCollectionCount(count, values, ProceduralWorldStateDTO.MaxHibernatedFaunaStates);
+            if (!writer.WriteInt(safeCount))
                 return false;
 
-            if (values == null || values.Length == 0)
+            if (safeCount == 0)
                 return true;
 
-            for (int i = 0; i < values.Length; i++)
+            for (int i = 0; i < safeCount; i++)
             {
                 HibernatedFaunaStateDTO value = values[i];
                 if (!writer.WriteInt(value.speciesId) ||
@@ -1593,6 +1642,12 @@ namespace Hecton8.SaveSystem
             {
                 values = Array.Empty<HibernatedFaunaStateDTO>();
                 return true;
+            }
+
+            if (count > ProceduralWorldStateDTO.MaxHibernatedFaunaStates)
+            {
+                reader.SetError("Hibernated fauna state count exceeds the supported range.");
+                return false;
             }
 
             if (count > int.MaxValue / HibernatedFaunaStateStrideBytes)
@@ -3335,6 +3390,11 @@ namespace Hecton8.SaveSystem
 
             public bool ReadStructArray<T>(out T[] values) where T : unmanaged
             {
+                return ReadStructArrayBounded(out values, int.MaxValue, "Collection");
+            }
+
+            public bool ReadStructArrayBounded<T>(out T[] values, int maxCount, string collectionName) where T : unmanaged
+            {
                 values = null;
                 if (!ReadInt(out int count))
                     return false;
@@ -3344,7 +3404,13 @@ namespace Hecton8.SaveSystem
 
                 if (count < 0)
                 {
-                    SetError("Collection length is negative.");
+                    SetError(collectionName + " length is negative.");
+                    return false;
+                }
+
+                if (count > maxCount)
+                {
+                    SetError(collectionName + " length exceeds the supported range.");
                     return false;
                 }
 

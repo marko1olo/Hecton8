@@ -40,14 +40,39 @@ namespace Hecton8.Interaction
 #endif
         }
 
+        /// <summary>
+        /// Registers a collider-backed receiver for physical hand lookup.
+        /// </summary>
+        /// <param name="collider">Trigger collider returned by the hand overlap probe.</param>
+        /// <param name="receiver">Receiver that handles the physical hand press.</param>
+        /// <remarks>
+        /// Compatibility wrapper for legacy callers. New systems should use <see cref="TryRegister"/>
+        /// when local lifecycle state depends on the write succeeding.
+        /// </remarks>
         public static void Register(Collider collider, IPhysicalPanelButtonReceiver receiver)
         {
-            if (collider == null || receiver == null)
-                return;
-
-            WriteReceiver(collider, receiver);
+            TryRegister(collider, receiver);
         }
 
+        /// <summary>
+        /// Attempts to register a collider-backed receiver and reports fixed-table saturation.
+        /// </summary>
+        /// <param name="collider">Trigger collider returned by the hand overlap probe.</param>
+        /// <param name="receiver">Receiver that handles the physical hand press.</param>
+        /// <returns>True when the receiver table was updated; false for null inputs or saturation.</returns>
+        public static bool TryRegister(Collider collider, IPhysicalPanelButtonReceiver receiver)
+        {
+            if (collider == null || receiver == null)
+                return false;
+
+            return WriteReceiver(collider, receiver);
+        }
+
+        /// <summary>
+        /// Removes a collider-backed receiver when the exact collider and receiver pair is still registered.
+        /// </summary>
+        /// <param name="collider">Collider key previously registered with this receiver.</param>
+        /// <param name="receiver">Receiver expected in the fixed table slot.</param>
         public static void Unregister(Collider collider, IPhysicalPanelButtonReceiver receiver)
         {
             if (collider == null)
@@ -56,6 +81,12 @@ namespace Hecton8.Interaction
             RemoveReceiver(collider, receiver);
         }
 
+        /// <summary>
+        /// Resolves a hand-overlap collider to its registered receiver without component traversal.
+        /// </summary>
+        /// <param name="collider">Collider returned by the physical hand overlap probe.</param>
+        /// <param name="receiver">Registered receiver when the collider key is present.</param>
+        /// <returns>True when the collider maps to a non-null receiver.</returns>
         public static bool TryResolve(Collider collider, out IPhysicalPanelButtonReceiver receiver)
         {
             receiver = null;
@@ -84,7 +115,7 @@ namespace Hecton8.Interaction
             return false;
         }
 
-        private static void WriteReceiver(Collider collider, IPhysicalPanelButtonReceiver receiver)
+        private static bool WriteReceiver(Collider collider, IPhysicalPanelButtonReceiver receiver)
         {
             ulong key = EntityId.ToULong(collider.GetEntityId());
             int index = HashKey(key);
@@ -97,13 +128,13 @@ namespace Hecton8.Interaction
                         ReferenceEquals(s_receiverColliders[index], collider))
                     {
                         s_receivers[index] = receiver;
-                        return;
+                        return true;
                     }
                 }
                 else
                 {
                     WriteReceiverSlot(index, key, collider, receiver);
-                    return;
+                    return true;
                 }
 
                 index = (index + 1) & ReceiverCacheMask;
@@ -116,6 +147,7 @@ namespace Hecton8.Interaction
                 Debug.LogWarning("[PhysicalHandReceiverRegistry] Fixed receiver cache saturated. Increase MaxReceivers.");
             }
 #endif
+            return false;
         }
 
         private static void RemoveReceiver(Collider collider, IPhysicalPanelButtonReceiver receiver)

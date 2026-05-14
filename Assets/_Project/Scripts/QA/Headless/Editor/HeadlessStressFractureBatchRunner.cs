@@ -165,7 +165,9 @@ namespace Hecton8.QA.Headless.Editor
             try
             {
                 string result = File.ReadAllText(resultPath);
-                TryParseExitCode(result, out exitCode);
+                if (!TryParseExitCode(result, out exitCode))
+                    WriteRunnerStatus("result_exit_code_invalid");
+
                 return true;
             }
             catch (IOException)

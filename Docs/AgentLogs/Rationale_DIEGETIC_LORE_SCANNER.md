@@ -253,3 +253,67 @@ Solution: Ran filtered and plain generated-project builds. Both passed; final su
 Rejected Alternatives: Trusting static inspection after modifying signal payload identity.
 Scalability potential: None; verification state.
 Hardware Impact: No runtime impact.
+
+## LOOP 11 SCANNER BLACK BOX / H-PHI HARDENING
+
+Problem: The scanner acquisition path had native candidate state, one-ray occlusion, and diegetic UI signals, but no scanner-local 300-frame postmortem ring. If acquisition pose/progress became non-finite, the system could clear or overwrite transient state before a crash report explained the failure.
+Solution: Added `ScannerBlackBoxEntry` as a fixed `NativeArray` ring of 300 entries owned by `ScannerTool`. Each fast tick records frame, runtime tool hash, artifact/blueprint hashes, active and pending lore hashes, progress, battery, dt, contact age, pending occlusion distance, tool pose, active probe, pending occlusion position, flags, and quality tier. Non-finite values are sanitized before the native write.
+Rejected Alternatives: Debug logging, managed queues, expanding `GlobalSignals.cs` while it is under parallel-agent ownership, or writing a generic scanner manager singleton.
+Scalability potential: Low/MX350 pays one compact sequential native write while the scanner is equipped; no added physics or UI polling. Middle keeps richer title decrypt visuals using the existing signal path. High/Ultra can increase visual decode density while the same black box captures exact target identity and probe state for postmortem triage.
+Hardware Impact: Estimated normal-path cost is below 1 us per active scanner fast tick on i3/MX350; memory is 300 fixed entries. Fault dump is one-shot disk I/O only after invalid state.
+
+Problem: Scanner progress and snapshot values could receive non-finite floats from upstream fragment progress, SDF/chemical sampling, or tool delta input, then feed display-facing signals.
+Solution: Added finite guard helpers for scanner saturation and non-negative values. `ScannerToolActiveSignal` now publishes sanitized progress/battery. Scientific snapshots sanitize progress, density, density01, toxicity, chemical load, attractant strength, depth, and direction. Held progress accumulation rejects non-finite delta/progress before it reaches archaeology/UI state.
+Rejected Alternatives: Letting `math.saturate`/`Mathf.Clamp01` pass NaN through; throwing gameplay exceptions; hiding the issue with UI-only clamps.
+Scalability potential: Toaster path avoids poisoned percentage text and spurious dump spam. High/Ultra preserve the same visual overkill path but stop one corrupt sample from contaminating RT display and scanner evidence.
+Hardware Impact: Added branch-only finite checks around existing writes. Expected cost is sub-us; avoided cost is crash ambiguity and invalid UI packet fanout.
+
+Problem: Decryption reveal math still used raw scanner progress in both scanner summary text and the physical RT consumer. A NaN progress packet can poison `floor(progress * length)` or suppress repaint because the raw comparison is not meaningful.
+Solution: Scanner summary and `ToolDiegeticDisplayController` now sanitize scanner progress before percent buckets, reveal counts, and dirty-state comparison.
+Rejected Alternatives: Trusting upstream scanner signal sanitation only; clamping the final integer after `floor` while still letting NaN enter the math.
+Scalability potential: Low tier percentage display and high-tier scramble reveal share the same finite progress gate. Ultra visual density can increase without inheriting invalid progress state.
+Hardware Impact: One finite branch per scanner repaint/reveal; estimated sub-us on i3/MX350.
+
+Problem: The first black-box write risked treating "no scanner contact yet" as invalid because `_scientificLastContactTime` starts at negative infinity.
+Solution: Contact age now records `0` until the first finite contact timestamp exists, so the black box does not dump on normal equip/no-contact state.
+Rejected Alternatives: Initializing last-contact time to `Time.time` on equip, which would fake recent contact; suppressing all black-box invalid checks until first target lock.
+Scalability potential: Low/Middle/High/Ultra all keep clean postmortem data without false-positive disk writes during normal scanner idle.
+Hardware Impact: One finite branch per black-box write; avoids accidental fault-path disk I/O.
+
+Problem: The current batch file no longer contains `DIEGETIC_LORE_SCANNER`.
+Solution: Ran a raw CLI search/extraction attempt, confirmed absence, ignored neighboring prompts, and continued from `Status_DIEGETIC_LORE_SCANNER.md` plus this rationale file.
+Rejected Alternatives: Reading adjacent agents' prompts or stopping scanner hardening despite persisted scanner state.
+Scalability potential: Process hygiene only.
+Hardware Impact: No runtime impact.
+
+Problem: User explicitly forbade dotnet rebuilds in this loop.
+Solution: Verification is limited to static checks: `git diff --check` and scanner-path bans for `Camera.main`, direct `Physics.Raycast`, `void Update`, `foreach`, `.ToString`, and TMP `.text =`.
+Rejected Alternatives: Running `dotnet build` against explicit instruction; claiming Unity/compiler verification from static review.
+Scalability potential: None; verification state.
+Hardware Impact: No runtime impact.
+
+## LOOP 12 SCOPED H-PHI TIER CADENCE HYGIENE
+
+Problem: Scanner quality-tier decisions were scattered across signal publish, low-tier scanner summary, and acquisition resample cadence. That created multiple `GlobalRegistry.ScalabilityTier` source refs and allowed tier changes to affect presentation/acquisition immediately.
+Solution: Added `ResolveScannerQualityTier()` in `ScannerTool`: one global tier ingress, 0.5s probe cadence, and 2s candidate hysteresis. Signal publish, low-tier decryption, black-box tier stamping, and focused resample cadence now share that cached tier.
+Rejected Alternatives: Keeping direct tier reads in each helper; adding a new cross-domain tier service; editing core registry contracts during a UX pass.
+Scalability potential: Low/MX350 cannot flicker between percentage and scramble presentation from transient tier changes. High/Ultra keep visual-overkill scanner responsiveness after the hysteresis window instead of causing immediate cadence churn.
+Hardware Impact: Source-level `GlobalRegistry.ScalabilityTier` refs in `ScannerTool.cs` drop from 3 to 1. Runtime tier polling is capped to 2 Hz per active scanner instead of every publish/resample/helper call. Exact profiler gain PENDING VERIFICATION.
+
+Problem: The physical tool RT display already had low-tier hysteresis, but it still read `GlobalRegistry.ScalabilityTier` every UI tick.
+Solution: Added a 0.5s quality-tier probe countdown to `ToolDiegeticDisplayController`. The existing 2s low-tier hysteresis remains; registry polling is throttled while flag-driven low-tier fallback still participates every tick.
+Rejected Alternatives: Removing hysteresis, polling every tick, or adding quality tier into `ToolStateChangedSignal` by changing the 32-byte public signal layout.
+Scalability potential: Low-tier displays shed RT work predictably. High/Ultra keep richer RT rendering after stable tier confirmation. Public signal layout stays immutable for the current batch.
+Hardware Impact: Source-level `GlobalRegistry.ScalabilityTier` refs in `ToolDiegeticDisplayController.cs` drop from 2 to 1. Active-display registry polling drops from 60 Hz to 2 Hz target cadence.
+
+Problem: UI display tick delta used `math.max(0f, deltaTime)`, which does not explicitly reject NaN before timer math.
+Solution: Added `SanitizeSeconds()` and routed display tick delta through it before pool retry and tier hysteresis counters.
+Rejected Alternatives: Trusting dispatcher delta in a render-facing UI timer; clamping only at timer write sites.
+Scalability potential: All tiers avoid NaN-poisoned RT release/pool retry timers.
+Hardware Impact: One finite branch per active display tick; no allocation.
+
+Problem: H-Phi improvement needed objective scoped evidence without fake global claims.
+Solution: Counted baseline/current scanner-domain `GlobalRegistry.ScalabilityTier` refs: `ScannerTool.cs` 3 -> 1, `ToolDiegeticDisplayController.cs` 2 -> 1. Did not edit `Docs/Reports/HECTON_PHI_REPORT.md` or claim runtime/global H-Phi.
+Rejected Alternatives: Running dotnet rebuilds, running a global H-Phi audit as if it verified runtime, or broad refactoring outside the scanner domain.
+Scalability potential: Cleaner source-level synaptic hygiene and lower hot registry polling in the scanner UX path.
+Hardware Impact: Exact microseconds PENDING PROFILER; expected low-end gain is small but deterministic.

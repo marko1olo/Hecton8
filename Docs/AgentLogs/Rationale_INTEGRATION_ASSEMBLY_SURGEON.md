@@ -2,7 +2,7 @@
 
 Agent: INTEGRATION_ASSEMBLY_SURGEON
 Domain: Unity Compilation Graph / Integrator
-Status: STATIC H-PHI PATCH APPLIED / PENDING FRESH COMPILE (NO DOTNET ORDER)
+Status: STATIC H-PHI TOOLING IMPROVED / PENDING FRESH COMPILE (NO DOTNET ORDER)
 
 ## Decision 0 - Session Initialization
 
@@ -67,3 +67,19 @@ Solution: Performed static-only validation: `Directory.Build.props` gate presenc
 Rejected Alternatives: Running `dotnet build`, `dotnet rebuild`, or `dotnet msbuild` was rejected by user instruction. Claiming Unity or fresh compile verification was rejected by evidence law.
 Scalability potential: Static H-Phi work preserves build-lane determinism but does not prove player-facing runtime quality. Low and Ultra runtime tiers require later Unity/profiler evidence outside this no-dotnet pass.
 Hardware Impact: Runtime impact 0 us. Fresh microsecond savings are not claimed; only the prior dated CLI artifact remains as historical evidence.
+
+## Decision 8 - H-Phi Core Graph Audit Mode
+
+Problem: H-Phi compile-graph debt was recorded manually in prose, which is too easy to stale out under parallel agent churn.
+Solution: Extended `Tools/Architecture/HectonPhiAudit.ps1` with `-CoreGraphOnly`, a fast static mode that classifies `Hecton8.Core.asmdef` references, generated `Hecton8.Core.csproj` project references, and the `Directory.Build.props` Core build gate.
+Rejected Alternatives: Creating a second standalone audit script was rejected because duplicate tooling fragments evidence. Running the full source H-Phi audit was rejected for this continuation because previous global H-Phi scans have timed out under repo load and the user requested continued careful work without build churn.
+Scalability potential: Low-end development machines get a fast graph-only audit that avoids a full source scan; High/Ultra validation can still run the full H-Phi scan when time budget allows. Runtime visuals unchanged.
+Hardware Impact: Runtime impact 0 us. Tooling impact: `-CoreGraphOnly` completed in 2026-05-15 static run and reported 46 Core asmdef refs, 28 Core asmdef H-Phi debt refs, 12 generated Core project refs, and 10 generated Core project debt refs. No fresh compile proof was generated.
+
+## Decision 9 - Core Graph Budget Gate
+
+Problem: A graph audit that only reports numbers can still let new H-Phi debt slip in unless humans compare the counts manually.
+Solution: Added optional budget switches to `HectonPhiAudit.ps1`: `-RequireCoreBuildGate`, `-MaxCoreAsmdefDebtReferences`, and `-MaxGeneratedProjectDebtReferences`. The continuation validated the current baseline with `-CoreGraphOnly -RequireCoreBuildGate -MaxCoreAsmdefDebtReferences 28 -MaxGeneratedProjectDebtReferences 10`, then verified the expected failure path with a zero asmdef-debt budget.
+Rejected Alternatives: Hard-failing on any existing debt was rejected because the current Core graph already has known debt and blind removal is unsafe. Baking the baseline into the script was rejected because the budget should be supplied by CI/task owner, not hidden inside tooling.
+Scalability potential: Low-end developer machines can enforce no-regression H-Phi graph budgets with a fast static script. High/Ultra validation lanes can lower the budgets after staged contract extraction.
+Hardware Impact: Runtime impact 0 us. Tooling impact is bounded to PowerShell text/XML/JSON reads; no Unity import or dotnet command is involved. Failure path now reports the aggregated budget violation text through one deterministic exception instead of stopping on the first `Write-Error`.

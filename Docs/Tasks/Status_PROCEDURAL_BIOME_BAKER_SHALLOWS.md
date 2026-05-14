@@ -142,3 +142,11 @@ Status: PENDING VERIFICATION
 - Patched `ShallowsBioForgeBatchBaker` to scan every generated prefab transform and reject any nonzero `StaticEditorFlags`.
 - Verification avoided dotnet rebuilds. `git diff --check` passed for the touched source; source scan found `ValidateStaticFlagsContract` and `GameObjectUtility.GetStaticEditorFlags`; brace count is balanced. Prefab YAML scans found TubeCoral=50, Kelp=100, PorousRock=50 with `BadStaticFlagsYaml=0`.
 - H-Phi impact is local evidence and contract density only; no global numeric H-Phi score is claimed.
+
+### Loop 14 - Mesh Geometry And Budget Contract Lockdown
+
+- Re-read status/rationale and continued from the preserved local assignment because live `CURRENT_BATCH.md` no longer carries this agent ID.
+- Found remaining mesh-payload drift risk: a prefab could pass count/reference checks while a LOD mesh carried a zero index buffer, extra submesh, UInt32 index format, degenerate bounds, weak LOD1/LOD2 vertex color mask, or family budget overflow.
+- Patched `ShallowsBioForgeBatchBaker` to centralize family LOD triangle budgets and validate every LOD mesh for non-empty geometry, one submesh, UInt16 indices, finite non-degenerate bounds, exact family budget ceilings, and vertex color R gradient on LOD0/LOD1/LOD2.
+- Verification avoided dotnet rebuilds. `git diff --check` passed for the touched source with only the repo CRLF warning; source scan found the new mesh/budget validators; brace count is balanced. Mesh YAML scan found `Count=600`, `Bad=0`, max triangles: Kelp `2200/514/94`, PorousRock `3081/581/53`, TubeCoral `2364/342/24`.
+- H-Phi impact remains domain-local: stricter asset contract density, no runtime scripts, no Update cadence, and no new cross-domain ownership.

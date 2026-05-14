@@ -18,7 +18,6 @@ namespace Hecton8.UI
     public sealed class PhysicalPanelButton : MonoBehaviour, ITickable, IUpdatable, IInteractionSignalConsumer, IPhysicalPanelButtonReceiver
     {
         private const uint PhysicalPanelToolId = 0x50414E4Cu;
-        private const float MinimumDeltaTime = 0.0001f;
         private const byte LeftMotorMask = 0b0001;
         private const byte RightMotorMask = 0b0010;
         private const byte MicroHapticPriority = 1;
@@ -39,6 +38,7 @@ namespace Hecton8.UI
         private const float MinimumClickPitch = 0.25f;
         private const float MaximumClickPitch = 2.5f;
         private const float MaximumButtonDeltaSeconds = 0.05f;
+        private const float VisualWriteEpsilon = 0.000001f;
         private const float VisualSettleEpsilon = 0.0005f;
 
         [Header("References")]
@@ -115,8 +115,10 @@ namespace Hecton8.UI
         private float _resolvedClickVolume = 0.42f;
         private float _resolvedClickPitch = 1f;
         private bool _registered;
+        private bool _receiverRegistered;
         private bool _pressDispatched;
         private bool _acousticRuntimeAcquired;
+        private Collider _registeredActivationVolume;
 
         /// <summary>Collider volume used by the physical hand overlap probe.</summary>
         public Collider ActivationCollider => activationVolume;
@@ -187,10 +189,12 @@ namespace Hecton8.UI
             float target = handInside ? 1f : 0f;
             float speed = handInside ? _resolvedDepressSpeed : _resolvedReleaseSpeed;
             float alpha = FastDecayBlend(speed, safeDeltaTime);
-            float currentPressed = math.isfinite(_pressed01) ? _pressed01 : 0f;
+            float previousPressed = _pressed01;
+            bool pressedWasInvalid = !math.isfinite(previousPressed);
+            float currentPressed = pressedWasInvalid ? 0f : previousPressed;
             _pressed01 = math.lerp(currentPressed, target, alpha);
 
-            if (buttonMesh != null)
+            if (buttonMesh != null && (pressedWasInvalid || math.abs(_pressed01 - currentPressed) > VisualWriteEpsilon))
             {
                 Vector3 offset = new Vector3(0f, 0f, -_resolvedPressDepthMeters * _pressed01);
                 buttonMesh.localPosition = _baseLocalPosition + offset;
@@ -201,7 +205,7 @@ namespace Hecton8.UI
                 DispatchPanelEvent(DiegeticPanelInputEventType.Up);
                 _pressDispatched = false;
             }
-            else if (handInside && _pressDispatched)
+            else if (handInside && _pressDispatched && safeDeltaTime > 0f)
             {
                 _holdEventRemaining -= safeDeltaTime;
                 if (_holdEventRemaining <= 0f)
@@ -221,7 +225,7 @@ namespace Hecton8.UI
             if (safeSpeed <= 0f || safeDeltaTime <= 0f)
                 return 0f;
 
-            float x = safeSpeed * math.max(safeDeltaTime, MinimumDeltaTime);
+            float x = safeSpeed * safeDeltaTime;
             if (x >= 3.5f)
                 return 1f;
 
@@ -391,18 +395,32 @@ namespace Hecton8.UI
 
         private void RegisterCollider()
         {
-            if (activationVolume == null)
+            if (_receiverRegistered)
+            {
+                if (ReferenceEquals(_registeredActivationVolume, activationVolume))
+                    return;
+
+                UnregisterCollider();
+            }
+
+            if (activationVolume == null || !Application.isPlaying)
                 return;
 
-            PhysicalHandReceiverRegistry.Register(activationVolume, this);
+            if (!PhysicalHandReceiverRegistry.TryRegister(activationVolume, this))
+                return;
+
+            _registeredActivationVolume = activationVolume;
+            _receiverRegistered = true;
         }
 
         private void UnregisterCollider()
         {
-            if (activationVolume == null)
+            if (!_receiverRegistered)
                 return;
 
-            PhysicalHandReceiverRegistry.Unregister(activationVolume, this);
+            PhysicalHandReceiverRegistry.Unregister(_registeredActivationVolume, this);
+            _registeredActivationVolume = null;
+            _receiverRegistered = false;
         }
 
         private void DispatchPanelEvent(DiegeticPanelInputEventType eventType)

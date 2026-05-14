@@ -342,10 +342,21 @@ namespace Hecton8.World
                 return navPayload;
             }
 
+            if (!math.isfinite(payload.MinX) ||
+                !math.isfinite(payload.MaxX) ||
+                !math.isfinite(payload.MinZ) ||
+                !math.isfinite(payload.MaxZ) ||
+                abyssalNavNodeStepMeters <= 0f ||
+                !math.isfinite(abyssalNavNodeStepMeters))
+            {
+                return navPayload;
+            }
+
             float chunkWidth = math.max(0.01f, payload.MaxX - payload.MinX);
             float chunkDepth = math.max(0.01f, payload.MaxZ - payload.MinZ);
-            int sampleCountX = math.max(1, (int)math.floor(chunkWidth / abyssalNavNodeStepMeters));
-            int sampleCountZ = math.max(1, (int)math.floor(chunkDepth / abyssalNavNodeStepMeters));
+            float inverseNodeStep = math.rcp(math.max(0.01f, abyssalNavNodeStepMeters));
+            int sampleCountX = math.max(1, (int)math.floor(chunkWidth * inverseNodeStep));
+            int sampleCountZ = math.max(1, (int)math.floor(chunkDepth * inverseNodeStep));
             int holeNodeCount = CountTerrainHolesIntersectingChunk(payload.MinX, payload.MaxX, payload.MinZ, payload.MaxZ);
             int maxNodeCount = sampleCountX * sampleCountZ + holeNodeCount;
             if (maxNodeCount <= 0)
@@ -402,8 +413,8 @@ namespace Hecton8.World
 
             EnsureInactiveNativeCapacity(ref nodeTypes, maxNodeCount);
 
-            float stepX = chunkWidth / sampleCountX;
-            float stepZ = chunkDepth / sampleCountZ;
+            float stepX = chunkWidth * math.rcp(math.max(1, sampleCountX));
+            float stepZ = chunkDepth * math.rcp(math.max(1, sampleCountZ));
             int writeIndex = 0;
             for (int sampleZ = 0; sampleZ < sampleCountZ; sampleZ++)
             {
@@ -477,6 +488,9 @@ namespace Hecton8.World
             conduitVector = Vector3.zero;
             conduitStrength = 0f;
             nodeType = NavNodeType.Water;
+            if (!IsFinite(candidate))
+                return false;
+
             if (IsInsideRegisteredTerrainHole(candidate.x, candidate.z))
             {
                 nodeType = NavNodeType.Interior;
@@ -497,10 +511,32 @@ namespace Hecton8.World
             Vector3 flowVectorSum = Vector3.zero;
             int contributingSamples = 0;
             NativeChunkPool underwaterPool = ResolveChunkPool(isSurface: false, payload);
-            int end = math.min(underwaterPool.Matrices.Length, payload.UnderwaterOffset + payload.UnderwaterCount);
-            for (int poolIndex = math.max(0, payload.UnderwaterOffset); poolIndex < end; poolIndex++)
+            if (!underwaterPool.Matrices.IsCreated ||
+                !underwaterPool.BiomeLayers.IsCreated ||
+                !underwaterPool.SemanticTypes.IsCreated)
+            {
+                return false;
+            }
+
+            int availableLength = math.min(
+                underwaterPool.Matrices.Length,
+                math.min(underwaterPool.BiomeLayers.Length, underwaterPool.SemanticTypes.Length));
+            if (availableLength <= 0)
+                return false;
+
+            int startIndex = math.clamp(payload.UnderwaterOffset, 0, availableLength);
+            long requestedEnd = (long)payload.UnderwaterOffset + math.max(0, payload.UnderwaterCount);
+            long clampedEnd = requestedEnd > availableLength ? availableLength : requestedEnd;
+            if (clampedEnd < startIndex)
+                clampedEnd = startIndex;
+
+            int end = (int)clampedEnd;
+            for (int poolIndex = startIndex; poolIndex < end; poolIndex++)
             {
                 Vector3 position = ResolveRuntimePosition(underwaterPool.Matrices[poolIndex]);
+                if (!IsFinite(position))
+                    continue;
+
                 float dx = position.x - candidate.x;
                 float dz = position.z - candidate.z;
                 float horizontalDistanceSq = (dx * dx) + (dz * dz);
@@ -521,7 +557,9 @@ namespace Hecton8.World
                 if (biomeLayer >= (byte)VegetationBiomeLayer.ColonyGraveyard)
                     deepAffinity += semanticWeight;
 
-                Vector3 flowVector = underwaterPool.FlowVectors[poolIndex];
+                Vector3 flowVector = underwaterPool.FlowVectors.IsCreated && poolIndex < underwaterPool.FlowVectors.Length
+                    ? underwaterPool.FlowVectors[poolIndex]
+                    : Vector3.zero;
                 if (IsFinite(flowVector))
                 {
                     flowMagnitudeSum += EstimateLength3D(flowVector);
@@ -599,13 +637,27 @@ namespace Hecton8.World
             if (state == null || !heightSamples.IsCreated || state.HeightmapResolution <= 1)
                 return false;
 
+            long expectedLength = (long)state.HeightmapResolution * state.HeightmapResolution;
+            if (expectedLength <= 0L ||
+                expectedLength > int.MaxValue ||
+                heightSamples.Length < expectedLength ||
+                !math.isfinite(worldX) ||
+                !math.isfinite(worldZ) ||
+                !IsFinite(state.TerrainPosition) ||
+                !IsFinite(state.TerrainSize) ||
+                state.TerrainSize.x <= 0f ||
+                state.TerrainSize.z <= 0f)
+            {
+                return false;
+            }
+
             float localX = worldX - state.TerrainPosition.x;
             float localZ = worldZ - state.TerrainPosition.z;
             if (localX < 0f || localZ < 0f || localX > state.TerrainSize.x || localZ > state.TerrainSize.z)
                 return false;
 
-            float normalizedX = math.saturate(localX / math.max(0.01f, state.TerrainSize.x));
-            float normalizedZ = math.saturate(localZ / math.max(0.01f, state.TerrainSize.z));
+            float normalizedX = math.saturate(localX * math.rcp(math.max(0.01f, state.TerrainSize.x)));
+            float normalizedZ = math.saturate(localZ * math.rcp(math.max(0.01f, state.TerrainSize.z)));
             terrainHeight = state.TerrainPosition.y + SampleHeight(
                 normalizedX,
                 normalizedZ,
@@ -620,8 +672,14 @@ namespace Hecton8.World
             if (!pool.BiomeLayers.IsCreated || count <= 0)
                 return false;
 
-            int end = math.min(pool.BiomeLayers.Length, offset + count);
-            for (int poolIndex = math.max(0, offset); poolIndex < end; poolIndex++)
+            int startIndex = math.clamp(offset, 0, pool.BiomeLayers.Length);
+            long requestedEnd = (long)offset + count;
+            long clampedEnd = requestedEnd > pool.BiomeLayers.Length ? pool.BiomeLayers.Length : requestedEnd;
+            if (clampedEnd < startIndex)
+                return false;
+
+            int end = (int)clampedEnd;
+            for (int poolIndex = startIndex; poolIndex < end; poolIndex++)
             {
                 if (pool.BiomeLayers[poolIndex] >= (byte)VegetationBiomeLayer.ColonyGraveyard)
                     return true;
@@ -1103,7 +1161,7 @@ namespace Hecton8.World
             if (elapsedTicks <= 0)
                 return 0f;
 
-            return (float)(elapsedTicks * 1000.0 / Stopwatch.Frequency);
+            return (float)(elapsedTicks * 1000.0 * math.rcp((double)Stopwatch.Frequency));
         }
 
         private void RecordAbyssalPathTelemetry(

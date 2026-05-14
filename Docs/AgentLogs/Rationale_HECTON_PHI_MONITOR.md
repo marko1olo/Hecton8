@@ -120,3 +120,17 @@ Hardware Impact: Runtime hot path cost is 0 us; no method bodies or runtime allo
 Verification: No rebuild was run. Static checks completed: `Tools/Architecture/HectonPhiAudit.ps1 -Json`, owner-blocked candidate scan, targeted layout scan, and `git diff --check`. Corrected runtime H-Phi narrow is `0.008929037`, risk-adjusted is `0.000114091`, Data Sovereignty is `0.018128162`, memory alignment is `0.495217853`. Runtime Unity evidence remains pending.
 
 Owner-blocked DataVault candidates for Overseer: `HectonVoxelEngine.cs`, `Audio/PlayerCriticalProceduralAudioRenderer.cs`, `PlayerInventory.cs`, `Fauna/PredatorCognitionDomain.cs`, `World/HectonMapMagicVegetationBridge.cs`, `World/EcosystemDirector.cs`, `Power/LogisticsNetworkGraph.cs`, `SaveBinaryStorage.cs`, `SubmarineAtmosphereSystem.cs`, `World/DestructibleOrganicManager.cs`, `World/VegetationFlowFieldIntegrator.cs`, `VoxelDeltaProcessor.cs`, `World/VoxelDynamicNavGridRuntime.cs`, `Construction/HabitatGraphManager.cs`, `WorldProceduralFieldSampler.cs`, `World/FloraInteractionManager.cs`, `Atmosphere/GasDynamicsSolver.cs`, `SubmarineStructuralGrid.cs`, `World/WorldChunkResidencyManager.cs`, `World/VegetationMemoryPool.cs`.
+
+## 2026-05-15 Signal Boundary Layout Cleanup
+
+Problem: `GlobalSignals.cs` still had two public signal-boundary structs without explicit layout metadata: `SpscSignalRingBuffer<T>` and `CombatDamageSignalAupShiftTransformer`. The first wraps native signal fallback storage; the second crosses the snapshot-transform boundary for combat damage AUP shifts. Leaving them implicit violates the signal lane mandate that unmanaged/native lane payloads and boundary helpers must have explicit layout or documented unmanaged field order.
+
+Solution: Added `[StructLayout(LayoutKind.Sequential)]` to those two structs only. The patch intentionally changed metadata only: no signal sanitizer logic, queue/ring behavior, NativeArray allocation/disposal, field order, public method body, or snapshot transform logic changed.
+
+Rejected Alternatives: Editing concurrent `PlayerBaseEnterSignal` / `PlayerBaseExitSignal` sanitizer work was rejected because those changes were already present from another active agent and outside this patch. A broader signal refactor was rejected because it would touch runtime dispatch logic without Unity Console evidence. Cross-domain DataVault migrations remain rejected without owner BufferID/SystemID/generation/disposal proof.
+
+Scalability potential: Low/MX350 benefits from clearer ABI metadata in native signal fallback and combat shift paths under IL2CPP/Burst/ARM assumptions. Middle/High/Ultra get no immediate visual gain; this prevents layout ambiguity from consuming future debugging/perf budget while richer signal consumers are added.
+
+Hardware Impact: Runtime hot path cost is 0 us; attributes are metadata and no executable method body changed. Exact gameplay microseconds remain unmeasured because rebuild/profiler work is forbidden by user order.
+
+Verification: No rebuild was run. Static checks completed: `git diff --check -- Assets/_Project/Scripts/Core/GlobalSignals.cs`, a public/internal `GlobalSignals.cs` struct-layout scan, and `Tools/Architecture/HectonPhiAudit.ps1 -Json`. `GlobalSignals.cs` layout scan reports no public/internal structs without nearby `StructLayout`. Latest runtime H-Phi narrow is `0.009035044`, risk-adjusted is `0.000121334`, Data Sovereignty is `0.018263557`, memory alignment is `0.497348887`. Runtime Unity evidence remains pending.

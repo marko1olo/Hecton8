@@ -24,6 +24,15 @@ namespace Hecton8.Editor.ProceduralGen
         private const int CoralCount = 50;
         private const int KelpCount = 100;
         private const int RockCount = 50;
+        private const int CoralLod0TriangleBudget = 2600;
+        private const int CoralLod1TriangleBudget = 620;
+        private const int CoralLod2TriangleBudget = 120;
+        private const int KelpLod0TriangleBudget = 2200;
+        private const int KelpLod1TriangleBudget = 520;
+        private const int KelpLod2TriangleBudget = 96;
+        private const int RockLod0TriangleBudget = 3200;
+        private const int RockLod1TriangleBudget = 720;
+        private const int RockLod2TriangleBudget = 128;
         private const int MaxAllowedLod2Triangles = 149;
         private const float Lod0ScreenHeight = 0.6f;
         private const float Lod1ScreenHeight = 0.15f;
@@ -120,9 +129,9 @@ namespace Hecton8.Editor.ProceduralGen
             SetFloat(serialized, "_boundsPadding", 0.32f);
             SetFloat(serialized, "_smoothMinK", 5.5f);
             SetEnum(serialized, "_sdfProfile", BioForgeSdfProfile.BranchCapsules);
-            SetInt(serialized, "_lod0TriangleBudget", 2600);
-            SetInt(serialized, "_lod1TriangleBudget", 620);
-            SetInt(serialized, "_lod2TriangleBudget", 120);
+            SetInt(serialized, "_lod0TriangleBudget", CoralLod0TriangleBudget);
+            SetInt(serialized, "_lod1TriangleBudget", CoralLod1TriangleBudget);
+            SetInt(serialized, "_lod2TriangleBudget", CoralLod2TriangleBudget);
             SetString(serialized, "_meshOutputFolder", $"{MeshRoot}/TubeCoral");
             SetString(serialized, "_prefabOutputFolder", $"{PrefabRoot}/TubeCoral");
             Apply(serialized, rule);
@@ -151,9 +160,9 @@ namespace Hecton8.Editor.ProceduralGen
             SetEnum(serialized, "_sdfProfile", BioForgeSdfProfile.RibbonFlora);
             SetFloat(serialized, "_ribbonThicknessScale", 0.12f);
             SetFloat(serialized, "_ribbonWidthScale", 3.3f);
-            SetInt(serialized, "_lod0TriangleBudget", 2200);
-            SetInt(serialized, "_lod1TriangleBudget", 520);
-            SetInt(serialized, "_lod2TriangleBudget", 96);
+            SetInt(serialized, "_lod0TriangleBudget", KelpLod0TriangleBudget);
+            SetInt(serialized, "_lod1TriangleBudget", KelpLod1TriangleBudget);
+            SetInt(serialized, "_lod2TriangleBudget", KelpLod2TriangleBudget);
             SetString(serialized, "_meshOutputFolder", $"{MeshRoot}/Kelp");
             SetString(serialized, "_prefabOutputFolder", $"{PrefabRoot}/Kelp");
             Apply(serialized, rule);
@@ -174,9 +183,9 @@ namespace Hecton8.Editor.ProceduralGen
             SetFloat(serialized, "_boundsPadding", 0.18f);
             SetFloat(serialized, "_smoothMinK", 8f);
             SetEnum(serialized, "_sdfProfile", BioForgeSdfProfile.PorousRock);
-            SetInt(serialized, "_lod0TriangleBudget", 3200);
-            SetInt(serialized, "_lod1TriangleBudget", 720);
-            SetInt(serialized, "_lod2TriangleBudget", 128);
+            SetInt(serialized, "_lod0TriangleBudget", RockLod0TriangleBudget);
+            SetInt(serialized, "_lod1TriangleBudget", RockLod1TriangleBudget);
+            SetInt(serialized, "_lod2TriangleBudget", RockLod2TriangleBudget);
             SetFloat(serialized, "_rockRadius", 1.15f);
             SetFloat(serialized, "_rockNoiseAmplitude", 0.24f);
             SetFloat(serialized, "_rockNoiseFrequency", 4.2f);
@@ -467,9 +476,9 @@ namespace Hecton8.Editor.ProceduralGen
                 Iterations = 2,
                 MaxBranches = 1800,
                 SdfResolution = 40,
-                Lod0 = 2600,
-                Lod1 = 620,
-                Lod2 = 120,
+                Lod0 = CoralLod0TriangleBudget,
+                Lod1 = CoralLod1TriangleBudget,
+                Lod2 = CoralLod2TriangleBudget,
                 AngleDegrees = 42f,
                 StepLength = 0.24f,
                 LengthTaper = 0.76f,
@@ -500,9 +509,9 @@ namespace Hecton8.Editor.ProceduralGen
                 Iterations = 3,
                 MaxBranches = 2400,
                 SdfResolution = 36,
-                Lod0 = 2200,
-                Lod1 = 520,
-                Lod2 = 96,
+                Lod0 = KelpLod0TriangleBudget,
+                Lod1 = KelpLod1TriangleBudget,
+                Lod2 = KelpLod2TriangleBudget,
                 AngleDegrees = 7.5f,
                 StepLength = 0.34f,
                 LengthTaper = 0.91f,
@@ -533,9 +542,9 @@ namespace Hecton8.Editor.ProceduralGen
                 Iterations = 0,
                 MaxBranches = 32,
                 SdfResolution = 38,
-                Lod0 = 3200,
-                Lod1 = 720,
-                Lod2 = 128,
+                Lod0 = RockLod0TriangleBudget,
+                Lod1 = RockLod1TriangleBudget,
+                Lod2 = RockLod2TriangleBudget,
                 AngleDegrees = 24f,
                 StepLength = 0.35f,
                 LengthTaper = 0.82f,
@@ -742,7 +751,7 @@ namespace Hecton8.Editor.ProceduralGen
             ValidatePrefabTransformContract(path, prefab.transform, ref failures);
             ValidateStaticFlagsContract(path, prefab, ref failures);
             ValidateLodGroupContract(path, lodGroup, lods, ref failures);
-            ValidateLodContract(path, lods, ref failures);
+            ValidateLodContract(path, familyFolder, lods, ref failures);
             ValidatePrefabMeshReferences(path, familyFolder, lods, ref failures);
 
             Renderer[] renderers = prefab.GetComponentsInChildren<Renderer>(true);
@@ -783,9 +792,6 @@ namespace Hecton8.Editor.ProceduralGen
                 failures++;
                 Debug.LogError($"[ShallowsBioForgeBatchBaker] LOD2 triangle overflow at {path}. Triangles={lod2Triangles}.");
             }
-
-            Mesh lod0Mesh = ResolveFirstMesh(lods[0].renderers);
-            ValidateVertexColorGradient(path, lod0Mesh, ref failures);
 
             MeshCollider[] colliders = prefab.GetComponentsInChildren<MeshCollider>(true);
             if (rock)
@@ -883,7 +889,7 @@ namespace Hecton8.Editor.ProceduralGen
             }
         }
 
-        private static void ValidateLodContract(string path, LOD[] lods, ref int failures)
+        private static void ValidateLodContract(string path, string familyFolder, LOD[] lods, ref int failures)
         {
             for (int i = 0; i < lods.Length; i++)
             {
@@ -897,12 +903,113 @@ namespace Hecton8.Editor.ProceduralGen
 
                 Renderer renderer = renderers[0];
                 MeshFilter meshFilter = renderer != null ? renderer.GetComponent<MeshFilter>() : null;
-                if (renderer == null || meshFilter == null || meshFilter.sharedMesh == null)
+                Mesh mesh = meshFilter != null ? meshFilter.sharedMesh : null;
+                if (renderer == null || meshFilter == null || mesh == null)
                 {
                     failures++;
                     Debug.LogError($"[ShallowsBioForgeBatchBaker] LOD{i} mesh contract failed at {path}.");
+                    continue;
                 }
+
+                ValidateMeshGeometryContract(path, i, mesh, ref failures);
+                ValidateLodTriangleBudget(path, familyFolder, i, mesh, ref failures);
+                ValidateVertexColorGradient(path, i, mesh, ref failures);
             }
+        }
+
+        private static void ValidateMeshGeometryContract(string path, int lodIndex, Mesh mesh, ref int failures)
+        {
+            Bounds bounds = mesh.bounds;
+            bool failed = mesh.vertexCount <= 0 ||
+                          mesh.subMeshCount != 1 ||
+                          mesh.GetIndexCount(0) == 0 ||
+                          mesh.indexFormat != IndexFormat.UInt16 ||
+                          !IsFinite(bounds.center) ||
+                          !IsFinite(bounds.extents) ||
+                          bounds.extents.sqrMagnitude <= TransformEpsilonSq;
+
+            if (!failed)
+                return;
+
+            failures++;
+            Debug.LogError($"[ShallowsBioForgeBatchBaker] LOD{lodIndex} mesh geometry contract failed at {path}. Vertices={mesh.vertexCount}, SubMeshes={mesh.subMeshCount}, IndexFormat={mesh.indexFormat}, BoundsExtentSq={bounds.extents.sqrMagnitude:0.000000}.");
+        }
+
+        private static void ValidateLodTriangleBudget(string path, string familyFolder, int lodIndex, Mesh mesh, ref int failures)
+        {
+            if (!TryResolveLodTriangleBudget(familyFolder, lodIndex, out int triangleBudget))
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] Missing LOD triangle budget for family={familyFolder}, LOD={lodIndex}, Prefab={path}.");
+                return;
+            }
+
+            int triangles = ResolveTriangleCount(mesh);
+            if (triangles > 0 && triangles <= triangleBudget)
+                return;
+
+            failures++;
+            Debug.LogError($"[ShallowsBioForgeBatchBaker] LOD{lodIndex} triangle budget failed at {path}. Triangles={triangles}, Budget={triangleBudget}.");
+        }
+
+        private static bool TryResolveLodTriangleBudget(string familyFolder, int lodIndex, out int triangleBudget)
+        {
+            switch (familyFolder)
+            {
+                case "TubeCoral":
+                    return TryResolveLodTriangleBudget(
+                        lodIndex,
+                        CoralLod0TriangleBudget,
+                        CoralLod1TriangleBudget,
+                        CoralLod2TriangleBudget,
+                        out triangleBudget);
+                case "Kelp":
+                    return TryResolveLodTriangleBudget(
+                        lodIndex,
+                        KelpLod0TriangleBudget,
+                        KelpLod1TriangleBudget,
+                        KelpLod2TriangleBudget,
+                        out triangleBudget);
+                case "PorousRock":
+                    return TryResolveLodTriangleBudget(
+                        lodIndex,
+                        RockLod0TriangleBudget,
+                        RockLod1TriangleBudget,
+                        RockLod2TriangleBudget,
+                        out triangleBudget);
+                default:
+                    triangleBudget = 0;
+                    return false;
+            }
+        }
+
+        private static bool TryResolveLodTriangleBudget(int lodIndex, int lod0, int lod1, int lod2, out int triangleBudget)
+        {
+            switch (lodIndex)
+            {
+                case 0:
+                    triangleBudget = lod0;
+                    return true;
+                case 1:
+                    triangleBudget = lod1;
+                    return true;
+                case 2:
+                    triangleBudget = lod2;
+                    return true;
+                default:
+                    triangleBudget = 0;
+                    return false;
+            }
+        }
+
+        private static bool IsFinite(Vector3 value)
+        {
+            return IsFinite(value.x) && IsFinite(value.y) && IsFinite(value.z);
+        }
+
+        private static bool IsFinite(float value)
+        {
+            return !float.IsNaN(value) && !float.IsInfinity(value);
         }
 
         private static void ValidateRockCollider(string path, MeshCollider[] colliders, LOD[] lods, ref int failures)
@@ -938,12 +1045,12 @@ namespace Hecton8.Editor.ProceduralGen
             }
         }
 
-        private static void ValidateVertexColorGradient(string path, Mesh mesh, ref int failures)
+        private static void ValidateVertexColorGradient(string path, int lodIndex, Mesh mesh, ref int failures)
         {
             if (mesh == null || mesh.vertexCount == 0)
             {
                 failures++;
-                Debug.LogError($"[ShallowsBioForgeBatchBaker] Missing LOD0 mesh for vertex color gradient at {path}.");
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] Missing LOD{lodIndex} mesh for vertex color gradient at {path}.");
                 return;
             }
 
@@ -951,7 +1058,7 @@ namespace Hecton8.Editor.ProceduralGen
             if (colors == null || colors.Length != mesh.vertexCount)
             {
                 failures++;
-                Debug.LogError($"[ShallowsBioForgeBatchBaker] Missing vertex colors at {path}.");
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] Missing LOD{lodIndex} vertex colors at {path}.");
                 return;
             }
 
@@ -967,7 +1074,7 @@ namespace Hecton8.Editor.ProceduralGen
             if (min > 0.08f || max < 0.82f)
             {
                 failures++;
-                Debug.LogError($"[ShallowsBioForgeBatchBaker] Vertex color R gradient weak at {path}. Min={min:0.000}, Max={max:0.000}.");
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] LOD{lodIndex} vertex color R gradient weak at {path}. Min={min:0.000}, Max={max:0.000}.");
             }
         }
 

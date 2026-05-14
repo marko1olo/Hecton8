@@ -15,7 +15,6 @@ namespace Hecton8.Interaction
     public sealed class PhysicalSnapSwitch : MonoBehaviour, IUpdatable, IPhysicalPanelButtonReceiver
     {
         private const uint PhysicalSwitchToolId = 0x53574954u;
-        private const float MinimumDeltaTime = 0.0001f;
         private const float RadiansPerDegree = 0.0174532924f;
         private const float HalfPi = 1.57079637f;
         private const float Pi = 3.14159274f;
@@ -73,6 +72,8 @@ namespace Hecton8.Interaction
         private float _snapCooldownRemaining;
         private bool _isOn;
         private bool _registered;
+        private bool _receiverRegistered;
+        private Collider _registeredActivationVolume;
 
         public bool IsOn => _isOn;
         public Collider ActivationCollider => activationVolume;
@@ -153,6 +154,9 @@ namespace Hecton8.Interaction
             if (_snapCooldownRemaining > 0f)
                 _snapCooldownRemaining = math.max(0f, _snapCooldownRemaining - safeDeltaTime);
 
+            if (safeDeltaTime <= 0f)
+                return;
+
             if (math.abs(_targetAngle - _currentAngle) < 0.001f)
             {
                 _currentAngle = _targetAngle;
@@ -169,7 +173,12 @@ namespace Hecton8.Interaction
 
         private static float FastDecayBlend(float speed, float deltaTime)
         {
-            float x = math.min(math.max(0f, speed) * math.max(deltaTime, MinimumDeltaTime), 3f);
+            float safeSpeed = math.isfinite(speed) ? math.max(0f, speed) : 0f;
+            float safeDeltaTime = SanitizeDeltaTime(deltaTime);
+            if (safeSpeed <= 0f || safeDeltaTime <= 0f)
+                return 0f;
+
+            float x = math.min(safeSpeed * safeDeltaTime, 3f);
             float x2 = x * x;
             return math.saturate(1f - math.rcp(1f + x + (0.5f * x2)));
         }
@@ -192,14 +201,32 @@ namespace Hecton8.Interaction
 
         private void RegisterCollider()
         {
-            if (activationVolume != null)
-                PhysicalHandReceiverRegistry.Register(activationVolume, this);
+            if (_receiverRegistered)
+            {
+                if (ReferenceEquals(_registeredActivationVolume, activationVolume))
+                    return;
+
+                UnregisterCollider();
+            }
+
+            if (activationVolume == null || !Application.isPlaying)
+                return;
+
+            if (!PhysicalHandReceiverRegistry.TryRegister(activationVolume, this))
+                return;
+
+            _registeredActivationVolume = activationVolume;
+            _receiverRegistered = true;
         }
 
         private void UnregisterCollider()
         {
-            if (activationVolume != null)
-                PhysicalHandReceiverRegistry.Unregister(activationVolume, this);
+            if (!_receiverRegistered)
+                return;
+
+            PhysicalHandReceiverRegistry.Unregister(_registeredActivationVolume, this);
+            _registeredActivationVolume = null;
+            _receiverRegistered = false;
         }
 
         private void TryRegister()

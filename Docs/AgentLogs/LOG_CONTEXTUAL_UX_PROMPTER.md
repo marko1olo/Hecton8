@@ -36,3 +36,25 @@ Exact microseconds saved: Estimates only. Avoids one duplicate indirect submissi
 Scalability matrix: Low snaps alpha, disables dither, uses minimal quads, and now avoids auxiliary-camera submission. Middle keeps 0.2s Bayer dither. High/Ultra can spend the preserved CPU/GPU budget on richer glyph materials and atlas quality without changing gameplay authority.
 
 Verification: No dotnet rebuilds were run because the user explicitly forbade them. Static scans on touched tooltip/cache/interaction files returned no `foreach`, `string.Format`, `.ToString(`, interpolated strings, managed collection construction, LINQ markers, exact sqrt, or normalize calls. Static scans on tooltip/shader returned no old shared `_instanceBuffer`/`_argsBuffer`, `_registeredUpdate`, tooltip `public void Tick`, tooltip `TryRegisterUpdatable`, `Quaternion.LookRotation`, `Matrix4x4.TRS`, shader `round(`, or Bayer `/ 16` expressions. `git diff --check` passed with CRLF warnings only.
+
+## 2026-05-15 Scoped H-Phi Micro Pass
+What was wrong: The diegetic tooltip still had two avoidable render-adjacent costs after the restore pass: Low-tier checks still reached through `GlobalRegistry.ScalabilityTierProfileByte`, and black-box telemetry used modulo for a fixed 300-entry ring cursor.
+
+What was done: Cached the Low-tier flag during lifecycle and late-frame update, made `IsLowTier()` a local boolean read, and replaced the black-box modulo cursor with increment plus branch wrap. Re-ran static scans after the change.
+
+Cinematic cheats used: Preserved the same fake-first prompt model: fixed atlas quads, alpha-test dither on non-Low tiers, instant Low-tier snap, and telemetry only as a bounded ring.
+
+Exact microseconds saved: Estimate only, not profiler-measured. Expected gain is below 1 us per visible tooltip frame on i3/MX350, but it removes avoidable registry/modulo work from a path that can run every frame.
+
+Verification: No dotnet rebuilds were run by instruction. Post-pass scans found no forbidden hot-path text/allocation/LINQ patterns, no old update/shared-buffer/matrix/shader symbols, no shader `round(` or Bayer `/ 16`, and no `% BlackBoxCapacity` cursor modulo. `git diff --check` on the tooltip and shader files produced no errors.
+
+## 2026-05-15 Render Basis Consolidation
+What was wrong: The renderer sampled `camera.transform` basis vectors inside each indirect batch and ran the UV dirty upload check from inside `DrawBatch`, duplicating work for the normal icon-plus-text prompt.
+
+What was done: Moved camera position/right/up/forward sampling to `Render`, passed the basis into both batch submissions, changed XR depth offset to use the sampled camera position, and moved `UploadUvTablesIfDirty()` to render scope.
+
+Cinematic cheats used: Same diegetic prompt fake: atlas quads and integer UV lookup, one frame-consistent camera basis, and shader dither rather than Canvas alpha.
+
+Exact microseconds saved: Estimate only. Expected gain is sub-1 us for a single visible prompt, but the duplicated transform/property path is gone and both batches now use the same camera sample.
+
+Verification: No dotnet rebuilds were run. Static scans remained clean for forbidden hot-path allocation/text/LINQ patterns and old renderer/update/shader markers. `git diff --check` produced only repository CRLF warnings.

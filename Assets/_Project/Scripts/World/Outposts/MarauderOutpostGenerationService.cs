@@ -90,6 +90,11 @@ namespace Hecton8.World.Outposts
         private Material _runtimeShellMaterial;
         private GameObject[] _spawnedInteractables;
         private SealedDoor[] _spawnedDoorControllers;
+        private RegistryBucket<IRenderable> _registeredRenderables;
+        private MapMagicBridge _cachedMapMagicBridge;
+        private IWorldSeedProvider _cachedWorldSeedProvider;
+        private IAsyncPersistenceService _cachedPersistence;
+        private ObjectPoolManager _cachedObjectPool;
         private JobHandle _jobHandle;
         private Bounds _drawBounds;
         private OutpostGenerationSnapshot _latestSnapshot;
@@ -112,6 +117,7 @@ namespace Hecton8.World.Outposts
         private int _solidCellCount;
         private int _supportCount;
         private int _telemetryWriteIndex;
+        private int _registeredOutpostGeneration;
         private int _registeredUpdate;
         private int _registeredLateFrame;
         private int _registeredRenderable;
@@ -135,10 +141,12 @@ namespace Hecton8.World.Outposts
             AllocatePersistentState();
             EnsureGraphicsResources();
             BakeInteractableProxyMeshes();
+            _registeredRenderables = GlobalRegistry.Renderables;
             GlobalRegistry.RegisterOutpostGenerationService(this);
+            _registeredOutpostGeneration = 1;
             _registeredUpdate = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment) ? 1 : 0;
             _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment) ? 1 : 0;
-            _registeredRenderable = GlobalRegistry.Renderables.TryRegister(this) ? 1 : 0;
+            _registeredRenderable = _registeredRenderables != null && _registeredRenderables.TryRegister(this) ? 1 : 0;
             SetState(OutpostGenerationState.Idle);
         }
 
@@ -166,7 +174,7 @@ namespace Hecton8.World.Outposts
         {
             if (_registeredRenderable != 0)
             {
-                GlobalRegistry.Renderables.Unregister(this);
+                _registeredRenderables?.Unregister(this);
                 _registeredRenderable = 0;
             }
 
@@ -182,8 +190,11 @@ namespace Hecton8.World.Outposts
                 _registeredUpdate = 0;
             }
 
-            if (ReferenceEquals(GlobalRegistry.OutpostGeneration, this))
+            if (_registeredOutpostGeneration != 0)
+            {
                 GlobalRegistry.UnregisterOutpostGenerationService(this);
+                _registeredOutpostGeneration = 0;
+            }
 
             ReleasePublishedPowerGrid();
 
@@ -225,6 +236,7 @@ namespace Hecton8.World.Outposts
             _generatedSignalHeartbeatFrames = 0;
             _state = OutpostGenerationState.Idle;
             _latestSnapshot = default;
+            ClearCachedRegistryDependencies();
         }
 
         public void Tick(float deltaTime)
@@ -532,7 +544,7 @@ namespace Hecton8.World.Outposts
 
         private MapMagicBridge.QuantizedHeightmapPayload ResolveHeightmapPayload()
         {
-            MapMagicBridge bridge = GlobalRegistry.MapMagic;
+            MapMagicBridge bridge = ResolveMapMagicBridge();
             if (bridge == null)
                 return default;
 
@@ -548,7 +560,7 @@ namespace Hecton8.World.Outposts
 
         private uint ResolveWorldSeed()
         {
-            IWorldSeedProvider seedProvider = GlobalRegistry.WorldSeedProvider;
+            IWorldSeedProvider seedProvider = ResolveWorldSeedProvider();
             if (seedProvider != null && seedProvider.IsInitialized)
                 return unchecked((uint)seedProvider.RuntimeWorldSeed);
 
@@ -576,6 +588,43 @@ namespace Hecton8.World.Outposts
             if (tier == HectonQualityTier.Ultra)
                 return OutpostGenerationQualityTier.Ultra;
             return OutpostGenerationQualityTier.Middle;
+        }
+
+        private MapMagicBridge ResolveMapMagicBridge()
+        {
+            if (_cachedMapMagicBridge == null)
+                _cachedMapMagicBridge = GlobalRegistry.MapMagic;
+            return _cachedMapMagicBridge;
+        }
+
+        private IWorldSeedProvider ResolveWorldSeedProvider()
+        {
+            if (_cachedWorldSeedProvider == null || IsDestroyedUnityObject(_cachedWorldSeedProvider))
+                _cachedWorldSeedProvider = GlobalRegistry.WorldSeedProvider;
+            return _cachedWorldSeedProvider;
+        }
+
+        private IAsyncPersistenceService ResolveAsyncPersistence()
+        {
+            if (_cachedPersistence == null || IsDestroyedUnityObject(_cachedPersistence))
+                _cachedPersistence = GlobalRegistry.AsyncPersistence;
+            return _cachedPersistence;
+        }
+
+        private ObjectPoolManager ResolveObjectPool()
+        {
+            if (_cachedObjectPool == null)
+                _cachedObjectPool = GlobalRegistry.ObjectPool;
+            return _cachedObjectPool;
+        }
+
+        private void ClearCachedRegistryDependencies()
+        {
+            _registeredRenderables = null;
+            _cachedMapMagicBridge = null;
+            _cachedWorldSeedProvider = null;
+            _cachedPersistence = null;
+            _cachedObjectPool = null;
         }
 
         private float ResolveCellSizeMeters()
@@ -633,7 +682,7 @@ namespace Hecton8.World.Outposts
             if (sectorHash == 0UL)
                 return;
 
-            IAsyncPersistenceService persistence = GlobalRegistry.AsyncPersistence;
+            IAsyncPersistenceService persistence = ResolveAsyncPersistence();
             if (persistence == null)
                 return;
 
@@ -721,7 +770,7 @@ namespace Hecton8.World.Outposts
             if (_interactableCount <= 0 || _spawnedInteractables == null)
                 return;
 
-            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+            ObjectPoolManager pool = ResolveObjectPool();
             if (pool == null)
                 return;
 
@@ -858,7 +907,7 @@ namespace Hecton8.World.Outposts
             if (_spawnedInteractables == null)
                 return;
 
-            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+            ObjectPoolManager pool = ResolveObjectPool();
             for (int i = 0; i < _spawnedInteractables.Length; i++)
             {
                 GameObject instance = _spawnedInteractables[i];
@@ -1265,6 +1314,11 @@ namespace Hecton8.World.Outposts
         private static float3 ToFloat3(Vector3 value)
         {
             return new float3(value.x, value.y, value.z);
+        }
+
+        private static bool IsDestroyedUnityObject(object instance)
+        {
+            return instance is UnityEngine.Object unityObject && unityObject == null;
         }
 
         private static float SanitizeMin(float value, float minValue, float fallback)

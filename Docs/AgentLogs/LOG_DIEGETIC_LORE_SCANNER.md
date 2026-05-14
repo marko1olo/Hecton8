@@ -217,3 +217,59 @@ Verification:
 - `rg Camera.main`, `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, and `.text =` over scanner/UI/target files: no matches.
 - Filtered `dotnet build Hecton8.Core.csproj`: exit 0, 0 error lines, 0 scanner-file matches.
 - Plain `dotnet build Hecton8.Core.csproj`: Build succeeded, 0 warnings, 0 errors, elapsed 00:00:07.86.
+
+## Follow-Up Hardening Pass 7
+
+What was wrong:
+- Scanner acquisition/progress had no scanner-local 300-frame black box. Invalid pose/progress could reach signals/UI with weak postmortem evidence.
+- `CURRENT_BATCH.md` no longer contains the `DIEGETIC_LORE_SCANNER` prompt; it now contains other agents.
+
+What was done:
+- Added a fixed `NativeArray<ScannerBlackBoxEntry>[300]` scanner ring in `ScannerTool`.
+- Ring entries record frame, runtime tool hash, artifact/blueprint hashes, active/pending lore hashes, progress, battery, dt, contact age, pending occlusion distance, tool pose, active probe, pending occlusion position, flags, and quality tier.
+- Non-finite scanner state now writes finite fallbacks, publishes math-guard telemetry, and dumps `Docs/AgentLogs/Dump_DIEGETIC_LORE_SCANNER.bin` once.
+- Scanner signal and scientific snapshot writes now sanitize progress/battery/density/toxicity/chemical/depth/direction values before display-facing state.
+- Scanner summary and diegetic RT decryption reveal math now sanitize progress before percent/reveal calculations and dirty-state comparison.
+- No-contact idle no longer counts as invalid just because `_scientificLastContactTime` starts at negative infinity.
+
+Cinematic Cheats used:
+- No extra physical truth. The scanner remains highest-dot fake targeting plus exactly one post-selection `RaycastCommand`; the new ring only records the lie and its state.
+
+Exact Microseconds saved:
+- Verified exact microseconds: PENDING PROFILER.
+- Added normal-path cost: estimated below 1 us per equipped scanner fast tick for one sequential native write plus finite branches.
+- Added repaint-path cost: one finite branch before scanner decryption reveal math.
+- Fault-path cost: one binary dump only after invalid state.
+- Saved integration/debug cost: scanner postmortem no longer depends on transient UI or chat logs.
+
+Verification:
+- Raw CLI prompt extraction attempted; `DIEGETIC_LORE_SCANNER` absent from current batch, neighboring prompts ignored.
+- `git diff --check` on scanner edit: pass, line-ending warning only.
+- `rg Camera.main`, `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, and `.text =` over scanner/UI/target files: no matches.
+- `dotnet build` / rebuild: NOT RUN by explicit user order.
+
+## Follow-Up Hardening Pass 8
+
+What was wrong:
+- Scanner tier decisions were scattered: signal publishing, low-tier decryption, and focused resample cadence each reached for `GlobalRegistry.ScalabilityTier`.
+- The physical tool RT display had hysteresis but still polled the registry every UI tick.
+- Display tick delta was clamped without an explicit finite gate.
+
+What was done:
+- Added `ScannerTool.ResolveScannerQualityTier()` with 0.5s probe cadence and 2s candidate hysteresis.
+- Routed scanner signal tier, black-box tier stamp, low-tier decryption choice, and focused resample cadence through the cached scanner tier.
+- Added a 0.5s quality-tier probe countdown to `ToolDiegeticDisplayController` while preserving its 2s low-tier hysteresis.
+- Added `SanitizeSeconds()` for display tick delta before timer math.
+
+Cinematic Cheats used:
+- Tier changes are now deliberately sticky. Low-tier percentage display and High/Ultra visual-overkill scanner responsiveness change only after stable evidence, not transient tier noise.
+
+Exact Microseconds saved:
+- Verified exact microseconds: PENDING PROFILER.
+- Source-level `GlobalRegistry.ScalabilityTier` refs: `ScannerTool.cs` 3 -> 1; `ToolDiegeticDisplayController.cs` 2 -> 1.
+- Runtime registry tier polling target: active display 60 Hz -> 2 Hz; active scanner tier reads are shared and probe-capped.
+
+Verification:
+- `git diff --check` on scanner/UI/doc edits: pass, line-ending warnings only.
+- `rg Camera.main`, `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, and `.text =` over scanner/UI/target files: no matches.
+- `dotnet build` / rebuild: NOT RUN by explicit user order.

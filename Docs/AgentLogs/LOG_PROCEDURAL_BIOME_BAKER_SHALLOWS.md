@@ -117,3 +117,15 @@ Cinematic Cheats used: Static authored meshes, shared atlas/material, LOD crossf
 Exact Microseconds saved: Runtime remains 0 us/frame and 0 bytes allocation. The change prevents hidden static-batching memory/draw-path regression; exact runtime microseconds not profiled because validation is editor-only.
 
 Verification: No dotnet rebuild was run. `git diff --check` passed for source/docs with CRLF warnings only. Source scan found `ValidateStaticFlagsContract`; prefab YAML scans found `BadStaticFlagsYaml=0` for all 200 generated prefabs. No global H-Phi score is claimed.
+
+## 2026-05-15 Mesh Geometry And LOD Budget Contract Lockdown
+
+What was wrong: The Safe Shallows validator still trusted mesh payload internals once the path/reference was correct. That left room for empty meshes, extra submeshes, UInt32 index drift, degenerate bounds, LOD budget drift, or missing LOD1/LOD2 vertex-color masks to survive until runtime visual/culling cost appeared.
+
+What was done: Added centralized family LOD budget constants to `ShallowsBioForgeBatchBaker` and reused them for rule authoring, rule validation, and prefab mesh validation. Added `ValidateMeshGeometryContract`, `ValidateLodTriangleBudget`, and all-LOD vertex color R gradient checks. Every LOD mesh now has to be non-empty, one submesh, UInt16, finite/non-degenerate, within its family budget, and shader-mask ready.
+
+Cinematic Cheats used: Static offline SDF/L-system meshes, exact LOD payloads, shared atlas/material, vertex-color shader masks, no flora collision, and rock-only convex collision remain unchanged. The pass makes those cheats harder to corrupt without adding runtime systems.
+
+Exact Microseconds saved: Runtime remains 0 us/frame and 0 bytes procedural allocation. The saved cost is avoided regression: no accidental high-index-format mesh, over-budget LOD, or missing shader mask can silently force heavier geometry or runtime correction. Exact runtime microseconds were not profiled because validation is editor-only.
+
+Verification: No dotnet rebuild was run. `git diff --check` passed for the touched source with only CRLF warnings. Source scans found the mesh/budget validators and all-LOD vertex color validation. Brace count is balanced. Mesh YAML scan found `Count=600`, `Bad=0`; max triangles were Kelp `2200/514/94`, PorousRock `3081/581/53`, TubeCoral `2364/342/24`.

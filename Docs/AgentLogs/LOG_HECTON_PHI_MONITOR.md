@@ -207,3 +207,46 @@ Regression Model:
 - Memory: no buffer ownership changed; DataVault migration remains owner-blocked.
 - Cadence: no tick registration or dispatcher cadence changed.
 - Correctness: low compile risk from attributes, but Unity import/compile remains pending because rebuild is forbidden.
+
+## 2026-05-15 Signal Boundary Layout Cleanup
+
+What was wrong:
+- `GlobalSignals.cs` still had public signal-boundary structs without explicit layout metadata:
+  - `SpscSignalRingBuffer<T>`
+  - `CombatDamageSignalAupShiftTransformer`
+- These are not arbitrary DTOs: one owns native fallback ring-buffer state and one crosses the combat signal snapshot transform boundary.
+
+What was done:
+- Added `[StructLayout(LayoutKind.Sequential)]` to both structs.
+- Kept all method bodies, field order, NativeArray lifecycle, signal sanitizer logic, and dispatch behavior unchanged.
+- Detected concurrent `PlayerBaseEnterSignal` / `PlayerBaseExitSignal` sanitizer edits in the same file and left them untouched.
+- Honored user instruction: no `dotnet build`, no rebuild.
+
+Cinematic Cheats used:
+- None. ABI/layout metadata only.
+
+Exact Microseconds saved:
+- Runtime gameplay: 0 us measured; no executable code path changed.
+- Debugging/perf debt: reduced layout ambiguity in signal fallback and combat shift paths. Exact time savings are unmeasured.
+
+Compile Status:
+- Not run by explicit user order.
+- Static checks run: `git diff --check -- Assets/_Project/Scripts/Core/GlobalSignals.cs`, targeted public/internal `GlobalSignals.cs` layout scan, and `Tools/Architecture/HectonPhiAudit.ps1 -Json`.
+- `git diff --check`: no whitespace errors, only LF/CRLF normalization warning.
+
+Phi Gain:
+- Previous corrected runtime narrow score: `0.008929037`.
+- Current corrected runtime narrow score: `0.009035044`.
+- Delta from previous runtime narrow: `+0.000106007`, about `+1.19%`.
+- Current corrected runtime risk-adjusted score: `0.000121334`.
+- Memory alignment: `0.495217853 -> 0.497348887`.
+- Data Sovereignty: `0.018128162 -> 0.018263557` from concurrent/current tree metric state.
+- Compared with original dialogue baseline `0.00062`: current corrected runtime narrow is about `+1357.26%`.
+- Important: H-Phi is still static-source evidence, not runtime performance proof.
+
+Regression Model:
+- CPU: no runtime method body changed.
+- GC: no runtime allocation changed.
+- Memory: no buffer ownership changed; DataVault migration remains owner-blocked.
+- Cadence: no tick, signal flush, or dispatch cadence changed.
+- Correctness: low compile risk from attributes, but Unity import/compile remains pending because rebuild is forbidden.

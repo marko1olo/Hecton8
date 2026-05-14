@@ -4,7 +4,7 @@ Agent: INTEGRATION_ASSEMBLY_SURGEON
 Role: SYSTEMS_ARCHITECT
 Domain: Unity Compilation Graph / Integrator
 Prompt task count: 17
-Current state: STATIC H-PHI PATCH APPLIED / PENDING FRESH COMPILE (NO DOTNET ORDER)
+Current state: STATIC H-PHI TOOLING IMPROVED / PENDING FRESH COMPILE (NO DOTNET ORDER)
 
 ## Mandates Read
 
@@ -53,6 +53,8 @@ Rule quote: `H-PHI DEFENSE: Do NOT solve missing dependencies by adding Hecton8.
 - Loop 5: Self-review scans: duplicate methods not duplicated; prompt re-extracted; `Directory.Build.targets` no longer contains `Hecton8.Animation.IK` bridge reference. Status: BUILD SUCCESSFUL (CLI_COMPILE).
 - Loop 6: 2026-05-15 continuation. User ordered no dotnet rebuilds. Re-read status/rationale, AGENTS, domain file, mandate files, current batch, `Directory.Build.props`, `Directory.Build.targets`, `Hecton8.Core.csproj`, and Core asmdef surface. Hardened Core medic mode with `BuildProjectReferences=false` and `BuildInParallel=false` in `Directory.Build.props`. Status: STATIC H-PHI PATCH APPLIED / PENDING FRESH COMPILE.
 - Loop 7: Static H-Phi audit. `Hecton8.Core.csproj` still declares generated project references to package/vendor projects; props gate isolates them by default. `Hecton8.Core.asmdef` still references broad leaf/domain assemblies; blind removal rejected because current Core-owned source uses `LeviathanTerrainIkJob`, `MacroSwarm`, and `SoundEmissionSignal`. Status: PENDING FRESH COMPILE BY USER NO-DOTNET ORDER.
+- Loop 8: Added `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly` static mode and ran it without dotnet. Counts: 46 Core asmdef refs, 28 Core asmdef H-Phi debt refs, 12 generated Core project refs, 10 generated project debt refs. Build graph gate detected `BuildProjectReferences=false` and `BuildInParallel=false`. Status: STATIC H-PHI TOOLING IMPROVED / PENDING FRESH COMPILE.
+- Loop 9: Added optional Core graph budget enforcement switches and validated current baseline with `-RequireCoreBuildGate -MaxCoreAsmdefDebtReferences 28 -MaxGeneratedProjectDebtReferences 10`. Verified expected failure path with zero asmdef-debt budget. Status: STATIC H-PHI TOOLING IMPROVED / NO DOTNET.
 
 ## 2026-05-15 Continuation Checklist
 
@@ -62,3 +64,7 @@ Rule quote: `H-PHI DEFENSE: Do NOT solve missing dependencies by adding Hecton8.
 - [x] Core asmdef H-Phi audit | Justification: `Hecton8.Core.asmdef` still has broad leaf references; removal blocked because source still directly uses several leaf-owned types | Alternatives rejected: unsafe contract migration without compile lane | Estimate: 0 us runtime
 - [x] Static anti-bloat scan | Justification: `Directory.Build.props` scan found no hot-path poison patterns; change is MSBuild metadata only | Alternatives rejected: runtime edits outside Integrator domain | Estimate: 0 us runtime
 - [x] Fresh compile status bounded | Justification: no fresh CLI compile claim made; existing `Build_INTEGRATION_ASSEMBLY_SURGEON_05_RawCoreDefault.log` is historical evidence only | Alternatives rejected: fake green report | Estimate: 0 us runtime
+- [x] Core graph audit tool upgraded | Justification: existing `HectonPhiAudit.ps1` now supports `-CoreGraphOnly` to classify Core asmdef/project-reference H-Phi debt without a build | Alternatives rejected: duplicate standalone audit script | Estimate: 0 us runtime
+- [x] Core graph audit executed | Justification: graph-only run completed and reported 28 Core asmdef H-Phi debt refs plus 10 generated project debt refs; no dotnet command involved | Alternatives rejected: full source H-Phi scan under repo load | Estimate: 0 us runtime
+- [x] Core graph budget gate added | Justification: `HectonPhiAudit.ps1` now accepts explicit debt budgets and can fail future regressions without compiling | Alternatives rejected: hardcoding current baseline inside the script | Estimate: 0 us runtime
+- [x] Core graph budget gate exercised | Justification: current baseline passed with `-RequireCoreBuildGate -MaxCoreAsmdefDebtReferences 28 -MaxGeneratedProjectDebtReferences 10`; expected failure path returned `EXPECTED_BUDGET_FAIL_PATH_OK` under zero asmdef-debt budget | Alternatives rejected: failing on known debt before DTO extraction | Estimate: 0 us runtime

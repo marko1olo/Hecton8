@@ -102,3 +102,17 @@ Solution: Added `ResolveRenderCamera()` to resolve the intended interaction came
 Rejected Alternatives: Drawing through every current camera, passing `null` camera, or trusting authoring order. Those create duplicate submission or wrong camera-facing math.
 Scalability potential: Low avoids extra editor/auxiliary submissions. Middle/High/Ultra preserve budget for visual overkill instead of duplicated indirect draws.
 Hardware Impact: No change in single-camera player frames; avoids one indirect submission per non-target camera pass in multi-camera/editor contexts. Measured profiler proof absent.
+
+## Decision 14: Low-Tier Cache And Black-Box Cursor Wrap
+Problem: The tooltip still read `GlobalRegistry.ScalabilityTierProfileByte` through the `IsLowTier()` helper and advanced the 300-frame black-box ring with a modulo operation. Both were tiny, but they lived in the presentation path the user asked to keep tightening.
+Solution: Cache `_lowTierActive` in `OnEnable`, `Start`, and `LateFrameTick`, then make render/layout checks read the local boolean. Replace `_blackBoxCursor = (_blackBoxCursor + 1) % BlackBoxCapacity` with increment plus branch wrap.
+Rejected Alternatives: Keeping a registry read inside `IsLowTier()`, keeping modulo for readability, or claiming a project-wide H-Phi improvement from one UI micro pass. The change is scoped and deterministic; global H-Phi remains monitor-owned.
+Scalability potential: Low uses the cached tier for snap/no-dither decisions. Middle keeps dither fade. High and Ultra keep identical behavior while avoiding the extra branchless division path in telemetry.
+Hardware Impact: Estimated low-end gain is sub-microsecond per tooltip frame, mostly from removing a registry property read and integer modulo from the render-adjacent path. No profiler proof because the user forbade rebuild/runtime verification.
+
+## Decision 15: Render Basis Single Sample
+Problem: Icon and text batches each re-read `camera.transform` basis vectors and checked UV-table dirtiness inside `DrawBatch`. That duplicated render-side property access and branch work in the exact two-batch tooltip path.
+Solution: Sample camera position/right/up/forward once in `Render`, pass the basis into both indirect batches, resolve XR depth offset from the sampled camera position, and upload dirty UV tables once before submissions.
+Rejected Alternatives: Keeping per-batch transform reads, caching a `Transform` across frames, or pushing camera basis through a global singleton. Per-batch reads are waste; cross-frame transform caching risks stale scene ownership; globals violate the prompt isolation policy.
+Scalability potential: Low benefits from fewer render-side checks. Middle keeps dither fade. High and Ultra get identical visuals with a cleaner basis handoff for future per-glyph effects.
+Hardware Impact: Estimated i3/MX350 gain is sub-microsecond for one icon plus text prompt, with slightly better determinism because both batches share one sampled camera basis. No profiler proof because runtime verification is still pending.

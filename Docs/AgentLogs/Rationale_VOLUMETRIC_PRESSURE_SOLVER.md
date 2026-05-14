@@ -257,3 +257,19 @@ Solution: Reordered the resolver so nonzero `targetHash` compares against `Resol
 Rejected Alternatives: Removing runtime entity fallback, or caching entity keys in a managed dictionary. Removing fallback would miss producers that target Unity entities; a dictionary adds memory ownership and invalidation work under concurrent agents.
 Scalability potential: Low/MX350 avoids unnecessary runtime identity reads during signal bursts with graph-backed module ids. Mid/High/Ultra keep exact localized bowing for both stable graph targets and runtime entity targets.
 Hardware Impact: Saves one `GetEntityId`/hash path per graph-hash hit candidate in stress signal scans; estimated 1-3 us on i3/MX350 signal-heavy frames, 0 B/frame, no shader cost.
+
+## Follow-Up Correction - Low-Tier Crease Texture Gate
+
+Problem: The low-tier DryZone crease path sampled `_DetailMask` before checking whether the cheap panel mask was zero. Border fragments with no possible crease still paid a texture fetch and then recomputed the same panel mask inside the helper.
+Solution: Compute `HectonHabitatInteriorCheapPanelMask` at the DryZone callsite, branch out before the detail texture sample when the mask is zero, and pass the precomputed mask into `HectonHabitatInteriorApplyLowTierCrease`.
+Rejected Alternatives: Leaving the texture sample inside the existing stress branch, or moving all crease logic into the fragment shader body. The first wastes low-tier bandwidth; the second duplicates shared helper logic and weakens shader include ownership.
+Scalability potential: Low/MX350 skips detail texture fetches on panel borders while retaining readable crease feedback under pressure. Mid/High/Ultra are unchanged because this branch is low-tier only.
+Hardware Impact: Saves one detail texture sample plus one cheap panel-mask recompute on zero-mask low-tier fragments; estimated 4-12 us per dense interior wall view on MX350-class GPUs, 0 B/frame.
+
+## Follow-Up Correction - Calm Stress Upload Gate
+
+Problem: A habitat with visible modules but zero peak module stress could still enter `UploadModuleStressMatrix`, ensure the structured stress buffer, and upload an all-zero scalar matrix. After the shader peak-stress guard, that buffer is not read on calm frames.
+Solution: Gate `EnsureModuleStressBuffer` and `GraphicsBufferUploadUtility.UploadNativeArray` behind `peakStress01 > ModuleStressUploadEpsilon`. The shader params are still published, so the global peak reaches zero and the resolver early-returns before any buffer read.
+Rejected Alternatives: Releasing the buffer whenever peak stress hits zero, or continuing to upload zero matrices. Releasing risks driver churn during near-threshold stress oscillation; zero uploads waste CPU/driver bandwidth with no visible result.
+Scalability potential: Low/MX350 avoids calm-state upload work after active module order or tier changes. Mid/High/Ultra keep immediate localized bowing once stress rises above the epsilon.
+Hardware Impact: Saves one buffer ensure/upload on calm visible-module dirty ticks; estimated 6-18 us on i3/MX350 rebuild/order-change frames, 0 B/frame, no shader cost.

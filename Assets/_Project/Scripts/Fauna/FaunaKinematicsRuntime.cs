@@ -21,6 +21,7 @@ namespace Hecton8.AI
         private const string TelemetryDumpRelativePath = "Docs/AgentLogs/Dump_LEVIATHAN_KINEMATICS_SOLVER.bin";
         private const ulong TelemetryDumpMagic = 0x4C455649494B3031UL;
         private const int TelemetryEntryPayloadBytes = 96;
+        private const int TelemetryEntryPaddingFloatCount = 7;
         private const float ConstraintIterationHysteresisSeconds = 2.5f;
         private const int MaxSegments = LeviathanTerrainIkConstants.MaxSegments;
         private const int LowTierSegments = LeviathanTerrainIkConstants.LowTierSegments;
@@ -889,13 +890,16 @@ namespace Hecton8.AI
             using FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read);
             using BinaryWriter writer = new BinaryWriter(stream);
             writer.Write(TelemetryDumpMagic);
-            int entryCount = _telemetryRing.IsCreated ? math.min(LeviathanTerrainIkConstants.TelemetryCapacity, _telemetryRing.Length) : 0;
+            int ringLength = _telemetryRing.IsCreated ? math.min(LeviathanTerrainIkConstants.TelemetryCapacity, _telemetryRing.Length) : 0;
+            int entryCount = cursor >= ringLength ? ringLength : math.max(0, cursor);
+            int firstEntryIndex = entryCount == ringLength && ringLength > 0 ? cursor % ringLength : 0;
             writer.Write(entryCount);
             writer.Write(cursor);
             writer.Write(TelemetryEntryPayloadBytes);
             for (int i = 0; i < entryCount; i++)
             {
-                LeviathanTerrainIkTelemetryEntry entry = _telemetryRing[i];
+                int sourceIndex = (firstEntryIndex + i) % ringLength;
+                LeviathanTerrainIkTelemetryEntry entry = _telemetryRing[sourceIndex];
                 writer.Write(entry.FrameIndex);
                 writer.Write(entry.ActiveSegmentCount);
                 writer.Write(entry.Flags);
@@ -913,6 +917,8 @@ namespace Hecton8.AI
                 writer.Write(entry.TailWhipSecondsRemaining);
                 writer.Write(entry.Padding0);
                 writer.Write(entry.Padding1);
+                for (int paddingIndex = 0; paddingIndex < TelemetryEntryPaddingFloatCount; paddingIndex++)
+                    writer.Write(0f);
             }
         }
 

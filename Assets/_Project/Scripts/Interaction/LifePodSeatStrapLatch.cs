@@ -302,7 +302,9 @@ namespace Hecton8.Interaction
                 UnregisterReceiver();
             }
 
-            PhysicalHandReceiverRegistry.Register(activationCollider, this);
+            if (!Application.isPlaying || !PhysicalHandReceiverRegistry.TryRegister(activationCollider, this))
+                return;
+
             _registeredCollider = activationCollider;
             _registeredReceiver = true;
         }

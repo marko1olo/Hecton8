@@ -21,7 +21,7 @@ Cinematic Cheats used:
 - LootZip audio uses `AcousticPingSignal.ChannelLootZip` with intensity rising as distance squared falls.
 - Presentation pings are stride-limited to preserve prewarmed native signal lanes.
 - Low tier skips integration and uses snap/acquire.
-- Omega polish removed per-signal `math.sqrt` by passing precomputed `PullRadiusMeters`.
+- Omega polish removed per-signal `math.sqrt` by keeping scheduled pull radius data out of presentation emission.
 
 Exact Microseconds saved:
 - Verified exact profiler numbers: unavailable. Unity MCP compile/console was unavailable and local generated `Hecton8.Core.csproj` fails on pre-existing missing cross-assembly references.
@@ -130,6 +130,38 @@ Verification:
 - User forbade dotnet rebuilds; none were run.
 - Static loot anti-bloat scan remains clean.
 - `git diff --check` on loot/status/rationale/log passed with line-ending warnings only.
+
+Final Status:
+- PENDING VERIFICATION.
+
+## 2026-05-15 - Commit Accuracy And H-Phi Scale Pass
+
+What was wrong:
+- `ItemAcquiredSignal.Quantity` could be derived from a stale vault quantity if a pickup changed between SlowTick refresh and LateFrame commit.
+- Consumed slots kept stale acquired state until the next registry refresh.
+- Full-inventory acquisition rejection could keep PullEnabled and retry managed inventory work every FastTick.
+- Presentation radius was recomputed per signal instead of using the scheduled pull radius.
+
+What was done:
+- Acquisition reporting now measures live pickup quantity before and after `TryHandleInventoryPickup`.
+- Fully consumed slots clear pickup ref, entity id, AUP, flags, velocity, item hash, quantity, and signal event immediately.
+- Zero-add rejections keep `Active|IsLoot` but drop `PullEnabled` until the next SlowTick registry refresh.
+- Scheduled pull radius/radiusSq are cached once per job and reused for acoustic intensity.
+- Default entity capacity stays 4096; authored high/ultra fields may scale to 8192 via `MaxEntitiesHardCap`.
+- Idle telemetry now reports active slot samples and clears per-frame acquired/fault counters when no job ran.
+
+Cinematic Cheats used:
+- No new presentation dependency. LootZip remains sparse acoustic/wake signal fakes; low tier still snaps instead of integrating.
+
+Exact Microseconds saved:
+- Avoids repeated managed inventory/drop-overflow attempts every FastTick when inventory is full; exact number depends on rejected pickups.
+- Removes one radius multiply and one max operation per emitted presentation signal.
+- Clears consumed slots immediately so stale acquired slots do not survive into later FastTick job scans before SlowTick compaction.
+
+Verification:
+- User forbade dotnet rebuilds; none were run.
+- Static loot anti-bloat scan remains clean for direct native signal writers, scene searches, `math.sqrt`, `math.normalize`, `ToAbsoluteDouble3`, `FromAbsolutePosition`, `foreach`, string formatting, `.ToString()`, and LINQ markers.
+- `git diff --check` on loot code passed with line-ending warnings only.
 
 Final Status:
 - PENDING VERIFICATION.

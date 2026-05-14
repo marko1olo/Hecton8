@@ -53,6 +53,8 @@ Status: PENDING VERIFICATION
 - Loop 10: Restored VISUAL_SYNC execution. Converted tooltip resolve/fade from UI `IUpdatable.Tick` to `ILateFrameTickable.LateFrameTick`, using `SystemDispatcher.CurrentFrameDeltaTime`, and kept draw submission in `IRenderable.Render`.
 - Loop 11: Restored shader and CPU matrix polish. Replaced shader Bayer divisions with constants, removed shader `round()`, restored branch-gated dither threshold, and replaced per-glyph `Quaternion.LookRotation` + `Matrix4x4.TRS` with direct billboard matrix writes.
 - Loop 12: SRP camera gate hardening. Added `ResolveRenderCamera()` fail-closed behavior so auxiliary camera passes do not submit duplicate tooltip draws and no arbitrary current camera is used when the interaction camera is unresolved.
+- Loop 13: Scoped H-Phi micro pass. Cached Low-tier state once in lifecycle and late-frame lanes, made `IsLowTier()` registry-free during render/layout checks, and changed the 300-frame black-box ring cursor from modulo to branch wrap. No dotnet rebuilds run per user instruction.
+- Loop 14: Render-basis consolidation. Sampled `camera.transform` once per render, passed right/up/forward into icon and text batches, moved UV dirty upload to render scope, and removed per-batch camera basis reads. No dotnet rebuilds run per user instruction.
 
 ## Verification Notes
 - `dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary | Select-String ...`: no output for touched-file filter after final cache collision fix.
@@ -60,6 +62,8 @@ Status: PENDING VERIFICATION
 - 2026-05-15 continuation: no dotnet rebuilds were run, per explicit user instruction.
 - Static scan on touched tooltip/cache/interaction files returned no matches for `foreach`, `string.Format`, `.ToString(`, interpolated strings, managed collection construction, LINQ markers, exact sqrt/normalize calls.
 - Static scan on tooltip renderer/shader returned no matches for old shared `_instanceBuffer`/`_argsBuffer`, `_registeredUpdate`, tooltip `public void Tick`, tooltip `TryRegisterUpdatable`, `Quaternion.LookRotation`, `Matrix4x4.TRS`, shader `round(`, or Bayer `/ 16` expressions.
+- Post Loop 13 static scan returned no matches for forbidden hot-path text/allocation/LINQ patterns, no old update/shared-buffer/matrix/shader patterns, and no `% BlackBoxCapacity` cursor modulo.
+- Post Loop 14 static scan stayed clean for forbidden text/allocation/LINQ patterns and old update/shared-buffer/matrix/shader markers after render-basis consolidation.
 - `git diff --check` on `DiegeticTooltipSystem.cs` and `Hecton_DiegeticTooltipIndirect.shader` passed with repository CRLF warnings only.
 - Broad unfiltered `dotnet build Hecton8.Core.csproj` did not complete within the tool timeout in the current dirty multi-agent workspace; stale child processes from that verification run were stopped only when command lines proved they belonged to this `Hecton8.Core.csproj` build.
 - Unity MCP script refresh failed: HTTP transport to `http://127.0.0.1:8088/mcp` was unreachable. Editor console verification is therefore pending.

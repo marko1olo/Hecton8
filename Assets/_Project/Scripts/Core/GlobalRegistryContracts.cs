@@ -2625,6 +2625,48 @@ namespace Hecton8.Core
     }
 
     /// <summary>
+    /// Cold-path hibernation snapshot for one habitat/base atmosphere island.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
+    public readonly struct GasBaseHibernationSnapshot
+    {
+        public GasBaseHibernationSnapshot(
+            int baseId,
+            int roomStart,
+            int roomCount,
+            AbsoluteUniversePosition centerAup,
+            bool awake,
+            bool playerInside,
+            float batteryWattSeconds,
+            float idleDrawWatts,
+            float leakRatePerSecond,
+            double hibernatedUnscaledTime)
+        {
+            BaseId = baseId;
+            RoomStart = roomStart;
+            RoomCount = roomCount;
+            CenterAup = centerAup;
+            Awake = awake;
+            PlayerInside = playerInside;
+            BatteryWattSeconds = batteryWattSeconds;
+            IdleDrawWatts = idleDrawWatts;
+            LeakRatePerSecond = leakRatePerSecond;
+            HibernatedUnscaledTime = hibernatedUnscaledTime;
+        }
+
+        public int BaseId { get; }
+        public int RoomStart { get; }
+        public int RoomCount { get; }
+        public AbsoluteUniversePosition CenterAup { get; }
+        public bool Awake { get; }
+        public bool PlayerInside { get; }
+        public float BatteryWattSeconds { get; }
+        public float IdleDrawWatts { get; }
+        public float LeakRatePerSecond { get; }
+        public double HibernatedUnscaledTime { get; }
+    }
+
+    /// <summary>
     /// Unmanaged gas-to-physiology signal emitted when CO2 toxicity or nitrogen narcosis crosses a scalar threshold.
     /// </summary>
     [StructLayout(LayoutKind.Sequential)]
@@ -2700,11 +2742,14 @@ namespace Hecton8.Core
     {
         bool IsInitialized { get; }
         int RoomCount { get; }
+        int BaseCount { get; }
         NativeArray<float>.ReadOnly RoomO2 { get; }
         NativeArray<float>.ReadOnly RoomCO2 { get; }
         NativeArray<float>.ReadOnly RoomPressure { get; }
+        NativeArray<byte>.ReadOnly BaseAwakeState { get; }
 
         bool TryGetRoomSnapshot(int roomId, out GasRoomSnapshot snapshot);
+        bool TryGetBaseHibernationSnapshot(int baseId, out GasBaseHibernationSnapshot snapshot);
         bool TryConfigureRoom(
             int roomId,
             float oxygenKPa,
@@ -2712,6 +2757,16 @@ namespace Hecton8.Core
             float nitrogenKPa,
             float ambientPressureKPa,
             ushort flags);
+        bool TryConfigureBase(
+            int baseId,
+            int roomStart,
+            int roomCount,
+            AbsoluteUniversePosition centerAup,
+            float batteryWattSeconds,
+            float idleDrawWatts,
+            float leakRatePerSecond);
+        bool TrySetBasePlayerInside(int baseId, bool playerInside);
+        bool TrySetBaseCenterAup(int baseId, AbsoluteUniversePosition centerAup);
         bool TrySetBulkhead(int edgeIndex, int roomA, int roomB, bool sealedBulkhead);
         bool TrySetPlayerRoom(int roomId, float playerStress01, float heartRateBpm);
         bool TrySetRoomFlags(int roomId, ushort setMask, ushort clearMask);
@@ -2750,6 +2805,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Immutable hardware profile captured during the bootstrap HardwareCheck phase.
     /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
     public readonly struct HectonHardwareProfile
     {
         /// <summary>

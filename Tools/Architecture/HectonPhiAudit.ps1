@@ -1,5 +1,9 @@
 param(
-    [switch]$Json
+    [switch]$Json,
+    [switch]$CoreGraphOnly,
+    [switch]$RequireCoreBuildGate,
+    [int]$MaxCoreAsmdefDebtReferences = -1,
+    [int]$MaxGeneratedProjectDebtReferences = -1
 )
 
 $ErrorActionPreference = 'Stop'
@@ -194,6 +198,183 @@ function Test-IsEditorFile {
     return $Path -match '[\\/]Editor[\\/]'
 }
 
+function ConvertTo-RelativeProjectPath {
+    param([string]$Path)
+
+    return $Path.Substring($root.Length).TrimStart([char]'\', [char]'/')
+}
+
+function Get-CoreReferenceKind {
+    param([string]$Reference)
+
+    if ([string]::IsNullOrWhiteSpace($Reference)) {
+        return 'Empty'
+    }
+
+    if ($Reference -eq 'Hecton8.Core.Contracts' -or
+        $Reference.StartsWith('Hecton8.Core.', [StringComparison]::Ordinal)) {
+        return 'CoreFamily'
+    }
+
+    if ($Reference -eq 'Unity.Mathematics' -or
+        $Reference -eq 'Unity.Burst' -or
+        $Reference -eq 'Unity.Collections') {
+        return 'MathNative'
+    }
+
+    if ($Reference -eq 'Hecton8.Bootstrap.Contracts' -or
+        $Reference.EndsWith('.Contracts', [StringComparison]::Ordinal)) {
+        return 'Contract'
+    }
+
+    if ($Reference.StartsWith('Unity.', [StringComparison]::Ordinal) -or
+        $Reference.StartsWith('UnityEngine.', [StringComparison]::Ordinal) -or
+        $Reference -eq 'GPUInstancer' -or
+        $Reference -eq 'Crest' -or
+        $Reference.StartsWith('WaveHarmonic.', [StringComparison]::Ordinal) -or
+        $Reference.StartsWith('EasySave', [StringComparison]::Ordinal) -or
+        $Reference.StartsWith('Volumetric', [StringComparison]::Ordinal) -or
+        $Reference.StartsWith('Shapes', [StringComparison]::Ordinal) -or
+        $Reference -eq 'Unity.TextMeshPro') {
+        return 'PackageOrUnity'
+    }
+
+    if ($Reference.StartsWith('Hecton8.', [StringComparison]::Ordinal)) {
+        return 'LeafDomain'
+    }
+
+    return 'Other'
+}
+
+function Get-ProjectReferenceKind {
+    param([string]$Reference)
+
+    if ([string]::IsNullOrWhiteSpace($Reference)) {
+        return 'Empty'
+    }
+
+    $name = [System.IO.Path]::GetFileNameWithoutExtension($Reference)
+
+    if ($name.StartsWith('Hecton8.Core', [StringComparison]::Ordinal) -or
+        $name.EndsWith('.Contracts', [StringComparison]::Ordinal)) {
+        return 'ContractOrCore'
+    }
+
+    if ($name.StartsWith('Hecton8.', [StringComparison]::Ordinal)) {
+        return 'FirstPartyLeaf'
+    }
+
+    return 'PackageOrGenerated'
+}
+
+function Get-CoreGraphAudit {
+    $coreAsmdefPath = Join-Path $scope 'Hecton8.Core.asmdef'
+    $coreCsprojPath = Join-Path $root 'Hecton8.Core.csproj'
+    $propsPath = Join-Path $root 'Directory.Build.props'
+
+    $asmdefRows = @()
+    if (Test-Path -LiteralPath $coreAsmdefPath) {
+        $coreAsmdef = Get-Content -LiteralPath $coreAsmdefPath -Raw | ConvertFrom-Json
+        foreach ($reference in @($coreAsmdef.references)) {
+            $kind = Get-CoreReferenceKind $reference
+            $asmdefRows += [pscustomobject][ordered]@{
+                Reference = $reference
+                Kind = $kind
+                IsHPhiDebt = ($kind -eq 'LeafDomain' -or $kind -eq 'PackageOrUnity' -or $kind -eq 'Other')
+            }
+        }
+    }
+
+    $projectRows = @()
+    if (Test-Path -LiteralPath $coreCsprojPath) {
+        $coreProject = [xml](Get-Content -LiteralPath $coreCsprojPath -Raw)
+        foreach ($node in @($coreProject.SelectNodes('//ProjectReference'))) {
+            $include = [string]$node.Include
+            $kind = Get-ProjectReferenceKind $include
+            $projectRows += [pscustomobject][ordered]@{
+                Reference = $include
+                Kind = $kind
+                IsHPhiDebt = ($kind -eq 'FirstPartyLeaf' -or $kind -eq 'PackageOrGenerated')
+            }
+        }
+    }
+
+    $propsText = ''
+    if (Test-Path -LiteralPath $propsPath) {
+        $propsText = Get-Content -LiteralPath $propsPath -Raw
+    }
+
+    $hasCoreCondition = $propsText.IndexOf("'`$(MSBuildProjectName)' == 'Hecton8.Core'", [StringComparison]::Ordinal) -ge 0
+    $coreGatePresent =
+        $hasCoreCondition -and
+        $propsText.IndexOf('<BuildProjectReferences>false</BuildProjectReferences>', [StringComparison]::Ordinal) -ge 0
+
+    $coreParallelGatePresent =
+        $hasCoreCondition -and
+        $propsText.IndexOf('<BuildInParallel>false</BuildInParallel>', [StringComparison]::Ordinal) -ge 0
+
+    $asmdefDebtRows = @($asmdefRows | Where-Object { $_.IsHPhiDebt })
+    $projectDebtRows = @($projectRows | Where-Object { $_.IsHPhiDebt })
+
+    [ordered]@{
+        CoreAsmdef = if (Test-Path -LiteralPath $coreAsmdefPath) { ConvertTo-RelativeProjectPath $coreAsmdefPath } else { 'MISSING' }
+        CoreProject = if (Test-Path -LiteralPath $coreCsprojPath) { ConvertTo-RelativeProjectPath $coreCsprojPath } else { 'MISSING' }
+        BuildGraphGate = [ordered]@{
+            CoreBuildProjectReferencesDisabledByDefault = $coreGatePresent
+            CoreBuildInParallelDisabledByDefault = $coreParallelGatePresent
+            OptInProperty = 'HectonBuildProjectReferences=true'
+        }
+        Counts = [ordered]@{
+            CoreAsmdefReferenceCount = @($asmdefRows).Count
+            CoreAsmdefDebtReferenceCount = @($asmdefDebtRows).Count
+            GeneratedProjectReferenceCount = @($projectRows).Count
+            GeneratedProjectDebtReferenceCount = @($projectDebtRows).Count
+        }
+        CoreAsmdefReferences = @($asmdefRows)
+        CoreAsmdefDebtReferences = @($asmdefDebtRows)
+        GeneratedProjectReferences = @($projectRows)
+        GeneratedProjectDebtReferences = @($projectDebtRows)
+    }
+}
+
+function Assert-CoreGraphBudget {
+    param([System.Collections.Specialized.OrderedDictionary]$Audit)
+
+    $violations = [System.Collections.Generic.List[string]]::new()
+    $gate = $Audit.BuildGraphGate
+    $counts = $Audit.Counts
+
+    if ($RequireCoreBuildGate -and
+        (-not $gate.CoreBuildProjectReferencesDisabledByDefault -or
+         -not $gate.CoreBuildInParallelDisabledByDefault)) {
+        [void]$violations.Add('Core build graph gate is incomplete.')
+    }
+
+    if ($MaxCoreAsmdefDebtReferences -ge 0 -and
+        [int]$counts.CoreAsmdefDebtReferenceCount -gt $MaxCoreAsmdefDebtReferences) {
+        [void]$violations.Add((
+            'Core asmdef H-Phi debt refs {0} exceed budget {1}.' -f
+            $counts.CoreAsmdefDebtReferenceCount,
+            $MaxCoreAsmdefDebtReferences))
+    }
+
+    if ($MaxGeneratedProjectDebtReferences -ge 0 -and
+        [int]$counts.GeneratedProjectDebtReferenceCount -gt $MaxGeneratedProjectDebtReferences) {
+        [void]$violations.Add((
+            'Generated Core project H-Phi debt refs {0} exceed budget {1}.' -f
+            $counts.GeneratedProjectDebtReferenceCount,
+            $MaxGeneratedProjectDebtReferences))
+    }
+
+    if ($violations.Count -le 0) {
+        return
+    }
+
+    throw (
+        "Core graph H-Phi budget failed with $($violations.Count) violation(s):`n" +
+        ($violations -join "`n"))
+}
+
 function Add-Count {
     param(
         [System.Collections.Specialized.OrderedDictionary]$Counters,
@@ -301,6 +482,41 @@ function New-Scores {
         HPhiStaticNarrow = [Math]::Round($hPhiStaticNarrow, 9)
         HPhiStaticRisk = [Math]::Round($hPhiStaticRisk, 9)
     }
+}
+
+$coreGraphAudit = Get-CoreGraphAudit
+Assert-CoreGraphBudget $coreGraphAudit
+
+if ($CoreGraphOnly) {
+    $result = [ordered]@{
+        Timestamp = (Get-Date).ToString('yyyy-MM-dd HH:mm:ss zzz')
+        Scope = 'Core dependency graph'
+        MetricModel = 'Fast graph-only H-Phi audit. STATIC_SOURCE only; no compile, Unity import, profiler, or runtime proof.'
+        CoreGraphAudit = $coreGraphAudit
+    }
+
+    if ($Json) {
+        $result | ConvertTo-Json -Depth 6
+        return
+    }
+
+    Write-Output 'Hecton-Phi Core graph audit'
+    Write-Output "Timestamp: $($result.Timestamp)"
+    Write-Output "Scope: $($result.Scope)"
+    Write-Output "Metric model: $($result.MetricModel)"
+    Write-Output ''
+    Write-Output 'Build graph gate:'
+    [pscustomobject]$coreGraphAudit.BuildGraphGate | Format-List
+    Write-Output ''
+    Write-Output 'Counts:'
+    [pscustomobject]$coreGraphAudit.Counts | Format-List
+    Write-Output ''
+    Write-Output 'Core asmdef H-Phi debt references:'
+    $coreGraphAudit.CoreAsmdefDebtReferences | Format-Table -AutoSize
+    Write-Output ''
+    Write-Output 'Generated Core project H-Phi debt references:'
+    $coreGraphAudit.GeneratedProjectDebtReferences | Format-Table -AutoSize
+    return
 }
 
 $patternSource = [ordered]@{
@@ -411,6 +627,7 @@ $result = [ordered]@{
     Timestamp = (Get-Date).ToString('yyyy-MM-dd HH:mm:ss zzz')
     Scope = 'Assets/_Project/Scripts'
     MetricModel = 'Runtime H-Phi excludes Scripts/Editor from runtime debt counters; Data Sovereignty counts DataVault access surface including IDataVault, VaultBufferHandle, GetBuffer, TryGetBuffer, and GlobalDataVault; AllSourceCounts is retained for hygiene tracking.'
+    CoreGraphAudit = $coreGraphAudit
     Counts = $runtimeCounters
     Scores = $runtimeScores
     AllSourceCounts = $allCounters
@@ -455,6 +672,11 @@ $runtimeScores.GetEnumerator() | ForEach-Object { Write-Output ("  {0}: {1}" -f 
 Write-Output ''
 Write-Output 'All-source scores:'
 $allSourceScores.GetEnumerator() | ForEach-Object { Write-Output ("  {0}: {1}" -f $_.Key, $_.Value) }
+Write-Output ''
+Write-Output 'Core graph H-Phi gate:'
+[pscustomobject]$coreGraphAudit.BuildGraphGate | Format-List
+Write-Output 'Core graph H-Phi debt counts:'
+[pscustomobject]$coreGraphAudit.Counts | Format-List
 Write-Output ''
 Write-Output 'Top runtime NativeArray domains:'
 $result.TopNativeArrayDomains | Format-Table -AutoSize

@@ -19,6 +19,7 @@ namespace Hecton8.UI.Tools
         private const int RenderTextureSize = 256;
         private const int TextBufferCapacity = 96;
         private const int InvalidDisplayBucket = int.MinValue;
+        private const float QualityTierProbeIntervalSeconds = 0.5f;
         private const float TierHysteresisSeconds = 2f;
         private const float PoolRetrySeconds = 2f;
         private const float InvisibleReleaseSeconds = 0.75f;
@@ -97,6 +98,7 @@ namespace Hecton8.UI.Tools
         private bool _lowTierCandidate;
         private bool _tierInitialized;
         private HectonQualityTier _currentTier = HectonQualityTier.Unknown;
+        private float _qualityTierProbeSeconds;
         private float _lowTierCandidateSeconds;
         private int _lastSignalSequence;
         private int _lastScannerSignalSequence;
@@ -179,7 +181,7 @@ namespace Hecton8.UI.Tools
             if (!_registered)
                 TryRegisterUpdatable();
 
-            float safeDeltaTime = math.max(0f, deltaTime);
+            float safeDeltaTime = SanitizeSeconds(deltaTime);
             if (_poolRetrySeconds > 0f)
                 _poolRetrySeconds = math.max(0f, _poolRetrySeconds - safeDeltaTime);
 
@@ -288,16 +290,17 @@ namespace Hecton8.UI.Tools
             _lastScannerSignalSequence = sequence;
             bool acceptsScanner = _toolHashFilter == 0u || _toolHashFilter == ScannerToolTuningHash || signal.ToolHash == _toolHashFilter;
             bool active = acceptsScanner && signal.Active != 0 && signal.ArtifactHash != 0u;
+            float scannerProgress01 = Sanitize01(signal.Progress01);
             if (_scannerSignalActive == active &&
                 _scannerArtifactHash == signal.ArtifactHash &&
-                math.abs(_scannerProgress01 - signal.Progress01) < 0.005f)
+                math.abs(_scannerProgress01 - scannerProgress01) < 0.005f)
             {
                 return;
             }
 
             _scannerSignalActive = active;
             _scannerArtifactHash = signal.ArtifactHash;
-            _scannerProgress01 = math.saturate(signal.Progress01);
+            _scannerProgress01 = scannerProgress01;
             _stateDirty = true;
         }
 
@@ -469,7 +472,7 @@ namespace Hecton8.UI.Tools
 
         private static void ScrambleDecryptionSpan(Span<char> span, uint hash, int frame, float progress01)
         {
-            int revealed = math.clamp((int)math.floor(math.saturate(progress01) * span.Length), 0, span.Length);
+            int revealed = math.clamp((int)math.floor(Sanitize01(progress01) * span.Length), 0, span.Length);
             uint seed = hash ^ unchecked((uint)frame * 747796405u) ^ 0xB5297A4Du;
             for (int i = revealed; i < span.Length; i++)
             {
@@ -647,22 +650,35 @@ namespace Hecton8.UI.Tools
 
         private void ResolveTierImmediate()
         {
-            _currentTier = GlobalRegistry.ScalabilityTier;
+            _currentTier = ReadGlobalScalabilityTier();
             bool lowTier = IsLowTier(_currentTier);
             _lowTierActive = lowTier;
             _lowTierCandidate = lowTier;
+            _qualityTierProbeSeconds = QualityTierProbeIntervalSeconds;
             _lowTierCandidateSeconds = 0f;
             _tierInitialized = true;
         }
 
         private void ResolveTierHysteresis(float deltaTime)
         {
-            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
-            if (tier != _currentTier)
+            if (!_tierInitialized)
             {
-                _currentTier = tier;
-                _stateDirty = true;
-                _renderRequested = true;
+                ResolveTierImmediate();
+                return;
+            }
+
+            _qualityTierProbeSeconds = math.max(0f, _qualityTierProbeSeconds - deltaTime);
+            HectonQualityTier tier = _currentTier;
+            if (_qualityTierProbeSeconds <= 0f)
+            {
+                _qualityTierProbeSeconds = QualityTierProbeIntervalSeconds;
+                tier = ReadGlobalScalabilityTier();
+                if (tier != _currentTier)
+                {
+                    _currentTier = tier;
+                    _stateDirty = true;
+                    _renderRequested = true;
+                }
             }
 
             bool requestedLowTier = IsLowTier(tier) ||
@@ -724,6 +740,11 @@ namespace Hecton8.UI.Tools
             return tier == HectonQualityTier.Unknown ||
                 tier == HectonQualityTier.Low ||
                 tier == HectonQualityTier.Mx350;
+        }
+
+        private static HectonQualityTier ReadGlobalScalabilityTier()
+        {
+            return GlobalRegistry.ScalabilityTier;
         }
 
         private static float ResolveVisualOverkill01(HectonQualityTier tier)
@@ -807,6 +828,11 @@ namespace Hecton8.UI.Tools
         }
 
         private static float SanitizeMeters(float value)
+        {
+            return math.isfinite(value) ? math.max(0f, value) : 0f;
+        }
+
+        private static float SanitizeSeconds(float value)
         {
             return math.isfinite(value) ? math.max(0f, value) : 0f;
         }

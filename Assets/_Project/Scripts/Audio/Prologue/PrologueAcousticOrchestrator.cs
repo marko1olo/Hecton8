@@ -13,6 +13,7 @@ namespace Hecton8.Audio.Prologue
     public sealed class PrologueAcousticOrchestrator : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
     {
         private const uint SourceHash = 0xAC0571C5u;
+        private const uint PrologueSequenceSourceHash = 0x50524C47u; // PRLG
         private const float MinimumLowPassCutoffHertz = 80f;
         private const float CutoffPublishEpsilonHertz = 1f;
         private const float GainPublishEpsilon = 0.0005f;
@@ -199,9 +200,22 @@ namespace Hecton8.Audio.Prologue
                 PrologueCompleteSignal signal = signals[i];
                 if (!math.isfinite(signal.WhiteoutHoldSeconds))
                     continue;
-                if (signal.Phase != PrologueCompleteSignal.PhaseOceanHandoff &&
-                    (signal.Flags & PrologueCompleteSignal.FlagForceWhiteout) == 0)
+
+                bool sequenceOceanHandoff = signal.Phase == PrologueCompleteSignal.PhaseOceanHandoff &&
+                                             signal.SourceHash == PrologueSequenceSourceHash;
+                if (!sequenceOceanHandoff &&
+                    (signal.Flags & PrologueCompleteSignal.FlagForceWhiteout) == 0 &&
+                    signal.Phase != PrologueCompleteSignal.PhaseWhiteout)
                 {
+                    continue;
+                }
+
+                if (!sequenceOceanHandoff)
+                {
+                    _prologueArmed = true;
+                    _stage = AudioTransitionState.StageWhiteout;
+                    _currentLowPassCutoffHertz = ClampCutoff(vacuumLowPassCutoffHertz);
+                    _forcePublishTransition = true;
                     continue;
                 }
 

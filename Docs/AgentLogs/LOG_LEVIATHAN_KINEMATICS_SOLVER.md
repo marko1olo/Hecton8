@@ -102,3 +102,109 @@ Verification:
 - Static grep found no `math.sqrt`, `math.normalize`, `foreach`, `string.Format`, `.ToString()`, `Debug.Log`, Unity Physics casts, Animator/SMR dependency, or `_H8LeviathanBodyRadius` in IK runtime/job/shader scope.
 - `git diff --check` on touched IK runtime/job/shader files exits 0; line-ending warnings only.
 - Full Unity/Core validation remains blocked by the existing project compile wall.
+
+## 2026-05-15T00:59+04:00
+
+Status: PENDING VERIFICATION. Continued domain H-Phi and presentation-owner hygiene. No `dotnet build`, rebuild, or Roslyn response-file compile was run because the user explicitly prohibited dotnet rebuilds.
+
+What was wrong:
+- `Docs/Tasks/CURRENT_BATCH.md` no longer contains `LEVIATHAN_KINEMATICS_SOLVER`; prompt re-extraction returned `Prompt block not found`.
+- Current source already contained later ownership/GPU hardening, but live status/rationale still ended at Loop 8.
+- `FaunaBrain.EnsureLeviathanPresentationOwner()` could call `AddComponent<FaunaKinematicsRuntime>()` without first recovering an already-existing component if the cached field was null.
+
+What was done:
+- Re-read AGENTS, the domain file, H-Phi atlas section, and relevant mandates.
+- Rechecked current `FaunaKinematicsRuntime` source for native ownership gates, AUP dirty upload, no-consumer GPU upload skip, material gate clearing, deferred dispose chaining, and hot scalability-tier caching.
+- Added a cold `TryGetComponent(out _faunaKinematicsRuntime)` before `AddComponent<FaunaKinematicsRuntime>()` in `FaunaBrain.EnsureLeviathanPresentationOwner()`.
+- Recorded scoped H-Phi counters instead of claiming a global metric.
+
+Cinematic cheats used:
+- None added. Existing Leviathan GPU matrix deformation and triangle-wave tail whip remain the visual fake path.
+
+Exact microseconds saved:
+- Hot-path savings: 0 us from this code diff. The new `TryGetComponent` executes only when binding/recovering the presentation owner.
+- Avoided failure cost: duplicate component/add failure or lost cached presentation owner on Alpha Leviathan path.
+- Existing scoped H-Phi runtime reads remain bounded: `GlobalRegistry.ScalabilityTier` has two source references in `FaunaKinematicsRuntime`.
+
+Verification:
+- CLI prompt extraction from current batch returned `Prompt block not found`; unrelated current-batch prompts were ignored.
+- Scoped H-Phi counters for `FaunaKinematicsRuntime`: `GlobalRegistryRefs=11`, `ScalabilityTierRefs=2`, `NativeArrays=22`, `SignalBusRefs=0`, `UnityUpdateMethods=0`, `FindCalls=0`, `GetComponentCalls=3`.
+- Static grep over IK runtime/job/shader scope found no `math.sqrt`, `math.normalize`, managed array creation, `foreach`, `string.Format`, `.ToString()`, `Debug.Log`, Unity Physics casts, `SkinnedMeshRenderer`, `renderer.material`, `Camera.main`, `GlobalRegistry.Get`, `GameObject.Find`, or `FindObject`.
+- `git diff --check` on touched code exits 0; output is only the LF-to-CRLF warning on `FaunaBrain.cs`.
+- Runtime status remains pending until Unity Editor import, shader compile, play-mode behavior, GC, and profiler evidence exist.
+
+## 2026-05-15T01:06+04:00
+
+Status: PENDING VERIFICATION. Continued blackbox dump integrity audit. No `dotnet` rebuild/compile was run.
+
+What was wrong:
+- `DumpTelemetryBlackBox()` wrote a header saying each telemetry entry was 96 bytes, but the manual writer only emitted 68 bytes of explicit fields.
+- The circular telemetry ring was dumped in physical array order, not chronological oldest-to-newest order.
+
+What was done:
+- Added explicit zero padding writes so each serialized entry matches `TelemetryEntryPayloadBytes = 96`.
+- Resolved `ringLength`, `entryCount`, and `firstEntryIndex` from the telemetry cursor and writes retained entries oldest-to-newest.
+
+Cinematic cheats used:
+- None. This is fault-path evidence integrity, not presentation simulation.
+
+Exact microseconds saved:
+- Hot-path savings: 0 us. This path runs only on blackbox dump.
+- Fault-path added bytes: 28 padding bytes per entry, 8.4 KB for 300 frames.
+- Debug time saved: prevents parser desync and false postmortem ordering; no runtime profiler number claimed.
+
+Verification:
+- Static grep over IK runtime/job/shader scope found no `math.sqrt`, `math.normalize`, managed array creation, `foreach`, `string.Format`, `.ToString()`, `Debug.Log`, Unity Physics casts, `SkinnedMeshRenderer`, `renderer.material`, `Camera.main`, `GlobalRegistry.Get`, `GameObject.Find`, or `FindObject`.
+- `git diff --check` on touched code/docs exits 0; output is only LF-to-CRLF warnings.
+- Runtime status remains pending until Unity Editor import, shader compile, play-mode behavior, GC, and profiler evidence exist.
+
+## 2026-05-15T01:09+04:00
+
+Status: PENDING VERIFICATION. Continued telemetry long-uptime edge audit. No `dotnet` rebuild/compile was run.
+
+What was wrong:
+- `LeviathanTerrainIkJob.WriteTelemetry()` reset the cursor to zero after `int.MaxValue`.
+- After that wrap, runtime last-frame inspection could read the wrong slot and dump code could report an empty retained history despite a full ring.
+
+What was done:
+- Changed the overflow branch to preserve full-ring state and next write index with `TelemetryRing.Length + nextIndex`.
+- Kept the existing single native cursor; no extra native allocation or second counter was added.
+
+Cinematic cheats used:
+- None. This is blackbox evidence integrity.
+
+Exact microseconds saved:
+- Hot-path savings: 0 us.
+- Added cost: one branch only when the cursor reaches `int.MaxValue`, effectively outside normal frame budgets.
+- Debug time saved: prevents false empty dumps and wrong last-frame checks after long uptime.
+
+Verification:
+- Static grep over IK runtime/job/shader scope found no `math.sqrt`, `math.normalize`, managed array creation, `foreach`, `string.Format`, `.ToString()`, `Debug.Log`, Unity Physics casts, `SkinnedMeshRenderer`, `renderer.material`, `Camera.main`, `GlobalRegistry.Get`, `GameObject.Find`, or `FindObject`.
+- `git diff --check` on touched code/docs exits 0; output is only LF-to-CRLF warnings.
+- Runtime status remains pending until Unity Editor import, shader compile, play-mode behavior, GC, and profiler evidence exist.
+
+## 2026-05-15T01:13+04:00
+
+Status: PENDING VERIFICATION. Continued Burst SDF hot-path audit. No `dotnet` rebuild/compile was run.
+
+What was wrong:
+- SDF trilinear sampling repeated voxel-count validation and cell-size reciprocal setup for the density sample and six gradient samples.
+- This work only exists on high/ultra terrain-contact frames, but it sits directly inside the lower-five-segment hugging loop.
+
+What was done:
+- Hoisted `sdfInvCellSize` once per job execution after the outer SDF payload gate.
+- Threaded the resolved reciprocal into density and gradient sampling.
+- Kept full central-difference SDF normal quality; no downgrade to 2D normals or fewer samples.
+
+Cinematic cheats used:
+- None added. Low/MX350 already uses the existing 2D MapMagic fallback cheat when SDF is off.
+
+Exact microseconds saved:
+- Low/MX350: 0 us; SDF remains disabled.
+- High/Ultra: estimated 0.5-2 us on SDF-contact frames by removing repeated validation/reciprocal setup.
+- Measurement status: estimate only; no Unity profiler run was performed.
+
+Verification:
+- Static grep over IK runtime/job/shader scope found no `math.sqrt`, `math.normalize`, managed array creation, `foreach`, `string.Format`, `.ToString()`, `Debug.Log`, Unity Physics casts, `SkinnedMeshRenderer`, `renderer.material`, `Camera.main`, `GlobalRegistry.Get`, `GameObject.Find`, or `FindObject`.
+- `git diff --check` on touched code/docs exits 0; output is only LF-to-CRLF warnings.
+- Runtime status remains pending until Unity Editor import, shader compile, play-mode behavior, GC, and profiler evidence exist.

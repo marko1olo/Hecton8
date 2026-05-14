@@ -532,8 +532,13 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
                 [branch]
                 if (_HectonHabitatModuleStressParams.z > 0.5 && input.habitatStress01 > 0.0001h)
                 {
-                    half habitatCreaseMask = SAMPLE_TEXTURE2D(_DetailMask, sampler_DetailMask, input.uv * 3.1).r;
-                    HectonHabitatInteriorApplyLowTierCrease(input.uv, input.habitatStress01, habitatCreaseMask, hullDentShadow, albedo, smoothness);
+                    half habitatPanelMask = HectonHabitatInteriorCheapPanelMask(input.uv);
+                    [branch]
+                    if (habitatPanelMask > 0.0001h)
+                    {
+                        half habitatCreaseMask = SAMPLE_TEXTURE2D(_DetailMask, sampler_DetailMask, input.uv * 3.1).r;
+                        HectonHabitatInteriorApplyLowTierCrease(input.habitatStress01, habitatPanelMask, habitatCreaseMask, hullDentShadow, albedo, smoothness);
+                    }
                 }
                 HectonCoreLitApplyHullDentSurfaceCheat(hullDentShadow, albedo, smoothness);
                 float parasitePulse = 1.0;

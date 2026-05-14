@@ -1363,7 +1363,8 @@ namespace Hecton8.Construction
         private void UploadModuleStressMatrix(int moduleCount, float peakStress01, HectonQualityTier tier)
         {
             int safeModuleCount = math.max(0, moduleCount);
-            if (safeModuleCount > 0)
+            bool hasVisibleStress = safeModuleCount > 0 && peakStress01 > ModuleStressUploadEpsilon;
+            if (hasVisibleStress)
             {
                 EnsureModuleStressBuffer(safeModuleCount);
                 if (_moduleStressBuffer != null)

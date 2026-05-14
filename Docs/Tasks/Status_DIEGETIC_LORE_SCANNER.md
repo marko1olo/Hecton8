@@ -93,9 +93,27 @@ Mandates read:
 - [x] Static no-regression checks after Loop 10 | DOD: `git diff --check` passed; no `Camera.main`, `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, or `.text =` hits in scanner/UI/target files | Rejected: report-only verification | Estimate: 1500 us
 - [x] Compile verification after Loop 10 | DOD: filtered and plain `dotnet build Hecton8.Core.csproj` both passed; final summary build was 0 warnings / 0 errors | Rejected: one-pass compile proof | Estimate: 66000 us
 
+## Loop 11 - Scanner Black Box and Finite Guard
+
+- [x] Prompt re-extract safety check | DOD: raw CLI scan of `Docs/Tasks/CURRENT_BATCH.md` found no `DIEGETIC_LORE_SCANNER` tag because the batch file now contains other agents; neighboring prompts were ignored and scanner work continued from persisted status/rationale | Rejected: reading other agents' prompts or inventing a new scanner directive | Estimate: 1200 us
+- [x] Scanner acquisition black box | DOD: `ScannerTool` owns a fixed `NativeArray<ScannerBlackBoxEntry>[300]` ring with frame, tool/artifact/blueprint hashes, active/pending target hashes, progress, battery, pose, probe positions, flags, and tier | Rejected: debug logs, managed queues, chat-only postmortem | Estimate: 900 us per active scanner frame
+- [x] One-shot invalid-state dump | DOD: non-finite scanner dt/pose/progress/pending distance writes a finite fallback entry, publishes math-guard telemetry, and dumps `Docs/AgentLogs/Dump_DIEGETIC_LORE_SCANNER.bin` once | Rejected: recording NaN into the ring or throwing gameplay exceptions | Estimate: 0 us normal path; fault path disk write only
+- [x] Finite scanner UI signal guards | DOD: scanner active signal and scientific snapshots now sanitize progress, battery, density, toxicity, chemical load, attractant, depth, and direction inputs before publishing/writing display-facing state | Rejected: allowing NaN to reach TMP buffers or signal consumers | Estimate: 0.2 us per affected publish/update
+- [x] Finite decryption reveal math | DOD: scanner summary and diegetic RT scramble reveal counts use sanitized progress before `floor`/percent comparisons | Rejected: raw `math.saturate(NaN)` feeding text reveal math | Estimate: 0.1 us per repaint
+- [x] Static no-regression checks after Loop 11 | DOD: `git diff --check` passed with line-ending warning only; no `Camera.main`, `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, or `.text =` hits in scanner/UI/target files | Rejected: dotnet rebuild, explicitly forbidden by user in this loop | Estimate: 2200 us
+
+## Loop 12 - Scoped H-Phi Tier Cadence Hygiene
+
+- [x] Scanner quality-tier read cache | DOD: `ScannerTool` now resolves quality tier through a 0.5s probe plus 2s hysteresis helper shared by signal publish, low-tier decryption, and focused resample cadence | Rejected: three independent hot/cold `GlobalRegistry.ScalabilityTier` reads and immediate tier flipping | Estimate: saves 2 source-level registry refs; hot reads capped to 2 Hz
+- [x] Diegetic RT quality-tier probe throttle | DOD: `ToolDiegeticDisplayController` keeps existing 2s low-tier hysteresis but probes `GlobalRegistry.ScalabilityTier` every 0.5s instead of every UI tick | Rejected: per-frame registry polling and unbounded tier flicker | Estimate: 60 Hz -> 2 Hz registry reads per active display
+- [x] UI tick delta finite guard | DOD: tool display tick delta now uses `SanitizeSeconds()` before pool retry and tier hysteresis timers | Rejected: allowing NaN delta to poison fallback timers | Estimate: one finite branch per display tick
+- [x] Scoped H-Phi evidence | DOD: baseline/current `GlobalRegistry.ScalabilityTier` source refs: `ScannerTool.cs` 3 -> 1, `ToolDiegeticDisplayController.cs` 2 -> 1 | Rejected: editing global H-Phi report or claiming runtime/global H-Phi without Unity profiler evidence | Estimate: 3 source refs removed
+- [x] Static no-regression checks after Loop 12 | DOD: `git diff --check` passed with line-ending warnings only; no scanner/UI/target `Camera.main`, direct `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, or `.text =` matches | Rejected: dotnet rebuild, explicitly forbidden by user | Estimate: 2400 us
+
 ## Verification
 
 - [x] Compile/source validation - `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:quiet -clp:Summary` passed with 0 warnings / 0 errors after Loop 10
+- [ ] Compile/source validation after Loops 11-12 - NOT RERUN: user explicitly ordered no dotnet rebuilds; static source checks only
 - [ ] Console check - BLOCKED BY UNITY SESSION: MCP validate/console calls cannot connect to Unity MCP HTTP endpoint / session
 - [x] Re-read prompt after core tasks
 - [x] Omega polish mandate after all tasks done or blocked

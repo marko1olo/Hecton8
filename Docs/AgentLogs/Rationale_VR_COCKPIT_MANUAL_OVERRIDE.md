@@ -221,3 +221,39 @@ Rejected Alternatives: scheduling the job and completing it in Tick was rejected
 Scalability potential: Low keeps cheaper low-tier IK smoothing. Middle/High get actual smooth handle following at 60 Hz. Ultra can add denser hand/lever presentation because the solver remains scalar and the assembly no longer depends on Burst for unused code.
 
 Hardware Impact: i3/MX350 avoids an unnecessary Burst package dependency in the VR UI assembly and keeps the hot solve on simple scalar math. Zero-dt pause frames now skip handle/IK transform reads and writes. No project-wide numeric H-Phi gain is claimed because the global audit timed out; scoped hygiene improves by making `BurstRefs=0` and `IJobRefs=0` in the VR lever slice.
+
+## Decision 18 - Receiver unregister must use the collider that was actually registered
+
+Problem: `TryUnregisterReceiver()` used the current `activationVolume` field. If editor tooling, prefab repair, or runtime initialization swaps that field after registration, the old collider can remain in `PhysicalHandReceiverRegistry` and keep routing hand presses to a disabled lever.
+
+Solution: cache the exact collider in `_registeredActivationVolume` immediately after registration, then unregister that cached collider and clear the cache during teardown.
+
+Rejected Alternatives: assuming serialized fields are immutable during play was rejected because this workspace has multiple agents and runtime repair paths. Searching the registry for this receiver was rejected because the registry is intentionally fixed-key and lookup-only for the interaction hot path.
+
+Scalability potential: Low/Middle/High/Ultra all keep the same fixed receiver table. Dense cockpit panels avoid stale receiver entries when authored controls are reconfigured or disabled.
+
+Hardware Impact: no steady-frame cost. Cold lifecycle adds one managed reference field assignment and prevents stale registry probes from surviving after a control is disabled.
+
+## Decision 19 - Registry saturation must not look like successful registration
+
+Problem: `PhysicalHandReceiverRegistry.Register()` logged once when the fixed table saturated, but it returned `void`. The VR lever therefore marked itself registered even when no receiver slot was written. In a dense cockpit, that creates a silent dead lever instead of a truthful lifecycle state.
+
+Solution: add `TryRegister()` to return the actual slot-write result and keep `Register()` as a compatibility wrapper. `OpenXRManualOverrideLever.TryRegisterReceiver()` now sets `_receiverRegistered` and `_registeredActivationVolume` only after `TryRegister()` succeeds.
+
+Rejected Alternatives: raising `MaxReceivers` was rejected because it hides authoring pressure and increases fixed memory without proving the intended cockpit budget. Changing every existing caller was rejected because the compatibility wrapper keeps the old API stable while the VR lever uses the stricter path.
+
+Scalability potential: Low/Middle/High/Ultra all preserve the same fixed-size receiver table and O(1) lookup. Dense cockpit authoring gets truthful failure state instead of false registration.
+
+Hardware Impact: no steady-frame cost and no hot lookup change. Cold registration pays one boolean return. On saturated tables, the lever avoids stale local state and keeps later retry paths possible.
+
+## Decision 20 - Receiver truth must cover all physical-control consumers
+
+Problem: after `TryRegister()` existed, adjacent physical controls still called the compatibility `Register()` wrapper and marked themselves registered even if the fixed table saturated. Two controls also kept `MinimumDeltaTime` fake progress, so a dispatcher `dt=0` frame could still move visuals or repeat a panel Hold event.
+
+Solution: move `PhysicalPanelButton`, `PhysicalSnapSwitch`, and `LifePodSeatStrapLatch` to `TryRegister()` for lifecycle truth. Panel buttons and snap switches now cache the exact registered collider before unregister. `FastDecayBlend()` in both controls now returns zero on sanitized zero-dt; panel buttons skip hold-repeat dispatch and unchanged mesh writes when time is frozen, and snap switches return before visual solve on zero-dt frames. Public registry methods now document saturation and collider identity semantics.
+
+Rejected Alternatives: leaving old callers on `Register()` was rejected because it creates a split-brain registry contract. Raising `MaxReceivers` was rejected because it hides cockpit density pressure and increases fixed memory without proving budget. Keeping `MinimumDeltaTime` was rejected because deterministic time control must obey dispatcher `dt`, not force visible progress through pause/time-dilation frames.
+
+Scalability potential: Low keeps fixed O(1) receiver lookup with truthful saturation failure and less pause-frame work. Middle/High can run denser cockpit panels without stale receiver state. Ultra can spend the saved control stability budget on richer tactile/audio response because the physical controls remain scalar, event-driven, and allocation-free.
+
+Hardware Impact: i3/MX350 pays no steady-frame registration cost. Cold registration adds one boolean result check and one collider-reference cache. Zero-dt frames avoid snap-switch visual solve/write and prevent panel Hold spam risk; stable panel frames skip unchanged mesh writes. No project-wide numeric H-Phi gain is claimed because no full audit completed in this pass.

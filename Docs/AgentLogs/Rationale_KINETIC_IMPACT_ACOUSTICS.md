@@ -190,3 +190,53 @@ Solution: Ran a source-only scoped spot check over the renderer and smoke tester
 Rejected Alternatives: Claiming a project-wide H-Phi score without the full scanner, or running build/rebuild commands against the user's explicit instruction.
 Scalability potential: No runtime tier change beyond lower policy coupling.
 Hardware Impact: Verification only.
+
+## LOOP 10 AUDIO SERVICE CACHE AND COMPONENT LOOKUP H-PHI PASS
+Problem: Cave reverb and binaural target sampling still resolved `GlobalRegistry.Audio` directly inside audio tick paths. That kept concrete service lookup in the hot renderer even after the kinetic fallback cache pass.
+Solution: Added `_spatialAudioManager` and `ResolveSpatialAudioManager()`. The helper reuses the initialized manager while valid, falls back to `GlobalRegistry.Audio as SpatialAudioManager` only on cold/stale cache, and clears the cached reference on disable/destroy. `UpdateCaveReverb` and `UpdateBinauralTargets` now use the helper.
+Rejected Alternatives: Holding a hard-only initialization reference would fail if bootstrap swaps the audio service; keeping direct registry reads in both paths preserves H-Phi coupling; creating another interface for two telemetry reads would widen the contract beyond this prompt.
+Scalability potential: Low tier cave reverb and high-tier binaural effects both keep behavior but pay fewer service lookups. High/Ultra still get cave SDF/Sabine/convolution and binaural targets; MX350 keeps cheaper Unity-profile/baked behavior.
+Hardware Impact: Saves two registry reads per normal DSP tick after cache warmup. Runtime allocation remains 0 B/frame.
+
+Problem: Quality and scalability policy reads were scattered across granular voice LOD, reverb DSP tier, sonar SDF probe count, and kinetic fallback.
+Solution: Added a renderer-local cached audio quality policy: `_cachedScalabilityTier`, `_cachedQualityTier`, `_cachedLowMemoryProfile`, and `RefreshAudioQualityPolicyIfStale(Time.frameCount)`. The cache refreshes on first use or every 30 frames, and all local LOD decisions consume cached values.
+Rejected Alternatives: Per-call `GlobalRegistry.ScalabilityTier` / `QualityTier` / low-memory reads, a per-frame unconditional refresh that only moves the cost, or injecting policy into every high-speed packet.
+Scalability potential: Low/MX350 still downshifts quickly; Middle/High/Ultra keep richer voice counts, SDF probes, and reverb tiers without repeated policy polling.
+Hardware Impact: Saves 3-5 registry reads per active tick/probe path after warmup; added cost is integer stale checks and one policy refresh per 30 frames.
+
+Problem: Optional `PlayerTransportCoordinator` fallback lookup could run in two transport-audio helpers every tick while the component is absent.
+Solution: Added `TransportCoordinatorLookupRetryFrames = 30` and `TryResolvePlayerTransportCoordinator()`. Both transport-audio helpers share that resolver, so a missing optional coordinator is retried at a bounded cadence instead of every call.
+Rejected Alternatives: Removing fallback support would break prefabs that add the coordinator later; assuming the component exists would reduce resilience; leaving duplicated `TryGetComponent` calls wastes main-thread budget when the optional component is absent.
+Scalability potential: Tool/transport audio still works across Low/Middle/High/Ultra. Missing optional coordinator no longer degrades repeated audio ticks on low silicon.
+Hardware Impact: Saves up to two failed `TryGetComponent` calls per tick when the coordinator is absent; runtime allocation remains 0 B/frame.
+
+Problem: H-Phi proof needed to stay honest under the no-rebuild order.
+Solution: Used source-only scans. Current renderer counts: `GlobalRegistry=26`, `SignalBus=1`, `NativeArray=232`, `StructLayout=6`, `UpdateMethods=0`, `FindObject=0`, `GetComponent=9`, `CachedQuality=14`, `CachedSpatial=9`, `TransportLookupGate=5`.
+Rejected Alternatives: Running dotnet build/rebuild against the user's explicit instruction, or claiming a project-wide H-Phi score from scoped source counts.
+Scalability potential: No additional tier behavior beyond lower service/policy/component lookup pressure.
+Hardware Impact: Verification only.
+
+## LOOP 11 CROSS-DOMAIN RESOLVER CADENCE H-PHI PASS
+Problem: Low-tier biome reverb still read `GlobalRegistry.MapMagic` directly from the cave reverb tick path.
+Solution: Added `_mapMagicBridge`, `_cachedBiomeId`, and `ResolveCachedBiomeId()` behind `AudioServiceLookupRetryFrames = 30`. Low-tier reverb now uses a cached biome id and refreshes the MapMagic bridge on a bounded cadence.
+Rejected Alternatives: Per-tick `GlobalRegistry.MapMagic` reads, or deleting biome flavor from low-tier reverb. A full terrain/biome service refactor exceeds the kinetic acoustic prompt.
+Scalability potential: Low tier preserves biome-colored reverb while avoiding repeated terrain bridge lookups. Middle/High/Ultra are unchanged because richer reverb paths dominate there.
+Hardware Impact: Saves one registry read per low-tier cave reverb tick after cache warmup; runtime allocation remains 0 B/frame.
+
+Problem: Forward echo probe and ambient-pressure audio fallback read `GlobalRegistry.Player` directly in separate helpers.
+Solution: Added `_playerRuntimeContext` and `ResolvePlayerRuntimeContext()` with a 30-frame retry gate. Both audio helpers now consume the cached initialized player context when available and retry only on cadence when absent.
+Rejected Alternatives: Hard-wiring camera/survival references forever would fail bootstrap swaps; direct registry reads in both helpers preserved H-Phi coupling.
+Scalability potential: Same Low/Middle/High/Ultra audio behavior; high-end forward echo and survival pressure cues avoid repeated player context lookup.
+Hardware Impact: Saves up to two player-context registry reads per active tick/probe path after warmup; 0 B/frame.
+
+Problem: Apex heartbeat threat and structural hull stress fallbacks still had direct service locator reads, and structural fallback could attempt three registry reads in one tick while no read model was available.
+Solution: Added `_ecosystemDirectorService`, `ResolveEcosystemDirectorService()`, and `ResolveSubmarineHullReadModel()` with bounded retry frames. Structural binding resets the retry gate when transport ownership changes.
+Rejected Alternatives: Removing fallback reads would break scenes without transport-provided structural grids; direct registry reads were cheap but repeated and hidden in audio helpers.
+Scalability potential: Low tier skips repeated missing-service lookup cost; high-end structural/heartbeat cues still resolve when the services exist.
+Hardware Impact: Saves one ecosystem registry read per SlowTick after warmup and up to three hull-registry fallback reads per tick while absent. Runtime allocation remains 0 B/frame.
+
+Problem: H-Phi evidence needed to remain source-only under the no-rebuild order.
+Solution: Ran `git diff --check`, fixed-string smoke-anchor scans, scoped forbidden-API scans, and source counters. Current renderer counts: `GlobalRegistry=23`, `SignalBus=1`, `NativeArray=232`, `StructLayout=6`, `UpdateMethods=0`, `FindObject=0`, `GetComponent=9`, `CachedQuality=14`, `CachedSpatial=9`, `CrossDomainResolver=16`, `TransportLookupGate=5`.
+Rejected Alternatives: Dotnet build/rebuild, global H-Phi score claim, or Unity-console status without an editor session.
+Scalability potential: No runtime tier behavior change beyond lower service lookup pressure.
+Hardware Impact: Verification only.

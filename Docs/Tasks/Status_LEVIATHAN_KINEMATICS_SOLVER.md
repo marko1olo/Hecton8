@@ -104,3 +104,33 @@ Batch source: Docs/Tasks/CURRENT_BATCH.md
 - Static grep over IK runtime/job/shader scope found no `math.sqrt`, `math.normalize`, managed array creation, `foreach`, `string.Format`, `.ToString()`, `Debug.Log`, Unity Physics casts, `SkinnedMeshRenderer`, `renderer.material`, `Camera.main`, `GlobalRegistry.Get`, `GameObject.Find`, or `FindObject`.
 - `git diff --check` on touched code exits 0; only LF-to-CRLF warnings on `FaunaBrain.cs`.
 - Final status remains PENDING VERIFICATION until Unity Editor import, shader compile, play-mode behavior, and profiler evidence exist.
+
+### Loop 10: Blackbox Dump Format Recheck
+
+- Fixed `DumpTelemetryBlackBox()` binary integrity: dumped entries are now written oldest-to-newest from the telemetry ring instead of physical ring order.
+- Fixed payload-size honesty: each dumped telemetry entry now writes explicit padding floats so the binary body matches `TelemetryEntryPayloadBytes = 96`.
+- Static grep over IK runtime/job/shader scope still found no `math.sqrt`, `math.normalize`, managed array creation, `foreach`, `string.Format`, `.ToString()`, `Debug.Log`, Unity Physics casts, `SkinnedMeshRenderer`, `renderer.material`, `Camera.main`, `GlobalRegistry.Get`, `GameObject.Find`, or `FindObject`.
+- `git diff --check` on touched code/docs exits 0; output is only LF-to-CRLF warnings.
+- No `dotnet` rebuild, compile, or response-file probe was run.
+- Final status remains PENDING VERIFICATION until Unity Editor import, shader compile, play-mode behavior, and profiler evidence exist.
+
+### Loop 11: Telemetry Cursor Wrap Recheck
+
+- Fixed the Burst telemetry cursor overflow path so `int.MaxValue` wrap preserves full-ring state and the next write index instead of resetting the cursor to zero.
+- DOD: `TelemetryHasInvalidFrame()` and dump ordering still resolve the newest/oldest retained entries correctly after long uptime wrap.
+- Alternative Rejected: cursor reset to zero because it makes the post-wrap dump look empty and can inspect the wrong last telemetry entry.
+- Estimate: 0 us hot-path meaningful cost; overflow branch is effectively unreachable during normal play, but it removes a blackbox integrity edge case.
+- Static grep over IK runtime/job/shader scope still found no `math.sqrt`, `math.normalize`, managed array creation, `foreach`, `string.Format`, `.ToString()`, `Debug.Log`, Unity Physics casts, `SkinnedMeshRenderer`, `renderer.material`, `Camera.main`, `GlobalRegistry.Get`, `GameObject.Find`, or `FindObject`.
+- `git diff --check` on touched code/docs exits 0; output is only LF-to-CRLF warnings.
+- No `dotnet` rebuild, compile, or response-file probe was run.
+
+### Loop 12: SDF Sampler Hot-Path Recheck
+
+- Hoisted SDF inverse cell-size resolution once per job execution instead of recomputing it inside each trilinear density and gradient sample.
+- Removed repeated voxel-count resolution from the private trilinear sampler; the outer `canUseSdf` gate remains the authoritative length/dimension validation.
+- DOD: high-tier SDF hugging still samples density plus six central-difference gradient points, but avoids redundant validation/reciprocal work for the lower five terrain-hug segments.
+- Alternative Rejected: changing gradient model or lowering sample count because visual contact quality is the point of high/ultra tiers.
+- Estimate: 0.5-2 us saved on high-tier SDF-contact frames; 0 us on Low/MX350 because SDF remains disabled.
+- Static grep over IK runtime/job/shader scope still found no `math.sqrt`, `math.normalize`, managed array creation, `foreach`, `string.Format`, `.ToString()`, `Debug.Log`, Unity Physics casts, `SkinnedMeshRenderer`, `renderer.material`, `Camera.main`, `GlobalRegistry.Get`, `GameObject.Find`, or `FindObject`.
+- `git diff --check` on touched code/docs exits 0; output is only LF-to-CRLF warnings.
+- No `dotnet` rebuild, compile, or response-file probe was run.

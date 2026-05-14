@@ -195,7 +195,7 @@ Follow-up upgrade 22:
 - Added zero-panel-mask early exits to `HectonHabitatInteriorApplyPanelBendOS` and `HectonHabitatInteriorApplyLowTierCrease`.
 - This protects future shader callsites from reintroducing calm-state resolver work and skips no-op border deformation/crease setup.
 - Static checks: exact shader `normalize()`/`sqrt()` scan produced no matches; managed-offender scans found no `string.Format`, `.ToString()`, interpolation, `foreach`, or LINQ offenders in `HabitatGraphManager.cs`; mesh mutation scan found no owned `Mesh.vertices` writes; `rg` confirms include guard and helper call wiring; brace count in `Hecton_HabitatInterior.hlsl` is balanced; `git diff --check` reports only repository CRLF normalization warnings.
-- Rebuild policy: no `dotnet` rebuild and no Unity rebuild were run by explicit user instruction. Static checks are run separately in this loop.
+- Rebuild policy: no `dotnet` rebuild and no Unity rebuild were run by explicit user instruction.
 
 Exact microseconds saved after follow-up 22:
 - Calm helper calls now return before count/ambience buffer resolution even if a future callsite misses the peak guard.
@@ -205,8 +205,28 @@ Exact microseconds saved after follow-up 22:
 Follow-up upgrade 23:
 - Reordered `TryResolveModuleStressIndex` so stable graph-hash matches return before runtime `EntityId` key lookup.
 - Runtime entity-key fallback remains intact for direct runtime targets and unique `TargetId` matching when the graph hash does not match.
-- Rebuild policy: no `dotnet` rebuild and no Unity rebuild were run by explicit user instruction. Static checks are run separately in this loop.
+- Static checks: managed-offender scans found no `string.Format`, `.ToString()`, interpolation, `foreach`, or LINQ offenders in `HabitatGraphManager.cs`; mesh mutation scan found no owned `Mesh.vertices` writes; exact shader `normalize()`/`sqrt()` scan produced no matches; resolver grep confirms graph-hash return precedes runtime entity-key lookup; local H-Phi spot check remains `GlobalRegistry=4`, `SignalBus=2`, `GlobalSignals=1`, `NativeArray=81`, `GraphicsBuffer=3`, `FindCalls=0`, `UpdateMethods=0`; `git diff --check` reports only unrelated CRLF warnings.
+- Rebuild policy: no `dotnet` rebuild and no Unity rebuild were run by explicit user instruction.
 
 Exact microseconds saved after follow-up 23:
 - Graph-hash stress signal hits avoid one runtime entity-key read/hash per candidate.
 - Estimated 1-3 us saved on i3/MX350 signal-heavy frames with graph-backed module signals; 0 B/frame and no shader cost.
+
+Follow-up upgrade 24:
+- Moved the low-tier habitat panel-mask gate in `Hecton_DryZoneLit.shader` before `_DetailMask` sampling.
+- Changed `HectonHabitatInteriorApplyLowTierCrease` to consume the precomputed panel mask, removing duplicate cheap mask computation.
+- Static checks: `rg` confirms `HectonHabitatInteriorApplyLowTierCrease` signature and DryZone callsite match; exact shader `normalize()`/`sqrt()` scan produced no matches; managed-offender scans found no `string.Format`, `.ToString()`, interpolation, `foreach`, or LINQ offenders in `HabitatGraphManager.cs`; mesh mutation scan found no owned `Mesh.vertices` writes; touched shader brace counts are balanced; `git diff --check` reports unrelated trailing whitespace in `Docs/Archive/Batch005/Tasks_Combined/CURRENT_BATCH.md` plus repository CRLF warnings.
+- Rebuild policy: no `dotnet` rebuild and no Unity rebuild were run by explicit user instruction.
+
+Exact microseconds saved after follow-up 24:
+- Zero-mask low-tier panel-border fragments skip one detail texture sample and the helper-side panel-mask recompute.
+- Estimated 4-12 us saved per dense interior wall view on MX350-class GPUs; 0 B/frame. Mid/High/Ultra branch behavior is unchanged.
+
+Follow-up upgrade 25:
+- Gated `UploadModuleStressMatrix` so `_HectonHabitatModuleStressBuffer` is ensured/uploaded only when `peakStress01 > ModuleStressUploadEpsilon`.
+- Calm visible-module states still publish zero peak shader params; the shader peak guard prevents buffer reads until stress becomes visible again.
+- Rebuild policy: no `dotnet` rebuild and no Unity rebuild were run by explicit user instruction. Static checks are run separately in this loop.
+
+Exact microseconds saved after follow-up 25:
+- Calm visible-module dirty ticks skip one stress buffer ensure/upload.
+- Estimated 6-18 us saved on i3/MX350 active-order, tier-change, or calm rebuild frames; 0 B/frame and no visual regression once stress rises above epsilon.

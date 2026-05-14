@@ -1,6 +1,10 @@
+using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
+using Hecton8.Core.Memory;
+using Hecton8.Core.Signals;
 using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
@@ -13,10 +17,11 @@ namespace Hecton8.Atmosphere
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton/Atmosphere/Gas Dynamics Solver")]
-    public sealed class GasDynamicsSolver : MonoBehaviour, IGasDynamicsSolver, IFixedTickable, IPostFixedTickable
+    public sealed class GasDynamicsSolver : MonoBehaviour, IGasDynamicsSolver, IFixedTickable, IPostFixedTickable, IFrostTickable
     {
         private const int MaxRoomCapacity = 128;
         private const int MaxBulkheadCapacity = 256;
+        private const int MaxBaseCapacity = 32;
         private const int TelemetryCapacity = 300;
         private const int TelemetryEntrySizeBytes = 32;
         private const int ToxicitySignalSoftCapacity = 128;
@@ -37,9 +42,17 @@ namespace Hecton8.Atmosphere
         private const float DefaultRoomTemperatureCelsius = 20f;
         private const float FreezingScrubberEfficiencyScale = 0.5f;
         private const float DefaultDiffusionConductancePerSecond = 0.45f;
+        private const float DefaultHibernationDistanceMeters = 500f;
+        private const float DefaultLowTierHibernationDistanceMeters = 150f;
+        private const float DefaultHibernationHysteresisMeters = 25f;
+        private const float DefaultBaseIdleDrawWatts = 45f;
+        private const float DefaultBaseBatteryWattSeconds = 720000f;
+        private const float DefaultHibernationLeakRatePerSecond = 0.00006f;
+        private const float MaxWakeCatchUpSeconds = 86400f;
         private const float MaxDiffusionFractionPerStep = 0.45f;
         private const ushort TelemetryFlagNaN = 1 << 0;
         private const ushort TelemetryFlagBreach = 1 << 1;
+        private const ushort TelemetryFlagHibernating = 1 << 2;
         private const ushort ToxicityFlagCO2 = 1 << 0;
         private const ushort ToxicityFlagNarcosis = 1 << 1;
         private const ushort RoomFlagInternalFire = (ushort)GasDynamicsRoomFlags.InternalFire;
@@ -65,6 +78,23 @@ namespace Hecton8.Atmosphere
         [SerializeField, Range(0f, 0.95f)] private float maxHullStressRelief01 = 0.45f;
         [SerializeField, Range(0f, 0.5f)] private float hullStressReliefPerAtm = 0.08f;
         [SerializeField] private bool seedStandardAtmosphereOnEnable = true;
+        [Header("Base Hibernation")]
+        [Tooltip("Maximum atmosphere islands tracked by the hibernation mask.")]
+        [SerializeField, Range(1, MaxBaseCapacity)] private int baseCapacity = 8;
+        [Tooltip("Standard hibernation distance for Mid+ quality tiers.")]
+        [SerializeField, Min(1f)] private float hibernationDistanceMeters = DefaultHibernationDistanceMeters;
+        [Tooltip("Low/MX350 hibernation distance used to shut down distant base math earlier.")]
+        [SerializeField, Min(1f)] private float lowTierHibernationDistanceMeters = DefaultLowTierHibernationDistanceMeters;
+        [Tooltip("Distance band preventing awake/sleep flicker around the hibernation threshold.")]
+        [SerializeField, Min(3f)] private float hibernationHysteresisMeters = DefaultHibernationHysteresisMeters;
+        [Tooltip("Fallback battery capacity for unconfigured base atmosphere islands.")]
+        [SerializeField, Min(0f)] private float defaultBaseBatteryWattSeconds = DefaultBaseBatteryWattSeconds;
+        [Tooltip("Fallback idle life-support draw applied while a base is hibernating.")]
+        [SerializeField, Min(0f)] private float defaultBaseIdleDrawWatts = DefaultBaseIdleDrawWatts;
+        [Tooltip("Analytical oxygen leak rate used during hibernation catch-up.")]
+        [SerializeField, Min(0f)] private float hibernationLeakRatePerSecond = DefaultHibernationLeakRatePerSecond;
+        [Tooltip("Ambient oxygen partial pressure target used by the analytical leak fake.")]
+        [SerializeField, Min(0f)] private float hibernationAmbientOxygenKPa = StandardOxygenKPa;
 
         // Prompt-mandated SOA lane names. These are private; callers read through IGasDynamicsSolver.
         private NativeArray<float> RoomO2;
@@ -83,6 +113,17 @@ namespace Hecton8.Atmosphere
         private NativeArray<byte> _roomPlayerPresent;
         private NativeArray<byte> _roomScrubberPowered;
         private NativeArray<ushort> _roomFlags;
+        private NativeArray<int> _roomBaseIndex;
+        private NativeArray<byte> BaseAwakeState;
+        private NativeArray<byte> _basePlayerInside;
+        private NativeArray<int> _baseRoomStart;
+        private NativeArray<int> _baseRoomCount;
+        private NativeArray<AbsoluteUniversePosition> _baseCenterAup;
+        private NativeArray<double> _baseHibernatedUnscaledTime;
+        private NativeArray<float> _baseBatteryWattSeconds;
+        private NativeArray<float> _baseIdleDrawWatts;
+        private NativeArray<float> _baseLeakRatePerSecond;
+        private NativeArray<float> _baseAmbientOxygenKPa;
         private NativeArray<int> _bulkheadRoomA;
         private NativeArray<int> _bulkheadRoomB;
         private NativeArray<byte> _bulkheadSealed;
@@ -93,26 +134,36 @@ namespace Hecton8.Atmosphere
         private bool _stepRunning;
         private bool _registeredTicks;
         private bool _registeredRegistry;
+        private bool _baseAwakeVaultOwned;
+        private bool _baseSignalLanesInitialized;
         private bool _seededStandardAtmosphere;
         private bool _blackBoxDumped;
         private int _roomCount;
         private int _bulkheadCapacityLimit;
         private int _bulkheadCount;
+        private int _baseCapacityLimit;
+        private int _baseCount;
+        private int _sleepingBaseCount;
         private int _activePlayerRoom = -1;
         private int _telemetryWriteIndex;
         private int _tickCount;
         private float _tickAccumulator;
         private float _lastCadenceSeconds = 2.0f;
         private GasDynamicsMathLod _lastMathLod = GasDynamicsMathLod.Low;
+        private ITickDispatcher _tickDispatcher;
+        private IPlayerMovementContracts _playerMovementContracts;
+        private IDataVault _dataVault;
 
         public bool IsInitialized => RoomO2.IsCreated && _toxicitySignals.IsCreated;
         public int RoomCount => _roomCount;
+        public int BaseCount => _baseCount;
         public float LastCadenceSeconds => _lastCadenceSeconds;
         public GasDynamicsMathLod LastMathLod => _lastMathLod;
 
         NativeArray<float>.ReadOnly IGasDynamicsSolver.RoomO2 => RoomO2.IsCreated ? RoomO2.AsReadOnly() : default;
         NativeArray<float>.ReadOnly IGasDynamicsSolver.RoomCO2 => RoomCO2.IsCreated ? RoomCO2.AsReadOnly() : default;
         NativeArray<float>.ReadOnly IGasDynamicsSolver.RoomPressure => RoomPressure.IsCreated ? RoomPressure.AsReadOnly() : default;
+        NativeArray<byte>.ReadOnly IGasDynamicsSolver.BaseAwakeState => BaseAwakeState.IsCreated ? BaseAwakeState.AsReadOnly() : default;
         int ISystem.TickCount => _tickCount;
 
         private void OnEnable()
@@ -126,6 +177,7 @@ namespace Hecton8.Atmosphere
                 return;
             }
 
+            CacheColdDependencies();
             EnsureNativeState();
             SeedStandardAtmosphereIfNeeded();
             TryRegisterRegistry();
@@ -179,6 +231,20 @@ namespace Hecton8.Atmosphere
             TryCompleteStep();
         }
 
+        public void FrostTick()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            if (!TryFinalizeDeferredNativeDisposal() || !TryCompleteStep())
+                return;
+
+            EnsureNativeState();
+            SeedStandardAtmosphereIfNeeded();
+            DrainBaseTransitionSignals();
+            ResolveBaseHibernationStates();
+        }
+
         public bool TryGetRoomSnapshot(int roomId, out GasRoomSnapshot snapshot)
         {
             snapshot = default;
@@ -200,6 +266,32 @@ namespace Hecton8.Atmosphere
                 ResolveToxicity01(carbonDioxide, co2ToxicityThresholdKPa, co2FatalKPa),
                 ResolveNarcosis01(pressureAtm, narcosisThresholdAtm, narcosisFullAtm),
                 _roomFlags[roomId]);
+            return true;
+        }
+
+        public bool TryGetBaseHibernationSnapshot(int baseId, out GasBaseHibernationSnapshot snapshot)
+        {
+            snapshot = default;
+            if (_stepRunning ||
+                !BaseAwakeState.IsCreated ||
+                !_baseRoomStart.IsCreated ||
+                baseId < 0 ||
+                baseId >= _baseCount)
+            {
+                return false;
+            }
+
+            snapshot = new GasBaseHibernationSnapshot(
+                baseId,
+                _baseRoomStart[baseId],
+                _baseRoomCount[baseId],
+                _baseCenterAup[baseId],
+                BaseAwakeState[baseId] != 0,
+                _basePlayerInside[baseId] != 0,
+                FiniteNonNegativeOrZero(_baseBatteryWattSeconds[baseId]),
+                FiniteNonNegativeOrZero(_baseIdleDrawWatts[baseId]),
+                FiniteNonNegativeOrZero(_baseLeakRatePerSecond[baseId]),
+                _baseHibernatedUnscaledTime[baseId]);
             return true;
         }
 
@@ -233,6 +325,63 @@ namespace Hecton8.Atmosphere
             _roomFlags[roomId] = flags;
             if (roomId >= _roomCount)
                 _roomCount = roomId + 1;
+            return true;
+        }
+
+        public bool TryConfigureBase(
+            int baseId,
+            int roomStart,
+            int roomCount,
+            AbsoluteUniversePosition centerAup,
+            float batteryWattSeconds,
+            float idleDrawWatts,
+            float leakRatePerSecond)
+        {
+            if (_stepRunning ||
+                !BaseAwakeState.IsCreated ||
+                !_roomBaseIndex.IsCreated ||
+                baseId < 0 ||
+                baseId >= _baseCapacityLimit)
+            {
+                return false;
+            }
+
+            int safeRoomStart = math.clamp(roomStart, 0, math.max(0, _roomCount - 1));
+            int safeRoomCount = math.clamp(roomCount, 0, math.max(0, _roomCount - safeRoomStart));
+            ConfigureBaseSlot(
+                baseId,
+                safeRoomStart,
+                safeRoomCount,
+                in centerAup,
+                FiniteNonNegativeOrZero(batteryWattSeconds),
+                FiniteNonNegativeOrZero(idleDrawWatts),
+                FiniteNonNegativeOrZero(leakRatePerSecond),
+                hibernationAmbientOxygenKPa);
+
+            for (int room = safeRoomStart; room < safeRoomStart + safeRoomCount; room++)
+                _roomBaseIndex[room] = baseId;
+
+            _baseCount = math.max(_baseCount, baseId + 1);
+            return true;
+        }
+
+        public bool TrySetBasePlayerInside(int baseId, bool playerInside)
+        {
+            if (_stepRunning || !_basePlayerInside.IsCreated || baseId < 0 || baseId >= _baseCount)
+                return false;
+
+            _basePlayerInside[baseId] = (byte)(playerInside ? 1 : 0);
+            if (playerInside && BaseAwakeState.IsCreated && BaseAwakeState[baseId] == 0)
+                WakeBase(baseId, ResolveUnscaledTimeSeconds());
+            return true;
+        }
+
+        public bool TrySetBaseCenterAup(int baseId, AbsoluteUniversePosition centerAup)
+        {
+            if (_stepRunning || !_baseCenterAup.IsCreated || baseId < 0 || baseId >= _baseCount)
+                return false;
+
+            _baseCenterAup[baseId] = centerAup;
             return true;
         }
 
@@ -386,6 +535,17 @@ namespace Hecton8.Atmosphere
             AccumulateAudit(_roomPlayerPresent, nameof(_roomPlayerPresent), ref accumulator);
             AccumulateAudit(_roomScrubberPowered, nameof(_roomScrubberPowered), ref accumulator);
             AccumulateAudit(_roomFlags, nameof(_roomFlags), ref accumulator);
+            AccumulateAudit(_roomBaseIndex, nameof(_roomBaseIndex), ref accumulator);
+            AccumulateAudit(BaseAwakeState, nameof(BaseAwakeState), ref accumulator);
+            AccumulateAudit(_basePlayerInside, nameof(_basePlayerInside), ref accumulator);
+            AccumulateAudit(_baseRoomStart, nameof(_baseRoomStart), ref accumulator);
+            AccumulateAudit(_baseRoomCount, nameof(_baseRoomCount), ref accumulator);
+            AccumulateAudit(_baseCenterAup, nameof(_baseCenterAup), ref accumulator);
+            AccumulateAudit(_baseHibernatedUnscaledTime, nameof(_baseHibernatedUnscaledTime), ref accumulator);
+            AccumulateAudit(_baseBatteryWattSeconds, nameof(_baseBatteryWattSeconds), ref accumulator);
+            AccumulateAudit(_baseIdleDrawWatts, nameof(_baseIdleDrawWatts), ref accumulator);
+            AccumulateAudit(_baseLeakRatePerSecond, nameof(_baseLeakRatePerSecond), ref accumulator);
+            AccumulateAudit(_baseAmbientOxygenKPa, nameof(_baseAmbientOxygenKPa), ref accumulator);
             AccumulateAudit(_bulkheadRoomA, nameof(_bulkheadRoomA), ref accumulator);
             AccumulateAudit(_bulkheadRoomB, nameof(_bulkheadRoomB), ref accumulator);
             AccumulateAudit(_bulkheadSealed, nameof(_bulkheadSealed), ref accumulator);
@@ -445,12 +605,15 @@ namespace Hecton8.Atmosphere
 
             bool fixedRegistered = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Environment);
             bool postFixedRegistered = GlobalRegistry.TryRegisterPostFixedTickable(this, PriorityLayer.Environment);
-            if (!fixedRegistered || !postFixedRegistered)
+            bool frostRegistered = GlobalRegistry.TryRegisterFrostTickable(this, PriorityLayer.Environment);
+            if (!fixedRegistered || !postFixedRegistered || !frostRegistered)
             {
                 if (fixedRegistered)
                     GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
                 if (postFixedRegistered)
                     GlobalRegistry.UnregisterPostFixedTickable(this, PriorityLayer.Environment);
+                if (frostRegistered)
+                    GlobalRegistry.UnregisterFrostTickable(this, PriorityLayer.Environment);
                 return;
             }
 
@@ -464,6 +627,7 @@ namespace Hecton8.Atmosphere
 
             GlobalRegistry.UnregisterPostFixedTickable(this, PriorityLayer.Environment);
             GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
+            GlobalRegistry.UnregisterFrostTickable(this, PriorityLayer.Environment);
             _registeredTicks = false;
         }
 
@@ -474,11 +638,16 @@ namespace Hecton8.Atmosphere
 
             int safeRoomCapacity = math.clamp(roomCapacity, 1, MaxRoomCapacity);
             int safeBulkheadCapacity = math.clamp(bulkheadCapacity, 0, MaxBulkheadCapacity);
+            int safeBaseCapacity = math.clamp(baseCapacity, 1, MaxBaseCapacity);
             roomCapacity = safeRoomCapacity;
             bulkheadCapacity = safeBulkheadCapacity;
+            baseCapacity = safeBaseCapacity;
             _roomCount = safeRoomCapacity;
             _bulkheadCapacityLimit = safeBulkheadCapacity;
             _bulkheadCount = 0;
+            _baseCapacityLimit = safeBaseCapacity;
+            _baseCount = 1;
+            _sleepingBaseCount = 0;
 
             RoomO2 = new NativeArray<float>(safeRoomCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[roomCapacity] - oxygen partial pressure kPa - owner: GasDynamicsSolver
             RoomCO2 = new NativeArray<float>(safeRoomCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[roomCapacity] - carbon dioxide partial pressure kPa - owner: GasDynamicsSolver
@@ -496,6 +665,17 @@ namespace Hecton8.Atmosphere
             _roomPlayerPresent = new NativeArray<byte>(safeRoomCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _roomScrubberPowered = new NativeArray<byte>(safeRoomCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _roomFlags = new NativeArray<ushort>(safeRoomCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _roomBaseIndex = new NativeArray<int>(safeRoomCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            BaseAwakeState = ResolveBaseAwakeStateBuffer(safeBaseCapacity);
+            _basePlayerInside = new NativeArray<byte>(safeBaseCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _baseRoomStart = new NativeArray<int>(safeBaseCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _baseRoomCount = new NativeArray<int>(safeBaseCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _baseCenterAup = new NativeArray<AbsoluteUniversePosition>(safeBaseCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _baseHibernatedUnscaledTime = new NativeArray<double>(safeBaseCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _baseBatteryWattSeconds = new NativeArray<float>(safeBaseCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _baseIdleDrawWatts = new NativeArray<float>(safeBaseCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _baseLeakRatePerSecond = new NativeArray<float>(safeBaseCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _baseAmbientOxygenKPa = new NativeArray<float>(safeBaseCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _bulkheadRoomA = new NativeArray<int>(math.max(1, safeBulkheadCapacity), Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _bulkheadRoomB = new NativeArray<int>(math.max(1, safeBulkheadCapacity), Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _bulkheadSealed = new NativeArray<byte>(math.max(1, safeBulkheadCapacity), Allocator.Persistent, NativeArrayOptions.ClearMemory);
@@ -518,14 +698,117 @@ namespace Hecton8.Atmosphere
             RegisterNativeArray(_roomPlayerPresent, nameof(_roomPlayerPresent));
             RegisterNativeArray(_roomScrubberPowered, nameof(_roomScrubberPowered));
             RegisterNativeArray(_roomFlags, nameof(_roomFlags));
+            RegisterNativeArray(_roomBaseIndex, nameof(_roomBaseIndex));
+            if (!_baseAwakeVaultOwned)
+                RegisterNativeArray(BaseAwakeState, nameof(BaseAwakeState));
+            RegisterNativeArray(_basePlayerInside, nameof(_basePlayerInside));
+            RegisterNativeArray(_baseRoomStart, nameof(_baseRoomStart));
+            RegisterNativeArray(_baseRoomCount, nameof(_baseRoomCount));
+            RegisterNativeArray(_baseCenterAup, nameof(_baseCenterAup));
+            RegisterNativeArray(_baseHibernatedUnscaledTime, nameof(_baseHibernatedUnscaledTime));
+            RegisterNativeArray(_baseBatteryWattSeconds, nameof(_baseBatteryWattSeconds));
+            RegisterNativeArray(_baseIdleDrawWatts, nameof(_baseIdleDrawWatts));
+            RegisterNativeArray(_baseLeakRatePerSecond, nameof(_baseLeakRatePerSecond));
+            RegisterNativeArray(_baseAmbientOxygenKPa, nameof(_baseAmbientOxygenKPa));
             RegisterNativeArray(_bulkheadRoomA, nameof(_bulkheadRoomA));
             RegisterNativeArray(_bulkheadRoomB, nameof(_bulkheadRoomB));
             RegisterNativeArray(_bulkheadSealed, nameof(_bulkheadSealed));
             RegisterNativeArray(_telemetryRing, nameof(_telemetryRing));
             NativeMemorySentinel.RegisterNativeQueue(_toxicitySignals, ToxicitySignalSoftCapacity, NativeMemoryOwner, nameof(_toxicitySignals), NativeAllocationLifetime.Scene);
             for (int i = 0; i < _roomCount; i++)
+            {
                 _roomTemperatureCelsius[i] = DefaultRoomTemperatureCelsius;
+                _roomBaseIndex[i] = 0;
+            }
+
+            InitializeBaseSlots(safeBaseCapacity, safeRoomCapacity);
+            EnsureBaseSignalLanesInitialized();
             PrewarmQueue(ref _toxicitySignals, ToxicitySignalSoftCapacity);
+        }
+
+        private void CacheColdDependencies()
+        {
+            _tickDispatcher = GlobalRegistry.TickDispatcher;
+            _playerMovementContracts = GlobalRegistry.PlayerMovementContracts;
+            _dataVault = GlobalRegistry.DataVault;
+        }
+
+        private NativeArray<byte> ResolveBaseAwakeStateBuffer(int safeBaseCapacity)
+        {
+            IDataVault vault = _dataVault;
+            if (vault != null)
+            {
+                NativeArray<byte> vaultBuffer = vault.GetBuffer<byte>(
+                    BufferID.HabitatBaseAwakeState,
+                    safeBaseCapacity,
+                    SystemID.HabitatAtmosphere,
+                    NativeArrayOptions.ClearMemory);
+                if (vaultBuffer.IsCreated && vaultBuffer.Length >= safeBaseCapacity)
+                {
+                    _baseAwakeVaultOwned = true;
+                    return vaultBuffer;
+                }
+            }
+
+            _baseAwakeVaultOwned = false;
+            return new NativeArray<byte>(safeBaseCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<byte>[baseCapacity] - fallback base awake mask when DataVault is unavailable - owner: GasDynamicsSolver
+        }
+
+        private void InitializeBaseSlots(int safeBaseCapacity, int safeRoomCapacity)
+        {
+            AbsoluteUniversePosition defaultCenterAup = AbsoluteUniversePosition.FromRuntimePosition(transform.position);
+            float safeDefaultBattery = FiniteNonNegativeOrZero(defaultBaseBatteryWattSeconds);
+            float safeDefaultIdleDraw = FiniteNonNegativeOrZero(defaultBaseIdleDrawWatts);
+            float safeDefaultLeakRate = FiniteNonNegativeOrZero(hibernationLeakRatePerSecond);
+            float safeAmbientOxygen = FiniteNonNegativeOrZero(hibernationAmbientOxygenKPa);
+
+            for (int baseId = 0; baseId < safeBaseCapacity; baseId++)
+            {
+                int roomCountForBase = baseId == 0 ? safeRoomCapacity : 0;
+                ConfigureBaseSlot(
+                    baseId,
+                    0,
+                    roomCountForBase,
+                    in defaultCenterAup,
+                    safeDefaultBattery,
+                    safeDefaultIdleDraw,
+                    safeDefaultLeakRate,
+                    safeAmbientOxygen);
+                BaseAwakeState[baseId] = (byte)(baseId == 0 ? 1 : 0);
+                _basePlayerInside[baseId] = 0;
+                _baseHibernatedUnscaledTime[baseId] = 0d;
+            }
+        }
+
+        private void ConfigureBaseSlot(
+            int baseId,
+            int roomStart,
+            int roomCount,
+            in AbsoluteUniversePosition centerAup,
+            float batteryWattSeconds,
+            float idleDrawWatts,
+            float leakRatePerSecond,
+            float ambientOxygenKPa)
+        {
+            _baseRoomStart[baseId] = roomStart;
+            _baseRoomCount[baseId] = roomCount;
+            _baseCenterAup[baseId] = centerAup;
+            _baseBatteryWattSeconds[baseId] = FiniteNonNegativeOrZero(batteryWattSeconds);
+            _baseIdleDrawWatts[baseId] = FiniteNonNegativeOrZero(idleDrawWatts);
+            _baseLeakRatePerSecond[baseId] = FiniteNonNegativeOrZero(leakRatePerSecond);
+            _baseAmbientOxygenKPa[baseId] = FiniteNonNegativeOrZero(ambientOxygenKPa);
+        }
+
+        private void EnsureBaseSignalLanesInitialized()
+        {
+            if (_baseSignalLanesInitialized)
+                return;
+
+            SignalBus<PlayerBaseEnterSignal>.Configure(32, 256, 64);
+            SignalBus<PlayerBaseEnterSignal>.EnsureInitialized();
+            SignalBus<PlayerBaseExitSignal>.Configure(32, 256, 64);
+            SignalBus<PlayerBaseExitSignal>.EnsureInitialized();
+            _baseSignalLanesInitialized = true;
         }
 
         private void SeedStandardAtmosphereIfNeeded()
@@ -599,6 +882,8 @@ namespace Hecton8.Atmosphere
                 RoomPlayerPresent = _roomPlayerPresent,
                 RoomScrubberPowered = _roomScrubberPowered,
                 RoomFlags = _roomFlags,
+                RoomBaseIndex = _roomBaseIndex,
+                BaseAwakeState = BaseAwakeState,
                 BulkheadRoomA = _bulkheadRoomA,
                 BulkheadRoomB = _bulkheadRoomB,
                 BulkheadSealed = _bulkheadSealed,
@@ -627,6 +912,246 @@ namespace Hecton8.Atmosphere
             PublishActiveRoomUi();
             CheckTelemetryForFault();
             return true;
+        }
+
+        private void DrainBaseTransitionSignals()
+        {
+            if (!BaseAwakeState.IsCreated || _baseCapacityLimit <= 0)
+                return;
+
+            double now = ResolveUnscaledTimeSeconds();
+            ReadOnlySpan<PlayerBaseEnterSignal> enterSignals = SignalBus<PlayerBaseEnterSignal>.GetFrameSnapshot();
+            for (int i = 0; i < enterSignals.Length; i++)
+            {
+                PlayerBaseEnterSignal signal = enterSignals[i];
+                if (!TryEnsureBaseSlotFromSignal(signal.BaseId, signal.RoomId, in signal.BaseCenterAup))
+                    continue;
+
+                _basePlayerInside[signal.BaseId] = 1;
+                _baseCenterAup[signal.BaseId] = signal.BaseCenterAup;
+                WakeBase(signal.BaseId, now);
+            }
+
+            ReadOnlySpan<PlayerBaseExitSignal> exitSignals = SignalBus<PlayerBaseExitSignal>.GetFrameSnapshot();
+            for (int i = 0; i < exitSignals.Length; i++)
+            {
+                PlayerBaseExitSignal signal = exitSignals[i];
+                if (!TryEnsureBaseSlotFromSignal(signal.BaseId, signal.RoomId, in signal.BaseCenterAup))
+                    continue;
+
+                _basePlayerInside[signal.BaseId] = 0;
+                _baseCenterAup[signal.BaseId] = signal.BaseCenterAup;
+            }
+        }
+
+        private bool TryEnsureBaseSlotFromSignal(int baseId, int roomId, in AbsoluteUniversePosition centerAup)
+        {
+            if (baseId < 0 || baseId >= _baseCapacityLimit)
+                return false;
+
+            if (baseId >= _baseCount)
+            {
+                for (int i = _baseCount; i <= baseId; i++)
+                {
+                    ConfigureBaseSlot(
+                        i,
+                        0,
+                        0,
+                        in centerAup,
+                        defaultBaseBatteryWattSeconds,
+                        defaultBaseIdleDrawWatts,
+                        hibernationLeakRatePerSecond,
+                        hibernationAmbientOxygenKPa);
+                    BaseAwakeState[i] = 1;
+                    _basePlayerInside[i] = 0;
+                }
+
+                _baseCount = baseId + 1;
+            }
+
+            if ((uint)roomId < (uint)_roomCount)
+            {
+                if (_baseRoomCount[baseId] <= 0)
+                {
+                    _baseRoomStart[baseId] = roomId;
+                    _baseRoomCount[baseId] = 1;
+                }
+
+                _roomBaseIndex[roomId] = baseId;
+            }
+
+            return true;
+        }
+
+        private void ResolveBaseHibernationStates()
+        {
+            if (!BaseAwakeState.IsCreated || _baseCount <= 0)
+                return;
+
+            double now = ResolveUnscaledTimeSeconds();
+            bool hasPlayerAup = TryResolvePlayerAup(out AbsoluteUniversePosition playerAup);
+            float sleepDistance = ResolveHibernationDistanceMeters(ResolveMathLod(GlobalRegistry.ScalabilityTier));
+            float wakeDistance = math.max(0f, sleepDistance - math.max(3f, hibernationHysteresisMeters));
+            double sleepDistanceSq = (double)sleepDistance * sleepDistance;
+            double wakeDistanceSq = (double)wakeDistance * wakeDistance;
+            int sleepingCount = 0;
+
+            for (int baseId = 0; baseId < _baseCount; baseId++)
+            {
+                bool awake = BaseAwakeState[baseId] != 0;
+                bool playerInside = _basePlayerInside[baseId] != 0;
+                bool hasRooms = _baseRoomCount[baseId] > 0;
+                AbsoluteUniversePosition baseCenterAup = _baseCenterAup[baseId];
+                double distanceSq = hasPlayerAup
+                    ? AbsoluteUniversePosition.DistanceSq(in playerAup, in baseCenterAup)
+                    : 0d;
+
+                if (awake)
+                {
+                    if (hasRooms && !playerInside && hasPlayerAup && double.IsFinite(distanceSq) && distanceSq > sleepDistanceSq)
+                        HibernateBase(baseId, now);
+                }
+                else
+                {
+                    bool playerNear = hasPlayerAup && double.IsFinite(distanceSq) && distanceSq <= wakeDistanceSq;
+                    if (playerInside || playerNear)
+                        WakeBase(baseId, now);
+                }
+
+                if (BaseAwakeState[baseId] == 0 && hasRooms)
+                    sleepingCount++;
+            }
+
+            _sleepingBaseCount = sleepingCount;
+        }
+
+        private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
+        {
+            playerAup = default;
+            IPlayerMovementContracts movement = _playerMovementContracts;
+            if (movement == null || !movement.TryGetRuntimePosition(out Vector3 runtimePosition))
+                return false;
+
+            if (!float.IsFinite(runtimePosition.x) ||
+                !float.IsFinite(runtimePosition.y) ||
+                !float.IsFinite(runtimePosition.z))
+            {
+                return false;
+            }
+
+            playerAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+            return true;
+        }
+
+        private double ResolveUnscaledTimeSeconds()
+        {
+            ITickDispatcher dispatcher = _tickDispatcher;
+            if (dispatcher != null)
+            {
+                double unscaled = dispatcher.TimeSnapshot.UnscaledTime;
+                if (double.IsFinite(unscaled) && unscaled >= 0d)
+                    return unscaled;
+            }
+
+            double fallback = SystemDispatcher.CurrentUnscaledTimeSeconds;
+            return double.IsFinite(fallback) && fallback >= 0d ? fallback : 0d;
+        }
+
+        private float ResolveHibernationDistanceMeters(GasDynamicsMathLod lod)
+        {
+            switch (lod)
+            {
+                case GasDynamicsMathLod.Low:
+                    return math.max(1f, lowTierHibernationDistanceMeters);
+                default:
+                    return math.max(1f, hibernationDistanceMeters);
+            }
+        }
+
+        private void HibernateBase(int baseId, double now)
+        {
+            if ((uint)baseId >= (uint)_baseCount || BaseAwakeState[baseId] == 0)
+                return;
+
+            BaseAwakeState[baseId] = 0;
+            _baseHibernatedUnscaledTime[baseId] = double.IsFinite(now) && now >= 0d ? now : 0d;
+        }
+
+        private void WakeBase(int baseId, double now)
+        {
+            if ((uint)baseId >= (uint)_baseCount || BaseAwakeState[baseId] != 0)
+                return;
+
+            double start = _baseHibernatedUnscaledTime[baseId];
+            double elapsedDouble = double.IsFinite(now) && double.IsFinite(start) && now > start
+                ? now - start
+                : 0d;
+            float elapsedSeconds = (float)math.min(MaxWakeCatchUpSeconds, math.max(0d, elapsedDouble));
+            ApplyBaseWakeCatchUp(baseId, elapsedSeconds);
+            BaseAwakeState[baseId] = 1;
+            _baseHibernatedUnscaledTime[baseId] = double.IsFinite(now) && now >= 0d ? now : 0d;
+        }
+
+        private void ApplyBaseWakeCatchUp(int baseId, float elapsedSeconds)
+        {
+            if (elapsedSeconds <= 0f || !_baseBatteryWattSeconds.IsCreated)
+                return;
+
+            float idleDraw = FiniteNonNegativeOrZero(_baseIdleDrawWatts[baseId]);
+            float battery = FiniteNonNegativeOrZero(_baseBatteryWattSeconds[baseId]);
+            battery = math.max(0f, battery - idleDraw * elapsedSeconds);
+            _baseBatteryWattSeconds[baseId] = battery;
+
+            if (battery <= 0f)
+            {
+                SetBaseOxygenDepleted(baseId);
+                return;
+            }
+
+            float leakRate = FiniteNonNegativeOrZero(_baseLeakRatePerSecond[baseId]);
+            if (leakRate <= 0f)
+                return;
+
+            float alpha = ResolveAnalyticalLeakAlpha(elapsedSeconds, leakRate);
+            if (alpha <= 0f)
+                return;
+
+            float ambientOxygen = FiniteNonNegativeOrZero(_baseAmbientOxygenKPa[baseId]);
+            int startRoom = math.clamp(_baseRoomStart[baseId], 0, math.max(0, _roomCount));
+            int roomEnd = math.min(_roomCount, startRoom + math.max(0, _baseRoomCount[baseId]));
+            for (int room = startRoom; room < roomEnd; room++)
+            {
+                float oxygen = math.lerp(FiniteNonNegativeOrZero(RoomO2[room]), ambientOxygen, alpha);
+                RoomO2[room] = oxygen;
+                _roomO2Back[room] = oxygen;
+                float carbonDioxide = FiniteNonNegativeOrZero(RoomCO2[room]);
+                float nitrogen = FiniteNonNegativeOrZero(_roomNitrogen[room]);
+                float pressure = ResolveDaltonPressureKPa(oxygen, carbonDioxide, nitrogen);
+                RoomPressure[room] = pressure;
+                _roomPressureBack[room] = pressure;
+            }
+        }
+
+        private void SetBaseOxygenDepleted(int baseId)
+        {
+            int startRoom = math.clamp(_baseRoomStart[baseId], 0, math.max(0, _roomCount));
+            int roomEnd = math.min(_roomCount, startRoom + math.max(0, _baseRoomCount[baseId]));
+            for (int room = startRoom; room < roomEnd; room++)
+            {
+                RoomO2[room] = 0f;
+                _roomO2Back[room] = 0f;
+                float pressure = ResolveDaltonPressureKPa(0f, RoomCO2[room], _roomNitrogen[room]);
+                RoomPressure[room] = pressure;
+                _roomPressureBack[room] = pressure;
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float ResolveAnalyticalLeakAlpha(float elapsedSeconds, float leakRatePerSecond)
+        {
+            float exponent = -FiniteNonNegativeOrZero(elapsedSeconds) * FiniteNonNegativeOrZero(leakRatePerSecond);
+            float alpha = 1f - math.exp(exponent);
+            return math.isfinite(alpha) ? math.saturate(alpha) : 0f;
         }
 
         private void PublishActiveRoomUi()
@@ -736,6 +1261,17 @@ namespace Hecton8.Atmosphere
             DisposeArray(ref _roomPlayerPresent, ref disposeHandle, waitForStep);
             DisposeArray(ref _roomScrubberPowered, ref disposeHandle, waitForStep);
             DisposeArray(ref _roomFlags, ref disposeHandle, waitForStep);
+            DisposeArray(ref _roomBaseIndex, ref disposeHandle, waitForStep);
+            DisposeBaseAwakeState(ref disposeHandle, waitForStep);
+            DisposeArray(ref _basePlayerInside, ref disposeHandle, waitForStep);
+            DisposeArray(ref _baseRoomStart, ref disposeHandle, waitForStep);
+            DisposeArray(ref _baseRoomCount, ref disposeHandle, waitForStep);
+            DisposeArray(ref _baseCenterAup, ref disposeHandle, waitForStep);
+            DisposeArray(ref _baseHibernatedUnscaledTime, ref disposeHandle, waitForStep);
+            DisposeArray(ref _baseBatteryWattSeconds, ref disposeHandle, waitForStep);
+            DisposeArray(ref _baseIdleDrawWatts, ref disposeHandle, waitForStep);
+            DisposeArray(ref _baseLeakRatePerSecond, ref disposeHandle, waitForStep);
+            DisposeArray(ref _baseAmbientOxygenKPa, ref disposeHandle, waitForStep);
             DisposeArray(ref _bulkheadRoomA, ref disposeHandle, waitForStep);
             DisposeArray(ref _bulkheadRoomB, ref disposeHandle, waitForStep);
             DisposeArray(ref _bulkheadSealed, ref disposeHandle, waitForStep);
@@ -767,6 +1303,9 @@ namespace Hecton8.Atmosphere
             _roomCount = 0;
             _bulkheadCapacityLimit = 0;
             _bulkheadCount = 0;
+            _baseCapacityLimit = 0;
+            _baseCount = 0;
+            _sleepingBaseCount = 0;
             _activePlayerRoom = -1;
         }
 
@@ -786,6 +1325,27 @@ namespace Hecton8.Atmosphere
             else
                 array.Dispose();
             array = default;
+        }
+
+        private void DisposeBaseAwakeState(ref JobHandle disposeHandle, bool deferred)
+        {
+            if (!BaseAwakeState.IsCreated)
+                return;
+
+            if (_baseAwakeVaultOwned)
+            {
+                BaseAwakeState = default;
+                _baseAwakeVaultOwned = false;
+                return;
+            }
+
+            NativeMemorySentinel.UnregisterNativeArray(BaseAwakeState);
+            if (deferred)
+                disposeHandle = BaseAwakeState.Dispose(disposeHandle);
+            else
+                BaseAwakeState.Dispose();
+            BaseAwakeState = default;
+            _baseAwakeVaultOwned = false;
         }
 
         private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity) where T : unmanaged
@@ -931,6 +1491,8 @@ namespace Hecton8.Atmosphere
             [ReadOnly] public NativeArray<byte> RoomPlayerPresent;
             [ReadOnly] public NativeArray<byte> RoomScrubberPowered;
             [ReadOnly] public NativeArray<ushort> RoomFlags;
+            [ReadOnly] public NativeArray<int> RoomBaseIndex;
+            [ReadOnly] public NativeArray<byte> BaseAwakeState;
             [ReadOnly] public NativeArray<int> BulkheadRoomA;
             [ReadOnly] public NativeArray<int> BulkheadRoomB;
             [ReadOnly] public NativeArray<byte> BulkheadSealed;
@@ -947,6 +1509,15 @@ namespace Hecton8.Atmosphere
                     float carbonDioxide = FiniteNonNegativeOrZero(RoomCO2Front[room]);
                     float nitrogen = FiniteNonNegativeOrZero(RoomNitrogenFront[room]);
                     ushort flags = RoomFlags[room];
+
+                    if (!IsRoomAwake(room))
+                    {
+                        RoomO2Back[room] = oxygen;
+                        RoomCO2Back[room] = carbonDioxide;
+                        RoomNitrogenBack[room] = nitrogen;
+                        RoomPressureBack[room] = ResolveDaltonPressureKPa(oxygen, carbonDioxide, nitrogen);
+                        continue;
+                    }
 
                     if (RoomPlayerPresent[room] != 0)
                     {
@@ -1000,6 +1571,8 @@ namespace Hecton8.Atmosphere
                         int roomB = BulkheadRoomB[edge];
                         if ((uint)roomA >= (uint)roomLimit || (uint)roomB >= (uint)roomLimit || roomA == roomB)
                             continue;
+                        if (!IsRoomAwake(roomA) || !IsRoomAwake(roomB))
+                            continue;
 
                         float oxygenA = RoomO2Back[roomA];
                         float oxygenB = RoomO2Back[roomB];
@@ -1030,14 +1603,21 @@ namespace Hecton8.Atmosphere
                 uint stateHash = 2166136261u;
                 ushort telemetryFlags = 0;
                 int signalsWritten = 0;
+                int sleepingRoomCount = 0;
                 for (int room = 0; room < roomLimit; room++)
                 {
                     ushort flags = RoomFlags[room];
                     float oxygen = RoomO2Back[room];
                     float carbonDioxide = RoomCO2Back[room];
                     float nitrogen = RoomNitrogenBack[room];
+                    bool roomAwake = IsRoomAwake(room);
+                    if (!roomAwake)
+                    {
+                        sleepingRoomCount++;
+                        telemetryFlags |= TelemetryFlagHibernating;
+                    }
 
-                    if ((flags & RoomFlagBreached) != 0)
+                    if (roomAwake && (flags & RoomFlagBreached) != 0)
                     {
                         oxygen = 0f;
                         carbonDioxide = 0f;
@@ -1045,7 +1625,7 @@ namespace Hecton8.Atmosphere
                         telemetryFlags |= TelemetryFlagBreach;
                     }
 
-                    if (RoomSubmerged01.IsCreated && room < RoomSubmerged01.Length)
+                    if (roomAwake && RoomSubmerged01.IsCreated && room < RoomSubmerged01.Length)
                     {
                         float dryFraction01 = 1f - FiniteSaturate01(RoomSubmerged01[room]);
                         oxygen = math.min(oxygen, StandardOxygenKPa * dryFraction01);
@@ -1067,7 +1647,7 @@ namespace Hecton8.Atmosphere
                     float pressureAtm = pressure * math.rcp(KPaPerAtmosphere);
                     float toxicity01 = ResolveToxicity01(carbonDioxide, Co2ToxicityThresholdKPa, Co2FatalKPa);
                     float narcosis01 = ResolveNarcosis01(pressureAtm, NarcosisThresholdAtm, NarcosisFullAtm);
-                    if ((toxicity01 > 0f || narcosis01 > 0f) && signalsWritten < ToxicitySignalSoftCapacity)
+                    if (roomAwake && (toxicity01 > 0f || narcosis01 > 0f) && signalsWritten < ToxicitySignalSoftCapacity)
                     {
                         ushort signalFlags = 0;
                         signalFlags |= (ushort)math.select(0, ToxicityFlagCO2, toxicity01 > 0f);
@@ -1103,8 +1683,21 @@ namespace Hecton8.Atmosphere
                     MaxPressureKPa = maxPressure,
                     StateHash = stateHash,
                     Flags = telemetryFlags,
-                    Reserved = 0
+                    Reserved = (ushort)math.min(ushort.MaxValue, sleepingRoomCount)
                 };
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private bool IsRoomAwake(int roomIndex)
+            {
+                if (!BaseAwakeState.IsCreated || !RoomBaseIndex.IsCreated || (uint)roomIndex >= (uint)RoomBaseIndex.Length)
+                    return true;
+
+                int baseIndex = RoomBaseIndex[roomIndex];
+                if ((uint)baseIndex >= (uint)BaseAwakeState.Length)
+                    return true;
+
+                return BaseAwakeState[baseIndex] != 0;
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]

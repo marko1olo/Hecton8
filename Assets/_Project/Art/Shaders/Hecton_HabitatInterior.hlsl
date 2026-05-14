@@ -117,8 +117,8 @@ half3 HectonHabitatInteriorApplyCheapNormalBiasWS(half3 normalWS, float stress01
 }
 
 void HectonHabitatInteriorApplyLowTierCrease(
-    float2 uv,
     half stress01,
+    half panelMask,
     half detailMask,
     inout half hullDentShadow,
     inout half3 albedo,
@@ -127,7 +127,6 @@ void HectonHabitatInteriorApplyLowTierCrease(
     if (_HectonHabitatModuleStressParams.z <= 0.5 || stress01 <= 0.0001h)
         return;
 
-    half panelMask = HectonHabitatInteriorCheapPanelMask(uv);
     if (panelMask <= 0.0001h)
         return;
 

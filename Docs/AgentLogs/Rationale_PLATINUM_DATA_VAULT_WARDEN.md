@@ -154,6 +154,12 @@ Rejected Alternatives: Trusting `[StructLayout]` declarations without a central 
 Scalability potential: Low catches binary drift before save/load corrupts data; Middle/High/Ultra can add more native persistence consumers with a single manifest gate.
 Hardware Impact: Cold boot/static validation only. The added assertions are O(number of DTO fields checked) and 0 us steady-frame.
 
+Problem: Procedural-world save arrays are capacity-backed, so the codec could serialize full backing capacity and the generic reader could allocate a corrupt over-limit array before domain max validation.
+Solution: Wrote suppressed placement, fauna, geology seam, geology cave, and hibernated fauna arrays as logical bounded slices; clamped their mirrored count fields to array length and domain maxima; added bounded struct-array reads for generic procedural arrays; rejected custom fauna counts before allocation; and made `ProceduralWorldStateDTO.EnsureCapacity` copy existing entries when expanding shorter loaded arrays.
+Rejected Alternatives: Keeping full-capacity writes for compatibility. The wire shape remains count + array payload, but the payload now reflects logical state instead of unused capacity. Trusting post-load migration was rejected because allocation happens before migration can clamp, and because no-copy expansion would discard compact payload entries.
+Scalability potential: Low saves disk and decompression bandwidth on weak hardware; Middle keeps save corruption fail-fast; High and Ultra can increase procedural state detail without paying for empty capacity slots.
+Hardware Impact: Cold save path adds bounded count clamps and removes up to approximately 240 KiB raw procedural-world payload when all capacity arrays are mostly empty: 8192 long suppressed keys, 4096 fauna records, 512 hibernated fauna records, 512 geology seam records, and 512 cave entrance records. Frame impact is 0 us.
+
 ## OMEGA POLISH CHANGES
 
 Problem: Polish audit required removal of fake precision, managed iteration/string debt, and any code outside the DataVault domain without justification.

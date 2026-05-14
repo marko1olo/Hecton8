@@ -49,6 +49,8 @@ namespace Hecton8.Gameplay
         private const int ScannerBlackBoxCapacity = 300;
         private const int ScannerBlackBoxInvalidStateHash = unchecked((int)0x53434E21); // SCN!
         private const uint ScannerBlackBoxMagic = 0x53434242u; // SCBB
+        private const float ScannerQualityTierProbeIntervalSeconds = 0.5f;
+        private const float ScannerQualityTierHysteresisSeconds = 2f;
         private const ushort ScannerBlackBoxFlagEquipped = 1 << 0;
         private const ushort ScannerBlackBoxFlagHeld = 1 << 1;
         private const ushort ScannerBlackBoxFlagSnapshotActive = 1 << 2;
@@ -643,6 +645,11 @@ namespace Hecton8.Gameplay
         private int _lastPublishedTuningProgressBucket = int.MinValue;
         private int _scannerBlackBoxCursor;
         private ushort _scannerBlackBoxQualityTier;
+        private HectonQualityTier _scannerQualityTier = HectonQualityTier.Unknown;
+        private HectonQualityTier _scannerQualityTierCandidate = HectonQualityTier.Unknown;
+        private float _scannerQualityTierNextProbeAt;
+        private float _scannerQualityTierCandidateSeconds;
+        private bool _scannerQualityTierInitialized;
         private bool _scannerBlackBoxDumped;
         private bool _applicationQuitting;
         private int _scientificRaycastRequestSequence;
@@ -974,7 +981,7 @@ namespace Hecton8.Gameplay
             float safeBattery01 = SafeSaturate01(BatteryCharge);
             int progressBucket = math.clamp((int)math.round(safeProgress01 * 1000f), 0, 1000);
             uint signalToolHash = RuntimeToolId != 0u ? RuntimeToolId : ScannerToolTuningHash;
-            HectonQualityTier signalTier = GlobalRegistry.ScalabilityTier;
+            HectonQualityTier signalTier = ResolveScannerQualityTier();
             _scannerBlackBoxQualityTier = (ushort)signalTier;
 
             if (active == _lastPublishedTuningActive &&
@@ -1523,7 +1530,8 @@ namespace Hecton8.Gameplay
 
         private void AppendLoreDecryptionSummary(ref FixedCharBuffer buffer)
         {
-            int progressPercent = Mathf.Clamp(Mathf.RoundToInt(_activeScientificEntityProgress * 100f), 0, 100);
+            float progress01 = SafeSaturate01(_activeScientificEntityProgress);
+            int progressPercent = math.clamp((int)math.round(progress01 * 100f), 0, 100);
             buffer.Append("SCANNER // ");
 
             if (IsLowScannerPresentationTier())
@@ -1543,8 +1551,8 @@ namespace Hecton8.Gameplay
             }
 
             Span<char> visibleTitle = titleBuffer.Slice(0, titleLength);
-            if (_activeScientificEntityProgress < 1f)
-                ScrambleDecryptionSpan(visibleTitle, _activeScientificEntityHash, Time.frameCount, _activeScientificEntityProgress);
+            if (progress01 < 1f)
+                ScrambleDecryptionSpan(visibleTitle, _activeScientificEntityHash, Time.frameCount, progress01);
 
             buffer.Append(visibleTitle);
             buffer.Append(" // ");
@@ -1554,7 +1562,7 @@ namespace Hecton8.Gameplay
 
         private static void ScrambleDecryptionSpan(Span<char> span, uint hash, int frame, float progress01)
         {
-            int revealed = math.clamp((int)math.floor(math.saturate(progress01) * span.Length), 0, span.Length);
+            int revealed = math.clamp((int)math.floor(SafeSaturate01(progress01) * span.Length), 0, span.Length);
             uint seed = hash ^ unchecked((uint)frame * 747796405u) ^ 0x9E3779B9u;
             for (int i = revealed; i < span.Length; i++)
             {
@@ -1567,9 +1575,9 @@ namespace Hecton8.Gameplay
             }
         }
 
-        private static bool IsLowScannerPresentationTier()
+        private bool IsLowScannerPresentationTier()
         {
-            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
+            HectonQualityTier tier = ResolveScannerQualityTier();
             return tier == HectonQualityTier.Unknown ||
                    tier == HectonQualityTier.Low ||
                    tier == HectonQualityTier.Mx350;
@@ -2797,7 +2805,7 @@ namespace Hecton8.Gameplay
         private float ResolveFocusedScanResampleInterval()
         {
             float configured = math.max(0.05f, focusedScanResampleInterval);
-            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
+            HectonQualityTier tier = ResolveScannerQualityTier();
             _scannerBlackBoxQualityTier = (ushort)tier;
             if (tier == HectonQualityTier.Unknown ||
                 tier == HectonQualityTier.Low ||
@@ -2813,6 +2821,61 @@ namespace Hecton8.Gameplay
                 return math.min(configured, 0.09f);
 
             return configured;
+        }
+
+        private HectonQualityTier ResolveScannerQualityTier()
+        {
+            float now = Time.time;
+            if (!_scannerQualityTierInitialized)
+            {
+                HectonQualityTier initialTier = ReadGlobalScalabilityTier();
+                _scannerQualityTier = initialTier;
+                _scannerQualityTierCandidate = initialTier;
+                _scannerQualityTierNextProbeAt = now + ScannerQualityTierProbeIntervalSeconds;
+                _scannerQualityTierCandidateSeconds = 0f;
+                _scannerQualityTierInitialized = true;
+                _scannerBlackBoxQualityTier = (ushort)initialTier;
+                return initialTier;
+            }
+
+            if (now < _scannerQualityTierNextProbeAt)
+                return _scannerQualityTier;
+
+            _scannerQualityTierNextProbeAt = now + ScannerQualityTierProbeIntervalSeconds;
+            HectonQualityTier observedTier = ReadGlobalScalabilityTier();
+            if (observedTier == _scannerQualityTier)
+            {
+                _scannerQualityTierCandidate = observedTier;
+                _scannerQualityTierCandidateSeconds = 0f;
+                _scannerBlackBoxQualityTier = (ushort)_scannerQualityTier;
+                return _scannerQualityTier;
+            }
+
+            if (observedTier != _scannerQualityTierCandidate)
+            {
+                _scannerQualityTierCandidate = observedTier;
+                _scannerQualityTierCandidateSeconds = 0f;
+                _scannerBlackBoxQualityTier = (ushort)_scannerQualityTier;
+                return _scannerQualityTier;
+            }
+
+            _scannerQualityTierCandidateSeconds += ScannerQualityTierProbeIntervalSeconds;
+            if (_scannerQualityTierCandidateSeconds < ScannerQualityTierHysteresisSeconds)
+            {
+                _scannerBlackBoxQualityTier = (ushort)_scannerQualityTier;
+                return _scannerQualityTier;
+            }
+
+            _scannerQualityTier = observedTier;
+            _scannerQualityTierCandidateSeconds = 0f;
+            _scannerBlackBoxQualityTier = (ushort)_scannerQualityTier;
+            InvalidateOperationalStringCache();
+            return _scannerQualityTier;
+        }
+
+        private static HectonQualityTier ReadGlobalScalabilityTier()
+        {
+            return GlobalRegistry.ScalabilityTier;
         }
 
         private void QueueScientificOcclusionRaycast(

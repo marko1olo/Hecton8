@@ -1,6 +1,6 @@
 # Rationale - VFX_SDF_CARVE_DEBRIS
 
-Status: PENDING VERIFICATION
+Status: STATIC VERIFIED / UNITY COMPILE BLOCKED (NO DOTNET REBUILD RUN)
 
 ## Decision 0 - Domain and Mandate Boundary
 
@@ -145,3 +145,11 @@ Solution: Bind the existing `CarveDebrisVelocity` ping-pong lane to the indirect
 Rejected Alternatives: Per-particle CPU color upload was rejected because it adds bandwidth and duplicates GPU state. Always reading velocity on Low/MX350 was rejected because the low path should spend saved cycles on stability, not extra shading. Adding a new material variant was rejected because it increases variant pressure for a tiny branch.
 Scalability potential: Low/MX350 = branch disabled, same cheap rock silhouette. Middle/High/Ultra = impact-speed edge highlight gives stronger carve readability while staying inside fixed 4096 storage.
 Hardware Impact: Low-tier cost is unchanged except one buffer bind on the CPU render path. High/ultra cost is one velocity buffer read per visible vertex and a few scalar ops; no GC, no readback, no extra CPU upload.
+
+## Decision 18 - No-Dotnet Static Verification Closeout
+
+Problem: The user explicitly prohibited dotnet rebuilds, Unity MCP tools are unavailable in this session, and the live project cannot be truthfully reported as Unity-compiled from static file access alone.
+Solution: Treat static evidence as the closeout boundary: run `git diff --check`, scan the touched VFX lane for forbidden managed/runtime patterns, scan debris/flow shaders for hot expensive math regressions, confirm velocity binding and draw-metadata cache call sites, and record the missing current batch prompt tag count. Keep compile status blocked instead of inventing a pass.
+Rejected Alternatives: Running `dotnet build` or `dotnet rebuild` was rejected by direct user instruction. CPU `GetData` validation was rejected because it stalls GPU work and violates the debris architecture. Claiming Unity compile success without editor/MCP evidence was rejected because it is a false report.
+Scalability potential: Low/MX350 retains the 1024 active slot cap, no SDF sample, no shader velocity branch, and no hot scheduler fences. Middle/High/Ultra retain 4096 active capacity, validated flow/SDF binding, hash-vector chip orientation, CoreLit response, and velocity fresh-edge impact readability without new CPU uploads.
+Hardware Impact: Verification itself saves 0 us at runtime. Preserved runtime estimates remain 25-35 us low-tier dispatch reduction, 20-70 us burst scheduler-fence removal, 15-60 us dense-batch scan reduction, sub-10 us duplicate mesh metadata avoidance, and visible-count-dependent shader ALU savings from removing per-vertex `sincos`.

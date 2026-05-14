@@ -171,7 +171,18 @@ namespace Hecton8.Audio.Editor
                 AssertContains(renderer, "entry.Valid != 0", "Kinetic impact duplicate admission ignores cold zeroed ring entries", builder, ref failureCount);
                 AssertContains(renderer, "KineticImpactQualityPolicyRefreshFrames = 30", "Kinetic impact tier policy is cached instead of polled per packet", builder, ref failureCount);
                 AssertContains(renderer, "RefreshKineticImpactQualityPolicyIfStale(Time.frameCount)", "Kinetic impact tier policy refreshes on a bounded cadence before signal admission", builder, ref failureCount);
+                AssertContains(renderer, "RefreshAudioQualityPolicyIfStale(Time.frameCount)", "Critical audio quality policy is cached across DSP hot paths", builder, ref failureCount);
+                AssertContains(renderer, "_cachedScalabilityTier", "Granular voice and sonar probe LOD use cached scalability tier", builder, ref failureCount);
+                AssertContains(renderer, "_cachedQualityTier", "Reverb DSP tier uses cached quality tier", builder, ref failureCount);
                 AssertContains(renderer, "ResolveKineticLowTierAudioService()", "Low-tier kinetic fallback uses cached audio-service resolution", builder, ref failureCount);
+                AssertContains(renderer, "ResolveSpatialAudioManager()", "Critical audio reverb and binaural sampling use cached spatial-audio service resolution", builder, ref failureCount);
+                AssertContains(renderer, "TransportCoordinatorLookupRetryFrames = 30", "Optional transport coordinator lookup is cadence-gated", builder, ref failureCount);
+                AssertContains(renderer, "TryResolvePlayerTransportCoordinator()", "Transport audio helpers share the bounded coordinator resolver", builder, ref failureCount);
+                AssertContains(renderer, "AudioServiceLookupRetryFrames = 30", "Optional cross-domain audio service lookups are cadence-gated", builder, ref failureCount);
+                AssertContains(renderer, "ResolvePlayerRuntimeContext()", "Critical audio reads player runtime context through a bounded cached resolver", builder, ref failureCount);
+                AssertContains(renderer, "ResolveEcosystemDirectorService()", "Apex heartbeat threat audio uses a bounded ecosystem service resolver", builder, ref failureCount);
+                AssertContains(renderer, "ResolveSubmarineHullReadModel()", "Structural audio stress uses a bounded hull read-model resolver", builder, ref failureCount);
+                AssertContains(renderer, "ResolveCachedBiomeId()", "Low-tier biome reverb uses cached biome policy", builder, ref failureCount);
                 AssertNotContains(renderer, "OnAudioFilterRead", "Critical renderer has no managed Unity audio callback fallback", builder, ref failureCount);
             }
 

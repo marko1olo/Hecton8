@@ -860,20 +860,26 @@ namespace Hecton8.SaveSystem
 
         public void EnsureCapacity()
         {
-            if (suppressedPlacementKeys == null || suppressedPlacementKeys.Length < MaxSuppressedPlacements)
-                suppressedPlacementKeys = new long[MaxSuppressedPlacements];
+            EnsureArrayCapacity(ref suppressedPlacementKeys, MaxSuppressedPlacements);
+            EnsureArrayCapacity(ref faunaStates, MaxFaunaStates);
+            EnsureArrayCapacity(ref hibernatedFaunaStates, MaxHibernatedFaunaStates);
+            EnsureArrayCapacity(ref geologySeamStates, MaxGeologySeamStates);
+            EnsureArrayCapacity(ref geologyCaveEntrances, MaxGeologyCaveEntrances);
+        }
 
-            if (faunaStates == null || faunaStates.Length < MaxFaunaStates)
-                faunaStates = new ProceduralFaunaStateDTO[MaxFaunaStates];
+        private static void EnsureArrayCapacity<T>(ref T[] values, int capacity)
+        {
+            if (values != null && values.Length >= capacity)
+                return;
 
-            if (hibernatedFaunaStates == null || hibernatedFaunaStates.Length < MaxHibernatedFaunaStates)
-                hibernatedFaunaStates = new HibernatedFaunaStateDTO[MaxHibernatedFaunaStates];
+            T[] replacement = new T[capacity];
+            if (values != null && values.Length > 0)
+            {
+                int copyCount = values.Length < capacity ? values.Length : capacity;
+                Array.Copy(values, replacement, copyCount);
+            }
 
-            if (geologySeamStates == null || geologySeamStates.Length < MaxGeologySeamStates)
-                geologySeamStates = new ProceduralGeologySeamStateDTO[MaxGeologySeamStates];
-
-            if (geologyCaveEntrances == null || geologyCaveEntrances.Length < MaxGeologyCaveEntrances)
-                geologyCaveEntrances = new ProceduralGeologyCaveEntranceDTO[MaxGeologyCaveEntrances];
+            values = replacement;
         }
     }
 

@@ -794,6 +794,7 @@ namespace Hecton8.QA.Headless
             try
             {
                 string tempPath = _resultPath + ".tmp";
+                MemorySnapshot finalSnapshot = CaptureMemorySnapshot();
                 EnsureParentDirectory(_resultPath);
                 using (StreamWriter writer = new StreamWriter(tempPath, false))
                 {
@@ -817,23 +818,23 @@ namespace Hecton8.QA.Headless
                     writer.Write(",\"nativeBytesBaseline\":");
                     WriteInvariant(writer, _nativeBytesBaseline);
                     writer.Write(",\"nativeBytesFinal\":");
-                    WriteInvariant(writer, GlobalRegistry.NativeTrackedBytes);
+                    WriteInvariant(writer, finalSnapshot.NativeBytes);
                     writer.Write(",\"h8BytesBaseline\":");
                     WriteInvariant(writer, _h8BytesBaseline);
                     writer.Write(",\"h8BytesFinal\":");
-                    WriteInvariant(writer, H8Memory.TotalBytes);
+                    WriteInvariant(writer, finalSnapshot.H8Bytes);
                     writer.Write(",\"dataVaultBytesBaseline\":");
                     WriteInvariant(writer, _dataVaultBytesBaseline);
                     writer.Write(",\"dataVaultBytesFinal\":");
-                    WriteInvariant(writer, _dataVault != null ? _dataVault.AllocatedBytes : 0L);
+                    WriteInvariant(writer, finalSnapshot.DataVaultBytes);
                     writer.Write(",\"nativeAllocationBaselineCount\":");
                     WriteInvariant(writer, _nativeAllocationBaselineCount);
                     writer.Write(",\"nativeAllocationFinalCount\":");
-                    WriteInvariant(writer, GlobalRegistry.NativeAllocationCount);
+                    WriteInvariant(writer, finalSnapshot.NativeAllocations);
                     writer.Write(",\"h8AllocationBaselineCount\":");
                     WriteInvariant(writer, _h8AllocationBaselineCount);
                     writer.Write(",\"h8AllocationFinalCount\":");
-                    WriteInvariant(writer, H8Memory.ActiveAllocationCount);
+                    WriteInvariant(writer, finalSnapshot.H8Allocations);
                     writer.Write(",\"rigidbodyScanMissCount\":");
                     WriteInvariant(writer, _rigidbodyScanMissCount);
                     writer.Write(",\"rigidbodyNanIndex\":");
@@ -844,6 +845,7 @@ namespace Hecton8.QA.Headless
                     WriteInvariant(writer, _ecosystemDirectorReadyAtIssue);
                     writer.Write(",\"staticHPhi\":");
                     WriteInvariant(writer, _staticHPhiMetric);
+                    writer.Write(",\"staticHPhiModel\":\"runtime_risk_adjusted\"");
                     writer.Write(",\"lastFractureHash\":");
                     WriteInvariant(writer, _lastFractureHash);
                     writer.Write(",\"dataVaultFreeApi\":\"ABSENT_IDataVault_RELEASE\"");
@@ -928,10 +930,21 @@ namespace Hecton8.QA.Headless
 
                 DateTime lastWriteUtc = File.GetLastWriteTimeUtc(path);
                 DateTime nowUtc = DateTime.UtcNow;
-                if (lastWriteUtc > nowUtc)
+                double ageSeconds = (nowUtc - lastWriteUtc).TotalSeconds;
+                if (ageSeconds < -FlagFutureSkewToleranceSeconds)
+                {
+                    TryDeleteFile(path);
+                    return false;
+                }
+
+                if (ageSeconds < 0.0)
                     return true;
 
-                return (nowUtc - lastWriteUtc).TotalSeconds <= FlagMaxAgeSeconds;
+                if (ageSeconds <= FlagMaxAgeSeconds)
+                    return true;
+
+                TryDeleteFile(path);
+                return false;
             }
             catch (Exception)
             {
@@ -1003,40 +1016,200 @@ namespace Hecton8.QA.Headless
                     return 0f;
 
                 string[] files = Directory.GetFiles(scriptsRoot, "*.cs", SearchOption.AllDirectories);
-                int nativeRefs = 0;
-                int signalRefs = 0;
-                int vaultRefs = 0;
-                int aupRefs = 0;
-                int burstRefs = 0;
+                HPhiStaticCounters counters = default;
                 for (int i = 0; i < files.Length; i++)
                 {
+                    string file = files[i];
+                    if (IsEditorScriptPath(file))
+                        continue;
+
                     string text;
                     try
                     {
-                        text = File.ReadAllText(files[i]);
+                        text = File.ReadAllText(file);
                     }
                     catch (Exception)
                     {
                         continue;
                     }
 
-                    nativeRefs += CountOrdinal(text, "NativeArray<");
-                    nativeRefs += CountOrdinal(text, "NativeQueue<");
-                    signalRefs += CountOrdinal(text, "SignalBus<");
-                    signalRefs += CountOrdinal(text, "GlobalSignals.Publish");
-                    vaultRefs += CountOrdinal(text, "GlobalDataVault");
-                    vaultRefs += CountOrdinal(text, "IDataVault");
-                    aupRefs += CountOrdinal(text, "AbsoluteUniversePosition");
-                    burstRefs += CountOrdinal(text, "BurstCompile");
+                    AccumulateHPhiCounters(text, ref counters);
                 }
 
-                float numerator = nativeRefs * 3f + signalRefs * 2f + vaultRefs * 5f + aupRefs * 2f + burstRefs;
-                return files.Length > 0 ? numerator / (files.Length * 1000f) : 0f;
+                return CalculateHPhiRisk(in counters);
             }
             catch (Exception)
             {
                 return 0f;
             }
+        }
+
+        private static void AccumulateHPhiCounters(string text, ref HPhiStaticCounters counters)
+        {
+            counters.SignalBusPush += CountSignalBusPush(text);
+            counters.GlobalRegistryGet += CountOrdinal(text, "Global" + "Registry.Get<");
+            counters.GlobalRegistrySurface += CountOrdinal(text, "Global" + "Registry.");
+            counters.EventPublish += CountOrdinal(text, "Pub" + "lish(");
+            counters.UnityUpdateMethods += CountUnityUpdateMethodDeclarations(text);
+            counters.ISlowTickable += CountOrdinal(text, "ISlow" + "Tickable");
+            counters.IJob += CountOrdinal(text, "IJ" + "ob");
+            counters.ITickable += CountOrdinal(text, "ITick" + "able");
+            counters.IFixedTickable += CountOrdinal(text, "IFixed" + "Tickable");
+            counters.DataVaultRefs += CountDataVaultRefs(text);
+            counters.NativeArrayRefs += CountOrdinal(text, "Native" + "Array<");
+            counters.StructDeclarations += CountOrdinal(text, " str" + "uct ");
+            counters.StructLayoutAttributes += CountOrdinal(text, "[Struct" + "Layout(");
+            counters.StaticInstance += CountOrdinal(text, "Instance {");
+            counters.StaticInstance += CountOrdinal(text, "Instance{");
+            counters.FindObjectCalls += CountFindObjectCalls(text);
+            counters.GetComponentCalls += CountComponentCalls(text);
+        }
+
+        private static float CalculateHPhiRisk(in HPhiStaticCounters counters)
+        {
+            float riskIntegration = DivideOrZero(
+                counters.SignalBusPush,
+                counters.SignalBusPush + counters.GlobalRegistrySurface + counters.EventPublish + counters.StaticInstance + counters.FindObjectCalls + counters.GetComponentCalls);
+            float architecturalPurity = DivideOrZero(
+                counters.ISlowTickable + counters.IJob,
+                counters.UnityUpdateMethods + counters.ISlowTickable + counters.IJob);
+            float dataSovereignty = DivideOrZero(
+                counters.DataVaultRefs,
+                counters.DataVaultRefs + counters.NativeArrayRefs);
+            float memoryAlignment = DivideOrZero(counters.StructLayoutAttributes, counters.StructDeclarations);
+            return riskIntegration * architecturalPurity * dataSovereignty * memoryAlignment;
+        }
+
+        private static float DivideOrZero(int numerator, int denominator)
+        {
+            return denominator > 0 ? (float)numerator / denominator : 0f;
+        }
+
+        private static bool IsEditorScriptPath(string path)
+        {
+            if (string.IsNullOrEmpty(path))
+                return false;
+
+            return path.IndexOf("\\Editor\\", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                path.IndexOf("/Editor/", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                path.EndsWith(".Editor.cs", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static int CountSignalBusPush(string text)
+        {
+            if (string.IsNullOrEmpty(text))
+                return 0;
+
+            int count = 0;
+            int index = 0;
+            while (index < text.Length)
+            {
+                int found = text.IndexOf("Signal" + "Bus<", index, StringComparison.Ordinal);
+                if (found < 0)
+                    break;
+
+                int lineEnd = FindStatementEnd(text, found);
+                if (text.IndexOf(".P" + "ush", found, lineEnd - found, StringComparison.Ordinal) >= 0)
+                    count++;
+
+                index = found + 10;
+            }
+
+            return count;
+        }
+
+        private static int CountUnityUpdateMethodDeclarations(string text)
+        {
+            if (string.IsNullOrEmpty(text))
+                return 0;
+
+            int count = 0;
+            int lineStart = 0;
+            while (lineStart < text.Length)
+            {
+                int lineEnd = FindLineEnd(text, lineStart);
+                if (ContainsInRange(text, lineStart, lineEnd, "void Update(") ||
+                    ContainsInRange(text, lineStart, lineEnd, "void LateUpdate(") ||
+                    ContainsInRange(text, lineStart, lineEnd, "void FixedUpdate("))
+                {
+                    count++;
+                }
+
+                lineStart = lineEnd + 1;
+            }
+
+            return count;
+        }
+
+        private static int CountDataVaultRefs(string text)
+        {
+            int count = CountOrdinal(text, "Global" + "DataVault");
+            count += CountOrdinal(text, "IData" + "Vault");
+            count += CountOrdinal(text, "Vault" + "BufferHandle<");
+            count += CountOrdinal(text, "Get" + "Buffer<");
+            count += CountOrdinal(text, "Try" + "GetBuffer<");
+            count += CountOrdinal(text, "Try" + "GetBuffer(");
+            count += CountOrdinal(text, "Get" + "BufferHandle<");
+            count += CountOrdinal(text, "Try" + "GetBufferHandle<");
+            count += CountOrdinal(text, "Resolve" + "Buffer<");
+            return count;
+        }
+
+        private static int CountFindObjectCalls(string text)
+        {
+            int count = CountOrdinal(text, "Find" + "ObjectOfType");
+            count += CountOrdinal(text, "FindObject" + "sOfType");
+            count += CountOrdinal(text, "FindFirst" + "ObjectByType");
+            count += CountOrdinal(text, "FindAny" + "ObjectByType");
+            count += CountOrdinal(text, "FindObject" + "sByType");
+            count += CountOrdinal(text, "Find" + "WithTag");
+            count += CountOrdinal(text, "GameObject." + "Find");
+            count += CountOrdinal(text, "Resources." + "FindObject" + "sOfTypeAll");
+            return count;
+        }
+
+        private static int CountComponentCalls(string text)
+        {
+            int count = CountOrdinal(text, "Get" + "Component<");
+            count += CountOrdinal(text, "Get" + "Components<");
+            count += CountOrdinal(text, "Get" + "ComponentInChildren<");
+            count += CountOrdinal(text, "Get" + "ComponentInParent<");
+            return count;
+        }
+
+        private static int FindStatementEnd(string text, int start)
+        {
+            int index = start;
+            while (index < text.Length)
+            {
+                char c = text[index];
+                if (c == ';' || c == '\n' || c == '\r')
+                    break;
+
+                index++;
+            }
+
+            return index;
+        }
+
+        private static int FindLineEnd(string text, int start)
+        {
+            int index = start;
+            while (index < text.Length)
+            {
+                char c = text[index];
+                if (c == '\n' || c == '\r')
+                    break;
+
+                index++;
+            }
+
+            return index;
+        }
+
+        private static bool ContainsInRange(string text, int start, int end, string pattern)
+        {
+            return end > start && text.IndexOf(pattern, start, end - start, StringComparison.Ordinal) >= 0;
         }
 
         private static int CountOrdinal(string text, string pattern)
@@ -1061,7 +1234,7 @@ namespace Hecton8.QA.Headless
 
         private static string FormatStaticHPhiLog(float metric, int targetFrames)
         {
-            return "[H-PHI_STATIC] " + AgentName + " value=" + metric.ToString("F6", CultureInfo.InvariantCulture) + " requestedBoids=10000 frames=" + targetFrames.ToString(CultureInfo.InvariantCulture);
+            return "[H-PHI_STATIC] " + AgentName + " value=" + metric.ToString("F6", CultureInfo.InvariantCulture) + " model=runtime_risk_adjusted requestedBoids=10000 frames=" + targetFrames.ToString(CultureInfo.InvariantCulture);
         }
 
         private static float TicksToMilliseconds(long ticks)
@@ -1158,6 +1331,38 @@ namespace Hecton8.QA.Headless
                 writer.Write(scratch.Slice(0, written));
             else
                 writer.Write('0');
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct MemorySnapshot
+        {
+            public long NativeBytes;
+            public long H8Bytes;
+            public long DataVaultBytes;
+            public int NativeAllocations;
+            public int H8Allocations;
+            public float DataVaultFragmentation;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct HPhiStaticCounters
+        {
+            public int SignalBusPush;
+            public int GlobalRegistryGet;
+            public int GlobalRegistrySurface;
+            public int EventPublish;
+            public int UnityUpdateMethods;
+            public int ISlowTickable;
+            public int IJob;
+            public int ITickable;
+            public int IFixedTickable;
+            public int DataVaultRefs;
+            public int NativeArrayRefs;
+            public int StructDeclarations;
+            public int StructLayoutAttributes;
+            public int StaticInstance;
+            public int FindObjectCalls;
+            public int GetComponentCalls;
         }
 
         [StructLayout(LayoutKind.Sequential, Size = BlackboxEntrySizeBytes)]

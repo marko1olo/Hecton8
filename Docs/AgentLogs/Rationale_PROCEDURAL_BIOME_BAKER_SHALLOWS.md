@@ -201,3 +201,17 @@ Scalability potential: Low/MX350 keeps MeshRenderer-owned flora eligible for the
 Hardware Impact: Runtime remains 0 us/frame and 0 bytes allocation. The gain is prevention: no future prefab edit can silently increase memory through static batching or break the intended instancing/GPU-resident path. Exact runtime microseconds are not profiled because this is editor validation.
 
 Verification: No dotnet rebuild was run. `git diff --check` passed for `ShallowsBioForgeBatchBaker.cs`. Source scan found `ValidateStaticFlagsContract` and `GameObjectUtility.GetStaticEditorFlags`. Prefab YAML scans found `BadStaticFlagsYaml=0` for TubeCoral=50, Kelp=100, and PorousRock=50. Brace count is balanced.
+
+## Decision 15 - Mesh Geometry And LOD Budget Contract Lockdown
+
+Problem: Counts, mesh references, material state, rule assets, transforms, and static flags were validated, but the validator still trusted mesh payload integrity after load. A stale or hand-edited mesh asset could keep the expected path while carrying empty geometry, multiple submeshes, UInt32 indices, degenerate/NaN bounds, an over-budget LOD, or missing shader mask data on LOD1/LOD2.
+
+Solution: Extend `ShallowsBioForgeBatchBaker` with mesh geometry validation and family-specific LOD triangle budget validation. The same constants now drive rule authoring, rule contract checks, and prefab LOD mesh checks. Every LOD mesh must be non-empty, one submesh, UInt16 index format, finite/non-degenerate bounds, within the exact family LOD budget, and carry a usable vertex color R gradient.
+
+Rejected Alternatives: Raw YAML edits to 600 generated mesh assets were rejected because mesh serialization is fragile and current assets already satisfy the strengthened contract. A Unity batch re-bake was rejected for this pass because the user prohibited rebuild-style validation and no generated payload mutation was required. Runtime mesh correction was rejected because Shallows flora prefabs must stay scriptless and data-only.
+
+Scalability potential: Low/MX350 receives verified compact UInt16 LOD meshes and strict far-LOD budgets. Middle and High keep the same deterministic payload with richer density/residency. Ultra can spend saved CPU on density and shader overkill while validation prevents silent geometry bloat from entering the asset library.
+
+Hardware Impact: Runtime remains 0 us/frame and 0 bytes procedural allocation. The gain is prevention: no accidental UInt32 index format, degenerate mesh, missing vertex color mask, or over-budget LOD can enter MX350-class scenes without editor validation failure. Exact runtime microseconds are not profiled because this is editor validation.
+
+Verification: No dotnet rebuild was run. `git diff --check` passed for `ShallowsBioForgeBatchBaker.cs` with only the repo CRLF warning. Source scan found `ValidateMeshGeometryContract`, `ValidateLodTriangleBudget`, budget constants, and all-LOD `ValidateVertexColorGradient` calls. Mesh YAML scan found `Count=600`, `Bad=0`, with max triangles Kelp `LOD0=2200`, `LOD1=514`, `LOD2=94`; PorousRock `LOD0=3081`, `LOD1=581`, `LOD2=53`; TubeCoral `LOD0=2364`, `LOD1=342`, `LOD2=24`. Brace count is balanced.

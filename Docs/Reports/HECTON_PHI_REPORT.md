@@ -425,3 +425,67 @@ Verification:
 - Owner-blocked DataVault candidate scan: completed with top file table.
 - `git diff --check` on touched files: no whitespace errors; LF/CRLF warnings only.
 - Runtime H-Phi remains `PENDING VERIFICATION` until Unity Console, PlayMode, Profiler, and GCMonitor evidence exist.
+
+## 2026-05-15 Live Addendum 7
+
+Evidence class: `STATIC_SOURCE`.
+
+User constraint for this pass: no `dotnet build` and no rebuild.
+
+What changed:
+- Added explicit sequential layout metadata to `SpscSignalRingBuffer<T>` in `GlobalSignals.cs`.
+- Added explicit sequential layout metadata to `CombatDamageSignalAupShiftTransformer` in `GlobalSignals.cs`.
+- No signal runtime logic, NativeArray lifecycle, field order, public method body, or dispatch behavior changed.
+
+Current runtime static scores:
+
+| Coefficient | Score |
+|---|---:|
+| Narrow integration | 1.000000000 |
+| Risk-adjusted integration | 0.013429257 |
+| Architectural purity | 0.994680851 |
+| Data sovereignty | 0.018263557 |
+| Memory alignment | 0.497348887 |
+| Binary-safe ratio | 0.018557794 |
+| H-Phi runtime static narrow | 0.009035044 |
+| H-Phi runtime static risk-adjusted | 0.000121334 |
+
+Current runtime counts:
+
+| Counter | Value |
+|---|---:|
+| Runtime C# files | 1,275 |
+| Runtime source lines | 854,524 |
+| `SignalBus<T>.Push` | 84 |
+| `GlobalRegistry.Get<T>` | 0 |
+| `GlobalRegistry.` surface refs | 5,141 |
+| `Publish(...)` surface refs | 450 |
+| Unity `Update`/`LateUpdate`/`FixedUpdate` method declarations | 3 |
+| DataVault access surface refs | 130 |
+| `NativeArray<T>` refs | 6,988 |
+| Struct declarations | 1,886 |
+| `StructLayout(...)` attrs | 938 |
+| `BinaryBlittableSafe` refs | 35 |
+| Runtime `Find*` calls | 5 |
+| Runtime `GetComponent*` calls | 542 |
+| `.Dispose(...)` calls | 1,259 |
+
+Comparison:
+- Original dialogue baseline: `0.00062`.
+- Previous corrected runtime static narrow score: `0.008929037`.
+- Current corrected runtime static narrow score: `0.009035044`.
+- Current runtime static narrow vs previous score: about `+1.19%`.
+- Current corrected runtime static narrow vs original baseline: about `+1357.26%`.
+- Most of the total gain since the original baseline remains model correction plus metadata proof, not measured frame-time gain.
+
+Residual bottlenecks:
+- Data Sovereignty is still the hard floor: `130 / (130 + 6,988) = 0.018263557`.
+- Memory alignment remains below the desired threshold: `938 / 1,886 = 0.497348887`.
+- Owner-blocked NativeArray migrations remain outside this agent's authority without BufferID/SystemID/generation/disposal proof.
+- Runtime verification remains absent by user order.
+
+Verification:
+- `Tools/Architecture/HectonPhiAudit.ps1 -Json`: completed at local timestamp `2026-05-15 01:07:58 +04:00`.
+- `GlobalSignals.cs` public/internal struct layout scan: no missing `StructLayout` output.
+- `git diff --check -- Assets/_Project/Scripts/Core/GlobalSignals.cs`: no whitespace errors; LF/CRLF warning only.
+- Runtime H-Phi remains `PENDING VERIFICATION` until Unity Console, PlayMode, Profiler, and GCMonitor evidence exist.

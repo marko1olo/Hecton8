@@ -597,6 +597,8 @@ namespace Hecton8.Core.Signals
         private const int BulletTimeVisualSignalGuardCode = unchecked((int)0x51A1000Au);
         private const int WeatherStrengthSignalGuardCode = unchecked((int)0x51A1000Bu);
         private const int PlayerLookTargetSignalGuardCode = unchecked((int)0x51A1000Cu);
+        private const int PlayerBaseEnterSignalGuardCode = unchecked((int)0x51A1000Du);
+        private const int PlayerBaseExitSignalGuardCode = unchecked((int)0x51A1000Eu);
         private const byte GuardNone = 0;
         private const byte GuardDamage = 1;
         private const byte GuardImpact = 2;
@@ -610,6 +612,8 @@ namespace Hecton8.Core.Signals
         private const byte GuardBulletTimeVisual = 10;
         private const byte GuardWeatherStrength = 11;
         private const byte GuardPlayerLookTarget = 12;
+        private const byte GuardPlayerBaseEnter = 13;
+        private const byte GuardPlayerBaseExit = 14;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int Sanitize<T>(ref T signal)
@@ -677,6 +681,16 @@ namespace Hecton8.Core.Signals
                     ref PlayerLookTargetSignal typed = ref UnsafeUtility.As<T, PlayerLookTargetSignal>(ref signal);
                     return SanitizePlayerLookTargetSignal(ref typed);
                 }
+                case GuardPlayerBaseEnter:
+                {
+                    ref PlayerBaseEnterSignal typed = ref UnsafeUtility.As<T, PlayerBaseEnterSignal>(ref signal);
+                    return SanitizePlayerBaseEnterSignal(ref typed);
+                }
+                case GuardPlayerBaseExit:
+                {
+                    ref PlayerBaseExitSignal typed = ref UnsafeUtility.As<T, PlayerBaseExitSignal>(ref signal);
+                    return SanitizePlayerBaseExitSignal(ref typed);
+                }
             }
 
             return 0;
@@ -709,6 +723,10 @@ namespace Hecton8.Core.Signals
                 return GuardWeatherStrength;
             if (typeof(T) == typeof(PlayerLookTargetSignal))
                 return GuardPlayerLookTarget;
+            if (typeof(T) == typeof(PlayerBaseEnterSignal))
+                return GuardPlayerBaseEnter;
+            if (typeof(T) == typeof(PlayerBaseExitSignal))
+                return GuardPlayerBaseExit;
 
             return GuardNone;
         }
@@ -905,6 +923,18 @@ namespace Hecton8.Core.Signals
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizePlayerBaseEnterSignal(ref PlayerBaseEnterSignal signal)
+        {
+            return SanitizeAup(ref signal.BaseCenterAup) ? PlayerBaseEnterSignalGuardCode : 0;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizePlayerBaseExitSignal(ref PlayerBaseExitSignal signal)
+        {
+            return SanitizeAup(ref signal.BaseCenterAup) ? PlayerBaseExitSignalGuardCode : 0;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static int SanitizeHighSpeedImpactSignal(ref HighSpeedImpactSignal signal)
         {
             int guardCode = SanitizeAup(ref signal.PointAup) ? HighSpeedImpactSignalGuardCode : 0;
@@ -990,6 +1020,7 @@ namespace Hecton8.Core
         private const int DamageSignalCapacity = 256;
         private const int HullDeformedSignalCapacity = 64;
         private const int BaseModuleCompromisedSignalCapacity = 64;
+        private const int PlayerBaseTransitionSignalCapacity = 32;
         private const int ImpactSignalCapacity = 256;
         private const int HighSpeedImpactSignalCapacity = 128;
         private const int HapticRequestCapacity = 64;
@@ -1752,6 +1783,8 @@ namespace Hecton8.Core
             ValidateSignalSize<CombatDamageSignal>(64);
             ValidateSignalSize<HullDeformedSignal>(64);
             ValidateSignalSize<BaseModuleCompromisedSignal>(64);
+            ValidateSignalSize<PlayerBaseEnterSignal>(64);
+            ValidateSignalSize<PlayerBaseExitSignal>(64);
             ValidateSignalSize<CameraPositionSignal>(32);
             ValidateSignalSize<CameraFrustumSignal>(64);
             ValidateSignalSize<WeatherChangedSignal>(32);
@@ -1961,6 +1994,20 @@ namespace Hecton8.Core
         {
             EnsureInitialized();
             SignalBus<BaseModuleCompromisedSignal>.Push(in signal);
+        }
+
+        /// <summary>Queues one player-entered-base packet for habitat atmosphere hibernation gates.</summary>
+        public static void Publish(in PlayerBaseEnterSignal signal)
+        {
+            EnsureInitialized();
+            SignalBus<PlayerBaseEnterSignal>.Push(in signal);
+        }
+
+        /// <summary>Queues one player-exited-base packet for habitat atmosphere hibernation gates.</summary>
+        public static void Publish(in PlayerBaseExitSignal signal)
+        {
+            EnsureInitialized();
+            SignalBus<PlayerBaseExitSignal>.Push(in signal);
         }
 
         /// <summary>Queues one AUP shift broadcast packet from the main thread.</summary>
@@ -3056,6 +3103,10 @@ namespace Hecton8.Core
             SignalBus<HullDeformedSignal>.EnsureInitialized();
             SignalBus<BaseModuleCompromisedSignal>.Configure(BaseModuleCompromisedSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(BaseModuleCompromisedSignal)));
             SignalBus<BaseModuleCompromisedSignal>.EnsureInitialized();
+            SignalBus<PlayerBaseEnterSignal>.Configure(PlayerBaseTransitionSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(PlayerBaseEnterSignal)));
+            SignalBus<PlayerBaseEnterSignal>.EnsureInitialized();
+            SignalBus<PlayerBaseExitSignal>.Configure(PlayerBaseTransitionSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(PlayerBaseExitSignal)));
+            SignalBus<PlayerBaseExitSignal>.EnsureInitialized();
             SignalBus<HighSpeedImpactSignal>.Configure(HighSpeedImpactSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(HighSpeedImpactSignal)));
             SignalBus<HighSpeedImpactSignal>.EnsureInitialized();
             SignalBus<HapticRequest>.Configure(HapticRequestCapacity, laneHash: ComputeStableSignalLaneHash(nameof(HapticRequest)));
@@ -3250,6 +3301,7 @@ namespace Hecton8.Core
     }
 
     /// <summary>Power-of-two single-producer/single-consumer signal fallback using mask wrapping.</summary>
+    [StructLayout(LayoutKind.Sequential)]
     public struct SpscSignalRingBuffer<T> : IDisposable
         where T : unmanaged
     {
@@ -4642,6 +4694,7 @@ namespace Hecton8.Core.Signals
         [FieldOffset(14)] public ushort RecentCount;
         [FieldOffset(16)] public byte Reason;
         [FieldOffset(17)] public byte Flags;
+        [FieldOffset(20)] public uint Revision;
         [FieldOffset(31)] private byte _pad;
     }
 
@@ -5157,6 +5210,34 @@ namespace Hecton8.Core.Signals
         [FieldOffset(46)] public ushort Reserved0;
     }
 
+    /// <summary>Player entered a habitat/base volume. Size: 64 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct PlayerBaseEnterSignal : ISignal
+    {
+        public const ushort DirectPlayerInsideFlag = 1 << 0;
+
+        [FieldOffset(0)] public AbsoluteUniversePosition BaseCenterAup;
+        [FieldOffset(48)] public int BaseId;
+        [FieldOffset(52)] public int RoomId;
+        [FieldOffset(56)] public uint Frame;
+        [FieldOffset(60)] public ushort Flags;
+        [FieldOffset(62)] public ushort Reserved0;
+    }
+
+    /// <summary>Player exited a habitat/base volume. Size: 64 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct PlayerBaseExitSignal : ISignal
+    {
+        public const ushort DirectPlayerOutsideFlag = 1 << 0;
+
+        [FieldOffset(0)] public AbsoluteUniversePosition BaseCenterAup;
+        [FieldOffset(48)] public int BaseId;
+        [FieldOffset(52)] public int RoomId;
+        [FieldOffset(56)] public uint Frame;
+        [FieldOffset(60)] public ushort Flags;
+        [FieldOffset(62)] public ushort Reserved0;
+    }
+
     /// <summary>Weather transition lane payload. Size: 32 bytes.</summary>
     [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct WeatherChangedSignal : ISignal
@@ -5183,6 +5264,7 @@ namespace Hecton8.Core.Signals
     }
 
     /// <summary>Applies a committed AUP shift to runtime-space combat signal coordinates.</summary>
+    [StructLayout(LayoutKind.Sequential)]
     public struct CombatDamageSignalAupShiftTransformer : ISignalSnapshotTransformer<CombatDamageSignal>
     {
         private float3 _shiftMeters;

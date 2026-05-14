@@ -177,3 +177,40 @@ Verification:
 - Scoped hot-path scan found no `PlayClipAtPoint`; broad owned-file scan found only pre-existing cold/editor `Debug.Log`, `math.exp` assertion text, and `builder.ToString()`.
 - Source-only H-Phi spot counts for the renderer: `GlobalRegistry=30`, `SignalBus=1`, `NativeArray=232`, `StructLayout=6`, `UpdateMethods=0`, `FindObject=0`, `GetComponent=10`, `KineticPolicyCache=7`.
 - Dotnet build/rebuild was not run by explicit user order. Unity compile remains PENDING VERIFICATION until Editor console/MCP validation is available.
+
+## 2026-05-15 - DSP_ACOUSTIC_LEAD - Loop 10 Audio Service Cache And Component Lookup H-Phi Pass
+Status: PENDING VERIFICATION
+
+What was wrong:
+- Cave reverb and binaural target sampling still resolved `GlobalRegistry.Audio` directly inside audio tick paths.
+- Granular voice count, reverb DSP tier, sonar SDF probe count, and kinetic fallback still had scattered quality/scalability policy reads.
+- Optional `PlayerTransportCoordinator` fallback lookup could retry in two transport-audio helpers every tick while absent.
+
+What was done:
+- Added `_spatialAudioManager` and `ResolveSpatialAudioManager()`; cave reverb and binaural sampling now use cached spatial-audio service resolution.
+- Added cached audio quality policy fields for scalability tier, quality tier, and low-memory profile, refreshed through `RefreshAudioQualityPolicyIfStale(Time.frameCount)`.
+- Moved granular voice count, reverb DSP tier, sonar SDF probe count, and kinetic fallback onto cached policy values.
+- Added `TransportCoordinatorLookupRetryFrames = 30` and `TryResolvePlayerTransportCoordinator()`; transport audio helpers share that bounded resolver.
+- Added smoke assertions for cached spatial audio, cached quality/scalability values, and cadence-gated transport lookup.
+
+Cinematic cheats used:
+- Audio LOD policy is a coarse 30-frame scalar cache, not a continuous hardware budget simulation.
+- Reverb/binaural telemetry still comes from the existing spatial audio service; no new acoustic solver or queue was added.
+- Optional transport coordinator recovery is cadence-based, preserving behavior without per-frame component search.
+
+Exact microseconds saved:
+- Saves two `GlobalRegistry.Audio` reads per normal DSP tick after spatial-audio cache warmup.
+- Saves 3-5 quality/scalability registry reads per active tick/probe path after warmup, with one policy refresh per 30 frames.
+- Saves up to two failed `TryGetComponent` calls per tick when the optional transport coordinator is absent.
+- Runtime allocation delta remains 0 B/frame.
+
+Verification:
+- `git diff --check -- Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs` passed except CRLF normalization warnings.
+- `rg -n -F "GlobalRegistry.ScalabilityTier"` now returns only the cache refresh assignment.
+- `rg -n -F "GlobalRegistry.QualityTier"` now returns only the cache refresh assignment.
+- `rg -n -F "GlobalRegistry.H8_LOW_MEMORY_PROFILE"` now returns only the cache refresh assignment.
+- `rg -n -F "ResolveSpatialAudioManager()"` found renderer and smoke tester anchors.
+- `rg -n -F "TransportCoordinatorLookupRetryFrames = 30"` and `rg -n -F "TryResolvePlayerTransportCoordinator()"` found renderer and smoke tester anchors.
+- Scoped hot-path scan found no `PlayClipAtPoint`; broad owned-file scan found only pre-existing cold/editor `Debug.Log`, `math.exp` assertion text, and `builder.ToString()`.
+- Source-only H-Phi spot counts for the renderer: `GlobalRegistry=26`, `SignalBus=1`, `NativeArray=232`, `StructLayout=6`, `UpdateMethods=0`, `FindObject=0`, `GetComponent=9`, `CachedQuality=14`, `CachedSpatial=9`, `TransportLookupGate=5`.
+- Dotnet build/rebuild was not run by explicit user order. Unity compile remains PENDING VERIFICATION until Editor console/MCP validation is available.

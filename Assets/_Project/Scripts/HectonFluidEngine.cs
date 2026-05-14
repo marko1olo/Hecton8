@@ -207,6 +207,7 @@ namespace Hecton8.Physics
         private const uint SplashdownImpulseNoAffectedCellsFlag = 1u << 4;
         private const uint SplashdownImpulseJobInvalidFlag = 1u << 8;
         private const uint SplashdownImpulseInvalidInputFlag = 1u << 31;
+        private const uint PrologueSequenceSourceHash = 0x50524C47u; // PRLG
         private const int AbyssalFlowTelemetryCapacity = 300;
         private const string AbyssalFlowDumpRelativePath = "Docs/AgentLogs/Dump_SPLASHDOWN_FLUID_DYNAMICS.bin";
         private const int GpuReadbackRingSize = 3;
@@ -2854,8 +2855,8 @@ namespace Hecton8.Physics
             for (int i = 0; i < signals.Length; i++)
             {
                 PrologueCompleteSignal signal = signals[i];
-                if (signal.Phase != PrologueCompleteSignal.PhaseOceanHandoff &&
-                    (signal.Flags & PrologueCompleteSignal.FlagForceWhiteout) == 0)
+                if (signal.Phase != PrologueCompleteSignal.PhaseOceanHandoff ||
+                    signal.SourceHash != PrologueSequenceSourceHash)
                 {
                     continue;
                 }

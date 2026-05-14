@@ -90,7 +90,7 @@ Hardware Impact: One 300-entry persistent NativeArray is cold memory. Per-frame 
 
 Problem: Polish mandate required removal of honest math and hot-path bloat after core tasks were checked/blocked.
 
-Solution: Replaced per-signal `math.sqrt(PullRadiusSq)` with a precomputed `PullRadiusMeters` job field. Confirmed no `foreach`, `string.Format`, interpolated strings, `.ToString()`, `math.sqrt`, or `math.normalize` remain under `Assets/_Project/Scripts/Gameplay/Loot`.
+Solution: Removed the per-signal `math.sqrt(PullRadiusSq)` dependency by keeping scheduled pull radius data on the runtime side. Confirmed no `foreach`, `string.Format`, interpolated strings, `.ToString()`, `math.sqrt`, or `math.normalize` remain under `Assets/_Project/Scripts/Gameplay/Loot`.
 
 Rejected Alternatives: Leaving the square root in signal emission would be acceptable for correctness but not for the frame-time dictatorship. A lookup table is unnecessary because radius is already authored once per schedule.
 
@@ -100,7 +100,7 @@ Scalability potential: Low = 10Hz snap/acquire. Middle = Burst pull and sparse V
 
 Hardware Impact: Removed two square roots per emitted acoustic signal. At the 64-signal stride cap, worst-case saved work is roughly 64 sqrt operations/frame during dense pull fields. Exact microseconds remain pending profiler/Burst evidence.
 
-Final Git Diff: `git diff --stat -- Assets/_Project/Scripts/Gameplay/Loot Assets/_Project/Scripts/Core/Memory/H8Memory.cs Assets/_Project/Scripts/Core/GlobalSignals.cs Docs/Tasks/Status_PHYS_MAGNETIC_LOOT_ACQUISITION.md Docs/AgentLogs/Rationale_PHYS_MAGNETIC_LOOT_ACQUISITION.md` reported 6 files changed, 138 insertions, 18 deletions. Current dirty `GlobalSignals.cs` and `H8Memory.cs` also contain unrelated concurrent/integrator edits; this task-owned gameplay polish diff is the `PullRadiusMeters` field/pass-through plus the status/rationale records.
+Final Git Diff: Historical note from the first polish pass: task-owned gameplay polish removed per-signal radius square-root work and kept status/rationale records. Current continuation diffs supersede the earlier radius implementation detail.
 
 Build Status: `dotnet build Hecton8.Core.csproj --no-restore -v:q -clp:ErrorsOnly` still fails before loot verification on missing cross-assembly references such as `Hecton8.Environment.Fluids`, `Hecton8.Core.Scheduling`, `Hecton8.Audio.Virtualization`, `Hecton8.Physics.CCD`, and related service types. Unity MCP console remained unavailable after refresh timeout. Status remains `PENDING VERIFICATION`.
 
@@ -175,3 +175,15 @@ Rejected Alternatives: Reading `EntityAUPs` while the job is still running was r
 Scalability potential: Low/Middle/High/Ultra all keep a fixed 300-entry ring with consistent idle and active state. Visual overkill does not affect telemetry shape.
 
 Hardware Impact: Adds one fixed struct write per idle late frame and no allocation. This is acceptable black-box cost and bounded to persistent NativeArray memory.
+
+## Decision 13 - Commit Accuracy And Scalable Capacity
+
+Problem: Late-frame acquisition reporting used the vault quantity captured during SlowTick refresh, not the pickup's live quantity at commit time. Fully consumed slots also kept stale acquired flags until the next registry refresh, and full-inventory failures could reattempt every FastTick.
+
+Solution: Measure added quantity from the pickup's live pre/post inventory quantity, clear consumed vault slots immediately, clear PullEnabled on zero-add inventory rejections until SlowTick refresh, cache scheduled pull radius for presentation intensity, and separate the default 4096 entity capacity from an 8192 hard cap for high-density authored fields.
+
+Rejected Alternatives: Trusting stale vault quantities was rejected because concurrent/manual pickups can overreport `ItemAcquiredSignal.Quantity`. Keeping PullEnabled on inventory rejection was rejected because it can pound managed inventory/drop overflow work every frame. Raising the default capacity was rejected because low/middle devices should not pay extra cold memory without author intent.
+
+Scalability potential: Low remains 4096 default with 10Hz snap/acquire. Middle keeps the same default path. High and Ultra can author up to 8192 loot slots when scene density justifies the memory, while presentation still uses the same sparse signal lane.
+
+Hardware Impact: MX350 avoids repeated full-inventory acquisition attempts between SlowTicks and avoids stale acquired slots in FastTick scans. High-end devices gain optional double-density vault capacity without changing default low-end memory.

@@ -12,9 +12,6 @@ using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.TextCore;
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
 
 namespace Hecton8.UI
 {
@@ -33,6 +30,9 @@ namespace Hecton8.UI
         private const int AsciiCacheSize = 128;
         private const int UvTableCapacity = 128;
         private const int BlackBoxCapacity = 300;
+        private const int TooltipGlyphInstanceStride = 96;
+        private const int UvRectStride = 16;
+        private const int IndirectArgsStride = IndirectArgsCount * 4;
         private const uint InputSchemeHashKeyboardMouse = DiegeticTooltipInputSchemeHashes.KeyboardMouse;
         private const uint InputSchemeHashGamepad = DiegeticTooltipInputSchemeHashes.Gamepad;
         private const uint InputSchemeHashSteamDeck = DiegeticTooltipInputSchemeHashes.SteamDeck;
@@ -48,9 +48,8 @@ namespace Hecton8.UI
         private const float CameraResolveRetryIntervalSeconds = 0.5f;
         private const float DefaultFadeDurationSeconds = 0.2f;
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_CONTEXTUAL_UX_PROMPTER.bin";
-#if UNITY_EDITOR
-        private const string DefaultGlyphShaderPath = "Assets/_Project/Art/Shaders/Hecton_DiegeticTooltipIndirect.shader";
-#endif
+        private const string DefaultGlyphMaterialResourcePath = "UI/MAT_DiegeticTooltipGlyph";
+        private const string DefaultIconMaterialResourcePath = "UI/MAT_DiegeticTooltipIcon";
 
         private static readonly int MainTexId = Shader.PropertyToID("_MainTex");
         private static readonly int GradientScaleId = Shader.PropertyToID("_GradientScale");
@@ -83,7 +82,11 @@ namespace Hecton8.UI
         private TMP_FontAsset fontAsset;
         [SerializeField, Tooltip("Optional explicit TMP sprite asset used for interact binding icons.")]
         private TMP_SpriteAsset spriteAsset;
-        [SerializeField, Tooltip("Optional explicit tooltip glyph shader. Editor fallback resolves the first-party indirect shader asset path when left null.")]
+        [SerializeField, Tooltip("Optional authored font material. Runtime fallback loads Resources/UI/MAT_DiegeticTooltipGlyph.")]
+        private Material glyphMaterial;
+        [SerializeField, Tooltip("Optional authored icon material. Runtime fallback loads Resources/UI/MAT_DiegeticTooltipIcon.")]
+        private Material iconMaterial;
+        [SerializeField, Tooltip("Optional tooltip shader contract reference. Runtime does not call Shader.Find.")]
         private Shader glyphShader;
         [SerializeField, Tooltip("Optional explicit interaction camera. When null, the owner resolves the active player camera.")]
         private Camera interactionCamera;
@@ -133,6 +136,8 @@ namespace Hecton8.UI
 
         private Material _runtimeGlyphMaterial;
         private Material _runtimeIconMaterial;
+        private MaterialPropertyBlock _textPropertyBlock;
+        private MaterialPropertyBlock _iconPropertyBlock;
         private Mesh _runtimeQuadMesh;
         private ComputeBuffer _textInstanceBuffer;
         private ComputeBuffer _iconInstanceBuffer;
@@ -142,9 +147,6 @@ namespace Hecton8.UI
         private ComputeBuffer _spriteUvBuffer;
         private NativeArray<TooltipBlackBoxEntry> _blackBox;
         private TMP_FontAsset _cachedAsciiFont;
-        private TMP_FontAsset _boundFontAsset;
-        private TMP_SpriteAsset _boundSpriteAsset;
-        private Shader _boundGlyphShader;
         private Camera _cachedRenderCamera;
         private AbsoluteUniversePosition _activeTargetAup;
         private Vector3 _activeRuntimeAnchor;
@@ -167,12 +169,8 @@ namespace Hecton8.UI
         private bool _hotSwapListenerRegistered;
         private bool _fontUvTableDirty;
         private bool _spriteUvTableDirty;
-        private bool _materialBindingsDirty = true;
+        private bool _resourceObjectsReady;
         private bool _lowTierActive;
-        private float _boundGradientScale = float.NaN;
-        private float _boundFaceDilate = float.NaN;
-        private float _boundTextDitherEnabled = float.NaN;
-        private float _boundIconDitherEnabled = float.NaN;
 
         public void LateFrameTick()
         {
@@ -211,8 +209,12 @@ namespace Hecton8.UI
             if (camera == null || _runtimeQuadMesh == null)
                 return;
 
-            Vector3 anchorPosition = ResolveAnchorPosition(camera);
-            Vector3 cameraPosition = camera.transform.position;
+            Transform cameraTransform = camera.transform;
+            Vector3 cameraPosition = cameraTransform.position;
+            Vector3 cameraRight = cameraTransform.right;
+            Vector3 cameraUp = cameraTransform.up;
+            Vector3 cameraForward = cameraTransform.forward;
+            Vector3 anchorPosition = ResolveAnchorPosition(cameraPosition);
             float maxDistanceSq = maxVisibleDistance * maxVisibleDistance;
             if ((anchorPosition - cameraPosition).sqrMagnitude > maxDistanceSq)
                 return;
@@ -229,12 +231,16 @@ namespace Hecton8.UI
             bool lowTier = IsLowTier();
             float ditherEnabled = lowTier ? 0f : 1f;
             Bounds bounds = new Bounds(anchorPosition, Vector3.one * math.max(1f, maxVisibleDistance * 0.35f));
+            UploadUvTablesIfDirty();
 
             if (_iconCount > 0 && _runtimeIconMaterial != null)
             {
                 DrawBatch(
                     anchorPosition,
                     camera,
+                    cameraRight,
+                    cameraUp,
+                    cameraForward,
                     bounds,
                     _iconLocalCenters,
                     _iconLocalScales,
@@ -253,6 +259,9 @@ namespace Hecton8.UI
                 DrawBatch(
                     anchorPosition,
                     camera,
+                    cameraRight,
+                    cameraUp,
+                    cameraForward,
                     bounds,
                     _textGlyphLocalCenters,
                     _textGlyphLocalScales,
@@ -689,6 +698,14 @@ namespace Hecton8.UI
             if (spriteAsset == null)
                 spriteAsset = TMP_Settings.defaultSpriteAsset;
 
+            if (!_resourceObjectsReady)
+                EnsureResourceObjects();
+
+            EnsureMaterials();
+        }
+
+        private void EnsureResourceObjects()
+        {
             bool argsDirty = false;
             if (_runtimeQuadMesh == null)
             {
@@ -698,37 +715,37 @@ namespace Hecton8.UI
 
             if (_textInstanceBuffer == null)
             {
-                _textInstanceBuffer = new ComputeBuffer(MaxGlyphCount, Marshal.SizeOf<TooltipGlyphInstance>(), ComputeBufferType.Structured);
+                _textInstanceBuffer = new ComputeBuffer(MaxGlyphCount, TooltipGlyphInstanceStride, ComputeBufferType.Structured);
                 _materialBindingsDirty = true;
             }
 
             if (_iconInstanceBuffer == null)
             {
-                _iconInstanceBuffer = new ComputeBuffer(MaxIconCount, Marshal.SizeOf<TooltipGlyphInstance>(), ComputeBufferType.Structured);
+                _iconInstanceBuffer = new ComputeBuffer(MaxIconCount, TooltipGlyphInstanceStride, ComputeBufferType.Structured);
                 _materialBindingsDirty = true;
             }
 
             if (_textArgsBuffer == null)
             {
-                _textArgsBuffer = new ComputeBuffer(1, IndirectArgsCount * sizeof(uint), ComputeBufferType.IndirectArguments);
+                _textArgsBuffer = new ComputeBuffer(1, IndirectArgsStride, ComputeBufferType.IndirectArguments);
                 argsDirty = true;
             }
 
             if (_iconArgsBuffer == null)
             {
-                _iconArgsBuffer = new ComputeBuffer(1, IndirectArgsCount * sizeof(uint), ComputeBufferType.IndirectArguments);
+                _iconArgsBuffer = new ComputeBuffer(1, IndirectArgsStride, ComputeBufferType.IndirectArguments);
                 argsDirty = true;
             }
 
             if (_fontUvBuffer == null)
             {
-                _fontUvBuffer = new ComputeBuffer(UvTableCapacity, sizeof(float) * 4, ComputeBufferType.Structured);
+                _fontUvBuffer = new ComputeBuffer(UvTableCapacity, UvRectStride, ComputeBufferType.Structured);
                 _materialBindingsDirty = true;
             }
 
             if (_spriteUvBuffer == null)
             {
-                _spriteUvBuffer = new ComputeBuffer(UvTableCapacity, sizeof(float) * 4, ComputeBufferType.Structured);
+                _spriteUvBuffer = new ComputeBuffer(UvTableCapacity, UvRectStride, ComputeBufferType.Structured);
                 _materialBindingsDirty = true;
             }
 
@@ -738,7 +755,13 @@ namespace Hecton8.UI
                 RefreshIndirectArgs(_iconArgsBuffer);
             }
 
-            EnsureMaterials();
+            _resourceObjectsReady = _runtimeQuadMesh != null
+                && _textInstanceBuffer != null
+                && _iconInstanceBuffer != null
+                && _textArgsBuffer != null
+                && _iconArgsBuffer != null
+                && _fontUvBuffer != null
+                && _spriteUvBuffer != null;
         }
 
         private void EnsureMaterials()
@@ -862,6 +885,9 @@ namespace Hecton8.UI
         private void DrawBatch(
             Vector3 anchorPosition,
             Camera camera,
+            Vector3 cameraRight,
+            Vector3 cameraUp,
+            Vector3 cameraForward,
             Bounds bounds,
             Vector2[] localCenters,
             Vector2[] localScales,
@@ -877,10 +903,6 @@ namespace Hecton8.UI
             if (instanceBuffer == null || argsBuffer == null)
                 return;
 
-            UploadUvTablesIfDirty();
-            Vector3 cameraRight = camera.transform.right;
-            Vector3 cameraUp = camera.transform.up;
-            Vector3 cameraForward = camera.transform.forward;
             for (int i = 0; i < count; i++)
             {
                 Vector2 localCenter = localCenters[i];
@@ -919,7 +941,7 @@ namespace Hecton8.UI
                 null);
         }
 
-        private Vector3 ResolveAnchorPosition(Camera camera)
+        private Vector3 ResolveAnchorPosition(Vector3 cameraPosition)
         {
             Vector3 anchor = _diagnosticActive
                 ? _diagnosticWorldAnchor
@@ -927,7 +949,7 @@ namespace Hecton8.UI
 
             uint schemeHash = _activeSchemeHash != 0u ? _activeSchemeHash : ResolveCurrentSchemeHash();
             if (schemeHash == InputSchemeHashXRTouch)
-                anchor = ApplyVrDepthOffset(anchor, camera);
+                anchor = ApplyVrDepthOffset(anchor, cameraPosition);
 
             return anchor;
         }
@@ -938,12 +960,9 @@ namespace Hecton8.UI
             return IsFinite(aupRuntime) ? aupRuntime : _activeRuntimeAnchor;
         }
 
-        private Vector3 ApplyVrDepthOffset(Vector3 anchor, Camera camera)
+        private Vector3 ApplyVrDepthOffset(Vector3 anchor, Vector3 cameraPosition)
         {
-            if (camera == null)
-                return anchor;
-
-            Vector3 toCamera = camera.transform.position - anchor;
+            Vector3 toCamera = cameraPosition - anchor;
             float distanceSq = toCamera.sqrMagnitude;
             if (distanceSq <= 0.0001f)
                 return anchor;
@@ -1187,6 +1206,7 @@ namespace Hecton8.UI
             _boundTextDitherEnabled = float.NaN;
             _boundIconDitherEnabled = float.NaN;
             _materialBindingsDirty = true;
+            _resourceObjectsReady = false;
         }
 
         private static float MoveTowardsFast(float current, float target, float maxDelta)

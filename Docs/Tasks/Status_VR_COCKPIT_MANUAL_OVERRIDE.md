@@ -112,6 +112,25 @@ Execution lane: SIMULATION / `PriorityLayer.Player`
 - [x] Removed unused Burst/IJob projection kernel. DOD: deleted `LeverAngularSolveJob`, removed `using Unity.Burst`, and removed `Unity.Burst` from `Hecton8.UI.VR.asmdef`. Rejected: scheduling/completing a one-lever job in Tick and keeping dead Burst code for metric optics. Estimate: 0 runtime us added; smaller assembly dependency surface.
 - [x] Reverification without dotnet. DOD: scoped scan over 5 task files reports `BurstRefs=0`, `IJobRefs=0`, `UnityUpdateMethods=0`, `FindObjectCalls=0`, `GetComponentCalls=0`, `PublicEvents=0`, `HingeJoint=0`, `DirectInput=0`; forbidden-pattern scan returned no matches; `git diff --check` passed for touched code/asmdef with CRLF warnings only. Rejected: dotnet rebuild/probe by explicit user instruction. Estimate: verification only.
 
+## Loop 16 - Receiver Lifecycle Identity
+
+- [x] Registered collider identity cache. DOD: receiver registration now stores `_registeredActivationVolume` and unregisters that exact collider, not whatever the serialized `activationVolume` field points at during teardown. Rejected: assuming runtime/prefab tooling never swaps the collider reference. Estimate: cold lifecycle only; avoids stale registry slots.
+- [x] Reverification without dotnet. DOD: forbidden-pattern scan still returns no matches; `git diff --check` passed for the lever file with CRLF warnings only. Rejected: dotnet rebuild/probe by explicit user instruction. Estimate: verification only.
+
+## Loop 17 - Receiver Saturation Truth
+
+- [x] Registry success reporting. DOD: `PhysicalHandReceiverRegistry` now exposes `TryRegister()` returning the actual fixed-table write result while preserving the existing `Register()` API for other callers. Rejected: blindly raising `MaxReceivers` because capacity should be a visible authoring error. Estimate: cold lifecycle only; no hot lookup cost.
+- [x] VR lever false-registration guard. DOD: `OpenXRManualOverrideLever.TryRegisterReceiver()` only sets `_receiverRegistered` and `_registeredActivationVolume` when `TryRegister()` succeeds. Rejected: marking the lever registered after a saturated registry silently drops it. Estimate: cold lifecycle only.
+- [x] Reverification without dotnet. DOD: forbidden-pattern scan returned no matches; `git diff --check` passed for the registry and lever with CRLF warnings only. Rejected: dotnet rebuild/probe by explicit user instruction. Estimate: verification only.
+
+## Loop 18 - Registry Consumer Truth / Pause-Time Control Hygiene
+
+- [x] Legacy receiver consumers hardened. DOD: `PhysicalPanelButton`, `PhysicalSnapSwitch`, and `LifePodSeatStrapLatch` now use `PhysicalHandReceiverRegistry.TryRegister()` and only mark local receiver state after a fixed-table write succeeds. Rejected: leaving adjacent physical controls on the compatibility `Register()` wrapper because it preserved false registration under saturation. Estimate: cold lifecycle only; no hot lookup cost.
+- [x] Registered collider identity extended to adjacent physical controls. DOD: panel buttons and snap switches cache the exact collider registered into the table and unregister that collider, matching the manual override lever lifecycle. Rejected: unregistering the current serialized field because runtime repair or prefab tooling can swap it. Estimate: one cold reference assignment per registration.
+- [x] Pause-time visual drift removed. DOD: `PhysicalPanelButton.FastDecayBlend()` and `PhysicalSnapSwitch.FastDecayBlend()` now return zero on sanitized zero-dt frames; panel buttons skip hold-repeat dispatch and unchanged mesh writes during zero-dt/control-stable frames; snap switches early-return before visual solve on zero-dt frames. Rejected: `MinimumDeltaTime` fake progress because dispatcher-provided `dt=0` must mean no simulation time passed. Estimate: avoids one switch visual solve/write and panel hold spam risk on paused frames; 0 B/frame.
+- [x] Registry API docs added. DOD: public `Register`, `TryRegister`, `Unregister`, and `TryResolve` now document collider identity and saturation semantics. Rejected: a public boolean API without XML docs because future controls would likely misuse the compatibility wrapper. Estimate: compile-time docs only; 0 runtime us.
+- [x] Reverification without dotnet. DOD: forbidden-pattern scan returned no matches; scoped counter over 5 task files reports `LegacyRegister=0`, `TryRegister=4`, `GetComponentCalls=0`, `UnityUpdateMethods=0`, `DirectDeltaTime=0`, `PublicEvents=0`, `HingeJoint=0`; `git diff --check` passed with CRLF warnings only. Rejected: dotnet rebuild/probe by explicit user instruction. Estimate: verification only.
+
 STATUS: PENDING VERIFICATION - Unity editor/global Core compile dependency wall prevents full player compile proof in this session.
 
 ## Compile Attempts

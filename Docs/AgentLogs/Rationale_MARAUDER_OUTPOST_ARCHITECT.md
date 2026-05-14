@@ -287,3 +287,17 @@ Solution: Verification used source-only scans. Scoped outpost counts changed `Si
 Rejected Alternatives: Running response-file compiles through `dotnet` was rejected because it violates the active instruction. Updating the global H-Phi report was rejected because this agent owns Habitat/Outpost logs, not the project-wide audit report.
 Scalability potential: Static H-Phi pressure is improved without increasing runtime work on cheap devices or consuming visual-overkill budget on high-end devices.
 Hardware Impact: Verification-only. Runtime path remains one typed signal on rare generation/replay/heartbeat and zero shell GameObjects.
+
+## LOOP 18 CACHED REGISTRY SURFACE REDUCTION
+
+Problem: The outpost service still had avoidable concrete `GlobalRegistry` surface: render unregister returned to the global render bucket, disposal checked `GlobalRegistry.OutpostGeneration`, and object-pool/global dependency accesses repeated cold singleton reads.
+Solution: Cache the render bucket used during `OnEnable`, track outpost registration with `_registeredOutpostGeneration`, and route MapMagic, world seed, async persistence, and object pool through cached cold resolvers that refresh on null or destroyed Unity object references.
+Rejected Alternatives: Polling `GlobalRegistry` on each cold use was rejected because H-Phi penalizes broad singleton surface and because cached interface contracts are the intended synaptic-density shape. Blind permanent caching without destroyed-object checks was rejected because Unity services can vanish during teardown/domain reload.
+Scalability potential: Low/Middle/High/Ultra behavior is unchanged. Low devices avoid redundant cold singleton probes during spawn/despawn and generation setup; high-end devices keep the same visual-overkill budget because no render or WFC topology cost was added.
+Hardware Impact: Runtime gain is small but real on cold paths: one disposal registry read removed, repeated object-pool lookups folded behind one cached handle, and no hot Tick/Render allocation. Scoped H-Phi registry surface in owned outpost files changed from 15 to 12.
+
+Problem: The user still forbids dotnet rebuilds while asking for continued H-Phi improvement.
+Solution: Verification stayed source-only: scoped H-Phi counts, forbidden-pattern `rg` audits, `git diff --check`, and a full project H-Phi PowerShell scan. Full scan after this pass reports `SignalBusPush=84`, `EventPublish=450`, `GlobalRegistrySurface=5141`, `StructLayoutAttributes=940`, `MemoryAlignment=0.497881356`, `RiskIntegration=0.013429257`, `HPhiStaticRisk=0.000122175`.
+Rejected Alternatives: Running a response-file or dotnet compile was rejected because it violates the active instruction. Editing unrelated high-pressure domains was rejected because this agent owns Habitat/Outposts.
+Scalability potential: Static pressure improves in the outpost service without increasing local native buffer count, shell GameObjects, signal volume, or update phases.
+Hardware Impact: Verification-only plus cold-path lookup reduction; hot rendering remains one indirect shell submission and 0 B/frame by source audit.

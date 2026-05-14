@@ -353,3 +353,36 @@ Verification:
 - Unity MCP console/profiler: unavailable from this session.
 
 Status: PENDING VERIFICATION. Static source audits pass; compile/runtime proof remains pending.
+
+## 2026-05-15 - WFC Outpost Loop 18 Cached Registry Surface Reduction
+
+What was wrong:
+- The outpost service still had avoidable concrete `GlobalRegistry` surface in disposal, renderable unregister, and repeated cold dependency resolution.
+- `Dispose()` read `GlobalRegistry.OutpostGeneration` only to avoid a double-unregister warning.
+- Object pool resolution was repeated in spawn and despawn paths.
+- The user explicitly forbade `dotnet` rebuilds again.
+
+What was done:
+- Cached the render bucket used for registration and unregisters from the same bucket.
+- Added `_registeredOutpostGeneration` so disposal no longer probes `GlobalRegistry.OutpostGeneration`.
+- Routed MapMagic, world seed, async persistence, and object pool through cached cold resolvers with null/destroyed-object refresh.
+- Re-ran source-only H-Phi, forbidden construct, and diff hygiene audits without any `dotnet` rebuild.
+
+Cinematic Cheats used:
+- No physical simulation change. The outpost remains WFC native data, bounded proxies, and GPU indirect shell rendering.
+- The change buys architecture cleanliness and cold-path lookup reduction without spending visual or simulation budget.
+
+Exact Microseconds saved:
+- Removes one disposal registry read and folds repeated object-pool singleton access behind a cached handle; expected savings are cold-path only and below 1 us per affected call.
+- Hot Tick/Render remains 0 B/frame and does not poll the registry.
+- Scoped H-Phi registry surface in owned outpost files changed from `15` to `12`.
+
+Verification:
+- Scoped H-Phi after-patch counts: `GlobalRegistrySurface=12`, `SignalBusPush=1`, `EventPublish=0`, `StructLayoutAttributes=6`.
+- Full project H-Phi source scan: `SignalBusPush=84`, `EventPublish=450`, `GlobalRegistrySurface=5141`, `StructLayoutAttributes=940`, `MemoryAlignment=0.497881356`, `RiskIntegration=0.013429257`, `HPhiStaticRisk=0.000122175`.
+- Forbidden construct audit: PASS; no managed LINQ/random/string interpolation, shell `Instantiate`, `BaseGenerator`, `math.pow`, telemetry modulo, hardcoded shift epsilon, or global publish wrapper remains in owned outpost files.
+- `git diff --check`: PASS with repository LF/CRLF warning only.
+- `dotnet` rebuilds/response-file compiles: NOT RUN by explicit user request.
+- Unity MCP console/profiler: unavailable from this session.
+
+Status: PENDING VERIFICATION. Static source audits pass; compile/runtime proof remains pending.

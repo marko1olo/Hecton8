@@ -62,7 +62,7 @@ namespace Hecton8.SaveSystem
         private const uint SaveCompressedSizeTelemetryHash = 0x53564342u; // SVCB
         private const uint ScreenshotSizeKbTelemetryHash = 0x53534B42u; // SSKB
         private const int MaxChunkDehydrationSignalsPerTick = 2;
-        private const int MaxWfcSectorHydratedSignalsPerTick = 4;
+        private const int MaxWfcSectorHydrationProbesPerTick = 4;
         private const float SafeAupSnapGroundPaddingMeters = 0.28f;
         private const float SafeAupSnapMinimumLiftMeters = 0.35f;
         private const string CriticalSectorCorruptionMessage = "CRITICAL ERROR: LOCALIZED DATA CORRUPTION. TERRAIN RE-INITIALIZED.";
@@ -1154,8 +1154,11 @@ namespace Hecton8.SaveSystem
         {
             ReadOnlySpan<Hecton8.Core.Signals.SectorHydratedSignal> signals =
                 SignalBus<Hecton8.Core.Signals.SectorHydratedSignal>.GetFrameSnapshot();
-            int count = math.min(signals.Length, MaxWfcSectorHydratedSignalsPerTick);
-            for (int i = 0; i < count; i++)
+            NativeArray<byte> wfcGrid = default;
+            bool hasGrid = false;
+            int probes = 0;
+
+            for (int i = 0; i < signals.Length && probes < MaxWfcSectorHydrationProbesPerTick; i++)
             {
                 Hecton8.Core.Signals.SectorHydratedSignal signal = signals[i];
                 if (signal.SectorHash == 0UL ||
@@ -1165,9 +1168,15 @@ namespace Hecton8.SaveSystem
                     continue;
                 }
 
-                if (!TryEnsureWfcOutpostGrid(out NativeArray<byte> wfcGrid))
-                    continue;
+                if (!hasGrid)
+                {
+                    if (!TryEnsureWfcOutpostGrid(out wfcGrid))
+                        return;
 
+                    hasGrid = true;
+                }
+
+                probes++;
                 TryApplyWfcOutpostStateOverrideFromHydration(signal.SectorHash, wfcGrid);
             }
         }

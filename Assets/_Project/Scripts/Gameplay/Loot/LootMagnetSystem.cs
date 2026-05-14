@@ -56,8 +56,10 @@ namespace Hecton8.Gameplay.Loot
         private uint _lastTelemetryRecordedFrame;
         private uint _frameCounter;
         private AbsoluteUniversePosition _lastPlayerAup;
+        private float _scheduledPullRadiusMeters;
+        private float _scheduledPullRadiusSq;
 
-        private int Capacity => math.clamp(maxLootEntities, 1, LootMagnetConstants.DefaultMaxEntities);
+        private int Capacity => math.clamp(maxLootEntities, 1, LootMagnetConstants.MaxEntitiesHardCap);
 
         private bool IsLowTier => GlobalRegistry.ScalabilityTierProfileByte == 0;
 
@@ -151,6 +153,8 @@ namespace Hecton8.Gameplay.Loot
             if (!_pullScheduled)
             {
                 TryResolvePlayerAup(out _);
+                _lastCommittedAcquiredCount = 0u;
+                _lastCommittedFlags = 0u;
                 RecordTelemetry(_telemetryFrameCounter);
                 return;
             }
@@ -359,6 +363,7 @@ namespace Hecton8.Gameplay.Loot
             {
                 _pickupRefs[index] = null;
                 _pickupEntityIds[index] = 0UL;
+                _entityAups[index] = default;
                 _entityFlags[index] = 0u;
                 _entityVelocities[index] = float3.zero;
                 _entityItemHashes[index] = 0u;
@@ -380,6 +385,14 @@ namespace Hecton8.Gameplay.Loot
             }
 
             playerAup = default;
+            Transform playerTransform = _playerTransform;
+            if (playerTransform != null)
+            {
+                playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerTransform.position);
+                _lastPlayerAup = playerAup;
+                return true;
+            }
+
             return false;
         }
 
@@ -392,6 +405,8 @@ namespace Hecton8.Gameplay.Loot
             _scheduledCount = count;
             _frameCounter++;
             float safeRadiusMeters = math.max(LootMagnetConstants.AcquireDistanceMeters, pullRadiusMeters);
+            _scheduledPullRadiusMeters = safeRadiusMeters;
+            _scheduledPullRadiusSq = safeRadiusMeters * safeRadiusMeters;
             float safeMaxVelocity = math.max(0.01f, maxVelocityMetersPerSecond);
             LootMagnetPullJob job = new LootMagnetPullJob
             {
@@ -399,7 +414,7 @@ namespace Hecton8.Gameplay.Loot
                 DeltaTimeSeconds = math.min(
                     math.max(0.0001f, dt),
                     LootMagnetConstants.MaxIntegrationDeltaTimeSeconds),
-                PullRadiusSq = safeRadiusMeters * safeRadiusMeters,
+                PullRadiusSq = _scheduledPullRadiusSq,
                 PullStrength = math.max(0f, pullStrength),
                 MaxVelocityMetersPerSecond = safeMaxVelocity,
                 Frame = _frameCounter,
@@ -433,7 +448,10 @@ namespace Hecton8.Gameplay.Loot
                 PickupItem pickup = _pickupRefs[index];
                 LootMagnetSignalEvent signalEvent = _signalEvents.IsCreated ? _signalEvents[index] : default;
                 if (pickup == null)
+                {
+                    ClearVaultSlot(index);
                     continue;
+                }
 
                 if ((flags & LootEntityFlags.Acquired) != 0u)
                 {
@@ -444,7 +462,7 @@ namespace Hecton8.Gameplay.Loot
                     }
 
                     acquisitionBudget--;
-                    int quantityBefore = math.max(0, (int)_entityQuantities[index]);
+                    int quantityBefore = math.max(0, pickup.Quantity);
                     pickup.TryHandleInventoryPickup(_inventory, _playerTransform);
                     int quantityAfter = math.max(0, pickup.Quantity);
                     int addedQuantity = math.max(0, quantityBefore - quantityAfter);
@@ -458,15 +476,16 @@ namespace Hecton8.Gameplay.Loot
                     if (quantityAfter > 0)
                     {
                         _entityQuantities[index] = (ushort)math.min(quantityAfter, (int)ushort.MaxValue);
-                        _entityFlags[index] = (flags & ~LootEntityFlags.Acquired) |
-                                              LootEntityFlags.Active |
-                                              LootEntityFlags.IsLoot |
-                                              LootEntityFlags.PullEnabled;
+                        _entityFlags[index] = addedQuantity > 0
+                            ? (flags & ~LootEntityFlags.Acquired) |
+                              LootEntityFlags.Active |
+                              LootEntityFlags.IsLoot |
+                              LootEntityFlags.PullEnabled
+                            : LootEntityFlags.Active | LootEntityFlags.IsLoot;
                     }
                     else
                     {
-                        _pickupRefs[index] = null;
-                        _pickupEntityIds[index] = 0UL;
+                        ClearVaultSlot(index);
                     }
 
                     continue;
@@ -499,6 +518,19 @@ namespace Hecton8.Gameplay.Loot
                                   LootEntityFlags.PullEnabled;
         }
 
+        private void ClearVaultSlot(int index)
+        {
+            _pickupRefs[index] = null;
+            _pickupEntityIds[index] = 0UL;
+            _entityAups[index] = default;
+            _entityFlags[index] = 0u;
+            _entityVelocities[index] = float3.zero;
+            _entityItemHashes[index] = 0u;
+            _entityQuantities[index] = 0;
+            if (_signalEvents.IsCreated && index < _signalEvents.Length)
+                _signalEvents[index] = default;
+        }
+
         private void PublishItemAcquired(in LootMagnetSignalEvent signalEvent, int addedQuantity)
         {
             if ((signalEvent.Flags & LootMagnetEventFlags.Acquired) == 0u || addedQuantity <= 0)
@@ -526,8 +558,8 @@ namespace Hecton8.Gameplay.Loot
             if (signalEvent.Flags == 0u || signalEvent.ItemHash == 0u)
                 return;
 
-            float radiusMeters = math.max(LootMagnetConstants.AcquireDistanceMeters, pullRadiusMeters);
-            float radiusSq = math.max(radiusMeters * radiusMeters, LootMagnetConstants.MinDistanceSq);
+            float radiusMeters = math.max(LootMagnetConstants.AcquireDistanceMeters, _scheduledPullRadiusMeters);
+            float radiusSq = math.max(_scheduledPullRadiusSq, LootMagnetConstants.MinDistanceSq);
             float intensity = math.saturate(1f - (signalEvent.DistanceSq * math.rcp(radiusSq)));
             if (addedQuantity > 0)
                 intensity = 1f;
@@ -571,7 +603,7 @@ namespace Hecton8.Gameplay.Loot
             _telemetry[writeIndex] = new LootMagnetTelemetryEntry
             {
                 PlayerAup = _lastPlayerAup,
-                SampleLootAup = _scheduledCount > 0 && _entityAups.IsCreated ? _entityAups[0] : default,
+                SampleLootAup = _activeCount > 0 && _entityAups.IsCreated && _entityAups.Length > 0 ? _entityAups[0] : default,
                 Frame = telemetryFrame,
                 ActiveCount = (uint)math.max(0, _activeCount),
                 AcquiredCount = _lastCommittedAcquiredCount,

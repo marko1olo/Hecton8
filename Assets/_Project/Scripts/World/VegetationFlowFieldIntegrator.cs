@@ -2323,7 +2323,13 @@ namespace Hecton8.World
                     StartNode < 0 ||
                     EndNode < 0 ||
                     StartNode >= Nodes.Length ||
-                    EndNode >= Nodes.Length)
+                    EndNode >= Nodes.Length ||
+                    MaxExpandedNodes <= 0 ||
+                    NeighborRadius <= 0f ||
+                    !math.isfinite(NeighborRadius) ||
+                    !math.isfinite(VerticalTolerance) ||
+                    !math.all(math.isfinite(StartPosition)) ||
+                    !math.all(math.isfinite(EndPosition)))
                 {
                     if (Path.IsCreated)
                         Path.Clear();
@@ -2332,6 +2338,15 @@ namespace Hecton8.World
 
                 Path.Clear();
                 int nodeCount = Nodes.Length;
+                if (!HasCompleteAStarWorkspace(nodeCount))
+                    return;
+
+                if (!math.all(math.isfinite(ToFloat3(Nodes[StartNode]))) ||
+                    !math.all(math.isfinite(ToFloat3(Nodes[EndNode]))))
+                {
+                    return;
+                }
+
                 float neighborRadiusSq = NeighborRadius * NeighborRadius;
                 int heapCount = 0;
 
@@ -2368,31 +2383,41 @@ namespace Hecton8.World
                     }
 
                     float3 currentNode = ToFloat3(Nodes[current]);
+                    if (!math.all(math.isfinite(currentNode)))
+                        continue;
+
                     for (int neighbor = 0; neighbor < nodeCount; neighbor++)
                     {
                         if (neighbor == current || ClosedFlags[neighbor] != 0)
                             continue;
 
                         float3 neighborNode = ToFloat3(Nodes[neighbor]);
+                        if (!math.all(math.isfinite(neighborNode)))
+                            continue;
+
                         float verticalDelta = neighborNode.y - currentNode.y;
                         float3 delta = neighborNode - currentNode;
                         float distanceSq = math.lengthsq(delta);
-                        if (distanceSq <= 0.000001f || distanceSq > neighborRadiusSq)
+                        if (distanceSq <= 0.000001f ||
+                            distanceSq > neighborRadiusSq ||
+                            !math.isfinite(distanceSq))
+                        {
                             continue;
+                        }
 
                         float distance = EstimateLength3D(delta);
                         float conduitStrength = ResolveConduitStrength(current, neighbor, currentNode, neighborNode, delta, distance, out float conduitAlignment, out float verticalBonus);
-                        float allowedVertical = VerticalTolerance + verticalBonus;
+                        float allowedVertical = math.max(0f, VerticalTolerance + verticalBonus);
                         if ((verticalDelta * verticalDelta) > (allowedVertical * allowedVertical))
                             continue;
 
-                        float threatPenalty = math.saturate(SampleThreatAtWorldPosition(neighborNode)) * ThreatPenaltyWeight;
+                        float threatPenalty = math.saturate(SampleThreatAtWorldPosition(neighborNode)) * math.max(0f, ThreatPenaltyWeight);
                         float conduitPenalty = conduitStrength * ((1f - conduitAlignment) * ConduitMisalignmentPenalty);
                         float conduitThreatReduction = threatPenalty * conduitStrength * conduitAlignment * math.saturate(ConduitAlignmentReward);
                         float traversalMultiplier = math.max(1f, ResolveTraversalMultiplier(current, neighbor));
                         float traversalCost = distance * traversalMultiplier;
                         float tentativeG = GScore[current] + traversalCost + math.max(0f, threatPenalty - conduitThreatReduction) + conduitPenalty;
-                        if (tentativeG >= GScore[neighbor])
+                        if (tentativeG >= GScore[neighbor] || !math.isfinite(tentativeG))
                             continue;
 
                         Parents[neighbor] = current;
@@ -2421,6 +2446,22 @@ namespace Hecton8.World
 
                 Path.AddNoResize(new Vector3(StartPosition.x, StartPosition.y, StartPosition.z));
                 ReversePath();
+            }
+
+            private bool HasCompleteAStarWorkspace(int nodeCount)
+            {
+                return Parents.IsCreated &&
+                       GScore.IsCreated &&
+                       FScore.IsCreated &&
+                       ClosedFlags.IsCreated &&
+                       HeapNodes.IsCreated &&
+                       HeapPositions.IsCreated &&
+                       Parents.Length >= nodeCount &&
+                       GScore.Length >= nodeCount &&
+                       FScore.Length >= nodeCount &&
+                       ClosedFlags.Length >= nodeCount &&
+                       HeapNodes.Length >= nodeCount &&
+                       HeapPositions.Length >= nodeCount;
             }
 
             private void ReversePath()

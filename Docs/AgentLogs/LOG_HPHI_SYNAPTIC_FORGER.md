@@ -133,3 +133,33 @@ Verification:
 - Final targeted forbidden scan over H-Phi touched runtime files returned no matches for converted-lane events, invokes, UnityEvents, `GetInstanceID(`, managed foreach, `string.Format`, sqrt/normalize, or raw lower-32 entity-id source casts.
 - Final `git diff --check` returned clean.
 - Unity MCP Editor validation remains unavailable because the local MCP endpoint was not reachable earlier in the session.
+
+## 2026-05-15 - No-Dotnet H-Phi Continuation Addendum
+
+What was wrong:
+- Disk state required a fresh H-Phi recheck after concurrent edits.
+- `Docs/Tasks/CURRENT_BATCH.md` no longer contains the `HPHI_SYNAPTIC_FORGER` XML prompt tag, so no new tag body could be honestly extracted.
+- PDA dirty relay could emit separate state packets when inventory and scan-log changes landed in the same frame.
+
+What was done:
+- Reconfirmed `ScanLogChangedSignal` as a 32-byte `ISignal` lane in `GlobalSignals` with capacity, size validation, publish overload, and prewarm registration.
+- Reconfirmed `ScanLogSystem` emits scan-log dirty packets and collapses save-load restore into one aggregate load signal.
+- Reconfirmed `PDAExchangeSystem` consumes `InventoryChangedSignal` and `ScanLogChangedSignal` snapshots through `IUpdatable` instead of managed event subscriptions.
+- Upgraded PDA relay to coalesce inventory plus scan-log dirtiness into one `PdaExchangeStateChangedSignal` per frame using `FlagInventoryDirty` and `FlagScanLogDirty`.
+- Kept PDA inventory matching on the legacy lower-32 inventory key because `PlayerInventory.ResolveInventorySignalHash()` publishes that exact `InventoryChangedSignal.InventoryHash` contract.
+
+Cinematic Cheats used:
+- Dirty-state bytes and bit flags replaced duplicate relay emissions.
+- Scan-log load uses a single aggregate dirty packet instead of per-entry replay spam.
+- No physical simulation was added; no water/light/deformation math was introduced.
+
+Exact microseconds saved:
+- Coalesced PDA dual-dirty frame: estimated 0.1-0.3 us from one relay packet instead of two.
+- Scan-log load aggregation: burst-dependent savings from avoiding per-entry dirty packet replay; steady-state cost remains 0.0 us/frame.
+- Avoided Fabricator conversion: prevents unprofiled permanent per-frame scan-log polling cost across crafting stations.
+
+Verification:
+- No dotnet build, restore, or rebuild was run after this continuation because the user explicitly forbade dotnet rebuilds.
+- `rg` found no `InventoryChanged +=`, `ScanLogChanged +=`, `HandleInventoryChanged`, or `HandleScanLogChanged` remnants in `PDAExchangeSystem`.
+- `rg` confirmed `ScanLogChangedSignal` alias, capacity, size validation, publish overload, lane configure/prewarm, struct definition, and PDA dirty flags.
+- `git diff --check` on the owned runtime/docs files reported no whitespace errors; only CRLF normalization warnings on tracked C# files.

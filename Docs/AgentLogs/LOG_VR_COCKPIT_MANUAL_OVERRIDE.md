@@ -133,3 +133,39 @@ Cinematic Cheats used: scalar kinematic lever remains the truth model. Removed a
 Exact microseconds saved/spent: 0 B/frame. No new runtime work. Zero-dt pause frames avoid two transform reads and one transform write. Assembly dependency surface is smaller by one Burst reference. Any compile-time/import savings are not measured.
 
 Verification: forbidden-pattern scan returned no matches. Scoped scan over 5 task files reports `BurstRefs=0`, `IJobRefs=0`, `UnityUpdateMethods=0`, `FindObjectCalls=0`, `GetComponentCalls=0`, `PublicEvents=0`, `HingeJoint=0`, `DirectInput=0`. `git diff --check` passed for touched code and asmdef with CRLF warnings only. No dotnet rebuild/probe was run by user instruction.
+
+## 2026-05-15 - Receiver Lifecycle Identity
+
+What was wrong: receiver unregister used the current `activationVolume` field. If that reference changed after registration, the original collider could remain in the fixed physical hand receiver table.
+
+What was done: cached the exact registered collider in `_registeredActivationVolume`, unregisters that collider during teardown, and clears the cache afterward.
+
+Cinematic Cheats used: none. This is lifecycle integrity for the existing fixed receiver table.
+
+Exact microseconds saved/spent: 0 us steady-frame cost. One cold reference assignment on register; avoids stale table probes and wrong receiver routing after collider swaps.
+
+Verification: forbidden-pattern scan returned no matches. `git diff --check` passed for the lever file with CRLF warnings only. No dotnet rebuild/probe was run by user instruction.
+
+## 2026-05-15 - Receiver Saturation Truth
+
+What was wrong: `PhysicalHandReceiverRegistry.Register()` could fail on fixed-table saturation but reported no result, so the VR lever could mark itself registered even when no receiver slot existed.
+
+What was done: added `PhysicalHandReceiverRegistry.TryRegister()` returning the actual write success while preserving `Register()` as a compatibility wrapper. `OpenXRManualOverrideLever.TryRegisterReceiver()` now only caches the registered collider and sets `_receiverRegistered` after `TryRegister()` succeeds.
+
+Cinematic Cheats used: none. This keeps the fixed registry table and avoids runtime discovery or dynamic allocation.
+
+Exact microseconds saved/spent: 0 us steady-frame cost. Cold registration pays one boolean return. Saturated-table cases avoid false local registration and keep retry/recovery truthful.
+
+Verification: forbidden-pattern scan returned no matches. `git diff --check` passed for the registry and lever with CRLF warnings only. No dotnet rebuild/probe was run by user instruction.
+
+## 2026-05-15 - Registry Consumer Truth And Pause-Time Hygiene
+
+What was wrong: the registry now reported saturation truth, but adjacent physical controls still used the legacy void registration path. Panel and snap-switch interpolation also used a minimum fake delta, allowing visual progress or Hold-repeat behavior when dispatcher time was zero.
+
+What was done: moved `PhysicalPanelButton`, `PhysicalSnapSwitch`, and `LifePodSeatStrapLatch` to `TryRegister()` and truth-based receiver state. Added exact registered-collider caches to panel buttons and snap switches. Removed `MinimumDeltaTime` fake progress in panel/switch blends, blocked panel Hold repeats on zero-dt frames, skipped unchanged panel mesh writes, and returned from snap-switch Tick before visual solve when `dt` is zero. Added XML docs for the public registry API.
+
+Cinematic Cheats used: preserved the fixed collider receiver table and scalar kinematic controls. No physics joints, runtime searches, direct OpenXR polling, or dynamic receiver collections were added.
+
+Exact microseconds saved/spent: 0 us steady receiver cost; one cold boolean result check and collider reference assignment per registration. Zero-dt frames avoid snap-switch visual solve/write and prevent panel hold spam risk; stable panel frames skip unchanged transform writes. 0 B/frame.
+
+Verification: forbidden-pattern scan returned no matches, including legacy `PhysicalHandReceiverRegistry.Register(`, `MinimumDeltaTime`, `GetComponent<...>`, `Update(`, `Time.deltaTime`, `HingeJoint`, and direct input polling. Scoped counter over 5 task files reports `LegacyRegister=0`, `TryRegister=4`, `GetComponentCalls=0`, `TryGetComponentCalls=9`, `UnityUpdateMethods=0`, `DirectDeltaTime=0`, `PublicEvents=0`, `HingeJoint=0`. `git diff --check` passed with CRLF warnings only. No dotnet rebuild/probe was run by user instruction.

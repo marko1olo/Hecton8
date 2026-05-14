@@ -96,6 +96,7 @@ namespace Hecton8.Gameplay
         private bool _serviceRegistered;
         private uint _scanArchivedNotificationHash;
         private uint _signalSourceId;
+        private uint _changeRevision;
 
         public static ScanLogSystem Instance => GlobalRegistry.ScanLog;
 
@@ -108,8 +109,8 @@ namespace Hecton8.Gameplay
         public int LoadPriority => 35;
         public int EntryCount => _entries.Count;
         public int RecentCount => _recentEntryHashes.Count;
+        public uint ChangeRevision => _changeRevision;
 
-        public event Action ScanLogChanged;
         public event Action<ScanEntrySnapshot> EntryUnlocked;
 
         private void Awake()
@@ -333,7 +334,6 @@ namespace Hecton8.Gameplay
             }
 
             PublishScanLogChanged(0u, ScanLogChangedSignal.ReasonLoaded);
-            ScanLogChanged?.Invoke();
         }
 
         public void OnScanEvent(in ScanEventPayload payload)
@@ -466,8 +466,6 @@ namespace Hecton8.Gameplay
             {
                 if (publishChangeSignal)
                     PublishScanLogChanged(entryHash, added ? ScanLogChangedSignal.ReasonEntryAdded : ScanLogChangedSignal.ReasonRecentChanged);
-
-                ScanLogChanged?.Invoke();
             }
         }
 
@@ -475,6 +473,10 @@ namespace Hecton8.Gameplay
         {
             if (_signalSourceId == 0u)
                 _signalSourceId = GlobalSignals.FoldEntityIdToSourceId(EntityId.ToULong(GetEntityId()));
+
+            _changeRevision = unchecked(_changeRevision + 1u);
+            if (_changeRevision == 0u)
+                _changeRevision = 1u;
 
             ScanLogChangedSignal signal = new ScanLogChangedSignal
             {
@@ -484,7 +486,8 @@ namespace Hecton8.Gameplay
                 EntryCount = (ushort)math.clamp(_entries.Count, 0, ushort.MaxValue),
                 RecentCount = (ushort)math.clamp(_recentEntryHashes.Count, 0, ushort.MaxValue),
                 Reason = reason,
-                Flags = 0
+                Flags = 0,
+                Revision = _changeRevision
             };
 
             GlobalSignals.Publish(in signal);

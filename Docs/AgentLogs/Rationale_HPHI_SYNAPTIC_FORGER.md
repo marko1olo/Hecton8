@@ -2,7 +2,7 @@
 
 Agent: ARCHITECTURAL_SURGEON
 Domain: Core/Gameplay Signal Architecture
-State: COMPLETE - DOTNET BUILDS VERIFIED / UNITY MCP UNAVAILABLE
+State: PENDING VERIFICATION - STATIC H-PHI CONTINUATION / DOTNET REBUILDS FORBIDDEN BY USER
 
 ## Decisions
 
@@ -85,3 +85,11 @@ Solution: Ran `dotnet restore Hecton8.Core.csproj` and `dotnet restore Assembly-
 Rejected Alternatives: Ignoring the missing assets file was rejected because it would leave the compile proof stale. Editing unrelated fauna/editor/package warnings was rejected because the warnings are outside H-Phi signal architecture and do not block compilation.
 Scalability potential: Low/toaster and High/Ultra tiers now share the same verified signal-code path; additional consumers can attach to the lanes without reopening compile-risk questions in this batch.
 Hardware Impact: Runtime impact is 0.0 us/frame. Verification impact is build-confidence only: the H-Phi code compiles in both Core and wider Assembly-CSharp gates.
+
+### 2026-05-15 - PDA Dirty Signal Coalescing Pass
+
+Problem: Disk recheck after concurrent churn showed PDA exchange was the critical H-Phi surface to preserve: inventory and scan-log changes can arrive in the same frame, and naive relay logic can emit duplicate PDA dirty packets. The current `Docs/Tasks/CURRENT_BATCH.md` no longer contains the original `HPHI_SYNAPTIC_FORGER` XML tag, so the continuation had to be grounded in existing status/rationale and live source scans.
+Solution: Confirmed/restored the 32-byte `ScanLogChangedSignal` lane in `GlobalSignals`, aggregate scan-log publishing in `ScanLogSystem`, and snapshot consumption in `PDAExchangeSystem`. Coalesced inventory and scan-log dirtiness into one PDA exchange packet per frame with `FlagInventoryDirty` and `FlagScanLogDirty`, keeping `ReasonScanLogChanged` as the priority reason when both are present. Static verification only was used because the user explicitly forbade dotnet rebuilds.
+Rejected Alternatives: Converting Fabricator's remaining `ScanLogChanged` subscription was rejected in this pass because Fabricator's `IUpdatable` registration is currently transient for spark proxy light; making every Fabricator a permanent per-frame SignalBus consumer would add idle scan cost without profiling evidence. Changing the PDA inventory filter to `FoldEntityIdToSourceId` was rejected because `PlayerInventory.ResolveInventorySignalHash()` still publishes the legacy lower-32 `InventoryChangedSignal.InventoryHash`; changing the consumer alone would break matching.
+Scalability potential: Low/toaster tier gets one PDA dirty packet for dual dirty frames and one aggregate scan-log-load packet. Middle tier can attach barter/crafting consumers to the same scan-log lane. High/Ultra can spend the saved duplicate dirty work on richer PDA refresh, audio, and cockpit diagnostics without adding producer references or managed payloads.
+Hardware Impact: Estimated i3/MX350 gain is 0.1-0.3 us in dual inventory plus scan-log dirty bursts from coalesced PDA relay writes. Steady-state cost is unchanged except one `IUpdatable` PDA snapshot scan that replaces two managed event subscriptions. Verification remains pending because no dotnet build/restore/rebuild was run after the continuation by user order.

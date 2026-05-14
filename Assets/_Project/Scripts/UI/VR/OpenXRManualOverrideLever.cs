@@ -79,6 +79,7 @@ namespace Hecton8.UI.VR
         private PhysicalHandSide _lastHandSide;
         private UniversalInputStateSignal _lastInputSignal;
         private IInputService _inputService;
+        private Collider _registeredActivationVolume;
         private float _grabRadiusSq;
         private float _nonVrHold01;
         private int _frameThisTick;
@@ -741,7 +742,10 @@ namespace Hecton8.UI.VR
             if (_receiverRegistered || activationVolume == null || !Application.isPlaying)
                 return;
 
-            PhysicalHandReceiverRegistry.Register(activationVolume, this);
+            if (!PhysicalHandReceiverRegistry.TryRegister(activationVolume, this))
+                return;
+
+            _registeredActivationVolume = activationVolume;
             _receiverRegistered = true;
         }
 
@@ -750,7 +754,8 @@ namespace Hecton8.UI.VR
             if (!_receiverRegistered)
                 return;
 
-            PhysicalHandReceiverRegistry.Unregister(activationVolume, this);
+            PhysicalHandReceiverRegistry.Unregister(_registeredActivationVolume, this);
+            _registeredActivationVolume = null;
             _receiverRegistered = false;
         }
 

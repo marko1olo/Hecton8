@@ -68,6 +68,39 @@ Verification:
 Status:
 - VERIFIED VAULT LOCK - COMPILE TARGET BLOCKED BY MISSING Hecton8.Core.Memory.rsp.
 
+## 2026-05-15 - Procedural DTO Payload Bounds Pass
+
+What was wrong:
+- Procedural-world DTO arrays are capacity-backed. The save codec wrote backing capacity instead of logical bounded counts for suppressed placement keys, procedural fauna, geology seam states, cave entrances, and hibernated fauna.
+- The generic struct-array reader could allocate a corrupt over-limit procedural array before migration had a chance to clamp it.
+- Existing procedural-world capacity repair replaced shorter arrays without copying, which would discard compact logical-slice payload entries during migration.
+
+What was done:
+- `SaveBinaryPayloadCodec` now clamps procedural-world count mirrors to array length and domain maxima before writing.
+- Capacity-backed procedural arrays now serialize as bounded logical slices.
+- Custom procedural fauna and hibernated fauna readers reject counts above `MaxFaunaStates` / `MaxHibernatedFaunaStates` before allocation.
+- Added `ReadStructArrayBounded` and used it for suppressed placement, geology seam, and cave entrance arrays.
+- `ProceduralWorldStateDTO.EnsureCapacity` now copies existing entries when expanding compact loaded arrays to full runtime capacity.
+
+Cinematic Cheats used:
+- Persistence now stores the actual logical state, not empty backing capacity. Saved bytes are spent on real state rather than unused slots.
+
+Exact Microseconds saved:
+- Hot-frame cost: 0 us.
+- Cold save/load improvement is payload-size driven. Worst empty-capacity raw bytes avoided are approximately 240 KiB: 65,536 B suppressed keys, 65,536 B fauna, 57,344 B hibernated fauna, 32,768 B geology seams, and 24,576 B cave entrances before compression; exact wall time requires a build/profiler path that is currently forbidden.
+
+Verification:
+- Static `rg` found no old procedural full-array write/read call shapes in `SaveBinaryPayloadCodec`.
+- Static `rg` found bounded procedural read calls and over-limit fauna error paths.
+- Brace/parenthesis balance check returned `PAREN=0 BRACE=0`.
+- DataVault live compaction scan remains clean.
+- Manifest coverage, repaired fauna bool scan, project `[BinaryBlittableSafe]` scan, and legacy ownerless H8 call scans passed.
+- `git diff --check` passed with CRLF warnings only.
+- No dotnet rebuild was run per user order.
+
+Status:
+- VERIFIED VAULT LOCK - STATIC NO-REBUILD PASS COMPLETE; EXACT COMPILE TARGET STILL BLOCKED BY MISSING Hecton8.Core.Memory.rsp.
+
 ## 2026-05-15 - Owner Release and H-Phi DataVault Cleanup
 
 What was wrong:

@@ -109,15 +109,29 @@ Task Count: 15
 ## Loop 15 - Nav Graph Ingress Sanitation
 
 - [x] Path request finite gate | DOD: immediate voxel routes and scheduled abyssal A* requests reject non-finite start/end positions before sampling route data; rejected letting NaN enter voxel and terrain probes; estimate 3 us.
+- [x] Chunk nav sampling reciprocal pass | DOD: abyssal chunk node sampling now rejects non-finite bounds/step sizes and uses reciprocal step/sample math; rejected raw `/` in warm graph generation; estimate 6 us.
+- [x] Terrain height sampling guard | DOD: cached height sampling now verifies finite world coordinates, terrain transforms, positive terrain size, and complete heightmap length before bilinear sample; rejected sampling corrupt tile payloads; estimate 7 us.
+- [x] Candidate pool bounds proof | DOD: node candidate resolver now clamps underwater slice bounds with `long`, requires complete matrix/biome/semantic arrays, and treats flow vectors as optional; rejected indexing parallel arrays by matrix length alone; estimate 6 us.
+- [x] Deep-biome slice clamp | DOD: `SliceContainsDeepBiome` now clamps offset/count with `long` before scanning biome layers; rejected int overflow in chunk slice bounds; estimate 3 us.
 - [x] Payload count bound | DOD: nav snapshot rebuild now clamps payload iteration/counting to `payload.Nodes.Length`; rejected trusting a stale serialized Count over native buffer length; estimate 3 us.
 - [x] Nav node snapshot ingress guard | DOD: non-finite payload nodes are skipped before they enter `AbyssalNavNodeSnapshotNative` or the spatial hash; rejected hashing corrupt nodes into a fallback bucket; estimate 5 us.
 - [x] Conduit payload sanitation | DOD: non-finite conduit vectors become zero and non-finite conduit strengths become 0 before snapshot write; rejected poisoning A* conduit weighting downstream; estimate 4 us.
 - [x] Spatial hash reciprocal pass | DOD: nav graph cell coordinate and search-radius math now uses precomputed `math.rcp` and finite origin/cell-size guards; rejected repeated `/` and epsilon masking of corrupt cell sizes; estimate 5 us.
 - [x] Flow support reciprocal pass | DOD: flow-field nav support stencil now precomputes inverse cell size and inverse radius squared, skips non-finite nodes, and rejects invalid grid centers; rejected divide-per-node/per-cell support writes; estimate 6 us.
 
+## Loop 16 - Telemetry Reciprocal Cleanup
+
+- [x] Funnel timing reciprocal pass | DOD: `ResolveAbyssalPathElapsedMs` now converts stopwatch ticks with `math.rcp((double)Stopwatch.Frequency)`; rejected raw `/` in path telemetry conversion; estimate 1 us.
+
+## Loop 17 - Burst A* Workspace Guard
+
+- [x] A* workspace completeness | DOD: `NativeAStarJob` now requires parent/score/closed/heap arrays to be created and at least `Nodes.Length` before writing; rejected trusting scheduler capacity blindly; estimate 5 us.
+- [x] A* finite authority guards | DOD: non-finite start/end positions, start/end nodes, current nodes, neighbor nodes, distance squared, and tentative costs fail closed or skip; rejected NaN propagation into heap scores; estimate 8 us.
+- [x] A* non-negative weighting | DOD: threat weight is clamped non-negative and vertical allowance is clamped >= 0 before edge acceptance; rejected negative route costs or inverted vertical gates; estimate 4 us.
+
 ## Verification
 
-- [x] Static scan | PASS: `StringPullPathJob`, `NativeAStarJob`, `TryResolveAbyssalNavNodeCandidate`, abyssal nav support/hash, and nav graph ingress regions have no `math.normalize`, `math.length(`, `math.distance(`, `.normalized`, or raw `/` code matches after loop 15.
+- [x] Static scan | PASS: `StringPullPathJob`, `NativeAStarJob`, `TryResolveAbyssalNavNodeCandidate`, abyssal nav support/hash, nav graph ingress, and funnel telemetry conversion regions have no `math.normalize`, `math.length(`, `math.distance(`, `.normalized`, or raw `/` code matches after loop 17.
 - [x] Diff hygiene | PASS: `git diff --check` passed for edited funnel/scheduler/status/log files; only LF-to-CRLF working-copy warnings were emitted.
 - [x] Static H-Phi audit | ATTEMPTED: `Tools/Architecture/HectonPhiAudit.ps1 -Json` timed out after 120 seconds under current repo load; no score claimed from this pass.
 - [x] Compile check | BLOCKED BY DEPENDENCY: bounded no-reference `dotnet build Hecton8.Core.csproj --no-restore /m:1 /nr:false /p:BuildProjectReferences=false` completed with 63 unrelated errors in `VRAMEnforcer`, `VoxelDeltaProcessor`, `SealedDoor`, `BinaryLayoutManifest`, and `HardwareTierDetector`; none were reported in `VegetationFlowFieldIntegrator.cs`, `VegetationNavGridSynchronizer.cs`, or `HectonMapMagicVegetationBridge.cs`.

@@ -132,3 +132,27 @@ Scoped H-Phi evidence:
 - Static grep over IK runtime/job/shader scope found no `math.sqrt`, `math.normalize`, managed array creation, `foreach`, `string.Format`, `.ToString()`, `Debug.Log`, Unity Physics casts, `SkinnedMeshRenderer`, `renderer.material`, `Camera.main`, `GlobalRegistry.Get`, `GameObject.Find`, or `FindObject`.
 - `git diff --check` on touched code exits 0 with LF-to-CRLF warning only.
 - Boundary: no runtime H-Phi or global H-Phi score is claimed; Unity Editor import, play mode, profiler, and GC evidence remain pending.
+
+## Decision 10: Blackbox Dump Format Integrity
+
+Problem: `DumpTelemetryBlackBox()` advertised `TelemetryEntryPayloadBytes = 96`, but the manual `BinaryWriter` path only wrote 68 bytes of explicit fields per entry. It also wrote the circular ring in physical index order, not oldest-to-newest order, making postmortem reconstruction slower and easier to misread.
+Solution: Keep the 96-byte payload contract and write seven explicit zero padding floats per entry. Resolve the dump range from the current cursor and serialize entries chronologically from the oldest retained frame to the newest.
+Rejected Alternatives: Reducing the header payload size to 68 was rejected because the telemetry struct is explicitly `[StructLayout(... Size = 96)]` and downstream tooling should be able to trust the fixed-size contract. Leaving physical ring order was rejected because the blackbox requirement is last-frame history, not array-storage order.
+Scalability potential: Runtime Low/MX350/Ultra paths are unchanged. The dump is fault-path only and improves postmortem evidence quality without changing steady simulation cost.
+Hardware Impact: Hot-path cost is 0 us. Fault-path dump writes the same entry count plus 28 padding bytes per entry, roughly 8.4 KB extra for 300 frames, negligible versus crash-dump usefulness and not a frame-time path.
+
+## Decision 11: Telemetry Cursor Long-Uptime Wrap
+
+Problem: `LeviathanTerrainIkJob.WriteTelemetry()` reset `TelemetryCursor[0]` to zero after `int.MaxValue`. That branch is extreme-uptime only, but after it fires the next runtime-side `TelemetryHasInvalidFrame()` reads the physical last slot instead of the just-written slot, and `DumpTelemetryBlackBox()` can report zero retained entries.
+Solution: Preserve ring semantics on overflow by writing `TelemetryRing.Length + nextIndex`, keeping the cursor saturated above full-ring count while preserving the next write index modulo ring length.
+Rejected Alternatives: Leaving reset-to-zero was rejected because blackbox evidence must be trustworthy even in rare fault conditions. Adding a second native counter was rejected as unnecessary memory and write traffic for a single retained-ring state.
+Scalability potential: Low/MX350/Ultra runtime behavior is unchanged. This is one cold overflow branch in the telemetry write path and does not change segment count, SDF, or GPU presentation tiers.
+Hardware Impact: Hot-path cost is effectively 0 us; the branch only matters after about 2.1 billion telemetry writes. It prevents postmortem data loss instead of saving frame time.
+
+## Decision 12: SDF Sampler Hoist
+
+Problem: High-tier SDF contact called the trilinear sampler once for density and six more times for central-difference gradient. Each private sample repeated voxel-count validation and cell-size reciprocal setup even though the job had already proven the SDF payload valid.
+Solution: Keep the outer `canUseSdf` payload gate as the validation authority, compute `sdfInvCellSize` once per job execution, and pass it into density/gradient samples.
+Rejected Alternatives: Reducing gradient samples or replacing central differences with a cheaper 2D height normal was rejected because high/ultra tiers spend saved CPU on contact quality. Leaving repeated validation in the private sampler was rejected because it burns work inside the lower-five-segment terrain loop.
+Scalability potential: Low/MX350 remains unchanged because SDF is disabled. Middle/high/ultra keep the same visual contact result while reducing repeated scalar setup; ultra can spend the saved cycles on denser visual deformation without changing this API.
+Hardware Impact: Estimated gain is 0.5-2 us on high-tier SDF-contact frames, depending how many lower segments penetrate rock. No profiler-backed number is claimed.

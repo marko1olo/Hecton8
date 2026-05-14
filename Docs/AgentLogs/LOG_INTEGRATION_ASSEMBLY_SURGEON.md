@@ -35,3 +35,65 @@ Residual risk:
 - Fresh compile is PENDING VERIFICATION by user no-dotnet order.
 - Unity Editor import, Unity Console, Play Mode, profiler, GCMonitor, and player build were not run.
 - Full H-Phi asmdef cleanup requires staged contract extraction for `LeviathanTerrainIkJob`, `MacroSwarm`, `SoundEmissionSignal`, and other cross-domain DTOs before leaf references can be safely removed from `Hecton8.Core.asmdef`.
+
+## 2026-05-15 - H-Phi Core Graph Audit Tooling
+
+What was wrong:
+- Core graph H-Phi debt was measurable only through ad hoc manual scans.
+- Manual scans are brittle in this project because `Hecton8.Core.asmdef`, generated `.csproj` files, and `Directory.Build.props` can churn independently.
+
+What was done:
+- Extended `Tools/Architecture/HectonPhiAudit.ps1` with `-CoreGraphOnly`.
+- The new mode classifies `Hecton8.Core.asmdef` references by CoreFamily, MathNative, Contract, LeafDomain, PackageOrUnity, and Other.
+- The new mode classifies generated `Hecton8.Core.csproj` project references by ContractOrCore, FirstPartyLeaf, and PackageOrGenerated.
+- The new mode reports whether `Directory.Build.props` has the Core `BuildProjectReferences=false` and `BuildInParallel=false` gate.
+
+Cinematic cheats used:
+- Static graph audit instead of compile or Unity import.
+- No runtime code changed.
+
+Exact microseconds saved:
+- Runtime frame time: 0 us changed.
+- Fresh build-time savings: not claimed because dotnet is forbidden in this continuation.
+- Developer iteration value: static graph-only audit completed and avoids full source scan pressure when the Integrator only needs Core dependency debt.
+
+Verification:
+- Command run: `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly`.
+- Evidence class: STATIC_SOURCE.
+- Result: Core build gate present; 46 Core asmdef refs; 28 Core asmdef H-Phi debt refs; 12 generated Core project refs; 10 generated Core project debt refs.
+- No `dotnet build`, `dotnet rebuild`, or `dotnet msbuild` was run.
+
+Residual risk:
+- This does not prove compilation or Unity import.
+- It exposes dependency debt; it does not remove leaf references because DTO extraction needs a compile-enabled integration pass.
+
+## 2026-05-15 - H-Phi Core Graph Budget Gate
+
+What was wrong:
+- Graph debt counts were visible but not enforceable. A future agent could add one more Core-to-leaf reference and the audit would still exit clean unless someone read the report.
+
+What was done:
+- Added `-RequireCoreBuildGate` to fail when the Core `BuildProjectReferences=false` / `BuildInParallel=false` guard is incomplete.
+- Added `-MaxCoreAsmdefDebtReferences` to cap Core asmdef H-Phi debt.
+- Added `-MaxGeneratedProjectDebtReferences` to cap generated Core project-reference H-Phi debt.
+- Exercised the gate against the current static baseline: 28 Core asmdef debt refs and 10 generated project debt refs.
+- Reworked the failure path to throw one aggregated budget exception instead of stopping on the first `Write-Error`.
+
+Cinematic cheats used:
+- No-regression budget gate instead of unsafe leaf-reference deletion.
+- Static source audit instead of compile.
+
+Exact microseconds saved:
+- Runtime frame time: 0 us changed.
+- Fresh build-time savings: not claimed.
+
+Verification:
+- Command run: `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -RequireCoreBuildGate -MaxCoreAsmdefDebtReferences 28 -MaxGeneratedProjectDebtReferences 10`.
+- Failure-path command run under catch: `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -MaxCoreAsmdefDebtReferences 0`.
+- Evidence class: STATIC_SOURCE.
+- Result: exit code 0; Core build gate present; debt counts at baseline.
+- Failure-path result: `EXPECTED_BUDGET_FAIL_PATH_OK`.
+- No `dotnet build`, `dotnet rebuild`, or `dotnet msbuild` was run.
+
+Residual risk:
+- Budget values are baseline caps, not architectural approval. They prevent regression, but reducing the counts still requires staged contract extraction and fresh compile validation.

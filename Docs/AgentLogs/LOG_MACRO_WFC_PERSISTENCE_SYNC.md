@@ -269,3 +269,60 @@ Verification:
 - Static scans confirm `PayloadHeaderBytes` and `PayloadMaxBytes` constants are unchanged.
 - `git diff --check` reports no whitespace errors except Git CRLF normalization warnings.
 - No `dotnet` rebuild was run.
+
+## Recheck Report: Hydration Telemetry And Probe Fairness
+Status: PENDING VERIFICATION.
+
+What was wrong:
+- Current source already warned on corrupt hydration payloads, so the compacted note was stale.
+- The real hydration risk was first-four slot bias: `DrainWfcSectorHydratedSignals` ignored valid WFC-sized `SectorHydratedSignal` entries after index 3.
+
+What was done:
+- Kept the existing corrupt hydration warning path intact.
+- Replaced the first-four signal slice with a full fixed-lane scan.
+- Capped actual WFC-sized hydration probes at four to preserve bounded Tick cost.
+- Kept DataVault WFC grid resolution lazy so frames without WFC-sized hydration candidates do no grid work.
+
+Cinematic cheats used:
+- No simulation replay and no world-generation catch-up.
+- Hydration still injects the compact four-plane truth bitmask only when the database payload is valid.
+
+Exact microseconds saved:
+- Measured savings: 0 us. No profiler or runtime trace.
+- Static gain: removes a slot-order correctness loss that could force fresh outpost generation instead of restored visual truth.
+- Static cost: up to 64 signal-struct inspections and at most four WFC restore probes per Tick.
+
+Verification:
+- Static scans confirm `MaxWfcSectorHydrationProbesPerTick`, full snapshot scanning, and no remaining `MaxWfcSectorHydratedSignalsPerTick`.
+- Static scans confirm hydration decode failures call `PublishWfcCorruptPayloadWarning()`.
+- `git diff --check` reports no whitespace errors except Git CRLF normalization warnings.
+- No `dotnet` rebuild was run.
+
+## Recheck Report: Pooled Datapad Baseline Restore
+Status: PENDING VERIFICATION.
+
+What was wrong:
+- `MessageTerminal` WFC restore marked all messages read for a looted datapad.
+- A later pooled reuse with an unlooted WFC cell had no path to restore authored unread/baseline state.
+- Null `MessageEntry` slots could still break persistence-adjacent message scans.
+
+What was done:
+- Added a cold `_initialReadStates` baseline for authored terminal read flags.
+- Rebuilt `_readMessageIds` from current message state instead of duplicating read-set logic.
+- Restored baseline message state when WFC config has no `DatapadLooted` bit.
+- Added null-entry guards in WFC read-state loops, pending scan, playback start/completion, and editor duration refresh.
+
+Cinematic cheats used:
+- No per-cell datapad history replay.
+- No managed runtime map; pooled proxy state resets from the authored local baseline plus the four-plane WFC save bit.
+
+Exact microseconds saved:
+- Measured savings: 0 us. No profiler or runtime trace.
+- Static gain: avoids cross-sector pooled state contamination and corrective persistence writes.
+- Static cost: one cold `bool[messages.Length]` allocation per terminal instance; branch-only scans during cold configure/editor paths.
+
+Verification:
+- Static scans confirm `_initialReadStates`, baseline capture, baseline restore, and read-set rebuild helpers.
+- Static scans confirm no direct unsafe `messages[i].isRead/messageId/audioClip` access remains.
+- `git diff --check` reports no whitespace errors except Git CRLF normalization warnings.
+- No `dotnet` rebuild was run.

@@ -263,3 +263,32 @@ Verification state:
 - Static C# read confirms the material binds the current parity velocity buffer.
 - Static shader read confirms velocity tint is gated by `_CarveDebrisMaterialParams.w`.
 - Unity compile remains PENDING/BLOCKED by local editor/license state; no fake pass recorded.
+
+## 2026-05-15 - Static Verification Closeout Under No-Dotnet Constraint
+
+What was wrong:
+- The VFX lane needed a final evidence pass after render/cache and high-tier fresh-edge upgrades.
+- The current `CURRENT_BATCH.md` no longer contains this agent's XML tag, so prompt re-extraction cannot be repeated from the active batch without borrowing another agent's block.
+- Unity compile cannot be truthfully claimed from this session, and the user explicitly forbade dotnet rebuilds.
+
+What was done:
+- Re-read status and rationale before reporting.
+- Ran `git diff --check` on the touched renderer, shader, status, rationale, and log files; only Git LF/CRLF notices appeared.
+- Scanned touched VFX code for forbidden hot-path patterns: `GetData`, `SetData`, `ParticleSystem`, `ComputeBuffer`, `foreach`, `.ToString`, `string.Format`, `Camera.main`, scene search, `JobHandle`, `.Schedule()`, and `.Complete()`.
+- Scanned debris/flow shaders for hot math regressions: `sincos`, raw `sin`, raw `cos`, `pow`, `exp`, `log`, and raw `normalize`.
+- Confirmed velocity buffer binding, impact mask shader path, and one-frame draw mesh cache call sites.
+- Did not run dotnet build, dotnet rebuild, or Unity batch compile.
+
+Cinematic cheats used:
+- Orientation remains a hash-vector visual fake instead of physical angular state.
+- Fresh fracture readability is bought with existing velocity data on non-low tiers, not with CPU color uploads.
+- Low tier keeps the cheap silhouette and bypasses the extra shader velocity response.
+
+Exact microseconds saved:
+- Verification saves 0 us at runtime.
+- Preserved estimates: 25-35 us from low-tier 1024 active dispatch cap, 20-70 us from batched same-frame injection without scheduler fences, 15-60 us from monotonic dense-batch slot scanning, sub-10 us CPU from cached mesh draw metadata, and visible-count-dependent GPU ALU savings from removing per-vertex `sincos`.
+
+Verification state:
+- Static verification passed for the touched VFX lane.
+- `CURRENT_BATCH.md` exact prompt tag count for `VFX_SDF_CARVE_DEBRIS`: 0.
+- Unity compile remains BLOCKED/UNCLAIMED; no dotnet rebuild was run.
