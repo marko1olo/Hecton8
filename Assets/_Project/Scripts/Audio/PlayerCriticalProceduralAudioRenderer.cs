@@ -2963,13 +2963,15 @@ namespace Hecton8.Audio
 
         private bool TryHandleHighSpeedImpactSignal(in HighSpeedImpactSignal signal)
         {
-            uint signalSignature = ResolveHighSpeedImpactSignature(in signal);
-            if (IsDuplicateHighSpeedImpactSignal(signal.Frame, signalSignature) ||
-                !math.isfinite(signal.ImpactSpeed) ||
+            if (!math.isfinite(signal.ImpactSpeed) ||
                 !math.isfinite(signal.LostKineticEnergy))
             {
                 return false;
             }
+
+            uint signalSignature = ResolveHighSpeedImpactSignature(in signal);
+            if (IsDuplicateHighSpeedImpactSignal(signal.Frame, signalSignature))
+                return false;
 
             float speed = math.max(0f, signal.ImpactSpeed);
             float speedSq = speed * speed;
