@@ -15,3 +15,9 @@ Task loop 1:
 - [x] Verify repository status and conflict marker scan | DOD: no unmerged paths; no `<<<<<<<`/`>>>>>>>`; `git diff --check` only line-ending warnings | Rejected: chat-only claim | Estimate: 0 us runtime.
 - [BLOCKED BY DEPENDENCY] CLI compile green proof | DOD attempted: `dotnet build Assembly-CSharp.csproj` x3 | Rejected: reporting green without artifact | Estimate: 0 us runtime. Blocker: MSBuild node failure, then missing generated `Temp/obj/project.assets.json`, then restore/build timeout. Unity Console still required.
 - [x] Append final agent log | DOD: disk report in `Docs/AgentLogs/LOG_GIT_CONFLICT_RESOLUTION.md` | Rejected: chat-only report | Estimate: 0 us runtime.
+
+Task loop 2:
+- [x] Commit active local tail safely | DOD: repeated `git diff --check` / marker scans before checkpoint commits | Rejected: reset/discard of parallel-agent work | Estimate: 0 us runtime.
+- [x] Merge Sabine remote commits | DOD: `origin/main` merged with ort strategy, no unmerged paths | Rejected: push before integrating remote divergence | Estimate: 0 us runtime.
+- [x] Repair push credentials | DOD: GCM account list included `marko1olo`; local repo credential helper bypasses stale global `store` | Rejected: force-push, remote rewrite, credential deletion | Estimate: 0 us runtime.
+- [x] Push `main` | DOD: `git push origin main:main` succeeded twice; `git fetch origin` then `rev-list origin/main...HEAD` returned `0 0` | Rejected: GitHub Desktop-only unverified push | Estimate: 0 us runtime.

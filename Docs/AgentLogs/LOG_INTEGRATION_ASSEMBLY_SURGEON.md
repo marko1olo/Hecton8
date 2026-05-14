@@ -268,3 +268,42 @@ Verification:
 Residual risk:
 - Other concurrent agents have unrelated working-tree edits. They were not reverted or claimed.
 - This is CLI Core compile proof only; Unity editor import/playmode proof remains outside this task.
+
+## 2026-05-15 - Post-Green H-Phi Static Hardening
+
+What was wrong:
+- Core asmdef debt pruning still depended on manual grep evidence instead of a repeatable candidate scan.
+- `Directory.Build.targets` had a second Core lane for project-reference replacement refs. The old bridge budget of 8 only described compile-bridge debt and did not expose 12 replacement debt refs.
+- The bridge counter included a `<Reference Remove=...>` node as a reference edge.
+- `Hecton8.Input.Generated` had reappeared in the project-reference replacement lane even though Core source does not use `HectonInputActions`.
+
+What was done:
+- Added `-IncludeUnusedCoreReferenceScan` to `Tools/Architecture/HectonPhiAudit.ps1`.
+- Added `BridgeLane` labels to bridge rows: `CoreCompileBridge` and `ProjectReferenceReplacement`.
+- Corrected bridge counting to count only `Reference Include` edges.
+- Added `-MaxSourceBackedCompileBridgeDebtReferences` and `-MaxProjectReferenceReplacementDebtReferences`.
+- Removed the stale `Hecton8.Input.Generated` replacement reference from `Directory.Build.targets`.
+- Updated `Docs/ARCHITECTURE/HECTON_PHI_STATIC_METRIC.md` with bridge lanes, the optional candidate scan, and the honest current budget command.
+
+Cinematic Cheats used:
+- Static graph surgery and no-regression gates only.
+- No runtime physical simulation, gameplay loop, rendering path, input path, or package source was changed.
+
+Exact Microseconds saved:
+- Runtime frame time saved: 0 us.
+- Build time saved: not claimed in this post-green pass because no dotnet command was run.
+- Static debt changed: replacement bridge debt reduced by 1 (`Hecton8.Input.Generated` removed).
+- Current graph baseline: 43 Core asmdef refs / 25 asmdef debt refs; 12 generated project refs / 10 generated-project debt refs; 31 source-backed bridge refs / 20 total bridge debt refs; 8 compile-bridge debt refs; 12 project-reference replacement debt refs.
+
+Verification:
+- Evidence class: STATIC_SOURCE + STATIC_DOC.
+- No `dotnet build`, `dotnet rebuild`, or `dotnet msbuild` was run in this post-green pass.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -IncludeUnusedCoreReferenceScan -Summary -Json`: 1065 Core compile-surface files, 25 scanned asmdef debt refs, `CandidateCount=0`.
+- Budget pass: `-MaxCoreAsmdefDebtReferences 25 -MaxGeneratedProjectDebtReferences 10 -MaxSourceBackedBridgeDebtReferences 20 -MaxSourceBackedCompileBridgeDebtReferences 8 -MaxProjectReferenceReplacementDebtReferences 12`.
+- Expected failures passed for asmdef 24, total bridge 19, compile-bridge 7, and replacement 11.
+- `Directory.Build.targets` XML parse: OK.
+- `Hecton8.Input.Generated` is absent from `Hecton8.Core.asmdef` and `Directory.Build.targets`.
+
+Residual risk:
+- This pass is not new compile proof. Existing `Fresh12` remains the last disk compile artifact.
+- Remaining Core asmdef debt has static external hits; reducing it requires staged contract extraction and a compile-enabled lane.

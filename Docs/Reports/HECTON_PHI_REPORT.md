@@ -675,7 +675,7 @@ Comparison:
 
 Residual bottlenecks:
 - Data Sovereignty remains the hard floor: `151 / (151 + 7,018) = 0.021062910`.
-- Core graph debt remains: Core asmdef debt references `25`, generated project debt references `10`, source-backed bridge debt references `21`.
+- Core graph debt remains: Core asmdef debt references `25`, generated project debt references `10`, source-backed bridge debt references `20`, compile-bridge debt references `8`, project-reference-replacement debt references `12`.
 - AUP precision risk remains low but nonzero: `6` risk refs.
 - Owner-blocked NativeArray migrations still require domain-owner BufferID/SystemID/generation/disposal proof before code migration.
 - Runtime verification remains absent by user order.

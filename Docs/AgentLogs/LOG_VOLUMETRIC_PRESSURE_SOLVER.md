@@ -317,3 +317,14 @@ Follow-up upgrade 33:
 Exact microseconds saved after follow-up 33:
 - Stable analytical reset/commit ticks skip redundant emergency-state shader global writes.
 - Estimated 1-3 us saved on i3/MX350 stress/reset-heavy frames; stale sub-epsilon vibration is cleared; contract layout cost is 0 us/frame.
+
+Follow-up upgrade 34:
+- What was wrong: analytical habitat stress used a 0.0025 CPU publish epsilon, but `_HectonHabitatStressParams` could still carry tiny positive stress and CoreLit accepted it at 0.0001, keeping near-calm dent math alive.
+- What was done: `PublishAnalyticalStressShader` now publishes zero stress and zero displacement at or below `AnalyticalShaderStressEpsilon`, skips repeated zero vector writes after the first clear, and forces dispose cleanup. `Hecton_CoreLit.hlsl` now uses `HECTON_CORE_LIT_HABITAT_STRESS_EPSILON` at 0.0025 before habitat analytical dent work.
+- Cinematic cheat used: sub-epsilon analytical pressure is visually silent. Active High/Ultra pressure still gets the grid dent fake; near-calm states buy back vertex ALU.
+- Static checks: `rg` confirms `visibleStress01` controls analytical stress publication and CoreLit uses the habitat epsilon macro; exact shader `normalize()`/`sqrt()` scan produced no matches across touched habitat/CoreLit/UberNoir shader files; managed-offender scans found no C# string/LINQ/foreach offenders; touched C#/shader brace counts are balanced; `git diff --check` reports only CRLF normalization warnings.
+- Rebuild policy: no `dotnet` rebuild and no Unity rebuild were run by explicit user instruction.
+
+Exact microseconds saved after follow-up 34:
+- Near-calm CoreLit vertices skip analytical habitat dent setup below the 0.0025 CPU visibility threshold.
+- Estimated 2-8 us saved per 1k CoreLit vertices in near-calm habitat views on MX350-class GPUs; 0 B/frame.

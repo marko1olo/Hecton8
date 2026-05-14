@@ -1595,6 +1595,20 @@ namespace Hecton8.SaveSystem
             return Math.Clamp(count, 0, upperBound);
         }
 
+        private static int ClampPairedCollectionCount<T0, T1, T2>(
+            int count,
+            int maxCount,
+            T0[] values0,
+            T1[] values1,
+            T2[] values2)
+        {
+            int upperBound = Math.Max(maxCount, 0);
+            upperBound = Math.Min(upperBound, values0 != null ? values0.Length : 0);
+            upperBound = Math.Min(upperBound, values1 != null ? values1.Length : 0);
+            upperBound = Math.Min(upperBound, values2 != null ? values2.Length : 0);
+            return Math.Clamp(count, 0, upperBound);
+        }
+
         private static bool WriteProceduralFaunaStateArray(ref BufferWriter writer, ProceduralFaunaStateDTO[] values, int count)
         {
             if (values == null)

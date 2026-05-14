@@ -185,6 +185,11 @@ Execution lane: SIMULATION / `PriorityLayer.Player`
 - [x] Final latch telemetry angle refreshed from native state. DOD: after `TryLatch(currentAngle)` mutates `_leverAngles[0]` to `maxAngleDegrees`, `Tick()` refreshes `currentAngle` from `_leverAngles[0]` before `WriteBlackBoxFrame(currentAngle)`. Rejected: writing a latched telemetry flag with a pre-latch angle while target/velocity already reflect the forced max state. Estimate: one scalar native read on lever ticks; 0 B/frame allocations.
 - [x] Reverification without dotnet. DOD: `git diff --check` passed with CRLF warnings only; forbidden-pattern scan over `OpenXRManualOverrideLever.cs` returned no matches; source counter reports `LatchRefreshBeforeBlackbox=1`, `StaleLatchWriteSequence=0`, `TryLatchUnregisterPair=1`, `DotnetMention=0`. Rejected: dotnet rebuild/probe by explicit user instruction. Estimate: verification only.
 
+## Loop 28 - Dispatcher Hot-Swap Tick Identity
+
+- [x] Dispatcher rebinding unregisters before re-registering. DOD: `OnGlobalRegistryServiceReplaced(GlobalRegistryServiceSlot.Dispatcher, ...)` now calls `TryUnregisterTick()` instead of blindly clearing `_registeredTick`; if a replacement dispatcher exists, lifecycle native state is ensured and normal guarded registration runs. Rejected: setting the local flag false while the lever could still be present in static dispatcher/GlobalRegistry buckets. Estimate: cold hot-swap only; prevents stale player-lane entries and missed teardown.
+- [x] Reverification without dotnet. DOD: `git diff --check` passed with CRLF warnings only; scoped forbidden-pattern counter reports `ForbiddenPatternTotal=0`; source counter reports `DispatcherHotSwapUnregister=1`, `BlindRegisteredTickFalse=0`, `LatchRefreshBeforeBlackbox=1`, `DotnetMention=0`. Rejected: dotnet rebuild/probe by explicit user instruction. Estimate: verification only.
+
 STATUS: PENDING VERIFICATION - Unity editor/global Core compile dependency wall prevents full player compile proof in this session.
 
 ## Compile Attempts

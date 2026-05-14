@@ -52,3 +52,28 @@ Verification:
 - Strict conflict marker scans found no active `<<<<<<<`, `=======`, or `>>>>>>>` markers in changed files.
 - `git merge origin/main --no-edit` completed cleanly.
 - `git push origin main` failed after merge with `Repository not found`; `git credential-manager diagnose` passed, so the remaining blocker is repository URL/access/credential authorization.
+
+## 2026-05-15 - Auth Repair and Successful Push
+
+What was wrong:
+- Git Credential Manager listed `shlomapetia`, while the repo and GitHub Desktop session targeted `marko1olo/Hecton8`.
+- Global `credential.helper=store` was still available and could feed stale credentials into CLI Git.
+- Parallel agents continued writing files during cleanup, so the worktree could become dirty immediately after a successful push.
+
+What was done:
+- Added local repo credential isolation: empty helper reset plus `manager`, with username pinned to `marko1olo`.
+- Ran Git Credential Manager browser login for `marko1olo`; GCM then listed both `shlomapetia` and `marko1olo`.
+- Merged remote Sabine proof commits, created checkpoint commits for active local tails, and pushed `main` to `origin`.
+- Verified after fetch: `origin/main...HEAD` returned `0 0`; latest pushed HEAD was `a8552bff4`.
+
+Cinematic Cheats used:
+- None. Git/auth-only operation.
+
+Exact Microseconds saved:
+- Runtime saved: 0 us. Dev-path saved: repeated 404 push loop removed; exact wall-clock savings not benchmarked.
+
+Verification:
+- `git push origin main:main --progress` succeeded.
+- `git fetch origin` succeeded after push.
+- `git rev-list --left-right --count origin/main...HEAD` returned `0 0`.
+- Active parallel-agent edits may appear after the pushed HEAD; those are new post-push dirty worktree changes, not unpushed committed history.

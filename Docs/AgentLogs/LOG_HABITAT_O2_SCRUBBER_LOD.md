@@ -117,3 +117,22 @@ Cinematic Cheats used:
 
 Exact microseconds saved:
 - No frame-time saving claimed. Cost is one int lane per base and one integer update per transition packet. No dotnet rebuild was run.
+
+## 2026-05-15 - H-Phi Audit Addendum
+STATUS: PENDING VERIFICATION
+
+What was checked:
+- Ran `Tools/Architecture/HectonPhiAudit.ps1 -Summary`; first two-minute run timed out, longer retry completed.
+
+Result:
+- Evidence class: STATIC_SOURCE.
+- RuntimeHPhiRisk: 0.000573574.
+- DataSovereignty: 0.021057035.
+- DataVaultRefs: 151.
+- NativeArrayRefs: 7020.
+
+Decision:
+- Kept DataVault ownership scoped to `BaseAwakeState`. Moving the front/back Dalton gas arrays now would require generation-handle and job-swap redesign outside this prompt.
+
+Exact microseconds saved:
+- None claimed. This was audit evidence, not runtime work. No dotnet rebuild was run.

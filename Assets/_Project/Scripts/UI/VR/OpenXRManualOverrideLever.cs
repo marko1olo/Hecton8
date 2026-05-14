@@ -504,7 +504,7 @@ namespace Hecton8.UI.VR
 
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
-                _registeredTick = false;
+                TryUnregisterTick();
                 if (currentService == null)
                     return;
 

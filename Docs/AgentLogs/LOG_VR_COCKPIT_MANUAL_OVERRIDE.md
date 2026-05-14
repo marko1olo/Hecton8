@@ -277,3 +277,15 @@ Cinematic Cheats used: no new physical simulation. This preserves the scalar kin
 Exact microseconds saved/spent: spends one scalar NativeArray read on active lever ticks after latch evaluation. The cost is below measurement noise and adds 0 B/frame.
 
 Verification: `git diff --check` passed with CRLF warnings only. Forbidden-pattern scan over `OpenXRManualOverrideLever.cs` returned no matches. Source counter reports `LatchRefreshBeforeBlackbox=1`, `StaleLatchWriteSequence=0`, `TryLatchUnregisterPair=1`, `DotnetMention=0`. `CURRENT_BATCH.md` extraction still returns no matching prompt block. No dotnet rebuild/probe was run by user instruction.
+
+## 2026-05-15 - Dispatcher Hot-Swap Tick Identity
+
+What was wrong: dispatcher service replacement cleared `_registeredTick` without removing the lever from the static dispatcher lane and GlobalRegistry updatable bucket first.
+
+What was done: changed the dispatcher hot-swap branch to call `TryUnregisterTick()` before re-registering against the replacement service. Existing `_latched`, native-state, and play-mode guards still control registration.
+
+Cinematic Cheats used: no simulation change. This is lifecycle bookkeeping so the kinematic lever has exactly one dispatcher identity.
+
+Exact microseconds saved/spent: no steady-frame cost. Cold dispatcher replacement pays one fixed-bucket unregister scan and prevents permanent stray tick slots after hot-swap.
+
+Verification: `git diff --check` passed with CRLF warnings only. Scoped forbidden-pattern counter reports `ForbiddenPatternTotal=0`; source counter reports `DispatcherHotSwapUnregister=1`, `BlindRegisteredTickFalse=0`, `LatchRefreshBeforeBlackbox=1`, `DotnetMention=0`. `CURRENT_BATCH.md` extraction still returns no matching prompt block. No dotnet rebuild/probe was run by user instruction.

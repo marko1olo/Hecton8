@@ -151,6 +151,8 @@ namespace Hecton8.UI
         private ComputeBuffer _spriteUvBuffer;
         private NativeArray<TooltipBlackBoxEntry> _blackBox;
         private TMP_FontAsset _cachedAsciiFont;
+        private Texture _runtimeFontAtlasTexture;
+        private Texture _runtimeSpriteAtlasTexture;
         private Camera _cachedRenderCamera;
         private Transform _cachedRenderCameraTransform;
         private IInputDeterminismService _inputDeterminism;
@@ -256,6 +258,7 @@ namespace Hecton8.UI
             Vector4 tint = new Vector4(resolvedColor.r, resolvedColor.g, resolvedColor.b, resolvedColor.a * _visibleAlpha);
             bool lowTier = IsLowTier();
             float ditherEnabled = lowTier ? 0f : 1f;
+            int renderLayer = gameObject.layer;
             Bounds bounds = new Bounds(anchorPosition, _cachedBoundsSize);
             UploadUvTablesIfDirty();
 
@@ -275,7 +278,7 @@ namespace Hecton8.UI
                     _iconInstanceBuffer,
                     _iconArgsBuffer,
                     _spriteUvBuffer,
-                    spriteAsset != null ? spriteAsset.spriteSheet : null,
+                    _runtimeSpriteAtlasTexture,
                     _iconPropertyBlock,
                     ref _boundIconTexture,
                     ref _boundIconInstanceBuffer,
@@ -285,6 +288,7 @@ namespace Hecton8.UI
                     ref _boundIconDitherEnabled,
                     ref _boundIconArgsCount,
                     _iconCount,
+                    renderLayer,
                     tint,
                     ditherEnabled);
             }
@@ -305,7 +309,7 @@ namespace Hecton8.UI
                     _textInstanceBuffer,
                     _textArgsBuffer,
                     _fontUvBuffer,
-                    fontAsset != null ? fontAsset.atlasTexture : null,
+                    _runtimeFontAtlasTexture,
                     _textPropertyBlock,
                     ref _boundTextTexture,
                     ref _boundTextInstanceBuffer,
@@ -315,6 +319,7 @@ namespace Hecton8.UI
                     ref _boundTextDitherEnabled,
                     ref _boundTextArgsCount,
                     _textGlyphCount,
+                    renderLayer,
                     tint,
                     ditherEnabled);
             }
@@ -551,11 +556,15 @@ namespace Hecton8.UI
             TMP_FontAsset font = fontAsset != null ? fontAsset : TMP_Settings.defaultFontAsset;
             if (font == null)
             {
+                _runtimeFontAtlasTexture = null;
+                _runtimeSpriteAtlasTexture = null;
                 _textGlyphCount = 0;
                 _iconCount = 0;
                 return;
             }
 
+            _runtimeFontAtlasTexture = font.atlasTexture;
+            _runtimeSpriteAtlasTexture = null;
             RefreshAsciiCharacterCache(font);
             int atlasWidth = Mathf.Max(1, font.atlasWidth);
             int atlasHeight = Mathf.Max(1, font.atlasHeight);
@@ -678,6 +687,8 @@ namespace Hecton8.UI
             if (spriteAsset == null || spriteAsset.spriteSheet == null || spriteAsset.spriteCharacterTable == null)
                 return false;
 
+            Texture spriteSheet = spriteAsset.spriteSheet;
+            _runtimeSpriteAtlasTexture = spriteSheet;
             int spriteIndex = ResolveInteractSpriteIndex(_activeSchemeHash != 0u ? _activeSchemeHash : ResolveCurrentSchemeHash());
             if ((uint)spriteIndex >= (uint)spriteAsset.spriteCharacterTable.Count || (uint)spriteIndex >= UvTableCapacity)
                 return false;
@@ -687,8 +698,8 @@ namespace Hecton8.UI
                 return false;
 
             Glyph glyph = spriteCharacter.glyph;
-            int atlasWidth = Mathf.Max(1, spriteAsset.spriteSheet.width);
-            int atlasHeight = Mathf.Max(1, spriteAsset.spriteSheet.height);
+            int atlasWidth = Mathf.Max(1, spriteSheet.width);
+            int atlasHeight = Mathf.Max(1, spriteSheet.height);
             GlyphRect rect = glyph.glyphRect;
             GlyphMetrics metrics = glyph.metrics;
             float invAtlasWidth = math.rcp(math.max(1f, atlasWidth));
@@ -920,6 +931,7 @@ namespace Hecton8.UI
             ref float boundDitherEnabled,
             ref int boundArgsCount,
             int count,
+            int renderLayer,
             Vector4 tint,
             float ditherEnabled)
         {
@@ -970,7 +982,7 @@ namespace Hecton8.UI
                 propertyBlock,
                 ShadowCastingMode.Off,
                 false,
-                gameObject.layer,
+                renderLayer,
                 camera,
                 LightProbeUsage.Off,
                 null);

@@ -490,3 +490,34 @@ Verification:
 - Unity MCP console/profiler: unavailable from this session.
 
 Status: PENDING VERIFICATION. Static source audits pass; compile/runtime proof remains pending by user instruction and external Core blocker.
+
+## 2026-05-15 - WFC Outpost Loop 23 Owner Render AUP Upload Fence
+
+What was wrong:
+- The public graphics-buffer accessor now rejected AUP shift/upload windows, but the owning `Render` method could still submit the old GPU matrix buffer while `_jobPhase == JobPhase.Shifting` or `_matrixUploadDirty` was true.
+- During that window, shell visuals could lag behind already-shifted proxies and draw bounds.
+- The user explicitly forbade `dotnet` rebuilds again.
+
+What was done:
+- Added the same AUP/upload fence to `Render`, skipping indirect shell submission while a CPU matrix shift is in progress or while shifted matrices have not yet been uploaded.
+- Kept the change allocation-free and inside the existing single indirect draw path.
+- Re-ran source-only audits without any `dotnet` rebuild.
+
+Cinematic Cheats used:
+- One-frame fail-closed rendering beats a physically correct recovery pass. The outpost shell waits for coherent GPU data instead of simulating or correcting stale shell transforms.
+- Low tier skips incoherent geometry on rare AUP events; High/Ultra resume the same visual-overkill shader path after the owner upload.
+
+Exact Microseconds saved:
+- New cost: two scalar checks in `Render`, estimated below 0.05 us/frame on i3/MX350.
+- Saved cost: avoids stale indirect draw submission and consumer-side correction work during AUP shifts.
+- Hot path remains 0 B/frame; no new signals, buffers, registries, or GameObjects.
+
+Verification:
+- Targeted render guard scan: PASS; `Render` includes `_jobPhase == JobPhase.Shifting` and `_matrixUploadDirty`.
+- Forbidden construct audit: PASS; no raw hash comparison, shader-global/material mutation, global publish wrapper, prefab shell `Instantiate`, `BaseGenerator`, `math.pow`, telemetry modulo, or `foreach` matches in owned outpost files.
+- Scoped H-Phi counts remain `GlobalRegistrySurface=12`, `SignalBusPush=1`, `EventPublish=0`, `StructLayoutAttributes=6`.
+- `git diff --check`: PASS with repository CRLF warning only.
+- `dotnet` rebuilds/response-file compiles: NOT RUN by explicit user request.
+- Unity MCP console/profiler: unavailable from this session.
+
+Status: PENDING VERIFICATION. Static source audits pass; compile/runtime proof remains pending by user instruction and external Core blocker.

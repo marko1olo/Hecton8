@@ -382,7 +382,7 @@ Phi Gain:
 - Data Sovereignty moved `0.018825826 -> 0.021062910` in the current tree.
 - Memory alignment moved `0.500794071 -> 0.502645503` in the current tree.
 - AUP precision integrity is now visible in the summary: `0.983739837`.
-- Current Core asmdef debt references: `25`; generated project debt references: `10`; source-backed bridge debt references: `21`.
+- Current Core asmdef debt references: `25`; generated project debt references: `10`; source-backed bridge debt references: `20`; compile-bridge debt references: `8`; project-reference-replacement debt references: `12`.
 - Important: the score movement includes concurrent workspace changes and static model changes. It is not measured frame-time gain.
 
 Regression Model:

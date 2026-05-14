@@ -17,3 +17,9 @@ Solution: Added zero-allocation byte validators and deterministic radius resolve
 Rejected Alternatives: Re-adding `_cameraResolveAttempted` would compile but preserve a forbidden camera lookup path; blanket revert would drop global cave SDF binding work from the incoming change.
 Scalability potential: Low uses existing low-tier particle cap; Middle/High/Ultra keep richer debris with global SDF gating. Visual overkill path remains the high-tier 64-particle carve injection and cave SDF advection.
 Hardware Impact: 0 allocation; estimated i3/MX350 gain versus stale camera fallback is avoidance of any accidental `Camera.main` hierarchy lookup. Static estimate only; profiler proof absent.
+
+Problem: Push kept returning GitHub 404 after merge completion even though `origin` pointed at `https://github.com/marko1olo/Hecton8.git`.
+Solution: Identified credential divergence: Git Credential Manager listed `shlomapetia` while GitHub Desktop was signed in as `marko1olo`. Added local repo credential isolation (`credential.helper =` then `credential.helper = manager`) to bypass stale global `store`, pinned credential username to `marko1olo`, ran GCM browser login for `marko1olo`, then pushed.
+Rejected Alternatives: Changing the remote URL blindly, deleting Windows credentials, deleting stashes, or force pushing. Those would hide the real auth fault or risk remote/user data.
+Scalability potential: Not a runtime system. Low/Middle/High/Ultra gameplay tiers unchanged.
+Hardware Impact: 0 us runtime impact. Dev-path gain is removal of repeated failed push attempts from the local workflow.

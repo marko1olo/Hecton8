@@ -256,11 +256,6 @@ namespace Hecton8.UI
 
         private void Unsubscribe()
         {
-            if (_subscribedInventory != null)
-            {
-                _subscribedInventory.InventoryChanged -= HandleInventoryChanged;
-                _subscribedInventory = null;
-            }
             if (_subscribedToolManager != null)
             {
                 _subscribedToolManager.ActiveSlotChanged -= HandleActiveSlotChanged;

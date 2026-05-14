@@ -123,3 +123,10 @@ Solution: Added `_basePlayerInsideCount` as a native per-base SOA lane. Signal e
 Rejected Alternatives: Managed hash sets of module references rejected for GC and lifetime complexity. Polling active `BaseModule` instances from gas rejected because it violates domain decoupling.
 Scalability potential: Low stores one int per base. Middle/High/Ultra can later replace base id 0 with construction base ids while preserving the same count lane.
 Hardware Impact: Four bytes per base and one integer op per transition packet; no frame-path cost.
+
+## Self-Review 11 - H-Phi Audit Boundary
+Problem: The user requested continued H-Phi improvement, but moving additional gas arrays into DataVault without generation handles, job ownership review, and compile proof would broaden risk.
+Solution: Ran the source-only H-Phi summary script. It completed on the longer retry and reports RuntimeHPhiRisk 0.000573574, DataSovereignty 0.021057035, DataVaultRefs 151, NativeArrayRefs 7020. Kept the implemented migration scoped to the cross-system awake mask.
+Rejected Alternatives: Migrating all Dalton pressure arrays to DataVault in this pass was rejected because those arrays are swapped by jobs and require a wider generation/alias contract. Claiming H-Phi improvement from the timed-out first script run was rejected.
+Scalability potential: Current H-Phi win is narrow but real: power and gas share the awake mask without copies. Full gas-array sovereignty is a separate architecture pass.
+Hardware Impact: No additional runtime impact from the audit. Avoided an unverified high-risk memory ownership churn.

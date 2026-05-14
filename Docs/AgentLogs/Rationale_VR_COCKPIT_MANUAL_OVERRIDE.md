@@ -365,3 +365,15 @@ Rejected Alternatives: changing `TryLatch()` to return a bool/new angle was reje
 Scalability potential: Low/Middle/High/Ultra all get truthful crash evidence with no extra data structure. Ultra post-latch effects can trust the blackbox angle if later diagnostics correlate signal frames with telemetry frames.
 
 Hardware Impact: i3/MX350 pays one scalar NativeArray read per active lever tick after latch evaluation. The read is accepted because it prevents misleading blackbox evidence and adds 0 B/frame.
+
+## Decision 30 - Dispatcher hot-swap must not clear tick identity without unregistering
+
+Problem: the dispatcher hot-swap callback set `_registeredTick = false` before trying to register against the replacement dispatcher. The dispatcher lanes and GlobalRegistry updatable bucket are static fixed buckets, so clearing the local flag first can leave the lever registered while local lifecycle state says it is not. Later `OnDisable()` would then skip unregistering, or a re-register attempt could fail because the item is still present.
+
+Solution: call `TryUnregisterTick()` on dispatcher replacement before inspecting `currentService`. When a replacement exists, keep the existing `EnsureNativeStateForLifecycle()` and guarded `TryRegisterTick()` path. This preserves one authoritative lifecycle identity: registered flag only changes through register/unregister helpers.
+
+Rejected Alternatives: keeping the blind flag clear was rejected because it can create stale dispatcher entries. Directly calling `SystemDispatcher.Unregister()` was rejected because `GlobalRegistry.UnregisterUpdatable()` already removes both the global bucket and dispatcher lane. Adding a second flag for "old dispatcher" was rejected as unnecessary state.
+
+Scalability potential: Low/toaster avoids hidden duplicate or stale update-lane work after service rebinding. Middle/High/Ultra keep deterministic bootstrap/hot-swap behavior as cockpit controls are streamed or service owners are replaced.
+
+Hardware Impact: no steady-frame impact. Cold dispatcher replacement pays one idempotent unregister scan across fixed buckets, preventing a permanent stray `Tick()` slot and missed teardown. 0 B/frame.

@@ -76,7 +76,7 @@ Task Count: 6
 - Narrow runtime H-Phi moved `0.009266939 -> 0.009377979` since the prior layout pass; this is static model/current-tree evidence, not runtime profiler proof.
 - Lexical source scrubbing was tested for comment/string false-positive control but timed out twice on the full tree (`420s+`). It is gated behind explicit `-LexicalScrub`; default `-Summary` completed at `2026-05-15 02:55:39 +04:00`.
 - Latest full summary after current workspace changes: `SignalBusPush=329`, `EventPublish=28`, `RuntimeHPhiNarrow=0.010531061`, `RuntimeHPhiRisk=0.000560589`, `DataVaultRefs=151`, `NativeArrayRefs=7018`.
-- Current Core graph summary: Core asmdef debt references `25`, generated project debt references `10`, source-backed bridge debt references `21`.
+- Current Core graph summary: Core asmdef debt references `25`, generated project debt references `10`, source-backed bridge debt references `20`, compile-bridge debt references `8`, project-reference-replacement debt references `12`.
 - Remaining runtime `Find*` debt is concentrated in `GameBootstrapper` bootstrap handoff, `HectonUrpShadowBudgetGuard` cold light scan, and `VRSomaticRuntimeBootstrap` decoupled root lookup; one textual `HectonUnderwaterVisuals` hit is editor-only and excluded from runtime score.
 - `git diff --check` on touched Core layout files reports only LF/CRLF normalization warnings.
 - Unity Console / PlayMode / Profiler / GCMonitor: PENDING VERIFICATION.

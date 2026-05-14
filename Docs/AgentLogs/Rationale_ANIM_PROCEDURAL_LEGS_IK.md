@@ -146,6 +146,22 @@ Rejected Alternatives: Dotnet rebuild was explicitly rejected by user instructio
 Scalability potential: Low/MX350 keeps telemetry deterministic and cheap. Middle/High/Ultra preserve black-box quality while richer IK/haptic events are enabled.
 Hardware Impact: One scalar finite/clamp operation per environment IK telemetry event, estimated below 0.1 us/event on i3/MX350. No allocations, no new containers, no new event lanes.
 
+## Decision 19: KCC producer finite boundary and sync fence guard
+
+Problem: `PlayerKinematicsRuntime` sanitized inside the Burst body job, but raw Rigidbody position/velocity and raw origin-shift offsets could still be written into NativeArrays or sync-fence hashes before the sanitizer ran.
+Solution: Sanitize Rigidbody position/velocity at the producer boundary, feed safe positions into SDF/advection paths, flag invalid raw body state as `FaultNaN`, reject non-finite or >10km origin shifts with `FaultInvalidOriginShift`, sanitize AUP rebases, and sanitize staged sync-fence state before hashing or publishing.
+Rejected Alternatives: Dotnet rebuild was explicitly rejected by user instruction. Letting the Burst job catch the fault later was rejected because the NativeArray write itself is the boundary. Logging was rejected as hot/fault-path noise.
+Scalability potential: Low/MX350 preserves the same KCC/IK fake with fail-closed neutral velocity and last-valid position. Middle/High/Ultra keep richer stride, hand, haptic, and acoustic polish without accepting corrupt producer data.
+Hardware Impact: Added branch/finite checks are at existing KCC producer and origin-shift points, estimated below 0.5 us/frame on i3/MX350. No allocations, no new jobs, no public API change.
+
+## Decision 20: Contextual IK black-box ring cursor hardening
+
+Problem: The contextual IK black box assumed its private cursor and dump head were valid and could write non-finite first-sample vectors into the telemetry ring/dump when the same invalid state triggered the dump.
+Solution: Bound the telemetry cursor/head against the actual ring length, reject zero-length rings, sanitize vectors/weights before hash, ring write, and dump serialization, while preserving the invalid-state flag in `Flags`.
+Rejected Alternatives: Dotnet rebuild was explicitly rejected by user instruction. Writing raw NaNs into the binary dump was rejected because the dump must remain parseable across tools. Allocating a diagnostic object/log was rejected as fault-path noise.
+Scalability potential: Low/MX350 keeps the 300-entry telemetry footprint. Middle/High/Ultra preserve useful chronological evidence while more IK visual layers are enabled.
+Hardware Impact: Added cost is integer bounds checks and vector finite selects only on telemetry samples/dumps, estimated below 0.1 us/sample on i3/MX350. No allocations and no extra telemetry lanes.
+
 ## OMEGA POLISH CHANGES
 
 Problem: Final anti-bloat pass required checking the lower-body implementation for honest simulation, unbounded math, GC leaks, and out-of-domain edits.

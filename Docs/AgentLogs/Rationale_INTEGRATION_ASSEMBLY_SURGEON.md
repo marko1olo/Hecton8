@@ -2,7 +2,7 @@
 
 Agent: INTEGRATION_ASSEMBLY_SURGEON
 Domain: Unity Compilation Graph / Integrator
-Status: BUILD SUCCESSFUL / PLATINUM GRADE (Fresh12: Hecton8.Core --no-restore 0 warnings / 0 errors)
+Status: BUILD SUCCESSFUL / POST-GREEN STATIC H-PHI HARDENED (Fresh12 retained; no dotnet command run in this post-green pass)
 
 ## Decision 0 - Session Initialization
 
@@ -163,3 +163,19 @@ Solution: Re-ran with build servers disabled, one worker, no restore, and MSBuil
 Rejected Alternatives: Treating blank logs or partial MSBuild diagnostic logs as final evidence was rejected. Running a broad Unity/player validation was rejected because the current objective was Core compile authority, not runtime QA.
 Scalability potential: Low/Middle/High/Ultra runtime tiers are unchanged; compile evidence is now reproducible for the Core medic lane.
 Hardware Impact: Runtime impact 0 us. Final compile verification time: 105,610,000 us. Exact runtime microseconds saved: 0 us.
+
+## Decision 20 - Optional Core Reference Candidate Scan
+
+Problem: Core asmdef debt pruning had depended on one-off type/name scans. That is too fragile under parallel agent churn and can tempt blind deletion of leaf references.
+Solution: Added `-IncludeUnusedCoreReferenceScan` to `HectonPhiAudit.ps1`. The scan maps each Core asmdef debt reference to its asmdef source, collects declared type names, strips comment noise, and searches the generated/source-backed Core compile surface outside the candidate's own source files. The post-green run scanned 1065 Core compile-surface files and 25 asmdef debt refs; `CandidateCount=0`.
+Rejected Alternatives: Removing more Core asmdef references by name was rejected because every remaining leaf asmdef with source had external Core hits. Building a separate one-off script was rejected because the H-Phi audit must be the single evidence surface.
+Scalability potential: Low-end machines get a static candidate-ordering pass without Unity import or dotnet; High/Ultra lanes can use the same scan before staged contract extraction. No runtime visual tier behavior changed.
+Hardware Impact: Runtime impact 0 us. Tooling cost is static file IO/text regex only. It prevents false compile-wall edits rather than saving player-frame time.
+
+## Decision 21 - Bridge Lane Split And Input Generated Prune
+
+Problem: The current `Directory.Build.targets` contains two Core bridge lanes: compile-bridge references and project-reference replacement references used when generated project references are disabled. Counting them as one opaque number hid 12 replacement debt refs, while the old counter also counted a `<Reference Remove=...>` node as a dependency edge.
+Solution: Tightened bridge counting to `Reference Include` nodes only, added `BridgeLane` labels (`CoreCompileBridge`, `ProjectReferenceReplacement`), and added lane-specific budget switches. Removed the stale `Hecton8.Input.Generated` replacement reference after static scans found `HectonInputActions` use only in `Hecton8.Input`, not Core. Current baseline: 31 bridge refs, 20 bridge debt refs, 18 compile-bridge refs with 8 debt refs, and 13 replacement refs with 12 debt refs.
+Rejected Alternatives: Keeping the old total bridge budget of 8 was rejected because it ignored the replacement lane. Removing package or `Hecton8.Input` replacement refs was rejected because current Core source has live InputSystem/UI/package surfaces. Running dotnet was rejected by the current user instruction.
+Scalability potential: Low tier gets a narrower replacement lane and honest no-regression gates; High/Ultra package-heavy visual systems remain isolated behind Unity-built assemblies rather than polluting Core ownership. Future contract extraction can lower compile-bridge and replacement budgets independently.
+Hardware Impact: Runtime impact 0 us. Static graph impact: one replacement debt ref removed (`Hecton8.Input.Generated`), and four budget failure paths now catch regressions before compile time.

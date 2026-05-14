@@ -2200,7 +2200,7 @@ namespace Hecton8.Gameplay
 
         private void WriteTelemetrySample(uint reasonFlags)
         {
-            if (!_telemetryRing.IsCreated)
+            if (!_telemetryRing.IsCreated || _telemetryRing.Length <= 0)
                 return;
 
             uint stateHash = 2166136261u;
@@ -2230,15 +2230,22 @@ namespace Hecton8.Gameplay
                         _ikWeights[baseIkIndex + LeftHandIndex],
                         _ikWeights[baseIkIndex + RightHandIndex])
                     : float2.zero;
+                float3 safeRootPosition = SanitizeTelemetryFloat3(entity.RootPosition, float3.zero);
+                float3 safeLeftFootPosition = SanitizeTelemetryFloat3(frame.LeftFoot.WorldPosition, float3.zero);
+                float3 safeRightFootPosition = SanitizeTelemetryFloat3(frame.RightFoot.WorldPosition, float3.zero);
+                float3 safeLeftHandPosition = SanitizeTelemetryFloat3(frame.LeftHand.WorldPosition, float3.zero);
+                float3 safeRightHandPosition = SanitizeTelemetryFloat3(frame.RightHand.WorldPosition, float3.zero);
+                float3 safeKccVelocity = SanitizeTelemetryFloat3(entity.KccVelocity, float3.zero);
+                float2 safeWeights = SanitizeTelemetryFloat2(weights, float2.zero);
 
                 stateHash = MixHash(stateHash, (uint)slotIndex);
-                stateHash = MixHash(stateHash, math.hash(entity.RootPosition));
-                stateHash = MixHash(stateHash, math.hash(frame.LeftFoot.WorldPosition));
-                stateHash = MixHash(stateHash, math.hash(frame.RightFoot.WorldPosition));
-                stateHash = MixHash(stateHash, math.hash(frame.LeftHand.WorldPosition));
-                stateHash = MixHash(stateHash, math.hash(frame.RightHand.WorldPosition));
-                stateHash = MixHash(stateHash, math.hash(entity.KccVelocity));
-                stateHash = MixHash(stateHash, math.hash(weights));
+                stateHash = MixHash(stateHash, math.hash(safeRootPosition));
+                stateHash = MixHash(stateHash, math.hash(safeLeftFootPosition));
+                stateHash = MixHash(stateHash, math.hash(safeRightFootPosition));
+                stateHash = MixHash(stateHash, math.hash(safeLeftHandPosition));
+                stateHash = MixHash(stateHash, math.hash(safeRightHandPosition));
+                stateHash = MixHash(stateHash, math.hash(safeKccVelocity));
+                stateHash = MixHash(stateHash, math.hash(safeWeights));
                 lowerBodyFlags |= frame.LowerBodyFlags;
 
                 bool slotInvalid =
@@ -2254,18 +2261,20 @@ namespace Hecton8.Gameplay
                 if (capturedFirst)
                     continue;
 
-                firstRootPosition = entity.RootPosition;
-                firstLeftFootTarget = frame.LeftFoot.WorldPosition;
-                firstRightFootTarget = frame.RightFoot.WorldPosition;
-                firstLeftTarget = frame.LeftHand.WorldPosition;
-                firstRightTarget = frame.RightHand.WorldPosition;
-                firstKccVelocity = entity.KccVelocity;
-                firstWeights = weights;
+                firstRootPosition = safeRootPosition;
+                firstLeftFootTarget = safeLeftFootPosition;
+                firstRightFootTarget = safeRightFootPosition;
+                firstLeftTarget = safeLeftHandPosition;
+                firstRightTarget = safeRightHandPosition;
+                firstKccVelocity = safeKccVelocity;
+                firstWeights = safeWeights;
                 capturedFirst = true;
             }
 
             uint flags = reasonFlags | ((lowerBodyFlags & 0xFFu) << 8) | (invalid ? 0x80000000u : 0u);
-            _telemetryRing[_telemetryCursor] = new ContextualPhysicalIkTelemetryEntry
+            int telemetryCapacity = _telemetryRing.Length;
+            int telemetryCursor = (uint)_telemetryCursor < (uint)telemetryCapacity ? _telemetryCursor : 0;
+            _telemetryRing[telemetryCursor] = new ContextualPhysicalIkTelemetryEntry
             {
                 Frame = unchecked((uint)Time.frameCount),
                 Flags = flags,
@@ -2281,9 +2290,8 @@ namespace Hecton8.Gameplay
                 FirstHandWeights = firstWeights
             };
 
-            _telemetryCursor++;
-            if (_telemetryCursor >= TelemetryCapacity)
-                _telemetryCursor = 0;
+            telemetryCursor++;
+            _telemetryCursor = telemetryCursor >= telemetryCapacity ? 0 : telemetryCursor;
 
             if (invalid && !_telemetryDumped)
                 DumpTelemetry(flags);
@@ -2311,11 +2319,14 @@ namespace Hecton8.Gameplay
                 using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
                 using (BinaryWriter writer = new BinaryWriter(stream))
                 {
-                    int capacity = _telemetryRing.Length;
-                    int head = _telemetryCursor;
-                    writer.Write(TelemetryDumpMagic);
-                    writer.Write((uint)capacity);
-                    writer.Write((uint)TelemetryEntrySizeBytes);
+                int capacity = _telemetryRing.Length;
+                if (capacity <= 0)
+                    return;
+
+                int head = (uint)_telemetryCursor < (uint)capacity ? _telemetryCursor : 0;
+                writer.Write(TelemetryDumpMagic);
+                writer.Write((uint)capacity);
+                writer.Write((uint)TelemetryEntrySizeBytes);
                     writer.Write((uint)head);
                     writer.Write(reasonFlags);
 
@@ -2348,15 +2359,29 @@ namespace Hecton8.Gameplay
             WriteFloat3(writer, entry.FirstLeftHandTarget);
             WriteFloat3(writer, entry.FirstRightHandTarget);
             WriteFloat3(writer, entry.FirstKccVelocity);
-            writer.Write(entry.FirstHandWeights.x);
-            writer.Write(entry.FirstHandWeights.y);
+            float2 weights = SanitizeTelemetryFloat2(entry.FirstHandWeights, float2.zero);
+            writer.Write(weights.x);
+            writer.Write(weights.y);
         }
 
         private static void WriteFloat3(BinaryWriter writer, float3 value)
         {
+            value = SanitizeTelemetryFloat3(value, float3.zero);
             writer.Write(value.x);
             writer.Write(value.y);
             writer.Write(value.z);
+        }
+
+        private static float3 SanitizeTelemetryFloat3(float3 value, float3 fallback)
+        {
+            float3 safeFallback = math.select(fallback, float3.zero, !math.all(math.isfinite(fallback)));
+            return math.select(value, safeFallback, !math.all(math.isfinite(value)));
+        }
+
+        private static float2 SanitizeTelemetryFloat2(float2 value, float2 fallback)
+        {
+            float2 safeFallback = math.select(fallback, float2.zero, !math.all(math.isfinite(fallback)));
+            return math.select(value, safeFallback, !math.all(math.isfinite(value)));
         }
 
         private void ResetTargetSlot(int slotIndex)

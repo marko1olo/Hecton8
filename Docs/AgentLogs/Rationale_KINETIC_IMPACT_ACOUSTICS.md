@@ -348,3 +348,22 @@ Solution: Ran source-only checks: `git diff --check`, direct registry scans, met
 Rejected Alternatives: Running dotnet build/rebuild would violate explicit user order; claiming Unity compile/profiler status without Editor console/MCP data would be false.
 Scalability potential: Verification only.
 Hardware Impact: Verification only.
+
+## LOOP 18 CRITICAL RENDERER SCALABILITY EVENT H-PHI PASS
+Problem: `PlayerCriticalProceduralAudioRenderer` still hid quality-policy registry reads behind `RefreshAudioQualityPolicyIfStale`. The wrapper was cadence-gated, but `Tick`, kinetic fallback, sonar probe LOD, and reverb tier call sites could still trigger `GlobalRegistry.ScalabilityTier`, `GlobalRegistry.QualityTier`, and `GlobalRegistry.H8_LOW_MEMORY_PROFILE` from audio hot paths.
+Solution: Converted the renderer to `IScalabilityChangedEventListener`. `OnEnable` cold-seeds the quality policy through `RefreshAudioQualityPolicyCold()`, scalability changes flow through `OnScalabilityChanged`, and hot call sites now use `EnsureAudioQualityPolicyCached()` without any registry access. The conservative unseeded fallback marks the cache Unknown/low-memory true instead of querying the registry from a hot helper.
+Rejected Alternatives: Keeping a 30-frame registry cadence was cheaper to leave but violates the service-locator hot-path mandate; updating `_cachedQualityTier` from `payload.CurrentQualityTier` would erase Mid/Ultra hardware quality because scalability events carry only a two-profile byte; adding a second audio quality event bus would duplicate `ScalabilityEvents`.
+Scalability potential: Low/MX350 keeps baked kinetic impact fallback, lower granular voice count, and cheap sonar probe policy through cached tier state. Middle/High/Ultra keep native reverb and richer granular/sonar behavior without spending hot-path work on service lookup. Toaster path uses conservative low-tier if bootstrap ordering is wrong; high-end path preserves hardware quality for native convolution.
+Hardware Impact: Saves up to three registry reads every previous 30-frame quality refresh window after warmup, plus removes hidden lookup spikes from kinetic impact admission and sonar probe count. Runtime allocation remains 0 B/frame; added work is one event registration and one cache write on scalability changes.
+
+Problem: Static regression coverage did not guard the central renderer against quality-policy polling regressions.
+Solution: Extended `AdvancedAcousticsSmokeTester` to assert renderer scalability event registration, cold-only registry seeding, hot-cache guard absence of `GlobalRegistry.`, and method-body absence of direct quality registry reads in `Tick`, `ResolveReverbDspTier`, `IsLowTierKineticImpactFallback`, and `ResolveSonarSdfProbeCount`.
+Rejected Alternatives: Manual-only source review, or a Unity playmode check that cannot run honestly without Editor/MCP access.
+Scalability potential: Editor-only guard; protects both the cheap low-tier branch and the expensive high-tier native reverb/granular branch from lookup creep.
+Hardware Impact: 0 us runtime in player builds.
+
+Problem: Compile/profiler proof remains unavailable under the user's no-dotnet-rebuild order and missing Unity MCP resources.
+Solution: Ran source-only checks: `git diff --check`, fixed-symbol scans, method-body registry counters, MCP resource listing, and scoped forbidden-API scans. Old cadence symbols are absent. Method-body counters are `TickQualityRegistry=0`, `ReverbQualityRegistry=0`, `KineticFallbackQualityRegistry=0`, `SonarProbeQualityRegistry=0`, `EnsureQualityRegistry=0`, `ColdQualityRegistry=3`.
+Rejected Alternatives: Running dotnet build/rebuild would violate explicit user order; claiming Unity compile or profiler status without Editor console/MCP data would be false.
+Scalability potential: Verification only.
+Hardware Impact: Verification only.
