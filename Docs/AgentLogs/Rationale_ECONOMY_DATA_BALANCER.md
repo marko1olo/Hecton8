@@ -127,7 +127,7 @@ Hardware Impact: Offline-only validation, 0 us gameplay. It prevents incorrect i
 
 ## Decision 11 - Documentation Evidence Consistency Review
 
-Problem: The status file contained one contradictory self-review line claiming the validator no longer prints `ECONOMY BALANCED`, while the batch-required and implemented behavior is to print a separate pacing warning before exact `STATUS: ECONOMY BALANCED`.
+Problem: The status file contained one contradictory self-review line implying the required `ECONOMY BALANCED` status had been removed, while the batch-required and implemented behavior is to print a separate pacing warning before exact `STATUS: ECONOMY BALANCED`.
 
 Solution: Corrected the status wording and preserved the validator behavior: `energy_pacing_warning=literal_30kw_requires_owner_decision` followed by `STATUS: ECONOMY BALANCED`.
 
@@ -136,3 +136,15 @@ Rejected Alternatives: Leaving the contradiction was rejected because downstream
 Scalability potential: Low/Middle/High/Ultra all consume the same validated static economy tables; the warning remains an owner decision gate for runtime energy pacing rather than a hidden data failure.
 
 Hardware Impact: Documentation-only correction, 0 us gameplay. It prevents wasted importer/tuning work caused by contradictory proof text.
+
+## Decision 12 - Negative Validator Proof
+
+Problem: A green validator run proves the current files pass, but it does not prove the new failure gates reject malformed data. The first-submarine and matrix-alignment checks needed direct negative proof.
+
+Solution: Executed validator functions against temporary copies outside project data. Mutations covered a forged first-submarine `result_item_id` with a corrected hash, a duplicated first-submarine raw resource row, and a matrix/recipe resource value drift. All three malformed cases failed as expected.
+
+Rejected Alternatives: Editing project data to force failures was rejected because it would churn authoritative files. Trusting the happy path alone was rejected because it would not prove the guardrails.
+
+Scalability potential: Low/Middle/High/Ultra benefit from the same offline importer gate. Runtime data remains flat and validated before any bake.
+
+Hardware Impact: Temporary validation only, 0 us gameplay. It prevents malformed static data from reaching runtime tables where diagnosis would cost more engineering time.

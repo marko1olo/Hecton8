@@ -37,3 +37,9 @@ Exhaustive declared-array audit -> Every phase/profile/tier/pressure/kill/refere
 CPU semantics review -> Added `profileCpuCoreCountKind` to distinguish Quest 3 Qualcomm performance-core count from Steam Deck x86 physical cores. Validation: `CPU_CORE_KIND_VALIDATION_OK`.
 
 CPU thread semantics review -> Added `profileCpuHardwareThreadKind` to distinguish Quest no-SMT performance cores from Deck SMT hardware threads. Validation: `CPU_THREAD_KIND_VALIDATION_OK`.
+
+Post-CPU-semantics validation -> Revalidated profile arrays with CPU kind fields included. Result: `POST_CPU_SEMANTICS_FULL_VALIDATION_OK`; `git diff --check` clean.
+
+Source rank legend review -> Added scalar `sourceAuthorityRankLegend` and validated it. Result: `SOURCE_AUTHORITY_LEGEND_VALIDATION_OK`.
+
+Semantic metadata final check -> CPU core/thread kind fields and source authority legend validated together. Result: `SEMANTIC_METADATA_FINAL_OK`. `git diff --check` reports only CRLF normalization warnings, no whitespace errors.

@@ -452,6 +452,7 @@
     2,
     2
   ],
+  "sourceAuthorityRankLegend": "3=official_vendor_or_vendor_document;2=secondary_spec_or_review_source;1=unverified",
   "sourceNote": [
     "XR2 Gen 2 CPU: 4+2 performance cores up to 2.4/2.0 GHz; memory interface: 4x16 LPDDR5 up to 3.2 GHz; bandwidth in this JSON is derived as SoC maximum, not a Meta device disclosure.",
     "Confirms Quest 3 uses Snapdragon XR2 Gen 2; page does not expose RAM bandwidth.",

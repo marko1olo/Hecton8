@@ -42,7 +42,7 @@ Exact Microseconds saved:
 Verification:
 
 - `python -B Tools/MathLUTGenerator.py`: PASS.
-- `python -B Tools/test_math_lut_generator.py`: OK, 4 tests.
+- `python -B Tools/test_math_lut_generator.py`: OK, 5 tests.
 - Python `compile(...)` syntax check for both Python files: `syntax ok`.
 - Final rerun used `python -B` to avoid baker-owned bytecode cache output.
 - `struct.calcsize("<f")`: 4 bytes.
@@ -102,7 +102,7 @@ Exact Microseconds saved:
 Verification:
 
 - `python -B Tools/MathLUTGenerator.py`: PASS.
-- `python -B Tools/test_math_lut_generator.py`: OK, 4 tests.
+- `python -B Tools/test_math_lut_generator.py`: OK, 5 tests.
 - Python `compile(...)`: `syntax ok`.
 - Branch object check: post-regeneration working files match the feature branch for all 12 selected paths.
 - C# boundary: no `.cs` files appear in the feature commit-vs-parent diff.
@@ -199,7 +199,7 @@ Verification:
 - All 12 selected paths match the feature branch with Git clean filters applied.
 - Commit-vs-parent diff contains no `.cs` files.
 - `python -B Tools/MathLUTGenerator.py`: PASS.
-- `python -B Tools/test_math_lut_generator.py`: OK, 4 tests.
+- `python -B Tools/test_math_lut_generator.py`: OK, 5 tests.
 
 Blocked:
 
@@ -228,6 +228,35 @@ Verification:
 
 - Report wording no longer undercounts remote push attempts.
 - The local feature branch remains the reliable publication artifact until a remote push is confirmed.
+
+Blocked:
+
+- Remote push remains unconfirmed.
+
+## 2026-05-14 - Automated Deterministic Rebuild Test
+
+What was wrong:
+
+- Byte-for-byte deterministic rebuild proof was recorded manually, but not enforced by the test suite.
+
+What was done:
+
+- Added `test_generate_all_is_byte_deterministic` to `Tools/test_math_lut_generator.py`.
+- The test generates all outputs into two independent temp directories and compares SHA-256 plus raw bytes for all four `.bin` tables and both JSON files.
+
+Cinematic Cheats used:
+
+- None. This was validation hardening.
+
+Exact Microseconds saved:
+
+- None. No runtime code changed.
+
+Verification:
+
+- `python -B Tools/MathLUTGenerator.py`: PASS.
+- `python -B Tools/test_math_lut_generator.py`: OK, 5 tests.
+- Python syntax check: `syntax ok`.
 
 Blocked:
 

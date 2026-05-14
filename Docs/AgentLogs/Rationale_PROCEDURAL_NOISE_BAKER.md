@@ -71,3 +71,11 @@ Solution: Recorded the absent polish tag and ran a scoped anti-bloat pass agains
 Rejected Alternatives: Inventing a polish mandate or reading archived batch polish text.
 Scalability potential: No runtime effect; keeps the offline asset path narrow and reproducible.
 Hardware Impact: 0 us runtime.
+
+## Decision 010 - Determinism Rebuild Review
+
+Problem: Existing PNG metrics prove the artifacts pass thresholds, but they do not prove `GenerateBlueNoise.py` can reproduce the committed bytes.
+Solution: Rebuilt the PNGs into `%TEMP%\h8_noise_review_PROCEDURAL_NOISE_BAKER` with `python -B`, compared SHA256 hashes against repository assets, then removed the temp directory after confirming it resolved under `%TEMP%`.
+Rejected Alternatives: Treating existing JSON metrics as determinism proof, or leaving review artifacts in the repository.
+Scalability potential: Deterministic source bytes mean all hardware tiers consume identical source data; tier differences remain sampling/import/runtime choices.
+Hardware Impact: 0 us runtime. Offline-only review pass.

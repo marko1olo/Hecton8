@@ -37,3 +37,22 @@ Evidence:
 Verification boundary:
 - STATIC/CLI verified.
 - Unity import settings, texture wrap mode, no-mip/no-aniso, shader binding, runtime frame time, GCMonitor, and visual capture remain PENDING VERIFICATION.
+
+## 2026-05-14 - Review Addendum
+
+What was reviewed:
+- Task status and rationale were re-read from disk before response.
+- Repository-owned baker scripts and baked PNGs were checked for deterministic rebuild behavior.
+
+What was done:
+- Rebuilt BlueNoise and Flow PNGs into `%TEMP%\h8_noise_review_PROCEDURAL_NOISE_BAKER` with `python -B`.
+- Compared SHA256 hashes against repository PNGs.
+- Removed the temp directory after validating it resolved under `%TEMP%`.
+
+Evidence:
+- BlueNoise deterministic match: `AD6F279C6D9AF828D3E1E808896C11F9EB159AC6F560A412E2B87D9F6BD1F902`.
+- Flow deterministic match: `32CCB138852E75017B9645CD138C1072D7193C8855D4D127FF3C58AB706C76AA`.
+- Temp cleanup result: `TEMP_REMOVED`.
+
+Verification boundary:
+- Unity import settings, texture wrap mode, no-mip/no-aniso, shader binding, runtime frame time, GCMonitor, and visual capture remain PENDING VERIFICATION.

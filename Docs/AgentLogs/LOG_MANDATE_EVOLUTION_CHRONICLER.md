@@ -121,3 +121,15 @@ Cinematic Cheats used -> Documentation-only. The corrected attenuation mandate s
 Exact Microseconds saved -> 0 runtime us measured. This prevents downstream runtime code from implementing an exploding attenuation curve.
 
 Verification -> Readback confirms negative-exponent attenuation and haptic decay. Broad malformed math scan has only known false positives: `2x expected average` and `readIdx`. `NON_ASCII_COUNT=0`. `git diff --check` remains clean except CRLF warnings. Runtime proof remains PENDING VERIFICATION because `dotnet` is unavailable and Unity was not run.
+
+## 2026-05-14 Sixth-Pass Self-Review
+
+What was wrong -> Shared Git state moved again. Reflog shows checkpoint commit `2026-05-14 14:25:19 +0300`; `.agents-skills` is no longer dirty because the mandate repairs are in `HEAD`. Status/rationale still contained stale exact-count wording.
+
+What was done -> Re-read committed mandate formulas from disk and corrected the stale count wording to readback-based evidence.
+
+Cinematic Cheats used -> Documentation-only. No runtime visual fake was implemented.
+
+Exact Microseconds saved -> 0 runtime us measured.
+
+Verification -> Readback confirms negative beam attenuation, corrected Verlet constraint, cutter density subtraction, and haptic negative decay remain present. Current global dirty files are unrelated agent logs/status and Python cache folders; this agent did not touch them. Compile/runtime proof remains blocked because `dotnet` is unavailable and Unity was not run.

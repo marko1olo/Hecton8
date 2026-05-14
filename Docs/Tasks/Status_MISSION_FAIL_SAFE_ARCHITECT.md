@@ -36,6 +36,7 @@ Status: SCENARIO STABILIZED - PENDING UNITY VERIFICATION
 - [x] Loop 5: Static verification, report append, final status update.
 - [x] Loop 6: Re-opened localization/quest contracts; added machine-readable handoff JSON instead of unsafe partial runtime localization mutation.
 - [x] Loop 7: Self-review found prose/JSON flag drift; canonicalized both files to the same 32 outpost flags.
+- [x] Loop 8: Strict handoff review found no stale live aliases, no unresolved JSON `outpost.*` references, and complete tooltip/log entry shape.
 
 ## Verification Ledger
 
@@ -43,10 +44,13 @@ Status: SCENARIO STABILIZED - PENDING UNITY VERIFICATION
 - Toolchain probe: BLOCKED BY TOOLCHAIN. `Get-Command dotnet` returned absent; `C:\Program Files\dotnet\dotnet.exe` and `C:\Program Files (x86)\dotnet\dotnet.exe` are also absent.
 - Handoff JSON validation: STATIC_DOC PASS. `ConvertFrom-Json` parsed `Outpost_FailSafe_Handoff.json`; result `flags=32`, `locEntries=15`, `hashMismatches=0`.
 - Flag vocabulary consistency: STATIC_DOC PASS. Regex extraction found `docUnique=32`, `jsonFlags=32`, `missingInJson=0`, `missingInDoc=0`.
+- JSON reference consistency: STATIC_DOC PASS. Regex extraction over the JSON handoff found `declared=32`, `refs=32`, `missing=0`.
+- Localization entry shape: STATIC_DOC PASS. JSON handoff contains `tooltips=10`, `logs=5`, `tooltipMissing=0`, `logMissing=0`.
+- Stale live-alias scan: STATIC_DOC PASS. No live `outpost.claim_complete`, `outpost.deadlock_revert_triggered`, `outpost.state_restored_after_revert`, `outpost.roomflag_*`, `outpost.marauder_log_*found`, `flags=30`, or `Authored 30` references remain in the authored files.
 - ASCII hygiene: STATIC_DOC PASS. `rg -n "[^\x00-\x7F]"` over the authored mission/status/rationale/log/handoff files returned no matches.
-- Diff hygiene: STATIC_DOC PASS. `git diff --check` over authored files returned exit code 0; Git reported only local LF-to-CRLF normalization warnings for the three modified log/status files.
+- Diff hygiene: STATIC_DOC PASS. `git diff --check` over authored files returned exit code 0; Git reported only local LF-to-CRLF normalization warnings for the modified log/rationale/status files.
 - Prompt re-extract: STATIC_DOC PASS. `rg -n 'MISSION_FAIL_SAFE_ARCHITECT|AGENT_PROMPT' Docs/Tasks -g 'CURRENT_BATCH.md'` located the active prompt at lines 47-65.
 - Unity Console: PENDING VERIFICATION. No Unity/MCP session was invoked.
 - Runtime/GC proof: PENDING VERIFICATION. Documentation-only change, no profiler or GCMonitor artifact.
 - Polish mandate: NOT PRESENT. `Select-String -Path Docs\Tasks\CURRENT_BATCH.md -Pattern '<POLISH_MANDATE>' -Quiet` returned `False`.
-- Final report: appended to `Docs/AgentLogs/LOG_MISSION_FAIL_SAFE_ARCHITECT.md`, including the handoff addendum.
+- Final report: appended to `Docs/AgentLogs/LOG_MISSION_FAIL_SAFE_ARCHITECT.md`, including the handoff and self-review addenda.

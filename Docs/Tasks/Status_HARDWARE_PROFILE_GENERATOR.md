@@ -47,3 +47,6 @@ STATUS: HARDWARE PROFILED | COMPILE PENDING VERIFICATION
 - [x] Loop 15 - Exhaustive declared-array audit: every phase/profile/tier/pressure/kill/reference/source array count matches its declared count; kill masks reconstruct exactly; `git diff --check` clean. Result: `EVERY_DECLARED_ARRAY_COUNT_OK`; `KILL_MASK_RECONSTRUCTION_OK`.
 - [x] Loop 16 - CPU core semantics review: added `profileCpuCoreCountKind` so Quest 3's Qualcomm 4+2 performance-core count is not confused with Steam Deck x86 physical cores. Result: `CPU_CORE_KIND_VALIDATION_OK`.
 - [x] Loop 17 - CPU thread semantics review: added `profileCpuHardwareThreadKind` so Quest 3's no-SMT performance core count is not confused with Deck SMT hardware threads. Result: `CPU_THREAD_KIND_VALIDATION_OK`.
+- [x] Loop 18 - Post-CPU-semantics validation: profile arrays revalidated with new CPU kind fields; `git diff --check` clean. Result: `POST_CPU_SEMANTICS_FULL_VALIDATION_OK`.
+- [x] Loop 19 - Source rank legend review: added `sourceAuthorityRankLegend` while preserving flat layout. Result: `SOURCE_AUTHORITY_LEGEND_VALIDATION_OK`.
+- [x] Loop 20 - Semantic metadata final check: CPU kind fields and source rank legend validated together. Result: `SEMANTIC_METADATA_FINAL_OK`.

@@ -252,6 +252,64 @@ energy_pacing_warning=literal_30kw_requires_owner_decision
 STATUS: ECONOMY BALANCED
 ```
 
+## 2026-05-14 - Negative Validator Proof Recheck
+
+What was wrong:
+- The negative-proof entry was present, but the final log ordering still needed a bottom-most current evidence entry.
+
+What was done:
+- Re-ran the economy validator after recording negative-test evidence.
+- Confirmed no scoped C# diff exists for this task.
+
+Cinematic Cheats used:
+- No runtime simulation added. This is offline validation and log-order hygiene.
+
+Exact Microseconds saved:
+- 0 us gameplay. The value is preventing bad economy data and stale evidence from reaching the importer handoff.
+
+Verification:
+
+```text
+python Tools/EconomyValidator.py --root .
+ECONOMY VALIDATION OK
+matrix_rows=150 biomes=10 resources=15
+matrix_recipe_value_aligned_resources=15
+recipes=40 tier_ratios=[3.667, 2.69]
+survival_velocity_bands=5
+binding_unresolved_ids=22
+first_sub_recursive_kwh=433.1 literal_minutes=901.7
+hash_pairs_checked=781
+unique_id_hashes=175
+energy_pacing_warning=literal_30kw_requires_owner_decision
+STATUS: ECONOMY BALANCED
+```
+
+## 2026-05-14 - Negative Validator Proof Pass
+
+What was wrong:
+- Happy-path validation did not prove that the newly hardened checks fail on malformed data.
+
+What was done:
+- Ran temporary-copy negative tests without mutating project economy files.
+- Confirmed first-submarine recipe-batch `result_item_id` mismatch fails.
+- Confirmed duplicated first-submarine raw resource row fails.
+- Confirmed resource matrix vs recipe value drift fails.
+
+Cinematic Cheats used:
+- No runtime simulation added. This is offline validation proof.
+
+Exact Microseconds saved:
+- 0 us gameplay. This prevents bad data from reaching importer/runtime bake work.
+
+Verification:
+
+```text
+first_sub_result_item_mismatch: FAILED_AS_EXPECTED (result item mismatch)
+first_sub_duplicate_raw_resource: FAILED_AS_EXPECTED (duplicate first submarine raw resource)
+matrix_recipe_value_drift: FAILED_AS_EXPECTED (inconsistent matrix base values)
+negative_cases=3
+```
+
 ## 2026-05-14 - Documentation Consistency Review
 
 What was wrong:
@@ -273,6 +331,38 @@ Verification:
 ```text
 python -m py_compile Tools\EconomyValidator.py
 python Tools\EconomyValidator.py --root .
+ECONOMY VALIDATION OK
+matrix_rows=150 biomes=10 resources=15
+matrix_recipe_value_aligned_resources=15
+recipes=40 tier_ratios=[3.667, 2.69]
+survival_velocity_bands=5
+binding_unresolved_ids=22
+first_sub_recursive_kwh=433.1 literal_minutes=901.7
+hash_pairs_checked=781
+unique_id_hashes=175
+energy_pacing_warning=literal_30kw_requires_owner_decision
+STATUS: ECONOMY BALANCED
+```
+
+## 2026-05-14 - Final Negative Validator Recheck
+
+What was wrong:
+- The latest work needed bottom-most evidence after the negative validator test run.
+
+What was done:
+- Rechecked the economy validator after temporary negative tests and documentation updates.
+- Confirmed scoped `.cs` diff is empty for this task.
+
+Cinematic Cheats used:
+- No runtime simulation added. This is offline validation evidence only.
+
+Exact Microseconds saved:
+- 0 us gameplay. It protects importer/runtime bake work from malformed data and stale handoff evidence.
+
+Verification:
+
+```text
+python Tools/EconomyValidator.py --root .
 ECONOMY VALIDATION OK
 matrix_rows=150 biomes=10 resources=15
 matrix_recipe_value_aligned_resources=15

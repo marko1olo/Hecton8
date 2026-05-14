@@ -21,6 +21,7 @@ Runtime Unity import/profiler proof: PENDING VERIFICATION
 11. Loop 11: Found Time-to-First-Submarine report defect: `163.9 kWh / 22.8 s` was top-level-only. Added `Time_To_First_Submarine.json`, recursive expansion validation, and corrected literal-energy timing to `433.1 kWh / 81.3 s / 901.7 min at 30 kW`.
 12. Loop 12: Preserved exact batch-required `STATUS: ECONOMY BALANCED`, added `energy_pacing_warning=literal_30kw_requires_owner_decision`, and hardened first-submarine milestone validation for duplicate rows, positive quantities, and recipe-batch result item mismatch.
 13. Loop 13: Re-read status, rationale, log, and validator output; corrected contradictory self-review wording so the written record matches the enforced validator behavior.
+14. Loop 14: Ran temporary negative validator tests for forged first-sub result item, duplicate first-sub raw resource, and matrix/recipe value drift; all malformed cases failed as expected without editing project data.
 
 ## Checklist
 
@@ -65,3 +66,4 @@ STATUS: ECONOMY BALANCED
 - [x] Runtime binding risk documented | DOD: asset scan found 55 unique recipe item/build IDs, 33 matching current data IDs, 22 economy-defined IDs requiring importer mapping or assets; `Runtime_Binding_Review.json` records them and validator re-scans current assets to verify the report | Alternative rejected: silently claiming Unity runtime readiness.
 - [x] Time-to-first-submarine defect corrected | DOD: validator recursively expands all prerequisite recipes and proves `433.1 kWh`, `81.3 s`, and `901.7 min` literal total at 30 kW | Alternative rejected: keeping the old top-level-only report.
 - [x] Required status wording verified | DOD: validator prints `energy_pacing_warning=literal_30kw_requires_owner_decision` and then exact batch-required `STATUS: ECONOMY BALANCED`; first-submarine report rows now fail on duplicate raw resources, duplicate recipe batches, non-positive quantities, or mismatched recipe result IDs | Alternative rejected: contradictory documentation implying the required status line was removed.
+- [x] Negative validator tests executed | DOD: temporary malformed copies failed on result-item mismatch, duplicate raw resource, and matrix/recipe value drift | Alternative rejected: relying only on happy-path validation.

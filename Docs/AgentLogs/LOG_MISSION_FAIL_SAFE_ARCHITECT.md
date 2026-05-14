@@ -105,3 +105,31 @@ Verification:
 - Flag vocabulary check: PASS. Doc and JSON both expose 32 canonical outpost flags with no missing flags in either direction.
 - JSON parse/hash check: PASS. `Outpost_FailSafe_Handoff.json` parsed with `flags=32`, `locEntries=15`, `hashMismatches=0`.
 - Runtime/Unity proof remains PENDING VERIFICATION.
+
+## 2026-05-14 - Strict Handoff Integrity Review
+
+Status: SCENARIO STABILIZED - PENDING UNITY VERIFICATION
+Evidence Class: STATIC_DOC
+
+What was wrong:
+- After canonicalization, the remaining risk was hidden reference debt: stale aliases in prose/logs, JSON references to undeclared flags, or tooltip/log entries missing trigger/suppress/commit fields.
+
+What was done:
+- Ran stale live-alias scan across the authored mission doc, JSON handoff, status, rationale, and log.
+- Ran JSON `outpost.*` reference resolution against the declared mission flag list.
+- Ran tooltip/log shape checks for required trigger, suppress, required-state, and commit fields.
+- Updated the status ledger with the strict review evidence.
+
+Cinematic Cheats used:
+- No new cinematic cheat. This pass audited the handoff contract only.
+
+Exact Microseconds saved:
+- Measured runtime savings: 0 us. Documentation/status/log only.
+- Future runtime value: reduced risk of alias-driven duplicate hash constants. No profiler claim.
+
+Verification:
+- Stale live-alias scan: PASS. No live `outpost.claim_complete`, `outpost.deadlock_revert_triggered`, `outpost.state_restored_after_revert`, `outpost.roomflag_*`, `outpost.marauder_log_*found`, `flags=30`, or `Authored 30` references remain.
+- JSON reference check: PASS. `declared=32`, `refs=32`, `missing=0`.
+- Entry shape check: PASS. `tooltips=10`, `logs=5`, `tooltipMissing=0`, `logMissing=0`.
+- Diff hygiene: PASS. `git diff --check` returned exit code 0; Git reported only local LF-to-CRLF normalization warnings.
+- Runtime/Unity proof remains PENDING VERIFICATION.

@@ -207,7 +207,7 @@ Scalability potential: Downstream agents now read unambiguous ranges, state tran
 Hardware Impact: No runtime impact until downstream code follows the repaired mandates.
 
 Problem: A shared Git rebase changed `HEAD` while verification was running, causing earlier applied fixes to disappear from the diff and making the previous patch evidence invalid.
-Solution: Detected the reflog event (`2026-05-14 13:44:24 +0300`), re-applied the math repairs on the new base, and verified the six mandate files are dirty after the re-application.
+Solution: Detected the reflog event (`2026-05-14 13:44:24 +0300`), re-applied the math repairs on the new base, and verified affected mandate files by readback instead of trusting patch output.
 Rejected Alternatives: Assume patch success from tool output; revert or interfere with other agents' rebase.
 Scalability potential: Protects parallel-agent work by adapting to the new base instead of fighting shared repository state.
 Hardware Impact: No runtime impact.
@@ -230,4 +230,18 @@ Problem: Regex gates can miss meaning-level mistakes after mechanical repair.
 Solution: Added manual dirty-diff review to the evidence chain and reran formula scans after the sign fix.
 Rejected Alternatives: Rely only on `NON_ASCII_COUNT`, `SET_STRIP_REMAINING`, and malformed-token scans.
 Scalability potential: Reduces risk of bad doctrine being converted into runtime code by later agents.
+Hardware Impact: No runtime impact.
+
+## Sixth-Pass Self-Review Decisions
+
+Problem: Shared Git state moved again after the fifth-pass fixes. Reflog shows a checkpoint commit at `2026-05-14 14:25:19 +0300`, and `.agents-skills` no longer appears dirty because the mandate repairs are now in `HEAD`.
+Solution: Re-read the affected mandate formulas from disk and updated status/rationale to avoid stale dirty-file-count claims.
+Rejected Alternatives: Assume the absence of `.agents-skills` diff means fixes disappeared; report a dirty file count that is no longer true.
+Scalability potential: Maintains accurate handoff in a parallel-agent repository where checkpoint commits can occur while review is running.
+Hardware Impact: Documentation-only. Runtime impact is 0 us.
+
+Problem: The previous fourth-pass wording claimed an exact changed-file count, but later haptics repair made that count misleading.
+Solution: Replaced the count with "affected mandate files by readback" wording.
+Rejected Alternatives: Leave an inaccurate count in audit files.
+Scalability potential: Prevents integrator confusion during batch merge review.
 Hardware Impact: No runtime impact.

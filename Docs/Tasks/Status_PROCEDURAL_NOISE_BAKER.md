@@ -50,5 +50,6 @@ Relevant Mandates Loaded:
 - Asset bake: PASS - `Data\Textures\BlueNoise_RGBA.png` 262737 bytes; `Data\Textures\AbyssalFlowField_LowTier_RGBA.png` 26919 bytes.
 - Spectrum metrics: PASS - low_mean_to_mid_mean 0.0732626; low_peak_to_mid_mean 0.312208; dc_power 2.064e-06 within numeric FFT tolerance.
 - PNG optimization: PASS WITH FALLBACK - `optipng`, `oxipng`, `zopflipng`, and `magick` absent; CLI baker used Pillow optimize/compress_level_9.
+- Determinism rebuild review: PASS - fresh `python -B Tools\NoiseBaker\GenerateBlueNoise.py` bake into `%TEMP%\h8_noise_review_PROCEDURAL_NOISE_BAKER` produced byte-identical PNG hashes for BlueNoise and Flow; temp directory removed after path validation.
 - Unity import/runtime/profiler: PENDING VERIFICATION
 - Hashes: BlueNoise SHA256 `AD6F279C6D9AF828D3E1E808896C11F9EB159AC6F560A412E2B87D9F6BD1F902`; Flow SHA256 `32CCB138852E75017B9645CD138C1072D7193C8855D4D127FF3C58AB706C76AA`.

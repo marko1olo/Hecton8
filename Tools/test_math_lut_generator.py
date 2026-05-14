@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Byte-size validation for the HECTON-8 math LUT baker."""
+"""Validation tests for the HECTON-8 math LUT baker."""
 
 from __future__ import annotations
 

@@ -89,3 +89,9 @@ Solution: Added `profileCpuHardwareThreadKind` values: `NO_SMT_PERFORMANCE_CORE_
 Rejected Alternatives: Reusing one unlabeled thread count was rejected because scheduling workers from that field would be unsafe on XR.
 Scalability potential: Homeostasis can clamp Quest worker budget lower without assuming SMT headroom.
 Hardware Impact: 0 us/frame; expected gain is avoiding oversubscription under thermal pressure.
+
+Problem: Numeric `sourceAuthorityRank` values needed an in-file legend for consumers and audits.
+Solution: Added scalar `sourceAuthorityRankLegend` while preserving the flat JSON layout.
+Rejected Alternatives: Adding nested metadata was rejected by the zero-GC parser contract.
+Scalability potential: Validation tools can interpret source rank without hardcoded docs lookup.
+Hardware Impact: 0 us/frame.
