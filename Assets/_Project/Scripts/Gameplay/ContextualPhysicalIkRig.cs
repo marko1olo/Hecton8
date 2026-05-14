@@ -854,7 +854,11 @@ namespace Hecton8.Gameplay
 
         private static bool IsFinite(quaternion value)
         {
-            return math.all(math.isfinite(value.value));
+            if (!math.all(math.isfinite(value.value)))
+                return false;
+
+            float lengthSq = math.dot(value.value, value.value);
+            return math.isfinite(lengthSq) && lengthSq > 0.000001f;
         }
 
         private static float SanitizeBlend(float value)
@@ -3214,8 +3218,12 @@ namespace Hecton8.Gameplay
 
         private static bool IsFiniteQuaternion(Quaternion value)
         {
-            return !(float.IsNaN(value.x) || float.IsNaN(value.y) || float.IsNaN(value.z) || float.IsNaN(value.w) ||
-                     float.IsInfinity(value.x) || float.IsInfinity(value.y) || float.IsInfinity(value.z) || float.IsInfinity(value.w));
+            if (float.IsNaN(value.x) || float.IsNaN(value.y) || float.IsNaN(value.z) || float.IsNaN(value.w) ||
+                float.IsInfinity(value.x) || float.IsInfinity(value.y) || float.IsInfinity(value.z) || float.IsInfinity(value.w))
+                return false;
+
+            float lengthSq = (value.x * value.x) + (value.y * value.y) + (value.z * value.z) + (value.w * value.w);
+            return !float.IsNaN(lengthSq) && !float.IsInfinity(lengthSq) && lengthSq > 0.000001f;
         }
 
         private static float SanitizeUnitScalar(float value)

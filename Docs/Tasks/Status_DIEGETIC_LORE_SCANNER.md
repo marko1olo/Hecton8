@@ -110,10 +110,18 @@ Mandates read:
 - [x] Scoped H-Phi evidence | DOD: baseline/current `GlobalRegistry.ScalabilityTier` source refs: `ScannerTool.cs` 3 -> 1, `ToolDiegeticDisplayController.cs` 2 -> 1 | Rejected: editing global H-Phi report or claiming runtime/global H-Phi without Unity profiler evidence | Estimate: 3 source refs removed
 - [x] Static no-regression checks after Loop 12 | DOD: `git diff --check` passed with line-ending warnings only; no scanner/UI/target `Camera.main`, direct `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, or `.text =` matches | Rejected: dotnet rebuild, explicitly forbidden by user | Estimate: 2400 us
 
+## Loop 13 - Event-Lane H-Phi Hardening
+
+- [x] Re-read authority and mandates | DOD: reread status/rationale, AGENTS.md, Unity MCP skill, and scanner-relevant UI/ZeroGC/Registry/AUP/SpatialHash/CinematicCheat/Telemetry mandates before edits | Rejected: continuing from compressed memory only | Estimate: 11400 us
+- [x] Event-lane scanner tier intake | DOD: `ScannerTool` now implements `IScalabilityChangedEventListener`; active scanner fast/late paths use cached tier plus 2s hysteresis instead of timed `GlobalRegistry.ScalabilityTier` probes | Rejected: 2 Hz registry polling from helper paths called by scanner ticks | Estimate: removes active registry probes
+- [x] Event-lane tool RT tier intake | DOD: `ToolDiegeticDisplayController` now consumes `ScalabilityEvents`, keeps 2s hysteresis, and removes per-display tier probe countdown state | Rejected: polling registry from UI tick path | Estimate: active display registry reads 2 Hz -> event-only
+- [x] Cached player acquisition context | DOD: scanner focused acquisition caches `GlobalRegistry.Player` on Awake/OnSpawn/OnEquip and uses the cached `IPlayerRuntimeContext` during candidate pose resolution | Rejected: hot `GlobalRegistry.Player` read inside focused scan acquisition | Estimate: one registry read removed per focused resample
+- [x] Static no-regression checks after Loop 13 | DOD: `git diff HEAD --check`, `git diff --cached --check`, and scanner bans for `Camera.main`, direct `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, and `.text =` passed | Rejected: dotnet rebuild, explicitly forbidden by user | Estimate: 2600 us
+
 ## Verification
 
 - [x] Compile/source validation - `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:quiet -clp:Summary` passed with 0 warnings / 0 errors after Loop 10
-- [ ] Compile/source validation after Loops 11-12 - NOT RERUN: user explicitly ordered no dotnet rebuilds; static source checks only
+- [ ] Compile/source validation after Loops 11-13 - NOT RERUN: user explicitly ordered no dotnet rebuilds; static source checks only
 - [ ] Console check - BLOCKED BY UNITY SESSION: MCP validate/console calls cannot connect to Unity MCP HTTP endpoint / session
 - [x] Re-read prompt after core tasks
 - [x] Omega polish mandate after all tasks done or blocked

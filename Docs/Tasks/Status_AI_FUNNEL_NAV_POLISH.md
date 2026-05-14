@@ -129,9 +129,18 @@ Task Count: 15
 - [x] A* finite authority guards | DOD: non-finite start/end positions, start/end nodes, current nodes, neighbor nodes, distance squared, and tentative costs fail closed or skip; rejected NaN propagation into heap scores; estimate 8 us.
 - [x] A* non-negative weighting | DOD: threat weight is clamped non-negative and vertical allowance is clamped >= 0 before edge acceptance; rejected negative route costs or inverted vertical gates; estimate 4 us.
 
+## Loop 18 - A* Reconstruction And Raw Path Fail-Closed
+
+- [x] A* path capacity proof | DOD: `NativeAStarJob` now requires `Path.Capacity >= min(Nodes.Length, MaxPathReconstructionIterations) + 2` before `AddNoResize`; rejected relying only on owner allocation; estimate 3 us.
+- [x] A* finite score sanitation | DOD: start/neighbor heuristics, distance estimates, current G scores, and resolved F scores must be finite before heap writes; rejected letting overflowed finite inputs poison priority ordering; estimate 6 us.
+- [x] A* parent-chain proof | DOD: reconstruction now requires a bounded valid parent chain to `StartNode` and clears partial paths on broken/cyclic chains; rejected appending start position after an unproven path tail; estimate 5 us.
+- [x] Funnel raw waypoint finite gate | DOD: `StringPullPathJob` now requires output capacity and all raw waypoints finite before emitting smoothed waypoints; rejected writing NaN/Infinity into the visible path and relying on post-copy cleanup; estimate 5 us.
+- [x] Raw-path black-box finite scan | DOD: empty-output telemetry now scans the raw path for interior non-finite waypoints, not only endpoints; rejected endpoint-only fault detection; estimate 4 us.
+- [x] Batch prompt rotation recorded | DOD: current `Docs/Tasks/CURRENT_BATCH.md` no longer contains `AI_FUNNEL_NAV_POLISH`; continued from persisted status/rationale instead of borrowing neighboring prompts; estimate 0 us.
+
 ## Verification
 
-- [x] Static scan | PASS: `StringPullPathJob`, `NativeAStarJob`, `TryResolveAbyssalNavNodeCandidate`, abyssal nav support/hash, nav graph ingress, and funnel telemetry conversion regions have no `math.normalize`, `math.length(`, `math.distance(`, `.normalized`, or raw `/` code matches after loop 17.
+- [x] Static scan | PASS: `StringPullPathJob`, `NativeAStarJob`, `TryResolveAbyssalNavNodeCandidate`, abyssal nav support/hash, nav graph ingress, and funnel telemetry conversion regions have no `math.normalize`, `math.length(`, `math.distance(`, `.normalized`, or raw `/` code matches after loop 18.
 - [x] Diff hygiene | PASS: `git diff --check` passed for edited funnel/scheduler/status/log files; only LF-to-CRLF working-copy warnings were emitted.
 - [x] Static H-Phi audit | ATTEMPTED: `Tools/Architecture/HectonPhiAudit.ps1 -Json` timed out after 120 seconds under current repo load; no score claimed from this pass.
 - [x] Compile check | BLOCKED BY DEPENDENCY: bounded no-reference `dotnet build Hecton8.Core.csproj --no-restore /m:1 /nr:false /p:BuildProjectReferences=false` completed with 63 unrelated errors in `VRAMEnforcer`, `VoxelDeltaProcessor`, `SealedDoor`, `BinaryLayoutManifest`, and `HardwareTierDetector`; none were reported in `VegetationFlowFieldIntegrator.cs`, `VegetationNavGridSynchronizer.cs`, or `HectonMapMagicVegetationBridge.cs`.

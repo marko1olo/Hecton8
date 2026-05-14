@@ -171,3 +171,41 @@ Verification:
 - Focused static audit: PASS for the two new Race Condition Hunter files; no forbidden hot-path patterns or `Substring` usage.
 - Temp compile artifacts were removed.
 - Full Unity/editor execution remains PENDING VERIFICATION because MCP has no available Unity session.
+
+## 2026-05-15 - H-Phi And CI Hygiene Addendum
+Status: PENDING VERIFICATION
+Evidence Class: STATIC_SOURCE_PLUS_EDITOR_ISOLATED_COMPILE
+
+What was wrong:
+- The runtime H-Phi console artifact used a custom weighted count instead of the atlas/runtime risk-adjusted H-Phi model.
+- The swarm stress request still used a `GlobalSignals.Publish` wrapper for a signal whose wrapper only forwards into the typed lane.
+- Memory artifact reads were repeated across result, blackbox, baseline, and crash telemetry paths instead of using one consistent snapshot.
+- A far-future `Temp/H8_FRACTURE_TEST.flag` timestamp could keep the fallback trigger valid indefinitely.
+- The editor runner did not explicitly mark malformed result JSON.
+- `CURRENT_BATCH.md` no longer contains this agent prompt; this is recorded as batch drift, not an instruction to read neighboring prompts.
+
+What was done:
+- Swarm pressure now writes directly to `SignalBus<SwarmDispersedSignal>.Push(in signal)`.
+- AUP and crash telemetry stay on `GlobalSignals.Publish` because those wrappers own job-admission/private-queue side effects.
+- Cold H-Phi calculation now reports `runtime_risk_adjusted` and writes `staticHPhiModel` into the result JSON.
+- Scanner search terms are split so the scanner does not create false source-count debt.
+- Added `[StructLayout]` `MemorySnapshot` and `HPhiStaticCounters` structs; terminal and blackbox artifacts now sample final memory through the snapshot path.
+- Runtime flag validation deletes stale flags and far-future timestamps beyond 5 minutes of clock skew.
+- Editor runner writes `result_exit_code_invalid` when `exitCode` cannot be parsed.
+
+Cinematic Cheats used:
+- Signal pressure remains the stress fake instead of mutating fauna/render systems.
+- H-Phi evidence is source-only and cold; no profiler or runtime visual simulation was introduced.
+
+Exact Microseconds saved:
+- Direct swarm lane removes one wrapper call on the one-shot stress request; below meaningful profiler resolution, estimated <1 us per run.
+- Central memory snapshot removes duplicate registry/memory property reads on terminal and blackbox writes; estimated 1-4 us on terminal artifact generation, 0 B hot-path managed allocation.
+- Far-future/stale flag deletion can prevent a false 50,000-frame run; estimated 120000000+ us saved per prevented false activation.
+
+Verification:
+- Focused forbidden-pattern scan: PASS for both Race Condition Hunter files; no scene search, LINQ, coroutine, `Task<`, `.Complete()`, explicit GC, reflection, managed collection creation, `string.Format`, or `Substring`.
+- Scoped QA/headless source count: `SignalBusPush=3`, `GlobalSignalsPublish=4`, `GlobalRegistrySurface=15`, `StructLayoutAttributes=3`, `StructDeclarations=3`, `FindObjectCalls=0`, `GetComponentCalls=0`, `UnityUpdateMethods=0`.
+- PowerShell H-Phi audit completed without `dotnet`: runtime risk `0.000124488`, runtime narrow `0.009266939`, `SignalBusPush=84`, `GlobalRegistrySurface=5139`, `EventPublish=450`, `DataVaultRefs=133`, `NativeArrayRefs=7020`, `StructLayoutAttributes=946`, `StructDeclarations=1888`.
+- Editor runner isolated Unity compiler probe: PASS.
+- Runtime isolated Unity compiler probe: BLOCKED by stale `Library/ScriptAssemblies` H8Memory API. Current source defines `Release(ref NativeArray<T>, SystemID)`, but the referenced compiled assembly still exposes the older `JobHandle` overload. No `dotnet` rebuild was run by user instruction.
+- Full Unity/editor/player execution remains PENDING VERIFICATION.

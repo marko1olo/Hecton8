@@ -1,6 +1,6 @@
 # Rationale - VFX_SDF_CARVE_DEBRIS
 
-Status: STATIC VERIFIED / UNITY COMPILE BLOCKED (NO DOTNET REBUILD RUN)
+Status: PENDING VERIFICATION / STATIC CHECKS ONLY / UNITY COMPILE BLOCKED (NO DOTNET REBUILD RUN)
 
 ## Decision 0 - Domain and Mandate Boundary
 
@@ -153,3 +153,11 @@ Solution: Treat static evidence as the closeout boundary: run `git diff --check`
 Rejected Alternatives: Running `dotnet build` or `dotnet rebuild` was rejected by direct user instruction. CPU `GetData` validation was rejected because it stalls GPU work and violates the debris architecture. Claiming Unity compile success without editor/MCP evidence was rejected because it is a false report.
 Scalability potential: Low/MX350 retains the 1024 active slot cap, no SDF sample, no shader velocity branch, and no hot scheduler fences. Middle/High/Ultra retain 4096 active capacity, validated flow/SDF binding, hash-vector chip orientation, CoreLit response, and velocity fresh-edge impact readability without new CPU uploads.
 Hardware Impact: Verification itself saves 0 us at runtime. Preserved runtime estimates remain 25-35 us low-tier dispatch reduction, 20-70 us burst scheduler-fence removal, 15-60 us dense-batch scan reduction, sub-10 us duplicate mesh metadata avoidance, and visible-count-dependent shader ALU savings from removing per-vertex `sincos`.
+
+## Decision 19 - Startup Retry, Bounded Signal Fairness, and No-Wake Fast Path
+
+Problem: Three residual weaknesses remained after the last pass: an `OnEnable()` that runs before `GlobalRegistry`/DataVault readiness can leave the renderer unregistered forever, a raw 32-signal cap can let invalid/non-subtract carve packets starve valid subtract packets later in the same frame, and `ApplyDynamicWakes` still enters an eight-slot unrolled loop even when no wake payload is active. The debris shader also recomputed a hash already available during basis construction and normalized an up vector derived from two unit perpendicular vectors.
+Solution: Retry registration/GPU readiness once from `Start()` without adding an Update polling loop; scan up to 64 raw carve signals while keeping the 32 valid-request emission cap; early-return from `ApplyDynamicWakes` when slot count is zero; reuse the orientation z-hash for edge jitter and assign `upWS = cross(forwardWS, rightWS)` directly.
+Rejected Alternatives: Runtime polling was rejected because it adds a permanent hot-path branch. Unbounded signal scans were rejected because burst events must stay predictable. Binding real dynamic wake buffers by widening `HectonFluidEngine` public contracts was rejected for this pass because the existing publisher does not expose a narrow read-only wake payload. CPU rotation/color uploads were rejected because shader fakes are cheaper.
+Scalability potential: Low/MX350 benefits most: no wake slot loop when wake slots are zero, 1024 active capacity stays intact, and startup retry prevents missing the whole VFX system after boot order jitter. Middle/High/Ultra retain richer flow/SDF behavior and velocity edge response, with lower vertex ALU per visible chip.
+Hardware Impact: Startup retry has no steady-frame cost. The signal scan remains capped at 64 raw packets and 32 valid emissions. The no-wake fast path removes 8 wake-slot branch iterations per live particle on frames with `_DynamicWakeParams.x == 0`, which is the current carve debris bind. Shader basis change saves one hash and one safe-normalize/rsqrt per visible chip vertex.

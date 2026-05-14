@@ -2348,6 +2348,12 @@ namespace Hecton8.World
                 }
 
                 float neighborRadiusSq = NeighborRadius * NeighborRadius;
+                if (!math.isfinite(neighborRadiusSq))
+                    return;
+
+                float threatPenaltyWeight = SanitizeNonNegative(ThreatPenaltyWeight);
+                float conduitMisalignmentPenalty = SanitizeNonNegative(ConduitMisalignmentPenalty);
+                float conduitAlignmentReward = SanitizeSaturate(ConduitAlignmentReward);
                 int heapCount = 0;
 
                 for (int i = 0; i < nodeCount; i++)
@@ -2360,7 +2366,11 @@ namespace Hecton8.World
                 }
 
                 GScore[StartNode] = 0f;
-                FScore[StartNode] = HeuristicCost(StartNode);
+                float startHeuristic = HeuristicCost(StartNode);
+                if (!math.isfinite(startHeuristic))
+                    return;
+
+                FScore[StartNode] = startHeuristic;
                 HeapPushOrDecrease(StartNode, ref heapCount);
 
                 int expandedNodes = 0;
@@ -2385,6 +2395,8 @@ namespace Hecton8.World
                     float3 currentNode = ToFloat3(Nodes[current]);
                     if (!math.all(math.isfinite(currentNode)))
                         continue;
+                    if (!math.isfinite(GScore[current]))
+                        continue;
 
                     for (int neighbor = 0; neighbor < nodeCount; neighbor++)
                     {
@@ -2406,23 +2418,31 @@ namespace Hecton8.World
                         }
 
                         float distance = EstimateLength3D(delta);
+                        if (distance <= 0.0001f || !math.isfinite(distance))
+                            continue;
+
                         float conduitStrength = ResolveConduitStrength(current, neighbor, currentNode, neighborNode, delta, distance, out float conduitAlignment, out float verticalBonus);
                         float allowedVertical = math.max(0f, VerticalTolerance + verticalBonus);
                         if ((verticalDelta * verticalDelta) > (allowedVertical * allowedVertical))
                             continue;
 
-                        float threatPenalty = math.saturate(SampleThreatAtWorldPosition(neighborNode)) * math.max(0f, ThreatPenaltyWeight);
-                        float conduitPenalty = conduitStrength * ((1f - conduitAlignment) * ConduitMisalignmentPenalty);
-                        float conduitThreatReduction = threatPenalty * conduitStrength * conduitAlignment * math.saturate(ConduitAlignmentReward);
+                        float threatPenalty = math.saturate(SampleThreatAtWorldPosition(neighborNode)) * threatPenaltyWeight;
+                        float conduitPenalty = conduitStrength * ((1f - conduitAlignment) * conduitMisalignmentPenalty);
+                        float conduitThreatReduction = threatPenalty * conduitStrength * conduitAlignment * conduitAlignmentReward;
                         float traversalMultiplier = math.max(1f, ResolveTraversalMultiplier(current, neighbor));
                         float traversalCost = distance * traversalMultiplier;
                         float tentativeG = GScore[current] + traversalCost + math.max(0f, threatPenalty - conduitThreatReduction) + conduitPenalty;
                         if (tentativeG >= GScore[neighbor] || !math.isfinite(tentativeG))
                             continue;
 
+                        float neighborHeuristic = HeuristicCost(neighbor);
+                        float resolvedFScore = tentativeG + neighborHeuristic;
+                        if (!math.isfinite(neighborHeuristic) || !math.isfinite(resolvedFScore))
+                            continue;
+
                         Parents[neighbor] = current;
                         GScore[neighbor] = tentativeG;
-                        FScore[neighbor] = tentativeG + HeuristicCost(neighbor);
+                        FScore[neighbor] = resolvedFScore;
                         HeapPushOrDecrease(neighbor, ref heapCount);
                     }
                 }
@@ -2433,15 +2453,39 @@ namespace Hecton8.World
                 Path.AddNoResize(new Vector3(EndPosition.x, EndPosition.y, EndPosition.z));
                 int nodeIndex = EndNode;
                 int pathIterations = 0;
-                while (nodeIndex >= 0 && pathIterations < MaxPathReconstructionIterations)
+                int reconstructionLimit = math.min(nodeCount, MaxPathReconstructionIterations);
+                bool reachedStartNode = false;
+                while (nodeIndex >= 0 && pathIterations < reconstructionLimit)
                 {
                     pathIterations++;
                     float3 node = ToFloat3(Nodes[nodeIndex]);
+                    if (!math.all(math.isfinite(node)))
+                    {
+                        Path.Clear();
+                        return;
+                    }
+
                     Path.AddNoResize(new Vector3(node.x, node.y, node.z));
                     if (nodeIndex == StartNode)
+                    {
+                        reachedStartNode = true;
                         break;
+                    }
 
-                    nodeIndex = Parents[nodeIndex];
+                    int parentIndex = Parents[nodeIndex];
+                    if (parentIndex < 0 || parentIndex >= nodeCount)
+                    {
+                        nodeIndex = -1;
+                        break;
+                    }
+
+                    nodeIndex = parentIndex;
+                }
+
+                if (!reachedStartNode)
+                {
+                    Path.Clear();
+                    return;
                 }
 
                 Path.AddNoResize(new Vector3(StartPosition.x, StartPosition.y, StartPosition.z));
@@ -2450,18 +2494,31 @@ namespace Hecton8.World
 
             private bool HasCompleteAStarWorkspace(int nodeCount)
             {
+                int requiredPathCapacity = math.min(nodeCount, MaxPathReconstructionIterations) + 2;
                 return Parents.IsCreated &&
                        GScore.IsCreated &&
                        FScore.IsCreated &&
                        ClosedFlags.IsCreated &&
                        HeapNodes.IsCreated &&
                        HeapPositions.IsCreated &&
+                       Path.IsCreated &&
+                       Path.Capacity >= requiredPathCapacity &&
                        Parents.Length >= nodeCount &&
                        GScore.Length >= nodeCount &&
                        FScore.Length >= nodeCount &&
                        ClosedFlags.Length >= nodeCount &&
                        HeapNodes.Length >= nodeCount &&
                        HeapPositions.Length >= nodeCount;
+            }
+
+            private static float SanitizeNonNegative(float value)
+            {
+                return math.isfinite(value) ? math.max(0f, value) : 0f;
+            }
+
+            private static float SanitizeSaturate(float value)
+            {
+                return math.isfinite(value) ? math.saturate(value) : 0f;
             }
 
             private void ReversePath()
@@ -2505,8 +2562,12 @@ namespace Hecton8.World
                     return 0f;
                 }
 
+                if (!math.isfinite(WaterLevel) || !math.isfinite(ConduitStartDepth))
+                    return 0f;
+
+                float conduitStartDepth = math.max(0f, ConduitStartDepth);
                 float depthMeters = math.max(0f, WaterLevel - math.min(currentNode.y, neighborNode.y));
-                if (depthMeters < ConduitStartDepth ||
+                if (depthMeters < conduitStartDepth ||
                     !ConduitVectors.IsCreated ||
                     !ConduitStrengths.IsCreated ||
                     currentIndex >= ConduitVectors.Length ||
@@ -2552,7 +2613,7 @@ namespace Hecton8.World
                 float3 edgeDirection = delta * math.rsqrt(edgeLengthSq);
                 float3 conduitDirection = DominantAxisOrDefault(conduitVector, edgeDirection);
                 conduitAlignment = math.saturate((math.dot(edgeDirection, conduitDirection) * 0.5f) + 0.5f);
-                verticalBonus = ConduitVerticalToleranceBonus * combinedStrength * conduitAlignment * math.abs(conduitDirection.y);
+                verticalBonus = SanitizeNonNegative(ConduitVerticalToleranceBonus) * combinedStrength * conduitAlignment * math.abs(conduitDirection.y);
                 return combinedStrength;
             }
 
@@ -2602,8 +2663,14 @@ namespace Hecton8.World
 
             private float SamplePredatorFearAtWorldPosition(float3 position)
             {
-                if (!PredatorFearNodes.IsCreated || PredatorFearNodeCount <= 0 || TraversalSpeciesId == 0 || PredatorFearPenaltyWeight <= 0f)
+                if (!PredatorFearNodes.IsCreated ||
+                    PredatorFearNodeCount <= 0 ||
+                    TraversalSpeciesId == 0 ||
+                    PredatorFearPenaltyWeight <= 0f ||
+                    !math.isfinite(PredatorFearPenaltyWeight))
+                {
                     return 0f;
+                }
 
                 float strongest = 0f;
                 int count = math.min(PredatorFearNodeCount, PredatorFearNodes.Length);
@@ -2894,6 +2961,9 @@ namespace Hecton8.World
                     return;
 
                 int pathCount = InputPath.Length;
+                if (OutputPath.Capacity < pathCount || !HasFiniteInputPath(pathCount))
+                    return;
+
                 if (pathCount <= 2)
                 {
                     for (int i = 0; i < pathCount; i++)
@@ -2984,6 +3054,20 @@ namespace Hecton8.World
                     OutputPath.AddNoResize(endPoint);
 
                 CompactPathByVoxelLineOfSight();
+            }
+
+            private bool HasFiniteInputPath(int pathCount)
+            {
+                if (!InputPath.IsCreated || pathCount <= 0)
+                    return false;
+
+                for (int i = 0; i < pathCount; i++)
+                {
+                    if (!math.all(math.isfinite(ToFloat3(InputPath[i]))))
+                        return false;
+                }
+
+                return true;
             }
 
             private NavPortal BuildPortal(int index, out float3 portalAxis)

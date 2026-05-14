@@ -1104,18 +1104,24 @@ namespace Hecton8.SaveSystem
         private static bool EnsureProceduralWorldState(ref ProceduralWorldStateDTO dto, List<string> steps)
         {
             bool changed = false;
-            if (dto.suppressedPlacementKeys == null || dto.suppressedPlacementKeys.Length < ProceduralWorldStateDTO.MaxSuppressedPlacements ||
-                dto.faunaStates == null || dto.faunaStates.Length < ProceduralWorldStateDTO.MaxFaunaStates ||
-                dto.hibernatedFaunaStates == null || dto.hibernatedFaunaStates.Length < ProceduralWorldStateDTO.MaxHibernatedFaunaStates ||
-                dto.geologySeamStates == null || dto.geologySeamStates.Length < ProceduralWorldStateDTO.MaxGeologySeamStates ||
-                dto.geologyCaveEntrances == null || dto.geologyCaveEntrances.Length < ProceduralWorldStateDTO.MaxGeologyCaveEntrances)
+            int suppressedPlacementBound = ClampArrayLength(dto.suppressedPlacementKeys, ProceduralWorldStateDTO.MaxSuppressedPlacements);
+            int faunaStateBound = ClampArrayLength(dto.faunaStates, ProceduralWorldStateDTO.MaxFaunaStates);
+            int hibernatedFaunaBound = ClampArrayLength(dto.hibernatedFaunaStates, ProceduralWorldStateDTO.MaxHibernatedFaunaStates);
+            int geologySeamBound = ClampArrayLength(dto.geologySeamStates, ProceduralWorldStateDTO.MaxGeologySeamStates);
+            int geologyCaveBound = ClampArrayLength(dto.geologyCaveEntrances, ProceduralWorldStateDTO.MaxGeologyCaveEntrances);
+
+            if (dto.suppressedPlacementKeys == null || dto.suppressedPlacementKeys.Length != ProceduralWorldStateDTO.MaxSuppressedPlacements ||
+                dto.faunaStates == null || dto.faunaStates.Length != ProceduralWorldStateDTO.MaxFaunaStates ||
+                dto.hibernatedFaunaStates == null || dto.hibernatedFaunaStates.Length != ProceduralWorldStateDTO.MaxHibernatedFaunaStates ||
+                dto.geologySeamStates == null || dto.geologySeamStates.Length != ProceduralWorldStateDTO.MaxGeologySeamStates ||
+                dto.geologyCaveEntrances == null || dto.geologyCaveEntrances.Length != ProceduralWorldStateDTO.MaxGeologyCaveEntrances)
             {
                 dto.EnsureCapacity();
                 changed = true;
                 steps.Add("procedural world state capacity repaired");
             }
 
-            int clampedSuppressed = math.clamp(dto.suppressedPlacementCount, 0, dto.suppressedPlacementKeys != null ? dto.suppressedPlacementKeys.Length : 0);
+            int clampedSuppressed = math.clamp(dto.suppressedPlacementCount, 0, suppressedPlacementBound);
             if (clampedSuppressed != dto.suppressedPlacementCount)
             {
                 dto.suppressedPlacementCount = clampedSuppressed;
@@ -1123,7 +1129,7 @@ namespace Hecton8.SaveSystem
                 steps.Add("procedural suppressed placement count clamped");
             }
 
-            int clampedFauna = math.clamp(dto.faunaStateCount, 0, dto.faunaStates != null ? dto.faunaStates.Length : 0);
+            int clampedFauna = math.clamp(dto.faunaStateCount, 0, faunaStateBound);
             if (clampedFauna != dto.faunaStateCount)
             {
                 dto.faunaStateCount = clampedFauna;
@@ -1131,7 +1137,7 @@ namespace Hecton8.SaveSystem
                 steps.Add("procedural fauna state count clamped");
             }
 
-            int clampedHibernatedFauna = math.clamp(dto.hibernatedFaunaCount, 0, dto.hibernatedFaunaStates != null ? dto.hibernatedFaunaStates.Length : 0);
+            int clampedHibernatedFauna = math.clamp(dto.hibernatedFaunaCount, 0, hibernatedFaunaBound);
             if (clampedHibernatedFauna != dto.hibernatedFaunaCount)
             {
                 dto.hibernatedFaunaCount = clampedHibernatedFauna;
@@ -1139,7 +1145,7 @@ namespace Hecton8.SaveSystem
                 steps.Add("hibernated fauna state count clamped");
             }
 
-            int clampedSeamStates = math.clamp(dto.geologySeamStateCount, 0, dto.geologySeamStates != null ? dto.geologySeamStates.Length : 0);
+            int clampedSeamStates = math.clamp(dto.geologySeamStateCount, 0, geologySeamBound);
             if (clampedSeamStates != dto.geologySeamStateCount)
             {
                 dto.geologySeamStateCount = clampedSeamStates;
@@ -1147,7 +1153,7 @@ namespace Hecton8.SaveSystem
                 steps.Add("procedural geology seam count clamped");
             }
 
-            int clampedCaveEntrances = math.clamp(dto.geologyCaveEntranceCount, 0, dto.geologyCaveEntrances != null ? dto.geologyCaveEntrances.Length : 0);
+            int clampedCaveEntrances = math.clamp(dto.geologyCaveEntranceCount, 0, geologyCaveBound);
             if (clampedCaveEntrances != dto.geologyCaveEntranceCount)
             {
                 dto.geologyCaveEntranceCount = clampedCaveEntrances;
@@ -1156,6 +1162,14 @@ namespace Hecton8.SaveSystem
             }
 
             return changed;
+        }
+
+        private static int ClampArrayLength<T>(T[] values, int maxCount)
+        {
+            if (values == null || maxCount <= 0)
+                return 0;
+
+            return math.min(values.Length, maxCount);
         }
 
         private static bool EnsureScanLog(ref ScanLogDTO dto, List<string> steps)

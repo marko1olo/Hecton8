@@ -1,5 +1,6 @@
 param(
     [switch]$Json,
+    [switch]$Summary,
     [switch]$CoreGraphOnly,
     [switch]$RequireCoreBuildGate,
     [int]$MaxCoreAsmdefDebtReferences = -1,
@@ -484,6 +485,60 @@ function New-Scores {
     }
 }
 
+function New-CoreGraphSummary {
+    param([System.Collections.Specialized.OrderedDictionary]$CoreGraphAudit)
+
+    [ordered]@{
+        CoreAsmdef = $CoreGraphAudit.CoreAsmdef
+        CoreProject = $CoreGraphAudit.CoreProject
+        BuildGraphGate = $CoreGraphAudit.BuildGraphGate
+        Counts = $CoreGraphAudit.Counts
+        CoreAsmdefDebtReferences = @($CoreGraphAudit.CoreAsmdefDebtReferences |
+            Select-Object -ExpandProperty Reference)
+        GeneratedProjectDebtReferences = @($CoreGraphAudit.GeneratedProjectDebtReferences |
+            Select-Object -ExpandProperty Reference)
+    }
+}
+
+function New-AuditSummary {
+    param([System.Collections.Specialized.OrderedDictionary]$Audit)
+
+    [ordered]@{
+        Timestamp = $Audit.Timestamp
+        Scope = $Audit.Scope
+        EvidenceClass = 'STATIC_SOURCE'
+        Scores = [ordered]@{
+            RuntimeHPhiNarrow = $Audit.Scores.HPhiStaticNarrow
+            RuntimeHPhiRisk = $Audit.Scores.HPhiStaticRisk
+            AllSourceHPhiNarrow = $Audit.AllSourceScores.HPhiStaticNarrow
+            AllSourceHPhiRisk = $Audit.AllSourceScores.HPhiStaticRisk
+            RiskIntegration = $Audit.Scores.RiskIntegration
+            ArchitecturalPurity = $Audit.Scores.ArchitecturalPurity
+            DataSovereignty = $Audit.Scores.DataSovereignty
+            MemoryAlignment = $Audit.Scores.MemoryAlignment
+            BinarySafeRatio = $Audit.Scores.BinarySafeRatio
+        }
+        Counts = [ordered]@{
+            RuntimeFiles = $Audit.Counts.CsFiles
+            RuntimeLines = $Audit.Counts.Lines
+            SignalBusPush = $Audit.Counts.SignalBusPush
+            GlobalRegistrySurface = $Audit.Counts.GlobalRegistrySurface
+            EventPublish = $Audit.Counts.EventPublish
+            UnityUpdateMethods = $Audit.Counts.UnityUpdateMethods
+            DataVaultRefs = $Audit.Counts.GlobalDataVaultRefs
+            NativeArrayRefs = $Audit.Counts.NativeArrayRefs
+            StructDeclarations = $Audit.Counts.StructDeclarations
+            StructLayoutAttributes = $Audit.Counts.StructLayoutAttributes
+            FindObjectCalls = $Audit.Counts.FindObjectCalls
+            GetComponentCalls = $Audit.Counts.GetComponentCalls
+            DisposeCalls = $Audit.Counts.DisposeCalls
+        }
+        CoreGraph = New-CoreGraphSummary $Audit.CoreGraphAudit
+        TopOwnerBlockedDataVaultCandidates = @($Audit.OwnerBlockedDataVaultCandidates |
+            Select-Object -First 10)
+    }
+}
+
 $coreGraphAudit = Get-CoreGraphAudit
 Assert-CoreGraphBudget $coreGraphAudit
 
@@ -493,6 +548,32 @@ if ($CoreGraphOnly) {
         Scope = 'Core dependency graph'
         MetricModel = 'Fast graph-only H-Phi audit. STATIC_SOURCE only; no compile, Unity import, profiler, or runtime proof.'
         CoreGraphAudit = $coreGraphAudit
+    }
+
+    if ($Summary) {
+        $summaryResult = [ordered]@{
+            Timestamp = $result.Timestamp
+            Scope = $result.Scope
+            EvidenceClass = 'STATIC_SOURCE'
+            CoreGraph = New-CoreGraphSummary $coreGraphAudit
+        }
+
+        if ($Json) {
+            $summaryResult | ConvertTo-Json -Depth 6
+            return
+        }
+
+        Write-Output 'Hecton-Phi Core graph summary'
+        Write-Output "Timestamp: $($summaryResult.Timestamp)"
+        Write-Output 'Counts:'
+        [pscustomobject]$summaryResult.CoreGraph.Counts | Format-List
+        Write-Output ''
+        Write-Output 'Core asmdef H-Phi debt references:'
+        $summaryResult.CoreGraph.CoreAsmdefDebtReferences | ForEach-Object { Write-Output ("  {0}" -f $_) }
+        Write-Output ''
+        Write-Output 'Generated Core project H-Phi debt references:'
+        $summaryResult.CoreGraph.GeneratedProjectDebtReferences | ForEach-Object { Write-Output ("  {0}" -f $_) }
+        return
     }
 
     if ($Json) {
@@ -520,10 +601,10 @@ if ($CoreGraphOnly) {
 }
 
 $patternSource = [ordered]@{
-    SignalBusPush = 'SignalBus\s*<[^>]+>\s*\.\s*Push'
+    SignalBusPush = '(?:SignalBus\s*<[^>]+>\s*\.\s*Push|GlobalSignals\s*\.\s*Publish\s*\()'
     GlobalRegistryGet = 'GlobalRegistry\s*\.\s*Get\s*<'
     GlobalRegistrySurface = 'GlobalRegistry\s*\.'
-    EventPublish = '\bPublish\s*\('
+    EventPublish = '\b(?:HectonEventBus|WaterTransitionEvents|SuitDamageEvents|LocalizationEvents|FluidFeedbackEvents|VehicleCommandSignalBus|PhysicsDeterminismSignals|[A-Za-z_]\w*Events)\s*\.\s*Publish\w*\s*\('
     UnityUpdateMethods = '^\s*(?:public|private|protected|internal)?\s*(?:static\s+)?void\s+(?:Update|LateUpdate|FixedUpdate)\s*\('
     ISlowTickable = '\bISlowTickable\b'
     IJob = '\bIJob(?:ParallelFor|For|Entity|Chunk)?\b'
@@ -652,6 +733,32 @@ $result = [ordered]@{
     TopEditorNativeArrayFiles = @($editorFileRows |
         Sort-Object NativeArrayRefs -Descending |
         Select-Object -First 10)
+}
+
+if ($Summary) {
+    $summaryResult = New-AuditSummary $result
+
+    if ($Json) {
+        $summaryResult | ConvertTo-Json -Depth 6
+        return
+    }
+
+    Write-Output 'Hecton-Phi static summary'
+    Write-Output "Timestamp: $($summaryResult.Timestamp)"
+    Write-Output "Evidence class: $($summaryResult.EvidenceClass)"
+    Write-Output ''
+    Write-Output 'Scores:'
+    [pscustomobject]$summaryResult.Scores | Format-List
+    Write-Output ''
+    Write-Output 'Counts:'
+    [pscustomobject]$summaryResult.Counts | Format-List
+    Write-Output ''
+    Write-Output 'Core graph H-Phi debt counts:'
+    [pscustomobject]$summaryResult.CoreGraph.Counts | Format-List
+    Write-Output ''
+    Write-Output 'Top owner-blocked DataVault candidate files:'
+    $summaryResult.TopOwnerBlockedDataVaultCandidates | Format-Table -AutoSize
+    return
 }
 
 if ($Json) {

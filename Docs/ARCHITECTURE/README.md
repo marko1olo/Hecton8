@@ -1,6 +1,6 @@
 # HECTON-8 Architecture Index
 
-Date: 2026-05-14
+Date: 2026-05-15
 Status: PENDING VERIFICATION
 
 Purpose: stable index for `Docs/ARCHITECTURE`. These files are long-lived system contracts. They are not dated progress reports.
@@ -26,11 +26,12 @@ Not proven by this folder: Unity import, Unity Console, Play Mode, profiler, GCM
 
 1. `CINEMATIC_CHEATS_LEDGER.md` - visual-realistic-fake doctrine and physical-simulation rejection gate.
 2. `SYSTEM_INTERCONNECT_MATRIX.md` - cross-system ownership and AUP-sensitive edges.
-3. `DISPATCH_PIPELINE.md` - runtime dispatch, tick ownership, and update boundaries.
-4. `AUP_PRECISION_STANDARDS.md` and `KINEMATICS_AUP_INTEGRATION.md` - floating-origin and movement correctness.
-5. `ZERO_GC_FABRICATION.md` and `ZERO_GC_UI_PIPELINE.md` - allocation discipline for fabrication and UI.
-6. `SAVE_V8_BINARY_SPEC.md` and `SAVE_PAGING_PROTOCOL.md` - persistence architecture.
-7. Domain docs such as `FLOW_FIELD_MATH.md`, `AUDIO_DSP_PIPELINE.md`, `HABITAT_LOGISTICS_GRAPH.md`, `SUBMARINE_OS_MANUAL.md`, and `URP_SCREENSHOT_PIPELINE.md` as needed by the task.
+3. `HECTON_PHI_STATIC_METRIC.md` - static H-Phi definition, formulas, graph debt gate, and evidence boundary.
+4. `DISPATCH_PIPELINE.md` - runtime dispatch, tick ownership, and update boundaries.
+5. `AUP_PRECISION_STANDARDS.md` and `KINEMATICS_AUP_INTEGRATION.md` - floating-origin and movement correctness.
+6. `ZERO_GC_FABRICATION.md` and `ZERO_GC_UI_PIPELINE.md` - allocation discipline for fabrication and UI.
+7. `SAVE_V8_BINARY_SPEC.md` and `SAVE_PAGING_PROTOCOL.md` - persistence architecture.
+8. Domain docs such as `FLOW_FIELD_MATH.md`, `AUDIO_DSP_PIPELINE.md`, `HABITAT_LOGISTICS_GRAPH.md`, `SUBMARINE_OS_MANUAL.md`, and `URP_SCREENSHOT_PIPELINE.md` as needed by the task.
 
 ## Hard Current Rules
 
@@ -41,3 +42,4 @@ Not proven by this folder: Unity import, Unity Console, Play Mode, profiler, GCM
 - No direct ad hoc `Rigidbody.AddForce` ownership outside the designated physics apply path.
 - No Bloom or FSR2/DLSS-class temporal upscaler on MX350/MINIMAL.
 - No runtime readiness claim without fresh Unity/profiler/GC/player-build evidence.
+- Static H-Phi is an architecture hygiene signal only; do not report it as compile, profiler, GC, player-build, or visual-quality proof.

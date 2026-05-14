@@ -212,3 +212,19 @@ What was done -> Added `PRLG` source gating to `PrologueAcousticOrchestrator` an
 Cinematic Cheats used -> Whiteout remains the cheap concealment layer. Splash audio/fluid overkill is reserved for the sequence-owned water-transition moment.
 Exact Microseconds saved -> Adds one uint compare in an 8-packet lane. Prevents premature DSP sweep, splash gain, bubble ring, and fluid impulse work before real handoff.
 Verification -> No dotnet rebuild/response-file compile was run per user constraint. Targeted scans confirm `PRLG` source gates across VFX, acoustic, and fluid consumers; forbidden-pattern scan returned no hits; `git diff --check` reports line-ending warnings only.
+
+## 2026-05-15 - Loop 31 Audio Whiteout Debounce Review
+
+What was wrong -> After source gating, non-`PRLG` complete packets still forced an audio transition publish every time they appeared, even when they represented the same whiteout-only manual/orbital packet.
+What was done -> Added source+sequence debounce state in `PrologueAcousticOrchestrator` for whiteout-only complete packets. New packets still force one responsive whiteout transition; duplicates update local state without queuing identical DSP transitions.
+Cinematic Cheats used -> Whiteout remains the cheap concealment layer. Ocean sweep and splash gain remain reserved for the `PRLG` sequence handoff.
+Exact Microseconds saved -> Adds two scalar compares in an 8-packet lane; saves one queued audio transition per duplicate non-`PRLG` packet, estimated 3-10 us depending on audio service contention.
+Verification -> No dotnet rebuild/response-file compile was run per user constraint. Targeted scan confirms `_hasWhiteoutCompleteSequence` source+sequence debounce; forbidden-pattern scan returned no hits; `git diff --check` reports line-ending warnings only.
+
+## 2026-05-15 - Loop 32 Post-Handoff Whiteout Regression Review
+
+What was wrong -> A late `MOVR`/`ORBI` complete packet could still affect consumers after the `PRLG` handoff: audio could leave ocean handoff for whiteout, and VFX could extend whiteout hold while already fading to hydrated splashdown.
+What was done -> Added post-handoff guards. Audio ignores non-`PRLG` complete packets once in `StageOceanHandoff`; VFX ignores them once in `HydratedFade` or `Complete`.
+Cinematic Cheats used -> Pre-handoff whiteout remains the cheap concealment fake. Post-handoff fade/splash/audio overkill stays owned by the sequence handoff.
+Exact Microseconds saved -> Adds one byte compare on qualifying non-sequence packets; prevents portal-audio rollback, delayed splash/fade, and redundant whiteout hold work. Direct compare cost is below 1 us.
+Verification -> No dotnet rebuild/response-file compile was run per user constraint. Targeted scan confirms `StageOceanHandoff` and `ReentryPhase.HydratedFade` guards; forbidden-pattern scan returned no hits; `git diff --check` reports line-ending warnings only.

@@ -236,13 +236,15 @@ What was done:
 - Sanitized non-finite conduit vectors/strengths at nav graph ingress.
 - Replaced abyssal spatial-hash and flow-support divisions with reciprocal precomputes plus finite transform guards.
 - Replaced raw stopwatch-frequency division in abyssal funnel timing with `math.rcp`.
+- Added `NativeAStarJob` workspace completeness checks and finite/cost guards before heap and score writes.
+- Clamped A* threat weighting and vertical allowance to non-negative ranges.
 
 Cinematic Cheats used:
 - Corrupt feeder proof becomes conservative route pressure instead of running expensive recovery or pretending the path is clear.
 - Low tier pays fixed cheap guards and reciprocal math; High/Ultra keep route fidelity for valid payloads and can spend saved cycles on smoothing budgets.
 
 Exact Microseconds saved:
-- PENDING RUNTIME PROFILER DATA. Static improvement is removal of four raw divide sites from `NativeAStarJob`, exact rsqrt normalization for conduit alignment, reciprocal chunk sampling/nav hash/support/timing math, and one fewer registry property read per abyssal path schedule; predator-fear retention adds no loop because the sample was already computed.
+- PENDING RUNTIME PROFILER DATA. Static improvement is removal of four raw divide sites from `NativeAStarJob`, exact rsqrt normalization for conduit alignment, reciprocal chunk sampling/nav hash/support/timing math, guarded A* workspace/cost writes, and one fewer registry property read per abyssal path schedule; predator-fear retention adds no loop because the sample was already computed.
 
 Verification:
 - Static scan passed for `NativeAStarJob`: no `math.normalize`, `math.length(`, `math.distance(`, `.normalized`, or raw `/`.
@@ -250,3 +252,33 @@ Verification:
 - `git diff --check` on touched files passed; LF/CRLF warnings only.
 - `Tools/Architecture/HectonPhiAudit.ps1 -Json` was attempted and timed out after 120 seconds; no global H-Phi score is claimed from this pass.
 - Dotnet rebuilds were not run after this pass because the user explicitly prohibited dotnet rebuilds.
+
+## 2026-05-15 - A* Reconstruction And Raw Path Fail-Closed Pass
+
+What was wrong:
+- `NativeAStarJob` guarded score arrays but still relied on owner-side path-list capacity before `AddNoResize`.
+- A* reconstruction could append the requested start position even if the parent chain was broken, cyclic, or exhausted `MaxPathReconstructionIterations`.
+- Heuristic/F-score overflow from extreme but finite payloads could still enter heap ordering.
+- `StringPullPathJob` did not reject non-finite raw waypoints before writing smoothed output.
+- Empty-output telemetry inspected raw endpoints but not interior raw waypoint corruption.
+
+What was done:
+- Added path-list capacity proof inside `NativeAStarJob`.
+- Added finite checks for start heuristic, neighbor heuristic, resolved F-score, distance estimate, and current G-score.
+- Cleared partial A* output unless reconstruction reaches `StartNode` through bounded valid parents.
+- Added a finite raw-waypoint scan and output-capacity guard before string-pull emits any path.
+- Added full raw-path finite telemetry scan when smoothed output is empty.
+- Recorded that current `Docs/Tasks/CURRENT_BATCH.md` no longer contains `AI_FUNNEL_NAV_POLISH`; this pass continued from persisted status/rationale rather than a neighboring prompt.
+
+Cinematic Cheats used:
+- Broken route proof now produces no path instead of a visually plausible teleporting tail.
+- Valid low-tier paths keep cheap bounded math; high-tier visual smoothing is reserved for routes with proven finite input and reconstruction.
+
+Exact Microseconds saved:
+- PENDING RUNTIME PROFILER DATA. Static improvement is mostly fault avoidance: no extra allocations, one path-capacity read, finite scalar gates, and a bounded raw waypoint scan that prevents invalid smoothing and steering correction.
+
+Verification:
+- Static scan passed for `NativeAStarJob` and `StringPullPathJob`: no `math.normalize`, `math.length(`, `math.distance(`, `.normalized`, or raw `/`.
+- Static scan passed for abyssal nav graph ingress, telemetry conversion, nav support/hash, terrain sampling, and candidate resolver regions.
+- `git diff --check` on touched files passed; LF/CRLF warnings only.
+- Dotnet rebuilds were not run because the user explicitly prohibited dotnet rebuilds.

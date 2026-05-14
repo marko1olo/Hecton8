@@ -321,7 +321,7 @@ namespace Hecton8.Gameplay
                 return quaternion.identity;
 
             float lenSq = math.max(rawLenSq, MinimumLengthSq);
-            v *= math.rcp(math.max(0.0001f, 0.5f + (lenSq * 0.5f)));
+            v *= math.rsqrt(lenSq);
             return new quaternion(v);
         }
 
@@ -440,7 +440,14 @@ namespace Hecton8.Gameplay
 
         public static quaternion ToMathematicsQuaternion(Quaternion value)
         {
-            return new quaternion(value.x, value.y, value.z, value.w);
+            quaternion rotation = new quaternion(value.x, value.y, value.z, value.w);
+            if (!math.all(math.isfinite(rotation.value)))
+                return rotation;
+
+            float lengthSq = math.dot(rotation.value, rotation.value);
+            return math.isfinite(lengthSq) && lengthSq > MinimumLengthSq
+                ? NormalizeQuaternionNoSqrt(rotation)
+                : rotation;
         }
 
         public static Vector3 ToUnityVector3(float3 value)

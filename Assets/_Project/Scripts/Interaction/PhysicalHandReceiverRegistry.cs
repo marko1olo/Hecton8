@@ -20,9 +20,15 @@ namespace Hecton8.Interaction
         private static readonly IPhysicalPanelButtonReceiver[] s_receivers = new IPhysicalPanelButtonReceiver[MaxReceivers];
         // COLD ALLOC: byte[128] - fixed open-address slot states for physical hand receiver lookup - owner: PhysicalHandReceiverRegistry
         private static readonly byte[] s_receiverStates = new byte[MaxReceivers];
+        private static int s_registeredReceiverCount;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private static bool s_saturationLogged;
 #endif
+
+        /// <summary>
+        /// True when at least one collider-backed physical hand receiver is registered.
+        /// </summary>
+        public static bool HasReceivers => s_registeredReceiverCount > 0;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -35,6 +41,7 @@ namespace Hecton8.Interaction
                 s_receiverStates[i] = CacheSlotEmpty;
             }
 
+            s_registeredReceiverCount = 0;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             s_saturationLogged = false;
 #endif
@@ -183,6 +190,7 @@ namespace Hecton8.Interaction
             s_receiverColliders[index] = collider;
             s_receivers[index] = receiver;
             s_receiverStates[index] = CacheSlotOccupied;
+            s_registeredReceiverCount++;
         }
 
         private static void RemoveReceiverSlot(int removeIndex)
@@ -208,6 +216,7 @@ namespace Hecton8.Interaction
             }
 
             ClearReceiverSlot(holeIndex);
+            s_registeredReceiverCount--;
         }
 
         private static void ClearReceiverSlot(int index)

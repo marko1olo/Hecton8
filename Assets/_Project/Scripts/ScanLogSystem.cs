@@ -111,8 +111,6 @@ namespace Hecton8.Gameplay
         public int RecentCount => _recentEntryHashes.Count;
         public uint ChangeRevision => _changeRevision;
 
-        public event Action<ScanEntrySnapshot> EntryUnlocked;
-
         private void Awake()
         {
             ScanLogSystem registered = GlobalRegistry.ScanLog;
@@ -451,25 +449,16 @@ namespace Hecton8.Gameplay
             if (added && raiseEvents)
             {
                 ShowUnlockFeedback();
-                EntryUnlocked?.Invoke(new ScanEntrySnapshot(
-                    entryId,
-                    title,
-                    category,
-                    summary,
-                    entryHash,
-                    titleHash,
-                    categoryHash,
-                    summaryHash));
             }
 
             if (added || markRecent)
             {
                 if (publishChangeSignal)
-                    PublishScanLogChanged(entryHash, added ? ScanLogChangedSignal.ReasonEntryAdded : ScanLogChangedSignal.ReasonRecentChanged);
+                    PublishScanLogChanged(entryHash, added ? ScanLogChangedSignal.ReasonEntryAdded : ScanLogChangedSignal.ReasonRecentChanged, categoryHash);
             }
         }
 
-        private void PublishScanLogChanged(uint entryHash, byte reason)
+        private void PublishScanLogChanged(uint entryHash, byte reason, uint categoryHash = 0u)
         {
             if (_signalSourceId == 0u)
                 _signalSourceId = GlobalSignals.FoldEntityIdToSourceId(EntityId.ToULong(GetEntityId()));
@@ -487,7 +476,8 @@ namespace Hecton8.Gameplay
                 RecentCount = (ushort)math.clamp(_recentEntryHashes.Count, 0, ushort.MaxValue),
                 Reason = reason,
                 Flags = 0,
-                Revision = _changeRevision
+                Revision = _changeRevision,
+                CategoryHash = categoryHash
             };
 
             GlobalSignals.Publish(in signal);

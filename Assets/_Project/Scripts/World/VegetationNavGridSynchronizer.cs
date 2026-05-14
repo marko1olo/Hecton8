@@ -1174,12 +1174,11 @@ namespace Hecton8.World
         {
             EnsureAbyssalPathTelemetry();
             if (outputCount <= 0 &&
-                _nativeMemory.AbyssalPathRawResultNative.IsCreated &&
-                rawCount > 0)
+                TryResolveAbyssalRawPathTelemetry(rawCount, out Vector3 rawStart, out Vector3 rawEnd, out bool rawFinite))
             {
-                start = _nativeMemory.AbyssalPathRawResultNative[0];
-                end = _nativeMemory.AbyssalPathRawResultNative[rawCount - 1];
-                finite = IsFinite(start) && IsFinite(end);
+                start = rawStart;
+                end = rawEnd;
+                finite = rawFinite;
             }
 
             uint flags = 0u;
@@ -1233,6 +1232,31 @@ namespace Hecton8.World
                    !float.IsInfinity(value.x) &&
                    !float.IsInfinity(value.y) &&
                    !float.IsInfinity(value.z);
+        }
+
+        private bool TryResolveAbyssalRawPathTelemetry(int rawCount, out Vector3 start, out Vector3 end, out bool finite)
+        {
+            start = default;
+            end = default;
+            finite = true;
+            if (!_nativeMemory.AbyssalPathRawResultNative.IsCreated || rawCount <= 0)
+                return false;
+
+            int count = math.min(rawCount, _nativeMemory.AbyssalPathRawResultNative.Length);
+            if (count <= 0)
+                return false;
+
+            for (int i = 0; i < count; i++)
+            {
+                Vector3 waypoint = _nativeMemory.AbyssalPathRawResultNative[i];
+                if (i == 0)
+                    start = waypoint;
+                end = waypoint;
+                if (!IsFinite(waypoint))
+                    finite = false;
+            }
+
+            return true;
         }
 
         private void DumpAbyssalPathTelemetry(uint reasonHash)

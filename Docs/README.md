@@ -1,6 +1,6 @@
 # Docs Index
 
-Date: 2026-05-11
+Date: 2026-05-15
 Status: PENDING VERIFICATION
 
 Purpose: stable documentation entry point. Dated reports are evidence snapshots and counters, not the permanent project brain. If a dated report changes policy, promote the rule into `AGENTS.md`, `.agents-skills`, or one of the stable authority docs below.
@@ -220,6 +220,7 @@ Current verification boundary:
 - `ARCHITECTURE/EQUIPMENT_SOA_LAYOUT.md`
 - `ARCHITECTURE/FLOW_FIELD_MATH.md`
 - `ARCHITECTURE/HABITAT_LOGISTICS_GRAPH.md`
+- `ARCHITECTURE/HECTON_PHI_STATIC_METRIC.md`
 - `ARCHITECTURE/HEADLESS_ECOSYSTEM_SIMULATION.md`
 - `ARCHITECTURE/KINEMATICS_AUP_INTEGRATION.md`
 - `ARCHITECTURE/KINETIC_ENTANGLEMENT.md`

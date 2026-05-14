@@ -343,6 +343,9 @@ namespace Hecton8.Prologue.VFX
                     continue;
                 }
 
+                if (!sequenceOceanHandoff && _phase >= ReentryPhase.HydratedFade)
+                    continue;
+
                 _lastCapsuleAup = signal.CapsuleAup;
                 _whiteoutHoldSecondsRemaining = math.max(_whiteoutHoldSecondsRemaining, math.max(0f, signal.WhiteoutHoldSeconds));
                 EnterWhiteout();

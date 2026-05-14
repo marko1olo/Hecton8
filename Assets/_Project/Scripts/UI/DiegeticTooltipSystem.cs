@@ -86,7 +86,7 @@ namespace Hecton8.UI
         private Material glyphMaterial;
         [SerializeField, Tooltip("Optional authored icon material. Runtime fallback loads Resources/UI/MAT_DiegeticTooltipIcon.")]
         private Material iconMaterial;
-        [SerializeField, Tooltip("Optional tooltip shader contract reference. Runtime does not call Shader.Find.")]
+        [SerializeField, Tooltip("Optional tooltip shader contract reference. Runtime uses authored material assets only.")]
         private Shader glyphShader;
         [SerializeField, Tooltip("Optional explicit interaction camera. When null, the owner resolves the active player camera.")]
         private Camera interactionCamera;
@@ -248,10 +248,12 @@ namespace Hecton8.UI
                     _runtimeIconMaterial,
                     _iconInstanceBuffer,
                     _iconArgsBuffer,
+                    _spriteUvBuffer,
+                    spriteAsset != null ? spriteAsset.spriteSheet : null,
+                    _iconPropertyBlock,
                     _iconCount,
                     tint,
-                    ditherEnabled,
-                    ref _boundIconDitherEnabled);
+                    ditherEnabled);
             }
 
             if (_textGlyphCount > 0 && _runtimeGlyphMaterial != null)
@@ -269,10 +271,12 @@ namespace Hecton8.UI
                     _runtimeGlyphMaterial,
                     _textInstanceBuffer,
                     _textArgsBuffer,
+                    _fontUvBuffer,
+                    fontAsset != null ? fontAsset.atlasTexture : null,
+                    _textPropertyBlock,
                     _textGlyphCount,
                     tint,
-                    ditherEnabled,
-                    ref _boundTextDitherEnabled);
+                    ditherEnabled);
             }
 
             RecordBlackBox(anchorPosition, tint, lowTier ? (byte)1 : (byte)0);
@@ -716,13 +720,11 @@ namespace Hecton8.UI
             if (_textInstanceBuffer == null)
             {
                 _textInstanceBuffer = new ComputeBuffer(MaxGlyphCount, TooltipGlyphInstanceStride, ComputeBufferType.Structured);
-                _materialBindingsDirty = true;
             }
 
             if (_iconInstanceBuffer == null)
             {
                 _iconInstanceBuffer = new ComputeBuffer(MaxIconCount, TooltipGlyphInstanceStride, ComputeBufferType.Structured);
-                _materialBindingsDirty = true;
             }
 
             if (_textArgsBuffer == null)
@@ -740,13 +742,11 @@ namespace Hecton8.UI
             if (_fontUvBuffer == null)
             {
                 _fontUvBuffer = new ComputeBuffer(UvTableCapacity, UvRectStride, ComputeBufferType.Structured);
-                _materialBindingsDirty = true;
             }
 
             if (_spriteUvBuffer == null)
             {
                 _spriteUvBuffer = new ComputeBuffer(UvTableCapacity, UvRectStride, ComputeBufferType.Structured);
-                _materialBindingsDirty = true;
             }
 
             if (argsDirty)
@@ -766,92 +766,35 @@ namespace Hecton8.UI
 
         private void EnsureMaterials()
         {
+            if (_runtimeGlyphMaterial == null)
+                _runtimeGlyphMaterial = ResolveTooltipMaterial(glyphMaterial, DefaultGlyphMaterialResourcePath);
+
+            if (_runtimeIconMaterial == null)
+                _runtimeIconMaterial = ResolveTooltipMaterial(iconMaterial, DefaultIconMaterialResourcePath);
+
             if (_runtimeGlyphMaterial == null || _runtimeIconMaterial == null)
-            {
-#if UNITY_EDITOR
-                if (glyphShader == null)
-                    glyphShader = AssetDatabase.LoadAssetAtPath<Shader>(DefaultGlyphShaderPath);
-#endif
-                if (glyphShader == null)
-                    glyphShader = Shader.Find("Hecton8/UI/DiegeticTooltipIndirect");
+                return;
 
-                if (glyphShader != null && _runtimeGlyphMaterial == null)
-                {
-                    _runtimeGlyphMaterial = new Material(glyphShader)
-                    {
-                        enableInstancing = true,
-                        hideFlags = HideFlags.DontSave
-                    };
-                    _materialBindingsDirty = true;
-                    _boundTextDitherEnabled = float.NaN;
-                }
-
-                if (glyphShader != null && _runtimeIconMaterial == null)
-                {
-                    _runtimeIconMaterial = new Material(glyphShader)
-                    {
-                        enableInstancing = true,
-                        hideFlags = HideFlags.DontSave
-                    };
-                    _materialBindingsDirty = true;
-                    _boundIconDitherEnabled = float.NaN;
-                }
-            }
-
-            if (glyphShader == null && _runtimeGlyphMaterial != null)
-                glyphShader = _runtimeGlyphMaterial.shader;
-            if (glyphShader == null && _runtimeIconMaterial != null)
-                glyphShader = _runtimeIconMaterial.shader;
             if (glyphShader == null)
-                return;
+                glyphShader = _runtimeGlyphMaterial.shader;
 
-            if (_runtimeGlyphMaterial != null && _runtimeGlyphMaterial.shader != glyphShader)
-            {
-                _runtimeGlyphMaterial.shader = glyphShader;
-                _materialBindingsDirty = true;
-                _boundTextDitherEnabled = float.NaN;
-            }
+            EnsurePropertyBlocks();
+        }
 
-            if (_runtimeIconMaterial != null && _runtimeIconMaterial.shader != glyphShader)
-            {
-                _runtimeIconMaterial.shader = glyphShader;
-                _materialBindingsDirty = true;
-                _boundIconDitherEnabled = float.NaN;
-            }
+        private static Material ResolveTooltipMaterial(Material explicitMaterial, string resourcePath)
+        {
+            return explicitMaterial != null
+                ? explicitMaterial
+                : Resources.Load<Material>(resourcePath);
+        }
 
-            bool needsRebind = _materialBindingsDirty
-                || !ReferenceEquals(_boundFontAsset, fontAsset)
-                || !ReferenceEquals(_boundSpriteAsset, spriteAsset)
-                || !ReferenceEquals(_boundGlyphShader, glyphShader)
-                || _boundGradientScale != gradientScale
-                || _boundFaceDilate != faceDilate;
-            if (!needsRebind)
-                return;
+        private void EnsurePropertyBlocks()
+        {
+            if (_textPropertyBlock == null)
+                _textPropertyBlock = new MaterialPropertyBlock();
 
-            if (_runtimeGlyphMaterial != null && fontAsset != null)
-            {
-                _runtimeGlyphMaterial.SetTexture(MainTexId, fontAsset.atlasTexture);
-                _runtimeGlyphMaterial.SetFloat(GradientScaleId, gradientScale);
-                _runtimeGlyphMaterial.SetFloat(FaceDilateId, faceDilate);
-                _runtimeGlyphMaterial.SetBuffer(InstanceBufferId, _textInstanceBuffer);
-                _runtimeGlyphMaterial.SetBuffer(UvRectBufferId, _fontUvBuffer);
-            }
-
-            if (_runtimeIconMaterial != null && spriteAsset != null && spriteAsset.spriteSheet != null)
-            {
-                _runtimeIconMaterial.SetTexture(MainTexId, spriteAsset.spriteSheet);
-                _runtimeIconMaterial.SetFloat(GradientScaleId, gradientScale);
-                _runtimeIconMaterial.SetFloat(FaceDilateId, faceDilate);
-                _runtimeIconMaterial.SetBuffer(InstanceBufferId, _iconInstanceBuffer);
-                _runtimeIconMaterial.SetBuffer(UvRectBufferId, _spriteUvBuffer);
-            }
-
-            _boundFontAsset = fontAsset;
-            _boundSpriteAsset = spriteAsset;
-            _boundGlyphShader = glyphShader;
-            _boundGradientScale = gradientScale;
-            _boundFaceDilate = faceDilate;
-            _materialBindingsDirty = false;
+            if (_iconPropertyBlock == null)
+                _iconPropertyBlock = new MaterialPropertyBlock();
         }
 
         private void UploadUvTablesIfDirty()
@@ -895,12 +838,14 @@ namespace Hecton8.UI
             Material material,
             ComputeBuffer instanceBuffer,
             ComputeBuffer argsBuffer,
+            ComputeBuffer uvBuffer,
+            Texture mainTexture,
+            MaterialPropertyBlock propertyBlock,
             int count,
             Vector4 tint,
-            float ditherEnabled,
-            ref float boundDitherEnabled)
+            float ditherEnabled)
         {
-            if (instanceBuffer == null || argsBuffer == null)
+            if (instanceBuffer == null || argsBuffer == null || uvBuffer == null || mainTexture == null || propertyBlock == null)
                 return;
 
             for (int i = 0; i < count; i++)
@@ -919,11 +864,13 @@ namespace Hecton8.UI
             instanceBuffer.SetData(_instancePayloads, 0, 0, count);
             _indirectArgs[1] = (uint)count;
             argsBuffer.SetData(_indirectArgs);
-            if (boundDitherEnabled != ditherEnabled)
-            {
-                material.SetFloat(DitherEnabledId, ditherEnabled);
-                boundDitherEnabled = ditherEnabled;
-            }
+            propertyBlock.Clear();
+            propertyBlock.SetTexture(MainTexId, mainTexture);
+            propertyBlock.SetFloat(GradientScaleId, gradientScale);
+            propertyBlock.SetFloat(FaceDilateId, faceDilate);
+            propertyBlock.SetFloat(DitherEnabledId, ditherEnabled);
+            propertyBlock.SetBuffer(InstanceBufferId, instanceBuffer);
+            propertyBlock.SetBuffer(UvRectBufferId, uvBuffer);
 
             Graphics.DrawMeshInstancedIndirect(
                 _runtimeQuadMesh,
@@ -932,7 +879,7 @@ namespace Hecton8.UI
                 bounds,
                 argsBuffer,
                 0,
-                null,
+                propertyBlock,
                 ShadowCastingMode.Off,
                 false,
                 gameObject.layer,
@@ -1141,17 +1088,10 @@ namespace Hecton8.UI
 
         private void ReleaseResources()
         {
-            if (_runtimeGlyphMaterial != null)
-            {
-                Destroy(_runtimeGlyphMaterial);
-                _runtimeGlyphMaterial = null;
-            }
-
-            if (_runtimeIconMaterial != null)
-            {
-                Destroy(_runtimeIconMaterial);
-                _runtimeIconMaterial = null;
-            }
+            _runtimeGlyphMaterial = null;
+            _runtimeIconMaterial = null;
+            _textPropertyBlock = null;
+            _iconPropertyBlock = null;
 
             if (_runtimeQuadMesh != null)
             {
@@ -1198,14 +1138,6 @@ namespace Hecton8.UI
             if (_blackBox.IsCreated)
                 _blackBox.Dispose();
 
-            _boundFontAsset = null;
-            _boundSpriteAsset = null;
-            _boundGlyphShader = null;
-            _boundGradientScale = float.NaN;
-            _boundFaceDilate = float.NaN;
-            _boundTextDitherEnabled = float.NaN;
-            _boundIconDitherEnabled = float.NaN;
-            _materialBindingsDirty = true;
             _resourceObjectsReady = false;
         }
 

@@ -133,8 +133,8 @@ namespace Hecton8.Animation.IK
                 : float3.zero;
             bool canUseHeight = (RuntimeFlags & LeviathanTerrainIkConstants.RuntimeFlagTerrainFallback) != 0u &&
                                 TerrainHeightSamples.IsCreated &&
-                                TerrainResolution > 1 &&
-                                TerrainHeightSamples.Length >= TerrainResolution * TerrainResolution &&
+                                TryResolveTerrainHeightSampleCount(TerrainResolution, out int expectedTerrainLength) &&
+                                TerrainHeightSamples.Length >= expectedTerrainLength &&
                                 TerrainSize.x > 0.0001f &&
                                 TerrainSize.y > 0.0001f &&
                                 TerrainSize.z > 0.0001f;
@@ -342,8 +342,8 @@ namespace Hecton8.Animation.IK
             height = 0f;
             normal = new float3(0f, 1f, 0f);
             if (!TerrainHeightSamples.IsCreated ||
-                TerrainResolution <= 1 ||
-                TerrainHeightSamples.Length < TerrainResolution * TerrainResolution ||
+                !TryResolveTerrainHeightSampleCount(TerrainResolution, out int expectedLength) ||
+                TerrainHeightSamples.Length < expectedLength ||
                 TerrainSize.x <= 0.0001f ||
                 TerrainSize.y <= 0.0001f ||
                 TerrainSize.z <= 0.0001f)
@@ -478,6 +478,20 @@ namespace Hecton8.Animation.IK
                 return false;
 
             voxelCount = (int)count;
+            return true;
+        }
+
+        public static bool TryResolveTerrainHeightSampleCount(int resolution, out int sampleCount)
+        {
+            sampleCount = 0;
+            if (resolution <= 1)
+                return false;
+
+            long count = (long)resolution * resolution;
+            if (count <= 0L || count > int.MaxValue)
+                return false;
+
+            sampleCount = (int)count;
             return true;
         }
 

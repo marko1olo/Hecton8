@@ -215,8 +215,12 @@ namespace Hecton8.Gameplay
             float leftHandDistance = SanitizeNonNegative(entity.LeftArmReach * handProbeScale) * leftHandMask;
             float rightHandDistance = SanitizeNonNegative(entity.RightArmReach * handProbeScale) * rightHandMask;
 
-            float3 leftBraceDirection = math.mul(entity.RootRotation, new float3(-0.70710677f, -0.70710677f, 0.0f));
-            float3 rightBraceDirection = math.mul(entity.RootRotation, new float3(0.70710677f, -0.70710677f, 0.0f));
+            float3 leftBraceDirection = ContextualPhysicalIkMath.SafeNormalize(
+                math.mul(entity.RootRotation, new float3(-0.70710677f, -0.70710677f, 0.0f)),
+                new float3(-0.70710677f, -0.70710677f, 0.0f));
+            float3 rightBraceDirection = ContextualPhysicalIkMath.SafeNormalize(
+                math.mul(entity.RootRotation, new float3(0.70710677f, -0.70710677f, 0.0f)),
+                new float3(0.70710677f, -0.70710677f, 0.0f));
             float3 rootForward = ContextualPhysicalIkMath.SafeNormalize(
                 math.mul(entity.RootRotation, new float3(0.0f, 0.0f, 1.0f)),
                 new float3(0.0f, 0.0f, 1.0f));
@@ -230,14 +234,21 @@ namespace Hecton8.Gameplay
             float3 cameraUp = ContextualPhysicalIkMath.SafeNormalize(entity.CameraUp, rootUp);
             float3 cameraRight = ContextualPhysicalIkMath.SafeNormalize(entity.CameraRight, rootRight);
             float3 cameraPosition = math.select(entity.RootPosition, entity.CameraPosition, entity.HasCameraPose != 0);
+            cameraPosition = math.select(cameraPosition, entity.RootPosition, !math.all(math.isfinite(cameraPosition)));
             float cameraHandLateralOffset = SanitizeNonNegative(entity.CameraHandLateralOffset);
             float cameraHandVerticalOffset = math.select(entity.CameraHandVerticalOffset, 0.0f, !math.isfinite(entity.CameraHandVerticalOffset));
             float toolDistance = SanitizeNonNegative(entity.ToolCollisionDistance) *
                 math.select(0.0f, 1.0f, entity.EnableToolRetraction != 0 && entity.HasCameraPose != 0);
             float3 leftToolRayOrigin = cameraPosition - (cameraRight * cameraHandLateralOffset) + (cameraUp * cameraHandVerticalOffset);
             float3 rightToolRayOrigin = cameraPosition + (cameraRight * cameraHandLateralOffset) + (cameraUp * cameraHandVerticalOffset);
+            leftToolRayOrigin = math.select(leftToolRayOrigin, entity.RootPosition, !math.all(math.isfinite(leftToolRayOrigin)));
+            rightToolRayOrigin = math.select(rightToolRayOrigin, entity.RootPosition, !math.all(math.isfinite(rightToolRayOrigin)));
+            float3 leftHandProbeOrigin = math.select(entity.LeftHandProbeOrigin, entity.RootPosition, !math.all(math.isfinite(entity.LeftHandProbeOrigin)));
+            float3 rightHandProbeOrigin = math.select(entity.RightHandProbeOrigin, entity.RootPosition, !math.all(math.isfinite(entity.RightHandProbeOrigin)));
             float3 leftFootRayOrigin = ResolveHipFootRayOrigin(in entity, rootRight, rootForward, rootUp, -1.0f);
             float3 rightFootRayOrigin = ResolveHipFootRayOrigin(in entity, rootRight, rootForward, rootUp, 1.0f);
+            leftFootRayOrigin = math.select(leftFootRayOrigin, entity.RootPosition, !math.all(math.isfinite(leftFootRayOrigin)));
+            rightFootRayOrigin = math.select(rightFootRayOrigin, entity.RootPosition, !math.all(math.isfinite(rightFootRayOrigin)));
 
             Commands[baseCommandIndex + 0] = new RaycastCommand(
                 ContextualPhysicalIkMath.ToUnityVector3(leftFootRayOrigin),
@@ -258,7 +269,7 @@ namespace Hecton8.Gameplay
             else
             {
                 Commands[baseCommandIndex + 2] = new RaycastCommand(
-                    ContextualPhysicalIkMath.ToUnityVector3(entity.LeftHandProbeOrigin),
+                    ContextualPhysicalIkMath.ToUnityVector3(leftHandProbeOrigin),
                     ContextualPhysicalIkMath.ToUnityVector3(leftBraceDirection),
                     wallQuery,
                     leftHandDistance);
@@ -271,7 +282,7 @@ namespace Hecton8.Gameplay
             else
             {
                 Commands[baseCommandIndex + 3] = new RaycastCommand(
-                    ContextualPhysicalIkMath.ToUnityVector3(entity.RightHandProbeOrigin),
+                    ContextualPhysicalIkMath.ToUnityVector3(rightHandProbeOrigin),
                     ContextualPhysicalIkMath.ToUnityVector3(rightBraceDirection),
                     wallQuery,
                     rightHandDistance);
@@ -325,8 +336,10 @@ namespace Hecton8.Gameplay
             float3 rootUp,
             float side)
         {
+            float3 safePelvis = math.select(entity.PelvisPosition, entity.RootPosition, !math.all(math.isfinite(entity.PelvisPosition)));
             float3 authoredProbe = side < 0.0f ? entity.LeftFootProbeOrigin : entity.RightFootProbeOrigin;
-            float3 pelvisToProbe = authoredProbe - entity.PelvisPosition;
+            authoredProbe = math.select(authoredProbe, safePelvis, !math.all(math.isfinite(authoredProbe)));
+            float3 pelvisToProbe = authoredProbe - safePelvis;
             float lateral = math.clamp(math.abs(math.dot(pelvisToProbe, rootRight)), 0.08f, 0.45f);
             float forward = math.clamp(math.dot(pelvisToProbe, rootForward), -0.35f, 0.45f);
             float3 planarVelocity = entity.KccVelocity - (rootUp * math.dot(entity.KccVelocity, rootUp));
@@ -336,7 +349,7 @@ namespace Hecton8.Gameplay
                 ContextualPhysicalIkRuntime.FootRayVelocityLeadMaxMeters,
                 planarSpeedSq * ContextualPhysicalIkRuntime.FootRayVelocityLeadScale);
             float3 velocityLead = ContextualPhysicalIkMath.SafeNormalize(planarVelocity, float3.zero) * velocityLeadMeters;
-            float3 hipOrigin = entity.PelvisPosition +
+            float3 hipOrigin = safePelvis +
                 (rootRight * (side * lateral)) +
                 (rootForward * forward) +
                 velocityLead;
@@ -795,7 +808,9 @@ namespace Hecton8.Gameplay
                 flags |= ContextualPhysicalIkLowerBodyConstants.FlagInvalid;
             }
 
-            data.StepThresholdSq = stepThresholdSq;
+            data.StepStartPosition = math.select(data.StepStartPosition, currentPosition, !math.all(math.isfinite(data.StepStartPosition)));
+            data.StepProgress01 = SanitizeBlend(data.StepProgress01);
+            data.StepThresholdSq = SanitizeNonNegative(stepThresholdSq);
             data.StepHeightMeters = ContextualPhysicalIkRuntime.StepHeightMeters;
             if (directSwim)
             {
@@ -870,7 +885,9 @@ namespace Hecton8.Gameplay
             resolvedTarget.WorldPosition = currentPosition;
             resolvedTarget.WorldNormal = safeNormal;
             resolvedTarget.Blend = smoothedBlend;
-            resolvedTarget.DeltaHeight = math.clamp(deltaHeight, -entity.MaxDeltaHeight, entity.MaxDeltaHeight);
+            float safeMaxDeltaHeight = SanitizeNonNegative(entity.MaxDeltaHeight);
+            float safeDeltaHeight = math.select(deltaHeight, 0.0f, !math.isfinite(deltaHeight));
+            resolvedTarget.DeltaHeight = math.clamp(safeDeltaHeight, -safeMaxDeltaHeight, safeMaxDeltaHeight);
         }
 
         private static bool TryBuildGroundFootCandidate(
@@ -882,6 +899,9 @@ namespace Hecton8.Gameplay
             out float3 targetNormal,
             out float deltaHeight)
         {
+            probeOrigin = SanitizeFloat3(probeOrigin, float3.zero);
+            float safeContactOffset = SanitizeNonNegative(contactOffset);
+            float safeMaxDeltaHeight = SanitizeNonNegative(maxDeltaHeight);
             targetPosition = probeOrigin;
             targetNormal = new float3(0.0f, 1.0f, 0.0f);
             deltaHeight = 0.0f;
@@ -889,14 +909,14 @@ namespace Hecton8.Gameplay
                 return false;
 
             targetNormal = ContextualPhysicalIkMath.SafeNormalize(ContextualPhysicalIkMath.ToFloat3(hit.normal), targetNormal);
-            targetPosition = ContextualPhysicalIkMath.ToFloat3(hit.point) + (targetNormal * contactOffset);
+            targetPosition = ContextualPhysicalIkMath.ToFloat3(hit.point) + (targetNormal * safeContactOffset);
             if (!math.all(math.isfinite(targetPosition)))
             {
                 targetPosition = probeOrigin;
                 return false;
             }
 
-            deltaHeight = math.clamp(targetPosition.y - probeOrigin.y, -maxDeltaHeight, maxDeltaHeight);
+            deltaHeight = math.clamp(targetPosition.y - probeOrigin.y, -safeMaxDeltaHeight, safeMaxDeltaHeight);
             return true;
         }
 
@@ -958,7 +978,8 @@ namespace Hecton8.Gameplay
             if (!math.all(math.isfinite(currentPosition)) || !math.all(math.isfinite(targetPosition)))
                 return false;
 
-            return math.lengthsq(currentPosition - targetPosition) > thresholdSq;
+            float distanceSq = math.lengthsq(currentPosition - targetPosition);
+            return math.isfinite(distanceSq) && distanceSq > SanitizeNonNegative(thresholdSq);
         }
 
         private static float ResolveStepThresholdSq(in ContextualPhysicalIkEntityState entity)
@@ -985,7 +1006,9 @@ namespace Hecton8.Gameplay
 
         private static bool IsStepping(in ContextualPhysicalIkFootData data)
         {
-            return (data.Flags & ContextualPhysicalIkLowerBodyConstants.FlagStepping) != 0 && data.StepProgress01 < 0.999f;
+            return (data.Flags & ContextualPhysicalIkLowerBodyConstants.FlagStepping) != 0 &&
+                math.isfinite(data.StepProgress01) &&
+                data.StepProgress01 < 0.999f;
         }
 
         private static float3 ResolveFootCurrentPosition(
@@ -1081,7 +1104,8 @@ namespace Hecton8.Gameplay
             float fadeSharpness,
             float deltaTime)
         {
-            float safeCollisionDistance = math.max(0.0001f, collisionDistance);
+            probeOrigin = SanitizeFloat3(probeOrigin, float3.zero);
+            float safeCollisionDistance = math.max(0.0001f, SanitizeNonNegative(collisionDistance));
             if (!HasHit(in hit) || hit.distance >= safeCollisionDistance)
                 return;
 
@@ -1120,6 +1144,7 @@ namespace Hecton8.Gameplay
             float fadeSharpness,
             float deltaTime)
         {
+            probeOrigin = SanitizeFloat3(probeOrigin, float3.zero);
             float safeMaxOffset = SanitizeNonNegative(maxOffset);
             if (safeMaxOffset <= 0.000001f || !math.all(math.isfinite(recoilOffset)))
                 return;
@@ -1190,8 +1215,12 @@ namespace Hecton8.Gameplay
                 return;
             }
 
+            probeOrigin = SanitizeFloat3(probeOrigin, float3.zero);
+            float safeContactOffset = SanitizeNonNegative(contactOffset);
+            float safeTargetBlend = SanitizeBlend(targetBlend);
+            float safeMaxDeltaHeight = SanitizeNonNegative(maxDeltaHeight);
             float3 normal = ContextualPhysicalIkMath.SafeNormalize(ContextualPhysicalIkMath.ToFloat3(hit.normal), new float3(0.0f, 1.0f, 0.0f));
-            float3 point = ContextualPhysicalIkMath.ToFloat3(hit.point) + (normal * contactOffset);
+            float3 point = ContextualPhysicalIkMath.ToFloat3(hit.point) + (normal * safeContactOffset);
 
             float3 currentPosition = ResolveSmoothingPosition(in target, in previous, point);
             float3 currentNormal = ResolveSmoothingNormal(in target, in previous, normal);
@@ -1199,8 +1228,10 @@ namespace Hecton8.Gameplay
             target.WorldNormal = ContextualPhysicalIkMath.SafeNormalize(
                 ContextualPhysicalIkMath.SmoothVector(currentNormal, normal, normalSharpness, deltaTime),
                 normal);
-            target.Blend = ContextualPhysicalIkMath.SmoothScalar(previous.Blend, targetBlend, fadeSharpness, deltaTime);
-            target.DeltaHeight = math.clamp(point.y - probeOrigin.y, -maxDeltaHeight, maxDeltaHeight);
+            target.Blend = ContextualPhysicalIkMath.SmoothScalar(previous.Blend, safeTargetBlend, fadeSharpness, deltaTime);
+            float deltaHeight = point.y - probeOrigin.y;
+            deltaHeight = math.select(deltaHeight, 0.0f, !math.isfinite(deltaHeight));
+            target.DeltaHeight = math.clamp(deltaHeight, -safeMaxDeltaHeight, safeMaxDeltaHeight);
         }
 
         private static float3 ResolveSmoothingPosition(
@@ -1208,6 +1239,7 @@ namespace Hecton8.Gameplay
             in ContextualPhysicalIkContactTarget previous,
             float3 fallback)
         {
+            fallback = SanitizeFloat3(fallback, float3.zero);
             if (target.Blend > 0.0001f && math.all(math.isfinite(target.WorldPosition)))
                 return target.WorldPosition;
 
@@ -1222,6 +1254,7 @@ namespace Hecton8.Gameplay
             in ContextualPhysicalIkContactTarget previous,
             float3 fallback)
         {
+            fallback = ContextualPhysicalIkMath.SafeNormalize(fallback, new float3(0.0f, 1.0f, 0.0f));
             if (target.Blend > 0.0001f && math.all(math.isfinite(target.WorldNormal)))
                 return target.WorldNormal;
 
@@ -1331,9 +1364,9 @@ namespace Hecton8.Gameplay
             if (!HasHit(in hit))
                 return 0.0f;
 
-            float scaledReach = math.max(0.0001f, armReach * math.max(0.0001f, distanceScale));
-            float proxyDistance = math.max(0.0001f, math.min(scaledReach, math.max(0.0001f, clearanceDistance)));
-            float safeFadeDistance = math.max(0.0001f, fadeDistance);
+            float scaledReach = math.max(0.0001f, SanitizeNonNegative(armReach) * math.max(0.0001f, SanitizeNonNegative(distanceScale)));
+            float proxyDistance = math.max(0.0001f, math.min(scaledReach, math.max(0.0001f, SanitizeNonNegative(clearanceDistance))));
+            float safeFadeDistance = math.max(0.0001f, SanitizeNonNegative(fadeDistance));
             return SanitizeBlend((proxyDistance - SanitizeNonNegative(hit.distance)) * math.rcp(safeFadeDistance));
         }
     }

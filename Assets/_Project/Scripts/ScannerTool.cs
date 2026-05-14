@@ -29,7 +29,7 @@ using UnityEditor;
 namespace Hecton8.Gameplay
 {
     [DisallowMultipleComponent]
-    public sealed class ScannerTool : PlayerTool, IBatteryTool, IDispatcherRaycastReceiver, IFastTickable, ILateFrameTickable
+    public sealed class ScannerTool : PlayerTool, IBatteryTool, IDispatcherRaycastReceiver, IFastTickable, ILateFrameTickable, IScalabilityChangedEventListener
     {
         internal const string ScannerMarkerShaderPath = "Assets/_Project/Art/Shaders/Hecton_ScannerMarkerInstanced.shader";
         internal const string ScannerPulseShaderPath = "Assets/_Project/Art/Shaders/Hecton_ScannerPulseInstanced.shader";
@@ -49,7 +49,6 @@ namespace Hecton8.Gameplay
         private const int ScannerBlackBoxCapacity = 300;
         private const int ScannerBlackBoxInvalidStateHash = unchecked((int)0x53434E21); // SCN!
         private const uint ScannerBlackBoxMagic = 0x53434242u; // SCBB
-        private const float ScannerQualityTierProbeIntervalSeconds = 0.5f;
         private const float ScannerQualityTierHysteresisSeconds = 2f;
         private const ushort ScannerBlackBoxFlagEquipped = 1 << 0;
         private const ushort ScannerBlackBoxFlagHeld = 1 << 1;
@@ -625,6 +624,7 @@ namespace Hecton8.Gameplay
         private ScientificScanSnapshot _scientificSnapshot;
         private DataArchaeologyRuntime _dataArchaeology;
         private HectonSurvivalSystem _cachedSurvivalSystem;
+        private IPlayerRuntimeContext _cachedPlayerContext;
         private float _scientificNextResampleAt;
         private float _scientificLastContactTime = float.NegativeInfinity;
         private float3 _activeScientificProbePosition;
@@ -647,8 +647,7 @@ namespace Hecton8.Gameplay
         private ushort _scannerBlackBoxQualityTier;
         private HectonQualityTier _scannerQualityTier = HectonQualityTier.Unknown;
         private HectonQualityTier _scannerQualityTierCandidate = HectonQualityTier.Unknown;
-        private float _scannerQualityTierNextProbeAt;
-        private float _scannerQualityTierCandidateSeconds;
+        private float _scannerQualityTierCandidateSince;
         private bool _scannerQualityTierInitialized;
         private bool _scannerBlackBoxDumped;
         private bool _applicationQuitting;
@@ -659,6 +658,7 @@ namespace Hecton8.Gameplay
         private bool _scientificRaycastPending;
         private bool _registeredScientificFastTick;
         private bool _registeredScientificLateFrame;
+        private bool _registeredScalabilityListener;
         private float _cachedFocusedConeAngleDegrees = -1f;
         private float _cachedFocusedConeTanSq;
 
@@ -784,6 +784,8 @@ namespace Hecton8.Gameplay
             _mpb = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] — power indicator emission — owner: ScannerTool
             _cachedTransform = transform;
             EnsureScientificNativeState();
+            InitializeScannerQualityTierCold();
+            ResolveCachedPlayerContextCold();
             InvalidateFocusedConeCache();
             RefreshModeStrings();
             #if UNITY_EDITOR
@@ -814,6 +816,7 @@ namespace Hecton8.Gameplay
         {
             base.OnEquip();
             PulseActive = false;
+            ResolveCachedPlayerContextCold();
             TryRegisterScientificLanes();
             InvalidateOperationalStringCache();
         }
@@ -969,6 +972,11 @@ namespace Hecton8.Gameplay
             PublishScannerTuningSignal(forceInactive: false);
         }
 
+        public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
+        {
+            QueueScannerQualityTierCandidate(payload.CurrentQualityTier);
+        }
+
         private void PublishScannerTuningSignal(bool forceInactive)
         {
             ResolveScannerTuningHashes(out uint artifactHash, out uint blueprintHash, out float progress01);
@@ -1044,6 +1052,7 @@ namespace Hecton8.Gameplay
         {
             base.OnSpawn();
             ResolveCachedSurvivalSystem();
+            ResolveCachedPlayerContextCold();
             ResetScientificFocus();
         }
 
@@ -1273,6 +1282,7 @@ namespace Hecton8.Gameplay
             if (!Application.isPlaying)
                 return;
 
+            TryRegisterScalabilityListener();
             if (!_registeredScientificFastTick)
                 _registeredScientificFastTick = GlobalRegistry.TryRegisterFastTickable(this, PriorityLayer.Player);
             if (!_registeredScientificLateFrame)
@@ -1292,6 +1302,27 @@ namespace Hecton8.Gameplay
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
                 _registeredScientificLateFrame = false;
             }
+
+            TryUnregisterScalabilityListener();
+        }
+
+        private void TryRegisterScalabilityListener()
+        {
+            if (_registeredScalabilityListener || !Application.isPlaying)
+                return;
+
+            InitializeScannerQualityTierCold();
+            ScalabilityEvents.Register(this);
+            _registeredScalabilityListener = true;
+        }
+
+        private void TryUnregisterScalabilityListener()
+        {
+            if (!_registeredScalabilityListener)
+                return;
+
+            ScalabilityEvents.Unregister(this);
+            _registeredScalabilityListener = false;
         }
 
         public override string GetOperationalSummary()
@@ -2783,7 +2814,7 @@ namespace Hecton8.Gameplay
 
         private bool TryResolveScientificAcquisitionPose(out Vector3 origin, out Vector3 forward)
         {
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
             Camera playerCamera = playerContext != null ? playerContext.PlayerCamera : null;
             Transform viewTransform = playerCamera != null ? playerCamera.transform : null;
             if (viewTransform == null)
@@ -2825,57 +2856,63 @@ namespace Hecton8.Gameplay
 
         private HectonQualityTier ResolveScannerQualityTier()
         {
-            float now = Time.time;
             if (!_scannerQualityTierInitialized)
-            {
-                HectonQualityTier initialTier = ReadGlobalScalabilityTier();
-                _scannerQualityTier = initialTier;
-                _scannerQualityTierCandidate = initialTier;
-                _scannerQualityTierNextProbeAt = now + ScannerQualityTierProbeIntervalSeconds;
-                _scannerQualityTierCandidateSeconds = 0f;
-                _scannerQualityTierInitialized = true;
-                _scannerBlackBoxQualityTier = (ushort)initialTier;
-                return initialTier;
-            }
+                InitializeScannerQualityTier(HectonQualityTier.Unknown);
 
-            if (now < _scannerQualityTierNextProbeAt)
-                return _scannerQualityTier;
-
-            _scannerQualityTierNextProbeAt = now + ScannerQualityTierProbeIntervalSeconds;
-            HectonQualityTier observedTier = ReadGlobalScalabilityTier();
-            if (observedTier == _scannerQualityTier)
-            {
-                _scannerQualityTierCandidate = observedTier;
-                _scannerQualityTierCandidateSeconds = 0f;
-                _scannerBlackBoxQualityTier = (ushort)_scannerQualityTier;
-                return _scannerQualityTier;
-            }
-
-            if (observedTier != _scannerQualityTierCandidate)
-            {
-                _scannerQualityTierCandidate = observedTier;
-                _scannerQualityTierCandidateSeconds = 0f;
-                _scannerBlackBoxQualityTier = (ushort)_scannerQualityTier;
-                return _scannerQualityTier;
-            }
-
-            _scannerQualityTierCandidateSeconds += ScannerQualityTierProbeIntervalSeconds;
-            if (_scannerQualityTierCandidateSeconds < ScannerQualityTierHysteresisSeconds)
+            if (_scannerQualityTierCandidate == _scannerQualityTier)
             {
                 _scannerBlackBoxQualityTier = (ushort)_scannerQualityTier;
                 return _scannerQualityTier;
             }
 
-            _scannerQualityTier = observedTier;
-            _scannerQualityTierCandidateSeconds = 0f;
+            float candidateAge = Time.time - _scannerQualityTierCandidateSince;
+            if (!math.isfinite(candidateAge) || candidateAge < ScannerQualityTierHysteresisSeconds)
+            {
+                _scannerBlackBoxQualityTier = (ushort)_scannerQualityTier;
+                return _scannerQualityTier;
+            }
+
+            _scannerQualityTier = _scannerQualityTierCandidate;
             _scannerBlackBoxQualityTier = (ushort)_scannerQualityTier;
             InvalidateOperationalStringCache();
             return _scannerQualityTier;
         }
 
-        private static HectonQualityTier ReadGlobalScalabilityTier()
+        private void InitializeScannerQualityTierCold()
         {
-            return GlobalRegistry.ScalabilityTier;
+            InitializeScannerQualityTier(GlobalRegistry.ScalabilityTier);
+        }
+
+        private void InitializeScannerQualityTier(HectonQualityTier tier)
+        {
+            _scannerQualityTier = tier;
+            _scannerQualityTierCandidate = tier;
+            _scannerQualityTierCandidateSince = Time.time;
+            _scannerQualityTierInitialized = true;
+            _scannerBlackBoxQualityTier = (ushort)tier;
+        }
+
+        private void QueueScannerQualityTierCandidate(HectonQualityTier observedTier)
+        {
+            if (!_scannerQualityTierInitialized)
+            {
+                InitializeScannerQualityTier(observedTier);
+                return;
+            }
+
+            if (observedTier == _scannerQualityTier)
+            {
+                _scannerQualityTierCandidate = observedTier;
+                _scannerQualityTierCandidateSince = Time.time;
+                _scannerBlackBoxQualityTier = (ushort)_scannerQualityTier;
+                return;
+            }
+
+            if (observedTier != _scannerQualityTierCandidate)
+            {
+                _scannerQualityTierCandidate = observedTier;
+                _scannerQualityTierCandidateSince = Time.time;
+            }
         }
 
         private void QueueScientificOcclusionRaycast(
@@ -3631,6 +3668,11 @@ namespace Hecton8.Gameplay
             {
                 _cachedSurvivalSystem = survivalSystem;
             }
+        }
+
+        private void ResolveCachedPlayerContextCold()
+        {
+            _cachedPlayerContext = GlobalRegistry.Player;
         }
 
         private void ResolveScientificWaterMetrics(

@@ -1094,64 +1094,42 @@ namespace Hecton8.Atmosphere
 
         private void ApplyBaseWakeCatchUp(int baseId, float elapsedSeconds)
         {
-            if (elapsedSeconds <= 0f || !_baseBatteryWattSeconds.IsCreated)
-                return;
-
-            float idleDraw = FiniteNonNegativeOrZero(_baseIdleDrawWatts[baseId]);
-            float battery = FiniteNonNegativeOrZero(_baseBatteryWattSeconds[baseId]);
-            battery = math.max(0f, battery - idleDraw * elapsedSeconds);
-            _baseBatteryWattSeconds[baseId] = battery;
-
-            if (battery <= 0f)
+            if (elapsedSeconds <= 0f ||
+                !RoomO2.IsCreated ||
+                !RoomCO2.IsCreated ||
+                !_roomNitrogen.IsCreated ||
+                !RoomPressure.IsCreated ||
+                !_roomO2Back.IsCreated ||
+                !_roomCO2Back.IsCreated ||
+                !_roomNitrogenBack.IsCreated ||
+                !_roomPressureBack.IsCreated ||
+                !_baseBatteryWattSeconds.IsCreated)
             {
-                SetBaseOxygenDepleted(baseId);
                 return;
             }
 
-            float leakRate = FiniteNonNegativeOrZero(_baseLeakRatePerSecond[baseId]);
-            if (leakRate <= 0f)
-                return;
-
-            float alpha = ResolveAnalyticalLeakAlpha(elapsedSeconds, leakRate);
-            if (alpha <= 0f)
-                return;
-
-            float ambientOxygen = FiniteNonNegativeOrZero(_baseAmbientOxygenKPa[baseId]);
-            int startRoom = math.clamp(_baseRoomStart[baseId], 0, math.max(0, _roomCount));
-            int roomEnd = math.min(_roomCount, startRoom + math.max(0, _baseRoomCount[baseId]));
-            for (int room = startRoom; room < roomEnd; room++)
+            BaseHibernationWakeCatchUpJob job = new BaseHibernationWakeCatchUpJob
             {
-                float oxygen = math.lerp(FiniteNonNegativeOrZero(RoomO2[room]), ambientOxygen, alpha);
-                RoomO2[room] = oxygen;
-                _roomO2Back[room] = oxygen;
-                float carbonDioxide = FiniteNonNegativeOrZero(RoomCO2[room]);
-                float nitrogen = FiniteNonNegativeOrZero(_roomNitrogen[room]);
-                float pressure = ResolveDaltonPressureKPa(oxygen, carbonDioxide, nitrogen);
-                RoomPressure[room] = pressure;
-                _roomPressureBack[room] = pressure;
-            }
-        }
+                BaseId = baseId,
+                RoomCount = _roomCount,
+                ElapsedSeconds = elapsedSeconds,
+                RoomO2 = RoomO2,
+                RoomCO2 = RoomCO2,
+                RoomNitrogen = _roomNitrogen,
+                RoomPressure = RoomPressure,
+                RoomO2Back = _roomO2Back,
+                RoomCO2Back = _roomCO2Back,
+                RoomNitrogenBack = _roomNitrogenBack,
+                RoomPressureBack = _roomPressureBack,
+                BaseRoomStart = _baseRoomStart,
+                BaseRoomCount = _baseRoomCount,
+                BaseBatteryWattSeconds = _baseBatteryWattSeconds,
+                BaseIdleDrawWatts = _baseIdleDrawWatts,
+                BaseLeakRatePerSecond = _baseLeakRatePerSecond,
+                BaseAmbientOxygenKPa = _baseAmbientOxygenKPa
+            };
 
-        private void SetBaseOxygenDepleted(int baseId)
-        {
-            int startRoom = math.clamp(_baseRoomStart[baseId], 0, math.max(0, _roomCount));
-            int roomEnd = math.min(_roomCount, startRoom + math.max(0, _baseRoomCount[baseId]));
-            for (int room = startRoom; room < roomEnd; room++)
-            {
-                RoomO2[room] = 0f;
-                _roomO2Back[room] = 0f;
-                float pressure = ResolveDaltonPressureKPa(0f, RoomCO2[room], _roomNitrogen[room]);
-                RoomPressure[room] = pressure;
-                _roomPressureBack[room] = pressure;
-            }
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static float ResolveAnalyticalLeakAlpha(float elapsedSeconds, float leakRatePerSecond)
-        {
-            float exponent = -FiniteNonNegativeOrZero(elapsedSeconds) * FiniteNonNegativeOrZero(leakRatePerSecond);
-            float alpha = 1f - math.exp(exponent);
-            return math.isfinite(alpha) ? math.saturate(alpha) : 0f;
+            job.Run(); // COLD SYNC JOB: FrostTick wake catch-up, not a per-frame path.
         }
 
         private void PublishActiveRoomUi()
@@ -1456,6 +1434,114 @@ namespace Hecton8.Atmosphere
             NativeArray<float> temp = first;
             first = second;
             second = temp;
+        }
+
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard, CompileSynchronously = false)]
+        private struct BaseHibernationWakeCatchUpJob : IJob
+        {
+            public int BaseId;
+            public int RoomCount;
+            public float ElapsedSeconds;
+
+            public NativeArray<float> RoomO2;
+            public NativeArray<float> RoomCO2;
+            public NativeArray<float> RoomNitrogen;
+            public NativeArray<float> RoomPressure;
+            public NativeArray<float> RoomO2Back;
+            public NativeArray<float> RoomCO2Back;
+            public NativeArray<float> RoomNitrogenBack;
+            public NativeArray<float> RoomPressureBack;
+
+            [ReadOnly] public NativeArray<int> BaseRoomStart;
+            [ReadOnly] public NativeArray<int> BaseRoomCount;
+            public NativeArray<float> BaseBatteryWattSeconds;
+            [ReadOnly] public NativeArray<float> BaseIdleDrawWatts;
+            [ReadOnly] public NativeArray<float> BaseLeakRatePerSecond;
+            [ReadOnly] public NativeArray<float> BaseAmbientOxygenKPa;
+
+            public void Execute()
+            {
+                if ((uint)BaseId >= (uint)BaseRoomCount.Length || ElapsedSeconds <= 0f)
+                    return;
+
+                float elapsed = FiniteNonNegativeOrZero(ElapsedSeconds);
+                float battery = FiniteNonNegativeOrZero(BaseBatteryWattSeconds[BaseId]);
+                float idleDraw = FiniteNonNegativeOrZero(BaseIdleDrawWatts[BaseId]);
+                battery = math.max(0f, battery - idleDraw * elapsed);
+                BaseBatteryWattSeconds[BaseId] = battery;
+
+                int startRoom = math.clamp(BaseRoomStart[BaseId], 0, math.max(0, RoomCount));
+                int roomEnd = math.min(RoomCount, startRoom + math.max(0, BaseRoomCount[BaseId]));
+                if (roomEnd <= startRoom)
+                    return;
+
+                if (battery <= 0f)
+                {
+                    for (int room = startRoom; room < roomEnd; room++)
+                    {
+                        float carbonDioxide = FiniteNonNegativeOrZero(RoomCO2[room]);
+                        float nitrogen = FiniteNonNegativeOrZero(RoomNitrogen[room]);
+                        float pressure = ResolveDaltonPressureKPa(0f, carbonDioxide, nitrogen);
+                        RoomO2[room] = 0f;
+                        RoomCO2[room] = carbonDioxide;
+                        RoomNitrogen[room] = nitrogen;
+                        RoomO2Back[room] = 0f;
+                        RoomCO2Back[room] = carbonDioxide;
+                        RoomNitrogenBack[room] = nitrogen;
+                        RoomPressure[room] = pressure;
+                        RoomPressureBack[room] = pressure;
+                    }
+
+                    return;
+                }
+
+                float leakRate = FiniteNonNegativeOrZero(BaseLeakRatePerSecond[BaseId]);
+                if (leakRate <= 0f)
+                    return;
+
+                float alpha = ResolveAnalyticalLeakAlpha(elapsed, leakRate);
+                if (alpha <= 0f)
+                    return;
+
+                float ambientOxygen = FiniteNonNegativeOrZero(BaseAmbientOxygenKPa[BaseId]);
+                for (int room = startRoom; room < roomEnd; room++)
+                {
+                    float oxygen = math.lerp(FiniteNonNegativeOrZero(RoomO2[room]), ambientOxygen, alpha);
+                    float carbonDioxide = FiniteNonNegativeOrZero(RoomCO2[room]);
+                    float nitrogen = FiniteNonNegativeOrZero(RoomNitrogen[room]);
+                    float pressure = ResolveDaltonPressureKPa(oxygen, carbonDioxide, nitrogen);
+                    RoomO2[room] = oxygen;
+                    RoomCO2[room] = carbonDioxide;
+                    RoomNitrogen[room] = nitrogen;
+                    RoomO2Back[room] = oxygen;
+                    RoomCO2Back[room] = carbonDioxide;
+                    RoomNitrogenBack[room] = nitrogen;
+                    RoomPressure[room] = pressure;
+                    RoomPressureBack[room] = pressure;
+                }
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private static float ResolveAnalyticalLeakAlpha(float elapsedSeconds, float leakRatePerSecond)
+            {
+                float exponent = -FiniteNonNegativeOrZero(elapsedSeconds) * FiniteNonNegativeOrZero(leakRatePerSecond);
+                float alpha = 1f - math.exp(exponent);
+                return math.isfinite(alpha) ? math.saturate(alpha) : 0f;
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private static float ResolveDaltonPressureKPa(float oxygenKPa, float carbonDioxideKPa, float nitrogenKPa)
+            {
+                return FiniteNonNegativeOrZero(oxygenKPa) +
+                       FiniteNonNegativeOrZero(carbonDioxideKPa) +
+                       FiniteNonNegativeOrZero(nitrogenKPa);
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private static float FiniteNonNegativeOrZero(float value)
+            {
+                return math.isfinite(value) ? math.max(0f, value) : 0f;
+            }
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low, CompileSynchronously = false)]

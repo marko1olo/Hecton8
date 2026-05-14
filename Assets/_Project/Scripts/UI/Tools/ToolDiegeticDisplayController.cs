@@ -14,12 +14,11 @@ namespace Hecton8.UI.Tools
     /// Drives a held-tool diegetic status screen from the native tool-state signal lane.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class ToolDiegeticDisplayController : MonoBehaviour, IUpdatable
+    public sealed class ToolDiegeticDisplayController : MonoBehaviour, IUpdatable, IScalabilityChangedEventListener
     {
         private const int RenderTextureSize = 256;
         private const int TextBufferCapacity = 96;
         private const int InvalidDisplayBucket = int.MinValue;
-        private const float QualityTierProbeIntervalSeconds = 0.5f;
         private const float TierHysteresisSeconds = 2f;
         private const float PoolRetrySeconds = 2f;
         private const float InvisibleReleaseSeconds = 0.75f;
@@ -98,8 +97,10 @@ namespace Hecton8.UI.Tools
         private bool _lowTierCandidate;
         private bool _tierInitialized;
         private HectonQualityTier _currentTier = HectonQualityTier.Unknown;
-        private float _qualityTierProbeSeconds;
+        private HectonQualityTier _tierCandidate = HectonQualityTier.Unknown;
+        private float _tierCandidateSeconds;
         private float _lowTierCandidateSeconds;
+        private bool _registeredScalabilityListener;
         private int _lastSignalSequence;
         private int _lastScannerSignalSequence;
         private int _lastAmmoBucket = InvalidDisplayBucket;
@@ -151,6 +152,7 @@ namespace Hecton8.UI.Tools
             _renderRequested = true;
             _notRenderableSeconds = 0f;
             ResolveTierImmediate();
+            TryRegisterScalabilityListener();
             TryRegisterUpdatable();
             ApplyScreenTexture(_fallbackEmissiveTexture, lowTierFallback: true);
             ApplyCameraRenderState(renderThisFrame: false);
@@ -164,12 +166,18 @@ namespace Hecton8.UI.Tools
         private void OnDisable()
         {
             TryUnregisterUpdatable();
+            TryUnregisterScalabilityListener();
             ApplyCameraRenderState(renderThisFrame: false);
             ReleaseRenderTexture();
             _poolUnavailableFallback = false;
             _poolRetrySeconds = 0f;
             _notRenderableSeconds = 0f;
             ApplyScreenTexture(_fallbackEmissiveTexture, lowTierFallback: true);
+        }
+
+        public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
+        {
+            QueueTierCandidate(payload.CurrentQualityTier);
         }
 
         /// <summary>
@@ -650,11 +658,17 @@ namespace Hecton8.UI.Tools
 
         private void ResolveTierImmediate()
         {
-            _currentTier = ReadGlobalScalabilityTier();
-            bool lowTier = IsLowTier(_currentTier);
+            InitializeTier(GlobalRegistry.ScalabilityTier);
+        }
+
+        private void InitializeTier(HectonQualityTier tier)
+        {
+            _currentTier = tier;
+            _tierCandidate = tier;
+            bool lowTier = IsLowTier(tier);
             _lowTierActive = lowTier;
             _lowTierCandidate = lowTier;
-            _qualityTierProbeSeconds = QualityTierProbeIntervalSeconds;
+            _tierCandidateSeconds = 0f;
             _lowTierCandidateSeconds = 0f;
             _tierInitialized = true;
         }
@@ -663,35 +677,30 @@ namespace Hecton8.UI.Tools
         {
             if (!_tierInitialized)
             {
-                ResolveTierImmediate();
+                InitializeTier(HectonQualityTier.Unknown);
                 return;
             }
 
-            _qualityTierProbeSeconds = math.max(0f, _qualityTierProbeSeconds - deltaTime);
-            HectonQualityTier tier = _currentTier;
-            if (_qualityTierProbeSeconds <= 0f)
+            if (_tierCandidate != _currentTier)
             {
-                _qualityTierProbeSeconds = QualityTierProbeIntervalSeconds;
-                tier = ReadGlobalScalabilityTier();
-                if (tier != _currentTier)
+                _tierCandidateSeconds += deltaTime;
+                if (_tierCandidateSeconds >= TierHysteresisSeconds)
                 {
-                    _currentTier = tier;
+                    _currentTier = _tierCandidate;
+                    _tierCandidateSeconds = 0f;
+                    _lowTierCandidate = IsLowTier(_currentTier);
+                    _lowTierCandidateSeconds = TierHysteresisSeconds;
                     _stateDirty = true;
                     _renderRequested = true;
                 }
             }
-
-            bool requestedLowTier = IsLowTier(tier) ||
-                (_stateFlags & ToolStateChangedSignal.FlagLowTierFallback) != 0;
-
-            if (!_tierInitialized)
+            else
             {
-                _lowTierActive = requestedLowTier;
-                _lowTierCandidate = requestedLowTier;
-                _tierInitialized = true;
-                _stateDirty = true;
-                return;
+                _tierCandidateSeconds = 0f;
             }
+
+            bool requestedLowTier = IsLowTier(_currentTier) ||
+                (_stateFlags & ToolStateChangedSignal.FlagLowTierFallback) != 0;
 
             if (requestedLowTier == _lowTierActive)
             {
@@ -718,6 +727,30 @@ namespace Hecton8.UI.Tools
             _renderRequested = true;
         }
 
+        private void QueueTierCandidate(HectonQualityTier tier)
+        {
+            if (!_tierInitialized)
+            {
+                InitializeTier(tier);
+                _stateDirty = true;
+                _renderRequested = true;
+                return;
+            }
+
+            if (tier == _currentTier)
+            {
+                _tierCandidate = tier;
+                _tierCandidateSeconds = 0f;
+                return;
+            }
+
+            if (tier != _tierCandidate)
+            {
+                _tierCandidate = tier;
+                _tierCandidateSeconds = 0f;
+            }
+        }
+
         private void TryRegisterUpdatable()
         {
             if (_registered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
@@ -735,16 +768,29 @@ namespace Hecton8.UI.Tools
             _registered = false;
         }
 
+        private void TryRegisterScalabilityListener()
+        {
+            if (_registeredScalabilityListener || !Application.isPlaying)
+                return;
+
+            ScalabilityEvents.Register(this);
+            _registeredScalabilityListener = true;
+        }
+
+        private void TryUnregisterScalabilityListener()
+        {
+            if (!_registeredScalabilityListener)
+                return;
+
+            ScalabilityEvents.Unregister(this);
+            _registeredScalabilityListener = false;
+        }
+
         private static bool IsLowTier(HectonQualityTier tier)
         {
             return tier == HectonQualityTier.Unknown ||
                 tier == HectonQualityTier.Low ||
                 tier == HectonQualityTier.Mx350;
-        }
-
-        private static HectonQualityTier ReadGlobalScalabilityTier()
-        {
-            return GlobalRegistry.ScalabilityTier;
         }
 
         private static float ResolveVisualOverkill01(HectonQualityTier tier)

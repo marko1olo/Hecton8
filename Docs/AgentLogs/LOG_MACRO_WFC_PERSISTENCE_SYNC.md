@@ -326,3 +326,29 @@ Verification:
 - Static scans confirm no direct unsafe `messages[i].isRead/messageId/audioClip` access remains.
 - `git diff --check` reports no whitespace errors except Git CRLF normalization warnings.
 - No `dotnet` rebuild was run.
+
+## Recheck Report: Pooled Datapad Transient Reset
+Status: PENDING VERIFICATION.
+
+What was wrong:
+- `MessageTerminal.UpdateState()` intentionally avoids interrupting active playback.
+- A pooled WFC datapad reused while still in `Playing` could keep stale playback/timer/blink state even after baseline read-state restore.
+
+What was done:
+- Added `ResetWfcOutpostTransientPlaybackState()`.
+- WFC configuration now clears current message index, playback timer, blink timer/state, and converts `Playing` to `Idle` before applying restored flags.
+- Kept the reset WFC-scoped, avoiding global `OnDisable` or generic terminal behavior changes.
+
+Cinematic cheats used:
+- No playback/history replay.
+- Cold WFC configure resets local presentation state and then applies the one-bit looted truth.
+
+Exact microseconds saved:
+- Measured savings: 0 us. No profiler or runtime trace.
+- Static cost: scalar writes only on WFC configure.
+- Static gain: prevents stale pooled playback from forcing later corrective interaction/save behavior.
+
+Verification:
+- Static scans confirm the reset helper and call order before the looted/unlooted branch.
+- `git diff --check` reports no whitespace errors except Git CRLF normalization warnings.
+- No `dotnet` rebuild was run.

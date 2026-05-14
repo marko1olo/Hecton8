@@ -317,3 +317,23 @@ Solution: Counted baseline/current scanner-domain `GlobalRegistry.ScalabilityTie
 Rejected Alternatives: Running dotnet rebuilds, running a global H-Phi audit as if it verified runtime, or broad refactoring outside the scanner domain.
 Scalability potential: Cleaner source-level synaptic hygiene and lower hot registry polling in the scanner UX path.
 Hardware Impact: Exact microseconds PENDING PROFILER; expected low-end gain is small but deterministic.
+
+## LOOP 13 EVENT-LANE H-PHI HARDENING
+
+Problem: The previous H-Phi pass still hid `GlobalRegistry.ScalabilityTier` reads behind helpers called by scanner fast/late/UI tick paths. The cadence was throttled, but it was still polling a global service from active presentation/acquisition loops.
+Solution: `ScannerTool` and `ToolDiegeticDisplayController` now implement `IScalabilityChangedEventListener` and consume the existing `ScalabilityEvents` NativeQueue lane. Cold lifecycle reads seed the tier, event callbacks queue candidates, and existing 2s hysteresis accepts stable changes.
+Rejected Alternatives: Adding a new scanner quality bus, editing core registry contracts, keeping 2 Hz polling, or changing the 32-byte `ToolStateChangedSignal` layout during a parallel batch.
+Scalability potential: Low/MX350 tier drops still shed scanner RT/scramble work after a stable event. High/Ultra keep visual-overkill shader scalar and faster scanner response without global polling in the active scanner/display paths.
+Hardware Impact: Active scanner/display tier registry polling goes from 2 Hz to event-only after cold initialization. Exact microseconds PENDING PROFILER; expected gain is small but removes a hot-path H-Phi violation.
+
+Problem: Focused scanner acquisition read `GlobalRegistry.Player` inside the acquisition pose helper used by held scan resampling.
+Solution: Added `_cachedPlayerContext`, refreshed on Awake, OnSpawn, and OnEquip, and used that cached interface for player-camera pose resolution. Fallback remains the tool transform if the player camera/context is unavailable.
+Rejected Alternatives: `Camera.main`, direct player concrete references, scene search, or hot registry fallback inside the scan pose helper.
+Scalability potential: Low/MX350 avoids a registry read every focused resample. High/Ultra keep camera-authored crosshair acquisition and can spend saved overhead on denser scanner visuals.
+Hardware Impact: One `GlobalRegistry.Player` read removed from each focused resample; exact microseconds PENDING PROFILER.
+
+Problem: Static verification had to account for staged and unstaged workspace state while the user forbade dotnet rebuilds.
+Solution: Ran `git diff HEAD --check`, `git diff --cached --check`, scanner banned-pattern scans, direct registry source scans, and event-listener source scans. No dotnet or Unity rebuild was run.
+Rejected Alternatives: Reporting compiler verification without running it, or modifying unrelated staged work from other agents.
+Scalability potential: Process hygiene only.
+Hardware Impact: No runtime impact.

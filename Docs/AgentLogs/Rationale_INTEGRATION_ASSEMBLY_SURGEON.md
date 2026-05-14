@@ -2,7 +2,7 @@
 
 Agent: INTEGRATION_ASSEMBLY_SURGEON
 Domain: Unity Compilation Graph / Integrator
-Status: STATIC H-PHI TOOLING IMPROVED / PENDING FRESH COMPILE (NO DOTNET ORDER)
+Status: STATIC H-PHI DOC VERIFIED / PENDING FRESH COMPILE (NO DOTNET ORDER)
 
 ## Decision 0 - Session Initialization
 
@@ -83,3 +83,27 @@ Solution: Added optional budget switches to `HectonPhiAudit.ps1`: `-RequireCoreB
 Rejected Alternatives: Hard-failing on any existing debt was rejected because the current Core graph already has known debt and blind removal is unsafe. Baking the baseline into the script was rejected because the budget should be supplied by CI/task owner, not hidden inside tooling.
 Scalability potential: Low-end developer machines can enforce no-regression H-Phi graph budgets with a fast static script. High/Ultra validation lanes can lower the budgets after staged contract extraction.
 Hardware Impact: Runtime impact 0 us. Tooling impact is bounded to PowerShell text/XML/JSON reads; no Unity import or dotnet command is involved. Failure path now reports the aggregated budget violation text through one deterministic exception instead of stopping on the first `Write-Error`.
+
+## Decision 10 - Fresh XML Compile Pass Re-Entry Paused By No-Dotnet Order
+
+Problem: The previous session ended in static/no-dotnet mode, while the current in-chat XML explicitly orders a fresh `dotnet build Hecton8.Core.csproj --no-restore` wall read and contract surgery.
+Solution: Preserve the fresh checklist as pending history, but keep it paused under the latest repeated user instruction forbidding dotnet rebuilds. The initial `Docs/Tasks/CURRENT_BATCH.md` extraction attempt did not expose this agent tag, so no fresh batch-file source overrides the current no-dotnet boundary.
+Rejected Alternatives: Reusing old green logs was rejected by evidence law. Editing generated project files first was rejected because Unity regenerates them and the LTS mandate makes source-backed graph files authoritative.
+Scalability potential: Low tier keeps Core compile diagnostics focused instead of dragging every third-party warning into the medic lane. Middle/High/Ultra validation can widen project references after first-party contract drift is removed.
+Hardware Impact: Runtime impact 0 us. This is compile/evidence state only; no player-frame microsecond savings are claimed.
+
+## Decision 11 - Stable H-Phi Metric Documentation
+
+Problem: H-Phi had executable tooling and dated report addenda, but no stable architecture contract explaining what the metric means, how it is calculated, and why it matters. That made the metric vulnerable to vanity edits and fake evidence claims.
+Solution: Added `Docs/ARCHITECTURE/HECTON_PHI_STATIC_METRIC.md` with the exact coefficient formulas, counter definitions, Core graph debt model, budget-gate command, valid/invalid improvement rules, and evidence-language boundary. Linked it from `Docs/ARCHITECTURE/README.md` and `Docs/README.md`.
+Rejected Alternatives: Appending another paragraph to `Docs/Reports/HECTON_PHI_REPORT.md` was rejected because reports are snapshots, not durable policy. Adding comments only inside `Tools/Architecture/HectonPhiAudit.ps1` was rejected because agents need a stable documentation entry point before touching code.
+Scalability potential: Low tier gets clearer rules for shedding and decoupling weak-device paths; Middle/High/Ultra tiers get a protected leaf-system boundary so visual overkill remains outside Core. The doc explicitly prevents treating static H-Phi as runtime proof.
+Hardware Impact: Runtime impact 0 us on i3/MX350 and high-end machines. Documentation-only change. Expected engineering impact is reduced false-positive metric chasing and fewer unsafe Core-to-leaf dependency edits.
+
+## Decision 12 - README Mojibake Boundary
+
+Problem: The broad ASCII scan after documentation edits reported non-ASCII content in `Docs/README.md`.
+Solution: Narrowed the scan to owned/new H-Phi documentation and state/log edits, then located the existing offending line: `Docs/README.md:17` contains historical mojibake for an old root filename. The H-Phi edit only changed the date and added an ASCII path entry.
+Rejected Alternatives: Normalizing the unrelated mojibake line during this integrator pass was rejected as doc-history churn outside the H-Phi metric contract. Ignoring the scan without locating the line was rejected because it would leave ambiguity about whether the new doc introduced non-ASCII.
+Scalability potential: Low/Middle/High/Ultra runtime tiers unchanged. The decision preserves focused documentation scope under concurrent agents.
+Hardware Impact: Runtime impact 0 us. Tooling impact 0 us outside static text scan time.

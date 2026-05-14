@@ -107,7 +107,9 @@ namespace Hecton8.Gameplay.Loot
 
         private void OnDisable()
         {
-            ForceCompletePendingJob();
+            if (ForceCompletePendingJob() && CanCommitCompletedJob())
+                CommitVaultResultsToManagedProxies();
+
             TryUnregisterTicks();
             DisposeSignalEvents();
             DisposeTelemetry();
@@ -437,6 +439,8 @@ namespace Hecton8.Gameplay.Loot
             uint acquiredCount = 0u;
             uint flagsHash = 2166136261u;
             int acquisitionBudget = LootMagnetConstants.MaxAcquisitionsPerFrame;
+            int acousticBudget = ResolveAcousticSignalBudget();
+            int wakeBudget = ResolveWakeSignalBudget();
             bool fault = false;
             for (int index = 0; index < count; index++)
             {
@@ -470,7 +474,7 @@ namespace Hecton8.Gameplay.Loot
                     {
                         acquiredCount++;
                         PublishItemAcquired(in signalEvent, addedQuantity);
-                        PublishPresentationSignals(in signalEvent, addedQuantity);
+                        PublishPresentationSignals(in signalEvent, addedQuantity, ref acousticBudget, ref wakeBudget);
                     }
 
                     if (quantityAfter > 0)
@@ -491,7 +495,7 @@ namespace Hecton8.Gameplay.Loot
                     continue;
                 }
 
-                PublishPresentationSignals(in signalEvent, 0);
+                PublishPresentationSignals(in signalEvent, 0, ref acousticBudget, ref wakeBudget);
                 if ((flags & LootEntityFlags.Pulling) == 0u || (flags & LootEntityFlags.Active) == 0u)
                     continue;
 
@@ -553,19 +557,28 @@ namespace Hecton8.Gameplay.Loot
             GlobalSignals.Publish(in itemSignal);
         }
 
-        private void PublishPresentationSignals(in LootMagnetSignalEvent signalEvent, int addedQuantity)
+        private void PublishPresentationSignals(
+            in LootMagnetSignalEvent signalEvent,
+            int addedQuantity,
+            ref int acousticBudget,
+            ref int wakeBudget)
         {
             if (signalEvent.Flags == 0u || signalEvent.ItemHash == 0u)
                 return;
 
-            float radiusMeters = math.max(LootMagnetConstants.AcquireDistanceMeters, _scheduledPullRadiusMeters);
-            float radiusSq = math.max(_scheduledPullRadiusSq, LootMagnetConstants.MinDistanceSq);
-            float intensity = math.saturate(1f - (signalEvent.DistanceSq * math.rcp(radiusSq)));
-            if (addedQuantity > 0)
-                intensity = 1f;
+            bool publishAcoustic = (signalEvent.Flags & LootMagnetEventFlags.Acoustic) != 0u && acousticBudget > 0;
+            bool publishWake = (signalEvent.Flags & LootMagnetEventFlags.Wake) != 0u && wakeBudget > 0;
+            if (!publishAcoustic && !publishWake)
+                return;
 
-            if ((signalEvent.Flags & LootMagnetEventFlags.Acoustic) != 0u)
+            if (publishAcoustic)
             {
+                acousticBudget--;
+                float radiusMeters = math.max(LootMagnetConstants.AcquireDistanceMeters, _scheduledPullRadiusMeters);
+                float radiusSq = math.max(_scheduledPullRadiusSq, LootMagnetConstants.MinDistanceSq);
+                float intensity = addedQuantity > 0
+                    ? 1f
+                    : math.saturate(1f - (signalEvent.DistanceSq * math.rcp(radiusSq)));
                 AcousticPingSignal acousticSignal = new AcousticPingSignal
                 {
                     PositionAup = signalEvent.PositionAup,
@@ -578,8 +591,9 @@ namespace Hecton8.Gameplay.Loot
                 GlobalSignals.Publish(in acousticSignal);
             }
 
-            if ((signalEvent.Flags & LootMagnetEventFlags.Wake) != 0u)
+            if (publishWake)
             {
+                wakeBudget--;
                 WakeGeneratedSignal wakeSignal = new WakeGeneratedSignal
                 {
                     PositionAup = signalEvent.PositionAup,
@@ -588,6 +602,34 @@ namespace Hecton8.Gameplay.Loot
                 };
                 GlobalSignals.Publish(in wakeSignal);
             }
+        }
+
+        private static int ResolveAcousticSignalBudget()
+        {
+            byte tier = GlobalRegistry.ScalabilityTierProfileByte;
+            if (tier == 0)
+                return LootMagnetConstants.LowTierAcousticSignalsPerFrame;
+
+            if (tier >= 3)
+                return LootMagnetConstants.UltraTierAcousticSignalsPerFrame;
+
+            return tier >= 2
+                ? LootMagnetConstants.HighTierAcousticSignalsPerFrame
+                : LootMagnetConstants.DefaultAcousticSignalsPerFrame;
+        }
+
+        private static int ResolveWakeSignalBudget()
+        {
+            byte tier = GlobalRegistry.ScalabilityTierProfileByte;
+            if (tier == 0)
+                return LootMagnetConstants.LowTierWakeSignalsPerFrame;
+
+            if (tier >= 3)
+                return LootMagnetConstants.UltraTierWakeSignalsPerFrame;
+
+            return tier >= 2
+                ? LootMagnetConstants.HighTierWakeSignalsPerFrame
+                : LootMagnetConstants.DefaultWakeSignalsPerFrame;
         }
 
         private uint _lastCommittedAcquiredCount;
@@ -615,13 +657,26 @@ namespace Hecton8.Gameplay.Loot
             _lastTelemetryRecordedFrame = telemetryFrame;
         }
 
-        private void ForceCompletePendingJob()
+        private bool CanCommitCompletedJob()
+        {
+            return _entityFlags.IsCreated &&
+                   _entityAups.IsCreated &&
+                   _entityVelocities.IsCreated &&
+                   _entityItemHashes.IsCreated &&
+                   _entityQuantities.IsCreated &&
+                   _signalEvents.IsCreated &&
+                   _pickupRefs != null &&
+                   _pickupEntityIds != null;
+        }
+
+        private bool ForceCompletePendingJob()
         {
             if (!_pullScheduled)
-                return;
+                return false;
 
             DispatcherJobSwap.TryComplete(ref _pullHandle, forceComplete: true);
             _pullScheduled = false;
+            return true;
         }
 
         private void DumpTelemetryBuffer()

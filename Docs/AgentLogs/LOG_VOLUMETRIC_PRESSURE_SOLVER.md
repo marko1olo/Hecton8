@@ -225,8 +225,29 @@ Exact microseconds saved after follow-up 24:
 Follow-up upgrade 25:
 - Gated `UploadModuleStressMatrix` so `_HectonHabitatModuleStressBuffer` is ensured/uploaded only when `peakStress01 > ModuleStressUploadEpsilon`.
 - Calm visible-module states still publish zero peak shader params; the shader peak guard prevents buffer reads until stress becomes visible again.
-- Rebuild policy: no `dotnet` rebuild and no Unity rebuild were run by explicit user instruction. Static checks are run separately in this loop.
+- Static checks: `rg` confirms `hasVisibleStress` gates `EnsureModuleStressBuffer` and `GraphicsBufferUploadUtility.UploadNativeArray` before shader params publish; managed-offender scans found no `string.Format`, `.ToString()`, interpolation, `foreach`, or LINQ offenders in `HabitatGraphManager.cs`; mesh mutation scan found no owned `Mesh.vertices` writes; exact shader `normalize()`/`sqrt()` scan produced no matches; touched C#/shader brace counts are balanced; local H-Phi spot check remains `GlobalRegistry=4`, `SignalBus=2`, `GlobalSignals=1`, `NativeArray=81`, `GraphicsBuffer=3`, `FindCalls=0`, `UpdateMethods=0`; `git diff --check` reports only CRLF warnings.
+- Rebuild policy: no `dotnet` rebuild and no Unity rebuild were run by explicit user instruction.
 
 Exact microseconds saved after follow-up 25:
 - Calm visible-module dirty ticks skip one stress buffer ensure/upload.
 - Estimated 6-18 us saved on i3/MX350 active-order, tier-change, or calm rebuild frames; 0 B/frame and no visual regression once stress rises above epsilon.
+
+Follow-up upgrade 26:
+- Changed `UploadModuleStressMatrix` so `hasVisibleStress` requires non-low-tier plus peak stress above `ModuleStressUploadEpsilon`.
+- Added a low-tier early return to `HectonHabitatInteriorResolveStress01`, returning peak stress before module count or buffer reads.
+- Static checks: `rg` confirms `hasVisibleStress` now requires `!lowTier` before `EnsureModuleStressBuffer`/`GraphicsBufferUploadUtility.UploadNativeArray`; `rg` confirms the shader low-tier branch returns before `HectonHabitatInteriorModuleCount()` and the only stress-buffer sample remains inside the resolver after that branch; managed-offender scans found no C# string/LINQ/foreach offenders; mesh mutation scan found no owned `Mesh.vertices` writes; exact shader `normalize()`/`sqrt()` scan produced no matches; touched C#/shader brace counts are balanced; local H-Phi spot check remains `GlobalRegistry=4`, `SignalBus=2`, `GlobalSignals=1`, `NativeArray=81`, `GraphicsBuffer=3`, `FindCalls=0`, `UpdateMethods=0`; `git diff --check` reports only CRLF warnings.
+- Rebuild policy: no `dotnet` rebuild and no Unity rebuild were run by explicit user instruction.
+
+Exact microseconds saved after follow-up 26:
+- Stressed low-tier habitat ticks skip one structured-buffer ensure/upload.
+- Estimated 6-18 us saved on i3/MX350 low-tier stress frames; 0 B/frame. Mid/High/Ultra buffer uploads remain active for localized bowing.
+
+Follow-up upgrade 27:
+- Cached `HectonAtmosphereManager` service resolution in `HabitatGraphManager`.
+- `ResolveRuntimeSeaLevelY` now reads live `SeaLevelY` from the cached manager instead of resolving `GlobalRegistry.Atmosphere` every pass.
+- Static checks: `rg` confirms `ResolveRuntimeSeaLevelY` routes through `ResolveAtmosphereManager`, `_atmosphereManager` is cleared on dispose, and live `SeaLevelY` is still sampled each pass; managed-offender scans found no C# string/LINQ/foreach offenders; mesh mutation scan found no owned `Mesh.vertices` writes; exact shader `normalize()`/`sqrt()` scan produced no matches; touched C#/shader brace counts are balanced; `git diff --check` reports only CRLF warnings.
+- Rebuild policy: no `dotnet` rebuild and no Unity rebuild were run by explicit user instruction.
+
+Exact microseconds saved after follow-up 27:
+- Rebuild/stress passes avoid repeated atmosphere service-locator reads after warm cache.
+- Estimated 1-3 us saved on i3/MX350 pressure-heavy frames; 0 B/frame and no loss of tide/sea-level freshness.

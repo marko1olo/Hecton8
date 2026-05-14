@@ -845,7 +845,7 @@ namespace Hecton8.QA.Headless
                     WriteInvariant(writer, _ecosystemDirectorReadyAtIssue);
                     writer.Write(",\"staticHPhi\":");
                     WriteInvariant(writer, _staticHPhiMetric);
-                    writer.Write(",\"staticHPhiModel\":\"runtime_risk_adjusted\"");
+                    writer.Write(",\"staticHPhiModel\":\"runtime_aup_risk_adjusted\"");
                     writer.Write(",\"lastFractureHash\":");
                     WriteInvariant(writer, _lastFractureHash);
                     writer.Write(",\"dataVaultFreeApi\":\"ABSENT_IDataVault_RELEASE\"");
@@ -1063,6 +1063,8 @@ namespace Hecton8.QA.Headless
             counters.StaticInstance += CountOrdinal(text, "Instance{");
             counters.FindObjectCalls += CountFindObjectCalls(text);
             counters.GetComponentCalls += CountComponentCalls(text);
+            counters.AupPrecisionSafe += CountAupPrecisionSafe(text);
+            counters.AupPrecisionRisk += CountAupPrecisionRisk(text);
         }
 
         private static float CalculateHPhiRisk(in HPhiStaticCounters counters)
@@ -1077,12 +1079,20 @@ namespace Hecton8.QA.Headless
                 counters.DataVaultRefs,
                 counters.DataVaultRefs + counters.NativeArrayRefs);
             float memoryAlignment = DivideOrZero(counters.StructLayoutAttributes, counters.StructDeclarations);
-            return riskIntegration * architecturalPurity * dataSovereignty * memoryAlignment;
+            float aupPrecisionIntegrity = DivideOrOne(
+                counters.AupPrecisionSafe,
+                counters.AupPrecisionSafe + counters.AupPrecisionRisk);
+            return riskIntegration * architecturalPurity * dataSovereignty * memoryAlignment * aupPrecisionIntegrity;
         }
 
         private static float DivideOrZero(int numerator, int denominator)
         {
             return denominator > 0 ? (float)numerator / denominator : 0f;
+        }
+
+        private static float DivideOrOne(int numerator, int denominator)
+        {
+            return denominator > 0 ? (float)numerator / denominator : 1f;
         }
 
         private static bool IsEditorScriptPath(string path)
@@ -1177,6 +1187,32 @@ namespace Hecton8.QA.Headless
             return count;
         }
 
+        private static int CountAupPrecisionSafe(string text)
+        {
+            int count = CountOrdinal(text, "Current" + "TotalOffsetDouble");
+            count += CountOrdinal(text, "ToAbsolute" + "UniversePositionDouble3");
+            count += CountOrdinal(text, "ToUniverse" + "SpaceDouble3");
+            count += CountOrdinal(text, "ToRuntime" + "SpaceDouble3");
+            count += CountOrdinal(text, "ToRuntime" + "Space(double3");
+            count += CountOrdinal(text, "FromAbsolute" + "Position");
+            count += CountOrdinal(text, "Distance" + "Sq(");
+            return count;
+        }
+
+        private static int CountAupPrecisionRisk(string text)
+        {
+            int count = CountOrdinal(text, "Current" + "TotalOffset;");
+            count += CountOrdinal(text, "Current" + "TotalOffset.");
+            count += CountOrdinal(text, "New" + "TotalOffset.");
+            count += CountOrdinal(text, "Previous" + "TotalOffset.");
+            count += CountOrdinal(text, "ToAbsolute" + "UniversePosition(");
+            count += CountOrdinal(text, "ToUniverse" + "Space(");
+            count += CountOrdinal(text, "(float3)" + "AU" + "P");
+            count += CountOrdinal(text, "Vector3 " + "uni" + "versePosition");
+            count += CountOrdinal(text, "Vector3 stable" + "UniverseRoot");
+            return count;
+        }
+
         private static int FindStatementEnd(string text, int start)
         {
             int index = start;
@@ -1234,7 +1270,7 @@ namespace Hecton8.QA.Headless
 
         private static string FormatStaticHPhiLog(float metric, int targetFrames)
         {
-            return "[H-PHI_STATIC] " + AgentName + " value=" + metric.ToString("F6", CultureInfo.InvariantCulture) + " model=runtime_risk_adjusted requestedBoids=10000 frames=" + targetFrames.ToString(CultureInfo.InvariantCulture);
+            return "[H-PHI_STATIC] " + AgentName + " value=" + metric.ToString("F6", CultureInfo.InvariantCulture) + " model=runtime_aup_risk_adjusted requestedBoids=10000 frames=" + targetFrames.ToString(CultureInfo.InvariantCulture);
         }
 
         private static float TicksToMilliseconds(long ticks)
@@ -1363,6 +1399,8 @@ namespace Hecton8.QA.Headless
             public int StaticInstance;
             public int FindObjectCalls;
             public int GetComponentCalls;
+            public int AupPrecisionSafe;
+            public int AupPrecisionRisk;
         }
 
         [StructLayout(LayoutKind.Sequential, Size = BlackboxEntrySizeBytes)]

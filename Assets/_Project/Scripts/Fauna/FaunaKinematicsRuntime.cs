@@ -103,6 +103,7 @@ namespace Hecton8.AI
         private bool _strikeActive;
         private bool _wasStrikeActiveLastTick;
         private bool _headLookTargetActive;
+        private bool _globalGpuSkinningPublished;
         private int _frameIndex;
         private int _activeSegmentCount = MaxSegments;
         private int _resolvedConstraintIterations = 1;
@@ -444,6 +445,8 @@ namespace Hecton8.AI
 
             DispatcherJobSwap.TryComplete(ref _pendingHandle, forceComplete: true);
             _solverScheduled = false;
+            if (TelemetryHasInvalidFrame())
+                DumpTelemetryBlackBoxOnce();
         }
 
         private void SeedSpineFromOwner()
@@ -467,6 +470,8 @@ namespace Hecton8.AI
             _motionIntentHeadTarget = origin + forward * segmentLength;
             _headLookTargetWorldPosition = _motionIntentHeadTarget;
             _strikeTargetWorldPosition = _motionIntentHeadTarget;
+            _motionIntentFrame = -1;
+            _gpuUploadDirty = true;
         }
 
         private void CaptureFallbackMotionIntent()
@@ -645,8 +650,14 @@ namespace Hecton8.AI
                 return;
             }
 
+            if (!LeviathanTerrainIkJob.TryResolveTerrainHeightSampleCount(payload.HeightmapResolution, out int expectedLength) ||
+                !payload.HeightSamples.IsCreated ||
+                payload.HeightSamples.Length < expectedLength)
+            {
+                return;
+            }
+
             NativeArray<ushort> resolvedHeight = payload.HeightSamples;
-            int expectedLength = payload.HeightmapResolution * payload.HeightmapResolution;
             IDataVault vault = _dataVault;
             if (vault != null &&
                 vault.TryGetBuffer(BufferID.TerrainSeamHeightmap, out NativeArray<ushort> vaultHeightmap) &&
@@ -666,6 +677,9 @@ namespace Hecton8.AI
         {
             if (!_leviathanBones.IsCreated)
                 return false;
+
+            if (!_publishGlobalBoneBuffer && _globalGpuSkinningPublished)
+                ClearGlobalGpuSkinningBinding();
 
             if (_skinningMaterial == null && !_publishGlobalBoneBuffer)
                 return true;
@@ -696,6 +710,7 @@ namespace Hecton8.AI
                 Shader.SetGlobalFloat(_LeviathanTailWhipId, tailWhip01);
                 Shader.SetGlobalFloat(_LeviathanSegmentLengthId, _segmentLength);
                 Shader.SetGlobalFloat(_LeviathanGpuSkinningId, 1f);
+                _globalGpuSkinningPublished = true;
             }
 
             _gpuUploadBufferIndex ^= 1;
@@ -706,14 +721,8 @@ namespace Hecton8.AI
         {
             ClearMaterialGpuSkinningBinding(_skinningMaterial);
 
-            if (_publishGlobalBoneBuffer)
-            {
-                Shader.SetGlobalFloat(_LeviathanBoneCountId, 0f);
-                Shader.SetGlobalFloat(_LeviathanIkTierId, 0f);
-                Shader.SetGlobalFloat(_LeviathanTailWhipId, 0f);
-                Shader.SetGlobalFloat(_LeviathanSegmentLengthId, 1f);
-                Shader.SetGlobalFloat(_LeviathanGpuSkinningId, 0f);
-            }
+            if (_publishGlobalBoneBuffer || _globalGpuSkinningPublished)
+                ClearGlobalGpuSkinningBinding();
         }
 
         private static void ClearMaterialGpuSkinningBinding(Material material)
@@ -726,6 +735,16 @@ namespace Hecton8.AI
             material.SetFloat(_LeviathanTailWhipId, 0f);
             material.SetFloat(_LeviathanSegmentLengthId, 1f);
             material.SetFloat(_LeviathanGpuSkinningId, 0f);
+        }
+
+        private void ClearGlobalGpuSkinningBinding()
+        {
+            Shader.SetGlobalFloat(_LeviathanBoneCountId, 0f);
+            Shader.SetGlobalFloat(_LeviathanIkTierId, 0f);
+            Shader.SetGlobalFloat(_LeviathanTailWhipId, 0f);
+            Shader.SetGlobalFloat(_LeviathanSegmentLengthId, 1f);
+            Shader.SetGlobalFloat(_LeviathanGpuSkinningId, 0f);
+            _globalGpuSkinningPublished = false;
         }
 
         private void EnsureGraphicsBuffers()

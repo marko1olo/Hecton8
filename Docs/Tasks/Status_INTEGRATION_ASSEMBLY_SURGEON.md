@@ -4,7 +4,7 @@ Agent: INTEGRATION_ASSEMBLY_SURGEON
 Role: SYSTEMS_ARCHITECT
 Domain: Unity Compilation Graph / Integrator
 Prompt task count: 17
-Current state: STATIC H-PHI TOOLING IMPROVED / PENDING FRESH COMPILE (NO DOTNET ORDER)
+Current state: STATIC H-PHI DOC VERIFIED / PENDING FRESH COMPILE (NO DOTNET ORDER)
 
 ## Mandates Read
 
@@ -55,6 +55,8 @@ Rule quote: `H-PHI DEFENSE: Do NOT solve missing dependencies by adding Hecton8.
 - Loop 7: Static H-Phi audit. `Hecton8.Core.csproj` still declares generated project references to package/vendor projects; props gate isolates them by default. `Hecton8.Core.asmdef` still references broad leaf/domain assemblies; blind removal rejected because current Core-owned source uses `LeviathanTerrainIkJob`, `MacroSwarm`, and `SoundEmissionSignal`. Status: PENDING FRESH COMPILE BY USER NO-DOTNET ORDER.
 - Loop 8: Added `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly` static mode and ran it without dotnet. Counts: 46 Core asmdef refs, 28 Core asmdef H-Phi debt refs, 12 generated Core project refs, 10 generated project debt refs. Build graph gate detected `BuildProjectReferences=false` and `BuildInParallel=false`. Status: STATIC H-PHI TOOLING IMPROVED / PENDING FRESH COMPILE.
 - Loop 9: Added optional Core graph budget enforcement switches and validated current baseline with `-RequireCoreBuildGate -MaxCoreAsmdefDebtReferences 28 -MaxGeneratedProjectDebtReferences 10`. Verified expected failure path with zero asmdef-debt budget. Status: STATIC H-PHI TOOLING IMPROVED / NO DOTNET.
+- Loop 10: Promoted H-Phi from report/addendum lore into stable architecture documentation. Added `Docs/ARCHITECTURE/HECTON_PHI_STATIC_METRIC.md`, linked it from `Docs/ARCHITECTURE/README.md`, and listed it in `Docs/README.md`. Status: STATIC H-PHI TOOLING DOCUMENTED / NO DOTNET.
+- Loop 11: Static no-dotnet verification after documentation. Core graph budget gate passed at 28 asmdef debt refs and 10 generated-project debt refs. Anchor scan found the H-Phi doc links and formula markers. `git diff --check` found no whitespace errors, only LF/CRLF normalization warnings. Owned ASCII scan passed; `Docs/README.md` has pre-existing mojibake at line 17 outside this edit. Status: STATIC H-PHI DOC VERIFIED / NO DOTNET.
 
 ## 2026-05-15 Continuation Checklist
 
@@ -68,3 +70,29 @@ Rule quote: `H-PHI DEFENSE: Do NOT solve missing dependencies by adding Hecton8.
 - [x] Core graph audit executed | Justification: graph-only run completed and reported 28 Core asmdef H-Phi debt refs plus 10 generated project debt refs; no dotnet command involved | Alternatives rejected: full source H-Phi scan under repo load | Estimate: 0 us runtime
 - [x] Core graph budget gate added | Justification: `HectonPhiAudit.ps1` now accepts explicit debt budgets and can fail future regressions without compiling | Alternatives rejected: hardcoding current baseline inside the script | Estimate: 0 us runtime
 - [x] Core graph budget gate exercised | Justification: current baseline passed with `-RequireCoreBuildGate -MaxCoreAsmdefDebtReferences 28 -MaxGeneratedProjectDebtReferences 10`; expected failure path returned `EXPECTED_BUDGET_FAIL_PATH_OK` under zero asmdef-debt budget | Alternatives rejected: failing on known debt before DTO extraction | Estimate: 0 us runtime
+
+## 2026-05-15 Fresh XML Pass
+
+Directive source: in-chat `<AGENT_PROMPT id="INTEGRATION_ASSEMBLY_SURGEON">`; `Docs/Tasks/CURRENT_BATCH.md` did not expose this prompt through `Select-String` in the initial extraction attempt.
+Task count: 15 numbered primary objectives.
+Domain: Echelon 9 / The Integrator (Compile Medic).
+Current state: PAUSED BY CURRENT NO-DOTNET ORDER / PENDING FRESH CLI_COMPILE ONLY AFTER USER ALLOWS DOTNET.
+
+### Mandates Re-Read
+
+- [x] `ARCH_Global_Registry_ServiceLocator_DI_Init.txt` | Justification: service lookup and optional guard fixes must not add singleton drift | Alternatives rejected: per-frame `GlobalRegistry.Get<T>()` polling | Estimate: 600 us
+- [x] `PROJECT_LTS_Compatibility_Layer.txt` | Justification: asmdef/project-reference surgery must preserve strict dependency graph | Alternatives rejected: generated `.csproj` as source of truth | Estimate: 700 us
+- [x] `ARCH_Signal_Lane_Segregation.txt` | Justification: duplicate signal names and lane drift are cited in the Inquisition report | Alternatives rejected: monolithic event lane expansion | Estimate: 650 us
+- [x] `OPT_Zero_GC_Policy_AllocFree_Mandate.txt` | Justification: compile fixes cannot add managed hot-path traps | Alternatives rejected: runtime wrappers allocating in Tick | Estimate: 500 us
+- [x] `OPT_Native_Memory_Collections_JobSystem_Protocol.txt` | Justification: contract structs may cross Burst/native collection surfaces | Alternatives rejected: managed DTO shims | Estimate: 800 us
+- [x] `DBG_Telemetry_Crash_Reporting_PostMortem.txt` | Justification: critical contract changes must respect black-box dump law | Alternatives rejected: debug strings as runtime proof | Estimate: 500 us
+- [x] `QA_Evidence_Text_Filter_Audit.txt` | Justification: build claims require artifact path and command | Alternatives rejected: static scan as compile proof | Estimate: 350 us
+
+### Fresh Checklist
+
+- [ ] Fresh Task 1: READ THE WALL | Justification: pending `dotnet build Hecton8.Core.csproj --no-restore` artifact only after current no-dotnet order is lifted | Alternatives rejected: stale logs and violating the latest user instruction | Estimate: pending
+- [ ] Fresh Task 2: ASSEMBLY AUDIT | Justification: pending `.asmdef` dependency graph scan | Alternatives rejected: direct leaf-to-Core reference patching | Estimate: pending
+- [ ] Fresh Task 3: CONTRACT DISCOVERY | Justification: pending missing type/provider scan for MacroSwarm/AcousticAup/SignalBus and current compiler output | Alternatives rejected: guessing from prior logs | Estimate: pending
+- [x] H-Phi metric documented | Justification: `Docs/ARCHITECTURE/HECTON_PHI_STATIC_METRIC.md` now defines what H-Phi is, how the coefficients and Core graph debt are calculated, why the metric matters, and which evidence claims are forbidden | Alternatives rejected: leaving the metric buried in dated reports or chat | Estimate: 0 us runtime
+- [x] H-Phi doc indexed | Justification: `Docs/ARCHITECTURE/README.md` read order and `Docs/README.md` active architecture list now point to the stable H-Phi metric contract | Alternatives rejected: orphan architecture document | Estimate: 0 us runtime
+- [x] H-Phi doc static verification | Justification: ran Core graph budget gate, anchor `rg`, owned ASCII scan, and `git diff --check` without dotnet; Core graph baseline still passed and no whitespace errors were reported | Alternatives rejected: dotnet compile against explicit user order, global cleanup of unrelated pre-existing `Docs/README.md` mojibake | Estimate: 0 us runtime

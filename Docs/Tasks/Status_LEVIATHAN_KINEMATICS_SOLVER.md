@@ -134,3 +134,25 @@ Batch source: Docs/Tasks/CURRENT_BATCH.md
 - Static grep over IK runtime/job/shader scope still found no `math.sqrt`, `math.normalize`, managed array creation, `foreach`, `string.Format`, `.ToString()`, `Debug.Log`, Unity Physics casts, `SkinnedMeshRenderer`, `renderer.material`, `Camera.main`, `GlobalRegistry.Get`, `GameObject.Find`, or `FindObject`.
 - `git diff --check` on touched code/docs exits 0; output is only LF-to-CRLF warnings.
 - No `dotnet` rebuild, compile, or response-file probe was run.
+
+### Loop 13: MapMagic Height Payload Overflow Recheck
+
+- Added `LeviathanTerrainIkJob.TryResolveTerrainHeightSampleCount()` using `long` multiplication before accepting or sampling any 2D fallback height buffer.
+- Updated `FaunaKinematicsRuntime.ResolveMapMagicPayload()` to reject invalid height payload lengths before handing native buffers to the Burst job.
+- Updated the Burst height fallback gate and private sampler to use the checked sample-count resolver instead of `TerrainResolution * TerrainResolution`.
+- DOD: fallback terrain hugging cannot accept an overflowed resolution/sample-count pair into the lower-segment contact loop.
+- Alternative Rejected: trusting `MapMagicBridge.QuantizedHeightmapPayload.IsValid` alone because that contract currently multiplies `HeightmapResolution * HeightmapResolution` in `int` space.
+- Estimate: 0 us normal terrain cost; avoids catastrophic invalid native indexing on malformed payloads.
+- Static grep over IK runtime/job/shader scope still found no `math.sqrt`, `math.normalize`, managed array creation, `foreach`, `string.Format`, `.ToString()`, `Debug.Log`, Unity Physics casts, `SkinnedMeshRenderer`, `renderer.material`, `Camera.main`, `GlobalRegistry.Get`, `GameObject.Find`, or `FindObject`.
+- `git diff --check` on touched code/docs exits 0; output is only LF-to-CRLF warnings.
+- No `dotnet` rebuild, compile, or response-file probe was run.
+
+### Loop 14: Global GPU Skinning Gate Recheck
+
+- Added `_globalGpuSkinningPublished` ownership tracking so stale global Leviathan shader gates are cleared when global publishing is disabled or the runtime shuts down.
+- DOD: `_H8LeviathanGpuSkinning` cannot remain globally enabled from an earlier publish if the runtime later uses material-only binding or no GPU consumer.
+- Alternative Rejected: relying on `_publishGlobalBoneBuffer` alone because serialized/runtime toggles can change after a global buffer has already been published.
+- Estimate: 0 us normal hot-path cost after state is stable; one cold clear only on publish-off transition or shutdown.
+- Static grep over IK runtime/job/shader scope still found no `math.sqrt`, `math.normalize`, managed array creation, `foreach`, `string.Format`, `.ToString()`, `Debug.Log`, Unity Physics casts, `SkinnedMeshRenderer`, `renderer.material`, `Camera.main`, `GlobalRegistry.Get`, `GameObject.Find`, or `FindObject`.
+- `git diff --check` and `git diff --cached --check` on touched code/docs exit 0.
+- No `dotnet` rebuild, compile, or response-file probe was run.

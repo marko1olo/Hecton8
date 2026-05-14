@@ -20,6 +20,7 @@ namespace Hecton8.UI
         private const uint PhysicalPanelToolId = 0x50414E4Cu;
         private const byte LeftMotorMask = 0b0001;
         private const byte RightMotorMask = 0b0010;
+        private const byte BothMotorMask = LeftMotorMask | RightMotorMask;
         private const byte MicroHapticPriority = 1;
         private const float HoldDispatchIntervalSeconds = 0.033333335f;
         private const int MaxParentResolveDepth = 32;
@@ -373,7 +374,13 @@ namespace Hecton8.UI
                     return RightMotorMask;
             }
 
-            return fallbackHandSide == PhysicalHandSide.Left ? LeftMotorMask : RightMotorMask;
+            if (fallbackHandSide == PhysicalHandSide.Left)
+                return LeftMotorMask;
+
+            if (fallbackHandSide == PhysicalHandSide.Right)
+                return RightMotorMask;
+
+            return BothMotorMask;
         }
 
         private void ResolveReferences()

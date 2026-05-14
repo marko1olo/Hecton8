@@ -97,3 +97,62 @@ Verification:
 
 Residual risk:
 - Budget values are baseline caps, not architectural approval. They prevent regression, but reducing the counts still requires staged contract extraction and fresh compile validation.
+
+## 2026-05-15 - H-Phi Metric Documentation
+
+What was wrong:
+- H-Phi was implemented in `Tools/Architecture/HectonPhiAudit.ps1` and described across dated report addenda, but no stable architecture document defined the metric contract.
+- Without a stable doc, future agents could confuse static H-Phi with compile, profiler, GC, player-build, or visual-quality proof.
+
+What was done:
+- Added `Docs/ARCHITECTURE/HECTON_PHI_STATIC_METRIC.md`.
+- Documented what H-Phi measures: coupling, tick discipline, DataVault/native ownership visibility, struct layout discipline, and Core graph debt.
+- Documented exact formulas for `NarrowIntegration`, `RiskIntegration`, `ArchitecturalPurity`, `ArchitecturalPurityExpanded`, `DataSovereignty`, `MemoryAlignment`, `BinarySafeRatio`, `HPhiStaticNarrow`, and `HPhiStaticRisk`.
+- Documented Core graph classification and debt rules for `Hecton8.Core.asmdef`, generated `Hecton8.Core.csproj`, and the `Directory.Build.props` Core build gate.
+- Linked the metric contract from `Docs/ARCHITECTURE/README.md` and `Docs/README.md`.
+
+Cinematic cheats used:
+- Stable metric documentation instead of cross-domain code churn.
+- No runtime simulation, rendering, physics, audio, NativeContainer, scene lookup, or gameplay path changed.
+
+Exact microseconds saved:
+- Runtime frame time: 0 us changed.
+- Fresh build-time savings: not claimed.
+- Documentation impact: prevents unsafe metric-chasing edits; no measured runtime delta.
+
+Verification:
+- Evidence class: STATIC_DOC plus STATIC_SOURCE for the referenced tool model.
+- No `dotnet build`, `dotnet rebuild`, or `dotnet msbuild` was run.
+
+Residual risk:
+- H-Phi remains static architecture evidence only.
+- Runtime H-Phi quality, Unity Console, Play Mode, profiler, GCMonitor, player build, and visual quality remain pending until those evidence lanes are explicitly run.
+
+## 2026-05-15 - H-Phi Documentation Verification
+
+What was wrong:
+- The new H-Phi metric contract needed static verification after indexing.
+
+What was done:
+- Ran `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -RequireCoreBuildGate -MaxCoreAsmdefDebtReferences 28 -MaxGeneratedProjectDebtReferences 10`.
+- Ran an anchor scan for `HECTON_PHI_STATIC_METRIC`, `HPhiStaticNarrow`, `Core graph budget`, and static H-Phi evidence language.
+- Ran `git diff --check` on the H-Phi tooling/docs/status/log file set.
+- Ran an owned ASCII scan and separately located the pre-existing non-ASCII line in `Docs/README.md`.
+
+Cinematic cheats used:
+- Static verification only. No compile, Unity import, profiler, or runtime lane was touched.
+
+Exact microseconds saved:
+- Runtime frame time: 0 us changed.
+- Fresh build-time savings: not claimed by no-dotnet order.
+
+Verification:
+- Core graph gate passed at 46 Core asmdef refs, 28 Core asmdef H-Phi debt refs, 12 generated Core project refs, and 10 generated project debt refs.
+- Anchor scan found the stable doc link in both architecture and root docs indexes.
+- `git diff --check` reported no whitespace errors; only LF/CRLF normalization warnings.
+- Owned ASCII scan passed. `Docs/README.md` still contains pre-existing mojibake at line 17; this pass did not introduce it.
+- No `dotnet build`, `dotnet rebuild`, or `dotnet msbuild` was run.
+
+Residual risk:
+- Fresh compile remains pending by explicit user order.
+- The doc does not reduce existing Core graph debt; it defines the metric and the evidence boundary for reducing it later.

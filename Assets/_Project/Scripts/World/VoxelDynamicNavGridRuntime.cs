@@ -1258,7 +1258,7 @@ namespace Hecton8.World
             if (!TryResolveMacroFloraObstacle(metadata, typeId, semanticType, out float3 centerOffset, out extents))
                 return false;
 
-            Vector3 stableUniverseRoot = new Vector3(matrix.m03, matrix.m13, matrix.m23);
+            double3 stableUniverseRoot = new double3(matrix.m03, matrix.m13, matrix.m23);
             Vector3 runtimeRoot = HectonMapMagicVegetationBridge.ToRuntimeSpace(stableUniverseRoot);
             center = new float3(runtimeRoot.x, runtimeRoot.y, runtimeRoot.z) + centerOffset;
             return true;

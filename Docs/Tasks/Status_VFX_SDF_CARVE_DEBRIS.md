@@ -3,7 +3,7 @@
 Agent: VFX_TECHNICAL_ARTIST
 Domain: ECHELON 7 #66 Marine Snow/Silt Compute VFX with ECHELON 2 SDF/Carve/Flow integration
 Prompt: `Docs/Tasks/CURRENT_BATCH.md` / `<AGENT_PROMPT id="VFX_SDF_CARVE_DEBRIS">`
-Status: STATIC VERIFIED / UNITY COMPILE BLOCKED (NO DOTNET REBUILD RUN)
+Status: PENDING VERIFICATION / STATIC CHECKS ONLY / UNITY COMPILE BLOCKED (NO DOTNET REBUILD RUN)
 
 ## Mandates Read Before Coding
 
@@ -53,6 +53,7 @@ Status: STATIC VERIFIED / UNITY COMPILE BLOCKED (NO DOTNET REBUILD RUN)
 - Loop 14: Render hot-math/cache pass. DOD: debris shader no longer uses per-vertex `sincos` to build chip basis; renderer caches mesh indirect draw metadata once per frame so dispatch and render do not both query mesh index data. Rejected alternatives: keeping trigonometric basis in the vertex path and reading mesh index metadata twice per active frame. Estimate: saves sub-10 us CPU on active debris frames and removes per-visible-vertex trig ALU on MX350.
 - Loop 15: High-tier visual currency pass. DOD: render path now binds the existing velocity lane and enables velocity-driven fresh-edge response only when cached tier is non-low. Rejected alternative: uploading per-particle color/rotation or enabling extra reads on MX350. Estimate: low-tier unchanged; high/ultra spends one velocity read per visible vertex for stronger impact readability.
 - Loop 16: Static verification closeout under no-dotnet constraint. DOD: `git diff --check` reports no whitespace errors beyond Git LF/CRLF notices; VFX static scan finds no `GetData`, `SetData`, `ParticleSystem`, `ComputeBuffer`, `foreach`, `.ToString`, `string.Format`, `Camera.main`, scene search, `JobHandle`, `.Schedule()`, or `.Complete()` in the touched lane; shader scan finds no `sincos`, raw `sin`, raw `cos`, `pow`, `exp`, `log`, or raw `normalize` in the debris/flow shaders; `CURRENT_BATCH.md` currently contains 0 matching `VFX_SDF_CARVE_DEBRIS` prompt tags. Rejected alternative: dotnet rebuild or fake Unity compile pass. Estimate: verification saves no frame time; it prevents shipping a false build claim.
+- Loop 17: H-Phi continuation pass. DOD: renderer retries registry/GPU readiness from `Start()` after early `OnEnable()` ordering; carve ingestion scans up to 64 raw frame signals but still queues 32 valid debris requests; fluid advection compute returns before the unrolled dynamic-wake loop when wake slots are zero; debris material reuses the orientation hash for edge jitter and skips one redundant basis normalize. Rejected alternatives: Update-loop registration polling, unbounded signal scans, simulating wake overkill when no wake payload is bound, and CPU-authored chip rotations. Estimate: prevents no-tick startup failure, keeps raw-signal scan bounded, removes 8 wake-slot branches per live particle when no wakes are active, and saves one hash plus one normalize per visible chip vertex.
 
 ## Second-Pass Upgrade Status
 
@@ -73,6 +74,10 @@ Status: STATIC VERIFIED / UNITY COMPILE BLOCKED (NO DOTNET REBUILD RUN)
 - [x] Flow texture binding disables structured-buffer fallback when their centers disagree, because the shared compute shader center uniform cannot represent two payload origins.
 - [x] Debris rendering caches mesh draw metadata per frame and uses hash-vector chip orientation instead of shader `sincos`.
 - [x] High/Ultra debris shader uses existing velocity buffer for fresh impact edge response; Low/MX350 keeps the branch disabled.
+- [x] Startup resilience improved: `Start()` retries registry and GPU state binding without adding an Update polling loop.
+- [x] Carve ingestion fairness improved: bounded 64-signal scan can skip invalid/non-subtract packets while preserving the 32-request per-frame emission cap.
+- [x] Dynamic wake no-slot cost removed at compute level for all fluid-advection consumers, including carve debris.
+- [x] Debris vertex basis cost reduced by reusing hash output and skipping redundant up-vector normalization.
 
 ## OMEGA Polish Status
 
@@ -80,4 +85,4 @@ Status: STATIC VERIFIED / UNITY COMPILE BLOCKED (NO DOTNET REBUILD RUN)
 - [x] Touched VFX code scanned for hot managed bloat patterns.
 - [x] No CPU GPU readback path introduced.
 - [x] Final compile verification marked `[BLOCKED BY TOOLING]`, not passed.
-- [x] Final no-dotnet closeout completed: static verification passed; Unity compile remains blocked/unclaimed.
+- [x] No-dotnet closeout policy maintained: static verification only; Unity compile remains blocked/unclaimed.

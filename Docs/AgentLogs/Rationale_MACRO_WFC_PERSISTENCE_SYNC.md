@@ -197,3 +197,12 @@ Scalability potential: Low/MX350 gets deterministic pooled proxy reuse without e
 Hardware Impact: One cold `bool[messages.Length]` allocation per terminal instance plus branch-only message scans during configuration/editor validation. No Tick allocation; measured microseconds absent.
 H-Phi Evidence: Improves DataSovereignty by separating authored terminal baseline from WFC mutable save truth, and improves PhaseDiscipline by keeping restore/reset inside the component that owns the read state.
 Verification Update 9: Static scans confirm `_initialReadStates`, `RestoreWfcOutpostDatapadBaselineState`, `RebuildReadMessageSetFromMessageStates`, null-entry guards, and no direct unsafe `messages[i].isRead/messageId/audioClip` access remains. `git diff --check` reports no whitespace errors beyond Git CRLF normalization warnings. No `dotnet` rebuild was run.
+
+## POOLED DATAPAD TRANSIENT RESET
+Problem: Baseline state restoration still depended on `UpdateState()`, but `UpdateState()` refuses to interrupt `TerminalState.Playing`. A pooled terminal reused while playback was active could carry previous playback state into the new WFC cell.
+Solution: Add a WFC-only transient reset before restored flags are applied: current message index, playback timer, blink timer, and blink state are cleared; `Playing` is converted to `Idle` so looted/unlooted restore can resolve cleanly.
+Rejected Alternatives: Resetting playback on every `OnDisable`; changing `UpdateState()` to interrupt playback globally. Both are broader than WFC persistence and can affect authored non-WFC terminal behavior.
+Scalability potential: Low/MX350 keeps pooled datapad reuse deterministic without per-frame cost. Middle/High/Ultra can use larger pools without carrying stale playback state between outpost cells.
+Hardware Impact: Cold configure-only scalar writes; no managed allocation and no Tick work. Measured microseconds absent.
+H-Phi Evidence: Improves PhaseDiscipline by making WFC restore own the transient presentation reset it requires, instead of relying on pooled object lifecycle ordering.
+Verification Update 10: Static scans confirm `ResetWfcOutpostTransientPlaybackState()` is called from `ConfigureWfcOutpostPersistence` before the looted/unlooted branch, and `git diff --check` reports no whitespace errors beyond CRLF normalization warnings. No `dotnet` rebuild was run.

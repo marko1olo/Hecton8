@@ -116,3 +116,17 @@ Solution: Sample camera position/right/up/forward once in `Render`, pass the bas
 Rejected Alternatives: Keeping per-batch transform reads, caching a `Transform` across frames, or pushing camera basis through a global singleton. Per-batch reads are waste; cross-frame transform caching risks stale scene ownership; globals violate the prompt isolation policy.
 Scalability potential: Low benefits from fewer render-side checks. Middle keeps dither fade. High and Ultra get identical visuals with a cleaner basis handoff for future per-glyph effects.
 Hardware Impact: Estimated i3/MX350 gain is sub-microsecond for one icon plus text prompt, with slightly better determinism because both batches share one sampled camera basis. No profiler proof because runtime verification is still pending.
+
+## Decision 16: Resource Readiness Split
+Problem: Visible tooltip frames still entered the full resource-object validation path and cold buffer creation used `Marshal.SizeOf<T>()`.
+Solution: Split resource-object creation into `EnsureResourceObjects()`, added `_resourceObjectsReady`, and replaced reflection-like stride queries with fixed explicit strides for glyph instances, UV rects, and indirect args.
+Rejected Alternatives: Leaving all null checks in the render path or relying on `Marshal.SizeOf` for readability. The struct layout is fixed and already owned here, so explicit stride is cheaper and easier to audit.
+Scalability potential: Low avoids repeated object-readiness checks. Middle keeps the same dither fade. High and Ultra preserve CPU budget for richer glyph treatment.
+Hardware Impact: Estimated gain is sub-microsecond per visible prompt after warmup, with cleaner cold allocation evidence. No runtime profiler proof.
+
+## Decision 17: Authored Tooltip Materials With MPB Draw Binding
+Problem: The tooltip still used runtime `Shader.Find` and `new Material` fallback, directly violating the diegetic UI/URP material mandates.
+Solution: Added authored glyph/icon material assets under `Assets/_Project/Resources/UI`, loaded them cold when serialized materials are absent, and moved per-draw texture/buffer/dither binding into persistent `MaterialPropertyBlock`s. Runtime no longer clones materials or searches shaders.
+Rejected Alternatives: Keeping runtime material clones, mutating shared material assets directly, or requiring all existing scenes to be manually rewired before the renderer can draw. MPBs are accepted for UI in the mandate and avoid shared asset mutation.
+Scalability potential: Low gets the same minimal draw path without material clone allocation. Middle keeps dither fade. High and Ultra can author richer material variants while the renderer still uses the same indirect payload contract.
+Hardware Impact: Expected low-end gain is cold-start and memory hygiene, not large frame-time reduction. Removes two runtime material allocations and one shader lookup fallback from the tooltip path.

@@ -134,3 +134,17 @@ Scalability potential: Low/MX350 benefits from clearer ABI metadata in native si
 Hardware Impact: Runtime hot path cost is 0 us; attributes are metadata and no executable method body changed. Exact gameplay microseconds remain unmeasured because rebuild/profiler work is forbidden by user order.
 
 Verification: No rebuild was run. Static checks completed: `git diff --check -- Assets/_Project/Scripts/Core/GlobalSignals.cs`, a public/internal `GlobalSignals.cs` struct-layout scan, and `Tools/Architecture/HectonPhiAudit.ps1 -Json`. `GlobalSignals.cs` layout scan reports no public/internal structs without nearby `StructLayout`. Latest runtime H-Phi narrow is `0.009035044`, risk-adjusted is `0.000121334`, Data Sovereignty is `0.018263557`, memory alignment is `0.497348887`. Runtime Unity evidence remains pending.
+
+## 2026-05-15 Core Native Container And Job Layout Cleanup
+
+Problem: The remaining Core layout scan still found native/job/allocation structs without explicit layout metadata: `NativeArenaArray<T>`, `StackQueue<T>`, `VaultGapAuditJob`, `HectonArenaAllocator.ArenaAllocation`, `UnsafeArenaAllocator.ArenaBlock`, and the numeric `HectonHardwareProfile`. These sit on native memory, job, allocation-record, or bootstrap hardware contract boundaries, so implicit field layout is avoidable risk.
+
+Solution: Added `[StructLayout(LayoutKind.Sequential)]` to those targeted structs and added `System.Runtime.InteropServices` imports where required. No method body, pointer arithmetic, NativeArray lifecycle, job scheduling, allocator logic, registry dispatch, or public data flow changed.
+
+Rejected Alternatives: `FixedCharBuffer` and `GameStartContext` were rejected because they contain managed references (`char[]`, `string`). `ServiceReboundEvent` was rejected because it carries `object` service references. `PersistenceAssemblyMarker` and `MacroDatabaseSignalBridge` were rejected as marker/bridge-only structs where layout metadata would be metric theater. Cross-domain DataVault migrations remain owner-blocked.
+
+Scalability potential: Low/MX350 benefits from less ambiguous native container/allocation metadata under IL2CPP/Burst/ARM assumptions. Middle/High/Ultra gain stability headroom for native scratch/vault paths; this pass does not buy visuals directly, it reduces future integration risk.
+
+Hardware Impact: Runtime hot path cost is 0 us; attributes and using directives do not change executable logic. Exact gameplay microseconds remain unmeasured because rebuild/profiler work is forbidden by user order.
+
+Verification: No rebuild was run. Static checks completed: `git diff --check` on the touched Core layout files, a Core public/internal struct-layout scan, and compact `Tools/Architecture/HectonPhiAudit.ps1 -Json` score extraction. Remaining Core missing-layout structs are managed-reference or marker/bridge-only. Latest runtime H-Phi narrow is `0.009266939`, risk-adjusted is `0.000124428`, Data Sovereignty is `0.018593597`, memory alignment is `0.501059322`. Runtime Unity evidence remains pending.

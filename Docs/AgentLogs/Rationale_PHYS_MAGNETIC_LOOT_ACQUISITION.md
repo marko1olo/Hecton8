@@ -187,3 +187,27 @@ Rejected Alternatives: Trusting stale vault quantities was rejected because conc
 Scalability potential: Low remains 4096 default with 10Hz snap/acquire. Middle keeps the same default path. High and Ultra can author up to 8192 loot slots when scene density justifies the memory, while presentation still uses the same sparse signal lane.
 
 Hardware Impact: MX350 avoids repeated full-inventory acquisition attempts between SlowTicks and avoids stale acquired slots in FastTick scans. High-end devices gain optional double-density vault capacity without changing default low-end memory.
+
+## Decision 14 - Assembly Surface Honesty
+
+Problem: The runtime loot asmdef still carried `Hecton8.Core.Contracts` even though `LootMagnetSystem` directly uses Core, Core.Memory, inventory, interaction, world, jobs, collections, and mathematics symbols only.
+
+Solution: Remove the unused runtime asmdef reference while keeping `Unity.Burst` in the contracts asmdef because `LootMagnetPullJob` owns the `[BurstCompile]` attribute.
+
+Rejected Alternatives: Leaving stale asmdef references was rejected because it widens compile coupling and contradicts the isolation task. Removing `Unity.Burst` from contracts was rejected because it would break the Burst attribute.
+
+Scalability potential: No frame behavior change. Smaller assembly dependency surface reduces parallel-agent integration risk and keeps loot contracts isolated.
+
+Hardware Impact: No runtime microsecond gain claimed. This is compile graph hygiene.
+
+## Decision 15 - Presentation Budget And Shutdown Handoff
+
+Problem: High-density authored capacity can reach 8192 loot slots, while the shared acoustic queue is prewarmed for 64 packets and wake is prewarmed for 128. A forced disable could also complete a scheduled job and then dispose the signal event lane before committing vault results.
+
+Solution: Add tiered loot presentation budgets: acoustic Low/Mid/High/Ultra = 16/48/56/64 and wake = 32/96/112/128. Budgets are resolved once per commit pass and passed by reference through presentation publishing. Acoustic intensity math is skipped when the acoustic budget is exhausted or when the event is wake-only. `OnDisable` now force-completes a pending job and commits it when all vault/event arrays are valid.
+
+Rejected Alternatives: Raising global signal capacities was rejected because that is a core-wide memory policy decision outside this domain. Letting NativeQueue growth absorb dense loot presentation was rejected because it violates prewarmed zero-GC intent. Dropping forced job results on disable was rejected because vault state could remain acquired/pulling without inventory or telemetry handoff.
+
+Scalability potential: Low keeps minimal acoustic/wake feedback. Middle remains under shared lane capacity. High and Ultra spend more of the saved trigger budget on presentation without exceeding the prewarmed lane shape.
+
+Hardware Impact: MX350 avoids acoustic queue growth, limits wake work, and stops paying radius/intensity math after cosmetic acoustic budget is gone. High-end devices keep up to 64 acoustic and 128 wake loot packets per commit pass, matching the existing global queue prewarm ceilings.

@@ -22,6 +22,7 @@ namespace Hecton8.Interaction
         private const float InvTwoPi = 0.159154943f;
         private const byte LeftMotorMask = 0b0001;
         private const byte RightMotorMask = 0b0010;
+        private const byte BothMotorMask = LeftMotorMask | RightMotorMask;
         private const byte CriticalPriority = 3;
         private const float MaximumSwitchDeltaTime = 0.05f;
         private const float MinimumSnapCooldownSeconds = 0.02f;
@@ -489,7 +490,13 @@ namespace Hecton8.Interaction
                     return RightMotorMask;
             }
 
-            return fallbackHandSide == PhysicalHandSide.Left ? LeftMotorMask : RightMotorMask;
+            if (fallbackHandSide == PhysicalHandSide.Left)
+                return LeftMotorMask;
+
+            if (fallbackHandSide == PhysicalHandSide.Right)
+                return RightMotorMask;
+
+            return BothMotorMask;
         }
 
 #if UNITY_EDITOR

@@ -12,6 +12,7 @@ Status: PENDING VERIFICATION
 - [x] Rationale file created empty-to-active | Justification: decision log required before done states; rejected chat-only reasoning | Estimate: 80 us
 - [x] Prompt re-extracted after implementation batch | Justification: anti-amnesia protocol after task batches; rejected relying on chat summary | Estimate: 190 us
 - [x] Unity MCP verification attempted | Justification: Unity compile/console is preferred proof path; rejected pretending static csc is full Unity proof | Estimate: 250000 us
+- [x] Prompt re-extraction attempted after batch drift | Justification: `CURRENT_BATCH.md` no longer contains `HEADLESS_STRESS_FRACTURE_BOT`; rejected neighboring prompt bleed and continued from disk status/rationale only | Estimate: 300 us
 
 ## Tasks
 - [x] Task 1: Command argument `-h8fracturetest` | Justification: runtime auto-creates only when command arg/env/flag is present; DOD used registry-safe isolated runner; rejected scene objects/direct bootstrap edits | Estimate: 2 us per process arg scan item
@@ -39,6 +40,7 @@ Status: PENDING VERIFICATION
 - Loop 8: CI robustness pass widened stall timing to the first fast tick of each rendered frame, added `H8_FRACTURE_FRAMES`/`-h8fractureFrames=...` support, scrubbed runner-owned scratch before failure dumps, hardened JSON control/non-finite output, removed CLI substring allocation, recompiled, and re-ran focused static audit.
 - Loop 9: Terminal lifecycle pass unregisters fast/cold/late/origin hooks immediately on pass/fail and replaces editor result substring matching with exact `exitCode` parsing plus fail-fast corrupted start-time handling.
 - Loop 10: Stale activation guard pass rejects old `Temp/H8_FRACTURE_TEST.flag` files older than 3 hours and deletes any old flag before the editor batch runner writes a fresh one.
+- Loop 11: No-dotnet H-Phi and CI hygiene pass routes swarm pressure through the typed `SignalBus<SwarmDispersedSignal>` lane, replaces the custom H-Phi count with runtime risk-adjusted source scanning, centralizes memory artifact reads into a layout-proven snapshot, deletes stale/far-future flag triggers, and logs invalid result JSON instead of silently defaulting.
 
 ## Verification
 - Unity MCP editor state: BLOCKED, no Unity session available.
@@ -56,5 +58,11 @@ Status: PENDING VERIFICATION
 - Isolated runtime compile after stale-flag patch: PASS via Unity Mono compiler with Unity 4.8 API facade, Unity modules, and Hecton8 script assemblies.
 - Isolated editor runner compile after stale-flag patch: PASS via Unity Mono compiler with Unity 4.8 API facade and `UnityEditor.dll`.
 - Focused static audit after stale-flag patch: PASS for the two new Race Condition Hunter files; no scene search, LINQ, coroutine, `Task<`, `.Complete()`, explicit GC, reflection, managed collection creation, `string.Format`, or `Substring` usage.
+- Focused static audit after H-Phi hygiene patch: PASS for the two Race Condition Hunter files; no scene search, LINQ, coroutine, `Task<`, `.Complete()`, explicit GC, reflection, managed collection creation, `string.Format`, or `Substring` usage.
+- Isolated editor runner compile after H-Phi hygiene patch: PASS via Unity Mono compiler with Unity 4.8 API facade and `UnityEditor.dll`.
+- Isolated runtime compile after H-Phi hygiene patch: BLOCKED BY STALE SCRIPTASSEMBLY; compiler reached source and failed at `H8Memory.Release(ref _scratchBlock, SystemID.External)` because `Library/ScriptAssemblies` still exposes the older `JobHandle` overload while current `Assets/_Project/Scripts/Core/Memory/H8Memory.cs` source defines the owner-tagged overload used by this file and other current sources. No `dotnet` rebuild was run by user instruction.
+- PowerShell H-Phi audit after H-Phi hygiene patch: PASS without `dotnet`; runtime risk `0.000124488`, runtime narrow `0.009266939`, `SignalBusPush=84`, `GlobalRegistrySurface=5139`, `EventPublish=450`, `DataVaultRefs=133`, `NativeArrayRefs=7020`, `StructLayoutAttributes=946`, `StructDeclarations=1888`.
+- Scoped QA/headless source count after H-Phi hygiene patch: `SignalBusPush=3`, `GlobalSignalsPublish=4`, `GlobalRegistrySurface=15`, `StructLayoutAttributes=3`, `StructDeclarations=3`, `FindObjectCalls=0`, `GetComponentCalls=0`, `UnityUpdateMethods=0`.
 - Full `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false`: BLOCKED BY EXISTING DEPENDENCIES, 139 unrelated errors before/around core missing namespaces, duplicate SaveManager members, and interface mismatches.
 - Full `dotnet build Assembly-CSharp.csproj --no-restore -m:2 /nr:false`: BLOCKED BY SAME EXISTING `Hecton8.Core.csproj` dependency failures.
+- No `dotnet` rebuilds were run during the 2026-05-15 continuation pass.

@@ -291,6 +291,7 @@ namespace Hecton8.Construction
         private int _lastUploadedModuleStressCount = -1;
         private int _lastProcessedModuleStressSignalFrame = -1;
         private GraphicsBuffer _moduleStressBuffer;
+        private HectonAtmosphereManager _atmosphereManager;
         private IAudioService _audioService;
         private AbyssalFluidDecalManager _fluidDecals;
 
@@ -424,6 +425,7 @@ namespace Hecton8.Construction
             Shader.SetGlobalFloat(HabitatVibrationId, 0f);
             ClearVisualLinks();
             DisposeNativeBuffers();
+            _atmosphereManager = null;
             _audioService = null;
             _fluidDecals = null;
             _graph.Dispose();
@@ -742,12 +744,21 @@ namespace Hecton8.Construction
             return reinforcement;
         }
 
-        private static float ResolveRuntimeSeaLevelY()
+        private float ResolveRuntimeSeaLevelY()
         {
-            HectonAtmosphereManager atmosphereManager = GlobalRegistry.Atmosphere;
+            HectonAtmosphereManager atmosphereManager = ResolveAtmosphereManager();
             return atmosphereManager != null && math.isfinite(atmosphereManager.SeaLevelY)
                 ? atmosphereManager.SeaLevelY
                 : 0f;
+        }
+
+        private HectonAtmosphereManager ResolveAtmosphereManager()
+        {
+            if (_atmosphereManager != null)
+                return _atmosphereManager;
+
+            _atmosphereManager = GlobalRegistry.Atmosphere;
+            return _atmosphereManager;
         }
 
         private float ResolveRuntimeDepthMeters(float3 runtimePosition)
@@ -1363,7 +1374,8 @@ namespace Hecton8.Construction
         private void UploadModuleStressMatrix(int moduleCount, float peakStress01, HectonQualityTier tier)
         {
             int safeModuleCount = math.max(0, moduleCount);
-            bool hasVisibleStress = safeModuleCount > 0 && peakStress01 > ModuleStressUploadEpsilon;
+            bool lowTier = safeModuleCount > 0 && IsModuleStressLowTier(tier);
+            bool hasVisibleStress = safeModuleCount > 0 && !lowTier && peakStress01 > ModuleStressUploadEpsilon;
             if (hasVisibleStress)
             {
                 EnsureModuleStressBuffer(safeModuleCount);
@@ -1374,7 +1386,6 @@ namespace Hecton8.Construction
                 }
             }
 
-            bool lowTier = safeModuleCount > 0 && IsModuleStressLowTier(tier);
             PublishModuleStressShader(safeModuleCount, peakStress01, tier);
             _lastUploadedModuleStressCount = safeModuleCount;
             _lastUploadedPeakModuleStress01 = peakStress01;

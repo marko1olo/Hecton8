@@ -386,3 +386,36 @@ Verification:
 - Unity MCP console/profiler: unavailable from this session.
 
 Status: PENDING VERIFICATION. Static source audits pass; compile/runtime proof remains pending.
+
+## 2026-05-15 - WFC Outpost Loop 19 Contract Layout And Public Count Clamp
+
+What was wrong:
+- Outpost contract DTOs had sequential layout but no explicit byte-size proof.
+- Public shell accessors returned raw `_matrixCount`, which could exceed native array or graphics buffer capacity after corruption, teardown, or stale cross-domain query.
+- The user explicitly forbade `dotnet` rebuilds again.
+
+What was done:
+- Set `OutpostGenerationSnapshot` layout to `Size = 56`.
+- Set `OutpostInteractableSpawn` layout to `Size = 20`.
+- Clamped `TryGetShellMatrices` output count to `_shellMatrices.Length`.
+- Clamped `TryGetShellGraphicsBuffer` output count to `_matrixBuffer.count`.
+- Re-ran source-only H-Phi, forbidden construct, and diff hygiene audits without any `dotnet` rebuild.
+
+Cinematic Cheats used:
+- No physical simulation change. The outpost still uses deterministic WFC bytes, native extraction, bounded proxies, and GPU indirect shell rendering.
+- This pass tightens binary/contract proof and fail-closed public access without adding visual cost.
+
+Exact Microseconds saved:
+- Metadata-only DTO layout proof has no expected runtime cost.
+- Getter hardening adds two scalar clamps on cold cross-domain query paths, estimated below 0.1 us per query.
+- Hot Tick/Render remains 0 B/frame.
+
+Verification:
+- Scoped counts: `GlobalRegistrySurface=12`, `SignalBusPush=1`, `EventPublish=0`, `StructLayoutAttributes=6`, explicit layout sizes `20` and `56` present.
+- Full project H-Phi source scan: `SignalBusPush=84`, `EventPublish=450`, `GlobalRegistrySurface=5145`, `StructLayoutAttributes=946`, `BinaryBlittableSafe=35`, `MemoryAlignment=0.501059322`, `BinarySafeRatio=0.018538136`, `RiskIntegration=0.013420674`, `HPhiStaticRisk=0.000124369`.
+- Forbidden construct audit: PASS; no managed LINQ/random/string interpolation, shell `Instantiate`, `BaseGenerator`, `math.pow`, telemetry modulo, hardcoded shift epsilon, raw matrix count getters, or global publish wrapper remains in owned outpost files.
+- `git diff --check`: PASS with repository LF/CRLF warning only.
+- `dotnet` rebuilds/response-file compiles: NOT RUN by explicit user request.
+- Unity MCP console/profiler: unavailable from this session.
+
+Status: PENDING VERIFICATION. Static source audits pass; compile/runtime proof remains pending.

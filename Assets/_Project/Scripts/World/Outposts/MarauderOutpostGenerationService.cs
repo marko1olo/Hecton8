@@ -395,18 +395,18 @@ namespace Hecton8.World.Outposts
         public bool TryGetShellMatrices(out NativeArray<float4x4>.ReadOnly matrices, out int matrixCount, out uint generationSequence)
         {
             matrices = _shellMatrices.IsCreated ? _shellMatrices.AsReadOnly() : default;
-            matrixCount = _matrixCount;
+            matrixCount = _shellMatrices.IsCreated ? math.min(math.max(0, _matrixCount), _shellMatrices.Length) : 0;
             generationSequence = _generationSequence;
-            return _generated && _shellMatrices.IsCreated && _matrixCount > 0;
+            return _generated && _shellMatrices.IsCreated && matrixCount > 0;
         }
 
         public bool TryGetShellGraphicsBuffer(out GraphicsBuffer matrixBuffer, out GraphicsBuffer argsBuffer, out int instanceCount, out uint generationSequence)
         {
             matrixBuffer = _matrixBuffer;
             argsBuffer = _argsBuffer;
-            instanceCount = _matrixCount;
+            instanceCount = _matrixBuffer != null ? math.min(math.max(0, _matrixCount), _matrixBuffer.count) : 0;
             generationSequence = _generationSequence;
-            return _generated && _matrixBuffer != null && _argsBuffer != null && _matrixCount > 0;
+            return _generated && _matrixBuffer != null && _argsBuffer != null && instanceCount > 0;
         }
 
         public void ApplyAupShift(float3 shiftMeters, uint shiftFrameId)

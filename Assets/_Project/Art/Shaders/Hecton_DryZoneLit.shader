@@ -412,21 +412,26 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
                     VertexPositionInputs preBendPositionInputs = GetVertexPositionInputs(safePositionOS);
                     habitatStress01 = HectonHabitatInteriorResolveStress01(preBendPositionInputs.positionWS);
                 }
-                half habitatBendShadow;
-                half habitatPanelMask01;
-                half2 habitatPanelCenteredUv;
-                safePositionOS = HectonHabitatInteriorApplyPanelBendOS(
-                    safePositionOS,
-                    input.normalOS,
-                    input.uv,
-                    habitatStress01,
-                    habitatBendShadow,
-                    habitatPanelMask01,
-                    habitatPanelCenteredUv);
+                half habitatBendShadow = 0.0h;
+                half habitatPanelMask01 = 0.0h;
+                half2 habitatPanelCenteredUv = half2(0.0h, 0.0h);
+                bool habitatVertexBendActive = _HectonHabitatModuleStressParams.z <= 0.5 && habitatStress01 > 0.0001;
+                if (habitatVertexBendActive)
+                {
+                    safePositionOS = HectonHabitatInteriorApplyPanelBendOS(
+                        safePositionOS,
+                        input.normalOS,
+                        input.uv,
+                        habitatStress01,
+                        habitatBendShadow,
+                        habitatPanelMask01,
+                        habitatPanelCenteredUv);
+                }
                 VertexPositionInputs positionInputs = GetVertexPositionInputs(safePositionOS);
                 VertexNormalInputs normalInputs = GetVertexNormalInputs(input.normalOS);
                 half3 normalWS = SafeNormalize3(normalInputs.normalWS);
-                normalWS = HectonHabitatInteriorApplyCheapNormalBiasWS(normalWS, habitatStress01, habitatPanelMask01, habitatPanelCenteredUv);
+                if (habitatVertexBendActive && habitatPanelMask01 > 0.0001h)
+                    normalWS = HectonHabitatInteriorApplyCheapNormalBiasWS(normalWS, habitatStress01, habitatPanelMask01, habitatPanelCenteredUv);
                 output.positionCS = positionInputs.positionCS;
                 output.positionWS = positionInputs.positionWS;
                 output.normalWS = normalWS;

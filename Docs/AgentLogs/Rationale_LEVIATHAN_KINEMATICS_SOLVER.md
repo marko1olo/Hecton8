@@ -156,3 +156,19 @@ Solution: Keep the outer `canUseSdf` payload gate as the validation authority, c
 Rejected Alternatives: Reducing gradient samples or replacing central differences with a cheaper 2D height normal was rejected because high/ultra tiers spend saved CPU on contact quality. Leaving repeated validation in the private sampler was rejected because it burns work inside the lower-five-segment terrain loop.
 Scalability potential: Low/MX350 remains unchanged because SDF is disabled. Middle/high/ultra keep the same visual contact result while reducing repeated scalar setup; ultra can spend the saved cycles on denser visual deformation without changing this API.
 Hardware Impact: Estimated gain is 0.5-2 us on high-tier SDF-contact frames, depending how many lower segments penetrate rock. No profiler-backed number is claimed.
+
+## Decision 13: Fallback Height Sample Count Guard
+
+Problem: The MapMagic fallback path multiplied `resolution * resolution` in `int` space before accepting and sampling `TerrainHeightSamples`. A malformed or cross-system payload could overflow the count and let an invalid native height buffer reach the Burst terrain-contact loop.
+Solution: Add `TryResolveTerrainHeightSampleCount()` with `long` multiplication and use it in both runtime payload acceptance and Burst job/sample gates.
+Rejected Alternatives: Trusting `QuantizedHeightmapPayload.IsValid` was rejected because that property currently performs the same multiplication in `int` space. Editing the MapMagic contract was rejected as outside this agent's domain for this pass.
+Scalability potential: Low/MX350 and high/ultra visuals are unchanged. The guard keeps the cheap 2D fallback safe without adding allocations or changing SDF behavior.
+Hardware Impact: Normal payload cost is effectively 0 us; the extra checked multiply is cold relative to the existing MapMagic query and prevents invalid native indexing on bad payloads.
+
+## Decision 14: Global GPU Skinning Gate Ownership
+
+Problem: Runtime global shader publication used `_publishGlobalBoneBuffer` as both desired state and cleanup gate. If a buffer had already been published and the runtime later switched to material-only binding or no GPU consumer, global `_H8LeviathanGpuSkinning` could remain enabled with stale bone data.
+Solution: Track `_globalGpuSkinningPublished` separately from the serialized publish intent and clear global shader gate floats whenever publishing is disabled after a prior publish, or during shutdown.
+Rejected Alternatives: Clearing globals every upload was rejected as unnecessary render-state traffic. Leaving cleanup gated only by `_publishGlobalBoneBuffer` was rejected because it cannot represent previously-published global state after runtime/inspector changes.
+Scalability potential: Low/MX350/high/ultra visual tiers are unchanged. The fix improves global state hygiene for material-only or no-consumer configurations without touching the Burst solver.
+Hardware Impact: Stable hot-path cost is 0 us. Publish-off transition adds five `Shader.SetGlobalFloat` calls once; this prevents stale global GPU deformation rather than saving frame time.

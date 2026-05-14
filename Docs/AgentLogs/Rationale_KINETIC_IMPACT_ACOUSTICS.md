@@ -240,3 +240,22 @@ Solution: Ran `git diff --check`, fixed-string smoke-anchor scans, scoped forbid
 Rejected Alternatives: Dotnet build/rebuild, global H-Phi score claim, or Unity-console status without an editor session.
 Scalability potential: No runtime tier behavior change beyond lower service lookup pressure.
 Hardware Impact: Verification only.
+
+## LOOP 12 DEEP PSYCHOSIS AUDIO RESOLVER H-PHI PASS
+Problem: `DeepPsychosisController` still polled player, environmental strain, audio service, and acoustic-zone registry slots directly from SlowTick/dependency/cue call sites. The cue itself is low cadence, but the pattern keeps hidden cross-domain coupling inside an Echelon-8 audio system.
+Solution: Added local cached resolvers for `IPlayerRuntimeContext`, `EnvironmentalStrainManager`, `IAudioService`, and `AcousticZoneController`, all refreshed behind the existing `DependencyRetryFrameInterval = 30`. SlowTick now consumes `ResolveEnvironmentalStrainManager()`, dependency resolution consumes `ResolvePlayerRuntimeContext()`, cue playback consumes `ResolveAudioService()`, and helmet whisper fallback consumes `PlayHelmetWhisperCue()` over `ResolveAcousticZone()`.
+Rejected Alternatives: Keeping direct service locator reads in call sites is cheaper to write but not cleaner at runtime; a new psychosis audio singleton would violate registry authority; moving pollution or player state into audio packets would cross world/player ownership and bloat the contract.
+Scalability potential: Low tier keeps cheap pooled clip playback and avoids repeated service lookup when stress is active. Middle keeps deterministic hull/whisper cues. High/Ultra can spend cue budget on stronger spatial/material/acoustic polish later because the optional service lookups are bounded and local.
+Hardware Impact: Saves up to four direct service-locator reads per active psychosis evaluation/playback window after warmup on i3/MX350. Runtime allocation remains 0 B/frame; the only added work is integer stale checks and one refresh per 30 frames when the path is active.
+
+Problem: H-Phi cleanup needed a regression anchor, otherwise a future edit can reintroduce direct registry polling inside the cue methods.
+Solution: Extended `AdvancedAcousticsSmokeTester` to load `DeepPsychosisController.cs`, assert all four resolver helpers, and assert that `SlowTick`, `TryResolveDependencies`, and `PlayPsychosisCue` do not contain direct `GlobalRegistry.EnvironmentalStrain`, `GlobalRegistry.Player`, `GlobalRegistry.Audio`, or `GlobalRegistry.AcousticZone` reads.
+Rejected Alternatives: Trusting source review alone, or adding a runtime playmode test that cannot be executed in the current no-Unity-MCP/no-rebuild context.
+Scalability potential: No tier behavior change; the smoke guard protects the cheap/overkill split by keeping service lookup pressure bounded.
+Hardware Impact: Editor-only validation; 0 us runtime in player builds.
+
+Problem: Compile proof remains unavailable under the user's current constraint.
+Solution: Ran source-only checks: `git diff --check`, fixed-string registry scans, forbidden hot-path scans, and source counters. `DeepPsychosisController` now shows `GlobalRegistry=11`, `CachedResolvers=8`, `GetComponent=3`, `FindObject=0`, `UpdateMethods=0`, `NewHot=0`, with direct registry reads confined to registration and resolver refresh bodies.
+Rejected Alternatives: Running dotnet build/rebuild would violate explicit user order; claiming Unity compile green without Editor console/MCP data would be a fake report.
+Scalability potential: Verification only.
+Hardware Impact: Verification only.

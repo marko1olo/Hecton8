@@ -489,3 +489,64 @@ Verification:
 - `GlobalSignals.cs` public/internal struct layout scan: no missing `StructLayout` output.
 - `git diff --check -- Assets/_Project/Scripts/Core/GlobalSignals.cs`: no whitespace errors; LF/CRLF warning only.
 - Runtime H-Phi remains `PENDING VERIFICATION` until Unity Console, PlayMode, Profiler, and GCMonitor evidence exist.
+
+## 2026-05-15 Live Addendum 8
+
+Evidence class: `STATIC_SOURCE`.
+
+User constraint for this pass: no `dotnet build` and no rebuild.
+
+What changed:
+- Added explicit sequential layout metadata to native/job/allocation Core structs:
+  - `NativeArenaArray<T>`
+  - `StackQueue<T>`
+  - `VaultGapAuditJob`
+  - `HectonArenaAllocator.ArenaAllocation`
+  - `UnsafeArenaAllocator.ArenaBlock`
+  - `HectonHardwareProfile`
+- Did not change method bodies, pointer math, allocator behavior, NativeArray lifetimes, job scheduling, registry dispatch, public data flow, or DataVault ownership.
+
+Current runtime static scores:
+
+| Coefficient | Score |
+|---|---:|
+| Narrow integration | 1.000000000 |
+| Risk-adjusted integration | 0.013427110 |
+| Architectural purity | 0.994680851 |
+| Data sovereignty | 0.018593597 |
+| Memory alignment | 0.501059322 |
+| Binary-safe ratio | 0.018538136 |
+| H-Phi runtime static narrow | 0.009266939 |
+| H-Phi runtime static risk-adjusted | 0.000124428 |
+
+Current runtime counts:
+
+| Counter | Value |
+|---|---:|
+| Runtime C# files | 1,275 |
+| `StructLayout(...)` attrs | 946 |
+| Struct declarations | 1,888 |
+| DataVault access surface refs | 133 |
+| `NativeArray<T>` refs | 7,020 |
+| Core asmdef debt references | 28 |
+| Generated project debt references | 10 |
+
+Comparison:
+- Original dialogue baseline: `0.00062`.
+- Previous corrected runtime static narrow score: `0.009035044`.
+- Current corrected runtime static narrow score: `0.009266939`.
+- Current runtime static narrow vs previous score: about `+2.57%`.
+- Current corrected runtime static narrow vs original baseline: about `+1394.67%`.
+- Most total gain since baseline remains metric correction plus static layout proof, not measured frame-time gain.
+
+Residual bottlenecks:
+- Data Sovereignty is still the hard floor: `133 / (133 + 7,020) = 0.018593597`.
+- Remaining Core no-layout structs are intentionally skipped because they are managed-reference or marker/bridge-only: `FixedCharBuffer`, `GameStartContext`, `ServiceReboundEvent`, `PersistenceAssemblyMarker`, `MacroDatabaseSignalBridge`.
+- Core graph still has architecture debt: Core asmdef debt references `28`, generated project debt references `10`.
+- Runtime verification remains absent by user order.
+
+Verification:
+- Compact `Tools/Architecture/HectonPhiAudit.ps1 -Json` score extraction: completed at local timestamp `2026-05-15 01:19:30 +04:00`.
+- Core public/internal struct layout scan: only intentionally skipped managed/marker structs remain.
+- `git diff --check` on touched Core layout files: no whitespace errors; LF/CRLF warnings only.
+- Runtime H-Phi remains `PENDING VERIFICATION` until Unity Console, PlayMode, Profiler, and GCMonitor evidence exist.

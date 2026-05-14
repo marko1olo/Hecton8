@@ -160,12 +160,24 @@ Verification: forbidden-pattern scan returned no matches. `git diff --check` pas
 
 ## 2026-05-15 - Registry Consumer Truth And Pause-Time Hygiene
 
-What was wrong: the registry now reported saturation truth, but adjacent physical controls still used the legacy void registration path. Panel and snap-switch interpolation also used a minimum fake delta, allowing visual progress or Hold-repeat behavior when dispatcher time was zero.
+What was wrong: the registry now reported saturation truth, but adjacent physical controls still used the legacy void registration path. Panel and snap-switch interpolation also used a minimum fake delta, allowing visual progress or Hold-repeat behavior when dispatcher time was zero. Their fallback haptic path right-biased any non-left hand side.
 
-What was done: moved `PhysicalPanelButton`, `PhysicalSnapSwitch`, and `LifePodSeatStrapLatch` to `TryRegister()` and truth-based receiver state. Added exact registered-collider caches to panel buttons and snap switches. Removed `MinimumDeltaTime` fake progress in panel/switch blends, blocked panel Hold repeats on zero-dt frames, skipped unchanged panel mesh writes, and returned from snap-switch Tick before visual solve when `dt` is zero. Added XML docs for the public registry API.
+What was done: moved `PhysicalPanelButton`, `PhysicalSnapSwitch`, and `LifePodSeatStrapLatch` to `TryRegister()` and truth-based receiver state. Added exact registered-collider caches to panel buttons and snap switches. Removed `MinimumDeltaTime` fake progress in panel/switch blends, blocked panel Hold repeats on zero-dt frames, skipped unchanged panel mesh writes, and returned from snap-switch Tick before visual solve when `dt` is zero. Added both-hand fallback masks for invalid/future hand-side values and XML docs for the public registry API.
 
 Cinematic Cheats used: preserved the fixed collider receiver table and scalar kinematic controls. No physics joints, runtime searches, direct OpenXR polling, or dynamic receiver collections were added.
 
-Exact microseconds saved/spent: 0 us steady receiver cost; one cold boolean result check and collider reference assignment per registration. Zero-dt frames avoid snap-switch visual solve/write and prevent panel hold spam risk; stable panel frames skip unchanged transform writes. 0 B/frame.
+Exact microseconds saved/spent: 0 us steady receiver cost; one cold boolean result check and collider reference assignment per registration. Zero-dt frames avoid snap-switch visual solve/write and prevent panel hold spam risk; stable panel frames skip unchanged transform writes. Haptic fallback adds one branch only on press/snap haptic dispatch frames. 0 B/frame.
 
 Verification: forbidden-pattern scan returned no matches, including legacy `PhysicalHandReceiverRegistry.Register(`, `MinimumDeltaTime`, `GetComponent<...>`, `Update(`, `Time.deltaTime`, `HingeJoint`, and direct input polling. Scoped counter over 5 task files reports `LegacyRegister=0`, `TryRegister=4`, `GetComponentCalls=0`, `TryGetComponentCalls=9`, `UnityUpdateMethods=0`, `DirectDeltaTime=0`, `PublicEvents=0`, `HingeJoint=0`. `git diff --check` passed with CRLF warnings only. No dotnet rebuild/probe was run by user instruction.
+
+## 2026-05-15 - Receiver-Density Probe Gate
+
+What was wrong: the physical panel probe path still ran in XR-active empty cockpit states even when the receiver table had no registered collider-backed controls. That wasted pose reads, service reads, a NonAlloc physics overlap, and candidate-loop work that could not produce an interaction.
+
+What was done: added `s_registeredReceiverCount` and `HasReceivers` to `PhysicalHandReceiverRegistry`. The count is updated only on true slot insert/remove operations. `PhysicalInteractionHandler.TickPhysicalPanelButtons()` now returns before probe pose, signal service, overlap query, bounds reads, and receiver lookup when no physical receiver exists.
+
+Cinematic Cheats used: kept the existing fixed hash table and scalar physical-hand bridge. No dynamic discovery, no joint simulation, no runtime scene search, and no polling of concrete controls were added.
+
+Exact microseconds saved/spent: one static integer comparison per active XR tick; one int increment/decrement on cold receiver lifecycle. Empty/transition states save one hand pose read, one interaction-signal service read, one `OverlapSphereNonAlloc`, and up to eight candidate bounds/hash checks per XR frame. 0 B/frame.
+
+Verification: forbidden-pattern scan over six physical-control files returned no matches. Scoped counter reports `LegacyRegister=0`, `TryRegister=4`, `HasReceivers=1`, `GetComponentCalls=0`, `TryGetComponentCalls=21`, `UnityUpdateMethods=0`, `DirectDeltaTime=0`, `PublicEvents=0`, `HingeJoint=0`. `git diff --check` passed. No dotnet rebuild/probe was run by user instruction.

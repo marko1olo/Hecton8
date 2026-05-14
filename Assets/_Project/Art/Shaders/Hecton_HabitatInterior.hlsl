@@ -29,6 +29,9 @@ float HectonHabitatInteriorResolveStress01(float3 positionWS)
     if (_HectonHabitatModuleStressParams.w <= 0.0001)
         return 0.0;
 
+    if (_HectonHabitatModuleStressParams.z > 0.5)
+        return saturate(_HectonHabitatModuleStressParams.w);
+
     uint count = HectonHabitatInteriorModuleCount();
     if (count == 0u)
         return 0.0;

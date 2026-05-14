@@ -43,6 +43,8 @@ namespace Hecton8.Audio.Prologue
         private int _lastCompleteFrame = -1;
         private uint _transitionSequence;
         private ushort _lastCompleteSequence;
+        private ushort _lastWhiteoutCompleteSequence;
+        private uint _lastWhiteoutCompleteSourceHash;
         private byte _stage = AudioTransitionState.StageSpace;
         private byte _lastPublishedStage;
         private byte _lastPublishedFlags;
@@ -59,6 +61,7 @@ namespace Hecton8.Audio.Prologue
         private bool _splashdownPending;
         private bool _prologueArmed;
         private bool _hasCompleteSequence;
+        private bool _hasWhiteoutCompleteSequence;
         private bool _forcePublishTransition;
         private uint _tickCount;
 
@@ -75,6 +78,7 @@ namespace Hecton8.Audio.Prologue
             _splashdownPending = false;
             _prologueArmed = false;
             _hasCompleteSequence = false;
+            _hasWhiteoutCompleteSequence = false;
             _forcePublishTransition = false;
             _lastPublishedStage = 0;
             _lastPublishedFlags = 0;
@@ -212,10 +216,23 @@ namespace Hecton8.Audio.Prologue
 
                 if (!sequenceOceanHandoff)
                 {
+                    if (_stage == AudioTransitionState.StageOceanHandoff)
+                        continue;
+
+                    bool newWhiteoutSequence = !_hasWhiteoutCompleteSequence ||
+                                                signal.Sequence != _lastWhiteoutCompleteSequence ||
+                                                signal.SourceHash != _lastWhiteoutCompleteSourceHash;
                     _prologueArmed = true;
                     _stage = AudioTransitionState.StageWhiteout;
                     _currentLowPassCutoffHertz = ClampCutoff(vacuumLowPassCutoffHertz);
-                    _forcePublishTransition = true;
+                    if (newWhiteoutSequence)
+                    {
+                        _lastWhiteoutCompleteSequence = signal.Sequence;
+                        _lastWhiteoutCompleteSourceHash = signal.SourceHash;
+                        _hasWhiteoutCompleteSequence = true;
+                        _forcePublishTransition = true;
+                    }
+
                     continue;
                 }
 

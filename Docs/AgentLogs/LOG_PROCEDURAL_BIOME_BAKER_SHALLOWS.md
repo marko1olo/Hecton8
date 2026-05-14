@@ -129,3 +129,27 @@ Cinematic Cheats used: Static offline SDF/L-system meshes, exact LOD payloads, s
 Exact Microseconds saved: Runtime remains 0 us/frame and 0 bytes procedural allocation. The saved cost is avoided regression: no accidental high-index-format mesh, over-budget LOD, or missing shader mask can silently force heavier geometry or runtime correction. Exact runtime microseconds were not profiled because validation is editor-only.
 
 Verification: No dotnet rebuild was run. `git diff --check` passed for the touched source with only CRLF warnings. Source scans found the mesh/budget validators and all-LOD vertex color validation. Brace count is balanced. Mesh YAML scan found `Count=600`, `Bad=0`; max triangles were Kelp `2200/514/94`, PorousRock `3081/581/53`, TubeCoral `2364/342/24`.
+
+## 2026-05-15 Vertex Color Validator Allocation Clamp
+
+What was wrong: The strengthened all-LOD vertex color validator used `mesh.colors`, which copies a managed `Color[]` every time a mesh is checked. It is editor-only, but validating 600 generated meshes should still use bounded memory behavior.
+
+What was done: Added a single bounded reusable `List<Color>` scratch buffer to `ShallowsBioForgeBatchBaker`, sized from the largest accepted LOD mesh budget. Replaced `mesh.colors` with `mesh.GetColors(VertexColorScratch)`, added a capacity guard, cleared the scratch buffer after use, used branch min/max comparisons, and made readable mesh data an explicit validator requirement while vertex color inspection is required.
+
+Cinematic Cheats used: Static offline SDF/L-system meshes, vertex-color shader masks, shared material/atlas, LOD payloads, no flora collision, and rock-only convex collision remain unchanged. This pass improves the editor validation path that protects those cheats.
+
+Exact Microseconds saved: Runtime remains 0 us/frame and 0 bytes procedural allocation. Editor validation avoids one transient copied color array per checked LOD mesh. Exact editor microseconds were not profiled.
+
+Verification: No dotnet rebuild was run. `git diff --check` passed with only CRLF warnings. Source scan found `VertexColorScratch`, `mesh.GetColors`, `mesh.isReadable`, and no `mesh.colors`. Brace count is balanced. Mesh YAML scan found `Count=600`, `Bad=0`, `MaxVertices=9243`, `ScratchCapacity=9600`.
+
+## 2026-05-15 Shader Source Contract And Fail-Closed Bake
+
+What was wrong: The Shallows material contract validated shader name and material values, but not the exact shader asset path or the source tokens that keep the shader opaque, SRP-batcher-friendly, instanced, LOD-crossfade-compatible, and math-LOD capable. The bake path also had a `Shader.Find` fallback.
+
+What was done: Added `ShaderPath` as the single shader authority, removed the `Shader.Find` fallback, aborted the bake when the authored shader asset is missing, and added source-token validation for required opaque/render-state/instancing/LOD/SRP-batcher tokens plus forbidden alpha-blend and `ZWrite Off` tokens.
+
+Cinematic Cheats used: Opaque static flora meshes, shader math LOD, LOD crossfade, shared atlas/material, vertex-color masks, no flora collision, and rock-only convex collision remain unchanged. This pass protects the shader fake that carries visual richness without runtime simulation.
+
+Exact Microseconds saved: Runtime remains 0 us/frame and 0 bytes procedural allocation. The saved cost is avoided regression: no silent alpha blend, missing instancing, or lost crossfade path can add overdraw or draw-path churn later. Exact runtime microseconds were not profiled.
+
+Verification: No dotnet rebuild was run. `git diff --check` passed. Source scan found `ValidateShaderSourceContract`, `ShaderPath`, and no `Shader.Find` in the Shallows baker. Shader token scan returned `Missing=0`, `ForbiddenHits=0`; brace count is balanced.

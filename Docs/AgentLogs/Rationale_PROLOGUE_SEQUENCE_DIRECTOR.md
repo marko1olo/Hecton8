@@ -300,3 +300,19 @@ Solution: Add the same `PRLG` source gate to `PrologueAcousticOrchestrator` and 
 Rejected Alternatives: Keep phase-only acceptance, remove manual complete emission, or add a new signal type mid-batch. Phase-only is the defect; changing the lever signal would risk the manual gate; a new event violates signal discipline when `SourceHash` already disambiguates ownership.
 Scalability potential: Low/MX350 avoids spending bubble/audio/impulse work on a pre-handoff manual latch. Middle/High/Ultra keep the expensive splash, DSP sweep, and fluid visual overkill aligned with the authoritative sequence moment.
 Hardware Impact: Adds one uint compare per complete signal in an 8-slot lane. Prevents early audio/fluid work and duplicate splashdown paths; estimated low-end saved work depends on scene responders, with the filter itself below 1 us. Verification this pass is static only by user request; no dotnet rebuild or response-file compile was run.
+
+## Decision 36 - Audio Whiteout Complete Debounce
+
+Problem: Non-authoritative complete packets (`MOVR`/`ORBI`) are intentionally whiteout-only after the `PRLG` source gate, but the audio path still forced a transition publish on every qualifying packet. A repeated or duplicated packet would queue identical helmet DSP state with no presentation gain.
+Solution: Track the last whiteout-only complete packet by `SourceHash` and `Sequence`; only a new source/sequence forces an audio transition publish. The current stage and cutoff still update to whiteout, so manual/orbital whiteout remains responsive.
+Rejected Alternatives: Ignore non-`PRLG` packets entirely, or keep force-publishing every packet. Ignoring them would break the concealment whiteout role; force-publishing duplicates wastes the audio SPSC lane and DSP transition work.
+Scalability potential: Low/MX350 keeps the cheap whiteout concealment without redundant queue traffic. Middle/High/Ultra reserve audio overkill and ocean sweep for the authoritative `PRLG` handoff while still accepting one visible whiteout state from other producers.
+Hardware Impact: Adds two scalar comparisons and one cached-source write on new packets in an 8-slot lane. Saves one queued `AudioTransitionState` per duplicate non-`PRLG` complete packet, roughly 3-10 us depending on audio-service contention. Verification this pass is static only by user request; no dotnet rebuild or response-file compile was run.
+
+## Decision 37 - Post-Handoff Whiteout Regression Guard
+
+Problem: After the sequence-owned `PRLG` handoff, a late non-`PRLG` complete packet could still pull audio from `StageOceanHandoff` back to whiteout, and VFX could extend `_whiteoutHoldSecondsRemaining` while already in `HydratedFade`. That delays the fade/splash and rolls back portal audio without any authoritative hydration signal.
+Solution: Reject non-`PRLG` complete packets once audio is in `StageOceanHandoff` and once VFX has reached `HydratedFade` or later. Pre-handoff manual/orbital whiteout is still accepted for concealment; post-handoff transition ownership remains with `PRLG`.
+Rejected Alternatives: Let `EnterWhiteout()` rely on enum ordering, or remove non-`PRLG` whiteout entirely. Enum ordering did not protect the hold timer; removing non-`PRLG` whiteout would break manual/orbital concealment before the sequence handoff.
+Scalability potential: Low/MX350 avoids extra whiteout hold and repeated DSP state churn after proxy handoff. Middle/High/Ultra keep hydrated fade, splash debris, visor droplets, ocean waves, and portal audio aligned to the authoritative sequence moment.
+Hardware Impact: Adds one byte compare on qualifying non-sequence packets in an 8-slot lane. Saves delayed splash/fade work and prevents a redundant portal-to-whiteout audio rollback; expected low-end hot-path cost is below 1 us. Verification this pass is static only by user request; no dotnet rebuild or response-file compile was run.

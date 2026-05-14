@@ -292,3 +292,33 @@ Verification state:
 - Static verification passed for the touched VFX lane.
 - `CURRENT_BATCH.md` exact prompt tag count for `VFX_SDF_CARVE_DEBRIS`: 0.
 - Unity compile remains BLOCKED/UNCLAIMED; no dotnet rebuild was run.
+
+## 2026-05-15 - H-Phi Continuation: Startup, Signal Fairness, No-Wake Fast Path
+
+What was wrong:
+- If `OnEnable()` ran before `GlobalRegistry`/DataVault readiness, the renderer had no second non-hot chance to register and bind GPU state.
+- Carve ingestion capped the first 32 raw signals, so invalid/non-subtract packets could starve valid subtract packets later in the same snapshot.
+- `ApplyDynamicWakes` still entered an eight-slot unrolled loop when the active wake slot count was zero.
+- The debris vertex shader recomputed the same hash for edge tint and normalized an up vector already derived from unit perpendicular basis vectors.
+
+What was done:
+- Added a `Start()` retry for `TryRegisterTick()` and `TryEnsureGpuState()`.
+- Added `MaxCarveSignalScanPerFrame = 64`; ingestion now scans up to 64 raw signals while preserving the existing 32 valid-request cap.
+- Added a zero-slot early return in `ApplyDynamicWakes`.
+- Reused the orientation z-hash as edge jitter and removed the redundant `upWS` safe-normalize.
+- Did not run dotnet build, dotnet rebuild, or Unity batch compile.
+
+Cinematic cheats used:
+- Startup resilience is a one-shot retry, not per-frame polling.
+- Debris still uses deterministic hash orientation and shader edge response instead of CPU-authored fracture state.
+- Wake influence remains a presentation fake and costs nothing when no wake payload is bound.
+
+Exact microseconds saved:
+- Startup retry: 0 us steady-frame cost; prevents complete VFX non-registration after boot order jitter.
+- Bounded signal fairness: worst scan increases from 32 to 64 raw packets but still queues only 32 valid requests; predictable CPU ceiling retained.
+- No-wake fast path: removes 8 wake-slot branches per live particle when `_DynamicWakeParams.x == 0`.
+- Debris shader: saves one hash and one safe-normalize/rsqrt per visible chip vertex.
+
+Verification state:
+- PENDING: Unity import/compile and visual/profiler capture remain unverified.
+- No dotnet rebuild was run.

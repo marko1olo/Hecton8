@@ -480,6 +480,9 @@ namespace Hecton8.Interaction
             if (_physicalHandController == null && !EnsurePhysicalHandController())
                 return;
 
+            if (!PhysicalHandReceiverRegistry.HasReceivers)
+                return;
+
             if (!_physicalHandController.TryGetInteractionProbePose(out Vector3 handPosition, out Quaternion handRotation))
                 return;
             if (!IsFiniteVector(handPosition))

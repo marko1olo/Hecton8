@@ -1,6 +1,6 @@
 # Status_HECTON_PHI_MONITOR
 
-Status: SIGNAL BOUNDARY LAYOUT IMPROVED / STATIC SOURCE VERIFIED / NO DOTNET REBUILD BY USER ORDER / RUNTIME PENDING VERIFICATION
+Status: CORE NATIVE LAYOUT IMPROVED / STATIC SOURCE VERIFIED / NO DOTNET REBUILD BY USER ORDER / RUNTIME PENDING VERIFICATION
 Agent: HECTON_PHI_MONITOR
 Domain: ECHELON 9 / Architecture metrics / static H-Phi audit
 Task Count: 6
@@ -36,18 +36,19 @@ Task Count: 6
 - [x] Task 15: Data Sovereignty metric correction | DOD: H-Phi audit now counts real DataVault access surface (`IDataVault`, `VaultBufferHandle`, `GetBuffer`, `TryGetBuffer`, `GlobalDataVault`) instead of only literal `GlobalDataVault` text | Rejected: preserving a false low score that hides existing Vault adoption | Estimate: 0 us runtime
 - [x] Task 16: Overseer owner-blocked backlog | DOD: audit JSON now emits `TopNativeArrayFiles` and `OwnerBlockedDataVaultCandidates`; log/report list the top heavy files that need domain-owner migration | Rejected: editing cross-domain NativeArray owners without BufferID/SystemID/generation/disposal proof | Estimate: 0 us runtime
 - [x] Task 17: Signal boundary layout cleanup | DOD: added sequential layout metadata to the remaining public signal ring buffer and AUP shift transformer in `GlobalSignals.cs`; verified no public/internal structs in that file remain without nearby `StructLayout` | Rejected: touching concurrent PlayerBase signal sanitizer edits or mutating signal runtime logic | Estimate: 0 us runtime
+- [x] Task 18: Core native container/job layout cleanup | DOD: added sequential layout metadata to targeted Core native containers, allocation records, DataVault audit job, and numeric hardware profile; verified remaining Core missing-layout structs are managed-reference or marker/bridge-only | Rejected: fake layout proof on `FixedCharBuffer`, `GameStartContext`, `ServiceReboundEvent`, `PersistenceAssemblyMarker`, and `MacroDatabaseSignalBridge` | Estimate: 0 us runtime
 
 ## Latest Static Scores
-- H-Phi runtime static narrow: `0.009035044`
-- H-Phi runtime static risk-adjusted: `0.000121334`
-- H-Phi all-source static narrow: `0.008044520`
-- H-Phi all-source static risk-adjusted: `0.000099814`
+- H-Phi runtime static narrow: `0.009266939`
+- H-Phi runtime static risk-adjusted: `0.000124428`
+- H-Phi all-source static narrow: `0.008252504`
+- H-Phi all-source static risk-adjusted: `0.000102379`
 - Narrow integration: `1.0`
-- Risk integration: `0.013429257`
+- Risk integration: `0.013427110`
 - Architectural purity: `0.994680851`
-- Data sovereignty: `0.018263557`
-- Memory alignment: `0.497348887`
-- Binary-safe ratio: `0.018557794`
+- Data sovereignty: `0.018593597`
+- Memory alignment: `0.501059322`
+- Binary-safe ratio: `0.018538136`
 
 ## Current Verification Notes
 - `Tools/Architecture/HectonPhiAudit.ps1 -Json` was corrected to count actual Unity `Update`/`LateUpdate`/`FixedUpdate` method declarations, not comments or editor calls such as `serializedObject.Update()`.
@@ -62,8 +63,10 @@ Task Count: 6
 - Public structs in `Assets/_Project/Scripts/Core/Contracts` now have explicit `StructLayout` metadata; no memory-layer dependency was added to the contracts.
 - Targeted Core boundary/job payload structs now have explicit `StructLayout` metadata; no runtime method bodies changed.
 - `GlobalSignals.cs` public/internal struct scan now reports no remaining public/internal structs without nearby `StructLayout`; the pass only added metadata to `SpscSignalRingBuffer<T>` and `CombatDamageSignalAupShiftTransformer`.
+- Core native container/job scan now leaves only managed-reference or marker/bridge structs without `StructLayout`: `FixedCharBuffer`, `GameStartContext`, `ServiceReboundEvent`, `PersistenceAssemblyMarker`, and `MacroDatabaseSignalBridge`.
 - Data Sovereignty metric was corrected to count real Vault API usage, not only literal `GlobalDataVault` text. This is a model correction, not a runtime performance claim.
+- Audit JSON now includes `CoreGraphAudit`: current Core asmdef debt references `28`, generated project debt references `10`.
 - Audit JSON now includes `TopNativeArrayFiles`, `OwnerBlockedDataVaultCandidates`, `DisposeCalls`, and editor file rows for overseer routing.
 - Remaining runtime `Find*` debt is concentrated in `GameBootstrapper` bootstrap handoff, `HectonUrpShadowBudgetGuard` cold light scan, and `VRSomaticRuntimeBootstrap` decoupled root lookup; one textual `HectonUnderwaterVisuals` hit is editor-only and excluded from runtime score.
-- `git diff --check` on `GlobalSignals.cs` reports only LF/CRLF normalization warnings.
+- `git diff --check` on touched Core layout files reports only LF/CRLF normalization warnings.
 - Unity Console / PlayMode / Profiler / GCMonitor: PENDING VERIFICATION.

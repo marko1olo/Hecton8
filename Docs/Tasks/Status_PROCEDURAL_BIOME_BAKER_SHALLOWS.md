@@ -150,3 +150,18 @@ Status: PENDING VERIFICATION
 - Patched `ShallowsBioForgeBatchBaker` to centralize family LOD triangle budgets and validate every LOD mesh for non-empty geometry, one submesh, UInt16 indices, finite non-degenerate bounds, exact family budget ceilings, and vertex color R gradient on LOD0/LOD1/LOD2.
 - Verification avoided dotnet rebuilds. `git diff --check` passed for the touched source with only the repo CRLF warning; source scan found the new mesh/budget validators; brace count is balanced. Mesh YAML scan found `Count=600`, `Bad=0`, max triangles: Kelp `2200/514/94`, PorousRock `3081/581/53`, TubeCoral `2364/342/24`.
 - H-Phi impact remains domain-local: stricter asset contract density, no runtime scripts, no Update cadence, and no new cross-domain ownership.
+
+### Loop 15 - Vertex Color Validator Allocation Clamp
+
+- Re-read status/rationale, AGENTS, domain map, H-Phi metric, Procedural Asset Pipeline, Unity workflow skill, and task-relevant mandates before editing.
+- Found cold-path scale debt in the Shallows validator: all-LOD vertex color validation used `mesh.colors`, allocating a copied `Color[]` for every checked LOD mesh.
+- Patched `ShallowsBioForgeBatchBaker` to use one bounded reusable editor scratch list for vertex colors, reject meshes exceeding the budget-derived scratch capacity, replace `Mathf.Min/Max` calls with simple branches in the scan loop, and explicitly require readable mesh payloads while the validator depends on vertex color inspection.
+- Verification avoided dotnet rebuilds. `git diff --check` passed for the touched source with only the repo CRLF warning; source scan found `VertexColorScratch`, `mesh.GetColors`, and no remaining `mesh.colors`; brace count is balanced. Mesh YAML scan found `Count=600`, `Bad=0`, `MaxVertices=9243`, `ScratchCapacity=9600`.
+- H-Phi impact remains static/source-local only: editor validation now has bounded memory behavior and stronger payload contracts without adding runtime systems or cross-domain references.
+
+### Loop 16 - Shader Source Contract And Fail-Closed Bake
+
+- Found another drift path: material validation locked shader name and material values, but not the shader asset path or required source tokens for opaque queue, SRP batcher CBUFFER, instancing, math LOD, and LOD crossfade.
+- Patched `ShallowsBioForgeBatchBaker` to validate the exact shader asset path, required source tokens, and forbidden alpha-blend/ZWrite-off tokens. Removed the `Shader.Find` fallback from the bake path and made material creation fail closed when the authored shader asset is missing.
+- Verification avoided dotnet rebuilds. `git diff --check` passed for the touched source; source scan found `ValidateShaderSourceContract`, no `Shader.Find` in the Shallows baker, and brace count is balanced. Shader token scan returned `Missing=0`, `ForbiddenHits=0`.
+- H-Phi impact remains local: stronger source-contract evidence and less fallback ambiguity without adding runtime coupling or render-path ownership.

@@ -208,3 +208,55 @@ Verification:
 - Static grep over IK runtime/job/shader scope found no `math.sqrt`, `math.normalize`, managed array creation, `foreach`, `string.Format`, `.ToString()`, `Debug.Log`, Unity Physics casts, `SkinnedMeshRenderer`, `renderer.material`, `Camera.main`, `GlobalRegistry.Get`, `GameObject.Find`, or `FindObject`.
 - `git diff --check` on touched code/docs exits 0; output is only LF-to-CRLF warnings.
 - Runtime status remains pending until Unity Editor import, shader compile, play-mode behavior, GC, and profiler evidence exist.
+
+## 2026-05-15T01:25+04:00
+
+Status: PENDING VERIFICATION. Continued MapMagic fallback safety audit. No `dotnet` rebuild/compile was run.
+
+What was wrong:
+- The fallback height path used `resolution * resolution` in `int` space before accepting or sampling `TerrainHeightSamples`.
+- A malformed payload could overflow the count and let an invalid native buffer reach the Burst terrain-contact loop.
+
+What was done:
+- Added `LeviathanTerrainIkJob.TryResolveTerrainHeightSampleCount()` with `long` multiplication.
+- Used that resolver in runtime payload acceptance, the Burst fallback gate, and private terrain-height sampling.
+- Kept the existing MapMagic 2D height fallback behavior unchanged for valid payloads.
+
+Cinematic cheats used:
+- Existing 2D MapMagic height fallback remains the cheap seabed cheat when SDF is unavailable.
+
+Exact microseconds saved:
+- Normal valid terrain payload: 0 us meaningful change.
+- Bad payload path: avoids invalid native indexing and corrupt terrain-contact output.
+- No profiler number claimed.
+
+Verification:
+- Static grep over IK runtime/job/shader scope found no `math.sqrt`, `math.normalize`, managed array creation, `foreach`, `string.Format`, `.ToString()`, `Debug.Log`, Unity Physics casts, `SkinnedMeshRenderer`, `renderer.material`, `Camera.main`, `GlobalRegistry.Get`, `GameObject.Find`, or `FindObject`.
+- `git diff --check` on touched code/docs exits 0; output is only LF-to-CRLF warnings.
+- Runtime status remains pending until Unity Editor import, shader compile, play-mode behavior, GC, and profiler evidence exist.
+
+## 2026-05-15T01:29+04:00
+
+Status: PENDING VERIFICATION. Continued GPU shader-state ownership audit. No `dotnet` rebuild/compile was run.
+
+What was wrong:
+- `_publishGlobalBoneBuffer` described desired publish behavior, not whether this runtime had already published global shader state.
+- If global publishing was disabled after a successful publish, `_H8LeviathanGpuSkinning` could remain globally enabled with stale bone data.
+
+What was done:
+- Added `_globalGpuSkinningPublished` tracking.
+- Clear global Leviathan shader gates on publish-off transition, shutdown, and any no-consumer path after prior global publication.
+- Kept material-only binding intact.
+
+Cinematic cheats used:
+- None. This is GPU state hygiene for the existing matrix deformation path.
+
+Exact microseconds saved:
+- Stable hot path: 0 us.
+- Transition cost: five `Shader.SetGlobalFloat` calls only when clearing stale global publication.
+- Prevented fault: stale global deformation on material-only/no-consumer configurations.
+
+Verification:
+- Static grep over IK runtime/job/shader scope found no `math.sqrt`, `math.normalize`, managed array creation, `foreach`, `string.Format`, `.ToString()`, `Debug.Log`, Unity Physics casts, `SkinnedMeshRenderer`, `renderer.material`, `Camera.main`, `GlobalRegistry.Get`, `GameObject.Find`, or `FindObject`.
+- `git diff --check` and `git diff --cached --check` on touched code/docs exit 0.
+- Runtime status remains pending until Unity Editor import, shader compile, play-mode behavior, GC, and profiler evidence exist.

@@ -65,6 +65,7 @@ namespace Hecton8.Narrative
             if (sectorHash == 0UL || cellIndex >= WfcOutpostPersistenceConstants.CellCount)
             {
                 ClearWfcOutpostPersistence();
+                RestoreWfcOutpostDatapadBaselineState(true);
                 return;
             }
 
@@ -74,7 +75,12 @@ namespace Hecton8.Narrative
             _wfcOutpostPersistenceConfigured = true;
 
             if ((_wfcOutpostFlags & WfcDatapadLootedFlag) != 0)
+            {
                 ApplyWfcOutpostDatapadLootedState();
+                return;
+            }
+
+            RestoreWfcOutpostDatapadBaselineState(true);
         }
 
         public void ClearWfcOutpostPersistence()
@@ -90,6 +96,16 @@ namespace Hecton8.Narrative
             TryRegisterPickupTemplate();
             LocalizationEvents.RegisterLanguageListener(this);
             _alreadyDiscovered = false;
+
+            if (_wfcOutpostPersistenceConfigured)
+            {
+                if ((_wfcOutpostFlags & WfcDatapadLootedFlag) != 0)
+                    ApplyWfcOutpostDatapadLootedState();
+                else
+                    RestoreWfcOutpostDatapadBaselineState(false);
+
+                return;
+            }
 
             if (logData != null && Hecton8.Core.GlobalRegistry.AudioLogs != null)
             {
@@ -209,6 +225,15 @@ namespace Hecton8.Narrative
 
             if (deactivateAfterPickup)
                 gameObject.SetActive(false);
+        }
+
+        private void RestoreWfcOutpostDatapadBaselineState(bool allowReactivate)
+        {
+            _alreadyDiscovered = false;
+            BuildCache();
+
+            if (allowReactivate && deactivateAfterPickup && !gameObject.activeSelf)
+                gameObject.SetActive(true);
         }
 
         private void SetWfcOutpostFlags(byte flags, uint frame)

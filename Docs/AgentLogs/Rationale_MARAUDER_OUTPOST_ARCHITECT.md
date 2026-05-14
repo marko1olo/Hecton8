@@ -301,3 +301,23 @@ Solution: Verification stayed source-only: scoped H-Phi counts, forbidden-patter
 Rejected Alternatives: Running a response-file or dotnet compile was rejected because it violates the active instruction. Editing unrelated high-pressure domains was rejected because this agent owns Habitat/Outposts.
 Scalability potential: Static pressure improves in the outpost service without increasing local native buffer count, shell GameObjects, signal volume, or update phases.
 Hardware Impact: Verification-only plus cold-path lookup reduction; hot rendering remains one indirect shell submission and 0 B/frame by source audit.
+
+## LOOP 19 CONTRACT LAYOUT AND PUBLIC COUNT CLAMP
+
+Problem: `OutpostGenerationSnapshot` and `OutpostInteractableSpawn` had sequential layout but no explicit byte-size proof, and these structs cross the outpost contract/native extraction boundary.
+Solution: Added fixed layout sizes: 56 bytes for `OutpostGenerationSnapshot` and 20 bytes for `OutpostInteractableSpawn`.
+Rejected Alternatives: Adding `[BinaryBlittableSafe]` was rejected because `Hecton8.World.Contracts` does not reference `Hecton8.Core.Memory`, and adding that dependency only for a metric marker would expand the contract assembly surface. Relying on implicit sequential packing was rejected because H-Phi/data-sovereignty rules prefer explicit layout evidence.
+Scalability potential: Low/Middle/High/Ultra data payloads are unchanged. The same DTOs now have fixed binary shape for cheap devices and high-end visual consumers.
+Hardware Impact: Metadata-only runtime impact. Stronger layout proof reduces integration ambiguity without adding allocations, signals, shell objects, or native buffers.
+
+Problem: Public shell accessors exposed raw `_matrixCount`, which could exceed the current native array or graphics buffer count after corruption, partial teardown, or an external stale query.
+Solution: Clamp `TryGetShellMatrices` count to `_shellMatrices.Length` and `TryGetShellGraphicsBuffer` count to `_matrixBuffer.count` before returning success.
+Rejected Alternatives: Trusting private `_matrixCount` was rejected because this is a cross-domain interface and H-Phi rewards stable, bounded contract surfaces. Throwing on impossible counts was rejected because consumers need fail-closed behavior.
+Scalability potential: Low returns at most 75-ish generated shell entries plus supports within the same buffer; Middle/High/Ultra stay bounded by the 1024 matrix buffer. Visual overkill cannot leak an impossible count to consumers.
+Hardware Impact: Two scalar clamps on cold query paths, estimated below 0.1 us per query and 0 B/frame.
+
+Problem: The user still forbids dotnet rebuilds.
+Solution: Verification stayed source-only: scoped H-Phi counts, forbidden-pattern audits, `git diff --check`, and a full project H-Phi PowerShell scan. Full scan after this pass reports `SignalBusPush=84`, `EventPublish=450`, `GlobalRegistrySurface=5145`, `StructLayoutAttributes=946`, `BinaryBlittableSafe=35`, `MemoryAlignment=0.501059322`, `BinarySafeRatio=0.018538136`, `RiskIntegration=0.013420674`, and `HPhiStaticRisk=0.000124369`.
+Rejected Alternatives: Running response-file compiles through `dotnet` was rejected because it violates the active instruction.
+Scalability potential: Static proof improves while runtime tier behavior remains unchanged.
+Hardware Impact: Verification only.

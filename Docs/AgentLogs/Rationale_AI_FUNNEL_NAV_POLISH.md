@@ -213,3 +213,21 @@ Solution: Add a complete-workspace guard for all native arrays, reject non-finit
 Rejected Alternatives: Relying on `EnsureAbyssalPathBuffers` alone was rejected because Burst jobs must fail closed when called with corrupted or stale native state. Letting negative threat weights invert edge costs was rejected by the pathfinding mandate.
 Scalability potential: Low avoids invalid heap churn and route crashes from corrupt graph payloads. High/Ultra keep the same A* behavior on valid data and spend smoothing budget only after route authority is proven.
 Hardware Impact: Adds scalar guards inside A* expansion; expected savings come from early rejection of corrupt candidates and prevention of downstream steering/telemetry faults. Exact microseconds remain pending profiler data.
+
+Problem: `NativeAStarJob` still trusted raw path-list capacity and could append the requested start position after a broken or over-budget parent chain.
+Solution: Require native path capacity before `AddNoResize`, sanitize heuristic/F-score math before heap writes, and clear the path unless reconstruction proves a bounded parent chain back to `StartNode`.
+Rejected Alternatives: Increasing `MaxPathReconstructionIterations` was rejected because it hides corrupt parent state with more work. Emitting partial paths was rejected because it creates visually smooth but unproven navigation authority.
+Scalability potential: Low/MX350 fails closed without invalid steering corrections. Middle/High/Ultra keep identical valid-path behavior and spend smoothing budget only after A* proof is complete.
+Hardware Impact: Adds cheap scalar checks and one capacity read; expected win is prevention of invalid path tails and downstream correction churn. Exact microseconds remain pending profiler data because dotnet rebuilds are prohibited.
+
+Problem: `StringPullPathJob` could consume non-finite raw waypoints from a macro route or corrupted upstream path and the black-box telemetry only inspected raw endpoints when smoothing emitted no output.
+Solution: Gate string-pull execution on output capacity plus full raw-waypoint finite proof, and scan all raw waypoints for finite telemetry when output is empty.
+Rejected Alternatives: Clamping individual waypoint components was rejected because it fabricates path geometry. Waiting for post-copy NaN detection was rejected because the funnel should not emit invalid output in the first place.
+Scalability potential: Low pays a bounded O(n) finite scan on the raw path and avoids expensive recovery. High/Ultra keep the same route fidelity for valid payloads and get cleaner crash evidence for invalid payloads.
+Hardware Impact: The scan is linear in waypoint count and allocation-free; expected low-end gain is from avoiding invalid smoothing/steering paths rather than from a pure CPU micro-optimization. Exact microseconds remain pending profiler data.
+
+Problem: The live `Docs/Tasks/CURRENT_BATCH.md` rotated and no longer contains `AI_FUNNEL_NAV_POLISH`.
+Solution: Treat the persisted status, rationale, and log files as the authoritative anti-amnesia record for this resumed task, and record the missing prompt instead of extracting a neighboring block.
+Rejected Alternatives: Borrowing the active fauna/noise/mission prompts was rejected because that would violate strict prompt isolation. Fabricating a new XML extraction was rejected as false evidence.
+Scalability potential: No runtime effect; keeps parallel-agent documentation coherent under batch rotation.
+Hardware Impact: None; documentation integrity only.

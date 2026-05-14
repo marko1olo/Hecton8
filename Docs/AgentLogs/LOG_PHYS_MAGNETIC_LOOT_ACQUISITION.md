@@ -165,3 +165,55 @@ Verification:
 
 Final Status:
 - PENDING VERIFICATION.
+
+## 2026-05-15 - Assembly Surface Hygiene Pass
+
+What was wrong:
+- Runtime loot asmdef still referenced `Hecton8.Core.Contracts` after the code path no longer directly used contract-only symbols.
+
+What was done:
+- Removed `Hecton8.Core.Contracts` from `Hecton8.Gameplay.Loot.asmdef`.
+- Kept `Unity.Burst` in `Hecton8.Gameplay.Loot.Contracts.asmdef` because `LootMagnetPullJob` has `[BurstCompile]`.
+
+Cinematic Cheats used:
+- None. This is assembly isolation cleanup.
+
+Exact Microseconds saved:
+- No frame-time saving claimed. This reduces compile graph coupling only.
+
+Verification:
+- Asmdef JSON parse passed after the edit.
+- User forbade dotnet rebuilds; none were run.
+
+Final Status:
+- PENDING VERIFICATION.
+
+## 2026-05-15 - Presentation Budget And Shutdown Handoff Pass
+
+What was wrong:
+- Authored capacity can scale to 8192 loot slots, but the shared acoustic lane is prewarmed for 64 packets and wake for 128.
+- Dense fields could publish more presentation signals than the loot system should claim from shared global lanes.
+- `OnDisable` completed pending jobs but did not commit completed vault results before disposing the event lane.
+
+What was done:
+- Added Low/Mid/High/Ultra acoustic budgets: 16/48/56/64 packets per commit pass.
+- Added Low/Mid/High/Ultra wake budgets: 32/96/112/128 packets per commit pass.
+- Presentation publish now decrements budgets by reference and skips excess acoustic/wake packets.
+- Acoustic intensity math is skipped once the acoustic budget is exhausted or when the event only emits wake.
+- `OnDisable` force-completes a scheduled job and commits it when the vault and event arrays are still valid.
+
+Cinematic Cheats used:
+- Presentation remains a controlled acoustic/wake fake. Dense loot fields degrade by dropping surplus cosmetic pings, not by slowing acquisition truth.
+
+Exact Microseconds saved:
+- Prevents NativeQueue growth work from loot presentation above the shared lane ceilings.
+- Avoids radius/intensity math for surplus cosmetic events after the acoustic budget is exhausted.
+- Shutdown handoff is not a frame-time saving; it prevents lost completed job state before native event disposal.
+
+Verification:
+- User forbade dotnet rebuilds; none were run.
+- `git diff --check` on loot code passed with line-ending warnings only.
+- Static loot anti-bloat scan remains clean for direct native signal writers, scene searches, `math.sqrt`, `math.normalize`, `ToAbsoluteDouble3`, `FromAbsolutePosition`, `foreach`, string formatting, `.ToString()`, and LINQ markers.
+
+Final Status:
+- PENDING VERIFICATION.

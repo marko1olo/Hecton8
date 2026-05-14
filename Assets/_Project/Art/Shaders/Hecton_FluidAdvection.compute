@@ -128,6 +128,9 @@ float3 SampleAbyssalFlow(float3 positionWS)
 float3 ApplyDynamicWakes(float3 positionWS, float3 flow)
 {
     int slotLimit = min((int)max(0.0, _DynamicWakeParams.x), HECTON_DYNAMIC_WAKE_CAPACITY);
+    if (slotLimit <= 0)
+        return Sanitize(flow);
+
     [unroll]
     for (int i = 0; i < HECTON_DYNAMIC_WAKE_CAPACITY; i++)
     {

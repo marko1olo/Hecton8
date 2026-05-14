@@ -179,6 +179,7 @@ namespace Hecton8.Gameplay
             _wfcOutpostCellIndex = cellIndex;
             _wfcOutpostFlags = (byte)(initialFlags & WfcOutpostPersistenceConstants.MutableFlagMask);
             _wfcOutpostPersistenceConfigured = true;
+            ResetWfcOutpostTransientPlaybackState();
 
             if ((_wfcOutpostFlags & WfcDatapadLootedFlag) != 0)
                 ApplyWfcOutpostDatapadLootedState();
@@ -519,6 +520,16 @@ namespace Hecton8.Gameplay
             RebuildReadMessageSetFromMessageStates();
             UpdatePendingMessage();
             UpdateState();
+        }
+
+        private void ResetWfcOutpostTransientPlaybackState()
+        {
+            _currentMessageIndex = -1;
+            _playbackTimer = 0f;
+            _blinkTimer = 0f;
+            _blinkOn = false;
+            if (_state == TerminalState.Playing)
+                _state = TerminalState.Idle;
         }
 
         private void EnsureWfcOutpostReadMessageSet()

@@ -4695,6 +4695,7 @@ namespace Hecton8.Core.Signals
         [FieldOffset(16)] public byte Reason;
         [FieldOffset(17)] public byte Flags;
         [FieldOffset(20)] public uint Revision;
+        [FieldOffset(24)] public uint CategoryHash;
         [FieldOffset(31)] private byte _pad;
     }
 

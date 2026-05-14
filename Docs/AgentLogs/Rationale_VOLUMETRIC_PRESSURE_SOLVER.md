@@ -273,3 +273,27 @@ Solution: Gate `EnsureModuleStressBuffer` and `GraphicsBufferUploadUtility.Uploa
 Rejected Alternatives: Releasing the buffer whenever peak stress hits zero, or continuing to upload zero matrices. Releasing risks driver churn during near-threshold stress oscillation; zero uploads waste CPU/driver bandwidth with no visible result.
 Scalability potential: Low/MX350 avoids calm-state upload work after active module order or tier changes. Mid/High/Ultra keep immediate localized bowing once stress rises above the epsilon.
 Hardware Impact: Saves one buffer ensure/upload on calm visible-module dirty ticks; estimated 6-18 us on i3/MX350 rebuild/order-change frames, 0 B/frame, no shader cost.
+
+## Follow-Up Correction - Low-Tier Buffer Upload Bypass
+
+Problem: Low-tier habitat deformation uses peak-stress crease feedback and does not need the per-module stress buffer, but `UploadModuleStressMatrix` still ensured and uploaded `_HectonHabitatModuleStressBuffer` whenever peak stress was visible.
+Solution: Treat low-tier as a peak-only visual mode in the CPU upload path: `hasVisibleStress` now requires non-low-tier plus peak stress above epsilon. The shared shader resolver also returns the peak stress immediately when low-tier mode is active, so future callsites cannot accidentally read a skipped buffer.
+Rejected Alternatives: Keeping low-tier buffer uploads for symmetry, or releasing/reallocating buffers on every tier change. Symmetry wastes driver bandwidth on MX350; release/realloc churn is worse than leaving a small stale buffer ignored when quality tiers change.
+Scalability potential: Low/MX350 gets peak-stress crease feedback with no per-module GPU upload. Mid/High/Ultra retain localized per-module bowing and buffer upload only when it buys visible deformation.
+Hardware Impact: Saves one structured-buffer ensure/upload on stressed low-tier module ticks; estimated 6-18 us on i3/MX350 stress frames, 0 B/frame, no loss to high-tier localized deformation.
+
+## Follow-Up Correction - Atmosphere Service Cache
+
+Problem: Habitat depth and pressure stress sampling still resolved `GlobalRegistry.Atmosphere` each rebuild/stress pass even though the service identity is stable; only `SeaLevelY` needs to remain live.
+Solution: Added `_atmosphereManager` caching and routed `ResolveRuntimeSeaLevelY` through `ResolveAtmosphereManager`. The cached service is cleared on dispose, while `SeaLevelY` is read fresh on every pass.
+Rejected Alternatives: Caching the numeric sea level for longer than one pass, or adding a new constructor dependency. Numeric caching would break tides and surface shifts; a constructor dependency widens architecture while concurrent agents are active.
+Scalability potential: Low/MX350 removes repeated service-locator work from pressure passes. Mid/High/Ultra keep exact live sea-level pressure deformation.
+Hardware Impact: Saves repeated atmosphere registry lookup during rebuild/stress loops; estimated 1-3 us on i3/MX350 stress-heavy frames, 0 B/frame, no shader cost.
+
+## Follow-Up Correction - Vertex Bend Callsite Gate
+
+Problem: DryZone vertices still called the habitat bend and cheap normal-bias helpers in low-tier and zero-stress states, even though the helpers immediately returned. This left avoidable branch/setup work on the highest-frequency render path.
+Solution: Initialized bend outputs to zero at the callsite and added `habitatVertexBendActive`, so `HectonHabitatInteriorApplyPanelBendOS` runs only for non-low stressed vertices. Normal bias now runs only when bend is active and the panel mask is nonzero.
+Rejected Alternatives: Relying only on helper-internal guards, or duplicating deformation math in the shader body. Helper-only guards waste callsite setup; duplication makes future shader maintenance brittle.
+Scalability potential: Low/MX350 avoids all vertex bend helper setup and keeps crease-only feedback. Mid/High/Ultra still get localized sine bow and normal bias when stress exists.
+Hardware Impact: Saves two helper-entry branches plus normal-bias setup on low-tier/calm vertices; estimated 2-8 us per 1k interior vertices on MX350-class GPUs, 0 B/frame.

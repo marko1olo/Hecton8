@@ -869,7 +869,7 @@ namespace Hecton8.SaveSystem
 
         private static void EnsureArrayCapacity<T>(ref T[] values, int capacity)
         {
-            if (values != null && values.Length >= capacity)
+            if (values != null && values.Length == capacity)
                 return;
 
             T[] replacement = new T[capacity];

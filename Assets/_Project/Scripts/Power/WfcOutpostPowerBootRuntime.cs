@@ -133,6 +133,7 @@ namespace Hecton8.Power
         public void BindGasDynamics(IGasDynamicsSolver gasDynamics)
         {
             _gasDynamics = gasDynamics;
+            TryBindGraphBaseAwakeState();
             if (_gasSeedPending && _gasDynamics != null)
                 TrySeedGasRooms();
         }
@@ -306,6 +307,7 @@ namespace Hecton8.Power
             if (_activeNodeCount <= 0)
                 return;
 
+            TryBindGraphBaseAwakeState();
             BuildLogisticsGraph();
             _graph.ScheduleEvaluation();
             _graphEvaluationPending = _graph.HasPendingEvaluation;
@@ -361,6 +363,25 @@ namespace Hecton8.Power
             }
 
             _graph.FinalizeBuild();
+        }
+
+        private void TryBindGraphBaseAwakeState()
+        {
+            IGasDynamicsSolver gas = _gasDynamics;
+            if (gas == null)
+            {
+                _graph.TryBindBaseAwakeState(default, 0);
+                return;
+            }
+
+            NativeArray<byte>.ReadOnly awakeState = gas.BaseAwakeState;
+            if (!awakeState.IsCreated)
+            {
+                _graph.TryBindBaseAwakeState(default, 0);
+                return;
+            }
+
+            _graph.TryBindBaseAwakeState(awakeState, 0);
         }
 
         private void UpdateReactorDecay(float now)

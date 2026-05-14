@@ -36,6 +36,7 @@ namespace Hecton8.Audio.Editor
         private const string AudioLogEventsPath = "Assets/_Project/Scripts/AudioLog/AudioLogEvents.cs";
         private const string PlayerPdaPath = "Assets/_Project/Scripts/PlayerPDA.cs";
         private const string PlayerStressVfxPath = "Assets/_Project/Scripts/Visor/PlayerStressVFX.cs";
+        private const string DeepPsychosisPath = "Assets/_Project/Scripts/Audio/DeepPsychosisController.cs";
 
         [MenuItem("Hecton8/Audio/Run Advanced Acoustics Smoke Test")]
         public static void RunMenuItem()
@@ -77,6 +78,7 @@ namespace Hecton8.Audio.Editor
             string audioLogEvents = ReadAssetText(AudioLogEventsPath, builder, ref failureCount);
             string playerPda = ReadAssetText(PlayerPdaPath, builder, ref failureCount);
             string playerStressVfx = ReadAssetText(PlayerStressVfxPath, builder, ref failureCount);
+            string deepPsychosis = ReadAssetText(DeepPsychosisPath, builder, ref failureCount);
 
             if (spatial.Length > 0)
             {
@@ -192,6 +194,22 @@ namespace Hecton8.Audio.Editor
                 AssertContains(synthesis, "CompileSynchronously = true", "Kinetic impact oscillator has synchronous Burst compile coverage", builder, ref failureCount);
                 AssertContains(synthesis, "DepthStressGranularMath.FiniteOrDefault(StartHertz, 150f)", "Burst oscillator default starts at 150 Hz", builder, ref failureCount);
                 AssertContains(synthesis, "DepthStressGranularMath.FiniteOrDefault(EndHertz, 40f)", "Burst oscillator default ends at 40 Hz", builder, ref failureCount);
+            }
+
+            if (deepPsychosis.Length > 0)
+            {
+                string psychosisSlowTick = ExtractMethodBody(deepPsychosis, "public void SlowTick()");
+                string psychosisDependencyResolve = ExtractMethodBody(deepPsychosis, "private void TryResolveDependencies()");
+                string psychosisCue = ExtractMethodBody(deepPsychosis, "private void PlayPsychosisCue()");
+                AssertContains(deepPsychosis, "ResolvePlayerRuntimeContext()", "Deep psychosis player context uses a bounded cached resolver", builder, ref failureCount);
+                AssertContains(deepPsychosis, "ResolveEnvironmentalStrainManager()", "Deep psychosis pollution stress uses a bounded environmental strain resolver", builder, ref failureCount);
+                AssertContains(deepPsychosis, "ResolveAudioService()", "Deep psychosis cue playback uses cached audio-service resolution", builder, ref failureCount);
+                AssertContains(deepPsychosis, "ResolveAcousticZone()", "Deep psychosis helmet whispers use cached acoustic-zone resolution", builder, ref failureCount);
+                AssertContains(deepPsychosis, "DependencyRetryFrameInterval = 30", "Deep psychosis optional service retry cadence is bounded to 30 frames", builder, ref failureCount);
+                AssertNotContains(psychosisSlowTick, "GlobalRegistry.EnvironmentalStrain", "Deep psychosis SlowTick does not poll environmental strain registry directly", builder, ref failureCount);
+                AssertNotContains(psychosisDependencyResolve, "GlobalRegistry.Player", "Deep psychosis dependency resolver does not poll player registry directly", builder, ref failureCount);
+                AssertNotContains(psychosisCue, "GlobalRegistry.Audio", "Deep psychosis cue playback does not poll audio registry directly", builder, ref failureCount);
+                AssertNotContains(psychosisCue, "GlobalRegistry.AcousticZone", "Deep psychosis cue playback does not poll acoustic-zone registry directly", builder, ref failureCount);
             }
 
             if (physicsApply.Length > 0)

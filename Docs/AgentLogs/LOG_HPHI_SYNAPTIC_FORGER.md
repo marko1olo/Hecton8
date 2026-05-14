@@ -163,3 +163,57 @@ Verification:
 - `rg` found no `InventoryChanged +=`, `ScanLogChanged +=`, `HandleInventoryChanged`, or `HandleScanLogChanged` remnants in `PDAExchangeSystem`.
 - `rg` confirmed `ScanLogChangedSignal` alias, capacity, size validation, publish overload, lane configure/prewarm, struct definition, and PDA dirty flags.
 - `git diff --check` on the owned runtime/docs files reported no whitespace errors; only CRLF normalization warnings on tracked C# files.
+
+## 2026-05-15 - Scan-Log Unlock Signal Purge Addendum
+
+What was wrong:
+- `ScanLogSystem` still had managed scan-log callback surfaces after the PDA relay pass.
+- Fabricator subscribed to scan-log dirty events just to invalidate recipe caches.
+- PDALogbookManager subscribed to scan unlock events just to detect first leviathan scan.
+
+What was done:
+- Removed project use of `ScanLogChanged` and `EntryUnlocked` managed events.
+- Added monotonic `ScanLogSystem.ChangeRevision`.
+- Extended `ScanLogChangedSignal` with `Revision` and `CategoryHash` while preserving the 32-byte packet.
+- Fabricator now invalidates recipe cache/unlock masks from scan-log revision during recipe data access; no managed subscription and no permanent fabricator signal polling.
+- PDALogbookManager now consumes `SignalBus<ScanLogChangedSignal>` as an `IUpdatable` UI consumer and filters by source id, `ReasonEntryAdded`, category hash, and known leviathan entry hashes.
+
+Cinematic Cheats used:
+- Category and entry hashes replace managed `ScanEntrySnapshot` delegate payloads for leviathan journal detection.
+- Revision integer replaces scan-log dirty callbacks for Fabricator cache invalidation.
+- No simulation was added; this is packet metadata and lazy cache invalidation only.
+
+Exact microseconds saved:
+- Scan unlock burst: estimated 0.4-0.9 us from removed `ScanLogChanged` plus `EntryUnlocked` delegate dispatch/subscription surfaces.
+- Fabricator station scaling: avoided unprofiled permanent per-frame signal scans across stations.
+- PDALogbook steady-state cost: one bounded empty snapshot read, expected below 0.05 us/frame.
+
+Verification:
+- No dotnet build, restore, or rebuild was run after this continuation because the user explicitly forbade dotnet rebuilds.
+- `rg` found no `EntryUnlocked`, `ScanLogChanged +=`, `ScanLogChanged?.Invoke`, `HandleScanLogChanged`, `SubscribeToScanLog`, or `UnsubscribeFromScanLog` hits in project C# files.
+- `rg` confirmed `ChangeRevision`, `Revision`, `CategoryHash`, Fabricator revision checks, and PDALogbook `SignalBus<ScanLogChangedSignal>` consumption.
+- `git diff --check` reported no whitespace errors; only CRLF normalization warnings.
+
+## 2026-05-15 - PDALogbook One-Shot Pump Addendum
+
+What was wrong:
+- The scan-log signal conversion left PDALogbookManager as a permanent UI updatable even after first leviathan scan was already logged.
+- A null/new-game load after that completion could clear seen origins but leave the one-shot pump unregistered.
+
+What was done:
+- Added `NeedsScanLogSignalPump` and `RefreshScanLogPumpRegistration()`.
+- PDALogbookManager now unregisters from `GlobalRegistry.Updatables` after `FirstLeviathanScanOriginHash` is appended or loaded.
+- Null/new-game load rebinds the scan-log source and re-enables the pump after clearing seen origins.
+
+Cinematic Cheats used:
+- One integer origin hash controls whether the scan-log cinematic journal pump is alive.
+- No object references, strings, or managed event payloads were reintroduced.
+
+Exact microseconds saved:
+- After first leviathan scan: removes the permanent empty scan-log snapshot read, estimated below 0.05 us/frame.
+- Load-path correctness prevents a missed future scan after a new-game/null-load reset; correctness gain, not frame-time.
+
+Verification:
+- No dotnet build, restore, or rebuild was run.
+- `rg` confirmed one-shot pump methods and no scan-log managed event remnants.
+- `git diff --check` reported no whitespace errors; only CRLF normalization warnings.

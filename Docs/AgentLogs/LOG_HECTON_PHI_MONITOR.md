@@ -250,3 +250,50 @@ Regression Model:
 - Memory: no buffer ownership changed; DataVault migration remains owner-blocked.
 - Cadence: no tick, signal flush, or dispatch cadence changed.
 - Correctness: low compile risk from attributes, but Unity import/compile remains pending because rebuild is forbidden.
+
+## 2026-05-15 Core Native Container And Job Layout Cleanup
+
+What was wrong:
+- Core still had native/job/allocation structs without explicit layout metadata:
+  - `NativeArenaArray<T>`
+  - `StackQueue<T>`
+  - `VaultGapAuditJob`
+  - `HectonArenaAllocator.ArenaAllocation`
+  - `UnsafeArenaAllocator.ArenaBlock`
+  - `HectonHardwareProfile`
+- These are real native/container/job/contract surfaces, not decorative DTOs.
+
+What was done:
+- Added `[StructLayout(LayoutKind.Sequential)]` to the six targeted structs.
+- Added `System.Runtime.InteropServices` imports where required.
+- Left method bodies, field order, pointer math, NativeArray lifetimes, job scheduling, allocator behavior, registry dispatch, and DataVault ownership unchanged.
+- Honored user instruction: no `dotnet build`, no rebuild.
+
+Cinematic Cheats used:
+- None. ABI/layout metadata only.
+
+Exact Microseconds saved:
+- Runtime gameplay: 0 us measured; no executable code path changed.
+- Future debugging/perf debt: reduced native layout ambiguity. Exact time savings are unmeasured.
+
+Compile Status:
+- Not run by explicit user order.
+- Static checks run: `git diff --check` on touched Core layout files, Core public/internal layout scan, and compact `Tools/Architecture/HectonPhiAudit.ps1 -Json` score extraction.
+- Remaining Core missing-layout structs are intentionally skipped: `FixedCharBuffer`, `GameStartContext`, `ServiceReboundEvent`, `PersistenceAssemblyMarker`, `MacroDatabaseSignalBridge`.
+
+Phi Gain:
+- Previous corrected runtime narrow score: `0.009035044`.
+- Current corrected runtime narrow score: `0.009266939`.
+- Delta from previous runtime narrow: `+0.000231895`, about `+2.57%`.
+- Current corrected runtime risk-adjusted score: `0.000124428`.
+- Memory alignment: `0.497348887 -> 0.501059322`.
+- Data Sovereignty: `0.018263557 -> 0.018593597` on current tree.
+- Compared with original dialogue baseline `0.00062`: current corrected runtime narrow is about `+1394.67%`.
+- Important: H-Phi is still static-source evidence, not runtime performance proof.
+
+Regression Model:
+- CPU: no runtime method body changed.
+- GC: no runtime allocation changed.
+- Memory: no buffer ownership changed; DataVault migration remains owner-blocked.
+- Cadence: no tick, job schedule, signal flush, or dispatch cadence changed.
+- Correctness: low compile risk from attributes/imports, but Unity import/compile remains pending because rebuild is forbidden.

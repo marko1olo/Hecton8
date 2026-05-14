@@ -214,3 +214,73 @@ Verification:
 - Scoped hot-path scan found no `PlayClipAtPoint`; broad owned-file scan found only pre-existing cold/editor `Debug.Log`, `math.exp` assertion text, and `builder.ToString()`.
 - Source-only H-Phi spot counts for the renderer: `GlobalRegistry=26`, `SignalBus=1`, `NativeArray=232`, `StructLayout=6`, `UpdateMethods=0`, `FindObject=0`, `GetComponent=9`, `CachedQuality=14`, `CachedSpatial=9`, `TransportLookupGate=5`.
 - Dotnet build/rebuild was not run by explicit user order. Unity compile remains PENDING VERIFICATION until Editor console/MCP validation is available.
+
+## 2026-05-15 - DSP_ACOUSTIC_LEAD - Loop 11 Cross-Domain Resolver Cadence H-Phi Pass
+Status: PENDING VERIFICATION
+
+What was wrong:
+- Low-tier biome reverb still pulled `GlobalRegistry.MapMagic` from the cave reverb tick path.
+- Forward echo probe and ambient-pressure audio fallback read `GlobalRegistry.Player` through separate helpers.
+- Apex heartbeat threat and structural hull fallback still used direct service locator reads; structural fallback could retry three hull-service reads in one tick while absent.
+
+What was done:
+- Added `AudioServiceLookupRetryFrames = 30` for optional cross-domain resolver retries.
+- Added cached MapMagic biome policy through `ResolveCachedBiomeId()`.
+- Added cached player runtime context through `ResolvePlayerRuntimeContext()`.
+- Added cached ecosystem and hull read-model resolvers through `ResolveEcosystemDirectorService()` and `ResolveSubmarineHullReadModel()`.
+- Reset structural retry gates when player/transport binding changes.
+- Added smoke assertions for all bounded cross-domain resolver helpers.
+
+Cinematic cheats used:
+- Biome reverb remains a cached 2-bit flavor branch, not a live terrain acoustic simulation.
+- Cross-domain audio cues still consume scalar contracts; no new object graph, physics query, or solver was added.
+- Missing optional services are retried on cadence instead of every audio tick.
+
+Exact microseconds saved:
+- Saves one MapMagic registry read per low-tier cave reverb tick after warmup.
+- Saves up to two player-context registry reads per active tick/probe path after warmup.
+- Saves one ecosystem registry read per SlowTick after warmup.
+- Saves up to three structural hull fallback registry reads per tick while the read model is absent.
+- Runtime allocation delta remains 0 B/frame.
+
+Verification:
+- `git diff --check -- Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs` passed except CRLF normalization warnings.
+- `rg -n "ResolvePlayerRuntimeContext\\(|ResolveEcosystemDirectorService\\(|ResolveSubmarineHullReadModel\\(|ResolveCachedBiomeId\\(|AudioServiceLookupRetryFrames = 30"` found renderer and smoke tester anchors.
+- `rg -n -F "PlayClipAtPoint" Assets/_Project/Scripts/Audio Assets/_Project/Scripts/Gameplay Assets/_Project/Scripts/Core` returned no matches.
+- Broad owned-file scan found only pre-existing cold/editor `Debug.Log`, `math.exp` assertion text, and `builder.ToString()`.
+- Source-only H-Phi spot counts for the renderer: `GlobalRegistry=23`, `SignalBus=1`, `NativeArray=232`, `StructLayout=6`, `UpdateMethods=0`, `FindObject=0`, `GetComponent=9`, `CachedQuality=14`, `CachedSpatial=9`, `CrossDomainResolver=16`, `TransportLookupGate=5`.
+- Dotnet build/rebuild was not run by explicit user order. Unity compile remains PENDING VERIFICATION until Editor console/MCP validation is available.
+
+## 2026-05-15 - DSP_ACOUSTIC_LEAD - Loop 12 Deep Psychosis Audio Resolver H-Phi Pass
+Status: PENDING VERIFICATION
+
+What was wrong:
+- `DeepPsychosisController` still read player, environmental strain, audio service, and acoustic-zone registry slots directly from SlowTick/dependency/cue methods.
+- Helmet whisper fallback went straight to `GlobalRegistry.AcousticZone` from the cue path.
+- The source smoke suite did not guard this DSP-owned psychosis cue path against future direct registry polling.
+
+What was done:
+- Added cached resolvers for `IPlayerRuntimeContext`, `EnvironmentalStrainManager`, `IAudioService`, and `AcousticZoneController`.
+- Bound all four optional service refreshes to the existing 30-frame dependency retry cadence.
+- Replaced direct psychosis SlowTick/dependency/cue service reads with resolver calls.
+- Routed helmet whisper fallback through `PlayHelmetWhisperCue()` over the cached acoustic-zone reference.
+- Added editor smoke assertions for the deep psychosis resolver helpers and method-body no-direct-registry checks.
+
+Cinematic cheats used:
+- Kept deterministic xorshift cue placement and authored clip pools instead of any physical hallucination or acoustic simulation.
+- Kept pooled `IAudioService.PlayAtPoint`; no AudioSource spawn, coroutine scheduler, or clip synthesis was added.
+- Service refresh is cadence-bound because psychosis cues do not need frame-perfect registry rebinding.
+
+Exact microseconds saved:
+- Saves up to one player-context registry read per dependency refresh after warmup.
+- Saves one environmental-strain registry read per active SlowTick after warmup.
+- Saves one audio-service registry read per psychosis cue playback after warmup.
+- Saves up to one acoustic-zone registry read per helmet whisper fallback after warmup.
+- Runtime allocation delta remains 0 B/frame.
+
+Verification:
+- `git diff --check -- Assets/_Project/Scripts/Audio/DeepPsychosisController.cs Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs` passed except CRLF normalization warnings.
+- `rg -n -F "GlobalRegistry." Assets/_Project/Scripts/Audio/DeepPsychosisController.cs` shows direct reads only in registration and resolver refresh bodies.
+- Source counters for `DeepPsychosisController`: `GlobalRegistry=11`, `CachedResolvers=8`, `GetComponent=3`, `FindObject=0`, `UpdateMethods=0`, `NewHot=0`.
+- Scoped forbidden scan found no `PlayClipAtPoint`, `PlayOneShot`, coroutine, managed collection, or hot formatting in `DeepPsychosisController`.
+- Dotnet build/rebuild was not run by explicit user order. Unity compile remains PENDING VERIFICATION until Editor console/MCP validation is available.

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
 using UnityEngine;
@@ -15,6 +16,7 @@ namespace Hecton8.Editor.ProceduralGen
         private const string MeshRoot = "Assets/_Project/Art/Generated/Flora/BioForge/Shallows";
         private const string PrefabRoot = "Assets/_Project/Prefabs/Nature/Flora/BioForge/Shallows";
         private const string MaterialPath = "Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_ProceduralBio_Shallows.mat";
+        private const string ShaderPath = "Assets/_Project/Art/Shaders/Hecton_ProceduralBio.shader";
         private const string TextureRoot = "Assets/_Project/Art/TEXTURES/WorldProceduralFlora";
         private const string AlbedoAtlasPath = TextureRoot + "/TX_ProceduralBio_Shallows_AlbedoAtlas.png";
         private const string NormalAtlasPath = TextureRoot + "/TX_ProceduralBio_Shallows_NormalAtlas.png";
@@ -33,6 +35,7 @@ namespace Hecton8.Editor.ProceduralGen
         private const int RockLod0TriangleBudget = 3200;
         private const int RockLod1TriangleBudget = 720;
         private const int RockLod2TriangleBudget = 128;
+        private const int MaxValidatedMeshVertices = RockLod0TriangleBudget * 3;
         private const int MaxAllowedLod2Triangles = 149;
         private const float Lod0ScreenHeight = 0.6f;
         private const float Lod1ScreenHeight = 0.15f;
@@ -41,6 +44,8 @@ namespace Hecton8.Editor.ProceduralGen
         private const float Lod1FadeWidth = 0.08f;
         private const float Lod2FadeWidth = 0.04f;
         private const float TransformEpsilonSq = 0.000001f;
+        // COLD ALLOC: List<Color>[9600] — reusable editor vertex color validation scratch — owner: ShallowsBioForgeBatchBaker
+        private static readonly List<Color> VertexColorScratch = new List<Color>(MaxValidatedMeshVertices);
 
         [MenuItem("HECTON-8/Bio-Forge/Bake Safe Shallows Assets", false, 172)]
         public static void BakeSafeShallowsAssets()
@@ -53,6 +58,12 @@ namespace Hecton8.Editor.ProceduralGen
 
             BuildSharedAtlases();
             Material material = CreateOrUpdateMaterial();
+            if (material == null)
+            {
+                Debug.LogError("[ShallowsBioForgeBatchBaker] Bake aborted because the shared Shallows material could not be created.");
+                return;
+            }
+
             BioRuleData coralRule = CreateOrUpdateTubeCoralRule(material);
             BioRuleData kelpRule = CreateOrUpdateKelpRule(material);
             BioRuleData rockRule = CreateOrUpdatePorousRockRule(material);
@@ -200,12 +211,10 @@ namespace Hecton8.Editor.ProceduralGen
 
         private static Material CreateOrUpdateMaterial()
         {
-            Shader shader = AssetDatabase.LoadAssetAtPath<Shader>("Assets/_Project/Art/Shaders/Hecton_ProceduralBio.shader");
-            if (shader == null)
-                shader = Shader.Find("Hecton8/Flora/ProceduralBio");
+            Shader shader = AssetDatabase.LoadAssetAtPath<Shader>(ShaderPath);
             if (shader == null)
             {
-                Debug.LogError("[ShallowsBioForgeBatchBaker] Missing Hecton8/Flora/ProceduralBio shader.");
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] Missing shader asset at {ShaderPath}.");
                 return null;
             }
 
@@ -382,6 +391,10 @@ namespace Hecton8.Editor.ProceduralGen
                 failures++;
                 Debug.LogError("[ShallowsBioForgeBatchBaker] Shared material shader contract failed.");
             }
+            else
+            {
+                ValidateShaderSourceContract(material.shader, ref failures);
+            }
 
             if (!material.enableInstancing || material.doubleSidedGI || material.globalIlluminationFlags != MaterialGlobalIlluminationFlags.None)
             {
@@ -419,6 +432,58 @@ namespace Hecton8.Editor.ProceduralGen
             ValidateMaterialFloat(material, "_BiolumPulseSharpness", 2.4f, ref failures);
             ValidateMaterialFloat(material, "_MatCapStrength", 0.42f, ref failures);
             ValidateMaterialFloat(material, "_Cull", 0f, ref failures);
+        }
+
+        private static void ValidateShaderSourceContract(Shader shader, ref int failures)
+        {
+            string shaderPath = AssetDatabase.GetAssetPath(shader);
+            if (!string.Equals(shaderPath, ShaderPath, StringComparison.Ordinal))
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] Shader asset path contract failed. Expected={ShaderPath}, Actual={shaderPath}.");
+                return;
+            }
+
+            string absolutePath = Path.GetFullPath(ShaderPath);
+            if (!File.Exists(absolutePath))
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] Shader source missing at {ShaderPath}.");
+                return;
+            }
+
+            string source = File.ReadAllText(absolutePath);
+            ValidateShaderRequiredToken(shaderPath, source, "\"RenderType\" = \"Opaque\"", ref failures);
+            ValidateShaderRequiredToken(shaderPath, source, "\"Queue\" = \"Geometry\"", ref failures);
+            ValidateShaderRequiredToken(shaderPath, source, "ZWrite On", ref failures);
+            ValidateShaderRequiredToken(shaderPath, source, "#pragma multi_compile_instancing", ref failures);
+            ValidateShaderRequiredToken(shaderPath, source, "#pragma instancing_options assumeuniformscaling", ref failures);
+            ValidateShaderRequiredToken(shaderPath, source, "#pragma multi_compile _ LOD_FADE_CROSSFADE", ref failures);
+            ValidateShaderRequiredToken(shaderPath, source, "#pragma multi_compile _ _MATH_LOD_LOW", ref failures);
+            ValidateShaderRequiredToken(shaderPath, source, "#pragma shader_feature_local _QUALITY_HIGH", ref failures);
+            ValidateShaderRequiredToken(shaderPath, source, "CBUFFER_START(UnityPerMaterial)", ref failures);
+            ValidateShaderRequiredToken(shaderPath, source, "LODFadeCrossFade(input.positionCS);", ref failures);
+            ValidateShaderForbiddenToken(shaderPath, source, "ZWrite Off", ref failures);
+            ValidateShaderForbiddenToken(shaderPath, source, "Blend SrcAlpha", ref failures);
+            ValidateShaderForbiddenToken(shaderPath, source, "Blend One One", ref failures);
+        }
+
+        private static void ValidateShaderRequiredToken(string shaderPath, string source, string token, ref int failures)
+        {
+            if (source.IndexOf(token, StringComparison.Ordinal) >= 0)
+                return;
+
+            failures++;
+            Debug.LogError($"[ShallowsBioForgeBatchBaker] Shader source contract missing token at {shaderPath}: {token}.");
+        }
+
+        private static void ValidateShaderForbiddenToken(string shaderPath, string source, string token, ref int failures)
+        {
+            if (source.IndexOf(token, StringComparison.Ordinal) < 0)
+                return;
+
+            failures++;
+            Debug.LogError($"[ShallowsBioForgeBatchBaker] Shader source contract contains forbidden token at {shaderPath}: {token}.");
         }
 
         private static void ValidateMaterialColor(Material material, string propertyName, Color expected, ref int failures)
@@ -923,6 +988,7 @@ namespace Hecton8.Editor.ProceduralGen
             bool failed = mesh.vertexCount <= 0 ||
                           mesh.subMeshCount != 1 ||
                           mesh.GetIndexCount(0) == 0 ||
+                          !mesh.isReadable ||
                           mesh.indexFormat != IndexFormat.UInt16 ||
                           !IsFinite(bounds.center) ||
                           !IsFinite(bounds.extents) ||
@@ -932,7 +998,7 @@ namespace Hecton8.Editor.ProceduralGen
                 return;
 
             failures++;
-            Debug.LogError($"[ShallowsBioForgeBatchBaker] LOD{lodIndex} mesh geometry contract failed at {path}. Vertices={mesh.vertexCount}, SubMeshes={mesh.subMeshCount}, IndexFormat={mesh.indexFormat}, BoundsExtentSq={bounds.extents.sqrMagnitude:0.000000}.");
+            Debug.LogError($"[ShallowsBioForgeBatchBaker] LOD{lodIndex} mesh geometry contract failed at {path}. Vertices={mesh.vertexCount}, SubMeshes={mesh.subMeshCount}, Readable={mesh.isReadable}, IndexFormat={mesh.indexFormat}, BoundsExtentSq={bounds.extents.sqrMagnitude:0.000000}.");
         }
 
         private static void ValidateLodTriangleBudget(string path, string familyFolder, int lodIndex, Mesh mesh, ref int failures)
@@ -1054,22 +1120,33 @@ namespace Hecton8.Editor.ProceduralGen
                 return;
             }
 
-            Color[] colors = mesh.colors;
-            if (colors == null || colors.Length != mesh.vertexCount)
+            if (mesh.vertexCount > VertexColorScratch.Capacity)
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] LOD{lodIndex} vertex color scratch capacity exceeded at {path}. Vertices={mesh.vertexCount}, Capacity={VertexColorScratch.Capacity}.");
+                return;
+            }
+
+            VertexColorScratch.Clear();
+            mesh.GetColors(VertexColorScratch);
+            if (VertexColorScratch.Count != mesh.vertexCount)
             {
                 failures++;
                 Debug.LogError($"[ShallowsBioForgeBatchBaker] Missing LOD{lodIndex} vertex colors at {path}.");
+                VertexColorScratch.Clear();
                 return;
             }
 
             float min = 1f;
             float max = 0f;
-            for (int i = 0; i < colors.Length; i++)
+            for (int i = 0; i < VertexColorScratch.Count; i++)
             {
-                float value = colors[i].r;
-                min = Mathf.Min(min, value);
-                max = Mathf.Max(max, value);
+                float value = VertexColorScratch[i].r;
+                if (value < min) min = value;
+                if (value > max) max = value;
             }
+
+            VertexColorScratch.Clear();
 
             if (min > 0.08f || max < 0.82f)
             {

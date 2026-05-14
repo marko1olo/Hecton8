@@ -36,6 +36,7 @@ namespace Hecton8.VFX.Debris
         private const int LowTierParticlesPerCarve = 16;
         private const int HighTierParticlesPerCarve = 64;
         private const int MaxCarveSignalsPerFrame = 32;
+        private const int MaxCarveSignalScanPerFrame = 64;
         private const int TelemetryPublishStride = 30;
         private const int GlobalSdfRefreshStrideFrames = 4;
         private const int TierRefreshStrideFrames = 30;
@@ -173,6 +174,12 @@ namespace Hecton8.VFX.Debris
         private void OnEnable()
         {
             EnsureFallbackRenderResources();
+            TryRegisterTick();
+            TryEnsureGpuState();
+        }
+
+        private void Start()
+        {
             TryRegisterTick();
             TryEnsureGpuState();
         }
@@ -421,14 +428,14 @@ namespace Hecton8.VFX.Debris
         private int DrainCarveSignals(bool lowTier, int activeCapacity)
         {
             ReadOnlySpan<VoxelCarveEvent> carveSignals = SignalBus<VoxelCarveEvent>.GetFrameSnapshot();
-            int signalCount = math.min(carveSignals.Length, MaxCarveSignalsPerFrame);
+            int signalCount = math.min(carveSignals.Length, MaxCarveSignalScanPerFrame);
             if (signalCount <= 0)
                 return 0;
 
             int particlesPerCarve = lowTier ? LowTierParticlesPerCarve : HighTierParticlesPerCarve;
             int queuedCarves = 0;
             int requestCount = 0;
-            for (int i = 0; i < signalCount; i++)
+            for (int i = 0; i < signalCount && requestCount < MaxCarveSignalsPerFrame; i++)
             {
                 VoxelCarveEvent carveEvent = carveSignals[i];
                 if (!TryResolveCarveDebrisRadius(in carveEvent, out float sourceRadius))

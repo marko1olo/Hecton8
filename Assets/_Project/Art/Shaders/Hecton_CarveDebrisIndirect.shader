@@ -78,16 +78,17 @@ Shader "Hecton8/VFX/CarveDebrisIndirect"
                 return (value & 0x00ffffffu) * 0.000000059604644775390625;
             }
 
-            void BuildDebrisBasis(uint particleIndex, out float3 rightWS, out float3 upWS, out float3 forwardWS)
+            void BuildDebrisBasis(uint particleIndex, out float3 rightWS, out float3 upWS, out float3 forwardWS, out float edgeJitter)
             {
+                edgeJitter = Hash11(particleIndex ^ 0xC2B2AE35u);
                 float3 rawForward = float3(
                     Hash11(particleIndex ^ 0x9E3779B9u) * 2.0 - 1.0,
                     Hash11(particleIndex ^ 0x85EBCA6Bu) * 0.7 - 0.35,
-                    Hash11(particleIndex ^ 0xC2B2AE35u) * 2.0 - 1.0);
+                    edgeJitter * 2.0 - 1.0);
                 forwardWS = HectonCoreLitSafeNormalize(rawForward);
                 float3 basisUp = abs(forwardWS.y) < 0.92 ? float3(0.0, 1.0, 0.0) : float3(1.0, 0.0, 0.0);
                 rightWS = HectonCoreLitSafeNormalize(cross(basisUp, forwardWS));
-                upWS = HectonCoreLitSafeNormalize(cross(forwardWS, rightWS));
+                upWS = cross(forwardWS, rightWS);
             }
 
             Varyings Vert(Attributes input)
@@ -102,7 +103,8 @@ Shader "Hecton8/VFX/CarveDebrisIndirect"
                 float3 rightWS;
                 float3 upWS;
                 float3 forwardWS;
-                BuildDebrisBasis(particleIndex, rightWS, upWS, forwardWS);
+                float edgeJitter;
+                BuildDebrisBasis(particleIndex, rightWS, upWS, forwardWS, edgeJitter);
 
                 float3 localPosition = input.positionOS.xyz * scale;
                 float3 positionWS = particle.xyz +
@@ -120,7 +122,7 @@ Shader "Hecton8/VFX/CarveDebrisIndirect"
                 output.viewDirWS = (half3)HectonCoreLitSafeNormalize(GetWorldSpaceViewDir(output.positionWS));
                 output.fogFactor = (half)ComputeFogFactor(output.positionCS.z);
                 output.life = life;
-                output.edgeMask = (half)saturate(abs(input.normalOS.y) * 0.35 + Hash11(particleIndex ^ 0xC2B2AE35u) * 0.25);
+                output.edgeMask = (half)saturate(abs(input.normalOS.y) * 0.35 + edgeJitter * 0.25);
                 output.impactMask = 0.0h;
                 [branch]
                 if (_CarveDebrisMaterialParams.w > 0.5)

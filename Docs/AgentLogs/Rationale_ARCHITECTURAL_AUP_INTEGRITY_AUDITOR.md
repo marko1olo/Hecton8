@@ -351,3 +351,27 @@ Solution: Run prompt extraction, mandatory AUP scan, targeted proxy scan, global
 Rejected Alternatives: Chasing unrelated Core/package errors from the AUP auditor domain, or stopping at the timed-out shell call while the build process continued to completion in the log.
 Scalability potential: Runtime unchanged beyond the Loop 18 precision repair; verification keeps Low/Middle/High/Ultra risk tied to the proxy cache changes rather than unrelated active dependency work.
 Hardware Impact: 0 us runtime gain from verification itself. Developer-time gain on low-end machines is preventing one proxy-cache patch from being blamed for the current 74 unrelated Core errors and 47 unrelated package warnings.
+
+## Decision 44 - Voxel Nav Macro-Flora Root Double Projection
+
+Problem: `VoxelDynamicNavGridRuntime.TryResolveMacroFloraObstacleWorldBounds` extracted a stable vegetation matrix translation into `Vector3` and then called the vegetation bridge runtime projection. That reduced the stable universe root before the macro-flora obstacle center was emitted to nav-grid runtime bounds.
+Solution: Capture the matrix translation as `double3` and call `HectonMapMagicVegetationBridge.ToRuntimeSpace(double3)`, preserving the bridge offset in 64-bit until the final `Vector3`/`float3` nav-bound output.
+Rejected Alternatives: Widening the nav-grid obstacle record and passability payload to double. Those surfaces are runtime grid contracts and Burst float payloads; the precision leak was the bridge hop, not the final nav voxel representation.
+Scalability potential: Low keeps the cheap macro-flora obstacle fake and existing grid payloads. Middle/High/Ultra get steadier long-session obstacle placement around kelp, coral, and sargassum without heavier nav-grid memory.
+Hardware Impact: Expected i3/MX350 benefit is sub-2 us on macro-flora obstacle resolution frames by reducing obstacle-bound churn after origin shifts. Managed allocation remains 0 B/frame; only stack `double3` was added.
+
+## Decision 45 - H-Phi Scope Classification
+
+Problem: The user requested H-Phi improvement, but the only direct H-Phi runtime file found by targeted scan is `HphiReactiveUiTelemetry`, a UI performance warning publisher with no AUP, origin offset, distance trigger, or universe-space math.
+Solution: Do not mutate UI telemetry from the AUP auditor domain. Record the classification and continue repairing confirmed AUP authority leaks.
+Rejected Alternatives: Editing `HphiReactiveUiTelemetry` to throttle or reshape UI warnings. That would be a UI/telemetry-domain change with no evidence of AUP precision drift.
+Scalability potential: Low/Middle/High/Ultra unchanged for AUP. H-Phi remains a separate UI/QA metric unless a future scan connects it to AUP authority.
+Hardware Impact: 0 us runtime gain from this classification; it avoids cross-domain churn and prevents this AUP loop from creating UI telemetry regressions.
+
+## Decision 46 - H-Phi Static AUP Precision Factor
+
+Problem: The headless H-Phi static score measured integration risk, tick purity, data-vault usage, and struct layout, but it did not penalize AUP precision leaks. That allowed a run to report the same H-Phi value whether code used double-safe AUP bridges or legacy float-origin patterns.
+Solution: Add `AupPrecisionSafe` and `AupPrecisionRisk` counters to `HeadlessStressFractureBot`, multiply the existing H-Phi score by `aupPrecisionIntegrity`, and rename the model to `runtime_aup_risk_adjusted`.
+Rejected Alternatives: Mutating `HphiReactiveUiTelemetry` or adding runtime UI counters. UI update cadence is outside AUP authority and would not catch precision drift. Adding allocations for detailed source reports was rejected; the static score remains scalar and bounded.
+Scalability potential: Low gets a cheap static gate that catches AUP regression before runtime tests. Middle/High/Ultra get cleaner precision hygiene data and can spend stable AUP anchors on richer visual feedback without hidden drift debt.
+Hardware Impact: 0 us gameplay-frame cost. Headless startup/source-scan cost increases by simple ordinal string scans only; expected low-end impact is negligible compared with the existing all-script `File.ReadAllText` pass.

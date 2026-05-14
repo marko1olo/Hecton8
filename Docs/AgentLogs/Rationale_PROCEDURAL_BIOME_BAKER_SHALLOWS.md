@@ -215,3 +215,31 @@ Scalability potential: Low/MX350 receives verified compact UInt16 LOD meshes and
 Hardware Impact: Runtime remains 0 us/frame and 0 bytes procedural allocation. The gain is prevention: no accidental UInt32 index format, degenerate mesh, missing vertex color mask, or over-budget LOD can enter MX350-class scenes without editor validation failure. Exact runtime microseconds are not profiled because this is editor validation.
 
 Verification: No dotnet rebuild was run. `git diff --check` passed for `ShallowsBioForgeBatchBaker.cs` with only the repo CRLF warning. Source scan found `ValidateMeshGeometryContract`, `ValidateLodTriangleBudget`, budget constants, and all-LOD `ValidateVertexColorGradient` calls. Mesh YAML scan found `Count=600`, `Bad=0`, with max triangles Kelp `LOD0=2200`, `LOD1=514`, `LOD2=94`; PorousRock `LOD0=3081`, `LOD1=581`, `LOD2=53`; TubeCoral `LOD0=2364`, `LOD1=342`, `LOD2=24`. Brace count is balanced.
+
+## Decision 16 - Bounded Vertex Color Validation Scratch
+
+Problem: The all-LOD vertex color contract improved payload coverage, but the validator used `mesh.colors`, which copies a managed `Color[]` for every mesh. This is editor-only, not runtime, but it is still unnecessary scale debt when validating 600 generated mesh assets and it weakens the zero-GC discipline around the bake pipeline.
+
+Solution: Add one bounded reusable `List<Color>` scratch buffer sized from the largest accepted LOD budget (`RockLod0TriangleBudget * 3`). `ValidateVertexColorGradient` now rejects meshes that exceed the scratch capacity, uses `mesh.GetColors(VertexColorScratch)`, clears the list after use, and uses branch comparisons instead of `Mathf.Min/Max` inside the scan loop. `ValidateMeshGeometryContract` now also requires readable meshes because current validation depends on vertex color inspection.
+
+Rejected Alternatives: Leaving `mesh.colors` was rejected because it scales linearly in managed allocations across every validator pass. Raw YAML mesh edits were rejected because mesh serialization is fragile and the current payload already satisfies the contract. Forcing non-readable meshes was rejected for this pass because it would require a new validation evidence path or a controlled re-bake; the user prohibited rebuild-style validation and no generated payload mutation was necessary.
+
+Scalability potential: Low/MX350 still receives the same static LOD prefabs and compact triangle budgets. Middle/High/Ultra gain faster, bounded editor validation for future deterministic re-bakes while preserving shader-readable vertex masks. If a later bake moves to non-readable runtime meshes, the contract must add sidecar validation metadata or perform color validation before upload.
+
+Hardware Impact: Runtime remains 0 us/frame and 0 bytes procedural allocation. Editor validation avoids one copied color array per checked LOD mesh; with 600 mesh assets, this prevents repeated transient managed arrays during validation. Exact editor microseconds are not profiled.
+
+Verification: No dotnet rebuild was run. `git diff --check` passed for `ShallowsBioForgeBatchBaker.cs` with only the repo CRLF warning. Source scan found `VertexColorScratch`, `mesh.GetColors`, `mesh.isReadable`, and no remaining `mesh.colors`. Mesh YAML scan found `Count=600`, `Bad=0`, `MaxVertices=9243`, `ScratchCapacity=9600`. Brace count is balanced.
+
+## Decision 17 - Shader Source Contract And Fail-Closed Material Creation
+
+Problem: Shared material validation locked shader name, material values, atlas bindings, and instancing flags, but not the shader asset path or source-level render contract. A shader could keep the same display name while losing opaque queue tags, SRP batcher CBUFFER, LOD crossfade, math LOD keyword, or instancing pragmas. The bake path also had a `Shader.Find` fallback, which weakened deterministic asset-path ownership.
+
+Solution: Add `ShaderPath` as a single source of truth, remove the `Shader.Find` fallback, abort the bake if the authored shader asset is missing, and add `ValidateShaderSourceContract`. The validator now checks the exact shader asset path, required opaque/render/instancing/math-LOD/crossfade/SRP-batcher tokens, and rejects known alpha-blend or `ZWrite Off` drift.
+
+Rejected Alternatives: Trusting shader name alone was rejected because names are not asset identity. Runtime shader keyword correction was rejected because this is an editor-authored asset library and runtime mutation would add hidden state. Editing the shader was rejected because the current shader already satisfies the contract; the missing work was validator coverage.
+
+Scalability potential: Low/MX350 keeps opaque, ZWrite-on, SRP-batcher-friendly flora with math LOD support and no alpha blend overdraw. Middle/High/Ultra retain the same shader contract while intentionally enabling richer material tiers only through explicit asset/validator changes.
+
+Hardware Impact: Runtime remains 0 us/frame and 0 bytes procedural allocation. The gain is prevention: no accidental alpha blend, missing instancing, missing CBUFFER, or disabled LOD crossfade can silently enter the Shallows library. Exact runtime microseconds are not profiled because this is editor validation.
+
+Verification: No dotnet rebuild was run. `git diff --check` passed for `ShallowsBioForgeBatchBaker.cs`. Source scan found `ValidateShaderSourceContract`, `ShaderPath`, and no `Shader.Find` in the Shallows baker. Shader token scan returned `Missing=0`, `ForbiddenHits=0`. Brace count is balanced.

@@ -23,3 +23,27 @@ Rejected Alternatives: Searching archive batches as active authority was rejecte
 Scalability potential: Keeps the audit bounded to the current task and prevents stale neighboring prompts from polluting metrics.
 
 Hardware Impact: 0 runtime microseconds. Avoids human review time lost to wrong-agent task bleed.
+
+## Decision 2 - LOC Method
+
+Problem: The task requested `cloc`, but `cloc` is not installed in PATH.
+
+Solution: Used a PowerShell CLI scanner over `Assets/_Project/Scripts/**/*.cs`, streaming files line-by-line and subtracting blank plus comment-only lines. Inline comments on code lines were kept as meaningful code lines because they still carry executable source.
+
+Rejected Alternatives: Stale May 13 report counters were rejected because current filesystem churn changed script counts. Pure `wc -l` was rejected because it cannot subtract comments and blanks.
+
+Scalability potential: Low/Middle/High/Ultra runtime tiers are unaffected. Process scalability improves because the audit can be rerun without installing extra tooling.
+
+Hardware Impact: 0 runtime microseconds on i3/MX350. The only gain is audit reproducibility.
+
+## Decision 3 - Domain Weight Classification
+
+Problem: The 85-domain authority map is semantic, while the filesystem is namespace/folder/file based and includes fused legacy hubs.
+
+Solution: Report both namespace-domain weight and top-file outliers. `Hecton8.World` is the heaviest namespace domain; `HectonPlayerMovement.cs` is the heaviest single fused file.
+
+Rejected Alternatives: Hard-mapping every file into one of 85 domains by keyword would create fake precision and pollute the report.
+
+Scalability potential: Low tier benefits from identifying large fused systems that are harder to budget. High/Ultra tiers can use the same map to target visual-overkill domains without bloating core execution.
+
+Hardware Impact: 0 direct runtime microseconds. Indirectly identifies risk surfaces where later profiling may recover frame time.

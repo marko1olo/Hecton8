@@ -243,3 +243,63 @@ Status: VERIFIED AUP INTEGRITY - CORE BUILD PASS; ASMDEF BLOCKED BY ARCHITECTURE
 - Remaining `ToUniverseSpace` runtime hits are the legacy bridge wrapper itself, editor-only `KinematicGhostDebugger`, and `VoxelDynamicNavGridRuntime.ToRuntimeSpace(stableUniverseRoot)` which needs separate authority classification before mutation.
 - Octahedral impostor universe centers remain float shader presentation data.
 - `PlayerPDA` universe-offset display remains a UI presentation path and not authority distance math.
+
+## Loop 19 Voxel Nav Macro-Flora Root Projection Double Bridge
+
+### Findings
+
+- `VoxelDynamicNavGridRuntime.TryResolveMacroFloraObstacleWorldBounds` converted a stable vegetation matrix root into `Vector3` before calling the vegetation runtime projection helper.
+- The method feeds macro-flora obstacle bounds used by dynamic nav-grid/runtime passability, so the bridge hop is authority-adjacent even though the final grid payload remains float.
+- Targeted H-Phi scan found `HphiReactiveUiTelemetry` and headless QA counters only. No H-Phi file consumed AUP/origin/distance math in this agent's domain.
+
+### Code Changes
+
+- `Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs`: matrix translation is now captured as `double3 stableUniverseRoot`.
+- Runtime projection now calls `HectonMapMagicVegetationBridge.ToRuntimeSpace(double3)` and final-casts only when building the `float3` nav obstacle center.
+- No UI/H-Phi file was changed because no AUP authority dependency was present.
+
+### Verification
+
+- Prompt extraction from `Docs/Tasks/CURRENT_BATCH.md` still returns `PROMPT_NOT_FOUND`; user-supplied XML remains authoritative.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` was re-run. Residual hits remain broad `universe` text, editor diagnostics, and known final-cast fluid/scatter/shader payload names.
+- Direct committed-offset leak scan remains clean across `Assets/_Project/Scripts`.
+- Targeted nav scan confirms no `Vector3 stableUniverseRoot`; `stableUniverseRoot` is now `double3` and resolves to the bridge's double overload.
+- `rg -n "ToUniverseSpace\(|ToRuntimeSpace\(" Assets/_Project/Scripts/World Assets/_Project/Scripts/UI Assets/_Project/Scripts/Gameplay --glob '*.cs'` leaves bridge wrappers plus double-safe runtime callsites.
+- `git diff --check -- Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs` reports line-ending warnings only, no whitespace errors.
+- No `dotnet build` or rebuild was run in Loop 19 because the latest user instruction explicitly forbids rebuilds.
+
+### Evidence Queue
+
+- `PlayerPDA` universe-offset display remains a UI presentation path: it sources `CurrentTotalOffsetDouble` and casts for text output only.
+- Octahedral impostor universe centers remain float shader presentation data.
+- H-Phi UI telemetry should be handled by a UI/QA owner if throttling or metric changes are desired; no AUP precision leak was found there.
+
+## Loop 20 H-Phi Static AUP Precision Hygiene
+
+### Findings
+
+- The existing headless H-Phi static model scored architecture and memory-shape risk but did not include AUP precision hygiene.
+- This meant legacy patterns such as committed-offset component reads or legacy AUP bridge calls were invisible to the H-Phi scalar even though they are first-order drift risks.
+- `HphiReactiveUiTelemetry` remains UI-only and was not changed.
+
+### Code Changes
+
+- `Assets/_Project/Scripts/QA/Headless/HeadlessStressFractureBot.cs`: added `AupPrecisionSafe` and `AupPrecisionRisk` fields to `HPhiStaticCounters`.
+- Added `CountAupPrecisionSafe` for double-safe AUP patterns: `CurrentTotalOffsetDouble`, `ToAbsoluteUniversePositionDouble3`, `ToUniverseSpaceDouble3`, `ToRuntimeSpaceDouble3`, `ToRuntimeSpace(double3)`, `FromAbsolutePosition`, and AUP `DistanceSq`.
+- Added `CountAupPrecisionRisk` for legacy precision-risk patterns: `CurrentTotalOffset` component reads, legacy shift offset component reads, legacy AUP/vegetation bridge calls, `(float3)AUP`, `Vector3 universePosition`, and `Vector3 stableUniverseRoot`.
+- `CalculateHPhiRisk` now multiplies by an AUP precision integrity factor. Files with no AUP patterns default to neutral `1.0` for that factor.
+- H-Phi model text is now `runtime_aup_risk_adjusted` in JSON output and the `[H-PHI_STATIC]` warning line.
+
+### Verification
+
+- Prompt extraction from `Docs/Tasks/CURRENT_BATCH.md` still returns `PROMPT_NOT_FOUND`; user-supplied XML remains authoritative.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` was re-run. The scanner's own split literals no longer add `(float3).*AUP` hits.
+- Direct committed-offset leak scan remains clean across `Assets/_Project/Scripts`.
+- Targeted H-Phi scan confirms `runtime_aup_risk_adjusted`, `AupPrecisionSafe`, and `AupPrecisionRisk` are present.
+- `git diff --check -- Assets/_Project/Scripts/QA/Headless/HeadlessStressFractureBot.cs` reports line-ending warnings only, no whitespace errors.
+- No `dotnet build` or rebuild was run in Loop 20 because the latest user instruction explicitly forbids rebuilds.
+
+### Evidence Queue
+
+- Runtime AUP shift signal payloads still expose `ShiftMeters` as `float3`; most consumers are presentation/runtime rebase paths. A future signal-contract loop can add a double side lane if compile validation is allowed.
+- H-Phi now catches newly introduced AUP precision debt statically, but the scalar still requires actual headless execution to produce a measured value.
