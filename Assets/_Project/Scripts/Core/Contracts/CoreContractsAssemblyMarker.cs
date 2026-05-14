@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.InteropServices;
 using Unity.Collections;
 
 namespace Hecton8.Core.Contracts
@@ -6,6 +7,7 @@ namespace Hecton8.Core.Contracts
     /// <summary>
     /// Assembly marker for isolated core contract-only packages.
     /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
     public readonly struct CoreContractsAssemblyMarker
     {
     }
@@ -24,6 +26,7 @@ namespace Hecton8.Core.Contracts
     /// <summary>
     /// Cached hardware thermal/battery snapshot. Values are written on FrostTick, never per-frame polled.
     /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
     public struct HardwareThermalSnapshot
     {
         public byte Severity;
@@ -54,6 +57,7 @@ namespace Hecton8.Core.Contracts
     /// <summary>
     /// Last committed dynamic-resolution runtime state, stored without managed payloads.
     /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
     public struct DynamicResolutionRuntimeSnapshot
     {
         public float CurrentRenderScale01;

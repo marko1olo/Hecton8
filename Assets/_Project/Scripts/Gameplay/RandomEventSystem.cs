@@ -68,6 +68,8 @@ namespace Hecton8.Gameplay
         public readonly int AppliedStampCount;
         public readonly Vector3 AupStart;
         public readonly Vector3 AupEnd;
+        public readonly double3 AupStartDouble;
+        public readonly double3 AupEndDouble;
         private readonly byte _hasAupLineSegment;
 
         public bool HasAupLineSegment => _hasAupLineSegment != 0;
@@ -82,8 +84,8 @@ namespace Hecton8.Gameplay
                 impulseRadiusMeters,
                 impulseMagnitude,
                 appliedStampCount,
-                Vector3.zero,
-                Vector3.zero,
+                double3.zero,
+                double3.zero,
                 false)
         {
         }
@@ -100,6 +102,24 @@ namespace Hecton8.Gameplay
                 impulseRadiusMeters,
                 impulseMagnitude,
                 appliedStampCount,
+                ToDouble3(aupStart),
+                ToDouble3(aupEnd),
+                true)
+        {
+        }
+
+        public SeismicShockwaveEvent(
+            Vector3 epicenterWS,
+            float impulseRadiusMeters,
+            float impulseMagnitude,
+            int appliedStampCount,
+            double3 aupStart,
+            double3 aupEnd)
+            : this(
+                epicenterWS,
+                impulseRadiusMeters,
+                impulseMagnitude,
+                appliedStampCount,
                 aupStart,
                 aupEnd,
                 true)
@@ -111,17 +131,29 @@ namespace Hecton8.Gameplay
             float impulseRadiusMeters,
             float impulseMagnitude,
             int appliedStampCount,
-            Vector3 aupStart,
-            Vector3 aupEnd,
+            double3 aupStart,
+            double3 aupEnd,
             bool hasAupLineSegment)
         {
             EpicenterWS = epicenterWS;
             ImpulseRadiusMeters = impulseRadiusMeters;
             ImpulseMagnitude = impulseMagnitude;
             AppliedStampCount = appliedStampCount;
-            AupStart = aupStart;
-            AupEnd = aupEnd;
+            AupStart = ToVector3(aupStart);
+            AupEnd = ToVector3(aupEnd);
+            AupStartDouble = aupStart;
+            AupEndDouble = aupEnd;
             _hasAupLineSegment = hasAupLineSegment ? (byte)1 : (byte)0;
+        }
+
+        private static Vector3 ToVector3(double3 value)
+        {
+            return new Vector3((float)value.x, (float)value.y, (float)value.z);
+        }
+
+        private static double3 ToDouble3(Vector3 value)
+        {
+            return new double3(value.x, value.y, value.z);
         }
     }
 
@@ -1388,15 +1420,15 @@ namespace Hecton8.Gameplay
 
         private static void PublishMeteorSplashFeedback(Vector3 impactPosition, float radius, float intensity)
         {
-            Vector3 absoluteUniversePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(impactPosition);
+            double3 absoluteUniversePosition = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(impactPosition);
             float clampedIntensity = math.saturate(intensity);
             SplashEvent splashEvent = new SplashEvent
             {
                 RuntimePosition = new float3(impactPosition.x, impactPosition.y, impactPosition.z),
                 AbsoluteUniversePosition = new float3(
-                    absoluteUniversePosition.x,
-                    absoluteUniversePosition.y,
-                    absoluteUniversePosition.z),
+                    (float)absoluteUniversePosition.x,
+                    (float)absoluteUniversePosition.y,
+                    (float)absoluteUniversePosition.z),
                 SurfaceNormal = new float3(0f, 1f, 0f),
                 ImpactSpeedMetersPerSecond = math.lerp(18f, 54f, clampedIntensity),
                 KineticEnergyJoules = radius * radius * math.lerp(480f, 3200f, clampedIntensity),
@@ -1634,16 +1666,17 @@ namespace Hecton8.Gameplay
             }
 
             ApplySeismicImpulse(playerPosition, settings.impulseRadius, settings.impulseMagnitude);
-            Vector3 epicenterAup = HectonFloatingOrigin.ToAbsoluteUniversePosition(playerPosition);
+            double3 epicenterAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(playerPosition);
             Vector3 trenchDirection = ResolveSeismicEventLineDirection(epicenterAup, stableSeed);
             float halfTrenchLength = math.max(2f, settings.impulseRadius * 0.5f);
+            double3 trenchDirectionDouble = new double3(trenchDirection.x, trenchDirection.y, trenchDirection.z);
             seismicEvent = new SeismicShockwaveEvent(
                 playerPosition,
                 settings.impulseRadius,
                 settings.impulseMagnitude,
                 appliedStampCount,
-                epicenterAup - trenchDirection * halfTrenchLength,
-                epicenterAup + trenchDirection * halfTrenchLength);
+                epicenterAup - trenchDirectionDouble * halfTrenchLength,
+                epicenterAup + trenchDirectionDouble * halfTrenchLength);
             return true;
         }
 
@@ -1673,10 +1706,10 @@ namespace Hecton8.Gameplay
             }
         }
 
-        private static Vector3 ResolveSeismicEventLineDirection(Vector3 absoluteEpicenter, uint stableSeed)
+        private static Vector3 ResolveSeismicEventLineDirection(double3 absoluteEpicenter, uint stableSeed)
         {
-            uint seedA = unchecked((uint)(int)math.round(absoluteEpicenter.x * 0.25f));
-            uint seedB = unchecked((uint)(int)math.round(absoluteEpicenter.z * 0.25f));
+            uint seedA = FoldLongToUInt(FastRoundToLong(absoluteEpicenter.x * 0.25d));
+            uint seedB = FoldLongToUInt(FastRoundToLong(absoluteEpicenter.z * 0.25d));
             uint state = unchecked(seedA * 747796405u + seedB * 2891336453u + stableSeed);
             state ^= state >> 16;
             state = unchecked(state * 2246822519u);
@@ -1695,6 +1728,31 @@ namespace Hecton8.Gameplay
                 case 6u: return new Vector3(0f, 0f, -1f);
                 default: return new Vector3(InvSqrtTwo, 0f, -InvSqrtTwo);
             }
+        }
+
+        private static uint FoldLongToUInt(long value)
+        {
+            unchecked
+            {
+                ulong bits = (ulong)value;
+                return (uint)bits ^ (uint)(bits >> 32);
+            }
+        }
+
+        private static long FastRoundToLong(double value)
+        {
+            if (!math.isfinite(value))
+                return 0L;
+
+            if (value >= long.MaxValue)
+                return long.MaxValue;
+
+            if (value <= long.MinValue)
+                return long.MinValue;
+
+            return value >= 0d
+                ? (long)(value + 0.5d)
+                : (long)(value - 0.5d);
         }
 
         private void ApplySeismicImpulse(Vector3 epicenter, float radius, float impulseMagnitude)

@@ -78,3 +78,102 @@ Status: VERIFIED AUP INTEGRITY - CORE BUILD PASS; ASMDEF BLOCKED BY ARCHITECTURE
 - Fauna cognition `FloatingOriginOffset` now uses `double3`; remaining `AUPMath.ToRuntimeFloat3(..., float3 offset)` hits are smoke tests or unowned presentation/job payloads.
 - Verify AUP shift consumer coverage across fluid, voxel, world streaming, scatter, foveated simulation, and GPR.
 - Decide whether a future batch may introduce a true `Hecton8.Core.AUP` asmdef; current file placement prevents UnityEngine isolation.
+
+## Loop 14 Runtime Chemical/Wreck Persistent Double Lane
+
+### Findings
+
+- `ChemicalInfluenceGrid` still used float absolute breadcrumb centers and `Vector4` defoliant centers for trigger-distance math after runtime-to-AUP conversion.
+- `ProceduralWreckGenerator` burial cut records stored voxel surgeon absolute box centers as `float3`, then replayed those records into voxel delta processing later.
+- Selected splash, acoustic, and wreck terrain-height callsites still used `HectonFloatingOrigin.ToAbsoluteUniversePosition(Vector3)` instead of the double committed-offset path.
+- `Docs/Tasks/CURRENT_BATCH.md` still does not contain this agent block; the user-supplied XML remains the assignment source.
+
+### Code Changes
+
+- `Assets/_Project/Scripts/World/ChemicalInfluenceGrid.cs`: added `double3 AbsolutePositionDouble` for breadcrumbs and a fixed `double3[64]` defoliant center lane. Breadcrumb merge, scent-grid cell resolution, channel sampling, nearest-waypoint search, and dead-zone checks now subtract in double before final float storage.
+- `Assets/_Project/Scripts/World/AcousticOcclusionUtility.cs`: midpoint SDF occlusion sampling now reconstructs AUP through `ToAbsoluteUniversePositionDouble3` before the final `float3` SDF query payload.
+- `Assets/_Project/Scripts/HectonPlayerMovement.cs`: surface-breach splash publication now builds the AUP payload from a double absolute position before final VFX payload casts.
+- `Assets/_Project/Scripts/SubmarineFluidDynamics.cs`: splash and breach payloads now use double AUP reconstruction; splash LCG hashing folds floored double AUP coordinates as `long` entropy before the final seed mix.
+- `Assets/_Project/Scripts/World/ProceduralWreckGenerator.cs`: terrain-height AUP query and burial cut centers now use double AUP reconstruction. `WreckBurialCutRecord.AbsoluteCenter` is `double3` and still fits the 64-byte record; voxel box crater submission calls the `double3` delta overload.
+
+### Verification
+
+- Mandatory scan re-run: `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'`. Residual hits are broad `universe` text plus final-cast fluid/scatter/shader payload names such as `AupOffsetXZ`; no new Loop 14 authority leak was identified.
+- Direct committed-offset leak scan is clean: no `HectonFloatingOrigin.CurrentTotalOffset` without `Double`, no direct `CurrentTotalOffset.x/y/z`, and no direct legacy `NewTotalOffset`/`PreviousTotalOffset` component reads under `Assets/_Project/Scripts`.
+- Targeted `ToAbsoluteUniversePosition(` scan is clean in `ChemicalInfluenceGrid`, `AcousticOcclusionUtility`, `HectonPlayerMovement`, `SubmarineFluidDynamics`, and `ProceduralWreckGenerator`.
+- `git diff --check` on Loop 14 touched files reports line-ending warnings only, no whitespace errors.
+- `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -v:normal /m:1 /nr:false /p:UseSharedCompilation=false /flp:"logfile=Docs\AgentLogs\AUP_build_loop14b.log;verbosity=normal"` failed with 0 warnings and 60 errors from unrelated active dependency work: `HardwareProfileCatalog`, `SaveMasterHashV10Result`/`SaveFileHeaderV10`, and `SystemID` vs `JobHandle`.
+- Filtered build-log scan for `ChemicalInfluenceGrid`, `SubmarineFluidDynamics`, `HectonPlayerMovement`, `AcousticOcclusionUtility`, `ProceduralWreckGenerator`, and previously upgraded AUP/voxel files returned no errors.
+
+### Evidence Queue
+
+- `ChemicalBreadcrumbWaypoint` now carries double authority while legacy `AbsolutePosition` remains for existing consumers; future AI-facing contracts should migrate to the double field explicitly when ownership allows.
+- Wreck burial cut records are double-safe without a native buffer size increase; any future voxel persistence migration should keep the same final-cast rule.
+- Remaining editor-only `KinematicGhostDebugger` float universe history is diagnostic presentation and not a runtime AUP authority leak.
+
+## Loop 15 Construction/Voxel/Seismic AUP Ingress Cleanup
+
+### Findings
+
+- Construction rupture/decal state, habitat edge midpoint feedback, drone voxel edit dispatch, drill placement probes, meteor splash, and seismic geology replay still had selected legacy `HectonFloatingOrigin.ToAbsoluteUniversePosition(Vector3)` callsites.
+- The high-risk subset was authority or persistent-event math: rupture comparison, voxel DDA ingress, spark AUP payload, seismic trench line/id generation, and geology replay length calculation.
+- `Docs/Tasks/CURRENT_BATCH.md` still does not contain this agent block; the user-supplied XML remains the assignment source.
+
+### Code Changes
+
+- `Assets/_Project/Scripts/Construction/BaseDegradationSystem.cs`: added `RuptureNodeState.AbsoluteUniversePositionDouble`, double comparison helpers, and double rupture/module AUP reconstruction before final decal `Vector3` output.
+- `Assets/_Project/Scripts/Construction/HabitatGraphManager.cs`: edge midpoint publication now reconstructs both sockets as `double3`, averages in double, and projects back to runtime only at the event/VFX boundary.
+- `Assets/_Project/Scripts/HectonVoxelVolume.cs`: added `double3` overloads for `ApplyPlasmaCutDda` and `ApplyRepairWeldDda`; existing `Vector3` overloads now wrap through `ToDouble3`.
+- `Assets/_Project/Scripts/Construction/DroneFleetManager.cs`: repair weld, plasma cut, and repair spark publication now preserve the ray hit as double AUP through voxel and persistent spark payload construction.
+- `Assets/_Project/Scripts/Construction/DeepDrillModule.cs`: placement probe AUP sampling now uses `ToAbsoluteUniversePositionDouble3` and casts only into the existing probe packet.
+- `Assets/_Project/Scripts/Gameplay/RandomEventSystem.cs`: meteor splash AUP sampling now uses the double path; `SeismicShockwaveEvent` carries double AUP line endpoints and folds rounded double coordinates for deterministic seed entropy.
+- `Assets/_Project/Scripts/WorldGenerativeGeologyVoxelBridgeDirector.cs`: seismic trench replay now uses double payload endpoints, double line length, and long-rounded trench ids before final legacy voxel plan casts.
+
+### Verification
+
+- Mandatory scan re-run: `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'`. Residual hits are broad `universe` text plus final-cast fluid/scatter/shader payload names.
+- Direct committed-offset leak scan is clean across `Assets/_Project/Scripts`.
+- Targeted `ToAbsoluteUniversePosition(` scan is clean in `BaseDegradationSystem`, `HabitatGraphManager`, `DroneFleetManager`, `DeepDrillModule`, `HectonVoxelVolume`, `RandomEventSystem`, and `WorldGenerativeGeologyVoxelBridgeDirector`.
+- First Loop 15 build found one local error: `DeepDrillModule.cs` needed `using Unity.Mathematics;`. Fixed.
+- After-fix Core build: `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -v:normal /m:1 /nr:false /p:UseSharedCompilation=false /flp:"logfile=Docs\AgentLogs\AUP_build_loop15_afterfix.log;verbosity=normal"` failed with 0 warnings and 60 unrelated dependency errors: missing `SaveMasterHashV10Result`/`SaveFileHeaderV10`, missing `HardwareProfileCatalog`, and `SystemID` passed where `JobHandle` is expected.
+- Filtered build-log scan for Loop 15 touched files returned no errors.
+- `git diff --check` on Loop 15 touched files reports line-ending warnings only, no whitespace errors.
+
+### Evidence Queue
+
+- Remaining runtime legacy `ToAbsoluteUniversePosition(` callsites are outside this Loop 15 patch and remain queued for classification: crash telemetry fallback, interaction tools, localized signage, player builder/tool, MapMagic/Crest helper surfaces, repair tools, submarine structural grid, spatial audio listener fallback, geology integration planning, and physical UI controls.
+- `Vector3` overloads remain intentionally as compatibility wrappers. Future owning-domain patches should route authority callers to `double3` overloads and leave presentation-only callers documented.
+- Seismic event dual lanes preserve existing consumers while allowing geology replay to stay 64-bit until the final voxel-plan boundary.
+
+## Loop 16 Global Legacy Runtime-To-AUP Cleanup
+
+### Findings
+
+- The remaining `HectonFloatingOrigin.ToAbsoluteUniversePosition(Vector3)` runtime callsites covered interaction/tool packet producers, repair weld/debris payloads, geology planning, crash telemetry fallback, spatial audio listener fallback, submarine leak impact signals, and MapMagic/Crest/scatter/sign/player-builder presentation helpers.
+- Several callsites were true authority or persistent-event math: voxel weld ingress, repair spark AUP, geology retained runtime keys, geology terrain/voxel centers, leak impact signals, and crash telemetry fallback.
+- Presentation-only helper endpoints still needed final-cast discipline so no caller would reduce the committed offset before shader/transform/vector output.
+
+### Code Changes
+
+- `Assets/_Project/Scripts/Interaction/EquipmentInteractionHandler.cs`, `Assets/_Project/Scripts/PlayerTool.cs`, `Assets/_Project/Scripts/Interaction/PhysicalSnapSwitch.cs`, and `Assets/_Project/Scripts/UI/PhysicalPanelButton.cs`: interaction packet origins now use `ToAbsoluteUniversePositionDouble3` and cast once into `float3` packet fields.
+- `Assets/_Project/Scripts/RepairTool.cs`: repair weld DDA and repair spark publication now use double AUP; spark payload builds `AbsoluteUniversePosition` from the double hit point.
+- `Assets/_Project/Scripts/Construction/HabitatConstructionManager.cs`: grid snapping now reconstructs absolute coordinates as double, snaps millimeters in double, and projects runtime output through the double overload.
+- `Assets/_Project/Scripts/WorldGenerativeGeologyIntegrationDirector.cs`: retained and newly built plans now use double AUP for world, terrain, and voxel centers; fallback runtime keys use rounded double millimeters instead of `Vector3.GetHashCode()`.
+- `Assets/_Project/Scripts/SubmarineStructuralGrid.cs` and `Assets/_Project/Scripts/SpatialAudioManager.cs`: leak impact and listener fallback AUP now build from double absolute positions.
+- `Assets/_Project/Scripts/CrashTelemetryBuffer.cs`: player AUP fallback now uses MapMagic double universe space or `ToAbsoluteUniversePositionDouble3` before final telemetry `float3`.
+- `Assets/_Project/Scripts/Plugins/MapMagic/MapMagicRuntimeBridge.cs`, `Assets/_Project/Scripts/Plugins/Crest/HectonCrestOceanDepthCacheBootstrap.cs`, `Assets/_Project/Scripts/WorldProceduralScatterDirectorSpatialHelpers.cs`, `Assets/_Project/Scripts/LocalizedWorldSign.cs`, and `Assets/_Project/Scripts/PlayerBuilder.cs`: presentation helper paths now keep double AUP until shader/transform/`Vector3` boundaries. Localized signs retain a double AUP side lane for origin-shift projection.
+
+### Verification
+
+- Global legacy HFO scan is clean: `rg -n "HectonFloatingOrigin\.ToAbsoluteUniversePosition\(" Assets/_Project/Scripts --glob '*.cs'` returned no hits.
+- Direct committed-offset leak scan remains clean: no legacy `CurrentTotalOffset` reads without `Double`, no direct committed-offset component reads, and no legacy shift offset component reads under `Assets/_Project/Scripts`.
+- Mandatory scan re-run: `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'`. Residual hits are broad `universe` text, editor diagnostics, and final-cast fluid/scatter/shader payload names.
+- `git diff --check` on Loop 16 touched files reports line-ending warnings only, no whitespace errors.
+- Core build: `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -v:normal /m:1 /nr:false /p:UseSharedCompilation=false /flp:"logfile=Docs\AgentLogs\AUP_build_loop16.log;verbosity=normal"` failed with 0 warnings and 74 unrelated errors from residency/power/fauna/core save-layout/hardware-profile/scheduler/gameplay dependency drift.
+- Filtered build-log scan for Loop 16 touched files returned no errors.
+
+### Evidence Queue
+
+- All runtime `HectonFloatingOrigin.ToAbsoluteUniversePosition(` callsites under `Assets/_Project/Scripts` are removed. Remaining text hits are local helper names, editor diagnostics, docs/comments, or final-cast payload names.
+- `InteractionPacket` remains float because it is a shared public contract; future contract migration should add a double/AUP lane rather than mutate existing fields in-place.
+- Geology seam-plan storage remains legacy `Vector3` for consumers; a future world-geometry batch can add explicit double plan fields if downstream consumers are ready.

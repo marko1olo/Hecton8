@@ -390,19 +390,19 @@ namespace Hecton8.Interaction
             if (interactionSignals == null || !interactionSignals.IsInitialized || !IsFiniteVector(handPosition))
                 return;
 
-            Vector3 absoluteHitPoint = HectonFloatingOrigin.ToAbsoluteUniversePosition(handPosition);
+            double3 absoluteHitPoint = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(handPosition);
             Vector3 fallbackForward = _cachedTransform != null ? _cachedTransform.forward : Vector3.forward;
             if (!IsFiniteVector(fallbackForward))
                 fallbackForward = Vector3.forward;
 
             Vector3 safeDirection = NormalizeVectorApproxNoSqrt(handForward, fallbackForward);
-            if (!IsFiniteVector(absoluteHitPoint) || !IsFiniteVector(safeDirection))
+            if (!math.all(math.isfinite(absoluteHitPoint)) || !IsFiniteVector(safeDirection))
                 return;
 
             float signalRange = math.abs(ResolveSafeOnAngleDegrees() - ResolveSafeOffAngleDegrees());
             InteractionPacket packet = new InteractionPacket(
                 PhysicalSwitchToolId,
-                (float3)absoluteHitPoint,
+                new float3((float)absoluteHitPoint.x, (float)absoluteHitPoint.y, (float)absoluteHitPoint.z),
                 (float3)safeDirection,
                 _isOn ? 1f : 0.5f,
                 signalRange,
@@ -412,7 +412,7 @@ namespace Hecton8.Interaction
             InteractionSignal signal = new InteractionSignal(
                 packet,
                 0,
-                (float3)absoluteHitPoint,
+                new float3((float)absoluteHitPoint.x, (float)absoluteHitPoint.y, (float)absoluteHitPoint.z),
                 (float3)(-safeDirection),
                 _isOn ? 1f : 0.5f,
                 (byte)InteractionEffectType.Drill,

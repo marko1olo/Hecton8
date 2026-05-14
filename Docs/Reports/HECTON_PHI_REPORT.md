@@ -177,3 +177,166 @@ Compile status:
 - `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal` failed with 72 Core errors outside the changed save codec files.
 - Representative blockers: unresolved existing `HardwareProfileCatalog`, `SaveMasterHashV10Result`, `SaveFileHeaderV10`, `SaveMasterHashV10`; unrelated `VoxelDeltaProcessor` double/float and `FastFloorToInt` errors.
 - Runtime H-Phi remains `PENDING VERIFICATION` until Unity Console, PlayMode, Profiler, and GCMonitor evidence exist.
+
+## 2026-05-14 Live Addendum 3
+
+Evidence class: `STATIC_SOURCE`.
+
+Correction: the H-Phi audit tool now counts Unity update cadence by method declaration only. The previous restored scan counted comments, editor calls, and scanner string literals as `Update()` methods.
+
+Corrected static scores:
+
+| Coefficient | Score |
+|---|---:|
+| Narrow integration | 1.000000000 |
+| Risk-adjusted integration | 0.011785768 |
+| Architectural purity | 0.994871795 |
+| Data sovereignty | 0.002010993 |
+| Memory alignment | 0.439215686 |
+| Binary-safe ratio | 0.016176471 |
+| H-Phi static narrow | 0.000878730 |
+| H-Phi static risk-adjusted | 0.000010357 |
+
+Corrected comparison:
+- Original dialogue baseline: `0.00062`.
+- Current corrected narrow score: `0.000878730`, about `+41.73%` versus baseline.
+- Actual first-party Unity update method declarations in this scan: `3`, all in Core territory.
+- Data Sovereignty remains the dominant bottleneck: `GlobalDataVault` refs `15` versus `NativeArray<T>` refs `7,444`.
+
+## 2026-05-15 Live Addendum 4
+
+Evidence class: `STATIC_SOURCE`.
+
+User constraint for this pass: no `dotnet build` and no rebuild. Verification is therefore limited to source scans and diff hygiene.
+
+Metric model correction:
+- Runtime H-Phi now excludes `Assets/_Project/Scripts/**/Editor/**`.
+- Runtime H-Phi strips `#if UNITY_EDITOR` blocks inside runtime files.
+- All-source counts remain in the JSON output as hygiene evidence; they are not used as shipped runtime score.
+
+Current runtime static scores:
+
+| Coefficient | Score |
+|---|---:|
+| Narrow integration | 1.000000000 |
+| Risk-adjusted integration | 0.012591648 |
+| Architectural purity | 0.994614004 |
+| Data sovereignty | 0.002143470 |
+| Memory alignment | 0.464893617 |
+| Binary-safe ratio | 0.017553191 |
+| H-Phi runtime static narrow | 0.000991118 |
+| H-Phi runtime static risk-adjusted | 0.000012480 |
+
+Current runtime counts:
+
+| Counter | Value |
+|---|---:|
+| Runtime C# files | 1,275 |
+| Runtime source lines | 851,872 |
+| `SignalBus<T>.Push` | 79 |
+| `GlobalRegistry.Get<T>` | 0 |
+| `GlobalRegistry.` surface refs | 5,168 |
+| `Publish(...)` surface refs | 448 |
+| Unity `Update`/`LateUpdate`/`FixedUpdate` method declarations | 3 |
+| `GlobalDataVault` refs | 15 |
+| `NativeArray<T>` refs | 6,983 |
+| Struct declarations | 1,880 |
+| `StructLayout(...)` attrs | 874 |
+| `BinaryBlittableSafe` refs | 33 |
+| Runtime `Find*` calls | 5 |
+| Runtime `GetComponent*` calls | 543 |
+
+What changed in this pass:
+- `Tools/Architecture/HectonPhiAudit.ps1` now reports runtime, all-source, and editor-only score sections.
+- Removed five scene-wide runtime singleton discovery scans from:
+  - `HardwareThermalService`
+  - `AnalyticalCausticsService`
+  - `LootMagnetSystem`
+  - `InternalFloodWaterlineRuntime`
+  - `MaterialDecayRuntime`
+
+Comparison:
+- Original dialogue baseline: `0.00062`.
+- Previous corrected static narrow score: `0.000878730`.
+- Current runtime static narrow score: `0.000991118`.
+- Current runtime static narrow vs original baseline: about `+59.86%`.
+- Current runtime static narrow vs previous corrected score: about `+12.79%`; this includes a model correction, so it is not a pure code-only gain.
+- Current all-source static narrow score: `0.000882815`, retained for hygiene trend continuity.
+
+Residual bottlenecks:
+- Data Sovereignty remains the hard floor: `GlobalDataVault` refs `15` vs runtime `NativeArray<T>` refs `6,983`.
+- Memory alignment remains mid-grade: runtime `StructLayout` ratio `874 / 1,880 = 0.464893617`.
+- Remaining runtime `Find*` debt is concentrated in bootstrap/scene handoff:
+  - `GameBootstrapper`
+  - `HectonUrpShadowBudgetGuard`
+  - `VRSomaticRuntimeBootstrap`
+- `HectonUnderwaterVisuals` still has a textual `FindObjectsByType` hit, but it is inside `#if UNITY_EDITOR` and is excluded from runtime H-Phi.
+
+Verification:
+- `Tools/Architecture/HectonPhiAudit.ps1 -Json`: completed at local timestamp `2026-05-15 00:10:29 +04:00`.
+- `git diff --check` on touched files: no whitespace errors; LF/CRLF warnings only.
+- Runtime H-Phi remains `PENDING VERIFICATION` until Unity Console, PlayMode, Profiler, and GCMonitor evidence exist.
+
+## 2026-05-15 Live Addendum 5
+
+Evidence class: `STATIC_SOURCE`.
+
+User constraint for this pass: no `dotnet build` and no rebuild.
+
+Current runtime static scores after DTO/contract layout pass:
+
+| Coefficient | Score |
+|---|---:|
+| Narrow integration | 1.000000000 |
+| Risk-adjusted integration | 0.012597672 |
+| Architectural purity | 0.994614004 |
+| Data sovereignty | 0.002141939 |
+| Memory alignment | 0.483253589 |
+| Binary-safe ratio | 0.017543860 |
+| H-Phi runtime static narrow | 0.001029525 |
+| H-Phi runtime static risk-adjusted | 0.000012970 |
+
+Current runtime counts:
+
+| Counter | Value |
+|---|---:|
+| Runtime C# files | 1,275 |
+| Runtime source lines | 852,599 |
+| `SignalBus<T>.Push` | 79 |
+| `GlobalRegistry.Get<T>` | 0 |
+| `GlobalRegistry.` surface refs | 5,165 |
+| `Publish(...)` surface refs | 448 |
+| Unity `Update`/`LateUpdate`/`FixedUpdate` method declarations | 3 |
+| `GlobalDataVault` refs | 15 |
+| `NativeArray<T>` refs | 6,988 |
+| Struct declarations | 1,881 |
+| `StructLayout(...)` attrs | 909 |
+| `BinaryBlittableSafe` refs | 33 |
+| Runtime `Find*` calls | 5 |
+| Runtime `GetComponent*` calls | 543 |
+
+What changed in this pass:
+- Added explicit sequential layout metadata to public `SaveData.cs` DTO structs that lacked it.
+- Added explicit sequential layout metadata to remaining public `Core/Contracts` structs.
+- Did not add fake binary-safe tags to managed/reference DTOs.
+- Did not change field order, pack, explicit size, serializer stride, registry API, or binary save format.
+
+Comparison:
+- Original dialogue baseline: `0.00062`.
+- Previous runtime static narrow score: `0.000991118`.
+- Current runtime static narrow score: `0.001029525`.
+- Current runtime static narrow vs original baseline: about `+66.05%`.
+- Current runtime static narrow vs previous runtime score: about `+3.88%`.
+- Current all-source static narrow score: `0.000916234`.
+
+Residual bottlenecks:
+- Data Sovereignty remains the hard floor: `GlobalDataVault` refs `15` vs runtime `NativeArray<T>` refs `6,988`.
+- Binary-safe ratio remains low: `33 / 1,881 = 0.017543860`.
+- Remaining runtime `Find*` debt still belongs to bootstrap/scene handoff and needs owner/integrator evidence before edits.
+
+Verification:
+- `Tools/Architecture/HectonPhiAudit.ps1 -Json`: completed at local timestamp `2026-05-15 00:28:23 +04:00`.
+- Public `SaveData.cs` DTO layout scan: no missing `StructLayout` output.
+- Public/internal `Core/Contracts` struct layout scan: no missing `StructLayout` output.
+- `git diff --check` on touched files: no whitespace errors; LF/CRLF warnings only.
+- Runtime H-Phi remains `PENDING VERIFICATION` until Unity Console, PlayMode, Profiler, and GCMonitor evidence exist.

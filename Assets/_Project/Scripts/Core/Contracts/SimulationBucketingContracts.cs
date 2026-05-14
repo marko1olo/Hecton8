@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using Unity.Collections;
 using Unity.Mathematics;
 
@@ -50,6 +51,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Lightweight frame snapshot emitted by the simulation bucketer and black-box telemetry.
     /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
     public struct SimulationBucketFrameState
     {
         /// <summary>Monotonic frame count owned by the bucketer, independent of Unity frame wrapping.</summary>

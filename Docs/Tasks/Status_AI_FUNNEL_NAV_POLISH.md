@@ -93,11 +93,20 @@ Task Count: 15
 - [x] Managed fallback vector sanitation | DOD: `NormalizeVector3Fast` now finite-checks primary/fallback vectors and normalizes fallback with `math.rsqrt`; rejected raw fallback propagation; estimate 4 us.
 - [x] Portal finite sanitation | DOD: `BuildNavPortal` now rejects whole non-finite portal endpoints and clamps non-finite width squared to epsilon; rejected component-spliced portal endpoints; estimate 4 us.
 
+## Loop 13 - H-Phi Feeder Hardening
+
+- [x] Re-read A* feeder path | DOD: inspected `NativeAStarJob` threat, conduit, and predator fear sampling before editing; rejected polishing funnel output while leaving upstream cost corruption; estimate 13 us.
+- [x] Native A* reciprocal purge | DOD: removed raw `/` from `NativeAStarJob` conduit direction, 2D threat-grid sampling, predator falloff, and threat-voxel decode; rejected relying on compiler divide lowering; estimate 9 us.
+- [x] Feeder finite guards | DOD: conduit vectors/strengths, node positions, threat grid center/cell size, predator nodes, threat voxel origin/cell size now reject non-finite payloads; rejected NaN propagation into path costs; estimate 8 us.
+- [x] Threat payload completeness guards | DOD: surface threat and voxel threat grids now require complete native lengths with 64-bit expected-size checks before indexed sampling; rejected treating undersized payloads as valid open water; estimate 6 us.
+- [x] Predator fear retention | DOD: predator fear is preserved when a point is outside the 2D surface threat grid; rejected dropping species-specific fear just because the surface heatmap lacks coverage; estimate 4 us.
+
 ## Verification
 
-- [x] Static scan | PASS: `StringPullPathJob` and `TryResolveAbyssalNavNodeCandidate` regions have no `math.normalize`, `math.length(`, `math.distance(`, `.normalized`, or raw `/` matches after loop 12.
+- [x] Static scan | PASS: `StringPullPathJob`, `NativeAStarJob`, and `TryResolveAbyssalNavNodeCandidate` regions have no `math.normalize`, `math.length(`, `math.distance(`, `.normalized`, or raw `/` matches after loop 13.
 - [x] Diff hygiene | PASS: `git diff --check` passed for edited funnel/scheduler/status/log files; only LF-to-CRLF working-copy warnings were emitted.
 - [x] Compile check | BLOCKED BY DEPENDENCY: bounded no-reference `dotnet build Hecton8.Core.csproj --no-restore /m:1 /nr:false /p:BuildProjectReferences=false` completed with 63 unrelated errors in `VRAMEnforcer`, `VoxelDeltaProcessor`, `SealedDoor`, `BinaryLayoutManifest`, and `HardwareTierDetector`; none were reported in `VegetationFlowFieldIntegrator.cs`, `VegetationNavGridSynchronizer.cs`, or `HectonMapMagicVegetationBridge.cs`.
+- [x] Dotnet rebuilds | NOT RERUN AFTER LOOP 13: user explicitly prohibited dotnet rebuilds; static scans and diff hygiene only.
 - [x] PlayMode test assembly build | NOT RERUN AFTER LOOP 12: Core source build is currently blocked by unrelated global dependency errors.
 - [x] Unity console | BLOCKED BY TOOLING: Unity MCP `validate_script` transport failed against `http://127.0.0.1:8088/mcp`.
 - [x] Omega polish mandate | COMPLETE WITH PENDING VERIFICATION: static funnel checks pass; current Core/Unity validation is blocked by unrelated global compile errors and MCP transport.

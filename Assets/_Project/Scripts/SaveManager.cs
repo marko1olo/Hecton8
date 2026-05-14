@@ -185,6 +185,7 @@ namespace Hecton8.SaveSystem
         private IMacroDatabaseService _macroDatabaseService;
         private IDataVault _dataVault;
         private bool _hasLastWfcOutpostSnapshot;
+        private bool _wfcOutpostDependenciesReady;
         private ulong _expectedIntegrityPayloadHash64;
         private int _integrityPayloadLength;
         private bool _updatableRegistered;
@@ -508,6 +509,7 @@ namespace Hecton8.SaveSystem
             _lastWfcOutpostPayloadHash = 0UL;
             _wfcOutpostMutableGridSectorHash = 0UL;
             _hasLastWfcOutpostSnapshot = false;
+            _wfcOutpostDependenciesReady = false;
 
             DisposeIntegrityResources();
         }
@@ -561,6 +563,16 @@ namespace Hecton8.SaveSystem
         }
 
         public unsafe bool TryPersistWfcOutpostStateSnapshot(
+            ulong sectorHash,
+            NativeArray<byte> wfcGrid,
+            uint frame,
+            out WfcOutpostPersistenceStatus status)
+        {
+            RefreshWfcOutpostDependencies();
+            return TryPersistWfcOutpostStateSnapshotInternal(sectorHash, wfcGrid, frame, out status);
+        }
+
+        private unsafe bool TryPersistWfcOutpostStateSnapshotInternal(
             ulong sectorHash,
             NativeArray<byte> wfcGrid,
             uint frame,
@@ -637,6 +649,7 @@ namespace Hecton8.SaveSystem
             NativeArray<byte> wfcGrid,
             out WfcOutpostPersistenceStatus status)
         {
+            RefreshWfcOutpostDependencies();
             status = WfcOutpostPersistenceStatus.None;
             if (sectorHash == 0UL)
             {
@@ -875,18 +888,15 @@ namespace Hecton8.SaveSystem
         {
             _macroDatabaseService = GlobalRegistry.MacroDatabase;
             _dataVault = GlobalRegistry.DataVault;
+            _wfcOutpostDependenciesReady = _macroDatabaseService != null &&
+                                           _macroDatabaseService.IsOpen &&
+                                           _dataVault != null;
             TryEnsureWfcOutpostGrid(out _);
         }
 
         private bool TryResolveWfcOutpostMacroDatabase(out IMacroDatabaseService macroDatabase)
         {
             macroDatabase = _macroDatabaseService;
-            if (macroDatabase == null || !macroDatabase.IsOpen)
-            {
-                RefreshWfcOutpostDependencies();
-                macroDatabase = _macroDatabaseService;
-            }
-
             return macroDatabase != null && macroDatabase.IsOpen;
         }
 
@@ -896,12 +906,9 @@ namespace Hecton8.SaveSystem
             IDataVault dataVault = _dataVault;
             if (dataVault == null)
             {
-                dataVault = GlobalRegistry.DataVault;
-                _dataVault = dataVault;
-            }
-
-            if (dataVault == null)
+                _wfcOutpostDependenciesReady = false;
                 return false;
+            }
 
             wfcGrid = dataVault.GetBuffer<byte>(
                 BufferID.WfcOutpostGrid,
@@ -912,6 +919,7 @@ namespace Hecton8.SaveSystem
             if (!IsValidWfcOutpostGrid(wfcGrid))
             {
                 _wfcOutpostGrid = default;
+                _wfcOutpostDependenciesReady = false;
                 return false;
             }
 
@@ -1037,6 +1045,15 @@ namespace Hecton8.SaveSystem
                 if (_slowTickSequence == int.MinValue)
                     _slowTickSequence = 0;
             }
+
+            if (!_wfcOutpostDependenciesReady ||
+                _macroDatabaseService == null ||
+                !_macroDatabaseService.IsOpen ||
+                _dataVault == null ||
+                !_wfcOutpostGrid.IsCreated)
+            {
+                RefreshWfcOutpostDependencies();
+            }
         }
 
         public void FrostTick()
@@ -1116,7 +1133,7 @@ namespace Hecton8.SaveSystem
                 if (dirtySectorHash != signal.SectorHash)
                 {
                     if (hasDirtySector)
-                        TryPersistWfcOutpostStateSnapshot(dirtySectorHash, wfcGrid, dirtyFrame, out _);
+                        TryPersistWfcOutpostStateSnapshotInternal(dirtySectorHash, wfcGrid, dirtyFrame, out _);
 
                     dirtySectorHash = signal.SectorHash;
                     hasDirtySector = false;
@@ -1130,7 +1147,7 @@ namespace Hecton8.SaveSystem
             }
 
             if (hasDirtySector)
-                TryPersistWfcOutpostStateSnapshot(dirtySectorHash, wfcGrid, dirtyFrame, out _);
+                TryPersistWfcOutpostStateSnapshotInternal(dirtySectorHash, wfcGrid, dirtyFrame, out _);
         }
 
         private void DrainWfcSectorHydratedSignals()

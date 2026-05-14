@@ -51,6 +51,8 @@ namespace Hecton8.Graphics.Caustics
         private static readonly int _OceanSurfaceWave2BId = Shader.PropertyToID("_HectonOceanSurfaceWave2B");
         private static readonly int _OceanSurfaceWaveMetaId = Shader.PropertyToID("_HectonOceanSurfaceWaveMeta");
 
+        private static AnalyticalCausticsService s_runtimeInstance;
+
         [Header("Projection")]
         [Tooltip("World-space square meters covered by the analytical caustics map.")]
         [SerializeField, Min(32f)] private float worldSizeMeters = DefaultWorldSizeMeters;
@@ -99,6 +101,12 @@ namespace Hecton8.Graphics.Caustics
         public bool IsServiceReady => _isInitialized;
         public int TickCount => _tickCount;
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            s_runtimeInstance = null;
+        }
+
         /// <summary>
         /// Injects the compute shader from bootstrap or scene-owned serialized references.
         /// </summary>
@@ -119,9 +127,8 @@ namespace Hecton8.Graphics.Caustics
             if (GlobalRegistry.Caustics is AnalyticalCausticsService runtime)
                 return runtime;
 
-            AnalyticalCausticsService existing = Object.FindAnyObjectByType<AnalyticalCausticsService>();
-            if (existing != null)
-                return existing;
+            if (s_runtimeInstance != null)
+                return s_runtimeInstance;
 
             GameObject runtimeRoot = new GameObject("[AnalyticalCausticsService]"); // COLD ALLOC: GameObject[1] - bootstrap-owned analytical caustics root - owner: AnalyticalCausticsService
             return runtimeRoot.AddComponent<AnalyticalCausticsService>();
@@ -209,11 +216,25 @@ namespace Hecton8.Graphics.Caustics
 
         private void Awake()
         {
+            if (s_runtimeInstance != null && !ReferenceEquals(s_runtimeInstance, this))
+            {
+                Destroy(gameObject);
+                return;
+            }
+
+            s_runtimeInstance = this;
             EnsureSingletonOwnership();
         }
 
         private void OnEnable()
         {
+            if (s_runtimeInstance != null && !ReferenceEquals(s_runtimeInstance, this))
+            {
+                Destroy(gameObject);
+                return;
+            }
+
+            s_runtimeInstance = this;
             if (_isInitialized)
             {
                 TryRegisterLateFrame();
@@ -230,6 +251,8 @@ namespace Hecton8.Graphics.Caustics
             TryUnregisterOriginShift();
             if (ReferenceEquals(GlobalRegistry.Caustics, this))
                 GlobalRegistry.UnregisterCausticsService(this);
+            if (ReferenceEquals(s_runtimeInstance, this))
+                s_runtimeInstance = null;
             _isComputeActive = false;
             PublishDisabledGlobals();
             ReleaseComputeOnlyResources();
@@ -764,6 +787,8 @@ namespace Hecton8.Graphics.Caustics
             TryUnregisterOriginShift();
             if (ReferenceEquals(GlobalRegistry.Caustics, this))
                 GlobalRegistry.UnregisterCausticsService(this);
+            if (ReferenceEquals(s_runtimeInstance, this))
+                s_runtimeInstance = null;
 
             ReleaseComputeOnlyResources();
 

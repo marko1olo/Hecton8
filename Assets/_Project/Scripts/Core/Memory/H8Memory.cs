@@ -82,6 +82,7 @@ namespace Hecton8.Core.Memory
         Vault = 1 << 2,
         Alias = 1 << 3,
         Freed = 1 << 4,
+        // Reserved compatibility bit. Live DataVault descriptors do not set relocation ownership.
         Relocatable = 1 << 5,
         SubAllocatorRoot = 1 << 6
     }
@@ -283,18 +284,26 @@ namespace Hecton8.Core.Memory
         /// <summary>
         /// Releases a native array allocated by <see cref="Allocate{T}"/> and removes it from the leak tracker.
         /// </summary>
+        [Obsolete("Use Release(ref NativeArray<T>, SystemID) so tracked memory is freed by its recorded owner.", true)]
         public static void Release<T>(ref NativeArray<T> array) where T : struct
+        {
+            Release(ref array, SystemID.Unknown);
+        }
+
+        /// <summary>
+        /// Releases a native array only when the caller matches the recorded allocation owner.
+        /// </summary>
+        public static void Release<T>(ref NativeArray<T> array, SystemID owner) where T : struct
         {
             if (!array.IsCreated)
                 return;
+            if (owner == SystemID.Unknown)
+                FatalMemoryException.ThrowUnknownFreeOwner();
             if (!_initialized)
-            {
-                array = default;
-                return;
-            }
+                FatalMemoryException.ThrowUntrackedPointer();
 
             void* pointer = NativeArrayUnsafeUtility.GetUnsafePtr(array);
-            UnregisterPointer(pointer);
+            UnregisterPointer(pointer, owner);
             array.Dispose();
             array = default;
         }
@@ -302,18 +311,26 @@ namespace Hecton8.Core.Memory
         /// <summary>
         /// Defers native-array disposal behind an active job dependency and retires leak ownership immediately.
         /// </summary>
+        [Obsolete("Use Release(ref NativeArray<T>, JobHandle, SystemID) so tracked memory is freed by its recorded owner.", true)]
         public static JobHandle Release<T>(ref NativeArray<T> array, JobHandle dependency) where T : struct
+        {
+            return Release(ref array, dependency, SystemID.Unknown);
+        }
+
+        /// <summary>
+        /// Defers native-array disposal behind an active job dependency when the caller matches the recorded owner.
+        /// </summary>
+        public static JobHandle Release<T>(ref NativeArray<T> array, JobHandle dependency, SystemID owner) where T : struct
         {
             if (!array.IsCreated)
                 return dependency;
+            if (owner == SystemID.Unknown)
+                FatalMemoryException.ThrowUnknownFreeOwner();
             if (!_initialized)
-            {
-                array = default;
-                return dependency;
-            }
+                FatalMemoryException.ThrowUntrackedPointer();
 
             void* pointer = NativeArrayUnsafeUtility.GetUnsafePtr(array);
-            UnregisterPointer(pointer);
+            UnregisterPointer(pointer, owner);
             JobHandle disposeHandle = array.Dispose(dependency);
             array = default;
             return disposeHandle;
@@ -404,6 +421,7 @@ namespace Hecton8.Core.Memory
         /// <summary>
         /// Legacy raw free entry point. Tracked memory must use the owner-tagged overload.
         /// </summary>
+        [Obsolete("Use FreeRaw(pointer, allocator, SystemID) so tracked memory is freed by its recorded owner.", true)]
         public static void FreeRaw(void* pointer, Allocator allocator)
         {
             FreeRaw(pointer, allocator, SystemID.Unknown);
@@ -414,8 +432,12 @@ namespace Hecton8.Core.Memory
         /// </summary>
         public static void FreeRaw(void* pointer, Allocator allocator, SystemID requester)
         {
-            if (pointer == null || !_initialized)
+            if (pointer == null)
                 return;
+            if (requester == SystemID.Unknown)
+                FatalMemoryException.ThrowUnknownFreeOwner();
+            if (!_initialized)
+                FatalMemoryException.ThrowUntrackedPointer();
 
             UnregisterPointer(pointer, requester);
             UnsafeUtility.Free(pointer, allocator);

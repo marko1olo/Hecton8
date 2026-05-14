@@ -379,6 +379,9 @@ namespace Hecton8.Gameplay
         /// </summary>
         public void Lock()
         {
+            if (_state == DoorState.Opened)
+                return;
+
             _state = DoorState.Locked;
             StopCutting();
             SetWfcOutpostFlags((byte)(_wfcOutpostFlags & ~WfcDoorUnlockedFlag), (uint)Time.frameCount);

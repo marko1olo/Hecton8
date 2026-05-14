@@ -3805,8 +3805,12 @@ namespace Hecton8.Audio
                 return true;
             }
 
-            listenerAbsolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(listenerRuntimePosition);
-            listenerAup = AbsoluteUniversePosition.FromRuntimePosition(listenerRuntimePosition);
+            double3 listenerAbsolutePositionDouble = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(listenerRuntimePosition);
+            listenerAbsolutePosition = new Vector3(
+                (float)listenerAbsolutePositionDouble.x,
+                (float)listenerAbsolutePositionDouble.y,
+                (float)listenerAbsolutePositionDouble.z);
+            listenerAup = AbsoluteUniversePosition.FromAbsolutePosition(listenerAbsolutePositionDouble);
             return true;
         }
 

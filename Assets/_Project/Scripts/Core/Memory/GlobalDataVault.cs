@@ -65,16 +65,16 @@ namespace Hecton8.Core.Memory
         /// <summary>Returns a persistent buffer view, growing the vault buffer when required.</summary>
         NativeArray<T> GetBuffer<T>(BufferID bufferId, int requiredLength, SystemID requester, NativeArrayOptions options = NativeArrayOptions.ClearMemory) where T : struct;
 
-        /// <summary>Returns a relocatable handle for a persistent buffer, growing the vault buffer when required.</summary>
+        /// <summary>Returns a generation-checked handle for a persistent buffer, growing the vault buffer when required.</summary>
         VaultBufferHandle<T> GetBufferHandle<T>(BufferID bufferId, int requiredLength, SystemID requester, NativeArrayOptions options = NativeArrayOptions.ClearMemory) where T : struct;
 
         /// <summary>Attempts to read an existing buffer without creating or growing it.</summary>
         bool TryGetBuffer<T>(BufferID bufferId, out NativeArray<T> buffer) where T : struct;
 
-        /// <summary>Attempts to read an existing relocatable handle without creating or growing it.</summary>
+        /// <summary>Attempts to read an existing generation-checked handle without creating or growing it.</summary>
         bool TryGetBufferHandle<T>(BufferID bufferId, out VaultBufferHandle<T> handle) where T : struct;
 
-        /// <summary>Validates a relocatable handle; stale cached metadata fails fast.</summary>
+        /// <summary>Validates a generation-checked handle; stale cached metadata fails fast.</summary>
         bool ResolveBuffer<T>(ref VaultBufferHandle<T> handle) where T : struct;
 
         /// <summary>Attempts to read the current generation for a buffer.</summary>
@@ -83,7 +83,7 @@ namespace Hecton8.Core.Memory
         /// <summary>Returns a read-only alias over an existing buffer.</summary>
         NativeArray<T>.ReadOnly CreateAlias<T>(BufferID bufferId, SystemID requester) where T : struct;
 
-        /// <summary>Locks a buffer against relocation while an external job owns its pointer.</summary>
+        /// <summary>Locks a buffer while an external job owns its pointer.</summary>
         bool TryLockBuffer(BufferID bufferId);
 
         /// <summary>Unlocks a previously locked buffer.</summary>
@@ -106,7 +106,7 @@ namespace Hecton8.Core.Memory
     }
 
     /// <summary>
-    /// Relocatable vault buffer handle. Resolve before dereferencing across frames.
+    /// Generation-checked vault buffer handle. Resolve before dereferencing across frames.
     /// </summary>
     /// <typeparam name="T">Blittable element type.</typeparam>
     [StructLayout(LayoutKind.Sequential)]
@@ -282,7 +282,6 @@ namespace Hecton8.Core.Memory
         private const long DefaultArenaBytes = 128L * 1024L * 1024L;
         private const float FragmentationRatioThreshold = 0.15f;
         private const long MassiveMoveThresholdBytes = 50L * 1024L * 1024L;
-        private const int RelocationRecordCapacity = 64;
         internal const byte BlockStateFree = 0;
         internal const byte BlockStateOccupied = 1;
         private const byte BlockFlagExternalView = 1 << 0;
@@ -301,7 +300,6 @@ namespace Hecton8.Core.Memory
         private NativeList<VaultArenaBlock> _blocks;
         private NativeArray<MemoryDefragTelemetryEntry> _defragBlackBox;
         private NativeArray<VaultGapAuditResult> _gapAuditResult;
-        private NativeArray<VaultRelocationRecord> _lastRelocationRecords;
         private NativeParallelHashMap<ulong, MacroDatabasePayloadHandle> _macroDatabasePayloadCache;
         private NativeList<ulong> _macroDatabasePayloadKeys;
         private void* _arenaBase;
@@ -406,10 +404,6 @@ namespace Hecton8.Core.Memory
                 1,
                 Allocator.Persistent,
                 NativeArrayOptions.ClearMemory);
-            _lastRelocationRecords = new NativeArray<VaultRelocationRecord>(
-                RelocationRecordCapacity,
-                Allocator.Persistent,
-                NativeArrayOptions.ClearMemory);
             _macroDatabasePayloadCache = new NativeParallelHashMap<ulong, MacroDatabasePayloadHandle>(safeCapacity, Allocator.Persistent);
             _macroDatabasePayloadKeys = new NativeList<ulong>(safeCapacity, Allocator.Persistent);
             _arenaBytes = AlignUp(DefaultArenaBytes, VaultBlockAlignment);
@@ -468,6 +462,8 @@ namespace Hecton8.Core.Memory
         {
             if (requiredLength <= 0)
                 return default;
+            if (requester == SystemID.Unknown)
+                FatalMemoryException.ThrowUnknownAllocationOwner();
 
             EnsureInitialized();
             if (_compactionFence != 0)
@@ -549,7 +545,7 @@ namespace Hecton8.Core.Memory
                 BlockIndex = blockIndex,
                 OffsetBytes = _blocks[blockIndex].OffsetBytes,
                 Bytes = requiredBytes,
-                Owner = requester == SystemID.Unknown ? SystemID.CoreDataVault : requester,
+                Owner = requester,
                 Allocator = Allocator.Persistent,
                 Version = 1u
             };
@@ -803,16 +799,8 @@ namespace Hecton8.Core.Memory
         public bool TryGetLastRelocationRecord(int index, out VaultRelocationRecord record)
         {
             record = default;
-            if (!_lastRelocationRecords.IsCreated ||
-                index < 0 ||
-                index >= _lastRelocationRecordCount ||
-                index >= _lastRelocationRecords.Length)
-            {
-                return false;
-            }
-
-            record = _lastRelocationRecords[index];
-            return true;
+            _ = index;
+            return false;
         }
 
         /// <inheritdoc />
@@ -1066,10 +1054,6 @@ namespace Hecton8.Core.Memory
             if (_gapAuditResult.IsCreated)
             {
                 _gapAuditResult.Dispose();
-            }
-            if (_lastRelocationRecords.IsCreated)
-            {
-                _lastRelocationRecords.Dispose();
             }
             _allocatedBytes = 0L;
             _arenaBytes = 0L;
@@ -1651,7 +1635,7 @@ namespace Hecton8.Core.Memory
 
         private BlockDescriptor BuildDescriptor(in VaultArenaBlock block)
         {
-            ushort flags = (ushort)(H8AllocationFlags.Raw | H8AllocationFlags.Vault | H8AllocationFlags.Relocatable);
+            ushort flags = (ushort)(H8AllocationFlags.Raw | H8AllocationFlags.Vault);
             BlockDescriptor descriptor = default;
             descriptor.BasePointer = (IntPtr)_arenaBase;
             descriptor.OffsetBytes = block.OffsetBytes;

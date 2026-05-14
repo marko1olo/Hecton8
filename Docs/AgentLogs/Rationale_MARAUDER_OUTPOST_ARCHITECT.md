@@ -185,3 +185,85 @@ Solution: Re-ran `Hecton8.World.Outposts` response-file compile, scoped forbidde
 Rejected Alternatives: Relying on prior Loop 10 proof was rejected because the source file has already drifted under concurrent edits.
 Scalability potential: Verification covers the same Low/Middle/High/Ultra source path.
 Hardware Impact: Verification only.
+
+## LOOP 12 FAULT BACKOFF AND BLACKBOX FORMAT
+
+Problem: A handleless generated state after `WfcOutpostGridRegistry.RegisterGrid` failure could retry the publish path every Tick, which would repeatedly write fault telemetry and dump the blackbox.
+Solution: Keep replay frames at zero but arm the existing 60-frame generated-signal heartbeat as a retry backoff. The system still retries from the authoritative native WFC byte grid, but only at bounded cadence.
+Rejected Alternatives: Per-frame retry/dump was rejected because the failure path includes file I/O and can bury the actual first fault. Marking the outpost permanently dead was rejected because registry capacity may recover after another system releases handles.
+Scalability potential: Low/Middle/High/Ultra share the same retry policy. Low avoids fault-path I/O spikes on weak storage; Ultra can still recover without re-solving WFC.
+Hardware Impact: On i3/MX350-class hardware this removes repeated fault-path disk writes and registry work during the failed window. Normal-frame impact stays one integer countdown, 0 B/frame.
+
+Problem: The 300-frame blackbox dump wrote only length/write-index plus physical ring order, which forced postmortem tools to infer format and chronology.
+Solution: Add a binary header with magic, version, entry payload size, and start index, then serialize entries oldest-to-newest from `_telemetryWriteIndex`.
+Rejected Alternatives: Raw `NativeArray` block dumping was rejected because struct padding and platform layout make the file harder to read consistently. Keeping physical order was rejected because the most useful crash sequence is chronological.
+Scalability potential: All tiers keep the same 300-entry fidelity; only offline fault analysis gets better. No visual or runtime quality tradeoff.
+Hardware Impact: Fault-path only. No steady Tick/Render cost; dump parsing cost moves off the game frame.
+
+Problem: Current compile proof changed after Bee artifacts drifted and Core source no longer rebuilds cleanly.
+Solution: Re-ran the targeted commands and recorded the objective blocker: `Hecton8.World.Outposts` cannot resolve the current 1300 `Hecton8.Core.ref.dll`, and `Hecton8.Core` rebuild fails in SaveSystem on missing `xxHash3`.
+Rejected Alternatives: Editing SaveSystem/Core was rejected as outside the Habitat/Outposts domain. Claiming Loop 11 compile proof still covers the current workspace was rejected because artifacts and source state changed.
+Scalability potential: Outpost low/full grid code paths remain statically audited; runtime profiling still waits on a compilable project and Unity transport.
+Hardware Impact: Verification-only blocker. No outpost runtime cost.
+
+## LOOP 13 EXTRACTION-PHASE AUP SHIFT CLOSURE
+
+Problem: If an AUP shift arrived while matrix extraction was still running, the service queued the shift but `CommitCompletedGeneration` published the grid descriptor, uploaded matrices, and spawned proxies before consuming the queued shift.
+Solution: Consume pending extraction-phase shifts at the start of `CommitCompletedGeneration` after native counters are read and before draw bounds, GPU upload, proxy spawn, and `WfcOutpostGeneratedSignal` publication. The helper shifts `_generationOrigin`, shell matrices, and interactable spawn packets in one cold commit pass.
+Rejected Alternatives: Waiting until the next LateFrame was rejected because it can publish a stale origin and create a one-frame visual/proxy mismatch. Re-solving WFC after a shift was rejected because the solved byte grid is origin-independent.
+Scalability potential: Low shifts at most 75 cells plus supports/proxies; Middle/High/Ultra shift up to 1024 matrix slots and 16 proxies only when a rare extraction/shift race occurs. No steady-frame cost.
+Hardware Impact: Rare cold pass only. On i3/MX350 this is a bounded linear matrix/spawn write instead of a stale descriptor recovery path; estimated below 20-60 us worst case, 0 B/frame steady.
+
+Problem: The user explicitly forbade dotnet rebuilds during this loop while the prior compile blocker remains outside Habitat/Outposts.
+Solution: Verification stayed source-only: scoped `rg` forbidden-pattern audit and `git diff --check`. The status file records compile as not run by user request, not as source pass.
+Rejected Alternatives: Running Unity Roslyn response-file compiles through `dotnet` was rejected because it violates the latest user instruction. Claiming runtime verification from source reads was rejected.
+Scalability potential: Static audit still covers the same Low/Middle/High/Ultra paths; runtime proof remains pending.
+Hardware Impact: Verification only.
+
+## LOOP 14 FINITE SCALAR PAYLOAD GUARD
+
+Problem: Serialized scalar fields for cell size, floor height, stilt clearance, and age could still carry NaN or Infinity into runtime math. `Mathf.Max`, `math.max`, and `math.saturate` are not a sufficient contract for cross-domain payload finite-ness when the source value is non-finite.
+Solution: Added finite-safe scalar resolvers and routed editor validation, Burst extraction inputs, draw bounds, snapshots, telemetry entries, WFC grid descriptors, and generated signals through them.
+Rejected Alternatives: Trusting inspector attributes was rejected because `[Min]` and `[Range]` do not prove loaded/runtime values are finite. Clamping only in `OnValidate` was rejected because runtime-loaded serialized values and script writes can bypass editor validation.
+Scalability potential: Low/Middle/High/Ultra all get deterministic positive dimensions and age. Low avoids collapsed/NaN bounds on weak GPUs; Ultra keeps stable rust/silt overkill without malformed descriptor payloads.
+Hardware Impact: Scalar branches only at boundary calls and render age publish, 0 B/frame allocation. Avoids NaN-driven culling, Burst extraction, and logistics graph recovery costs.
+
+Problem: The user again forbade dotnet rebuilds, so compile proof could not be refreshed after scalar sanitation.
+Solution: Verification used `rg` source audits and `git diff --check`, and status records compile as not run by request.
+Rejected Alternatives: Running response-file compiles through `dotnet` was rejected because it directly violates the active user instruction.
+Scalability potential: Static source guarantees improved; Unity/Profiler proof remains pending.
+Hardware Impact: Verification only.
+
+## LOOP 15 RENDER BOUNDARY AND PENDING SHIFT FAULT CLOSURE
+
+Problem: The indirect args upload path trusted the resolved `shellMesh` to contain submesh 0. An authored mesh with zero submeshes would fault at `GetIndexCount(0)`, and a later invalid mesh assignment could still reach `Graphics.RenderMeshIndirect`.
+Solution: Gate draw-argument extraction on `mesh != null && mesh.subMeshCount > 0`, zero the indirect instance count when the mesh has no indices, and skip render submission for zero-submesh meshes.
+Rejected Alternatives: Trusting authored mesh import validity was rejected because this outpost is meant to be reusable and concurrent art changes can swap assets. Falling back to a shell GameObject was rejected because the domain contract forbids shell prefabs/Transforms.
+Scalability potential: Low still draws fewer generated matrices; Middle/High/Ultra keep the same GPU buffer path and can spend saved CPU on richer shader wear without introducing object count. Invalid art assets fail closed instead of breaking the render boundary.
+Hardware Impact: i3/MX350 pays one integer property check in Render and cold args-upload checks only when matrices are uploaded. Estimated steady cost below 0.05 us/frame, with a crash/fault path eliminated.
+
+Problem: `ApplyPendingShiftToExtractedData` returned early on non-finite `_pendingShift` without clearing `_hasPendingShift`, leaving a poisoned pending state that could be retried later.
+Solution: Treat a non-finite pending shift as a blackbox-worthy fault: clear the pending fields, write fault/AUP telemetry, dump `Dump_MARAUDER_OUTPOST_ARCHITECT.bin`, and continue without applying corrupt coordinates.
+Rejected Alternatives: Leaving the state sticky was rejected because it creates an unbounded invalid-state retry. Applying a fallback shift was rejected because an AUP delta with NaN/Infinity has no deterministic physical meaning.
+Scalability potential: Low/Middle/High/Ultra all keep the same AUP correction rules. Cheap devices avoid repeated invalid-state checks; top-tier devices retain deterministic shell/proxy alignment and forensic telemetry.
+Hardware Impact: Fault path only. Normal generation and render remain 0 B/frame; the only normal code cost is the existing pending-shift branch at extraction commit.
+
+Problem: Compile/runtime proof remains blocked by active user instruction and unavailable Unity MCP telemetry.
+Solution: Verification stayed source-only: `git diff --check`, broad forbidden-pattern audit, scalar payload audit, and targeted checks for the old unsafe mesh-args and pending-shift patterns.
+Rejected Alternatives: Running `dotnet` or response-file compiles was rejected because the user explicitly forbade rebuilds. Claiming Unity runtime proof was rejected because console/profiler transport is unavailable.
+Scalability potential: Static checks cover the same Low/Middle/High/Ultra paths, but measured frame/VRAM data remains pending.
+Hardware Impact: Verification only.
+
+## LOOP 16 AUP SIGNAL INGRESS FAULT EVIDENCE
+
+Problem: `ApplyAupShift` rejected non-finite `AupShiftSignal` payloads silently, and the tiny-shift threshold was duplicated as a hardcoded scalar instead of the shared shift epsilon.
+Solution: Split non-finite and tiny finite shift handling. Non-finite AUP ingress now writes fault/AUP telemetry and dumps the blackbox; tiny finite shifts still return through `ShiftEpsilonMeters`.
+Rejected Alternatives: Silent return was rejected because NaN/Infinity in coordinate signals is a critical-system fault. Applying a fallback shift was rejected because there is no deterministic coordinate meaning for a corrupt AUP delta.
+Scalability potential: Low/Middle/High/Ultra retain identical valid-shift math. Cheap devices avoid repeated invalid coordinate drift; high-end devices retain forensic traceability without changing visual richness.
+Hardware Impact: Valid shift cost is unchanged except using the existing constant. Fault path may write the blackbox once per corrupt signal frame; normal Tick/Render remains 0 B/frame.
+
+Problem: The active instruction still forbids rebuilds.
+Solution: Verification stayed source-only with `git diff --check`, broad forbidden-pattern audit, and targeted checks for hardcoded epsilon, old unsafe mesh args, combined finite/tiny early returns, and stale pending-shift guard.
+Rejected Alternatives: Running response-file compiles through `dotnet` was rejected because it violates the explicit user instruction.
+Scalability potential: Static coverage remains across Low 5x5x3 and full 10x10x5 topology paths; measured runtime data remains pending.
+Hardware Impact: Verification only.

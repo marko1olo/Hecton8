@@ -71,13 +71,6 @@ namespace Hecton8.Gameplay.Loot
             if (_bootstrapRuntime != null)
                 return;
 
-            LootMagnetSystem existing = Object.FindAnyObjectByType<LootMagnetSystem>();
-            if (existing != null)
-            {
-                _bootstrapRuntime = existing;
-                return;
-            }
-
             GameObject runtimeRoot = new GameObject(RuntimeObjectName); // COLD ALLOC: GameObject[1] - bootstrap-owned loot magnet scheduler - owner: LootMagnetSystem
             Object.DontDestroyOnLoad(runtimeRoot);
             _bootstrapRuntime = runtimeRoot.AddComponent<LootMagnetSystem>();

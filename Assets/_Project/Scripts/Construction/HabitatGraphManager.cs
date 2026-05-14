@@ -2612,9 +2612,9 @@ namespace Hecton8.Construction
                 if (!sourceGroanAllowed && !destinationGroanAllowed)
                     continue;
 
-                Vector3 startAup = HectonFloatingOrigin.ToAbsoluteUniversePosition((Vector3)edge.StartSocketPosition);
-                Vector3 endAup = HectonFloatingOrigin.ToAbsoluteUniversePosition((Vector3)edge.EndSocketPosition);
-                Vector3 midpoint = HectonFloatingOrigin.ToRuntimePosition((startAup + endAup) * 0.5f);
+                double3 startAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3((Vector3)edge.StartSocketPosition);
+                double3 endAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3((Vector3)edge.EndSocketPosition);
+                Vector3 midpoint = HectonFloatingOrigin.ToRuntimePosition((startAup + endAup) * 0.5d);
                 float depthMeters = math.max(
                     ResolveAnalyticalModuleDepthMeters(_moduleBuffer[edge.SourceIndex], sourceModule),
                     ResolveAnalyticalModuleDepthMeters(_moduleBuffer[edge.DestinationIndex], destinationModule));
@@ -3482,9 +3482,9 @@ namespace Hecton8.Construction
             if (fluidDecals == null || _emittedRuptureEdgeVfxKeys.Count >= _emittedRuptureEdgeVfxKeys.Capacity)
                 return;
 
-            Vector3 startAup = HectonFloatingOrigin.ToAbsoluteUniversePosition((Vector3)edge.StartSocketPosition);
-            Vector3 endAup = HectonFloatingOrigin.ToAbsoluteUniversePosition((Vector3)edge.EndSocketPosition);
-            Vector3 midpointRuntime = HectonFloatingOrigin.ToRuntimePosition((startAup + endAup) * 0.5f);
+            double3 startAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3((Vector3)edge.StartSocketPosition);
+            double3 endAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3((Vector3)edge.EndSocketPosition);
+            Vector3 midpointRuntime = HectonFloatingOrigin.ToRuntimePosition((startAup + endAup) * 0.5d);
             float3 spanDelta = edge.EndSocketPosition - edge.StartSocketPosition;
             float spanSq = math.lengthsq(spanDelta);
             float unsupportedSpanMeters = LogisticsPipeBuilder.UnsupportedSpanMeters;

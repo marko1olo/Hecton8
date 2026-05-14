@@ -35,3 +35,27 @@ Solution: changed Telethon logger level from WARNING to ERROR for future restart
 Rejected Alternatives: leaving warning spam in the primary diagnostic file; it hid the real last useful bot event.
 Scalability potential: Low/Middle/High/Ultra identical: smaller logs, same bot behavior.
 Hardware Impact: reduced disk/log churn; no measured microsecond claim.
+
+Problem: User reported the content still did not arrive after the first restart. Runtime evidence showed PID 30052 alive, `bot.log` stuck after `Отправка Daily`, no `bot_state.json`, and no successful send marker.
+Solution: instrumented `summarizer.py` with stage checkpoints and hard timeouts for reply lookup, Gemini, Telegraph, Telegram send, and pinning. Replaced per-message reply DB lookups with `database.get_texts_by_ids()` to avoid N SQLite connections during Daily assembly.
+Rejected Alternatives: marking the day as sent on scheduler timeout; this hides lost content. Blindly increasing the 900-second outer timeout; the missing log showed the stall was before or inside the delivery chain and needed stage visibility.
+Scalability potential: Low - one batch SQL query instead of dozens of SQLite connections. Middle/High/Ultra - deterministic stage logs identify the external bottleneck without manual guessing.
+Hardware Impact: lower SQLite overhead during Daily assembly; no measured microsecond claim.
+
+Problem: `scheduler_task()` marked messages summarized and advanced dates after target-loop exceptions, even if no target received content.
+Solution: added `sent_any_daily` and `sent_any_weekly`; DB summarize flags and `bot_state.json` advance only after at least one successful target send.
+Rejected Alternatives: treating "attempted send" as completion; that is the exact failure mode where content disappears.
+Scalability potential: Low/Middle/High/Ultra identical: delivery confirmation now gates state mutation.
+Hardware Impact: no meaningful runtime cost.
+
+Problem: The live process still had old code loaded and was stuck on the failed Daily run.
+Solution: stopped PID 30052. `start.bat` restarted PID 7944 with the patched code. PID 7944 synced 5 messages, generated Daily for 178 messages, created Telegraph, sent to `-1001820467444`, sent cached teaser to `-1003735006121` topic `26`, and persisted `last_daily_date=2026-05-14`.
+Rejected Alternatives: waiting for PID 30052; it had already exceeded the expected delivery window and could not load the patch without restart.
+Scalability potential: Low - restart recovers current run. Middle/High/Ultra - watchdog/timeouts reduce future manual intervention.
+Hardware Impact: restart only; steady-state impact limited to stage logs and bounded waits.
+
+Problem: After successful delivery, user explicitly requested no more bot restarts because they can provoke repeated sends.
+Solution: stopped all restart actions and continued by observation only. Verified one live PID 7944, state date `2026-05-14`, and no duplicate Daily send after the next scheduler window.
+Rejected Alternatives: applying another live restart to validate cold-start behavior; it was unnecessary and contradicted the user's constraint.
+Scalability potential: Low/Middle/High/Ultra identical: use file state and passive monitoring for verification.
+Hardware Impact: no runtime change.

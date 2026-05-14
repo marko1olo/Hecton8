@@ -2241,7 +2241,7 @@ namespace Hecton8.Construction
                 return;
 
             Vector3 normalizedWeldDirection = weldDirection * math.rsqrt(weldDistanceSq);
-            Vector3 absoluteHitPoint = HectonFloatingOrigin.ToAbsoluteUniversePosition(dronePosition + (normalizedWeldDirection * 0.35f));
+            double3 absoluteHitPoint = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(dronePosition + (normalizedWeldDirection * 0.35f));
             volume.ApplyRepairWeldDda(
                 absoluteHitPoint,
                 normalizedWeldDirection,
@@ -2264,7 +2264,7 @@ namespace Hecton8.Construction
                 return;
 
             Vector3 normalizedCutDirection = cutDirection * math.rsqrt(cutDistanceSq);
-            Vector3 absoluteHitPoint = HectonFloatingOrigin.ToAbsoluteUniversePosition(dronePosition + (normalizedCutDirection * 0.35f));
+            double3 absoluteHitPoint = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(dronePosition + (normalizedCutDirection * 0.35f));
             volume.ApplyPlasmaCutDda(
                 absoluteHitPoint,
                 normalizedCutDirection,
@@ -2272,14 +2272,11 @@ namespace Hecton8.Construction
                 drone.WeldRangeMeters);
         }
 
-        private static void PublishDroneRepairSparks(Vector3 absoluteHitPoint, int droneId, float intensity01)
+        private static void PublishDroneRepairSparks(double3 absoluteHitPoint, int droneId, float intensity01)
         {
             DebrisSpawnSignal signal = new DebrisSpawnSignal
             {
-                PositionAup = AbsoluteUniversePosition.FromAbsolutePosition(new double3(
-                    absoluteHitPoint.x,
-                    absoluteHitPoint.y,
-                    absoluteHitPoint.z)),
+                PositionAup = AbsoluteUniversePosition.FromAbsolutePosition(absoluteHitPoint),
                 SpeciesHash = DroneRepairSparksSignalHash,
                 SourceEntityId = (uint)Mathf.Max(0, droneId),
                 Intensity01 = Mathf.Clamp01(intensity01),

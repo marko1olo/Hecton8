@@ -220,9 +220,9 @@ namespace Hecton8.Lighting.Shafts
 
         private void ReleaseBuffers()
         {
-            H8Memory.Release(ref _topContributions);
-            H8Memory.Release(ref _historyContributions);
-            H8Memory.Release(ref _telemetry);
+            H8Memory.Release(ref _topContributions, SystemID.Vfx);
+            H8Memory.Release(ref _historyContributions, SystemID.Vfx);
+            H8Memory.Release(ref _telemetry, SystemID.Vfx);
             _telemetryWriteIndex = 0;
         }
 

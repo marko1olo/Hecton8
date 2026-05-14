@@ -1094,7 +1094,7 @@ namespace Hecton8.Physics
                 return;
 
             NativeMemorySentinel.UnregisterNativeArray(array);
-            H8Memory.Release(ref array);
+            H8Memory.Release(ref array, SystemID.GlobalPhysicsStateManager);
         }
 
         private void ReleaseUndersizedRigidbodyAupLane()
@@ -1106,7 +1106,7 @@ namespace Hecton8.Physics
             if (_rigidbodyAUPsVaultOwned)
                 _rigidbodyAUPs = default;
             else
-                H8Memory.Release(ref _rigidbodyAUPs);
+                H8Memory.Release(ref _rigidbodyAUPs, SystemID.GlobalPhysicsStateManager);
 
             _rigidbodyAUPsVaultOwned = false;
         }
@@ -1182,7 +1182,7 @@ namespace Hecton8.Physics
             if (_lastValidPositions.IsCreated)
             {
                 NativeMemorySentinel.UnregisterNativeArray(_lastValidPositions);
-                H8Memory.Release(ref _lastValidPositions);
+                H8Memory.Release(ref _lastValidPositions, SystemID.GlobalPhysicsStateManager);
             }
 
             if (_rigidbodyAUPs.IsCreated)
@@ -1191,38 +1191,38 @@ namespace Hecton8.Physics
                 if (_rigidbodyAUPsVaultOwned)
                     _rigidbodyAUPs = default;
                 else
-                    H8Memory.Release(ref _rigidbodyAUPs);
+                    H8Memory.Release(ref _rigidbodyAUPs, SystemID.GlobalPhysicsStateManager);
                 _rigidbodyAUPsVaultOwned = false;
             }
 
             if (_rigidbodyCullingStateSnapshot.IsCreated)
             {
                 NativeMemorySentinel.UnregisterNativeArray(_rigidbodyCullingStateSnapshot);
-                H8Memory.Release(ref _rigidbodyCullingStateSnapshot);
+                H8Memory.Release(ref _rigidbodyCullingStateSnapshot, SystemID.GlobalPhysicsStateManager);
             }
 
             if (_rigidbodyAwakeResults.IsCreated)
             {
                 NativeMemorySentinel.UnregisterNativeArray(_rigidbodyAwakeResults);
-                H8Memory.Release(ref _rigidbodyAwakeResults);
+                H8Memory.Release(ref _rigidbodyAwakeResults, SystemID.GlobalPhysicsStateManager);
             }
 
             if (_rigidbodyCullingCommandResults.IsCreated)
             {
                 NativeMemorySentinel.UnregisterNativeArray(_rigidbodyCullingCommandResults);
-                H8Memory.Release(ref _rigidbodyCullingCommandResults);
+                H8Memory.Release(ref _rigidbodyCullingCommandResults, SystemID.GlobalPhysicsStateManager);
             }
 
             if (_rigidbodyDistanceSqResults.IsCreated)
             {
                 NativeMemorySentinel.UnregisterNativeArray(_rigidbodyDistanceSqResults);
-                H8Memory.Release(ref _rigidbodyDistanceSqResults);
+                H8Memory.Release(ref _rigidbodyDistanceSqResults, SystemID.GlobalPhysicsStateManager);
             }
 
             if (_physicsCullingTelemetry.IsCreated)
             {
                 NativeMemorySentinel.UnregisterNativeArray(_physicsCullingTelemetry);
-                H8Memory.Release(ref _physicsCullingTelemetry);
+                H8Memory.Release(ref _physicsCullingTelemetry, SystemID.GlobalPhysicsStateManager);
             }
 
             TryUnregisterService();

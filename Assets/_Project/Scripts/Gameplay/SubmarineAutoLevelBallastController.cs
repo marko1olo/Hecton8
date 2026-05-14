@@ -1699,7 +1699,7 @@ namespace Hecton8.Gameplay
             }
 
             NativeMemorySentinel.UnregisterNativeArray(array);
-            H8Memory.Release(ref array);
+            H8Memory.Release(ref array, SystemID.VehiclesPhysics);
         }
 
         private static uint BuildTelemetryHash(

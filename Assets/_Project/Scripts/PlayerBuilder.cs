@@ -1902,7 +1902,7 @@ namespace Hecton8.Building
 
             Transform ghostTransform = _currentGhostObj.transform;
             Vector3 targetRuntime = ghostTransform.TransformPoint(template.ProxyBoundsCenter);
-            Vector3 targetAup = HectonFloatingOrigin.ToAbsoluteUniversePosition(targetRuntime);
+            double3 targetAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(targetRuntime);
             Vector3 drawPosition = HectonFloatingOrigin.ToRuntimePosition(targetAup);
             _buildGhostProjectionMatrices[0] = Matrix4x4.TRS(drawPosition, ghostTransform.rotation, proxyBoundsSize);
 

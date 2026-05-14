@@ -382,7 +382,7 @@ namespace Hecton8.World
     [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
     internal struct WreckBurialCutRecord
     {
-        public float3 AbsoluteCenter;
+        public double3 AbsoluteCenter;
         public float3 HalfExtents;
         public float BlendStrength;
         public byte MaterialId;
@@ -2846,12 +2846,12 @@ namespace Hecton8.World
 
                 float3 localCenter = placement.Position + placement.BoundsCenter;
                 Vector3 runtimeCenter = runtimeOrigin + ToVector3(localCenter);
-                Vector3 absoluteCenter = HectonFloatingOrigin.ToAbsoluteUniversePosition(runtimeCenter);
+                double3 absoluteCenter = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimeCenter);
                 float3 halfExtents = SanitizeBoundsSize(placement.BoundsSize) * 0.5f;
                 halfExtents.y = math.max(0.05f, math.min(halfExtents.y, wreckInteriorCutHalfHeight));
                 _burialCutRecords[_burialCutRecordCount++] = new WreckBurialCutRecord
                 {
-                    AbsoluteCenter = new float3(absoluteCenter.x, absoluteCenter.y, absoluteCenter.z),
+                    AbsoluteCenter = absoluteCenter,
                     HalfExtents = halfExtents,
                     BlendStrength = math.max(0.25f, math.cmin(halfExtents) * 0.35f),
                     MaterialId = 0,
@@ -2865,11 +2865,11 @@ namespace Hecton8.World
 
             if (_burialCutRecordCount == 0 && IsFiniteBounds(worldBounds) && capacity > 0)
             {
-                Vector3 absoluteCenter = HectonFloatingOrigin.ToAbsoluteUniversePosition(worldBounds.center);
+                double3 absoluteCenter = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(worldBounds.center);
                 Vector3 halfExtents = worldBounds.extents;
                 _burialCutRecords[0] = new WreckBurialCutRecord
                 {
-                    AbsoluteCenter = new float3(absoluteCenter.x, absoluteCenter.y, absoluteCenter.z),
+                    AbsoluteCenter = absoluteCenter,
                     HalfExtents = new float3(math.max(1f, halfExtents.x * 0.25f), wreckInteriorCutHalfHeight, math.max(1f, halfExtents.z * 0.25f)),
                     BlendStrength = math.max(0.25f, wreckInteriorCutHalfHeight * 0.35f),
                     MaterialId = 0,
@@ -2896,9 +2896,8 @@ namespace Hecton8.World
                 if (record.Applied != 0)
                     continue;
 
-                Vector3 absoluteCenter = new Vector3(record.AbsoluteCenter.x, record.AbsoluteCenter.y, record.AbsoluteCenter.z);
                 Vector3 halfExtents = new Vector3(record.HalfExtents.x, record.HalfExtents.y, record.HalfExtents.z);
-                engine.DeltaProcessor.ApplyImmediateAbsoluteBoxCrater(wreckVoxelCutVolume, absoluteCenter, halfExtents, record.MaterialId);
+                engine.DeltaProcessor.ApplyImmediateAbsoluteBoxCrater(wreckVoxelCutVolume, record.AbsoluteCenter, halfExtents, record.MaterialId);
                 record.Applied = 1;
                 _burialCutRecords[i] = record;
             }
@@ -3247,8 +3246,12 @@ namespace Hecton8.World
             if (bridge == null || !bridge.IsAvailable)
                 return fallbackY;
 
-            Vector3 absolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(runtimePosition);
-            return bridge.TryGetHeightAUP(absolutePosition, out float terrainHeight) && math.isfinite(terrainHeight)
+            double3 absolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimePosition);
+            Vector3 absolutePositionVector = new Vector3(
+                (float)absolutePosition.x,
+                (float)absolutePosition.y,
+                (float)absolutePosition.z);
+            return bridge.TryGetHeightAUP(absolutePositionVector, out float terrainHeight) && math.isfinite(terrainHeight)
                 ? terrainHeight
                 : fallbackY;
         }

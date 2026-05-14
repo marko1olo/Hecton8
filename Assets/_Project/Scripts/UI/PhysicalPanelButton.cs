@@ -256,14 +256,17 @@ namespace Hecton8.UI
             if (_signalCooldownRemaining > 0f)
                 return true;
 
-            Vector3 absoluteHitPoint = HectonFloatingOrigin.ToAbsoluteUniversePosition(handPosition);
+            double3 absoluteHitPoint = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(handPosition);
             Vector3 fallbackForward = _cachedTransform != null ? _cachedTransform.forward : Vector3.forward;
             if (!IsFinite(fallbackForward))
                 fallbackForward = Vector3.forward;
+            if (!math.all(math.isfinite(absoluteHitPoint)))
+                return false;
+
             Vector3 safeDirection = ResolveApproxPressDirection(handForward, fallbackForward);
             InteractionPacket packet = new InteractionPacket(
                 PhysicalPanelToolId,
-                (float3)absoluteHitPoint,
+                new float3((float)absoluteHitPoint.x, (float)absoluteHitPoint.y, (float)absoluteHitPoint.z),
                 (float3)safeDirection,
                 1f,
                 _resolvedPressDepthMeters,
@@ -273,7 +276,7 @@ namespace Hecton8.UI
             InteractionSignal signal = new InteractionSignal(
                 packet,
                 0,
-                (float3)absoluteHitPoint,
+                new float3((float)absoluteHitPoint.x, (float)absoluteHitPoint.y, (float)absoluteHitPoint.z),
                 (float3)(-safeDirection),
                 1f,
                 (byte)signalEffectType,

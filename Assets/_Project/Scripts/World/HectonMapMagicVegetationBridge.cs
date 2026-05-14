@@ -2304,10 +2304,19 @@ namespace Hecton8.World
         /// <summary>Converts stable universe coordinates into current runtime-local coordinates.</summary>
         public static Vector3 ToRuntimeSpace(Vector3 universePosition) => ToVector3(ToRuntimeSpaceDouble3(universePosition));
 
+        /// <summary>Converts stable universe coordinates into current runtime-local coordinates.</summary>
+        public static Vector3 ToRuntimeSpace(double3 universePosition) => ToVector3(ToRuntimeSpaceDouble3(universePosition));
+
         /// <summary>Converts stable universe coordinates into current runtime-local coordinates without reducing the bridge offset to float first.</summary>
         public static double3 ToRuntimeSpaceDouble3(Vector3 universePosition)
         {
-            return ToDouble3(universePosition) + GlobalTotalUniverseOffsetDouble;
+            return ToRuntimeSpaceDouble3(ToDouble3(universePosition));
+        }
+
+        /// <summary>Converts stable universe coordinates into current runtime-local coordinates without reducing the bridge offset to float first.</summary>
+        public static double3 ToRuntimeSpaceDouble3(double3 universePosition)
+        {
+            return universePosition + GlobalTotalUniverseOffsetDouble;
         }
 
         private static bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)

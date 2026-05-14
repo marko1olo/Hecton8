@@ -46,6 +46,7 @@ namespace Hecton8.Core.Hardware
         private const string DumpFileName = "Dump_THERMAL_THROTTLING_DIRECTOR.bin";
 
         private static bool s_sceneHooked;
+        private static HardwareThermalService s_runtimeInstance;
 
         private NativeArray<byte> _thermalSeverity;
         private NativeArray<ThermalTelemetryEntry> _blackBox;
@@ -95,6 +96,7 @@ namespace Hecton8.Core.Hardware
         private static void ResetStaticState()
         {
             s_sceneHooked = false;
+            s_runtimeInstance = null;
             SceneManager.sceneLoaded -= HandleSceneLoaded;
         }
 
@@ -120,8 +122,7 @@ namespace Hecton8.Core.Hardware
             if (GlobalRegistry.HardwareThermal != null)
                 return;
 
-            HardwareThermalService existing = UnityEngine.Object.FindAnyObjectByType<HardwareThermalService>();
-            if (existing != null)
+            if (s_runtimeInstance != null)
                 return;
 
             GameObject serviceObject = new GameObject("[HardwareThermalService]");
@@ -154,6 +155,13 @@ namespace Hecton8.Core.Hardware
             if (!Application.isPlaying)
                 return;
 
+            if (s_runtimeInstance != null && !ReferenceEquals(s_runtimeInstance, this))
+            {
+                Destroy(gameObject);
+                return;
+            }
+
+            s_runtimeInstance = this;
             EnsureNativeState();
         }
 
@@ -186,6 +194,8 @@ namespace Hecton8.Core.Hardware
         private void OnDestroy()
         {
             Dispose();
+            if (ReferenceEquals(s_runtimeInstance, this))
+                s_runtimeInstance = null;
         }
 
         public void Dispose()

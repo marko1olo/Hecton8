@@ -1172,7 +1172,7 @@ namespace Hecton8.Core.Determinism
                 return;
 
             NativeMemorySentinel.UnregisterNativeArray(array);
-            H8Memory.Release(ref array);
+            H8Memory.Release(ref array, SystemID.CoreDeterminism);
         }
 
         private void EnsureReplayWriter()

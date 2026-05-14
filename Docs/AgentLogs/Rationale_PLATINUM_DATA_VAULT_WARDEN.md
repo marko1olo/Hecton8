@@ -118,6 +118,12 @@ Rejected Alternatives: Relying on later `Release<T>` cleanup or leak reaping; bo
 Scalability potential: Low keeps native-array ownership deterministic; Middle/High/Ultra keep pool telemetry and leak attribution stable as larger systems allocate more SOA buffers.
 Hardware Impact: One branch on cold/native-array allocation only; 0 us steady-frame impact for already allocated buffers.
 
+Problem: The save writer appended the v72 first-hour DTO tail while writing `data.version` unchanged. Repair/manual rewrite paths can pass a loaded older `SaveData`, causing reload to skip the v72 tail by version gate and then fail payload byte-length validation.
+Solution: Normalize `data.version` to `SaveData.CurrentVersion` inside `SaveBinaryPayloadCodec.TryWrite` before `WriteSaveData` emits the header and DTO tail.
+Rejected Alternatives: Writing `SaveData.CurrentVersion` only in the header without mutating `data.version`; `SaveBinaryStorage` also writes prefix metadata from `data.version` after codec serialization. Skipping the DTO tail for older in-memory objects would preserve inconsistent repaired artifacts.
+Scalability potential: Low keeps save repair deterministic; Middle/High/Ultra avoid backup promotion loops caused by self-created payload length mismatches.
+Hardware Impact: One cold save-path integer compare/assign; 0 us frame impact and 0 B GC.
+
 ## OMEGA POLISH CHANGES
 
 Problem: Polish audit required removal of fake precision, managed iteration/string debt, and any code outside the DataVault domain without justification.

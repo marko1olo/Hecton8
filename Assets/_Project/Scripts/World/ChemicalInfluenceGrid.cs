@@ -24,6 +24,7 @@ namespace Hecton8.World
         internal struct ChemicalBreadcrumbWaypoint
         {
             public float3 AbsolutePosition;
+            public double3 AbsolutePositionDouble;
             public float3 RuntimePosition;
             public float4 Channels;
             public float RadiusMeters;
@@ -67,6 +68,7 @@ namespace Hecton8.World
 
         // COLD ALLOC: Vector4[64] - permanent defoliant dead-zone registry in absolute-universe space - owner: ChemicalInfluenceGrid
         private readonly Vector4[] _defoliantDeadZones = new Vector4[MaxDefoliantDeadZones];
+        private readonly double3[] _defoliantDeadZoneCentersDouble = new double3[MaxDefoliantDeadZones];
 
         private NativeArray<ChemicalBreadcrumbWaypoint> _breadcrumbs;
         private NativeArray<byte> _scentGrid;
@@ -241,13 +243,13 @@ namespace Hecton8.World
         {
             ChemicalInfluenceGrid instance = _activeRuntimeInstance;
             return instance != null &&
-                   instance.IsInsidePermanentDefoliantDeadZoneAbsoluteInternal(HectonFloatingOrigin.ToAbsoluteUniversePosition(worldPosition));
+                   instance.IsInsidePermanentDefoliantDeadZoneAbsoluteInternal(HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(worldPosition));
         }
 
         internal static bool IsInsidePermanentDefoliantDeadZoneAbsolute(Vector3 absolutePosition)
         {
             ChemicalInfluenceGrid instance = _activeRuntimeInstance;
-            return instance != null && instance.IsInsidePermanentDefoliantDeadZoneAbsoluteInternal(absolutePosition);
+            return instance != null && instance.IsInsidePermanentDefoliantDeadZoneAbsoluteInternal(ToDouble3(absolutePosition));
         }
 
         private static void RegisterChemicalTransient(Vector3 worldPosition, float intensity)
@@ -415,15 +417,16 @@ namespace Hecton8.World
                 return;
 
             float now = Time.time;
-            Vector3 absolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(worldPosition);
-            float3 absolute = new float3(absolutePosition.x, absolutePosition.y, absolutePosition.z);
+            double3 absolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(worldPosition);
+            float3 absolute = ToFloat3(absolutePosition);
             float safeRadius = math.max(1f, radiusOverrideMeters > 0f ? radiusOverrideMeters : breadcrumbRadiusMeters);
-            int mergeIndex = FindMergeCandidate(absolute, primaryChannel, now);
+            int mergeIndex = FindMergeCandidate(absolutePosition, primaryChannel, now);
             float4 clampedChannels = ClampChemicalChannels(channels, maximumChannelIntensity);
             if (mergeIndex >= 0)
             {
                 ChemicalBreadcrumbWaypoint merged = _breadcrumbs[mergeIndex];
                 merged.AbsolutePosition = absolute;
+                merged.AbsolutePositionDouble = absolutePosition;
                 merged.RuntimePosition = new float3(worldPosition.x, worldPosition.y, worldPosition.z);
                 merged.Channels = ClampChemicalChannels(merged.Channels + clampedChannels, maximumChannelIntensity);
                 merged.RadiusMeters = math.max(merged.RadiusMeters, safeRadius);
@@ -438,6 +441,7 @@ namespace Hecton8.World
             _breadcrumbs[writeIndex] = new ChemicalBreadcrumbWaypoint
             {
                 AbsolutePosition = absolute,
+                AbsolutePositionDouble = absolutePosition,
                 RuntimePosition = new float3(worldPosition.x, worldPosition.y, worldPosition.z),
                 Channels = clampedChannels,
                 RadiusMeters = safeRadius,
@@ -458,7 +462,7 @@ namespace Hecton8.World
             if (!_scentGrid.IsCreated || intensity <= 0f)
                 return;
 
-            Vector3 absolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(worldPosition);
+            double3 absolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(worldPosition);
             int2 cell = ResolveScentGridCell(absolutePosition);
             EnsureScentGridContainsCell(cell);
             if (!TryResolveScentGridIndex(cell, out int index))
@@ -500,11 +504,11 @@ namespace Hecton8.World
 
         private bool TrySampleScentGrid01Internal(Vector3 worldPosition, out float scent01)
         {
-            Vector3 absolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(worldPosition);
+            double3 absolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(worldPosition);
             return TrySampleScentGrid01AbsoluteInternal(absolutePosition, out scent01);
         }
 
-        private bool TrySampleScentGrid01AbsoluteInternal(Vector3 absolutePosition, out float scent01)
+        private bool TrySampleScentGrid01AbsoluteInternal(double3 absolutePosition, out float scent01)
         {
             scent01 = 0f;
             if (!_scentGrid.IsCreated || !_scentGridHasOrigin)
@@ -569,18 +573,18 @@ namespace Hecton8.World
             return true;
         }
 
-        private static int2 ResolveScentGridCell(Vector3 absolutePosition)
+        private static int2 ResolveScentGridCell(double3 absolutePosition)
         {
-            float inverseCellSize = 1f / ScentGridCellSizeMeters;
+            double inverseCellSize = 1d / ScentGridCellSizeMeters;
             return new int2(
-                (int)math.floor(absolutePosition.x * inverseCellSize),
-                (int)math.floor(absolutePosition.z * inverseCellSize));
+                FastFloorToInt(absolutePosition.x * inverseCellSize),
+                FastFloorToInt(absolutePosition.z * inverseCellSize));
         }
 
-        private int FindMergeCandidate(float3 absolutePosition, ChemicalChannel primaryChannel, float now)
+        private int FindMergeCandidate(double3 absolutePosition, ChemicalChannel primaryChannel, float now)
         {
             int safeCount = math.min(_breadcrumbCount, _breadcrumbs.Length);
-            float mergeDistanceSq = BreadcrumbMergeDistanceMeters * BreadcrumbMergeDistanceMeters;
+            double mergeDistanceSq = (double)BreadcrumbMergeDistanceMeters * BreadcrumbMergeDistanceMeters;
             int channelIndex = (int)primaryChannel;
             for (int i = 0; i < safeCount; i++)
             {
@@ -592,7 +596,7 @@ namespace Hecton8.World
                     continue;
 
                 if (now - waypoint.SpawnTime < breadcrumbDropIntervalSeconds &&
-                    math.lengthsq(waypoint.AbsolutePosition - absolutePosition) <= mergeDistanceSq)
+                    math.lengthsq(ResolveWaypointAbsolutePositionDouble(in waypoint) - absolutePosition) <= mergeDistanceSq)
                 {
                     return i;
                 }
@@ -652,10 +656,7 @@ namespace Hecton8.World
             for (int i = 0; i < safeCount; i++)
             {
                 ChemicalBreadcrumbWaypoint waypoint = _breadcrumbs[i];
-                Vector3 runtime = HectonFloatingOrigin.ToRuntimePosition(new Vector3(
-                    waypoint.AbsolutePosition.x,
-                    waypoint.AbsolutePosition.y,
-                    waypoint.AbsolutePosition.z));
+                Vector3 runtime = HectonFloatingOrigin.ToRuntimePosition(ResolveWaypointAbsolutePositionDouble(in waypoint));
                 waypoint.RuntimePosition = new float3(runtime.x, runtime.y, runtime.z);
                 _breadcrumbs[i] = waypoint;
             }
@@ -663,21 +664,22 @@ namespace Hecton8.World
 
         private void RegisterDefoliantDeadZone(Vector3 worldPosition, float radiusMeters)
         {
-            Vector3 absolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(worldPosition);
+            double3 absolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(worldPosition);
             float safeRadius = math.max(MinimumRadiusMeters, radiusMeters);
-            float mergeRadiusSq = safeRadius * safeRadius;
+            double mergeRadiusSq = (double)safeRadius * safeRadius;
             for (int i = 0; i < _defoliantDeadZoneCount; i++)
             {
                 Vector4 zone = _defoliantDeadZones[i];
-                Vector3 zoneCenter = new Vector3(zone.x, zone.y, zone.z);
-                if ((zoneCenter - absolutePosition).sqrMagnitude > mergeRadiusSq)
+                double3 zoneCenter = ResolveDefoliantDeadZoneCenterDouble(i, zone);
+                if (math.lengthsq(zoneCenter - absolutePosition) > mergeRadiusSq)
                     continue;
 
-                Vector3 mergedCenter = Vector3.Lerp(zoneCenter, absolutePosition, 0.5f);
+                double3 mergedCenter = (zoneCenter + absolutePosition) * 0.5d;
+                _defoliantDeadZoneCentersDouble[i] = mergedCenter;
                 _defoliantDeadZones[i] = new Vector4(
-                    mergedCenter.x,
-                    mergedCenter.y,
-                    mergedCenter.z,
+                    (float)mergedCenter.x,
+                    (float)mergedCenter.y,
+                    (float)mergedCenter.z,
                     Mathf.Max(zone.w, safeRadius));
                 return;
             }
@@ -686,25 +688,26 @@ namespace Hecton8.World
                 ? _defoliantDeadZoneCount++
                 : _defoliantDeadZones.Length - 1;
             _defoliantDeadZones[writeIndex] = new Vector4(
-                absolutePosition.x,
-                absolutePosition.y,
-                absolutePosition.z,
+                (float)absolutePosition.x,
+                (float)absolutePosition.y,
+                (float)absolutePosition.z,
                 safeRadius);
+            _defoliantDeadZoneCentersDouble[writeIndex] = absolutePosition;
         }
 
         private bool TrySampleNormalizedChannelsInternal(float3 worldPosition, out float4 normalizedChannels)
         {
             normalizedChannels = float4.zero;
             Vector3 runtimePosition = new Vector3(worldPosition.x, worldPosition.y, worldPosition.z);
-            Vector3 absolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(runtimePosition);
+            double3 absolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimePosition);
             bool insideDeadZone = IsInsidePermanentDefoliantDeadZoneAbsoluteInternal(absolutePosition);
             float4 accumulated = float4.zero;
             bool hasSample = false;
             float now = Time.time;
+            double3 queryAbsolute = absolutePosition;
 
             if (_breadcrumbs.IsCreated)
             {
-                float3 queryAbsolute = new float3(absolutePosition.x, absolutePosition.y, absolutePosition.z);
                 int safeCount = math.min(_breadcrumbCount, _breadcrumbs.Length);
                 for (int i = 0; i < safeCount; i++)
                 {
@@ -713,11 +716,12 @@ namespace Hecton8.World
                         continue;
 
                     float radius = math.max(MinimumRadiusMeters, waypoint.RadiusMeters);
-                    float distanceSq = math.lengthsq(waypoint.AbsolutePosition - queryAbsolute);
-                    if (distanceSq > radius * radius)
+                    double distanceSq = math.lengthsq(ResolveWaypointAbsolutePositionDouble(in waypoint) - queryAbsolute);
+                    double radiusSq = (double)radius * radius;
+                    if (distanceSq > radiusSq)
                         continue;
 
-                    float distanceSq01 = math.saturate(distanceSq / (radius * radius));
+                    float distanceSq01 = math.saturate((float)(distanceSq / radiusSq));
                     float falloff = SmoothStep01(1f - distanceSq01);
                     accumulated += waypoint.Channels * falloff;
                     hasSample = true;
@@ -757,12 +761,11 @@ namespace Hecton8.World
                 return false;
 
             Vector3 runtimePosition = new Vector3(worldPosition.x, worldPosition.y, worldPosition.z);
-            Vector3 absolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(runtimePosition);
-            float3 queryAbsolute = new float3(absolutePosition.x, absolutePosition.y, absolutePosition.z);
+            double3 queryAbsolute = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimePosition);
             int channelIndex = (int)channel;
             int safeCount = math.min(_breadcrumbCount, _breadcrumbs.Length);
             float now = Time.time;
-            float bestDistanceSq = float.MaxValue;
+            double bestDistanceSq = double.MaxValue;
             float bestIntensity = 0f;
             bool found = false;
 
@@ -777,11 +780,12 @@ namespace Hecton8.World
                     continue;
 
                 float radius = math.max(MinimumRadiusMeters, waypoint.RadiusMeters);
-                float distanceSq = math.lengthsq(waypoint.AbsolutePosition - queryAbsolute);
-                if (distanceSq > radius * radius || distanceSq >= bestDistanceSq)
+                double distanceSq = math.lengthsq(ResolveWaypointAbsolutePositionDouble(in waypoint) - queryAbsolute);
+                double radiusSq = (double)radius * radius;
+                if (distanceSq > radiusSq || distanceSq >= bestDistanceSq)
                     continue;
 
-                float distanceSq01 = math.saturate(distanceSq / (radius * radius));
+                float distanceSq01 = math.saturate((float)(distanceSq / radiusSq));
                 bestIntensity = math.saturate(channelSignal * SmoothStep01(1f - distanceSq01) / math.max(0.1f, maximumChannelIntensity));
                 bestDistanceSq = distanceSq;
                 nearestWaypoint = waypoint;
@@ -791,23 +795,79 @@ namespace Hecton8.World
             if (!found)
                 return false;
 
-            distanceMeters = bestDistanceSq > 0f ? bestDistanceSq * math.rsqrt(bestDistanceSq) : 0f;
+            distanceMeters = bestDistanceSq > 0d ? (float)(bestDistanceSq * math.rsqrt(bestDistanceSq)) : 0f;
             intensity01 = bestIntensity;
             return true;
         }
 
         private bool IsInsidePermanentDefoliantDeadZoneAbsoluteInternal(Vector3 absolutePosition)
         {
+            return IsInsidePermanentDefoliantDeadZoneAbsoluteInternal(ToDouble3(absolutePosition));
+        }
+
+        private bool IsInsidePermanentDefoliantDeadZoneAbsoluteInternal(double3 absolutePosition)
+        {
             for (int i = 0; i < _defoliantDeadZoneCount; i++)
             {
                 Vector4 zone = _defoliantDeadZones[i];
-                float radiusSq = zone.w * zone.w;
-                Vector3 zoneCenter = new Vector3(zone.x, zone.y, zone.z);
-                if ((absolutePosition - zoneCenter).sqrMagnitude <= radiusSq)
+                double radiusSq = (double)zone.w * zone.w;
+                double3 zoneCenter = ResolveDefoliantDeadZoneCenterDouble(i, zone);
+                if (math.lengthsq(absolutePosition - zoneCenter) <= radiusSq)
                     return true;
             }
 
             return false;
+        }
+
+        private static float3 ToFloat3(double3 value)
+        {
+            return new float3((float)value.x, (float)value.y, (float)value.z);
+        }
+
+        private static double3 ToDouble3(Vector3 value)
+        {
+            return new double3(value.x, value.y, value.z);
+        }
+
+        private static double3 ToDouble3(float3 value)
+        {
+            return new double3(value.x, value.y, value.z);
+        }
+
+        private static int FastFloorToInt(double value)
+        {
+            if (!math.isfinite(value))
+                return 0;
+
+            if (value >= int.MaxValue)
+                return int.MaxValue;
+
+            if (value <= int.MinValue)
+                return int.MinValue;
+
+            return (int)math.floor(value);
+        }
+
+        private static double3 ResolveWaypointAbsolutePositionDouble(in ChemicalBreadcrumbWaypoint waypoint)
+        {
+            if (math.all(math.isfinite(waypoint.AbsolutePositionDouble)) &&
+                (math.any(waypoint.AbsolutePositionDouble != double3.zero) ||
+                 math.all(waypoint.AbsolutePosition == float3.zero)))
+                return waypoint.AbsolutePositionDouble;
+
+            return ToDouble3(waypoint.AbsolutePosition);
+        }
+
+        private double3 ResolveDefoliantDeadZoneCenterDouble(int index, Vector4 legacyZone)
+        {
+            if (index >= 0 &&
+                index < _defoliantDeadZoneCentersDouble.Length &&
+                math.all(math.isfinite(_defoliantDeadZoneCentersDouble[index])) &&
+                (math.any(_defoliantDeadZoneCentersDouble[index] != double3.zero) ||
+                 (legacyZone.x == 0f && legacyZone.y == 0f && legacyZone.z == 0f)))
+                return _defoliantDeadZoneCentersDouble[index];
+
+            return new double3(legacyZone.x, legacyZone.y, legacyZone.z);
         }
 
         private static float4 ClampChemicalChannels(float4 value, float maxChannelIntensity)

@@ -1590,7 +1590,7 @@ namespace Hecton8.Core
             }
 
             NativeMemorySentinel.UnregisterNativeArray(_h8Time);
-            H8Memory.Release(ref _h8Time);
+            H8Memory.Release(ref _h8Time, SystemID.SystemDispatcher);
             _h8TimeHandle = default;
             _h8TimeVaultOwned = false;
         }
@@ -3114,7 +3114,7 @@ namespace Hecton8.Core
                 else
                 {
                     NativeMemorySentinel.UnregisterNativeArray(_scheduledDispatcherRaycastHits);
-                    H8Memory.Release(ref _scheduledDispatcherRaycastHits);
+                    H8Memory.Release(ref _scheduledDispatcherRaycastHits, SystemID.SystemDispatcher);
                     _scheduledDispatcherRaycastHitsHandle = default;
                 }
             }

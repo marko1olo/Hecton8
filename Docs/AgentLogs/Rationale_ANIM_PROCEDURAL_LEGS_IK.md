@@ -106,6 +106,14 @@ Rejected Alternatives: Relying on telemetry-only detection was rejected because 
 Scalability potential: Low/Middle/High/Ultra valid visuals are unchanged. Low-tier devices avoid catastrophic IK spikes; high-tier secondary-chain and muscle presentation receive only finite targets and can spend visual budget without amplifying invalid data.
 Hardware Impact: Added branch/finite checks are linear in two hands/two feet per active rig, estimated below 1 us on i3/MX350. No allocations, no extra jobs, no extra rays, no new managed owners.
 
+## Decision 14: AnimationJob finite H-Phi guard
+
+Problem: Target-frame quarantine protected runtime SOA lanes, but `ContextualPhysicalIkApplyJob` still trusted stream handle reads, chain metadata, cached pose state, muscle-bulge state, and `math.saturate` on external floats. A non-finite bone pose or NaN blend could still reach two-bone, FABRIK, spine, secondary, and PlayerKinematics wall/squeeze hand production.
+Solution: Added finite and handle-range validation inside the Burst animation job before pelvis, two-bone, appendage, spine, and secondary writes. Sanitized blend inputs, stiffness/damping, cached pose playback, muscle-bulge output, quaternion nlerp/axis/euler approximations, chain lengths, runtime foot/hand publication, and the PlayerKinematics hand target producer. Invalid states now skip the specific solve/write path or reset secondary state to finite pose/zero velocity.
+Rejected Alternatives: Dotnet rebuild was explicitly rejected by user instruction. Logs/exceptions inside animation jobs were rejected as GC/noise. Additional rays or physical validation were rejected because this is an H-Phi data-integrity defect, not a simulation defect.
+Scalability potential: Low/Middle/High/Ultra valid visuals are unchanged. Low-tier avoids animation spikes; high-tier muscle/secondary overkill no longer amplifies invalid scalar or stream data. Low keeps the cheap finite gates; Middle keeps two-bone presence; High keeps velocity/predictive polish; Ultra keeps secondary/muscle visuals without trusting corrupt inputs.
+Hardware Impact: Branch/finite checks are per active IK chain and mostly inside existing AnimationJob/producer loops; estimated below 1 us for the standard player rig and no allocations/jobs/rays.
+
 ## OMEGA POLISH CHANGES
 
 Problem: Final anti-bloat pass required checking the lower-body implementation for honest simulation, unbounded math, GC leaks, and out-of-domain edits.

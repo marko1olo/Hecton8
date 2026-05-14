@@ -68,6 +68,29 @@ Verification:
 Status:
 - VERIFIED VAULT LOCK - COMPILE TARGET BLOCKED BY MISSING Hecton8.Core.Memory.rsp.
 
+## 2026-05-14 - Save Version Tail Symmetry
+
+What was wrong:
+- `SaveBinaryPayloadCodec` always wrote the v72 first-hour DTO tail, but wrote `data.version` unchanged. A repair/manual rewrite path carrying an older in-memory `SaveData` could produce a payload whose version gate skipped the appended tail on reload, causing a byte-length mismatch.
+
+What was done:
+- Normalized `data.version` to `SaveData.CurrentVersion` at the codec write boundary before `WriteSaveData` emits the version header and v72 DTO tail.
+
+Cinematic Cheats used:
+- None. This is binary ABI hygiene.
+
+Exact Microseconds saved:
+- Prevents backup/repair retry loops caused by self-written mismatched payloads. Runtime cost is one cold save-path integer compare/assign, 0 us frame impact, 0 B GC.
+
+Verification:
+- Static scan found the version normalization before `writer.WriteInt(data.version)` and the v72 DTO read/write gate intact.
+- Live-compaction regression scan stayed clean in `GlobalDataVault.cs`.
+- Exact `dotnet build Hecton8.Core.Memory.rsp` still fails with MSB1009 because the target file is missing.
+- Edited-file filtered `Hecton8.Core.csproj` build reports `NO_EDITED_FILE_ERRORS_IN_BUILD_OUTPUT`; project exit code remains 1 from unrelated failures.
+
+Status:
+- VERIFIED VAULT LOCK - COMPILE TARGET BLOCKED BY MISSING Hecton8.Core.Memory.rsp.
+
 ## 2026-05-14 - Native Array Owner Gate Restored
 
 What was wrong:

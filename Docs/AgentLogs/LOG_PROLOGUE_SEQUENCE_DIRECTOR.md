@@ -115,3 +115,68 @@ What was done -> `_running` is cleared first, final/dev-skip input unlock goes t
 Cinematic Cheats used -> None; this is recovery-path hardening around the existing cinematic sequence.
 Exact Microseconds saved -> 0 us in wait loops. Normal cleanup adds one method call and a non-throwing try boundary; fault paths save investigation time by preserving black-box dumps.
 Verification -> Unity Roslyn primary Bee `Library/Bee/artifacts/1300b0aEDbg.dag/Hecton8.Narrative.Prologue.rsp` compiled with `EXIT=0`.
+
+## 2026-05-14 - Loop 19 Dev-Skip Cancellation Guard
+
+What was wrong -> Dev-skip handoff could throw from inside token/explicit cancellation handling, bypassing the sequence catch block and losing black-box evidence. Non-finite orbital handling also still called runtime dump directly.
+What was done -> All dev-skip entry points now use `TryExecuteDevelopmentSkipHandoff()`, the handoff is latched once, failures dump the sequence/runtime black box, and non-finite orbital detection uses the guarded runtime dump path.
+Cinematic Cheats used -> Forced shallow-water hydration remains the dev-only cinematic fake; this patch only makes its failure mode deterministic.
+Exact Microseconds saved -> 0 us release hot path. Dev skip/fault path pays one helper call and one try boundary after cancellation is already active.
+Verification -> Unity Roslyn primary Bee `Hecton8.Core.Contracts.rsp` and `Hecton8.Narrative.Prologue.rsp` compiled with `EXIT=0`; `Hecton8.Core.rsp` is blocked by unrelated `Assets/_Project/Scripts/SaveSystem/SaveMasterHashV10.cs(237,26)` missing `xxHash3`. Forbidden-pattern scan is empty; `git diff --check` reports line-ending warnings only.
+
+## 2026-05-14 - Loop 20 Duplicate Input-Unlock Signal Review
+
+What was wrong -> Successful water transition emitted `PublishInputLock(None)` and then the `finally` cleanup emitted the same unlock again. One of those calls was unguarded and burned a signal lane slot for no presentation gain.
+What was done -> Removed the normal-path unlock from `RunWaterTransition()` and rely on the guarded final release. Dev-skip still releases immediately through the guarded helper.
+Cinematic Cheats used -> None; this is control-signal cleanup.
+Exact Microseconds saved -> One `SystemPauseSignal` publish per completed prologue, estimated 3-8 us and one signal-lane entry.
+Verification -> No dotnet rebuild/response-file compile was run per user constraint. Static scan confirms the only `PublishInputLock(None)` path is inside `ReleaseInputLockNoThrow()`; `git diff --check` reports line-ending warnings only.
+
+## 2026-05-14 - Loop 21 Hydration Fallback Specificity
+
+What was wrong -> When no ocean chunk was configured, high-tier hydration fallback accepted any sector hydration signal. A non-ocean sector could end the hydration wait and start splashdown early.
+What was done -> `MatchesOceanChunk` now accepts configured ocean chunk, forced shallow-water hash, or arbitrary fallback only when low-tier proxy mode is active and the signal has `FlagProxyFallback`.
+Cinematic Cheats used -> Low-tier proxy hydration remains the deliberate fake; high-tier no longer uses that fake unless the signal is explicit.
+Exact Microseconds saved -> No direct hot-path saving; adds one proxy branch under a 64-signal lane cap, below 1 us. Saves wasted water-transition work caused by false readiness.
+Verification -> No dotnet rebuild/response-file compile was run per user constraint. Static scan confirms `MatchesOceanChunk(chunkId, allowProxy, proxy)` gates arbitrary fallback behind low-tier proxy mode; `git diff --check` reports line-ending warnings only.
+
+## 2026-05-14 - Loop 22 Registry Ownership And Cancellation Guard
+
+What was wrong -> A duplicate bridge could auto-run even if `GlobalRegistry` kept another prologue sequence as the authoritative runtime. Cancellation also depended on service cancellation succeeding before the CTS was cancelled.
+What was done -> Auto-run now occurs only after `_registeredService` verifies registry ownership. Cancellation catches service failures, reports hash telemetry, and still cancels the linked CTS through `CancelRunSourceNoThrow()`.
+Cinematic Cheats used -> None; this protects ownership around the existing cinematic state machine.
+Exact Microseconds saved -> 0 us hot path. Prevents duplicate bridge wait loops and duplicate signal publishes under misconfiguration; cancellation guard is lifecycle/fault only.
+Verification -> No dotnet rebuild/response-file compile was run per user constraint. Static scan confirms auto-run is below registry acceptance and cancellation routes through `CancelRunSourceNoThrow()`.
+
+## 2026-05-15 - Loop 23 Pre-Registration Ownership Repair
+
+What was wrong -> `GlobalRegistry.RegisterServiceAllowSameInstance` replaces existing owners. The previous post-register ownership check could not prevent a duplicate bridge from overwriting the authoritative prologue runtime.
+What was done -> The bridge now checks `GlobalRegistry.PrologueSequence` before registration and returns if another service owns the slot. Input and hot-swap binding moved below proven ownership.
+Cinematic Cheats used -> None; this is lifecycle ownership hardening.
+Exact Microseconds saved -> 0 us hot path. Enable-time adds one pointer read/equality check; prevents duplicate wait loops, VWS/haptic prompts, and splashdown signals under scene misconfiguration.
+Verification -> No dotnet rebuild/response-file compile was run per user constraint. Forbidden-pattern scan returned no hits; static readback confirms duplicate-service check happens before registration and binding; `git diff --check` reports line-ending warnings only.
+
+## 2026-05-15 - Loop 24 Hot-Path Registry Cache And Auto-Run CTS Retention
+
+What was wrong -> The prologue bridge still read registry service slots from wait paths and retained the auto-run linked CTS after normal sequence completion.
+What was done -> Cached input/orbital/streaming/tick-dispatcher dependencies on enable and hot-swap, removed registry service reads from wait loops, and wrapped auto-run so the CTS is released when the Awaitable sequence finishes.
+Cinematic Cheats used -> Low-tier proxy hydration remains the cheap water-readiness fake; this patch spends saved CPU on cleaner downstream cinematic signal cadence, not on more simulation.
+Exact Microseconds saved -> Estimated 2-8 us on wait frames that sample orbital/streaming/dev-skip state. Also removes one retained linked CTS registration after normal completion.
+Verification -> No dotnet rebuild/response-file compile was run per user constraint. Service-slot scan shows `GlobalRegistry` reads limited to cold cache/bind paths; forbidden-pattern scan returned no hits; `git diff --check` reports line-ending warnings only.
+
+## 2026-05-15 - Loop 25 Dev-Skip Cancellation Priority
+
+What was wrong -> A dev-skip cancellation could be overwritten by a same-frame explicit cancel from disable before the Awaitable unwound, losing the forced shallow-water handoff.
+What was done -> `CancelSequence` now preserves an already-latched dev-skip reason while still marking cancellation requested.
+Cinematic Cheats used -> Forced shallow-water hydration remains the dev-only cinematic fake; this patch protects its priority during teardown.
+Exact Microseconds saved -> 0 us steady-state. Cancellation path adds one byte compare/branch and prevents one lost dev handoff in interruption races.
+Verification -> No dotnet rebuild/response-file compile was run per user constraint. Targeted cancellation scan confirms dev skip is preserved over later explicit cancellation; forbidden-pattern scan returned only cold registry cache reads; `git diff --check` reports line-ending warnings only.
+H-Phi -> `Tools/Architecture/HectonPhiAudit.ps1 -Json` was attempted without dotnet and timed out at 60 seconds. No project-wide H-Phi metric claimed; local H-Phi gain is reduced prologue hot-path registry coupling.
+
+## 2026-05-15 - Loop 26 Hydration LOD Hysteresis
+
+What was wrong -> Dynamic hydration quality could flip low/high proxy policy every wait frame under tier or thermal churn.
+What was done -> Added a 150-frame hysteresis band to bridge low-tier policy, with immediate downshift still allowed for low-memory pressure.
+Cinematic Cheats used -> Low-tier proxy hydration remains the deliberate fake; hysteresis prevents the fake from flickering against high-resolution readiness.
+Exact Microseconds saved -> No direct saving; adds roughly 1-2 us during hydration wait frames and avoids wasted transition churn from unstable readiness.
+Verification -> No dotnet rebuild/response-file compile was run per user constraint. Targeted scan confirms the hysteresis resolver is present; forbidden-pattern scan returned no hits; `git diff --check` reports line-ending warnings only.

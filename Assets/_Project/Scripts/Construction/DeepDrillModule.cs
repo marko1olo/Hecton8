@@ -8,6 +8,7 @@ using Hecton8.Items;
 using Hecton8.Power;
 using Hecton8.SaveSystem;
 using Hecton8.World;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Construction
@@ -274,10 +275,10 @@ namespace Hecton8.Construction
                 return false;
             }
 
-            Vector3 absoluteOrigin = HectonFloatingOrigin.ToAbsoluteUniversePosition(origin);
+            double3 absoluteOrigin = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(origin);
             InteractionPacket packet = new InteractionPacket(
                 unchecked((uint)_placementProbeToolId),
-                new Unity.Mathematics.float3(absoluteOrigin.x, absoluteOrigin.y, absoluteOrigin.z),
+                new Unity.Mathematics.float3((float)absoluteOrigin.x, (float)absoluteOrigin.y, (float)absoluteOrigin.z),
                 new Unity.Mathematics.float3(0f, -1f, 0f),
                 1f,
                 placementProbeHeight + placementProbeDistance,

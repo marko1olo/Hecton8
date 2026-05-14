@@ -115,6 +115,7 @@ namespace Hecton8.World.Outposts
         public uint ShiftFrameId;
     }
 
+    [StructLayout(LayoutKind.Sequential)]
     [BurstCompile(FloatPrecision.Low, FloatMode.Fast, CompileSynchronously = true)]
     internal struct MarauderOutpostSolveJob : IJob
     {
@@ -251,6 +252,7 @@ namespace Hecton8.World.Outposts
         }
     }
 
+    [StructLayout(LayoutKind.Sequential)]
     [BurstCompile(FloatPrecision.Low, FloatMode.Fast, CompileSynchronously = true)]
     internal struct MarauderOutpostMatrixExtractionJob : IJob
     {
@@ -445,6 +447,7 @@ namespace Hecton8.World.Outposts
         }
     }
 
+    [StructLayout(LayoutKind.Sequential)]
     [BurstCompile(FloatPrecision.Low, FloatMode.Fast, CompileSynchronously = true)]
     internal struct MarauderOutpostAupShiftJob : IJobParallelFor
     {

@@ -165,3 +165,160 @@ Verification:
 - `git diff --check`: PASS with repository LF/CRLF warning only.
 
 Status: PENDING VERIFICATION. Source compile and static audits pass; runtime scene/profiler proof is still unavailable from this session.
+
+## 2026-05-14 - WFC Outpost Loop 12 Fault Backoff And Blackbox Format
+
+What was wrong:
+- Registry publish failure left a generated outpost with no grid handle and no retry backoff, so the heartbeat path could retry and dump blackbox every Tick.
+- The blackbox file lacked a magic/version header and wrote physical ring order instead of chronological order.
+- Current compile artifacts drifted: the outpost response file references a missing `Hecton8.Core.ref.dll`, and rebuilding Core currently fails in SaveSystem.
+
+What was done:
+- Restored publish-failure retry backoff by arming the existing 60 Tick-frame heartbeat after `RegisterGrid` failure.
+- Kept recovery from the native WFC byte grid; no re-solve or shell rebuild is introduced.
+- Added blackbox dump header fields: magic, version, entry payload byte count, and start index.
+- Changed dump serialization to oldest-to-newest order from `_telemetryWriteIndex`.
+- Re-ran prompt/state checks, static forbidden audit, `git diff --check`, and targeted compile attempts.
+
+Cinematic Cheats used:
+- Failure recovery remains metadata/signal based; no physical reconstruction, no shell GameObjects, no WFC re-solve.
+- Blackbox stays a fixed 300-entry ring; the improvement is dump formatting, not runtime telemetry expansion.
+
+Exact Microseconds saved:
+- Prevents repeated fault-path registry/file I/O every Tick after publish failure. This is millisecond-scale risk avoided on slow storage; steady runtime remains 0 B/frame.
+- Normal Tick cost remains one heartbeat countdown branch, estimated below 0.2 us/frame.
+- Blackbox chronology/header has no normal-frame cost; it only affects fault dump time.
+
+Verification:
+- `Docs/Tasks/CURRENT_BATCH.md` extraction for `MARAUDER_OUTPOST_ARCHITECT`: `PROMPT_NOT_FOUND`; persisted status/rationale files used as authoritative continuity record.
+- Scoped forbidden construct audit: PASS; no managed LINQ/random, shell `Instantiate`, `BaseGenerator`, `pow`, `/255`, `/65535`, telemetry modulo, raw transform-origin fallback, solve zero-shift accumulation, or immediate publish-failure heartbeat reset.
+- `git diff --check`: PASS with repository LF/CRLF warning only.
+- `Hecton8.World.Outposts` Unity Roslyn response-file compile: BLOCKED by missing `Library/Bee/artifacts/1300b0aEDbg.dag/Hecton8.Core.ref.dll`.
+- `Hecton8.Core` Unity Roslyn response-file rebuild: BLOCKED outside Habitat/Outposts at `Assets/_Project/Scripts/SaveSystem/SaveMasterHashV10.cs(237,26)` because `xxHash3` is missing.
+- Unity MCP console/profiler: unavailable from this session.
+
+Status: PENDING VERIFICATION. Static source audits pass; current compile proof is blocked by external Core/SaveSystem dependency drift.
+
+## 2026-05-14 - WFC Outpost Loop 13 Extraction-Phase AUP Shift Closure
+
+What was wrong:
+- A pending AUP shift received during matrix extraction was consumed only after generation commit.
+- That meant draw bounds, GPU upload, pooled proxy spawn, and `WfcOutpostGeneratedSignal` publication could use pre-shift coordinates for one frame or hand logistics a stale origin descriptor.
+- The user explicitly forbade `dotnet` rebuilds for this loop.
+
+What was done:
+- Added `ShiftEpsilonMeters` to centralize the pending-shift threshold.
+- `CommitCompletedGeneration` now consumes pending extraction-phase shifts immediately after native counters are read.
+- The new cold helper shifts `_generationOrigin`, shell matrices, and `OutpostInteractableSpawn.PositionMeters` before draw bounds, upload, proxy spawn, grid hash publication, and signal replay.
+- Re-ran source-only verification without any `dotnet` rebuild.
+
+Cinematic Cheats used:
+- Shift correction remains a deterministic matrix/spawn-packet offset, not a transform hierarchy teleport or WFC re-solve.
+- Grid topology remains byte-data truth; visual/proxy data is moved to match the new AUP frame.
+
+Exact Microseconds saved:
+- Avoids a stale-origin recovery path and one-frame visual/proxy mismatch after extraction/shift races.
+- Rare commit-time linear pass only: up to 1024 matrices and 16 spawn packets, estimated below 20-60 us on i3/MX350 class CPUs.
+- Steady frame cost remains 0 B/frame and unchanged Tick/Render cost.
+
+Verification:
+- Scoped forbidden construct audit: PASS; no managed LINQ/random, shell `Instantiate`, `BaseGenerator`, `pow`, `/255`, `/65535`, telemetry modulo, raw transform-origin fallback, solve zero-shift accumulation, or immediate publish-failure heartbeat reset.
+- `git diff --check`: PASS with repository LF/CRLF warning only.
+- `dotnet` rebuilds/response-file compiles: NOT RUN by explicit user request.
+- Unity MCP console/profiler: unavailable from this session.
+
+Status: PENDING VERIFICATION. Static source audits pass; compile/runtime proof remains pending.
+
+## 2026-05-14 - WFC Outpost Loop 14 Finite Scalar Payload Guard
+
+What was wrong:
+- Serialized scalar fields could carry NaN/Infinity into Burst extraction, draw bounds, telemetry, and generated WFC logistics payloads.
+- Inspector attributes and `Mathf.Max`/`math.max` were not sufficient evidence of finite values at runtime.
+- The user explicitly forbade `dotnet` rebuilds again.
+
+What was done:
+- Added a default constant for outpost age and finite-safe scalar sanitizers.
+- Routed cell size, floor height, stilt clearance, and age through resolver methods.
+- Applied those resolvers to `OnValidate`, matrix extraction job fields, draw bounds, snapshots, telemetry entries, `WfcOutpostGridDescriptor`, and `WfcOutpostGeneratedSignal`.
+- Re-ran source-only audits without any `dotnet` rebuild.
+
+Cinematic Cheats used:
+- No physical simulation or object hierarchy changes. The fix protects numeric payloads that drive existing matrix/GPU/logistics fakes.
+
+Exact Microseconds saved:
+- Prevents NaN-driven culling/extraction/logistics recovery paths; steady cost is scalar finite checks at boundary points.
+- Runtime allocation remains 0 B/frame.
+- Hot Render adds only finite-safe age resolution, estimated below 0.1 us/frame.
+
+Verification:
+- Scoped forbidden construct audit: PASS; no managed LINQ/random, shell `Instantiate`, `BaseGenerator`, `pow`, `/255`, `/65535`, telemetry modulo, raw transform-origin fallback, solve zero-shift accumulation, or immediate publish-failure heartbeat reset.
+- Scalar payload audit: PASS; no raw `math.max(... serialized field ...)`, raw `Mathf.Clamp01(outpostAge01)`, or raw `outpostAge01` payload writes remain in the outpost service.
+- `git diff --check`: PASS with repository LF/CRLF warning only.
+- `dotnet` rebuilds/response-file compiles: NOT RUN by explicit user request.
+- Unity MCP console/profiler: unavailable from this session.
+
+Status: PENDING VERIFICATION. Static source audits pass; compile/runtime proof remains pending.
+
+## 2026-05-15 - WFC Outpost Loop 15 Render Boundary And Pending Shift Fault Closure
+
+What was wrong:
+- `UpdateIndirectArgsBuffer` assumed the resolved shell mesh had submesh 0 and could call `GetIndexCount(0)` on an invalid authored mesh.
+- `Render` could still submit an invalid zero-submesh mesh if the mesh asset changed after args upload.
+- `ApplyPendingShiftToExtractedData` returned on non-finite `_pendingShift` without clearing `_hasPendingShift`, leaving a corrupt pending AUP state sticky.
+- The user explicitly forbade `dotnet` rebuilds again.
+
+What was done:
+- Added a render-boundary guard for zero-submesh meshes.
+- Changed indirect args upload to produce zero draw instances unless mesh submesh 0 exists and has a positive index count.
+- Changed corrupt pending-shift handling to clear the pending state, write fault/AUP telemetry, and dump the 300-frame blackbox.
+- Re-ran source-only audits without any `dotnet` rebuild.
+
+Cinematic Cheats used:
+- The shell remains a GPU-buffer/indirect render fake, not prefab wall objects or a transform hierarchy.
+- AUP repair remains deterministic matrix/spawn-packet math; corrupt input fails closed into telemetry instead of inventing physical recovery.
+
+Exact Microseconds saved:
+- Eliminates an invalid mesh exception path and avoids fallback object spawning. Steady render cost adds one integer mesh-property guard, estimated below 0.05 us/frame.
+- Invalid pending-shift cleanup is fault-path only; normal generation and render remain 0 B/frame.
+- Zero-instance args avoid wasted indirect submissions for empty meshes.
+
+Verification:
+- `git diff --check`: PASS with repository LF/CRLF warning only.
+- Scoped forbidden construct audit: PASS; no managed LINQ/random/string interpolation, shell `Instantiate`, `BaseGenerator`, `pow`, `/255`, `/65535`, telemetry modulo, raw transform-origin fallback, or immediate publish-failure heartbeat reset.
+- Targeted mesh/pending-shift audit: PASS; no old `mesh != null ? mesh.GetIndex...` ternary, no `instanceCount = instanceCount`, and no stale `_hasPendingShift || !isfinite` early return.
+- Scalar payload audit: PASS; no raw `math.max(... serialized field ...)`, raw `Mathf.Clamp01(outpostAge01)`, or raw `outpostAge01` payload writes remain.
+- `dotnet` rebuilds/response-file compiles: NOT RUN by explicit user request.
+- Unity MCP console/profiler: unavailable from this session.
+
+Status: PENDING VERIFICATION. Static source audits pass; compile/runtime proof remains pending.
+
+## 2026-05-15 - WFC Outpost Loop 16 AUP Signal Ingress Fault Evidence
+
+What was wrong:
+- `ApplyAupShift` dropped non-finite AUP shift signals silently.
+- The tiny-shift threshold was duplicated as `new float3(0.0001f)` instead of using the shared `ShiftEpsilonMeters` constant.
+- The user explicitly forbade `dotnet` rebuilds again.
+
+What was done:
+- Split corrupt and tiny shift handling.
+- Non-finite shift ingress now writes fault/AUP telemetry, dumps the blackbox, and returns without mutating origin or matrices.
+- Tiny finite shifts now return through `ShiftEpsilonMeters`.
+- Re-ran source-only audits without any `dotnet` rebuild.
+
+Cinematic Cheats used:
+- AUP correction remains deterministic matrix/proxy offset math.
+- Corrupt coordinate payloads fail closed into telemetry instead of invoking a physical recovery or WFC re-solve.
+
+Exact Microseconds saved:
+- Avoids repeated silent invalid-coordinate handling and preserves forensic state for the 300-frame blackbox.
+- Valid shift path cost is unchanged except constant reuse.
+- Hot Tick/Render allocation remains 0 B/frame by source audit.
+
+Verification:
+- `git diff --check`: PASS with repository LF/CRLF warning only.
+- Scoped forbidden construct audit: PASS; no managed LINQ/random/string interpolation, shell `Instantiate`, `BaseGenerator`, `pow`, `/255`, `/65535`, telemetry modulo, raw transform-origin fallback, or immediate publish-failure heartbeat reset.
+- Targeted AUP/render audit: PASS; no hardcoded `new float3(0.0001f)`, no combined finite/tiny shift early return, no old `mesh != null ? mesh.GetIndex...` ternary, no `instanceCount = instanceCount`, and no stale pending-shift guard.
+- `dotnet` rebuilds/response-file compiles: NOT RUN by explicit user request.
+- Unity MCP console/profiler: unavailable from this session.
+
+Status: PENDING VERIFICATION. Static source audits pass; compile/runtime proof remains pending.

@@ -2456,6 +2456,14 @@ namespace Hecton8.World
             {
                 conduitAlignment = 0f;
                 verticalBonus = 0f;
+                if (currentIndex < 0 ||
+                    neighborIndex < 0 ||
+                    !math.all(math.isfinite(currentNode)) ||
+                    !math.all(math.isfinite(neighborNode)))
+                {
+                    return 0f;
+                }
+
                 float depthMeters = math.max(0f, WaterLevel - math.min(currentNode.y, neighborNode.y));
                 if (depthMeters < ConduitStartDepth ||
                     !ConduitVectors.IsCreated ||
@@ -2464,22 +2472,39 @@ namespace Hecton8.World
                     neighborIndex >= ConduitVectors.Length ||
                     currentIndex >= ConduitStrengths.Length ||
                     neighborIndex >= ConduitStrengths.Length ||
-                    distance <= 0.0001f)
+                    distance <= 0.0001f ||
+                    !math.isfinite(distance) ||
+                    !math.all(math.isfinite(delta)))
                 {
                     return 0f;
                 }
 
-                float currentStrength = math.saturate(ConduitStrengths[currentIndex]);
-                float neighborStrength = math.saturate(ConduitStrengths[neighborIndex]);
+                float currentStrengthValue = ConduitStrengths[currentIndex];
+                float neighborStrengthValue = ConduitStrengths[neighborIndex];
+                if (!math.isfinite(currentStrengthValue))
+                    currentStrengthValue = 0f;
+                if (!math.isfinite(neighborStrengthValue))
+                    neighborStrengthValue = 0f;
+
+                float currentStrength = math.saturate(currentStrengthValue);
+                float neighborStrength = math.saturate(neighborStrengthValue);
                 float combinedStrength = math.max(currentStrength, neighborStrength);
                 if (combinedStrength <= 0.0001f)
                     return 0f;
 
-                float3 conduitVector = (ToFloat3(ConduitVectors[currentIndex]) * currentStrength) + (ToFloat3(ConduitVectors[neighborIndex]) * neighborStrength);
+                float3 currentConduit = ToFloat3(ConduitVectors[currentIndex]);
+                float3 neighborConduit = ToFloat3(ConduitVectors[neighborIndex]);
+                if (!math.all(math.isfinite(currentConduit)) ||
+                    !math.all(math.isfinite(neighborConduit)))
+                {
+                    return 0f;
+                }
+
+                float3 conduitVector = (currentConduit * currentStrength) + (neighborConduit * neighborStrength);
                 if (math.lengthsq(conduitVector) <= 0.0001f)
                     return 0f;
 
-                float3 edgeDirection = delta / distance;
+                float3 edgeDirection = delta * math.rcp(math.max(distance, 0.0001f));
                 float3 conduitDirection = DominantAxisOrDefault(conduitVector, edgeDirection);
                 conduitAlignment = math.saturate((math.dot(edgeDirection, conduitDirection) * 0.5f) + 0.5f);
                 verticalBonus = ConduitVerticalToleranceBonus * combinedStrength * conduitAlignment * math.abs(conduitDirection.y);
@@ -2488,20 +2513,31 @@ namespace Hecton8.World
 
             private float SampleThreatAtWorldPosition(float3 position)
             {
+                if (!math.all(math.isfinite(position)))
+                    return 1f;
+
                 float voxelThreat = SampleThreatVoxelAtWorldPosition(position);
                 float predatorFearThreat = SamplePredatorFearAtWorldPosition(position);
 
-                if (!ThreatGrid.IsCreated || ThreatGridResolution <= 0 || ThreatGridCellSize <= 0f)
+                if (!ThreatGrid.IsCreated ||
+                    ThreatGridResolution <= 0 ||
+                    ThreatGridCellSize <= 0f ||
+                    !math.isfinite(ThreatGridCellSize) ||
+                    !math.all(math.isfinite(ThreatGridCenter)) ||
+                    !HasCompleteThreatGrid())
+                {
                     return math.max(voxelThreat, predatorFearThreat);
+                }
 
                 float halfExtent = (ThreatGridResolution - 1) * 0.5f * ThreatGridCellSize;
                 float localX = position.x - (ThreatGridCenter.x - halfExtent);
                 float localZ = position.z - (ThreatGridCenter.z - halfExtent);
                 if (localX < 0f || localZ < 0f || localX > halfExtent * 2f || localZ > halfExtent * 2f)
-                    return voxelThreat;
+                    return math.max(voxelThreat, predatorFearThreat);
 
-                float cellCoordX = localX / ThreatGridCellSize;
-                float cellCoordZ = localZ / ThreatGridCellSize;
+                float inverseThreatGridCellSize = math.rcp(math.max(ThreatGridCellSize, 0.0001f));
+                float cellCoordX = localX * inverseThreatGridCellSize;
+                float cellCoordZ = localZ * inverseThreatGridCellSize;
                 int x0 = math.clamp((int)math.floor(cellCoordX), 0, ThreatGridResolution - 1);
                 int z0 = math.clamp((int)math.floor(cellCoordZ), 0, ThreatGridResolution - 1);
                 int x1 = math.min(x0 + 1, ThreatGridResolution - 1);
@@ -2529,12 +2565,18 @@ namespace Hecton8.World
                 for (int i = 0; i < count; i++)
                 {
                     PredatorFearNodeSnapshot node = PredatorFearNodes[i];
-                    if (node.SpeciesId != TraversalSpeciesId || node.Weight <= 0f)
+                    if (node.SpeciesId != TraversalSpeciesId ||
+                        node.Weight <= 0f ||
+                        !math.isfinite(node.Weight) ||
+                        !math.isfinite(node.Radius) ||
+                        !math.all(math.isfinite(node.Position)))
+                    {
                         continue;
+                    }
 
                     float radius = math.max(node.Radius, 1f);
                     float2 delta = new float2(position.x - node.Position.x, position.z - node.Position.z);
-                    float gate = 1f - math.saturate(EstimateLength2D(delta) / radius);
+                    float gate = 1f - math.saturate(EstimateLength2D(delta) * math.rcp(radius));
                     if (gate <= 0f)
                         continue;
 
@@ -2546,22 +2588,29 @@ namespace Hecton8.World
 
             private float SampleThreatVoxelAtWorldPosition(float3 position)
             {
-                if (!ThreatVoxelGrid.IsCreated ||
+                if (!ThreatVoxelGrid.IsCreated)
+                    return 0f;
+
+                if (!math.all(math.isfinite(position)) ||
+                    !math.all(math.isfinite(ThreatVoxelOrigin)) ||
+                    !HasUsableThreatVoxelCellSize() ||
                     ThreatVoxelDimensions.x <= 0 ||
                     ThreatVoxelDimensions.y <= 0 ||
-                    ThreatVoxelDimensions.z <= 0)
+                    ThreatVoxelDimensions.z <= 0 ||
+                    !HasCompleteThreatVoxelGrid())
                 {
-                    return 0f;
+                    return 1f;
                 }
 
                 float3 local = position - ThreatVoxelOrigin;
                 if (local.x < 0f || local.y < 0f || local.z < 0f)
                     return 0f;
 
+                float3 inverseCellSize = math.rcp(math.max(ThreatVoxelCellSize, new float3(0.0001f, 0.0001f, 0.0001f)));
                 int3 voxel = new int3(
-                    (int)math.floor(local.x / math.max(ThreatVoxelCellSize.x, 0.001f)),
-                    (int)math.floor(local.y / math.max(ThreatVoxelCellSize.y, 0.001f)),
-                    (int)math.floor(local.z / math.max(ThreatVoxelCellSize.z, 0.001f)));
+                    (int)math.floor(local.x * inverseCellSize.x),
+                    (int)math.floor(local.y * inverseCellSize.y),
+                    (int)math.floor(local.z * inverseCellSize.z));
                 if (voxel.x < 0 || voxel.y < 0 || voxel.z < 0 ||
                     voxel.x >= ThreatVoxelDimensions.x ||
                     voxel.y >= ThreatVoxelDimensions.y ||
@@ -2572,10 +2621,10 @@ namespace Hecton8.World
 
                 int flatIndex = voxel.x + (voxel.y * ThreatVoxelDimensions.x) + (voxel.z * ThreatVoxelDimensions.x * ThreatVoxelDimensions.y);
                 if (flatIndex < 0 || flatIndex >= ThreatVoxelGrid.Length)
-                    return 0f;
+                    return 1f;
 
                 byte encoded = ThreatVoxelGrid[flatIndex];
-                return encoded >= 255 ? 1f : (encoded / 254f);
+                return encoded >= 255 ? 1f : encoded * math.rcp(254f);
             }
 
             private float ResolveTraversalMultiplier(int currentIndex, int neighborIndex)
@@ -2707,6 +2756,42 @@ namespace Hecton8.World
                 float min = math.min(ax, math.min(ay, az));
                 float mid = ax + ay + az - max - min;
                 return max + (mid * 0.375f) + (min * 0.25f);
+            }
+
+            private bool HasCompleteThreatGrid()
+            {
+                if (!ThreatGrid.IsCreated || ThreatGridResolution <= 0)
+                    return false;
+
+                long resolution = ThreatGridResolution;
+                long expectedLength = resolution * resolution;
+                return expectedLength > 0L &&
+                       expectedLength <= int.MaxValue &&
+                       ThreatGrid.Length >= expectedLength;
+            }
+
+            private bool HasCompleteThreatVoxelGrid()
+            {
+                if (!ThreatVoxelGrid.IsCreated ||
+                    ThreatVoxelDimensions.x <= 0 ||
+                    ThreatVoxelDimensions.y <= 0 ||
+                    ThreatVoxelDimensions.z <= 0)
+                {
+                    return false;
+                }
+
+                long expectedLength = (long)ThreatVoxelDimensions.x * ThreatVoxelDimensions.y * ThreatVoxelDimensions.z;
+                return expectedLength > 0L &&
+                       expectedLength <= int.MaxValue &&
+                       ThreatVoxelGrid.Length >= expectedLength;
+            }
+
+            private bool HasUsableThreatVoxelCellSize()
+            {
+                return math.all(math.isfinite(ThreatVoxelCellSize)) &&
+                       ThreatVoxelCellSize.x > 0.000001f &&
+                       ThreatVoxelCellSize.y > 0.000001f &&
+                       ThreatVoxelCellSize.z > 0.000001f;
             }
         }
 

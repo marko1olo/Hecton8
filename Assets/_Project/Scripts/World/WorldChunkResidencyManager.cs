@@ -4231,7 +4231,7 @@ namespace Hecton8.World
                 return;
 
             NativeMemorySentinel.UnregisterNativeArray(array);
-            H8Memory.Release(ref array);
+            H8Memory.Release(ref array, SystemID.WorldStreaming);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -223,3 +223,99 @@ Solution: Re-ran the constrained Core build after Loop 10. `Hecton8.Core.csproj`
 Rejected Alternatives: Continuing to label compile as blocked after the local evidence changed, or expanding the verification scope into Unity Editor MCP while the endpoint remains unavailable.
 Scalability potential: Runtime unchanged; the integration gate is now factual for Low/Middle/High/Ultra Core code.
 Hardware Impact: 0 us runtime gain from verification; saves low-end developer iteration time by clearing the AUP patch set from compile suspicion.
+
+## Decision 28 - Chemical Influence Double Breadcrumbs
+
+Problem: `ChemicalInfluenceGrid` mixed runtime positions into absolute chemical breadcrumbs and defoliant dead zones, then stored the authoritative centers as `float3`/`Vector4` before distance checks and scent-grid cell resolution.
+Solution: Add `double3 AbsolutePositionDouble` to `ChemicalBreadcrumbWaypoint`, preserve double defoliant centers in a fixed `double3[64]` side lane, and route merge, sample, nearest-waypoint, dead-zone, and grid-cell math through double subtraction before final legacy presentation/storage casts.
+Rejected Alternatives: Replacing every existing AI-facing breadcrumb API with a new AUP struct. That would break consumers during a precision audit and add cross-domain churn. Keeping float breadcrumbs was rejected because chemical proximity is trigger math, not presentation.
+Scalability potential: Low keeps the same 64 breadcrumb cap and byte scent grid; Middle/High/Ultra get stable long-session chemical trails and defoliant gates without heavier simulation.
+Hardware Impact: Expected i3/MX350 cost is below 3 us on chemical query frames and 0 B/frame managed allocation. Expected gain is fewer false scent/defoliant threshold flips after origin shifts.
+
+## Decision 29 - Splash, Acoustic, And Terrain Query AUP Reconstruction
+
+Problem: Splash anchors, acoustic SDF midpoint sampling, and wreck terrain-height queries still used legacy `ToAbsoluteUniversePosition(Vector3)` in selected callsites, reducing the committed offset before seeds, persistent payloads, or absolute queries were built.
+Solution: Convert those callsites to `HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3`, keep seed/position calculations in double, and cast only into existing float payloads for shader, VFX, audio, and MapMagic API boundaries.
+Rejected Alternatives: Converting shader/VFX/MapMagic payload contracts to doubles. Those surfaces are presentation or third-party API boundaries; the correct repair is keeping CPU authority in double until the final required cast.
+Scalability potential: Low keeps cheap splash and acoustic payloads; Middle/High/Ultra gain stable persistent anchors and deterministic splash seeds that can support denser visual effects without AUP wobble.
+Hardware Impact: Expected i3/MX350 benefit is 1-5 us in splash/acoustic bursts by avoiding seed churn and post-shift correction. Managed allocation remains 0 B/frame.
+
+## Decision 30 - Wreck Burial Voxel Cut Double Center
+
+Problem: Procedural wreck burial cuts queued voxel surgeon box centers as `float3 AbsoluteCenter`, so an origin-shifted wreck could feed truncated AUP centers into voxel crater cuts.
+Solution: Replace the record center with `double3 AbsoluteCenter` while preserving the 64-byte record size, populate it from `ToAbsoluteUniversePositionDouble3`, and submit directly to the voxel delta processor's `double3` box-crater overload.
+Rejected Alternatives: Adding a second native side buffer or increasing the record size. The existing record had enough reserved space to preserve double precision without extra buffers, allocations, or cache-thrashing metadata.
+Scalability potential: Low keeps the existing placement cap and voxel cut count; High/Ultra get stable buried-wreck excavation cuts and can spend saved correction budget on richer debris presentation.
+Hardware Impact: Expected i3/MX350 benefit is 2-6 us on buried-wreck voxel cut frames by avoiding misaligned crater retries. Memory footprint remains 64 bytes per record and 0 B/frame managed allocation.
+
+## Decision 31 - Loop 14 Verification Wall
+
+Problem: Loop 14 required compile verification after the AUP repairs, but the current Core build is blocked by active unrelated dependency changes outside the touched files.
+Solution: Run mandatory and targeted scans, `git diff --check`, and a constrained Core build with a binary log file. Then filter the build log for every Loop 14 touched file before classifying the failure.
+Rejected Alternatives: Reporting a fake compile pass, chasing `HardwareProfileCatalog`, save-header, or `SystemID`/`JobHandle` errors outside this agent's AUP boundary, or reverting other agents' dirty files.
+Scalability potential: Runtime unchanged; evidence isolation protects Low/Middle/High/Ultra integration by proving the AUP patch is not the current compile blocker.
+Hardware Impact: 0 us runtime gain from verification. Developer-time gain on low-end machines is avoiding false attribution of 60 unrelated Core errors to this AUP patch.
+
+## Decision 32 - Construction Rupture Double AUP State
+
+Problem: Construction rupture/decal logic reconstructed module and rupture positions through legacy `Vector3` absolute AUP before comparing state and building outward decal vectors.
+Solution: Preserve `RuptureNodeState.AbsoluteUniversePositionDouble`, compare prior/current rupture anchors in double, and calculate rupture-vs-module outward vectors from `ToAbsoluteUniversePositionDouble3` before the final `Vector3` decal matrix boundary.
+Rejected Alternatives: Replacing all construction rupture public payloads with `double3`. Existing consumers and serialized/debug surfaces expect `Vector3`; a wrapper double lane keeps compatibility while removing authority drift.
+Scalability potential: Low keeps the same decal/VFX payload and cheap visual fracture fake. Middle/High/Ultra get stable long-session rupture anchors and can spend the stability budget on denser crack VFX without changing gameplay truth.
+Hardware Impact: Expected i3/MX350 benefit is 1-4 us on rupture/decal update frames by avoiding repeated state churn from float AUP comparison jitter. Managed allocation remains 0 B/frame.
+
+## Decision 33 - Drone Voxel Ingress Double Boundary
+
+Problem: Drone repair and plasma cut dispatch converted ray hits to legacy `Vector3` AUP before feeding voxel DDA and spark events, truncating the committed origin offset before voxel authority work.
+Solution: Add `double3` overloads for `HectonVoxelVolume.ApplyPlasmaCutDda` and `ApplyRepairWeldDda`, route `DroneFleetManager` through those overloads, and convert spark payloads to `AbsoluteUniversePosition` from the double hit point.
+Rejected Alternatives: Removing the `Vector3` overloads or changing all tool callers in one pass. Legacy wrappers are required to avoid broad public API churn across active tool/interaction agents.
+Scalability potential: Low keeps the same DDA cost and VFX payload. High/Ultra can layer denser weld/cut particles because the hit anchor no longer drifts after origin shifts.
+Hardware Impact: Expected i3/MX350 benefit is 2-6 us on drone voxel edit bursts by avoiding misaligned DDA retries and spark correction. No per-frame managed allocation or native buffer growth.
+
+## Decision 34 - Seismic Event Double Line Payload
+
+Problem: Meteor splash and seismic shockwave events produced persistent splash/trench AUP anchors from `Vector3` absolute positions; geology replay then computed trench length, direction, and ids after precision loss.
+Solution: Add `AupStartDouble` and `AupEndDouble` to `SeismicShockwaveEvent`, generate splash/trench anchors with `ToAbsoluteUniversePositionDouble3`, fold rounded double coordinates into deterministic uint seeds, and consume the double line in `WorldGenerativeGeologyVoxelBridgeDirector` before final legacy voxel plan casts.
+Rejected Alternatives: Making all random/geology event payload fields double-only. Existing event consumers still expect legacy `Vector3` fields; dual lanes preserve compatibility and keep the authority path 64-bit.
+Scalability potential: Low keeps the same cheap seismic trench fake and voxel plan fields. Middle/High/Ultra gain deterministic long-session trench placement and can spend saved stability on richer debris/dust presentation.
+Hardware Impact: Expected i3/MX350 benefit is 2-8 us on seismic event execution by avoiding trench-id churn and line-length correction after origin shifts. Event struct grows by two `double3` lanes but remains stack/blittable usage; managed allocation remains 0 B/frame.
+
+## Decision 35 - Loop 15 Verification Wall
+
+Problem: Loop 15 compile verification initially exposed one local import error, then returned to the active unrelated Core dependency wall.
+Solution: Fix the local `DeepDrillModule.cs` missing `Unity.Mathematics` import, re-run the constrained Core build, and filter the build log for every Loop 15 touched file. The after-fix build has 0 warnings and no errors in touched files; remaining 60 errors are save-layout, hardware-profile, and scheduler-handle dependencies.
+Rejected Alternatives: Leaving the local CS0246 error in place, reporting a fake green build, or chasing unrelated save/core-memory ownership from the AUP auditor domain.
+Scalability potential: Runtime unchanged beyond the Loop 15 fixes; verification evidence keeps Low/Middle/High/Ultra integration risk scoped to actual blockers.
+Hardware Impact: 0 us runtime gain from verification. Developer-time gain on low-end machines is preventing a local AUP import error from being buried under unrelated dependency failures.
+
+## Decision 36 - Interaction And Tool Packet Final-Cast Boundary
+
+Problem: Player tools, physical switches, panel buttons, equipment interaction packets, and repair welds converted runtime hit origins to legacy `Vector3` AUP before packet, voxel, or debris-spark publication.
+Solution: Route those producers through `HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3`, validate double finiteness where needed, and cast only into existing `float3` packet/presentation fields or `AbsoluteUniversePosition.FromAbsolutePosition`.
+Rejected Alternatives: Changing `InteractionPacket` and all interaction service contracts to double in this audit pass. That would mutate public interfaces across active interaction/tool agents. The safer DOD pattern is a double authority lane with legacy final-cast wrappers.
+Scalability potential: Low keeps cheap float interaction packets and haptics. Middle/High/Ultra get stable long-session hit anchors and can spend saved stability on denser panel/spark feedback without changing the event contract.
+Hardware Impact: Expected i3/MX350 benefit is 2-7 us on interaction/repair bursts by avoiding hit-anchor correction and voxel weld retry churn. Managed allocation remains 0 B/frame.
+
+## Decision 37 - Geology Plan Double Runtime Keys
+
+Problem: `WorldGenerativeGeologyIntegrationDirector` built retained plan centers, terrain heights, voxel centers, and fallback runtime keys after legacy `Vector3` AUP reconstruction.
+Solution: Reconstruct plan world/terrain/voxel centers as `double3`, create AUP structs from absolute double positions, and build fallback runtime keys from rounded double millimeters with an FNV-style long hash before final legacy `Vector3` plan fields.
+Rejected Alternatives: Converting `WorldGenerativeGeologySeamPlan` storage wholesale to double. The plan struct is consumed by voxel, terrain, gizmo, and compatibility code; widening it is a separate world-geometry contract migration.
+Scalability potential: Low keeps the existing cheap seam-plan payload. High/Ultra get stable deterministic plan retention and can spend saved churn on richer seam/debris presentation.
+Hardware Impact: Expected i3/MX350 benefit is 3-9 us on plan refreshes by avoiding key churn and repeated plan rebuilds after origin shifts. No managed allocation was added.
+
+## Decision 38 - Presentation Helper Double Bridge
+
+Problem: MapMagic shader origins, Crest depth helper points, scatter helper positions, localized sign rebases, player build ghost projection, crash telemetry fallback, submarine leak impact signals, and spatial audio listener fallback still used legacy AUP reconstruction.
+Solution: Keep double AUP until the required shader `Vector4`, Unity `Vector3`, telemetry `float3`, or `AbsoluteUniversePosition` boundary. Localized signs now retain a double AUP side lane for origin-shift projection while preserving the legacy `Vector3` field.
+Rejected Alternatives: Converting shader globals, Unity transforms, and third-party helper surfaces to doubles. Those endpoints are float presentation surfaces; the correct fix is final-cast discipline, not GPU/API contract mutation.
+Scalability potential: Low keeps cheap shader/transform/telemetry payloads. Middle/High/Ultra get stable origins for richer terrain fades, depth effects, signage, scatter, audio, and leak feedback.
+Hardware Impact: Expected i3/MX350 benefit is 1-5 us across shift-heavy frames by avoiding presentation correction churn. Crash telemetry remains fixed-buffer and zero-GC.
+
+## Decision 39 - Loop 16 Verification Wall
+
+Problem: After the global legacy HFO AUP cleanup, the Core build still fails under active unrelated dependency changes.
+Solution: Re-run the global `HectonFloatingOrigin.ToAbsoluteUniversePosition(` scan, mandatory AUP regex, direct committed-offset scan, `git diff --check`, and constrained Core build. Then filter the build log for every Loop 16 touched file before classifying the result.
+Rejected Alternatives: Chasing residency/power/fauna/core save-layout/hardware-profile/scheduler errors outside the AUP auditor domain, or reporting a fake green build.
+Scalability potential: Runtime unchanged beyond Loop 16 fixes; verification evidence proves Low/Middle/High/Ultra AUP edits are not the current compile blocker.
+Hardware Impact: 0 us runtime gain from verification. Developer-time gain on low-end machines is avoiding false attribution of 74 unrelated Core errors to this AUP patch.

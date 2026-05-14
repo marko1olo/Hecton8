@@ -1021,7 +1021,7 @@ namespace Hecton8.World
         /// </summary>
         internal int ApplyConstructionDecomposition(Vector3 runtimePosition, float radiusMeters)
         {
-            if (radiusMeters <= 0f)
+            if (!math.isfinite(radiusMeters) || radiusMeters <= 0f)
                 return 0;
 
             if (vegetationBridge == null)
@@ -1031,8 +1031,8 @@ namespace Hecton8.World
                 return 0;
 
             RefreshActiveCachesIfNeeded(force: false);
-            Vector3 universePosition = HectonMapMagicVegetationBridge.ToUniverseSpace(runtimePosition);
-            float radiusSq = radiusMeters * radiusMeters;
+            double3 universePosition = HectonMapMagicVegetationBridge.ToUniverseSpaceDouble3(runtimePosition);
+            double radiusSq = (double)radiusMeters * radiusMeters;
             int decomposedCount = 0;
             decomposedCount += ApplyConstructionDecompositionInLane(false, universePosition, radiusSq);
             decomposedCount += ApplyConstructionDecompositionInLane(true, universePosition, radiusSq);
@@ -1044,7 +1044,7 @@ namespace Hecton8.World
         /// </summary>
         internal int ApplyDefoliantDeadZone(Vector3 runtimePosition, float radiusMeters)
         {
-            if (radiusMeters <= 0f)
+            if (!math.isfinite(radiusMeters) || radiusMeters <= 0f)
                 return 0;
 
             if (vegetationBridge == null)
@@ -1054,8 +1054,8 @@ namespace Hecton8.World
                 return 0;
 
             RefreshActiveCachesIfNeeded(force: false);
-            Vector3 universePosition = HectonMapMagicVegetationBridge.ToUniverseSpace(runtimePosition);
-            float radiusSq = radiusMeters * radiusMeters;
+            double3 universePosition = HectonMapMagicVegetationBridge.ToUniverseSpaceDouble3(runtimePosition);
+            double radiusSq = (double)radiusMeters * radiusMeters;
             int killedCount = 0;
             killedCount += ApplyDefoliantDeadZoneInLane(false, universePosition, radiusSq);
             killedCount += ApplyDefoliantDeadZoneInLane(true, universePosition, radiusSq);
@@ -1306,7 +1306,7 @@ namespace Hecton8.World
             }
         }
 
-        private int ApplyConstructionDecompositionInLane(bool underwater, Vector3 centerUniversePosition, float radiusSq)
+        private int ApplyConstructionDecompositionInLane(bool underwater, double3 centerUniversePosition, double radiusSq)
         {
             NativeArray<Matrix4x4> matrices = underwater ? _underwaterMatrices : _surfaceMatrices;
             NativeArray<HectonVegetationInstanceData> metadata = underwater ? _underwaterMetadata : _surfaceMetadata;
@@ -1348,7 +1348,7 @@ namespace Hecton8.World
                     continue;
 
                 Vector3 rootPosition = ExtractTranslation(matrices[i]);
-                float distanceSq = ResolveConstructionDistanceSq(centerUniversePosition, rootPosition, metadata[i], types[i]);
+                double distanceSq = ResolveConstructionDistanceSq(centerUniversePosition, rootPosition, metadata[i], types[i]);
                 if (distanceSq > radiusSq)
                     continue;
 
@@ -1360,7 +1360,7 @@ namespace Hecton8.World
             return decomposedCount;
         }
 
-        private int ApplyDefoliantDeadZoneInLane(bool underwater, Vector3 centerUniversePosition, float radiusSq)
+        private int ApplyDefoliantDeadZoneInLane(bool underwater, double3 centerUniversePosition, double radiusSq)
         {
             NativeArray<Matrix4x4> matrices = underwater ? _underwaterMatrices : _surfaceMatrices;
             NativeArray<HectonVegetationInstanceData> metadata = underwater ? _underwaterMetadata : _surfaceMetadata;
@@ -1402,7 +1402,7 @@ namespace Hecton8.World
                     continue;
 
                 Vector3 rootPosition = ExtractTranslation(matrices[i]);
-                if ((rootPosition - centerUniversePosition).sqrMagnitude > radiusSq)
+                if (math.lengthsq(ToDouble3(rootPosition) - centerUniversePosition) > radiusSq)
                     continue;
 
                 int templateIndex = ResolveTemplateIndex(metadata[i], materialClass);
@@ -3769,7 +3769,7 @@ namespace Hecton8.World
             if (voxelEngine == null)
                 return false;
 
-            Vector3 universePosition = ExtractTranslation(matrices[activeIndex]);
+            double3 universePosition = ToDouble3(ExtractTranslation(matrices[activeIndex]));
             Vector3 runtimePosition = HectonMapMagicVegetationBridge.ToRuntimeSpace(universePosition);
             if (!voxelEngine.TryGetNearestActiveVolume(runtimePosition, out HectonVoxelVolume volume) || volume == null)
                 return false;
@@ -4400,22 +4400,23 @@ namespace Hecton8.World
                    materialClass == HarvestableTemplate.MaterialClass.Sargassum;
         }
 
-        private static float ResolveConstructionDistanceSq(
-            Vector3 centerUniversePosition,
+        private static double ResolveConstructionDistanceSq(
+            double3 centerUniversePosition,
             Vector3 rootPosition,
             HectonVegetationInstanceData metadata,
             int typeId)
         {
+            double3 rootPositionDouble = ToDouble3(rootPosition);
             HectonVegetationInstanceType vegetationType = (HectonVegetationInstanceType)typeId;
             if (vegetationType == HectonVegetationInstanceType.GiantKelp)
             {
-                float kelpHeight = math.lerp(10f, 20f, math.saturate(metadata.HeightScale));
-                Vector3 top = rootPosition + Vector3.up * Mathf.Max(0.5f, kelpHeight + KelpRadiusBias);
-                Vector3 closest = ClosestPointOnSegment(rootPosition, top, centerUniversePosition);
-                return (closest - centerUniversePosition).sqrMagnitude;
+                double kelpHeight = math.lerp(10d, 20d, (double)math.saturate(metadata.HeightScale));
+                double3 top = rootPositionDouble + new double3(0d, math.max(0.5d, kelpHeight + KelpRadiusBias), 0d);
+                double3 closest = ClosestPointOnSegment(rootPositionDouble, top, centerUniversePosition);
+                return math.lengthsq(closest - centerUniversePosition);
             }
 
-            return (rootPosition - centerUniversePosition).sqrMagnitude;
+            return math.lengthsq(rootPositionDouble - centerUniversePosition);
         }
 
         private static float ResolveHarvestDistanceSq(
@@ -4449,9 +4450,25 @@ namespace Hecton8.World
             return start + segment * t;
         }
 
+        private static double3 ClosestPointOnSegment(double3 start, double3 end, double3 point)
+        {
+            double3 segment = end - start;
+            double segmentLengthSq = math.lengthsq(segment);
+            if (segmentLengthSq <= 0.0001d)
+                return start;
+
+            double t = math.clamp(math.dot(point - start, segment) * math.rcp(segmentLengthSq), 0d, 1d);
+            return start + segment * t;
+        }
+
         private static Vector3 ExtractTranslation(Matrix4x4 matrix)
         {
             return new Vector3(matrix.m03, matrix.m13, matrix.m23);
+        }
+
+        private static double3 ToDouble3(Vector3 value)
+        {
+            return new double3(value.x, value.y, value.z);
         }
 
         private static float ResolveFractionalVariation(float encodedVariation)

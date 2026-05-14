@@ -178,3 +178,36 @@ Verification:
 - `Hecton8.Core.Contracts` Unity/Bee response-file compile exits 0.
 - `Hecton8.Core` Unity/Bee response-file compile remains blocked by unrelated Audio Virtualization, AI Cognition/Fauna, Prologue, Outpost generation, WFC power boot, and World Ore missing symbols.
 - Runtime save/load roundtrip, PlayMode, GCMonitor, Burst Inspector, and profiler proof remain blocked by the project compile wall.
+
+## Recheck Report: Producer/Restore Closure And H-Phi Hygiene
+Status: PENDING VERIFICATION.
+
+What was wrong:
+- SaveManager consumed `WfcOutpostStateChangedSignal`, but the gameplay closure needed concrete spawned producers and restore consumers for doors/datapads.
+- A restored open door could be pushed back to locked state by a generic `Lock()` call.
+- Datapad-like hybrid prefabs could publish duplicate same-cell `DatapadLooted` signals if both `MessageTerminal` and `AudioLogPickup` were configured.
+- The static H-Phi audit did not complete; a numeric score would be fabricated evidence.
+
+What was done:
+- Preserved the typed WFC signal bridge on `SealedDoor`, `MessageTerminal`, and `AudioLogPickup`.
+- Added a `SealedDoor.Lock()` open-state guard so restored/open truth is not overwritten by a lock call.
+- Updated outpost datapad configuration to prefer `MessageTerminal` and return before falling back to `AudioLogPickup`.
+- Recorded the batch-rotation limit and honored the user's no-`dotnet` rebuild instruction.
+
+Cinematic cheats used:
+- Four-plane bitmask truth replaces replaying full outpost interaction history.
+- One fixed 32-byte typed signal represents a real mutable-state transition.
+- Restored state is applied at component spawn/configuration time instead of running a simulation catch-up pass.
+
+Exact microseconds saved:
+- Measured savings: 0 us. No profiler, PlayMode, Burst Inspector, or GCMonitor proof is available.
+- Static estimate: duplicate datapad producer avoidance removes one redundant 32-byte signal and one redundant same-cell dirty check on hybrid prefabs.
+- Static estimate: door lock guard adds one branch only on lock calls and prevents a later corrective persistence write.
+- Static H-Phi: audit timed out; no numeric H-Phi claim is made.
+
+Verification:
+- Static scans confirm `GlobalSignals.Publish(in signal)` producers exist in `SealedDoor`, `MessageTerminal`, and `AudioLogPickup`.
+- Static scans confirm outpost spawn calls door/datapad WFC configuration and door power restore.
+- Static scans confirm the datapad `return` after `MessageTerminal` configuration.
+- `git diff --check` reports no whitespace errors for the touched code/log files, aside from Git CRLF normalization warnings.
+- No `dotnet` rebuild was run after the user's explicit instruction.

@@ -34,6 +34,8 @@ namespace Hecton8.VFX.Materials
         private static readonly int RustDetailMapId = Shader.PropertyToID("_RustDetailMap");
         private static readonly int RustDetailMapStId = Shader.PropertyToID("_RustDetailMap_ST");
 
+        private static MaterialDecayRuntime s_runtimeInstance;
+
         [SerializeField]
         private Texture2D rustDetailAtlas;
 
@@ -65,16 +67,20 @@ namespace Hecton8.VFX.Materials
         private bool _hasDurabilitySignal;
         private bool _dumpedFault;
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            s_runtimeInstance = null;
+        }
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void EnsureSceneRuntime()
         {
             if (!Application.isPlaying)
                 return;
 
-#pragma warning disable 0618
-            if (FindObjectOfType<MaterialDecayRuntime>(includeInactive: true) != null)
+            if (s_runtimeInstance != null)
                 return;
-#pragma warning restore 0618
 
             // COLD ALLOC: one scene-local bridge only when authoring has not placed the component.
             GameObject host = new GameObject("H8_MaterialDecayRuntime");
@@ -84,6 +90,13 @@ namespace Hecton8.VFX.Materials
 
         private void Awake()
         {
+            if (s_runtimeInstance != null && !ReferenceEquals(s_runtimeInstance, this))
+            {
+                enabled = false;
+                return;
+            }
+
+            s_runtimeInstance = this;
             _rust01 = SanitizeUnit(defaultRust01);
             EnsureBlackBox();
             BindRustAtlas();
@@ -91,6 +104,13 @@ namespace Hecton8.VFX.Materials
 
         private void OnEnable()
         {
+            if (s_runtimeInstance != null && !ReferenceEquals(s_runtimeInstance, this))
+            {
+                enabled = false;
+                return;
+            }
+
+            s_runtimeInstance = this;
             EnsureBlackBox();
             BindRustAtlas();
             UploadShaderGlobals(force: true);
@@ -111,6 +131,9 @@ namespace Hecton8.VFX.Materials
         private void OnDestroy()
         {
             TryUnregisterTick();
+            if (ReferenceEquals(s_runtimeInstance, this))
+                s_runtimeInstance = null;
+
             if (_blackBox.IsCreated)
             {
                 NativeMemorySentinel.UnregisterNativeArray(_blackBox);

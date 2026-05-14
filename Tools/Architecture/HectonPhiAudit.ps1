@@ -6,37 +6,153 @@ $ErrorActionPreference = 'Stop'
 
 $root = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $scope = Join-Path $root 'Assets/_Project/Scripts'
+$regexOptions = [System.Text.RegularExpressions.RegexOptions]::Compiled -bor
+    [System.Text.RegularExpressions.RegexOptions]::Multiline
 
-function Count-Pattern {
-    param(
-        [string[]]$Files,
-        [string]$Pattern
-    )
+function New-CounterSet {
+    [ordered]@{
+        CsFiles = 0
+        Lines = 0
+        SignalBusPush = 0
+        GlobalRegistryGet = 0
+        GlobalRegistrySurface = 0
+        EventPublish = 0
+        UnityUpdateMethods = 0
+        ISlowTickable = 0
+        IJob = 0
+        ITickable = 0
+        IFixedTickable = 0
+        GlobalDataVaultRefs = 0
+        NativeArrayRefs = 0
+        StructDeclarations = 0
+        StructLayoutAttributes = 0
+        BinaryBlittableSafe = 0
+        StaticInstance = 0
+        FindObjectCalls = 0
+        GetComponentCalls = 0
+    }
+}
 
-    if ($Files.Count -eq 0) {
+function New-DomainRow {
+    param([string]$Domain)
+
+    [ordered]@{
+        Domain = $Domain
+        Files = 0
+        Lines = 0
+        NativeArrayRefs = 0
+        GlobalDataVaultRefs = 0
+        RegistryRefs = 0
+        UpdateMethods = 0
+        Structs = 0
+        Layout = 0
+        BinarySafe = 0
+        FindObjectCalls = 0
+        GetComponentCalls = 0
+    }
+}
+
+function Count-Lines {
+    param([string]$Text)
+
+    if ([string]::IsNullOrEmpty($Text)) {
         return 0
     }
 
-    $matches = Select-String -LiteralPath $Files -Pattern $Pattern -AllMatches -ErrorAction SilentlyContinue
-    $total = 0
-    foreach ($match in $matches) {
-        $total += $match.Matches.Count
+    $lineCount = 1
+    for ($i = 0; $i -lt $Text.Length; $i++) {
+        if ($Text[$i] -eq [char]10) {
+            $lineCount++
+        }
     }
 
-    return $total
+    if ($Text[$Text.Length - 1] -eq [char]10) {
+        $lineCount--
+    }
+
+    return $lineCount
+}
+
+function Remove-UnityEditorBlocks {
+    param([string]$Text)
+
+    if ($Text.IndexOf('UNITY_EDITOR', [StringComparison]::Ordinal) -lt 0) {
+        return $Text
+    }
+
+    $builder = [System.Text.StringBuilder]::new($Text.Length)
+    $lines = $Text -split "`r?`n", -1
+    $depth = 0
+    $skipDepth = -1
+
+    foreach ($line in $lines) {
+        $trimmed = $line.Trim()
+
+        if ($trimmed -match '^#\s*if\b') {
+            $depth++
+            if ($skipDepth -lt 0 -and $trimmed -match '\bUNITY_EDITOR\b') {
+                $skipDepth = $depth
+                continue
+            }
+
+            if ($skipDepth -lt 0) {
+                [void]$builder.AppendLine($line)
+            }
+
+            continue
+        }
+
+        if ($trimmed -match '^#\s*(?:elif|else)\b') {
+            if ($skipDepth -eq $depth) {
+                $skipDepth = -1
+                continue
+            }
+
+            if ($skipDepth -lt 0 -and $trimmed -match '^#\s*elif\b' -and $trimmed -match '\bUNITY_EDITOR\b') {
+                $skipDepth = $depth
+                continue
+            }
+
+            if ($skipDepth -lt 0) {
+                [void]$builder.AppendLine($line)
+            }
+
+            continue
+        }
+
+        if ($trimmed -match '^#\s*endif\b') {
+            if ($skipDepth -eq $depth) {
+                $skipDepth = -1
+                $depth--
+                continue
+            }
+
+            if ($skipDepth -lt 0) {
+                [void]$builder.AppendLine($line)
+            }
+
+            $depth--
+            continue
+        }
+
+        if ($skipDepth -lt 0) {
+            [void]$builder.AppendLine($line)
+        }
+    }
+
+    return $builder.ToString()
 }
 
 function Get-DomainName {
     param([string]$Path)
 
-    $relative = Resolve-Path -LiteralPath $Path -Relative
+    $relative = $Path.Substring($scope.Length).TrimStart([char]'\', [char]'/')
     $parts = $relative -split '[\\/]'
-    $scriptsIndex = [Array]::IndexOf($parts, 'Scripts')
-    if ($scriptsIndex -lt 0 -or $scriptsIndex + 1 -ge $parts.Length) {
+    if ($parts.Length -eq 0) {
         return '_Unknown'
     }
 
-    $domain = $parts[$scriptsIndex + 1]
+    $domain = $parts[0]
     if ($domain.EndsWith('.cs', [StringComparison]::OrdinalIgnoreCase)) {
         return $domain
     }
@@ -44,82 +160,108 @@ function Get-DomainName {
     return $domain
 }
 
-$files = @(Get-ChildItem -LiteralPath $scope -Filter '*.cs' -Recurse -File | Select-Object -ExpandProperty FullName)
-$lineCount = 0
-foreach ($file in $files) {
-    $lineCount += [System.Linq.Enumerable]::Count([System.IO.File]::ReadLines($file))
+function Test-IsEditorFile {
+    param([string]$Path)
+
+    return $Path -match '[\\/]Editor[\\/]'
 }
 
-$counts = [ordered]@{
-    CsFiles = $files.Count
-    Lines = $lineCount
-    SignalBusPush = Count-Pattern $files 'SignalBus\s*<[^>]+>\s*\.\s*Push'
-    GlobalRegistryGet = Count-Pattern $files 'GlobalRegistry\s*\.\s*Get\s*<'
-    GlobalRegistrySurface = Count-Pattern $files 'GlobalRegistry\s*\.'
-    EventPublish = Count-Pattern $files '\bPublish\s*\('
-    UnityUpdateMethods = Count-Pattern $files '^\s*(?:public|private|protected|internal)?\s*(?:static\s+)?void\s+(?:Update|LateUpdate|FixedUpdate)\s*\('
-    ISlowTickable = Count-Pattern $files '\bISlowTickable\b'
-    IJob = Count-Pattern $files '\bIJob(?:ParallelFor|For|Entity|Chunk)?\b'
-    ITickable = Count-Pattern $files '\bITickable\b'
-    IFixedTickable = Count-Pattern $files '\bIFixedTickable\b'
-    GlobalDataVaultRefs = Count-Pattern $files '\bGlobalDataVault\b'
-    NativeArrayRefs = Count-Pattern $files '\bNativeArray\s*<'
-    StructDeclarations = Count-Pattern $files '\bstruct\s+\w+'
-    StructLayoutAttributes = Count-Pattern $files '\[StructLayout\s*\('
-    BinaryBlittableSafe = Count-Pattern $files '\[BinaryBlittableSafe\]'
-    StaticInstance = Count-Pattern $files '\bstatic\s+\w+\s+Instance\b|\bInstance\s*\{'
-    FindObjectCalls = Count-Pattern $files '\b(?:FindObjectOfType|FindObjectsOfType|GameObject\s*\.\s*Find|FindWithTag)\s*\('
-    GetComponentCalls = Count-Pattern $files '\bGetComponent(?:s|InChildren|InParent)?\s*<'
+function Add-Count {
+    param(
+        [System.Collections.Specialized.OrderedDictionary]$Counters,
+        [string]$Name,
+        [int]$Value
+    )
+
+    $Counters[$Name] = [int]$Counters[$Name] + $Value
 }
 
-$signalDenominator = $counts.SignalBusPush + $counts.GlobalRegistryGet
-$narrowIntegration = if ($signalDenominator -gt 0) { $counts.SignalBusPush / $signalDenominator } else { 0.0 }
+function Add-PatternCounts {
+    param(
+        [System.Collections.Specialized.OrderedDictionary]$Counters,
+        [string]$Content,
+        [hashtable]$Patterns
+    )
 
-$riskDenominator = $counts.SignalBusPush + $counts.GlobalRegistrySurface + $counts.EventPublish + $counts.StaticInstance + $counts.FindObjectCalls + $counts.GetComponentCalls
-$riskIntegration = if ($riskDenominator -gt 0) { $counts.SignalBusPush / $riskDenominator } else { 0.0 }
-
-$purityDenominator = $counts.UnityUpdateMethods + $counts.ISlowTickable + $counts.IJob
-$architecturalPurity = if ($purityDenominator -gt 0) { ($counts.ISlowTickable + $counts.IJob) / $purityDenominator } else { 0.0 }
-
-$expandedPurityDenominator = $counts.UnityUpdateMethods + $counts.ISlowTickable + $counts.IJob + $counts.ITickable + $counts.IFixedTickable
-$architecturalPurityExpanded = if ($expandedPurityDenominator -gt 0) { ($counts.ISlowTickable + $counts.IJob + $counts.ITickable + $counts.IFixedTickable) / $expandedPurityDenominator } else { 0.0 }
-
-$dataSovereigntyDenominator = $counts.GlobalDataVaultRefs + $counts.NativeArrayRefs
-$dataSovereignty = if ($dataSovereigntyDenominator -gt 0) { $counts.GlobalDataVaultRefs / $dataSovereigntyDenominator } else { 0.0 }
-
-$memoryAlignment = if ($counts.StructDeclarations -gt 0) { $counts.StructLayoutAttributes / $counts.StructDeclarations } else { 0.0 }
-$binarySafeRatio = if ($counts.StructDeclarations -gt 0) { $counts.BinaryBlittableSafe / $counts.StructDeclarations } else { 0.0 }
-
-$hPhiStaticNarrow = $narrowIntegration * $architecturalPurity * $dataSovereignty * $memoryAlignment
-$hPhiStaticRisk = $riskIntegration * $architecturalPurity * $dataSovereignty * $memoryAlignment
-
-$domainRows = @()
-foreach ($group in ($files | Group-Object { Get-DomainName $_ })) {
-    $domainFiles = @($group.Group)
-    $domainLines = 0
-    foreach ($file in $domainFiles) {
-        $domainLines += [System.Linq.Enumerable]::Count([System.IO.File]::ReadLines($file))
-    }
-
-    $domainRows += [pscustomobject]@{
-        Domain = $group.Name
-        Files = $domainFiles.Count
-        Lines = $domainLines
-        NativeArrayRefs = Count-Pattern $domainFiles '\bNativeArray\s*<'
-        GlobalDataVaultRefs = Count-Pattern $domainFiles '\bGlobalDataVault\b'
-        RegistryRefs = Count-Pattern $domainFiles 'GlobalRegistry\s*\.'
-        UpdateMethods = Count-Pattern $domainFiles '^\s*(?:public|private|protected|internal)?\s*(?:static\s+)?void\s+(?:Update|LateUpdate|FixedUpdate)\s*\('
-        Structs = Count-Pattern $domainFiles '\bstruct\s+\w+'
-        Layout = Count-Pattern $domainFiles '\[StructLayout\s*\('
-        BinarySafe = Count-Pattern $domainFiles '\[BinaryBlittableSafe\]'
+    foreach ($entry in $Patterns.GetEnumerator()) {
+        Add-Count $Counters $entry.Key $entry.Value.Matches($Content).Count
     }
 }
 
-$result = [ordered]@{
-    Timestamp = (Get-Date).ToString('yyyy-MM-dd HH:mm:ss zzz')
-    Scope = 'Assets/_Project/Scripts'
-    Counts = $counts
-    Scores = [ordered]@{
+function Add-DomainMetrics {
+    param(
+        [System.Collections.Specialized.OrderedDictionary]$Row,
+        [System.Collections.Specialized.OrderedDictionary]$Counters,
+        [int]$LineCount
+    )
+
+    $Row['Files'] = [int]$Row['Files'] + 1
+    $Row['Lines'] = [int]$Row['Lines'] + $LineCount
+    $Row['NativeArrayRefs'] = [int]$Row['NativeArrayRefs'] + [int]$Counters['NativeArrayRefs']
+    $Row['GlobalDataVaultRefs'] = [int]$Row['GlobalDataVaultRefs'] + [int]$Counters['GlobalDataVaultRefs']
+    $Row['RegistryRefs'] = [int]$Row['RegistryRefs'] + [int]$Counters['GlobalRegistrySurface']
+    $Row['UpdateMethods'] = [int]$Row['UpdateMethods'] + [int]$Counters['UnityUpdateMethods']
+    $Row['Structs'] = [int]$Row['Structs'] + [int]$Counters['StructDeclarations']
+    $Row['Layout'] = [int]$Row['Layout'] + [int]$Counters['StructLayoutAttributes']
+    $Row['BinarySafe'] = [int]$Row['BinarySafe'] + [int]$Counters['BinaryBlittableSafe']
+    $Row['FindObjectCalls'] = [int]$Row['FindObjectCalls'] + [int]$Counters['FindObjectCalls']
+    $Row['GetComponentCalls'] = [int]$Row['GetComponentCalls'] + [int]$Counters['GetComponentCalls']
+}
+
+function Divide-OrZero {
+    param(
+        [double]$Numerator,
+        [double]$Denominator
+    )
+
+    if ($Denominator -gt 0.0) {
+        return $Numerator / $Denominator
+    }
+
+    return 0.0
+}
+
+function New-Scores {
+    param([System.Collections.Specialized.OrderedDictionary]$Counts)
+
+    $signalDenominator = [double]$Counts.SignalBusPush + [double]$Counts.GlobalRegistryGet
+    $narrowIntegration = Divide-OrZero $Counts.SignalBusPush $signalDenominator
+
+    $riskDenominator =
+        [double]$Counts.SignalBusPush +
+        [double]$Counts.GlobalRegistrySurface +
+        [double]$Counts.EventPublish +
+        [double]$Counts.StaticInstance +
+        [double]$Counts.FindObjectCalls +
+        [double]$Counts.GetComponentCalls
+    $riskIntegration = Divide-OrZero $Counts.SignalBusPush $riskDenominator
+
+    $purityDenominator =
+        [double]$Counts.UnityUpdateMethods +
+        [double]$Counts.ISlowTickable +
+        [double]$Counts.IJob
+    $architecturalPurity = Divide-OrZero ($Counts.ISlowTickable + $Counts.IJob) $purityDenominator
+
+    $expandedPurityDenominator =
+        [double]$Counts.UnityUpdateMethods +
+        [double]$Counts.ISlowTickable +
+        [double]$Counts.IJob +
+        [double]$Counts.ITickable +
+        [double]$Counts.IFixedTickable
+    $architecturalPurityExpanded = Divide-OrZero `
+        ($Counts.ISlowTickable + $Counts.IJob + $Counts.ITickable + $Counts.IFixedTickable) `
+        $expandedPurityDenominator
+
+    $dataSovereigntyDenominator = [double]$Counts.GlobalDataVaultRefs + [double]$Counts.NativeArrayRefs
+    $dataSovereignty = Divide-OrZero $Counts.GlobalDataVaultRefs $dataSovereigntyDenominator
+
+    $memoryAlignment = Divide-OrZero $Counts.StructLayoutAttributes $Counts.StructDeclarations
+    $binarySafeRatio = Divide-OrZero $Counts.BinaryBlittableSafe $Counts.StructDeclarations
+
+    $hPhiStaticNarrow = $narrowIntegration * $architecturalPurity * $dataSovereignty * $memoryAlignment
+    $hPhiStaticRisk = $riskIntegration * $architecturalPurity * $dataSovereignty * $memoryAlignment
+
+    [ordered]@{
         NarrowIntegration = [Math]::Round($narrowIntegration, 9)
         RiskIntegration = [Math]::Round($riskIntegration, 9)
         ArchitecturalPurity = [Math]::Round($architecturalPurity, 9)
@@ -130,7 +272,116 @@ $result = [ordered]@{
         HPhiStaticNarrow = [Math]::Round($hPhiStaticNarrow, 9)
         HPhiStaticRisk = [Math]::Round($hPhiStaticRisk, 9)
     }
-    TopNativeArrayDomains = @($domainRows | Sort-Object NativeArrayRefs -Descending | Select-Object -First 8)
+}
+
+$patternSource = [ordered]@{
+    SignalBusPush = 'SignalBus\s*<[^>]+>\s*\.\s*Push'
+    GlobalRegistryGet = 'GlobalRegistry\s*\.\s*Get\s*<'
+    GlobalRegistrySurface = 'GlobalRegistry\s*\.'
+    EventPublish = '\bPublish\s*\('
+    UnityUpdateMethods = '^\s*(?:public|private|protected|internal)?\s*(?:static\s+)?void\s+(?:Update|LateUpdate|FixedUpdate)\s*\('
+    ISlowTickable = '\bISlowTickable\b'
+    IJob = '\bIJob(?:ParallelFor|For|Entity|Chunk)?\b'
+    ITickable = '\bITickable\b'
+    IFixedTickable = '\bIFixedTickable\b'
+    GlobalDataVaultRefs = '\bGlobalDataVault\b'
+    NativeArrayRefs = '\bNativeArray\s*<'
+    StructDeclarations = '\bstruct\s+\w+'
+    StructLayoutAttributes = '\[StructLayout\s*\('
+    BinaryBlittableSafe = '\[BinaryBlittableSafe\]'
+    StaticInstance = '\bstatic\s+\w+\s+Instance\b|\bInstance\s*\{'
+    FindObjectCalls = '\b(?:FindObjectOfType|FindObjectsOfType|FindFirstObjectByType|FindAnyObjectByType|FindObjectsByType|FindWithTag)\s*(?:<|\()|GameObject\s*\.\s*Find(?:GameObjectWithTag|WithTag)?\s*\(|Resources\s*\.\s*FindObjectsOfTypeAll\s*(?:<|\()'
+    GetComponentCalls = '\bGetComponent(?:s|InChildren|InParent)?\s*<'
+}
+
+$patterns = @{}
+foreach ($entry in $patternSource.GetEnumerator()) {
+    $patterns[$entry.Key] = [System.Text.RegularExpressions.Regex]::new(
+        $entry.Value,
+        $regexOptions)
+}
+
+$allCounters = New-CounterSet
+$runtimeCounters = New-CounterSet
+$editorCounters = New-CounterSet
+$runtimeDomainRows = @{}
+$editorDomainRows = @{}
+
+$files = @(Get-ChildItem -LiteralPath $scope -Filter '*.cs' -Recurse -File |
+    Sort-Object FullName |
+    Select-Object -ExpandProperty FullName)
+
+foreach ($file in $files) {
+    $content = [System.IO.File]::ReadAllText($file)
+    $lineCount = Count-Lines $content
+    $isEditorFile = Test-IsEditorFile $file
+    $fileCounters = New-CounterSet
+    Add-Count $fileCounters 'CsFiles' 1
+    Add-Count $fileCounters 'Lines' $lineCount
+    Add-PatternCounts $fileCounters $content $patterns
+
+    foreach ($key in $fileCounters.Keys) {
+        Add-Count $allCounters $key $fileCounters[$key]
+    }
+
+    $domain = Get-DomainName $file
+    if ($isEditorFile) {
+        foreach ($key in $fileCounters.Keys) {
+            Add-Count $editorCounters $key $fileCounters[$key]
+        }
+
+        if (-not $editorDomainRows.ContainsKey($domain)) {
+            $editorDomainRows[$domain] = New-DomainRow $domain
+        }
+
+        Add-DomainMetrics $editorDomainRows[$domain] $fileCounters $lineCount
+        continue
+    }
+
+    if ($content.IndexOf('UNITY_EDITOR', [StringComparison]::Ordinal) -lt 0) {
+        $runtimeFileCounters = $fileCounters
+    }
+    else {
+        $runtimeContent = Remove-UnityEditorBlocks $content
+        $runtimeFileCounters = New-CounterSet
+        Add-Count $runtimeFileCounters 'CsFiles' 1
+        Add-Count $runtimeFileCounters 'Lines' $lineCount
+        Add-PatternCounts $runtimeFileCounters $runtimeContent $patterns
+    }
+
+    foreach ($key in $fileCounters.Keys) {
+        Add-Count $runtimeCounters $key $runtimeFileCounters[$key]
+    }
+
+    if (-not $runtimeDomainRows.ContainsKey($domain)) {
+        $runtimeDomainRows[$domain] = New-DomainRow $domain
+    }
+
+    Add-DomainMetrics $runtimeDomainRows[$domain] $runtimeFileCounters $lineCount
+}
+
+$runtimeScores = New-Scores $runtimeCounters
+$allSourceScores = New-Scores $allCounters
+$editorScores = New-Scores $editorCounters
+
+$result = [ordered]@{
+    Timestamp = (Get-Date).ToString('yyyy-MM-dd HH:mm:ss zzz')
+    Scope = 'Assets/_Project/Scripts'
+    MetricModel = 'Runtime H-Phi excludes Scripts/Editor from runtime debt counters; AllSourceCounts is retained for hygiene tracking.'
+    Counts = $runtimeCounters
+    Scores = $runtimeScores
+    AllSourceCounts = $allCounters
+    AllSourceScores = $allSourceScores
+    EditorCounts = $editorCounters
+    EditorScores = $editorScores
+    TopNativeArrayDomains = @($runtimeDomainRows.Values |
+        ForEach-Object { [pscustomobject]$_ } |
+        Sort-Object NativeArrayRefs -Descending |
+        Select-Object -First 8)
+    TopEditorNativeArrayDomains = @($editorDomainRows.Values |
+        ForEach-Object { [pscustomobject]$_ } |
+        Sort-Object NativeArrayRefs -Descending |
+        Select-Object -First 4)
 }
 
 if ($Json) {
@@ -138,15 +389,19 @@ if ($Json) {
     return
 }
 
-Write-Output "Hecton-Phi static audit"
+Write-Output 'Hecton-Phi static audit'
 Write-Output "Timestamp: $($result.Timestamp)"
 Write-Output "Scope: $($result.Scope)"
+Write-Output "Metric model: $($result.MetricModel)"
 Write-Output ''
-Write-Output 'Counts:'
-$counts.GetEnumerator() | ForEach-Object { Write-Output ("  {0}: {1}" -f $_.Key, $_.Value) }
+Write-Output 'Runtime counts:'
+$runtimeCounters.GetEnumerator() | ForEach-Object { Write-Output ("  {0}: {1}" -f $_.Key, $_.Value) }
 Write-Output ''
-Write-Output 'Scores:'
-$result.Scores.GetEnumerator() | ForEach-Object { Write-Output ("  {0}: {1}" -f $_.Key, $_.Value) }
+Write-Output 'Runtime scores:'
+$runtimeScores.GetEnumerator() | ForEach-Object { Write-Output ("  {0}: {1}" -f $_.Key, $_.Value) }
 Write-Output ''
-Write-Output 'Top NativeArray domains:'
+Write-Output 'All-source scores:'
+$allSourceScores.GetEnumerator() | ForEach-Object { Write-Output ("  {0}: {1}" -f $_.Key, $_.Value) }
+Write-Output ''
+Write-Output 'Top runtime NativeArray domains:'
 $result.TopNativeArrayDomains | Format-Table -AutoSize

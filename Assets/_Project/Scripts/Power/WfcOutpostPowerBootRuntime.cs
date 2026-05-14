@@ -211,11 +211,11 @@ namespace Hecton8.Power
                 _powerEdges = default;
             }
 
-            dependency = H8Memory.Release(ref _nodes, dependency);
-            dependency = H8Memory.Release(ref _cellToNode, dependency);
-            dependency = H8Memory.Release(ref _counts, dependency);
-            dependency = H8Memory.Release(ref _generatorNodeIndex, dependency);
-            H8Memory.Release(ref _blackBox, dependency);
+            dependency = H8Memory.Release(ref _nodes, dependency, LogisticsGridSystemId);
+            dependency = H8Memory.Release(ref _cellToNode, dependency, LogisticsGridSystemId);
+            dependency = H8Memory.Release(ref _counts, dependency, LogisticsGridSystemId);
+            dependency = H8Memory.Release(ref _generatorNodeIndex, dependency, LogisticsGridSystemId);
+            H8Memory.Release(ref _blackBox, dependency, LogisticsGridSystemId);
 
             _initialized = false;
             _hasActiveGraph = false;

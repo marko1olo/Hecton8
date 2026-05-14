@@ -98,6 +98,7 @@ namespace Hecton8.UI.VR
         private bool _nativeAllocated;
         private bool _projectionSingular;
         private bool _xrActiveThisFrame;
+        private bool _blackBoxDumped;
         private byte _latchedHandSide;
 
         /// <inheritdoc />
@@ -138,6 +139,7 @@ namespace Hecton8.UI.VR
             EnsureReferences();
             CacheConfiguration();
             EnsureNativeStateForLifecycle();
+            _blackBoxDumped = false;
             _inputService = GlobalRegistry.Input;
             _lowTierMath = ResolveLowTierMath();
             TryRegisterHotSwapListener();
@@ -541,11 +543,17 @@ namespace Hecton8.UI.VR
                 flags |= 1 << 3;
             if (_projectionSingular)
                 flags |= 1 << 4;
+            if (_blackBoxDumped)
+                flags |= 1 << 5;
             return flags;
         }
 
         private void DumpBlackBox()
         {
+            if (_blackBoxDumped)
+                return;
+
+            _blackBoxDumped = true;
             try
             {
                 string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
@@ -687,6 +695,7 @@ namespace Hecton8.UI.VR
             _leverTargets[0] = initialAngle;
             _blackBoxWriteIndex = 0;
             _lastRatchetStep = -1;
+            _blackBoxDumped = false;
             ApplyLeverVisual(initialAngle);
         }
 

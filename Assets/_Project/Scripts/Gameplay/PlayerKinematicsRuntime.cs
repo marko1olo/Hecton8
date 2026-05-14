@@ -407,8 +407,8 @@ namespace Hecton8.Gameplay
             float3 up = SafeNormalize(SourceUp, new float3(0.0f, 1.0f, 0.0f));
             float speedSq = math.lengthsq(Velocity);
             float speed = speedSq > 0.000001f && math.isfinite(speedSq) ? speedSq * math.rsqrt(speedSq) : 0.0f;
-            float speedBlend = math.saturate((speed - math.max(0.0f, BraceSpeedThreshold)) * 0.25f);
-            float braceBaseBlend = math.saturate(math.max(BraceBlend, speedBlend));
+            float speedBlend = SanitizeUnit((speed - SanitizeNonNegative(BraceSpeedThreshold)) * 0.25f);
+            float braceBaseBlend = math.max(SanitizeUnit(BraceBlend), speedBlend);
 
             PlayerKinematicsHandTarget leftTarget = default;
             PlayerKinematicsHandTarget rightTarget = default;
@@ -462,19 +462,19 @@ namespace Hecton8.Gameplay
             }
 
             float3 normal = SafeNormalize(hitNormal, new float3(0.0f, 1.0f, 0.0f));
-            float safeBraceDistance = math.max(0.001f, BraceDistance);
-            float safeHitDistance = math.clamp(hit.distance, 0.0f, math.max(0.001f, MaxProbeDistance));
+            float safeBraceDistance = math.max(0.001f, SanitizeNonNegative(BraceDistance));
+            float safeHitDistance = math.clamp(hit.distance, 0.0f, math.max(0.001f, SanitizeNonNegative(MaxProbeDistance)));
             if (safeHitDistance > safeBraceDistance)
                 return false;
 
             float distanceBlend = 1.0f - safeHitDistance * math.rcp(safeBraceDistance);
-            float blend = math.saturate(braceBaseBlend * (0.35f + 0.65f * distanceBlend));
-            float jitter = Stress01 * blend * 0.012f;
+            float blend = SanitizeUnit(braceBaseBlend * (0.35f + 0.65f * distanceBlend));
+            float jitter = SanitizeUnit(Stress01) * blend * 0.012f;
             float lateralJitter = TriangleWaveSigned(Phase + sideSign * 0.31f) * jitter;
             float verticalJitter = TriangleWaveSigned((Phase * 1.71f) + sideSign * 0.17f) * jitter * 0.5f;
             float3 point = hitPoint +
-                           normal * math.max(0.0f, ContactOffset) +
-                           right * (sideSign * math.max(0.0f, sideOffset) + lateralJitter) +
+                           normal * SanitizeNonNegative(ContactOffset) +
+                           right * (sideSign * SanitizeNonNegative(sideOffset) + lateralJitter) +
                            up * verticalJitter;
             if (!math.all(math.isfinite(point)))
             {
@@ -529,7 +529,7 @@ namespace Hecton8.Gameplay
 
             float3 normal = SafeNormalize(ImpactNormal, -forward);
             float3 point = ImpactPoint +
-                           normal * math.max(0.0f, ContactOffset) +
+                           normal * SanitizeNonNegative(ContactOffset) +
                            right * sideSign * 0.17f -
                            up * 0.04f;
             if (!math.all(math.isfinite(point)))
@@ -539,7 +539,7 @@ namespace Hecton8.Gameplay
             {
                 Position = point,
                 Normal = normal,
-                Blend = math.saturate(braceBaseBlend),
+                Blend = SanitizeUnit(braceBaseBlend),
                 Hit = 1,
                 Flags = PlayerKinematicsHandTarget.FlagBrace
             };
@@ -555,7 +555,7 @@ namespace Hecton8.Gameplay
             float3 up,
             ref PlayerKinematicsHandTarget target)
         {
-            float squeezeBlend = math.saturate(SqueezeBlend);
+            float squeezeBlend = SanitizeUnit(SqueezeBlend);
             if (squeezeBlend <= 0.0001f)
                 return;
 
@@ -567,7 +567,9 @@ namespace Hecton8.Gameplay
                 return;
 
             float3 squeezeNormal = -forward;
-            if (target.Hit != 0)
+            if (target.Hit != 0 &&
+                math.all(math.isfinite(target.Position)) &&
+                math.all(math.isfinite(target.Normal)))
             {
                 target.Position = math.lerp(target.Position, squeezePoint, squeezeBlend);
                 target.Normal = SafeNormalize(math.lerp(target.Normal, squeezeNormal, squeezeBlend), squeezeNormal);
@@ -610,6 +612,16 @@ namespace Hecton8.Gameplay
             return lengthSq > 0.000001f && math.all(math.isfinite(value))
                 ? value * math.rsqrt(lengthSq)
                 : fallback;
+        }
+
+        private static float SanitizeUnit(float value)
+        {
+            return math.select(math.saturate(value), 0.0f, !math.isfinite(value));
+        }
+
+        private static float SanitizeNonNegative(float value)
+        {
+            return math.select(math.max(0.0f, value), 0.0f, !math.isfinite(value));
         }
 
         private static float TriangleWaveSigned(float phase)
@@ -1529,7 +1541,7 @@ namespace Hecton8.Gameplay
 
         private float ResolveRuntimeWaterImmersion01()
         {
-            return _movement != null ? math.saturate(_movement.WaterImmersionRatio) : 1.0f;
+            return _movement != null ? SanitizeUnit(_movement.WaterImmersionRatio) : 1.0f;
         }
 
         private float ResolveEquipmentDragMultiplier()
@@ -1538,7 +1550,7 @@ namespace Hecton8.Gameplay
                 return 1.0f;
 
             ulong mask = _inventory.CurrentInventoryMask;
-            float load01 = math.saturate(_inventory.CachedInventoryLoad01);
+            float load01 = SanitizeUnit(_inventory.CachedInventoryLoad01);
             float heavy = (mask != 0UL && _inventory.TotalMassKg >= HeavyInventoryMassKg) ? HeavyInventoryMaskMultiplier : 0.0f;
             return 1.0f + heavy + load01 * DragCoefficientLoadScale;
         }
@@ -1556,14 +1568,14 @@ namespace Hecton8.Gameplay
                     out float velocityReduction01,
                     out _))
             {
-                float speed01 = math.saturate((blockedSpeed - WallImpactRollThreshold) * 0.2f);
+                float speed01 = SanitizeUnit((blockedSpeed - WallImpactRollThreshold) * 0.2f);
                 float side = math.sign(math.dot(ToFloat3(normal), SafeRight()));
                 _rollPhaseRadians = DeterministicPhysicsMath.WrapSignedPi(_rollPhaseRadians + math.max(0.0f, dt) * 28.0f);
                 float impactWave = IsHighScalabilityTier() ? DeterministicPhysicsMath.SinApprox(_rollPhaseRadians) : SignedTriangleWave(_rollPhaseRadians);
                 targetRoll = -side *
                     WallImpactRollDegrees *
                     speed01 *
-                    math.saturate(velocityReduction01 + 0.25f) *
+                    SanitizeUnit(velocityReduction01 + 0.25f) *
                     impactWave;
             }
 
@@ -1582,7 +1594,7 @@ namespace Hecton8.Gameplay
 
             MovementAcousticSignal signal = default;
             signal.PositionAup = AbsoluteUniversePosition.FromRuntimePosition(position);
-            signal.Volume = math.saturate(velocitySq * 0.08f);
+            signal.Volume = SanitizeUnit(velocitySq * 0.08f);
             signal.VelocitySq = velocitySq;
             signal.SourceId = _sourceId;
             signal.LocomotionMode = ResolveLocomotionModeCode();
@@ -1648,7 +1660,7 @@ namespace Hecton8.Gameplay
                 if (age > 4u)
                     continue;
 
-                _squeezeTargetBlend = math.max(_squeezeTargetBlend, math.saturate(signal.Intensity01));
+                _squeezeTargetBlend = math.max(SanitizeUnit(_squeezeTargetBlend), SanitizeUnit(signal.Intensity01));
                 _squeezeHoldTimer = math.max(_squeezeHoldTimer, SqueezeHoldSeconds);
             }
 
@@ -1656,7 +1668,7 @@ namespace Hecton8.Gameplay
                 stressSequence != _lastPlayerStressSequence)
             {
                 _lastPlayerStressSequence = stressSequence;
-                _cachedStress01 = math.saturate(stressSignal.Stress01);
+                _cachedStress01 = SanitizeUnit(stressSignal.Stress01);
             }
         }
 
@@ -1728,7 +1740,7 @@ namespace Hecton8.Gameplay
                 IntendedMovement = _intendedMovement.IsCreated ? _intendedMovement[0] : float3.zero,
                 DragCoefficient = math.max(0.0f, dragCoefficient),
                 WaterDensity = ResolveRuntimeWaterDensityScale(),
-                SolidDensity = math.saturate(signal.Intensity01),
+                SolidDensity = SanitizeUnit(signal.Intensity01),
                 Frame = signal.Frame != 0u ? signal.Frame : unchecked((uint)Time.frameCount),
                 Flags = 0u,
                 SyncFenceHash = 0u,
@@ -1985,9 +1997,16 @@ namespace Hecton8.Gameplay
         private void SmoothHandTarget(int index, in PlayerKinematicsHandTarget rawTarget)
         {
             PlayerKinematicsHandTarget current = _smoothedHandTargets[index];
-            float deltaTime = math.max(0.0001f, _lastIkDeltaTime);
-            float blend = SmoothScalar(current.Blend, rawTarget.Hit != 0 ? rawTarget.Blend : 0.0f, HandBraceBlendSharpness, deltaTime);
-            if (rawTarget.Hit == 0)
+            bool rawTargetValid = rawTarget.Hit != 0 &&
+                                  math.all(math.isfinite(rawTarget.Position)) &&
+                                  math.all(math.isfinite(rawTarget.Normal));
+            float deltaTime = math.max(0.0001f, SanitizeNonNegative(_lastIkDeltaTime));
+            float blend = SmoothScalar(
+                SanitizeUnit(current.Blend),
+                rawTargetValid ? SanitizeUnit(rawTarget.Blend) : 0.0f,
+                HandBraceBlendSharpness,
+                deltaTime);
+            if (!rawTargetValid)
             {
                 current.Blend = blend;
                 current.Flags = rawTarget.Flags;
@@ -1997,7 +2016,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            float t = math.saturate(HandBraceBlendSharpness * deltaTime);
+            float t = SanitizeUnit(HandBraceBlendSharpness * deltaTime);
             if (current.Hit == 0 || !math.all(math.isfinite(current.Position)))
             {
                 current.Position = rawTarget.Position;
@@ -2020,10 +2039,11 @@ namespace Hecton8.Gameplay
             if (_braceHapticCooldown > 0.0f)
                 return;
 
+            float safeBlend = SanitizeUnit(blend);
             HapticRequest signal = default;
-            signal.Intensity01 = math.saturate(0.18f + blend * 0.42f);
-            signal.DurationSeconds = 0.045f + blend * 0.035f;
-            signal.Frequency01 = math.saturate(0.35f + blend * 0.35f);
+            signal.Intensity01 = SanitizeUnit(0.18f + safeBlend * 0.42f);
+            signal.DurationSeconds = 0.045f + safeBlend * 0.035f;
+            signal.Frequency01 = SanitizeUnit(0.35f + safeBlend * 0.35f);
             signal.SourceHash = _sourceId;
             signal.Frame = unchecked((uint)Time.frameCount);
             signal.Channel = HapticRequest.ChannelLightThud;
@@ -2049,13 +2069,19 @@ namespace Hecton8.Gameplay
                 return false;
             }
 
-            if (blockedSpeed <= 0.2f || velocityReduction01 <= 0.05f)
+            float3 pointFloat = ToFloat3(point);
+            if (!math.all(math.isfinite(pointFloat)))
+                return false;
+
+            float safeBlockedSpeed = SanitizeNonNegative(blockedSpeed);
+            float safeVelocityReduction01 = SanitizeUnit(velocityReduction01);
+            if (safeBlockedSpeed <= 0.2f || safeVelocityReduction01 <= 0.05f)
                 return false;
 
             AcousticPingSignal signal = default;
             signal.PositionAup = AbsoluteUniversePosition.FromRuntimePosition(point);
-            signal.RadiusMeters = math.saturate(0.65f + blockedSpeed * 0.12f) * 2.0f;
-            signal.Intensity01 = math.saturate(blend * (0.35f + velocityReduction01) + blockedSpeed * 0.025f);
+            signal.RadiusMeters = SanitizeUnit(0.65f + safeBlockedSpeed * 0.12f) * 2.0f;
+            signal.Intensity01 = SanitizeUnit(SanitizeUnit(blend) * (0.35f + safeVelocityReduction01) + safeBlockedSpeed * 0.025f);
             signal.SourceId = _sourceId;
             signal.Channel = AcousticPingSignal.ChannelGloveScrape;
             signal.Flags = AcousticPingSignal.FlagGloveScrape;
@@ -2112,7 +2138,7 @@ namespace Hecton8.Gameplay
         private void PushVatScalar()
         {
             float speedSq = _velocities.IsCreated ? math.lengthsq(_velocities[0]) : 0.0f;
-            float scalar = math.saturate(speedSq * 0.05f);
+            float scalar = SanitizeUnit(speedSq * 0.05f);
             if (math.abs(scalar - _lastVatSpeedScalar) <= 0.0025f)
                 return;
 
@@ -2417,10 +2443,22 @@ namespace Hecton8.Gameplay
                 : fallback;
         }
 
+        private static float SanitizeUnit(float value)
+        {
+            return math.select(math.saturate(value), 0.0f, !math.isfinite(value));
+        }
+
+        private static float SanitizeNonNegative(float value)
+        {
+            return math.select(math.max(0.0f, value), 0.0f, !math.isfinite(value));
+        }
+
         private static float SmoothScalar(float current, float target, float sharpness, float deltaTime)
         {
-            float t = math.saturate(math.max(0.0f, sharpness) * math.max(0.0f, deltaTime));
-            return math.lerp(current, target, t);
+            float t = SanitizeUnit(SanitizeNonNegative(sharpness) * SanitizeNonNegative(deltaTime));
+            float safeCurrent = math.select(current, 0.0f, !math.isfinite(current));
+            float safeTarget = math.select(target, 0.0f, !math.isfinite(target));
+            return math.lerp(safeCurrent, safeTarget, t);
         }
 
         private static float3 SnapMillimeter(float3 value)

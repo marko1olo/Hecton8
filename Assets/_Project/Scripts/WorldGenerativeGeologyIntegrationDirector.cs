@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Hecton8.Core;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.World
@@ -379,8 +380,9 @@ namespace Hecton8.World
                         continue;
 
                     float playerDistance = ApproximateDistanceNoSqrt(playerDelta);
-                    plan.absoluteUniversePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(runtimeWorldPosition);
-                    plan.absoluteUniverseAup = AbsoluteUniversePosition.FromRuntimePosition(runtimeWorldPosition);
+                    double3 absoluteUniversePositionDouble = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimeWorldPosition);
+                    plan.absoluteUniversePosition = ToVector3(absoluteUniversePositionDouble);
+                    plan.absoluteUniverseAup = AbsoluteUniversePosition.FromAbsolutePosition(absoluteUniversePositionDouble);
                     plan.hasAbsoluteUniverseAup = true;
                     plan.worldRotation = binding.transform.rotation;
                     plan.worldScale = binding.transform.lossyScale;
@@ -392,13 +394,15 @@ namespace Hecton8.World
                         : runtimeWorldPosition.y;
                     Vector3 runtimeTerrainPosition = new Vector3(runtimeWorldPosition.x, hasTerrainSample ? terrainHeight : runtimeWorldPosition.y, runtimeWorldPosition.z);
                     plan.hasTerrainSample = hasTerrainSample;
-                    plan.absoluteTerrainHeight = HectonFloatingOrigin.ToAbsoluteUniversePosition(runtimeTerrainPosition).y;
-                    plan.absoluteTerrainContactAup = AbsoluteUniversePosition.FromRuntimePosition(runtimeTerrainPosition);
+                    double3 absoluteTerrainPositionDouble = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimeTerrainPosition);
+                    plan.absoluteTerrainHeight = (float)absoluteTerrainPositionDouble.y;
+                    plan.absoluteTerrainContactAup = AbsoluteUniversePosition.FromAbsolutePosition(absoluteTerrainPositionDouble);
                     plan.hasAbsoluteTerrainContactAup = true;
                     plan.terrainDelta = hasTerrainSample ? runtimeWorldPosition.y - terrainHeight : 0f;
                     Vector3 runtimeVoxelCenter = new Vector3(runtimeWorldPosition.x, voxelCenterY, runtimeWorldPosition.z);
-                    plan.absoluteVoxelVolumeCenter = HectonFloatingOrigin.ToAbsoluteUniversePosition(runtimeVoxelCenter);
-                    plan.absoluteVoxelVolumeCenterAup = AbsoluteUniversePosition.FromRuntimePosition(runtimeVoxelCenter);
+                    double3 absoluteVoxelCenterDouble = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimeVoxelCenter);
+                    plan.absoluteVoxelVolumeCenter = ToVector3(absoluteVoxelCenterDouble);
+                    plan.absoluteVoxelVolumeCenterAup = AbsoluteUniversePosition.FromAbsolutePosition(absoluteVoxelCenterDouble);
                     plan.hasAbsoluteVoxelVolumeCenterAup = true;
                 }
 
@@ -478,7 +482,8 @@ namespace Hecton8.World
 
             Transform targetTransform = binding.transform;
             Vector3 runtimeWorldPosition = targetTransform.position;
-            Vector3 absoluteUniversePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(runtimeWorldPosition);
+            double3 absoluteUniversePositionDouble = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimeWorldPosition);
+            Vector3 absoluteUniversePosition = ToVector3(absoluteUniversePositionDouble);
             float residencyRadius = searchRadius + Mathf.Max(4f, binding.SeamBlendRadius);
             float residencyRadiusSq = residencyRadius * residencyRadius;
             Vector3 playerDelta = playerTransform.position - runtimeWorldPosition;
@@ -489,7 +494,7 @@ namespace Hecton8.World
             WorldProceduralProxyInstance metadata = binding.CachedProxyInstance;
             long runtimeKey = binding.RuntimeKey != 0L
                 ? binding.RuntimeKey
-                : (binding.CachedProxyRuntimeKey != 0L ? binding.CachedProxyRuntimeKey : absoluteUniversePosition.GetHashCode());
+                : (binding.CachedProxyRuntimeKey != 0L ? binding.CachedProxyRuntimeKey : BuildFallbackRuntimeKey(absoluteUniversePositionDouble));
             if (runtimeKey == 0L)
                 return false;
 
@@ -528,10 +533,11 @@ namespace Hecton8.World
                 : runtimeWorldPosition.y;
             Vector3 runtimeVoxelVolumeCenter = new Vector3(runtimeWorldPosition.x, voxelCenterY, runtimeWorldPosition.z);
             Vector3 runtimeTerrainPosition = new Vector3(runtimeWorldPosition.x, hasTerrainSample ? terrainHeight : runtimeWorldPosition.y, runtimeWorldPosition.z);
-            Vector3 absoluteTerrainPosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(runtimeTerrainPosition);
-            AbsoluteUniversePosition absoluteUniverseAup = AbsoluteUniversePosition.FromRuntimePosition(runtimeWorldPosition);
-            AbsoluteUniversePosition absoluteTerrainContactAup = AbsoluteUniversePosition.FromRuntimePosition(runtimeTerrainPosition);
-            AbsoluteUniversePosition absoluteVoxelVolumeCenterAup = AbsoluteUniversePosition.FromRuntimePosition(runtimeVoxelVolumeCenter);
+            double3 absoluteTerrainPositionDouble = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimeTerrainPosition);
+            double3 absoluteVoxelVolumeCenterDouble = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimeVoxelVolumeCenter);
+            AbsoluteUniversePosition absoluteUniverseAup = AbsoluteUniversePosition.FromAbsolutePosition(absoluteUniversePositionDouble);
+            AbsoluteUniversePosition absoluteTerrainContactAup = AbsoluteUniversePosition.FromAbsolutePosition(absoluteTerrainPositionDouble);
+            AbsoluteUniversePosition absoluteVoxelVolumeCenterAup = AbsoluteUniversePosition.FromAbsolutePosition(absoluteVoxelVolumeCenterDouble);
 
             plan = new WorldGenerativeGeologySeamPlan
             {
@@ -555,7 +561,7 @@ namespace Hecton8.World
                 worldScale = targetTransform.lossyScale,
                 playerDistance = playerDistance,
                 hasTerrainSample = hasTerrainSample,
-                absoluteTerrainHeight = absoluteTerrainPosition.y,
+                absoluteTerrainHeight = (float)absoluteTerrainPositionDouble.y,
                 absoluteTerrainContactAup = absoluteTerrainContactAup,
                 hasAbsoluteTerrainContactAup = true,
                 terrainDelta = terrainDelta,
@@ -573,7 +579,7 @@ namespace Hecton8.World
                 caveBlendWeight = voxelWeight,
                 debrisWeight = debrisWeight,
                 planWeight = planWeight,
-                absoluteVoxelVolumeCenter = HectonFloatingOrigin.ToAbsoluteUniversePosition(runtimeVoxelVolumeCenter),
+                absoluteVoxelVolumeCenter = ToVector3(absoluteVoxelVolumeCenterDouble),
                 absoluteVoxelVolumeCenterAup = absoluteVoxelVolumeCenterAup,
                 hasAbsoluteVoxelVolumeCenterAup = true,
                 voxelVolumeSize = voxelSize
@@ -668,6 +674,40 @@ namespace Hecton8.World
             float min = Mathf.Min(ax, Mathf.Min(ay, az));
             float mid = ax + ay + az - max - min;
             return max + mid * 0.375f + min * 0.125f;
+        }
+
+        private static Vector3 ToVector3(double3 value)
+        {
+            return new Vector3((float)value.x, (float)value.y, (float)value.z);
+        }
+
+        private static long BuildFallbackRuntimeKey(double3 absoluteUniversePosition)
+        {
+            ulong hash = 1469598103934665603UL;
+            hash = HashLong(hash, FastRoundToLong(absoluteUniversePosition.x * 1000d));
+            hash = HashLong(hash, FastRoundToLong(absoluteUniversePosition.y * 1000d));
+            hash = HashLong(hash, FastRoundToLong(absoluteUniversePosition.z * 1000d));
+            long key = unchecked((long)(hash & 0x7fffffffffffffffUL));
+            return key != 0L ? key : 1L;
+        }
+
+        private static ulong HashLong(ulong hash, long value)
+        {
+            ulong data = unchecked((ulong)value);
+            hash = unchecked((hash ^ data) * 1099511628211UL);
+            return unchecked((hash ^ (data >> 32)) * 1099511628211UL);
+        }
+
+        private static long FastRoundToLong(double value)
+        {
+            if (!math.isfinite(value))
+                return 0L;
+
+            const double MaxLongRoundTrip = 9223372036854770000d;
+            double clamped = math.clamp(value, -MaxLongRoundTrip, MaxLongRoundTrip);
+            return clamped >= 0d
+                ? (long)(clamped + 0.5d)
+                : (long)(clamped - 0.5d);
         }
 
         private void ResolveReferences()

@@ -397,11 +397,11 @@ namespace Hecton8.AI
 
         private void DisposePersistentBuffers(JobHandle dependency)
         {
-            _disposeHandle = H8Memory.Release(ref _segmentPositions, dependency);
-            _disposeHandle = H8Memory.Release(ref _previousSegmentPositions, JobHandle.CombineDependencies(_disposeHandle, dependency));
-            _disposeHandle = H8Memory.Release(ref _leviathanBones, JobHandle.CombineDependencies(_disposeHandle, dependency));
-            _disposeHandle = H8Memory.Release(ref _telemetryRing, JobHandle.CombineDependencies(_disposeHandle, dependency));
-            _disposeHandle = H8Memory.Release(ref _telemetryCursor, JobHandle.CombineDependencies(_disposeHandle, dependency));
+            _disposeHandle = H8Memory.Release(ref _segmentPositions, dependency, SystemID.External);
+            _disposeHandle = H8Memory.Release(ref _previousSegmentPositions, JobHandle.CombineDependencies(_disposeHandle, dependency), SystemID.External);
+            _disposeHandle = H8Memory.Release(ref _leviathanBones, JobHandle.CombineDependencies(_disposeHandle, dependency), SystemID.External);
+            _disposeHandle = H8Memory.Release(ref _telemetryRing, JobHandle.CombineDependencies(_disposeHandle, dependency), SystemID.External);
+            _disposeHandle = H8Memory.Release(ref _telemetryCursor, JobHandle.CombineDependencies(_disposeHandle, dependency), SystemID.External);
             DispatcherJobSwap.TryFinalizeCompleted(ref _disposeHandle);
             _pendingHandle = default;
             _solverScheduled = false;

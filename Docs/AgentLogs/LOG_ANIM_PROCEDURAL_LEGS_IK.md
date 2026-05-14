@@ -139,3 +139,23 @@ Scoped forbidden-pattern scan returned no matches for `sqrMagnitude`, `math.sqrt
 
 Status:
 PENDING VERIFICATION. Unity import, Burst compiler, Play Mode, GCMonitor, profiler proof, and full compile proof remain absent.
+
+## 2026-05-15 Recursive QA Addendum 7
+
+What was wrong:
+The target-frame quarantine did not fully close H-Phi at the animation execution boundary. `ContextualPhysicalIkApplyJob` still accepted invalid stream-handle reads, chain metadata, cached pose payloads, muscle output, and raw scalar saturation. The PlayerKinematics hand producer could also publish NaN/invalid wall or squeeze blends into the IK rig.
+
+What was done:
+`ContextualPhysicalIkRig` now finite-gates pelvis, two-bone, FABRIK appendage, spine, secondary, cached pose replay, quaternion approximations, muscle bulge accumulation, authoring blends, squeeze pole offsets, cold shiver, predictive latch, and external hand target blends. `ContextualPhysicalIkRuntime` now uses finite-safe `SanitizeBlend` at hand SOA, foot progress, foot fade, slope lean, predictive target, collision response, hand offsets, and target-frame sanitization. `PlayerKinematicsRuntime` now sanitizes brace/squeeze/stress/load/immersion/acoustic/haptic scalar paths and rejects invalid smoothed hand targets before calling IK.
+
+Cinematic cheats used:
+No new simulation, no new rays, no gait planner, no managed owner. The lower body remains hip-origin batched rays, squared-distance step logic, triangle-wave lift, planar swim posture, pelvis yaw bias, Burst two-bone solve, and optional secondary/muscle visual overkill fed only by finite values.
+
+Exact microseconds saved:
+Added cost is branch/finite scalar checks inside existing loops, estimated below 1 us for the standard player rig on i3/MX350. Avoided cost is catastrophic NaN propagation through animation jobs, repeated solver correction, invalid hand latching, and debugging without trustworthy H-Phi boundaries.
+
+Verification:
+No dotnet rebuild was run per user instruction. `git diff --check -- Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRig.cs Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRuntime.cs Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs` passed with CRLF warnings only. Scoped forbidden-pattern scan over the touched lower-body/signal files returned no matches for `sqrMagnitude`, `math.sqrt`, `math.normalize`, `foreach`, `string.Format`, interpolation strings, `OnAnimatorIK`, `SetIK`, `ikPass`, `StartCoroutine`, `GameObject.Find`, `FindObjectOfType`, or `Camera.main`.
+
+Status:
+PENDING VERIFICATION. Unity import, Burst compiler, Play Mode, GCMonitor, profiler proof, and full compile proof remain absent.

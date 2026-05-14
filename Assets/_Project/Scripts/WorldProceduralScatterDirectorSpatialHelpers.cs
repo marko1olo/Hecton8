@@ -1,4 +1,5 @@
 using Hecton8.Core;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.World
@@ -27,7 +28,8 @@ namespace Hecton8.World
 
         private static Vector3 ToAbsoluteScatterPosition(Vector3 runtimePosition)
         {
-            return HectonFloatingOrigin.ToAbsoluteUniversePosition(runtimePosition);
+            double3 absolute = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimePosition);
+            return new Vector3((float)absolute.x, (float)absolute.y, (float)absolute.z);
         }
 
         private static Vector3 ToRuntimeScatterPosition(Vector3 absolutePosition)

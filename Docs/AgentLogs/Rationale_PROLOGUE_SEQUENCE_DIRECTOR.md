@@ -204,3 +204,67 @@ Solution: Clear `_running` before unlock and route final unlock through `Release
 Rejected Alternatives: Leave direct `finally` unlock, or call telemetry/runtime dump directly from catch/finally. Direct calls are cheaper in text only; the try boundary is outside wait loops and prevents cleanup from becoming a second crash.
 Scalability potential: Low/MX350 avoids stranded input locks during disable/dev skip faults; Middle/High/Ultra keep the same presentation pacing and richer downstream responders because normal state-machine timing is unchanged.
 Hardware Impact: 0 us per wait frame. Normal sequence cleanup pays one method call and no thrown exception; fault-only paths dump black-box data instead of burning additional recovery time.
+
+## Decision 24 - Dev-Skip Cancellation Guard
+
+Problem: Dev skip can be entered from token cancellation, explicit cancel state, or skip polling. The handoff calls runtime hydration, velocity, impact, and ocean signals; if one throws inside cancellation handling, the sibling catch block will not catch it and the crash can escape without the intended sequence fault record.
+Solution: Route all dev-skip entry points through `TryExecuteDevelopmentSkipHandoff()`, latch the handoff once, dump black-box data on runtime failure, and use guarded runtime black-box dump for non-finite orbital detection.
+Rejected Alternatives: Let cancellation handlers call the handoff directly, or wrap each runtime handoff call independently. Direct calls leave an unlogged secondary failure; per-call wrapping adds noise and still needs one shared latch.
+Scalability potential: Low/MX350 dev testing reaches forced shallow-water handoff or produces a clear dump; High/Ultra production pacing is unchanged because the guarded path is dev-skip/fault only.
+Hardware Impact: 0 us release hot path. Dev-only skip adds one guarded helper call and a try boundary when skip/cancel is already active; no per-frame wait-loop allocation. Verification: Core.Contracts and Narrative.Prologue response files compile with exit 0; Core response-file probe is blocked by unrelated `SaveMasterHashV10.cs(237,26)` missing `xxHash3`.
+
+## Decision 25 - Duplicate Input-Unlock Signal Removal
+
+Problem: Normal water transition published `PublishInputLock(None)` and then the sequence `finally` published the same unlock again through the guarded cleanup path. The duplicate signal spent a lane slot and left one unguarded cleanup call in the success path.
+Solution: Remove the normal-path unlock from `RunWaterTransition()` and rely on the guarded `finally` release. Dev-skip keeps immediate guarded unlock because it exits through cancellation before normal completion.
+Rejected Alternatives: Keep duplicate unlock for symmetry, or remove the final cleanup release. Duplicate unlock is wasteful; removing final cleanup would make fault/cancel paths less deterministic.
+Scalability potential: Low/MX350 saves one unnecessary signal publish on completed prologue; High/Ultra keep identical visible pacing while downstream water/audio/VFX responders receive less duplicate control traffic.
+Hardware Impact: Saves one `SystemPauseSignal` publish per completed run, estimated 3-8 us and one signal-lane entry. Verification this pass is static only by user request; no dotnet rebuild or response-file compile was run.
+
+## Decision 26 - Hydration Fallback Specificity
+
+Problem: With `oceanSurfaceChunkId == 0` and `allowAnyHydratedChunkFallback == true`, the bridge accepted any `SectorResidencyHydratedSignal` on high tier. A random ecosystem or stress-test sector could release the splashdown gate before the ocean/shallow-water surface was ready.
+Solution: Keep exact configured chunk matching, keep forced shallow-water hash matching, and restrict arbitrary fallback to low-tier proxy mode with `FlagProxyFallback` present.
+Rejected Alternatives: Disable fallback completely, or keep accepting any hydrated sector. Disabling fallback risks black-screen stalls in unconfigured low-tier/dev scenes; accepting any sector breaks high-tier visual integrity.
+Scalability potential: Low/MX350 can still use the cheap proxy fake; Middle/High/Ultra require the configured ocean chunk or deliberate shallow-water signal before spending cycles on water/audio/VFX overkill.
+Hardware Impact: Adds one proxy-flag branch per residency signal in a lane capped at 64. Estimated cost below 1 us on i3/MX350; prevents false readiness and wasted splashdown work. Verification this pass is static only by user request; no dotnet rebuild or response-file compile was run.
+
+## Decision 27 - Registry Ownership and Cancellation Guard
+
+Problem: `PrologueSequenceRegistryBridge` configured and could auto-run its local service even if `GlobalRegistry` rejected registration because another prologue runtime already owned the slot. Cancellation also called the service before CTS cancellation, so a future throwing service adapter could block token cancellation.
+Solution: After registration, the bridge now verifies `GlobalRegistry.PrologueSequence` still points to its service before auto-run. Cancellation catches service failures, publishes hash telemetry, and always attempts CTS cancellation through `CancelRunSourceNoThrow()`. Disposal nulls the field before cancel/dispose to avoid reuse.
+Rejected Alternatives: Let duplicate local bridges run, or rely on current `CancelSequence` never throwing. Duplicate local runners break deterministic sequence ownership; adapter assumptions do not survive parallel integration.
+Scalability potential: Low/MX350 avoids duplicated signal spam from accidental duplicate bridges; Middle/High/Ultra keep a single authoritative cinematic state machine before expensive water/audio/VFX responders activate.
+Hardware Impact: 0 us hot path. Duplicate/disable paths add only scalar checks and fault-only telemetry; preventing duplicate runners avoids multiple wait-loop and signal costs. Verification this pass is static only by user request; no dotnet rebuild or response-file compile was run.
+
+## Decision 28 - Pre-Registration Ownership Repair
+
+Problem: Static readback showed `GlobalRegistry.RegisterServiceAllowSameInstance` replaces an existing slot instead of rejecting it. The previous post-register check was too late: a duplicate bridge could overwrite the authoritative prologue runtime, then consider itself registered.
+Solution: Check `GlobalRegistry.PrologueSequence` before `RegisterPrologueSequenceRuntime()` and return if another service already owns the slot. Bind input and hot-swap only after registration ownership is proven.
+Rejected Alternatives: Keep post-register validation only, or bind input before ownership is known. Post-register validation cannot prevent overwrite; pre-ownership input binding lets rejected bridges react to dev-skip input.
+Scalability potential: Low/MX350 avoids duplicate wait loops and duplicate VWS/haptic/splashdown signals from scene misconfiguration; Middle/High/Ultra preserve one authoritative cinematic state machine before expensive responders activate.
+Hardware Impact: 0 us hot path. Enable-time adds one registry pointer read and equality check; avoids duplicate sequence CPU/signal traffic under misconfiguration. Verification this pass is static only by user request; no dotnet rebuild or response-file compile was run.
+
+## Decision 29 - Hot-Path Registry Cache And Auto-Run CTS Retention
+
+Problem: The bridge still read `GlobalRegistry` service slots from prologue wait paths (`OrbitalDirector`, `StreamingBackpressure`, `TickDispatcher`, and dev input fallback), and the auto-run linked `CancellationTokenSource` stayed retained after normal sequence completion until destroy/re-enable.
+Solution: Cache development flag, input, orbital, streaming, and tick-dispatcher dependencies during enable and refresh them via `IGlobalRegistryHotSwapListener`. The dev-only dilated wait refreshes only from the cached dispatcher field. Auto-run now goes through a guarded Awaitable wrapper that releases the linked CTS when the sequence finishes and reports hash telemetry if the service faults outside the director envelope.
+Rejected Alternatives: Keep per-frame registry slot reads because they are convenient, or dispose the CTS only from `OnDestroy`. Registry polling violates the hot-path cache mandate; destroy-only disposal retains an unnecessary linked-token registration after successful prologue completion.
+Scalability potential: Low/MX350 gets cheaper prologue wait frames and avoids retained lifecycle baggage after splashdown. Middle/High/Ultra keep the same cinematic staging while preserving one authoritative service cache that can be upgraded by hot-swap events for richer downstream orbital/ocean responders.
+Hardware Impact: Estimated 2-8 us saved on wait frames that sample orbital/streaming/dev-skip state, depending on service access contention. One cold CTS is still allocated for auto-run cancellation, but it is released at sequence completion instead of waiting for destroy/re-enable. Verification this pass is static only by user request; no dotnet rebuild or response-file compile was run. `Tools/Architecture/HectonPhiAudit.ps1 -Json` timed out at 60 seconds, so no project-wide H-Phi metric is claimed.
+
+## Decision 30 - Dev-Skip Cancellation Priority
+
+Problem: Dev skip can set `_cancelReason = DevSkip`, then a same-frame disable can call `CancelSequence(ExplicitCancel)` before the Awaitable cancellation unwinds. That race downgrades the intended shallow-water handoff into an ordinary cancellation.
+Solution: Normalize the incoming reason once and preserve an already-latched dev-skip reason unless the new reason is also dev skip. Later generic cancellation still marks `_cancelRequested`, but it cannot erase the forced handoff path.
+Rejected Alternatives: Trust cancellation ordering, or move dev skip into the bridge only. Ordering is not deterministic during disable/scene teardown; bridge-only handling would duplicate the director's black-box and stage ownership.
+Scalability potential: Low/MX350 dev iteration keeps deterministic shallow-water resume instead of a dead cancelled cinematic. Middle/High/Ultra production cadence is unchanged because the branch only matters after cancellation is requested.
+Hardware Impact: 0 us steady-state. Cancellation path adds one byte comparison and branch; it prevents one lost dev handoff under interruption races. Verification this pass is static only by user request; no dotnet rebuild or response-file compile was run.
+
+## Decision 31 - Hydration LOD Hysteresis
+
+Problem: Loop 14 made hydration quality dynamic, but direct per-frame low/high policy sampling can flip proxy hydration on and off during thermal/memory tier churn. That violates the state-hysteresis mandate and can create inconsistent splashdown readiness.
+Solution: Add a 150-frame hysteresis band to `IsLowTier` in the bridge. A new low-memory pressure flag still forces immediate downshift to the cheap proxy path; upgrades or non-emergency tier flips must stay stable before changing the cached hydration mode.
+Rejected Alternatives: One-shot quality sampling, or immediate per-frame switching. One-shot sampling traps constrained devices in high-res waits; immediate switching trades correctness for flicker.
+Scalability potential: Low/toaster path still reaches proxy water quickly under pressure. Middle/High/Ultra keep high-resolution hydration stable and avoid accidental proxy flicker, preserving expensive water/audio/VFX overkill only when the tier is stable.
+Hardware Impact: Adds a few scalar bool/int branches to hydration wait frames, estimated 1-2 us. Prevents repeated readiness churn and wasted transition work during unstable quality policy. Verification this pass is static only by user request; no dotnet rebuild or response-file compile was run.

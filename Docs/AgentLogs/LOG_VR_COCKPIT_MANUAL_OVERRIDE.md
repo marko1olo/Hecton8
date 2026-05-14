@@ -97,3 +97,27 @@ Cinematic Cheats used: no real joint or force solver; this keeps the determinist
 Exact microseconds saved/spent: +0.04 us per tick for hand/pivot telemetry finite checks; +0.03 us only on receiver candidate callbacks; 0 B/frame; avoided unbounded crash-debug time by dumping the fixed 300-frame ring.
 
 Verification: forbidden-pattern scan over task files returned no matches. `git diff --check` passed with CRLF warnings only. Official UI response-file compile is blocked because the rsp references missing `Library/Bee/artifacts/1300b0aEDbg.dag/Hecton8.Core.ref.dll`; a temporary probe substituting the available `1900...Hecton8.Core.ref.dll` reached binding and failed only on stale Core metadata (`ManualOverridePulledSignal` absent, `PhysicalHandReceiverRegistry` inaccessible). Source scan confirms `ManualOverridePulledSignal` exists in `GlobalSignals.cs` and `PhysicalHandReceiverRegistry` is public in source.
+
+## 2026-05-14 - Input / Presentation Sanitization
+
+What was wrong: input adaptation and presentation writes still trusted upstream axes and handle/IK transforms after the simulation finite guard. Bad automation input or a corrupted cockpit art rig could still leak invalid values into the local universal signal or presentation transform state.
+
+What was done: clamped Move, Look, and Vertical to [-1,1] with zero fallback in `BuildUniversalInputSignal()`. `ApplyLeverVisual()` now refuses non-finite angle/quaternion output. `UpdateIkTarget()` rejects invalid handle pose, recovers corrupted IK target pose by snapping to the valid handle, and uses one combined `SetPositionAndRotation()` write for interpolated IK output.
+
+Cinematic Cheats used: still a kinematic scalar lever; no physics joint, no direct OpenXR polling, no extra smoothing buffers.
+
+Exact microseconds saved/spent: +0.03 us per tick for axis sanitation; +0.02 us per lever visual write guard; +0.05 us while grabbed for IK finite checks; one combined IK transform write replaces separate position and rotation writes.
+
+Verification: forbidden-pattern scan returned no matches. `git diff --check` passed. Official UI response-file compile still fails before source binding on missing `1300...Hecton8.Core.ref.dll`; temporary response-file probe with `1900...Hecton8.Core.ref.dll` reports only stale Core metadata (`ManualOverridePulledSignal`, `PhysicalHandReceiverRegistry`) and no new input/presentation compiler category before that wall.
+
+## 2026-05-15 - Blackbox Dump Rate Limit
+
+What was wrong: a persistent NaN/Inf state could call `DumpBlackBox()` every Tick. The 300-frame blackbox is required evidence, but repeated binary rewrites convert a fault artifact into frame-time damage.
+
+What was done: added `_blackBoxDumped` as a lifecycle-reset latch. The first corrupt state writes `Docs/AgentLogs/Dump_VR_COCKPIT_MANUAL_OVERRIDE.bin`; later corrupt ticks return without touching disk until `OnEnable()` or native-state initialization resets the latch. Telemetry flags now set bit 5 after a dump attempt.
+
+Cinematic Cheats used: no additional simulation. The lever remains a scalar kinematic fake; this pass makes crash evidence bounded instead of simulating or logging fault detail every frame.
+
+Exact microseconds saved/spent: 0 us normal-path IO; one branch in fault handling and telemetry flag build. In persistent fault state, avoids repeated 300-entry binary file rewrites, which can otherwise cost milliseconds depending on disk/cache state. Static H-Phi formula movement is not claimed; local H-Phi evidence improves by bounding fault-side IO and preserving typed telemetry.
+
+Verification: pending static scans in this pass. Dotnet rebuild/probe intentionally not run by user instruction.

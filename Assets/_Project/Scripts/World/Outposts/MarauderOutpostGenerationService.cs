@@ -30,11 +30,13 @@ namespace Hecton8.World.Outposts
         private const float DefaultCellSizeMeters = 4f;
         private const float DefaultFloorHeightMeters = 3f;
         private const float DefaultStiltClearanceMeters = 1.6f;
+        private const float DefaultOutpostAge01 = 0.92f;
         private const int GeneratedSignalReplayFrames = 4;
         private const int GeneratedSignalHeartbeatFrames = 60;
         private const ulong TelemetryDumpMagic = 0x00384E4F54434548UL; // HECTON8\0 as little-endian bytes.
         private const uint TelemetryDumpVersion = 1u;
         private const int TelemetryDumpEntryPayloadBytes = 72;
+        private const float ShiftEpsilonMeters = 0.0001f;
 
         private static readonly int OutpostMatricesId = Shader.PropertyToID("_OutpostMatrices");
         private static readonly int OutpostCellTypesId = Shader.PropertyToID("_OutpostCellTypes");
@@ -60,7 +62,7 @@ namespace Hecton8.World.Outposts
         [SerializeField, Min(1f)] private float cellSizeMeters = DefaultCellSizeMeters;
         [SerializeField, Min(1f)] private float floorHeightMeters = DefaultFloorHeightMeters;
         [SerializeField, Min(0.25f)] private float stiltClearanceMeters = DefaultStiltClearanceMeters;
-        [SerializeField, Range(0f, 1f)] private float outpostAge01 = 0.92f;
+        [SerializeField, Range(0f, 1f)] private float outpostAge01 = DefaultOutpostAge01;
 
         [Header("Rendering")]
         [SerializeField] private Mesh shellMesh;
@@ -152,10 +154,10 @@ namespace Hecton8.World.Outposts
 
         private void OnValidate()
         {
-            cellSizeMeters = Mathf.Max(1f, cellSizeMeters);
-            floorHeightMeters = Mathf.Max(1f, floorHeightMeters);
-            stiltClearanceMeters = Mathf.Max(0.25f, stiltClearanceMeters);
-            outpostAge01 = Mathf.Clamp01(outpostAge01);
+            cellSizeMeters = SanitizeMin(cellSizeMeters, 1f, DefaultCellSizeMeters);
+            floorHeightMeters = SanitizeMin(floorHeightMeters, 1f, DefaultFloorHeightMeters);
+            stiltClearanceMeters = SanitizeMin(stiltClearanceMeters, 0.25f, DefaultStiltClearanceMeters);
+            outpostAge01 = Sanitize01(outpostAge01, DefaultOutpostAge01);
             if (!IsFinite(localOriginOffsetMeters))
                 localOriginOffsetMeters = Vector3.zero;
         }
@@ -292,10 +294,10 @@ namespace Hecton8.World.Outposts
 
             Material material = ResolveRenderMaterial();
             Mesh mesh = ResolveRenderMesh();
-            if (material == null || mesh == null)
+            if (material == null || mesh == null || mesh.subMeshCount <= 0)
                 return;
 
-            float age = Mathf.Clamp01(outpostAge01);
+            float age = ResolveOutpostAge01();
             Shader.SetGlobalFloat(OutpostAge01Id, age);
             Shader.SetGlobalVector(HectonMaterialDecayRuntimeId, new Vector4(age, 0.55f, _qualityTier == OutpostGenerationQualityTier.Low ? 1f : 0f, (_activeSolveSeed & 0xFFFFu) * MarauderOutpostConstants.HeightUShortToUnit));
             material.SetBuffer(OutpostMatricesId, _matrixBuffer);
@@ -397,7 +399,14 @@ namespace Hecton8.World.Outposts
 
         public void ApplyAupShift(float3 shiftMeters, uint shiftFrameId)
         {
-            if (!math.all(math.isfinite(shiftMeters)) || math.all(math.abs(shiftMeters) < new float3(0.0001f)))
+            if (!math.all(math.isfinite(shiftMeters)))
+            {
+                WriteTelemetry(MarauderOutpostConstants.FaultFlag | MarauderOutpostConstants.AupShiftFlag);
+                DumpBlackBox();
+                return;
+            }
+
+            if (math.all(math.abs(shiftMeters) < new float3(ShiftEpsilonMeters)))
                 return;
 
             if (_jobPhase == JobPhase.Solving)
@@ -475,13 +484,13 @@ namespace Hecton8.World.Outposts
                 Counters = _counters,
                 Dimensions = _activeDimensions,
                 OriginMeters = _generationOrigin,
-                TerrainPosition = payload.IsValid ? ToFloat3(payload.TerrainPosition) : _generationOrigin - new float3(16f, stiltClearanceMeters, 16f),
+                TerrainPosition = payload.IsValid ? ToFloat3(payload.TerrainPosition) : _generationOrigin - new float3(16f, ResolveStiltClearanceMeters(), 16f),
                 TerrainSize = payload.IsValid ? ToFloat3(payload.TerrainSize) : new float3(32f, 8f, 32f),
                 HeightResolution = payload.IsValid ? payload.HeightmapResolution : 0,
-                CellSizeMeters = math.max(1f, cellSizeMeters),
-                FloorHeightMeters = math.max(1f, floorHeightMeters),
-                StiltClearanceMeters = math.max(0.25f, stiltClearanceMeters),
-                OutpostAge01 = math.saturate(outpostAge01),
+                CellSizeMeters = ResolveCellSizeMeters(),
+                FloorHeightMeters = ResolveFloorHeightMeters(),
+                StiltClearanceMeters = ResolveStiltClearanceMeters(),
+                OutpostAge01 = ResolveOutpostAge01(),
                 Seed = _activeSolveSeed,
                 LowTier = _qualityTier == OutpostGenerationQualityTier.Low ? (byte)1 : (byte)0
             };
@@ -499,6 +508,7 @@ namespace Hecton8.World.Outposts
             _solidCellCount = _counters.IsCreated && _counters.Length > 2 ? math.max(0, _counters[2]) : 0;
             _supportCount = _counters.IsCreated && _counters.Length > 3 ? math.max(0, _counters[3]) : 0;
             _heightmapFallback = _counters.IsCreated && _counters.Length > 4 && _counters[4] != 0;
+            ApplyPendingShiftToExtractedData(_matrixCount, _interactableCount);
             _generated = _matrixCount > 0;
             _activeGridHash = _generated ? ComputeGridHash() : 0u;
             _matrixUploadDirty = _generated;
@@ -566,6 +576,26 @@ namespace Hecton8.World.Outposts
             if (tier == HectonQualityTier.Ultra)
                 return OutpostGenerationQualityTier.Ultra;
             return OutpostGenerationQualityTier.Middle;
+        }
+
+        private float ResolveCellSizeMeters()
+        {
+            return SanitizeMin(cellSizeMeters, 1f, DefaultCellSizeMeters);
+        }
+
+        private float ResolveFloorHeightMeters()
+        {
+            return SanitizeMin(floorHeightMeters, 1f, DefaultFloorHeightMeters);
+        }
+
+        private float ResolveStiltClearanceMeters()
+        {
+            return SanitizeMin(stiltClearanceMeters, 0.25f, DefaultStiltClearanceMeters);
+        }
+
+        private float ResolveOutpostAge01()
+        {
+            return Sanitize01(outpostAge01, DefaultOutpostAge01);
         }
 
         private void AllocatePersistentState()
@@ -661,14 +691,26 @@ namespace Hecton8.World.Outposts
                 return;
 
             Mesh mesh = ResolveRenderMesh();
+            uint indexCount = 0u;
+            uint startIndex = 0u;
+            uint baseVertexIndex = 0u;
+            uint safeInstanceCount = 0u;
+            if (mesh != null && mesh.subMeshCount > 0)
+            {
+                indexCount = mesh.GetIndexCount(0);
+                startIndex = mesh.GetIndexStart(0);
+                baseVertexIndex = (uint)math.max(0, mesh.GetBaseVertex(0));
+                safeInstanceCount = indexCount > 0u ? instanceCount : 0u;
+            }
+
             NativeArray<GraphicsBuffer.IndirectDrawIndexedArgs> argsWrite =
                 _argsBuffer.LockBufferForWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(0, 1);
             argsWrite[0] = new GraphicsBuffer.IndirectDrawIndexedArgs
             {
-                indexCountPerInstance = mesh != null ? mesh.GetIndexCount(0) : 0u,
-                instanceCount = instanceCount,
-                startIndex = mesh != null ? mesh.GetIndexStart(0) : 0u,
-                baseVertexIndex = mesh != null ? (uint)math.max(0, mesh.GetBaseVertex(0)) : 0u,
+                indexCountPerInstance = indexCount,
+                instanceCount = safeInstanceCount,
+                startIndex = startIndex,
+                baseVertexIndex = baseVertexIndex,
                 startInstance = 0u
             };
             _argsBuffer.UnlockBufferAfterWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(1);
@@ -746,7 +788,10 @@ namespace Hecton8.World.Outposts
                 return;
 
             if (TryResolveOwnedComponent(instance, out MessageTerminal terminal))
+            {
                 terminal.ConfigureWfcOutpostPersistence(_activeSectorHash, cellIndex, flags);
+                return;
+            }
 
             if (TryResolveOwnedComponent(instance, out AudioLogPickup audioLogPickup))
                 audioLogPickup.ConfigureWfcOutpostPersistence(_activeSectorHash, cellIndex, flags);
@@ -848,17 +893,64 @@ namespace Hecton8.World.Outposts
 
         private void AccumulatePendingShift(float3 shiftMeters, uint shiftFrameId)
         {
-            if (math.any(math.abs(shiftMeters) > new float3(0.0001f)))
+            if (math.any(math.abs(shiftMeters) > new float3(ShiftEpsilonMeters)))
                 _pendingShift += shiftMeters;
 
             _pendingShiftFrameId = shiftFrameId;
-            _hasPendingShift = math.any(math.abs(_pendingShift) > new float3(0.0001f));
+            _hasPendingShift = math.any(math.abs(_pendingShift) > new float3(ShiftEpsilonMeters));
+        }
+
+        private void ApplyPendingShiftToExtractedData(int matrixCount, int interactableCount)
+        {
+            if (!_hasPendingShift)
+                return;
+
+            if (!math.all(math.isfinite(_pendingShift)))
+            {
+                _pendingShift = default;
+                _pendingShiftFrameId = 0u;
+                _hasPendingShift = false;
+                WriteTelemetry(MarauderOutpostConstants.FaultFlag | MarauderOutpostConstants.AupShiftFlag);
+                DumpBlackBox();
+                return;
+            }
+
+            float3 shift = _pendingShift;
+            uint shiftFrameId = _pendingShiftFrameId;
+            _pendingShift = default;
+            _pendingShiftFrameId = 0u;
+            _hasPendingShift = false;
+            if (math.all(math.abs(shift) < new float3(ShiftEpsilonMeters)))
+                return;
+
+            _generationOrigin -= shift;
+            _lastShiftFrameId = shiftFrameId;
+
+            int safeMatrixCount = _shellMatrices.IsCreated ? math.min(math.max(0, matrixCount), _shellMatrices.Length) : 0;
+            for (int i = 0; i < safeMatrixCount; i++)
+            {
+                float4x4 matrix = _shellMatrices[i];
+                matrix.c3.x -= shift.x;
+                matrix.c3.y -= shift.y;
+                matrix.c3.z -= shift.z;
+                _shellMatrices[i] = matrix;
+            }
+
+            int safeInteractableCount = _interactableSpawns.IsCreated ? math.min(math.max(0, interactableCount), _interactableSpawns.Length) : 0;
+            for (int i = 0; i < safeInteractableCount; i++)
+            {
+                OutpostInteractableSpawn spawn = _interactableSpawns[i];
+                spawn.PositionMeters -= shift;
+                _interactableSpawns[i] = spawn;
+            }
+
+            WriteTelemetry(MarauderOutpostConstants.AupShiftFlag);
         }
 
         private void UpdateDrawBounds()
         {
-            float width = math.max(_activeDimensions.x, _activeDimensions.z) * math.max(1f, cellSizeMeters) + 12f;
-            float height = math.max(4f, _activeDimensions.y * math.max(1f, floorHeightMeters) + 12f);
+            float width = math.max(_activeDimensions.x, _activeDimensions.z) * ResolveCellSizeMeters() + 12f;
+            float height = math.max(4f, _activeDimensions.y * ResolveFloorHeightMeters() + 12f);
             _drawBounds = new Bounds(
                 new Vector3(_generationOrigin.x, _generationOrigin.y + height * 0.35f, _generationOrigin.z),
                 new Vector3(width, height, width));
@@ -881,7 +973,7 @@ namespace Hecton8.World.Outposts
                 Dimensions = _activeDimensions,
                 ShellMatrixCount = _matrixCount,
                 InteractableCount = _interactableCount,
-                OutpostAge01 = outpostAge01,
+                OutpostAge01 = ResolveOutpostAge01(),
                 QualityTier = _qualityTier,
                 State = _state,
                 Flags = ResolveDescriptorFlags()
@@ -925,8 +1017,8 @@ namespace Hecton8.World.Outposts
                     LocalZ = originAup.LocalZ
                 },
                 Dimensions = _activeDimensions,
-                CellSizeMeters = math.max(1f, cellSizeMeters),
-                FloorHeightMeters = math.max(1f, floorHeightMeters),
+                CellSizeMeters = ResolveCellSizeMeters(),
+                FloorHeightMeters = ResolveFloorHeightMeters(),
                 SectorHash = _activeSectorHash,
                 WorldSeed = _activeWorldSeed,
                 GenerationSequence = _generationSequence,
@@ -994,14 +1086,15 @@ namespace Hecton8.World.Outposts
                 GridHandle = _publishedPowerGridHandle,
                 GenerationSequence = _generationSequence,
                 Dimensions = _activeDimensions,
-                CellSizeMeters = math.max(1f, cellSizeMeters),
-                FloorHeightMeters = math.max(1f, floorHeightMeters),
+                CellSizeMeters = ResolveCellSizeMeters(),
+                FloorHeightMeters = ResolveFloorHeightMeters(),
                 GridHash = _activeGridHash,
                 Frame = (uint)Time.frameCount,
                 CellCount = (ushort)math.min(ResolveActiveCellCount(), ushort.MaxValue),
                 Flags = ResolveDescriptorFlags()
             };
-            GlobalSignals.Publish(in signal);
+            GlobalSignals.InitializeAllQueues();
+            SignalBus<WfcOutpostGeneratedSignal>.Push(in signal);
         }
 
         private void ReleasePublishedPowerGrid()
@@ -1068,7 +1161,7 @@ namespace Hecton8.World.Outposts
                 InteractableCount = _interactableCount,
                 SolidCellCount = _solidCellCount,
                 SupportCount = _supportCount,
-                OutpostAge01 = outpostAge01,
+                OutpostAge01 = ResolveOutpostAge01(),
                 ShiftFrameId = _lastShiftFrameId
             };
             index++;
@@ -1172,6 +1265,28 @@ namespace Hecton8.World.Outposts
         private static float3 ToFloat3(Vector3 value)
         {
             return new float3(value.x, value.y, value.z);
+        }
+
+        private static float SanitizeMin(float value, float minValue, float fallback)
+        {
+            float resolvedFallback = IsFinite(fallback) ? fallback : minValue;
+            if (!IsFinite(value))
+                return math.max(minValue, resolvedFallback);
+            return value < minValue ? minValue : value;
+        }
+
+        private static float Sanitize01(float value, float fallback)
+        {
+            if (!IsFinite(value))
+                value = fallback;
+            if (!IsFinite(value))
+                return 0f;
+            return Mathf.Clamp01(value);
+        }
+
+        private static bool IsFinite(float value)
+        {
+            return !float.IsNaN(value) && !float.IsInfinity(value);
         }
 
         private static bool IsFinite(Vector3 value)

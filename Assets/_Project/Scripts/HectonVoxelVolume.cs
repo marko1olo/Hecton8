@@ -2021,6 +2021,15 @@ namespace Hecton8.Caves
             float normalizedPower,
             float maxDistance)
         {
+            return ApplyPlasmaCutDda(ToDouble3(absoluteHitPoint), direction, normalizedPower, maxDistance);
+        }
+
+        public bool ApplyPlasmaCutDda(
+            double3 absoluteHitPoint,
+            Vector3 direction,
+            float normalizedPower,
+            float maxDistance)
+        {
             if (!_runtimeDataReady || _gridDimension <= 0 || _voxelSize <= 0f || _bakeState != VoxelBakeState.Complete)
                 return false;
 
@@ -2140,6 +2149,15 @@ namespace Hecton8.Caves
         /// <returns>True when at least one voxel cell was converted into an additive weld stamp.</returns>
         public bool ApplyRepairWeldDda(
             Vector3 absoluteHitPoint,
+            Vector3 direction,
+            float normalizedPower,
+            float maxDistance)
+        {
+            return ApplyRepairWeldDda(ToDouble3(absoluteHitPoint), direction, normalizedPower, maxDistance);
+        }
+
+        public bool ApplyRepairWeldDda(
+            double3 absoluteHitPoint,
             Vector3 direction,
             float normalizedPower,
             float maxDistance)

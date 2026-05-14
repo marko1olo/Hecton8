@@ -193,10 +193,10 @@ namespace Hecton8.Gameplay
             {
                 if (_queuedRaycastRequesterId == 0UL) RefreshQueuedRaycastRequesterId();
                 Vector3 normalizedDirection = NormalizeOrCachedForward(direction);
-                Vector3 absoluteOrigin = HectonFloatingOrigin.ToAbsoluteUniversePosition(origin);
+                double3 absoluteOrigin = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(origin);
                 InteractionPacket packet = new InteractionPacket(
                     ResolveRuntimeToolId(),
-                    new Unity.Mathematics.float3(absoluteOrigin.x, absoluteOrigin.y, absoluteOrigin.z),
+                    new Unity.Mathematics.float3((float)absoluteOrigin.x, (float)absoluteOrigin.y, (float)absoluteOrigin.z),
                     new Unity.Mathematics.float3(normalizedDirection.x, normalizedDirection.y, normalizedDirection.z),
                     GetRuntimePowerScalar(1f),
                     range,

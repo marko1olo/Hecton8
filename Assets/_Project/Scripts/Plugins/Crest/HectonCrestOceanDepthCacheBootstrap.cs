@@ -990,7 +990,8 @@ namespace Hecton8.World
 
         private static Vector3 ResolveAbsoluteUniversePoint(Vector3 runtimePosition)
         {
-            return HectonFloatingOrigin.ToAbsoluteUniversePosition(runtimePosition);
+            double3 absolute = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimePosition);
+            return new Vector3((float)absolute.x, (float)absolute.y, (float)absolute.z);
         }
 
         private static float ResolveAbsoluteUniverseY(float runtimeY)

@@ -47,7 +47,7 @@ namespace Hecton8.Power
             {
                 NativeArray<byte> slot = _gridSlots[i];
                 if (slot.IsCreated)
-                    H8Memory.Release(ref slot);
+                    H8Memory.Release(ref slot, LogisticsGridSystemId);
 
                 _gridSlots[i] = slot;
                 _descriptors[i] = default;

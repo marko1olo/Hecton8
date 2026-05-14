@@ -532,7 +532,7 @@ namespace Hecton8.QA.Headless
             if (!_scratchBlock.IsCreated)
                 return;
 
-            H8Memory.Release(ref _scratchBlock);
+            H8Memory.Release(ref _scratchBlock, SystemID.External);
         }
 
         private void EmitAupShift()

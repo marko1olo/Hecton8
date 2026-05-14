@@ -84,7 +84,7 @@ namespace Hecton8.Core.Bucketing
                 if (_entityBuckets.Length == capacity)
                     return;
 
-                H8Memory.Release(ref _entityBuckets);
+                H8Memory.Release(ref _entityBuckets, SystemID.SimulationBucketer);
             }
 
             _entityBuckets = H8Memory.Allocate<int>(
@@ -224,7 +224,7 @@ namespace Hecton8.Core.Bucketing
         public void Dispose()
         {
             if (_entityBuckets.IsCreated)
-                H8Memory.Release(ref _entityBuckets);
+                H8Memory.Release(ref _entityBuckets, SystemID.SimulationBucketer);
 
             _entityMask = 0;
             _currentFrameCount = 0;

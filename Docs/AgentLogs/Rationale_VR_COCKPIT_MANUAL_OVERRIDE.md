@@ -173,3 +173,27 @@ Rejected Alternatives: trusting Unity Transform output was rejected because corr
 Scalability potential: Low keeps the same cheap scalar solve with explicit invalid-state rejection. Middle/High gain stable cockpit interaction under nested rigs. Ultra can spend saved solver simplicity on richer haptic/audio/visual response while the blackbox still records deterministic state.
 
 Hardware Impact: i3/MX350 pays two extra `float3` finite checks in the 60Hz blackbox write and one receiver-side local-hand check only on hand candidate frames; estimated +0.04 us per tick and +0.03 us per receiver callback. This is accepted because it buys crash explainability without heap allocation or physics cost.
+
+## Decision 14 - Presentation writes and input axes need their own guard boundary
+
+Problem: the lever's simulation state was finite-guarded, but presentation and downstream input adaptation still trusted upstream values. A bad input provider, automation override, or corrupted handle transform could push non-finite axes into the local universal signal or write invalid pose data into IK/visual transforms.
+
+Solution: clamp Move, Look, and Vertical to [-1,1] with zero fallback in `BuildUniversalInputSignal()`. Gate lever visual writes behind finite angle and quaternion checks. Gate IK writes behind finite handle pose checks, recover a corrupted IK target by snapping to the valid handle, and use one `SetPositionAndRotation()` call for the interpolated pose.
+
+Rejected Alternatives: relying on upstream `InputDispatcher` sanitation was rejected because UI.VR must remain robust against hot-swap and automation injection. Leaving separate `position` and `rotation` writes was rejected because a single valid combined write is cleaner and avoids half-updated presentation state. Adding smoothing state arrays was rejected because current Math LOD smoothing already exists and extra state would not improve correctness.
+
+Scalability potential: Low/Middle keep the cheap scalar lever while avoiding corrupted presentation output. High/Ultra can use richer cockpit art rigs and IK targets without increasing simulation truth. The same signal remains device-agnostic and bounded for all tiers.
+
+Hardware Impact: i3/MX350 pays roughly +0.03 us per tick for axis sanitation, +0.02 us per visual write guard, and +0.05 us while grabbed for IK pose guards. One combined IK transform write replaces separate position/rotation writes during interpolation.
+
+## Decision 15 - Blackbox dumps must be fault evidence, not repeated frame work
+
+Problem: the blackbox guard could call `DumpBlackBox()` every Tick while native state stayed corrupt. The dump path is intentionally allowed to allocate and touch disk as a crash artifact, but repeating it every frame would damage the same frame pacing the zero-GC mandate is trying to protect.
+
+Solution: add `_blackBoxDumped` as a lifecycle-reset latch. `DumpBlackBox()` exits after the first attempted dump until `OnEnable()` or `InitializeLeverStateAfterAllocation()` resets the latch. Telemetry flag bit 5 records that a dump has already been attempted on later valid frames.
+
+Rejected Alternatives: deleting the dump was rejected because the blackbox rule requires evidence on NaN/crash. Logging every corrupt frame was rejected because managed logs allocate and are noisy. Keeping repeated binary rewrites was rejected because one corrupted rig could create disk I/O every frame.
+
+Scalability potential: Low/toaster path gets one bounded dump and no repeated disk churn. Middle/High stay deterministic. Ultra can spend saved failure-mode headroom on richer cockpit aftermath presentation while the same fault bit tells downstream diagnostics that the blackbox entered dump mode.
+
+Hardware Impact: normal frames pay no extra IO and only a telemetry flag branch. Persistent corrupt state avoids repeated 300-entry binary rewrites; on i3/MX350 this prevents multi-millisecond disk spikes during a fault loop. No numeric H-Phi score is claimed for this local robustness pass because the static formula does not measure fault-dump rate limiting directly.

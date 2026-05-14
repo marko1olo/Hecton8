@@ -1354,11 +1354,11 @@ namespace Hecton8.Physics
         {
             Transform cachedTransform = _cachedTransform != null ? _cachedTransform : transform;
             _cachedTransform = cachedTransform;
-            Vector3 absolute = HectonFloatingOrigin.ToAbsoluteUniversePosition(cachedTransform.position);
+            double3 absolute = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(cachedTransform.position);
             Rigidbody hullBody = ResolveHullRigidbody();
             ImpactSignal signal = new ImpactSignal
             {
-                PointAup = AbsoluteUniversePosition.FromAbsolutePosition(new double3(absolute.x, absolute.y, absolute.z)),
+                PointAup = AbsoluteUniversePosition.FromAbsolutePosition(absolute),
                 Force = math.max(0f, severitySum * ambientPressureKPa),
                 Intensity = math.saturate(severitySum / math.max(1f, MaxActiveBreaches)),
                 PrimaryBodyId = hullBody != null ? unchecked((uint)EntityId.ToULong(hullBody.GetEntityId())) : 0u,

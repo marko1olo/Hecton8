@@ -113,7 +113,7 @@ namespace Hecton8.Narrative.Prologue
             catch (OperationCanceledException)
             {
                 if (_cancelReason == PrologueCancelReasons.DevSkip)
-                    ExecuteDevelopmentSkipHandoff();
+                    TryExecuteDevelopmentSkipHandoff();
                 else
                     RecordStage(
                         PrologueStage.Cancelled,
@@ -135,8 +135,16 @@ namespace Hecton8.Narrative.Prologue
 
         public void CancelSequence(byte reason)
         {
+            byte normalizedReason = reason == 0 ? PrologueCancelReasons.ExplicitCancel : reason;
+            if (_cancelReason == PrologueCancelReasons.DevSkip &&
+                normalizedReason != PrologueCancelReasons.DevSkip)
+            {
+                _cancelRequested = true;
+                return;
+            }
+
             _cancelRequested = true;
-            _cancelReason = reason == 0 ? PrologueCancelReasons.ExplicitCancel : reason;
+            _cancelReason = normalizedReason;
         }
 
         private void OnDisable()
@@ -228,7 +236,7 @@ namespace Hecton8.Narrative.Prologue
                     {
                         RecordStage(PrologueStage.Faulted, FaultHash, PrologueCancelReasons.NonFinite);
                         DumpBlackBox();
-                        _runtime.DumpBlackBox();
+                        TryDumpRuntimeBlackBox(_runtime);
                         return false;
                     }
 
@@ -320,7 +328,6 @@ namespace Hecton8.Narrative.Prologue
             _runtime.ZeroUniverseVelocity();
             _runtime.PublishMassiveImpact();
             _runtime.PublishOceanHandoff();
-            _runtime.PublishInputLock(PrologueInputLockFlags.None, paused: false);
         }
 
         private bool ShouldStopForCancellation(CancellationToken cancellationToken)
@@ -328,7 +335,7 @@ namespace Hecton8.Narrative.Prologue
             if (cancellationToken.IsCancellationRequested)
             {
                 if (_cancelReason == PrologueCancelReasons.DevSkip)
-                    ExecuteDevelopmentSkipHandoff();
+                    TryExecuteDevelopmentSkipHandoff();
                 else
                     RecordStage(
                         PrologueStage.Cancelled,
@@ -340,7 +347,7 @@ namespace Hecton8.Narrative.Prologue
             if (_cancelRequested)
             {
                 if (_cancelReason == PrologueCancelReasons.DevSkip)
-                    ExecuteDevelopmentSkipHandoff();
+                    TryExecuteDevelopmentSkipHandoff();
                 else
                     RecordStage(PrologueStage.Cancelled, CancelHash, _cancelReason);
                 return true;
@@ -355,16 +362,31 @@ namespace Hecton8.Narrative.Prologue
                 return false;
 
             CancelSequence(PrologueCancelReasons.DevSkip);
-            ExecuteDevelopmentSkipHandoff();
+            TryExecuteDevelopmentSkipHandoff();
             return true;
         }
 
-        private void ExecuteDevelopmentSkipHandoff()
+        private void TryExecuteDevelopmentSkipHandoff()
         {
             if (_devSkipHandoffPublished)
                 return;
 
             _devSkipHandoffPublished = true;
+            try
+            {
+                ExecuteDevelopmentSkipHandoff();
+            }
+            catch (Exception)
+            {
+                RecordStage(PrologueStage.Faulted, DevSkipHash, PrologueCancelReasons.DevSkip);
+                DumpBlackBox();
+                TryDumpRuntimeBlackBox(_runtime);
+                ReleaseInputLockNoThrow();
+            }
+        }
+
+        private void ExecuteDevelopmentSkipHandoff()
+        {
             RecordStage(PrologueStage.DevSkip, DevSkipHash, (byte)PrologueHydrationMode.DevForcedShallowWater);
             _runtime.ForceShallowWaterHydration();
             _runtime.ZeroUniverseVelocity();

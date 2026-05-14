@@ -1,6 +1,6 @@
 # Status_HECTON_PHI_MONITOR
 
-Status: CODE PATCHED / COMPILE BLOCKED BY EXISTING DEPENDENCIES / RUNTIME PENDING VERIFICATION
+Status: RUNTIME FIND-DEBT REDUCED / DTO-CONTRACT LAYOUT IMPROVED / STATIC SOURCE VERIFIED / NO DOTNET REBUILD BY USER ORDER / RUNTIME PENDING VERIFICATION
 Agent: HECTON_PHI_MONITOR
 Domain: ECHELON 9 / Architecture metrics / static H-Phi audit
 Task Count: 6
@@ -25,20 +25,37 @@ Task Count: 6
 - [x] Task 4: Compile verification after codec hardening | DOD: full `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal` reached Core compile and failed on unrelated pre-existing/generated-project issues, not changed files | Rejected: treating dependency-excluded build as source proof | Estimate: 0 us runtime until verified
 - [x] Task 5: H-Phi report addendum | DOD: appended current counts, comparison, and residual risks to `Docs/Reports/HECTON_PHI_REPORT.md` | Rejected: transient chat-only report | Estimate: 0 us runtime
 - [x] Task 6: Final log/rationale update | DOD: appended evidence and regression model to `Docs/AgentLogs/LOG_HECTON_PHI_MONITOR.md` and rationale | Rejected: unlogged changes | Estimate: 0 us runtime
+- [x] Task 7: Runtime metric model hardening | DOD: `Tools/Architecture/HectonPhiAudit.ps1` now separates runtime counters from `Scripts/Editor` and strips `#if UNITY_EDITOR` blocks before runtime scoring | Rejected: counting editor authoring APIs as shipped runtime debt | Estimate: 0 us runtime
+- [x] Task 8: Scene-wide lookup debt reduction | DOD: removed five runtime `FindAnyObjectByType`/`FindObjectOfType` scans from existing singleton/static-owner services | Rejected: broad registry refactor without domain-owner proof | Estimate: cold bootstrap only
+- [x] Task 9: No-rebuild verification pass | DOD: honored user order and skipped `dotnet build`/rebuild; ran static H-Phi, `rg` find-debt scan, and `git diff --check` only | Rejected: violating explicit no-rebuild instruction | Estimate: 0 us runtime
+- [x] Task 10: Continuation reporting | DOD: updated status/rationale/log/report with current numbers and residual risk | Rejected: chat-only progress | Estimate: 0 us runtime
+- [x] Task 11: SaveData DTO layout proof pass | DOD: added explicit sequential layout metadata to public save DTO structs that lacked it; no field order, pack, size, or codec format changed | Rejected: fake `[BinaryBlittableSafe]` on managed DTOs and risky `Pack=1` blanket edits | Estimate: 0 us runtime
+- [x] Task 12: Core contract layout proof pass | DOD: added explicit sequential layout metadata to remaining public contract structs in `Core/Contracts`; verified no public contract structs in that folder remain without `StructLayout` | Rejected: adding memory-layer attributes to contract-only files | Estimate: 0 us runtime
+- [x] Task 13: No-rebuild static verification after layout pass | DOD: ran `Tools/Architecture/HectonPhiAudit.ps1 -Json`, contract layout scan, SaveData public DTO layout scan, and `git diff --check`; no `dotnet build` or rebuild per user order | Rejected: violating explicit no-rebuild instruction | Estimate: 0 us runtime
 
 ## Latest Static Scores
-- H-Phi static narrow: `0.000844101`
-- H-Phi static risk-adjusted: `0.000009953`
+- H-Phi runtime static narrow: `0.001029525`
+- H-Phi runtime static risk-adjusted: `0.000012970`
+- H-Phi all-source static narrow: `0.000916234`
+- H-Phi all-source static risk-adjusted: `0.000010666`
 - Narrow integration: `1.0`
-- Risk integration: `0.011791045`
-- Architectural purity: `0.955665025`
-- Data sovereignty: `0.002010993`
-- Memory alignment: `0.439215686`
-- Binary-safe ratio: `0.016176471`
+- Risk integration: `0.012597672`
+- Architectural purity: `0.994614004`
+- Data sovereignty: `0.002141939`
+- Memory alignment: `0.483253589`
+- Binary-safe ratio: `0.017543860`
 
 ## Current Verification Notes
+- `Tools/Architecture/HectonPhiAudit.ps1 -Json` was corrected to count actual Unity `Update`/`LateUpdate`/`FixedUpdate` method declarations, not comments or editor calls such as `serializedObject.Update()`.
 - `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal` failed with 72 Core errors.
 - First blocker group: generated `Hecton8.Core.csproj` does not include or resolve existing source files/types such as `HardwareProfileCatalog`, `SaveMasterHashV10Result`, `SaveFileHeaderV10`, and `SaveMasterHashV10`.
 - Second blocker group: `VoxelDeltaProcessor.cs` has unrelated double/float and missing `FastFloorToInt` compile errors.
 - The changed save codec files are not listed in the compiler errors.
+- Continuation pass obeyed user order: no `dotnet build`, no rebuild, no project refresh build.
+- Runtime H-Phi now excludes `Scripts/Editor` and `#if UNITY_EDITOR` blocks. `AllSourceCounts` remains in the JSON for hygiene debt.
+- Static runtime `Find*` debt moved from 11 to 5 after removing five scene-wide singleton discovery scans.
+- Public `SaveData.cs` DTO structs now have explicit `StructLayout` metadata; managed/reference DTOs were not marked binary-blittable.
+- Public structs in `Assets/_Project/Scripts/Core/Contracts` now have explicit `StructLayout` metadata; no memory-layer dependency was added to the contracts.
+- Remaining runtime `Find*` debt is concentrated in `GameBootstrapper` bootstrap handoff, `HectonUrpShadowBudgetGuard` cold light scan, and `VRSomaticRuntimeBootstrap` decoupled root lookup; one textual `HectonUnderwaterVisuals` hit is editor-only and excluded from runtime score.
+- `git diff --check` on touched files reports only LF/CRLF normalization warnings.
 - Unity Console / PlayMode / Profiler / GCMonitor: PENDING VERIFICATION.

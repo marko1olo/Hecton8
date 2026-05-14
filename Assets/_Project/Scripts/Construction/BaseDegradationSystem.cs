@@ -41,6 +41,7 @@ namespace Hecton8.Construction
             public int ModuleRuntimeId;
             public uint SyncStamp;
             public Vector3 AbsoluteUniversePosition;
+            public double3 AbsoluteUniversePositionDouble;
             public Matrix4x4 DecalMatrix;
             public int DecalAtlasIndex;
         }
@@ -331,14 +332,17 @@ namespace Hecton8.Construction
                 return;
             }
 
-            Vector3 absoluteUniversePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(ruptureWorldPosition);
+            double3 absoluteUniversePositionDouble = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(ruptureWorldPosition);
+            Vector3 absoluteUniversePosition = ToVector3(absoluteUniversePositionDouble);
             Matrix4x4 decalMatrix = BuildCrackDecalMatrix(moduleObject, ruptureWorldPosition);
             int decalAtlasIndex = StructuralIntegrityProfile.DefaultRuptureDecalAtlasIndex;
             bool decalStateChanged = !hadPreviousState ||
                                      !previousState.IsRuptured ||
                                      previousState.ModuleRuntimeId != moduleRuntimeId ||
                                      previousState.DecalAtlasIndex != decalAtlasIndex ||
-                                     !ApproximatelySameVector(previousState.AbsoluteUniversePosition, absoluteUniversePosition) ||
+                                     !ApproximatelySameDouble3(
+                                         ResolveRuptureAbsolutePositionDouble(in previousState),
+                                         absoluteUniversePositionDouble) ||
                                      !ApproximatelySameMatrix(previousState.DecalMatrix, decalMatrix);
 
             _ruptureStates[nodeId] = new RuptureNodeState
@@ -347,6 +351,7 @@ namespace Hecton8.Construction
                 ModuleRuntimeId = moduleRuntimeId,
                 SyncStamp = _ruptureSyncStamp,
                 AbsoluteUniversePosition = absoluteUniversePosition,
+                AbsoluteUniversePositionDouble = absoluteUniversePositionDouble,
                 DecalMatrix = decalMatrix,
                 DecalAtlasIndex = decalAtlasIndex
             };
@@ -659,6 +664,22 @@ namespace Hecton8.Construction
             return (left - right).sqrMagnitude <= DecalStateChangeEpsilonSq;
         }
 
+        private static bool ApproximatelySameDouble3(double3 left, double3 right)
+        {
+            double3 delta = left - right;
+            return math.lengthsq(delta) <= DecalStateChangeEpsilonSq;
+        }
+
+        private static double3 ResolveRuptureAbsolutePositionDouble(in RuptureNodeState state)
+        {
+            if (math.all(math.isfinite(state.AbsoluteUniversePositionDouble)) &&
+                (math.any(state.AbsoluteUniversePositionDouble != double3.zero) ||
+                 state.AbsoluteUniversePosition == Vector3.zero))
+                return state.AbsoluteUniversePositionDouble;
+
+            return ToDouble3(state.AbsoluteUniversePosition);
+        }
+
         private static bool ApproximatelySameMatrix(Matrix4x4 left, Matrix4x4 right)
         {
             for (int elementIndex = 0; elementIndex < 16; elementIndex++)
@@ -677,6 +698,16 @@ namespace Hecton8.Construction
                    math.isfinite(value.z);
         }
 
+        private static Vector3 ToVector3(double3 value)
+        {
+            return new Vector3((float)value.x, (float)value.y, (float)value.z);
+        }
+
+        private static double3 ToDouble3(Vector3 value)
+        {
+            return new double3(value.x, value.y, value.z);
+        }
+
         private static Matrix4x4 BuildCrackDecalMatrix(GameObject moduleObject, Vector3 ruptureWorldPosition)
         {
             Vector3 outward = Vector3.forward;
@@ -687,9 +718,9 @@ namespace Hecton8.Construction
                 Matrix4x4 localToWorld = moduleTransform.localToWorldMatrix;
                 Vector3 moduleWorldPosition = localToWorld.GetColumn(3);
                 fallbackForward = localToWorld.GetColumn(2);
-                Vector3 ruptureAup = HectonFloatingOrigin.ToAbsoluteUniversePosition(ruptureWorldPosition);
-                Vector3 moduleAup = HectonFloatingOrigin.ToAbsoluteUniversePosition(moduleWorldPosition);
-                outward = ruptureAup - moduleAup;
+                double3 ruptureAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(ruptureWorldPosition);
+                double3 moduleAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(moduleWorldPosition);
+                outward = ToVector3(ruptureAup - moduleAup);
             }
 
             if (outward.sqrMagnitude <= 0.0001f)

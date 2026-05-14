@@ -210,3 +210,29 @@ Verification:
 - Static scan passed for `TryResolveAbyssalNavNodeCandidate`: no `math.normalize`, `math.length(`, `math.distance(`, `.normalized`, or raw `/`.
 - `git diff --check` passed for edited funnel/scheduler/status/log files; only LF-to-CRLF warnings were emitted.
 - Bounded no-reference `dotnet build Hecton8.Core.csproj --no-restore /m:1 /nr:false /p:BuildProjectReferences=false` completed with 63 unrelated errors in `VRAMEnforcer`, `VoxelDeltaProcessor`, `SealedDoor`, `BinaryLayoutManifest`, and `HardwareTierDetector`; no errors were reported in edited funnel/navigation files.
+
+## 2026-05-15 - H-Phi Feeder Hardening Pass
+
+What was wrong:
+- `NativeAStarJob` still had raw divisions in conduit alignment, 2D threat-grid lookup, predator falloff, and threat-voxel decode.
+- Non-finite conduit vectors/strengths, threat grid transforms, predator snapshots, or threat voxel transforms could poison path costs before funnel smoothing.
+- Undersized surface/voxel threat payloads were not proven complete before indexed sampling.
+- Predator fear was discarded when a waypoint fell outside the 2D surface threat grid.
+
+What was done:
+- Replaced A* feeder hot divisions with `math.rcp` multiplies.
+- Added finite guards to conduit, threat-grid, predator-fear, and threat-voxel paths.
+- Added 64-bit complete-length proof for surface threat and voxel threat grids.
+- Changed corrupt threat voxel payloads to fail as max threat while preserving missing-grid and out-of-coverage behavior as zero threat.
+- Preserved predator fear outside the surface heatmap by returning `max(voxelThreat, predatorFearThreat)`.
+
+Cinematic Cheats used:
+- Corrupt feeder proof becomes conservative route pressure instead of running expensive recovery or pretending the path is clear.
+- Low tier pays fixed cheap guards and reciprocal math; High/Ultra keep route fidelity for valid payloads and can spend saved cycles on smoothing budgets.
+
+Exact Microseconds saved:
+- PENDING RUNTIME PROFILER DATA. Static improvement is removal of four raw divide sites from `NativeAStarJob`; predator-fear retention adds no loop because the sample was already computed.
+
+Verification:
+- Static scan passed for `NativeAStarJob`: no `math.normalize`, `math.length(`, `math.distance(`, `.normalized`, or raw `/`.
+- Dotnet rebuilds were not run after this pass because the user explicitly prohibited dotnet rebuilds.

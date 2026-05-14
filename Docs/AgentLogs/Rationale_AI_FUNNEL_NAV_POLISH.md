@@ -147,3 +147,21 @@ Solution: Static scan confirmed no `math.normalize`, `math.length(`, `math.dista
 Rejected Alternatives: Adding a LUT was rejected because the portal is built from dynamic obstacle/threat/voxel geometry and the current rsqrt/rcp path is cheaper than maintaining cache state in this context.
 Scalability potential: Low/Middle run the same deterministic cheap path. High/Ultra can later increase visual navigation polish through a tier-owned lookahead budget.
 Hardware Impact: Exact microseconds saved are pending Unity/Burst profiler verification; the new owner-side telemetry will collect real funnel completion timing at runtime.
+
+Problem: H-Phi in the navigation domain was still capped by upstream A* feeder cost quality: `NativeAStarJob` had raw divisions in conduit direction, threat-grid sampling, predator falloff, and threat-voxel decode.
+Solution: Replaced those divisions with `math.rcp` multiplies while keeping the existing approximate length model and Burst-friendly scalar math.
+Rejected Alternatives: Trusting Burst or the C# compiler to lower `/` was rejected because the rsqrt/reciprocal mandate requires explicit math. Replacing the A* cost model was rejected because this pass owns polish, not route-authority redesign.
+Scalability potential: Low/MX350 removes divide latency from every feeder candidate and threat lookup. Middle/High/Ultra can spend the saved scalar budget on higher authored smoothing caps without changing behavior.
+Hardware Impact: Expected gain is small per candidate but broad across A* expansion. Exact microseconds remain pending Unity profiler data because dotnet rebuilds are prohibited by current user instruction.
+
+Problem: Non-finite or incomplete feeder payloads could poison path costs before the funnel ever saw the route.
+Solution: Added finite guards for conduit nodes/vectors/strengths, threat grid center/cell size, predator fear nodes, and threat voxel origin/cell size. Surface threat and voxel threat grids now require complete native lengths using 64-bit expected-size checks.
+Rejected Alternatives: Treating malformed payloads as zero threat/open water was rejected because it hides corrupt data as cheap navigation. Managed repair/rebuild of payloads was rejected as outside this domain and too expensive for the hot path.
+Scalability potential: Low keeps conservative, predictable navigation when payloads are corrupt. Middle/High/Ultra preserve high-quality smoothing only when upstream data has enough proof.
+Hardware Impact: Adds cheap finite/length checks before indexed reads; on low-end hardware the expected win is avoiding invalid route expansion and downstream steering correction.
+
+Problem: Predator fear was dropped when a point was outside the 2D surface threat grid, even though species-specific fear is independent route pressure.
+Solution: Outside-surface-grid sampling now returns `max(voxelThreat, predatorFearThreat)` instead of only voxel threat.
+Rejected Alternatives: Forcing predator fear into the 2D grid was rejected because it creates a coupling to heatmap coverage. A second fear field resample was rejected as waste.
+Scalability potential: Low gets correct cheap fear avoidance without more containers. High/Ultra keep stronger route intent while still using the same fixed snapshots.
+Hardware Impact: No extra loop was added; predator fear was already sampled before the branch. The change prevents bad routes rather than claiming a measurable CPU save.

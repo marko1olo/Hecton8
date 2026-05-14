@@ -10331,13 +10331,16 @@ namespace Hecton8.Gameplay
         {
             Vector3 splashPosition = ResolvePlayerAupRuntimePosition();
             splashPosition.y = surfaceY;
-            Vector3 absoluteUniversePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(splashPosition);
+            double3 absoluteUniversePosition = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(splashPosition);
             float mass = _rb != null ? math.max(1f, _rb.mass) : 80f;
             float kineticEnergy = 0.5f * mass * upwardSpeed * upwardSpeed * math.max(1f, surfaceBreachSplashEnergyScale);
             SplashEvent splashEvent = new SplashEvent
             {
                 RuntimePosition = new float3(splashPosition.x, splashPosition.y, splashPosition.z),
-                AbsoluteUniversePosition = new float3(absoluteUniversePosition.x, absoluteUniversePosition.y, absoluteUniversePosition.z),
+                AbsoluteUniversePosition = new float3(
+                    (float)absoluteUniversePosition.x,
+                    (float)absoluteUniversePosition.y,
+                    (float)absoluteUniversePosition.z),
                 SurfaceNormal = new float3(0f, 1f, 0f),
                 ImpactSpeedMetersPerSecond = upwardSpeed,
                 KineticEnergyJoules = kineticEnergy,

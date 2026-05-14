@@ -566,8 +566,8 @@ namespace Hecton8.Gameplay
             bool rightBlendValid = math.isfinite(frame.RightHand.Blend);
             IkTargets[baseIkIndex + ContextualPhysicalIkRuntime.LeftHandIndex] = math.select(frame.LeftHand.WorldPosition, float3.zero, !leftPositionValid);
             IkTargets[baseIkIndex + ContextualPhysicalIkRuntime.RightHandIndex] = math.select(frame.RightHand.WorldPosition, float3.zero, !rightPositionValid);
-            IkWeights[baseIkIndex + ContextualPhysicalIkRuntime.LeftHandIndex] = math.select(math.saturate(frame.LeftHand.Blend), 0.0f, !leftPositionValid || !leftBlendValid);
-            IkWeights[baseIkIndex + ContextualPhysicalIkRuntime.RightHandIndex] = math.select(math.saturate(frame.RightHand.Blend), 0.0f, !rightPositionValid || !rightBlendValid);
+            IkWeights[baseIkIndex + ContextualPhysicalIkRuntime.LeftHandIndex] = math.select(SanitizeBlend(frame.LeftHand.Blend), 0.0f, !leftPositionValid || !leftBlendValid);
+            IkWeights[baseIkIndex + ContextualPhysicalIkRuntime.RightHandIndex] = math.select(SanitizeBlend(frame.RightHand.Blend), 0.0f, !rightPositionValid || !rightBlendValid);
         }
 
         private void ClearFootSoa(int baseFootIndex)
@@ -813,7 +813,7 @@ namespace Hecton8.Gameplay
                 if (stepping)
                 {
                     float safeDuration = math.max(0.0001f, ContextualPhysicalIkRuntime.StepDurationSeconds);
-                    float progress = math.saturate(data.StepProgress01 + (math.max(0.0f, entity.DeltaTime) * math.rcp(safeDuration)));
+                    float progress = SanitizeBlend(data.StepProgress01 + (math.max(0.0f, entity.DeltaTime) * math.rcp(safeDuration)));
                     float lift01 = 1.0f - math.abs((progress * 2.0f) - 1.0f);
                     currentPosition = math.lerp(data.StepStartPosition, safeTarget, progress);
                     currentPosition.y += lift01 * data.StepHeightMeters;
@@ -841,7 +841,7 @@ namespace Hecton8.Gameplay
             currentPosition = math.select(currentPosition, safeTarget, !math.all(math.isfinite(currentPosition)));
             float smoothedBlend = ContextualPhysicalIkMath.SmoothScalar(
                 SanitizeBlend(data.Blend),
-                math.saturate(targetBlend),
+                SanitizeBlend(targetBlend),
                 entity.BlendFadeSharpness,
                 entity.DeltaTime);
             data.TargetPosition = safeTarget;
@@ -999,8 +999,8 @@ namespace Hecton8.Gameplay
             in ContextualPhysicalIkTargetFrame frame,
             in ContextualPhysicalIkEntityState entity)
         {
-            float leftBlend = math.saturate(frame.LeftFoot.Blend);
-            float rightBlend = math.saturate(frame.RightFoot.Blend);
+            float leftBlend = SanitizeBlend(frame.LeftFoot.Blend);
+            float rightBlend = SanitizeBlend(frame.RightFoot.Blend);
             float blendSum = leftBlend + rightBlend;
             float hasFootNormal = math.select(0.0f, 1.0f, blendSum > 0.0001f);
             float3 blendedNormal = (frame.LeftFoot.WorldNormal * leftBlend) + (frame.RightFoot.WorldNormal * rightBlend);
@@ -1027,7 +1027,7 @@ namespace Hecton8.Gameplay
         {
             target.WorldPosition = math.select(previous.WorldPosition, float3.zero, !math.all(math.isfinite(previous.WorldPosition)));
             target.WorldNormal = ContextualPhysicalIkMath.SafeNormalize(previous.WorldNormal, new float3(0.0f, 1.0f, 0.0f));
-            float previousBlend = math.select(math.saturate(previous.Blend), 0.0f, !math.isfinite(previous.Blend));
+            float previousBlend = SanitizeBlend(previous.Blend);
             target.Blend = ContextualPhysicalIkMath.SmoothScalar(previousBlend, 0.0f, fadeSharpness, deltaTime);
             target.DeltaHeight = 0.0f;
         }
@@ -1043,7 +1043,7 @@ namespace Hecton8.Gameplay
             float fadeSharpness,
             float deltaTime)
         {
-            float targetBlend = math.saturate(predictiveBlend);
+            float targetBlend = SanitizeBlend(predictiveBlend);
             if (targetBlend <= 0.0001f || !math.all(math.isfinite(predictivePosition)))
                 return;
 
@@ -1080,8 +1080,8 @@ namespace Hecton8.Gameplay
 
             float3 forward = ContextualPhysicalIkMath.SafeNormalize(cameraForward, new float3(0.0f, 0.0f, 1.0f));
             float3 up = ContextualPhysicalIkMath.SafeNormalize(cameraUp, new float3(0.0f, 1.0f, 0.0f));
-            float blocked01 = math.saturate((safeCollisionDistance - math.max(0.0f, hit.distance)) * math.rcp(safeCollisionDistance));
-            float targetBlend = blocked01 * math.saturate(blendScale);
+            float blocked01 = SanitizeBlend((safeCollisionDistance - math.max(0.0f, hit.distance)) * math.rcp(safeCollisionDistance));
+            float targetBlend = blocked01 * SanitizeBlend(blendScale);
             if (targetBlend <= 0.0001f)
                 return;
 
@@ -1123,7 +1123,7 @@ namespace Hecton8.Gameplay
                 return;
 
             float maxOffsetSq = math.max(0.000001f, safeMaxOffset * safeMaxOffset);
-            float targetBlend = math.saturate(offsetSq * math.rcp(maxOffsetSq));
+            float targetBlend = SanitizeBlend(offsetSq * math.rcp(maxOffsetSq));
             if (targetBlend <= 0.0001f)
                 return;
 
@@ -1156,7 +1156,7 @@ namespace Hecton8.Gameplay
             float3 offset,
             float blend)
         {
-            float activeBlend = math.saturate(blend) * math.saturate(target.Blend);
+            float activeBlend = SanitizeBlend(blend) * SanitizeBlend(target.Blend);
             if (activeBlend <= 0.0001f || !math.all(math.isfinite(offset)))
                 return;
 
@@ -1254,7 +1254,7 @@ namespace Hecton8.Gameplay
             }
             else
             {
-                target.Blend = math.saturate(target.Blend);
+                target.Blend = SanitizeBlend(target.Blend);
                 target.DeltaHeight = math.select(target.DeltaHeight, 0.0f, !math.isfinite(target.DeltaHeight));
             }
 
@@ -1327,7 +1327,7 @@ namespace Hecton8.Gameplay
             float scaledReach = math.max(0.0001f, armReach * math.max(0.0001f, distanceScale));
             float proxyDistance = math.max(0.0001f, math.min(scaledReach, math.max(0.0001f, clearanceDistance)));
             float safeFadeDistance = math.max(0.0001f, fadeDistance);
-            return math.saturate((proxyDistance - math.max(0.0f, hit.distance)) * math.rcp(safeFadeDistance));
+            return SanitizeBlend((proxyDistance - math.max(0.0f, hit.distance)) * math.rcp(safeFadeDistance));
         }
     }
 

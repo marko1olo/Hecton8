@@ -4588,8 +4588,8 @@ namespace Hecton8.Physics
             if (!(kineticEnergyJoules > Epsilon) || !float.IsFinite(kineticEnergyJoules))
                 return;
 
-            Vector3 absoluteUniversePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(worldPoint);
-            if (!IsFiniteVector(absoluteUniversePosition))
+            double3 absoluteUniversePosition = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(worldPoint);
+            if (!math.all(math.isfinite(absoluteUniversePosition)))
                 return;
 
             uint splashHash = ResolveSplashLcgHash(absoluteUniversePosition, sampleIndex);
@@ -4599,7 +4599,10 @@ namespace Hecton8.Physics
             SplashEvent splashEvent = new SplashEvent
             {
                 RuntimePosition = new float3(worldPoint.x, worldPoint.y, worldPoint.z),
-                AbsoluteUniversePosition = new float3(absoluteUniversePosition.x, absoluteUniversePosition.y, absoluteUniversePosition.z),
+                AbsoluteUniversePosition = new float3(
+                    (float)absoluteUniversePosition.x,
+                    (float)absoluteUniversePosition.y,
+                    (float)absoluteUniversePosition.z),
                 SurfaceNormal = new float3(0f, 1f, 0f),
                 ImpactSpeedMetersPerSecond = impactSpeedMetersPerSecond,
                 KineticEnergyJoules = kineticEnergyJoules,
@@ -4613,8 +4616,7 @@ namespace Hecton8.Physics
 
             ImpactSignal impactSignal = new ImpactSignal
             {
-                PointAup = AbsoluteUniversePosition.FromAbsolutePosition(
-                    new double3(absoluteUniversePosition.x, absoluteUniversePosition.y, absoluteUniversePosition.z)),
+                PointAup = AbsoluteUniversePosition.FromAbsolutePosition(absoluteUniversePosition),
                 Force = impactSpeedMetersPerSecond * effectiveSampleMass,
                 Intensity = math.saturate(kineticEnergyJoules * 0.0005f),
                 PrimaryBodyId = _rigidbody != null ? unchecked((uint)EntityId.ToULong(_rigidbody.GetEntityId())) : 0u,
@@ -4639,16 +4641,15 @@ namespace Hecton8.Physics
             if (upwardSpeedMetersPerSecond < math.max(0f, surfacingBreachSpeedMetersPerSecond))
                 return;
 
-            Vector3 absoluteUniversePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(worldPoint);
-            if (!IsFiniteVector(absoluteUniversePosition))
+            double3 absoluteUniversePosition = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(worldPoint);
+            if (!math.all(math.isfinite(absoluteUniversePosition)))
                 return;
 
             float effectiveSampleMass = math.max(sampleHullMass, Epsilon);
             float kineticEnergyJoules = 0.5f * effectiveSampleMass * upwardSpeedMetersPerSecond * upwardSpeedMetersPerSecond;
             ImpactSignal impactSignal = new ImpactSignal
             {
-                PointAup = AbsoluteUniversePosition.FromAbsolutePosition(
-                    new double3(absoluteUniversePosition.x, absoluteUniversePosition.y, absoluteUniversePosition.z)),
+                PointAup = AbsoluteUniversePosition.FromAbsolutePosition(absoluteUniversePosition),
                 Force = upwardSpeedMetersPerSecond * effectiveSampleMass,
                 Intensity = math.saturate(kineticEnergyJoules * 0.00035f),
                 PrimaryBodyId = unchecked((uint)EntityId.ToULong(_rigidbody.GetEntityId())),
@@ -4660,17 +4661,32 @@ namespace Hecton8.Physics
             GlobalSignals.Publish(in impactSignal);
         }
 
-        private static uint ResolveSplashLcgHash(Vector3 absoluteUniversePosition, int sampleIndex)
+        private static uint ResolveSplashLcgHash(double3 absoluteUniversePosition, int sampleIndex)
         {
             unchecked
             {
                 uint state = 2166136261u;
-                state = (state ^ (uint)math.floor(absoluteUniversePosition.x * 16f)) * 1664525u + 1013904223u;
-                state = (state ^ (uint)math.floor(absoluteUniversePosition.y * 16f)) * 1664525u + 1013904223u;
-                state = (state ^ (uint)math.floor(absoluteUniversePosition.z * 16f)) * 1664525u + 1013904223u;
+                state = MixSplashSeed(state, FastFloorToLong(absoluteUniversePosition.x * 16d));
+                state = MixSplashSeed(state, FastFloorToLong(absoluteUniversePosition.y * 16d));
+                state = MixSplashSeed(state, FastFloorToLong(absoluteUniversePosition.z * 16d));
                 state = (state ^ (uint)sampleIndex) * 1664525u + 1013904223u;
                 return state;
             }
+        }
+
+        private static uint MixSplashSeed(uint state, long value)
+        {
+            unchecked
+            {
+                state = (state ^ (uint)value) * 1664525u + 1013904223u;
+                return (state ^ (uint)(value >> 32)) * 1664525u + 1013904223u;
+            }
+        }
+
+        private static long FastFloorToLong(double value)
+        {
+            long truncated = (long)value;
+            return value >= truncated ? truncated : truncated - 1L;
         }
 
         private static byte ResolveSplashWeightClass(float kineticEnergyJoules)
