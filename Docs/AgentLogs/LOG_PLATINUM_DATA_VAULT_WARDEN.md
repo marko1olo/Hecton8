@@ -68,6 +68,39 @@ Verification:
 Status:
 - VERIFIED VAULT LOCK - COMPILE TARGET BLOCKED BY MISSING Hecton8.Core.Memory.rsp.
 
+## 2026-05-15 - Save Capacity Repair Bounds
+
+What was wrong:
+- Several save DTO repair paths expanded arrays to max capacity before clamping logical count mirrors.
+- No-copy capacity repair could discard compact loaded entries, and post-expansion clamps could turn corrupt counts into full-capacity default-entry loops.
+
+What was done:
+- Centralized exact-capacity, copy-preserving array normalization in `SaveData.EnsureExactArrayCapacity`.
+- Applied the capacity normalizer to inventory, world, construction, exploration, PDA, lore, meta, resource scarcity, ecosystem, procedural world, RTG, and first-hour flood DTO arrays.
+- Changed `SaveDataMigration` to compute count bounds before expanding arrays, then clamp counts against the original payload capacity.
+- Added missing construction graph/flood count clamps and changed root encrypted-audio/archaeology clamps to record `changed` plus summary steps.
+- Kept the helper `internal`, not public, so the save assembly can share it without widening the external API surface.
+
+Cinematic Cheats used:
+- Repair stays cold-load scalar math and array copying only. No gameplay-frame validation loop, no live recompression, no managed reflection pass.
+
+Exact Microseconds saved:
+- Frame cost: 0 us.
+- Cold migration avoids downstream restore loops over default backing capacity. Worst avoided scan class: 8192 pickup/suppression records, 4096 fauna records, 1536 construction graph edges, and paired lore/archaeology arrays when corrupt counts were previously clamped after expansion.
+
+Verification:
+- Static brace/parenthesis balance passed for `SaveData.cs` and `SaveDataMigration.cs`.
+- `rg` found no live compaction or relocation symbols in `GlobalDataVault.cs`.
+- `rg` found no old procedural full-array write/read call shapes or property-out bool reads in `SaveBinaryPayloadCodec.cs`.
+- Binary layout manifest coverage passed for 12 `[BinaryBlittableSafe]` DTOs.
+- Binary-blit field scan found no public bool/string/array fields in marked DTO structs.
+- External legacy ownerless `H8Memory.Release`/`FreeRaw` call scan returned no call sites.
+- `git diff --check` passed for touched source/log files.
+- No dotnet rebuild was run per user order.
+
+Status:
+- VERIFIED VAULT LOCK - COMPILE TARGET BLOCKED BY MISSING Hecton8.Core.Memory.rsp.
+
 ## 2026-05-15 - Procedural DTO Payload Bounds Pass
 
 What was wrong:

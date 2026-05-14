@@ -332,3 +332,11 @@ Solution: Add `PrologueSignalSourceHashes` to `Hecton8.Core.Contracts` and consu
 Rejected Alternatives: Leave duplicated constants, compute hashes at runtime, or move hashes into a concrete Core-only class. Duplicates drift; runtime hashing adds unnecessary hot/cold cost and can diverge by string spelling; concrete Core would force contract consumers through the wrong assembly boundary.
 Scalability potential: Low/MX350 gets unchanged hot-path cost because constants are compile-time inlined. Middle/High/Ultra keep handoff ownership stable as more visual/audio overkill responders are added.
 Hardware Impact: 0 us runtime cost. Saves integration/debug time and prevents mismatched source hashes from spending larger VFX/audio/fluid transition budgets on invalid packets. Verification this pass is static only by user request; no dotnet rebuild or response-file compile was run.
+
+## Decision 40 - Atmospheric Packet Finite Guard
+
+Problem: `AtmosphericReentrySignal` has no source-hash field left in its 64-byte layout, and the bridge accepted the first packet in the frame snapshot without validating altitude, velocity, or heat. A NaN/Inf atmospheric packet could start the prologue or poison the Mach fallback without producing the intended fault evidence.
+Solution: Keep the signal layout unchanged and make the bridge scan until it finds a finite packet. Invalid atmospheric packets are skipped; the director keeps waiting or uses the orbital snapshot path, which already has a non-finite fault guard.
+Rejected Alternatives: Expand `AtmosphericReentrySignal` with `SourceHash`, or let the director validate after snapshot creation. Expanding the signal breaks the fixed 64-byte lane contract; validating later still lets bad packets become sequence state and telemetry input.
+Scalability potential: Low/MX350 avoids false sequence starts from corrupted presentation packets. Middle/High/Ultra keep the same orbital/VFX/audio overkill path while protecting the cheaper fallback lane.
+Hardware Impact: Adds three finite checks per atmospheric packet in a 32-slot lane only while the prologue waits for re-entry or Mach 10. Estimated cost is below 1 us for normal one-packet frames; prevents much larger invalid transition work. Verification this pass is static only by user request; no dotnet rebuild or response-file compile was run.

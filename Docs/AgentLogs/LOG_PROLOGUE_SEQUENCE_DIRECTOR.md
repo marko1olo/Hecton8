@@ -244,3 +244,11 @@ What was done -> Added `PrologueSignalSourceHashes` in Core.Contracts and routed
 Cinematic Cheats used -> None; this is ownership-contract hardening for existing whiteout, handoff, and splashdown fakes.
 Exact Microseconds saved -> 0 us runtime; compile-time constants preserve current hot-path cost. The gain is preventing source drift that would trigger invalid whiteout/audio/fluid/VFX work.
 Verification -> No dotnet rebuild/response-file compile was run per user constraint. Raw `PRLG`/`MOVR`/`ORBI` literals now scan only in `PrologueSignalSourceHashes`; forbidden-pattern scan returned no hits; staged/unstaged `git diff --check` passes for the touched source-hash scope.
+
+## 2026-05-15 - Loop 35 Atmospheric Packet Finite Guard Review
+
+What was wrong -> The bridge accepted the first atmospheric re-entry packet without checking finite altitude, velocity, or heat. The atmospheric signal layout has no source hash, so malformed data needed local validation.
+What was done -> `TryConsumeAtmosphericReentry` now scans the frame snapshot and skips non-finite atmospheric packets before creating a prologue snapshot.
+Cinematic Cheats used -> None; this protects the existing orbital/re-entry presentation lane without changing the 64-byte signal layout.
+Exact Microseconds saved -> Adds three finite checks per atmospheric packet, below 1 us on normal frames. Saves invalid sequence progression and downstream transition work from NaN/Inf packets.
+Verification -> No dotnet rebuild/response-file compile was run per user constraint. Targeted scan confirms the atmospheric finite guards; forbidden-pattern scan returned no hits; `git diff --check` reports line-ending warnings only.

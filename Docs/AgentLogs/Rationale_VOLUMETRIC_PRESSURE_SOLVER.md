@@ -305,3 +305,11 @@ Solution: Added the same deformation-amplitude threshold to `habitatVertexBendAc
 Rejected Alternatives: Leaving amplitude validation only inside `HectonHabitatInteriorApplyPanelBendOS`, or hardwiring tier names in the shader. Helper-only validation wastes vertex branches; tier names belong on CPU quality policy, not shader branching.
 Scalability potential: Low/MX350 and transitional zero-amplitude states skip vertex deformation setup. Mid/High/Ultra keep full sine bow and normal bias when displacement is positive.
 Hardware Impact: Saves helper-entry setup on non-low zero-amplitude transitional states; estimated 1-3 us per 1k affected interior vertices on MX350-class GPUs, 0 B/frame.
+
+## Follow-Up Correction - Native Payload Struct Layout
+
+Problem: `HabitatSiegeTargetSnapshot` and `HabitatFloodConnection` are native-facing habitat payload structs, but only the blackbox entry had explicit layout. H-Phi memory-alignment coverage and binary auditability were weaker than the actual data ownership.
+Solution: Added `[StructLayout(LayoutKind.Sequential, Pack = 4)]` to the siege snapshot and flood connection payloads. Object-reference staging structs were left untouched because explicit binary layout there would be misleading.
+Rejected Alternatives: Blanket layout attributes on every private staging struct, or no layout correction. Blanket attributes on `GameObject`/`string` staging records create false binary-safety signals; no correction leaves native payload ownership under-specified.
+Scalability potential: Low/MX350 gets clearer native payload layout for cheap audits and safer telemetry/flood data handling. High/Ultra keep the same runtime behavior with better data-contract evidence.
+Hardware Impact: 0 runtime cost; static H-Phi memory-alignment coverage improves for owned native-facing structs.

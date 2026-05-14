@@ -48,8 +48,15 @@ namespace Hecton8.QA.Headless
         private const int ActivationSourceFlagFile = 3;
         private const int WarmupFrames = 120;
         private const int AupShiftIntervalFrames = 15;
+        private const int AupSnapFenceFrames = 300;
         private const int ChunkUnloadIntervalFrames = 900;
         private const int ChunkLeakGraceFrames = 180;
+        private const int BlackboxFlagScratchActiveBit = 0;
+        private const int BlackboxFlagBaselineCapturedBit = 1;
+        private const int BlackboxFlagChunkUnloadPendingBit = 2;
+        private const int BlackboxFlagEcosystemStressIssuedBit = 3;
+        private const int BlackboxFlagDataVaultMissingBit = 4;
+        private const int BlackboxFlagAupSnapFenceActiveBit = 5;
         private const long LeakToleranceBytes = 1024L * 1024L;
         private const double FlagMaxAgeSeconds = 10800.0;
         private const double FlagFutureSkewToleranceSeconds = 300.0;
@@ -106,6 +113,7 @@ namespace Hecton8.QA.Headless
         private int _ecosystemDirectorReadyAtIssue;
         private int _chunkUnloadCheckFrame;
         private int _cameraScratchCount;
+        private int _lastAupShiftExtremeFrame;
         private int _nativeAllocationBaselineCount;
         private int _h8AllocationBaselineCount;
         private int _scratchBaselineH8AllocationCount;
@@ -590,6 +598,7 @@ namespace Hecton8.QA.Headless
             int3 delta = new int3(sign, 0, 0);
             float3 shiftMeters = new float3(sign * 1000f, 0f, 0f);
             _lastShiftMeters = shiftMeters;
+            _lastAupShiftExtremeFrame = _extremeFrame;
             _dispatcher?.RequestAupPreShiftPause(sequence);
             GlobalSignals.Publish(new AupPreShiftSignal
             {
@@ -763,16 +772,24 @@ namespace Hecton8.QA.Headless
         {
             uint flags = 0u;
             if (_scratchBlock.IsCreated)
-                flags |= 1u;
+                flags |= 1u << BlackboxFlagScratchActiveBit;
             if (_baselineCaptured)
-                flags |= 1u << 1;
+                flags |= 1u << BlackboxFlagBaselineCapturedBit;
             if (_chunkUnloadPending)
-                flags |= 1u << 2;
+                flags |= 1u << BlackboxFlagChunkUnloadPendingBit;
             if (_ecosystemStressIssued != 0)
-                flags |= 1u << 3;
+                flags |= 1u << BlackboxFlagEcosystemStressIssuedBit;
             if (_dataVault == null)
-                flags |= 1u << 4;
+                flags |= 1u << BlackboxFlagDataVaultMissingBit;
+            if (IsAupSnapFenceActive())
+                flags |= 1u << BlackboxFlagAupSnapFenceActiveBit;
             return flags;
+        }
+
+        private bool IsAupSnapFenceActive()
+        {
+            return _lastAupShiftExtremeFrame > 0 &&
+                _extremeFrame - _lastAupShiftExtremeFrame < AupSnapFenceFrames;
         }
 
         private void TryDumpBlackbox()
@@ -856,6 +873,9 @@ namespace Hecton8.QA.Headless
                     WriteInvariant(writer, _targetFrames);
                     writer.Write(",\"activationSource\":");
                     WriteInvariant(writer, _activationSource);
+                    writer.Write(",\"activationSourceName\":\"");
+                    WriteActivationSourceName(writer, _activationSource);
+                    writer.Write('"');
                     writer.Write(",\"scratchBlockBytes\":");
                     WriteInvariant(writer, _scratchBlockBytes);
                     writer.Write(",\"startupTimeoutSeconds\":");
@@ -864,6 +884,10 @@ namespace Hecton8.QA.Headless
                     WriteInvariant(writer, _shiftSequence);
                     writer.Write(",\"originShiftCallbacks\":");
                     WriteInvariant(writer, _originShiftCount);
+                    writer.Write(",\"blackboxAupSnapFenceFrames\":");
+                    WriteInvariant(writer, AupSnapFenceFrames);
+                    writer.Write(",\"blackboxFlagAupSnapFenceBit\":");
+                    WriteInvariant(writer, BlackboxFlagAupSnapFenceActiveBit);
                     writer.Write(",\"simulationPhaseMs\":");
                     WriteInvariant(writer, _lastSimulationPhaseMs);
                     writer.Write(",\"nativeBytesBaseline\":");
@@ -957,6 +981,25 @@ namespace Hecton8.QA.Headless
 
                         break;
                 }
+            }
+        }
+
+        private static void WriteActivationSourceName(StreamWriter writer, int source)
+        {
+            switch (source)
+            {
+                case ActivationSourceCommandLine:
+                    writer.Write("command_line");
+                    break;
+                case ActivationSourceEnvironment:
+                    writer.Write("environment");
+                    break;
+                case ActivationSourceFlagFile:
+                    writer.Write("flag_file");
+                    break;
+                default:
+                    writer.Write("none");
+                    break;
             }
         }
 

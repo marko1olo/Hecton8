@@ -688,12 +688,14 @@ namespace Hecton8.Audio
             _listenerPlayerMovement = null;
             _foveatedSimulationDirector = null;
             _cachedPlayerRuntimeContext = null;
+            _cachedWeatherService = null;
             _cachedAcousticZone = null;
             _cachedSurfaceWeatherDirector = null;
             _cachedScalabilityTier = HectonQualityTier.Unknown;
             _cachedLowMemoryProfile = false;
             _spatialAudioPolicyRefreshFrame = -4096;
             _playerRuntimeContextResolveFrame = -4096;
+            _weatherServiceResolveFrame = -4096;
             _acousticZoneResolveFrame = -4096;
             _surfaceWeatherResolveFrame = -4096;
             _listenerWaterDensityMul = 0f;
@@ -2424,6 +2426,22 @@ namespace Hecton8.Audio
             playerContext = GlobalRegistry.Player;
             _cachedPlayerRuntimeContext = playerContext != null && playerContext.IsInitialized ? playerContext : null;
             return _cachedPlayerRuntimeContext;
+        }
+
+        private IWeatherService ResolveWeatherService()
+        {
+            int frame = Time.frameCount;
+            IWeatherService weatherService = _cachedWeatherService;
+            if (weatherService != null && weatherService.IsInitialized && frame < _weatherServiceResolveFrame)
+                return weatherService;
+
+            if (frame < _weatherServiceResolveFrame)
+                return null;
+
+            _weatherServiceResolveFrame = frame + SpatialAudioRegistryRetryFrames;
+            weatherService = GlobalRegistry.Weather;
+            _cachedWeatherService = weatherService != null && weatherService.IsInitialized ? weatherService : null;
+            return _cachedWeatherService;
         }
 
         private AcousticZoneController ResolveAcousticZone()
@@ -5848,7 +5866,7 @@ namespace Hecton8.Audio
         {
             float target01 = 0f;
 
-            IWeatherService weatherService = GlobalRegistry.Weather;
+            IWeatherService weatherService = ResolveWeatherService();
             if (weatherService != null && weatherService.IsInitialized)
             {
                 Vector3 wind = weatherService.GlobalWindVector;
@@ -5858,7 +5876,7 @@ namespace Hecton8.Audio
                     target01 = math.max(target01, math.saturate(_globalWindHowlStormFloor));
             }
 
-            HectonSurfaceWeatherDirector surfaceWeather = GlobalRegistry.SurfaceWeather;
+            HectonSurfaceWeatherDirector surfaceWeather = ResolveSurfaceWeatherDirector();
             if (surfaceWeather != null && !surfaceWeather.IsSurfaceSuppressed)
             {
                 float weatherPressure = math.saturate(
