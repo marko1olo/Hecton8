@@ -26,3 +26,29 @@ Verification:
 - STATIC_SOURCE: no conflict markers, no unmerged paths, diff check clean except line-ending warnings.
 - CLI_COMPILE: PENDING VERIFICATION. `dotnet build Assembly-CSharp.csproj` failed three times for tooling/infrastructure reasons: parallel MSBuild child node failure, missing generated `Temp/obj/project.assets.json` under `--no-restore`, and restore/build timeout after 10 minutes.
 - UNITY_CONSOLE / PLAYMODE / PROFILER: not run in this shell.
+
+## 2026-05-15 - Commit and Push Continuation
+
+What was wrong:
+- Local `main` kept receiving edits from parallel agents while commit/push cleanup was running.
+- `origin/main` moved by 4 Sabine reverb commits after the local checkpoint chain was created.
+- `git push origin main` still failed with `remote: Repository not found` for `https://github.com/marko1olo/Hecton8.git/`.
+- SSH access to `git@github.com:marko1olo/Hecton8.git` failed with `Permission denied (publickey)`.
+
+What was done:
+- Created incremental local checkpoint commits instead of discarding active agent changes.
+- Merged `origin/main` successfully with the ort strategy; no Git conflict files remained from the Sabine LUT merge.
+- Confirmed branch state after merge: local `main` is ahead of `origin/main`; remote publication is blocked by GitHub access, not by merge conflicts.
+- Retained both existing stashes: Codex safety backup and GitHub Desktop stash.
+
+Cinematic Cheats used:
+- None. Git-only operation.
+
+Exact Microseconds saved:
+- Runtime saved: 0 us. Dev-time saved by checkpointing instead of replaying dirty agent waves manually.
+
+Verification:
+- Multiple `git diff --check` passes returned only CRLF normalization warnings.
+- Strict conflict marker scans found no active `<<<<<<<`, `=======`, or `>>>>>>>` markers in changed files.
+- `git merge origin/main --no-edit` completed cleanly.
+- `git push origin main` failed after merge with `Repository not found`; `git credential-manager diagnose` passed, so the remaining blocker is repository URL/access/credential authorization.
