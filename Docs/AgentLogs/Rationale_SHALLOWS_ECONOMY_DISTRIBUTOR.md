@@ -101,3 +101,31 @@ Scalability potential: Low uses hash clump and small GPR ray count. Middle keeps
 Hardware Impact: Const reciprocal removes one candidate-level reciprocal expression from the new gradient path. Low-tier hash clump avoids a `distancesq` after Copper predecessor. Expected savings remain sub-0.01 ms but remove avoidable ALU on i3/MX350.
 
 Final Git Diff: Edited `GlobalSignals.cs`, `GroundRadarContracts.cs`, `GroundRadarJobs.cs`, `GroundPenetratingRadarRuntime.cs`, `ProceduralOreSpawner.cs`, `Status_SHALLOWS_ECONOMY_DISTRIBUTOR.md`, and this rationale file. Added `Hecton8.World.Economy.asmdef` plus meta.
+
+## Decision 8 - Post-Compact Hardening
+
+Problem: The GPR persistent ping lane decayed `GprSignalStrength` in-place, so changing the HUD ore filter after a ping existed would apply filtering over an already weakened signal. The ore blackbox dump also still used the old `Dump_WORLD_RESOURCE_SPAWNER.bin` filename instead of this agent's mandated dump file. The active `Docs/Tasks/CURRENT_BATCH.md` no longer contains `SHALLOWS_ECONOMY_DISTRIBUTOR`, so fresh prompt re-extraction is blocked by batch hygiene drift.
+
+Solution: Kept raw GPR signal strength stable in `GprSignalStrength`, computed decayed display strength only for `GprPingGpu`, and recalculated highest signal from active display values every job. Replaced the cold `GetComponents<MonoBehaviour>()` array allocation with a capacity-bound `List<MonoBehaviour>` probe. Changed ore dump output to `Dump_SHALLOWS_ECONOMY_DISTRIBUTOR.bin`. Revalidated with Unity Bee response-file C# compiles for `Hecton8.World.GPR`, `Hecton8.World.Economy`, and `Hecton8.Core`.
+
+Rejected Alternatives: Leaving in-place decay would make ore filter switches non-authoritative after the first frame. Rebuilding pings whenever the filter changes was rejected because it would turn a display preference into generation work. Keeping the old dump filename was rejected because the agent protocol explicitly names `Dump_[YourID].bin`. Re-reading archived batch prompts was rejected because AGENTS forbids previous-batch log dependency without explicit order.
+
+Scalability potential: Low keeps the same small GPR ray count and cheap display-only filter. Middle keeps stable decay and refiltering. High and Ultra can layer richer GPR visuals on the raw lane without changing ore authority or re-running generation.
+
+Hardware Impact: The raw/display separation is one extra local float and one max operation during existing ping compaction, with 0 B GC. The non-alloc component probe removes one cold managed array allocation from dependency discovery. Expected hot-path delta is under 0.005 ms on i3/MX350; correctness improves because filter changes do not permanently erode signal data.
+
+Verification Update: `dotnet build Hecton8.World.Contracts.csproj -v:minimal /m:1` passed 0 warnings/0 errors. `dotnet build Hecton8.Core.csproj -v:minimal /m:1` passed 0 warnings/0 errors. Unity Bee response-file csc validation passed for `Hecton8.World.GPR`, `Hecton8.World.Economy`, and `Hecton8.Core`. Unity Editor console, PlayMode, GCMonitor, and profiler evidence remain absent; status remains PENDING VERIFICATION.
+
+## Decision 9 - Real Drop-Pod Anchor Regeneration
+
+Problem: If a sector generated before a real `DropPodLandedSignal` arrived, the fallback player AUP anchor could permanently seed the active sector. Later accepting the real drop-pod AUP updated the stored anchor, but did not force the already-generated sector to reroll against the real crash-site weights.
+
+Solution: Added `_dropPodAnchorRequiresGenerationRefresh`. Accepting the first real drop-pod signal, or a later changed AUP signal, marks the active generation dirty. `RefreshSectorAndTerrain()` treats that as a generation refresh, completes/discards an obsolete in-flight spawn job if needed, reloads the existing depletion words for the same sector, disables hydrated proxies, and schedules generation against the real drop-pod AUP.
+
+Rejected Alternatives: Immediate regeneration inside `DrainDropPodLandingSignals()` was rejected because it would cross scheduling responsibilities and could run from LateFrame. Ignoring fallback-generated sectors was rejected because first-hour Titanium/Copper/Silver distribution would be anchored to the player rather than the crash site. Wiping depletion state was rejected because a signal timing change must not resurrect mined ore.
+
+Scalability potential: Low and MX350 pay the extra generation only once when the real anchor arrives; normal steady-frame cost remains zero. Middle, High, and Ultra retain deterministic ore placement while allowing richer crash-site presentation to be layered without changing economy authority.
+
+Hardware Impact: One boolean branch in the cold sector refresh path and exact AUP field comparisons when a drop-pod signal is present. No Tick/LateFrame allocation and no per-frame regeneration.
+
+Verification Update: `dotnet build Hecton8.World.Contracts.csproj -v:minimal /m:1` passed 0 warnings/0 errors. `dotnet build Hecton8.Core.csproj -v:minimal /m:1` passed 0 warnings/0 errors. Unity Bee response-file csc validation passed for `Hecton8.World.Contracts`, `Hecton8.World.GPR`, `Hecton8.World.Economy`, and `Hecton8.Core`. Scoped forbidden-pattern scan over the edited ore/GPR files returned `NO_MATCHES`. Unity Editor console, PlayMode, GCMonitor, and profiler evidence remain absent; status remains PENDING VERIFICATION.

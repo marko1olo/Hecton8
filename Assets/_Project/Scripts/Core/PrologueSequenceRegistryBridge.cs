@@ -15,6 +15,7 @@ namespace Hecton8.Core
     public sealed class PrologueSequenceRegistryBridge : MonoBehaviour, IPrologueSequenceRuntime, IGlobalRegistryHotSwapListener
     {
         private const uint SourceHash = 0x50524C47u; // PRLG
+        private const uint ManualOverrideSourceHash = 0x4D4F5652u; // MOVR
         private const uint MissingServiceHash = 0x50524D49u; // PRMI
         private const uint MuffledBreathingHash = 0x4D425254u; // MBRT
         private const uint HullTempCriticalHash = 0x4854454Du; // HTEM
@@ -87,6 +88,7 @@ namespace Hecton8.Core
 
         private void OnEnable()
         {
+            ResetTransientSequenceState();
             ResolveService();
             BindInputIfAvailable();
             RegisterHotSwap();
@@ -193,9 +195,12 @@ namespace Hecton8.Core
                 _completeSnapshotCursor = 0;
             }
 
-            if (_completeSnapshotCursor < signals.Length)
+            while (_completeSnapshotCursor < signals.Length)
             {
                 PrologueCompleteSignal signal = signals[_completeSnapshotCursor++];
+                if (signal.SourceHash != ManualOverrideSourceHash)
+                    continue;
+
                 snapshot = new PrologueCompleteSnapshot(
                     signal.Frame,
                     signal.WhiteoutHoldSeconds,
@@ -252,6 +257,11 @@ namespace Hecton8.Core
             }
 
             return false;
+        }
+
+        public void PrepareSequenceRun()
+        {
+            ResetTransientSequenceState();
         }
 
         public Awaitable DelayDilatedAsync(float seconds, CancellationToken cancellationToken)
@@ -410,6 +420,8 @@ namespace Hecton8.Core
 
         private void ResolveService()
         {
+            _service = null;
+
             if (sequenceComponent is IPrologueSequenceService serializedService)
             {
                 _service = serializedService;
@@ -514,6 +526,19 @@ namespace Hecton8.Core
                 if (deltaTime > 0d && math.isfinite(deltaTime))
                     remainingSeconds -= deltaTime;
             }
+        }
+
+        private void ResetTransientSequenceState()
+        {
+            _skipRequested = false;
+            _observedHighResSurfaceReady = false;
+            _observedProxySurfaceReady = false;
+            _atmosphereSnapshotFrame = -1;
+            _completeSnapshotFrame = -1;
+            _residencySnapshotFrame = -1;
+            _atmosphereSnapshotCursor = 0;
+            _completeSnapshotCursor = 0;
+            _residencySnapshotCursor = 0;
         }
 
         private void RequestRunCancellation(byte reason)

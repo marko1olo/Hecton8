@@ -2747,18 +2747,18 @@ namespace Hecton8.Gameplay
 
             Vector3 runtimePosition = _rb != null ? _rb.position : ResolvePlayerAupRuntimePosition();
             ResourceDistributionDirector director = _resourceDistributionRuntime;
-            Vector3 shiftOffset = HectonFloatingOrigin.CurrentTotalOffset;
+            var shiftOffset = HectonFloatingOrigin.CurrentTotalOffsetDouble;
             if (PlayerMovementBrineRuntimeSystem.TrySampleBrineLayer(
                     director,
                     runtimePosition,
                     IsInDryInterior(),
-                    shiftOffset.y,
+                    (float)shiftOffset.y,
                     out BrineLayerSample sample,
                     out bool submerged))
             {
                 _lastBrineLayerSample = sample;
                 _isInsideBrineLayer = submerged;
-                PublishBrineShaderGlobals(sample, shiftOffset.y);
+                PublishBrineShaderGlobals(sample, (float)shiftOffset.y);
                 if (submerged)
                 {
                     _brineSubmersionSeconds += math.max(0f, fixedDeltaTime);
@@ -12187,12 +12187,12 @@ namespace Hecton8.Gameplay
         {
             sinkMultiplier = 0f;
             ResourceDistributionDirector director = _resourceDistributionRuntime;
-            Vector3 shiftOffset = HectonFloatingOrigin.CurrentTotalOffset;
+            var shiftOffset = HectonFloatingOrigin.CurrentTotalOffsetDouble;
             if (!PlayerMovementBrineRuntimeSystem.TrySampleBrineLayer(
                     director,
                     worldPosition,
                     false,
-                    shiftOffset.y,
+                    (float)shiftOffset.y,
                     out BrineLayerSample sample,
                     out bool submerged) ||
                 !submerged)

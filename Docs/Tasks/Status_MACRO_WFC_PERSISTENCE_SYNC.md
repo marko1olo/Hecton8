@@ -13,6 +13,7 @@ Status: PENDING VERIFICATION
 - OPT_Native_Memory_Collections_JobSystem_Protocol.txt
 - DBG_Telemetry_Crash_Reporting_PostMortem.txt
 - ARCH_Global_Registry_ServiceLocator_DI_Init.txt
+- ARCH_Signal_Lane_Segregation.txt
 - NET_Logistics_Sync_BitPacking_Reconciliation.txt
 
 ## Loop 1: Tasks 1-5
@@ -65,3 +66,9 @@ Status: PENDING VERIFICATION
 - [x] Exact WFC payload length | Result: `SaveBinaryPayloadCodec.TryReadWfcOutpostBitmaskPayload` now requires `length == PayloadHeaderBytes + storedBytes`, so trailing bytes in a MacroDB WFC payload reject as corruption. Alternative rejected: accepting valid prefix plus trailing garbage. Estimate: one integer equality check on restore.
 - [x] Matrix extraction mutable read cost | Result: `MarauderOutpostMatrixExtractionJob` now reads `MutableGrid[cellIndex]` directly; the per-solid-cell `IsCreated`/length branch was removed because the service allocates the grid with `WfcGrid`. Alternative rejected: defensive per-cell branch in a Burst extraction loop. Estimate: one branch and one length compare removed per solid extracted cell.
 - [x] Static verification | Result: grep confirms exact-length guard, no `MutableGrid.IsCreated` branch in outpost extraction, no old `UnpackWfcOutpostGrid`, and no `immutableMask` in SaveManager WFC path. `Hecton8.Core.Contracts` response-file check still passes.
+
+## Loop 9: Signal Backpressure And Telemetry Recheck
+- [x] Batch-file extraction recheck | Result: `Docs/Tasks/CURRENT_BATCH.md` no longer contains `<AGENT_PROMPT id="MACRO_WFC_PERSISTENCE_SYNC">`; current batch file appears rotated to other prompts. Continued from this status file and rationale log to avoid false extraction claims. Alternative rejected: fabricating a fresh prompt extraction. Estimate: 0 us runtime.
+- [x] Full WFC signal snapshot drain | Result: `DrainWfcOutpostStateChangedSignals` now scans the full bounded `WfcOutpostStateChangedSignal` snapshot instead of only the first 8 entries, applies same-sector mutations into the mutable grid, and persists once per dirty sector group. Alternative rejected: silent drop of valid entries 9..128. Estimate: common same-sector burst saves up to 7 redundant 500-cell pack passes versus the old 8-signal cap path; worst-case alternating sectors remains bounded by signal lane capacity.
+- [x] WfcBytesSaved baseline correction | Result: telemetry now reports saved bytes versus the old 500-byte mutable grid baseline: `CellCount - payloadBytes`, not `PackedWordBytes - payloadBytes`. Alternative rejected: reporting 0 bytes saved for the 288-byte worst-case packed payload. Estimate: <1 us integer subtraction; data quality improvement only.
+- [x] Verification recheck | Result: static scans confirm full snapshot loop, no old state-signal cap constant, exact payload boundary guards, direct mutable extraction read, and corrected telemetry baseline. `Hecton8.Core.Contracts` Bee/Roslyn response-file compile exits 0. `Hecton8.Core` Bee/Roslyn response-file compile remains blocked by unrelated Audio Virtualization, AI Cognition/Fauna, UI Diegetic, World Ore, Outpost generation, and Power WFC dependency errors before a clean runtime/Burst proof can be produced.

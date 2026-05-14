@@ -106,6 +106,48 @@ Rejected Alternatives: Reporting the previous clean scan while the current file 
 Scalability potential: Low/Middle devices keep deterministic maintenance and avoid memory-copy spikes; High/Ultra devices keep saved frame budget available for visible systems instead of heap movement.
 Hardware Impact: Maintains removal of the 512 KB live move slice and associated fences/timers. Final scan after build found no live relocation symbols in `GlobalDataVault.cs`.
 
+Problem: Continued rechecks found live relocation drift reappearing after long validation windows, making broad build timing unreliable as the final source truth.
+Solution: Removed the reintroduced live relocation block again and switched final validation to repeated short static scans after the edit. Verified no live compaction symbols, no Core.Memory signal imports, owner-tagged raw frees, first-hour DTO markers, and stale-handle fatal paths.
+Rejected Alternatives: Waiting on another long build as final proof while the source is being overwritten; marking the task fully compiled when `Hecton8.Core.Memory.rsp` is absent and the broader filtered build timed out.
+Scalability potential: Low/Middle devices keep deterministic no-relocation memory maintenance; High/Ultra systems retain frame budget for visible systems rather than hidden heap motion.
+Hardware Impact: Preserves removal of 512 KB live copy slices, thread fences, and timer checks. The latest verification is static/source-state only; no runtime profiling claim is made.
+
+Problem: A later sanity check found a new syntactic variant of live relocation drift after the logs had been updated.
+Solution: Removed `using System.Threading`, `CompactionSliceBudgetSeconds`, `CompactionSoftMoveBytes`, `DefragFlagWatchdog`, `Thread.MemoryBarrier`, `Volatile`, `RunCompactionSlice`, `TryCompactFreeGapAt`, `UnsafeUtility.MemMove`, and `RecordRelocation`. Verified five short clean scans after the cleanup.
+Rejected Alternatives: Re-running a long broad build as final truth while source churn is active; accepting a watchdog-bounded move slice because it still mutates raw buffer addresses under aliases.
+Scalability potential: Low/Middle devices avoid invisible relocation spikes; High/Ultra devices keep saved frame time for presentation systems.
+Hardware Impact: Removes the latest 512 KB live move budget and thread/timer overhead variant. Validation remains static/source-state because compile infrastructure is missing/unstable.
+
+Problem: Continued audit found alias contract drift without live relocation symbols: `ResolveBuffer` again refreshed stale cached handle metadata and `CURRENT_BATCH.md` had rotated away from this agent prompt.
+Solution: Restored cached-identity fail-fast logic before vault availability checks, pointer/meta checks, and metadata mismatch rebinding. Added the `BufferID.Unknown` cached-identity fault path so corrupt handles cannot soft-fail. Kept the current assignment anchored to this durable status/rationale record because live `CURRENT_BATCH.md` no longer contains `PLATINUM_DATA_VAULT_WARDEN`.
+Rejected Alternatives: Allowing silent stale handle self-heal; treating missing live prompt as permission to adopt neighboring batch work; claiming compile verification after the broad build timed out.
+Scalability potential: Low and Middle devices avoid undefined alias reads under memory pressure; High and Ultra systems retain deterministic black-box diagnostics before adding heavier vault consumers.
+Hardware Impact: Valid handle resolution remains branch-only, estimated under 0.05 us on i3/MX350. Fault-only paths dump PHI/VOD and throw; no new frame allocation or relocation work is added.
+
+Problem: `GlobalDataVault.ValidateType` only enforced stride/alignment/type identity under `ENABLE_UNITY_COLLECTIONS_CHECKS`, leaving production builds able to alias a buffer through the wrong element type.
+Solution: Made the vault type check unconditional. On mismatch the vault now dumps PHI/VOD and throws `FatalMemoryException.ThrowVaultTypeMismatch()` with a fixed message instead of debug-only string formatting.
+Rejected Alternatives: Leaving the Unity collections check gate; throwing `InvalidOperationException` with a concatenated buffer id; silently allowing production type aliasing.
+Scalability potential: Low devices get deterministic failure instead of corrupt reads; Middle/High/Ultra retain the same branch-only valid path while gaining production crash evidence.
+Hardware Impact: Valid paths add two integer comparisons already present in editor checks; estimated under 0.02 us per resolve/get on i3/MX350. Fault path is diagnostic-only.
+
+Problem: `H8Memory.Allocate<T>` recorded NativeArray owners but did not reject `SystemID.Unknown`, leaving a future unowned allocation path even after raw allocations were locked down.
+Solution: Added the same unknown-owner fail-fast gate used by `AllocateRaw`. Existing project call sites were scanned and none pass `SystemID.Unknown`.
+Rejected Alternatives: Relying on caller discipline; leaving only raw allocation protected; changing every legacy `Release<T>` call across other domains in this pass.
+Scalability potential: Low devices keep owner byte accounting meaningful; Middle/High/Ultra can grow native pool consumers without losing blame data.
+Hardware Impact: One enum comparison on cold NativeArray allocation only; 0 us steady-frame cost.
+
+Problem: `H8Memory.ReallocateRaw` used `UnsafeUtility.MemMove` even though it copies into a newly allocated block, so source and destination cannot overlap.
+Solution: Switched the reallocation copy to `UnsafeUtility.MemCpy`.
+Rejected Alternatives: Keeping overlap-safe copy for non-overlapping memory; adding a runtime overlap branch; touching unrelated caller domains.
+Scalability potential: Low devices avoid a more conservative copy primitive on rare native pool resize; Middle/High/Ultra keep raw reallocation semantics simpler for future memory consumers.
+Hardware Impact: Cold-path native reallocation only. Expected win is small and workload-dependent, but it removes unnecessary overlap handling from the copy primitive.
+
+Problem: `H8Memory.ReallocateRaw` still trusted the caller-supplied `oldBytes` for pool-cap accounting and copy bounds, so a stale caller size could undercount retained bytes or over-read the old allocation.
+Solution: `ValidateTrackedPointerOwner` now returns the tracked allocation byte count. `ReallocateRaw` uses the tracked count for reserve math and copy length, and throws `FatalMemoryException.ThrowAllocationSizeMismatch()` if a positive caller size disagrees.
+Rejected Alternatives: Trusting the caller size after owner validation; clamping silently; scanning the records twice.
+Scalability potential: Low devices avoid native pool accounting drift; Middle/High/Ultra keep reallocation deterministic as native memory consumers grow.
+Hardware Impact: Reuses the existing O(active allocations) owner scan and returns one long from it; no extra steady-frame cost.
+
 ## OMEGA POLISH CHANGES
 
 Problem: Polish audit required removal of fake precision, managed iteration/string debt, and any code outside the DataVault domain without justification.

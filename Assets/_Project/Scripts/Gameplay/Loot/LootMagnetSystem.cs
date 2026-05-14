@@ -52,6 +52,7 @@ namespace Hecton8.Gameplay.Loot
         private int _activeCount;
         private int _scheduledCount;
         private int _telemetryIndex;
+        private uint _lastTelemetryRecordedFrame;
         private uint _frameCounter;
         private AbsoluteUniversePosition _lastPlayerAup;
 
@@ -160,7 +161,8 @@ namespace Hecton8.Gameplay.Loot
 
             _pullScheduled = false;
             CommitVaultResultsToManagedProxies();
-            RecordTelemetry();
+            if (_lastTelemetryRecordedFrame != _frameCounter)
+                RecordTelemetry();
         }
 
         private void TryRegisterTicks()
@@ -479,15 +481,15 @@ namespace Hecton8.Gameplay.Loot
                 pickup.transform.position = new Vector3(runtime.x, runtime.y, runtime.z);
             }
 
-            if (fault && !_dumpedFault)
-            {
-                _dumpedFault = true;
-                DumpTelemetryBuffer();
-            }
-
             _lastCommittedAcquiredCount = acquiredCount;
             _lastCommittedFlagsHash = flagsHash;
             _lastCommittedFlags = fault ? TelemetryFaultFlag : 0u;
+            if (fault && !_dumpedFault)
+            {
+                RecordTelemetry();
+                _dumpedFault = true;
+                DumpTelemetryBuffer();
+            }
         }
 
         private void RestoreDeferredAcquisition(int index, uint flags)
@@ -579,6 +581,7 @@ namespace Hecton8.Gameplay.Loot
             };
 
             _telemetryIndex = (writeIndex + 1) % _telemetry.Length;
+            _lastTelemetryRecordedFrame = _frameCounter;
         }
 
         private void ForceCompletePendingJob()

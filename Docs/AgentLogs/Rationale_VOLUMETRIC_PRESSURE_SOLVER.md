@@ -177,3 +177,59 @@ Solution: The fallback now returns immediately for points inside a module interi
 Rejected Alternatives: Removing nearest fallback entirely, or keeping unbounded nearest matching. Removing it would drop legitimate hull-surface impacts without stable ids; keeping it can corrupt pressure feedback from unrelated combat.
 Scalability potential: Low/MX350 avoids false crease spikes from distant combat. Mid/High/Ultra preserve legitimate local bowing while rejecting far-field noise.
 Hardware Impact: Adds bounded signal-path bounds checks only when id/hash matching fails; no shader cost and no per-frame idle cost. Estimated under 4 us for a 64-module fallback scan on i3/MX350-class hardware.
+
+## Follow-Up Correction - Unique TargetId Stress Fallback
+
+Problem: Some signal producers only carry a 16-bit `TargetId` from runtime or graph identity low bits. The previous resolver accepted graph node low bits immediately, missed direct runtime-id low-bit targets, and could pick the wrong module on a low-bit collision.
+Solution: `TryResolveModuleStressIndex` now counts `TargetId` candidates across stable module hash, direct runtime `EntityId` hash, and graph node id low bits. It accepts the id path only when exactly one active module matches; ambiguous ids fall through to bounded world-point fallback or no match.
+Rejected Alternatives: Blind immediate low-bit matching, requiring every producer to emit a full graph hash, or using nearest-only. Immediate matching creates collision artifacts; producer rewrites violate decoupled signal ownership; nearest-only is less deterministic in dense habitat interiors.
+Scalability potential: Low/MX350 receives reliable crease feedback from truncated target ids without false-room spikes. Mid/High/Ultra keep localized bowing tied to the correct module and spend no extra shader cost.
+Hardware Impact: Adds a bounded 64-module signal-path candidate counter only while resolving impact/deformation signals, with no idle-frame or vertex cost. Estimated under 2 us on i3/MX350-class hardware.
+
+## Follow-Up Correction - Empty Stress Buffer Release
+
+Problem: Zero-module stress states stopped allocating a new GPU stress buffer, but a previously allocated `_HectonHabitatModuleStressBuffer` could remain resident after all modules disappeared.
+Solution: `ClearModuleStressState(true)` now releases the existing stress `GraphicsBuffer` during real shader-clear states, then publishes zero stress params and records the uploaded count as zero. `ClearModuleStressState(false)` still preserves the buffer for active-order rebuilds that upload replacement data in the same tick.
+Rejected Alternatives: Always keeping the buffer resident, or releasing it on every active-order clear. The first wastes VRAM in empty/teardown states; the second creates release/reallocate churn during module pooling and graph rebuilds.
+Scalability potential: Low/MX350 gets lower idle VRAM pressure when habitats are absent or torn down. Mid/High/Ultra keep the buffer hot during real active-module reorder events, preserving deformation responsiveness.
+Hardware Impact: Saves one structured GPU buffer after empty habitat teardown or startup clear; no hot-frame allocation and no shader cost. Estimated 5-20 us plus transient VRAM saved on low-end rebuild/teardown paths, with 0 us idle-frame tax.
+
+## Follow-Up Correction - Buffer Growth Clear Suppression
+
+Problem: When module stress capacity grows beyond the current `GraphicsBuffer`, `EnsureModuleStressBuffer` released the old buffer with a shader-param clear even though the upload path immediately creates, uploads, binds, and republishes the replacement buffer.
+Solution: Buffer growth now calls `ReleaseModuleStressBuffer(false)`, preserving shader params during same-path replacement. Dispose and real empty clears still use the clearing path.
+Rejected Alternatives: Leaving the transient global zero, or never clearing on release. The transient zero burns driver traffic and can produce one-frame visual flicker during growth; never clearing leaves stale globals after teardown.
+Scalability potential: Low/MX350 avoids unnecessary driver work during base expansion. Mid/High/Ultra keep continuous pressure deformation while the buffer grows.
+Hardware Impact: Saves one redundant `Shader.SetGlobalVector` on stress-buffer growth/reallocation events; estimated 1-4 us on driver-bound MX350-class frames, with no idle-frame cost.
+
+## Follow-Up Correction - Combined Shader Stress Resolver
+
+Problem: The DryZone vertex path resolved a habitat module index, then called a second helper that recomputed the module count before reading the stress buffer.
+Solution: Replaced the split index/read path with `HectonHabitatInteriorResolveStress01`, which clamps module count once, scans once, returns zero on no match, and reads `_HectonHabitatModuleStressBuffer` only for a valid module.
+Rejected Alternatives: Keeping the split helpers for readability, or adding another metadata buffer. Split helpers duplicate scalar work on every stressed vertex; another buffer changes the renderer contract for no visual gain.
+Scalability potential: Low/MX350 is unchanged because low tier does not run per-module vertex lookup. Mid/High/Ultra keep identical localized bowing with less vertex shader scalar work.
+Hardware Impact: Removes one duplicate module-count clamp/read helper call per Mid/High/Ultra DryZone vertex. Estimated 1-3 us per 1k affected interior vertices on MX350-class GPUs, with no idle-frame cost.
+
+## Follow-Up Correction - Panel UV Reuse
+
+Problem: The high-tier vertex path computed panel UV for sine bow, then recomputed centered panel UV inside normal bias.
+Solution: `HectonHabitatInteriorApplyPanelBendOS` now outputs `panelCenteredUv` together with the shared panel mask. `HectonHabitatInteriorApplyCheapNormalBiasWS` consumes that value instead of recalculating `frac(abs(uv))`.
+Rejected Alternatives: Leaving the duplicate panel-space math, or replacing high-tier sine panels with low-tier triangle masks. The first wastes vertex ALU; the second violates the instructed sine bow look.
+Scalability potential: Low/MX350 remains on the cheaper triangle crease path. Mid/High/Ultra keep premium sine deformation and normal bias with less repeated vertex work.
+Hardware Impact: Removes one panel UV normalize/frac/center calculation from the stressed normal-bias path. Estimated 1-2 us per 1k affected interior vertices on MX350-class GPUs, with no idle-frame cost.
+
+## Follow-Up Correction - Shader Helper Anti-Bloat
+
+Problem: Panel-UV reuse left `HectonHabitatInteriorPanelMask` as an unused wrapper around the live panel UV and sine-mask helpers.
+Solution: Removed the unused wrapper and kept only `HectonHabitatInteriorPanelUv`, `HectonHabitatInteriorPanelMaskFromUv`, and `HectonHabitatInteriorCheapPanelMask`.
+Rejected Alternatives: Keeping the compatibility wrapper for possible future use. Future-proof dead code increases audit noise and does not buy runtime value.
+Scalability potential: Low/MX350 and Mid/High/Ultra behavior is unchanged; shader source stays smaller and easier to audit.
+Hardware Impact: Compile-time/source-size cleanup only; no direct runtime microseconds claimed.
+
+## Follow-Up Correction - Index-Hinted Graph Lookup
+
+Problem: Active-module stress loops repeatedly resolved `BaseModule` back into `_moduleBuffer` by scanning from slot 0, even when active module order matched graph order.
+Solution: Added an index-hinted overload for `TryResolveGraphModuleRecord`. Stress update, stress-order hash, direct signal targeting, and nearest fallback now check the active slot first, then fall back to the existing graph scan when orders differ.
+Rejected Alternatives: Building a managed dictionary/cache or requiring active and graph order to be identical. A dictionary adds managed memory/churn risk; requiring identical order would break the renderer-order alignment correction.
+Scalability potential: Low/MX350 reduces CPU work during signal-heavy base stress frames. Mid/High/Ultra keep exact localized deformation while paying less lookup overhead when orders align.
+Hardware Impact: Best case removes up to one 64-record scan per active module lookup in stress tick/signal paths; estimated 4-12 us saved on i3/MX350-class signal-heavy frames, with no allocation and no shader cost.

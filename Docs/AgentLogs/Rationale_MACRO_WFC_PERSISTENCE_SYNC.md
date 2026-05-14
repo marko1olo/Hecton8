@@ -131,3 +131,24 @@ Scalability potential: Low removes the branch from up to 75 cells; Middle/High/U
 Hardware Impact: Removes one `IsCreated` branch and one length compare per solid extracted cell. Measured proof absent.
 
 Verification Update 3: Static scans confirm exact-length WFC payload guard, no `MutableGrid.IsCreated` branch in outpost extraction, no old `UnpackWfcOutpostGrid`, and no `immutableMask` in SaveManager WFC path. `Hecton8.Core.Contracts` response-file compile still exits 0.
+
+## SIGNAL BACKPRESSURE AND TELEMETRY RECHECK
+Problem: `DrainWfcOutpostStateChangedSignals` processed only the first 8 entries from a fixed snapshot lane configured for more events. A burst of doors, power state changes, or loot interactions beyond that cap could be ignored after the frame snapshot expired. The same path also packed and dirtied the WFC payload once per processed signal, even when all changes belonged to one sector.
+Solution: Scan the full bounded snapshot and batch contiguous dirty sector groups. The mutable DataVault grid is resolved only after the first valid changed signal, same-sector cell writes accumulate in-place, and `TryPersistWfcOutpostStateSnapshot` runs once when the dirty sector changes or at the end of the scan.
+Rejected Alternatives: Keeping the 8-signal cap; raising the cap while still packing per signal; adding a managed per-sector dictionary. The cap risks lost persistence, per-signal packing wastes CPU on same-sector bursts, and a managed dictionary violates the zero-GC persistence path.
+Scalability potential: Low/MX350 handles the full lane without allocation and usually packs once for one outpost sector. Middle/High/Ultra can tolerate denser interaction bursts without changing disk format; richer visual consumers can react to the restored truth without increasing save payload size.
+Hardware Impact: Common same-sector burst removes up to 7 redundant 500-cell pack passes compared with the old 8-signal cap path. Worst-case alternating sectors remains bounded by the signal lane capacity and pays correctness cost rather than dropping state. Measured microseconds absent.
+
+Problem: `WfcBytesSaved` used packed bitmask bytes as the baseline, so the worst-case 288-byte payload reported 0 bytes saved even though it replaces a 500-byte mutable byte grid.
+Solution: Report `CellCount - payloadBytes`, clamped at zero. The telemetry now measures net disk-byte savings against the old raw mutable-grid baseline.
+Rejected Alternatives: Keeping the packed-word baseline; excluding the 32-byte header from telemetry. The first hides real savings, and the second overstates disk savings because the header is written.
+Scalability potential: Low-tier storage tuning gets truthful savings values for mostly-default outposts and worst-case dirty grids. High/Ultra can use the same metric to justify richer restored visuals without changing persistence truth.
+Hardware Impact: One integer subtraction and clamp on successful persist; expected cost below 1 microsecond on i3/MX350. Data quality improves; runtime proof absent.
+
+Problem: The anti-amnesia protocol requires repeated CLI extraction of the prompt, but the current `Docs/Tasks/CURRENT_BATCH.md` no longer contains `MACRO_WFC_PERSISTENCE_SYNC`.
+Solution: Record the failed extraction as a hygiene/verification constraint and continue from `Status_MACRO_WFC_PERSISTENCE_SYNC.md` plus this rationale log.
+Rejected Alternatives: Claiming a successful prompt extraction from the rotated batch file; reading unrelated current batch prompts and letting them influence this persistence design.
+Scalability potential: No runtime effect. Prevents cross-agent batch contamination.
+Hardware Impact: Zero runtime effect.
+
+Verification Update 4: Static scans confirm the full WFC state-change snapshot loop, removal of `MaxWfcOutpostStateSignalsPerTick`, corrected `CellCount - payloadBytes` telemetry baseline, exact WFC payload length guard, and direct `MutableGrid[cellIndex]` extraction read. `Hecton8.Core.Contracts` response-file compile exits 0. `Hecton8.Core` response-file compile remains blocked by unrelated missing Audio Virtualization, AI Cognition/Fauna, UI Diegetic, World Ore, Outpost generation, and WFC power boot symbols. No runtime, Burst Inspector, GCMonitor, or profiler green claim is made.

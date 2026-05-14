@@ -85,7 +85,7 @@ What was wrong:
 FrameTimeSignal/SystemHealthSignal merging still let producer order decide EWMA frame time, health index, and foveation tier when more than one same-frame signal was present. Pressure was already max-merged, but the rest of the decision context could still be softened by a later signal.
 
 What was done:
-Merged current-frame snapshots conservatively: maximum EWMA frame time, minimum system health index, maximum pressure level, and maximum foveation pressure tier. Cached values are replaced once per signal family so later frames can still recover normally.
+Merged current-frame snapshots conservatively: maximum EWMA frame time, maximum system health-pressure index, maximum pressure level, and maximum foveation pressure tier. Cached values are replaced once per signal family so later frames can still recover normally.
 
 Cinematic Cheats used:
 Still no per-camera GPU timing or thermal simulation. The adapter uses scalar EWMA and signal tiers as cheap presentation knobs.
@@ -95,3 +95,51 @@ Adds only scalar comparisons, estimated below 1 CPU microsecond per frame, while
 
 Verification:
 STATUS: PENDING VERIFICATION. Static hot-path scan found no foreach, LINQ, string formatting, ToString, Enumerable, or Unity Update in the touched runtime files. git diff --check is clean apart from CRLF conversion warnings. Unity Editor/MCP verification remains blocked.
+
+## 2026-05-14 - Health Index Polarity Recheck
+What was wrong:
+The Loop 10 merge treated SystemHealthIndex01 as if lower meant worse. HomeostasisBrain uses higher SystemHealthIndex01 as higher pressure, so blackbox telemetry could underreport same-frame health pressure when several SystemHealthSignal payloads existed.
+
+What was done:
+Changed the health merge to start at 0 and keep the maximum sanitized SystemHealthIndex01. Pressure level and foveation tier were already using max semantics.
+
+Cinematic Cheats used:
+No presentation policy change. This keeps the scalar health-pressure fake and fixes its telemetry polarity.
+
+Exact Microseconds saved:
+Runtime cost is unchanged: one scalar comparison per SystemHealthSignal, below 1 CPU microsecond. The value is postmortem accuracy during emergency DRS events.
+
+Verification:
+STATUS: PENDING VERIFICATION. HomeostasisBrain.ResolvePressureLevel confirms higher SystemHealthIndex01 maps to higher pressure levels. Unity Editor/MCP verification remains blocked.
+
+## 2026-05-14 - Dispatcher Boot Race Recheck
+What was wrong:
+GlobalRegistry.TryRegisterUpdatable returns false when SystemDispatcher is not registered. The adapter had OnEnable and Start attempts, but a delayed dispatcher could still leave DRS outside the Core update lane.
+
+What was done:
+Added a bounded boot-only Awaitable retry. The adapter now waits for GlobalRegistry.Dispatcher before calling TryRegisterUpdatable, avoids changing global Dispatcher hot-swap semantics, and stops retrying after registration, disable/destroy, or 600 frames.
+
+Cinematic Cheats used:
+No visual policy change. This protects the existing scalar DRS fake so low-end hardware does not lose the emergency resolution drop path during bootstrap.
+
+Exact Microseconds saved:
+Runtime path after registration is unchanged: 0 extra hot-path microseconds and 0 B/frame. Cold boot retry costs one Awaitable state and one dispatcher reference check per pending frame; preventing a missed DRS registration preserves the 2500-8000 GPU microsecond emergency savings when pressure arrives.
+
+Verification:
+STATUS: PENDING VERIFICATION. Static scan found no Unity Update, StartCoroutine, IEnumerator, WaitForSeconds, foreach, LINQ, ToString, or string.Format in ThermalDynamicResolutionAdapter/DynamicResolutionScaler. Unity Editor/MCP verification remains blocked.
+
+## 2026-05-14 - Dispatcher Replacement Handoff Recheck
+What was wrong:
+If SystemDispatcher is replaced or cleared at runtime, the adapter could keep a stale _registered flag and stop receiving DRS ticks after lanes are rebuilt.
+
+What was done:
+Handled GlobalRegistryServiceSlot.Dispatcher in the existing hot-swap listener. The adapter now unregisters stale lane state on dispatcher handoff and re-registers only when a replacement dispatcher exists.
+
+Cinematic Cheats used:
+No presentation change. This preserves the scalar thermal DRS policy through dispatcher recovery.
+
+Exact Microseconds saved:
+No steady-state cost. Handoff cost is one unregister/register pair during a rare service replacement, estimated below 20 cold CPU microseconds, while preserving emergency downscale savings on later pressure frames.
+
+Verification:
+STATUS: PENDING VERIFICATION. Static code review confirms the handoff path does not alter GlobalRegistry initial Dispatcher notification semantics. Unity Editor/MCP verification remains blocked.

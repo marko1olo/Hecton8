@@ -68,6 +68,179 @@ Verification:
 Status:
 - VERIFIED VAULT LOCK - COMPILE TARGET BLOCKED BY MISSING Hecton8.Core.Memory.rsp.
 
+## 2026-05-14 - Reallocate Size Trust Removed
+
+What was wrong:
+- `H8Memory.ReallocateRaw` validated owner but still trusted caller-supplied `oldBytes` for pool accounting and copy bounds.
+
+What was done:
+- `ValidateTrackedPointerOwner` now returns the tracked allocation byte count.
+- `ReallocateRaw` uses the tracked byte count for reserve math and copy length.
+- Positive caller size mismatch now throws `FatalMemoryException.ThrowAllocationSizeMismatch()`.
+
+Cinematic Cheats used:
+- None. This is native memory accounting integrity.
+
+Exact Microseconds saved:
+- No frame-time saving claimed. It reuses the existing owner scan and avoids future corruption/recovery cost.
+
+Verification:
+- Static scan confirmed `trackedOldBytes` drives `TryReserveReplacementBytes(...)` and `copyBytes`.
+- Exact `dotnet build Hecton8.Core.Memory.rsp` still fails with MSB1009 because the target file is missing.
+- Five short `GlobalDataVault.cs` drift scans remained clean.
+
+Status:
+- VERIFIED VAULT LOCK - COMPILE TARGET BLOCKED BY MISSING Hecton8.Core.Memory.rsp.
+
+## 2026-05-14 - Raw Reallocation Copy Tightened
+
+What was wrong:
+- `H8Memory.ReallocateRaw` used `UnsafeUtility.MemMove` even though the destination is freshly allocated and cannot overlap the old pointer.
+
+What was done:
+- Replaced the copy with `UnsafeUtility.MemCpy`.
+
+Cinematic Cheats used:
+- None. This is a cold memory primitive cleanup.
+
+Exact Microseconds saved:
+- No frame-time claim. This affects rare native raw reallocation only; it removes unnecessary overlap-safe copy semantics.
+
+Verification:
+- Static scan found `UnsafeUtility.MemCpy` in `H8Memory.ReallocateRaw`.
+- Static scan found no `UnsafeUtility.MemMove` in `H8Memory.cs` or `GlobalDataVault.cs`.
+- Five short `GlobalDataVault.cs` drift scans remained clean.
+
+Status:
+- VERIFIED VAULT LOCK - COMPILE TARGET BLOCKED BY MISSING Hecton8.Core.Memory.rsp.
+
+## 2026-05-14 - NativeArray Owner Gate Added
+
+What was wrong:
+- `H8Memory.Allocate<T>` could still accept `SystemID.Unknown`, unlike `AllocateRaw`.
+
+What was done:
+- Added an unknown-owner fatal gate to `H8Memory.Allocate<T>`.
+- Scanned project call sites for `H8Memory.Allocate(... SystemID.Unknown)`; no matches.
+
+Cinematic Cheats used:
+- None. This is ownership accounting, not simulation.
+
+Exact Microseconds saved:
+- No runtime frame saving claimed. One enum comparison on cold allocation only; 0 us steady-frame cost.
+
+Verification:
+- Static scan found `ThrowUnknownAllocationOwner()` in both NativeArray and raw allocation paths.
+- Static scan found no project `H8Memory.Allocate(...)` call with `SystemID.Unknown`.
+- Exact `dotnet build Hecton8.Core.Memory.rsp` still fails with MSB1009 because the target file is missing.
+
+Status:
+- VERIFIED VAULT LOCK - COMPILE TARGET BLOCKED BY MISSING Hecton8.Core.Memory.rsp.
+
+## 2026-05-14 - Production Type Check Locked
+
+What was wrong:
+- `GlobalDataVault.ValidateType` enforced stride/alignment/type identity only under `ENABLE_UNITY_COLLECTIONS_CHECKS`.
+- A production player could bind a vault buffer through the wrong element type and skip the guard.
+
+What was done:
+- Made the vault type check unconditional.
+- Added `FatalMemoryException.ThrowVaultTypeMismatch()`.
+- On type mismatch, `GlobalDataVault` now dumps PHI/VOD before throwing.
+
+Cinematic Cheats used:
+- No physical or visual simulation added. This preserves deterministic memory failure over undefined alias behavior.
+
+Exact Microseconds saved:
+- No frame-time claim. Valid path cost is two integer comparisons already paid in checked builds, estimated under 0.02 us per resolve/get on i3/MX350.
+- Prevents corruption recovery churn and keeps the 512 KB live relocation path absent.
+
+Verification:
+- `Select-String` found no `ENABLE_UNITY_COLLECTIONS_CHECKS` gate or old concatenated mismatch message in `GlobalDataVault.cs`.
+- Five short `rg` passes found no live relocation/thread/Burst/Stopwatch drift in `GlobalDataVault.cs`.
+- Exact `dotnet build Hecton8.Core.Memory.rsp` still fails with MSB1009 because the target file is missing.
+
+Status:
+- VERIFIED VAULT LOCK - COMPILE TARGET BLOCKED BY MISSING Hecton8.Core.Memory.rsp.
+
+## 2026-05-14 - Alias Contract Drift Closed
+
+What was wrong:
+- Live relocation symbols were absent, but `ResolveBuffer` had drifted back to silently refreshing stale cached handles.
+- The live `Docs/Tasks/CURRENT_BATCH.md` no longer contains `PLATINUM_DATA_VAULT_WARDEN`, so prompt re-extraction is blocked by batch rotation.
+
+What was done:
+- Restored cached-identity detection before vault availability checks.
+- Made unavailable vault, unknown buffer id, missing pointer/meta, and metadata mismatch dump PHI/VOD then throw `FatalMemoryException` for any non-empty cached handle.
+- Updated interface/handle comments so they no longer advertise stale pointer refresh.
+
+Cinematic Cheats used:
+- DataVault remains a deterministic telemetry and alias contract system; live heap motion stays out of gameplay frames.
+
+Exact Microseconds saved:
+- No new hot-path work beyond branch checks; stale fault path is diagnostic-only.
+- Maintains removal of the former 512 KB live relocation slice and thread/timer overhead.
+
+Verification:
+- Five short `rg` passes found no live `UnsafeUtility.MemMove`, `VaultMemMoveJob`, compaction slice, memmove runner, stress gate, thread fence, BurstCompile, or Stopwatch symbols in `GlobalDataVault.cs`.
+- Static scan found `hasCachedIdentity` and `FatalMemoryException.ThrowStaleVaultHandle()` in `ResolveBuffer`.
+- Exact `dotnet build Hecton8.Core.Memory.rsp` still fails with MSB1009 because the target file is missing.
+- Broader `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 /nr:false /clp:ErrorsOnly` timed out after 120 s, so this loop is verified by static/source checks only.
+
+Status:
+- VERIFIED VAULT LOCK - COMPILE TARGET BLOCKED BY MISSING Hecton8.Core.Memory.rsp.
+
+## 2026-05-14 - Continued Drift Stabilization
+
+What was wrong:
+- A long validation window allowed the concurrent drift pattern to reappear again in `GlobalDataVault.cs`.
+- The reintroduced code restored `RunCompactionSlice`, `TryCompactFreeGapAt`, `UnsafeUtility.MemMove`, relocation recording, stress-gated compaction constants, thread fences, and stale-handle refresh behavior.
+
+What was done:
+- Removed the live relocation block again.
+- Restored telemetry-only `FrostTickDefrag`.
+- Restored stale cached handle throws in `ResolveBuffer`.
+- Verified adjacent invariants: no `GlobalSignals` imports in Core.Memory, owner-tagged raw frees, first-hour DTO ABI markers, and stale-handle throw sites.
+
+Cinematic Cheats used:
+- Fragmentation remains a black-box telemetry signal and future loading-mask concern, not a runtime heap mover.
+
+Exact Microseconds saved:
+- Maintains removal of the 512 KB live relocation slice plus `System.Threading` fences and `Stopwatch` checks from maintenance.
+- Valid handle resolution remains branch-only; stale faults dump PHI/VOD and throw.
+
+Verification:
+- Five short post-edit static passes stayed clean for live compaction and `MemMove` symbols.
+- Later static scans stayed clean after the broad build timeout.
+- Exact `dotnet build Hecton8.Core.Memory.rsp` still fails with MSB1009 because the target file is missing.
+- Broader edited-file filtered `Hecton8.Core.csproj` build timed out in this pass, so no compile-green claim is made.
+
+Status:
+- VERIFIED VAULT LOCK BY STATIC SOURCE SCAN - COMPILE TARGET BLOCKED BY MISSING Hecton8.Core.Memory.rsp.
+
+## 2026-05-14 - Drift Variant Removed After Log Pass
+
+What was wrong:
+- A final sanity scan after log updates found another live relocation variant in `GlobalDataVault.cs`.
+- This variant used `using System.Threading`, `CompactionSliceBudgetSeconds`, `CompactionSoftMoveBytes`, `DefragFlagWatchdog`, `Thread.MemoryBarrier`, `Volatile`, `RunCompactionSlice`, `TryCompactFreeGapAt`, `UnsafeUtility.MemMove`, and `RecordRelocation`.
+
+What was done:
+- Removed the latest relocation variant.
+- Preserved telemetry-only gap analysis and stale-handle fatal behavior.
+
+Cinematic Cheats used:
+- Fragmentation remains a cheap reported condition. Runtime heap relocation remains excluded from gameplay frames.
+
+Exact Microseconds saved:
+- Removes the reintroduced 512 KB live move budget, timer checks, and thread fences from the maintenance path.
+
+Verification:
+- Five short post-edit scans stayed clean for live compaction and `MemMove` symbols.
+- Long broad build was not rerun after this cleanup because prior long validation windows are where concurrent overwrite reappeared.
+
+Status:
+- VERIFIED VAULT LOCK BY STATIC SOURCE SCAN - COMPILE TARGET BLOCKED BY MISSING Hecton8.Core.Memory.rsp.
+
 ## 2026-05-14 - Final Drift Removal After Build Probe
 
 What was wrong:

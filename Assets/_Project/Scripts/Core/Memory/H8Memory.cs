@@ -157,6 +157,16 @@ namespace Hecton8.Core.Memory
         {
             throw new FatalMemoryException("GlobalDataVault handle generation mismatch.");
         }
+
+        public static void ThrowVaultTypeMismatch()
+        {
+            throw new FatalMemoryException("GlobalDataVault buffer type mismatch.");
+        }
+
+        public static void ThrowAllocationSizeMismatch()
+        {
+            throw new FatalMemoryException("H8Memory allocation size mismatch.");
+        }
     }
 
     /// <summary>
@@ -256,6 +266,8 @@ namespace Hecton8.Core.Memory
 
             if (length <= 0)
                 return default;
+            if (owner == SystemID.Unknown)
+                FatalMemoryException.ThrowUnknownAllocationOwner();
 
             int stride = UnsafeUtility.SizeOf<T>();
             long bytes = (long)stride * length;
@@ -360,21 +372,23 @@ namespace Hecton8.Core.Memory
             if (newBytes <= 0L)
                 return null;
 
-            if (oldPointer == null || oldBytes <= 0L)
+            if (oldPointer == null)
                 return AllocateRaw(newBytes, alignment, owner, allocator, clearExtendedBytes, extraFlags);
 
-            ValidateTrackedPointerOwner(oldPointer, owner);
+            long trackedOldBytes = ValidateTrackedPointerOwner(oldPointer, owner);
+            if (oldBytes > 0L && oldBytes != trackedOldBytes)
+                FatalMemoryException.ThrowAllocationSizeMismatch();
 
             int safeAlignment = alignment > 0 ? alignment : 16;
-            if (!TryReserveReplacementBytes(oldBytes, newBytes) || !EnsureTrackingCapacity())
+            if (!TryReserveReplacementBytes(trackedOldBytes, newBytes) || !EnsureTrackingCapacity())
                 return null;
 
             void* newPointer = UnsafeUtility.Malloc(newBytes, safeAlignment, allocator);
             if (newPointer == null)
                 return null;
 
-            long copyBytes = oldBytes < newBytes ? oldBytes : newBytes;
-            UnsafeUtility.MemMove(newPointer, oldPointer, copyBytes);
+            long copyBytes = trackedOldBytes < newBytes ? trackedOldBytes : newBytes;
+            UnsafeUtility.MemCpy(newPointer, oldPointer, copyBytes);
             if (clearExtendedBytes && newBytes > copyBytes)
                 UnsafeUtility.MemClear((byte*)newPointer + copyBytes, newBytes - copyBytes);
 
@@ -717,10 +731,10 @@ namespace Hecton8.Core.Memory
                 FatalMemoryException.ThrowUntrackedPointer();
         }
 
-        private static void ValidateTrackedPointerOwner(void* pointer, SystemID requester)
+        private static long ValidateTrackedPointerOwner(void* pointer, SystemID requester)
         {
             if (!_initialized || pointer == null)
-                return;
+                return 0L;
             if (requester == SystemID.Unknown)
                 FatalMemoryException.ThrowUnknownFreeOwner();
 
@@ -733,10 +747,11 @@ namespace Hecton8.Core.Memory
                 if (_records[i].Owner != requester)
                     FatalMemoryException.ThrowWrongFreeOwner();
 
-                return;
+                return _records[i].Bytes;
             }
 
             FatalMemoryException.ThrowUntrackedPointer();
+            return 0L;
         }
 
         private static void RemoveRecordAt(int index)

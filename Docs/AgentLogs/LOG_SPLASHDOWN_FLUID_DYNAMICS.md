@@ -176,3 +176,28 @@ Verification:
 - Static allocation scan on touched C# files: only pre-existing field-level `List<T>` allocations at `HectonFluidEngine.cs:1264` and `HectonFluidEngine.cs:1268`; no new splashdown hot-path allocation pattern found.
 - Unity MCP `read_console`: BLOCKED; only placeholder tool available in this request and it reported unsupported/unavailable.
 - Leftover `dotnet` compiler worker processes from the isolated compile probe were terminated.
+
+## Follow-up Audit - Empty Flow Fallback Binding
+
+What was wrong: The full splash vector buffer was correctly made lazy, but the no-splash compute dispatch still needs a valid `_AbyssalSplashdownImpulseBuffer` binding. After `DisposeFluidAdvectionState()` and a later re-enable, `FixedTick` can run before `LateFrameTick` rebuilds full advection state, leaving `_emptyAbyssalFlowBuffer` null for the abyssal compute dispatch.
+
+What was done:
+- Added `EnsureEmptyAbyssalFlowFallbackBuffer()` to own only the one-element zero `NativeArray<float4>` and `GraphicsBuffer` fallback.
+- Reused that helper from full fluid-advection setup.
+- Called the helper from `EnsureGpuAbyssalFlowBuffers()` so abyssal flow dispatch has a valid fallback even when full advection state has not been rebuilt.
+- Removed the redundant empty-flow fallback upload from the full advection buffer upload block; the helper uploads only when it creates the fallback data/buffer.
+
+Cinematic Cheats used: no-splash/low-tier compute binds a one-float4 zero vector lie while the expensive 32768-cell splash field stays absent until a real high-tier splash needs it.
+
+Exact Microseconds saved:
+- Avoids reintroducing the 512 KB splash vector buffer on base/no-splash init.
+- Avoids rebuilding all fluid-advection buffers just to satisfy a no-splash compute binding.
+- Prevents a null/invalid `SetBuffer` recovery edge; measured runtime microseconds remain PENDING VERIFICATION.
+
+Verification:
+- `git diff --check` on splashdown C#/compute/doc paths: PASS except Git LF-to-CRLF warning on `HectonFluidEngine.cs`.
+- Static allocation scan on touched C# files: only pre-existing field-level `List<T>` allocations at `HectonFluidEngine.cs:1269` and `HectonFluidEngine.cs:1273`; no new splashdown hot-path allocation pattern found.
+- Isolated `FluidImpulseJob.cs` compile through .NET Roslyn with live `Library/ScriptAssemblies` Unity references: PASS.
+- Full `dotnet build Hecton8.Core.csproj --no-restore /p:UseSharedCompilation=false /m:1`: TIMED OUT after 120s against the known generated-project dependency wall; leftover `dotnet`/`VBCSCompiler` workers were terminated afterward.
+- Unity MCP console/runtime verification: BLOCKED; no Unity MCP resources/tools are exposed in this session.
+- Live `Docs/Tasks/CURRENT_BATCH.md` extraction for `SPLASHDOWN_FLUID_DYNAMICS`: BLOCKED because the file now contains a different batch; continuation used the existing status/rationale durable records and did not act on unrelated prompts.

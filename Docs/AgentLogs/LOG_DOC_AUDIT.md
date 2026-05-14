@@ -137,3 +137,54 @@ Cinematic Cheats used:
 Exact Microseconds saved:
 - Runtime: 0 us/frame.
 - Process: active docs now share the same current compile/runtime-proof boundary, reducing repeated rediscovery work by other agents.
+
+## R43 - 2026-05-14 - Root CLI Recheck / Active Docs Rebase
+
+What was wrong:
+- Active docs had been moved to the R41/R42 compile boundary, but another live recheck exposed more precise current hazards around generated output state.
+- Earlier C# errors in fauna/audio were not stable current source blockers.
+- `--no-restore` can fail before source compilation when `Temp\obj` restore assets are missing, referenced `Temp\bin\Debug` DLLs are missing, or shared `Temp\obj` output files are locked by concurrent agents.
+
+What was done:
+- Ran `dotnet build-server shutdown` before retrying shared-output evidence.
+- Rebuilt Core with restore to recreate referenced package DLLs; result: `0 Warning(s)`, `0 Error(s)`.
+- Restored all eight root projects serially after `NETSDK1004` on Editor restore assets.
+- Rebuilt Editor with restore to recreate `Den.Tools.dll` and `MapMagic.dll`; result: `0 Error(s)`, vendor/package warnings only.
+- Rechecked all eight root Hecton8 projects as individual no-restore commands with `-m:1 /nr:false -p:BuildProjectReferences=false -p:UseSharedCompilation=false -v:minimal -clp:Summary`.
+- Individual final results: `Hecton8.Core.csproj`, `Hecton8.Editor.csproj`, `Hecton8.PlayModeTests.csproj`, `Hecton8.World.Contracts.csproj`, `Hecton8.World.Dots.csproj`, `Hecton8.Bootstrap.Contracts.csproj`, `Hecton8.Input.Generated.csproj`, and `Hecton8.Input.csproj` each returned `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `LASTEXITCODE=0`.
+- Updated `35` repeated active reference override lines plus top-level governance/index/static-map/report docs from latest-R41 wording to R43 wording.
+
+Cinematic Cheats used:
+- None. Evidence hygiene only.
+
+Exact Microseconds saved:
+- Runtime: 0 us/frame.
+- Process: prevents false source edits caused by restore-state, missing temporary reference DLLs, or shared `Temp\obj` locks.
+
+Current R43 boundary:
+- Root Hecton8 CLI no-restore compile surface is clean after restore assets and referenced `Temp\bin\Debug` DLLs exist.
+- Full restore graphs still carry vendor/package warnings.
+- Unity MCP Console still fails at `127.0.0.1:8088/mcp`.
+- No Unity Console, Play Mode, profiler, GCMonitor, player build, frame-time, memory, scene-wiring, save/load, or visual-quality proof is claimed.
+
+## R44 - 2026-05-14 - R38 Current-Blocked Wording Cleanup
+
+What was wrong:
+- R43 had made the current external root `Hecton8*.csproj` no-restore CLI surface clean.
+- Four active authority/index docs still contained R38 wording that read like the current full `Hecton8.Core` probe was blocked by unrelated active churn.
+- That wording was historically true for R38, but stale as current status.
+
+What was done:
+- Re-read `AGENTS.md`, `Docs/Actual Domains of Project.txt`, `.agents-skills/README.md`, `QA_Evidence_Text_Filter_Audit.txt`, `PROJECT_LTS_Compatibility_Layer.txt`, `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`, and `OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`.
+- Scanned active non-archive/non-deprecated docs, excluding dated report snapshots and DOC_AUDIT memory, for current-blocked Core wording.
+- Updated `Docs/README.md`, `Docs/Reports/README.md`, `Docs/PROJECT_STATE_STATIC_XRAY.md`, and `Docs/HECTON8_GLOBAL_ARCHITECTURE_MAP.md`.
+- New wording preserves R38 as historical churn and states R43 superseded it with the clean external root CLI recheck.
+- Re-ran stale-blocked and R41/latest scans; no active top-level stale hits remain outside DOC_AUDIT history.
+- `git diff --check` on the edited docs is clean except Git LF-to-CRLF working-copy warnings.
+
+Cinematic Cheats used:
+- None. Documentation/evidence synchronization only.
+
+Exact Microseconds saved:
+- Runtime: 0 us/frame.
+- Process: removes a current-status contradiction between R38 and R43 compile boundaries.

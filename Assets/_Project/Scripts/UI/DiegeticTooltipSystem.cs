@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Core.Signals;
+using Hecton8.UI.Diegetic.Contracts;
 using Hecton8.World;
 using TMPro;
 using Unity.Collections;
@@ -22,7 +23,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Diegetic Tooltip System")]
-    public sealed class DiegeticTooltipSystem : MonoBehaviour, ITickable, IUpdatable, IRenderable, IGlobalRegistryHotSwapListener
+    public sealed class DiegeticTooltipSystem : MonoBehaviour, ILateFrameTickable, IRenderable, IGlobalRegistryHotSwapListener
     {
         private const int MaxGlyphCount = 96;
         private const int MaxIconCount = 1;
@@ -32,14 +33,14 @@ namespace Hecton8.UI
         private const int AsciiCacheSize = 128;
         private const int UvTableCapacity = 128;
         private const int BlackBoxCapacity = 300;
-        private const uint InputSchemeHashKeyboardMouse = 0x4B424D21u;
-        private const uint InputSchemeHashGamepad = 0x47504144u;
-        private const uint InputSchemeHashSteamDeck = 0x5354444Bu;
-        private const uint InputSchemeHashXRTouch = 0x58525443u;
-        private const int KeyboardInteractGlyphIndex = 1;
-        private const int GamepadInteractGlyphIndex = 12;
-        private const int SteamDeckInteractGlyphIndex = 14;
-        private const int XRInteractGlyphIndex = 18;
+        private const uint InputSchemeHashKeyboardMouse = DiegeticTooltipInputSchemeHashes.KeyboardMouse;
+        private const uint InputSchemeHashGamepad = DiegeticTooltipInputSchemeHashes.Gamepad;
+        private const uint InputSchemeHashSteamDeck = DiegeticTooltipInputSchemeHashes.SteamDeck;
+        private const uint InputSchemeHashXRTouch = DiegeticTooltipInputSchemeHashes.XRTouch;
+        private const int KeyboardInteractGlyphIndex = DiegeticTooltipGlyphIndices.KeyboardInteract;
+        private const int GamepadInteractGlyphIndex = DiegeticTooltipGlyphIndices.GamepadInteract;
+        private const int SteamDeckInteractGlyphIndex = DiegeticTooltipGlyphIndices.SteamDeckInteract;
+        private const int XRInteractGlyphIndex = DiegeticTooltipGlyphIndices.XRInteract;
         private const float MinimumGlyphScale = 0.0001f;
         private const float IconScaleMultiplier = 1.06f;
         private const float IconVerticalBias = -0.002f;
@@ -133,8 +134,10 @@ namespace Hecton8.UI
         private Material _runtimeGlyphMaterial;
         private Material _runtimeIconMaterial;
         private Mesh _runtimeQuadMesh;
-        private ComputeBuffer _instanceBuffer;
-        private ComputeBuffer _argsBuffer;
+        private ComputeBuffer _textInstanceBuffer;
+        private ComputeBuffer _iconInstanceBuffer;
+        private ComputeBuffer _textArgsBuffer;
+        private ComputeBuffer _iconArgsBuffer;
         private ComputeBuffer _fontUvBuffer;
         private ComputeBuffer _spriteUvBuffer;
         private NativeArray<TooltipBlackBoxEntry> _blackBox;
@@ -159,7 +162,7 @@ namespace Hecton8.UI
         private float _nextCameraResolveTime;
         private bool _hasSignalTarget;
         private bool _diagnosticActive;
-        private bool _registeredUpdate;
+        private bool _registeredLateFrame;
         private bool _registeredRenderable;
         private bool _hotSwapListenerRegistered;
         private bool _fontUvTableDirty;
@@ -167,9 +170,12 @@ namespace Hecton8.UI
         private bool _materialBindingsDirty = true;
         private float _boundGradientScale = float.NaN;
         private float _boundFaceDilate = float.NaN;
+        private float _boundTextDitherEnabled = float.NaN;
+        private float _boundIconDitherEnabled = float.NaN;
 
-        public void Tick(float deltaTime)
+        public void LateFrameTick()
         {
+            float deltaTime = math.max(0f, SystemDispatcher.CurrentFrameDeltaTime);
             ConsumeLookTargetSignals();
             ConsumeAupShiftSignals();
 
@@ -199,8 +205,8 @@ namespace Hecton8.UI
                 return;
 
             EnsureResources();
-            Camera camera = ResolveCamera();
-            if (camera == null || _runtimeQuadMesh == null || _instanceBuffer == null || _argsBuffer == null)
+            Camera camera = ResolveRenderCamera();
+            if (camera == null || _runtimeQuadMesh == null)
                 return;
 
             Vector3 anchorPosition = ResolveAnchorPosition(camera);
@@ -232,9 +238,12 @@ namespace Hecton8.UI
                     _iconLocalScales,
                     _iconGlyphIndices,
                     _runtimeIconMaterial,
+                    _iconInstanceBuffer,
+                    _iconArgsBuffer,
                     _iconCount,
                     tint,
-                    ditherEnabled);
+                    ditherEnabled,
+                    ref _boundIconDitherEnabled);
             }
 
             if (_textGlyphCount > 0 && _runtimeGlyphMaterial != null)
@@ -247,9 +256,12 @@ namespace Hecton8.UI
                     _textGlyphLocalScales,
                     _textGlyphIndices,
                     _runtimeGlyphMaterial,
+                    _textInstanceBuffer,
+                    _textArgsBuffer,
                     _textGlyphCount,
                     tint,
-                    ditherEnabled);
+                    ditherEnabled,
+                    ref _boundTextDitherEnabled);
             }
 
             RecordBlackBox(anchorPosition, tint, lowTier ? (byte)1 : (byte)0);
@@ -680,15 +692,27 @@ namespace Hecton8.UI
                 argsDirty = true;
             }
 
-            if (_instanceBuffer == null)
+            if (_textInstanceBuffer == null)
             {
-                _instanceBuffer = new ComputeBuffer(MaxInstanceCount, Marshal.SizeOf<TooltipGlyphInstance>(), ComputeBufferType.Structured);
+                _textInstanceBuffer = new ComputeBuffer(MaxGlyphCount, Marshal.SizeOf<TooltipGlyphInstance>(), ComputeBufferType.Structured);
                 _materialBindingsDirty = true;
             }
 
-            if (_argsBuffer == null)
+            if (_iconInstanceBuffer == null)
             {
-                _argsBuffer = new ComputeBuffer(1, IndirectArgsCount * sizeof(uint), ComputeBufferType.IndirectArguments);
+                _iconInstanceBuffer = new ComputeBuffer(MaxIconCount, Marshal.SizeOf<TooltipGlyphInstance>(), ComputeBufferType.Structured);
+                _materialBindingsDirty = true;
+            }
+
+            if (_textArgsBuffer == null)
+            {
+                _textArgsBuffer = new ComputeBuffer(1, IndirectArgsCount * sizeof(uint), ComputeBufferType.IndirectArguments);
+                argsDirty = true;
+            }
+
+            if (_iconArgsBuffer == null)
+            {
+                _iconArgsBuffer = new ComputeBuffer(1, IndirectArgsCount * sizeof(uint), ComputeBufferType.IndirectArguments);
                 argsDirty = true;
             }
 
@@ -705,7 +729,10 @@ namespace Hecton8.UI
             }
 
             if (argsDirty)
-                RefreshIndirectArgs();
+            {
+                RefreshIndirectArgs(_textArgsBuffer);
+                RefreshIndirectArgs(_iconArgsBuffer);
+            }
 
             EnsureMaterials();
         }
@@ -729,6 +756,7 @@ namespace Hecton8.UI
                         hideFlags = HideFlags.DontSave
                     };
                     _materialBindingsDirty = true;
+                    _boundTextDitherEnabled = float.NaN;
                 }
 
                 if (glyphShader != null && _runtimeIconMaterial == null)
@@ -739,6 +767,7 @@ namespace Hecton8.UI
                         hideFlags = HideFlags.DontSave
                     };
                     _materialBindingsDirty = true;
+                    _boundIconDitherEnabled = float.NaN;
                 }
             }
 
@@ -748,6 +777,20 @@ namespace Hecton8.UI
                 glyphShader = _runtimeIconMaterial.shader;
             if (glyphShader == null)
                 return;
+
+            if (_runtimeGlyphMaterial != null && _runtimeGlyphMaterial.shader != glyphShader)
+            {
+                _runtimeGlyphMaterial.shader = glyphShader;
+                _materialBindingsDirty = true;
+                _boundTextDitherEnabled = float.NaN;
+            }
+
+            if (_runtimeIconMaterial != null && _runtimeIconMaterial.shader != glyphShader)
+            {
+                _runtimeIconMaterial.shader = glyphShader;
+                _materialBindingsDirty = true;
+                _boundIconDitherEnabled = float.NaN;
+            }
 
             bool needsRebind = _materialBindingsDirty
                 || !ReferenceEquals(_boundFontAsset, fontAsset)
@@ -763,7 +806,7 @@ namespace Hecton8.UI
                 _runtimeGlyphMaterial.SetTexture(MainTexId, fontAsset.atlasTexture);
                 _runtimeGlyphMaterial.SetFloat(GradientScaleId, gradientScale);
                 _runtimeGlyphMaterial.SetFloat(FaceDilateId, faceDilate);
-                _runtimeGlyphMaterial.SetBuffer(InstanceBufferId, _instanceBuffer);
+                _runtimeGlyphMaterial.SetBuffer(InstanceBufferId, _textInstanceBuffer);
                 _runtimeGlyphMaterial.SetBuffer(UvRectBufferId, _fontUvBuffer);
             }
 
@@ -772,7 +815,7 @@ namespace Hecton8.UI
                 _runtimeIconMaterial.SetTexture(MainTexId, spriteAsset.spriteSheet);
                 _runtimeIconMaterial.SetFloat(GradientScaleId, gradientScale);
                 _runtimeIconMaterial.SetFloat(FaceDilateId, faceDilate);
-                _runtimeIconMaterial.SetBuffer(InstanceBufferId, _instanceBuffer);
+                _runtimeIconMaterial.SetBuffer(InstanceBufferId, _iconInstanceBuffer);
                 _runtimeIconMaterial.SetBuffer(UvRectBufferId, _spriteUvBuffer);
             }
 
@@ -799,9 +842,9 @@ namespace Hecton8.UI
             }
         }
 
-        private void RefreshIndirectArgs()
+        private void RefreshIndirectArgs(ComputeBuffer argsBuffer)
         {
-            if (_runtimeQuadMesh == null || _argsBuffer == null)
+            if (_runtimeQuadMesh == null || argsBuffer == null)
                 return;
 
             _indirectArgs[0] = _runtimeQuadMesh.GetIndexCount(0);
@@ -809,7 +852,7 @@ namespace Hecton8.UI
             _indirectArgs[2] = _runtimeQuadMesh.GetIndexStart(0);
             _indirectArgs[3] = _runtimeQuadMesh.GetBaseVertex(0);
             _indirectArgs[4] = 0u;
-            _argsBuffer.SetData(_indirectArgs);
+            argsBuffer.SetData(_indirectArgs);
         }
 
         private void DrawBatch(
@@ -820,14 +863,20 @@ namespace Hecton8.UI
             Vector2[] localScales,
             int[] glyphIndices,
             Material material,
+            ComputeBuffer instanceBuffer,
+            ComputeBuffer argsBuffer,
             int count,
             Vector4 tint,
-            float ditherEnabled)
+            float ditherEnabled,
+            ref float boundDitherEnabled)
         {
+            if (instanceBuffer == null || argsBuffer == null)
+                return;
+
             UploadUvTablesIfDirty();
-            Quaternion faceCameraRotation = Quaternion.LookRotation(camera.transform.forward, camera.transform.up);
             Vector3 cameraRight = camera.transform.right;
             Vector3 cameraUp = camera.transform.up;
+            Vector3 cameraForward = camera.transform.forward;
             for (int i = 0; i < count; i++)
             {
                 Vector2 localCenter = localCenters[i];
@@ -835,26 +884,27 @@ namespace Hecton8.UI
                 Vector3 worldPosition = anchorPosition + cameraRight * localCenter.x + cameraUp * localCenter.y;
                 _instancePayloads[i] = new TooltipGlyphInstance
                 {
-                    LocalToWorld = Matrix4x4.TRS(
-                        worldPosition,
-                        faceCameraRotation,
-                        new Vector3(localScale.x, localScale.y, 1f)),
+                    LocalToWorld = BuildBillboardMatrix(worldPosition, cameraRight, cameraUp, cameraForward, localScale),
                     Tint = tint,
                     GlyphIndex = new Vector4(glyphIndices[i], 0f, 0f, 0f)
                 };
             }
 
-            _instanceBuffer.SetData(_instancePayloads, 0, 0, count);
+            instanceBuffer.SetData(_instancePayloads, 0, 0, count);
             _indirectArgs[1] = (uint)count;
-            _argsBuffer.SetData(_indirectArgs);
-            material.SetFloat(DitherEnabledId, ditherEnabled);
-            material.SetBuffer(InstanceBufferId, _instanceBuffer);
+            argsBuffer.SetData(_indirectArgs);
+            if (boundDitherEnabled != ditherEnabled)
+            {
+                material.SetFloat(DitherEnabledId, ditherEnabled);
+                boundDitherEnabled = ditherEnabled;
+            }
+
             Graphics.DrawMeshInstancedIndirect(
                 _runtimeQuadMesh,
                 0,
                 material,
                 bounds,
-                _argsBuffer,
+                argsBuffer,
                 0,
                 null,
                 ShadowCastingMode.Off,
@@ -925,6 +975,19 @@ namespace Hecton8.UI
             return _cachedRenderCamera;
         }
 
+        private Camera ResolveRenderCamera()
+        {
+            Camera targetCamera = ResolveCamera();
+            Camera currentCamera = GlobalRenderContext.CurrentCamera;
+            if (currentCamera == null)
+                return targetCamera;
+
+            if (targetCamera != null && !ReferenceEquals(currentCamera, targetCamera))
+                return null;
+
+            return currentCamera;
+        }
+
         private uint ResolveCurrentSchemeHash()
         {
             IInputDeterminismService input = GlobalRegistry.InputDeterminism;
@@ -944,8 +1007,8 @@ namespace Hecton8.UI
 
         private void TryRegisterRuntime()
         {
-            if (!_registeredUpdate)
-                _registeredUpdate = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+            if (!_registeredLateFrame)
+                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
 
             if (!_registeredRenderable && Application.isPlaying)
                 _registeredRenderable = GlobalRegistry.Renderables.TryRegister(this);
@@ -953,10 +1016,10 @@ namespace Hecton8.UI
 
         private void UnregisterRuntime()
         {
-            if (_registeredUpdate)
+            if (_registeredLateFrame)
             {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
-                _registeredUpdate = false;
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+                _registeredLateFrame = false;
             }
 
             if (_registeredRenderable)
@@ -1063,16 +1126,28 @@ namespace Hecton8.UI
                 _runtimeQuadMesh = null;
             }
 
-            if (_instanceBuffer != null)
+            if (_textInstanceBuffer != null)
             {
-                _instanceBuffer.Release();
-                _instanceBuffer = null;
+                _textInstanceBuffer.Release();
+                _textInstanceBuffer = null;
             }
 
-            if (_argsBuffer != null)
+            if (_iconInstanceBuffer != null)
             {
-                _argsBuffer.Release();
-                _argsBuffer = null;
+                _iconInstanceBuffer.Release();
+                _iconInstanceBuffer = null;
+            }
+
+            if (_textArgsBuffer != null)
+            {
+                _textArgsBuffer.Release();
+                _textArgsBuffer = null;
+            }
+
+            if (_iconArgsBuffer != null)
+            {
+                _iconArgsBuffer.Release();
+                _iconArgsBuffer = null;
             }
 
             if (_fontUvBuffer != null)
@@ -1095,6 +1170,8 @@ namespace Hecton8.UI
             _boundGlyphShader = null;
             _boundGradientScale = float.NaN;
             _boundFaceDilate = float.NaN;
+            _boundTextDitherEnabled = float.NaN;
+            _boundIconDitherEnabled = float.NaN;
             _materialBindingsDirty = true;
         }
 
@@ -1137,6 +1214,36 @@ namespace Hecton8.UI
             mesh.SetTriangles(s_quadIndices, 0, true);
             mesh.RecalculateBounds();
             return mesh;
+        }
+
+        private static Matrix4x4 BuildBillboardMatrix(
+            Vector3 position,
+            Vector3 right,
+            Vector3 up,
+            Vector3 forward,
+            Vector2 scale)
+        {
+            Matrix4x4 matrix = default;
+            matrix.m00 = right.x * scale.x;
+            matrix.m10 = right.y * scale.x;
+            matrix.m20 = right.z * scale.x;
+            matrix.m30 = 0f;
+
+            matrix.m01 = up.x * scale.y;
+            matrix.m11 = up.y * scale.y;
+            matrix.m21 = up.z * scale.y;
+            matrix.m31 = 0f;
+
+            matrix.m02 = forward.x;
+            matrix.m12 = forward.y;
+            matrix.m22 = forward.z;
+            matrix.m32 = 0f;
+
+            matrix.m03 = position.x;
+            matrix.m13 = position.y;
+            matrix.m23 = position.z;
+            matrix.m33 = 1f;
+            return matrix;
         }
 
         [StructLayout(LayoutKind.Sequential)]

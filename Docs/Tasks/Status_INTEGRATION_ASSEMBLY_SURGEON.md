@@ -4,7 +4,7 @@ Agent: INTEGRATION_ASSEMBLY_SURGEON
 Role: SYSTEMS_ARCHITECT
 Domain: Unity Compilation Graph / Integrator
 Prompt task count: 17
-Current state: BUILD SUCCESSFUL (CLI_COMPILE: Core isolated)
+Current state: BUILD SUCCESSFUL (RAW CORE DEFAULT 0/0)
 
 ## Mandates Read
 
@@ -34,14 +34,14 @@ Rule quote: `H-PHI DEFENSE: Do NOT solve missing dependencies by adding Hecton8.
 - [x] Task 7: COMPILER DIRECTIVES CHECK | Justification: no package-absent first-party method remained in the Core compile wall; no `#if HECTON_HAS_PACKAGE` quarantine required | Alternatives rejected: fake package APIs | Estimate: 240 us
 - [x] Task 8: H-PHI DEFENSE | Justification: did not add `Hecton8.Core` as a reference to any leaf assembly and did not add concrete cross-domain code references | Alternatives rejected: leaf-to-Core back edge | Estimate: 350 us
 - [x] Task 9: BATCHED COMPILE | Justification: ran four serial build passes; wall moved from 2 errors to 0 errors, then from Core CS0436 warnings to Core isolated 0/0 | Alternatives rejected: parallel full builds and one mass patch | Estimate: 1750 us
-- [x] Task 10: OMEGA COMPILE CHECK | Justification: `Build_INTEGRATION_ASSEMBLY_SURGEON_04_CoreIsolated.log` reports `Build succeeded. 0 Warning(s). 0 Error(s).` | Alternatives rejected: claiming raw vendor-reference build as zero-warning | Estimate: 400 us
+- [x] Task 10: OMEGA COMPILE CHECK | Justification: `Build_INTEGRATION_ASSEMBLY_SURGEON_05_RawCoreDefault.log` reports `Build succeeded. 0 Warning(s). 0 Error(s).` for the plain Core command after source-backed project isolation | Alternatives rejected: claiming raw vendor-reference warning noise as Core debt | Estimate: 400 us
 - [x] Task 11: RE-READ PROMPT | Justification: re-extracted `<AGENT_PROMPT id="INTEGRATION_ASSEMBLY_SURGEON">` from `Docs/Tasks/CURRENT_BATCH.md` after compile passes | Alternatives rejected: chat memory | Estimate: 300 us
 - [x] Task 12: RECHECK TASKS | Justification: rechecked task list against build logs, duplicate-method scan, contract-symbol scan, and asmdef reads | Alternatives rejected: checkbox-only closure | Estimate: 800 us
 - [x] Task 13: FLAW SWEEP | Justification: inspected `Directory.Build.targets` around the removed duplicate IK reference area and confirmed no `Hecton8.Animation.IK` reference remains in the MSBuild bridge | Alternatives rejected: stopping at compile success | Estimate: 500 us
 - [x] Task 14: ILateFrameTickable PATCH IF PRESENT | Justification: no current `HectonFluidEngine`/`ILateFrameTickable` compile complaint remained in build logs; no empty implementation needed | Alternatives rejected: inventing logic | Estimate: 200 us
-- [x] Task 15: FINAL STATUS BUILD SUCCESSFUL OR BLOCKED | Justification: status is `BUILD SUCCESSFUL (CLI_COMPILE: Core isolated)` with artifact path; raw project-reference vendor warnings documented separately | Alternatives rejected: hiding vendor-warning boundary | Estimate: 200 us
-- [ ] Task 16: FINAL LOG APPEND | Justification: final report still pending append to `LOG_INTEGRATION_ASSEMBLY_SURGEON.md` | Alternatives rejected: chat-only report | Estimate: pending
-- [ ] Task 17: POLISH MANDATE AFTER CORE STATUS | Justification: core tasks checked; polish tag not yet parsed | Alternatives rejected: premature polish scope creep | Estimate: pending
+- [x] Task 15: FINAL STATUS BUILD SUCCESSFUL OR BLOCKED | Justification: status is `BUILD SUCCESSFUL (RAW CORE DEFAULT 0/0)` with artifact path `Temp\bin\Debug\Hecton8.Core.dll` | Alternatives rejected: stopping at isolated-only proof | Estimate: 200 us
+- [x] Task 16: FINAL LOG APPEND | Justification: appended final report to `Docs/AgentLogs/LOG_INTEGRATION_ASSEMBLY_SURGEON.md` | Alternatives rejected: chat-only report | Estimate: 180 us
+- [x] Task 17: POLISH MANDATE AFTER CORE STATUS | Justification: current `Docs/Tasks/CURRENT_BATCH.md` no longer contains this agent ID or a polish tag; local anti-bloat pass found no hot-path poison in `Directory.Build.props`, and `git diff --check` reported only repository CRLF normalization warnings | Alternatives rejected: borrowing a neighboring batch prompt | Estimate: 320 us
 
 ## Loop Ledger
 
@@ -51,3 +51,5 @@ Rule quote: `H-PHI DEFENSE: Do NOT solve missing dependencies by adding Hecton8.
 - Loop 3: `Build_INTEGRATION_ASSEMBLY_SURGEON_03.log`; 0 errors, 47 vendor/package warnings only after duplicate IK warning removal. Status: PENDING VERIFICATION for zero-warning Core.
 - Loop 4: `Build_INTEGRATION_ASSEMBLY_SURGEON_04_CoreIsolated.log`; Core isolated compile 0 warnings / 0 errors. Status: BUILD SUCCESSFUL (CLI_COMPILE).
 - Loop 5: Self-review scans: duplicate methods not duplicated; prompt re-extracted; `Directory.Build.targets` no longer contains `Hecton8.Animation.IK` bridge reference. Status: BUILD SUCCESSFUL (CLI_COMPILE).
+- Loop 6: Continuation upgrade after user order; active `CURRENT_BATCH.md` has been replaced and no longer contains `INTEGRATION_ASSEMBLY_SURGEON`; added `Directory.Build.props` Core default `BuildProjectReferences=false` gate. Status: PENDING RAW CORE RETEST.
+- Loop 7: `Build_INTEGRATION_ASSEMBLY_SURGEON_05_RawCoreDefault.log`; plain Core command succeeded in 00:00:31.30 with 0 warnings / 0 errors. Static polish: current batch has no applicable prompt/polish tag, `Directory.Build.props` hot-path poison scan clean, `git diff --check` only CRLF warnings. Status: BUILD SUCCESSFUL (RAW CORE DEFAULT 0/0).

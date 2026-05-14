@@ -3057,6 +3057,10 @@ namespace Hecton8.AI
                         threatLevel = math.max(threatLevel, math.max(directAcousticScore, 0.35f));
                     }
                 }
+                else if (useAlphaLeviathanCognition)
+                {
+                    ResetAlphaLeviathanInterruptedPhase(slot, input.CurrentTime);
+                }
 
                 float threatVisual = 0f;
                 if (isApexPredator && rivalApexVisible)
@@ -3344,6 +3348,15 @@ namespace Hecton8.AI
 
                 control.LastPredatorStateCode = (int)stateMask;
                 return output;
+            }
+
+            private void ResetAlphaLeviathanInterruptedPhase(int slot, float currentTime)
+            {
+                if (!StalkingPhases.IsCreated || !StalkingPhaseStartTimes.IsCreated)
+                    return;
+
+                StalkingPhases[slot] = AlphaLeviathanPhase.Hidden;
+                StalkingPhaseStartTimes[slot] = math.max(0f, currentTime);
             }
 
             private AlphaLeviathanDirective ResolveAlphaLeviathanDirective(

@@ -1403,9 +1403,32 @@ namespace Hecton8.Gameplay
 
         private static uint BuildAupArtifactSeed(uint hash, float3 position)
         {
-            int3 sector = (int3)math.floor(position * 0.02f);
-            uint seed = hash ^ (uint)sector.x * 73856093u ^ (uint)sector.y * 19349663u ^ (uint)sector.z * 83492791u;
+            double3 absolute = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(new Vector3(position.x, position.y, position.z));
+            long cellX = FastFloorToLong(absolute.x * 0.02d);
+            long cellY = FastFloorToLong(absolute.y * 0.02d);
+            long cellZ = FastFloorToLong(absolute.z * 0.02d);
+            uint seed = hash;
+            seed = MixAupSeed(seed, cellX, 73856093u);
+            seed = MixAupSeed(seed, cellY, 19349663u);
+            seed = MixAupSeed(seed, cellZ, 83492791u);
             return DataArchaeologyFrequencyKernel.NextLcg(seed != 0u ? seed : 1u);
+        }
+
+        private static uint MixAupSeed(uint seed, long value, uint multiplier)
+        {
+            unchecked
+            {
+                seed ^= (uint)value * multiplier;
+                seed = DataArchaeologyFrequencyKernel.NextLcg(seed != 0u ? seed : 1u);
+                seed ^= (uint)(value >> 32) * (multiplier ^ 0x9E3779B9u);
+                return seed;
+            }
+        }
+
+        private static long FastFloorToLong(double value)
+        {
+            long truncated = (long)value;
+            return value >= truncated ? truncated : truncated - 1L;
         }
 
         private static float Wrap01(float value)

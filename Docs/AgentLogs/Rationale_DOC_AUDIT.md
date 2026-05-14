@@ -2,7 +2,7 @@
 
 Agent: DOC_AUDIT
 Domain: Documentation / Project Reality Audit / Editor Validation Tripwires
-Current continuation: R42
+Current continuation: R44
 Date: 2026-05-14
 
 Previous rationale history is archived under `Docs/Archive/Batch005/AgentLogs/Rationale_DOC_AUDIT.md`.
@@ -102,3 +102,27 @@ Rejected Alternatives: editing old dated reports was rejected because reports ar
 Scalability potential: Low/Middle/High/Ultra runtime tiers are unchanged. Process scalability improves because active reference docs now route readers to the same current compile/runtime boundary instead of forcing each agent to rediscover the May 13 -> R41 chain.
 
 Hardware Impact: Runtime impact 0.000 ms/frame. Documentation-only work. No profiler, GCMonitor, Unity Console, Play Mode, Memory Profiler, player build, or scene-wiring proof was captured.
+
+## Decision 046 - R43 Compile Recheck Must Separate Source Errors From Generated-Output Hazards
+
+Problem: After R42 documentation propagation, fresh root CLI checks produced changing failure classes: stale-looking C# errors disappeared under current source, `--no-restore` failed on missing `Temp\bin\Debug` package DLLs, Editor no-restore failed on missing `Temp\obj` restore assets, and one Core no-restore run hit `CS2012` on a shared `Temp\obj` output DLL. Under 20+ concurrent agents, treating each transient CLI failure as gameplay source truth would cause unnecessary edits in unrelated domains.
+
+Solution: verify source errors only after clearing generated-output state. R43 used `dotnet build-server shutdown`, serial restore/build where needed, and single-project `--no-restore -m:1 /nr:false -p:BuildProjectReferences=false -p:UseSharedCompilation=false -v:minimal -clp:Summary` checks with explicit `LASTEXITCODE=0`. All eight root Hecton8 projects now pass that surface: Core, Editor, PlayModeTests, World.Contracts, World.Dots, Bootstrap.Contracts, Input.Generated, and Input. Docs were rebased from "latest R41" to "R43 rechecked" and now name the transient hazards.
+
+Rejected Alternatives: editing `SpatialAudioManager.cs` or fauna code was rejected because current source no longer contained the reported blocker and fresh builds progressed without those edits. Treating `NETSDK1004`, missing referenced package DLLs, or `CS2012` shared-output locks as C# source failures was rejected because restore/build or build-server cleanup cleared them. Treating the loop wrapper's spurious `-1` status as final proof was rejected because individual project commands returned `Build succeeded` and `LASTEXITCODE=0`.
+
+Scalability potential: Low/Middle/High/Ultra runtime tiers are unchanged. Process scalability improves: agents can distinguish actual source compile failures from generated project restore state, missing referenced temporary DLLs, and shared intermediate locks before spending architecture time.
+
+Hardware Impact: Runtime impact 0.000 ms/frame. Build-only/doc-only work. No profiler, GCMonitor, Unity Console, Play Mode, Memory Profiler, player build, frame-time, memory, scene-wiring, or visual proof was captured.
+
+## Decision 047 - R38 Compile-Blocked Text Must Be Preserved As History, Not Current Status
+
+Problem: After R43, several stable active docs still contained R38 wording that read as current status: full `Hecton8.Core` was blocked by unrelated active churn. That was accurate during R38, but misleading after R43 proved the current external root `Hecton8*.csproj` no-restore CLI surface clean. Leaving both statements without chronology makes readers treat stale churn as the latest build boundary.
+
+Solution: update the active authority/index docs to preserve the R38 event as historical and add the R43 supersession in the same sentence. `Docs/README.md`, `Docs/Reports/README.md`, `Docs/PROJECT_STATE_STATIC_XRAY.md`, and `Docs/HECTON8_GLOBAL_ARCHITECTURE_MAP.md` now say R38 demoted the old full-Core success under then-current churn, while R43 later superseded that compile-blocked note with the clean external root CLI recheck. The runtime-proof boundary remains unchanged.
+
+Rejected Alternatives: deleting the R38 note was rejected because it documents why older R37 proof was demoted. Editing dated report snapshots was rejected because they are historical evidence artifacts. Upgrading R43 CLI compile to Unity runtime health was rejected because Unity MCP Console, Play Mode, profiler, GCMonitor, player build, scene wiring, and visual proof remain absent.
+
+Scalability potential: Low/Middle/High/Ultra runtime tiers are unchanged. Process scalability improves because active docs no longer force agents to reconcile contradictory current compile statements before doing useful work.
+
+Hardware Impact: Runtime impact 0.000 ms/frame. Documentation-only work. No profiler, GCMonitor, Unity Console, Play Mode, Memory Profiler, player build, frame-time, memory, scene-wiring, or visual proof was captured.

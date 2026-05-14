@@ -254,3 +254,10 @@ Solution: Classified these separately from project compile/runtime defects and r
 Rejected Alternatives: Global log filters, PackageCache mutation, deleting package test assemblies, or claiming MCP screenshot/console proof without an MCP transport was rejected. Those would reduce observability or create package drift.
 Scalability potential: Low/Middle/High/Ultra runtime unchanged. Verification now distinguishes real HECTON defects from external editor setup noise.
 Hardware Impact: 0 us runtime. The only process impact was a fresh batchmode compile/import pass; no player-frame cost.
+
+## Continuation Decision 37 - Above-Water Readability Camera Clamp
+Problem: Surface readability floors existed in `Tick()`, but the camera render enforcement path could overwrite them with raw celestial fog color and raw fog density when the camera was above water. That can reintroduce the dark green/noir surface image even after the main surface branch brightens it.
+Solution: Routed the above-water celestial camera branch through `ResolveSurfaceFogColor()` and `ResolveSurfaceFogDensity()`, and made `ResolveSurfaceFogDensity()` clamp celestial/weather/authored density through `ResolveReadableSurfaceFogDensity()`.
+Rejected Alternatives: Disabling fog, raising underwater fog floors, forcing exposure globally, or per-profile manual tuning was rejected because the defect is a branch bypass, not a content-authoring problem.
+Scalability potential: Low keeps the same single fog pass and just clamps scalar density/color inputs. Middle/High/Ultra can still use richer sky/weather colors, but the camera path cannot crush the surface into unreadable green-black.
+Hardware Impact: Two resolver calls and one scalar clamp on the camera render path; no allocation, no new render pass, and no shader variant churn.

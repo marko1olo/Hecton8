@@ -92,6 +92,12 @@ Rejected Alternatives: Dumping raw array order was rejected because it slows cra
 Scalability potential: No hot-path cost; dump-only readability improves on every tier.
 Hardware Impact: Runtime frame impact remains zero outside fault dump; dump path writes fewer cold entries before the ring is full.
 
+Problem: LOS compaction could trust a created native voxel array even if its length did not cover the advertised dimensions, and invalid flat samples returned open space.
+Solution: Added a complete-grid guard using 64-bit expected-length math and changed invalid voxel samples to return `SolidThreatVoxel`.
+Rejected Alternatives: Keeping `0` for invalid samples was rejected because missing payload data must not authorize smoothing. Adding managed validation outside the job was rejected because payload ownership can change per schedule.
+Scalability potential: Low/MX350 fails closed with raw waypoints when voxel proof is incomplete. High/Ultra still smooth aggressively when payloads are valid.
+Hardware Impact: One grid-length multiply check before compaction and solid fallback on invalid samples; negligible normal-path cost, avoids downstream steering correction from invalid smoothing.
+
 Problem: Compile verification is blocked by global dependency errors outside the funnel domain.
 Solution: Ran a bounded `dotnet build` and Unity MCP script validation; recorded the compile wall and tool session failure without claiming success.
 Rejected Alternatives: Fixing Core/Audio/AI/Physics contracts from this task was rejected because the Integrator owns assembly surgery.
@@ -103,6 +109,36 @@ Solution: Re-ran bounded `dotnet build Hecton8.Core.csproj --no-restore /m:1 /nr
 Rejected Alternatives: Keeping the stale blocked status was rejected because current objective data supersedes the old dependency wall.
 Scalability potential: Build-valid code can now enter Unity/Burst profiler verification without assembly noise.
 Hardware Impact: Runtime hardware claims still require Unity profiler capture; compile proof only verifies C# integration.
+
+Problem: Full project-reference PlayMode rebuild timed out in `Hecton8.Editor.csproj`, which is outside the funnel source surface but would leave verification ambiguous if ignored.
+Solution: Stopped treating the hung rebuild as authoritative and ran `Hecton8.PlayModeTests.csproj` with `BuildProjectReferences=false` against already-built outputs; result is 0 warnings and 0 errors.
+Rejected Alternatives: Waiting indefinitely was rejected because it leaves orphan build processes. Claiming full PlayMode success was rejected because the project-reference rebuild did not complete.
+Scalability potential: Test assembly integration is verified without blocking on unrelated editor rebuild latency.
+Hardware Impact: No runtime impact; this is verification hygiene.
+
+Problem: Black-box dump valid-entry count was derived from a wrapping `uint` sequence, so an extreme long-running session could wrap and dump too few entries despite a full telemetry ring.
+Solution: Added a separate capped `_abyssalPathTelemetryWrittenCount` that increments to `AbyssalPathTelemetryFrameCount` and drives dump valid-count.
+Rejected Alternatives: Using the sequence forever was rejected because it is semantically an event ID, not a stable count. Expanding sequence to 64-bit was rejected because the dump needs count, not just identity.
+Scalability potential: No hot-path allocation and no per-frame cost beyond one capped integer increment on path completion.
+Hardware Impact: Negligible on i3/MX350; improves postmortem reliability for long QA soaks.
+
+Problem: `NormalizeRsqrtOrFallback` returned fallback vectors raw, so a non-unit or non-finite fallback could propagate into portal winding, side, or DDA direction math.
+Solution: Keep the valid vector fast path as `value * math.rsqrt(lengthSq)`, but normalize finite fallbacks with `math.rsqrt` and use +Z only when both primary and fallback are unusable.
+Rejected Alternatives: Leaving raw fallback propagation was rejected because NaN hardening must cover secondary axes. Always normalizing both value and fallback branchlessly was rejected because it spends extra math on the common valid path.
+Scalability potential: Low/MX350 pays no extra work on valid vectors. High/Ultra get the same deterministic axis sanitation in degenerate path corners.
+Hardware Impact: Normal path remains one rsqrt multiply; extra fallback work only occurs on zero-length or non-finite vectors.
+
+Problem: Final verification was briefly polluted by active overlapping Core builds and a missing PlayMode `project.assets.json` generated file.
+Solution: Waited for active `dotnet`/MSBuild processes to clear, verified generated Unity references existed, restored only `Hecton8.PlayModeTests.csproj`, and reran bounded no-reference builds.
+Rejected Alternatives: Starting another overlapping build was rejected because it would corrupt evidence and waste shared machine time. Treating missing generated assets as a code failure was rejected because restore regenerated them without source changes.
+Scalability potential: No runtime effect; verification remains reproducible without touching navigation code.
+Hardware Impact: No frame-time impact. This is build hygiene only.
+
+Problem: Abyssal nav-node conduit scoring still used managed `/` for average flow magnitude and conduit strength, and its Vector3 normalizer returned fallback vectors raw.
+Solution: Replaced those divisions with `math.rcp` multiplies and hardened `NormalizeVector3Fast` with finite primary/fallback checks plus stable `Vector3.forward` fallback.
+Rejected Alternatives: Leaving managed divisions for the C# compiler was rejected because the math gate expects explicit reciprocal intent. Returning raw fallback vectors was rejected because corrupted flow payloads can leak non-finite conduit directions into path weighting.
+Scalability potential: Low/MX350 avoids divide latency in node candidate scoring. Middle/High/Ultra keep the same visual conduit fidelity while preserving deterministic fallbacks for richer path smoothing inputs.
+Hardware Impact: Expected low-end gain is small but direct: two scalar divisions become reciprocal multiplies per conduit-qualified candidate. Exact microseconds remain pending Unity profiler data.
 
 ## OMEGA POLISH CHANGES
 

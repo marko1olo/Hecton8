@@ -485,11 +485,13 @@ namespace Hecton8.Caves
 
                 float halfExtent = volume.GridDimension * volume.VoxelSize * 0.5f;
                 float acceptedRadius = halfExtent + radius;
-                float distanceSq = (volume.GenerationAbsoluteUniversePosition - absoluteCenter).sqrMagnitude;
-                if (distanceSq > acceptedRadius * acceptedRadius || distanceSq >= bestDistanceSq)
+                double3 delta = volume.GenerationAbsoluteUniversePositionDouble - new double3(absoluteCenter.x, absoluteCenter.y, absoluteCenter.z);
+                double distanceSq = math.lengthsq(delta);
+                double acceptedRadiusSq = (double)acceptedRadius * acceptedRadius;
+                if (distanceSq > acceptedRadiusSq || distanceSq >= bestDistanceSq)
                     continue;
 
-                bestDistanceSq = distanceSq;
+                bestDistanceSq = (float)math.min(distanceSq, float.MaxValue);
                 bestVolume = volume;
             }
 

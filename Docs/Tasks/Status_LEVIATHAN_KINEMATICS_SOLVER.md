@@ -26,10 +26,10 @@ Batch source: Docs/Tasks/CURRENT_BATCH.md
 - [x] Task 9: Upload LeviathanBones to GraphicsBuffer | DOD: double-buffered `GraphicsBuffer` upload through `GraphicsBufferUploadUtility.UploadNativeArray` | Alternative Rejected: per-frame managed arrays | Estimate: 3-10 us upload overhead
 - [x] Task 10: Hook existing compute/GPU skinning path where available | DOD: material/global shader buffers are published and `Hecton_LeviathanOrganic.shader` consumes `_H8LeviathanBones` in forward and shadow passes | Alternative Rejected: CPU mesh deformation and serialized material defaults that shadow globals | Estimate: saves 150-600 us versus CPU skinning, unmeasured
 - [x] Task 11: Strike tail whip impulse with one-second terrain bypass | DOD: strike starts `_tailWhipSecondsRemaining`, passes `_tailWhipDurationSeconds` into Burst, applies tail-half wave impulse, bypasses terrain constraints during active timer | Alternative Rejected: physical joints/impulses | Estimate: under 4 us
-- [x] Task 12: AUP shift safety for all segments | DOD: `OnOriginShift` rebases segment positions, previous positions, matrices, and target positions | Alternative Rejected: reseeding spine after shift | Estimate: 5-15 us per shift only
+- [x] Task 12: AUP shift safety for all segments | DOD: `OnOriginShift` rebases segment positions, previous positions, matrices, and target positions; late-frame publishes rebased matrices immediately | Alternative Rejected: reseeding spine after shift | Estimate: 5-15 us per shift only
 - [x] Task 13: Math LOD: Low tier eight segments and SDF disabled | DOD: `HectonQualityTier.Unknown/Low/Mx350` clamps active segments to 8 and disables SDF terrain hugging | Alternative Rejected: balanced middle path | Estimate: saves 20-60 us versus high tier
 - [x] Task 14: Zero-GC hot path audit | DOD: static grep found no hot-path managed collection creation, Mono `Update`, `Debug.Log`, `Camera.main`, `renderer.material`, or `GlobalRegistry.Get` in IK runtime/job files | Alternative Rejected: deferred audit | Estimate: 0 B intended hot path
-- [x] Task 15: Omega compile check: verify math.rsqrt constraints [BLOCKED BY DEPENDENCY] | DOD: `math.rsqrt` verified in all distance constraints; isolated `Hecton8.Animation.IK` csc pass exits 0; full project compile blocked by unrelated assemblies/open Unity instances | Alternative Rejected: fake green build report | Estimate: compile wall cost external
+- [x] Task 15: Omega compile check: verify math.rsqrt constraints [BLOCKED BY DEPENDENCY] | DOD: `math.rsqrt` verified in all distance constraints; isolated `Hecton8.Animation.IK` and `Hecton8.Core` Unity Roslyn response-file passes exit 0; full Unity Editor import/runtime validation still pending | Alternative Rejected: fake green build report | Estimate: compile wall cost external
 
 ## Iteration Log
 
@@ -91,4 +91,32 @@ Batch source: Docs/Tasks/CURRENT_BATCH.md
 - Scoped compile: Unity Roslyn `Hecton8.Animation.IK` csc pass exited 0 after the tail-duration field change; DLL timestamp updated to 2026-05-14 12:31:39.
 - Static check: no `math.sqrt`, `math.normalize`, `foreach`, `string.Format`, `.ToString()`, `Debug.Log`, Unity Physics casts, Animator/SMR dependency, or `_H8LeviathanBodyRadius` in IK runtime/job/shader scope.
 - `git diff --check` on touched IK runtime/job/shader files exits 0; line-ending warnings are repo-wide and unrelated.
-- Final status remains PENDING VERIFICATION because `FaunaKinematicsRuntime` is still inside the project-wide `Hecton8.Core` compile wall.
+- Final status remained PENDING VERIFICATION at this loop because `FaunaKinematicsRuntime` had not yet passed a scoped `Hecton8.Core` compile; Loop 9 records the later response-file pass.
+
+### Loop 9: Ownership And Binding Recheck
+
+- CLI prompt re-extraction from `Docs/Tasks/CURRENT_BATCH.md` returned `Prompt block not found`; batch source has rotated, so this continuation used the existing status/rationale files as the persistent assignment record.
+- Fixed the internal native exposure contract: `TryGetLeviathanBones` now refuses to return the `NativeArray<float4x4>` while the IK job is scheduled or the runtime is disposed.
+- Fixed stale material state: `BindSkinningMaterial` clears the old and new material gates, and `ClearGpuSkinningBinding` now resets IK tier and segment length as well as bone count/tail/gpu gate.
+- Fixed deferred native disposal chaining: `DisposePersistentBuffers` now starts from the previous `_disposeHandle` plus the active dependency before releasing the SOA lanes.
+- Scoped compile: Unity Roslyn `Hecton8.Core` csc pass exited 0 with `Library/Bee/artifacts/1300b0aEDbg.dag/Hecton8.Core.rsp` and `.rsp2`.
+- Static check: no `math.sqrt`, `math.normalize`, managed array creation, `foreach`, `string.Format`, `.ToString()`, `Debug.Log`, Unity Physics casts, Animator/SMR dependency, `renderer.material`, or `Camera.main` in IK runtime/job/shader scope.
+- `git diff --check` on touched files exits 0; the only output is the existing LF-to-CRLF warning for `FaunaKinematicsRuntime.cs`.
+- Final status remains PENDING VERIFICATION until Unity Editor import, shader compile, and runtime/profiler evidence exist.
+
+### Loop 10: Origin Shift GPU Publish Recheck
+
+- Fixed a one-frame AUP presentation gap: if an origin shift was queued while no solver was scheduled, late-frame now uploads rebased matrices immediately.
+- Fixed the queued-shift completion path: after a scheduled solver completes, `ApplyPendingOriginShiftRebase()` no longer returns before `UploadBonesToGpu()`.
+- First scoped `Hecton8.Core` Roslyn probe timed out at 120 seconds without compiler output; rerun with a 240-second timeout exited 0.
+- Static check: no `math.sqrt`, `math.normalize`, managed array creation, `foreach`, `string.Format`, `.ToString()`, `Debug.Log`, Unity Physics casts, Animator/SMR dependency, `renderer.material`, or `Camera.main` in IK runtime/job/shader scope.
+- `git diff --check` on touched files exits 0; output is only LF-to-CRLF warnings on touched files.
+- Final status remains PENDING VERIFICATION until Unity Editor import, shader compile, play-mode behavior, and profiler evidence exist.
+
+### Loop 11: No-Consumer GPU Upload Recheck
+
+- Added a no-consumer early-out in `UploadBonesToGpu()` so a runtime with no skinning material and global publishing disabled does not allocate or upload graphics buffers.
+- Scoped compile: Unity Roslyn `Hecton8.Core` csc pass exited 0 with the same saved response files.
+- Static check: no `math.sqrt`, `math.normalize`, managed array creation, `foreach`, `string.Format`, `.ToString()`, `Debug.Log`, Unity Physics casts, Animator/SMR dependency, `renderer.material`, or `Camera.main` in IK runtime/job/shader scope.
+- `git diff --check` on touched files exits 0; output is only LF-to-CRLF warnings on touched files.
+- Final status remains PENDING VERIFICATION until Unity Editor import, shader compile, play-mode behavior, and profiler evidence exist.

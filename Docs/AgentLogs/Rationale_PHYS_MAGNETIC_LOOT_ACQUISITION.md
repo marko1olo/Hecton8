@@ -127,3 +127,63 @@ Rejected Alternatives: Letting NativeQueue growth handle overload violates zero-
 Scalability potential: Low remains 10Hz snap/acquire; Middle drains 64/frame; High/Ultra can raise presentation density downstream without changing the acquisition cap.
 
 Hardware Impact: MX350 avoids bursty inventory work. Sector-delta math saves two AUP absolute conversions per candidate and reduces per-entity math pressure before Burst verification.
+
+## Decision 9 - Runtime Installation And Slot Identity
+
+Problem: A compile-valid `LootMagnetSystem` can still do nothing if no scene owns the component. Registry refresh can also reshuffle pickup slots, which would carry a previous slot velocity into a different pickup.
+
+Solution: Added a cold `AfterSceneLoad` installer that creates or adopts exactly one `LootMagnetSystem` without exposing `LootMagnet.Instance`. Added a managed `int[]` instance-id sidecar so velocity is preserved only while the same `PickupItem` occupies the same vault slot; registry slot changes reset velocity to zero. OnEnable now immediately seeds vault data instead of waiting for the next SlowTick.
+
+Rejected Alternatives: A public singleton was rejected because task 1 explicitly removes that dependency shape. Resetting all velocities every SlowTick was rejected because it would weaken the pull feel and waste integration work. A dictionary from instance id to slot was rejected because the cold scan can stay O(n) with arrays and no hashing.
+
+Scalability potential: Low tier still uses 10Hz snap with immediate cold-start visibility. Middle retains smooth pull. High/Ultra keep stable per-item velocity under dense loot fields without needing heavier lookup structures.
+
+Hardware Impact: Adds one cold `int[capacity]` sidecar and one `GetInstanceID()` per SlowTick registry slot. It prevents cross-item velocity artifacts without adding FastTick cost or GC.
+
+## Decision 10 - Verification Boundary
+
+Problem: Unity MCP console transport fails at `http://127.0.0.1:8088/mcp`, but this task needs real compile evidence and must not fake Burst verification.
+
+Solution: Used Unity-generated Bee response files with Unity's Roslyn compiler to compile `Hecton8.Gameplay.Loot.Contracts` and `Hecton8.Gameplay.Loot` into `Temp/LootMagnetCompileCheck`; both exited 0. Kept Task 15 pending because this proves C# assembly correctness, not Burst AOT emission.
+
+Rejected Alternatives: `dotnet build Hecton8.Core.csproj` was rejected as the authority because the generated aggregate project fails on unrelated cross-assembly references before isolating loot. Treating fresh `Library/ScriptAssemblies` timestamps as the only proof was also rejected.
+
+Scalability potential: Compile-verified code keeps the same Low/Middle/High/Ultra behavior documented above; Burst runtime proof is still required before changing status beyond PENDING VERIFICATION.
+
+Hardware Impact: No runtime impact. Verification used ignored temp artefacts only.
+
+## Decision 11 - Fault-Frame Telemetry Ordering
+
+Problem: Non-finite detection triggered `DumpTelemetryBuffer()` before the current frame's fault counters were written into the 300-frame ring. The dump could therefore contain the lead-up frames but miss the frame that actually tripped the fault.
+
+Solution: Commit `_lastCommittedAcquiredCount`, `_lastCommittedFlagsHash`, and fault flags before the dump path. Record telemetry immediately on first fault, then suppress the normal late-frame write for the same frame with `_lastTelemetryRecordedFrame`.
+
+Rejected Alternatives: Duplicating the same frame twice in the ring was rejected because it wastes one of the fixed 300 slots and can obscure sequence analysis. Writing string logs on fault was rejected because the mandate calls for fixed-size binary black-box state.
+
+Scalability potential: Low/Middle/High/Ultra all keep the same fixed telemetry shape. High-end visual overkill does not increase dump size.
+
+Hardware Impact: Adds one uint field and one branch in LateFrame. Fault path writes one extra ring entry before disk I/O; steady-state cost is below profiler noise and remains allocation-free.
+
+## Decision 12 - Burst Local AUP Rebuild
+
+Problem: The Burst job integrated loot AUPs by calling `AbsoluteUniversePosition.FromAbsolutePosition` from the world assembly. The method is numeric, but it expands the Burst dependency surface and makes AOT diagnosis depend on another assembly method body.
+
+Solution: Inlined the small AUP rebuild into `LootMagnetPullJob` with the same 5000 m cell size, `math.floor`, grid origin subtraction, and local float storage.
+
+Rejected Alternatives: Keeping the cross-assembly call was shorter but left unnecessary Burst surface area. Converting through runtime floats was rejected because it violates AUP shift safety.
+
+Scalability potential: Low/Middle/High/Ultra all keep identical AUP semantics. High-density loot fields now execute only local numeric job code for integration.
+
+Hardware Impact: Removes one cross-assembly static method call from the hot integration path. Exact microseconds remain pending Burst/profiler proof.
+
+## Decision 13 - Guarded AUP Sector Broadphase
+
+Problem: Every active loot slot paid local delta math even when the loot AUP sector was several 5 km cells away from the player and therefore impossible to be inside a normal magnet radius.
+
+Solution: Added a Burst-local adjacency reject before float delta resolution. The reject only runs when `PullRadiusSq <= AupCellSizeSq`; oversized debug radii bypass it and preserve behavior.
+
+Rejected Alternatives: A new shared spatial hash was rejected because the prompt's concrete implementation path is vault SoA iteration over `EntityAUPs` and `EntityFlags`, and adding a mutable hash table would create ownership and allocation risk. Unconditional sector rejection was rejected because large debug radii must remain correct.
+
+Scalability potential: Low gets cheaper 10Hz scans in spread-out scenes. Middle/High/Ultra keep exact near-cell behavior while reducing math pressure for distant loot fields.
+
+Hardware Impact: Adds three integer adjacency checks before float3/double local delta work. Saves sector-delta math for far-cell loot on i3/MX350 and remains zero-GC.

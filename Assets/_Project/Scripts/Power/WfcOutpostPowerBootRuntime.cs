@@ -28,8 +28,10 @@ namespace Hecton8.Power
         private const int DumpVersion = 1;
         private const SystemID LogisticsGridSystemId = (SystemID)512;
         private const float InitialReactorOutput01 = 0.05f;
-        private const float ReactorDecayPerSecond = 0.01f / 60f;
+        private const float SecondsToMinutesReciprocal = 0.016666667f;
+        private const float ReactorDecayPerSecond = 0.01f * SecondsToMinutesReciprocal;
         private const float ReactorBrownoutThreshold01 = 0.02f;
+        private const float PowerEvaluationIntervalSeconds = 1f;
         private const float DoorUnlockVoltage = 0.1f;
         private const float GeneratorWatts = 5000f;
         private const float RoomDemandWatts = 12f;
@@ -69,6 +71,7 @@ namespace Hecton8.Power
         private int _lastGraphFaultFlags;
         private float _reactorOutput01;
         private float _lastReactorUpdateTime;
+        private float _nextGraphEvaluationTime;
         private bool _initialized;
         private bool _translationPending;
         private bool _graphEvaluationPending;
@@ -154,8 +157,8 @@ namespace Hecton8.Power
             if (TryScheduleLatestGeneratedSignal())
                 return;
 
-            if (_hasActiveGraph)
-                ScheduleGraphEvaluation();
+            if (_hasActiveGraph && now + 0.0001f >= _nextGraphEvaluationTime)
+                ScheduleGraphEvaluation(now, false);
         }
 
         public bool LateFrameTick(float now)
@@ -220,6 +223,7 @@ namespace Hecton8.Power
             _initialized = false;
             _hasActiveGraph = false;
             _gasSeedPending = false;
+            _nextGraphEvaluationTime = 0f;
         }
 
         private bool TryScheduleLatestGeneratedSignal()
@@ -297,17 +301,21 @@ namespace Hecton8.Power
 
             TrySeedGasRooms();
             if (_hasActiveGraph)
-                ScheduleGraphEvaluation();
+                ScheduleGraphEvaluation(now, true);
         }
 
-        private void ScheduleGraphEvaluation()
+        private void ScheduleGraphEvaluation(float now, bool force)
         {
             if (_activeNodeCount <= 0)
+                return;
+
+            if (!force && now + 0.0001f < _nextGraphEvaluationTime)
                 return;
 
             BuildLogisticsGraph();
             _graph.ScheduleEvaluation();
             _graphEvaluationPending = _graph.HasPendingEvaluation;
+            _nextGraphEvaluationTime = math.max(now, 0f) + PowerEvaluationIntervalSeconds;
             if (!_graphEvaluationPending)
             {
                 PublishDoorPowerSignals();

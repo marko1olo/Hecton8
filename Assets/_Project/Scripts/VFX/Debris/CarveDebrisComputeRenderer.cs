@@ -37,6 +37,8 @@ namespace Hecton8.VFX.Debris
         private const int HighTierParticlesPerCarve = 64;
         private const int MaxCarveSignalsPerFrame = 32;
         private const int TelemetryPublishStride = 30;
+        private const int GlobalSdfRefreshStrideFrames = 4;
+        private const float MinimumCarveSpawnRadiusMeters = 0.05f;
         private const uint TelemetryContextHash = 0x56465844u; // VFXD
         private const uint ActiveCountTelemetryHash = 0x43444252u; // CDBR
         private const uint InvalidStateFlag = 1u;
@@ -71,6 +73,10 @@ namespace Hecton8.VFX.Debris
         private static readonly int VoxelSdfTexture3DId = Shader.PropertyToID("_VoxelSdfTexture3D");
         private static readonly int VoxelSdfWorldToLocalId = Shader.PropertyToID("_VoxelSdfWorldToLocal");
         private static readonly int VoxelSdfInvDoubleHalfExtentsId = Shader.PropertyToID("_VoxelSdfInvDoubleHalfExtents");
+        private static readonly int HectonCaveVoxelSdfTexId = Shader.PropertyToID("_HectonCaveVoxelSdfTex");
+        private static readonly int HectonCaveVoxelActiveId = Shader.PropertyToID("_HectonCaveVoxelActive");
+        private static readonly int HectonCaveVoxelWorldToLocalId = Shader.PropertyToID("_HectonCaveVoxelWorldToLocal");
+        private static readonly int HectonCaveVoxelInvDoubleHalfExtentsId = Shader.PropertyToID("_HectonCaveVoxelInvDoubleHalfExtents");
         private static readonly int FluidAdvectionParamsId = Shader.PropertyToID("_FluidAdvectionParams");
         private static readonly int FluidAdvectionSdfParamsId = Shader.PropertyToID("_FluidAdvectionSdfParams");
 
@@ -111,6 +117,7 @@ namespace Hecton8.VFX.Debris
         private GraphicsBuffer _visibleIndicesBuffer;
         private GraphicsBuffer _indirectArgsBuffer;
         private GraphicsBuffer _emptyFlowBuffer;
+        private Texture _cachedGlobalSdfTexture;
         private Texture3D _emptyTexture3D;
         private Mesh _ownedMesh;
         private Material _ownedMaterial;
@@ -122,6 +129,7 @@ namespace Hecton8.VFX.Debris
         private int _maxDispatchGroups = MaxCarveDebrisCount >> 6;
         private int _lowDispatchGroups = LowTierActiveCarveDebrisCount >> 6;
         private int _lastActiveCapacity = MaxCarveDebrisCount;
+        private int _nextGlobalSdfRefreshFrame;
         private int _bufferParity;
         private int _activeMirrorCount;
         private int _blackBoxCursor;
@@ -129,10 +137,12 @@ namespace Hecton8.VFX.Debris
         private uint _lastProcessedAupShiftFrameId;
         private uint _frameSequence;
         private float3 _pendingAupShift;
+        private Matrix4x4 _cachedGlobalSdfWorldToLocal = Matrix4x4.identity;
+        private Vector4 _cachedGlobalSdfInvDoubleHalfExtents;
+        private float _cachedGlobalSdfActive;
         private bool _registered;
         private bool _gpuReady;
         private bool _blackBoxDumped;
-        private bool _cameraResolveAttempted;
         private bool _materialFallbackAttempted;
         private bool _lastFlowActive;
         private bool _lastSdfActive;
@@ -291,7 +301,7 @@ namespace Hecton8.VFX.Debris
                 _indirectArgsBuffer = new GraphicsBuffer(
                     GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw,
                     1,
-                    GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] - compute-written indirect rock debris args - owner: VFX_SDF_CARVE_DEBRIS
+                    GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] — compute-written indirect rock debris args — owner: VFX_SDF_CARVE_DEBRIS
             }
         }
 
@@ -302,7 +312,7 @@ namespace Hecton8.VFX.Debris
                 GraphicsBuffer.Target.Structured,
                 GraphicsBuffer.UsageFlags.LockBufferForWrite,
                 math.max(1, count),
-                UnsafeUtility.SizeOf<T>()); // COLD ALLOC: GraphicsBuffer[count] - persistent carve debris GPU lane - owner: VFX_SDF_CARVE_DEBRIS
+                UnsafeUtility.SizeOf<T>()); // COLD ALLOC: GraphicsBuffer[count] — persistent carve debris GPU lane — owner: VFX_SDF_CARVE_DEBRIS
         }
 
         private void CreateEmptyResources()
@@ -310,7 +320,7 @@ namespace Hecton8.VFX.Debris
             if (_emptyTexture3D != null)
                 return;
 
-            _emptyTexture3D = new Texture3D(1, 1, 1, TextureFormat.RGBAFloat, false)
+            _emptyTexture3D = new Texture3D(1, 1, 1, TextureFormat.RGBAFloat, false) // COLD ALLOC: Texture3D[1] — zero fallback for unbound SDF/flow 3D textures — owner: VFX_SDF_CARVE_DEBRIS
             {
                 name = "Hecton Empty CarveDebris 3D Texture",
                 wrapMode = TextureWrapMode.Clamp,
@@ -385,13 +395,19 @@ namespace Hecton8.VFX.Debris
             for (int i = 0; i < signalCount; i++)
             {
                 VoxelCarveEvent carveEvent = carveSignals[i];
-                if (!IsFiniteCarveEvent(in carveEvent))
+                if (!TryResolveCarveDebrisRadius(in carveEvent, out float sourceRadius))
                 {
-                    _jobState[JobStateFlagsIndex] |= (int)InvalidStateFlag;
+                    if (!IsFiniteCarveEvent(in carveEvent) ||
+                        !IsSupportedCarveOperation(carveEvent.Operation) ||
+                        !IsSupportedCarveShape(carveEvent.Shape))
+                    {
+                        _jobState[JobStateFlagsIndex] |= (int)InvalidStateFlag;
+                    }
+
                     continue;
                 }
 
-                float radius = math.max(0.05f, carveEvent.RadiusMeters * spawnRadiusScale);
+                float radius = math.max(MinimumCarveSpawnRadiusMeters, sourceRadius * spawnRadiusScale);
                 float3 runtimeCenter = AbsoluteUniversePosition.FromAbsolutePosition(new double3(
                     carveEvent.AbsoluteHitPoint.x,
                     carveEvent.AbsoluteHitPoint.y,
@@ -486,9 +502,9 @@ namespace Hecton8.VFX.Debris
 
         private void BindSharedComputeParams(float dt, bool lowTier, int activeCapacity, Vector4 drawArgs)
         {
-            Camera camera = ResolveCamera();
+            Camera camera = renderCamera;
             Vector3 cameraPosition = camera != null ? camera.transform.position : Vector3.zero;
-            float renderDistanceSq = renderDistanceMeters > 0f ? renderDistanceMeters * renderDistanceMeters : 0f;
+            float renderDistanceSq = camera != null && renderDistanceMeters > 0f ? renderDistanceMeters * renderDistanceMeters : 0f;
             GraphicsBuffer flowBuffer = ResolveFlowPayload(
                 out Texture flowTexture,
                 out Vector4 gridResolution,
@@ -497,7 +513,7 @@ namespace Hecton8.VFX.Debris
                 out Vector4 flowTextureParams,
                 out float flowTextureActive,
                 out float flowBufferActive);
-            Texture sdfTexture = ResolveSdfTexture(lowTier, out float sdfActive);
+            Texture sdfTexture = ResolveSdfTexture(lowTier, out Matrix4x4 sdfWorldToLocal, out Vector4 sdfInvDoubleHalfExtents, out float sdfActive);
             float flowActive = flowBufferActive > 0.5f || flowTextureActive > 0.5f ? 1f : 0f;
             _lastFlowActive = flowActive > 0.5f;
             _lastSdfActive = sdfActive > 0.5f;
@@ -520,8 +536,8 @@ namespace Hecton8.VFX.Debris
             fluidAdvectionCompute.SetVector(AbyssalFlowSpacingId, flowSpacing);
             fluidAdvectionCompute.SetVector(AbyssalFlowTextureParamsId, flowTextureParams);
             fluidAdvectionCompute.SetFloat(AbyssalFlowTextureActiveId, flowTextureActive);
-            fluidAdvectionCompute.SetMatrix(VoxelSdfWorldToLocalId, voxelSdfWorldToLocal);
-            fluidAdvectionCompute.SetVector(VoxelSdfInvDoubleHalfExtentsId, voxelSdfInvDoubleHalfExtents);
+            fluidAdvectionCompute.SetMatrix(VoxelSdfWorldToLocalId, sdfWorldToLocal);
+            fluidAdvectionCompute.SetVector(VoxelSdfInvDoubleHalfExtentsId, sdfInvDoubleHalfExtents);
             fluidAdvectionCompute.SetVector(FluidAdvectionParamsId, new Vector4(dt, lowTier ? 1f : 0f, flowActive, sdfActive));
             fluidAdvectionCompute.SetVector(FluidAdvectionSdfParamsId, new Vector4(sdfActive, solidDensityThreshold, 0f, 0f));
         }
@@ -590,35 +606,116 @@ namespace Hecton8.VFX.Debris
             if (fluidEngine != null &&
                 fluidEngine.TryGetGpuAbyssalFlowFieldTexture(
                     out Texture publishedFlowTexture,
-                    out _,
+                    out Vector4 publishedTextureResolution,
                     out Vector4 publishedTextureCenter,
                     out Vector4 publishedTextureSpacing))
             {
                 flowTexture = publishedFlowTexture;
                 flowCenter = publishedTextureCenter;
-                flowTextureParams = publishedTextureSpacing;
-                flowTextureActive = 1f;
+                if (TryResolveFlowTextureParams(publishedTextureSpacing, publishedTextureResolution.x, out Vector4 resolvedTextureParams))
+                {
+                    flowTextureParams = resolvedTextureParams;
+                    flowTextureActive = 1f;
+                }
             }
             else if (abyssalFlowTextureOverride != null)
             {
                 flowTexture = abyssalFlowTextureOverride;
                 flowCenter = Shader.GetGlobalVector(AbyssalFlowCenterId);
-                flowTextureParams = Shader.GetGlobalVector(AbyssalFlowTextureParamsId);
-                flowTextureActive = flowTextureParams.w > 0f ? 1f : 0f;
+                Vector4 globalTextureParams = Shader.GetGlobalVector(AbyssalFlowTextureParamsId);
+                if (TryResolveFlowTextureParams(globalTextureParams, globalTextureParams.x, out Vector4 resolvedTextureParams))
+                {
+                    flowTextureParams = resolvedTextureParams;
+                    flowTextureActive = 1f;
+                }
             }
 
             return flowBuffer != null && flowBuffer.IsValid() ? flowBuffer : _emptyFlowBuffer;
         }
 
-        private Texture ResolveSdfTexture(bool lowTier, out float sdfActive)
+        private static bool TryResolveFlowTextureParams(Vector4 sourceParams, float textureResolution, out Vector4 textureParams)
         {
-            bool hasSdf = !lowTier &&
-                          voxelSdfTexture3D != null &&
-                          voxelSdfInvDoubleHalfExtents.x > 0f &&
-                          voxelSdfInvDoubleHalfExtents.y > 0f &&
-                          voxelSdfInvDoubleHalfExtents.z > 0f;
-            sdfActive = hasSdf ? 1f : 0f;
-            return hasSdf ? voxelSdfTexture3D : _emptyTexture3D;
+            float worldSize = sourceParams.z > sourceParams.y && sourceParams.z > 1f ? sourceParams.z : sourceParams.y;
+            if (!math.isfinite(worldSize) || worldSize <= 0.001f)
+            {
+                textureParams = Vector4.zero;
+                return false;
+            }
+
+            float inverseWorldSize = sourceParams.w > 0f && sourceParams.w < 1f
+                ? sourceParams.w
+                : math.rcp(worldSize);
+            float resolution = textureResolution > 0f && math.isfinite(textureResolution) ? textureResolution : sourceParams.x;
+            textureParams = new Vector4(resolution, worldSize, sourceParams.z, inverseWorldSize);
+            return math.isfinite(textureParams.x) &&
+                   math.isfinite(textureParams.y) &&
+                   math.isfinite(textureParams.z) &&
+                   math.isfinite(textureParams.w);
+        }
+
+        private Texture ResolveSdfTexture(bool lowTier, out Matrix4x4 sdfWorldToLocal, out Vector4 sdfInvDoubleHalfExtents, out float sdfActive)
+        {
+            sdfWorldToLocal = Matrix4x4.identity;
+            sdfInvDoubleHalfExtents = Vector4.zero;
+            sdfActive = 0f;
+            if (lowTier)
+                return _emptyTexture3D;
+
+            if (voxelSdfTexture3D != null && IsValidSdfInvDoubleHalfExtents(voxelSdfInvDoubleHalfExtents))
+            {
+                sdfWorldToLocal = voxelSdfWorldToLocal;
+                sdfInvDoubleHalfExtents = voxelSdfInvDoubleHalfExtents;
+                sdfActive = 1f;
+                return voxelSdfTexture3D;
+            }
+
+            RefreshGlobalSdfCacheIfNeeded();
+            if (_cachedGlobalSdfActive > 0.5f && _cachedGlobalSdfTexture != null)
+            {
+                sdfWorldToLocal = _cachedGlobalSdfWorldToLocal;
+                sdfInvDoubleHalfExtents = _cachedGlobalSdfInvDoubleHalfExtents;
+                sdfActive = 1f;
+                return _cachedGlobalSdfTexture;
+            }
+
+            return _emptyTexture3D;
+        }
+
+        private void RefreshGlobalSdfCacheIfNeeded()
+        {
+            int frame = Time.frameCount;
+            if (frame < _nextGlobalSdfRefreshFrame)
+                return;
+
+            _nextGlobalSdfRefreshFrame = frame + GlobalSdfRefreshStrideFrames;
+            Texture sdfTexture = Shader.GetGlobalTexture(HectonCaveVoxelSdfTexId);
+            Vector4 invDoubleHalfExtents = Shader.GetGlobalVector(HectonCaveVoxelInvDoubleHalfExtentsId);
+            bool valid = Shader.GetGlobalFloat(HectonCaveVoxelActiveId) > 0.5f &&
+                         sdfTexture != null &&
+                         IsValidSdfInvDoubleHalfExtents(invDoubleHalfExtents);
+            if (!valid)
+            {
+                _cachedGlobalSdfTexture = null;
+                _cachedGlobalSdfWorldToLocal = Matrix4x4.identity;
+                _cachedGlobalSdfInvDoubleHalfExtents = Vector4.zero;
+                _cachedGlobalSdfActive = 0f;
+                return;
+            }
+
+            _cachedGlobalSdfTexture = sdfTexture;
+            _cachedGlobalSdfWorldToLocal = Shader.GetGlobalMatrix(HectonCaveVoxelWorldToLocalId);
+            _cachedGlobalSdfInvDoubleHalfExtents = invDoubleHalfExtents;
+            _cachedGlobalSdfActive = 1f;
+        }
+
+        private static bool IsValidSdfInvDoubleHalfExtents(Vector4 invDoubleHalfExtents)
+        {
+            return invDoubleHalfExtents.x > 0f &&
+                   invDoubleHalfExtents.y > 0f &&
+                   invDoubleHalfExtents.z > 0f &&
+                   math.isfinite(invDoubleHalfExtents.x) &&
+                   math.isfinite(invDoubleHalfExtents.y) &&
+                   math.isfinite(invDoubleHalfExtents.z);
         }
 
         private static int ResolveActiveCapacity(bool lowTier)
@@ -706,7 +803,7 @@ namespace Hecton8.VFX.Debris
             if (shader == null)
                 return;
 
-            _ownedMaterial = new Material(shader)
+            _ownedMaterial = new Material(shader) // COLD ALLOC: Material[1] — fallback first-party indirect debris material — owner: VFX_SDF_CARVE_DEBRIS
             {
                 name = "Hecton Runtime Carve Debris Material"
             };
@@ -720,18 +817,6 @@ namespace Hecton8.VFX.Debris
                 return _ownedMaterial;
             EnsureFallbackRenderResources();
             return _ownedMaterial;
-        }
-
-        private Camera ResolveCamera()
-        {
-            if (renderCamera != null)
-                return renderCamera;
-            if (_cameraResolveAttempted)
-                return null;
-
-            _cameraResolveAttempted = true;
-            renderCamera = Camera.main;
-            return renderCamera;
         }
 
         private void DrainAupShiftSignals()
@@ -769,21 +854,67 @@ namespace Hecton8.VFX.Debris
 
         private static bool IsFiniteCarveEvent(in VoxelCarveEvent carveEvent)
         {
-            return carveEvent.RadiusMeters > 0f &&
+            return math.all(math.isfinite(carveEvent.AbsoluteHitPoint)) &&
+                   math.all(math.isfinite(carveEvent.AbsoluteSegmentEnd)) &&
+                   math.all(math.isfinite(carveEvent.AbsoluteHalfExtents)) &&
+                   math.all(math.isfinite(carveEvent.AbsoluteImpulseDirection)) &&
                    math.isfinite(carveEvent.RadiusMeters) &&
-                   math.all(math.isfinite(carveEvent.AbsoluteHitPoint));
+                   math.isfinite(carveEvent.BlendStrengthMeters);
+        }
+
+        private static bool IsSupportedCarveOperation(byte operation)
+        {
+            return operation <= (byte)VoxelCarveOperationType.Replace;
+        }
+
+        private static bool IsSupportedCarveShape(byte shape)
+        {
+            return shape <= (byte)VoxelCarveShapeType.Capsule;
+        }
+
+        private static bool TryResolveCarveDebrisRadius(in VoxelCarveEvent carveEvent, out float radius)
+        {
+            radius = 0f;
+            if (!IsFiniteCarveEvent(in carveEvent) ||
+                !IsSupportedCarveOperation(carveEvent.Operation) ||
+                !IsSupportedCarveShape(carveEvent.Shape) ||
+                carveEvent.Operation != (byte)VoxelCarveOperationType.Subtract)
+            {
+                return false;
+            }
+
+            float resolvedRadius = math.max(0f, carveEvent.RadiusMeters);
+            if (carveEvent.Shape == (byte)VoxelCarveShapeType.Box)
+                resolvedRadius = math.max(resolvedRadius, math.cmax(math.abs(carveEvent.AbsoluteHalfExtents)));
+            resolvedRadius = math.max(resolvedRadius, math.max(0f, carveEvent.BlendStrengthMeters));
+            if (resolvedRadius <= 0f)
+                return false;
+
+            radius = resolvedRadius;
+            return true;
         }
 
         private static uint BuildStableSeed(uint frame, in VoxelCarveEvent carveEvent, int eventIndex)
         {
+            uint volumeLo = unchecked((uint)carveEvent.VolumeInstanceId);
+            uint volumeHi = unchecked((uint)(carveEvent.VolumeInstanceId >> 32));
             uint hash = 2166136261u;
             hash = (hash ^ frame) * 16777619u;
             hash = (hash ^ (uint)eventIndex) * 16777619u;
-            hash = (hash ^ (uint)carveEvent.VolumeInstanceId) * 16777619u;
+            hash = (hash ^ volumeLo) * 16777619u;
+            hash = (hash ^ volumeHi) * 16777619u;
             hash = (hash ^ math.asuint(carveEvent.AbsoluteHitPoint.x)) * 16777619u;
             hash = (hash ^ math.asuint(carveEvent.AbsoluteHitPoint.y)) * 16777619u;
             hash = (hash ^ math.asuint(carveEvent.AbsoluteHitPoint.z)) * 16777619u;
             hash = (hash ^ math.asuint(carveEvent.RadiusMeters)) * 16777619u;
+            hash = (hash ^ math.asuint(carveEvent.BlendStrengthMeters)) * 16777619u;
+            hash = (hash ^ math.asuint(carveEvent.AbsoluteHalfExtents.x)) * 16777619u;
+            hash = (hash ^ math.asuint(carveEvent.AbsoluteHalfExtents.y)) * 16777619u;
+            hash = (hash ^ math.asuint(carveEvent.AbsoluteHalfExtents.z)) * 16777619u;
+            hash = (hash ^ carveEvent.Operation) * 16777619u;
+            hash = (hash ^ carveEvent.Shape) * 16777619u;
+            hash = (hash ^ carveEvent.MaterialId) * 16777619u;
+            hash = (hash ^ carveEvent.SourceFlags) * 16777619u;
             return hash == 0u ? 1u : hash;
         }
 
@@ -876,13 +1007,17 @@ namespace Hecton8.VFX.Debris
             _ownedMesh = null;
             _ownedMaterial = null;
             _emptyTexture3D = null;
+            _cachedGlobalSdfTexture = null;
+            _cachedGlobalSdfWorldToLocal = Matrix4x4.identity;
+            _cachedGlobalSdfInvDoubleHalfExtents = Vector4.zero;
+            _cachedGlobalSdfActive = 0f;
+            _nextGlobalSdfRefreshFrame = 0;
             _debrisPositions = default;
             _debrisVelocities = default;
             _gpuReady = false;
             _activeMirrorCount = 0;
             _lastFlowActive = false;
             _lastSdfActive = false;
-            _cameraResolveAttempted = false;
             _materialFallbackAttempted = false;
         }
 
@@ -908,11 +1043,11 @@ namespace Hecton8.VFX.Debris
 
         private static Mesh BuildOctahedronMesh()
         {
-            Mesh mesh = new Mesh
+            Mesh mesh = new Mesh // COLD ALLOC: Mesh[1] — fallback low-poly indirect debris chip mesh — owner: VFX_SDF_CARVE_DEBRIS
             {
                 name = "Hecton Carve Debris Octahedron"
             };
-            Vector3[] vertices =
+            Vector3[] vertices = // COLD ALLOC: Vector3[6] — fallback octahedron vertices — owner: VFX_SDF_CARVE_DEBRIS
             {
                 new Vector3(0f, 1f, 0f),
                 new Vector3(1f, 0f, 0f),
@@ -921,7 +1056,7 @@ namespace Hecton8.VFX.Debris
                 new Vector3(0f, 0f, -1f),
                 new Vector3(0f, -1f, 0f)
             };
-            int[] indices =
+            int[] indices = // COLD ALLOC: int[24] — fallback octahedron index buffer — owner: VFX_SDF_CARVE_DEBRIS
             {
                 0, 2, 1,
                 0, 3, 2,

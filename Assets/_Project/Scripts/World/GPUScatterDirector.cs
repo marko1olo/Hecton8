@@ -317,6 +317,7 @@ namespace Hecton8.World
         private int _scatterTelemetryCursor;
         private bool _scatterTelemetryDumped;
         private Vector2 _scatterAupGenerationOffsetXZ;
+        private double2 _scatterAupGenerationOffsetXZDouble;
         private uint _lastOriginShiftSequence;
         private int _lastResolvedScatterBudget = -1;
 
@@ -443,8 +444,8 @@ namespace Hecton8.World
             float activeCellSizeMeters = ResolveActiveCellSizeMeters(activeScatterRadius);
             float diameter = activeCellSizeMeters * math.max(1, _gridResolution);
             float halfDiameter = diameter * 0.5f;
-            float minX = ResolveAupSnappedAxis(center.x - halfDiameter, _scatterAupGenerationOffsetXZ.x, activeCellSizeMeters);
-            float minZ = ResolveAupSnappedAxis(center.z - halfDiameter, _scatterAupGenerationOffsetXZ.y, activeCellSizeMeters);
+            float minX = ResolveAupSnappedAxis(center.x - halfDiameter, _scatterAupGenerationOffsetXZDouble.x, activeCellSizeMeters);
+            float minZ = ResolveAupSnappedAxis(center.z - halfDiameter, _scatterAupGenerationOffsetXZDouble.y, activeCellSizeMeters);
             Vector4 fieldRect = new Vector4(minX, minZ, diameter, diameter);
             int candidateCount = _gridResolution * _gridResolution;
             int heightResolution = math.max(1, heightPayload.HeightmapResolution);
@@ -858,15 +859,17 @@ namespace Hecton8.World
             return math.max(0.05f, (activeScatterRadius * 2f) * math.rcp(_gridResolution));
         }
 
-        private static float ResolveAupSnappedAxis(float value, float absoluteOffset, float cellSize)
+        private static float ResolveAupSnappedAxis(float value, double absoluteOffset, float cellSize)
         {
-            float safeCellSize = math.max(0.0001f, cellSize);
-            return math.floor((value + absoluteOffset) * math.rcp(safeCellSize)) * safeCellSize - absoluteOffset;
+            double safeCellSize = math.max(0.0001d, cellSize);
+            double snapped = math.floor((value + absoluteOffset) / safeCellSize) * safeCellSize - absoluteOffset;
+            return (float)snapped;
         }
 
         private void RefreshAupGridOffsetFromOrigin()
         {
             double3 currentOffset = HectonFloatingOrigin.CurrentTotalOffsetDouble;
+            _scatterAupGenerationOffsetXZDouble = new double2(currentOffset.x, currentOffset.z);
             _scatterAupGenerationOffsetXZ = new Vector2((float)currentOffset.x, (float)currentOffset.z);
             _lastOriginShiftSequence = HectonFloatingOrigin.CurrentShiftSequence;
             Shader.SetGlobalVector(_ScatterAupGridOffsetId, new Vector4(_scatterAupGenerationOffsetXZ.x, _scatterAupGenerationOffsetXZ.y, _lastOriginShiftSequence, 0f));
@@ -877,6 +880,7 @@ namespace Hecton8.World
             if (!isActiveAndEnabled)
                 return;
 
+            _scatterAupGenerationOffsetXZDouble = new double2(shiftData.NewTotalOffsetDouble.x, shiftData.NewTotalOffsetDouble.z);
             _scatterAupGenerationOffsetXZ = new Vector2((float)shiftData.NewTotalOffsetDouble.x, (float)shiftData.NewTotalOffsetDouble.z);
             _lastOriginShiftSequence = shiftData.Sequence;
             _depthPyramidInvalidatedFrame = shiftData.Frame;

@@ -733,6 +733,7 @@ namespace Hecton8.SaveSystem
     }
 
     [Serializable]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 16)]
     public struct ProceduralFaunaStateDTO
     {
         public long runtimeKey;
@@ -742,6 +743,7 @@ namespace Hecton8.SaveSystem
     }
 
     [Serializable]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 112)]
     public struct HibernatedFaunaStateDTO
     {
         public int speciesId;

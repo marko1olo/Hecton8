@@ -1388,15 +1388,15 @@ namespace Hecton8.Gameplay
 
         private static void PublishMeteorSplashFeedback(Vector3 impactPosition, float radius, float intensity)
         {
-            Vector3 absoluteUniversePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(impactPosition);
+            double3 absoluteUniversePosition = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(impactPosition);
             float clampedIntensity = math.saturate(intensity);
             SplashEvent splashEvent = new SplashEvent
             {
                 RuntimePosition = new float3(impactPosition.x, impactPosition.y, impactPosition.z),
                 AbsoluteUniversePosition = new float3(
-                    absoluteUniversePosition.x,
-                    absoluteUniversePosition.y,
-                    absoluteUniversePosition.z),
+                    (float)absoluteUniversePosition.x,
+                    (float)absoluteUniversePosition.y,
+                    (float)absoluteUniversePosition.z),
                 SurfaceNormal = new float3(0f, 1f, 0f),
                 ImpactSpeedMetersPerSecond = math.lerp(18f, 54f, clampedIntensity),
                 KineticEnergyJoules = radius * radius * math.lerp(480f, 3200f, clampedIntensity),
@@ -1634,7 +1634,11 @@ namespace Hecton8.Gameplay
             }
 
             ApplySeismicImpulse(playerPosition, settings.impulseRadius, settings.impulseMagnitude);
-            Vector3 epicenterAup = HectonFloatingOrigin.ToAbsoluteUniversePosition(playerPosition);
+            double3 epicenterAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(playerPosition);
+            Vector3 epicenterAupVector = new Vector3(
+                (float)epicenterAup.x,
+                (float)epicenterAup.y,
+                (float)epicenterAup.z);
             Vector3 trenchDirection = ResolveSeismicEventLineDirection(epicenterAup, stableSeed);
             float halfTrenchLength = math.max(2f, settings.impulseRadius * 0.5f);
             seismicEvent = new SeismicShockwaveEvent(
@@ -1642,8 +1646,8 @@ namespace Hecton8.Gameplay
                 settings.impulseRadius,
                 settings.impulseMagnitude,
                 appliedStampCount,
-                epicenterAup - trenchDirection * halfTrenchLength,
-                epicenterAup + trenchDirection * halfTrenchLength);
+                epicenterAupVector - trenchDirection * halfTrenchLength,
+                epicenterAupVector + trenchDirection * halfTrenchLength);
             return true;
         }
 
@@ -1657,32 +1661,25 @@ namespace Hecton8.Gameplay
             long timelineSlot = (long)math.floor(universeTime * 2d);
             unchecked
             {
-                uint state = (uint)timelineSlot * 2654435761u;
-                state ^= (uint)aup.GridX * 2246822519u;
-                state ^= (uint)aup.GridY * 3266489917u;
-                state ^= (uint)aup.GridZ * 668265263u;
+                uint state = MixLongIntoSeed(0x9E3779B9u, timelineSlot, 2654435761u);
+                state = MixLongIntoSeed(state, aup.GridX, 2246822519u);
+                state = MixLongIntoSeed(state, aup.GridY, 3266489917u);
+                state = MixLongIntoSeed(state, aup.GridZ, 668265263u);
                 state ^= (uint)(int)math.round(aup.LocalX * 4f) * 374761393u;
                 state ^= (uint)(int)math.round(aup.LocalZ * 4f) * 1274126177u;
                 state ^= (uint)runtimeStamp * 2891336453u;
-                state ^= state >> 16;
-                state *= 2246822519u;
-                state ^= state >> 13;
-                state *= 3266489917u;
-                state ^= state >> 16;
+                state = AvalancheSeed(state);
                 return state != 0u ? state : 0x9E3779B9u;
             }
         }
 
-        private static Vector3 ResolveSeismicEventLineDirection(Vector3 absoluteEpicenter, uint stableSeed)
+        private static Vector3 ResolveSeismicEventLineDirection(double3 absoluteEpicenter, uint stableSeed)
         {
-            uint seedA = unchecked((uint)(int)math.round(absoluteEpicenter.x * 0.25f));
-            uint seedB = unchecked((uint)(int)math.round(absoluteEpicenter.z * 0.25f));
-            uint state = unchecked(seedA * 747796405u + seedB * 2891336453u + stableSeed);
-            state ^= state >> 16;
-            state = unchecked(state * 2246822519u);
-            state ^= state >> 13;
-            state = unchecked(state * 3266489917u);
-            state ^= state >> 16;
+            long seedA = FastRoundToLong(absoluteEpicenter.x * 0.25d);
+            long seedB = FastRoundToLong(absoluteEpicenter.z * 0.25d);
+            uint state = MixLongIntoSeed(stableSeed, seedA, 747796405u);
+            state = MixLongIntoSeed(state, seedB, 2891336453u);
+            state = AvalancheSeed(state);
 
             switch (state & 7u)
             {
@@ -1695,6 +1692,38 @@ namespace Hecton8.Gameplay
                 case 6u: return new Vector3(0f, 0f, -1f);
                 default: return new Vector3(InvSqrtTwo, 0f, -InvSqrtTwo);
             }
+        }
+
+        private static uint MixLongIntoSeed(uint state, long value, uint multiplier)
+        {
+            unchecked
+            {
+                state ^= (uint)value * multiplier;
+                state = AvalancheSeed(state);
+                state ^= (uint)(value >> 32) * (multiplier ^ 0x9E3779B9u);
+                return state;
+            }
+        }
+
+        private static uint AvalancheSeed(uint state)
+        {
+            unchecked
+            {
+                state = state != 0u ? state : 0x9E3779B9u;
+                state ^= state >> 16;
+                state *= 2246822519u;
+                state ^= state >> 13;
+                state *= 3266489917u;
+                state ^= state >> 16;
+                return state != 0u ? state : 0x9E3779B9u;
+            }
+        }
+
+        private static long FastRoundToLong(double value)
+        {
+            return value >= 0d
+                ? (long)math.floor(value + 0.5d)
+                : (long)math.ceil(value - 0.5d);
         }
 
         private void ApplySeismicImpulse(Vector3 epicenter, float radius, float impulseMagnitude)

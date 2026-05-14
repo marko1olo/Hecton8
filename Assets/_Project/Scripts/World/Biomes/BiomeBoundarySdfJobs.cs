@@ -4,6 +4,7 @@ using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
+using Unity.Profiling;
 
 namespace Hecton8.World.Biomes
 {
@@ -12,6 +13,7 @@ namespace Hecton8.World.Biomes
         private const float MinCellSizeMeters = 0.5f;
         private const float MinBlendWidthMeters = 0.01f;
         private const float ExactCenterDistanceSq = 0.0001f;
+        private static readonly ProfilerMarker SampleJobMarker = new ProfilerMarker("H8.World.BiomeBoundarySdf.SampleJob");
 
         [StructLayout(LayoutKind.Sequential)]
         private struct BiomeWeightEntry
@@ -33,12 +35,21 @@ namespace Hecton8.World.Biomes
 
             public void Execute()
             {
+                using var sampleJobScope = SampleJobMarker.Auto();
                 BiomeBoundarySdfResult result = default;
                 int2 resolution = math.max(Settings.Resolution, new int2(1, 1));
-                int expectedLength = resolution.x * resolution.y;
+                long expectedLengthLong = (long)resolution.x * resolution.y;
                 if (!Result.IsCreated || Result.Length == 0)
                     return;
 
+                if (expectedLengthLong > int.MaxValue)
+                {
+                    result.Flags = (byte)BiomeBoundarySdfFlags.InvalidInput;
+                    WriteResult(result);
+                    return;
+                }
+
+                int expectedLength = (int)expectedLengthLong;
                 if (!GlobalBiomeMap.IsCreated || GlobalBiomeMap.Length < expectedLength)
                 {
                     result.Flags = (byte)BiomeBoundarySdfFlags.MissingMap;
@@ -75,16 +86,19 @@ namespace Hecton8.World.Biomes
                 int radius = math.clamp(Settings.SampleRadiusCells, 1, 2);
 
                 FixedList512Bytes<BiomeWeightEntry> weights = default;
-                float nearestBoundaryMeters = DistanceToCellBoundaryMeters(sampleMeters, centerCell, cellSize);
+                float nearestBoundaryMeters = cellSize * (radius + 0.5f);
                 int centerIndex = centerCell.y * resolution.x + centerCell.x;
                 byte centerBiome = GlobalBiomeMap[centerIndex];
+                uint centerHash = BiomeHashMap.IsCreated && BiomeHashMap.Length > centerIndex ? BiomeHashMap[centerIndex] : 0u;
 
-                for (int z = -radius; z <= radius; z++)
+                int minY = math.max(0, centerCell.y - radius);
+                int maxY = math.min(maxCell.y, centerCell.y + radius);
+                int minX = math.max(0, centerCell.x - radius);
+                int maxX = math.min(maxCell.x, centerCell.x + radius);
+                for (int y = minY; y <= maxY; y++)
                 {
-                    int y = math.clamp(centerCell.y + z, 0, maxCell.y);
-                    for (int x = -radius; x <= radius; x++)
+                    for (int cellX = minX; cellX <= maxX; cellX++)
                     {
-                        int cellX = math.clamp(centerCell.x + x, 0, maxCell.x);
                         int index = y * resolution.x + cellX;
                         byte biome = GlobalBiomeMap[index];
                         if (biome == 0)
@@ -106,12 +120,22 @@ namespace Hecton8.World.Biomes
                         float weight = boundaryBoost * math.rcp(distanceSq);
                         AddWeight(ref weights, biome, hash, weight);
 
-                        if (centerBiome != 0 && biome != centerBiome)
+                        if (centerBiome != 0 && !IsSameBiomeKey(centerBiome, centerHash, biome, hash))
                             nearestBoundaryMeters = math.min(nearestBoundaryMeters, boundaryDistance);
                     }
                 }
 
                 ResolveTopTwo(in weights, out BiomeWeightEntry primary, out BiomeWeightEntry secondary);
+                if (primary.Biome == 0)
+                {
+                    result.SampleDiameter = (byte)(radius * 2 + 1);
+                    result.Flags = (byte)(flags | (byte)BiomeBoundarySdfFlags.MissingMap);
+                    result.BoundaryDistanceMeters = math.max(0f, nearestBoundaryMeters);
+                    result.MacroCell = centerCell;
+                    WriteResult(result);
+                    return;
+                }
+
                 float total = primary.Weight + secondary.Weight;
                 float blend01 = total > 0f && secondary.Biome != 0
                     ? math.saturate((secondary.Weight * math.rcp(total)) * 2f)
@@ -190,10 +214,15 @@ namespace Hecton8.World.Biomes
 
         private static bool IsSameBiomeKey(in BiomeWeightEntry entry, byte biome, uint hash)
         {
-            if (entry.Biome != biome)
+            return IsSameBiomeKey(entry.Biome, entry.Hash, biome, hash);
+        }
+
+        private static bool IsSameBiomeKey(byte leftBiome, uint leftHash, byte rightBiome, uint rightHash)
+        {
+            if (leftBiome != rightBiome)
                 return false;
 
-            return hash == 0u || entry.Hash == 0u || entry.Hash == hash;
+            return rightHash == 0u || leftHash == 0u || leftHash == rightHash;
         }
 
         private static float DistanceToCellBoundaryMeters(float2 sampleMeters, int2 cell, float cellSize)

@@ -18,7 +18,7 @@ Purpose: stable index for `Docs/ARCHITECTURE`. These files are long-lived system
 
 2026-05-14 DOC_AUDIT override: `../../Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md`.
 
-The previously cited local compile-only artifact `../../CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.summary.txt` is absent from the current filesystem. Treat the May 11 compile-success claim as dated report text. Current May 14 R41 evidence is external root `Hecton8*.csproj` no-restore CLI compile at `0 Warning(s)` / `0 Error(s)` after restore assets exist, not Unity runtime proof.
+The previously cited local compile-only artifact `../../CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.summary.txt` is absent from the current filesystem. Treat the May 11 compile-success claim as dated report text. Current May 14 R43 evidence is external root `Hecton8*.csproj` no-restore CLI compile at `0 Warning(s)` / `0 Error(s)` after restore assets and referenced `Temp\bin\Debug` DLLs exist, not Unity runtime proof.
 
 Not proven by this folder: Unity import, Unity Console, Play Mode, profiler, GCMonitor, player build, frame-time, memory, scene wiring, and visual quality.
 

@@ -130,12 +130,44 @@ Rejected Alternatives: Keeping `IsApexPredator` as the gate was rejected because
 Scalability potential: Low = only the intended Alpha pays the 10Hz psychological-stalking branch. Middle = other apex predators keep normal utility cadence. High = PresenceCircle Alpha spends saved budget on SDF/fog presentation. Ultra = the same flag can drive extra roar, IK, and fog silhouette overkill without changing generic apex AI.
 Hardware Impact: i3/MX350 avoids unnecessary Alpha telemetry writes and 10Hz SDF/gaze branches for non-Alpha Leviathans; expected gain scales with non-Alpha apex count, static estimate ~0.05-0.12 us avoided per non-Alpha apex slow eval plus no false roar/stress queue write.
 
+## Decision 17
+
+Problem: Alpha telemetry could resolve a default `PlayerTargetAup` when no player/acoustic target was present, creating finite but misleading postmortem samples with a fake far-away player.
+Solution: When `HasPlayerTarget` is absent, keep the telemetry target position equal to the Alpha position, store `DistanceToPlayerMeters = 0`, and set local telemetry bit 5 as `AlphaLeviathanTelemetryNoPlayerTarget`.
+Rejected Alternatives: Adding a new public `AlphaLeviathanTelemetryFlags.NoPlayerTarget` contract bit was rejected because the generated `Hecton8.AI.Cognition` project can be stale outside Unity and previously hid new contract members from `Hecton8.Core.csproj`. Resolving default AUP was rejected because it corrupts black-box evidence.
+Scalability potential: Low/Middle/High/Ultra all get cleaner dumps without extra memory. High-end telemetry tooling can decode bit 5 as no-target while the 64-byte layout stays stable.
+Hardware Impact: Replaces one default-AUP conversion with a branch and local assignment for no-target Alpha samples; static estimate saves the double3 conversion path on those samples and stays 0 B/frame.
+
+## Decision 18
+
+Problem: Mixed legacy species-profile Leviathans with a non-Leviathan archetype could still opt into Alpha cognition through broad `useLeviathanPresence`, even when the encounter type was not `PresenceCircle`.
+Solution: Tighten `ShouldUseAlphaLeviathanCognition()` so the mixed legacy branch requires `useFeintRush` or `useLeviathanPresence && LeviathanEncounterType.PresenceCircle`.
+Rejected Alternatives: Keeping broad `useLeviathanPresence` was rejected because AmbushBurst/SentinelPressure-style legacy hybrids would inherit first-hour fog stalking and false-charge stress. Removing the species-profile fallback entirely was rejected because legacy Alpha content still needs a migration bridge.
+Scalability potential: Low = fewer accidental 10Hz Alpha evaluations on cheap devices. Middle = non-Alpha Leviathans keep their normal cadence. High = only PresenceCircle/feint encounters spend budget on SDF fog dive. Ultra = overkill presentation remains bound to the authored Alpha gate.
+Hardware Impact: i3/MX350 avoids unnecessary Alpha phase telemetry, gaze/SDF checks, and false-charge queue writes for misconfigured legacy hybrids; static estimate remains ~0.05-0.12 us avoided per non-Alpha apex slow eval, 0 B/frame.
+
+## Decision 19
+
+Problem: Sixth-pass verification exposed a shared compile wall: `GlobalSignals.cs` referenced `ScanLogChangedSignal`, and the struct existed in the same file, but the `Hecton8.Core` namespace block lacked the explicit alias pattern used by other signal types.
+Solution: Add `using ScanLogChangedSignal = Hecton8.Core.Signals.ScanLogChangedSignal;` beside the existing signal aliases.
+Rejected Alternatives: Moving the struct, duplicating the signal, or rewriting PDA/scan-log consumers was rejected because that would cross unrelated ownership and add behavior churn. Reverting another agent's scan-log signal work was rejected because the signal is already wired by consumers.
+Scalability potential: No runtime behavior change. The shared signal lane remains typed and NativeQueue-backed; the fix only restores compiler name resolution.
+Hardware Impact: Alias-only compile fix, 0 us runtime and 0 B/frame.
+
+## Decision 20
+
+Problem: Alpha phase state could become stale when stalking was interrupted by losing the player/acoustic target or by rival apex visibility. On reacquire, an old Circling/FalseCharge phase age could trigger an immediate or incoherent false-charge beat.
+Solution: Add `ResetAlphaLeviathanInterruptedPhase(slot, currentTime)` in the Burst predator evaluation path and call it whenever `UseAlphaLeviathanCognition` is set but the Alpha override is interrupted. The reset keeps the slot in Hidden and refreshes `StalkingPhaseStartTimes` during interruption.
+Rejected Alternatives: Preserving stale phase was rejected because it lets old timing leak across target loss. Resetting only telemetry was rejected because movement authority would still resume from old state. Allocating another interruption timer lane was rejected because the existing phase timestamp lane is enough.
+Scalability potential: Low = reacquire restarts with the cheap Hidden radial fake. Middle = clean fog-ring re-entry. High = SDF dive can sell the reacquire. Ultra = presentation can layer over a deterministic hidden restart instead of masking stale charge timing.
+Hardware Impact: One byte write and one float write on interrupted Alpha slow evaluations only; static estimate <0.01 us per interrupted Alpha 10Hz eval on i3/MX350, 0 B/frame.
+
 ## OMEGA POLISH CHANGES
 
 Problem: Anti-bloat audit required proof that stalking math did not become an honest simulation.
 Solution: Kept the fog orbit as a visual fake: tangent vector + small radial correction, not a physical pursuit solver. Kept dive as SDF-biased direction fake, not pathfinding. Kept false charge as Feint with damage flag stripped.
 Rejected Alternatives: 3D spline orbit, NavMesh path, real collision attack, and per-frame roar/logging were rejected as bloat.
-Scalability potential: Low = radial flee + dominant-axis approximation. Middle = fog-ring tangent. High = SDF-biased dive. Ultra = same authority plus visual/audio overkill. Non-Alpha apex encounters no longer inherit Alpha overkill work.
+Scalability potential: Low = radial flee + dominant-axis approximation. Middle = fog-ring tangent. High = SDF-biased dive. Ultra = same authority plus visual/audio overkill. Non-Alpha apex encounters and mixed legacy non-PresenceCircle hybrids no longer inherit Alpha overkill work; no-target telemetry remains cheap and readable.
 Hardware Impact: Source proof indicates 0 B/frame in Alpha hot path; fixed telemetry cost is 19.2 KB only for active Alpha telemetry. Static math estimate remains under 0.1 us per active Alpha slow-tick branch on i3/MX350-class hardware.
 
 Cinematic Cheats used:
@@ -152,6 +184,7 @@ Final Git Diff:
 - `Assets/_Project/Scripts/Fauna/FaunaBrain.Compatibility.cs`
 - `Assets/_Project/Scripts/Fauna/FaunaBrain.cs`
 - `Assets/_Project/Scripts/Hecton8.Core.asmdef`
+- `Docs/AgentLogs/LOG_ALPHA_LEVIATHAN_COGNITION.md`
 - `Docs/Tasks/Status_ALPHA_LEVIATHAN_COGNITION.md`
 - `Docs/AgentLogs/Rationale_ALPHA_LEVIATHAN_COGNITION.md`
 
@@ -160,6 +193,9 @@ Verification:
 - Second-pass `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false` failed behind 127 global generated/cross-asmdef reference errors, including stale project generation for `Hecton8.AI.Cognition`.
 - Third-pass `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false` failed behind 132 generated/cross-asmdef reference errors. The Alpha-facing compiler line remains stale generated project visibility for `AlphaLeviathanTelemetryEntry`; no new local syntax error was isolated before the reference wall.
 - Fourth-pass `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false` first failed on a generated `Hecton8.World.Contracts.dll` file lock from another process; serialized `dotnet build Hecton8.Core.csproj --no-restore -m:1 /nr:false /clp:ErrorsOnly` succeeded with 0 errors.
+- Fifth-pass `dotnet build Hecton8.Core.csproj --no-restore -m:1 /nr:false /clp:ErrorsOnly` succeeded with 0 errors after the no-target telemetry hardening.
+- Sixth-pass `dotnet build Hecton8.Core.csproj --no-restore -m:1 /nr:false /clp:ErrorsOnly` initially failed on missing `ScanLogChangedSignal` name resolution in shared `GlobalSignals.cs`; after adding the explicit alias, the same command succeeded with 0 errors. A later contention retry returned exit 1 with no diagnostics while Unity/Roslyn and another build were active; after those processes cleared, the same serialized command succeeded again with 0 errors in 2.51s.
+- Seventh-pass `dotnet build Hecton8.Core.csproj --no-restore -m:1 /nr:false /clp:ErrorsOnly` first failed on missing generated `Temp/bin/Debug` dependencies during Unity/Roslyn churn; after the generated DLLs repopulated, the same command succeeded with 0 errors in 1:41.69.
 - Unity MCP refresh timed out after 60s; console was unavailable because no Unity session was attached.
 - Second-pass Unity MCP refresh and console read failed at transport level: HTTP request to `127.0.0.1:8088/mcp` could not be sent.
 - Third-pass Unity MCP refresh and console read failed at the same `127.0.0.1:8088/mcp` transport.
@@ -167,3 +203,6 @@ Verification:
 - Second-pass static scans found no remaining `PositionAup.ToRuntimeFloat3()` call in `FaunaBrain.Compatibility.cs`; acoustic AUP now uses the explicit captured origin.
 - Third-pass static scans found no `math.sqrt`, `math.normalize`, `.normalized`, `Mathf.Sqrt`, or `math.length(...)` in the Alpha-scoped files.
 - Fourth-pass static scans confirmed Alpha behavior is gated by `UseAlphaLeviathanCognition`, with generic `IsApexPredator` retained for non-Alpha apex systems only. Allocation scan found no new managed collection/LINQ path in the Alpha hot branch.
+- Fifth-pass static scans found no new managed collection/LINQ path, no `math.sqrt`, no `math.normalize`, no `.normalized`, and no `math.length(...)` in the Alpha-scoped hot path. `git diff --check` reported only LF-to-CRLF warnings.
+- Sixth-pass scan confirmed the mixed legacy species-profile branch now requires `useFeintRush` or `useLeviathanPresence + PresenceCircle`; `git diff --check` reported only LF-to-CRLF warnings.
+- Seventh-pass static scan confirmed `ResetAlphaLeviathanInterruptedPhase` adds no managed allocations, LINQ, sqrt, normalize, or length calls in the Alpha hot path.

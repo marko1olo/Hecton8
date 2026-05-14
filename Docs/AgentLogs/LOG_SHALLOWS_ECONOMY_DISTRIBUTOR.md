@@ -42,3 +42,67 @@ Verification:
 - Unity MCP refresh failed because the local MCP endpoint at `127.0.0.1:8088` was unavailable.
 - Standalone compiler validation could not load Unity's Roslyn dependency `System.Text.Encoding.CodePages`.
 - `git diff --check` passed for edited files.
+
+## 2026-05-14 - Ore Economy Post-Pass Hardening
+
+Status: PENDING VERIFICATION
+
+What was wrong:
+- GPR persistent ping compaction decayed `GprSignalStrength` in-place. That made ore filter changes operate on already-eroded signal data instead of stable raw ping strength.
+- Same-object ore read-model discovery used `GetComponents<MonoBehaviour>()`, which allocates a managed array during cold dependency probing.
+- Ore blackbox dump path still used `Dump_WORLD_RESOURCE_SPAWNER.bin`, not the mandated `Dump_SHALLOWS_ECONOMY_DISTRIBUTOR.bin`.
+- `Docs/Tasks/CURRENT_BATCH.md` no longer contains this agent id, so the required periodic prompt re-extraction is now blocked by batch hygiene drift.
+
+What was done:
+- Preserved raw signal strength in `GprSignalStrength`; decay and 0.1 non-match filtering now write only the GPU/display payload.
+- Recomputed highest GPR signal from active display values every job instead of carrying stale previous max.
+- Replaced cold `GetComponents<MonoBehaviour>()` array allocation with a bounded `List<MonoBehaviour>` probe and explicit clear.
+- Renamed ore telemetry dump target to `Dump_SHALLOWS_ECONOMY_DISTRIBUTOR.bin`.
+- Revalidated affected assemblies with Unity Bee response files: `Hecton8.World.GPR`, `Hecton8.World.Economy`, and `Hecton8.Core`.
+
+Cinematic cheats used:
+- Display-side GPR filtering remains a cheap alpha/strength attenuation, not a radar rebuild.
+- Raw/display split buys higher-tier GPR visual richness without changing ore authority or generation cadence.
+
+Exact microseconds saved / cost avoided:
+- Avoided one cold managed component array allocation during GPR dependency discovery; exact allocation size depends on same-object component count.
+- Avoided filter-change radar rebuilds entirely; estimated 5-50 us per filter change depending on active ping count.
+- Added display max recompute inside existing compaction loop; expected cost under 0.005 ms on i3/MX350 at 128 pings.
+
+Verification:
+- `dotnet build Hecton8.World.Contracts.csproj -v:minimal /m:1` passed with 0 warnings and 0 errors.
+- `dotnet build Hecton8.Core.csproj -v:minimal /m:1` passed with 0 warnings and 0 errors.
+- Unity Bee response-file csc validation passed for `Hecton8.World.GPR`, `Hecton8.World.Economy`, and `Hecton8.Core`.
+- `git diff --check` passed for edited files, with line-ending warnings only.
+- Unity Editor console, PlayMode, GCMonitor, profiler, and scene wiring are not verified in this session.
+
+## 2026-05-14 - Real Drop-Pod Anchor Regeneration
+
+Status: PENDING VERIFICATION
+
+What was wrong:
+- A sector could generate from the fallback player AUP before the real `DropPodLandedSignal` arrived.
+- Once the real signal arrived, the stored anchor updated, but the active sector was not regenerated, so first-hour ore weights could remain player-anchored.
+- `IGroundRadarService` did not explicitly state that `GprSignalStrengthReadOnly` is raw while the GPU ping buffer is display-filtered.
+
+What was done:
+- Added a drop-pod anchor dirty bit to `ProceduralOreSpawner`.
+- First real drop-pod AUP, or any later changed drop-pod AUP, now forces the current sector to regenerate against the real crash-site anchor.
+- Existing depletion masks are reloaded, not wiped, so mined ore stays depleted across anchor refresh.
+- Added public XML comments clarifying raw GPR lanes, display-ready GPU pings, ore filter ids, scan windows, and ore type constants.
+
+Cinematic cheats used:
+- Anchor refresh is a cold-sector reroll, not a continuous economy simulation.
+- Depletion masks remain authoritative, avoiding expensive reconciliation passes or per-node object state.
+
+Exact microseconds saved / cost avoided:
+- Rejected immediate signal-drain regeneration: avoids scheduling work from LateFrame and keeps cadence controlled by sector refresh.
+- Rejected depletion wipe/rebuild: avoids full authoritative node reconciliation and prevents mined ore resurrection.
+- Added cost is one cold boolean branch plus exact AUP field comparisons only when drop-pod signals exist; 0 B/frame hot path.
+
+Verification:
+- `dotnet build Hecton8.World.Contracts.csproj -v:minimal /m:1` passed with 0 warnings and 0 errors.
+- `dotnet build Hecton8.Core.csproj -v:minimal /m:1` passed with 0 warnings and 0 errors.
+- Unity Bee response-file csc validation passed for `Hecton8.World.Contracts`, `Hecton8.World.GPR`, `Hecton8.World.Economy`, and `Hecton8.Core`.
+- Scoped forbidden-pattern scan over edited ore/GPR files returned `NO_MATCHES`.
+- Unity Editor console, PlayMode, GCMonitor, profiler, and scene wiring are not verified in this session.

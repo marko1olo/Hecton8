@@ -217,3 +217,16 @@ None. This is API hygiene and deterministic identity cleanup.
 
 Exact Microseconds saved:
 0 us added in steady gameplay. Cold bootstrap lookup only. Active pickup refresh keeps one scalar entity-id conversion per pickup and no GC. External editor/package noise remains classified separately: licensing token refresh, headless shortcut `GetVirtualKey`, package/native extension probes, invalid package test assemblies, and MCP shutdown when port 8088 is closed.
+
+## 2026-05-14 - Surface Readability Camera Clamp
+What was wrong:
+`HectonUnderwaterVisuals` already had readable surface floors in its main tick path, but `EnforceFogState()` could overwrite the above-water camera with raw celestial fog color and raw fog density. That is a direct path for the surface to become dark green/noir again even after the readability floor runs.
+
+What was done:
+Changed above-water camera enforcement to use `ResolveSurfaceFogColor()` and `ResolveSurfaceFogDensity()` instead of raw celestial values. Changed `ResolveSurfaceFogDensity()` so celestial, weather, and authored surface fog all pass through `ResolveReadableSurfaceFogDensity()`. Verified with temp-output Roslyn for `Hecton8.Core.rsp` and fresh Unity batchmode `Logs/Codex_UI_DIEGETIC_INPUT_CompileCheck_20260514_075500.log`.
+
+Cinematic Cheats used:
+Scalar readability clamp in the camera fog path; no new lights, no new render pass, no exposure pump.
+
+Exact Microseconds saved:
+0 us meaningful cost. The camera path pays two resolver calls and one scalar clamp; saved budget stays available for actual water/sky visuals. Final batch grep count for project C#/Burst/shader failures is 0.

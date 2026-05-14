@@ -108,3 +108,67 @@ Verification:
 - Unity MCP console/profiler: unavailable from this session.
 
 Status: PENDING VERIFICATION. Outpost source and assembly proof pass; full runtime proof is blocked by Unity access and unrelated Core compile drift.
+
+## 2026-05-14 - WFC Outpost Loop 8 Robustness
+
+What was wrong:
+- `CURRENT_BATCH.md` no longer contains this agent XML tag; the moving batch file cannot be cited as current prompt proof.
+- Sector hydration provided only a sector hash, so generation origin was implicitly tied to the service transform.
+- Getter contracts exposed native buffers based on allocation/matrix count rather than completed generation state.
+- Solve-phase AUP shifts changed origin without recording the shift frame in blackbox telemetry.
+
+What was done:
+- Recorded the missing live XML tag in status and continued from disk-backed `Status`/`Rationale` assignment memory.
+- Added `outpostOriginOverride` and `localOriginOffsetMeters`, with finite clamps, to control WFC origin without changing Core signals.
+- Required `_generated` for shell matrix and graphics-buffer getters; clamped WFC cell count to the native buffer length.
+- Updated solve-phase AUP path to write `_lastShiftFrameId`, telemetry, and snapshot without forcing job completion.
+- Re-ran targeted response-file compiles and static audits. `Hecton8.World.Outposts` passes. Core and dependency targets pass on targeted rerun. Runtime proof remains pending because Unity console/profiler transport is unavailable.
+
+Cinematic Cheats used:
+- Placement remains authored cold data, not runtime physics/search.
+- AUP remains a matrix/origin offset, not scene hierarchy rebasing.
+- Getter failure remains branchable zero-GC data flow, not exception/log spam.
+
+Exact Microseconds saved:
+- Origin anchor: 0 us/frame; below 1 us per generation request.
+- Getter hardening: below 0.2 us per query, avoids estimated 1-5 us failed consumer scans on stale data.
+- Solve-phase AUP telemetry: rare shift path cost 0.5-2 us, prevents blackbox evidence loss.
+- No new shell GameObjects, no managed WFC arrays, no hot-path allocations.
+
+Status: PENDING VERIFICATION. Source compile and static audits pass; runtime scene/profiler proof is unavailable from this session.
+
+## 2026-05-14 - WFC Outpost Loop 9 Publish Retry
+
+What was wrong:
+- Registry publish failure could leave a generated shell with no power-grid handle, while same-sector/same-seed requests returned as if the handoff was complete.
+- Telemetry ring writes used `%` on every Tick even though the blackbox has a fixed 300-frame capacity.
+- Descriptor/signal flags could be read from a stale snapshot after publish-order refactoring.
+
+What was done:
+- Same-sector/same-seed generation requests retry grid publish when `_publishedPowerGridHandle == 0`.
+- Sector hydration only exits early when the outpost is generated and has a live grid handle.
+- Publish failure now leaves `LatestSnapshot.State` as `Faulted`, writes telemetry, and dumps the blackbox, while keeping native shell data available for cheap retry.
+- `WriteTelemetry` now uses branch wrapping instead of modulo.
+- Descriptor and generated-signal flags now derive from `ResolveDescriptorFlags`.
+
+Cinematic Cheats used:
+- Retry reuses the solved native byte grid instead of re-running WFC.
+- Failure state is metadata/blackbox, not a physical teardown of the rendered shell.
+- The 300-frame blackbox remains fixed-size and cache-predictable.
+
+Exact Microseconds saved:
+- Publish retry: avoids estimated 20-250 us re-solve/extraction retry depending tier.
+- Telemetry ring: removes non-power-of-two modulo from hot Tick path, estimated 0.1-0.8 us/frame on i3/MX350 class CPUs.
+- Descriptor flags: cold correctness fix, 0 us/frame.
+
+Verification:
+- `Hecton8.Logistics.Grid.Contracts` response-file compile: PASS.
+- `Hecton8.Logistics.Grid` response-file compile: PASS.
+- `Hecton8.World.Contracts` response-file compile: PASS.
+- `Hecton8.Core.Memory` response-file compile: PASS.
+- `Hecton8.Core` response-file compile: initial `CS2012` artifact lock, targeted retry PASS.
+- `Hecton8.World.Outposts` response-file compile: PASS.
+- Scoped forbidden construct audit: PASS; no managed LINQ/random, shell `Instantiate`, `BaseGenerator`, `pow`, `/255`, `/65535`, or telemetry modulo hit in owned paths.
+- `git diff --check`: PASS with repository LF/CRLF warnings only.
+
+Status: PENDING VERIFICATION. Source compile and static audits pass; runtime scene/profiler proof is still unavailable from this session.

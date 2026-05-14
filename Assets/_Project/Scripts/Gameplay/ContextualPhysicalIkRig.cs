@@ -642,6 +642,8 @@ namespace Hecton8.Gameplay
         private const float ExternalWallHandHoldSeconds = 0.12f;
         private const float ExternalSqueezePoleHoldSeconds = 0.18f;
         private const float ExternalSqueezePoleLocalMeters = 0.075f;
+        private const float MaxAcceptedOriginShiftMeters = 10000.0f;
+        private const float MaxAcceptedOriginShiftMetersSq = MaxAcceptedOriginShiftMeters * MaxAcceptedOriginShiftMeters;
         private const string NativeMemoryOwner = nameof(ContextualPhysicalIkRig);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
         private static readonly float3 HeadToChestSocketLocalOffset = new float3(0.0f, -0.32f, -0.08f);
@@ -1180,10 +1182,18 @@ namespace Hecton8.Gameplay
             _terminalRightHandSourceId = target.SourceId;
             _terminalRightHandPosition = target.WorldPosition;
             _terminalRightHandNormal = target.WorldRotation * Vector3.up;
-            if (!IsFiniteVector(_terminalRightHandNormal) || _terminalRightHandNormal.sqrMagnitude <= 0.0001f)
+            float3 terminalNormal = ContextualPhysicalIkMath.ToFloat3(_terminalRightHandNormal);
+            float terminalNormalLengthSq = math.lengthsq(terminalNormal);
+            if (!math.all(math.isfinite(terminalNormal)) ||
+                !math.isfinite(terminalNormalLengthSq) ||
+                terminalNormalLengthSq <= 0.0001f)
+            {
                 _terminalRightHandNormal = Vector3.up;
+            }
             else
+            {
                 _terminalRightHandNormal = NormalizeVectorNoSqrt(_terminalRightHandNormal, Vector3.up);
+            }
 
             _terminalRightHandHoldTimer = math.max(0.0f, target.HoldSeconds);
             _terminalRightHandTargetBlend = math.saturate(target.Blend);
@@ -2504,10 +2514,17 @@ namespace Hecton8.Gameplay
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
             Vector3 shiftOffset = shiftData.ShiftOffset;
-            if (shiftOffset.sqrMagnitude <= 0.000001f)
+            float3 offset = new float3(shiftOffset.x, shiftOffset.y, shiftOffset.z);
+            if (!math.all(math.isfinite(offset)))
                 return;
 
-            float3 offset = new float3(shiftOffset.x, shiftOffset.y, shiftOffset.z);
+            float shiftDistanceSq = math.lengthsq(offset);
+            if (!math.isfinite(shiftDistanceSq) || shiftDistanceSq > MaxAcceptedOriginShiftMetersSq)
+                return;
+
+            if (shiftDistanceSq <= 0.000001f)
+                return;
+
             RebaseWorldSpaceFloat3Array(_spineTargets, offset);
             RebaseAppendageTargets(_appendageTargets, offset);
             RebaseSecondaryStates(_secondaryStates, offset);
@@ -2931,12 +2948,28 @@ namespace Hecton8.Gameplay
             if (parent == null || source == null)
                 return new float3(0.0f, 0.0f, 0.25f);
 
-            Quaternion inverseParentRotation = Quaternion.Inverse(parent.rotation);
-            Vector3 localOffset = inverseParentRotation * (source.position - parent.position);
-            if (localOffset.sqrMagnitude <= 0.0001f)
-                localOffset = new Vector3(0.0f, 0.0f, 0.25f);
+            Vector3 parentPosition = parent.position;
+            Vector3 sourcePosition = source.position;
+            Quaternion parentRotation = parent.rotation;
+            if (!IsFiniteVector(parentPosition) ||
+                !IsFiniteVector(sourcePosition) ||
+                !IsFiniteQuaternion(parentRotation))
+            {
+                return new float3(0.0f, 0.0f, 0.25f);
+            }
 
-            return ContextualPhysicalIkMath.ToFloat3(localOffset);
+            Quaternion inverseParentRotation = Quaternion.Inverse(parentRotation);
+            Vector3 localOffset = inverseParentRotation * (sourcePosition - parentPosition);
+            float3 localOffsetFloat3 = ContextualPhysicalIkMath.ToFloat3(localOffset);
+            float localOffsetLengthSq = math.lengthsq(localOffsetFloat3);
+            if (!math.all(math.isfinite(localOffsetFloat3)) ||
+                !math.isfinite(localOffsetLengthSq) ||
+                localOffsetLengthSq <= 0.0001f)
+            {
+                return new float3(0.0f, 0.0f, 0.25f);
+            }
+
+            return localOffsetFloat3;
         }
     }
 }

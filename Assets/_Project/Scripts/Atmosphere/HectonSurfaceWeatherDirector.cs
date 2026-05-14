@@ -765,7 +765,7 @@ namespace Hecton8.Atmosphere
         private SurfaceWeatherJobInput BuildWeatherJobInput(float deltaTime)
         {
             Vector3 followPosition = ResolveFollowPosition();
-            Vector3 absoluteOffset = HectonFloatingOrigin.CurrentTotalOffset;
+            var absoluteOffset = HectonFloatingOrigin.CurrentTotalOffsetDouble;
             return new SurfaceWeatherJobInput
             {
                 currentState = ToMathState(_currentState),
@@ -790,7 +790,7 @@ namespace Hecton8.Atmosphere
                 stormInterferencePulseIntervalMin = stormInterferencePulseIntervalMin,
                 stormInterferencePulseIntervalMax = stormInterferencePulseIntervalMax,
                 followPosition = ToFloat3(followPosition),
-                absoluteUniverseOffset = new double3(absoluteOffset.x, absoluteOffset.y, absoluteOffset.z),
+                absoluteUniverseOffset = absoluteOffset,
                 surfaceY = ResolveSurfaceY(followPosition),
                 randomState = _rngState,
                 defaultFoamStrength = _oceanSurfaceDefaults.FoamStrength,

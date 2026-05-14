@@ -117,4 +117,48 @@ Hardware Impact: Hot-path cost is 0 us. Lifecycle stalls are bounded to one alre
 Scoped compile evidence:
 - Command: Unity 6000.4.1f1 Roslyn `csc.dll` with `Library/Bee/artifacts/1300b0aEDbg.dag/Hecton8.Animation.IK.rsp` and `.rsp2`.
 - Result: exit 0 after adding `TailWhipDurationSeconds`.
-- Boundary: validates `Hecton8.Animation.IK` only; `FaunaKinematicsRuntime` remains blocked behind the red `Hecton8.Core` assembly.
+- Boundary: validates `Hecton8.Animation.IK` only; Loop 9 records the later scoped `Hecton8.Core` response-file pass for `FaunaKinematicsRuntime`.
+
+## Decision 9: Native Ownership And Material Gate Hygiene
+
+Problem: The internal `TryGetLeviathanBones` API could expose `_leviathanBones` while `LeviathanTerrainIkJob` was scheduled, allowing a reader to touch a writer-owned native array. Material rebinding could also leave the old material with `_H8LeviathanGpuSkinning` still enabled, and repeated cold disposal could drop an older `_disposeHandle`.
+Solution: Gate `TryGetLeviathanBones` on `_solverScheduled` and `_disposed`, clamp exported counts to the backing array length, clear old/new material GPU gates during `BindSkinningMaterial`, clear global tier/segment-length state on teardown, and chain `DisposePersistentBuffers` from the previous `_disposeHandle` plus the active job dependency.
+Rejected Alternatives: Forcing completion inside `TryGetLeviathanBones` was rejected because an accessor should not create a hidden main-thread stall. Leaving stale material state was rejected because serialized material overrides can outlive the runtime owner. Disposing each array from only the current dependency was rejected because a previous deferred dispose handle can still be live during cold reallocation paths.
+Scalability potential: Low/MX350 keeps the same eight-segment path with safer ownership boundaries. Middle/High/Ultra can share the graphics buffer or material without stale gates leaking across presentation owners. No hot-path math cost was added.
+Hardware Impact: Hot-path cost is 0 us. Cold-path cost is a few material float writes and job-handle combines during bind/teardown only. The avoided failure is a native safety race or stale GPU deformation, not measurable frame-time savings.
+
+Prompt re-extraction note:
+- `Docs/Tasks/CURRENT_BATCH.md` no longer contains `<AGENT_PROMPT id="LEVIATHAN_KINEMATICS_SOLVER">`; CLI extraction returned `Prompt block not found` on 2026-05-14T16:37+04:00.
+- Existing status/rationale files remain the assignment authority for this continuation. Neighboring current-batch prompts were ignored.
+
+Scoped compile evidence:
+- Command: Unity 6000.4.1f1 Roslyn `csc.dll` with `Library/Bee/artifacts/1300b0aEDbg.dag/Hecton8.Core.rsp` and `.rsp2`.
+- Result: exit 0 after ownership/material/disposal hygiene changes.
+- Boundary: validates current `FaunaKinematicsRuntime` syntax/type surface against the saved Unity response file. It is not an in-editor shader import, play-mode, or profiler validation.
+
+## Decision 10: Origin Shift GPU Publication
+
+Problem: A queued AUP origin shift rebased `_segmentPositions`, `_previousSegmentPositions`, and `_leviathanBones`, but `LateFrameTick` returned before uploading the rebased matrices. The shader could therefore sample pre-shift bones for one visual frame.
+Solution: When no solver is scheduled, upload immediately after a pending rebase. When a scheduled solver completes, apply the pending rebase and continue through telemetry and `UploadBonesToGpu()` instead of returning early.
+Rejected Alternatives: Waiting for the next solved frame was rejected because an origin shift is a visible camera-space discontinuity and one stale GPU frame can produce a large-body pop. Forcing a new solve only for the shift was rejected because rebasing the existing matrices is enough.
+Scalability potential: Low/MX350 and Ultra use the same cold origin-shift correction. The only extra upload happens on a shift frame, not every frame, so the high-tier visual path stays intact without penalizing low tier.
+Hardware Impact: Hot-path cost is 0 us. Shift-frame cost is one existing 20-matrix GPU upload, estimated 3-10 us unmeasured, paid only when an AUP shift occurs. The avoided cost is a visible Leviathan snap.
+
+Scoped compile evidence:
+- First command: Unity 6000.4.1f1 Roslyn `csc.dll` with `Library/Bee/artifacts/1300b0aEDbg.dag/Hecton8.Core.rsp` and `.rsp2`; timed out at 120 seconds without compiler output.
+- Rerun command: same response files with a 240-second timeout.
+- Result: exit 0 after origin-shift GPU publication change.
+- Boundary: validates current `FaunaKinematicsRuntime` syntax/type surface against the saved Unity response file. It is not an in-editor shader import, play-mode, or profiler validation.
+
+## Decision 11: No-Consumer GPU Upload Gate
+
+Problem: `UploadBonesToGpu()` always ensured double graphics buffers and attempted upload work even when `_skinningMaterial` was null and `_publishGlobalBoneBuffer` was false. That made the disabled-consumer configuration pay cold allocation and upload maintenance for no visible output.
+Solution: Return before `EnsureGraphicsBuffers()` when there is no material consumer and global publishing is disabled.
+Rejected Alternatives: Keeping the buffers warm was rejected because a no-consumer path should be genuinely zero GPU work. Releasing buffers every time publishing is disabled was rejected because toggling the option at runtime would add churn; the existing disable/dispose release path is enough.
+Scalability potential: Low devices can disable global publication and avoid all Leviathan bone upload work when no renderer consumes it. High/Ultra paths remain unchanged when a material or global shader consumer exists.
+Hardware Impact: Hot path saves one graphics-buffer validity path and one 20-matrix upload in the no-consumer configuration, estimated 3-10 us/frame unmeasured. Default global-publish behavior is unchanged.
+
+Scoped compile evidence:
+- Command: Unity 6000.4.1f1 Roslyn `csc.dll` with `Library/Bee/artifacts/1300b0aEDbg.dag/Hecton8.Core.rsp` and `.rsp2`.
+- Result: exit 0 after no-consumer GPU upload gate.
+- Boundary: validates current `FaunaKinematicsRuntime` syntax/type surface against the saved Unity response file. It is not an in-editor shader import, play-mode, or profiler validation.

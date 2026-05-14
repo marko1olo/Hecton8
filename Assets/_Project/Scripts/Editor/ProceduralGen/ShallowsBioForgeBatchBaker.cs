@@ -67,12 +67,14 @@ namespace Hecton8.Editor.ProceduralGen
             Texture matCap = AssetDatabase.LoadAssetAtPath<Texture2D>(MatCapPath);
 
             int failures = 0;
+            ValidateRequiredFolders(ref failures);
             if (material == null || albedo == null || normal == null || orm == null || matCap == null)
             {
                 failures++;
                 Debug.LogError("[ShallowsBioForgeBatchBaker] Missing shared material or atlas texture dependency.");
             }
 
+            ValidateRuleAssets(material, ref failures);
             ValidateSharedMaterial(material, albedo, normal, orm, matCap, ref failures);
             ValidateAtlasImporter(AlbedoAtlasPath, AtlasKind.Albedo, ref failures);
             ValidateAtlasImporter(NormalAtlasPath, AtlasKind.Normal, ref failures);
@@ -376,6 +378,199 @@ namespace Hecton8.Editor.ProceduralGen
                 failures++;
                 Debug.LogError("[ShallowsBioForgeBatchBaker] Shared atlas binding mismatch.");
             }
+        }
+
+        private static void ValidateRequiredFolders(ref int failures)
+        {
+            ValidateFolderExists(RuleFolder, ref failures);
+            ValidateFolderExists(MeshRoot, ref failures);
+            ValidateFolderExists(PrefabRoot, ref failures);
+            ValidateFolderExists(TextureRoot, ref failures);
+            ValidateFolderExists($"{MeshRoot}/TubeCoral", ref failures);
+            ValidateFolderExists($"{MeshRoot}/Kelp", ref failures);
+            ValidateFolderExists($"{MeshRoot}/PorousRock", ref failures);
+            ValidateFolderExists($"{PrefabRoot}/TubeCoral", ref failures);
+            ValidateFolderExists($"{PrefabRoot}/Kelp", ref failures);
+            ValidateFolderExists($"{PrefabRoot}/PorousRock", ref failures);
+        }
+
+        private static void ValidateFolderExists(string folder, ref int failures)
+        {
+            if (AssetDatabase.IsValidFolder(folder))
+                return;
+
+            failures++;
+            Debug.LogError($"[ShallowsBioForgeBatchBaker] Missing required folder: {folder}.");
+        }
+
+        private static void ValidateRuleAssets(Material material, ref int failures)
+        {
+            ValidateRuleAsset(new RuleExpectation
+            {
+                Path = $"{RuleFolder}/Rule_Shallows_TubeCoral.asset",
+                AssetPrefix = "GEN_Shallows_TubeCoral",
+                Axiom = "F[+F][-F][^F][&F][/F][\\F]",
+                Replacement = "F[+F][-F][^F][&F][/F][\\F]",
+                Profile = BioForgeSdfProfile.BranchCapsules,
+                MeshFolder = $"{MeshRoot}/TubeCoral",
+                PrefabFolder = $"{PrefabRoot}/TubeCoral",
+                Iterations = 2,
+                MaxBranches = 1800,
+                SdfResolution = 40,
+                Lod0 = 2600,
+                Lod1 = 620,
+                Lod2 = 120,
+                AngleDegrees = 42f,
+                StepLength = 0.24f,
+                LengthTaper = 0.76f,
+                RootRadius = 0.24f,
+                RadiusTaper = 0.78f,
+                MinimumRadius = 0.055f,
+                BoundsPadding = 0.32f,
+                SmoothMinK = 5.5f,
+                RibbonThicknessScale = 0.18f,
+                RibbonWidthScale = 2.4f,
+                RockRadius = 1.4f,
+                RockNoiseAmplitude = 0.22f,
+                RockNoiseFrequency = 3.5f,
+                RockPoreCount = 0,
+                RockPoreRadius = 0.35f,
+                RockPoreSurfaceBias = 0.72f
+            }, material, ref failures);
+
+            ValidateRuleAsset(new RuleExpectation
+            {
+                Path = $"{RuleFolder}/Rule_Shallows_Kelp.asset",
+                AssetPrefix = "GEN_Shallows_Kelp",
+                Axiom = "F[+F][-F]F",
+                Replacement = "F[+F]F[-F]F",
+                Profile = BioForgeSdfProfile.RibbonFlora,
+                MeshFolder = $"{MeshRoot}/Kelp",
+                PrefabFolder = $"{PrefabRoot}/Kelp",
+                Iterations = 3,
+                MaxBranches = 2400,
+                SdfResolution = 36,
+                Lod0 = 2200,
+                Lod1 = 520,
+                Lod2 = 96,
+                AngleDegrees = 7.5f,
+                StepLength = 0.34f,
+                LengthTaper = 0.91f,
+                RootRadius = 0.055f,
+                RadiusTaper = 0.83f,
+                MinimumRadius = 0.018f,
+                BoundsPadding = 0.18f,
+                SmoothMinK = 13f,
+                RibbonThicknessScale = 0.12f,
+                RibbonWidthScale = 3.3f,
+                RockRadius = 1.4f,
+                RockNoiseAmplitude = 0.22f,
+                RockNoiseFrequency = 3.5f,
+                RockPoreCount = 0,
+                RockPoreRadius = 0.35f,
+                RockPoreSurfaceBias = 0.72f
+            }, material, ref failures);
+
+            ValidateRuleAsset(new RuleExpectation
+            {
+                Path = $"{RuleFolder}/Rule_Shallows_PorousRock.asset",
+                AssetPrefix = "GEN_Shallows_PorousRock",
+                Axiom = "F",
+                Replacement = "F",
+                Profile = BioForgeSdfProfile.PorousRock,
+                MeshFolder = $"{MeshRoot}/PorousRock",
+                PrefabFolder = $"{PrefabRoot}/PorousRock",
+                Iterations = 0,
+                MaxBranches = 32,
+                SdfResolution = 38,
+                Lod0 = 3200,
+                Lod1 = 720,
+                Lod2 = 128,
+                AngleDegrees = 24f,
+                StepLength = 0.35f,
+                LengthTaper = 0.82f,
+                RootRadius = 0.13f,
+                RadiusTaper = 0.72f,
+                MinimumRadius = 0.025f,
+                BoundsPadding = 0.18f,
+                SmoothMinK = 8f,
+                RibbonThicknessScale = 0.18f,
+                RibbonWidthScale = 2.4f,
+                RockRadius = 1.15f,
+                RockNoiseAmplitude = 0.24f,
+                RockNoiseFrequency = 4.2f,
+                RockPoreCount = 18,
+                RockPoreRadius = 0.34f,
+                RockPoreSurfaceBias = 0.82f
+            }, material, ref failures);
+        }
+
+        private static void ValidateRuleAsset(RuleExpectation expected, Material material, ref int failures)
+        {
+            BioRuleData rule = AssetDatabase.LoadAssetAtPath<BioRuleData>(expected.Path);
+            if (rule == null)
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] Missing BioRuleData at {expected.Path}.");
+                return;
+            }
+
+            bool failed = false;
+            failed |= rule.AssetPrefix != expected.AssetPrefix;
+            failed |= rule.Material != material;
+            failed |= rule.Axiom != expected.Axiom;
+            failed |= rule.Iterations != expected.Iterations;
+            failed |= rule.MaxBranches != expected.MaxBranches;
+            failed |= !Approximately(rule.AngleDegrees, expected.AngleDegrees);
+            failed |= !Approximately(rule.StepLength, expected.StepLength);
+            failed |= !Approximately(rule.LengthTaper, expected.LengthTaper);
+            failed |= !Approximately(rule.RootRadius, expected.RootRadius);
+            failed |= !Approximately(rule.RadiusTaper, expected.RadiusTaper);
+            failed |= !Approximately(rule.MinimumRadius, expected.MinimumRadius);
+            failed |= rule.SdfResolution != expected.SdfResolution;
+            failed |= !Approximately(rule.BoundsPadding, expected.BoundsPadding);
+            failed |= !Approximately(rule.SmoothMinK, expected.SmoothMinK);
+            failed |= rule.SdfProfile != expected.Profile;
+            failed |= !Approximately(rule.RibbonThicknessScale, expected.RibbonThicknessScale);
+            failed |= !Approximately(rule.RibbonWidthScale, expected.RibbonWidthScale);
+            failed |= rule.Lod0TriangleBudget != expected.Lod0;
+            failed |= rule.Lod1TriangleBudget != expected.Lod1;
+            failed |= rule.Lod2TriangleBudget != expected.Lod2;
+            failed |= !Approximately(rule.RockRadius, expected.RockRadius);
+            failed |= !Approximately(rule.RockNoiseAmplitude, expected.RockNoiseAmplitude);
+            failed |= !Approximately(rule.RockNoiseFrequency, expected.RockNoiseFrequency);
+            failed |= rule.RockPoreCount != expected.RockPoreCount;
+            failed |= !Approximately(rule.RockPoreRadius, expected.RockPoreRadius);
+            failed |= !Approximately(rule.RockPoreSurfaceBias, expected.RockPoreSurfaceBias);
+            failed |= rule.MeshOutputFolder != expected.MeshFolder;
+            failed |= rule.PrefabOutputFolder != expected.PrefabFolder;
+
+            if (!rule.TryGetReplacement('F', out string replacement) || replacement != expected.Replacement)
+                failed = true;
+
+            SerializedObject serialized = new SerializedObject(rule);
+            SerializedProperty rules = serialized.FindProperty("_rules");
+            if (rules == null || !rules.isArray || rules.arraySize != 1)
+            {
+                failed = true;
+            }
+            else
+            {
+                SerializedProperty element = rules.GetArrayElementAtIndex(0);
+                failed |= element.FindPropertyRelative("_symbol").stringValue != "F";
+                failed |= element.FindPropertyRelative("_replacement").stringValue != expected.Replacement;
+            }
+
+            if (failed)
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] BioRuleData contract drift at {expected.Path}.");
+            }
+        }
+
+        private static bool Approximately(float actual, float expected)
+        {
+            return Mathf.Abs(actual - expected) <= 0.0001f;
         }
 
         private static void ValidateAtlasImporter(string path, AtlasKind kind, ref int failures)
@@ -776,6 +971,39 @@ namespace Hecton8.Editor.ProceduralGen
 
             public string Symbol { get; }
             public string Replacement { get; }
+        }
+
+        private struct RuleExpectation
+        {
+            public string Path;
+            public string AssetPrefix;
+            public string Axiom;
+            public string Replacement;
+            public string MeshFolder;
+            public string PrefabFolder;
+            public BioForgeSdfProfile Profile;
+            public int Iterations;
+            public int MaxBranches;
+            public int SdfResolution;
+            public int Lod0;
+            public int Lod1;
+            public int Lod2;
+            public int RockPoreCount;
+            public float AngleDegrees;
+            public float StepLength;
+            public float LengthTaper;
+            public float RootRadius;
+            public float RadiusTaper;
+            public float MinimumRadius;
+            public float BoundsPadding;
+            public float SmoothMinK;
+            public float RibbonThicknessScale;
+            public float RibbonWidthScale;
+            public float RockRadius;
+            public float RockNoiseAmplitude;
+            public float RockNoiseFrequency;
+            public float RockPoreRadius;
+            public float RockPoreSurfaceBias;
         }
 
         private enum AtlasKind : byte

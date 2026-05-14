@@ -32,7 +32,7 @@ Status: PENDING VERIFICATION
 - [x] 12. Math LOD: Low tier/MX350 injects 16 particles and passes SDF inactive to compute. Rejected alternative: same 64-particle/SDF path on every device. Estimate: saves 48 random writes per carve plus one SDF sample per live particle.
 - [x] 13. Zero-GC: persistent NativeArrays/GraphicsBuffers; no `GetData`/`SetData`; only cold fallback mesh/material and crash dump allocate. Rejected alternative: managed emitter/list. Estimate: 0 B/frame hot path.
 - [x] 14. Blackbox dump: 300-entry `NativeArray<CarveDebrisTelemetryEntry>` records `ActiveCarveDebrisCount`; invalid state dumps `Dump_VFX_SDF_CARVE_DEBRIS.bin`. Rejected alternative: log-only diagnostics. Estimate: 1 ring write per frame.
-- [x] 15. [BLOCKED BY TOOLING] Omega compile check: indirect args logic statically verified: clear kernel writes 5 indexed args, cull kernel atomically increments instance count, render uses `Graphics.RenderMeshIndirect`. Unity compile blocked: MCP server unavailable and project lock prevents safe batch compile. Rejected alternative: CPU `GetData` counter verification. Estimate: GPU-only visible count avoids readback stalls.
+- [x] 15. Omega compile check: indirect args logic statically verified: clear kernel writes 5 indexed args, cull kernel atomically increments instance count, render uses `Graphics.RenderMeshIndirect`. Unity 6000.4.1f1 batchmode compile passed on second attempt after restoring `Hecton8.World` for AUP conversion. Rejected alternative: CPU `GetData` counter verification. Estimate: GPU-only visible count avoids readback stalls.
 
 ## Loop Log
 
@@ -44,6 +44,7 @@ Status: PENDING VERIFICATION
 - Loop 5: Final strict pass re-read renderer, compute shader, material shader, signal bridge, DataVault IDs, and asmdef references. Unity MCP validation still fails at `http://127.0.0.1:8088/mcp`; `Temp/UnityLockfile` is present with active Unity processes, so batchmode compile remains blocked. DOD: `git diff --check` reports only line-ending normalization warning on `CarveDebrisComputeRenderer.cs`.
 - Loop 6: Patient second-pass upgrade re-read status, rationale, prompt excerpt, renderer, compute shader, asmdef, `HectonFluidEngine` flow contract, marine snow flow binding precedent, and cave SDF publication contract. DOD: low tier now dispatches/ages/culls only 1024 active slots, high tier remains 4096; false flow activation from empty fallback buffers is removed; published `HectonFluidEngine` buffer/texture payloads are bound when available; dynamic wake buffers are defensively bound with zero active slots; fallback mesh/material creation is cold-started in `Awake`/`OnEnable`; GPU velocity is clamped to 3.5 m/s and 0.20 m/frame. Rejected alternatives: same 4096 scan on low tier, CPU readback verification, direct access to internal `HectonCaveVoxelLightingVolume` from the isolated asmdef, and ParticleSystem fallback. Estimate: low-tier dispatch groups drop from 64 to 16, saving about 25-35 us GPU on MX350; idle CPU mirror aging skip saves about 10-25 us when no debris is alive; velocity clamp prevents SDF tunneling without substeps.
 - Loop 7: Verification retry and failure classification. DOD: static scan still finds no `GetData`, `SetData`, `ParticleSystem`, `ComputeBuffer`, `foreach`, `.ToString`, `string.Format`, or interpolated strings in the touched VFX lane; shader scan shows reciprocal/`rsqrt` math and no new hot `sqrt`/`pow`/`exp`/`log` path. Unity MCP remains unavailable; no `Hecton8.VFX.Debris.csproj` has been generated; `dotnet build Hecton8.Core.csproj --no-restore` fails on unrelated symbols outside this VFX asmdef. Rejected alternative: reporting the unrelated root csproj failure as a VFX compile failure. Estimate: verification blocked by tooling/project integration state, not by observed carve debris errors.
+- Loop 8: Real Unity batchmode verification. DOD: `dotnet build Hecton8.Core.csproj --no-restore -v:minimal` passes; first Unity batchmode run found `CS0103 AbsoluteUniversePosition` in `CarveDebrisComputeRenderer.cs`; fix restored `using Hecton8.World`; second Unity 6000.4.1f1 batchmode run exits with return code 0 and no `error CS` entries. Current `Docs/Tasks/CURRENT_BATCH.md` no longer contains this agent tag, so prompt re-extraction from active batch is unavailable; assignment remains preserved in this status/rationale trail. Rejected alternatives: leaving compile blocked after tooling recovered, deleting Bee/Library cache, or killing other agents' MSBuild worker nodes. Estimate: compile fix has 0 us runtime cost.
 
 ## Second-Pass Upgrade Status
 
@@ -54,10 +55,11 @@ Status: PENDING VERIFICATION
 - [x] Compute velocity clamp added to cap chip travel per frame and reduce SDF miss-through without adding substeps.
 - [x] `AgeCarveDebrisMirrorJob` preserves existing blackbox flags instead of wiping invalid-state bits during an otherwise normal age pass.
 - [x] Root build failure classified as unrelated: `Hecton8.Core.csproj` does not include `Assets/_Project/Scripts/VFX/Debris/CarveDebrisComputeRenderer.cs`, and its errors are missing symbols in UI/fauna/world/core systems.
+- [x] Unity batchmode compile recovered and passed after the AUP namespace import fix; MCP port 8088 still reports shutdown noise only.
 
 ## OMEGA Polish Status
 
 - [x] Prompt-specific polish mandate parsed after core completion/block.
 - [x] Touched VFX code scanned for hot managed bloat patterns.
 - [x] No CPU GPU readback path introduced.
-- [x] Final compile verification marked `[BLOCKED BY TOOLING]`, not passed.
+- [x] Final Unity batchmode compile passed locally; status remains `PENDING VERIFICATION` until runtime visual/profiler capture exists.

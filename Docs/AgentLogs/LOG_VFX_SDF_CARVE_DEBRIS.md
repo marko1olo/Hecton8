@@ -69,3 +69,30 @@ Verification state:
 - Shader scan shows reciprocal/`rsqrt` math and no new hot `sqrt`, `pow`, `exp`, or `log` path in the carve debris compute lane.
 - `dotnet build Hecton8.Core.csproj --no-restore` fails on unrelated symbols in UI/fauna/world/core files; that csproj does not include `CarveDebrisComputeRenderer.cs`.
 - Status remains `PENDING VERIFICATION` until Unity imports the new asmdef and the live editor or batchmode compile can be queried.
+
+## 2026-05-14 - Compile Recovery Pass
+
+What was wrong:
+- Previous verification was stale: Unity batchmode became available after the lock cleared, and the first real compile found `CS0103 AbsoluteUniversePosition` in `CarveDebrisComputeRenderer.cs`.
+- The active `Docs/Tasks/CURRENT_BATCH.md` has been replaced and no longer contains `<AGENT_PROMPT id="VFX_SDF_CARVE_DEBRIS">`; the original directive is preserved in this agent's status/rationale files.
+- The first Unity pass also hit a Bee IL post-process lock because compilation workers were still draining.
+
+What was done:
+- Restored `using Hecton8.World` for the existing AUP conversion path.
+- Removed only the stale `Temp/UnityLockfile` after confirming no Unity process was alive.
+- Reran Unity 6000.4.1f1 batchmode compile to `Docs/AgentLogs/UnityCompile_VFX_SDF_CARVE_DEBRIS_r2.log`.
+- Reran static no-bloat checks and shader math checks after the fix.
+
+Cinematic cheats used:
+- No new simulation added. The existing fake remains GPU chips + flow drag + SDF dissolve + CoreLit edge tint.
+
+Exact microseconds saved:
+- 0 us from the namespace fix itself.
+- Existing savings retained: 25-35 us low-tier dispatch saving, 10-25 us idle CPU skip, 30-90 us low-tier SDF/injection saving, 150-400 us avoided versus spawned mesh debris.
+
+Verification state:
+- `dotnet build Hecton8.Core.csproj --no-restore -v:minimal` succeeded with 0 warnings and 0 errors.
+- Unity 6000.4.1f1 batchmode compile second pass exited with return code 0 and no `error CS` entries.
+- Static scan still finds no `GetData`, `SetData`, `ParticleSystem`, `ComputeBuffer`, `foreach`, `.ToString`, `string.Format`, `Camera.main`, scene search, or interpolated strings in the touched VFX lane.
+- Shader scan finds no hot `sqrt`, `pow`, `exp`, `log`, or lowercase `normalize` path in `Hecton_FluidAdvection.compute`.
+- Status remains `PENDING VERIFICATION` until runtime visual/profiler capture exists.

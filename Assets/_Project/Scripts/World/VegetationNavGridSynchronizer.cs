@@ -524,7 +524,7 @@ namespace Hecton8.World
                 return false;
 
             float averageCurrentMagnitude = contributingSamples > 0
-                ? flowMagnitudeSum / contributingSamples
+                ? flowMagnitudeSum * math.rcp(math.max(1, contributingSamples))
                 : 0f;
             if (averageCurrentMagnitude > abyssalNavNodeMaxCurrentMagnitude)
                 return false;
@@ -547,9 +547,11 @@ namespace Hecton8.World
                 return true;
             }
 
+            float conduitStrengthRange = math.max(
+                0.01f,
+                abyssalNavNodeMaxCurrentMagnitude - abyssalConduitMinimumFlowMagnitude);
             conduitStrength = math.saturate(
-                (averageCurrentMagnitude - abyssalConduitMinimumFlowMagnitude) /
-                math.max(0.01f, abyssalNavNodeMaxCurrentMagnitude - abyssalConduitMinimumFlowMagnitude));
+                (averageCurrentMagnitude - abyssalConduitMinimumFlowMagnitude) * math.rcp(conduitStrengthRange));
             return true;
         }
 
@@ -906,7 +908,14 @@ namespace Hecton8.World
         private static Vector3 NormalizeVector3Fast(Vector3 vector, Vector3 fallback)
         {
             float magnitudeSq = vector.sqrMagnitude;
-            return magnitudeSq > 0.0001f ? vector * math.rsqrt(magnitudeSq) : fallback;
+            if (magnitudeSq > 0.0001f && IsFinite(vector))
+                return vector * math.rsqrt(magnitudeSq);
+
+            float fallbackMagnitudeSq = fallback.sqrMagnitude;
+            if (fallbackMagnitudeSq > 0.0001f && IsFinite(fallback))
+                return fallback * math.rsqrt(fallbackMagnitudeSq);
+
+            return Vector3.forward;
         }
 
         private static double ComputeAupDistanceSq(Vector3 runtimePositionA, Vector3 runtimePositionB)
@@ -1072,6 +1081,7 @@ namespace Hecton8.World
                 NativeArrayOptions.ClearMemory);
             RegisterTrackedNativeArray(_abyssalPathTelemetry, nameof(_abyssalPathTelemetry));
             _abyssalPathTelemetryCursor = 0;
+            _abyssalPathTelemetryWrittenCount = 0;
             _abyssalPathTelemetrySequence = 0;
             _abyssalPathTelemetryDumpedForFault = false;
         }
@@ -1131,6 +1141,8 @@ namespace Hecton8.World
             _abyssalPathTelemetryCursor++;
             if (_abyssalPathTelemetryCursor >= AbyssalPathTelemetryFrameCount)
                 _abyssalPathTelemetryCursor = 0;
+            if (_abyssalPathTelemetryWrittenCount < AbyssalPathTelemetryFrameCount)
+                _abyssalPathTelemetryWrittenCount++;
             _abyssalPathTelemetrySequence++;
 
             if (funnelMs > 0.1f)
@@ -1171,9 +1183,7 @@ namespace Hecton8.World
                     writer.Write(AbyssalPathTelemetryFrameCount);
                     writer.Write(_abyssalPathTelemetryCursor);
                     writer.Write(_abyssalPathTelemetrySequence);
-                    int validEntryCount = _abyssalPathTelemetrySequence < (uint)AbyssalPathTelemetryFrameCount
-                        ? (int)_abyssalPathTelemetrySequence
-                        : AbyssalPathTelemetryFrameCount;
+                    int validEntryCount = math.clamp(_abyssalPathTelemetryWrittenCount, 0, AbyssalPathTelemetryFrameCount);
                     writer.Write(validEntryCount);
                     int firstEntryIndex = validEntryCount < AbyssalPathTelemetryFrameCount
                         ? 0
@@ -1227,6 +1237,7 @@ namespace Hecton8.World
             _abyssalPathCount = 0;
             _lastAbyssalPathEndNode = -1;
             _abyssalPathTelemetryCursor = 0;
+            _abyssalPathTelemetryWrittenCount = 0;
             _abyssalPathTelemetrySequence = 0;
             _lastAbyssalPathPortalLookAhead = 0;
             _lastAbyssalPathMaxSamples = 0;

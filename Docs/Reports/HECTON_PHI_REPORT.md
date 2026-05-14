@@ -118,3 +118,57 @@ Correctness: compile is currently blocked before Unity verification. Representat
 Unity Console / PlayMode / Profiler / GCMonitor: not verified. Static scan cannot prove runtime 0 GC, frame time, scene wiring, or memory stability.
 
 Final status: H-PHI VERIFIED for static-source audit. Runtime H-Phi remains PENDING VERIFICATION until compile and Unity evidence exist.
+
+## 2026-05-14 Live Addendum
+
+Evidence class: `STATIC_SOURCE`.
+
+Current scan command:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File Tools/Architecture/HectonPhiAudit.ps1 -Json
+```
+
+Current static counts:
+
+| Counter | Value |
+|---|---:|
+| C# files | 1,498 |
+| Source lines | 941,222 |
+| `SignalBus<T>.Push` | 80 |
+| `GlobalRegistry.Get<T>` | 0 |
+| `GlobalRegistry.` surface refs | 5,287 |
+| `Publish(...)` surface refs | 450 |
+| Unity `Update`/`LateUpdate`/`FixedUpdate` methods | 3 |
+| `ISlowTickable` refs | 227 |
+| `IJob*` refs | 353 |
+| `GlobalDataVault` refs | 15 |
+| `NativeArray<T>` refs | 7,450 |
+| Struct declarations | 2,028 |
+| `StructLayout(...)` attrs | 909 |
+| `BinaryBlittableSafe` refs | 40 |
+
+Current static scores:
+
+| Coefficient | Score |
+|---|---:|
+| Narrow integration | 1.000000000 |
+| Risk-adjusted integration | 0.091112257 |
+| Architectural purity | 0.994854202 |
+| Data sovereignty | 0.002009377 |
+| Memory alignment | 0.448224852 |
+| Binary-safe ratio | 0.019723866 |
+| H-Phi static narrow | 0.000896018 |
+| H-Phi static risk-adjusted | 0.000081638 |
+
+Comparison:
+- Original 2026-05-13 report: `H-Phi_static = 0.00062`.
+- Current 2026-05-14 source-only narrow score: `0.000896018`.
+- Net change from the beginning of the H-Phi dialogue: about `+44.5%`.
+- Compared with the later quick live estimate of roughly `0.00137`, the current stricter full scan is lower because the tree grew and the global struct-layout denominator widened.
+
+Current verdict:
+- The project is still strong on update discipline and narrow signal-vs-`GlobalRegistry.Get<T>` coupling.
+- The H-Phi bottleneck remains Data Sovereignty, not tick cadence.
+- Broad NativeArray-to-DataVault migration is not safe as a blind metric chase. Each candidate needs owner, `BufferID`, `SystemID`, generation handling, and disposal proof.
+- This addendum added a reproducible audit tool, expanded cold-boot save DTO layout assertions, and removed raw bool-containing array blits from the procedural fauna save path. Runtime H-Phi remains `PENDING VERIFICATION` until Unity PlayMode/profiler/GC evidence exists.

@@ -132,3 +132,70 @@ Follow-up upgrade 10:
 
 Exact microseconds saved after follow-up 10:
 - No direct idle-frame savings claimed. This blocks false stress injections from unrelated far-field impacts while preserving local hull-surface spikes; fallback scan remains bounded to 64 modules and is estimated under 4 us on i3/MX350-class hardware.
+
+Follow-up upgrade 11:
+- Changed 16-bit `TargetId` stress resolution in `HabitatGraphManager`.
+- The resolver now compares `TargetId` against stable module hash low bits, direct runtime `EntityId` hash low bits, and graph node id low bits.
+- The `TargetId` path is accepted only when exactly one active module matches. Collisions fall through to the bounded world-point fallback or no match, preventing arbitrary room selection.
+- Static checks: managed-offender scans found no `string.Format`, `.ToString()`, interpolation, `foreach`, or LINQ offenders in `HabitatGraphManager.cs`; mesh mutation scan found no owned `Mesh.vertices` writes; exact shader `normalize()`/`sqrt()` scan produced no matches; `git diff --check` reports only repository CRLF normalization warnings.
+- Verification block: constrained `dotnet build .\Hecton8.Core.csproj --no-restore --nologo -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -p:BuildProjectReferences=false -v:quiet -clp:ErrorsOnly` returned `BUILD_EXIT=1 MATCH_COUNT=0` because Unity-generated metadata DLLs are missing from `Temp\bin\Debug` (`EasySave3.dll`, `ShapesRuntime.dll`, `Unity.ShaderGraph.Editor.dll`, `VolumetricLightBeam.dll`, `WaveHarmonic.Crest.dll`, `WaveHarmonic.Crest.Shared.Editor.dll`). No touched-file compiler error was emitted before that external metadata wall.
+
+Exact microseconds saved after follow-up 11:
+- No idle-frame savings claimed. This closes missed runtime-id and collision cases in the signal path with one candidate counter over the existing 64-module scan, estimated under 2 us on i3/MX350-class hardware.
+
+Follow-up upgrade 12:
+- Changed real zero-module clears to release the existing `_HectonHabitatModuleStressBuffer` before publishing zero stress params.
+- Preserved the no-publish clear path for active-order rebuilds, so same-tick replacement uploads do not release and recreate the GPU buffer.
+- Static checks: managed-offender scans found no `string.Format`, `.ToString()`, interpolation, `foreach`, or LINQ offenders in `HabitatGraphManager.cs`; mesh mutation scan found no owned `Mesh.vertices` writes; exact shader `normalize()`/`sqrt()` scan produced no matches; `git diff --check` reports only repository CRLF normalization warnings.
+- Verification: constrained `dotnet build .\Hecton8.Core.csproj --no-restore --nologo -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -p:BuildProjectReferences=false -v:quiet -clp:ErrorsOnly` completed with `BUILD_EXIT=0 MATCH_COUNT=0`.
+
+Exact microseconds saved after follow-up 12:
+- Releases one stale structured GPU buffer after real empty habitat clears while avoiding active-order rebuild churn. Estimated 5-20 us saved on low-end teardown/startup clear paths plus transient VRAM reduction; 0 us idle-frame tax.
+
+Follow-up upgrade 13:
+- Changed stress-buffer growth in `EnsureModuleStressBuffer` to release the old buffer without clearing shader params.
+- Real empty clears and dispose paths still clear shader state; immediate replacement uploads no longer publish a transient global zero vector.
+- Static checks: managed-offender scans found no `string.Format`, `.ToString()`, interpolation, `foreach`, or LINQ offenders in `HabitatGraphManager.cs`; mesh mutation scan found no owned `Mesh.vertices` writes; exact shader `normalize()`/`sqrt()` scan produced no matches; `git diff --check` reports only repository CRLF normalization warnings.
+- Verification: constrained `dotnet build .\Hecton8.Core.csproj --no-restore --nologo -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -p:BuildProjectReferences=false -v:quiet -clp:ErrorsOnly` completed with `BUILD_EXIT=0 MATCH_COUNT=0`.
+
+Exact microseconds saved after follow-up 13:
+- Removes one redundant shader-param clear during stress-buffer growth/reallocation. Estimated 1-4 us saved on driver-bound MX350-class expansion frames, with continuous deformation state and 0 us idle-frame tax.
+
+Follow-up upgrade 14:
+- Replaced the split shader stress `ResolveStressIndex` plus `ReadStress01` flow with one `HectonHabitatInteriorResolveStress01` helper.
+- The combined helper clamps module count once, scans once, returns zero on no match, and reads the stress buffer only when a valid module is found.
+- Updated `Hecton_DryZoneLit.shader` vertex path to use the combined resolver.
+- Static checks: shader reference scan confirms only the combined resolver is used by DryZone; exact shader `normalize()`/`sqrt()` scan produced no matches; managed-offender scans found no `string.Format`, `.ToString()`, interpolation, `foreach`, or LINQ offenders in `HabitatGraphManager.cs`; `git diff --check` reports only repository CRLF normalization warnings.
+- Verification: constrained `dotnet build .\Hecton8.Core.csproj --no-restore --nologo -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -p:BuildProjectReferences=false -v:quiet -clp:ErrorsOnly` completed with `BUILD_EXIT=0 MATCH_COUNT=0`. Unity editor shader compile proof remains unavailable in this session.
+
+Exact microseconds saved after follow-up 14:
+- Removes one duplicate module-count clamp/read helper call per Mid/High/Ultra DryZone vertex. Estimated 1-3 us saved per 1k affected interior vertices on MX350-class GPUs, with no low-tier or idle-frame cost.
+
+Follow-up upgrade 15:
+- Changed `HectonHabitatInteriorApplyPanelBendOS` to output centered panel UV together with the shared panel mask.
+- Changed `HectonHabitatInteriorApplyCheapNormalBiasWS` to consume the centered panel UV instead of recalculating panel-space UV.
+- Low-tier crease still uses the triangle panel mask path; Mid/High/Ultra keep sine panel bow and cheap normal bias.
+- Static checks: shader reference scan confirms updated bend/normal callsites; exact shader `normalize()`/`sqrt()` scan produced no matches; managed-offender scans found no `string.Format`, `.ToString()`, interpolation, `foreach`, or LINQ offenders in `HabitatGraphManager.cs`; `git diff --check` reports only repository CRLF normalization warnings.
+- Verification block: constrained `dotnet build .\Hecton8.Core.csproj --no-restore --nologo -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -p:BuildProjectReferences=false -v:quiet -clp:ErrorsOnly` returned `BUILD_EXIT=1 MATCH_COUNT=0` because Unity-generated metadata DLLs are missing from `Temp\bin\Debug` (`Crest.dll`, `EasySave3.dll`, `GPUInstancer.dll`, `Hecton8.Input.dll`, `Unity.RenderPipelines.Universal.Runtime.dll`, `Unity.ShaderGraph.Editor.dll`, `VolumetricLightBeam.dll`, etc.). No touched-file compiler error was emitted before that external metadata wall.
+
+Exact microseconds saved after follow-up 15:
+- Removes one duplicate panel UV normalize/frac/center calculation from the Mid/High/Ultra stressed normal-bias path. Estimated 1-2 us saved per 1k affected interior vertices on MX350-class GPUs, with 0 us low-tier or idle-frame cost.
+
+Follow-up upgrade 16:
+- Removed unused `HectonHabitatInteriorPanelMask` wrapper after panel-UV reuse.
+- Kept only live panel helpers: `HectonHabitatInteriorPanelUv`, `HectonHabitatInteriorPanelMaskFromUv`, and `HectonHabitatInteriorCheapPanelMask`.
+- Static checks: shader reference scan confirms only live panel helpers remain; exact shader `normalize()`/`sqrt()` scan produced no matches; managed-offender scans found no `string.Format`, `.ToString()`, interpolation, `foreach`, or LINQ offenders in `HabitatGraphManager.cs`; `git diff --check` reports only repository CRLF normalization warnings.
+- Verification: constrained `dotnet build .\Hecton8.Core.csproj --no-restore --nologo -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -p:BuildProjectReferences=false -v:quiet -clp:ErrorsOnly` completed with `BUILD_EXIT=0 MATCH_COUNT=0`.
+
+Exact microseconds saved after follow-up 16:
+- No runtime microseconds claimed. This is anti-bloat source cleanup to keep the shader pressure path smaller and easier to audit.
+
+Follow-up upgrade 17:
+- Added an index-hinted overload for `TryResolveGraphModuleRecord`.
+- Updated active-module stress update, active-order hash, direct stress target resolution, and nearest fallback to pass their active slot as the hint.
+- If active module order matches graph order, lookup resolves directly; if not, the existing fallback scan still preserves correctness.
+- Static checks: managed-offender scans found no `string.Format`, `.ToString()`, interpolation, `foreach`, or LINQ offenders in `HabitatGraphManager.cs`; mesh mutation scan found no owned `Mesh.vertices` writes; exact shader `normalize()`/`sqrt()` scan produced no matches; `git diff --check` reports only repository CRLF normalization warnings.
+- Verification block: constrained `dotnet build .\Hecton8.Core.csproj --no-restore --nologo -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -p:BuildProjectReferences=false -v:quiet -clp:ErrorsOnly` returned `BUILD_EXIT=1 MATCH_COUNT=0` because unrelated `Assets\_Project\Scripts\Gameplay\RandomEventSystem.cs(1397-1399)` double-to-float errors stop the build. No pressure-solver touched-file error was emitted.
+
+Exact microseconds saved after follow-up 17:
+- Best case removes a repeated 64-record graph scan from aligned active-module stress lookups. Estimated 4-12 us saved on i3/MX350-class signal-heavy frames, with 0 B/frame and no shader cost.

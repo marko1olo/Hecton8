@@ -47,7 +47,7 @@ Verification:
 - `dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary` failed with 131 unrelated missing namespace/type errors before local H-Phi validation could be reached.
 - `dotnet build Assembly-CSharp.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary` timed out at 124 seconds.
 - Unity MCP script validation returned `Unity session not available; please retry`.
-- Status is PENDING - GLOBAL COMPILE DEPENDENCY BLOCK. It is not VERIFIED MASTER GRADE until the global dependency wall is repaired and compile can reach these surfaces.
+- Intermediate status was PENDING - GLOBAL COMPILE DEPENDENCY BLOCK at this point in the log. The final closure below supersedes this with successful Core and Assembly-CSharp dotnet builds.
 
 ## 2026-05-14 - Recursive Reverification Addendum
 
@@ -78,7 +78,7 @@ Verification:
 - Targeted rg remains clean for converted hot lanes: no managed event remnants, no foreach, no string.Format, no interpolation, no math.sqrt, no math.normalize, no old progress/fade division patterns.
 - Only `.ToString()` hit remains `PDAExchangeSystem.BuildBundleSummaryForSave`, a cold save serialization path.
 - `git diff --check` reports no whitespace errors; only CRLF normalization warnings on touched tracked files.
-- `Docs/AgentLogs/Build_HPHI_SYNAPTIC_FORGER_latest.txt` captured the latest Core build wall: 128 unrelated global errors and no touched-file hits for GlobalSignals, PlayerActionController, ActionProgressHUD, PDAExchangeSystem, PDABarterTab, or VehicleUpgradeModule.
+- Intermediate `Docs/AgentLogs/Build_HPHI_SYNAPTIC_FORGER_latest.txt` captured a Core build wall: 128 unrelated global errors and no touched-file hits for GlobalSignals, PlayerActionController, ActionProgressHUD, PDAExchangeSystem, PDABarterTab, or VehicleUpgradeModule. The final closure below supersedes that log with a successful Core build.
 - Unity MCP validation retry failed at transport level: `http://127.0.0.1:8088/mcp` was unavailable, so Editor-side validation remains blocked.
 
 ## 2026-05-14 - Source ID Folding Addendum
@@ -133,3 +133,61 @@ Verification:
 - Final targeted forbidden scan over H-Phi touched runtime files returned no matches for converted-lane events, invokes, UnityEvents, `GetInstanceID(`, managed foreach, `string.Format`, sqrt/normalize, or raw lower-32 entity-id source casts.
 - Final `git diff --check` returned clean.
 - Unity MCP Editor validation remains unavailable because the local MCP endpoint was not reachable earlier in the session.
+
+## 2026-05-14 - Late-Frame Coherence Addendum
+
+What was wrong:
+- ActionProgressHUD had correctly moved to `ILateFrameTickable`, but older status/log wording still described it as a dispatcher tick-lane consumer.
+- That mismatch was documentation debt and an integration risk for future UI lane owners.
+
+What was done:
+- Confirmed SystemDispatcher sets `CurrentFrameDeltaTime` before late-frame tickables run.
+- Kept ActionProgressHUD on the late-frame visual lane and updated its summary comment to say it reads SignalBus snapshots from the late-frame lane.
+- Updated Status/Rationale/Log wording to distinguish ActionProgressHUD late-frame visual consumption from PDABarterTab UI tick consumption.
+
+Cinematic Cheats used:
+- No simulation or new effect. This pass protects the existing cheap signal snapshot model and late-frame visual presentation order.
+
+Exact microseconds saved:
+- 0.0 us/frame. This is correctness/documentation alignment, not a runtime optimization.
+
+Verification:
+- `git diff --check` on ActionProgressHUD and H-Phi docs is clean except repository CRLF normalization warnings.
+- Targeted forbidden scan over H-Phi touched runtime files returned no converted-lane managed event, Invoke, UnityEvent, `GetInstanceID(`, foreach, `string.Format`, sqrt/normalize, or raw lower-32 source-id cast matches.
+
+## 2026-05-14 - Scan Log Lane Addendum
+
+What was wrong:
+- PDAExchangeSystem still subscribed directly to `PlayerInventory.InventoryChanged` and `ScanLogSystem.ScanLogChanged`.
+- ScanLogSystem had no unmanaged dirty-state lane for PDA/barter consumers.
+- PDAExchangeSystem retried `AutoResolve()` every tick if only the optional HUD notification reference was missing.
+
+What was done:
+- Added `ScanLogChangedSignal` as a fixed 32-byte explicit-layout SignalBus payload.
+- Registered the lane capacity, size validation, initialization, and `GlobalSignals.Publish(in ScanLogChangedSignal)` overload.
+- Published scan-log dirty packets on save load, entry add, and recent-entry updates with source id, entry hash, frame, entry count, recent count, reason, and flags.
+- Suppressed per-entry scan-log signal packets during save load; load now emits one aggregate `ReasonLoaded` packet after entries and recents are restored.
+- Rewired PDAExchangeSystem as an `IUpdatable` snapshot consumer for `InventoryChangedSignal` and `ScanLogChangedSignal`.
+- Removed PDAExchangeSystem managed subscribe/unsubscribe paths for inventory and scan log.
+- Limited PDA tick auto-resolution to inventory and scan-log dependencies; HUD lookup is no longer retried every frame.
+- Left `ScanLogSystem.ScanLogChanged` and `EntryUnlocked` in place because Fabricator and PDALogbookManager still consume them outside this pass.
+
+Cinematic Cheats used:
+- Dirty-state bytes and counts replace physical or object-rich truth. No content strings, no managed object references, no world coordinates.
+- One-frame SignalBus snapshot latency is accepted for deterministic decoupling; the exchange state is a visual/UI refresh signal, not a physics-critical command.
+
+Exact microseconds saved:
+- PDA-side managed event removal: estimated 0.2-0.6 us per inventory/scan-log dirty burst on i3/MX350.
+- Save-load storm suppression: avoids up to 128 scan-log signal queue writes and dropped-lane telemetry noise per loaded save.
+- Removed optional HUD auto-resolve retry: small steady-state lookup avoidance when HUDNotification is absent, estimated under 0.1 us/frame.
+- Scan-log lane registration uses existing SignalBus Black Box telemetry; no duplicate managed logger added.
+
+Verification:
+- `dotnet restore Assembly-CSharp.csproj` regenerated missing `Temp/obj` assets after concurrent environment churn.
+- `dotnet build Crest.csproj --no-restore`: succeeded, 0 warnings, 0 errors. This prebuild repairs generated Unity project order where Hecton8.Core can request `Crest.dll` before the broad Assembly-CSharp gate emits it.
+- `dotnet build Hecton8.Core.csproj --no-restore`: succeeded, 0 warnings, 0 errors.
+- `dotnet build Assembly-CSharp.csproj --no-restore`: succeeded, 0 warnings, 0 errors.
+- `git diff --check` on owned H-Phi files returned no whitespace errors; only repository CRLF normalization warnings.
+- Targeted rg confirms PDAExchangeSystem has no `InventoryChanged +=`, `InventoryChanged -=`, `ScanLogChanged +=`, `ScanLogChanged -=`, `HandleInventoryChanged`, or `HandleScanLogChanged`.
+- Targeted rg confirms `ScanLogChangedSignal` is registered, size-validated, published by ScanLogSystem, and consumed by PDAExchangeSystem.
+- Targeted rg confirms `publishChangeSignal: false` is used for save-load entry restoration, followed by one aggregate `ReasonLoaded` publish.

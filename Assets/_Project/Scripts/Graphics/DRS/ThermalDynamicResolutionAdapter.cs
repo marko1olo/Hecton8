@@ -51,6 +51,7 @@ namespace Hecton8.Graphics.DRS
         private const byte FlagNotification = 1 << 2;
         private const byte FlagInvalidState = 1 << 3;
         private const int TelemetryReportCooldownFrames = 30;
+        private const int DispatcherRegistrationRetryFrameBudget = 600;
 
         private static readonly PerformDynamicRes s_systemScaler = ResolveSystemScalePercentage;
         private static readonly PerformDynamicRes s_nativeScale = ResolveNativeScalePercentage;
@@ -75,6 +76,7 @@ namespace Hecton8.Graphics.DRS
         private int _lastTelemetryReportFrame = -TelemetryReportCooldownFrames;
         private bool _registered;
         private bool _hotSwapRegistered;
+        private bool _registrationRetryActive;
         private bool _systemScalerInstalled;
         private bool _notificationArmed = true;
         private bool _blackBoxDumped;
@@ -286,14 +288,24 @@ namespace Hecton8.Graphics.DRS
             object currentService)
         {
             if (serviceSlot == GlobalRegistryServiceSlot.DynamicResolutionRuntime)
+            {
                 RebindDynamicResolutionRuntime(currentService as IDynamicResolutionRuntime);
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                TryUnregister();
+                if (currentService != null)
+                    TryRegister();
+            }
         }
 
         private void ConsumeSignals()
         {
             float frameTimeEwmaMs = 0f;
             bool frameTimeReceived = false;
-            float systemHealth01 = 1f;
+            float systemHealth01 = 0f;
             bool systemHealthReceived = false;
             byte pressureLevel = 0;
             bool pressureReceived = false;
@@ -318,7 +330,7 @@ namespace Hecton8.Graphics.DRS
             for (int i = 0; i < healthSignals.Length; i++)
             {
                 SystemHealthSignal signal = healthSignals[i];
-                systemHealth01 = math.min(systemHealth01, Sanitize01(signal.SystemHealthIndex01));
+                systemHealth01 = math.max(systemHealth01, Sanitize01(signal.SystemHealthIndex01));
                 systemHealthReceived = true;
                 pressureLevel = MaxByte(pressureLevel, signal.PressureLevel);
                 pressureReceived = true;
@@ -450,7 +462,15 @@ namespace Hecton8.Graphics.DRS
             if (_registered || !Application.isPlaying)
                 return;
 
+            if (GlobalRegistry.Dispatcher == null)
+            {
+                ArmDispatcherRegistrationRetry();
+                return;
+            }
+
             _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Core);
+            if (!_registered)
+                ArmDispatcherRegistrationRetry();
         }
 
         private void TryUnregister()
@@ -460,6 +480,46 @@ namespace Hecton8.Graphics.DRS
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
             _registered = false;
+        }
+
+        private void ArmDispatcherRegistrationRetry()
+        {
+            if (_registrationRetryActive || !Application.isPlaying || !isActiveAndEnabled)
+                return;
+
+            // COLD ASYNC: boot-order retry only; recurring DRS execution remains SystemDispatcher-owned.
+            _ = RetryDispatcherRegistrationAsync();
+        }
+
+        private async Awaitable RetryDispatcherRegistrationAsync()
+        {
+            _registrationRetryActive = true;
+            int remainingFrames = DispatcherRegistrationRetryFrameBudget;
+            try
+            {
+                while (!_registered &&
+                       remainingFrames-- > 0 &&
+                       Application.isPlaying &&
+                       isActiveAndEnabled &&
+                       ReferenceEquals(s_activeAdapter, this))
+                {
+                    if (GlobalRegistry.Dispatcher != null)
+                    {
+                        _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Core);
+                        if (_registered)
+                            return;
+                    }
+
+                    await AwaitableDebtMonitor.NextFrameAsync(destroyCancellationToken);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+            }
+            finally
+            {
+                _registrationRetryActive = false;
+            }
         }
 
         private void TryRegisterHotSwap()

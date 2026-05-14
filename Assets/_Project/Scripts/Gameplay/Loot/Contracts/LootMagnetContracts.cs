@@ -18,6 +18,7 @@ namespace Hecton8.Gameplay.Loot.Contracts
         public const int PresentationSignalStride = 64;
         public const int MaxAcquisitionsPerFrame = 64;
         public const double AupCellSizeMeters = 5000d;
+        public const double AupCellSizeSq = AupCellSizeMeters * AupCellSizeMeters;
         public const byte ItemSourceLootMagnet = 8;
         public const byte SignalFlagLootMagnet = 1;
         public const uint WakeSourceLootZip = 0x4C5A4950u;

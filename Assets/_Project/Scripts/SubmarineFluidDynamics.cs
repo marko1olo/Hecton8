@@ -3997,11 +3997,11 @@ namespace Hecton8.Physics
             if (director == null || !director.TrySampleBrineLayer(runtimePosition, out sample))
                 return false;
 
-            Vector3 shiftOffset = HectonFloatingOrigin.CurrentTotalOffset;
+            var shiftOffset = HectonFloatingOrigin.CurrentTotalOffsetDouble;
             return BrineLayerMath.IsRuntimeBelowAbsolutePlane(
                 runtimePosition.y,
                 sample.AbsoluteHeightY,
-                shiftOffset.y);
+                (float)shiftOffset.y);
         }
 
         private void UpdateBrineHullBreachState(bool insideBrine, Vector3 runtimePosition)

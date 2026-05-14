@@ -123,3 +123,29 @@ Solution: Shut down build servers, reran builds sequentially with `/p:UseSharedC
 Rejected Alternatives: Accepting a file-lock failure as a real compile wall or reporting stale blocked status.
 Scalability potential: Clean generated-project verification gives integration a better baseline while runtime Unity validation remains pending.
 Hardware Impact: No runtime impact; build hygiene only.
+
+## FOURTH PASS HOT-PATH HARDENING
+
+Problem: `BiomeBoundarySdfRuntime.SlowTick` still risked periodic service polling for player and scalability state.
+Solution: Cache the player context and scalability state, listen to `GlobalRegistry` hot-swap and scalability event lanes, use a 2-second missing-player cold rebind fallback, and apply 3-second hysteresis before changing low-tier kernel mode.
+Rejected Alternatives: Polling `GlobalRegistry.Player` every `SlowTick`, polling scalability properties every sample, or flipping 3x3/5x5 kernels immediately on transient tier changes.
+Scalability potential: Low keeps a stable 3x3 kernel on weak or low-memory devices; Middle/High keep 5x5 visual smoothness; Ultra can spend the saved registry/polling cost in consumers without changing the producer contract.
+Hardware Impact: i3/MX350 avoids repeated registry property reads and avoids visual thrash from immediate math-LOD changes; hot path remains 0 B GC.
+
+Problem: Edge sampling could duplicate cells because offsets were clamped after the offset loop.
+Solution: Compute the clamped min/max cell window once, iterate only real heatmap cells, keep hash-aware boundary checks, and flag all-zero maps as `MissingMap`.
+Rejected Alternatives: Letting clamp duplication over-weight map edges, treating an all-zero unhydrated map as valid biome 0, or widening the primary heatmap from 64 KB byte storage to a 256 KB uint map.
+Scalability potential: Low tier gets cheaper and more deterministic 3x3 edge behavior; High/Ultra retain hash fidelity for richer material, fog, and audio response.
+Hardware Impact: Estimated 2-4 us saved on map-edge low-tier samples on i3/MX350 by removing duplicate clamped sample work and inner-loop clamp branches.
+
+Problem: The black-box dump was readable only if the decoder already knew the current struct layout and cursor semantics.
+Solution: Prefix dumps with magic, version, entry count, struct size, capacity, cursor, origin-shift sequence, and sample sequence before writing the 300 telemetry entries.
+Rejected Alternatives: Raw entry stream with no decoder metadata or managed JSON dump on fault.
+Scalability potential: No gameplay cost; postmortem tools can decode Low/Middle/High/Ultra telemetry consistently even after struct changes.
+Hardware Impact: No hot-path cost. Fault-path binary write stays outside the gameplay cadence.
+
+Problem: The active `CURRENT_BATCH.md` no longer contains this agent XML block, but the agent protocol still requires disk-backed identity and task state.
+Solution: Preserve authority from `Status_BIOME_TRANSITION_BLENDER.md` and `Rationale_BIOME_TRANSITION_BLENDER.md`, record the current-batch miss explicitly, and keep final state at `PENDING VERIFICATION` until Unity runtime proof exists.
+Rejected Alternatives: Hallucinating the missing XML from memory or reporting runtime verification without Unity Play Mode/Profiler data.
+Scalability potential: Integration gets a factual audit trail instead of stale chat-only claims.
+Hardware Impact: No runtime impact.

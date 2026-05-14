@@ -132,3 +132,93 @@ Verification:
 - `dotnet build Hecton8.Core.csproj --no-restore /m:1 /nr:false` succeeded with 0 warnings and 0 errors.
 - `dotnet build Hecton8.PlayModeTests.csproj --no-restore /m:1 /nr:false` succeeded with 0 warnings and 0 errors.
 - Unity MCP `validate_script` remains unavailable in this session due prior `127.0.0.1:8088/mcp` transport failure.
+
+## 2026-05-14 - Voxel Payload Contract Hardening
+
+What was wrong:
+- LOS compaction treated invalid/out-of-range voxel samples as open space.
+- A created passability array with dimensions larger than its actual length could still be trusted by the smoothing job.
+
+What was done:
+- Added complete voxel-grid length validation before LOS compaction trusts a passability or threat payload.
+- Changed invalid sample fallback to `SolidThreatVoxel` so corrupt or stale payloads preserve raw waypoints.
+
+Cinematic Cheats used:
+- If spatial proof is incomplete, keep the less-polished route instead of paying for or faking geometry proof.
+
+Exact Microseconds saved:
+- PENDING RUNTIME PROFILER DATA. This is route-safety hardening; expected normal-path cost is one 64-bit expected-length check per grid selection.
+
+Verification:
+- Static scan remains clean inside `StringPullPathJob`: no `math.normalize`, `math.length(`, `math.distance(`, or raw `/`.
+- `git diff --check` passed for the edited funnel/status/log files; only line-ending warnings were emitted.
+- `dotnet build Hecton8.Core.csproj --no-restore /m:1 /nr:false` succeeded with 0 warnings and 0 errors.
+- `dotnet build Hecton8.PlayModeTests.csproj --no-restore /m:1 /nr:false /p:BuildProjectReferences=false` succeeded with 0 warnings and 0 errors.
+- Full project-reference PlayMode rebuild timed out while building `Hecton8.Editor.csproj`; no C# errors were parsed before timeout.
+- Unity MCP `validate_script` remains unavailable in this session.
+
+## 2026-05-14 - Telemetry Ring Longevity Pass
+
+What was wrong:
+- Black-box dump valid-entry count depended on `_abyssalPathTelemetrySequence`, a wrapping event ID.
+
+What was done:
+- Added `_abyssalPathTelemetryWrittenCount` as a capped valid-entry counter for dump reconstruction.
+
+Cinematic Cheats used:
+- None. This is diagnostic integrity only.
+
+Exact Microseconds saved:
+- 0 measured. Cost is one capped integer increment per completed path.
+
+Verification:
+- Static scan remains clean inside `StringPullPathJob`: no `math.normalize`, `math.length(`, `math.distance(`, or raw `/`.
+- `git diff --check` passed for edited funnel/status/log files; only line-ending warnings were emitted.
+- `dotnet build Hecton8.Core.csproj --no-restore /m:1 /nr:false` succeeded with 0 warnings and 0 errors.
+- `dotnet build Hecton8.PlayModeTests.csproj --no-restore /m:1 /nr:false /p:BuildProjectReferences=false` succeeded with 0 warnings and 0 errors.
+
+## 2026-05-14 - Fallback Direction Sanitation Pass
+
+What was wrong:
+- `NormalizeRsqrtOrFallback` returned fallback vectors raw, so secondary axes could become non-unit or carry invalid data if a caller's fallback was corrupted.
+
+What was done:
+- Preserved the valid-vector fast path.
+- Added finite fallback normalization with `math.rsqrt`.
+- Added a final +Z axis fallback when both vectors are unusable.
+
+Cinematic Cheats used:
+- Degenerate path corners choose stable +Z rather than attempting expensive geometric recovery.
+
+Exact Microseconds saved:
+- PENDING RUNTIME PROFILER DATA. Valid-path cost stays one rsqrt multiply; degenerate-path cost increases only when the old path was already unsafe.
+
+Verification:
+- Static scan passed for `StringPullPathJob` lines 2724-3260: no `math.normalize`, `math.length(`, `math.distance(`, or raw `/`.
+- `git diff --check` passed for edited funnel/status/log files; only LF-to-CRLF working-copy warnings were emitted.
+- Initial Core build attempt hit transient missing `Temp/bin/Debug` Unity-generated references while another build process was active; after build contention cleared and generated references were present, `dotnet build Hecton8.Core.csproj --no-restore /m:1 /nr:false` succeeded with 0 warnings and 0 errors.
+- Initial PlayMode no-reference build found missing `Temp/obj/Hecton8.PlayModeTests/project.assets.json`; `dotnet restore Hecton8.PlayModeTests.csproj --no-cache` regenerated assets, then `dotnet build Hecton8.PlayModeTests.csproj --no-restore /m:1 /nr:false /p:BuildProjectReferences=false` succeeded with 0 warnings and 0 errors.
+- Unity MCP `validate_script` remains unavailable in this session due prior `127.0.0.1:8088/mcp` transport failure.
+
+## 2026-05-14 - Conduit Reciprocal Sanitation Pass
+
+What was wrong:
+- Abyssal nav-node conduit scoring still used raw managed division for average flow magnitude and normalized conduit strength.
+- `NormalizeVector3Fast` returned fallback vectors raw, so corrupted flow payloads could propagate non-unit or non-finite conduit directions.
+
+What was done:
+- Replaced the average-current and conduit-strength divisions with `math.rcp` multiplies.
+- Hardened `NormalizeVector3Fast` with finite checks for primary and fallback vectors, then a stable `Vector3.forward` fallback.
+
+Cinematic Cheats used:
+- Degenerate or corrupted flow vectors collapse to a stable forward conduit hint instead of spending CPU on recovery geometry.
+
+Exact Microseconds saved:
+- PENDING RUNTIME PROFILER DATA. Expected saving is two scalar divide paths removed per conduit-qualified abyssal nav-node candidate.
+
+Verification:
+- Static scan passed for `StringPullPathJob` lines 2724-3260 and `TryResolveAbyssalNavNodeCandidate` lines 461-556: no `math.normalize`, `math.length(`, `math.distance(`, or raw `/`.
+- `git diff --check` passed for edited funnel/status/log files; only LF-to-CRLF working-copy warnings were emitted.
+- `dotnet build Hecton8.Core.csproj --no-restore /m:1 /nr:false` succeeded with 0 warnings and 0 errors.
+- `dotnet build Hecton8.PlayModeTests.csproj --no-restore /m:1 /nr:false /p:BuildProjectReferences=false` succeeded with 0 warnings and 0 errors.
+- Unity MCP `validate_script` remains unavailable in this session due prior `127.0.0.1:8088/mcp` transport failure.

@@ -99,3 +99,63 @@ Prompt re-extracted from `CURRENT_BATCH.md`. Targeted `dotnet build` filter comp
 
 Status:
 PENDING VERIFICATION. Unity import, Burst compiler, Play Mode, GCMonitor, and profiler proof remain absent.
+
+## 2026-05-14 Recursive QA Addendum 5
+
+What was wrong:
+The lifecycle race guard was memory-safe but incomplete. It force-completed a pending IK ground response before slot mutation, then discarded the completed back-buffer frame by not swapping/publishing it. During register/unregister churn, other active rigs could miss one finished lower-body target update. Forced origin-shift completion also left the old completed `JobHandle` value in the field and did not mark telemetry with a reason flag.
+
+What was done:
+`ContextualPhysicalIkRuntime` now swaps the completed target buffer inside `CompletePendingGroundResponseForStructuralMutation()` and returns whether a frame was produced. `RegisterRig` publishes that frame before adding the new slot. `UnregisterRig` removes/resets the leaving slot first, then publishes to the remaining active rigs so a disabling rig does not receive an unnecessary buffer swap. Normal LateFrame, structural completion, and origin-shift completion all clear `_pendingGroundResponseHandle`. Structural and origin-shift forced completions now write distinct black-box telemetry reason flags.
+
+Cinematic cheats used:
+No added simulation. The fix preserves the existing two batched foot rays, squared step trigger, triangle-wave lift, and Burst two-bone presentation lie. It only fixes target-buffer ownership and black-box chronology.
+
+Exact microseconds saved:
+Hot path: 0 us added. Cold lifecycle/origin-shift path: one required forced completion when a job is already pending, one buffer swap, one active-rig publish pass, and one fixed telemetry sample over 128 slots. Avoided cost is a dropped target frame and post-mortem ambiguity; steady-state i3/MX350 frame time is unchanged.
+
+Verification:
+Current `CURRENT_BATCH.md` has rotated away from this agent prompt, so persisted status/rationale were used and neighboring prompts were ignored. Scoped `dotnet build Hecton8.Core.csproj --no-restore -v:quiet /m:1 /p:UseSharedCompilation=false /clp:ErrorsOnly` filter completed with no matching errors for `ContextualPhysicalIkRuntime`, `ContextualPhysicalIkRig`, `PlayerKinematicsRuntime`, `PhysicsDeterminismSignals`, `KccVelocitySignal`, or `LowerBodyPresenceIkJobs`. Scoped anti-bloat scan returned no matches for `math.sqrt`, `math.normalize`, `foreach`, `string.Format`, interpolation, `OnAnimatorIK`, `SetIK`, `ikPass`, `StartCoroutine`, `GameObject.Find`, `FindObjectOfType`, or `Camera.main`. `git diff --check` reports CRLF warnings only.
+
+Status:
+PENDING VERIFICATION. Unity import, Burst compiler, Play Mode, GCMonitor, and profiler proof remain absent because Unity MCP resources are unavailable and the global build remains outside-domain red.
+
+## 2026-05-14 Recursive QA Addendum 6
+
+What was wrong:
+The runtime and rig origin-shift listeners trusted `Vector3.sqrMagnitude` before checking finite values. NaN compares through that guard and would rebase lower-body target frames, foot SOA lanes, hand targets, spine targets, and cached KCC body position into corrupt world-space data. The rig pole-offset builder also had a cold authoring path where corrupt transform positions or rotation could generate a non-finite pole vector for the animation job.
+
+What was done:
+`ContextualPhysicalIkRuntime.OnOriginShift` and `ContextualPhysicalIkRig.OnOriginShift` now convert the shift to `float3`, reject non-finite vectors, reject non-finite length-squared values, and reject shifts over the 10km AUP mandate cap before any rebase. Runtime writes a telemetry sample and dumps with `TelemetryReasonInvalidOriginShift` on corrupt shift input. Rig terminal-hand normal and local pole-offset setup now use finite `math.lengthsq` guards and explicit fallback values.
+
+Cinematic cheats used:
+No physical simulation added. This is AUP hygiene around the existing visual IK fake: two batched foot rays, squared step trigger, triangle-wave step lift, and two-bone Burst pose solve.
+
+Exact microseconds saved:
+Hot path: 0 us added. Origin shift and authoring setup are cold paths; added cost is finite checks and `math.lengthsq`. Prevented cost is catastrophic NaN propagation through 256 lower-body SOA lanes and animation job data.
+
+Verification:
+Current `CURRENT_BATCH.md` still does not contain this agent prompt, so persisted assignment/status/rationale were used and neighboring prompts were ignored. Scoped `dotnet build Hecton8.Core.csproj --no-restore -v:quiet /m:1 /p:UseSharedCompilation=false /clp:ErrorsOnly` filter completed with `NO_MATCHING_ERRORS_IN_TOUCHED_IK_FILES`. Forbidden-pattern scan over touched lower-body/signal files returned no matches for `sqrMagnitude`, `math.sqrt`, `math.normalize`, `foreach`, `string.Format`, interpolation, `OnAnimatorIK`, `SetIK`, `ikPass`, `StartCoroutine`, `GameObject.Find`, `FindObjectOfType`, or `Camera.main`. `git diff --check` reports CRLF warnings only.
+
+Status:
+PENDING VERIFICATION. Unity import, Burst compiler, Play Mode, GCMonitor, and profiler proof remain absent because Unity MCP resources are unavailable and the global build remains outside-domain red.
+
+## 2026-05-14 Recursive QA Addendum 7
+
+What was wrong:
+The shared `HasHit` predicate could accept a raycast result because the normal looked meaningful while the hit point or distance was not proven finite. That creates a narrow but serious path for corrupt physics data to enter foot targets and contextual hand targets before downstream finite guards see a derived value instead of the original bad hit.
+
+What was done:
+`ContextualPhysicalIkRuntime.HasHit` now converts the hit point and normal to `float3`, computes normal length-squared once, and accepts the hit only when distance, point, normal, and normal length-squared are all finite. The existing positive-distance or meaningful-normal condition remains as the final acceptance gate. This fixes the shared source instead of duplicating checks in every target builder.
+
+Cinematic cheats used:
+No added simulation. The lower-body presence remains the same visual fake: two hip-origin batched foot rays, squared step trigger, triangle-wave lift, swim posture from planar KCC velocity, and Burst two-bone presentation. The change only rejects corrupt raycast data before it reaches the fake.
+
+Exact microseconds saved:
+Hot path added cost is a few finite checks and one `math.lengthsq` per validated hit, estimated below 1 us across the two-foot plus contextual hand-probe lanes on i3/MX350. Avoided cost is NaN propagation through lower-body SOA state and animation job inputs, plus post-mortem time from ambiguous crash data.
+
+Verification:
+Scoped `dotnet build Hecton8.Core.csproj --no-restore -v:quiet /m:1 /p:UseSharedCompilation=false /clp:ErrorsOnly` filter completed with `NO_MATCHING_ERRORS_IN_TOUCHED_IK_FILES`. Forbidden-pattern scan over touched lower-body/signal files returned no matches for `sqrMagnitude`, `math.sqrt`, `math.normalize`, `foreach`, `string.Format`, `OnAnimatorIK`, `SetIK`, `ikPass`, `StartCoroutine`, `GameObject.Find`, `FindObjectOfType`, or `Camera.main`. `git diff --check` reports CRLF warnings only.
+
+Status:
+PENDING VERIFICATION. Unity import, Burst compiler, Play Mode, GCMonitor, and profiler proof remain absent because Unity MCP resources are unavailable and the global build remains outside-domain red.

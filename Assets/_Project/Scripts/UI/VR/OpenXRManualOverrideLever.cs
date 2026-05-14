@@ -16,6 +16,9 @@ using UnityEngine.XR;
 
 namespace Hecton8.UI.VR
 {
+    /// <summary>
+    /// OpenXR-ready kinematic cockpit lever that consumes agnostic grip input, accepts physical hand proximity, and emits the manual override signal on latch.
+    /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(BoxCollider))]
     [AddComponentMenu("Hecton8/UI/VR/OpenXR Manual Override Lever")]
@@ -71,12 +74,15 @@ namespace Hecton8.UI.VR
         private Quaternion _closedLocalRotation = Quaternion.identity;
         private Vector3 _resolvedLocalAxis = Vector3.right;
         private Vector3 _referenceLocalVector = Vector3.forward;
-        private Vector3 _lastHandWorldPosition;
+        private float3 _axisLocalFloat = new float3(1f, 0f, 0f);
+        private float3 _referenceLocalFloat = new float3(0f, 0f, 1f);
+        private float3 _lastHandLocalPosition;
         private PhysicalHandSide _lastHandSide;
         private UniversalInputStateSignal _lastInputSignal;
         private IInputService _inputService;
         private float _grabRadiusSq;
         private float _nonVrHold01;
+        private int _frameThisTick;
         private int _blackBoxWriteIndex;
         private int _lastHandFrame = -1000;
         private int _lastRatchetStep = -1;
@@ -90,13 +96,26 @@ namespace Hecton8.UI.VR
         private bool _latched;
         private bool _lowTierMath;
         private bool _nativeAllocated;
+        private bool _projectionSingular;
+        private bool _xrActiveThisFrame;
         private byte _latchedHandSide;
 
+        /// <inheritdoc />
         public float AngleDegrees => _nativeAllocated ? _leverAngles[0] : minAngleDegrees;
+
+        /// <inheritdoc />
         public float Normalized01 => _nativeAllocated ? ResolveNormalized01(_leverAngles[0]) : 0f;
+
+        /// <inheritdoc />
         public float VelocityDegreesPerSecond => _nativeAllocated ? _leverVelocities[0] : 0f;
+
+        /// <inheritdoc />
         public bool IsGrabbed => _grabbed;
+
+        /// <inheritdoc />
         public bool IsLatched => _latched;
+
+        /// <inheritdoc />
         public byte ExecutionPhase => ManualOverrideLeverContractConstants.ExecutionPhaseSimulation;
 
         private void Awake()
@@ -118,6 +137,7 @@ namespace Hecton8.UI.VR
         {
             EnsureReferences();
             CacheConfiguration();
+            EnsureNativeStateForLifecycle();
             _inputService = GlobalRegistry.Input;
             _lowTierMath = ResolveLowTierMath();
             TryRegisterHotSwapListener();
@@ -141,23 +161,29 @@ namespace Hecton8.UI.VR
             DisposeNativeState();
         }
 
+        /// <summary>
+        /// Advances the lever through the dispatcher simulation lane without allocating or polling Unity input directly.
+        /// </summary>
+        /// <param name="deltaTime">Dispatcher-provided frame delta in seconds.</param>
         public void Tick(float deltaTime)
         {
-            if (!TryEnsureNativeState())
+            if (!_nativeAllocated)
                 return;
 
+            _frameThisTick = Time.frameCount;
             float dt = SanitizeDeltaSeconds(deltaTime);
             _lastInputSignal = BuildUniversalInputSignal();
             bool gripHeld = (_lastInputSignal.ActionsBitmask & GripActionMask) != 0u;
-            bool xrActive = XRSettings.enabled && XRSettings.isDeviceActive;
-            int handAgeFrames = Time.frameCount - _lastHandFrame;
+            _xrActiveThisFrame = XRSettings.enabled && XRSettings.isDeviceActive;
+            int handAgeFrames = _frameThisTick - _lastHandFrame;
 
             if (_latched)
             {
                 _grabbed = false;
+                _projectionSingular = false;
                 _leverTargets[0] = maxAngleDegrees;
             }
-            else if (xrActive)
+            else if (_xrActiveThisFrame)
             {
                 UpdateVrGrab(gripHeld, handAgeFrames);
             }
@@ -175,6 +201,15 @@ namespace Hecton8.UI.VR
             WriteBlackBoxFrame(currentAngle);
         }
 
+        /// <summary>
+        /// Queues a physical hand sample when it is close enough to the lever pivot or handle for the next simulation tick to consume.
+        /// </summary>
+        /// <param name="handPosition">World-space hand/controller position.</param>
+        /// <param name="handForward">World-space hand forward vector supplied by the interaction bridge.</param>
+        /// <param name="interactionSignals">Interaction signal service supplied by the physical hand bridge.</param>
+        /// <param name="handSourceCollider">Collider that supplied the physical hand sample.</param>
+        /// <param name="fallbackHandSide">Hand side reported by the physical hand bridge.</param>
+        /// <returns>True when the hand sample is accepted into the lever's zero-GC state cache.</returns>
         public bool TryQueueHandPress(
             Vector3 handPosition,
             Vector3 handForward,
@@ -191,7 +226,7 @@ namespace Hecton8.UI.VR
             if (math.min(pivotDistanceSq, handleDistanceSq) > _grabRadiusSq)
                 return false;
 
-            _lastHandWorldPosition = handPosition;
+            _lastHandLocalPosition = localHand;
             _lastHandSide = fallbackHandSide;
             _lastHandFrame = Time.frameCount;
             return true;
@@ -202,17 +237,20 @@ namespace Hecton8.UI.VR
             if (!gripHeld)
             {
                 _grabbed = false;
+                _projectionSingular = false;
                 return;
             }
 
             if (handAgeFrames > MaxStaleGrabFrames)
             {
                 _grabbed = false;
+                _projectionSingular = false;
                 return;
             }
 
             if (handAgeFrames > 1)
             {
+                _projectionSingular = false;
                 if (_grabbed)
                     _leverTargets[0] = _leverAngles[0];
 
@@ -221,13 +259,22 @@ namespace Hecton8.UI.VR
 
             _grabbed = true;
             _latchedHandSide = ResolveSignalHandSide(_lastHandSide);
-            float targetAngle = SolveAngleFromHand(WorldToLocal(_lastHandWorldPosition), _leverPivots[0], ToFloat3(_resolvedLocalAxis), ToFloat3(_referenceLocalVector), minAngleDegrees, maxAngleDegrees);
-            _leverTargets[0] = targetAngle;
+            if (TrySolveAngleFromHand(_lastHandLocalPosition, _leverPivots[0], _axisLocalFloat, _referenceLocalFloat, minAngleDegrees, maxAngleDegrees, out float targetAngle))
+            {
+                _projectionSingular = false;
+                _leverTargets[0] = targetAngle;
+            }
+            else
+            {
+                _projectionSingular = true;
+                _leverTargets[0] = _leverAngles[0];
+            }
         }
 
         private void UpdateNonVrFallback(bool gripHeld, float dt)
         {
             _grabbed = false;
+            _projectionSingular = false;
             if (gripHeld)
             {
                 _nonVrHold01 = math.saturate(_nonVrHold01 + dt * math.rcp(math.max(0.05f, nonVrPullSeconds)));
@@ -276,14 +323,16 @@ namespace Hecton8.UI.VR
 
             float blend = _lowTierMath ? lowTierIkBlend : highTierIkBlend;
             float step = math.saturate(blend * math.max(1f, dt * 90f));
+            Vector3 handlePosition = handleAnchor.position;
+            Quaternion handleRotation = handleAnchor.rotation;
             if (step >= 0.999f)
             {
-                handIkTarget.SetPositionAndRotation(handleAnchor.position, handleAnchor.rotation);
+                handIkTarget.SetPositionAndRotation(handlePosition, handleRotation);
                 return;
             }
 
-            handIkTarget.position = Vector3.Lerp(handIkTarget.position, handleAnchor.position, step);
-            handIkTarget.rotation = Quaternion.Slerp(handIkTarget.rotation, handleAnchor.rotation, step);
+            handIkTarget.position = Vector3.Lerp(handIkTarget.position, handlePosition, step);
+            handIkTarget.rotation = Quaternion.Slerp(handIkTarget.rotation, handleRotation, step);
         }
 
         private void EmitRatchetHaptic(float angleDegrees)
@@ -310,7 +359,7 @@ namespace Hecton8.UI.VR
             request.DurationSeconds = 0.025f;
             request.Frequency01 = 0.72f;
             request.SourceHash = SourceHash;
-            request.Frame = unchecked((uint)Time.frameCount);
+            request.Frame = unchecked((uint)_frameThisTick);
             request.Channel = HapticRequest.ChannelGearScrape;
             GlobalSignals.Publish(in request);
             byte motorMask = _grabbed ? ResolveHapticMotorMask(_lastHandSide) : HapticBothHandsMask;
@@ -344,12 +393,12 @@ namespace Hecton8.UI.VR
             signal.AngleDegrees = _leverAngles[0];
             signal.GripStrength01 = (_lastInputSignal.ActionsBitmask & GripActionMask) != 0u ? 1f : 0f;
             signal.SourceHash = SourceHash;
-            signal.Frame = unchecked((uint)Time.frameCount);
+            signal.Frame = unchecked((uint)_frameThisTick);
             signal.Sequence = ++_signalSequence;
             signal.HandSide = _latchedHandSide;
             signal.VelocityDegreesPerSecond = latchVelocityDegreesPerSecond;
             signal.Flags = ManualOverridePulledSignal.FlagLatched;
-            signal.Flags |= XRSettings.enabled && XRSettings.isDeviceActive
+            signal.Flags |= _xrActiveThisFrame
                 ? ManualOverridePulledSignal.FlagVrGrip
                 : ManualOverridePulledSignal.FlagNonVrFallback;
             GlobalSignals.Publish(in signal);
@@ -368,7 +417,7 @@ namespace Hecton8.UI.VR
         {
             PrologueCompleteSignal signal = default;
             signal.CapsuleAup = default;
-            signal.Frame = unchecked((uint)Time.frameCount);
+            signal.Frame = unchecked((uint)_frameThisTick);
             signal.WhiteoutHoldSeconds = 0.4f;
             signal.SourceHash = SourceHash;
             signal.Sequence = _signalSequence;
@@ -384,7 +433,7 @@ namespace Hecton8.UI.VR
             request.DurationSeconds = 0.11f;
             request.Frequency01 = 0.95f;
             request.SourceHash = SourceHash;
-            request.Frame = unchecked((uint)Time.frameCount);
+            request.Frame = unchecked((uint)_frameThisTick);
             request.Channel = HapticRequest.ChannelVehicleCritical;
             GlobalSignals.Publish(in request);
             byte motorMask = ResolveHapticMotorMask(_latchedHandSide);
@@ -400,12 +449,18 @@ namespace Hecton8.UI.VR
             signal.Vertical = state.VerticalDelta;
             signal.ActionsBitmask = state.ActionsBitmask;
             signal.CurrentInputSchemeHash = state.CurrentInputSchemeHash;
-            signal.Frame = unchecked((uint)Time.frameCount);
+            signal.Frame = unchecked((uint)_frameThisTick);
             signal.Sequence = ++_inputSequence;
             signal.Flags = (byte)((state.ActionsBitmask & GripActionMask) != 0u ? 1 : 0);
             return signal;
         }
 
+        /// <summary>
+        /// Rebinds cached registry services on cold hot-swap events without adding per-frame registry polling.
+        /// </summary>
+        /// <param name="serviceSlot">Registry slot that changed.</param>
+        /// <param name="previousService">Previous service instance, unused by this lever.</param>
+        /// <param name="currentService">Current service instance, if one is registered.</param>
         public void OnGlobalRegistryServiceReplaced(GlobalRegistryServiceSlot serviceSlot, object previousService, object currentService)
         {
             if (!isActiveAndEnabled)
@@ -423,6 +478,7 @@ namespace Hecton8.UI.VR
                 if (currentService == null)
                     return;
 
+                EnsureNativeStateForLifecycle();
                 TryRegisterTick();
             }
         }
@@ -438,12 +494,12 @@ namespace Hecton8.UI.VR
             }
 
             ManualOverrideLeverTelemetryEntry entry = default;
-            entry.HandLocalPosition = WorldToLocal(_lastHandWorldPosition);
+            entry.HandLocalPosition = _lastHandLocalPosition;
             entry.PivotLocalPosition = _leverPivots[0];
             entry.AngleDegrees = angleDegrees;
             entry.TargetAngleDegrees = target;
             entry.VelocityDegreesPerSecond = velocity;
-            entry.Frame = unchecked((uint)Time.frameCount);
+            entry.Frame = unchecked((uint)_frameThisTick);
             entry.Flags = BuildTelemetryFlags();
             _blackBox[_blackBoxWriteIndex] = entry;
             _blackBoxWriteIndex++;
@@ -460,8 +516,10 @@ namespace Hecton8.UI.VR
                 flags |= 1 << 1;
             if (_lowTierMath)
                 flags |= 1 << 2;
-            if (XRSettings.enabled && XRSettings.isDeviceActive)
+            if (_xrActiveThisFrame)
                 flags |= 1 << 3;
+            if (_projectionSingular)
+                flags |= 1 << 4;
             return flags;
         }
 
@@ -518,6 +576,7 @@ namespace Hecton8.UI.VR
         private void CacheConfiguration()
         {
             _resolvedLocalAxis = NormalizeOr(localRotationAxis, Vector3.right);
+            _axisLocalFloat = ToFloat3(_resolvedLocalAxis);
             minAngleDegrees = math.clamp(SanitizeFloat(minAngleDegrees, 0f), -180f, 180f);
             maxAngleDegrees = math.clamp(SanitizeFloat(maxAngleDegrees, 90f), minAngleDegrees + 1f, 180f);
             latchAngleDegrees = math.clamp(SanitizeFloat(latchAngleDegrees, 85f), minAngleDegrees, maxAngleDegrees);
@@ -530,6 +589,7 @@ namespace Hecton8.UI.VR
             lowTierIkBlend = math.saturate(SanitizeFloat(lowTierIkBlend, 0.35f));
             highTierIkBlend = math.saturate(SanitizeFloat(highTierIkBlend, 0.85f));
             _referenceLocalVector = ResolveReferenceVector();
+            _referenceLocalFloat = ToFloat3(_referenceLocalVector);
             if (_nativeAllocated)
                 _leverPivots[0] = ToFloat3(pivotLocalPosition);
         }
@@ -579,18 +639,17 @@ namespace Hecton8.UI.VR
             _nativeAllocated = true;
         }
 
-        private bool TryEnsureNativeState()
+        private void EnsureNativeStateForLifecycle()
         {
             if (_nativeAllocated)
-                return true;
+                return;
 
             AllocateNativeState();
             if (!_nativeAllocated)
-                return false;
+                return;
 
             CacheConfiguration();
             InitializeLeverStateAfterAllocation();
-            return true;
         }
 
         private void InitializeLeverStateAfterAllocation()
@@ -662,7 +721,7 @@ namespace Hecton8.UI.VR
 
         private void TryRegisterTick()
         {
-            if (_registeredTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (_registeredTick || !_nativeAllocated || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
@@ -718,15 +777,26 @@ namespace Hecton8.UI.VR
 
         private static float SolveAngleFromHand(float3 handLocal, float3 pivotLocal, float3 axisLocal, float3 referenceLocal, float minimum, float maximum)
         {
+            return TrySolveAngleFromHand(handLocal, pivotLocal, axisLocal, referenceLocal, minimum, maximum, out float angle)
+                ? angle
+                : minimum;
+        }
+
+        private static bool TrySolveAngleFromHand(float3 handLocal, float3 pivotLocal, float3 axisLocal, float3 referenceLocal, float minimum, float maximum, out float angle)
+        {
             float3 fromPivot = handLocal - pivotLocal;
             float3 projected = fromPivot - axisLocal * math.dot(fromPivot, axisLocal);
             float projectedLengthSq = math.lengthsq(projected);
             if (projectedLengthSq < MinAxisLengthSq)
-                return minimum;
+            {
+                angle = minimum;
+                return false;
+            }
 
             projected *= math.rsqrt(projectedLengthSq);
             float signed = math.atan2(math.dot(axisLocal, math.cross(referenceLocal, projected)), math.dot(referenceLocal, projected)) * DegreesPerRadian;
-            return math.clamp(signed, minimum, maximum);
+            angle = math.clamp(signed, minimum, maximum);
+            return math.isfinite(angle);
         }
 
         private static float SanitizeDeltaSeconds(float value)
@@ -766,14 +836,24 @@ namespace Hecton8.UI.VR
 
         private static byte ResolveSignalHandSide(PhysicalHandSide side)
         {
-            return side == PhysicalHandSide.Left
-                ? ManualOverridePulledSignal.HandLeft
-                : ManualOverridePulledSignal.HandRight;
+            if (side == PhysicalHandSide.Left)
+                return ManualOverridePulledSignal.HandLeft;
+
+            if (side == PhysicalHandSide.Right)
+                return ManualOverridePulledSignal.HandRight;
+
+            return ManualOverridePulledSignal.HandUnknown;
         }
 
         private static byte ResolveHapticMotorMask(PhysicalHandSide side)
         {
-            return side == PhysicalHandSide.Left ? HapticLeftHandMask : HapticRightHandMask;
+            if (side == PhysicalHandSide.Left)
+                return HapticLeftHandMask;
+
+            if (side == PhysicalHandSide.Right)
+                return HapticRightHandMask;
+
+            return HapticBothHandsMask;
         }
 
         private static byte ResolveHapticMotorMask(byte signalHandSide)
@@ -794,7 +874,8 @@ namespace Hecton8.UI.VR
             float3 reference = new float3(0f, 0f, 1f);
             float zero = SolveAngleFromHand(reference, float3.zero, axis, reference, 0f, 90f);
             float rightAngle = SolveAngleFromHand(new float3(0f, -1f, 0f), float3.zero, axis, reference, 0f, 90f);
-            return math.abs(zero) <= 0.01f && math.abs(rightAngle - 90f) <= 0.01f;
+            bool singularRejected = !TrySolveAngleFromHand(float3.zero, float3.zero, axis, reference, 0f, 90f, out _);
+            return singularRejected && math.abs(zero) <= 0.01f && math.abs(rightAngle - 90f) <= 0.01f;
         }
 #endif
 

@@ -140,3 +140,39 @@ Verification:
 - Static grep confirms exact-length guard and no `MutableGrid.IsCreated` branch in outpost extraction.
 - `Hecton8.Core.Contracts` Unity/Bee response-file check exits 0.
 - Full runtime/compiler proof remains blocked by the existing project-wide dependency wall.
+
+## Recheck Report: Signal Backpressure And Telemetry
+Status: PENDING VERIFICATION.
+
+What was wrong:
+- The WFC state-change drain only processed the first 8 entries from a bounded signal snapshot, so valid entries after index 7 could expire without persistence.
+- Same-sector bursts packed and dirtied the 500-cell grid once per signal instead of once per dirty sector group.
+- `WfcBytesSaved` used packed-word bytes as the baseline, causing the 288-byte worst-case packed payload to report 0 bytes saved even though it replaces a 500-byte mutable grid.
+- `Docs/Tasks/CURRENT_BATCH.md` has rotated and no longer contains `MACRO_WFC_PERSISTENCE_SYNC`; claiming a fresh prompt extraction would be false.
+
+What was done:
+- `SaveManager.DrainWfcOutpostStateChangedSignals` now scans the full `WfcOutpostStateChangedSignal` frame snapshot.
+- Dirty same-sector cell writes accumulate in the DataVault mutable grid and persist once when the sector changes or the scan ends.
+- Removed the stale `MaxWfcOutpostStateSignalsPerTick` cap constant.
+- `WfcBytesSaved` now reports `CellCount - payloadBytes`, clamped at zero.
+- Status and rationale logs now record the rotated batch-file constraint.
+
+Cinematic cheats used:
+- Keep the four-plane mutable bitmask as exact disk truth instead of replaying interaction history.
+- Batch same-sector persistence writes instead of adding a managed per-sector cache.
+- Use telemetry math to expose real disk-byte savings so higher tiers can spend restored-state budget on richer presentation without changing the truth payload.
+
+Exact microseconds saved:
+- Measured savings: 0 us. No Unity profiler, Burst Inspector, GCMonitor, or runtime trace is available.
+- Static estimate: a same-sector burst of 8 changes now performs 1 pack pass instead of 8, removing 7 redundant 500-cell pack scans.
+- Static estimate: telemetry correction costs one integer subtraction and clamp on successful persist, below measurement noise.
+- Static cost: worst-case alternating-sector bursts may still pack per sector group, bounded by signal lane capacity; correctness is preferred over silent state loss.
+
+Verification:
+- Static scan confirms the full `for (int i = 0; i < signals.Length; i++)` snapshot loop.
+- Static scan confirms no `MaxWfcOutpostStateSignalsPerTick` reference remains.
+- Static scan confirms `CellCount - payloadBytes` telemetry baseline and no old `PackedWordBytes - payloadBytes` baseline.
+- Static scan confirms exact WFC payload length guard and direct `MutableGrid[cellIndex]` extraction read remain intact.
+- `Hecton8.Core.Contracts` Unity/Bee response-file compile exits 0.
+- `Hecton8.Core` Unity/Bee response-file compile remains blocked by unrelated Audio Virtualization, AI Cognition/Fauna, UI Diegetic, World Ore, Outpost generation, and WFC power boot missing symbols.
+- Runtime save/load roundtrip, PlayMode, GCMonitor, Burst Inspector, and profiler proof remain blocked by the project compile wall.

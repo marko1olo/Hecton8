@@ -39,6 +39,13 @@ namespace Hecton8.SaveSystem
         private const int RtgDecaySaveVersion = 70;
         private const int MetaCampaignSaveVersion = 71;
         private const int FirstHourDtoLockSaveVersion = 72;
+        private const int ProceduralFaunaStateStrideBytes = 16;
+        private const int HibernatedFaunaStateStrideBytes = 112;
+        private const int SerializedStringHeaderBytes = sizeof(int);
+        private const int SerializedIntBytes = sizeof(int);
+        private const int SerializedLongBytes = sizeof(long);
+        private const int SerializedFloatBytes = sizeof(float);
+        private const int SerializedBoolBytes = sizeof(byte);
         private const uint WfcOutpostPayloadMagic = 0x57464342u; // WFCB
         private const ushort WfcOutpostPayloadVersion = 1;
         private const byte WfcOutpostPayloadFlagRle = 1 << 0;
@@ -1335,13 +1342,13 @@ namespace Hecton8.SaveSystem
             return writer.WriteInt(value.suppressedPlacementCount)
                 && writer.WriteStructArray(value.suppressedPlacementKeys)
                 && writer.WriteInt(value.faunaStateCount)
-                && writer.WriteStructArray(value.faunaStates)
+                && WriteProceduralFaunaStateArray(ref writer, value.faunaStates)
                 && writer.WriteInt(value.geologySeamStateCount)
                 && writer.WriteStructArray(value.geologySeamStates)
                 && writer.WriteInt(value.geologyCaveEntranceCount)
                 && writer.WriteStructArray(value.geologyCaveEntrances)
                 && writer.WriteInt(value.hibernatedFaunaCount)
-                && writer.WriteStructArray(value.hibernatedFaunaStates);
+                && WriteHibernatedFaunaStateArray(ref writer, value.hibernatedFaunaStates);
         }
 
         private static bool ReadProceduralWorldState(ref BufferReader reader, int version, out ProceduralWorldStateDTO value)
@@ -1350,7 +1357,7 @@ namespace Hecton8.SaveSystem
             if (!reader.ReadInt(out value.suppressedPlacementCount)
                 || !reader.ReadStructArray(out value.suppressedPlacementKeys)
                 || !reader.ReadInt(out value.faunaStateCount)
-                || !reader.ReadStructArray(out value.faunaStates))
+                || !ReadProceduralFaunaStateArray(ref reader, out value.faunaStates))
             {
                 return false;
             }
@@ -1377,7 +1384,183 @@ namespace Hecton8.SaveSystem
                 return true;
 
             return reader.ReadInt(out value.hibernatedFaunaCount)
-                && reader.ReadStructArray(out value.hibernatedFaunaStates);
+                && ReadHibernatedFaunaStateArray(ref reader, out value.hibernatedFaunaStates);
+        }
+
+        private static bool WriteProceduralFaunaStateArray(ref BufferWriter writer, ProceduralFaunaStateDTO[] values)
+        {
+            int count = values != null ? values.Length : NullCollectionCount;
+            if (!writer.WriteInt(count))
+                return false;
+
+            if (values == null || values.Length == 0)
+                return true;
+
+            for (int i = 0; i < values.Length; i++)
+            {
+                ProceduralFaunaStateDTO value = values[i];
+                if (!writer.WriteLong(value.runtimeKey) ||
+                    !writer.WriteFloat(value.cooldownUntilPlayTime) ||
+                    !writer.WriteBool(value.isLargeThreatZone) ||
+                    !writer.WriteBool(value.blocked) ||
+                    !writer.WriteByte(0) ||
+                    !writer.WriteByte(0))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static bool ReadProceduralFaunaStateArray(ref BufferReader reader, out ProceduralFaunaStateDTO[] values)
+        {
+            values = null;
+            if (!reader.ReadInt(out int count))
+                return false;
+
+            if (count == NullCollectionCount)
+                return true;
+
+            if (count < 0)
+            {
+                reader.SetError("Procedural fauna state count is negative.");
+                return false;
+            }
+
+            if (count == 0)
+            {
+                values = Array.Empty<ProceduralFaunaStateDTO>();
+                return true;
+            }
+
+            if (count > int.MaxValue / ProceduralFaunaStateStrideBytes)
+            {
+                reader.SetError("Procedural fauna state payload exceeds the supported range.");
+                return false;
+            }
+
+            int payloadBytes = count * ProceduralFaunaStateStrideBytes;
+            if (!reader.CanConsumeBytes(payloadBytes))
+                return false;
+
+            values = new ProceduralFaunaStateDTO[count];
+            for (int i = 0; i < count; i++)
+            {
+                if (!reader.ReadLong(out values[i].runtimeKey) ||
+                    !reader.ReadFloat(out values[i].cooldownUntilPlayTime) ||
+                    !reader.ReadBool(out values[i].isLargeThreatZone) ||
+                    !reader.ReadBool(out values[i].blocked) ||
+                    !reader.ReadByte(out _) ||
+                    !reader.ReadByte(out _))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static bool WriteHibernatedFaunaStateArray(ref BufferWriter writer, HibernatedFaunaStateDTO[] values)
+        {
+            int count = values != null ? values.Length : NullCollectionCount;
+            if (!writer.WriteInt(count))
+                return false;
+
+            if (values == null || values.Length == 0)
+                return true;
+
+            for (int i = 0; i < values.Length; i++)
+            {
+                HibernatedFaunaStateDTO value = values[i];
+                if (!writer.WriteInt(value.speciesId) ||
+                    !writer.WriteInt(value.biomeIndex) ||
+                    !writer.WriteInt(value.creatureTypeIndex) ||
+                    !writer.WriteFloat(value.health) ||
+                    !writer.WriteStruct(value.position) ||
+                    !writer.WriteFloat(value.rotationX) ||
+                    !writer.WriteFloat(value.rotationY) ||
+                    !writer.WriteFloat(value.rotationZ) ||
+                    !writer.WriteFloat(value.rotationW) ||
+                    !writer.WriteFloat(value.linearVelocityX) ||
+                    !writer.WriteFloat(value.linearVelocityY) ||
+                    !writer.WriteFloat(value.linearVelocityZ) ||
+                    !writer.WriteFloat(value.angularVelocityX) ||
+                    !writer.WriteFloat(value.angularVelocityY) ||
+                    !writer.WriteFloat(value.angularVelocityZ) ||
+                    !writer.WriteUInt(value.uniqueInstanceUid) ||
+                    !writer.WriteBool(value.isLargeThreat) ||
+                    !writer.WriteByte(0) ||
+                    !writer.WriteByte(0) ||
+                    !writer.WriteByte(0))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static bool ReadHibernatedFaunaStateArray(ref BufferReader reader, out HibernatedFaunaStateDTO[] values)
+        {
+            values = null;
+            if (!reader.ReadInt(out int count))
+                return false;
+
+            if (count == NullCollectionCount)
+                return true;
+
+            if (count < 0)
+            {
+                reader.SetError("Hibernated fauna state count is negative.");
+                return false;
+            }
+
+            if (count == 0)
+            {
+                values = Array.Empty<HibernatedFaunaStateDTO>();
+                return true;
+            }
+
+            if (count > int.MaxValue / HibernatedFaunaStateStrideBytes)
+            {
+                reader.SetError("Hibernated fauna state payload exceeds the supported range.");
+                return false;
+            }
+
+            int payloadBytes = count * HibernatedFaunaStateStrideBytes;
+            if (!reader.CanConsumeBytes(payloadBytes))
+                return false;
+
+            values = new HibernatedFaunaStateDTO[count];
+            for (int i = 0; i < count; i++)
+            {
+                if (!reader.ReadInt(out values[i].speciesId) ||
+                    !reader.ReadInt(out values[i].biomeIndex) ||
+                    !reader.ReadInt(out values[i].creatureTypeIndex) ||
+                    !reader.ReadFloat(out values[i].health) ||
+                    !reader.ReadStruct(out values[i].position) ||
+                    !reader.ReadFloat(out values[i].rotationX) ||
+                    !reader.ReadFloat(out values[i].rotationY) ||
+                    !reader.ReadFloat(out values[i].rotationZ) ||
+                    !reader.ReadFloat(out values[i].rotationW) ||
+                    !reader.ReadFloat(out values[i].linearVelocityX) ||
+                    !reader.ReadFloat(out values[i].linearVelocityY) ||
+                    !reader.ReadFloat(out values[i].linearVelocityZ) ||
+                    !reader.ReadFloat(out values[i].angularVelocityX) ||
+                    !reader.ReadFloat(out values[i].angularVelocityY) ||
+                    !reader.ReadFloat(out values[i].angularVelocityZ) ||
+                    !reader.ReadUInt(out values[i].uniqueInstanceUid) ||
+                    !reader.ReadBool(out values[i].isLargeThreat) ||
+                    !reader.ReadByte(out _) ||
+                    !reader.ReadByte(out _) ||
+                    !reader.ReadByte(out _))
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         private static bool WriteConstruction(ref BufferWriter writer, ConstructionDTO value)
@@ -2173,7 +2356,11 @@ namespace Hecton8.SaveSystem
 
         private static bool ReadInventoryCellArray(ref BufferReader reader, out InventoryCellDTO[] values)
         {
-            return ReadCustomArray(ref reader, out values, ReadInventoryCell);
+            return ReadCustomArray(
+                ref reader,
+                out values,
+                ReadInventoryCell,
+                SerializedIntBytes + SerializedIntBytes + SerializedStringHeaderBytes + SerializedIntBytes);
         }
 
         private static bool WriteScanEntryArray(ref BufferWriter writer, ScanEntryDTO[] values)
@@ -2183,7 +2370,7 @@ namespace Hecton8.SaveSystem
 
         private static bool ReadScanEntryArray(ref BufferReader reader, out ScanEntryDTO[] values)
         {
-            return ReadCustomArray(ref reader, out values, ReadScanEntry);
+            return ReadCustomArray(ref reader, out values, ReadScanEntry, SerializedStringHeaderBytes * 4);
         }
 
         private static bool WriteBarterOfferStateArray(ref BufferWriter writer, BarterOfferStateDTO[] values)
@@ -2193,7 +2380,11 @@ namespace Hecton8.SaveSystem
 
         private static bool ReadBarterOfferStateArray(ref BufferReader reader, out BarterOfferStateDTO[] values)
         {
-            return ReadCustomArray(ref reader, out values, ReadBarterOfferState);
+            return ReadCustomArray(
+                ref reader,
+                out values,
+                ReadBarterOfferState,
+                SerializedStringHeaderBytes + SerializedIntBytes);
         }
 
         private static bool WriteBarterTransactionArray(ref BufferWriter writer, BarterTransactionDTO[] values)
@@ -2203,7 +2394,7 @@ namespace Hecton8.SaveSystem
 
         private static bool ReadBarterTransactionArray(ref BufferReader reader, out BarterTransactionDTO[] values)
         {
-            return ReadCustomArray(ref reader, out values, ReadBarterTransaction);
+            return ReadCustomArray(ref reader, out values, ReadBarterTransaction, SerializedStringHeaderBytes * 5);
         }
 
         private static bool WriteFieldOperationEntryArray(ref BufferWriter writer, FieldOperationEntryDTO[] values)
@@ -2213,7 +2404,7 @@ namespace Hecton8.SaveSystem
 
         private static bool ReadFieldOperationEntryArray(ref BufferReader reader, out FieldOperationEntryDTO[] values)
         {
-            return ReadCustomArray(ref reader, out values, ReadFieldOperationEntry);
+            return ReadCustomArray(ref reader, out values, ReadFieldOperationEntry, SerializedStringHeaderBytes * 4);
         }
 
         private static bool WriteBeaconEntryArray(ref BufferWriter writer, BeaconEntryDTO[] values)
@@ -2223,7 +2414,11 @@ namespace Hecton8.SaveSystem
 
         private static bool ReadBeaconEntryArray(ref BufferReader reader, out BeaconEntryDTO[] values)
         {
-            return ReadCustomArray(ref reader, out values, ReadBeaconEntry);
+            return ReadCustomArray(
+                ref reader,
+                out values,
+                ReadBeaconEntry,
+                (SerializedStringHeaderBytes * 2) + (SerializedFloatBytes * 12));
         }
 
         private static bool WritePdaLogbookEntryArray(ref BufferWriter writer, PDALogbookEntryDTO[] values)
@@ -2245,6 +2440,18 @@ namespace Hecton8.SaveSystem
                 reader.SetError("Collection length is negative.");
                 return false;
             }
+
+            if (count == 0)
+            {
+                values = Array.Empty<PDALogbookEntryDTO>();
+                return true;
+            }
+
+            int minimumBytesPerEntry = version >= 54
+                ? (SerializedIntBytes * 5) + (SerializedFloatBytes * 2)
+                : (SerializedIntBytes * 2) + (SerializedFloatBytes * 2) + (SerializedStringHeaderBytes * 3);
+            if (!reader.CanConsumeCollectionItems(count, minimumBytesPerEntry, nameof(PDALogbookEntryDTO)))
+                return false;
 
             values = new PDALogbookEntryDTO[count];
             for (int i = 0; i < count; i++)
@@ -2276,6 +2483,18 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
+            if (count == 0)
+            {
+                values = Array.Empty<PDAMarkerEntryDTO>();
+                return true;
+            }
+
+            int minimumBytesPerEntry = version >= 55
+                ? (SerializedStringHeaderBytes * 2) + SerializedIntBytes + (SerializedFloatBytes * 3) + SerializedBoolBytes + SerializedIntBytes + (SerializedLongBytes * 3) + (SerializedFloatBytes * 3)
+                : (SerializedStringHeaderBytes * 2) + SerializedIntBytes + (SerializedFloatBytes * 3) + SerializedBoolBytes;
+            if (!reader.CanConsumeCollectionItems(count, minimumBytesPerEntry, nameof(PDAMarkerEntryDTO)))
+                return false;
+
             values = new PDAMarkerEntryDTO[count];
             for (int i = 0; i < count; i++)
             {
@@ -2293,7 +2512,11 @@ namespace Hecton8.SaveSystem
 
         private static bool ReadProceduralLorePlacementArray(ref BufferReader reader, out ProceduralLorePlacementDTO[] values)
         {
-            return ReadCustomArray(ref reader, out values, ReadProceduralLorePlacement);
+            return ReadCustomArray(
+                ref reader,
+                out values,
+                ReadProceduralLorePlacement,
+                (SerializedStringHeaderBytes * 2) + SerializedLongBytes + (SerializedFloatBytes * 3));
         }
 
         private static bool WriteModuleArray(ref BufferWriter writer, ModuleDTO[] values)
@@ -2316,6 +2539,29 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
+            if (count == 0)
+            {
+                values = Array.Empty<ModuleDTO>();
+                return true;
+            }
+
+            int minimumBytesPerEntry = (SerializedStringHeaderBytes * 4)
+                + (SerializedIntBytes * 3)
+                + (SerializedFloatBytes * 14)
+                + (SerializedStringHeaderBytes * 2)
+                + SerializedBoolBytes
+                + sizeof(byte);
+            if (version >= 63)
+                minimumBytesPerEntry += sizeof(byte);
+            if (version >= 49)
+                minimumBytesPerEntry += SerializedFloatBytes + SerializedBoolBytes;
+            if (version >= 48)
+                minimumBytesPerEntry += SerializedIntBytes + (SerializedStringHeaderBytes * 3);
+            if (version >= 51)
+                minimumBytesPerEntry += SerializedStringHeaderBytes;
+            if (!reader.CanConsumeCollectionItems(count, minimumBytesPerEntry, nameof(ModuleDTO)))
+                return false;
+
             values = new ModuleDTO[count];
             for (int i = 0; i < count; i++)
             {
@@ -2333,7 +2579,11 @@ namespace Hecton8.SaveSystem
 
         private static bool ReadModuleGraphNodeArray(ref BufferReader reader, out ModuleGraphNodeDTO[] values)
         {
-            return ReadCustomArray(ref reader, out values, ReadModuleGraphNode);
+            return ReadCustomArray(
+                ref reader,
+                out values,
+                ReadModuleGraphNode,
+                SerializedStringHeaderBytes + SerializedIntBytes + (SerializedLongBytes * 3) + (SerializedFloatBytes * 7));
         }
 
         private static bool WriteModuleGraphEdgeArray(ref BufferWriter writer, ModuleGraphEdgeDTO[] values)
@@ -2343,7 +2593,7 @@ namespace Hecton8.SaveSystem
 
         private static bool ReadModuleGraphEdgeArray(ref BufferReader reader, out ModuleGraphEdgeDTO[] values)
         {
-            return ReadCustomArray(ref reader, out values, ReadModuleGraphEdge);
+            return ReadCustomArray(ref reader, out values, ReadModuleGraphEdge, SerializedIntBytes * 2);
         }
 
         private static bool WriteStringArray(ref BufferWriter writer, string[] values)
@@ -2378,6 +2628,15 @@ namespace Hecton8.SaveSystem
                 reader.SetError("Collection length is negative.");
                 return false;
             }
+
+            if (count == 0)
+            {
+                values = Array.Empty<string>();
+                return true;
+            }
+
+            if (!reader.CanConsumeCollectionItems(count, SerializedStringHeaderBytes, "String array"))
+                return false;
 
             values = new string[count];
             for (int i = 0; i < count; i++)
@@ -2421,6 +2680,9 @@ namespace Hecton8.SaveSystem
                 reader.SetError("Collection length is negative.");
                 return false;
             }
+
+            if (!reader.CanConsumeCollectionItems(count, SerializedStringHeaderBytes, "String list"))
+                return false;
 
             values = new List<string>(count);
             for (int i = 0; i < count; i++)
@@ -2466,6 +2728,9 @@ namespace Hecton8.SaveSystem
                 reader.SetError("Collection length is negative.");
                 return false;
             }
+
+            if (!reader.CanConsumeCollectionItems(count, SerializedFloatBytes, "Float list"))
+                return false;
 
             values = new List<float>(count);
             for (int i = 0; i < count; i++)
@@ -2515,6 +2780,9 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
+            if (!reader.CanConsumeCollectionItems(count, SerializedStringHeaderBytes + SerializedFloatBytes, "String-float dictionary"))
+                return false;
+
             values = new Dictionary<string, float>(count);
             for (int i = 0; i < count; i++)
             {
@@ -2562,6 +2830,9 @@ namespace Hecton8.SaveSystem
                 reader.SetError("Collection length is negative.");
                 return false;
             }
+
+            if (!reader.CanConsumeCollectionItems(count, SerializedStringHeaderBytes + SerializedBoolBytes, "String-bool dictionary"))
+                return false;
 
             values = new Dictionary<string, bool>(count);
             for (int i = 0; i < count; i++)
@@ -2611,6 +2882,9 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
+            if (!reader.CanConsumeCollectionItems(count, SerializedStringHeaderBytes * 2, "String-string dictionary"))
+                return false;
+
             values = new Dictionary<string, string>(count);
             for (int i = 0; i < count; i++)
             {
@@ -2658,6 +2932,9 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
+            if (!reader.CanConsumeCollectionItems(count, SerializedIntBytes, "Int hash set"))
+                return false;
+
             values = new HashSet<int>(count);
             for (int i = 0; i < count; i++)
             {
@@ -2688,7 +2965,11 @@ namespace Hecton8.SaveSystem
             return true;
         }
 
-        private static bool ReadCustomArray<T>(ref BufferReader reader, out T[] values, ReadItemDelegate<T> readItem)
+        private static bool ReadCustomArray<T>(
+            ref BufferReader reader,
+            out T[] values,
+            ReadItemDelegate<T> readItem,
+            int minimumBytesPerElement)
         {
             values = null;
             if (!reader.ReadInt(out int count))
@@ -2702,6 +2983,15 @@ namespace Hecton8.SaveSystem
                 reader.SetError("Collection length is negative.");
                 return false;
             }
+
+            if (count == 0)
+            {
+                values = Array.Empty<T>();
+                return true;
+            }
+
+            if (!reader.CanConsumeCollectionItems(count, minimumBytesPerElement, typeof(T).Name))
+                return false;
 
             values = new T[count];
             for (int i = 0; i < count; i++)
@@ -3095,6 +3385,38 @@ namespace Hecton8.SaveSystem
                 value = new string((char*)(_buffer + _cursor), 0, charCount);
                 _cursor += byteCount;
                 return true;
+            }
+
+            public bool CanConsumeBytes(int byteCount)
+            {
+                if (byteCount < 0 || _cursor < 0 || _cursor > _length - byteCount)
+                {
+                    SetError("Save payload read exceeded the available byte range.");
+                    return false;
+                }
+
+                return true;
+            }
+
+            public bool CanConsumeCollectionItems(int count, int minimumBytesPerElement, string collectionName)
+            {
+                if (count <= 0)
+                    return true;
+
+                if (minimumBytesPerElement <= 0)
+                {
+                    SetError($"{collectionName} minimum element size is invalid.");
+                    return false;
+                }
+
+                long minimumBytesLong = (long)count * minimumBytesPerElement;
+                if (minimumBytesLong > int.MaxValue)
+                {
+                    SetError($"{collectionName} minimum payload size exceeds the supported range.");
+                    return false;
+                }
+
+                return CanConsumeBytes((int)minimumBytesLong);
             }
 
             private bool TryConsume(int byteCount)

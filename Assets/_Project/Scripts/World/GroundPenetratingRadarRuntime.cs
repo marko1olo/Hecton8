@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using Hecton8.Caves;
 using Hecton8.Core;
@@ -28,7 +29,7 @@ namespace Hecton8.World
         private static readonly int GroundRadarScaleId = Shader.PropertyToID("_GroundRadarScale");
 
         [Header("Dependencies")]
-        [SerializeField] private MonoBehaviour worldResourceSpawner;
+        [SerializeField, Tooltip("Optional ore read-model provider; must implement IWorldResourceSpawnerReadModel. GlobalRegistry fallback is used when empty.")] private MonoBehaviour worldResourceSpawner;
         [SerializeField] private Mesh radarPingMesh;
         [SerializeField] private Material radarPingMaterial;
 
@@ -58,6 +59,7 @@ namespace Hecton8.World
         private Material _runtimeMaterial;
         private IEcosystemDirectorService _ecosystemDirector;
         private IWorldResourceSpawnerReadModel _worldResourceSpawnerReadModel;
+        private readonly List<MonoBehaviour> _componentProbe = new List<MonoBehaviour>(8); // COLD ALLOC: List<MonoBehaviour>[8] - same-object ore read-model probe - owner: TERRAIN_GPR_SYSTEM
         private JobHandle _scanJobHandle;
         private Bounds _drawBounds;
         private Transform _cachedPlayerTransform;
@@ -537,18 +539,23 @@ namespace Hecton8.World
             if (_worldResourceSpawnerReadModel != null)
                 return;
 
-            MonoBehaviour[] components = GetComponents<MonoBehaviour>();
-            for (int i = 0; i < components.Length; i++)
+            _componentProbe.Clear();
+            GetComponents(_componentProbe);
+            for (int i = 0; i < _componentProbe.Count; i++)
             {
-                if (ReferenceEquals(components[i], this))
+                MonoBehaviour component = _componentProbe[i];
+                if (ReferenceEquals(component, this))
                     continue;
-                _worldResourceSpawnerReadModel = components[i] as IWorldResourceSpawnerReadModel;
+                _worldResourceSpawnerReadModel = component as IWorldResourceSpawnerReadModel;
                 if (_worldResourceSpawnerReadModel != null)
                 {
-                    worldResourceSpawner = components[i];
+                    worldResourceSpawner = component;
+                    _componentProbe.Clear();
                     return;
                 }
             }
+
+            _componentProbe.Clear();
         }
 
         private bool TryResolveOreSource(out NativeArray<float3> orePositions, out NativeArray<int> oreTypes, out int oreCount)

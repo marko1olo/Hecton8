@@ -75,8 +75,60 @@ Execution lane: SIMULATION / `PriorityLayer.Player`
 - [x] Blackbox ring wrap polish. DOD: telemetry write index now wraps with increment/compare instead of `% BlackBoxFrameCount` division. Rejected: modulo in a 60Hz telemetry write. Estimate: about 0.01 us saved per tick on weak CPUs.
 - [x] Hot-swap registration flag. DOD: local `_registeredHotSwapListener` mirrors GlobalRegistry listener state to avoid duplicate/miss scans. Rejected: blind register/unregister calls every lifecycle event. Estimate: cold lifecycle only.
 - [x] Play-mode receiver registration. DOD: lever no longer registers with `PhysicalHandReceiverRegistry` outside play mode. Rejected: mutating the runtime collider table from edit-mode inspector lifecycle. Estimate: editor hygiene only; 0 runtime cost.
-- [x] Deferred allocation recovery. DOD: Tick attempts allocation if native state is absent, then reinitializes angles/targets only after allocation succeeds. Rejected: permanent dead lever after a deferred dispose blocks allocation during lifecycle wiring. Estimate: no cost after native state exists.
+- [x] Deferred allocation recovery audit. DOD: earlier Tick-side recovery was identified as too permissive for Zero-GC policy and is superseded by Loop 13 lifecycle-only allocation. Rejected: keeping any `new NativeArray` path reachable from Tick. Estimate: removes rare hot-path cold allocation risk.
 - [x] Reverified after nested-anchor pass. DOD: `git diff --check` passed with CRLF warnings only; static ban scan returned no matches; generated `Hecton8.UI.VR.rsp` probe still reports only stale Core metadata (`ManualOverridePulledSignal`, `PhysicalHandReceiverRegistry`). Rejected: claiming Unity compile green while the Core ref is stale. Estimate: verification only.
+
+## Loop 11 - Projection Singularity / Batch Drift Hardening
+
+- [x] Batch drift audit. DOD: attempted to extract `<AGENT_PROMPT id="VR_COCKPIT_MANUAL_OVERRIDE">` from `Docs/Tasks/CURRENT_BATCH.md`; the current file now contains unrelated prompt IDs only. Rejected: silently relying on neighboring prompt text. Estimate: cold IO only.
+- [x] Projection singularity guard. DOD: VR grab now uses `TrySolveAngleFromHand`; if the hand lies on the rotation axis/pivot and the plane projection collapses, the lever holds the current angle and sets a blackbox flag instead of snapping to minimum. Rejected: returning `minAngleDegrees` on degenerate projection because it creates false lever movement. Estimate: +0.03 us valid solve branch; saves visible recovery churn on singular frames.
+- [x] Dot/cross self-check extended. DOD: editor/development verification now asserts both the 0/90-degree sign tests and explicit rejection of a zero-length projected vector. Rejected: testing only happy-path angular pulls. Estimate: cold check only.
+- [x] Rechecked after singularity pass. DOD: `git diff --check` passed with CRLF warning only; static ban scan returned no `HingeJoint`, `math.normalize`, `.normalized`, managed `foreach`, `.ToArray`, `FindObject`, `GetComponentInParent`, `StartCoroutine`, or Unity `Update`; direct Unity Roslyn probe for `Hecton8.UI.VR.rsp` exited 0. Rejected: chat-only verification. Estimate: static scan plus compile probe.
+
+## Loop 12 - Hand-Side Fallback Hardening
+
+- [x] Invalid hand-side guard. DOD: signal hand side and haptic motor mask helpers now explicitly accept `Left`, `Right`, and unknown/invalid enum values; invalid values degrade to `HandUnknown` and both motors. Rejected: defaulting any non-left enum byte to right-hand telemetry. Estimate: +0.01 us only on haptic/latch helper calls.
+- [x] Reverified hand-side pass. DOD: `git diff --check` passed with CRLF warning only; static ban scan returned no forbidden lever patterns; direct Unity Roslyn probe for `Hecton8.UI.VR.rsp` returned `EXIT=0` after a transient missing Core ref race recovered. Rejected: trusting the first artifact-race `CS0006`. Estimate: verification only.
+
+## Loop 13 - Hot-Path Allocation Closure
+
+- [x] Tick allocation closure. DOD: `Tick` now returns if native state is missing; native allocation recovery runs only from lifecycle before dispatcher registration, and tick registration requires `_nativeAllocated`. Rejected: rare `new NativeArray` recovery reachable through `Tick` because Zero-GC policy treats hot-path allocation reachability as a defect. Estimate: 0 B/frame proof strengthened; one branch unchanged.
+- [x] Reverified allocation closure. DOD: source scan shows `AllocateNativeState()` is reachable from `Awake` and lifecycle helper only, not from `Tick`; `git diff --check` passed with CRLF warning only; static ban scan returned no forbidden lever patterns; direct Unity Roslyn probe for `Hecton8.UI.VR.rsp` returned `EXIT=0`. Rejected: relying on visual inspection of call graph. Estimate: verification only.
+
+## Loop 14 - Dispatcher Rebind Allocation Recovery
+
+- [x] Dispatcher hotswap native recovery. DOD: dispatcher replacement now calls `EnsureNativeStateForLifecycle()` before `TryRegisterTick()`, so a deferred-disposal recovery gap can heal in the cold service-rebind path while `Tick` remains allocation-free. Rejected: reintroducing a `Tick`-side allocation retry or per-frame dispatcher polling. Estimate: 0 us steady; cold hotswap only.
+- [x] Reverified dispatcher recovery. DOD: direct Unity Roslyn probe for `Hecton8.UI.VR.rsp` returned `EXIT=0`; static ban scan returned no forbidden lever patterns; call graph scan confirms `AllocateNativeState()` remains reachable from `Awake` and lifecycle helper only. Rejected: claiming hotswap safety from visual inspection only. Estimate: verification only.
+
+## Loop 15 - Public Contract Documentation
+
+- [x] XML contract docs. DOD: public lever class, read-model properties, dispatcher tick, physical hand queue, hot-swap listener, and contract constants now have XML documentation. Rejected: documenting implementation internals or adding runtime comments to scalar math that is already covered by mandate/rationale. Estimate: 0 us runtime; compile-time metadata only.
+- [x] Reverified documentation pass. DOD: direct Unity Roslyn probe for `Hecton8.UI.VR.rsp` returned `EXIT=0`; static ban scan returned no forbidden lever patterns; `git diff --check` passed with CRLF warnings only. Rejected: assuming comments cannot break compile. Estimate: verification only.
+
+## Loop 16 - Local Hand Sample Cache
+
+- [x] Local hand cache. DOD: accepted physical hand samples now store `_lastHandLocalPosition`; VR angle solve and blackbox telemetry consume that cached local `float3` instead of converting the same world hand position again during `Tick`. Rejected: repeated `Transform.InverseTransformPoint` in solver/telemetry hot path. Estimate: saves up to two native transform crossings on fresh VR grab frames and one crossing on telemetry frames.
+- [x] Reverified local hand cache. DOD: direct Unity Roslyn probe for `Hecton8.UI.VR.rsp` returned `EXIT=0`; static ban scan returned no forbidden lever patterns; source scan confirms `_lastHandWorldPosition` is gone and `WorldToLocal()` is only used when accepting a physical hand sample. Rejected: relying on source review without compile. Estimate: verification only.
+
+## Loop 17 - XR State Cache
+
+- [x] XR state cache. DOD: `Tick` now samples `XRSettings.enabled && XRSettings.isDeviceActive` once into `_xrActiveThisFrame`; VR branch, latch signal flags, and blackbox telemetry all consume that cached bool. Rejected: repeated XR runtime property reads in telemetry and latch publication. Estimate: saves one XR active-state read per frame and one more on latch frames.
+- [x] Reverified XR state cache. DOD: direct Unity Roslyn probe for `Hecton8.UI.VR.rsp` returned `EXIT=0`; source scan shows `XRSettings` only at the single frame sample and all other logic uses `_xrActiveThisFrame`; `git diff --check` passed with CRLF warnings only. Rejected: assuming property-cache edits are harmless without compiler probe. Estimate: verification only.
+
+## Loop 18 - Solver Basis Float Cache
+
+- [x] Solver basis float cache. DOD: `CacheConfiguration()` now stores `_axisLocalFloat` and `_referenceLocalFloat`; VR solve consumes those cached `float3` values instead of converting `_resolvedLocalAxis` and `_referenceLocalVector` every valid solve. Rejected: repeated struct conversion in the interaction hot path. Estimate: saves two `Vector3` to `float3` conversions on fresh VR solve frames.
+- [x] Reverified solver basis cache. DOD: direct Unity Roslyn probe for `Hecton8.UI.VR.rsp` returned `EXIT=0`; source scan shows no `ToFloat3(_resolved...)` in the solver path and cached basis fields are assigned only in configuration. Rejected: assuming field-cache changes are compile-neutral. Estimate: verification only.
+
+## Loop 19 - Frame Stamp Cache
+
+- [x] Frame stamp cache. DOD: `Tick` now samples `Time.frameCount` once into `_frameThisTick`; input signal, ratchet haptic, latch signal, prologue signal, latch haptic, stale-hand age, and blackbox telemetry use that cached frame. Rejected: repeated `Time.frameCount` reads inside the same simulation tick. Estimate: saves five frame-count reads on normal frames and more on latch/haptic frames.
+- [x] Reverified frame stamp cache. DOD: direct Unity Roslyn probe for `Hecton8.UI.VR.rsp` returned `EXIT=0`; source scan shows tick-side frame stamps use `_frameThisTick` while receiver callback still samples `Time.frameCount` at hand acceptance time. Rejected: replacing receiver callback timing with stale tick frame. Estimate: verification only.
+
+## Loop 20 - IK Handle Pose Cache
+
+- [x] IK handle pose cache. DOD: `UpdateIkTarget()` now reads `handleAnchor.position` and `handleAnchor.rotation` once into local value types before snap/lerp application. Rejected: duplicate transform property reads in the grabbed-hand visual follow path. Estimate: saves two transform property reads on smoothed IK frames.
+- [x] Reverified IK handle pose cache. DOD: direct Unity Roslyn probe for `Hecton8.UI.VR.rsp` returned `EXIT=0`; static scan returned no forbidden lever patterns; `git diff --check` passed with CRLF warnings only. Rejected: assuming presentation-only edits are compile-neutral. Estimate: verification only.
 
 STATUS: PENDING VERIFICATION - Unity editor/global Core compile dependency wall prevents full player compile proof in this session.
 
@@ -86,5 +138,13 @@ STATUS: PENDING VERIFICATION - Unity editor/global Core compile dependency wall 
 - Dotnet Core compile blocked by unrelated project dependency wall after task-local signal error was fixed. New `Hecton8.UI.VR` assembly compile remains pending because Unity did not generate the csproj during the lost-session compile refresh.
 - Unity-generated `Hecton8.UI.VR.rsp` compile still fails only because `Hecton8.Core.ref.dll` is stale: it does not yet expose `ManualOverridePulledSignal` or public `PhysicalHandReceiverRegistry`. The haptic-mask pass did not add new compiler categories.
 - Direct Unity Roslyn Core rsp compile (`Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.Core.rsp`) fails before manual override on unrelated missing types: `Hecton8.Audio.Virtualization`, `Hecton8.AI.Cognition`, `IOutpostGenerationService`, `IPrologueSequenceService`, `WorldOreTypeIds`, and related audio/fauna payloads.
-- Latest direct Core rsp probe timed out after 60s while unrelated Core/MSBuild processes were already active; those processes were not killed to avoid interfering with parallel agents.
+- Latest direct Core rsp probe (`Library\Bee\artifacts\1300b0aEDbg.dag\Hecton8.Core.rsp`) timed out after 120s without returning an error stream. Active `dotnet build`/MSBuild processes remain in the shared workspace and were not killed to avoid interfering with parallel agents.
 - Latest Core build attempt timed out after two minutes; `dotnet build-server shutdown` executed. Some `dotnet build Hecton8.Core.csproj` processes remain active but command lines indicate separate quiet builds, so they were not killed to avoid interfering with parallel agents.
+- Latest direct UI assembly probe succeeded: `dotnet exec "C:\Program Files\Unity\Hub\Editor\6000.4.1f1\Editor\Data\DotNetSdkRoslyn\csc.dll" @Library\Bee\artifacts\1300b0aEDbg.dag\Hecton8.UI.VR.rsp` returned `EXIT=0` after the hot-path allocation closure. Full Unity/player compile remains blocked by the unrelated global Core dependency wall above.
+- Latest direct UI assembly probe after dispatcher hotswap recovery also returned `EXIT=0`. Full Unity/player compile remains blocked by the unrelated global Core dependency wall above.
+- Latest direct UI assembly probe after public contract documentation also returned `EXIT=0`. Full Unity/player compile remains blocked by the unrelated global Core dependency wall above.
+- Latest direct UI assembly probe after local hand sample caching also returned `EXIT=0`. Full Unity/player compile remains blocked by the unrelated global Core dependency wall above.
+- Latest direct UI assembly probe after XR state caching also returned `EXIT=0`. Full Unity/player compile remains blocked by the unrelated global Core dependency wall above.
+- Latest direct UI assembly probe after solver basis float caching also returned `EXIT=0`. Full Unity/player compile remains blocked by the unrelated global Core dependency wall above.
+- Latest direct UI assembly probe after frame stamp caching returned `EXIT=0`. Full Unity/player compile remains blocked by the unrelated global Core dependency wall above.
+- Latest direct UI assembly probe after IK handle pose caching returned `EXIT=0`. Full Unity/player compile remains blocked by the unrelated global Core dependency wall above.

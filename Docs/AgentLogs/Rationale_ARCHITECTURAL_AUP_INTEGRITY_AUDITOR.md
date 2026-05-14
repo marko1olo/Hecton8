@@ -223,3 +223,51 @@ Solution: Re-ran the constrained Core build after Loop 10. `Hecton8.Core.csproj`
 Rejected Alternatives: Continuing to label compile as blocked after the local evidence changed, or expanding the verification scope into Unity Editor MCP while the endpoint remains unavailable.
 Scalability potential: Runtime unchanged; the integration gate is now factual for Low/Middle/High/Ultra Core code.
 Hardware Impact: 0 us runtime gain from verification; saves low-end developer iteration time by clearing the AUP patch set from compile suspicion.
+
+## Decision 28 - Legacy CurrentTotalOffset Sweep
+
+Problem: A broad scan still found direct `HectonFloatingOrigin.CurrentTotalOffset` reads in weather, voxel stamps, laser cutter absolute points, player/submarine brine sampling, geology terrain seams, save vertical lift, marine snow shader offset, mod AUP rebasing, and PDA diagnostics.
+Solution: Route every remaining direct reader through `CurrentTotalOffsetDouble`, keep arithmetic in double where it affects absolute reconstruction or grid decisions, and cast only at the legacy `Vector3`, shader, or scalar API boundary.
+Rejected Alternatives: Treating display/VFX reads as harmless and leaving them on the float lane. They still leak into diagnostics, shader offsets, or persistence-adjacent math after long sessions.
+Scalability potential: Low keeps cheap float Unity/shader payloads; Middle/High/Ultra remove long-session threshold wobble from multiple consumers without changing native buffer layouts.
+Hardware Impact: Expected i3/MX350 benefit is 6-18 us during rebase-heavy frames by avoiding correction churn in voxel/geology/brine/VFX paths; managed allocation remains 0 B/frame.
+
+## Decision 29 - Loop 11 Verification
+
+Problem: After the sweep, verification had to prove both that no legacy direct-offset reads remained and that the project still compiled.
+Solution: Ran the legacy-offset regex, mandatory AUP regex, `git diff --check`, and Core build. A restore-enabled build timed out after regenerating `project.assets.json`; the follow-up no-restore build succeeded with 0 warnings and 0 errors.
+Rejected Alternatives: Reporting the restore timeout as a compile failure or ignoring it after `project.assets.json` was created.
+Scalability potential: Runtime unchanged; build gate is factual after restore state was repaired.
+Hardware Impact: 0 us runtime gain from verification; reduces low-end workstation churn by separating restore timeout from compile correctness.
+
+## Decision 30 - Fluid/Scatter AUP Payload Hardening
+
+Problem: Loop 12 static review found two residual precision-risk surfaces: fluid vector-noise cell selection carried the committed origin offset as a final-cast payload name but narrowed the double cell floor to `int`, and GPU scatter snapped grid origins from a float XZ offset before the shader payload boundary.
+Solution: Keep fluid `vectorNoiseAupOffset` as `double3` through analytical flow and buoyancy jobs, reject non-finite double offsets, floor AUP cell coordinates into `long`, and mask into the bounded prebaked noise table only at lookup time. Add a double XZ shadow for GPU scatter grid snapping while preserving the existing `Vector2` shader/telemetry payload.
+Rejected Alternatives: Converting GPU buffers or shader globals to double, or leaving `double -> int` narrowing in noise indexing because the table mask is small. Shader/GPU lanes are float presentation surfaces, and out-of-range narrowing is not an acceptable deterministic kernel.
+Scalability potential: Low keeps the cheap float water/scatter visual payloads; Middle/High/Ultra keep stable far-origin noise and scatter-grid phase, then spend saved stability budget on richer water/scatter presentation.
+Hardware Impact: Expected i3/MX350 benefit is 2-8 us during long-session origin-shifted frames by avoiding fluid noise phase jitter and scatter grid correction churn. Managed allocation remains 0 B/frame.
+
+## Decision 31 - Loop 12 Verification
+
+Problem: The fluid/scatter hardening needed proof that the remaining `AupOffset` names are final presentation payloads and that the new double/long kernel compiles.
+Solution: Re-ran the legacy committed-offset regex, the mandatory AUP scan, targeted fluid/scatter symbol scans, `git diff --check`, and the constrained Core build. The Core build passed with 0 warnings and 0 errors.
+Rejected Alternatives: Trusting the previous Loop 11 green build or starting a compile while another agent-owned Core build was still active. The active build was allowed to finish before this agent ran its own verification.
+Scalability potential: Runtime behavior stays tier-compatible: Low uses the same bounded noise/scatter payloads, while High/Ultra keep cleaner far-origin phase stability.
+Hardware Impact: 0 us runtime gain from verification itself; saves integration time on low-end workstations by keeping the AUP patch set compile-proven after the final payload hardening.
+
+## Decision 32 - AI/Biome Proximity and Seed Hardening
+
+Problem: Focused scans found authority-adjacent AUP leaks: resource tombstones were projected to runtime `Vector3` before seismic radius checks, archaeology scan seeds were quantized from runtime `float3`, meteor/seismic event payloads used `Vector3` absolute intermediates, and AUP timeline/trench-direction seeds mixed only the low 32 bits of long grid coordinates.
+Solution: Compare resource tombstones with `AbsoluteUniversePosition.DistanceSq`, build archaeology scan cells from double absolute coordinates, mix high/low long bits for deterministic seeds, and keep meteor/seismic absolute coordinates in `double3` until final `Vector3`/`float3` event payload boundaries. Acoustic midpoint SDF sampling now uses `ToAbsoluteUniversePositionDouble3` before the float SDF API boundary.
+Rejected Alternatives: Widening `MacroSwarm.CurrentSectorAup` to `double2` in this audit. That packed ecology DTO has explicit layout expectations and must be migrated by the ecology owner with save/native-buffer compatibility review.
+Scalability potential: Low keeps cheap event and scanner payloads; Middle/High/Ultra retain stable deterministic seeds and radius gates during long sessions, reducing false respawns and scan phase drift without heavier simulations.
+Hardware Impact: Expected i3/MX350 benefit is 3-10 us during seismic/resource/scan event bursts by avoiding runtime-projection correction churn and seed instability. Managed allocation remains 0 B/frame.
+
+## Decision 33 - Loop 13 Verification
+
+Problem: The proximity/seed fixes touched gameplay, world, and acoustic code and needed proof that the new helper paths did not create type or assembly errors.
+Solution: Re-ran targeted AUP cast scans, the legacy committed-offset scan, `git diff --check`, and the constrained Core build. The remaining cast hits are local-offset payloads or final SDF/API boundaries, and Core build passed with 0 warnings and 0 errors.
+Rejected Alternatives: Treating the broad AI/biome `rg` result as actionable wholesale. Most hits were ordinary runtime vectors, comments, or presentation surfaces; patching them blindly would be a refactoring loop.
+Scalability potential: Runtime stays tier-compatible across Low/Middle/High/Ultra; verification narrows remaining risk to known presentation/storage boundaries.
+Hardware Impact: 0 us runtime gain from verification; saves low-end workstation integration time by keeping the multi-file Loop 13 patch compile-proven.

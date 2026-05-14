@@ -1,4 +1,4 @@
-﻿# QUALITY_GATES.md
+# QUALITY_GATES.md
 ## SECONDARY LAYER: QUALITY CONTROL
 Date: 2026-05-14
 Status: PENDING VERIFICATION
@@ -9,14 +9,14 @@ Performance tooling: SYSTEMS_CONTRACTS.md source x-ray. `BenchmarkRunner.cs` is 
 
 2026-05-14 current-state boundary:
 
-- 2026-05-14 DOC_AUDIT override: `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md` found the cited May 11 build artifacts absent from the current filesystem. Do not use those paths as current proof. Current R41 root `Hecton8*.csproj` no-restore CLI compile evidence is `0 Warning(s)` / `0 Error(s)` after restore assets exist; this is not Unity runtime proof.
+- 2026-05-14 DOC_AUDIT override: `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md` found the cited May 11 build artifacts absent from the current filesystem. Do not use those paths as current proof. Current R43 root `Hecton8*.csproj` no-restore CLI compile evidence is `0 Warning(s)` / `0 Error(s)` after restore assets and referenced `Temp\bin\Debug` DLLs exist; this is not Unity runtime proof.
 - This stable file is the acceptance-gate authority. Dated reports are evidence/counter snapshots only.
 - This is a gate/checklist contract, not evidence that any asset passed.
 - Do not fill or cite this document as proof without a real prefab/material/scatter profile and fresh validation output.
 - Current project truth starts at `AGENTS.md`, `.agents-skills/README.md`, task-relevant mandates, `Docs/README.md`, `Docs/ARCHITECTURE/README.md`, current source, `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md`, and then older evidence reports.
 - May 11 report text claimed historical Core dependency build evidence at `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.summary.txt`, but DOC_AUDIT did not find that summary or raw log. This is not current artifact-backed proof in the workspace.
 - Unity MCP, Unity Console, Play Mode, profiler, GCMonitor, scene/prefab gameplay, player build, import, frame-time, memory, and visual quality proof remain absent.
-- 2026-05-14 DOC_AUDIT R41/R42 update: current external root-project CLI compile surface is clean, but Quality Gates remain `PENDING VERIFICATION` because Unity import/Console, Play Mode, profiler, GCMonitor, player build, frame-time, memory, scene/prefab, and visual proof are still absent.
+- 2026-05-14 DOC_AUDIT R43 update: current external root-project CLI compile surface is clean under single-project no-restore checks, but Quality Gates remain `PENDING VERIFICATION` because Unity import/Console, Play Mode, profiler, GCMonitor, player build, frame-time, memory, scene/prefab, and visual proof are still absent.
 
 2026-05-12 permanent build gate protocol:
 

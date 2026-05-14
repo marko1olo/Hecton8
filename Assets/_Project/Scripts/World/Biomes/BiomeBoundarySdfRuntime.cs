@@ -9,25 +9,36 @@ using Hecton8.World.Biomes.Contracts;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
+using Unity.Profiling;
 using UnityEngine;
 
 namespace Hecton8.World.Biomes
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4310)]
-    public sealed class BiomeBoundarySdfRuntime : MonoBehaviour, ISlowTickable, IOriginShiftListener
+    public sealed class BiomeBoundarySdfRuntime : MonoBehaviour,
+        ISlowTickable,
+        IOriginShiftListener,
+        IScalabilityChangedEventListener,
+        IGlobalRegistryHotSwapListener,
+        IGlobalRegistryHotSwapRefListener
     {
         internal static BiomeBoundarySdfRuntime ActiveRuntimeInstance { get; private set; }
 
         private const int BiomeHeatmapResolution = 256;
         private const int BiomeHeatmapPixelCount = BiomeHeatmapResolution * BiomeHeatmapResolution;
         private const int TelemetryCapacity = 300;
+        private const double DependencyRebindCadenceSeconds = 2d;
+        private const double ScalabilityHysteresisSeconds = 3d;
         private const float DefaultCellSizeMeters = 50f;
         private const float DefaultBlendWidthMeters = 50f;
         private const uint RuntimeContextHash = 0x42424C44u;
         private const uint InvalidResultHash = 0x4242494Eu;
+        private const ulong BlackBoxMagic = 0x53454D4F49423848ul;
+        private const uint BlackBoxVersion = 1u;
         private const string NativeMemoryOwner = nameof(BiomeBoundarySdfRuntime);
         private const string BlackBoxDumpPath = "Docs/AgentLogs/Dump_BIOME_TRANSITION_BLENDER.bin";
+        private static readonly ProfilerMarker SlowTickMarker = new ProfilerMarker("H8.World.BiomeBoundarySdf.SlowTick");
 
         [Header("Heatmap")]
         [SerializeField] private Transform playerTransform;
@@ -56,6 +67,16 @@ namespace Hecton8.World.Biomes
         private bool _nativeStorageReady;
         private bool _registeredSlowTick;
         private bool _originShiftRegistered;
+        private bool _hotSwapRegistered;
+        private bool _scalabilityRegistered;
+        private bool _cachedLowTierKernel = true;
+        private bool _targetLowTierKernel = true;
+        private bool _cachedLowMemoryProfile = true;
+        private byte _cachedScalabilityProfileByte;
+        private double _lowTierKernelChangeEligibleTime;
+        private double _nextDependencyRebindTime;
+        private HectonQualityTier _cachedScalabilityTier = HectonQualityTier.Unknown;
+        private IPlayerRuntimeContext _playerContext;
         private uint _lastOriginShiftSequence;
         private uint _sequence;
 
@@ -79,14 +100,23 @@ namespace Hecton8.World.Biomes
                 return;
 
             EnsureNativeStorage();
+            CacheRuntimeDependencies();
             TryRegister();
             TryRegisterOriginShift();
+            TryRegisterHotSwap();
+            TryRegisterScalability();
         }
 
         private void Start()
         {
+            if (!TryClaimActiveRuntime())
+                return;
+
+            CacheRuntimeDependencies();
             TryRegister();
             TryRegisterOriginShift();
+            TryRegisterHotSwap();
+            TryRegisterScalability();
             RefreshGlobalBiomeMapIfDirty();
         }
 
@@ -94,6 +124,8 @@ namespace Hecton8.World.Biomes
         {
             TryUnregister();
             TryUnregisterOriginShift();
+            TryUnregisterHotSwap();
+            TryUnregisterScalability();
 
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
@@ -103,6 +135,8 @@ namespace Hecton8.World.Biomes
         {
             TryUnregister();
             TryUnregisterOriginShift();
+            TryUnregisterHotSwap();
+            TryUnregisterScalability();
             DisposeNativeStorage();
 
             if (ReferenceEquals(ActiveRuntimeInstance, this))
@@ -111,6 +145,7 @@ namespace Hecton8.World.Biomes
 
         public void SlowTick()
         {
+            using var slowTickScope = SlowTickMarker.Auto();
             EnsureNativeStorage();
             RefreshGlobalBiomeMapIfDirty();
             if (!_debugMapReady || !TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
@@ -171,6 +206,31 @@ namespace Hecton8.World.Biomes
             _lastOriginShiftSequence = shiftData.Sequence;
         }
 
+        public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
+        {
+            _cachedScalabilityProfileByte = payload.CurrentTier;
+            _cachedScalabilityTier = payload.CurrentQualityTier;
+            bool nextLowTier = ShouldUseLowTierKernel(_cachedScalabilityTier, _cachedScalabilityProfileByte, _cachedLowMemoryProfile);
+            if (nextLowTier == _targetLowTierKernel)
+                return;
+
+            _targetLowTierKernel = nextLowTier;
+            _lowTierKernelChangeEligibleTime = ResolveUnscaledTimeSeconds() + ScalabilityHysteresisSeconds;
+        }
+
+        public void OnGlobalRegistryServiceRebound(GlobalRegistryServiceSlot serviceSlot, ref object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
+                _playerContext = currentService as IPlayerRuntimeContext;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+        }
+
         private bool TryClaimActiveRuntime()
         {
             if (!Application.isPlaying)
@@ -212,7 +272,24 @@ namespace Hecton8.World.Biomes
                 return;
 
             HectonFloatingOrigin.RegisterListener(this);
-            _originShiftRegistered = HectonFloatingOrigin.IsListenerRegistered(this);
+            _originShiftRegistered = true;
+        }
+
+        private void TryRegisterHotSwap()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryRegisterScalability()
+        {
+            if (_scalabilityRegistered || !Application.isPlaying)
+                return;
+
+            ScalabilityEvents.Register(this);
+            _scalabilityRegistered = true;
         }
 
         private void TryUnregisterOriginShift()
@@ -222,6 +299,24 @@ namespace Hecton8.World.Biomes
 
             HectonFloatingOrigin.UnregisterListener(this);
             _originShiftRegistered = false;
+        }
+
+        private void TryUnregisterHotSwap()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
+        }
+
+        private void TryUnregisterScalability()
+        {
+            if (!_scalabilityRegistered)
+                return;
+
+            ScalabilityEvents.Unregister(this);
+            _scalabilityRegistered = false;
         }
 
         private void EnsureNativeStorage()
@@ -321,15 +416,23 @@ namespace Hecton8.World.Biomes
         private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
         {
             playerAup = default;
-            IPlayerRuntimeContext player = GlobalRegistry.Player;
+            IPlayerRuntimeContext player = _playerContext;
+            if (IsStaleUnityObject(player))
+            {
+                _playerContext = null;
+                player = null;
+            }
+
             if (player != null && player.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot))
             {
                 playerAup = snapshot.Aup;
                 return true;
             }
 
-            if (playerTransform == null)
-                WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
+            if (player != null && playerTransform == null)
+                playerTransform = player.PlayerTransform;
+
+            TryRefreshMissingPlayerBinding();
 
             if (playerTransform == null)
                 return false;
@@ -340,13 +443,74 @@ namespace Hecton8.World.Biomes
 
         private bool ResolveLowTierKernel()
         {
-            if (forceLowTierKernel || GlobalRegistry.H8_LOW_MEMORY_PROFILE || GlobalRegistry.ScalabilityTierProfileByte == 0)
+            if (forceLowTierKernel)
                 return true;
 
-            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
-            return tier == HectonQualityTier.Unknown ||
+            ApplyLowTierKernelHysteresis();
+            return _cachedLowTierKernel;
+        }
+
+        private void CacheRuntimeDependencies()
+        {
+            _playerContext = GlobalRegistry.Player;
+            if (playerTransform == null)
+                WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
+
+            _cachedLowMemoryProfile = GlobalRegistry.H8_LOW_MEMORY_PROFILE;
+            _cachedScalabilityTier = GlobalRegistry.ScalabilityTier;
+            _cachedScalabilityProfileByte = GlobalRegistry.ScalabilityTierProfileByte;
+            _cachedLowTierKernel = ShouldUseLowTierKernel(
+                _cachedScalabilityTier,
+                _cachedScalabilityProfileByte,
+                _cachedLowMemoryProfile);
+            _targetLowTierKernel = _cachedLowTierKernel;
+            _lowTierKernelChangeEligibleTime = 0d;
+        }
+
+        private void TryRefreshMissingPlayerBinding()
+        {
+            if (_playerContext != null || playerTransform != null || !Application.isPlaying)
+                return;
+
+            double now = ResolveUnscaledTimeSeconds();
+            if (now < _nextDependencyRebindTime)
+                return;
+
+            _nextDependencyRebindTime = now + DependencyRebindCadenceSeconds;
+            _playerContext = GlobalRegistry.Player;
+            if (playerTransform == null)
+                WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
+        }
+
+        private void ApplyLowTierKernelHysteresis()
+        {
+            if (_cachedLowTierKernel == _targetLowTierKernel)
+                return;
+
+            if (ResolveUnscaledTimeSeconds() < _lowTierKernelChangeEligibleTime)
+                return;
+
+            _cachedLowTierKernel = _targetLowTierKernel;
+        }
+
+        private static bool ShouldUseLowTierKernel(HectonQualityTier tier, byte profileByte, bool lowMemoryProfile)
+        {
+            return lowMemoryProfile ||
+                   profileByte == 0 ||
+                   tier == HectonQualityTier.Unknown ||
                    tier == HectonQualityTier.Low ||
                    tier == HectonQualityTier.Mx350;
+        }
+
+        private static bool IsStaleUnityObject(IPlayerRuntimeContext player)
+        {
+            return player is UnityEngine.Object unityObject && unityObject == null;
+        }
+
+        private static double ResolveUnscaledTimeSeconds()
+        {
+            double dispatcherTime = SystemDispatcher.CurrentUnscaledTimeSeconds;
+            return dispatcherTime > 0d ? dispatcherTime : Time.unscaledTimeAsDouble;
         }
 
         private void PublishGradientSignal(in AbsoluteUniversePosition playerAup, in BiomeBoundarySdfResult result, float cellSizeMeters)
@@ -427,6 +591,14 @@ namespace Hecton8.World.Biomes
                 int capacity = _telemetryRing.Length;
                 int count = math.min(_telemetryCount, capacity);
                 int start = count == capacity ? _telemetryCursor : 0;
+                writer.Write(BlackBoxMagic);
+                writer.Write(BlackBoxVersion);
+                writer.Write(count);
+                writer.Write(Marshal.SizeOf<BiomeBoundaryTelemetryEntry>());
+                writer.Write(capacity);
+                writer.Write(_telemetryCursor);
+                writer.Write(_lastOriginShiftSequence);
+                writer.Write(_sequence);
                 for (int i = 0; i < count; i++)
                 {
                     int entryIndex = start + i;
@@ -456,6 +628,8 @@ namespace Hecton8.World.Biomes
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogError("[BiomeBoundarySdfRuntime] Black-box dump failed: " + exception.Message, this);
+#else
+                _ = exception;
 #endif
             }
         }

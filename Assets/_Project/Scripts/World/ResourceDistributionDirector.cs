@@ -1943,14 +1943,15 @@ namespace Hecton8.World
                 return;
 
             uint shockSeed = ResolveShockwaveSeed(in payload);
-            float maxDistanceSqr = math.max(1f, payload.ImpulseRadiusMeters * payload.ImpulseRadiusMeters);
+            double maxDistanceSqr = math.max(1d, (double)payload.ImpulseRadiusMeters * payload.ImpulseRadiusMeters);
+            AbsoluteUniversePosition epicenterAup = AbsoluteUniversePosition.FromRuntimePosition(payload.EpicenterWS);
             for (int i = 0; i < _resourceTombstoneScratch.Count; i++)
             {
                 ResourceNodeTombstoneRecord tombstone = _resourceTombstoneScratch[i];
-                Vector3 runtimePosition = tombstone.Position.ToRuntimeFloat3();
-                if ((runtimePosition - payload.EpicenterWS).sqrMagnitude > maxDistanceSqr)
+                if (AbsoluteUniversePosition.DistanceSq(in tombstone.Position, in epicenterAup) > maxDistanceSqr)
                     continue;
 
+                Vector3 runtimePosition = tombstone.Position.ToRuntimeFloat3();
                 uint selectionState = Mix(shockSeed, (uint)tombstone.TombstoneId);
                 selectionState = Mix(selectionState, (uint)(tombstone.TombstoneId >> 32));
                 if (Next01(ref selectionState) > tectonicUpwellingRespawnRate ||

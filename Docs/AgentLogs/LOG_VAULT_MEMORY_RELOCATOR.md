@@ -104,3 +104,51 @@ No profiler capture is available. Added work is branch-level handle resolution p
 
 Verification:
 Source readback confirms `GlobalDataVault.cs` has no `FatalMemoryException.ThrowStaleVaultHandle`, still contains `RunCompactionSlice`, and still calls direct `UnsafeUtility.MemMove`. `dotnet exec "C:\Program Files\Unity\Hub\Editor\6000.4.1f1\Editor\Data\DotNetSdkRoslyn\csc.dll" @Library\Bee\artifacts\1900b0aEDbg.dag\Hecton8.Core.Memory.rsp` exits 0. Full strict `dotnet build .\Hecton8.Core.csproj --no-restore --nologo -v:minimal -p:UseSharedCompilation=false -p:BuildInParallel=false -m:1` exits 0 with 47 warnings and 0 errors; warnings are in package/third-party projects (URP, GPUInstancer, Crest, ShaderGraph/WaveHarmonic).
+
+## 2026-05-14 - Hardening Pass 7
+What was wrong:
+The working copy regressed again: `GlobalDataVault.ResolveBuffer` had a fatal stale-handle path and `FrostTickDefrag` had drifted back toward telemetry-only behavior. `LockstepStateValidator` also read vault arrays through raw `TryGetBuffer` aliases before scheduling Burst hash jobs, which left deterministic hash reads exposed to relocated backing memory.
+
+What was done:
+Restored no-throw handle healing in `GlobalDataVault.ResolveBuffer`. Restored bounded live compaction in `FrostTickDefrag(elapsedSeconds, systemStress01)` with NaN/hot-stress blocking, 512 KB soft move cap, 1.0 ms watchdog, relocation-record budget, 64-byte source/destination/span audit, locked-block skip flagging, direct `UnsafeUtility.MemMove`, memory barriers, and exact `_buffers`/`_metadata` publication. Migrated `LockstepStateValidator` player and room-water writes to `VaultBufferHandle<T>`, and locked `RigidbodyAUPs`, `PlayerKinematicState`, `RoomWaterLevels`, and `EntityAUPs` around the POST_SIMULATION hash job chain.
+
+Cinematic Cheats used:
+No physical simulation. The memory strategy remains cold-window surgery: compact only under low stress and emit exact relocation records. Determinism hashing locks only the four sampled buffers instead of pinning the whole vault.
+
+Exact Microseconds saved:
+No Unity profiler capture is available. Static cost remains branch-level for stress/record/lock checks; determinism adds four handle resolves and up to four lock/unlock mutations every 300 frames. The hard compaction ceiling is 1.0 ms with a 512 KB soft movement cap. Saved time is avoided crash recovery, avoided whole-vault pinning, and avoided fragmentation growth over long sessions.
+
+Verification:
+`rg` readback confirms `GlobalDataVault.cs` contains no `FatalMemoryException.ThrowStaleVaultHandle`, contains `RunCompactionSlice`, and calls direct `UnsafeUtility.MemMove`. `dotnet exec "C:\Program Files\Unity\Hub\Editor\6000.4.1f1\Editor\Data\DotNetSdkRoslyn\csc.dll" @Library\Bee\artifacts\1900b0aEDbg.dag\Hecton8.Core.Memory.rsp` exits 0. Full no-restore diagnostic build `dotnet build .\Hecton8.Core.csproj --no-restore --nologo -v:diag -p:UseSharedCompilation=false -p:BuildInParallel=false -m:1` exits 0 with 0 warnings and 0 errors.
+
+## 2026-05-14 - Hardening Pass 8
+What was wrong:
+The compaction slice had a subtle spike path. It stopped after 512 KB total moved bytes, but if the first candidate block was larger than 512 KB, the vault would still start that oversized `UnsafeUtility.MemMove` before the total counter could stop the slice.
+
+What was done:
+Added a remaining-byte admission parameter to `TryCompactFreeGapAt`. `RunCompactionSlice` now computes `CompactionSoftMoveBytes - movedBytes` before each candidate. If a candidate block exceeds the remaining budget, the vault refuses the move, marks massive-move telemetry, and leaves the block for a later cold/masked relocation strategy.
+
+Cinematic Cheats used:
+No simulation. The cheat is deferral: small safe relocations happen now; oversized moves are reported and delayed rather than forcing a frame spike.
+
+Exact Microseconds saved:
+The added branch is estimated under 1 us. The avoided cost is one unbounded native copy spike on low-end hardware; exact runtime savings require Unity profiler capture.
+
+Verification:
+`dotnet exec "C:\Program Files\Unity\Hub\Editor\6000.4.1f1\Editor\Data\DotNetSdkRoslyn\csc.dll" @Library\Bee\artifacts\1900b0aEDbg.dag\Hecton8.Core.Memory.rsp` exits 0. Source readback confirms `remainingMoveBytes` gates `TryCompactFreeGapAt` before direct `UnsafeUtility.MemMove`.
+
+## 2026-05-14 - Hardening Pass 9
+What was wrong:
+The full build passed after the oversized-move repair, but post-build source readback caught another concurrent overwrite inside `GlobalDataVault.ResolveBuffer`: stale handles again called `FatalMemoryException.ThrowStaleVaultHandle()`. That code compiles but violates live relocation.
+
+What was done:
+Removed the fatal stale-handle path from `ResolveBuffer` again. Kept the handle-healing path, live `RunCompactionSlice`, remaining-byte gate, direct `UnsafeUtility.MemMove`, and determinism buffer locking intact. Re-ran compile and source scans after the repair.
+
+Cinematic Cheats used:
+No simulation. This pass is integration hygiene: a green compiler result is not accepted until the behavioral source contract is re-read.
+
+Exact Microseconds saved:
+No runtime microseconds claimed. The saved cost is avoiding a crash-class stale handle failure after relocation.
+
+Verification:
+Unity Roslyn memory compile exits 0. Full no-restore diagnostic build `dotnet build .\Hecton8.Core.csproj --no-restore --nologo -v:diag -p:UseSharedCompilation=false -p:BuildInParallel=false -m:1` exits 0. Post-build `rg` readback confirms no `FatalMemoryException.ThrowStaleVaultHandle`, no `stale cached handles throw`, no `telemetry-only` marker, no Core legacy `.GetBuffer<`/`.TryGetBuffer(` consumers in scoped files, and confirms `RunCompactionSlice`, `remainingMoveBytes`, and direct `UnsafeUtility.MemMove`.

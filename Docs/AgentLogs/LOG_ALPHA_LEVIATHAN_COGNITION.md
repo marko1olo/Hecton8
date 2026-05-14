@@ -129,3 +129,92 @@ Verification:
 - `git diff --check`: no whitespace errors; only repository LF-to-CRLF warnings.
 - `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false`: failed once on locked generated `Temp/obj/Hecton8.World.Contracts/Hecton8.World.Contracts.dll`.
 - `dotnet build Hecton8.Core.csproj --no-restore -m:1 /nr:false /clp:ErrorsOnly`: succeeded with 0 errors.
+
+---
+
+Fifth-pass upgrade: 2026-05-14
+
+What was wrong:
+- Alpha black-box telemetry still had one evidence-quality hole: if an Alpha slot had no current player/acoustic target, telemetry could resolve the default `PlayerTargetAup` and report a fake player position.
+- Adding a new public telemetry flag in `Hecton8.AI.Cognition` risks stale generated asmdef visibility in the local `Hecton8.Core.csproj` path.
+
+What was done:
+- Hardened `UpdateAlphaLeviathanPostEvaluationTelemetry` so no-target samples keep `PlayerPosition = core.Position` and `DistanceToPlayerMeters = 0`.
+- Added a local domain bit, `AlphaLeviathanTelemetryNoPlayerTarget = 1 << 5`, without changing the 64-byte public telemetry contract layout.
+- Preserved high-tier SDF/gaze telemetry only when `HasPlayerTarget` is present, so no-target samples cannot claim gaze or SDF intent.
+
+Cinematic Cheats used:
+- Postmortem truth fake: no-target entries are deliberately local and flagged instead of pretending the player exists at a decoded default AUP.
+- Contract restraint: local bit 5 buys diagnostics without forcing an asmdef contract refresh.
+
+Exact Microseconds saved:
+- Measured runtime microseconds unavailable; Unity runtime/MCP session is still not attached.
+- No-target telemetry skips the default-AUP double3 conversion; static estimate is below 0.01 us per no-target Alpha telemetry sample on i3/MX350.
+- Hot-path allocation remains 0 B/frame; no new managed collections, LINQ, or heap writes were added.
+
+Verification:
+- Prompt re-extracted from `Docs/Tasks/CURRENT_BATCH.md`; domain file re-read.
+- `rg` scan confirmed no new allocations/LINQ, no `math.sqrt`, no `math.normalize`, no `.normalized`, and no `math.length(...)` in Alpha-scoped hot files.
+- `git diff --check`: no whitespace errors; only repository LF-to-CRLF warnings.
+- `dotnet build Hecton8.Core.csproj --no-restore -m:1 /nr:false /clp:ErrorsOnly`: succeeded with 0 errors.
+- Runtime proof remains pending because no Unity MCP/editor session is attached.
+
+---
+
+Sixth-pass upgrade: 2026-05-14
+
+What was wrong:
+- The mixed legacy species-profile branch of `ShouldUseAlphaLeviathanCognition()` still accepted broad `useLeviathanPresence` for non-Leviathan archetypes.
+- That could let non-PresenceCircle legacy hybrids pay for Alpha 10Hz stalking, telemetry, SDF/gaze checks, and false-charge stress.
+- Verification also exposed a shared compile wall: `GlobalSignals.cs` referenced `ScanLogChangedSignal` without the explicit alias pattern used for other signal structs, even though the struct already existed.
+
+What was done:
+- Tightened the mixed legacy branch so it now requires `useFeintRush` or `useLeviathanPresence && LeviathanEncounterType.PresenceCircle`.
+- Added the explicit `ScanLogChangedSignal = Hecton8.Core.Signals.ScanLogChangedSignal` alias in `GlobalSignals.cs`.
+- Left unrelated dirty files untouched and did not change scan-log signal behavior.
+
+Cinematic Cheats used:
+- Encounter gate: Alpha fog stalking stays tied to feint/PresenceCircle authoring instead of generic presence pressure.
+- Budget fence: legacy non-Alpha apex content keeps normal cognition cadence and avoids Alpha black-box writes.
+- Compile-boundary restraint: one alias restored build proof without moving shared signal contracts.
+
+Exact Microseconds saved:
+- Measured runtime microseconds unavailable; Unity runtime/MCP session is still not attached.
+- Avoided work for misconfigured legacy hybrids: no Alpha phase branch, no Alpha telemetry write, no Alpha SDF/gaze branch, and no false-charge roar/stress queue write; static estimate ~0.05-0.12 us per avoided non-Alpha apex slow eval on i3/MX350.
+- Alias fix is compile-only: 0 us runtime, 0 B/frame.
+
+Verification:
+- Current `Docs/Tasks/CURRENT_BATCH.md` no longer contains the Alpha tag; durable Alpha status/rationale files remain the assignment record.
+- `rg` scan confirmed `ShouldUseAlphaLeviathanCognition()` uses `useFeintRush` or `useLeviathanPresence + PresenceCircle` for the mixed legacy branch.
+- `git diff --check`: no whitespace errors; only repository LF-to-CRLF warnings.
+- `dotnet build Hecton8.Core.csproj --no-restore -m:1 /nr:false /clp:ErrorsOnly`: initially failed on missing `ScanLogChangedSignal` name resolution; after alias patch, succeeded with 0 errors.
+- Later retry: one run returned exit 1 with no diagnostics while Unity/Roslyn and another build were active; after contention cleared, the same serialized command succeeded again with 0 errors in 2.51s.
+- Runtime proof remains pending because no Unity MCP/editor session is attached.
+
+---
+
+Seventh-pass upgrade: 2026-05-14
+
+What was wrong:
+- Alpha phase state could stay stale when the player/acoustic target disappeared or a rival apex interrupted the PresenceCircle loop.
+- Reacquiring after that interruption could resume an old Circling or FalseCharge phase age and produce an incoherent immediate charge.
+
+What was done:
+- Added `ResetAlphaLeviathanInterruptedPhase(slot, currentTime)` in `PredatorCognitionDomain`.
+- When `UseAlphaLeviathanCognition` is active but the Alpha override cannot run because target authority is missing or a rival apex is visible, the slot now refreshes to Hidden and updates `StalkingPhaseStartTimes`.
+- Kept the reset inside the existing SoA phase/timestamp lanes; no new timer lane or managed state was added.
+
+Cinematic Cheats used:
+- Reacquire reset: the monster vanishes back into Hidden during interruption instead of preserving an invisible old charge timer.
+- Cheap authority: byte phase + float timestamp writes, not path replanning or extra behavior graph state.
+
+Exact Microseconds saved:
+- Measured runtime microseconds unavailable; Unity runtime/MCP session is still not attached.
+- The patch adds one byte write and one float write on interrupted Alpha 10Hz evaluations only, estimated <0.01 us on i3/MX350, 0 B/frame.
+- It prevents wasted/stale false-charge presentation on reacquire; visual budget stays on a deterministic hide/stalk restart.
+
+Verification:
+- Static scan found no new managed allocation/LINQ pattern and no `math.sqrt`, `math.normalize`, `.normalized`, or `math.length(...)` in the Alpha hot path.
+- First compile retry failed on missing generated `Temp/bin/Debug` dependencies during Unity/Roslyn churn, including Crest/EasySave/Input/World contracts.
+- After generated DLLs repopulated, `dotnet build Hecton8.Core.csproj --no-restore -m:1 /nr:false /clp:ErrorsOnly` succeeded with 0 errors in 1:41.69.
+- Runtime proof remains pending because no Unity MCP/editor session is attached.

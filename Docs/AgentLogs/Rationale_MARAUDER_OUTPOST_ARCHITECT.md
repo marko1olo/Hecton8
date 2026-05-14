@@ -145,3 +145,61 @@ Solution: Re-ran Unity Roslyn response-file compiles. `Hecton8.World.Outposts` p
 Rejected Alternatives: Editing Ground Radar was rejected as cross-domain without critical interface justification. Reporting a clean global build was rejected because the current Core response file objectively fails.
 Scalability potential: Outpost scalability path remains valid; runtime profiling still waits on Unity console/profiler access and global compile stability.
 Hardware Impact: No outpost runtime change from the unrelated Core block.
+
+## LOOP 8 ORIGIN/API/BLACKBOX RE-AUDIT
+
+Problem: `CURRENT_BATCH.md` no longer contains `<AGENT_PROMPT id="MARAUDER_OUTPOST_ARCHITECT">`, so strict re-extraction cannot be honestly satisfied from the current moving batch file.
+Solution: Performed the raw regex attempt and an `rg` search across `Docs`, then continued from the persisted `Status_MARAUDER_OUTPOST_ARCHITECT.md` and this rationale file as the disk-backed assignment memory. The status file records the missing live XML tag instead of fabricating proof.
+Rejected Alternatives: Pretending the tag was present was rejected as false reporting. Searching neighboring current-batch prompts for replacement tasks was rejected because the batch protocol forbids cross-prompt influence.
+Scalability potential: No runtime impact. The process guard prevents prompt drift from causing out-of-domain edits while other agents rotate batches.
+Hardware Impact: 0 us/frame and 0 B/frame.
+
+Problem: Sector hydration only identifies the sector; it does not provide an authored base origin. The previous trigger path used `transform.position` directly, which couples placement to the service object and makes production scene authoring brittle.
+Solution: Added `outpostOriginOverride` and `localOriginOffsetMeters`, routed sector-hydration generation through `ResolveGenerationOriginMeters`, and clamped invalid anchor/offset values before scheduling WFC.
+Rejected Alternatives: Extending `SectorHydratedSignal` was rejected because that signal is Core/Macro ownership and would create cross-agent dependency churn. Spawning a marker GameObject at runtime was rejected because generation origin is cold data, not a shell object.
+Scalability potential: Low uses the same anchor for 5x5x3; Middle/High/Ultra use the same anchor for 10x10x5 and spend visual budget in shader/material response. Authored placement scales by scene data, not new runtime search.
+Hardware Impact: i3/MX350 pays a cold trigger branch and two finite checks, estimated below 1 us per generation request. Steady hot path remains 0 us/frame.
+
+Problem: Public getters could return created native shell buffers if matrix counts remained nonzero, even when generation state was not ready. Consumers should not need to infer lifecycle from buffer creation alone.
+Solution: `TryGetShellMatrices` and `TryGetShellGraphicsBuffer` now require `_generated`. `TryGetWfcGrid` clamps active cell count to the actual native buffer length while still allowing a valid zero-valued 32-bit hash.
+Rejected Alternatives: Requiring `_activeGridHash != 0` was rejected after self-review because a 32-bit hash can theoretically be zero. Throwing exceptions was rejected because interface consumers need branchable, zero-GC failure.
+Scalability potential: All tiers expose only ready data; low-tier 75-cell descriptors and full-tier 500-cell descriptors use the same read contract.
+Hardware Impact: One boolean guard per getter, estimated below 0.2 us per external query. Avoided failed consumer scans are estimated at 1-5 us depending query path.
+
+Problem: AUP shifts during `Solving` updated `_generationOrigin` but did not preserve the shift frame in the blackbox ring, weakening postmortem evidence for origin-relative faults before extraction.
+Solution: Solve-phase shifts now set `_lastShiftFrameId`, write AUP telemetry, and update the snapshot. No pending zero-shift is queued because extraction will use the already-shifted origin.
+Rejected Alternatives: Completing the solve job synchronously on shift was rejected because it would convert a rare rebasing event into a main-thread stall. Queuing a zero shift was rejected because it hides the actual shift frame.
+Scalability potential: Low/Middle/High/Ultra keep deterministic AUP behavior; high-end visual overkill remains independent from origin rebasing.
+Hardware Impact: Rare shift path only. Telemetry write cost is estimated at 0.5-2 us; no steady-frame cost.
+
+Problem: Compile evidence after Loop 7 became stale because direct response-file compiles now pass where older logs reported Core drift, while sequential all-assembly runs can intermittently return `exit=-1` without `CS` diagnostics.
+Solution: Re-ran targeted Unity Roslyn response-file compiles for the changed outpost assembly and Core, plus scoped static audits and `git diff --check`. Status now reports source compile pass with runtime proof still pending.
+Rejected Alternatives: Reporting a global runtime pass was rejected because Unity MCP console/profiler access is unavailable. Treating an `exit=-1` with no diagnostics as a source defect was rejected after immediate targeted reruns passed.
+Scalability potential: Source path remains ready for Low 5x5x3 and full 10x10x5 profiling once Editor transport is available.
+Hardware Impact: No runtime change. Verification only.
+
+## LOOP 9 PUBLISH RETRY AND TELEMETRY RING RE-AUDIT
+
+Problem: If `WfcOutpostGridRegistry.RegisterGrid` failed, the shell stayed generated and same-sector/same-seed requests short-circuited. That left the outpost visually alive but without a logistics grid handle, so door power could never come online unless the service was forced to re-solve.
+Solution: Same-sector/same-seed requests now retry `TryPublishGeneratedSignal` when `_publishedPowerGridHandle == 0`. Sector hydration no longer exits early for a generated outpost that lacks a published handle. Publish failure sets `Faulted`, writes telemetry, and dumps the blackbox while preserving generated native shell data for cheap retry.
+Rejected Alternatives: Re-solving the full WFC grid on publish failure was rejected because the solved byte grid is still valid and native. Leaving state as `Ready` was rejected because it masks logistics failure. Editing the Power runtime was rejected because this fix belongs to the outpost publication boundary.
+Scalability potential: Low retries a 75-cell descriptor/grid registration; Middle/High/Ultra retry a 500-cell registration. No tier pays a new shell solve unless topology actually changes.
+Hardware Impact: Avoids a 20-250 us solve/extraction retry depending tier and Burst warm state. Normal frame cost is one extra boolean in the sector-hydration guard.
+
+Problem: `WriteTelemetry` used `% _telemetryRing.Length` on every Tick. Integer modulo is unnecessary for a fixed 300-entry ring and violates the spirit of the blackbox write pattern.
+Solution: Replaced modulo wrap with unsigned bounds check and branch reset. The ring remains fixed-size and writes one blittable entry per call.
+Rejected Alternatives: Keeping `%` was rejected because this is a hot-path telemetry write. Increasing ring size to a power of two was rejected because the mandate requires exactly 300 frames without explicit memory proof.
+Scalability potential: All tiers use the same blackbox path. Low-end devices get lower scalar ALU cost; high-end devices keep identical forensic fidelity.
+Hardware Impact: Estimated i3/MX350 save is 0.1-0.8 us/frame depending JIT/backend lowering of `%` by non-power-of-two length.
+
+Problem: Refactoring publish order exposed a stale metadata risk: generated descriptors/signals could pull flags from `_latestSnapshot` before `SetState` refreshed it after matrix extraction.
+Solution: Added `ResolveDescriptorFlags` and used it for snapshots, registry descriptors, and generated signals. Flags now derive directly from `_heightmapFallback` and quality tier at publication time.
+Rejected Alternatives: Calling `UpdateSnapshot` before every descriptor build was rejected because it hides data dependency and performs unnecessary full snapshot writes.
+Scalability potential: Low-tier and heightmap-fallback metadata are correct for all tiers; logistics can branch on descriptor flags without guessing.
+Hardware Impact: Cold path only. No measurable frame cost.
+
+Problem: Compile verification encountered `CS2012` because `Hecton8.Core.dll` was locked by active compiler/Unity processes, while no C# diagnostics pointed at the outpost source.
+Solution: Recorded the artifact lock, then reran targeted Unity Roslyn response-file compiles after the lock cleared. `Hecton8.Core` and `Hecton8.World.Outposts` both pass. Scoped forbidden construct audit and `git diff --check` also pass.
+Rejected Alternatives: Killing concurrent compiler processes was rejected because 20+ agents may be running. Treating the lock as source failure was rejected because targeted retries passed.
+Scalability potential: Source path remains ready for runtime Low/Middle/High/Ultra measurements once Unity console/profiler transport is available.
+Hardware Impact: No runtime change. Verification only.

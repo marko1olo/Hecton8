@@ -142,10 +142,132 @@ Hardware Impact: i3/MX350 pays one branch only on ratchet/latch dispatch frames,
 
 Problem: `ResolveReferenceVector()` used `handleAnchor.localPosition`, which is only correct when the handle anchor is parented directly under the lever root. Real cockpit art rigs often nest the visible handle under a rotating visual child, so the angular solver could be initialized with a reference vector in the wrong local space.
 
-Solution: derive the reference vector from `handleAnchor.position` transformed through the lever root with `InverseTransformPoint`, matching the existing handle-proximity path. Also reset ratchet step state when idle, track hot-swap listener registration locally, keep receiver registration play-mode-only, use increment/compare for blackbox ring wrap, and allow Tick to recover if deferred native disposal delays allocation.
+Solution: derive the reference vector from `handleAnchor.position` transformed through the lever root with `InverseTransformPoint`, matching the existing handle-proximity path. Also reset ratchet step state when idle, track hot-swap listener registration locally, keep receiver registration play-mode-only, use increment/compare for blackbox ring wrap, and keep deferred native recovery in lifecycle/hotswap paths only.
 
 Rejected Alternatives: constraining scene hierarchy was rejected because it makes authoring brittle. Recomputing the reference vector every Tick was rejected because the closed handle basis is static config, not frame state. Leaving modulo in telemetry was rejected because the branch wrap is simpler and cheaper.
 
 Scalability potential: Low/Middle get the same deterministic scalar solve under richer art hierarchy. High/Ultra can use nested mechanical linkages and animated handle meshes without changing the solver contract.
 
 Hardware Impact: i3/MX350 removes one integer modulo from the 60Hz telemetry path, estimated 0.01 us saved per tick. Other changes are cold lifecycle/configuration, edit-mode hygiene, or idle-only branches.
+
+## Decision 12 - Degenerate hand projection must hold, not snap
+
+Problem: the angular solver returned `minAngleDegrees` when the hand vector projected onto the lever rotation plane collapsed below epsilon. That can happen when the player controller crosses the pivot/axis line. The old behavior converted a mathematically invalid sample into a real lever target, causing an artificial snap toward closed.
+
+Solution: add a zero-GC `TrySolveAngleFromHand` helper. Valid pulls still use the same `atan2(dot(axis, cross(reference, projected)), dot(reference, projected))` solver. Degenerate projection returns `false`; VR grab holds the current angle and sets a blackbox telemetry bit so the last 300 frames show the singularity instead of hiding it.
+
+Rejected Alternatives: keeping the previous `minimum` fallback was rejected because it creates false physical motion. Smoothing over the snap with a spring-only delay was rejected because it preserves the wrong target. Polling OpenXR hands directly for a secondary vector was rejected because the physical hand receiver already owns hand identity and pose delivery.
+
+Scalability potential: Low/Middle/High/Ultra all retain identical latch math on valid samples. Low avoids visible lever flicker during imperfect tracking. High/Ultra can layer reacquire animation from the telemetry bit later without changing the deterministic solver.
+
+Hardware Impact: i3/MX350 pays one boolean branch on valid VR solve frames, estimated +0.03 us. The trade removes false spring work and visual correction on singular frames. No managed allocation, no Unity physics, no haptic spam.
+
+Batch Drift Note: `Docs/Tasks/CURRENT_BATCH.md` no longer contains `VR_COCKPIT_MANUAL_OVERRIDE`; it currently contains unrelated prompt IDs. Existing `Status_` and `Rationale_` files remain the local assignment memory for this continuation, and status remains `PENDING VERIFICATION`.
+
+## Decision 13 - Invalid hand-side bytes must not become right-hand events
+
+Problem: `PhysicalHandSide` currently defines only `Left` and `Right`, but the lever receives that value across a collider interaction boundary. The previous helper treated every non-left value as right, which is acceptable for the current enum but brittle under corrupted data, future enum expansion, or bad fallback wiring.
+
+Solution: make `ResolveSignalHandSide` and `ResolveHapticMotorMask` explicit. `Left` maps left, `Right` maps right, and any invalid value degrades to `HandUnknown` plus both motors. Valid runtime behavior is unchanged; bad data no longer produces misleading right-hand telemetry.
+
+Rejected Alternatives: leaving the ternary was rejected because it hides invalid hand identity. Throwing or logging was rejected because this path can run on interaction frames and must remain fail-soft and zero-GC.
+
+Scalability potential: Low/Middle keep the same haptic cost. High/Ultra retain clean hand-channel telemetry for later cockpit feedback layers without assuming enum closure forever.
+
+Hardware Impact: i3/MX350 pays at most two integer comparisons only on haptic/latch dispatch frames, estimated +0.01 us. No steady polling, no allocation, no string logging.
+
+## Decision 14 - Native allocation recovery belongs to lifecycle, not Tick
+
+Problem: the defensive native-state recovery helper could call `AllocateNativeState()` from `Tick` if `_nativeAllocated` was false. The path is rare, but it still leaves `new NativeArray` reachable from a hot-path call stack, which violates the Zero-GC policy and makes static review weaker.
+
+Solution: make `Tick` a pure `_nativeAllocated` gate. Lifecycle now calls `EnsureNativeStateForLifecycle()` before dispatcher registration, and `TryRegisterTick()` refuses registration unless native state exists. Allocation and reinitialization stay cold; the per-frame path never creates native containers.
+
+Rejected Alternatives: keeping the recovery path was rejected because "rare" does not satisfy hot-path allocation law. Retrying allocation through a per-frame fallback or SlowTick was rejected because this component should allocate in Awake/OnEnable or fail inert until lifecycle rebind.
+
+Scalability potential: Low/Middle/High/Ultra all get a stronger static 0 B/frame proof. Top-tier visual/haptic layers can consume the read model without inheriting hidden allocation risk.
+
+Hardware Impact: i3/MX350 removes a rare but severe allocation/reinitialization spike from the Tick call graph. Steady cost is unchanged: one `_nativeAllocated` branch remains.
+
+## Decision 15 - Dispatcher hotswap must recover native state before registration
+
+Problem: after the hot-path allocation closure, `TryRegisterTick()` correctly refuses to register unless `_nativeAllocated` is true. A dispatcher service replacement could therefore leave an active lever inert if native allocation had previously been delayed by a deferred dispose handle.
+
+Solution: on `GlobalRegistryServiceSlot.Dispatcher` replacement, clear the local registration flag, require a non-null dispatcher, then call `EnsureNativeStateForLifecycle()` before `TryRegisterTick()`. Allocation remains lifecycle/cold-path only, and `Tick` remains a pure `_nativeAllocated` gate.
+
+Rejected Alternatives: reintroducing allocation retry inside `Tick` was rejected because it weakens the 0 B/frame proof. Per-frame dispatcher polling was rejected because service rebinding is a cold event. Ignoring the edge case was rejected because a dead manual override is worse than an inert cold-path recovery attempt.
+
+Scalability potential: Low/Middle keep the same scalar lever and no extra steady work. High/Ultra can survive service rebinding during richer startup stacks without adding per-frame registry checks or new dependencies.
+
+Hardware Impact: i3/MX350 pays 0 us steady-state. Cold hotswap may allocate the same five persistent native buffers that `Awake`/`OnEnable` already own; no allocation is reachable from `Tick`.
+
+## Decision 16 - Public lever contract needs explicit XML documentation
+
+Problem: the lever's external contract is used by dispatcher, physical hand receiver, registry hot-swap, haptics, UI, and cinematic consumers. Without public XML documentation, future consumers must infer read timing and ownership rules from implementation details.
+
+Solution: add concise XML docs to the public lever class, read-model properties, `Tick`, `TryQueueHandPress`, `OnGlobalRegistryServiceReplaced`, `IManualOverrideLeverReadModel`, and execution-phase constant. Documentation stays on the public boundary; scalar math details remain in code/rationale to avoid comment bloat.
+
+Rejected Alternatives: documenting private implementation fields was rejected because it adds noise and maintenance drag. Leaving the API undocumented was rejected because this component is an integration boundary across multiple agents.
+
+Scalability potential: Low/Middle/High/Ultra consumers now have the same stable read-model contract without depending on private fields. Extra cockpit feedback layers can bind to documented read timing instead of reflection or scene probing.
+
+Hardware Impact: 0 us runtime and 0 B/frame. XML comments are compile-time documentation only; direct UI response-file probe still exits 0.
+
+## Decision 17 - Hand samples should cross Unity Transform once
+
+Problem: the receiver already converted accepted world-space hand samples into lever-local space for distance checks, but the tick path converted the stored world hand position again for the angular solver and blackbox telemetry. That repeated Unity `Transform.InverseTransformPoint` native work in the frame path.
+
+Solution: store `_lastHandLocalPosition` as the accepted sample. The VR solver and blackbox write consume that blittable local value directly. World-to-local conversion now happens only at physical hand sample acceptance, where the system is already validating distance against the pivot and handle.
+
+Rejected Alternatives: keeping both world and local hand positions was rejected because only local space is needed for this lever's deterministic solver and AUP-safe telemetry. Recomputing local hand position in `Tick` was rejected because it spends native transform crossings after the receiver has already done the conversion.
+
+Scalability potential: Low/Middle reduce frame-path transform work. High/Ultra can add more cockpit levers without each one repeating native coordinate conversion in telemetry and solve paths.
+
+Hardware Impact: i3/MX350 saves up to two `InverseTransformPoint` crossings on fresh VR grab frames and one crossing on blackbox telemetry frames. 0 B/frame and no behavior change to latch math.
+
+## Decision 18 - XR runtime state should be sampled once per lever frame
+
+Problem: `Tick` already needed XR active state to choose VR versus fallback control, but telemetry and latch signal publication queried `XRSettings` again. This duplicated native/runtime property reads and could make the same frame report inconsistent state if the XR backend changed between reads.
+
+Solution: cache `XRSettings.enabled && XRSettings.isDeviceActive` into `_xrActiveThisFrame` once at the start of `Tick`. The branch decision, manual override flags, and blackbox flags all use that cached value.
+
+Rejected Alternatives: keeping repeated property reads was rejected because telemetry should describe the same sampled frame state as the simulation branch. Polling XR state through a separate service was rejected because the existing task scope already isolates input through `IInputService`, and this change only caches the current engine state.
+
+Scalability potential: Low/Middle reduce engine property traffic. High/Ultra can layer more telemetry/feedback consumers without each consumer querying XR runtime state directly.
+
+Hardware Impact: i3/MX350 saves one XR active-state read per lever frame and one additional read on latch frames. 0 B/frame and no behavior change.
+
+## Decision 19 - Solver basis should already be in Burst-friendly float form
+
+Problem: the valid VR solve path converted `_resolvedLocalAxis` and `_referenceLocalVector` from Unity `Vector3` into `float3` on every fresh hand sample. The values change only when configuration is cached, not during the solve.
+
+Solution: cache `_axisLocalFloat` and `_referenceLocalFloat` in `CacheConfiguration()` and pass those fields directly into `TrySolveAngleFromHand`.
+
+Rejected Alternatives: leaving conversion in the solver path was rejected because the data is static configuration. Storing only `float3` and removing `Vector3` was rejected because Unity visual rotation and configuration helpers still consume `Vector3`.
+
+Scalability potential: Low/Middle save small but repeated scalar conversion work. High/Ultra keep the same solver while allowing more cockpit controls to share the same config-hotpath split.
+
+Hardware Impact: i3/MX350 saves two `Vector3` to `float3` conversions on fresh VR solve frames. 0 B/frame and no behavior change.
+
+## Decision 20 - Frame stamps must be consistent inside one tick
+
+Problem: the lever asked `Time.frameCount` multiple times while building input, haptic, signal, and telemetry payloads during one dispatcher tick. That wastes repeated engine/static property reads and could stamp same-tick payloads inconsistently if called across a frame boundary.
+
+Solution: sample `Time.frameCount` once into `_frameThisTick` at the start of `Tick`. All tick-owned payloads use that cached frame. `TryQueueHandPress` still samples `Time.frameCount` at receiver callback time because hand acceptance can occur outside the lever tick.
+
+Rejected Alternatives: replacing the receiver callback timestamp with `_frameThisTick` was rejected because it could use a stale tick frame when physical hand callbacks run before the lever tick. Leaving repeated tick-side frame reads was rejected because all downstream payloads should share the same sampled frame state.
+
+Scalability potential: Low/Middle reduce engine property reads per cockpit control. High/Ultra keep coherent payload frames as more haptic/visual consumers bind to manual override events.
+
+Hardware Impact: i3/MX350 saves five frame-count reads on ordinary frames and more on latch/ratchet frames. 0 B/frame and no behavior change.
+
+## Decision 21 - IK handle pose should be read once per follow step
+
+Problem: `UpdateIkTarget()` read `handleAnchor.position` and `handleAnchor.rotation` separately in the snap branch and again in the smoothing branch. During grabbed VR interaction this is avoidable transform property traffic.
+
+Solution: read handle position and rotation once into local value types after the early-out and before branch selection, then use those values for `SetPositionAndRotation`, `Vector3.Lerp`, and `Quaternion.Slerp`.
+
+Rejected Alternatives: caching handle pose across frames was rejected because handle art can animate. Removing IK smoothing was rejected because low/high tier presentation tuning is part of the lever feel.
+
+Scalability potential: Low/Middle reduce per-frame transform property traffic during grabs. High/Ultra keep the same visual smoothing while leaving budget for richer cockpit feedback.
+
+Hardware Impact: i3/MX350 saves two transform property reads on smoothed IK frames. 0 B/frame and no behavior change.

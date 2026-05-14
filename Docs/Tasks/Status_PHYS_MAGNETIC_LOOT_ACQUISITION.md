@@ -32,7 +32,7 @@ Status: PENDING VERIFICATION
 - [x] 12. MATH LOD | Justification: low tier uses SlowTick scheduling and instant acquisition/snap when loot enters radius | Alternative rejected: same integration cadence on MX350 | Estimate: saves ~50 FastTick jobs/sec on low tier
 - [x] 13. ZERO-GC | Justification: job uses only NativeArray vault buffers plus a persistent NativeArray event lane; managed sidecar allocation is OnEnable/capacity-change only | Alternative rejected: LINQ/list allocations, trigger callbacks, or unbounded native signal queue writes from Burst | Estimate: 0 B GC/frame by static inspection
 - [x] 14. H-PHI DATA SOVEREIGNTY | Justification: loot active/pull/acquired state is modified through vault buffers; managed pickup proxy only mirrors vault result after completion | Alternative rejected: component fields as simulation truth | Estimate: state mutation remains contiguous, cache-friendly
-- [ ] 15. OMEGA COMPILE CHECK [BLOCKED BY ENVIRONMENT] | Justification: Unity refresh timed out, MCP console unavailable, and `dotnet build Hecton8.Core.csproj` fails on pre-existing missing assembly references outside this task | Alternative rejected: claiming compile success without Unity/Burst evidence | Estimate: blocked
+- [ ] 15. OMEGA COMPILE CHECK [C# VERIFIED / BURST AOT PENDING] | Justification: Unity-generated Bee response files compile `Hecton8.Gameplay.Loot.Contracts` and `Hecton8.Gameplay.Loot` with exit code 0 into `Temp/LootMagnetCompileCheck`; MCP console remains unreachable, so Burst AOT proof for `FloatMode.Fast` is still pending | Alternative rejected: claiming Burst success from C# compile alone | Estimate: Burst verification blocked
 
 ## Iteration Log
 
@@ -45,3 +45,8 @@ Status: PENDING VERIFICATION
 - Loop 6: Rechecked signal consumers. Replaced Burst direct global queue writes with NativeArray event records and late-frame `GlobalSignals.Publish` so SignalBus consumers receive loot acquisition/audio.
 - Loop 7: Rechecked AUP math and dense-field scaling. Replaced double absolute conversions with direct sector-delta math, added 50 ms integration clamp, required `PullEnabled`, and capped acquisition attempts to 64/frame.
 - Loop 8: Rechecked asmdef bloat and static hygiene. Removed unused runtime `Unity.Burst`/`Hecton8.Core.Contracts` references; asmdef JSON valid; anti-bloat scan still clean.
+- Loop 9: Rechecked registry-slot stability and bootstrap coverage. Added instance-id sidecar velocity reset for registry reordering, immediate OnEnable vault refresh, and cold runtime installer without a public singleton.
+- Loop 10: Rechecked with Unity Bee response files. `Hecton8.Gameplay.Loot.Contracts` and `Hecton8.Gameplay.Loot` C# compilation passed; MCP transport still blocks console/Burst AOT verification, so status remains PENDING VERIFICATION.
+- Loop 11: Rechecked black-box fault ordering. Fault-frame counters are now committed and recorded before telemetry dump; duplicate same-frame telemetry writes are suppressed. Split Bee response-file C# compile passed again for contracts and runtime.
+- Loop 12: Rechecked Burst dependency surface. Inlined AUP rebuild math in `LootMagnetPullJob` and removed the hot-loop call to `AbsoluteUniversePosition.FromAbsolutePosition`; split Bee response-file C# compile passed, MCP Burst AOT still unreachable.
+- Loop 13: Rechecked broadphase cost. Added guarded AUP-cell adjacency reject before float delta math for radii <= 5 km cell size; split Bee response-file C# compile passed.

@@ -3108,14 +3108,14 @@ namespace Hecton8.World
                 {
                     int flatIndex = FlattenThreatVoxelIndex(voxel, NavPassabilityDimensions);
                     if (flatIndex < 0 || flatIndex >= NavPassabilityGrid.Length)
-                        return 0;
+                        return SolidThreatVoxel;
 
                     return NavPassabilityGrid[flatIndex];
                 }
 
                 int legacyFlatIndex = FlattenThreatVoxelIndex(voxel, ThreatVoxelDimensions);
                 if (legacyFlatIndex < 0 || legacyFlatIndex >= ThreatVoxelGrid.Length)
-                    return 0;
+                    return SolidThreatVoxel;
 
                 return ThreatVoxelGrid[legacyFlatIndex];
             }
@@ -3128,19 +3128,29 @@ namespace Hecton8.World
             private bool HasAnyVoxelGrid()
             {
                 return HasNavPassabilityGrid() ||
-                       (ThreatVoxelGrid.IsCreated &&
-                        ThreatVoxelDimensions.x > 0 &&
-                        ThreatVoxelDimensions.y > 0 &&
-                        ThreatVoxelDimensions.z > 0);
+                       HasCompleteVoxelGrid(ThreatVoxelGrid, ThreatVoxelDimensions);
             }
 
             private bool HasNavPassabilityGrid()
             {
-                return NavPassabilityGrid.IsCreated &&
-                       NavPassabilityDimensions.x > 0 &&
-                       NavPassabilityDimensions.y > 0 &&
-                       NavPassabilityDimensions.z > 0 &&
+                return HasCompleteVoxelGrid(NavPassabilityGrid, NavPassabilityDimensions) &&
                        NavPassabilityCellSize > 0f;
+            }
+
+            private static bool HasCompleteVoxelGrid(NativeArray<byte> grid, int3 dimensions)
+            {
+                if (!grid.IsCreated ||
+                    dimensions.x <= 0 ||
+                    dimensions.y <= 0 ||
+                    dimensions.z <= 0)
+                {
+                    return false;
+                }
+
+                long expectedLength = (long)dimensions.x * dimensions.y * dimensions.z;
+                return expectedLength > 0L &&
+                       expectedLength <= int.MaxValue &&
+                       grid.Length >= expectedLength;
             }
 
             private int3 GetActiveVoxelDimensions()
@@ -3227,10 +3237,14 @@ namespace Hecton8.World
             private static float3 NormalizeRsqrtOrFallback(float3 value, float3 fallback)
             {
                 float lengthSq = math.lengthsq(value);
-                bool useFallback = lengthSq <= FunnelEpsilon || !math.all(math.isfinite(value));
-                float safeLengthSq = math.max(lengthSq, FunnelEpsilon);
-                float3 normalized = value * math.rsqrt(safeLengthSq);
-                return math.select(normalized, fallback, useFallback);
+                if (lengthSq > FunnelEpsilon && math.all(math.isfinite(value)))
+                    return value * math.rsqrt(lengthSq);
+
+                float fallbackLengthSq = math.lengthsq(fallback);
+                if (fallbackLengthSq > FunnelEpsilon && math.all(math.isfinite(fallback)))
+                    return fallback * math.rsqrt(fallbackLengthSq);
+
+                return new float3(0f, 0f, 1f);
             }
 
             private static bool IsDegenerateRay(float3 apex, float3 point)

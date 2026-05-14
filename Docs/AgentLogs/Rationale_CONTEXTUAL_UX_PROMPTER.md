@@ -74,3 +74,31 @@ Solution: Replaced direct placement with bounded lookup, first-free-slot inserti
 Rejected Alternatives: Direct bitmask placement, a managed dictionary, or moving prompt strings into `PlayerLookTargetSignal`. Direct bitmask is fragile; dictionary lookup violates the hot path rules; managed signal payloads break the unmanaged signal lane.
 Scalability potential: Low/Middle/High/Ultra all use the same bounded 64-slot cache. Low still pays only signal-time copy work, not render-time lookup allocations.
 Hardware Impact: Expected cost is up to 64 integer compares only when a prompt signal is stored or copied, not per rendered glyph. This is acceptable against the UX correctness gain and still below any visible frame-time threshold. Measured proof absent.
+
+## Decision 10: Indirect Draw Buffer And Shader Hot-Path Hardening
+Problem: The icon and text draws shared one instance buffer and one indirect args buffer. That is unsafe because `DrawMeshInstancedIndirect` submission can consume those buffers after the CPU has already overwritten them for the second draw. The shader also used hash dither math and `round()` on a value authored as an integer.
+Solution: Split text/icon into separate instance buffers and args buffers, dirty-gated material bindings and dither uniforms, skipped space glyph quads, replaced the hash dither with a 4x4 Bayer LUT, clamped glyph UV table indices, and removed shader `round()`/division notation from the atlas path.
+Rejected Alternatives: Keeping one shared buffer pair, forcing draw order assumptions, retaining hash dither because it looks random, or relying on shader out-of-range behavior. Those are not deterministic enough for a first-hour critical prompt.
+Scalability potential: Low now skips dither through a uniform branch and submits fewer quads. Middle keeps cheap Bayer dither. High/Ultra keep the same stable buffer topology and can add richer glyph material treatment without changing signal transport.
+Hardware Impact: Estimated low-end gain is small but real: one less blank glyph quad for `"OPEN HATCH"`, fewer per-frame material property writes, no per-pixel hash/dot/frac dither, no shader `round()`, and no GPU race from shared indirect buffers. Measured profiler proof absent.
+
+## Decision 11: CPU Billboard Matrix Direct Write
+Problem: The renderer still used `Quaternion.LookRotation` and `Matrix4x4.TRS` once per glyph. For a short prompt this is not catastrophic, but it is unnecessary CPU work in a system designed around cheap atlas quads.
+Solution: Build the `LocalToWorld` matrix directly from camera right/up/forward vectors and local scale. The quad stays camera-facing, but the hot path avoids quaternion construction and TRS helper work.
+Rejected Alternatives: Keeping TRS for readability, adding a more complex GPU-side expansion shader, or batching the whole text into one mesh. TRS costs avoidable CPU; GPU expansion would be a larger shader contract change; mesh batching reintroduces CPU geometry churn.
+Scalability potential: Low gets the same readable prompt with less CPU. Middle/High/Ultra can spend the saved CPU on richer material treatment rather than transform helpers.
+Hardware Impact: Expected gain is small per glyph but deterministic, especially on weak CPU frames. Measured profiler proof absent.
+
+## Decision 12: Late-Frame Signal Resolve
+Problem: The tooltip was consuming `PlayerLookTargetSignal` in the UI `IUpdatable` lane. That is after the player lane, but it is still earlier than the project POST_SIMULATION/LateFrame window and weaker than the prompt's execution-phase requirement.
+Solution: Converted `DiegeticTooltipSystem` to `ILateFrameTickable`, registered it with `GlobalRegistry.TryRegisterLateFrameTickable(..., PriorityLayer.UI)`, and resolved look-target signals, AUP shifts, scheme changes, and fade state before `GlobalSignals.ClearPostSimulationSnapshots()`. Rendering remains in `IRenderable.Render` during the SRP camera callback. The duplicated scheme/glyph constants now reference `Hecton8.UI.Diegetic.Contracts`.
+Rejected Alternatives: Keeping early UI `IUpdatable`, moving draw work into LateFrame, or reading Unity `Time.deltaTime`. Early UI tick is the wrong phase; drawing in LateFrame misses the render dispatcher; `Time.deltaTime` bypasses dispatcher timing.
+Scalability potential: Low still snaps alpha late-frame and submits the same minimal quads. Middle/High/Ultra retain dither and atlas overkill in the render phase without changing signal transport.
+Hardware Impact: Runtime cost is roughly neutral; the main gain is correctness and one-frame freshness for current-frame player look signals. Using `SystemDispatcher.CurrentFrameDeltaTime` avoids Unity time reads and keeps timing deterministic. Measured profiler proof absent.
+
+## Decision 13: SRP Camera Submission Gate
+Problem: `RenderDispatcher` invokes every `IRenderable` once per SRP camera. The tooltip draw supplies a camera to `Graphics.DrawMeshInstancedIndirect`, so auxiliary camera passes could queue duplicate draws for the interaction camera.
+Solution: Added `ResolveRenderCamera()`: resolve the intended interaction camera first, read `GlobalRenderContext.CurrentCamera`, and return `null` when the current SRP camera is not the target. If there is no render context, the previous fallback camera path remains.
+Rejected Alternatives: Passing `null` camera to draw in every camera, trusting SRP call order, or moving draw submission to LateFrame. All risk duplicates, wrong camera orientation, or bypassing the established render dispatcher.
+Scalability potential: Low avoids unnecessary auxiliary camera submissions. Middle/High/Ultra spend saved render submission budget on glyph treatment rather than duplicate draw queues.
+Hardware Impact: Expected gain is scene-dependent: no change in single-camera player builds, but editor/auxiliary camera frames avoid duplicate indirect submissions. Measured profiler proof absent.

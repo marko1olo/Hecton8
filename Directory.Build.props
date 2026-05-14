@@ -4,6 +4,10 @@
     <GenerateRuntimeConfigurationFiles>false</GenerateRuntimeConfigurationFiles>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(MSBuildProjectName)' == 'Hecton8.Core' And '$(HectonBuildProjectReferences)' != 'true'">
+    <BuildProjectReferences>false</BuildProjectReferences>
+  </PropertyGroup>
+
   <PropertyGroup Condition="('$(MSBuildProjectName)' == 'Assembly-CSharp' Or '$(MSBuildProjectName)' == 'Assembly-CSharp-firstpass') And '$(HectonSkipAssemblyProjectReferences)' == 'true'">
     <BuildProjectReferences>false</BuildProjectReferences>
   </PropertyGroup>

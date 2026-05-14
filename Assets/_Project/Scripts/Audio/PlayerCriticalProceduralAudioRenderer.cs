@@ -3188,8 +3188,7 @@ namespace Hecton8.Audio
             float lowPassCutoffHz,
             float energy01)
         {
-            if (!_sonarEchoTapUploadQueue.IsCreated ||
-                thudExcitation <= KineticImpactThudMinimumExcitation)
+            if (thudExcitation <= KineticImpactThudMinimumExcitation)
             {
                 return false;
             }
@@ -3198,11 +3197,9 @@ namespace Hecton8.Audio
             NativeArray<SonarEchoTap> inactiveTapBuffer = inactiveIndex == 0
                 ? _pendingSonarEchoTapsA
                 : _pendingSonarEchoTapsB;
-            if (!inactiveTapBuffer.IsCreated)
+            if (!inactiveTapBuffer.IsCreated || inactiveTapBuffer.Length <= 0)
                 return false;
 
-            ClearSonarEchoTapUploadQueue();
-            int queuedTapCount = 0;
             float panStereo = ResolveKineticImpactPanStereo(runtimePosition);
             float delaySeconds = math.clamp(
                 math.max(0.035f, distanceMeters * SoundSpeedWaterMetersPerSecondInv),
@@ -3214,12 +3211,8 @@ namespace Hecton8.Audio
                 math.saturate(thudExcitation * math.max(0.12f, proximity)),
                 panStereo,
                 lowPassCutoffHz);
-            if (!TryEnqueueSonarEchoTap(tap, ref queuedTapCount))
-                return false;
-
-            int tapCount = DrainSonarEchoTapUploadQueue(inactiveTapBuffer);
-            if (tapCount <= 0)
-                return false;
+            inactiveTapBuffer[0] = tap;
+            const int tapCount = 1;
 
             PublishPendingSonarState(
                 inactiveIndex,

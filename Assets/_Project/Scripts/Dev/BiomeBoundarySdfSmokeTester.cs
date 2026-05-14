@@ -33,6 +33,7 @@ namespace Hecton8.Dev
             bool lowTierPass = false;
             bool outOfBoundsPass = false;
             bool hashCollisionPass = false;
+            bool missingMapPass = false;
 
             try
             {
@@ -68,6 +69,11 @@ namespace Hecton8.Dev
                                     collision.BiomeBHash != 0u &&
                                     collision.BiomeAHash != collision.BiomeBHash &&
                                     collision.BlendFactor01 > 0f;
+
+                ClearMap(map, hashes);
+                missingMapPass = RunRawSample(map, hashes, result, new double2(20d, 20d), 2, BiomeBoundarySdfFlags.None, out BiomeBoundarySdfResult missing) &&
+                                 missing.BiomeA == 0 &&
+                                 (missing.Flags & (byte)BiomeBoundarySdfFlags.MissingMap) != 0;
             }
             finally
             {
@@ -79,7 +85,7 @@ namespace Hecton8.Dev
             int nativeAllocationDelta = NativeMemorySentinel.ActiveAllocationCount - nativeAllocationsBefore;
             long nativeByteDelta = NativeMemorySentinel.TrackedBytes - nativeBytesBefore;
             bool nativeBalancePass = nativeAllocationDelta == 0 && nativeByteDelta == 0L;
-            bool pass = boundaryPass && lowTierPass && outOfBoundsPass && hashCollisionPass && nativeBalancePass;
+            bool pass = boundaryPass && lowTierPass && outOfBoundsPass && hashCollisionPass && missingMapPass && nativeBalancePass;
 
             json = "{\"tester\":\"BiomeBoundarySdfSmokeTester\"," +
                    "\"pass\":" + ToJsonBool(pass) + "," +
@@ -87,12 +93,26 @@ namespace Hecton8.Dev
                    "\"lowTier\":" + ToJsonBool(lowTierPass) + "," +
                    "\"outOfBounds\":" + ToJsonBool(outOfBoundsPass) + "," +
                    "\"hashCollision\":" + ToJsonBool(hashCollisionPass) + "," +
+                   "\"missingMap\":" + ToJsonBool(missingMapPass) + "," +
                    "\"nativeAllocationDelta\":" + nativeAllocationDelta + "," +
                    "\"nativeByteDelta\":" + nativeByteDelta + "}";
             return pass;
         }
 
         private static bool RunSample(
+            NativeArray<byte> map,
+            NativeArray<uint> hashes,
+            NativeArray<BiomeBoundarySdfResult> result,
+            double2 sampleAupXZ,
+            int sampleRadius,
+            BiomeBoundarySdfFlags flags,
+            out BiomeBoundarySdfResult sample)
+        {
+            return RunRawSample(map, hashes, result, sampleAupXZ, sampleRadius, flags, out sample) &&
+                   sample.BiomeA != 0;
+        }
+
+        private static bool RunRawSample(
             NativeArray<byte> map,
             NativeArray<uint> hashes,
             NativeArray<BiomeBoundarySdfResult> result,
@@ -121,8 +141,7 @@ namespace Hecton8.Dev
 
             job.Run();
             sample = result[0];
-            return sample.BiomeA != 0 &&
-                   math.isfinite(sample.BlendFactor01) &&
+            return math.isfinite(sample.BlendFactor01) &&
                    math.isfinite(sample.BoundaryDistanceMeters) &&
                    math.isfinite(sample.PrimaryWeight) &&
                    math.isfinite(sample.SecondaryWeight);
@@ -140,6 +159,15 @@ namespace Hecton8.Dev
                     map[index] = collideBytes ? (byte)7 : (byte)(rightBiome ? 2 : 1);
                     hashes[index] = rightBiome ? BiomeBHash : BiomeAHash;
                 }
+            }
+        }
+
+        private static void ClearMap(NativeArray<byte> map, NativeArray<uint> hashes)
+        {
+            for (int i = 0; i < map.Length; i++)
+            {
+                map[i] = 0;
+                hashes[i] = 0u;
             }
         }
 

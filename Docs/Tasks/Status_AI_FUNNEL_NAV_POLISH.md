@@ -72,10 +72,33 @@ Task Count: 15
 - [x] Compaction tail fail-closed | DOD: if `MaxPathCompactionIterations` is exhausted before the final waypoint, the job now copies the remaining original path tail instead of appending only the final point; rejected dropping unverified waypoints; estimate 9 us.
 - [x] Chronological black-box dump | DOD: NaN dump now writes valid telemetry entries oldest-to-newest with capacity/cursor/sequence metadata; rejected raw circular-array order for postmortem review; estimate 6 us.
 
+## Loop 10 - Voxel Payload Contract Hardening
+
+- [x] Re-read status/rationale and attempted prompt re-extraction | DOD: anti-amnesia files reloaded; current `CURRENT_BATCH.md` has rotated and no longer contains `AI_FUNNEL_NAV_POLISH`, so persisted status/rationale remain the active assignment record; estimate 10 us.
+- [x] Passability payload length guard | DOD: LOS compaction now trusts only complete native voxel arrays whose length covers `dimensions.x * dimensions.y * dimensions.z`; rejected treating undersized payloads as open; estimate 7 us.
+- [x] Missing sample fail-closed | DOD: out-of-range voxel samples now return `SolidThreatVoxel` instead of open space; rejected smoothing through corrupt or stale payloads; estimate 4 us.
+
+## Loop 11 - Telemetry Ring Longevity
+
+- [x] Re-read status/rationale and persisted assignment | DOD: current batch no longer contains this agent tag, so the persisted AI_FUNNEL_NAV_POLISH files remain the source of truth; rejected borrowing active neighboring prompts; estimate 10 us.
+- [x] Ring valid-count hardening | DOD: added `_abyssalPathTelemetryWrittenCount` so dumps no longer infer valid entries from a wrapping `uint` sequence; rejected wrap-sensitive dump reconstruction; estimate 3 us.
+
+## Loop 12 - Fallback Direction Sanitation
+
+- [x] Re-read status/rationale and source hot path | DOD: inspected `NormalizeRsqrtOrFallback` callers and found fallback vectors were returned raw; rejected assuming all fallback axes stay unit/finite forever; estimate 8 us.
+- [x] Fallback rsqrt normalization | DOD: valid vectors still return through one `math.rsqrt`; degenerate vectors now normalize a finite fallback or return +Z; rejected raw fallback propagation; estimate 5 us.
+
+## Loop 13 - Conduit Reciprocal Sanitation
+
+- [x] Re-read mandates/domain/source | DOD: loaded AI funnel, rsqrt, zero-GC, native jobs, telemetry, and math-gate mandates before editing; rejected stale chat memory and current-batch prompt borrowing; estimate 12 us.
+- [x] Managed conduit scoring reciprocal pass | DOD: replaced two raw divisions in abyssal nav-node conduit scoring with `math.rcp` multiplies; rejected trusting JIT/Burst to rewrite managed divisions; estimate 4 us.
+- [x] Flow-vector finite fallback | DOD: hardened `NormalizeVector3Fast` so corrupt flow vectors normalize a finite fallback or return `Vector3.forward`; rejected raw fallback propagation; estimate 5 us.
+
 ## Verification
 
-- [x] Static scan | PASS: `StringPullPathJob` region has no `math.normalize`, `math.length(`, `math.distance(`, or raw `/` matches after the LOD upgrade.
-- [x] Compile check | PASS: latest parsed `dotnet build Hecton8.Core.csproj --no-restore /m:1 /nr:false` succeeded with 0 warnings and 0 errors after the tail-safety pass.
-- [x] PlayMode test assembly build | PASS: `dotnet build Hecton8.PlayModeTests.csproj --no-restore /m:1 /nr:false` succeeded with 0 warnings and 0 errors.
+- [x] Static scan | PASS: `StringPullPathJob` lines 2724-3260 and `TryResolveAbyssalNavNodeCandidate` lines 461-556 have no `math.normalize`, `math.length(`, `math.distance(`, or raw `/` matches after the conduit reciprocal pass.
+- [x] Diff hygiene | PASS: `git diff --check` passed for edited funnel/status/log files; only LF-to-CRLF working-copy warnings were emitted.
+- [x] Compile check | PASS: latest parsed `dotnet build Hecton8.Core.csproj --no-restore /m:1 /nr:false` succeeded with 0 warnings and 0 errors after the conduit reciprocal pass.
+- [x] PlayMode test assembly build | PASS: `dotnet build Hecton8.PlayModeTests.csproj --no-restore /m:1 /nr:false /p:BuildProjectReferences=false` succeeded with 0 warnings and 0 errors after the conduit reciprocal pass; full project-reference PlayMode rebuild remains outside this pass because the prior attempt stopped after timeout in `Hecton8.Editor.csproj`.
 - [x] Unity console | BLOCKED BY TOOLING: Unity MCP `validate_script` transport failed against `http://127.0.0.1:8088/mcp`.
 - [x] Omega polish mandate | COMPLETE WITH PENDING VERIFICATION: Core build is green; Unity/Burst editor validation remains blocked by MCP transport.

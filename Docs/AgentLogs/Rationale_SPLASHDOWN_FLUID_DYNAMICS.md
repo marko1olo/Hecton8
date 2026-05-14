@@ -153,3 +153,19 @@ Solution: Add `_splashdownImpactConsumed`, track the source hash with the last p
 Rejected Alternatives: Rely on sequence alone, process every valid signal, or hard-code one prologue producer. Sequence values are independent per producer and may be zero; processing every signal violates the task's one-impact requirement; hard-coding a producer creates cross-domain coupling.
 Scalability potential: Low avoids repeated 500-bubble uploads from duplicate handoff packets. Middle/High/Ultra avoid duplicate job scheduling attempts and busy fallback telemetry while preserving the first cinematic pressure wave.
 Hardware Impact: Prevents each duplicate valid signal from writing 500 bubble records and uploading both 2000-slot bubble buffers. Estimated duplicate-edge saving: 80-250 us CPU/driver time plus avoided GPU buffer traffic; profiler proof remains PENDING VERIFICATION.
+
+## EMPTY FALLBACK BUFFER DECISION
+
+Problem: Lazy splash-buffer allocation removed the always-resident 32768-cell splash vector buffer, but the no-splash compute path still needs a valid `_AbyssalSplashdownImpulseBuffer` binding. After `DisposeFluidAdvectionState()` and a later re-enable, `FixedTick` can dispatch abyssal flow before `LateFrameTick` recreates `_emptyAbyssalFlowBuffer`, creating a null/invalid `SetBuffer` edge.
+Solution: Factor `EnsureEmptyAbyssalFlowFallbackBuffer()` so the one-element zero `NativeArray<float4>` and matching `GraphicsBuffer` are owned independently from full fluid-advection buffers. `EnsureGpuAbyssalFlowBuffers()` now calls it before dispatch setup; `EnsureFluidAdvectionState()` and `EnsureFluidAdvectionBuffers()` reuse the same helper.
+Rejected Alternatives: Rebuild all fluid-advection buffers inside the abyssal flow dispatch path, reintroduce the 512 KB splash impulse buffer during base flow init, or rely on shader params being zero while binding a null buffer. Full advection rebuild is unnecessary work in SIMULATION; eager splash allocation reverses the lazy-buffer memory win; null binding is an avoidable GPU/runtime fault.
+Scalability potential: Low and no-splash sessions keep only a one-float4 fallback. Middle/High/Ultra still allocate the full splash vector field only for a real non-low splash, preserving the cinematic pressure wave without permanent VRAM cost.
+Hardware Impact: Prevents a null/invalid GPU buffer binding after advection teardown while preserving the 512 KB VRAM saving from lazy splash allocation. Extra steady-state cost is one valid-buffer branch in abyssal GPU setup; fallback allocation is cold/recovery only and profiler proof remains PENDING VERIFICATION.
+
+## LIVE BATCH SOURCE MISMATCH
+
+Problem: The fallback audit attempted the required `CURRENT_BATCH.md` extraction, but the live file no longer contains `SPLASHDOWN_FLUID_DYNAMICS`; it contains a different active batch.
+Solution: Do not act on neighboring prompts. Continue this continuation from `Status_SPLASHDOWN_FLUID_DYNAMICS.md` and this rationale file as the durable assignment record, and mark the extraction attempt blocked by live batch replacement.
+Rejected Alternatives: Switch identities to an unrelated prompt, infer tasks from the new batch, or claim a fresh XML extraction succeeded.
+Scalability potential: None; this is workflow hygiene.
+Hardware Impact: None.

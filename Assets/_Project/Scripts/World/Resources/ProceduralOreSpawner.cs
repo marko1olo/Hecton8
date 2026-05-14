@@ -21,6 +21,7 @@ namespace Hecton8.World
     public sealed class ProceduralOreSpawner : MonoBehaviour, ISlowTickable, ILateFrameTickable, IDisposable, IWorldResourceSpawnerReadModel
     {
         private const string OwnerName = nameof(ProceduralOreSpawner);
+        private const string AgentDumpFileName = "Dump_SHALLOWS_ECONOMY_DISTRIBUTOR.bin";
         private const int DefaultOreCapacity = 2048;
         private const int MinimumOreCapacity = 64;
         private const int MaximumOreCapacity = 16384;
@@ -118,6 +119,7 @@ namespace Hecton8.World
         private uint _lastDropPodSignalFrame;
         private bool _hasDropPodAnchor;
         private bool _dropPodAnchorFromSignal;
+        private bool _dropPodAnchorRequiresGenerationRefresh;
         private int _localTitaniumCount;
 
         /// <summary>Number of non-depleted ore slots currently alive in the active sector.</summary>
@@ -296,6 +298,7 @@ namespace Hecton8.World
             _lastDropPodSignalFrame = 0u;
             _hasDropPodAnchor = false;
             _dropPodAnchorFromSignal = false;
+            _dropPodAnchorRequiresGenerationRefresh = false;
             _localTitaniumCount = 0;
             _discardSpawnJobOutput = false;
         }
@@ -388,7 +391,9 @@ namespace Hecton8.World
                 (int)math.floor(playerAbsolute.z / safeSectorSize));
 
             bool sectorChanged = !_depletionLoaded || !sector.Equals(_currentSector);
-            if (sectorChanged)
+            bool anchorRefreshRequired = _dropPodAnchorRequiresGenerationRefresh && _dropPodAnchorFromSignal;
+            bool generationRefreshRequired = sectorChanged || anchorRefreshRequired;
+            if (generationRefreshRequired)
             {
                 if (_spawnJobScheduled)
                 {
@@ -402,11 +407,12 @@ namespace Hecton8.World
                 _currentSectorHash = ComputeAupSectorHash(sector, worldSeed);
                 LoadDepletionMasksForCurrentSector();
                 DisableAllProxies();
+                _dropPodAnchorRequiresGenerationRefresh = false;
             }
 
             RefreshMapMagicPayload(playerAbsolute);
 
-            if (sectorChanged && !_spawnJobScheduled)
+            if (generationRefreshRequired && !_spawnJobScheduled)
                 ScheduleSpawnJob(playerAbsolute);
         }
 
@@ -518,23 +524,35 @@ namespace Hecton8.World
             for (int i = 0; i < dropPodSignals.Length; i++)
             {
                 DropPodLandedSignal signal = dropPodSignals[i];
-                if (_dropPodAnchorFromSignal && !IsNewAupShift(signal.Frame, _lastDropPodSignalFrame))
-                    continue;
 
                 double3 absolute = signal.PositionAup.ToAbsoluteDouble3();
                 if (!math.all(math.isfinite(absolute)))
+                    continue;
+
+                if (_dropPodAnchorFromSignal && !IsNewDropPodSignal(in signal))
                     continue;
 
                 float3 runtime = signal.PositionAup.ToRuntimeFloat3();
                 if (!math.all(math.isfinite(runtime)))
                     continue;
 
+                bool anchorChanged = !_dropPodAnchorFromSignal || !AreAupEqual(in _dropPodAup, in signal.PositionAup);
                 _dropPodAup = signal.PositionAup;
                 _dropPodRuntimePosition = runtime;
                 _lastDropPodSignalFrame = signal.Frame;
                 _hasDropPodAnchor = true;
                 _dropPodAnchorFromSignal = true;
+                if (anchorChanged)
+                    _dropPodAnchorRequiresGenerationRefresh = true;
             }
+        }
+
+        private bool IsNewDropPodSignal(in DropPodLandedSignal signal)
+        {
+            if (IsNewAupShift(signal.Frame, _lastDropPodSignalFrame))
+                return true;
+
+            return signal.Frame == _lastDropPodSignalFrame && !AreAupEqual(in _dropPodAup, in signal.PositionAup);
         }
 
         private bool TryCompleteFinishedSpawnJob()
@@ -862,6 +880,16 @@ namespace Hecton8.World
             return shiftFrameId != lastAppliedFrameId && unchecked(shiftFrameId - lastAppliedFrameId) < 0x80000000u;
         }
 
+        private static bool AreAupEqual(in AbsoluteUniversePosition left, in AbsoluteUniversePosition right)
+        {
+            return left.GridX == right.GridX &&
+                   left.GridY == right.GridY &&
+                   left.GridZ == right.GridZ &&
+                   left.LocalX == right.LocalX &&
+                   left.LocalY == right.LocalY &&
+                   left.LocalZ == right.LocalZ;
+        }
+
         private void ApplyRuntimeShift(float3 totalShift, bool writeTelemetry)
         {
             if (!math.any(totalShift != new float3(0f)))
@@ -1028,7 +1056,7 @@ namespace Hecton8.World
 
             try
             {
-                string path = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Docs", "AgentLogs", "Dump_WORLD_RESOURCE_SPAWNER.bin"));
+                string path = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Docs", "AgentLogs", AgentDumpFileName));
                 using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);
                 using BinaryWriter writer = new BinaryWriter(stream);
                 for (int i = 0; i < _telemetryRing.Length; i++)

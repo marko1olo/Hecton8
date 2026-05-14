@@ -808,7 +808,7 @@ namespace Hecton8.Gameplay
                     continue;
                 }
 
-                Vector3 absolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(runtimePosition);
+                double3 absolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimePosition);
                 if (HectonVoxelVolume.TryDepositAdditiveSdfSphere(
                         absolutePosition,
                         ThermalPetrificationSdfRadius * math.max(0.5f, state.MassScale),

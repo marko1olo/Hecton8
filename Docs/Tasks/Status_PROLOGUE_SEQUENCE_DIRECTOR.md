@@ -14,6 +14,7 @@ Status: PENDING VERIFICATION.
 - `AUD_DSP_Audio_Synthesis_ThreadSafe_SPSC.txt`
 - `CTRL_Device_Abstraction_Haptics.txt`
 - `UI_Diegetic_Physical_Interfaces.txt`
+- `CORE_Global_State_Reset_NonReload_Transitions.txt`
 
 ## Loop 0 - Prompt Extraction
 
@@ -47,6 +48,13 @@ Status: PENDING VERIFICATION.
 - [x] Loop 4 - Cross-domain decoupling review | Result: concrete `WorldChunkResidencyManager` bridge dependency was removed; `IStreamingBackpressureService.IsChunkResident` now carries residency read model. Alternative rejected: keeping type-check in Core bridge. Estimate: saves compile coupling, same runtime cost.
 - [x] Loop 5 - Verification hygiene review | Result: `git diff --check` passes for touched files except line-ending warnings; MCP console is unreachable; owned timed-out MSBuild root was terminated. Alternative rejected: launching a second Unity editor over active project. Estimate: 900 us.
 - [x] Loop 6 - Dev skip interruption recheck | Result: Stage 1 dilated silence no longer traps dev skip for the full 3 seconds; bridge uses a dev-only linked cancellation token and interruptible dilated wait, while release builds keep `AwaitableExtension.DelayDilated`. Alternative rejected: accepting delayed skip during cinematic silence. Estimate: 5-10 us per dev-only wait frame, 0 us release overhead.
+- [x] Loop 7 - Non-reload lifecycle reset review | Result: `PrologueSequenceRegistryBridge` now clears transient hydration readiness, signal cursors, skip latch, and stale service reference on `OnEnable` before re-registration. Alternative rejected: trusting `OnDisable`/domain reload to clear second-run state. Estimate: 0 us hot path; 8-20 us avoided stale gate debugging cost on re-entry.
+- [x] Loop 8 - Signal self-feedback review | Result: `TryConsumePrologueComplete` now skips bridge-authored `PRLG` ocean-handoff packets so the manual override gate cannot consume its own output during same-frame reuse. Alternative rejected: phase-only filtering, because existing cockpit/orbital producers use `PhaseOceanHandoff`. Estimate: 1 uint compare per consumed complete signal.
+- [x] Loop 9 - Director repeated-run state review | Result: `AwaitableDropSequenceDirector` now clears cached atmospheric, complete, orbital, and telemetry suppression state at run entry. Alternative rejected: assuming a service instance runs only once, because registry services can be invoked manually after dev skip/cancel. Estimate: 0 us hot path; prevents stale Mach/sequence carryover.
+- [x] Loop 10 - Runtime repeated-run state review | Result: `IPrologueSequenceRuntime.PrepareSequenceRun()` now resets bridge observation state at every sequence start, not only `OnEnable`. Alternative rejected: relying on scene/component lifecycle for service-level reruns. Estimate: one interface call at run start, 0 us wait-loop cost.
+- [x] Loop 11 - Manual gate producer review | Result: `TryConsumePrologueComplete` now rejects autonomous `ORBI` whiteout completion as well as self-authored `PRLG`, keeping Stage 3 gated by cockpit/manual producers. Alternative rejected: accepting any complete signal on the shared lane. Estimate: one extra uint compare per complete signal.
+- [x] Loop 12 - Manual gate source whitelist review | Result: audited all `PrologueCompleteSignal` producers and narrowed Stage 3 acceptance to `MOVR` only. Alternative rejected: blacklist of known non-manual producers. Estimate: one uint inequality per complete signal, lane cap 8.
+- [x] Loop 13 - Run preparation fault guard review | Result: moved `PrepareSequenceRun()` under the director `try/finally` envelope after local run-state reset. Alternative rejected: trusting all future runtime adapters to be infallible. Estimate: 0 us hot-path cost.
 
 ## Verification
 
@@ -54,5 +62,13 @@ Status: PENDING VERIFICATION.
 - [x] Compile verification pass after Tasks 6-10. BLOCKED BY UNRELATED DEPENDENCY: no prologue errors in Unity compile log; global errors remain outside this domain. Second batch attempt stalled in Unity after asmdef refresh and was terminated to avoid leaving an owned batch process running.
 - [x] Compile verification pass after Tasks 11-15. BLOCKED BY UNRELATED DEPENDENCY / ACTIVE EDITOR: MCP console still fails at `127.0.0.1:8088`; active Unity editor already owns the project; narrow `dotnet build Hecton8.Core.csproj --no-restore -v:minimal` timed out and its owned root process was terminated. Static scans found no prologue forbidden wait patterns.
 - [x] Response-file compile pass after dev-skip upgrade. PARTIAL PASS: Unity Roslyn `Hecton8.Core.Contracts.rsp` and `Hecton8.Narrative.Prologue.rsp` compile clean after sequencing. `Hecton8.Core.rsp` fails in unrelated `GroundPenetratingRadarRuntime.cs(309,17)` on missing `GroundRadarRaymarchJob.GprOreTypes`; no prologue errors emitted before that wall.
+- [x] Response-file compile pass after lifecycle reset. PASS ON PRIMARY BEE SET: `1300b0aEDbg` `Hecton8.Core.Contracts.rsp`, `Hecton8.Narrative.Prologue.rsp`, `Hecton8.Core.rsp`, and `Hecton8.Prologue.Space.rsp` compile with exit 0. SECONDARY BEE SET BLOCKED/STALE: `1900b0aEDbg` lacks `PrologueSequenceContracts.cs` in Core.Contracts and fails on unrelated/missing audio virtualization, fauna cognition, WFC/outpost, ore ID, and fluid impulse references.
+- [x] Response-file compile pass after self-feedback filter. PASS: primary `1300b0aEDbg` `Hecton8.Core.rsp` compiles with exit 0 after the bridge filter patch.
+- [x] Response-file compile pass after director repeated-run reset. PASS: primary `1300b0aEDbg` `Hecton8.Narrative.Prologue.rsp` compiles with exit 0 after the director patch.
+- [x] Response-file compile pass after runtime run-reset contract. PASS: primary `1300b0aEDbg` `Hecton8.Core.Contracts.rsp`, `Hecton8.Narrative.Prologue.rsp`, and `Hecton8.Core.rsp` compile with exit 0.
+- [x] Response-file compile pass after manual gate producer filter. PASS: primary `1300b0aEDbg` `Hecton8.Core.rsp` compiles with exit 0.
+- [x] Response-file compile pass after manual source whitelist. PASS: primary `1300b0aEDbg` `Hecton8.Core.rsp` compiles with exit 0.
+- [x] Response-file compile pass after run preparation guard. PASS: primary `1300b0aEDbg` `Hecton8.Narrative.Prologue.rsp` compiles with exit 0.
+- [x] Prompt re-extraction drift noted. BLOCKED BY BATCH FILE ROTATION: current `Docs/Tasks/CURRENT_BATCH.md` no longer contains `PROLOGUE_SEQUENCE_DIRECTOR`; durable status/rationale remain the active local memory for the already-extracted assignment.
 - [x] Five strict iterative self-review loops.
 - [x] Polish mandate read and executed only after all tasks were checked or blocked. DOD: OMEGA audit removed telemetry `math.sqrt`, removed concrete world residency dependency, rescanned forbidden wait/string/iteration patterns, and documented final scoped diff in rationale. Status remains PENDING VERIFICATION due unrelated compile wall.

@@ -226,3 +226,89 @@ Verification:
 Integrator notes:
 - `Hecton8.Core.AUP` asmdef isolation is still blocked by architecture; Core compile is no longer blocked.
 - Full double vegetation matrix storage is a separate vegetation-native-buffer migration, not part of this AUP bridge patch.
+
+## 2026-05-14 - Loop 11 Legacy CurrentTotalOffset Eradication
+
+What was wrong:
+- Direct `HectonFloatingOrigin.CurrentTotalOffset` reads remained in authority-adjacent paths: weather absolute offsets, voxel stamp centers, laser cutter absolute points, player/submarine brine checks, geology seam grids, save vertical lift, marine snow shader offsets, mod AUP rebasing, and PDA diagnostics.
+
+What was done:
+- Replaced those readers with `CurrentTotalOffsetDouble`.
+- Kept absolute reconstruction, grid bounds, and vertical lift math in double until the legacy `Vector3`, shader, scalar, or diagnostic boundary.
+- Confirmed no direct legacy committed-offset read remains under `Assets/_Project/Scripts`.
+
+Cinematic Cheats used:
+- Unity transforms, shader globals, and old `Vector3` APIs still receive floats at the final boundary.
+- Low tier keeps the same cheap rendering and brine paths; High/Ultra get more stable long-session thresholds and visual offsets without heavier simulation.
+
+Exact Microseconds saved:
+- Legacy committed-offset sweep: estimated 6-18 us during rebase-heavy frames by avoiding correction churn across voxel/geology/brine/VFX consumers.
+- Managed allocation: 0 B/frame.
+
+Verification:
+- Targeted scan for `HectonFloatingOrigin.CurrentTotalOffset(?!Double)`, `CurrentTotalOffset.x/y/z`, `(float3).*CurrentTotalOffset`, `NewTotalOffset.x/y/z`, and `PreviousTotalOffset.x/y/z` under `Assets/_Project/Scripts` is clean.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe"` re-run. Residual hits are broad text plus final-cast fluid/scatter payload names and explicit legacy/presentation universe APIs.
+- `git diff --check` on Loop 11 files: line-ending warnings only.
+- Restore-enabled build timed out after regenerating `Temp/obj/Hecton8.Core/project.assets.json`; follow-up no-restore Core build succeeded with 0 warnings and 0 errors.
+
+## 2026-05-14 - Loop 12 Fluid/Scatter AUP Payload Hardening
+
+What was wrong:
+- Fluid vector-noise sampling had been moved to `double3`, but the AUP cell floor still narrowed to `int` before masking into the finite noise table.
+- GPU scatter grid snapping still used the float XZ offset lane before the shader payload boundary.
+
+What was done:
+- Kept `HectonFluidEngine` vector-noise offset as `double3` through analytical flow and buoyancy jobs.
+- Added finite validation for the double AUP offset.
+- Changed vector-noise cell flooring to `long`, then masked into the bounded table index.
+- Added a double XZ scatter offset shadow in `GPUScatterDirector`; existing `Vector2` offset remains only for shader and telemetry payloads.
+- Re-extracted this agent prompt from `Docs/Tasks/CURRENT_BATCH.md`; result remains `PROMPT_NOT_FOUND`.
+
+Cinematic Cheats used:
+- Water and scatter still upload float payloads to jobs/shaders. The CPU authority and grid/noise phase stay double until the last practical boundary.
+- Low tier keeps the same cheap float visual surfaces. High/Ultra get cleaner long-session phase stability and can spend the saved budget on denser scatter/water presentation later.
+
+Exact Microseconds saved:
+- Fluid/scatter AUP payload hardening: estimated 2-8 us during long-session origin-shifted frames by avoiding noise phase jitter and scatter grid correction churn.
+- Managed allocation: 0 B/frame.
+
+Verification:
+- Targeted scan for `HectonFloatingOrigin.CurrentTotalOffset(?!Double)`, direct committed-offset component reads, `(float3).*CurrentTotalOffset`, `NewTotalOffset.x/y/z`, and `PreviousTotalOffset.x/y/z` under `Assets/_Project/Scripts` is clean.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe"` re-run. Residual hits are broad `universe` text, compatibility/presentation `Vector3 universe` APIs, and final fluid/scatter shader/job payload fields.
+- `git diff --check -- Assets/_Project/Scripts/HectonFluidEngine.cs Assets/_Project/Scripts/World/GPUScatterDirector.cs`: line-ending warnings only.
+- `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false`: build succeeded with 0 warnings and 0 errors.
+
+Integrator notes:
+- `Hecton8.Core.AUP` asmdef isolation remains blocked by current architecture: the public AUP struct still lives in UnityEngine-dependent `PersistentWorldRegistry.cs`.
+- Unity MCP validation remains unavailable in this session; verification is CLI/static/build based.
+
+## 2026-05-14 - Loop 13 AI/Biome Proximity and Seed Hardening
+
+What was wrong:
+- Seismic resource tombstones were projected to runtime `Vector3` before radius filtering.
+- Archaeology scan seed cells were quantized from runtime `float3`, so origin shifts could perturb deterministic scan phase.
+- Random event AUP timeline and seismic trench-direction seeds mixed only low 32-bit grid data.
+- Meteor splash and acoustic midpoint SDF payloads used `Vector3` absolute intermediates before final API boundaries.
+
+What was done:
+- `ResourceDistributionDirector` now filters tombstones with `AbsoluteUniversePosition.DistanceSq` before runtime projection.
+- `DataArchaeologyRuntime` now builds artifact seed cells from double absolute coordinates and mixes high/low long bits into the LCG seed.
+- `RandomEventSystem` now keeps meteor/seismic absolute coordinates in `double3` until final payload casts and mixes high/low long bits for timeline/trench seeds.
+- `AcousticOcclusionUtility` now uses `ToAbsoluteUniversePositionDouble3` before the final float SDF density query boundary.
+
+Cinematic Cheats used:
+- Event payloads and SDF density APIs remain float where Unity/VFX/voxel interfaces demand it.
+- Low tier pays no new simulation cost. High/Ultra get more stable long-session event seeding and resource/scan thresholds.
+
+Exact Microseconds saved:
+- Proximity/seed hardening: estimated 3-10 us during seismic/resource/scan event bursts by avoiding runtime-projection correction churn and seed instability.
+- Managed allocation: 0 B/frame.
+
+Verification:
+- Targeted AUP cast scan over AI/fauna/gameplay/world paths leaves only local-offset payloads and final API boundaries.
+- Legacy committed-offset scan under `Assets/_Project/Scripts` is clean.
+- `git diff --check` on Loop 13 code files: line-ending warnings only.
+- `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false`: build succeeded with 0 warnings and 0 errors.
+
+Integrator notes:
+- `MacroSwarm.CurrentSectorAup` remains `float2` in a packed ecology DTO. Widening it to `double2` needs an ecology-owned native layout migration, not an AUP audit hotfix.

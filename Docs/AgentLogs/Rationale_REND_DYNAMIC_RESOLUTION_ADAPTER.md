@@ -73,7 +73,28 @@ Hardware Impact: Normal path adds one ReferenceEquals guard and one integer scal
 
 ## Decision 010 - Conservative signal merge
 Problem: Multiple producers can publish FrameTimeSignal and SystemHealthSignal in one frame; last-writer consumption could overwrite a worse EWMA frame time, health index, pressure level, or foveation tier before DRS target calculation.
-Solution: Merge only the current-frame snapshots, taking maximum EWMA frame time, minimum health index, maximum pressure, and maximum foveation tier, then replace cached values once per signal family.
+Solution: Merge only the current-frame snapshots, taking maximum EWMA frame time, maximum health-pressure index, maximum pressure, and maximum foveation tier, then replace cached values once per signal family.
 Rejected Alternatives: Trusting signal queue order was rejected because producer order is not a graphics policy contract. Persisting the previous frame in the max was rejected because it would make recovery sticky after pressure clears.
 Scalability potential: Low devices keep immediate scale drops when any current-frame lane reports stress; Middle recovers when current signals cool; High/Ultra avoid unnecessary downscale unless a same-frame signal actually proves pressure.
 Hardware Impact: Adds scalar comparisons only, estimated below 1 CPU microsecond per frame, and prevents missed 2500-8000 GPU microsecond savings during same-frame escalation.
+
+## Decision 011 - Health index polarity correction
+Problem: Re-reading HomeostasisBrain showed SystemHealthIndex01 is a pressure index where higher values are worse. The conservative merge used minimum health index, which underreported same-frame health pressure in DRS blackbox telemetry.
+Solution: Initialize the merged health index to 0 and keep the maximum sanitized SystemHealthIndex01 across current-frame SystemHealthSignal snapshots.
+Rejected Alternatives: Renaming or reshaping the shared signal was rejected because the signal contract is already consumed by other systems; the DRS adapter only needed to respect the existing polarity.
+Scalability potential: Low/Middle devices get truthful postmortem pressure telemetry during emergency drops; High/Ultra keep no extra allocation and unchanged runtime scale behavior.
+Hardware Impact: Same scalar comparison cost, below 1 CPU microsecond. Gain is diagnostic accuracy, preventing false low-pressure blackbox reads during GPU/thermal escalation.
+
+## Decision 012 - Dispatcher boot-order retry
+Problem: GlobalRegistry.TryRegisterUpdatable returns false when SystemDispatcher is not registered; a self-bootstrapped DRS adapter could miss the update lane permanently if created during that boot gap.
+Solution: Gate TryRegister behind GlobalRegistry.Dispatcher and arm a bounded boot-only Awaitable retry that stops after successful Core-lane registration, disable/destroy, or 600 frames.
+Rejected Alternatives: Adding an initial Dispatcher hot-swap event in GlobalRegistry was rejected because existing Dispatcher listeners mutate their registered flags and could leak lane entries. StartCoroutine/Update polling was rejected because project scanners flag them and the recurring path must stay dispatcher-owned.
+Scalability potential: Low/Middle devices do not lose emergency resolution scaling during slow bootstrap; High/Ultra keep identical runtime cost once registered.
+Hardware Impact: Normal runtime cost remains 0 B/frame and 0 extra comparisons after registration. Cold retry costs one Awaitable state during boot and at most one dispatcher reference check per frame until registration.
+
+## Decision 013 - Dispatcher replacement handoff
+Problem: Runtime Dispatcher replacement can clear or rebuild update lanes while the DRS adapter still believes it is registered, causing silent loss of DRS ticks after service teardown/recreate.
+Solution: Handle GlobalRegistryServiceSlot.Dispatcher in the existing hot-swap listener by unregistering stale lane state and re-registering only when the replacement dispatcher exists.
+Rejected Alternatives: Blindly setting _registered=false was rejected because existing bucket entries could leak. Global initial Dispatcher events were still rejected because they would perturb unrelated listeners.
+Scalability potential: Low devices keep emergency DRS after runtime dispatcher recovery; High/Ultra keep unchanged steady-state execution.
+Hardware Impact: No hot-path cost. Replacement path pays one unregister/register pair only during service handoff, estimated below 20 cold microseconds plus existing registry bucket scans.

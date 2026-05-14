@@ -80,9 +80,15 @@ namespace Hecton8.Narrative.Prologue
             _blackBoxDumped = false;
             _devSkipHandoffPublished = false;
             _hasLastOrbitalSnapshot = false;
+            _lastAtmosphericReentry = default;
+            _lastComplete = default;
+            _lastOrbital = default;
+            _hasPublishedTelemetry = false;
 
             try
             {
+                _runtime.PrepareSequenceRun();
+
                 if (!await AwaitAtmosphericReentryAsync(cancellationToken))
                     return;
 

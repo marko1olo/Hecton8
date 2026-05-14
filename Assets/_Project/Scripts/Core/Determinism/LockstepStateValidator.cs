@@ -193,6 +193,10 @@ namespace Hecton8.Core.Determinism
         private AutoResetEvent _writerSignal;
         private FileStream _replayStream;
         private IDataVault _dataVault;
+        private VaultBufferHandle<float3> _rigidbodyAupsHandle;
+        private VaultBufferHandle<LockstepPlayerKinematicState> _playerKinematicStateHandle;
+        private VaultBufferHandle<float> _roomWaterLevelsHandle;
+        private VaultBufferHandle<float3> _entityAupsHandle;
         private IPlayerRuntimeContext _player;
         private IHabitatGraphService _habitat;
         private SystemDispatcher _dispatcher;
@@ -413,11 +417,12 @@ namespace Hecton8.Core.Determinism
             if (vault == null)
                 return;
 
-            NativeArray<LockstepPlayerKinematicState> buffer = vault.GetBuffer<LockstepPlayerKinematicState>(
+            _playerKinematicStateHandle = vault.GetBufferHandle<LockstepPlayerKinematicState>(
                 BufferID.PlayerKinematicState,
                 1,
                 SystemID.CoreDeterminism,
                 NativeArrayOptions.ClearMemory);
+            NativeArray<LockstepPlayerKinematicState> buffer = _playerKinematicStateHandle.Resolve(vault);
             if (!buffer.IsCreated)
                 return;
 
@@ -472,11 +477,12 @@ namespace Hecton8.Core.Determinism
             if (count <= 0)
                 return;
 
-            NativeArray<float> destination = vault.GetBuffer<float>(
+            _roomWaterLevelsHandle = vault.GetBufferHandle<float>(
                 BufferID.RoomWaterLevels,
                 count,
                 SystemID.CoreDeterminism,
                 NativeArrayOptions.ClearMemory);
+            NativeArray<float> destination = _roomWaterLevelsHandle.Resolve(vault);
             if (!destination.IsCreated)
                 return;
 
@@ -505,53 +511,68 @@ namespace Hecton8.Core.Determinism
             NativeArray<LockstepPlayerKinematicState> playerStates = default;
             NativeArray<float> roomWaterLevels = default;
             NativeArray<float3> entityAups = default;
+            bool rigidbodyAupsLocked = false;
+            bool playerStatesLocked = false;
+            bool roomWaterLevelsLocked = false;
+            bool entityAupsLocked = false;
 
             if (vault != null)
             {
-                vault.TryGetBuffer(BufferID.RigidbodyAUPs, out rigidbodyAups);
-                vault.TryGetBuffer(BufferID.PlayerKinematicState, out playerStates);
-                vault.TryGetBuffer(BufferID.RoomWaterLevels, out roomWaterLevels);
-                vault.TryGetBuffer(BufferID.EntityAUPs, out entityAups);
+                TryResolveLockedVaultBuffer(vault, BufferID.RigidbodyAUPs, ref _rigidbodyAupsHandle, out rigidbodyAups, out rigidbodyAupsLocked);
+                TryResolveLockedVaultBuffer(vault, BufferID.PlayerKinematicState, ref _playerKinematicStateHandle, out playerStates, out playerStatesLocked);
+                TryResolveLockedVaultBuffer(vault, BufferID.RoomWaterLevels, ref _roomWaterLevelsHandle, out roomWaterLevels, out roomWaterLevelsLocked);
+                TryResolveLockedVaultBuffer(vault, BufferID.EntityAUPs, ref _entityAupsHandle, out entityAups, out entityAupsLocked);
             }
 
-            int rigidbodyCount = ResolveHashCount(rigidbodyAups, ref telemetryFlags, out bool rigidbodyTruncated);
-            int playerCount = ResolveHashCount(playerStates, ref telemetryFlags, out bool playerTruncated);
-            int roomCount = ResolveRoomHashCount(roomWaterLevels, ref telemetryFlags, out bool roomTruncated);
-            int entityCount = ResolveHashCount(entityAups, ref telemetryFlags, out bool entityTruncated);
-
-            SetDefaultArrayHash(LockstepHashCategory.RigidbodyAups, rigidbodyCount, rigidbodyAups.IsCreated, rigidbodyTruncated);
-            SetDefaultArrayHash(LockstepHashCategory.PlayerKinematicState, playerCount, playerStates.IsCreated, playerTruncated);
-            SetDefaultArrayHash(LockstepHashCategory.RoomWaterLevels, roomCount, roomWaterLevels.IsCreated, roomTruncated);
-            SetDefaultArrayHash(LockstepHashCategory.EntityAups, entityCount, entityAups.IsCreated, entityTruncated);
-
-            JobHandle combineHandle = default;
-            combineHandle = ScheduleFloat3Hash(
-                rigidbodyAups,
-                _rigidbodyElementHashes,
-                _rigidbodyElementFlags,
-                LockstepHashCategory.RigidbodyAups,
-                rigidbodyCount,
-                combineHandle);
-            combineHandle = SchedulePlayerHash(playerStates, playerCount, combineHandle);
-            combineHandle = ScheduleFloatHash(roomWaterLevels, roomCount, combineHandle);
-            combineHandle = ScheduleFloat3Hash(
-                entityAups,
-                _entityElementHashes,
-                _entityElementFlags,
-                LockstepHashCategory.EntityAups,
-                entityCount,
-                combineHandle);
-            JobHandle masterHandle = new MasterStateHashJob
+            JobHandle masterHandle = default;
+            try
             {
-                ArrayHashes = _arrayHashes,
-                MasterHash = _masterHash,
-                MasterFlags = _masterFlags,
-                Frame = frame
-            }.Schedule(combineHandle);
+                int rigidbodyCount = ResolveHashCount(rigidbodyAups, ref telemetryFlags, out bool rigidbodyTruncated);
+                int playerCount = ResolveHashCount(playerStates, ref telemetryFlags, out bool playerTruncated);
+                int roomCount = ResolveRoomHashCount(roomWaterLevels, ref telemetryFlags, out bool roomTruncated);
+                int entityCount = ResolveHashCount(entityAups, ref telemetryFlags, out bool entityTruncated);
 
-            // [BLOCKING_SYNC_POINT] 300-frame POST_SIMULATION hash fence.
-            // The replay block must contain frame-N truth before any owner can mutate the sampled DataVault arrays.
-            masterHandle.Complete();
+                SetDefaultArrayHash(LockstepHashCategory.RigidbodyAups, rigidbodyCount, rigidbodyAups.IsCreated, rigidbodyTruncated);
+                SetDefaultArrayHash(LockstepHashCategory.PlayerKinematicState, playerCount, playerStates.IsCreated, playerTruncated);
+                SetDefaultArrayHash(LockstepHashCategory.RoomWaterLevels, roomCount, roomWaterLevels.IsCreated, roomTruncated);
+                SetDefaultArrayHash(LockstepHashCategory.EntityAups, entityCount, entityAups.IsCreated, entityTruncated);
+
+                JobHandle combineHandle = default;
+                combineHandle = ScheduleFloat3Hash(
+                    rigidbodyAups,
+                    _rigidbodyElementHashes,
+                    _rigidbodyElementFlags,
+                    LockstepHashCategory.RigidbodyAups,
+                    rigidbodyCount,
+                    combineHandle);
+                combineHandle = SchedulePlayerHash(playerStates, playerCount, combineHandle);
+                combineHandle = ScheduleFloatHash(roomWaterLevels, roomCount, combineHandle);
+                combineHandle = ScheduleFloat3Hash(
+                    entityAups,
+                    _entityElementHashes,
+                    _entityElementFlags,
+                    LockstepHashCategory.EntityAups,
+                    entityCount,
+                    combineHandle);
+                masterHandle = new MasterStateHashJob
+                {
+                    ArrayHashes = _arrayHashes,
+                    MasterHash = _masterHash,
+                    MasterFlags = _masterFlags,
+                    Frame = frame
+                }.Schedule(combineHandle);
+
+                // [BLOCKING_SYNC_POINT] 300-frame POST_SIMULATION hash fence.
+                // The replay block must contain frame-N truth before any owner can mutate the sampled DataVault arrays.
+                masterHandle.Complete();
+            }
+            finally
+            {
+                UnlockVaultBuffer(vault, BufferID.EntityAUPs, ref entityAupsLocked);
+                UnlockVaultBuffer(vault, BufferID.RoomWaterLevels, ref roomWaterLevelsLocked);
+                UnlockVaultBuffer(vault, BufferID.PlayerKinematicState, ref playerStatesLocked);
+                UnlockVaultBuffer(vault, BufferID.RigidbodyAUPs, ref rigidbodyAupsLocked);
+            }
 
             uint flags = _masterFlags[0];
             if ((flags & ArrayFlagMissing) != 0u)
@@ -565,6 +586,46 @@ namespace Hecton8.Core.Determinism
             _lastMasterHashLo = (uint)master;
             _lastMasterHashHi = (uint)(master >> 32);
             GlobalTelemetryBus.PublishModTelemetry(ReasonDesyncHash, _lastMasterHashLo, _lastMasterHashHi);
+        }
+
+        private static bool TryResolveLockedVaultBuffer<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            ref VaultBufferHandle<T> handle,
+            out NativeArray<T> buffer,
+            out bool locked)
+            where T : struct
+        {
+            buffer = default;
+            locked = false;
+            if (vault == null || !vault.TryGetBufferHandle(bufferId, out handle))
+                return false;
+
+            if (!vault.TryLockBuffer(bufferId))
+            {
+                handle = default;
+                return false;
+            }
+
+            locked = true;
+            buffer = handle.Resolve(vault);
+            if (buffer.IsCreated)
+                return true;
+
+            vault.TryUnlockBuffer(bufferId);
+            locked = false;
+            handle = default;
+            return false;
+        }
+
+        private static void UnlockVaultBuffer(IDataVault vault, BufferID bufferId, ref bool locked)
+        {
+            if (!locked)
+                return;
+
+            if (vault != null)
+                vault.TryUnlockBuffer(bufferId);
+            locked = false;
         }
 
         private int ResolveHashCount<T>(NativeArray<T> source, ref uint telemetryFlags, out bool truncated)
@@ -1163,6 +1224,10 @@ namespace Hecton8.Core.Determinism
             DisposeArray(ref _inputRing);
             DisposeArray(ref _ghostHeaders);
             DisposeArray(ref _ghostInputs);
+            _rigidbodyAupsHandle = default;
+            _playerKinematicStateHandle = default;
+            _roomWaterLevelsHandle = default;
+            _entityAupsHandle = default;
         }
 
         private static void DisposeArray<T>(ref NativeArray<T> array)

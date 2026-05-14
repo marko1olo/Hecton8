@@ -121,16 +121,30 @@ namespace Hecton8.AI
 
         internal bool TryGetLeviathanBones(out NativeArray<float4x4> bones, out int activeSegmentCount)
         {
+            if (_disposed || _solverScheduled || !_leviathanBones.IsCreated || _activeSegmentCount <= 0)
+            {
+                bones = default;
+                activeSegmentCount = 0;
+                return false;
+            }
+
+            activeSegmentCount = math.min(_activeSegmentCount, _leviathanBones.Length);
             bones = _leviathanBones;
-            activeSegmentCount = _activeSegmentCount;
-            return bones.IsCreated && activeSegmentCount > 0;
+            return activeSegmentCount > 0;
         }
 
         internal bool TryGetLeviathanBoneGraphicsBuffer(out GraphicsBuffer buffer, out int activeSegmentCount)
         {
-            activeSegmentCount = _activeSegmentCount;
+            if (_disposed || _activeSegmentCount <= 0)
+            {
+                buffer = null;
+                activeSegmentCount = 0;
+                return false;
+            }
+
+            activeSegmentCount = math.min(_activeSegmentCount, MaxSegments);
             buffer = _gpuUploadBufferIndex == 0 ? _bonesGraphicsBufferB : _bonesGraphicsBufferA;
-            return buffer != null && buffer.IsValid() && activeSegmentCount > 0;
+            return HasValidGraphicsBuffer(buffer, activeSegmentCount);
         }
 
         private void Awake()
@@ -262,7 +276,8 @@ namespace Hecton8.AI
 
             if (!_solverScheduled)
             {
-                ApplyPendingOriginShiftRebase();
+                if (ApplyPendingOriginShiftRebase())
+                    UploadBonesToGpu();
                 return;
             }
 
@@ -271,8 +286,7 @@ namespace Hecton8.AI
 
             _solverScheduled = false;
             _frameIndex = _frameIndex == int.MaxValue ? 0 : _frameIndex + 1;
-            if (ApplyPendingOriginShiftRebase())
-                return;
+            ApplyPendingOriginShiftRebase();
 
             if (TelemetryHasInvalidFrame())
                 DumpTelemetryBlackBoxOnce();
@@ -319,7 +333,12 @@ namespace Hecton8.AI
 
         internal void BindSkinningMaterial(Material material)
         {
+            if (_skinningMaterial == material)
+                return;
+
+            ClearMaterialGpuSkinningBinding(_skinningMaterial);
             _skinningMaterial = material;
+            ClearMaterialGpuSkinningBinding(_skinningMaterial);
         }
 
         internal void SetMotionIntent(Vector3 intendedVelocity, Vector3 headTargetWorldPosition)
@@ -397,11 +416,13 @@ namespace Hecton8.AI
 
         private void DisposePersistentBuffers(JobHandle dependency)
         {
-            _disposeHandle = H8Memory.Release(ref _segmentPositions, dependency);
-            _disposeHandle = H8Memory.Release(ref _previousSegmentPositions, JobHandle.CombineDependencies(_disposeHandle, dependency));
-            _disposeHandle = H8Memory.Release(ref _leviathanBones, JobHandle.CombineDependencies(_disposeHandle, dependency));
-            _disposeHandle = H8Memory.Release(ref _telemetryRing, JobHandle.CombineDependencies(_disposeHandle, dependency));
-            _disposeHandle = H8Memory.Release(ref _telemetryCursor, JobHandle.CombineDependencies(_disposeHandle, dependency));
+            JobHandle releaseDependency = JobHandle.CombineDependencies(_disposeHandle, dependency);
+            releaseDependency = H8Memory.Release(ref _segmentPositions, releaseDependency);
+            releaseDependency = H8Memory.Release(ref _previousSegmentPositions, releaseDependency);
+            releaseDependency = H8Memory.Release(ref _leviathanBones, releaseDependency);
+            releaseDependency = H8Memory.Release(ref _telemetryRing, releaseDependency);
+            releaseDependency = H8Memory.Release(ref _telemetryCursor, releaseDependency);
+            _disposeHandle = releaseDependency;
             DispatcherJobSwap.TryFinalizeCompleted(ref _disposeHandle);
             _pendingHandle = default;
             _solverScheduled = false;
@@ -636,6 +657,9 @@ namespace Hecton8.AI
             if (!_leviathanBones.IsCreated)
                 return;
 
+            if (_skinningMaterial == null && !_publishGlobalBoneBuffer)
+                return;
+
             EnsureGraphicsBuffers();
             GraphicsBuffer writeBuffer = _gpuUploadBufferIndex == 0 ? _bonesGraphicsBufferA : _bonesGraphicsBufferB;
             if (!HasValidGraphicsBuffer(writeBuffer, MaxSegments))
@@ -669,19 +693,28 @@ namespace Hecton8.AI
 
         private void ClearGpuSkinningBinding()
         {
-            if (_skinningMaterial != null)
-            {
-                _skinningMaterial.SetFloat(_LeviathanBoneCountId, 0f);
-                _skinningMaterial.SetFloat(_LeviathanTailWhipId, 0f);
-                _skinningMaterial.SetFloat(_LeviathanGpuSkinningId, 0f);
-            }
+            ClearMaterialGpuSkinningBinding(_skinningMaterial);
 
             if (_publishGlobalBoneBuffer)
             {
                 Shader.SetGlobalFloat(_LeviathanBoneCountId, 0f);
+                Shader.SetGlobalFloat(_LeviathanIkTierId, 0f);
                 Shader.SetGlobalFloat(_LeviathanTailWhipId, 0f);
+                Shader.SetGlobalFloat(_LeviathanSegmentLengthId, 1f);
                 Shader.SetGlobalFloat(_LeviathanGpuSkinningId, 0f);
             }
+        }
+
+        private static void ClearMaterialGpuSkinningBinding(Material material)
+        {
+            if (material == null)
+                return;
+
+            material.SetFloat(_LeviathanBoneCountId, 0f);
+            material.SetFloat(_LeviathanIkTierId, 0f);
+            material.SetFloat(_LeviathanTailWhipId, 0f);
+            material.SetFloat(_LeviathanSegmentLengthId, 1f);
+            material.SetFloat(_LeviathanGpuSkinningId, 0f);
         }
 
         private void EnsureGraphicsBuffers()

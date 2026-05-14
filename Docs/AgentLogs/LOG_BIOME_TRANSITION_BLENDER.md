@@ -112,3 +112,45 @@ Direct Roslyn probe passed for `BiomeBoundarySdfContracts.cs` + `BiomeBoundarySd
 `git diff --check` passed for the touched biome/editor files.
 Source scan found no `Update()`, `BiomeManager.Instance`, biome trigger collider, `new List<`, or `new Dictionary<` in the SDF slice.
 Unity MCP validation remains unavailable in this session; status stays `PENDING VERIFICATION`.
+
+## 2026-05-14 - Fourth Pass Hot-Path Hardening
+
+What was wrong:
+`BiomeBoundarySdfRuntime` was source-complete but still too tolerant of periodic registry access and immediate math-LOD changes. The sampler also over-weighted heatmap edges by clamping duplicate offset samples, and the black-box dump did not carry enough header metadata for stable postmortem decoding. The active `CURRENT_BATCH.md` in this workspace no longer contains the `BIOME_TRANSITION_BLENDER` XML block, so prompt re-extraction now fails even though the status/rationale trail preserves the original assignment.
+
+What was done:
+Cached player and scalability dependencies in `BiomeBoundarySdfRuntime`.
+Added GlobalRegistry hot-swap and scalability event listeners.
+Bound missing-player cold rebinding to a 2-second cadence.
+Added 3-second hysteresis before low-tier kernel changes.
+Added `ProfilerMarker` scopes for runtime `SlowTick` and the Burst sample job.
+Changed edge sampling to iterate only real min/max heatmap cells instead of duplicating clamped cells.
+Guarded resolution multiplication overflow.
+Reported all-zero/unhydrated maps as `MissingMap`.
+Kept boundary comparison hash-aware without widening the hot byte map.
+Added a binary black-box header with magic, version, entry count, struct size, capacity, cursor, origin-shift sequence, and sample sequence.
+Expanded the dev smoke tester with missing-map coverage.
+
+Cinematic cheats used:
+Kept the 2D SDF/IDW biome heatmap instead of physical biome volumes.
+Kept 64 KB byte-map storage plus hash mirror instead of a wider hot map.
+Used math-LOD hysteresis to preserve visual continuity instead of simulating micro-boundary churn.
+Kept fault-path binary telemetry instead of managed diagnostic objects.
+
+Exact microseconds saved:
+Edge-window sampler: estimated 2-4 us saved on low-tier map-edge samples by removing duplicate clamped cells and inner clamp branches.
+Registry cache: removes the normal 0.5-second cadence dependency on `GlobalRegistry` player/scalability polling during steady-state `SlowTick`.
+Map memory choice: retained 64 KB primary map instead of 256 KB uint map; cache pressure reduction is the win, not raw arithmetic.
+GC result: 0 B maintained in the hot sampling path.
+
+Verification:
+`dotnet build .\Hecton8.Core.csproj --no-restore -m:1 /nr:false /p:UseSharedCompilation=false /clp:ErrorsOnly` passed.
+`dotnet build .\Hecton8.Editor.csproj --no-restore -m:1 /nr:false /p:UseSharedCompilation=false /clp:ErrorsOnly` passed after restore and after a transient unrelated `RandomEventSystem` compile fix landed from another agent.
+Direct runtime Roslyn probe compiled `BiomeBoundarySdfContracts.cs`, `BiomeBoundarySdfJobs.cs`, `BiomeBoundarySdfRuntime.cs`, and `BiomeBoundarySdfRuntimeBootstrap.cs` with Unity references. It emitted expected type-conflict warnings because existing `Library\ScriptAssemblies` already contained prior versions of those types, but exited 0.
+`git diff --check` passed for the touched biome/dev source files; only CRLF normalization warnings were printed.
+Static banned-pattern scan found no `Update`, `LateUpdate`, `FixedUpdate`, `new List<`, `new Dictionary<`, `BiomeManager.Instance`, `FindObjectOfType`, or `GameObject.Find` in the touched SDF files.
+
+Pending:
+Unity MCP/Play Mode/Profiler validation is unavailable in this session.
+Generated `Hecton8.Core.csproj` still does not list the SDF source files; Unity source import must regenerate project ownership.
+Status remains `PENDING VERIFICATION`.

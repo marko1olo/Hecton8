@@ -2374,7 +2374,13 @@ namespace Hecton8.AI
                 return _speciesProfile != null && _speciesProfile.isLeviathan;
 
             if (_archetype.roleType != CreatureRoleType.Leviathan)
-                return _speciesProfile != null && _speciesProfile.isLeviathan && _archetype.useLeviathanPresence;
+            {
+                return _speciesProfile != null &&
+                       _speciesProfile.isLeviathan &&
+                       (_archetype.useFeintRush ||
+                        (_archetype.useLeviathanPresence &&
+                         _archetype.leviathanEncounterType == LeviathanEncounterType.PresenceCircle));
+            }
 
             return _archetype.useFeintRush ||
                    (_archetype.useLeviathanPresence &&

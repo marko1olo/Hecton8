@@ -100,3 +100,67 @@ Solution: Use Unity Bee response files directly with Unity's bundled Roslyn comp
 Rejected Alternatives: Trust stale `.csproj`, run another active-editor Unity batch, or declare success from static scan only.
 Scalability potential: No runtime impact; this improves evidence quality under active editor contention.
 Hardware Impact: No frame-time impact. Result: Contracts and Narrative.Prologue compile clean; Core compile is blocked by unrelated `GroundPenetratingRadarRuntime.cs(309,17)` missing `GroundRadarRaymarchJob.GprOreTypes`.
+
+## Decision 11 - Non-Reload Lifecycle Reset
+
+Problem: `PrologueSequenceRegistryBridge` cached transient readiness flags, per-frame signal cursors, skip state, and a resolved service reference across enable cycles. In domain-reload-disabled or scene-transition reuse, a second prologue run could inherit "ocean ready" from a previous forced hydration or keep a stale service reference after inspector wiring changed.
+Solution: Add `ResetTransientSequenceState()` at the start of `OnEnable()` and clear `_service` before `ResolveService()`. The reset is scalar-only and runs before registration, input binding, and auto-run start.
+Rejected Alternatives: Trust `OnDisable` to cover every entry path, clear state lazily inside `IsOceanSurfaceReady`, or keep stale service as a fallback. `OnDisable` is not a deterministic reset owner for non-reload transitions; lazy clearing touches the wait path; stale service fallback can register a dead component.
+Scalability potential: Low/MX350 gets deterministic second-run proxy behavior instead of accidental instant hydration; Middle/High/Ultra keep high-res hydration gating and richer responders without contaminated readiness state.
+Hardware Impact: Hot path cost is 0 us. `OnEnable` scalar reset cost is below measurement relevance; estimated 8-20 us avoided in stale-state branch checks/debugging and prevents unbounded correctness drift.
+
+## Decision 12 - Primary vs Secondary Bee Verification
+
+Problem: There are multiple Bee response-file sets. The primary `1300b0aEDbg` set sees the new prologue contracts and compiles touched assemblies; the secondary `1900b0aEDbg` set is stale or configured without several dependencies.
+Solution: Treat `1300b0aEDbg` as the valid narrow post-edit evidence set for this work and record `1900b0aEDbg` as blocked/stale. `1300b0aEDbg` compiles `Hecton8.Core.Contracts`, `Hecton8.Narrative.Prologue`, `Hecton8.Core`, and `Hecton8.Prologue.Space` with exit 0. `1900b0aEDbg` lacks `PrologueSequenceContracts.cs` in Core.Contracts and fails on unrelated audio virtualization, fauna cognition, WFC/outpost, ore ID, and fluid impulse references.
+Rejected Alternatives: Declare full Unity verification from one response-file set, or edit unrelated assemblies to make stale verification green. Full verification still requires Unity import/console/Play Mode/GCMonitor; unrelated fixes violate domain boundaries.
+Scalability potential: No runtime effect; preserves reliable evidence while avoiding cross-lane churn.
+Hardware Impact: No frame-time impact. Status remains PENDING VERIFICATION because MCP/Unity console and runtime profiling are unavailable.
+
+## Decision 13 - Complete Signal Self-Feedback Filter
+
+Problem: The bridge both consumes `PrologueCompleteSignal` for the manual override gate and emits `PrologueCompleteSignal` for ocean handoff. In a same-frame re-enable or repeated run, a bridge-authored `PRLG` handoff packet could be read as if it came from the cockpit/orbital producers.
+Solution: `TryConsumePrologueComplete` now skips packets whose `SourceHash` equals the bridge `SourceHash`. Existing cockpit lever (`MOVR`) and orbital director (`ORBI`) packets remain accepted.
+Rejected Alternatives: Filter by `PhaseWhiteout` or reject all `PhaseOceanHandoff` packets. Existing producers currently mark the manual lever and orbital completion as `PhaseOceanHandoff`, so phase-only filtering would break the handoff gate.
+Scalability potential: Low/MX350 avoids accidental instant progress after dev skip/re-enable; High/Ultra retain the same richer downstream water/audio/VFX response because only self-authored feedback is discarded.
+Hardware Impact: One uint compare per consumed complete signal; capacity is 8, so worst-case cost is below 1 us on i3/MX350. No allocation and no hot-frame polling change outside the existing wait loop.
+
+## Decision 14 - Director Repeated-Run State Reset
+
+Problem: `AwaitableDropSequenceDirector` reset cancellation flags at run entry but left `_lastAtmosphericReentry`, `_lastComplete`, `_lastOrbital`, and `_hasPublishedTelemetry` from the previous run. If a service instance is invoked again after cancel/dev skip, stale atmospheric velocity could pass the Mach gate when no new snapshot exists, and telemetry could suppress the first repeated-run stage packet.
+Solution: Clear cached snapshots and telemetry publication gate at the start of `RunPrologueSequenceAsync` before awaiting atmospheric reentry.
+Rejected Alternatives: Treat prologue as one-shot only, or clear state lazily inside each wait loop. One-shot assumptions do not hold for dev skip/manual testing; lazy clears scatter correctness state across hot wait loops.
+Scalability potential: Low/MX350 repeated test loops keep deterministic proxy/high-res decisions; High/Ultra presentation can rerun without stale sequence hashes contaminating downstream signal timing.
+Hardware Impact: Hot path cost is 0 us. Run-entry reset is scalar assignment only; it removes stale Mach/sequence carryover without adding wait-loop branches.
+
+## Decision 15 - Runtime Run-Start Reset Hook
+
+Problem: The director now clears its cached snapshots on every run, but the bridge still only cleared hydration readiness and signal cursors on `OnEnable`. A same enabled service instance invoked after dev skip could retain forced proxy/high-res readiness and skip the intended chunk hydration gate.
+Solution: Expand `IPrologueSequenceRuntime` with `PrepareSequenceRun()` and call it once at `RunPrologueSequenceAsync` entry. The bridge implementation reuses the same scalar `ResetTransientSequenceState()` used by `OnEnable`.
+Rejected Alternatives: Force consumers to disable/enable the bridge before rerunning, or add checks inside `IsOceanSurfaceReady`. Lifecycle choreography is fragile for dev tooling; hot-path hydration checks should not carry extra stale-state cleanup branches.
+Scalability potential: Low/MX350 repeated runs recalculate proxy readiness from current streaming state; Middle/High/Ultra repeat runs must revalidate high-res ocean residency before splashdown.
+Hardware Impact: One interface dispatch at sequence start; 0 us added to per-frame wait loops. Removes stale forced-hydration carryover without affecting normal one-shot cost.
+
+## Decision 16 - Manual Gate Producer Filtering
+
+Problem: `OrbitalRelativityDirector` emits `PrologueCompleteSignal` from source `ORBI` automatically at cloud whiteout. Stage 3 is the manual cockpit override stage; accepting any complete signal on the shared lane allows autonomous orbital whiteout to bypass the manual release.
+Solution: `TryConsumePrologueComplete` rejects both bridge-authored `PRLG` and orbital `ORBI` packets. Cockpit/manual producers such as `MOVR` remain valid complete-signal sources for the manual gate.
+Rejected Alternatives: Accept all complete signals, or filter only by phase. Accept-all breaks player agency; phase-only filtering is invalid because both cockpit and orbital producers currently use `PhaseOceanHandoff`.
+Scalability potential: Low/MX350 still gets non-VR lever fallback via the cockpit producer; High/Ultra keep manual agency before spending cycles on richer water/audio/VFX handoff.
+Hardware Impact: One additional uint compare per `PrologueCompleteSignal` in a lane capped at 8 entries; below 1 us worst-case on i3/MX350. No allocation.
+
+## Decision 17 - Manual Gate Source Whitelist
+
+Problem: The previous Stage 3 filter rejected known autonomous producers, but any unknown future `PrologueCompleteSignal` source could still satisfy the manual override gate by sharing the global lane.
+Solution: Replace the blacklist with a `MOVR` whitelist after auditing all current producers. `OpenXRManualOverrideLever` is the only accepted release source; bridge `PRLG`, orbital `ORBI`, and unknown producers are ignored by the gate.
+Rejected Alternatives: Keep the PRLG/ORBI blacklist, or introduce a new signal type for manual release. A blacklist fails closed only for known producers; a new lane would force additional consumers during an active parallel batch.
+Scalability potential: Low/MX350 keeps the existing non-VR lever fallback through `MOVR`; Middle/High/Ultra preserve manual agency before expensive water/audio/VFX overkill responders start.
+Hardware Impact: One uint inequality per complete signal in a lane capped at 8 entries; same worst-case sub-1 us cost as the blacklist, with stricter correctness.
+
+## Decision 18 - Run Preparation Fault Guard
+
+Problem: `RunPrologueSequenceAsync` marked the service as running and then called `_runtime.PrepareSequenceRun()` before entering the guarded `try/finally`. The current bridge reset is scalar-only, but the public runtime contract should not be able to strand `_running` or input-lock cleanup if a future implementation faults.
+Solution: Reset director-local run state first, then execute `PrepareSequenceRun()` inside the `try/finally` sequence envelope.
+Rejected Alternatives: Trust the current bridge implementation forever, or wrap only `PrepareSequenceRun()` in a separate catch. Trusting a single adapter is brittle; a second catch duplicates the fault/black-box path.
+Scalability potential: Low/MX350 and Ultra behavior is unchanged in the hot path. The change buys deterministic cleanup for future runtime adapters without adding wait-loop branches.
+Hardware Impact: 0 us hot-path cost. No added allocation. One call moved under existing exception handling; normal sequence cost is unchanged.

@@ -1,4 +1,4 @@
-﻿# Documentation Governance
+# Documentation Governance
 
 Date: 2026-05-14
 Status: PENDING VERIFICATION
@@ -8,20 +8,20 @@ Purpose: prevent workspace documentation from collapsing back into root-level no
 Current-state boundary:
 
 - 2026-05-14 DOC_AUDIT override: read `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md` before using May 11 counters or build-artifact links as current proof.
-- The May 11 `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.*` proof files cited by several docs are absent from the current filesystem. Treat those references as stale report text. Current May 14/R41 external root `Hecton8*.csproj` no-restore CLI compile evidence is `0 Warning(s)` / `0 Error(s)` after restore assets exist, not Unity runtime proof.
+- The May 11 `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.*` proof files cited by several docs are absent from the current filesystem. Treat those references as stale report text. Current May 14/R43 external root `Hecton8*.csproj` no-restore CLI compile evidence is `0 Warning(s)` / `0 Error(s)` after restore assets and referenced `Temp\bin\Debug` DLLs exist, not Unity runtime proof.
 - Current root text scan sees `6` root `.md`, `3` root `.log`, and `3` root `.json` files. Only `AGENTS.md`, `MASTER_RELEASE_WORK_PLAN.md`, and `BUILD_PLAYTEST_ISSUES.md` are active root authority.
 - Current non-anchor root markdown files are not authority: `BROKEN_PREFABS.md` is a generated snapshot, `PROJECT_ATLAS.md` is a compatibility mirror for `Docs/PROJECT_ATLAS.md`, and `TERRAIN_AND_BIOME_REALITY_MAP.md` is a compatibility mirror / stale legacy surface for `Docs/Reports/TERRAIN_AND_BIOME_REALITY_MAP.md`.
 - `PROJECT_ATLAS.md` and `Docs/PROJECT_ATLAS.md` are static first-party asmdef graph snapshots only. They are not package/config/runtime authority.
 - 2026-05-13 DOC_AUDIT R7 patched `AGENTS.md` and `.codexrules/AGENTS.md` to current Low URP reality: `URP_Low` uses `Mobile_Renderer` at render scale `0.85`.
 - 2026-05-13 package/player-settings drift is documented in `Docs/PROJECT_STATE_STATIC_XRAY.md` and `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md`; manifest cleanliness does not mean asset-tree or PlayerSettings cleanliness.
-- `Docs/не откр.md` was a stale batch-prompt dump and was moved to `Docs/DEPRECATED/Root_Stale_Batch_Prompt_Dumps_2026-05-13/`.
+- `Docs/?? ????.md` was a stale batch-prompt dump and was moved to `Docs/DEPRECATED/Root_Stale_Batch_Prompt_Dumps_2026-05-13/`.
 - Current first-party asmdef scan sees `24` asmdefs under `Assets/_Project`; older `13`, `22`, and `23` asmdef atlas statements are stale.
 - `Docs/PROJECT_STATE_STATIC_XRAY.md` is now a direct `Docs/` root static risk register. It is evidence-guiding documentation, not runtime proof.
 - This file defines documentation placement and authority order only.
 - It is not runtime proof and does not certify that every listed document is current by itself.
 - Long-lived project authority lives in stable docs first. Dated reports are evidence snapshots and counters.
 - Current `.agents-skills` visual-fake doctrine is promoted into `../AGENTS.md`, `.agents-skills/OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt`, and `Docs/ARCHITECTURE/CINEMATIC_CHEATS_LEDGER.md`; `Docs/Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md` is supporting evidence.
-- Current documentation synchronization counters are overridden by `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md`; `Docs/Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md` and `Docs/Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json` remain historical May 11 evidence and manifest structure, not current numeric truth where May 13/R41/R42 conflicts.
+- Current documentation synchronization counters are overridden by `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md`; `Docs/Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md` and `Docs/Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json` remain historical May 11 evidence and manifest structure, not current numeric truth where May 13/R41/R42/R43 conflicts.
 - Current documentation sorting authority starts at this file plus `Docs/README.md`. `Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md` and later synchronization reports are evidence for why the sorting changed.
 - Current project truth starts at `../AGENTS.md`, `.agents-skills/README.md`, task-relevant `.agents-skills/*`, `Docs/README.md`, `Docs/HECTON8_GLOBAL_ARCHITECTURE_MAP.md`, `Docs/HECTON8_RUNTIME_EXECUTION_MASTER_PLAN.md`, `Docs/SYSTEMS_CONTRACTS.md`, `Docs/QUALITY_GATES.md`, `Docs/ARCHITECTURE/README.md`, `Docs/ARCHITECTURE/CINEMATIC_CHEATS_LEDGER.md`, `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/README.md`, current source files, and fresh verification logs. Dated reports support these files; they do not outrank them.
 - Current warning-cleanup evidence starts at `Docs/Reports/2026-05-04_WARNING_CLEANUP.md`; current Omega build warning classification is scoped in `Docs/Reports/2026-05-05_OMEGA_AUTONOMY_FORENSIC_HARDENING.md`.

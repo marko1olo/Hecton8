@@ -588,16 +588,18 @@ namespace Hecton8.Gameplay
         {
             int leftIndex = baseFootIndex + ContextualPhysicalIkLowerBodyConstants.LeftFootIndex;
             int rightIndex = baseFootIndex + ContextualPhysicalIkLowerBodyConstants.RightFootIndex;
+            float3 leftPosition = math.select(frame.LeftFoot.WorldPosition, float3.zero, !math.all(math.isfinite(frame.LeftFoot.WorldPosition)));
+            float3 rightPosition = math.select(frame.RightFoot.WorldPosition, float3.zero, !math.all(math.isfinite(frame.RightFoot.WorldPosition)));
             if (FootTargets.IsCreated && rightIndex < FootTargets.Length)
             {
-                FootTargets[leftIndex] = frame.LeftFoot.WorldPosition;
-                FootTargets[rightIndex] = frame.RightFoot.WorldPosition;
+                FootTargets[leftIndex] = leftPosition;
+                FootTargets[rightIndex] = rightPosition;
             }
 
             if (FootCurrentPos.IsCreated && rightIndex < FootCurrentPos.Length)
             {
-                FootCurrentPos[leftIndex] = frame.LeftFoot.WorldPosition;
-                FootCurrentPos[rightIndex] = frame.RightFoot.WorldPosition;
+                FootCurrentPos[leftIndex] = leftPosition;
+                FootCurrentPos[rightIndex] = rightPosition;
             }
         }
 
@@ -739,10 +741,12 @@ namespace Hecton8.Gameplay
                 return;
 
             ContextualPhysicalIkFootData data = FootData[footIndex];
-            data.TargetPosition = target.WorldPosition;
-            data.CurrentPosition = target.WorldPosition;
-            data.StepStartPosition = target.WorldPosition;
-            data.SurfaceNormal = target.WorldNormal;
+            float3 safePosition = math.select(target.WorldPosition, float3.zero, !math.all(math.isfinite(target.WorldPosition)));
+            float3 safeNormal = ContextualPhysicalIkMath.SafeNormalize(target.WorldNormal, new float3(0.0f, 1.0f, 0.0f));
+            data.TargetPosition = safePosition;
+            data.CurrentPosition = safePosition;
+            data.StepStartPosition = safePosition;
+            data.SurfaceNormal = safeNormal;
             data.StepProgress01 = 1.0f;
             data.Blend = ContextualPhysicalIkMath.SmoothScalar(data.Blend, 0.0f, fadeSharpness, deltaTime);
             data.Flags = 0;
@@ -1012,8 +1016,10 @@ namespace Hecton8.Gameplay
             float fadeSharpness,
             float deltaTime)
         {
-            target = previous;
-            target.Blend = ContextualPhysicalIkMath.SmoothScalar(previous.Blend, 0.0f, fadeSharpness, deltaTime);
+            target.WorldPosition = math.select(previous.WorldPosition, float3.zero, !math.all(math.isfinite(previous.WorldPosition)));
+            target.WorldNormal = ContextualPhysicalIkMath.SafeNormalize(previous.WorldNormal, new float3(0.0f, 1.0f, 0.0f));
+            float previousBlend = math.select(math.saturate(previous.Blend), 0.0f, !math.isfinite(previous.Blend));
+            target.Blend = ContextualPhysicalIkMath.SmoothScalar(previousBlend, 0.0f, fadeSharpness, deltaTime);
             target.DeltaHeight = 0.0f;
         }
 
@@ -1210,7 +1216,15 @@ namespace Hecton8.Gameplay
 
         private static bool HasHit(in RaycastHit hit)
         {
-            return hit.distance > 0.0f || math.lengthsq(ContextualPhysicalIkMath.ToFloat3(hit.normal)) > 0.0001f;
+            float3 point = ContextualPhysicalIkMath.ToFloat3(hit.point);
+            float3 normal = ContextualPhysicalIkMath.ToFloat3(hit.normal);
+            float normalLengthSq = math.lengthsq(normal);
+            return math.isfinite(hit.distance) &&
+                hit.distance >= 0.0f &&
+                math.all(math.isfinite(point)) &&
+                math.all(math.isfinite(normal)) &&
+                math.isfinite(normalLengthSq) &&
+                (hit.distance > 0.0f || normalLengthSq > 0.0001f);
         }
 
         private static float ResolveBraceProxyTunnelBlend(
@@ -1281,6 +1295,11 @@ namespace Hecton8.Gameplay
         private const string NativeMemoryOwner = nameof(ContextualPhysicalIkRuntime);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
         private const ulong TelemetryDumpMagic = 0x314753454C4B4948UL;
+        private const uint TelemetryReasonOriginShift = 0x00000001u;
+        private const uint TelemetryReasonStructuralMutation = 0x00000002u;
+        private const uint TelemetryReasonInvalidOriginShift = 0x00000004u;
+        private const float MaxAcceptedOriginShiftMeters = 10000.0f;
+        private const float MaxAcceptedOriginShiftMetersSq = MaxAcceptedOriginShiftMeters * MaxAcceptedOriginShiftMeters;
         private const string TelemetryDumpRelativePath = "Docs/AgentLogs/Dump_ANIM_PROCEDURAL_LEGS_IK.bin";
 
         // COLD ALLOC: ContextualPhysicalIkRig[128] - stable slot owner registry for contextual IK entities - owner: ContextualPhysicalIkRuntime
@@ -1373,12 +1392,27 @@ namespace Hecton8.Gameplay
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
             Vector3 shiftOffset = shiftData.ShiftOffset;
-            if (shiftOffset.sqrMagnitude <= 0.000001f)
+            float3 offset = new float3(shiftOffset.x, shiftOffset.y, shiftOffset.z);
+            if (!math.all(math.isfinite(offset)))
+            {
+                WriteTelemetrySample(TelemetryReasonInvalidOriginShift);
+                DumpTelemetry(TelemetryReasonInvalidOriginShift);
+                return;
+            }
+
+            float shiftDistanceSq = math.lengthsq(offset);
+            if (!math.isfinite(shiftDistanceSq) || shiftDistanceSq > MaxAcceptedOriginShiftMetersSq)
+            {
+                WriteTelemetrySample(TelemetryReasonInvalidOriginShift);
+                DumpTelemetry(TelemetryReasonInvalidOriginShift);
+                return;
+            }
+
+            if (shiftDistanceSq <= 0.000001f)
                 return;
 
             CompletePendingGroundResponseForOriginShift();
 
-            float3 offset = new float3(shiftOffset.x, shiftOffset.y, shiftOffset.z);
             RebaseScheduledEntityStates(offset);
             RebaseTargetFrames(_frontTargetFrames, offset);
             RebaseTargetFrames(_backTargetFrames, offset);
@@ -1423,6 +1457,7 @@ namespace Hecton8.Gameplay
             PublishFrontTargetBuffer();
             WriteTelemetrySample(0u);
             _groundResponseScheduled = false;
+            _pendingGroundResponseHandle = default;
         }
 
         internal bool RegisterRig(ContextualPhysicalIkRig rig, out int slotIndex)
@@ -1431,7 +1466,12 @@ namespace Hecton8.Gameplay
             if (rig == null || _freeSlotCount <= 0)
                 return false;
 
-            CompletePendingGroundResponseForStructuralMutation();
+            bool completedTargetFrame = CompletePendingGroundResponseForStructuralMutation();
+            if (completedTargetFrame)
+            {
+                PublishFrontTargetBuffer();
+                WriteTelemetrySample(TelemetryReasonStructuralMutation);
+            }
 
             int freeStackIndex = _freeSlotCount - 1;
             slotIndex = _freeSlots[freeStackIndex];
@@ -1452,13 +1492,19 @@ namespace Hecton8.Gameplay
             if (!ReferenceEquals(_registeredRigs[slotIndex], rig))
                 return;
 
-            CompletePendingGroundResponseForStructuralMutation();
+            bool completedTargetFrame = CompletePendingGroundResponseForStructuralMutation();
 
             _registeredRigs[slotIndex] = null;
             _slotActive[slotIndex] = false;
             ResetTargetSlot(slotIndex);
             _freeSlots[_freeSlotCount] = slotIndex;
             _freeSlotCount++;
+
+            if (completedTargetFrame)
+            {
+                PublishFrontTargetBuffer();
+                WriteTelemetrySample(TelemetryReasonStructuralMutation);
+            }
         }
 
         private void InitializeFreeSlots()
@@ -1666,18 +1712,22 @@ namespace Hecton8.Gameplay
             DispatcherJobSwap.TryComplete(ref _pendingGroundResponseHandle, forceComplete: true);
             SwapTargetBuffers();
             PublishFrontTargetBuffer();
+            WriteTelemetrySample(TelemetryReasonOriginShift);
             _groundResponseScheduled = false;
+            _pendingGroundResponseHandle = default;
         }
 
-        private void CompletePendingGroundResponseForStructuralMutation()
+        private bool CompletePendingGroundResponseForStructuralMutation()
         {
             if (!_groundResponseScheduled)
-                return;
+                return false;
 
             // COLD SYNC JOB: lifecycle slot mutation must not race pending IK writes.
             DispatcherJobSwap.TryComplete(ref _pendingGroundResponseHandle, forceComplete: true);
+            SwapTargetBuffers();
             _groundResponseScheduled = false;
             _pendingGroundResponseHandle = default;
+            return true;
         }
 
         private void RebaseScheduledEntityStates(float3 shiftOffset)

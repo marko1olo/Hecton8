@@ -3662,7 +3662,7 @@ public class HectonVoxelEngine : MonoBehaviour
             }
 
             OriginShiftEventData postMeshShift = await HectonFloatingOrigin.WaitForShiftStabilityAsync(ct);
-            ConfigureVolumeRuntimeData(targetGO, seed, worldCenter, absoluteUniverseOffsetAtStart, preset, gridDim, voxelStep, clampedLodLevel, caveParams,
+            ConfigureVolumeRuntimeData(targetGO, seed, worldCenter, absoluteUniverseOffsetAtStart, absoluteUniverseOffsetAtStartDouble, preset, gridDim, voxelStep, clampedLodLevel, caveParams,
                 caveNodes, caveTunnels, caveEntrances, caveStructures,
                 pipelineData.ScratchLease.SmoothDensityField,
                 pipelineData.PtsX,
@@ -3883,7 +3883,7 @@ public class HectonVoxelEngine : MonoBehaviour
             }
 
             OriginShiftEventData postMeshShift = await HectonFloatingOrigin.WaitForShiftStabilityAsync(ct);
-            ConfigureVolumeRuntimeData(targetGO, caveParams.seed, worldCenter, absoluteUniverseOffsetAtStart, null, gridDim, voxelStep, clampedLodLevel, caveParams,
+            ConfigureVolumeRuntimeData(targetGO, caveParams.seed, worldCenter, absoluteUniverseOffsetAtStart, absoluteUniverseOffsetAtStartDouble, null, gridDim, voxelStep, clampedLodLevel, caveParams,
                 nodes, tunnels, entrances, structures,
                 pipelineData.ScratchLease.SmoothDensityField,
                 pipelineData.PtsX,
@@ -3948,7 +3948,7 @@ public class HectonVoxelEngine : MonoBehaviour
             float voxelStep = math.max(volume.VoxelSize, 0.25f);
             double3 committedTotalOffsetDouble = stableShift.NewTotalOffsetDouble;
             Vector3 committedTotalOffset = ToVector3(committedTotalOffsetDouble);
-            Vector3 worldCenter = HectonFloatingOrigin.ToRuntimePosition(ToDouble3(volume.GenerationAbsoluteUniversePosition), committedTotalOffsetDouble);
+            Vector3 worldCenter = HectonFloatingOrigin.ToRuntimePosition(volume.GenerationAbsoluteUniversePositionDouble, committedTotalOffsetDouble);
             CaveGenerationParams caveParams = volume.CaveParams;
             float lodTransitionBand = lodLevel > 0 ? math.max(voxelStep * 1.25f, 0.5f) : 0f;
             float effectiveSealMargin = math.max(sealMargin, TerrainVoxelSeamTransitionBand) + lodTransitionBand;
@@ -4183,11 +4183,7 @@ public class HectonVoxelEngine : MonoBehaviour
             if (volume == null || !volume.HasRuntimeData)
                 continue;
 
-            Vector3 absolutePosition = volume.GenerationAbsoluteUniversePosition;
-            AbsoluteUniversePosition volumeAup = AbsoluteUniversePosition.FromAbsolutePosition(new double3(
-                absolutePosition.x,
-                absolutePosition.y,
-                absolutePosition.z));
+            AbsoluteUniversePosition volumeAup = AbsoluteUniversePosition.FromAbsolutePosition(volume.GenerationAbsoluteUniversePositionDouble);
             double3 resolvedPosition = volumeAup.ToAbsoluteDouble3();
             if (resolvedPosition.x < minX || resolvedPosition.x > maxX ||
                 resolvedPosition.z < minZ || resolvedPosition.z > maxZ)
@@ -4290,11 +4286,7 @@ public class HectonVoxelEngine : MonoBehaviour
                 continue;
             }
 
-            Vector3 volumeAbsolute = volume.GenerationAbsoluteUniversePosition;
-            AbsoluteUniversePosition volumeAup = AbsoluteUniversePosition.FromAbsolutePosition(new double3(
-                volumeAbsolute.x,
-                volumeAbsolute.y,
-                volumeAbsolute.z));
+            AbsoluteUniversePosition volumeAup = AbsoluteUniversePosition.FromAbsolutePosition(volume.GenerationAbsoluteUniversePositionDouble);
             double sqrDistance = AbsoluteUniversePosition.DistanceSq(in volumeAup, in queryAup);
             if (sqrDistance >= bestSqrDistance)
                 continue;
@@ -8483,6 +8475,7 @@ public class HectonVoxelEngine : MonoBehaviour
         uint seed,
         Vector3 worldCenter,
         Vector3 absoluteUniverseOffset,
+        double3 absoluteUniverseOffsetDouble,
         CavePreset preset,
         int gridDimension,
         float voxelSize,
@@ -8512,6 +8505,7 @@ public class HectonVoxelEngine : MonoBehaviour
             seed,
             worldCenter,
             absoluteUniverseOffset,
+            absoluteUniverseOffsetDouble,
             preset,
             gridDimension,
             voxelSize,

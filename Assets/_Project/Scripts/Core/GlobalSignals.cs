@@ -22,6 +22,7 @@ using NarrativeFocusSignal = Hecton8.Core.Signals.NarrativeFocusSignal;
 using NarrativeHudWaypointSignal = Hecton8.Core.Signals.NarrativeHudWaypointSignal;
 using NarrativePoiStateSignal = Hecton8.Core.Signals.NarrativePoiStateSignal;
 using ProgressionEventSignal = Hecton8.Core.Signals.ProgressionEventSignal;
+using ScanLogChangedSignal = Hecton8.Core.Signals.ScanLogChangedSignal;
 using SoundscapeProfileSignal = Hecton8.Core.Signals.SoundscapeProfileSignal;
 
 namespace Hecton8.Core.Signals
@@ -1097,6 +1098,7 @@ namespace Hecton8.Core
         private const int PlayerActionProgressSignalCapacity = 64;
         private const int PlayerActionCompletedSignalCapacity = 16;
         private const int PlayerActionCancelledSignalCapacity = 16;
+        private const int ScanLogChangedSignalCapacity = 32;
         private const int PdaExchangeStateChangedSignalCapacity = 32;
         private const int VehicleUpgradesChangedSignalCapacity = 32;
         private const int SignalTelemetryLaneBudgetPerFrame = 4;
@@ -1768,6 +1770,7 @@ namespace Hecton8.Core
             ValidateSignalSize<PlayerActionProgressSignal>(32);
             ValidateSignalSize<PlayerActionCompletedSignal>(32);
             ValidateSignalSize<PlayerActionCancelledSignal>(32);
+            ValidateSignalSize<ScanLogChangedSignal>(32);
             ValidateSignalSize<PdaExchangeStateChangedSignal>(32);
             ValidateSignalSize<VehicleUpgradesChangedSignal>(32);
 #endif
@@ -2393,6 +2396,13 @@ namespace Hecton8.Core
         {
             EnsureInitialized();
             SignalBus<PlayerActionCancelledSignal>.Push(in signal);
+        }
+
+        /// <summary>Queues one scan-log mutation packet.</summary>
+        public static void Publish(in ScanLogChangedSignal signal)
+        {
+            EnsureInitialized();
+            SignalBus<ScanLogChangedSignal>.Push(in signal);
         }
 
         /// <summary>Queues one PDA exchange dirty-state packet.</summary>
@@ -3130,6 +3140,8 @@ namespace Hecton8.Core
             SignalBus<PlayerActionCompletedSignal>.EnsureInitialized();
             SignalBus<PlayerActionCancelledSignal>.Configure(PlayerActionCancelledSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(PlayerActionCancelledSignal)));
             SignalBus<PlayerActionCancelledSignal>.EnsureInitialized();
+            SignalBus<ScanLogChangedSignal>.Configure(ScanLogChangedSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(ScanLogChangedSignal)));
+            SignalBus<ScanLogChangedSignal>.EnsureInitialized();
             SignalBus<PdaExchangeStateChangedSignal>.Configure(PdaExchangeStateChangedSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(PdaExchangeStateChangedSignal)));
             SignalBus<PdaExchangeStateChangedSignal>.EnsureInitialized();
             SignalBus<VehicleUpgradesChangedSignal>.Configure(VehicleUpgradesChangedSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(VehicleUpgradesChangedSignal)));
@@ -4399,6 +4411,24 @@ namespace Hecton8.Core.Signals
         [FieldOffset(4)] public uint Frame;
         [FieldOffset(8)] public uint SourceId;
         [FieldOffset(12)] public byte Flags;
+    }
+
+    /// <summary>Scan-log dirty-state signal for PDA and barter consumers. Size: 32 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 32)]
+    public struct ScanLogChangedSignal : ISignal
+    {
+        public const byte ReasonLoaded = 1;
+        public const byte ReasonEntryAdded = 2;
+        public const byte ReasonRecentChanged = 3;
+
+        [FieldOffset(0)] public uint SourceId;
+        [FieldOffset(4)] public uint EntryHash;
+        [FieldOffset(8)] public uint Frame;
+        [FieldOffset(12)] public ushort EntryCount;
+        [FieldOffset(14)] public ushort RecentCount;
+        [FieldOffset(16)] public byte Reason;
+        [FieldOffset(17)] public byte Flags;
+        [FieldOffset(31)] private byte _pad;
     }
 
     /// <summary>Blueprint unlock signal for crafting and PDA consumers. Size: 32 bytes.</summary>
