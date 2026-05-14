@@ -233,6 +233,7 @@ namespace Hecton8.Caves
         private bool _buildCollider;
         private CaveGenerationParams _caveParams;
         private Vector3 _generationAbsoluteUniversePosition;
+        private double3 _generationAbsoluteUniversePositionDouble;
         private Vector3 _lastCollapseAbsoluteCenter;
         private int[] _terrainHoleHandles = Array.Empty<int>();
         private int _terrainHoleHandleCount;
@@ -266,6 +267,9 @@ namespace Hecton8.Caves
 
         /// <summary>Absolute-universe center captured when this volume payload was built.</summary>
         public Vector3 GenerationAbsoluteUniversePosition => _generationAbsoluteUniversePosition;
+
+        /// <summary>Double-precision absolute-universe center captured when this volume payload was built.</summary>
+        public double3 GenerationAbsoluteUniversePositionDouble => _generationAbsoluteUniversePositionDouble;
 
         /// <summary>Voxel grid resolution used by this runtime volume.</summary>
         public int GridDimension => _gridDimension;
@@ -483,6 +487,14 @@ namespace Hecton8.Caves
 
         public static bool TryDepositAdditiveSdfSphere(Vector3 absoluteCenter, float radiusMeters, float strengthMeters)
         {
+            return TryDepositAdditiveSdfSphere(
+                new double3(absoluteCenter.x, absoluteCenter.y, absoluteCenter.z),
+                radiusMeters,
+                strengthMeters);
+        }
+
+        public static bool TryDepositAdditiveSdfSphere(double3 absoluteCenter, float radiusMeters, float strengthMeters)
+        {
             float radius = Mathf.Max(0.05f, radiusMeters);
             float strength = Mathf.Max(0.05f, strengthMeters);
             for (int i = s_activePublishedVolumes.Count - 1; i >= 0; i--)
@@ -496,14 +508,16 @@ namespace Hecton8.Caves
 
                 float halfExtent = candidate._gridDimension * candidate._voxelSize * 0.5f;
                 float acceptedRadius = halfExtent + radius;
-                if ((candidate._generationAbsoluteUniversePosition - absoluteCenter).sqrMagnitude > acceptedRadius * acceptedRadius ||
+                double acceptedRadiusSq = (double)acceptedRadius * acceptedRadius;
+                if (math.lengthsq(candidate._generationAbsoluteUniversePositionDouble - absoluteCenter) > acceptedRadiusSq ||
                     candidate._deltaProcessor == null)
                 {
                     continue;
                 }
 
+                Vector3 absoluteCenterVector = ToVector3(absoluteCenter);
                 candidate.SetBakeState(VoxelBakeState.Pending);
-                candidate._deltaProcessor.ApplyImmediateAbsoluteWeld(candidate, absoluteCenter, radius, strength, MagmaDeltaMaterialId);
+                candidate._deltaProcessor.ApplyImmediateAbsoluteWeld(candidate, absoluteCenterVector, radius, strength, MagmaDeltaMaterialId);
                 return true;
             }
 
@@ -905,6 +919,7 @@ namespace Hecton8.Caves
             _engine = null;
             _deltaProcessor = null;
             _generationAbsoluteUniversePosition = Vector3.zero;
+            _generationAbsoluteUniversePositionDouble = double3.zero;
             _nodes = Array.Empty<CaveNode>();
             _tunnels = Array.Empty<CaveTunnel>();
             _entrances = Array.Empty<CaveEntrance>();
@@ -1345,6 +1360,7 @@ namespace Hecton8.Caves
             uint seed,
             Vector3 worldCenter,
             Vector3 absoluteUniverseOffset,
+            double3 absoluteUniverseOffsetDouble,
             CavePreset cavePreset,
             int gridDimension,
             float voxelSize,
@@ -1360,7 +1376,8 @@ namespace Hecton8.Caves
             _deltaProcessor = engine != null ? engine.DeltaProcessor : null;
             _seed = seed;
             generationPosition = worldCenter;
-            _generationAbsoluteUniversePosition = worldCenter + absoluteUniverseOffset;
+            _generationAbsoluteUniversePositionDouble = new double3(worldCenter.x, worldCenter.y, worldCenter.z) + absoluteUniverseOffsetDouble;
+            _generationAbsoluteUniversePosition = ToVector3(_generationAbsoluteUniversePositionDouble);
             preset = cavePreset;
             _gridDimension = gridDimension;
             _voxelSize = voxelSize;
@@ -2055,7 +2072,7 @@ namespace Hecton8.Caves
             float maxTravel = math.max(_voxelSize, math.min(maxDistance, _voxelSize * MaxPlasmaCutSteps));
             float remainingPower = clampedPower;
             float stampRadius = math.max(_voxelSize * 0.6f, _voxelSize * math.lerp(0.75f, 1.1f, clampedPower));
-            Vector3 committedOffset = HectonFloatingOrigin.CurrentTotalOffset;
+            double3 committedOffset = HectonFloatingOrigin.CurrentTotalOffsetDouble;
             bool modified = false;
 
             if (_deltaProcessor != null)
@@ -2071,7 +2088,10 @@ namespace Hecton8.Caves
                     (voxel.y + 0.5f) * _voxelSize,
                     (voxel.z + 0.5f) * _voxelSize);
                 Vector3 worldCenter = cachedTransform.TransformPoint(localCenter);
-                Vector3 absoluteCenter = worldCenter + committedOffset;
+                Vector3 absoluteCenter = new Vector3(
+                    (float)(worldCenter.x + committedOffset.x),
+                    (float)(worldCenter.y + committedOffset.y),
+                    (float)(worldCenter.z + committedOffset.z));
                 if (_deltaProcessor != null)
                 {
                     _deltaProcessor.ApplyImmediateAbsoluteLaserCrater(this, absoluteCenter, stampRadius * remainingPower, direction, DefaultDeltaMaterialId);
@@ -2179,7 +2199,7 @@ namespace Hecton8.Caves
             float remainingPower = clampedPower;
             float stampRadius = math.max(_voxelSize * 0.55f, _voxelSize * math.lerp(0.65f, 1f, clampedPower));
             float stampStrength = math.max(_voxelSize, stampRadius * 0.45f);
-            Vector3 committedOffset = HectonFloatingOrigin.CurrentTotalOffset;
+            double3 committedOffset = HectonFloatingOrigin.CurrentTotalOffsetDouble;
             bool modified = false;
 
             SetBakeState(VoxelBakeState.Pending);
@@ -2194,7 +2214,10 @@ namespace Hecton8.Caves
                     (voxel.y + 0.5f) * _voxelSize,
                     (voxel.z + 0.5f) * _voxelSize);
                 Vector3 worldCenter = cachedTransform.TransformPoint(localCenter);
-                Vector3 absoluteCenter = worldCenter + committedOffset;
+                Vector3 absoluteCenter = new Vector3(
+                    (float)(worldCenter.x + committedOffset.x),
+                    (float)(worldCenter.y + committedOffset.y),
+                    (float)(worldCenter.z + committedOffset.z));
                 _deltaProcessor.ApplyImmediateAbsoluteWeld(
                     this,
                     absoluteCenter,
@@ -2782,6 +2805,11 @@ namespace Hecton8.Caves
         private static int CastBiasInt(float value)
         {
             return value >= 0f ? (int)(value + 0.5f) : (int)(value - 0.5f);
+        }
+
+        private static Vector3 ToVector3(double3 value)
+        {
+            return new Vector3((float)value.x, (float)value.y, (float)value.z);
         }
 
         private void ApplyCollapseImpulse(Vector3 runtimeCenter, Vector3 halfExtents, float impulseRadius, float impulseMagnitude)

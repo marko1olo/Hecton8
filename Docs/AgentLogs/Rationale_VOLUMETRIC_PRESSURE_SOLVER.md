@@ -177,3 +177,43 @@ Solution: The fallback now returns immediately for points inside a module interi
 Rejected Alternatives: Removing nearest fallback entirely, or keeping unbounded nearest matching. Removing it would drop legitimate hull-surface impacts without stable ids; keeping it can corrupt pressure feedback from unrelated combat.
 Scalability potential: Low/MX350 avoids false crease spikes from distant combat. Mid/High/Ultra preserve legitimate local bowing while rejecting far-field noise.
 Hardware Impact: Adds bounded signal-path bounds checks only when id/hash matching fails; no shader cost and no per-frame idle cost. Estimated under 4 us for a 64-module fallback scan on i3/MX350-class hardware.
+
+## Follow-Up Correction - Unique TargetId Stress Fallback
+
+Problem: Some producers only carry a 16-bit `TargetId`; immediate low-bit matching can miss runtime-id targets or pick the wrong module on collision.
+Solution: Count candidates across stable hash, runtime entity hash, and graph node id low bits; accept only exactly one active-module match.
+Rejected Alternatives: Blind low-bit matching, producer rewrites, or nearest-only. Those create collision artifacts, coupling, or wrong-room hits.
+Scalability potential: Low/MX350 gets reliable crease feedback; Mid/High/Ultra keep localized bowing without shader cost.
+Hardware Impact: Bounded 64-module signal-path counter only; estimated under 2 us on i3/MX350.
+
+## Follow-Up Correction - Buffer Lifetime And Growth Clears
+
+Problem: Empty states could leave a stress `GraphicsBuffer` resident, while growth replacement could clear shader params immediately before rebinding replacement data.
+Solution: Real zero-module clears release the buffer and publish zero params; active-order rebuilds and growth replacement use no-clear release paths.
+Rejected Alternatives: Always keep buffers, or clear on every release. The first wastes VRAM; the second burns driver traffic and can flicker.
+Scalability potential: Low/MX350 lowers idle VRAM pressure; Mid/High/Ultra avoid deformation interruption during growth.
+Hardware Impact: Saves one stale structured buffer on teardown and one redundant shader vector write on growth; estimated 5-20 us teardown and 1-4 us growth frames.
+
+## Follow-Up Correction - Shader Resolver And Panel Reuse
+
+Problem: The shader split module resolve/read, recomputed panel UV in normal bias, and retained an unused panel-mask wrapper.
+Solution: Combined stress resolve/read into `HectonHabitatInteriorResolveStress01`, passed centered panel UV from bend to normal bias, and removed the dead wrapper.
+Rejected Alternatives: Extra metadata buffer or dead compatibility helpers. They add contract surface or audit noise without visual gain.
+Scalability potential: Low/MX350 remains on triangle crease; Mid/High/Ultra keep sine bow with less vertex scalar work.
+Hardware Impact: Estimated 2-5 us per 1k stressed interior vertices on MX350-class GPUs; no idle-frame cost.
+
+## Follow-Up Correction - Index-Hinted Graph Lookup
+
+Problem: Active-module stress loops repeatedly resolved `BaseModule` back into `_moduleBuffer` by scanning from slot 0.
+Solution: Added an index-hinted overload for `TryResolveGraphModuleRecord`; active stress loops check the active slot first, then fall back to the existing scan.
+Rejected Alternatives: Managed dictionary/cache or forcing graph/active order equivalence. Those add memory churn or break renderer-order alignment.
+Scalability potential: Low/MX350 reduces CPU work during signal-heavy frames; high tiers keep exact localized deformation.
+Hardware Impact: Best case removes repeated 64-record scans; estimated 4-12 us saved on i3/MX350 signal-heavy frames.
+
+## Follow-Up Correction - Single-Pass Signal Resolver
+
+Problem: Failed hash/id targeting scanned active modules once, then nearest fallback scanned the same active modules again.
+Solution: One pass now handles exact hash, `TargetId` counting, interior containment, and bounded nearest collection while preserving priority order.
+Rejected Alternatives: Keeping the second scan, or returning interior hits immediately. The first wastes CPU; the second could beat a later exact hash or unique target id.
+Scalability potential: Low/MX350 reduces combat/Leviathan signal CPU; Mid/High/Ultra preserve deterministic localized deformation.
+Hardware Impact: Removes one 64-module fallback scan for failed hash/id world-point signals; estimated 4-10 us saved on i3/MX350 signal-heavy frames.

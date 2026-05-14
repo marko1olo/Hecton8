@@ -1,4 +1,4 @@
-﻿# SYSTEMS_CONTRACTS.md
+# SYSTEMS_CONTRACTS.md
 ## ENGINE SYSTEMS CONTRACTS
 Date: 2026-05-14
 Status: PENDING VERIFICATION
@@ -7,7 +7,7 @@ Scope: Save, Steam, Audio, Telemetry, CI, Accessibility, Endgame
 
 Current-state boundary, 2026-05-14:
 
-- 2026-05-14 DOC_AUDIT override: `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md` found the cited May 11 build artifacts absent from the current filesystem. Treat those compile-success references as dated report claims. Current R41 external root `Hecton8*.csproj` no-restore CLI compile evidence is `0 Warning(s)` / `0 Error(s)` after restore assets exist; it is not Unity runtime proof.
+- 2026-05-14 DOC_AUDIT override: `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md` found the cited May 11 build artifacts absent from the current filesystem. Treat those compile-success references as dated report claims. Current R43 external root `Hecton8*.csproj` no-restore CLI compile evidence is `0 Warning(s)` / `0 Error(s)` after restore assets and referenced `Temp\bin\Debug` DLLs exist; it is not Unity runtime proof.
 - This stable file is the non-asset systems contract authority. Dated reports are evidence/counter snapshots only.
 - This file is a contracts and target-behavior document, not a proof that every listed file/class exists or is production-ready.
 - Current source-backed system ownership starts from `AGENTS.md`, `.agents-skills/README.md`, task-relevant mandates, `Docs/README.md`, `Docs/ARCHITECTURE/README.md`, current source, `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md`, and then older evidence reports.

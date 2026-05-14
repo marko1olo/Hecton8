@@ -889,7 +889,11 @@ namespace Hecton8.World.Outposts
             if (!_telemetryRing.IsCreated || _telemetryRing.Length == 0)
                 return;
 
-            int index = _telemetryWriteIndex % _telemetryRing.Length;
+            int length = _telemetryRing.Length;
+            int index = _telemetryWriteIndex;
+            if ((uint)index >= (uint)length)
+                index = 0;
+
             _telemetryRing[index] = new OutpostTelemetryEntry
             {
                 Frame = (uint)Time.frameCount,
@@ -906,7 +910,8 @@ namespace Hecton8.World.Outposts
                 OutpostAge01 = outpostAge01,
                 ShiftFrameId = _lastShiftFrameId
             };
-            _telemetryWriteIndex = (_telemetryWriteIndex + 1) % _telemetryRing.Length;
+            index++;
+            _telemetryWriteIndex = index >= length ? 0 : index;
         }
 
         private void DumpBlackBox()

@@ -275,13 +275,7 @@ namespace Hecton8.Narrative.Prologue
 
         private async Awaitable<bool> AwaitOceanHydrationAsync(CancellationToken cancellationToken)
         {
-            bool allowProxy = _runtime.IsLowTier;
-            RecordStage(
-                PrologueStage.AwaitOceanHydration,
-                HydrationHash,
-                allowProxy ? (byte)PrologueHydrationMode.LowTierProxySurface : (byte)PrologueHydrationMode.HighResolutionSurface);
-
-            while (!_runtime.IsOceanSurfaceReady(allowProxy))
+            while (true)
             {
                 if (ShouldStopForCancellation(cancellationToken))
                     return false;
@@ -289,14 +283,23 @@ namespace Hecton8.Narrative.Prologue
                 if (TryHandleDevelopmentSkip())
                     return false;
 
+                bool allowProxy = _runtime.IsLowTier;
+                byte hydrationMode = allowProxy
+                    ? (byte)PrologueHydrationMode.LowTierProxySurface
+                    : (byte)PrologueHydrationMode.HighResolutionSurface;
+
+                if (_runtime.IsOceanSurfaceReady(allowProxy))
+                {
+                    RecordStage(PrologueStage.AwaitOceanHydration, HydrationHash, hydrationMode);
+                    return true;
+                }
+
                 RecordStage(
                     PrologueStage.AwaitOceanHydration,
                     HydrationHash,
-                    allowProxy ? (byte)PrologueHydrationMode.LowTierProxySurface : (byte)PrologueHydrationMode.HighResolutionSurface);
+                    hydrationMode);
                 await _runtime.NextFrameAsync(cancellationToken);
             }
-
-            return true;
         }
 
         private void RunWaterTransition()

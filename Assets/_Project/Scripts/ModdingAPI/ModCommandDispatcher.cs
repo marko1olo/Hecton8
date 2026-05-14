@@ -1449,7 +1449,7 @@ namespace Hecton8.Modding
 
         private static float3 RebaseAupToFrameSpace(long3 grid, float3 local)
         {
-            Vector3 offset = HectonFloatingOrigin.CurrentTotalOffset;
+            double3 offset = HectonFloatingOrigin.CurrentTotalOffsetDouble;
             double cellSize = AupCellSizeMeters;
             double runtimeX = (grid.x * cellSize) + local.x - offset.x;
             double runtimeY = (grid.y * cellSize) + local.y - offset.y;

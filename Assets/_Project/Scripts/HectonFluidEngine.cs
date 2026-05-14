@@ -917,7 +917,7 @@ namespace Hecton8.Physics
                 haloclineShearForcePerKg,
                 vectorNoiseField,
                 vectorNoiseLength,
-                new float3((float)aupOffset.x, (float)aupOffset.y, (float)aupOffset.z),
+                aupOffset,
                 math.rcp(math.max(0.25f, prebakedVectorNoiseCellSizeMeters)),
                 enablePrebakedVectorNoise ? (byte)1 : (byte)0,
                 prebakedVectorNoiseTriangleModulation,
@@ -2504,11 +2504,7 @@ namespace Hecton8.Physics
                 : default;
             int vectorNoiseLength = _prebakedVectorNoiseField.IsCreated ? _prebakedVectorNoiseField.Length : 0;
             double3 vectorNoiseAupOffset = HectonFloatingOrigin.CurrentTotalOffsetDouble;
-            float3 vectorNoiseAupOffsetFloat = new float3(
-                (float)vectorNoiseAupOffset.x,
-                (float)vectorNoiseAupOffset.y,
-                (float)vectorNoiseAupOffset.z);
-            float2 waveAupOffsetXZ = new float2(vectorNoiseAupOffsetFloat.x, vectorNoiseAupOffsetFloat.z);
+            float2 waveAupOffsetXZ = new float2((float)vectorNoiseAupOffset.x, (float)vectorNoiseAupOffset.z);
             byte highScalabilityTier = DistanceMath.IsHighQualityTier(GlobalRegistry.ScalabilityTier) ? (byte)1 : (byte)0;
 
             JobHandle waveHandle = default;
@@ -2612,7 +2608,7 @@ namespace Hecton8.Physics
                 currentTimeScale = currentTimeScale,
                 currentVerticalFactor = currentVerticalFactor,
                 phantomCurrentStrength = phantomCurrentStrength,
-                vectorNoiseAupOffset = vectorNoiseAupOffsetFloat,
+                vectorNoiseAupOffset = vectorNoiseAupOffset,
                 brineShiftOffsetY = math.isfinite(vectorNoiseAupOffset.y) ? (float)vectorNoiseAupOffset.y : 0f,
                 vectorNoiseInvCellSize = math.rcp(math.max(0.25f, prebakedVectorNoiseCellSizeMeters)),
                 enablePrebakedVectorNoise = enablePrebakedVectorNoise ? (byte)1 : (byte)0,
@@ -6935,7 +6931,7 @@ namespace Hecton8.Physics
         public float  currentTimeScale;
         public float  currentVerticalFactor;
         public float  phantomCurrentStrength;
-        public float3 vectorNoiseAupOffset;
+        public double3 vectorNoiseAupOffset;
         public float  brineShiftOffsetY;
         public float  vectorNoiseInvCellSize;
         public byte   enablePrebakedVectorNoise;
@@ -7489,7 +7485,7 @@ namespace Hecton8.Physics
             float haloclineShearVelocity,
             NativeArray<float3> vectorNoiseField,
             int vectorNoiseFieldLength,
-            float3 vectorNoiseAupOffset,
+            double3 vectorNoiseAupOffset,
             float vectorNoiseInvCellSize,
             byte enablePrebakedVectorNoise,
             float vectorNoiseTriangleModulation,
@@ -7557,7 +7553,7 @@ namespace Hecton8.Physics
             float time,
             NativeArray<float3> vectorNoiseField,
             int vectorNoiseFieldLength,
-            float3 vectorNoiseAupOffset,
+            double3 vectorNoiseAupOffset,
             float vectorNoiseInvCellSize,
             byte enablePrebakedVectorNoise,
             float timeScale,
@@ -7570,17 +7566,18 @@ namespace Hecton8.Physics
                 strength == 0f ||
                 vectorNoiseInvCellSize <= 0f ||
                 vectorNoiseFieldLength < VectorNoiseVoxelCount ||
-                !math.all(math.isfinite(worldPos)))
+                !math.all(math.isfinite(worldPos)) ||
+                !math.all(math.isfinite(vectorNoiseAupOffset)))
             {
                 return float3.zero;
             }
 
-            float3 aupCell = (worldPos + vectorNoiseAupOffset) * vectorNoiseInvCellSize;
+            double3 aupCell = (new double3(worldPos.x, worldPos.y, worldPos.z) + vectorNoiseAupOffset) * vectorNoiseInvCellSize;
             bool highTier = highScalabilityTier != 0;
             int cellMask = math.select(VectorNoiseLowTierMask, VectorNoiseMask, highTier);
-            int x = FastFloorToInt(aupCell.x) & cellMask;
-            int y = FastFloorToInt(aupCell.y) & cellMask;
-            int z = FastFloorToInt(aupCell.z) & cellMask;
+            int x = (int)(FastFloorToLong(aupCell.x) & cellMask);
+            int y = (int)(FastFloorToLong(aupCell.y) & cellMask);
+            int z = (int)(FastFloorToLong(aupCell.z) & cellMask);
             int index = x | (y << VectorNoiseSliceShift) | (z << VectorNoisePlaneShift);
             float3 highSample = vectorNoiseField[index];
             float3 lowSample = DominantAxisOrDefault(highSample, new float3(1f, 0f, 0f));
@@ -7752,6 +7749,12 @@ namespace Hecton8.Physics
         {
             int truncated = (int)value;
             return math.select(truncated - 1, truncated, value >= truncated);
+        }
+
+        private static long FastFloorToLong(double value)
+        {
+            long truncated = (long)value;
+            return value >= truncated ? truncated : truncated - 1L;
         }
 
         private static float FastMagnitudeApprox(float3 value)

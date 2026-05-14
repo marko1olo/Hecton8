@@ -72,10 +72,19 @@ Task Count: 15
 - [x] Compaction tail fail-closed | DOD: if `MaxPathCompactionIterations` is exhausted before the final waypoint, the job now copies the remaining original path tail instead of appending only the final point; rejected dropping unverified waypoints; estimate 9 us.
 - [x] Chronological black-box dump | DOD: NaN dump now writes valid telemetry entries oldest-to-newest with capacity/cursor/sequence metadata; rejected raw circular-array order for postmortem review; estimate 6 us.
 
+## Loop 10 - Voxel Transform Contract Hardening
+
+- [x] Re-read status/rationale and source hot path | DOD: inspected `HasVoxelLineOfSight`, `TryWorldToVoxel`, and grid guards before editing; rejected stale chat assumptions; estimate 10 us.
+- [x] Cell-size finite proof | DOD: LOS compaction now trusts passability/threat grids only when their cell sizes are finite and positive; rejected `math.max` masking of corrupt cell sizes; estimate 5 us.
+- [x] World-to-voxel fail-closed transform | DOD: non-finite world positions, origins, or cell sizes now reject LOS instead of producing undefined voxel indices; rejected smoothing through invalid coordinate transforms; estimate 6 us.
+- [x] DDA cap overflow guard | DOD: grid traversal cap now sums dimensions in `long` before clamping to `MaxThreatDdaSteps`; rejected int overflow in hostile payload dimensions; estimate 3 us.
+- [x] Invalid sample solid fallback | DOD: bad flat indices return `SolidThreatVoxel`; rejected treating corrupt payload holes as open water; estimate 4 us.
+
 ## Verification
 
-- [x] Static scan | PASS: `StringPullPathJob` region has no `math.normalize`, `math.length(`, `math.distance(`, or raw `/` matches after the LOD upgrade.
-- [x] Compile check | PASS: latest parsed `dotnet build Hecton8.Core.csproj --no-restore /m:1 /nr:false` succeeded with 0 warnings and 0 errors after the tail-safety pass.
-- [x] PlayMode test assembly build | PASS: `dotnet build Hecton8.PlayModeTests.csproj --no-restore /m:1 /nr:false` succeeded with 0 warnings and 0 errors.
+- [x] Static scan | PASS: `StringPullPathJob` region has no `math.normalize`, `math.length(`, `math.distance(`, or raw `/` matches after the voxel transform contract pass.
+- [x] Diff hygiene | PASS: `git diff --check` passed for the edited funnel file; only LF-to-CRLF working-copy warnings were emitted.
+- [x] Compile check | BLOCKED BY DEPENDENCY: latest `dotnet build Hecton8.Core.csproj --no-restore /m:1 /nr:false` failed with 48 errors in `VRAMEnforcer`, `BinaryLayoutManifest`, `HardwareTierDetector`, and `HectonFluidEngine`; none were reported in `VegetationFlowFieldIntegrator.cs`.
+- [x] PlayMode test assembly build | NOT RERUN AFTER LOOP 10: Core source build is currently blocked by unrelated global dependency errors.
 - [x] Unity console | BLOCKED BY TOOLING: Unity MCP `validate_script` transport failed against `http://127.0.0.1:8088/mcp`.
-- [x] Omega polish mandate | COMPLETE WITH PENDING VERIFICATION: Core build is green; Unity/Burst editor validation remains blocked by MCP transport.
+- [x] Omega polish mandate | COMPLETE WITH PENDING VERIFICATION: static funnel checks pass; current Core/Unity validation is blocked by unrelated global compile errors and MCP transport.

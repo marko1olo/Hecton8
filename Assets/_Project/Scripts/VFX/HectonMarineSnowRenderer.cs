@@ -1006,7 +1006,7 @@ namespace Hecton8.Environment
 
         private void RefreshHotGpuBindings()
         {
-            Vector3 floatingOriginOffset = HectonFloatingOrigin.CurrentTotalOffset;
+            double3 floatingOriginOffset = HectonFloatingOrigin.CurrentTotalOffsetDouble;
             SetComputeVectorHotIfChanged(
                 ShaderIds.SubmarineWashSphereId,
                 Shader.GetGlobalVector(ShaderIds.SubmarineWashSphereId),
@@ -1018,7 +1018,7 @@ namespace Hecton8.Environment
             SetComputeVectorHotIfChanged(ShaderIds.PropwashParamsId, DefaultPropwashParams, ref _boundPropwashParams);
             SetComputeVectorHotIfChanged(
                 ShaderIds.FloatingOriginOffsetId,
-                new Vector4(floatingOriginOffset.x, floatingOriginOffset.y, floatingOriginOffset.z, 0f),
+                new Vector4((float)floatingOriginOffset.x, (float)floatingOriginOffset.y, (float)floatingOriginOffset.z, 0f),
                 ref _boundFloatingOriginOffset);
         }
 

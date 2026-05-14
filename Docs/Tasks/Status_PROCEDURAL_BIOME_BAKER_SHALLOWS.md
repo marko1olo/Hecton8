@@ -111,3 +111,11 @@ Status: PENDING VERIFICATION
 - Found one remaining GUID-stable re-bake failure mode: a prefab could have valid LOD counts while still referencing an older or cross-family mesh asset.
 - Patched `ShallowsBioForgeBatchBaker` to validate exact prefab-to-mesh mapping: for every prefab stem, LOD0/1/2 must resolve to `Assets/_Project/Art/Generated/Flora/BioForge/Shallows/{Family}/{Stem}_LOD{i}.asset`.
 - Verification: `dotnet build Hecton8.Core.csproj` succeeded with `0 Warning(s), 0 Error(s)`. A text GUID scan checked all 200 prefabs against their expected three mesh `.meta` GUIDs and found `BadReferenceCount=0`.
+
+### Loop 10 - Rule Asset Contract And Batch Drift Audit
+
+- Re-read status, rationale, AGENTS, domain map, unity orchestration skill, and task-relevant mandates before editing. Live `Docs/Tasks/CURRENT_BATCH.md` no longer contains `PROCEDURAL_BIOME_BAKER_SHALLOWS`; preserved extracted status/rationale remains the active local assignment memory.
+- Found a remaining validation hole: generated prefabs and meshes were exact, but the three `BioRuleData` assets could drift in axiom/profile/budget/output settings and still pass validation.
+- Patched `ShallowsBioForgeBatchBaker` to validate required folders plus exact `Rule_Shallows_TubeCoral`, `Rule_Shallows_Kelp`, and `Rule_Shallows_PorousRock` contracts: prefix, material, axiom, single `F` replacement, SDF profile, iterations, branch limits, SDF resolution, LOD budgets, ribbon settings, porous rock settings, and deterministic mesh/prefab output folders.
+- Verification: Unity Bee response-file Roslyn compile for `Hecton8.Editor.ProceduralGen` exited 0. Literal rule asset scan passed: `RuleAssetScan=PASS Rules=3 ContractFields=25`. `git diff --check` exited 0 with only the existing LF-to-CRLF warning.
+- Full `dotnet build Hecton8.Core.csproj` is currently blocked outside this domain by `Assets/_Project/Scripts/SaveBinaryPayloadCodec.cs` missing `BufferReader.CanConsumeCollectionItems` and matching `ReadCustomArray` overloads. No save-code was edited from this flora bake task.

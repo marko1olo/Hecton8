@@ -3,7 +3,7 @@
 Agent: HABITAT_ARCHITECT  
 Domain: ECHELON 6 HABITAT & VEHICLES - Structural Integrity Math / Habitat Deformation  
 Task Count: 19  
-State: PENDING VERIFICATION - GLOBAL COMPILE WALL OUTSIDE OWNED FILES
+State: IMPLEMENTED - OWNED STATIC CHECKS CLEAN; LATEST BUILD BLOCKED OUTSIDE DOMAIN
 
 ## Mandates Loaded
 
@@ -36,7 +36,7 @@ State: PENDING VERIFICATION - GLOBAL COMPILE WALL OUTSIDE OWNED FILES
 - [x] 16. Push `PeakModuleStress` into blackbox telemetry and dump on invalid state. DOD: `HabitatFloodBlackBoxEntry` version 3 records `PeakModuleStress`/deformation sequence and invalid stress dumps `Dump_VOLUMETRIC_PRESSURE_SOLVER.bin`; rejected blind crash reports; estimate ring write only.
 - [x] 17. Emit `BaseModuleCompromisedSignal` at max threshold. DOD: added 64-byte signal contract/lane/config/publish method and graph-side hysteresis publish; rejected tight subsystem reference; estimate one bus publish.
 - [!] 18. Compile/check shader buffer indexing. DOD: scoped grep confirms bounded buffer index path and no added exact normalize/sqrt; `dotnet build` blocked by 107 unrelated missing refs and Unity MCP reports `no_unity_session`; estimate n/a.
-- [x] 19. Recursive normals verification and cheap normal bias. DOD: prompt re-read attempted from `CURRENT_BATCH.md` but tag was already absent; cheap normal bias added with rsqrt safe-normal helpers; final state remains `PENDING VERIFICATION`.
+- [x] 19. Recursive normals verification and cheap normal bias. DOD: prompt re-read attempted from `CURRENT_BATCH.md` but tag was already absent; cheap normal bias added with rsqrt safe-normal helpers; editor/runtime shader verification remains unavailable.
 
 ## Iterative Loop Ledger
 
@@ -44,7 +44,7 @@ State: PENDING VERIFICATION - GLOBAL COMPILE WALL OUTSIDE OWNED FILES
 - Loop 2: COMPLETE - tasks 6-10 implemented; scoped shader grep confirms stress buffer read/bulge path.
 - Loop 3: COMPLETE - tasks 11-14 implemented; low-tier path avoids vertex module scan and uses crease overlay.
 - Loop 4: COMPLETE/BLOCKED BUILD - tasks 15-18 implemented; compile gate blocked outside owned domain, Unity session unavailable.
-- Loop 5: COMPLETE/PENDING VERIFICATION - recursive prompt re-read attempted, normals audited, exact `normalize` removed from new include, status remains PENDING VERIFICATION.
+- Loop 5: COMPLETE - recursive prompt re-read attempted, normals audited, exact `normalize` removed from new include; editor/runtime shader verification remains unavailable.
 
 ## Verification Notes
 
@@ -79,3 +79,9 @@ State: PENDING VERIFICATION - GLOBAL COMPILE WALL OUTSIDE OWNED FILES
 - Latest C#/shader verification: resolver context review confirms `CombatDamageSignal`/`HullDeformedSignal` producers can carry `EntityId`-derived target hashes; managed-offender scans found no new allocation patterns; mesh mutation scan found no owned `Mesh.vertices` writes; exact shader normalize/sqrt scan produced no matches; `git diff --check` reports only CRLF warnings. A constrained `dotnet build` timed out at 120s without usable output; a separate external `Hecton8.Core.csproj` build process remains active and was left untouched. Unity MCP read-console tool is unavailable in this session.
 - Follow-up correction: nearest-module stress fallback is now bounded. Direct interior containment still wins, but non-contained world points must fall inside a padded module hazard radius capped at 36m before a stress spike is injected.
 - Latest verification: managed-offender scans still produced no matches; mesh mutation scan found no owned `Mesh.vertices` writes; exact shader normalize/sqrt scan produced no matches; `git diff --check` reports only CRLF warnings. Constrained `dotnet build .\Hecton8.Core.csproj --no-restore --nologo -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -p:BuildProjectReferences=false -v:quiet -clp:ErrorsOnly` completed with `BUILD_EXIT=0 MATCH_COUNT=0`.
+- Follow-up correction: 16-bit `TargetId` fallback checks stable module hash low bits, runtime `EntityId` hash low bits, and graph node id low bits; it accepts only exactly one active-module match.
+- Follow-up correction: real zero-module shader clears release the existing `_HectonHabitatModuleStressBuffer`; active-order rebuild clears and stress-buffer growth suppress transient shader-param clears to avoid release/realloc and global-zero churn.
+- Follow-up correction: shader stress lookup now uses one `HectonHabitatInteriorResolveStress01` helper; Mid/High/Ultra normal bias reuses centered panel UV from the bend helper; the unused panel-mask wrapper was removed.
+- Follow-up correction: active-module stress paths use an index-hinted graph-record lookup, resolving O(1) when active order matches graph order and falling back to the bounded scan when it differs.
+- Follow-up correction: stress signal resolution now collects exact hash, `TargetId`, interior containment, and bounded nearest results in one active-module pass. Priority remains exact hash, unique `TargetId`, interior containment, bounded nearest.
+- Latest verification after single-pass signal resolver: managed-offender scans found no `string.Format`, `.ToString()`, interpolation, `foreach`, or LINQ offenders in `HabitatGraphManager.cs`; mesh mutation scan found no owned `Mesh.vertices` writes; exact shader normalize/sqrt scan produced no matches; `git diff --check` reports only CRLF warnings. First constrained build probe timed out and its exact lingering `Hecton8.Core.csproj` process was stopped; retry returned `BUILD_EXIT=1 MATCH_COUNT=0` because unrelated `Assets\_Project\Scripts\Core\BinaryLayoutManifest.cs` save-layout type errors stop the build before a clean project result.

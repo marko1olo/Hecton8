@@ -62,7 +62,6 @@ namespace Hecton8.SaveSystem
         private const uint SaveCompressedSizeTelemetryHash = 0x53564342u; // SVCB
         private const uint ScreenshotSizeKbTelemetryHash = 0x53534B42u; // SSKB
         private const int MaxChunkDehydrationSignalsPerTick = 2;
-        private const int MaxWfcOutpostStateSignalsPerTick = 8;
         private const int MaxWfcSectorHydratedSignalsPerTick = 4;
         private const float SafeAupSnapGroundPaddingMeters = 0.28f;
         private const float SafeAupSnapMinimumLiftMeters = 0.35f;
@@ -1090,8 +1089,13 @@ namespace Hecton8.SaveSystem
         private void DrainWfcOutpostStateChangedSignals()
         {
             ReadOnlySpan<WfcOutpostStateChangedSignal> signals = SignalBus<WfcOutpostStateChangedSignal>.GetFrameSnapshot();
-            int count = math.min(signals.Length, MaxWfcOutpostStateSignalsPerTick);
-            for (int i = 0; i < count; i++)
+            NativeArray<byte> wfcGrid = default;
+            bool hasGrid = false;
+            bool hasDirtySector = false;
+            ulong dirtySectorHash = 0UL;
+            uint dirtyFrame = 0u;
+
+            for (int i = 0; i < signals.Length; i++)
             {
                 WfcOutpostStateChangedSignal signal = signals[i];
                 if (signal.SectorHash == 0UL || signal.CellIndex >= WfcOutpostPersistenceConstants.CellCount)
@@ -1101,15 +1105,32 @@ namespace Hecton8.SaveSystem
                 if (changedMask == 0)
                     continue;
 
-                if (!TryEnsureWfcOutpostGrid(out NativeArray<byte> wfcGrid))
-                    continue;
+                if (!hasGrid)
+                {
+                    if (!TryEnsureWfcOutpostGrid(out wfcGrid))
+                        return;
 
-                PrepareWfcOutpostMutableGridForSector(signal.SectorHash, wfcGrid);
+                    hasGrid = true;
+                }
+
+                if (dirtySectorHash != signal.SectorHash)
+                {
+                    if (hasDirtySector)
+                        TryPersistWfcOutpostStateSnapshot(dirtySectorHash, wfcGrid, dirtyFrame, out _);
+
+                    dirtySectorHash = signal.SectorHash;
+                    hasDirtySector = false;
+                    PrepareWfcOutpostMutableGridForSector(dirtySectorHash, wfcGrid);
+                }
+
                 byte mutableFlags = (byte)(signal.CurrentFlags & WfcOutpostPersistenceConstants.MutableFlagMask);
                 wfcGrid[signal.CellIndex] = mutableFlags;
-
-                TryPersistWfcOutpostStateSnapshot(signal.SectorHash, wfcGrid, signal.Frame, out _);
+                dirtyFrame = signal.Frame;
+                hasDirtySector = true;
             }
+
+            if (hasDirtySector)
+                TryPersistWfcOutpostStateSnapshot(dirtySectorHash, wfcGrid, dirtyFrame, out _);
         }
 
         private void DrainWfcSectorHydratedSignals()
@@ -1358,7 +1379,7 @@ namespace Hecton8.SaveSystem
 
         private static void PublishWfcBytesSaved(int payloadBytes)
         {
-            int savedBytes = math.max(0, WfcOutpostPersistenceConstants.PackedWordBytes - payloadBytes);
+            int savedBytes = math.max(0, WfcOutpostPersistenceConstants.CellCount - payloadBytes);
             GlobalTelemetryBus.PublishModTelemetry(WfcOutpostPersistenceSourceHash, WfcBytesSavedTelemetryHash, savedBytes);
         }
 
@@ -2336,7 +2357,7 @@ namespace Hecton8.SaveSystem
             in AbsoluteUniversePosition savedAup,
             float terrainRuntimeY)
         {
-            Vector3 committedOffset = HectonFloatingOrigin.CurrentTotalOffset;
+            double3 committedOffset = HectonFloatingOrigin.CurrentTotalOffsetDouble;
             double savedRuntimeY = (savedAup.GridY * (double)AbsoluteUniversePosition.CellSizeMeters) +
                                    savedAup.LocalY -
                                    committedOffset.y;
