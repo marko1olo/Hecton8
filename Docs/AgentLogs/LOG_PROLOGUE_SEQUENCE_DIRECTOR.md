@@ -260,3 +260,11 @@ What was done -> Added shared `IsFiniteOrbital()` validation and used it in both
 Cinematic Cheats used -> None; this protects the existing orbital presentation fake from corrupt telemetry.
 Exact Microseconds saved -> Adds four finite checks per orbital snapshot during prologue waits, below 1 us on normal frames. Saves invalid silence/burn/VFX/audio progression from bad orbital telemetry.
 Verification -> No dotnet rebuild/response-file compile was run per user constraint. Targeted scan confirms `IsFiniteOrbital` usage in both stages; forbidden-pattern scan returned no hits; `git diff --check` reports line-ending warnings only.
+
+## 2026-05-15 - Loop 37 Active Dispose Cleanup Review
+
+What was wrong -> External disposal during an active awaitable run could release director black-box storage before cancellation cleanup completed, leaving input unlock dependent on delayed async teardown.
+What was done -> `AwaitableDropSequenceDirector.Dispose()` now requests explicit cancellation and calls the guarded input unlock helper before disposing the fixed black-box buffer when `_running` is true.
+Cinematic Cheats used -> None; this is teardown and forensic-state hardening for the prologue sequence owner.
+Exact Microseconds saved -> 0 us steady-state. Disposal-only branch cost is one bool check plus a guarded signal publish if teardown interrupts an active prologue run.
+Verification -> No dotnet rebuild/response-file compile was run per user constraint. Targeted scan confirms active disposal cancels and unlocks before black-box disposal; forbidden-pattern scan returned no hits. Initial git diff hygiene check timed out and was rerun after log update.

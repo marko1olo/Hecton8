@@ -38,6 +38,7 @@ namespace Hecton8.Audio.Editor
         private const string PlayerStressVfxPath = "Assets/_Project/Scripts/Visor/PlayerStressVFX.cs";
         private const string DeepPsychosisPath = "Assets/_Project/Scripts/Audio/DeepPsychosisController.cs";
         private const string HectonMusicDirectorPath = "Assets/_Project/Scripts/Audio/HectonMusicDirector.cs";
+        private const string PrologueAcousticOrchestratorPath = "Assets/_Project/Scripts/Audio/Prologue/PrologueAcousticOrchestrator.cs";
 
         [MenuItem("Hecton8/Audio/Run Advanced Acoustics Smoke Test")]
         public static void RunMenuItem()
@@ -81,6 +82,7 @@ namespace Hecton8.Audio.Editor
             string playerStressVfx = ReadAssetText(PlayerStressVfxPath, builder, ref failureCount);
             string deepPsychosis = ReadAssetText(DeepPsychosisPath, builder, ref failureCount);
             string musicDirector = ReadAssetText(HectonMusicDirectorPath, builder, ref failureCount);
+            string prologueAcoustic = ReadAssetText(PrologueAcousticOrchestratorPath, builder, ref failureCount);
 
             if (spatial.Length > 0)
             {
@@ -263,6 +265,21 @@ namespace Hecton8.Audio.Editor
                 AssertNotContains(musicRareDiscovery, "GlobalRegistry.FirstHour", "Music director rare-discovery gate does not poll first-hour registry directly", builder, ref failureCount);
                 AssertNotContains(musicShouldDepthDiscovery, "GlobalRegistry.FirstHour", "Music director depth discovery gate does not poll first-hour registry directly", builder, ref failureCount);
                 AssertNotContains(musicFirstHourBoost, "GlobalRegistry.FirstHour", "Music director first-hour pressure boost does not poll first-hour registry directly", builder, ref failureCount);
+            }
+
+            if (prologueAcoustic.Length > 0)
+            {
+                string prologueLateFrame = ExtractMethodBody(prologueAcoustic, "public void LateFrameTick()");
+                string prologueColdPolicy = ExtractMethodBody(prologueAcoustic, "private void RefreshQualityPolicyCold()");
+                AssertContains(prologueAcoustic, "IScalabilityChangedEventListener", "Prologue acoustic bridge receives scalability changes through the typed event lane", builder, ref failureCount);
+                AssertContains(prologueAcoustic, "ScalabilityEvents.Register(this)", "Prologue acoustic bridge registers for scalability events", builder, ref failureCount);
+                AssertContains(prologueAcoustic, "ScalabilityEvents.Unregister(this)", "Prologue acoustic bridge unregisters scalability events", builder, ref failureCount);
+                AssertContains(prologueAcoustic, "CacheQualityPolicy(payload.CurrentQualityTier, payload.CurrentTier, _lowMemoryProfile)", "Prologue acoustic bridge updates quality policy from scalability payloads", builder, ref failureCount);
+                AssertContains(prologueColdPolicy, "GlobalRegistry.H8_LOW_MEMORY_PROFILE", "Prologue acoustic bridge reads low-memory policy only during cold cache refresh", builder, ref failureCount);
+                AssertNotContains(prologueLateFrame, "GlobalRegistry.ScalabilityTier", "Prologue acoustic LateFrameTick does not poll scalability tier registry directly", builder, ref failureCount);
+                AssertNotContains(prologueLateFrame, "GlobalRegistry.ScalabilityTierProfileByte", "Prologue acoustic LateFrameTick does not poll scalability profile byte directly", builder, ref failureCount);
+                AssertNotContains(prologueLateFrame, "GlobalRegistry.H8_LOW_MEMORY_PROFILE", "Prologue acoustic LateFrameTick does not poll low-memory registry directly", builder, ref failureCount);
+                AssertNotContains(prologueLateFrame, "RefreshQualityTier", "Prologue acoustic LateFrameTick has no periodic registry quality refresh", builder, ref failureCount);
             }
 
             if (physicsApply.Length > 0)
