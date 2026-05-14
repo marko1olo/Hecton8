@@ -30,6 +30,7 @@ function New-CounterSet {
         StaticInstance = 0
         FindObjectCalls = 0
         GetComponentCalls = 0
+        DisposeCalls = 0
     }
 }
 
@@ -49,6 +50,27 @@ function New-DomainRow {
         BinarySafe = 0
         FindObjectCalls = 0
         GetComponentCalls = 0
+        DisposeCalls = 0
+    }
+}
+
+function New-FileRow {
+    param(
+        [string]$RelativePath,
+        [string]$Domain,
+        [System.Collections.Specialized.OrderedDictionary]$Counters,
+        [int]$LineCount
+    )
+
+    [ordered]@{
+        File = $RelativePath
+        Domain = $Domain
+        Lines = $LineCount
+        NativeArrayRefs = [int]$Counters['NativeArrayRefs']
+        GlobalDataVaultRefs = [int]$Counters['GlobalDataVaultRefs']
+        DisposeCalls = [int]$Counters['DisposeCalls']
+        FindObjectCalls = [int]$Counters['FindObjectCalls']
+        GetComponentCalls = [int]$Counters['GetComponentCalls']
     }
 }
 
@@ -146,7 +168,7 @@ function Remove-UnityEditorBlocks {
 function Get-DomainName {
     param([string]$Path)
 
-    $relative = $Path.Substring($scope.Length).TrimStart([char]'\', [char]'/')
+    $relative = Get-RelativeSourcePath $Path
     $parts = $relative -split '[\\/]'
     if ($parts.Length -eq 0) {
         return '_Unknown'
@@ -158,6 +180,12 @@ function Get-DomainName {
     }
 
     return $domain
+}
+
+function Get-RelativeSourcePath {
+    param([string]$Path)
+
+    return $Path.Substring($scope.Length).TrimStart([char]'\', [char]'/')
 }
 
 function Test-IsEditorFile {
@@ -206,6 +234,7 @@ function Add-DomainMetrics {
     $Row['BinarySafe'] = [int]$Row['BinarySafe'] + [int]$Counters['BinaryBlittableSafe']
     $Row['FindObjectCalls'] = [int]$Row['FindObjectCalls'] + [int]$Counters['FindObjectCalls']
     $Row['GetComponentCalls'] = [int]$Row['GetComponentCalls'] + [int]$Counters['GetComponentCalls']
+    $Row['DisposeCalls'] = [int]$Row['DisposeCalls'] + [int]$Counters['DisposeCalls']
 }
 
 function Divide-OrZero {
@@ -292,6 +321,7 @@ $patternSource = [ordered]@{
     StaticInstance = '\bstatic\s+\w+\s+Instance\b|\bInstance\s*\{'
     FindObjectCalls = '\b(?:FindObjectOfType|FindObjectsOfType|FindFirstObjectByType|FindAnyObjectByType|FindObjectsByType|FindWithTag)\s*(?:<|\()|GameObject\s*\.\s*Find(?:GameObjectWithTag|WithTag)?\s*\(|Resources\s*\.\s*FindObjectsOfTypeAll\s*(?:<|\()'
     GetComponentCalls = '\bGetComponent(?:s|InChildren|InParent)?\s*<'
+    DisposeCalls = '\.Dispose\s*\('
 }
 
 $patterns = @{}
@@ -306,6 +336,8 @@ $runtimeCounters = New-CounterSet
 $editorCounters = New-CounterSet
 $runtimeDomainRows = @{}
 $editorDomainRows = @{}
+$runtimeFileRows = [System.Collections.Generic.List[object]]::new()
+$editorFileRows = [System.Collections.Generic.List[object]]::new()
 
 $files = @(Get-ChildItem -LiteralPath $scope -Filter '*.cs' -Recurse -File |
     Sort-Object FullName |
@@ -325,6 +357,7 @@ foreach ($file in $files) {
     }
 
     $domain = Get-DomainName $file
+    $relativePath = Get-RelativeSourcePath $file
     if ($isEditorFile) {
         foreach ($key in $fileCounters.Keys) {
             Add-Count $editorCounters $key $fileCounters[$key]
@@ -335,6 +368,11 @@ foreach ($file in $files) {
         }
 
         Add-DomainMetrics $editorDomainRows[$domain] $fileCounters $lineCount
+        if ([int]$fileCounters['NativeArrayRefs'] -gt 0 -or
+            [int]$fileCounters['GlobalDataVaultRefs'] -gt 0 -or
+            [int]$fileCounters['FindObjectCalls'] -gt 0) {
+            [void]$editorFileRows.Add([pscustomobject](New-FileRow $relativePath $domain $fileCounters $lineCount))
+        }
         continue
     }
 
@@ -358,6 +396,11 @@ foreach ($file in $files) {
     }
 
     Add-DomainMetrics $runtimeDomainRows[$domain] $runtimeFileCounters $lineCount
+    if ([int]$runtimeFileCounters['NativeArrayRefs'] -gt 0 -or
+        [int]$runtimeFileCounters['GlobalDataVaultRefs'] -gt 0 -or
+        [int]$runtimeFileCounters['FindObjectCalls'] -gt 0) {
+        [void]$runtimeFileRows.Add([pscustomobject](New-FileRow $relativePath $domain $runtimeFileCounters $lineCount))
+    }
 }
 
 $runtimeScores = New-Scores $runtimeCounters
@@ -378,10 +421,20 @@ $result = [ordered]@{
         ForEach-Object { [pscustomobject]$_ } |
         Sort-Object NativeArrayRefs -Descending |
         Select-Object -First 8)
+    TopNativeArrayFiles = @($runtimeFileRows |
+        Sort-Object NativeArrayRefs -Descending |
+        Select-Object -First 25)
+    OwnerBlockedDataVaultCandidates = @($runtimeFileRows |
+        Where-Object { $_.NativeArrayRefs -gt 0 -and $_.GlobalDataVaultRefs -eq 0 } |
+        Sort-Object NativeArrayRefs -Descending |
+        Select-Object -First 25)
     TopEditorNativeArrayDomains = @($editorDomainRows.Values |
         ForEach-Object { [pscustomobject]$_ } |
         Sort-Object NativeArrayRefs -Descending |
         Select-Object -First 4)
+    TopEditorNativeArrayFiles = @($editorFileRows |
+        Sort-Object NativeArrayRefs -Descending |
+        Select-Object -First 10)
 }
 
 if ($Json) {
@@ -405,3 +458,6 @@ $allSourceScores.GetEnumerator() | ForEach-Object { Write-Output ("  {0}: {1}" -
 Write-Output ''
 Write-Output 'Top runtime NativeArray domains:'
 $result.TopNativeArrayDomains | Format-Table -AutoSize
+Write-Output ''
+Write-Output 'Owner-blocked DataVault candidate files:'
+$result.OwnerBlockedDataVaultCandidates | Format-Table -AutoSize

@@ -762,6 +762,7 @@ namespace Hecton8.Audio
         private int _lastConsumedAcousticPingSignalSequence;
         private uint _lastHighSpeedImpactFrame;
         private uint _lastHighSpeedImpactSignature;
+        private int _lastHighSpeedImpactSignalValid;
         // COLD ALLOC: HighSpeedImpactDuplicateEntry[8] - same-frame kinetic packet dedupe ring - owner: PlayerCriticalProceduralAudioRenderer
         private readonly HighSpeedImpactDuplicateEntry[] _recentHighSpeedImpactSignals = new HighSpeedImpactDuplicateEntry[KineticImpactDuplicateHistoryCapacity];
         private int _recentHighSpeedImpactSignalCursor;
@@ -1040,6 +1041,7 @@ namespace Hecton8.Audio
         {
             public uint Frame;
             public uint Signature;
+            public byte Valid;
         }
 
         [StructLayout(LayoutKind.Sequential, Pack = 4)]
@@ -3075,13 +3077,17 @@ namespace Hecton8.Audio
 
         private bool IsDuplicateHighSpeedImpactSignal(uint frame, uint signature)
         {
-            if (frame == _lastHighSpeedImpactFrame && signature == _lastHighSpeedImpactSignature)
+            if (_lastHighSpeedImpactSignalValid != 0 &&
+                frame == _lastHighSpeedImpactFrame &&
+                signature == _lastHighSpeedImpactSignature)
+            {
                 return true;
+            }
 
             for (int i = 0; i < KineticImpactDuplicateHistoryCapacity; i++)
             {
                 HighSpeedImpactDuplicateEntry entry = _recentHighSpeedImpactSignals[i];
-                if (entry.Frame == frame && entry.Signature == signature)
+                if (entry.Valid != 0 && entry.Frame == frame && entry.Signature == signature)
                     return true;
             }
 
@@ -3092,12 +3098,14 @@ namespace Hecton8.Audio
         {
             _lastHighSpeedImpactFrame = frame;
             _lastHighSpeedImpactSignature = signature;
+            _lastHighSpeedImpactSignalValid = 1;
 
             int slot = _recentHighSpeedImpactSignalCursor & KineticImpactDuplicateHistoryMask;
             _recentHighSpeedImpactSignals[slot] = new HighSpeedImpactDuplicateEntry
             {
                 Frame = frame,
-                Signature = signature
+                Signature = signature,
+                Valid = 1
             };
             _recentHighSpeedImpactSignalCursor = (slot + 1) & KineticImpactDuplicateHistoryMask;
         }

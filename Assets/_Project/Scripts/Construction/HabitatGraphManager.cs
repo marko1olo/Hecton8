@@ -272,6 +272,7 @@ namespace Hecton8.Construction
         private uint _analyticalBreachNodeId;
         private float _habitatVibration01;
         private float _lastPublishedHabitatVibration01 = -1f;
+        private float _runtimeSeaLevelY;
         private int _graphFloodSliceCursor;
         private int _floodedRoomCount;
         private int _floodBlackBoxCursor;
@@ -485,6 +486,7 @@ namespace Hecton8.Construction
                 return;
 
             HectonQualityTier scalabilityTier = GlobalRegistry.ScalabilityTier;
+            _runtimeSeaLevelY = ResolveRuntimeSeaLevelY();
             UpdateHabitatVibration(deltaTime);
             ApplyGraphFluidIncursion(deltaTime, scalabilityTier);
             ApplyWaterPumpDrainage(deltaTime);
@@ -688,7 +690,7 @@ namespace Hecton8.Construction
             return moduleIntegrity * (depthScale + currentScale);
         }
 
-        private static float ResolveAnalyticalModuleDepthMeters(ModuleRecord module, BaseModule baseModule)
+        private float ResolveAnalyticalModuleDepthMeters(ModuleRecord module, BaseModule baseModule)
         {
             float depthMeters = baseModule.PressureCompressionDepthMeters;
             if (depthMeters <= 0.25f || !math.isfinite(depthMeters))
@@ -737,13 +739,17 @@ namespace Hecton8.Construction
             return reinforcement;
         }
 
-        private static float ResolveRuntimeDepthMeters(float3 runtimePosition)
+        private static float ResolveRuntimeSeaLevelY()
         {
             HectonAtmosphereManager atmosphereManager = GlobalRegistry.Atmosphere;
-            if (atmosphereManager == null)
-                return math.max(0f, -runtimePosition.y);
+            return atmosphereManager != null && math.isfinite(atmosphereManager.SeaLevelY)
+                ? atmosphereManager.SeaLevelY
+                : 0f;
+        }
 
-            return math.max(0f, atmosphereManager.SeaLevelY - runtimePosition.y);
+        private float ResolveRuntimeDepthMeters(float3 runtimePosition)
+        {
+            return math.max(0f, _runtimeSeaLevelY - runtimePosition.y);
         }
 
         private static bool IsAnalyticalGrounded(ModuleRecord module)
@@ -971,7 +977,7 @@ namespace Hecton8.Construction
             }
         }
 
-        private static float ResolveActiveModuleDepthMeters(BaseModule baseModule, float3 runtimePosition)
+        private float ResolveActiveModuleDepthMeters(BaseModule baseModule, float3 runtimePosition)
         {
             float depthMeters = baseModule != null ? baseModule.PressureCompressionDepthMeters : 0f;
             if (depthMeters <= 0.25f || !math.isfinite(depthMeters))
@@ -2138,7 +2144,7 @@ namespace Hecton8.Construction
             return unchecked((hash ^ value) * 16777619u);
         }
 
-        private static float ResolveGraphIngressPressureDeltaKPa(
+        private float ResolveGraphIngressPressureDeltaKPa(
             ModuleRecord module,
             BaseModule baseModule,
             float internalPressureAtm)

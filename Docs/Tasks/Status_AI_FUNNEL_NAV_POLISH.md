@@ -97,6 +97,7 @@ Task Count: 15
 
 - [x] Re-read A* feeder path | DOD: inspected `NativeAStarJob` threat, conduit, and predator fear sampling before editing; rejected polishing funnel output while leaving upstream cost corruption; estimate 13 us.
 - [x] Native A* reciprocal purge | DOD: removed raw `/` from `NativeAStarJob` conduit direction, 2D threat-grid sampling, predator falloff, and threat-voxel decode; rejected relying on compiler divide lowering; estimate 9 us.
+- [x] Exact conduit direction rsqrt | DOD: conduit alignment now normalizes edge delta with `math.rsqrt(math.lengthsq(delta))`; rejected approximate cost distance as a direction normalizer; estimate 3 us.
 - [x] Feeder finite guards | DOD: conduit vectors/strengths, node positions, threat grid center/cell size, predator nodes, threat voxel origin/cell size now reject non-finite payloads; rejected NaN propagation into path costs; estimate 8 us.
 - [x] Threat payload completeness guards | DOD: surface threat and voxel threat grids now require complete native lengths with 64-bit expected-size checks before indexed sampling; rejected treating undersized payloads as valid open water; estimate 6 us.
 - [x] Predator fear retention | DOD: predator fear is preserved when a point is outside the 2D surface threat grid; rejected dropping species-specific fear just because the surface heatmap lacks coverage; estimate 4 us.

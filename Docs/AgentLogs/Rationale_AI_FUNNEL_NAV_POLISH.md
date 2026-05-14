@@ -149,7 +149,7 @@ Scalability potential: Low/Middle run the same deterministic cheap path. High/Ul
 Hardware Impact: Exact microseconds saved are pending Unity/Burst profiler verification; the new owner-side telemetry will collect real funnel completion timing at runtime.
 
 Problem: H-Phi in the navigation domain was still capped by upstream A* feeder cost quality: `NativeAStarJob` had raw divisions in conduit direction, threat-grid sampling, predator falloff, and threat-voxel decode.
-Solution: Replaced those divisions with `math.rcp` multiplies while keeping the existing approximate length model and Burst-friendly scalar math.
+Solution: Replaced those divisions with `math.rcp` multiplies and normalized conduit edge direction with `math.rsqrt(math.lengthsq(delta))` instead of the approximate path-cost distance.
 Rejected Alternatives: Trusting Burst or the C# compiler to lower `/` was rejected because the rsqrt/reciprocal mandate requires explicit math. Replacing the A* cost model was rejected because this pass owns polish, not route-authority redesign.
 Scalability potential: Low/MX350 removes divide latency from every feeder candidate and threat lookup. Middle/High/Ultra can spend the saved scalar budget on higher authored smoothing caps without changing behavior.
 Hardware Impact: Expected gain is small per candidate but broad across A* expansion. Exact microseconds remain pending Unity profiler data because dotnet rebuilds are prohibited by current user instruction.
