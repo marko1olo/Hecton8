@@ -544,17 +544,17 @@ Shader samples quest-state in single texture fetch -> no CB complexity.
 ## [RULE-FINAL] ENFORCEMENT CHECKLIST
 
 ```
- No string ever crosses runtime quest evaluation boundary
- No new() allocation inside any quest evaluation path
- No Update() method on any quest-related component
- All EventBus receivers: Burst-compiled FunctionPointers only
- Save/Load: UnsafeUtility.MemCpy only. Zero serialization framework
- Anti-deadlock: covered for item-lost, item-destroyed, item-inaccessible
- Phase gates: validated at build time (topological sort, no runtime cycles)
- Checksum: validated on every load, degraded-mode on failure (no crash)
- MX350 VRAM: quest state GraphicsBuffer <= 2KB (fits in L2 cache)
- CPU budget: 0.3ms Base / 0.8ms High / 2.0ms Ultra, deferred if exceeded
- All NativeContainers: disposed in explicit shutdown sequence (no finalizer leak)
+[ ] No string ever crosses runtime quest evaluation boundary
+[ ] No new() allocation inside any quest evaluation path
+[ ] No Update() method on any quest-related component
+[ ] All EventBus receivers: Burst-compiled FunctionPointers only
+[ ] Save/Load: UnsafeUtility.MemCpy only. Zero serialization framework
+[ ] Anti-deadlock: covered for item-lost, item-destroyed, item-inaccessible
+[ ] Phase gates: validated at build time (topological sort, no runtime cycles)
+[ ] Checksum: validated on every load, degraded-mode on failure (no crash)
+[ ] MX350 VRAM: quest state GraphicsBuffer <= 2KB (fits in L2 cache)
+[ ] CPU budget: 0.3ms Base / 0.8ms High / 2.0ms Ultra, deferred if exceeded
+[ ] All NativeContainers: disposed in explicit shutdown sequence (no finalizer leak)
 ```
 ```
 

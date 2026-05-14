@@ -192,7 +192,7 @@ memoryHead = (memoryHead + 1) & 7;
 
 ### Memory Decay Curve
 ```
-// age  [0, 120]
+// age  in  [0, 120]
 // decayWeight = 1 - (age/120)^2   <- quadratic, rapid fade near end
 // At age=0:   weight=1.0
 // At age=60:  weight=0.75
@@ -223,7 +223,7 @@ if inFOV AND distSq < VISUAL_RANGE_SQ:
 ### Acoustic Component (Spatial Hash Ping)
 ```
 // Spatial hash: bucket = int3(floor(pos / CELL_SIZE))
-// Player movement generates acoustic ping: magnitude  speed
+// Player movement generates acoustic ping: magnitude proportional_to speed
 playerNoiseMag = length(playerVelocity) * NOISE_COEFFICIENT
 
 bucketDist  = distance(creatureBucket, playerBucket)   // in cell units

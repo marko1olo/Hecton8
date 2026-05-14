@@ -403,10 +403,10 @@ Result:
 
 // When retiring buffer (e.g., after chunk is unloaded):
 
-//  WRONG:
+// X WRONG:
 oldBuffer.Dispose();  // Job may still be reading it. Use-After-Free.
 
-//  CORRECT:
+// [OK] CORRECT:
 oldBuffer.Dispose(activeWriteHandle);
 oldBuffer = default;  // Nullify local reference immediately to prevent accidental use.
 

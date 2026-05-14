@@ -36,3 +36,6 @@ STATUS: HARDWARE PROFILED | COMPILE PENDING VERIFICATION
 - [x] Loop 4 - Compile/build feasibility check: no `.sln`/`.csproj` found and `dotnet` is not installed in PATH; Unity executable also not discoverable from standard Hub path. Compile status remains PENDING VERIFICATION, not green.
 - [x] Loop 5 - Polish mandate and final anti-bloat review: original active batch had no applicable `<POLISH_MANDATE>` for this data task; current batch replacement is a different prompt set.
 - [x] Loop 6 - Professional self-review remediation: split physical graphics memory from graphics budget, added bandwidth derivation kinds/formulas, added Quest 2/MX350 source coverage, and validated every declared array count. Final validation: `FINAL_STRICT_PROFILE_VALIDATION_OK`.
+- [x] Loop 7 - Source hygiene review: removed process-noise wording from source notes, revalidated source/profile/tier/reference array counts. Result: `FINAL_JSON_ARRAY_VALIDATION_OK`.
+- [x] Loop 8 - Encoding and mask review: all hardware profile artifacts are ASCII-only; pressure masks and bit indexes print as expected. Result: `ASCII_OK`, masks `0x0/0x70/0x2007F0/0xF017F0`.
+- [x] Loop 9 - Runtime key review: added FNV-1a `StableHash32` arrays for phases, profiles, tiers, and reference devices so C# consumers do not need string keys. Result: `HASHED_PROFILE_VALIDATION_OK`.

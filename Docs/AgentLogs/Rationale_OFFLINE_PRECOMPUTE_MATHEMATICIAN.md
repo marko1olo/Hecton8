@@ -122,3 +122,15 @@ Rejected Alternatives: Keeping `np.random.default_rng` was rejected because it i
 Scalability potential: Low reads stable compact weather presets. Middle/High/Ultra can use the same deterministic preset identity to drive richer shader/audio presentation without changing the binary contract.
 
 Hardware Impact: No runtime cost. Offline bake remains deterministic. Gerstner hash changed to `3BB0295DAE4258D8E6882414E4E753FC643D2D5EF6219A13F8C78C2C660624EF`.
+
+## Decision 11: Bounded Remote Push Retry
+
+Problem: Remote publication was still the only incomplete part of Task 14, but previous Git remote commands hung and left child processes. Retrying blindly would create more unmanaged processes and false confidence.
+
+Solution: Run a single HTTPS push attempt for `feature/ai-offline-precompute-math-luts-20260514` with `GIT_TERMINAL_PROMPT=0`, `GCM_INTERACTIVE=Never`, and a 60 second process timeout. The push timed out with no stdout/stderr. The orphaned `remote-https`, `send-pack`, and `pack-objects` children were killed by PID and remote publication remains unconfirmed.
+
+Rejected Alternatives: Direct `main` push remained rejected. Infinite retry loops were rejected because they already produced hung Git processes. Reporting success without remote confirmation was rejected.
+
+Scalability potential: Repository-only concern. No runtime tier behavior changes.
+
+Hardware Impact: None.

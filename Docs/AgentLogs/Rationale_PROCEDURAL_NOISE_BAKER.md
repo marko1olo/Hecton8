@@ -63,3 +63,11 @@ Solution: Keep optimizer discovery in the CLI baker and fall back to Pillow `opt
 Rejected Alternatives: Installing external packages during the batch, downloading binaries, or falsely claiming optipng ran.
 Scalability potential: Same runtime texture data; external optimizer can later reduce disk bytes without changing pixels.
 Hardware Impact: 0 us runtime. Disk bytes after fallback: BlueNoise 262737, Flow 26919.
+
+## Decision 009 - Omega Polish Boundary
+
+Problem: Batch protocol requires reading `<POLISH_MANDATE>` only after core task closure, but the active batch file has no such tag.
+Solution: Recorded the absent polish tag and ran a scoped anti-bloat pass against owned files: syntax compile, verifier, ASCII scan, deterministic/network/runtime scan, pycache cleanup, and whitespace check.
+Rejected Alternatives: Inventing a polish mandate or reading archived batch polish text.
+Scalability potential: No runtime effect; keeps the offline asset path narrow and reproducible.
+Hardware Impact: 0 us runtime.

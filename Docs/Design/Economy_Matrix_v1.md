@@ -11,6 +11,7 @@ Status: ECONOMY BALANCED by `Tools/EconomyValidator.py`; runtime Unity proof rem
 - `Data/Economy/Recipes.json`
 - `Data/Economy/Survival_Stats.json`
 - `Data/Economy/Runtime_Binding_Review.json`
+- `Data/Economy/Time_To_First_Submarine.json`
 - `Tools/EconomyValidator.py`
 
 ## Mandates Followed
@@ -130,12 +131,14 @@ Data_GoldOre: 1
 Data_SilicaShards: 1
 ```
 
-Crafting requirement: `163.9 kWh` and `22.8 s` machine craft time. Optimal static pathing estimate is `41 minutes`: 14 minutes route travel, 15 minutes mixed-node harvesting, 5.5 minutes energy pacing at 30 kW, 6.5 minutes inventory, return, and fabrication handling. This is a data-model estimate, not PlayMode proof.
+Top-level target recipes require `163.9 kWh` and `22.8 s` machine craft time. That number is not the full expansion. Recursive prerequisites require 46 recipe batches across 17 unique recipes, `433.1 kWh`, and `81.3 s` machine craft time.
+
+At a literal `30 kW` energy source, recursive fabrication alone waits `866.2 minutes`; total static route + harvest + handling + energy wait is `901.7 minutes`. Therefore the old `41 minute` estimate is invalid if `fabrication_kwh` is literal player-gated energy. It only holds as a route/harvest pacing estimate if fabrication energy is precharged, abstracted, or supplied by a much stronger source. `Time_To_First_Submarine.json` records this as `economy.path.requires_literal_energy_rebalance`, and the validator now proves the recursive expansion.
 
 ## Regression Model
 
 - CPU: data files are offline tables. Runtime work should be integer hash lookup and table sampling only.
 - GC: no runtime strings are required if the engine consumes hash fields.
 - Memory: CSV/JSON are authoring/input assets; Data Monolith should bake them into contiguous runtime blobs.
-- Correctness: validator checks project-compatible hashes, row counts, duplicate biome/resource pairs, exact recipe category quotas, recipe cycles, value math, result value parity, no-profit deconstruction, tier progression, survival band ranges, and global generated-file hash collisions.
+- Correctness: validator checks project-compatible hashes, row counts, duplicate biome/resource pairs, exact recipe category quotas, recipe cycles, value math, result value parity, no-profit deconstruction, tier progression, survival band ranges, runtime binding drift, time-to-first-submarine recursive expansion, and global generated-file hash collisions.
 - Failure modes: missing engine importer, economy-defined IDs not mapped to runtime assets, or runtime system still reading strings would invalidate runtime integration.

@@ -29,7 +29,7 @@ Prompt Source: `Docs/Tasks/CURRENT_BATCH.md`
 - [x] Task 11: Export coefficients | DOD: `ecosystem_coefficients.json` exports `BirthRate`, `DeathRate`, `FeedRate`; rejected C# hardcoding; microsecond estimate: 0 measured, preserves data-driven ingest.
 - [x] Task 12: Avoid C# | DOD: no Unity C# file authored; rejected runtime integration edit; microsecond estimate: avoids compile/runtime blast radius.
 - [x] Task 13: Validation test | DOD: `Tools/test_math_lut_generator.py` validates exact byte sizes, explicit little-endian bytes, manifest axes, table content ranges, ecosystem finiteness/equilibrium, and Gerstner direction unit length; rejected manual visual inspection; microsecond estimate: offline-only.
-- [x] Task 14: [PARTIAL: LOCAL BRANCH COMMIT, REMOTE PUSH TIMEOUT] Commit/push binary files | DOD: selected files were committed to local branch `feature/ai-offline-precompute-math-luts-20260514` via temporary index; direct push to `main` was rejected; remote push attempted twice and timed out without confirmation; microsecond estimate: not applicable.
+- [x] Task 14: [PARTIAL: LOCAL BRANCH COMMIT, REMOTE PUSH TIMEOUT] Commit/push binary files | DOD: selected files were committed to local branch `feature/ai-offline-precompute-math-luts-20260514` via temporary index; direct push to `main` was rejected; remote push attempts, including a bounded non-interactive HTTPS push, timed out without confirmation; microsecond estimate: not applicable.
 - [x] Task 15: Rationale formulas | DOD: formulas documented in `Docs/Design/LUT_Memory_Layout.md` and rationale log; rejected chat-only reporting; microsecond estimate: not applicable.
 
 ## Verification
@@ -51,7 +51,7 @@ Prompt Source: `Docs/Tasks/CURRENT_BATCH.md`
 - Branch integrity: working files match branch object hashes for all 12 selected paths.
 - Final review: post-regeneration branch object check still matches all 12 selected paths.
 - Final review: feature commit vs parent changes exactly 12 selected paths and contains no `.cs` files.
-- Remote diagnostics: `github.com:443` TCP succeeds; git remote commands hang in this environment and were killed to avoid leaving background processes.
+- Remote diagnostics: `github.com:443` TCP succeeds; git remote commands hang in this environment. Bounded non-interactive push timed out after 60 seconds with no stdout/stderr; orphaned `remote-https`, `send-pack`, and `pack-objects` children were killed.
 - Unity compile/profiler proof: not applicable to this Python/data-only task; runtime savings remain PENDING VERIFICATION.
 
 ## Iteration Log
@@ -67,3 +67,4 @@ Prompt Source: `Docs/Tasks/CURRENT_BATCH.md`
 - Loop 9: Rebuilt into a clean temp directory and verified all output hashes match checked files. Killed leftover git processes after local branch checks.
 - Loop 10: Replaced NumPy RNG jitter with local integer-hash jitter, added table content-range tests, regenerated outputs, and verified clean-temp deterministic rebuild again.
 - Loop 11: Refreshed the local feature branch after the hash-jitter patch, reran generator/tests/syntax checks, verified the commit-vs-parent diff has exactly 12 selected paths and no C# files, and confirmed post-regeneration branch object matches.
+- Loop 12: Retried remote publication with terminal prompts disabled and a 60 second timeout. Push hung with no stdout/stderr; killed the exact orphaned Git children and kept remote publication unconfirmed.

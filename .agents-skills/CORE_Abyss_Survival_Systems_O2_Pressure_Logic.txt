@@ -9,7 +9,7 @@ Classification: Core Systems Architecture
 This document governs all code, data structures, and runtime behavior related to:
 - Hull/suit structural integrity and pressure simulation
 - Implosion event sequencing
-- Life support resource management (O, Battery)
+- Life support resource management (O2, Battery)
 - Thermal regulation and cold current simulation
 - Glitch state propagation to dependent systems
 - Failure recovery and safe-zone restoration
@@ -251,9 +251,9 @@ public static void TickHullStress(
 
 State machine:
 
-[Normal]  (stress > 0.70) [GlitchOnset]
-[GlitchOnset] (stress > 0.95) [CriticalWarning]
-[CriticalWarning] (stress >= 1.00) [FatalImplosion]
+[Normal]  (stress > 0.70)-> [GlitchOnset]
+[GlitchOnset] (stress > 0.95)-> [CriticalWarning]
+[CriticalWarning] (stress >= 1.00)-> [FatalImplosion]
 
 CriticalWarning Phase (stress 0.95 -> 1.00):
 - Visual: chromatic aberration ramp, screen crack overlay alpha = `(stress - 0.95) / 0.05`
@@ -542,7 +542,7 @@ must manage stress proactively or carry repair consumables.
 [STRUCT_START]
                      SURVIVAL SYSTEM OVERVIEW
 
-  DepthTracker  DepthToMPa()  SurvivalState
+  DepthTracker -> DepthToMPa() -> SurvivalState
                                             .depthPressure
 
 
@@ -551,11 +551,11 @@ must manage stress proactively or carry repair consumables.
 
                          hullStress          internalTemp
 
-                          TickLifeSupport()
+                    ++      TickLifeSupport()
 
              GlitchState     ImplosionSequencer
                                          oxygenLevel
-                  FatalPressure
+           ++       FatalPressure
                               ImplosionEvent
     InputManager   HUDRenderer             faintCheck
     (noise inject) (glitch mat)  EventBus

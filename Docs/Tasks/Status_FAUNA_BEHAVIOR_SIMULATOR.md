@@ -25,7 +25,7 @@ Relevant mandates loaded:
 
 - [x] Task 4: HEATMAP ANALYSIS | Justification: rerun heatmap/refinement selected `AggressionScalar=1.38`, `FearScalar=0.76` by lowest population-stability score | Alternatives Rejected: max-aggression tuning because it risks prey collapse and predator starvation in the scoring model | Estimate: 0 runtime microseconds; offline heatmap stored in JSON.
 - [x] Task 5: NOISE ROBUSTNESS | Justification: rerun exported noise cases `0.00`, `0.03`, `0.06`, `0.09`, `0.12`, `0.18`, `0.24`; `0.12` retained as tolerance line | Alternatives Rejected: perfect-signal tuning; it would overfit and fail noisy radar | Estimate: 0 runtime microseconds; offline robustness only.
-- [x] Task 6: OPTIMAL CONSTANTS | Justification: exported `Data/AI/Fauna_Global_Weights.json` with status `AI BALANCED`, constants, heatmap, noise tests, retinal tests, fear-curve comparison | Alternatives Rejected: chat-only constants; project protocol requires file artifact | Estimate: 0 runtime microseconds; JSON consumer cost unprofiled.
+- [x] Task 6: OPTIMAL CONSTANTS | Justification: exported compact `Data/AI/Fauna_Global_Weights.json` with status `AI BALANCED`, constants, million-frame summary, and pointer to detailed report | Alternatives Rejected: chat-only constants and bloated runtime handoff JSON | Estimate: 0 runtime microseconds; JSON consumer cost unprofiled.
 
 ## Loop 3 - Tasks 7-9
 
@@ -49,7 +49,14 @@ Relevant mandates loaded:
 - `python -m py_compile Tools\AI_Sim\FaunaBalanceSim.py` -> pass.
 - `python -m json.tool Data\AI\Fauna_Global_Weights.json` -> pass.
 - `python -m json.tool Tools\AI_Sim\FaunaBalanceSim_Report.json` -> pass.
-- Export/report payload equality -> `True`.
-- Required JSON keys missing -> `[]`.
+- Compact constants JSON size -> `1812` bytes.
+- Detailed report JSON size -> `40188` bytes with `101` million-frame samples.
+- Required compact JSON keys present -> `conclusions`, `detailedReport`, `evidenceClass`, `generatedBy`, `millionFrameSummary`, `runtimeUnityProof`, `schemaVersion`, `selectedConstants`, `speciesTargets`, `status`.
 - Prompt re-extraction -> `PROMPT_REEXTRACTED length=1622`.
 - Static self-review for `TODO`, Dotnet, subprocess, `os.system`, `eval`, `exec`, `random.` -> no matches.
+
+## Loop 6 - Polish
+
+- [x] Read `<POLISH_MANDATE>` after core tasks reached 100% -> `POLISH_MANDATE_NOT_FOUND`.
+- [x] Anti-bloat pass -> compacted `Data/AI/Fauna_Global_Weights.json` from full report duplicate to runtime handoff; retained detailed telemetry in `Tools/AI_Sim/FaunaBalanceSim_Report.json`.
+- [x] Post-polish validation -> Python compile pass, both JSON files parse, no banned Python process/random/Dotnet patterns found.

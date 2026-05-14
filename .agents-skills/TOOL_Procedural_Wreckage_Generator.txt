@@ -132,7 +132,7 @@ While uncollapsed cells exist:
           PropagationQueue.Enqueue(neighborIdx)
 ```
 
-[MATH] Shannon Entropy = -(p_i * log(p_i)) simplified to log2(popcount) assuming uniform probability.
+[MATH] Shannon Entropy = -sum(p_i * log(p_i)) simplified to log2(popcount) assuming uniform probability.
 [MATH] SmallNoise adds +/-0.001 * RNG.NextFloat01() to prevent identical entropy causing non-deterministic sort.
 
 ### C. Socket_Validation_Bitmask

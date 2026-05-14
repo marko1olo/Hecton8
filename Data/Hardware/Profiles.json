@@ -11,10 +11,20 @@
     "POST_SIMULATION",
     "VISUAL_SYNC"
   ],
+  "phaseStableHash32": [
+    554027688,
+    1209854998,
+    4154061783,
+    3595059945
+  ],
   "profileCount": 2,
   "profileId": [
     "QUEST_3",
     "STEAM_DECK_LCD"
+  ],
+  "profileStableHash32": [
+    1478646863,
+    1871614729
   ],
   "profileDisplayName": [
     "Meta Quest 3",
@@ -170,6 +180,12 @@
     "HANDHELD",
     "DESKTOP_BASELINE",
     "ULTRA"
+  ],
+  "tierStableHash32": [
+    3672274183,
+    3238102799,
+    2600114955,
+    4228075797
   ],
   "tierPhysicalGraphicsMemoryMb": [
     2048,
@@ -347,6 +363,12 @@
     "QUEST_3",
     "STEAM_DECK_LCD",
     "MX350_REFERENCE"
+  ],
+  "referenceDeviceStableHash32": [
+    1727656182,
+    1478646863,
+    1871614729,
+    3816317990
   ],
   "referenceDedicatedVramMb": [
     0,

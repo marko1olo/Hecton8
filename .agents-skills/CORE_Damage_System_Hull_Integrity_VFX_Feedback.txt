@@ -81,7 +81,7 @@ Integrity           = math.max(0.0, Integrity - scaledDamage)
 powerLoss = scaledDamage * 0.4 * (1.0 - PowerShielding)
 Power     = math.max(0.0, Power - powerLoss)
 
-`PowerShielding`  [0.0..1.0], defaults to 0.6 (standard hull). Upgrade system modifies.
+`PowerShielding`  in  [0.0..1.0], defaults to 0.6 (standard hull). Upgrade system modifies.
 
 ### Clarity Degradation (Cross-Channel Bleed)
 
@@ -111,7 +111,7 @@ Clarity   += 0.018 per SlowTick   // Sensors = fastest recovery
 // Continuous slow drain, not burst. Applied each SlowTick while parasiteActive=true.
 Integrity -= 0.005 * parasiteIntensity
 Clarity   -= 0.008 * parasiteIntensity
-// parasiteIntensity  [0.3 .. 1.0], set at attach event
+// parasiteIntensity  in  [0.3 .. 1.0], set at attach event
 // Counter: UV-scan pulse clears parasiteActive. Stacks up to 3 sources.
 
 ---
@@ -153,7 +153,7 @@ IF Clarity < 0.1:
 ### Flood-Drain Logic (SlowTick, 10Hz)
 
 floodRate  = depthPressureDelta * 0.04 * (1.0 - zoneIntegrity)
-drainRate  = pumpPower * 0.015   // pumpPower  [0..1], upgradeable
+drainRate  = pumpPower * 0.015   // pumpPower  in  [0..1], upgradeable
 netFlood   = floodRate - drainRate
 floodLevel = math.clamp(floodLevel + netFlood, 0.0, 1.0)
 

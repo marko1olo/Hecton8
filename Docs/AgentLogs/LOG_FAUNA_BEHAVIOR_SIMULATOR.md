@@ -14,6 +14,7 @@ What was done:
 - Ran the full command: `python Tools\AI_Sim\FaunaBalanceSim.py --frames 1000000 --discovery-frames 12000`.
 - Exported `Data/AI/Fauna_Global_Weights.json`.
 - Exported matching detailed report `Tools/AI_Sim/FaunaBalanceSim_Report.json`.
+- Polish pass compacted `Data/AI/Fauna_Global_Weights.json` to a runtime handoff and left detailed telemetry in `Tools/AI_Sim/FaunaBalanceSim_Report.json`.
 
 Cinematic Cheats used:
 - Aggregate prey/predator biomass simulation instead of per-creature truth.
@@ -48,14 +49,17 @@ Exact microseconds saved:
 - Runtime measured savings: `0 us` claimed. This task did not modify Unity runtime code and no profiler sample exists.
 - Runtime cost introduced by this task: `0 us` until a runtime owner consumes the JSON.
 - Static estimate versus per-creature runtime ecology truth: savings are material but unmeasured; profiler proof remains `PENDING VERIFICATION`.
+- File bloat removed: constants handoff reduced from full-report duplicate to `1812` bytes; detailed report remains `40188` bytes.
 
 Verification:
 - `python -m py_compile Tools\AI_Sim\FaunaBalanceSim.py` -> pass.
 - `python -m json.tool Data\AI\Fauna_Global_Weights.json` -> pass.
 - `python -m json.tool Tools\AI_Sim\FaunaBalanceSim_Report.json` -> pass.
-- JSON export/report equality -> `True`.
-- Required JSON keys missing -> `[]`.
+- Compact constants JSON size -> `1812` bytes.
+- Detailed report JSON size -> `40188` bytes with `101` samples.
+- Required compact JSON keys present.
 - Static self-review for `TODO`, Dotnet, subprocess, `os.system`, `eval`, `exec`, `random.` -> no matches.
+- `<POLISH_MANDATE>` lookup -> `POLISH_MANDATE_NOT_FOUND`.
 
 Regression model:
 - CPU: no Unity runtime code changed; offline Python run elapsed 226.3 s.

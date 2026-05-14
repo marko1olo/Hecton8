@@ -204,11 +204,11 @@ public class HealthDisplay : MonoBehaviour
 
 `.ToString()` on any numeric type or enum produces heap-allocated string. It is banned in `Tick`, `FixedTick`, and any per-frame UI update path.
 
-//  FORBIDDEN
+// X FORBIDDEN
 label.text = score.ToString();
 label.text = ammoCount.ToString("D3");
 
-//  CORRECT
+// [OK] CORRECT
 // Use IntToBuffer and TMP SetText(char[], int, int)
 
 Exception: `.ToString()` is permitted in `Awake()`, `Start()`, `OnEnable()`, `OnDisable()`, Editor code, and logging paths that are guarded by `#if UNITY_EDITOR` or `Debug.isDebugBuild` checks.
@@ -345,7 +345,7 @@ public void Tick(float dt)
 
 All iteration over collections in hot paths must use explicit index-based `for` loops:
 
-//  ONLY APPROVED HOT-PATH ITERATION PATTERN
+// [OK] ONLY APPROVED HOT-PATH ITERATION PATTERN
 for (int i = 0; i < _count; i++)
 {
     _items[i].DoWork();
@@ -461,7 +461,7 @@ public class CombatSystem : MonoBehaviour
 
 Unity Coroutines (`IEnumerator` / `yield return`) create iterator state machine objects on heap. They are permitted for initialization sequences and cinematic flows. They are banned for any logic that runs repeatedly in hot-path frame loop. Use explicit state machines implemented as `switch` statements or `enum`-driven update logic instead.
 
-//  FORBIDDEN in hot paths
+// X FORBIDDEN in hot paths
 IEnumerator AttackSequence() {
     yield return new WaitForSeconds(0.5f); // Two allocations
     PerformAttack();
@@ -679,7 +679,7 @@ This document requires CTO approval for each entry. It is not dumping ground for
 
 ### 10.1 Approved Data Flow in Hot Paths
 
-[Registry<T>] index [NativeArray / T[]] for(i) [Struct data in-place]
+[Registry<T>] index-> [NativeArray / T[]] for(i)-> [Struct data in-place]
 
                                                          [NonAlloc Physics Buffer]
 

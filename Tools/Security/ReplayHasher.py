@@ -411,27 +411,83 @@ def _command_shuffle(args: argparse.Namespace) -> int:
 
 
 def _command_self_test(_: argparse.Namespace) -> int:
-    vectors = {
-        b"": 0x2D06800538D394C2,
+    zero_seed_vectors = {
+        0: 0x2D06800538D394C2,
+        1: 0xE12EF9D2EB86CEEB,
+        3: 0xB2B06C45EF888EF4,
+        4: 0x8B806C96EC81F796,
+        8: 0x65D8B6BD6573B7B0,
+        9: 0xB5F2EED243EC7BCB,
+        16: 0x49D5450D8A85F113,
+        17: 0x8D676AB55FD41AF7,
+        64: 0x126D7B47CBB1D0F0,
+        128: 0x50ABCBCA6BB1912F,
+        129: 0x94874E014AAD8E2D,
+        240: 0x7E145804A9F93009,
+        241: 0x31C2D8792B29ABB5,
+        1024: 0x4986EA1C273817C6,
+        4097: 0x0D009A3F10B46B2B,
     }
-    for payload, expected in vectors.items():
+    for length, expected in zero_seed_vectors.items():
+        payload = bytes((i * 31 + length) & 0xFF for i in range(length))
         actual = xxh3_64(payload)
         if actual != expected:
             print(
-                f"SELFTEST_FAIL len={len(payload)} expected=0x{expected:016X} actual=0x{actual:016X}",
+                f"SELFTEST_FAIL len={length} expected=0x{expected:016X} actual=0x{actual:016X}",
                 file=sys.stderr,
             )
             return 1
 
-    for length in (1, 3, 4, 8, 9, 16, 17, 64, 128, 129, 240, 241, 1024, 4097):
-        payload = bytes((i * 31 + length) & 0xFF for i in range(length))
-        digest = xxh3_64(payload)
-        if not (0 <= digest <= MASK64):
-            print(f"SELFTEST_FAIL digest range len={length}", file=sys.stderr)
+    seeded_vectors = {
+        (0, 0x0000000000000001): 0x4DC5B0CC826F6703,
+        (1, 0x0000000000000001): 0x644AE62A32686D33,
+        (4, 0x0000000000000001): 0x43AE41E2954D3A8B,
+        (9, 0x0000000000000001): 0x12E69274D0687516,
+        (17, 0x0000000000000001): 0xD4ED529FDF908A51,
+        (129, 0x0000000000000001): 0xA0CBF569259DE49A,
+        (240, 0x0000000000000001): 0xE86745C639596C17,
+        (241, 0x0000000000000001): 0x7B5FCDFFE3B17B86,
+        (4097, 0x0000000000000001): 0x22588E279FA90372,
+        (0, 0x9E3779B185EBCA87): 0x07F70F819703314D,
+        (1, 0x9E3779B185EBCA87): 0x20A721235B83753D,
+        (4, 0x9E3779B185EBCA87): 0xC5676E1316EC5907,
+        (9, 0x9E3779B185EBCA87): 0x308E51AFC56716C7,
+        (17, 0x9E3779B185EBCA87): 0x252405BFD59ACA5F,
+        (129, 0x9E3779B185EBCA87): 0x2638E2C1AA29D175,
+        (240, 0x9E3779B185EBCA87): 0x98DF4C7B366C82D5,
+        (241, 0x9E3779B185EBCA87): 0x765B94AD431FD9AC,
+        (4097, 0x9E3779B185EBCA87): 0x5011A06EFDE64433,
+        (0, 0xFFFFFFFFFFFFFFFF): 0x4C093276AE47A555,
+        (1, 0xFFFFFFFFFFFFFFFF): 0x0E2534ADF99A4609,
+        (4, 0xFFFFFFFFFFFFFFFF): 0x8E880C6B1A88D1F6,
+        (9, 0xFFFFFFFFFFFFFFFF): 0x1691E98A41D4FD81,
+        (17, 0xFFFFFFFFFFFFFFFF): 0xA5BA236D8EF26CFA,
+        (129, 0xFFFFFFFFFFFFFFFF): 0x329B13981F8BECC5,
+        (240, 0xFFFFFFFFFFFFFFFF): 0xC3749153347E6C99,
+        (241, 0xFFFFFFFFFFFFFFFF): 0x19AA14338A94373E,
+        (4097, 0xFFFFFFFFFFFFFFFF): 0xE70C25DEFAD0B7A5,
+    }
+    for (length, seed), expected in seeded_vectors.items():
+        payload = bytes(((i * 31 + length * 17 + seed) & 0xFF) for i in range(length))
+        actual = xxh3_64(payload, seed)
+        if actual != expected:
+            print(
+                f"SELFTEST_FAIL seed=0x{seed:016X} len={length} expected=0x{expected:016X} actual=0x{actual:016X}",
+                file=sys.stderr,
+            )
             return 1
 
     plain = (0x0123456789ABCDEF, 0x0F1E2D3C4B5A6978)
+    mask = derive_shuffle_mask(123456789, -987654321)
+    if mask != (0x0E72B33300EEB5F5, 0x1623468F605621EE):
+        print("SELFTEST_FAIL shuffle mask vector", file=sys.stderr)
+        return 1
+
     shuffled = shuffle_hash128(plain[0], plain[1], 123456789, -987654321)
+    if shuffled != (0x3D47D9522515E068, 0x64F5AECCAC312258):
+        print("SELFTEST_FAIL shuffle vector", file=sys.stderr)
+        return 1
+
     recovered = unshuffle_hash128(shuffled[0], shuffled[1], 123456789, -987654321)
     if recovered != plain:
         print("SELFTEST_FAIL shuffle inverse", file=sys.stderr)

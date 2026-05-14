@@ -7,6 +7,7 @@ Batch Source: Docs/Tasks/CURRENT_BATCH.md
 Requested Batch Alias: CURRENT_BATCH_OSHINO.md not present in workspace
 Task Count: 7
 Status: NOISE BAKED - STATIC/CLI VERIFIED, UNITY IMPORT PENDING VERIFICATION
+Required Prompt Status: NOISE BAKED
 
 Relevant Mandates Loaded:
 - REND_Shader_Noir_Aesthetics_Dithering_Fog.txt
@@ -38,9 +39,9 @@ Relevant Mandates Loaded:
 
 - [x] Loop 1: executed tasks 1-5 and ran Python bake verification. DOD: `python -m py_compile` passed; `python Tools\NoiseBaker\GenerateBlueNoise.py` exited 0 and wrote `status: NOISE BAKED`. Alternative rejected: trusting the first transient bake that disappeared from disk. Estimate: 23.499339 s offline bake.
 - [x] Loop 2: executed tasks 6-7, reran independent verifier, and recorded optimizer fallback. DOD: verifier JSON persisted at `Data\Textures\NoiseBakeMetrics.verify.json`; hash readback captured. Alternative rejected: reporting optimizer success from unavailable `optipng`. Estimate: offline only.
-- [ ] Loop 3: re-read generated code for deterministic/tileability errors.
-- [ ] Loop 4: re-extract prompt and re-run asset verification.
-- [ ] Loop 5: read polish mandate only after all core tasks checked or blocked; run final anti-bloat/evidence pass.
+- [x] Loop 3: re-read `Tools\NoiseBaker\GenerateBlueNoise.py` and scanned generated scripts for non-deterministic or runtime-only patterns. DOD: no `np.random`, `random.`, `datetime`, `time.time(`, Unity runtime hooks, network imports, or Resources usage. Alternative rejected: trusting only bake output. Estimate: 0 us runtime.
+- [x] Loop 4: re-extracted `<AGENT_PROMPT id="PROCEDURAL_NOISE_BAKER">` and reran asset verification. DOD: `python Tools\NoiseBaker\GenerateBlueNoise.py --verify-only --metrics Data\Textures\NoiseBakeMetrics.verify2.json` exited 0; final verifier JSON persisted at `Data\Textures\NoiseBakeMetrics.final.json`. Alternative rejected: using stale console output from vanished first attempt. Estimate: offline verifier only.
+- [x] Loop 5: read polish mandate after all core tasks were checked; `POLISH_MANDATE` tag was absent. Final anti-bloat pass ran: ASCII scan clean, deterministic/network/runtime scan clean, py_compile pass, pycache removed, `git diff --check` returned only LF-to-CRLF warnings for owned markdown. Alternative rejected: inventing a missing polish directive. Estimate: 0 us runtime.
 
 ## Verification Ledger
 
@@ -50,3 +51,4 @@ Relevant Mandates Loaded:
 - Spectrum metrics: PASS - low_mean_to_mid_mean 0.0732626; low_peak_to_mid_mean 0.312208; dc_power 2.064e-06 within numeric FFT tolerance.
 - PNG optimization: PASS WITH FALLBACK - `optipng`, `oxipng`, `zopflipng`, and `magick` absent; CLI baker used Pillow optimize/compress_level_9.
 - Unity import/runtime/profiler: PENDING VERIFICATION
+- Hashes: BlueNoise SHA256 `AD6F279C6D9AF828D3E1E808896C11F9EB159AC6F560A412E2B87D9F6BD1F902`; Flow SHA256 `32CCB138852E75017B9645CD138C1072D7193C8855D4D127FF3C58AB706C76AA`.

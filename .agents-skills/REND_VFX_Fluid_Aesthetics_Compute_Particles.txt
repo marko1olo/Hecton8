@@ -87,7 +87,7 @@ Dispatch group stride: 64 threads/group. Dead slots are managed via explicit `RW
            Renderer consumes `VisibleIndices` directly
            No CPU draw calls. No IndirectArgs bubble.
 
-     [PROBE APPROX UPDATE]
+    -> [PROBE APPROX UPDATE]
             Per-cluster-anchor particle: sample approved probe approximation, write SH to CB
             Frequency: every 4 frames (jittered per cluster)
 

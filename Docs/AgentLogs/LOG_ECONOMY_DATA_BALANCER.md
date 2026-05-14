@@ -45,6 +45,43 @@ hash_pairs_checked=663
 STATUS: ECONOMY BALANCED
 ```
 
+## 2026-05-14 - Time-To-First-Submarine Correction
+
+What was wrong:
+- The report's `163.9 kWh` and `22.8 s` values counted only the seven top-level target recipes.
+- The full prerequisite component chain was not included in the energy/time summary.
+- The old `41 minute` claim is invalid if `fabrication_kwh` is literal player-gated energy at 30 kW.
+
+What was done:
+- Added `Data/Economy/Time_To_First_Submarine.json`.
+- Extended `Tools/EconomyValidator.py` to recursively expand the first-submarine path from `Recipes.json`.
+- Corrected `Docs/Design/Economy_Matrix_v1.md`, status, rationale, and this log.
+
+Cinematic Cheats used:
+- No runtime simulation added. The correction is an offline balance proof.
+
+Exact Microseconds saved:
+- Offline recursive path validation: 0 us gameplay cost.
+- Preventing a bad runtime pacing pass saves human iteration time, not frame time. Gameplay lookup savings remain unchanged.
+
+Verification:
+
+```text
+python Tools/EconomyValidator.py --root .
+ECONOMY VALIDATION OK
+matrix_rows=150 biomes=10 resources=15
+recipes=40 tier_ratios=[3.667, 2.69]
+survival_velocity_bands=5
+binding_unresolved_ids=22
+first_sub_recursive_kwh=433.1 literal_minutes=901.7
+hash_pairs_checked=781
+unique_id_hashes=175
+STATUS: ECONOMY BALANCED
+```
+
+Runtime boundary:
+- Literal energy pacing needs an owner decision. Either fabrication kWh is an abstract cost/precharged budget, or early energy generation must be scaled far above 30 kW, or the generated kWh values need a deliberate rebalance.
+
 ## 2026-05-14 - Runtime Binding Review Artifact
 
 What was wrong:

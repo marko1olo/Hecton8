@@ -199,7 +199,7 @@ DeviceType check before trigger write:
 
 ```
 // INPUT: signal  [0,1], t = time since trigger (seconds), lambda = DecayRate
-// OUTPUT: motorIntensity  [0,1]
+// OUTPUT: motorIntensity  in  [0,1]
 
 // Exponential decay (primary):
 motorIntensity(t) = signal x exp(-t x lambda)
@@ -270,10 +270,10 @@ HAPTIC UPDATE (end-of-frame, after gameplay writes to front buffer):
 ### IIIF. Fast Approximations - MX350 Budget
 
 ```
-// exp(-x) Pad [1/2] approximation:
+// exp(-x) Pade [1/2] approximation:
 math.exp(-x);
 
-// Valid range: x  [0, 3]. Clamp x before call:
+// Valid range: x  in  [0, 3]. Clamp x before call:
 x = clamp(t x lambda, 0.0f, 3.0f)
 
 // Bitmask IsPressed - branchless (SIMD-friendly unroll for 12 actions):
@@ -300,7 +300,7 @@ BASE (i3-10gen / MX350 / mandatory):
   Update rate: Haptic tick every frame.
 
 HIGH (i5-11gen / GTX 1660 class):
-  Haptic: Exp decay active. fastExp Pad approximation.
+  Haptic: Exp decay active. fastExp Pade approximation.
   AnimationCurve sampling enabled (baked, single Evaluate per trigger).
   Buffer: 15-frame window. Priority blending active.
   Update rate: Haptic tick every frame.

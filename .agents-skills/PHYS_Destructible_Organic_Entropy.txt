@@ -144,7 +144,7 @@ Step 7: If isDestroyed: enqueue entityID into DestructionEventQueue (NativeQueue
 
 ```
 // Executed by EntropyYieldJob (Burst, single-threaded against event queue)
-// Inputs: parentMassKg, materialClass, drillPower, depthMeters, toolEfficiency  [0,1]
+// Inputs: parentMassKg, materialClass, drillPower, depthMeters, toolEfficiency  in  [0,1]
 
 // Base yield volume (m^3):
 yieldVolume = (drillPower * toolEfficiency * dt) / densityLUT[materialClass]

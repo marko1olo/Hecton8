@@ -218,12 +218,16 @@ def parse_hphi_report(path: Path = HPHI_REPORT) -> dict[str, Any]:
     except OSError as exc:
         result["status"] = f"read_failed:{exc.__class__.__name__}"
         return result
-    match = re.search(r"H-?Phi[^0-9]+([0-9]*\.?[0-9]+)", text, re.IGNORECASE)
-    if match is None:
-        match = re.search(r"static\s+H-Phi[^0-9]+([0-9]*\.?[0-9]+)", text, re.IGNORECASE)
-    if match:
+    for line in text.splitlines():
+        if "h-phi" not in line.lower() and "hphi" not in line.lower():
+            continue
+        candidate = line.rsplit("=", 1)[-1] if "=" in line else line
+        match = re.search(r"([0-9]*\.[0-9]+|[0-9]+)", candidate)
+        if match is None:
+            continue
         result["value"] = float(match.group(1))
         result["status"] = "static-report"
+        break
     else:
         result["status"] = "not_found"
     return result

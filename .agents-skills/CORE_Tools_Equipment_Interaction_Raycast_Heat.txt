@@ -13,7 +13,7 @@
 
 ## Section0 - CONTRACTS & IDENTITY
 
-[CONTRACT] Every tool type satisfies dual interface binding: `IInteractable  IToolModule`.
+[CONTRACT] Every tool type satisfies dual interface binding: `IInteractable  AND  IToolModule`.
 [CONTRACT] `IInteractable` exposes: `Interact(InteractionPacket p)`, `CanInteract(uint toolID) -> bool`, `QueryState() -> byte`.
 [CONTRACT] `IToolModule` exposes: `Activate()`, `Deactivate()`, `CancelAction()`, `GetCapabilityMask() -> uint`.
 [ENFORCE] No concrete tool class cross-references another concrete tool class. Coupling channel = `EventBus` only.
@@ -169,7 +169,7 @@ if heat <= 0.15 AND (flags & 0x08):
 if heat <= 0.0:
   heat = 0.0; flags &= ~0x40     // exit Cooldown
 
-`passive_water_cooling_bonus`  [0.0, 1.2]: higher in colder/deeper zones (query `OceanThermalMap`).
+`passive_water_cooling_bonus`  in  [0.0, 1.2]: higher in colder/deeper zones (query `OceanThermalMap`).
 
 ### 3.4 Power Draw from Energy System
 
@@ -189,14 +189,14 @@ if EnergySystem.GetLevel() <= 0.0f:
 
 // Verlet integration for visual cable proxy:
 for each node i in cable[1..N-1]:
-  velocity    = node[i].pos  node[i].prev_pos
+  velocity    = node[i].pos - node[i].prev_pos
   node[i].prev_pos = node[i].pos
   node[i].pos += velocity + gravity x dt^2
 
 // Constraint solve (Jakobsen, 4 iterations):
 for iter in 0..3:
   for each segment (i, i+1):
-    delta     = node[i+1].pos  node[i].pos
+    delta     = node[i+1].pos - node[i].pos
     dist      = |delta|
 // [FORBID] Naked division in distance constraints. Guard it:
 float safe_dist = math.max(dist, 1e-5f);
@@ -219,7 +219,7 @@ TICK (FixedUpdate, Active state):
    -> VoxelSDF: subtract density sphere, mark dirty chunks
 5. Heat accumulate (Section3.3)
 6. Recoil (Section3.2) every N=3 FixedUpdates (reduce physics spam)
-7. Spawn spark ParticleSystem from pool at hitPoint (rate  power_final)
+7. Spawn spark ParticleSystem from pool at hitPoint (rate proportional_to power_final)
 
 ### 4.2 Harpoon
 
@@ -233,7 +233,7 @@ FIRE (one-shot, single FixedUpdate):
    d. EventBus->PhysicsSystem: CreateTetherConstraint(ownerRB, targetRB, restLength)
 
 PHYSICS_INTEGRITY CHECK (every 4 FixedUpdates):
-  tension = |ownerPos  targetHitPoint|  restLength
+  tension = |ownerPos - targetHitPoint| - restLength
   if tension > MaxTension: BreakLink()
   if target destroyed: BreakLink()
 
@@ -262,7 +262,7 @@ ACTIVE (sustained cut):
 2. Per voxel step:
    a. Sample density: d = VoxelSDF.SampleDensity(voxelCoord)
    b. d_new = d  CutStrength x power_final x marchStepSize
-   c. VoxelSDF.WriteDensity(voxelCoord, clamp(d_new, 1, 1))
+   c. VoxelSDF.WriteDensity(voxelCoord, clamp(d_new, -1, 1))
    d. Mark chunk dirty
 3. After march completes: EventBus->VoxelSystem: ScheduleAsyncRebuild(affectedChunks[])
    -> Rebuild runs on worker thread, main thread continues
@@ -416,7 +416,7 @@ EffectType 4 (Torch)     -> MaterialSystem.OnTorchSignal, VoxelSystem.OnMeltSign
 
 // Prevent duplicate signals same frame (tool held, continuous):
 last_signal_frame[ToolID] stored in NativeHashMap<uint, uint>
-On Publish: if current_frame  last_signal_frame[ToolID] < dedup_window: merge, don't enqueue new
+On Publish: if current_frame - last_signal_frame[ToolID] < dedup_window: merge, don't enqueue new
 dedup_window: 1 frame for instantaneous tools; 0 for sustained (accumulate all)
 
 ---
@@ -441,14 +441,14 @@ CancelAction():
 // Guard against stuck Busy state:
 busy_watchdog[ToolID] = Time.fixedTime at Busy entry
 Per FixedUpdate check:
-  if (flags & 0x04) AND (Time.fixedTime  busy_watchdog > 8.0f):
+  if (flags & 0x04) AND (Time.fixedTime - busy_watchdog > 8.0f):
     LogWarning("ToolID {id} Busy deadlock @ 8s - force CancelAction()")
     CancelAction()
 
 ### 8.3 Origin Shift Mid-Interaction
 
 FloatingOrigin.OnShift subscription (all tool instances):
-  delta = newOffset  oldOffset                 // double3
+  delta = newOffset - oldOffset                 // double3
   packet.Origin   -= (float3)delta
   If HarpoonLinkRecord active:
     record.HitPoint     -= (float3)delta
@@ -485,14 +485,14 @@ BreakLink triggers on ANY of:
 AudioSystem.OnDrillSignal(s):
   pitch  = lerp(0.85, 1.15, s.PowerDelivered)
   volume = s.PowerDelivered x depthAttenuation   // deeper = more muffled
-  Filter: LowpassCutoff = lerp(800, 4000, 1(depth/maxDepth))
+  Filter: LowpassCutoff = lerp(800, 4000, 1-(depth/maxDepth))
 
 AudioSystem.OnHarpoonSignal(s):
   One-shot fire SFX on Publish
-  Loop tension-creak SFX while TargetLock active, pitch  tension/MaxTension
+  Loop tension-creak SFX while TargetLock active, pitch proportional_to tension/MaxTension
 
 AudioSystem.OnCutSignal(s):
-  Loop plasma-hum, pitch  mean voxel_density along cut path
+  Loop plasma-hum, pitch proportional_to mean voxel_density along cut path
 
 // All audio: spatialize at s.HitPoint, not tool origin
 // Underwater muffle: apply convolution reverb IR switched by depth zone

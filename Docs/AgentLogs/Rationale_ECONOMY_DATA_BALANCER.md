@@ -100,3 +100,15 @@ Rejected Alternatives: Treating candidate component/buildable IDs as final mappi
 Scalability potential: Low uses this file as an import gate; Middle can add explicit binding tables; High/Ultra can add richer unlock visualization after mappings are approved.
 
 Hardware Impact: The binding review is offline-only. It prevents failed runtime hash lookups and string fallback paths. Estimated preserved saving: 5-20 us per lookup burst.
+
+## Decision 9 - Time-To-First-Submarine Correction
+
+Problem: The report's `163.9 kWh` and `22.8 s` values were top-level target recipe totals only. They did not include prerequisite component recipes. The raw resource expansion was correct, but the energy/time summary was misleading.
+
+Solution: Added `Data/Economy/Time_To_First_Submarine.json` and extended `Tools/EconomyValidator.py` to recursively expand the seven target items from `Recipes.json`. The validated full path is 46 recipe batches, 17 unique recipes, `433.1 kWh`, and `81.3 s` machine craft time. At a literal 30 kW source, static pathing plus energy wait is `901.7 minutes`.
+
+Rejected Alternatives: Keeping the old `41 minute` report was rejected because it only makes sense when fabrication energy is precharged, abstracted, or supplied by a much stronger source. Silently lowering all kWh costs was rejected because that would change balance data without a runtime energy owner confirming the intended pacing model.
+
+Scalability potential: Low can treat fabrication energy as abstracted authoring cost; Middle can gate energy by base battery state; High/Ultra can use richer charging VFX and fabricator staging after the energy model is approved.
+
+Hardware Impact: The correction is offline-only, 0 us gameplay. It prevents a runtime tuning failure where players would wait hours under literal 30 kW energy gating.

@@ -18,6 +18,7 @@ Runtime Unity import/profiler proof: PENDING VERIFICATION
 8. Loop 8: Validator reviewed after hardening; removed redundant dependency graph write and added exact recipe category quota checks for components, tools, base modules, and submarine upgrades.
 9. Loop 9: Added `Data/Economy/Runtime_Binding_Review.json` so the 22 unresolved runtime bindings are machine-readable; validator now checks this report.
 10. Loop 10: Validator now scans current `Assets/_Project/Data` asset IDs and fails if the binding review counts or unresolved ID list drift from actual project data.
+11. Loop 11: Found Time-to-First-Submarine report defect: `163.9 kWh / 22.8 s` was top-level-only. Added `Time_To_First_Submarine.json`, recursive expansion validation, and corrected literal-energy timing to `433.1 kWh / 81.3 s / 901.7 min at 30 kW`.
 
 ## Checklist
 
@@ -34,7 +35,7 @@ Runtime Unity import/profiler proof: PENDING VERIFICATION
 - [x] Task 11 - FNV-1a Hashing | DOD: every runtime-facing `*_id` has matching project-compatible `LocHash.Compute` bit-pattern `*_hash32`; validator checked 727 hash pairs after binding-report inclusion | Alternative rejected: local lowercase UTF-8 hash convention after self-review | Microsecond estimate: 5-20 us saved per lookup burst.
 - [x] Task 12 - Validation Script | DOD: added standalone `Tools/EconomyValidator.py` | Alternative rejected: manual review and Unity C# validator | Microsecond estimate: 0 us gameplay, offline guard.
 - [x] Task 13 - Run Validator | DOD: `python Tools/EconomyValidator.py --root .` exits 0 and prints `STATUS: ECONOMY BALANCED` | Alternative rejected: stale or chat-only proof | Microsecond estimate: 0 us gameplay.
-- [x] Task 14 - Economy Report | DOD: `Docs/Design/Economy_Matrix_v1.md` includes Time to First Submarine with raw requirements and 41 minute optimal estimate | Alternative rejected: vague progression statement | Microsecond estimate: 0 us gameplay.
+- [x] Task 14 - Economy Report | DOD: `Docs/Design/Economy_Matrix_v1.md` and `Data/Economy/Time_To_First_Submarine.json` include raw requirements, recursive recipe batches, and corrected literal-energy timing | Alternative rejected: preserving invalid top-level-only `163.9 kWh / 41 min` interpretation | Microsecond estimate: 0 us gameplay.
 - [x] Task 15 - Reconnaissance | DOD: no `.cs` files edited; output scope is data, docs, and Python validator only | Alternative rejected: runtime importer work outside prompt | Microsecond estimate: prevents unknown runtime regression.
 
 ## Verification
@@ -45,8 +46,9 @@ matrix_rows=150 biomes=10 resources=15
 recipes=40 tier_ratios=[3.667, 2.69]
 survival_velocity_bands=5
 binding_unresolved_ids=22
-hash_pairs_checked=727
-unique_id_hashes=172
+first_sub_recursive_kwh=433.1 literal_minutes=901.7
+hash_pairs_checked=781
+unique_id_hashes=175
 STATUS: ECONOMY BALANCED
 ```
 
@@ -57,3 +59,4 @@ STATUS: ECONOMY BALANCED
 - [x] Economic loop review tightened | DOD: validator now checks duplicate item values, recipe result value parity, no-profit deconstruction, and 172 unique generated ID hashes | Alternative rejected: relying only on acyclic recipe graph.
 - [x] Recipe category review tightened | DOD: validator now enforces 12 components, 6 tools, 8 base modules, and 14 submarine upgrades | Alternative rejected: accepting any 40 recipes regardless of category coverage.
 - [x] Runtime binding risk documented | DOD: asset scan found 55 unique recipe item/build IDs, 33 matching current data IDs, 22 economy-defined IDs requiring importer mapping or assets; `Runtime_Binding_Review.json` records them and validator re-scans current assets to verify the report | Alternative rejected: silently claiming Unity runtime readiness.
+- [x] Time-to-first-submarine defect corrected | DOD: validator recursively expands all prerequisite recipes and proves `433.1 kWh`, `81.3 s`, and `901.7 min` literal total at 30 kW | Alternative rejected: keeping the old top-level-only report.

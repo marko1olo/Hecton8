@@ -122,7 +122,7 @@ Deserialize(tileID):
 ### 3.2 Sphere Crater Stamp
 
 ApplySphereCarve(center: float3, radius: float, chunk: VoxelChunk):
-  for each voxel p in AABB(center-radius, center+radius)  chunk.bounds:
+  for each voxel p in AABB(center-radius, center+radius)  AND  chunk.bounds:
     sphere_sdf = length(p - center) - radius
     current    = ReadSDF(p)
     new_sdf    = min(current, sphere_sdf)          // CSG union-of-voids

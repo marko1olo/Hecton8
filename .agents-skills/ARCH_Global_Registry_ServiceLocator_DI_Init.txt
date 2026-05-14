@@ -177,7 +177,7 @@ public sealed class AudioService : MonoBehaviour, IAudioService
     public void Initialize()
     {
         GlobalRegistry.RegisterService(ref GlobalRegistry.Audio, (IAudioService)this);
-        //  requires: public static IAudioService Audio; (internal set)
+        // above requires: public static IAudioService Audio; (internal set)
     }
 
     private void OnDisable()

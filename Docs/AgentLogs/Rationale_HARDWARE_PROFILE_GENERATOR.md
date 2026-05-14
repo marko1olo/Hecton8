@@ -47,3 +47,15 @@ Solution: Rehydrated `Data/Hardware/Profiles.json`, `Status_HARDWARE_PROFILE_GEN
 Rejected Alternatives: Switching to the new unrelated batch prompt was rejected because the user explicitly ordered this hardware profiler continuation.
 Scalability potential: Keeps the Homeostasis profile data available for downstream consumers.
 Hardware Impact: 0 us/frame.
+
+Problem: Final source hygiene review found a note that described a source fetch condition instead of the hardware fact.
+Solution: Replaced it with a factual MX350 secondary cross-check note and re-ran JSON array/count validation.
+Rejected Alternatives: Keeping process noise inside runtime data was rejected because data consumers need facts, not scraper state.
+Scalability potential: No runtime effect; improves downstream confidence classification.
+Hardware Impact: 0 us/frame.
+
+Problem: Human-readable profile IDs would push a naive runtime parser toward string comparisons.
+Solution: Added FNV-1a 32-bit stable hash arrays for phases, profiles, tiers, and reference devices. Strings remain for audits; numeric hashes are the runtime key path.
+Rejected Alternatives: Removing names entirely was rejected because logs and design review need readable labels. Nested key/value dictionaries were rejected because they are worse for zero-GC parsing.
+Scalability potential: C# side can load hashes into fixed `uint` arrays and branch on integers without heap string work.
+Hardware Impact: Expected hot-path impact remains 0 us/frame; cold parse avoids string-key dependency.

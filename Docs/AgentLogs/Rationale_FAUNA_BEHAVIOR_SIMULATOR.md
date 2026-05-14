@@ -69,3 +69,17 @@ Solution: Keep `fearCurvePower=2.0`. The comparison exported `linearVsQuadraticS
 Rejected Alternatives: Linear fear was rejected because it applies too much fear at low threat and suppresses early hunting; cubic fear was not selected because it delays braking too long for scarcity protection.
 Scalability potential: Toaster tier uses one multiply. Ultra tier can use the same scalar to drive richer animation, bioluminescent panic, and audio layers.
 Hardware Impact: Runtime cost estimate is one extra multiply if integrated. Actual C# cost remains PENDING VERIFICATION.
+
+## Polish Decisions
+
+Problem: `<POLISH_MANDATE>` was absent from `Docs/Tasks/CURRENT_BATCH.md`, but the status was 100% checked and an anti-bloat pass was still required.
+Solution: Record `POLISH_MANDATE_NOT_FOUND` and perform local anti-bloat on own files only.
+Rejected Alternatives: Inventing a missing polish directive or reading neighboring agent prompts.
+Scalability potential: Keeps handoff bounded and reduces runtime data ingestion surface.
+Hardware Impact: No runtime hardware impact measured.
+
+Problem: The first constants export duplicated the full 40 KB report, including 101 timeline samples, in `Data/AI/Fauna_Global_Weights.json`.
+Solution: Changed `FaunaBalanceSim.py` so the `Data/AI` output is a compact 1812-byte constants handoff with a pointer to `Tools/AI_Sim/FaunaBalanceSim_Report.json`; the report retains full heatmap/noise/retinal/fear telemetry.
+Rejected Alternatives: Keeping duplicate report data in the runtime-facing constants file. It is avoidable bloat.
+Scalability potential: Low-end devices parse the compact handoff; high-end tooling can inspect the detailed report offline.
+Hardware Impact: Runtime cost is still unmeasured and PENDING VERIFICATION; file-size reduction is static evidence only.

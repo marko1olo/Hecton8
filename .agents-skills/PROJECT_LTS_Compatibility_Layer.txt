@@ -658,16 +658,16 @@ Prevents silent breakage when old branches merge late.
 ## XII. VALIDATION CHECKLIST - PER PULL REQUEST
 
 ```
- No new UnityEngine.* references in Layer 0/1/2
- All new Unity API usage behind preprocessor guard with fallback
- All new third-party usage behind interface + adapter + fallback
- api_surface.hash unchanged for Layer 0/1/2 (or approved change)
- Zero CS0618/CS0619 warnings
+[ ] No new UnityEngine.* references in Layer 0/1/2
+[ ] All new Unity API usage behind preprocessor guard with fallback
+[ ] All new third-party usage behind interface + adapter + fallback
+[ ] api_surface.hash unchanged for Layer 0/1/2 (or approved change)
+[ ] Zero CS0618/CS0619 warnings
  ModdingFacade public surface <= 8 methods
- No NativeArray/pointer types in mod-facing APIs
+[ ] No NativeArray/pointer types in mod-facing APIs
  Adapter method count per package <= 12
- New adapter has NoOp fallback registered
- Build passes on both LTS Current and LTS Next
+[ ] New adapter has NoOp fallback registered
+[ ] Build passes on both LTS Current and LTS Next
 ```
 
 ---

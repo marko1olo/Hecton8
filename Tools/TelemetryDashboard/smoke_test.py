@@ -84,6 +84,10 @@ def main() -> int:
             )
         assert round(server.parse_csv_file(csv_path, "QA_Endurance_Log.csv")["frameSeries"][0]["frameTimeMs"], 3) == 16.667
 
+        hphi_path = root / "HECTON_PHI_REPORT.md"
+        hphi_path.write_text("Date: 2026-05-13\nH-Phi_static = 0.973 * 0.996 * 0.001 * 0.535 = 0.00062\n", encoding="utf-8")
+        assert server.parse_hphi_report(hphi_path)["value"] == 0.00062
+
         old_logs = server.AGENT_LOGS
         server.AGENT_LOGS = root
         try:

@@ -39,7 +39,10 @@ Status: SCENARIO STABILIZED - PENDING UNITY VERIFICATION
 ## Verification Ledger
 
 - Compile guard: BLOCKED BY TOOLCHAIN. `dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary` failed because `dotnet` is not available in the shell PATH.
+- Toolchain probe: BLOCKED BY TOOLCHAIN. `Get-Command dotnet` returned absent; `C:\Program Files\dotnet\dotnet.exe` and `C:\Program Files (x86)\dotnet\dotnet.exe` are also absent.
+- Handoff JSON validation: STATIC_DOC PASS. `ConvertFrom-Json` parsed `Outpost_FailSafe_Handoff.json`; result `flags=30`, `locEntries=15`, `hashMismatches=0`.
+- ASCII hygiene: STATIC_DOC PASS. `rg -n "[^\x00-\x7F]"` over the authored mission/status/rationale/log/handoff files returned no matches.
 - Unity Console: PENDING VERIFICATION. No Unity/MCP session was invoked.
 - Runtime/GC proof: PENDING VERIFICATION. Documentation-only change, no profiler or GCMonitor artifact.
 - Polish mandate: NOT PRESENT. `Select-String -Path Docs\Tasks\CURRENT_BATCH.md -Pattern '<POLISH_MANDATE>' -Quiet` returned `False`.
-- Final report: appended to `Docs/AgentLogs/LOG_MISSION_FAIL_SAFE_ARCHITECT.md`.
+- Final report: appended to `Docs/AgentLogs/LOG_MISSION_FAIL_SAFE_ARCHITECT.md`, including the handoff addendum.

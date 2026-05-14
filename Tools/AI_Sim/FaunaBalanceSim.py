@@ -399,6 +399,26 @@ def write_json(path: Path, data: Dict[str, object]) -> None:
     path.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
+def constants_payload(payload: Dict[str, object]) -> Dict[str, object]:
+    return {
+        "schemaVersion": payload["schemaVersion"],
+        "status": payload["status"],
+        "generatedBy": payload["generatedBy"],
+        "evidenceClass": payload["evidenceClass"],
+        "runtimeUnityProof": payload["runtimeUnityProof"],
+        "selectedConstants": payload["selectedConstants"],
+        "speciesTargets": payload["speciesTargets"],
+        "millionFrameSummary": {
+            "frames": payload["millionFrameRun"]["frames"],
+            "score": payload["millionFrameRun"]["score"],
+            "population": payload["millionFrameRun"]["population"],
+            "stability": payload["millionFrameRun"]["stability"],
+        },
+        "conclusions": payload["conclusions"],
+        "detailedReport": "Tools/AI_Sim/FaunaBalanceSim_Report.json",
+    }
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="HECTON-8 fauna behavior balance simulator.")
     parser.add_argument("--frames", type=int, default=DEFAULT_FRAMES)
@@ -422,7 +442,7 @@ def main() -> int:
     side_frames = 10_000 if args.quick else min(120_000, max(60_000, frames // 8))
     noise, retinal, curves = side_runs(final_weights, side_frames, stable_seed(args.seed, 0x53494445))
     payload = export_payload(final, heatmap, noise, retinal, curves, time.perf_counter() - start)
-    write_json(Path(args.output), payload)
+    write_json(Path(args.output), constants_payload(payload))
     write_json(Path(args.report), payload)
 
     print("FAUNA BALANCE SIMULATION COMPLETE")

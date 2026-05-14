@@ -15,3 +15,9 @@ Verification status -> `STRICT_PROFILE_VALIDATION_OK`; source/profile/tier/refer
 Final status -> HARDWARE PROFILED / COMPILE PENDING VERIFICATION.
 
 Source correction -> Replaced the MX350 news-article source ID with `LAPTOPMEDIA_MX350_REFERENCE` and kept `TECHPOWERUP_MX350_REFERENCE` as a cross-check. Final strict validation passed after this correction.
+
+Final source hygiene -> Removed process-noise wording from the MX350 source note. Validation after correction: `FINAL_JSON_ARRAY_VALIDATION_OK`; `git diff --check` clean.
+
+Encoding/mask review -> All four hardware profile artifacts are ASCII-only. Pressure masks and bit indexes print as expected: `0x0`, `0x70`, `0x2007F0`, `0xF017F0`; bits `4,5,6,7,8,9,10,12,20,21,22,23`.
+
+Runtime key review -> Added FNV-1a `StableHash32` arrays for phase/profile/tier/reference IDs. Validation after addition: `HASHED_PROFILE_VALIDATION_OK`.

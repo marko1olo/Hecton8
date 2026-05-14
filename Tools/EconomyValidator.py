@@ -10,6 +10,7 @@ Checks:
 - Three-to-one tier progression medians.
 - Survival O2/calorie table integrity, including fast swim = 3x slow swim.
 - Runtime binding review summary for economy-defined IDs.
+- Time-to-first-submarine recursive recipe expansion.
 """
 
 from __future__ import annotations
@@ -193,6 +194,9 @@ def validate_global_hash_collisions(economy_dir: Path) -> int:
     binding_path = economy_dir / "Runtime_Binding_Review.json"
     if binding_path.exists():
         collect_json_id_hashes(load_json(binding_path), "RuntimeBinding", pairs)
+    first_sub_path = economy_dir / "Time_To_First_Submarine.json"
+    if first_sub_path.exists():
+        collect_json_id_hashes(load_json(first_sub_path), "FirstSubmarine", pairs)
     return len(pairs)
 
 
@@ -392,6 +396,79 @@ def validate_runtime_binding_review(path: Path, recipes_path: Path, root: Path) 
     return {"hashes": hash_checks, "unresolved": len(unresolved)}
 
 
+def expand_recipe_closure(item_id: str, quantity: int, recipes_by_output: dict[str, Any], raw: dict[str, int], recipe_batches: dict[str, int]) -> None:
+    recipe = recipes_by_output.get(item_id)
+    if recipe is None:
+        raw[item_id] = raw.get(item_id, 0) + quantity
+        return
+
+    result_quantity = int(recipe["result"]["quantity"])
+    batches = (quantity + result_quantity - 1) // result_quantity
+    recipe_id = recipe["recipe_id"]
+    recipe_batches[recipe_id] = recipe_batches.get(recipe_id, 0) + batches
+    for ingredient in recipe["ingredients"]:
+        expand_recipe_closure(ingredient["item_id"], int(ingredient["quantity"]) * batches, recipes_by_output, raw, recipe_batches)
+
+
+def validate_first_submarine_path(path: Path, recipes_path: Path) -> dict[str, Any]:
+    require(path.exists(), f"missing {path}")
+    data = load_json(path)
+    hash_checks = check_hash_pairs(data, "FirstSubmarine")
+    recipes_data = load_json(recipes_path)
+    recipes = recipes_data.get("recipes", [])
+    recipes_by_output = {recipe["result"]["item_id"]: recipe for recipe in recipes}
+    recipes_by_id = {recipe["recipe_id"]: recipe for recipe in recipes}
+
+    raw: dict[str, int] = {}
+    recipe_batches: dict[str, int] = {}
+    target_items = data["target_items"]
+    require(len(target_items) == 7, "first submarine path must have 7 target items")
+    for target in target_items:
+        expand_recipe_closure(target["item_id"], int(target["quantity"]), recipes_by_output, raw, recipe_batches)
+
+    recorded_raw = {entry["item_id"]: int(entry["quantity"]) for entry in data["raw_resources"]}
+    require(recorded_raw == raw, "first submarine raw resource expansion mismatch")
+
+    recorded_batches = {entry["recipe_id"]: int(entry["batches"]) for entry in data["recipe_batches"]}
+    require(recorded_batches == recipe_batches, "first submarine recipe batch expansion mismatch")
+
+    top_level_kwh = 0.0
+    top_level_seconds = 0.0
+    for target in target_items:
+        recipe = recipes_by_output.get(target["item_id"])
+        require(recipe is not None, f"first submarine target {target['item_id']} has no recipe")
+        quantity = int(target["quantity"])
+        top_level_kwh += float(recipe["fabrication_kwh"]) * quantity
+        top_level_seconds += float(recipe["craft_time_seconds"]) * quantity
+
+    recursive_kwh = 0.0
+    recursive_seconds = 0.0
+    for recipe_id, batches in recipe_batches.items():
+        recipe = recipes_by_id[recipe_id]
+        recursive_kwh += float(recipe["fabrication_kwh"]) * batches
+        recursive_seconds += float(recipe["craft_time_seconds"]) * batches
+
+    assumptions = data["assumptions"]
+    generator_kw = float(assumptions["generator_power_kw"])
+    require(generator_kw > 0.0, "first submarine generator power must be positive")
+    static_minutes = float(assumptions["static_path_minutes_excluding_energy_wait"])
+    expected_top_wait = top_level_kwh / generator_kw * 60.0
+    expected_recursive_wait = recursive_kwh / generator_kw * 60.0
+    expected_literal_total = static_minutes + expected_recursive_wait
+    totals = data["totals"]
+    require(abs(float(totals["top_level_target_only_fabrication_kwh"]) - round(top_level_kwh, 3)) <= 0.001, "first submarine top-level kWh mismatch")
+    require(abs(float(totals["top_level_target_only_craft_time_seconds"]) - round(top_level_seconds, 3)) <= 0.001, "first submarine top-level craft time mismatch")
+    require(abs(float(totals["top_level_energy_wait_minutes_at_30kw"]) - round(expected_top_wait, 3)) <= 0.001, "first submarine top-level energy wait mismatch")
+    require(int(totals["recursive_recipe_batches"]) == sum(recipe_batches.values()), "first submarine recursive batch count mismatch")
+    require(int(totals["unique_recursive_recipes"]) == len(recipe_batches), "first submarine unique recipe count mismatch")
+    require(abs(float(totals["recursive_fabrication_kwh"]) - round(recursive_kwh, 3)) <= 0.001, "first submarine recursive kWh mismatch")
+    require(abs(float(totals["recursive_craft_time_seconds"]) - round(recursive_seconds, 3)) <= 0.001, "first submarine recursive craft time mismatch")
+    require(abs(float(totals["recursive_energy_wait_minutes_at_30kw"]) - round(expected_recursive_wait, 3)) <= 0.001, "first submarine recursive energy wait mismatch")
+    require(abs(float(totals["literal_total_minutes_at_30kw"]) - round(expected_literal_total, 3)) <= 0.001, "first submarine literal total mismatch")
+    require(data["status_id"] == "economy.path.requires_literal_energy_rebalance", "first submarine status must flag literal kWh rebalance")
+    return {"hashes": hash_checks, "recursive_kwh": round(recursive_kwh, 3), "literal_minutes": round(expected_literal_total, 3)}
+
+
 def validate_numeric_bands(entries: list[dict[str, Any]], min_key: str, max_key: str, value_key: str | None, label: str) -> None:
     require(entries, f"{label} bands are empty")
     ordered = sorted(entries, key=lambda entry: float(entry[min_key]))
@@ -423,13 +500,15 @@ def main() -> None:
     recipe_result = validate_recipes(economy_dir / "Recipes.json")
     survival_result = validate_survival(economy_dir / "Survival_Stats.json")
     binding_result = validate_runtime_binding_review(economy_dir / "Runtime_Binding_Review.json", economy_dir / "Recipes.json", root)
+    first_sub_result = validate_first_submarine_path(economy_dir / "Time_To_First_Submarine.json", economy_dir / "Recipes.json")
     unique_hashes = validate_global_hash_collisions(economy_dir)
-    total_hashes = matrix_result["hashes"] + recipe_result["hashes"] + survival_result["hashes"] + binding_result["hashes"]
+    total_hashes = matrix_result["hashes"] + recipe_result["hashes"] + survival_result["hashes"] + binding_result["hashes"] + first_sub_result["hashes"]
     print("ECONOMY VALIDATION OK")
     print(f"matrix_rows={matrix_result['rows']} biomes={matrix_result['biomes']} resources={matrix_result['resources']}")
     print(f"recipes={recipe_result['recipes']} tier_ratios={recipe_result['tier_ratios']}")
     print(f"survival_velocity_bands={survival_result['velocity_bands']}")
     print(f"binding_unresolved_ids={binding_result['unresolved']}")
+    print(f"first_sub_recursive_kwh={first_sub_result['recursive_kwh']} literal_minutes={first_sub_result['literal_minutes']}")
     print(f"hash_pairs_checked={total_hashes}")
     print(f"unique_id_hashes={unique_hashes}")
     print("STATUS: ECONOMY BALANCED")
