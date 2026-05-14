@@ -61,3 +61,11 @@ Cinematic Cheats used -> Steam Deck spends the available memory on sharper textu
 Exact Microseconds saved -> 0 us/frame added. Bootstrap-only branch. Visual gain on Steam Deck is expected from one mip level of texture residency; measured memory delta is PENDING RUNTIME CAPTURE.
 
 Verification status -> `PROFILE_TEXTURE_CLAMP_WIRING_OK`; call-site search confirms the updated texture-budget resolver signature is used only by `VRAMEnforcer`. Hot-path scan remains clean. Compile remains PENDING VERIFICATION for missing local toolchain.
+
+Persistent catalog guard -> Added `Tools/Hardware/ValidateHardwareProfileCatalog.py` to replace one-off inline parity checks. The guard verifies flat JSON shape, FNV-1a stable hashes, generated profile constants, pressure masks, phase-budget switch returns, and UMA graphics/texture budget call-sites.
+
+Cinematic Cheats used -> None in runtime. The guard protects existing presentation-sacrifice budgets and visual-overkill data without adding simulation truth.
+
+Exact Microseconds saved -> 0 us/frame. Offline validation only; no runtime C# changed in this pass.
+
+Verification status -> `python -B Tools\Hardware\ValidateHardwareProfileCatalog.py` returns `HARDWARE_PROFILE_CATALOG_GUARD=PASS profiles=2 phases=4 masks=4 constants=19`; `python -m py_compile Tools\Hardware\ValidateHardwareProfileCatalog.py` passed. Unity/C# compile remains PENDING VERIFICATION for missing local toolchain.

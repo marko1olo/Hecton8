@@ -57,3 +57,10 @@ STATUS: RUNTIME CATALOG INTEGRATED | COMPILE PENDING VERIFICATION
 - [x] Loop 23 - Accuracy correction: added explicit `IsQuest3Like` detection and rejected broad non-Deck UMA equals Quest 3 logic. Result: unknown UMA remains conservative.
 - [x] Loop 24 - Texture clamp implementation: `HardwareProfileCatalog.ResolveSharedMemoryTextureBudgetMegabytes` is profile-aware; `VRAMEnforcer.ResolveMinimumTextureMipLimit` uses the catalog to keep Steam Deck at half-res clamp and Quest/unknown UMA at shared-memory clamp. Result: `PROFILE_TEXTURE_CLAMP_WIRING_OK`.
 - [x] Loop 25 - Texture clamp review: call-site search confirms only the new signature is used; hot-path scan remains clean for the patched files. Compile remains PENDING VERIFICATION due absent local toolchain.
+- [x] Loop 26 - Persistent catalog parity guard: added `Tools/Hardware/ValidateHardwareProfileCatalog.py` so JSON/C# drift is caught by a tracked command instead of a one-off inline script. Result: `HARDWARE_PROFILE_CATALOG_GUARD=PASS profiles=2 phases=4 masks=4 constants=19`.
+
+## Latest Verification
+
+- Hardware catalog guard: `python -B Tools\Hardware\ValidateHardwareProfileCatalog.py` -> PASS (`HARDWARE_PROFILE_CATALOG_GUARD=PASS profiles=2 phases=4 masks=4 constants=19`).
+- Python syntax: `python -m py_compile Tools\Hardware\ValidateHardwareProfileCatalog.py` -> PASS.
+- Unity/C# compile: PENDING VERIFICATION; local toolchain remains unavailable from prior probes.

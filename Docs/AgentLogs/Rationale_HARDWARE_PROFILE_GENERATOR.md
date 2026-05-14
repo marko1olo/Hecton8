@@ -107,3 +107,9 @@ Solution: Made shared-memory texture budget resolution profile-aware and routed 
 Rejected Alternatives: Leaving one-size shared-memory texture clamps was rejected because it wastes Steam Deck visual budget. Dropping Quest 3 to mip limit 1 was rejected because the Quest 3 profile budget is 768 MB and thermal/XR proof is absent.
 Scalability potential: Steam Deck spends saved budget on sharper textures; Quest 3 keeps conservative texture residency and buys image quality through fixed foveation/dynamic resolution instead of raw texture residency.
 Hardware Impact: 0 us/frame. Cold bootstrap branch only. Expected gain is visual quality on Steam Deck with no added per-frame cost; exact frame/memory delta remains PENDING RUNTIME CAPTURE.
+
+Problem: Runtime catalog parity with `Data/Hardware/Profiles.json` was proven by one-off inline scripts, which is weak evidence after later agents edit either the JSON or C# catalog.
+Solution: Added `Tools/Hardware/ValidateHardwareProfileCatalog.py`. It validates flat JSON shape, FNV-1a hash arrays, profile constants, pressure masks, phase budget switch returns, and the UMA graphics/texture budget call-sites.
+Rejected Alternatives: Relying on prose/status evidence was rejected because C# constants can drift silently. Runtime JSON parsing was rejected again because this guard is offline and must not change boot/runtime allocation behavior.
+Scalability potential: Low/Handheld/Ultra profile data stays machine-checkable without adding runtime arrays or parsers. Ultra visual-overkill settings remain data-driven in JSON while the C# path stays constant/switch based.
+Hardware Impact: 0 us/frame. Offline validation only; it protects Steam Deck/Quest budget correctness before Unity import.
