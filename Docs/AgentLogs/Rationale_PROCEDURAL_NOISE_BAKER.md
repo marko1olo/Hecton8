@@ -79,3 +79,35 @@ Solution: Rebuilt the PNGs into `%TEMP%\h8_noise_review_PROCEDURAL_NOISE_BAKER` 
 Rejected Alternatives: Treating existing JSON metrics as determinism proof, or leaving review artifacts in the repository.
 Scalability potential: Deterministic source bytes mean all hardware tiers consume identical source data; tier differences remain sampling/import/runtime choices.
 Hardware Impact: 0 us runtime. Offline-only review pass.
+
+## Decision 011 - Portable Metrics Paths
+
+Problem: Tracked JSON metrics embedded machine-local absolute workspace paths, which makes evidence noisy and non-portable across clone locations.
+Solution: Added `artifact_path()` to serialize repository-owned artifacts as POSIX-style repository-relative paths, then regenerated `NoiseBakeMetrics.json`, `NoiseBakeMetrics.verify.json`, `NoiseBakeMetrics.verify2.json`, and `NoiseBakeMetrics.final.json`.
+Rejected Alternatives: Leaving local absolute paths in tracked metrics, or hand-editing JSON without fixing the baker that produces it.
+Scalability potential: No runtime effect. Low, Middle, High, and Ultra tiers consume the same PNG bytes; this only hardens evidence portability.
+Hardware Impact: 0 us runtime. Offline metadata correction only.
+
+## Decision 012 - Volatile Timing Opt-In
+
+Problem: `NoiseBakeMetrics.json` stored `bake_seconds`, so every full bake changed tracked evidence even when texture bytes and verification metrics were identical.
+Solution: Removed timing from default metrics and added `--include-timing` for explicit local benchmarking. Regenerated tracked metrics without volatile timing.
+Rejected Alternatives: Keeping noisy timing in committed metrics, rounding the timer, or hand-editing JSON while leaving the generator unstable.
+Scalability potential: No runtime effect. Stable metrics reduce integration noise for all hardware tiers while preserving optional local benchmark data when needed.
+Hardware Impact: 0 us runtime. Offline metadata stability only.
+
+## Decision 013 - Bounded Optimizer Subprocess
+
+Problem: The evidence wording implied `subprocess` was absent, while the baker legitimately invokes optional external PNG optimizers. The call also lacked a timeout.
+Solution: Keep `subprocess` only in the offline optimizer path, add `OPTIMIZER_TIMEOUT_SECONDS = 120`, catch `TimeoutExpired`, and record the boundary explicitly.
+Rejected Alternatives: Removing optimizer support entirely was rejected because the prompt requested `optipng` or similar when available. Leaving the unbounded call was rejected because a broken external optimizer can stall offline batch execution.
+Scalability potential: Runtime data is unchanged. Low, Middle, High, and Ultra tiers still consume the same PNG bytes; only offline bake reliability improves.
+Hardware Impact: 0 us runtime. Offline batch worst-case wait is now bounded per optimizer attempt.
+
+## Decision 014 - Independent Spectrum Verifier
+
+Problem: `VerifyBlueNoiseSpectrum.py` imported `verify_assets()` from the generator, so the producer and verifier shared formula and threshold logic. A bad shared implementation could pass itself.
+Solution: Rewrote the verifier as a standalone PNG readback tool with its own IGN formula, Fourier spectrum thresholds, seam metrics, repository-relative path serializer, and JSON writer.
+Rejected Alternatives: Keeping the generator-backed verifier, or adding a second wrapper that still imported generator internals.
+Scalability potential: No runtime effect. Stronger offline proof keeps Low, Middle, High, and Ultra tiers consuming verified source pixels.
+Hardware Impact: 0 us runtime. Offline verification only.

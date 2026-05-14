@@ -95,3 +95,15 @@ Solution: Added scalar `sourceAuthorityRankLegend` while preserving the flat JSO
 Rejected Alternatives: Adding nested metadata was rejected by the zero-GC parser contract.
 Scalability potential: Validation tools can interpret source rank without hardcoded docs lookup.
 Hardware Impact: 0 us/frame.
+
+Problem: The flat JSON was accurate, but existing runtime UMA budgeting still used one generic 960 MB shared-memory clamp, which is below the profiled Quest 3 and Steam Deck budgets.
+Solution: Added `HardwareProfileCatalog` as a constant/switch catalog and wired `HardwareTierDetector` to resolve shared-memory graphics budgets from explicit Steam Deck and Quest 3 signatures while keeping the 960 MB fallback for unknown UMA devices.
+Rejected Alternatives: Runtime JSON parsing was rejected because it would introduce managed parsing pressure and boot complexity. Managed static arrays were rejected because switch returns are enough for two generated profiles. Treating every non-Deck UMA device as Quest 3 was rejected as over-broad.
+Scalability potential: Quest 3-like UMA gets a 1536 MB graphics budget; Steam Deck-like UMA gets a 4096 MB handheld budget; unknown UMA keeps the conservative 960 MB fallback. Ultra remains separate through tier data and visual-overkill constants, not through extra simulation truth.
+Hardware Impact: 0 us/frame. Cold detector lookup is a few string checks at subsystem initialization plus constant return. Expected low-end gain is fewer false-positive VRAM pressure clamps on Steam Deck/Quest 3 while preserving conservative behavior on unknown UMA; exact microseconds remain PENDING RUNTIME CAPTURE.
+
+Problem: `VRAMEnforcer` still applied the same mip limit 2 to every shared-memory device, causing Steam Deck to pay the Quest/unknown UMA texture clamp despite the Steam Deck profile declaring a 2048 MB texture budget.
+Solution: Made shared-memory texture budget resolution profile-aware and routed `VRAMEnforcer` mip selection through the catalog. Steam Deck-like hardware now uses mip limit 1; Quest 3-like and unknown UMA remain at mip limit 2.
+Rejected Alternatives: Leaving one-size shared-memory texture clamps was rejected because it wastes Steam Deck visual budget. Dropping Quest 3 to mip limit 1 was rejected because the Quest 3 profile budget is 768 MB and thermal/XR proof is absent.
+Scalability potential: Steam Deck spends saved budget on sharper textures; Quest 3 keeps conservative texture residency and buys image quality through fixed foveation/dynamic resolution instead of raw texture residency.
+Hardware Impact: 0 us/frame. Cold bootstrap branch only. Expected gain is visual quality on Steam Deck with no added per-frame cost; exact frame/memory delta remains PENDING RUNTIME CAPTURE.

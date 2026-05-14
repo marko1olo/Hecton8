@@ -115,12 +115,24 @@ namespace Hecton8.Optimization
 
         private static void ApplyTextureBudget()
         {
-            int minimumMipLimit = _sharedMemoryBudgetActive
-                ? SharedMemoryTextureMipLimit
-                : HalfResolutionTextureMipLimit;
+            int minimumMipLimit = ResolveMinimumTextureMipLimit();
             int enforcedMipLimit = Mathf.Max(QualitySettings.globalTextureMipmapLimit, minimumMipLimit);
             if (QualitySettings.globalTextureMipmapLimit != enforcedMipLimit)
                 QualitySettings.globalTextureMipmapLimit = enforcedMipLimit;
+        }
+
+        private static int ResolveMinimumTextureMipLimit()
+        {
+            if (!_sharedMemoryBudgetActive)
+                return HalfResolutionTextureMipLimit;
+
+            int textureBudgetMb = HardwareProfileCatalog.ResolveSharedMemoryTextureBudgetMegabytes(
+                HardwareTierDetector.IsSteamDeckLike,
+                HardwareTierDetector.IsQuest3Like,
+                HardwareProfileCatalog.Quest3TextureBudgetMegabytes);
+            return textureBudgetMb >= HardwareProfileCatalog.SteamDeckLcdTextureBudgetMegabytes
+                ? HalfResolutionTextureMipLimit
+                : SharedMemoryTextureMipLimit;
         }
 
 #if UNITY_EDITOR

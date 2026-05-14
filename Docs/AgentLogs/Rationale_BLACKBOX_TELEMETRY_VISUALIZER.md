@@ -90,3 +90,17 @@ Solution: Verify the server read path uses guarded file metadata and add a smoke
 Rejected Alternatives: Creating `Docs/AgentLogs` from the API was rejected because read endpoints should not repair filesystem layout. Letting missing files raise was rejected because telemetry writers can rotate or delete files while the browser polls.
 Scalability potential: Low tier avoids accidental disk writes during polling. Middle/High/Ultra can run continuous dashboard refreshes without the reader creating evidence folders or crashing on absent artifacts.
 Hardware Impact: 0 us Unity frame impact. Auxiliary Python behavior only; exact API timing remains PENDING MEASUREMENT.
+
+## Decision 014 - Frontend Partial-Payload Guard
+Problem: The backend returns a complete summary during normal operation, but the browser renderer still assumed nested `csv` and `dumps` objects existed. A partial/error payload could break the whole dashboard view.
+Solution: Add `normalizeSummary()` in `index.html` so missing objects become empty objects and missing arrays become empty arrays before rendering. Add an HTTP status guard before parsing `/api/summary` JSON.
+Rejected Alternatives: Leaving the assumption in place was rejected because the dashboard is a diagnostic tool and must fail visibly, not cascade into JavaScript exceptions. Adding a frontend framework was rejected as bloat for a single static page.
+Scalability potential: Low tier keeps the same small static page. High/Ultra can add panels later against the normalized client-side contract without multiplying null guards across every widget.
+Hardware Impact: 0 us Unity frame impact. Browser-only defensive checks; exact dashboard render timing remains PENDING MEASUREMENT.
+
+## Decision 015 - Frontend Nested-Shape Guard
+Problem: Normalizing top-level arrays did not protect the renderer from malformed array elements, especially memory maps with missing `blocks` arrays.
+Solution: Add `objectArray()` and `normalizeMemoryMap()` so chart points, CSV rows, dump rows, memory-map entries, and memory blocks are objects before widget code reads fields.
+Rejected Alternatives: Adding scattered null checks inside every widget was rejected because it duplicates the contract and still leaves gaps. Trusting only backend-generated payloads was rejected because this dashboard is diagnostic infrastructure and must tolerate partial failure.
+Scalability potential: Low tier keeps one static page with predictable empty fallbacks. High/Ultra can add more panels on the same normalized contract without adding per-widget exception traps.
+Hardware Impact: 0 us Unity frame impact. Browser-only defensive normalization; exact render timing remains PENDING MEASUREMENT.

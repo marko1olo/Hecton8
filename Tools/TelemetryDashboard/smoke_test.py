@@ -117,6 +117,17 @@ def main() -> int:
         assert dump_data["memoryMaps"][0]["name"] == "Dump_CORE_DATA_VAULT_WARDEN.txt"
         assert dump_data["memoryMaps"][0]["estimated"] is False
 
+        index_text = (Path(__file__).with_name("index.html")).read_text(encoding="utf-8")
+        for required in (
+            "function normalizeSummary",
+            "function normalizeMemoryMap",
+            "function objectArray",
+            "if (!response.ok)",
+        ):
+            assert required in index_text
+        for forbidden in ("innerHTML", "eval(", "new Function", "document.write", "console.log", "debugger"):
+            assert forbidden not in index_text
+
     print("telemetry dashboard smoke ok")
     return 0
 

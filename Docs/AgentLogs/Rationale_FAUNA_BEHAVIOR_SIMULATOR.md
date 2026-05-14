@@ -97,3 +97,31 @@ Solution: Store only `replicateValidation` summary in `Data/AI/Fauna_Global_Weig
 Rejected Alternatives: Embedding all replicate rows in the runtime-facing constants file. It repeats the earlier bloat problem.
 Scalability potential: Runtime consumers parse a bounded summary; balancing tools can inspect the detailed file.
 Hardware Impact: Static file-size impact only: compact constants file is `2250` bytes after summary; runtime parsing cost remains unmeasured.
+
+## Regression Harness Decisions
+
+Problem: The simulator had CLI validation artifacts but no committed regression harness, so future edits could silently break schema alignment.
+Solution: Add `Tools/AI_Sim/test_fauna_balance_sim.py` with standard-library `unittest` checks for compact/report consistency, replicate summary consistency, bounded selected-weight run, and short replicate validation.
+Rejected Alternatives: Adding third-party test dependencies or rerunning the million-frame sweep in tests. Both are unnecessary for a fast guard.
+Scalability potential: Low-cost test catches data-contract drift before runtime owners consume bad constants; high-end/manual validation still uses the full CLI sweeps.
+Hardware Impact: Runtime impact remains 0 microseconds. Final regression test execution completed offline in `1.470 s`.
+
+Problem: Dynamic import of a dataclass module failed because `importlib` did not register the module in `sys.modules`.
+Solution: Register the simulator module in `sys.modules` before `exec_module`.
+Rejected Alternatives: Turning `Tools/AI_Sim` into a package or modifying production script import paths; both are broader than this tool requires.
+Scalability potential: Keeps the regression harness self-contained and path-stable.
+Hardware Impact: No runtime hardware impact.
+
+## Artifact Checker Decisions
+
+Problem: The regression tests validate artifacts, but humans and CI need a direct CLI check that fails with a nonzero exit code when JSON artifacts drift.
+Solution: Add `--check-artifacts` to `Tools/AI_Sim/FaunaBalanceSim.py`; it compares compact constants, detailed report, and replicate validation files, prints sizes/frame counts, and returns `2` on any mismatch.
+Rejected Alternatives: Relying only on `unittest`; it works for developers but is less direct for a batch pipeline wanting a single artifact check command.
+Scalability potential: Low-end runtime remains unaffected; batch CI can now validate handoff files without rerunning simulation.
+Hardware Impact: Runtime impact remains 0 microseconds. CLI check is offline and read-only.
+
+Problem: The test harness did not cover the new checker.
+Solution: Add `test_artifact_checker_passes_current_outputs`.
+Rejected Alternatives: Manual-only checker verification, which would regress silently.
+Scalability potential: Keeps the checker contract stable as schema evolves.
+Hardware Impact: No runtime hardware impact.

@@ -52,6 +52,7 @@
   ],
   "topologicalOrder": [
     "outpost.generated",
+    "outpost.generation_faulted",
     "outpost.entry_reached",
     "outpost.main_path_connected",
     "outpost.generator_room_present",
@@ -59,6 +60,10 @@
     "outpost.exit_route_marked",
     "outpost.power_relay_found",
     "outpost.power_coupler_acquired",
+    "outpost.critical_item_lost",
+    "outpost.deadlock_revert_requested",
+    "outpost.marker_fallback_active",
+    "outpost.state_restored_from_save",
     "outpost.power_coupler_installed",
     "outpost.bus_voltage_stable",
     "outpost.brownout_cleared",
@@ -67,6 +72,10 @@
     "outpost.sealed_door_powered",
     "outpost.sealed_door_opened",
     "outpost.datapad_found",
+    "outpost.internal_fire_seen",
+    "outpost.fire_route_optional",
+    "outpost.breached_room_seen",
+    "outpost.flooded_room_bypassed",
     "outpost.marauder_log_power_read",
     "outpost.marauder_log_air_read",
     "outpost.marauder_log_fire_read",
@@ -90,7 +99,7 @@
     },
     {
       "risk": "unsafe_air_route",
-      "trigger": "InternalFire || Breached || Submerged on critical room",
+      "trigger": "GasDynamicsRoomFlags.InternalFire || GasDynamicsRoomFlags.Breached || roomSubmerged01 > 0 on critical room",
       "setFlag": "outpost.marker_fallback_active",
       "constraint": "Critical route must move to a safe room. Fire, breached, and submerged states may be optional evidence only."
     }
@@ -200,7 +209,7 @@
       "hash": "0x965F0F78",
       "layer": "Narrative",
       "category": "outpost_log",
-      "requiredState": "outpost.scrubber_powered || roomflag.ScrubberInstalled",
+      "requiredState": "outpost.scrubber_powered || GasDynamicsRoomFlags.ScrubberInstalled",
       "commitFlag": "outpost.marauder_log_air_read",
       "text": "Air count starts when the panel wakes. Scrubber cuts CO2, it does not give oxygen back. Ninety seconds for the read, less if your hands shake."
     },
@@ -209,7 +218,7 @@
       "hash": "0xC2ED4503",
       "layer": "Narrative",
       "category": "outpost_log",
-      "requiredState": "roomflag.InternalFire",
+      "requiredState": "GasDynamicsRoomFlags.InternalFire",
       "commitFlag": "outpost.marauder_log_fire_read",
       "text": "Red load line burned clean through the paint. We sealed that room and left the coupler teeth on the deck. Anyone sending a diver through fire wants the diver dead."
     },
@@ -218,7 +227,7 @@
       "hash": "0x75653D5B",
       "layer": "Narrative",
       "category": "outpost_log",
-      "requiredState": "roomflag.Breached",
+      "requiredState": "GasDynamicsRoomFlags.Breached",
       "commitFlag": "outpost.marauder_log_breach_read",
       "text": "Pressure door held. Wall did not. The gauge hit ambient and nobody argued with it. If your map points through that room, your map is lying."
     },

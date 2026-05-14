@@ -245,3 +245,57 @@ Solution: Replaced the count with "affected mandate files by readback" wording.
 Rejected Alternatives: Leave an inaccurate count in audit files.
 Scalability potential: Prevents integrator confusion during batch merge review.
 Hardware Impact: No runtime impact.
+
+## Seventh-Pass Self-Review Decisions
+
+Problem: Shared Git state moved again after the sixth-pass report. `HEAD` is now `569c5605 Checkpoint incoming auxiliary batch updates 20260514-143246`, and scoped chronicler files plus `.agents-skills` had no active diff before this seventh-pass audit patch.
+Solution: Rechecked current `git status`, current `HEAD`, reflog, and committed formula anchors before reporting. Updated the status/log to describe the actual repository state.
+Rejected Alternatives: Repeat the 14:25 checkpoint as current; report stale active chronicler diffs after they were checkpointed.
+Scalability potential: Keeps parallel-agent handoff factual when repository checkpoints happen during review.
+Hardware Impact: Documentation-only. Runtime impact is 0 us.
+
+Problem: The sixth-pass log contained stale dirty-worktree wording, and the global dirty list changed again while the seventh-pass review was running.
+Solution: Replaced exact global dirty-file wording with a scoped statement: chronicler changes are limited to status/rationale/log, and unrelated shared-worktree files must be re-read from `git status --short` before integration.
+Rejected Alternatives: Leave stale "agent logs/status" wording; freeze a volatile exact global dirty-file list; revert unrelated dirty files.
+Scalability potential: Prevents integrator confusion and avoids cross-agent contamination.
+Hardware Impact: No runtime impact.
+
+Problem: Checkpoint commits can hide whether mandate formula repairs survived.
+Solution: Re-read negative beam attenuation, haptic low/high decay, logistics totals/supply ratio, non-ASCII count, and scoped no-code guard after the latest checkpoint.
+Rejected Alternatives: Trust prior diff output after `HEAD` moved.
+Scalability potential: Ensures downstream agents still ingest corrected low-tier and high-tier mandate formulas.
+Hardware Impact: No runtime impact.
+
+## Eighth-Pass Self-Review Decisions
+
+Problem: The continuation request required another professional audit, but stale chat memory is not acceptable under the anti-amnesia protocol.
+Solution: Re-read `Status_MANDATE_EVOLUTION_CHRONICLER.md` and `Rationale_MANDATE_EVOLUTION_CHRONICLER.md`, then reloaded the task-relevant mandates: evidence law, registry README, execution phases, signal lanes, DataVault sovereignty, and AUP Sync-Fence.
+Rejected Alternatives: Continue from memory; read unrelated batch prompts.
+Scalability potential: Maintains deterministic handoff during context compression and parallel-agent movement.
+Hardware Impact: Documentation-only. Runtime impact is 0 us.
+
+Problem: Third-pass status/log wording used "currently" for a `.codex_tmp` global worktree observation that is no longer durable.
+Solution: Reworded the historical note to "at third-pass review time" and left current dirty-state reporting scoped to chronicler files.
+Rejected Alternatives: Leave misleading current-state language; replace it with another exact global dirty list that can change during review.
+Scalability potential: Prevents integrator confusion and keeps audit evidence time-scoped.
+Hardware Impact: No runtime impact.
+
+Problem: Registry and authority consistency needed another readback after shared checkpoints.
+Solution: Verified `.agents-skills` has 78 mandate `.txt` files, `Docs/PROJECT_ATLAS.md` and `.agents-skills` have no active diff, and the scoped chronicler diff is status/rationale/log only.
+Rejected Alternatives: Infer registry integrity from previous logs.
+Scalability potential: Confirms the mandate inventory remains stable for downstream agents.
+Hardware Impact: No runtime impact.
+
+## Ninth-Pass Self-Review Decisions
+
+Problem: The final report used one line anchor for two facts: `.agents-skills/README.md:79` is the Batch 007 additions header, but it does not itself prove the 78-file inventory count.
+Solution: Split the evidence: README lines 79-83 prove Batch 007 additions are indexed; filesystem count proves `.agents-skills` has 78 mandate `.txt` files.
+Rejected Alternatives: Keep an over-specific line-anchor claim after readback showed it was imprecise.
+Scalability potential: Prevents integrators from chasing a false line anchor when auditing the mandate registry.
+Hardware Impact: Documentation-only. Runtime impact is 0 us.
+
+Problem: Task 14 wording described changed authority files as visible through `git status --short`, but shared checkpoints can remove those authority diffs while preserving the files in `HEAD`.
+Solution: Reworded the status line to say the files were saved during the task loop and current authority state is verified by readback.
+Rejected Alternatives: Leave status phrasing that can be misread as a current dirty-worktree claim.
+Scalability potential: Keeps shared-checkpoint handoff accurate for parallel agents.
+Hardware Impact: No runtime impact.

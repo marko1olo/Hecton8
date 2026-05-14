@@ -31,14 +31,17 @@ No Unity C# was authored for this task.
 - Header bytes: none.
 - Alignment assumption: payload can be copied into a tightly packed `float` buffer.
 - Indexing: C-order row-major.
+- Integrity metadata: `math_lut_manifest.json` records SHA-256 for each binary payload and
+  `ecosystem_coefficients.json`. Check hashes during cold load only; do not compute them in gameplay hot paths.
 
 Burst-side reader contract:
 
 1. Verify exact byte count before copying.
-2. Allocate the destination buffer from the project-owned data vault or cold loading system.
-3. Copy only after byte-count validation passes.
-4. Treat dimensions as constants from this document or `math_lut_manifest.json`.
-5. Do not parse strings or JSON in a gameplay hot path.
+2. Verify SHA-256 during cold load if integrity checking is enabled.
+3. Allocate the destination buffer from the project-owned data vault or cold loading system.
+4. Copy only after byte-count validation passes.
+5. Treat dimensions as constants from this document or `math_lut_manifest.json`.
+6. Do not parse strings or JSON in a gameplay hot path.
 
 UnsafeUtility read pattern, expressed as layout guidance only:
 

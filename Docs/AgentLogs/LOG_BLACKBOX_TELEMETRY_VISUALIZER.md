@@ -178,3 +178,60 @@ Verification:
 - `/`: HTTP 200, 15327 bytes.
 - Removed `.codex_tmp`; `Tools/TelemetryDashboard/__pycache__` absent after verification.
 - C# boundary: no `Assets/_Project/Scripts` edits.
+
+## 2026-05-14 - Frontend Partial-Payload Guard
+
+What was wrong:
+- `index.html` assumed `/api/summary` always returned nested `csv.sources`, `csv.frameSeries`, `dumps.files`, and `dumps.memoryMaps`. A partial response could throw in the browser before showing diagnostic status.
+
+What was done:
+- Added `asArray`, `asObject`, and `normalizeSummary()` helpers.
+- Routed `updateDashboard()` through normalized data before calculating KPIs, charts, memory maps, and the file table.
+- Added an HTTP status guard before parsing `/api/summary` JSON.
+
+Cinematic Cheats used:
+- The browser now uses empty-series fallbacks instead of inventing telemetry when the payload is partial. Missing data remains visible as empty gauges/tables.
+
+Exact Microseconds saved:
+- Unity gameplay frame: 0 us changed.
+- Dashboard/browser: prevented exception cascade on partial payloads; exact render timing is PENDING MEASUREMENT.
+
+Verification:
+- `python -B Tools\TelemetryDashboard\smoke_test.py`: PASS, output `telemetry dashboard smoke ok`.
+- `py_compile` for `server.py` and `smoke_test.py`: PASS.
+- `git diff --check -- Tools\TelemetryDashboard\index.html Tools\TelemetryDashboard\smoke_test.py`: PASS; Git reports only LF-to-CRLF warning for `index.html`.
+- `node --version`: FAILED, Node is not installed in this environment; JavaScript parser check is PENDING TOOLING.
+- Safety scan: no `eval`, `new Function`, `document.write`, `innerHTML`, `console.log`, or `debugger` in dashboard source.
+- `/api/summary`: `DASHBOARD OPERATIONAL`, `frameSeries=0`, `memoryMaps=0`, `files=0`, `HPHI=0.00062` with no active live dump/QA artifacts.
+- `/`: HTTP 200, 16472 bytes; served HTML contains `normalizeSummary()` and the HTTP status guard.
+- Removed `.codex_tmp`; `Tools/TelemetryDashboard/__pycache__` absent after verification.
+- C# boundary: no `Assets/_Project/Scripts` edits by this task; unrelated untracked `Assets/_Project/Scripts/Editor/OutpostFailSafeHandoffValidator.cs` exists and was not touched.
+
+## 2026-05-14 - Frontend Nested-Shape Guard
+
+What was wrong:
+- Top-level frontend payload normalization did not protect against malformed array elements. `memoryMaps[0].blocks` could still throw if a partial payload supplied a memory-map object without a block list.
+
+What was done:
+- Added `objectArray()` to normalize array elements to objects.
+- Added `normalizeMemoryMap()` to normalize each memory-map entry and its `blocks` list.
+- Updated `normalizeSummary()` to normalize frame/ecology points, CSV sources, dump files, and memory-map entries before widget rendering.
+- Extended `smoke_test.py` to assert the frontend guard functions exist and that unsafe browser patterns remain absent from `index.html`.
+
+Cinematic Cheats used:
+- Malformed or missing telemetry renders as empty charts/tables/maps instead of fabricated values. The dashboard remains honest when source data is incomplete.
+
+Exact Microseconds saved:
+- Unity gameplay frame: 0 us changed.
+- Dashboard/browser: prevented memory-map and table exception paths from malformed JSON; exact render timing is PENDING MEASUREMENT.
+
+Verification:
+- `python -B Tools\TelemetryDashboard\smoke_test.py`: PASS, output `telemetry dashboard smoke ok`.
+- `py_compile` for `server.py` and `smoke_test.py`: PASS.
+- `git diff --check -- Tools\TelemetryDashboard\index.html Tools\TelemetryDashboard\smoke_test.py`: PASS; Git reports only LF-to-CRLF warnings.
+- Safety scan on executable dashboard sources: no `eval`, `new Function`, `document.write`, `innerHTML`, `console.log`, or `debugger`.
+- `/api/summary`: `DASHBOARD OPERATIONAL`, `frameSeries=0`, `memoryMaps=0`, `files=0`, `HPHI=0.00062` with no active live dump/QA artifacts.
+- `/`: HTTP 200, 16769 bytes; served HTML contains `objectArray()`, `normalizeMemoryMap()`, and the HTTP status guard.
+- Dashboard process remains PID `7244` on `http://127.0.0.1:8000`.
+- Removed `.codex_tmp`; `Tools/TelemetryDashboard/__pycache__` absent after verification.
+- C# boundary: no `Assets/_Project/Scripts` edits by this task. Unrelated modified/untracked C# files exist and were not touched.

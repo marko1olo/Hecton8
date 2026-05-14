@@ -77,3 +77,24 @@ Relevant mandates loaded:
 - [x] Removed generated `Tools/AI_Sim/__pycache__` artifact from the workspace.
 - [x] Corrected stale rationale evidence line from doc-only evidence wording to `CLI_PYTHON_SIMULATION` for Python/JSON artifacts.
 - [x] Replaced overstated CLI completion wording with `FINISHED` to avoid implying Unity runtime verification.
+
+## Loop 9 - Regression Harness Upgrade
+
+- [x] Added `Tools/AI_Sim/test_fauna_balance_sim.py` using Python standard-library `unittest`.
+- [x] Test coverage -> compact constants match detailed report, compact replicate summary matches replicate report, selected constants stay bounded in a short run, short repeat validation stays stable.
+- [x] Fixed import-loader issue by registering the dynamically loaded simulator module in `sys.modules` before dataclass evaluation.
+- [x] Ran `python -m unittest Tools.AI_Sim.test_fauna_balance_sim -v` -> initial `4` tests, `OK`, elapsed `1.470 s`.
+- [x] Ran `python -m py_compile Tools\AI_Sim\FaunaBalanceSim.py Tools\AI_Sim\test_fauna_balance_sim.py` -> pass.
+- [x] Ran JSON parse validation for constants, detailed report, and replicate report -> pass.
+- [x] Removed generated `Tools\AI_Sim\__pycache__` and `Tools\__pycache__` after test execution.
+
+## Loop 10 - Artifact Checker Upgrade
+
+- [x] Added `--check-artifacts` mode to `Tools/AI_Sim/FaunaBalanceSim.py`.
+- [x] Checker validates constants/report selected constants, million-frame summary, compact handoff boundary, replicate summary, replicate status, and zero failure count.
+- [x] Checker exits `2` on drift and prints exact error rows.
+- [x] Extended `Tools/AI_Sim/test_fauna_balance_sim.py` with artifact-checker coverage.
+- [x] Ran `python Tools\AI_Sim\FaunaBalanceSim.py --check-artifacts` -> `ARTIFACT_CHECK_PASSED`, constants `2250` bytes, report `40188` bytes, replicate `5683` bytes, frames `1000000`, replicates `5`.
+- [x] Ran `python -m unittest Tools.AI_Sim.test_fauna_balance_sim -v` -> `5` tests, `OK`, final validation elapsed `1.672 s`.
+- [x] Ran `python -m py_compile Tools\AI_Sim\FaunaBalanceSim.py Tools\AI_Sim\test_fauna_balance_sim.py` and JSON parse validation -> pass.
+- [x] Removed generated `Tools\AI_Sim\__pycache__` after test execution.

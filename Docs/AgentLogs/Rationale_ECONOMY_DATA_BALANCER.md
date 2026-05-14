@@ -148,3 +148,51 @@ Rejected Alternatives: Editing project data to force failures was rejected becau
 Scalability potential: Low/Middle/High/Ultra benefit from the same offline importer gate. Runtime data remains flat and validated before any bake.
 
 Hardware Impact: Temporary validation only, 0 us gameplay. It prevents malformed static data from reaching runtime tables where diagnosis would cost more engineering time.
+
+## Decision 13 - Reproducible Negative Validator Mode
+
+Problem: Negative validator proof existed in the log, but the proof was not directly reproducible by the next agent without retyping a temporary Python harness.
+
+Solution: Added an opt-in `--negative-tests` mode to `Tools/EconomyValidator.py`. It copies economy files to a temporary directory, injects three malformed cases, confirms they fail with expected messages, prints `negative_cases=3`, and still leaves exact `STATUS: ECONOMY BALANCED` as the final output line.
+
+Rejected Alternatives: Keeping the one-off harness was rejected because log-only proof decays. Running negative tests by default was rejected because normal CI/importer checks should stay short and stable unless strict proof is requested.
+
+Scalability potential: Low uses normal validation; Middle/High/Ultra or CI can enable `--negative-tests` before an importer bake. Runtime tables remain unchanged.
+
+Hardware Impact: Offline-only proof, 0 us gameplay. It prevents malformed static data from reaching runtime where diagnosis would cost more engineering time.
+
+## Decision 14 - Exact UTF-16 Hash Iteration
+
+Problem: `fnv1a32` claimed to match `LocHash.Compute` over UTF-16 code units, but the Python helper iterated Unicode code points and split them into two bytes. That is equivalent for ASCII/BMP IDs, but it is not exact for non-BMP characters.
+
+Solution: Changed `fnv1a32` to iterate `value.encode("utf-16le")` bytes directly and added silent sentinel checks for `Data_TitaniumScrap`, `emoji_contract_probe`, and a non-BMP `LocHashProbe_` string built with `chr(0x1F600)`. Existing generated IDs are ASCII, so stored hash values remain unchanged; `Data_TitaniumScrap` still validates as unsigned `3511699502`.
+
+Rejected Alternatives: Keeping the code-point loop was rejected because the function documentation and design report explicitly say UTF-16 code units. Re-hashing data was rejected because no generated ID changed under the exact implementation. Printing sentinel rows during normal validation was rejected because downstream checks require concise stable output.
+
+Scalability potential: Low/Middle/High/Ultra all keep the same baked integer IDs. The improvement prevents future localization/tooling IDs with non-BMP characters from silently using a different hash than C#.
+
+Hardware Impact: Offline validator only, 0 us gameplay. Runtime lookup savings remain the same because baked hash values are unchanged.
+
+## Decision 15 - Robust Negative Mutation Selection
+
+Problem: The `--negative-tests` result-item mismatch case used a fixed replacement ID. It worked against the current first-submarine report, but a future recipe-order change could make the fixed ID equal to the selected row and accidentally weaken the negative proof.
+
+Solution: Added `choose_distinct_negative_item_id()` and a recipe-batch presence guard. The mutation now chooses a deterministic replacement from known resource IDs only if it differs from the current row, then recalculates the matching `LocHash.Compute` hash so the failure remains specifically a result-item mismatch.
+
+Rejected Alternatives: Leaving the fixed ID was rejected because it depends on current row ordering. Random replacement was rejected because validation proof must be deterministic.
+
+Scalability potential: Low/Middle/High/Ultra all use the same offline validation gate. CI can run `--negative-tests` without flaky data mutation behavior.
+
+Hardware Impact: Offline-only validation, 0 us gameplay. It keeps malformed-data proof reliable before importer/runtime bake work.
+
+## Decision 16 - Controlled Negative Mutator Failures
+
+Problem: The `--negative-tests` mutators assumed first-submarine `recipe_batches` and `raw_resources` rows existed. If those sections were missing or empty, strict mode could throw a raw Python `KeyError` or `IndexError` instead of the validator's controlled failure format.
+
+Solution: Added explicit `require()` guards in `mutate_first_sub_result_item()` and `mutate_first_sub_duplicate_raw()` so missing rows fail as `ECONOMY VALIDATION FAILED: ...` with deterministic messages.
+
+Rejected Alternatives: Leaving raw Python exceptions was rejected because this tool is an importer gate and must report data failures in validator language. Adding a broader exception wrapper was rejected because it would hide the exact failing precondition.
+
+Scalability potential: Low/Middle/High/Ultra and CI get deterministic failure messages from the same offline gate.
+
+Hardware Impact: Offline-only validation, 0 us gameplay. It improves diagnosis before importer/runtime bake work.

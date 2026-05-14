@@ -177,6 +177,51 @@
     document.getElementById(id).textContent = value;
   }
 
+  function asArray(value) {
+    return Array.isArray(value) ? value : [];
+  }
+
+  function asObject(value) {
+    return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+  }
+
+  function objectArray(value) {
+    return asArray(value).map(item => asObject(item));
+  }
+
+  function normalizeMemoryMap(value) {
+    const map = asObject(value);
+    return {
+      ...map,
+      blocks: objectArray(map.blocks)
+    };
+  }
+
+  function normalizeSummary(rawSummary) {
+    const summary = asObject(rawSummary);
+    const csv = asObject(summary.csv);
+    const dumps = asObject(summary.dumps);
+    return {
+      status: summary.status || "UNKNOWN",
+      generatedUtc: summary.generatedUtc || "--",
+      projectRoot: summary.projectRoot || "--",
+      agentLogs: summary.agentLogs || "--",
+      frameSeries: objectArray(summary.frameSeries),
+      ecologySeries: objectArray(summary.ecologySeries),
+      hphi: asObject(summary.hphi),
+      thermal: asObject(summary.thermal),
+      csv: {
+        sources: objectArray(csv.sources),
+        frameSeries: objectArray(csv.frameSeries),
+        ecologySeries: objectArray(csv.ecologySeries)
+      },
+      dumps: {
+        files: objectArray(dumps.files),
+        memoryMaps: asArray(dumps.memoryMaps).map(item => normalizeMemoryMap(item))
+      }
+    };
+  }
+
   function fmtNumber(value, digits = 2) {
     if (value === null || value === undefined || Number.isNaN(Number(value))) return "--";
     return Number(value).toFixed(digits);
@@ -312,11 +357,11 @@
   function updateMemoryMap(memoryMaps) {
     const container = document.getElementById("memoryMap");
     container.replaceChildren();
-    if (!memoryMaps.length || !memoryMaps[0].blocks.length) {
+    const selected = memoryMaps[0] || { blocks: [] };
+    if (!selected.blocks.length) {
       text("memoryMapStatus", "No memory dump loaded.");
       return;
     }
-    const selected = memoryMaps[0];
     const blocks = selected.blocks.filter(block => Number(block.bytes) > 0);
     const total = blocks.reduce((sum, block) => sum + Number(block.bytes), 0) || 1;
     const cells = 32 * 14;
@@ -330,7 +375,7 @@
       }
     });
     const evidence = selected.estimated ? "estimated map" : "source table";
-    text("memoryMapStatus", `${selected.name} | ${evidence} | ${blocks.length} blocks | ${total} bytes visualized`);
+    text("memoryMapStatus", `${selected.name || "memory map"} | ${evidence} | ${blocks.length} blocks | ${total} bytes visualized`);
   }
 
   function updateFiles(summary) {
@@ -366,8 +411,9 @@
     });
   }
 
-  function updateDashboard(summary) {
-    const frames = summary.frameSeries || summary.csv.frameSeries || [];
+  function updateDashboard(rawSummary) {
+    const summary = normalizeSummary(rawSummary);
+    const frames = summary.frameSeries.length ? summary.frameSeries : summary.csv.frameSeries;
     const latest = frames[frames.length - 1] || null;
     const spikeCount = frames.filter(point => point.spike).length;
     const thermal = summary.thermal || {};
@@ -395,6 +441,7 @@
   async function poll() {
     try {
       const response = await fetch("/api/summary", { cache: "no-store" });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
       updateDashboard(await response.json());
     } catch (error) {
       text("statusText", "API ERROR");

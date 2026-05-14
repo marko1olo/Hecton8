@@ -1,6 +1,5 @@
 {
   "bake": {
-    "bake_seconds": 23.499339099995268,
     "blue_spectrum": {
       "dc_power": 2.0642223717004526e-06,
       "high_mean": 6063.30078125,
@@ -48,13 +47,13 @@
     "bytes_after_optimizer": 26919,
     "bytes_before_optimizer": 26919,
     "optimizer": "pillow_optimize_compress_level_9",
-    "path": "C:\\Hecton8\\Data\\Textures\\AbyssalFlowField_LowTier_RGBA.png"
+    "path": "Data/Textures/AbyssalFlowField_LowTier_RGBA.png"
   },
   "noise_save": {
     "bytes_after_optimizer": 262737,
     "bytes_before_optimizer": 262737,
     "optimizer": "pillow_optimize_compress_level_9",
-    "path": "C:\\Hecton8\\Data\\Textures\\BlueNoise_RGBA.png"
+    "path": "Data/Textures/BlueNoise_RGBA.png"
   },
   "status": "NOISE BAKED",
   "verification": {
@@ -67,7 +66,7 @@
         4
       ]
     },
-    "flow_path": "C:\\Hecton8\\Data\\Textures\\AbyssalFlowField_LowTier_RGBA.png",
+    "flow_path": "Data/Textures/AbyssalFlowField_LowTier_RGBA.png",
     "noise": {
       "blue_spectrum": {
         "dc_power": 2.0642223717004526e-06,
@@ -110,7 +109,7 @@
         "max_seam_ratio_max": 1.35
       }
     },
-    "noise_path": "C:\\Hecton8\\Data\\Textures\\BlueNoise_RGBA.png",
+    "noise_path": "Data/Textures/BlueNoise_RGBA.png",
     "passed": true
   }
 }

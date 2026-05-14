@@ -36,7 +36,7 @@ Status: MANDATES EVOLVED / RUNTIME PENDING VERIFICATION
 
 ## Loop 4: Tasks 14-15
 
-- [x] Task 14: Save updated mandates. | Justification: changed authority files are present on disk and visible through `git status --short`. | Alternatives Rejected: chat-only report. | Estimate: 0 runtime us
+- [x] Task 14: Save updated mandates. | Justification: changed authority files were saved to disk during the task loop and later checkpointed; current authority state is verified by readback. | Alternatives Rejected: chat-only report. | Estimate: 0 runtime us
 - [x] Task 15: Log exact lines changed. | Justification: `LOG_MANDATE_EVOLUTION_CHRONICLER.md` records key file/line anchors and final report. | Alternatives Rejected: vague final summary. | Estimate: 0 runtime us
 
 ## Loop 5: Recursive Re-Verification
@@ -62,7 +62,7 @@ Status: MANDATES EVOLVED / RUNTIME PENDING VERIFICATION
 
 - [x] Searched for stripped comparison/math operators. | Justification: broad ASCII cleanup can leave `VRAM  1800MB`, malformed tier thresholds, and broken Markdown tables while still passing non-ASCII scans. | Alternatives Rejected: accept `EXACT_STRIP_REMAINING=0` as enough. | Estimate: 0 runtime us
 - [x] Repaired VRAM/tier/table mandate defects. | Justification: fixed malformed `MID: VRAM 2- 1800MB`, duplicate GPU tier threshold, Addressables/HLOD tier gaps, missing `<=`/`>` operators, impossible proxy VRAM math, and broken `||` Markdown separators. | Alternatives Rejected: leave downstream agents to infer intent from corrupt authority text. | Estimate: 0 runtime us
-- [x] Scoped no-code guard honestly. | Justification: global worktree currently contains unrelated `.codex_tmp` deleted `.cs`/`.prefab` entries; mandate-edit scope has no `.cs`, `.shader`, `.asset`, `.prefab`, or `.unity` diffs. | Alternatives Rejected: claim the whole shared worktree is clean; revert unrelated files. | Estimate: 0 runtime us
+- [x] Scoped no-code guard honestly. | Justification: at third-pass review time, the global worktree contained unrelated `.codex_tmp` deleted `.cs`/`.prefab` entries; mandate-edit scope had no `.cs`, `.shader`, `.asset`, `.prefab`, or `.unity` diffs. | Alternatives Rejected: claim the whole shared worktree is clean; revert unrelated files. | Estimate: 0 runtime us
 - [x] Re-ran exact-strip and format gates. | Justification: `EXACT_STRIP_REMAINING=0`, `.agents-skills` non-ASCII count is 0, malformed-token scan has no target hits, and `git diff --check` is clean except CRLF warnings. | Alternatives Rejected: rely on visual inspection. | Estimate: 0 runtime us
 - [x] Recorded current batch rotation. | Justification: final readback found `Docs/Tasks/CURRENT_BATCH.md` no longer contains `<AGENT_PROMPT id="MANDATE_EVOLUTION_CHRONICLER">`; original extracted prompt remains persisted in this status and rationale. | Alternatives Rejected: pretending live prompt re-extraction still works. | Estimate: 0 runtime us
 
@@ -85,3 +85,21 @@ Status: MANDATES EVOLVED / RUNTIME PENDING VERIFICATION
 - [x] Detected later shared checkpoint/rebase state. | Justification: reflog shows `2026-05-14 14:25:19 +0300` checkpoint commit after the fifth-pass fixes; current `.agents-skills` diffs are now zero because those fixes are in `HEAD`. | Alternatives Rejected: report dirty mandate files after they were checkpointed. | Estimate: 0 runtime us
 - [x] Re-read committed mandate formulas after checkpoint. | Justification: readback confirms negative beam attenuation, corrected Verlet constraint, cutter density subtraction, and haptic negative decay remain present on disk. | Alternatives Rejected: trust previous diff after shared Git movement. | Estimate: 0 runtime us
 - [x] Corrected stale self-report count. | Justification: replaced stale exact file-count wording with readback-based evidence wording. | Alternatives Rejected: leave a false file-count claim in status/rationale. | Estimate: 0 runtime us
+
+## Seventh-Pass Self-Review
+
+- [x] Detected newest shared checkpoint state. | Justification: `git log -1` reports `569c5605 Checkpoint incoming auxiliary batch updates 20260514-143246`; scoped chronicler files and `.agents-skills` have no active diff before this seventh-pass audit patch. | Alternatives Rejected: report the 14:25 checkpoint as current after a later checkpoint exists. | Estimate: 0 runtime us
+- [x] Corrected volatile dirty-worktree reporting. | Justification: shared `git status` changed during review; chronicler scope is limited to status/rationale/log, while unrelated dirty files must be re-read from `git status --short` before integration. | Alternatives Rejected: freeze a stale exact global dirty-file list in the durable status. | Estimate: 0 runtime us
+- [x] Rechecked committed formula anchors after latest checkpoint. | Justification: readback confirms negative beam attenuation, haptic low/high decay, logistics production/demand/supply ratio, and scoped no-code guard still pass. | Alternatives Rejected: assume checkpoint preserved all mandate repairs without reading files. | Estimate: 0 runtime us
+
+## Eighth-Pass Self-Review
+
+- [x] Re-read task/rationale before continuing. | Justification: anti-amnesia protocol requires disk-backed state before any response or further edits. | Alternatives Rejected: memory-only continuation. | Estimate: 12 us
+- [x] Re-loaded relevant mandates. | Justification: evidence law, registry README, phase ownership, signal lanes, DataVault sovereignty, and AUP Sync-Fence remain the governing rules for this audit. | Alternatives Rejected: use stale chat memory. | Estimate: 60 us static scan
+- [x] Corrected stale historical "currently" wording. | Justification: third-pass `.codex_tmp` contamination was a point-in-time observation, not a durable current-state claim. | Alternatives Rejected: leave misleading global-worktree wording in the audit trail. | Estimate: 0 runtime us
+- [x] Rechecked registry count and scoped diff. | Justification: `.agents-skills` has 78 `.txt` mandates, `Docs/PROJECT_ATLAS.md` and `.agents-skills` have no active diff, and scoped chronicler diff is status/rationale/log only. | Alternatives Rejected: assume checkpoint state without readback. | Estimate: 0 runtime us
+
+## Ninth-Pass Self-Review
+
+- [x] Audited log line anchors against current files. | Justification: README line 79 is the Batch 007 additions header, not the registry count authority. | Alternatives Rejected: preserve an over-specific line-anchor claim after readback contradicted it. | Estimate: 0 runtime us
+- [x] Corrected inventory-count evidence wording. | Justification: 78 mandate `.txt` files is proven by filesystem count, while README lines 79-83 prove Batch 007 addition indexing. | Alternatives Rejected: imply one README line proves both facts. | Estimate: 0 runtime us

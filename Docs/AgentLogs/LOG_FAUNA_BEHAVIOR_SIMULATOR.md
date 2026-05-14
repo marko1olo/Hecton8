@@ -16,6 +16,8 @@ What was done:
 - Exported matching detailed report `Tools/AI_Sim/FaunaBalanceSim_Report.json`.
 - Polish pass compacted `Data/AI/Fauna_Global_Weights.json` to a runtime handoff and left detailed telemetry in `Tools/AI_Sim/FaunaBalanceSim_Report.json`.
 - Added repeat-seed validation mode and wrote `Tools/AI_Sim/FaunaBalanceSim_ReplicateValidation.json`.
+- Added `Tools/AI_Sim/test_fauna_balance_sim.py` regression harness.
+- Added `--check-artifacts` CLI mode to `Tools/AI_Sim/FaunaBalanceSim.py`.
 
 Cinematic Cheats used:
 - Aggregate prey/predator biomass simulation instead of per-creature truth.
@@ -68,6 +70,11 @@ Verification:
 - Hard self-audit invariant check -> constants/report match, replicate summary/report match, `failureCount=0`.
 - Removed generated `Tools/AI_Sim/__pycache__`.
 - Corrected stale evidence wording in rationale and changed overstated CLI completion wording to `FINISHED`.
+- Regression harness: `python -m unittest Tools.AI_Sim.test_fauna_balance_sim -v` -> `4` tests, `OK`, final validation elapsed `1.470 s`.
+- Regression coverage: constants/report alignment, replicate summary/report alignment, bounded selected-weight short run, short replicate stability.
+- Removed generated `Tools/AI_Sim/__pycache__` and `Tools/__pycache__` after test execution.
+- Artifact checker: `python Tools\AI_Sim\FaunaBalanceSim.py --check-artifacts` -> `ARTIFACT_CHECK_PASSED`, constants `2250` bytes, report `40188` bytes, replicate `5683` bytes, frames `1000000`, replicates `5`.
+- Expanded regression harness: `python -m unittest Tools.AI_Sim.test_fauna_balance_sim -v` -> `5` tests, `OK`, final validation elapsed `1.672 s`.
 
 Regression model:
 - CPU: no Unity runtime code changed; offline Python run elapsed 226.3 s.

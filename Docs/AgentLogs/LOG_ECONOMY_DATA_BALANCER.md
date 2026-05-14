@@ -252,10 +252,167 @@ energy_pacing_warning=literal_30kw_requires_owner_decision
 STATUS: ECONOMY BALANCED
 ```
 
+## 2026-05-14 - Exact UTF-16 Hash Helper Upgrade
+
+What was wrong:
+- `Tools/EconomyValidator.py` documented `LocHash.Compute` compatibility, but `fnv1a32` iterated Python Unicode code points instead of exact UTF-16LE bytes.
+- Current economy IDs are ASCII, so this did not corrupt existing hashes, but the implementation was only accidentally exact for the current character set.
+
+What was done:
+- Changed `fnv1a32` to hash `value.encode("utf-16le")` byte-by-byte.
+- Rechecked normal validation and opt-in negative validation.
+- Verified `Data_TitaniumScrap` remains unsigned hash `3511699502`.
+
+Cinematic Cheats used:
+- No runtime simulation added. This is offline hash-contract correctness.
+
+Exact Microseconds saved:
+- 0 us gameplay. Existing runtime hash lookup savings remain unchanged because generated IDs and hashes did not change.
+
+Verification:
+
+```text
+Data_TitaniumScrap 3511699502
+emoji_contract_probe 2044075353
+LocHashProbe_\U0001f600 1705751833
+
+python -B Tools\EconomyValidator.py --root .
+STATUS: ECONOMY BALANCED
+
+python -B Tools\EconomyValidator.py --root . --negative-tests
+negative_cases=3
+STATUS: ECONOMY BALANCED
+```
+
+## 2026-05-14 - Robust Negative Mutation Guard
+
+What was wrong:
+- The result-item mismatch negative test used a fixed replacement ID. It passed against current data, but future recipe-order changes could make the mutation weaker.
+
+What was done:
+- Added deterministic distinct-ID selection for the first-submarine result mismatch mutation.
+- Added an explicit guard for missing first-submarine recipe-batch rows.
+- Re-ran normal and opt-in negative validation with `python -B` to avoid bytecode artifacts.
+
+Cinematic Cheats used:
+- No runtime simulation added. This is offline validator hardening.
+
+Exact Microseconds saved:
+- 0 us gameplay. It preserves reliable importer-gate proof without touching runtime.
+
+Verification:
+
+```text
+python -B Tools\EconomyValidator.py --root .
+ECONOMY VALIDATION OK
+matrix_rows=150 biomes=10 resources=15
+matrix_recipe_value_aligned_resources=15
+recipes=40 tier_ratios=[3.667, 2.69]
+survival_velocity_bands=5
+binding_unresolved_ids=22
+first_sub_recursive_kwh=433.1 literal_minutes=901.7
+hash_pairs_checked=781
+unique_id_hashes=175
+energy_pacing_warning=literal_30kw_requires_owner_decision
+STATUS: ECONOMY BALANCED
+
+python -B Tools\EconomyValidator.py --root . --negative-tests
+ECONOMY VALIDATION OK
+matrix_rows=150 biomes=10 resources=15
+matrix_recipe_value_aligned_resources=15
+recipes=40 tier_ratios=[3.667, 2.69]
+survival_velocity_bands=5
+binding_unresolved_ids=22
+first_sub_recursive_kwh=433.1 literal_minutes=901.7
+hash_pairs_checked=781
+unique_id_hashes=175
+negative_test_first_sub_result_item_mismatch=FAILED_AS_EXPECTED
+negative_test_first_sub_duplicate_raw_resource=FAILED_AS_EXPECTED
+negative_test_matrix_recipe_value_drift=FAILED_AS_EXPECTED
+negative_cases=3
+energy_pacing_warning=literal_30kw_requires_owner_decision
+STATUS: ECONOMY BALANCED
+```
+
+## 2026-05-14 - Hash Contract Sentinel Guard
+
+What was wrong:
+- The UTF-16LE hash helper fix had log evidence, but no internal sentinel guard. A future edit could drift without current ASCII economy IDs detecting it.
+
+What was done:
+- Added silent hash sentinels for `Data_TitaniumScrap`, `emoji_contract_probe`, and a non-BMP UTF-16 surrogate probe.
+- Corrected stale log evidence for `emoji_contract_probe` from `3334068930` to the exact UTF-16LE value `2044075353`.
+- Re-ran normal and negative validation.
+
+Cinematic Cheats used:
+- No runtime simulation added. This is offline hash-contract proof.
+
+Exact Microseconds saved:
+- 0 us gameplay. Runtime hash lookup savings remain unchanged.
+
+Verification:
+
+```text
+Data_TitaniumScrap 3511699502
+emoji_contract_probe 2044075353
+LocHashProbe_\U0001f600 1705751833
+
+python -B Tools\EconomyValidator.py --root .
+ECONOMY VALIDATION OK
+STATUS: ECONOMY BALANCED
+
+python -B Tools\EconomyValidator.py --root . --negative-tests
+negative_cases=3
+STATUS: ECONOMY BALANCED
+```
+
+## 2026-05-14 - Final UTF Hash Verification
+
+What was wrong:
+- The hash helper was upgraded after the reusable negative-test mode existed, so the bottom of the log needed current proof for both normal validation and exact hash compatibility.
+
+What was done:
+- Re-ran normal validation.
+- Re-ran opt-in negative validation.
+- Verified `Data_TitaniumScrap` still hashes to unsigned `3511699502` after switching the helper to exact UTF-16LE byte iteration.
+- Corrected duplicate status/rationale numbering for the final review loops.
+
+Cinematic Cheats used:
+- No runtime simulation added. This is offline hash-contract and validation proof.
+
+Exact Microseconds saved:
+- 0 us gameplay. Runtime lookup savings are preserved because generated hashes did not change.
+
+Verification:
+
+```text
+Data_TitaniumScrap 3511699502
+
+python -B Tools\EconomyValidator.py --root .
+ECONOMY VALIDATION OK
+matrix_rows=150 biomes=10 resources=15
+matrix_recipe_value_aligned_resources=15
+recipes=40 tier_ratios=[3.667, 2.69]
+survival_velocity_bands=5
+binding_unresolved_ids=22
+first_sub_recursive_kwh=433.1 literal_minutes=901.7
+hash_pairs_checked=781
+unique_id_hashes=175
+energy_pacing_warning=literal_30kw_requires_owner_decision
+STATUS: ECONOMY BALANCED
+
+python -B Tools\EconomyValidator.py --root . --negative-tests
+negative_test_first_sub_result_item_mismatch=FAILED_AS_EXPECTED
+negative_test_first_sub_duplicate_raw_resource=FAILED_AS_EXPECTED
+negative_test_matrix_recipe_value_drift=FAILED_AS_EXPECTED
+negative_cases=3
+STATUS: ECONOMY BALANCED
+```
+
 ## 2026-05-14 - Negative Validator Proof Recheck
 
 What was wrong:
-- The negative-proof entry was present, but the final log ordering still needed a bottom-most current evidence entry.
+- The negative-proof entry was present, but the log still needed a current evidence entry.
 
 What was done:
 - Re-ran the economy validator after recording negative-test evidence.
@@ -344,10 +501,60 @@ energy_pacing_warning=literal_30kw_requires_owner_decision
 STATUS: ECONOMY BALANCED
 ```
 
+## 2026-05-14 - Reproducible Negative Validator Mode
+
+What was wrong:
+- Negative validator evidence existed, but it was log-only and required a hand-written temporary harness to reproduce.
+
+What was done:
+- Added `--negative-tests` to `Tools/EconomyValidator.py`.
+- The mode copies economy files to a temporary directory, mutates only those copies, and verifies three malformed cases fail as expected.
+- Kept normal validator output unchanged unless the flag is passed.
+
+Cinematic Cheats used:
+- No runtime simulation added. This is offline validation proof.
+
+Exact Microseconds saved:
+- 0 us gameplay. The value is preventing malformed economy data from reaching importer/runtime bake work.
+
+Verification:
+
+```text
+python -B Tools\EconomyValidator.py --root .
+ECONOMY VALIDATION OK
+matrix_rows=150 biomes=10 resources=15
+matrix_recipe_value_aligned_resources=15
+recipes=40 tier_ratios=[3.667, 2.69]
+survival_velocity_bands=5
+binding_unresolved_ids=22
+first_sub_recursive_kwh=433.1 literal_minutes=901.7
+hash_pairs_checked=781
+unique_id_hashes=175
+energy_pacing_warning=literal_30kw_requires_owner_decision
+STATUS: ECONOMY BALANCED
+
+python -B Tools\EconomyValidator.py --root . --negative-tests
+ECONOMY VALIDATION OK
+matrix_rows=150 biomes=10 resources=15
+matrix_recipe_value_aligned_resources=15
+recipes=40 tier_ratios=[3.667, 2.69]
+survival_velocity_bands=5
+binding_unresolved_ids=22
+first_sub_recursive_kwh=433.1 literal_minutes=901.7
+hash_pairs_checked=781
+unique_id_hashes=175
+negative_test_first_sub_result_item_mismatch=FAILED_AS_EXPECTED
+negative_test_first_sub_duplicate_raw_resource=FAILED_AS_EXPECTED
+negative_test_matrix_recipe_value_drift=FAILED_AS_EXPECTED
+negative_cases=3
+energy_pacing_warning=literal_30kw_requires_owner_decision
+STATUS: ECONOMY BALANCED
+```
+
 ## 2026-05-14 - Final Negative Validator Recheck
 
 What was wrong:
-- The latest work needed bottom-most evidence after the negative validator test run.
+- The latest work needed validation evidence after the negative validator test run.
 
 What was done:
 - Rechecked the economy validator after temporary negative tests and documentation updates.
@@ -373,5 +580,109 @@ first_sub_recursive_kwh=433.1 literal_minutes=901.7
 hash_pairs_checked=781
 unique_id_hashes=175
 energy_pacing_warning=literal_30kw_requires_owner_decision
+STATUS: ECONOMY BALANCED
+```
+
+## 2026-05-14 - Post-Automation Validator Proof
+
+What was wrong:
+- The negative validator proof was promoted into `Tools/EconomyValidator.py --negative-tests`, so the log needed a final bottom-most proof after the tool change.
+
+What was done:
+- Re-ran normal validation.
+- Re-ran opt-in negative validation.
+- Confirmed no `Tools/__pycache__` artifact was created by the verification commands.
+
+Cinematic Cheats used:
+- No runtime simulation added. This is offline validator proof.
+
+Exact Microseconds saved:
+- 0 us gameplay. It prevents malformed static economy data from reaching importer/runtime bake work.
+
+Verification:
+
+```text
+python -B Tools\EconomyValidator.py --root .
+ECONOMY VALIDATION OK
+matrix_rows=150 biomes=10 resources=15
+matrix_recipe_value_aligned_resources=15
+recipes=40 tier_ratios=[3.667, 2.69]
+survival_velocity_bands=5
+binding_unresolved_ids=22
+first_sub_recursive_kwh=433.1 literal_minutes=901.7
+hash_pairs_checked=781
+unique_id_hashes=175
+energy_pacing_warning=literal_30kw_requires_owner_decision
+STATUS: ECONOMY BALANCED
+
+python -B Tools\EconomyValidator.py --root . --negative-tests
+ECONOMY VALIDATION OK
+matrix_rows=150 biomes=10 resources=15
+matrix_recipe_value_aligned_resources=15
+recipes=40 tier_ratios=[3.667, 2.69]
+survival_velocity_bands=5
+binding_unresolved_ids=22
+first_sub_recursive_kwh=433.1 literal_minutes=901.7
+hash_pairs_checked=781
+unique_id_hashes=175
+negative_test_first_sub_result_item_mismatch=FAILED_AS_EXPECTED
+negative_test_first_sub_duplicate_raw_resource=FAILED_AS_EXPECTED
+negative_test_matrix_recipe_value_drift=FAILED_AS_EXPECTED
+negative_cases=3
+energy_pacing_warning=literal_30kw_requires_owner_decision
+STATUS: ECONOMY BALANCED
+```
+
+## 2026-05-14 - Bottom UTF Hash Verification
+
+What was wrong:
+- The UTF hash helper and sentinel guard needed bottom-most evidence after all prior validator proof entries.
+
+What was done:
+- Re-ran normal validation.
+- Re-ran opt-in negative validation.
+- Verified `Data_TitaniumScrap`, `emoji_contract_probe`, and the non-BMP UTF-16LE probe hashes after exact byte iteration.
+- Confirmed scoped `.cs` diff is empty for this task.
+
+Cinematic Cheats used:
+- No runtime simulation added. This is offline hash-contract and validator proof.
+
+Exact Microseconds saved:
+- 0 us gameplay. Generated hashes did not change, so runtime lookup savings are preserved.
+
+Verification:
+
+```text
+Data_TitaniumScrap 3511699502
+emoji_contract_probe 2044075353
+LocHashProbe_\U0001f600 1705751833
+python -B Tools\EconomyValidator.py --root . -> STATUS: ECONOMY BALANCED
+python -B Tools\EconomyValidator.py --root . --negative-tests -> negative_cases=3, STATUS: ECONOMY BALANCED
+```
+
+## 2026-05-14 - Controlled Negative Mutator Failures
+
+What was wrong:
+- Two negative-test mutators assumed first-submarine rows existed. Missing rows could produce raw Python exceptions instead of controlled validator failures.
+
+What was done:
+- Added explicit `require()` guards for missing `recipe_batches` and `raw_resources` rows in negative-test mutators.
+- Re-ran normal and opt-in negative validation with `python -B`.
+
+Cinematic Cheats used:
+- No runtime simulation added. This is offline validator hardening.
+
+Exact Microseconds saved:
+- 0 us gameplay. It improves importer-gate diagnostics without touching runtime.
+
+Verification:
+
+```text
+python -B Tools\EconomyValidator.py --root .
+ECONOMY VALIDATION OK
+STATUS: ECONOMY BALANCED
+
+python -B Tools\EconomyValidator.py --root . --negative-tests
+negative_cases=3
 STATUS: ECONOMY BALANCED
 ```

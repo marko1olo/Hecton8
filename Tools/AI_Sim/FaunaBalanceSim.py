@@ -503,6 +503,57 @@ def update_constants_with_validation(constants_path: Path, validation_path: Path
     write_json(constants_path, data)
 
 
+def check_artifacts(constants_path: Path, report_path: Path, replicate_path: Path) -> Dict[str, object]:
+    errors: List[str] = []
+    try:
+        constants = json.loads(constants_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        return {"status": "ARTIFACT_CHECK_FAILED", "errors": [f"constants:{exc}"]}
+    try:
+        report = json.loads(report_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        return {"status": "ARTIFACT_CHECK_FAILED", "errors": [f"report:{exc}"]}
+    try:
+        replicate = json.loads(replicate_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        return {"status": "ARTIFACT_CHECK_FAILED", "errors": [f"replicate:{exc}"]}
+
+    if constants.get("status") != "AI BALANCED":
+        errors.append("constants.status != AI BALANCED")
+    if report.get("status") != "AI BALANCED":
+        errors.append("report.status != AI BALANCED")
+    if constants.get("selectedConstants") != report.get("selectedConstants"):
+        errors.append("selectedConstants mismatch")
+    if constants.get("millionFrameSummary", {}).get("frames") != report.get("millionFrameRun", {}).get("frames"):
+        errors.append("millionFrame frames mismatch")
+    if constants.get("millionFrameSummary", {}).get("population") != report.get("millionFrameRun", {}).get("population"):
+        errors.append("millionFrame population mismatch")
+    if "heatmapTop10" in constants or "millionFrameRun" in constants:
+        errors.append("constants file contains detailed report payload")
+
+    replicate_summary = constants.get("replicateValidation", {})
+    if replicate_summary.get("status") != replicate.get("status"):
+        errors.append("replicate status mismatch")
+    if replicate_summary.get("failureCount") != replicate.get("failureCount"):
+        errors.append("replicate failureCount mismatch")
+    if replicate_summary.get("summary") != replicate.get("summary"):
+        errors.append("replicate summary mismatch")
+    if replicate.get("status") != "REPLICATE_STABLE":
+        errors.append("replicate.status != REPLICATE_STABLE")
+    if replicate.get("failureCount") != 0:
+        errors.append("replicate failureCount != 0")
+
+    return {
+        "status": "ARTIFACT_CHECK_PASSED" if not errors else "ARTIFACT_CHECK_FAILED",
+        "errors": errors,
+        "constantsBytes": constants_path.stat().st_size if constants_path.exists() else 0,
+        "reportBytes": report_path.stat().st_size if report_path.exists() else 0,
+        "replicateBytes": replicate_path.stat().st_size if replicate_path.exists() else 0,
+        "millionFrames": constants.get("millionFrameSummary", {}).get("frames"),
+        "replicates": replicate_summary.get("replicates"),
+    }
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="HECTON-8 fauna behavior balance simulator.")
     parser.add_argument("--frames", type=int, default=DEFAULT_FRAMES)
@@ -515,11 +566,28 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--validation-frames", type=int, default=200_000)
     parser.add_argument("--replicates", type=int, default=5)
     parser.add_argument("--validation-output", default="Tools/AI_Sim/FaunaBalanceSim_ReplicateValidation.json")
+    parser.add_argument("--check-artifacts", action="store_true")
     return parser.parse_args()
 
 
 def main() -> int:
     args = parse_args()
+    if args.check_artifacts:
+        check = check_artifacts(Path(args.output), Path(args.report), Path(args.validation_output))
+        print(f"status={check['status']}")
+        print(
+            "sizes "
+            f"constants={check['constantsBytes']} "
+            f"report={check['reportBytes']} "
+            f"replicate={check['replicateBytes']}"
+        )
+        print(f"millionFrames={check['millionFrames']} replicates={check['replicates']}")
+        if check["errors"]:
+            for error in check["errors"]:
+                print(f"error={error}")
+            return 2
+        return 0
+
     if args.validate_selected:
         start = time.perf_counter()
         weights = load_selected_weights(Path(args.output))

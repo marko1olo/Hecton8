@@ -11,7 +11,7 @@ namespace Hecton8.Core
     public static class HardwareTierDetector
     {
         private const int DefaultVramBudgetMegabytes = 1600;
-        private const int SharedMemoryVramBudgetMegabytes = 960;
+        private const int GenericSharedMemoryVramBudgetMegabytes = 960;
         private const int LowVramGraphicsMemoryMegabytes = 2048;
         private const int LowSystemMemoryMegabytes = 8192;
 
@@ -21,6 +21,7 @@ namespace Hecton8.Core
         private static bool _isVulkan;
         private static bool _isMetal;
         private static bool _isSteamDeckLike;
+        private static bool _isQuest3Like;
         private static bool _isSharedMemoryArchitecture;
         private static bool _allowComputeCulling;
         private static int _recommendedVramBudgetMegabytes;
@@ -76,6 +77,16 @@ namespace Hecton8.Core
             }
         }
 
+        /// <summary>True for Meta Quest 3 signatures that should use the generated Quest 3 profile.</summary>
+        public static bool IsQuest3Like
+        {
+            get
+            {
+                EnsureInitialized();
+                return _isQuest3Like;
+            }
+        }
+
         /// <summary>True when RAM and VRAM must be treated as a shared pressure pool.</summary>
         public static bool SharedMemoryModeActive
         {
@@ -128,6 +139,7 @@ namespace Hecton8.Core
             _isVulkan = false;
             _isMetal = false;
             _isSteamDeckLike = false;
+            _isQuest3Like = false;
             _isSharedMemoryArchitecture = false;
             _allowComputeCulling = false;
             _recommendedVramBudgetMegabytes = DefaultVramBudgetMegabytes;
@@ -156,19 +168,28 @@ namespace Hecton8.Core
             _isVulkan = _graphicsDeviceType == GraphicsDeviceType.Vulkan;
             _isMetal = _graphicsDeviceType == GraphicsDeviceType.Metal;
             _isSteamDeckLike = DetectSteamDeckLike();
-            _isSharedMemoryArchitecture = DetectSharedMemoryArchitecture(_isSteamDeckLike);
+            _isQuest3Like = DetectQuest3Like();
+            _isSharedMemoryArchitecture = DetectSharedMemoryArchitecture(_isSteamDeckLike, _isQuest3Like);
             _allowComputeCulling =
                 SystemInfo.supportsComputeShaders &&
                 !_isLegacyDirect3D11;
-            _recommendedVramBudgetMegabytes = ResolveRecommendedVramBudgetMegabytes(_isSharedMemoryArchitecture);
+            _recommendedVramBudgetMegabytes = ResolveRecommendedVramBudgetMegabytes(
+                _isSharedMemoryArchitecture,
+                _isSteamDeckLike,
+                _isQuest3Like);
             _initialized = true;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static int ResolveRecommendedVramBudgetMegabytes(bool sharedMemory)
+        private static int ResolveRecommendedVramBudgetMegabytes(bool sharedMemory, bool steamDeckLike, bool quest3Like)
         {
             if (sharedMemory)
-                return SharedMemoryVramBudgetMegabytes;
+            {
+                return HardwareProfileCatalog.ResolveSharedMemoryGraphicsBudgetMegabytes(
+                    steamDeckLike,
+                    quest3Like,
+                    GenericSharedMemoryVramBudgetMegabytes);
+            }
 
             int reportedGraphicsMemory = SystemInfo.graphicsMemorySize;
             if (reportedGraphicsMemory <= 0)
@@ -177,9 +198,9 @@ namespace Hecton8.Core
             return Mathf.Min(DefaultVramBudgetMegabytes, Mathf.Max(512, reportedGraphicsMemory));
         }
 
-        private static bool DetectSharedMemoryArchitecture(bool steamDeckLike)
+        private static bool DetectSharedMemoryArchitecture(bool steamDeckLike, bool quest3Like)
         {
-            if (steamDeckLike)
+            if (steamDeckLike || quest3Like)
                 return true;
 
             int graphicsMemory = SystemInfo.graphicsMemorySize;
@@ -203,6 +224,16 @@ namespace Hecton8.Core
                    ContainsIgnoreCase(SystemInfo.deviceName, "steam") ||
                    ContainsIgnoreCase(SystemInfo.processorType, "custom amd aerith") ||
                    ContainsIgnoreCase(SystemInfo.processorType, "van gogh");
+        }
+
+        private static bool DetectQuest3Like()
+        {
+            return ContainsIgnoreCase(SystemInfo.deviceModel, "quest 3") ||
+                   ContainsIgnoreCase(SystemInfo.deviceModel, "quest3") ||
+                   ContainsIgnoreCase(SystemInfo.deviceName, "quest 3") ||
+                   ContainsIgnoreCase(SystemInfo.deviceName, "quest3") ||
+                   ContainsIgnoreCase(SystemInfo.operatingSystem, "quest 3") ||
+                   ContainsIgnoreCase(SystemInfo.processorType, "xr2 gen 2");
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

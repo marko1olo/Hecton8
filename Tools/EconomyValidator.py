@@ -20,6 +20,8 @@ import argparse
 import csv
 import json
 import re
+import shutil
+import tempfile
 from pathlib import Path
 from statistics import median
 from typing import Any
@@ -68,13 +70,21 @@ ASSET_ID_KEYS = ("stableId", "upgradeId", "m_Name")
 def fnv1a32(value: str) -> int:
     """Match Hecton.Localization.LocHash.Compute as an unsigned 32-bit value."""
     hash_value = FNV_OFFSET
-    for char in value:
-        code_unit = ord(char)
-        hash_value ^= code_unit & 0xFF
-        hash_value = (hash_value * FNV_PRIME) & 0xFFFFFFFF
-        hash_value ^= (code_unit >> 8) & 0xFF
+    for byte in value.encode("utf-16le"):
+        hash_value ^= byte
         hash_value = (hash_value * FNV_PRIME) & 0xFFFFFFFF
     return hash_value
+
+
+def validate_hash_contract() -> None:
+    sentinels = (
+        ("Data_TitaniumScrap", 3511699502),
+        ("emoji_contract_probe", 2044075353),
+        ("LocHashProbe_" + chr(0x1F600), 1705751833),
+    )
+    for value, expected_hash in sentinels:
+        actual_hash = fnv1a32(value)
+        require(actual_hash == expected_hash, f"hash contract drift for {ascii(value)}: got {actual_hash}, expected {expected_hash}")
 
 
 def fail(message: str) -> None:
@@ -568,13 +578,105 @@ def validate_numeric_bands(entries: list[dict[str, Any]], min_key: str, max_key:
         previous_max = max_value
 
 
+def write_json(path: Path, data: Any) -> None:
+    path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+
+
+def copy_economy_files(source_dir: Path, target_dir: Path) -> None:
+    for source in source_dir.iterdir():
+        if source.is_file():
+            shutil.copy2(source, target_dir / source.name)
+
+
+def choose_distinct_negative_item_id(original_id: str) -> str:
+    for candidate_id in ("Data_TitaniumScrap", "Data_CopperOre", "Data_SilicaShards"):
+        if candidate_id != original_id:
+            return candidate_id
+    fail("negative result item mismatch test requires a distinct replacement ID")
+
+
+def mutate_first_sub_result_item(tmp_dir: Path) -> None:
+    path = tmp_dir / "Time_To_First_Submarine.json"
+    data = load_json(path)
+    recipe_batches = data.get("recipe_batches")
+    require(isinstance(recipe_batches, list) and recipe_batches, "negative result item mismatch test requires recipe batch rows")
+    replacement_id = choose_distinct_negative_item_id(recipe_batches[0]["result_item_id"])
+    recipe_batches[0]["result_item_id"] = replacement_id
+    recipe_batches[0]["result_item_hash32"] = fnv1a32(replacement_id)
+    write_json(path, data)
+
+
+def mutate_first_sub_duplicate_raw(tmp_dir: Path) -> None:
+    path = tmp_dir / "Time_To_First_Submarine.json"
+    data = load_json(path)
+    raw_resources = data.get("raw_resources")
+    require(isinstance(raw_resources, list) and raw_resources, "negative duplicate raw resource test requires raw resource rows")
+    raw_resources.append(dict(raw_resources[0]))
+    write_json(path, data)
+
+
+def mutate_matrix_value_drift(tmp_dir: Path) -> None:
+    path = tmp_dir / "Resource_Distribution_Matrix.csv"
+    with path.open("r", encoding="utf-8", newline="") as handle:
+        reader = csv.DictReader(handle)
+        rows = list(reader)
+        fieldnames = reader.fieldnames
+    require(rows, "negative matrix value drift test requires matrix rows")
+    require(fieldnames is not None, "negative matrix value drift test requires CSV headers")
+    rows[0]["base_value_units"] = str(float(rows[0]["base_value_units"]) + 0.5)
+    with path.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(rows)
+
+
+def run_negative_tests(economy_dir: Path) -> list[str]:
+    tests = (
+        (
+            "first_sub_result_item_mismatch",
+            mutate_first_sub_result_item,
+            lambda tmp_dir: validate_first_submarine_path(tmp_dir / "Time_To_First_Submarine.json", tmp_dir / "Recipes.json"),
+            "result item mismatch",
+        ),
+        (
+            "first_sub_duplicate_raw_resource",
+            mutate_first_sub_duplicate_raw,
+            lambda tmp_dir: validate_first_submarine_path(tmp_dir / "Time_To_First_Submarine.json", tmp_dir / "Recipes.json"),
+            "duplicate first submarine raw resource",
+        ),
+        (
+            "matrix_recipe_value_drift",
+            mutate_matrix_value_drift,
+            lambda tmp_dir: validate_resource_value_alignment(tmp_dir / "Resource_Distribution_Matrix.csv", tmp_dir / "Recipes.json"),
+            "inconsistent matrix base values",
+        ),
+    )
+    results: list[str] = []
+    for name, mutate, validate, expected_fragment in tests:
+        with tempfile.TemporaryDirectory(prefix="h8_economy_negative_") as temp_root:
+            temp_dir = Path(temp_root)
+            copy_economy_files(economy_dir, temp_dir)
+            mutate(temp_dir)
+            try:
+                validate(temp_dir)
+            except SystemExit as exc:
+                message = str(exc)
+                require(expected_fragment in message, f"{name} failed with unexpected message: {message}")
+                results.append(name)
+                continue
+            fail(f"{name} unexpectedly passed")
+    return results
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Validate HECTON-8 economy JSON/CSV data.")
     parser.add_argument("--root", default=".", help="Repository root. Default: current directory.")
+    parser.add_argument("--negative-tests", action="store_true", help="Run temporary-copy malformed data rejection tests.")
     args = parser.parse_args()
     root = Path(args.root)
     economy_dir = root / "Data" / "Economy"
 
+    validate_hash_contract()
     matrix_result = validate_resource_matrix(economy_dir / "Resource_Distribution_Matrix.csv")
     recipe_result = validate_recipes(economy_dir / "Recipes.json")
     aligned_resources = validate_resource_value_alignment(economy_dir / "Resource_Distribution_Matrix.csv", economy_dir / "Recipes.json")
@@ -583,6 +685,7 @@ def main() -> None:
     first_sub_result = validate_first_submarine_path(economy_dir / "Time_To_First_Submarine.json", economy_dir / "Recipes.json")
     unique_hashes = validate_global_hash_collisions(economy_dir)
     total_hashes = matrix_result["hashes"] + recipe_result["hashes"] + survival_result["hashes"] + binding_result["hashes"] + first_sub_result["hashes"]
+    negative_results = run_negative_tests(economy_dir) if args.negative_tests else []
     print("ECONOMY VALIDATION OK")
     print(f"matrix_rows={matrix_result['rows']} biomes={matrix_result['biomes']} resources={matrix_result['resources']}")
     print(f"matrix_recipe_value_aligned_resources={aligned_resources}")
@@ -592,6 +695,10 @@ def main() -> None:
     print(f"first_sub_recursive_kwh={first_sub_result['recursive_kwh']} literal_minutes={first_sub_result['literal_minutes']}")
     print(f"hash_pairs_checked={total_hashes}")
     print(f"unique_id_hashes={unique_hashes}")
+    for negative_result in negative_results:
+        print(f"negative_test_{negative_result}=FAILED_AS_EXPECTED")
+    if negative_results:
+        print(f"negative_cases={len(negative_results)}")
     print("energy_pacing_warning=literal_30kw_requires_owner_decision")
     print("STATUS: ECONOMY BALANCED")
 

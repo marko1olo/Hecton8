@@ -9,6 +9,7 @@ buffers whose dimensions are defined in the manifest and design document.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
 import struct
@@ -252,6 +253,19 @@ def write_float32_bin(path: Path, table: np.ndarray) -> int:
     return contiguous.size * FLOAT32_BYTES
 
 
+def file_sha256(path: Path) -> str:
+    """Return the uppercase SHA-256 digest for a generated file."""
+
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        while True:
+            chunk = handle.read(64 * 1024)
+            if not chunk:
+                break
+            digest.update(chunk)
+    return digest.hexdigest().upper()
+
+
 def validate_bin_sizes(output_dir: Path) -> Dict[str, Any]:
     """Validate that every generated binary matches its exact expected byte size."""
 
@@ -375,6 +389,8 @@ def generate_all(output_dir: Path = DEFAULT_OUTPUT_DIR) -> Dict[str, Any]:
         json.dumps(ecosystem, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
     )
+    for file_name, file_info in files.items():
+        file_info["sha256"] = file_sha256(output_dir / file_name)
 
     validation = validate_bin_sizes(output_dir)
     manifest = {
@@ -389,6 +405,7 @@ def generate_all(output_dir: Path = DEFAULT_OUTPUT_DIR) -> Dict[str, Any]:
         "jsonFiles": {
             "ecosystem_coefficients.json": {
                 "purpose": "Predator/prey biomass constants for the Ecosystem Director.",
+                "sha256": file_sha256(coefficient_path),
                 "keys": [
                     "BirthRate",
                     "DeathRate",

@@ -107,3 +107,39 @@ Rejected Alternatives: Weakening or removing the master self-test was rejected. 
 Scalability potential: Same as Decision 8; this is verification hardening only.
 
 Hardware Impact: 0 us frame impact. Offline self-test only.
+
+## Decision 10
+
+Problem: The Python oracle and design doc were not enough for implementation handoff; SHINOBU still needed a concrete C# surface for the master hash and bit-shuffle math.
+
+Solution: Added `Assets/_Project/Scripts/SaveSystem/SaveMasterHashV10.cs` as an internal isolated helper. It uses stackalloc buffers, manual little-endian byte writes, Unity.Mathematics `xxHash3.Hash64`, and explicit 128-bit lane rotation. Added `SaveMasterHashV10Result` to `BinaryLayoutManifest` so its 32-byte ABI is checked at cold boot.
+
+Rejected Alternatives: Directly bumping `SaveBinaryStorage.CurrentVersion` to `0x000A` was rejected because that would change active save ABI without Unity import/play/load verification. Managed `byte[]`, `BitConverter`, and string preimage builders were rejected because they are allocation-prone and weaker for Burst parity.
+
+Scalability potential: Low/Middle/High/Ultra share the same result ABI. Ultra/debug builds can log `PlainLo/PlainHi`; shipping saves store only `StoredLo/StoredHi`.
+
+Hardware Impact: 0 us gameplay frame impact. Cold save/load path only; stack buffer footprint is 91 bytes max.
+
+## Decision 11
+
+Problem: The C# helper computed the V10 hash but did not yet own a concrete 72-byte header layout. That left the most important requirement, byte offsets 56 and 64, protected only by documentation.
+
+Solution: Added `SaveFileHeaderV10` with `[StructLayout(LayoutKind.Sequential, Pack = 1, Size = 72)]`, added helper overloads for compute/fill/validate, and extended `BinaryLayoutManifest` to assert every V10 header field offset.
+
+Rejected Alternatives: Mutating `SaveBinaryStorage.SaveFileHeader` was rejected because it would alter the active v9 ABI. Leaving layout proof in docs only was rejected because offset drift must fail cold-boot validation once Unity can import.
+
+Scalability potential: Low/Middle/High/Ultra share the same 72-byte header ABI. Future high-tier debug can validate plain lanes without changing stored bytes.
+
+Hardware Impact: 0 us gameplay frame impact. Cold save/load header math only; no active writer integration in this pass.
+
+## Decision 12
+
+Problem: Tooling evidence was incomplete. `MSBuild` was absent from PATH, but a Visual Studio Community MSBuild executable exists in a standard install directory.
+
+Solution: Ran MSBuild directly against `Hecton8.slnx`. The build did not reach source compilation because the solution references missing `.csproj` files while this checkout only has `.csproj.lscache` artifacts.
+
+Rejected Alternatives: Reporting "MSBuild missing" without checking standard install paths was rejected after review. Creating or renaming project files from `.lscache` was rejected because that would mutate generated Unity project artifacts outside this task's domain.
+
+Scalability potential: No runtime impact. This only tightens verification accuracy.
+
+Hardware Impact: 0 us frame impact.

@@ -8,7 +8,7 @@
       4
     ]
   },
-  "flow_path": "C:\\Hecton8\\Data\\Textures\\AbyssalFlowField_LowTier_RGBA.png",
+  "flow_path": "Data/Textures/AbyssalFlowField_LowTier_RGBA.png",
   "noise": {
     "blue_spectrum": {
       "dc_power": 2.0642223717004526e-06,
@@ -51,6 +51,6 @@
       "max_seam_ratio_max": 1.35
     }
   },
-  "noise_path": "C:\\Hecton8\\Data\\Textures\\BlueNoise_RGBA.png",
+  "noise_path": "Data/Textures/BlueNoise_RGBA.png",
   "passed": true
 }

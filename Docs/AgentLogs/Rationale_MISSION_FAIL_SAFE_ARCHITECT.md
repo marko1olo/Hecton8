@@ -82,3 +82,43 @@ Solution: Canonicalized both files to the same 32 outpost flags, including five 
 Rejected Alternatives: Keeping the 30-flag count to preserve the earlier report; accepting alias names; leaving the mismatch for a runtime integrator.
 Scalability potential: Low tier gets one stable bit vocabulary for O(1) checks. High/Ultra can add presentation systems without renaming quest truth.
 Hardware Impact: 0 us runtime from this documentation pass. Future runtime risk is reduced because hash constants can be generated from one canonical vocabulary.
+
+## Decision 011 - Editor-Only Handoff Validator
+
+Problem: Manual PowerShell/static checks proved the handoff once, but nothing in the Unity authoring workflow would stop a future edit from reintroducing stale aliases, wrong hashes, missing commit flags, or prose/JSON drift.
+Solution: Added `Assets/_Project/Scripts/Editor/OutpostFailSafeHandoffValidator.cs`, an editor-only menu validator for `Docs/Design/Missions/Outpost_FailSafe_Handoff.json` and `Docs/Design/Missions/Outpost_Failure_Modes.md`.
+Rejected Alternatives: Runtime validation in quest code; direct localization table mutation; integrating a partial quest baker without Unity compile proof; expanding public quest interfaces during the batch.
+Scalability potential: Low tier receives baked constants from a validated source instead of runtime string checks. High/Ultra can layer richer outpost presentation on the same validated flag vocabulary.
+Hardware Impact: 0 us player runtime. The validator is editor-only and cold-path; all managed allocations are outside gameplay and marked as `COLD ALLOC`.
+
+## Decision 012 - Canonical Cold Allocation Comments
+
+Problem: Self-review found the new validator used ASCII hyphen separators in `COLD ALLOC` comments, but the project mandate requires the exact long-dash separator format.
+Solution: Corrected all 12 editor-only allocation comments in `OutpostFailSafeHandoffValidator.cs` to the canonical format.
+Rejected Alternatives: Keeping ASCII-only comments and falsely reporting compliance; removing allocation comments from editor-only code.
+Scalability potential: No player runtime impact. The correction improves static audit accuracy for future import/bake work.
+Hardware Impact: 0 us player runtime. Editor-only documentation/comment fix.
+
+## Decision 013 - Full Topological Coverage Gate
+
+Problem: Self-review found `Outpost_FailSafe_Handoff.json` declared 32 mission flags but listed only 23 in `topologicalOrder`. That makes the graph handoff partial while the status claimed a 32-flag DAG.
+Solution: Expanded `topologicalOrder` to include every declared outpost flag exactly once and upgraded `OutpostFailSafeHandoffValidator.cs` to reject missing topological coverage.
+Rejected Alternatives: Leaving topological order as a critical-path-only summary was rejected because the field name is machine-readable graph authority. Moving the missing flags into prose only was rejected because the validator would still miss drift.
+Scalability potential: Low tier gets deterministic O(1) bit progression with no hidden branch flags. High and Ultra can add richer branch presentation without changing quest truth.
+Hardware Impact: 0 us player runtime. Editor-only validation catches data drift before localization/quest bake.
+
+## Decision 014 - Gas Room Flag Vocabulary Gate
+
+Problem: Self-review found `Outpost_FailSafe_Handoff.json` used invented `roomflag.*` tokens and a bare `Submerged` condition. Current source authority defines `GasDynamicsRoomFlags.InternalFire`, `Breached`, `ScrubberInstalled`, and `Occupied`; submerged state is a scalar `roomSubmerged01`, not an enum flag.
+Solution: Canonicalized JSON physical-state references to `GasDynamicsRoomFlags.*` and `roomSubmerged01`, then upgraded `OutpostFailSafeHandoffValidator.cs` to reject legacy `roomflag.*`, unsupported gas enum values, and bare `Submerged` flag claims.
+Rejected Alternatives: Leaving the physical-state consistency contract as prose only; inventing a `GasDynamicsRoomFlags.Submerged` member; changing the runtime gas interface during a scenario-design task.
+Scalability potential: Low tier keeps scalar gas checks cheap. High and Ultra can add stronger visual warnings for fire, breach, or submerged-fraction rooms without changing mission truth.
+Hardware Impact: 0 us player runtime. Editor-only validation prevents invalid gas vocabulary before quest/localization bake.
+
+## Decision 015 - Static Editor Array Allocation Comments
+
+Problem: The validator used editor-only static string arrays for gas allowlists and stale-token needles without explicit cold-allocation ownership comments.
+Solution: Added canonical `COLD ALLOC` comments for those arrays in `OutpostFailSafeHandoffValidator.cs`.
+Rejected Alternatives: Ignoring static editor arrays because they are not runtime hot-path; that weakens allocation review discipline and makes future scans less exact.
+Scalability potential: No player runtime impact. Cleaner editor validation ownership supports safer future bake/import hardening.
+Hardware Impact: 0 us player runtime. Comment-only compliance correction in an editor-only file.

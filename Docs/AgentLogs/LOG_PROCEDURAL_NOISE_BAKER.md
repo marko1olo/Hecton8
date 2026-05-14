@@ -56,3 +56,103 @@ Evidence:
 
 Verification boundary:
 - Unity import settings, texture wrap mode, no-mip/no-aniso, shader binding, runtime frame time, GCMonitor, and visual capture remain PENDING VERIFICATION.
+
+## 2026-05-14 - Review Addendum: Metrics Portability
+
+What was wrong:
+- The baked PNGs were byte-stable, but tracked metrics JSON used machine-local absolute workspace paths.
+
+What was done:
+- Added repository-relative artifact path serialization to `Tools/NoiseBaker/GenerateBlueNoise.py`.
+- Regenerated `NoiseBakeMetrics.json`, `NoiseBakeMetrics.verify.json`, `NoiseBakeMetrics.verify2.json`, and `NoiseBakeMetrics.final.json`.
+- Re-ran the independent Fourier verifier after the metadata rewrite.
+
+Cinematic Cheats used:
+- No new runtime cheat. This was evidence hygiene around the existing offline visual-fake textures.
+
+Exact Microseconds saved:
+- 0 us runtime. The change affects offline metadata only.
+
+Evidence:
+- `python -B Tools\NoiseBaker\GenerateBlueNoise.py` exited 0 with `status: NOISE BAKED`.
+- `python -B Tools\NoiseBaker\VerifyBlueNoiseSpectrum.py --metrics Data\Textures\NoiseBakeMetrics.final.json` exited 0.
+- Absolute-path scan over owned baker, texture metrics, status, rationale, and log files returned no matches after documentation cleanup.
+- BlueNoise hash unchanged: `AD6F279C6D9AF828D3E1E808896C11F9EB159AC6F560A412E2B87D9F6BD1F902`.
+- Flow hash unchanged: `32CCB138852E75017B9645CD138C1072D7193C8855D4D127FF3C58AB706C76AA`.
+
+Verification boundary:
+- Unity import settings, texture wrap mode, no-mip/no-aniso, shader binding, runtime frame time, GCMonitor, and visual capture remain PENDING VERIFICATION.
+
+## 2026-05-14 - Review Addendum: Stable Metrics
+
+What was wrong:
+- `NoiseBakeMetrics.json` stored local `bake_seconds`, causing tracked evidence churn on every full bake.
+
+What was done:
+- Removed default timing from generated tracked metrics.
+- Added `--include-timing` for explicit local benchmarking when timing is wanted.
+- Regenerated all tracked metrics and cleaned untracked verification scratch output plus Python bytecode cache.
+
+Cinematic Cheats used:
+- No new runtime cheat. This hardens the offline evidence path for the existing baked visual-fake textures.
+
+Exact Microseconds saved:
+- 0 us runtime. The change removes metadata churn only.
+
+Evidence:
+- `python -B Tools\NoiseBaker\GenerateBlueNoise.py` exited 0 with `status: NOISE BAKED`.
+- `python -B Tools\NoiseBaker\VerifyBlueNoiseSpectrum.py --metrics Data\Textures\NoiseBakeMetrics.final.json` exited 0.
+- Tracked metrics contain no volatile timing key.
+- BlueNoise hash unchanged: `AD6F279C6D9AF828D3E1E808896C11F9EB159AC6F560A412E2B87D9F6BD1F902`.
+- Flow hash unchanged: `32CCB138852E75017B9645CD138C1072D7193C8855D4D127FF3C58AB706C76AA`.
+
+Verification boundary:
+- Unity import settings, texture wrap mode, no-mip/no-aniso, shader binding, runtime frame time, GCMonitor, and visual capture remain PENDING VERIFICATION.
+
+## 2026-05-14 - Review Addendum: Optimizer Boundary
+
+What was wrong:
+- Status wording said the generated script scan found no `subprocess`, but `GenerateBlueNoise.py` intentionally uses `subprocess.run` for optional offline PNG optimizers.
+- The optimizer call had no timeout, so a broken external optimizer could stall an offline batch run.
+
+What was done:
+- Added `OPTIMIZER_TIMEOUT_SECONDS = 120`.
+- Wrapped optimizer `subprocess.run` with `timeout=OPTIMIZER_TIMEOUT_SECONDS` and a `TimeoutExpired` fallback result.
+- Corrected status wording so evidence says `subprocess` is offline optimizer-only, not absent.
+
+Cinematic Cheats used:
+- No runtime cheat added. This is offline tooling hardening for the existing baked visual-fake textures.
+
+Exact Microseconds saved:
+- 0 us runtime. The change only bounds offline optimizer execution.
+
+Evidence:
+- `python -m py_compile Tools\NoiseBaker\GenerateBlueNoise.py Tools\NoiseBaker\VerifyBlueNoiseSpectrum.py` passed.
+- `python Tools\NoiseBaker\VerifyBlueNoiseSpectrum.py --metrics Data\Textures\NoiseBakeMetrics.final.json` exited 0.
+
+Verification boundary:
+- Unity import settings, texture wrap mode, no-mip/no-aniso, shader binding, runtime frame time, GCMonitor, and visual capture remain PENDING VERIFICATION.
+
+## 2026-05-14 - Review Addendum: Independent Verifier
+
+What was wrong:
+- `VerifyBlueNoiseSpectrum.py` imported the generator's `verify_assets()` function, so producer and verifier shared the same formula/threshold implementation.
+
+What was done:
+- Rewrote `VerifyBlueNoiseSpectrum.py` as a standalone PNG readback verifier.
+- Added independent IGN formula evaluation, Fourier spectrum thresholds, seam metrics, repository-relative path serialization, and JSON writing in the verifier.
+- Regenerated verifier metrics with the standalone script.
+
+Cinematic Cheats used:
+- No new runtime cheat. This strengthens offline proof for the existing baked blue-noise and flow-field visual fakes.
+
+Exact Microseconds saved:
+- 0 us runtime. The change affects offline verification only.
+
+Evidence:
+- `python Tools\NoiseBaker\VerifyBlueNoiseSpectrum.py --metrics Data\Textures\NoiseBakeMetrics.final.json` exited 0.
+- A normal verifier run did not create a local `Tools\NoiseBaker\__pycache__`.
+- Independent verifier still reports `ign_max_quantized_delta=0`, low_mean_to_mid_mean `0.07326260954141617`, and low_peak_to_mid_mean `0.3122076988220215`.
+
+Verification boundary:
+- Unity import settings, texture wrap mode, no-mip/no-aniso, shader binding, runtime frame time, GCMonitor, and visual capture remain PENDING VERIFICATION.

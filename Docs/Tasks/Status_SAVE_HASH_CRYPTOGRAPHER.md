@@ -39,6 +39,8 @@ Extracted from `Docs/Tasks/CURRENT_BATCH.md` because `CURRENT_BATCH_OSHINO.md` i
 - Loop 6: Local anti-bloat/polish pass; no `<POLISH_MANDATE>` tag exists in `Docs/Tasks/CURRENT_BATCH.md`, so fixed XXH3 branch vectors and shuffle vectors were embedded into `ReplayHasher.py` self-test.
 - Loop 7: Professional self-review pass; added executable `master` command, corrected `MasterStateHash` preimage to bind the full current header prefix/body except circular result fields, and reran external XXH3/fuzz verification.
 - Loop 8: Self-review correction pass; caught stale placeholder master vector in `ReplayHasher.py` self-test, patched it to the CLI-emitted deterministic lanes, reran syntax/self-test/master/reference fuzz, and probed local compiler/editor availability.
+- Loop 9: Implementation upgrade pass; added isolated C# `SaveMasterHashV10` helper, added `SaveMasterHashV10Result` binary layout sentinel, validated 128-bit rotate formulas externally, and kept the active v9 writer untouched.
+- Loop 10: Header implementation upgrade pass; added concrete `SaveFileHeaderV10`, helper overloads for compute/fill/validate, full header offset sentinels, and independent packed-layout validation.
 
 ## Verification
 
@@ -46,8 +48,17 @@ Extracted from `Docs/Tasks/CURRENT_BATCH.md` because `CURRENT_BATCH_OSHINO.md` i
 - Python self-test: `python .\Tools\Security\ReplayHasher.py self-test` -> PASS (`SELFTEST_OK`), including fixed zero-seed branch vectors, seeded branch vectors, shuffle mask vector, shuffle output vector, inverse validation, and master hash vector.
 - Master CLI vector: `python .\Tools\Security\ReplayHasher.py master ...` -> PASS, expected `stored_le=6d24c9a87e8ec3322681980ad2b6b28c`.
 - Reference comparison: local script vs isolated `xxhash.xxh3_64_intdigest` package across 136 deterministic vectors plus 128 randomized seeded/fuzz cases -> PASS (`XXH3_REFERENCE_AND_SHUFFLE_FUZZ_OK 264 cases`).
+- C# implementation surface: `Assets/_Project/Scripts/SaveSystem/SaveMasterHashV10.cs` added. Static review: stackalloc-only preimage/mask buffers, manual little-endian writes, no managed arrays, no `BitConverter`, no strings in hash generation.
+- Concrete V10 header: `SaveFileHeaderV10` added with size `72`; `MasterStateHashLo/Hi` offsets `56/64`.
+- Binary layout sentinel: `BinaryLayoutManifest.VerifySaveLayouts()` now asserts `SaveFileHeaderV10` size/offsets and `SaveMasterHashV10Result` size `32` with offsets `0/8/16/24`.
+- Header layout proof: independent packed-struct check -> PASS (`V10_HEADER_LAYOUT_OK`).
+- Rotate formula proof: independent Python check of C# lane formulas -> PASS (`ROT128_FORMULA_OK`).
+- C# static guard: new helper and manifest edit -> PASS (`CS_STATIC_GUARD_OK`).
+- Temp dependency hygiene: `.codex_tmp\xxhash_check` -> absent after reference verification.
 - Omega polish extraction: `<POLISH_MANDATE>` tag not found in `Docs/Tasks/CURRENT_BATCH.md`; local anti-bloat pass completed on owned artifacts.
 - C# compile attempt: `dotnet build .\Hecton8.slnx --no-restore` -> BLOCKED, `dotnet` not found on PATH.
+- Additional compiler probes: `csc` and `mcs` -> BLOCKED, not found on PATH.
+- MSBuild direct probe: `C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe .\Hecton8.slnx /t:Build /p:RestorePackages=false /restore:false` -> BLOCKED, solution references missing `.csproj` files; checkout contains `.csproj.lscache` files instead.
 - Unity editor compile/import attempt: `where.exe Unity` -> BLOCKED, `Unity.exe` not found on PATH. Standard Unity Hub scan from the prior pass also found no editor executable.
-- Unity compile/import: PENDING VERIFICATION; no C# runtime source was edited in this pass.
+- Unity compile/import: PENDING VERIFICATION; C# source was added but no local compiler/editor is available in this shell.
 - IL2CPP/ARM proof: PENDING VERIFICATION; DTO audit is static source review only.

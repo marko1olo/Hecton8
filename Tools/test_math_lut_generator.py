@@ -54,6 +54,18 @@ class MathLUTGeneratorTests(unittest.TestCase):
             self.assertEqual(4, manifest["scalarBytes"])
             self.assertEqual(10.0, manifest["files"]["sabine_reverb_rt60.bin"]["axes"]["volumeM3"]["min"])
             self.assertEqual(-100, manifest["files"]["caustics_dispersion_offsets.bin"]["axes"]["depthMeters"]["max"])
+            for file_name, file_info in manifest["files"].items():
+                payload_digest = hashlib.sha256((output_dir / file_name).read_bytes()).hexdigest().upper()
+                self.assertEqual(payload_digest, file_info["sha256"], file_name)
+                self.assertEqual(64, len(file_info["sha256"]), file_name)
+
+            coefficient_digest = hashlib.sha256(
+                (output_dir / "ecosystem_coefficients.json").read_bytes()
+            ).hexdigest().upper()
+            self.assertEqual(
+                coefficient_digest,
+                manifest["jsonFiles"]["ecosystem_coefficients.json"]["sha256"],
+            )
             self.assertEqual(1_000_000, coefficients["IntegrationSteps"])
             self.assertTrue(math.isfinite(coefficients["FinalPreyBiomass"]))
             self.assertTrue(math.isfinite(coefficients["FinalPredatorBiomass"]))

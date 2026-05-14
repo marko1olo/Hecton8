@@ -3,7 +3,7 @@
 PROMPT IDENTIFIED: HARDWARE_PROFILE_GENERATOR
 DOMAIN: Auxiliary Node (Data/Research)
 TASK COUNT: 15 declared in original extracted XML; 7 numbered objectives present.
-STATUS: HARDWARE PROFILED | COMPILE PENDING VERIFICATION
+STATUS: RUNTIME CATALOG INTEGRATED | COMPILE PENDING VERIFICATION
 
 ## Churn Notice
 - [x] Workspace churn detected | DOD: `Docs/Tasks/CURRENT_BATCH.md` was replaced and no longer contains `HARDWARE_PROFILE_GENERATOR`; previous hardware status/log/profile artifacts disappeared from disk. | Alternatives Rejected: silently switching to another agent prompt. | Estimate: 0 us runtime.
@@ -28,6 +28,8 @@ STATUS: HARDWARE PROFILED | COMPILE PENDING VERIFICATION
 - [x] 5. BITMASK ASSIGNMENT | DOD: mapped masks to existing `HomeostasisBrain.SystemBit` values with stable bit indexes 4,5,6,7,8,9,10,12,20,21,22,23. | Alternatives Rejected: new single-use EventIDs or new public contract bits. | Estimate: <1 us bitwise mask test.
 - [x] 6. WATCHDOG THRESHOLDS | DOD: `phaseCount=4`; profile and tier phase arrays validate as row-major `count * phaseCount` values. | Alternatives Rejected: single global phase budget. | Estimate: <1 us indexed lookup.
 - [x] 7. DATA SOVEREIGNTY | DOD: syntax check passed; top-level values are scalars or arrays, no nested profile objects. | Alternatives Rejected: nested JSON object graph. | Estimate: 35 us cold parse per profile row after parser exists.
+- [x] 8. RUNTIME CATALOG INTEGRATION | DOD: added `HardwareProfileCatalog` constants/methods and wired `HardwareTierDetector` UMA budget resolution to explicit Quest 3 / Steam Deck signatures with legacy fallback for unknown UMA. | Alternatives Rejected: runtime JSON parsing, managed arrays, existing interface mutation, treating every UMA device as Quest 3. | Estimate: <1 us cold switch lookup; 0 us/frame.
+- [x] 9. TEXTURE CLAMP UPGRADE | DOD: `VRAMEnforcer` now resolves shared-memory mip clamps from profile texture budget: Steam Deck keeps mip limit 1, Quest 3/unknown UMA keep mip limit 2. | Alternatives Rejected: one-size shared-memory mip limit, Steam Deck quarter-res textures despite 2048 MB texture profile. | Estimate: <1 us cold bootstrap branch; 0 us/frame.
 
 ## Iterative Loop Log
 - [x] Loop 1 - JSON syntax validation passed.
@@ -50,3 +52,8 @@ STATUS: HARDWARE PROFILED | COMPILE PENDING VERIFICATION
 - [x] Loop 18 - Post-CPU-semantics validation: profile arrays revalidated with new CPU kind fields; `git diff --check` clean. Result: `POST_CPU_SEMANTICS_FULL_VALIDATION_OK`.
 - [x] Loop 19 - Source rank legend review: added `sourceAuthorityRankLegend` while preserving flat layout. Result: `SOURCE_AUTHORITY_LEGEND_VALIDATION_OK`.
 - [x] Loop 20 - Semantic metadata final check: CPU kind fields and source rank legend validated together. Result: `SEMANTIC_METADATA_FINAL_OK`.
+- [x] Loop 21 - Runtime implementation pass: created `Assets/_Project/Scripts/Core/HardwareProfileCatalog.cs` and `.meta`; catalog mirrors profile hashes, UMA budgets, texture/RT budgets, worker budgets, phase budgets, and pressure masks without arrays or heap parsing.
+- [x] Loop 22 - Runtime integration validation: `HardwareTierDetector.RecommendedVramBudgetMegabytes` now resolves Steam Deck-like UMA to 4096 MB, Quest 3-like UMA to 1536 MB, and unknown UMA to the prior 960 MB fallback. Result: `PROFILE_AWARE_CATALOG_PARITY_OK`; hot-path scan found no `new`, collections, LINQ, Update/Tick, coroutine, Debug.Log, or Unity search calls.
+- [x] Loop 23 - Accuracy correction: added explicit `IsQuest3Like` detection and rejected broad non-Deck UMA equals Quest 3 logic. Result: unknown UMA remains conservative.
+- [x] Loop 24 - Texture clamp implementation: `HardwareProfileCatalog.ResolveSharedMemoryTextureBudgetMegabytes` is profile-aware; `VRAMEnforcer.ResolveMinimumTextureMipLimit` uses the catalog to keep Steam Deck at half-res clamp and Quest/unknown UMA at shared-memory clamp. Result: `PROFILE_TEXTURE_CLAMP_WIRING_OK`.
+- [x] Loop 25 - Texture clamp review: call-site search confirms only the new signature is used; hot-path scan remains clean for the patched files. Compile remains PENDING VERIFICATION due absent local toolchain.

@@ -120,6 +120,29 @@ namespace Hecton8.Core
             AssertOffset<InventoryShadowDTO>(nameof(InventoryShadowDTO.totalWeight), 20);
             AssertOffset<InventoryShadowDTO>(nameof(InventoryShadowDTO.flags), 24);
 
+            AssertSize<SaveMasterHashV10Result>(32);
+            AssertOffset<SaveMasterHashV10Result>(nameof(SaveMasterHashV10Result.PlainLo), 0);
+            AssertOffset<SaveMasterHashV10Result>(nameof(SaveMasterHashV10Result.PlainHi), 8);
+            AssertOffset<SaveMasterHashV10Result>(nameof(SaveMasterHashV10Result.StoredLo), 16);
+            AssertOffset<SaveMasterHashV10Result>(nameof(SaveMasterHashV10Result.StoredHi), 24);
+
+            AssertSize<SaveFileHeaderV10>(72);
+            AssertOffset<SaveFileHeaderV10>(nameof(SaveFileHeaderV10.MagicValue), 0);
+            AssertOffset<SaveFileHeaderV10>(nameof(SaveFileHeaderV10.Version), 4);
+            AssertOffset<SaveFileHeaderV10>(nameof(SaveFileHeaderV10.CompatMask), 6);
+            AssertOffset<SaveFileHeaderV10>(nameof(SaveFileHeaderV10.Flags), 7);
+            AssertOffset<SaveFileHeaderV10>(nameof(SaveFileHeaderV10.TimestampUnixMs), 8);
+            AssertOffset<SaveFileHeaderV10>(nameof(SaveFileHeaderV10.Checksum), 16);
+            AssertOffset<SaveFileHeaderV10>(nameof(SaveFileHeaderV10.DeltaCount), 20);
+            AssertOffset<SaveFileHeaderV10>(nameof(SaveFileHeaderV10.EntityCount), 24);
+            AssertOffset<SaveFileHeaderV10>(nameof(SaveFileHeaderV10.PlayerOffset), 28);
+            AssertOffset<SaveFileHeaderV10>(nameof(SaveFileHeaderV10.DeltaOffset), 32);
+            AssertOffset<SaveFileHeaderV10>(nameof(SaveFileHeaderV10.EntityOffset), 36);
+            AssertOffset<SaveFileHeaderV10>(nameof(SaveFileHeaderV10.HashPayload64), 40);
+            AssertOffset<SaveFileHeaderV10>(nameof(SaveFileHeaderV10.HashHeader64), 48);
+            AssertOffset<SaveFileHeaderV10>(nameof(SaveFileHeaderV10.MasterStateHashLo), SaveMasterHashV10.MasterStateHashLoOffset);
+            AssertOffset<SaveFileHeaderV10>(nameof(SaveFileHeaderV10.MasterStateHashHi), SaveMasterHashV10.MasterStateHashHiOffset);
+
             AssertSize<HabitatFloodStateDTO>(32);
             AssertOffset<HabitatFloodStateDTO>(nameof(HabitatFloodStateDTO.moduleHashId), 0);
             AssertOffset<HabitatFloodStateDTO>(nameof(HabitatFloodStateDTO.airReserveNormalized), 12);

@@ -20,11 +20,21 @@ BLUE_SIZE = 256
 FLOW_SIZE = 128
 DEFAULT_SEED = 0x4845384E
 DEFAULT_SWAPS = 2048
+OPTIMIZER_TIMEOUT_SECONDS = 120
 UINT_MAX_FLOAT = np.float64(0xFFFFFFFF)
 
 
 def repository_root() -> Path:
     return Path(__file__).resolve().parents[2]
+
+
+def artifact_path(path: Path) -> str:
+    resolved = path.resolve()
+    root = repository_root().resolve()
+    try:
+        return resolved.relative_to(root).as_posix()
+    except ValueError:
+        return str(resolved)
 
 
 def frac(value: np.ndarray) -> np.ndarray:
@@ -182,14 +192,12 @@ def generate_jitter(size: int, seed: int) -> np.ndarray:
 
 
 def generate_packed_noise(size: int, seed: int, swaps: int) -> tuple[np.ndarray, dict[str, Any]]:
-    start = time.perf_counter()
     blue = generate_blue_noise(size, seed, swaps)
     ign = quantize_unorm(generate_exact_ign(size, size))
     jitter = quantize_unorm(generate_jitter(size, seed))
     dither = (255 - np.roll(blue, shift=(73, 41), axis=(0, 1))).astype(np.uint8)
     packed = np.dstack((blue, ign, jitter, dither)).astype(np.uint8)
     metrics = verify_packed_noise_array(packed)
-    metrics["bake_seconds"] = time.perf_counter() - start
     metrics["void_cluster_swaps"] = swaps
     metrics["seed"] = seed
     return packed, metrics
@@ -233,7 +241,17 @@ def optimize_png(path: Path) -> str:
     ):
         if shutil.which(name) is None:
             continue
-        result = subprocess.run(command, cwd=repository_root(), capture_output=True, text=True, check=False)
+        try:
+            result = subprocess.run(
+                command,
+                cwd=repository_root(),
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=OPTIMIZER_TIMEOUT_SECONDS,
+            )
+        except subprocess.TimeoutExpired:
+            return f"{name}_failed_timeout_{OPTIMIZER_TIMEOUT_SECONDS}s"
         return name if result.returncode == 0 else f"{name}_failed_exit_{result.returncode}"
     return "pillow_optimize_compress_level_9"
 
@@ -244,7 +262,12 @@ def save_png(path: Path, pixels: np.ndarray) -> dict[str, Any]:
     before = path.stat().st_size
     optimizer = optimize_png(path)
     after = path.stat().st_size
-    return {"path": str(path), "bytes_before_optimizer": before, "bytes_after_optimizer": after, "optimizer": optimizer}
+    return {
+        "path": artifact_path(path),
+        "bytes_before_optimizer": before,
+        "bytes_after_optimizer": after,
+        "optimizer": optimizer,
+    }
 
 
 def read_rgba(path: Path) -> np.ndarray:
@@ -325,8 +348,8 @@ def verify_assets(noise_path: Path, flow_path: Path) -> dict[str, Any]:
     flow_passed = flow.shape == (FLOW_SIZE, FLOW_SIZE, 4)
     return {
         "passed": bool(noise["passed"] and flow_passed),
-        "noise_path": str(noise_path),
-        "flow_path": str(flow_path),
+        "noise_path": artifact_path(noise_path),
+        "flow_path": artifact_path(flow_path),
         "noise": noise,
         "flow": {"passed": bool(flow_passed), "shape": list(flow.shape), "bytes": int(flow_path.stat().st_size)},
     }
@@ -346,6 +369,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--seed", default=hex(DEFAULT_SEED))
     parser.add_argument("--swaps", type=int, default=DEFAULT_SWAPS)
     parser.add_argument("--verify-only", action="store_true")
+    parser.add_argument("--include-timing", action="store_true", help="Include volatile local bake_seconds in metrics.")
     return parser.parse_args()
 
 
@@ -361,7 +385,10 @@ def main() -> int:
         return 0 if metrics["passed"] else 1
 
     seed = int(str(args.seed), 0)
+    bake_start = time.perf_counter() if args.include_timing else None
     packed, bake_metrics = generate_packed_noise(BLUE_SIZE, seed, max(0, int(args.swaps)))
+    if bake_start is not None:
+        bake_metrics["bake_seconds"] = time.perf_counter() - bake_start
     flow = generate_abyssal_flow_slice(FLOW_SIZE)
     noise_save = save_png(noise_path, packed)
     flow_save = save_png(flow_path, flow)

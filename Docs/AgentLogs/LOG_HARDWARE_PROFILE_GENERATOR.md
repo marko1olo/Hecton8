@@ -43,3 +43,21 @@ Post-CPU-semantics validation -> Revalidated profile arrays with CPU kind fields
 Source rank legend review -> Added scalar `sourceAuthorityRankLegend` and validated it. Result: `SOURCE_AUTHORITY_LEGEND_VALIDATION_OK`.
 
 Semantic metadata final check -> CPU core/thread kind fields and source authority legend validated together. Result: `SEMANTIC_METADATA_FINAL_OK`. `git diff --check` reports only CRLF normalization warnings, no whitespace errors.
+
+Runtime catalog integration -> Added `Assets/_Project/Scripts/Core/HardwareProfileCatalog.cs` and `.meta`. The catalog exposes generated Quest 3 / Steam Deck hashes, graphics budgets, texture budgets, RT budgets, worker budgets, pressure masks, and phase budgets through constants and switch methods. No arrays, no LINQ, no runtime JSON parse.
+
+Detector upgrade -> Replaced one-size UMA budgeting in `HardwareTierDetector` with profile-aware resolution. Steam Deck-like UMA now resolves to `4096 MB`; Quest 3-like UMA resolves to `1536 MB`; unknown shared-memory UMA keeps the prior `960 MB` fallback.
+
+Cinematic Cheats used -> Runtime masks still cut secondary caustics, particle advection, high-res fog, SSR, noncritical VFX, and cadence tiers before gameplay truth. No new simulation system was added.
+
+Exact Microseconds saved -> 0 us/frame added. Cold detector branch cost is below measurement relevance. Potential savings remain profiler-dependent: fewer premature VRAM pressure clamps on Steam Deck-like UMA and fewer texture churn events from the old 960 MB clamp.
+
+Verification status -> `PROFILE_AWARE_CATALOG_PARITY_OK`; hot-path pattern scan found no `new`, collections, LINQ, Update/Tick, coroutine, Debug.Log, Unity search, or material hot-path calls in the catalog/detector patch. `git diff --check` reports only line-ending normalization warnings. Compile remains PENDING VERIFICATION because `dotnet`, `.sln`/`.csproj`, and a discoverable Unity editor are absent.
+
+Texture clamp upgrade -> `VRAMEnforcer` no longer applies mip limit 2 to every shared-memory device. Steam Deck-like UMA now resolves profile texture budget `2048 MB` and uses mip limit 1; Quest 3-like and unknown UMA remain at mip limit 2.
+
+Cinematic Cheats used -> Steam Deck spends the available memory on sharper texture residency instead of unnecessary CPU simulation. Quest/unknown UMA keep texture sacrifice and rely on foveation/dynamic resolution.
+
+Exact Microseconds saved -> 0 us/frame added. Bootstrap-only branch. Visual gain on Steam Deck is expected from one mip level of texture residency; measured memory delta is PENDING RUNTIME CAPTURE.
+
+Verification status -> `PROFILE_TEXTURE_CLAMP_WIRING_OK`; call-site search confirms the updated texture-budget resolver signature is used only by `VRAMEnforcer`. Hot-path scan remains clean. Compile remains PENDING VERIFICATION for missing local toolchain.

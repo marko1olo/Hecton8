@@ -2,7 +2,7 @@
 
 ## 2026-05-14 Batch007 Mandate Evolution
 
-What was wrong -> `.agents-skills` did not contain Batch 007 authority for DataVault-owned NativeArrays, two-phase dependency injection, execution phases, SignalBus lane segregation, or AUP Sync-Fence drift control. `Docs/PROJECT_ATLAS.md` was a stale 24-assembly snapshot while current static scan found 83 first-party asmdefs. `.agents-skills` also contained 48 files with 11,314 non-ASCII/mojibake characters. The inquisition report exposed false verification language, duplicate signal drift, layout-unsafe DTO claims, platform claims without build artifacts, unchecked status/log gaps, singleton debt, and raw `Update()` fallbacks.
+What was wrong -> `.agents-skills` did not contain Batch 007 authority for DataVault-owned NativeArrays, two-phase dependency injection, execution phases, SignalBus lane segregation, or AUP Sync-Fence drift control. `Docs/PROJECT_ATLAS.md` was a stale 24-assembly snapshot while the batch static scan found 83 first-party asmdefs. `.agents-skills` also contained 48 files with 11,314 non-ASCII/mojibake characters. The inquisition report exposed false verification language, duplicate signal drift, layout-unsafe DTO claims, platform claims without build artifacts, unchecked status/log gaps, singleton debt, and raw `Update()` fallbacks.
 
 What was done -> Added/updated mandate authority:
 - `.agents-skills/OPT_Zero_GC_Policy_AllocFree_Mandate.txt:389` - `GlobalDataVault Native Sovereignty`.
@@ -12,7 +12,10 @@ What was done -> Added/updated mandate authority:
 - `.agents-skills/ARCH_Signal_Lane_Segregation.txt:1` - new typed SignalBus lane mandate.
 - `.agents-skills/ARCH_Signal_Lane_Segregation.txt:114` - inquisition prevention for duplicate lanes and platform evidence.
 - `.agents-skills/MATH_AUP_Determinism_Sync.txt:1` - new AUP Sync-Fence mandate.
-- `.agents-skills/README.md:79` - Batch 007 additions indexed; inventory set to 78 mandate files.
+- `.agents-skills/README.md:79` - Batch 007 additions section.
+- `.agents-skills/README.md:81` - `ARCH_Execution_Phases.txt` indexed.
+- `.agents-skills/README.md:82` - `ARCH_Signal_Lane_Segregation.txt` indexed.
+- `.agents-skills/README.md:83` - `MATH_AUP_Determinism_Sync.txt` indexed.
 - `.agents-skills/README.md:85` - inquisition prevention promoted to registry authority.
 - `.agents-skills/QA_Evidence_Text_Filter_Audit.txt:36` - Batch 007 inquisition rules.
 - `Docs/PROJECT_ATLAS.md:58` - H-Phi metric.
@@ -81,7 +84,7 @@ Cinematic Cheats used -> Still documentation-only. The repaired budget and tier 
 
 Exact Microseconds saved -> Measured runtime savings remain unavailable. This pass saved 0 runtime us directly; it prevents wrong downstream budget/tier code generated from corrupt mandates.
 
-Verification -> `EXACT_STRIP_REMAINING=0`. `.agents-skills` non-ASCII count is 0. Malformed-token target scan has no matches. `git diff --check` is clean except CRLF warnings. Scoped mandate-edit paths have no `.cs`, `.shader`, `.asset`, `.prefab`, or `.unity` diffs. Global worktree does contain unrelated `.codex_tmp` deleted `.cs`/`.prefab` entries; those were not touched or reverted. `dotnet --info` still fails because `dotnet` is unavailable on PATH.
+Verification -> `EXACT_STRIP_REMAINING=0`. `.agents-skills` non-ASCII count is 0. Malformed-token target scan has no matches. `git diff --check` is clean except CRLF warnings. Scoped mandate-edit paths have no `.cs`, `.shader`, `.asset`, `.prefab`, or `.unity` diffs. At third-pass review time, the global worktree contained unrelated `.codex_tmp` deleted `.cs`/`.prefab` entries; those were not touched or reverted. `dotnet --info` still failed because `dotnet` was unavailable on PATH.
 
 Batch rotation note -> Final readback of `Docs/Tasks/CURRENT_BATCH.md` returned `PROMPT_NOT_FOUND` for `MANDATE_EVOLUTION_CHRONICLER`; the active batch file has changed to a different agent set. Original assignment evidence remains in this agent's status/rationale/log from earlier successful extraction.
 
@@ -132,4 +135,40 @@ Cinematic Cheats used -> Documentation-only. No runtime visual fake was implemen
 
 Exact Microseconds saved -> 0 runtime us measured.
 
-Verification -> Readback confirms negative beam attenuation, corrected Verlet constraint, cutter density subtraction, and haptic negative decay remain present. Current global dirty files are unrelated agent logs/status and Python cache folders; this agent did not touch them. Compile/runtime proof remains blocked because `dotnet` is unavailable and Unity was not run.
+Verification -> Readback confirms negative beam attenuation, corrected Verlet constraint, cutter density subtraction, and haptic negative decay remain present. Compile/runtime proof remains blocked because `dotnet` is unavailable and Unity was not run.
+
+## 2026-05-14 Seventh-Pass Self-Review
+
+What was wrong -> The repository moved again after the sixth-pass report. `HEAD` is now `569c5605 Checkpoint incoming auxiliary batch updates 20260514-143246`; the previous dirty-worktree sentence was stale.
+
+What was done -> Re-read current status, current `HEAD`, reflog, and committed mandate formulas. Corrected this log and status/rationale to report the actual dirty state.
+
+Cinematic Cheats used -> Documentation-only. No runtime visual fake was implemented.
+
+Exact Microseconds saved -> 0 runtime us measured.
+
+Verification -> Scoped chronicler files and `.agents-skills` had no active diff before this seventh-pass audit patch. The shared global dirty list changed during review; exact unrelated files must be re-read from `git status --short` before integration. Readback confirms negative beam attenuation, haptic low/high decay, logistics production/demand/supply ratio, `.agents-skills` `NON_ASCII_COUNT=0`, and scoped no-code guard has no `.cs`, `.shader`, `.asset`, `.prefab`, or `.unity` matches. Runtime proof remains PENDING VERIFICATION because `dotnet` is unavailable and Unity was not run.
+
+## 2026-05-14 Eighth-Pass Self-Review
+
+What was wrong -> The user requested continued professional review. The audit trail still had one stale historical "currently" phrase for third-pass `.codex_tmp` contamination.
+
+What was done -> Re-read status/rationale, reloaded relevant mandates, corrected the historical wording, and rechecked registry inventory plus scoped diff state.
+
+Cinematic Cheats used -> Documentation-only. No runtime visual fake was implemented.
+
+Exact Microseconds saved -> 0 runtime us measured.
+
+Verification -> `.agents-skills` contains 78 mandate `.txt` files. `Docs/PROJECT_ATLAS.md` and `.agents-skills` have no active diff. Scoped chronicler diff is status/rationale/log only. No unchecked tasks were found in `Status_MANDATE_EVOLUTION_CHRONICLER.md`. Runtime proof remains PENDING VERIFICATION because `dotnet` is unavailable and Unity was not run.
+
+## 2026-05-14 Ninth-Pass Self-Review
+
+What was wrong -> One final-report line anchor was too broad: `.agents-skills/README.md:79` proves the Batch 007 additions section exists, but not the 78-file inventory count.
+
+What was done -> Split the claim. README lines 79-83 now anchor the indexed Batch 007 additions, and the 78 mandate `.txt` count is treated as filesystem-count evidence. Task 14 status wording was also changed from current `git status` visibility to saved-and-readback evidence.
+
+Cinematic Cheats used -> Documentation-only. No runtime visual fake was implemented.
+
+Exact Microseconds saved -> 0 runtime us measured.
+
+Verification -> README line readback confirms the Batch 007 additions section and new mandate entries. Filesystem count confirms 78 mandate `.txt` files. Runtime proof remains PENDING VERIFICATION because `dotnet` is unavailable and Unity was not run.

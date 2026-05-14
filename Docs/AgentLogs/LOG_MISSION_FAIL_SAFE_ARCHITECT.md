@@ -133,3 +133,150 @@ Verification:
 - Entry shape check: PASS. `tooltips=10`, `logs=5`, `tooltipMissing=0`, `logMissing=0`.
 - Diff hygiene: PASS. `git diff --check` returned exit code 0; Git reported only local LF-to-CRLF normalization warnings.
 - Runtime/Unity proof remains PENDING VERIFICATION.
+
+## 2026-05-14 - Editor Validator Implementation
+
+Status: SCENARIO STABILIZED - PENDING UNITY VERIFICATION
+Evidence Class: STATIC_SOURCE
+
+What was wrong:
+- The handoff contract was only protected by ad hoc shell checks. A later edit could reintroduce stale aliases, wrong `LocHash` values, missing tooltip/log fields, or prose-vs-JSON flag drift without an in-editor failure.
+
+What was done:
+- Added `Assets/_Project/Scripts/Editor/OutpostFailSafeHandoffValidator.cs`.
+- Added menu item `Hecton-8/Validate Outpost Fail-Safe Handoff`.
+- Validator checks schema, agent id, 32 declared mission flags, topological references, fallback references, 10 tooltip entries, 5 log entries, `LocHash` values, gas constraints, stale aliases, JSON `outpost.*` references, and prose-vs-JSON flag parity.
+- Updated `Docs/Design/Missions/Outpost_Failure_Modes.md` to point future integrators at the validator.
+- Updated status and rationale with Decision 011.
+
+Cinematic Cheats used:
+- No new cinematic cheat. This was an editor-only guard for the existing Ghost Power, scalar gas, and fallback marker contract.
+
+Exact Microseconds saved:
+- Measured runtime savings: 0 us. The validator is editor-only and does not enter player runtime.
+- Future runtime value: prevents invalid handoff data from becoming duplicate constants, stale hashes, or runtime string fallback logic. No profiler claim.
+
+Verification:
+- Static validator scan: PASS. No `foreach`, LINQ, `Update`, `FixedUpdate`, `LateUpdate`, coroutine, runtime scene search, `Resources.Load`, `SendMessage`, or `BroadcastMessage` in the new validator.
+- Handoff static check: PASS. `declared=32`, `refs=32`, `missing=0`, `locEntries=15`, `hashMismatches=0`.
+- ASCII scan: EXPECTED EXCEPTION after self-review correction. The validator now contains only the project-mandated long-dash separators in `COLD ALLOC` comments; player runtime remains unaffected.
+- Diff hygiene: PASS. `git diff --check` returned exit code 0 for tracked authored files; custom trailing-whitespace scan returned `TRAILING_WS_CHECK PASS` for the new validator and authored docs/logs.
+- Toolchain status: BLOCKED. `dotnet`, `csc`, `msbuild`, `Unity`, and Unity Hub editor directories are absent from this shell environment.
+- Unity Console/import proof remains PENDING VERIFICATION.
+
+## 2026-05-14 - Self-Review Correction - Cold Allocation Comments
+
+Status: SCENARIO STABILIZED - PENDING UNITY VERIFICATION
+Evidence Class: STATIC_SOURCE
+
+What was wrong:
+- The new editor validator's `COLD ALLOC` comments used ASCII hyphen separators. That was not the exact project-mandated comment format.
+
+What was done:
+- Corrected all 12 editor-only allocation comments in `OutpostFailSafeHandoffValidator.cs` to the canonical long-dash separator format.
+- Updated status and rationale with the correction.
+
+Cinematic Cheats used:
+- None. Source compliance correction only.
+
+Exact Microseconds saved:
+- Measured runtime savings: 0 us. The changed file is editor-only.
+
+Verification:
+- `rg -n "COLD ALLOC"` found 12 allocation comments in the validator, all using the mandated long-dash separator format.
+- Unity Console/import proof remains PENDING VERIFICATION.
+
+## 2026-05-14 - Final Static Review Pass
+
+Status: SCENARIO STABILIZED - PENDING UNITY VERIFICATION
+Evidence Class: STATIC_SOURCE / STATIC_DOC
+
+What was wrong:
+- The final report needed to separate static proof from missing Unity/toolchain proof after the validator correction.
+
+What was done:
+- Re-extracted the active prompt with an attribute-aware regex from `Docs/Tasks/CURRENT_BATCH.md`; it still contains 6 actionable tasks at lines 47-65.
+- Re-ran validator trap scans, handoff counts, diff hygiene, and trailing-whitespace checks.
+- Confirmed `OutpostFailSafeHandoffValidator.cs.meta` exists beside the new editor script.
+
+Cinematic Cheats used:
+- No new cinematic cheat. The mission still relies on Ghost Power as reserve-bus fiction and scalar gas constraints.
+
+Exact Microseconds saved:
+- Measured runtime savings: 0 us. No player runtime file was changed in this pass.
+
+Verification:
+- Validator trap scan: PASS. No `foreach`, LINQ, `Update`, `FixedUpdate`, `LateUpdate`, coroutine, runtime scene search, `Resources.Load`, `SendMessage`, or `BroadcastMessage`.
+- Cold allocation hyphen-regression scan: PASS. No old ASCII hyphen separator pattern remains in `COLD ALLOC` comments.
+- Handoff count check: PASS. `flags=32`, `unique=32`, `tooltips=10`, `logs=5`, `refs=32`, `missing=0`, `fallbacks=3`.
+- Diff/trailing-whitespace hygiene: PASS. `git diff --check` returned exit code 0; custom trailing whitespace scan returned `TRAILING_WS_CHECK PASS`.
+- Toolchain status: BLOCKED. `dotnet`, `csc`, `msbuild`, and `Unity` are absent from this shell environment.
+- Unity Console/import proof remains PENDING VERIFICATION.
+
+## 2026-05-14 - Gas Flag Vocabulary Hardening
+
+Status: SCENARIO STABILIZED - PENDING UNITY VERIFICATION
+Evidence Class: STATIC_DOC / STATIC_SOURCE
+
+What was wrong:
+- The handoff JSON used invented `roomflag.*` tokens and a bare `Submerged` condition. Current source authority exposes `GasDynamicsRoomFlags.InternalFire`, `Breached`, `ScrubberInstalled`, and `Occupied`; submerged state is tracked by scalar `roomSubmerged01`, not by a gas enum flag.
+
+What was done:
+- Replaced JSON `roomflag.*` references with `GasDynamicsRoomFlags.*`.
+- Replaced the unsafe-air fallback trigger with `GasDynamicsRoomFlags.InternalFire || GasDynamicsRoomFlags.Breached || roomSubmerged01 > 0 on critical room`.
+- Upgraded `OutpostFailSafeHandoffValidator.cs` to reject legacy `roomflag.*`, unsupported `GasDynamicsRoomFlags.*` values, and bare `Submerged` flag claims.
+- Updated the mission prose, status, and rationale with the stricter gas-token contract.
+
+Cinematic Cheats used:
+- No simulation added. Submerged-room mission logic remains scalar; high-tier presentation can spend saved cost on warning lights, fog, and audio without changing gas truth.
+
+Exact Microseconds saved:
+- Measured runtime savings: 0 us. The changed source is editor-only and the JSON/prose are design handoff data.
+
+Verification:
+- Gas token check: PASS. `gasRefs=3`, `bad=0`, `legacyRoomflag=0`, `bareSubmerged=0`.
+- Topological coverage check remains PASS: `flags=32`, `topo=32`, `missingTopo=0`, `extraTopo=0`.
+- Toolchain status remains BLOCKED. `dotnet`, `csc`, `msbuild`, and `Unity` are absent from this shell environment.
+- Unity Console/import proof remains PENDING VERIFICATION.
+
+## 2026-05-14 - Static Editor Array Allocation Comments
+
+Status: SCENARIO STABILIZED - PENDING UNITY VERIFICATION
+Evidence Class: STATIC_SOURCE
+
+What was wrong:
+- The validator's editor-only static string arrays were cold allocations but had no explicit ownership comments.
+
+What was done:
+- Added canonical `COLD ALLOC` comments for the gas flag allowlist, stale alias needles, and stale count needles.
+
+Cinematic Cheats used:
+- None. Source compliance correction only.
+
+Exact Microseconds saved:
+- Measured runtime savings: 0 us. The changed source remains editor-only.
+
+Verification:
+- `rg -n "COLD ALLOC"` now reports 16 canonical allocation comments in `OutpostFailSafeHandoffValidator.cs`.
+- Unity Console/import proof remains PENDING VERIFICATION.
+
+## 2026-05-14 - Review Addendum - Topological Coverage Gate
+
+What was wrong:
+- `Outpost_FailSafe_Handoff.json` declared 32 mission flags but `topologicalOrder` covered only 23.
+- The editor validator checked duplicates and declared references, but it did not require full DAG coverage.
+
+What was done:
+- Expanded `topologicalOrder` to all 32 declared flags.
+- Upgraded `OutpostFailSafeHandoffValidator.cs` to reject incomplete topological order and report each missing flag.
+- Updated `Outpost_Failure_Modes.md`, `Status_MISSION_FAIL_SAFE_ARCHITECT.md`, and this rationale/log trail to stop reporting partial order as complete DAG authority.
+
+Cinematic Cheats used:
+- Documentation/static validator only. No physical simulation, no runtime object spawn, no power-grid truth mutation.
+
+Exact Microseconds saved:
+- 0 us player runtime. The saving is avoided integration churn: invalid graph data fails in editor before quest/localization bake.
+
+Verification:
+- Static PowerShell validation target: `OUTPOST_STATIC_VALIDATION=PASS flags=32 topo=32 tooltips=10 logs=5 fallbacks=3`.
+- Unity import and C# compile remain PENDING VERIFICATION because Unity/dotnet are absent in this shell.

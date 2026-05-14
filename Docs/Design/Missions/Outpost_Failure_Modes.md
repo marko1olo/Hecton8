@@ -25,6 +25,8 @@ Mandates followed:
 
 Machine-readable handoff: `Docs/Design/Missions/Outpost_FailSafe_Handoff.json`. It contains the authored DAG flags, topological order, fallback rules, 10 tooltip entries, 5 Marauder log entries, and `LocHash`-compatible FNV hashes. Runtime localization assets were not mutated in this pass because the active language table, generated `LocKeys`, and translated language tables must be baked together.
 
+Editor validation hook: `Hecton-8/Validate Outpost Fail-Safe Handoff`, implemented by `Assets/_Project/Scripts/Editor/OutpostFailSafeHandoffValidator.cs`. It is editor-only and validates the handoff JSON plus this prose document for schema, hash, flag-reference, stale-alias, tooltip/log-shape, and gas-limit drift before a quest/localization bake. It also rejects legacy `roomflag.*` tokens, unsupported `GasDynamicsRoomFlags.*` values, and bare `Submerged` flag claims; submerged-room logic must use the `roomSubmerged01` scalar because the gas enum has no `Submerged` flag.
+
 ## Mission Rule
 
 The Abandoned Outpost mission is a DAG, not a story script. Every progression step must be reachable from event-driven flags, a fallback marker, and a revert path. WFC topology is presentation and placement authority; it is not allowed to be the only owner of a critical path.
@@ -80,7 +82,9 @@ These are authored logical flags. Runtime implementation must compile them into 
 
 Required topological ordering:
 
-`outpost.generated` -> `outpost.entry_reached` -> `outpost.power_relay_found` -> `outpost.power_coupler_acquired` -> `outpost.power_coupler_installed` -> `outpost.bus_voltage_stable` -> `outpost.sealed_door_powered` -> `outpost.sealed_door_opened` -> `outpost.datapad_found` -> Marauder log reads -> `outpost.evidence_uploaded` -> `outpost.mission_complete`
+The machine-readable handoff must list all 32 flags exactly once. Critical-path order:
+
+`outpost.generated` -> `outpost.entry_reached` -> `outpost.main_path_connected` -> `outpost.power_relay_found` -> `outpost.power_coupler_acquired` -> `outpost.power_coupler_installed` -> `outpost.bus_voltage_stable` -> `outpost.brownout_cleared` -> `outpost.sealed_door_powered` -> `outpost.sealed_door_opened` -> `outpost.datapad_found` -> Marauder log reads -> `outpost.evidence_uploaded` -> `outpost.mission_complete`
 
 Fallback branch:
 

@@ -47,3 +47,39 @@ Cinematic Cheats used: None. Verification and tooling probe only.
 Exact Microseconds saved: 0 runtime microseconds. No Unity runtime code changed.
 
 Verification: `python -m compileall .\Tools\Security\ReplayHasher.py` passed. `python .\Tools\Security\ReplayHasher.py self-test` returned `SELFTEST_OK`. `python .\Tools\Security\ReplayHasher.py master ...` returned `stored_le=6d24c9a87e8ec3322681980ad2b6b28c`. External reference/fuzz remained `XXH3_REFERENCE_AND_SHUFFLE_FUZZ_OK 264 cases`. `dotnet` is not available on PATH; `Unity.exe` is not available on PATH.
+
+## 2026-05-14 - C# Implementation Surface
+
+What was wrong: The prior handoff was still too soft for implementation: Python oracle plus prose did not give the Unity side a concrete zero-GC byte writer and 128-bit rotate implementation.
+
+What was done: Added `Assets/_Project/Scripts/SaveSystem/SaveMasterHashV10.cs` with `Compute`, `DeriveShuffleMask`, `ShuffleHash128`, and `UnshuffleHash128`. Added `SaveMasterHashV10Result` layout checks to `Assets/_Project/Scripts/Core/BinaryLayoutManifest.cs`. The active v9 save writer was not changed.
+
+Cinematic Cheats used: This is still deterministic tamper friction, not cryptographic security. No simulation or visual system changed.
+
+Exact Microseconds saved: 0 measured runtime microseconds. Estimated cost remains cold-path only: two master XXH3 lanes plus two shuffle-mask XXH3 lanes and constant-time 128-bit rotate. No gameplay frame path touched.
+
+Verification: `python .\Tools\Security\ReplayHasher.py self-test` returned `SELFTEST_OK`. Independent rotate formula proof returned `ROT128_FORMULA_OK`. C# static text balance returned `CS_TEXT_BALANCE_OK`. `git diff --check` passed with line-ending warnings only. Local C# compile remains blocked because `dotnet`, `csc`, `mcs`, and `Unity.exe` are not available on PATH.
+
+## 2026-05-14 - V10 Header Layout Upgrade
+
+What was wrong: The C# helper owned the hash math but not the concrete 72-byte header layout. The byte-offset requirement for `MasterStateHash` still needed code-level enforcement.
+
+What was done: Added `SaveFileHeaderV10`, compute/fill/validate overloads, and full `BinaryLayoutManifest` assertions for every V10 header field. The active v9 writer remains untouched.
+
+Cinematic Cheats used: None. This is binary ABI hardening only.
+
+Exact Microseconds saved: 0 measured runtime microseconds. No gameplay frame path touched.
+
+Verification: `python .\Tools\Security\ReplayHasher.py self-test` returned `SELFTEST_OK`. Independent packed layout check returned `V10_HEADER_LAYOUT_OK`. C# static guard returned `CS_STATIC_GUARD_OK`. `git diff --check` passed with line-ending warnings only. Unity/C# compile remains blocked by missing local tooling.
+
+## 2026-05-14 - MSBuild Reality Check
+
+What was wrong: I previously recorded MSBuild as unavailable based only on PATH. That was incomplete evidence.
+
+What was done: Located `C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe` and ran it directly against `Hecton8.slnx`.
+
+Cinematic Cheats used: None. Tooling verification only.
+
+Exact Microseconds saved: 0 runtime microseconds.
+
+Verification: MSBuild launched but the build failed before compiling project code because `Hecton8.slnx` references missing `.csproj` files such as `Hecton8.Core.csproj`; the checkout contains `.csproj.lscache` files instead. This is a project-generation/tooling blockage, not a compile error from `SaveMasterHashV10.cs`.

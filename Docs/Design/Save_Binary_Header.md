@@ -114,6 +114,8 @@ Rejected alternative: per-byte random permutation. It is slower, more error-pron
 
 `Tools/Security/ReplayHasher.py` is the OSHINO oracle.
 
+`Assets/_Project/Scripts/SaveSystem/SaveMasterHashV10.cs` is the SHINOBU C# implementation surface. It is isolated from the active v9 writer until the save header version is intentionally bumped. `Assets/_Project/Scripts/Core/BinaryLayoutManifest.cs` verifies `SaveFileHeaderV10` as a 72-byte blit-safe header and `SaveMasterHashV10Result` as a 32-byte blit-safe result struct.
+
 The SHINOBU Burst port must match it exactly:
 
 - Read all multibyte integers little-endian.
@@ -122,6 +124,7 @@ The SHINOBU Burst port must match it exactly:
 - Return `uint2`/`ulong2` lanes in low-high order, not high-low display order.
 - Never hash `Transform.position`; hash AUP sector/local authority only.
 - Do not serialize a managed `struct` by raw memory unless it is `[StructLayout]` and has an explicit size/padding proof.
+- Keep the C# path stack-only: no managed byte arrays, no `BitConverter`, no strings in hash preimage generation, and no heap allocation.
 
 CLI reference commands:
 
@@ -175,6 +178,11 @@ Commands used:
 - `python .\Tools\Security\ReplayHasher.py self-test` -> PASS, including embedded branch and shuffle vectors.
 - `python .\Tools\Security\ReplayHasher.py master ...` -> PASS, expected `stored_le=6d24c9a87e8ec3322681980ad2b6b28c`.
 - Isolated comparison against Python `xxhash.xxh3_64_intdigest` across 136 deterministic seed/length vectors plus 128 randomized seeded/fuzz cases -> PASS (`XXH3_REFERENCE_AND_SHUFFLE_FUZZ_OK 264 cases`).
+- Independent rotate formula check for the C# 128-bit lane algorithm -> PASS (`ROT128_FORMULA_OK`).
+- `SaveMasterHashV10.cs` added with stackalloc-only preimage/mask buffers and manual little-endian writes.
+- `SaveFileHeaderV10` added as a concrete 72-byte implementation header; independent packed-struct check -> PASS (`V10_HEADER_LAYOUT_OK`).
+- `BinaryLayoutManifest.cs` extended with `SaveFileHeaderV10` and `SaveMasterHashV10Result` size/offset assertions.
+- C# static guard for the helper -> PASS (`CS_STATIC_GUARD_OK`).
 - `<POLISH_MANDATE>` extraction from `Docs/Tasks/CURRENT_BATCH.md` -> TAG ABSENT; local anti-bloat pass executed on owned artifacts.
 
-Unity import, Unity Console, Play Mode, GCMonitor, profiler, player build, and IL2CPP/ARM runtime proof remain `PENDING VERIFICATION`.
+Unity import, Unity Console, Play Mode, GCMonitor, profiler, player build, and IL2CPP/ARM runtime proof remain `PENDING VERIFICATION`. Local C# compile is also blocked in this shell: `dotnet`, `csc`, `mcs`, and `Unity.exe` are not available on PATH.
