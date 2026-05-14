@@ -1582,7 +1582,7 @@ namespace Hecton8.Audio
 
         public bool QueuePrologueAudioTransition(in AudioTransitionState state)
         {
-            PlayerCriticalProceduralAudioRenderer playerCriticalAudio = GlobalRegistry.PlayerCriticalAudio;
+            PlayerCriticalProceduralAudioRenderer playerCriticalAudio = _cachedPlayerCriticalAudio;
             return playerCriticalAudio != null && playerCriticalAudio.QueuePrologueAudioTransition(in state);
         }
 
@@ -1698,7 +1698,7 @@ namespace Hecton8.Audio
                 amplitude * ImpactEmitterAmplitudeScale,
                 amplitude);
 
-            PlayerCriticalProceduralAudioRenderer renderer = GlobalRegistry.PlayerCriticalAudio;
+            PlayerCriticalProceduralAudioRenderer renderer = _cachedPlayerCriticalAudio;
             bool proceduralQueued = renderer != null && renderer.QueueHighSpeedImpactSignal(in signal);
             return radarQueued || proceduralQueued;
         }

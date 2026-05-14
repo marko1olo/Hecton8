@@ -101,6 +101,8 @@ namespace Hecton8.UI
         private Hecton8.Gameplay.PlayerToolManager _subscribedToolManager;
         private uint _inventorySignalHash;
         private uint _lastInventorySignalRevision;
+        private uint _toolLoadoutSignalSourceId;
+        private uint _lastToolLoadoutSignalSequence;
         private ModuleCatalog _lastCatalog;
         private BuildableData _lastCatalogActiveBuildable;
         private int _lastVisibleCardCount = -1;
@@ -256,12 +258,7 @@ namespace Hecton8.UI
 
         private void Unsubscribe()
         {
-            if (_subscribedToolManager != null)
-            {
-                _subscribedToolManager.ActiveSlotChanged -= HandleActiveSlotChanged;
-                _subscribedToolManager.ToolAssignmentsChanged -= HandleToolAssignmentsChanged;
-                _subscribedToolManager = null;
-            }
+            _subscribedToolManager = null;
 
             UnregisterPDAEvents();
             UnregisterQuestEvents();
@@ -312,22 +309,8 @@ namespace Hecton8.UI
         private void RefreshSubscriptions()
         {
             RefreshInventorySignalBinding();
-
-            if (!ReferenceEquals(_subscribedToolManager, toolManager))
-            {
-                if (_subscribedToolManager != null)
-                {
-                    _subscribedToolManager.ActiveSlotChanged -= HandleActiveSlotChanged;
-                    _subscribedToolManager.ToolAssignmentsChanged -= HandleToolAssignmentsChanged;
-                }
-
-                _subscribedToolManager = toolManager;
-                if (_subscribedToolManager != null)
-                {
-                    _subscribedToolManager.ActiveSlotChanged += HandleActiveSlotChanged;
-                    _subscribedToolManager.ToolAssignmentsChanged += HandleToolAssignmentsChanged;
-                }
-            }
+            RefreshToolLoadoutSignalBinding();
+            _subscribedToolManager = toolManager;
         }
 
         private bool ConsumeInventoryChangedSignals()
@@ -371,22 +354,45 @@ namespace Hecton8.UI
                 : 0u;
         }
 
-        private void HandleActiveSlotChanged(int _)
+        private bool ConsumeToolLoadoutChangedSignals()
         {
-            if (!IsTabActive)
-                return;
+            uint sourceId = _toolLoadoutSignalSourceId;
+            if (sourceId == 0u)
+                return false;
 
-            MarkSummaryDirty();
-            Refresh();
+            bool dirty = false;
+            ReadOnlySpan<ToolLoadoutChangedSignal> signals = SignalBus<ToolLoadoutChangedSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                ref readonly ToolLoadoutChangedSignal signal = ref signals[i];
+                if (signal.SourceId != sourceId)
+                    continue;
+
+                if (signal.Sequence == _lastToolLoadoutSignalSequence && _lastToolLoadoutSignalSequence != 0u)
+                    continue;
+
+                _lastToolLoadoutSignalSequence = signal.Sequence;
+                dirty = true;
+            }
+
+            return dirty;
         }
 
-        private void HandleToolAssignmentsChanged()
+        private void RefreshToolLoadoutSignalBinding()
         {
-            if (!IsTabActive)
+            uint resolvedSourceId = ResolveToolLoadoutSignalSourceId(toolManager);
+            if (_toolLoadoutSignalSourceId == resolvedSourceId)
                 return;
 
-            MarkSummaryDirty();
-            Refresh();
+            _toolLoadoutSignalSourceId = resolvedSourceId;
+            _lastToolLoadoutSignalSequence = 0u;
+        }
+
+        private static uint ResolveToolLoadoutSignalSourceId(Hecton8.Gameplay.PlayerToolManager manager)
+        {
+            return manager != null && manager.gameObject != null
+                ? GlobalSignals.FoldEntityIdToSourceId(EntityId.ToULong(manager.gameObject.GetEntityId()))
+                : 0u;
         }
 
         public void OnPDAEvent(in PDAEventPayload payload)

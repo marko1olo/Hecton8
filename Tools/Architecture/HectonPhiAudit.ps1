@@ -1651,6 +1651,8 @@ function New-AuditSummary {
         }
         TopAupPrecisionRiskFiles = @($Audit.TopAupPrecisionRiskFiles |
             Select-Object -First 10)
+        TopCouplingRiskFiles = @($Audit.TopCouplingRiskFiles |
+            Select-Object -First 10)
         TopOwnerBlockedDataVaultCandidates = @($Audit.OwnerBlockedDataVaultCandidates |
             Select-Object -First 10)
     }
@@ -1662,6 +1664,14 @@ Assert-CoreGraphBudget $coreGraphAudit
 if ($CoreGraphOnly) {
     if ($MaxAupPrecisionRisk -ge 0) {
         throw 'AUP precision budget requires full source scan. Remove -CoreGraphOnly when using -MaxAupPrecisionRisk.'
+    }
+
+    if ($MaxFindObjectCalls -ge 0) {
+        throw 'FindObject budget requires full source scan. Remove -CoreGraphOnly when using -MaxFindObjectCalls.'
+    }
+
+    if ($MaxLegacyEventPublish -ge 0) {
+        throw 'Legacy event publish budget requires full source scan. Remove -CoreGraphOnly when using -MaxLegacyEventPublish.'
     }
 
     if ($MaxDuplicateSignalNames -ge 0) {
@@ -1844,7 +1854,11 @@ foreach ($file in $files) {
         Add-DomainMetrics $editorDomainRows[$domain] $fileCounters $lineCount
         if ([int]$fileCounters['NativeArrayRefs'] -gt 0 -or
             [int]$fileCounters['GlobalDataVaultRefs'] -gt 0 -or
-            [int]$fileCounters['FindObjectCalls'] -gt 0) {
+            [int]$fileCounters['GlobalRegistrySurface'] -gt 0 -or
+            [int]$fileCounters['EventPublish'] -gt 0 -or
+            [int]$fileCounters['StaticInstance'] -gt 0 -or
+            [int]$fileCounters['FindObjectCalls'] -gt 0 -or
+            [int]$fileCounters['GetComponentCalls'] -gt 0) {
             [void]$editorFileRows.Add([pscustomobject](New-FileRow $relativePath $domain $fileCounters $lineCount))
         }
         continue
@@ -1873,7 +1887,11 @@ foreach ($file in $files) {
     Add-DomainMetrics $runtimeDomainRows[$domain] $runtimeFileCounters $lineCount
     if ([int]$runtimeFileCounters['NativeArrayRefs'] -gt 0 -or
         [int]$runtimeFileCounters['GlobalDataVaultRefs'] -gt 0 -or
+        [int]$runtimeFileCounters['GlobalRegistrySurface'] -gt 0 -or
+        [int]$runtimeFileCounters['EventPublish'] -gt 0 -or
+        [int]$runtimeFileCounters['StaticInstance'] -gt 0 -or
         [int]$runtimeFileCounters['FindObjectCalls'] -gt 0 -or
+        [int]$runtimeFileCounters['GetComponentCalls'] -gt 0 -or
         [int]$runtimeFileCounters['AupPrecisionRisk'] -gt 0) {
         [void]$runtimeFileRows.Add([pscustomobject](New-FileRow $relativePath $domain $runtimeFileCounters $lineCount))
     }
@@ -1884,6 +1902,8 @@ $allSourceScores = New-Scores $allCounters
 $editorScores = New-Scores $editorCounters
 
 Assert-AupPrecisionBudget $runtimeCounters $runtimeFileRows
+Assert-StaticCounterBudget $runtimeCounters $runtimeFileRows 'FindObjectCalls' $MaxFindObjectCalls 'FindObject runtime lookup'
+Assert-StaticCounterBudget $runtimeCounters $runtimeFileRows 'EventPublish' $MaxLegacyEventPublish 'Legacy event publish'
 
 $result = [ordered]@{
     Timestamp = (Get-Date).ToString('yyyy-MM-dd HH:mm:ss zzz')
@@ -1903,6 +1923,20 @@ $result = [ordered]@{
             Max = $MaxAupPrecisionRisk
             Actual = [int]$runtimeCounters.AupPrecisionRisk
             Passed = $MaxAupPrecisionRisk -lt 0 -or [int]$runtimeCounters.AupPrecisionRisk -le $MaxAupPrecisionRisk
+            EvidenceClass = 'STATIC_SOURCE_FULL_SCAN'
+        }
+        FindObjectCalls = [ordered]@{
+            Enabled = $MaxFindObjectCalls -ge 0
+            Max = $MaxFindObjectCalls
+            Actual = [int]$runtimeCounters.FindObjectCalls
+            Passed = $MaxFindObjectCalls -lt 0 -or [int]$runtimeCounters.FindObjectCalls -le $MaxFindObjectCalls
+            EvidenceClass = 'STATIC_SOURCE_FULL_SCAN'
+        }
+        LegacyEventPublish = [ordered]@{
+            Enabled = $MaxLegacyEventPublish -ge 0
+            Max = $MaxLegacyEventPublish
+            Actual = [int]$runtimeCounters.EventPublish
+            Passed = $MaxLegacyEventPublish -lt 0 -or [int]$runtimeCounters.EventPublish -le $MaxLegacyEventPublish
             EvidenceClass = 'STATIC_SOURCE_FULL_SCAN'
         }
         DuplicateSignalNames = [ordered]@{
@@ -1929,6 +1963,13 @@ $result = [ordered]@{
         Sort-Object -Property @(
             @{ Expression = 'AupPrecisionRisk'; Descending = $true },
             @{ Expression = 'AupPrecisionSafe'; Descending = $true }) |
+        Select-Object -First 25)
+    TopCouplingRiskFiles = @($runtimeFileRows |
+        Where-Object { $_.CouplingRisk -gt 0 } |
+        Sort-Object -Property @(
+            @{ Expression = 'CouplingRisk'; Descending = $true },
+            @{ Expression = 'GlobalRegistrySurface'; Descending = $true },
+            @{ Expression = 'GetComponentCalls'; Descending = $true }) |
         Select-Object -First 25)
     TopEditorNativeArrayDomains = @($editorDomainRows.Values |
         ForEach-Object { [pscustomobject]$_ } |
@@ -1958,7 +1999,17 @@ if ($Summary) {
     [pscustomobject]$summaryResult.Counts | Format-List
     Write-Output ''
     Write-Output 'Budgets:'
-    [pscustomobject]$summaryResult.Budgets.AupPrecisionRisk | Format-List
+    $summaryResult.Budgets.GetEnumerator() |
+        ForEach-Object {
+            [pscustomobject]@{
+                Budget = $_.Key
+                Enabled = $_.Value.Enabled
+                Max = $_.Value.Max
+                Actual = $_.Value.Actual
+                Passed = $_.Value.Passed
+            }
+        } |
+        Format-Table -AutoSize
     Write-Output ''
     Write-Output 'Core graph H-Phi debt counts:'
     [pscustomobject]$summaryResult.CoreGraph.Counts | Format-List
@@ -1967,6 +2018,9 @@ if ($Summary) {
         Write-Output 'Top AUP precision risk files:'
         $summaryResult.TopAupPrecisionRiskFiles | Format-Table -AutoSize
     }
+    Write-Output ''
+    Write-Output 'Top coupling risk files:'
+    $summaryResult.TopCouplingRiskFiles | Format-Table -AutoSize
     Write-Output ''
     Write-Output 'Top owner-blocked DataVault candidate files:'
     $summaryResult.TopOwnerBlockedDataVaultCandidates | Format-Table -AutoSize

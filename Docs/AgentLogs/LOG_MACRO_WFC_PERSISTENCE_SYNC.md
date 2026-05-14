@@ -602,3 +602,26 @@ Verification:
 - Static scans confirm the WFC writer emits 13 fields and ends at `Reserved0`.
 - `git diff --check` reports no whitespace errors beyond Git CRLF normalization warnings.
 - No `dotnet` rebuild was run.
+
+## Recheck Report: WFC Black-Box Dump Latch Ordering
+Status: PENDING VERIFICATION.
+
+What was wrong:
+- The WFC dump latch was set before directory creation and file serialization.
+- A failed dump attempt could permanently suppress later WFC forensic dumps.
+
+What was done:
+- Moved `_wfcOutpostBlackBoxDumped = true` to after successful ring serialization.
+- Kept the one-shot behavior after a successful dump.
+
+Cinematic cheats used:
+- No simulation or replay added. The fix preserves compact binary forensic export.
+
+Exact microseconds saved:
+- Measured savings: 0 us. No profiler or runtime trace.
+- Hot path cost: unchanged.
+- Failure path cost: unchanged except the latch now reflects successful write state.
+
+Verification:
+- Pending final static scans and `git diff --check`.
+- No `dotnet` rebuild was run.

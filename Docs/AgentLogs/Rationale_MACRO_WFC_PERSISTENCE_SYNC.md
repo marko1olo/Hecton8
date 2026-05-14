@@ -287,3 +287,12 @@ Scalability potential: Low/MX350 keeps the literal 64-byte per-frame and per-eve
 Hardware Impact: Persistent native memory returns to the intended 19.2 KB per 300-entry ring and roughly 38.4 KB for both rings. Hot path remains one native struct write per Tick plus WFC activity events. Measured microseconds absent.
 H-Phi Evidence: Improves DataSovereignty by making the binary contract match the documented record size; improves PhaseDiscipline by versioning the dump layout instead of silently changing serialization.
 Verification Update 19: Static scans confirm WFC version 3, WFC struct contains no `Reserved1`, and `WriteWfcOutpostTelemetryEntry` writes 13 fields ending at `Reserved0`. `git diff --check` reports no whitespace errors beyond Git CRLF normalization warnings. No `dotnet` rebuild, Unity import, Burst Inspector, GCMonitor, profiler, or PlayMode claim is made.
+
+## WFC BLACK-BOX DUMP LATCH ORDERING
+Problem: `DumpWfcOutpostBlackBox()` set `_wfcOutpostBlackBoxDumped = true` before resolving the path, creating the directory, opening the stream, and writing both rings. A transient IO failure would mark the dump as complete and block every later WFC corruption/write-loss attempt from exporting forensic state.
+Solution: Move the latch assignment to the success side after the writer scope has serialized both rings. The early return still prevents repeated dumps after a successful export, while a failed export remains retryable on the next critical WFC fault.
+Rejected Alternatives: Leaving the pre-write latch; removing the latch entirely; adding a second retry counter. Pre-write latch hides future faults after one IO failure, no latch can spam disk under persistent corruption, and a counter adds state without improving the first-order correctness issue.
+Scalability potential: Low/MX350 keeps failure-only disk IO and still avoids repeated successful dumps. Middle/High/Ultra preserve the same compact forensic path while making IO failures recoverable.
+Hardware Impact: Hot path unchanged. Failure path only changes one boolean write from before IO to after successful IO. Measured microseconds absent.
+H-Phi Evidence: Improves DataSovereignty by making the owner-local dump latch represent actual persisted dump state instead of attempted dump state.
+Verification Update 20: Pending static scans for latch ordering and whitespace. No `dotnet` rebuild, Unity import, Burst Inspector, GCMonitor, profiler, or PlayMode claim is made.

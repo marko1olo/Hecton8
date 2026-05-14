@@ -1905,8 +1905,6 @@ namespace Hecton8.SaveSystem
                 return;
             }
 
-            _wfcOutpostBlackBoxDumped = true;
-
             try
             {
                 string dumpPath = Path.GetFullPath(Path.Combine(Application.dataPath, "..", WfcOutpostBlackBoxDumpRelativePath));
@@ -1938,6 +1936,8 @@ namespace Hecton8.SaveSystem
                         WriteWfcOutpostTelemetryEntry(writer, in entry);
                     }
                 }
+
+                _wfcOutpostBlackBoxDumped = true;
             }
             catch (Exception exception)
             {

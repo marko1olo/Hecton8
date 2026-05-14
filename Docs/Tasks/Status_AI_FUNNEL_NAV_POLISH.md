@@ -168,12 +168,23 @@ Task Count: 15
 - [x] Flow-field finite extent proof | DOD: sampler rejects non-finite half-extent before local coordinate mapping; rejected allowing corrupt cell size/resolution to fabricate indices; estimate 3 us.
 - [x] Flow sampler static scan | DOD: targeted flow sampler range reports no raw float division or forbidden hot-math/allocation matches after loop 22; estimate 3 us.
 
+## Loop 23 - Threat/Flow Payload Boundary Proof
+
+- [x] Compute audit context read | DOD: read `COMPUTE_AUDIT_BRIEF.md` and `Docs/Reports/COMPUTE_DOMINANCE_REPORT.md`; rejected editing H-Phi reports without a completed local audit; estimate 0 us.
+- [x] Batch prompt re-extraction | DOD: CLI regex confirmed `AI_FUNNEL_NAV_POLISH` is absent from current `CURRENT_BATCH.md`; continued from persisted state instead of borrowing active prompts; estimate 0 us.
+- [x] Flow payload export proof | DOD: `TryGetEcosystemFlowFieldPayload` now requires finite metadata and complete square-grid state before exposing native flow vectors; rejected trusting `_flowFieldInitialized` alone; estimate 3 us.
+- [x] Wake/pulse ingress finite gate | DOD: swarm wake and external threat pulse state now reject non-finite positions, vectors, radii, strengths, and timers before mutating route pressure; rejected clamping NaN into steering state; estimate 4 us.
+- [x] Hotspot local scan proof | DOD: hotspot scan now requires complete threat-grid state, finite grid center/cell size, finite threat samples, and finite player Y fallback; rejected O(N) scan over stale native length; estimate 5 us.
+- [x] Public threat payload proof | DOD: float, compressed, echo, and voxel threat payload getters now require complete square/voxel grid length, declared cell-count coherence, and finite metadata before returning created arrays; rejected exposing partial native payloads to fauna/path consumers; estimate 6 us.
+- [x] Boundary static scan | DOD: targeted changed ranges report no forbidden hot math/allocation and only one existing integer grid-index division; `git diff --check` passed with LF/CRLF warnings only; estimate 4 us.
+
 ## Verification
 
 - [x] Static scan | PASS: `StringPullPathJob`, `NativeAStarJob`, `TryResolveAbyssalNavNodeCandidate`, abyssal nav support/hash, nav graph ingress, and funnel telemetry conversion regions have no `math.normalize`, `math.length(`, `math.distance(`, `.normalized`, or raw `/` code matches after loop 19.
 - [x] Bridge targeted scan | PASS: flow-volume, threat metadata, threat chunk hash, artificial-structure hash, threat sampler, and echo sampler ranges in `HectonMapMagicVegetationBridge.cs` have no raw float-division or forbidden hot-math matches after loop 20.
 - [x] Threat-service targeted scan | PASS: `VegetationThreatAndStructureService.cs` and nearest-node lookup ranges in `VegetationNavGridSynchronizer.cs` have no raw float-division or forbidden hot-math/allocation matches after loop 21.
 - [x] Flow sampler targeted scan | PASS: `SampleFlowFieldAtPosition` range has no raw float-division or forbidden hot-math/allocation matches after loop 22.
+- [x] Payload boundary targeted scan | PASS: `TryGetEcosystemFlowFieldPayload`, wake/pulse ingress, hotspot update, threat payload getters, and threat grid view helpers report no forbidden hot math/allocation; the only `/` hit is integer index decomposition in hotspot decode.
 - [x] Diff hygiene | PASS: `git diff --check` passed for edited funnel/scheduler/status/log files; only LF-to-CRLF working-copy warnings were emitted.
 - [x] Static H-Phi audit | ATTEMPTED: `Tools/Architecture/HectonPhiAudit.ps1 -Json` timed out after 120 seconds under current repo load; no score claimed from this pass.
 - [x] Compile check | BLOCKED BY DEPENDENCY: bounded no-reference `dotnet build Hecton8.Core.csproj --no-restore /m:1 /nr:false /p:BuildProjectReferences=false` completed with 63 unrelated errors in `VRAMEnforcer`, `VoxelDeltaProcessor`, `SealedDoor`, `BinaryLayoutManifest`, and `HardwareTierDetector`; none were reported in `VegetationFlowFieldIntegrator.cs`, `VegetationNavGridSynchronizer.cs`, or `HectonMapMagicVegetationBridge.cs`.

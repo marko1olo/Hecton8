@@ -416,6 +416,30 @@ namespace Hecton8.SaveSystem
         /// <summary>Maximum persisted external scavenger sites. Runtime capacity is clamped to 16.</summary>
         public const int MaxExternalScavengerSites = 16;
 
+        /// <summary>Maximum legacy tool durability entries. Matches ToolDurabilitySystem fixed slots.</summary>
+        public const int MaxToolDurabilityRecords = 32;
+
+        /// <summary>Maximum legacy discovered biome IDs accepted before packed bitmask migration.</summary>
+        public const int MaxLegacyDiscoveredBiomeIds = BiomeDiscoveryBitMask.MaxBiomeId - BiomeDiscoveryBitMask.MinBiomeId + 1;
+
+        /// <summary>Maximum legacy discovered audio-log IDs accepted before packed bitmask migration.</summary>
+        public const int MaxLegacyAudioLogDiscoveredIds = AudioLogDiscoveryBitMask.MaxLogCount;
+
+        /// <summary>Maximum legacy quest IDs accepted before packed quest-state restoration.</summary>
+        public const int MaxLegacyQuestIds = 1024;
+
+        /// <summary>Maximum persisted suit upgrade IDs in each legacy suit list.</summary>
+        public const int MaxSuitUpgradeIds = 32;
+
+        /// <summary>Maximum persisted corporate order IDs and pending-order timers.</summary>
+        public const int MaxCorporateOrderIds = 16;
+
+        /// <summary>Maximum persisted mission IDs in each mission facade list.</summary>
+        public const int MaxMissionIds = 32;
+
+        /// <summary>Maximum custom mod key/value pairs persisted in the root compatibility map.</summary>
+        public const int MaxCustomModDataEntries = 64;
+
         public void EnsureRtgDecayCapacity()
         {
             EnsureExactArrayCapacity(ref rtgDecaySourceIds, MaxRtgDecayRecords);

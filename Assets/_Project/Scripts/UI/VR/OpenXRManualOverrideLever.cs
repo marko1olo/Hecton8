@@ -225,12 +225,12 @@ namespace Hecton8.UI.VR
             if (!_nativeAllocated || _latched || !IsFiniteVector(handPosition))
                 return false;
 
-            float3 localHand = WorldToLocal(handPosition);
-            if (!IsFiniteFloat3(localHand))
-                return false;
-
             int resolvedSampleFrame = sampleFrame >= 0 ? sampleFrame : Time.frameCount;
             if (resolvedSampleFrame < _lastHandFrame)
+                return false;
+
+            float3 localHand = WorldToLocal(handPosition);
+            if (!IsFiniteFloat3(localHand))
                 return false;
 
             float pivotDistanceSq = math.lengthsq(localHand - _leverPivots[0]);

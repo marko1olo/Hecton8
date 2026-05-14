@@ -318,10 +318,10 @@ Verification: `git diff --check` passed. Scoped source counter reports `Forbidde
 
 What was wrong: the manual override receiver accepted valid hand callbacks in arrival order only. An older sample arriving after a newer one could overwrite `_lastHandLocalPosition`, `_lastHandSide`, and `_lastHandFrame`.
 
-What was done: `TryQueueHandPress()` now resolves the sample frame once and rejects samples older than the currently cached hand frame before mutating state.
+What was done: `TryQueueHandPress()` now resolves the sample frame once and rejects samples older than the currently cached hand frame before world-to-local transform work or state mutation.
 
 Cinematic Cheats used: no simulation change. This preserves the scalar kinematic lever and treats the newest hand pose as the only physical truth needed by the cockpit control.
 
-Exact microseconds saved/spent: one integer compare per receiver callback. No allocations, no new containers, no dispatcher cost.
+Exact microseconds saved/spent: one integer compare per receiver callback. Stale callbacks skip one transform conversion plus local/distance checks. No allocations, no new containers, no dispatcher cost.
 
-Verification: `git diff --check` passed. Scoped source counter reports `ForbiddenPatternTotal=0`, `ResolvedSampleFrame=1`, `StaleSampleReject=1`, `LastHandFrameSingleWrite=1`, `OldFrameWrite=0`, `TryQueueLatchedGuard=1`, `DotnetMention=0`. `CURRENT_BATCH.md` extraction still returns no matching prompt block. No dotnet rebuild/probe was run by user instruction.
+Verification: pending in this pass. No dotnet rebuild/probe was run by user instruction.
