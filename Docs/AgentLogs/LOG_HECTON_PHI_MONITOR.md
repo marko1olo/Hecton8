@@ -297,3 +297,51 @@ Regression Model:
 - Memory: no buffer ownership changed; DataVault migration remains owner-blocked.
 - Cadence: no tick, job schedule, signal flush, or dispatch cadence changed.
 - Correctness: low compile risk from attributes/imports, but Unity import/compile remains pending because rebuild is forbidden.
+
+## 2026-05-15 Typed Signal Publish Metric Correction And Summary Mode
+
+What was wrong:
+- H-Phi risk integration counted typed `GlobalSignals.Publish(...)` as generic `Publish(...)` event debt.
+- That made the project look less signal-integrated than it is: previous summary showed `SignalBusPush=84` and `EventPublish=450`.
+- Overseer checks had no compact summary path; full JSON was too noisy for fast status review.
+
+What was done:
+- Updated `Tools/Architecture/HectonPhiAudit.ps1`:
+  - `SignalBusPush` now includes `SignalBus<T>.Push` and `GlobalSignals.Publish(...)`.
+  - `EventPublish` is narrowed to explicit legacy/static event publisher surfaces.
+  - Added `-Summary` for compact scores, counts, Core graph debt, and top DataVault owner-blocked candidates.
+- Honored user instruction: no `dotnet build`, no rebuild.
+
+Cinematic Cheats used:
+- None. Static audit model only.
+
+Exact Microseconds saved:
+- Runtime gameplay: 0 us measured; no executable runtime code changed.
+- Workflow: graph-only compact summary now avoids parsing the full H-Phi JSON when the overseer only needs Core graph status. Exact human/CLI savings are unmeasured.
+
+Compile Status:
+- Not run by explicit user order.
+- Static checks run:
+  - `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json`
+  - `git diff --check -- Tools/Architecture/HectonPhiAudit.ps1`
+  - `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json`
+- `git diff --check`: no whitespace errors, only LF/CRLF normalization warning.
+
+Phi Gain:
+- Previous runtime narrow score: `0.009266939`.
+- Current runtime narrow score: `0.009244029`.
+- Narrow delta: `-0.000022910`, about `-0.25%`; this is concurrent/static counter movement, not a runtime regression claim.
+- Previous runtime risk-adjusted score: `0.000124428`.
+- Current runtime risk-adjusted score: `0.000468052`.
+- Risk-adjusted delta: `+0.000343624`, about `+276.16%`.
+- Risk integration moved `0.013427110 -> 0.050632911`.
+- `SignalBusPush` moved `84 -> 308`; `EventPublish` moved `450 -> 48`.
+- Compared with original dialogue baseline `0.00062`, current runtime narrow is about `+1390.97%`.
+- Important: this pass is a metric-model correction and evidence-routing improvement, not measured frame-time gain.
+
+Regression Model:
+- CPU: no runtime code path changed.
+- GC: no runtime allocation changed.
+- Memory: no buffer ownership changed; DataVault migration remains owner-blocked.
+- Cadence: no tick, signal flush, job schedule, or dispatch cadence changed.
+- Correctness: regex model risk remains because this is static text analysis; Unity import/compile and runtime evidence remain pending because rebuild is forbidden.
