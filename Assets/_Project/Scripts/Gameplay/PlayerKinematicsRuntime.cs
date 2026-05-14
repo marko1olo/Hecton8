@@ -1422,6 +1422,15 @@ namespace Hecton8.Gameplay
                 return;
             }
 
+            if (!IsFinite(gridResolution) || !IsFinite(flowCenter) || !IsFinite(flowSpacing))
+            {
+                _lastGpuFlowResolution = Vector4.zero;
+                _lastGpuFlowCenter = Vector4.zero;
+                _lastGpuFlowSpacing = Vector4.zero;
+                _lastGpuFlowFrame = 0u;
+                return;
+            }
+
             _lastGpuFlowResolution = gridResolution;
             _lastGpuFlowCenter = flowCenter;
             _lastGpuFlowSpacing = flowSpacing;
@@ -1511,9 +1520,21 @@ namespace Hecton8.Gameplay
 
             sdfTexture3D = resolvedSdf;
             gridDimensions = resolvedDimensions;
-            volumeOrigin = ToFloat3(publishedOrigin);
-            voxelCellSize = ToFloat3(publishedCellSize);
-            sdfRange = SanitizeNonNegative(publishedRange);
+            float3 safeOrigin = ToFloat3(publishedOrigin);
+            float3 safeCellSize = ToFloat3(publishedCellSize);
+            float safeRange = SanitizeNonNegative(publishedRange);
+            if (!math.all(math.isfinite(safeOrigin)) ||
+                !math.all(math.isfinite(safeCellSize)) ||
+                safeRange <= 0.0001f)
+            {
+                sdfTexture3D = default;
+                gridDimensions = default;
+                return;
+            }
+
+            volumeOrigin = safeOrigin;
+            voxelCellSize = safeCellSize;
+            sdfRange = safeRange;
         }
 
         private static byte ResolveSdfGradientProbeRequest()
@@ -1583,7 +1604,11 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            ladderPoint = ToFloat3(ladderHit.point);
+            float3 safePoint = ToFloat3(ladderHit.point);
+            if (!math.all(math.isfinite(safePoint)))
+                return;
+
+            ladderPoint = safePoint;
             ladderActive = 1;
         }
 
@@ -1601,7 +1626,8 @@ namespace Hecton8.Gameplay
 
             float gpuBoost = _lastGpuFlowFrame != 0u ? 1.0f : 0.65f;
             float tierScale = IsLowTier(GlobalRegistry.ScalabilityTier) ? 0.75f : 1.0f;
-            return flow * (AdvectionVelocityScale * gpuBoost * tierScale * immersion01);
+            float3 advection = flow * (AdvectionVelocityScale * gpuBoost * tierScale * immersion01);
+            return SanitizeFloat3(advection, float3.zero);
         }
 
         private float ResolveRuntimeWaterDensityScale()
@@ -1667,8 +1693,12 @@ namespace Hecton8.Gameplay
             if (velocitySq <= 0.0025f || !math.isfinite(velocitySq))
                 return;
 
+            float3 safePosition = SanitizeFloat3(
+                ToFloat3(position),
+                _positions.IsCreated ? _positions[0] : float3.zero);
+
             MovementAcousticSignal signal = default;
-            signal.PositionAup = AbsoluteUniversePosition.FromRuntimePosition(position);
+            signal.PositionAup = AbsoluteUniversePosition.FromRuntimePosition(ToVector3(SnapMillimeter(safePosition)));
             signal.Volume = SanitizeUnit(velocitySq * 0.08f);
             signal.VelocitySq = velocitySq;
             signal.SourceId = _sourceId;
@@ -2208,7 +2238,8 @@ namespace Hecton8.Gameplay
         {
             float speedSq = _velocities.IsCreated ? math.lengthsq(_velocities[0]) : 0.0f;
             float scalar = SanitizeUnit(speedSq * 0.05f);
-            if (math.abs(scalar - _lastVatSpeedScalar) <= 0.0025f)
+            float lastScalar = math.select(_lastVatSpeedScalar, -1.0f, !math.isfinite(_lastVatSpeedScalar));
+            if (math.abs(scalar - lastScalar) <= 0.0025f)
                 return;
 
             Shader.SetGlobalFloat(_PlayerSwimVatSpeedId, scalar);
@@ -2217,13 +2248,24 @@ namespace Hecton8.Gameplay
 
         private void PushRollSignal()
         {
-            if (math.abs(_rollDegrees - _lastPushedRollDegrees) <= RollSignalEpsilonDegrees)
+            bool rollInvalid = !math.isfinite(_rollDegrees);
+            float rollDegrees = math.select(_rollDegrees, 0.0f, rollInvalid);
+            float lastPushedRollDegrees = math.select(_lastPushedRollDegrees, 99999.0f, !math.isfinite(_lastPushedRollDegrees));
+            if (rollInvalid)
+                _rollVelocityDegrees = 0.0f;
+
+            if (math.abs(rollDegrees - lastPushedRollDegrees) <= RollSignalEpsilonDegrees)
+            {
+                _rollDegrees = rollDegrees;
+                _lastPushedRollDegrees = lastPushedRollDegrees;
                 return;
+            }
 
             if (_movement != null)
-                _movement.RequestKinematicInertiaRoll(_rollDegrees);
-            Shader.SetGlobalFloat(_PlayerKinematicRollId, _rollDegrees);
-            _lastPushedRollDegrees = _rollDegrees;
+                _movement.RequestKinematicInertiaRoll(rollDegrees);
+            Shader.SetGlobalFloat(_PlayerKinematicRollId, rollDegrees);
+            _rollDegrees = rollDegrees;
+            _lastPushedRollDegrees = rollDegrees;
         }
 
         private void ClearRollSignal()
@@ -2683,6 +2725,14 @@ namespace Hecton8.Gameplay
         }
 
         private static bool IsFinite(Quaternion value)
+        {
+            return math.isfinite(value.x) &&
+                   math.isfinite(value.y) &&
+                   math.isfinite(value.z) &&
+                   math.isfinite(value.w);
+        }
+
+        private static bool IsFinite(Vector4 value)
         {
             return math.isfinite(value.x) &&
                    math.isfinite(value.y) &&

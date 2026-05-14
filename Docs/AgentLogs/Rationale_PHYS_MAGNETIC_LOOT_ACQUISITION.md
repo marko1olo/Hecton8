@@ -319,3 +319,39 @@ Rejected Alternatives: Runtime-only clamps were rejected because they hide autho
 Scalability potential: Low-to-Ultra authoring remains explicit: capacity, radius, pull strength, and speed limits are bounded before runtime.
 
 Hardware Impact: No frame cost. Metadata-only editor guardrails reduce bad scene data before it reaches runtime.
+
+## Decision 25 - Inventory Dependency Fail-Closed
+
+Problem: `PickupItem.TryHandleInventoryPickup(null, interactor)` deliberately invokes overflow scatter behavior. The loot magnet should not trigger that path when the player inventory service is temporarily unavailable.
+
+Solution: Before auto-stow, `CommitVaultResultsToManagedProxies` now checks `_inventory`. If it is missing, the slot is restored as active loot without `PullEnabled`, and a fixed telemetry flag records the dependency fault.
+
+Rejected Alternatives: Calling pickup transfer with null inventory was rejected because it can mutate physics/presentation through overflow impulses. Dropping the slot was rejected because that would lose loot truth due to a dependency gap.
+
+Scalability potential: Low/Middle/High/Ultra all fail closed in the same way. Dense loot fields do not amplify missing-inventory overflow behavior.
+
+Hardware Impact: Adds one null branch only for acquired slots during commit. MX350 avoids repeated overflow force queue work when inventory is not resolved.
+
+## Decision 26 - Cold Allocation Evidence
+
+Problem: The managed sidecar arrays were bounded cold allocations, but their allocation lines did not carry the canonical `COLD ALLOC` owner comments required by the memory policy.
+
+Solution: Added canonical cold allocation comments to `_pickupRefs` and `_pickupEntityIds` allocation lines.
+
+Rejected Alternatives: Leaving only the field-level comment was rejected because allocation evidence should sit at the allocation site. Moving sidecars into NativeArrays was rejected because these are managed object references and cannot be Burst-owned truth.
+
+Scalability potential: No behavior change. Capacity remains bounded by authored cap and hard clamp.
+
+Hardware Impact: No runtime cost. This is evidence hygiene for cold managed memory.
+
+## Decision 27 - Acquisition Deferral Telemetry
+
+Problem: Dense fields can exceed `MaxAcquisitionsPerFrame` and defer truth work, but telemetry only recorded presentation clipping and dependency faults.
+
+Solution: Added a fixed telemetry bit for acquisition-budget deferral when acquired slots are restored for a later frame.
+
+Rejected Alternatives: Raising the acquisition cap was rejected because inventory transfer is managed work and must stay bounded. Logging each deferred pickup was rejected because it would allocate/noise in the overload case.
+
+Scalability potential: Low/Middle/High/Ultra preserve the same acquisition cap, but postmortem data now shows when scene density exceeds the truth-work budget.
+
+Hardware Impact: Adds one `uint` OR only on budget-exhausted acquired slots. It improves dump evidence with no normal-case cost.

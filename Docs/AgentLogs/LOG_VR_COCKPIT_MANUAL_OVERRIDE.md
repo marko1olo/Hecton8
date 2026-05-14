@@ -300,4 +300,16 @@ Cinematic Cheats used: no simulation change. This protects the existing kinemati
 
 Exact microseconds saved/spent: 0 us steady-state. Cold teardown pays one idempotent fixed-bucket unregister path and prevents a permanent stray tick plus one stale receiver slot per affected lever.
 
-Verification: pending in this pass. No dotnet rebuild/probe was run by user instruction.
+Verification: `git diff --check` passed. Scoped source counter reports `ForbiddenPatternTotal=0`, `ReceiverUnregisterCachedVolume=1`, `ReceiverFlagDriftCleanup=1`, `ReceiverNullCallGuard=1`, `TickUnregisterAlways=1`, `LatchedReceiverGuard=1`, `LatchedTickGuard=1`, `DotnetMention=0`. `CURRENT_BATCH.md` extraction still returns no matching prompt block. No dotnet rebuild/probe was run by user instruction.
+
+## 2026-05-15 - Latched Hot-Swap Listener Eviction
+
+What was wrong: after a successful latch, the one-shot lever left tick and receiver lanes but could remain in the GlobalRegistry hot-swap listener table, even though `_latched` prevents future active registration.
+
+What was done: `TryLatch()` now unregisters the hot-swap listener after ordered signal publication and after receiver/tick cleanup. `TryRegisterHotSwapListener()` also refuses registration while `_latched`, matching the tick and receiver lifecycle guards. Disable/destroy paths remain idempotent.
+
+Cinematic Cheats used: no simulation change. This keeps the latch as authored post-state instead of keeping a dead physical control wired into service rebinding.
+
+Exact microseconds saved/spent: 0 us steady-state. The latch frame pays one fixed-table listener removal and avoids future cold hot-swap callbacks for a spent lever.
+
+Verification: `git diff --check` passed. Scoped source counter reports `ForbiddenPatternTotal=0`, `LatchCleanupSequence=1`, `HotSwapUnregisterGuard=1`, `LatchGuardPreventsTickRegister=1`, `LatchGuardPreventsReceiverRegister=1`, `LatchGuardPreventsHotSwapRegister=1`, `DotnetMention=0`. `CURRENT_BATCH.md` extraction still returns no matching prompt block. No dotnet rebuild/probe was run by user instruction.

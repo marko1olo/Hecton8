@@ -335,7 +335,7 @@ Verification:
 - Scoped QA/headless source count: `SignalBusPush=3`, `GlobalSignalsPublish=4`, `GlobalRegistryDot=13`, `GlobalRegistryIdentifierTokens=18`, `StructLayoutAttributes=3`, `StructDeclarations=3`, `FindObjectCalls=0`, `GetComponentCalls=0`, `UnityUpdateMethods=0`, `FastTickRegistryRefresh=0`, `MemorySnapshotIntervalFields=1`.
 - Runtime isolated Unity compiler probe: PASS via Unity Mono/Roslyn with UnityJIT facades, Unity modules, current `Library/ScriptAssemblies`, and `Assembly-CSharp.dll`.
 - Editor runner isolated Unity compiler probe: PASS with `UNITY_EDITOR` defined, Unity editor facade, and `Assembly-CSharp.dll`.
-- `git diff --check`: PASS for whitespace on the QA runner/editor runner/status/rationale/log files; Git emitted LF-to-CRLF normalization warning on the touched runtime C# file only.
+- `git diff --check`: PASS for whitespace on the QA runner/editor runner/status/rationale/log files; LF-to-CRLF normalization warnings appeared only on files dirty at check time, with the final readback warning limited to this owned LOG file.
 - No temp `HeadlessStressFracture*MemoryCadence*.dll` probe artifacts remain.
 - No `dotnet` rebuild was run.
 - Full Unity/editor/player execution remains PENDING VERIFICATION because no Unity MCP/editor session is available in this tool context.

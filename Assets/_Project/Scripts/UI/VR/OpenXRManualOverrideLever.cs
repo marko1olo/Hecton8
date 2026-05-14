@@ -412,6 +412,7 @@ namespace Hecton8.UI.VR
 
             TryUnregisterReceiver();
             TryUnregisterTick();
+            TryUnregisterHotSwapListener();
         }
 
         private void PublishManualOverrideSignal(float latchVelocityDegreesPerSecond)
@@ -784,7 +785,7 @@ namespace Hecton8.UI.VR
 
         private void TryRegisterHotSwapListener()
         {
-            if (_registeredHotSwapListener || !Application.isPlaying)
+            if (_registeredHotSwapListener || _latched || !Application.isPlaying)
                 return;
 
             _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);

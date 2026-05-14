@@ -168,3 +168,14 @@ Cinematic cheats used: Preserved the same phosphor-history fake: previous RT dec
 Exact microseconds saved: Estimate only. No steady-frame win is claimed; cold path removes one shader lookup and one material allocation, and invalid authoring now fails closed instead of constructing fallback state.
 
 Verification: No dotnet rebuilds were run. Static scans found no `PhosphorDecayShaderPath`, `AssetDatabase`, `Shader.Find`, or `new Material(` markers in `DiegeticPanelController.cs`; hot-path text/LINQ marker scan for the same file returned no matches. `git diff --check` returned the repository CRLF warning only on the edited panel file.
+
+## 2026-05-15 Diegetic Panel Camera Ownership
+What was wrong: Physical panel camera resolution still reached through `GameBootstrapper.TryGetCurrentPlayerTransform` and carried a one-second retry timer.
+
+What was done: Removed the bootstrap fallback and retry field. `DiegeticPanelController` now resolves an authored interaction camera first, then `GlobalRegistry.Player.PlayerCamera`, and fails closed when no active camera exists.
+
+Cinematic cheats used: No visual change. The same physical panel cursor projection and RT presentation remain; the change removes ownership ambiguity from the camera source.
+
+Exact microseconds saved: Estimate only. Steady-frame gain is small; cold/worst-case path avoids one bootstrap call chain, one component probe, and one retry-timer branch.
+
+Verification: No dotnet rebuilds were run. Static scans found no `Hecton8.Bootstrap`, `GameBootstrapper`, `_cameraRetryTimer`, `TryGetCurrentPlayerTransform`, old phosphor fallback markers, or hot-path text/LINQ markers in `DiegeticPanelController.cs`.

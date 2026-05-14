@@ -1,7 +1,7 @@
 # AUP Drift Report
 
 Agent: ARCHITECTURAL_AUP_INTEGRITY_AUDITOR
-Status: VERIFIED AUP INTEGRITY - LOOP 28 AUP PRECISION H-PHI BUDGET GATE PASSES AND COREGRAPH MISUSE FAILS FAST; AUP PRECISION INTEGRITY 1.0; CORE BUILD NOT RERUN PER USER; ASMDEF BLOCKED BY ARCHITECTURE
+Status: VERIFIED AUP INTEGRITY - LOOP 29 AUP PRECISION H-PHI BUDGET GATE PASSES AND FAILURE OUTPUT IS ACTIONABLE; AUP PRECISION INTEGRITY 1.0; CORE BUILD NOT RERUN PER USER; ASMDEF BLOCKED BY ARCHITECTURE
 
 ## Authority
 
@@ -486,6 +486,32 @@ Status: VERIFIED AUP INTEGRITY - LOOP 28 AUP PRECISION H-PHI BUDGET GATE PASSES 
 
 - Full AUP budget proof remains the Loop 27 full-source run: `AupPrecisionRisk=0`.
 - Unity import/Console verification remains pending because no Unity editor session is available.
+
+## Loop 29 Actionable AUP Budget Failure Output
+
+### Findings
+
+- The AUP precision budget gate rejected bad counts, but a future failure would not identify the files responsible.
+
+### Tool Changes
+
+- `Tools/Architecture/HectonPhiAudit.ps1`: `Assert-AupPrecisionBudget` now receives runtime file rows and includes up to 8 top risk files in the thrown error.
+
+### Verification
+
+- PowerShell parser reports `PARSE_OK`.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json -MaxAupPrecisionRisk 0` still returns the expected fail-fast message.
+- Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0` completed in 125.752 seconds.
+- Gated full static summary: `RuntimeHPhiRisk=0.000566586`, `RuntimeHPhiNarrow=0.010409098`, `AupPrecisionIntegrity=1`, `AupPrecisionSafe=363`, `AupPrecisionRisk=0`, `TopAupPrecisionRiskFiles=0`, `RuntimeFiles=1276`, `RuntimeLines=860158`.
+- Targeted qualified AUP H-Phi risk scan returns `NO_MATCHES`.
+- Direct committed-offset leak scan returns `NO_MATCHES`.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` was re-run. Residual hits remain broad `universe` text and known final-cast fluid/scatter/shader payload names.
+- No `dotnet build` or rebuild was run in Loop 29 because the latest user instruction explicitly forbids rebuilds.
+
+### Evidence Queue
+
+- Unity import/Console verification remains pending because no Unity editor session is available.
+- H-Phi result is static-source evidence, not profiler proof.
 
 ## Loop 27 AUP Precision H-Phi Budget Gate
 

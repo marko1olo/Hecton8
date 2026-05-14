@@ -200,3 +200,10 @@ Solution: Added authored `Resources/UI/MAT_DiegeticPanelPhosphorDecay` and chang
 Rejected Alternatives: Keeping the runtime shader/material fallback, adding another per-panel material clone, or disabling phosphor decay entirely. Runtime lookup hides authoring faults; clones add memory churn; disabling the effect removes the intended CRT persistence cheat.
 Scalability potential: Low/MX350 keeps the same cheap RT history fake without runtime material creation. Middle/High/Ultra can tune the authored material or shader while preserving the same validation gate.
 Hardware Impact: Expected low-end gain is cold-start and memory hygiene, not a measurable steady-frame win. Removes one runtime shader lookup and one runtime material allocation from the physical panel phosphor path. No profiler proof.
+
+## Decision 28: Registry-Owned Diegetic Panel Camera Resolution
+Problem: `DiegeticPanelController` still reached through `GameBootstrapper.TryGetCurrentPlayerTransform` and throttled camera discovery with `Time.unscaledTime`. That creates hidden coupling to bootstrap ownership and a retry branch in a presentation controller.
+Solution: Removed the bootstrap fallback and retry timer. Physical panels now resolve an authored `interactionCamera` first, then `GlobalRegistry.Player.PlayerCamera`, and return null when neither active camera exists.
+Rejected Alternatives: Keeping the bootstrap fallback for convenience, using `Camera.main`, or searching player children for a camera. Those hide broken player context wiring and add discovery work to a diegetic UI system.
+Scalability potential: Low fails closed instead of searching. Middle/High/Ultra keep deterministic camera ownership for richer physical panel effects without camera-source ambiguity.
+Hardware Impact: Expected gain is cold-path hygiene and lower worst-case discovery work, not a large steady-frame win. Removes one bootstrap call chain, one component probe, and one retry timer from panel camera resolution. No profiler proof.

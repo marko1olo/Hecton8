@@ -439,3 +439,11 @@ Solution: Fail immediately when `-CoreGraphOnly` is combined with `-MaxAupPrecis
 Rejected Alternatives: Silently ignore the AUP budget in graph-only mode or run a full scan despite `-CoreGraphOnly`. Silent ignore is false evidence; overriding CoreGraphOnly violates the caller's requested fast graph path.
 Scalability potential: Low machines keep the fast CoreGraphOnly path for graph debt and get a separate explicit full-source path for AUP precision. Middle/High/Ultra CI scripts can compose the two checks without accidental false positives.
 Hardware Impact: Gameplay frame impact is 0 us. Guard cost is one integer comparison before returning CoreGraphOnly output.
+
+## Decision 55 - Actionable AUP Budget Failure Output
+
+Problem: The AUP precision budget failed with only a count, which would force the integrator to rerun exploratory scans to identify offending files.
+Solution: Pass runtime file rows into `Assert-AupPrecisionBudget` and append the top AUP precision risk files to the thrown error when the budget fails.
+Rejected Alternatives: Leave failure triage to manual `rg` commands or always emit a full per-file report. Manual triage slows regression repair; full reports bloat the common passing path.
+Scalability potential: Low machines keep the same passing audit cost and get faster failure triage when regressions occur. Middle/High/Ultra CI gets actionable source locations before AUP drift reaches visual-overkill systems.
+Hardware Impact: Gameplay frame impact is 0 us. Full gated static run completed in 125.752 seconds with `AupPrecisionRisk=0` and `TopAupPrecisionRiskFiles=0`; failure formatting cost only occurs when the budget is already violated.

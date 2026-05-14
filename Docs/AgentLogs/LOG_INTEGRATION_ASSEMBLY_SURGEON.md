@@ -305,7 +305,7 @@ Verification:
 - `Hecton8.Input.Generated` is absent from `Hecton8.Core.asmdef` and `Directory.Build.targets`.
 
 Residual risk:
-- This pass is not new compile proof. Existing `Fresh12` remains the last disk compile artifact.
+- This pass is not new compile proof. It was later superseded by `Fresh19` as current disk compile evidence.
 - Remaining Core asmdef debt has static external hits; reducing it requires staged contract extraction and a compile-enabled lane.
 
 ## 2026-05-15 - Concurrent Edit Revalidation Addendum
@@ -338,3 +338,42 @@ Verification:
 - Command: `dotnet build Hecton8.Core.csproj --no-restore --disable-build-servers -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal`.
 - Result: `Build succeeded. 0 Warning(s). 0 Error(s).`
 - Output: `Temp/bin/Debug/Hecton8.Core.dll`.
+
+## 2026-05-15 - Replacement Bridge H-Phi Debt Reduction
+
+What was wrong:
+- The Core project-reference replacement lane still carried four zero-hit references: `EasySave3`, `Unity.RenderPipelines.Core.Editor`, `Unity.ShaderGraph.Editor`, and `WaveHarmonic.Crest.Shared.Editor`.
+- `HectonPhiAudit.ps1` had a PowerShell parse error in the `TopAupPrecisionRiskFiles` sort expression, blocking the static H-Phi gate.
+- The stable H-Phi metric doc still needed the lowered bridge budget values after this prune.
+
+What was done:
+- Reconstructed the generated/source-backed Core compile surface: 1065 files.
+- Confirmed zero exact static hits for the four removed replacement references.
+- Removed those four reference blocks from `Directory.Build.targets`.
+- Kept replacement refs with live source hits: `Crest`, `GPUInstancer`, `Hecton8.Input`, `ShapesRuntime`, `Unity.RenderPipelines.Universal.Runtime`, `VolumetricLightBeam`, `WaveHarmonic.Crest`, and `WaveHarmonic.Crest.Shared`.
+- Fixed the PowerShell `Sort-Object -Property` syntax in `Tools/Architecture/HectonPhiAudit.ps1`.
+- Updated `Docs/ARCHITECTURE/HECTON_PHI_STATIC_METRIC.md` with the lowered bridge budgets.
+
+Cinematic Cheats used:
+- Static graph debt surgery only.
+- No runtime physical simulation, rendering algorithm, package source, or gameplay path changed.
+
+Exact Microseconds saved:
+- Runtime frame time saved: 0 us.
+- Build time saved: not claimed because no dotnet command was run in this pass.
+- Static graph impact: total source-backed bridge debt reduced from 20 to 16; project-reference replacement debt reduced from 12 to 8.
+
+Verification:
+- Evidence class: STATIC_SOURCE + STATIC_DOC.
+- No `dotnet build`, `dotnet rebuild`, or `dotnet msbuild` command was run.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Json -RequireCoreBuildGate -MaxCoreAsmdefDebtReferences 25 -MaxGeneratedProjectDebtReferences 10 -MaxSourceBackedBridgeDebtReferences 16 -MaxSourceBackedCompileBridgeDebtReferences 8 -MaxProjectReferenceReplacementDebtReferences 8` passed.
+- Current counts: 43 Core asmdef refs, 25 asmdef debt refs, 12 generated project refs, 10 generated-project debt refs, 27 source-backed bridge refs, 16 total bridge debt refs, 8 compile-bridge debt refs, 8 replacement debt refs.
+- `PS_PARSE_OK` for `HectonPhiAudit.ps1`.
+- `Directory.Build.targets` XML parse: OK.
+- Removed-reference scan: `REMOVED_DEBT_REFS_ABSENT`.
+- Full static AUP gate: `AupPrecisionSafe=363`, `AupPrecisionRisk=0` under `-MaxAupPrecisionRisk 0`.
+- Expected failure paths: `EXPECTED_TOTAL_BRIDGE_BUDGET_FAIL_PATH_OK` at total bridge budget 15 and `EXPECTED_REPLACEMENT_BRIDGE_BUDGET_FAIL_PATH_OK` at replacement budget 7.
+
+Residual risk:
+- This is not fresh compile proof. `Fresh19` remains the latest compile artifact on disk.
+- Generated `Hecton8.Core.csproj` still lists stale project references until Unity regenerates project files or a compile-enabled lane validates generated-project cleanup.

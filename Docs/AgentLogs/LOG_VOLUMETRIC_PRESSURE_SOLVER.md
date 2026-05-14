@@ -339,3 +339,14 @@ Follow-up upgrade 35:
 Exact microseconds saved after follow-up 35:
 - Stable sub-5cm analytical spatial jitter skips redundant shader global vectors; moved active pressure regions publish correctly.
 - Estimated gate cost under 1 us per analytical publish decision on i3/MX350; avoids stale deformation and unnecessary driver traffic.
+
+Follow-up upgrade 36:
+- What was wrong: `ApplyHydrodynamicStress` rejected non-positive time but not non-finite time, allowing NaN/Infinity to enter pressure, flood, vibration, module stress and telemetry paths. Malformed seismic epicenters also scanned active modules before failing distance tests.
+- What was done: added a finite `deltaTime` gate at hydrodynamic stress entry and finite epicenter component gates in `RegisterSeismicVibration` before active-module scanning.
+- Cinematic cheat used: invalid time or invalid epicenter produces no pressure/vibration visual event. Valid pressure feedback remains unchanged.
+- Static checks: `rg` confirms the finite `deltaTime` and seismic epicenter gates; managed-offender scans found no C# string/LINQ/foreach offenders in `HabitatGraphManager.cs`; touched C# brace count is balanced; `git diff --check` reports only CRLF normalization warnings.
+- Rebuild policy: no `dotnet` rebuild and no Unity rebuild were run by explicit user instruction.
+
+Exact microseconds saved after follow-up 36:
+- Invalid frame time skips the entire hydrodynamic stress pass; invalid seismic epicenters skip one active-module scan.
+- Estimated 10-80 us saved on i3/MX350 invalid-input frames/events; valid-frame overhead is one finite check plus three event-ingress component checks.

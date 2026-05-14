@@ -179,7 +179,7 @@ namespace Hecton8.Graphics.Caustics
                                   (stateFlags & ((uint)CausticStateFlags.LowTierFallback | (uint)CausticStateFlags.DepthDisabled | (uint)CausticStateFlags.ComputeMissing)) == 0u;
             _isComputeActive = computeAllowed;
 
-            PublishShaderGlobals(anchor, waterLevel, dispatchWaveCount, computeAllowed, depthDisabled);
+            PublishShaderGlobals(anchor, waterLevel, dispatchWaveCount, computeAllowed, lowTier, depthDisabled);
             WriteBlackBox(anchor, waterLevel, waveCount, dispatchWaveCount, stateFlags);
             PublishStateTelemetryIfChanged(stateFlags, waveCount, dispatchWaveCount);
 
@@ -524,12 +524,12 @@ namespace Hecton8.Graphics.Caustics
                    tier == HectonQualityTier.Mx350;
         }
 
-        private void PublishShaderGlobals(in Vector3 anchor, float waterLevel, int waveCount, bool computeActive, bool depthDisabled)
+        private void PublishShaderGlobals(in Vector3 anchor, float waterLevel, int waveCount, bool computeActive, bool lowTier, bool depthDisabled)
         {
             float size = math.max(32f, worldSizeMeters);
             float invSize = math.rcp(size);
             float halfSize = size * 0.5f;
-            float intensity = depthDisabled ? 0f : baseIntensity * (1f - _weatherCloudCover01 * cloudFadePenalty);
+            float intensity = (lowTier || depthDisabled) ? 0f : baseIntensity * (1f - _weatherCloudCover01 * cloudFadePenalty);
             intensity = math.max(0f, intensity);
 
             _lastAnchor = anchor;
@@ -796,6 +796,7 @@ namespace Hecton8.Graphics.Caustics
             {
                 NativeMemorySentinel.UnregisterNativeArray(_blackBox);
                 _blackBox.Dispose();
+                _blackBox = default;
             }
 
             _isInitialized = false;
@@ -811,6 +812,7 @@ namespace Hecton8.Graphics.Caustics
             {
                 NativeMemorySentinel.UnregisterNativeArray(_waveUploadScratch);
                 _waveUploadScratch.Dispose();
+                _waveUploadScratch = default;
             }
 
             _waveBuffer?.Release();
@@ -828,14 +830,14 @@ namespace Hecton8.Graphics.Caustics
             _isComputeActive = false;
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 32)]
         private struct CausticsWaveGpuData
         {
             public Vector4 WaveA;
             public Vector4 WaveB;
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 48)]
         private struct CausticTelemetryEntry
         {
             public uint FrameIndex;

@@ -401,3 +401,63 @@ Solution: Verification stayed source-only: targeted render guard scan, forbidden
 Rejected Alternatives: Running response-file compiles through `dotnet` was rejected because it violates the active user instruction.
 Scalability potential: Source proof covers all quality tiers; runtime profiler/console proof remains blocked until Unity/compile validation is allowed.
 Hardware Impact: Verification only.
+
+## LOOP 24 GENERATION ORIGIN FAIL-FAST GATE
+
+Problem: `TryRequestGeneration` replaced a non-finite caller origin with `ResolveGenerationOriginMeters()`, but did not re-check the fallback. A bad transform or a finite-but-huge `localOriginOffsetMeters` addition could still produce a non-finite `_generationOrigin`, allowing WFC scheduling and later GPU upload/proxy spawn before the commit-time fault gate.
+Solution: Re-check `originMeters` after fallback resolution. If it remains non-finite, write fault telemetry for the requested sector, dump the blackbox, set service state to `Faulted`, and return false before state teardown, persistence, job scheduling, draw-bounds update, GPU upload, or proxy spawn.
+Rejected Alternatives: Letting `CommitCompletedGeneration` catch non-finite `_generationOrigin` was rejected because that check runs after `UpdateDrawBounds()`, `UploadMatricesAndArgs()`, and `SpawnInteractableProxies()`. Clamping bad coordinates to a visual fallback was rejected because AUP ownership requires deterministic rejection of corrupt spatial input.
+Scalability potential: Low/Middle/High/Ultra all reject corrupt generation coordinates at the same boundary. Cheap devices avoid wasted cold WFC/job/GPU/proxy work; high-end devices retain the same visual-overkill path for valid origins.
+Hardware Impact: One finite check on cold generation requests. Corrupt input avoids a solve/extraction cycle, GPU buffer upload, and up to 16 pooled proxy spawns. Steady Tick/Render remains 0 B/frame.
+
+Problem: `ResolveGenerationOriginMeters()` checked the anchor position and offset individually, but not the summed position after applying a large offset.
+Solution: Re-check `position` after adding `localOriginOffsetMeters` and fall back to `Vector3.zero` if the sum becomes NaN/Infinity.
+Rejected Alternatives: Trusting finite operands was rejected because finite float addition can overflow to Infinity. Hard-clamping to an arbitrary outpost range was rejected because this service does not own global placement limits.
+Scalability potential: All tiers receive a finite fallback origin or a fail-fast request rejection; no new renderer/job path is added.
+Hardware Impact: One cold finite check after offset addition. No hot-frame cost.
+
+Problem: The active instruction still forbids dotnet rebuilds.
+Solution: Verification stayed source-only: targeted origin gate scan, forbidden-pattern audit, scoped H-Phi counts, and `git diff --check`.
+Rejected Alternatives: Running response-file compiles through `dotnet` was rejected because it violates the active user instruction.
+Scalability potential: Source proof covers generation ingress; runtime console/profiler proof remains pending.
+Hardware Impact: Verification only.
+
+## LOOP 25 HEIGHTMAP PAYLOAD FINITE GATE
+
+Problem: `MapMagicBridge.QuantizedHeightmapPayload.IsValid` proves sample ownership, resolution, and length, but it does not prove finite `TerrainPosition` or `TerrainSize`. A corrupted terrain bridge could feed NaN/Infinity into `MarauderOutpostMatrixExtractionJob`, causing bad support heights and shell matrices.
+Solution: Add `IsValidHeightmapPayload(in payload)` in the outpost service. It validates native sample presence, bounded resolution, required length, finite terrain position/size, and positive terrain extents before the payload is accepted. Invalid payloads use the existing deterministic fallback terrain slab.
+Rejected Alternatives: Trusting the MapMagic bridge validity bit was rejected because the outpost job consumes terrain position/size directly. Clamping NaN terrain fields was rejected because terrain ownership belongs to MapMagic/World terrain, not Habitat/Outposts.
+Scalability potential: Low/Middle/High/Ultra retain the same height-following behavior when payloads are valid. Cheap devices avoid corrupt terrain metadata cascading into GPU uploads; high-end devices keep richer shell/stilt placement when the payload is sane.
+Hardware Impact: Cold generation-only validation: a handful of scalar checks before one extraction job. Corrupt payloads skip height sampling and use fallback, preserving 0 B/frame.
+
+Problem: The Burst extraction job still relied on service-side validation and could use non-finite terrain metadata if a future caller bypassed or regressed the service gate.
+Solution: Add `math.all(math.isfinite(TerrainPosition))` and `math.all(math.isfinite(TerrainSize))` to the job's `hasHeightmap` predicate.
+Rejected Alternatives: Service-only validation was rejected because the job is the final safety boundary before matrix output. Throwing from the job is not viable under Burst; fail-closed fallback is deterministic.
+Scalability potential: All tiers degrade to the same fallback slab when terrain payload metadata is invalid. No additional buffers, signals, or object proxies are introduced.
+Hardware Impact: Two vector finite checks once per extraction job. No hot Tick/Render cost.
+
+Problem: The active instruction still forbids dotnet rebuilds.
+Solution: Verification stayed source-only: targeted heightmap gate scan, forbidden-pattern audit, scoped H-Phi counts, and `git diff --check`.
+Rejected Alternatives: Running response-file compiles through `dotnet` was rejected because it violates the active user instruction.
+Scalability potential: Static ingress proof improved; runtime console/profiler proof remains pending.
+Hardware Impact: Verification only.
+
+## LOOP 26 AUP SHIFT MAGNITUDE CAP
+
+Problem: `ApplyAupShift` rejected NaN/Infinity but accepted any finite magnitude. A corrupted finite shift such as `1e30` meters could overflow `_generationOrigin` or shell matrix translation columns and later reach GPU upload.
+Solution: Add `MaxAupShiftMeters = 10000f` and reject shifts whose absolute component exceeds that AUP mandate cap. Over-limit shifts write fault/AUP telemetry and dump the blackbox.
+Rejected Alternatives: Clamping the consumer-side shift was rejected because this service does not own the global rebase authority; clamping could diverge the outpost from the actual world origin. Applying the shift and relying on later finite checks was rejected because matrix overflow can happen before a later public query.
+Scalability potential: Low/Middle/High/Ultra all use the same 10 km guard. Cheap devices avoid corrupt matrix writes and high-end devices retain normal visual-overkill rendering for sane AUP shifts.
+Hardware Impact: One vector magnitude check on rare AUP shift signals. Normal Tick/Render remains unchanged and 0 B/frame.
+
+Problem: Pending shifts accumulated during solve/extraction could exceed the safe magnitude even if individual shifts were finite.
+Solution: Validate the accumulated pending shift before storing it, and repeat the limit check before applying pending data to extracted matrices/interactable spawns.
+Rejected Alternatives: Only guarding direct `ApplyAupShift` was rejected because extraction-phase shifts are deferred and summed. Completing jobs to avoid accumulation was rejected because it violates job-system frame discipline.
+Scalability potential: Deferred AUP correction remains deterministic across tiers; corrupt accumulated shifts fail closed with blackbox evidence.
+Hardware Impact: Rare deferred-shift path only. No new buffers, registries, signals, GameObjects, or render mutations.
+
+Problem: The active instruction still forbids dotnet rebuilds.
+Solution: Verification stayed source-only: targeted AUP magnitude guard scan, forbidden-pattern audit, scoped H-Phi counts, and `git diff --check`.
+Rejected Alternatives: Running response-file compiles through `dotnet` was rejected because it violates the active user instruction.
+Scalability potential: Static AUP input proof improved; runtime console/profiler proof remains pending.
+Hardware Impact: Verification only.

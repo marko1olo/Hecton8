@@ -180,9 +180,33 @@ State: PENDING VERIFICATION
 - [x] Re-ran source-only audits. DOD: targeted render guard scan confirms `Render` includes `_jobPhase == JobPhase.Shifting` and `_matrixUploadDirty`; forbidden-pattern audit stayed clean; scoped H-Phi counts remain unchanged; `HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json` passed with `CoreAsmdefDebtReferenceCount=25` and `GeneratedProjectDebtReferenceCount=10`. Alternative rejected: `dotnet` rebuild, forbidden by user. Estimate: verification only.
 - [ ] Compile proof [NOT RUN BY USER REQUEST]. DOD: no `dotnet` rebuild or response-file compile was executed in Loop 23. Alternative rejected: violating explicit "do not make dotnet rebuilds". Estimate: no runtime cost.
 
+### Loop 24 - Generation Origin Fail-Fast Gate
+
+- [x] Re-read status/rationale, prompt source, domain boundary, Unity workflow, and selected mandates before coding. DOD: GlobalRegistry lifecycle, signal lanes, zero-GC, native jobs, blackbox telemetry, AUP precision, GPU sovereignty, and fake-first performance were used for this pass. Alternative rejected: editing from chat memory. Estimate: disk/source audit only.
+- [x] Hardened fallback generation origin resolution. DOD: `ResolveGenerationOriginMeters` now re-checks finite position after applying `localOriginOffsetMeters`, preventing finite-but-huge transform/offset sums from escaping as Infinity. Alternative rejected: trusting editor `Vector3` fields because finite inputs can still overflow when added. Estimate: one finite check on cold generation request path.
+- [x] Rejected non-finite generation origins before WFC scheduling. DOD: `TryRequestGeneration` now writes fault telemetry, dumps the blackbox, marks the service faulted, and returns false if caller origin and resolved fallback origin are still non-finite. Alternative rejected: letting extraction/commit detect bad origin after draw-bounds update, GPU upload, and proxy spawn. Estimate: avoids cold job/GPU/proxy work on corrupt input; 0 B/frame.
+- [x] Re-ran source-only audits. DOD: targeted origin gate scan confirms the second finite gate exists before `DespawnInteractables`/job scheduling; forbidden-pattern audit stayed clean; scoped H-Phi counts remain unchanged. Alternative rejected: `dotnet` rebuild, forbidden by user. Estimate: verification only.
+- [ ] Compile proof [NOT RUN BY USER REQUEST]. DOD: no `dotnet` rebuild or response-file compile was executed in Loop 24. Alternative rejected: violating explicit "do not make dotnet rebuilds". Estimate: no runtime cost.
+
+### Loop 25 - Heightmap Payload Finite Gate
+
+- [x] Re-audited terrain payload ingress after the origin gate. DOD: compared `MapMagicBridge.QuantizedHeightmapPayload.IsValid` against the fields consumed by `MarauderOutpostMatrixExtractionJob` and found missing finite checks for terrain position/size. Alternative rejected: assuming third-party bridge validity implies finite spatial metadata. Estimate: source audit only.
+- [x] Hardened service-side heightmap payload acceptance. DOD: `ResolveHeightmapPayload` and `ScheduleMatrixExtraction` now use `IsValidHeightmapPayload(in payload)` to require native samples, bounded resolution, required length, finite terrain position/size, and positive terrain extents before height sampling is enabled. Alternative rejected: clamping bad terrain fields inside Habitat ownership. Estimate: cold generation validation only.
+- [x] Hardened the Burst extraction job final predicate. DOD: `hasHeightmap` now requires finite `TerrainPosition` and `TerrainSize` before sampling; invalid metadata falls back to the deterministic slab. Alternative rejected: service-only validation. Estimate: two vector finite checks once per extraction job.
+- [x] Re-ran source-only audits. DOD: targeted heightmap gate scan confirms service and job finite checks; forbidden-pattern audit stayed clean; scoped H-Phi counts remain unchanged. Alternative rejected: `dotnet` rebuild, forbidden by user. Estimate: verification only.
+- [ ] Compile proof [NOT RUN BY USER REQUEST]. DOD: no `dotnet` rebuild or response-file compile was executed in Loop 25. Alternative rejected: violating explicit "do not make dotnet rebuilds". Estimate: no runtime cost.
+
+### Loop 26 - AUP Shift Magnitude Cap
+
+- [x] Re-audited AUP shift ingestion after finite-origin and terrain gates. DOD: compared `ApplyAupShift` and deferred pending-shift accumulation against the 10 km AUP mandate cap and found finite over-limit shifts were not rejected. Alternative rejected: treating finite floats as safe coordinate data. Estimate: source audit only.
+- [x] Rejected over-limit direct AUP shifts. DOD: `ApplyAupShift` now rejects any component beyond `MaxAupShiftMeters = 10000f`, writes fault/AUP telemetry, and dumps the blackbox before touching origin, proxies, matrices, or draw bounds. Alternative rejected: consumer-side clamping that could diverge from global rebase authority. Estimate: one vector magnitude check on rare shift signal.
+- [x] Rejected over-limit accumulated pending shifts. DOD: `AccumulatePendingShift` validates the summed shift before storing it, and `ApplyPendingShiftToExtractedData` repeats the cap check before mutating extracted matrices/interactable spawns. Alternative rejected: guarding only direct shifts while extraction-phase shifts are deferred. Estimate: rare deferred-shift path only.
+- [x] Re-ran source-only audits. DOD: targeted AUP cap scan confirms direct, accumulated, and pending-apply guards; forbidden-pattern audit stayed clean; scoped H-Phi counts remain unchanged. Alternative rejected: `dotnet` rebuild, forbidden by user. Estimate: verification only.
+- [ ] Compile proof [NOT RUN BY USER REQUEST]. DOD: no `dotnet` rebuild or response-file compile was executed in Loop 26. Alternative rejected: violating explicit "do not make dotnet rebuilds". Estimate: no runtime cost.
+
 ## Verification Ledger
 
-- Compile status: NOT RUN IN LOOP 23 BY USER REQUEST / PRIOR BLOCKER STILL RECORDED. Last attempted compile path could not resolve `Hecton8.Core.ref.dll`; Core rebuild failed in `SaveMasterHashV10.cs(237,26)` on missing `xxHash3`, outside Habitat/Outposts ownership.
+- Compile status: NOT RUN IN LOOP 26 BY USER REQUEST / PRIOR BLOCKER STILL RECORDED. Last attempted compile path could not resolve `Hecton8.Core.ref.dll`; Core rebuild failed in `SaveMasterHashV10.cs(237,26)` on missing `xxHash3`, outside Habitat/Outposts ownership.
 - Unity Console status: MCP unavailable; console/scene validation not accessible from this session.
 - GC proof: code audit only; hot Tick/Render path uses spans/native buffers and no LINQ/managed allocation.
 - Frame/VRAM proof: static estimate only; runtime profiling blocked by Unity MCP transport failure; no console/profiler capture is available from this session.

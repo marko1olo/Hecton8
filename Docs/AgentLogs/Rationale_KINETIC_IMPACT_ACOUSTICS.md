@@ -386,3 +386,22 @@ Solution: Ran source-only checks: `git diff --check`, fixed-symbol scans, method
 Rejected Alternatives: Running dotnet build/rebuild would violate explicit user order; claiming Unity compile or profiler status without Editor console/MCP data would be false.
 Scalability potential: Verification only.
 Hardware Impact: Verification only.
+
+## LOOP 20 SPATIAL FOVEATED DIRECTOR RESOLVER H-PHI PASS
+Problem: After the spatial quality-policy pass, `RefreshFoveatedDirector()` still read `GlobalRegistry.FoveatedSimulationDirector` from the spatial audio slow lane. The foveated director is optional, but the direct read was still a cross-domain service-locator poll in central audio virtualization.
+Solution: Added `_foveatedDirectorResolveFrame` and `ResolveFoveatedSimulationDirector()` using the existing `SpatialAudioRegistryRetryFrames = 30` cadence. `RefreshFoveatedDirector()` now delegates to that resolver, and `ResolveVirtualVoiceFoveatedTier()` continues to consume only the cached director field.
+Rejected Alternatives: Leaving the slow-lane direct read was simple but inconsistent with the other optional spatial resolvers; hard-null clearing on a missing registry sample could flicker virtualization tiers during service rebinding; adding a new foveated event bus would exceed the audio-domain change.
+Scalability potential: Low tier keeps virtual voice ranking cheap by avoiding repeated optional resolver work. Middle/High/Ultra retain foveated virtual voice priority when the service exists, with lookup pressure bounded to retry cadence.
+Hardware Impact: Saves one optional service-locator read per spatial SlowTick after warmup on low-end silicon. Runtime allocation remains 0 B/frame; added work is one integer frame gate.
+
+Problem: Smoke coverage did not guard foveated-director lookup hygiene.
+Solution: Extended `AdvancedAcousticsSmokeTester` to assert `ResolveFoveatedSimulationDirector()`, direct registry confinement inside the resolver, retry cadence through `_foveatedDirectorResolveFrame = frame + SpatialAudioRegistryRetryFrames`, and no direct registry read in `RefreshFoveatedDirector()`.
+Rejected Alternatives: Manual-only source review, or runtime playmode validation without Unity MCP/Editor access.
+Scalability potential: Editor-only guard; protects virtual voice foveation from lookup creep while preserving high-tier foveated priority behavior.
+Hardware Impact: 0 us runtime in player builds.
+
+Problem: Compile/profiler proof remains unavailable under the user's no-dotnet-rebuild order and missing Unity MCP resources.
+Solution: Ran source-only checks: `git diff --check`, fixed-symbol scans, method-body registry counters, and scoped forbidden-API scans. Method-body counters are `SlowTickFoveatedRegistry=0`, `RefreshFoveatedRegistry=0`, `ResolveFoveatedRegistry=1`, `VirtualVoiceTierRegistry=0`.
+Rejected Alternatives: Running dotnet build/rebuild would violate explicit user order; claiming Unity compile or profiler status without Editor console/MCP data would be false.
+Scalability potential: Verification only.
+Hardware Impact: Verification only.

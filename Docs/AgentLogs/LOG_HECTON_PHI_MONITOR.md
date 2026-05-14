@@ -391,3 +391,51 @@ Regression Model:
 - Memory: no buffer ownership changed by this pass.
 - Cadence: no Tick/FixedTick/Update/job schedule changed.
 - Correctness: lexical scrub remains experimental and explicitly gated; default H-Phi evidence remains static regex output.
+
+## 2026-05-15 AUP Risk Stale-Score Verification And Summary Routing
+
+What was wrong:
+- The active status still carried a stale `AupPrecisionRisk=6` from the previous full summary.
+- An exact current runtime regex scan found no matching AUP risk code, so direct gameplay edits would have been evidence-free.
+- Compact summary output showed the aggregate AUP count but not the files that would need repair if the counter regressed.
+
+What was done:
+- Re-ran `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0`.
+- Confirmed current runtime `AupPrecisionRisk=0` and `AupPrecisionIntegrity=1.000000000`.
+- Added `TopAupPrecisionRiskFiles` to compact summary output.
+- Updated runtime file-row retention so files with AUP precision risk appear in triage even without NativeArray/DataVault/Find debt.
+- Honored user instruction: no `dotnet build`, no rebuild.
+
+Cinematic Cheats used:
+- None. Static audit tooling and evidence routing only.
+
+Exact Microseconds saved:
+- Runtime gameplay: 0 us measured; no gameplay code path changed.
+- Tooling: one failed PowerShell parser strike was fixed; final budgeted summary completed in about 182.5 seconds. No runtime profiler claim.
+
+Compile Status:
+- Not run by explicit user order.
+- Static checks run:
+  - `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0`
+  - `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -RequireCoreBuildGate -MaxCoreAsmdefDebtReferences 25 -MaxGeneratedProjectDebtReferences 10 -MaxSourceBackedBridgeDebtReferences 16 -MaxSourceBackedCompileBridgeDebtReferences 8 -MaxProjectReferenceReplacementDebtReferences 8 -Summary -Json`
+  - `git diff --check` on touched H-Phi files
+- `git diff --check`: no whitespace errors; LF/CRLF warning only.
+
+Phi Gain:
+- Previous current runtime narrow score: `0.010531061`.
+- Current runtime narrow score: `0.010409098`.
+- Previous current runtime risk-adjusted score: `0.000560589`.
+- Current runtime risk-adjusted score: `0.000566586`.
+- AUP precision integrity moved `0.983739837 -> 1.000000000`.
+- AUP precision risk moved `6 -> 0`.
+- Data Sovereignty moved `0.021062910 -> 0.020775237` in the active tree because DataVault refs moved `151 -> 149` while NativeArray refs stayed `7023`.
+- Core graph current tree also improved from concurrent/integrator work: source-backed bridge debt `20 -> 16`, project-reference replacement debt `12 -> 8`.
+- Compared with original dialogue baseline `0.00062`, current runtime static narrow is about `+1578.89%`.
+- Important: the score movement is static-source evidence and includes concurrent workspace changes. It is not measured frame-time gain.
+
+Regression Model:
+- CPU: no gameplay code path changed.
+- GC: no gameplay allocation changed.
+- Memory: no buffer ownership changed.
+- Cadence: no Tick/FixedTick/Update/job schedule changed.
+- Correctness: AUP risk routing is now visible in summary output; runtime Unity evidence remains pending because rebuild/runtime verification is forbidden.

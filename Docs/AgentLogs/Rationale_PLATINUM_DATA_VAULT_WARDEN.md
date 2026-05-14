@@ -166,6 +166,12 @@ Rejected Alternatives: Post-expansion clamping to backing array length and reset
 Scalability potential: Low keeps save repair deterministic and avoids reload loops on weak hardware; Middle keeps compact payloads valid during migration; High and Ultra can increase save-state density without paying for unused max-capacity records or accepting silent default-entry pollution.
 Hardware Impact: 0 us frame impact. Cold migration adds scalar bound checks and `Array.Copy` only when an array is normalized; avoiding full-capacity false counts prevents downstream restore loops over thousands of default entries, worst case approximately 4096 fauna/world records plus 8192 pickup/suppression records.
 
+Problem: The fixed-capacity save codec needed a final allocation-bomb audit after capacity repair. Most logical-slice writers/readers were already locked, but the legacy `InventoryCellDTO` custom writer still delegated to the unbounded generic custom-array writer.
+Solution: Verified fixed-capacity writer/readers for world, construction, scan, PDA, lore, resource scarcity, ecosystem, root bitmasks, module sorter buffers, and cultivation arrays; then routed `WriteInventoryCellArray` through `WriteCustomArraySlice` with `InventoryDTO.MaxCells`.
+Rejected Alternatives: Leaving the legacy writer untouched because current inventory writing no longer calls it. Legacy persistence code remains a reconnection point during migrations, so it must carry the same max-cell invariant as the reader.
+Scalability potential: Low devices avoid malformed legacy payload expansion; Middle keeps save repair deterministic; High and Ultra can keep larger DTO backings without allowing wire payloads to grow past logical caps.
+Hardware Impact: 0 us frame impact. Cold legacy save path now caps the custom item-cell loop at 128 records and prevents oversized string-bearing inventory-cell payloads from being emitted.
+
 ## OMEGA POLISH CHANGES
 
 Problem: Polish audit required removal of fake precision, managed iteration/string debt, and any code outside the DataVault domain without justification.

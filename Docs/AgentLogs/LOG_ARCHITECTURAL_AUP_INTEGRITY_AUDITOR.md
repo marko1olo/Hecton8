@@ -719,3 +719,30 @@ Verification:
 
 Integrator notes:
 - Use full source mode for `-MaxAupPrecisionRisk`; CoreGraphOnly is graph debt only.
+
+## 2026-05-15 - Loop 29 Actionable AUP Budget Failure Output
+
+What was wrong:
+- The AUP precision budget gate could fail with a count but no source-file pointers.
+
+What was done:
+- `Assert-AupPrecisionBudget` now accepts runtime file rows and includes up to 8 top AUP precision risk files in the thrown error.
+
+Cinematic Cheats used:
+- Static tooling only. The passing path stays compact; detailed file output only appears on failure.
+
+Exact Microseconds saved:
+- Gameplay frame time: 0 us.
+- Static full source run completed in 125.752 seconds with the zero-risk budget enabled.
+
+Verification:
+- PowerShell parser reports `PARSE_OK`.
+- Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0` completed and reported `RuntimeHPhiRisk=0.000566586`, `RuntimeHPhiNarrow=0.010409098`, `AupPrecisionIntegrity=1`, `AupPrecisionSafe=363`, `AupPrecisionRisk=0`, `TopAupPrecisionRiskFiles=0`, `RuntimeFiles=1276`, `RuntimeLines=860158`.
+- `-CoreGraphOnly -MaxAupPrecisionRisk 0` still fails fast with the expected source-scan requirement.
+- Qualified AUP H-Phi risk scan returns `NO_MATCHES`.
+- Direct committed-offset leak scan returns `NO_MATCHES`.
+- Mandatory AUP regex scan re-run; residual hits remain broad `universe` text and known final-cast fluid/scatter/shader payload names.
+- No `dotnet build` or rebuild was run because the user explicitly forbade rebuilds.
+
+Integrator notes:
+- Failure-path file listing is source-tool evidence only; Unity Console/import, PlayMode, profiler, and GCMonitor proof remain pending.

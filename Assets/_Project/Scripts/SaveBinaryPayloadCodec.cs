@@ -2785,7 +2785,8 @@ namespace Hecton8.SaveSystem
 
         private static bool WriteInventoryCellArray(ref BufferWriter writer, InventoryCellDTO[] values)
         {
-            return WriteCustomArray(ref writer, values, WriteInventoryCell);
+            int count = values != null ? values.Length : NullCollectionCount;
+            return WriteCustomArraySlice(ref writer, values, count, InventoryDTO.MaxCells, WriteInventoryCell);
         }
 
         private static bool ReadInventoryCellArray(ref BufferReader reader, out InventoryCellDTO[] values)

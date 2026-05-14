@@ -713,3 +713,69 @@ Result:
 - Target `R = 0.05` is not objectively proven by this pass.
 - Core graph debt remains dominated by leaf-domain and package references.
 - Compile verification is blocked by unrelated errors in `SaveMasterHashV10.cs` and `PDAShellChrome.cs`, so runtime H-Phi remains `PENDING VERIFICATION`.
+
+## 2026-05-15 Live Addendum 11
+
+Evidence class: `STATIC_SOURCE`.
+
+User constraint for this pass: no `dotnet build` and no rebuild.
+
+What changed:
+- Re-ran full current-tree H-Phi summary after exact AUP-risk scan showed no live hits.
+- Added `TopAupPrecisionRiskFiles` to compact summary output so future AUP precision regressions have file-level routing.
+- No gameplay code, buffer ownership, tick cadence, job scheduling, signal dispatch, or Unity scene state was changed.
+
+Current runtime static scores:
+
+| Coefficient | Score |
+|---|---:|
+| Narrow integration | 1.000000000 |
+| Risk-adjusted integration | 0.054404997 |
+| Architectural purity | 0.994699647 |
+| Data sovereignty | 0.021048230 |
+| Memory alignment | 0.503174603 |
+| Binary-safe ratio | 0.018518519 |
+| AUP precision integrity | 1.000000000 |
+| H-Phi runtime static narrow | 0.010534799 |
+| H-Phi runtime static risk-adjusted | 0.000573146 |
+
+Current runtime counts:
+
+| Counter | Value |
+|---|---:|
+| Runtime C# files | 1,276 |
+| Runtime source lines | 860,023 |
+| Typed/queued signal push surface | 331 |
+| Legacy/direct event publish surface | 28 |
+| `GlobalRegistry.` surface refs | 5,146 |
+| Unity `Update`/`LateUpdate`/`FixedUpdate` method declarations | 3 |
+| DataVault access surface refs | 151 |
+| `NativeArray<T>` refs | 7,023 |
+| Struct declarations | 1,890 |
+| `StructLayout(...)` attrs | 951 |
+| Runtime `Find*` calls | 5 |
+| Runtime `GetComponent*` calls | 541 |
+| `.Dispose(...)` calls | 1,251 |
+| AUP precision safe refs | 363 |
+| AUP precision risk refs | 0 |
+
+Comparison:
+- Previous runtime static narrow score: `0.010531061`.
+- Current runtime static narrow score: `0.010534799`.
+- Previous runtime static risk-adjusted score: `0.000560589`.
+- Current runtime static risk-adjusted score: `0.000573146`.
+- AUP precision integrity moved `0.983739837 -> 1.000000000`.
+- AUP precision risk moved `6 -> 0`.
+- Compared with original dialogue baseline `0.00062`, current runtime static narrow is about `+1599.16%`.
+- Score movement includes concurrent workspace changes and static model changes; it is not runtime profiler evidence.
+
+Residual bottlenecks:
+- Data Sovereignty remains the hard floor: `151 / (151 + 7,023) = 0.021048230`.
+- Core graph debt remains: Core asmdef debt references `25`, generated project debt references `10`, source-backed bridge debt references `16`, compile-bridge debt references `8`, project-reference-replacement debt references `8`.
+- Owner-blocked NativeArray migrations still require domain-owner BufferID/SystemID/generation/disposal proof before code migration.
+- Runtime verification remains absent by user order.
+
+Verification:
+- `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json`: completed at local timestamp `2026-05-15 03:22:27 +04:00`.
+- `git diff --check -- Tools/Architecture/HectonPhiAudit.ps1`: no whitespace errors; LF/CRLF warning only.
+- Runtime H-Phi remains `PENDING VERIFICATION` until Unity Console, PlayMode, Profiler, and GCMonitor evidence exist.

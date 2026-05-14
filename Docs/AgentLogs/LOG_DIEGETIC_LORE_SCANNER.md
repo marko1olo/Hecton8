@@ -355,3 +355,29 @@ Verification:
 - `git diff --check` on scanner/UI/doc edits: pass, line-ending warnings only.
 - Scanner banned-pattern scan for `ILocalizationService`, `Camera.main`, direct `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, and `.text =`: no matches.
 - `dotnet build` / rebuild: NOT RUN by explicit user order.
+
+## Follow-Up Hardening Pass 12
+
+What was wrong:
+- Scanner cached runtime-service handles could survive unequip, despawn, pool reuse, or service replacement while the scanner was not registered for hot-swap events.
+- Diegetic tool display cached `RenderTexturePool` without a service replacement path.
+
+What was done:
+- Scanner now clears cached player, survival, Atlas, and lore handles on spawn/equip/unequip/despawn/destroy.
+- Player service hot-swap now clears the cached survival component so scientific water/body metrics rebind to the current player.
+- `ToolDiegeticDisplayController` now implements `IGlobalRegistryHotSwapListener`.
+- On `RenderTexturePoolRuntime` replacement, the display releases any RT owned by the previous pool, binds the new pool, clears pool retry fallback, and marks rendering dirty.
+- On disable, the display unregisters from hot-swap events and clears the cached pool handle.
+
+Cinematic Cheats used:
+- None added. This is lifecycle and ownership hygiene for the existing physical-tool RT display and scanner presentation caches.
+
+Exact Microseconds saved:
+- Verified exact microseconds: PENDING PROFILER.
+- Active scanner remains cache-based without reintroducing per-sample service polling.
+- RT pool rebind is event-only; no per-frame pool lookup added.
+
+Verification:
+- `git diff --cached --check` on scanner/UI/doc edits: pass.
+- Scanner banned-pattern scan for `ILocalizationService`, `Camera.main`, direct `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, and `.text =`: no matches.
+- `dotnet build` / rebuild: NOT RUN by explicit user order.

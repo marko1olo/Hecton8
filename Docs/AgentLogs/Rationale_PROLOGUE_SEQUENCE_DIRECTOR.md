@@ -380,3 +380,11 @@ Solution: Add `_inputLockAcquired` and route lock acquisition through `PublishSe
 Rejected Alternatives: Keep unconditional final unlock, or release on disable without ownership tracking. Unconditional unlock wastes a signal slot on pre-lock cancellation; disable-only unlock without tracking can publish false unlock packets before the sequence owns input.
 Scalability potential: Low/MX350 avoids unnecessary control-lane traffic during cancellation churn and gets deterministic input recovery during scene disable. Middle/High/Ultra keep the same cinematic lock pacing while richer responders unwind.
 Hardware Impact: Saves one `SystemPauseSignal` publish on pre-lock cancellation, roughly 3-8 us and one lane slot. Adds one bool branch to cleanup and two scalar writes when acquiring/releasing a lock. Verification this pass is static only by user request; no dotnet rebuild or response-file compile was run.
+
+## Decision 46 - Atmospheric Responder Phase Shape
+
+Problem: Prologue audio and re-entry VFX used numeric `>=` phase checks for atmospheric packets. A malformed future phase value greater than `PhaseWhiteout` could trigger whiteout/plasma audio or visual heating even though the bridge sequence gate now requires exact phases.
+Solution: Audio now validates atmospheric packets against explicit approach/plasma/whiteout phases and uses equality for plasma/whiteout transitions. VFX skips unrecognized phases and starts heating only on explicit plasma or whiteout phase.
+Rejected Alternatives: Leave responder-side numeric promotion because the current orbital producer emits valid phases, or rely only on the bridge gate. Responders consume the shared lane independently, so they need their own shape guard; numeric promotion is too broad for forward compatibility.
+Scalability potential: Low/MX350 avoids wasting shader/audio transition work on malformed phase packets. Middle/High/Ultra keep expensive plasma roar, whiteout, splash, and crossfade work aligned to recognized prologue phases.
+Hardware Impact: Adds one to three byte comparisons per atmospheric packet in 32-slot lanes, below 1 us in normal frames. Prevents larger invalid VFX/audio transition work. Verification this pass is static only by user request; no dotnet rebuild or response-file compile was run.

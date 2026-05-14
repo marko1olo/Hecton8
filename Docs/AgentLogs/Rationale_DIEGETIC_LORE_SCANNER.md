@@ -377,3 +377,23 @@ Solution: Ran `git diff --check` and scanner banned-pattern scans over scanner/U
 Rejected Alternatives: Running prohibited dotnet rebuilds; reporting Unity/compiler verification without evidence.
 Scalability potential: Process hygiene only.
 Hardware Impact: No runtime impact.
+
+## LOOP 16 SERVICE CACHE LIFETIME HARDENING
+
+Problem: Scanner caches player, survival, Atlas, and lore services to remove active-path GlobalRegistry reads. Those cached handles could survive unequip/despawn or a service replacement that happens while the scanner is not registered for hot-swap events.
+Solution: Clear cached runtime-service handles on spawn, equip, unequip, despawn, and destroy. Player hot-swap now also clears the cached survival component so the next scientific sample resolves against the current player.
+Rejected Alternatives: Re-reading GlobalRegistry on every scanner sample; keeping permanent cached handles across pool reuse; registering scanner hot-swap listeners while unequipped.
+Scalability potential: Low/MX350 keeps active scanner reads clean without stale-service risk. High/Ultra can keep richer scanner presentation and cached Atlas/lore use without extra polling.
+Hardware Impact: No per-frame cost. Cold lifecycle cache clears and one event-time survival null on player replacement.
+
+Problem: `ToolDiegeticDisplayController` cached the render-texture pool, but a `RenderTexturePoolRuntime` service replacement while the physical display is enabled could leave the display renting/returning through a stale owner.
+Solution: Add lifecycle-scoped `IGlobalRegistryHotSwapListener` support to the display. On render-texture pool replacement, release any RT owned by the old pool, bind the new pool, clear fallback retry timers, and mark the display dirty. On disable, unregister and clear the cached pool handle.
+Rejected Alternatives: Resolving `GlobalRegistry.RenderTexturePool` every render attempt; assuming the pool never hot-swaps; leaking an RT from the previous pool.
+Scalability potential: Toaster path avoids repeated pool lookups and handles pool pressure/replacement cleanly. High/Ultra can keep RT display fidelity without stale pool ownership.
+Hardware Impact: Event-only path. Avoids failed/stale pool calls and prevents RT ownership drift; exact microseconds PENDING PROFILER.
+
+Problem: Verification remains limited by the explicit no-rebuild order.
+Solution: Used staged diff checks and scanner banned-pattern scans only.
+Rejected Alternatives: Running dotnet/Unity compile validation against user instruction.
+Scalability potential: Process hygiene only.
+Hardware Impact: No runtime impact.

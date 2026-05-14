@@ -3,7 +3,7 @@
 Agent: ARCHITECTURAL_AUP_INTEGRITY_AUDITOR
 Domain: ECHELON 1 / Origin Shift (AUP Manager), with audit reach into Physics, Voxel, Kinematics, AI trigger math, Biome trigger math, and deterministic seed callsites.
 Assignment Source: User-supplied XML block. `Docs/Tasks/CURRENT_BATCH.md` extraction returned `PROMPT_NOT_FOUND` for this ID on initial pass.
-Status: VERIFIED AUP INTEGRITY - LOOP 28 APPLIED; AUP PRECISION H-PHI BUDGET GATE ADDED; COREGRAPH MISUSE FAILS FAST; `-MaxAupPrecisionRisk 0` FULL SCAN PASSES; AUP PRECISION INTEGRITY 1.0; CORE BUILD NOT RERUN PER USER; ASMDEF BLOCKED BY ARCHITECTURE
+Status: VERIFIED AUP INTEGRITY - LOOP 29 APPLIED; AUP PRECISION H-PHI BUDGET FAILURE NOW LISTS TOP RISK FILES; `-MaxAupPrecisionRisk 0` FULL SCAN PASSES; AUP PRECISION INTEGRITY 1.0; CORE BUILD NOT RERUN PER USER; ASMDEF BLOCKED BY ARCHITECTURE
 
 ## Selected Mandates
 
@@ -302,3 +302,17 @@ Loop 28 - AUP Budget CoreGraphOnly Fail-Fast Guard:
 - `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json -MaxAupPrecisionRisk 0` returns the expected failure: `AUP precision budget requires full source scan. Remove -CoreGraphOnly when using -MaxAupPrecisionRisk.`
 - `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json` still completes successfully without the AUP source budget switch.
 - No `dotnet build` or rebuild was run in Loop 28 because the user explicitly forbade rebuilds.
+
+Loop 29 - Actionable AUP Budget Failure Output:
+- Re-read status/rationale and kept the rebuild ban active.
+- Patched `Tools/Architecture/HectonPhiAudit.ps1` so `Assert-AupPrecisionBudget` accepts the runtime file rows and appends up to 8 top offending files (`file risk=N safe=N`) when the AUP precision budget fails.
+- PowerShell parser reports `PARSE_OK`.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json -MaxAupPrecisionRisk 0` still returns the expected fail-fast message because source AUP budgets require full scan.
+- Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0` completed in 125.752 seconds.
+- Latest gated full static H-Phi summary: `RuntimeHPhiRisk=0.000566586`, `RuntimeHPhiNarrow=0.010409098`, `AupPrecisionIntegrity=1`, `AupPrecisionSafe=363`, `AupPrecisionRisk=0`, `TopAupPrecisionRiskFiles=0`, `RuntimeFiles=1276`, `RuntimeLines=860158`.
+- Removed the temporary JSON capture after extracting the metrics.
+- Targeted qualified AUP H-Phi risk scan returns `NO_MATCHES`.
+- Direct committed-offset leak scan returns `NO_MATCHES`.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` was re-run; residual hits remain broad `universe` text plus known final-cast fluid/scatter/shader payload names.
+- `git diff --check -- Tools/Architecture/HectonPhiAudit.ps1` reports line-ending warnings only, no whitespace errors.
+- No `dotnet build` or rebuild was run in Loop 29 because the user explicitly forbade rebuilds.

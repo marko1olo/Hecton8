@@ -292,3 +292,11 @@ What was done -> Added `_inputLockAcquired`, routed lock acquisition through `Pu
 Cinematic Cheats used -> None; this is control-lane ownership cleanup for the prologue pacing state machine.
 Exact Microseconds saved -> Saves one `SystemPauseSignal` publish on pre-lock cancellation, estimated 3-8 us and one lane slot. Adds one cleanup bool branch and two scalar writes on lock acquire/release.
 Verification -> No dotnet rebuild/response-file compile was run per user constraint. Targeted scan confirms input-lock ownership latch and active-disable guarded release; forbidden-pattern scan returned no hits; `git diff --check` reports line-ending warnings only.
+
+## 2026-05-15 - Loop 41 Atmospheric Responder Phase-Shape Review
+
+What was wrong -> Prologue audio and re-entry VFX used numeric `>=` atmospheric phase checks, so malformed future phase values could promote into plasma/whiteout responders.
+What was done -> Audio now validates exact approach/plasma/whiteout phases and uses equality for plasma/whiteout transitions. VFX skips unrecognized phases and only starts heating on explicit plasma or whiteout.
+Cinematic Cheats used -> None; this protects the existing plasma/whiteout presentation fakes from malformed shared-lane packets.
+Exact Microseconds saved -> Adds one to three byte compares per atmospheric packet, below 1 us on normal frames. Prevents invalid audio/VFX transition work from bad phase packets.
+Verification -> No dotnet rebuild/response-file compile was run per user constraint. Targeted scan confirms exact phase checks in audio/VFX; forbidden-pattern scan returned no hits; `git diff --check` reports line-ending warnings only for responder files.

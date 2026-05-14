@@ -1,4 +1,3 @@
-using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.World;
 using System.Runtime.InteropServices;
@@ -362,7 +361,6 @@ namespace Hecton8.UI
         private bool _retainRenderTextureOnDisable;
         private bool _presentationPausedByOwner;
         private float _refreshTimer;
-        private float _cameraRetryTimer;
         private float _appliedDepthFadeRange = -1f;
         private float _appliedPowerLevel = -1f;
         private float _terminalDamageGlitch;
@@ -1842,24 +1840,11 @@ namespace Hecton8.UI
             if (_resolvedInteractionCamera != null && _resolvedInteractionCamera.isActiveAndEnabled)
                 return _resolvedInteractionCamera;
 
-            float now = Application.isPlaying ? Time.unscaledTime : Time.realtimeSinceStartup;
-            if (now < _cameraRetryTimer)
-                return null;
-
-            _cameraRetryTimer = now + 1f;
-
-            if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
-                playerTransform != null)
-            {
-                if (playerTransform.TryGetComponent(out Camera playerCamera))
-                {
-                    _resolvedInteractionCamera = playerCamera;
-                    return _resolvedInteractionCamera;
-                }
-
-                IPlayerRuntimeContext playerContext = Hecton8.Core.GlobalRegistry.Player;
-                _resolvedInteractionCamera = playerContext != null ? playerContext.PlayerCamera : null;
-            }
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            Camera playerCamera = playerContext != null ? playerContext.PlayerCamera : null;
+            _resolvedInteractionCamera = playerCamera != null && playerCamera.isActiveAndEnabled
+                ? playerCamera
+                : null;
 
             return _resolvedInteractionCamera;
         }

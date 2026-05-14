@@ -68,6 +68,36 @@ Verification:
 Status:
 - VERIFIED VAULT LOCK - COMPILE TARGET BLOCKED BY MISSING Hecton8.Core.Memory.rsp.
 
+## 2026-05-15 - Fixed-Capacity Codec Final Gate
+
+What was wrong:
+- The fixed-capacity codec pass needed one more legacy-path check after capacity repair.
+- `WriteInventoryCellArray` still used the generic custom-array writer, while its reader was capped to `InventoryDTO.MaxCells`.
+
+What was done:
+- Routed `WriteInventoryCellArray` through `WriteCustomArraySlice` with `InventoryDTO.MaxCells`.
+- Verified current logical-slice writers/readers for world, construction, scan log, PDA, procedural lore, achievements, resource scarcity, ecosystem, root bitmasks, external scavenger sites, module sorter buffers, and cultivation arrays.
+- Re-extracted the batch prompt with PowerShell raw regex; `CURRENT_BATCH.md` still returns `PROMPT_NOT_FOUND`, so disk status/rationale remain the authoritative memory.
+
+Cinematic Cheats used:
+- Save payloads stay logical and bounded. Backing capacity is a cold in-memory repair detail, not a serialized gameplay truth.
+
+Exact Microseconds saved:
+- Frame cost: 0 us.
+- Cold legacy inventory-cell writing is capped to 128 records instead of allowing an oversized custom string-bearing loop.
+
+Verification:
+- `SaveBinaryPayloadCodec.cs` brace/parenthesis balance passed.
+- Duplicate custom-array writer scan returned clean.
+- Fixed-capacity full-array writer scan returned clean.
+- Old procedural full-array write/read scan returned clean.
+- DataVault live compaction scan returned no `UnsafeUtility.MemMove`, `RunCompactionSlice`, `TryCompactFreeGapAt`, `VaultMemMoveJob`, `System.Threading`, `Stopwatch`, or `BurstCompile`.
+- `git diff --check` passed with CRLF warnings only.
+- No dotnet rebuild was run per user order.
+
+Status:
+- VERIFIED VAULT LOCK - COMPILE TARGET BLOCKED BY MISSING Hecton8.Core.Memory.rsp.
+
 ## 2026-05-15 - Procedural DTO Payload Bounds Pass
 
 What was wrong:

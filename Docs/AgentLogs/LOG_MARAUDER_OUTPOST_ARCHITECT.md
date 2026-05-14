@@ -522,3 +522,98 @@ Verification:
 - Unity MCP console/profiler: unavailable from this session.
 
 Status: PENDING VERIFICATION. Static source audits pass; compile/runtime proof remains pending by user instruction and external Core blocker.
+
+## 2026-05-15 - WFC Outpost Loop 24 Generation Origin Fail-Fast Gate
+
+What was wrong:
+- `TryRequestGeneration` replaced a non-finite caller origin with the configured fallback origin but did not re-check that fallback before scheduling WFC work.
+- `ResolveGenerationOriginMeters` checked the anchor position and offset separately, but a finite huge offset added to a finite position could still overflow to Infinity.
+- The existing commit-time fault check ran after draw bounds, GPU upload, and proxy spawn, which was too late for corrupt coordinates.
+
+What was done:
+- Re-checked resolved `originMeters` before state teardown, persistence restore, job scheduling, GPU upload, or proxy spawn.
+- On non-finite origin after fallback: write fault telemetry, dump `Dump_MARAUDER_OUTPOST_ARCHITECT.bin`, set state to `Faulted`, and return false.
+- Re-checked `ResolveGenerationOriginMeters` after offset addition and fell back to `Vector3.zero` if the sum is not finite.
+
+Cinematic Cheats used:
+- No physical correction pass. Corrupt spatial input is rejected at the boundary instead of trying to visually hide or clamp an invalid outpost position.
+- Valid outposts still use deterministic WFC bytes, native extraction, bounded proxies, and one indirect shell draw.
+
+Exact Microseconds saved:
+- New cost: two cold finite checks on generation ingress/fallback, estimated below 0.1 us per request.
+- Saved cost on corrupt input: avoids WFC solve/extraction scheduling, GPU matrix/type upload, draw-bounds update, and up to 16 proxy spawns.
+- Hot Tick/Render remains 0 B/frame; no new signals, registry lookups, buffers, or GameObjects.
+
+Verification:
+- Targeted origin gate scan: PASS; the second finite gate is before `DespawnInteractables()` and job scheduling, and fallback origin re-checks after offset addition.
+- Forbidden construct audit: PASS; no raw hash comparison, shader-global/material mutation, global publish wrapper, prefab shell `Instantiate`, `BaseGenerator`, `math.pow`, telemetry modulo, or `foreach` matches in owned outpost files.
+- Scoped H-Phi counts remain `GlobalRegistrySurface=12`, `SignalBusPush=1`, `EventPublish=0`, `StructLayoutAttributes=6`.
+- `git diff --check`: PASS with repository CRLF warning only.
+- `dotnet` rebuilds/response-file compiles: NOT RUN by explicit user request.
+- Unity MCP console/profiler: unavailable from this session.
+
+Status: PENDING VERIFICATION. Static source audits pass; compile/runtime proof remains pending by user instruction and external Core blocker.
+
+## 2026-05-15 - WFC Outpost Loop 25 Heightmap Payload Finite Gate
+
+What was wrong:
+- `MapMagicBridge.QuantizedHeightmapPayload.IsValid` does not prove finite `TerrainPosition` or `TerrainSize`.
+- The outpost extraction job consumed those terrain fields directly for height sampling, support pillar placement, and shell matrix generation.
+- A future service bypass or bridge regression could feed NaN/Infinity terrain metadata into Burst extraction.
+
+What was done:
+- Added `IsValidHeightmapPayload(in payload)` in the outpost service.
+- Required created samples, bounded resolution, required sample length, finite terrain position/size, and positive terrain extents before using a MapMagic heightmap payload.
+- Routed invalid payloads to the existing deterministic fallback terrain slab.
+- Added finite terrain position/size checks to `MarauderOutpostMatrixExtractionJob.hasHeightmap`.
+
+Cinematic Cheats used:
+- Bad terrain truth falls back to a cheap deterministic slab rather than simulating recovery or clamping foreign terrain coordinates.
+- Valid payloads still buy better visual grounding with height-following stilts; invalid payloads prioritize stable believable geometry over corrupt precision.
+
+Exact Microseconds saved:
+- New cost: a handful of scalar checks on cold generation and two vector finite checks once per extraction job.
+- Saved cost on corrupt terrain metadata: avoids NaN shell matrices, invalid support heights, and downstream GPU/proxy correction work.
+- Hot Tick/Render remains 0 B/frame; no new buffers, signals, registries, GameObjects, or material mutations.
+
+Verification:
+- Targeted heightmap gate scan: PASS; service validation checks finite terrain position/size and the Burst job `hasHeightmap` predicate repeats the finite checks.
+- Forbidden construct audit: PASS; no raw hash comparison, shader-global/material mutation, global publish wrapper, prefab shell `Instantiate`, `BaseGenerator`, `math.pow`, telemetry modulo, or `foreach` matches in owned outpost files.
+- Scoped H-Phi counts remain `GlobalRegistrySurface=12`, `SignalBusPush=1`, `EventPublish=0`, `StructLayoutAttributes=6`.
+- `git diff --check`: PASS with repository CRLF warning only.
+- `dotnet` rebuilds/response-file compiles: NOT RUN by explicit user request.
+- Unity MCP console/profiler: unavailable from this session.
+
+Status: PENDING VERIFICATION. Static source audits pass; compile/runtime proof remains pending by user instruction and external Core blocker.
+
+## 2026-05-15 - WFC Outpost Loop 26 AUP Shift Magnitude Cap
+
+What was wrong:
+- AUP shift ingestion rejected NaN/Infinity but accepted any finite magnitude.
+- A corrupted finite shift could overflow `_generationOrigin`, shell matrix translation columns, draw bounds, or proxy positions.
+- Pending shifts accumulated during solve/extraction could exceed the safe AUP cap before being applied.
+
+What was done:
+- Added `MaxAupShiftMeters = 10000f`, matching the AUP mandate cap.
+- Rejected direct AUP shifts beyond the cap with fault/AUP telemetry and blackbox dump before origin/proxy/matrix mutation.
+- Validated accumulated pending shifts before storing them.
+- Repeated the cap check before applying pending shifts to extracted shell matrices and interactable spawn packets.
+
+Cinematic Cheats used:
+- No recovery simulation. Invalid rebase payloads are treated as corrupt authority data and fail closed with telemetry.
+- Valid shifts keep the deterministic matrix-offset fake instead of physics/Transform hierarchy correction.
+
+Exact Microseconds saved:
+- New cost: one vector magnitude check on rare direct shift and rare pending-shift paths.
+- Saved cost on corrupt finite shifts: avoids overflowing matrix data, GPU upload fallout, and proxy correction work.
+- Hot Tick/Render remains 0 B/frame; no new signals, buffers, registries, GameObjects, or material mutations.
+
+Verification:
+- Targeted AUP cap scan: PASS; direct, accumulated, and pending-apply paths all call the shift limit guard.
+- Forbidden construct audit: PASS; no raw hash comparison, shader-global/material mutation, global publish wrapper, prefab shell `Instantiate`, `BaseGenerator`, `math.pow`, telemetry modulo, or `foreach` matches in owned outpost files.
+- Scoped H-Phi counts remain `GlobalRegistrySurface=12`, `SignalBusPush=1`, `EventPublish=0`, `StructLayoutAttributes=6`.
+- `git diff --check`: PASS with repository CRLF warning only.
+- `dotnet` rebuilds/response-file compiles: NOT RUN by explicit user request.
+- Unity MCP console/profiler: unavailable from this session.
+
+Status: PENDING VERIFICATION. Static source audits pass; compile/runtime proof remains pending by user instruction and external Core blocker.

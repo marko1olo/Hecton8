@@ -1394,6 +1394,7 @@ namespace Hecton8.Physics
         private RenderTexture _gpuAbyssalFlowWriteTexture;
         private RTHandle _gpuAbyssalFlowTextureAHandle;
         private RTHandle _gpuAbyssalFlowTextureBHandle;
+        private IDataVault _dataVault;
         private ISimulationBucketer _simulationBucketer;
         private float _gpuAbyssalFlowInterpolationAlpha = 1f;
         private GraphicsBuffer _advectedSiltBufferA;
@@ -1507,6 +1508,7 @@ namespace Hecton8.Physics
             }
 
             MathGuard.Initialize();
+            _dataVault = GlobalRegistry.DataVault;
 
             // Initial observer resolution. If player/camera appears later,
             // FixedTick retries on a cooldown instead of staying in full-cost mode forever.
@@ -1550,6 +1552,7 @@ namespace Hecton8.Physics
         private void OnEnable()
         {
             EnsurePrebakedVectorNoiseField();
+            _dataVault = GlobalRegistry.DataVault;
             _simulationBucketer = GlobalRegistry.SimulationBucketer;
 
             if (Application.isPlaying && !_fluidRuntimeRegistered)
@@ -1635,6 +1638,7 @@ namespace Hecton8.Physics
             DisposeNativeArrays();
             DisposeFluidAdvectionState();
             _simulationBucketer = null;
+            _dataVault = null;
         }
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
@@ -1782,6 +1786,7 @@ namespace Hecton8.Physics
             DisposeNativeArrays();
             DisposeFluidAdvectionState();
             _simulationBucketer = null;
+            _dataVault = null;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -2049,7 +2054,7 @@ namespace Hecton8.Physics
 
         private void EnsureSharedGerstnerDataVaultBuffers()
         {
-            IDataVault vault = GlobalRegistry.DataVault;
+            IDataVault vault = _dataVault;
             if (vault == null || vault.IsAllocationLocked)
                 return;
 
@@ -2070,7 +2075,7 @@ namespace Hecton8.Physics
             if (!_gerstnerWaves.IsCreated)
                 return;
 
-            IDataVault vault = GlobalRegistry.DataVault;
+            IDataVault vault = _dataVault;
             if (vault == null)
                 return;
 

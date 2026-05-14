@@ -576,6 +576,7 @@ namespace Hecton8.Graphics.Culling
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [StructLayout(LayoutKind.Sequential)]
         private struct ApplyAupShiftJob : IJobParallelFor
         {
             public NativeArray<Matrix4x4> Matrices;

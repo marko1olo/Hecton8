@@ -162,6 +162,14 @@ Rejected Alternatives: Dotnet rebuild was explicitly rejected by user instructio
 Scalability potential: Low/MX350 keeps the 300-entry telemetry footprint. Middle/High/Ultra preserve useful chronological evidence while more IK visual layers are enabled.
 Hardware Impact: Added cost is integer bounds checks and vector finite selects only on telemetry samples/dumps, estimated below 0.1 us/sample on i3/MX350. No allocations and no extra telemetry lanes.
 
+## Decision 21: KCC output and IK storage integrity gate
+
+Problem: KCC output paths still trusted finite-looking external metadata at the last boundary before lower-body consumers: GPU-flow field metadata could enable the full advection boost, SDF payload metadata could expose invalid origin/cell/range data to the body job, ladder hit points could enter KCC state, acoustic AUP output used the caller position directly, shader roll/VAT pushes trusted cached scalars, and contextual IK could schedule/reset NativeArrays without length validation.
+Solution: Reject non-finite GPU-flow metadata and fall back to the cheaper CPU advection scale, reject invalid SDF metadata before publishing a payload to the body job, ignore non-finite ladder hits, snap/sanitize acoustic AUP output, sanitize roll/VAT shader and movement-roll signals at publish time, add a native-storage gate before scheduling the contextual IK ground pipeline, and length-guard contextual IK telemetry/reset/rebase lanes.
+Rejected Alternatives: Dotnet rebuild was explicitly rejected by user instruction. Adding another diagnostic manager or rebuilding the IK scheduler was rejected because the existing owner and black-box ring already provide the domain boundary. Adding extra raycasts or physical gait validation was rejected because the lower-body remains a visual fake.
+Scalability potential: Low/MX350 now fails closed to cheap advection, neutral roll/VAT, and no IK schedule if storage is invalid. Middle keeps deterministic two-bone presence. High/Ultra can keep richer flow-led stride/swim polish and secondary visual layers without trusting corrupt metadata or partial native storage.
+Hardware Impact: Added work is finite checks, integer length comparisons, and scalar sanitization at existing boundaries, estimated below 0.3 us/frame on i3/MX350 plus cold reset-only guards. No allocations, no new jobs, no new ray lanes, no public API change.
+
 ## OMEGA POLISH CHANGES
 
 Problem: Final anti-bloat pass required checking the lower-body implementation for honest simulation, unbounded math, GC leaks, and out-of-domain edits.

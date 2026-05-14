@@ -1228,7 +1228,10 @@ function Assert-CoreGraphBudget {
 }
 
 function Assert-AupPrecisionBudget {
-    param([System.Collections.Specialized.OrderedDictionary]$Counts)
+    param(
+        [System.Collections.Specialized.OrderedDictionary]$Counts,
+        [System.Collections.IEnumerable]$FileRows
+    )
 
     if ($MaxAupPrecisionRisk -lt 0) {
         return
@@ -1239,10 +1242,32 @@ function Assert-AupPrecisionBudget {
         return
     }
 
-    throw (
+    $message =
         'AUP precision H-Phi budget failed: risk patterns {0} exceed budget {1}.' -f
         $riskCount,
-        $MaxAupPrecisionRisk)
+        $MaxAupPrecisionRisk
+
+    $topFiles = @($FileRows |
+        Where-Object { $_.AupPrecisionRisk -gt 0 } |
+        Sort-Object -Property @(
+            @{ Expression = 'AupPrecisionRisk'; Descending = $true },
+            @{ Expression = 'AupPrecisionSafe'; Descending = $true }) |
+        Select-Object -First 8)
+
+    if ($topFiles.Count -gt 0) {
+        $lines = [System.Collections.Generic.List[string]]::new()
+        foreach ($file in $topFiles) {
+            [void]$lines.Add((
+                '{0} risk={1} safe={2}' -f
+                $file.File,
+                $file.AupPrecisionRisk,
+                $file.AupPrecisionSafe))
+        }
+
+        $message += "`nTop AUP precision risk files:`n" + ($lines -join "`n")
+    }
+
+    throw $message
 }
 
 function Add-Count {
@@ -1471,6 +1496,7 @@ function New-AuditSummary {
             AupPrecisionSafe = $Audit.Counts.AupPrecisionSafe
             AupPrecisionRisk = $Audit.Counts.AupPrecisionRisk
         }
+        Budgets = $Audit.Budgets
         CoreGraph = New-CoreGraphSummary $Audit.CoreGraphAudit
         TopAupPrecisionRiskFiles = @($Audit.TopAupPrecisionRiskFiles |
             Select-Object -First 10)
@@ -1699,7 +1725,7 @@ $runtimeScores = New-Scores $runtimeCounters
 $allSourceScores = New-Scores $allCounters
 $editorScores = New-Scores $editorCounters
 
-Assert-AupPrecisionBudget $runtimeCounters
+Assert-AupPrecisionBudget $runtimeCounters $runtimeFileRows
 
 $result = [ordered]@{
     Timestamp = (Get-Date).ToString('yyyy-MM-dd HH:mm:ss zzz')
@@ -1712,6 +1738,15 @@ $result = [ordered]@{
     AllSourceScores = $allSourceScores
     EditorCounts = $editorCounters
     EditorScores = $editorScores
+    Budgets = [ordered]@{
+        AupPrecisionRisk = [ordered]@{
+            Enabled = $MaxAupPrecisionRisk -ge 0
+            Max = $MaxAupPrecisionRisk
+            Actual = [int]$runtimeCounters.AupPrecisionRisk
+            Passed = $MaxAupPrecisionRisk -lt 0 -or [int]$runtimeCounters.AupPrecisionRisk -le $MaxAupPrecisionRisk
+            EvidenceClass = 'STATIC_SOURCE_FULL_SCAN'
+        }
+    }
     TopNativeArrayDomains = @($runtimeDomainRows.Values |
         ForEach-Object { [pscustomobject]$_ } |
         Sort-Object NativeArrayRefs -Descending |
@@ -1756,6 +1791,9 @@ if ($Summary) {
     Write-Output 'Counts:'
     [pscustomobject]$summaryResult.Counts | Format-List
     Write-Output ''
+    Write-Output 'Budgets:'
+    [pscustomobject]$summaryResult.Budgets.AupPrecisionRisk | Format-List
+    Write-Output ''
     Write-Output 'Core graph H-Phi debt counts:'
     [pscustomobject]$summaryResult.CoreGraph.Counts | Format-List
     if (@($summaryResult.TopAupPrecisionRiskFiles).Count -gt 0) {
@@ -1786,15 +1824,4 @@ Write-Output 'Runtime scores:'
 $runtimeScores.GetEnumerator() | ForEach-Object { Write-Output ("  {0}: {1}" -f $_.Key, $_.Value) }
 Write-Output ''
 Write-Output 'All-source scores:'
-$allSourceScores.GetEnumerator() | ForEach-Object { Write-Output ("  {0}: {1}" -f $_.Key, $_.Value) }
-Write-Output ''
-Write-Output 'Core graph H-Phi gate:'
-[pscustomobject]$coreGraphAudit.BuildGraphGate | Format-List
-Write-Output 'Core graph H-Phi debt counts:'
-[pscustomobject]$coreGraphAudit.Counts | Format-List
-Write-Output ''
-Write-Output 'Top runtime NativeArray domains:'
-$result.TopNativeArrayDomains | Format-Table -AutoSize
-Write-Output ''
-Write-Output 'Owner-blocked DataVault candidate files:'
-$result.OwnerBlockedDataVaultCandidates | Format-Table -AutoSize
+$allSourceScores.

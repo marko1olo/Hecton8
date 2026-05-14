@@ -1707,6 +1707,7 @@ namespace Hecton8.World
             RefreshRenderLayerCache();
             RefreshRenderScaleCache();
             ResetDependencyProbeCache();
+            _simulationBucketerProbeAttempted = false;
             ResolveDependencies();
             EnsureBuffers();
             RefreshThreatVoxelPayload();
@@ -1723,6 +1724,7 @@ namespace Hecton8.World
             _hitFlashPropertiesDirty = true;
             RefreshRenderLayerCache();
             RefreshRenderScaleCache();
+            _simulationBucketerProbeAttempted = false;
             ResolveDependencies();
             EnsureBuffers();
             RefreshThreatVoxelPayload();
@@ -1775,6 +1777,7 @@ namespace Hecton8.World
             _reportedWakeCenterWS = Vector3.zero;
             _reportedWakeFlowDirectionWS = Vector3.zero;
             _simulationBucketer = null;
+            _simulationBucketerProbeAttempted = false;
             _simulationInterpolationAlpha = 1f;
             ClearStatisticalPopulationPoint();
             _leviathanModeActive = false;
@@ -1811,6 +1814,8 @@ namespace Hecton8.World
         private void OnDestroy()
         {
             ResetDependencyProbeCache();
+            _simulationBucketer = null;
+            _simulationBucketerProbeAttempted = false;
             TryUnregisterService();
             SargassumGlobalDragManager.Unregister(this);
             FlashlightEvents.Unregister(this);
@@ -2146,7 +2151,6 @@ namespace Hecton8.World
             _playerTransformProbeAttempted = false;
             _viewCameraProbeAttempted = false;
             _runtimeServiceProbeAttempted = false;
-            _simulationBucketerProbeAttempted = false;
         }
 
         private void SanitizeSettings()

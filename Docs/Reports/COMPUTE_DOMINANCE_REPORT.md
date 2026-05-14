@@ -43,6 +43,7 @@ No named active agent is convicted as a "Compute Thief" from current Status/LOG/
 | No-cache current API equivalent | USD 191,832.08 | CALC | Same tokens, cached input priced as normal input |
 | Cache discount avoided | USD 162,696.72 | CALC | 84.812% reduction from no-cache equivalent |
 | Effective blended token price | USD 0.6655 / 1M tokens | CALC | Total cost divided by all latest JSONL final tokens |
+| Latest live SQLite token mass | 43,998,578,833 | SQLITE | 2026-05-15T03:21+04 snapshot; ledger continues moving |
 | Energy estimate | 2,171.17 MWh | CALC | Uses supplied 0.05 kWh/1K tokens, not OpenAI telemetry |
 | Peak `.codex` prompt burst | 13/sec | JSONL | User-message events only |
 | Last six hours prompt rate | 30.5/hour | JSONL | Latest observed `.codex` timestamp window |
@@ -50,6 +51,21 @@ No named active agent is convicted as a "Compute Thief" from current Status/LOG/
 | Human-year compression, meaningful LOC | 176.24-352.47 years | CALC | 10-20 LOC/day, 220 workdays/year |
 | Midpoint replacement cost, meaningful LOC | USD 58.75M | CALC | Assumes USD 250k fully loaded senior/year |
 | Midpoint replacement cost, all Assets physical C# | USD 119.81M | CALC | Includes vendor/third-party physical code |
+
+## Near-Root Audit Files
+
+These files preserve the short operational view outside the long report:
+
+| File | Purpose |
+|---|---|
+| `COMPUTE_AUDIT_BRIEF.md` | Root hard-number snapshot and evidence rules |
+| `COMPUTE_THREAD_TRIAGE.md` | Top-heavy `.codex` thread queue by token concentration |
+| `COMPUTE_THREAD_ATTRIBUTION.md` | Top-30 rollout JSONL work-trace attribution |
+| `COMPUTE_COLLISION_RISK.md` | Current dirty-tree intersection with hot attribution targets |
+
+Latest attribution pass parsed top-30 rollout JSONL files: 490,220 events, 14,015 `apply_patch` calls, 86,616 `shell_command` calls, 1,647 unique patch targets, and patch churn of +354,203/-75,895 lines. This is work-trace evidence, not final value proof.
+
+Current collision snapshot observed 45 dirty/untracked paths and 10 dirty `Assets/_Project/Scripts/*` paths. Hot-target intersection: `Assets/_Project/Scripts/SpatialAudioManager.cs`.
 
 ## Continuation Addendum - Live Ledger Recheck
 

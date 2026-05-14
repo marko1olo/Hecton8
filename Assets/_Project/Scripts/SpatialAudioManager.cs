@@ -597,6 +597,7 @@ namespace Hecton8.Audio
         private int _weatherServiceResolveFrame = -4096;
         private int _acousticZoneResolveFrame = -4096;
         private int _surfaceWeatherResolveFrame = -4096;
+        private int _foveatedDirectorResolveFrame = -4096;
         private readonly ImpactEmitterSample[] _impactEmitters = new ImpactEmitterSample[MaxImpactRadarEmitters]; // COLD ALLOC: ImpactEmitterSample[16] - passive radar impact impulse cache - owner: SpatialAudioManager
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -704,6 +705,7 @@ namespace Hecton8.Audio
             _weatherServiceResolveFrame = -4096;
             _acousticZoneResolveFrame = -4096;
             _surfaceWeatherResolveFrame = -4096;
+            _foveatedDirectorResolveFrame = -4096;
             _listenerWaterDensityMul = 0f;
             SetParasiteRoomAcousticLoad(0);
             SetEclipseAcousticPitchShiftCents(0f);
@@ -2398,9 +2400,25 @@ namespace Hecton8.Audio
 
         private void RefreshFoveatedDirector()
         {
-            IFoveatedSimulationDirector director = GlobalRegistry.FoveatedSimulationDirector;
-            if (director != null || _foveatedSimulationDirector == null)
-                _foveatedSimulationDirector = director;
+            ResolveFoveatedSimulationDirector();
+        }
+
+        private IFoveatedSimulationDirector ResolveFoveatedSimulationDirector()
+        {
+            int frame = Time.frameCount;
+            IFoveatedSimulationDirector director = _foveatedSimulationDirector;
+            if (director != null && frame < _foveatedDirectorResolveFrame)
+                return director;
+
+            if (frame < _foveatedDirectorResolveFrame)
+                return director;
+
+            _foveatedDirectorResolveFrame = frame + SpatialAudioRegistryRetryFrames;
+            IFoveatedSimulationDirector resolvedDirector = GlobalRegistry.FoveatedSimulationDirector;
+            if (resolvedDirector != null || director == null)
+                _foveatedSimulationDirector = resolvedDirector;
+
+            return _foveatedSimulationDirector;
         }
 
         private void EnsureSpatialAudioPolicyCached()

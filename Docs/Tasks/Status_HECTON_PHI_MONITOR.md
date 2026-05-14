@@ -40,19 +40,20 @@ Task Count: 6
 - [x] Task 19: Typed signal metric correction and compact summary mode | DOD: H-Phi audit now counts typed `GlobalSignals.Publish(...)` as synaptic SignalBus traffic and narrows `EventPublish` to legacy/static event publish surfaces; `-Summary` emits compact overseer JSON | Rejected: classifying typed signal wrappers as generic event debt and forcing full JSON parsing for every status check | Estimate: 0 us runtime
 - [x] Task 20: Queued signal-lane classification correction | DOD: H-Phi audit now counts confirmed NativeQueue/SystemDispatcher-backed publish lanes as signal traffic: `VehicleCommandSignalBus`, `PhysicsDeterminismSignals`, `FluidFeedbackEvents`, `LocalizationEvents`, and `VoxelChunkModifiedEvents`; direct fan-out and `HectonEventBus` remain event debt | Rejected: counting every `*Events.Publish*` as healthy signal flow | Estimate: 0 us runtime
 - [x] Task 21: Full-scan recovery and lexical-scrub containment | DOD: tested comment/string lexical scrubbing, observed two full-scan timeouts, gated it behind `-LexicalScrub`, and restored default `-Summary` completion | Rejected: leaving a >420s default audit path or claiming partial H-Phi output | Estimate: 0 us runtime
+- [x] Task 22: AUP risk stale-score verification and summary routing | DOD: reran full default `-Summary -Json`, proved current runtime `AupPrecisionRisk=0`, and added `TopAupPrecisionRiskFiles` to summary output for future regression triage | Rejected: patching gameplay files from stale counters or hiding file-level risk routing in full JSON only | Estimate: 0 us runtime
 
 ## Latest Static Scores
-- H-Phi runtime static narrow: `0.010531061`
-- H-Phi runtime static risk-adjusted: `0.000560589`
-- H-Phi all-source static narrow: `0.009379334`
-- H-Phi all-source static risk-adjusted: `0.000458987`
+- H-Phi runtime static narrow: `0.010409098`
+- H-Phi runtime static risk-adjusted: `0.000566586`
+- H-Phi all-source static narrow: `0.009270504`
+- H-Phi all-source static risk-adjusted: `0.000465967`
 - Narrow integration: `1.0`
-- Risk integration: `0.054111842`
+- Risk integration: `0.054431837`
 - Architectural purity: `0.994699647`
-- Data sovereignty: `0.021062910`
-- Memory alignment: `0.502645503`
+- Data sovereignty: `0.020775237`
+- Memory alignment: `0.503703704`
 - Binary-safe ratio: `0.018518519`
-- AUP precision integrity: `0.983739837`
+- AUP precision integrity: `1.000000000`
 
 ## Current Verification Notes
 - `Tools/Architecture/HectonPhiAudit.ps1 -Json` was corrected to count actual Unity `Update`/`LateUpdate`/`FixedUpdate` method declarations, not comments or editor calls such as `serializedObject.Update()`.
@@ -75,8 +76,10 @@ Task Count: 6
 - Typed `GlobalSignals.Publish(...)` and confirmed queued publish lanes now count as SignalBus traffic in the static model. Latest full summary: `SignalBusPush=328`, `EventPublish=28`, `RiskIntegration=0.053947368`, `RuntimeHPhiRisk=0.000505917`.
 - Narrow runtime H-Phi moved `0.009266939 -> 0.009377979` since the prior layout pass; this is static model/current-tree evidence, not runtime profiler proof.
 - Lexical source scrubbing was tested for comment/string false-positive control but timed out twice on the full tree (`420s+`). It is gated behind explicit `-LexicalScrub`; default `-Summary` completed at `2026-05-15 02:55:39 +04:00`.
-- Latest full summary after current workspace changes: `SignalBusPush=329`, `EventPublish=28`, `RuntimeHPhiNarrow=0.010531061`, `RuntimeHPhiRisk=0.000560589`, `DataVaultRefs=151`, `NativeArrayRefs=7018`.
-- Current Core graph summary: Core asmdef debt references `25`, generated project debt references `10`, source-backed bridge debt references `20`, compile-bridge debt references `8`, project-reference-replacement debt references `12`.
+- Latest full summary after current workspace changes: `SignalBusPush=331`, `EventPublish=28`, `RuntimeHPhiNarrow=0.010409098`, `RuntimeHPhiRisk=0.000566586`, `DataVaultRefs=149`, `NativeArrayRefs=7023`, `AupPrecisionRisk=0`.
+- Current Core graph summary: Core asmdef debt references `25`, generated project debt references `10`, source-backed bridge debt references `16`, compile-bridge debt references `8`, project-reference-replacement debt references `8`.
+- `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json` now exposes `TopAupPrecisionRiskFiles`; latest list is empty because the current runtime AUP risk counter is zero.
+- `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0` passed at `2026-05-15 03:29:17 +04:00`; `-CoreGraphOnly -RequireCoreBuildGate` also passed with the current budgets.
 - Remaining runtime `Find*` debt is concentrated in `GameBootstrapper` bootstrap handoff, `HectonUrpShadowBudgetGuard` cold light scan, and `VRSomaticRuntimeBootstrap` decoupled root lookup; one textual `HectonUnderwaterVisuals` hit is editor-only and excluded from runtime score.
-- `git diff --check` on touched Core layout files reports only LF/CRLF normalization warnings.
+- `git diff --check` on touched H-Phi files reports only LF/CRLF normalization warnings.
 - Unity Console / PlayMode / Profiler / GCMonitor: PENDING VERIFICATION.

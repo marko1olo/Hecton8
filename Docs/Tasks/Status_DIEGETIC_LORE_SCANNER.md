@@ -133,10 +133,17 @@ Mandates read:
 - [x] Scanner localization/cache rebind | DOD: equipped scanner registers for localization language and GlobalRegistry hot-swap events; mode strings and operational caches refresh on language, player, Atlas, lore, or localization service replacement | Rejected: stale mode labels after language switch and cached service handles without rebind path | Estimate: event-only cost while equipped
 - [x] Static no-regression checks after Loop 15 | DOD: `git diff --check` passed with line-ending warnings only; scanner banned-pattern scan found no `ILocalizationService`, `Camera.main`, direct `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, or `.text =` | Rejected: dotnet rebuild, explicitly forbidden by user | Estimate: 2600 us
 
+## Loop 16 - Service Cache Lifetime Hardening
+
+- [x] Re-read status/rationale and Unity workflow constraints | DOD: loaded `Status_DIEGETIC_LORE_SCANNER.md`, `Rationale_DIEGETIC_LORE_SCANNER.md`, and Unity MCP skill before source edits | Rejected: continuing from chat memory only | Estimate: 7800 us
+- [x] Scanner cached service lifetime reset | DOD: scanner clears cached player/survival/Atlas/lore handles on spawn/equip/unequip/despawn/destroy and clears survival cache when the player service hot-swaps | Rejected: holding stale cached services across unequip or pool reuse | Estimate: event/cold lifecycle only
+- [x] Diegetic RT pool hot-swap rebind | DOD: `ToolDiegeticDisplayController` now implements `IGlobalRegistryHotSwapListener`, rebinds `RenderTexturePoolRuntime`, releases old owned RTs on pool replacement, and clears cached pool on disable | Rejected: stale RT pool handle after service replacement | Estimate: event-only; avoids failed pool calls on stale owner
+- [x] Static no-regression checks after Loop 16 | DOD: staged `git diff --cached --check` passed; scanner banned-pattern scan found no `ILocalizationService`, `Camera.main`, direct `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, or `.text =` | Rejected: dotnet rebuild, explicitly forbidden by user | Estimate: 2800 us
+
 ## Verification
 
 - [x] Compile/source validation - `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:quiet -clp:Summary` passed with 0 warnings / 0 errors after Loop 10
-- [ ] Compile/source validation after Loops 11-15 - NOT RERUN: user explicitly ordered no dotnet rebuilds; static source checks only
+- [ ] Compile/source validation after Loops 11-16 - NOT RERUN: user explicitly ordered no dotnet rebuilds; static source checks only
 - [ ] Console check - BLOCKED BY UNITY SESSION: MCP validate/console calls cannot connect to Unity MCP HTTP endpoint / session
 - [x] Re-read prompt after core tasks
 - [x] Omega polish mandate after all tasks done or blocked

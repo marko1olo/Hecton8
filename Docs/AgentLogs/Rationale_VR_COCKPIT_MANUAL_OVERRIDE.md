@@ -389,3 +389,15 @@ Rejected Alternatives: keeping flag-only guards was rejected because it fails ex
 Scalability potential: Low/toaster avoids hidden inert lever ticks and stale receiver slots after latch or streamed-scene teardown. Middle/High keep predictable service rebinding under cockpit streaming. Ultra can stack more physical controls because spent or disabled levers vacate fixed tables deterministically.
 
 Hardware Impact: no steady-frame impact. Cold teardown pays at most one fixed-bucket unregister scan and one receiver-table exact-key removal. i3/MX350 gain is prevention of permanent stray work: one avoided player-lane tick and one freed receiver slot per affected lever.
+
+## Decision 32 - Latched levers must leave service hot-swap tables too
+
+Problem: after latch, the lever now leaves the player tick lane and physical receiver table, but it could remain registered as a `GlobalRegistry` hot-swap listener. A completed one-shot lever cannot re-enter active simulation because `_latched` guards block registration, so the listener only consumes fixed table capacity and future service-replacement callback scans.
+
+Solution: call `TryUnregisterHotSwapListener()` at the end of `TryLatch()` after manual override, haptic, prologue, receiver, and tick cleanup. Add the same `_latched` guard to `TryRegisterHotSwapListener()` that tick and receiver registration already use, so disabled/enabled completed controls cannot re-enter the listener table. Existing disable/destroy cleanup remains idempotent.
+
+Rejected Alternatives: keeping the listener until `OnDisable()` was rejected because many cockpit controls remain enabled as post-latch authored scene state. Relying only on latch-time unregister was rejected because streamed scene objects can be disabled and re-enabled after completion. Polling service state from Tick was rejected because the lever no longer ticks after latch. Disabling the component was rejected because designers may still query or display the latched read model.
+
+Scalability potential: Low/toaster avoids dead service callback work in long sessions. Middle/High keep fixed GlobalRegistry listener tables available for streamed cockpit controls. Ultra can stack more animated post-latch presentation without keeping the spent control in service lifecycle machinery.
+
+Hardware Impact: no steady-frame impact. The latch frame pays one idempotent fixed-table listener removal and prevents future hot-swap callback dispatch for the spent lever. i3/MX350 gain is freed listener capacity plus avoided cold callback work during service rebinding.

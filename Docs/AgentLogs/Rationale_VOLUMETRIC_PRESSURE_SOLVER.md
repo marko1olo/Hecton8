@@ -353,3 +353,11 @@ Solution: Added cached analytical center/radius state and included 5cm center/ra
 Rejected Alternatives: Publishing analytical center/radius every tick, or keeping the stress-only dirty check. Every-tick global vectors waste driver bandwidth on calm frames; stress-only gating can put active deformation around the wrong world-space region.
 Scalability potential: Low/MX350 keeps cheap zero-stress skip behavior. Mid/High/Ultra keep accurate spatial analytical dents during active pressure while still skipping tiny sub-5cm shader churn.
 Hardware Impact: Prevents stale analytical deformation coordinates with one `lengthsq` and one radius compare in the dirty gate. Estimated saved integration/debug cost is high; runtime cost is under 1 us per analytical publish decision on i3/MX350, with avoided redundant shader globals when spatial movement is below tolerance.
+
+## Follow-Up Correction - Finite Ingress Gates
+
+Problem: `ApplyHydrodynamicStress` accepted NaN/Infinity `deltaTime` because the old guard only rejected non-positive time. A malformed seismic epicenter could also force a full active-module scan before naturally failing all distance comparisons.
+Solution: Added a finite `deltaTime` gate at the hydrodynamic stress tick entry and finite epicenter component checks in `RegisterSeismicVibration` before the module scan.
+Rejected Alternatives: Letting downstream math sanitize every field, or only clamping inside `UpdateHabitatVibration`. Downstream-only cleanup allows NaN to touch flood, pressure, pump, condensation, module-stress and telemetry code; vibration-only cleanup misses other hydrodynamic consumers.
+Scalability potential: Low/MX350 avoids wasted module scans and NaN-driven state churn from bad input. High/Ultra keep identical valid-input behavior and preserve all visual pressure feedback.
+Hardware Impact: Saves a full hydrodynamic pass on invalid frame time and avoids one active-module scan for malformed seismic signals. Estimated worst-case saved work is 10-80 us on i3/MX350 invalid-input frames; normal-frame cost is one finite check and three seismic component checks on event ingress.

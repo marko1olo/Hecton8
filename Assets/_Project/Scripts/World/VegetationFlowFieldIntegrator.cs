@@ -731,8 +731,16 @@ namespace Hecton8.World
 
         private void ApplyExternalThreatPulseToSnapshot(ref Vector3 emissionPosition, ref float emissionRadius, ref float emissionStrength)
         {
-            if (_externalThreatPulseHoldTimer <= 0f || _externalThreatPulseStrength <= 0f || _externalThreatPulseRadius <= 0f)
+            if (_externalThreatPulseHoldTimer <= 0f ||
+                _externalThreatPulseStrength <= 0f ||
+                _externalThreatPulseRadius <= 0f ||
+                !math.isfinite(_externalThreatPulseHoldTimer) ||
+                !math.isfinite(_externalThreatPulseStrength) ||
+                !math.isfinite(_externalThreatPulseRadius) ||
+                !IsFinite(_externalThreatPulsePosition))
+            {
                 return;
+            }
 
             emissionPosition = _externalThreatPulsePosition;
             emissionRadius = math.max(emissionRadius, _externalThreatPulseRadius);
@@ -743,15 +751,27 @@ namespace Hecton8.World
         {
             _currentThreatHotspotLevel = 0f;
             _currentThreatHotspotPosition = _ecosystemThreatGridCenter;
-            if (!_nativeMemory.EcosystemThreatGridCurrentNative.IsCreated || _ecosystemThreatGridResolution <= 0)
+            if (!_nativeMemory.EcosystemThreatGridCurrentNative.IsCreated ||
+                _ecosystemThreatGridResolution <= 0 ||
+                _ecosystemThreatGridCellCount <= 0 ||
+                threatGridCellSize <= 0f ||
+                !math.isfinite(threatGridCellSize) ||
+                !IsFinite(_ecosystemThreatGridCenter) ||
+                !TryResolveSquareGridCellCount(
+                    _ecosystemThreatGridResolution,
+                    _nativeMemory.EcosystemThreatGridCurrentNative.Length,
+                    out int threatGridCellCount) ||
+                _ecosystemThreatGridCellCount < threatGridCellCount)
+            {
                 return;
+            }
 
             int bestIndex = -1;
             float bestThreat = 0f;
-            for (int i = 0; i < _ecosystemThreatGridCellCount; i++)
+            for (int i = 0; i < threatGridCellCount; i++)
             {
                 float threat = _nativeMemory.EcosystemThreatGridCurrentNative[i];
-                if (threat <= bestThreat)
+                if (!math.isfinite(threat) || threat <= bestThreat)
                     continue;
 
                 bestThreat = threat;
@@ -764,19 +784,71 @@ namespace Hecton8.World
             int halfExtent = _ecosystemThreatGridResolution >> 1;
             int bestX = bestIndex % _ecosystemThreatGridResolution;
             int bestZ = bestIndex / _ecosystemThreatGridResolution;
+            float hotspotY = _ecosystemThreatGridCenter.y;
+            if (TryResolvePlayerRuntimePositionFromAup(out Vector3 playerRuntimePosition) &&
+                IsFinite(playerRuntimePosition))
+            {
+                hotspotY = playerRuntimePosition.y;
+            }
+
             _currentThreatHotspotLevel = bestThreat;
             _currentThreatHotspotPosition = new Vector3(
                 _ecosystemThreatGridCenter.x + ((bestX - halfExtent) * threatGridCellSize),
-                TryResolvePlayerRuntimePositionFromAup(out Vector3 playerRuntimePosition) ? playerRuntimePosition.y : _ecosystemThreatGridCenter.y,
+                hotspotY,
                 _ecosystemThreatGridCenter.z + ((bestZ - halfExtent) * threatGridCellSize));
         }
 
         private NativeArray<float> GetThreatGridFloatView()
         {
-            if (!_threatGridInitialized || !_nativeMemory.EcosystemThreatGridCurrentNative.IsCreated || _ecosystemThreatGridCellCount <= 0)
+            if (!_threatGridInitialized ||
+                !_nativeMemory.EcosystemThreatGridCurrentNative.IsCreated ||
+                _ecosystemThreatGridCellCount <= 0 ||
+                !TryResolveSquareGridCellCount(
+                    _ecosystemThreatGridResolution,
+                    _nativeMemory.EcosystemThreatGridCurrentNative.Length,
+                    out int threatGridCellCount) ||
+                _ecosystemThreatGridCellCount < threatGridCellCount)
+            {
                 return default;
+            }
 
             return _nativeMemory.EcosystemThreatGridCurrentNative;
+        }
+
+        private static bool HasCompleteSquareGridLength(int resolution, int payloadLength)
+        {
+            return TryResolveSquareGridCellCount(resolution, payloadLength, out _);
+        }
+
+        private static bool TryResolveSquareGridCellCount(int resolution, int payloadLength, out int cellCount)
+        {
+            cellCount = 0;
+            long expectedLength = (long)resolution * resolution;
+            if (resolution <= 0 ||
+                expectedLength <= 0L ||
+                expectedLength > int.MaxValue ||
+                payloadLength < expectedLength)
+            {
+                return false;
+            }
+
+            cellCount = (int)expectedLength;
+            return true;
+        }
+
+        private static bool HasCompleteVoxelGridLength(Vector3Int dimensions, int payloadLength)
+        {
+            if (dimensions.x <= 0 ||
+                dimensions.y <= 0 ||
+                dimensions.z <= 0)
+            {
+                return false;
+            }
+
+            long expectedLength = (long)dimensions.x * dimensions.y * dimensions.z;
+            return expectedLength > 0L &&
+                   expectedLength <= int.MaxValue &&
+                   payloadLength >= expectedLength;
         }
 
         private static float2 SampleFlowFieldAtPosition(

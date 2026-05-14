@@ -4,6 +4,7 @@ Status: AUDIT COMPLETE
 Snapshot: 2026-05-15T03:07+04:00
 Source: `C:\Users\danat\.codex\state_5.sqlite`
 Method: read-only SQLite query over `threads.tokens_used`
+Attribution detail: `COMPUTE_THREAD_ATTRIBUTION.md`
 
 ## Verdict
 
@@ -105,3 +106,5 @@ To convict a thread as waste, collect all four:
 - H-Phi or other project-quality delta.
 
 Without those four, the only valid label is `HIGH-BURN CANDIDATE`.
+
+Top-30 rollout JSONL attribution is preserved in `COMPUTE_THREAD_ATTRIBUTION.md`.

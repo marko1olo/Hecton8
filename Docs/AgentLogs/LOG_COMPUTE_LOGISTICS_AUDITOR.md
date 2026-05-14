@@ -34,6 +34,58 @@ Verification:
 
 STATUS: AUDIT COMPLETE.
 
+## 2026-05-15 - Collision Risk Snapshot
+
+What was wrong:
+- Hot attribution targets were known, but they were not compared to the live dirty workspace.
+- Concurrent agents are currently editing runtime scripts.
+
+What was done:
+- Ran `git status --porcelain` and compared dirty paths against hot patch targets.
+- Created `COMPUTE_COLLISION_RISK.md` at project root.
+- Recorded 45 dirty/untracked paths and 10 dirty `Assets/_Project/Scripts/*` paths.
+- Recorded the current hot-target intersection: `Assets/_Project/Scripts/SpatialAudioManager.cs`.
+- Updated `COMPUTE_AUDIT_BRIEF.md` and `COMPUTE_DOMINANCE_REPORT.md` with the collision-risk pointer.
+
+Cinematic Cheats used:
+- None.
+
+Exact microseconds saved:
+- Runtime: 0 us.
+- Process: not claimed.
+
+Verification:
+- Markdown-only collision snapshot. Compile not run because runtime files are actively dirty and not owned by this audit agent.
+
+STATUS: AUDIT COMPLETE.
+
+## 2026-05-15 - Rollout Attribution
+
+What was wrong:
+- `COMPUTE_THREAD_TRIAGE.md` identified expensive `.codex` threads but did not show their visible work trace.
+- Token count alone still cannot separate productive patch loops from pure churn.
+
+What was done:
+- Parsed the top-30 rollout JSONL files read-only.
+- Created `COMPUTE_THREAD_ATTRIBUTION.md` at project root.
+- Recorded current live SQLite all-thread token mass: 43,998,578,833.
+- Recorded top-30 evidence: 490,220 rollout events, 14,015 `apply_patch` calls, 86,616 `shell_command` calls, 1,647 unique patch file targets.
+- Recorded patch churn from JSONL payloads: +354,203/-75,895 lines.
+- Recorded hot patch targets: `SargassumMicroFaunaBoids.cs`, `CrashTelemetryBuffer.cs`, `BaseModule.cs`, `FaunaBrain.cs`, `HectonPlayerMovement.cs`, `PersistentWorldRegistry.cs`, `GlobalRegistry.cs`, `SaveBinaryStorage.cs`.
+- Updated `COMPUTE_AUDIT_BRIEF.md` and `COMPUTE_THREAD_TRIAGE.md` with attribution links.
+
+Cinematic Cheats used:
+- None.
+
+Exact microseconds saved:
+- Runtime: 0 us.
+- Process: not claimed.
+
+Verification:
+- Markdown-only attribution. Compile not run.
+
+STATUS: AUDIT COMPLETE.
+
 ## 2026-05-15 - Top Thread Triage
 
 What was wrong:

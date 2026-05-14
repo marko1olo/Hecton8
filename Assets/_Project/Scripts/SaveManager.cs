@@ -667,6 +667,7 @@ namespace Hecton8.SaveSystem
             {
                 status = WfcOutpostPersistenceStatus.Rejected;
                 RecordWfcOutpostEventBlackBox(WfcOutpostBlackBoxOperationPersist, status, sectorHash, packedHash, frame: frame);
+                PublishWfcWriteFailureWarning(frame);
                 return false;
             }
 
@@ -678,6 +679,7 @@ namespace Hecton8.SaveSystem
             {
                 status = WfcOutpostPersistenceStatus.Rejected;
                 RecordWfcOutpostEventBlackBox(WfcOutpostBlackBoxOperationPersist, status, sectorHash, packedHash, payloadBytes, frame: frame);
+                PublishWfcWriteFailureWarning(frame);
                 return false;
             }
 
@@ -1510,7 +1512,7 @@ namespace Hecton8.SaveSystem
             if (!appended)
             {
                 RecordWfcOutpostEventBlackBox(WfcOutpostBlackBoxOperationAppend, WfcOutpostPersistenceStatus.Rejected, sectorHash, frame: frame);
-                GlobalTelemetryBus.PublishPerformanceWarning(WfcCorruptPayloadTelemetryHash, WfcOutpostPersistenceSourceHash, frame);
+                PublishWfcWriteFailureWarning(frame);
             }
         }
 
@@ -1523,6 +1525,12 @@ namespace Hecton8.SaveSystem
         private void PublishWfcCorruptPayloadWarning()
         {
             GlobalTelemetryBus.PublishPerformanceWarning(WfcCorruptPayloadTelemetryHash, WfcOutpostPersistenceSourceHash, 1f);
+            DumpWfcOutpostBlackBox();
+        }
+
+        private void PublishWfcWriteFailureWarning(uint frame)
+        {
+            GlobalTelemetryBus.PublishPerformanceWarning(WfcCorruptPayloadTelemetryHash, WfcOutpostPersistenceSourceHash, frame);
             DumpWfcOutpostBlackBox();
         }
 

@@ -26,6 +26,7 @@ namespace Hecton8.Gameplay.Loot
         private const uint TelemetryAcousticBudgetDropFlag = 1u << 1;
         private const uint TelemetryWakeBudgetDropFlag = 1u << 2;
         private const uint TelemetryInventoryMissingFlag = 1u << 3;
+        private const uint TelemetryAcquisitionBudgetDropFlag = 1u << 4;
 
         private static LootMagnetSystem _bootstrapRuntime;
         private static bool _sceneLoadedHooked;
@@ -566,6 +567,7 @@ namespace Hecton8.Gameplay.Loot
 
                     if (acquisitionBudget <= 0)
                     {
+                        telemetryFlags |= TelemetryAcquisitionBudgetDropFlag;
                         RestoreDeferredAcquisition(index, flags);
                         continue;
                     }

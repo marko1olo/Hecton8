@@ -310,6 +310,9 @@ What was done:
 - Added a resolved writable-capacity guard from actual vault buffers, event lane, telemetry ring, and sidecar lengths.
 - Scheduling now caches the resolved capacity used by the job, and commit handoff uses that scheduled capacity.
 - Added `[DisallowMultipleComponent]`, serialized field ranges/minimums/tooltips, and XML inheritance docs for tick methods.
+- Added an inventory-null fail-closed guard before auto-stow transfer and encoded the condition in telemetry flags.
+- Added an acquisition-budget deferral telemetry flag for dense truth-work throttling.
+- Added canonical `COLD ALLOC` comments to managed pickup sidecar allocation lines.
 - Stopped externally spawned dotnet build processes again; no dotnet build was started by this agent.
 
 Cinematic Cheats used:
@@ -319,6 +322,7 @@ Cinematic Cheats used:
 Exact Microseconds saved:
 - No profiler claim. The change removes fast-path global tier budget reads and prevents out-of-range native lane faults under capacity churn.
 - Capacity guard is constant-time before scheduling; no per-entity loop cost added.
+- Inventory guard avoids overflow force queue work when the inventory dependency is missing.
 
 Verification:
 - User forbade dotnet rebuilds; none were run.

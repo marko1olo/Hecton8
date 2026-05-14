@@ -5,6 +5,8 @@ Snapshot: 2026-05-15T03:02:21+04:00
 Agent: COMPUTE_LOGISTICS_AUDITOR
 Full report: `Docs/Reports/COMPUTE_DOMINANCE_REPORT.md`
 Thread triage: `COMPUTE_THREAD_TRIAGE.md`
+Thread attribution: `COMPUTE_THREAD_ATTRIBUTION.md`
+Collision risk: `COMPUTE_COLLISION_RISK.md`
 Status/Rationale/Log:
 - `Docs/Tasks/Status_COMPUTE_LOGISTICS_AUDITOR.md`
 - `Docs/AgentLogs/Rationale_COMPUTE_LOGISTICS_AUDITOR.md`
@@ -36,6 +38,13 @@ Status/Rationale/Log:
 | Tokens per script source byte | 1,055.433 |
 | Cache-aware cost per meaningful LOC | USD 0.037573 |
 | Energy by prompt constant | 2,188.95 MWh |
+| Live SQLite all-thread tokens, 03:21 snapshot | 43,998,578,833 |
+| Top-30 attribution patch calls | 14,015 |
+| Top-30 attribution unique patch targets | 1,647 |
+| Top-30 attribution patch churn | +354,203 / -75,895 lines |
+| Dirty paths observed, 03:24 snapshot | 45 |
+| Dirty script paths observed | 10 |
+| Hot attribution targets currently dirty | 1 |
 
 ## Evidence Rules
 
@@ -56,3 +65,7 @@ The economic anomaly is context recursion: 43.78B total tokens against 775,435 m
 Next audit target: top 100 `.codex` threads. They hold about half of the recorded token mass. Broad scanning below that is low-yield.
 
 Thread triage has been written to `COMPUTE_THREAD_TRIAGE.md`. The valid label is `HIGH-BURN CANDIDATE`, not `waste`, until a thread is joined to changed files, meaningful LOC delta, compile/test result, and H-Phi or equivalent quality delta.
+
+Thread attribution has been written to `COMPUTE_THREAD_ATTRIBUTION.md`. It identifies visible patch targets from top-30 rollout JSONL. This is work-trace attribution, not final value proof.
+
+Collision snapshot has been written to `COMPUTE_COLLISION_RISK.md`. Current hot-target intersection is `Assets/_Project/Scripts/SpatialAudioManager.cs`.

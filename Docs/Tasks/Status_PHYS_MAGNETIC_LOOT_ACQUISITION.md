@@ -62,3 +62,6 @@ Status: PENDING VERIFICATION
 - Loop 23: Rechecked scalability stability. Loot magnet now caches `ScalabilityTierProfileByte` behind a slow-tick hysteresis gate before low-tier snap or presentation budgets change.
 - Loop 24: Rechecked runtime capacity mutation. Scheduling now resolves writable capacity from actual vault/event/sidecar lengths, so authored capacity changes between SlowTick and FastTick cannot overrun native lanes.
 - Loop 25: Rechecked authoring hygiene. Added component multiplicity, inspector ranges/tooltips, and interface XML docs without changing hot-path behavior.
+- Loop 26: Rechecked missing dependency behavior. Auto-stow now fails closed when inventory is unavailable and records a telemetry flag instead of invoking pickup overflow behavior.
+- Loop 27: Rechecked cold allocation evidence. Managed pickup sidecar allocations now carry canonical `COLD ALLOC` owner comments.
+- Loop 28: Rechecked dense acquisition throttling. Acquisition-budget deferrals now set a fixed telemetry flag, separate from cosmetic acoustic/wake budget clipping.

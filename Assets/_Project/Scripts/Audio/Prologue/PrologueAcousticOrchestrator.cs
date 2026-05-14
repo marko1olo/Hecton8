@@ -173,7 +173,7 @@ namespace Hecton8.Audio.Prologue
             for (int i = 0; i < signals.Length; i++)
             {
                 AtmosphericReentrySignal signal = signals[i];
-                if (!math.isfinite(signal.UniverseVelocityMetersPerSecond) || !math.isfinite(signal.Heat01))
+                if (!IsValidAtmosphericSignal(in signal))
                     continue;
 
                 _prologueArmed = true;
@@ -183,13 +183,13 @@ namespace Hecton8.Audio.Prologue
                 if (_stage == AudioTransitionState.StageOceanHandoff)
                     continue;
 
-                if (signal.Phase >= AtmosphericReentrySignal.PhaseWhiteout ||
+                if (signal.Phase == AtmosphericReentrySignal.PhaseWhiteout ||
                     (signal.Flags & AtmosphericReentrySignal.FlagWhiteoutRequested) != 0)
                 {
                     _stage = AudioTransitionState.StageWhiteout;
                     _currentLowPassCutoffHertz = ClampCutoff(vacuumLowPassCutoffHertz);
                 }
-                else if (signal.Phase >= AtmosphericReentrySignal.PhasePlasma)
+                else if (signal.Phase == AtmosphericReentrySignal.PhasePlasma)
                 {
                     _stage = AudioTransitionState.StagePlasma;
                     _currentLowPassCutoffHertz = ClampCutoff(vacuumLowPassCutoffHertz);
@@ -401,6 +401,15 @@ namespace Hecton8.Audio.Prologue
         {
             float velocityScale = math.max(1f, plasmaFullStressVelocityMetersPerSecond);
             return math.saturate(math.max(0f, velocityMetersPerSecond) * math.rcp(velocityScale));
+        }
+
+        private static bool IsValidAtmosphericSignal(in AtmosphericReentrySignal signal)
+        {
+            return math.isfinite(signal.UniverseVelocityMetersPerSecond) &&
+                   math.isfinite(signal.Heat01) &&
+                   (signal.Phase == AtmosphericReentrySignal.PhaseApproach ||
+                    signal.Phase == AtmosphericReentrySignal.PhasePlasma ||
+                    signal.Phase == AtmosphericReentrySignal.PhaseWhiteout);
         }
 
         private float ResolveLfeGain(float velocity01, bool plasmaStage, bool portalStage)

@@ -1405,6 +1405,7 @@ namespace Hecton8.Gameplay
         private const uint TelemetryReasonOriginShift = 0x00000001u;
         private const uint TelemetryReasonStructuralMutation = 0x00000002u;
         private const uint TelemetryReasonInvalidOriginShift = 0x00000004u;
+        private const uint TelemetryReasonNativeStorageInvalid = 0x00000008u;
         private const float MaxAcceptedOriginShiftMeters = 10000.0f;
         private const float MaxAcceptedOriginShiftMetersSq = MaxAcceptedOriginShiftMeters * MaxAcceptedOriginShiftMeters;
         private const string TelemetryDumpRelativePath = "Docs/AgentLogs/Dump_ANIM_PROCEDURAL_LEGS_IK.bin";
@@ -1545,6 +1546,12 @@ namespace Hecton8.Gameplay
                 return;
 
             float3 kccVelocity = ConsumeKccVelocitySignal(frameIndex);
+            if (!HasGroundPipelineStorage())
+            {
+                WriteTelemetrySample(TelemetryReasonNativeStorageInvalid);
+                return;
+            }
+
             if (!CaptureEntityStates(deltaTime, frameIndex, viewerPosition, viewerForward, viewerUp, viewerRight, hasViewerPosition, kccVelocity))
                 return;
 
@@ -1842,7 +1849,8 @@ namespace Hecton8.Gameplay
             if (!_scheduledEntityStates.IsCreated)
                 return;
 
-            for (int slotIndex = 0; slotIndex < MaxEntities; slotIndex++)
+            int stateCount = math.min(MaxEntities, _scheduledEntityStates.Length);
+            for (int slotIndex = 0; slotIndex < stateCount; slotIndex++)
             {
                 if (!_slotActive[slotIndex])
                     continue;
@@ -1872,7 +1880,8 @@ namespace Hecton8.Gameplay
             if (!targetFrames.IsCreated)
                 return;
 
-            for (int slotIndex = 0; slotIndex < MaxEntities; slotIndex++)
+            int frameCount = math.min(MaxEntities, targetFrames.Length);
+            for (int slotIndex = 0; slotIndex < frameCount; slotIndex++)
             {
                 if (!_slotActive[slotIndex])
                     continue;
@@ -2021,6 +2030,9 @@ namespace Hecton8.Gameplay
             bool hasViewerPosition,
             float3 kccVelocity)
         {
+            if (!_scheduledEntityStates.IsCreated || _scheduledEntityStates.Length < MaxEntities)
+                return false;
+
             bool hasActiveEntity = false;
             for (int slotIndex = 0; slotIndex < MaxEntities; slotIndex++)
             {
@@ -2051,6 +2063,23 @@ namespace Hecton8.Gameplay
             }
 
             return hasActiveEntity;
+        }
+
+        private bool HasGroundPipelineStorage()
+        {
+            int rayLaneCount = MaxEntities * RaysPerEntity;
+            int handLaneCount = MaxEntities * HandsPerEntity;
+            int footLaneCount = MaxEntities * ContextualPhysicalIkLowerBodyConstants.FeetPerEntity;
+            return _scheduledEntityStates.IsCreated && _scheduledEntityStates.Length >= MaxEntities &&
+                   _scheduledCommands.IsCreated && _scheduledCommands.Length >= rayLaneCount &&
+                   _scheduledHits.IsCreated && _scheduledHits.Length >= rayLaneCount &&
+                   _frontTargetFrames.IsCreated && _frontTargetFrames.Length >= MaxEntities &&
+                   _backTargetFrames.IsCreated && _backTargetFrames.Length >= MaxEntities &&
+                   _ikTargets.IsCreated && _ikTargets.Length >= handLaneCount &&
+                   _ikWeights.IsCreated && _ikWeights.Length >= handLaneCount &&
+                   _footIkData.IsCreated && _footIkData.Length >= footLaneCount &&
+                   _footTargets.IsCreated && _footTargets.Length >= footLaneCount &&
+                   _footCurrentPos.IsCreated && _footCurrentPos.Length >= footLaneCount;
         }
 
         private float3 ConsumeKccVelocitySignal(uint fallbackFrame)
@@ -2215,6 +2244,9 @@ namespace Hecton8.Gameplay
             bool capturedFirst = false;
             bool invalid = false;
             uint lowerBodyFlags = 0u;
+            int entityStateCount = _scheduledEntityStates.IsCreated ? _scheduledEntityStates.Length : 0;
+            int targetFrameCount = _frontTargetFrames.IsCreated ? _frontTargetFrames.Length : 0;
+            int weightCount = _ikWeights.IsCreated ? _ikWeights.Length : 0;
 
             for (int slotIndex = 0; slotIndex < MaxEntities; slotIndex++)
             {
@@ -2222,10 +2254,13 @@ namespace Hecton8.Gameplay
                     continue;
 
                 activeCount++;
-                ContextualPhysicalIkEntityState entity = _scheduledEntityStates.IsCreated ? _scheduledEntityStates[slotIndex] : default;
-                ContextualPhysicalIkTargetFrame frame = _frontTargetFrames.IsCreated ? _frontTargetFrames[slotIndex] : default;
+                bool hasEntityState = slotIndex < entityStateCount;
+                bool hasTargetFrame = slotIndex < targetFrameCount;
+                ContextualPhysicalIkEntityState entity = hasEntityState ? _scheduledEntityStates[slotIndex] : default;
+                ContextualPhysicalIkTargetFrame frame = hasTargetFrame ? _frontTargetFrames[slotIndex] : default;
                 int baseIkIndex = slotIndex * HandsPerEntity;
-                float2 weights = _ikWeights.IsCreated
+                bool hasWeightLanes = baseIkIndex + RightHandIndex < weightCount;
+                float2 weights = hasWeightLanes
                     ? new float2(
                         _ikWeights[baseIkIndex + LeftHandIndex],
                         _ikWeights[baseIkIndex + RightHandIndex])
@@ -2249,6 +2284,9 @@ namespace Hecton8.Gameplay
                 lowerBodyFlags |= frame.LowerBodyFlags;
 
                 bool slotInvalid =
+                    !hasEntityState ||
+                    !hasTargetFrame ||
+                    !hasWeightLanes ||
                     !math.all(math.isfinite(entity.RootPosition)) ||
                     !math.all(math.isfinite(frame.LeftFoot.WorldPosition)) ||
                     !math.all(math.isfinite(frame.RightFoot.WorldPosition)) ||
@@ -2386,39 +2424,42 @@ namespace Hecton8.Gameplay
 
         private void ResetTargetSlot(int slotIndex)
         {
-            if (_frontTargetFrames.IsCreated)
+            if ((uint)slotIndex >= (uint)MaxEntities)
+                return;
+
+            if (_frontTargetFrames.IsCreated && (uint)slotIndex < (uint)_frontTargetFrames.Length)
                 _frontTargetFrames[slotIndex] = default;
 
-            if (_backTargetFrames.IsCreated)
+            if (_backTargetFrames.IsCreated && (uint)slotIndex < (uint)_backTargetFrames.Length)
                 _backTargetFrames[slotIndex] = default;
 
             int baseIkIndex = slotIndex * HandsPerEntity;
-            if (_ikTargets.IsCreated)
+            if (_ikTargets.IsCreated && baseIkIndex + RightHandIndex < _ikTargets.Length)
             {
                 _ikTargets[baseIkIndex + LeftHandIndex] = float3.zero;
                 _ikTargets[baseIkIndex + RightHandIndex] = float3.zero;
             }
 
-            if (_ikWeights.IsCreated)
+            if (_ikWeights.IsCreated && baseIkIndex + RightHandIndex < _ikWeights.Length)
             {
                 _ikWeights[baseIkIndex + LeftHandIndex] = 0.0f;
                 _ikWeights[baseIkIndex + RightHandIndex] = 0.0f;
             }
 
             int baseFootIndex = slotIndex * ContextualPhysicalIkLowerBodyConstants.FeetPerEntity;
-            if (_footIkData.IsCreated)
+            if (_footIkData.IsCreated && baseFootIndex + ContextualPhysicalIkLowerBodyConstants.RightFootIndex < _footIkData.Length)
             {
                 _footIkData[baseFootIndex + ContextualPhysicalIkLowerBodyConstants.LeftFootIndex] = default;
                 _footIkData[baseFootIndex + ContextualPhysicalIkLowerBodyConstants.RightFootIndex] = default;
             }
 
-            if (_footTargets.IsCreated)
+            if (_footTargets.IsCreated && baseFootIndex + ContextualPhysicalIkLowerBodyConstants.RightFootIndex < _footTargets.Length)
             {
                 _footTargets[baseFootIndex + ContextualPhysicalIkLowerBodyConstants.LeftFootIndex] = float3.zero;
                 _footTargets[baseFootIndex + ContextualPhysicalIkLowerBodyConstants.RightFootIndex] = float3.zero;
             }
 
-            if (_footCurrentPos.IsCreated)
+            if (_footCurrentPos.IsCreated && baseFootIndex + ContextualPhysicalIkLowerBodyConstants.RightFootIndex < _footCurrentPos.Length)
             {
                 _footCurrentPos[baseFootIndex + ContextualPhysicalIkLowerBodyConstants.LeftFootIndex] = float3.zero;
                 _footCurrentPos[baseFootIndex + ContextualPhysicalIkLowerBodyConstants.RightFootIndex] = float3.zero;

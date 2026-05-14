@@ -497,3 +497,54 @@ Verification:
 - Static scans confirm frame records and event records use separate rings and no old shared `RecordWfcOutpostBlackBox` call remains.
 - `Select-String` re-extraction found no `MACRO_WFC_PERSISTENCE_SYNC` tag in rotated `Docs/Tasks/CURRENT_BATCH.md`.
 - No `dotnet` rebuild was run.
+
+## Recheck Report: WFC Frame Dependency Bitfield
+Status: PENDING VERIFICATION.
+
+What was wrong:
+- Frame black-box records carried sector and payload hashes but only a single snapshot-present flag.
+- Dependency failures could look similar to clean missing-state frames in a binary dump.
+
+What was done:
+- Added `BuildWfcOutpostFrameBlackBoxFlags()`.
+- Packed last-snapshot present, dependency-ready, WFC grid-created, MacroDB open, and DataVault cached bits into the existing frame `Flags` word.
+- Kept `WfcOutpostTelemetryEntry` at 64 bytes.
+
+Cinematic cheats used:
+- Encoded dependency truth as a bitfield instead of adding verbose logs or replaying service-locator history.
+
+Exact microseconds saved:
+- Measured savings: 0 us. No profiler or runtime trace.
+- Static cost: five scalar flag checks and one uint write per Tick.
+- Static gain: faster post-mortem classification of WFC dependency failures without widening records.
+
+Verification:
+- Static scans confirm `BuildWfcOutpostFrameBlackBoxFlags()` feeds the Tick frame record.
+- Static scans confirm the WFC telemetry entry remains 64 bytes.
+- No `dotnet` rebuild was run.
+
+## Recheck Report: WFC Dirty Append Failure Dump
+Status: PENDING VERIFICATION.
+
+What was wrong:
+- WFC dirty append failure recorded a binary event and performance warning, but did not dump the WFC black-box rings.
+- A failed append can lose player mutation truth while leaving only a shallow warning trail.
+
+What was done:
+- Added `PublishWfcAppendFailureWarning(frame)` in `SaveManager`.
+- `FlushWfcOutpostDirtyPayloadAsync` now records the append rejection event first, then emits the warning and one-shot WFC black-box dump.
+- Public persistence contracts and payload format stayed unchanged.
+
+Cinematic cheats used:
+- Append failure diagnosis uses compact sector/frame binary state instead of replaying interaction history or adding managed log spam.
+
+Exact microseconds saved:
+- Measured savings: 0 us. No profiler or runtime trace.
+- Hot path cost: unchanged.
+- Failure path cost: one existing warning plus one one-shot binary dump after an append rejection.
+
+Verification:
+- Static scans confirm append failure records the binary event before `PublishWfcAppendFailureWarning(frame)`, and the helper invokes `DumpWfcOutpostBlackBox()`.
+- `git diff --check` reports no whitespace errors beyond Git CRLF normalization warnings.
+- `Select-String` still finds no `MACRO_WFC_PERSISTENCE_SYNC` tag in the rotated current batch.
+- No `dotnet` rebuild was run.

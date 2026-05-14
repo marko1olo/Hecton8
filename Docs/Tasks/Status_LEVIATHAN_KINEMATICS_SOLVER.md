@@ -243,6 +243,16 @@ Batch source: Docs/Tasks/CURRENT_BATCH.md
 - `git diff --check` and `git diff --cached --check` on touched code/docs exit 0; output is only LF-to-CRLF warnings on touched runtime/docs files.
 - No `dotnet` rebuild, compile, or response-file probe was run.
 
+### Loop 23: Dispatcher Registration Repair Recheck
+
+- Updated `TryRegister()` to repair partial update/late-frame registration state before retrying.
+- DOD: the runtime cannot remain in a one-sided dispatcher registration state if an external lifecycle edge clears only one registration path.
+- Alternative Rejected: returning when `_registeredUpdate` is true because that preserves stale partial state and can strand GPU upload/telemetry completion.
+- Estimate: 0 us hot path; cold enable/rebind registration only.
+- Static grep over IK runtime/job/shader scope still found no `math.sqrt`, `math.normalize`, managed array creation, `foreach`, `string.Format`, `.ToString()`, `Debug.Log`, Unity Physics casts, `SkinnedMeshRenderer`, `renderer.material`, `Camera.main`, `GlobalRegistry.Get`, `GameObject.Find`, or `FindObject`.
+- `git diff --check` and `git diff --cached --check` on touched code/docs exit 0; output is only LF-to-CRLF warnings on touched runtime/docs files.
+- No `dotnet` rebuild, compile, or response-file probe was run.
+
 ### Loop 24: Strike Contract And Read-Only Bone API Recheck
 
 - Removed the dead `strikeRange` parameter from `FaunaKinematicsRuntime.SetStrikeIntent()` and the two `FaunaBrain` call sites.
@@ -254,15 +264,5 @@ Batch source: Docs/Tasks/CURRENT_BATCH.md
 - Estimate: 0 us hot-path meaningful savings; one removed strike-intent range calculation per `FaunaBrain` strike update and lower future mutation risk.
 - Static grep over IK runtime/job/shader scope still found no `math.sqrt`, `math.normalize`, managed array creation, `foreach`, `string.Format`, `.ToString()`, `Debug.Log`, Unity Physics casts, `SkinnedMeshRenderer`, `renderer.material`, `Camera.main`, `GlobalRegistry.Get`, `GameObject.Find`, or `FindObject`.
 - `rg` confirms no `NativeMemoryOwner`, `_faunaBrain`, old four-argument `FaunaKinematicsRuntime.SetStrikeIntent`, or old 1 m segment upload fallback remains in the IK runtime/direct call site scope.
-- `git diff --check` and `git diff --cached --check` on touched code/docs exit 0; output is only LF-to-CRLF warnings on touched runtime/docs files.
-- No `dotnet` rebuild, compile, or response-file probe was run.
-
-### Loop 23: Dispatcher Registration Repair Recheck
-
-- Updated `TryRegister()` to repair partial update/late-frame registration state before retrying.
-- DOD: the runtime cannot remain in a one-sided dispatcher registration state if an external lifecycle edge clears only one registration path.
-- Alternative Rejected: returning when `_registeredUpdate` is true because that preserves stale partial state and can strand GPU upload/telemetry completion.
-- Estimate: 0 us hot path; cold enable/rebind registration only.
-- Static grep over IK runtime/job/shader scope still found no `math.sqrt`, `math.normalize`, managed array creation, `foreach`, `string.Format`, `.ToString()`, `Debug.Log`, Unity Physics casts, `SkinnedMeshRenderer`, `renderer.material`, `Camera.main`, `GlobalRegistry.Get`, `GameObject.Find`, or `FindObject`.
 - `git diff --check` and `git diff --cached --check` on touched code/docs exit 0; output is only LF-to-CRLF warnings on touched runtime/docs files.
 - No `dotnet` rebuild, compile, or response-file probe was run.

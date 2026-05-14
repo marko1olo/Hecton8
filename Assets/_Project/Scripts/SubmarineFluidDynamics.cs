@@ -2286,7 +2286,7 @@ namespace Hecton8.Physics
 
         private void PublishSubmarineRoomMassDataVault()
         {
-            IDataVault vault = GlobalRegistry.DataVault;
+            IDataVault vault = _dataVault;
             if (vault == null ||
                 !_compartmentFloodVolumes.IsCreated ||
                 !_compartmentMaxVolumes.IsCreated ||

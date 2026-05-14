@@ -191,3 +191,27 @@ Rejected Alternatives: Scanning all 764 threads equally was rejected because top
 Scalability potential: Low/Middle/High/Ultra process gains a concrete audit queue. Investigating the top 30 first covers 21.618% of total burn; top 100 covers 49.975%.
 
 Hardware Impact: 0 runtime microseconds on i3/MX350. No runtime code or Unity asset changed.
+
+## Decision 16 - Rollout Attribution
+
+Problem: Top-thread triage identified expensive thread IDs, but token concentration alone does not show what files those threads attempted to change.
+
+Solution: Parse the top-30 rollout JSONL files read-only. Extract `apply_patch` file targets, patch churn lines, tool-call counts, and command evidence buckets. Preserve the result in `COMPUTE_THREAD_ATTRIBUTION.md`.
+
+Rejected Alternatives: Treating title text as attribution was rejected because titles are weak evidence. Treating patch payload churn as final LOC delta was rejected because JSONL includes retries, superseded edits, and work that may have been overwritten by later agents.
+
+Scalability potential: Low/Middle/High/Ultra process gains a practical collision map. The hot patch files are now known before further agents pile more edits onto fused surfaces.
+
+Hardware Impact: 0 runtime microseconds on i3/MX350. No C# source, scene, prefab, shader, or project setting was changed by this audit pass.
+
+## Decision 17 - Collision-Risk Snapshot
+
+Problem: Hot patch targets from attribution are useful only if compared against the current dirty workspace. Concurrent agents are modifying runtime scripts while this audit is running.
+
+Solution: Compare `git status --porcelain` against the hot target list and create `COMPUTE_COLLISION_RISK.md`. Record dirty script paths and hot-target intersections without editing or reverting them.
+
+Rejected Alternatives: Running a compile immediately was rejected because the workspace contains active unrelated runtime edits by other agents. Reverting or normalizing those files was rejected because they are not owned by this audit agent.
+
+Scalability potential: Low/Middle/High/Ultra process gains a live collision gate. The next integrator can prioritize `SpatialAudioManager.cs` because it is both historically hot and currently dirty.
+
+Hardware Impact: 0 runtime microseconds on i3/MX350. This is a documentation-only risk snapshot.

@@ -301,14 +301,19 @@ namespace Hecton8.Prologue.VFX
                     continue;
                 }
 
+                if (!IsRecognizedAtmosphericPhase(signal.Phase))
+                    continue;
+
                 _lastCapsuleAup = signal.CapsuleAup;
                 _altitudeMeters = math.max(0f, signal.AltitudeMeters);
                 _velocityMetersPerSecond = math.max(0f, signal.UniverseVelocityMetersPerSecond);
                 _targetHeat01 = ResolveHeat01(in signal);
-                if (_phase == ReentryPhase.Idle)
+                bool plasmaOrWhiteout = signal.Phase == AtmosphericReentrySignal.PhasePlasma ||
+                                         signal.Phase == AtmosphericReentrySignal.PhaseWhiteout;
+                if (_phase == ReentryPhase.Idle && plasmaOrWhiteout)
                     BeginHeating();
 
-                if (signal.Phase >= AtmosphericReentrySignal.PhaseWhiteout ||
+                if (signal.Phase == AtmosphericReentrySignal.PhaseWhiteout ||
                     (signal.Flags & AtmosphericReentrySignal.FlagWhiteoutRequested) != 0 ||
                     signal.AltitudeMeters <= math.max(1f, whiteoutAltitudeMeters))
                 {
@@ -792,6 +797,13 @@ namespace Hecton8.Prologue.VFX
             return math.isfinite(signal.AltitudeMeters) &&
                    math.isfinite(signal.UniverseVelocityMetersPerSecond) &&
                    math.isfinite(signal.Heat01);
+        }
+
+        private static bool IsRecognizedAtmosphericPhase(byte phase)
+        {
+            return phase == AtmosphericReentrySignal.PhaseApproach ||
+                   phase == AtmosphericReentrySignal.PhasePlasma ||
+                   phase == AtmosphericReentrySignal.PhaseWhiteout;
         }
 
         private bool IsFiniteRuntimeState()

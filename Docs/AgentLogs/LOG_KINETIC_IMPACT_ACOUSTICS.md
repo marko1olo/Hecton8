@@ -512,3 +512,34 @@ Verification:
 - Method-body counters: `EnsureSpatialPolicyRegistry=0`, `ColdSpatialPolicyRegistry=2`, `ResolveCachedTierRegistry=0`, `ResolveCachedLowMemoryRegistry=0`, `VoiceLimitPolicyRegistry=0`, `PortalPolicyRegistry=0`.
 - Scoped forbidden scan found only pre-existing editor/cold diagnostics and assertion text.
 - Dotnet build/rebuild was not run by explicit user order. Unity compile remains PENDING VERIFICATION until Editor console/MCP validation is available.
+
+## 2026-05-15 - DSP_ACOUSTIC_LEAD - Loop 20 Spatial Foveated Director Resolver H-Phi Pass
+Status: PENDING VERIFICATION
+
+What was wrong:
+- `RefreshFoveatedDirector()` still polled `GlobalRegistry.FoveatedSimulationDirector` from the spatial audio slow lane.
+- Virtual voice foveation only needs an optional cached director, not a service-locator read on every slow tick.
+- The smoke tester did not guard foveated-director lookup confinement.
+
+What was done:
+- Added `_foveatedDirectorResolveFrame`.
+- Added `ResolveFoveatedSimulationDirector()` using `SpatialAudioRegistryRetryFrames = 30`.
+- Converted `RefreshFoveatedDirector()` to delegate to the bounded resolver.
+- Preserved existing semantics where a missing registry sample does not discard a cached director unless no cached director exists.
+- Extended `AdvancedAcousticsSmokeTester` with foveated resolver and no-direct-slow-lane registry checks.
+
+Cinematic cheats used:
+- Virtual voice foveation remains a cached scalar tier input, not a per-voice service resolution.
+- Missing optional service keeps the default active tier path; no expensive fallback discovery was added.
+- High-tier scenes still get foveated virtual voice priority when the service is present, with lookup work bounded.
+
+Exact microseconds saved:
+- Saves one optional service-locator read per spatial SlowTick after warmup.
+- Runtime allocation delta remains 0 B/frame.
+
+Verification:
+- `git diff --check -- Assets/_Project/Scripts/SpatialAudioManager.cs Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs` passed except CRLF normalization warnings.
+- Direct foveated registry reads are confined to `ResolveFoveatedSimulationDirector()`.
+- Method-body counters: `SlowTickFoveatedRegistry=0`, `RefreshFoveatedRegistry=0`, `ResolveFoveatedRegistry=1`, `VirtualVoiceTierRegistry=0`.
+- Scoped forbidden scan found only pre-existing editor/cold diagnostics and assertion text.
+- Dotnet build/rebuild was not run by explicit user order. Unity compile remains PENDING VERIFICATION until Editor console/MCP validation is available.

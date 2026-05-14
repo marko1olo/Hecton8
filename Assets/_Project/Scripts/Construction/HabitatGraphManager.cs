@@ -497,7 +497,7 @@ namespace Hecton8.Construction
 
         internal void ApplyHydrodynamicStress(float deltaTime)
         {
-            if (deltaTime <= 0f || _moduleBuffer.Count <= 0)
+            if (!math.isfinite(deltaTime) || deltaTime <= 0f || _moduleBuffer.Count <= 0)
                 return;
 
             HectonQualityTier scalabilityTier = GlobalRegistry.ScalabilityTier;
@@ -526,8 +526,15 @@ namespace Hecton8.Construction
 
         internal void RegisterSeismicVibration(Vector3 epicenter, float radiusMeters, float impulseMagnitude)
         {
-            if (!float.IsFinite(impulseMagnitude) || impulseMagnitude <= 0f || _moduleBuffer.Count <= 0)
+            if (!float.IsFinite(impulseMagnitude) ||
+                impulseMagnitude <= 0f ||
+                !float.IsFinite(epicenter.x) ||
+                !float.IsFinite(epicenter.y) ||
+                !float.IsFinite(epicenter.z) ||
+                _moduleBuffer.Count <= 0)
+            {
                 return;
+            }
 
             float safeRadiusMeters = float.IsFinite(radiusMeters) && radiusMeters > 0f ? radiusMeters : 1f;
             float radiusSq = Mathf.Max(1f, safeRadiusMeters * safeRadiusMeters);

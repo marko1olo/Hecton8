@@ -39,6 +39,7 @@ namespace Hecton8.QA.Headless
         private const int DefaultScratchMegabytes = 50;
         private const int MinScratchMegabytes = 8;
         private const int MaxScratchMegabytes = 256;
+        private const int ResultSchemaVersion = 4;
         private const int DefaultStartupTimeoutSeconds = 60;
         private const int MinStartupTimeoutSeconds = 5;
         private const int MaxStartupTimeoutSeconds = 600;
@@ -67,6 +68,7 @@ namespace Hecton8.QA.Headless
         private const float NativeBytesToMegabytes = 1f / (1024f * 1024f);
         private const ushort RequestedBoidCount = 10000;
         private const uint RunnerHash = 0x48534642u;
+        private const uint BlackboxMagic = 0x48534642u;
         private const uint SuccessHash = 0x53554343u;
         private const uint StallHash = 0x4a53544cu;
         private const uint NanHash = 0x4e414e50u;
@@ -109,7 +111,7 @@ namespace Hecton8.QA.Headless
         private int _phaseFrame;
         private int _originShiftCount;
         private int _rigidbodyScanMissCount;
-        private int _rigidbodyNanIndex;
+        private int _rigidbodyNanIndex = -1;
         private int _dataVaultApiGapLogged;
         private int _ecosystemStressIssued;
         private int _ecosystemDirectorReadyAtIssue;
@@ -839,7 +841,7 @@ namespace Hecton8.QA.Headless
             using (FileStream stream = new FileStream(_blackboxPath, FileMode.Create, FileAccess.Write, FileShare.Read))
             using (BinaryWriter writer = new BinaryWriter(stream))
             {
-                writer.Write(0x48534642u);
+                writer.Write(BlackboxMagic);
                 int validCount = math.min(_blackboxCursor, _blackbox.Length);
                 int start = _blackboxCursor >= _blackbox.Length ? _blackboxCursor % _blackbox.Length : 0;
                 writer.Write(validCount);
@@ -890,7 +892,9 @@ namespace Hecton8.QA.Headless
                     writer.Write('{');
                     writer.Write("\"agent\":\"");
                     writer.Write(AgentName);
-                    writer.Write("\",\"status\":\"");
+                    writer.Write("\",\"resultSchemaVersion\":");
+                    WriteInvariant(writer, ResultSchemaVersion);
+                    writer.Write(",\"status\":\"");
                     WriteJsonEscaped(writer, status);
                     writer.Write("\",\"exitCode\":");
                     WriteInvariant(writer, exitCode);
@@ -915,6 +919,12 @@ namespace Hecton8.QA.Headless
                     WriteInvariant(writer, AupSnapFenceFrames);
                     writer.Write(",\"blackboxFlagAupSnapFenceBit\":");
                     WriteInvariant(writer, BlackboxFlagAupSnapFenceActiveBit);
+                    writer.Write(",\"blackboxMagic\":");
+                    WriteInvariant(writer, BlackboxMagic);
+                    writer.Write(",\"blackboxFrameCapacity\":");
+                    WriteInvariant(writer, BlackboxFrameCapacity);
+                    writer.Write(",\"blackboxEntrySizeBytes\":");
+                    WriteInvariant(writer, BlackboxEntrySizeBytes);
                     writer.Write(",\"blackboxMemorySnapshotIntervalFrames\":");
                     WriteInvariant(writer, BlackboxMemorySnapshotIntervalFrames);
                     writer.Write(",\"blackboxFlagMemorySampleFreshBit\":");

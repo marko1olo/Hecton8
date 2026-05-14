@@ -4,7 +4,7 @@ Agent: INTEGRATION_ASSEMBLY_SURGEON
 Role: SYSTEMS_ARCHITECT
 Domain: Unity Compilation Graph / Integrator
 Prompt task count: 15 (current in-chat XML; older 17-task static pass retained below)
-Current state: BUILD SUCCESSFUL / PLATINUM GRADE (Fresh19: Hecton8.Core --no-restore 0 warnings / 0 errors)
+Current state: BUILD SUCCESSFUL / POST-GREEN STATIC H-PHI DEBT REDUCED (Fresh19 retained; no dotnet command run in this pass)
 
 ## Mandates Read
 
@@ -155,3 +155,17 @@ Evidence boundary: STATIC_SOURCE / STATIC_DOC only for this post-green pass. Sup
 - [x] Failure paths verified | Justification: expected failures returned for asmdef 24, total bridge 19, compile-bridge 7, and replacement 11 budgets | Alternatives rejected: untested budget switches | Estimate: 0 us runtime
 - [x] H-Phi metric docs updated | Justification: `HECTON_PHI_STATIC_METRIC.md` now documents bridge lanes, optional unused-reference scan, and the current honest budget command | Alternatives rejected: stale budget docs | Estimate: 0 us runtime
 - [x] No-dotnet order honored in this pass | Justification: only PowerShell static audit, XML/JSON parsing, grep, and docs/log edits were run | Alternatives rejected: rerunning Fresh12 against current user instruction | Estimate: 0 us runtime
+
+## 2026-05-15 Replacement Bridge Debt Pass
+
+Directive: accurately fix remaining static H-Phi debt without dotnet rebuilds.
+Mandates used: `PROJECT_LTS_Compatibility_Layer.txt`, `QA_Evidence_Text_Filter_Audit.txt`, `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`, `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`.
+
+- [x] Compute report context read | Justification: `COMPUTE_AUDIT_BRIEF.md`, `COMPUTE_DOMINANCE_REPORT.md`, and `COMPUTE_THREAD_TRIAGE.md` were inspected; valid label remains `HIGH-BURN CANDIDATE`, not proof of waste | Alternatives rejected: editing compute claims without attribution evidence | Estimate: 500 us process
+- [x] Replacement edge usage scanned | Justification: generated/source-backed Core compile surface had 1065 files; exact scans found no hits for `EasySave3`, `Unity.RenderPipelines.Core.Editor`, `Unity.ShaderGraph.Editor`, or `WaveHarmonic.Crest.Shared.Editor` | Alternatives rejected: removing refs with live `Crest`, `GPUInstancer`, `Shapes`, `VolumetricLightBeam`, `URP`, or `Hecton8.Input` hits | Estimate: 0 us runtime
+- [x] Four dead replacement refs removed | Justification: pruned the four zero-hit project-reference replacement blocks from `Directory.Build.targets` | Alternatives rejected: generated `.csproj` edits and package-source edits | Estimate: 0 us runtime
+- [x] H-Phi audit parse debt repaired | Justification: fixed invalid PowerShell multi-key `Sort-Object -Property` syntax around `TopAupPrecisionRiskFiles`; parse check returned `PS_PARSE_OK` | Alternatives rejected: reverting AUP budget feature | Estimate: 0 us runtime
+- [x] Bridge budgets lowered | Justification: static gate now passes at 16 total bridge debt refs, 8 compile-bridge debt refs, and 8 replacement debt refs | Alternatives rejected: stale budget 20/12 after pruning | Estimate: 0 us runtime
+- [x] Full static AUP budget verified | Justification: full summary audit with `-MaxAupPrecisionRisk 0` returned `AupPrecisionSafe=363`, `AupPrecisionRisk=0` | Alternatives rejected: claiming runtime AUP proof from static scan | Estimate: 0 us runtime
+- [x] Lowered failure paths verified | Justification: total bridge budget 15 returned `EXPECTED_TOTAL_BRIDGE_BUDGET_FAIL_PATH_OK`; replacement bridge budget 7 returned `EXPECTED_REPLACEMENT_BRIDGE_BUDGET_FAIL_PATH_OK` | Alternatives rejected: untested gate update | Estimate: 0 us runtime
+- [x] No-dotnet order honored again | Justification: this pass used static PowerShell/XML/JSON/grep only; no `dotnet build`, `dotnet rebuild`, or `dotnet msbuild` command was run | Alternatives rejected: fresh compile against standing user constraint | Estimate: 0 us runtime

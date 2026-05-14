@@ -45,6 +45,8 @@ namespace Hecton8.Editor.ProceduralGen
         private const float Lod1FadeWidth = 0.08f;
         private const float Lod2FadeWidth = 0.04f;
         private const float TransformEpsilonSq = 0.000001f;
+        private const int DefaultLayer = 0;
+        private const string UntaggedTag = "Untagged";
         // COLD ALLOC: List<Color>[9600] - reusable editor vertex color validation scratch - owner: ShallowsBioForgeBatchBaker
         private static readonly List<Color> VertexColorScratch = new List<Color>(MaxValidatedMeshVertices);
         // COLD ALLOC: Editor-only prefab validation scratch lists reused across the generated Shallows library.
@@ -1064,10 +1066,21 @@ namespace Hecton8.Editor.ProceduralGen
 
             for (int i = 0; i < TransformScratch.Count; i++)
             {
+                ValidateGameObjectStateContract(path, TransformScratch[i], ref failures);
                 ValidateComponentEnvelope(path, TransformScratch[i], root, rock, ref failures);
             }
 
             TransformScratch.Clear();
+        }
+
+        private static void ValidateGameObjectStateContract(string path, Transform transform, ref int failures)
+        {
+            GameObject gameObject = transform.gameObject;
+            if (gameObject.activeSelf && gameObject.layer == DefaultLayer && gameObject.CompareTag(UntaggedTag))
+                return;
+
+            failures++;
+            Debug.LogError($"[ShallowsBioForgeBatchBaker] GameObject state contract failed at {path}. Child={transform.name}, Active={gameObject.activeSelf}, Layer={gameObject.layer}, Tag={gameObject.tag}.");
         }
 
         private static void ValidateComponentEnvelope(string path, Transform transform, Transform root, bool rock, ref int failures)
@@ -1155,6 +1168,12 @@ namespace Hecton8.Editor.ProceduralGen
 
         private static void ValidateLodGroupContract(string path, LODGroup lodGroup, LOD[] lods, ref int failures)
         {
+            if (!lodGroup.enabled)
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] LODGroup is disabled at {path}.");
+            }
+
             if (lodGroup.fadeMode != LODFadeMode.CrossFade || !lodGroup.animateCrossFading)
             {
                 failures++;

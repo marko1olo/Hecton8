@@ -2,7 +2,7 @@
 
 Agent: INTEGRATION_ASSEMBLY_SURGEON
 Domain: Unity Compilation Graph / Integrator
-Status: BUILD SUCCESSFUL / PLATINUM GRADE (Fresh19: Hecton8.Core --no-restore 0 warnings / 0 errors)
+Status: BUILD SUCCESSFUL / POST-GREEN STATIC H-PHI DEBT REDUCED (Fresh19 retained; no dotnet command run in latest static pass)
 
 ## Decision 0 - Session Initialization
 
@@ -172,7 +172,7 @@ Rejected Alternatives: Reverting concurrent edits was rejected. Changing read-si
 Scalability potential: Low tier retains bounded save serialization and cached audio quality updates; Middle/High/Ultra retain richer audio scalability behavior from the concurrent implementation.
 Hardware Impact: Runtime frame savings are not profiled and are reported as 0 us. The clamp/overloads avoid new managed allocations; final compile verification time was 81,710,000 us.
 
-## Decision 20 - Optional Core Reference Candidate Scan
+## Decision 22 - Optional Core Reference Candidate Scan
 
 Problem: Core asmdef debt pruning had depended on one-off type/name scans. That is too fragile under parallel agent churn and can tempt blind deletion of leaf references.
 Solution: Added `-IncludeUnusedCoreReferenceScan` to `HectonPhiAudit.ps1`. The scan maps each Core asmdef debt reference to its asmdef source, collects declared type names, strips comment noise, and searches the generated/source-backed Core compile surface outside the candidate's own source files. The post-green run scanned 1065 Core compile-surface files and 25 asmdef debt refs; `CandidateCount=0`.
@@ -180,10 +180,26 @@ Rejected Alternatives: Removing more Core asmdef references by name was rejected
 Scalability potential: Low-end machines get a static candidate-ordering pass without Unity import or dotnet; High/Ultra lanes can use the same scan before staged contract extraction. No runtime visual tier behavior changed.
 Hardware Impact: Runtime impact 0 us. Tooling cost is static file IO/text regex only. It prevents false compile-wall edits rather than saving player-frame time.
 
-## Decision 21 - Bridge Lane Split And Input Generated Prune
+## Decision 23 - Bridge Lane Split And Input Generated Prune
 
 Problem: The current `Directory.Build.targets` contains two Core bridge lanes: compile-bridge references and project-reference replacement references used when generated project references are disabled. Counting them as one opaque number hid 12 replacement debt refs, while the old counter also counted a `<Reference Remove=...>` node as a dependency edge.
 Solution: Tightened bridge counting to `Reference Include` nodes only, added `BridgeLane` labels (`CoreCompileBridge`, `ProjectReferenceReplacement`), and added lane-specific budget switches. Removed the stale `Hecton8.Input.Generated` replacement reference after static scans found `HectonInputActions` use only in `Hecton8.Input`, not Core. Current baseline: 31 bridge refs, 20 bridge debt refs, 18 compile-bridge refs with 8 debt refs, and 13 replacement refs with 12 debt refs.
 Rejected Alternatives: Keeping the old total bridge budget of 8 was rejected because it ignored the replacement lane. Removing package or `Hecton8.Input` replacement refs was rejected because current Core source has live InputSystem/UI/package surfaces. Running dotnet was rejected by the current user instruction.
 Scalability potential: Low tier gets a narrower replacement lane and honest no-regression gates; High/Ultra package-heavy visual systems remain isolated behind Unity-built assemblies rather than polluting Core ownership. Future contract extraction can lower compile-bridge and replacement budgets independently.
 Hardware Impact: Runtime impact 0 us. Static graph impact: one replacement debt ref removed (`Hecton8.Input.Generated`), and four budget failure paths now catch regressions before compile time.
+
+## Decision 24 - Replacement Bridge Zero-Hit Prune
+
+Problem: The project-reference replacement lane still contained package/editor references after the previous bridge split. Some were only historical generated-project fallout, not Core source needs.
+Solution: Reconstructed the generated/source-backed Core compile surface and scanned 1065 files for exact package/editor usage. Removed `EasySave3`, `Unity.RenderPipelines.Core.Editor`, `Unity.ShaderGraph.Editor`, and `WaveHarmonic.Crest.Shared.Editor` from `Directory.Build.targets` after zero hits. Kept `Crest`, `GPUInstancer`, `ShapesRuntime`, `VolumetricLightBeam`, `Unity.RenderPipelines.Universal.Runtime`, `WaveHarmonic.Crest`, `WaveHarmonic.Crest.Shared`, and `Hecton8.Input` because they had live Core source hits.
+Rejected Alternatives: Editing generated `Hecton8.Core.csproj` was rejected because Unity regenerates it. Removing package refs with live source hits was rejected because it would create an unverified compile wall. Running dotnet was rejected under the current no-rebuild constraint.
+Scalability potential: Low tier gets a narrower Core medic reference surface; High/Ultra package-heavy lanes remain available through only the assemblies Core actually references. Future package decoupling can target live-hit refs with contract extraction instead of blind deletion.
+Hardware Impact: Runtime impact 0 us. Static graph impact: total bridge debt reduced from 20 to 16 and project-reference replacement debt reduced from 12 to 8. No runtime microsecond savings are claimed.
+
+## Decision 25 - H-Phi Audit Syntax And AUP Gate Repair
+
+Problem: `HectonPhiAudit.ps1` had an invalid multi-key `Sort-Object -Property` expression around `TopAupPrecisionRiskFiles`, so Core graph budget commands failed before reporting counts.
+Solution: Repaired the PowerShell property-array syntax without removing the AUP precision budget feature. Full static summary with `-MaxAupPrecisionRisk 0` now returns `AupPrecisionSafe=363` and `AupPrecisionRisk=0`.
+Rejected Alternatives: Reverting the AUP precision gate was rejected because it is useful H-Phi debt control. Treating the parse failure as a project build failure was rejected because no compile command was involved.
+Scalability potential: Low-end validation gets a static precision-risk tripwire without Unity import or dotnet. High/Ultra validation can keep the same gate as a preflight before runtime/profiler proof.
+Hardware Impact: Runtime impact 0 us. Tooling reliability improved; exact player-frame savings are 0 us.

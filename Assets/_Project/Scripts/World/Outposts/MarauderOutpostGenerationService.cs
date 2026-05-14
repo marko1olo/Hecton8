@@ -37,6 +37,7 @@ namespace Hecton8.World.Outposts
         private const uint TelemetryDumpVersion = 1u;
         private const int TelemetryDumpEntryPayloadBytes = 72;
         private const float ShiftEpsilonMeters = 0.0001f;
+        private const float MaxAupShiftMeters = 10000f;
 
         private static readonly int OutpostMatricesId = Shader.PropertyToID("_OutpostMatrices");
         private static readonly int OutpostCellTypesId = Shader.PropertyToID("_OutpostCellTypes");
@@ -359,6 +360,14 @@ namespace Hecton8.World.Outposts
             if (!math.all(math.isfinite(originMeters)))
                 originMeters = ResolveGenerationOriginMeters();
 
+            if (!math.all(math.isfinite(originMeters)))
+            {
+                WriteTelemetry(MarauderOutpostConstants.FaultFlag, sectorHash);
+                DumpBlackBox();
+                SetState(OutpostGenerationState.Faulted);
+                return false;
+            }
+
             DespawnInteractables();
             _generated = false;
             _matrixCount = 0;
@@ -476,6 +485,13 @@ namespace Hecton8.World.Outposts
                 return;
             }
 
+            if (!IsWithinAupShiftLimit(shiftMeters))
+            {
+                WriteTelemetry(MarauderOutpostConstants.FaultFlag | MarauderOutpostConstants.AupShiftFlag);
+                DumpBlackBox();
+                return;
+            }
+
             if (math.all(math.abs(shiftMeters) < new float3(ShiftEpsilonMeters)))
                 return;
 
@@ -544,20 +560,21 @@ namespace Hecton8.World.Outposts
         private void ScheduleMatrixExtraction()
         {
             MapMagicBridge.QuantizedHeightmapPayload payload = ResolveHeightmapPayload();
+            bool hasHeightmapPayload = IsValidHeightmapPayload(in payload);
             MarauderOutpostMatrixExtractionJob job = new MarauderOutpostMatrixExtractionJob
             {
                 WfcGrid = WfcGrid,
                 MutableGrid = _wfcMutableStateGrid,
-                HeightSamples = payload.IsValid ? payload.HeightSamples : default,
+                HeightSamples = hasHeightmapPayload ? payload.HeightSamples : default,
                 ShellMatrices = _shellMatrices,
                 CellTypes = _shellCellTypes,
                 InteractableSpawns = _interactableSpawns,
                 Counters = _counters,
                 Dimensions = _activeDimensions,
                 OriginMeters = _generationOrigin,
-                TerrainPosition = payload.IsValid ? ToFloat3(payload.TerrainPosition) : _generationOrigin - new float3(16f, ResolveStiltClearanceMeters(), 16f),
-                TerrainSize = payload.IsValid ? ToFloat3(payload.TerrainSize) : new float3(32f, 8f, 32f),
-                HeightResolution = payload.IsValid ? payload.HeightmapResolution : 0,
+                TerrainPosition = hasHeightmapPayload ? ToFloat3(payload.TerrainPosition) : _generationOrigin - new float3(16f, ResolveStiltClearanceMeters(), 16f),
+                TerrainSize = hasHeightmapPayload ? ToFloat3(payload.TerrainSize) : new float3(32f, 8f, 32f),
+                HeightResolution = hasHeightmapPayload ? payload.HeightmapResolution : 0,
                 CellSizeMeters = ResolveCellSizeMeters(),
                 FloorHeightMeters = ResolveFloorHeightMeters(),
                 StiltClearanceMeters = ResolveStiltClearanceMeters(),
@@ -608,13 +625,28 @@ namespace Hecton8.World.Outposts
                 return default;
 
             Vector3 origin = new Vector3(_generationOrigin.x, _generationOrigin.y, _generationOrigin.z);
-            if (bridge.TryGetQuantizedHeightmapPayloadAUP(origin, out MapMagicBridge.QuantizedHeightmapPayload payload) && payload.IsValid)
+            if (bridge.TryGetQuantizedHeightmapPayloadAUP(origin, out MapMagicBridge.QuantizedHeightmapPayload payload) && IsValidHeightmapPayload(in payload))
                 return payload;
 
-            if (bridge.TryGetActiveQuantizedHeightmapPayload(out payload) && payload.IsValid)
+            if (bridge.TryGetActiveQuantizedHeightmapPayload(out payload) && IsValidHeightmapPayload(in payload))
                 return payload;
 
             return default;
+        }
+
+        private static bool IsValidHeightmapPayload(in MapMagicBridge.QuantizedHeightmapPayload payload)
+        {
+            int resolution = payload.HeightmapResolution;
+            if (!payload.HeightSamples.IsCreated || resolution <= 1 || resolution > 46340)
+                return false;
+
+            int requiredLength = resolution * resolution;
+            return payload.HeightSamples.Length >= requiredLength &&
+                   IsFinite(payload.TerrainPosition) &&
+                   IsFinite(payload.TerrainSize) &&
+                   payload.TerrainSize.x > 0.001f &&
+                   payload.TerrainSize.y > 0.001f &&
+                   payload.TerrainSize.z > 0.001f;
         }
 
         private uint ResolveWorldSeed()
@@ -638,7 +670,11 @@ namespace Hecton8.World.Outposts
             if (!IsFinite(position))
                 position = Vector3.zero;
             if (IsFinite(localOriginOffsetMeters))
+            {
                 position += localOriginOffsetMeters;
+                if (!IsFinite(position))
+                    position = Vector3.zero;
+            }
             return ToFloat3(position);
         }
 
@@ -1034,7 +1070,20 @@ namespace Hecton8.World.Outposts
         private void AccumulatePendingShift(float3 shiftMeters, uint shiftFrameId)
         {
             if (math.any(math.abs(shiftMeters) > new float3(ShiftEpsilonMeters)))
-                _pendingShift += shiftMeters;
+            {
+                float3 accumulatedShift = _pendingShift + shiftMeters;
+                if (!math.all(math.isfinite(accumulatedShift)) || !IsWithinAupShiftLimit(accumulatedShift))
+                {
+                    _pendingShift = default;
+                    _pendingShiftFrameId = shiftFrameId;
+                    _hasPendingShift = false;
+                    WriteTelemetry(MarauderOutpostConstants.FaultFlag | MarauderOutpostConstants.AupShiftFlag);
+                    DumpBlackBox();
+                    return;
+                }
+
+                _pendingShift = accumulatedShift;
+            }
 
             _pendingShiftFrameId = shiftFrameId;
             _hasPendingShift = math.any(math.abs(_pendingShift) > new float3(ShiftEpsilonMeters));
@@ -1046,6 +1095,16 @@ namespace Hecton8.World.Outposts
                 return;
 
             if (!math.all(math.isfinite(_pendingShift)))
+            {
+                _pendingShift = default;
+                _pendingShiftFrameId = 0u;
+                _hasPendingShift = false;
+                WriteTelemetry(MarauderOutpostConstants.FaultFlag | MarauderOutpostConstants.AupShiftFlag);
+                DumpBlackBox();
+                return;
+            }
+
+            if (!IsWithinAupShiftLimit(_pendingShift))
             {
                 _pendingShift = default;
                 _pendingShiftFrameId = 0u;
@@ -1496,6 +1555,11 @@ namespace Hecton8.World.Outposts
         {
             return !float.IsNaN(value.x) && !float.IsNaN(value.y) && !float.IsNaN(value.z) &&
                    !float.IsInfinity(value.x) && !float.IsInfinity(value.y) && !float.IsInfinity(value.z);
+        }
+
+        private static bool IsWithinAupShiftLimit(float3 shiftMeters)
+        {
+            return math.all(math.abs(shiftMeters) <= new float3(MaxAupShiftMeters));
         }
 
         private static void RegisterNativeArray<T>(NativeArray<T> array, string label) where T : struct
