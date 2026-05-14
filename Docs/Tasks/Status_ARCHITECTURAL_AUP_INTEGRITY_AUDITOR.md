@@ -3,7 +3,7 @@
 Agent: ARCHITECTURAL_AUP_INTEGRITY_AUDITOR
 Domain: ECHELON 1 / Origin Shift (AUP Manager), with audit reach into Physics, Voxel, Kinematics, AI trigger math, Biome trigger math, and deterministic seed callsites.
 Assignment Source: User-supplied XML block. `Docs/Tasks/CURRENT_BATCH.md` extraction returned `PROMPT_NOT_FOUND` for this ID on initial pass.
-Status: VERIFIED AUP INTEGRITY - LOOP 17 APPLIED; ORGANIC VEGETATION UNIVERSE-SPACE TRIGGERS DOUBLE-SAFE; GLOBAL LEGACY HFO AUP SCAN CLEAN; CORE BUILD BLOCKED BY UNRELATED DEPENDENCY WALL; ASMDEF BLOCKED BY ARCHITECTURE
+Status: VERIFIED AUP INTEGRITY - LOOP 18 APPLIED; LARGE-FLORA COLLISION PROXY UNIVERSE CACHE DOUBLE-SAFE; ORGANIC VEGETATION UNIVERSE-SPACE TRIGGERS DOUBLE-SAFE; GLOBAL LEGACY HFO AUP SCAN CLEAN; CORE BUILD BLOCKED BY UNRELATED DEPENDENCY WALL; ASMDEF BLOCKED BY ARCHITECTURE
 
 ## Selected Mandates
 
@@ -177,3 +177,15 @@ Loop 17 - Organic Vegetation Universe-Space Trigger Cleanup:
 - Re-ran mandatory `rg "\(float3\).*AUP|AupOffset|universe"`; residual hits are broad `universe` text, editor diagnostics, final-cast fluid/scatter/shader payload names, and the new double-safe vegetation bridge/helper names.
 - `git diff --check` on Loop 17 touched files reports no whitespace errors.
 - `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -v:normal /m:1 /nr:false /p:UseSharedCompilation=false /flp:"logfile=Docs\AgentLogs\AUP_build_loop17.log;verbosity=normal"` completed in the log with 47 unrelated package warnings and 74 unrelated Core errors. Filtered build-log scan reports no errors or warnings for `DestructibleOrganicManager.cs` or `HectonMapMagicVegetationBridge.cs`.
+
+Loop 18 - Large-Flora Collision Proxy Double Cache:
+- Re-read status/rationale before reporting and re-extracted `ARCHITECTURAL_AUP_INTEGRITY_AUDITOR` from `Docs/Tasks/CURRENT_BATCH.md`; result remains `PROMPT_NOT_FOUND`.
+- Patched `HectonMapMagicVegetationBridgeFloraCollisionProxies` so `_largeFloraColliderUniverseCenters` stores `double3` instead of `Vector3`.
+- Patched player universe resolution, active-candidate center conversion, activation radius checks, and deactivation hysteresis checks to use `ToUniverseSpaceDouble3` plus `math.lengthsq(double3)`.
+- Patched proxy rebase to project cached double centers through `ToRuntimeSpace(double3)` before the final Unity transform position.
+- Targeted proxy scan is clean: no legacy `ToUniverseSpace(`, no `Vector3 playerUniverse`, no `Vector3 centerUniverse`, no `Vector3 proxyUniverse`, no `.sqrMagnitude`, no `Vector3[] _largeFloraColliderUniverseCenters`, and no `Vector3` center signature in `ActivateOrUpdateLargeFloraCollisionProxy`.
+- Global legacy `HectonFloatingOrigin.ToAbsoluteUniversePosition(` scan remains clean under `Assets/_Project/Scripts --glob '*.cs'`.
+- Direct committed-offset scan remains clean.
+- Re-ran mandatory `rg "\(float3\).*AUP|AupOffset|universe"`; residual hits are broad `universe` text, editor diagnostics, final-cast fluid/scatter/shader payload names, and double-safe vegetation helper/cache names.
+- `git diff --check` on the Loop 18 touched file reports line-ending warnings only, no whitespace errors.
+- `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -v:normal /m:1 /nr:false /p:UseSharedCompilation=false /flp:"logfile=Docs\AgentLogs\AUP_build_loop18.log;verbosity=normal"` completed in the log with 47 unrelated package warnings and 74 unrelated Core errors. Filtered build-log scan reports no C# errors or warnings for `HectonMapMagicVegetationBridgeFloraCollisionProxies.cs`.

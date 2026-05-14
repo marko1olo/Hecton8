@@ -38,6 +38,7 @@ Shader "Hecton8/VFX/CarveDebrisIndirect"
             #include "Assets/_Project/Art/Shaders/Hecton_CoreLit.hlsl"
 
             StructuredBuffer<float4> _CarveDebrisRead;
+            StructuredBuffer<float4> _CarveDebrisVelocityRead;
             StructuredBuffer<uint> _CarveDebrisVisibleIndices;
 
             CBUFFER_START(UnityPerMaterial)
@@ -64,6 +65,7 @@ Shader "Hecton8/VFX/CarveDebrisIndirect"
                 half fogFactor : TEXCOORD3;
                 half life : TEXCOORD4;
                 half edgeMask : TEXCOORD5;
+                half impactMask : TEXCOORD6;
             };
 
             float Hash11(uint value)
@@ -119,6 +121,15 @@ Shader "Hecton8/VFX/CarveDebrisIndirect"
                 output.fogFactor = (half)ComputeFogFactor(output.positionCS.z);
                 output.life = life;
                 output.edgeMask = (half)saturate(abs(input.normalOS.y) * 0.35 + Hash11(particleIndex ^ 0xC2B2AE35u) * 0.25);
+                output.impactMask = 0.0h;
+                [branch]
+                if (_CarveDebrisMaterialParams.w > 0.5)
+                {
+                    float3 velocityWS = _CarveDebrisVelocityRead[particleIndex].xyz;
+                    float speedSq = dot(velocityWS, velocityWS);
+                    output.impactMask = (half)(saturate(speedSq * 0.055) * saturate(life * 1.2));
+                }
+
                 return output;
             }
 
@@ -146,7 +157,8 @@ Shader "Hecton8/VFX/CarveDebrisIndirect"
                 HectonCoreLitClipDitheredTransparencyFade(fadeOut, input.positionCS);
                 half3 normalWS = (half3)HectonCoreLitSafeNormalize(input.normalWS);
                 half3 viewDirWS = (half3)HectonCoreLitSafeNormalize(input.viewDirWS);
-                half3 albedo = lerp(_BaseColor.rgb, _EdgeColor.rgb, input.edgeMask);
+                half edgeMask = saturate(input.edgeMask + input.impactMask * 0.35h);
+                half3 albedo = lerp(_BaseColor.rgb, _EdgeColor.rgb, edgeMask);
                 half3 lit = EvaluateDebrisLighting(input.positionWS, input.positionCS, normalWS, viewDirWS, albedo);
                 half3 finalColor = HectonCoreLitApplyNoirFog(lit, input.fogFactor, input.positionWS);
                 return half4(finalColor, 1.0h);

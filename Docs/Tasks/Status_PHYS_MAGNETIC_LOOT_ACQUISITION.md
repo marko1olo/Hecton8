@@ -48,3 +48,4 @@ Status: PENDING VERIFICATION
 - Loop 9: Continuation re-extraction attempted. Active `Docs/Tasks/CURRENT_BATCH.md` no longer contains `PHYS_MAGNETIC_LOOT_ACQUISITION`; continued from persisted status/rationale plus chat assignment instead of borrowing a neighboring prompt.
 - Loop 10: Rechecked H-Phi fault evidence and slot identity. Fault-frame telemetry is recorded before dump, duplicate same-frame telemetry is suppressed, and pickup sidecar identity now stores full `ulong` entity ids instead of truncating to `int`.
 - Loop 11: Rechecked Burst math surface and broadphase. Job now uses guarded AUP-cell adjacency reject for radii <= 5 km cell size and local AUP rebuild math; static anti-bloat scan is clean and `git diff --check` passes with line-ending warnings only.
+- Loop 12: Rechecked black-box continuity. LateFrame now writes idle high-level telemetry when no pull job owns the arrays; running jobs skip idle reads to avoid NativeArray races.

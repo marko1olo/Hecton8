@@ -6,6 +6,7 @@
 
   <PropertyGroup Condition="'$(MSBuildProjectName)' == 'Hecton8.Core' And '$(HectonBuildProjectReferences)' != 'true'">
     <BuildProjectReferences>false</BuildProjectReferences>
+    <BuildInParallel>false</BuildInParallel>
   </PropertyGroup>
 
   <PropertyGroup Condition="('$(MSBuildProjectName)' == 'Assembly-CSharp' Or '$(MSBuildProjectName)' == 'Assembly-CSharp-firstpass') And '$(HectonSkipAssemblyProjectReferences)' == 'true'">

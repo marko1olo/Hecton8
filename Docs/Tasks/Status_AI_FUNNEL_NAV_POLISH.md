@@ -106,9 +106,18 @@ Task Count: 15
 
 - [x] Scheduler tier cache | DOD: `GlobalRegistry.ScalabilityTier` is read once per abyssal path schedule and passed as a primitive to both Math LOD resolvers; rejected duplicate registry surface in the scheduling path; estimate 2 us.
 
+## Loop 15 - Nav Graph Ingress Sanitation
+
+- [x] Path request finite gate | DOD: immediate voxel routes and scheduled abyssal A* requests reject non-finite start/end positions before sampling route data; rejected letting NaN enter voxel and terrain probes; estimate 3 us.
+- [x] Payload count bound | DOD: nav snapshot rebuild now clamps payload iteration/counting to `payload.Nodes.Length`; rejected trusting a stale serialized Count over native buffer length; estimate 3 us.
+- [x] Nav node snapshot ingress guard | DOD: non-finite payload nodes are skipped before they enter `AbyssalNavNodeSnapshotNative` or the spatial hash; rejected hashing corrupt nodes into a fallback bucket; estimate 5 us.
+- [x] Conduit payload sanitation | DOD: non-finite conduit vectors become zero and non-finite conduit strengths become 0 before snapshot write; rejected poisoning A* conduit weighting downstream; estimate 4 us.
+- [x] Spatial hash reciprocal pass | DOD: nav graph cell coordinate and search-radius math now uses precomputed `math.rcp` and finite origin/cell-size guards; rejected repeated `/` and epsilon masking of corrupt cell sizes; estimate 5 us.
+- [x] Flow support reciprocal pass | DOD: flow-field nav support stencil now precomputes inverse cell size and inverse radius squared, skips non-finite nodes, and rejects invalid grid centers; rejected divide-per-node/per-cell support writes; estimate 6 us.
+
 ## Verification
 
-- [x] Static scan | PASS: `StringPullPathJob`, `NativeAStarJob`, and `TryResolveAbyssalNavNodeCandidate` regions have no `math.normalize`, `math.length(`, `math.distance(`, `.normalized`, or raw `/` matches after loop 14.
+- [x] Static scan | PASS: `StringPullPathJob`, `NativeAStarJob`, `TryResolveAbyssalNavNodeCandidate`, abyssal nav support/hash, and nav graph ingress regions have no `math.normalize`, `math.length(`, `math.distance(`, `.normalized`, or raw `/` code matches after loop 15.
 - [x] Diff hygiene | PASS: `git diff --check` passed for edited funnel/scheduler/status/log files; only LF-to-CRLF working-copy warnings were emitted.
 - [x] Static H-Phi audit | ATTEMPTED: `Tools/Architecture/HectonPhiAudit.ps1 -Json` timed out after 120 seconds under current repo load; no score claimed from this pass.
 - [x] Compile check | BLOCKED BY DEPENDENCY: bounded no-reference `dotnet build Hecton8.Core.csproj --no-restore /m:1 /nr:false /p:BuildProjectReferences=false` completed with 63 unrelated errors in `VRAMEnforcer`, `VoxelDeltaProcessor`, `SealedDoor`, `BinaryLayoutManifest`, and `HardwareTierDetector`; none were reported in `VegetationFlowFieldIntegrator.cs`, `VegetationNavGridSynchronizer.cs`, or `HectonMapMagicVegetationBridge.cs`.

@@ -210,3 +210,36 @@ Status: VERIFIED AUP INTEGRITY - CORE BUILD PASS; ASMDEF BLOCKED BY ARCHITECTURE
 - `HectonMapMagicVegetationBridgeFloraCollisionProxies` still owns a legacy `Vector3` proxy cache path for collision-proxy deactivation; that is a candidate for a future loop if it feeds authority distance math rather than presentation/collider toggling.
 - Editor-only `KinematicGhostDebugger` still has float universe preview history; it remains diagnostic presentation, not runtime AUP authority.
 - Octahedral impostor universe centers remain float shader presentation data and are outside this Loop 17 trigger-math repair.
+
+## Loop 18 Large-Flora Collision Proxy Double Cache
+
+### Findings
+
+- `HectonMapMagicVegetationBridgeFloraCollisionProxies` used `Vector3[] _largeFloraColliderUniverseCenters` for active proxy cache state.
+- Player universe resolution and candidate center resolution used legacy `ToUniverseSpace`, reducing the vegetation bridge double offset before activation checks.
+- Activation and deactivation thresholds used `Vector3.sqrMagnitude`, so proxy pool state could oscillate near distance thresholds after origin shifts.
+- Proxy rebase projected cached `Vector3` universe centers through the legacy `ToRuntimeSpace(Vector3)` helper.
+
+### Code Changes
+
+- `Assets/_Project/Scripts/World/HectonMapMagicVegetationBridgeFloraCollisionProxies.cs`: `_largeFloraColliderUniverseCenters` is now `double3[]`; cold allocation comment updated.
+- Player universe resolution now uses `ToUniverseSpaceDouble3`.
+- Candidate center conversion now uses `ToUniverseSpaceDouble3`; activation radius compares `math.lengthsq(double3)` against double radius squared.
+- Deactivation hysteresis compares cached `double3` proxy centers against the `double3` player center.
+- Proxy transform rebase uses `ToRuntimeSpace(double3)` and casts only at the Unity transform boundary.
+
+### Verification
+
+- Prompt extraction from `Docs/Tasks/CURRENT_BATCH.md` still returns `PROMPT_NOT_FOUND`; user-supplied XML remains authoritative.
+- Targeted proxy scan is clean for legacy `ToUniverseSpace(`, `Vector3 playerUniverse`, `Vector3 centerUniverse`, `Vector3 proxyUniverse`, `.sqrMagnitude`, `Vector3[] _largeFloraColliderUniverseCenters`, and the old `ActivateOrUpdateLargeFloraCollisionProxy` `Vector3` center signature.
+- Global `rg -n "HectonFloatingOrigin\.ToAbsoluteUniversePosition\(" Assets/_Project/Scripts --glob '*.cs'` remains clean.
+- Direct committed-offset leak scan remains clean across `Assets/_Project/Scripts`.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` was re-run. Residual hits are broad `universe` text, editor diagnostics, final-cast fluid/scatter/shader payload names, and double-safe vegetation helper/cache names.
+- `git diff --check -- Assets/_Project/Scripts/World/HectonMapMagicVegetationBridgeFloraCollisionProxies.cs` reports line-ending warnings only, no whitespace errors.
+- Core build log `Docs/AgentLogs/AUP_build_loop18.log` completed with 47 unrelated package warnings and 74 unrelated Core errors; filtered scan for `HectonMapMagicVegetationBridgeFloraCollisionProxies.cs` reports no C# errors or warnings.
+
+### Evidence Queue
+
+- Remaining `ToUniverseSpace` runtime hits are the legacy bridge wrapper itself, editor-only `KinematicGhostDebugger`, and `VoxelDynamicNavGridRuntime.ToRuntimeSpace(stableUniverseRoot)` which needs separate authority classification before mutation.
+- Octahedral impostor universe centers remain float shader presentation data.
+- `PlayerPDA` universe-offset display remains a UI presentation path and not authority distance math.

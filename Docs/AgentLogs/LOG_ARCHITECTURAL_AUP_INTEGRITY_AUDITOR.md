@@ -371,3 +371,39 @@ Verification:
 Integrator notes:
 - Do not attribute the current Core build wall to Loop 17. Active blockers remain save-layout V10 types, `HardwareProfileCatalog`, `SystemID`/`JobHandle` mismatches, native release signature drift, and unrelated package deprecation/default-field warnings.
 - Remaining queued AUP debt includes vegetation collision proxy caches and shader/impostor presentation paths; those require separate authority-vs-presentation classification before edits.
+
+## 2026-05-15 - Loop 18 Large-Flora Collision Proxy Double Cache
+
+What was wrong:
+- Large-flora collision proxy activation and deactivation cached universe centers as `Vector3`.
+- Player/candidate proxy comparisons used legacy `ToUniverseSpace` plus `.sqrMagnitude`, which can flip pool state near distance thresholds after long-session origin shifts.
+- Proxy rebase projected the cached center through the legacy `ToRuntimeSpace(Vector3)` helper.
+
+What was done:
+- Changed `_largeFloraColliderUniverseCenters` to `double3[]`.
+- Converted player and candidate universe centers through `ToUniverseSpaceDouble3`.
+- Changed activation/deactivation radius checks to double squared-distance comparisons via `math.lengthsq(double3)`.
+- Routed proxy rebase through `ToRuntimeSpace(double3)` and cast only at `Transform.SetPositionAndRotation`.
+- Re-extracted this agent prompt from `Docs/Tasks/CURRENT_BATCH.md`; result remains `PROMPT_NOT_FOUND`.
+
+Cinematic Cheats used:
+- The proxy remains a pooled BoxCollider fake. No new physics simulation was added.
+- Low tier keeps the same pool capacity and scan budget. Middle/High/Ultra get steadier collision presence near large coral and can spend stability on denser interaction feedback without increasing GPU instance payloads.
+
+Exact Microseconds saved:
+- Proxy activation/deactivation stability: estimated 1-4 us on proxy scan frames by reducing threshold churn and unnecessary pool spawn/despawn.
+- Runtime cost: extra double math in a bounded scan loop; no per-frame managed allocation.
+- Memory cost: +12 bytes per proxy slot versus `Vector3`, default 24 slots, cold allocation only.
+
+Verification:
+- Targeted proxy scan: no legacy `ToUniverseSpace(`, no `Vector3 playerUniverse`, no `Vector3 centerUniverse`, no `Vector3 proxyUniverse`, no `.sqrMagnitude`, no `Vector3[] _largeFloraColliderUniverseCenters`, no old `ActivateOrUpdateLargeFloraCollisionProxy` `Vector3` center signature.
+- Global `HectonFloatingOrigin.ToAbsoluteUniversePosition(` scan remains clean under `Assets/_Project/Scripts`.
+- Direct committed-offset scan remains clean under `Assets/_Project/Scripts`.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` re-run. Residual hits are broad `universe` text, editor diagnostics, final-cast fluid/scatter/shader payload names, and double-safe vegetation helper/cache names.
+- `git diff --check` on the Loop 18 file reports line-ending warnings only, no whitespace errors.
+- `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -v:normal /m:1 /nr:false /p:UseSharedCompilation=false /flp:"logfile=Docs\AgentLogs\AUP_build_loop18.log;verbosity=normal"` completed in the log with 47 unrelated package warnings and 74 unrelated Core errors.
+- Filtered build-log scan reports no C# errors or warnings in `HectonMapMagicVegetationBridgeFloraCollisionProxies.cs`.
+
+Integrator notes:
+- Do not attribute the current Core build wall to Loop 18. Active blockers remain save-layout V10 types, `HardwareProfileCatalog`, `SystemID`/`JobHandle` mismatches, native release signature drift, and unrelated package warnings.
+- The only remaining `ToUniverseSpace` first-party runtime candidate from the broad scan is `VoxelDynamicNavGridRuntime.ToRuntimeSpace(stableUniverseRoot)`/bridge-wrapper surface; classify before editing because nav grid roots may already be stored as stable presentation coordinates.

@@ -45,7 +45,7 @@ Execution lane: SIMULATION / `PriorityLayer.Player`
 
 ## Loop 6 - AAA Patience Pass
 
-- [x] Runtime asmdef dependency audit. DOD: added explicit `Unity.Jobs` reference because the lever contains a Burst/IJob projection kernel. Rejected: relying on transitive package references. Estimate: 0 runtime us; compile determinism improvement.
+- [x] Runtime asmdef dependency audit. DOD: kept explicit `Unity.Jobs` reference for tracked `JobHandle` deferred disposal; the later unused Burst/IJob projection kernel was removed in Loop 15. Rejected: relying on transitive package references. Estimate: 0 runtime us; compile determinism improvement.
 - [x] Grab affordance fix. DOD: grab acceptance now passes if the hand is within 0.15m of either pivot or handle local position; solver still uses pivot plane. Rejected: pivot-only grab because a real lever handle can be unreachable if the handle length is nonzero. Estimate: +0.2 us only on receiver callback.
 - [x] Latch signal fidelity. DOD: capture latch velocity before zeroing spring velocity and emit the actual handle local position. Rejected: zero-velocity latch telemetry and duplicate pivot/lever positions. Estimate: 0.1 us on one latch frame.
 - [x] Ratchet haptic polish. DOD: first observed ratchet step seeds state without firing, so the first click requires real angular movement. Rejected: bogus 0-degree click on grab. Estimate: no steady cost.
@@ -105,6 +105,12 @@ Execution lane: SIMULATION / `PriorityLayer.Player`
 - [x] Fault evidence bit. DOD: telemetry flags now reserve bit 5 for "dump already attempted", so later valid frames can show the blackbox had entered fault mode without a managed log stream. Rejected: verbose per-frame logging. Estimate: one branch in telemetry flag build, 0 B/frame.
 - [x] Scoped H-Phi lookup debt purge. DOD: cold `GetComponent<BoxCollider>()` fallback changed to `TryGetComponent(out activationVolume)` while preserving `RequireComponent` recovery. Rejected: deleting the fallback and relying on every prefab to serialize the collider reference. Estimate: cold lifecycle only; scoped `GetComponentCalls` counter is now 0.
 - [x] Reverification without dotnet. DOD: forbidden-pattern scan returned no matches; scoped H-Phi hygiene scan over 4 task files reports `UnityUpdateMethods=0`, `FindObjectCalls=0`, `GetComponentCalls=0`, `PublicEvents=0`, `HingeJoint=0`, `DirectInput=0`; `git diff --check` passed for touched files with CRLF warnings only. Global `HectonPhiAudit.ps1 -Json` timed out at 120 seconds, so no project-wide numeric H-Phi gain is claimed. Rejected: `dotnet` rebuild/probe because the user explicitly prohibited it. Estimate: verification only.
+
+## Loop 15 - IK Smoothing / Burst Bloat Purge
+
+- [x] IK smoothing correction. DOD: `UpdateIkTarget()` now scales blend by `saturate(dt * 60f)` instead of `max(1f, dt * 90f)`, so the default high-tier blend no longer snaps at normal 60 Hz and zero-dt frames skip transform reads/writes. Rejected: keeping snap-prone interpolation while the rationale claims smoother high-tier IK. Estimate: 0 B/frame; avoids two transform reads and one write on zero-dt pause frames.
+- [x] Removed unused Burst/IJob projection kernel. DOD: deleted `LeverAngularSolveJob`, removed `using Unity.Burst`, and removed `Unity.Burst` from `Hecton8.UI.VR.asmdef`. Rejected: scheduling/completing a one-lever job in Tick and keeping dead Burst code for metric optics. Estimate: 0 runtime us added; smaller assembly dependency surface.
+- [x] Reverification without dotnet. DOD: scoped scan over 5 task files reports `BurstRefs=0`, `IJobRefs=0`, `UnityUpdateMethods=0`, `FindObjectCalls=0`, `GetComponentCalls=0`, `PublicEvents=0`, `HingeJoint=0`, `DirectInput=0`; forbidden-pattern scan returned no matches; `git diff --check` passed for touched code/asmdef with CRLF warnings only. Rejected: dotnet rebuild/probe by explicit user instruction. Estimate: verification only.
 
 STATUS: PENDING VERIFICATION - Unity editor/global Core compile dependency wall prevents full player compile proof in this session.
 

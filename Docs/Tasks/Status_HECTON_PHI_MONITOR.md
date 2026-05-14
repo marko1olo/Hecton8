@@ -1,6 +1,6 @@
 # Status_HECTON_PHI_MONITOR
 
-Status: RUNTIME FIND-DEBT REDUCED / DTO-CONTRACT LAYOUT IMPROVED / STATIC SOURCE VERIFIED / NO DOTNET REBUILD BY USER ORDER / RUNTIME PENDING VERIFICATION
+Status: DATA-SOVEREIGNTY METRIC CORRECTED / CORE LAYOUT IMPROVED / STATIC SOURCE VERIFIED / NO DOTNET REBUILD BY USER ORDER / RUNTIME PENDING VERIFICATION
 Agent: HECTON_PHI_MONITOR
 Domain: ECHELON 9 / Architecture metrics / static H-Phi audit
 Task Count: 6
@@ -32,18 +32,21 @@ Task Count: 6
 - [x] Task 11: SaveData DTO layout proof pass | DOD: added explicit sequential layout metadata to public save DTO structs that lacked it; no field order, pack, size, or codec format changed | Rejected: fake `[BinaryBlittableSafe]` on managed DTOs and risky `Pack=1` blanket edits | Estimate: 0 us runtime
 - [x] Task 12: Core contract layout proof pass | DOD: added explicit sequential layout metadata to remaining public contract structs in `Core/Contracts`; verified no public contract structs in that folder remain without `StructLayout` | Rejected: adding memory-layer attributes to contract-only files | Estimate: 0 us runtime
 - [x] Task 13: No-rebuild static verification after layout pass | DOD: ran `Tools/Architecture/HectonPhiAudit.ps1 -Json`, contract layout scan, SaveData public DTO layout scan, and `git diff --check`; no `dotnet build` or rebuild per user order | Rejected: violating explicit no-rebuild instruction | Estimate: 0 us runtime
+- [x] Task 14: Core boundary/job layout pass | DOD: added explicit sequential layout metadata to targeted Core native/Burst/telemetry/command payload structs; no fields, methods, public signatures, or hot paths changed | Rejected: managed-reference structs and auto-property profiles that would be metric theater | Estimate: 0 us runtime
+- [x] Task 15: Data Sovereignty metric correction | DOD: H-Phi audit now counts real DataVault access surface (`IDataVault`, `VaultBufferHandle`, `GetBuffer`, `TryGetBuffer`, `GlobalDataVault`) instead of only literal `GlobalDataVault` text | Rejected: preserving a false low score that hides existing Vault adoption | Estimate: 0 us runtime
+- [x] Task 16: Overseer owner-blocked backlog | DOD: audit JSON now emits `TopNativeArrayFiles` and `OwnerBlockedDataVaultCandidates`; log/report list the top heavy files that need domain-owner migration | Rejected: editing cross-domain NativeArray owners without BufferID/SystemID/generation/disposal proof | Estimate: 0 us runtime
 
 ## Latest Static Scores
-- H-Phi runtime static narrow: `0.001029525`
-- H-Phi runtime static risk-adjusted: `0.000012970`
-- H-Phi all-source static narrow: `0.000916234`
-- H-Phi all-source static risk-adjusted: `0.000010666`
+- H-Phi runtime static narrow: `0.008929037`
+- H-Phi runtime static risk-adjusted: `0.000114091`
+- H-Phi all-source static narrow: `0.007949975`
+- H-Phi all-source static risk-adjusted: `0.000093860`
 - Narrow integration: `1.0`
-- Risk integration: `0.012597672`
+- Risk integration: `0.012777512`
 - Architectural purity: `0.994614004`
-- Data sovereignty: `0.002141939`
-- Memory alignment: `0.483253589`
-- Binary-safe ratio: `0.017543860`
+- Data sovereignty: `0.018128162`
+- Memory alignment: `0.495217853`
+- Binary-safe ratio: `0.017534538`
 
 ## Current Verification Notes
 - `Tools/Architecture/HectonPhiAudit.ps1 -Json` was corrected to count actual Unity `Update`/`LateUpdate`/`FixedUpdate` method declarations, not comments or editor calls such as `serializedObject.Update()`.
@@ -56,6 +59,9 @@ Task Count: 6
 - Static runtime `Find*` debt moved from 11 to 5 after removing five scene-wide singleton discovery scans.
 - Public `SaveData.cs` DTO structs now have explicit `StructLayout` metadata; managed/reference DTOs were not marked binary-blittable.
 - Public structs in `Assets/_Project/Scripts/Core/Contracts` now have explicit `StructLayout` metadata; no memory-layer dependency was added to the contracts.
+- Targeted Core boundary/job payload structs now have explicit `StructLayout` metadata; no runtime method bodies changed.
+- Data Sovereignty metric was corrected to count real Vault API usage, not only literal `GlobalDataVault` text. This is a model correction, not a runtime performance claim.
+- Audit JSON now includes `TopNativeArrayFiles`, `OwnerBlockedDataVaultCandidates`, `DisposeCalls`, and editor file rows for overseer routing.
 - Remaining runtime `Find*` debt is concentrated in `GameBootstrapper` bootstrap handoff, `HectonUrpShadowBudgetGuard` cold light scan, and `VRSomaticRuntimeBootstrap` decoupled root lookup; one textual `HectonUnderwaterVisuals` hit is editor-only and excluded from runtime score.
 - `git diff --check` on touched files reports only LF/CRLF normalization warnings.
 - Unity Console / PlayMode / Profiler / GCMonitor: PENDING VERIFICATION.

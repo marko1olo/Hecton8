@@ -154,3 +154,56 @@ Phi Gain:
 - Current runtime risk-adjusted score: `0.000012970`.
 - Memory alignment: `0.464893617 -> 0.483253589`.
 - Compared with original dialogue baseline `0.00062`: current runtime narrow is about `+66.05%`.
+
+## 2026-05-15 Core Boundary Layout And Owner Backlog Pass
+
+What was wrong:
+- Core native/Burst/telemetry/command payload structs still lacked explicit layout metadata outside the earlier SaveData and Core/Contracts passes.
+- Data Sovereignty counter was objectively wrong: it counted literal `GlobalDataVault` but missed real `IDataVault`, `VaultBufferHandle`, `GetBuffer`, and `TryGetBuffer` usage.
+- Overseer had no file-level `NativeArray<T>` owner backlog in the H-Phi tool output.
+
+What was done:
+- Added explicit sequential layout metadata to targeted Core payload/job/wrapper structs only.
+- Updated `Tools/Architecture/HectonPhiAudit.ps1` to count DataVault access surface, not just the class name.
+- Added `TopNativeArrayFiles`, `OwnerBlockedDataVaultCandidates`, `TopEditorNativeArrayFiles`, and `DisposeCalls` to the audit output.
+- Honored user instruction: no `dotnet build`, no rebuild.
+
+Cinematic Cheats used:
+- None. Architecture metadata and static audit only.
+
+Exact Microseconds saved:
+- Runtime gameplay: 0 us measured; no hot-path method body changed.
+- Audit routing: no runtime gain. It prevents wrong prioritization by exposing real owner debt.
+
+Compile Status:
+- Not run by explicit user order.
+- Static checks run: `Tools/Architecture/HectonPhiAudit.ps1 -Json`, owner-candidate scan, targeted layout scan, `git diff --check`.
+- `git diff --check`: no whitespace errors, only LF/CRLF normalization warnings where reported.
+
+Phi Gain:
+- Previous runtime narrow score before this continuation: `0.001029525`.
+- Current corrected runtime narrow score: `0.008929037`.
+- Current corrected runtime risk-adjusted score: `0.000114091`.
+- Data Sovereignty: `0.002141939 -> 0.018128162` after metric correction.
+- Memory alignment: `0.483253589 -> 0.495217853`.
+- Compared with original dialogue baseline `0.00062`: corrected runtime narrow is about `+1340.17%`.
+- Important: most of this jump is a metric-model correction. It is not a runtime performance claim.
+
+Owner-Blocked DataVault Candidates:
+- `HectonVoxelEngine.cs` - 277 `NativeArray<T>` refs, 0 DataVault refs.
+- `Audio/PlayerCriticalProceduralAudioRenderer.cs` - 232 refs, 0 DataVault refs.
+- `PlayerInventory.cs` - 197 refs, 0 DataVault refs.
+- `Fauna/PredatorCognitionDomain.cs` - 173 refs, 0 DataVault refs.
+- `World/HectonMapMagicVegetationBridge.cs` - 166 refs, 0 DataVault refs.
+- `World/EcosystemDirector.cs` - 154 refs, 0 DataVault refs.
+- `Power/LogisticsNetworkGraph.cs` - 141 refs, 0 DataVault refs.
+- `SaveBinaryStorage.cs` - 132 refs, 0 DataVault refs.
+- `SubmarineAtmosphereSystem.cs` - 132 refs, 0 DataVault refs.
+- `World/DestructibleOrganicManager.cs` - 125 refs, 0 DataVault refs.
+
+Regression Model:
+- CPU: no runtime code path changed except metadata attributes; audit is CLI-only.
+- GC: no runtime allocation changed; measured proof absent.
+- Memory: no buffer ownership changed; DataVault migration remains owner-blocked.
+- Cadence: no tick registration or dispatcher cadence changed.
+- Correctness: low compile risk from attributes, but Unity import/compile remains pending because rebuild is forbidden.

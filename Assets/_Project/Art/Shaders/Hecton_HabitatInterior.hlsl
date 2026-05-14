@@ -26,6 +26,9 @@ half3 HectonHabitatInteriorSafeNormalizeHalf3(half3 value)
 
 float HectonHabitatInteriorResolveStress01(float3 positionWS)
 {
+    if (_HectonHabitatModuleStressParams.w <= 0.0001)
+        return 0.0;
+
     uint count = HectonHabitatInteriorModuleCount();
     if (count == 0u)
         return 0.0;
@@ -89,6 +92,9 @@ float3 HectonHabitatInteriorApplyPanelBendOS(
 
     float2 panelUv = HectonHabitatInteriorPanelUv(uv);
     float panelMask = HectonHabitatInteriorPanelMaskFromUv(panelUv);
+    if (panelMask <= 0.0001)
+        return positionOS;
+
     panelMask01 = (half)panelMask;
     panelCenteredUv = (half2)(panelUv * 2.0 - 1.0);
     float offsetMeters = panelMask * saturate(stress01) * maxDeformation;
@@ -122,6 +128,9 @@ void HectonHabitatInteriorApplyLowTierCrease(
         return;
 
     half panelMask = HectonHabitatInteriorCheapPanelMask(uv);
+    if (panelMask <= 0.0001h)
+        return;
+
     half crease = saturate(stress01 * panelMask * lerp(0.38h, 1.0h, detailMask));
     hullDentShadow = max(hullDentShadow, crease * 0.32h);
     albedo *= lerp(1.0h, 0.74h, crease);

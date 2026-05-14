@@ -642,6 +642,7 @@ namespace Hecton8.Gameplay
         private bool _lastPublishedTuningActive;
         private int _lastPublishedTuningProgressBucket = int.MinValue;
         private int _scannerBlackBoxCursor;
+        private ushort _scannerBlackBoxQualityTier;
         private bool _scannerBlackBoxDumped;
         private bool _applicationQuitting;
         private int _scientificRaycastRequestSequence;
@@ -951,8 +952,9 @@ namespace Hecton8.Gameplay
             if (!math.isfinite(deltaTime) || deltaTime < 0f)
                 deltaTime = 0f;
 
+            bool heldForBlackBox = _heldPrimaryThisFrame;
             UpdateScientificScanning(deltaTime);
-            WriteScannerBlackBox(deltaTime);
+            WriteScannerBlackBox(deltaTime, heldForBlackBox);
         }
 
         public void LateFrameTick()
@@ -972,6 +974,8 @@ namespace Hecton8.Gameplay
             float safeBattery01 = SafeSaturate01(BatteryCharge);
             int progressBucket = math.clamp((int)math.round(safeProgress01 * 1000f), 0, 1000);
             uint signalToolHash = RuntimeToolId != 0u ? RuntimeToolId : ScannerToolTuningHash;
+            HectonQualityTier signalTier = GlobalRegistry.ScalabilityTier;
+            _scannerBlackBoxQualityTier = (ushort)signalTier;
 
             if (active == _lastPublishedTuningActive &&
                 signalToolHash == _lastPublishedTuningToolHash &&
@@ -998,7 +1002,7 @@ namespace Hecton8.Gameplay
                 Active = active ? (byte)1 : (byte)0,
                 Stage = 0,
                 Flags = _activeScientificFragment != null ? (byte)1 : (byte)0,
-                QualityTier = (byte)GlobalRegistry.ScalabilityTier
+                QualityTier = (byte)signalTier
             });
         }
 
@@ -1106,6 +1110,152 @@ namespace Hecton8.Gameplay
                 NativeMemorySentinel.UnregisterNativeArray(_scannerBlackBox);
                 _scannerBlackBox.Dispose();
                 _scannerBlackBox = default;
+            }
+        }
+
+        private void WriteScannerBlackBox(float deltaTime, bool heldThisFrame)
+        {
+            if (!_scannerBlackBox.IsCreated)
+                return;
+
+            Transform scannerTransform = _cachedTransform;
+            float3 toolPosition = scannerTransform != null ? (float3)scannerTransform.position : float3.zero;
+            float3 toolForward = scannerTransform != null ? (float3)scannerTransform.forward : new float3(0f, 0f, 1f);
+            float3 activeProbe = _activeScientificEntityHash != 0u
+                ? _activeScientificEntityProbePosition
+                : _activeScientificProbePosition;
+            float3 pendingPosition = _pendingScientificOcclusionPosition;
+            float progress01 = _activeScientificEntityHash != 0u
+                ? _activeScientificEntityProgress
+                : _scientificSnapshot.Progress01;
+            float lastContactAge = Time.time - _scientificLastContactTime;
+            float pendingDistance = _pendingScientificOcclusionDistance;
+            bool invalidState =
+                !math.isfinite(deltaTime) ||
+                !math.all(math.isfinite(toolPosition)) ||
+                !math.all(math.isfinite(toolForward)) ||
+                !math.all(math.isfinite(activeProbe)) ||
+                !math.all(math.isfinite(pendingPosition)) ||
+                !math.isfinite(progress01) ||
+                !math.isfinite(lastContactAge) ||
+                !math.isfinite(pendingDistance);
+
+            if (!math.all(math.isfinite(toolPosition)))
+                toolPosition = float3.zero;
+            if (!math.all(math.isfinite(toolForward)) || math.lengthsq(toolForward) <= 0.000001f)
+                toolForward = new float3(0f, 0f, 1f);
+            else
+                toolForward = toolForward * math.rsqrt(math.lengthsq(toolForward));
+            if (!math.all(math.isfinite(activeProbe)))
+                activeProbe = float3.zero;
+            if (!math.all(math.isfinite(pendingPosition)))
+                pendingPosition = float3.zero;
+
+            progress01 = SafeSaturate01(progress01);
+            lastContactAge = SafeNonNegative(lastContactAge);
+            pendingDistance = SafeNonNegative(pendingDistance);
+            ushort flags = 0;
+            if (IsEquipped)
+                flags |= ScannerBlackBoxFlagEquipped;
+            if (heldThisFrame)
+                flags |= ScannerBlackBoxFlagHeld;
+            if (_scientificSnapshot.IsActive)
+                flags |= ScannerBlackBoxFlagSnapshotActive;
+            if (_activeScientificFragment != null)
+                flags |= ScannerBlackBoxFlagFragmentActive;
+            if (_activeScientificEntityHash != 0u)
+                flags |= ScannerBlackBoxFlagEntityActive;
+            if (_scientificRaycastPending)
+                flags |= ScannerBlackBoxFlagRaycastPending;
+            if (invalidState)
+                flags |= ScannerBlackBoxFlagInvalidState;
+
+            ResolveScannerTuningHashes(out uint artifactHash, out uint blueprintHash, out _);
+            _scannerBlackBox[_scannerBlackBoxCursor] = new ScannerBlackBoxEntry
+            {
+                Frame = unchecked((uint)Time.frameCount),
+                ToolHash = RuntimeToolId != 0u ? RuntimeToolId : ScannerToolTuningHash,
+                ArtifactHash = artifactHash,
+                BlueprintHash = blueprintHash != 0u ? blueprintHash : FallbackScannerBlueprintHash,
+                ActiveEntityHash = _activeScientificEntityHash,
+                PendingEntityHash = _pendingScientificOcclusionHash,
+                Progress01 = progress01,
+                Battery01 = SafeSaturate01(BatteryCharge),
+                DeltaTime = SafeNonNegative(deltaTime),
+                LastContactAge = lastContactAge,
+                PendingDistance = pendingDistance,
+                ToolPosition = toolPosition,
+                ToolForward = toolForward,
+                ActiveProbePosition = activeProbe,
+                PendingOcclusionPosition = pendingPosition,
+                Flags = flags,
+                QualityTier = _scannerBlackBoxQualityTier
+            };
+
+            _scannerBlackBoxCursor++;
+            if (_scannerBlackBoxCursor >= _scannerBlackBox.Length)
+                _scannerBlackBoxCursor = 0;
+
+            if (invalidState && !_scannerBlackBoxDumped)
+            {
+                GlobalTelemetryBus.PublishMathGuardInvalidNumber(ScannerBlackBoxInvalidStateHash);
+                DumpScannerBlackBoxOnce();
+            }
+        }
+
+        private void DumpScannerBlackBoxOnce()
+        {
+            if (_scannerBlackBoxDumped || !_scannerBlackBox.IsCreated)
+                return;
+
+            _scannerBlackBoxDumped = true;
+            try
+            {
+                string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+                string directory = Path.Combine(projectRoot, "Docs", "AgentLogs");
+                Directory.CreateDirectory(directory);
+                string path = Path.Combine(directory, ScannerBlackBoxFileName);
+                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+                using (BinaryWriter writer = new BinaryWriter(stream))
+                {
+                    writer.Write(ScannerBlackBoxMagic);
+                    writer.Write(1);
+                    writer.Write(ScannerBlackBoxCapacity);
+                    writer.Write(_scannerBlackBoxCursor);
+                    for (int i = 0; i < _scannerBlackBox.Length; i++)
+                    {
+                        ScannerBlackBoxEntry entry = _scannerBlackBox[i];
+                        writer.Write(entry.Frame);
+                        writer.Write(entry.ToolHash);
+                        writer.Write(entry.ArtifactHash);
+                        writer.Write(entry.BlueprintHash);
+                        writer.Write(entry.ActiveEntityHash);
+                        writer.Write(entry.PendingEntityHash);
+                        writer.Write(entry.Progress01);
+                        writer.Write(entry.Battery01);
+                        writer.Write(entry.DeltaTime);
+                        writer.Write(entry.LastContactAge);
+                        writer.Write(entry.PendingDistance);
+                        writer.Write(entry.ToolPosition.x);
+                        writer.Write(entry.ToolPosition.y);
+                        writer.Write(entry.ToolPosition.z);
+                        writer.Write(entry.ToolForward.x);
+                        writer.Write(entry.ToolForward.y);
+                        writer.Write(entry.ToolForward.z);
+                        writer.Write(entry.ActiveProbePosition.x);
+                        writer.Write(entry.ActiveProbePosition.y);
+                        writer.Write(entry.ActiveProbePosition.z);
+                        writer.Write(entry.PendingOcclusionPosition.x);
+                        writer.Write(entry.PendingOcclusionPosition.y);
+                        writer.Write(entry.PendingOcclusionPosition.z);
+                        writer.Write(entry.Flags);
+                        writer.Write(entry.QualityTier);
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                CrashTelemetryBuffer.ReportBlackBoxExportFailure();
             }
         }
 
@@ -2503,7 +2653,7 @@ namespace Hecton8.Gameplay
         private void UpdateScientificScanning(float deltaTime)
         {
             bool heldThisFrame = _heldPrimaryThisFrame;
-            float heldDeltaTime = _heldPrimaryDeltaTime;
+            float heldDeltaTime = SafeNonNegative(_heldPrimaryDeltaTime);
             _heldPrimaryThisFrame = false;
             _heldPrimaryDeltaTime = 0f;
 
@@ -2554,7 +2704,7 @@ namespace Hecton8.Gameplay
                      Time.time - _scientificLastContactTime <= holdTimeout &&
                      heldDeltaTime > 0f)
             {
-                _activeScientificEntityProgress += heldDeltaTime;
+                _activeScientificEntityProgress = SafeNonNegative(_activeScientificEntityProgress + heldDeltaTime);
                 if (_dataArchaeology != null &&
                     _dataArchaeology.UpdateRaycastTargetProgress(
                         _activeScientificEntityHash,
@@ -2646,6 +2796,7 @@ namespace Hecton8.Gameplay
         {
             float configured = math.max(0.05f, focusedScanResampleInterval);
             HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
+            _scannerBlackBoxQualityTier = (ushort)tier;
             if (tier == HectonQualityTier.Unknown ||
                 tier == HectonQualityTier.Low ||
                 tier == HectonQualityTier.Mx350)
@@ -2770,7 +2921,7 @@ namespace Hecton8.Gameplay
                 _activeScientificEntityHash = entityHash;
                 _activeScientificEntityProgress = _dataArchaeology != null &&
                                                   _dataArchaeology.TryGetTargetProgress01(entityHash, out float progress01)
-                    ? progress01
+                    ? SafeSaturate01(progress01)
                     : 0f;
             }
 
@@ -3197,25 +3348,25 @@ namespace Hecton8.Gameplay
             bool threatPredictionUnlocked,
             bool flankingManeuverDetected)
         {
-            float progress01 = fragment != null ? Mathf.Clamp01(fragment.ProgressNormalized) : 0f;
+            float progress01 = fragment != null ? SafeSaturate01(fragment.ProgressNormalized) : 0f;
             _scientificSnapshot = new ScientificScanSnapshot(
                 true,
                 progress01,
-                density,
-                Mathf.Clamp01(density01),
-                Mathf.Clamp01(density01),
+                math.isfinite(density) ? density : 0f,
+                SafeSaturate01(density01),
+                SafeSaturate01(density01),
                 materialClass,
                 fragment,
                 fragment != null ? fragment.HologramProxyMeshIndex : -1,
-                temperatureC,
-                salinityPpt,
-                Mathf.Clamp01(toxicity01),
-                Mathf.Clamp01(chemicalLoad01),
-                Mathf.Clamp01(organicBlood01),
-                Mathf.Clamp01(attractantScent01),
+                math.isfinite(temperatureC) ? temperatureC : ScientificDefaultTemperatureC,
+                math.isfinite(salinityPpt) ? salinityPpt : ScientificSurfaceSalinityPpt,
+                SafeSaturate01(toxicity01),
+                SafeSaturate01(chemicalLoad01),
+                SafeSaturate01(organicBlood01),
+                SafeSaturate01(attractantScent01),
                 ResolveSafeDirection(scentDirection, Vector3.zero),
                 attractantChannel,
-                Mathf.Max(0f, depthMeters),
+                SafeNonNegative(depthMeters),
                 faunaBrain,
                 threatPredictionLoreHash,
                 threatPredictionUnlocked,
@@ -3228,7 +3379,9 @@ namespace Hecton8.Gameplay
                 return;
 
             ScannableFragment fragment = _scientificSnapshot.Fragment;
-            float progress01 = fragment != null ? Mathf.Clamp01(fragment.ProgressNormalized) : _scientificSnapshot.Progress01;
+            float progress01 = fragment != null
+                ? SafeSaturate01(fragment.ProgressNormalized)
+                : SafeSaturate01(_scientificSnapshot.Progress01);
             _scientificSnapshot = new ScientificScanSnapshot(
                 _scientificSnapshot.IsActive,
                 progress01,
@@ -3524,13 +3677,23 @@ namespace Hecton8.Gameplay
         private static Vector3 ResolveSafeDirection(Vector3 direction, Vector3 fallback)
         {
             float lengthSq = direction.sqrMagnitude;
-            return lengthSq > 0.0001f ? direction * math.rsqrt(lengthSq) : fallback;
+            return math.isfinite(lengthSq) && lengthSq > 0.0001f ? direction * math.rsqrt(lengthSq) : fallback;
         }
 
         private static float3 ResolveSafeDirection(float3 direction)
         {
             float lengthSq = math.lengthsq(direction);
-            return lengthSq > 0.000001f ? direction * math.rsqrt(lengthSq) : float3.zero;
+            return math.isfinite(lengthSq) && lengthSq > 0.000001f ? direction * math.rsqrt(lengthSq) : float3.zero;
+        }
+
+        private static float SafeSaturate01(float value)
+        {
+            return math.isfinite(value) ? math.saturate(value) : 0f;
+        }
+
+        private static float SafeNonNegative(float value)
+        {
+            return math.isfinite(value) ? math.max(0f, value) : 0f;
         }
 
         private static void ResolveScientificAttractantTrace(

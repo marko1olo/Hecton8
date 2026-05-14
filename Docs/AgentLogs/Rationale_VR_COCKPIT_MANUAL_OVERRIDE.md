@@ -209,3 +209,15 @@ Rejected Alternatives: deleting the fallback was rejected because a scene instan
 Scalability potential: Low/Middle/High/Ultra all keep the same cold lifecycle behavior. The local H-Phi hygiene counter over the task scope now reports `GetComponentCalls=0`, `FindObjectCalls=0`, `UnityUpdateMethods=0`, `PublicEvents=0`, `HingeJoint=0`, and `DirectInput=0`.
 
 Hardware Impact: no steady-frame impact. Cold lifecycle cost is equivalent for the expected `RequireComponent` path, and the change removes one audit-counted lookup debt site from the VR lever domain.
+
+## Decision 17 - Do not keep fake Burst surface for a one-lever scalar solve
+
+Problem: the source still contained an unused `LeverAngularSolveJob` with a `Unity.Burst` dependency, while the real Tick path intentionally solves one scalar lever on the main thread. The IK smoothing step also used `blend * max(1, dt * 90)`, which makes the default high-tier blend snap at normal 60 Hz and contradicts the smoother high-tier presentation claim.
+
+Solution: remove the unused Burst job, remove `using Unity.Burst`, and remove `Unity.Burst` from `Hecton8.UI.VR.asmdef`. Keep `Unity.Jobs` because deferred native disposal still owns a `JobHandle`. Change IK step to `saturate(blend * saturate(dt * 60f))` and return early on zero step before transform reads.
+
+Rejected Alternatives: scheduling the job and completing it in Tick was rejected because `Complete()` in frame code violates the native job mandate and would cost more than the scalar solve. Leaving the dead job for static H-Phi optics was rejected as evidence fraud. Keeping the snap-prone IK formula was rejected because richer rigs need visible interpolation, not instant pose jumps.
+
+Scalability potential: Low keeps cheaper low-tier IK smoothing. Middle/High get actual smooth handle following at 60 Hz. Ultra can add denser hand/lever presentation because the solver remains scalar and the assembly no longer depends on Burst for unused code.
+
+Hardware Impact: i3/MX350 avoids an unnecessary Burst package dependency in the VR UI assembly and keeps the hot solve on simple scalar math. Zero-dt pause frames now skip handle/IK transform reads and writes. No project-wide numeric H-Phi gain is claimed because the global audit timed out; scoped hygiene improves by making `BurstRefs=0` and `IJobRefs=0` in the VR lever slice.

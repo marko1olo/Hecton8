@@ -136,6 +136,24 @@ Rejected Alternatives: Leaving unused relocation storage for future work; keepin
 Scalability potential: Low saves persistent native memory and avoids false relocation expectations; Middle gets cleaner telemetry; High and Ultra can reserve memory budget for real visual systems instead of dead bookkeeping.
 Hardware Impact: Removes one 64 * 32 byte persistent relocation-record allocation, approximately 2048 bytes plus allocator overhead, at vault init. Runtime hot path impact is one cold requester-owner branch on `GetBuffer`; no dotnet rebuild was run per user order.
 
+Problem: The H8 allocation flag enum and internal unregister helpers still exposed dead relocation/ownerless concepts after the active paths were removed.
+Solution: Removed `H8AllocationFlags.Relocatable` and deleted the unused private `UnregisterPointer(void*)` shim so all H8 unregister calls require owner proof.
+Rejected Alternatives: Keeping reserved symbols for hypothetical future relocation. In this codebase, dead symbols repeatedly became reconnection points for live compaction drift.
+Scalability potential: Low/Middle devices avoid accidental reintroduction of hidden memory movement; High/Ultra keep the saved frame budget available for visible systems instead of heap churn.
+Hardware Impact: 0 us runtime change. Static API surface is smaller; no allocation, branch, or frame cost added.
+
+Problem: `ProceduralFaunaStateDTO` and `HibernatedFaunaStateDTO` stored managed `bool` fields inside structured save DTOs. The codec already wrote them as one-byte wire fields, but the in-memory DTOs were not safe native mirror candidates.
+Solution: Replaced bool storage with fixed byte flags behind compatibility properties, preserved the existing codec wire format, added `[BinaryBlittableSafe]`, and asserted the sizes/flag offsets in `BinaryLayoutManifest`.
+Rejected Alternatives: Changing the save wire format or renaming public DTO accessors; both would widen migration risk. Leaving managed bool fields would keep the ARM/native-blit hazard documented in `Save_Binary_Header.md`.
+Scalability potential: Low gets deterministic ABI-safe fauna state loads; Middle can use DTO mirrors without managed bool ambiguity; High/Ultra can persist larger fauna state sets without changing binary layout again.
+Hardware Impact: 0 us frame impact. Save/load still writes and reads the same bytes; property flag packing is cold persistence code only.
+
+Problem: Several `[BinaryBlittableSafe]` `SaveData.cs` DTOs lacked explicit `BinaryLayoutManifest` size coverage, leaving the marker weaker than the enforcement.
+Solution: Added manifest size/offset assertions for every currently marked blit-safe SaveData DTO, including external scavenger sites, geology seam/cave records, module blit records, PDA advisory, environmental strain, and module graph edge records.
+Rejected Alternatives: Trusting `[StructLayout]` declarations without a central boot assertion; that lets accidental field drift survive until runtime persistence fails.
+Scalability potential: Low catches binary drift before save/load corrupts data; Middle/High/Ultra can add more native persistence consumers with a single manifest gate.
+Hardware Impact: Cold boot/static validation only. The added assertions are O(number of DTO fields checked) and 0 us steady-frame.
+
 ## OMEGA POLISH CHANGES
 
 Problem: Polish audit required removal of fake precision, managed iteration/string debt, and any code outside the DataVault domain without justification.

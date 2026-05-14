@@ -238,3 +238,28 @@ Verification state:
 - Static shader scan confirms `sincos`, `sin(`, and `cos(` are absent from `Hecton_CarveDebrisIndirect.shader`.
 - Static C# read confirms dispatch and render now share one-frame mesh draw metadata.
 - Unity compile remains PENDING/BLOCKED by local editor/license state; no fake pass recorded.
+
+## 2026-05-15 - High-Tier Fresh Edge Pass
+
+What was wrong:
+- The previous render pass saved shader ALU but did not spend that budget on stronger high-tier visual feedback.
+- Fast chips and slow chips shared the same edge tint, reducing impact readability during carve bursts.
+
+What was done:
+- Bound the existing carve debris velocity buffer to `Hecton_CarveDebrisIndirect.shader`.
+- Added a non-low-tier material flag in `_CarveDebrisMaterialParams.w`.
+- Added velocity-driven fresh-edge response only when the cached tier is not low.
+- Did not run dotnet build or rebuild.
+
+Cinematic cheats used:
+- Impact freshness is derived from chip speed, not from fracture simulation or extra CPU-authored color state.
+- Low tier skips the velocity visual branch; high/ultra buy stronger edge response with saved shader ALU.
+
+Exact microseconds saved:
+- Low-tier cost remains effectively unchanged; the added shader branch is disabled.
+- High/ultra adds one velocity buffer read per visible vertex in exchange for clearer carve impact response.
+
+Verification state:
+- Static C# read confirms the material binds the current parity velocity buffer.
+- Static shader read confirms velocity tint is gated by `_CarveDebrisMaterialParams.w`.
+- Unity compile remains PENDING/BLOCKED by local editor/license state; no fake pass recorded.

@@ -171,3 +171,22 @@ Solution: Performed source readback, `git diff --check`, fixed-string smoke-anch
 Rejected Alternatives: Running another dotnet build/rebuild would violate the user's explicit instruction; killing external dotnet/Unity processes would risk other agents' work.
 Scalability potential: No runtime effect.
 Hardware Impact: No runtime effect.
+
+## LOOP 9 KINETIC POLICY CACHE H-PHI PASS
+Problem: Kinetic impact admission still read scalability tier and low-memory policy inside the packet path. Bursty collision frames could multiply registry reads across the 32-signal scan cap, which is unnecessary architecture coupling for a policy that changes rarely.
+Solution: Added a cached kinetic policy with `KineticImpactQualityPolicyRefreshFrames = 30` and a stale-check helper. `Tick` warms the cache through `RefreshKineticImpactQualityPolicyIfStale(Time.frameCount)`, and direct service calls refresh only if stale. This makes tier/low-memory reads first-use or cadence-bound instead of per packet.
+Rejected Alternatives: Unconditional per-frame refresh would move the registry read instead of reducing it; removing low-tier fallback would punish MX350/i3; storing tier in each signal packet would bloat the high-speed contract and duplicate global policy.
+Scalability potential: Low tier still routes to the baked clip quickly. Middle/High/Ultra keep procedural thud/clang/echo admission without repeated tier-policy reads. The 30-frame cadence preserves controllability while keeping low-memory downshift responsive enough for an audio LOD gate.
+Hardware Impact: Saves two registry reads per scanned high-speed packet after warmup; worst-case 32-packet scan saves up to 64 registry reads in that frame. Added cost is one integer stale check per low-tier decision and one policy refresh every 30 frames.
+
+Problem: Low-tier baked impact playback resolved `GlobalRegistry.Audio` every time the fallback clip was queued.
+Solution: Added `_kineticLowTierAudioService` and `ResolveKineticLowTierAudioService()`. The cached interface is reused while initialized and cleared on disable/destroy, keeping service resolution cold and recoverable.
+Rejected Alternatives: Holding a hard `SpatialAudioManager` reference would increase concrete coupling; keeping registry lookup in every fallback event was measurable H-Phi debt; creating a new audio source pool would violate the audio service contract.
+Scalability potential: Toaster/MX350 path gets cheaper baked fallback admission. High-end path is unchanged because it bypasses the baked fallback.
+Hardware Impact: Saves one registry read on warm cached low-tier impacts. Runtime allocation remains 0 B/frame.
+
+Problem: Global H-Phi tooling is broad and expensive under the current shared-workspace/no-rebuild constraint.
+Solution: Ran a source-only scoped spot check over the renderer and smoke tester. Current renderer counts: `GlobalRegistry=30`, `SignalBus=1`, `NativeArray=232`, `StructLayout=6`, `UpdateMethods=0`, `FindObject=0`, `GetComponent=10`, `KineticPolicyCache=7`.
+Rejected Alternatives: Claiming a project-wide H-Phi score without the full scanner, or running build/rebuild commands against the user's explicit instruction.
+Scalability potential: No runtime tier change beyond lower policy coupling.
+Hardware Impact: Verification only.

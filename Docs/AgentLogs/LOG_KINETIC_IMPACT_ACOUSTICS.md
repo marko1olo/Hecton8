@@ -144,3 +144,36 @@ Verification:
 - `rg -n -F "PlayClipAtPoint" Assets/_Project/Scripts/Audio Assets/_Project/Scripts/Gameplay Assets/_Project/Scripts/Core` returned no matches.
 - Targeted owned-file scan found only pre-existing cold/editor `Debug.Log`/`ToString()`/assertion text, not new hot-path allocation.
 - Dotnet build/rebuild was not run by explicit user order. Unity compile remains PENDING VERIFICATION until Editor console/MCP validation is available.
+
+## 2026-05-15 - DSP_ACOUSTIC_LEAD - Loop 9 Kinetic Policy Cache H-Phi Pass
+Status: PENDING VERIFICATION
+
+What was wrong:
+- Kinetic impact admission still read scalability tier and low-memory state from `GlobalRegistry` inside the packet path.
+- The MX350/low-tier baked fallback resolved `GlobalRegistry.Audio` every time a fallback impact clip was queued.
+- A per-frame unconditional policy refresh would have been fake cleanup: it moves registry coupling rather than bounding it.
+
+What was done:
+- Added `KineticImpactQualityPolicyRefreshFrames = 30`, `_kineticImpactLowTierFallback`, and `RefreshKineticImpactQualityPolicyIfStale(Time.frameCount)`.
+- `Tick` warms the policy cache on a stale cadence; direct service calls also refresh only if stale.
+- Added `_kineticLowTierAudioService` and `ResolveKineticLowTierAudioService()`; the cached interface is cleared on disable/destroy.
+- `AdvancedAcousticsSmokeTester` now asserts the policy-cache constant, stale-refresh call, and cached low-tier audio-service helper.
+
+Cinematic cheats used:
+- The low-tier gate remains a coarse device/memory policy, not a continuously simulated acoustic budget.
+- The 30-frame cache cadence is deliberate: collision audio LOD does not need per-packet tier polling.
+- High/Ultra still spend budget on procedural thud/clang/echo; Low/MX350 keeps the baked clip.
+
+Exact microseconds saved:
+- Saves two registry reads per scanned high-speed packet after cache warmup; worst-case 32-packet scan avoids up to 64 registry reads in that frame.
+- Saves one registry read on warm cached low-tier fallback clip admission.
+- Added work is one integer stale check and one policy refresh every 30 frames; runtime allocation delta remains 0 B/frame.
+
+Verification:
+- `git diff --check -- Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs` passed except CRLF normalization warnings.
+- `rg -n -F "KineticImpactQualityPolicyRefreshFrames = 30"` found renderer and smoke tester anchors.
+- `rg -n -F "RefreshKineticImpactQualityPolicyIfStale(Time.frameCount)"` found renderer tick/admission calls and the smoke anchor.
+- `rg -n -F "ResolveKineticLowTierAudioService()"` found renderer fallback call/helper and the smoke anchor.
+- Scoped hot-path scan found no `PlayClipAtPoint`; broad owned-file scan found only pre-existing cold/editor `Debug.Log`, `math.exp` assertion text, and `builder.ToString()`.
+- Source-only H-Phi spot counts for the renderer: `GlobalRegistry=30`, `SignalBus=1`, `NativeArray=232`, `StructLayout=6`, `UpdateMethods=0`, `FindObject=0`, `GetComponent=10`, `KineticPolicyCache=7`.
+- Dotnet build/rebuild was not run by explicit user order. Unity compile remains PENDING VERIFICATION until Editor console/MCP validation is available.

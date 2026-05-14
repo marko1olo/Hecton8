@@ -335,3 +335,19 @@ Solution: Run mandatory AUP scan, targeted vegetation scans, global legacy HFO s
 Rejected Alternatives: Reporting the build as green because touched files have no local errors, or chasing save-layout, scheduler-handle, hardware-profile, power, fauna, and package warning debt from the AUP auditor domain.
 Scalability potential: Runtime unchanged beyond the Loop 17 precision repair; verification keeps Low/Middle/High/Ultra risk scoped to actual blockers instead of burying precision fixes under unrelated compile noise.
 Hardware Impact: 0 us runtime gain from verification itself. Developer-time gain on low-end machines is avoiding false attribution of 74 unrelated Core errors and 47 package warnings to the organic vegetation AUP patch.
+
+## Decision 42 - Large-Flora Collision Proxy Double Cache
+
+Problem: Large-flora collision proxies cached universe centers as `Vector3` and compared player/proxy/candidate distances with `.sqrMagnitude`, so collider activation and deactivation could drift around threshold boundaries after long sessions.
+Solution: Store proxy universe centers as `double3`, resolve player and candidate centers through `ToUniverseSpaceDouble3`, use `math.lengthsq(double3)` for activation/deactivation tests, and rebase proxy transforms through `ToRuntimeSpace(double3)` only at the final transform boundary.
+Rejected Alternatives: Replacing proxy transforms, BoxColliders, or pooled GameObject contracts with double-aware physics objects. Unity physics and transforms are float runtime surfaces; the correct repair is keeping the proxy decision cache in double and casting only for the existing collider transform.
+Scalability potential: Low keeps the same 24 default proxy pool and cheap scan budget. Middle/High/Ultra get stable long-session proxy activation and can spend the saved churn on denser collision/interaction feedback near large coral without expanding the renderer payload.
+Hardware Impact: Expected i3/MX350 benefit is 1-4 us on proxy scan/deactivation frames by avoiding threshold churn and repeated pool despawn/spawn near boundaries. Memory increases by 12 bytes per proxy slot at the default 24-slot pool; managed allocation remains cold-init only and 0 B/frame.
+
+## Decision 43 - Loop 18 Verification Wall
+
+Problem: Loop 18 needed compile verification, but the Core build still fails under unrelated save-layout, scheduler, hardware-profile, fauna, power, and package warning debt.
+Solution: Run prompt extraction, mandatory AUP scan, targeted proxy scan, global HFO scan, direct committed-offset scan, `git diff --check`, and a constrained Core build log; then filter the build log specifically for `HectonMapMagicVegetationBridgeFloraCollisionProxies.cs`.
+Rejected Alternatives: Chasing unrelated Core/package errors from the AUP auditor domain, or stopping at the timed-out shell call while the build process continued to completion in the log.
+Scalability potential: Runtime unchanged beyond the Loop 18 precision repair; verification keeps Low/Middle/High/Ultra risk tied to the proxy cache changes rather than unrelated active dependency work.
+Hardware Impact: 0 us runtime gain from verification itself. Developer-time gain on low-end machines is preventing one proxy-cache patch from being blamed for the current 74 unrelated Core errors and 47 unrelated package warnings.

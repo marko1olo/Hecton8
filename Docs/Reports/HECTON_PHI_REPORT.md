@@ -340,3 +340,88 @@ Verification:
 - Public/internal `Core/Contracts` struct layout scan: no missing `StructLayout` output.
 - `git diff --check` on touched files: no whitespace errors; LF/CRLF warnings only.
 - Runtime H-Phi remains `PENDING VERIFICATION` until Unity Console, PlayMode, Profiler, and GCMonitor evidence exist.
+
+## 2026-05-15 Live Addendum 6
+
+Evidence class: `STATIC_SOURCE`.
+
+User constraint for this pass: no `dotnet build` and no rebuild.
+
+Metric correction:
+- Data Sovereignty now counts the real Vault access surface: `IDataVault`, `VaultBufferHandle<T>`, `GetBuffer<T>`, `TryGetBuffer`, handle accessors, and `GlobalDataVault`.
+- Previous `GlobalDataVaultRefs=15` was a false low count because it ignored actual `vault.GetBuffer(...)` usage.
+- This addendum is therefore not comparable as pure runtime-code gain; it is a corrected model plus a small metadata layout pass.
+
+Current runtime static scores:
+
+| Coefficient | Score |
+|---|---:|
+| Narrow integration | 1.000000000 |
+| Risk-adjusted integration | 0.012777512 |
+| Architectural purity | 0.994614004 |
+| Data sovereignty | 0.018128162 |
+| Memory alignment | 0.495217853 |
+| Binary-safe ratio | 0.017534538 |
+| H-Phi runtime static narrow | 0.008929037 |
+| H-Phi runtime static risk-adjusted | 0.000114091 |
+
+Current runtime counts:
+
+| Counter | Value |
+|---|---:|
+| Runtime C# files | 1,275 |
+| Runtime source lines | 853,049 |
+| `SignalBus<T>.Push` | 80 |
+| `GlobalRegistry.Get<T>` | 0 |
+| `GlobalRegistry.` surface refs | 5,156 |
+| `Publish(...)` surface refs | 447 |
+| Unity `Update`/`LateUpdate`/`FixedUpdate` method declarations | 3 |
+| DataVault access surface refs | 129 |
+| `NativeArray<T>` refs | 6,987 |
+| Struct declarations | 1,882 |
+| `StructLayout(...)` attrs | 932 |
+| `BinaryBlittableSafe` refs | 33 |
+| Runtime `Find*` calls | 5 |
+| Runtime `GetComponent*` calls | 542 |
+| `.Dispose(...)` calls | 1,258 |
+
+What changed in this pass:
+- Added explicit sequential layout metadata to targeted Core native/Burst/telemetry/registry/command payload structs.
+- Added DataVault access-surface counting to the H-Phi audit.
+- Added `TopNativeArrayFiles`, `OwnerBlockedDataVaultCandidates`, `TopEditorNativeArrayFiles`, and `DisposeCalls` to the audit JSON.
+- Did not change hot-path method bodies, field order, public signatures, BufferIDs, SystemIDs, or NativeArray ownership.
+
+Comparison:
+- Original dialogue baseline: `0.00062`.
+- Previous runtime static narrow score: `0.001029525`.
+- Current corrected runtime static narrow score: `0.008929037`.
+- Current corrected runtime static narrow vs original baseline: about `+1340.17%`.
+- Current runtime static narrow vs previous runtime score: about `+767.29%`.
+- Most of this jump is the Data Sovereignty metric correction, not new runtime behavior.
+
+Owner-blocked DataVault candidates for Overseer:
+
+| File | NativeArray refs | DataVault refs |
+|---|---:|---:|
+| `HectonVoxelEngine.cs` | 277 | 0 |
+| `Audio/PlayerCriticalProceduralAudioRenderer.cs` | 232 | 0 |
+| `PlayerInventory.cs` | 197 | 0 |
+| `Fauna/PredatorCognitionDomain.cs` | 173 | 0 |
+| `World/HectonMapMagicVegetationBridge.cs` | 166 | 0 |
+| `World/EcosystemDirector.cs` | 154 | 0 |
+| `Power/LogisticsNetworkGraph.cs` | 141 | 0 |
+| `SaveBinaryStorage.cs` | 132 | 0 |
+| `SubmarineAtmosphereSystem.cs` | 132 | 0 |
+| `World/DestructibleOrganicManager.cs` | 125 | 0 |
+
+Residual bottlenecks:
+- Data Sovereignty is still low even after correction: `129 / (129 + 6,987) = 0.018128162`.
+- World remains the heaviest owner-blocked domain: 1,780 runtime `NativeArray<T>` refs and 0 DataVault access-surface refs in the domain rollup.
+- Binary-safe ratio remains low: `33 / 1,882 = 0.017534538`.
+- Runtime verification remains absent by user order.
+
+Verification:
+- `Tools/Architecture/HectonPhiAudit.ps1 -Json`: completed at local timestamp `2026-05-15 00:49:42 +04:00`.
+- Owner-blocked DataVault candidate scan: completed with top file table.
+- `git diff --check` on touched files: no whitespace errors; LF/CRLF warnings only.
+- Runtime H-Phi remains `PENDING VERIFICATION` until Unity Console, PlayMode, Profiler, and GCMonitor evidence exist.

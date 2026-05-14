@@ -177,3 +177,15 @@ Solution: Cache the tier once in a local `HectonQualityTier` and pass that primi
 Rejected Alternatives: Moving tier ownership into the Burst job was rejected. Adding a new service dependency for one cached primitive was rejected as overengineering.
 Scalability potential: Low/Middle/High/Ultra behavior is unchanged; the scheduler now has one authoritative tier sample for both lookahead and DDA budgets.
 Hardware Impact: Removes one global property read per abyssal path schedule. Exact microseconds are below meaningful profiler resolution, but the H-Phi registry surface is cleaner.
+
+Problem: Abyssal nav graph ingress could write non-finite nodes, conduit vectors, or conduit strengths into persistent snapshots and the spatial hash before later path guards ran.
+Solution: Clamp payload iteration to the actual native node buffer length, reject non-finite nodes at snapshot ingress, sanitize conduit vectors/strengths, and keep corrupt payloads out of the searchable hash.
+Rejected Alternatives: Trusting serialized `Count` over native buffer length was rejected. Hashing corrupt nodes into a default bucket was rejected because it turns invalid payloads into discoverable route candidates. Repairing payload producers was rejected as cross-domain for this pass.
+Scalability potential: Low avoids wasted nearest-node scans and invalid A* expansions. Middle/High/Ultra keep richer route smoothing only on valid graph payloads.
+Hardware Impact: Adds cheap finite checks during snapshot rebuild; avoids downstream path expansion and steering correction against corrupt nodes.
+
+Problem: Abyssal spatial hash lookup and flow-field nav support still used raw divisions and weak finite guards in the navigation hot/warm path.
+Solution: Precompute reciprocal cell/radius terms with `math.rcp`, reject invalid grid centers/origins/cell sizes, and skip non-finite support nodes.
+Rejected Alternatives: Leaving `/` in managed route support was rejected by the math gate. Masking bad cell sizes with epsilon only was rejected because it fabricates plausible coordinates from invalid transforms.
+Scalability potential: Low/MX350 gets fewer scalar divisions and safer hash lookups. High/Ultra can reuse the same clean support grid for denser visual navigation without corrupting path authority.
+Hardware Impact: Removes repeated divisions from nav support and hash lookup paths. Exact microseconds remain pending Unity profiler data because dotnet rebuilds are prohibited.

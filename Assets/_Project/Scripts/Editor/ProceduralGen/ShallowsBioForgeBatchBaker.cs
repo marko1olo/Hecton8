@@ -740,6 +740,7 @@ namespace Hecton8.Editor.ProceduralGen
 
             LOD[] lods = lodGroup.GetLODs();
             ValidatePrefabTransformContract(path, prefab.transform, ref failures);
+            ValidateStaticFlagsContract(path, prefab, ref failures);
             ValidateLodGroupContract(path, lodGroup, lods, ref failures);
             ValidateLodContract(path, lods, ref failures);
             ValidatePrefabMeshReferences(path, familyFolder, lods, ref failures);
@@ -812,6 +813,20 @@ namespace Hecton8.Editor.ProceduralGen
             {
                 failures++;
                 Debug.LogError($"[ShallowsBioForgeBatchBaker] Root transform contract failed at {path}.");
+            }
+        }
+
+        private static void ValidateStaticFlagsContract(string path, GameObject prefab, ref int failures)
+        {
+            Transform[] transforms = prefab.GetComponentsInChildren<Transform>(true);
+            for (int i = 0; i < transforms.Length; i++)
+            {
+                int flags = (int)GameObjectUtility.GetStaticEditorFlags(transforms[i].gameObject);
+                if (flags == 0)
+                    continue;
+
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] Static batching/editor flags are forbidden at {path}. Child={transforms[i].name}, Flags={flags}.");
             }
         }
 

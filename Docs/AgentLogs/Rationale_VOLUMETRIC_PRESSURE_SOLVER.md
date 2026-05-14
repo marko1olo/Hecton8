@@ -241,3 +241,11 @@ Solution: Added a peak-stress guard before `HectonHabitatInteriorResolveStress01
 Rejected Alternatives: Always resolving to preserve theoretical zero-stress locality, or moving the guard into the include. The first wastes vertex ALU; the second hides callsite intent and still forces helper entry.
 Scalability potential: Low/MX350 already avoids the vertex resolver; Mid/High/Ultra calm interiors now also skip it until pressure actually buys visible bowing.
 Hardware Impact: Saves a 0-64 slot radius scan per DryZone vertex during calm module states; estimated 5-30 us per 1k interior vertices on MX350-class GPUs depending on visible module count, with no loss once stress is nonzero.
+
+## Follow-Up Correction - Include-Level Peak And Mask Gates
+
+Problem: The DryZone callsite had a peak-stress guard, but the shared habitat shader include still allowed future callsites to enter the 64-slot resolver on calm frames. The bend and low-tier crease helpers also finished panel setup when the sine/triangle panel mask was effectively zero, wasting ALU on panel borders with no possible visual output.
+Solution: Added a peak-stress early return to `HectonHabitatInteriorResolveStress01`. Added zero-panel-mask early exits to `HectonHabitatInteriorApplyPanelBendOS` and `HectonHabitatInteriorApplyLowTierCrease` before normal bias, centered-UV setup, crease lerp, or output writes.
+Rejected Alternatives: Relying only on every shader callsite to remember the peak guard, or leaving zero-mask borders to fall through the helper math. Callsite-only guards are brittle under concurrent shader edits; border fallthrough spends cycles for invisible deformation.
+Scalability potential: Low/MX350 keeps cheap crease-only pressure feedback and skips dead crease work on panel borders. Mid/High/Ultra keep sine panel bowing where mask is visible and spend no vertex ALU on zero-mask borders.
+Hardware Impact: Calm helper calls now return before module buffer/radius work, and border vertices/fragments skip no-op deformation setup. Estimated 1-4 us per 1k stressed interior vertices/fragments on i3/MX350-class hardware beyond the callsite guard, with 0 B/frame and no visual regression.

@@ -163,3 +163,15 @@ Rejected Alternatives: A mutable spatial hash table was rejected because the pro
 Scalability potential: Low-tier 10Hz scans skip far-cell math. Middle/High/Ultra retain exact nearby behavior while reducing math pressure in scattered loot fields.
 
 Hardware Impact: Adds three integer comparisons before double/float delta math. Saves sector-delta work for loot more than one 5 km AUP cell from the player. Exact profiler numbers remain pending Unity/Burst verification.
+
+## Decision 12 - Idle Black-Box Continuity
+
+Problem: The 300-frame telemetry ring only advanced after a completed pull job. Idle frames were absent, which weakens the black-box requirement for a critical gameplay system.
+
+Solution: LateFrame now advances a telemetry frame counter and records high-level state when no pull job is scheduled. If a job is still running, idle recording is skipped to avoid reading arrays owned by the job. Completed jobs record once, and fault dumps still force a same-frame record before disk output.
+
+Rejected Alternatives: Reading `EntityAUPs` while the job is still running was rejected because it can race with Burst writes. Logging strings per idle frame was rejected as GC/noise.
+
+Scalability potential: Low/Middle/High/Ultra all keep a fixed 300-entry ring with consistent idle and active state. Visual overkill does not affect telemetry shape.
+
+Hardware Impact: Adds one fixed struct write per idle late frame and no allocation. This is acceptable black-box cost and bounded to persistent NativeArray memory.

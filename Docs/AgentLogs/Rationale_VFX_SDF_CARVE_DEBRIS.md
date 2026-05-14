@@ -137,3 +137,11 @@ Solution: Replace trigonometric yaw with a hash-vector basis that preserves dete
 Rejected Alternatives: Per-particle CPU rotation upload was rejected because it adds bandwidth and persistent state. Keeping `sincos` was rejected because rock chips do not need exact angular truth. Permanent mesh metadata caching was rejected because authored mesh data can change in Editor or at runtime; once-per-frame cache is safer.
 Scalability potential: Low/MX350 = cheaper vertex ALU and one mesh metadata query per active frame. Middle/High/Ultra = saved ALU buys denser visible chips and stronger CoreLit/caustic shading inside the same fixed storage cap.
 Hardware Impact: CPU saving is estimated sub-10 us on active frames from avoiding duplicate mesh index queries. GPU saving depends on visible count; replacing one `sincos` per debris vertex removes expensive transcendental ALU on MX350 while preserving deterministic per-chip variation.
+
+## Decision 17 - Velocity-Driven High-Tier Fresh Edge Response
+
+Problem: After removing vertex trig, the high/ultra path had saved ALU but no new visible payoff. Fast SDF chips should read as fresh fracture impact without adding CPU color uploads or new particle state.
+Solution: Bind the existing `CarveDebrisVelocity` ping-pong lane to the indirect material and set `_CarveDebrisMaterialParams.w` as a cached non-low-tier visual flag. The shader reads velocity only on non-low tiers and blends more fresh-edge tint for fast, still-alive chips.
+Rejected Alternatives: Per-particle CPU color upload was rejected because it adds bandwidth and duplicates GPU state. Always reading velocity on Low/MX350 was rejected because the low path should spend saved cycles on stability, not extra shading. Adding a new material variant was rejected because it increases variant pressure for a tiny branch.
+Scalability potential: Low/MX350 = branch disabled, same cheap rock silhouette. Middle/High/Ultra = impact-speed edge highlight gives stronger carve readability while staying inside fixed 4096 storage.
+Hardware Impact: Low-tier cost is unchanged except one buffer bind on the CPU render path. High/ultra cost is one velocity buffer read per visible vertex and a few scalar ops; no GC, no readback, no extra CPU upload.

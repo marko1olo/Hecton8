@@ -52,6 +52,7 @@ namespace Hecton8.Gameplay.Loot
         private int _activeCount;
         private int _scheduledCount;
         private int _telemetryIndex;
+        private uint _telemetryFrameCounter;
         private uint _lastTelemetryRecordedFrame;
         private uint _frameCounter;
         private AbsoluteUniversePosition _lastPlayerAup;
@@ -146,16 +147,21 @@ namespace Hecton8.Gameplay.Loot
 
         public void LateFrameTick()
         {
+            _telemetryFrameCounter++;
             if (!_pullScheduled)
+            {
+                TryResolvePlayerAup(out _);
+                RecordTelemetry(_telemetryFrameCounter);
                 return;
+            }
 
             if (!DispatcherJobSwap.TryComplete(ref _pullHandle, forceComplete: false))
                 return;
 
             _pullScheduled = false;
             CommitVaultResultsToManagedProxies();
-            if (_lastTelemetryRecordedFrame != _frameCounter)
-                RecordTelemetry();
+            if (_lastTelemetryRecordedFrame != _telemetryFrameCounter)
+                RecordTelemetry(_telemetryFrameCounter);
         }
 
         private void TryRegisterTicks()
@@ -479,7 +485,7 @@ namespace Hecton8.Gameplay.Loot
             _lastCommittedFlags = fault ? TelemetryFaultFlag : 0u;
             if (fault && !_dumpedFault)
             {
-                RecordTelemetry();
+                RecordTelemetry(_telemetryFrameCounter);
                 _dumpedFault = true;
                 DumpTelemetryBuffer();
             }
@@ -556,7 +562,7 @@ namespace Hecton8.Gameplay.Loot
         private uint _lastCommittedFlagsHash;
         private uint _lastCommittedFlags;
 
-        private void RecordTelemetry()
+        private void RecordTelemetry(uint telemetryFrame)
         {
             if (!_telemetry.IsCreated)
                 return;
@@ -566,7 +572,7 @@ namespace Hecton8.Gameplay.Loot
             {
                 PlayerAup = _lastPlayerAup,
                 SampleLootAup = _scheduledCount > 0 && _entityAups.IsCreated ? _entityAups[0] : default,
-                Frame = _frameCounter,
+                Frame = telemetryFrame,
                 ActiveCount = (uint)math.max(0, _activeCount),
                 AcquiredCount = _lastCommittedAcquiredCount,
                 FlagsHash = _lastCommittedFlagsHash,
@@ -574,7 +580,7 @@ namespace Hecton8.Gameplay.Loot
             };
 
             _telemetryIndex = (writeIndex + 1) % _telemetry.Length;
-            _lastTelemetryRecordedFrame = _frameCounter;
+            _lastTelemetryRecordedFrame = telemetryFrame;
         }
 
         private void ForceCompletePendingJob()

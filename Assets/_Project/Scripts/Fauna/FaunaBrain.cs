@@ -4437,6 +4437,9 @@ namespace Hecton8.AI
                 return;
 
             if (_faunaKinematicsRuntime == null)
+                TryGetComponent(out _faunaKinematicsRuntime);
+
+            if (_faunaKinematicsRuntime == null)
                 _faunaKinematicsRuntime = gameObject.AddComponent<FaunaKinematicsRuntime>();
 
             _faunaKinematicsRuntime.BindFromFauna(this, _rb);

@@ -4,7 +4,7 @@ Agent: INTEGRATION_ASSEMBLY_SURGEON
 Role: SYSTEMS_ARCHITECT
 Domain: Unity Compilation Graph / Integrator
 Prompt task count: 17
-Current state: BUILD SUCCESSFUL (CLI_COMPILE: Core isolated)
+Current state: STATIC H-PHI PATCH APPLIED / PENDING FRESH COMPILE (NO DOTNET ORDER)
 
 ## Mandates Read
 
@@ -40,8 +40,8 @@ Rule quote: `H-PHI DEFENSE: Do NOT solve missing dependencies by adding Hecton8.
 - [x] Task 13: FLAW SWEEP | Justification: inspected `Directory.Build.targets` around the removed duplicate IK reference area and confirmed no `Hecton8.Animation.IK` reference remains in the MSBuild bridge | Alternatives rejected: stopping at compile success | Estimate: 500 us
 - [x] Task 14: ILateFrameTickable PATCH IF PRESENT | Justification: no current `HectonFluidEngine`/`ILateFrameTickable` compile complaint remained in build logs; no empty implementation needed | Alternatives rejected: inventing logic | Estimate: 200 us
 - [x] Task 15: FINAL STATUS BUILD SUCCESSFUL OR BLOCKED | Justification: status is `BUILD SUCCESSFUL (CLI_COMPILE: Core isolated)` with artifact path; raw project-reference vendor warnings documented separately | Alternatives rejected: hiding vendor-warning boundary | Estimate: 200 us
-- [ ] Task 16: FINAL LOG APPEND | Justification: final report still pending append to `LOG_INTEGRATION_ASSEMBLY_SURGEON.md` | Alternatives rejected: chat-only report | Estimate: pending
-- [ ] Task 17: POLISH MANDATE AFTER CORE STATUS | Justification: core tasks checked; polish tag not yet parsed | Alternatives rejected: premature polish scope creep | Estimate: pending
+- [x] Task 16: FINAL LOG APPEND | Justification: 2026-05-15 continuation report appended to `LOG_INTEGRATION_ASSEMBLY_SURGEON.md` | Alternatives rejected: chat-only report | Estimate: 180 us
+- [x] Task 17: POLISH MANDATE AFTER CORE STATUS | Justification: current `Docs/Tasks/CURRENT_BATCH.md` no longer contains this agent ID or a polish tag; static anti-bloat pass ran on owned build-graph file | Alternatives rejected: borrowing another agent prompt | Estimate: 320 us
 
 ## Loop Ledger
 
@@ -51,3 +51,14 @@ Rule quote: `H-PHI DEFENSE: Do NOT solve missing dependencies by adding Hecton8.
 - Loop 3: `Build_INTEGRATION_ASSEMBLY_SURGEON_03.log`; 0 errors, 47 vendor/package warnings only after duplicate IK warning removal. Status: PENDING VERIFICATION for zero-warning Core.
 - Loop 4: `Build_INTEGRATION_ASSEMBLY_SURGEON_04_CoreIsolated.log`; Core isolated compile 0 warnings / 0 errors. Status: BUILD SUCCESSFUL (CLI_COMPILE).
 - Loop 5: Self-review scans: duplicate methods not duplicated; prompt re-extracted; `Directory.Build.targets` no longer contains `Hecton8.Animation.IK` bridge reference. Status: BUILD SUCCESSFUL (CLI_COMPILE).
+- Loop 6: 2026-05-15 continuation. User ordered no dotnet rebuilds. Re-read status/rationale, AGENTS, domain file, mandate files, current batch, `Directory.Build.props`, `Directory.Build.targets`, `Hecton8.Core.csproj`, and Core asmdef surface. Restored Core-only `BuildProjectReferences=false` gate in `Directory.Build.props`. Status: STATIC H-PHI PATCH APPLIED / PENDING FRESH COMPILE.
+- Loop 7: Static H-Phi audit. `Hecton8.Core.csproj` still declares generated project references to package/vendor projects; props gate isolates them by default. `Hecton8.Core.asmdef` still references broad leaf/domain assemblies; blind removal rejected because current Core-owned source uses `LeviathanTerrainIkJob`, `MacroSwarm`, and `SoundEmissionSignal`. Status: PENDING FRESH COMPILE BY USER NO-DOTNET ORDER.
+
+## 2026-05-15 Continuation Checklist
+
+- [x] No-dotnet order honored | Justification: no `dotnet build`, `dotnet rebuild`, or `dotnet msbuild` command was run in this continuation | Alternatives rejected: fresh compile proof against explicit user instruction | Estimate: 0 us runtime
+- [x] Core build isolation gate restored | Justification: `Directory.Build.props` now defaults `Hecton8.Core` to `BuildProjectReferences=false` unless `HectonBuildProjectReferences=true` | Alternatives rejected: generated `.csproj` edit | Estimate: 0 us runtime
+- [x] Generated Core project reference scan | Justification: `Hecton8.Core.csproj` still lists package/vendor project references; source-backed props gate is required to keep medic builds focused | Alternatives rejected: package-source edits | Estimate: 0 us runtime
+- [x] Core asmdef H-Phi audit | Justification: `Hecton8.Core.asmdef` still has broad leaf references; removal blocked because source still directly uses several leaf-owned types | Alternatives rejected: unsafe contract migration without compile lane | Estimate: 0 us runtime
+- [x] Static anti-bloat scan | Justification: `Directory.Build.props` scan found no hot-path poison patterns; change is MSBuild metadata only | Alternatives rejected: runtime edits outside Integrator domain | Estimate: 0 us runtime
+- [x] Fresh compile status bounded | Justification: no fresh CLI compile claim made; existing `Build_INTEGRATION_ASSEMBLY_SURGEON_05_RawCoreDefault.log` is historical evidence only | Alternatives rejected: fake green report | Estimate: 0 us runtime

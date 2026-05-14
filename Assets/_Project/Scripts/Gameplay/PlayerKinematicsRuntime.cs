@@ -236,7 +236,7 @@ namespace Hecton8.Gameplay
             if (!TrySampleSdfTrilinear(encodedSdf, gridDimensions, volumeOrigin, cellSize, sdfRange, targetPosition, out centerDensity))
                 return false;
 
-            float step = math.max(0.025f, math.abs(sampleStepMeters));
+            float step = math.max(0.025f, SanitizeNonNegative(math.abs(sampleStepMeters)));
             float3 openGradient;
             if ((sampleMode & SdfSampleModeTetra4) != 0)
             {
@@ -1343,8 +1343,11 @@ namespace Hecton8.Gameplay
             }
 
             float2 planar = inputSignal.State.Move;
+            planar = math.select(planar, float2.zero, !math.all(math.isfinite(planar)));
             float planarSq = math.lengthsq(planar);
-            if (planarSq > 1.0f)
+            if (!math.isfinite(planarSq))
+                planar = float2.zero;
+            else if (planarSq > 1.0f)
                 planar *= math.rsqrt(planarSq);
 
             float3 forward = _cameraTransform != null ? ToFloat3(_cameraTransform.forward) : ToFloat3(_cachedTransform.forward);
@@ -1353,8 +1356,9 @@ namespace Hecton8.Gameplay
             right.y = 0.0f;
             forward = SafeNormalize(forward, new float3(0.0f, 0.0f, 1.0f));
             right = SafeNormalize(right, new float3(1.0f, 0.0f, 0.0f));
-            float vertical = math.clamp(inputSignal.State.VerticalAxis, -1.0f, 1.0f);
-            _intendedMovement[0] = (right * planar.x) + (forward * planar.y) + new float3(0.0f, vertical, 0.0f);
+            float vertical = SanitizeSignedUnit(inputSignal.State.VerticalAxis);
+            float3 intended = (right * planar.x) + (forward * planar.y) + new float3(0.0f, vertical, 0.0f);
+            _intendedMovement[0] = SanitizeFloat3(intended, float3.zero);
         }
 
         private void SnapshotGpuFlow()
@@ -1582,21 +1586,26 @@ namespace Hecton8.Gameplay
                     out _))
             {
                 float speed01 = SanitizeUnit((blockedSpeed - WallImpactRollThreshold) * 0.2f);
-                float side = math.sign(math.dot(ToFloat3(normal), SafeRight()));
+                float sideDot = math.dot(ToFloat3(normal), SafeRight());
+                float side = math.sign(math.select(sideDot, 0.0f, !math.isfinite(sideDot)));
                 _rollPhaseRadians = DeterministicPhysicsMath.WrapSignedPi(_rollPhaseRadians + SanitizeNonNegative(dt) * 28.0f);
                 float impactWave = IsHighScalabilityTier() ? DeterministicPhysicsMath.SinApprox(_rollPhaseRadians) : SignedTriangleWave(_rollPhaseRadians);
                 targetRoll = -side *
-                    WallImpactRollDegrees *
+                    SanitizeNonNegative(WallImpactRollDegrees) *
                     speed01 *
                     SanitizeUnit(velocityReduction01 + 0.25f) *
                     impactWave;
             }
 
             float safeDt = SanitizeNonNegative(dt);
+            targetRoll = math.select(targetRoll, 0.0f, !math.isfinite(targetRoll));
+            _rollDegrees = math.select(_rollDegrees, 0.0f, !math.isfinite(_rollDegrees));
+            _rollVelocityDegrees = math.select(_rollVelocityDegrees, 0.0f, !math.isfinite(_rollVelocityDegrees));
             float spring = ((targetRoll - _rollDegrees) * 64.0f) - (_rollVelocityDegrees * WallImpactRollDecay);
             _rollVelocityDegrees += spring * safeDt;
             _rollDegrees += _rollVelocityDegrees * safeDt;
-            _rollDegrees = math.clamp(_rollDegrees, -WallImpactRollDegrees, WallImpactRollDegrees);
+            float maxRoll = SanitizeNonNegative(WallImpactRollDegrees);
+            _rollDegrees = math.clamp(_rollDegrees, -maxRoll, maxRoll);
         }
 
         private void PublishMovementAcoustics(Vector3 position, float3 velocity)
@@ -2462,9 +2471,20 @@ namespace Hecton8.Gameplay
             return math.select(math.saturate(value), 0.0f, !math.isfinite(value));
         }
 
+        private static float SanitizeSignedUnit(float value)
+        {
+            return math.select(math.clamp(value, -1.0f, 1.0f), 0.0f, !math.isfinite(value));
+        }
+
         private static float SanitizeNonNegative(float value)
         {
             return math.select(math.max(0.0f, value), 0.0f, !math.isfinite(value));
+        }
+
+        private static float3 SanitizeFloat3(float3 value, float3 fallback)
+        {
+            float3 safeFallback = math.select(fallback, float3.zero, !math.all(math.isfinite(fallback)));
+            return math.select(value, safeFallback, !math.all(math.isfinite(value)));
         }
 
         private static float SmoothScalar(float current, float target, float sharpness, float deltaTime)
@@ -2609,6 +2629,7 @@ namespace Hecton8.Gameplay
 
         private static float SignedTriangleWave(float radians)
         {
+            radians = math.select(radians, 0.0f, !math.isfinite(radians));
             float unit = math.frac(radians * InvTwoPi);
             return 1.0f - math.abs((unit * 4.0f) - 2.0f);
         }

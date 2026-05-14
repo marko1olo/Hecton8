@@ -877,9 +877,11 @@ namespace Hecton8.VFX.Debris
                 return;
 
             GraphicsBuffer currentPositionBuffer = (_bufferParity & 1) == 0 ? _positionBufferA : _positionBufferB;
+            GraphicsBuffer currentVelocityBuffer = (_bufferParity & 1) == 0 ? _velocityBufferA : _velocityBufferB;
             material.SetBuffer(CarveDebrisReadId, currentPositionBuffer);
+            material.SetBuffer(CarveDebrisVelocityReadId, currentVelocityBuffer);
             material.SetBuffer(CarveDebrisVisibleIndicesId, _visibleIndicesBuffer);
-            material.SetVector(CarveDebrisMaterialParamsId, new Vector4(minRockScale, math.max(minRockScale, maxRockScale), particleLifetimeSeconds, 0f));
+            material.SetVector(CarveDebrisMaterialParamsId, new Vector4(minRockScale, math.max(minRockScale, maxRockScale), particleLifetimeSeconds, _cachedLowTier ? 0f : 1f));
 
             RenderParams renderParams = new RenderParams(material)
             {

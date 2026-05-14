@@ -127,3 +127,11 @@ Status: PENDING VERIFICATION
 - Patched `ShallowsBioForgeBatchBaker` to validate `_BaseColor`, `_RootTint`, `_TipTint`, `_EmissionColor`, the full Shallows shader scalar set, `_Cull=0`, and `_QUALITY_HIGH` disabled.
 - Verification: Unity Bee response-file Roslyn compile for `Hecton8.Editor.ProceduralGen` exited 0; material scan passed `MaterialContractScan=PASS Fields=26`; `git diff --check` exited 0 with only the repo LF-to-CRLF warning.
 - Full `dotnet build Hecton8.Core.csproj --no-restore` is currently blocked outside this domain by missing generated `Temp/obj/Hecton8.Core/.NETStandard,Version=v2.1.AssemblyAttributes.cs`; restore-enabled retry timed out and the timed-out build process is no longer running.
+
+### Loop 12 - LOD And Transform Contract Lockdown
+
+- Re-read status/rationale, AGENTS, domain map, H-Phi atlas, unity orchestration skill, and task-relevant mandates before editing; live `Docs/Tasks/CURRENT_BATCH.md` still does not contain this agent ID.
+- Found remaining local H-Phi weakness: the validator proved prefab counts and mesh identity, but LOD transition heights, crossfade mode, root/child transform identity, and collision proxy transform naming remained implicit Unity-object assumptions.
+- Patched `ShallowsBioForgeBatchBaker` to validate root identity transforms, `LODGroup` crossfade mode, exact LOD screen heights and fade widths, LOD0/LOD1/LOD2 child names, LOD child identity rotation/scale, and `Collision_LOD2` identity rotation/scale.
+- Verification avoided dotnet rebuilds by user order. Static checks: `git diff --check` clean for the touched source; scoped source scan found the new validators; brace count is balanced. Prefab YAML scans found TubeCoral=50, Kelp=100, PorousRock=50 with `BadLodTransitionYaml=0`, `BadTransformYaml=0`, and rock `BadCollisionNameYaml=0`.
+- Project-wide numeric H-Phi was not claimed. Domain-local H-Phi evidence improved through stricter editor contract density and no added runtime ownership, Update cadence, registry polling, or scripts on generated prefabs.

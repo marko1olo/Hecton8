@@ -121,3 +121,15 @@ Cinematic Cheats used: no additional simulation. The lever remains a scalar kine
 Exact microseconds saved/spent: 0 us normal-path IO; one branch in fault handling and telemetry flag build. In persistent fault state, avoids repeated 300-entry binary file rewrites, which can otherwise cost milliseconds depending on disk/cache state. Static project-wide H-Phi movement is not claimed; local H-Phi evidence improves by bounding fault-side IO, preserving typed telemetry, and reducing scoped `GetComponentCalls` from 1 to 0.
 
 Verification: forbidden-pattern scan returned no matches, including `GetComponent<...>`, `FindObject*`, `Update(`, `HingeJoint`, direct input polling, `math.normalize`, and managed `foreach`. Scoped H-Phi hygiene over 4 task files reports `SignalBusPush=48`, `GlobalSignalsPublish=4`, `GlobalRegistrySurface=13`, `UnityUpdateMethods=0`, `FindObjectCalls=0`, `GetComponentCalls=0`, `PublicEvents=0`, `HingeJoint=0`, `DirectInput=0`. `git diff --check` passed for touched files with CRLF warnings only. `Tools/Architecture/HectonPhiAudit.ps1 -Json` timed out at 120 seconds, so no project-wide numeric H-Phi gain is claimed. Dotnet rebuild/probe intentionally not run by user instruction.
+
+## 2026-05-15 - IK Smoothing And Burst Bloat Purge
+
+What was wrong: the lever still carried an unused Burst `IJob` projection kernel and `Unity.Burst` asmdef reference. The real runtime path never scheduled it, and scheduling/completing a one-element job would be slower and would violate job discipline. High-tier IK also snapped at normal 60 Hz because the blend formula multiplied the default `0.85` by `dt * 90`.
+
+What was done: deleted `LeverAngularSolveJob`, removed `using Unity.Burst`, and removed `Unity.Burst` from `Hecton8.UI.VR.asmdef`. Kept `Unity.Jobs` because deferred native disposal still uses `JobHandle`. Changed IK smoothing to `saturate(blend * saturate(dt * 60f))` with an early return on zero step before handle/IK transform reads.
+
+Cinematic Cheats used: scalar kinematic lever remains the truth model. Removed a fake Burst surface instead of pretending a single cockpit lever needs a worker job. Presentation smoothing now buys visible richness without changing latch math.
+
+Exact microseconds saved/spent: 0 B/frame. No new runtime work. Zero-dt pause frames avoid two transform reads and one transform write. Assembly dependency surface is smaller by one Burst reference. Any compile-time/import savings are not measured.
+
+Verification: forbidden-pattern scan returned no matches. Scoped scan over 5 task files reports `BurstRefs=0`, `IJobRefs=0`, `UnityUpdateMethods=0`, `FindObjectCalls=0`, `GetComponentCalls=0`, `PublicEvents=0`, `HingeJoint=0`, `DirectInput=0`. `git diff --check` passed for touched code and asmdef with CRLF warnings only. No dotnet rebuild/probe was run by user instruction.

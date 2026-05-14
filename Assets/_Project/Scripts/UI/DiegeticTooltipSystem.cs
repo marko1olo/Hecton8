@@ -168,6 +168,7 @@ namespace Hecton8.UI
         private bool _fontUvTableDirty;
         private bool _spriteUvTableDirty;
         private bool _materialBindingsDirty = true;
+        private bool _lowTierActive;
         private float _boundGradientScale = float.NaN;
         private float _boundFaceDilate = float.NaN;
         private float _boundTextDitherEnabled = float.NaN;
@@ -176,6 +177,7 @@ namespace Hecton8.UI
         public void LateFrameTick()
         {
             float deltaTime = math.max(0f, SystemDispatcher.CurrentFrameDeltaTime);
+            RefreshScalabilityTier();
             ConsumeLookTargetSignals();
             ConsumeAupShiftSignals();
 
@@ -273,6 +275,7 @@ namespace Hecton8.UI
             EnsureBlackBox();
             TryRegisterRuntime();
             TryRegisterHotSwapListener();
+            RefreshScalabilityTier();
             _activeSchemeHash = ResolveCurrentSchemeHash();
         }
 
@@ -280,6 +283,7 @@ namespace Hecton8.UI
         {
             TryRegisterRuntime();
             TryRegisterHotSwapListener();
+            RefreshScalabilityTier();
             _activeSchemeHash = ResolveCurrentSchemeHash();
         }
 
@@ -1005,7 +1009,12 @@ namespace Hecton8.UI
 
         private bool IsLowTier()
         {
-            return GlobalRegistry.ScalabilityTierProfileByte == 0;
+            return _lowTierActive;
+        }
+
+        private void RefreshScalabilityTier()
+        {
+            _lowTierActive = GlobalRegistry.ScalabilityTierProfileByte == 0;
         }
 
         private void TryRegisterRuntime()
@@ -1076,7 +1085,9 @@ namespace Hecton8.UI
                 Flags = (byte)(_diagnosticActive ? 1 : 0),
                 TierFlags = tierFlags
             };
-            _blackBoxCursor = (_blackBoxCursor + 1) % BlackBoxCapacity;
+            _blackBoxCursor++;
+            if (_blackBoxCursor >= BlackBoxCapacity)
+                _blackBoxCursor = 0;
         }
 
         private void DumpBlackBox()

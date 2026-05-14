@@ -173,3 +173,17 @@ Scalability potential: Low keeps cheap triplanar/MatCap tuning, no high-tier key
 Hardware Impact: Runtime remains 0 us/frame and 0 bytes allocation. The gain is preventing silent shader keyword or scalar drift from increasing GPU cost or weakening the visual mask on i3/MX350-class hardware. Exact frame microseconds are not profiled because this is editor validation.
 
 Verification: Unity Bee response-file Roslyn compile for `Hecton8.Editor.ProceduralGen` exited 0. Material text scan passed `MaterialContractScan=PASS Fields=26`. `git diff --check` exited 0 with only the repo LF-to-CRLF warning. Full `dotnet build Hecton8.Core.csproj --no-restore` is currently blocked outside this domain by missing generated `Temp/obj/Hecton8.Core/.NETStandard,Version=v2.1.AssemblyAttributes.cs`; restore-enabled retry timed out and the timed-out build process is no longer running.
+
+## Decision 13 - LOD And Transform Contract Lockdown
+
+Problem: The Safe Shallows validator locked counts, mesh references, materials, atlas importers, rule assets, renderer flags, and rock collider alignment. It still trusted implicit Unity prefab state for LOD transition heights, crossfade mode, root transform identity, LOD child naming, LOD child rotation/scale, and collision proxy transform identity. That weakens local H-Phi because prefab correctness depends on unvalidated Unity-object state.
+
+Solution: Extend `ShallowsBioForgeBatchBaker` with transform and LOD contract validation. The validator now rejects non-identity root transforms, non-crossfade LODGroups, wrong LOD screen-relative heights or fade widths, LOD children not named `LOD0`/`LOD1`/`LOD2`, LOD children with rotated/scaled transforms, and rock collision proxies not named `Collision_LOD2` or not identity-rotated/scaled.
+
+Rejected Alternatives: Re-baking the payload was rejected because the current prefab YAML already matches the contract. A project-wide H-Phi score run was rejected because the user explicitly prohibited dotnet rebuilds and previous global H-Phi scans have timed out under repo load. Runtime LOD manager code was rejected because this domain owns editor-authored assets, not runtime scalability switching.
+
+Scalability potential: Low/MX350 keeps static MeshRenderer-owned prefabs with stable crossfade and no hidden transform scale that could distort culling, batching, or collider proxies. Middle/High retain longer LOD residency without transition drift. Ultra can spend saved runtime cost on denser Shallows dressing while the prefab contract remains deterministic.
+
+Hardware Impact: Runtime remains 0 us/frame and 0 bytes allocation. The gain is prevention: no accidental transform scale, disabled crossfade, or malformed collision child can silently increase visible popping, culling error, or collider/render mismatch on low-end hardware. Exact runtime microseconds are not profiled because this is editor validation.
+
+Verification: No dotnet rebuild was run. `git diff --check` passed for `ShallowsBioForgeBatchBaker.cs`. Scoped source scan found the new LOD/transform validators and no hot-path `Update`, `FindObject`, `GameObject.Find`, `SendMessage`, `UnityEvent`, public event, or renderer material mutation patterns in the touched ProceduralGen files. Prefab YAML scans found `BadLodTransitionYaml=0`, `BadTransformYaml=0`, and rock `BadCollisionNameYaml=0` across the 200 generated prefabs. Brace count is balanced.

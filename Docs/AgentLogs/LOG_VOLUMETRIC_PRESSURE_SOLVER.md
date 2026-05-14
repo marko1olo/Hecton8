@@ -189,3 +189,15 @@ Exact microseconds saved after follow-up 21:
 - Calm Mid/High/Ultra DryZone vertices skip up to 64 module-radius checks.
 - Estimated 5-30 us saved per 1k interior vertices on MX350-class GPUs during zero-stress habitat frames.
 - No visual regression: the skip only applies when peak stress is below 0.0001; visible deformation resumes once stress exists.
+
+Follow-up upgrade 22:
+- Added an include-level peak-stress early return inside `HectonHabitatInteriorResolveStress01`.
+- Added zero-panel-mask early exits to `HectonHabitatInteriorApplyPanelBendOS` and `HectonHabitatInteriorApplyLowTierCrease`.
+- This protects future shader callsites from reintroducing calm-state resolver work and skips no-op border deformation/crease setup.
+- Static checks: exact shader `normalize()`/`sqrt()` scan produced no matches; managed-offender scans found no `string.Format`, `.ToString()`, interpolation, `foreach`, or LINQ offenders in `HabitatGraphManager.cs`; mesh mutation scan found no owned `Mesh.vertices` writes; `rg` confirms include guard and helper call wiring; brace count in `Hecton_HabitatInterior.hlsl` is balanced; `git diff --check` reports only repository CRLF normalization warnings.
+- Rebuild policy: no `dotnet` rebuild and no Unity rebuild were run by explicit user instruction. Static checks are run separately in this loop.
+
+Exact microseconds saved after follow-up 22:
+- Calm helper calls now return before count/ambience buffer resolution even if a future callsite misses the peak guard.
+- Zero-mask panel borders skip centered-UV, offset, shadow, and crease lerp setup.
+- Estimated 1-4 us saved per 1k affected interior vertices/fragments on i3/MX350-class hardware beyond the callsite guard; 0 B/frame.

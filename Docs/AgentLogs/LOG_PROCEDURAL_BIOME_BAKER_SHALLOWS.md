@@ -93,3 +93,15 @@ Cinematic Cheats used: No runtime simulation added. The pass protects the existi
 Exact Microseconds saved: Runtime remains 0 us/frame and 0 bytes allocation. The change prevents hidden shader keyword/scalar drift from spending GPU budget on low-end hardware or weakening bioluminescent readability. Exact runtime microseconds not profiled because the code executes only in editor validation.
 
 Verification: Unity Bee response-file Roslyn compile for `Hecton8.Editor.ProceduralGen` exited 0. Material scan passed `MaterialContractScan=PASS Fields=26`. `git diff --check` exited 0 with only the repo LF-to-CRLF warning. Full `dotnet build Hecton8.Core.csproj --no-restore` failed outside this flora domain on missing generated `Temp/obj/Hecton8.Core/.NETStandard,Version=v2.1.AssemblyAttributes.cs`; restore-enabled retry timed out and the timed-out build process is no longer running.
+
+## 2026-05-15 LOD And Transform Contract Lockdown
+
+What was wrong: Safe Shallows validation still left several prefab invariants as implicit Unity state: LODGroup crossfade mode, screen-relative transition heights, fade widths, root identity transform, LOD child names, LOD child rotation/scale, and rock collision proxy transform identity. A manual prefab edit could create visible LOD popping, culling drift, or collision/render mismatch without failing the prior validator.
+
+What was done: Extended `ShallowsBioForgeBatchBaker` validation to lock root transforms, LODGroup crossfade settings, exact LOD thresholds, exact fade widths, LOD child names, LOD child rotation/scale, and the `Collision_LOD2` proxy transform contract.
+
+Cinematic Cheats used: Static offline SDF/L-system meshes remain the truth. The pass protects the LOD crossfade cheat, vertex-mask shader cheat, shared material/atlas cheat, no-flora-collision cheat, and rock-only convex collision proxy cheat.
+
+Exact Microseconds saved: Runtime remains 0 us/frame and 0 bytes allocation. The saved cost is avoided regression: no accidental scaled LOD child, disabled crossfade, or malformed collision proxy can force runtime correction casts, extra scripts, or visible transition cleanup later. Exact runtime microseconds not profiled because the validator executes only in editor.
+
+Verification: No dotnet rebuild was run by user order. `git diff --check` passed for the touched source. Source scans found the new validators and no scoped hot-path debt patterns in ProceduralGen. Prefab YAML scans found TubeCoral=50, Kelp=100, PorousRock=50 with `BadLodTransitionYaml=0`, `BadTransformYaml=0`, and PorousRock `BadCollisionNameYaml=0`. Project-wide numeric H-Phi is not claimed; local H-Phi evidence improved by increasing editor contract density without adding runtime ownership or Update cadence.

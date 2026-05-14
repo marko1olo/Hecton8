@@ -7,8 +7,7 @@
         "Hecton8.Input.Universal",
         "Unity.Mathematics",
         "Unity.Collections",
-        "Unity.Jobs",
-        "Unity.Burst"
+        "Unity.Jobs"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

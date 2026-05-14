@@ -108,6 +108,41 @@ Verification:
 Status:
 - VERIFIED VAULT LOCK - NO DOTNET REBUILD PER USER ORDER - EXACT MEMORY RSP TARGET STILL ABSENT FROM PRIOR CHECK.
 
+## 2026-05-15 - DTO Flag ABI and Manifest Coverage
+
+What was wrong:
+- `H8AllocationFlags.Relocatable` and an unused private ownerless `H8Memory.UnregisterPointer(void*)` shim remained after live relocation and ownerless release paths were locked out.
+- `ProceduralFaunaStateDTO` and `HibernatedFaunaStateDTO` still stored managed bool fields, despite the save codec already writing one-byte bool wire fields plus padding.
+- Multiple `[BinaryBlittableSafe]` SaveData DTOs had no central `BinaryLayoutManifest` size assertion.
+
+What was done:
+- Removed the dead `Relocatable` enum member and ownerless H8 unregister shim.
+- Replaced fauna DTO bool storage with fixed byte flags behind compatibility properties.
+- Updated `SaveBinaryPayloadCodec` reads to consume bools into locals, then set the flag-backed properties; the wire format remains unchanged.
+- Added `[BinaryBlittableSafe]` to the repaired fauna DTOs.
+- Expanded `BinaryLayoutManifest` so every currently marked `[BinaryBlittableSafe]` DTO in `SaveData.cs` has a size assertion and critical offset checks.
+- Updated `Docs/Design/Save_Binary_Header.md` to mark the fauna bool handoff debt as repaired.
+
+Cinematic Cheats used:
+- No new simulation. This is ABI hygiene: fixed flags and boot-time layout proof instead of runtime discovery.
+
+Exact Microseconds saved:
+- 0 us steady-frame change.
+- Removed dead relocation/ownerless symbols: 0 runtime cost, lower reconnection risk.
+- Fauna DTO flag packing is cold save/load only and writes the same bytes as before.
+- Manifest expansion is cold boot validation only.
+
+Verification:
+- No dotnet build/rebuild was run, per user order.
+- Static script found no `[BinaryBlittableSafe]` `SaveData.cs` DTO missing an `AssertSize<T>` entry.
+- Static scan found no public bool/string/array fields inside marked blit-safe DTO blocks.
+- Static scan found no `ReadBool(out values[i].field)` calls against flag-backed properties.
+- Static scan found no `Relocatable`, dead relocation arrays, DataVault live compaction symbols, or ownerless H8 unregister shim.
+- `git diff --check` passed with CRLF warnings only.
+
+Status:
+- VERIFIED VAULT LOCK - DTO ABI HARDENED - NO DOTNET REBUILD PER USER ORDER.
+
 ## 2026-05-14 - Save Version Tail Symmetry
 
 What was wrong:

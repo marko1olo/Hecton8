@@ -74,3 +74,31 @@ Solution: Replaced direct placement with bounded lookup, first-free-slot inserti
 Rejected Alternatives: Direct bitmask placement, a managed dictionary, or moving prompt strings into `PlayerLookTargetSignal`. Direct bitmask is fragile; dictionary lookup violates the hot path rules; managed signal payloads break the unmanaged signal lane.
 Scalability potential: Low/Middle/High/Ultra all use the same bounded 64-slot cache. Low still pays only signal-time copy work, not render-time lookup allocations.
 Hardware Impact: Expected cost is up to 64 integer compares only when a prompt signal is stored or copied, not per rendered glyph. This is acceptable against the UX correctness gain and still below any visible frame-time threshold. Measured proof absent.
+
+## Decision 10: Restored Indirect Draw Buffer Separation
+Problem: The continuation audit found the tooltip renderer had reverted to one shared instance buffer and one shared indirect args buffer for both icon and text draws. That risks GPU-side overwrite when the backend consumes the first indirect draw after the CPU has prepared the second.
+Solution: Restored separate text/icon `ComputeBuffer` instance payloads and separate indirect args buffers. Material bindings now bind the correct buffer per material, and dither uniform writes are dirty-gated.
+Rejected Alternatives: Keeping one shared buffer pair, relying on draw submission order, or switching back to Canvas/TMP objects. Shared buffers are not deterministic enough; Canvas/TMP objects violate the prompt and hot-path policy.
+Scalability potential: Low submits the minimum icon/text quads without duplicated state. Middle keeps cheap dither fade. High/Ultra can spend saved CPU/GPU budget on atlas/material treatment without changing signal transport.
+Hardware Impact: Expected low-end gain is mostly correctness plus fewer redundant material writes. Measured profiler proof absent; no dotnet rebuild was run per user instruction.
+
+## Decision 11: Restored Late-Frame Signal Resolve
+Problem: Tooltip signal consumption had reverted to UI `IUpdatable.Tick`, which is dispatcher-owned but earlier than the project VISUAL_SYNC/POST_SIMULATION UI signal pattern.
+Solution: Converted `DiegeticTooltipSystem` to `ILateFrameTickable`, registered through `GlobalRegistry.TryRegisterLateFrameTickable(..., PriorityLayer.UI)`, and resolved look-target signals, AUP shifts, scheme changes, and fade state before `GlobalSignals.ClearPostSimulationSnapshots()`.
+Rejected Alternatives: Keeping early UI `IUpdatable`, moving draw work into LateFrame, or reading Unity `Time.deltaTime`. Early UI tick is the wrong phase; drawing in LateFrame bypasses SRP ownership; Unity time reads break dispatcher timing.
+Scalability potential: Low snaps alpha late-frame. Middle/High/Ultra keep the same render payload and can scale visual quality independently from interaction truth.
+Hardware Impact: Runtime cost is roughly neutral; the gain is current-frame signal correctness and no native Unity update method. Measured profiler proof absent.
+
+## Decision 12: Restored Shader And Matrix Hot Path
+Problem: The shader had reverted to Bayer division expressions and `round()` on an integer-authored glyph index, and CPU glyph setup had reverted to `Quaternion.LookRotation` plus `Matrix4x4.TRS`.
+Solution: Replaced Bayer entries with constants, removed shader `round()`, restored branch-gated dither threshold, and built billboard matrices directly from camera right/up/forward vectors.
+Rejected Alternatives: Keeping helper math for readability, adding GPU expansion now, or returning to alpha-blended UI. Helper math costs avoidable CPU; GPU expansion is a larger contract change; alpha blend/floating UI breaks the diegetic depth policy.
+Scalability potential: Low gets fewer shader/CPU operations. Middle keeps dither fade. High/Ultra can spend saved budget on richer glyph effects.
+Hardware Impact: Expected gain is small per glyph but deterministic on weak CPUs and cheap GPUs. Measured profiler proof absent.
+
+## Decision 13: SRP Camera Fail-Closed Gate
+Problem: `RenderDispatcher` invokes renderables per SRP camera. Submitting the tooltip draw with an explicit player camera during auxiliary camera passes can duplicate draw work or orient the prompt from the wrong camera.
+Solution: Added `ResolveRenderCamera()` to resolve the intended interaction camera, compare it to `GlobalRenderContext.CurrentCamera`, skip non-target camera passes, and fail closed when no interaction camera is resolved during a render context.
+Rejected Alternatives: Drawing through every current camera, passing `null` camera, or trusting authoring order. Those create duplicate submission or wrong camera-facing math.
+Scalability potential: Low avoids extra editor/auxiliary submissions. Middle/High/Ultra preserve budget for visual overkill instead of duplicated indirect draws.
+Hardware Impact: No change in single-camera player frames; avoids one indirect submission per non-target camera pass in multi-camera/editor contexts. Measured profiler proof absent.

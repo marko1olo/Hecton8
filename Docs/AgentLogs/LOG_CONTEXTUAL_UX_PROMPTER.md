@@ -23,3 +23,16 @@ What was done: Replaced direct placement with bounded linear lookup, first-free-
 Cinematic cheats used: Kept hash-only signal payloads and bounded char slab storage instead of introducing managed prompt objects or dictionaries.
 
 Exact microseconds saved: No new savings claimed. This trade spends a small signal-time compare budget for prompt correctness while keeping render-time cost unchanged at fixed-array reads.
+
+## 2026-05-15 Continuation Restore And H-Phi Polish
+What was wrong: Recheck found the disk status/rationale had stale loop records, and the runtime renderer had reverted several hot-path fixes: UI `IUpdatable.Tick` signal consumption, shared icon/text indirect buffers, shader `round()` and Bayer division expressions, and per-glyph `Quaternion.LookRotation`/`Matrix4x4.TRS`.
+
+What was done: Restored `ILateFrameTickable` signal resolve before post-simulation snapshot clear, restored separate icon/text instance and args buffers, restored contract-sourced input scheme/glyph constants, restored direct billboard matrix writes, restored shader constant Bayer LUT and branch-gated dither, and added a fail-closed SRP camera gate through `GlobalRenderContext.CurrentCamera`.
+
+Cinematic cheats used: Same physical fake: one atlas quad per glyph, integer atlas lookup, alpha-test dither instead of blended Canvas/UI, Low-tier snap instead of fade, and camera-facing billboard math instead of real 3D text.
+
+Exact microseconds saved: Estimates only. Avoids one duplicate indirect submission per non-target camera pass, removes one quaternion/TRS helper path per glyph, avoids one blank space quad already present from the prior pass, and avoids repeated material/dither writes after warmup. No profiler capture available.
+
+Scalability matrix: Low snaps alpha, disables dither, uses minimal quads, and now avoids auxiliary-camera submission. Middle keeps 0.2s Bayer dither. High/Ultra can spend the preserved CPU/GPU budget on richer glyph materials and atlas quality without changing gameplay authority.
+
+Verification: No dotnet rebuilds were run because the user explicitly forbade them. Static scans on touched tooltip/cache/interaction files returned no `foreach`, `string.Format`, `.ToString(`, interpolated strings, managed collection construction, LINQ markers, exact sqrt, or normalize calls. Static scans on tooltip/shader returned no old shared `_instanceBuffer`/`_argsBuffer`, `_registeredUpdate`, tooltip `public void Tick`, tooltip `TryRegisterUpdatable`, `Quaternion.LookRotation`, `Matrix4x4.TRS`, shader `round(`, or Bayer `/ 16` expressions. `git diff --check` passed with CRLF warnings only.

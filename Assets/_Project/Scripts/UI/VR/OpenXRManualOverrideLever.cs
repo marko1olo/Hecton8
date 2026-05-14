@@ -7,7 +7,6 @@ using Hecton8.Interaction;
 using Hecton8.Tools;
 using Hecton8.UI.VR.Contracts;
 using Hecton8.World;
-using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
@@ -335,7 +334,10 @@ namespace Hecton8.UI.VR
                 return;
 
             float blend = _lowTierMath ? lowTierIkBlend : highTierIkBlend;
-            float step = math.saturate(blend * math.max(1f, dt * 90f));
+            float step = math.saturate(blend * math.saturate(dt * 60f));
+            if (step <= 0f)
+                return;
+
             Vector3 handlePosition = handleAnchor.position;
             Quaternion handleRotation = handleAnchor.rotation;
             if (!IsFiniteVector(handlePosition) || !IsFiniteQuaternion(handleRotation))
@@ -953,28 +955,5 @@ namespace Hecton8.UI.VR
             public byte Flags;
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        private struct LeverAngularSolveJob : IJob
-        {
-            public float3 HandLocal;
-            public float3 AxisLocal;
-            public float3 ReferenceLocal;
-            public float MinAngleDegrees;
-            public float MaxAngleDegrees;
-
-            [ReadOnly] public NativeArray<float3> LeverPivots;
-            public NativeArray<float> LeverTargets;
-
-            public void Execute()
-            {
-                LeverTargets[0] = SolveAngleFromHand(
-                    HandLocal,
-                    LeverPivots[0],
-                    AxisLocal,
-                    ReferenceLocal,
-                    MinAngleDegrees,
-                    MaxAngleDegrees);
-            }
-        }
     }
 }
