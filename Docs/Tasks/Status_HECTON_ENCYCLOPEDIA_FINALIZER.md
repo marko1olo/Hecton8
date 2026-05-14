@@ -4,7 +4,7 @@ Agent: WRITER_ARCHITECT
 Domain: The Chronicler (Docs)
 Prompt source: `Docs/Tasks/CURRENT_BATCH.md`
 Prompt task count: 6
-Status: ENCYCLOPEDIA VERIFIED - continuation committed
+Status: ENCYCLOPEDIA VERIFIED - second continuation committed
 
 ## Mandates Loaded
 
@@ -39,3 +39,6 @@ Status: ENCYCLOPEDIA VERIFIED - continuation committed
 - Iteration 8: Verified `Docs/README.md` contains the complete tracked direct `Docs/Reports/*.md` inventory, excluding nested deprecated snapshots.
 - Iteration 9: Structural gate passed: 20 FAQ entries, required glossary terms present, 85 domain ids, 84 tracked direct reports linked, 234 owned links checked with 0 missing.
 - Iteration 10: Python spellcheck rerun over current `Docs/`: 1507 files, 41520 unique tokens, 28 known typo hits in legacy/archive/deprecated surfaces, no owned encyclopedia typo requiring edit.
+- Iteration 11: Second continuation request received on 2026-05-15. Re-read status and rationale. `Docs/Tasks/CURRENT_BATCH.md` still points to another agent prompt, so this pass remains bound to the original captured 6-task assignment.
+- Iteration 12: Corrected structural gate passed: checked tasks `6/6`, FAQ entries `20`, required glossary terms present, ASCII and table domain ranges both contiguous `1..85`, direct tracked reports `84`, key-doc relative links checked `234`, missing links `0`, bad stale-domain wording `0`.
+- Iteration 13: ASCII domain backbone validation passed with `0` non-ASCII characters. `pyspellchecker` was missing from the active Python environment, installed with approval, then rerun over `1527` Docs text/CSV/JSON files: `85978` unique tokens, `13` known typo hits outside owned encyclopedia docs, `0` owned known typo hits.

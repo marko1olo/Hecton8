@@ -119,3 +119,15 @@ Rejected Alternatives: Linking nested deprecated reports in the primary README w
 Scalability potential: Low-context agents get direct report routing; high-tier feature owners still use current stable docs first.
 
 Hardware Impact: 0 us runtime gain; reduces documentation lookup cost only.
+
+## Decision 10 - Second Continuation Verification Discipline
+
+Problem: The first strict continuation parser was too narrow for the actual FAQ and architecture-map format, and the active Python environment lacked the `spellchecker` module required for a real rerun.
+
+Solution: Correct the parser to count numbered FAQ entries and both ASCII/table domain ids, validate the ASCII backbone for non-ASCII characters, install `pyspellchecker 0.9.0` with approval, and rerun the spellcheck over current `Docs/` text/CSV/JSON surfaces. Evidence class: FILESYSTEM / PY_SPELLCHECK.
+
+Rejected Alternatives: Accepting the failed import as proof, rewriting stable docs without a failing gate, or bulk-editing archive/CSV/JSON token noise was rejected as false cleanup.
+
+Scalability potential: Low/middle/high/ultra runtime tiers unchanged; future documentation agents get stronger mechanical evidence and less ambiguity around proof boundaries.
+
+Hardware Impact: 0 us runtime gain on i3/MX350; documentation verification only.

@@ -81,3 +81,35 @@ Verification:
 - Structural Python gate exited `0`.
 - Spellcheck Python gate exited `0`.
 - Runtime/Unity/Profiler/GC/player-build proof remains `PENDING VERIFICATION`.
+
+## 2026-05-15 - Second Continuation Hardening
+
+What was wrong:
+
+- User requested another certainty pass after the continuation commit.
+- The active batch file still points to another agent prompt, so this agent cannot re-extract the original XML from the live batch.
+- A first strict parser attempt was too narrow for the actual FAQ/domain-map formats.
+- The active Python environment lacked `spellchecker`, so a fresh Python spellcheck could not be accepted until the package was restored.
+
+What was done:
+
+- Re-read this agent's status and rationale before continuing.
+- Confirmed current `Docs/Tasks/CURRENT_BATCH.md` does not contain this agent prompt and kept scope bound to the captured 6-task assignment.
+- Re-ran corrected structural validation: checked tasks `6/6`, FAQ entries `20`, required glossary terms present, ASCII domain ids `1..85`, table domain ids `1..85`, direct tracked reports `84`, key-doc relative links `234`, missing links `0`, bad stale-domain wording `0`.
+- Validated the ASCII architecture backbone: `0` non-ASCII characters.
+- Installed `pyspellchecker 0.9.0` with approval after import failure, then reran spellcheck over `1527` Docs text/CSV/JSON files. Full corpus known typo hits: `13`; owned encyclopedia known typo hits: `0`.
+
+Cinematic Cheats used:
+
+- Documentation-only verification. No physical simulation or runtime presentation system touched.
+
+Exact Microseconds saved:
+
+- Runtime measured saving: 0 us. No runtime code changed.
+
+Verification:
+
+- Corrected structural Python gate exited `0`.
+- ASCII backbone Python gate exited `0`.
+- Python spellchecker gate exited `0`.
+- Runtime/Unity/Profiler/GC/player-build proof remains `PENDING VERIFICATION`.

@@ -82,3 +82,40 @@ Continuation structural gate:
 - owned missing links: `0`
 
 Boundary: `Docs/Tasks/CURRENT_BATCH.md` rotated to a new batch and no longer contains `<AGENT_PROMPT id="HECTON_ENCYCLOPEDIA_FINALIZER">`. The original assignment remains captured in `Docs/Tasks/Status_HECTON_ENCYCLOPEDIA_FINALIZER.md`.
+
+## 2026-05-15 Second Continuation Recheck
+
+The user requested another continuation pass. The active batch file still does not contain this agent prompt, so this pass uses the already-captured 6-task assignment in `Docs/Tasks/Status_HECTON_ENCYCLOPEDIA_FINALIZER.md`.
+
+Corrected structural gate:
+
+- checked tasks in status: `6`
+- reported task count: `6`
+- FAQ count: `20`
+- required glossary terms missing: `0`
+- ASCII domain ids: `1..85`, contiguous
+- table domain ids: `1..85`, contiguous
+- tracked direct `Docs/Reports/*.md` files: `84`
+- missing direct report links in `Docs/README.md`: `0`
+- key docs checked: `7`
+- key-doc relative links checked: `234`
+- key-doc missing links: `0`
+- bad stale-domain wording hits: `0`
+
+ASCII map gate:
+
+- `HECTON-8 DOMAIN BACKBONE` fenced text block found
+- non-ASCII characters inside ASCII backbone: `0`
+
+Python spellchecker gate:
+
+- active Python initially lacked `spellchecker`
+- `pyspellchecker 0.9.0` installed with user approval through `python -m pip install pyspellchecker`
+- files scanned: `1527`
+- unique tokens: `85978`
+- unknown tokens after allowlist: `73021`
+- owned unknown tokens after allowlist: `530`
+- known typo hits in full scanned corpus: `13`
+- known typo hits in owned encyclopedia docs: `0`
+
+The high unknown-token count is expected because this pass included `.csv` and `.json` evidence files, which contain GUID-like tokens, identifiers, file paths, and code symbols. No owned encyclopedia typo requiring a content edit was found.
