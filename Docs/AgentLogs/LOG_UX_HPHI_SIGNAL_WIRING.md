@@ -137,3 +137,68 @@ Domain: ECHELON 8 - PRESENTATION & UX
 ## Microseconds Saved
 - Measured saved time: 0 us. Profiler proof remains unavailable until the upstream compile wall is fixed.
 - Static estimate: ten additional dispatcher Update slots removed this pass; twenty-four total scoped UI Update-lane owners purged/neutralized across all passes; localization/layout one-shot owners no longer probe Update buckets; active tooltip/terminal/settings owners now drain in VISUAL_SYNC only while needed.
+
+# UX_HPHI_SIGNAL_WIRING Upgrade Pass 4 - HUD And PDA Visual Owners
+
+Status: COMPILE VERIFIED (`Hecton8.Core.csproj`)
+Domain: ECHELON 8 - PRESENTATION & UX
+
+## What Was Wrong
+- Five clean HUD/PDA overlays still implemented `ITickable` / `IUpdatable` and registered presentation work into dispatcher Update.
+- `BuilderStatusOverlay` had a cold `TMP_Text.SetText` title write in a touched UI file.
+
+## What Was Done
+- Converted `SurvivalHUDController`, `RelayHUDElement`, `PDADeathMemoryDump`, `PDAAtlasSignalTab`, and `BuilderStatusOverlay` to `ILateFrameTickable`.
+- Replaced Update registration/unregistration with `GlobalRegistry.TryRegisterLateFrameTickable` and `GlobalRegistry.UnregisterLateFrameTickable`.
+- Kept existing active-only or throttled behavior: death dump registers during reveal/fade, builder unregisters when not needed, relay hidden polling remains throttled, Atlas beacon polling remains 0.1s.
+- Replaced the builder title `SetText` call with pre-baked `TitleChars` + `SetCharArray`.
+- Removed duplicate delta clamps in Atlas and builder late-frame callbacks.
+- Updated H-Phi deletion evidence: scoped dispatcher Update-lane UI owners purged/neutralized now totals 29.
+
+## Cinematic Cheats Used
+- VISUAL_SYNC-only ownership.
+- Cached dispatcher delta instead of Tick delta relay.
+- Active-only overlay registration.
+- Hidden relay polling throttle.
+- Existing preallocated TMP char buffers and `SetCharArray`.
+
+## Verification
+- Static scan over the five edited files: no `ITickable`, `IUpdatable`, `TryRegisterUpdatable`, public `Tick`, LINQ, `string.Format`, interpolation `$"`, `SetText`, `.text =`, `Quaternion.Slerp`, or `math.slerp`.
+- `git diff --check`: clean except CRLF normalization warnings.
+- `dotnet build Hecton8.Core.csproj --no-restore --disable-build-servers --nologo -v:minimal -m:1 /nr:false /p:BuildInParallel=false /p:UseSharedCompilation=false`: exited `0`.
+
+## Microseconds Saved
+- Measured saved time: 0 us. No Unity profiler capture was run.
+- Static estimate: five additional dispatcher Update slots removed this pass; twenty-nine total scoped UI Update-lane owners purged/neutralized across all passes; one cold `SetText` site removed; two redundant delta clamps eliminated.
+
+# UX_HPHI_SIGNAL_WIRING Upgrade Pass 5 - Menu And Loading Visual Owners
+
+Status: COMPILE VERIFIED (`Hecton8.Core.csproj`)
+Domain: ECHELON 8 - PRESENTATION & UX
+
+## What Was Wrong
+- Five UI state machines still owned dispatcher Update work: action progress, loading tips, save hover preview, font streaming status, and PDA shell chrome.
+- Three files used `GlobalRegistry.Updatables.Contains` after registration, adding avoidable Update-bucket scans.
+
+## What Was Done
+- Converted `ActionProgressHUD`, `LoadingTipsDisplay`, `SaveSlotHoverPreview`, `FontStreamingManager`, and `PDAShellChrome` to `ILateFrameTickable`.
+- Replaced Update registration/unregistration with `GlobalRegistry.TryRegisterLateFrameTickable` and `GlobalRegistry.UnregisterLateFrameTickable`.
+- Preserved the existing state machines, signal snapshot consumption, loading-tip activation gate, save hover transitions, font-swap batching, and PDA-open unregister behavior.
+- Removed `GlobalRegistry.Updatables.Contains` registration probes from loading tips, save hover preview, and PDA shell chrome.
+- Updated H-Phi deletion evidence: scoped dispatcher Update-lane UI owners purged/neutralized now totals 34.
+
+## Cinematic Cheats Used
+- VISUAL_SYNC-only ownership.
+- Cached dispatcher delta instead of Tick delta relay.
+- Active-only loading-tip and PDA shell registration behavior.
+- Hover-preview explicit state machine.
+- Staged font streaming batches.
+
+## Verification
+- Static scan over the five edited files: no `ITickable`, `IUpdatable`, `TryRegisterUpdatable`, public `Tick`, LINQ, `string.Format`, interpolation `$"`, `SetText`, `.text =`, `Quaternion.Slerp`, or `math.slerp`.
+- `git diff --check`: clean except CRLF normalization warnings.
+- `dotnet build Hecton8.Core.csproj --no-restore --disable-build-servers --nologo -v:minimal -m:1 /nr:false /p:BuildInParallel=false /p:UseSharedCompilation=false`: exited `0`.
+
+## Microseconds Saved
+- Measured saved time: 0 us. No Unity profiler capture was run.
+- Static estimate: five additional dispatcher Update slots removed this pass; thirty-four total scoped UI Update-lane owners purged/neutralized across all passes; three O(N) Update-bucket registration probes removed.

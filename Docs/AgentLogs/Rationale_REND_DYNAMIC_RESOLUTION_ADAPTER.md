@@ -70,3 +70,10 @@ Solution: Added active-owner guards, a Start registration retry, same-runtime re
 Rejected Alternatives: Relying on Destroy timing for duplicates was rejected because OnEnable can still be risky during Unity lifecycle edge cases. Publishing a performance warning at default scale was rejected because it is false telemetry.
 Scalability potential: Low devices keep deterministic DRS ownership even across scene reloads; Middle/High/Ultra avoid warning-lane noise when no resolution drop occurred.
 Hardware Impact: Normal path adds one ReferenceEquals guard and one integer scale comparison, below 1 microsecond. Prevents duplicate registration/DRS-slot churn and removes false startup telemetry.
+
+## Decision 010 - Conservative signal merge
+Problem: Multiple producers can publish FrameTimeSignal and SystemHealthSignal in one frame; last-writer consumption could overwrite a worse EWMA frame time, health index, pressure level, or foveation tier before DRS target calculation.
+Solution: Merge only the current-frame snapshots, taking maximum EWMA frame time, minimum health index, maximum pressure, and maximum foveation tier, then replace cached values once per signal family.
+Rejected Alternatives: Trusting signal queue order was rejected because producer order is not a graphics policy contract. Persisting the previous frame in the max was rejected because it would make recovery sticky after pressure clears.
+Scalability potential: Low devices keep immediate scale drops when any current-frame lane reports stress; Middle recovers when current signals cool; High/Ultra avoid unnecessary downscale unless a same-frame signal actually proves pressure.
+Hardware Impact: Adds scalar comparisons only, estimated below 1 CPU microsecond per frame, and prevents missed 2500-8000 GPU microsecond savings during same-frame escalation.

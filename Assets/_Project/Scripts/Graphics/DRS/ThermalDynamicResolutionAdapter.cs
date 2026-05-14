@@ -291,6 +291,10 @@ namespace Hecton8.Graphics.DRS
 
         private void ConsumeSignals()
         {
+            float frameTimeEwmaMs = 0f;
+            bool frameTimeReceived = false;
+            float systemHealth01 = 1f;
+            bool systemHealthReceived = false;
             byte pressureLevel = 0;
             bool pressureReceived = false;
             byte foveatedPressureTier = 0;
@@ -299,7 +303,13 @@ namespace Hecton8.Graphics.DRS
             for (int i = 0; i < frameTimeSignals.Length; i++)
             {
                 FrameTimeSignal signal = frameTimeSignals[i];
-                _latestFrameTimeEwmaMs = SanitizePositive(signal.FrameTimeEwmaMs, _latestFrameTimeEwmaMs);
+                float candidateFrameTimeMs = SanitizePositive(signal.FrameTimeEwmaMs, 0f);
+                if (candidateFrameTimeMs > 0f)
+                {
+                    frameTimeEwmaMs = math.max(frameTimeEwmaMs, candidateFrameTimeMs);
+                    frameTimeReceived = true;
+                }
+
                 pressureLevel = MaxByte(pressureLevel, signal.PressureLevel);
                 pressureReceived = true;
             }
@@ -308,15 +318,23 @@ namespace Hecton8.Graphics.DRS
             for (int i = 0; i < healthSignals.Length; i++)
             {
                 SystemHealthSignal signal = healthSignals[i];
-                _latestSystemHealth01 = Sanitize01(signal.SystemHealthIndex01);
+                systemHealth01 = math.min(systemHealth01, Sanitize01(signal.SystemHealthIndex01));
+                systemHealthReceived = true;
                 pressureLevel = MaxByte(pressureLevel, signal.PressureLevel);
                 pressureReceived = true;
                 foveatedPressureTier = MaxByte(foveatedPressureTier, signal.FoveatedPressureTier);
                 foveatedPressureReceived = true;
                 if (signal.FpsEwma > 0f)
-                    _latestFrameTimeEwmaMs = 1000f * math.rcp(math.max(1f, signal.FpsEwma));
+                {
+                    frameTimeEwmaMs = math.max(frameTimeEwmaMs, 1000f * math.rcp(math.max(1f, signal.FpsEwma)));
+                    frameTimeReceived = true;
+                }
             }
 
+            if (frameTimeReceived)
+                _latestFrameTimeEwmaMs = frameTimeEwmaMs;
+            if (systemHealthReceived)
+                _latestSystemHealth01 = systemHealth01;
             if (pressureReceived)
                 _pressureLevel = pressureLevel;
             if (foveatedPressureReceived)

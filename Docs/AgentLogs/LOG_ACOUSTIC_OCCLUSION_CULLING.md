@@ -150,3 +150,28 @@ Verification:
 - File-scoped scans over virtualizer contracts/job report no `.Sort(`, `List<T>.Sort`, `FixedList`, `foreach`, `math.sqrt`, `math.normalize`, `StartCoroutine`, `PlayOneShot`, `string.Format`, `$"..."`, or `.ToString(`.
 - Direct `AudioSource.Play()` scan still reports legacy base/tool/player/music/central audio loops outside the `SoundEmissionSignal` virtualization domain.
 - Full project build was not restarted because unrelated `dotnet build` / Unity compiler processes are active; Unity MCP remains offline.
+
+## 2026-05-14 - Continuation Upgrade Pass 4
+What was wrong:
+- Stable virtual channel identity ignored `StationaryCacheKey`, wasting a known stationary acoustic identity.
+- A local stable-key helper had appeared in `SpatialAudioManager`, duplicating the contracts utility and creating drift risk.
+- Internal `QueueSoundEmissionSignal` validated an audio event, then called public `EnqueueVirtualVoice`, which validated the same event again.
+
+What was done:
+- `VirtualVoiceUtility.ComputeStableKey` now hashes `StationaryCacheKey`.
+- Removed the local stable-key helper and routed `SpatialAudioManager` through the contracts utility.
+- Split `AppendVirtualVoice` from public `EnqueueVirtualVoice`; internal signal ingress validates once, external callers remain guarded.
+
+Cinematic Cheats used:
+- Same deterministic perceptual stack: identity hash plus selected top-K, not a managed source registry; stationary cache identity is used as cheap continuity glue.
+
+Exact microseconds saved:
+- Profiler data unavailable.
+- Mechanical saving: one `TryResolveAudioEventClip` table lookup removed per accepted internal `SoundEmissionSignal`.
+- Expected qualitative saving: fewer unnecessary 10 ms steals for stationary emitters because channel keys now include stationary acoustic identity.
+
+Verification:
+- Focused Mono compile passes for `AcousticPortalPropagation.cs`, `AudioVirtualizationContracts.cs`, and `AudioVirtualizationJobs.cs`.
+- Roslyn parse passes for `AudioVirtualizationContracts.cs`, `AudioVirtualizationJobs.cs`, and `SpatialAudioManager.cs`.
+- Scan confirms only one `ComputeStableKey` implementation remains and `SpatialAudioManager` calls `VirtualVoiceUtility.ComputeStableKey`.
+- Virtualizer anti-bloat scans remain clean.

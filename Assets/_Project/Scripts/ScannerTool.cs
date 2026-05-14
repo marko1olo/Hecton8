@@ -602,6 +602,7 @@ namespace Hecton8.Gameplay
         private uint _pendingScientificOcclusionHash;
         private float _pendingScientificOcclusionDistance;
         private NativeArray<LoreCandidateResult> _scientificLoreCandidateResult;
+        private uint _lastPublishedTuningToolHash;
         private uint _lastPublishedTuningArtifactHash;
         private uint _lastPublishedTuningBlueprintHash;
         private bool _lastPublishedTuningActive;
@@ -928,8 +929,10 @@ namespace Hecton8.Gameplay
                           artifactHash != 0u &&
                           (_scientificSnapshot.IsActive || _activeScientificFragment != null || _activeScientificEntityHash != 0u);
             int progressBucket = math.clamp((int)math.round(math.saturate(progress01) * 1000f), 0, 1000);
+            uint signalToolHash = RuntimeToolId != 0u ? RuntimeToolId : ScannerToolTuningHash;
 
             if (active == _lastPublishedTuningActive &&
+                signalToolHash == _lastPublishedTuningToolHash &&
                 artifactHash == _lastPublishedTuningArtifactHash &&
                 blueprintHash == _lastPublishedTuningBlueprintHash &&
                 progressBucket == _lastPublishedTuningProgressBucket)
@@ -938,12 +941,13 @@ namespace Hecton8.Gameplay
             }
 
             _lastPublishedTuningActive = active;
+            _lastPublishedTuningToolHash = signalToolHash;
             _lastPublishedTuningArtifactHash = artifactHash;
             _lastPublishedTuningBlueprintHash = blueprintHash;
             _lastPublishedTuningProgressBucket = progressBucket;
             GlobalSignals.Publish(new ScannerToolActiveSignal
             {
-                ToolHash = ScannerToolTuningHash,
+                ToolHash = signalToolHash,
                 ArtifactHash = artifactHash,
                 BlueprintHash = blueprintHash != 0u ? blueprintHash : FallbackScannerBlueprintHash,
                 Frame = unchecked((uint)Time.frameCount),

@@ -18,7 +18,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Font Streaming Manager")]
-    public sealed class FontStreamingManager : MonoBehaviour, ITickable, IUpdatable, ILocalizationLanguageChangedListener
+    public sealed class FontStreamingManager : MonoBehaviour, ILateFrameTickable, ILocalizationLanguageChangedListener
     {
         private const string RootName = "FontStreamingStatus";
         private const string DefaultStatusText = "[REBOOTING LANG_MODULE...]";
@@ -102,11 +102,12 @@ namespace Hecton8.UI
         }
 
         /// <inheritdoc />
-        public void Tick(float dt)
+        public void LateFrameTick()
         {
             if (!EnsureUiBuilt(allowCreate: false))
                 return;
 
+            float dt = math.max(0f, SystemDispatcher.CurrentFrameDeltaTime);
             TryCompleteVisibleHashPrefetch();
 
             if (_awaitingPrimaryFontReadiness)
@@ -581,7 +582,7 @@ namespace Hecton8.UI
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+            _registered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
         private void UnregisterFromTickManager()
@@ -589,7 +590,7 @@ namespace Hecton8.UI
             if (!_registered)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
             _registered = false;
         }
 

@@ -77,9 +77,25 @@ Mandates read:
 - [x] Inactive signal helper | DOD: `PublishInactiveScannerTuningSignal()` centralizes play/quitting guard and uses the existing decoupled signal lane | Rejected: direct UI controller call or scanner manager singleton | Estimate: 500 us
 - [x] Compile recovery verification | DOD: `dotnet build Hecton8.Core.csproj` passed with 0 warnings / 0 errors after Loop 8; filtered build also had no scanner file matches | Rejected: carrying prior global dependency wall forward after project graph recovered | Estimate: 201000 us
 
+## Loop 9 - Title Cache Version Hardening
+
+- [x] Re-extract scanner prompt | DOD: raw PowerShell extraction re-read the full DIEGETIC_LORE_SCANNER tag before cache-version edits | Rejected: continuing from previous loop memory | Estimate: 800 us
+- [x] Lore title cache version stamp | DOD: `ScannableTarget` now increments `LoreTitleLookupVersion` whenever the lore title lookup cache invalidates | Rejected: managed dictionary or per-title string cache | Estimate: 450 us
+- [x] Diegetic RT title cache invalidation | DOD: `ToolDiegeticDisplayController` binds its fixed char cache to artifact hash plus lore-title version, forcing refresh when runtime title/registry data changes | Rejected: stale same-hash title cache | Estimate: 550 us
+- [x] Static no-regression checks after Loop 9 | DOD: `git diff --check` passed; no `Camera.main`, `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, or `.text =` hits in scanner/UI/target files | Rejected: visual review only | Estimate: 1500 us
+- [x] Compile verification after Loop 9 | DOD: filtered and plain `dotnet build Hecton8.Core.csproj` both passed; final summary build was 0 warnings / 0 errors | Rejected: relying on one transient build pass | Estimate: 124000 us
+
+## Loop 10 - Runtime Tool-Hash Signal Hardening
+
+- [x] Recheck filtered scanner signal path | DOD: inspected `ToolDiegeticDisplayController.SetToolHashFilter`, `ScannerToolActiveSignal`, `PlayerTool.RuntimeToolId`, and `ModularEquipmentEngine` tool-state publishing | Rejected: assuming synthetic `SCNR` works for authored runtime-tool filters | Estimate: 2200 us
+- [x] Publish real runtime tool hash | DOD: `ScannerToolActiveSignal.ToolHash` now uses `RuntimeToolId` when available and falls back to `SCNR` only when runtime id is unavailable | Rejected: widening UI accept rules and risking scanner data on non-scanner tool displays | Estimate: 650 us
+- [x] Dedup key includes tool hash | DOD: scanner tuning signal cache now tracks `_lastPublishedTuningToolHash`, forcing a packet if runtime id changes after registration | Rejected: stale dedup state hiding the corrected tool hash | Estimate: 450 us
+- [x] Static no-regression checks after Loop 10 | DOD: `git diff --check` passed; no `Camera.main`, `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, or `.text =` hits in scanner/UI/target files | Rejected: report-only verification | Estimate: 1500 us
+- [x] Compile verification after Loop 10 | DOD: filtered and plain `dotnet build Hecton8.Core.csproj` both passed; final summary build was 0 warnings / 0 errors | Rejected: one-pass compile proof | Estimate: 66000 us
+
 ## Verification
 
-- [x] Compile/source validation - `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:quiet -clp:Summary` passed with 0 warnings / 0 errors after Loop 8
+- [x] Compile/source validation - `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:quiet -clp:Summary` passed with 0 warnings / 0 errors after Loop 10
 - [ ] Console check - BLOCKED BY UNITY SESSION: MCP validate/console calls cannot connect to Unity MCP HTTP endpoint / session
 - [x] Re-read prompt after core tasks
 - [x] Omega polish mandate after all tasks done or blocked

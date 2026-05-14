@@ -88,3 +88,19 @@ Verification:
 
 Batch prompt extraction note:
 `Docs\Tasks\CURRENT_BATCH.md` currently does not contain `<AGENT_PROMPT id="VAULT_MEMORY_RELOCATOR">`; PowerShell regex extraction returned `PROMPT_NOT_FOUND`. The local status/rationale/log files and the chat assignment remain the active memory for this agent.
+
+## 2026-05-14 - Hardening Pass 6
+What was wrong:
+Core still had internal raw vault views that could go stale after live compaction. `SystemDispatcher` cached `NativeArray<double>` for H8 time and `NativeArray<RaycastHit>` for scheduled dispatcher raycast hits. The raycast buffer also needed a lock while `RaycastCommand.ScheduleBatch` owned it.
+
+What was done:
+Added `VaultBufferHandle<double>` and `VaultBufferHandle<RaycastHit>` storage in `SystemDispatcher`. H8 time now resolves its handle before writes. Dispatcher raycast hits now resolve before scheduling and call `TryLockBuffer(BufferID.DispatcherRaycastHits)` before the scheduled job, then unlock after completion or forced disposal. Repaired one more concurrent overwrite of `GlobalDataVault.cs` that restored stale-handle throws and telemetry-only defrag.
+
+Cinematic Cheats used:
+No simulation. This is deterministic pointer hygiene: use generation repair for local Core buffers and lock only the actual job-owned buffer window instead of pinning the full vault.
+
+Exact Microseconds saved:
+No profiler capture is available. Added work is branch-level handle resolution plus one lock/unlock around dispatcher raycast scheduling. The saved cost is avoided crash/stale-pointer recovery and avoided whole-vault pinning.
+
+Verification:
+Source readback confirms `GlobalDataVault.cs` has no `FatalMemoryException.ThrowStaleVaultHandle`, still contains `RunCompactionSlice`, and still calls direct `UnsafeUtility.MemMove`. `dotnet exec "C:\Program Files\Unity\Hub\Editor\6000.4.1f1\Editor\Data\DotNetSdkRoslyn\csc.dll" @Library\Bee\artifacts\1900b0aEDbg.dag\Hecton8.Core.Memory.rsp` exits 0. Full strict `dotnet build .\Hecton8.Core.csproj --no-restore --nologo -v:minimal -p:UseSharedCompilation=false -p:BuildInParallel=false -m:1` exits 0 with 47 warnings and 0 errors; warnings are in package/third-party projects (URP, GPUInstancer, Crest, ShaderGraph/WaveHarmonic).

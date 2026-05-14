@@ -420,7 +420,7 @@ namespace Hecton8.Editor.ProceduralGen
             {
                 string path = AssetDatabase.GUIDToAssetPath(guids[i]);
                 GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
-                ValidatePrefab(path, prefab, material, rocks, ref failures);
+                ValidatePrefab(path, familyFolder, prefab, material, rocks, ref failures);
             }
 
             ValidateMeshFamily(familyFolder, expectedCount, ref failures);
@@ -458,7 +458,7 @@ namespace Hecton8.Editor.ProceduralGen
             }
         }
 
-        private static void ValidatePrefab(string path, GameObject prefab, Material material, bool rock, ref int failures)
+        private static void ValidatePrefab(string path, string familyFolder, GameObject prefab, Material material, bool rock, ref int failures)
         {
             if (prefab == null)
             {
@@ -477,6 +477,7 @@ namespace Hecton8.Editor.ProceduralGen
 
             LOD[] lods = lodGroup.GetLODs();
             ValidateLodContract(path, lods, ref failures);
+            ValidatePrefabMeshReferences(path, familyFolder, lods, ref failures);
 
             Renderer[] renderers = prefab.GetComponentsInChildren<Renderer>(true);
             if (renderers.Length != 3)
@@ -536,6 +537,22 @@ namespace Hecton8.Editor.ProceduralGen
                 Debug.LogError($"[ShallowsBioForgeBatchBaker] Runtime script component found at {path}.");
             }
 
+        }
+
+        private static void ValidatePrefabMeshReferences(string path, string familyFolder, LOD[] lods, ref int failures)
+        {
+            string assetStem = Path.GetFileNameWithoutExtension(path);
+            for (int i = 0; i < lods.Length; i++)
+            {
+                Mesh mesh = ResolveFirstMesh(lods[i].renderers);
+                string actualPath = mesh != null ? AssetDatabase.GetAssetPath(mesh) : null;
+                string expectedPath = $"{MeshRoot}/{familyFolder}/{assetStem}_LOD{i}.asset";
+                if (!string.Equals(actualPath, expectedPath, StringComparison.Ordinal))
+                {
+                    failures++;
+                    Debug.LogError($"[ShallowsBioForgeBatchBaker] LOD{i} mesh reference mismatch at {path}. Expected={expectedPath}, Actual={actualPath}.");
+                }
+            }
         }
 
         private static void ValidateLodContract(string path, LOD[] lods, ref int failures)

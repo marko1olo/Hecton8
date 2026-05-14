@@ -12,7 +12,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Loading Tips Display")]
-    public sealed class LoadingTipsDisplay : MonoBehaviour, ITickable, IUpdatable, ILocalizationLanguageChangedListener
+    public sealed class LoadingTipsDisplay : MonoBehaviour, ILateFrameTickable, ILocalizationLanguageChangedListener
     {
         private const int TipBufferCapacity = 256;
 
@@ -145,11 +145,12 @@ namespace Hecton8.UI
             RefreshTickRegistration();
         }
 
-        public void Tick(float dt)
+        public void LateFrameTick()
         {
             if (!_isActive || tipText == null || tipCanvasGroup == null)
                 return;
 
+            float dt = math.max(0f, SystemDispatcher.CurrentFrameDeltaTime);
             if (_isFadingIn)
             {
                 _fadeTimer += dt;
@@ -293,8 +294,7 @@ namespace Hecton8.UI
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _registered = GlobalRegistry.Updatables.Contains(this);
+            _registered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
         private void RefreshTickRegistration()
@@ -349,7 +349,7 @@ namespace Hecton8.UI
             if (!_registered)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
             _registered = false;
         }
     }

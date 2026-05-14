@@ -79,3 +79,19 @@ Avoids duplicate hot-swap commits and false telemetry events, estimated 2-10 CPU
 
 Verification:
 STATUS: PENDING VERIFICATION. Static dispatcher inspection confirms HomeostasisBrain.PreSimulationTick runs before IUpdatable lanes, so Core-lane DRS consumes same-frame FrameTimeSignal/SystemHealthSignal data. git diff --check reports no whitespace errors, only CRLF conversion warnings. Stray dotnet.exe processes were cleared with taskkill. Unity Editor verification remains blocked.
+
+## 2026-05-14 - Conservative Signal Merge Recheck
+What was wrong:
+FrameTimeSignal/SystemHealthSignal merging still let producer order decide EWMA frame time, health index, and foveation tier when more than one same-frame signal was present. Pressure was already max-merged, but the rest of the decision context could still be softened by a later signal.
+
+What was done:
+Merged current-frame snapshots conservatively: maximum EWMA frame time, minimum system health index, maximum pressure level, and maximum foveation pressure tier. Cached values are replaced once per signal family so later frames can still recover normally.
+
+Cinematic Cheats used:
+Still no per-camera GPU timing or thermal simulation. The adapter uses scalar EWMA and signal tiers as cheap presentation knobs.
+
+Exact Microseconds saved:
+Adds only scalar comparisons, estimated below 1 CPU microsecond per frame, while preserving emergency downscale opportunities worth an estimated 2500-8000 GPU microseconds on fill-rate-bound frames.
+
+Verification:
+STATUS: PENDING VERIFICATION. Static hot-path scan found no foreach, LINQ, string formatting, ToString, Enumerable, or Unity Update in the touched runtime files. git diff --check is clean apart from CRLF conversion warnings. Unity Editor/MCP verification remains blocked.

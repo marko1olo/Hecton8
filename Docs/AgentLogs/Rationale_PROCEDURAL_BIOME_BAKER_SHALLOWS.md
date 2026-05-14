@@ -114,6 +114,20 @@ Hardware Impact: Runtime remains 0 us/frame for generation. Validation protects 
 
 Verification: `dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary` returned `Build succeeded. 0 Warning(s). 0 Error(s).` Mesh scan found TubeCoral `LOD0=50, LOD1=50, LOD2=50`, Kelp `LOD0=100, LOD1=100, LOD2=100`, PorousRock `LOD0=50, LOD1=50, LOD2=50`, all with `Other=0`. Prefab scan found `Prefabs=200`, `MaterialRefs=600`, `MeshColliders=50`, and `CollisionChildren=50`.
 
+## Decision 10 - Exact Prefab-To-Mesh Reference Contract
+
+Problem: The stale mesh payload pass proved mesh counts, but a prefab could still reference an older mesh asset with the right LOD count, or a mesh from the wrong family, if a re-bake or manual move went wrong.
+
+Solution: Extend prefab validation to derive the prefab stem and require each LOD renderer mesh to resolve to the exact deterministic asset path: `MeshRoot/{Family}/{Stem}_LOD{i}.asset`. This ties prefab references, generated mesh assets, and deterministic naming into one contract.
+
+Rejected Alternatives: Counting material references and mesh asset counts alone was rejected because those prove quantity, not identity. Hashing entire prefab YAML was rejected because Unity serialization order can churn and would create brittle validation noise. Re-baking again was rejected because no generated content changed; the defect was in validator coverage.
+
+Scalability potential: Low/Middle/High/Ultra tiers all benefit from stable asset identity. Scatter tables can reference prefab GUIDs while the validator guarantees each prefab carries the intended three LOD meshes and no cross-family payload drift.
+
+Hardware Impact: Runtime remains 0 us/frame. The impact is risk reduction: no accidental high-detail or wrong-family mesh can slip into a low-tier prefab without validation failure. That protects MX350-class geometry budgets, especially for LOD2 impostor use.
+
+Verification: `dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary` returned `Build succeeded. 0 Warning(s). 0 Error(s).` A GUID text scan checked all 200 prefabs against their expected three mesh `.meta` GUIDs and found `BadReferenceCount=0`.
+
 ## OMEGA POLISH CHANGES
 
 Problem: The polish mandate required a final anti-bloat pass after the checklist reached 100%, including bitmask checks, reciprocal/sqrt audit, GC audit, and a build probe.

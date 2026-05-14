@@ -207,3 +207,49 @@ Solution: Re-ran generated-project builds. Filtered build returned exit 0, zero 
 Rejected Alternatives: Keeping Task 15 blocked after compiler evidence became available; ignoring the previous inconsistent build behavior.
 Scalability potential: None; verification state.
 Hardware Impact: No runtime impact.
+
+## LOOP 9 TITLE CACHE VERSION HARDENING
+
+Problem: The diegetic RT title cache was keyed only by artifact hash. If a lore target refreshed title data or registry membership changed under the same hash, the RT could keep displaying stale decrypted title characters.
+Solution: Added `ScannableTarget.LoreTitleLookupVersion`, incremented from the same invalidation path that clears the static title lookup cache. `ToolDiegeticDisplayController` now refreshes its fixed `char[96]` title cache when either artifact hash or title version changes.
+Rejected Alternatives: Managed dictionary keyed by hash; caching localized strings in the UI; removing the fixed cache and scanning 1024 lore targets every repaint.
+Scalability potential: Low tier still bypasses title display. Middle/High/Ultra get stable same-target O(1) title copy while runtime title edits or registry churn invalidate correctly.
+Hardware Impact: One integer read/compare per scanner title resolve; avoids stale UI without adding managed allocation or steady physics work.
+
+Problem: The workspace has many unrelated dirty files, including `GlobalSignals.cs`, from other agents.
+Solution: Limited this pass to scanner-owned `ScannableTarget.cs` and `ToolDiegeticDisplayController.cs`. Did not patch core signal ordering while the core file is being edited by others.
+Rejected Alternatives: Editing dirty core signal infrastructure for a theoretical main-thread latest-state race; reverting unrelated agent edits.
+Scalability potential: Keeps scanner UI robust without increasing merge risk in the multi-agent workspace.
+Hardware Impact: No additional steady-frame cost beyond the title-version compare.
+
+Problem: Verification needed to prove this small cache change did not break compile.
+Solution: Ran scanner static checks, filtered build, and plain summary build. Final build passed with 0 warnings and 0 errors.
+Rejected Alternatives: Trusting local inspection only.
+Scalability potential: None; verification state.
+Hardware Impact: No runtime impact.
+
+## LOOP 10 RUNTIME TOOL-HASH HARDENING
+
+Problem: `ScannerToolActiveSignal.ToolHash` always used the synthetic `SCNR` tuning hash. `ToolDiegeticDisplayController.SetToolHashFilter()` is documented as a runtime tool hash filter, so a physical scanner display filtered to `PlayerTool.RuntimeToolId` could reject its own scanner active packet.
+Solution: Publish `RuntimeToolId` in `ScannerToolActiveSignal.ToolHash` when available, falling back to `SCNR` only when the runtime id is not ready.
+Rejected Alternatives: Broadening UI acceptance to any active scanner packet on any filtered display; direct display binding; scanner manager singleton.
+Scalability potential: Multiple tool displays can filter scanner signals by real runtime id. Generic unfiltered displays still receive scanner packets. Authoring that explicitly uses `SCNR` remains compatible because the UI already treats that filter as a scanner wildcard.
+Hardware Impact: One uint selection per scanner signal publish; no steady-frame cost beyond existing late-frame signal path.
+
+Problem: Existing scanner signal dedup ignored tool hash.
+Solution: Added `_lastPublishedTuningToolHash` to the dedup key so a signal is republished if the scanner runtime id appears after registration.
+Rejected Alternatives: Clearing all published cache fields on every lane register; removing dedup entirely.
+Scalability potential: Correct packet identity without increasing signal spam.
+Hardware Impact: One uint compare per publish attempt; avoids unnecessary duplicate signal traffic.
+
+Problem: The workspace is heavily dirty from parallel agents.
+Solution: Kept the edit scoped to `ScannerTool.cs`; did not touch dirty `GlobalSignals.cs` or unrelated systems.
+Rejected Alternatives: Refactoring signal infrastructure during concurrent core edits.
+Scalability potential: Minimal merge footprint.
+Hardware Impact: No additional runtime impact.
+
+Problem: Compile proof had to be refreshed after changing signal identity.
+Solution: Ran filtered and plain generated-project builds. Both passed; final summary build reported 0 warnings and 0 errors.
+Rejected Alternatives: Trusting static inspection after modifying signal payload identity.
+Scalability potential: None; verification state.
+Hardware Impact: No runtime impact.

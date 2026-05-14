@@ -1691,7 +1691,7 @@ namespace Hecton8.Audio
             float priority = request.FoveatedTier >= VirtualVoiceUtility.FoveatedTierFrozen
                 ? 0f
                 : math.max(0f, SanitizeFinite(request.Priority, 0f));
-            uint stableKey = ComputeVirtualVoiceStableKey(
+            uint stableKey = VirtualVoiceUtility.ComputeStableKey(
                 request.EventID,
                 request.ClipHash,
                 request.StationaryCacheKey,
@@ -2456,31 +2456,6 @@ namespace Hecton8.Audio
                 hash = (hash ^ (uint)statistics.StolenVoices) * 16777619u;
                 hash = (hash ^ math.asuint(loudestWeight)) * 16777619u;
                 return hash;
-            }
-        }
-
-        private static uint ComputeVirtualVoiceStableKey(
-            uint eventId,
-            uint clipHash,
-            int stationaryCacheKey,
-            in AcousticAup sourceAup)
-        {
-            unchecked
-            {
-                uint hash = 2166136261u;
-                hash = (hash ^ eventId) * 16777619u;
-                hash = (hash ^ clipHash) * 16777619u;
-                hash = (hash ^ (uint)stationaryCacheKey) * 16777619u;
-                hash = (hash ^ (uint)sourceAup.GridX) * 16777619u;
-                hash = (hash ^ (uint)(sourceAup.GridX >> 32)) * 16777619u;
-                hash = (hash ^ (uint)sourceAup.GridY) * 16777619u;
-                hash = (hash ^ (uint)(sourceAup.GridY >> 32)) * 16777619u;
-                hash = (hash ^ (uint)sourceAup.GridZ) * 16777619u;
-                hash = (hash ^ (uint)(sourceAup.GridZ >> 32)) * 16777619u;
-                hash = (hash ^ (uint)math.round(sourceAup.Local.x)) * 16777619u;
-                hash = (hash ^ (uint)math.round(sourceAup.Local.y)) * 16777619u;
-                hash = (hash ^ (uint)math.round(sourceAup.Local.z)) * 16777619u;
-                return hash != 0u ? hash : 1u;
             }
         }
 

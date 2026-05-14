@@ -57,3 +57,15 @@ Cinematic Cheats used: Static offline SDF meshes remain the core cheat. The pass
 Exact Microseconds saved: Runtime remains 0 us/frame. The concrete runtime protection is avoiding accidental uncompressed/readable atlas drift and stale mesh bloat. Editor-side gain is reduced batchmode UI cleanup/progress overhead; exact microseconds not profiled.
 
 Verification: `dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary` returned `Build succeeded. 0 Warning(s). 0 Error(s).` Mesh scan found TubeCoral `50/50/50`, Kelp `100/100/100`, PorousRock `50/50/50`, all `Other=0`. Prefab scan found `Prefabs=200`, `MaterialRefs=600`, `MeshColliders=50`, `CollisionChildren=50`.
+
+## 2026-05-14 Exact Mesh Reference Contract Pass
+
+What was wrong: Counts alone could not prove identity. A prefab could theoretically contain three LOD renderers and the project could contain 600 mesh assets while one prefab referenced a stale or cross-family mesh from a prior bake.
+
+What was done: Added exact prefab-to-mesh validation in `ShallowsBioForgeBatchBaker`: every prefab stem must reference `MeshRoot/{Family}/{Stem}_LOD0.asset`, `_LOD1.asset`, and `_LOD2.asset` through its LOD renderers. This is source-only validation; generated content did not need a re-bake.
+
+Cinematic Cheats used: Preserved the deterministic static mesh library, exact LOD payload cheat, shared atlas cheat, and rock-only collider cheat. The change prevents asset drift from undermining those cheats.
+
+Exact Microseconds saved: Runtime remains 0 us/frame. The gain is preventing accidental wrong-LOD or cross-family geometry from entering low-tier prefabs, which protects LOD2 geometry budgets. Exact runtime microseconds not profiled because this is validator coverage.
+
+Verification: `dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary` returned `Build succeeded. 0 Warning(s). 0 Error(s).` A GUID scan checked all 200 prefabs against their expected three mesh `.meta` GUIDs and found `BadReferenceCount=0`.

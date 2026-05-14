@@ -4,7 +4,7 @@
 //
 // ARCHITECTURE:
 //   • Consumes PlayerAction SignalBus snapshots.
-//   • ITickable for smooth fade animations.
+//   • ILateFrameTickable for smooth VISUAL_SYNC fade animations.
 //   • CanvasGroup for alpha control (zero GC).
 //   • Image.fillAmount for circular progress (zero GC).
 //
@@ -25,10 +25,10 @@ namespace Hecton8.UI
 {
     /// <summary>
     /// HUD element displaying action progress as a circular fill.
-    /// Reads PlayerAction signal snapshots from the dispatcher tick lane.
+    /// Reads PlayerAction signal snapshots from the dispatcher late-frame lane.
     /// </summary>
     [RequireComponent(typeof(CanvasGroup))]
-    public sealed class ActionProgressHUD : MonoBehaviour, ITickable, IUpdatable
+    public sealed class ActionProgressHUD : MonoBehaviour, ILateFrameTickable
     {
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -144,12 +144,12 @@ namespace Hecton8.UI
         }
 
         // ══════════════════════════════════════════════════════════
-        //  ITickable
+        //  ILateFrameTickable
         // ══════════════════════════════════════════════════════════
 
-        public void Tick(float deltaTime)
+        public void LateFrameTick()
         {
-            float safeDeltaTime = math.max(0f, deltaTime);
+            float safeDeltaTime = math.max(0f, SystemDispatcher.CurrentFrameDeltaTime);
             ProcessPlayerActionSignals();
 
             // Handle fade animations
@@ -315,14 +315,14 @@ namespace Hecton8.UI
 
             if (GlobalRegistry.Dispatcher == null) return;
 
-            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+            _registered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
         private void TryUnregister()
         {
             if (!_registered) return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
             _registered = false;
         }
     }

@@ -13,11 +13,11 @@ namespace Hecton8.UI
     /// <summary>
     /// Hover preview for save slots â€” shows enlarged thumbnail + metadata on hover.
     /// EXCEEDS SUBNAUTICA: Subnautica has no hover preview, only click-to-load.
-    /// Zero-GC: ITickable state machine, cached delegates, CanvasGroup alpha.
+    /// Zero-GC: ILateFrameTickable state machine, cached delegates, CanvasGroup alpha.
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Save Slot Hover Preview")]
-    public sealed class SaveSlotHoverPreview : MonoBehaviour, ITickable, IUpdatable, IPointerEnterHandler, IPointerExitHandler, ILocalizationLanguageChangedListener
+    public sealed class SaveSlotHoverPreview : MonoBehaviour, ILateFrameTickable, IPointerEnterHandler, IPointerExitHandler, ILocalizationLanguageChangedListener
     {
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         // INSPECTOR
@@ -110,11 +110,12 @@ namespace Hecton8.UI
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-        // ITICKABLE
+        // ILATEFRAMETICKABLE
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-        public void Tick(float dt)
+        public void LateFrameTick()
         {
+            float dt = Mathf.Max(0f, SystemDispatcher.CurrentFrameDeltaTime);
             switch (_state)
             {
                 case State.WaitingForDelay:
@@ -604,8 +605,7 @@ namespace Hecton8.UI
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _registered = GlobalRegistry.Updatables.Contains(this);
+            _registered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
         private void Unregister()
@@ -613,7 +613,7 @@ namespace Hecton8.UI
             if (!_registered)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
             _registered = false;
         }
 

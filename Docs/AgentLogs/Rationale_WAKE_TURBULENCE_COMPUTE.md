@@ -146,13 +146,13 @@ Hardware Impact: Static audit preserves the expected MX350 path: no per-frame ma
 ## Loop 9 - Cross-Domain Compile Unblockers
 
 Problem: Solution-level verification exposed unrelated compile blockers outside Environment.Fluids/VFX after the wake code was focused-clean.
-Solution: Applied three minimal compatibility fixes only where the compiler had concrete evidence: added `NoPlayerTarget` to `AlphaLeviathanTelemetryFlags`, changed editor relay verification to call `RelayHUDElement.LateFrameTick()`, and moved virtual voice stable-key hashing local to `SpatialAudioManager` to avoid a stale generated-project DLL surface.
-Rejected Alternatives: Editing generated `.csproj` references or reverting other agents' changes would be wider and less stable. Leaving obvious one-line contract/API mismatches unfixed would keep the verification wall artificial.
-Scalability potential: No change to wake scalability. The audio hash fix preserves source-AUP stable keys for virtual voice channel reuse; it does not allocate and does not increase voice count.
-Hardware Impact: No measurable frame cost. The stable-key helper is the same FNV-style integer hash previously intended by the contract source; expected cost is sub-microsecond per queued virtual voice.
+Solution: Applied minimal compatibility fixes only where the compiler had concrete evidence: added `NoPlayerTarget` to `AlphaLeviathanTelemetryFlags`, changed editor relay verification to call `RelayHUDElement.LateFrameTick()`, and verified the shared `VirtualVoiceUtility.ComputeStableKey` path now compiles because `AudioVirtualizationContracts.cs` is included in the generated build targets.
+Rejected Alternatives: Reverting other agents' generated-target fix or keeping a duplicate local stable-key helper would be wider and more brittle. Leaving obvious one-line contract/API mismatches unfixed would keep the verification wall artificial.
+Scalability potential: No change to wake scalability. The shared audio hash preserves source-AUP stable keys for virtual voice channel reuse; it does not allocate and does not increase voice count.
+Hardware Impact: No measurable frame cost. The shared FNV-style integer hash remains sub-microsecond per queued virtual voice.
 
 Problem: `dotnet build Hecton8.slnx --no-restore` still cannot complete after code symbol errors are cleared.
-Solution: Recorded the current hard wall exactly: missing `Temp/obj/*/project.assets.json` files for generated third-party/editor projects. Focused Core build succeeds with 0 errors and 0 warnings under `-m:1 /nr:false`.
-Rejected Alternatives: Running restore or rewriting generated Unity project files from this task would be outside the wake domain and may damage Unity-generated state.
+Solution: Restored/regenerated the focused Core build artifacts, created the missing `Temp/obj/Hecton8.Core` output directory, and recorded the current hard wall exactly: seven missing `Temp/obj/*/project.assets.json` files for generated third-party/editor projects. Focused Core build succeeds with 0 errors and 5 warnings under `-m:1 /nr:false`.
+Rejected Alternatives: Rewriting generated Unity project files from this task would be outside the wake domain and may damage Unity-generated state. The remaining solution failures are restore artifacts, not source edits.
 Scalability potential: None; this is build environment state.
 Hardware Impact: None at runtime.

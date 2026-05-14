@@ -66,13 +66,39 @@ Domain: Echelon 8 Presentation & UX
 - `Assets/_Project/Scripts/UI/EngineHealthOverlay.cs`
   - Removed `IUpdatable`; editor engine health graph refresh now uses late-frame ownership.
 
+### Upgrade Pass 4 - HUD And PDA Visual Owners
+- `Assets/_Project/Scripts/UI/SurvivalHUDController.cs`
+  - Removed `ITickable` / `IUpdatable`; survival bars now solve in VISUAL_SYNC with dispatcher late-frame delta.
+- `Assets/_Project/Scripts/UI/RelayHUDElement.cs`
+  - Removed `ITickable` / `IUpdatable`; relay route marker now runs as a late-frame visual owner.
+- `Assets/_Project/Scripts/UI/PDADeathMemoryDump.cs`
+  - Removed `ITickable` / `IUpdatable`; fatal-pressure memory dump reveal/fade now drains through late-frame ownership.
+- `Assets/_Project/Scripts/UI/PDAAtlasSignalTab.cs`
+  - Removed `ITickable` / `IUpdatable`; Atlas beacon polling/countdown refresh now runs in VISUAL_SYNC.
+- `Assets/_Project/Scripts/UI/BuilderStatusOverlay.cs`
+  - Removed `ITickable` / `IUpdatable`; builder overlay refresh now runs in VISUAL_SYNC and its cold title write uses `SetCharArray`.
+
+### Upgrade Pass 5 - Menu And Loading Visual Owners
+- `Assets/_Project/Scripts/UI/ActionProgressHUD.cs`
+  - Removed `ITickable` / `IUpdatable`; player-action signal snapshots and fade animation now run in VISUAL_SYNC.
+- `Assets/_Project/Scripts/UI/LoadingTipsDisplay.cs`
+  - Removed `ITickable` / `IUpdatable`; loading-tip fade/cycle timing now runs in VISUAL_SYNC and no longer probes `GlobalRegistry.Updatables`.
+- `Assets/_Project/Scripts/UI/SaveSlotHoverPreview.cs`
+  - Removed `ITickable` / `IUpdatable`; save-slot hover state machine now runs in VISUAL_SYNC and no longer probes `GlobalRegistry.Updatables`.
+- `Assets/_Project/Scripts/UI/FontStreamingManager.cs`
+  - Removed `ITickable` / `IUpdatable`; staged font swap/status fade now runs in VISUAL_SYNC.
+- `Assets/_Project/Scripts/UI/PDAShellChrome.cs`
+  - Removed `ITickable`; PDA shell chrome refresh now runs in VISUAL_SYNC and no longer probes `GlobalRegistry.Updatables`.
+
 ## Count
 - Direct Unity `Update()` methods deleted: 0 (none existed in UI sources at scan time).
-- Dispatcher Update-lane UI registrations purged/neutralized: 24.
-- Controllers moved to VISUAL_SYNC/LateFrame ownership: 24.
+- Dispatcher Update-lane UI registrations purged/neutralized: 34.
+- Controllers moved to VISUAL_SYNC/LateFrame ownership: 34.
 - Upgrade Pass 1 additions: 4 controllers.
 - Upgrade Pass 2 additions: 8 controllers.
 - Upgrade Pass 3 additions: 10 controllers.
+- Upgrade Pass 4 additions: 5 controllers.
+- Upgrade Pass 5 additions: 5 controllers.
 
 ## Compile Evidence
 - `dotnet build Assembly-CSharp.csproj --no-restore -v:minimal` is blocked by existing cross-domain assembly reference failures.
@@ -80,3 +106,5 @@ Domain: Echelon 8 Presentation & UX
 - Upgrade Pass 1 filtered compile for four added controllers returned only existing non-UX missing type/namespace diagnostics.
 - Upgrade Pass 2 filtered compile over eight added controllers timed out after 184 seconds before diagnostics; static scans over those files were clean for Update-lane ownership and zero-GC forbidden patterns.
 - Upgrade Pass 3 filtered compile over ten added controllers returned only existing non-UX diagnostics in `FaunaKinematicsRuntime` and `PlayerCriticalProceduralAudioRenderer`; no edited UI file diagnostics were present.
+- Upgrade Pass 4 final compile over `Hecton8.Core.csproj` exited `0` after transient concurrent build/file-lock attempts cleared. Static scans over the five added controllers were clean for Update-lane ownership and zero-GC forbidden patterns.
+- Upgrade Pass 5 final compile over `Hecton8.Core.csproj` exited `0`. Static scans over the five added controllers were clean for Update-lane ownership and zero-GC forbidden patterns.

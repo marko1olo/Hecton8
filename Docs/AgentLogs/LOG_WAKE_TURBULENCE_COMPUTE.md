@@ -109,12 +109,12 @@ What was wrong:
 - Solution-level build exposed three unrelated code symbol breaks after the wake path was focused-clean:
 - `PredatorCognitionDomain` emitted `AlphaLeviathanTelemetryFlags.NoPlayerTarget`, but the flag contract did not define it.
 - `RelayRouteAuthoringUtility` called `RelayHUDElement.Tick(float)`, but `RelayHUDElement` implements `ILateFrameTickable.LateFrameTick()`.
-- `SpatialAudioManager` called the newer four-argument `VirtualVoiceUtility.ComputeStableKey`, while the generated Core project referenced an older `Hecton8.Audio.Virtualization.Contracts.dll` surface.
+- `SpatialAudioManager` previously hit a generated-project surface mismatch around `VirtualVoiceUtility.ComputeStableKey`; the current build targets now include the contract source and the shared path compiles.
 
 What was done:
 - Added `NoPlayerTarget = 1 << 5` to `AlphaLeviathanTelemetryFlags`.
 - Changed relay HUD authoring verification to call `LateFrameTick()`.
-- Added a local `ComputeVirtualVoiceStableKey` hash in `SpatialAudioManager` and routed virtual voice enqueue through it.
+- Verified the shared `VirtualVoiceUtility.ComputeStableKey` path compiles and did not keep a duplicate local hash helper.
 - Killed an orphaned timed-out `dotnet build` process and reran focused Core with `-m:1 /nr:false`.
 
 Cinematic cheats used:
@@ -122,11 +122,12 @@ Cinematic cheats used:
 
 Exact microseconds saved:
 - No new wake runtime savings in this pass.
-- Audio stable-key hash remains integer-only and allocation-free; expected cost is below 1 us per queued virtual voice.
+- Audio stable-key hash remains shared, integer-only, and allocation-free; expected cost is below 1 us per queued virtual voice.
 
 Verification:
-- `dotnet build Hecton8.Core.csproj --no-restore -v:quiet -clp:ErrorsOnly -m:1 /nr:false`: succeeded, 0 errors, 0 warnings.
-- `dotnet build Hecton8.slnx --no-restore -v:quiet -clp:ErrorsOnly -m:1 /nr:false`: failed only on missing generated `Temp/obj/*/project.assets.json` restore artifacts across third-party/editor projects.
+- `dotnet build Hecton8.Core.csproj -v:quiet -clp:ErrorsOnly -m:1 /nr:false`: initially regenerated Core build artifacts; required creating `Temp/obj/Hecton8.Core`; then succeeded.
+- `dotnet build Hecton8.Core.csproj --no-restore -v:quiet -clp:ErrorsOnly -m:1 /nr:false`: succeeded, 0 errors, 5 warnings.
+- `dotnet build Hecton8.slnx --no-restore -v:quiet -clp:ErrorsOnly -m:1 /nr:false`: failed only on seven missing generated `Temp/obj/*/project.assets.json` restore artifacts in editor/third-party projects.
 - `git diff --check` on the cross-domain compile fixes: no whitespace errors, CRLF normalization warnings only.
 
 Status:

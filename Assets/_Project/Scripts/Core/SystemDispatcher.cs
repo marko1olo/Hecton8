@@ -281,6 +281,7 @@ namespace Hecton8.Core
         // COLD ALLOC: bool[64] - single telemetry gate per IslandID per frame - owner: SystemDispatcher
         private static readonly bool[] _baseStressCascadeTelemetryEmitted = new bool[BaseStressCascadeCircuitBreakerCapacity];
         private NativeArray<double> _h8Time;
+        private VaultBufferHandle<double> _h8TimeHandle;
         private bool _h8TimeVaultOwned;
         private double _fastTickAccumulator;
         private double _slowTickAccumulator;
@@ -385,7 +386,9 @@ namespace Hecton8.Core
         private static NativeQueue<RaycastCommand> _pendingDispatcherRaycastCommands;
         private static NativeList<RaycastCommand> _scheduledDispatcherRaycastCommands;
         private static NativeArray<RaycastHit> _scheduledDispatcherRaycastHits;
+        private static VaultBufferHandle<RaycastHit> _scheduledDispatcherRaycastHitsHandle;
         private static bool _scheduledDispatcherRaycastHitsVaultOwned;
+        private static bool _scheduledDispatcherRaycastHitsVaultLocked;
         private static JobHandle _scheduledDispatcherRaycastHandle;
         private static bool _dispatcherRaycastsScheduled;
         private static int _pendingDispatcherRaycastCount;
@@ -1388,16 +1391,19 @@ namespace Hecton8.Core
 
             if (dataVault != null)
             {
-                _h8Time = dataVault.GetBuffer<double>(
+                _h8TimeHandle = dataVault.GetBufferHandle<double>(
                     BufferID.H8Time,
                     (int)H8TimeSlot.Count,
                     SystemID.SystemDispatcher,
                     NativeArrayOptions.ClearMemory);
+                _h8Time = _h8TimeHandle.Resolve(dataVault);
                 if (_h8Time.IsCreated)
                 {
                     _h8TimeVaultOwned = true;
                     return;
                 }
+
+                _h8TimeHandle = default;
             }
 
             _h8Time = H8Memory.Allocate<double>((int)H8TimeSlot.Count, SystemID.SystemDispatcher, Allocator.Persistent, NativeArrayOptions.ClearMemory); // FALLBACK COLD ALLOC: NativeArray<double>[4] - dispatcher H8 time SOA when DataVault is unavailable - owner: SystemDispatcher
@@ -1407,6 +1413,30 @@ namespace Hecton8.Core
                 nameof(_h8Time),
                 NativeAllocationLifetime.Session);
             _h8TimeVaultOwned = false;
+        }
+
+        private bool TryResolveH8TimeArray()
+        {
+            EnsureH8TimeArray();
+            if (!_h8TimeVaultOwned)
+                return _h8Time.IsCreated;
+
+            IDataVault dataVault = _dataVault;
+            if (dataVault == null)
+            {
+                RefreshDataVaultDependency();
+                dataVault = _dataVault;
+            }
+
+            if (dataVault == null)
+                return false;
+
+            NativeArray<double> resolved = _h8TimeHandle.Resolve(dataVault);
+            if (!resolved.IsCreated)
+                return false;
+
+            _h8Time = resolved;
+            return true;
         }
 
         private void RefreshDataVaultDependency()
@@ -1554,18 +1584,22 @@ namespace Hecton8.Core
             if (_h8TimeVaultOwned)
             {
                 _h8Time = default;
+                _h8TimeHandle = default;
                 _h8TimeVaultOwned = false;
                 return;
             }
 
             NativeMemorySentinel.UnregisterNativeArray(_h8Time);
             H8Memory.Release(ref _h8Time);
+            _h8TimeHandle = default;
             _h8TimeVaultOwned = false;
         }
 
         private void UpdateH8TimeState(float dilatedDeltaTime, float unscaledDeltaTime)
         {
-            EnsureH8TimeArray();
+            if (!TryResolveH8TimeArray())
+                return;
+
             double dilatedTime = _h8Time[(int)H8TimeSlot.Time] + dilatedDeltaTime;
             double unscaledTime = Time.unscaledTimeAsDouble;
             _h8Time[(int)H8TimeSlot.Time] = dilatedTime;
@@ -2876,16 +2910,19 @@ namespace Hecton8.Core
                 IDataVault dataVault = GlobalRegistry.DataVault;
                 if (dataVault != null)
                 {
-                    _scheduledDispatcherRaycastHits = dataVault.GetBuffer<RaycastHit>(
+                    _scheduledDispatcherRaycastHitsHandle = dataVault.GetBufferHandle<RaycastHit>(
                         BufferID.DispatcherRaycastHits,
                         MaxQueuedDispatcherRaycasts,
                         SystemID.SystemDispatcher,
                         NativeArrayOptions.ClearMemory);
+                    _scheduledDispatcherRaycastHits = _scheduledDispatcherRaycastHitsHandle.Resolve(dataVault);
                     if (_scheduledDispatcherRaycastHits.IsCreated)
                     {
                         _scheduledDispatcherRaycastHitsVaultOwned = true;
                         return;
                     }
+
+                    _scheduledDispatcherRaycastHitsHandle = default;
                 }
 
                 _scheduledDispatcherRaycastHits = H8Memory.Allocate<RaycastHit>(MaxQueuedDispatcherRaycasts, SystemID.SystemDispatcher, Allocator.Persistent, NativeArrayOptions.ClearMemory); // FALLBACK COLD ALLOC: NativeArray<RaycastHit>[1024] - deferred raycast hit lane when DataVault is unavailable - owner: SystemDispatcher
@@ -2896,6 +2933,49 @@ namespace Hecton8.Core
                     NativeAllocationLifetime.Session);
                 _scheduledDispatcherRaycastHitsVaultOwned = false;
             }
+        }
+
+        private static bool TryResolveDispatcherRaycastHits()
+        {
+            EnsureDispatcherRaycastBuffers();
+            if (!_scheduledDispatcherRaycastHitsVaultOwned)
+                return _scheduledDispatcherRaycastHits.IsCreated;
+
+            IDataVault dataVault = GlobalRegistry.DataVault;
+            if (dataVault == null)
+                return false;
+
+            NativeArray<RaycastHit> resolved = _scheduledDispatcherRaycastHitsHandle.Resolve(dataVault);
+            if (!resolved.IsCreated)
+                return false;
+
+            _scheduledDispatcherRaycastHits = resolved;
+            return true;
+        }
+
+        private static bool TryLockDispatcherRaycastHitsVaultBuffer()
+        {
+            if (!_scheduledDispatcherRaycastHitsVaultOwned || _scheduledDispatcherRaycastHitsVaultLocked)
+                return true;
+
+            IDataVault dataVault = GlobalRegistry.DataVault;
+            if (dataVault == null || !dataVault.TryLockBuffer(BufferID.DispatcherRaycastHits))
+                return false;
+
+            _scheduledDispatcherRaycastHitsVaultLocked = true;
+            return true;
+        }
+
+        private static void UnlockDispatcherRaycastHitsVaultBuffer()
+        {
+            if (!_scheduledDispatcherRaycastHitsVaultLocked)
+                return;
+
+            IDataVault dataVault = GlobalRegistry.DataVault;
+            if (dataVault != null)
+                dataVault.TryUnlockBuffer(BufferID.DispatcherRaycastHits);
+
+            _scheduledDispatcherRaycastHitsVaultLocked = false;
         }
 
         private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
@@ -2918,7 +2998,14 @@ namespace Hecton8.Core
                 return;
 
             EnsureDispatcherRaycastBuffers();
-            if (!_pendingDispatcherRaycastCommands.IsCreated || !_scheduledDispatcherRaycastCommands.IsCreated)
+            if (!_pendingDispatcherRaycastCommands.IsCreated ||
+                !_scheduledDispatcherRaycastCommands.IsCreated ||
+                !TryResolveDispatcherRaycastHits())
+            {
+                return;
+            }
+
+            if (!TryLockDispatcherRaycastHitsVaultBuffer())
                 return;
 
             using (_dispatcherRaycastScheduleProfilerMarker.Auto())
@@ -2945,7 +3032,10 @@ namespace Hecton8.Core
 
                 _pendingDispatcherRaycastCount = 0;
                 if (scheduledCount <= 0)
+                {
+                    UnlockDispatcherRaycastHitsVaultBuffer();
                     return;
+                }
 
                 _scheduledDispatcherRaycastCount = scheduledCount;
                 _scheduledDispatcherRaycastHandle = RaycastCommand.ScheduleBatch(
@@ -2981,6 +3071,7 @@ namespace Hecton8.Core
                 }
 
                 _scheduledDispatcherRaycastCount = 0;
+                UnlockDispatcherRaycastHitsVaultBuffer();
             }
         }
 
@@ -2990,10 +3081,12 @@ namespace Hecton8.Core
             {
                 DispatcherJobSwap.TryComplete(ref _scheduledDispatcherRaycastHandle, forceComplete: true);
                 _dispatcherRaycastsScheduled = false;
+                UnlockDispatcherRaycastHitsVaultBuffer();
             }
             else
             {
                 _scheduledDispatcherRaycastHandle = default;
+                UnlockDispatcherRaycastHitsVaultBuffer();
             }
 
             if (_pendingDispatcherRaycastCommands.IsCreated)
@@ -3015,12 +3108,14 @@ namespace Hecton8.Core
                 if (_scheduledDispatcherRaycastHitsVaultOwned)
                 {
                     _scheduledDispatcherRaycastHits = default;
+                    _scheduledDispatcherRaycastHitsHandle = default;
                     _scheduledDispatcherRaycastHitsVaultOwned = false;
                 }
                 else
                 {
                     NativeMemorySentinel.UnregisterNativeArray(_scheduledDispatcherRaycastHits);
                     H8Memory.Release(ref _scheduledDispatcherRaycastHits);
+                    _scheduledDispatcherRaycastHitsHandle = default;
                 }
             }
 

@@ -44,6 +44,7 @@ Last Prompt Extraction: 2026-05-14 from Docs/Tasks/CURRENT_BATCH.md
 7. Loop 7 complete: invalid-scale fault containment now writes the corrupt frame before dump, resets to native scale, commits the reset, applies direct URP fallback when registry runtime disappears, and restores DynamicResolutionScaler default state when clearing system override.
 8. Loop 8 complete: same-frame pressure merge now takes the maximum pressure level across FrameTimeSignal and SystemHealthSignal instead of allowing lower later signals to erase escalation.
 9. Loop 9 complete: duplicate adapters are prevented from registering/clearing active DRS state, Start retries dispatcher registration, hot-swap duplicate callbacks now no-op on same runtime, SubsystemRegistration restores Unity DRS slot, and startup/default-scale telemetry warnings are suppressed.
+10. Loop 10 complete: same-frame signal merge now uses worst current-frame EWMA frame time, worst health index, maximum pressure, and maximum foveation tier so producer order cannot hide GPU/thermal escalation.
 
 ## Verification
 - Unity MCP refresh: failed, no Unity session available after refresh timeout.
@@ -56,3 +57,4 @@ Last Prompt Extraction: 2026-05-14 from Docs/Tasks/CURRENT_BATCH.md
 - Static hot-path scan after Loop 8: no foreach, LINQ, string formatting, ToString, Enumerable, or Unity Update in ThermalDynamicResolutionAdapter/DynamicResolutionScaler. Only new List hit remains the Android-only XRDisplaySubsystem scratch list behind UNITY_ANDROID && !UNITY_EDITOR.
 - Static dispatcher inspection after Loop 9: HomeostasisBrain.PreSimulationTick runs before dispatcher IUpdatable lanes, so the adapter consumes same-frame FrameTimeSignal/SystemHealthSignal data on the Core lane.
 - git diff --check after Loop 9: no whitespace errors; only CRLF conversion warnings. Stray dotnet.exe processes were cleared again with taskkill /IM dotnet.exe /F.
+- Static hot-path scan after Loop 10: no foreach, LINQ, string formatting, ToString, Enumerable, or Unity Update in ThermalDynamicResolutionAdapter/DynamicResolutionScaler. git diff --check reports no whitespace errors, only CRLF conversion warnings on ThermalDynamicResolutionAdapter.cs.

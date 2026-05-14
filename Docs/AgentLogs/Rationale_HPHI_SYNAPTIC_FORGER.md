@@ -2,7 +2,7 @@
 
 Agent: ARCHITECTURAL_SURGEON
 Domain: Core/Gameplay Signal Architecture
-State: PENDING - GLOBAL COMPILE DEPENDENCY BLOCK
+State: COMPLETE - DOTNET BUILDS VERIFIED / UNITY MCP UNAVAILABLE
 
 ## Decisions
 
@@ -76,4 +76,12 @@ Problem: PDA and vehicle SignalBus lanes had moved from Unity instance ids to st
 Solution: Added `GlobalSignals.FoldEntityIdToSourceId(ulong)` using a zero-free 32-bit avalanche fold, then routed PDAExchangeSystem, PDABarterTab, and VehicleUpgradeModule through the same helper. Producer and consumer now share one Core source-id contract without adding payload fields or managed state.
 Rejected Alternatives: Expanding `SourceId` to `ulong` was rejected because the H-Phi packets are fixed 32-byte lanes and the UI only needs a deterministic match key. Per-system private hash helpers were rejected because they invite drift between producer and consumer. Returning to `GetInstanceID()` was rejected because it is runtime-local and weaker for persistence/reload behavior.
 Scalability potential: Low/toaster keeps source matching at one cached 32-bit key and no extra frame work; Middle keeps multiple PDA refresh consumers deterministic; High/Ultra can add telemetry, cockpit audio, and cinematic overlay consumers without re-keying the signal lane or inflating packets.
-Hardware Impact: Estimated i3/MX350 frame gain is 0.0 us steady-state because the fold happens on bind/cache, not per UI scan. Quality gain is collision-risk reduction at no hot-path allocation cost. Latest Core build fails on one unrelated fauna enum error: `PredatorCognitionDomain.cs(1680,59) AlphaLeviathanTelemetryFlags.NoPlayerTarget`; no H-Phi touched file appears in the build error list.
+Hardware Impact: Estimated i3/MX350 frame gain is 0.0 us steady-state because the fold happens on bind/cache, not per UI scan. Quality gain is collision-risk reduction at no hot-path allocation cost. Final Core and Assembly-CSharp dotnet builds succeeded after project assets were restored.
+
+### 2026-05-14 - Final Build Verification Pass
+
+Problem: The compile state changed during the session: early runs hit unrelated dependency errors, then `--no-restore` failed because project assets under `Temp/obj` had been removed or cleaned by concurrent activity.
+Solution: Ran `dotnet restore Hecton8.Core.csproj` and `dotnet restore Assembly-CSharp.csproj`, then reran both build gates with `--no-restore`. `Hecton8.Core.csproj` succeeded with 0 errors / 6 warnings. `Assembly-CSharp.csproj` succeeded with 0 errors / 131 warnings.
+Rejected Alternatives: Ignoring the missing assets file was rejected because it would leave the compile proof stale. Editing unrelated fauna/editor/package warnings was rejected because the warnings are outside H-Phi signal architecture and do not block compilation.
+Scalability potential: Low/toaster and High/Ultra tiers now share the same verified signal-code path; additional consumers can attach to the lanes without reopening compile-risk questions in this batch.
+Hardware Impact: Runtime impact is 0.0 us/frame. Verification impact is build-confidence only: the H-Phi code compiles in both Core and wider Assembly-CSharp gates.

@@ -55,7 +55,7 @@ Status: PENDING VERIFICATION
 - [x] 14. BLACKBOX DUMP: Push `ActiveTurbulenceWakes` to telemetry.
   DOD: Added `ActiveTurbulenceWakes` to the 300-frame fluid advection telemetry ring, global warning telemetry, and `Dump_WAKE_TURBULENCE_COMPUTE.bin`. Rejected: chat-only reporting. Estimate: one int in the ring entry; no hot allocation.
 - [x] 15. OMEGA COMPILE CHECK: Verify GPU buffer mapping.
-  DOD: Static mapping verified from C# property IDs to RenderGraph imports/use calls to compute shader declarations. `dotnet build Hecton8.Core.csproj --no-restore -v:quiet -clp:ErrorsOnly -m:1 /nr:false` succeeded with 0 errors and 0 warnings on the current project state. Solution-level build now reaches generated third-party/editor projects and stops on missing `project.assets.json` restore artifacts. Unity MCP compile/profiler validation remains unavailable. Rejected: claiming Unity Editor runtime proof without an active Unity session. Estimate: 0 runtime us.
+  DOD: Static mapping verified from C# property IDs to RenderGraph imports/use calls to compute shader declarations. `dotnet build Hecton8.Core.csproj --no-restore -v:quiet -clp:ErrorsOnly -m:1 /nr:false` succeeded with 0 errors and 5 warnings on the current project state after regenerating Core build artifacts. Solution-level build now reaches generated third-party/editor projects and stops on missing `project.assets.json` restore artifacts. Unity MCP compile/profiler validation remains unavailable. Rejected: claiming Unity Editor runtime proof without an active Unity session. Estimate: 0 runtime us.
 
 ## Iteration Log
 
@@ -131,6 +131,6 @@ Status: PENDING VERIFICATION
 - Solution-level compile exposed unrelated code symbol blockers after the wake path was already focused-clean.
 - Added `AlphaLeviathanTelemetryFlags.NoPlayerTarget` because `PredatorCognitionDomain` already emitted the telemetry bit.
 - Updated relay authoring verification to call `RelayHUDElement.LateFrameTick()` instead of a non-existent `Tick(float)`.
-- Replaced a generated-project-fragile `VirtualVoiceUtility.ComputeStableKey` call with a local `ComputeVirtualVoiceStableKey` implementation matching the current source hash inputs.
-- Focused Core build now succeeds with 0 errors and 0 warnings using `dotnet build Hecton8.Core.csproj --no-restore -v:quiet -clp:ErrorsOnly -m:1 /nr:false`.
-- Solution build no longer reports code symbol errors before the next wall; it fails on missing `Temp/obj/*/project.assets.json` for generated third-party/editor projects.
+- Verified the current shared `VirtualVoiceUtility.ComputeStableKey` path now compiles with `AudioVirtualizationContracts.cs` included in the generated build targets; avoided keeping a duplicate local hash helper.
+- Focused Core build now succeeds with 0 errors and 5 warnings using `dotnet build Hecton8.Core.csproj --no-restore -v:quiet -clp:ErrorsOnly -m:1 /nr:false`.
+- Solution build no longer reports code symbol errors before the next wall; it fails on seven missing `Temp/obj/*/project.assets.json` artifacts for generated third-party/editor projects.

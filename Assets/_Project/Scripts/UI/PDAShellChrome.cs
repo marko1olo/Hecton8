@@ -14,7 +14,7 @@ namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/PDA Shell Chrome")]
-    public sealed class PDAShellChrome : MonoBehaviour, ITickable, IPDAEventListener, ILocalizationLanguageChangedListener
+    public sealed class PDAShellChrome : MonoBehaviour, ILateFrameTickable, IPDAEventListener, ILocalizationLanguageChangedListener
     {
         private const string TitleTextValue = "HECTON-8 PERSONAL DATA ASSISTANT";
         private const string ActiveTabInventory = "ACTIVE TAB // INVENTORY";
@@ -372,7 +372,7 @@ namespace Hecton8.UI
             RefreshChrome();
         }
 
-        public void Tick(float deltaTime)
+        public void LateFrameTick()
         {
             if (!PlayerPDA.IsOpen)
             {
@@ -1209,8 +1209,7 @@ namespace Hecton8.UI
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _registeredToTickManager = GlobalRegistry.Updatables.Contains(this);
+            _registeredToTickManager = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
         private void UnregisterFromTickManager()
@@ -1218,7 +1217,7 @@ namespace Hecton8.UI
             if (!_registeredToTickManager)
                 return;
 
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
 
             _registeredToTickManager = false;
         }

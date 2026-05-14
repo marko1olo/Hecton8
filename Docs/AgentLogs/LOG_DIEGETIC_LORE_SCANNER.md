@@ -166,3 +166,54 @@ Verification:
 - `rg Camera.main`, `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, and `.text =` over scanner/UI/target files: no matches.
 - Filtered `dotnet build Hecton8.Core.csproj`: exit 0, 0 error lines, 0 scanner-file matches.
 - Plain `dotnet build Hecton8.Core.csproj`: Build succeeded, 0 warnings, 0 errors, elapsed 00:01:36.62.
+
+## Follow-Up Hardening Pass 5
+
+What was wrong:
+- The diegetic scanner RT title cache was keyed by artifact hash only. Same-hash runtime title refresh or lore registry churn could leave stale decrypted title text in the fixed UI buffer.
+- `GlobalSignals.cs` is dirty from other agents, so core latest-signal ordering was not a safe ownership target for this scanner pass.
+
+What was done:
+- Added `ScannableTarget.LoreTitleLookupVersion`.
+- Incremented that version from the existing lore title cache invalidation path.
+- Bound `ToolDiegeticDisplayController` scanner-title cache to artifact hash plus lore-title version.
+
+Cinematic Cheats used:
+- Kept the title cache as a fixed-buffer display fake. Runtime title changes now invalidate with an integer stamp, not a managed cache.
+
+Exact Microseconds saved:
+- Verified exact microseconds: PENDING PROFILER.
+- Steady added cost: one integer read/compare per title resolve.
+- Avoided cost retained: same-target title repaint stays O(1) instead of repeated 1024-entry scans.
+
+Verification:
+- Prompt re-extracted cover-to-cover with attribute-safe XML regex.
+- `git diff --check` on scanner/UI/target edits: pass.
+- `rg Camera.main`, `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, and `.text =` over scanner/UI/target files: no matches.
+- Filtered `dotnet build Hecton8.Core.csproj`: exit 0, 0 error lines, 0 scanner-file matches.
+- Plain `dotnet build Hecton8.Core.csproj`: Build succeeded, 0 warnings, 0 errors, elapsed 00:00:42.03.
+
+## Follow-Up Hardening Pass 6
+
+What was wrong:
+- Scanner active packets used the synthetic `SCNR` hash as `ToolHash`, while diegetic tool displays can be filtered by real runtime tool id.
+- The signal dedup cache did not include tool hash, so a late runtime id correction could be suppressed.
+
+What was done:
+- `ScannerToolActiveSignal.ToolHash` now uses `RuntimeToolId` when nonzero, with `SCNR` fallback.
+- Added `_lastPublishedTuningToolHash` to the scanner tuning signal dedup key.
+
+Cinematic Cheats used:
+- None added. This preserves the existing decryption display fake and makes the signal identity match the physical tool filter.
+
+Exact Microseconds saved:
+- Verified exact microseconds: PENDING PROFILER.
+- Added cost: one uint selection and one uint compare per late-frame publish attempt.
+- Saved cost retained: no new UI polling, no manager, no direct object reference.
+
+Verification:
+- Prompt re-extracted cover-to-cover with attribute-safe XML regex.
+- `git diff --check` on scanner/UI/target edits: pass, line-ending warning only.
+- `rg Camera.main`, `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, and `.text =` over scanner/UI/target files: no matches.
+- Filtered `dotnet build Hecton8.Core.csproj`: exit 0, 0 error lines, 0 scanner-file matches.
+- Plain `dotnet build Hecton8.Core.csproj`: Build succeeded, 0 warnings, 0 errors, elapsed 00:00:07.86.

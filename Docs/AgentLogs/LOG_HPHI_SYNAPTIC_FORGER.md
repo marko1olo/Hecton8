@@ -101,8 +101,35 @@ Exact microseconds saved:
 - Saved cost is architectural: lower source collision risk without increasing packet size or adding managed allocation.
 
 Verification:
-- `dotnet build Hecton8.Core.csproj --no-restore` now fails on one unrelated error only: `Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs(1680,59): AlphaLeviathanTelemetryFlags.NoPlayerTarget`.
-- Latest build log has no errors in `GlobalSignals.cs`, `PlayerActionController.cs`, `ActionProgressHUD.cs`, `PDAExchangeSystem.cs`, `PDABarterTab.cs`, or `VehicleUpgradeModule.cs`.
+- Intermediate `dotnet build Hecton8.Core.csproj --no-restore` reached one unrelated fauna enum error and no H-Phi touched-file errors.
+- Final builds after project restore are covered in the closure section below.
 - `git diff --check` returned no whitespace errors, only CRLF normalization warnings.
 - Targeted scans found no converted-lane `public event`, `event Action`, `UnityEvent`, `Action<`, `.Invoke(`, `GetInstanceID(`, `foreach`, `string.Format`, `$"` interpolation, `math.sqrt`, `math.normalize`, or raw lower-32 source-id casts in the H-Phi touched hot files.
 - Remaining expected hits: existing `SignalBus<T>` `new NativeArray<T>` owner allocation in Core and cold `PDAExchangeSystem.BuildBundleSummaryForSave()` `.ToString()` save serialization.
+
+## 2026-05-14 - Build Verification Closure
+
+What was wrong:
+- `--no-restore` briefly failed because `Temp/obj/Hecton8.Core/project.assets.json` and `Temp/obj/Assembly-CSharp/project.assets.json` were missing after concurrent environment churn.
+- Earlier compile-wall notes are superseded by the restored build evidence below.
+
+What was done:
+- Ran `dotnet restore Hecton8.Core.csproj`.
+- Ran `dotnet build Hecton8.Core.csproj --no-restore`: succeeded, 0 errors, 6 warnings from Unity package/editor dependencies.
+- Ran `dotnet restore Assembly-CSharp.csproj`.
+- Ran `dotnet build Assembly-CSharp.csproj --no-restore`: succeeded, 0 errors, 131 warnings from third-party/editor dependencies.
+- Added `[MethodImpl(MethodImplOptions.AggressiveInlining)]` to `GlobalSignals.FoldEntityIdToSourceId(ulong)`.
+
+Cinematic Cheats used:
+- No new simulation. Verification protects the cheap SignalBus packet architecture already forged.
+
+Exact microseconds saved:
+- 0.0 us/frame from build verification itself.
+- Source-id fold remains 0.0 us/frame steady-state because it is cached/bind-time work.
+
+Verification:
+- `Docs/AgentLogs/Build_HPHI_SYNAPTIC_FORGER_latest.txt`: `Build succeeded`, 6 warnings, 0 errors.
+- `Docs/AgentLogs/Build_HPHI_SYNAPTIC_FORGER_AssemblyCSharp_latest.txt`: `Build succeeded`, 131 warnings, 0 errors.
+- Final targeted forbidden scan over H-Phi touched runtime files returned no matches for converted-lane events, invokes, UnityEvents, `GetInstanceID(`, managed foreach, `string.Format`, sqrt/normalize, or raw lower-32 entity-id source casts.
+- Final `git diff --check` returned clean.
+- Unity MCP Editor validation remains unavailable because the local MCP endpoint was not reachable earlier in the session.

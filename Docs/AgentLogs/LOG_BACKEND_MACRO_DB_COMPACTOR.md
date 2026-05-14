@@ -201,4 +201,5 @@ Exact microseconds saved:
 - Stale public flush calls pay one B-tree lookup and payload-header validation; false telemetry/retry investigation cost is removed.
 
 Verification:
-- Pending rerun. Current shared-tree compile wall is outside Macro DB in Fauna.
+- `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -v:minimal -m:1 /nr:false /p:UseSharedCompilation=false` exited 0 with 36 warnings, 0 errors.
+- Warnings are third-party/package warnings plus one shared output-lock retry that recovered; no Macro DB diagnostic surfaced.

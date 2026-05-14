@@ -104,3 +104,10 @@ Status: PENDING VERIFICATION
 - Added atlas importer validation for repeat wrap, mipmaps, non-readable textures, compression, sRGB policy, normal-map type, max size, and Standalone BC5/BC7 platform settings.
 - Patched `BioForgeGenerator` to skip `EditorUtility.ClearProgressBar()` in batchmode as well as progress display calls.
 - Verification: `dotnet build Hecton8.Core.csproj` succeeded with `0 Warning(s), 0 Error(s)`. Asset scans found TubeCoral `50/50/50` LOD meshes, Kelp `100/100/100`, PorousRock `50/50/50`, `Prefabs=200`, `MaterialRefs=600`, `MeshColliders=50`, `CollisionChildren=50`.
+
+### Loop 9 - Deterministic Mesh Reference Contract
+
+- Re-extracted the XML assignment and inspected the current validator/source around family, prefab, mesh, and material validation.
+- Found one remaining GUID-stable re-bake failure mode: a prefab could have valid LOD counts while still referencing an older or cross-family mesh asset.
+- Patched `ShallowsBioForgeBatchBaker` to validate exact prefab-to-mesh mapping: for every prefab stem, LOD0/1/2 must resolve to `Assets/_Project/Art/Generated/Flora/BioForge/Shallows/{Family}/{Stem}_LOD{i}.asset`.
+- Verification: `dotnet build Hecton8.Core.csproj` succeeded with `0 Warning(s), 0 Error(s)`. A text GUID scan checked all 200 prefabs against their expected three mesh `.meta` GUIDs and found `BadReferenceCount=0`.
