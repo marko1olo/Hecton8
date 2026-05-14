@@ -277,9 +277,9 @@ Compact summary audit:
 Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json
 ```
 
-The compact summary includes aggregate scores, Core graph debt, top owner-blocked
-DataVault candidate files, and `TopAupPrecisionRiskFiles` for immediate AUP
-precision regression routing.
+The compact summary includes aggregate scores, Core graph debt, duplicate signal
+name debt, top owner-blocked DataVault candidate files, and
+`TopAupPrecisionRiskFiles` for immediate AUP precision regression routing.
 
 Core graph only:
 
@@ -303,6 +303,12 @@ AUP precision budget gate:
 
 ```powershell
 Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0
+```
+
+Duplicate signal-name budget gate:
+
+```powershell
+Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxDuplicateSignalNames 0
 ```
 
 Core graph with unused-reference candidates:

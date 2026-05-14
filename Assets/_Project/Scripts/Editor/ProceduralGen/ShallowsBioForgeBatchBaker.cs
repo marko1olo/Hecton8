@@ -49,10 +49,12 @@ namespace Hecton8.Editor.ProceduralGen
         private const string UntaggedTag = "Untagged";
         // COLD ALLOC: List<Color>[9600] - reusable editor vertex color validation scratch - owner: ShallowsBioForgeBatchBaker
         private static readonly List<Color> VertexColorScratch = new List<Color>(MaxValidatedMeshVertices);
-        // COLD ALLOC: Editor-only prefab validation scratch lists reused across the generated Shallows library.
-        private static readonly List<Transform> TransformScratch = new List<Transform>(5);
-        private static readonly List<Component> ComponentScratch = new List<Component>(4);
-        private static readonly List<Material> RendererMaterialScratch = new List<Material>(1);
+        // COLD ALLOC: List<Transform>[8] - reusable editor prefab hierarchy/state validation scratch - owner: ShallowsBioForgeBatchBaker
+        private static readonly List<Transform> TransformScratch = new List<Transform>(8);
+        // COLD ALLOC: List<Component>[8] - reusable editor component envelope validation scratch - owner: ShallowsBioForgeBatchBaker
+        private static readonly List<Component> ComponentScratch = new List<Component>(8);
+        // COLD ALLOC: List<Material>[4] - reusable editor renderer material slot validation scratch - owner: ShallowsBioForgeBatchBaker
+        private static readonly List<Material> RendererMaterialScratch = new List<Material>(4);
 
         [MenuItem("HECTON-8/Bio-Forge/Bake Safe Shallows Assets", false, 172)]
         public static void BakeSafeShallowsAssets()
@@ -1172,6 +1174,12 @@ namespace Hecton8.Editor.ProceduralGen
             {
                 failures++;
                 Debug.LogError($"[ShallowsBioForgeBatchBaker] LODGroup is disabled at {path}.");
+            }
+
+            if (!IsFinite(lodGroup.localReferencePoint) || !IsFinite(lodGroup.size) || lodGroup.size <= 0f)
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] LODGroup bounds contract failed at {path}. Size={lodGroup.size:0.000000}, LocalReferencePoint={lodGroup.localReferencePoint}.");
             }
 
             if (lodGroup.fadeMode != LODFadeMode.CrossFade || !lodGroup.animateCrossFading)

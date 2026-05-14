@@ -225,3 +225,15 @@ Cinematic Cheats used: Rock collision stays a coarse LOD2 convex proxy. Flora re
 Exact Microseconds saved: Runtime remains 0 us/frame and 0 bytes procedural allocation. This prevents hidden collider mesh bloat or disabled/trigger-only proxy drift; exact runtime microseconds were not profiled.
 
 Verification: No dotnet rebuild and no Unity import was run. `RockColliderLod2GuidYamlScan Count=50 Bad=0`; `ShallowsColliderCountYamlScan Count=200 Bad=0`; `git diff --check` passed for the baker; source forbidden scan stayed clean.
+
+## 2026-05-15 Prefab Activation And LODGroup State Contract
+
+What was wrong: Generated Shallows prefabs could keep correct hierarchy, components, renderer flags, material slots, mesh references, static flags, and collider proxies while hidden GameObject state drift made a child inactive, moved it to a non-default layer, retagged it, or disabled the root `LODGroup`.
+
+What was done: Added `DefaultLayer`, `UntaggedTag`, and `ValidateGameObjectStateContract` to `ShallowsBioForgeBatchBaker`; every generated transform must now be active, layer `0`, and tagged `Untagged`. Added an explicit `LODGroup.enabled` validation branch before existing crossfade and transition checks.
+
+Cinematic Cheats used: Static offline L-system/SDF prefabs, MeshRenderer-owned GPU Resident Drawer-friendly objects, shared atlas/material, vertex-color masks, dithered LOD crossfade, no flora colliders, and LOD2 convex rock proxies remain unchanged.
+
+Exact Microseconds saved: Runtime remains 0 us/frame and 0 bytes procedural allocation. This prevents future runtime fix-up scripts, wrong-layer collision/filtering work, invisible inactive payloads, and disabled LOD switching from entering the asset library. Exact runtime microseconds were not profiled.
+
+Verification: No dotnet rebuild and no Unity import was run. `PrefabGameObjectStateYamlScan Count=200 Bad=0`; `LodGroupEnabledYamlScan Count=200 Bad=0`; `git diff --check` passed for the baker with only the repo CRLF warning; source brace balance stayed `Delta=0`, `NonAscii=0`, and forbidden source scan stayed clean.

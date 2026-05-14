@@ -1599,6 +1599,10 @@ namespace Hecton8.World
         private BiomeMatrixDirector _biomeMatrixDirector;
         private HectonMapMagicVegetationBridge _mapMagicVegetationBridge;
         private HectonFluidEngine _fluidEngine;
+        private ISubmarineRuntimeContext _submarineRuntime;
+        private IEncounterDirectorService _encounterDirector;
+        private BeaconNetworkSystem _beaconNetworkRuntime;
+        private AbyssalFluidDecalManager _abyssalFluidDecals;
         private bool _flashlightOn;
         private bool _parasiteModeActive;
         private bool _formationModeActive;
@@ -1776,6 +1780,11 @@ namespace Hecton8.World
             _reportedWakeFleeCount = 0;
             _reportedWakeCenterWS = Vector3.zero;
             _reportedWakeFlowDirectionWS = Vector3.zero;
+            _fluidEngine = null;
+            _submarineRuntime = null;
+            _encounterDirector = null;
+            _beaconNetworkRuntime = null;
+            _abyssalFluidDecals = null;
             _simulationBucketer = null;
             _simulationBucketerProbeAttempted = false;
             _simulationInterpolationAlpha = 1f;
@@ -1814,6 +1823,11 @@ namespace Hecton8.World
         private void OnDestroy()
         {
             ResetDependencyProbeCache();
+            _fluidEngine = null;
+            _submarineRuntime = null;
+            _encounterDirector = null;
+            _beaconNetworkRuntime = null;
+            _abyssalFluidDecals = null;
             _simulationBucketer = null;
             _simulationBucketerProbeAttempted = false;
             TryUnregisterService();
@@ -2060,7 +2074,11 @@ namespace Hecton8.World
                                           _worldZoneDirector == null ||
                                           _biomeMatrixDirector == null ||
                                           _mapMagicVegetationBridge == null ||
-                                          _fluidEngine == null;
+                                          _fluidEngine == null ||
+                                          _submarineRuntime == null ||
+                                          _encounterDirector == null ||
+                                          _beaconNetworkRuntime == null ||
+                                          _abyssalFluidDecals == null;
             if (!_runtimeServiceProbeAttempted && missingRuntimeServices)
             {
                 if (biolumManager == null)
@@ -2083,6 +2101,18 @@ namespace Hecton8.World
 
                 if (_fluidEngine == null)
                     _fluidEngine = GlobalRegistry.Fluid;
+
+                if (_submarineRuntime == null)
+                    _submarineRuntime = GlobalRegistry.Submarine;
+
+                if (_encounterDirector == null)
+                    _encounterDirector = GlobalRegistry.EncounterDirector;
+
+                if (_beaconNetworkRuntime == null)
+                    _beaconNetworkRuntime = GlobalRegistry.BeaconNetwork;
+
+                if (_abyssalFluidDecals == null)
+                    _abyssalFluidDecals = GlobalRegistry.AbyssalFluidDecals;
 
                 _runtimeServiceProbeAttempted = true;
             }
@@ -3200,7 +3230,7 @@ namespace Hecton8.World
             if (!_deepModeActive)
                 return;
 
-            BeaconNetworkSystem beaconNetwork = Hecton8.Core.GlobalRegistry.BeaconNetwork;
+            BeaconNetworkSystem beaconNetwork = _beaconNetworkRuntime;
             if (beaconNetwork == null || _formationBeaconSnapshots == null)
                 return;
 
@@ -3213,7 +3243,7 @@ namespace Hecton8.World
                 return;
 
             AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromRuntimePosition(origin);
-            HectonFluidEngine fluidRuntime = GlobalRegistry.Fluid;
+            HectonFluidEngine fluidRuntime = _fluidEngine;
             int formationCount = 0;
             for (int i = 0; i < snapshotCount && formationCount < _formationBeacons.Length; i++)
             {
@@ -3992,7 +4022,7 @@ namespace Hecton8.World
                 densityTexture = Texture2D.blackTexture;
             Texture activeCutMaskTexture = cutMaskActive && cutMaskTexture != null ? (Texture)cutMaskTexture : Texture2D.blackTexture;
             Vector3 abyssalFlowWeatherCurrent = Vector3.zero;
-            HectonFluidEngine fluidRuntime = GlobalRegistry.Fluid;
+            HectonFluidEngine fluidRuntime = _fluidEngine;
             if (fluidRuntime != null &&
                 fluidRuntime.TrySampleModAbyssalFlow(_fieldCenter, out float3 resolvedAbyssalFlow))
             {
@@ -4028,7 +4058,7 @@ namespace Hecton8.World
             Vector3 submarineWakeVelocity = Vector3.zero;
             float submarineWakeRadius = 0f;
             float submarineWakeHalfLength = 0f;
-            ISubmarineRuntimeContext submarine = GlobalRegistry.Submarine;
+            ISubmarineRuntimeContext submarine = _submarineRuntime;
             Rigidbody submarineHull = submarine != null ? submarine.HullRigidbody : null;
             if (submarineHull != null)
             {
@@ -4048,7 +4078,7 @@ namespace Hecton8.World
 
             GraphicsBuffer predatorAupBuffer = null;
             int predatorAupCount = 0;
-            IEncounterDirectorService encounterDirector = GlobalRegistry.EncounterDirector;
+            IEncounterDirectorService encounterDirector = _encounterDirector;
             if (encounterDirector != null &&
                 encounterDirector.IsInitialized &&
                 encounterDirector.TryGetPredatorAupGpuBuffer(out GraphicsBuffer publishedPredatorAupBuffer, out int publishedPredatorAupCount))
@@ -4481,7 +4511,7 @@ namespace Hecton8.World
             RecalculateMassiveThreatCount();
             UploadMassiveThreats();
 
-            AbyssalFluidDecalManager fluidDecals = Hecton8.Core.GlobalRegistry.AbyssalFluidDecals;
+            AbyssalFluidDecalManager fluidDecals = _abyssalFluidDecals;
             if ((_deepModeActive || _parasiteModeActive || _formationModeActive || _leviathanModeActive) && fluidDecals != null)
             {
                 float ruptureScale = math.saturate(signal.RadiusWS / math.max(1f, deepBaitBallRadius * 2f));
@@ -4776,7 +4806,7 @@ namespace Hecton8.World
             };
             GlobalSignals.Publish(in debrisSignal);
 
-            AbyssalFluidDecalManager fluidDecals = GlobalRegistry.AbyssalFluidDecals;
+            AbyssalFluidDecalManager fluidDecals = _abyssalFluidDecals;
             if (fluidDecals != null)
                 fluidDecals.RegisterRuptureFluid(killPositionWS, PredatorKillFluidDecalRadiusScale);
         }

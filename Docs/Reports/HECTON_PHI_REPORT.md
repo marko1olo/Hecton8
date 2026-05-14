@@ -730,29 +730,29 @@ Current runtime static scores:
 | Coefficient | Score |
 |---|---:|
 | Narrow integration | 1.000000000 |
-| Risk-adjusted integration | 0.054404997 |
+| Risk-adjusted integration | 0.054431837 |
 | Architectural purity | 0.994699647 |
-| Data sovereignty | 0.021048230 |
-| Memory alignment | 0.503174603 |
+| Data sovereignty | 0.020775237 |
+| Memory alignment | 0.503703704 |
 | Binary-safe ratio | 0.018518519 |
 | AUP precision integrity | 1.000000000 |
-| H-Phi runtime static narrow | 0.010534799 |
-| H-Phi runtime static risk-adjusted | 0.000573146 |
+| H-Phi runtime static narrow | 0.010409098 |
+| H-Phi runtime static risk-adjusted | 0.000566586 |
 
 Current runtime counts:
 
 | Counter | Value |
 |---|---:|
 | Runtime C# files | 1,276 |
-| Runtime source lines | 860,023 |
+| Runtime source lines | 860,134 |
 | Typed/queued signal push surface | 331 |
 | Legacy/direct event publish surface | 28 |
-| `GlobalRegistry.` surface refs | 5,146 |
+| `GlobalRegistry.` surface refs | 5,143 |
 | Unity `Update`/`LateUpdate`/`FixedUpdate` method declarations | 3 |
-| DataVault access surface refs | 151 |
+| DataVault access surface refs | 149 |
 | `NativeArray<T>` refs | 7,023 |
 | Struct declarations | 1,890 |
-| `StructLayout(...)` attrs | 951 |
+| `StructLayout(...)` attrs | 952 |
 | Runtime `Find*` calls | 5 |
 | Runtime `GetComponent*` calls | 541 |
 | `.Dispose(...)` calls | 1,251 |
@@ -761,21 +761,22 @@ Current runtime counts:
 
 Comparison:
 - Previous runtime static narrow score: `0.010531061`.
-- Current runtime static narrow score: `0.010534799`.
+- Current runtime static narrow score: `0.010409098`.
 - Previous runtime static risk-adjusted score: `0.000560589`.
-- Current runtime static risk-adjusted score: `0.000573146`.
+- Current runtime static risk-adjusted score: `0.000566586`.
 - AUP precision integrity moved `0.983739837 -> 1.000000000`.
 - AUP precision risk moved `6 -> 0`.
-- Compared with original dialogue baseline `0.00062`, current runtime static narrow is about `+1599.16%`.
+- Compared with original dialogue baseline `0.00062`, current runtime static narrow is about `+1578.89%`.
 - Score movement includes concurrent workspace changes and static model changes; it is not runtime profiler evidence.
 
 Residual bottlenecks:
-- Data Sovereignty remains the hard floor: `151 / (151 + 7,023) = 0.021048230`.
+- Data Sovereignty remains the hard floor: `149 / (149 + 7,023) = 0.020775237`.
 - Core graph debt remains: Core asmdef debt references `25`, generated project debt references `10`, source-backed bridge debt references `16`, compile-bridge debt references `8`, project-reference-replacement debt references `8`.
 - Owner-blocked NativeArray migrations still require domain-owner BufferID/SystemID/generation/disposal proof before code migration.
 - Runtime verification remains absent by user order.
 
 Verification:
-- `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json`: completed at local timestamp `2026-05-15 03:22:27 +04:00`.
-- `git diff --check -- Tools/Architecture/HectonPhiAudit.ps1`: no whitespace errors; LF/CRLF warning only.
+- `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0`: completed at local timestamp `2026-05-15 03:29:17 +04:00`.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -RequireCoreBuildGate -MaxCoreAsmdefDebtReferences 25 -MaxGeneratedProjectDebtReferences 10 -MaxSourceBackedBridgeDebtReferences 16 -MaxSourceBackedCompileBridgeDebtReferences 8 -MaxProjectReferenceReplacementDebtReferences 8 -Summary -Json`: completed at local timestamp `2026-05-15 03:26:30 +04:00`.
+- `git diff --check` on touched H-Phi files: no whitespace errors; LF/CRLF warnings only.
 - Runtime H-Phi remains `PENDING VERIFICATION` until Unity Console, PlayMode, Profiler, and GCMonitor evidence exist.

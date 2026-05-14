@@ -259,3 +259,23 @@ No dotnet rebuild was run per user instruction. `git diff --check` over touched 
 
 Status:
 PENDING VERIFICATION. Unity import, Burst compiler, Play Mode, GCMonitor, profiler proof, and full compile proof remain absent.
+
+## 2026-05-15 Recursive QA Addendum 13
+
+What was wrong:
+The KCC-to-IK path still had small output-side H-Phi leaks after producer sanitization. GPU-flow metadata could enable full advection boost even if the field metadata was corrupt. SDF payload origin/cell/range metadata could reach the body job. Ladder hit points, acoustic AUP output, shader VAT scalar, and movement roll publication trusted cached or caller data at the final boundary. Contextual IK scheduling/reset/rebase/telemetry paths also assumed native storage lengths matched the fixed lane counts.
+
+What was done:
+`PlayerKinematicsRuntime` now rejects non-finite GPU-flow metadata, rejects invalid SDF payload metadata, ignores non-finite ladder hit points, clamps scaled advection after multiplication, snaps/sanitizes acoustic AUP output, sanitizes cached VAT scalar comparisons, and publishes roll only through a finite neutral fallback. `ContextualPhysicalIkRuntime` now validates native storage before scheduling the ground pipeline, adds a black-box reason flag for invalid storage, length-guards scheduled state and target-frame rebases, length-guards telemetry sampling, and bounds reset writes for hand/foot SOA lanes.
+
+Cinematic cheats used:
+No new gait physics, no additional rays, no solver change. Invalid metadata falls back to cheaper visual approximations: CPU-scaled advection, neutral roll/VAT, and no contextual IK schedule when native storage is invalid.
+
+Exact microseconds saved:
+Added cost is finite checks, integer length comparisons, and scalar sanitization at existing boundaries, estimated below 0.3 us/frame on i3/MX350 plus cold reset-only guards. Prevented cost is corrupt metadata amplifying stride/swim prediction or faulting the native ground pipeline.
+
+Verification:
+No dotnet rebuild was run per user instruction. `git diff --check` over touched IK/KCC files passed with CRLF warnings only. Scoped forbidden-pattern scan over lower-body/signal files returned no matches for `sqrMagnitude`, `math.sqrt`, `math.normalize`, `foreach`, `string.Format`, interpolation strings, `OnAnimatorIK`, `SetIK`, `ikPass`, `StartCoroutine`, `GameObject.Find`, `FindObjectOfType`, or `Camera.main`.
+
+Status:
+PENDING VERIFICATION. Unity import, Burst compiler, Play Mode, GCMonitor, profiler proof, and full compile proof remain absent.

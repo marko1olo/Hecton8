@@ -2428,10 +2428,10 @@ namespace Hecton8.World
         public NativeArray<float> EcosystemThreatGrid => GetThreatGridFloatView();
 
         /// <summary>Compressed ecosystem threat grid used by AI/flow-field consumers that do not need float precision.</summary>
-        public NativeArray<byte> EcosystemThreatGridCompressed => _nativeMemory.EcosystemThreatGridCompressedCurrentNative;
+        public NativeArray<byte> EcosystemThreatGridCompressed => GetThreatGridByteView(_nativeMemory.EcosystemThreatGridCompressedCurrentNative);
 
         /// <summary>Permanent threat-echo flags aligned to the compressed ecosystem threat grid. 1 means the cell never decays below the echo floor.</summary>
-        public NativeArray<byte> EcosystemThreatEchoFlags => _nativeMemory.EcosystemThreatEchoCurrentNative;
+        public NativeArray<byte> EcosystemThreatEchoFlags => GetThreatGridByteView(_nativeMemory.EcosystemThreatEchoCurrentNative);
 
         /// <summary>Current ecosystem threat grid resolution in cells along one axis.</summary>
         public int EcosystemThreatGridResolution => _ecosystemThreatGridResolution;
@@ -2879,8 +2879,10 @@ namespace Hecton8.World
             cellSize = threatGridCellSize;
             return _threatGridInitialized &&
                    threatLevels.IsCreated &&
-                   gridResolution > 0 &&
-                   cellSize > 0f;
+                   HasCompleteSquareGridLength(gridResolution, threatLevels.Length) &&
+                   cellSize > 0f &&
+                   math.isfinite(cellSize) &&
+                   IsFinite(gridCenter);
         }
 
         /// <summary>
@@ -2898,8 +2900,10 @@ namespace Hecton8.World
             cellSize = threatGridCellSize;
             return _threatGridInitialized &&
                    threatLevels.IsCreated &&
-                   gridResolution > 0 &&
-                   cellSize > 0f;
+                   HasCompleteSquareGridLength(gridResolution, threatLevels.Length) &&
+                   cellSize > 0f &&
+                   math.isfinite(cellSize) &&
+                   IsFinite(gridCenter);
         }
 
         /// <summary>
@@ -2918,12 +2922,12 @@ namespace Hecton8.World
             voxelCellSize = new Vector3(threatGridCellSize, thermalGridVerticalCellSize, threatGridCellSize);
             return _threatGridInitialized &&
                    threatVoxels.IsCreated &&
-                   gridDimensions.x > 0 &&
-                   gridDimensions.y > 0 &&
-                   gridDimensions.z > 0 &&
+                   HasCompleteVoxelGridLength(gridDimensions, threatVoxels.Length) &&
                    voxelCellSize.x > 0f &&
                    voxelCellSize.y > 0f &&
-                   voxelCellSize.z > 0f;
+                   voxelCellSize.z > 0f &&
+                   IsFinite(gridOrigin) &&
+                   IsFinite(voxelCellSize);
         }
 
         /// <summary>
@@ -2941,8 +2945,10 @@ namespace Hecton8.World
             cellSize = threatGridCellSize;
             return _threatGridInitialized &&
                    echoFlags.IsCreated &&
-                   gridResolution > 0 &&
-                   cellSize > 0f;
+                   HasCompleteSquareGridLength(gridResolution, echoFlags.Length) &&
+                   cellSize > 0f &&
+                   math.isfinite(cellSize) &&
+                   IsFinite(gridCenter);
         }
 
         /// Returns the current abyssal flow-field payload and metadata for external consumers.

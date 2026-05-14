@@ -10,7 +10,8 @@ param(
     [int]$MaxSourceBackedBridgeDebtReferences = -1,
     [int]$MaxSourceBackedCompileBridgeDebtReferences = -1,
     [int]$MaxProjectReferenceReplacementDebtReferences = -1,
-    [int]$MaxAupPrecisionRisk = -1
+    [int]$MaxAupPrecisionRisk = -1,
+    [int]$MaxDuplicateSignalNames = -1
 )
 
 $ErrorActionPreference = 'Stop'
@@ -1038,6 +1039,66 @@ function Get-UnusedCoreReferenceScan {
     }
 }
 
+function Get-DuplicateSignalNameAudit {
+    param([string[]]$Files)
+
+    $rows = [System.Collections.Generic.List[object]]::new()
+    $structRegex = [System.Text.RegularExpressions.Regex]::new(
+        '^\s*(?:public|internal|private|protected)?\s*(?:readonly\s+|partial\s+|unsafe\s+|ref\s+)*struct\s+(?<Name>[A-Za-z_][A-Za-z0-9_]*Signal)\b',
+        $regexOptions)
+    $namespaceRegex = [System.Text.RegularExpressions.Regex]::new(
+        '^\s*namespace\s+(?<Name>[A-Za-z_][A-Za-z0-9_.]*)\b',
+        $regexOptions)
+
+    foreach ($file in $Files) {
+        $content = [System.IO.File]::ReadAllText($file)
+        $codeSurface = ConvertTo-CodeSurface $content
+        $lines = $codeSurface -split "`r?`n", -1
+        $namespace = ''
+
+        for ($lineIndex = 0; $lineIndex -lt $lines.Count; $lineIndex++) {
+            $line = $lines[$lineIndex]
+            $namespaceMatch = $namespaceRegex.Match($line)
+            if ($namespaceMatch.Success) {
+                $namespace = $namespaceMatch.Groups['Name'].Value
+            }
+
+            foreach ($match in $structRegex.Matches($line)) {
+                [void]$rows.Add([pscustomobject][ordered]@{
+                    Name = $match.Groups['Name'].Value
+                    Namespace = $namespace
+                    File = Get-RelativeSourcePath $file
+                    Line = $lineIndex + 1
+                })
+            }
+        }
+    }
+
+    $groups = @($rows | Group-Object Name | Where-Object { $_.Count -gt 1 } | Sort-Object Name)
+    $duplicateNameSet = @{}
+    $duplicateNames = [System.Collections.Generic.List[object]]::new()
+    foreach ($group in $groups) {
+        $duplicateNameSet[$group.Name] = $true
+        [void]$duplicateNames.Add([pscustomobject][ordered]@{
+            Name = $group.Name
+            Count = $group.Count
+            Files = @($group.Group | Select-Object -ExpandProperty File | Sort-Object -Unique)
+        })
+    }
+
+    $duplicateRows = @($rows | Where-Object { $duplicateNameSet.ContainsKey($_.Name) } | Sort-Object Name, File, Line)
+
+    [ordered]@{
+        EvidenceClass = 'STATIC_SOURCE'
+        Model = 'First-party struct names ending in Signal must be globally unique. This is a static name-collision scan, not compile or runtime proof.'
+        SignalStructDeclarationCount = @($rows).Count
+        DuplicateSignalNameCount = @($groups).Count
+        DuplicateSignalDeclarationCount = @($duplicateRows).Count
+        DuplicateNames = @($duplicateNames)
+        Rows = @($duplicateRows)
+    }
+}
+
 function Get-CoreGraphAudit {
     $coreAsmdefPath = Join-Path $scope 'Hecton8.Core.asmdef'
     $coreCsprojPath = Join-Path $root 'Hecton8.Core.csproj'
@@ -1270,6 +1331,31 @@ function Assert-AupPrecisionBudget {
     throw $message
 }
 
+function Assert-DuplicateSignalNameBudget {
+    param([System.Collections.Specialized.OrderedDictionary]$Audit)
+
+    if ($MaxDuplicateSignalNames -lt 0) {
+        return
+    }
+
+    $duplicateCount = [int]$Audit.DuplicateSignalNameCount
+    if ($duplicateCount -le $MaxDuplicateSignalNames) {
+        return
+    }
+
+    $lines = [System.Collections.Generic.List[string]]::new()
+    foreach ($entry in @($Audit.DuplicateNames | Select-Object -First 8)) {
+        [void]$lines.Add(('{0} declarations={1}' -f $entry.Name, $entry.Count))
+    }
+
+    throw (
+        'Duplicate signal-name H-Phi budget failed: duplicate names {0} exceed budget {1}.' -f
+        $duplicateCount,
+        $MaxDuplicateSignalNames) +
+        "`nDuplicate signal names:`n" +
+        ($lines -join "`n")
+}
+
 function Add-Count {
     param(
         [System.Collections.Specialized.OrderedDictionary]$Counters,
@@ -1498,6 +1584,13 @@ function New-AuditSummary {
         }
         Budgets = $Audit.Budgets
         CoreGraph = New-CoreGraphSummary $Audit.CoreGraphAudit
+        DuplicateSignalNameAudit = [ordered]@{
+            EvidenceClass = $Audit.DuplicateSignalNameAudit.EvidenceClass
+            SignalStructDeclarationCount = $Audit.DuplicateSignalNameAudit.SignalStructDeclarationCount
+            DuplicateSignalNameCount = $Audit.DuplicateSignalNameAudit.DuplicateSignalNameCount
+            DuplicateSignalDeclarationCount = $Audit.DuplicateSignalNameAudit.DuplicateSignalDeclarationCount
+            DuplicateNames = @($Audit.DuplicateSignalNameAudit.DuplicateNames | Select-Object -First 12)
+        }
         TopAupPrecisionRiskFiles = @($Audit.TopAupPrecisionRiskFiles |
             Select-Object -First 10)
         TopOwnerBlockedDataVaultCandidates = @($Audit.OwnerBlockedDataVaultCandidates |
@@ -1511,6 +1604,10 @@ Assert-CoreGraphBudget $coreGraphAudit
 if ($CoreGraphOnly) {
     if ($MaxAupPrecisionRisk -ge 0) {
         throw 'AUP precision budget requires full source scan. Remove -CoreGraphOnly when using -MaxAupPrecisionRisk.'
+    }
+
+    if ($MaxDuplicateSignalNames -ge 0) {
+        throw 'Duplicate signal-name budget requires full source scan. Remove -CoreGraphOnly when using -MaxDuplicateSignalNames.'
     }
 
     $result = [ordered]@{
@@ -1658,6 +1755,9 @@ $files = @(Get-ChildItem -LiteralPath $scope -Filter '*.cs' -Recurse -File |
     Sort-Object FullName |
     Select-Object -ExpandProperty FullName)
 
+$duplicateSignalNameAudit = Get-DuplicateSignalNameAudit $files
+Assert-DuplicateSignalNameBudget $duplicateSignalNameAudit
+
 foreach ($file in $files) {
     $content = [System.IO.File]::ReadAllText($file)
     $codeContent = if ($LexicalScrub) { ConvertTo-CodeSurface $content } else { $content }
@@ -1732,6 +1832,7 @@ $result = [ordered]@{
     Scope = 'Assets/_Project/Scripts'
     MetricModel = 'Runtime H-Phi excludes Scripts/Editor from runtime debt counters; Data Sovereignty counts DataVault access surface including IDataVault, VaultBufferHandle, GetBuffer, TryGetBuffer, and GlobalDataVault; risk-adjusted score includes AUP precision integrity from qualified legacy bridge and double-safe AUP patterns; AllSourceCounts is retained for hygiene tracking.'
     CoreGraphAudit = $coreGraphAudit
+    DuplicateSignalNameAudit = $duplicateSignalNameAudit
     Counts = $runtimeCounters
     Scores = $runtimeScores
     AllSourceCounts = $allCounters
@@ -1744,6 +1845,13 @@ $result = [ordered]@{
             Max = $MaxAupPrecisionRisk
             Actual = [int]$runtimeCounters.AupPrecisionRisk
             Passed = $MaxAupPrecisionRisk -lt 0 -or [int]$runtimeCounters.AupPrecisionRisk -le $MaxAupPrecisionRisk
+            EvidenceClass = 'STATIC_SOURCE_FULL_SCAN'
+        }
+        DuplicateSignalNames = [ordered]@{
+            Enabled = $MaxDuplicateSignalNames -ge 0
+            Max = $MaxDuplicateSignalNames
+            Actual = [int]$duplicateSignalNameAudit.DuplicateSignalNameCount
+            Passed = $MaxDuplicateSignalNames -lt 0 -or [int]$duplicateSignalNameAudit.DuplicateSignalNameCount -le $MaxDuplicateSignalNames
             EvidenceClass = 'STATIC_SOURCE_FULL_SCAN'
         }
     }
@@ -1824,4 +1932,15 @@ Write-Output 'Runtime scores:'
 $runtimeScores.GetEnumerator() | ForEach-Object { Write-Output ("  {0}: {1}" -f $_.Key, $_.Value) }
 Write-Output ''
 Write-Output 'All-source scores:'
-$allSourceScores.
+$allSourceScores.GetEnumerator() | ForEach-Object { Write-Output ("  {0}: {1}" -f $_.Key, $_.Value) }
+Write-Output ''
+Write-Output 'Core graph H-Phi gate:'
+[pscustomobject]$coreGraphAudit.BuildGraphGate | Format-List
+Write-Output 'Core graph H-Phi debt counts:'
+[pscustomobject]$coreGraphAudit.Counts | Format-List
+Write-Output ''
+Write-Output 'Top runtime NativeArray domains:'
+$result.TopNativeArrayDomains | Format-Table -AutoSize
+Write-Output ''
+Write-Output 'Owner-blocked DataVault candidate files:'
+$result.OwnerBlockedDataVaultCandidates | Format-Table -AutoSize

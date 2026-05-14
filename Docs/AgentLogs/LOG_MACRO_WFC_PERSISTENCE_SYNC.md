@@ -531,7 +531,7 @@ What was wrong:
 - A failed append can lose player mutation truth while leaving only a shallow warning trail.
 
 What was done:
-- Added `PublishWfcAppendFailureWarning(frame)` in `SaveManager`.
+- Added `PublishWfcWriteFailureWarning(frame)` in `SaveManager`.
 - `FlushWfcOutpostDirtyPayloadAsync` now records the append rejection event first, then emits the warning and one-shot WFC black-box dump.
 - Public persistence contracts and payload format stayed unchanged.
 
@@ -544,7 +544,34 @@ Exact microseconds saved:
 - Failure path cost: one existing warning plus one one-shot binary dump after an append rejection.
 
 Verification:
-- Static scans confirm append failure records the binary event before `PublishWfcAppendFailureWarning(frame)`, and the helper invokes `DumpWfcOutpostBlackBox()`.
+- Static scans confirm append failure records the binary event before `PublishWfcWriteFailureWarning(frame)`, and the helper invokes `DumpWfcOutpostBlackBox()`.
 - `git diff --check` reports no whitespace errors beyond Git CRLF normalization warnings.
 - `Select-String` still finds no `MACRO_WFC_PERSISTENCE_SYNC` tag in the rotated current batch.
+- No `dotnet` rebuild was run.
+
+## Recheck Report: WFC Validated Write Failure Dump Broadening
+Status: PENDING VERIFICATION.
+
+What was wrong:
+- Codec write failure and MacroDB `MarkDirty` failure were validated WFC write-loss paths.
+- They recorded rejection events but did not dump the WFC black-box rings.
+
+What was done:
+- Generalized the helper to `PublishWfcWriteFailureWarning(frame)`.
+- Persist rejection after payload encode failure now records the event, then dumps.
+- Persist rejection after `MarkDirty` failure now records the event, then dumps.
+- Invalid input and service-unavailable exits remain event-only to avoid noisy dependency/startup dumps.
+
+Cinematic cheats used:
+- Failure diagnosis uses compact binary sector/hash/frame state instead of replaying interactions or emitting managed text logs.
+
+Exact microseconds saved:
+- Measured savings: 0 us. No profiler or runtime trace.
+- Hot success path cost: unchanged.
+- Failure path cost: existing warning plus one one-shot binary dump.
+
+Verification:
+- Static scans confirm codec write failure, `MarkDirty` failure, and append failure all record their WFC black-box event before `PublishWfcWriteFailureWarning(frame)`.
+- Static scans confirm no stale `PublishWfcAppendFailureWarning` reference remains.
+- `git diff --check` reports no whitespace errors beyond Git CRLF normalization warnings.
 - No `dotnet` rebuild was run.

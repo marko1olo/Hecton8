@@ -1074,6 +1074,7 @@ namespace Hecton8.Core
         private const int CraftingStartedSignalCapacity = 128;
         private const int CraftingCompletedSignalCapacity = 128;
         private const int ToolStateChangedSignalCapacity = 64;
+        private const int ToolLoadoutChangedSignalCapacity = 64;
         private const int ToolAcousticSignalCapacity = 128;
         private const int PowerDrainSignalCapacity = 128;
         private const int ToolTriggerSignalCapacity = 128;
@@ -1750,6 +1751,7 @@ namespace Hecton8.Core
             ValidateSignalSize<CraftingStartedSignal>(32);
             ValidateSignalSize<CraftingCompletedSignal>(32);
             ValidateSignalSize<ToolStateChangedSignal>(32);
+            ValidateSignalSize<ToolLoadoutChangedSignal>(32);
             ValidateSignalSize<ToolAcousticSignal>(32);
             ValidateSignalSize<PowerDrainSignal>(32);
             ValidateSignalSize<ToolTriggerSignal>(32);
@@ -2379,6 +2381,13 @@ namespace Hecton8.Core
             _latestToolStateChangedSignal = signal;
             AdvanceSignalSequence(ref _latestToolStateChangedSignalSequence);
             _toolStateChangedSignals.Enqueue(signal);
+        }
+
+        /// <summary>Queues one player tool loadout or active-slot dirty packet.</summary>
+        public static void Publish(in ToolLoadoutChangedSignal signal)
+        {
+            EnsureInitialized();
+            SignalBus<ToolLoadoutChangedSignal>.Push(in signal);
         }
 
         /// <summary>Queues one tool acoustic packet from the main thread.</summary>
@@ -3200,6 +3209,8 @@ namespace Hecton8.Core
             SignalBus<CullingOverloadSignal>.EnsureInitialized();
             SignalBus<CraftingCompletedSignal>.Configure(CraftingCompletedSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(CraftingCompletedSignal)));
             SignalBus<CraftingCompletedSignal>.EnsureInitialized();
+            SignalBus<ToolLoadoutChangedSignal>.Configure(ToolLoadoutChangedSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(ToolLoadoutChangedSignal)));
+            SignalBus<ToolLoadoutChangedSignal>.EnsureInitialized();
             SignalBus<PlayerActionProgressSignal>.Configure(PlayerActionProgressSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(PlayerActionProgressSignal)));
             SignalBus<PlayerActionProgressSignal>.EnsureInitialized();
             SignalBus<PlayerActionCompletedSignal>.Configure(PlayerActionCompletedSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(PlayerActionCompletedSignal)));
@@ -4546,6 +4557,27 @@ namespace Hecton8.Core.Signals
         [FieldOffset(28)] public ushort AmmoUnits;
         [FieldOffset(30)] public byte Flags;
         [FieldOffset(31)] public byte ToolTypeId;
+    }
+
+    /// <summary>Player quick-slot assignment and active slot dirty signal. Size: 32 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct ToolLoadoutChangedSignal : ISignal
+    {
+        public const ushort NoActiveSlot = ushort.MaxValue;
+        public const byte ReasonActiveSlotChanged = 1;
+        public const byte ReasonAssignmentsChanged = 2;
+        public const byte FlagHasActiveTool = 1 << 0;
+        public const byte FlagSwapInProgress = 1 << 1;
+
+        [FieldOffset(0)] public uint SourceId;
+        [FieldOffset(4)] public uint Sequence;
+        [FieldOffset(8)] public uint Frame;
+        [FieldOffset(12)] public uint ActiveToolHash;
+        [FieldOffset(16)] public uint AssignedSlotMask;
+        [FieldOffset(20)] public ushort ActiveSlot;
+        [FieldOffset(22)] public ushort SlotCount;
+        [FieldOffset(24)] public byte Reason;
+        [FieldOffset(25)] public byte Flags;
     }
 
     /// <summary>Tool acoustic state signal. Size: 32 bytes.</summary>

@@ -12,6 +12,9 @@ namespace Hecton8.Animation.IK
         public const int LowTierSegments = 8;
         public const int TerrainHugSegmentCount = 5;
         public const int TelemetryCapacity = 300;
+        public const float DefaultSegmentLength = 2.5f;
+        public const float MinSegmentLength = 0.05f;
+        public const float MinTerrainSize = 0.0001f;
         public const uint TelemetryFlagActive = 1u << 0;
         public const uint TelemetryFlagSdf = 1u << 1;
         public const uint TelemetryFlagMapMagic = 1u << 2;
@@ -97,7 +100,7 @@ namespace Hecton8.Animation.IK
             int iterations = math.clamp(ConstraintIterations, 1, 4);
             float dt = math.select(0f, math.min(DeltaTime, 0.05f), math.isfinite(DeltaTime) && DeltaTime > 0f);
             float damping = SanitizeFiniteClamp(Damping, 0.87f, 0f, 1f);
-            float segmentLength = SanitizePositiveFinite(SegmentLength, 2.5f, 0.05f);
+            float segmentLength = SanitizePositiveFinite(SegmentLength, LeviathanTerrainIkConstants.DefaultSegmentLength, LeviathanTerrainIkConstants.MinSegmentLength);
             float bodyRadius = SanitizePositiveFinite(BodyRadius, 1.15f, 0.01f);
             float clearance = SanitizePositiveFinite(TerrainClearance, 0f, 0f);
             float tailWhipSecondsRemaining = SanitizePositiveFinite(TailWhipSecondsRemaining, 0f, 0f);
@@ -143,9 +146,9 @@ namespace Hecton8.Animation.IK
                                 TerrainHeightSamples.Length >= expectedTerrainLength &&
                                 math.all(math.isfinite(TerrainOrigin)) &&
                                 math.all(math.isfinite(TerrainSize)) &&
-                                TerrainSize.x > 0.0001f &&
-                                TerrainSize.y > 0.0001f &&
-                                TerrainSize.z > 0.0001f;
+                                TerrainSize.x > LeviathanTerrainIkConstants.MinTerrainSize &&
+                                TerrainSize.y > LeviathanTerrainIkConstants.MinTerrainSize &&
+                                TerrainSize.z > LeviathanTerrainIkConstants.MinTerrainSize;
 
             int terrainStart = math.max(0, activeCount - LeviathanTerrainIkConstants.TerrainHugSegmentCount);
             for (int index = terrainStart; index < activeCount; index++)
@@ -361,15 +364,24 @@ namespace Hecton8.Animation.IK
             if (!TerrainHeightSamples.IsCreated ||
                 !TryResolveTerrainHeightSampleCount(TerrainResolution, out int expectedLength) ||
                 TerrainHeightSamples.Length < expectedLength ||
-                TerrainSize.x <= 0.0001f ||
-                TerrainSize.y <= 0.0001f ||
-                TerrainSize.z <= 0.0001f)
+                !math.isfinite(worldX) ||
+                !math.isfinite(worldZ) ||
+                !math.all(math.isfinite(TerrainOrigin)) ||
+                !math.all(math.isfinite(TerrainSize)) ||
+                TerrainSize.x <= LeviathanTerrainIkConstants.MinTerrainSize ||
+                TerrainSize.y <= LeviathanTerrainIkConstants.MinTerrainSize ||
+                TerrainSize.z <= LeviathanTerrainIkConstants.MinTerrainSize)
             {
                 return false;
             }
 
-            float normalizedX = math.saturate((worldX - TerrainOrigin.x) * math.rcp(TerrainSize.x));
-            float normalizedZ = math.saturate((worldZ - TerrainOrigin.z) * math.rcp(TerrainSize.z));
+            float localX = worldX - TerrainOrigin.x;
+            float localZ = worldZ - TerrainOrigin.z;
+            if (localX < 0f || localZ < 0f || localX > TerrainSize.x || localZ > TerrainSize.z)
+                return false;
+
+            float normalizedX = math.saturate(localX * math.rcp(TerrainSize.x));
+            float normalizedZ = math.saturate(localZ * math.rcp(TerrainSize.z));
             float sampleX = normalizedX * (TerrainResolution - 1);
             float sampleZ = normalizedZ * (TerrainResolution - 1);
             int x0 = math.clamp((int)math.floor(sampleX), 0, TerrainResolution - 1);

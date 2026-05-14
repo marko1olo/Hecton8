@@ -213,17 +213,13 @@ namespace Hecton8.Audio.Prologue
             for (int i = 0; i < signals.Length; i++)
             {
                 PrologueCompleteSignal signal = signals[i];
-                if (!math.isfinite(signal.WhiteoutHoldSeconds))
+                if (!IsValidCompleteHold(signal.WhiteoutHoldSeconds))
                     continue;
 
                 bool sequenceOceanHandoff = signal.Phase == PrologueCompleteSignal.PhaseOceanHandoff &&
                                              signal.SourceHash == PrologueSequenceSourceHash;
-                if (!sequenceOceanHandoff &&
-                    (signal.Flags & PrologueCompleteSignal.FlagForceWhiteout) == 0 &&
-                    signal.Phase != PrologueCompleteSignal.PhaseWhiteout)
-                {
+                if (!sequenceOceanHandoff && !IsWhiteoutOnlyComplete(in signal))
                     continue;
-                }
 
                 if (!sequenceOceanHandoff)
                 {
@@ -410,6 +406,20 @@ namespace Hecton8.Audio.Prologue
                    (signal.Phase == AtmosphericReentrySignal.PhaseApproach ||
                     signal.Phase == AtmosphericReentrySignal.PhasePlasma ||
                     signal.Phase == AtmosphericReentrySignal.PhaseWhiteout);
+        }
+
+        private static bool IsValidCompleteHold(float whiteoutHoldSeconds)
+        {
+            return math.isfinite(whiteoutHoldSeconds) && whiteoutHoldSeconds >= 0f;
+        }
+
+        private static bool IsWhiteoutOnlyComplete(in PrologueCompleteSignal signal)
+        {
+            if (signal.Phase == PrologueCompleteSignal.PhaseWhiteout)
+                return true;
+
+            return signal.Phase == PrologueCompleteSignal.PhaseOceanHandoff &&
+                   (signal.Flags & PrologueCompleteSignal.FlagForceWhiteout) != 0;
         }
 
         private float ResolveLfeGain(float velocity01, bool plasmaStage, bool portalStage)

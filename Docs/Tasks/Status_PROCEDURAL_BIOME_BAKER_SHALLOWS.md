@@ -214,3 +214,12 @@ Status: PENDING VERIFICATION
 - Verification avoided dotnet rebuilds and Unity import. `RockColliderLod2GuidYamlScan Count=50 Bad=0`; `ShallowsColliderCountYamlScan Count=200 Bad=0`; `git diff --check` passed for the baker; source brace balance stayed `Delta=0` with `NonAscii=0`; forbidden source scan found no Shallows `Shader.Find`, `mesh.colors`, `renderer.sharedMaterial`, `.material`, or hot-path update methods.
 - Rejected alternative: adding runtime collider correction or extra collider simplification jobs was rejected because the existing LOD2 convex proxy is the intended visual-fake physics boundary and current assets already satisfy the stronger contract.
 - H-Phi impact remains domain-local: rock collision is now tied to the deterministic low-cost LOD2 proxy, while flora remains collider-free and runtime procedural allocation stays 0 us/frame.
+
+### Loop 23 - Prefab Activation And LODGroup State Contract
+
+- Re-read status/rationale, AGENTS, domain map, live batch extraction, Unity workflow skill, compute audit brief/report, and flora/visual-fake/zero-GC/render-budget mandates before editing. Live `CURRENT_BATCH.md` still does not contain the Shallows agent tag.
+- Found a remaining hidden prefab-state drift path: generated prefabs could keep the correct hierarchy, components, meshes, and materials while a child GameObject was inactive, moved to a non-default layer, retagged, or had the root `LODGroup` disabled.
+- Patched `ShallowsBioForgeBatchBaker` with default layer/tag constants, `ValidateGameObjectStateContract` for every generated transform, and an explicit `LODGroup.enabled` check in `ValidateLodGroupContract`.
+- Verification avoided dotnet rebuilds and Unity import. `PrefabGameObjectStateYamlScan Count=200 Bad=0`; `LodGroupEnabledYamlScan Count=200 Bad=0`; `git diff --check` passed for the baker with only the repo CRLF warning; source brace balance stayed `Delta=0` with `NonAscii=0`; forbidden source scan found no Shallows `Shader.Find`, `mesh.colors`, `renderer.sharedMaterial`, `.material`, or hot-path update methods.
+- Rejected alternative: runtime activation/layer/tag repair was rejected because generated Shallows prefabs must stay static data and because current assets already satisfy the stricter editor contract.
+- H-Phi impact remains domain-local evidence only: the prefab state surface is now fail-closed without adding runtime scripts, Update cadence, registry polling, material clones, or cross-domain ownership.

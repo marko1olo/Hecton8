@@ -46,6 +46,7 @@ Status: PENDING VERIFICATION
 - Loop 13: AUP snap-fence telemetry pass adds a 300-frame snap-fence bit to the existing 64-byte blackbox flags word, writes the flag schema and activation source name into result JSON, and confirms the current `Library/ScriptAssemblies` now lets both runtime and editor probes compile without `dotnet`.
 - Loop 14: Dispatcher-contract H-Phi and scanner self-pollution pass counts the full project tick/dispatcher contract family, exports dispatcher/update counts in result JSON, removes contiguous scene-search/component/update signatures from scanner identifiers/literals, and reconfirms runtime/editor isolated compiles without `dotnet`.
 - Loop 15: Hot-path telemetry cadence pass removes `FastTick` service-refresh polling, caches blackbox memory snapshots to a 30-frame cadence with forced fresh samples on terminal/event records, exports the memory-sample flag schema, and reconfirms runtime/editor isolated compiles without `dotnet`.
+- Loop 16: CI artifact schema clarity pass adds a result schema version, named blackbox magic/capacity/entry-size fields, and a `rigidbodyNanIndex=-1` clean-run sentinel, then reconfirms runtime/editor isolated compiles without `dotnet`.
 
 ## Verification
 - Unity MCP editor state: BLOCKED, no Unity session available.
@@ -86,6 +87,10 @@ Status: PENDING VERIFICATION
 - Isolated editor runner compile after hot-path telemetry cadence pass: PASS via Unity Mono/Roslyn with `UNITY_EDITOR` defined, Unity editor facade, and `Assembly-CSharp.dll`.
 - Scoped QA/headless source count after hot-path telemetry cadence pass: `SignalBusPush=3`, `GlobalSignalsPublish=4`, `GlobalRegistryDot=13`, `GlobalRegistryIdentifierTokens=18`, `StructLayoutAttributes=3`, `StructDeclarations=3`, `FindObjectCalls=0`, `GetComponentCalls=0`, `UnityUpdateMethods=0`, `FastTickRegistryRefresh=0`, `MemorySnapshotIntervalFields=1`.
 - `git diff --check` after hot-path telemetry cadence pass: PASS for whitespace on the QA runner/editor runner/status/rationale/log files; Git emitted LF-to-CRLF normalization warnings on the touched runtime C# file and owned markdown files only.
+- Focused static audit after CI artifact schema clarity pass: PASS for both Race Condition Hunter files; no contiguous scene search, component lookup, Unity `Update` method signature, LINQ `foreach`, coroutine, `Task<`, `.Complete()`, explicit GC, managed collection creation, `string.Format`, or `Substring` parser usage.
+- Isolated runtime compile after CI artifact schema clarity pass: PASS via Unity Mono/Roslyn using UnityJIT facades, Unity modules, current `Library/ScriptAssemblies`, and `Assembly-CSharp.dll`.
+- Isolated editor runner compile after CI artifact schema clarity pass: PASS via Unity Mono/Roslyn with `UNITY_EDITOR` defined, Unity editor facade, and `Assembly-CSharp.dll`.
+- Scoped QA/headless source count after CI artifact schema clarity pass: `SignalBusPush=3`, `GlobalSignalsPublish=4`, `GlobalRegistryDot=13`, `GlobalRegistryIdentifierTokens=18`, `StructLayoutAttributes=3`, `StructDeclarations=3`, `FindObjectCalls=0`, `GetComponentCalls=0`, `UnityUpdateMethods=0`, `ResultSchemaVersion=1`, `BlackboxMetadataFields=3`.
 - Full `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false`: BLOCKED BY EXISTING DEPENDENCIES, 139 unrelated errors before/around core missing namespaces, duplicate SaveManager members, and interface mismatches.
 - Full `dotnet build Assembly-CSharp.csproj --no-restore -m:2 /nr:false`: BLOCKED BY SAME EXISTING `Hecton8.Core.csproj` dependency failures.
 - No `dotnet` rebuilds were run during the 2026-05-15 continuation pass.

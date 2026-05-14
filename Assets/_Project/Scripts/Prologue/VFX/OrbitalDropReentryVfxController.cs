@@ -340,14 +340,13 @@ namespace Hecton8.Prologue.VFX
                     continue;
                 }
 
+                if (signal.WhiteoutHoldSeconds < 0f)
+                    continue;
+
                 bool sequenceOceanHandoff = signal.Phase == PrologueCompleteSignal.PhaseOceanHandoff &&
                                              signal.SourceHash == PrologueSequenceSourceHash;
-                if (!sequenceOceanHandoff &&
-                    (signal.Flags & PrologueCompleteSignal.FlagForceWhiteout) == 0 &&
-                    signal.Phase != PrologueCompleteSignal.PhaseWhiteout)
-                {
+                if (!sequenceOceanHandoff && !IsWhiteoutOnlyComplete(in signal))
                     continue;
-                }
 
                 if (!sequenceOceanHandoff && _phase >= ReentryPhase.HydratedFade)
                     continue;
@@ -804,6 +803,15 @@ namespace Hecton8.Prologue.VFX
             return phase == AtmosphericReentrySignal.PhaseApproach ||
                    phase == AtmosphericReentrySignal.PhasePlasma ||
                    phase == AtmosphericReentrySignal.PhaseWhiteout;
+        }
+
+        private static bool IsWhiteoutOnlyComplete(in PrologueCompleteSignal signal)
+        {
+            if (signal.Phase == PrologueCompleteSignal.PhaseWhiteout)
+                return true;
+
+            return signal.Phase == PrologueCompleteSignal.PhaseOceanHandoff &&
+                   (signal.Flags & PrologueCompleteSignal.FlagForceWhiteout) != 0;
         }
 
         private bool IsFiniteRuntimeState()

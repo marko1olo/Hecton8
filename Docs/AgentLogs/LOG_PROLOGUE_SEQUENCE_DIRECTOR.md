@@ -300,3 +300,11 @@ What was done -> Audio now validates exact approach/plasma/whiteout phases and u
 Cinematic Cheats used -> None; this protects the existing plasma/whiteout presentation fakes from malformed shared-lane packets.
 Exact Microseconds saved -> Adds one to three byte compares per atmospheric packet, below 1 us on normal frames. Prevents invalid audio/VFX transition work from bad phase packets.
 Verification -> No dotnet rebuild/response-file compile was run per user constraint. Targeted scan confirms exact phase checks in audio/VFX; forbidden-pattern scan returned no hits; `git diff --check` reports line-ending warnings only for responder files.
+
+## 2026-05-15 - Loop 42 Complete Responder Packet-Shape Review
+
+What was wrong -> Prologue audio and re-entry VFX still treated force-whiteout as sufficient for unknown complete phases, and VFX clamped negative hold seconds into a valid zero-second whiteout.
+What was done -> Audio now rejects non-finite or negative complete hold values. VFX preserves non-finite telemetry dump behavior and skips negative holds. Both responders accept non-sequence whiteout only from explicit `PhaseWhiteout` or ocean-handoff packets carrying `FlagForceWhiteout`.
+Cinematic Cheats used -> Whiteout remains the cheap concealment fake, but only for recognized complete-packet shapes. Hydrated fade remains owned by the `PRLG` sequence handoff.
+Exact Microseconds saved -> Adds below-1-us scalar checks in the 8-slot complete lane. Prevents malformed packets from triggering DSP state, whiteout hold, shader fade, and splash timing work.
+Verification -> No dotnet rebuild/response-file compile was run per user constraint. Targeted scan confirms complete-packet helpers in audio/VFX; forbidden-pattern scan returned no hits; `git diff --check` reports line-ending warnings only.

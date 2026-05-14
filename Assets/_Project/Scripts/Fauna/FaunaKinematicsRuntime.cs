@@ -103,7 +103,7 @@ namespace Hecton8.AI
         private bool _headLookTargetActive;
         private bool _globalGpuSkinningPublished;
         private int _frameIndex;
-        private int _activeSegmentCount = MaxSegments;
+        private int _activeSegmentCount = LowTierSegments;
         private int _resolvedConstraintIterations = 1;
         private int _pendingConstraintIterations = 1;
         private int _motionIntentFrame = -1;
@@ -456,7 +456,7 @@ namespace Hecton8.AI
 
             float3 origin = ResolveOwnerRuntimePosition();
             float3 forward = ResolveOwnerForward();
-            float segmentLength = SanitizePositiveFinite(_segmentLength, 2.5f, 0.05f);
+            float segmentLength = SanitizePositiveFinite(_segmentLength, LeviathanTerrainIkConstants.DefaultSegmentLength, LeviathanTerrainIkConstants.MinSegmentLength);
             float bodyRadius = SanitizePositiveFinite(_bodyRadius, 1.15f, 0.01f);
             for (int i = 0; i < MaxSegments; i++)
             {
@@ -489,7 +489,7 @@ namespace Hecton8.AI
                 velocity = ownerForward * math.max(0.1f, bodySpeed);
 
             _motionIntentVelocity = velocity;
-            float segmentLength = SanitizePositiveFinite(_segmentLength, 2.5f, 0.05f);
+            float segmentLength = SanitizePositiveFinite(_segmentLength, LeviathanTerrainIkConstants.DefaultSegmentLength, LeviathanTerrainIkConstants.MinSegmentLength);
             _motionIntentHeadTarget = ownerPosition + NormalizeSafe(velocity, ownerForward) * math.max(segmentLength, bodySpeed * 0.35f);
         }
 
@@ -659,6 +659,17 @@ namespace Hecton8.AI
                 return;
             }
 
+            float3 resolvedTerrainOrigin = (float3)payload.TerrainPosition;
+            float3 resolvedTerrainSize = (float3)payload.TerrainSize;
+            if (!math.all(math.isfinite(resolvedTerrainOrigin)) ||
+                !math.all(math.isfinite(resolvedTerrainSize)) ||
+                resolvedTerrainSize.x <= LeviathanTerrainIkConstants.MinTerrainSize ||
+                resolvedTerrainSize.y <= LeviathanTerrainIkConstants.MinTerrainSize ||
+                resolvedTerrainSize.z <= LeviathanTerrainIkConstants.MinTerrainSize)
+            {
+                return;
+            }
+
             NativeArray<ushort> resolvedHeight = payload.HeightSamples;
             IDataVault vault = _dataVault;
             if (vault != null &&
@@ -670,8 +681,8 @@ namespace Hecton8.AI
             }
 
             heightSamples = resolvedHeight;
-            terrainOrigin = (float3)payload.TerrainPosition;
-            terrainSize = (float3)payload.TerrainSize;
+            terrainOrigin = resolvedTerrainOrigin;
+            terrainSize = resolvedTerrainSize;
             terrainResolution = payload.HeightmapResolution;
         }
 
@@ -693,7 +704,7 @@ namespace Hecton8.AI
 
             GraphicsBufferUploadUtility.UploadNativeArray(writeBuffer, _leviathanBones, MaxSegments);
             float ikTier = IsLowTier(_qualityTier) ? 0f : 1f;
-            float safeSegmentLength = SanitizePositiveFinite(_segmentLength, 2.5f, 0.05f);
+            float safeSegmentLength = SanitizePositiveFinite(_segmentLength, LeviathanTerrainIkConstants.DefaultSegmentLength, LeviathanTerrainIkConstants.MinSegmentLength);
             float safeTailWhipDuration = SanitizePositiveFinite(_tailWhipDurationSeconds, 1f, 0.0001f);
             float tailWhip01 = math.saturate(_tailWhipSecondsRemaining * math.rcp(safeTailWhipDuration));
             if (_skinningMaterial != null)
@@ -737,7 +748,7 @@ namespace Hecton8.AI
             material.SetFloat(_LeviathanBoneCountId, 0f);
             material.SetFloat(_LeviathanIkTierId, 0f);
             material.SetFloat(_LeviathanTailWhipId, 0f);
-            material.SetFloat(_LeviathanSegmentLengthId, 1f);
+            material.SetFloat(_LeviathanSegmentLengthId, LeviathanTerrainIkConstants.DefaultSegmentLength);
             material.SetFloat(_LeviathanGpuSkinningId, 0f);
         }
 
@@ -746,7 +757,7 @@ namespace Hecton8.AI
             Shader.SetGlobalFloat(_LeviathanBoneCountId, 0f);
             Shader.SetGlobalFloat(_LeviathanIkTierId, 0f);
             Shader.SetGlobalFloat(_LeviathanTailWhipId, 0f);
-            Shader.SetGlobalFloat(_LeviathanSegmentLengthId, 1f);
+            Shader.SetGlobalFloat(_LeviathanSegmentLengthId, LeviathanTerrainIkConstants.DefaultSegmentLength);
             Shader.SetGlobalFloat(_LeviathanGpuSkinningId, 0f);
             _globalGpuSkinningPublished = false;
         }
@@ -957,7 +968,11 @@ namespace Hecton8.AI
         private void ResetConstraintIterationHysteresis()
         {
             _qualityTier = GlobalRegistry.ScalabilityTier;
-            _resolvedConstraintIterations = IsLowTier(_qualityTier) ? 1 : math.clamp(_highTierConstraintIterations, 1, 4);
+            bool lowTier = IsLowTier(_qualityTier);
+            _activeSegmentCount = lowTier
+                ? LowTierSegments
+                : math.clamp(_highTierSegmentCount, LowTierSegments, MaxSegments);
+            _resolvedConstraintIterations = lowTier ? 1 : math.clamp(_highTierConstraintIterations, 1, 4);
             _pendingConstraintIterations = _resolvedConstraintIterations;
             _constraintIterationSwitchTimer = 0f;
         }

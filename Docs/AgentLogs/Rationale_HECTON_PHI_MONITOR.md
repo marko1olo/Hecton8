@@ -181,7 +181,7 @@ Verification: No rebuild was run. Static checks completed: `git diff --check -- 
 
 Problem: The last recorded H-Phi summary still showed `AupPrecisionRisk=6`, but an exact runtime regex scan over `Assets/_Project/Scripts` found no current AUP risk hits. Editing gameplay files from that stale number would be false surgery and could collide with domain owners.
 
-Solution: Re-ran the full default `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json` and proved the current runtime counter is `AupPrecisionRisk=0`, with `AupPrecisionIntegrity=1.000000000`. Added `TopAupPrecisionRiskFiles` to the compact summary so future regressions show file-level evidence without forcing full JSON parsing. The file-row inclusion predicate now retains files that contain AUP precision risk even if they have no NativeArray, DataVault, or Find debt.
+Solution: Re-ran the full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0` gate and proved the current runtime counter is `AupPrecisionRisk=0`, with `AupPrecisionIntegrity=1.000000000`. Added `TopAupPrecisionRiskFiles` to the compact summary so future regressions show file-level evidence without forcing full JSON parsing. The file-row inclusion predicate now retains files that contain AUP precision risk even if they have no NativeArray, DataVault, or Find debt.
 
 Rejected Alternatives: Patching AUP gameplay call sites from stale report data was rejected because the exact current scan was clean. Enabling the slow lexical scrub path was rejected because it already timed out twice. Hiding AUP risk routing in full JSON only was rejected because the overseer needs fast triage from `-Summary`.
 

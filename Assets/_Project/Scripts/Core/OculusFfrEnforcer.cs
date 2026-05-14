@@ -116,7 +116,7 @@ namespace Hecton8.Core
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9820)]
     [AddComponentMenu("Hecton8/Rendering/Oculus FFR Enforcer")]
-    public sealed class OculusFfrEnforcer : MonoBehaviour, IUpdatable
+    public sealed class OculusFfrEnforcer : MonoBehaviour, IUpdatable, IGlobalRegistryHotSwapListener
     {
         private const int BlackboxCapacity = 300;
         private const int DefaultSampleIntervalFrames = 60;
@@ -150,6 +150,7 @@ namespace Hecton8.Core
         private int _blackboxWriteIndex;
         private int _framesUntilSample;
         private bool _registeredUpdate;
+        private bool _registeredHotSwap;
         private bool _subscribedToXRState;
         private bool _allocatedBlackbox;
         private bool _capturedMipLimit;
@@ -168,20 +169,16 @@ namespace Hecton8.Core
         {
             EnsureBlackbox();
             SubscribeXRState();
+            TryRegisterHotSwapListener();
             TryRegisterUpdate();
             ApplyQuestPolicy(force: true);
         }
 
         private void Start()
         {
+            TryRegisterHotSwapListener();
             TryRegisterUpdate();
             ApplyQuestPolicy(force: true);
-        }
-
-        private void Update()
-        {
-            if (!_registeredUpdate && Application.isPlaying)
-                Tick(Time.unscaledDeltaTime);
         }
 
         private void OnDisable()
@@ -192,6 +189,7 @@ namespace Hecton8.Core
                 _registeredUpdate = false;
             }
 
+            TryUnregisterHotSwapListener();
             UnsubscribeXRState();
             RestoreEditorTextureLimit();
         }
@@ -215,6 +213,23 @@ namespace Hecton8.Core
             ApplyQuestPolicy(force: false);
         }
 
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
+                return;
+
+            if (currentService == null)
+            {
+                _registeredUpdate = false;
+                return;
+            }
+
+            TryRegisterUpdate();
+        }
+
         public void RequestBlackboxDump()
         {
             DumpBlackbox();
@@ -226,6 +241,23 @@ namespace Hecton8.Core
                 return;
 
             _registeredUpdate = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Core);
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwap || !Application.isPlaying)
+                return;
+
+            _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwap)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwap = false;
         }
 
         private void SubscribeXRState()

@@ -327,3 +327,17 @@ Scalability potential: Low/MX350 keeps only 50 rock convex proxies and no flora 
 Hardware Impact: Runtime remains 0 us/frame and 0 bytes procedural allocation. The gain is prevention: no stale, disabled, trigger-only, or high-cost mesh collider can enter the Shallows rock library unnoticed. Exact runtime microseconds are not profiled because this is editor validation.
 
 Verification: No dotnet rebuild and no Unity import was run. `git diff --check` passed for `ShallowsBioForgeBatchBaker.cs`. Source scans found `colliders[0].enabled`, `colliders[0].isTrigger`, and `colliders[0].sharedMesh != lod2Mesh`; source brace count remained balanced and `NonAscii=0`. YAML scans found `RockColliderLod2GuidYamlScan Count=50 Bad=0` and `ShallowsColliderCountYamlScan Count=200 Bad=0`.
+
+## Decision 24 - Prefab Activation And LODGroup State Lockdown
+
+Problem: The Shallows prefab validator proved exact hierarchy, component envelopes, material slots, mesh references, static editor flags, and renderer flags. It still did not reject hidden GameObject state drift. A generated prefab could keep all expected objects and references while a child was inactive, placed on a non-default layer, retagged, or had the root `LODGroup` disabled. That would produce invisible flora, bad collision/raycast layer behavior, missing LOD switching, or inconsistent GPU Resident Drawer ownership without changing mesh/material counts.
+
+Solution: Add default layer/tag constants to `ShallowsBioForgeBatchBaker`, validate every generated transform through `ValidateGameObjectStateContract`, and require each GameObject to be `activeSelf`, layer `0`, and `CompareTag("Untagged")`. Also extend `ValidateLodGroupContract` to reject disabled `LODGroup` components before checking crossfade and transition values.
+
+Rejected Alternatives: Runtime repair scripts were rejected because generated Shallows prefabs must remain scriptless static data. Layer/tag correction during play was rejected because it hides asset defects and risks cross-domain physics/render ownership. Re-baking or Unity import was rejected because current assets already satisfy the stronger contract and the user prohibited rebuild-style validation.
+
+Scalability potential: Low/MX350 keeps active, default-layer, untagged MeshRenderer-owned prefab data with enabled LOD switching and no surprise physics-layer or culling state. Middle/High/Ultra can spend density and shader overkill on the same deterministic payload while validator coverage prevents hidden activation or LODGroup drift from corrupting tier behavior.
+
+Hardware Impact: Runtime remains 0 us/frame and 0 bytes procedural allocation. The gain is prevention: no inactive renderer object, wrong layer/tag, or disabled LODGroup can enter the Shallows library unnoticed and force runtime fix-up or visual/collision debugging on i3/MX350. Exact runtime microseconds are not profiled because this is editor validation.
+
+Verification: No dotnet rebuild and no Unity import was run. `PrefabGameObjectStateYamlScan Count=200 Bad=0`; `LodGroupEnabledYamlScan Count=200 Bad=0`; `git diff --check` passed for `ShallowsBioForgeBatchBaker.cs` with only the repo CRLF warning. Source scans found `DefaultLayer`, `UntaggedTag`, `ValidateGameObjectStateContract`, and `lodGroup.enabled`; source brace count remained balanced and `NonAscii=0`. Forbidden source scan found no Shallows `Shader.Find`, `mesh.colors`, `renderer.sharedMaterial`, `.material`, `Update`, `LateUpdate`, or `FixedUpdate` hits.

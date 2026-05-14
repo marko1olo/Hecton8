@@ -77,3 +77,32 @@ Verification:
 - `git fetch origin` succeeded after push.
 - `git rev-list --left-right --count origin/main...HEAD` returned `0 0`.
 - Active parallel-agent edits may appear after the pushed HEAD; those are new post-push dirty worktree changes, not unpushed committed history.
+
+## 2026-05-15 - Live Tail Checkpoint Push
+
+What was wrong:
+- After `origin/main` was already synchronized, parallel agents continued writing runtime scripts, shader/report docs, status files, and logs.
+- A newly generated Unity meta file had trailing whitespace in empty YAML fields, causing `git diff --cached --check` to reject the staged snapshot.
+- GitHub Desktop briefly held `.git/index.lock` while its own git processes were running.
+
+What was done:
+- Ran `git fetch origin` and verified `origin/main...HEAD` was `0 0` before adding new commits.
+- Ran strict conflict marker checks for `<<<<<<<` / `>>>>>>>`; no active conflict markers were found.
+- Fixed the Unity meta trailing whitespace without changing the asset GUID or importer structure.
+- Committed and pushed two checkpoint batches:
+  - `29d517219 chore: checkpoint active agent tail`
+  - `73ca61c58 chore: checkpoint second live tail`
+- Verified after push: `git fetch origin`; `git rev-list --left-right --count origin/main...HEAD` returned `0 0`.
+
+Cinematic Cheats used:
+- None. Git-only operation.
+
+Exact Microseconds saved:
+- Runtime saved: 0 us. Dev-path saved: reduced local-only conflict surface by publishing complete checkpoint batches; exact wall-clock savings not benchmarked.
+
+Verification:
+- `git diff --cached --check` passed before each successful commit.
+- `git push origin main:main` succeeded for both checkpoint commits.
+- `git fetch origin` after push succeeded.
+- `git rev-list --left-right --count origin/main...HEAD` returned `0 0`.
+- New dirty worktree files after the second push are live parallel-agent edits, not unpushed committed history.

@@ -388,3 +388,11 @@ Solution: Audio now validates atmospheric packets against explicit approach/plas
 Rejected Alternatives: Leave responder-side numeric promotion because the current orbital producer emits valid phases, or rely only on the bridge gate. Responders consume the shared lane independently, so they need their own shape guard; numeric promotion is too broad for forward compatibility.
 Scalability potential: Low/MX350 avoids wasting shader/audio transition work on malformed phase packets. Middle/High/Ultra keep expensive plasma roar, whiteout, splash, and crossfade work aligned to recognized prologue phases.
 Hardware Impact: Adds one to three byte comparisons per atmospheric packet in 32-slot lanes, below 1 us in normal frames. Prevents larger invalid VFX/audio transition work. Verification this pass is static only by user request; no dotnet rebuild or response-file compile was run.
+
+## Decision 47 - Complete Responder Packet Shape
+
+Problem: Prologue audio and re-entry VFX still accepted complete packets when `FlagForceWhiteout` was set even if the phase was malformed or future-unknown, and VFX clamped negative hold seconds into a valid zero-second whiteout.
+Solution: Add responder-side complete packet guards. Audio rejects non-finite or negative hold seconds. VFX dumps non-finite hold as before but now skips negative hold. Both consumers accept non-sequence whiteout only for explicit `PhaseWhiteout` or `PhaseOceanHandoff` with `FlagForceWhiteout`.
+Rejected Alternatives: Trust the bridge gate, or accept any force-whiteout flag as a concealment override. Audio/VFX consume the shared complete lane independently of the bridge, and flag-only acceptance is too broad for forward-compatible packet shapes.
+Scalability potential: Low/MX350 avoids spending DSP and shader transition budget on malformed complete packets. Middle/High/Ultra preserve whiteout, hydrated fade, splash debris, visor droplets, and audio overkill for recognized handoff/whiteout shapes only.
+Hardware Impact: Adds one float sign check and one to two byte comparisons per complete packet in an 8-slot lane, below 1 us in normal frames. It prevents larger false whiteout/fade work and keeps malformed finite data off the presentation path. Verification this pass is static only by user request; no dotnet rebuild or response-file compile was run.

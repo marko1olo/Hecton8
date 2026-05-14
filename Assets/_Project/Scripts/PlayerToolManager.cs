@@ -34,6 +34,7 @@ namespace Hecton8.Gameplay
     using Hecton8.Input;
     using Hecton8.Interaction;
     using Hecton8.Physics;
+    using Hecton8.Core.Signals;
     using Hecton8.Tools;
     using Hecton8.World;
     using Unity.Mathematics;

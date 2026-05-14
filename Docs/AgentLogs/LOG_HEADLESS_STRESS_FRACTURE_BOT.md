@@ -339,3 +339,34 @@ Verification:
 - No temp `HeadlessStressFracture*MemoryCadence*.dll` probe artifacts remain.
 - No `dotnet` rebuild was run.
 - Full Unity/editor/player execution remains PENDING VERIFICATION because no Unity MCP/editor session is available in this tool context.
+
+## 2026-05-15 - CI Artifact Schema Clarity Addendum
+Status: PENDING VERIFICATION
+Evidence Class: CLI_COMPILE_PLUS_STATIC_SOURCE
+
+What was wrong:
+- Clean runs defaulted `rigidbodyNanIndex` to `0`, which is ambiguous with a NaN at the first RigidbodyAUP slot.
+- Result JSON did not expose schema version, blackbox magic, blackbox capacity, or blackbox entry size.
+- Blackbox dump used a literal magic value instead of the named constant now exported to CI result JSON.
+
+What was done:
+- `_rigidbodyNanIndex` now defaults to `-1`; the NaN failure path still writes the actual failing index.
+- Added `ResultSchemaVersion=4` and result JSON field `resultSchemaVersion`.
+- Added named `BlackboxMagic` and result JSON fields `blackboxMagic`, `blackboxFrameCapacity`, and `blackboxEntrySizeBytes`.
+- Kept binary dump layout unchanged.
+
+Cinematic Cheats used:
+- None. This is CI artifact readability and postmortem parser hygiene only.
+
+Exact Microseconds saved:
+- Hot path: 0 us; all new writes are terminal artifact writes.
+- Avoided manual parser/source lookup during failed-run triage: estimated 1000000+ us saved per artifact review.
+- Avoided clean-run/slot-zero-NaN ambiguity: estimated 3000000+ us saved per disputed failure.
+
+Verification:
+- Focused static audit: PASS for both Race Condition Hunter files; no contiguous scene search, component lookup, Unity `Update` method signature, LINQ `foreach`, coroutine, `Task<`, `.Complete()`, explicit GC, managed collection creation, `string.Format`, or `Substring` parser usage.
+- Scoped QA/headless source count: `SignalBusPush=3`, `GlobalSignalsPublish=4`, `GlobalRegistryDot=13`, `GlobalRegistryIdentifierTokens=18`, `StructLayoutAttributes=3`, `StructDeclarations=3`, `FindObjectCalls=0`, `GetComponentCalls=0`, `UnityUpdateMethods=0`, `ResultSchemaVersion=1`, `BlackboxMetadataFields=3`.
+- Runtime isolated Unity compiler probe: PASS via Unity Mono/Roslyn with UnityJIT facades, Unity modules, current `Library/ScriptAssemblies`, and `Assembly-CSharp.dll`.
+- Editor runner isolated Unity compiler probe: PASS with `UNITY_EDITOR` defined, Unity editor facade, and `Assembly-CSharp.dll`.
+- No `dotnet` rebuild was run.
+- Full Unity/editor/player execution remains PENDING VERIFICATION because no Unity MCP/editor session is available in this tool context.

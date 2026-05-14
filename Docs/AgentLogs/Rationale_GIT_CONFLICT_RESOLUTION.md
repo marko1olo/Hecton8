@@ -23,3 +23,9 @@ Solution: Identified credential divergence: Git Credential Manager listed `shlom
 Rejected Alternatives: Changing the remote URL blindly, deleting Windows credentials, deleting stashes, or force pushing. Those would hide the real auth fault or risk remote/user data.
 Scalability potential: Not a runtime system. Low/Middle/High/Ultra gameplay tiers unchanged.
 Hardware Impact: 0 us runtime impact. Dev-path gain is removal of repeated failed push attempts from the local workflow.
+
+Problem: Parallel agents kept modifying the worktree during the Git cleanup, so each successful push was followed by a new dirty local tail.
+Solution: Treat each verified clean staged snapshot as an atomic checkpoint: run conflict-marker and whitespace checks, commit the current tail, push, fetch, and verify `origin/main...HEAD` before deciding whether to chase another tail.
+Rejected Alternatives: Killing GitHub Desktop, force pushing, resetting the worktree, or claiming a clean tree while files were still changing. These either destroy active work or produce false repository state.
+Scalability potential: Not a runtime system. Gameplay Low/Middle/High/Ultra behavior unchanged; repository operations only.
+Hardware Impact: 0 us runtime impact on i3/MX350. Dev-path gain is bounded conflict exposure by publishing completed checkpoint batches instead of leaving all active work local.

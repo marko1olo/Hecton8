@@ -793,9 +793,6 @@ namespace Hecton8.UI.VR
 
         private void TryUnregisterHotSwapListener()
         {
-            if (!_registeredHotSwapListener)
-                return;
-
             GlobalRegistry.TryUnregisterHotSwapListener(this);
             _registeredHotSwapListener = false;
         }

@@ -28,8 +28,10 @@ namespace Hecton8.World
             cellSize = threatGridCellSize;
             return _flowFieldInitialized &&
                    flowVectors.IsCreated &&
-                   gridResolution > 0 &&
-                   cellSize > 0f;
+                   HasCompleteSquareGridLength(gridResolution, flowVectors.Length) &&
+                   cellSize > 0f &&
+                   math.isfinite(cellSize) &&
+                   IsFinite(gridCenter);
         }
 
         /// <summary>
@@ -37,7 +39,20 @@ namespace Hecton8.World
         /// </summary>
         public void RegisterSwarmWakeImpulse(Vector3 positionWS, Vector3 flowVectorWS, float radiusMeters, float lifetimeSeconds)
         {
-            EnsureFlowFieldBuffers();
+            if (!IsFinite(positionWS) ||
+                !IsFinite(flowVectorWS) ||
+                radiusMeters <= 0f ||
+                lifetimeSeconds <= 0f ||
+                !math.isfinite(radiusMeters) ||
+                !math.isfinite(lifetimeSeconds))
+            {
+                _swarmWakeImpulseCount = 0;
+                _swarmWakeImpulseExpireTime = float.NegativeInfinity;
+                if (_nativeMemory.SwarmWakeImpulseNative.IsCreated)
+                    _nativeMemory.SwarmWakeImpulseNative[0] = default;
+                return;
+            }
+
             float strength = EstimateLength3D(flowVectorWS);
             if (strength <= 0.0001f)
             {
@@ -48,6 +63,7 @@ namespace Hecton8.World
                 return;
             }
 
+            EnsureFlowFieldBuffers();
             _nativeMemory.SwarmWakeImpulseNative[0] = new SwarmWakeImpulse
             {
                 Position = new float3(positionWS.x, positionWS.y, positionWS.z),
@@ -750,7 +766,7 @@ namespace Hecton8.World
         private void UpdateThreatHotspot()
         {
             _currentThreatHotspotLevel = 0f;
-            _currentThreatHotspotPosition = _ecosystemThreatGridCenter;
+            _currentThreatHotspotPosition = IsFinite(_ecosystemThreatGridCenter) ? _ecosystemThreatGridCenter : Vector3.zero;
             if (!_nativeMemory.EcosystemThreatGridCurrentNative.IsCreated ||
                 _ecosystemThreatGridResolution <= 0 ||
                 _ecosystemThreatGridCellCount <= 0 ||
@@ -813,6 +829,23 @@ namespace Hecton8.World
             }
 
             return _nativeMemory.EcosystemThreatGridCurrentNative;
+        }
+
+        private NativeArray<byte> GetThreatGridByteView(NativeArray<byte> threatGrid)
+        {
+            if (!_threatGridInitialized ||
+                !threatGrid.IsCreated ||
+                _ecosystemThreatGridCellCount <= 0 ||
+                !TryResolveSquareGridCellCount(
+                    _ecosystemThreatGridResolution,
+                    threatGrid.Length,
+                    out int threatGridCellCount) ||
+                _ecosystemThreatGridCellCount < threatGridCellCount)
+            {
+                return default;
+            }
+
+            return threatGrid;
         }
 
         private static bool HasCompleteSquareGridLength(int resolution, int payloadLength)

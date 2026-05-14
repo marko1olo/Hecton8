@@ -21,3 +21,9 @@ Task loop 2:
 - [x] Merge Sabine remote commits | DOD: `origin/main` merged with ort strategy, no unmerged paths | Rejected: push before integrating remote divergence | Estimate: 0 us runtime.
 - [x] Repair push credentials | DOD: GCM account list included `marko1olo`; local repo credential helper bypasses stale global `store` | Rejected: force-push, remote rewrite, credential deletion | Estimate: 0 us runtime.
 - [x] Push `main` | DOD: `git push origin main:main` succeeded twice; `git fetch origin` then `rev-list origin/main...HEAD` returned `0 0` | Rejected: GitHub Desktop-only unverified push | Estimate: 0 us runtime.
+
+Task loop 3:
+- [x] Check remote before continuing | DOD: `git fetch origin`; `rev-list origin/main...HEAD` returned `0 0` before new checkpointing | Rejected: stacking commits on stale remote knowledge | Estimate: 0 us runtime.
+- [x] Commit active agent tail | DOD: `git diff --cached --check` passed after fixing Unity meta trailing whitespace; committed `29d517219` and `73ca61c58` | Rejected: reset/discard, force push, deleting Desktop state | Estimate: 0 us runtime.
+- [x] Push checkpoint commits | DOD: `git push origin main:main` succeeded for both checkpoint commits; post-fetch divergence returned `0 0` | Rejected: GitHub Desktop-only visual confirmation | Estimate: 0 us runtime.
+- [x] Record continuing dirty tail | DOD: post-push `git status` and `git diff --stat` captured ongoing parallel-agent edits | Rejected: pretending worktree was clean while other agents kept writing | Estimate: 0 us runtime.

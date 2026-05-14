@@ -367,6 +367,7 @@ namespace Hecton8.UI
         private float _terminalDamageGlitchPeak;
         private float _terminalDamageGlitchRemaining;
         private float _terminalDamageGlitchDuration = 0.22f;
+        private float _tickUnscaledTime;
         private float _appliedTerminalDamageGlitch = -1f;
         private float _appliedFlashlightGlare = -1f;
         private bool _tickRegistered;
@@ -470,6 +471,7 @@ namespace Hecton8.UI
                 return;
             }
 
+            _tickUnscaledTime = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
             RefreshPanelData(forceRefresh: false);
             RefreshDistanceAndRenderTexture(deltaTime);
             ApplyPowerLevel();
@@ -483,7 +485,7 @@ namespace Hecton8.UI
                     out bool showFingerCursor))
             {
                 _panelData.StateFlags |= PanelStateFlags.CursorOver | PanelStateFlags.PlayerInRange;
-                _panelData.LastInteractTime = Time.unscaledTime;
+                _panelData.LastInteractTime = _tickUnscaledTime;
                 _clampedCanvasPosition = fingerCanvasPos;
 
                 if (showFingerCursor)
@@ -528,7 +530,7 @@ namespace Hecton8.UI
             }
 
             _panelData.StateFlags |= PanelStateFlags.CursorOver | PanelStateFlags.PlayerInRange;
-            _panelData.LastInteractTime = Time.unscaledTime;
+            _panelData.LastInteractTime = _tickUnscaledTime;
             _clampedCanvasPosition = canvasPos;
 
             UpdateCursor(localHit, deltaTime);
@@ -1405,7 +1407,7 @@ namespace Hecton8.UI
                 return;
             }
 
-            float now = Time.unscaledTime;
+            float now = _tickUnscaledTime;
             float flickerWave = EvaluateCheapFlicker01((now * 23.0f) + (panelId * 0.37f));
             float flicker01 = math.saturate(1f - proxyLightFlicker + (flickerWave * proxyLightFlicker));
             float intensity = math.saturate(proxyLightIntensity * _appliedPowerLevel * flicker01);
@@ -1747,7 +1749,7 @@ namespace Hecton8.UI
                 CanvasHitPoint = canvasPos,
                 AnalogDelta = analogDelta,
                 EventType = eventType,
-                Timestamp = Time.unscaledTime
+                Timestamp = _tickUnscaledTime
             });
         }
 
