@@ -1,0 +1,1715 @@
+{
+  "schema_id": "economy.recipes.v1",
+  "schema_hash32": 73866197,
+  "hash_algorithm": "FNV-1a 32-bit via Hecton.Localization.LocHash.Compute (UTF-16 code units, case-preserving)",
+  "currency_id": "economy.value.baseline_resource_unit",
+  "currency_hash32": 616425093,
+  "progression_rule": {
+    "rule_id": "economy.rule.three_to_one_progression",
+    "rule_hash32": 386476884,
+    "tier_median_costs": {
+      "1": 4.35,
+      "2": 15.95,
+      "3": 42.9
+    },
+    "tier2_to_tier1_ratio": 3.667,
+    "tier3_to_tier2_ratio": 2.69,
+    "accepted_ratio_min": 2.4,
+    "accepted_ratio_max": 3.8
+  },
+  "deconstruction": {
+    "policy_id": "economy.deconstruction.no_profit_loop",
+    "policy_hash32": 780132086,
+    "normal_reclaim_ratio": 0.8,
+    "degraded_reclaim_ratio": 0.3
+  },
+  "item_values": [
+    {
+      "item_id": "Comp_BatteryCell",
+      "item_hash32": 1562252576,
+      "baseline_value_units": 5.2
+    },
+    {
+      "item_id": "Comp_CircuitBoard",
+      "item_hash32": 71708594,
+      "baseline_value_units": 6.0
+    },
+    {
+      "item_id": "Comp_CopperWire",
+      "item_hash32": 3187749649,
+      "baseline_value_units": 3.5
+    },
+    {
+      "item_id": "Comp_FiberMesh",
+      "item_hash32": 1095668018,
+      "baseline_value_units": 4.5
+    },
+    {
+      "item_id": "Comp_GlassPanel",
+      "item_hash32": 1708824863,
+      "baseline_value_units": 3.0
+    },
+    {
+      "item_id": "Comp_LubricantResin",
+      "item_hash32": 2880126392,
+      "baseline_value_units": 4.2
+    },
+    {
+      "item_id": "Comp_PowerCoupler",
+      "item_hash32": 4027154086,
+      "baseline_value_units": 10.7
+    },
+    {
+      "item_id": "Comp_PrecisionLens",
+      "item_hash32": 3399578969,
+      "baseline_value_units": 4.0
+    },
+    {
+      "item_id": "Comp_PumpRotor",
+      "item_hash32": 2033101255,
+      "baseline_value_units": 10.2
+    },
+    {
+      "item_id": "Comp_ReinforcedPlate",
+      "item_hash32": 3550014518,
+      "baseline_value_units": 12.0
+    },
+    {
+      "item_id": "Comp_SealantPack",
+      "item_hash32": 3268286546,
+      "baseline_value_units": 3.9
+    },
+    {
+      "item_id": "Comp_StructuralBracket",
+      "item_hash32": 2908503494,
+      "baseline_value_units": 4.0
+    },
+    {
+      "item_id": "Data_AbyssalCrystal",
+      "item_hash32": 702456815,
+      "baseline_value_units": 12.0
+    },
+    {
+      "item_id": "Data_CarbonGraphite",
+      "item_hash32": 2008184373,
+      "baseline_value_units": 6.0
+    },
+    {
+      "item_id": "Data_CobaltAlloy",
+      "item_hash32": 857583970,
+      "baseline_value_units": 5.0
+    },
+    {
+      "item_id": "Data_Copper",
+      "item_hash32": 2276338585,
+      "baseline_value_units": 1.0
+    },
+    {
+      "item_id": "Data_FiberKelp",
+      "item_hash32": 2069849578,
+      "baseline_value_units": 1.0
+    },
+    {
+      "item_id": "Data_GoldOre",
+      "item_hash32": 4056809162,
+      "baseline_value_units": 3.0
+    },
+    {
+      "item_id": "Data_HydrocarbonResin",
+      "item_hash32": 248205602,
+      "baseline_value_units": 1.5
+    },
+    {
+      "item_id": "Data_LithiumCrystal",
+      "item_hash32": 3763503872,
+      "baseline_value_units": 3.0
+    },
+    {
+      "item_id": "Data_NickelOre",
+      "item_hash32": 1037165092,
+      "baseline_value_units": 4.0
+    },
+    {
+      "item_id": "Data_RareEarthDust",
+      "item_hash32": 1997058338,
+      "baseline_value_units": 8.0
+    },
+    {
+      "item_id": "Data_SilicaShards",
+      "item_hash32": 3920354616,
+      "baseline_value_units": 1.0
+    },
+    {
+      "item_id": "Data_SilverOre",
+      "item_hash32": 884621125,
+      "baseline_value_units": 2.0
+    },
+    {
+      "item_id": "Data_SulfurClumps",
+      "item_hash32": 3346875565,
+      "baseline_value_units": 1.2
+    },
+    {
+      "item_id": "Data_ThermalGel",
+      "item_hash32": 1601052383,
+      "baseline_value_units": 5.0
+    },
+    {
+      "item_id": "Data_TitaniumScrap",
+      "item_hash32": 3511699502,
+      "baseline_value_units": 1.0
+    },
+    {
+      "item_id": "Item_Tool_EnvAnalyzer",
+      "item_hash32": 2495175395,
+      "baseline_value_units": 16.0
+    },
+    {
+      "item_id": "Item_Tool_Flashlight",
+      "item_hash32": 2093163854,
+      "baseline_value_units": 9.2
+    },
+    {
+      "item_id": "Item_Tool_LaserCutter",
+      "item_hash32": 403113992,
+      "baseline_value_units": 20.2
+    },
+    {
+      "item_id": "Item_Tool_Repair",
+      "item_hash32": 3021274157,
+      "baseline_value_units": 18.6
+    },
+    {
+      "item_id": "Item_Tool_SalvageSampler",
+      "item_hash32": 2737502431,
+      "baseline_value_units": 17.7
+    },
+    {
+      "item_id": "Item_Tool_Scanner",
+      "item_hash32": 2534372966,
+      "baseline_value_units": 15.2
+    },
+    {
+      "item_id": "Module_AirlockFrame",
+      "item_hash32": 1235472580,
+      "baseline_value_units": 15.5
+    },
+    {
+      "item_id": "Module_FabricatorBench",
+      "item_hash32": 1194003719,
+      "baseline_value_units": 16.7
+    },
+    {
+      "item_id": "Module_FoundationKit",
+      "item_hash32": 972870237,
+      "baseline_value_units": 15.9
+    },
+    {
+      "item_id": "Module_O2Recycler",
+      "item_hash32": 1361286512,
+      "baseline_value_units": 14.7
+    },
+    {
+      "item_id": "Module_PowerRelay",
+      "item_hash32": 2185499708,
+      "baseline_value_units": 19.4
+    },
+    {
+      "item_id": "Module_PressurizedContainer",
+      "item_hash32": 2749184637,
+      "baseline_value_units": 18.9
+    },
+    {
+      "item_id": "Module_StorageLocker",
+      "item_hash32": 4001448765,
+      "baseline_value_units": 11.0
+    },
+    {
+      "item_id": "Module_SumpPump",
+      "item_hash32": 822934043,
+      "baseline_value_units": 14.1
+    },
+    {
+      "item_id": "Upgrade_AbyssPressureShell",
+      "item_hash32": 932012347,
+      "baseline_value_units": 68.0
+    },
+    {
+      "item_id": "Upgrade_AbyssalStabilizer",
+      "item_hash32": 3542071688,
+      "baseline_value_units": 65.7
+    },
+    {
+      "item_id": "Upgrade_BallastOptimizer",
+      "item_hash32": 1231965596,
+      "baseline_value_units": 45.8
+    },
+    {
+      "item_id": "Upgrade_DepthCompensator",
+      "item_hash32": 1167658630,
+      "baseline_value_units": 38.7
+    },
+    {
+      "item_id": "Upgrade_EmergencyO2Rack",
+      "item_hash32": 2872587453,
+      "baseline_value_units": 47.3
+    },
+    {
+      "item_id": "Upgrade_EngineOverdriveManifold",
+      "item_hash32": 3136873884,
+      "baseline_value_units": 62.0
+    },
+    {
+      "item_id": "Upgrade_GuidanceModule",
+      "item_hash32": 657239398,
+      "baseline_value_units": 37.0
+    },
+    {
+      "item_id": "Upgrade_HighCapacityCell",
+      "item_hash32": 2083712206,
+      "baseline_value_units": 37.6
+    },
+    {
+      "item_id": "Upgrade_HullArmorLattice",
+      "item_hash32": 1257718430,
+      "baseline_value_units": 59.0
+    },
+    {
+      "item_id": "Upgrade_HydraulicActuator",
+      "item_hash32": 1328461324,
+      "baseline_value_units": 41.4
+    },
+    {
+      "item_id": "Upgrade_ReactorBypassCoupler",
+      "item_hash32": 3833141382,
+      "baseline_value_units": 44.4
+    },
+    {
+      "item_id": "Upgrade_SilentRunningBaffle",
+      "item_hash32": 3312055054,
+      "baseline_value_units": 39.4
+    },
+    {
+      "item_id": "Upgrade_SonarAmplifier",
+      "item_hash32": 2406373322,
+      "baseline_value_units": 37.0
+    },
+    {
+      "item_id": "Upgrade_ThermalShielding",
+      "item_hash32": 2908096734,
+      "baseline_value_units": 39.0
+    }
+  ],
+  "recipes": [
+    {
+      "recipe_id": "Recipe_CopperWire",
+      "recipe_hash32": 1259281760,
+      "display_name": "Copper Wire",
+      "category_id": "recipe.category.component",
+      "category_hash32": 2984369858,
+      "progression_tier": 1,
+      "result": {
+        "item_id": "Comp_CopperWire",
+        "item_hash32": 3187749649,
+        "quantity": 1
+      },
+      "ingredients": [
+        {
+          "item_id": "Data_Copper",
+          "item_hash32": 2276338585,
+          "quantity": 2
+        },
+        {
+          "item_id": "Data_HydrocarbonResin",
+          "item_hash32": 248205602,
+          "quantity": 1
+        }
+      ],
+      "baseline_value_units": 3.5,
+      "craft_time_seconds": 1.5,
+      "fabrication_kwh": 4.6,
+      "unlock_scan_id": null,
+      "unlock_scan_hash32": null
+    },
+    {
+      "recipe_id": "Recipe_GlassPanel",
+      "recipe_hash32": 3861079582,
+      "display_name": "Glass Panel",
+      "category_id": "recipe.category.component",
+      "category_hash32": 2984369858,
+      "progression_tier": 1,
+      "result": {
+        "item_id": "Comp_GlassPanel",
+        "item_hash32": 1708824863,
+        "quantity": 1
+      },
+      "ingredients": [
+        {
+          "item_id": "Data_SilicaShards",
+          "item_hash32": 3920354616,
+          "quantity": 3
+        }
+      ],
+      "baseline_value_units": 3.0,
+      "craft_time_seconds": 1.5,
+      "fabrication_kwh": 4.2,
+      "unlock_scan_id": null,
+      "unlock_scan_hash32": null
+    },
+    {
+      "recipe_id": "Recipe_FiberMesh",
+      "recipe_hash32": 1651013131,
+      "display_name": "Fiber Mesh",
+      "category_id": "recipe.category.component",
+      "category_hash32": 2984369858,
+      "progression_tier": 1,
+      "result": {
+        "item_id": "Comp_FiberMesh",
+        "item_hash32": 1095668018,
+        "quantity": 1
+      },
+      "ingredients": [
+        {
+          "item_id": "Data_FiberKelp",
+          "item_hash32": 2069849578,
+          "quantity": 3
+        },
+        {
+          "item_id": "Data_HydrocarbonResin",
+          "item_hash32": 248205602,
+          "quantity": 1
+        }
+      ],
+      "baseline_value_units": 4.5,
+      "craft_time_seconds": 1.5,
+      "fabrication_kwh": 5.4,
+      "unlock_scan_id": null,
+      "unlock_scan_hash32": null
+    },
+    {
+      "recipe_id": "Recipe_StructuralBracket",
+      "recipe_hash32": 2660799583,
+      "display_name": "Structural Bracket",
+      "category_id": "recipe.category.component",
+      "category_hash32": 2984369858,
+      "progression_tier": 1,
+      "result": {
+        "item_id": "Comp_StructuralBracket",
+        "item_hash32": 2908503494,
+        "quantity": 1
+      },
+      "ingredients": [
+        {
+          "item_id": "Data_TitaniumScrap",
+          "item_hash32": 3511699502,
+          "quantity": 4
+        }
+      ],
+      "baseline_value_units": 4.0,
+      "craft_time_seconds": 1.5,
+      "fabrication_kwh": 5.0,
+      "unlock_scan_id": null,
+      "unlock_scan_hash32": null
+    },
+    {
+      "recipe_id": "Recipe_SealantPack",
+      "recipe_hash32": 3788947323,
+      "display_name": "Sealant Pack",
+      "category_id": "recipe.category.component",
+      "category_hash32": 2984369858,
+      "progression_tier": 1,
+      "result": {
+        "item_id": "Comp_SealantPack",
+        "item_hash32": 3268286546,
+        "quantity": 1
+      },
+      "ingredients": [
+        {
+          "item_id": "Data_SulfurClumps",
+          "item_hash32": 3346875565,
+          "quantity": 2
+        },
+        {
+          "item_id": "Data_HydrocarbonResin",
+          "item_hash32": 248205602,
+          "quantity": 1
+        }
+      ],
+      "baseline_value_units": 3.9,
+      "craft_time_seconds": 1.5,
+      "fabrication_kwh": 4.9,
+      "unlock_scan_id": null,
+      "unlock_scan_hash32": null
+    },
+    {
+      "recipe_id": "Recipe_LubricantResin",
+      "recipe_hash32": 3795135593,
+      "display_name": "Lubricant Resin",
+      "category_id": "recipe.category.component",
+      "category_hash32": 2984369858,
+      "progression_tier": 1,
+      "result": {
+        "item_id": "Comp_LubricantResin",
+        "item_hash32": 2880126392,
+        "quantity": 1
+      },
+      "ingredients": [
+        {
+          "item_id": "Data_HydrocarbonResin",
+          "item_hash32": 248205602,
+          "quantity": 2
+        },
+        {
+          "item_id": "Data_SulfurClumps",
+          "item_hash32": 3346875565,
+          "quantity": 1
+        }
+      ],
+      "baseline_value_units": 4.2,
+      "craft_time_seconds": 1.5,
+      "fabrication_kwh": 5.1,
+      "unlock_scan_id": null,
+      "unlock_scan_hash32": null
+    },
+    {
+      "recipe_id": "Recipe_BatteryCell",
+      "recipe_hash32": 458473593,
+      "display_name": "Battery Cell",
+      "category_id": "recipe.category.component",
+      "category_hash32": 2984369858,
+      "progression_tier": 1,
+      "result": {
+        "item_id": "Comp_BatteryCell",
+        "item_hash32": 1562252576,
+        "quantity": 1
+      },
+      "ingredients": [
+        {
+          "item_id": "Data_Copper",
+          "item_hash32": 2276338585,
+          "quantity": 1
+        },
+        {
+          "item_id": "Data_LithiumCrystal",
+          "item_hash32": 3763503872,
+          "quantity": 1
+        },
+        {
+          "item_id": "Data_SulfurClumps",
+          "item_hash32": 3346875565,
+          "quantity": 1
+        }
+      ],
+      "baseline_value_units": 5.2,
+      "craft_time_seconds": 1.5,
+      "fabrication_kwh": 6.0,
+      "unlock_scan_id": null,
+      "unlock_scan_hash32": null
+    },
+    {
+      "recipe_id": "Recipe_PrecisionLens",
+      "recipe_hash32": 3000041024,
+      "display_name": "Precision Lens",
+      "category_id": "recipe.category.component",
+      "category_hash32": 2984369858,
+      "progression_tier": 1,
+      "result": {
+        "item_id": "Comp_PrecisionLens",
+        "item_hash32": 3399578969,
+        "quantity": 1
+      },
+      "ingredients": [
+        {
+          "item_id": "Data_SilicaShards",
+          "item_hash32": 3920354616,
+          "quantity": 2
+        },
+        {
+          "item_id": "Data_SilverOre",
+          "item_hash32": 884621125,
+          "quantity": 1
+        }
+      ],
+      "baseline_value_units": 4.0,
+      "craft_time_seconds": 1.5,
+      "fabrication_kwh": 5.0,
+      "unlock_scan_id": null,
+      "unlock_scan_hash32": null
+    },
+    {
+      "recipe_id": "Recipe_CircuitBoard",
+      "recipe_hash32": 458861155,
+      "display_name": "Circuit Board",
+      "category_id": "recipe.category.component",
+      "category_hash32": 2984369858,
+      "progression_tier": 1,
+      "result": {
+        "item_id": "Comp_CircuitBoard",
+        "item_hash32": 71708594,
+        "quantity": 1
+      },
+      "ingredients": [
+        {
+          "item_id": "Data_Copper",
+          "item_hash32": 2276338585,
+          "quantity": 2
+        },
+        {
+          "item_id": "Data_GoldOre",
+          "item_hash32": 4056809162,
+          "quantity": 1
+        },
+        {
+          "item_id": "Data_SilicaShards",
+          "item_hash32": 3920354616,
+          "quantity": 1
+        }
+      ],
+      "baseline_value_units": 6.0,
+      "craft_time_seconds": 1.5,
+      "fabrication_kwh": 6.6,
+      "unlock_scan_id": null,
+      "unlock_scan_hash32": null
+    },
+    {
+      "recipe_id": "Recipe_PowerCoupler",
+      "recipe_hash32": 3616742455,
+      "display_name": "Power Coupler",
+      "category_id": "recipe.category.component",
+      "category_hash32": 2984369858,
+      "progression_tier": 1,
+      "result": {
+        "item_id": "Comp_PowerCoupler",
+        "item_hash32": 4027154086,
+        "quantity": 1
+      },
+      "ingredients": [
+        {
+          "item_id": "Comp_CopperWire",
+          "item_hash32": 3187749649,
+          "quantity": 1
+        },
+        {
+          "item_id": "Comp_BatteryCell",
+          "item_hash32": 1562252576,
+          "quantity": 1
+        },
+        {
+          "item_id": "Data_SilverOre",
+          "item_hash32": 884621125,
+          "quantity": 1
+        }
+      ],
+      "baseline_value_units": 10.7,
+      "craft_time_seconds": 1.5,
+      "fabrication_kwh": 10.5,
+      "unlock_scan_id": null,
+      "unlock_scan_hash32": null
+    },
+    {
+      "recipe_id": "Recipe_PumpRotor",
+      "recipe_hash32": 3001905566,
+      "display_name": "Pump Rotor",
+      "category_id": "recipe.category.component",
+      "category_hash32": 2984369858,
+      "progression_tier": 1,
+      "result": {
+        "item_id": "Comp_PumpRotor",
+        "item_hash32": 2033101255,
+        "quantity": 1
+      },
+      "ingredients": [
+        {
+          "item_id": "Data_TitaniumScrap",
+          "item_hash32": 3511699502,
+          "quantity": 2
+        },
+        {
+          "item_id": "Data_NickelOre",
+          "item_hash32": 1037165092,
+          "quantity": 1
+        },
+        {
+          "item_id": "Comp_LubricantResin",
+          "item_hash32": 2880126392,
+          "quantity": 1
+        }
+      ],
+      "baseline_value_units": 10.2,
+      "craft_time_seconds": 1.5,
+      "fabrication_kwh": 10.1,
+      "unlock_scan_id": null,
+      "unlock_scan_hash32": null
+    },
+    {
+      "recipe_id": "Recipe_ReinforcedPlate",
+      "recipe_hash32": 2840072671,
+      "display_name": "Reinforced Plate",
+      "category_id": "recipe.category.component",
+      "category_hash32": 2984369858,
+      "progression_tier": 1,
+      "result": {
+        "item_id": "Comp_ReinforcedPlate",
+        "item_hash32": 3550014518,
+        "quantity": 1
+      },
+      "ingredients": [
+        {
+          "item_id": "Comp_StructuralBracket",
+          "item_hash32": 2908503494,
+          "quantity": 2
+        },
+        {
+          "item_id": "Data_NickelOre",
+          "item_hash32": 1037165092,
+          "quantity": 1
+        }
+      ],
+      "baseline_value_units": 12.0,
+      "craft_time_seconds": 1.5,
+      "fabrication_kwh": 11.5,
+      "unlock_scan_id": null,
+      "unlock_scan_hash32": null
+    },
+    {
+      "recipe_id": "Recipe_Flashlight",
+      "recipe_hash32": 1902931108,
+      "display_name": "Dive Flashlight",
+      "category_id": "recipe.category.tool",
+      "category_hash32": 3320453461,
+      "progression_tier": 2,
+      "result": {
+        "item_id": "Item_Tool_Flashlight",
+        "item_hash32": 2093163854,
+        "quantity": 1
+      },
+      "ingredients": [
+        {
+          "item_id": "Comp_BatteryCell",
+          "item_hash32": 1562252576,
+          "quantity": 1
+        },
+        {
+          "item_id": "Comp_GlassPanel",
+          "item_hash32": 1708824863,
+          "quantity": 1
+        },
+        {
+          "item_id": "Data_Copper",
+          "item_hash32": 2276338585,
+          "quantity": 1
+        }
+      ],
+      "baseline_value_units": 9.2,
+      "craft_time_seconds": 2.5,
+      "fabrication_kwh": 10.9,
+      "unlock_scan_id": "scan.resource_node",
+      "unlock_scan_hash32": 3168398105
+    },
+    {
+      "recipe_id": "Recipe_Scanner",
+      "recipe_hash32": 1119893084,
+      "display_name": "Survey Scanner",
+      "category_id": "recipe.category.tool",
+      "category_hash32": 3320453461,
+      "progression_tier": 2,
+      "result": {
+        "item_id": "Item_Tool_Scanner",
+        "item_hash32": 2534372966,
+        "quantity": 1
+      },
+      "ingredients": [
+        {
+          "item_id": "Comp_CircuitBoard",
+          "item_hash32": 71708594,
+          "quantity": 1
+        },
+        {
+          "item_id": "Comp_PrecisionLens",
+          "item_hash32": 3399578969,
+          "quantity": 1
+        },
+        {
+          "item_id": "Comp_BatteryCell",
+          "item_hash32": 1562252576,
+          "quantity": 1
+        }
+      ],
+      "baseline_value_units": 15.2,
+      "craft_time_seconds": 2.5,
+      "fabrication_kwh": 15.9,
+      "unlock_scan_id": "scan.expedition_contact",
+      "unlock_scan_hash32": 2293519330
+    },
+    {
+      "recipe_id": "Recipe_RepairTool",
+      "recipe_hash32": 3444507111,
+      "display_name": "Repair Tool",
+      "category_id": "recipe.category.tool",
+      "category_hash32": 3320453461,
+      "progression_tier": 2,
+      "result": {
+        "item_id": "Item_Tool_Repair",
+        "item_hash32": 3021274157,
+        "quantity": 1
+      },
+      "ingredients": [
+        {
+          "item_id": "Comp_PowerCoupler",
+          "item_hash32": 4027154086,
+          "quantity": 1
+        },
+        {
+          "item_id": "Comp_SealantPack",
+          "item_hash32": 3268286546,
+          "quantity": 1
+        },
+        {
+          "item_id": "Comp_StructuralBracket",
+          "item_hash32": 2908503494,
+          "quantity": 1
+        }
+      ],
+      "baseline_value_units": 18.6,
+      "craft_time_seconds": 2.5,
+      "fabrication_kwh": 18.7,
+      "unlock_scan_id": "scan.structure_relay",
+      "unlock_scan_hash32": 488796685
+    },
+    {
+      "recipe_id": "Recipe_LaserCutter",
+      "recipe_hash32": 289684690,
+      "display_name": "Laser Cutter",
+      "category_id": "recipe.category.tool",
+      "category_hash32": 3320453461,
+      "progression_tier": 2,
+      "result": {
+        "item_id": "Item_Tool_LaserCutter",
+        "item_hash32": 403113992,
+        "quantity": 1
+      },
+      "ingredients": [
+        {
+          "item_id": "Comp_CircuitBoard",
+          "item_hash32": 71708594,
+          "quantity": 1
+        },
+        {
+          "item_id": "Comp_PrecisionLens",
+          "item_hash32": 3399578969,
+          "quantity": 1
+        },
+        {
+          "item_id": "Comp_BatteryCell",
+          "item_hash32": 1562252576,
+          "quantity": 1
+        },
+        {
+          "item_id": "Data_ThermalGel",
+          "item_hash32": 1601052383,
+          "quantity": 1
+        }
+      ],
+      "baseline_value_units": 20.2,
+      "craft_time_seconds": 3.0,
+      "fabrication_kwh": 20.0,
+      "unlock_scan_id": "scan.resource_cache",
+      "unlock_scan_hash32": 3016831365
+    },
+    {
+      "recipe_id": "Recipe_SalvageSampler",
+      "recipe_hash32": 60144597,
+      "display_name": "Salvage Sampler",
+      "category_id": "recipe.category.tool",
+      "category_hash32": 3320453461,
+      "progression_tier": 2,
+      "result": {
+        "item_id": "Item_Tool_SalvageSampler",
+        "item_hash32": 2737502431,
+        "quantity": 1
+      },
+      "ingredients": [
+        {
+          "item_id": "Comp_StructuralBracket",
+          "item_hash32": 2908503494,
+          "quantity": 1
+        },
+        {
+          "item_id": "Comp_PumpRotor",
+          "item_hash32": 2033101255,
+          "quantity": 1
+        },
+        {
+          "item_id": "Comp_CopperWire",
+          "item_hash32": 3187749649,
+          "quantity": 1
+        }
+      ],
+      "baseline_value_units": 17.7,
+      "craft_time_seconds": 2.5,
+      "fabrication_kwh": 17.9,
+      "unlock_scan_id": "scan.resource_cache",
+      "unlock_scan_hash32": 3016831365
+    },
+    {
+      "recipe_id": "Recipe_EnvAnalyzer",
+      "recipe_hash32": 130106729,
+      "display_name": "Environmental Analyzer",
+      "category_id": "recipe.category.tool",
+      "category_hash32": 3320453461,
+      "progression_tier": 2,
+      "result": {
+        "item_id": "Item_Tool_EnvAnalyzer",
+        "item_hash32": 2495175395,
+        "quantity": 1
+      },
+      "ingredients": [
+        {
+          "item_id": "Comp_CircuitBoard",
+          "item_hash32": 71708594,
+          "quantity": 1
+        },
+        {
+          "item_id": "Comp_PrecisionLens",
+          "item_hash32": 3399578969,
+          "quantity": 1
+        },
+        {
+          "item_id": "Comp_GlassPanel",
+          "item_hash32": 1708824863,
+          "quantity": 1
+        },
+        {
+          "item_id": "Data_GoldOre",
+          "item_hash32": 4056809162,
+          "quantity": 1
+        }
+      ],
+      "baseline_value_units": 16.0,
+      "craft_time_seconds": 2.5,
+      "fabrication_kwh": 16.5,
+      "unlock_scan_id": "scan.expedition_contact",
+      "unlock_scan_hash32": 2293519330
+    },
+    {
+      "recipe_id": "Recipe_ModuleFoundationKit",
+      "recipe_hash32": 4053661581,
+      "display_name": "Foundation Kit",
+      "category_id": "recipe.category.base_module",
+      "category_hash32": 4211523877,
+      "progression_tier": 2,
+      "result": {
+        "item_id": "Module_FoundationKit",
+        "item_hash32": 972870237,
+        "quantity": 1
+      },
+      "ingredients": [
+        {
+          "item_id": "Comp_ReinforcedPlate",
+          "item_hash32": 3550014518,
+          "quantity": 1
+        },
+        {
+          "item_id": "Comp_SealantPack",
+          "item_hash32": 3268286546,
+          "quantity": 1
+        }
+      ],
+      "baseline_value_units": 15.9,
+      "craft_time_seconds": 3.0,
+      "fabrication_kwh": 16.4,
+      "unlock_scan_id": "scan.structure_relay",
+      "unlock_scan_hash32": 488796685
+    },
+    {
+      "recipe_id": "Recipe_ModuleAirlockFrame",
+      "recipe_hash32": 3914489556,
+      "display_name": "Airlock Frame",
+      "category_id": "recipe.category.base_module",
+      "category_hash32": 4211523877,
+      "progression_tier": 2,
+      "result": {
+        "item_id": "Module_AirlockFrame",
+        "item_hash32": 1235472580,
+        "quantity": 1
+      },
+      "ingredients": [
+        {
+          "item_id": "Comp_ReinforcedPlate",
+          "item_hash32": 3550014518,
+          "quantity": 1
+        },
+        {
+          "item_id": "Comp_CopperWire",
+          "item_hash32": 3187749649,
+          "quantity": 1
+        }
+      ],
+      "baseline_value_units": 15.5,
+      "craft_time_seconds": 3.0,
+      "fabrication_kwh": 16.1,
+      "unlock_scan_id": "scan.structure_relay",
+      "unlock_scan_hash32": 488796685
+    },
+    {
+      "recipe_id": "Recipe_ModuleFabricatorBench",
+      "recipe_hash32": 447016055,
+      "display_name": "Fabricator Bench",
+      "category_id": "recipe.category.base_module",
+      "category_hash32": 4211523877,
+      "progression_tier": 2,
+      "result": {
+        "item_id": "Module_FabricatorBench",
+        "item_hash32": 1194003719,
+        "quantity": 1
+      },
+      "ingredients": [
+        {
+          "item_id": "Comp_PowerCoupler",
+          "item_hash32": 4027154086,
+          "quantity": 1
+        },
+        {
+          "item_id": "Comp_CircuitBoard",
+          "item_hash32": 71708594,
+          "quantity": 1
+        }
+      ],
+      "baseline_value_units": 16.7,
+      "craft_time_seconds": 3.0,
+      "fabrication_kwh": 17.1,
+      "unlock_scan_id": "scan.structure_relay",
+      "unlock_scan_hash32": 488796685
+    },
+    {
+      "recipe_id": "Recipe_ModulePowerRelay",
+      "recipe_hash32": 621889132,
+      "display_name": "Power Relay Module",
+      "category_id": "recipe.category.base_module",
+      "category_hash32": 4211523877,
+      "progression_tier": 2,
+      "result": {
+        "item_id": "Module_PowerRelay",
+        "item_hash32": 2185499708,
+        "quantity": 1
+      },
+      "ingredients": [
+        {
+          "item_id": "Comp_PowerCoupler",
+          "item_hash32": 4027154086,
+          "quantity": 1
+        },
+        {
+          "item_id": "Comp_CopperWire",
+          "item_hash32": 3187749649,
+          "quantity": 1
+        },
+        {
+          "item_id": "Comp_BatteryCell",
+          "item_hash32": 1562252576,
+          "quantity": 1
+        }
+      ],
+      "baseline_value_units": 19.4,
+      "craft_time_seconds": 2.8,
+      "fabrication_kwh": 19.3,
+      "unlock_scan_id": "scan.structure_relay",
+      "unlock_scan_hash32": 488796685
+    },
+    {
+      "recipe_id": "Recipe_ModuleO2Recycler",
+      "recipe_hash32": 1145872896,
+      "display_name": "O2 Recycler Module",
+      "category_id": "recipe.category.base_module",
+      "category_hash32": 4211523877,
+      "progression_tier": 2,
+      "result": {
+        "item_id": "Module_O2Recycler",
+        "item_hash32": 1361286512,
+        "quantity": 1
+      },
+      "ingredients": [
+        {
+          "item_id": "Comp_PumpRotor",
+          "item_hash32": 2033101255,
+          "quantity": 1
+        },
+        {
+          "item_id": "Comp_FiberMesh",
+          "item_hash32": 1095668018,
+          "quantity": 1
+        }
+      ],
+      "baseline_value_units": 14.7,
+      "craft_time_seconds": 3.0,
+      "fabrication_kwh": 15.5,
+      "unlock_scan_id": "scan.structure_relay",
+      "unlock_scan_hash32": 488796685
+    },
+    {
+      "recipe_id": "Recipe_ModuleStorageLocker",
+      "recipe_hash32": 1755589453,
+      "display_name": "Storage Locker Module",
+      "category_id": "recipe.category.base_module",
+      "category_hash32": 4211523877,
+      "progression_tier": 2,
+      "result": {
+        "item_id": "Module_StorageLocker",
+        "item_hash32": 4001448765,
+        "quantity": 1
+      },
+      "ingredients": [
+        {
+          "item_id": "Comp_StructuralBracket",
+          "item_hash32": 2908503494,
+          "quantity": 2
+        },
+        {
+          "item_id": "Comp_GlassPanel",
+          "item_hash32": 1708824863,
+          "quantity": 1
+        }
+      ],
+      "baseline_value_units": 11.0,
+      "craft_time_seconds": 2.5,
+      "fabrication_kwh": 12.4,
+      "unlock_scan_id": "scan.resource_node",
+      "unlock_scan_hash32": 3168398105
+    },
+    {
+      "recipe_id": "Recipe_ModulePressurizedContainer",
+      "recipe_hash32": 3789307373,
+      "display_name": "Pressurized Container Module",
+      "category_id": "recipe.category.base_module",
+      "category_hash32": 4211523877,
+      "progression_tier": 2,
+      "result": {
+        "item_id": "Module_PressurizedContainer",
+        "item_hash32": 2749184637,
+        "quantity": 1
+      },
+      "ingredients": [
+        {
+          "item_id": "Comp_ReinforcedPlate",
+          "item_hash32": 3550014518,
+          "quantity": 1
+        },
+        {
+          "item_id": "Comp_SealantPack",
+          "item_hash32": 3268286546,
+          "quantity": 1
+        },
+        {
+          "item_id": "Comp_GlassPanel",
+          "item_hash32": 1708824863,
+          "quantity": 1
+        }
+      ],
+      "baseline_value_units": 18.9,
+      "craft_time_seconds": 3.0,
+      "fabrication_kwh": 18.9,
+      "unlock_scan_id": "scan.structure_relay",
+      "unlock_scan_hash32": 488796685
+    },
+    {
+      "recipe_id": "Recipe_ModuleSumpPump",
+      "recipe_hash32": 82512683,
+      "display_name": "Sump Pump Module",
+      "category_id": "recipe.category.base_module",
+      "category_hash32": 4211523877,
+      "progression_tier": 2,
+      "result": {
+        "item_id": "Module_SumpPump",
+        "item_hash32": 822934043,
+        "quantity": 1
+      },
+      "ingredients": [
+        {
+          "item_id": "Comp_PumpRotor",
+          "item_hash32": 2033101255,
+          "quantity": 1
+        },
+        {
+          "item_id": "Comp_SealantPack",
+          "item_hash32": 3268286546,
+          "quantity": 1
+        }
+      ],
+      "baseline_value_units": 14.1,
+      "craft_time_seconds": 3.0,
+      "fabrication_kwh": 15.0,
+      "unlock_scan_id": "scan.structure_relay",
+      "unlock_scan_hash32": 488796685
+    },
+    {
+      "recipe_id": "Recipe_DepthCompensator",
+      "recipe_hash32": 2344520494,
+      "display_name": "Depth Compensator",
+      "category_id": "recipe.category.submarine_upgrade",
+      "category_hash32": 4248040746,
+      "progression_tier": 3,
+      "result": {
+        "item_id": "Upgrade_DepthCompensator",
+        "item_hash32": 1167658630,
+        "quantity": 1
+      },
+      "ingredients": [
+        {
+          "item_id": "Comp_ReinforcedPlate",
+          "item_hash32": 3550014518,
+          "quantity": 2
+        },
+        {
+          "item_id": "Comp_PowerCoupler",
+          "item_hash32": 4027154086,
+          "quantity": 1
+        },
+        {
+          "item_id": "Data_NickelOre",
+          "item_hash32": 1037165092,
+          "quantity": 1
+        }
+      ],
+      "baseline_value_units": 38.7,
+      "craft_time_seconds": 4.0,
+      "fabrication_kwh": 36.8,
+      "unlock_scan_id": "scan.structure_relay",
+      "unlock_scan_hash32": 488796685
+    },
+    {
+      "recipe_id": "Recipe_BallastOptimizer",
+      "recipe_hash32": 531469028,
+      "display_name": "Ballast Optimizer",
+      "category_id": "recipe.category.submarine_upgrade",
+      "category_hash32": 4248040746,
+      "progression_tier": 3,
+      "result": {
+        "item_id": "Upgrade_BallastOptimizer",
+        "item_hash32": 1231965596,
+        "quantity": 1
+      },
+      "ingredients": [
+        {
+          "item_id": "Comp_PumpRotor",
+          "item_hash32": 2033101255,
+          "quantity": 2
+        },
+        {
+          "item_id": "Comp_PowerCoupler",
+          "item_hash32": 4027154086,
+          "quantity": 2
+        },
+        {
+          "item_id": "Data_NickelOre",
+          "item_hash32": 1037165092,
+          "quantity": 1
+        }
+      ],
+      "baseline_value_units": 45.8,
+      "craft_time_seconds": 4.0,
+      "fabrication_kwh": 42.7,
+      "unlock_scan_id": "scan.structure_relay",
+      "unlock_scan_hash32": 488796685
+    },
+    {
+      "recipe_id": "Recipe_SonarAmplifier",
+      "recipe_hash32": 3235962818,
+      "display_name": "Sonar Amplifier",
+      "category_id": "recipe.category.submarine_upgrade",
+      "category_hash32": 4248040746,
+      "progression_tier": 3,
+      "result": {
+        "item_id": "Upgrade_SonarAmplifier",
+        "item_hash32": 2406373322,
+        "quantity": 1
+      },
+      "ingredients": [
+        {
+          "item_id": "Comp_CircuitBoard",
+          "item_hash32": 71708594,
+          "quantity": 2
+        },
+        {
+          "item_id": "Comp_PrecisionLens",
+          "item_hash32": 3399578969,
+          "quantity": 2
+        },
+        {
+          "item_id": "Data_RareEarthDust",
+          "item_hash32": 1997058338,
+          "quantity": 1
+        },
+        {
+          "item_id": "Data_GoldOre",
+          "item_hash32": 4056809162,
+          "quantity": 1
+        },
+        {
+          "item_id": "Data_LithiumCrystal",
+          "item_hash32": 3763503872,
+          "quantity": 2
+        }
+      ],
+      "baseline_value_units": 37.0,
+      "craft_time_seconds": 4.0,
+      "fabrication_kwh": 35.4,
+      "unlock_scan_id": "scan.expedition_contact",
+      "unlock_scan_hash32": 2293519330
+    },
+    {
+      "recipe_id": "Recipe_HullArmorLattice",
+      "recipe_hash32": 3839810470,
+      "display_name": "Hull Armor Lattice",
+      "category_id": "recipe.category.submarine_upgrade",
+      "category_hash32": 4248040746,
+      "progression_tier": 3,
+      "result": {
+        "item_id": "Upgrade_HullArmorLattice",
+        "item_hash32": 1257718430,
+        "quantity": 1
+      },
+      "ingredients": [
+        {
+          "item_id": "Comp_ReinforcedPlate",
+          "item_hash32": 3550014518,
+          "quantity": 4
+        },
+        {
+          "item_id": "Data_CobaltAlloy",
+          "item_hash32": 857583970,
+          "quantity": 1
+        },
+        {
+          "item_id": "Data_CarbonGraphite",
+          "item_hash32": 2008184373,
+          "quantity": 1
+        }
+      ],
+      "baseline_value_units": 59.0,
+      "craft_time_seconds": 4.5,
+      "fabrication_kwh": 53.5,
+      "unlock_scan_id": "scan.structure_relay",
+      "unlock_scan_hash32": 488796685
+    },
+    {
+      "recipe_id": "Recipe_SilentRunningBaffle",
+      "recipe_hash32": 2948013318,
+      "display_name": "Silent Running Baffle",
+      "category_id": "recipe.category.submarine_upgrade",
+      "category_hash32": 4248040746,
+      "progression_tier": 3,
+      "result": {
+        "item_id": "Upgrade_SilentRunningBaffle",
+        "item_hash32": 3312055054,
+        "quantity": 1
+      },
+      "ingredients": [
+        {
+          "item_id": "Comp_FiberMesh",
+          "item_hash32": 1095668018,
+          "quantity": 2
+        },
+        {
+          "item_id": "Comp_LubricantResin",
+          "item_hash32": 2880126392,
+          "quantity": 2
+        },
+        {
+          "item_id": "Data_CarbonGraphite",
+          "item_hash32": 2008184373,
+          "quantity": 1
+        },
+        {
+          "item_id": "Data_RareEarthDust",
+          "item_hash32": 1997058338,
+          "quantity": 1
+        },
+        {
+          "item_id": "Data_ThermalGel",
+          "item_hash32": 1601052383,
+          "quantity": 1
+        },
+        {
+          "item_id": "Data_GoldOre",
+          "item_hash32": 4056809162,
+          "quantity": 1
+        }
+      ],
+      "baseline_value_units": 39.4,
+      "craft_time_seconds": 4.0,
+      "fabrication_kwh": 37.4,
+      "unlock_scan_id": "scan.expedition_contact",
+      "unlock_scan_hash32": 2293519330
+    },
+    {
+      "recipe_id": "Recipe_HighCapacityCell",
+      "recipe_hash32": 376833910,
+      "display_name": "High Capacity Cell",
+      "category_id": "recipe.category.submarine_upgrade",
+      "category_hash32": 4248040746,
+      "progression_tier": 3,
+      "result": {
+        "item_id": "Upgrade_HighCapacityCell",
+        "item_hash32": 2083712206,
+        "quantity": 1
+      },
+      "ingredients": [
+        {
+          "item_id": "Comp_BatteryCell",
+          "item_hash32": 1562252576,
+          "quantity": 3
+        },
+        {
+          "item_id": "Data_LithiumCrystal",
+          "item_hash32": 3763503872,
+          "quantity": 2
+        },
+        {
+          "item_id": "Data_RareEarthDust",
+          "item_hash32": 1997058338,
+          "quantity": 1
+        },
+        {
+          "item_id": "Data_CobaltAlloy",
+          "item_hash32": 857583970,
+          "quantity": 1
+        },
+        {
+          "item_id": "Data_GoldOre",
+          "item_hash32": 4056809162,
+          "quantity": 1
+        }
+      ],
+      "baseline_value_units": 37.6,
+      "craft_time_seconds": 4.0,
+      "fabrication_kwh": 35.9,
+      "unlock_scan_id": "scan.resource_cache",
+      "unlock_scan_hash32": 3016831365
+    },
+    {
+      "recipe_id": "Recipe_ThermalShielding",
+      "recipe_hash32": 504564630,
+      "display_name": "Thermal Shielding",
+      "category_id": "recipe.category.submarine_upgrade",
+      "category_hash32": 4248040746,
+      "progression_tier": 3,
+      "result": {
+        "item_id": "Upgrade_ThermalShielding",
+        "item_hash32": 2908096734,
+        "quantity": 1
+      },
+      "ingredients": [
+        {
+          "item_id": "Data_ThermalGel",
+          "item_hash32": 1601052383,
+          "quantity": 2
+        },
+        {
+          "item_id": "Comp_ReinforcedPlate",
+          "item_hash32": 3550014518,
+          "quantity": 2
+        },
+        {
+          "item_id": "Data_CobaltAlloy",
+          "item_hash32": 857583970,
+          "quantity": 1
+        }
+      ],
+      "baseline_value_units": 39.0,
+      "craft_time_seconds": 4.0,
+      "fabrication_kwh": 37.1,
+      "unlock_scan_id": "scan.resource_cache",
+      "unlock_scan_hash32": 3016831365
+    },
+    {
+      "recipe_id": "Recipe_GuidanceModule",
+      "recipe_hash32": 2196597006,
+      "display_name": "Guidance Module",
+      "category_id": "recipe.category.submarine_upgrade",
+      "category_hash32": 4248040746,
+      "progression_tier": 3,
+      "result": {
+        "item_id": "Upgrade_GuidanceModule",
+        "item_hash32": 657239398,
+        "quantity": 1
+      },
+      "ingredients": [
+        {
+          "item_id": "Comp_CircuitBoard",
+          "item_hash32": 71708594,
+          "quantity": 2
+        },
+        {
+          "item_id": "Comp_PrecisionLens",
+          "item_hash32": 3399578969,
+          "quantity": 2
+        },
+        {
+          "item_id": "Data_RareEarthDust",
+          "item_hash32": 1997058338,
+          "quantity": 1
+        },
+        {
+          "item_id": "Data_GoldOre",
+          "item_hash32": 4056809162,
+          "quantity": 1
+        },
+        {
+          "item_id": "Data_LithiumCrystal",
+          "item_hash32": 3763503872,
+          "quantity": 2
+        }
+      ],
+      "baseline_value_units": 37.0,
+      "craft_time_seconds": 4.0,
+      "fabrication_kwh": 35.4,
+      "unlock_scan_id": "scan.expedition_contact",
+      "unlock_scan_hash32": 2293519330
+    },
+    {
+      "recipe_id": "Recipe_HydraulicActuator",
+      "recipe_hash32": 2040131956,
+      "display_name": "Hydraulic Actuator",
+      "category_id": "recipe.category.submarine_upgrade",
+      "category_hash32": 4248040746,
+      "progression_tier": 3,
+      "result": {
+        "item_id": "Upgrade_HydraulicActuator",
+        "item_hash32": 1328461324,
+        "quantity": 1
+      },
+      "ingredients": [
+        {
+          "item_id": "Comp_PumpRotor",
+          "item_hash32": 2033101255,
+          "quantity": 2
+        },
+        {
+          "item_id": "Comp_ReinforcedPlate",
+          "item_hash32": 3550014518,
+          "quantity": 1
+        },
+        {
+          "item_id": "Data_NickelOre",
+          "item_hash32": 1037165092,
+          "quantity": 1
+        },
+        {
+          "item_id": "Data_CobaltAlloy",
+          "item_hash32": 857583970,
+          "quantity": 1
+        }
+      ],
+      "baseline_value_units": 41.4,
+      "craft_time_seconds": 4.0,
+      "fabrication_kwh": 39.0,
+      "unlock_scan_id": "scan.structure_relay",
+      "unlock_scan_hash32": 488796685
+    },
+    {
+      "recipe_id": "Recipe_ReactorBypassCoupler",
+      "recipe_hash32": 4187834654,
+      "display_name": "Reactor Bypass Coupler",
+      "category_id": "recipe.category.submarine_upgrade",
+      "category_hash32": 4248040746,
+      "progression_tier": 3,
+      "result": {
+        "item_id": "Upgrade_ReactorBypassCoupler",
+        "item_hash32": 3833141382,
+        "quantity": 1
+      },
+      "ingredients": [
+        {
+          "item_id": "Comp_PowerCoupler",
+          "item_hash32": 4027154086,
+          "quantity": 2
+        },
+        {
+          "item_id": "Comp_CircuitBoard",
+          "item_hash32": 71708594,
+          "quantity": 2
+        },
+        {
+          "item_id": "Data_RareEarthDust",
+          "item_hash32": 1997058338,
+          "quantity": 1
+        },
+        {
+          "item_id": "Data_GoldOre",
+          "item_hash32": 4056809162,
+          "quantity": 1
+        }
+      ],
+      "baseline_value_units": 44.4,
+      "craft_time_seconds": 4.5,
+      "fabrication_kwh": 41.5,
+      "unlock_scan_id": "scan.resource_cache",
+      "unlock_scan_hash32": 3016831365
+    },
+    {
+      "recipe_id": "Recipe_EngineOverdriveManifold",
+      "recipe_hash32": 1306256436,
+      "display_name": "Engine Overdrive Manifold",
+      "category_id": "recipe.category.submarine_upgrade",
+      "category_hash32": 4248040746,
+      "progression_tier": 3,
+      "result": {
+        "item_id": "Upgrade_EngineOverdriveManifold",
+        "item_hash32": 3136873884,
+        "quantity": 1
+      },
+      "ingredients": [
+        {
+          "item_id": "Comp_PumpRotor",
+          "item_hash32": 2033101255,
+          "quantity": 3
+        },
+        {
+          "item_id": "Comp_PowerCoupler",
+          "item_hash32": 4027154086,
+          "quantity": 2
+        },
+        {
+          "item_id": "Data_ThermalGel",
+          "item_hash32": 1601052383,
+          "quantity": 1
+        },
+        {
+          "item_id": "Data_CobaltAlloy",
+          "item_hash32": 857583970,
+          "quantity": 1
+        }
+      ],
+      "baseline_value_units": 62.0,
+      "craft_time_seconds": 4.8,
+      "fabrication_kwh": 55.9,
+      "unlock_scan_id": "scan.resource_cache",
+      "unlock_scan_hash32": 3016831365
+    },
+    {
+      "recipe_id": "Recipe_AbyssPressureShell",
+      "recipe_hash32": 257314259,
+      "display_name": "Abyss Pressure Shell",
+      "category_id": "recipe.category.submarine_upgrade",
+      "category_hash32": 4248040746,
+      "progression_tier": 3,
+      "result": {
+        "item_id": "Upgrade_AbyssPressureShell",
+        "item_hash32": 932012347,
+        "quantity": 1
+      },
+      "ingredients": [
+        {
+          "item_id": "Comp_ReinforcedPlate",
+          "item_hash32": 3550014518,
+          "quantity": 3
+        },
+        {
+          "item_id": "Data_CarbonGraphite",
+          "item_hash32": 2008184373,
+          "quantity": 2
+        },
+        {
+          "item_id": "Data_RareEarthDust",
+          "item_hash32": 1997058338,
+          "quantity": 1
+        },
+        {
+          "item_id": "Data_AbyssalCrystal",
+          "item_hash32": 702456815,
+          "quantity": 1
+        }
+      ],
+      "baseline_value_units": 68.0,
+      "craft_time_seconds": 5.0,
+      "fabrication_kwh": 60.9,
+      "unlock_scan_id": "scan.resource_cache",
+      "unlock_scan_hash32": 3016831365
+    },
+    {
+      "recipe_id": "Recipe_AbyssalStabilizer",
+      "recipe_hash32": 1997363424,
+      "display_name": "Abyssal Stabilizer",
+      "category_id": "recipe.category.submarine_upgrade",
+      "category_hash32": 4248040746,
+      "progression_tier": 3,
+      "result": {
+        "item_id": "Upgrade_AbyssalStabilizer",
+        "item_hash32": 3542071688,
+        "quantity": 1
+      },
+      "ingredients": [
+        {
+          "item_id": "Data_AbyssalCrystal",
+          "item_hash32": 702456815,
+          "quantity": 2
+        },
+        {
+          "item_id": "Data_RareEarthDust",
+          "item_hash32": 1997058338,
+          "quantity": 2
+        },
+        {
+          "item_id": "Data_CobaltAlloy",
+          "item_hash32": 857583970,
+          "quantity": 2
+        },
+        {
+          "item_id": "Data_ThermalGel",
+          "item_hash32": 1601052383,
+          "quantity": 1
+        },
+        {
+          "item_id": "Comp_PowerCoupler",
+          "item_hash32": 4027154086,
+          "quantity": 1
+        }
+      ],
+      "baseline_value_units": 65.7,
+      "craft_time_seconds": 5.5,
+      "fabrication_kwh": 59.0,
+      "unlock_scan_id": "scan.resource_cache",
+      "unlock_scan_hash32": 3016831365
+    },
+    {
+      "recipe_id": "Recipe_EmergencyO2Rack",
+      "recipe_hash32": 2042781381,
+      "display_name": "Emergency O2 Rack",
+      "category_id": "recipe.category.submarine_upgrade",
+      "category_hash32": 4248040746,
+      "progression_tier": 3,
+      "result": {
+        "item_id": "Upgrade_EmergencyO2Rack",
+        "item_hash32": 2872587453,
+        "quantity": 1
+      },
+      "ingredients": [
+        {
+          "item_id": "Module_O2Recycler",
+          "item_hash32": 1361286512,
+          "quantity": 2
+        },
+        {
+          "item_id": "Comp_BatteryCell",
+          "item_hash32": 1562252576,
+          "quantity": 2
+        },
+        {
+          "item_id": "Comp_FiberMesh",
+          "item_hash32": 1095668018,
+          "quantity": 1
+        },
+        {
+          "item_id": "Data_LithiumCrystal",
+          "item_hash32": 3763503872,
+          "quantity": 1
+        }
+      ],
+      "baseline_value_units": 47.3,
+      "craft_time_seconds": 4.2,
+      "fabrication_kwh": 43.9,
+      "unlock_scan_id": "scan.structure_relay",
+      "unlock_scan_hash32": 488796685
+    }
+  ]
+}

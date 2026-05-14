@@ -3,7 +3,7 @@
 
 ---
 
-## §0 — HARDWARE TRUTH TABLE
+## Section0 - HARDWARE TRUTH TABLE
 
 | Target GPU     | VRAM  | Warp Size | Max CUs | Shared Mem/CU | Preferred Dispatch |
 |----------------|-------|-----------|---------|---------------|--------------------|
@@ -15,13 +15,13 @@
 
 ---
 
-## §1 — BUS MANAGEMENT PROTOCOL
+## Section1 - BUS MANAGEMENT PROTOCOL
 
 ### 1.1 PCIe Stall Prevention
 
 [RULE]: NEVER call SetData/GetData inside Update/FixedUpdate.
-[RULE]: All CPU→GPU data: frame-start upload block only.
-[RULE]: All GPU→CPU readback: AsyncGPUReadback, 3-frame ring buffer delay.
+[RULE]: All CPU->GPU data: frame-start upload block only.
+[RULE]: All GPU->CPU readback: AsyncGPUReadback, 3-frame ring buffer delay.
 
 UPLOAD SCHEDULE (per frame):
   Frame N:   Dispatch compute kernels
@@ -46,17 +46,17 @@ CBUFFER _HectonFrame {
   float  BioluminescentPhase; // 4b
   int    FrameIndex;          // 4b  mod 3 ring
   float2 _pad;                // align to 16b boundary
-}  // Total: 64b — fits single cache line
+}  // Total: 64b - fits single cache line
 
 ### 1.3 Buffer Strategy Matrix
 
-READ-ONLY input        → StructuredBuffer<T>
-READ-WRITE state       → RWStructuredBuffer<T>
-Raw byte addressing    → RWByteAddressBuffer (atomic counters, indirect args)
-High-freq scalar atom  → RWByteAddressBuffer (InterlockedAdd on byte offset)
+READ-ONLY input        -> StructuredBuffer<T>
+READ-WRITE state       -> RWStructuredBuffer<T>
+Raw byte addressing    -> RWByteAddressBuffer (atomic counters, indirect args)
+High-freq scalar atom  -> RWByteAddressBuffer (InterlockedAdd on byte offset)
 
 [FORBID]: Mixing RWStructuredBuffer and raw atomics on same resource without UAV barrier.
-[RULE]:   Indirect dispatch args → always RWByteAddressBuffer. Never StructuredBuffer.
+[RULE]:   Indirect dispatch args -> always RWByteAddressBuffer. Never StructuredBuffer.
 
 ### 1.4 C# Resource Contract
 
@@ -71,7 +71,7 @@ Interop rule:
 
 ---
 
-## §2 — SPATIAL GRID ARCHITECTURE
+## Section2 - SPATIAL GRID ARCHITECTURE
 
 ### 2.1 Grid Spec
 
@@ -114,16 +114,16 @@ KERNEL: GridInsert [64x1x1]
 // Write (CellHash, EntityID) pairs and use GPU Bitonic Sort or Radix Sort.
 
   [GUARD]: if(prev >= 32) { InterlockedAdd(GridCountBuffer, byteOff, -1); return; }
-           // rollback on overflow — grid slot exhausted
+           // rollback on overflow - grid slot exhausted
 
-  [SAFE]: isfinite(pos.x) && isfinite(pos.y) && isfinite(pos.z) — check BEFORE cell math
+  [SAFE]: isfinite(pos.x) && isfinite(pos.y) && isfinite(pos.z) - check BEFORE cell math
           if(!isfinite) { mark entity dead; return; }
 
   GridEntityBuffer[flatIdx * 32 + prev] = entityId
 
 ### 2.4 Neighbor Query (Logic Kernel)
 
-FUNC: QueryNeighbors(float3 posWS, float radius) → entityId[]
+FUNC: QueryNeighbors(float3 posWS, float radius) -> entityId[]
   minCell = floor((posWS - radius - GridOrigin) / CellSize)
   maxCell = floor((posWS + radius - GridOrigin) / CellSize)
   clamp both to [0, GridDims-1]
@@ -141,14 +141,14 @@ FUNC: QueryNeighbors(float3 posWS, float radius) → entityId[]
 
 ---
 
-## §3 — ATOM STABILITY PROTOCOL
+## Section3 - ATOM STABILITY PROTOCOL
 
 ### 3.1 InterlockedAdd Safety Chain
 
 ORDER OF OPERATIONS (mandatory):
   1. isfinite() check on all float inputs
   2. Bounds check on target buffer index
-  3. Cell capacity guard (prev >= MAX → rollback)
+  3. Cell capacity guard (prev >= MAX -> rollback)
   4. InterlockedAdd execute
   5. Write payload ONLY after successful atom
 
@@ -168,12 +168,12 @@ INCREMENT (during cull):
   VisibleEntities[slot] = entityId
 
 READ (CPU, async, 3 frames late):
-  AsyncGPUReadback → VisibleCount for audio/gameplay systems
+  AsyncGPUReadback -> VisibleCount for audio/gameplay systems
   [FORBID]: Use on render hot path. Gameplay-latency only.
 
 ---
 
-## §4 — SIMULATION TIME & PHASE STABILITY
+## Section4 - SIMULATION TIME & PHASE STABILITY
 
 ### 4.1 Phase Wrapping Protocol
 
@@ -191,8 +191,8 @@ READ (CPU, async, 3 frames late):
 
 [SCALE]: Replace sin(x) in inner loops with degree-5 minimax:
   x in [-PI, PI] (normalize first)
-  sin_approx(x) = x*(1 - x²*(1/6 - x²*(1/120 - x²/5040)))
-  Max error: ~1.8e-7 — sufficient for bioluminescence flicker
+  sin_approx(x) = x*(1 - x^2*(1/6 - x^2*(1/120 - x^2/5040)))
+  Max error: ~1.8e-7 - sufficient for bioluminescence flicker
 
 [SCALE]: LUT fallback for branchy paths:
   BiolumLUT: RWStructuredBuffer<float>[256]
@@ -202,7 +202,7 @@ READ (CPU, async, 3 frames late):
 
 ---
 
-## §5 — CREATURE / ENTITY SIMULATION KERNELS
+## Section5 - CREATURE / ENTITY SIMULATION KERNELS
 
 ### 5.1 Entity Budget
 
@@ -213,9 +213,9 @@ MAX_ENTITIES_LOD2      = 20,000  // frozen, grid-tracked only
 
 LOD Assignment:
   dist = length(entityPos - CameraPositionWS)
-  LOD0: dist < 40m   → full sim
-  LOD1: dist < 120m  → integration only
-  LOD2: dist >= 120m → grid-only, no forces
+  LOD0: dist < 40m   -> full sim
+  LOD1: dist < 120m  -> integration only
+  LOD2: dist >= 120m -> grid-only, no forces
 
 [RULE]: LOD tier written to EntityMetaBuffer uint8 flag. Checked at kernel entry. Early-out.
 
@@ -274,17 +274,17 @@ KERNEL: LOD1PositionUpdate [64x1x1]
   if(EntityMeta[entityId].lod != 1) return
   pos = EntityPositions[entityId]
   vel = EntityVelocities[entityId]
-  // No force computation — only euler integrate existing velocity
+  // No force computation - only euler integrate existing velocity
   // Apply light drag
   vel *= (1.0 - DragCoeff * DeltaTime)
   pos += vel * DeltaTime
-  [SAFE]: finitecheck → reset
+  [SAFE]: finitecheck -> reset
   EntityPositions[entityId] = pos
   EntityVelocities[entityId] = vel
 
 ---
 
-## §6 — BIOLUMINESCENCE COMPUTE
+## Section6 - BIOLUMINESCENCE COMPUTE
 
 ### 6.1 Pulse Kernel (Logic Kernel)
 
@@ -306,11 +306,11 @@ KERNEL: BiolumUpdate [64x1x1]
   stressGain = speedFrac * StressGainMax
 
   intensity = saturate(base * 0.5 + 0.5 + proximityGain + stressGain)
-  BiolumBuffer[entityId] = half(intensity)  // write as half — halves bandwidth
+  BiolumBuffer[entityId] = half(intensity)  // write as half - halves bandwidth
 
 ### 6.2 Biolum-to-Render Bridge
 
-[RULE]: BiolumBuffer → Texture2DArray (entity atlas) via CopyBuffer-to-Texture path.
+[RULE]: BiolumBuffer -> Texture2DArray (entity atlas) via CopyBuffer-to-Texture path.
         Never sample RWStructuredBuffer in fragment shader directly (perf cliff on Pascal).
 [RULE]: Update atlas every 2 frames on MX350 (temporal interpolation in shader compensates).
         Update every frame on RTX+ (SCALE macro).
@@ -322,12 +322,12 @@ TEMPORAL INTERP (fragment):
 
 ---
 
-## §7 — FLUID / CURRENT SIMULATION
+## Section7 - FLUID / CURRENT SIMULATION
 
 ### 7.1 Current Field Architecture
 
 CurrentFieldTex: RenderTexture3D, R16G16B16A16_SFLOAT
-  Dims: 64x32x64 (MX350 budget) → 128x64x128 (RTX+)
+  Dims: 64x32x64 (MX350 budget) -> 128x64x128 (RTX+)
   RGB: velocity field (m/s)
   A:   turbulence scalar
 
@@ -339,7 +339,7 @@ CurrentFieldTex: RenderTexture3D, R16G16B16A16_SFLOAT
 
 ### 7.2 Current Force on Entities
 
-FUNC: SampleCurrentForce(float3 worldPos) → float3
+FUNC: SampleCurrentForce(float3 worldPos) -> float3
   uvw = (worldPos - FieldOrigin) / FieldWorldSize
   uvw = saturate(uvw)  // clamp to field bounds
   sample = CurrentFieldTex.SampleLevel(BilinearClamp, uvw, 0)
@@ -355,7 +355,7 @@ FUNC: SampleCurrentForce(float3 worldPos) → float3
 
 ---
 
-## §8 — UNDERWATER PARTICLE SYSTEM (GPU)
+## Section8 - UNDERWATER PARTICLE SYSTEM (GPU)
 
 ### 8.1 Particle Buffer
 
@@ -370,7 +370,7 @@ ParticleBuffer: RWStructuredBuffer<Particle>
   }
 
 MAX_PARTICLES = 65536 (MX350) | 262144 (RTX+)
-[RULE]: Dead particles → recycled via free-list (ByteAddressBuffer atomic counter).
+[RULE]: Dead particles -> recycled via free-list (ByteAddressBuffer atomic counter).
 
 ### 8.2 Particle Update Kernel (Logic Kernel)
 
@@ -404,7 +404,7 @@ KERNEL: ParticleUpdate [64x1x1]
 ### 8.3 Parasite Count Readback
 
 [RULE]: ParasiteCount (gameplay metric) read via AsyncGPUReadback only.
-        Dispatch frame N → Request readback frame N+3 → C# callback frame N+3+latency.
+        Dispatch frame N -> Request readback frame N+3 -> C# callback frame N+3+latency.
         Never block render thread.
 [DATA]: Maintain ParasiteCountBuffer: RWByteAddressBuffer, single uint.
         Reset each frame (compute clear kernel, 1 thread).
@@ -412,7 +412,7 @@ KERNEL: ParticleUpdate [64x1x1]
 
 ---
 
-## §9 — PRESSURE / DEPTH PHYSICS
+## Section9 - PRESSURE / DEPTH PHYSICS
 
 ### 9.1 Crush Depth Simulation
 
@@ -431,7 +431,7 @@ StructuralStress(entity):
 [DATA]: BuoyancyField: RWStructuredBuffer<float>[MaxCells]
         float = water density at cell (accounts for thermoclines, debris)
 
-FUNC: SampleBuoyancy(float3 worldPos) → float
+FUNC: SampleBuoyancy(float3 worldPos) -> float
   cell = WorldToCell(worldPos)
   flatIdx = FlatIndex(cell)
   localDensity = BuoyancyField[flatIdx]
@@ -440,7 +440,7 @@ FUNC: SampleBuoyancy(float3 worldPos) → float
 
 ---
 
-## §10 — TDR PROTECTION & DISPATCH BUDGETING
+## Section10 - TDR PROTECTION & DISPATCH BUDGETING
 
 ### 10.1 Dispatch Limits (MX350)
 
@@ -471,7 +471,7 @@ RENDER BUDGET      : ~9.5ms remaining
 
 ---
 
-## §11 — SCALABILITY MACROS
+## Section11 - SCALABILITY MACROS
 
 ### 11.1 Compile-Time Quality Gates
 
@@ -495,19 +495,19 @@ RENDER BUDGET      : ~9.5ms remaining
   MEDIUM: 65,536
   HIGH:   262,144
 
-[RULE]: Quality tier detected at runtime: VRAM <  1800MB → LOW. VRAM <  1800MB → MEDIUM. else HIGH.
+[RULE]: Quality tier detected at runtime: VRAM <= 1800MB -> LOW. VRAM < 6000MB -> MEDIUM. else HIGH.
         Pass tier as CBUFFER int. Kernel branches on it (uniform branch = no divergence).
 
 ---
 
-## §12 — NaN VACCINATION PROTOCOL
+## Section12 - NaN VACCINATION PROTOCOL
 
-[SAFE]: ALL positions before grid insert       → isfinite() guard
-[SAFE]: ALL velocities before integration      → isfinite() guard
-[SAFE]: ALL InterlockedAdd targets             → isfinite() on float source before conversion
-[SAFE]: ALL normalize() calls                 → only if dot(v,v) > 1e-8
-[SAFE]: ALL division operations               → denominator = max(denom, EPSILON) where EPSILON=1e-6
-[SAFE]: Biolum intensity                      → saturate() clamp before write
+[SAFE]: ALL positions before grid insert       -> isfinite() guard
+[SAFE]: ALL velocities before integration      -> isfinite() guard
+[SAFE]: ALL InterlockedAdd targets             -> isfinite() on float source before conversion
+[SAFE]: ALL normalize() calls                 -> only if dot(v,v) > 1e-8
+[SAFE]: ALL division operations               -> denominator = max(denom, EPSILON) where EPSILON=1e-6
+[SAFE]: Biolum intensity                      -> saturate() clamp before write
 
 NaN PROPAGATION KILL:
   On NaN detection in entity state:
@@ -518,38 +518,38 @@ NaN PROPAGATION KILL:
 
 ---
 
-## §13 — SYNCHRONIZATION DEPENDENCY GRAPH
+## Section13 - SYNCHRONIZATION DEPENDENCY GRAPH
 
 FRAME START
 
-  ├ [CPU UPLOAD]: CBUFFER update (SimTime, CameraPos, EntityCount)
+  + [CPU UPLOAD]: CBUFFER update (SimTime, CameraPos, EntityCount)
 
-  ├ DISPATCH: GridClear
+  + DISPATCH: GridClear
        UAV Barrier
-  ├ DISPATCH: GridInsert
+  + DISPATCH: GridInsert
        UAV Barrier
-  ├ DISPATCH: SwarmUpdate  →  reads: Grid, EntityPos, EntityVel
+   DISPATCH: SwarmUpdate  ->  reads: Grid, EntityPos, EntityVel
        UAV Barrier              writes: EntityPos, EntityVel
-  ├ DISPATCH: LOD1Update
+  + DISPATCH: LOD1Update
        UAV Barrier
-  ├ DISPATCH: BiolumUpdate →  reads: EntityPos, EntityVel, PlayerPos
+   DISPATCH: BiolumUpdate ->  reads: EntityPos, EntityVel, PlayerPos
        UAV Barrier              writes: BiolumBuffer
-  ├ DISPATCH: ParticleUpdate
+  + DISPATCH: ParticleUpdate
        UAV Barrier
-  ├ DISPATCH (4Hz): CurrentFieldAdvect
+  + DISPATCH (4Hz): CurrentFieldAdvect
        UAV Barrier
-  ├ DISPATCH: BiolumAtlasWrite  → Texture write
+   DISPATCH: BiolumAtlasWrite  -> Texture write
 
-  ├ RENDER PASSES (consume read-only views of above buffers)
+  + RENDER PASSES (consume read-only views of above buffers)
 
-   AsyncGPUReadback.Request(ParasiteCountBuffer)  ← N+3 frames safe
+   AsyncGPUReadback.Request(ParasiteCountBuffer)  <- N+3 frames safe
 
 [FORBID]: UAV read-after-write without barrier between dependent dispatches.
 [FORBID]: Render pass consuming buffer written in same frame without barrier.
 
 ---
 
-## §14 — PRECISION & CAMERA-RELATIVE MANDATE
+## Section14 - PRECISION & CAMERA-RELATIVE MANDATE
 
 [RULE]: ALL world-space positions stored as camera-relative offsets inside shaders.
         Absolute world pos only in CPU-side C# logic.
@@ -560,16 +560,16 @@ CONVERSION AT SHADER ENTRY:
   Reconvert for writes: posWS = posCS + CameraPositionWS
 
 [MATH]: Float precision at 1km depth with 0.01m accuracy:
-  float32 mantissa = 23 bits → ~7 decimal digits
-  At 1000m: error = 1000 / 10^7 = 0.0001m → acceptable
-  At 10km: error = 0.001m → acceptable with camera-relative
-  Without camera-relative at 10km: 10000 / 10^7 = 0.001m → jitter visible
+  float32 mantissa = 23 bits -> ~7 decimal digits
+  At 1000m: error = 1000 / 10^7 = 0.0001m -> acceptable
+  At 10km: error = 0.001m -> acceptable with camera-relative
+  Without camera-relative at 10km: 10000 / 10^7 = 0.001m -> jitter visible
 
 [RULE]: Entity spawn positions stored as float64 CPU-side. Compressed to float32 camera-relative on upload.
 
 ---
 
-## §15 — APPENDIX: FAST MATH REFERENCE
+## Section15 - APPENDIX: FAST MATH REFERENCE
 
 // Normalize safe
 float3 SafeNormalize(float3 v):

@@ -1,0 +1,52 @@
+{
+  "conclusions": {
+    "acousticCompensationKillRatio": 0.56321,
+    "aggressionFearSweetSpot": "Aggression 1.38000, Fear 0.76000",
+    "linearVsQuadraticScoreDelta": 0.058491,
+    "noAcousticKillRatio": 0.08101,
+    "quadraticFearFinding": "Second-degree fear buildup damps late scarcity spikes while avoiding the linear curve's early hunt suppression.",
+    "retinalBlindnessFinding": "Acoustic tracking partially compensates; retinal blindness without acoustic tracking collapses hunt efficiency.",
+    "sensoryNoiseFinding": "Stable through 12 percent 1-bit radar noise; 18 percent starts scoring as degraded."
+  },
+  "detailedReport": "Tools/AI_Sim/FaunaBalanceSim_Report.json",
+  "evidenceClass": "CLI_PYTHON_SIMULATION",
+  "generatedBy": "FAUNA_BEHAVIOR_SIMULATOR",
+  "millionFrameSummary": {
+    "frames": 1000000,
+    "population": {
+      "alphaLeviathan": 1.664,
+      "predatorMax": 39.951,
+      "predatorMin": 35.087,
+      "prey": 9436.618,
+      "preyMax": 9515.66,
+      "preyMin": 9199.621,
+      "stalker": 38.109
+    },
+    "score": 0.4471,
+    "stability": {
+      "extinct": false,
+      "overpopulated": false,
+      "predatorStdDev": 0.016,
+      "preyStdDev": 2.007
+    }
+  },
+  "runtimeUnityProof": "PENDING VERIFICATION",
+  "schemaVersion": 1,
+  "selectedConstants": {
+    "acousticTrackingWeight": 0.68,
+    "aggressionScalar": 1.38,
+    "fearCurvePower": 2.0,
+    "fearScalar": 0.76,
+    "fearWeight": 1.16,
+    "hungerWeight": 0.92,
+    "retinalBlindnessAcousticCompensation": 2691.893,
+    "retinalTrackingWeight": 0.32,
+    "sensoryNoiseTolerance": 0.12
+  },
+  "speciesTargets": {
+    "alphaLeviathanIdealPopulation": 2.4,
+    "preyIdealPopulation": 9600.0,
+    "stalkerIdealPopulation": 36.0
+  },
+  "status": "AI BALANCED"
+}

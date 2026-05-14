@@ -1,9 +1,9 @@
 # PATHFINDING_FUNNEL.md
-## Distilled Technical Mandate — Hecton-8 Navigation Engine
+## Distilled Technical Mandate - Hecton-8 Navigation Engine
 
 ---
 
-## §0 — CORE INVARIANTS
+## Section0 - CORE INVARIANTS
 
 - Path smoothing: O(N) Funnel (Simple String Pulling). No Bezier. No iterative relaxation.
 - All Nav Jobs: `[BurstCompile(FloatMode=FloatMode.Fast, FloatPrecision=FloatPrecision.Standard)]`
@@ -13,7 +13,7 @@
 
 ---
 
-## §1 — DATA STRUCTURES
+## Section1 - DATA STRUCTURES
 
 ### 1.1 Portal Definition
 
@@ -68,7 +68,7 @@ int2  HeightmapDim             // (W, D) sample counts
 
 ---
 
-## §2 — A* COST MODEL
+## Section2 - A* COST MODEL
 
 ### 2.1 Edge Cost Formula
 
@@ -80,15 +80,15 @@ edge_base_cost(a, b):
     threat_f    = (float)threat_byte * ThreatMultiplier      // ThreatMultiplier tunable [0.0, 8.0]
     return dist + threat_f
 
-- `ThreatMultiplier` per-entity-type. Predator flees threat → multiplier negative-equivalent via inverse sampling. Herbivore avoids → positive. Never write negative weights; invert sampling logic instead.
-- Admissibility: heuristic `h(n) = math.length(goal - n.WorldPos)` — Euclidean. Never overestimate. Admissible by definition in open 3D space.
+- `ThreatMultiplier` per-entity-type. Predator flees threat -> multiplier negative-equivalent via inverse sampling. Herbivore avoids -> positive. Never write negative weights; invert sampling logic instead.
+- Admissibility: heuristic `h(n) = math.length(goal - n.WorldPos)` - Euclidean. Never overestimate. Admissible by definition in open 3D space.
 
 ### 2.2 Weighted A* Variant (Performance LOD)
 
 f(n) = g(n) + W * h(n)
 
-- Near entities (<50m): `W = 1.0` → optimal
-- Mid entities (50–150m): `W = 1.5` → suboptimal, faster
+- Near entities (<50m): `W = 1.0` -> optimal
+- Mid entities (50-150m): `W = 1.5` -> suboptimal, faster
 - Distant entities (>150m): skip A*, use Flowfield vector only
 
 ### 2.3 Node Representation
@@ -106,10 +106,10 @@ struct NavNode
 
 ---
 
-## §3 — FUNNEL ALGORITHM (O(N) STRING PULLING)
+## Section3 - FUNNEL ALGORITHM (O(N) STRING PULLING)
 
 ### 3.1 Prerequisites
-- Input: `NativeArray<NavPortal>` (N portals) — ordered apex-to-goal.
+- Input: `NativeArray<NavPortal>` (N portals) - ordered apex-to-goal.
 - Input: `float3 StartPos`, `float3 GoalPos`.
 - Output: appended into `NativeList<float3> WaypointBuffer`.
 
@@ -143,7 +143,7 @@ FOR i = 1 TO N-1:
             state.RightRay = newRight - Apex
             state.RightIdx = i
         else:
-            // newRight crosses LEFT ray → right apex step
+            // newRight crosses LEFT ray -> right apex step
             WaypointBuffer.Add(LeftRay_endpoint)
             state.Apex     = LeftRay_endpoint
             state.LeftRay  = Portal[state.LeftIdx + 1].Left  - Apex   // re-scan from apex's left index
@@ -157,7 +157,7 @@ FOR i = 1 TO N-1:
             state.LeftRay = newLeft - Apex
             state.LeftIdx = i
         else:
-            // newLeft crosses RIGHT ray → left apex step
+            // newLeft crosses RIGHT ray -> left apex step
             WaypointBuffer.Add(RightRay_endpoint)
             state.Apex     = RightRay_endpoint
             state.RightRay = Portal[state.RightIdx + 1].Right - Apex
@@ -186,7 +186,7 @@ IF WaypointBuffer.Length <= 1 OR FunnelIterations > MaxPortals * 2:
 
 ---
 
-## §4 — HEIGHTMAP BILINEAR SAMPLING (ZERO-GC, BURST)
+## Section4 - HEIGHTMAP BILINEAR SAMPLING (ZERO-GC, BURST)
 
 ### 4.1 Formula
 
@@ -216,11 +216,11 @@ SampleHeightmapBilinear(xz):
 
 ---
 
-## §5 — LINE-OF-SIGHT (GRID-BASED, NO RAYCASTS)
+## Section5 - LINE-OF-SIGHT (GRID-BASED, NO RAYCASTS)
 
 ### 5.1 Voxel LoS (Branchless 3D DDA)
 
-VoxelLoS(a_world, b_world) → bool:
+VoxelLoS(a_world, b_world) -> bool:
     rayOrigin = a_world
     rayDir    = normalize(b_world - a_world)
     rayDirInv = 1.0 / max(abs(rayDir), 1e-6)
@@ -241,9 +241,9 @@ VoxelLoS(a_world, b_world) → bool:
         tMax += math.select(float3.zero, tDelta, mask)
         currentVoxel += math.select(int3.zero, step, mask)
 
-- `SOLID_THRESHOLD = 255` (impassable geometry). Threat byte 0–254 = open with cost.
+- `SOLID_THRESHOLD = 255` (impassable geometry). Threat byte 0-254 = open with cost.
 - Call only during waypoint post-validation, never inside A* inner loop.
-- Funnel algorithm implicitly guarantees LoS through portal geometry — skip LoS revalidation for smoothed waypoints unless NavMesh is dynamic.
+- Funnel algorithm implicitly guarantees LoS through portal geometry - skip LoS revalidation for smoothed waypoints unless NavMesh is dynamic.
 
 ### 5.2 Dynamic Obstacle Integration
 - Obstacle writes to ThreatGrid via `IJobParallelFor` each frame, double-buffered.
@@ -252,24 +252,24 @@ VoxelLoS(a_world, b_world) → bool:
 
 ---
 
-## §6 — PERFORMANCE & SCALABILITY
+## Section6 - PERFORMANCE & SCALABILITY
 
 ### 6.1 Time-Slicing
 
 PathRequestQueue: NativeQueue<PathRequest>   // Allocator.Persistent
 Solvebudget per frame: min(4, queue.Count)
-Distribute: frame N → entities [0..budget-1], frame N+1 → [budget..2*budget-1]
+Distribute: frame N -> entities [0..budget-1], frame N+1 -> [budget..2*budget-1]
 
-- Heavy solve (>150 nodes): spread across 4–8 frames via coroutine-free state machine.
+- Heavy solve (>150 nodes): spread across 4-8 frames via coroutine-free state machine.
 - State enum: `Idle | AStarSlice | FunnelPending | Complete | Failed`
 - Store partial A* open/closed sets in persistent `NativeArray<NavNode>` per-agent slot.
-- Max concurrent agents with full A*: 8 (MX350 constraint). Excess → Flowfield.
+- Max concurrent agents with full A*: 8 (MX350 constraint). Excess -> Flowfield.
 
 ### 6.2 Path LOD Tiers
 
-< 50m  → Full A* + Funnel smoothing         (precise, 1-frame or sliced)
-50–150m → Weighted A* (W=1.5) + skip funnel  (raw node chain, cheaper)
-> 150m  → Flowfield vector sample only        (precomputed, O(1) per agent)
+< 50m  -> Full A* + Funnel smoothing         (precise, 1-frame or sliced)
+50-150m -> Weighted A* (W=1.5) + skip funnel  (raw node chain, cheaper)
+> 150m  -> Flowfield vector sample only        (precomputed, O(1) per agent)
 
 - LOD tier evaluated at path-request time. Re-evaluated if entity crosses tier boundary.
 
@@ -277,25 +277,25 @@ Distribute: frame N → entities [0..budget-1], frame N+1 → [budget..2*budget-
 
 FlowfieldGrid: NativeArray<float2>   // XZ direction vectors, goal-relative
 Update frequency: every 4 frames for active goal clusters
-Goal clustering: bin goals into 16m³ cells; shared flowfield per cell
+Goal clustering: bin goals into 16m^3 cells; shared flowfield per cell
 
-- Entity samples `FlowfieldGrid[WorldToFlowfieldIdx(pos)]` → steer direction. O(1).
+- Entity samples `FlowfieldGrid[WorldToFlowfieldIdx(pos)]` -> steer direction. O(1).
 - Flowfield computed via Dijkstra flood-fill in `IJobParallelFor`, starting from goal.
 
 ### 6.4 Memory Budget (MX350 / 6-8GB RAM)
 
-ThreatGrid (128³ voxels, byte):      2 MB
-Heightmap (1024×1024, ushort):       2 MB
-NavNode array (256³ grid):           ~50 MB  → REDUCE to 128³ (6.4 MB) for low-spec
-WaypointBuffer × 16 agents:          16 × 512 × 12B = ~96 KB
-FlowfieldGrid (512×512, float2):     2 MB
-Total Nav budget:                    ≤ 12 MB
+ThreatGrid (128^3 voxels, byte):      2 MB
+Heightmap (1024x1024, ushort):       2 MB
+NavNode array (256^3 grid):           ~50 MB  -> REDUCE to 128^3 (6.4 MB) for low-spec
+WaypointBuffer x 16 agents:          16 x 512 x 12B = ~96 KB
+FlowfieldGrid (512x512, float2):     2 MB
+Total Nav budget:                    <= 12 MB
 
 - On low-spec detect: halve grid resolution, double voxel size. Detect via `SystemInfo.graphicsMemorySize < 3000`.
 
 ---
 
-## §7 — FLOATING ORIGIN INTEGRATION
+## Section7 - FLOATING ORIGIN INTEGRATION
 
 ### 7.1 Waypoint Translation on Origin Shift
 
@@ -309,7 +309,7 @@ OnOriginShift(float3 shift):
     FlowfieldDirty = true
 
 - Origin shift event: subscribe via `IFloatingOriginShiftListener` (custom interface, not Unity's managed event).
-- Shift magnitude threshold: `math.length(shift) > 1000f` → trigger rebuild of NavNode world positions.
+- Shift magnitude threshold: `math.length(shift) > 1000f` -> trigger rebuild of NavNode world positions.
 - NavNode world positions stored as `float3` local-to-origin. On shift: bulk subtract via `IJobParallelFor`.
 
 ### 7.2 Absolute Universe Position (AUP)
@@ -322,26 +322,26 @@ OriginAccumulator: double3   // accumulates all shifts, never reset
 
 ---
 
-## §8 — BURST JOB TOPOLOGY
+## Section8 - BURST JOB TOPOLOGY
 
 ### 8.1 Job Dependency Chain (per frame)
 
 [MainThread]
     SchedulePathRequests()
 
-        ▼
+
 [Job: UpdateThreatGridJob]          // IJobParallelFor, batch=32
 
-        ▼
+
 [Job: AStarSliceJob]                // IJob per agent slot, sequential per slot
           (depends on ThreatGrid complete)
-        ▼
+
 [Job: FunnelSmoothJob]              // IJob, reads NavPortals, writes WaypointBuffer
           (depends on AStarSlice complete)
-        ▼
+
 [Job: HeightmapLiftJob]             // IJobParallelFor, corrects Y per waypoint
 
-        ▼
+
 [MainThread]
     // Yield main thread via Awaitable
     await jobHandle
@@ -356,22 +356,22 @@ OriginAccumulator: double3   // accumulates all shifts, never reset
 [FORBID] new NativeArray/NativeList inside Job Execute()
 [FORBID] static mutable state accessed from Jobs
 [FORBID] physics queries (Raycast, OverlapSphere) inside Jobs
-[FORBID] math.sqrt in inner loops → use math.lengthsq for comparisons
-[FORBID] branch-heavy switch in hot inner loop → bitmask + lookup table
+[FORBID] math.sqrt in inner loops -> use math.lengthsq for comparisons
+[FORBID] branch-heavy switch in hot inner loop -> bitmask + lookup table
 
 ---
 
-## §9 — EDGE CASES & FAILURE MODES
+## Section9 - EDGE CASES & FAILURE MODES
 
 ### 9.1 Wedge Collapse
 
-Detect: TripleProduct(Apex, LeftRayEnd - Apex, RightRayEnd - Apex) ≈ 0 (< EPSILON = 1e-5f)
-Action: treat as zero-width portal → add midpoint to WaypointBuffer, advance Apex
+Detect: TripleProduct(Apex, LeftRayEnd - Apex, RightRayEnd - Apex) ~= 0 (< EPSILON = 1e-5f)
+Action: treat as zero-width portal -> add midpoint to WaypointBuffer, advance Apex
 
 ### 9.2 Infinite Loop Guard
 
 MaxFunnelIterations = PortalCount * 3
-IF iterCount > MaxFunnelIterations: GOTO Fallback (§3.5)
+IF iterCount > MaxFunnelIterations: GOTO Fallback (Section3.5)
 
 ### 9.3 Goal Unreachable
 
@@ -395,14 +395,14 @@ No plane projection. No `PlaneFlag`. No `TriArea2D` fallback.
 
 ---
 
-## §10 — VALIDATION & DEBUG (EDITOR ONLY)
+## Section10 - VALIDATION & DEBUG (EDITOR ONLY)
 
 #if UNITY_EDITOR
     OnDrawGizmos:
         Draw Apex history: yellow spheres
         Draw active wedge: green (left) / red (right) rays from Apex
         Draw WaypointBuffer: cyan line strip
-        Draw ThreatGrid: heat-map overlay (byte → Color.Lerp blue→red)
+        Draw ThreatGrid: heat-map overlay (byte -> Color.Lerp blue->red)
         Draw portal sequence: white lines between Left-Right pairs
 #endif
 
@@ -411,7 +411,7 @@ No plane projection. No `PlaneFlag`. No `TriArea2D` fallback.
 
 ---
 
-## §11 — TUNING CONSTANTS (CENTRALIZED)
+## Section11 - TUNING CONSTANTS (CENTRALIZED)
 
 SOLID_THRESHOLD         = 255       (byte, impassable voxel)
 THREAT_MULTIPLIER_BASE  = 0.5f      (float, per ThreatGrid byte unit)

@@ -4,9 +4,9 @@
 
 ### IK_SOLVER_SELECTION
 - FABRIK: Legs, tentacles, robotic arms (multi-joint chains 3+)
-- Two-Bone IK (Analytical): Humanoid arms/legs (exactly 2 joints) — faster than FABRIK
-- CCD (Cyclic Coordinate Descent): Tails, spines, flexible appendages — better convergence for curved paths
-- Trigonometric Solver: Simple 2-bone chains (elbow/knee) — single-pass analytical solution
+- Two-Bone IK (Analytical): Humanoid arms/legs (exactly 2 joints) - faster than FABRIK
+- CCD (Cyclic Coordinate Descent): Tails, spines, flexible appendages - better convergence for curved paths
+- Trigonometric Solver: Simple 2-bone chains (elbow/knee) - single-pass analytical solution
 
 ### HYBRID_ANIMATION_STRATEGY
 - Root motion: Baked animation (Unity Animator)
@@ -162,7 +162,7 @@ Else:
 
 Surface angle = acos(dot(hitNormal, worldUp))
 
-If angle > 45°:
+If angle > 45 deg:
   Reduce IK weight: weight = lerp(1, 0, (angle - 45) / 45)
   Blend to animated foot position (prevents foot sliding on walls)
 
@@ -253,7 +253,7 @@ Smoothed rotation:
 
 ### CONSTRAINT_CONE
 
-Max look angle from forward: 80° horizontal, 60° vertical
+Max look angle from forward: 80 deg horizontal, 60 deg vertical
 
 lookDir = math.mul(currentRot, float3(0,0,1))
 forwardDir = math.mul(bodyRot, float3(0,0,1))
@@ -282,7 +282,7 @@ Blend between top 2 targets:
 
 ### ROTATION_DELTA_CLAMPING
 
-maxRotationSpeed = 360° per second
+maxRotationSpeed = 360 deg per second
 
 Per bone per frame:
   deltaRot = math.mul(math.inverse(prevRot), newRot)
@@ -417,7 +417,7 @@ Quality presets:
 
 Ragdoll blending:
   When entity dies:
-    1. Transition IK weight 1→0 over 0.2s
+    1. Transition IK weight 1->0 over 0.2s
     2. Enable ragdoll physics
     3. Apply IK velocities to rigidbody bones (preserves momentum)
 
@@ -480,7 +480,7 @@ Usage:
 Debug builds only:
   - Assert segment lengths never change
   - Assert bone positions never NaN/Infinity
-  - Assert rotation quaternions normalized (w²+x²+y²+z²=1)
+  - Assert rotation quaternions normalized (w^2+x^2+y^2+z^2=1)
   - Assert job handles completed before transform access
 
 ---

@@ -1,0 +1,116 @@
+{
+  "bake": {
+    "bake_seconds": 23.499339099995268,
+    "blue_spectrum": {
+      "dc_power": 2.0642223717004526e-06,
+      "high_mean": 6063.30078125,
+      "low_mean": 252.36935424804688,
+      "low_mean_to_mid_mean": 0.07326260954141617,
+      "low_peak": 1075.4688720703125,
+      "low_peak_to_mid_mean": 0.3122076988220215,
+      "mid_mean": 3444.722412109375
+    },
+    "channel_seams": [
+      {
+        "horizontal_wrap_to_neighbor_ratio": 1.0424615144729614,
+        "max_wrap_delta": 248.0,
+        "vertical_wrap_to_neighbor_ratio": 0.903811514377594
+      },
+      {
+        "horizontal_wrap_to_neighbor_ratio": 0.015429253689944744,
+        "max_wrap_delta": 254.0,
+        "vertical_wrap_to_neighbor_ratio": 0.4667949974536896
+      },
+      {
+        "horizontal_wrap_to_neighbor_ratio": 1.3395100831985474,
+        "max_wrap_delta": 184.0,
+        "vertical_wrap_to_neighbor_ratio": 0.8645722270011902
+      },
+      {
+        "horizontal_wrap_to_neighbor_ratio": 0.9707195162773132,
+        "max_wrap_delta": 252.0,
+        "vertical_wrap_to_neighbor_ratio": 1.0011074542999268
+      }
+    ],
+    "ign_max_quantized_delta": 0,
+    "max_seam_ratio": 1.3395100831985474,
+    "passed": true,
+    "seed": 1212495950,
+    "thresholds": {
+      "dc_power_max": 0.0001,
+      "low_mean_to_mid_mean_max": 0.12,
+      "low_peak_to_mid_mean_max": 0.5,
+      "max_seam_ratio_max": 1.35
+    },
+    "void_cluster_swaps": 2048
+  },
+  "flow_save": {
+    "bytes_after_optimizer": 26919,
+    "bytes_before_optimizer": 26919,
+    "optimizer": "pillow_optimize_compress_level_9",
+    "path": "C:\\Hecton8\\Data\\Textures\\AbyssalFlowField_LowTier_RGBA.png"
+  },
+  "noise_save": {
+    "bytes_after_optimizer": 262737,
+    "bytes_before_optimizer": 262737,
+    "optimizer": "pillow_optimize_compress_level_9",
+    "path": "C:\\Hecton8\\Data\\Textures\\BlueNoise_RGBA.png"
+  },
+  "status": "NOISE BAKED",
+  "verification": {
+    "flow": {
+      "bytes": 26919,
+      "passed": true,
+      "shape": [
+        128,
+        128,
+        4
+      ]
+    },
+    "flow_path": "C:\\Hecton8\\Data\\Textures\\AbyssalFlowField_LowTier_RGBA.png",
+    "noise": {
+      "blue_spectrum": {
+        "dc_power": 2.0642223717004526e-06,
+        "high_mean": 6063.30078125,
+        "low_mean": 252.36935424804688,
+        "low_mean_to_mid_mean": 0.07326260954141617,
+        "low_peak": 1075.4688720703125,
+        "low_peak_to_mid_mean": 0.3122076988220215,
+        "mid_mean": 3444.722412109375
+      },
+      "channel_seams": [
+        {
+          "horizontal_wrap_to_neighbor_ratio": 1.0424615144729614,
+          "max_wrap_delta": 248.0,
+          "vertical_wrap_to_neighbor_ratio": 0.903811514377594
+        },
+        {
+          "horizontal_wrap_to_neighbor_ratio": 0.015429253689944744,
+          "max_wrap_delta": 254.0,
+          "vertical_wrap_to_neighbor_ratio": 0.4667949974536896
+        },
+        {
+          "horizontal_wrap_to_neighbor_ratio": 1.3395100831985474,
+          "max_wrap_delta": 184.0,
+          "vertical_wrap_to_neighbor_ratio": 0.8645722270011902
+        },
+        {
+          "horizontal_wrap_to_neighbor_ratio": 0.9707195162773132,
+          "max_wrap_delta": 252.0,
+          "vertical_wrap_to_neighbor_ratio": 1.0011074542999268
+        }
+      ],
+      "ign_max_quantized_delta": 0,
+      "max_seam_ratio": 1.3395100831985474,
+      "passed": true,
+      "thresholds": {
+        "dc_power_max": 0.0001,
+        "low_mean_to_mid_mean_max": 0.12,
+        "low_peak_to_mid_mean_max": 0.5,
+        "max_seam_ratio_max": 1.35
+      }
+    },
+    "noise_path": "C:\\Hecton8\\Data\\Textures\\BlueNoise_RGBA.png",
+    "passed": true
+  }
+}

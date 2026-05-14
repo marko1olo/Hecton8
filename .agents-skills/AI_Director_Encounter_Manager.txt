@@ -21,12 +21,12 @@
 
 ```
 DirectorState (align 64-byte cache line):
-  [0..3]   float  StressLevel          // 0.0–1.0 normalized
-  [4..7]   float  IntensityLevel       // 0.0–1.0 normalized
+  [0..3]   float  StressLevel          // 0.0-1.0 normalized
+  [4..7]   float  IntensityLevel       // 0.0-1.0 normalized
   [8..11]  float  PacingPhaseTimer     // seconds in current phase
-  [12..15] float  TokenBudget          // 0.0–100.0
+  [12..15] float  TokenBudget          // 0.0-100.0
   [16..19] float  TokenRegenRate       // tokens/sec, dynamic
-  [20..23] int    ActivePhase          // 0=Buildup 1=Peak 2=Decay 3=Relax (bitmask: 0b00–0b11)
+  [20..23] int    ActivePhase          // 0=Buildup 1=Peak 2=Decay 3=Relax (bitmask: 0b00-0b11)
   [24..27] int    ActiveEnemyCount
   [28..31] int    FrameTimeBudgetFlags // bit0=Shedding, bit1=Suspended, bit2=Emergency
   [32..47] float4 PlayerPosition       // xyz + depth (w)
@@ -50,11 +50,11 @@ EnemyToken (32 bytes):
 ### 1.3 Memory Layout Policy
 
 Ring-buffer: `EnemyTokenRing[32]` (max simultaneous entities = 32, hard cap)
-Double-buffer: `DirectorStateBuffer[2]` — write frame N+1 while read frame N
-NativeArray stride: 32 bytes → fits 2 EnemyTokens per cache line (64B)
+Double-buffer: `DirectorStateBuffer[2]` - write frame N+1 while read frame N
+NativeArray stride: 32 bytes -> fits 2 EnemyTokens per cache line (64B)
 // Use flat multi-mapping. Nested native containers are physically illegal.
 NativeMultiHashMap<int2, int> spatialHash;
-Player history ring: `PlayerStateHistory[64]` — 64 frames at 1Hz = 64 seconds lookback
+Player history ring: `PlayerStateHistory[64]` - 64 frames at 1Hz = 64 seconds lookback
 
 ### 1.4 Bitmask Definitions
 
@@ -80,15 +80,15 @@ BudgetFlags (int, 4 bits):
 
 ---
 
-## II. PACING ENGINE — SINE-WAVE MODEL
+## II. PACING ENGINE - SINE-WAVE MODEL
 
 ### 2.1 Phase Duration Table (seconds)
 
 ```
-BUILDUP  : [45, 90]   → lerp via StressLevel
-PEAK     : [15, 30]   → clamped by token availability
-DECAY    : [20, 40]   → linear ramp-down
-RELAX    : [30, 60]   → token regen window, threat suppressed
+BUILDUP  : [45, 90]   -> lerp via StressLevel
+PEAK     : [15, 30]   -> clamped by token availability
+DECAY    : [20, 40]   -> linear ramp-down
+RELAX    : [30, 60]   -> token regen window, threat suppressed
 ```
 
 ### 2.2 Intensity Curve Formula
@@ -97,19 +97,19 @@ PacingIntensity(t) per phase:
 
 ```
 BUILDUP:
-  I(t) = sin(π/2 * (t / T_buildup))^1.5
+  I(t) = sin(pi/2 * (t / T_buildup))^1.5
   // Slow start, accelerating. Exponent 1.5 = late pressure spike.
 
 PEAK:
-  I(t) = 1.0 - 0.1 * sin(2π * t / T_peak)
+  I(t) = 1.0 - 0.1 * sin(2*pi * t / T_peak)
   // Near-max with micro-oscillation. Prevents flat-line fatigue.
 
 DECAY:
-  I(t) = cos(π/2 * (t / T_decay))^0.7
+  I(t) = cos(pi/2 * (t / T_decay))^0.7
   // Fast initial drop, then plateau. Exponent 0.7 = lingering dread.
 
 RELAX:
-  I(t) = 0.05 + 0.05 * sin(π * t / T_relax)
+  I(t) = 0.05 + 0.05 * sin(pi * t / T_relax)
   // Ambient minimal threat signal. Never true zero = no "safe" feeling.
 ```
 
@@ -121,11 +121,11 @@ Each ColdTick (1Hz):
   2. PhaseDuration = lerp(PhaseMin, PhaseMax, StressLevel)
   3. IF PacingPhaseTimer >= PhaseDuration:
        PacingPhaseTimer = 0.0
-       ActivePhase = (ActivePhase + 1) & 0b11  // wrap 0→1→2→3→0
+       ActivePhase = (ActivePhase + 1) & 0b11  // wrap 0->1->2->3->0
        OnPhaseChange(ActivePhase)
   4. IntensityLevel = EvalCurve(ActivePhase, PacingPhaseTimer, PhaseDuration)
   5. IntensityLevel = clamp(IntensityLevel, 0.0, 1.0)
-  6. Guard: IF isnan(IntensityLevel) OR isinf(IntensityLevel) → IntensityLevel = 0.0
+  6. Guard: IF isnan(IntensityLevel) OR isinf(IntensityLevel) -> IntensityLevel = 0.0
 ```
 
 ### 2.4 Stress Integration (from HectonSurvivalSystem)
@@ -140,10 +140,10 @@ StressInputs (per ColdTick, fed via NativeArray<float>):
 
 StressRaw = 0.35*S_health + 0.25*S_oxygen + 0.25*S_proximity + 0.10*S_depth + 0.05*S_velocity
 
-// Exponential moving average — frame-rate invariant:
-τ = 8.0  // stress time-constant (seconds)
-α = 1.0 - exp(-Δt / τ)   // Δt=1.0 at 1Hz
-StressLevel = StressLevel + α * (StressRaw - StressLevel)
+// Exponential moving average - frame-rate invariant:
+tau = 8.0  // stress time-constant (seconds)
+alpha = 1.0 - exp(-deltaT / tau)   // deltaT=1.0 at 1Hz
+StressLevel = StressLevel + alpha * (StressRaw - StressLevel)
 // Result: StressLevel lags inputs by ~8s. Prevents instant spike/drop.
 ```
 
@@ -153,11 +153,11 @@ StressLevel = StressLevel + α * (StressRaw - StressLevel)
 TokenRegenRate = lerp(0.0, 8.0, saturate((ActivePhase == RELAX) ? 1.0 : 0.0))
 // Only regenerate in RELAX phase.
 
-TokenBudget += TokenRegenRate * Δt
+TokenBudget += TokenRegenRate * deltaT
 TokenBudget = clamp(TokenBudget, 0.0, 100.0)
 
 // Regen blocked flag:
-IF (BudgetFlags & bit3) → TokenRegenRate = 0.0
+IF (BudgetFlags & bit3) -> TokenRegenRate = 0.0
 ```
 
 ---
@@ -179,29 +179,29 @@ Scout Drone    | 10        | 0              | 8
 
 ```
 SpawnEvaluate():
-  1. IF BudgetFlags & SPAWN_SUSPENDED → return NO_SPAWN
-  2. IF BudgetFlags & LOAD_SHEDDING_ACTIVE → return NO_SPAWN
-  3. IF ActivePhase == RELAX → return NO_SPAWN
-  4. IF ActiveEnemyCount >= 32 → return NO_SPAWN
+  1. IF BudgetFlags & SPAWN_SUSPENDED -> return NO_SPAWN
+  2. IF BudgetFlags & LOAD_SHEDDING_ACTIVE -> return NO_SPAWN
+  3. IF ActivePhase == RELAX -> return NO_SPAWN
+  4. IF ActiveEnemyCount >= 32 -> return NO_SPAWN
 
   5. DesiredThreat = SelectThreatByIntensity(IntensityLevel):
-       IF IntensityLevel > 0.85 → candidate = Leviathan (cost 80)
-       ELIF IntensityLevel > 0.55 → candidate = Stalker (cost 35)
-       ELIF IntensityLevel > 0.25 → candidate = Swarm (cost 20)
-       ELSE → candidate = Drone (cost 10)
+       IF IntensityLevel > 0.85 -> candidate = Leviathan (cost 80)
+       ELIF IntensityLevel > 0.55 -> candidate = Stalker (cost 35)
+       ELIF IntensityLevel > 0.25 -> candidate = Swarm (cost 20)
+       ELSE -> candidate = Drone (cost 10)
 
   6. IF TokenBudget < candidate.TokenCost:
        // Downgrade: find largest affordable class
        candidate = HighestAffordable(TokenBudget, ThreatCostTable)
-       IF candidate == NULL → return NO_SPAWN
+       IF candidate == NULL -> return NO_SPAWN
 
   7. SpawnPoint = FindOcclusionSafeSpawnPoint(PlayerPosition, 150.0)
-     IF SpawnPoint == INVALID → return NO_SPAWN  // no valid point = abort, not exception
+     IF SpawnPoint == INVALID -> return NO_SPAWN  // no valid point = abort, not exception
 
-  8. // Deterministic selection — NO RNG. Use hash of PlayerPosition + Phase + TokenBudget:
+  8. // Deterministic selection - NO RNG. Use hash of PlayerPosition + Phase + TokenBudget:
 uint2 posInt = math.asuint(PlayerPosition.xz);
 SelectionSeed = hash((posInt.x * 73856093) ^ (posInt.y * 19349663) ^ ActivePhase...);
-     // XOR spatial hash — fast, deterministic, seed varies per game-state
+     // XOR spatial hash - fast, deterministic, seed varies per game-state
      ThreatVariant = SelectionSeed % candidate.VariantCount
 
   9. EnqueueSpawnRequest(candidate, SpawnPoint, ThreatVariant)
@@ -218,7 +218,7 @@ hash(int3 p):
   h *= 0x45d9f3b
   h = h ^ (h >> 16)
   return h & 0x7FFFFFFF  // positive int
-// Wang hash variant — no division, no modulo, SIMD-friendly
+// Wang hash variant - no division, no modulo, SIMD-friendly
 ```
 
 ---
@@ -242,11 +242,11 @@ NativeArray<Plane> nativePlanes = new NativeArray<Plane>(_frustumPlanes, Allocat
 ```
 FindOcclusionSafeSpawnPoint(PlayerPos, float Radius):
   1. Generate 32 candidate positions (deterministic, spherical Fibonacci lattice):
-     φ = (1 + sqrt(5)) / 2  // golden ratio constant — compile-time
+     goldenPhi = (1 + sqrt(5)) / 2  // golden ratio constant - compile-time
      FOR i IN [0..31]:
-       θ = 2π * i / φ
-       ϕ = acos(1 - 2*(i+0.5)/32)
-       CandidateDir[i] = float3(sin(ϕ)*cos(θ), sin(ϕ)*sin(θ), cos(ϕ))
+       theta = 2*pi * i / goldenPhi
+       polarPhi = acos(1 - 2*(i+0.5)/32)
+       CandidateDir[i] = float3(sin(polarPhi)*cos(theta), sin(polarPhi)*sin(theta), cos(polarPhi))
        // Spherical Fibonacci = uniform distribution, zero RNG, deterministic
 
   2. Scale candidates to [50m, 150m] annular shell:
@@ -257,28 +257,28 @@ FindOcclusionSafeSpawnPoint(PlayerPos, float Radius):
   3. FOR each Candidate[i]:
      a. FrustumTest: TestPlanesAABB(FrustumPlanes[6], Candidate[i], 3.0f)
         // 3m = enemy radius bound
-        IF result == INSIDE → skip (enemy would be visible)
+        IF result == INSIDE -> skip (enemy would be visible)
 
      b. DepthBoundsTest:
-        IF Candidate[i].y > SurfaceY - 2.0 → skip (avoid surface pop-in)
-        IF Candidate[i].y < MaxDepth + 10.0 → skip (below geometry floor)
+        IF Candidate[i].y > SurfaceY - 2.0 -> skip (avoid surface pop-in)
+        IF Candidate[i].y < MaxDepth + 10.0 -> skip (below geometry floor)
 
      c. SolidGeometryTest:
         SphereCast from PlayerPos to Candidate[i], radius 1.5m
-        IF hit → skip (inside rock/terrain)
+        IF hit -> skip (inside rock/terrain)
 
      d. MinDistToOtherEnemies:
         Query SpatialHash cell of Candidate[i]
-        IF any entity within 15m → skip (prevent clustering)
+        IF any entity within 15m -> skip (prevent clustering)
 
   4. Score surviving candidates:
-     Score[i] = DistSq(Candidate[i], PlayerPos)        // prefer farther
+     Score[i] = DistSq(Candidate[i], PlayerPos)        // rank farther
               + 500.0 * (1.0 - NormalDot(PlayerForward, normalize(Candidate[i]-PlayerPos)))
               // Heavy bonus for spawns behind player's look direction
 
   5. Return Candidate with highest Score
-     IF zero candidates survived → return INVALID (float3(NaN) as sentinel)
-     // Caller checks isnan() — no exception thrown
+     IF zero candidates survived -> return INVALID (float3(NaN) as sentinel)
+     // Caller checks isnan() - no exception thrown
 ```
 
 ### 4.3 Frustum Plane Test (SIMD-Optimized Logic)
@@ -287,10 +287,10 @@ FindOcclusionSafeSpawnPoint(PlayerPos, float Radius):
 TestPlanesAABB(float4[6] planes, float3 center, float radius):
   FOR each plane p IN planes[6]:
     dist = dot(p.xyz, center) + p.w
-    IF dist < -radius → OUTSIDE (safe to spawn)  // early exit on first outside plane? NO.
+    IF dist < -radius -> OUTSIDE (safe to spawn)  // early exit on first outside plane? NO.
     // Must test ALL 6 planes: only FULLY outside frustum = safe
-  IF all 6 planes: dist < -radius → return OUTSIDE
-  ELSE → return INSIDE_OR_INTERSECT (reject spawn point)
+  IF all 6 planes: dist < -radius -> return OUTSIDE
+  ELSE -> return INSIDE_OR_INTERSECT (reject spawn point)
 ```
 
 ---
@@ -307,8 +307,8 @@ AvgFrameTime = sum(FrameTimeBuffer) / 8.0
 // Budget thresholds:
 NORMAL    : AvgFrameTime <= 16.67ms  // 60fps
 STRESSED  : AvgFrameTime <= 20.0ms   // 50fps
-CRITICAL  : AvgFrameTime >  20.0ms   // < 50fps → trigger shed
-EMERGENCY : AvgFrameTime >  33.3ms   // < 30fps → aggressive shed
+CRITICAL  : AvgFrameTime >  20.0ms   // < 50fps -> trigger shed
+EMERGENCY : AvgFrameTime >  33.3ms   // < 30fps -> aggressive shed
 ```
 
 ### 5.2 Shedding Priority Algorithm
@@ -326,11 +326,11 @@ OnCriticalFrameTime():
                         // Cheaper enemies shed first (keep Leviathan for UX)
 
   4. Sort indices by DespawnPriority descending (radix sort on float keys, Burst)
-     // Radix sort O(n) vs quicksort O(n log n) — n=32, always fast
+     // Radix sort O(n) vs quicksort O(n log n) - n=32, always fast
 
   5. ShedCount:
-     IF AvgFrameTime > 33.3ms → shed top 3
-     ELIF AvgFrameTime > 20.0ms → shed top 1
+     IF AvgFrameTime > 33.3ms -> shed top 3
+     ELIF AvgFrameTime > 20.0ms -> shed top 1
 
   6. FOR each shed candidate:
      EnqueueDespawnRequest(candidate.EntityID)  // return to pool
@@ -355,7 +355,7 @@ NEVER shed:
 IF AvgFrameTime > 33.3ms AND no sheddable candidates:
   SET BudgetFlags |= SPAWN_SUSPENDED
   Director sends PerformanceCriticalSignal to SystemDispatcher
-  // SystemDispatcher handles LOD reduction, shadow cascade drop — outside Director scope
+  // SystemDispatcher handles LOD reduction, shadow cascade drop - outside Director scope
 ```
 
 ---
@@ -369,8 +369,8 @@ DirectorJobInput (blittable, 128 bytes):
   [0..63]   DirectorState   State           // double-buffer read side
   [64..79]  float4          PlayerPos       // xyz + depth
   [80..95]  float4          PlayerVel       // xyz + speed
-  [96..99]  float           PlayerHealth    // 0.0–1.0
-  [100..103]float           PlayerOxygen    // 0.0–1.0
+  [96..99]  float           PlayerHealth    // 0.0-1.0
+  [100..103]float           PlayerOxygen    // 0.0-1.0
   [104..107]float           AvgFrameTimeMs  // from SystemDispatcher
   [108..111]int             FrameIndex      // monotonic, for deterministic hash seeding
   [112..127]float4          PlayerForward   // look direction xyz, w=unused
@@ -380,7 +380,7 @@ DirectorJobInput (blittable, 128 bytes):
 
 ```
 DirectorJobOutput (blittable, 96 bytes):
-  [0..3]    int             SpawnRequestCount     // 0–4 this tick
+  [0..3]    int             SpawnRequestCount     // 0-4 this tick
 Unity.Collections.LowLevel.Unsafe.FixedList32Bytes<int> SpawnEntityTypes;
 Unity.Collections.LowLevel.Unsafe.FixedList128Bytes<float3> SpawnPositions;
   [68..71]  int             DespawnRequestCount
@@ -391,16 +391,16 @@ Unity.Collections.LowLevel.Unsafe.FixedList128Bytes<float3> SpawnPositions;
 ### 6.3 Job Schedule Contract
 
 ```
-ColdTickJob : IJob (NOT IJobParallelFor — Director is single-instance logic)
+ColdTickJob : IJob (NOT IJobParallelFor - Director is single-instance logic)
   Schedule: 1Hz via SystemDispatcher.ScheduleDelayed(1.0f)
   Dependency chain:
-    SurvivalSystemJob.Complete() → DirectorJob.Schedule() → EntitySpawnJob.Schedule()
-  
+    SurvivalSystemJob.Complete() -> DirectorJob.Schedule() -> EntitySpawnJob.Schedule()
+
   InnerLoop budget allocation:
     StressIntegration    : ~0.05ms
     PhaseTransition      : ~0.02ms
     SpawnEvaluate        : ~0.15ms
-    SpawnPointSearch     : ~0.30ms  // 32 candidates × frustum test × spherecast
+    SpawnPointSearch     : ~0.30ms  // 32 candidates x frustum test x spherecast
     LoadSheddingSort     : ~0.08ms
     OutputWrite          : ~0.02ms
     Total target         : < 0.65ms CPU (single core, MX350 companion i3-10gen)
@@ -408,7 +408,7 @@ ColdTickJob : IJob (NOT IJobParallelFor — Director is single-instance logic)
 
 ---
 
-## VII. SCALABILITY — LOGIC LOD
+## VII. SCALABILITY - LOGIC LOD
 
 ### 7.1 Director Quality Tiers
 
@@ -452,7 +452,7 @@ OnStart():
     Tier = ULTRA
 
 // No dynamic tier switching mid-session. Prevents pool resize GC.
-// Exception: emergency downgrade HIGH→BASE if 30s avg frame time > 25ms.
+// Exception: emergency downgrade HIGH->BASE if 30s avg frame time > 25ms.
 ```
 
 ---
@@ -493,22 +493,22 @@ DebugEventRing[256] of struct{timestamp, code, float_context}
 
 ```
 IStressDataProvider:
-  GetStressSnapshot() → NativeArray<float> (Health, Oxygen, Proximity, Depth, Velocity)
+  GetStressSnapshot() -> NativeArray<float> (Health, Oxygen, Proximity, Depth, Velocity)
 
 ISystemPerformanceMonitor:
-  GetAvgFrameTimeMs() → float
-  GetBudgetFlags() → int (bitmask)
+  GetAvgFrameTimeMs() -> float
+  GetBudgetFlags() -> int (bitmask)
 
 IEntityPool:
-  RequestSpawn(int entityType, float3 position) → int entityID
-  RequestDespawn(int entityID) → void
-  GetEntityCount() → int
+  RequestSpawn(int entityType, float3 position) -> int entityID
+  RequestDespawn(int entityID) -> void
+  GetEntityCount() -> int
 ```
 
 ### 9.2 Outbound Interfaces (Director writes)
 
 ```
-IDirectorObserver (event sink, polling-based — no C# events):
+IDirectorObserver (event sink, polling-based - no C# events):
   DirectorState ReadDirectorState()   // external systems poll this
   float ReadIntensityLevel()
   float ReadTokenBudget()

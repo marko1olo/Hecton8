@@ -46,7 +46,7 @@ struct IKTarget {
 
 ### Raycast_Batch_Buffer (NativeArray<RaycastCommand>)
 ```
-Per entity: 
+Per entity:
 - 2x foot rays (origin=hip+footOffset, dir=down, distance=legLength*1.2)
 - 2x hand rays (origin=shoulder, dir=lateral+down, distance=armLength)
 - 1x clearance ray (origin=root, dir=forward, distance=1.5m for tunnel detect)
@@ -68,14 +68,14 @@ IK jobs read from buffer[(frameIdx-1)&1]
 ```
 for entity in entities:
     baseIdx = entity.idx * 5
-    
+
     // Foot rays
     leftOrigin = rootPos + rootRot * leftHipOffset
     raycastCmds[baseIdx] = new RaycastCommand(leftOrigin, down, new QueryParameters(terrainMask, false, QueryTriggerInteraction.Ignore, false), legLength * 1.2)
     rightOrigin = rootPos + rootRot * rightHipOffset
     raycastCmds[baseIdx+1] = new RaycastCommand(rightOrigin, down, new QueryParameters(terrainMask, false, QueryTriggerInteraction.Ignore, false), legLength * 1.2)
-    
-    // Hand brace rays (lateral-down 45° when in narrow context)
+
+    // Hand brace rays (lateral-down 45 deg when in narrow context)
     if contextMask & 0x01:
         leftHandDir = normalize(rootRot * float3(-0.7, -0.7, 0))
         raycastCmds[baseIdx+2] = new RaycastCommand(leftShoulderPos, leftHandDir, new QueryParameters(wallMask, false, QueryTriggerInteraction.Ignore, false), armLength)
@@ -84,7 +84,7 @@ for entity in entities:
     else:
         raycastCmds[baseIdx+2].distance = 0  // Disable
         raycastCmds[baseIdx+3].distance = 0
-    
+
     // Tunnel clearance
     raycastCmds[baseIdx+4] = new RaycastCommand(rootPos + float3(0,0.8,0), rootRot * forward, new QueryParameters(wallMask, false, QueryTriggerInteraction.Ignore, false), 1.5)
 ```
@@ -102,32 +102,32 @@ JobHandle rayJob = RaycastCommand.ScheduleBatch(raycastCmds, raycastHits, 32, de
 ```
 for entity in entities:
     baseIdx = entity.idx * 5
-    
+
     // Left foot processing
 // Unmanaged bounds/hit check
 if (raycastHits[baseIdx+0].colliderInstanceID != 0 && raycastHits[baseIdx+0].distance > 0f)
         targetPos = raycastHits[baseIdx+0].point
         normal = raycastHits[baseIdx+0].normal
         deltaHeight = targetPos.y - (rootPos.y - hipToFootDist)
-        
+
         // Slope adherence: project foot forward along normal plane
         tangent = normalize(cross(normal, rootRot * right))
         slopedTarget = targetPos + tangent * footForwardBias
-        
+
         ikTargets[entity.idx*4 + 0].worldPos = slopedTarget
         ikTargets[entity.idx*4 + 0].normal = normal
         ikTargets[entity.idx*4 + 0].blend = 1.0
         ikTargets[entity.idx*4 + 0].deltaHeight = deltaHeight
     else:
         ikTargets[entity.idx*4 + 0].blend = 0  // Airborne/swimming
-    
+
     // Right foot (mirror logic)
     [... same as left ...]
-    
+
     // Hand brace targets (only if tunnel detected)
     if raycastHits[baseIdx+4].distance < 1.5:
         contextMask |= 0x01  // Set tunnel bit
-        
+
         if raycastHits[baseIdx+2].collider.IsValid():
             wallPos = raycastHits[baseIdx+2].point
             wallNormal = raycastHits[baseIdx+2].normal
@@ -141,7 +141,7 @@ if (raycastHits[baseIdx+0].colliderInstanceID != 0 && raycastHits[baseIdx+0].dis
 
 ### C. TWO_BONE_IK_MATH
 
-**Input:** 
+**Input:**
 - rootPos (hip/shoulder)
 - targetPos (foot/hand IK target)
 - polePos (knee/elbow hint direction)
@@ -157,29 +157,29 @@ if (raycastHits[baseIdx+0].colliderInstanceID != 0 && raycastHits[baseIdx+0].dis
 1. limbVector = targetPos - rootPos
    limbDist = length(limbVector)
    limbDir = limbVector / limbDist
-   
+
 2. maxReach = upperLength + lowerLength
    if limbDist > maxReach - epsilon:
        limbDist = maxReach - epsilon  // Clamp to prevent hyper-extension
        targetPos = rootPos + limbDir * limbDist  // Pull target inward
-   
+
 3. // Law of cosines for joint angles
    a = upperLength
    b = lowerLength
    c = limbDist
-   
-   upperAngle = acos(clamp((a² + c² - b²) / (2*a*c), -1, 1))
-   lowerAngle = acos(clamp((a² + b² - c²) / (2*a*b), -1, 1))
-   
+
+   upperAngle = acos(clamp((a^2 + c^2 - b^2) / (2*a*c), -1, 1))
+   lowerAngle = acos(clamp((a^2 + b^2 - c^2) / (2*a*b), -1, 1))
+
 4. // Pole vector projection
    toTarget = normalize(limbVector)
    toPole = normalize(polePos - rootPos)
    bendDir = normalize(toPole - toTarget * dot(toPole, toTarget))
-   
+
 5. // Middle joint position
    upperDir = RotateTowards(toTarget, bendDir, upperAngle)
    middleJointPos = rootPos + upperDir * upperLength
-   
+
 6. // Rotations
    upperRot = LookRotation(upperDir, bendDir)
    lowerDir = normalize(targetPos - middleJointPos)
@@ -205,13 +205,13 @@ if maxDelta > 0.15:
     // Shift root COM opposite to higher foot
     higherSide = (leftFoot.deltaHeight > rightFoot.deltaHeight) ? -1 : 1
     lateralShift = higherSide * clamp(maxDelta * 0.4, 0, 0.25)  // Max 25cm shift
-    
+
     // Forward lean to maintain balance
     forwardLean = clamp(maxDelta * 0.3, 0, 0.15)
-    
+
     comOffset.x = lerp(comOffset.x, lateralShift, deltaTime * 3.0)
     comOffset.z = lerp(comOffset.z, forwardLean, deltaTime * 3.0)
-    
+
     // Apply to root transform before IK solve
     rootPos += rootRot * comOffset
 ```
@@ -230,14 +230,14 @@ comOffset.y = lerp(comOffset.y, verticalCompress, deltaTime * 5.0)
 for each limb:
     toTarget = ikTarget.worldPos - limbRoot.worldPos
     distSq = dot(toTarget, toTarget)
-    maxReachSq = (upperBone + lowerBone - safetyMargin)²
-    
+    maxReachSq = (upperBone + lowerBone - safetyMargin)^2
+
     if distSq > maxReachSq:
         // Clamp target to reachable sphere
         dist = sqrt(distSq)
         maxReach = sqrt(maxReachSq)
         clampedPos = limbRoot.worldPos + (toTarget / dist) * maxReach
-        
+
         // Blend back with hysteresis to prevent jitter
         ikTarget.worldPos = lerp(ikTarget.worldPos, clampedPos, 0.8)
         ikTarget.blend *= 0.5  // Reduce IK influence when clamping
@@ -264,14 +264,14 @@ struct IKApplyJob : IAnimationJob {
     NativeArray<IKTarget> targets;
     NativeArray<TransformStreamHandle> boneHandles;
     int entityIndex;
-    
+
     void ProcessRootMotion(AnimationStream stream) {}
-    
+
     void ProcessAnimation(AnimationStream stream) {
         // Direct bone manipulation via handles
         leftFootHandle = boneHandles[entityIndex * 4 + 0];
         rightFootHandle = boneHandles[entityIndex * 4 + 1];
-        
+
         // Write world positions
 // [FORBID] World Space injection in local Animation Streams.
 float4x4 rootToWorld = stream.GetRootTransform();
@@ -281,7 +281,7 @@ leftFootHandle.SetLocalPosition(stream, localTarget);
 // Align the UP axis to the normal, preserving the character's forward toe orientation.
 quaternion alignRot = quaternion.AxisAngle(math.cross(math.up(), targets.normal), math.acos(math.clamp(math.dot(math.up(), targets.normal), -1f, 1f)));
 leftFootHandle.SetRotation(stream, math.mul(alignRot, currentFootRot));
-        
+
         // Apply blend weights
         weight = targets[entityIndex*4 + 0].blend;
         // Stream internally handles blending with animation clip data
@@ -316,7 +316,7 @@ leftFootHandle.SetRotation(stream, math.mul(alignRot, currentFootRot));
 At spawn:
     for each bone in IK chain:
         handles[boneIdx] = animator.BindStreamTransform(boneTransform)
-        
+
 In job:
     // Direct access via handle index, zero pointer chasing
     boneHandle.SetLocalPosition(stream, localPos)
@@ -419,7 +419,7 @@ Re-enable: When speed < 35m/s for 0.5s (hysteresis)
 ```
 Animation override: Force "compressed posture" clip
 IK disable: COM shift disabled (character locked to swim animation)
-Reason: Art direction—body should look constrained
+Reason: Art direction-body must look constrained
 ```
 
 **Raycast batch overflow (>64 entities):**
@@ -471,7 +471,7 @@ right = normalize(cross(float3(0,1,0), forward))
 up = cross(forward, right)
 return quaternion(float3x3(right, up, forward))
 
-Cost: 60% faster, error <2° for IK blending
+Cost: 60% faster, error <2 deg for IK blending
 ```
 
 ### Temporal_Coherence_Exploitation

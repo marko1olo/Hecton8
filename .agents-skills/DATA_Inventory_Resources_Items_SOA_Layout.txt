@@ -3,7 +3,7 @@
 
 ---
 
-## §0 — FOUNDATIONAL AXIOMS
+## Section0 - FOUNDATIONAL AXIOMS
 
 [AXIOM-001] All resource data lives in contiguous memory. No heap-scattered objects.
 [AXIOM-002] CPU-side truth. GPU receives only render-relevant subsets.
@@ -13,40 +13,40 @@
 
 ---
 
-## §1 — CORE DATA STRUCTURES
+## Section1 - CORE DATA STRUCTURES
 
-### 1.1 ItemData (Primary Record — 20 bytes, cache-aligned)
+### 1.1 ItemData (Primary Record - 20 bytes, cache-aligned)
 
 struct ItemData {
-    uint  hashID;        // FNV-1a of canonical item name — computed offline
-    uint  instanceUID;   // [EntityID:24bit | Timestamp:40bit] — collision-free
-    float quality;       // [0.0, 1.0] — saturate-clamped always
-    ushort stackCount;   // max 65535 — sufficient for all resource types
-    ushort flags;        // bitfield — see §1.4
+    uint  hashID;        // FNV-1a of canonical item name - computed offline
+    uint  instanceUID;   // [EntityID:24bit | Timestamp:40bit] - collision-free
+    float quality;       // [0.0, 1.0] - saturate-clamped always
+    ushort stackCount;   // max 65535 - sufficient for all resource types
+    ushort flags;        // bitfield - see Section1.4
 }
 
-Size: 4+4+4+2+4 → pad to 20B. Align structs to 16B cache boundary via `[StructLayout(LayoutKind.Sequential, Pack=4)]`.
+Size: 4+4+4+2+4 -> pad to 20B. Align structs to 16B cache boundary via `[StructLayout(LayoutKind.Sequential, Pack=4)]`.
 
-### 1.2 ItemState (Per-Instance Mutable Runtime — 16 bytes)
+### 1.2 ItemState (Per-Instance Mutable Runtime - 16 bytes)
 
 struct ItemState {
-    uint   instanceUID;   // FK → ItemData.instanceUID
+    uint   instanceUID;   // FK -> ItemData.instanceUID
     float  durability;    // [0.0, 1.0]
-    float  temperature;   // Celsius — affects chemistry/biology items
-    uint   containerUID;  // owner: player/chest/world — 0 = unowned
+    float  temperature;   // Celsius - affects chemistry/biology items
+    uint   containerUID;  // owner: player/chest/world - 0 = unowned
 }
 
-### 1.3 WorldItemProxy (Render-Side Record — 12 bytes)
+### 1.3 WorldItemProxy (Render-Side Record - 12 bytes)
 
 struct WorldItemProxy {
     uint   instanceUID;   // links to ItemData
     uint   chunkID;       // spatial partition key
-    float3 position;      // world-space — NO rotation stored (billboards/LOD-silhouettes)
+    float3 position;      // world-space - NO rotation stored (billboards/LOD-silhouettes)
 }
 
 Proxies never store mesh refs. Mesh resolved via `ItemTemplateRegistry[hashID].ProxyMeshIndex`.
 
-### 1.4 Flags Bitfield (ushort — 16 bits)
+### 1.4 Flags Bitfield (ushort - 16 bits)
 
 Bit 0:    IS_STACKABLE
 Bit 1:    IS_EQUIPPABLE
@@ -67,13 +67,13 @@ Rarity extract: `byte rarity = (byte)((item.flags >> 12) & 0xF);`
 
 ---
 
-## §2 — REGISTRY & TEMPLATE SYSTEM
+## Section2 - REGISTRY & TEMPLATE SYSTEM
 
 ### 2.1 ItemTemplateRegistry
 
 static class ItemTemplateRegistry {
-    NativeHashMap<uint, int>  hashToIndex;    // hashID → template array index
-    ItemTemplate[]            templates;       // SO-baked structs — READ ONLY
+    NativeHashMap<uint, int>  hashToIndex;    // hashID -> template array index
+    ItemTemplate[]            templates;       // SO-baked structs - READ ONLY
 }
 
 struct ItemTemplate {
@@ -87,15 +87,15 @@ struct ItemTemplate {
     ushort  hlodSilhouetteIdx;
 }
 
-Lookup: O(1) — `templates[hashToIndex[hashID]]`
+Lookup: O(1) - `templates[hashToIndex[hashID]]`
 Population: Bake at AssetPostprocessor stage. No runtime SO reads.
 
 ### 2.2 UID Generation Algorithm
 
 instanceUID generation:
-  entityCounter: static uint64 — atomic increment per session
+  entityCounter: static uint64 - atomic increment per session
 // [FORBID] Millisecond-based UIDs for high-speed physics objects.
-// You MUST use a monotonic atomic counter: 
+// You MUST use a monotonic atomic counter:
 uid = Interlocked.Increment(ref globalCounter);
   entityID:  uint64 = Interlocked.Increment(ref entityCounter) & 0xFFFFFF  // 24-bit mask
   uid = (entityID << 40) | timestamp
@@ -105,7 +105,7 @@ instanceUID : ulong = (entityID << 40) | timestamp;
 
 Collision probability at 10K items/session: < 2^-18. Acceptable. Use uint32 form as instanceUID.
 
-### 2.3 HashID Generation (Offline — Build Tool)
+### 2.3 HashID Generation (Offline - Build Tool)
 
 FNV-1a 32-bit:
   hash = 2166136261u
@@ -118,16 +118,16 @@ Bake into ScriptableObject field at import. Never compute at runtime.
 
 ---
 
-## §3 — CONTAINER ARCHITECTURE
+## Section3 - CONTAINER ARCHITECTURE
 
 ### 3.1 Container Types
 
 enum ContainerType : byte {
-    PlayerHotbar   = 0,   // 8 slots — NativeArray fixed
-    PlayerBackpack = 1,   // 32 slots — NativeArray fixed
-    WorldChest     = 2,   // variable — NativeArray<ItemData> pooled
-    CraftingBuffer = 3,   // 6 input + 1 output — fixed
-    DropBuffer     = 4,   // temporary — cleared each frame end
+    PlayerHotbar   = 0,   // 8 slots - NativeArray fixed
+    PlayerBackpack = 1,   // 32 slots - NativeArray fixed
+    WorldChest     = 2,   // variable - NativeArray<ItemData> pooled
+    CraftingBuffer = 3,   // 6 input + 1 output - fixed
+    DropBuffer     = 4,   // temporary - cleared each frame end
 }
 
 ### 3.2 PlayerInventoryBuffer (Burst-Compatible)
@@ -135,14 +135,14 @@ enum ContainerType : byte {
 struct PlayerInventoryBuffer {
     NativeArray<ItemData>   hotbar;        // [8]
     NativeArray<ItemData>   backpack;      // [32]
-    NativeArray<ItemState>  states;        // [40] — parallel indexed to above
-    NativeArray<uint>       sortKeys;      // [40] — category|rarity|hashID packed
+    NativeArray<ItemState>  states;        // [40] - parallel indexed to above
+    NativeArray<uint>       sortKeys;      // [40] - category|rarity|hashID packed
     int                     hotbarCount;
     int                     backpackCount;
 }
 
 Sort key pack: `sortKey = (categoryMask << 20) | (rarity << 16) | (hashID & 0xFFFF)`
-Enables radix sort by category → rarity → type in single pass.
+Enables radix sort by category -> rarity -> type in single pass.
 
 ### 3.3 WorldStateManager (Spatial Partition)
 
@@ -155,14 +155,14 @@ struct ChunkItemRegistry {
 }
 
 WorldStateManager owns:
-    NativeParallelHashMap<uint, ChunkItemRegistry>  chunkMap;  // chunkID → registry
-    NativeParallelHashMap<uint, uint>                uidToChunk; // instanceUID → chunkID
+    NativeParallelHashMap<uint, ChunkItemRegistry>  chunkMap;  // chunkID -> registry
+    NativeParallelHashMap<uint, uint>                uidToChunk; // instanceUID -> chunkID
 
-UID→Chunk lookup: O(1). Required for scavenging protocol step 2.
+UID->Chunk lookup: O(1). Required for scavenging protocol step 2.
 
 ---
 
-## §4 — ALGORITHMIC KERNELS
+## Section4 - ALGORITHMIC KERNELS
 
 ### 4.1 Stack Merge Logic
 
@@ -176,7 +176,7 @@ STACK_MERGE(ref ItemData dest, ref ItemData src, ushort maxStack):
   if remainder == 0: invalidate src (set hashID = 0, instanceUID = 0)
   return remainder
 
-### 4.2 Durability Decay (Per-Tick — Burst Job)
+### 4.2 Durability Decay (Per-Tick - Burst Job)
 
 DURABILITY_DECAY(ref ItemState state, float deltaTime, uint hashID):
   template     = ItemTemplateRegistry.Get(hashID)
@@ -189,7 +189,7 @@ DURABILITY_DECAY(ref ItemState state, float deltaTime, uint hashID):
   if state.durability <= 0.0f:
     TRIGGER_ITEM_BREAK_EVENT(state.instanceUID)
 
-Saturate: `saturate(x) = clamp(x, 0.0, 1.0)` — maps to single SIMD instruction in Burst.
+Saturate: `saturate(x) = clamp(x, 0.0, 1.0)` - maps to single SIMD instruction in Burst.
 
 ### 4.3 Biological Decay (Secondary Overlay)
 
@@ -201,25 +201,25 @@ BIO_DECAY(ref ItemState state, float ambientTemp, float deltaTime):
   if items[idx].quality < 0.1f:
     TRIGGER_SPOILAGE(state.instanceUID)
 
-Cold storage (4°C) = near-zero decay. Deep-sea temps (2°C) actually preserve bio-items. Design leverage.
+Cold storage (4 degC) = near-zero decay. Deep-sea temps (2 degC) actually preserve bio-items. Design leverage.
 
 ### 4.4 Pressure-Temperature State Check (NASA-Punk integration)
 
 PRESSURE_CHECK(ItemData item, float ambientPressure, float ambientTemp):
   if (item.flags & IS_PRESSURIZED) == 0: return
-  critPressure = 60.0f   // ATM — configure per item via template
+  critPressure = 60.0f   // ATM - configure per item via template
   if ambientPressure > critPressure:
     TRIGGER_CONTAINER_BREACH(item.instanceUID)
     // Spawns particle event + destroys item
   if ambientTemp > 300.0f && (item.flags & IS_RADIOACTIVE):
     TRIGGER_MELTDOWN_HAZARD(item.instanceUID)
 
-### 4.5 Inventory Sort (Radix — Burst Job)
+### 4.5 Inventory Sort (Radix - Burst Job)
 
 INVENTORY_SORT(NativeArray<ItemData> items, NativeArray<uint> sortKeys, int count):
   // Rebuild sortKeys pass:
   for i in [0, count):
-// [FORBID] Bitmasks in sort keys. 
+// [FORBID] Bitmasks in sort keys.
 // Define a mutually exclusive sequential 'byte CategoryID' and pack that into the sort key.
     id     = items[i].hashID & 0xFFFF
     sortKeys[i] = (cat << 20) | (rar << 16) | id
@@ -234,11 +234,11 @@ Schedule as Burst job over contiguous key/value buffers. Off main-thread. No GC.
 ### 4.6 Scavenging Protocol (Full Flow)
 
 SCAVENGE_ATTEMPT(Ray cameraRay, PlayerInventoryBuffer* playerBuf):
-  Step 1 — RAYCAST:
+  Step 1 - RAYCAST:
     hit = PhysicsScene.Raycast(cameraRay, maxDist=3.5f, layerMask=LOOT_LAYER)
     if !hit: return FAIL
 
-  Step 2 — RESOLVE UID:
+  Step 2 - RESOLVE UID:
     proxyGO   = hit.collider.gameObject
     proxyUID  = ProxyUIDComponent[proxyGO]   // single-field struct on proxy GO
     chunkID   = WorldStateManager.uidToChunk[proxyUID]
@@ -246,14 +246,14 @@ SCAVENGE_ATTEMPT(Ray cameraRay, PlayerInventoryBuffer* playerBuf):
     itemIdx   = FindIndexByUID(registry.items, proxyUID)
     if itemIdx < 0: return FAIL_STALE
 
-  Step 3 — TRANSFER TO PLAYER:
+  Step 3 - TRANSFER TO PLAYER:
     itemData  = registry.items[itemIdx]
     result    = ATTEMPT_ADD_TO_INVENTORY(playerBuf, itemData)
     if result == INVENTORY_FULL:
       DROP_BUFFER_ENQUEUE(itemData, playerBuf->position)
       return FAIL_FULL
 
-  Step 4 — WORLD CLEANUP:
+  Step 4 - WORLD CLEANUP:
     registry.proxyActive[itemIdx] = false
     registry.items[itemIdx]       = default   // zero-fill
     registry.count--
@@ -265,14 +265,14 @@ SCAVENGE_ATTEMPT(Ray cameraRay, PlayerInventoryBuffer* playerBuf):
 ### 4.7 Add-To-Inventory Logic
 
 ATTEMPT_ADD_TO_INVENTORY(PlayerInventoryBuffer* buf, ItemData incoming):
-  // Phase 1 — Stack merge attempt:
+  // Phase 1 - Stack merge attempt:
   if (incoming.flags & IS_STACKABLE):
     for slot in buf.backpack[0..backpackCount]:
       if slot.hashID == incoming.hashID && slot.stackCount < maxStack:
         remainder = STACK_MERGE(ref slot, ref incoming, maxStack)
         if remainder == 0: return SUCCESS
 
-  // Phase 2 — Empty slot:
+  // Phase 2 - Empty slot:
   if backpackCount < 32:
     buf.backpack[backpackCount] = incoming
     buf.states[8 + backpackCount] = NEW_ITEM_STATE(incoming.instanceUID)
@@ -306,7 +306,7 @@ seed = (seed ^ (seed >> 16)) * 0x45D9F3BUL;
 
 ---
 
-## §5 — HARDWARE SCALABILITY [MX350 MANDATE]
+## Section5 - HARDWARE SCALABILITY [MX350 MANDATE]
 
 ### 5.1 Proxy Budget Enforcement
 
@@ -322,17 +322,17 @@ CHUNK_VISIBILITY_CULL(ChunkItemRegistry registry, float3 cameraPos):
       RENDER_HLOD_SILHOUETTE(registry.proxies[i])
     // beyond 80m: invisible, data retained
 
-### 5.2 VRAM Footprint — Loot Proxies
+### 5.2 VRAM Footprint - Loot Proxies
 
 Proxy mesh budget:
   Max unique proxy meshes:  32 types (shared via GPU instancing)
   Per-mesh avg VRAM:        ~48KB (low-poly, 200-500 tri)
-  Total mesh VRAM:          32 × 48KB =  1800MB
-  Instance data (128/chunk × 4 active chunks):
-    512 instances × 64B transform = 32KB
-  Icon atlas:               512×512 RGBA8 = 1MB
-  HLOD silhouettes:         16 types × 8KB = 128KB
-  TOTAL PROXY VRAM:         ~ 1800MB — within MX350 2GB ceiling alongside main render
+  Total mesh VRAM:          32 x 48KB = 1.5MB
+  Instance data (128/chunk x 4 active chunks):
+    512 instances x 64B transform = 32KB
+  Icon atlas:               512x512 RGBA8 = 1MB
+  HLOD silhouettes:         16 types x 8KB = 128KB
+  TOTAL PROXY VRAM:         ~2.7MB - within MX350 2GB ceiling alongside main render
 
 ### 5.3 Job Scheduling Policy
 
@@ -346,33 +346,33 @@ Frame N+1 fence:
   Complete all jobs before save-serialize or UI-refresh reads
 
 Job dependencies:
-  DurabilityDecayJob → completes before CraftingValidationJob
-  SortJob → completes before UIRenderJob
+  DurabilityDecayJob -> completes before CraftingValidationJob
+  SortJob -> completes before UIRenderJob
 
 ### 5.4 Memory Budget (6GB RAM Target)
 
-PlayerInventoryBuffers:    40 × 20B (ItemData) + 40 × 16B (ItemState) = 1.44KB
+PlayerInventoryBuffers:    40 x 20B (ItemData) + 40 x 16B (ItemState) = 1.44KB
 WorldStateManager total:
-  32 active chunks × 128 items × 36B (ItemData+Proxy) = 147KB
-ItemTemplateRegistry:      512 templates × 24B = 12KB
+  32 active chunks x 128 items x 36B (ItemData+Proxy) = 147KB
+ItemTemplateRegistry:      512 templates x 24B = 12KB
 NativeHashMaps overhead:   ~2MB (worst case, pre-allocated)
-TOTAL INVENTORY SYSTEM:    ~2.2MB — negligible vs. 6GB ceiling
+TOTAL INVENTORY SYSTEM:    ~2.2MB - negligible vs. 6GB ceiling
 
 ---
 
-## §6 — PERSISTENCE & SERIALIZATION [ZERO-GC]
+## Section6 - PERSISTENCE & SERIALIZATION [ZERO-GC]
 
 ### 6.1 Save Blit Protocol
 
 SAVE_INVENTORY(PlayerInventoryBuffer buf, FileStream stream):
-  // Direct memory blit — no serializer, no JSON, no GC
-  headerSize = sizeof(int) × 2   // hotbarCount + backpackCount
-  dataSize   = (buf.hotbarCount + buf.backpackCount) × sizeof(ItemData)
-  stateSize  = (buf.hotbarCount + buf.backpackCount) × sizeof(ItemState)
+  // Direct memory blit - no serializer, no JSON, no GC
+  headerSize = sizeof(int) x 2   // hotbarCount + backpackCount
+  dataSize   = (buf.hotbarCount + buf.backpackCount) x sizeof(ItemData)
+  stateSize  = (buf.hotbarCount + buf.backpackCount) x sizeof(ItemState)
 
   WRITE_RAW(stream, &buf.hotbarCount,   headerSize)
-  WRITE_RAW(stream, buf.hotbar.ptr,     buf.hotbarCount × 20)
-  WRITE_RAW(stream, buf.backpack.ptr,   buf.backpackCount × 20)
+  WRITE_RAW(stream, buf.hotbar.ptr,     buf.hotbarCount x 20)
+  WRITE_RAW(stream, buf.backpack.ptr,   buf.backpackCount x 20)
   WRITE_RAW(stream, buf.states.ptr,     stateSize)
   CRC32_APPEND(stream)   // validation on load
 
@@ -385,16 +385,16 @@ SAVE_CHUNK(ChunkItemRegistry registry, FileStream stream):
     if registry.proxyActive[i] || ITEM_HAS_VALUE(registry.items[i]):
       WRITE_RAW(stream, &registry.items[i],   20)
       WRITE_RAW(stream, &registry.proxies[i], 12)
-  // Skip zeroed/invalid records — reduces save file bloat
+  // Skip zeroed/invalid records - reduces save file bloat
 
 ### 6.3 Load & Validation
 
 LOAD_INVENTORY(FileStream stream, PlayerInventoryBuffer* buf):
   READ_RAW(stream, &hotbarCount, &backpackCount)
   VALIDATE(hotbarCount <= 8, backpackCount <= 32)
-  READ_RAW(stream, buf.hotbar.ptr,   hotbarCount × 20)
-  READ_RAW(stream, buf.backpack.ptr, backpackCount × 20)
-  READ_RAW(stream, buf.states.ptr,   (hotbarCount+backpackCount) × 16)
+  READ_RAW(stream, buf.hotbar.ptr,   hotbarCount x 20)
+  READ_RAW(stream, buf.backpack.ptr, backpackCount x 20)
+  READ_RAW(stream, buf.states.ptr,   (hotbarCount+backpackCount) x 16)
   storedCRC = READ_UINT32(stream)
   computedCRC = CRC32(buf.hotbar.ptr, totalBytes)
   if storedCRC != computedCRC: LOAD_BACKUP_SAVE()
@@ -403,7 +403,7 @@ LOAD_INVENTORY(FileStream stream, PlayerInventoryBuffer* buf):
 
 ---
 
-## §7 — FAILURE MODES & GUARDS
+## Section7 - FAILURE MODES & GUARDS
 
 ### 7.1 Stale UID Handling
 
@@ -413,7 +413,7 @@ UID_VALIDATE(uint instanceUID):
   return VALID
 
 // Call before any operation that resolves UID to data
-// Stale UIDs arise from: save corruption, async job race, duplicate UID (see §2.2 collision note)
+// Stale UIDs arise from: save corruption, async job race, duplicate UID (see Section2.2 collision note)
 
 ### 7.2 Chunk Overflow Guard
 
@@ -424,7 +424,7 @@ EVICT_OLDEST(ChunkItemRegistry registry):
     if registry.items[i].instanceUID < minUID:
       minUID = registry.items[i].instanceUID
       evictIdx = i
-  // Despawn without drop — world clutter cap enforcement
+  // Despawn without drop - world clutter cap enforcement
   registry.items[evictIdx]       = default
   registry.proxyActive[evictIdx] = false
   DisableProxyMesh(evictIdx)
@@ -462,7 +462,7 @@ CRAFT_FAIL(ItemData[] inputs):
 
 ---
 
-## §8 — RENDER INTEGRATION NOTES
+## Section8 - RENDER INTEGRATION NOTES
 
 ### 8.1 Proxy Mesh Instantiation Strategy
 
@@ -470,11 +470,11 @@ GPU Instancing groups by proxyMeshIndex:
   Build InstancedRenderData[32] arrays each frame
   Per-instance data: float4x4 TRS (computed from proxy.position + identity rotation)
   Submit via Graphics.DrawMeshInstanced(mesh, 0, mat, matrices, count)
-  Batch threshold: submit when count >= 1 (no minimum — underwater scenes sparse)
+  Batch threshold: submit when count >= 1 (no minimum - underwater scenes sparse)
 
 ### 8.2 Icon Atlas Sampling
 
-UV tile calculation (512×512 atlas, 32×32 icon tiles = 16×16 grid):
+UV tile calculation (512x512 atlas, 32x32 icon tiles = 16x16 grid):
   col = iconAtlasIndex % 16
   row = iconAtlasIndex / 16
   uvMin = float2(col / 16.0f, row / 16.0f)
@@ -484,43 +484,43 @@ UV tile calculation (512×512 atlas, 32×32 icon tiles = 16×16 grid):
 
 On raycast hit proxy:
   Pass instanceUID to highlight shader via MaterialPropertyBlock
-  Shader reads: _HighlightUID (uint) — compares against per-instance ID
+  Shader reads: _HighlightUID (uint) - compares against per-instance ID
   If match: rim light + depth-outline pass active
   No material duplication. Single property override.
 
 ---
 
-## §9 — CONSTANTS REGISTRY
+## Section9 - CONSTANTS REGISTRY
 
-PROXY_FULL_DIST     = 30.0f        // meters — full mesh render
-HLOD_DIST           = 80.0f        // meters — silhouette only
+PROXY_FULL_DIST     = 30.0f        // meters - full mesh render
+HLOD_DIST           = 80.0f        // meters - silhouette only
 MAX_PROXIES_CHUNK   = 128          // MX350 hard cap
 MAX_PLAYER_SLOTS    = 40           // hotbar(8) + backpack(32)
 MAX_STACK_DEFAULT   = 64           // override per-template
 DURABILITY_BROKEN   = 0.0f
 DURABILITY_DEGRADED = 0.25f
-BIO_PRESERVE_TEMP   = 4.0f         // Celsius — Arrhenius baseline
-PRESSURE_CRITICAL   = 60.0f        // ATM — pressurized item breach
+BIO_PRESERVE_TEMP   = 4.0f         // Celsius - Arrhenius baseline
+PRESSURE_CRITICAL   = 60.0f        // ATM - pressurized item breach
 SCATTER_RADIUS      = 0.8f         // drop scatter max offset (meters)
 UID_ENTITY_BITS     = 24           // 16M unique entities per session
 UID_TIME_BITS       = 40           // ~34 years of millisecond precision
-CHUNK_SIZE          = 50.0f        // meters — world partition cell
+CHUNK_SIZE          = 50.0f        // meters - world partition cell
 SAVE_MAGIC          = 0xH8C0_BABE  // file header validation
 
 ---
 
-## §10 — ANTI-PATTERNS [FORBID]
+## Section10 - ANTI-PATTERNS [FORBID]
 
 [FORBID-001] GameObject.Find or string-based resource loading in inventory path.
 [FORBID-002] Inventory slot as MonoBehaviour or Component.
-[FORBID-003] List<T>, Dictionary<K,V> in hot inventory loops — allocate GC.
+[FORBID-003] List<T>, Dictionary<K,V> in hot inventory loops - allocate GC.
 [FORBID-004] ScriptableObject field mutation at runtime.
 [FORBID-005] JSON/XML serialization for save files.
-[FORBID-006] ItemData on heap — must live in NativeArray at all times.
-[FORBID-007] Physics queries per-frame for loot detection — use trigger volumes + dirty flags.
+[FORBID-006] ItemData on heap - must live in NativeArray at all times.
+[FORBID-007] Physics queries per-frame for loot detection - use trigger volumes + dirty flags.
 [FORBID-008] Sorting on main thread without Burst job.
-[FORBID-009] UID resolution via linear scan — always use NativeParallelHashMap.
-[FORBID-010] Destroying world item GameObjects — pool and disable only.
+[FORBID-009] UID resolution via linear scan - always use NativeParallelHashMap.
+[FORBID-010] Destroying world item GameObjects - pool and disable only.
 
 ---
 

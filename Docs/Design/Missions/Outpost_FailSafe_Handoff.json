@@ -1,0 +1,232 @@
+{
+  "schema": "H8.OUTPOST.FAILSAFE.HANDOFF.V1",
+  "agent": "MISSION_FAIL_SAFE_ARCHITECT",
+  "evidenceClass": "STATIC_DOC",
+  "sourceBatch": "Docs/Tasks/CURRENT_BATCH.md",
+  "requestedBatch": "CURRENT_BATCH_OSHINO.md",
+  "requestedBatchPresent": false,
+  "runtimeAssetDecision": {
+    "mutatedRuntimeLocalizationAssets": false,
+    "activeEnglishTableObserved": "Assets/_Project/Scripts/English.json",
+    "reason": "Runtime language tables, generated LocKeys, and translated tables must be baked together. This handoff avoids an English-only partial mutation and gives the exact keys, hashes, flags, and source text for the localization bake."
+  },
+  "hashContract": {
+    "algorithm": "FNV-1a 32-bit over UTF-16LE code units",
+    "runtimeMatch": "Hecton.Localization.LocHash.Compute",
+    "offsetBasis": "0x811C9DC5",
+    "prime": "0x01000193"
+  },
+  "missionFlags": [
+    { "flag": "outpost.generated", "band": "generation", "description": "WFC outpost instance exists." },
+    { "flag": "outpost.generation_faulted", "band": "generation", "description": "WFC output is missing one or more critical mission affordances." },
+    { "flag": "outpost.entry_reached", "band": "route", "description": "Player reached the first stable entry node." },
+    { "flag": "outpost.main_path_connected", "band": "route", "description": "At least one route connects entry, relay, evidence, and exit." },
+    { "flag": "outpost.generator_room_present", "band": "power", "description": "Generated layout contains a usable generator room." },
+    { "flag": "outpost.ghost_power_enabled", "band": "power", "description": "Mission-only reserve bus fallback is active because no valid generator room exists." },
+    { "flag": "outpost.power_relay_found", "band": "power", "description": "Player inspected the local relay or brownout panel." },
+    { "flag": "outpost.power_coupler_acquired", "band": "power", "description": "Player acquired the repair coupler." },
+    { "flag": "outpost.power_coupler_installed", "band": "power", "description": "Coupler is seated in the relay plate." },
+    { "flag": "outpost.bus_voltage_stable", "band": "power", "description": "Local bus is stable enough for one mission branch." },
+    { "flag": "outpost.brownout_cleared", "band": "power", "description": "Brownout hazard is resolved or bypassed by reserve bus." },
+    { "flag": "outpost.scrubber_powered", "band": "gas", "description": "Local scrubber is powered. This removes CO2 only; it does not create oxygen." },
+    { "flag": "outpost.safe_air_confirmed", "band": "gas", "description": "Mission-critical room is not fire, breached, submerged, or forced beyond the safe read timer." },
+    { "flag": "outpost.sealed_door_powered", "band": "door", "description": "Door motor has enough feed for the critical route." },
+    { "flag": "outpost.sealed_door_opened", "band": "door", "description": "Critical sealed door opened once." },
+    { "flag": "outpost.datapad_found", "band": "evidence", "description": "Player found a data pad or evidence terminal." },
+    { "flag": "outpost.marauder_log_power_found", "band": "lore", "description": "Power fallback log found." },
+    { "flag": "outpost.marauder_log_air_found", "band": "lore", "description": "Air and scrubber log found." },
+    { "flag": "outpost.marauder_log_fire_found", "band": "lore", "description": "Internal fire log found." },
+    { "flag": "outpost.marauder_log_breach_found", "band": "lore", "description": "Breach log found." },
+    { "flag": "outpost.marauder_log_exit_found", "band": "lore", "description": "Exit discipline log found." },
+    { "flag": "outpost.roomflag_internal_fire_seen", "band": "physical", "description": "Observed room state includes InternalFire." },
+    { "flag": "outpost.roomflag_breached_seen", "band": "physical", "description": "Observed room state includes Breached." },
+    { "flag": "outpost.exit_route_marked", "band": "route", "description": "Return marker or route claim exists before the prize step." },
+    { "flag": "outpost.critical_item_lost", "band": "deadlock", "description": "Critical coupler/evidence item was destroyed, dropped into unreachable state, or invalidated." },
+    { "flag": "outpost.deadlock_revert_triggered", "band": "deadlock", "description": "Quest graph reverted the critical item or completion state." },
+    { "flag": "outpost.marker_fallback_active", "band": "deadlock", "description": "Fallback marker points to an alternate reachable node." },
+    { "flag": "outpost.state_restored_after_revert", "band": "deadlock", "description": "Player recovered the critical item or alternate path after revert." },
+    { "flag": "outpost.evidence_uploaded", "band": "completion", "description": "Evidence has been copied to player/system ownership." },
+    { "flag": "outpost.claim_complete", "band": "completion", "description": "Outpost claim and fail-safe mission branch are complete." }
+  ],
+  "topologicalOrder": [
+    "outpost.generated",
+    "outpost.entry_reached",
+    "outpost.main_path_connected",
+    "outpost.generator_room_present",
+    "outpost.ghost_power_enabled",
+    "outpost.exit_route_marked",
+    "outpost.power_relay_found",
+    "outpost.power_coupler_acquired",
+    "outpost.power_coupler_installed",
+    "outpost.bus_voltage_stable",
+    "outpost.brownout_cleared",
+    "outpost.scrubber_powered",
+    "outpost.safe_air_confirmed",
+    "outpost.sealed_door_powered",
+    "outpost.sealed_door_opened",
+    "outpost.datapad_found",
+    "outpost.evidence_uploaded",
+    "outpost.claim_complete"
+  ],
+  "fallbacks": [
+    {
+      "risk": "no_generator_room",
+      "trigger": "!outpost.generator_room_present",
+      "setFlag": "outpost.ghost_power_enabled",
+      "constraint": "Reserve bus powers only marker, relay, one sealed door, one evidence terminal, and optional scrubber. It must not publish false total generation."
+    },
+    {
+      "risk": "critical_item_lost",
+      "trigger": "outpost.critical_item_lost",
+      "setFlag": "outpost.deadlock_revert_triggered",
+      "constraint": "Clear the dependent completion flag, activate fallback marker, and reissue the coupler/evidence through a reachable node."
+    },
+    {
+      "risk": "unsafe_air_route",
+      "trigger": "InternalFire || Breached || Submerged on critical room",
+      "setFlag": "outpost.marker_fallback_active",
+      "constraint": "Critical route must move to a safe room. Fire, breached, and submerged states may be optional evidence only."
+    }
+  ],
+  "localizationEntries": [
+    {
+      "locId": "TIP_OUTPOST_REPAIR_01_EXIT",
+      "hash": "0x2A142972",
+      "layer": "Narrative",
+      "category": "outpost_tooltip",
+      "triggerFlag": "outpost.entry_reached",
+      "suppressFlag": "outpost.exit_route_marked",
+      "text": "MARAUDER FIELD NOTE: Mark the way out before touching the prize. A lit panel is not a promise."
+    },
+    {
+      "locId": "TIP_OUTPOST_REPAIR_02_BROWNOUT",
+      "hash": "0x0CCAC779",
+      "layer": "Narrative",
+      "category": "outpost_tooltip",
+      "triggerFlag": "outpost.power_relay_found",
+      "suppressFlag": "outpost.brownout_cleared",
+      "text": "POWER BUS: Feed is starving. The relay is awake enough to accuse you, not enough to open doors."
+    },
+    {
+      "locId": "TIP_OUTPOST_REPAIR_03_TRACE",
+      "hash": "0x2B642361",
+      "layer": "Narrative",
+      "category": "outpost_tooltip",
+      "triggerFlag": "outpost.power_relay_found",
+      "suppressFlag": "outpost.power_coupler_acquired",
+      "text": "TRACE PAINT: Green runs to feed. Red runs to load. Follow the paint, ignore the sparks."
+    },
+    {
+      "locId": "TIP_OUTPOST_REPAIR_04_COUPLER",
+      "hash": "0xCB9BD16D",
+      "layer": "Narrative",
+      "category": "outpost_tooltip",
+      "triggerFlag": "outpost.power_coupler_acquired",
+      "suppressFlag": "outpost.power_coupler_installed",
+      "text": "MARAUDER NOTE: Pull the coupler clean. Bent teeth mean heat, heat means lies in the gauge."
+    },
+    {
+      "locId": "TIP_OUTPOST_REPAIR_05_INSTALL",
+      "hash": "0xBE1FE7DF",
+      "layer": "Narrative",
+      "category": "outpost_tooltip",
+      "triggerFlag": "outpost.power_coupler_installed",
+      "suppressFlag": "outpost.bus_voltage_stable",
+      "text": "RELAY PLATE: Seat the coupler until the bus hums steady. If it chatters, back away."
+    },
+    {
+      "locId": "TIP_OUTPOST_REPAIR_06_GHOST_POWER",
+      "hash": "0x0BE5D8A2",
+      "layer": "Narrative",
+      "category": "outpost_tooltip",
+      "triggerFlag": "outpost.ghost_power_enabled",
+      "suppressFlag": "outpost.brownout_cleared",
+      "text": "RESERVE BUS: No generator on this deck. Something under the floor still remembers its last charge."
+    },
+    {
+      "locId": "TIP_OUTPOST_REPAIR_07_DOOR",
+      "hash": "0x2AED981A",
+      "layer": "Narrative",
+      "category": "outpost_tooltip",
+      "triggerFlag": "outpost.sealed_door_powered",
+      "suppressFlag": "outpost.sealed_door_opened",
+      "text": "LOCK STATUS: Door motor has one clean pull left. Waste it only if the exit is still marked."
+    },
+    {
+      "locId": "TIP_OUTPOST_REPAIR_08_AIR",
+      "hash": "0xAAB187F1",
+      "layer": "Narrative",
+      "category": "outpost_tooltip",
+      "triggerFlag": "outpost.scrubber_powered",
+      "suppressFlag": "outpost.safe_air_confirmed",
+      "text": "AIR LEDGER: Scrubber is cutting CO2, not making oxygen. Read fast. Breathe slow."
+    },
+    {
+      "locId": "TIP_OUTPOST_REPAIR_09_LOG",
+      "hash": "0x4A4D2F96",
+      "layer": "Narrative",
+      "category": "outpost_tooltip",
+      "triggerFlag": "outpost.datapad_found",
+      "suppressFlag": "outpost.evidence_uploaded",
+      "text": "MARAUDER RULE: A log is not loot until its room agrees with it. Check scorch, breach, and gauge."
+    },
+    {
+      "locId": "TIP_OUTPOST_REPAIR_10_LEAVE",
+      "hash": "0xD83926D1",
+      "layer": "Narrative",
+      "category": "outpost_tooltip",
+      "triggerFlag": "outpost.evidence_uploaded",
+      "suppressFlag": "outpost.claim_complete",
+      "text": "CLAIM MARK: Evidence copied. The outpost can keep its dead power. You keep the route home."
+    },
+    {
+      "locId": "OUTPOST_LOG_POWER_01",
+      "hash": "0x6AAC299E",
+      "layer": "Narrative",
+      "category": "outpost_log",
+      "requiredState": "outpost.ghost_power_enabled || !outpost.generator_room_present",
+      "text": "Generator bay is missing from the company map. Not sealed. Missing. We found a reserve bus under deck two, warm enough to twitch a relay and honest enough to die after it opens one door."
+    },
+    {
+      "locId": "OUTPOST_LOG_AIR_02",
+      "hash": "0x965F0F78",
+      "layer": "Narrative",
+      "category": "outpost_log",
+      "requiredState": "outpost.scrubber_powered || roomflag.ScrubberInstalled",
+      "text": "Air count starts when the panel wakes. Scrubber cuts CO2, it does not give oxygen back. Ninety seconds for the read, less if your hands shake."
+    },
+    {
+      "locId": "OUTPOST_LOG_FIRE_03",
+      "hash": "0xC2ED4503",
+      "layer": "Narrative",
+      "category": "outpost_log",
+      "requiredState": "roomflag.InternalFire",
+      "text": "Red load line burned clean through the paint. We sealed that room and left the coupler teeth on the deck. Anyone sending a diver through fire wants the diver dead."
+    },
+    {
+      "locId": "OUTPOST_LOG_BREACH_04",
+      "hash": "0x75653D5B",
+      "layer": "Narrative",
+      "category": "outpost_log",
+      "requiredState": "roomflag.Breached",
+      "text": "Pressure door held. Wall did not. The gauge hit ambient and nobody argued with it. If your map points through that room, your map is lying."
+    },
+    {
+      "locId": "OUTPOST_LOG_EXIT_05",
+      "hash": "0x44BF4F8D",
+      "layer": "Narrative",
+      "category": "outpost_log",
+      "requiredState": "outpost.exit_route_marked",
+      "text": "Claim marker is on the return rail. Prize waits after the exit is marked twice. Marauders do not get paid for dying in rooms they already understood."
+    }
+  ],
+  "gasConstraints": {
+    "oxygenStandardKpa": 21.22,
+    "playerOxygenDrainKpaPerSecond": 0.012,
+    "playerCo2ProductionKpaPerSecond": 0.01,
+    "fireOxygenDrainKpaPerSecond": 0.4,
+    "scrubberCo2RemovalKpaPerSecond": 0.055,
+    "unpoweredSealedCriticalReadCapSeconds": 90,
+    "rule": "Scrubber cuts CO2 only. Ghost Power does not create oxygen."
+  }
+}

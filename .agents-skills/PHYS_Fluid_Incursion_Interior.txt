@@ -8,7 +8,7 @@
 [FORBID] Rigidbody mass/CoM writes every FixedTick without measured proof and a fallback. Prefer low-cadence state changes and presentation interpolation.
 
 # PHYS_Fluid_Incursion_Interior.md
-## Distilled Technical Mandate — HECTON-8 | Fluid Incursion & Buoyancy System
+## Distilled Technical Mandate - HECTON-8 | Fluid Incursion & Buoyancy System
 
 ---
 
@@ -29,13 +29,13 @@
 ```
 CompartmentState : IComponentData
 {
-  float  currentVolume;       // m³ currently flooded
-  float  maxVolume;           // m³ capacity
-  float  floodRate;           // m³/s ingress
-  float  breachArea;          // m² breach cross-section
+  float  currentVolume;       // m^3 currently flooded
+  float  maxVolume;           // m^3 capacity
+  float  floodRate;           // m^3/s ingress
+  float  breachArea;          // m^2 breach cross-section
   float3 localCentroid;       // compartment geometric center in vessel-local space
   uint   stateFlags;          // bitfield [see FLAGS]
-  float  _pad0;               // explicit pad → 64-byte alignment
+  float  _pad0;               // explicit pad -> 64-byte alignment
   float  _pad1;
 }
 ```
@@ -46,7 +46,7 @@ NativeArray<CompartmentState> compartments; // length = 8, fixed
 // Index map (bitmask correspondance):
 // [0]=ForePeak [1]=FwdBallast [2]=CrewFwd [3]=EngineRoom
 // [4]=AftBallast [5]=CrewAft [6]=CargoA [7]=CargoB
-// Spatial order = bow→stern: maintains locality for CoM sweep
+// Spatial order = bow->stern: maintains locality for CoM sweep
 ```
 
 ### State Flags Bitmask (uint stateFlags)
@@ -66,7 +66,7 @@ FLAG_OVERFLOW       = 1 << 7   // volume >= maxVolume, cap and spill
 NativeArray<float3> comAccum[2];  // ping-pong buffers, length = 8
 int writeBuffer = 0;              // flip each FixedTick
 int readBuffer  = 1;
-// Writer populates comAccum[writeBuffer] → reader consumes comAccum[readBuffer]
+// Writer populates comAccum[writeBuffer] -> reader consumes comAccum[readBuffer]
 // Atomic flip: writeBuffer ^= 1; readBuffer ^= 1; (end of FixedTick)
 ```
 
@@ -75,20 +75,20 @@ int readBuffer  = 1;
 NativeArray<float3> angVelHistory;  // length = 8 frames (circular)
 int  ringHead = 0;                  // write head
 // Delay tap: index = (ringHead - SLOSH_DELAY_FRAMES) & 7
-// SLOSH_DELAY_FRAMES = 3 (≈50ms @ 60Hz physics) — tunable per compartment mass
+// SLOSH_DELAY_FRAMES = 3 (~=50ms @ 60Hz physics) - tunable per compartment mass
 ```
 
 ---
 
 ## [MATH] ALGORITHMIC KERNELS
 
-### KERNEL 1 — Dynamic Mass Injection
+### KERNEL 1 - Dynamic Mass Injection
 
 **Physics truth: Torricelli-extended ingress rate**
 ```
 v_ingress = sqrt(2 * g * depth_m)                         // m/s, water jet velocity
             g = 9.80665, depth_m = hull pressure depth
-volumeRate = breachArea * v_ingress * Cd                  // m³/s
+volumeRate = breachArea * v_ingress * Cd                  // m^3/s
             Cd = 0.62 (sharp-edge discharge coefficient)
 
 // dt-invariant mass accumulation:
@@ -105,7 +105,7 @@ if (isnan(deltaMass) || isinf(deltaMass)) deltaMass = 0
 rigidbody.mass = clamp(rigidbody.mass, DRY_MASS, DRY_MASS + MAX_FLOOD_MASS)
 ```
 
-### KERNEL 2 — Center of Mass Shifting (dt-Invariant, Explosion-Safe)
+### KERNEL 2 - Center of Mass Shifting (dt-Invariant, Explosion-Safe)
 
 **Weighted centroid sweep across 8 compartments:**
 ```
@@ -125,14 +125,14 @@ float3 floodCoM_local = (totalFloodMass > EPSILON)
                         : float3.zero
 
 // Step 3: Blend toward target (exponential decay, frame-rate independent)
-// τ = time constant (seconds). Recommended τ = 1.2s (viscous fluid response)
+// tau = time constant (seconds). Recommended tau = 1.2s (viscous fluid response)
 float  alpha    = 1.0 - exp(-dt / TAU_COM)              // dt-invariant blend factor
 float3 currentCoM = rigidbody.centerOfMass               // local space
 float3 targetCoM  = lerp(DRY_COM_LOCAL, floodCoM_local,
                          totalFloodMass / MAX_FLOOD_MASS)
 float3 newCoM     = lerp(currentCoM, targetCoM, alpha)
 
-// Step 4: Magnitude clamp — prevent physics explosion
+// Step 4: Magnitude clamp - prevent physics explosion
 float3 delta = newCoM - currentCoM
 float  deltaMag = length(delta)
 if (deltaMag > MAX_COM_DELTA_PER_FRAME):                 // MAX_COM_DELTA = 0.05m
@@ -147,7 +147,7 @@ rigidbody.inertiaTensor = math.lerp(dryTensor, fullTensor, fillRatio);
 // DRY_COM_LOCAL = designer-set dry vessel CoM in local space (const float3)
 ```
 
-### KERNEL 3 — Internal Sloshing Momentum (Cheap Fluid Dynamics)
+### KERNEL 3 - Internal Sloshing Momentum (Cheap Fluid Dynamics)
 
 **Delayed angular counter-torque approximation:**
 ```
@@ -166,15 +166,15 @@ for i in [0..7]:
   if (compartments[i].currentVolume < SLOSH_MIN_VOLUME) continue  // skip dry
   float fillRatio  = compartments[i].currentVolume / compartments[i].maxVolume
   float sloshMass  = compartments[i].currentVolume * WATER_DENSITY
-  
+
   // Core formula (provided in brief, extended with mass-scaling):
   float3 sloshTorque_i = -delayedAngVel * fillRatio * SLOSH_FACTOR * sloshMass
-  
-  // SENIOR_HACK: Scale by (1 - fillRatio)² — full compartments slosh less
-  // (solid water mass → reduced free-surface effect at 100% fill)
+
+  // SENIOR_HACK: Scale by (1 - fillRatio)^2 - full compartments slosh less
+  // (solid water mass -> reduced free-surface effect at 100% fill)
   float freesurf = (1.0 - fillRatio) * (1.0 - fillRatio)
   sloshTorque_i *= freesurf
-  
+
   totalSloshTorque += sloshTorque_i
 
 // Step 4: Clamp torque magnitude before apply
@@ -187,18 +187,18 @@ if (torqueMag > MAX_SLOSH_TORQUE):
 rigidbody.AddRelativeTorque(totalSloshTorque, ForceMode.Force);
 
 // SLOSH_FACTOR         = 0.15  (tune: higher = more unstable feel)
-// SLOSH_MIN_VOLUME     = 0.05  m³ (skip near-empty compartments)
-// MAX_SLOSH_TORQUE     = 50000 N·m (vessel-scale dependent, scale with displacement)
+// SLOSH_MIN_VOLUME     = 0.05  m^3 (skip near-empty compartments)
+// MAX_SLOSH_TORQUE     = 50000 N-m (vessel-scale dependent, scale with displacement)
 // SLOSH_DELAY_FRAMES   = 3     (increase for heavier/more viscous feel)
 ```
 
-### KERNEL 4 — Inter-Compartment Water Transfer
+### KERNEL 4 - Inter-Compartment Water Transfer
 
 **Bulkhead-gated pressure-driven flow:**
 ```
 // Adjacency map: static readonly int[8][2] NEIGHBORS
-// (linear array of pairs, bow→stern order, bilateral)
-// [0↔1][1↔2][2↔3][3↔4][4↔5][5↔6][6↔7]
+// (linear array of pairs, bow->stern order, bilateral)
+// [0<->1][1<->2][2<->3][3<->4][4<->5][5<->6][6<->7]
 
 for each pair (A, B) in NEIGHBORS:
   // Gate check: SEALED flag on EITHER compartment = halt
@@ -206,11 +206,11 @@ for each pair (A, B) in NEIGHBORS:
              || (compartments[B].stateFlags & FLAG_SEALED) != 0
   if (sealed) continue
 
-  // Pressure differential → transfer rate
+  // Pressure differential -> transfer rate
   float headDiff   = (compartments[A].currentVolume / compartments[A].maxVolume)
                    - (compartments[B].currentVolume / compartments[B].maxVolume)
-  // Positive headDiff: A is more full → transfer A→B
-  float transferRate = headDiff * BULKHEAD_FLOW_COEFF  // m³/s
+  // Positive headDiff: A is more full -> transfer A->B
+  float transferRate = headDiff * BULKHEAD_FLOW_COEFF  // m^3/s
   float deltaVol     = transferRate * dt
   deltaVol = clamp(deltaVol, -MAX_TRANSFER_PER_TICK, MAX_TRANSFER_PER_TICK)
 
@@ -233,11 +233,11 @@ for each pair (A, B) in NEIGHBORS:
     compartments[B].stateFlags |= FLAG_TRANSFER_SRC
     compartments[A].stateFlags |= FLAG_TRANSFER_DST
 
-// BULKHEAD_FLOW_COEFF  = 0.4   m³/s per unit head differential
-// MAX_TRANSFER_PER_TICK = 0.1  m³ (stability cap per FixedUpdate)
+// BULKHEAD_FLOW_COEFF  = 0.4   m^3/s per unit head differential
+// MAX_TRANSFER_PER_TICK = 0.1  m^3 (stability cap per FixedUpdate)
 ```
 
-### KERNEL 5 — Critical State + Overflow Guard
+### KERNEL 5 - Critical State + Overflow Guard
 ```
 for i in [0..7]:
   // Clamp volume
@@ -263,7 +263,7 @@ for i in [0..7]:
 
 ## [SCALE] HARDWARE LOD TIERS
 
-### LOD_Base — i3-10gen / MX350
+### LOD_Base - i3-10gen / MX350
 ```
 - Sloshing: 1 ring-buffer sample, SLOSH_DELAY_FRAMES=2, skip freesurf multiply
 - CoM: Update every 2 FixedTicks (alt-frame). TAU_COM = 2.0s
@@ -273,7 +273,7 @@ for i in [0..7]:
 - Physics timestep: 0.02s (50Hz). No sub-stepping on base.
 ```
 
-### LOD_High — i5 / GTX1060
+### LOD_High - i5 / GTX1060
 ```
 - Sloshing: Full ring-buffer, SLOSH_DELAY_FRAMES=3, freesurf enabled
 - CoM: Every FixedTick. TAU_COM = 1.2s
@@ -282,7 +282,7 @@ for i in [0..7]:
 - Physics timestep: 0.016s (62.5Hz)
 ```
 
-### LOD_Ultra — i7+ / RTX class
+### LOD_Ultra - i7+ / RTX class
 ```
 - Sloshing: SLOSH_DELAY_FRAMES=4, per-compartment SLOSH_FACTOR variation by geometry
 - CoM: Sub-step interpolation between FixedTick results
@@ -307,14 +307,14 @@ LOD_Ultra: 1.10ms
 
 ### Speed > 40 m/s (structural breach edge case)
 ```
-- v_ingress from Torricelli → unrealistically large deltaVolume
+- v_ingress from Torricelli -> unrealistically large deltaVolume
 - Guard: deltaVolume = min(deltaVolume, maxVolume * 0.25)  // max 25% fill per second
 - Flag: FLAG_CRITICAL auto-set. Emit event via IFloodEvent interface. No exception thrown.
 ```
 
 ### Depth > 4000m (implosion zone)
 ```
-- Pressure exceeds hull rating → clamp breachArea to MAX_BREACH_AREA
+- Pressure exceeds hull rating -> clamp breachArea to MAX_BREACH_AREA
 - MAX_BREACH_AREA = hullSurfaceArea * 0.6 (60% hull compromise = catastrophic)
 - Above threshold: all compartments set FLAG_BREACHED, floodRate = maxRate, skip normal kernel
 - Rigidbody drag += IMPLOSION_DRAG_BONUS (= 50.0) to simulate crush deceleration
@@ -323,14 +323,14 @@ LOD_Ultra: 1.10ms
 ### rigidbody.mass NaN / Inf
 ```
 - Pre-apply guard: if (!isfinite(rigidbody.mass)) rigidbody.mass = DRY_MASS
-- Post-apply: same check. Log via IDebugLogger interface (not Debug.Log — no allocation)
+- Post-apply: same check. Log via IDebugLogger interface (not Debug.Log - no allocation)
 ```
 
 ### CoM physics explosion (rapid CoM shift)
 ```
 - MAX_COM_DELTA_PER_FRAME enforced (0.05m). See Kernel 2 Step 4.
 - If TAU_COM misconfigured to 0: clamp TAU_COM = max(TAU_COM, 0.1)
-- Physics explosion detection: if |rigidbody.velocity| > 200 m/s → zero velocity,
+- Physics explosion detection: if |rigidbody.velocity| > 200 m/s -> zero velocity,
   restore DRY_COM_LOCAL, log via IDebugLogger, reset compartments to last valid snapshot
 ```
 
@@ -350,7 +350,7 @@ LOD_Ultra: 1.10ms
 ### Ring buffer uninitialized frames (startup)
 ```
 - Initialize angVelHistory to float3.zero on system creation
-- SLOSH_DELAY_FRAMES reads zeros → zero torque applied → safe startup
+- SLOSH_DELAY_FRAMES reads zeros -> zero torque applied -> safe startup
 ```
 
 ---
@@ -385,13 +385,13 @@ IFloodEvent:
 HACK_01: SIMD math.sqrt path retained. No LUT indirection.
 HACK_02: exp(-dt/TAU) precomputed per LOD tier at system init. Stored as float alphaCoM.
          Recomputed only if TAU changes (designer event). Zero runtime exp() calls.
-HACK_03: freesurf = (1-f)² computed as tmp=(1-f); tmp*tmp. No pow() call.
+HACK_03: freesurf = (1-f)^2 computed as tmp=(1-f); tmp*tmp. No pow() call.
 HACK_04: torque magnitude clamp: use dot-product fast magnitude estimate before normalize.
          fastMag = abs(x)+abs(y)+abs(z) * 0.9 (L1-norm approx, 3 adds vs sqrt)
          Only fallback to true length() if fastMag > 0.85*MAX_SLOSH_TORQUE.
 HACK_05: Transfer loop round-robin on LOD_Base: tick & 1 selects even/odd pairs.
-         7 pairs → 4 evaluated per tick → halved cost, imperceptible visual error.
-HACK_06: FLAG_FROZEN skip: ~50% compartments dry in early game → ~50% kernel reduction free.
+         7 pairs -> 4 evaluated per tick -> halved cost, imperceptible visual error.
+HACK_06: FLAG_FROZEN skip: ~50% compartments dry in early game -> ~50% kernel reduction free.
 HACK_07: Tensor update alt-frame on LOD_Base: rigidbody.inertiaTensor write every 2 ticks.
          Interpolate externally for VFX/audio queries without touching Rigidbody.
 ```
@@ -401,17 +401,17 @@ HACK_07: Tensor update alt-frame on LOD_Base: rigidbody.inertiaTensor write ever
 ## [CONSTANTS] REFERENCE TABLE
 
 ```
-WATER_DENSITY           = 1025.0    kg/m³  (seawater)
-GRAVITY                 = 9.80665   m/s²
+WATER_DENSITY           = 1025.0    kg/m^3  (seawater)
+GRAVITY                 = 9.80665   m/s^2
 Cd                      = 0.62      (sharp-edge orifice)
 TAU_COM_BASE            = 1.2       s      (LOD_High)
 MAX_COM_DELTA_PER_FRAME = 0.05      m
-MAX_SLOSH_TORQUE        = 50000.0   N·m    (scale with vessel displacement)
+MAX_SLOSH_TORQUE        = 50000.0   N-m    (scale with vessel displacement)
 SLOSH_FACTOR            = 0.15      (dimensionless)
 SLOSH_DELAY_FRAMES      = 3         (ring buffer offset)
-SLOSH_MIN_VOLUME        = 0.05      m³
-BULKHEAD_FLOW_COEFF     = 0.4       m³/s/ΔfillRatio
-MAX_TRANSFER_PER_TICK   = 0.10      m³
+SLOSH_MIN_VOLUME        = 0.05      m^3
+BULKHEAD_FLOW_COEFF     = 0.4       m^3/s/DeltafillRatio
+MAX_TRANSFER_PER_TICK   = 0.10      m^3
 EPSILON_MASS            = 0.001     kg
 MAX_BREACH_AREA_RATIO   = 0.60      (fraction of hull surface)
 IMPLOSION_DRAG_BONUS    = 50.0      (Rigidbody.drag additive)

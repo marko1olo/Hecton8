@@ -1,4 +1,6 @@
 # FRAME TIMELINE â€” HECTON-8 Runtime Execution Order
+Batch007 warning: [DEPRECATED] for runtime phase authority. Use `.agents-skills/ARCH_Execution_Phases.txt`. Raw Unity loop names in this report are historical evidence, not permission for private gameplay schedulers.
+
 Date: 2026-05-07
 Status: PENDING VERIFICATION
 

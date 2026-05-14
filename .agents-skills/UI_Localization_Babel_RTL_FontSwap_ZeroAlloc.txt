@@ -1,10 +1,10 @@
 # LOCALIZATION_BABEL.md
-## Technical Mandate — HECTON-8 Localization System (Registry, Async Font-Swap, RTL/CJK)
+## Technical Mandate - HECTON-8 Localization System (Registry, Async Font-Swap, RTL/CJK)
 ### Mandate CORE-SYSTEMS
 
 ---
 
-## SECTION 1 — EXECUTION POLICY
+## SECTION 1 - EXECUTION POLICY
 
 ### [RULE-LOC-001] Zero-Alloc Lookup
 All localization keys MUST resolve via `static readonly int` hashes. String-based dictionary
@@ -19,15 +19,15 @@ public static class LocKeys
     public static readonly int WORLD_SECTOR_KORRATH = LocHash.Compute("world.sector.korrath");
 }
 
-// Lookup — zero alloc, returns ref into pool buffer
+// Lookup - zero alloc, returns ref into pool buffer
 ReadOnlySpan<char> label = LocRegistry.Resolve(LocKeys.HUD_HULL_LABEL);
 
-// NON-COMPLIANT — string key at runtime
+// NON-COMPLIANT - string key at runtime
 var label = LocRegistry.Resolve("hud.hull.label"); // [FORBID]
 
 ---
 
-### [RULE-LOC-002] Staged Asset Swap — Max 18 Labels Per Tick
+### [RULE-LOC-002] Staged Asset Swap - Max 18 Labels Per Tick
 When a language change triggers font-atlas swap, UI label re-assignment MUST be batched.
 Maximum throughput: 18 TMP_Text registrations per engine Tick.
 Excess registrations are enqueued and drained across subsequent Ticks.
@@ -61,10 +61,10 @@ public sealed class LabelSwapScheduler
 render paths. Use pre-allocated numeric placeholder templates backed by `LocNumericBuffer`.
 
 // NON-COMPLIANT
-hudText.text = $"HULL: {hullValue}/{maxHull}";          // [FORBID] — allocates
-hudText.text = string.Format("HULL: {0}/{1}", h, m);   // [FORBID] — allocates
+hudText.text = $"HULL: {hullValue}/{maxHull}";          // [FORBID] - allocates
+hudText.text = string.Format("HULL: {0}/{1}", h, m);   // [FORBID] - allocates
 
-// COMPLIANT — template with pre-allocated buffer
+// COMPLIANT - template with pre-allocated buffer
 // Template stored as: "HULL: {N0}/{N1}"
 // Buffer reused per-frame
 LocNumericBuffer.Write(LocKeys.HUD_HULL_LABEL, hullValue, maxHull, out ReadOnlySpan<char> result);
@@ -72,27 +72,27 @@ hudText.SetCharArray(result); // Zero-alloc TMP path
 
 `LocNumericBuffer` Contract:
 - Fixed `char[]` internal buffer, size = 128.
-- Supports up to 4 numeric placeholders (`{N0}`–`{N3}`).
+- Supports up to 4 numeric placeholders (`{N0}`-`{N3}`).
 - Thread-safe via `[ThreadStatic]` buffer instance.
 
 ---
 
 ### [FORBID-LOC-002] No Runtime Font-Sweep via `FindObjectsOfType<TMP_Text>`
 All `TMP_Text` instances MUST register to `TMP_TextRegistry` on `Awake`.
-`FindObjectsOfType<TMP_Text>` is PERMANENTLY FORBIDDEN — causes full scene graph traversal,
+`FindObjectsOfType<TMP_Text>` is PERMANENTLY FORBIDDEN - causes full scene graph traversal,
 produces O(n) GC pressure proportional to scene object count.
 
 // NON-COMPLIANT
 TMP_Text[] all = FindObjectsOfType<TMP_Text>(); // [FORBID]
 
-// COMPLIANT — registry-driven enumeration
+// COMPLIANT - registry-driven enumeration
 TMP_TextRegistry.ForEachInLayer(LocLayer.HUD, entry => {
     swapScheduler.Enqueue(entry);
 });
 
 ---
 
-## SECTION 2 — DATA ARCHITECTURE
+## SECTION 2 - DATA ARCHITECTURE
 
 ### [DATA-LOC-001] Multi-Layer String Pool Architecture
 String pools are partitioned into three isolation layers to control memory residency and
@@ -100,7 +100,7 @@ eviction granularity independently.
 
 [STRUCT_START]
                     LOCALIZATION STRING POOL
-├
++
   LAYER: CORE     LAYER: WORLD          LAYER: NARRATIVE
 
  HUD labels     Sector names           Cutscene dialogue
@@ -130,7 +130,7 @@ public static class LocRegistry
         if (_world.TryGet(keyHash, out val))         return val.AsSpan();
         if (_narrative.TryGet(keyHash, out val))     return val.AsSpan();
 
-        // [SAFE-LOC-001] Missing key fallback — see Section 5
+        // [SAFE-LOC-001] Missing key fallback - see Section 5
         LocErrorLog.LogOnce(keyHash);
         return MissingKeyLiteral.AsSpan(); // "[ERR_MISSING_KEY]"
     }
@@ -138,8 +138,8 @@ public static class LocRegistry
 
 ---
 
-### [DATA-LOC-002] Glitch Encoding — Binary-Noise Table for Text Decay
-At high Hull Stress (threshold: ≥ 75% damage), HUD text undergoes Text Decay rendering.
+### [DATA-LOC-002] Glitch Encoding - Binary-Noise Table for Text Decay
+At high Hull Stress (threshold: >= 75% damage), HUD text undergoes Text Decay rendering.
 A pre-baked binary-noise substitution table maps Unicode codepoints to glitch variants.
 The table is static, immutable, and loaded at boot. Zero runtime allocation.
 
@@ -153,7 +153,7 @@ public static class GlitchEncoder
     // decayProbability derived from: stress = clamp((hull_stress - 0.75) / 0.25, 0, 1)
     public static char ApplyDecay(char input, float decayProbability, uint frameSeed)
     {
-        // Deterministic per-frame noise — no Random allocation
+        // Deterministic per-frame noise - no Random allocation
         uint hash = (uint)input ^ (frameSeed * 2246822519u);
         float noise = (hash & 0xFFFF) / 65535f;
         if (noise < decayProbability)
@@ -163,23 +163,23 @@ public static class GlitchEncoder
 }
 
 Decay Activation Rule:
-- Hull Stress < 75%  → No decay. Standard render.
-- Hull Stress 75–90% → Partial decay. `decayProbability` = 0.0–0.5 (linear).
-- Hull Stress > 90%  → Heavy decay. `decayProbability` = 0.5–1.0 (linear).
+- Hull Stress < 75%  -> No decay. Standard render.
+- Hull Stress 75-90% -> Partial decay. `decayProbability` = 0.0-0.5 (linear).
+- Hull Stress > 90%  -> Heavy decay. `decayProbability` = 0.5-1.0 (linear).
 - Decay applied only to `LocLayer.Core` (HUD). Never applied to Narrative layer text.
 
 ---
 
-## SECTION 3 — ALGORITHMIC & MATH TRUTH
+## SECTION 3 - ALGORITHMIC & MATH TRUTH
 
-### [MATH-LOC-001] RTL Reversal Algorithm — Zero-GC Arabic/Hebrew Reordering
+### [MATH-LOC-001] RTL Reversal Algorithm - Zero-GC Arabic/Hebrew Reordering
 RTL character reordering is performed via manual index-swap in a fixed char buffer.
 `string.Reverse()`, LINQ reversal, and any method producing intermediate allocations are
 FORBIDDEN for this operation.
 
 public static class RTLProcessor
 {
-    // Fixed staging buffer — [ThreadStatic] for thread safety, no allocation
+    // Fixed staging buffer - [ThreadStatic] for thread safety, no allocation
     [ThreadStatic]
     private static char[] _stagingBuffer;
 
@@ -189,7 +189,7 @@ public static class RTLProcessor
     /// <summary>
     /// Reverses a logical RTL string into visual order.
     /// Handles Arabic ligature boundaries and Hebrew vowel diacritics.
-    /// Returns span into internal staging buffer — caller must consume before next call.
+    /// Returns span into internal staging buffer - caller must consume before next call.
     /// </summary>
     public static ReadOnlySpan<char> ToVisualOrder(ReadOnlySpan<char> logical)
     {
@@ -199,7 +199,7 @@ public static class RTLProcessor
         // Phase 1: Copy to buffer
         logical.CopyTo(buf.AsSpan(0, len));
 
-        // Phase 2: In-place reverse — O(n/2), zero alloc
+        // Phase 2: In-place reverse - O(n/2), zero alloc
         int left  = 0;
         int right = len - 1;
         while (left < right)
@@ -207,7 +207,7 @@ public static class RTLProcessor
             // Diacritic-safe swap: do not split Arabic combining marks
             if (IsArabicCombiningMark(buf[right]))
             {
-                // Keep combining mark anchored to its base — shift right cursor left
+                // Keep combining mark anchored to its base - shift right cursor left
                 right--;
                 continue;
             }
@@ -221,11 +221,11 @@ public static class RTLProcessor
             right--;
         }
 
-        // Phase 3: Return span — zero alloc, caller consumes immediately
+        // Phase 3: Return span - zero alloc, caller consumes immediately
         return buf.AsSpan(0, len);
     }
 
-    // Unicode range check — no allocation
+    // Unicode range check - no allocation
     private static bool IsArabicCombiningMark(char c)
         => c >= '\u0610' && c <= '\u061A'   // Arabic Extended
         || c >= '\u064B' && c <= '\u065F';  // Arabic Diacritics
@@ -237,14 +237,14 @@ Arabic, Hebrew, bidirectional mixed segments) before merge to `main`.
 
 ---
 
-### [FLOW-LOC-001] Language Reboot Sequence — 4-Stage Pipeline
+### [FLOW-LOC-001] Language Reboot Sequence - 4-Stage Pipeline
 Language change triggers a deterministic async pipeline. Stages are strictly ordered.
 No stage may begin before its predecessor completes. Frame-spike prevention is enforced
 via `LabelSwapScheduler` (see [RULE-LOC-002]).
 
 LANGUAGE REBOOT PIPELINE
 
-  STAGE 1 — LOAD FONT ADDRESSABLE
+  STAGE 1 - LOAD FONT ADDRESSABLE
   [STRUCT_START]
    AsyncOperationHandle<TMP_FontAsset> handle =
        Addressables.LoadAssetAsync<TMP_FontAsset>(fontKey);
@@ -252,18 +252,18 @@ LANGUAGE REBOOT PIPELINE
    await handle;  // Zero-GC Unity async awaiter.
    TMP_FontAsset newFont = handle.Result;
 
-                               COMPLETE → proceed
-                              ▼
-  STAGE 2 — GENERATE MATERIAL INSTANCE
+                               COMPLETE -> proceed
+
+  STAGE 2 - GENERATE MATERIAL INSTANCE
   [STRUCT_START]
    // Must run on main thread (Unity GPU API constraint)
    Material newMat = new Material(newFont.material);
    newMat.SetTexture("_MainTex", newFont.atlasTexture);
    newMat.EnableKeyword("UNITY_UI_CLIP_RECT");
 
-                               COMPLETE → proceed
-                              ▼
-  STAGE 3 — BACKGROUND-ITERATE REGISTRY
+                               COMPLETE -> proceed
+
+  STAGE 3 - BACKGROUND-ITERATE REGISTRY
   [STRUCT_START]
    // Enqueue all registered TMP_Text entries to SwapScheduler
    // SwapScheduler drains at MAX 18 per Tick (frame-safe)
@@ -273,9 +273,9 @@ LANGUAGE REBOOT PIPELINE
    while (swapScheduler.HasPending)
        await NextTick(); // yield to engine loop
 
-                               ALL LABELS SWAPPED → proceed
-                              ▼
-  STAGE 4 — RELEASE OLD ATLAS
+                               ALL LABELS SWAPPED -> proceed
+
+  STAGE 4 - RELEASE OLD ATLAS
   [STRUCT_START]
    Addressables.Release(previousFontHandle);
    // Deterministic ref-count release only. Never call Resources.UnloadUnusedAssets().
@@ -283,18 +283,18 @@ LANGUAGE REBOOT PIPELINE
   [STRUCT_END]
 
   TOTAL EXPECTED DURATION:
-    Stage 1: 80–400ms (network/disk dependent, async)
+    Stage 1: 80-400ms (network/disk dependent, async)
     Stage 2: < 2ms    (main thread, single frame)
     Stage 3: N Ticks  (N = ceil(label_count / 18))
     Stage 4: < 1ms    (handle release, deferred GPU eviction)
 
 ---
 
-## SECTION 4 — HARDWARE & SCALABILITY
+## SECTION 4 - HARDWARE & SCALABILITY
 
-### [SCALE-LOC-001] VRAM Optimization — 2K Atlas Packing, No 4K on MX350
-All language glyph sets MUST be packed into 2048×2048 atlases maximum.
-4K atlases (4096×4096) are FORBIDDEN on hardware profiles including or below MX350.
+### [SCALE-LOC-001] VRAM Optimization - 2K Atlas Packing, No 4K on MX350
+All language glyph sets MUST be packed into 2048x2048 atlases maximum.
+4K atlases (4096x4096) are FORBIDDEN on hardware profiles including or below MX350.
 
 public static class AtlasPolicy
 {
@@ -302,8 +302,8 @@ public static class AtlasPolicy
     {
         return profile switch
         {
-            GpuProfile.MX350_Or_Below  => 2048,  // HARD LIMIT — [SCALE-LOC-001]
-            GpuProfile.GTX1060_Class   => 2048,  // Conservative — share VRAM with scene
+            GpuProfile.MX350_Or_Below  => 2048,  // HARD LIMIT - [SCALE-LOC-001]
+            GpuProfile.GTX1060_Class   => 2048,  // Conservative - share VRAM with scene
             GpuProfile.RTX3060_And_Up  => 4096,  // Permitted only for CJK full glyph set
             _                          => 2048   // Default safe
         };
@@ -312,14 +312,14 @@ public static class AtlasPolicy
 
 Glyph Packing Strategy:
 
-ATLAS LAYOUT — CJK + Latin + Cyrillic (2K, ~1.8MB VRAM)
+ATLAS LAYOUT - CJK + Latin + Cyrillic (2K, ~1.8MB VRAM)
 [STRUCT_START]
  [0,0][2048,0]
   Latin Extended + Cyrillic   Arabic/Hebrew RTL
-  (512×2048 column)           (256×2048 column)
+  (512x2048 column)           (256x2048 column)
 
   CJK Unified (BMP subset)    Hangul Syllables
-  (1024×1024 block)           (256×512 block)
+  (1024x1024 block)           (256x512 block)
 
   Numeric/Symbol shared zone  [RESERVED]
   (all languages)             Glitch variants
@@ -331,7 +331,7 @@ Full CJK (20,000+) requires RTX3060+ profile AND player opt-in.
 
 ---
 
-### [SCALE-LOC-002] Dynamic Atlas Scope — User Input Only
+### [SCALE-LOC-002] Dynamic Atlas Scope - User Input Only
 TMP Dynamic Atlas mode introduces per-glyph GPU texture uploads. This is acceptable
 ONLY for unpredictable user-generated content (chat, callsign input).
 
@@ -348,7 +348,7 @@ public void Register(TMP_Text text, LocLayer layer, bool isUserInput = false)
 {
     if (!isUserInput && text.font.atlasPopulationMode == AtlasPopulationMode.Dynamic)
     {
-        // [SCALE-LOC-002] Violation — story/HUD text must use static atlas
+        // [SCALE-LOC-002] Violation - story/HUD text must use static atlas
         Debug.LogError(
             $"[LOC-BABEL] Dynamic atlas on non-user-input text '{text.name}'. " +
             $"Switch to Static-Baked. Layer: {layer}",
@@ -362,16 +362,16 @@ public void Register(TMP_Text text, LocLayer layer, bool isUserInput = false)
 
 ---
 
-## SECTION 5 — INTEGRATION & FAILURE MODES
+## SECTION 5 - INTEGRATION & FAILURE MODES
 
-### [SAFE-LOC-001] Missing Key Fallback — Log-Once, No Exception
+### [SAFE-LOC-001] Missing Key Fallback - Log-Once, No Exception
 If a key hash resolves to no entry across all three layers (Core, World, Narrative),
 the system MUST return the literal string `[ERR_MISSING_KEY]` and log exactly once per
 missing key per session. Exceptions MUST NOT be thrown.
 
 public static class LocErrorLog
 {
-    // HashSet — tracks already-logged missing keys to enforce log-once
+    // HashSet - tracks already-logged missing keys to enforce log-once
     private static readonly HashSet<int> _loggedMissing = new HashSet<int>(64);
 
     public static void LogOnce(int keyHash)
@@ -391,7 +391,7 @@ public static class LocErrorLog
     }
 }
 
-// Contract: this span is stored as a static literal — zero alloc
+// Contract: this span is stored as a static literal - zero alloc
 private static class MissingKeyLiteral
 {
     private static readonly char[] _chars = "[ERR_MISSING_KEY]".ToCharArray();
@@ -400,7 +400,7 @@ private static class MissingKeyLiteral
 
 ---
 
-### [SAFE-LOC-002] Overflow Auto-Scale — Matrix-Based, Range [0.8, 1.0]
+### [SAFE-LOC-002] Overflow Auto-Scale - Matrix-Based, Range [0.8, 1.0]
 When a localized string overflows its assigned UI bounds (common in German, Finnish, Arabic
 expanded forms), the system MUST auto-scale text using Matrix4x4 transform only.
 `rectTransform.localScale` is FORBIDDEN for this purpose (cascades to child layouts).
@@ -423,16 +423,16 @@ public static class LocOverflowHandler
 
         if (textWidth <= boundsWidth)
         {
-            // No overflow — reset to identity
+            // No overflow - reset to identity
             text.rectTransform.localMatrix = Matrix4x4.identity;
             return;
         }
 
-        // Compute required scale — clamped to [0.8, 1.0]
+        // Compute required scale - clamped to [0.8, 1.0]
         float rawScale   = boundsWidth / textWidth;
         float safeScale  = Mathf.Clamp(rawScale, SCALE_MIN, SCALE_MAX);
 
-        // Apply via matrix — does NOT affect child layout transforms
+        // Apply via matrix - does NOT affect child layout transforms
         Matrix4x4 scaleMatrix = Matrix4x4.Scale(new Vector3(safeScale, safeScale, 1f));
         text.rectTransform.localMatrix = scaleMatrix;
 
@@ -441,7 +441,7 @@ public static class LocOverflowHandler
         {
             text.overflowMode   = TextOverflowModes.Ellipsis;
             text.enableWordWrapping = false;
-            // Log for loc team — string needs shortening in source
+            // Log for loc team - string needs shortening in source
             Debug.LogWarning(
                 $"[LOC-BABEL] Overflow unresolvable at 0.8x scale. " +
                 $"Key: 0x{text.GetHashCode():X8} | Lang: {LocalizationCoordinator.ActiveLanguage}"
@@ -452,20 +452,20 @@ public static class LocOverflowHandler
 
 ---
 
-## SECTION 6 — REGISTRY SPECIFICATION
+## SECTION 6 - REGISTRY SPECIFICATION
 
-### [SPEC-LOC-001] TMP_TextRegistry — Mandatory Registration Contract
+### [SPEC-LOC-001] TMP_TextRegistry - Mandatory Registration Contract
 
 /// <summary>
 /// Central registry for all TMP_Text instances in HECTON-8.
 /// Registration is MANDATORY in Awake for every TMP_Text component.
-/// FindObjectsOfType<TMP_Text> is FORBIDDEN — [FORBID-LOC-002].
+/// FindObjectsOfType<TMP_Text> is FORBIDDEN - [FORBID-LOC-002].
 /// </summary>
 public sealed class TMP_TextRegistry : MonoBehaviour
 {
     private static TMP_TextRegistry _instance;
 
-    // Layered storage — index by LocLayer for O(1) layer enumeration
+    // Layered storage - index by LocLayer for O(1) layer enumeration
     private readonly List<TMP_TextEntry>[] _layers
         = new List<TMP_TextEntry>[3]
           {
@@ -507,7 +507,7 @@ public sealed class TMP_TextRegistry : MonoBehaviour
 
     private void RegisterInternal(TMP_Text text, LocLayer layer, bool isUserInput)
     {
-        // Validate atlas mode — [SCALE-LOC-002]
+        // Validate atlas mode - [SCALE-LOC-002]
         if (!isUserInput && text.font?.atlasPopulationMode == AtlasPopulationMode.Dynamic)
         {
             Debug.LogError($"[LOC-BABEL] Dynamic atlas violation on '{text.name}'.", text);
@@ -542,7 +542,7 @@ public readonly struct TMP_TextEntry
 
 ---
 
-## SECTION 7 — COMPLIANCE CHECKLIST
+## SECTION 7 - COMPLIANCE CHECKLIST
 
 | ID              | Rule Summary                                     | Enforcement       | Severity |
 |-----------------|--------------------------------------------------|-------------------|----------|
@@ -557,11 +557,11 @@ public readonly struct TMP_TextEntry
 | SCALE-LOC-001   | No 4K atlas on MX350 or below                    | Hardware Profile  | HIGH     |
 | SCALE-LOC-002   | Dynamic atlas only for user-input TMP_Text       | Registry Enforce  | HIGH     |
 | SAFE-LOC-001    | Missing key returns `[ERR_MISSING_KEY]`, log-once| Unit Test         | CRITICAL |
-| SAFE-LOC-002    | Overflow scale matrix-only, clamp [0.8–1.0]      | UI QA Pass        | MEDIUM   |
+| SAFE-LOC-002    | Overflow scale matrix-only, clamp [0.8-1.0]      | UI QA Pass        | MEDIUM   |
 
 ---
 
-## SECTION 8 — PROHIBITED PATTERNS REFERENCE
+## SECTION 8 - PROHIBITED PATTERNS REFERENCE
 
 FORBIDDEN PATTERN                         REASON
 
@@ -571,7 +571,7 @@ $"interpolated {string}"                  Heap alloc in HUD hot-path
 string.Reverse() for RTL                  Allocates new string
 LINQ .Reverse() for RTL                   IEnumerable alloc chain
 TMP Dynamic atlas on story text           Unbounded VRAM growth
-4096×4096 atlas on MX350 profile         VRAM overflow, driver evict
+4096x4096 atlas on MX350 profile         VRAM overflow, driver evict
 throw Exception on missing key            Breaks HUD render frame
 rectTransform.localScale for overflow     Cascades to child layouts
 LocRegistry.Resolve("string.key")         String-keyed lookup, no hash

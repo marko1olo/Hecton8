@@ -1,8 +1,8 @@
 # REND_GPU_DRIVEN_ANIMATION_VAT.md
-## Technical Mandate — HECTON-8 Engine 
+## Technical Mandate - HECTON-8 Engine
 ---
 
-## §0 · CONTRACTS & IDENTITY
+## Section0 - CONTRACTS & IDENTITY
 
 [CONTRACT] Unity 6.0 (6000.4) pure GPU-driven Swarm Rendering architecture.
 [RULE] SkinnedMeshRenderer PERMANENTLY FORBIDDEN for background fauna (Boids/Swarms). CPU skinning for 5000+ entities = instant architectural failure on i3-10gen.
@@ -14,7 +14,7 @@
 
 ---
 
-## §1 · DATA ARCHITECTURE & VRAM PACKING
+## Section1 - DATA ARCHITECTURE & VRAM PACKING
 
 ### 1.1 BoidInstance Cache-Line Alignment[DATA] `BoidInstance` payload MUST fit exactly 32 bytes (2 instances per 64-byte L1 cache line). Expand/contract is forbidden.
 
@@ -35,7 +35,7 @@ struct BoidInstance {
 
 ---
 
-## §2 · HLOD & FRUSTUM CULLING (COMPUTE KERNEL)
+## Section2 - HLOD & FRUSTUM CULLING (COMPUTE KERNEL)
 
 [FLOW] CPU dispatches Compute Shader (`CS_Main`) once per frame.
 [FLOW] CS reads `GraphicsBuffer _AllBoids`.
@@ -76,7 +76,7 @@ if (dist < 20.0f) {
 
 ---
 
-## §3 · SHADER MATH & VAT SAMPLING (HLSL KERNEL)
+## Section3 - SHADER MATH & VAT SAMPLING (HLSL KERNEL)
 
 ### 3.1 Unpack Payload
 float speedMult   = f16tof32(instance.AnimPhaseSpeed & 0xFFFF);
@@ -110,7 +110,7 @@ v.vertex.xyz = instance.Position + rotatedOffset;
 
 ---
 
-## §4 · UNITY 6000.4 OPTIMIZATION & PIPELINE INTEGRATION
+## Section4 - UNITY 6000.4 OPTIMIZATION & PIPELINE INTEGRATION
 
 ### 4.1 Global Pipeline Directives[SYS] Universal Render Pipeline (URP) Asset -> Rendering Path: `Forward+` (Mandatory for Unity 6 GPU Occlusion Culling compatibility).[SYS] Project Settings > Player > Other Settings -> Disable `Static Batching`.[SYS] Project Settings > Graphics -> `BatchRendererGroup Variants` = `Keep All`.
 [SYS] Window > Rendering > Occlusion Culling -> `GPU Occlusion Culling` = `Enabled`.
@@ -124,7 +124,7 @@ v.vertex.xyz = instance.Position + rotatedOffset;
 
 ---
 
-## §5 · HARDWARE SCALABILITY GUARD (MX350 / TIER_LOW)
+## Section5 - HARDWARE SCALABILITY GUARD (MX350 / TIER_LOW)
 
 ### 5.1 VRAM Atlas Packing
 [SCALE] MX350 Guard: Maximum VAT budget = 32MB total.
@@ -143,7 +143,7 @@ TIER_ULTRA (RTX)  : LOD0 max distance = 50m. LOD1 max distance = 150m. LOD2 max 
 
 ---
 
-## §6 · FAILURE MODES & EDGE CASES
+## Section6 - FAILURE MODES & EDGE CASES
 
 [SAFE] Floating Origin Shift:
 `FloatingOrigin.OnShift` triggers immediately -> CPU updates `_RenderBuffer` position offsets via fast Burst job before next `CS_Main` dispatch. Do NOT lerp. Hard teleport only.
@@ -157,7 +157,7 @@ VAT Import script MUST scrub texture via AssetPostprocessor, replacing `NaN` wit
 
 ---
 
-## §7 · INTEGRATION CHECKLIST (VALIDATION)
+## Section7 - INTEGRATION CHECKLIST (VALIDATION)
 
 [BOOT] Assert `GraphicsBuffer.Target.Structured` support.
 [BOOT] Validate BoidInstance size `sizeof(BoidInstance) == 32`.

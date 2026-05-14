@@ -3,7 +3,7 @@
 
 ---
 
-## §0 — FOUNDATIONAL COMPILE GUARDS
+## Section0 - FOUNDATIONAL COMPILE GUARDS
 
 // ALL debug logic lives inside this boundary. No exceptions.
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -12,14 +12,14 @@
 
 Conditional symbol matrix:
 
-HECTON_DEBUG_PHYSICS   → bit0
-HECTON_DEBUG_VOXEL     → bit1
-HECTON_DEBUG_BOIDS     → bit2
-HECTON_DEBUG_AUDIO     → bit3
-HECTON_DEBUG_PRESSURE  → bit4  // fluid simulation subsystem
-HECTON_DEBUG_STREAMING → bit5  // chunk/asset streaming
-HECTON_DEBUG_AI        → bit6
-HECTON_DEBUG_OVERDRAW  → bit7
+HECTON_DEBUG_PHYSICS   -> bit0
+HECTON_DEBUG_VOXEL     -> bit1
+HECTON_DEBUG_BOIDS     -> bit2
+HECTON_DEBUG_AUDIO     -> bit3
+HECTON_DEBUG_PRESSURE  -> bit4  // fluid simulation subsystem
+HECTON_DEBUG_STREAMING -> bit5  // chunk/asset streaming
+HECTON_DEBUG_AI        -> bit6
+HECTON_DEBUG_OVERDRAW  -> bit7
 
 Check pattern (zero branch overhead):
 
@@ -27,27 +27,27 @@ isActive = (DebugFlags >> bitIndex) & 1u
 
 ---
 
-## §1 — CRASH TELEMETRY BUFFER [DATA]
+## Section1 - CRASH TELEMETRY BUFFER [DATA]
 
 ### 1.1 Ring Buffer Architecture
 
-Persistent `NativeArray<DebugLogEntry>` — capacity: 300 frames
+Persistent `NativeArray<DebugLogEntry>` - capacity: 300 frames
 Allocator: `Persistent` | Layout: `Sequential` | Access: `ReadWrite`
 
 DebugLogEntry {
     uint  frameIndex        // 4B
-    uint  systemMask        // 4B — which systems active this frame
+    uint  systemMask        // 4B - which systems active this frame
     float deltaTime         // 4B
     float fixedDeltaTime    // 4B
-    float gpuFrameTime      // 4B — FrameTimingManager sample
+    float gpuFrameTime      // 4B - FrameTimingManager sample
     float memoryUsedMB      // 4B
     float3 playerPos        // 12B
     uint  activeChunkCount  // 4B
     uint  boidAgentCount    // 4B
-    uint  errorFlags        // 4B — NaN / physics violation / OOB flags
-    uint  pad0              // 4B — align to 64B cache line
+    uint  errorFlags        // 4B - NaN / physics violation / OOB flags
+    uint  pad0              // 4B - align to 64B cache line
 }
-// Total: 64B per entry × 300 = 19.2KB — negligible
+// Total: 64B per entry x 300 = 19.2KB - negligible
 
 Write pattern (lockless, wrapping):
 
@@ -72,11 +72,11 @@ Export algorithm:
 3. Write 8B magic header: 0x48454354_4F4E3800  ("HECTON8\0")
 4. Write uint32 entryCount
 5. Write uint32 structSizeBytes (64)
-6. Unsafe.CopyBlock from NativeArray slice → byte* → FileStream
+6. Unsafe.CopyBlock from NativeArray slice -> byte* -> FileStream
 7. Flush + Close
 8. Write companion .json manifest: timestamp, buildGUID, platform, systemFlags legend
 
-Never use `JsonUtility` for binary section — raw `BinaryWriter` or `UnsafeUtility.MemCpy`.
+Never use `JsonUtility` for binary section - raw `BinaryWriter` or `UnsafeUtility.MemCpy`.
 Export runs on a pre-owned export worker, `Awaitable.BackgroundThreadAsync`, or a persistent log thread. Do not allocate a fresh managed task per fault.
 System-specific dumps use `Docs/AgentLogs/Dump_[OWNER_ID].bin`. Examples: `Dump_PLAYER_KINEMATICS.bin`, `Dump_PIPE_LOGISTICS_ARCHITECT.bin`, `Dump_VOXEL_MESH_PIPELINE.bin`.
 Critical-system Black Boxes may add owner-specific fields, but capacity remains exactly 300 frames unless a larger capacity has explicit MX350 memory proof.
@@ -85,28 +85,28 @@ Critical-system Black Boxes may add owner-specific fields, but capacity remains 
 
 FLOW: ErrorDetected
 
-├ [1] NaN Sweep (per FixedUpdate, Physics systems only)
++ [1] NaN Sweep (per FixedUpdate, Physics systems only)
        trackedCount = trackedComponents.Count
        for i = 0; i < trackedCount; i++:
            component = trackedComponents[i]
            velSq = dot(vel, vel)
            if IsNaN(pos.x | pos.y | pos.z | velSq):
                errorFlags |= ERR_NAN_PHYSICS
-               Snap pos → lastValidPos[entityID]
+               Snap pos -> lastValidPos[entityID]
                Zero velocity
 
-├ [2] Buffer 300 Preceding States
++ [2] Buffer 300 Preceding States
        readCursor = writeIndex
        copy BUFFER_CAPACITY entries to safetySnapshot NativeArray (pre-allocated, separate)
        export order = ring[(writeIndex + offset) % BUFFER_CAPACITY], offset 0..BUFFER_CAPACITY-1
 
-├ [3] Export Binary Log (§1.2)
+ [3] Export Binary Log (Section1.2)
 
  [4] Safe Recovery
         Invoke RecoveryState:
             Re-teleport entity to lastValidPos
             Broadcast SystemEvent.PHYSICS_RECOVERED
-            Increment recoveryCounter (cap: 3 per session → escalate to scene reload)
+            Increment recoveryCounter (cap: 3 per session -> escalate to scene reload)
 
 NaN check math (SIMD-friendly):
 
@@ -115,13 +115,13 @@ nanMask = (x != x) | (y != y) | (z != z)
 
 ---
 
-## §2 — PROFILER MARKERS [MATH]
+## Section2 - PROFILER MARKERS [MATH]
 
 ### 2.1 Marker Registry
 
 Every hot-path system gets named `ProfilerMarker`. Anonymous work forbidden.
 
-// Pre-allocate as static readonly — zero GC, zero string concat at runtime
+// Pre-allocate as static readonly - zero GC, zero string concat at runtime
 static readonly ProfilerMarker PM_PhysicsTick      = new("H8.Physics.Tick")
 static readonly ProfilerMarker PM_VoxelRebuild      = new("H8.Voxel.Rebuild")
 static readonly ProfilerMarker PM_BoidSteering      = new("H8.Boids.Steer")
@@ -137,7 +137,7 @@ Usage pattern:
 
 using (PM_PhysicsTick.Auto())
 {
-    // system work — Auto() calls Begin/End on scope exit
+    // system work - Auto() calls Begin/End on scope exit
 }
 
 Custom deep-probe variant (GPU correlation):
@@ -149,7 +149,7 @@ CommandBuffer.EndSample("H8.GPU.UnderwaterPost")
 
 ### 2.2 Frame Budget Watchdog
 
-Budget limits (MX350 baseline — adjustable per quality tier):
+Budget limits (MX350 baseline - adjustable per quality tier):
 
 BUDGET_PHYSICS_MS      = 2.5f
 BUDGET_VOXEL_MS        = 4.0f
@@ -158,7 +158,7 @@ BUDGET_FLUID_MS        = 3.0f
 BUDGET_TOTAL_CPU_MS    = 16.6f  // 60fps target
 BUDGET_TOTAL_GPU_MS    = 20.0f  // MX350 headroom with underwater post
 
-Watchdog sampling (not every frame — stratified):
+Watchdog sampling (not every frame - stratified):
 
 if (frameCount % WATCHDOG_SAMPLE_INTERVAL == 0):  // INTERVAL = 30
     sample = ProfilerRecorder per marker
@@ -167,11 +167,11 @@ if (frameCount % WATCHDOG_SAMPLE_INTERVAL == 0):  // INTERVAL = 30
         overbudgetLog[markerID] = sample.LastValue
         // Written to telemetry buffer, NOT Debug.Log
 
-`ProfilerRecorder` — allocate once, reuse. Dispose on shutdown.
+`ProfilerRecorder` - allocate once, reuse. Dispose on shutdown.
 
 ---
 
-## §3 — ZERO-GC GIZMO SYSTEM [RULE]
+## Section3 - ZERO-GC GIZMO SYSTEM [RULE]
 
 ### 3.1 Pre-Allocated Geometry Pool
 
@@ -180,19 +180,19 @@ Forbidden: `new Mesh()` per frame. Forbidden: `Handles.DrawLine` loops without b
 Pool architecture:
 
 GizmoGeometryPool {
-    Mesh[]       sphereLODs[3]      // r=0.1, 0.5, 2.0 — pre-built icospheres
+    Mesh[]       sphereLODs[3]      // r=0.1, 0.5, 2.0 - pre-built icospheres
     Mesh         wireCube
     Mesh         arrowMesh
     Mesh         frustumMesh
     GraphicsBuffer instanceBuffer   // capacity: 1024 instances per type
     MaterialPropertyBlock mpb       // reused, never reallocated
-    Matrix4x4[]  matrixScratch      // pre-alloc 1024 — reused per Draw call
+    Matrix4x4[]  matrixScratch      // pre-alloc 1024 - reused per Draw call
 }
 
 Icosphere pre-generation (editor-time, baked to asset):
 
-// Subdivision count s drives vertex count: V = 10·4^s + 2
-// Use s=1 for debug spheres: 42 verts — negligible GPU cost
+// Subdivision count s drives vertex count: V = 10-4^s + 2
+// Use s=1 for debug spheres: 42 verts - negligible GPU cost
 
 ### 3.2 Instanced Gizmo Dispatch
 
@@ -208,10 +208,10 @@ GizmoRequest {
 
 Dispatch:
 
-1. Group requests by (meshType, lod) — radix sort on uint key = (meshType<<2)|lod
+1. Group requests by (meshType, lod) - radix sort on uint key = (meshType<<2)|lod
 2. Per group: extract Matrix4x4[] slice from matrixScratch
 3. // Use Unity 6 'Graphics.RenderPrimitives' OR inject a custom RenderGraph pass using 'Graphics.RenderMeshIndirect'.
-4. Clear NativeList (no dealloc — just set Length=0)
+4. Clear NativeList (no dealloc - just set Length=0)
 
 Silhouette markers (replaces `Instantiate` for debug objects):
 
@@ -226,10 +226,10 @@ dist = Vector3.Distance(sceneCamera.pos, gizmoWorldPos)
 
 lod = dist < 10f  ? 0    // full icosphere
     : dist < 50f  ? 1    // medium
-    :               2    // billboard quad — 4 verts only
+    :               2    // billboard quad - 4 verts only
 
 scale = Mathf.Clamp(dist * 0.05f, 0.1f, 5.0f)
-// Gizmo scales with distance — stays visible without occluding scene
+// Gizmo scales with distance - stays visible without occluding scene
 
 Apply in matrix construction:
 
@@ -239,11 +239,11 @@ Frustum cull before adding to NativeList:
 
 if GeometryUtility.TestPlanesAABB(frustumPlanes, gizmoBounds):
     Add to list
-// frustumPlanes pre-extracted once per frame — Plane[6] stack alloc
+// frustumPlanes pre-extracted once per frame - Plane[6] stack alloc
 
 ---
 
-## §4 — OVERDRAW HEATMAP [SCALE]
+## Section4 - OVERDRAW HEATMAP [SCALE]
 
 ### 4.1 MX350 Fillrate Analysis Mode
 
@@ -278,31 +278,31 @@ using (var builder = renderGraph.AddRasterRenderPass<PassData>("OverdrawHeatmap"
 Budget reference lines:
 
 // Overlay horizontal bands showing overdraw budget thresholds:
-// Green zone:  <4x  — acceptable
-// Yellow zone: 4-8x — optimize
-// Red zone:    >8x  — critical (MX350 fillrate cliff)
+// Green zone:  <4x  - acceptable
+// Yellow zone: 4-8x - optimize
+// Red zone:    >8x  - critical (MX350 fillrate cliff)
 
 ### 4.2 Fillrate Budget Math
 
 MX350 fillrate at 1080p:
 
-pixels_per_frame = 1920 × 1080 = 2,073,600
-fillrate_budget_overdraw = GPU_FILLRATE_GB / (bpp × res_in_Gpx)
-                         = 12e9 / (4 × 2.07e6) ≈ 1,449 overdraw passes/frame
+pixels_per_frame = 1920 x 1080 = 2,073,600
+fillrate_budget_overdraw = GPU_FILLRATE_GB / (bpp x res_in_Gpx)
+                         = 12e9 / (4 x 2.07e6) ~= 1,449 overdraw passes/frame
 // Realistic usable: ~8-12x accounting for bandwidth contention
 
 Flag scenes exceeding 8x average overdraw for optimization pass.
 
 ---
 
-## §5 — RUNTIME CONSOLE [SAFE]
+## Section5 - RUNTIME CONSOLE [SAFE]
 
 ### 5.1 Circular Status Buffer (Tick-Safe)
 
 Forbidden: `Debug.Log` in `Update` / `FixedUpdate`. Status emitted to circular buffer only.
 
 StatusBuffer {
-    string[64] lines        // fixed ring — pre-allocated strings
+    string[64] lines        // fixed ring - pre-allocated strings
     int        writeHead    // wraps with % 64
     float[]    timestamps   // parallel array
 }
@@ -312,7 +312,7 @@ lines[writeHead] = ScratchFormat(formatString, args)  // stackalloc sprintf equi
 timestamps[writeHead] = Time.unscaledTime
 writeHead = (writeHead + 1) % 64
 
-`ScratchFormat`: uses `Span<char>` + `MemoryMarshal` — never allocates.
+`ScratchFormat`: uses `Span<char>` + `MemoryMarshal` - never allocates.
 Pre-bake format strings as `ReadOnlySpan<char>` literals.
 
 ### 5.2 Low-Overhead Text Overlay
@@ -321,11 +321,11 @@ Render path: `CommandBuffer` injected at `CameraEvent.AfterEverything`.
 No Unity UI canvas. No LayoutGroup. No ContentSizeFitter.
 
 Overlay render:
-1. Blit background quad: 320×480px, bottom-left, alpha=0.6, one draw call
-2. Font atlas: pre-baked monospace bitmap atlas (256×256, 1 texture bind)
+1. Blit background quad: 320x480px, bottom-left, alpha=0.6, one draw call
+2. Font atlas: pre-baked monospace bitmap atlas (256x256, 1 texture bind)
 3. Per visible line: pack glyph UVs into mesh vertex stream
-   — Pre-allocated Mesh: 64 lines × 80 chars × 4 verts = 20,480 verts max
-   — Update only dirty lines via SetVertices on NativeArray slice
+   - Pre-allocated Mesh: 64 lines x 80 chars x 4 verts = 20,480 verts max
+   - Update only dirty lines via SetVertices on NativeArray slice
 4. DrawMesh: 1 draw call for all text
 5. Composite over scene in CommandBuffer
 
@@ -340,26 +340,26 @@ lineDirty[i] = (newContent[i] != displayedContent[i])
 Zero-allocation command dispatch:
 
 Input: ReadOnlySpan<char> from input field (no string alloc)
-Parse: SpanSplit on ' ' → commandToken + argTokens
+Parse: SpanSplit on ' ' -> commandToken + argTokens
 Dispatch: CommandRegistry Dictionary<ReadOnlySpan<char>, Action<ReadOnlySpan<char>[]>>
 // Use StringComparer.Ordinal for span keying
 
 Built-in command registry:
 
-"dump_telemetry"    → trigger §1.2 binary export
-"toggle_overdraw"   → flip HECTON_DEBUG_OVERDRAW bit
-"set_flags [hex]"   → set DebugFlags = ParseHex(arg)
-"budget_report"     → flush ProfilerRecorder samples to overlay
-"clear_log"         → reset StatusBuffer writeHead = 0
-"recovery_status"   → print recoveryCounter + lastRecoveryReason
-"voxel_stats"       → print chunk count, dirty queue depth, VRAM usage
-"boid_stats"        → print agent count, spatial hash bucket fill rate
-"mem_snapshot"      → GC.GetTotalMemory(false) + NativeMemory audit
-"scene_reload"      → SceneManager.LoadScene(current, Single) after export
+"dump_telemetry"    -> trigger Section1.2 binary export
+"toggle_overdraw"   -> flip HECTON_DEBUG_OVERDRAW bit
+"set_flags [hex]"   -> set DebugFlags = ParseHex(arg)
+"budget_report"     -> flush ProfilerRecorder samples to overlay
+"clear_log"         -> reset StatusBuffer writeHead = 0
+"recovery_status"   -> print recoveryCounter + lastRecoveryReason
+"voxel_stats"       -> print chunk count, dirty queue depth, VRAM usage
+"boid_stats"        -> print agent count, spatial hash bucket fill rate
+"mem_snapshot"      -> GC.GetTotalMemory(false) + NativeMemory audit
+"scene_reload"      -> SceneManager.LoadScene(current, Single) after export
 
 ---
 
-## §6 — LOG PROTECTION & DISK SAFETY [SAFE]
+## Section6 - LOG PROTECTION & DISK SAFETY [SAFE]
 
 ### 6.1 Hard Caps
 
@@ -393,37 +393,37 @@ Registered once in debug subsystem init. Captured on any thread.
 Handler(string condition, string stackTrace, LogType type):
     if type == Exception || type == Error:
         entry = BuildErrorEntry(condition, stackTrace)
-        errorQueue.Enqueue(entry)  // ConcurrentQueue — thread-safe
-        // Main thread drains queue in LateUpdate → writes to telemetry + triggers export
+        errorQueue.Enqueue(entry)  // ConcurrentQueue - thread-safe
+        // Main thread drains queue in LateUpdate -> writes to telemetry + triggers export
 
 Stack trace compression for binary log:
 
-// Don't store raw string — store CRC32 of stackTrace + first 256 chars
+// Don't store raw string - store CRC32 of stackTrace + first 256 chars
 // Full trace preserved in companion .txt sidecar file
 // Binary log stays compact
 
 ---
 
-## §7 — WATCHDOG BITFIELD REFERENCE
+## Section7 - WATCHDOG BITFIELD REFERENCE
 
 Complete `uint DebugFlags` bit allocation:
 
-Bit  0  : PHYSICS        — NaN sweep, rigidbody state, joint stress
-Bit  1  : VOXEL          — chunk rebuild times, dirty queue, mesh stats
-Bit  2  : BOIDS          — agent count, spatial hash, separation force vectors
-Bit  3  : AUDIO          — occlusion rays, hydrophone radius, reverb zones
-Bit  4  : PRESSURE       — fluid sim convergence, pressure field visualization
-Bit  5  : STREAMING      — chunk load/unload events, VRAM budget, streaming queue
-Bit  6  : AI             — creature state machines, path nodes, perception cones
-Bit  7  : OVERDRAW       — fillrate heatmap mode (§4)
-Bit  8  : SHADOWS        — cascade splits, shadow caster count per cascade
-Bit  9  : LIGHTING       — probe interpolation, light budget, emissive contributors
-Bit 10  : MEMORY         — NativeArray audit, GC alloc tracking, texture memory
-Bit 11  : NETWORK        — reserved for future co-op / telemetry transmission
-Bit 12  : ANIMATION      — state machine transitions, IK solve cost, blend tree weights
-Bit 13  : PARTICLES      — particle budget, GPU particle count, simulation cost
-Bit 14  : POSTPROCESS    — underwater distortion cost, depth-of-field sample count
-Bit 15  : MASTER_VERBOSE — enable all bits 0-14 simultaneously
+Bit  0  : PHYSICS        - NaN sweep, rigidbody state, joint stress
+Bit  1  : VOXEL          - chunk rebuild times, dirty queue, mesh stats
+Bit  2  : BOIDS          - agent count, spatial hash, separation force vectors
+Bit  3  : AUDIO          - occlusion rays, hydrophone radius, reverb zones
+Bit  4  : PRESSURE       - fluid sim convergence, pressure field visualization
+Bit  5  : STREAMING      - chunk load/unload events, VRAM budget, streaming queue
+Bit  6  : AI             - creature state machines, path nodes, perception cones
+Bit  7  : OVERDRAW       - fillrate heatmap mode (Section4)
+Bit  8  : SHADOWS        - cascade splits, shadow caster count per cascade
+Bit  9  : LIGHTING       - probe interpolation, light budget, emissive contributors
+Bit 10  : MEMORY         - NativeArray audit, GC alloc tracking, texture memory
+Bit 11  : NETWORK        - reserved for future co-op / telemetry transmission
+Bit 12  : ANIMATION      - state machine transitions, IK solve cost, blend tree weights
+Bit 13  : PARTICLES      - particle budget, GPU particle count, simulation cost
+Bit 14  : POSTPROCESS    - underwater distortion cost, depth-of-field sample count
+Bit 15  : MASTER_VERBOSE - enable all bits 0-14 simultaneously
 
 Set/clear/query macros (logic only):
 
@@ -439,19 +439,19 @@ if QUERY(DebugFlags, 15):
 
 ---
 
-## §8 — INTEGRATION CHECKLIST
+## Section8 - INTEGRATION CHECKLIST
 
-Subsystem initialization order (critical — wrong order causes null-ref on early errors):
+Subsystem initialization order (critical - wrong order causes null-ref on early errors):
 
-[1] Allocate NativeArray<DebugLogEntry> (Persistent)          // §1.1
-[2] Allocate safetySnapshot NativeArray<DebugLogEntry> ×300  // §1.3
-[3] Init GizmoGeometryPool — pre-build meshes                 // §3.1
-[4] Allocate StatusBuffer string[64] + float[64]             // §5.1
-[5] Pre-allocate Overlay Mesh (20,480 verts)                 // §5.2
-[6] Register Application.logMessageReceived                   // §6.2
-[7] Init ProfilerRecorder set (one per PM_* marker)          // §2.2
-[8] Run pre-session log cleanup                               // §6.1
-[9] Parse DebugFlags from PlayerPrefs or command-line args    // §7
+[1] Allocate NativeArray<DebugLogEntry> (Persistent)          // Section1.1
+[2] Allocate safetySnapshot NativeArray<DebugLogEntry> x300  // Section1.3
+[3] Init GizmoGeometryPool - pre-build meshes                 // Section3.1
+[4] Allocate StatusBuffer string[64] + float[64]             // Section5.1
+[5] Pre-allocate Overlay Mesh (20,480 verts)                 // Section5.2
+[6] Register Application.logMessageReceived                   // Section6.2
+[7] Init ProfilerRecorder set (one per PM_* marker)          // Section2.2
+[8] Run pre-session log cleanup                               // Section6.1
+[9] Parse DebugFlags from PlayerPrefs or command-line args    // Section7
 [10] Write init entry to StatusBuffer: "DEBUG SUBSYSTEM READY | flags=0x{DebugFlags:X8}"
 
 Shutdown order (reverse dependency):
@@ -466,15 +466,15 @@ Shutdown order (reverse dependency):
 
 ---
 
-## §9 — PERFORMANCE ENVELOPE (MX350 / i3 BASELINE)
+## Section9 - PERFORMANCE ENVELOPE (MX350 / i3 BASELINE)
 
-Debug subsystem overhead budget — must never exceed:
+Debug subsystem overhead budget - must never exceed:
 
 CPU overhead per frame (debug active):     < 0.3ms
 CPU overhead per frame (debug inactive):   < 0.02ms  (compile-guard eliminates most paths)
 GPU overhead per frame (debug active):     < 0.5ms
 Memory footprint (all debug allocations):  < 4MB
-Disk write latency (async export):         non-blocking — background thread only
+Disk write latency (async export):         non-blocking - background thread only
 
 Profiler self-measurement:
 
@@ -482,7 +482,7 @@ PM_GizmoFlush targets:     < 0.1ms
 PM_TelemetryWrite targets: < 0.05ms
 Overlay glyph rebuild:     < 0.1ms for 64 lines
 
-If any debug subsystem cost exceeds 10% of frame budget → auto-disable that subsystem:
+If any debug subsystem cost exceeds 10% of frame budget -> auto-disable that subsystem:
 
 if debugSubsystemCostMs > (targetFrameMs * 0.10f):
     CLEAR(DebugFlags, offendingBit)

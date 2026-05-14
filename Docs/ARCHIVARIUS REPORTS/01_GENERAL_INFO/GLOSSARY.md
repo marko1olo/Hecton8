@@ -1,4 +1,6 @@
 # HECTON-8 â€” GLOSSARY OF TERMS
+Batch007 warning: [DEPRECATED] for runtime authority. Old snippets in this glossary that show `Update()` or direct `GlobalRegistry` access inside `Update()` are rejected. Use `.agents-skills/ARCH_Execution_Phases.txt`, `.agents-skills/ARCH_Global_Registry_ServiceLocator_DI_Init.txt`, and `.agents-skills/ARCH_Signal_Lane_Segregation.txt`.
+
 Date: 2026-05-07
 Status: PENDING VERIFICATION
 

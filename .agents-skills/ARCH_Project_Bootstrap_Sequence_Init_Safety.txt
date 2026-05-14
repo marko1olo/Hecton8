@@ -2,7 +2,7 @@
 
 ---
 
-## [§0] SOVEREIGN BOOT CONTRACT
+## [Section0] SOVEREIGN BOOT CONTRACT
 
 ENTRY_POINT_RULE:
   ONLY valid scene index = 0 ("00_BOOTSTRAP")
@@ -16,39 +16,39 @@ SCENE_LOCK:
 
 ---
 
-## [§1] BOOT PRIORITY LADDER — IMMUTABLE SEQUENCE
+## [Section1] BOOT PRIORITY LADDER - IMMUTABLE SEQUENCE
 
 PRIORITY_QUEUE (ordered, blocking):
-  [P0] HardwareProfiler         → GPU_VRAM_detect, CPU_core_count, RAM_available
-  [P1] GameTickManager          → Fixed/Variable tick registration
-  [P2] SaveManager              → Version audit, migration check
-  [P3] InputManager             → Device enumeration, rebind load
-  [P4] ShaderWarmupExecutor     → background shader prewarm during splash window
-  [P5] OceanBridge              → Crest/custom FFT ocean link
-  [P6] MapMagicBridge           → Terrain chunk pipeline init
-  [P7] AudioGraphBootstrap      → DSPGraph + native spatializer init
-  [P8] MainMenuLoader           → Async scene load trigger
+  [P0] HardwareProfiler         -> GPU_VRAM_detect, CPU_core_count, RAM_available
+  [P1] GameTickManager          -> Fixed/Variable tick registration
+  [P2] SaveManager              -> Version audit, migration check
+  [P3] InputManager             -> Device enumeration, rebind load
+  [P4] ShaderWarmupExecutor     -> background shader prewarm during splash window
+  [P5] OceanBridge              -> Crest/custom FFT ocean link
+  [P6] MapMagicBridge           -> Terrain chunk pipeline init
+  [P7] AudioGraphBootstrap      -> DSPGraph + native spatializer init
+  [P8] MainMenuLoader           -> Async scene load trigger
 
 RULE: P(n+1) CANNOT start if P(n).Status != COMPLETE
-TIMEOUT_PER_STEP: 8000ms → auto-trigger SAFE_HALT(step_id)
+TIMEOUT_PER_STEP: 8000ms -> auto-trigger SAFE_HALT(step_id)
 
 ---
 
-## [§2] IBootstrapStep CONTRACT
+## [Section2] IBootstrapStep CONTRACT
 
 INTERFACE IBootstrapStep:
-  int     Priority          → sort key (ascending = earlier)
-  string  StepID            → unique string token (e.g. "TICK_MANAGER")
-  bool    IsCritical        → true = failure halts boot
-  float   TimeoutSeconds    → per-step watchdog limit
+  int     Priority          -> sort key (ascending = earlier)
+  string  StepID            -> unique string token (e.g. "TICK_MANAGER")
+  bool    IsCritical        -> true = failure halts boot
+  float   TimeoutSeconds    -> per-step watchdog limit
 
-  ExecuteAsync() → Awaitable   → Unity 6 allocation-free async execution
-  Validate()    → bool         → post-execute integrity check
+  ExecuteAsync() -> Awaitable   -> Unity 6 allocation-free async execution
+  Validate()    -> bool         -> post-execute integrity check
 
 REGISTRATION FLOW:
   BootstrapOrchestrator.Register(IBootstrapStep step)
-    → insert into SortedList<int, IBootstrapStep> by Priority
-    → duplicate Priority = ASSERT_FAIL("PRIORITY_COLLISION: {StepID}")
+    -> insert into SortedList<int, IBootstrapStep> by Priority
+    -> duplicate Priority = ASSERT_FAIL("PRIORITY_COLLISION: {StepID}")
 
 EXECUTION LOOP (pseudo):
   FOREACH step IN sorted_queue:
@@ -61,19 +61,19 @@ EXECUTION LOOP (pseudo):
 
 ---
 
-## [§3] LAZY SINGLETON GUARD — LOGIC KERNEL
+## [Section3] LAZY SINGLETON GUARD - LOGIC KERNEL
 
 PATTERN: Double-Checked Locking + Frame-Safe EnsureInitialized
 
 ACCESS RULE:
   T Instance:
     IF _instance == null:
-      EnsureInitialized()           → scene-safe search + create
+      EnsureInitialized()           -> scene-safe search + create
     RETURN _instance
 
 EnsureInitialized() LOGIC:
   LOCK(_lock_object):
-    IF _instance != null: RETURN     → second check inside lock
+    IF _instance != null: RETURN     -> second check inside lock
     _instance = FindObjectOfType<T>()
     IF _instance == null:
       IF !BootstrapOrchestrator.HasCompleted(StepID):
@@ -82,55 +82,55 @@ EnsureInitialized() LOGIC:
       DontDestroyOnLoad(_instance.gameObject)
 
 FORBID:
-  Awake() → NO dependency calls to other managers
-  Awake() → NO third-party SDK init
-  Awake() → ONLY self-state allocation (arrays, pools, local fields)
+  Awake() -> NO dependency calls to other managers
+  Awake() -> NO third-party SDK init
+  Awake() -> ONLY self-state allocation (arrays, pools, local fields)
 
 ---
 
-## [§4] HARDWARE PROFILER — DETECTION & PRESET BINDING
+## [Section4] HARDWARE PROFILER - DETECTION & PRESET BINDING
 
 GPU VRAM TIER (detect at P0):
   vram_mb = SystemInfo.graphicsMemorySize
   TIER_MAP:
-    vram_mb < 1500  → TIER_LOW      (MX150-class fallback)
-    vram_mb < 2200  → TIER_MX350    ← PRIMARY TARGET
-    vram_mb < 4200  → TIER_MID      (GTX 1650 class)
-    vram_mb < 8200  → TIER_HIGH     (RTX 3060 class)
-    vram_mb >= 8200 → TIER_ULTRA
+    vram_mb < 1500  -> TIER_LOW      (MX150-class fallback)
+    vram_mb < 2200  -> TIER_MX350    <- PRIMARY TARGET
+    vram_mb < 4200  -> TIER_MID      (GTX 1650 class)
+    vram_mb < 8200  -> TIER_HIGH     (RTX 3060 class)
+    vram_mb >= 8200 -> TIER_ULTRA
 
 CPU CORE TIER:
   cores = SystemInfo.processorCount
   TIER_MAP:
-    cores <= 4  → CPU_LIGHT   ← PRIMARY TARGET (i3-10gen)
-    cores <= 8  → CPU_MID
-    cores > 8   → CPU_HEAVY
+    cores <= 4  -> CPU_LIGHT   <- PRIMARY TARGET (i3-10gen)
+    cores <= 8  -> CPU_MID
+    cores > 8   -> CPU_HEAVY
 
 RAM TIER:
   ram_mb = SystemInfo.systemMemorySize
   TIER_MAP:
-    ram_mb < 7000   → RAM_CONSTRAINED  ← PRIMARY TARGET (6GB)
-    ram_mb < 12000  → RAM_STANDARD
-    ram_mb >= 12000 → RAM_RICH
+    ram_mb < 7000   -> RAM_CONSTRAINED  <- PRIMARY TARGET (6GB)
+    ram_mb < 12000  -> RAM_STANDARD
+    ram_mb >= 12000 -> RAM_RICH
 
-PRESET MATRIX (GPU_TIER × CPU_TIER → ConfigBundle):
-  [MX350 × CPU_LIGHT]:
+PRESET MATRIX (GPU_TIER x CPU_TIER -> ConfigBundle):
+  [MX350 x CPU_LIGHT]:
     DrawDistance           = 180m
     ShadowDistance         = 60m
     ReflectionResolution   = 256
     OceanFFT_Resolution    = 128
-    PhysicsSolverQuality   = ConfigureSolverQuality(2)     → 2 solver iters
+    PhysicsSolverQuality   = ConfigureSolverQuality(2)     -> 2 solver iters
     TextureStreamingBudget = 768MB
     MaxLODLevel            = 1
     ParticleMaxBudget      = 512
     // [FORBID] 8MB upload buffers for dynamic streaming.
     AsyncUploadBufferSize  = 64MB
-    QualitySettings.SetQualityLevel(1)   → "Performance"
+    QualitySettings.SetQualityLevel(1)   -> "Performance"
 
-  [MX350 × CPU_MID]:   → same GPU tier, relax PhysicsSolverQuality(3)
-  [MID × CPU_LIGHT]:   → DrawDistance=280m, ShadowDistance=90m, FFT=256
-  [HIGH × CPU_MID]:    → DrawDistance=450m, FFT=512, SolverQuality(6)
-  [ULTRA × CPU_HEAVY]: → DrawDistance=800m, FFT=1024, SolverQuality(12), RT_ON
+  [MX350 x CPU_MID]:   -> same GPU tier, relax PhysicsSolverQuality(3)
+  [MID x CPU_LIGHT]:   -> DrawDistance=280m, ShadowDistance=90m, FFT=256
+  [HIGH x CPU_MID]:    -> DrawDistance=450m, FFT=512, SolverQuality(6)
+  [ULTRA x CPU_HEAVY]: -> DrawDistance=800m, FFT=1024, SolverQuality(12), RT_ON
 
 APPLY:
   urpAsset = (UniversalRenderPipelineAsset)GraphicsSettings.currentRenderPipeline
@@ -143,7 +143,7 @@ APPLY:
 
 ---
 
-## [§5] SHADER WARMUP EXECUTOR — LOGIC KERNEL
+## [Section5] SHADER WARMUP EXECUTOR - LOGIC KERNEL
 
 TIMING: Execute during SPLASH SCREEN (P4 window, min 2.5s guaranteed display)
 
@@ -171,7 +171,7 @@ WARMUP SEQUENCE:
 
   5. Dispose handle reference; retain svc ref for runtime lookup
 
-VRAM GUARD (MX350  1800MB):
+VRAM GUARD (MX350 <= 1800MB):
   IF TIER == TIER_MX350:
     BEFORE WarmUp(): force Texture2D budget to 512MB
     AFTER  WarmUp(): restore TextureStreamingBudget = 768MB
@@ -180,7 +180,7 @@ VRAM GUARD (MX350  1800MB):
 
 ---
 
-## [§6] VERSION AUDIT & SAVE MIGRATION
+## [Section6] VERSION AUDIT & SAVE MIGRATION
 
 BUILD_ID VALIDATION (executes at P0):
   stored_id  = PlayerPrefs.GetString("BUILD_ID", "NONE")
@@ -191,15 +191,15 @@ BUILD_ID VALIDATION (executes at P0):
     PlayerPrefs.SetString("BUILD_ID", current_id)
 
 SAVE VERSION MIGRATION (executes at P2 / SaveManager):
-  save_header = DeserializeHeader(save_path)    → read first 64 bytes only
+  save_header = DeserializeHeader(save_path)    -> read first 64 bytes only
 
   MIGRATION_MATRIX:
-    save_header.version == current_save_version → LOAD_DIRECT
-    save_header.version <  current_save_version → PROMPT_MIGRATE
-    save_header.version >  current_save_version → BLOCK + ERROR_UI("FUTURE_SAVE")
+    save_header.version == current_save_version -> LOAD_DIRECT
+    save_header.version <  current_save_version -> PROMPT_MIGRATE
+    save_header.version >  current_save_version -> BLOCK + ERROR_UI("FUTURE_SAVE")
 
   PROMPT_MIGRATE FLOW:
-    Show modal: "Save format v{old} → v{new}. Backup created. Continue?"
+    Show modal: "Save format v{old} -> v{new}. Backup created. Continue?"
     ON_CONFIRM:
       backup_path = save_path + ".bak." + DateTime.UtcNow.Ticks
       File.Copy(save_path, backup_path)
@@ -209,8 +209,8 @@ SAVE VERSION MIGRATION (executes at P2 / SaveManager):
 
   MIGRATION_CHAIN PATTERN (version-step pipeline):
     FOREACH migrator IN MigrationRegistry WHERE version IN [old..new]:
-      data = migrator.Transform(data)    → pure data transform, no MonoBehaviour
-    Serialize(data) → overwrite save_path
+      data = migrator.Transform(data)    -> pure data transform, no MonoBehaviour
+    Serialize(data) -> overwrite save_path
 
   CORRUPTION GUARD:
     checksum_stored  = save_header.CRC32
@@ -219,7 +219,7 @@ SAVE VERSION MIGRATION (executes at P2 / SaveManager):
 
 ---
 
-## [§7] SCENE TRANSITION LOGIC — ATOMIC SEQUENCE
+## [Section7] SCENE TRANSITION LOGIC - ATOMIC SEQUENCE
 
 TRANSITION_STATE_MACHINE:
   States: IDLE | FADING | LOCKED | LOADING | UNLOADING | FINALIZING
@@ -251,20 +251,20 @@ STEP SEQUENCE (blocking per step):
        await ScreenFader.FadeInAsync(duration: 0.25s, curve: EaseOut)
        state = IDLE
 
-VRAM FLUSH (MX350 critical path, between steps 3→4):
+VRAM FLUSH (MX350 critical path, between steps 3->4):
   IF TIER == TIER_MX350 OR TIER_LOW:
-    TextureStreamingManager.SetBudget(256MB)   → force eviction
+    TextureStreamingManager.SetBudget(256MB)   -> force eviction
     await Awaitable.NextFrameAsync()
     TextureStreamingManager.SetBudget(preset.TextureStreamingBudget)
 
 ---
 
-## [§8] FATAL HALT — "BIOS ERROR" UI PROTOCOL
+## [Section8] FATAL HALT - "BIOS ERROR" UI PROTOCOL
 
 FATAL_HALT TRIGGER CONDITIONS:
   - IsCritical step Validate() == false
   - Step timeout exceeded (watchdog fires)
-  - VRAM <  1800MB (cannot meet minimum)
+  - VRAM < 1800MB (cannot meet minimum)
   - Save CRC32 mismatch with no backup
   - ShaderVariantCollection null
 
@@ -282,39 +282,39 @@ HALT SEQUENCE:
          BUILD:      {Application.version}_{CommitHash[..8]}
          ACTION:     "Restart Application / Report"
   4. LOG_FLUSH:
-       Debug.LogError → write to Application.persistentDataPath/crash_{timestamp}.log
+       Debug.LogError -> write to Application.persistentDataPath/crash_{timestamp}.log
        Include: full step execution timeline, hardware profile, exception stack
   5. HALT:
-       WHILE true: await Awaitable.NextFrameAsync()   → preserve UI, block all game logic
+       WHILE true: await Awaitable.NextFrameAsync()   -> preserve UI, block all game logic
        ON_QUIT_BUTTON: Application.Quit(-1)
 
 RECOVERY_OPTION (non-critical subsystems only):
   IF !step.IsCritical AND halt_not_triggered:
-    FallbackRegistry.Activate(step.StepID)   → inject stub/null-object
+    FallbackRegistry.Activate(step.StepID)   -> inject stub/null-object
     LOG_WARN("FALLBACK_ACTIVE: {step.StepID}")
     CONTINUE boot sequence
 
 ---
 
-## [§9] TICK MANAGER — CORE TEMPORAL CONTRACT
+## [Section9] TICK MANAGER - CORE TEMPORAL CONTRACT
 
 DUAL TICK ARCHITECTURE:
-  FixedTick  (physics/simulation): 50Hz default → 20Hz on CPU_LIGHT
-  VariableTick (rendering/input):  uncapped → capped 60fps on TIER_MX350
+  FixedTick  (physics/simulation): 50Hz default -> 20Hz on CPU_LIGHT
+  VariableTick (rendering/input):  uncapped -> capped 60fps on TIER_MX350
 
 REGISTRATION KERNEL:
   ITickable.OnFixedTick(float fixedDt)
-  ITickable.OnVariableTick(float dt, float alpha)   → alpha = physics interpolation
+  ITickable.OnVariableTick(float dt, float alpha)   -> alpha = physics interpolation
 
 ALPHA FORMULA (render interpolation):
   alpha = (Time.time - Time.fixedTime) / Time.fixedDeltaTime
-  → clamp(alpha, 0.0, 1.0)
-  → apply to transform lerp: pos = Vector3.LerpUnclamped(prev_pos, curr_pos, alpha)
+  -> clamp(alpha, 0.0, 1.0)
+  -> apply to transform lerp: pos = Vector3.LerpUnclamped(prev_pos, curr_pos, alpha)
 
 BUDGET ENFORCEMENT (CPU_LIGHT):
   fixedHz_actual = 1.0 / Time.fixedDeltaTime
   IF fixedHz_actual > 20.0 AND CPU_TIER == CPU_LIGHT:
-    Time.fixedDeltaTime = 0.05f   → force 20Hz
+    Time.fixedDeltaTime = 0.05f   -> force 20Hz
     LOG_WARN("TICK_THROTTLE: CPU_LIGHT 20Hz enforced")
 
 PRIORITY TIERS (execution order within tick):
@@ -328,7 +328,7 @@ PRIORITY TIERS (execution order within tick):
 
 ---
 
-## [§10] OCEAN + TERRAIN BRIDGE INIT CONTRACT
+## [Section10] OCEAN + TERRAIN BRIDGE INIT CONTRACT
 
 OCEAN BRIDGE (P4):
   PREREQ: ShaderWarmupExecutor.Status == COMPLETE
@@ -337,19 +337,19 @@ OCEAN BRIDGE (P4):
     1. Detect ocean system type: [CREST | CUSTOM_FFT | FALLBACK_PLANE]
     2. IF TIER_MX350:
          FFT_Resolution = 128
-         SimLayers      = 1       → single cascade
+         SimLayers      = 1       -> single cascade
          GerstnerWaves  = 8
          Foam_ON        = false
-         SSR_ON         = false   → no screen-space reflections
-         CubemapRefresh = 0       → static skybox reflection only
+         SSR_ON         = false   -> no screen-space reflections
+         CubemapRefresh = 0       -> static skybox reflection only
     3. IF TIER_HIGH+:
          FFT_Resolution = 512
          SimLayers      = 4
          GerstnerWaves  = 32
          Foam_ON        = true
          SSR_ON         = true
-    4. Bind BuoyancyManager → ocean height query API
-    5. Validate query: ocean.GetHeight(Vector3.zero) → IF NaN: FATAL(0xB007_0020)
+    4. Bind BuoyancyManager -> ocean height query API
+    5. Validate query: ocean.GetHeight(Vector3.zero) -> IF NaN: FATAL(0xB007_0020)
 
 TERRAIN BRIDGE (P5 / MapMagic):
   PREREQ: OceanBridge.Status == COMPLETE
@@ -369,10 +369,10 @@ TERRAIN BRIDGE (P5 / MapMagic):
 
 ---
 
-## [§11] MEMORY BUDGET — HARD LIMITS (MX350 / 6GB RAM TARGET)
+## [Section11] MEMORY BUDGET - HARD LIMITS (MX350 / 6GB RAM TARGET)
 
 VRAM ALLOCATION BUDGET ( 1800MB total):
-  Framebuffer + Depth:        256MB  (1080p MSAA×2)
+  Framebuffer + Depth:        256MB  (1080p MSAAx2)
   Texture Streaming Pool:     768MB
   Mesh + Geometry:            256MB
   Shader + PSO Cache:         128MB
@@ -380,7 +380,7 @@ VRAM ALLOCATION BUDGET ( 1800MB total):
   Shadow Maps (1 cascade):     64MB
   RenderTextures (misc):       64MB
   Driver Overhead Reserve:    128MB
-  HARD_CEILING:              1792MB  → trigger eviction at 87.5% full
+  HARD_CEILING:              1792MB  -> trigger eviction at 87.5% full
 
 RAM ALLOCATION BUDGET (6144MB system):
   OS + Driver Reserve:       1024MB
@@ -390,17 +390,17 @@ RAM ALLOCATION BUDGET (6144MB system):
   Save/Serialization:          64MB
   Navigation Meshes:          128MB
   Gameplay Heap:             2048MB  (NPC, physics, simulation)
-  EMERGENCY_POOL:             576MB  → DO NOT TOUCH unless GC.Collect fails
+  EMERGENCY_POOL:             576MB  -> DO NOT TOUCH unless GC.Collect fails
 
 GC POLICY:
   Mode: Incremental GC (Unity 2021+)
-  GC.MaxTimeSliceNanoseconds = 3_000_000   → 3ms max per frame slice
+  GC.MaxTimeSliceNanoseconds = 3_000_000   -> 3ms max per frame slice
   AVOID: GC.Collect() in hot path
   ALLOW: GC.Collect(0, Optimized) after scene unload ONLY
 
 ---
 
-## [§12] BUILD VALIDATION CHECKLIST (Pre-Ship Gate)
+## [Section12] BUILD VALIDATION CHECKLIST (Pre-Ship Gate)
 
 AUTOMATED BOOT ASSERTIONS (run in Editor via [InitializeOnLoad]):
   [ ] SceneManager.GetSceneByBuildIndex(0).name == "00_BOOTSTRAP"
@@ -415,9 +415,9 @@ AUTOMATED BOOT ASSERTIONS (run in Editor via [InitializeOnLoad]):
   [ ] TickManager FixedTick registered consumers >= 1
 
 PERFORMANCE GATE (CI automated, must pass on MX350-equivalent):
-  Boot time 00_BOOTSTRAP → MainMenu: <= 12s (cold shader cache)
-  Boot time 00_BOOTSTRAP → MainMenu: <= 4s  (warm shader cache)
-  VRAM at MainMenu idle:             <=  1800MB
+  Boot time 00_BOOTSTRAP -> MainMenu: <= 12s (cold shader cache)
+  Boot time 00_BOOTSTRAP -> MainMenu: <= 4s  (warm shader cache)
+  VRAM at MainMenu idle:             <= 1800MB
   RAM  at MainMenu idle:             <= 1800MB
   Frame 1 after MainMenu load:       >= 30fps (target 60fps steady)
 

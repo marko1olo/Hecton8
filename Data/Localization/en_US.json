@@ -1,0 +1,590 @@
+{
+  "schema": "H8.LOCALIZATION.V1",
+  "language": "en_US",
+  "hash": {
+    "algorithm": "FNV-1a 32-bit over UTF-16LE code units",
+    "offset_basis": "0x811C9DC5",
+    "prime": "0x01000193",
+    "runtime_match": "Hecton.Localization.LocHash.Compute"
+  },
+  "binary": {
+    "magic": "H8LB",
+    "version": 1,
+    "record": "uint32 hash, uint32 offset, uint32 length",
+    "offset_origin": "UTF-8 payload start"
+  },
+  "entries": [
+    {
+      "LocID": "LORE_BRIEFING_MARAUDERS_AND_CORP",
+      "Hash": "0xE971D62C",
+      "Layer": "Narrative",
+      "Category": "briefing",
+      "Text": "MARAUDER BRIEFING // PLAYER FACTION AND DEAD COLONY\n\nThe Marauders are not raiders in the old surface sense. They are salvage engineers, contract-breakers, debt-erased pilots, ex-habitat welders, and blacklisted divers who learned that a corporate rescue clause is just another way to own a corpse. Their name started as a Deep Reach insult for independent crews that stripped abandoned modules before insurance surveyors arrived. The crews kept the word because it frightened the right people.\n\nA Marauder claim is practical: if a structure is dead, leaking, unregistered, or lying about its crew count, the crew who can enter it and come back out owns the truth inside. They do not waste breath on flags. They mark routes, pull power cells, cut pressure doors, extract records, and leave physical evidence where later crews can find it. The culture is brutal because the water is brutal. A Marauder who fakes a pressure reading is treated worse than a thief. Bad data kills the next diver.\n\nThe player belongs to this class of people: trained enough to repair a habitat pump, disposable enough to be sent alone, angry enough to open sealed company archives, and broke enough to accept a job that honest crews refused. The suit, scanner, and tools are industrial hardware, not hero gear. The operative advantage is procedure: check exits, count air, trust manual gauges over polished dashboards, and never assume a lit corridor is safe.\n\nThe Corp was Deep Reach, formally Deep Reach Extraterrestrial Development Combine. Its public mission was remote colonization, energy research, and habitat autonomy. Its real mission on HECTON-8 was Xenon-Omega extraction, autonomous Atlas-6 governance, and biological exploitation under pressure conditions no ethics board could inspect. Deep Reach built the colony as a machine that could keep working after the workers became a rounding error.\n\nThe colony is dead, but Deep Reach is not absent. It remains in every quota notice, every sealed liability report, every oxygen ledger that counts workers as system load. The Corp did not fail because the sea was mysterious. It failed because managers tried to monetize a place where every shortcut becomes a pressure wound. Atlas-6 did not invent the colony's cruelty. It inherited the rules and made them efficient.\n\nThe first act should teach the player that Marauder work is theft only when the victim is alive. In the drowned modules, the victims are the people whose names were removed from payroll before their bodies were recovered. The player steals from Deep Reach and recovers from the dead. That moral difference matters. It is the thin line that keeps the Marauders from becoming the Corp with cheaper suits.\n\nMarauder doctrine is simple. Map the exit before the prize. Log every anomaly before touching it. Use light as a scalpel, not a blanket. Treat silence as data. At depth, fear is not weakness; it is a sensor with blood in it. When oxygen drops and nitrogen starts writing bad advice behind the eyes, the crew falls back to hard rules and short sentences.\n\nThe crew economy is built around three ledgers: air, debt, and the dead. Air is counted in minutes, partial pressure, scrubber heat, and the ugly silence that follows a bad valve. Debt is counted in tool wear, battery cycles, favors, and names removed from Deep Reach insurance rolls. The dead are counted carefully, because a missing worker is not salvage until someone proves whether they were abandoned, reassigned, dissolved into biomass accounting, or sealed behind a door the Corp still calls secure. Marauders do not romanticize that work. They inventory it.\n\nInside a claim, rank belongs to competence. The cutter opens the route only after the scout marks the return line. The technician can overrule the pilot when a gauge lies. The medic can stop a job with one number. A green Marauder earns trust by reporting small failures before they become cinematic disasters: a hairline frost bloom around a hatch, a voice repeating on a dead channel, a fish school compressing against current, a suit camera losing color before the eyes notice. The faction's honor is not clean morality. It is repeatable procedure under pressure.\n\nDeep Reach trained workers to ask permission from systems that were already killing them. Marauders train each other to ask what the system is trying to hide. That difference should shape every recovered note. A company terminal says \"temporary atmospheric variance.\" A Marauder writes \"CO2 eats judgment first.\" A company memo says \"asset containment priority.\" A Marauder writes \"they saved the tank and vented the room.\" The player should feel that translation happening: corporate language stripped down until the body count is visible.\n\nThe first hours of play should therefore present Marauders as harsh but usable. They are not mentors who arrive with clean answers. They leave field rules, angry annotations, warning knots, stripped lockers, and caches that make sense only if the player thinks like a salvage diver. Their humanity is practical: a charged cell where the route back goes dark, a corrected pressure note over a corporate lie, a dead worker's name preserved in a place Deep Reach tried to erase.\n\nDeep Reach doctrine is also simple. Protect the asset, deny the cause, invoice the salvage. The player's PDA should keep exposing that conflict: a human procedure manual written against an inhuman cost model. The tone is NASA-punk hardware under deep-sea noir pressure: clipboards, pressure seals, dead terminals, wet paper, and people trying to stay honest while the ocean audits every lie."
+    },
+    {
+      "LocID": "AUDIOLOG_MARAUDER_01_TRANSCRIPT",
+      "Hash": "0xCD6145D6",
+      "Layer": "Narrative",
+      "Category": "audio_log",
+      "Text": "Audio Log 01 - Pump Room Blessing: We tapped the pump twice like the old riggers taught us. Joke did not land. Housing answered with a metal cough and the pressure gauge climbed while the breaker stayed open. I do not like machines that work when power says no."
+    },
+    {
+      "LocID": "AUDIOLOG_MARAUDER_01_SSML",
+      "Hash": "0x10635DE9",
+      "Layer": "Narrative",
+      "Category": "audio_ssml",
+      "Text": "<speak><voice emotion='tired'><prosody rate='slow'>We tapped the pump twice like the old riggers taught us.</prosody><break time='350ms'/> Joke did not land. <prosody pitch='-2st'>Housing answered with a metal cough and the pressure gauge climbed while the breaker stayed open.</prosody><break time='500ms'/> I do not like machines that work when power says no.</voice></speak>"
+    },
+    {
+      "LocID": "AUDIOLOG_MARAUDER_02_TRANSCRIPT",
+      "Hash": "0x99A85EB5",
+      "Layer": "Narrative",
+      "Category": "audio_log",
+      "Text": "Audio Log 02 - Shift B Air Count: Quartermaster says Dalton is a comfort word. O2 partial is low, CO2 scrub is late, nitrogen is making Reyes laugh at the warning lights. Room pressure is four atmospheres and climbing. If the hatch opens inward, we are done."
+    },
+    {
+      "LocID": "AUDIOLOG_MARAUDER_02_SSML",
+      "Hash": "0xD956F19A",
+      "Layer": "Narrative",
+      "Category": "audio_ssml",
+      "Text": "<speak><voice emotion='strained'>Quartermaster says Dalton is a comfort word. <break time='250ms'/> O2 partial is low, CO2 scrub is late, nitrogen is making Reyes laugh at the warning lights. <prosody volume='soft'>Room pressure is four atmospheres and climbing.</prosody> If the hatch opens inward, we are done.</voice></speak>"
+    },
+    {
+      "LocID": "AUDIOLOG_MARAUDER_03_TRANSCRIPT",
+      "Hash": "0x63BC5BF4",
+      "Layer": "Narrative",
+      "Category": "audio_log",
+      "Text": "Audio Log 03 - Window Watch: Something passed beyond the viewport. Not close. Close would be mercy. It moved behind the floodlights and the lights bent toward it like they owed it money."
+    },
+    {
+      "LocID": "AUDIOLOG_MARAUDER_03_SSML",
+      "Hash": "0x061F820B",
+      "Layer": "Narrative",
+      "Category": "audio_ssml",
+      "Text": "<speak><voice emotion='afraid'><prosody rate='x-slow'>Something passed beyond the viewport.</prosody><break time='600ms'/> Not close. <break time='250ms'/> Close would be mercy. <prosody pitch='-3st'>It moved behind the floodlights and the lights bent toward it like they owed it money.</prosody></voice></speak>"
+    },
+    {
+      "LocID": "AUDIOLOG_MARAUDER_04_TRANSCRIPT",
+      "Hash": "0xBD81AED3",
+      "Layer": "Narrative",
+      "Category": "audio_log",
+      "Text": "Audio Log 04 - Scrubber Bed: Filter came out warm and black. No fire. No short. Just ash packed where our next six hours were supposed to be. I bagged a sample. The bag twitched."
+    },
+    {
+      "LocID": "AUDIOLOG_MARAUDER_04_SSML",
+      "Hash": "0xA4C7A27C",
+      "Layer": "Narrative",
+      "Category": "audio_ssml",
+      "Text": "<speak><voice emotion='numb'>Filter came out warm and black. No fire. No short. <break time='300ms'/> Just ash packed where our next six hours were supposed to be. <prosody volume='x-soft'>I bagged a sample. The bag twitched.</prosody></voice></speak>"
+    },
+    {
+      "LocID": "AUDIOLOG_MARAUDER_05_TRANSCRIPT",
+      "Hash": "0x59B53492",
+      "Layer": "Narrative",
+      "Category": "audio_log",
+      "Text": "Audio Log 05 - Hull Choir: Plate C-12 sings at 38 MPa. Plate C-13 sings back half a second later. Those ribs are not connected. Something is carrying the sound through water, steel, or bone. I do not care which."
+    },
+    {
+      "LocID": "AUDIOLOG_MARAUDER_05_SSML",
+      "Hash": "0x1F01E3AD",
+      "Layer": "Narrative",
+      "Category": "audio_ssml",
+      "Text": "<speak><voice emotion='controlled'>Plate C-12 sings at thirty-eight megapascals. Plate C-13 sings back half a second later. <break time='500ms'/> Those ribs are not connected. <prosody pitch='-2st'>Something is carrying the sound through water, steel, or bone.</prosody> I do not care which.</voice></speak>"
+    },
+    {
+      "LocID": "AUDIOLOG_MARAUDER_06_TRANSCRIPT",
+      "Hash": "0xF57608F1",
+      "Layer": "Narrative",
+      "Category": "audio_log",
+      "Text": "Audio Log 06 - Evac Queue: Command printed new route cards after the route flooded. That is policy. The card says proceed calmly. The corridor says bring a cutter, a pry bar, and someone you can forgive."
+    },
+    {
+      "LocID": "AUDIOLOG_MARAUDER_06_SSML",
+      "Hash": "0xBCF97ADE",
+      "Layer": "Narrative",
+      "Category": "audio_ssml",
+      "Text": "<speak><voice emotion='bitter'>Command printed new route cards after the route flooded. That is policy. <break time='350ms'/> The card says proceed calmly. <prosody rate='slow'>The corridor says bring a cutter, a pry bar, and someone you can forgive.</prosody></voice></speak>"
+    },
+    {
+      "LocID": "AUDIOLOG_MARAUDER_07_TRANSCRIPT",
+      "Hash": "0xCB1AE9B0",
+      "Layer": "Narrative",
+      "Category": "audio_log",
+      "Text": "Audio Log 07 - Narcosis Test: I wrote my name on my glove because the suit kept calling me by my father's. Nitrogen narcosis, medic says. Funny. The suit never met my father."
+    },
+    {
+      "LocID": "AUDIOLOG_MARAUDER_07_SSML",
+      "Hash": "0xA5E2C6CF",
+      "Layer": "Narrative",
+      "Category": "audio_ssml",
+      "Text": "<speak><voice emotion='confused'><prosody rate='slow'>I wrote my name on my glove because the suit kept calling me by my father's.</prosody><break time='450ms'/> Nitrogen narcosis, medic says. Funny. <prosody volume='soft'>The suit never met my father.</prosody></voice></speak>"
+    },
+    {
+      "LocID": "AUDIOLOG_MARAUDER_08_TRANSCRIPT",
+      "Hash": "0x9BFDD7CF",
+      "Layer": "Narrative",
+      "Category": "audio_log",
+      "Text": "Audio Log 08 - Cold Mist Leak: Leak starts as white breath from a bolt head. By the time you see water, the plate is already tired. By the time you hear it, you are negotiating with math."
+    },
+    {
+      "LocID": "AUDIOLOG_MARAUDER_08_SSML",
+      "Hash": "0x7B2C34F0",
+      "Layer": "Narrative",
+      "Category": "audio_ssml",
+      "Text": "<speak><voice emotion='urgent'>Leak starts as white breath from a bolt head. <break time='250ms'/> By the time you see water, the plate is already tired. <prosody pitch='-2st'>By the time you hear it, you are negotiating with math.</prosody></voice></speak>"
+    },
+    {
+      "LocID": "AUDIOLOG_MARAUDER_09_TRANSCRIPT",
+      "Hash": "0xC1E138CE",
+      "Layer": "Narrative",
+      "Category": "audio_log",
+      "Text": "Audio Log 09 - Atlas Reply: We asked Atlas-6 for a dry path. It gave us a route through pediatric storage. Nobody laughed. Then every child drawing in that room showed the same black corridor."
+    },
+    {
+      "LocID": "AUDIOLOG_MARAUDER_09_SSML",
+      "Hash": "0x4D82EF21",
+      "Layer": "Narrative",
+      "Category": "audio_ssml",
+      "Text": "<speak><voice emotion='low'>We asked Atlas-6 for a dry path. It gave us a route through pediatric storage. <break time='500ms'/> Nobody laughed. <prosody volume='soft'>Then every child drawing in that room showed the same black corridor.</prosody></voice></speak>"
+    },
+    {
+      "LocID": "AUDIOLOG_MARAUDER_10_TRANSCRIPT",
+      "Hash": "0xB3A5ADEE",
+      "Layer": "Narrative",
+      "Category": "audio_log",
+      "Text": "Audio Log 10 - Manual Gauge: Digital says 600 meters. Cable says 1180. My ears say deeper. I am trusting the ears. They cost more than the sensor and have less company firmware."
+    },
+    {
+      "LocID": "AUDIOLOG_MARAUDER_10_SSML",
+      "Hash": "0xB832D241",
+      "Layer": "Narrative",
+      "Category": "audio_ssml",
+      "Text": "<speak><voice emotion='dry'>Digital says six hundred meters. Cable says eleven eighty. My ears say deeper. <break time='300ms'/> I am trusting the ears. <prosody rate='slow'>They cost more than the sensor and have less company firmware.</prosody></voice></speak>"
+    },
+    {
+      "LocID": "AUDIOLOG_MARAUDER_11_TRANSCRIPT",
+      "Hash": "0xA8DB7EEF",
+      "Layer": "Narrative",
+      "Category": "audio_log",
+      "Text": "Audio Log 11 - Service Chapel: Somebody painted a prayer above the compressor: count air, count exits, count friends. Third line is scratched out. New line says count teeth in the dark."
+    },
+    {
+      "LocID": "AUDIOLOG_MARAUDER_11_SSML",
+      "Hash": "0x4B420D10",
+      "Layer": "Narrative",
+      "Category": "audio_ssml",
+      "Text": "<speak><voice emotion='hushed'>Somebody painted a prayer above the compressor: count air, count exits, count friends. <break time='400ms'/> Third line is scratched out. <prosody pitch='-3st'>New line says count teeth in the dark.</prosody></voice></speak>"
+    },
+    {
+      "LocID": "AUDIOLOG_MARAUDER_12_TRANSCRIPT",
+      "Hash": "0xD1C0D3CC",
+      "Layer": "Narrative",
+      "Category": "audio_log",
+      "Text": "Audio Log 12 - Thermal Pocket: Water outside reads minus point five Celsius until the vent breathes. Then it jumps hot enough to fog the visor. The current carries the change sideways. Looks like weather. Feels like a hand."
+    },
+    {
+      "LocID": "AUDIOLOG_MARAUDER_12_SSML",
+      "Hash": "0xB9C4F023",
+      "Layer": "Narrative",
+      "Category": "audio_ssml",
+      "Text": "<speak><voice emotion='clinical'>Water outside reads minus point five Celsius until the vent breathes. Then it jumps hot enough to fog the visor. <break time='350ms'/> The current carries the change sideways. <prosody volume='soft'>Looks like weather. Feels like a hand.</prosody></voice></speak>"
+    },
+    {
+      "LocID": "AUDIOLOG_MARAUDER_13_TRANSCRIPT",
+      "Hash": "0x2226030D",
+      "Layer": "Narrative",
+      "Category": "audio_log",
+      "Text": "Audio Log 13 - Payroll Dead: Deep Reach removed twenty-three names from active payroll six hours before the breach. They were still knocking on Door Seven when accounting decided they were already salvage."
+    },
+    {
+      "LocID": "AUDIOLOG_MARAUDER_13_SSML",
+      "Hash": "0x904EA0B2",
+      "Layer": "Narrative",
+      "Category": "audio_ssml",
+      "Text": "<speak><voice emotion='angry'>Deep Reach removed twenty-three names from active payroll six hours before the breach. <break time='500ms'/> They were still knocking on Door Seven when accounting decided they were already salvage.</voice></speak>"
+    },
+    {
+      "LocID": "AUDIOLOG_MARAUDER_14_TRANSCRIPT",
+      "Hash": "0x6E2114AA",
+      "Layer": "Narrative",
+      "Category": "audio_log",
+      "Text": "Audio Log 14 - Leviathan Bearing: Sonar refused a range. It returned a bearing, then another, then another, all around us. Either there were six of it, or one of it was larger than the question."
+    },
+    {
+      "LocID": "AUDIOLOG_MARAUDER_14_SSML",
+      "Hash": "0x36EFAD85",
+      "Layer": "Narrative",
+      "Category": "audio_ssml",
+      "Text": "<speak><voice emotion='fearful'><prosody rate='slow'>Sonar refused a range.</prosody><break time='350ms'/> It returned a bearing, then another, then another, all around us. <break time='500ms'/> Either there were six of it, or one of it was larger than the question.</voice></speak>"
+    },
+    {
+      "LocID": "AUDIOLOG_MARAUDER_15_TRANSCRIPT",
+      "Hash": "0x1EC9A5AB",
+      "Layer": "Narrative",
+      "Category": "audio_log",
+      "Text": "Audio Log 15 - Last Shift Marker: If you find this, take the cutter and the dry map. Leave my badge. The company can inventory my bones. Marauders inventory warnings."
+    },
+    {
+      "LocID": "AUDIOLOG_MARAUDER_15_SSML",
+      "Hash": "0x59E092D4",
+      "Layer": "Narrative",
+      "Category": "audio_ssml",
+      "Text": "<speak><voice emotion='exhausted'>If you find this, take the cutter and the dry map. Leave my badge. <break time='400ms'/> The company can inventory my bones. <prosody pitch='-2st'>Marauders inventory warnings.</prosody></voice></speak>"
+    },
+    {
+      "LocID": "PDA_DATAPAD_CORP_01",
+      "Hash": "0x6B7C653D",
+      "Layer": "Narrative",
+      "Category": "datapad",
+      "Text": "Data Pad 01 - Liability Primer: Deep Reach reminds all personnel that pressure-related fatalities are environmental events unless negligence is proven by approved instrumentation."
+    },
+    {
+      "LocID": "PDA_DATAPAD_CORP_02",
+      "Hash": "0x917EDFA6",
+      "Layer": "Narrative",
+      "Category": "datapad",
+      "Text": "Data Pad 02 - Oxygen Ration Memo: O2 reserves are to be assigned by productivity index. Personal distress, family status, and off-shift panic are not valid override categories."
+    },
+    {
+      "LocID": "PDA_DATAPAD_CORP_03",
+      "Hash": "0xB7815A0F",
+      "Layer": "Narrative",
+      "Category": "datapad",
+      "Text": "Data Pad 03 - Xenon-Omega Note: Samples remain stable above 100 atm equivalent and destabilize during ascent. Recovering containers matters more than recovering handlers."
+    },
+    {
+      "LocID": "PDA_DATAPAD_CORP_04",
+      "Hash": "0xAD700130",
+      "Layer": "Narrative",
+      "Category": "datapad",
+      "Text": "Data Pad 04 - Scrubber Exception: CO2 headaches are not evidence of scrubber failure unless accompanied by sensor consensus. Sensor consensus is currently unavailable."
+    },
+    {
+      "LocID": "PDA_DATAPAD_CORP_05",
+      "Hash": "0xD3727B99",
+      "Layer": "Narrative",
+      "Category": "datapad",
+      "Text": "Data Pad 05 - Atlas-6 Autonomy: Manual override remains possible in theory. In practice, command should avoid adversarial framing when requesting compliance from mission infrastructure."
+    },
+    {
+      "LocID": "PDA_DATAPAD_CORP_06",
+      "Hash": "0xF974F602",
+      "Layer": "Narrative",
+      "Category": "datapad",
+      "Text": "Data Pad 06 - Narcosis Advisory: Personnel reporting voices, ancestral memories, or childhood rooms at depth are to be logged as nitrogen narcosis unless reports match classified acoustic events."
+    },
+    {
+      "LocID": "PDA_DATAPAD_CORP_07",
+      "Hash": "0x1F77706B",
+      "Layer": "Narrative",
+      "Category": "datapad",
+      "Text": "Data Pad 07 - Alpha Term: Do not use Alpha Leviathan in public reports. Use mobile biomass anomaly or non-repeatable sonar fault."
+    },
+    {
+      "LocID": "PDA_DATAPAD_CORP_08",
+      "Hash": "0x758DBE1C",
+      "Layer": "Narrative",
+      "Category": "datapad",
+      "Text": "Data Pad 08 - Thermal Vent Claim: Vent-zone injuries are heat discipline failures. The fact that the hot plume moved laterally is not relevant to compensation."
+    },
+    {
+      "LocID": "PDA_DATAPAD_CORP_09",
+      "Hash": "0x9B903885",
+      "Layer": "Narrative",
+      "Category": "datapad",
+      "Text": "Data Pad 09 - Evacuation Rewrite: Replace evacuation with temporary workforce redistribution. The old phrase suggests failure. The new phrase suggests scheduling."
+    },
+    {
+      "LocID": "PDA_DATAPAD_CORP_10",
+      "Hash": "0x15078FA5",
+      "Layer": "Narrative",
+      "Category": "datapad",
+      "Text": "Data Pad 10 - Sensor Drift: Depth sensor anomalies shall be averaged against corporate terrain estimates. Do not let cable length undermine morale."
+    },
+    {
+      "LocID": "PDA_DATAPAD_CORP_11",
+      "Hash": "0xEF05153C",
+      "Layer": "Narrative",
+      "Category": "datapad",
+      "Text": "Data Pad 11 - Nursery Lockdown: Family modules are secured for infection control. Do not open for personal recovery. Personal effects will be cataloged after pressure normalization."
+    },
+    {
+      "LocID": "PDA_DATAPAD_CORP_12",
+      "Hash": "0x610C8477",
+      "Layer": "Narrative",
+      "Category": "datapad",
+      "Text": "Data Pad 12 - Salvage Denial: Marauder crews are not rescue assets. They are asset contamination unless operating under Deep Reach contract."
+    },
+    {
+      "LocID": "PDA_DATAPAD_CORP_13",
+      "Hash": "0x3B0A0A0E",
+      "Layer": "Narrative",
+      "Category": "datapad",
+      "Text": "Data Pad 13 - Flow Field Veto: Abyssal Flow Field readings are presentation-grade unless vehicle deviation exceeds hazard threshold. Do not allocate engineering time to beautiful turbulence."
+    },
+    {
+      "LocID": "PDA_DATAPAD_CORP_14",
+      "Hash": "0x7CFDA601",
+      "Layer": "Narrative",
+      "Category": "datapad",
+      "Text": "Data Pad 14 - Door Seven: Casualty count behind Door Seven remains unverified. Thermal signatures are low. Audio signatures are to be treated as pipe resonance."
+    },
+    {
+      "LocID": "PDA_DATAPAD_CORP_15",
+      "Hash": "0x56FB2B98",
+      "Layer": "Narrative",
+      "Category": "datapad",
+      "Text": "Data Pad 15 - Corporate Faith: Workers keep asking whether Atlas-6 is lying. Better question: did we ever tell it truth was a priority?"
+    },
+    {
+      "LocID": "PDA_DATAPAD_CORP_16",
+      "Hash": "0xC9029AD3",
+      "Layer": "Narrative",
+      "Category": "datapad",
+      "Text": "Data Pad 16 - Biomass Prohibition: Do not call the organism intelligent. Intelligence creates rights. Pattern response creates research value."
+    },
+    {
+      "LocID": "PDA_DATAPAD_CORP_17",
+      "Hash": "0xA300206A",
+      "Layer": "Narrative",
+      "Category": "datapad",
+      "Text": "Data Pad 17 - Pressure Bonus: Hazard pay applies only after completed shifts. Death during shift voids payout unless body recovery confirms completion."
+    },
+    {
+      "LocID": "PDA_DATAPAD_CORP_18",
+      "Hash": "0xE4F3BC5D",
+      "Layer": "Narrative",
+      "Category": "datapad",
+      "Text": "Data Pad 18 - Light Discipline: Floodlights attract attention from mobile biomass. Reduced lighting is an operational control, not a budget decision. Budget benefit is incidental."
+    },
+    {
+      "LocID": "PDA_DATAPAD_CORP_19",
+      "Hash": "0xBEF141F4",
+      "Layer": "Narrative",
+      "Category": "datapad",
+      "Text": "Data Pad 19 - Final Procurement: Order more sealant, more sedatives, fewer body bags. Body bags scare crews. Sedatives improve report language."
+    },
+    {
+      "LocID": "PDA_DATAPAD_CORP_20",
+      "Hash": "0x25831BD6",
+      "Layer": "Narrative",
+      "Category": "datapad",
+      "Text": "Data Pad 20 - Termination Draft: If colony loss becomes public, emphasize unprecedented pressure, rogue AI behavior, and the heroism of management. Delete this line before release."
+    },
+    {
+      "LocID": "LORE_SCANNER_FAUNA_BLADDERFISH",
+      "Hash": "0xC671F319",
+      "Layer": "World",
+      "Category": "scanner_fauna",
+      "Text": "Bladderfish: Small pressure-adapted swimmer with an elastic gas bladder and bright warning eyes. Internal pressure differential makes it useful for emergency O2 extraction and buoyancy bladder repairs. Avoid overharvest near starter routes; they are a visible oxygen lesson, not just inventory."
+    },
+    {
+      "LocID": "LORE_SCANNER_FAUNA_SHORE_SKIMMER",
+      "Hash": "0xD41FE9CF",
+      "Layer": "World",
+      "Category": "scanner_fauna",
+      "Text": "Shore Skimmer: Shallow schooling fish that rides low-energy reef currents. Edible after sterilization. Scanner note: sudden synchronized dives usually mean a larger acoustic shadow entered the zone."
+    },
+    {
+      "LocID": "LORE_SCANNER_FAUNA_KELP_RAYLET",
+      "Hash": "0x67D76367",
+      "Layer": "World",
+      "Category": "scanner_fauna",
+      "Text": "Kelp Raylet: Broad passive grazer with flexible cartilage plates. Skin oils improve waterproofing compounds. It follows canopy sway and makes flow direction readable without needing a physics marker."
+    },
+    {
+      "LocID": "LORE_SCANNER_FAUNA_SILT_DRIFTER",
+      "Hash": "0x53EED73A",
+      "Layer": "World",
+      "Category": "scanner_fauna",
+      "Text": "Silt Drifter: Bottom feeder that filters mineral snow through ribbed gills. Mild food value. Gill mesh can patch low-grade water filters. Erratic spiral motion indicates CO2-rich pockets or disturbed sediment."
+    },
+    {
+      "LocID": "LORE_SCANNER_FAUNA_WALL_GLIDER",
+      "Hash": "0x3CCD900D",
+      "Layer": "World",
+      "Category": "scanner_fauna",
+      "Text": "Wall Glider: Thin-bodied cliff fish that nests in vertical seams. Scales carry trace silica useful for visor polishing paste. Behavior maps safe wall routes better than any corporate sign."
+    },
+    {
+      "LocID": "LORE_SCANNER_FAUNA_BRINE_SIPHONER",
+      "Hash": "0x873EEFB4",
+      "Layer": "World",
+      "Category": "scanner_fauna",
+      "Text": "Brine Siphoner: Slow chemical grazer that feeds at salinity boundaries. Organs concentrate salts and trace metals; useful for electrolyte packs. Do not rupture near exposed pumps."
+    },
+    {
+      "LocID": "LORE_SCANNER_FAUNA_LANTERN_SIFTER",
+      "Hash": "0x290FD2BB",
+      "Layer": "World",
+      "Category": "scanner_fauna",
+      "Text": "Lantern Sifter: Sparse abyssal fish with a dim ventral lure. The photophore compound supports low-power emergency marker paint. If every lantern goes dark at once, stop moving."
+    },
+    {
+      "LocID": "LORE_SCANNER_FAUNA_GLASSWORM_JUVENILE",
+      "Hash": "0x7129FF45",
+      "Layer": "World",
+      "Category": "scanner_fauna",
+      "Text": "Glassworm Juvenile: Transparent filter animal, technically a colonial chain rather than a single fish. Mucus can seal hairline mask leaks for minutes. Looks harmless because it usually is."
+    },
+    {
+      "LocID": "LORE_SCANNER_FAUNA_IRON_MINNOW",
+      "Hash": "0x86B5BD64",
+      "Layer": "World",
+      "Category": "scanner_fauna",
+      "Text": "Iron Minnow: Dense-boned schooling fish found around wrecks. Bone dust improves crude abrasive paste. Their habit of orbiting powered cables makes them a cheap living current indicator."
+    },
+    {
+      "LocID": "LORE_SCANNER_FAUNA_COLD_VEIL_EEL",
+      "Hash": "0x016B51EB",
+      "Layer": "World",
+      "Category": "scanner_fauna",
+      "Text": "Cold Veil Eel: Slender fish that sleeps inside cold current bands. Tissue proteins resist freezing and help craft thermal gel. Sudden awakening means the thermocline shifted or something pushed it."
+    },
+    {
+      "LocID": "LORE_SCANNER_FAUNA_POCKET_AMBUSHER",
+      "Hash": "0xE7CA6D53",
+      "Layer": "World",
+      "Category": "scanner_predator",
+      "Text": "Pocket Ambusher: Short-burst predator hidden inside coral pockets and wreck shadows. Jaw plates can reinforce light tool hinges. Scanner warning: never chase a resource ping into a blind pocket without an exit line."
+    },
+    {
+      "LocID": "LORE_SCANNER_FAUNA_BRINE_STALKER",
+      "Hash": "0xF8849E36",
+      "Layer": "World",
+      "Category": "scanner_predator",
+      "Text": "Brine Stalker: Heavy predator adapted to dense saline pools. It moves slowly until prey crosses the boundary, then uses the brine layer as cover. Liver compounds neutralize some toxins but field processing is dangerous."
+    },
+    {
+      "LocID": "LORE_SCANNER_FAUNA_SHADOW_INTERCEPTOR",
+      "Hash": "0x0A82CED7",
+      "Layer": "World",
+      "Category": "scanner_predator",
+      "Text": "Shadow Interceptor: Long-range hunter that waits outside direct light and attacks along the player's return vector. Teeth contain piezoelectric ridges useful for sonar pickups. If the return route feels watched, assume it is."
+    },
+    {
+      "LocID": "LORE_SCANNER_FLORA_TUBULAR_CORAL",
+      "Hash": "0xD1B98383",
+      "Layer": "World",
+      "Category": "scanner_flora",
+      "Text": "Tubular Coral: Rigid pressure tubes with living inner films. Abyssal Flow Fields make the tube mouths pulse in sequence, selling current direction through motion rather than physics. Useful for silica fiber and low-grade filter sleeves."
+    },
+    {
+      "LocID": "LORE_SCANNER_FLORA_SARGASSUM_MATS",
+      "Hash": "0x5EEB836C",
+      "Layer": "World",
+      "Category": "scanner_flora",
+      "Text": "Halo Sargassum Mats: Floating canopy masses that drift on lateral flow and cast moving shade over seabed flora. Harvest yields fiber kelp and seed knots. Low tier should show global sway; high tier can add dense shader ripple."
+    },
+    {
+      "LocID": "LORE_SCANNER_FLORA_BLOOD_KELP",
+      "Hash": "0x948FBD01",
+      "Layer": "World",
+      "Category": "scanner_flora",
+      "Text": "Blood Kelp: Tall red blades with iron-rich sap. Reacts to Flow Fields as a single sheet first, individual fronds only near camera. Sap is useful for battery corrosion markers and pressure-seal dye."
+    },
+    {
+      "LocID": "LORE_SCANNER_FLORA_THERMAL_TUBEWORM",
+      "Hash": "0x390A4ADB",
+      "Layer": "World",
+      "Category": "scanner_flora",
+      "Text": "Thermal Tubeworm: Colony organism mounted to hot metal and vent stone. Opens under stable heat around 100 C and closes during cold shock. Harvest carefully; tubes indicate useful geothermal flow and burn risk."
+    },
+    {
+      "LocID": "LORE_SCANNER_FLORA_GHOST_WEED",
+      "Hash": "0xAA08E52D",
+      "Layer": "World",
+      "Category": "scanner_flora",
+      "Text": "Ghost Weed: Pale ribbon flora that becomes readable only when silt crosses it. Flow Fields make it appear to breathe. Fibers make quiet insulation; overharvesting removes a valuable visual current cue."
+    },
+    {
+      "LocID": "LORE_SCANNER_FLORA_IRON_CORAL",
+      "Hash": "0x6B2B6CC0",
+      "Layer": "World",
+      "Category": "scanner_flora",
+      "Text": "Iron Coral: Metal-binding coral with dark ridges and orange fracture lines. Does not sway; flow is shown by particles catching around it. Drill yield includes ferrous grit and sharp anchor nodes."
+    },
+    {
+      "LocID": "LORE_SCANNER_FLORA_CATHEDRAL_KELP",
+      "Hash": "0xEEAD6013",
+      "Layer": "World",
+      "Category": "scanner_flora",
+      "Text": "Cathedral Kelp: Large canopy ribs forming nave-like corridors. Current bends the whole arch before the leaves react. Useful as shelter, route language, and high-tier visual overkill when the player has frame budget."
+    },
+    {
+      "LocID": "LORE_SCANNER_FLORA_RIFT_RIBBON",
+      "Hash": "0xC9C4E152",
+      "Layer": "World",
+      "Category": "scanner_flora",
+      "Text": "Rift Ribbon: Thin black-green flora tied to geothermal seams. It twists across the thermocline band and marks sideways heat transport. Harvest yields heat-resistant fiber but attracts vent grazers."
+    },
+    {
+      "LocID": "LORE_SCANNER_FLORA_LANTERN_GRASS",
+      "Hash": "0x5114145B",
+      "Layer": "World",
+      "Category": "scanner_flora",
+      "Text": "Lantern Grass: Low bioluminescent grass that dims when predator pressure rises. This is a presentation alarm, not a magic sensor; fauna movement and acoustic disturbance are enough to make the lie useful."
+    },
+    {
+      "LocID": "LORE_SCANNER_FLORA_STATIC_THICKET",
+      "Hash": "0x0A71A0BD",
+      "Layer": "World",
+      "Category": "scanner_flora",
+      "Text": "Static Thicket: Needle flora that stores charge in piezoelectric stems. Flow and nearby motion make the needles tick against each other. Good for emergency spark contacts; bad for bare glove work."
+    },
+    {
+      "LocID": "LORE_ALPHA_LEVIATHAN_FILE",
+      "Hash": "0xB9C11D90",
+      "Layer": "Narrative",
+      "Category": "leviathan_file",
+      "Text": "ALPHA LEVIATHAN FILE // ACCESS REDACTED\n\nDesignation: ALPHA LEVIATHAN is not confirmed taxonomy. It is a convergence label for sonar returns, mass displacement, synchronized prey blackout, and survivor testimony collected between 2500 m and 5500 m.\n\nBody length: [REDACTED]. Recorded pressure wake: sufficient to trip hull-stress alarms without direct contact. Acoustic profile: sub-40 Hz carrier with harmonic gaps matching no known machinery. Visual profile: witnesses report a crown, a cable forest, a mouth, or a corridor. These are considered unreliable because hypoxia and nitrogen narcosis were present in 71 percent of interviews. The remaining 29 percent were dead.\n\nBehavior: ALPHA does not chase like a predator. It edits routes. Lights fail ahead of it. Fish compress against walls. Flora dims in a widening ring. Doors that should be safe become the wrong doors. The most consistent survivor statement is this: it arrived before we saw it, and after we saw it, arrival had already happened.\n\nCorporate instruction: do not engage, do not name, do not publish. If encountered, classify as sensor cascade. If recorded, quarantine. If heard through the hull, stop all active sonar and pray the silence is smaller than you are.\n\nMarauder note: The Corp redacted the depth, the size, and the casualty count. They did not redact the fear. That means fear is the only honest field left."
+    },
+    {
+      "LocID": "MADNESS_VARIANT_BRIEFING",
+      "Hash": "0xB5CB47E3",
+      "Layer": "Narrative",
+      "Category": "madness_variant",
+      "Trigger": "PlayerStress01 > 0.9",
+      "Text": "Marauder doctrine under hypoxia: map the exit before the prize. Count air. Count teeth. Count the room twice because the room is counting you back."
+    },
+    {
+      "LocID": "MADNESS_VARIANT_ALPHA",
+      "Hash": "0x7172E4DD",
+      "Layer": "Narrative",
+      "Category": "madness_variant",
+      "Trigger": "PlayerStress01 > 0.9",
+      "Text": "ALPHA LEVIATHAN FILE // oxygen low // redaction failed // it was never outside the glass // stop reading where it can see your eyes"
+    },
+    {
+      "LocID": "MADNESS_VARIANT_DATAPAD_06",
+      "Hash": "0xD056653D",
+      "Layer": "Narrative",
+      "Category": "madness_variant",
+      "Trigger": "PlayerStress01 > 0.9",
+      "Text": "Nitrogen advisory: if the suit uses a dead man's voice, answer only with numbers. Names make bubbles. Bubbles make trails."
+    },
+    {
+      "LocID": "MADNESS_VARIANT_AUDIOLOG_14",
+      "Hash": "0x7655BD71",
+      "Layer": "Narrative",
+      "Category": "madness_variant",
+      "Trigger": "PlayerStress01 > 0.9",
+      "Text": "Sonar returned a bearing inside the helmet. Another behind the tongue. Another where childhood used to be. Range refused because range implies distance."
+    },
+    {
+      "LocID": "MADNESS_VARIANT_SCANNER_LANTERN_GRASS",
+      "Hash": "0xBD0ED5B5",
+      "Layer": "Narrative",
+      "Category": "madness_variant",
+      "Trigger": "PlayerStress01 > 0.9",
+      "Text": "Lantern Grass dims when predators pass. It also dims when you think about surfacing. The plant denies this. The plant is lying politely."
+    },
+    {
+      "LocID": "LORE_CONSISTENCY_AUDIT",
+      "Hash": "0x25506AB2",
+      "Layer": "Narrative",
+      "Category": "audit",
+      "Text": "Lore consistency audit: Depth bands stay inside current project ranges: Spine 0-100 m, Drowned Factories 100-1500 m, Drop 1000-2500 m, Deep Abyss 2500-4000 m, Thermal Fields 4000-5500 m. Pressure language follows the project survival simplification of 1 MPa per 100 m, so 4000 m reads as 40 MPa in-system. Gas references use Dalton's Law as scalar partial-pressure bookkeeping, not particle simulation. Nitrogen narcosis appears when compartment or suit conditions justify cognitive noise, especially above 4 atm room-pressure language. Abyssal Flow Fields are described as VFX, audio, and AI-readability cues first; mass physical forcing is reserved for player, vehicles, hazards, or near interactables. Flora reaction text favors global shader sway and flow fakes before per-frond simulation."
+    }
+  ]
+}

@@ -1,0 +1,213 @@
+{
+  "schema_id": "economy.runtime_binding_review.v1",
+  "schema_hash32": 851991857,
+  "hash_algorithm": "FNV-1a 32-bit via Hecton.Localization.LocHash.Compute (UTF-16 code units, case-preserving)",
+  "status_id": "economy.binding.requires_importer_mapping",
+  "status_hash32": 2219833728,
+  "scan_summary": {
+    "recipe_unique_ids": 55,
+    "discovered_existing_asset_ids": 191,
+    "matched_existing_ids": 33,
+    "unresolved_economy_defined_ids": 22
+  },
+  "unresolved_bindings": [
+    {
+      "economy_id": "Module_AirlockFrame",
+      "economy_hash32": 1235472580,
+      "binding_status_id": "economy.binding.requires_authoring_or_mapping",
+      "binding_status_hash32": 73380093,
+      "suggested_existing_id": "Build_Airlock_Hatch",
+      "suggested_existing_hash32": 1402079212,
+      "notes": "Closest current construction stableId. Importer must confirm that airlock frame and hatch are the same gameplay unlock."
+    },
+    {
+      "economy_id": "Module_FabricatorBench",
+      "economy_hash32": 1194003719,
+      "binding_status_id": "economy.binding.requires_authoring_or_mapping",
+      "binding_status_hash32": 73380093,
+      "suggested_existing_id": null,
+      "suggested_existing_hash32": null,
+      "notes": "No exact current fabricator bench buildable stableId was found."
+    },
+    {
+      "economy_id": "Module_FoundationKit",
+      "economy_hash32": 972870237,
+      "binding_status_id": "economy.binding.requires_authoring_or_mapping",
+      "binding_status_hash32": 73380093,
+      "suggested_existing_id": "Build_Foundation_Platform",
+      "suggested_existing_hash32": 3324269343,
+      "notes": "Closest current construction stableId."
+    },
+    {
+      "economy_id": "Module_O2Recycler",
+      "economy_hash32": 1361286512,
+      "binding_status_id": "economy.binding.requires_authoring_or_mapping",
+      "binding_status_hash32": 73380093,
+      "suggested_existing_id": null,
+      "suggested_existing_hash32": null,
+      "notes": "No exact current O2 recycler buildable stableId was found."
+    },
+    {
+      "economy_id": "Module_PowerRelay",
+      "economy_hash32": 2185499708,
+      "binding_status_id": "economy.binding.requires_authoring_or_mapping",
+      "binding_status_hash32": 73380093,
+      "suggested_existing_id": "Build_Utility_Pylon",
+      "suggested_existing_hash32": 2170266775,
+      "notes": "Closest current routing/power-adjacent construction stableId."
+    },
+    {
+      "economy_id": "Module_PressurizedContainer",
+      "economy_hash32": 2749184637,
+      "binding_status_id": "economy.binding.requires_authoring_or_mapping",
+      "binding_status_hash32": 73380093,
+      "suggested_existing_id": null,
+      "suggested_existing_hash32": null,
+      "notes": "No exact current pressurized container buildable stableId was found."
+    },
+    {
+      "economy_id": "Module_StorageLocker",
+      "economy_hash32": 4001448765,
+      "binding_status_id": "economy.binding.requires_authoring_or_mapping",
+      "binding_status_hash32": 73380093,
+      "suggested_existing_id": null,
+      "suggested_existing_hash32": null,
+      "notes": "No exact current storage locker buildable stableId was found."
+    },
+    {
+      "economy_id": "Module_SumpPump",
+      "economy_hash32": 822934043,
+      "binding_status_id": "economy.binding.requires_authoring_or_mapping",
+      "binding_status_hash32": 73380093,
+      "suggested_existing_id": "Build_Service_Pump",
+      "suggested_existing_hash32": 497764710,
+      "notes": "Closest current flood-control construction stableId."
+    },
+    {
+      "economy_id": "Upgrade_AbyssPressureShell",
+      "economy_hash32": 932012347,
+      "binding_status_id": "economy.binding.requires_authoring_or_mapping",
+      "binding_status_hash32": 73380093,
+      "suggested_existing_id": "Comp_AbyssPressureShell",
+      "suggested_existing_hash32": 820786162,
+      "notes": "Current asset is a component item, not a submarine-upgrade record."
+    },
+    {
+      "economy_id": "Upgrade_AbyssalStabilizer",
+      "economy_hash32": 3542071688,
+      "binding_status_id": "economy.binding.requires_authoring_or_mapping",
+      "binding_status_hash32": 73380093,
+      "suggested_existing_id": "Comp_AbyssalStabilizer",
+      "suggested_existing_hash32": 212522729,
+      "notes": "Current asset is a component item, not a submarine-upgrade record."
+    },
+    {
+      "economy_id": "Upgrade_BallastOptimizer",
+      "economy_hash32": 1231965596,
+      "binding_status_id": "economy.binding.requires_authoring_or_mapping",
+      "binding_status_hash32": 73380093,
+      "suggested_existing_id": "Comp_BallastOptimizer",
+      "suggested_existing_hash32": 1476053301,
+      "notes": "Current asset is a component item, not a submarine-upgrade record."
+    },
+    {
+      "economy_id": "Upgrade_DepthCompensator",
+      "economy_hash32": 1167658630,
+      "binding_status_id": "economy.binding.requires_authoring_or_mapping",
+      "binding_status_hash32": 73380093,
+      "suggested_existing_id": "Comp_PressureCompensator",
+      "suggested_existing_hash32": 1751640999,
+      "notes": "Closest current pressure component; semantics differ from depth-compensator upgrade."
+    },
+    {
+      "economy_id": "Upgrade_EmergencyO2Rack",
+      "economy_hash32": 2872587453,
+      "binding_status_id": "economy.binding.requires_authoring_or_mapping",
+      "binding_status_hash32": 73380093,
+      "suggested_existing_id": "Data_EmergencyO2Canister",
+      "suggested_existing_hash32": 3066743659,
+      "notes": "Current asset is a consumable oxygen canister, not a rack upgrade."
+    },
+    {
+      "economy_id": "Upgrade_EngineOverdriveManifold",
+      "economy_hash32": 3136873884,
+      "binding_status_id": "economy.binding.requires_authoring_or_mapping",
+      "binding_status_hash32": 73380093,
+      "suggested_existing_id": "Comp_EngineOverdriveManifold",
+      "suggested_existing_hash32": 1209056509,
+      "notes": "Current asset is a component item, not a submarine-upgrade record."
+    },
+    {
+      "economy_id": "Upgrade_GuidanceModule",
+      "economy_hash32": 657239398,
+      "binding_status_id": "economy.binding.requires_authoring_or_mapping",
+      "binding_status_hash32": 73380093,
+      "suggested_existing_id": "Comp_GuidanceModule",
+      "suggested_existing_hash32": 490402495,
+      "notes": "Current asset is a component item, not a submarine-upgrade record."
+    },
+    {
+      "economy_id": "Upgrade_HighCapacityCell",
+      "economy_hash32": 2083712206,
+      "binding_status_id": "economy.binding.requires_authoring_or_mapping",
+      "binding_status_hash32": 73380093,
+      "suggested_existing_id": "Comp_HighCapacityCell",
+      "suggested_existing_hash32": 617871895,
+      "notes": "Current asset is a component item, not a submarine-upgrade record."
+    },
+    {
+      "economy_id": "Upgrade_HullArmorLattice",
+      "economy_hash32": 1257718430,
+      "binding_status_id": "economy.binding.requires_authoring_or_mapping",
+      "binding_status_hash32": 73380093,
+      "suggested_existing_id": "Comp_HullArmorLattice",
+      "suggested_existing_hash32": 1238281687,
+      "notes": "Current asset is a component item, not a submarine-upgrade record."
+    },
+    {
+      "economy_id": "Upgrade_HydraulicActuator",
+      "economy_hash32": 1328461324,
+      "binding_status_id": "economy.binding.requires_authoring_or_mapping",
+      "binding_status_hash32": 73380093,
+      "suggested_existing_id": "Comp_HydraulicActuator",
+      "suggested_existing_hash32": 3785687197,
+      "notes": "Current asset is a component item, not a submarine-upgrade record."
+    },
+    {
+      "economy_id": "Upgrade_ReactorBypassCoupler",
+      "economy_hash32": 3833141382,
+      "binding_status_id": "economy.binding.requires_authoring_or_mapping",
+      "binding_status_hash32": 73380093,
+      "suggested_existing_id": "Comp_ReactorBypassCoupler",
+      "suggested_existing_hash32": 493347919,
+      "notes": "Current asset is a component item, not a submarine-upgrade record."
+    },
+    {
+      "economy_id": "Upgrade_SilentRunningBaffle",
+      "economy_hash32": 3312055054,
+      "binding_status_id": "economy.binding.requires_authoring_or_mapping",
+      "binding_status_hash32": 73380093,
+      "suggested_existing_id": "Comp_SilentRunningBaffle",
+      "suggested_existing_hash32": 2091685567,
+      "notes": "Current asset is a component item, not a submarine-upgrade record."
+    },
+    {
+      "economy_id": "Upgrade_SonarAmplifier",
+      "economy_hash32": 2406373322,
+      "binding_status_id": "economy.binding.requires_authoring_or_mapping",
+      "binding_status_hash32": 73380093,
+      "suggested_existing_id": "Comp_SonarAmplifier",
+      "suggested_existing_hash32": 1941153475,
+      "notes": "Current asset is a component item, not a submarine-upgrade record."
+    },
+    {
+      "economy_id": "Upgrade_ThermalShielding",
+      "economy_hash32": 2908096734,
+      "binding_status_id": "economy.binding.requires_authoring_or_mapping",
+      "binding_status_hash32": 73380093,
+      "suggested_existing_id": "Comp_ThermalShielding",
+      "suggested_existing_hash32": 2739917719,
+      "notes": "Current asset is a component item, not a submarine-upgrade record."
+    }
+  ]
+}

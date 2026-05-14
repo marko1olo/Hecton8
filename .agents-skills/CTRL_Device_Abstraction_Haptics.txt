@@ -38,7 +38,7 @@ PlayerInputState {
     uint8   DeviceType         // 0=KBM, 1=DualSense, 2=Xbox, 3=Generic
     uint8   _pad[3]
 }
-// Total: 8+8+4+4+4+4+4+4+1+3 = 44 bytes → pad to 48 or 64 with explicit layout
+// Total: 8+8+4+4+4+4+4+4+1+3 = 44 bytes -> pad to 48 or 64 with explicit layout
 
 BufferedAction {
     uint8   ActionID           // enum cast: Jump=0, Dash=1, Interact=2 ... max 255 actions
@@ -52,7 +52,7 @@ HapticCommand {
     float   LowFreqIntensity   // [0,1] left motor
     float   HighFreqIntensity  // [0,1] right motor
     float   DurationRemaining  // seconds
-    float   DecayRate          // λ for exp(-t*λ)
+    float   DecayRate          // lambda for exp(-t*lambda)
     uint8   Priority           // 0=low(ambient) 1=medium(tool) 2=high(collision) 3=critical
     uint8   MotorMask          // bit0=Left, bit1=Right, bit2=Trigger-L, bit3=Trigger-R
     uint8   BlendMode          // 0=Override, 1=Additive, 2=Max
@@ -64,7 +64,7 @@ HapticCommand {
 ### IIB. Bitmask Action Map
 
 ```
-// ActionBitmask layout — uint32:
+// ActionBitmask layout - uint32:
 // bit  0  : Jump/Ascend
 // bit  1  : Dash/Boost
 // bit  2  : Interact
@@ -86,7 +86,7 @@ JustReleased(action)     := ~IsPressed(action, Current) & IsPressed(action, Prev
 IsHeld(action)           := IsPressed(action, Current) & IsPressed(action, Prev)
 ```
 
-### IIC. Ring Buffer — Input Buffer
+### IIC. Ring Buffer - Input Buffer
 
 ```
 // NativeCircularBuffer<BufferedAction>:
@@ -101,30 +101,30 @@ IsHeld(action)           := IsPressed(action, Current) & IsPressed(action, Prev)
 // Cost:  O(32) fixed scan per frame. 128 bytes. Always in L1.
 ```
 
-### IID. Double-Buffer — Haptic Queue
+### IID. Double-Buffer - Haptic Queue
 
 ```
 // Front buffer: game-thread writes HapticCommand entries this frame
 // Back buffer:  haptic dispatch thread (or end-of-frame job) reads, sends to device
 // Swap: atomic pointer flip (Interlocked.Exchange on buffer index uint)
-// NativeArray<HapticCommand>[16] × 2 = 512 bytes total. Never grows.
+// NativeArray<HapticCommand>[16] x 2 = 512 bytes total. Never grows.
 ```
 
 ---
 
 ## III. ALGORITHMIC & MATH TRUTH
 
-### IIIA. Zero-GC Poll — Frame Entry Point
+### IIIA. Zero-GC Poll - Frame Entry Point
 
 ```
 POLL SEQUENCE (execute once, top of Update, before all game systems):
 1. Read // Inside Awake():
 CachedMoveAction = InputSystem.actions.FindAction("Move");
 // Inside Poll():
-CachedMoveAction.ReadValue<Vector2>()        → state.MoveAxis
-2. Read InputSystem.actions["Look"].ReadValue<Vector2>()        → state.LookAxis
-3. Read InputSystem.actions["Thrust"].ReadValue<float>()        → state.ThrustAxis
-4. Read InputSystem.actions["Brake"].ReadValue<float>()         → state.BrakeAxis
+CachedMoveAction.ReadValue<Vector2>()        -> state.MoveAxis
+2. Read InputSystem.actions["Look"].ReadValue<Vector2>()        -> state.LookAxis
+3. Read InputSystem.actions["Thrust"].ReadValue<float>()        -> state.ThrustAxis
+4. Read InputSystem.actions["Brake"].ReadValue<float>()         -> state.BrakeAxis
 5. state.ActionBitmaskPrev = state.ActionBitmask
 6. Rebuild state.ActionBitmask:
    For each ActionID in [0..11]:
@@ -133,16 +133,16 @@ CachedMoveAction.ReadValue<Vector2>()        → state.MoveAxis
 7. state.InteractHoldTime += IsHeld(Interact, state.ActionBitmask) ? dt : -state.InteractHoldTime
    (clamp InteractHoldTime >= 0)
 8. state.DeviceType = CachedDeviceType  // set on device-change event only
-9. Write state to SharedState (single blittable write — no boxing)
+9. Write state to SharedState (single blittable write - no boxing)
 // Total: 12 native API crossings maximum per frame. Fixed. Deterministic.
 ```
 
-### IIIB. Input Buffer — Enqueue Logic
+### IIIB. Input Buffer - Enqueue Logic
 
 ```
 ON JustPressed(ActionID):
 1. Scan buffer[0..31] for existing entry with same ActionID && ConsumedFlag==0
-   → if found: reset FramesRemaining = BUFFER_WINDOW (15). Exit. (Dedup)
+   -> if found: reset FramesRemaining = BUFFER_WINDOW (15). Exit. (Dedup)
 2. If no existing: write new BufferedAction at WriteHead & Mask
    ActionID=id, FrameQueued=FrameCounter&255, FramesRemaining=15, ConsumedFlag=0
    WriteHead++
@@ -160,66 +160,66 @@ For i in 0..31:
     buffer[i].ConsumedFlag = 1
     return true
 return false
-// Gameplay never misses input ≤15 frames old. Zero allocation.
+// Gameplay never misses input <=15 frames old. Zero allocation.
 ```
 
-### IIIC. Haptic Frequency Split — Motor Routing
+### IIIC. Haptic Frequency Split - Motor Routing
 
 ```
 MOTOR ASSIGNMENT RULES:
 StructuralEvent  (SubCollision, HullStress, SeismicShock):
-  → Left Motor (LowFreq)
-  → MotorMask = 0b0001
-  → LowFreqIntensity = f(DamageSignal.Magnitude)
-  → DecayRate = 3.0f  (fast structural thud)
+  -> Left Motor (LowFreq)
+  -> MotorMask = 0b0001
+  -> LowFreqIntensity = f(DamageSignal.Magnitude)
+  -> DecayRate = 3.0f  (fast structural thud)
 
 ToolEvent (DrillActive, PlasmaCutterFire, SonarPing):
-  → Right Motor (HighFreq)
-  → MotorMask = 0b0010
-  → HighFreqIntensity = f(InteractionSignal.PowerDelivered)
-  → DecayRate = 1.5f  (sustained tool hum)
+  -> Right Motor (HighFreq)
+  -> MotorMask = 0b0010
+  -> HighFreqIntensity = f(InteractionSignal.PowerDelivered)
+  -> DecayRate = 1.5f  (sustained tool hum)
 
 AmbientHorror (CreatureNearby, PressureWarning):
-  → Both Motors (LowFreq dominant)
-  → MotorMask = 0b0011
-  → LowFreqIntensity = 0.15f (constant low pulse)
-  → HighFreqIntensity = 0.05f
-  → DecayRate = 0.1f  (slow ambient fade)
+  -> Both Motors (LowFreq dominant)
+  -> MotorMask = 0b0011
+  -> LowFreqIntensity = 0.15f (constant low pulse)
+  -> HighFreqIntensity = 0.05f
+  -> DecayRate = 0.1f  (slow ambient fade)
 
-TriggerFeedback (DualSense only — adaptive triggers):
-  → MotorMask |= 0b1100
-  → L2 resistance scales with BrakeAxis hold force
-  → R2 resistance scales with DrillHold duration
+TriggerFeedback (DualSense only - adaptive triggers):
+  -> MotorMask |= 0b1100
+  -> L2 resistance scales with BrakeAxis hold force
+  -> R2 resistance scales with DrillHold duration
 
 DeviceType check before trigger write:
   if DeviceType != 1 (DualSense): MotorMask &= 0b0011  (strip trigger bits)
 ```
 
-### IIID. Haptic Attenuation — Math Kernel
+### IIID. Haptic Attenuation - Math Kernel
 
 ```
-// INPUT: signal ∈ [0,1], t = time since trigger (seconds), λ = DecayRate
-// OUTPUT: motorIntensity ∈ [0,1]
+// INPUT: signal  [0,1], t = time since trigger (seconds), lambda = DecayRate
+// OUTPUT: motorIntensity  in  [0,1]
 
 // Exponential decay (primary):
-motorIntensity(t) = signal × exp(-t × λ)
+motorIntensity(t) = signal x exp(-t x lambda)
 
 // NaN/Inf guard:
 if isnan(motorIntensity) || isinf(motorIntensity): motorIntensity = 0.0f
 motorIntensity = clamp(motorIntensity, 0.0f, 1.0f)
 
 // Signal mapping from raw event data:
-// DamageSignal.Magnitude → [0,1]:
+// DamageSignal.Magnitude -> [0,1]:
 signal = clamp(Magnitude / MaxExpectedMagnitude, 0.0f, 1.0f)
 // MaxExpectedMagnitude = 500.0f (calibrate per project)
 
-// InteractionSignal.PowerDelivered → [0,1]:
+// InteractionSignal.PowerDelivered -> [0,1]:
 signal = clamp(PowerDelivered / RatedPower, 0.0f, 1.0f)
 // RatedPower = tool.MaxPower (cached, not queried per frame)
 
 // AnimationCurve variant (designer-tunable, evaluated once at trigger):
-// curveIntensity = HapticCurve.Evaluate(signal)  ← baked float, not re-evaluated per frame
-// motorIntensity(t) = curveIntensity × exp(-t × λ)
+// curveIntensity = HapticCurve.Evaluate(signal)  <- baked float, not re-evaluated per frame
+// motorIntensity(t) = curveIntensity x exp(-t x lambda)
 
 // Additive blend (when BlendMode==1):
 finalMotor = clamp(existing + motorIntensity(t), 0.0f, 1.0f)
@@ -235,15 +235,15 @@ finalMotor = motorIntensity(t)
 // Priority compared per motor bit independently
 ```
 
-### IIIE. Haptic Tick — Per-Frame Update Kernel
+### IIIE. Haptic Tick - Per-Frame Update Kernel
 
 ```
 HAPTIC UPDATE (end-of-frame, after gameplay writes to front buffer):
 1. Scan front buffer[0..15]:
    For each HapticCommand where DurationRemaining > 0:
      a. Compute t = CommandLifetime - DurationRemaining
-     b. LowFreq_out  = (MotorMask & 0b01) ? cmd.LowFreqIntensity  × exp(-t × cmd.DecayRate) : 0
-     c. HighFreq_out = (MotorMask & 0b10) ? cmd.HighFreqIntensity × exp(-t × cmd.DecayRate) : 0
+     b. LowFreq_out  = (MotorMask & 0b01) ? cmd.LowFreqIntensity  x exp(-t x cmd.DecayRate) : 0
+     c. HighFreq_out = (MotorMask & 0b10) ? cmd.HighFreqIntensity x exp(-t x cmd.DecayRate) : 0
      d. Accumulate into FrameMotorAccum[Left], FrameMotorAccum[Right] via BlendMode logic
      e. DurationRemaining -= dt
      f. if DurationRemaining <= 0: mark slot inactive
@@ -251,38 +251,38 @@ HAPTIC UPDATE (end-of-frame, after gameplay writes to front buffer):
 2. FinalLeft  = clamp(FrameMotorAccum[Left],  0.0f, 1.0f)
    FinalRight = clamp(FrameMotorAccum[Right], 0.0f, 1.0f)
 
-3. NaN/Inf check on both values → zero if invalid
+3. NaN/Inf check on both values -> zero if invalid
 
 4. if abs(FinalLeft  - LastSentLeft)  < 0.01f &&
       abs(FinalRight - LastSentRight) < 0.01f:
-   → SKIP device write (delta threshold — reduces USB/BT traffic)
+   -> SKIP device write (delta threshold - reduces USB/BT traffic)
 
 5. Gamepad.SetMotorSpeeds(FinalLeft, FinalRight)  // single native crossing
    LastSentLeft = FinalLeft; LastSentRight = FinalRight
 
 6. Swap double-buffer: atomically flip active buffer index
 
-// exp(-t×λ) fast approx for MX350 CPU budget:
-// Use: 1/(1 + t×λ + 0.5×(t×λ)²)  (Padé [1/2] — valid for t×λ < 3.0)
+// exp(-txlambda) fast approx for MX350 CPU budget:
+// Use: 1/(1 + txlambda + 0.5x(txlambda)^2)  (Pad [1/2] - valid for txlambda < 3.0)
 // Error: <2% vs true exp in range. No libm call. Pure ALU.
 ```
 
-### IIIF. Fast Approximations — MX350 Budget
+### IIIF. Fast Approximations - MX350 Budget
 
 ```
-// exp(-x) Padé [1/2] approximation:
+// exp(-x) Pade [1/2] approximation:
 math.exp(-x);
 
-// Valid range: x ∈ [0, 3]. Clamp x before call:
-x = clamp(t × λ, 0.0f, 3.0f)
+// Valid range: x  in  [0, 3]. Clamp x before call:
+x = clamp(t x lambda, 0.0f, 3.0f)
 
-// Bitmask IsPressed — branchless (SIMD-friendly unroll for 12 actions):
+// Bitmask IsPressed - branchless (SIMD-friendly unroll for 12 actions):
 // Process all 12 action bits in single uint32 op. No loop branches.
 
-// Device type detect — integer compare, not string:
+// Device type detect - integer compare, not string:
 // DeviceType cached as uint8 on connect event. Zero string ops in tick.
 
-// Gamepad.SetMotorSpeeds — called maximum ONCE per frame.
+// Gamepad.SetMotorSpeeds - called maximum ONCE per frame.
 // Delta threshold (step IIIE.4) reduces redundant calls by ~60% during calm gameplay.
 ```
 
@@ -290,24 +290,24 @@ x = clamp(t × λ, 0.0f, 3.0f)
 
 ## IV. HARDWARE & SCALABILITY
 
-### IVA. LOD Tiers — Haptic Fidelity
+### IVA. LOD Tiers - Haptic Fidelity
 
 ```
 BASE (i3-10gen / MX350 / mandatory):
   Haptic: Left+Right motor only. Binary decay curve (linear falloff).
-  motorIntensity(t) = signal × max(0, 1 - t×λ)  // linear, no exp, cheapest
+  motorIntensity(t) = signal x max(0, 1 - txlambda)  // linear, no exp, cheapest
   Buffer: 15-frame window active. Full agnostic input system.
   Update rate: Haptic tick every frame.
 
 HIGH (i5-11gen / GTX 1660 class):
-  Haptic: Exp decay active. fastExp Padé approximation.
+  Haptic: Exp decay active. fastExp Pade approximation.
   AnimationCurve sampling enabled (baked, single Evaluate per trigger).
   Buffer: 15-frame window. Priority blending active.
   Update rate: Haptic tick every frame.
 
 ULTRA (i7+ / RTX 2060+):
   Haptic: DualSense adaptive trigger resistance (L2/R2 via DSX/SteamInput API).
-  True exp(-t×λ) via libm (CPU budget allows).
+  True exp(-txlambda) via libm (CPU budget allows).
   Ambient haptic layers (creature proximity gradient).
   Update rate: Haptic tick at 120Hz via fixed-step accumulator if game runs >60fps.
 ```
@@ -315,11 +315,11 @@ ULTRA (i7+ / RTX 2060+):
 ### IVB. CPU Time Budget
 
 ```
-Poll (top of Update):          ≤ 0.10ms  (12 fixed API crossings)
-Buffer tick (32 slots scan):   ≤ 0.02ms  (128 bytes, always L1)
-Haptic tick (16 slots scan):   ≤ 0.03ms  (256 bytes, always L1)
-Haptic device write:           ≤ 0.05ms  (1 SetMotorSpeeds call, delta-gated)
-Total input system budget:     ≤ 0.20ms/frame  (leaves 15.8ms for 60fps frame)
+Poll (top of Update):          <= 0.10ms  (12 fixed API crossings)
+Buffer tick (32 slots scan):   <= 0.02ms  (128 bytes, always L1)
+Haptic tick (16 slots scan):   <= 0.03ms  (256 bytes, always L1)
+Haptic device write:           <= 0.05ms  (1 SetMotorSpeeds call, delta-gated)
+Total input system budget:     <= 0.20ms/frame  (leaves 15.8ms for 60fps frame)
 ```
 
 ### IVC. VRAM / Memory Impact
@@ -327,8 +327,8 @@ Total input system budget:     ≤ 0.20ms/frame  (leaves 15.8ms for 60fps frame)
 ```
 PlayerInputState struct:       48 bytes (single persistent allocation, static)
 BufferedAction array:          128 bytes (NativeArray, persistent)
-HapticCommand double-buffer:   512 bytes (NativeArray×2, persistent)
-CachedActionRefs array:        ~192 bytes (12 × InputAction ref, 16 bytes each)
+HapticCommand double-buffer:   512 bytes (NativeArrayx2, persistent)
+CachedActionRefs array:        ~192 bytes (12 x InputAction ref, 16 bytes each)
 Total input system footprint:  < 1KB RAM. Zero VRAM. Zero GC pressure.
 ```
 
@@ -374,7 +374,7 @@ FAILURE: Haptic buffer full (all 16 slots active simultaneously):
   If Priority equal: evict oldest slot (smallest DurationRemaining).
   No exception. No allocation.
 
-FAILURE: exp(-t×λ) with t=NaN (dt spike causing NaN propagation):
+FAILURE: exp(-txlambda) with t=NaN (dt spike causing NaN propagation):
   Guard: dt = clamp(dt, 0.0001f, 0.05f) before all haptic math.
   Caps frame spike at 50ms. Prevents runaway decay on stutter frame.
 
@@ -384,7 +384,7 @@ FAILURE: signal = Magnitude / MaxExpectedMagnitude with MaxExpectedMagnitude = 0
 FAILURE: MoveAxis magnitude > 1.0 (analog stick hardware drift on worn controllers):
 // Use normalizesafe to prevent division by zero.
 MoveAxis = math.normalizesafe(MoveAxis) * ...
-  Applied at poll boundary. All downstream sees clean [-1,1]² disk.
+  Applied at poll boundary. All downstream sees clean [-1,1]^2 disk.
 
 FAILURE: Buffer scan finds ConsumedFlag=1 entries accumulating (consumed but not recycled):
   Policy: ConsumedFlag=1 slots treated as free during write. WriteHead wraps freely.
@@ -397,29 +397,29 @@ FAILURE: DeviceType=1 (DualSense) but running on Linux without DualSense driver:
 FAILURE: Input buffer ghost-firing (action consumed by wrong system, both systems fire):
   Policy: exactly one consumer per ActionID per buffer entry. ConsumedFlag atomic.
   Priority system: higher-gameplay-priority systems query buffer first.
-  Document consumer priority order in gameplay layer (NOT here — SRP).
+  Document consumer priority order in gameplay layer (NOT here - SRP).
 ```
 
 ### VC. Initialization Sequence
 
 ```
 1. Allocate NativeArray<BufferedAction>[32] persistent (Allocator.Persistent)
-2. Allocate NativeArray<HapticCommand>[16]×2 persistent
+2. Allocate NativeArray<HapticCommand>[16]x2 persistent
 3. Allocate PlayerInputState persistent (single static slot)
-4. Load InputActionAsset → EnableActionMap("Gameplay")
+4. Load InputActionAsset -> EnableActionMap("Gameplay")
 5. Cache InputAction references: CachedActionRefs[0..11] = actionMap.FindAction(name)
    // All 12 lookups happen ONCE here. Never repeated.
 6. Register: InputSystem.onDeviceChange += OnDeviceChange
-7. OnDeviceChange: detect Gamepad → classify DeviceType → cache Gamepad reference
+7. OnDeviceChange: detect Gamepad -> classify DeviceType -> cache Gamepad reference
 8. Initialize LastSentLeft=0, LastSentRight=0
 9. Initialize all BufferedAction slots: ConsumedFlag=1, FramesRemaining=0
 
 SHUTDOWN:
 1. Dispose NativeArray<BufferedAction>
-2. Dispose NativeArray<HapticCommand>×2
+2. Dispose NativeArray<HapticCommand>x2
 3. Disable InputActionAsset
 4. Unregister InputSystem.onDeviceChange
-// No leaks. NativeArray disposal mandatory — Burst allocator, not managed heap.
+// No leaks. NativeArray disposal mandatory - Burst allocator, not managed heap.
 ```
 
 ---
@@ -431,7 +431,7 @@ SHUTDOWN:
 ```
 // InputActionAsset schema can drift between Unity versions.
 // Cache action GUIDs (not names) as fallback:
-// CachedActionGUIDs[i] = action.id (System.Guid → 16 bytes)
+// CachedActionGUIDs[i] = action.id (System.Guid -> 16 bytes)
 // If FindAction(name) returns null: retry FindAction(guid)
 // Prevents silent input failure on asset reimport / rename.
 ```
@@ -440,21 +440,21 @@ SHUTDOWN:
 
 ```
 // MX350 targets 60fps but may dip. Buffer window = 15 frames = 250ms at 60fps.
-// At 30fps, 15 frames = 500ms — too long, feels unresponsive.
-// Dynamic window: BUFFER_WINDOW = clamp(round(0.25 × frameRate), 8, 20)
+// At 30fps, 15 frames = 500ms - too long, feels unresponsive.
+// Dynamic window: BUFFER_WINDOW = clamp(round(0.25 x frameRate), 8, 20)
 // frameRate = rolling 30-frame average FPS, updated every 30 frames.
 // Recalculate BUFFER_WINDOW every 30 frames. FramesRemaining on existing entries unchanged.
 // Prevents "ghost dash" at 30fps while maintaining responsiveness at 60fps.
 ```
 
-### VIC. Haptic Cooldown — Neurological Fatigue Model
+### VIC. Haptic Cooldown - Neurological Fatigue Model
 
 ```
 // Constant high-frequency haptic desensitizes player. Horror impact diminishes.
 // Per-motor accumulated exposure tracker:
-ExposureAccum[Left]  += FinalLeft  × dt  // joule-equivalent metric
-ExposureAccum[Right] += FinalRight × dt
-ExposureAccum decays: ExposureAccum[m] *= exp(-dt × 0.5f)  // τ = 2 seconds recovery
+ExposureAccum[Left]  += FinalLeft  x dt  // joule-equivalent metric
+ExposureAccum[Right] += FinalRight x dt
+ExposureAccum decays: ExposureAccum[m] *= exp(-dt x 0.5f)  //  = 2 seconds recovery
 
 // Fatigue attenuation multiplier:
 fatigueScale[m] = 1.0f - clamp(ExposureAccum[m] / ExposureThreshold, 0.0f, 0.6f)
@@ -465,7 +465,7 @@ FinalMotor[m] *= fatigueScale[m]
 // Result: ambient rumble fades over time; collision/horror hits always land with full impact.
 ```
 
-### VID. Deadzones — Adaptive Per-Device
+### VID. Deadzones - Adaptive Per-Device
 
 ```
 // Hardware deadzone varies by controller age/wear. Fixed deadzone wrong approach.
@@ -477,25 +477,25 @@ FinalMotor[m] *= fatigueScale[m]
 // Apply at poll:
 rawMag = length(MoveAxis)
 if rawMag < sessionDeadzone: MoveAxis = float2(0,0)
-else: MoveAxis = MoveAxis × ((rawMag - sessionDeadzone) / (1.0f - sessionDeadzone)) / rawMag
-// Remaps [deadzone..1] → [0..1] cleanly. No deadzone cliff artifact.
+else: MoveAxis = MoveAxis x ((rawMag - sessionDeadzone) / (1.0f - sessionDeadzone)) / rawMag
+// Remaps [deadzone..1] -> [0..1] cleanly. No deadzone cliff artifact.
 ```
 
-### VIE. Haptic Spatial Awareness — Stereo Directionality
+### VIE. Haptic Spatial Awareness - Stereo Directionality
 
 ```
-// Collision from sub's left side → emphasize left motor. Right impact → right motor.
-// Requires collision normal in world space → transform to submarine local space.
+// Collision from sub's left side -> emphasize left motor. Right impact -> right motor.
+// Requires collision normal in world space -> transform to submarine local space.
 
 localNormal = InverseTransformDirection(submarineTransform, worldCollisionNormal)
 // localNormal.x: -1=full left, +1=full right
 
 // Motor blend:
-leftBias  = clamp(0.5f - localNormal.x × 0.5f, 0.0f, 1.0f)
-rightBias = clamp(0.5f + localNormal.x × 0.5f, 0.0f, 1.0f)
+leftBias  = clamp(0.5f - localNormal.x x 0.5f, 0.0f, 1.0f)
+rightBias = clamp(0.5f + localNormal.x x 0.5f, 0.0f, 1.0f)
 
-cmd.LowFreqIntensity  = baseSignal × leftBias
-cmd.HighFreqIntensity = baseSignal × rightBias  // repurposed as right motor here
+cmd.LowFreqIntensity  = baseSignal x leftBias
+cmd.HighFreqIntensity = baseSignal x rightBias  // repurposed as right motor here
 cmd.MotorMask = 0b0011
 
 // Result: player physically feels which side hull was hit.

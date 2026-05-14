@@ -1,11 +1,11 @@
 # HECTON-8 Mandate Registry
 
-Date: 2026-05-11
+Date: 2026-05-14
 Status: ENFORCED REGISTRY / PENDING RUNTIME VERIFICATION
 
 Purpose: stable index for `.agents-skills`. This folder contains technical mandates, not brainstorming notes.
 
-Current inventory: `75` `.txt` mandates plus this `README.md` registry index.
+Current inventory: `78` `.txt` mandates plus this `README.md` registry index.
 
 ## Authority
 
@@ -33,13 +33,18 @@ Minimum examples:
 - Any runtime system over `0.1ms` is suspicious until profiler proof and load-shed behavior exist.
 - No per-proton, per-droplet, per-bubble, per-cable-segment, or per-flora-blade truth by default.
 - Zero GC in hot paths remains non-negotiable.
+- Native runtime buffers are DataVault-owned. Local persistent NativeArray ownership is banned outside the vault owner.
+- Systems execute through named phases: PRE_SIMULATION, SIMULATION, POST_SIMULATION, VISUAL_SYNC.
+- New gameplay broadcasts use typed SignalBus lanes and ReadOnlySpan-style snapshots. A monolithic EventBus is not a gameplay transport.
+- AUP authority uses a 300-frame Sync-Fence and millimeter quantization after every origin shift.
+- Mandate language is command language. "Consider", "maybe", "should", and "recommended" are rejected in new mandate text unless quoted as a banned pattern.
 - Unity import, Console, Play Mode, profiler, GCMonitor, player-build, memory, frame-time, scene wiring, and visual quality are `PENDING VERIFICATION` unless fresh artifacts prove them.
 
 ## Engineering Data
 
 | Fact | Current Value | Enforcement |
 |---|---:|---|
-| Mandate files | 75 | Registry audit must update this value when files are added or removed. |
+| Mandate files | 78 | Registry audit must update this value when files are added or removed. |
 | Runtime coroutine tolerance | 0 | `IEnumerator`, `yield return`, and `StartCoroutine` are rejected in gameplay hot paths. |
 | Unity 6000 render path | RenderGraph | New URP renderer features use `RecordRenderGraph`; Compatibility Mode is legacy debt. |
 | Async Unity object path | `UnityEngine.Awaitable` | `Task` is reserved for owned persistent workers or non-Unity background work. |
@@ -53,11 +58,15 @@ When mandate text conflicts:
 3. `OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt` wins over simulate-first wording for water, light, deformation, pressure, flow, ambience, cable sag, particles, flora motion, and distant motion.
 4. `OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt` wins on frame, VRAM, RAM, quality-tier, and load-shed budgets.
 5. `OPT_Zero_GC_Policy_AllocFree_Mandate.txt` wins on allocation policy.
-6. Current source/log evidence wins over undocumented assumptions.
+6. `ARCH_Execution_Phases.txt` wins on runtime phase ownership.
+7. `ARCH_Signal_Lane_Segregation.txt` wins on broadcast topology.
+8. `MATH_AUP_Determinism_Sync.txt` wins on rebase Sync-Fence and AUP drift proof.
+9. `QA_Evidence_Text_Filter_Audit.txt` wins on verification language and proof labels.
+10. Current source/log evidence wins over undocumented assumptions.
 
 ## Registry Buckets
 
-- `ARCH_*`: bootstrap, registry, service ownership.
+- `ARCH_*`: bootstrap, registry, service ownership, execution phases, signal lane segregation.
 - `OPT_*`: performance, zero-GC, native memory, cinematic-cheat doctrine.
 - `PHYS_*`: physics truth, contacts, kinematics, tether, fluid/incursion.
 - `REND_*`, `GPU_*`, `VOX_*`: rendering, VFX, shader, compute, voxel, MapMagic.
@@ -65,4 +74,22 @@ When mandate text conflicts:
 - `AI_*`, `ANIM_*`: navigation, cognition, boids, IK, animation.
 - `DATA_*`, `STRM_*`, `LOGI_*`, `NET_*`: data, save, streaming, logistics, reconciliation.
 - `AUD_*`, `AUDIO_*`, `UI_*`, `CTRL_*`: audio, UI, haptics, presentation.
-- `TOOL_*`, `DBG_*`, `PROJECT_*`: tooling, telemetry, compatibility.
+- `TOOL_*`, `DBG_*`, `PROJECT_*`, `QA_*`: tooling, telemetry, compatibility, evidence discipline.
+
+## Batch 007 Additions
+
+- `ARCH_Execution_Phases.txt`: fixed phase order and phase ownership record.
+- `ARCH_Signal_Lane_Segregation.txt`: typed SignalBus lanes, ReadOnlySpan snapshots, duplicate lane prevention.
+- `MATH_AUP_Determinism_Sync.txt`: AUP Sync-Fence, millimeter quantization, drift probes, fault dump law.
+
+## Inquisition Prevention
+
+[RULE] A report claiming `VERIFIED`, `0 GC`, microsecond savings, compile success, platform readiness, IL2CPP safety, or data sovereignty must name artifact path, command/tool, timestamp, and evidence class.
+[RULE] Binary/native DTOs and signal payloads crossing native, Burst, persistence, or platform boundaries require explicit layout proof or documented unmanaged field order.
+[RULE] Contract expansion during a batch is API debt unless legacy wrappers are preserved and compile evidence exists.
+[RULE] Duplicate signal names across assemblies are build-blocking architecture debt.
+
+[FORBID] False verification language.
+[FORBID] Microsecond tables without profiler context.
+[FORBID] Claiming platform readiness from `link.xml` text alone.
+[FORBID] Claiming data sovereignty while NativeArray references bypass GlobalDataVault.

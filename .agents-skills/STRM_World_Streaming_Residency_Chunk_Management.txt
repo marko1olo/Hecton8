@@ -1,5 +1,5 @@
 # WORLD_STREAMING_RESIDENCY.md
-# Hecton-8 — Chunk Management, Page Allocation, Caching
+# Hecton-8 - Chunk Management, Page Allocation, Caching
 
 ---
 
@@ -28,23 +28,23 @@
 ### [DATA] Chunk Identity & State Bitmask
 
 ChunkState : byte (bitmask)
-  Bit 0 → RESIDENT      (fully loaded, GPU-ready)
-  Bit 1 → LOADING       (async job in-flight)
-  Bit 2 → EVICTING      (deferred disposal queued)
-  Bit 3 → STAGED        (written to StagingArea, not yet promoted)
-  Bit 4 → LOD0          (full detail active)
-  Bit 5 → LOD1          (proxy/HLOD active)
-  Bit 6 → HIGH_PRIORITY (inside movement cone)
-  Bit 7 → PINNED        (never evict: spawn, checkpoint, trigger volume)
+  Bit 0 -> RESIDENT      (fully loaded, GPU-ready)
+  Bit 1 -> LOADING       (async job in-flight)
+  Bit 2 -> EVICTING      (deferred disposal queued)
+  Bit 3 -> STAGED        (written to StagingArea, not yet promoted)
+  Bit 4 -> LOD0          (full detail active)
+  Bit 5 -> LOD1          (proxy/HLOD active)
+  Bit 6 -> HIGH_PRIORITY (inside movement cone)
+  Bit 7 -> PINNED        (never evict: spawn, checkpoint, trigger volume)
 
 State Machine Transitions (bitmask ops only):
 
-Request Load   → state |=  LOADING
-Promote Staged → state |=  (RESIDENT | LOD0); state &= ~(LOADING | STAGED)
-Request Evict  → state |=  EVICTING; state &= ~RESIDENT
-Evict Complete → state  =  0x00
-Pin            → state |=  PINNED
-Force LOD1     → state |=  LOD1; state &= ~LOD0
+Request Load   -> state |=  LOADING
+Promote Staged -> state |=  (RESIDENT | LOD0); state &= ~(LOADING | STAGED)
+Request Evict  -> state |=  EVICTING; state &= ~RESIDENT
+Evict Complete -> state  =  0x00
+Pin            -> state |=  PINNED
+Force LOD1     -> state |=  LOD1; state &= ~LOD0
 
 ### [DATA] Struct-of-Arrays Memory Layout (Burst/SIMD Friendly)
 
@@ -63,7 +63,7 @@ NativeArray<byte>     tile_AlphaCache         [TILE_CACHE_SIZE * ALPHA_RES * ALP
 NativeArray<int>      tile_CacheKeys          [TILE_CACHE_SIZE]  // chunkID hash
 NativeArray<byte>     tile_CacheValid         [TILE_CACHE_SIZE]  // 0=invalid,1=valid
 
-### [DATA] Native Pool Architecture — Fixed-Size Page Layout
+### [DATA] Native Pool Architecture - Fixed-Size Page Layout
 
 MemoryDomain layout (pre-allocated at startup, NO runtime alloc):
 
@@ -74,10 +74,10 @@ MemoryDomain layout (pre-allocated at startup, NO runtime alloc):
    HLOD PROXY POOL     ~256 MB   (LOD1 geometry)
  [STRUCT_END]
 
-Total ceiling: ~4.14 GB → leaves OS+Unity headroom within 6-8 GB target.
+Total ceiling: ~4.14 GB -> leaves OS+Unity headroom within 6-8 GB target.
 Pools: Allocator.Persistent. Allocate/freeze/free by whole page only. Never memcpy-compaction.
 
-### [DATA] Ring Buffer — Load Request Queue
+### [DATA] Ring Buffer - Load Request Queue
 
 struct LoadRequest:
   int   chunkID
@@ -92,7 +92,7 @@ Sorted per-frame: radix sort on priority byte + distanceSq float (2-pass, Native
 
 ## III. ALGORITHMIC & MATH TRUTH
 
-### [MATH] Residency Hysteresis — Load/Eviction Zones
+### [MATH] Residency Hysteresis - Load/Eviction Zones
 
 residentRadius  = R_base                          // e.g., 600m
 evictionRadius  = R_base * 1.20f                  // 20% hysteresis band
@@ -102,18 +102,18 @@ Per-chunk per-frame (Burst job):
   distSq = dot(chunkPos - playerPos, chunkPos - playerPos)
 
 Load condition:
-  distSq < residentRadius² AND NOT (state & RESIDENT) AND NOT (state & LOADING)
+  distSq < residentRadius^2 AND NOT (state & RESIDENT) AND NOT (state & LOADING)
 
 Eviction condition:
-  distSq > evictionRadius² AND (state & RESIDENT) AND NOT (state & PINNED)
-  // Hysteresis gap [R_base → R_base*1.2] acts as dead zone → prevents thrashing
+  distSq > evictionRadius^2 AND (state & RESIDENT) AND NOT (state & PINNED)
+  // Hysteresis gap [R_base -> R_base*1.2] acts as dead zone -> prevents thrashing
 
 Thrash guard (additional):
   evict only if (currentTick - chunk_LastAccessTick[i]) > EVICTION_COOLDOWN_TICKS
   EVICTION_COOLDOWN_TICKS = 250  // ~5 seconds @ 60Hz (FixedUpdate)
-  → chunk oscillating at boundary cannot be evicted faster than this rate
+  -> chunk oscillating at boundary cannot be evicted faster than this rate
 
-### [MATH] Priority-Based Loading — Movement Cone Weighting
+### [MATH] Priority-Based Loading - Movement Cone Weighting
 
 playerVelocityDir = normalize(playerVelocity)     // world-space, pre-normalized
 chunkDir          = normalize(chunkPos - playerPos)
@@ -121,23 +121,23 @@ chunkDir          = normalize(chunkPos - playerPos)
 dotProduct = dot(playerVelocityDir, chunkDir)     // range [-1, +1]
 
 // Cone classification:
-  HIGH_PRIORITY  : dotProduct > cos(30°)  = 0.866f   AND distSq < residentRadius²
-  NORMAL         : dotProduct > cos(60°)  = 0.500f
-  LOW            : dotProduct > cos(90°)  = 0.000f
-  THROTTLED      : dotProduct ≤ 0.000f                // behind player
+  HIGH_PRIORITY  : dotProduct > cos(30 deg)  = 0.866f   AND distSq < residentRadius^2
+  NORMAL         : dotProduct > cos(60 deg)  = 0.500f
+  LOW            : dotProduct > cos(90 deg)  = 0.000f
+  THROTTLED      : dotProduct <= 0.000f                // behind player
 
 Priority score formula:
   score = (dotProduct * 0.6f) + (1.0f - saturate(dist / residentRadius)) * 0.4f
   // Blend: 60% cone alignment, 40% proximity
 
 State bit:
-  if dotProduct > 0.866f → state |= HIGH_PRIORITY
-  else                   → state &= ~HIGH_PRIORITY
+  if dotProduct > 0.866f -> state |= HIGH_PRIORITY
+  else                   -> state &= ~HIGH_PRIORITY
 
 Scheduler per-frame budget:
-  HIGH_PRIORITY  → max 4 concurrent load jobs
-  NORMAL         → max 2 concurrent load jobs
-  LOW/THROTTLED  → max 1 concurrent load job, every 3rd frame only
+  HIGH_PRIORITY  -> max 4 concurrent load jobs
+  NORMAL         -> max 2 concurrent load jobs
+  LOW/THROTTLED  -> max 1 concurrent load job, every 3rd frame only
 
 ### [MATH] Fixed-Size Page Allocation (Zero Defrag)
 
@@ -161,7 +161,7 @@ Guarantee:
   - no memcpy compaction job exists
   - alloc/free cost remains O(1) per page
 
-### [MATH] Non-Blocking Eviction — Deferred Disposal
+### [MATH] Non-Blocking Eviction - Deferred Disposal
 
 Eviction request lifecycle:
   Frame N:   state |= EVICTING; state &= ~RESIDENT
@@ -181,12 +181,12 @@ NativeArray buffer free sequence (strict order):
 
 NEVER call .Dispose() without .Complete() guard. Assert: IsCreated && IsCompleted.
 
-### [MATH] Tile Cache — Zero-GC Heightmap Access
+### [MATH] Tile Cache - Zero-GC Heightmap Access
 
 // Retrieve heightmap tile without allocation:
 Texture2D.GetPixelData<ushort>(mipLevel:0)
-  → returns NativeArray<ushort> alias into texture memory (zero-copy)
-  → store into tile_HeightCache slice: offset = tileIndex * TILE_RES²
+  -> returns NativeArray<ushort> alias into texture memory (zero-copy)
+  -> store into tile_HeightCache slice: offset = tileIndex * TILE_RES^2
 
 // Bilinear height sampling (pure math, no Unity Terrain API):
   u = (worldX - tileOriginX) / tileSize          // [0..1]
@@ -213,38 +213,38 @@ Texture2D.GetPixelData<ushort>(mipLevel:0)
 // [FORBID] Raw modulo on signed hashes. You MUST strip the sign bit before modulo:
 slot = (hashKey & 0x7FFFFFFF) % TILE_CACHE_SIZE;
   if tile_CacheKeys[slot] == hashKey AND tile_CacheValid[slot] == 1:
-    → hit: return slice at slot*TILE_RES²
+    -> hit: return slice at slot*TILE_RES^2
   else:
-    → miss: load via GetPixelData, write to slot (LRU evict if valid)
+    -> miss: load via GetPixelData, write to slot (LRU evict if valid)
 
 // LRU without GC: NativeArray<uint> tile_AccessFrame[TILE_CACHE_SIZE]
   on access: tile_AccessFrame[slot] = currentFrame
-  on miss requiring evict: find slot with min(tile_AccessFrame[i]) via linear scan (small N≤64)
+  on miss requiring evict: find slot with min(tile_AccessFrame[i]) via linear scan (small N<=64)
 
-### [MATH] Streaming LOD Swap — Pop Prevention
+### [MATH] Streaming LOD Swap - Pop Prevention
 
 LOD transition driven by screen-space size estimate (no Camera.main poll in job):
   screenFraction = (chunkRadius * 2.0f) / (dist * tanHalfFOV * 2.0f)
   // tanHalfFOV cached at camera init, never recomputed per-chunk
 
 LOD thresholds:
-  screenFraction > 0.15f → LOD0 (full geometry, full terrain detail)
-  screenFraction > 0.04f → LOD1 (proxy mesh, half-res heightmap)
-  screenFraction ≤ 0.04f → LOD2 (invisible / impostor only)
+  screenFraction > 0.15f -> LOD0 (full geometry, full terrain detail)
+  screenFraction > 0.04f -> LOD1 (proxy mesh, half-res heightmap)
+  screenFraction <= 0.04f -> LOD2 (invisible / impostor only)
 
-Pop prevention — cross-fade blend weight:
+Pop prevention - cross-fade blend weight:
   blendBand = 0.02f   // 2% screen-fraction overlap zone
 
-  if screenFraction in [threshold ± blendBand]:
+  if screenFraction in [threshold +/- blendBand]:
     alpha = saturate((screenFraction - (threshold - blendBand)) / (blendBand * 2.0f))
-    → render BOTH LOD levels; LOD0 at alpha, LOD1 at (1-alpha)
-    → use GPU instancing for proxy; no CPU blend cost
-    → swap completes when alpha reaches 0.0 or 1.0 (no hard pop)
+    -> render BOTH LOD levels; LOD0 at alpha, LOD1 at (1-alpha)
+    -> use GPU instancing for proxy; no CPU blend cost
+    -> swap completes when alpha reaches 0.0 or 1.0 (no hard pop)
 
 LOD swap sequence (deferred, not immediate):
   Frame N:   flag chunk LOD_TRANSITIONING; begin loading target LOD resource (job)
-  Frame N+k: target LOD job complete → start blend timer (blendFrames = 8)
-  Frame N+k+8: blend complete → hard swap state bit; unload previous LOD resource (deferred eviction queue)
+  Frame N+k: target LOD job complete -> start blend timer (blendFrames = 8)
+  Frame N+k+8: blend complete -> hard swap state bit; unload previous LOD resource (deferred eviction queue)
 
 HLOD proxy (distant ocean floor stand-ins):
   generated offline via MapMagic bake pipeline
@@ -281,7 +281,7 @@ Total streaming overhead  < 2.6ms      (16% of frame budget)
 LOD0 terrain texture sets: max 4 chunks simultaneous in VRAM ( 1800MB each = 2GB)
 LOD1 proxy textures: shared atlas, 256MB max
 Evict GPU resource (RenderTexture, GraphicsBuffer) SAME FRAME as chunk eviction trigger
-  → do not defer GPU resource release beyond 2 frames
+  -> do not defer GPU resource release beyond 2 frames
 GPU memory eviction sequence:
   1. chunk flagged EVICTING on CPU
   2. EndOfFrame: GPU resource.Release() (safe: no in-flight draw referencing evicted chunk after culling)
@@ -326,38 +326,38 @@ ILODController:
 ### [SAFE] Failure Modes & Guards
 
 FAILURE: Pool allocation returns -1 (pool full)
-  → Do NOT load chunk. Set priority=0. Log warning (throttled: max 1/sec).
-  → Trigger emergency eviction: find lowest-priority RESIDENT chunk beyond 0.8*evictionRadius, evict immediately.
-  → If still no space after emergency evict: skip frame loading entirely.
+  -> Do NOT load chunk. Set priority=0. Log warning (throttled: max 1/sec).
+  -> Trigger emergency eviction: find lowest-priority RESIDENT chunk beyond 0.8*evictionRadius, evict immediately.
+  -> If still no space after emergency evict: skip frame loading entirely.
 
 FAILURE: Free page reserve drops below emergency threshold
-  → Halt non-critical chunk loads.
-  → Evict lowest-priority non-pinned chunks until reserve restored.
+  -> Halt non-critical chunk loads.
+  -> Evict lowest-priority non-pinned chunks until reserve restored.
 
 FAILURE: Eviction queue full (>64 pending)
-  → Halt new load requests until queue drains below 32.
-  → Assert in editor. Silent throttle in build.
+  -> Halt new load requests until queue drains below 32.
+  -> Assert in editor. Silent throttle in build.
 
 FAILURE: Player speed > 80m/s (submarine boost / debug teleport)
-  → residentRadius temporarily *= 1.5f for 3 seconds (anticipation buffer)
-  → maxConcurrentLoadJobs temporarily = MAX for 3 seconds
-  → Log speed anomaly for QA.
+  -> residentRadius temporarily *= 1.5f for 3 seconds (anticipation buffer)
+  -> maxConcurrentLoadJobs temporarily = MAX for 3 seconds
+  -> Log speed anomaly for QA.
 
 FAILURE: NaN in playerVelocityDir (zero velocity)
-  → Guard: if dot(vel,vel) < 0.0001f → skip cone weighting, use proximity-only priority.
-  → Default all chunks to NORMAL priority.
+  -> Guard: if dot(vel,vel) < 0.0001f -> skip cone weighting, use proximity-only priority.
+  -> Default all chunks to NORMAL priority.
 
 FAILURE: Tile cache key collision (hash aliasing)
-  → Linear probe: check tile_CacheKeys[slot], if mismatch probe slot+1 (max 4 probes).
-  → If no valid slot found after 4 probes: bypass cache, sample directly (GC-free path still valid via GetPixelData).
+  -> Linear probe: check tile_CacheKeys[slot], if mismatch probe slot+1 (max 4 probes).
+  -> If no valid slot found after 4 probes: bypass cache, sample directly (GC-free path still valid via GetPixelData).
 
 FAILURE: JobHandle.IsCompleted false for > 120 frames (job hung)
-  → Force Complete() on frame 121. Log error.
-  → Mark chunk state = 0x00 (reset). Do not free memory (potential corruption risk → flag for GC collect on next scene load only).
+  -> Force Complete() on frame 121. Log error.
+  -> Mark chunk state = 0x00 (reset). Do not free memory (potential corruption risk -> flag for GC collect on next scene load only).
 
-FAILURE: VRAM over  1800MB (MX350 threshold)
-  → Immediately downgrade furthest 2 LOD0 chunks to LOD1 (skip blend, hard swap).
-  → Suspend new LOD0 promotions until VRAM <  1800MB.
+FAILURE: VRAM over 1800MB (MX350 threshold)
+  -> Immediately downgrade furthest 2 LOD0 chunks to LOD1 (skip blend, hard swap).
+  -> Suspend new LOD0 promotions until VRAM < 1800MB.
 
 ### [SAFE] Depth / Coordinate Edge Cases (Underwater World)
 
@@ -384,8 +384,8 @@ DEFRAG_TRIGGER_RATIO  = 0.15f     // Base=0.25
 MAX_LOAD_JOBS_HIGH    = 4
 MAX_LOAD_JOBS_NORMAL  = 2
 MAX_LOAD_JOBS_LOW     = 1
-CONE_HIGH_DOT         = 0.866f    // cos(30°)
-CONE_NORMAL_DOT       = 0.500f    // cos(60°)
+CONE_HIGH_DOT         = 0.866f    // cos(30 deg)
+CONE_NORMAL_DOT       = 0.500f    // cos(60 deg)
 PRIORITY_CONE_WEIGHT  = 0.6f
 PRIORITY_DIST_WEIGHT  = 0.4f
 POOL_RESIDENT_BYTES   = 3_758_096_384   // 3.5 GB

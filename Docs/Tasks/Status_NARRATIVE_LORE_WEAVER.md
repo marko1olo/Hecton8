@@ -1,0 +1,48 @@
+# Status - NARRATIVE_LORE_WEAVER
+
+Prompt: `NARRATIVE_LORE_WEAVER`
+Role: `WRITER_ARCHITECT`
+Domain: Auxiliary Node (Text/Data only)
+Task count: 15
+Status: PENDING VERIFICATION
+
+## Mandates Loaded
+
+- `UI_Localization_Babel_RTL_FontSwap_ZeroAlloc.txt` - hash-based localization lookup and narrative layer residency.
+- `UI_Data_Streaming_ZeroGC_Optimization.txt` - FNV key discipline and text streaming constraints.
+- `OPT_Zero_GC_Policy_AllocFree_Mandate.txt` - hot-path 0 B GC boundary; no runtime code touched.
+- `CORE_Abyss_Survival_Systems_O2_Pressure_Logic.txt` - pressure, O2, thermal, narcosis, and stress terminology.
+- `CORE_Weather_Abyssal_FlowField_Currents.txt` - abyssal flow fields as presentation-first VFX/audio/AI cues.
+- `AUD_DSP_Audio_Synthesis_ThreadSafe_SPSC.txt` - voice/audio-log data must stay authored text, not runtime AudioSource events.
+- `OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt` - lore must support believable fakes instead of physical simulation debt.
+- `QA_Evidence_Text_Filter_Audit.txt` - report evidence class and avoid fake runtime claims.
+
+## Checklist
+
+- [x] Task 1 - Faction lore briefing | Justification: data-only DOD, player faction and dead Corp written in `Lore_Bible.md` and `LORE_BRIEFING_MARAUDERS_AND_CORP`; keeps narrative out of runtime code | Alternatives Rejected: new faction systems, C# constants, or scene objects | Estimate: 0 us runtime code cost; no profiler claim
+- [x] Task 2 - 15 audio log transcripts | Justification: authored short industrial-worker logs as localization records; supports future DSP/TTS without touching audio runtime | Alternatives Rejected: AudioSource event names, MasterAudio strings, or generated voice assets | Estimate: 0 us runtime code cost; playback cost unmeasured
+- [x] Task 3 - 20 data pad entries | Justification: corporate greed and failing life-support expressed as static PDA strings, matching async encyclopedia paging needs | Alternatives Rejected: quest-state side effects or new discovery triggers | Estimate: 0 us runtime code cost; lookup cost pending UI agent
+- [x] Task 4 - 10 fish and 3 predator scanner entries | Justification: scanner text uses practical biological uses and project fauna IDs where possible | Alternatives Rejected: inventing spawn assets or fauna behavior | Estimate: 0 us runtime code cost; scanner display path unmeasured
+- [x] Task 5 - 10 flora scanner entries | Justification: flora reactions written as flow-field presentation fakes, not per-frond physics truth | Alternatives Rejected: CPU flora simulation language or new runtime flora stack | Estimate: 0 us runtime code cost; visual savings are doctrine-only
+- [x] Task 6 - Alpha Leviathan file | Justification: heavily redacted dossier authored as `LORE_ALPHA_LEVIATHAN_FILE`; fear delivered by evidence gaps and sensor effects, not stat-block exposition | Alternatives Rejected: concrete boss mechanics, exact taxonomy, or AI behavior promises | Estimate: 0 us runtime code cost; encounter runtime unmeasured
+- [x] Task 7 - Structured `Data/Localization/en_US.json` | Justification: all authored payload text is stored as structured entries with `LocID`, `Hash`, `Layer`, `Category`, `Text` | Alternatives Rejected: unstructured markdown-only lore or flat table without metadata | Estimate: offline JSON parse only; runtime cost pending consumer
+- [x] Task 8 - Unique LocID and FNV-1a hashes | Justification: `LocToBinary.py --normalize --verify-only` computed and validated 81 hashes matching `LocHash.Compute` UTF-16 semantics | Alternatives Rejected: ASCII byte hash mismatch or manual hash entry | Estimate: avoids runtime key hashing by data contract; measured runtime proof absent
+- [x] Task 9 - `Tools/LocToBinary.py` packer | Justification: standalone Python packer validates schema, hashes, duplicate IDs, collisions, and binary slices | Alternatives Rejected: ad hoc PowerShell pack or JSON-only handoff | Estimate: offline tool, 0 us runtime code cost
+- [x] Task 10 - Execute packer and emit `Data/Localization/en_US.bin` | Justification: packer emitted `H8LB` binary, then independent header/record/payload assertions passed | Alternatives Rejected: unchecked blob or text-only handoff | Estimate: generated 24,729 byte file, 23,725 byte payload after briefing expansion; runtime lookup savings PENDING VERIFICATION
+- [x] Task 11 - 5 oxygen deprivation variants | Justification: 5 preauthored `madness_variant` entries validated by category count for `PlayerStress01 > 0.9` swaps; keeps stress corruption as data, not runtime text generation | Alternatives Rejected: procedural hallucination generator, string mutation in UI hot paths, or new stress system code | Estimate: 0 us runtime code cost; display swap cost pending consumer
+- [x] Task 12 - SSML/emotion prompts for audio logs | Justification: 15 paired `audio_ssml` records validated by category count; future TTS/emotion layer remains offline/data-driven | Alternatives Rejected: AudioSource events, MasterAudio strings, or audio-domain code | Estimate: 0 us runtime code cost; voice playback unmeasured
+- [x] Task 13 - Zero C# touch | Justification: focused project scan `git diff --name-only -- '*.cs' ':!.codex_tmp/**'` returned empty; work is limited to markdown, Python tooling, JSON, and generated binary data | Alternatives Rejected: generated `LocalizationKeys.cs`, runtime loader edits, or registry changes | Estimate: 0 us project C# delta; broad scan shows unrelated `.codex_tmp/huv_20c82c86.cs` deletion left untouched
+- [x] Task 14 - Lore consistency audit | Justification: `LORE_CONSISTENCY_AUDIT` entry exists and content count verification passed; terminology aligns with pressure/O2/stress/current-fake mandates | Alternatives Rejected: claiming Unity runtime verification or introducing mechanics outside writer domain | Estimate: 0 us runtime code cost; runtime integration PENDING VERIFICATION
+- [x] Task 15 - Reporting and rationale update | Justification: final report appended to `Docs/AgentLogs/LOG_NARRATIVE_LORE_WEAVER.md`, rationale updated, and status maintained on disk | Alternatives Rejected: chat-only report or unlogged completion claim | Estimate: 0 us runtime code cost; Unity verification remains PENDING
+
+## Loop Log
+
+- Loop 0: Prompt extracted from `Docs/Tasks/CURRENT_BATCH.md`; 15 tasks identified; status and rationale files were absent before initialization.
+- Loop 1: Tasks 1-5 authored in `Docs/Design/Lore_Bible.md` and `Data/Localization/en_US.json`; prompt re-extracted after Task 3 (`PROMPT_REEXTRACT_OK`); JSON parse passed; `LocToBinary.py --normalize --verify-only` validated 81 entries and hash uniqueness without writing the final bin yet; C# diff scan returned empty.
+- Loop 2: Prompt re-extracted before Task 6/9 binary pass; `python Tools/LocToBinary.py --input Data/Localization/en_US.json --output Data/Localization/en_US.bin` emitted the blob; independent Python header parser verified magic/version/header size/record size/sorted hashes/slice bounds/payload length; C# diff scan returned empty.
+- Loop 3: Prompt re-extracted before Task 12 audit (`PROMPT_REEXTRACT_OK_BEFORE_TASK12`); category counts verified 15 audio logs, 15 SSML records, 20 datapads, 10 fauna, 3 predators, 10 flora, 5 madness variants, 1 briefing, 1 leviathan file, and 1 audit; `LocToBinary.py --verify-only` passed; C# diff scan returned empty.
+- Loop 4: `Docs/AgentLogs/LOG_NARRATIVE_LORE_WEAVER.md` created with what-was-wrong, what-was-done, cinematic cheats, binary facts, regression model, failure modes, and explicit PENDING VERIFICATION runtime claims.
+- Loop 5: Polish pass executed after all tasks were checked; `<POLISH_MANDATE>` was absent in `CURRENT_BATCH.md`; JSON parse passed, placeholder scan returned no hits, content counts passed, independent binary parser returned pre-expansion `BINARY_VERIFY_OK entries=81 size=22575 payload=21571 flags=3`; `dotnet` compile could not run because the command is unavailable in this shell; project C# diff scan was empty at that pass.
+- Loop 6: User-requested hard review found 43 LocIDs with `DATAPAD_`/`SCANNER_` prefixes that current `LocRegistry.ClassifyLayer` would not classify as Narrative. Fixed to `PDA_DATAPAD_*` and `LORE_SCANNER_*`, updated `LocToBinary.py --normalize` to intentionally recompute hashes during identifier maintenance while plain verification still rejects mismatches, regenerated `en_US.bin`, and revalidated narrative prefixes. Broad C# scan now reports an unrelated deleted `.codex_tmp/huv_20c82c86.cs`; focused project C# scan excluding `.codex_tmp` remains empty.
+- Loop 7: Second hard review found the briefing was only 562 words, thin for the requested 2-page briefing. Expanded the briefing to 911 words, synced `Lore_Bible.md` back into `en_US.json`, regenerated `en_US.bin`, and revalidated: `BINARY_VERIFY_OK entries=81 size=24729 payload=23725 flags=3`, `SSML_WELL_FORMED_OK count=15`, `CONTENT_AND_PREFIX_OK`, `NO_SENTINEL_HITS`, and `NO_PROJECT_CSHARP_DIFF`. Prompt re-extraction failed because `CURRENT_BATCH.md` no longer contains `NARRATIVE_LORE_WEAVER`; current batch contents were ignored.
+- Loop 8: Continued review against existing `LocalizationManager` found the project already has `MADNESS_WHISPERS_01..15` in `Assets/_Project/Scripts/English.json`; this lore payload's 5 `MADNESS_VARIANT_*` entries are therefore handoff data, not replacements for the current whisper resolver. Added `Trigger: PlayerStress01 > 0.9` to all five madness records, then revalidated `JSON_OK`, `MADNESS_TRIGGER_OK count=5`, `BINARY_VERIFY_OK entries=81 size=24729 payload=23725 flags=3`, `CONTENT_AND_PREFIX_OK`, `NO_SENTINEL_HITS`, and `NO_PROJECT_CSHARP_DIFF`.
