@@ -280,3 +280,22 @@ Exact Microseconds saved:
 Verification:
 - Static PowerShell validation target: `OUTPOST_STATIC_VALIDATION=PASS flags=32 topo=32 tooltips=10 logs=5 fallbacks=3`.
 - Unity import and C# compile remain PENDING VERIFICATION because Unity/dotnet are absent in this shell.
+
+## 2026-05-14 - Review Addendum - Validator Self-Fail Token Removal
+
+What was wrong:
+- `OutpostFailSafeHandoffValidator` rejects the legacy room-flag namespace token.
+- `Outpost_Failure_Modes.md` contained that forbidden literal in explanatory prose, so the validator would fail on its own documentation.
+
+What was done:
+- Reworded the prose to describe the legacy namespace without embedding the banned token.
+
+Cinematic Cheats used:
+- None. Documentation/validator hygiene only.
+
+Exact Microseconds saved:
+- 0 us player runtime. This prevents a false editor validation failure before quest/localization bake.
+
+Verification:
+- Stale-token scan over `Outpost_FailSafe_Handoff.json` and `Outpost_Failure_Modes.md` is clean for the forbidden legacy token.
+- Unity import and C# compile remain PENDING VERIFICATION because Unity/dotnet are absent in this shell.

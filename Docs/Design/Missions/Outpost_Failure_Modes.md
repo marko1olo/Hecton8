@@ -25,7 +25,7 @@ Mandates followed:
 
 Machine-readable handoff: `Docs/Design/Missions/Outpost_FailSafe_Handoff.json`. It contains the authored DAG flags, topological order, fallback rules, 10 tooltip entries, 5 Marauder log entries, and `LocHash`-compatible FNV hashes. Runtime localization assets were not mutated in this pass because the active language table, generated `LocKeys`, and translated language tables must be baked together.
 
-Editor validation hook: `Hecton-8/Validate Outpost Fail-Safe Handoff`, implemented by `Assets/_Project/Scripts/Editor/OutpostFailSafeHandoffValidator.cs`. It is editor-only and validates the handoff JSON plus this prose document for schema, hash, flag-reference, stale-alias, tooltip/log-shape, and gas-limit drift before a quest/localization bake. It also rejects legacy `roomflag.*` tokens, unsupported `GasDynamicsRoomFlags.*` values, and bare `Submerged` flag claims; submerged-room logic must use the `roomSubmerged01` scalar because the gas enum has no `Submerged` flag.
+Editor validation hook: `Hecton-8/Validate Outpost Fail-Safe Handoff`, implemented by `Assets/_Project/Scripts/Editor/OutpostFailSafeHandoffValidator.cs`. It is editor-only and validates the handoff JSON plus this prose document for schema, hash, flag-reference, stale-alias, tooltip/log-shape, and gas-limit drift before a quest/localization bake. It also rejects legacy room-flag namespace tokens, unsupported `GasDynamicsRoomFlags.*` values, and bare `Submerged` flag claims; submerged-room logic must use the `roomSubmerged01` scalar because the gas enum has no `Submerged` flag.
 
 ## Mission Rule
 

@@ -122,3 +122,11 @@ Solution: Added canonical `COLD ALLOC` comments for those arrays in `OutpostFail
 Rejected Alternatives: Ignoring static editor arrays because they are not runtime hot-path; that weakens allocation review discipline and makes future scans less exact.
 Scalability potential: No player runtime impact. Cleaner editor validation ownership supports safer future bake/import hardening.
 Hardware Impact: 0 us player runtime. Comment-only compliance correction in an editor-only file.
+
+## Decision 016 - Validator Self-Fail Token Removal
+
+Problem: The editor validator rejects the legacy room-flag namespace token, but `Outpost_Failure_Modes.md` contained that exact forbidden literal while explaining the rejection rule. Because the validator scans the prose document, the menu validation would fail on its own documentation.
+Solution: Reworded the prose to describe legacy room-flag namespace tokens without embedding the banned literal.
+Rejected Alternatives: Weakening `OutpostFailSafeHandoffValidator` was rejected because stale-token detection is the point of the gate. Ignoring the prose document was rejected because prose/JSON drift is a known failure mode.
+Scalability potential: Low/Middle/High/Ultra all keep one stable mission flag vocabulary; invalid legacy tokens fail before bake.
+Hardware Impact: 0 us player runtime. Documentation-only correction prevents editor validation noise.
