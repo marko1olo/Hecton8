@@ -137,7 +137,7 @@ Exact microseconds saved:
 
 ## Entry - Prompt Cache Four-Way Hardening / Compile Repair
 
-Status: CORE CLI BUILD GREEN WITH WARNINGS. `dotnet build Hecton8.Core.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false /p:UseSharedCompilation=false` succeeds with 30 generated-project CS0436 warnings / 0 errors. Mandatory communication scan now reports 2106 legacy hits, still not zero.
+Status: CORE CLI BUILD GREEN. `dotnet build Hecton8.Core.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false /p:UseSharedCompilation=false` succeeds with 0 warnings / 0 errors. A warnings-only compile pass recorded 30 generated-project CS0436 duplicate-type warnings. Mandatory communication scan now reports 2106 legacy hits, still not zero.
 
 What was wrong:
 - `PlayerLookTargetPromptCache` had become a full 64-slot linear scan. It was bounded and zero-GC, but wasteful and avoidable.

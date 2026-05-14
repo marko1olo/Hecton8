@@ -61,3 +61,15 @@ Cinematic Cheats used: localized gear-click pulses instead of continuous mechani
 Exact microseconds saved/spent: +0.02 us branch only on haptic dispatch frames; 0 us steady frame; removed hidden cold normalization sqrt/division path.
 
 Verification: `git diff --check` passed with only CRLF warning. Static scan found no `HingeJoint`, `math.normalize`, `.normalized`, managed `foreach`, `.ToArray()`, `FindObject`, `GetComponentInParent`, `new List`, `new Dictionary`, or `.Dispose()`. Direct Unity Roslyn probe for `Hecton8.UI.VR.rsp` still reports only stale Core reference symptoms: missing `ManualOverridePulledSignal` and inaccessible `PhysicalHandReceiverRegistry`. Direct Core rsp probe still timed out behind the unrelated global Core/MSBuild wall; active parallel build processes were left alone.
+
+## 2026-05-14 - Nested Anchor / Ratchet Reacquire Hardening
+
+What was wrong: handle reference math assumed the handle anchor lived in lever-root local space, which breaks with nested cockpit art rigs. Ratchet state could survive release and produce a false click on the next grab. Blackbox telemetry used a modulo wrap in the 60Hz path. Hot-swap listener registration was not locally tracked.
+
+What was done: angular reference now converts the handle world position into lever-root local space. Idle unheld lever resets `_lastRatchetStep`. Blackbox index wraps with increment/compare. Hot-swap registration now has a local boolean. Receiver registration is play-mode-only. Native allocation can recover from a deferred-disposal gap before ticking.
+
+Cinematic Cheats used: still kinematic scalar lever, no `HingeJoint`, no force solver; hierarchy-safe handle basis allows richer visible lever rigs without more simulation.
+
+Exact microseconds saved/spent: blackbox modulo removal saves about 0.01 us per tick on weak CPUs; idle ratchet reset is one branch only while unheld; no new managed allocations.
+
+Verification: `git diff --check` passed with only CRLF warnings. Static scan found no `HingeJoint`, `math.normalize`, `.normalized`, managed `foreach`, `.ToArray()`, `FindObject`, `GetComponentInParent`, `new List`, `new Dictionary`, `.Dispose()`, `Time.deltaTime`, `StartCoroutine`, or `Update(` in the lever source. Direct Unity Roslyn probe for `Hecton8.UI.VR.rsp` still reports only stale Core reference symptoms: missing `ManualOverridePulledSignal` and inaccessible `PhysicalHandReceiverRegistry`.

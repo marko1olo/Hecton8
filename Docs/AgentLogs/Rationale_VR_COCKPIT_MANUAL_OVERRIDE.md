@@ -137,3 +137,15 @@ Rejected Alternatives: adding per-frame XR controller polling was rejected becau
 Scalability potential: Low keeps the same event frequency and cheaper IK smoothing. Middle/High get correctly localized gear clicks. Ultra can layer secondary cockpit shake/audio from the same ratchet steps without changing the solver.
 
 Hardware Impact: i3/MX350 pays one branch only on ratchet/latch dispatch frames, estimated 0.02 us. No added steady-frame polling or allocation.
+
+## Decision 11 - Solver basis must survive nested cockpit art rigs
+
+Problem: `ResolveReferenceVector()` used `handleAnchor.localPosition`, which is only correct when the handle anchor is parented directly under the lever root. Real cockpit art rigs often nest the visible handle under a rotating visual child, so the angular solver could be initialized with a reference vector in the wrong local space.
+
+Solution: derive the reference vector from `handleAnchor.position` transformed through the lever root with `InverseTransformPoint`, matching the existing handle-proximity path. Also reset ratchet step state when idle, track hot-swap listener registration locally, keep receiver registration play-mode-only, use increment/compare for blackbox ring wrap, and allow Tick to recover if deferred native disposal delays allocation.
+
+Rejected Alternatives: constraining scene hierarchy was rejected because it makes authoring brittle. Recomputing the reference vector every Tick was rejected because the closed handle basis is static config, not frame state. Leaving modulo in telemetry was rejected because the branch wrap is simpler and cheaper.
+
+Scalability potential: Low/Middle get the same deterministic scalar solve under richer art hierarchy. High/Ultra can use nested mechanical linkages and animated handle meshes without changing the solver contract.
+
+Hardware Impact: i3/MX350 removes one integer modulo from the 60Hz telemetry path, estimated 0.01 us saved per tick. Other changes are cold lifecycle/configuration, edit-mode hygiene, or idle-only branches.

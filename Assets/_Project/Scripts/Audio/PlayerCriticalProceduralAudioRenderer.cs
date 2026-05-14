@@ -1205,7 +1205,7 @@ namespace Hecton8.Audio
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard, CompileSynchronously = true)]
         private struct PrologueSplashdownSineSweepProbeJob : IJob
         {
             [WriteOnly] public NativeArray<float> Output;

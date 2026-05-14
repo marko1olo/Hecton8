@@ -220,7 +220,16 @@ namespace Hecton8.Core.Signals
         {
             int laneCount = _laneCount;
             for (int i = 0; i < laneCount; i++)
-                _lanes[i].Dispose();
+            {
+                ISignalLane lane = _lanes[i];
+                if (lane != null)
+                    lane.Dispose();
+
+                _lanes[i] = null;
+            }
+
+            _laneCount = 0;
+            Volatile.Write(ref _registrationOverflow, 0);
         }
 
         /// <summary>Copies per-lane telemetry into a caller-owned buffer.</summary>
@@ -488,6 +497,7 @@ namespace Hecton8.Core.Signals
             _droppedLastFlush = 0;
             _stormDetectedLastFlush = 0;
             _initialized = false;
+            _registered = false;
         }
 
         private static void EnsureRegistered()

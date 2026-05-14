@@ -709,13 +709,13 @@ namespace Hecton8.World
                     int writeIndex = surfaceOffset;
                     if (useScratchPool)
                     {
-                        WriteJobRecordsToPool(jobState.GrassRecords, ref _surfaceDefragScratchPool, ref writeIndex, _totalUniverseOffset, floraTemplates, _floraTemplateRuntimeDescriptors);
-                        WriteJobRecordsToPool(jobState.FloatingRecords, ref _surfaceDefragScratchPool, ref writeIndex, _totalUniverseOffset, floraTemplates, _floraTemplateRuntimeDescriptors);
+                        WriteJobRecordsToPool(jobState.GrassRecords, ref _surfaceDefragScratchPool, ref writeIndex, _totalUniverseOffsetDouble, floraTemplates, _floraTemplateRuntimeDescriptors);
+                        WriteJobRecordsToPool(jobState.FloatingRecords, ref _surfaceDefragScratchPool, ref writeIndex, _totalUniverseOffsetDouble, floraTemplates, _floraTemplateRuntimeDescriptors);
                     }
                     else
                     {
-                        WriteJobRecordsToPool(jobState.GrassRecords, ref _surfaceChunkPool, ref writeIndex, _totalUniverseOffset, floraTemplates, _floraTemplateRuntimeDescriptors);
-                        WriteJobRecordsToPool(jobState.FloatingRecords, ref _surfaceChunkPool, ref writeIndex, _totalUniverseOffset, floraTemplates, _floraTemplateRuntimeDescriptors);
+                        WriteJobRecordsToPool(jobState.GrassRecords, ref _surfaceChunkPool, ref writeIndex, _totalUniverseOffsetDouble, floraTemplates, _floraTemplateRuntimeDescriptors);
+                        WriteJobRecordsToPool(jobState.FloatingRecords, ref _surfaceChunkPool, ref writeIndex, _totalUniverseOffsetDouble, floraTemplates, _floraTemplateRuntimeDescriptors);
                     }
                 }
             }
@@ -730,9 +730,9 @@ namespace Hecton8.World
                     payload.UnderwaterPoolSet = useScratchPool ? (byte)1 : (byte)0;
                     int writeIndex = underwaterOffset;
                     if (useScratchPool)
-                        WriteJobRecordsToPool(jobState.KelpRecords, ref _underwaterDefragScratchPool, ref writeIndex, _totalUniverseOffset, floraTemplates, _floraTemplateRuntimeDescriptors);
+                        WriteJobRecordsToPool(jobState.KelpRecords, ref _underwaterDefragScratchPool, ref writeIndex, _totalUniverseOffsetDouble, floraTemplates, _floraTemplateRuntimeDescriptors);
                     else
-                        WriteJobRecordsToPool(jobState.KelpRecords, ref _underwaterChunkPool, ref writeIndex, _totalUniverseOffset, floraTemplates, _floraTemplateRuntimeDescriptors);
+                        WriteJobRecordsToPool(jobState.KelpRecords, ref _underwaterChunkPool, ref writeIndex, _totalUniverseOffsetDouble, floraTemplates, _floraTemplateRuntimeDescriptors);
                 }
             }
 
@@ -763,7 +763,7 @@ namespace Hecton8.World
             NativeArray<JobInstanceRecord> source,
             ref NativeChunkPool pool,
             ref int writeIndex,
-            Vector3 universeOffset,
+            double3 universeOffset,
             FloraDataTemplate[] floraTemplates,
             FloraDataTemplate.RuntimeDescriptor[] floraTemplateRuntimeDescriptors)
         {

@@ -107,6 +107,7 @@ namespace Hecton8.Core
                 if (IsDevelopmentBuild)
                 {
                     DisposeRunCancellationSource();
+                    // COLD ALLOC: CancellationTokenSource[1] - dev skip cancellation bridge for auto-run Awaitable - owner: PrologueSequenceRegistryBridge
                     _runCancellationSource = CancellationTokenSource.CreateLinkedTokenSource(destroyCancellationToken);
                     runToken = _runCancellationSource.Token;
                 }

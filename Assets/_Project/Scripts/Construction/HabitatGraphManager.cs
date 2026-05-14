@@ -150,6 +150,9 @@ namespace Hecton8.Construction
         private const float ModuleStressImpactSpikeStrength = 1f;
         private const float ModuleStressFastDeltaGroanThresholdPerSecond = 0.9f;
         private const float ModuleStressCompromisedThreshold01 = 0.985f;
+        private const float ModuleStressNearestSignalPaddingMeters = 3f;
+        private const float ModuleStressNearestSignalFallbackRadiusMeters = 8f;
+        private const float ModuleStressNearestSignalMaxRadiusMeters = 36f;
         private const int ModuleStressShaderCapacity = 64;
         private const float AnalyticalLowTierFeedbackThreshold01 = 0.42f;
         private const float AnalyticalLowTierFeedbackCooldownSeconds = 3.5f;
@@ -1145,17 +1148,37 @@ namespace Hecton8.Construction
                 return false;
 
             float bestDistanceSq = float.MaxValue;
+            Vector3 runtimePoint = new Vector3(worldPoint.x, worldPoint.y, worldPoint.z);
             for (int nodeIndex = 0; nodeIndex < moduleCount; nodeIndex++)
             {
                 BaseModule baseModule = BaseModule.GetActiveModuleAt(nodeIndex);
                 if (baseModule == null || !baseModule.isActiveAndEnabled)
                     continue;
 
-                float3 modulePosition = TryResolveGraphModuleRecord(baseModule, out _, out ModuleRecord module)
-                    ? module.Position
-                    : ResolveActiveModulePosition(baseModule);
+                if (baseModule.TryContainsInteriorRuntimePoint(runtimePoint))
+                {
+                    moduleIndex = nodeIndex;
+                    return true;
+                }
+
+                bool hasGraphRecord = TryResolveGraphModuleRecord(baseModule, out _, out ModuleRecord module);
+                float3 modulePosition = hasGraphRecord ? module.Position : ResolveActiveModulePosition(baseModule);
+                float allowedRadiusMeters = ModuleStressNearestSignalFallbackRadiusMeters;
+                if (baseModule.TryGetInteriorHazardBounds(out Vector3 interiorCenter, out float interiorRadius) &&
+                    math.all(math.isfinite((float3)interiorCenter)) &&
+                    math.isfinite(interiorRadius) &&
+                    interiorRadius > 0f)
+                {
+                    modulePosition = (float3)interiorCenter;
+                    allowedRadiusMeters = math.max(ModuleStressNearestSignalFallbackRadiusMeters, interiorRadius);
+                }
+
+                allowedRadiusMeters = math.min(
+                    ModuleStressNearestSignalMaxRadiusMeters,
+                    allowedRadiusMeters + ModuleStressNearestSignalPaddingMeters);
                 float distanceSq = math.lengthsq(modulePosition - worldPoint);
-                if (distanceSq >= bestDistanceSq)
+                float allowedDistanceSq = allowedRadiusMeters * allowedRadiusMeters;
+                if (distanceSq > allowedDistanceSq || distanceSq >= bestDistanceSq)
                     continue;
 
                 bestDistanceSq = distanceSq;

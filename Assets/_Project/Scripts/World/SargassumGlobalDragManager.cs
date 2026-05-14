@@ -1921,7 +1921,7 @@ namespace Hecton8.World
             Vector3 boundsMin = default;
             Vector3 boundsMax = default;
             int trackedInstances = 0;
-            Vector3 universeOffset = mapMagicVegetationBridge.TotalUniverseOffset;
+            double3 universeOffset = mapMagicVegetationBridge.TotalUniverseOffsetDouble;
             EnsureDensityBuildSourceCapacity(activeCount);
 
             int sourceCount = 0;
@@ -1933,7 +1933,8 @@ namespace Hecton8.World
                     continue;
 
                 Matrix4x4 matrix = matrices[i];
-                Vector3 origin = new Vector3(matrix.m03, matrix.m13, matrix.m23) + universeOffset;
+                double3 originDouble = new double3(matrix.m03, matrix.m13, matrix.m23) + universeOffset;
+                Vector3 origin = new Vector3((float)originDouble.x, (float)originDouble.y, (float)originDouble.z);
                 float scale = ExtractUniformScale(matrix);
                 float influenceRadius = Mathf.Max(baseInfluenceRadius * scale, cellSize * 0.35f);
                 float verticalHalfExtent = Mathf.Max(baseVerticalHalfExtent * scale, 0.5f);

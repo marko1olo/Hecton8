@@ -100,7 +100,7 @@ namespace Hecton8.World
                     _abyssalAnchorPositions,
                     _nativeMemory.AbyssalAnchorPositionsNative,
                     _nativeMemory.AbyssalAnchorAupPositionsNative,
-                    _totalUniverseOffset,
+                    _totalUniverseOffsetDouble,
                     ref writeIndex);
             }
         }

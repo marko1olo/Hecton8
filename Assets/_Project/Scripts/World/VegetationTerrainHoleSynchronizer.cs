@@ -598,7 +598,7 @@ namespace Hecton8.World
             Vector3[] managedPositions,
             NativeArray<Vector3> nativePositions,
             NativeArray<AbsoluteUniversePosition> nativeAupPositions,
-            Vector3 universeOffset,
+            double3 universeOffset,
             ref int writeIndex)
         {
             if (!pool.SemanticTypes.IsCreated || !pool.Matrices.IsCreated || count <= 0)
@@ -610,13 +610,11 @@ namespace Hecton8.World
                 if (pool.SemanticTypes[i] != semanticType)
                     continue;
 
-                Vector3 position = new Vector3(
-                    pool.Matrices[i].m03 + universeOffset.x,
-                    pool.Matrices[i].m13 + universeOffset.y,
-                    pool.Matrices[i].m23 + universeOffset.z);
+                double3 runtimePosition = new double3(pool.Matrices[i].m03, pool.Matrices[i].m13, pool.Matrices[i].m23) + universeOffset;
+                Vector3 position = ToVector3(runtimePosition);
                 managedPositions[writeIndex] = position;
                 nativePositions[writeIndex] = position;
-                nativeAupPositions[writeIndex] = AbsoluteUniversePosition.FromRuntimePosition(position);
+                nativeAupPositions[writeIndex] = AbsoluteUniversePosition.FromAbsolutePosition(runtimePosition + HectonFloatingOrigin.CurrentTotalOffsetDouble);
                 writeIndex++;
             }
         }

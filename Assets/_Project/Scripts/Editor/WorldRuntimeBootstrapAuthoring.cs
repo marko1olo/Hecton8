@@ -3,7 +3,6 @@ using Hecton8.Core;
 using Hecton8.AI;
 using Hecton8.UI;
 using Hecton8.World;
-using Hecton8.World.Biomes;
 using Hecton8.Dev;
 using Hecton8.Environment;
 using Hecton8.Biolum;
@@ -36,6 +35,7 @@ namespace Hecton8.EditorTools
         private const string WorldChunkStreamingProfilePath = "Assets/_Project/Data/World/Streaming/WorldChunkStreamingProfile.asset";
         private const string BiomeFamilyProfileFolder = "Assets/_Project/Data/Biomes/FamilyProfiles";
         private const string BiomeMatrixCatalogPath = "Assets/_Project/Data/Biomes/BiomeMatrixCatalog.asset";
+        private const string BiomeBoundarySdfRuntimeTypeName = "Hecton8.World.Biomes.BiomeBoundarySdfRuntime, Hecton8.Core";
         private const string ManagersRootName = "[MANAGERS]";
         private const string NearHolderName = "__NearInteractive";
         private const string MidHolderName = "__MidVisual";
@@ -117,7 +117,7 @@ namespace Hecton8.EditorTools
             WorldFaunaSpawnRegistry faunaSpawnRegistry = GetOrAddComponent<WorldFaunaSpawnRegistry>(managersRoot);
             WorldProceduralStateRegistry proceduralStateRegistry = GetOrAddComponent<WorldProceduralStateRegistry>(managersRoot);
             BiomeMatrixDirector biomeMatrixDirector = GetOrAddComponent<BiomeMatrixDirector>(managersRoot);
-            BiomeBoundarySdfRuntime biomeBoundarySdfRuntime = GetOrAddComponent<BiomeBoundarySdfRuntime>(managersRoot);
+            Component biomeBoundarySdfRuntime = GetOrAddOptionalComponent(managersRoot, BiomeBoundarySdfRuntimeTypeName);
             WorldReadabilityDirector readabilityDirector = GetOrAddComponent<WorldReadabilityDirector>(managersRoot);
             GetOrAddComponent<EmergencyServiceRelayDirector>(managersRoot);
             WorldCaveDirector caveDirector = GetOrAddComponent<WorldCaveDirector>(managersRoot);
@@ -505,11 +505,17 @@ namespace Hecton8.EditorTools
         }
 
         private static void ConfigureBiomeBoundarySdfRuntime(
-            BiomeBoundarySdfRuntime runtime,
+            Component runtime,
             Transform playerTransform)
         {
+            if (runtime == null)
+                return;
+
             SerializedObject so = new SerializedObject(runtime);
-            so.FindProperty("playerTransform").objectReferenceValue = playerTransform;
+            SerializedProperty playerProperty = so.FindProperty("playerTransform");
+            if (playerProperty != null)
+                playerProperty.objectReferenceValue = playerTransform;
+
             so.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(runtime);
         }
@@ -3082,6 +3088,19 @@ namespace Hecton8.EditorTools
             T component = gameObject.GetComponent<T>();
             if (component == null)
                 component = gameObject.AddComponent<T>();
+
+            return component;
+        }
+
+        private static Component GetOrAddOptionalComponent(GameObject gameObject, string componentTypeName)
+        {
+            Type componentType = Type.GetType(componentTypeName, false);
+            if (componentType == null || !typeof(Component).IsAssignableFrom(componentType))
+                return null;
+
+            Component component = gameObject.GetComponent(componentType);
+            if (component == null)
+                component = gameObject.AddComponent(componentType);
 
             return component;
         }

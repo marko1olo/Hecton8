@@ -644,7 +644,7 @@ namespace Hecton8.UI.VR
 
         private void TryRegisterReceiver()
         {
-            if (_receiverRegistered || activationVolume == null)
+            if (_receiverRegistered || activationVolume == null || !Application.isPlaying)
                 return;
 
             PhysicalHandReceiverRegistry.Register(activationVolume, this);

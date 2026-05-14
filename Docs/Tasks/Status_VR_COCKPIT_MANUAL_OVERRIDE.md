@@ -68,6 +68,16 @@ Execution lane: SIMULATION / `PriorityLayer.Player`
 - [x] Normalization fallback audit. DOD: `NormalizeOr` no longer calls `.normalized`; both primary and fallback vectors use guarded `math.rsqrt`. Rejected: hidden Unity `Vector3.normalized` sqrt path. Estimate: cold config path only; scan now covers `.normalized`.
 - [x] Direct UI assembly probe. DOD: Unity-generated `Hecton8.UI.VR.rsp` was invoked after the haptic pass; reported errors remain the same stale Core reference symptoms (`ManualOverridePulledSignal` absent and `PhysicalHandReceiverRegistry` still internal in the ref). Rejected: claiming compile success when the response-file probe still sees stale Core metadata. Estimate: verification only.
 
+## Loop 10 - Nested Anchor / Ratchet Reacquire Hardening
+
+- [x] Nested handle reference fix. DOD: angular reference vector now converts `handleAnchor.position` through the lever root transform instead of assuming `handleAnchor.localPosition` is in lever-root space. Rejected: requiring scene authors to keep handle anchors as direct lever-root children. Estimate: cold config only; prevents wrong solver basis on nested visuals.
+- [x] Ratchet reacquire reset. DOD: when the lever is idle and unheld, `_lastRatchetStep` resets to seed the next grab without a false click. Rejected: carrying old ratchet step across release/re-grab cycles. Estimate: one branch only while idle.
+- [x] Blackbox ring wrap polish. DOD: telemetry write index now wraps with increment/compare instead of `% BlackBoxFrameCount` division. Rejected: modulo in a 60Hz telemetry write. Estimate: about 0.01 us saved per tick on weak CPUs.
+- [x] Hot-swap registration flag. DOD: local `_registeredHotSwapListener` mirrors GlobalRegistry listener state to avoid duplicate/miss scans. Rejected: blind register/unregister calls every lifecycle event. Estimate: cold lifecycle only.
+- [x] Play-mode receiver registration. DOD: lever no longer registers with `PhysicalHandReceiverRegistry` outside play mode. Rejected: mutating the runtime collider table from edit-mode inspector lifecycle. Estimate: editor hygiene only; 0 runtime cost.
+- [x] Deferred allocation recovery. DOD: Tick attempts allocation if native state is absent, then reinitializes angles/targets only after allocation succeeds. Rejected: permanent dead lever after a deferred dispose blocks allocation during lifecycle wiring. Estimate: no cost after native state exists.
+- [x] Reverified after nested-anchor pass. DOD: `git diff --check` passed with CRLF warnings only; static ban scan returned no matches; generated `Hecton8.UI.VR.rsp` probe still reports only stale Core metadata (`ManualOverridePulledSignal`, `PhysicalHandReceiverRegistry`). Rejected: claiming Unity compile green while the Core ref is stale. Estimate: verification only.
+
 STATUS: PENDING VERIFICATION - Unity editor/global Core compile dependency wall prevents full player compile proof in this session.
 
 ## Compile Attempts

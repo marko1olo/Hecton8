@@ -2,7 +2,7 @@
 
 Prompt: `ALPHA_LEVIATHAN_COGNITION`
 Domain: AI / Fauna Cognition
-Status: PENDING VERIFICATION
+Status: COMPILE VERIFIED / RUNTIME PENDING
 
 Mandates read:
 - `AI_Creature_Cognition_States.txt`
@@ -27,10 +27,10 @@ Mandates read:
 - [x] Task 9: BIOMASS OVERRIDE / ignore ecological biomass | DOD: apex predators bypass `ApplyEcologyChainOverrides`. Rejected ecosystem concrete branch in Burst job. Static estimate: saves ecology override call for alpha.
 - [x] Task 10: AUP SHIFT SAFETY | DOD: acoustic and stalking targets carry AUP and are resolved against a single captured floating-origin offset per evaluation. Rejected stale Transform-only target authority and mixed-origin acoustic conversion. Static estimate: AUP conversion only on slow tick.
 - [x] Task 11: MATH LOD / Low tier radial fallback | DOD: low tier disables SDF dive and uses radial steer away. Rejected MX350 SDF gradient path. Static estimate: ~0.03 us low tier.
-- [x] Task 12: EXECUTION PHASE / SIMULATION SlowTick 10Hz | DOD: alpha predators force `AlphaLeviathanSlowTickIntervalSeconds = 0.1f` in `PrepareEvaluationDueFlags`. Rejected per-frame Update cognition. Static estimate: max 10 evals/sec per alpha.
+- [x] Task 12: EXECUTION PHASE / SIMULATION SlowTick 10Hz | DOD: predators flagged with `UseAlphaLeviathanCognition` force `AlphaLeviathanSlowTickIntervalSeconds = 0.1f` in `PrepareEvaluationDueFlags`. Rejected generic apex overreach and per-frame Update cognition. Static estimate: max 10 evals/sec per alpha.
 - [x] Task 13: ZERO-GC | DOD: Burst math path uses NativeArrays/scalars only; source scan found no new managed collections/LINQ in Alpha hot path. Rejected closures/delegates. Static estimate: 0 B/frame.
 - [x] Task 14: BLACKBOX DUMP / Alpha phase telemetry | DOD: 300-entry `NativeArray<AlphaLeviathanTelemetryEntry>` ring + `Dump_ALPHA_LEVIATHAN_COGNITION.bin` on fault; telemetry now records gaze break and only marks SDF dive when high-tier Hidden steering actually uses the SDF branch. Rejected unbounded text log and false low-tier SDF flags. Static estimate: 64 bytes per telemetry entry.
-- [x] Task 15: [BLOCKED BY DEPENDENCY] OMEGA COMPILE CHECK / Burst `rsqrt` vector math | DOD: static scan confirms Alpha distance/direction uses `math.rsqrt`; full compile blocked by stale/generated project references and no live Unity session. Rejected claiming runtime proof. Static estimate: compile proof unavailable.
+- [x] Task 15: OMEGA COMPILE CHECK / Burst `rsqrt` vector math | DOD: static scan confirms Alpha distance/direction uses `math.rsqrt`; serialized `dotnet build Hecton8.Core.csproj --no-restore -m:1 /nr:false /clp:ErrorsOnly` succeeded with 0 errors after a parallel build hit a transient generated-DLL file lock. Rejected claiming runtime proof without Unity play-mode/MCP. Static estimate: compile proof available; runtime proof unavailable.
 
 ## Loop Log
 
@@ -42,3 +42,4 @@ Mandates read:
 - Loop 5: Task 15 source proof reviewed: Alpha direction/distance uses `math.rsqrt`; full compile remains blocked by external project dependency wall. Status remains PENDING VERIFICATION.
 - Loop 6: Prompt re-extracted with attribute-aware PowerShell regex from `Docs/Tasks/CURRENT_BATCH.md`. Second-pass fixes added explicit acoustic AUP rebasing, phase-3 `Strike` alias, and roar-triggered `PlayerStressSignal`. `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false` still failed behind 127 generated/cross-asmdef errors; Unity MCP refresh/console failed with HTTP transport unavailable on `127.0.0.1:8088`. `git diff --check` reported no whitespace errors beyond repository line-ending warnings.
 - Loop 7: Prompt re-extracted again; mandates re-read. Third-pass fixes added `AlphaHiddenHoldSeconds = 1.15f` to prevent one-tick vanish and corrected Alpha telemetry flags for gaze/SDF/low-tier truth. Static scans found no sqrt/normalize/length calls in Alpha files and no new managed allocation patterns in `PredatorCognitionDomain`; existing scratch lists/logs remain pre-existing `FaunaBrain` debt. `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false` failed behind 132 generated/cross-asmdef errors; Unity MCP transport still unavailable at `127.0.0.1:8088`.
+- Loop 8: Prompt re-extracted from `Docs/Tasks/CURRENT_BATCH.md`; first-encounter gate tightened with `UseAlphaLeviathanCognition` so 10Hz Alpha stalking, phase telemetry, SDF dive, false-charge roar, and stress spike apply only to legacy species-profile Leviathans or archetypes using `useFeintRush` / `useLeviathanPresence + PresenceCircle`. Static scans found no new Alpha hot-path allocations. `git diff --check` reported only LF-to-CRLF warnings. `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false` first failed on a generated DLL file lock; serialized `dotnet build Hecton8.Core.csproj --no-restore -m:1 /nr:false /clp:ErrorsOnly` succeeded with 0 errors. Runtime proof remains pending because no Unity MCP session is attached.
