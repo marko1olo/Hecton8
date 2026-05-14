@@ -338,3 +338,28 @@ Verification:
 - Static grep over IK runtime/job/shader scope found no `math.sqrt`, `math.normalize`, managed array creation, `foreach`, `string.Format`, `.ToString()`, `Debug.Log`, Unity Physics casts, `SkinnedMeshRenderer`, `renderer.material`, `Camera.main`, `GlobalRegistry.Get`, `GameObject.Find`, or `FindObject`.
 - `git diff --check` and `git diff --cached --check` on touched code/docs exit 0; unstaged output is only LF-to-CRLF warnings.
 - Runtime status remains pending until Unity Editor import, shader compile, play-mode behavior, GC, and profiler evidence exist.
+
+## 2026-05-15T02:24+04:00
+
+Status: PENDING VERIFICATION. Continued terrain payload boundary audit. No `dotnet` rebuild/compile was run.
+
+What was wrong:
+- SDF and fallback height buffer length gates existed, but terrain transform metadata could still be non-finite.
+- SDF decode and gradient sampling read raw range/cell fields after the outer payload gate.
+
+What was done:
+- Added finite metadata gates for SDF origin, terrain origin, and terrain size.
+- Sanitized SDF cell size and range once per job execution.
+- Passed sanitized SDF values through density, gradient, and decode paths.
+
+Cinematic cheats used:
+- Existing 2D height fallback remains the cheap non-SDF contact path.
+
+Exact microseconds saved:
+- No frame-time saving claimed.
+- Added scalar/vector finite gates estimated under 0.3 us on terrain-contact solver frames.
+- Prevented fault: NaN terrain metadata reaching native matrices.
+
+Verification:
+- Pending static checks after this edit.
+- Runtime status remains pending until Unity Editor import, shader compile, play-mode behavior, GC, and profiler evidence exist.

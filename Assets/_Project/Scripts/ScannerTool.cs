@@ -625,6 +625,7 @@ namespace Hecton8.Gameplay
         private DataArchaeologyRuntime _dataArchaeology;
         private HectonSurvivalSystem _cachedSurvivalSystem;
         private IPlayerRuntimeContext _cachedPlayerContext;
+        private AtlasSignalSystem _cachedAtlasSignal;
         private float _scientificNextResampleAt;
         private float _scientificLastContactTime = float.NegativeInfinity;
         private float3 _activeScientificProbePosition;
@@ -1385,7 +1386,7 @@ namespace Hecton8.Gameplay
             float cooldownRemaining = Mathf.Max(0f, (_lastScanTime + effectiveCooldown) - now);
 
             // Signal Atlas-6 — pokazyvaem silu esli obnaruzhen
-            AtlasSignalSystem signal = Hecton8.Core.GlobalRegistry.AtlasSignal;
+            AtlasSignalSystem signal = ResolveCachedAtlasSignalCold();
             if (signal != null && signal.CurrentRevealStage >= AtlasDetectionRevealStage)
             {
                 float strength = signal.CurrentStrength;
@@ -1445,7 +1446,7 @@ namespace Hecton8.Gameplay
 
         public override void WriteOperationalDirective(ref FixedCharBuffer buffer)
         {
-            AtlasSignalSystem signal = Hecton8.Core.GlobalRegistry.AtlasSignal;
+            AtlasSignalSystem signal = ResolveCachedAtlasSignalCold();
             if (signal != null &&
                 signal.CurrentRevealStage >= AtlasNavigationRevealStage &&
                 _cachedTransform != null)
@@ -1530,7 +1531,7 @@ namespace Hecton8.Gameplay
             float effectiveScanRadius = ResolveEffectiveScanRadius();
             float cooldownRemaining = math.max(0f, (_lastScanTime + effectiveCooldown) - Time.time);
 
-            AtlasSignalSystem signal = Hecton8.Core.GlobalRegistry.AtlasSignal;
+            AtlasSignalSystem signal = ResolveCachedAtlasSignalCold();
             if (signal != null && signal.CurrentRevealStage >= AtlasDetectionRevealStage)
             {
                 float strength = signal.CurrentStrength;
@@ -2692,8 +2693,9 @@ namespace Hecton8.Gameplay
 
         private static string ResolveLocalized(string key, string fallback)
         {
-            return Hecton8.Core.GlobalRegistry.Localization != null
-                ? Hecton8.Core.GlobalRegistry.Localization.GetOrFallback(Hecton8.Core.GlobalRegistry.Localization.CurrentLanguage, key, fallback)
+            ILocalizationService localization = Hecton8.Core.GlobalRegistry.Localization;
+            return localization != null
+                ? localization.GetOrFallback(localization.CurrentLanguage, key, fallback)
                 : fallback;
         }
 
