@@ -41,6 +41,8 @@ Extracted from `Docs/Tasks/CURRENT_BATCH.md` because `CURRENT_BATCH_OSHINO.md` i
 - Loop 8: Self-review correction pass; caught stale placeholder master vector in `ReplayHasher.py` self-test, patched it to the CLI-emitted deterministic lanes, reran syntax/self-test/master/reference fuzz, and probed local compiler/editor availability.
 - Loop 9: Implementation upgrade pass; added isolated C# `SaveMasterHashV10` helper, added `SaveMasterHashV10Result` binary layout sentinel, validated 128-bit rotate formulas externally, and kept the active v9 writer untouched.
 - Loop 10: Header implementation upgrade pass; added concrete `SaveFileHeaderV10`, helper overloads for compute/fill/validate, full header offset sentinels, and independent packed-layout validation.
+- Loop 11: Static C# helper guard pass; added `Tools/Security/ValidateSaveMasterHashCSharp.py` to compare C# domain bytes/constants/layout sentinels against `ReplayHasher.py`. DOD: `SAVE_MASTER_HASH_CSHARP_GUARD=PASS domains=5 constants=9 manifestSentinels=8`; rejected relying on prose-only parity while Unity compile is unavailable.
+- Loop 12: Static guard self-review pass; first execution exposed a parser defect: method extraction matched a call-site and suffix writers were forced to start at index 0. DOD: declaration-only extraction plus explicit `expected_start` validation, then `SAVE_MASTER_HASH_CSHARP_GUARD=PASS`; rejected weakening the domain-byte check.
 
 ## Verification
 
@@ -54,6 +56,7 @@ Extracted from `Docs/Tasks/CURRENT_BATCH.md` because `CURRENT_BATCH_OSHINO.md` i
 - Header layout proof: independent packed-struct check -> PASS (`V10_HEADER_LAYOUT_OK`).
 - Rotate formula proof: independent Python check of C# lane formulas -> PASS (`ROT128_FORMULA_OK`).
 - C# static guard: new helper and manifest edit -> PASS (`CS_STATIC_GUARD_OK`).
+- C# helper executable static guard: initial parser attempt failed on call-site/suffix extraction; corrected parser and reran `python -B Tools\Security\ValidateSaveMasterHashCSharp.py` -> PASS (`SAVE_MASTER_HASH_CSHARP_GUARD=PASS domains=5 constants=9 manifestSentinels=8`).
 - Temp dependency hygiene: `.codex_tmp\xxhash_check` -> absent after reference verification.
 - Omega polish extraction: `<POLISH_MANDATE>` tag not found in `Docs/Tasks/CURRENT_BATCH.md`; local anti-bloat pass completed on owned artifacts.
 - C# compile attempt: `dotnet build .\Hecton8.slnx --no-restore` -> BLOCKED, `dotnet` not found on PATH.

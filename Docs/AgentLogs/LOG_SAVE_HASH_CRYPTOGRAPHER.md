@@ -83,3 +83,27 @@ Cinematic Cheats used: None. Tooling verification only.
 Exact Microseconds saved: 0 runtime microseconds.
 
 Verification: MSBuild launched but the build failed before compiling project code because `Hecton8.slnx` references missing `.csproj` files such as `Hecton8.Core.csproj`; the checkout contains `.csproj.lscache` files instead. This is a project-generation/tooling blockage, not a compile error from `SaveMasterHashV10.cs`.
+
+## 2026-05-14 - CSharp Helper Static Guard
+
+What was wrong: Unity/C# compile is still blocked, so `SaveMasterHashV10.cs` needed an executable static parity guard instead of relying only on prose and manual review.
+
+What was done: Added `Tools/Security/ValidateSaveMasterHashCSharp.py`. The guard reads `SaveMasterHashV10.cs`, `BinaryLayoutManifest.cs`, and `ReplayHasher.py`; it verifies C# domain bytes, constants, layout sentinels, stackalloc-only buffer shape, and the frozen Python master vector.
+
+Cinematic Cheats used: None. Offline binary ABI validation only.
+
+Exact Microseconds saved: 0 runtime microseconds. This prevents byte-domain drift before save/load integration.
+
+Verification: `python -B Tools\Security\ValidateSaveMasterHashCSharp.py` returns `SAVE_MASTER_HASH_CSHARP_GUARD=PASS domains=5 constants=9 manifestSentinels=8`. Unity/C# compile remains PENDING VERIFICATION.
+
+## 2026-05-14 - Static Guard Parser Correction
+
+What was wrong: The new C# helper guard initially failed before validation. It matched a method call-site instead of the method declaration, then treated suffix-only domain writers as malformed because their first literal assignment is `target[15]`.
+
+What was done: Tightened method extraction to C# static declarations and added explicit byte-assignment start windows. Full domain writers still require contiguous bytes from zero; shuffle lane suffix writers require contiguous bytes from 15.
+
+Cinematic Cheats used: None. Offline tooling correction only.
+
+Exact Microseconds saved: 0 runtime microseconds. The change prevents a false tooling failure before Unity import is available.
+
+Verification: `python -B Tools\Security\ValidateSaveMasterHashCSharp.py` returns `SAVE_MASTER_HASH_CSHARP_GUARD=PASS domains=5 constants=9 manifestSentinels=8`; `python -m py_compile Tools\Security\ReplayHasher.py Tools\Security\ValidateSaveMasterHashCSharp.py` passed; `python -B Tools\Security\ReplayHasher.py self-test` returned `SELFTEST_OK`.

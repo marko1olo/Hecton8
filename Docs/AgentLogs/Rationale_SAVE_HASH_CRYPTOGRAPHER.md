@@ -143,3 +143,27 @@ Rejected Alternatives: Reporting "MSBuild missing" without checking standard ins
 Scalability potential: No runtime impact. This only tightens verification accuracy.
 
 Hardware Impact: 0 us frame impact.
+
+## Decision 13
+
+Problem: Unity/C# compile remains unavailable in this shell, so C# helper parity with the Python oracle could drift silently between prose, `ReplayHasher.py`, and `SaveMasterHashV10.cs`.
+
+Solution: Added `Tools/Security/ValidateSaveMasterHashCSharp.py`. It statically extracts C# domain byte writers, constants, forbidden managed patterns, and `BinaryLayoutManifest` sentinels, then compares them against the Python oracle constants and frozen master vector.
+
+Rejected Alternatives: Relying on documentation-only parity was rejected because byte-domain drift is easy to miss. Generating C# from Python was rejected because it would change the implementation workflow and introduce a larger generated-code surface.
+
+Scalability potential: Low/Middle/High/Ultra all keep the same save ABI; the guard prevents platform-specific drift before Unity import.
+
+Hardware Impact: 0 us frame impact. Offline validation only.
+
+## Decision 14
+
+Problem: The first executable guard run failed for tooling reasons, not hash reasons. `extract_method_body` matched the first call-site name before the declaration, and `extract_byte_assignments` assumed every writer started at `target[0]` even though shuffle lane writers intentionally append from `target[15]`.
+
+Solution: Changed method extraction to require a C# static method declaration and added explicit `expected_start` validation for byte assignment windows. The guard now verifies both contiguous full domains and suffix-only domain writers without relaxing byte equality.
+
+Rejected Alternatives: Suppressing parser failures or slicing empty tails was rejected because that would turn the guard into a false positive. Rewriting the C# domain writers just to satisfy a weaker parser was rejected because the C# implementation was already explicit and cheaper to review.
+
+Scalability potential: Low/Middle/High/Ultra save ABI is unchanged. This only hardens offline parity checks.
+
+Hardware Impact: 0 us frame impact. Offline validation only.
