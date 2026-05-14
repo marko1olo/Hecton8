@@ -84,14 +84,15 @@ namespace Hecton8.Gameplay
 
         public void Execute()
         {
-            float dt = math.max(0.0f, DeltaTime);
-            float3 position = Positions[0];
-            float3 velocity = Velocities[0];
-            float3 intended = IntendedMovement[0];
+            float dt = SanitizeNonNegative(DeltaTime);
+            float3 fallbackPosition = SanitizeFloat3(LastValidPositions[0], float3.zero);
+            float3 position = SanitizeFloat3(Positions[0], fallbackPosition);
+            float3 velocity = SanitizeFloat3(Velocities[0], float3.zero);
+            float3 intended = SanitizeFloat3(IntendedMovement[0], float3.zero);
             uint runtimeFlags = RuntimeFlags;
-            float drag = math.max(0.0f, DragCoefficient) * math.max(0.0f, EquipmentDragMultiplier);
-            float density = math.max(0.0f, WaterDensity);
-            float telemetrySolidDensity = SolidDensity;
+            float drag = SanitizeNonNegative(DragCoefficient) * SanitizeNonNegative(EquipmentDragMultiplier);
+            float density = SanitizeNonNegative(WaterDensity);
+            float telemetrySolidDensity = math.select(SolidDensity, 0.0f, !math.isfinite(SolidDensity));
 
             if ((SdfGradientProbeRequested & 1) != 0 &&
                 TryResolveSdfOpenSpaceGradient(
@@ -124,17 +125,18 @@ namespace Hecton8.Gameplay
                 telemetrySolidDensity = sdfDensity;
             }
 
-            float dragTerm = drag * density * dt;
-            velocity *= math.rcp(1.0f + math.max(0.0f, dragTerm));
-            velocity += FlowVelocity[0] * dt;
+            float dragTerm = SanitizeNonNegative(drag * density * dt);
+            velocity *= math.rcp(1.0f + dragTerm);
+            velocity += SanitizeFloat3(FlowVelocity[0], float3.zero) * dt;
             if (ActiveMaelstromCount > 0)
             {
-                velocity += HectonAnalyticalFlowField.SampleWhirlpoolVelocity(
+                float3 maelstromVelocity = HectonAnalyticalFlowField.SampleWhirlpoolVelocity(
                     position,
                     ActiveMaelstroms,
                     ActiveMaelstromCount,
                     LowMaelstromTier,
-                    MaelstromVelocityClamp) * dt;
+                    MaelstromVelocityClamp);
+                velocity += SanitizeFloat3(maelstromVelocity, float3.zero) * dt;
             }
 
             if ((runtimeFlags & PlayerKinematicsRuntime.BodyFlagLadderActive) != 0u)
@@ -157,13 +159,13 @@ namespace Hecton8.Gameplay
             if (!finite)
             {
                 flags = PlayerKinematicsRuntime.FaultNaN;
-                position = LastValidPositions[0];
+                position = fallbackPosition;
                 velocity = float3.zero;
             }
             else if ((runtimeFlags & PlayerKinematicsRuntime.BodyFlagInSolid) != 0u)
             {
                 flags = PlayerKinematicsRuntime.FaultSolidTeleport;
-                position = LastValidPositions[0];
+                position = fallbackPosition;
                 velocity = float3.zero;
             }
             else
@@ -202,6 +204,17 @@ namespace Hecton8.Gameplay
                 DeterministicPhysicsMath.SnapMillimeter(value.x),
                 DeterministicPhysicsMath.SnapMillimeter(value.y),
                 DeterministicPhysicsMath.SnapMillimeter(value.z));
+        }
+
+        private static float SanitizeNonNegative(float value)
+        {
+            return math.select(math.max(0.0f, value), 0.0f, !math.isfinite(value));
+        }
+
+        private static float3 SanitizeFloat3(float3 value, float3 fallback)
+        {
+            float3 safeFallback = math.select(fallback, float3.zero, !math.all(math.isfinite(fallback)));
+            return math.select(value, safeFallback, !math.all(math.isfinite(value)));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

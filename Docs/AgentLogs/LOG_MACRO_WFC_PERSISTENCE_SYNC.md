@@ -240,3 +240,32 @@ Verification:
 - Static scans confirm public persist/restore still call `RefreshWfcOutpostDependencies` for cold callers.
 - `git diff --check` reports no whitespace errors except Git CRLF normalization warnings.
 - No `dotnet` rebuild was run.
+
+## Recheck Report: WFC Payload Checksum Hardening
+Status: PENDING VERIFICATION.
+
+What was wrong:
+- WFC payloads had structural guards but no stored-byte checksum.
+- A payload-byte bit flip could survive if the magic/version/dimensions/length fields stayed valid.
+
+What was done:
+- Packed a WFC-local checksum into the high 24 bits of the existing 32-bit flags field.
+- Added a checksum flag in the low flag byte.
+- Writer computes checksum after RLE/raw storage selection.
+- Reader rejects checksum mismatches before RLE/raw decode.
+- Legacy zero-checksum payloads remain readable; high checksum bits without the checksum flag reject.
+
+Cinematic cheats used:
+- No header expansion, no sidecar manifest, no full interaction-history replay.
+- The four-plane bitmask remains compact; integrity rides inside the existing payload header word.
+
+Exact microseconds saved:
+- Measured savings: 0 us. No profiler or runtime trace.
+- Static cost: checksum loops over <=256 stored payload bytes per WFC persist/restore.
+- Static gain: corrupt WFC payloads fail before mutable-state grid injection, avoiding bad restored presentation and later corrective writes.
+
+Verification:
+- Static scans confirm `WfcOutpostPayloadFlagChecksum24`, checksum write, checksum read, and mismatch rejection paths.
+- Static scans confirm `PayloadHeaderBytes` and `PayloadMaxBytes` constants are unchanged.
+- `git diff --check` reports no whitespace errors except Git CRLF normalization warnings.
+- No `dotnet` rebuild was run.

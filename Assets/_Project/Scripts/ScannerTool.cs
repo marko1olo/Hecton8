@@ -49,6 +49,13 @@ namespace Hecton8.Gameplay
         private const int ScannerBlackBoxCapacity = 300;
         private const int ScannerBlackBoxInvalidStateHash = unchecked((int)0x53434E21); // SCN!
         private const uint ScannerBlackBoxMagic = 0x53434242u; // SCBB
+        private const ushort ScannerBlackBoxFlagEquipped = 1 << 0;
+        private const ushort ScannerBlackBoxFlagHeld = 1 << 1;
+        private const ushort ScannerBlackBoxFlagSnapshotActive = 1 << 2;
+        private const ushort ScannerBlackBoxFlagFragmentActive = 1 << 3;
+        private const ushort ScannerBlackBoxFlagEntityActive = 1 << 4;
+        private const ushort ScannerBlackBoxFlagRaycastPending = 1 << 5;
+        private const ushort ScannerBlackBoxFlagInvalidState = 1 << 15;
         private const uint ScannerToolTuningHash = 0x53434E52u; // SCNR
         private const uint FallbackScannerBlueprintHash = 0x534F5648u; // SOVH
         private const string ScannerBlackBoxFileName = "Dump_DIEGETIC_LORE_SCANNER.bin";
@@ -941,7 +948,11 @@ namespace Hecton8.Gameplay
 
         public void FastTick(float deltaTime)
         {
+            if (!math.isfinite(deltaTime) || deltaTime < 0f)
+                deltaTime = 0f;
+
             UpdateScientificScanning(deltaTime);
+            WriteScannerBlackBox(deltaTime);
         }
 
         public void LateFrameTick()
@@ -957,7 +968,9 @@ namespace Hecton8.Gameplay
                           BatteryCharge > 0f &&
                           artifactHash != 0u &&
                           (_scientificSnapshot.IsActive || _activeScientificFragment != null || _activeScientificEntityHash != 0u);
-            int progressBucket = math.clamp((int)math.round(math.saturate(progress01) * 1000f), 0, 1000);
+            float safeProgress01 = SafeSaturate01(progress01);
+            float safeBattery01 = SafeSaturate01(BatteryCharge);
+            int progressBucket = math.clamp((int)math.round(safeProgress01 * 1000f), 0, 1000);
             uint signalToolHash = RuntimeToolId != 0u ? RuntimeToolId : ScannerToolTuningHash;
 
             if (active == _lastPublishedTuningActive &&
@@ -980,8 +993,8 @@ namespace Hecton8.Gameplay
                 ArtifactHash = artifactHash,
                 BlueprintHash = blueprintHash != 0u ? blueprintHash : FallbackScannerBlueprintHash,
                 Frame = unchecked((uint)Time.frameCount),
-                Progress01 = math.saturate(progress01),
-                Battery01 = math.saturate(BatteryCharge),
+                Progress01 = safeProgress01,
+                Battery01 = safeBattery01,
                 Active = active ? (byte)1 : (byte)0,
                 Stage = 0,
                 Flags = _activeScientificFragment != null ? (byte)1 : (byte)0,
@@ -1050,28 +1063,50 @@ namespace Hecton8.Gameplay
 
         private void EnsureScientificNativeState()
         {
-            if (_scientificLoreCandidateResult.IsCreated)
-                return;
+            if (!_scientificLoreCandidateResult.IsCreated)
+            {
+                _scientificLoreCandidateResult = new NativeArray<LoreCandidateResult>(
+                    1,
+                    Allocator.Persistent,
+                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<LoreCandidateResult>[1] - Burst scanner target result slot - owner: ScannerTool
+                NativeMemorySentinel.RegisterNativeArray(
+                    _scientificLoreCandidateResult,
+                    nameof(ScannerTool),
+                    nameof(_scientificLoreCandidateResult),
+                    NativeAllocationLifetime.Scene);
+            }
 
-            _scientificLoreCandidateResult = new NativeArray<LoreCandidateResult>(
-                1,
-                Allocator.Persistent,
-                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<LoreCandidateResult>[1] - Burst scanner target result slot - owner: ScannerTool
-            NativeMemorySentinel.RegisterNativeArray(
-                _scientificLoreCandidateResult,
-                nameof(ScannerTool),
-                nameof(_scientificLoreCandidateResult),
-                NativeAllocationLifetime.Scene);
+            if (!_scannerBlackBox.IsCreated)
+            {
+                _scannerBlackBox = new NativeArray<ScannerBlackBoxEntry>(
+                    ScannerBlackBoxCapacity,
+                    Allocator.Persistent,
+                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ScannerBlackBoxEntry>[300] - scanner acquisition black box - owner: ScannerTool
+                NativeMemorySentinel.RegisterNativeArray(
+                    _scannerBlackBox,
+                    nameof(ScannerTool),
+                    nameof(_scannerBlackBox),
+                    NativeAllocationLifetime.Scene);
+                _scannerBlackBoxCursor = 0;
+                _scannerBlackBoxDumped = false;
+            }
         }
 
         private void DisposeScientificNativeState()
         {
-            if (!_scientificLoreCandidateResult.IsCreated)
-                return;
+            if (_scientificLoreCandidateResult.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_scientificLoreCandidateResult);
+                _scientificLoreCandidateResult.Dispose();
+                _scientificLoreCandidateResult = default;
+            }
 
-            NativeMemorySentinel.UnregisterNativeArray(_scientificLoreCandidateResult);
-            _scientificLoreCandidateResult.Dispose();
-            _scientificLoreCandidateResult = default;
+            if (_scannerBlackBox.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_scannerBlackBox);
+                _scannerBlackBox.Dispose();
+                _scannerBlackBox = default;
+            }
         }
 
         private void TryRegisterScientificLanes()
