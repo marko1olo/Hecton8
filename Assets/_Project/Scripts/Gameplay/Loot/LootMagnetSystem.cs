@@ -463,6 +463,7 @@ namespace Hecton8.Gameplay.Loot
             {
                 uint flags = _entityFlags[index];
                 flagsHash = (flagsHash ^ flags) * 16777619u;
+                flagsHash = (flagsHash ^ _entityItemHashes[index]) * 16777619u;
                 if ((flags & LootEntityFlags.NonFinite) != 0u)
                     fault = true;
 

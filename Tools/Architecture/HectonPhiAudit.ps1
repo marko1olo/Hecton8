@@ -1319,6 +1319,22 @@ function New-Scores {
 function New-CoreGraphSummary {
     param([System.Collections.Specialized.OrderedDictionary]$CoreGraphAudit)
 
+    $unusedScan = $CoreGraphAudit.CoreAsmdefUnusedReferenceScan
+    $unusedScanSummary = [ordered]@{
+        Enabled = $false
+    }
+
+    if ($null -ne $unusedScan -and $unusedScan.Enabled) {
+        $unusedScanSummary = [ordered]@{
+            Enabled = $true
+            EvidenceClass = $unusedScan.EvidenceClass
+            CoreCompileSurfaceFileCount = $unusedScan.CoreCompileSurfaceFileCount
+            ScannedDebtReferenceCount = $unusedScan.ScannedDebtReferenceCount
+            CandidateCount = $unusedScan.CandidateCount
+            Candidates = @($unusedScan.Candidates | Select-Object Reference, Confidence, SourceFileCount, DeclaredTypeCount, SourceInCoreCompileSurfaceCount)
+        }
+    }
+
     [ordered]@{
         CoreAsmdef = $CoreGraphAudit.CoreAsmdef
         CoreProject = $CoreGraphAudit.CoreProject
@@ -1328,6 +1344,9 @@ function New-CoreGraphSummary {
             Select-Object -ExpandProperty Reference)
         GeneratedProjectDebtReferences = @($CoreGraphAudit.GeneratedProjectDebtReferences |
             Select-Object -ExpandProperty Reference)
+        SourceBackedBridgeDebtReferences = @($CoreGraphAudit.SourceBackedBridgeDebtReferences |
+            Select-Object -ExpandProperty Reference)
+        CoreAsmdefUnusedReferenceScan = $unusedScanSummary
     }
 }
 
@@ -1407,6 +1426,14 @@ if ($CoreGraphOnly) {
         Write-Output ''
         Write-Output 'Generated Core project H-Phi debt references:'
         $summaryResult.CoreGraph.GeneratedProjectDebtReferences | ForEach-Object { Write-Output ("  {0}" -f $_) }
+        Write-Output ''
+        Write-Output 'Source-backed Core bridge H-Phi debt references:'
+        $summaryResult.CoreGraph.SourceBackedBridgeDebtReferences | ForEach-Object { Write-Output ("  {0}" -f $_) }
+        if ($summaryResult.CoreGraph.CoreAsmdefUnusedReferenceScan.Enabled) {
+            Write-Output ''
+            Write-Output 'Unused Core asmdef reference candidates:'
+            $summaryResult.CoreGraph.CoreAsmdefUnusedReferenceScan.Candidates | Format-Table -AutoSize
+        }
         return
     }
 
@@ -1434,6 +1461,18 @@ if ($CoreGraphOnly) {
     Write-Output ''
     Write-Output 'Source-backed Core bridge H-Phi debt references:'
     $coreGraphAudit.SourceBackedBridgeDebtReferences | Format-Table -AutoSize
+    if ($coreGraphAudit.CoreAsmdefUnusedReferenceScan.Enabled) {
+        Write-Output ''
+        Write-Output 'Unused Core asmdef reference scan:'
+        [pscustomobject][ordered]@{
+            CoreCompileSurfaceFileCount = $coreGraphAudit.CoreAsmdefUnusedReferenceScan.CoreCompileSurfaceFileCount
+            ScannedDebtReferenceCount = $coreGraphAudit.CoreAsmdefUnusedReferenceScan.ScannedDebtReferenceCount
+            CandidateCount = $coreGraphAudit.CoreAsmdefUnusedReferenceScan.CandidateCount
+        } | Format-List
+        Write-Output ''
+        Write-Output 'Unused Core asmdef reference candidates:'
+        $coreGraphAudit.CoreAsmdefUnusedReferenceScan.Candidates | Format-Table -AutoSize
+    }
     return
 }
 

@@ -24,12 +24,12 @@ Prompt Source: in-chat XML. `Docs/Tasks/CURRENT_BATCH.md` contains no matching p
 - [x] Task 3 - Watchdog Hooks | Justification: verified no `Watchdog.Start/Stop` API exists; retained existing `RuntimeWatchdog.Signal/ReportSubsystemCost` contract and did not invent incompatible wrappers | Alternatives Rejected: synthetic watchdog class and per-frame allocations | Estimate: 0 runtime microseconds added
 - [x] Task 4 - Fauna Bucketing | Justification: `SargassumMicroFaunaBoids` now drives `_SimulationBucketIndex/_SimulationBucketMask` from `ISimulationBucketer`; compute shader updates 1/16 boids and PBD lanes per frame while copying inactive boids to the ping-pong write buffer | Alternatives Rejected: whole-frame skip and CPU boid list migration | Estimate: 180-550 microseconds saved on i3/MX350 under dense swarm/PBD
 - [x] Task 5 - Fluids Bucketing | Justification: `HectonFluidEngine` now drives `_AbyssalFlowUpdateBucket/_AbyssalFlowUpdateBucketMask`; flow buffer/texture compute updates 1/8 flat voxels and preserves skipped texture voxels from the read texture | Alternatives Rejected: global resolution reduction and CPU noise generation | Estimate: 120-320 microseconds saved on i3/MX350 when abyssal flow texture is active
-- [ ] Task 6 - Interpolation Audit | Justification: pending renderer-facing bucketed system scan | Alternatives Rejected: no visual jitter claim without read path | Estimate: pending
-- [ ] Task 7 - Final Vault Push | Justification: pending `PlayerMovement` and `SubmarinePhysics` NativeArray ownership scan | Alternatives Rejected: no direct NativeArray deletion without vault handles | Estimate: pending
-- [ ] Task 8 - Pointer Rebinding | Justification: pending dependency-injection contract scan | Alternatives Rejected: no hot-path registry lookups | Estimate: pending
-- [ ] Task 9 - Kill-Switch Wiring | Justification: pending `SystemKillSwitchMask` API scan | Alternatives Rejected: no hardcoded global booleans | Estimate: pending
-- [ ] Task 10 - Degradation Logic | Justification: pending tier/fallback surfaces per system | Alternatives Rejected: no balanced middle mode only | Estimate: pending
-- [ ] Task 11 - Batched Compile | Justification: pending two-system edit batches | Alternatives Rejected: no fake compile status | Estimate: pending
+- [x] Task 6 - Interpolation Audit | Justification: fauna exposes `SimulationInterpolationAlpha` and pushes `_SimulationInterpolationAlpha` to the material property block; fluids expose `GpuAbyssalFlowInterpolationAlpha` and carry `AbyssalFlowInterpolationAlpha` in render-graph payload | Alternatives Rejected: CPU smoothing and recomputing skipped buckets | Estimate: under 3 microseconds added when property values change
+- [x] Task 7 - Final Vault Push | Justification: moved exact `HectonPlayerMovement` cinematic focus black box, `PlayerKinematicsNativeState` SOA/telemetry, and `SubmarineFluidDynamics` persistent hydro arrays to `GlobalDataVault` with H8Memory fallback | Alternatives Rejected: disposing vault arrays locally or leaving local-only persistent state | Estimate: 0-20 microseconds saved indirectly through centralized ownership
+- [x] Task 8 - Pointer Rebinding | Justification: `HectonPlayerMovement.OnDependencyInject()` caches `GlobalRegistry.DataVault` and passes it to `PlayerKinematicsNativeState`; submarine caches vault in cold reference binding and allocation helper | Alternatives Rejected: hot-path registry lookups in physics/render loops | Estimate: 0-5 microseconds saved on cold rebind and no hot-loop allocation
+- [x] Task 9 - Kill-Switch Wiring | Justification: fauna and abyssal flow read `GlobalRegistry.SystemKillSwitchMask & SystemKillSwitchLane4VfxMask`; no new global booleans | Alternatives Rejected: independent kill flags outside Homeostasis authority | Estimate: one volatile mask read per active tick/dispatch
+- [x] Task 10 - Degradation Logic | Justification: fauna suppresses simulation and renders cached ambient drift; abyssal flow ages impulse timers and keeps previous published flow field under VFX pressure | Alternatives Rejected: hard renderer disable and global resolution drop | Estimate: 370-1020 microseconds saved during kill-switch pressure on low-end silicon
+- [ ] Task 11 - Batched Compile [BLOCKED BY DEPENDENCY] | Justification: `Assembly-CSharp` first failed without restore assets, then full graph failed before stable Assembly compile; `Hecton8.Core.csproj` independently fails on unrelated `xxHash3` and PDA inventory binding symbols | Alternatives Rejected: editing unrelated save/UI owner files or claiming a green build | Estimate: verification blocked, 0 runtime microseconds
 - [ ] Task 12 - H-PHI Measurement | Justification: pending audit tool run after rewiring | Alternatives Rejected: no hand-computed vanity score | Estimate: pending
 - [ ] Task 13 - Zero-GC Verification | Justification: pending static hot-path allocation scan and runtime boundary report | Alternatives Rejected: no `0 B` claim without profiler/GCMonitor | Estimate: pending
 
@@ -46,4 +46,14 @@ Prompt Source: in-chat XML. `Docs/Tasks/CURRENT_BATCH.md` contains no matching p
 - Mapped dispatcher phases from actual `SystemDispatcher`/`GlobalRegistry` contracts instead of inventing a new phase API.
 - Wired fauna and abyssal flow to modulo simulation buckets through existing `ISimulationBucketer` registry service.
 - Added VFX-lane kill switch degradation for fauna ambient drift and cached abyssal flow.
-- Pending compile verification for the first two-system batch.
+- Compile verification attempted and blocked by unrelated dependency wall:
+  - `Assembly-CSharp.csproj --no-restore`: missing `Temp/obj/Assembly-CSharp/project.assets.json`.
+  - `Assembly-CSharp.csproj` full graph: failed before usable Assembly-CSharp diagnostics.
+  - `Hecton8.Core.csproj`: unrelated errors in `SaveMasterHashV10.cs` and `PDAShellChrome.cs`.
+
+### Loop 2 - Tasks 6-10 Implementation
+
+- Added renderer-facing interpolation alpha surfaces for fauna and fluid consumers.
+- Moved player/submarine persistent native state to DataVault-backed buffers with local H8Memory fallback.
+- Cached DataVault pointers through existing dependency-injection/cold-reference paths.
+- Recorded kill-switch degradation behavior for Low/Middle/High/Ultra tiers.

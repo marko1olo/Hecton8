@@ -755,12 +755,27 @@ namespace Hecton8.World.Outposts
 
         private void EnsureGraphicsResources()
         {
+            bool matrixBufferCreated = false;
+            bool cellTypeBufferCreated = false;
+            bool argsBufferCreated = false;
+
             if (_matrixBuffer == null)
+            {
                 _matrixBuffer = CreateStructuredLockBuffer<float4x4>(MarauderOutpostConstants.MaxShellMatrices); // COLD ALLOC: GraphicsBuffer[1024 float4x4] - outpost shell matrices - owner: MARAUDER_OUTPOST_ARCHITECT
+                matrixBufferCreated = true;
+            }
+
             if (_cellTypeBuffer == null)
+            {
                 _cellTypeBuffer = CreateStructuredLockBuffer<uint>(MarauderOutpostConstants.MaxShellMatrices); // COLD ALLOC: GraphicsBuffer[1024 uint] - outpost shell types - owner: MARAUDER_OUTPOST_ARCHITECT
+                cellTypeBufferCreated = true;
+            }
+
             if (_argsBuffer == null)
+            {
                 _argsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments, GraphicsBuffer.UsageFlags.LockBufferForWrite, 1, GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] - outpost indirect draw args - owner: MARAUDER_OUTPOST_ARCHITECT
+                argsBufferCreated = true;
+            }
 
             if (_renderPropertyBlock == null)
             {
@@ -785,7 +800,13 @@ namespace Hecton8.World.Outposts
                 }
             }
 
-            UpdateIndirectArgsBuffer(0u);
+            if (matrixBufferCreated || cellTypeBufferCreated || argsBufferCreated)
+                _renderPropertiesDirty = true;
+
+            if (_generated && _matrixCount > 0 && (matrixBufferCreated || cellTypeBufferCreated || argsBufferCreated))
+                UploadMatricesAndArgs();
+            else if (argsBufferCreated)
+                UpdateIndirectArgsBuffer(0u);
         }
 
         private void UploadMatricesAndArgs()

@@ -228,3 +228,43 @@ Final static verification addendum:
 - Expected bridge budget failure: `EXPECTED_BRIDGE_BUDGET_FAIL_PATH_OK`.
 - `git diff --check` on touched files: no whitespace errors.
 - Owned ASCII scan: passed.
+
+## 2026-05-15 - Fresh XML Compile Closure
+
+Triage Record:
+- Errors Fixed: 79 filtered compiler entries from `Fresh01` reduced to 0 in `Fresh12`.
+- Files Moved: none.
+- ASMDEFs Repaired: none in this closure; 152 asmdefs scanned into `AsmdefList_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh.txt`.
+- Current Status: BUILD SUCCESSFUL / PLATINUM GRADE.
+
+What was wrong:
+- Core isolated build could not see current memory/save/source contracts and later hit generated project-output metadata leaks.
+- Save master hash used the correct algorithm family but missed the Unity Collections namespace.
+- `PDAShellChrome` called inventory signal binding/consumption methods that did not exist.
+- A blank `Fresh10` build artifact produced exit `-1`; it was discarded as invalid evidence.
+
+What was done:
+- Re-ran the mandated Core build wall and fixed compile blockers in batches until `Hecton8.Core.dll` emitted.
+- Verified generated project references are suppressed in the Core medic lane and Unity-built assemblies are resolved from `Library/ScriptAssemblies`.
+- Added `Unity.Collections` import for `SaveMasterHashV10`.
+- Added allocation-free PDA inventory signal binding and `SignalBus<InventoryChangedSignal>` consumption.
+- Captured final proof in `Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh12.log`.
+
+Cinematic Cheats used:
+- Compile-graph surgery only. No runtime physical simulation was added.
+- Source-backed DLL resolution was used instead of rebuilding every vendor/package project into `Temp/bin/Debug`.
+
+Exact Microseconds saved:
+- Runtime frame time saved: 0 us. This pass repaired compile connective tissue, not player-frame logic.
+- Final build verification time: 105,610,000 us.
+- Avoided vendor/project rebuild savings: not claimed; no controlled timing baseline was collected.
+
+Verification:
+- Command: `dotnet build Hecton8.Core.csproj --no-restore --disable-build-servers -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal`.
+- Result: `Build succeeded. 0 Warning(s). 0 Error(s).`
+- Output: `Temp/bin/Debug/Hecton8.Core.dll`.
+- `git diff --check` on owned compile-fix files: no whitespace errors; only CRLF normalization warnings.
+
+Residual risk:
+- Other concurrent agents have unrelated working-tree edits. They were not reverted or claimed.
+- This is CLI Core compile proof only; Unity editor import/playmode proof remains outside this task.

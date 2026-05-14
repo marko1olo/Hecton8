@@ -117,6 +117,7 @@ The graph audit reads:
 - `Assets/_Project/Scripts/Hecton8.Core.asmdef`
 - `Hecton8.Core.csproj`
 - `Directory.Build.props`
+- `Directory.Build.targets`
 
 It classifies Core asmdef references as:
 
@@ -177,6 +178,24 @@ unused Core asmdef debt references and two unused source-backed bridge
 references from the integrator pass.
 They are not a target. Lower them only after staged contract extraction and
 compile verification.
+
+## Optional Unused Core Reference Scan
+
+The Core graph audit can also run a static candidate scan:
+
+```powershell
+Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -IncludeUnusedCoreReferenceScan -Json
+```
+
+This scan maps each Core asmdef debt reference to its source-backed asmdef,
+collects declared type names, and searches the generated/source-backed Core
+compile surface for external hits. A candidate means Core compile-surface text
+did not reference the candidate assembly literal, namespace literal, or declared
+types outside that assembly's own source files.
+
+This is a pruning hint only. It is valid evidence for review order, not proof
+that removing a reference is compile-safe. Removal still requires JSON/XML
+parse checks and compile verification when the build lane is allowed.
 
 ## Interpreting Movement
 
