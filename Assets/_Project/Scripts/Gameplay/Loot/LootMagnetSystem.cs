@@ -16,7 +16,10 @@ namespace Hecton8.Gameplay.Loot
     public sealed class LootMagnetSystem : MonoBehaviour, IFastTickable, ISlowTickable, ILateFrameTickable
     {
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_PHYS_MAGNETIC_LOOT_ACQUISITION.bin";
+        private const string RuntimeObjectName = "[LootMagnetSystem]";
         private const uint TelemetryFaultFlag = 1u;
+
+        private static LootMagnetSystem _bootstrapRuntime;
 
         [Header("Pull")]
         [SerializeField] private int maxLootEntities = LootMagnetConstants.DefaultMaxEntities;
@@ -37,8 +40,9 @@ namespace Hecton8.Gameplay.Loot
         private NativeArray<LootMagnetSignalEvent> _signalEvents;
         private NativeArray<LootMagnetTelemetryEntry> _telemetry;
 
-        // COLD ALLOC: PickupItem[capacity] sidecar mirrors vault slots only for legacy visual proxy/inventory commit.
+        // COLD ALLOC: managed sidecars mirror vault slots only for legacy visual proxy/inventory commit.
         private PickupItem[] _pickupRefs;
+        private int[] _pickupInstanceIds;
         private JobHandle _pullHandle;
         private bool _pullScheduled;
         private bool _registeredFastTick;
@@ -55,6 +59,41 @@ namespace Hecton8.Gameplay.Loot
 
         private bool IsLowTier => GlobalRegistry.ScalabilityTierProfileByte == 0;
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetBootstrapState()
+        {
+            _bootstrapRuntime = null;
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+        private static void EnsureRuntimeInstalled()
+        {
+            if (_bootstrapRuntime != null)
+                return;
+
+            LootMagnetSystem existing = Object.FindFirstObjectByType<LootMagnetSystem>();
+            if (existing != null)
+            {
+                _bootstrapRuntime = existing;
+                return;
+            }
+
+            GameObject runtimeRoot = new GameObject(RuntimeObjectName); // COLD ALLOC: GameObject[1] - bootstrap-owned loot magnet scheduler - owner: LootMagnetSystem
+            Object.DontDestroyOnLoad(runtimeRoot);
+            _bootstrapRuntime = runtimeRoot.AddComponent<LootMagnetSystem>();
+        }
+
+        private void Awake()
+        {
+            if (_bootstrapRuntime != null && !ReferenceEquals(_bootstrapRuntime, this))
+            {
+                enabled = false;
+                return;
+            }
+
+            _bootstrapRuntime = this;
+        }
+
         private void OnEnable()
         {
             if (!Application.isPlaying)
@@ -64,7 +103,8 @@ namespace Hecton8.Gameplay.Loot
             EnsureSignalEvents();
             EnsureTelemetry();
             RefreshDependencies();
-            EnsureVaultBuffers();
+            if (EnsureVaultBuffers())
+                RefreshPickupVaultFromRegistry();
             TryRegisterTicks();
         }
 
@@ -74,6 +114,12 @@ namespace Hecton8.Gameplay.Loot
             TryUnregisterTicks();
             DisposeSignalEvents();
             DisposeTelemetry();
+        }
+
+        private void OnDestroy()
+        {
+            if (ReferenceEquals(_bootstrapRuntime, this))
+                _bootstrapRuntime = null;
         }
 
         public void FastTick(float dt)
@@ -204,10 +250,16 @@ namespace Hecton8.Gameplay.Loot
         private void EnsureManagedSidecars()
         {
             int capacity = Capacity;
-            if (_pickupRefs != null && _pickupRefs.Length == capacity)
+            if (_pickupRefs != null &&
+                _pickupRefs.Length == capacity &&
+                _pickupInstanceIds != null &&
+                _pickupInstanceIds.Length == capacity)
+            {
                 return;
+            }
 
             _pickupRefs = new PickupItem[capacity];
+            _pickupInstanceIds = new int[capacity];
         }
 
         private void EnsureTelemetry()
@@ -271,7 +323,7 @@ namespace Hecton8.Gameplay.Loot
 
         private void RefreshPickupVaultFromRegistry()
         {
-            if (_pullScheduled || !_entityAups.IsCreated || _pickupRefs == null)
+            if (_pullScheduled || !_entityAups.IsCreated || _pickupRefs == null || _pickupInstanceIds == null)
                 return;
 
             int capacity = Capacity;
@@ -289,7 +341,12 @@ namespace Hecton8.Gameplay.Loot
                 }
 
                 Transform pickupTransform = pickup.transform;
+                int instanceId = pickup.GetInstanceID();
+                if (_pickupInstanceIds[activeCount] != instanceId)
+                    _entityVelocities[activeCount] = float3.zero;
+
                 _pickupRefs[activeCount] = pickup;
+                _pickupInstanceIds[activeCount] = instanceId;
                 _entityAups[activeCount] = AbsoluteUniversePosition.FromRuntimePosition(pickupTransform.position);
                 _entityItemHashes[activeCount] = unchecked((uint)pickup.ItemHashId);
                 _entityQuantities[activeCount] = (ushort)math.clamp(pickup.Quantity, 1, (int)ushort.MaxValue);
@@ -300,6 +357,7 @@ namespace Hecton8.Gameplay.Loot
             for (int index = activeCount; index < _activeCount && index < capacity; index++)
             {
                 _pickupRefs[index] = null;
+                _pickupInstanceIds[index] = 0;
                 _entityFlags[index] = 0u;
                 _entityVelocities[index] = float3.zero;
                 _entityItemHashes[index] = 0u;
@@ -407,6 +465,7 @@ namespace Hecton8.Gameplay.Loot
                     else
                     {
                         _pickupRefs[index] = null;
+                        _pickupInstanceIds[index] = 0;
                     }
 
                     continue;

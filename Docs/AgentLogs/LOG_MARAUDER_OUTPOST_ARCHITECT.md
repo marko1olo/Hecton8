@@ -81,3 +81,30 @@ Verification:
 - `git diff --check`: PASS with existing line-ending warnings only.
 
 Status: PENDING VERIFICATION. Source compile and static audits pass; runtime console/profiler proof is still unavailable from this session.
+
+## 2026-05-14 - WFC Outpost Loop 7 Hardening
+
+What was wrong: The previous pass still left four avoidable integration risks: height sampling trusted external payload validity only, sealed-door shell matrices did not rotate to match edge-facing proxy yaw, door power signals could be processed before a real grid handle existed, and same-sector generation reuse ignored world seed changes.
+
+What was done: Added sample-count and terrain-height guards to the Burst extraction job, precomputed height scale, applied deterministic edge-facing yaw to sealed-door shell/proxy output, required a published power-grid handle before door signal processing, dumped blackbox on grid registry publish failure, and required same world seed for same-sector generation reuse.
+
+Cinematic Cheats used: Still no physical settlement, wiring, or shell GameObjects. Door orientation is a matrix yaw fake. Terrain support remains quantized height sampling plus stretched pillar matrices. Power remains byte-grid metadata plus signals.
+
+Exact microseconds saved:
+- Height sampling: precomputed height scale removes one multiply per height sample. Estimated cold extraction gain: 1-3 us full grid.
+- Door yaw: added branch work is cold and door-only, estimated below 5 us full grid; it prevents visual mismatch without proxy expansion.
+- Door power guard: one integer check in LateFrame, estimated below 1 us; prevents handle-less signal bleed.
+- Same-seed reuse guard: cold request comparison only, 0 B/frame.
+
+Verification:
+- `Hecton8.Logistics.Grid.Contracts` Unity Roslyn response-file compile: PASS.
+- `Hecton8.Logistics.Grid` Unity Roslyn response-file compile: PASS.
+- `Hecton8.World.Contracts` Unity Roslyn response-file compile: PASS.
+- `Hecton8.Core.Memory` Unity Roslyn response-file compile: PASS.
+- `Hecton8.World.Outposts` Unity Roslyn response-file compile: PASS.
+- `Hecton8.Core` Unity Roslyn response-file compile: BLOCKED by unrelated `Assets/_Project/Scripts/World/GroundPenetratingRadarRuntime.cs(309,17)` referencing missing `GroundRadarRaymarchJob.GprOreTypes`.
+- Scoped forbidden construct audit: PASS; no managed LINQ/random, shell `Instantiate`, `BaseGenerator`, `pow`, `/255`, or `/65535` hits in owned outpost/shader paths.
+- `git diff --check`: PASS.
+- Unity MCP console/profiler: unavailable from this session.
+
+Status: PENDING VERIFICATION. Outpost source and assembly proof pass; full runtime proof is blocked by Unity access and unrelated Core compile drift.

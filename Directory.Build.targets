@@ -54,10 +54,6 @@
       <HintPath>$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Hecton8.AI.Ecology.Migration.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Hecton8.Animation.IK" Condition="Exists('$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Hecton8.Animation.IK.dll') And !$([System.String]::Copy('@(Reference)').Contains('Hecton8.Animation.IK'))">
-      <HintPath>$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Hecton8.Animation.IK.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="Hecton8.Audio.Echolocation" Condition="Exists('$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Hecton8.Audio.Echolocation.dll') And !$([System.String]::Copy('@(Reference)').Contains('Hecton8.Audio.Echolocation'))">
       <HintPath>$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Hecton8.Audio.Echolocation.dll</HintPath>
       <Private>False</Private>

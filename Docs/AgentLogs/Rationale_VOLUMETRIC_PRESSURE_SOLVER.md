@@ -169,3 +169,11 @@ Solution: `TryResolveModuleStressIndex` now checks the stable graph hash and the
 Rejected Alternatives: Forcing all producers to emit habitat graph ids, or scanning only nearest world point. Producer coupling violates the signal-bus contract; nearest-only matching is less deterministic and can hit the wrong room in tight interiors.
 Scalability potential: Low/MX350 gets reliable crease/spike feedback from direct impacts. Mid/High/Ultra get localized bowing from the same signal without extra shader data.
 Hardware Impact: Adds one `EntityId` hash compare only while processing impact signals, not per vertex or per frame in the idle path; estimated under 2 us for 64 modules on i3/MX350-class hardware while recovering missed cinematic spikes.
+
+## Follow-Up Correction - Bounded Nearest Stress Fallback
+
+Problem: When direct hash/id matching failed, the nearest-module fallback accepted any finite world point and could inject habitat stress from unrelated impacts far outside the base.
+Solution: The fallback now returns immediately for points inside a module interior trigger, otherwise it only accepts candidates within a padded interior hazard radius capped at 36m.
+Rejected Alternatives: Removing nearest fallback entirely, or keeping unbounded nearest matching. Removing it would drop legitimate hull-surface impacts without stable ids; keeping it can corrupt pressure feedback from unrelated combat.
+Scalability potential: Low/MX350 avoids false crease spikes from distant combat. Mid/High/Ultra preserve legitimate local bowing while rejecting far-field noise.
+Hardware Impact: Adds bounded signal-path bounds checks only when id/hash matching fails; no shader cost and no per-frame idle cost. Estimated under 4 us for a 64-module fallback scan on i3/MX350-class hardware.

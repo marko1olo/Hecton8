@@ -138,6 +138,11 @@ namespace Hecton8.Core.Memory
             throw new FatalMemoryException("H8Memory free owner is unknown.");
         }
 
+        public static void ThrowUnknownAllocationOwner()
+        {
+            throw new FatalMemoryException("H8Memory allocation owner is unknown.");
+        }
+
         public static void ThrowWrongFreeOwner()
         {
             throw new FatalMemoryException("H8Memory free owner mismatch.");
@@ -318,6 +323,8 @@ namespace Hecton8.Core.Memory
 
             if (bytes <= 0L)
                 return null;
+            if (owner == SystemID.Unknown)
+                FatalMemoryException.ThrowUnknownAllocationOwner();
 
             int safeAlignment = alignment > 0 ? alignment : 16;
             if (!TryReserveBytes(owner, bytes) || !EnsureTrackingCapacity())
@@ -355,6 +362,8 @@ namespace Hecton8.Core.Memory
 
             if (oldPointer == null || oldBytes <= 0L)
                 return AllocateRaw(newBytes, alignment, owner, allocator, clearExtendedBytes, extraFlags);
+
+            ValidateTrackedPointerOwner(oldPointer, owner);
 
             int safeAlignment = alignment > 0 ? alignment : 16;
             if (!TryReserveReplacementBytes(oldBytes, newBytes) || !EnsureTrackingCapacity())
@@ -706,6 +715,28 @@ namespace Hecton8.Core.Memory
 
             if (requireOwnerMatch)
                 FatalMemoryException.ThrowUntrackedPointer();
+        }
+
+        private static void ValidateTrackedPointerOwner(void* pointer, SystemID requester)
+        {
+            if (!_initialized || pointer == null)
+                return;
+            if (requester == SystemID.Unknown)
+                FatalMemoryException.ThrowUnknownFreeOwner();
+
+            long pointerKey = ((IntPtr)pointer).ToInt64();
+            for (int i = _recordCount - 1; i >= 0; i--)
+            {
+                if (_records[i].Pointer.ToInt64() != pointerKey)
+                    continue;
+
+                if (_records[i].Owner != requester)
+                    FatalMemoryException.ThrowWrongFreeOwner();
+
+                return;
+            }
+
+            FatalMemoryException.ThrowUntrackedPointer();
         }
 
         private static void RemoveRecordAt(int index)

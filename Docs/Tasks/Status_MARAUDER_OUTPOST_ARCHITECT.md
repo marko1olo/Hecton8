@@ -68,9 +68,17 @@ State: PENDING VERIFICATION
 - [x] Re-ran scoped audits. DOD: no forbidden managed constructs or runtime division/pow hits in owned outpost/shader paths; only `_jobHandle.Complete()` calls are post-`IsCompleted` commit points. Alternative rejected: manual-only review. Estimate: 0 B/frame preserved.
 - [x] Re-ran dependency-chain compile. DOD: Unity Roslyn response-file compiles PASS for `Hecton8.Logistics.Grid.Contracts`, `Hecton8.Logistics.Grid`, `Hecton8.World.Contracts`, `Hecton8.Core.Memory`, `Hecton8.Core`, and `Hecton8.World.Outposts`. Alternative rejected: relying on stale missing-ref result. Estimate: compile-only proof.
 
+### Loop 7 - Continued Hardening Pass
+
+- [x] Re-extracted prompt and domain boundary before additional work. DOD: raw XML prompt read cover-to-cover and Echelon 6 domain rechecked. Alternative rejected: acting from chat memory. Estimate: 40 us parse after disk read.
+- [x] Hardened heightmap sampling. DOD: extraction now requires valid sample length, sane resolution, positive terrain height, and precomputed height scale before reading `HeightSamples`. Alternative rejected: trusting external payload validity only. Estimate: prevents Burst out-of-range crash; saves 1 multiply per height sample.
+- [x] Added deterministic edge-facing yaw for sealed-door shell and proxy packets. DOD: edge doors face out of the grid while interior interactables still use missing-neighbor fallback. Alternative rejected: identity rotation for every shell cube. Estimate: cold extraction only, below 5 us full grid.
+- [x] Guarded stale generation and power-signal handling. DOD: same-sector reuse also requires same world seed; door power signals are ignored until a real published grid handle exists; registry publish failure dumps blackbox. Alternative rejected: stale seed reuse and accepting handle-less door signals. Estimate: 0 B/frame, avoids cross-outpost signal bleed.
+- [x] Re-ran compile and static audits. DOD: `Hecton8.World.Outposts` response-file compile passes; scoped forbidden construct audit and `git diff --check` pass. `Hecton8.Core` response-file compile is currently blocked by unrelated GPR symbol drift. Alternative rejected: editing Ground Radar from Habitat domain. Estimate: compile-only proof.
+
 ## Verification Ledger
 
-- Compile status: PASS for scoped dependency chain. Unity Roslyn response-file compiles pass for `Hecton8.Logistics.Grid.Contracts`, `Hecton8.Logistics.Grid`, `Hecton8.World.Contracts`, `Hecton8.Core.Memory`, `Hecton8.Core`, and `Hecton8.World.Outposts`.
-- Unity Console status: MCP unavailable at `http://127.0.0.1:8088/mcp`; console/scene validation not accessible from this session.
+- Compile status: SCOPED PASS / GLOBAL DEPENDENCY BLOCK. Unity Roslyn response-file compiles pass for `Hecton8.Logistics.Grid.Contracts`, `Hecton8.Logistics.Grid`, `Hecton8.World.Contracts`, `Hecton8.Core.Memory`, and `Hecton8.World.Outposts`. `Hecton8.Core` currently fails in unrelated `Assets/_Project/Scripts/World/GroundPenetratingRadarRuntime.cs(309,17)` because `GroundRadarRaymarchJob.GprOreTypes` is missing.
+- Unity Console status: MCP unavailable; console/scene validation not accessible from this session.
 - GC proof: code audit only; hot Tick/Render path uses spans/native buffers and no LINQ/managed allocation.
-- Frame/VRAM proof: static estimate only; runtime profiling blocked by Unity MCP transport failure, not by compile.
+- Frame/VRAM proof: static estimate only; runtime profiling blocked by Unity MCP transport failure and current unrelated Core compile drift.

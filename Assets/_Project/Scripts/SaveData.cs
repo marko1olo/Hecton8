@@ -692,7 +692,7 @@ namespace Hecton8.SaveSystem
             dto.gridColumns = inventory.gridColumns;
             dto.gridRows = inventory.gridRows;
             dto.totalWeight = inventory.totalWeight;
-            dto.flags = hasShadowPayload ? FlagHasPayload : (byte)0;
+            dto.flags = dto.payloadLength > 0 ? FlagHasPayload : (byte)0;
             dto.schemaVersion = SchemaVersion;
             return dto;
         }

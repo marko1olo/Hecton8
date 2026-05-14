@@ -1,6 +1,6 @@
 # Rationale_ALPHA_LEVIATHAN_COGNITION
 
-Status: PENDING VERIFICATION
+Status: COMPILE VERIFIED / RUNTIME PENDING
 
 ## Decision 1
 
@@ -122,13 +122,21 @@ Rejected Alternatives: Trusting directive-local flags was rejected because they 
 Scalability potential: Low telemetry now proves the cheap radial path. High/Ultra telemetry proves when the expensive SDF visual fake was actually requested.
 Hardware Impact: Two rsqrt-normalized vectors per active Alpha telemetry write; slow-path post-evaluation only, no heap allocation.
 
+## Decision 16
+
+Problem: Alpha stalking was keyed to generic apex predator status, which could make every Leviathan-class apex inherit the first-hour PresenceCircle false-charge AI.
+Solution: Add `UseAlphaLeviathanCognition` as an explicit cognition flag from `FaunaBrain` through `CreatureUtilityContext` into `PredatorCognitionDomain`; gate 10Hz Alpha cadence, Alpha telemetry, SDF dive, false charge override, roar, and stress spike on that flag.
+Rejected Alternatives: Keeping `IsApexPredator` as the gate was rejected because AmbushBurst and SentinelPressure Leviathans are different encounter contracts. Adding a new component or singleton registry was rejected because the batch forbids custom MonoBehaviours and direct dependencies.
+Scalability potential: Low = only the intended Alpha pays the 10Hz psychological-stalking branch. Middle = other apex predators keep normal utility cadence. High = PresenceCircle Alpha spends saved budget on SDF/fog presentation. Ultra = the same flag can drive extra roar, IK, and fog silhouette overkill without changing generic apex AI.
+Hardware Impact: i3/MX350 avoids unnecessary Alpha telemetry writes and 10Hz SDF/gaze branches for non-Alpha Leviathans; expected gain scales with non-Alpha apex count, static estimate ~0.05-0.12 us avoided per non-Alpha apex slow eval plus no false roar/stress queue write.
+
 ## OMEGA POLISH CHANGES
 
 Problem: Anti-bloat audit required proof that stalking math did not become an honest simulation.
 Solution: Kept the fog orbit as a visual fake: tangent vector + small radial correction, not a physical pursuit solver. Kept dive as SDF-biased direction fake, not pathfinding. Kept false charge as Feint with damage flag stripped.
 Rejected Alternatives: 3D spline orbit, NavMesh path, real collision attack, and per-frame roar/logging were rejected as bloat.
-Scalability potential: Low = radial flee + dominant-axis approximation. Middle = fog-ring tangent. High = SDF-biased dive. Ultra = same authority plus visual/audio overkill.
-Hardware Impact: Source proof indicates 0 B/frame in Alpha hot path; fixed telemetry cost is 19.2 KB. Static math estimate remains under 0.1 us per active Alpha slow-tick branch on i3/MX350-class hardware.
+Scalability potential: Low = radial flee + dominant-axis approximation. Middle = fog-ring tangent. High = SDF-biased dive. Ultra = same authority plus visual/audio overkill. Non-Alpha apex encounters no longer inherit Alpha overkill work.
+Hardware Impact: Source proof indicates 0 B/frame in Alpha hot path; fixed telemetry cost is 19.2 KB only for active Alpha telemetry. Static math estimate remains under 0.1 us per active Alpha slow-tick branch on i3/MX350-class hardware.
 
 Cinematic Cheats used:
 - Fog silhouette ring: `FogEnd - 10m`, tangent steer, radial correction.
@@ -151,9 +159,11 @@ Verification:
 - `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false` failed behind 131 global generated-reference errors.
 - Second-pass `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false` failed behind 127 global generated/cross-asmdef reference errors, including stale project generation for `Hecton8.AI.Cognition`.
 - Third-pass `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false` failed behind 132 generated/cross-asmdef reference errors. The Alpha-facing compiler line remains stale generated project visibility for `AlphaLeviathanTelemetryEntry`; no new local syntax error was isolated before the reference wall.
+- Fourth-pass `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false` first failed on a generated `Hecton8.World.Contracts.dll` file lock from another process; serialized `dotnet build Hecton8.Core.csproj --no-restore -m:1 /nr:false /clp:ErrorsOnly` succeeded with 0 errors.
 - Unity MCP refresh timed out after 60s; console was unavailable because no Unity session was attached.
 - Second-pass Unity MCP refresh and console read failed at transport level: HTTP request to `127.0.0.1:8088/mcp` could not be sent.
 - Third-pass Unity MCP refresh and console read failed at the same `127.0.0.1:8088/mcp` transport.
 - Static scans found Alpha distance/direction code using `math.rsqrt` and no new managed collection/LINQ path in the Alpha hot branch.
 - Second-pass static scans found no remaining `PositionAup.ToRuntimeFloat3()` call in `FaunaBrain.Compatibility.cs`; acoustic AUP now uses the explicit captured origin.
 - Third-pass static scans found no `math.sqrt`, `math.normalize`, `.normalized`, `Mathf.Sqrt`, or `math.length(...)` in the Alpha-scoped files.
+- Fourth-pass static scans confirmed Alpha behavior is gated by `UseAlphaLeviathanCognition`, with generic `IsApexPredator` retained for non-Alpha apex systems only. Allocation scan found no new managed collection/LINQ path in the Alpha hot branch.

@@ -80,6 +80,18 @@ Rejected Alternatives: Treating unknown space as visible was rejected because it
 Scalability potential: Low keeps more conservative paths. High/Ultra still smooth aggressively inside verified voxel coverage.
 Hardware Impact: Reduces invalid long compaction attempts and avoids route artifacts that cause downstream steering correction.
 
+Problem: The in-place LOS compaction guard could hit `MaxPathCompactionIterations` before reaching the final waypoint, then append only the final point and silently drop the unverified tail.
+Solution: When the iteration cap is exhausted, copy the remaining original path tail in order and stop compaction.
+Rejected Alternatives: Raising `MaxPathCompactionIterations` was rejected because it preserves a spike path. Appending only the final point was rejected because it trades performance for invalid navigation proof.
+Scalability potential: Low keeps deterministic bounded work without route corruption. Middle/High/Ultra still compact normally when the proof completes inside budget.
+Hardware Impact: MX350/i3 avoids unbounded compaction work while preserving waypoint safety; exact microseconds unchanged until profiler capture.
+
+Problem: The black-box dump wrote the circular telemetry array in raw memory order, forcing postmortem readers to reconstruct the last-frame sequence manually.
+Solution: Dump valid entries oldest-to-newest while retaining capacity, cursor, and sequence metadata.
+Rejected Alternatives: Dumping raw array order was rejected because it slows crash analysis. Allocating a managed sorted list was rejected.
+Scalability potential: No hot-path cost; dump-only readability improves on every tier.
+Hardware Impact: Runtime frame impact remains zero outside fault dump; dump path writes fewer cold entries before the ring is full.
+
 Problem: Compile verification is blocked by global dependency errors outside the funnel domain.
 Solution: Ran a bounded `dotnet build` and Unity MCP script validation; recorded the compile wall and tool session failure without claiming success.
 Rejected Alternatives: Fixing Core/Audio/AI/Physics contracts from this task was rejected because the Integrator owns assembly surgery.

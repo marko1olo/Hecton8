@@ -67,3 +67,14 @@ Cinematic Cheats used: No new sonic feature; this protects the existing 100ms sp
 Exact Microseconds saved: Moves possible Burst first-use compile/probe work into cold setup. Runtime saving is unbounded in editor/development configurations where first-use Burst compile would otherwise occur during the seam; player runtime stays 0 B/frame.
 
 Verification: `git diff --check` passed after this pass. Static readback confirmed the cold probe call is in buffer initialization and the atmospheric sequence force-publish path is gone.
+
+## 2026-05-14 - Seventh Quality Pass
+What was wrong: Renderer readback showed PrologueSplashdownSineSweepProbeJob did not actually have `CompileSynchronously=true`, despite status/rationale saying it did.
+
+What was done: Restored `CompileSynchronously = true` on the BurstCompile attribute.
+
+Cinematic Cheats used: No new cheat; this keeps the 100ms splashdown sine sweep proof stricter.
+
+Exact Microseconds saved: No runtime frame saving. The gain is failure locality: Burst issues surface at cold compile/probe time rather than during the active seam.
+
+Verification: `git diff --check` passed after this pass. Static readback confirms the Burst attribute includes CompileSynchronously=true and the cold probe schedules the job during buffer initialization.

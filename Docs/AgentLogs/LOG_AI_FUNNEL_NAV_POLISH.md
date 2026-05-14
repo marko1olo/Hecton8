@@ -110,3 +110,22 @@ Verification:
 - Static scan remains clean inside `StringPullPathJob`: no `math.normalize`, `math.length(`, `math.distance(`, or raw `/`.
 - Latest parsed `dotnet build Hecton8.Core.csproj --no-restore /m:1 /nr:false` summary still fails with 128 global dependency errors; parsed edited-file error count = 0.
 - Unity MCP `validate_script` still fails due editor transport error at `127.0.0.1:8088/mcp`.
+
+## 2026-05-14 - Tail Safety / Black Box Readability Pass
+
+What was wrong:
+- If the LOS compaction loop exhausted `MaxPathCompactionIterations` before reaching the final waypoint, it could append only the final point and drop the unverified tail.
+- The telemetry dump wrote the circular array in raw memory order, adding friction to NaN postmortem analysis.
+
+What was done:
+- Added fail-closed tail copying when compaction budget is exhausted.
+- Changed `Dump_AI_FUNNEL_NAV_POLISH.bin` writer to include valid entry count and write entries oldest-to-newest.
+
+Cinematic Cheats used:
+- Bounded low-tier compaction remains cheap; route polish is abandoned before safety is abandoned.
+
+Exact Microseconds saved:
+- PENDING RUNTIME PROFILER DATA. This pass is correctness-first; it prevents invalid tail collapse without increasing normal compaction budget.
+
+Verification:
+- Pending re-run after this pass.

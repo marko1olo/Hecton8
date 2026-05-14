@@ -226,3 +226,17 @@ Solution: Widened `LootMagnetSignalEvent.Quantity` to `uint` so the payload stay
 Rejected Alternatives: Disabling Burst, removing `StructLayout(Size=80)`, changing the NativeArray to managed events, or ignoring live Editor Burst output was rejected. The job must remain deterministic, blittable, and Burst-safe.
 Scalability potential: Low keeps the same compact signal stride; Middle/High/Ultra keep Burst compilation for the pull job instead of falling back to managed execution.
 Hardware Impact: No stride increase versus the existing explicit 80-byte payload. Prevents Burst fallback/error spam and preserves jobified loot magnet performance on low-end CPUs.
+
+## Continuation Decision 33 - Editor Shortcut Spam Boundary
+Problem: Latest clean batch log still contains repeated `GetVirtualKey: Could not map char` lines, which are noisy enough to mask real console defects if treated as project gameplay output.
+Solution: Traced the sequence against package/editor shortcut sources and user/project settings. The spam appears during Unity Editor/headless menu shortcut registration; there is no project-owned shortcut override asset to fix, and the repeat sequence matches editor shortcut/menu registration rather than HECTON runtime code.
+Rejected Alternatives: Patching embedded ShaderGraph/editor package code, deleting package shortcuts, or installing a global log filter was rejected. Those options either create package drift or hide future real warnings/errors.
+Scalability potential: Low/Middle/High/Ultra runtime behavior is unchanged. The only decision is verification hygiene: classify editor-only log noise instead of spending runtime budget on a non-runtime defect.
+Hardware Impact: 0 us runtime. No player binary change.
+
+## Continuation Decision 34 - Prompt Cache Collision Hardening
+Problem: Hash-only look-target signals need a bounded prompt-text cache. A direct-mapped prompt cache can lose prompt text when unrelated interactables fold to the same slot, causing missing or wrong diegetic UI text without any allocation or exception signal.
+Solution: Kept the cache as a fixed 64-slot slab but audited it as 16-set/4-way bounded storage with cold `SubsystemRegistration` reset, age-based replacement, and returned copied-length semantics for caller buffers.
+Rejected Alternatives: Managed dictionaries, per-frame string payloads in signals, unbounded caches, or increasing signal payload size was rejected because the look-target path must stay zero-GC and low-latency.
+Scalability potential: Low uses four scalar probes and no heap traffic. Middle/High/Ultra can reuse the same cache behavior while spending saved frame time on richer glyph/material treatment instead of data plumbing.
+Hardware Impact: Four scalar probes on prompt store/read; no per-frame GC. Focused Roslyn compile against Unity 6000.4.1f1 references passed.

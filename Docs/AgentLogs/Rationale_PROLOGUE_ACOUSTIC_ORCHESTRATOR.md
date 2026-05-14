@@ -107,3 +107,10 @@ Solution: Added WarmPrologueSplashdownBurstProbeCold(), which allocates a one-fl
 Rejected Alternatives: Leaving the job unscheduled, or scheduling the proof in the active prologue path.
 Scalability potential: Low/Middle/High/Ultra all pay the proof cost only during cold renderer setup; runtime DSP path remains unchanged.
 Hardware Impact: Moves Burst compile/proof work out of the cinematic seam. Runtime cost is 0 B/frame; cold setup has one TempJob NativeArray<float>[1] allocation and immediate disposal.
+
+## SEVENTH QUALITY PASS - ATTRIBUTED PROOF CONSISTENCY
+Problem: Code readback found PrologueSplashdownSineSweepProbeJob was missing CompileSynchronously=true even though the status/rationale described it as synchronously compiled.
+Solution: Restored CompileSynchronously=true on the BurstCompile attribute so the scheduled cold probe and the compile policy agree.
+Rejected Alternatives: Leaving documentation ahead of code, or relying only on the scheduled probe without explicit synchronous compile intent.
+Scalability potential: No runtime behavior change; all tiers keep the cold proof path and zero hot-path allocation.
+Hardware Impact: No frame cost. Improves editor/build failure locality for the splashdown sine probe.

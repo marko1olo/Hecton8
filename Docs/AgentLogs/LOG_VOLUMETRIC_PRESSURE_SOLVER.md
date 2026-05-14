@@ -122,3 +122,13 @@ Follow-up upgrade 9:
 
 Exact microseconds saved after follow-up 9:
 - No direct frame-time savings claimed. This recovers missed stress spikes from direct runtime target hashes with one signal-path entity-hash compare per candidate module, estimated under 2 us for a 64-module scan on i3/MX350-class hardware.
+
+Follow-up upgrade 10:
+- Bounded nearest-module stress fallback in `HabitatGraphManager`.
+- Direct interior containment now wins immediately for a finite world point.
+- Non-contained nearest fallback now requires the point to fall inside a padded module interior/hazard radius, capped at 36m, before injecting a stress spike.
+- Static checks: managed-offender scans found no `string.Format`, `.ToString()`, interpolation, `foreach`, or LINQ offenders in `HabitatGraphManager.cs`; mesh mutation scan found no owned `Mesh.vertices` writes; exact shader `normalize()`/`sqrt()` scan produced no matches; `git diff --check` reports only repository CRLF normalization warnings.
+- Verification: constrained `dotnet build .\Hecton8.Core.csproj --no-restore --nologo -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -p:BuildProjectReferences=false -v:quiet -clp:ErrorsOnly` completed with `BUILD_EXIT=0 MATCH_COUNT=0`.
+
+Exact microseconds saved after follow-up 10:
+- No direct idle-frame savings claimed. This blocks false stress injections from unrelated far-field impacts while preserving local hull-surface spikes; fallback scan remains bounded to 64 modules and is estimated under 4 us on i3/MX350-class hardware.

@@ -100,6 +100,20 @@ Hardware Impact: Runtime impact remains 0 us/frame because this is editor-only. 
 
 Verification: `dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary` returned `Build succeeded. 0 Warning(s). 0 Error(s).` Main prefab scan found `Prefabs=200`, `MeshRenderers=600`, no bad shadow/probe/dynamic occlusion flags, `MeshColliders=50`, and `CollisionChildren=50`.
 
+## Decision 9 - Stale Mesh Payload And Atlas Importer Validation
+
+Problem: Preserving generated folders prevents GUID churn, but it also means a future count change or interrupted bake can leave stale mesh assets beside the correct prefabs. The previous validator proved prefab counts and renderer contracts but did not count generated mesh assets or enforce atlas importer settings after import.
+
+Solution: Add mesh-library validation per family: expected mesh count is `prefabCount * 3`, and each family must have exactly one `_LOD0.asset`, `_LOD1.asset`, and `_LOD2.asset` per prefab. Add shared material validation for shader name, instancing, GI flags, and atlas bindings. Add atlas importer validation for wrap, mipmaps, readability, compression, sRGB policy, normal-map type, max size, and Standalone BC5/BC7 settings. Also gate `EditorUtility.ClearProgressBar()` behind `!Application.isBatchMode`.
+
+Rejected Alternatives: Reintroducing folder deletion was rejected because it risks GUID churn. Relying only on prefab counts was rejected because stale mesh assets can survive even when prefabs are correct. Leaving importer validation to Unity defaults was rejected because atlas import drift can silently damage batching, memory, or normal decoding.
+
+Scalability potential: Low-tier devices keep compressed shared atlas textures and exact LOD mesh sets. Middle and high tiers can increase scatter density without per-family material or texture churn. Ultra can spend saved CPU/GPU budget on shader overkill because asset contracts stay deterministic and compact.
+
+Hardware Impact: Runtime remains 0 us/frame for generation. Validation protects MX350-class VRAM by enforcing compressed non-readable atlas textures and exact generated mesh payload size. Future batchmode bakes also skip progress-bar cleanup work; exact editor microseconds were not profiled.
+
+Verification: `dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary` returned `Build succeeded. 0 Warning(s). 0 Error(s).` Mesh scan found TubeCoral `LOD0=50, LOD1=50, LOD2=50`, Kelp `LOD0=100, LOD1=100, LOD2=100`, PorousRock `LOD0=50, LOD1=50, LOD2=50`, all with `Other=0`. Prefab scan found `Prefabs=200`, `MaterialRefs=600`, `MeshColliders=50`, and `CollisionChildren=50`.
+
 ## OMEGA POLISH CHANGES
 
 Problem: The polish mandate required a final anti-bloat pass after the checklist reached 100%, including bitmask checks, reciprocal/sqrt audit, GC audit, and a build probe.

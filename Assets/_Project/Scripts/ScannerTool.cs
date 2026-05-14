@@ -606,6 +606,7 @@ namespace Hecton8.Gameplay
         private uint _lastPublishedTuningBlueprintHash;
         private bool _lastPublishedTuningActive;
         private int _lastPublishedTuningProgressBucket = int.MinValue;
+        private bool _applicationQuitting;
         private int _scientificRaycastRequestSequence;
         private int _scientificRaycastPendingRequestId;
         private float _heldPrimaryDeltaTime;
@@ -777,7 +778,7 @@ namespace Hecton8.Gameplay
             base.OnUnequip();
             PulseActive = false;
             ResetScientificFocus();
-            PublishScannerTuningSignal(forceInactive: true);
+            PublishInactiveScannerTuningSignal();
             UnregisterScientificLanes();
             InvalidateOperationalStringCache();
         }
@@ -955,6 +956,14 @@ namespace Hecton8.Gameplay
             });
         }
 
+        private void PublishInactiveScannerTuningSignal()
+        {
+            if (!Application.isPlaying || _applicationQuitting)
+                return;
+
+            PublishScannerTuningSignal(forceInactive: true);
+        }
+
         private void ResolveScannerTuningHashes(out uint artifactHash, out uint blueprintHash, out float progress01)
         {
             ScannableFragment fragment = _activeScientificFragment;
@@ -985,11 +994,23 @@ namespace Hecton8.Gameplay
         {
             UnregisterScientificLanes();
             ResetScientificFocus();
+            PublishInactiveScannerTuningSignal();
             base.OnDespawn();
+        }
+
+        private void OnApplicationQuit()
+        {
+            _applicationQuitting = true;
         }
 
         private void OnDestroy()
         {
+            if (Application.isPlaying && !_applicationQuitting)
+            {
+                ResetScientificFocus();
+                PublishInactiveScannerTuningSignal();
+            }
+
             UnregisterScientificLanes();
             DisposeScientificNativeState();
         }

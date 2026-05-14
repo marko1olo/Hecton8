@@ -650,18 +650,26 @@ namespace Hecton8.Core.Memory
         /// <inheritdoc />
         public bool ResolveBuffer<T>(ref VaultBufferHandle<T> handle) where T : struct
         {
-            if (!_initialized || _compactionFence != 0 || _arenaBase == null)
-                return false;
-
-            int key = (int)handle.BufferId;
-            if (key == 0)
-                return false;
-
             bool hasCachedIdentity =
                 handle.ptr != null ||
                 handle.generation != 0u ||
                 handle.Length != 0 ||
                 handle.Stride != 0;
+
+            if (!_initialized || _compactionFence != 0 || _arenaBase == null)
+            {
+                if (hasCachedIdentity)
+                {
+                    DumpPhiVodBlackBox();
+                    FatalMemoryException.ThrowStaleVaultHandle();
+                }
+
+                return false;
+            }
+
+            int key = (int)handle.BufferId;
+            if (key == 0)
+                return false;
 
             bool hasPointer = _buffers.TryGetValue(key, out IntPtr pointer);
             bool hasMeta = _metadata.TryGetValue(key, out VaultBufferMeta meta);

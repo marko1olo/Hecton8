@@ -1385,6 +1385,7 @@ namespace Hecton8.Gameplay
             RebaseWeightedIkTargetLanes(offset);
             RebaseFootSoaLanes(offset);
             RebaseFootData(offset);
+            RebaseCachedKccBodyPosition(offset);
         }
 
         /// <inheritdoc />
@@ -1802,6 +1803,14 @@ namespace Hecton8.Gameplay
                 data.StepStartPosition -= shiftOffset;
                 _footIkData[laneIndex] = data;
             }
+        }
+
+        private void RebaseCachedKccBodyPosition(float3 shiftOffset)
+        {
+            if (_lastKccVelocityFrame == 0u || !math.all(math.isfinite(_lastKccBodyPosition)))
+                return;
+
+            _lastKccBodyPosition -= shiftOffset;
         }
 
         private bool CaptureEntityStates(

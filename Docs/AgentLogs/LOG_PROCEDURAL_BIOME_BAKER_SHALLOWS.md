@@ -45,3 +45,15 @@ Cinematic Cheats used: No runtime change. This preserves the existing static off
 Exact Microseconds saved: Runtime remains 0 us/frame. Editor-authoring savings are from skipping headless progress UI/string work and avoiding green-path stack trace emission for 200 generated prefabs. Exact microseconds not profiled; prior proof log was 681 KB with repeated success stack traces, which future bakes now avoid.
 
 Verification: `dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary` returned `Build succeeded. 0 Warning(s). 0 Error(s).` Main prefab scan returned `Prefabs=200`, `LodGroups=200`, `MeshRenderers=600`, `BadCastShadows=0`, `BadReceiveShadows=0`, `BadDynamicOccludee=0`, `BadLightProbeUsage=0`, `BadReflectionProbeUsage=0`, `MeshColliders=50`, `CollisionChildren=50`.
+
+## 2026-05-14 Stale Payload And Importer Contract Pass
+
+What was wrong: GUID-stable re-bakes preserve existing generated folders, which is correct for downstream references but creates one failure mode: stale mesh assets could remain after an interrupted or changed bake. The validator also did not explicitly enforce material shader/instancing/GI settings or atlas importer settings.
+
+What was done: Added generated mesh-count validation per family and per LOD suffix. Added shared material validation for `Hecton8/Flora/ProceduralBio`, instancing, GI flags, and atlas bindings. Added atlas importer validation for wrap mode, mipmaps, readability, compression, sRGB policy, normal-map type, max size, and Standalone BC5/BC7 settings. Also skipped `EditorUtility.ClearProgressBar()` in batchmode.
+
+Cinematic Cheats used: Static offline SDF meshes remain the core cheat. The pass protects the shared compressed atlas cheat and exact LOD payload cheat so runtime keeps zero procedural generation and avoids per-family texture/material churn.
+
+Exact Microseconds saved: Runtime remains 0 us/frame. The concrete runtime protection is avoiding accidental uncompressed/readable atlas drift and stale mesh bloat. Editor-side gain is reduced batchmode UI cleanup/progress overhead; exact microseconds not profiled.
+
+Verification: `dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary` returned `Build succeeded. 0 Warning(s). 0 Error(s).` Mesh scan found TubeCoral `50/50/50`, Kelp `100/100/100`, PorousRock `50/50/50`, all `Other=0`. Prefab scan found `Prefabs=200`, `MaterialRefs=600`, `MeshColliders=50`, `CollisionChildren=50`.

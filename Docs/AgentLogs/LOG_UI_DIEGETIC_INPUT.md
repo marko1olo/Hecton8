@@ -191,3 +191,16 @@ Exact Microseconds saved:
 
 Verification:
 Roslyn temp-output compile passed for `Hecton8.Gameplay.Loot.Contracts`, `Hecton8.Gameplay.Loot`, `Assembly-CSharp`, and `Hecton8.Editor`. Fresh live Editor log `Logs/Codex_UI_DIEGETIC_INPUT_LiveEditorProbe_20260514_065227.log` reaches scene load; grep finds no Burst error, CS error/warning, shader error/warning, or Tundra failure. Batchmode log `Logs/Codex_UI_DIEGETIC_INPUT_CompileCheck_20260514_065653.log` exits return code 0 after the expected Bee rerun. Port 8088 remains closed, so MCP screenshot/console is still blocked by MCP setup.
+
+## 2026-05-14 - Console Spam And Prompt Cache Audit
+What was wrong:
+Fresh compile/import proof was clean for C#/Burst/shader failures, but the log still contained repeated `GetVirtualKey: Could not map char` lines. The look-target prompt path also depends on hash-only signals; a weak prompt cache would make missing or wrong prompts look like a UI rendering bug instead of a data-cache miss.
+
+What was done:
+Traced `GetVirtualKey` spam to Unity Editor/headless shortcut and menu registration. No `UserSettings` or `ProjectSettings` shortcut override asset exists to repair, so this is classified as editor/import noise, not HECTON runtime console spam. Audited `PlayerLookTargetPromptCache` as bounded 16-set/4-way storage with cold reset and copied-length semantics. Compiled `PlayerLookTargetPromptCache.cs` standalone against Unity 6000.4.1f1 `netstandard.dll` and `UnityEngine.CoreModule.dll`; exit code 0.
+
+Cinematic Cheats used:
+Fixed-size prompt slab and four-way probing instead of passing managed prompt strings through the signal path. Headless shortcut spam is documented at source instead of hidden with a global filter.
+
+Exact Microseconds saved:
+Prompt cache: no per-frame heap allocation; prompt read/write stays four scalar probes plus bounded char copy. Runtime: `GetVirtualKey` classification saves 0 us directly because it is editor-only, but avoids package drift and preserves error visibility.

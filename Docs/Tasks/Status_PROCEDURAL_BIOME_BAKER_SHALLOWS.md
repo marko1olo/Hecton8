@@ -95,3 +95,12 @@ Status: PENDING VERIFICATION
 - Patched `BioForgeGenerator` to skip cancelable progress bar work in `Application.isBatchMode` and emit generated-prefab summaries with `LogOption.NoStacktrace`.
 - Strengthened Safe Shallows validation again: every prefab must have exactly three renderers, and each renderer must keep receive shadows off, forced no motion vectors, light/reflection probes off, and dynamic occlusion off.
 - Verification after this source-only pass: `dotnet build Hecton8.Core.csproj` succeeded with `0 Warning(s), 0 Error(s)`; prefab text scan found `Prefabs=200`, `MeshRenderers=600`, `BadCastShadows=0`, `BadReceiveShadows=0`, `BadDynamicOccludee=0`, `BadLightProbeUsage=0`, `BadReflectionProbeUsage=0`, `MeshColliders=50`, `CollisionChildren=50`.
+
+### Loop 8 - Stale Payload And Importer Contract Audit
+
+- Re-read status/rationale and audited the remaining weakness created by GUID-stable re-bakes: generated folders are preserved, so stale mesh assets must be validated explicitly.
+- Patched `ShallowsBioForgeBatchBaker` to validate generated mesh asset counts and exact LOD distribution per family: TubeCoral=150 meshes, Kelp=300 meshes, PorousRock=150 meshes, with no unexpected mesh asset suffixes.
+- Added shared material validation for shader name, GPU instancing, GI flags, and atlas texture bindings.
+- Added atlas importer validation for repeat wrap, mipmaps, non-readable textures, compression, sRGB policy, normal-map type, max size, and Standalone BC5/BC7 platform settings.
+- Patched `BioForgeGenerator` to skip `EditorUtility.ClearProgressBar()` in batchmode as well as progress display calls.
+- Verification: `dotnet build Hecton8.Core.csproj` succeeded with `0 Warning(s), 0 Error(s)`. Asset scans found TubeCoral `50/50/50` LOD meshes, Kelp `100/100/100`, PorousRock `50/50/50`, `Prefabs=200`, `MaterialRefs=600`, `MeshColliders=50`, `CollisionChildren=50`.

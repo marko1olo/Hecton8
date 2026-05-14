@@ -119,3 +119,29 @@ Solution: Recompiled the dependency chain with Unity's Roslyn response files and
 Rejected Alternatives: Marking the status fully done was rejected because the batch protocol requires objective console/runtime evidence. Reopening source changes after compile pass was rejected because scoped audits showed no forbidden construct regressions.
 Scalability potential: Source path is ready for runtime tier measurement: Low 5x5x3, Middle/High/Ultra 10x10x5 with visual overkill in shader metadata.
 Hardware Impact: Compile proof confirms the intended i3/MX350 path is present; measured frame/VRAM impact remains pending Unity transport access.
+
+## LOOP 7 CONTINUED HARDENING
+
+Problem: The Burst matrix extraction path trusted the MapMagic payload contract, but a stale or partially rebuilt height buffer would turn terrain sampling into an out-of-range native read.
+Solution: Require `HeightSamples.Length >= HeightResolution * HeightResolution`, clamp resolution to the safe integer-square range, require positive terrain height scale, and precompute `heightScale` once before sampling.
+Rejected Alternatives: Relying only on `QuantizedHeightmapPayload.IsValid` was rejected because concurrent systems can refresh cache ownership while the outpost schedules extraction.
+Scalability potential: Low samples fewer bottom cells; Middle/High/Ultra keep full resolution but do not pay repeated height-scale multiplication.
+Hardware Impact: i3/MX350 avoids a native safety failure path and saves one multiply per sampled bottom/support height. Estimated cold extraction gain: 1-3 us full grid, larger value is crash prevention.
+
+Problem: Sealed-door shell matrices were identity-rotated, so edge doors could visually face sideways while their proxy used a separate facing rule.
+Solution: Add deterministic edge-facing yaw in the extraction job and apply it to both sealed-door shell matrices and interactable proxy spawn packets.
+Rejected Alternatives: Per-door authored prefabs or post-spawn transform correction were rejected because shell geometry must remain matrix-driven and proxy count must stay bounded.
+Scalability potential: Low/Middle/High/Ultra share the same deterministic yaw logic; Ultra can still spend extra shader budget without changing topology.
+Hardware Impact: Cold extraction adds a few branch checks for door cells only. Estimated cost below 5 us full grid, no per-frame cost.
+
+Problem: Door power signals should not affect proxies before the outpost has published a real power-grid handle, and same-sector generation reuse ignored world seed changes.
+Solution: Require `_publishedPowerGridHandle != 0` before consuming `WfcOutpostDoorPowerSignal`, dump blackbox on registry publish failure, and only reuse same-sector generated data when the world seed also matches.
+Rejected Alternatives: Accepting handle-less signals was rejected because it risks cross-outpost state bleed. Reusing by sector only was rejected because the prompt requires seed-deterministic topology.
+Scalability potential: Device tier behavior is unchanged; the guard keeps integration deterministic across reloads and seed swaps.
+Hardware Impact: One extra integer guard in LateFrame and one cold seed comparison. Estimated normal-frame impact below 1 us.
+
+Problem: Verification changed after other agents edited Core; a current compile report must separate outpost assembly proof from unrelated global compile drift.
+Solution: Re-ran Unity Roslyn response-file compiles. `Hecton8.World.Outposts` passes. `Hecton8.Core` currently fails in `GroundPenetratingRadarRuntime.cs(309,17)` because `GroundRadarRaymarchJob.GprOreTypes` is missing, which is outside this agent's Habitat/Outposts domain.
+Rejected Alternatives: Editing Ground Radar was rejected as cross-domain without critical interface justification. Reporting a clean global build was rejected because the current Core response file objectively fails.
+Scalability potential: Outpost scalability path remains valid; runtime profiling still waits on Unity console/profiler access and global compile stability.
+Hardware Impact: No outpost runtime change from the unrelated Core block.

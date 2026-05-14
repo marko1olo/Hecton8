@@ -79,3 +79,23 @@ Prompt re-extracted from `CURRENT_BATCH.md`. Static anti-bloat scan over touched
 
 Status:
 PENDING VERIFICATION. Unity import, Burst compiler, Play Mode, GCMonitor, and profiler proof are still absent.
+
+## 2026-05-14 Recursive QA Addendum 4
+
+What was wrong:
+The shared IK runtime consumed the latest player `KccVelocitySignal` and assigned that velocity to every registered rig. That works only while the player rig is the sole user. It is wrong for scalable shared IK because a future NPC/secondary rig would inherit player step lead, velocity-scaled step threshold, and swimming posture.
+
+What was done:
+`ContextualPhysicalIkRuntime` now caches the KCC body AUP runtime position when consuming `KccVelocitySignal`. Per entity, it applies the KCC velocity only when the rig root is finite and within 4m of the KCC body position. Non-matching rigs receive zero KCC velocity.
+
+Cinematic cheats used:
+Kept the same presentation fake: two batched foot rays, planar velocity lead, squared thresholds, and triangle-wave stepping. Rejected direct player movement coupling and new rig ownership APIs.
+
+Exact microseconds saved:
+No managed allocation. Added cost is one finite gate and one squared-distance compare per active rig, estimated <0.1 us/frame for the single-player rig case. Prevented future visual corruption rather than adding simulation.
+
+Verification:
+Prompt re-extracted from `CURRENT_BATCH.md`. Targeted `dotnet build` filter completed with no matching errors for touched IK/KCC/signal files. Static anti-bloat scan over touched lower-body/signal files returned no forbidden hot-path patterns. `git diff --check` passed with CRLF warnings only.
+
+Status:
+PENDING VERIFICATION. Unity import, Burst compiler, Play Mode, GCMonitor, and profiler proof remain absent.

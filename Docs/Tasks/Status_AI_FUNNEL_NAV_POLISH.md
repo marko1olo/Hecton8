@@ -66,6 +66,12 @@ Task Count: 15
 - [x] DDA sample Math LOD | DOD: scheduler now clamps LOS DDA samples by quality tier: Low/Unknown/MX350 <= 32, Mid <= 64, High/Ultra = authored cap clamped to `MaxThreatDdaSteps`; rejected a universal high cap on low silicon; estimate 13 us.
 - [x] Static re-scan | DOD: re-scanned `StringPullPathJob` region after DDA cap patch and found no `math.normalize`, `math.length(`, `math.distance(`, or raw `/`; rejected trusting prior scan after edits; estimate 15 us.
 
+## Loop 9 - Tail Safety And Dump Readability
+
+- [x] Re-read prompt/status/rationale | DOD: anti-amnesia files and XML prompt reloaded before continuing; rejected stale chat memory; estimate 10 us.
+- [x] Compaction tail fail-closed | DOD: if `MaxPathCompactionIterations` is exhausted before the final waypoint, the job now copies the remaining original path tail instead of appending only the final point; rejected dropping unverified waypoints; estimate 9 us.
+- [x] Chronological black-box dump | DOD: NaN dump now writes valid telemetry entries oldest-to-newest with capacity/cursor/sequence metadata; rejected raw circular-array order for postmortem review; estimate 6 us.
+
 ## Verification
 
 - [x] Static scan | PASS: `StringPullPathJob` region has no `math.normalize`, `math.length(`, `math.distance(`, or raw `/` matches after the LOD upgrade.

@@ -94,3 +94,38 @@ Verification:
 - Allocation scan found no new managed allocation pattern in `PredatorCognitionDomain`; matches are pre-existing `FaunaBrain` scratch lists and guarded/fault logs.
 - `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false`: still blocked by generated/cross-asmdef reference wall, now 132 errors.
 - Unity MCP `refresh_unity` and `read_console`: still offline at `127.0.0.1:8088/mcp`.
+
+---
+
+Fourth-pass upgrade: 2026-05-14
+
+What was wrong:
+- Alpha-specific stalking, telemetry, SDF dive, false-charge roar, and stress spike were keyed off generic apex/Leviathan status.
+- That made AmbushBurst or SentinelPressure apex creatures eligible for first-hour PresenceCircle behavior, wasting 10Hz cognition budget and contaminating encounter identity.
+- Parallel build verification also hit a generated DLL file lock, so the compile signal needed a serialized retry before reporting.
+
+What was done:
+- Added `UseAlphaLeviathanCognition` to `CognitionInputFlags`.
+- Added `UseAlphaLeviathanCognition` to `CreatureUtilityContext` and packed it through `CreatureUtilityBrain.Evaluate`.
+- Added `ShouldUseAlphaLeviathanCognition()` in `FaunaBrain`: legacy species-profile Leviathans stay supported; archetypes opt in through `useFeintRush` or `useLeviathanPresence + LeviathanEncounterType.PresenceCircle`.
+- Changed `PredatorCognitionDomain` so Alpha 10Hz cadence, Alpha telemetry, and the false-charge override use the explicit Alpha flag instead of generic `IsApexPredator`.
+- Changed `EmitLeviathanThreatPulse` so the Alpha roar/stress spike only fires for the Alpha cognition profile; generic Leviathan pulses still scatter microfauna without publishing Alpha stress.
+
+Cinematic Cheats used:
+- Encounter gate: PresenceCircle/feint Alpha gets the deep-fog psychological fake; other apex contracts keep their own pressure model.
+- Budget fence: non-Alpha Leviathans no longer pay for Alpha black-box telemetry or 10Hz SDF/gaze checks.
+- Roar restraint: one-shot stress remains a designed false-charge beat, not every Feint state.
+
+Exact Microseconds saved:
+- Measured runtime microseconds unavailable; Unity runtime/MCP session is still not attached.
+- Static avoided work per non-Alpha apex: no Alpha telemetry write, no Alpha phase branch, no Alpha SDF/gaze decision, estimated ~0.05-0.12 us per non-Alpha apex slow evaluation on i3/MX350.
+- Hot-path allocation remains 0 B/frame for Alpha cognition; allocation scan only reports pre-existing `FaunaBrain` scratch lists.
+- Compile cost was not optimized; build proof was restored by serialized MSBuild after a parallel generated-DLL lock.
+
+Verification:
+- Prompt re-extracted from `Docs/Tasks/CURRENT_BATCH.md`: `PROMPT_BYTES=2997`, `TASK_MARKERS=17`.
+- `rg` scan confirmed `UseAlphaLeviathanCognition` gates Alpha cadence, telemetry, and override paths; generic `IsApexPredator` remains for non-Alpha apex systems.
+- Allocation scan found no new managed collection/LINQ path in the Alpha hot branch.
+- `git diff --check`: no whitespace errors; only repository LF-to-CRLF warnings.
+- `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false`: failed once on locked generated `Temp/obj/Hecton8.World.Contracts/Hecton8.World.Contracts.dll`.
+- `dotnet build Hecton8.Core.csproj --no-restore -m:1 /nr:false /clp:ErrorsOnly`: succeeded with 0 errors.

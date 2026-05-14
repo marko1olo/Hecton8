@@ -121,7 +121,11 @@ What was wrong:
 
 What was done:
 - Scanned active non-archive/non-deprecated docs for stale May 13/Missing-May-11/R40-only compile-boundary wording.
-- Mechanically updated `38` active markdown files, excluding dated report snapshots, to include the May 14/R41 boundary:
+- Mechanically updated `38` active markdown files, excluding dated report snapshots, to include the May 14/R41 boundary.
+- Ran a second governance sweep and updated the remaining top-level authority/index surfaces, for `49` non-DOC_AUDIT-memory docs touched in R42.
+- R42 stale-string scan now finds no targeted May 13-only / `until restored or replaced` / May 4-latest / R40-only compile-status phrases in active non-archive/non-deprecated docs, excluding dated report snapshots.
+- `git diff --check` on the touched docs is clean except Git LF-to-CRLF working-copy warnings.
+R42 boundary written:
   - May 11 artifact remains absent and stale.
   - Current root `Hecton8*.csproj` no-restore CLI compile surface is `0 Warning(s)` / `0 Error(s)` after restore assets exist.
   - Full restore graphs still carry vendor/package warnings.

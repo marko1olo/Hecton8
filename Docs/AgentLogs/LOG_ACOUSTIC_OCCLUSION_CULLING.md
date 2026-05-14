@@ -122,3 +122,31 @@ Verification:
 - `git diff --check` reports no whitespace errors, only CRLF conversion warnings for touched files.
 - Unity MCP validate/read_console failed with HTTP transport failure to `127.0.0.1:8088`; editor-side proof remains unavailable.
 - Full `dotnet build Hecton8.Core.csproj --no-restore -v:quiet -clp:ErrorsOnly /m:1 /p:UseSharedCompilation=false` timed out after 184 s; status remains PENDING VERIFICATION.
+
+## 2026-05-14 - Continuation Upgrade Pass 3
+What was wrong:
+- Top-K ranking still required a second linear scan over the compacted audible `NativeList`.
+- `SpatialAudioManager` still allocated and drained an obsolete `NativeQueue<SoundEmissionSignal>` that public ingress no longer used.
+- That dead queue retained an immediate physical dispatch fallback, which was architectural debt against the "before DSP" culling rule.
+
+What was done:
+- Fused candidate insertion into `VirtualVoiceSortJob.Execute()` compaction: sanitize, compact, and top-K rank in one loop.
+- Deleted `MaxQueuedSoundEmissionSignals`, `_soundEmissionSignals`, sound-emission queue counters, prewarm, drain, direct dispatch fallback, sentinel registration, reset, and dispose code.
+- Rechecked public `QueueSoundEmissionSignal`: it now routes only through `VirtualVoiceRequest` / `EnqueueVirtualVoice`.
+
+Cinematic Cheats used:
+- Same perceptual model: squared-distance reciprocal ranking, hard audible floor, foveated silence, Low/MX350 8-channel cap, fixed 10 ms handoff fade.
+- New cleanup cheat: no legacy physical fallback. If the virtualizer rejects a voice, the system drops it instead of spending DSP budget to prove inaudible noise existed.
+
+Exact microseconds saved:
+- Profiler data remains unavailable.
+- Mechanical saving: one persistent native queue allocation removed, one late-frame dead drain removed, and one linear read pass over up to 8192 audible voices removed from the Burst ranking job.
+- Expected low-end result is lower variance during swarm bursts and fewer stale bypass surfaces, not a measured frame-time claim.
+
+Verification:
+- Focused Mono compile passes for `AcousticPortalPropagation.cs`, `AudioVirtualizationContracts.cs`, and `AudioVirtualizationJobs.cs`.
+- Roslyn parse probe passes for `AudioVirtualizationJobs.cs` and `SpatialAudioManager.cs`.
+- File-scoped scans report no stale sound-emission queue identifiers in `SpatialAudioManager.cs`.
+- File-scoped scans over virtualizer contracts/job report no `.Sort(`, `List<T>.Sort`, `FixedList`, `foreach`, `math.sqrt`, `math.normalize`, `StartCoroutine`, `PlayOneShot`, `string.Format`, `$"..."`, or `.ToString(`.
+- Direct `AudioSource.Play()` scan still reports legacy base/tool/player/music/central audio loops outside the `SoundEmissionSignal` virtualization domain.
+- Full project build was not restarted because unrelated `dotnet build` / Unity compiler processes are active; Unity MCP remains offline.

@@ -506,11 +506,13 @@ namespace Hecton8.World
             for (int i = 0; i < count; i++)
             {
                 int poolIndex = offset + i;
-                float x = pool.Matrices[poolIndex].m03 + _totalUniverseOffset.x;
-                float z = pool.Matrices[poolIndex].m23 + _totalUniverseOffset.z;
-                if (x < minX || x > maxX || z < minZ || z > maxZ)
+                double xDouble = pool.Matrices[poolIndex].m03 + _totalUniverseOffsetDouble.x;
+                double zDouble = pool.Matrices[poolIndex].m23 + _totalUniverseOffsetDouble.z;
+                if (xDouble < minX || xDouble > maxX || zDouble < minZ || zDouble > maxZ)
                     continue;
 
+                float x = (float)xDouble;
+                float z = (float)zDouble;
                 int type = pool.Types[poolIndex];
                 float normalizedX = Mathf.Clamp01((x - minX) * inverseWidth) * (DensityGridResolution - 1);
                 float normalizedZ = Mathf.Clamp01((z - minZ) * inverseDepth) * (DensityGridResolution - 1);
@@ -554,11 +556,13 @@ namespace Hecton8.World
             for (int i = 0; i < count; i++)
             {
                 int poolIndex = offset + i;
-                float x = pool.Matrices[poolIndex].m03 + _totalUniverseOffset.x;
-                float z = pool.Matrices[poolIndex].m23 + _totalUniverseOffset.z;
-                if (x < minX || x > maxX || z < minZ || z > maxZ)
+                double xDouble = pool.Matrices[poolIndex].m03 + _totalUniverseOffsetDouble.x;
+                double zDouble = pool.Matrices[poolIndex].m23 + _totalUniverseOffsetDouble.z;
+                if (xDouble < minX || xDouble > maxX || zDouble < minZ || zDouble > maxZ)
                     continue;
 
+                float x = (float)xDouble;
+                float z = (float)zDouble;
                 float normalizedX = Mathf.Clamp01((x - minX) * inverseWidth) * (DensityGridResolution - 1);
                 float normalizedZ = Mathf.Clamp01((z - minZ) * inverseDepth) * (DensityGridResolution - 1);
                 int cellX = Mathf.Clamp(Mathf.FloorToInt(normalizedX), 0, DensityGridResolution - 1);
