@@ -50,4 +50,4 @@ Status: ACOUSTICS BAKED / UNITY RUNTIME PENDING VERIFICATION
 - Regression test commit created and pushed: `b87d7e17` (`Add Sabine LUT regression tests`) to `origin/main`.
 - Clean isolated Sabine-only Unity-boundary commit pushed: `3b26e6af` to `origin/main`; unrelated local encyclopedia commit was not pushed.
 - 2026-05-15 final rerun: `PYTHONDONTWRITEBYTECODE=1 python Tools/test_acoustic_validator.py` passed 5 tests in 2.187s and `PYTHONDONTWRITEBYTECODE=1 python Tools/AcousticValidator.py --verify-only` returned `STATUS: ACOUSTICS BAKED`.
-- Remote proof: `origin/main` resolved to clean Sabine-only commit `3631e7a791382b20cc9c4a59e29b38a7c69b47cf` before this final status update.
+- Remote proof: clean Sabine-only final rerun evidence pushed as `2fc81bd9a62895950a7810a96f962f32126eb9d6` to `origin/main`.
