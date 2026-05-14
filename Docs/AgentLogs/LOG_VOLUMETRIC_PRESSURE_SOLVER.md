@@ -282,3 +282,14 @@ Follow-up upgrade 30:
 
 Exact microseconds saved after follow-up 30:
 - Runtime frame savings: 0 us. This is H-Phi/data-contract hardening for native-facing habitat payloads.
+
+Follow-up upgrade 31:
+- What was wrong: CPU skipped per-module stress-buffer uploads at `ModuleStressUploadEpsilon` (0.0015), while shader stress gates still accepted peaks above 0.0001. That could let tiny post-impact stress sample stale high-stress buffer data.
+- What was done: added `HECTON_HABITAT_INTERIOR_STRESS_EPSILON` / `_HALF` at 0.0015, routed shader resolver/bend/normal/crease/DryZone gates through it, and made `PublishModuleStressShader` publish zero deformation amplitude unless the same non-low visible-stress condition is true.
+- Cinematic cheat used: sub-epsilon pressure is intentionally silent visually; Low/MX350 keeps peak-only crease, while Mid/High/Ultra reserve sine bow and normal bias for pressure that clears the agreed visibility threshold.
+- Static checks: `rg` found no stale shader stress guards using `0.0001`; `rg` confirms stress epsilon macro wiring; exact shader `normalize()`/`sqrt()` scan produced no matches; managed-offender scans found no C# string/LINQ/foreach offenders; mesh mutation scan found no owned `Mesh.vertices` writes; touched C#/shader brace counts are balanced; owned-source `git diff --check` is clean.
+- Rebuild policy: no `dotnet` rebuild and no Unity rebuild were run by explicit user instruction.
+
+Exact microseconds saved after follow-up 31:
+- Near-calm Mid/High/Ultra interior vertices skip stale-prone resolver/bend work below the CPU upload epsilon.
+- Estimated 5-30 us saved per 1k calm or near-calm interior vertices on MX350-class GPUs, plus avoided 6-18 us CPU/driver upload churn on near-threshold dirty ticks; 0 B/frame.

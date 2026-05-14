@@ -313,3 +313,11 @@ Solution: Added `[StructLayout(LayoutKind.Sequential, Pack = 4)]` to the siege s
 Rejected Alternatives: Blanket layout attributes on every private staging struct, or no layout correction. Blanket attributes on `GameObject`/`string` staging records create false binary-safety signals; no correction leaves native payload ownership under-specified.
 Scalability potential: Low/MX350 gets clearer native payload layout for cheap audits and safer telemetry/flood data handling. High/Ultra keep the same runtime behavior with better data-contract evidence.
 Hardware Impact: 0 runtime cost; static H-Phi memory-alignment coverage improves for owned native-facing structs.
+
+## Follow-Up Correction - Visible Stress Threshold Coherence
+
+Problem: CPU upload skipped `_HectonHabitatModuleStressBuffer` when peak stress was at or below `ModuleStressUploadEpsilon` (0.0015), but the shader still treated stress above 0.0001 as visible. A drop from high stress to a tiny sub-epsilon peak could publish nonzero shader params while sampling a stale per-module buffer.
+Solution: Added shared HLSL stress epsilon macros at 0.0015 and routed resolver, bend, normal bias, DryZone vertex lookup, and low-tier crease gates through them. `PublishModuleStressShader` now publishes zero deformation amplitude unless the same non-low visible-stress condition is true.
+Rejected Alternatives: Lowering CPU upload visibility to 0.0001, clearing/releasing the buffer on every tiny stress drop, or leaving the threshold mismatch. The first reintroduces upload churn and still fights the CPU dirty epsilon; the second burns driver bandwidth during near-threshold oscillation; the third can produce stale localized bowing.
+Scalability potential: Low/MX350 stays peak-only crease with no per-module buffer dependency. Mid/High/Ultra keep localized bowing only when CPU and shader agree that the stress is visually worth paying for, preserving visual overkill above the threshold and silence below it.
+Hardware Impact: Prevents stale buffer reads and skips sub-epsilon vertex resolver/bend work. Estimated 5-30 us saved per 1k calm or near-calm interior vertices on MX350-class GPUs, plus avoided 6-18 us CPU/driver upload churn on near-threshold dirty ticks; 0 B/frame.

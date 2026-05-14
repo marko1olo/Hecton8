@@ -3691,6 +3691,17 @@ namespace Hecton8.Gameplay
             _cachedPlayerContext = GlobalRegistry.Player;
         }
 
+        private AtlasSignalSystem ResolveCachedAtlasSignalCold()
+        {
+            AtlasSignalSystem signal = _cachedAtlasSignal;
+            if (signal != null)
+                return signal;
+
+            signal = Hecton8.Core.GlobalRegistry.AtlasSignal;
+            _cachedAtlasSignal = signal;
+            return signal;
+        }
+
         private void ResolveScientificWaterMetrics(
             Vector3 worldPosition,
             float chemicalLoad01,

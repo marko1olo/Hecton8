@@ -363,7 +363,7 @@ Scalability potential: Low avoids avoidable managed churn during streaming/toggl
 Hardware Impact: Cold lifecycle improvement only; steady render remains 0 B/frame.
 
 Problem: The active instruction still forbids dotnet rebuilds.
-Solution: Verification stayed source-only: render binding scan, forbidden-pattern scan, scoped H-Phi counts, and `git diff --check`.
+Solution: Verification stayed source-only: render binding scan, forbidden-pattern scan, scoped H-Phi counts, `git diff --check`, and `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json`. Full `HectonPhiAudit.ps1 -Summary -Json` timed out at 240 seconds, so no fresh full-project H-Phi score is claimed.
 Rejected Alternatives: Running response-file compiles through `dotnet` was rejected because it violates the user instruction.
 Scalability potential: Source-level render-state isolation improved; runtime frame/debugger capture remains pending.
-Hardware Impact: Verification only.
+Hardware Impact: Verification only. Core graph summary reports `CoreAsmdefDebtReferenceCount=25` and `GeneratedProjectDebtReferenceCount=10`; these are project-level debts outside the outpost source edit.
