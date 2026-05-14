@@ -47,7 +47,7 @@ Status: SCENARIO STABILIZED - PENDING UNITY VERIFICATION
 
 - Compile guard: BLOCKED BY TOOLCHAIN. `dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary` failed because `dotnet` is not available in the shell PATH.
 - Toolchain probe: BLOCKED BY TOOLCHAIN. `Get-Command dotnet` returned absent; `C:\Program Files\dotnet\dotnet.exe` and `C:\Program Files (x86)\dotnet\dotnet.exe` are also absent.
-- Handoff JSON validation: STATIC_DOC PASS. `ConvertFrom-Json` parsed `Outpost_FailSafe_Handoff.json`; result `flags=32`, `topologicalOrder=32`, `locEntries=15`, `hashMismatches=0`.
+- Handoff JSON validation: STATIC_DOC PASS. `ConvertFrom-Json` parsed `Outpost_FailSafe_Handoff.json`; final check returned `OUTPOST_STATIC_VALIDATION flags=32 topo=32 refs=32 tooltips=10 logs=5 fallbacks=3 hashBad=0 gasRefs=3 badGas=0 legacyRoomflag=0`.
 - Handoff final count check: STATIC_DOC PASS. Final PowerShell pass returned `flags=32`, `unique=32`, `tooltips=10`, `logs=5`, `refs=32`, `missing=0`, `fallbacks=3`.
 - Flag vocabulary consistency: STATIC_DOC PASS. Regex extraction found `docUnique=32`, `jsonFlags=32`, `missingInJson=0`, `missingInDoc=0`.
 - JSON reference consistency: STATIC_DOC PASS. Regex extraction over the JSON handoff found `declared=32`, `refs=32`, `missing=0`.
