@@ -3502,7 +3502,9 @@ namespace Hecton8.World
                    _ecosystemThreatGridCellCount > 0 &&
                    _ecosystemThreatVoxelCellCount > 0 &&
                    threatGridCellSize > 0f &&
-                   thermalGridVerticalCellSize > 0f;
+                   thermalGridVerticalCellSize > 0f &&
+                   math.isfinite(threatGridCellSize) &&
+                   math.isfinite(thermalGridVerticalCellSize);
         }
 
         private void EnsureCanopyGridBuffer()
@@ -3551,7 +3553,9 @@ namespace Hecton8.World
             if (_threatSamplingChunkCount <= 0 ||
                 !_nativeMemory.ThreatSamplingChunksNative.IsCreated ||
                 _ecosystemThreatGridResolution <= 0 ||
-                threatGridCellSize <= 0f)
+                threatGridCellSize <= 0f ||
+                !math.isfinite(threatGridCellSize) ||
+                !IsFinite(gridCenter))
             {
                 EnsureThreatSamplingChunkHashBuffersCapacity(1);
                 _nativeMemory.ThreatSamplingChunkHashBackNative.Clear();
@@ -3577,8 +3581,17 @@ namespace Hecton8.World
 
         private int EstimateThreatSamplingChunkHashEntries(VegetationDensityChunkRecord chunk, Vector3 gridCenter)
         {
-            if (_ecosystemThreatGridResolution <= 0 || threatGridCellSize <= 0f)
+            if (_ecosystemThreatGridResolution <= 0 ||
+                threatGridCellSize <= 0f ||
+                !math.isfinite(threatGridCellSize) ||
+                !IsFinite(gridCenter) ||
+                !math.isfinite(chunk.MinX) ||
+                !math.isfinite(chunk.MaxX) ||
+                !math.isfinite(chunk.MinZ) ||
+                !math.isfinite(chunk.MaxZ))
+            {
                 return 0;
+            }
 
             GetThreatGridBounds(gridCenter, out float minGridX, out float maxGridX, out float minGridZ, out float maxGridZ);
             float minX = math.max(chunk.MinX, minGridX);
@@ -3588,17 +3601,28 @@ namespace Hecton8.World
             if (minX > maxX || minZ > maxZ)
                 return 0;
 
-            int minCellX = math.clamp((int)math.floor((minX - minGridX) / threatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
-            int maxCellX = math.clamp((int)math.floor((maxX - minGridX) / threatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
-            int minCellZ = math.clamp((int)math.floor((minZ - minGridZ) / threatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
-            int maxCellZ = math.clamp((int)math.floor((maxZ - minGridZ) / threatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
+            float inverseThreatGridCellSize = math.rcp(threatGridCellSize);
+            int minCellX = math.clamp((int)math.floor((minX - minGridX) * inverseThreatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
+            int maxCellX = math.clamp((int)math.floor((maxX - minGridX) * inverseThreatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
+            int minCellZ = math.clamp((int)math.floor((minZ - minGridZ) * inverseThreatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
+            int maxCellZ = math.clamp((int)math.floor((maxZ - minGridZ) * inverseThreatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
             return math.max(0, (maxCellX - minCellX + 1) * (maxCellZ - minCellZ + 1));
         }
 
         private void StampThreatSamplingChunkHash(VegetationDensityChunkRecord chunk, Vector3 gridCenter, int chunkIndex)
         {
-            if (!_nativeMemory.ThreatSamplingChunkHashBackNative.IsCreated || _ecosystemThreatGridResolution <= 0 || threatGridCellSize <= 0f)
+            if (!_nativeMemory.ThreatSamplingChunkHashBackNative.IsCreated ||
+                _ecosystemThreatGridResolution <= 0 ||
+                threatGridCellSize <= 0f ||
+                !math.isfinite(threatGridCellSize) ||
+                !IsFinite(gridCenter) ||
+                !math.isfinite(chunk.MinX) ||
+                !math.isfinite(chunk.MaxX) ||
+                !math.isfinite(chunk.MinZ) ||
+                !math.isfinite(chunk.MaxZ))
+            {
                 return;
+            }
 
             GetThreatGridBounds(gridCenter, out float minGridX, out float maxGridX, out float minGridZ, out float maxGridZ);
             float minX = math.max(chunk.MinX, minGridX);
@@ -3608,10 +3632,11 @@ namespace Hecton8.World
             if (minX > maxX || minZ > maxZ)
                 return;
 
-            int minCellX = math.clamp((int)math.floor((minX - minGridX) / threatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
-            int maxCellX = math.clamp((int)math.floor((maxX - minGridX) / threatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
-            int minCellZ = math.clamp((int)math.floor((minZ - minGridZ) / threatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
-            int maxCellZ = math.clamp((int)math.floor((maxZ - minGridZ) / threatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
+            float inverseThreatGridCellSize = math.rcp(threatGridCellSize);
+            int minCellX = math.clamp((int)math.floor((minX - minGridX) * inverseThreatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
+            int maxCellX = math.clamp((int)math.floor((maxX - minGridX) * inverseThreatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
+            int minCellZ = math.clamp((int)math.floor((minZ - minGridZ) * inverseThreatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
+            int maxCellZ = math.clamp((int)math.floor((maxZ - minGridZ) * inverseThreatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
             for (int cellZ = minCellZ; cellZ <= maxCellZ; cellZ++)
             {
                 int rowOffset = cellZ * _ecosystemThreatGridResolution;
@@ -3689,8 +3714,15 @@ namespace Hecton8.World
 
         private int EstimateArtificialStructureHashEntries(Bounds bounds, Vector3 gridCenter)
         {
-            if (_ecosystemThreatGridResolution <= 0 || threatGridCellSize <= 0f)
+            if (_ecosystemThreatGridResolution <= 0 ||
+                threatGridCellSize <= 0f ||
+                !math.isfinite(threatGridCellSize) ||
+                !IsFinite(gridCenter) ||
+                !IsFinite(bounds.min) ||
+                !IsFinite(bounds.max))
+            {
                 return 0;
+            }
 
             GetThreatGridBounds(gridCenter, out float minGridX, out float maxGridX, out float minGridZ, out float maxGridZ);
             float minX = math.max(bounds.min.x, minGridX);
@@ -3700,17 +3732,28 @@ namespace Hecton8.World
             if (minX > maxX || minZ > maxZ)
                 return 0;
 
-            int minCellX = math.clamp((int)math.floor((minX - minGridX) / threatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
-            int maxCellX = math.clamp((int)math.floor((maxX - minGridX) / threatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
-            int minCellZ = math.clamp((int)math.floor((minZ - minGridZ) / threatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
-            int maxCellZ = math.clamp((int)math.floor((maxZ - minGridZ) / threatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
+            float inverseThreatGridCellSize = math.rcp(threatGridCellSize);
+            int minCellX = math.clamp((int)math.floor((minX - minGridX) * inverseThreatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
+            int maxCellX = math.clamp((int)math.floor((maxX - minGridX) * inverseThreatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
+            int minCellZ = math.clamp((int)math.floor((minZ - minGridZ) * inverseThreatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
+            int maxCellZ = math.clamp((int)math.floor((maxZ - minGridZ) * inverseThreatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
             return math.max(0, (maxCellX - minCellX + 1) * (maxCellZ - minCellZ + 1));
         }
 
         private void StampArtificialStructureHash(ArtificialStructureRecord record, Vector3 gridCenter, int recordIndex)
         {
-            if (!_nativeMemory.ArtificialStructureHashBackNative.IsCreated || _ecosystemThreatGridResolution <= 0 || threatGridCellSize <= 0f)
+            if (!_nativeMemory.ArtificialStructureHashBackNative.IsCreated ||
+                _ecosystemThreatGridResolution <= 0 ||
+                threatGridCellSize <= 0f ||
+                !math.isfinite(threatGridCellSize) ||
+                !IsFinite(gridCenter) ||
+                !math.isfinite(record.MinX) ||
+                !math.isfinite(record.MaxX) ||
+                !math.isfinite(record.MinZ) ||
+                !math.isfinite(record.MaxZ))
+            {
                 return;
+            }
 
             GetThreatGridBounds(gridCenter, out float minGridX, out float maxGridX, out float minGridZ, out float maxGridZ);
             float minX = math.max(record.MinX, minGridX);
@@ -3720,10 +3763,11 @@ namespace Hecton8.World
             if (minX > maxX || minZ > maxZ)
                 return;
 
-            int minCellX = math.clamp((int)math.floor((minX - minGridX) / threatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
-            int maxCellX = math.clamp((int)math.floor((maxX - minGridX) / threatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
-            int minCellZ = math.clamp((int)math.floor((minZ - minGridZ) / threatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
-            int maxCellZ = math.clamp((int)math.floor((maxZ - minGridZ) / threatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
+            float inverseThreatGridCellSize = math.rcp(threatGridCellSize);
+            int minCellX = math.clamp((int)math.floor((minX - minGridX) * inverseThreatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
+            int maxCellX = math.clamp((int)math.floor((maxX - minGridX) * inverseThreatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
+            int minCellZ = math.clamp((int)math.floor((minZ - minGridZ) * inverseThreatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
+            int maxCellZ = math.clamp((int)math.floor((maxZ - minGridZ) * inverseThreatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
             for (int cellZ = minCellZ; cellZ <= maxCellZ; cellZ++)
             {
                 int rowOffset = cellZ * _ecosystemThreatGridResolution;

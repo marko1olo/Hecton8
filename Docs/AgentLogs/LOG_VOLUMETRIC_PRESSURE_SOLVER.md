@@ -277,7 +277,8 @@ Follow-up upgrade 30:
 - Added `[StructLayout(LayoutKind.Sequential, Pack = 4)]` to `HabitatSiegeTargetSnapshot`.
 - Added `[StructLayout(LayoutKind.Sequential, Pack = 4)]` to `HabitatFloodConnection`.
 - Deliberately did not add layout attributes to object-reference staging structs such as `ModuleRecord` and `SocketMatchEntry`.
-- Rebuild policy: no `dotnet` rebuild and no Unity rebuild were run by explicit user instruction. Static checks are run separately in this loop.
+- Static checks: struct/layout scan confirms `HabitatSiegeTargetSnapshot`, `HabitatFloodConnection`, and `HabitatFloodBlackBoxEntry` have explicit layout while object-reference staging structs remain untouched; managed-offender scans found no C# string/LINQ/foreach offenders; mesh mutation scan found no owned `Mesh.vertices` writes; exact shader `normalize()`/`sqrt()` scan produced no matches; touched C#/shader brace counts are balanced; `git diff --check` reports only CRLF warnings.
+- Rebuild policy: no `dotnet` rebuild and no Unity rebuild were run by explicit user instruction.
 
 Exact microseconds saved after follow-up 30:
 - Runtime frame savings: 0 us. This is H-Phi/data-contract hardening for native-facing habitat payloads.

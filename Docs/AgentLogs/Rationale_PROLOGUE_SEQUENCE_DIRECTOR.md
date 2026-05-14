@@ -340,3 +340,11 @@ Solution: Keep the signal layout unchanged and make the bridge scan until it fin
 Rejected Alternatives: Expand `AtmosphericReentrySignal` with `SourceHash`, or let the director validate after snapshot creation. Expanding the signal breaks the fixed 64-byte lane contract; validating later still lets bad packets become sequence state and telemetry input.
 Scalability potential: Low/MX350 avoids false sequence starts from corrupted presentation packets. Middle/High/Ultra keep the same orbital/VFX/audio overkill path while protecting the cheaper fallback lane.
 Hardware Impact: Adds three finite checks per atmospheric packet in a 32-slot lane only while the prologue waits for re-entry or Mach 10. Estimated cost is below 1 us for normal one-packet frames; prevents much larger invalid transition work. Verification this pass is static only by user request; no dotnet rebuild or response-file compile was run.
+
+## Decision 41 - Orbital Fallback Finite Guard
+
+Problem: The burn stage rejected non-finite orbital velocity and distance, but the earlier awaiting-reentry fallback could accept an orbital snapshot with positive heat before validating velocity, distance, or cloud whiteout. That could move the sequence into silence before the black-box fault path ran.
+Solution: Add shared `IsFiniteOrbital()` validation for velocity, planet distance, re-entry heat, and cloud whiteout. Use it in both awaiting-reentry and burn stages; on failure the director records `Faulted`, dumps its black box, asks the runtime to dump, and returns.
+Rejected Alternatives: Keep validation only in burn, or hide invalid snapshots in the bridge. Burn-only validation delays fault evidence until after silence; hiding snapshots in the bridge would suppress the sequence black-box dump.
+Scalability potential: Low/MX350 avoids entering cinematic wait states from corrupted orbital telemetry. Middle/High/Ultra keep the same richer re-entry visuals while fault evidence remains deterministic.
+Hardware Impact: Adds four finite checks per orbital snapshot while prologue is waiting. Estimated cost is below 1 us on i3/MX350 and prevents invalid cinematic/audio/VFX transition work. Verification this pass is static only by user request; no dotnet rebuild or response-file compile was run.

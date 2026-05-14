@@ -190,11 +190,22 @@ namespace Hecton8.Narrative.Prologue
                     return true;
                 }
 
-                if (_runtime.TryGetOrbitalSnapshot(out _lastOrbital) && _lastOrbital.ReentryHeat01 > 0.001f)
+                if (_runtime.TryGetOrbitalSnapshot(out _lastOrbital))
                 {
                     _hasLastOrbitalSnapshot = true;
-                    RecordStage(PrologueStage.AwaitingAtmosphericReentry, HashOrbital(in _lastOrbital), _lastOrbital.Flags);
-                    return true;
+                    if (!IsFiniteOrbital(in _lastOrbital))
+                    {
+                        RecordStage(PrologueStage.Faulted, FaultHash, PrologueCancelReasons.NonFinite);
+                        DumpBlackBox();
+                        TryDumpRuntimeBlackBox(_runtime);
+                        return false;
+                    }
+
+                    if (_lastOrbital.ReentryHeat01 > 0.001f)
+                    {
+                        RecordStage(PrologueStage.AwaitingAtmosphericReentry, HashOrbital(in _lastOrbital), _lastOrbital.Flags);
+                        return true;
+                    }
                 }
 
                 RecordStage(PrologueStage.AwaitingAtmosphericReentry, AwaitHash, 0);
@@ -234,7 +245,7 @@ namespace Hecton8.Narrative.Prologue
                 if (_runtime.TryGetOrbitalSnapshot(out _lastOrbital))
                 {
                     _hasLastOrbitalSnapshot = true;
-                    if (!math.all(math.isfinite(_lastOrbital.UniverseVelocity)) || !math.isfinite(_lastOrbital.PlanetDistanceMeters))
+                    if (!IsFiniteOrbital(in _lastOrbital))
                     {
                         RecordStage(PrologueStage.Faulted, FaultHash, PrologueCancelReasons.NonFinite);
                         DumpBlackBox();
@@ -502,6 +513,14 @@ namespace Hecton8.Narrative.Prologue
 
             float speedSqF = (float)math.min(speedSq, (double)float.MaxValue);
             return speedSqF * math.rsqrt(math.max(speedSqF, 0.000001f));
+        }
+
+        private static bool IsFiniteOrbital(in PrologueOrbitalSnapshot snapshot)
+        {
+            return math.all(math.isfinite(snapshot.UniverseVelocity)) &&
+                   math.isfinite(snapshot.PlanetDistanceMeters) &&
+                   math.isfinite(snapshot.ReentryHeat01) &&
+                   math.isfinite(snapshot.CloudWhiteout01);
         }
 
         private void DumpBlackBox()

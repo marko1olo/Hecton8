@@ -1400,7 +1400,8 @@ namespace Hecton8.Construction
         {
             int safeModuleCount = math.max(0, moduleCount);
             bool lowTier = safeModuleCount > 0 && IsModuleStressLowTier(tier);
-            float displacementMaxMeters = safeModuleCount > 0
+            bool hasVisibleStress = safeModuleCount > 0 && !lowTier && peakStress01 > ModuleStressUploadEpsilon;
+            float displacementMaxMeters = hasVisibleStress
                 ? ResolveModuleStressDisplacementMaxMeters(tier)
                 : 0f;
             Shader.SetGlobalVector(

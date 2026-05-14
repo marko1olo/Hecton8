@@ -120,6 +120,26 @@ Scoped forbidden-pattern scan over touched IK/KCC/signal files returned no match
 Status:
 PENDING VERIFICATION. Unity import, Burst compiler, Play Mode, GCMonitor, profiler proof, and full compile proof remain absent.
 
+## 2026-05-15 Recursive QA Addendum 11
+
+What was wrong:
+Environment IK telemetry sanitized its cursor, position, velocity, and intended movement payloads, but could still write a non-finite `activeBlend` into `SolidDensity` when squeeze, impact, low-tier, or scrape flags triggered the event independently of brace blend.
+
+What was done:
+`WriteEnvironmentIkTelemetry` now clamps `activeBlend` through `SanitizeUnit` before aux flag selection and writes the same finite scalar into `SolidDensity`.
+
+Cinematic cheats used:
+No simulation change. This is fault-path hygiene for the existing KCC-to-IK visual fake and its 300-frame black box.
+
+Exact microseconds saved:
+Added cost is one scalar finite/clamp operation per environment IK telemetry event, estimated below 0.1 us/event on i3/MX350. Prevented cost is corrupted dump evidence from a NaN scalar in an otherwise valid squeeze/impact/scrape event.
+
+Verification:
+No dotnet rebuild was run per user instruction. `git diff --check` over the touched IK/KCC/docs files passed with CRLF warnings only. Scoped forbidden-pattern scan over the lower-body/signal files returned no matches for `sqrMagnitude`, `math.sqrt`, `math.normalize`, `foreach`, `string.Format`, interpolation strings, `OnAnimatorIK`, `SetIK`, `ikPass`, `StartCoroutine`, `GameObject.Find`, `FindObjectOfType`, or `Camera.main`.
+
+Status:
+PENDING VERIFICATION. Unity import, Burst compiler, Play Mode, GCMonitor, profiler proof, and full compile proof remain absent.
+
 ## 2026-05-14 Recursive QA Addendum 6
 
 What was wrong:
@@ -160,6 +180,26 @@ No dotnet rebuild was run per user instruction. `git diff --check -- Assets/_Pro
 Status:
 PENDING VERIFICATION. Unity import, Burst compiler, Play Mode, GCMonitor, profiler proof, and full compile proof remain absent.
 
+## 2026-05-15 Recursive QA Addendum 8
+
+What was wrong:
+The lower-body IK path was finite-gated downstream, but its KCC velocity producer still had a small upstream H-Phi leak. Bad planar/vertical input, bad SDF sample step, or non-finite roll spring state could contaminate intended movement or roll state before velocity was published for stride/swim prediction.
+
+What was done:
+`PlayerKinematicsRuntime` now zeroes non-finite planar input, clamps vertical input through a signed-unit sanitizer, sanitizes intended movement before storing it, sanitizes SDF gradient sample step, sanitizes roll side-dot/target/position/velocity, uses non-negative roll amplitude, and zeroes non-finite triangle-wave phase.
+
+Cinematic cheats used:
+No new physical model. The fix preserves the existing visual lie: KCC-derived velocity lead, triangle-wave roll/step response, and lower-body IK prediction. Invalid input now collapses to neutral movement instead of trying to simulate through corrupt data.
+
+Exact microseconds saved:
+Added cost is a few scalar/vector finite checks in existing player kinematic paths, estimated below 1 us/frame on i3/MX350. Avoided cost is NaN propagation into KCC velocity, foot-ray lead, swim posture, and IK smoothing.
+
+Verification:
+No dotnet rebuild was run per user instruction. `git diff --check -- Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs` passed with CRLF warnings only. Scoped forbidden-pattern scan over touched lower-body/signal files returned no matches for `sqrMagnitude`, `math.sqrt`, `math.normalize`, `foreach`, `string.Format`, interpolation strings, `OnAnimatorIK`, `SetIK`, `ikPass`, `StartCoroutine`, `GameObject.Find`, `FindObjectOfType`, or `Camera.main`.
+
+Status:
+PENDING VERIFICATION. Unity import, Burst compiler, Play Mode, GCMonitor, profiler proof, and full compile proof remain absent.
+
 ## 2026-05-15 Recursive QA Addendum 9
 
 What was wrong:
@@ -196,26 +236,6 @@ Added cost is integer bounds checks and vector finite selects only on telemetry 
 
 Verification:
 No dotnet rebuild was run per user instruction. `git diff --check -- Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs` passed with CRLF warnings only. Scoped forbidden-pattern scan over lower-body/signal files returned no matches for `sqrMagnitude`, `math.sqrt`, `math.normalize`, `foreach`, `string.Format`, interpolation strings, `OnAnimatorIK`, `SetIK`, `ikPass`, `StartCoroutine`, `GameObject.Find`, `FindObjectOfType`, or `Camera.main`. MCP resource listing returned no Unity resources.
-
-Status:
-PENDING VERIFICATION. Unity import, Burst compiler, Play Mode, GCMonitor, profiler proof, and full compile proof remain absent.
-
-## 2026-05-15 Recursive QA Addendum 8
-
-What was wrong:
-The lower-body IK path was finite-gated downstream, but its KCC velocity producer still had a small upstream H-Phi leak. Bad planar/vertical input, bad SDF sample step, or non-finite roll spring state could contaminate intended movement or roll state before velocity was published for stride/swim prediction.
-
-What was done:
-`PlayerKinematicsRuntime` now zeroes non-finite planar input, clamps vertical input through a signed-unit sanitizer, sanitizes intended movement before storing it, sanitizes SDF gradient sample step, sanitizes roll side-dot/target/position/velocity, uses non-negative roll amplitude, and zeroes non-finite triangle-wave phase.
-
-Cinematic cheats used:
-No new physical model. The fix preserves the existing visual lie: KCC-derived velocity lead, triangle-wave roll/step response, and lower-body IK prediction. Invalid input now collapses to neutral movement instead of trying to simulate through corrupt data.
-
-Exact microseconds saved:
-Added cost is a few scalar/vector finite checks in existing player kinematic paths, estimated below 1 us/frame on i3/MX350. Avoided cost is NaN propagation into KCC velocity, foot-ray lead, swim posture, and IK smoothing.
-
-Verification:
-No dotnet rebuild was run per user instruction. `git diff --check -- Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs` passed with CRLF warnings only. Scoped forbidden-pattern scan over touched lower-body/signal files returned no matches for `sqrMagnitude`, `math.sqrt`, `math.normalize`, `foreach`, `string.Format`, interpolation strings, `OnAnimatorIK`, `SetIK`, `ikPass`, `StartCoroutine`, `GameObject.Find`, `FindObjectOfType`, or `Camera.main`.
 
 Status:
 PENDING VERIFICATION. Unity import, Burst compiler, Play Mode, GCMonitor, profiler proof, and full compile proof remain absent.

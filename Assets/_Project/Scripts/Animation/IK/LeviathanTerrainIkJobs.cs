@@ -97,10 +97,13 @@ namespace Hecton8.Animation.IK
             int activeCount = math.clamp(requested, 2, maxUsableSegments);
             int iterations = math.clamp(ConstraintIterations, 1, 4);
             float dt = math.select(0f, math.min(DeltaTime, 0.05f), math.isfinite(DeltaTime) && DeltaTime > 0f);
-            float damping = math.clamp(Damping, 0f, 1f);
-            float segmentLength = math.max(0.05f, SegmentLength);
-            float bodyRadius = math.max(0.01f, BodyRadius);
-            float clearance = math.max(0f, TerrainClearance);
+            float damping = SanitizeFiniteClamp(Damping, 0.87f, 0f, 1f);
+            float segmentLength = SanitizePositiveFinite(SegmentLength, 2.5f, 0.05f);
+            float bodyRadius = SanitizePositiveFinite(BodyRadius, 1.15f, 0.01f);
+            float clearance = SanitizePositiveFinite(TerrainClearance, 0f, 0f);
+            float tailWhipSecondsRemaining = SanitizePositiveFinite(TailWhipSecondsRemaining, 0f, 0f);
+            float tailWhipDurationSeconds = SanitizePositiveFinite(TailWhipDurationSeconds, 1f, 0.1f);
+            float tailWhipAmplitudeMeters = SanitizePositiveFinite(TailWhipAmplitudeMeters, 0f, 0f);
             float3 ownerForward = NormalizeSafe(OwnerForward, new float3(0f, 0f, 1f));
             float3 up = NormalizeSafe(WorldUp, new float3(0f, 1f, 0f));
             float3 intended = SanitizeFinite(IntendedVelocity, float3.zero);
@@ -115,10 +118,10 @@ namespace Hecton8.Animation.IK
             for (int iteration = 0; iteration < iterations; iteration++)
                 PullDistanceConstraints(activeCount, segmentLength, ownerForward);
 
-            if (TailWhipSecondsRemaining > 0f)
+            if (tailWhipSecondsRemaining > 0f)
             {
                 telemetryFlags |= LeviathanTerrainIkConstants.TelemetryFlagTailWhip;
-                ApplyTailWhip(activeCount, segmentLength, ownerForward, up);
+                ApplyTailWhip(activeCount, segmentLength, ownerForward, up, tailWhipSecondsRemaining, tailWhipDurationSeconds, tailWhipAmplitudeMeters);
                 PullDistanceConstraints(activeCount, segmentLength, ownerForward);
             }
 
@@ -142,7 +145,7 @@ namespace Hecton8.Animation.IK
             int terrainStart = math.max(0, activeCount - LeviathanTerrainIkConstants.TerrainHugSegmentCount);
             for (int index = terrainStart; index < activeCount; index++)
             {
-                bool tailBypass = TailWhipSecondsRemaining > 0f && index >= activeCount >> 1;
+                bool tailBypass = tailWhipSecondsRemaining > 0f && index >= activeCount >> 1;
                 if (tailBypass)
                     continue;
 
@@ -179,7 +182,7 @@ namespace Hecton8.Animation.IK
             if (invalid)
                 telemetryFlags |= LeviathanTerrainIkConstants.TelemetryFlagInvalid;
 
-            WriteTelemetry(activeCount, telemetryFlags, intended, maxTerrainPush);
+            WriteTelemetry(activeCount, telemetryFlags, intended, maxTerrainPush, tailWhipSecondsRemaining);
         }
 
         private void MoveHead(float dt, float segmentLength, float3 intended, float3 ownerForward)
@@ -227,19 +230,24 @@ namespace Hecton8.Animation.IK
             }
         }
 
-        private void ApplyTailWhip(int activeCount, float segmentLength, float3 ownerForward, float3 up)
+        private void ApplyTailWhip(
+            int activeCount,
+            float segmentLength,
+            float3 ownerForward,
+            float3 up,
+            float tailWhipSecondsRemaining,
+            float tailWhipDurationSeconds,
+            float tailWhipAmplitudeMeters)
         {
-            float duration = math.max(0.1f, TailWhipDurationSeconds);
-            float normalizedAge = math.saturate(1f - TailWhipSecondsRemaining * math.rcp(duration));
+            float normalizedAge = math.saturate(1f - tailWhipSecondsRemaining * math.rcp(tailWhipDurationSeconds));
             float3 side = NormalizeSafe(math.cross(up, ownerForward), new float3(1f, 0f, 0f));
-            float amplitude = math.max(0f, TailWhipAmplitudeMeters);
             int firstTail = math.max(1, activeCount >> 1);
             for (int i = firstTail; i < activeCount; i++)
             {
                 float t = (i - firstTail) * math.rcp(math.max(1, activeCount - firstTail));
                 float wave = CheapSinSigned((normalizedAge * 3.2f) + t * 1.7f);
                 float falloff = t * t;
-                float3 impulse = side * (wave * amplitude * falloff);
+                float3 impulse = side * (wave * tailWhipAmplitudeMeters * falloff);
                 SegmentPositions[i] = SanitizeFinite(SegmentPositions[i] + impulse, SegmentPositions[i - 1] - ownerForward * segmentLength);
             }
         }
@@ -393,7 +401,7 @@ namespace Hecton8.Animation.IK
             return (z * VoxelSdfDimensions.y + y) * VoxelSdfDimensions.x + x;
         }
 
-        private void WriteTelemetry(int activeCount, uint flags, float3 intended, float maxTerrainPush)
+        private void WriteTelemetry(int activeCount, uint flags, float3 intended, float maxTerrainPush, float tailWhipSecondsRemaining)
         {
             if (!TelemetryRing.IsCreated || !TelemetryCursor.IsCreated || TelemetryRing.Length <= 0 || TelemetryCursor.Length <= 0)
                 return;
@@ -415,7 +423,7 @@ namespace Hecton8.Animation.IK
                 TailPosition = SanitizeFinite(tail, float3.zero),
                 IntendedVelocity = SanitizeFinite(intended, float3.zero),
                 MaxTerrainPushMeters = math.select(0f, maxTerrainPush, math.isfinite(maxTerrainPush)),
-                TailWhipSecondsRemaining = math.max(0f, TailWhipSecondsRemaining)
+                TailWhipSecondsRemaining = tailWhipSecondsRemaining
             };
             TelemetryRing[index] = entry;
             if (cursor == int.MaxValue)
@@ -502,6 +510,16 @@ namespace Hecton8.Animation.IK
                 return fallback;
 
             return value * math.rsqrt(lengthSq);
+        }
+
+        private static float SanitizePositiveFinite(float value, float fallback, float minValue)
+        {
+            return math.isfinite(value) ? math.max(value, minValue) : fallback;
+        }
+
+        private static float SanitizeFiniteClamp(float value, float fallback, float minValue, float maxValue)
+        {
+            return math.isfinite(value) ? math.clamp(value, minValue, maxValue) : fallback;
         }
 
         private static float3 SanitizeFinite(float3 value, float3 fallback)

@@ -252,3 +252,11 @@ What was done -> `TryConsumeAtmosphericReentry` now scans the frame snapshot and
 Cinematic Cheats used -> None; this protects the existing orbital/re-entry presentation lane without changing the 64-byte signal layout.
 Exact Microseconds saved -> Adds three finite checks per atmospheric packet, below 1 us on normal frames. Saves invalid sequence progression and downstream transition work from NaN/Inf packets.
 Verification -> No dotnet rebuild/response-file compile was run per user constraint. Targeted scan confirms the atmospheric finite guards; forbidden-pattern scan returned no hits; `git diff --check` reports line-ending warnings only.
+
+## 2026-05-15 - Loop 36 Orbital Fallback Finite Guard Review
+
+What was wrong -> Awaiting re-entry could accept an orbital fallback snapshot with positive heat before validating orbital velocity, planet distance, heat, and cloud whiteout.
+What was done -> Added shared `IsFiniteOrbital()` validation and used it in both awaiting-reentry and burn stages. Non-finite orbital snapshots now record `Faulted` and dump black-box state immediately.
+Cinematic Cheats used -> None; this protects the existing orbital presentation fake from corrupt telemetry.
+Exact Microseconds saved -> Adds four finite checks per orbital snapshot during prologue waits, below 1 us on normal frames. Saves invalid silence/burn/VFX/audio progression from bad orbital telemetry.
+Verification -> No dotnet rebuild/response-file compile was run per user constraint. Targeted scan confirms `IsFiniteOrbital` usage in both stages; forbidden-pattern scan returned no hits; `git diff --check` reports line-ending warnings only.

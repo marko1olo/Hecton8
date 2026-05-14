@@ -70,8 +70,9 @@ Status: PENDING VERIFICATION
 - Post Loop 14 static scan stayed clean for forbidden text/allocation/LINQ patterns and old update/shared-buffer/matrix/shader markers after render-basis consolidation.
 - Post Loop 16 static scan stayed clean for forbidden text/allocation/LINQ patterns and old update/shared-buffer/matrix/shader markers, and returned no `Marshal.SizeOf`, `Shader.Find`, or `new Material(` matches in the tooltip/shader scope.
 - Post Loop 17 static scan stayed clean for forbidden text/allocation/LINQ patterns and old update/shared-buffer/matrix/shader markers, and `git diff --check` returned only repository CRLF warnings.
-- Post Loop 18 static scans stayed clean for forbidden text/allocation/LINQ patterns and old update/shared-buffer/matrix/shader markers, and `git diff --check` passed cleanly on the tooltip/status/rationale/log scope.
+- Post Loop 18 static scans stayed clean for forbidden text/allocation/LINQ patterns and old update/shared-buffer/matrix/shader markers, and `git diff --check` returned CRLF normalization warnings only on the tooltip/status/rationale/log scope.
 - `Tools/Architecture/HectonPhiAudit.ps1 -Json` completed at `2026-05-15 01:32:33 +04:00` without invoking a rebuild. Follow-up summary extraction exceeded tool timeout; no score claim is recorded from that partial extraction.
+- `Tools/Architecture/HectonPhiAudit.ps1 -Summary` was retried after Loop 18 and timed out after 120 seconds without output; no H-Phi score claim is recorded.
 - `git diff --check` on `DiegeticTooltipSystem.cs` and `Hecton_DiegeticTooltipIndirect.shader` passed with repository CRLF warnings only.
 - Broad unfiltered `dotnet build Hecton8.Core.csproj` did not complete within the tool timeout in the current dirty multi-agent workspace; stale child processes from that verification run were stopped only when command lines proved they belonged to this `Hecton8.Core.csproj` build.
 - Unity MCP script refresh failed: HTTP transport to `http://127.0.0.1:8088/mcp` was unreachable. Editor console verification is therefore pending.

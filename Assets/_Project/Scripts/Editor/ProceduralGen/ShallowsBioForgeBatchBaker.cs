@@ -16,6 +16,7 @@ namespace Hecton8.Editor.ProceduralGen
         private const string MeshRoot = "Assets/_Project/Art/Generated/Flora/BioForge/Shallows";
         private const string PrefabRoot = "Assets/_Project/Prefabs/Nature/Flora/BioForge/Shallows";
         private const string MaterialPath = "Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_ProceduralBio_Shallows.mat";
+        private const string MaterialName = "MAT_ProceduralBio_Shallows";
         private const string ShaderPath = "Assets/_Project/Art/Shaders/Hecton_ProceduralBio.shader";
         private const string TextureRoot = "Assets/_Project/Art/TEXTURES/WorldProceduralFlora";
         private const string AlbedoAtlasPath = TextureRoot + "/TX_ProceduralBio_Shallows_AlbedoAtlas.png";
@@ -46,6 +47,10 @@ namespace Hecton8.Editor.ProceduralGen
         private const float TransformEpsilonSq = 0.000001f;
         // COLD ALLOC: List<Color>[9600] - reusable editor vertex color validation scratch - owner: ShallowsBioForgeBatchBaker
         private static readonly List<Color> VertexColorScratch = new List<Color>(MaxValidatedMeshVertices);
+        // COLD ALLOC: Editor-only prefab validation scratch lists reused across the generated Shallows library.
+        private static readonly List<Transform> TransformScratch = new List<Transform>(5);
+        private static readonly List<Component> ComponentScratch = new List<Component>(4);
+        private static readonly List<Material> RendererMaterialScratch = new List<Material>(1);
 
         [MenuItem("HECTON-8/Bio-Forge/Bake Safe Shallows Assets", false, 172)]
         public static void BakeSafeShallowsAssets()
@@ -102,6 +107,7 @@ namespace Hecton8.Editor.ProceduralGen
             }
 
             ValidateRuleAssets(material, ref failures);
+            ValidateMaterialAssetContract(material, ref failures);
             ValidateSharedMaterial(material, albedo, normal, orm, matCap, ref failures);
             ValidateAtlasTextureAsset(albedo, AlbedoAtlasPath, ref failures);
             ValidateAtlasTextureAsset(normal, NormalAtlasPath, ref failures);
@@ -227,7 +233,7 @@ namespace Hecton8.Editor.ProceduralGen
             {
                 material = new Material(shader)
                 {
-                    name = "MAT_ProceduralBio_Shallows"
+                    name = MaterialName
                 };
                 AssetDatabase.CreateAsset(material, MaterialPath);
             }
@@ -436,6 +442,28 @@ namespace Hecton8.Editor.ProceduralGen
             ValidateMaterialFloat(material, "_BiolumPulseSharpness", 2.4f, ref failures);
             ValidateMaterialFloat(material, "_MatCapStrength", 0.42f, ref failures);
             ValidateMaterialFloat(material, "_Cull", 0f, ref failures);
+        }
+
+        private static void ValidateMaterialAssetContract(Material material, ref int failures)
+        {
+            if (material == null)
+                return;
+
+            string actualPath = AssetDatabase.GetAssetPath(material);
+            if (!string.Equals(actualPath, MaterialPath, StringComparison.Ordinal) ||
+                !string.Equals(material.name, MaterialName, StringComparison.Ordinal))
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] Shared material asset identity contract failed. ExpectedPath={MaterialPath}, ActualPath={actualPath}, Name={material.name}.");
+            }
+
+            SerializedObject serialized = new SerializedObject(material);
+            SerializedProperty customRenderQueue = serialized.FindProperty("m_CustomRenderQueue");
+            if (customRenderQueue == null || customRenderQueue.intValue != -1)
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] Shared material custom render queue override is forbidden. Queue={(customRenderQueue != null ? customRenderQueue.intValue : int.MinValue)}.");
+            }
         }
 
         private static void ValidateAtlasTextureAsset(Texture texture, string expectedPath, ref int failures)
@@ -844,6 +872,7 @@ namespace Hecton8.Editor.ProceduralGen
 
             LOD[] lods = lodGroup.GetLODs();
             ValidatePrefabTransformContract(path, prefab.transform, ref failures);
+            ValidatePrefabHierarchyContract(path, prefab.transform, rock, ref failures);
             ValidateStaticFlagsContract(path, prefab, ref failures);
             ValidateLodGroupContract(path, lodGroup, lods, ref failures);
             ValidateLodContract(path, familyFolder, lods, ref failures);
@@ -859,10 +888,12 @@ namespace Hecton8.Editor.ProceduralGen
             for (int i = 0; i < renderers.Length; i++)
             {
                 Renderer renderer = renderers[i];
-                if (renderer.sharedMaterial != material)
+                ValidateRendererMaterialContract(path, renderer, material, ref failures);
+
+                if (!renderer.enabled)
                 {
                     failures++;
-                    Debug.LogError($"[ShallowsBioForgeBatchBaker] Material mismatch at {path}.");
+                    Debug.LogError($"[ShallowsBioForgeBatchBaker] Disabled renderer found at {path}.");
                 }
 
                 if (renderer.shadowCastingMode != ShadowCastingMode.Off)
@@ -917,18 +948,133 @@ namespace Hecton8.Editor.ProceduralGen
             }
         }
 
+        private static void ValidatePrefabHierarchyContract(string path, Transform root, bool rock, ref int failures)
+        {
+            int lod0 = 0;
+            int lod1 = 0;
+            int lod2 = 0;
+            int collision = 0;
+            int unexpected = 0;
+            for (int i = 0; i < root.childCount; i++)
+            {
+                Transform child = root.GetChild(i);
+                if (string.Equals(child.name, "LOD0", StringComparison.Ordinal)) lod0++;
+                else if (string.Equals(child.name, "LOD1", StringComparison.Ordinal)) lod1++;
+                else if (string.Equals(child.name, "LOD2", StringComparison.Ordinal)) lod2++;
+                else if (string.Equals(child.name, "Collision_LOD2", StringComparison.Ordinal)) collision++;
+                else unexpected++;
+            }
+
+            int expectedChildren = rock ? 4 : 3;
+            int expectedTransforms = rock ? 5 : 4;
+            if (root.childCount != expectedChildren ||
+                lod0 != 1 ||
+                lod1 != 1 ||
+                lod2 != 1 ||
+                collision != (rock ? 1 : 0) ||
+                unexpected != 0)
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] Prefab hierarchy contract failed at {path}. Children={root.childCount}, LOD0={lod0}, LOD1={lod1}, LOD2={lod2}, Collision={collision}, Unexpected={unexpected}.");
+            }
+
+            TransformScratch.Clear();
+            root.GetComponentsInChildren<Transform>(true, TransformScratch);
+            if (TransformScratch.Count != expectedTransforms)
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] Prefab transform count contract failed at {path}. Expected={expectedTransforms}, Actual={TransformScratch.Count}.");
+            }
+
+            for (int i = 0; i < TransformScratch.Count; i++)
+            {
+                ValidateComponentEnvelope(path, TransformScratch[i], root, rock, ref failures);
+            }
+
+            TransformScratch.Clear();
+        }
+
+        private static void ValidateComponentEnvelope(string path, Transform transform, Transform root, bool rock, ref int failures)
+        {
+            ComponentScratch.Clear();
+            transform.GetComponents<Component>(ComponentScratch);
+
+            bool valid;
+            if (transform == root)
+            {
+                valid = ComponentScratch.Count == 2 &&
+                        ScratchContainsComponent<Transform>() &&
+                        ScratchContainsComponent<LODGroup>();
+            }
+            else if (string.Equals(transform.name, "LOD0", StringComparison.Ordinal) ||
+                     string.Equals(transform.name, "LOD1", StringComparison.Ordinal) ||
+                     string.Equals(transform.name, "LOD2", StringComparison.Ordinal))
+            {
+                valid = ComponentScratch.Count == 3 &&
+                        ScratchContainsComponent<Transform>() &&
+                        ScratchContainsComponent<MeshFilter>() &&
+                        ScratchContainsComponent<MeshRenderer>();
+            }
+            else if (rock && string.Equals(transform.name, "Collision_LOD2", StringComparison.Ordinal))
+            {
+                valid = ComponentScratch.Count == 2 &&
+                        ScratchContainsComponent<Transform>() &&
+                        ScratchContainsComponent<MeshCollider>();
+            }
+            else
+            {
+                valid = false;
+            }
+
+            int componentCount = ComponentScratch.Count;
+            ComponentScratch.Clear();
+            if (valid)
+                return;
+
+            failures++;
+            Debug.LogError($"[ShallowsBioForgeBatchBaker] Component envelope contract failed at {path}. Child={transform.name}, Components={componentCount}.");
+        }
+
+        private static bool ScratchContainsComponent<T>() where T : Component
+        {
+            for (int i = 0; i < ComponentScratch.Count; i++)
+            {
+                if (ComponentScratch[i] is T)
+                    return true;
+            }
+
+            return false;
+        }
+
         private static void ValidateStaticFlagsContract(string path, GameObject prefab, ref int failures)
         {
-            Transform[] transforms = prefab.GetComponentsInChildren<Transform>(true);
-            for (int i = 0; i < transforms.Length; i++)
+            TransformScratch.Clear();
+            prefab.GetComponentsInChildren<Transform>(true, TransformScratch);
+            for (int i = 0; i < TransformScratch.Count; i++)
             {
-                int flags = (int)GameObjectUtility.GetStaticEditorFlags(transforms[i].gameObject);
+                int flags = (int)GameObjectUtility.GetStaticEditorFlags(TransformScratch[i].gameObject);
                 if (flags == 0)
                     continue;
 
                 failures++;
-                Debug.LogError($"[ShallowsBioForgeBatchBaker] Static batching/editor flags are forbidden at {path}. Child={transforms[i].name}, Flags={flags}.");
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] Static batching/editor flags are forbidden at {path}. Child={TransformScratch[i].name}, Flags={flags}.");
             }
+
+            TransformScratch.Clear();
+        }
+
+        private static void ValidateRendererMaterialContract(string path, Renderer renderer, Material material, ref int failures)
+        {
+            RendererMaterialScratch.Clear();
+            renderer.GetSharedMaterials(RendererMaterialScratch);
+            bool failed = RendererMaterialScratch.Count != 1 || RendererMaterialScratch[0] != material;
+            int materialCount = RendererMaterialScratch.Count;
+            RendererMaterialScratch.Clear();
+            if (!failed)
+                return;
+
+            failures++;
+            Debug.LogError($"[ShallowsBioForgeBatchBaker] Renderer material slot contract failed at {path}. Materials={materialCount}.");
         }
 
         private static void ValidateLodGroupContract(string path, LODGroup lodGroup, LOD[] lods, ref int failures)

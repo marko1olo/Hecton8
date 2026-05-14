@@ -312,3 +312,28 @@ Verification:
 - Static grep over IK runtime/job/shader scope found no `math.sqrt`, `math.normalize`, managed array creation, `foreach`, `string.Format`, `.ToString()`, `Debug.Log`, Unity Physics casts, `SkinnedMeshRenderer`, `renderer.material`, `Camera.main`, `GlobalRegistry.Get`, `GameObject.Find`, or `FindObject`.
 - `git diff --check` and `git diff --cached --check` on touched code/docs exit 0; unstaged output is only LF-to-CRLF warnings.
 - Runtime status remains pending until Unity Editor import, shader compile, play-mode behavior, GC, and profiler evidence exist.
+
+## 2026-05-15T02:15+04:00
+
+Status: PENDING VERIFICATION. Continued Burst scalar boundary audit. No `dotnet` rebuild/compile was run.
+
+What was wrong:
+- The Burst job still consumed several raw scalar fields after basic `math.max`/`math.clamp` operations.
+- NaN or malformed runtime tuning could contaminate positions, matrices, or telemetry before shader-side sanitization.
+
+What was done:
+- Added Burst-side finite scalar sanitizers.
+- Sanitized damping, segment length, body radius, terrain clearance, tail-whip remaining time, tail-whip duration, and tail-whip amplitude before solver math.
+- Passed sanitized tail-whip values into `ApplyTailWhip()` and telemetry.
+
+Cinematic cheats used:
+- Existing triangle-wave tail whip remains unchanged for valid data.
+
+Exact microseconds saved:
+- No frame-time saving claimed.
+- Added scalar checks are estimated under 0.2 us per scheduled solver.
+- Prevented fault: NaN propagation through native matrices and blackbox telemetry.
+
+Verification:
+- Pending static checks after this edit.
+- Runtime status remains pending until Unity Editor import, shader compile, play-mode behavior, GC, and profiler evidence exist.

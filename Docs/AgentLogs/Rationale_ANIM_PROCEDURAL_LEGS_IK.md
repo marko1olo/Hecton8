@@ -138,6 +138,14 @@ Rejected Alternatives: Dotnet rebuild was explicitly rejected by user instructio
 Scalability potential: Low/MX350 keeps the same 300-entry telemetry footprint with safer writes. Middle/High/Ultra preserve chronological KCC/IK evidence under richer hand/leg presentation without increasing hot-path memory or event lanes.
 Hardware Impact: Added cost is integer bounds checks and finite vector selects only when telemetry is written, estimated below 0.5 us per telemetry event on i3/MX350. No allocations, no new native containers, no new public API.
 
+## Decision 18: Environment IK telemetry scalar clamp
+
+Problem: Environment IK black-box telemetry sanitized vector payloads and cursor writes, but `activeBlend` could still be non-finite when squeeze, impact, low-tier, or scrape aux flags triggered a telemetry write.
+Solution: Clamp `activeBlend` through `SanitizeUnit` before aux flag selection and reuse the same safe scalar for `SolidDensity`.
+Rejected Alternatives: Dotnet rebuild was explicitly rejected by user instruction. Dropping all aux-flag telemetry on invalid blend was rejected because squeeze/impact/scrape evidence can still be useful with a neutral scalar. Logging was rejected as fault-path noise.
+Scalability potential: Low/MX350 keeps telemetry deterministic and cheap. Middle/High/Ultra preserve black-box quality while richer IK/haptic events are enabled.
+Hardware Impact: One scalar finite/clamp operation per environment IK telemetry event, estimated below 0.1 us/event on i3/MX350. No allocations, no new containers, no new event lanes.
+
 ## OMEGA POLISH CHANGES
 
 Problem: Final anti-bloat pass required checking the lower-body implementation for honest simulation, unbounded math, GC leaks, and out-of-domain edits.

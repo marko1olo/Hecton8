@@ -161,4 +161,27 @@
       <_HectonMissingGeneratedAnalyzer Remove="@(_HectonMissingGeneratedAnalyzer)" />
     </ItemGroup>
   </Target>
+
+  <Target Name="HectonCorePruneGeneratedProjectOutputs"
+          BeforeTargets="ResolveProjectReferences;ResolveAssemblyReferences;CoreCompile"
+          Condition="'$(MSBuildProjectName)' == 'Hecton8.Core' And '$(HectonBuildProjectReferences)' != 'true'">
+    <ItemGroup>
+      <ProjectReference Remove="@(ProjectReference)" />
+      <ReferencePath Remove="@(ReferencePath)"
+                     Condition="!Exists('%(ReferencePath.Identity)') And ($([System.String]::Copy('%(ReferencePath.Identity)').Contains('Temp\bin\Debug')) Or $([System.String]::Copy('%(ReferencePath.Identity)').Contains('Temp/bin/Debug')))" />
+      <ReferenceDependencyPaths Remove="@(ReferenceDependencyPaths)"
+                                Condition="!Exists('%(ReferenceDependencyPaths.Identity)') And ($([System.String]::Copy('%(ReferenceDependencyPaths.Identity)').Contains('Temp\bin\Debug')) Or $([System.String]::Copy('%(ReferenceDependencyPaths.Identity)').Contains('Temp/bin/Debug')))" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="HectonCorePruneMissingReferencePaths"
+          BeforeTargets="CoreCompile"
+          Condition="'$(MSBuildProjectName)' == 'Hecton8.Core' And '$(HectonBuildProjectReferences)' != 'true'">
+    <ItemGroup>
+      <ReferencePath Remove="@(ReferencePath)"
+                     Condition="!Exists('%(ReferencePath.Identity)') And ($([System.String]::Copy('%(ReferencePath.Identity)').Contains('Temp\bin\Debug')) Or $([System.String]::Copy('%(ReferencePath.Identity)').Contains('Temp/bin/Debug')))" />
+      <ReferenceDependencyPaths Remove="@(ReferenceDependencyPaths)"
+                                Condition="!Exists('%(ReferenceDependencyPaths.Identity)') And ($([System.String]::Copy('%(ReferenceDependencyPaths.Identity)').Contains('Temp\bin\Debug')) Or $([System.String]::Copy('%(ReferenceDependencyPaths.Identity)').Contains('Temp/bin/Debug')))" />
+    </ItemGroup>
+  </Target>
 </Project>

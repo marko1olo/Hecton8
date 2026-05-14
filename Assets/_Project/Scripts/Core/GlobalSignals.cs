@@ -1233,6 +1233,7 @@ namespace Hecton8.Core
         private static int _latestSeismicSignalSequence;
         private static int _latestScannerToolActiveSignalSequence;
         private static int _latestToolStateChangedSignalSequence;
+        private static int _latestCraftingCompletedSignalSequence;
         private static int _timeDilationScalarMilli = 1000;
         private static int _timeDilationSequence;
         private static int _simulationPaused;
@@ -1250,6 +1251,8 @@ namespace Hecton8.Core
         public static float LatestStorageLatencyEwmaMs => math.max(0f, Volatile.Read(ref _latestStorageLatencyMilli));
 
         public static uint LatestStorageDebtSequence => unchecked((uint)Volatile.Read(ref _latestStorageDebtSequence));
+
+        public static uint LatestCraftingCompletedSequence => unchecked((uint)Volatile.Read(ref _latestCraftingCompletedSignalSequence));
 
         /// <summary>Damage routing writer for Burst jobs or background producers.</summary>
         public static NativeQueue<DamageSignal>.ParallelWriter DamageSignalWriter
@@ -2356,8 +2359,11 @@ namespace Hecton8.Core
         public static void Publish(in CraftingCompletedSignal signal)
         {
             EnsureInitialized();
-            _craftingCompletedSignals.Enqueue(signal);
-            SignalBus<CraftingCompletedSignal>.Push(in signal);
+            CraftingCompletedSignal sequencedSignal = signal;
+            AdvanceSignalSequence(ref _latestCraftingCompletedSignalSequence);
+            sequencedSignal.Sequence = unchecked((uint)Volatile.Read(ref _latestCraftingCompletedSignalSequence));
+            _craftingCompletedSignals.Enqueue(sequencedSignal);
+            SignalBus<CraftingCompletedSignal>.Push(in sequencedSignal);
         }
 
         /// <summary>Queues one tool runtime state packet from the main thread.</summary>
@@ -3243,6 +3249,7 @@ namespace Hecton8.Core
             Volatile.Write(ref _latestSeismicSignalSequence, 0);
             Volatile.Write(ref _latestScannerToolActiveSignalSequence, 0);
             Volatile.Write(ref _latestToolStateChangedSignalSequence, 0);
+            Volatile.Write(ref _latestCraftingCompletedSignalSequence, 0);
             Volatile.Write(ref _timeDilationScalarMilli, 1000);
             Volatile.Write(ref _timeDilationSequence, 0);
             Volatile.Write(ref _simulationPaused, 0);
@@ -4502,6 +4509,7 @@ namespace Hecton8.Core.Signals
         [FieldOffset(12)] public uint Frame;
         [FieldOffset(16)] public ushort Quantity;
         [FieldOffset(18)] public byte Flags;
+        [FieldOffset(20)] public uint Sequence;
     }
 
     /// <summary>Authoritative active tool state signal consumed by diegetic tool screens. Size: 32 bytes.</summary>

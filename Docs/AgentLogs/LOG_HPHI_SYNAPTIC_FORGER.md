@@ -241,3 +241,31 @@ Verification:
 - No dotnet build, restore, or rebuild was run.
 - `rg` confirmed `_firstLeviathanScanLogged`, O(1) `NeedsScanLogSignalPump`, and no scan-log managed callback remnants.
 - `git diff --check` reported no whitespace errors; only CRLF normalization warnings.
+
+## 2026-05-15 - Crafting Logbook Signal Lane Addendum
+
+What was wrong:
+- PDALogbookManager still had a managed crafted-item journal path while scan-log journal detection had been converted to SignalBus.
+- The combined milestone pump had an unregister edge: either laser-cutter or leviathan append could shut the pump down before the other milestone was observed.
+
+What was done:
+- `CraftingCompletedSignal` now also pushes into `SignalBus<CraftingCompletedSignal>` while preserving the legacy native queue.
+- PDALogbookManager consumes crafting and scan-log snapshots from one `NeedsLogbookSignalPump` gate.
+- Removed the logbook `ItemCraftedEvent` subscription surface.
+- Added `_firstLaserCutterLogged`.
+- Refreshes pump registration after milestone appends instead of forcing unregister.
+
+Cinematic Cheats used:
+- Journal milestones remain deterministic one-shot bits.
+- Low tier pays one shared snapshot pump until both milestones complete.
+- Middle/High/Ultra can attach richer PDA/audio/cockpit responses to the same lane without producer references.
+
+Exact microseconds saved:
+- Estimated 0.2-0.6 us on crafted-item journal bursts by removing the logbook managed event path.
+- Post-completion idle cost returns to 0 because the pump unregisters only after both one-shots are logged.
+
+Verification:
+- No dotnet build, restore, or rebuild was run.
+- Static `rg` found no `ItemCraftedEvent`, `_itemCraftedSubscription`, `HandleItemCrafted`, or logbook `HectonEventBus.Subscribe<ItemCraftedEvent>` remnants.
+- Static `rg` found no scan-log `ScanLogChanged`/`EntryUnlocked` subscription remnants in ScanLogSystem/Fabricator/PDALogbookManager.
+- `git diff --check` on touched code reported only LF/CRLF notices.

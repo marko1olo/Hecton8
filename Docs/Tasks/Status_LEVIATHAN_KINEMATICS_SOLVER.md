@@ -177,3 +177,14 @@ Batch source: Docs/Tasks/CURRENT_BATCH.md
 - Static grep over IK runtime/job/shader scope still found no `math.sqrt`, `math.normalize`, managed array creation, `foreach`, `string.Format`, `.ToString()`, `Debug.Log`, Unity Physics casts, `SkinnedMeshRenderer`, `renderer.material`, `Camera.main`, `GlobalRegistry.Get`, `GameObject.Find`, or `FindObject`.
 - `git diff --check` and `git diff --cached --check` on touched code/docs exit 0; unstaged output is only LF-to-CRLF warnings.
 - No `dotnet` rebuild, compile, or response-file probe was run.
+
+### Loop 17: Burst Scalar Boundary Recheck
+
+- Added Burst-side finite clamps for damping, segment length, body radius, terrain clearance, tail-whip remaining time, duration, and amplitude before solver math consumes them.
+- Passed sanitized tail-whip values through `ApplyTailWhip()` and telemetry instead of reading raw job fields inside those paths.
+- DOD: non-finite or negative tuning data cannot poison segment positions, matrices, or telemetry through scalar job fields.
+- Alternative Rejected: sanitizing only shader upload because the Burst solver can corrupt native matrices before GPU publication.
+- Estimate: under 0.2 us per scheduled solver; all checks are scalar and avoid downstream NaN failure.
+- Static grep over IK runtime/job/shader scope still found no `math.sqrt`, `math.normalize`, managed array creation, `foreach`, `string.Format`, `.ToString()`, `Debug.Log`, Unity Physics casts, `SkinnedMeshRenderer`, `renderer.material`, `Camera.main`, `GlobalRegistry.Get`, `GameObject.Find`, or `FindObject`.
+- `git diff --check` and `git diff --cached --check` on touched code/docs exit 0; unstaged output is only LF-to-CRLF warnings.
+- No `dotnet` rebuild, compile, or response-file probe was run.

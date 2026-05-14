@@ -88,3 +88,10 @@ Solution: FrostTick now reads cached `_lastMathLod` from the fixed-step cadence 
 Rejected Alternatives: Keeping registry reads in FrostTick rejected by dependency-injection mandate. Reconfiguring signal lanes from the consumer rejected because GlobalSignals is the lane owner.
 Scalability potential: Low tier still receives 150m hibernation through `_lastMathLod`; High/Ultra keep the standard threshold.
 Hardware Impact: Removes a registry touch from FrostTick and avoids accidental large-lane/hash churn; microsecond gain is negligible but risk is lower.
+
+## Self-Review 6 - Static Integration Audit
+Problem: The user requested continued professional recheck without dotnet rebuilds, so the remaining useful work was static integration risk reduction, not churn.
+Solution: Re-read the modified gas solver, global signal payloads, H-Phi buffer identifiers, power graph jobs, and WFC binding. Verified by source scan that `ReadOnlySpan<T>` signal snapshots and `NativeArray<T>.ReadOnly` job fields already exist elsewhere in the project, and that `AbsoluteUniversePosition` is 48 bytes, leaving the 64-byte base transition signals correctly packed.
+Rejected Alternatives: Adding another abstraction or expanding vault ownership was rejected because the code already meets the prompt surface and further uncompiled movement would be risk-positive. Running dotnet rebuild remains rejected by explicit user instruction.
+Scalability potential: Low keeps only a byte mask and O(room) wake catch-up. Middle/High/Ultra keep the same native authority and can spend saved cycles in presentation systems.
+Hardware Impact: No new microsecond claim; this pass reduced compile/integration risk only. Last touched-file whitespace check exits 0 with CRLF warnings only.

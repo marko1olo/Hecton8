@@ -3,6 +3,8 @@
 
 #define HECTON_HABITAT_INTERIOR_PI 3.14159265359
 #define HECTON_HABITAT_INTERIOR_MAX_MODULES 64
+#define HECTON_HABITAT_INTERIOR_STRESS_EPSILON 0.0015
+#define HECTON_HABITAT_INTERIOR_STRESS_EPSILON_HALF 0.0015h
 
 StructuredBuffer<float> _HectonHabitatModuleStressBuffer;
 float4 _HectonHabitatModuleStressParams; // x=count, y=max deformation, z=low-tier crease mode, w=peak stress
@@ -26,7 +28,7 @@ half3 HectonHabitatInteriorSafeNormalizeHalf3(half3 value)
 
 float HectonHabitatInteriorResolveStress01(float3 positionWS)
 {
-    if (_HectonHabitatModuleStressParams.w <= 0.0001)
+    if (_HectonHabitatModuleStressParams.w <= HECTON_HABITAT_INTERIOR_STRESS_EPSILON)
         return 0.0;
 
     if (_HectonHabitatModuleStressParams.z > 0.5)
@@ -90,7 +92,7 @@ float3 HectonHabitatInteriorApplyPanelBendOS(
     panelMask01 = 0.0h;
     panelCenteredUv = half2(0.0h, 0.0h);
     float maxDeformation = max(_HectonHabitatModuleStressParams.y, 0.0);
-    if (_HectonHabitatModuleStressParams.z > 0.5 || maxDeformation <= 0.00001 || stress01 <= 0.0001)
+    if (_HectonHabitatModuleStressParams.z > 0.5 || maxDeformation <= 0.00001 || stress01 <= HECTON_HABITAT_INTERIOR_STRESS_EPSILON)
         return positionOS;
 
     float2 panelUv = HectonHabitatInteriorPanelUv(uv);
@@ -107,7 +109,7 @@ float3 HectonHabitatInteriorApplyPanelBendOS(
 
 half3 HectonHabitatInteriorApplyCheapNormalBiasWS(half3 normalWS, float stress01, half panelMask01, half2 panelCenteredUv)
 {
-    if (_HectonHabitatModuleStressParams.z > 0.5 || stress01 <= 0.0001 || panelMask01 <= 0.0001h)
+    if (_HectonHabitatModuleStressParams.z > 0.5 || stress01 <= HECTON_HABITAT_INTERIOR_STRESS_EPSILON || panelMask01 <= 0.0001h)
         return normalWS;
 
     half3 baseNormal = HectonHabitatInteriorSafeNormalizeHalf3(normalWS);
@@ -127,7 +129,7 @@ void HectonHabitatInteriorApplyLowTierCrease(
     inout half3 albedo,
     inout half smoothness)
 {
-    if (_HectonHabitatModuleStressParams.z <= 0.5 || stress01 <= 0.0001h)
+    if (_HectonHabitatModuleStressParams.z <= 0.5 || stress01 <= HECTON_HABITAT_INTERIOR_STRESS_EPSILON_HALF)
         return;
 
     if (panelMask <= 0.0001h)

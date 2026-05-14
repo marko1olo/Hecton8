@@ -407,7 +407,7 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
                 float habitatStress01 = saturate(_HectonHabitatModuleStressParams.w);
                 if (_HectonHabitatModuleStressParams.z <= 0.5 &&
                     _HectonHabitatModuleStressParams.x > 0.5 &&
-                    habitatStress01 > 0.0001)
+                    habitatStress01 > HECTON_HABITAT_INTERIOR_STRESS_EPSILON)
                 {
                     VertexPositionInputs preBendPositionInputs = GetVertexPositionInputs(safePositionOS);
                     habitatStress01 = HectonHabitatInteriorResolveStress01(preBendPositionInputs.positionWS);
@@ -418,7 +418,7 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
                 bool habitatVertexBendActive =
                     _HectonHabitatModuleStressParams.z <= 0.5 &&
                     _HectonHabitatModuleStressParams.y > 0.00001 &&
-                    habitatStress01 > 0.0001;
+                    habitatStress01 > HECTON_HABITAT_INTERIOR_STRESS_EPSILON;
                 if (habitatVertexBendActive)
                 {
                     safePositionOS = HectonHabitatInteriorApplyPanelBendOS(
@@ -538,7 +538,7 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
                     hullDentShadow = max(hullDentShadow, (half)_HectonHullDentParams.z * lowTierScarTexture * 0.28h);
                 }
                 [branch]
-                if (_HectonHabitatModuleStressParams.z > 0.5 && input.habitatStress01 > 0.0001h)
+                if (_HectonHabitatModuleStressParams.z > 0.5 && input.habitatStress01 > HECTON_HABITAT_INTERIOR_STRESS_EPSILON_HALF)
                 {
                     half habitatPanelMask = HectonHabitatInteriorCheapPanelMask(input.uv);
                     [branch]

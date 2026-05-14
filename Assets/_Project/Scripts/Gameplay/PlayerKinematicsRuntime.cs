@@ -2124,8 +2124,9 @@ namespace Hecton8.Gameplay
             float activeBlend,
             bool scraped)
         {
+            float safeActiveBlend = SanitizeUnit(activeBlend);
             uint auxFlags = 0u;
-            if (activeBlend > 0.0001f)
+            if (safeActiveBlend > 0.0001f)
                 auxFlags |= IkBraceTelemetryFlag;
             if ((leftTarget.Flags & PlayerKinematicsHandTarget.FlagSqueeze) != 0 ||
                 (rightTarget.Flags & PlayerKinematicsHandTarget.FlagSqueeze) != 0)
@@ -2151,7 +2152,7 @@ namespace Hecton8.Gameplay
                 IntendedMovement = _intendedMovement.IsCreated ? SanitizeFloat3(_intendedMovement[0], float3.zero) : float3.zero,
                 DragCoefficient = SanitizeNonNegative(dragCoefficient),
                 WaterDensity = ResolveRuntimeWaterDensityScale(),
-                SolidDensity = activeBlend,
+                SolidDensity = safeActiveBlend,
                 Frame = unchecked((uint)Time.frameCount),
                 Flags = 0u,
                 SyncFenceHash = 0u,

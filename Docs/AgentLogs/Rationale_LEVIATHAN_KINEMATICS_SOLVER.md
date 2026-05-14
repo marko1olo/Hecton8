@@ -188,3 +188,11 @@ Solution: Add `SanitizePositiveFinite()` and publish safe segment length and saf
 Rejected Alternatives: Relying on shader-side `max()` alone was rejected because NaN can propagate differently across graphics backends. Clamping only in the Burst job was rejected because shader globals are a separate contract.
 Scalability potential: Low/MX350/high/ultra visuals are unchanged for valid data. The fix protects all tiers from malformed tuning without adding allocations or changing GPU buffer layout.
 Hardware Impact: Upload path adds two finite checks and two clamps on frames where bones are uploaded; estimated under 0.1 us and not profiler-backed.
+
+## Decision 17: Burst Scalar Boundary Sanitization
+
+Problem: The Burst job clamped several scalar inputs with `math.max`/`math.clamp`, but those helpers are not a complete contract against NaN data entering from serialized/runtime fields. A bad scalar could still contaminate segment positions or matrices before shader upload sanitization.
+Solution: Add Burst-compatible finite scalar sanitizers and consume sanitized damping, segment length, radius, clearance, and tail-whip values through the solver, tail-whip, and telemetry paths.
+Rejected Alternatives: Sanitizing only at the MonoBehaviour upload boundary was rejected because the native solver owns the authoritative matrices. Removing runtime tunability was rejected because high/ultra visual overkill needs authored ranges.
+Scalability potential: Low/MX350/high/ultra behavior is unchanged for valid data. Invalid data now collapses to conservative defaults instead of breaking the IK ring or GPU deformation.
+Hardware Impact: Estimated cost is under 0.2 us per scheduled solver; scalar checks buy deterministic failure containment, not frame-time savings.

@@ -30,3 +30,20 @@ Exact microseconds saved:
 Blocked items:
 - ASMDEF isolation is blocked by existing `GlobalRegistry` concrete references to `HectonSurfaceWeatherDirector` and `HectonAtmosphereManager`; a real split requires integrator interface work first.
 - Burst `math.exp` compile verification is blocked by the no-rebuild/no-Unity-tool constraint. Code path is present in a `[BurstCompile]` job, but verification remains pending.
+
+## 2026-05-15 - Static Recheck Addendum
+STATUS: PENDING VERIFICATION
+
+What was rechecked:
+- Re-read the modified gas solver hibernation state, signal drain, wake catch-up job, native disposal, and telemetry gates.
+- Re-read the power graph awake-mask binding and WFC gas binding.
+- Re-read GlobalSignals payload sizing and H-Phi buffer identifiers.
+
+What was found:
+- No new code patch required from this pass.
+- `ReadOnlySpan<T>` signal snapshots and `NativeArray<T>.ReadOnly` job fields are already established in the project.
+- `AbsoluteUniversePosition` is explicitly 48 bytes, so the 64-byte base enter/exit signal layout is correctly bounded.
+- Touched-file `git diff --check` exits 0 with CRLF warnings only.
+
+Exact microseconds saved:
+- No additional runtime saving claimed; this pass was risk reduction. Dotnet rebuild was not run.
