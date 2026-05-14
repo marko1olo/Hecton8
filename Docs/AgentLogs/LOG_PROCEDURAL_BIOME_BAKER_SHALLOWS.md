@@ -105,3 +105,15 @@ Cinematic Cheats used: Static offline SDF/L-system meshes remain the truth. The 
 Exact Microseconds saved: Runtime remains 0 us/frame and 0 bytes allocation. The saved cost is avoided regression: no accidental scaled LOD child, disabled crossfade, or malformed collision proxy can force runtime correction casts, extra scripts, or visible transition cleanup later. Exact runtime microseconds not profiled because the validator executes only in editor.
 
 Verification: No dotnet rebuild was run by user order. `git diff --check` passed for the touched source. Source scans found the new validators and no scoped hot-path debt patterns in ProceduralGen. Prefab YAML scans found TubeCoral=50, Kelp=100, PorousRock=50 with `BadLodTransitionYaml=0`, `BadTransformYaml=0`, and PorousRock `BadCollisionNameYaml=0`. Project-wide numeric H-Phi is not claimed; local H-Phi evidence improved by increasing editor contract density without adding runtime ownership or Update cadence.
+
+## 2026-05-15 Static Batching Flag Guard
+
+What was wrong: Generated Shallows prefabs were instancing/GPU-resident-friendly, but the validator did not reject Unity static editor flags. A future `BatchingStatic` flag would conflict with the shared-material flora draw strategy and can add static-batching memory cost.
+
+What was done: Added `ValidateStaticFlagsContract` to `ShallowsBioForgeBatchBaker`. It walks every transform under each generated prefab and fails validation on any nonzero `StaticEditorFlags`.
+
+Cinematic Cheats used: Static authored meshes, shared atlas/material, LOD crossfade, shader vertex-color masks, no flora collision, and rock-only convex collision proxies remain unchanged.
+
+Exact Microseconds saved: Runtime remains 0 us/frame and 0 bytes allocation. The change prevents hidden static-batching memory/draw-path regression; exact runtime microseconds not profiled because validation is editor-only.
+
+Verification: No dotnet rebuild was run. `git diff --check` passed for source/docs with CRLF warnings only. Source scan found `ValidateStaticFlagsContract`; prefab YAML scans found `BadStaticFlagsYaml=0` for all 200 generated prefabs. No global H-Phi score is claimed.

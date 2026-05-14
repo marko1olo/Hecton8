@@ -245,4 +245,4 @@ Verification:
 - Static scan passed for abyssal nav support/hash and graph ingress regions: no hot-code raw `/`, `math.normalize`, `math.length(`, `math.distance(`, or `.normalized`.
 - `git diff --check` on touched files passed; LF/CRLF warnings only.
 - `Tools/Architecture/HectonPhiAudit.ps1 -Json` was attempted and timed out after 120 seconds; no global H-Phi score is claimed from this pass.
-- Dotnet rebu
+- Dotnet rebuilds were not run after this pass because the user explicitly prohibited dotnet rebuilds.

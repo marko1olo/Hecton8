@@ -108,3 +108,28 @@ Verification:
 Final Status:
 - PENDING VERIFICATION.
 - Compile/Burst proof remains blocked by Unity session/global generated project state, not claimed.
+
+## 2026-05-15 - Idle Black-Box Continuity Pass
+
+What was wrong:
+- The telemetry ring only advanced after completed pull jobs, so idle frames were missing from the last-300-frame evidence.
+- Recording while a job is still running would risk reading NativeArrays that Burst owns.
+
+What was done:
+- Added a telemetry frame counter independent from pull job frame ids.
+- LateFrame records idle high-level state when no job is scheduled.
+- Running jobs skip idle recording until completion; completed jobs and fault dumps still record exactly once for that frame.
+
+Cinematic Cheats used:
+- None. This is black-box correctness.
+
+Exact Microseconds saved:
+- No CPU saving claimed. This spends one fixed NativeArray write per idle late frame to buy better crash evidence.
+
+Verification:
+- User forbade dotnet rebuilds; none were run.
+- Static loot anti-bloat scan remains clean.
+- `git diff --check` on loot/status/rationale/log passed with line-ending warnings only.
+
+Final Status:
+- PENDING VERIFICATION.

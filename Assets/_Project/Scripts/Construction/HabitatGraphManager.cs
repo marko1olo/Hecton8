@@ -1178,9 +1178,16 @@ namespace Hecton8.Construction
                 {
                     hasGraphRecord = TryResolveGraphModuleRecord(baseModule, nodeIndex, out _, out module);
                     uint moduleHash = ResolveModuleStressHash(baseModule, module, hasGraphRecord);
-                    uint entityKey = ResolveModuleStressEntityKey(baseModule);
-                    if (targetHash != 0u &&
-                        (moduleHash == targetHash || entityKey == targetHash))
+                    if (targetHash != 0u && moduleHash == targetHash)
+                    {
+                        moduleIndex = nodeIndex;
+                        return true;
+                    }
+
+                    uint entityKey = targetHash != 0u || targetId != 0
+                        ? ResolveModuleStressEntityKey(baseModule)
+                        : 0u;
+                    if (targetHash != 0u && entityKey == targetHash)
                     {
                         moduleIndex = nodeIndex;
                         return true;

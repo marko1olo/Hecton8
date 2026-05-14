@@ -114,6 +114,14 @@ Rejected Alternatives: Dotnet rebuild was explicitly rejected by user instructio
 Scalability potential: Low/Middle/High/Ultra valid visuals are unchanged. Low-tier avoids animation spikes; high-tier muscle/secondary overkill no longer amplifies invalid scalar or stream data. Low keeps the cheap finite gates; Middle keeps two-bone presence; High keeps velocity/predictive polish; Ultra keeps secondary/muscle visuals without trusting corrupt inputs.
 Hardware Impact: Branch/finite checks are per active IK chain and mostly inside existing AnimationJob/producer loops; estimated below 1 us for the standard player rig and no allocations/jobs/rays.
 
+## Decision 15: KCC input-to-IK finite velocity boundary
+
+Problem: Lower-body stride lead and swim posture depend on `KccVelocitySignal`, but `PlayerKinematicsRuntime` still allowed non-finite input move axes, vertical axis, SDF sample step, roll side-dot, roll spring state, and triangle-wave phase to survive upstream of the KCC velocity path.
+Solution: Sanitized planar input to zero on non-finite values, clamped vertical input through a signed-unit helper, sanitized intended movement before storing it, clamped SDF sample step through the non-negative helper, sanitized roll side-dot/target/position/velocity, and zeroed non-finite triangle-wave phase before cheap roll wave evaluation.
+Rejected Alternatives: Dotnet rebuild was explicitly rejected by user instruction. Adding input-event logging was rejected as noise and potential allocation. Replacing roll/stride prediction with a physical body solver was rejected because the lower-body system is a visual fake consuming finite KCC data.
+Scalability potential: Low keeps stable cheap KCC output for disabled/non-XR lower-body IK. Middle keeps two-bone stride prediction finite. High/Ultra can use velocity lead, swim posture, haptics, and secondary IK polish without amplifying corrupt input state.
+Hardware Impact: Added scalar finite checks are in existing player kinematic paths and estimated well below 1 us/frame on i3/MX350; no allocations, no new jobs, no new rays.
+
 ## OMEGA POLISH CHANGES
 
 Problem: Final anti-bloat pass required checking the lower-body implementation for honest simulation, unbounded math, GC leaks, and out-of-domain edits.

@@ -187,3 +187,17 @@ Scalability potential: Low/MX350 keeps static MeshRenderer-owned prefabs with st
 Hardware Impact: Runtime remains 0 us/frame and 0 bytes allocation. The gain is prevention: no accidental transform scale, disabled crossfade, or malformed collision child can silently increase visible popping, culling error, or collider/render mismatch on low-end hardware. Exact runtime microseconds are not profiled because this is editor validation.
 
 Verification: No dotnet rebuild was run. `git diff --check` passed for `ShallowsBioForgeBatchBaker.cs`. Scoped source scan found the new LOD/transform validators and no hot-path `Update`, `FindObject`, `GameObject.Find`, `SendMessage`, `UnityEvent`, public event, or renderer material mutation patterns in the touched ProceduralGen files. Prefab YAML scans found `BadLodTransitionYaml=0`, `BadTransformYaml=0`, and rock `BadCollisionNameYaml=0` across the 200 generated prefabs. Brace count is balanced.
+
+## Decision 14 - Static Batching Flag Guard
+
+Problem: The renderer/material contract enforces shared material and instancing-friendly setup, but the validator did not reject Unity static editor flags. If a generated flora prefab or child becomes `BatchingStatic`, it conflicts with the mandate that static batching and GPU instancing/GPU Resident Drawer ownership must not double-own the same renderer.
+
+Solution: Add `ValidateStaticFlagsContract` to `ShallowsBioForgeBatchBaker`. The validator scans every transform under the generated prefab and rejects any nonzero `StaticEditorFlags`, reporting the child name and raw flag value.
+
+Rejected Alternatives: Manually editing prefab YAML was rejected because the current prefabs already have zero static flags. Adding a runtime correction script was rejected because generated Shallows prefabs must remain scriptless and static-data-only. Project-wide H-Phi scoring was rejected because this pass is domain-local and the user prohibited dotnet rebuilds.
+
+Scalability potential: Low/MX350 keeps MeshRenderer-owned flora eligible for the intended shared-material draw path without static-batching memory bloat. Middle/High/Ultra can increase density or LOD residency without hidden static-batching conflicts.
+
+Hardware Impact: Runtime remains 0 us/frame and 0 bytes allocation. The gain is prevention: no future prefab edit can silently increase memory through static batching or break the intended instancing/GPU-resident path. Exact runtime microseconds are not profiled because this is editor validation.
+
+Verification: No dotnet rebuild was run. `git diff --check` passed for `ShallowsBioForgeBatchBaker.cs`. Source scan found `ValidateStaticFlagsContract` and `GameObjectUtility.GetStaticEditorFlags`. Prefab YAML scans found `BadStaticFlagsYaml=0` for TubeCoral=50, Kelp=100, and PorousRock=50. Brace count is balanced.

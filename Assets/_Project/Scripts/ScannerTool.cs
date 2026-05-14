@@ -1128,7 +1128,9 @@ namespace Hecton8.Gameplay
             float progress01 = _activeScientificEntityHash != 0u
                 ? _activeScientificEntityProgress
                 : _scientificSnapshot.Progress01;
-            float lastContactAge = Time.time - _scientificLastContactTime;
+            float lastContactAge = math.isfinite(_scientificLastContactTime)
+                ? Time.time - _scientificLastContactTime
+                : 0f;
             float pendingDistance = _pendingScientificOcclusionDistance;
             bool invalidState =
                 !math.isfinite(deltaTime) ||

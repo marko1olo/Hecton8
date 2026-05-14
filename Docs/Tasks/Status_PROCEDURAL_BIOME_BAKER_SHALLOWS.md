@@ -135,3 +135,10 @@ Status: PENDING VERIFICATION
 - Patched `ShallowsBioForgeBatchBaker` to validate root identity transforms, `LODGroup` crossfade mode, exact LOD screen heights and fade widths, LOD0/LOD1/LOD2 child names, LOD child identity rotation/scale, and `Collision_LOD2` identity rotation/scale.
 - Verification avoided dotnet rebuilds by user order. Static checks: `git diff --check` clean for the touched source; scoped source scan found the new validators; brace count is balanced. Prefab YAML scans found TubeCoral=50, Kelp=100, PorousRock=50 with `BadLodTransitionYaml=0`, `BadTransformYaml=0`, and rock `BadCollisionNameYaml=0`.
 - Project-wide numeric H-Phi was not claimed. Domain-local H-Phi evidence improved through stricter editor contract density and no added runtime ownership, Update cadence, registry polling, or scripts on generated prefabs.
+
+### Loop 13 - Static Batching Flag Guard
+
+- Found one more mandate-level drift risk: generated MeshRenderer flora uses shared material/instancing/GPU-resident-friendly ownership, but the validator did not reject Unity static editor flags that could lead to static batching conflicts.
+- Patched `ShallowsBioForgeBatchBaker` to scan every generated prefab transform and reject any nonzero `StaticEditorFlags`.
+- Verification avoided dotnet rebuilds. `git diff --check` passed for the touched source; source scan found `ValidateStaticFlagsContract` and `GameObjectUtility.GetStaticEditorFlags`; brace count is balanced. Prefab YAML scans found TubeCoral=50, Kelp=100, PorousRock=50 with `BadStaticFlagsYaml=0`.
+- H-Phi impact is local evidence and contract density only; no global numeric H-Phi score is claimed.

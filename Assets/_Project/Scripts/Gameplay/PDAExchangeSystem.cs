@@ -627,8 +627,20 @@ namespace Hecton8.Gameplay
                 AutoResolve();
 
             RefreshSignalFilters();
-            ConsumeInventoryChangedSignals();
-            ConsumeScanLogChangedSignals();
+            byte dirtyFlags = 0;
+            if (ConsumeInventoryChangedSignals())
+                dirtyFlags |= PdaExchangeStateChangedSignal.FlagInventoryDirty;
+            if (ConsumeScanLogChangedSignals())
+                dirtyFlags |= PdaExchangeStateChangedSignal.FlagScanLogDirty;
+
+            if (dirtyFlags == 0)
+                return;
+
+            PublishExchangeStateChanged(
+                (dirtyFlags & PdaExchangeStateChangedSignal.FlagScanLogDirty) != 0
+                    ? PdaExchangeStateChangedSignal.ReasonScanLogChanged
+                    : PdaExchangeStateChangedSignal.ReasonInventoryChanged,
+                dirtyFlags);
         }
 
         private void RefreshSignalFilters()
@@ -648,11 +660,11 @@ namespace Hecton8.Gameplay
             }
         }
 
-        private void ConsumeInventoryChangedSignals()
+        private bool ConsumeInventoryChangedSignals()
         {
             uint inventoryHash = _inventorySignalHash;
             if (inventoryHash == 0u)
-                return;
+                return false;
 
             ReadOnlySpan<InventoryChangedSignal> signals = SignalBus<InventoryChangedSignal>.GetFrameSnapshot();
             for (int i = 0; i < signals.Length; i++)
@@ -660,16 +672,17 @@ namespace Hecton8.Gameplay
                 if (signals[i].InventoryHash != inventoryHash)
                     continue;
 
-                PublishExchangeStateChanged(PdaExchangeStateChangedSignal.ReasonInventoryChanged);
-                break;
+                return true;
             }
+
+            return false;
         }
 
-        private void ConsumeScanLogChangedSignals()
+        private bool ConsumeScanLogChangedSignals()
         {
             uint sourceId = _scanLogSourceId;
             if (sourceId == 0u)
-                return;
+                return false;
 
             ReadOnlySpan<ScanLogChangedSignal> signals = SignalBus<ScanLogChangedSignal>.GetFrameSnapshot();
             for (int i = 0; i < signals.Length; i++)
@@ -677,12 +690,13 @@ namespace Hecton8.Gameplay
                 if (signals[i].SourceId != sourceId)
                     continue;
 
-                PublishExchangeStateChanged(PdaExchangeStateChangedSignal.ReasonScanLogChanged);
-                break;
+                return true;
             }
+
+            return false;
         }
 
-        private void PublishExchangeStateChanged(byte reason)
+        private void PublishExchangeStateChanged(byte reason, byte flags = 0)
         {
             if (_signalSourceId == 0u)
                 _signalSourceId = GlobalSignals.FoldEntityIdToSourceId(EntityId.ToULong(GetEntityId()));
@@ -695,7 +709,7 @@ namespace Hecton8.Gameplay
                 RecentTransactionCount = _recentTransactionCount,
                 ExecutionStateCount = _executionStateCount,
                 Reason = reason,
-                Flags = 0
+                Flags = flags
             };
 
             GlobalSignals.Publish(in signal);

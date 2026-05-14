@@ -37,6 +37,7 @@ namespace Hecton8.QA.Headless
         private const int ScratchBlockBytes = 50 * 1024 * 1024;
         private const long LeakToleranceBytes = 1024L * 1024L;
         private const double FlagMaxAgeSeconds = 10800.0;
+        private const double FlagFutureSkewToleranceSeconds = 300.0;
         private const double StartupTimeoutSeconds = 60.0;
         private const float TimeDilationScalar = 100f;
         private const float StallThresholdMilliseconds = 16f;
@@ -416,11 +417,12 @@ namespace Hecton8.QA.Headless
 
         private void CaptureNativeBaselines()
         {
-            _nativeBytesBaseline = GlobalRegistry.NativeTrackedBytes;
-            _nativeAllocationBaselineCount = GlobalRegistry.NativeAllocationCount;
-            _h8BytesBaseline = H8Memory.TotalBytes;
-            _h8AllocationBaselineCount = H8Memory.ActiveAllocationCount;
-            _dataVaultBytesBaseline = _dataVault != null ? _dataVault.AllocatedBytes : 0L;
+            MemorySnapshot snapshot = CaptureMemorySnapshot();
+            _nativeBytesBaseline = snapshot.NativeBytes;
+            _nativeAllocationBaselineCount = snapshot.NativeAllocations;
+            _h8BytesBaseline = snapshot.H8Bytes;
+            _h8AllocationBaselineCount = snapshot.H8Allocations;
+            _dataVaultBytesBaseline = snapshot.DataVaultBytes;
             _baselineCaptured = true;
         }
 
@@ -438,7 +440,7 @@ namespace Hecton8.QA.Headless
                 Flags = SectorResidencyHydratedSignal.FlagPinned,
                 ResidencyState = 1
             });
-            GlobalSignals.Publish(new SwarmDispersedSignal
+            SwarmDispersedSignal swarmSignal = new SwarmDispersedSignal
             {
                 PositionAup = centerAup,
                 RadiusMeters = 250f,
@@ -447,7 +449,8 @@ namespace Hecton8.QA.Headless
                 EstimatedBoidCount = RequestedBoidCount,
                 Flags = 1,
                 QualityTier = 0
-            });
+            };
+            SignalBus<SwarmDispersedSignal>.Push(in swarmSignal);
             _ecosystemDirectorReadyAtIssue = _ecosystemDirector != null && _ecosystemDirector.IsInitialized ? 1 : 0;
             _ecosystemStressIssued = 1;
             RecordBlackbox(EcosystemStressHash);

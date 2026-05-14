@@ -4653,6 +4653,8 @@ namespace Hecton8.Core.Signals
         public const byte ReasonLoaded = 2;
         public const byte ReasonInventoryChanged = 3;
         public const byte ReasonScanLogChanged = 4;
+        public const byte FlagInventoryDirty = 1 << 0;
+        public const byte FlagScanLogDirty = 1 << 1;
 
         [FieldOffset(0)] public uint SourceId;
         [FieldOffset(4)] public uint Frame;

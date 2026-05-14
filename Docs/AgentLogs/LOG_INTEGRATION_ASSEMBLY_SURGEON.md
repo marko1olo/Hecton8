@@ -9,7 +9,7 @@ What was wrong:
 - `Assets/_Project/Scripts/Hecton8.Core.asmdef` still references broad leaf/domain assemblies. This is H-Phi debt, but current Core-owned source still uses leaf types, so blind deletion would break the compile lane.
 
 What was done:
-- Restored the source-backed `Directory.Build.props` gate for `Hecton8.Core`: default `BuildProjectReferences=false` unless `HectonBuildProjectReferences=true`.
+- Hardened the source-backed `Directory.Build.props` gate for `Hecton8.Core`: default `BuildProjectReferences=false` and `BuildInParallel=false` unless `HectonBuildProjectReferences=true`.
 - Rechecked `Directory.Build.targets`: current bridge surface has no `Hecton8.Animation.IK` reference.
 - Rechecked current batch: `Docs/Tasks/CURRENT_BATCH.md` no longer contains `INTEGRATION_ASSEMBLY_SURGEON` or a polish tag, so no neighboring prompt was parsed.
 - Audited Core asmdef references and recorded the remaining H-Phi debt instead of hiding it.
@@ -27,9 +27,9 @@ Exact microseconds saved:
 Verification:
 - Evidence class for this continuation: STATIC_SOURCE and STATIC_DOC only.
 - No `dotnet build`, `dotnet rebuild`, or `dotnet msbuild` was run during this continuation.
-- `Directory.Build.props` now contains the Core `BuildProjectReferences=false` default with `HectonBuildProjectReferences=true` opt-in.
+- `Directory.Build.props` now contains the Core `BuildProjectReferences=false` and `BuildInParallel=false` defaults with `HectonBuildProjectReferences=true` opt-in.
 - Owned-file static poison scan found no `foreach`, `string.Format`, interpolation, `.ToString(`, `math.sqrt`, `math.normalize`, managed collection construction, `Task.Run`, Addressables instantiate, or unload calls in `Directory.Build.props`.
-- `git diff --check` on owned files reported no whitespace errors, only repository CRLF normalization warnings for `Directory.Build.props`.
+- `git diff --check` on owned files reported no whitespace errors, only repository CRLF normalization warnings for the owned markdown files.
 
 Residual risk:
 - Fresh compile is PENDING VERIFICATION by user no-dotnet order.
