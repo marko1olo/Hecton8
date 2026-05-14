@@ -271,3 +271,15 @@ Rejected Alternatives: Letting the wrapper continue was rejected because it viol
 Scalability potential: No gameplay behavior change. This protects process hygiene while other agents run in parallel.
 
 Hardware Impact: Removes local build CPU pressure. No frame microseconds claimed.
+
+## Decision 21 - Black-Box Hash Completeness
+
+Problem: The telemetry ring stored positions and a flags hash, but the hash folded only entity flags. Two dense loot frames with identical pull/acquired flags but different item content would look identical in the dump.
+
+Solution: Fold `_entityItemHashes[index]` into the same deterministic FNV-style telemetry hash during commit. The telemetry struct and binary dump layout stay unchanged.
+
+Rejected Alternatives: Adding another telemetry field was rejected because it would change the dump shape without need. Writing per-slot item data was rejected because the black box must stay fixed-size and high-level.
+
+Scalability potential: Low/Middle/High/Ultra all keep the same 300-entry dump format. High-density authored loot fields gain better postmortem discrimination without larger telemetry memory.
+
+Hardware Impact: Adds one integer XOR/multiply per committed slot. MX350 cost is bounded by scheduled count and replaces ambiguity, not frame budget.

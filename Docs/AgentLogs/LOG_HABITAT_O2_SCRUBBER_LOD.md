@@ -68,3 +68,20 @@ Cinematic Cheats used:
 
 Exact microseconds saved:
 - Frame-time saving not claimed. Cold allocation pressure is lower because the solver no longer prewarms two signal lanes in scenes without base transition traffic. No dotnet rebuild was run.
+
+## 2026-05-15 - Signal Producer Addendum
+STATUS: PENDING VERIFICATION
+
+What was wrong:
+- Atmosphere hibernation consumed base transition signals, but no runtime module producer emitted them.
+
+What was done:
+- `BaseModule` now publishes `PlayerBaseEnterSignal` when the player is confirmed inside a dry module trigger.
+- `BaseModule` now publishes `PlayerBaseExitSignal` when the tracked player leaves the module interior.
+- Payloads use AUP center from the module interior probe, current frame, resolvable room id, and base id 0 as the current single-base bridge.
+
+Cinematic Cheats used:
+- None new. This is a decoupled event bridge.
+
+Exact microseconds saved:
+- No frame-time claim. This avoids gas polling gameplay modules and keeps wake override event-driven. No dotnet rebuild was run.

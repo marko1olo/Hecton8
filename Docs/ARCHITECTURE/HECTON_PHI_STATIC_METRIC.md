@@ -274,3 +274,9 @@ Core graph budget gate:
 ```powershell
 Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -RequireCoreBuildGate -MaxCoreAsmdefDebtReferences 25 -MaxGeneratedProjectDebtReferences 10 -MaxSourceBackedBridgeDebtReferences 8
 ```
+
+Core graph with unused-reference candidates:
+
+```powershell
+Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -IncludeUnusedCoreReferenceScan -Json
+```

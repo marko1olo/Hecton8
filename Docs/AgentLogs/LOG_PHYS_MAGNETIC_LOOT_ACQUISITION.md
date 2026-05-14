@@ -274,6 +274,7 @@ What was wrong:
 What was done:
 - Added fixed telemetry bits for acoustic and wake presentation budget drops.
 - Changed `PublishPresentationSignals` to return drop flags and commit them into the 300-frame telemetry ring.
+- Folded loot item hashes into the telemetry hash so black-box dumps capture content differences, not only state flags.
 - Moved `_signalEvents` and `_telemetry` allocation/release to `H8Memory` with `SystemID.GameplayLoot`.
 - Made `OnEnable` exit before tick registration if the event lane or telemetry ring fails allocation.
 - Made vault readiness require both `_signalEvents.IsCreated` and `_telemetry.IsCreated` before Burst scheduling can proceed.

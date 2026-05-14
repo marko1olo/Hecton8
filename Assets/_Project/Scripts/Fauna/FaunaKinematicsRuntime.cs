@@ -111,7 +111,6 @@ namespace Hecton8.AI
         private int _motionIntentFrame = -1;
         private float _constraintIterationSwitchTimer;
         private float _tailWhipSecondsRemaining;
-        private float _strikeRange = 1f;
         private float _attackTelegraphBlend;
         private float3 _pendingOriginShiftOffset;
         private float3 _motionIntentVelocity;
@@ -353,7 +352,6 @@ namespace Hecton8.AI
 
         internal void SetStrikeIntent(Transform target, Vector3 targetWorldPosition, float strikeRange, bool strikeActive)
         {
-            _strikeRange = math.max(1f, strikeRange);
             _strikeActive = strikeActive && target != null;
             if (!_strikeActive)
             {

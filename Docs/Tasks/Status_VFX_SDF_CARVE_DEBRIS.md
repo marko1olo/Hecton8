@@ -58,6 +58,7 @@ Status: PENDING VERIFICATION / STATIC CHECKS ONLY / UNITY COMPILE BLOCKED (NO DO
 - Loop 19: Static verification after H-Phi lease pass. DOD: `git diff --check` reports no whitespace errors beyond Git LF/CRLF notices; VFX static scan finds no `GetData`, `SetData`, `ParticleSystem`, `ComputeBuffer`, `foreach`, `.ToString`, `string.Format`, `Camera.main`, scene search, `JobHandle`, `.Schedule()`, or `.Complete()` in the touched lane; shader scan finds no `sincos`, raw `sin`, raw `cos`, `pow`, `exp`, `log`, or raw `normalize`; `CURRENT_BATCH.md` exact prompt tag count remains 0. Rejected alternative: dotnet rebuild or fake Unity compile pass. Estimate: verification saves 0 us and prevents false readiness claims.
 - Loop 20: DataVault lease invalidation pass. DOD: failed DataVault alias validation and failed generation capture now call one `InvalidateDataVaultLease()` helper, and teardown uses the same helper, so stale vault references/generation IDs cannot survive a partial bind failure. Rejected alternative: leaving old lease fields intact until the next successful bind. Estimate: 0 us steady-state; removes a stale-metadata edge on bind failure.
 - Loop 21: Static verification after lease invalidation pass. DOD: final `git diff --check` returns clean; VFX static scan again finds no forbidden managed hot-path patterns; shader hot-math scan again finds no `sincos`, raw trig, `pow`, `exp`, `log`, or raw `normalize`. Rejected alternative: dotnet rebuild or fake Unity compile pass. Estimate: verification saves 0 us.
+- Loop 22: Full DataVault scratch-state pass. DOD: persistent job state, carve request bridge, and 300-frame blackbox ring now use `GlobalRegistry.DataVault` buffer IDs with generation checks alongside position/velocity lanes; release drops aliases instead of freeing vault memory; cold rebind clears scratch payloads before reuse. Rejected alternative: keeping private `H8Memory` persistent arrays for VFX scratch state. Estimate: 0 us direct frame saving; removes three local native-memory islands and keeps all cross-frame debris state under H-Phi authority.
 
 ## Second-Pass Upgrade Status
 
@@ -84,6 +85,7 @@ Status: PENDING VERIFICATION / STATIC CHECKS ONLY / UNITY COMPILE BLOCKED (NO DO
 - [x] Debris vertex basis cost reduced by reusing hash output and skipping redundant up-vector normalization.
 - [x] DataVault alias safety improved: cached `IDataVault` and buffer generations must remain valid before mirror aging, injection, compute dispatch, cull, or render work can run.
 - [x] DataVault partial-bind safety improved: failed alias/generation capture clears cached vault lease metadata immediately.
+- [x] H-Phi scratch ownership completed: job state, request batch, and telemetry blackbox buffers are DataVault-owned and generation-checked, not private persistent `H8Memory` arrays.
 
 ## OMEGA Polish Status
 

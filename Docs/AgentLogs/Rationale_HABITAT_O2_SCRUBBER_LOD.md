@@ -102,3 +102,10 @@ Solution: Removed consumer-side `SignalBus<PlayerBaseEnterSignal>` / `SignalBus<
 Rejected Alternatives: Leaving the solver to allocate signal lanes was rejected because empty snapshot reads are already safe and owner-side lane configuration is cleaner. Reusing a low occupied buffer value was rejected because H-Phi IDs must be stable. Running a rebuild remains rejected by user instruction.
 Scalability potential: Low avoids two unnecessary cold signal allocations in scenes without base transitions. Middle/High/Ultra keep deterministic hibernation authority and stable H-Phi aliasing.
 Hardware Impact: Cold allocation reduction only; no new frame-time microsecond claim. Room remap fix prevents stale sleeping-base masks from incorrectly gating rooms after procedural base reconfiguration.
+
+## Self-Review 8 - Transition Producer Bridge
+Problem: The gas solver consumed player base transition signals, but no live producer emitted them, leaving hibernation wake override dependent on direct interface calls.
+Solution: Added a narrow producer in `BaseModule`, the class already owning player interior enter/exit truth. It publishes typed `PlayerBaseEnterSignal` and `PlayerBaseExitSignal` with AUP center, frame, room id when resolvable, and base id 0 until multi-base construction identity exists.
+Rejected Alternatives: Directly calling `IGasDynamicsSolver.TrySetBasePlayerInside` from `BaseModule` was rejected because it would create a concrete runtime dependency from gameplay modules into atmosphere authority. Publishing from `BaseAirlock` alone was rejected because module trigger enter/exit is the broader interior truth.
+Scalability potential: Low tier wakes the single base through one queued unmanaged signal. Middle/High/Ultra can later replace base id 0 with construction graph base identity without touching the gas solver.
+Hardware Impact: Trigger-only signal cost, not a frame path. It closes the decoupled wake path and avoids polling modules from the gas solver.

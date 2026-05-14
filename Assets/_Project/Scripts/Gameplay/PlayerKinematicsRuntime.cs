@@ -669,6 +669,7 @@ namespace Hecton8.Gameplay
         internal const int FaultSyncFence = 1 << 2;
         internal const int FaultDesync = 1 << 3;
         internal const int FaultStateCorrection = 1 << 4;
+        internal const int FaultInvalidOriginShift = 1 << 5;
         internal const uint BodyFlagLadderActive = 1u << 0;
         internal const uint BodyFlagInSolid = 1u << 1;
         internal const uint BodyFlagMaelstromActive = 1u << 2;
@@ -882,10 +883,17 @@ namespace Hecton8.Gameplay
             byte sdfSampleMode = lowTier != 0
                 ? PlayerKinematicsBodyJob.SdfSampleModeTetra4
                 : PlayerKinematicsBodyJob.SdfSampleModeAxis6;
+            float3 rawBodyPosition = ToFloat3(_body.position);
+            float3 rawBodyVelocity = ToFloat3(_body.linearVelocity);
+            float3 bodyPosition = SanitizeFloat3(rawBodyPosition, _lastValidPositions.IsCreated ? _lastValidPositions[0] : float3.zero);
+            float3 bodyVelocity = SanitizeFloat3(rawBodyVelocity, float3.zero);
+            bool rawBodyStateInvalid = !math.all(math.isfinite(rawBodyPosition)) || !math.all(math.isfinite(rawBodyVelocity));
+            Vector3 safeBodyPosition = ToVector3(bodyPosition);
+
             if (sdfGradientProbeRequested != 0 || lowTier == 0)
             {
                 SnapshotSdfPayload(
-                    _body.position,
+                    safeBodyPosition,
                     out sdfTexture3D,
                     out sdfDimensions,
                     out sdfOrigin,
@@ -895,9 +903,9 @@ namespace Hecton8.Gameplay
             }
             SnapshotLadder(out byte ladderActive, out float3 ladderPoint);
 
-            _positions[0] = ToFloat3(_body.position);
-            _velocities[0] = ToFloat3(_body.linearVelocity);
-            _flowVelocity[0] = ResolveCurrentAdvection(_body.position);
+            _positions[0] = bodyPosition;
+            _velocities[0] = bodyVelocity;
+            _flowVelocity[0] = SanitizeFloat3(ResolveCurrentAdvection(safeBodyPosition), float3.zero);
             NativeArray<WhirlpoolFlow> activeMaelstroms = default;
             int activeMaelstromCount = 0;
             if (_fluid != null &&
@@ -930,7 +938,7 @@ namespace Hecton8.Gameplay
                 LadderPoint = ladderPoint,
                 VoxelSdfOrigin = sdfOrigin,
                 VoxelSdfCellSize = sdfCellSize,
-                TargetAup = ToFloat3(_body.position),
+                TargetAup = bodyPosition,
                 SolidDensity = solidDensity,
                 VoxelSdfRange = sdfRange,
                 SdfSampleStepMeters = ResolveSdfSampleStepMeters(sdfCellSize),
@@ -942,6 +950,8 @@ namespace Hecton8.Gameplay
                                math.select(0u, BodyFlagMaelstromActive, activeMaelstromCount > 0)
             };
             bodyJob.Run();
+            if (rawBodyStateInvalid && _faultFlags.IsCreated)
+                _faultFlags[0] |= FaultNaN;
 
             float3 resolvedPosition3 = SnapMillimeter(_positions[0]);
             float3 resolvedVelocity3 = SnapMillimeter(_velocities[0]);
@@ -1003,6 +1013,17 @@ namespace Hecton8.Gameplay
                 return;
 
             float3 offset = ToFloat3(shiftData.ShiftOffset);
+            float offsetLengthSq = math.lengthsq(offset);
+            if (!math.all(math.isfinite(offset)) ||
+                !math.isfinite(offsetLengthSq) ||
+                offsetLengthSq > 100000000.0f)
+            {
+                if (_faultFlags.IsCreated)
+                    _faultFlags[0] |= FaultInvalidOriginShift;
+                DumpFaultTelemetryIfNeeded();
+                return;
+            }
+
             _positions[0] -= offset;
             _lastValidPositions[0] -= offset;
             if (_stateRead.IsCreated)
@@ -1026,18 +1047,21 @@ namespace Hecton8.Gameplay
                 for (int i = 0; i < _telemetry.Length; i++)
                 {
                     PlayerKinematicsRuntimeTelemetryEntry entry = _telemetry[i];
-                    entry.Position -= offset;
+                    entry.Position = SanitizeFloat3(entry.Position - offset, float3.zero);
                     _telemetry[i] = entry;
                 }
             }
 
-            for (int i = 0; i < _handTargets.Length; i++)
+            if (_handTargets.IsCreated)
             {
-                PlayerKinematicsHandTarget target = _handTargets[i];
-                if (target.Hit != 0)
+                for (int i = 0; i < _handTargets.Length; i++)
                 {
-                    target.Position -= offset;
-                    _handTargets[i] = target;
+                    PlayerKinematicsHandTarget target = _handTargets[i];
+                    if (target.Hit != 0)
+                    {
+                        target.Position = SanitizeFloat3(target.Position - offset, float3.zero);
+                        _handTargets[i] = target;
+                    }
                 }
             }
 
@@ -1048,15 +1072,15 @@ namespace Hecton8.Gameplay
                     PlayerKinematicsHandTarget target = _smoothedHandTargets[i];
                     if (target.Hit != 0)
                     {
-                        target.Position -= offset;
+                        target.Position = SanitizeFloat3(target.Position - offset, float3.zero);
                         _smoothedHandTargets[i] = target;
                     }
                 }
             }
 
             if (_hasImpactBracePoint)
-                _impactBracePoint -= offset;
-            _lastProbeSourcePosition -= offset;
+                _impactBracePoint = SanitizeFloat3(_impactBracePoint - offset, float3.zero);
+            _lastProbeSourcePosition = SanitizeFloat3(_lastProbeSourcePosition - offset, float3.zero);
         }
 
         public void OnGlobalRegistryServiceReplaced(GlobalRegistryServiceSlot serviceSlot, object previousService, object currentService)
