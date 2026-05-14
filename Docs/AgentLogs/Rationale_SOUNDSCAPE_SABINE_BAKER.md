@@ -111,3 +111,15 @@ Rejected Alternatives: Pushing local `main` was rejected because it would publis
 Scalability potential: No runtime change. This is repository hygiene only.
 
 Hardware Impact: None.
+
+## Decision 9 - Final 2026-05-15 Rerun
+
+Problem: The user explicitly requested continued work after prior completion claims, so stale verification text was not enough.
+
+Solution: Rerun the acoustic regression suite and verify-only baker on 2026-05-15, then record the exact rerun evidence and remote ref proof in status/log files.
+
+Rejected Alternatives: Stopping at the prior `b407324b4`/`b87d7e17` evidence was rejected because the remote isolation issue proved the paper trail could drift.
+
+Scalability potential: No runtime change. This is verification hardening only.
+
+Hardware Impact: None.

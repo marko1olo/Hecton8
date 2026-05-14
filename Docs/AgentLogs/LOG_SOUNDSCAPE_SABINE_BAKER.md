@@ -28,6 +28,8 @@ Regression test result: `PYTHONDONTWRITEBYTECODE=1 python Tools/test_acoustic_va
 Post-test verify-only result: `STATUS: ACOUSTICS BAKED`.
 Regression test commit `b87d7e17` was pushed to `origin/main`.
 Clean isolated Sabine-only Unity-boundary commit `3b26e6af` was pushed to `origin/main`; unrelated local encyclopedia history was not pushed.
+2026-05-15 final rerun: `PYTHONDONTWRITEBYTECODE=1 python Tools/test_acoustic_validator.py` ran `5` tests in `2.187s` and passed; `PYTHONDONTWRITEBYTECODE=1 python Tools/AcousticValidator.py --verify-only` returned `STATUS: ACOUSTICS BAKED`.
+Remote proof before final status update: `origin/main` resolved to clean Sabine-only commit `3631e7a791382b20cc9c4a59e29b38a7c69b47cf`.
 
 Edge cases:
 Small locker error `0.00000439%`.
