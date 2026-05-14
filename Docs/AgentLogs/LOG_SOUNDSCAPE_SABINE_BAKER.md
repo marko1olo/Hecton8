@@ -23,8 +23,9 @@ Commit `8dc0eed5` was pushed to `origin/main`.
 `<POLISH_MANDATE>` was absent from `Docs/Tasks/CURRENT_BATCH.md`; no invented mandate was executed.
 Final anti-bloat pass found `Tools/AcousticValidator.py` at `11778` bytes, spec at `4810` bytes, binary at `262400` bytes, and no `AcousticValidator.pyc` residue.
 Additional assurance added `Tools/test_acoustic_validator.py` to test deterministic output, header contract, recursive edge cases, CRC failure, and truncation failure.
-Regression test result: `PYTHONDONTWRITEBYTECODE=1 python Tools/test_acoustic_validator.py` ran `5` tests in `0.310s` and passed.
+Regression test result: `PYTHONDONTWRITEBYTECODE=1 python Tools/test_acoustic_validator.py` ran `5` tests in `0.261s` on final rerun and passed.
 Post-test verify-only result: `STATUS: ACOUSTICS BAKED`.
+Regression test commit `b87d7e17` was pushed to `origin/main`.
 
 Edge cases:
 Small locker error `0.00000439%`.

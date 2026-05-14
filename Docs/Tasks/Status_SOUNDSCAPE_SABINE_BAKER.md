@@ -43,6 +43,7 @@ Status: ACOUSTICS BAKED / UNITY RUNTIME PENDING VERIFICATION
 - `<POLISH_MANDATE>` tag absent from `Docs/Tasks/CURRENT_BATCH.md`; final static anti-bloat pass executed anyway.
 - Anti-bloat pass: validator size `11778` bytes, spec size `4810` bytes, binary size `262400` bytes, no `AcousticValidator.pyc`, verify-only still returns `STATUS: ACOUSTICS BAKED`.
 - Additional assurance pass added `Tools/test_acoustic_validator.py` for deterministic bytes, header contract, recursive edge cases, CRC failure, and truncation failure.
-- `PYTHONDONTWRITEBYTECODE=1 python Tools/test_acoustic_validator.py` passed: 5 tests in 0.310s.
+- `PYTHONDONTWRITEBYTECODE=1 python Tools/test_acoustic_validator.py` passed: 5 tests in 0.261s on final rerun.
 - `PYTHONDONTWRITEBYTECODE=1 python Tools/AcousticValidator.py --verify-only` returned `STATUS: ACOUSTICS BAKED` after test addition.
 - No `AcousticValidator.pyc` or `test_acoustic_validator.pyc` residue after the added test pass.
+- Regression test commit created and pushed: `b87d7e17` (`Add Sabine LUT regression tests`) to `origin/main`.
