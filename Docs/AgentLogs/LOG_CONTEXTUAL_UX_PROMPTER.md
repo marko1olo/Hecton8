@@ -80,3 +80,14 @@ Cinematic cheats used: Same indirect atlas-quad prompt with dithered fade and Lo
 Exact microseconds saved: Estimate only. Expected gain is sub-1 us in normal frames and prevents repeated cold-resource lookup/check work when authoring is invalid. No runtime profiler proof.
 
 Verification: No dotnet rebuilds were run. Static scans stayed clean for forbidden allocation/text/LINQ patterns and old renderer/update/shader markers. `git diff --check` returned only repository CRLF warnings.
+
+## 2026-05-15 MPB Dirty Binding
+What was wrong: The indirect tooltip renderer still cleared and rebound the same `MaterialPropertyBlock` state for each icon/text batch, even when texture, compute buffers, SDF tuning, and dither state had not changed.
+
+What was done: Added per-batch bound-state caches and a dirty binding gate. The renderer now uploads per-instance glyph payloads every visible draw, but only calls `MaterialPropertyBlock.Clear`, `SetTexture`, `SetFloat`, and `SetBuffer` when binding state changes.
+
+Cinematic cheats used: Preserved the same fake-first diegetic prompt model: atlas quads, integer UV lookup, dithered alpha-test fade for non-Low tiers, and Low-tier snap. This pass removes redundant CPU binding traffic without changing the visual contract.
+
+Exact microseconds saved: Estimate only. Expected gain is sub-1 us per visible prompt on i3/MX350, with the practical benefit that High/Ultra material polish can be layered without resetting identical MPB bindings every frame.
+
+Verification: No dotnet rebuilds were run. Static scans returned no forbidden hot-path text/allocation/LINQ patterns, no old update/shared-buffer/matrix/shader markers, and no runtime `Marshal.SizeOf`, `Shader.Find`, or `new Material(` markers in the tooltip/shader scope. `git diff --check` passed cleanly on the tooltip/status/rationale/log scope.

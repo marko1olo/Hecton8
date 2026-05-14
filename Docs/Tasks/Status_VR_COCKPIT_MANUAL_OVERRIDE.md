@@ -155,7 +155,12 @@ Execution lane: SIMULATION / `PriorityLayer.Player`
 
 - [x] IK position interpolation moved to mathematics path. DOD: `OpenXRManualOverrideLever.UpdateIkTarget()` now uses `math.lerp(float3)` for hand IK target position instead of `Vector3.Lerp`. Rejected: keeping UnityEngine helper calls in the grabbed presentation hot path when the step is already saturated. Estimate: equivalent output, fewer managed/native helper crossings; 0 B/frame.
 - [x] IK rotation slerp replaced with no-sqrt nlerp. DOD: `Quaternion.Slerp` is replaced by `ApproximateNlerp()` using shortest-arc sign correction, `math.lerp(float4)`, and `math.rsqrt` normalization. Rejected: paying spherical interpolation/trig cost for a small cockpit IK presentation target where normalized lerp preserves player belief. Estimate: removes one Slerp from grabbed lever presentation frames; 0 B/frame.
-- [x] Reverification without dotnet. DOD: scoped scan confirms `Quaternion.Slerp=0`, `Vector3.Lerp=0`, `ApproximateNlerp=1` in the manual override lever; broad forbidden-pattern scan over seven physical-control files remains clean. Rejected: dotnet rebuild/probe by explicit user instruction. Estimate: verification only.
+- [x] Reverification without dotnet. DOD: scoped scan confirms `Quaternion.Slerp=0`, `Vector3.Lerp=0`, `ApproximateNlerp=2` in the manual override lever; broad forbidden-pattern scan over seven physical-control files remains clean. Rejected: dotnet rebuild/probe by explicit user instruction. Estimate: verification only.
+
+## Loop 23 - Panel Probe Service Gate
+
+- [x] Interaction signal readiness moved before hand pose. DOD: `PhysicalInteractionHandler.TickPhysicalPanelButtons()` now checks `GlobalRegistry.InteractionSignals` and `IsInitialized` before reading hand pose, hand collider, probe radius, or issuing `OverlapSphereNonAlloc`. Rejected: sampling XR hand pose when no signal service can consume a queued press. Estimate: saves one hand-pose read and all later probe work per XR frame during boot/service outages; 0 B/frame.
+- [x] Reverification without dotnet. DOD: diff review confirms the service gate precedes `TryGetInteractionProbePose`; broad forbidden-pattern scan over seven physical-control files remains clean. Rejected: dotnet rebuild/probe by explicit user instruction. Estimate: verification only.
 
 STATUS: PENDING VERIFICATION - Unity editor/global Core compile dependency wall prevents full player compile proof in this session.
 

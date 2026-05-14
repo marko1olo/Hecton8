@@ -137,3 +137,10 @@ Solution: Added `_materialsReady`, `_materialResolveAttempted`, and `_materialRe
 Rejected Alternatives: Rechecking every frame, logging every failure, or falling back to runtime shader/material creation. Rechecking burns hot-path budget; repeated logging allocates/noises; runtime creation violates mandates.
 Scalability potential: Low avoids repeated failure work. Middle, High, and Ultra keep the same draw path once materials are ready.
 Hardware Impact: Expected gain is small but deterministic: zero repeated material-resolution work after warmup or after a failed material contract. No runtime profiler proof.
+
+## Decision 19: MaterialPropertyBlock Dirty Binding
+Problem: The tooltip still cleared and rebound the same `MaterialPropertyBlock` texture, buffer, SDF, and dither properties for every icon/text batch even when the binding state was unchanged.
+Solution: Added per-batch bound-state caches for texture, instance buffer, UV buffer, gradient scale, face dilate, and dither flag. `BindPropertyBlockIfDirty` now skips `Clear`/`Set*` calls unless one of those bindings changes; per-instance compute-buffer payload upload remains per visible draw.
+Rejected Alternatives: Rebinding every draw for simplicity, mutating shared material assets directly, or moving tint into the property block. Rebinding is avoidable CPU traffic; shared material mutation breaks authored asset ownership; tint must stay per instance.
+Scalability potential: Low removes repeated MPB setter work from the normal prompt. Middle keeps dither fade. High and Ultra can add authored material variants or extra per-instance visual treatment without paying redundant binding resets every frame.
+Hardware Impact: Expected gain is sub-microsecond per prompt on i3/MX350, but deterministic: after warmup the icon/text batches only rebind when texture, buffer, SDF tuning, or dither tier state changes. No runtime profiler proof.

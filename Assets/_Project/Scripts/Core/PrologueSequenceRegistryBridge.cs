@@ -188,9 +188,16 @@ namespace Hecton8.Core
                 _atmosphereSnapshotCursor = 0;
             }
 
-            if (_atmosphereSnapshotCursor < signals.Length)
+            while (_atmosphereSnapshotCursor < signals.Length)
             {
                 AtmosphericReentrySignal signal = signals[_atmosphereSnapshotCursor++];
+                if (!math.isfinite(signal.AltitudeMeters) ||
+                    !math.isfinite(signal.UniverseVelocityMetersPerSecond) ||
+                    !math.isfinite(signal.Heat01))
+                {
+                    continue;
+                }
+
                 snapshot = new PrologueAtmosphericReentrySnapshot(
                     signal.AltitudeMeters,
                     signal.UniverseVelocityMetersPerSecond,

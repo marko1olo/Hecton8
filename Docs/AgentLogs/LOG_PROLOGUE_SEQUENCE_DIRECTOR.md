@@ -236,3 +236,11 @@ What was done -> The bridge now also requires `PhaseOceanHandoff`, `FlagForceWhi
 Cinematic Cheats used -> None; this is gate validation for the manual override handoff.
 Exact Microseconds saved -> Adds two byte checks and one finite float check in the 8-slot complete lane, below 1 us. It prevents invalid impact/hydration transition work from a bad packet.
 Verification -> No dotnet rebuild/response-file compile was run per user constraint. Targeted scan confirms the new packet-shape checks; forbidden-pattern scan returned no hits; `git diff --check` reports no whitespace errors for the bridge patch.
+
+## 2026-05-15 - Loop 34 Prologue Source Hash Contract Review
+
+What was wrong -> `PRLG`, `MOVR`, and `ORBI` source hashes were duplicated across the sequence owner, manual lever, orbital producer, VFX, audio, fluid, and bridge code.
+What was done -> Added `PrologueSignalSourceHashes` in Core.Contracts and routed the relevant producers/consumers through those constants. Added direct Core.Contracts references to UI VR and Prologue Space asmdefs.
+Cinematic Cheats used -> None; this is ownership-contract hardening for existing whiteout, handoff, and splashdown fakes.
+Exact Microseconds saved -> 0 us runtime; compile-time constants preserve current hot-path cost. The gain is preventing source drift that would trigger invalid whiteout/audio/fluid/VFX work.
+Verification -> No dotnet rebuild/response-file compile was run per user constraint. Raw `PRLG`/`MOVR`/`ORBI` literals now scan only in `PrologueSignalSourceHashes`; forbidden-pattern scan returned no hits; staged/unstaged `git diff --check` passes for the touched source-hash scope.

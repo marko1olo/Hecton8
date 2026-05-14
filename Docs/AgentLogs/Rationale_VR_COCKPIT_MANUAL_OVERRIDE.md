@@ -305,3 +305,15 @@ Rejected Alternatives: keeping Slerp was rejected because this is presentation s
 Scalability potential: Low/toaster saves grabbed-frame presentation math. Middle keeps smooth IK output. High/Ultra can spend the saved cycles on denser cockpit tactile/audio/visual feedback while the manual override lever remains a scalar kinematic control.
 
 Hardware Impact: i3/MX350 removes one `Quaternion.Slerp` and one `Vector3.Lerp` from grabbed lever presentation frames, replacing them with struct math and one `rsqrt`. 0 B/frame. Gameplay angle solve and blackbox telemetry are unchanged.
+
+## Decision 25 - Panel hand pose should not be sampled without a signal sink
+
+Problem: `TickPhysicalPanelButtons()` read hand pose and validated it before checking whether `GlobalRegistry.InteractionSignals` existed and was initialized. If the interaction signal service is unavailable during boot or service reload, no receiver can queue a valid press, so the pose read and all later probe work are dead.
+
+Solution: move the existing `InteractionSignals` readiness check before `TryGetInteractionProbePose()`, hand collider fetch, probe radius resolve, and `OverlapSphereNonAlloc`.
+
+Rejected Alternatives: leaving the order unchanged was rejected because service outage is a clear fast-fail condition. Caching the signal service as a long-lived field was rejected because GlobalRegistry can hot-swap services and this path already has a cheap property read.
+
+Scalability potential: Low/toaster boot and service-transition frames avoid wasted physical hand sampling. Middle/High keep identical behavior once the signal service is initialized. Ultra can keep dense cockpit controls without extra bridge work during service reloads.
+
+Hardware Impact: i3/MX350 saves one physical hand pose read and all downstream panel-probe work per XR frame when the signal service is absent/uninitialized. Normal initialized frames pay the same work as before, just in a safer order. 0 B/frame.

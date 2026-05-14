@@ -334,6 +334,7 @@ What was done:
 - Captured both buffer generations immediately after DataVault allocation/resolve.
 - Added `IsDataVaultLeaseValid()` into the GPU readiness gate.
 - The renderer now fails closed if the vault is under compaction, buffer generations change, aliases are missing/undersized, or the 30-frame service lease check detects a different `GlobalRegistry.DataVault`.
+- Added one `InvalidateDataVaultLease()` helper and call it on failed alias validation, failed generation capture, and GPU state release.
 - Reset the vault lease and generation IDs in `ReleaseGpuState()`.
 - Did not run dotnet build, dotnet rebuild, or Unity batch compile.
 

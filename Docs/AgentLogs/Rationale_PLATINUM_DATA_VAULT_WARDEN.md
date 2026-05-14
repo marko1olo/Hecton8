@@ -160,6 +160,12 @@ Rejected Alternatives: Keeping full-capacity writes for compatibility. The wire 
 Scalability potential: Low saves disk and decompression bandwidth on weak hardware; Middle keeps save corruption fail-fast; High and Ultra can increase procedural state detail without paying for empty capacity slots.
 Hardware Impact: Cold save path adds bounded count clamps and removes up to approximately 240 KiB raw procedural-world payload when all capacity arrays are mostly empty: 8192 long suppressed keys, 4096 fauna records, 512 hibernated fauna records, 512 geology seam records, and 512 cave entrance records. Frame impact is 0 us.
 
+Problem: Capacity repair was still allowed to rewrite compact loaded arrays before clamping logical count mirrors. A corrupt or stale count could survive as a full-capacity count after `EnsureCapacity`, and old no-copy repair paths could discard the only valid payload entries.
+Solution: Centralized exact-capacity, copy-preserving array normalization in `SaveData.EnsureExactArrayCapacity`; made migration compute pre-expansion bounds for inventory, world, construction, exploration, PDA, lore, meta, resource scarcity, ecosystem, procedural world, encrypted audio fragments, and archaeology state before repair; added missing construction graph/flood count clamps and changed root lore count clamps to report mutation.
+Rejected Alternatives: Post-expansion clamping to backing array length and resetting paired root arrays to count zero. Post-expansion clamps accept default entries as real state, and zero-resetting paired arrays destroys salvageable cold-load data.
+Scalability potential: Low keeps save repair deterministic and avoids reload loops on weak hardware; Middle keeps compact payloads valid during migration; High and Ultra can increase save-state density without paying for unused max-capacity records or accepting silent default-entry pollution.
+Hardware Impact: 0 us frame impact. Cold migration adds scalar bound checks and `Array.Copy` only when an array is normalized; avoiding full-capacity false counts prevents downstream restore loops over thousands of default entries, worst case approximately 4096 fauna/world records plus 8192 pickup/suppression records.
+
 ## OMEGA POLISH CHANGES
 
 Problem: Polish audit required removal of fake precision, managed iteration/string debt, and any code outside the DataVault domain without justification.

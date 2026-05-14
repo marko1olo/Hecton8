@@ -88,6 +88,11 @@ namespace Hecton8.World.Outposts
         private GraphicsBuffer _argsBuffer;
         private Mesh _runtimeShellMesh;
         private Material _runtimeShellMaterial;
+        private MaterialPropertyBlock _renderPropertyBlock;
+        private GraphicsBuffer _renderPropertyMatrixBuffer;
+        private GraphicsBuffer _renderPropertyCellTypeBuffer;
+        private Vector4 _renderPropertyDecayRuntime;
+        private float _renderPropertyAge01;
         private GameObject[] _spawnedInteractables;
         private SealedDoor[] _spawnedDoorControllers;
         private RegistryBucket<IRenderable> _registeredRenderables;
@@ -127,6 +132,7 @@ namespace Hecton8.World.Outposts
         private bool _matrixUploadDirty;
         private bool _hasPendingShift;
         private bool _heightmapFallback;
+        private bool _renderPropertiesDirty = true;
 
         public bool IsGenerated => _generated;
         public bool IsBusy => _jobPhase != JobPhase.None;
@@ -238,6 +244,7 @@ namespace Hecton8.World.Outposts
             _generatedSignalHeartbeatFrames = 0;
             _state = OutpostGenerationState.Idle;
             _latestSnapshot = default;
+            ClearRenderPropertyCache();
             ClearCachedRegistryDependencies();
         }
 
@@ -303,7 +310,7 @@ namespace Hecton8.World.Outposts
 
         public void Render(float deltaTime)
         {
-            if (!_generated || _matrixCount <= 0 || _matrixBuffer == null || _argsBuffer == null)
+            if (!_generated || _matrixCount <= 0 || _matrixBuffer == null || _cellTypeBuffer == null || _argsBuffer == null)
                 return;
 
             Material material = ResolveRenderMaterial();
@@ -312,10 +319,7 @@ namespace Hecton8.World.Outposts
                 return;
 
             float age = ResolveOutpostAge01();
-            Shader.SetGlobalFloat(OutpostAge01Id, age);
-            Shader.SetGlobalVector(HectonMaterialDecayRuntimeId, new Vector4(age, 0.55f, _qualityTier == OutpostGenerationQualityTier.Low ? 1f : 0f, (_activeSolveSeed & 0xFFFFu) * MarauderOutpostConstants.HeightUShortToUnit));
-            material.SetBuffer(OutpostMatricesId, _matrixBuffer);
-            material.SetBuffer(OutpostCellTypesId, _cellTypeBuffer);
+            MaterialPropertyBlock renderProperties = ResolveRenderProperties(age);
 
             RenderParams renderParams = new RenderParams(material)
             {
@@ -323,7 +327,8 @@ namespace Hecton8.World.Outposts
                 layer = renderLayer,
                 shadowCastingMode = shadowCastingMode,
                 receiveShadows = receiveShadows,
-                motionVectorMode = MotionVectorGenerationMode.ForceNoMotion
+                motionVectorMode = MotionVectorGenerationMode.ForceNoMotion,
+                matProps = renderProperties
             };
             Graphics.RenderMeshIndirect(renderParams, mesh, _argsBuffer, 1, 0);
         }
@@ -756,6 +761,12 @@ namespace Hecton8.World.Outposts
                 _cellTypeBuffer = CreateStructuredLockBuffer<uint>(MarauderOutpostConstants.MaxShellMatrices); // COLD ALLOC: GraphicsBuffer[1024 uint] - outpost shell types - owner: MARAUDER_OUTPOST_ARCHITECT
             if (_argsBuffer == null)
                 _argsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments, GraphicsBuffer.UsageFlags.LockBufferForWrite, 1, GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] - outpost indirect draw args - owner: MARAUDER_OUTPOST_ARCHITECT
+
+            if (_renderPropertyBlock == null)
+            {
+                _renderPropertyBlock = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - per-outpost indirect draw payload - owner: MARAUDER_OUTPOST_ARCHITECT
+                _renderPropertiesDirty = true;
+            }
 
             if (shellMesh == null && _runtimeShellMesh == null)
                 _runtimeShellMesh = CreateCubeMesh();
@@ -1343,6 +1354,59 @@ namespace Hecton8.World.Outposts
         private Mesh ResolveRenderMesh()
         {
             return shellMesh != null ? shellMesh : _runtimeShellMesh;
+        }
+
+        private MaterialPropertyBlock ResolveRenderProperties(float age)
+        {
+            if (_renderPropertyBlock == null)
+            {
+                _renderPropertyBlock = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - late fallback indirect draw payload - owner: MARAUDER_OUTPOST_ARCHITECT
+                _renderPropertiesDirty = true;
+            }
+
+            Vector4 decayRuntime = new Vector4(
+                age,
+                0.55f,
+                _qualityTier == OutpostGenerationQualityTier.Low ? 1f : 0f,
+                (_activeSolveSeed & 0xFFFFu) * MarauderOutpostConstants.HeightUShortToUnit);
+
+            if (_renderPropertiesDirty || _renderPropertyMatrixBuffer != _matrixBuffer)
+            {
+                _renderPropertyBlock.SetBuffer(OutpostMatricesId, _matrixBuffer);
+                _renderPropertyMatrixBuffer = _matrixBuffer;
+            }
+
+            if (_renderPropertiesDirty || _renderPropertyCellTypeBuffer != _cellTypeBuffer)
+            {
+                _renderPropertyBlock.SetBuffer(OutpostCellTypesId, _cellTypeBuffer);
+                _renderPropertyCellTypeBuffer = _cellTypeBuffer;
+            }
+
+            if (_renderPropertiesDirty || _renderPropertyAge01 != age)
+            {
+                _renderPropertyBlock.SetFloat(OutpostAge01Id, age);
+                _renderPropertyAge01 = age;
+            }
+
+            if (_renderPropertiesDirty || _renderPropertyDecayRuntime != decayRuntime)
+            {
+                _renderPropertyBlock.SetVector(HectonMaterialDecayRuntimeId, decayRuntime);
+                _renderPropertyDecayRuntime = decayRuntime;
+            }
+
+            _renderPropertiesDirty = false;
+            return _renderPropertyBlock;
+        }
+
+        private void ClearRenderPropertyCache()
+        {
+            if (_renderPropertyBlock != null)
+                _renderPropertyBlock.Clear();
+            _renderPropertyMatrixBuffer = null;
+            _renderPropertyCellTypeBuffer = null;
+            _renderPropertyDecayRuntime = default;
+            _renderPropertyAge01 = 0f;
+            _renderPropertiesDirty = true;
         }
 
         private static Mesh CreateCubeMesh()

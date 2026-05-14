@@ -33,6 +33,7 @@ namespace Hecton8.Construction
         CascadeFailure = 1 << 6
     }
 
+    [StructLayout(LayoutKind.Sequential, Pack = 4)]
     internal struct HabitatSiegeTargetSnapshot
     {
         public float3 ModuleCenter;
@@ -65,6 +66,7 @@ namespace Hecton8.Construction
         Ruptured = 1 << 1
     }
 
+    [StructLayout(LayoutKind.Sequential, Pack = 4)]
     internal struct HabitatFloodConnection
     {
         public int DestinationIndex;

@@ -144,6 +144,28 @@ namespace Hecton8.Physics
         private const int MaxQueuedSplashEvents = 32;
         private const int ExteriorThermalAnomalyCapacity = 8;
         private const int ExteriorThermalContactCapacity = 16;
+        private const int VaultCompartmentFloodVolumesFlag = 1 << 0;
+        private const int VaultCompartmentViscosityFlag = 1 << 1;
+        private const int VaultCompartmentBaseMaxVolumesFlag = 1 << 2;
+        private const int VaultCompartmentMaxVolumesFlag = 1 << 3;
+        private const int VaultCompartmentBreachAreasFlag = 1 << 4;
+        private const int VaultCompartmentLocalCentroidsFlag = 1 << 5;
+        private const int VaultCompartmentFlagsFlag = 1 << 6;
+        private const int VaultBulkheadPairsFlag = 1 << 7;
+        private const int VaultBulkheadSealedFlag = 1 << 8;
+        private const int VaultBulkheadDoorAreasFlag = 1 << 9;
+        private const int VaultComAccumulatorFrontFlag = 1 << 10;
+        private const int VaultComAccumulatorBackFlag = 1 << 11;
+        private const int VaultMassPropertiesFrontFlag = 1 << 12;
+        private const int VaultMassPropertiesBackFlag = 1 << 13;
+        private const int VaultAngularVelocityHistoryFlag = 1 << 14;
+        private const int VaultExteriorSubmersionHistoryFlag = 1 << 15;
+        private const int VaultJobFloodVolumesFlag = 1 << 16;
+        private const int VaultJobCompartmentFlagsFlag = 1 << 17;
+        private const int VaultBulkheadTransferDeltasFlag = 1 << 18;
+        private const int VaultHydroInputFlag = 1 << 19;
+        private const int VaultHydroOutputFlag = 1 << 20;
+        private const int VaultHydroBlackBoxFlag = 1 << 21;
         private const float ExteriorThermalCellSizeMeters = 8f;
         private const float ExteriorWaterSpecificHeatCapacityJoulesPerKilogramCelsius = 3990f;
         private const float ExteriorWaterReferenceTemperatureCelsius = 6f;
@@ -486,6 +508,7 @@ namespace Hecton8.Physics
         private Transform _cachedTransform;
         private Transform _cachedPlayerTransform;
         private HectonPlayerMovement _cachedPlayerMovement;
+        private IDataVault _dataVault;
         private Rigidbody _cachedPlayerRigidbody;
         private bool _registered;
         private bool _registeredOriginShiftListener;
@@ -495,6 +518,7 @@ namespace Hecton8.Physics
         private int _configuredCompartmentCount;
         private int _configuredBulkheadCount;
         private int _ringHead;
+        private int _vaultNativeStateMask;
         private float _externalDepthMeters;
         private float _floodFillRatio;
         private float _totalFloodVolumeCubicMeters;
@@ -1735,6 +1759,8 @@ namespace Hecton8.Physics
                 IHectonOceanKinematicsService oceanKinematicsService = GlobalRegistry.OceanKinematics;
                 _oceanKinematics = oceanKinematicsService != null ? oceanKinematicsService.ActiveProvider : null;
             }
+
+            _dataVault ??= GlobalRegistry.DataVault;
 
             if (_structuralBreachReadModel == null)
             {

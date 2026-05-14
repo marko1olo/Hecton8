@@ -304,7 +304,7 @@ namespace Hecton8.PDA
             UIStateStore.AppendPDALogEventHash(unchecked((uint)originHash), playTimeSeconds);
             Hecton8.UI.PDAEvents.RaiseLogbookChanged(_entryCount, unchecked((uint)originHash));
             if (originHash == FirstLaserCutterOriginHash || originHash == FirstLeviathanScanOriginHash)
-                TryUnregister();
+                RefreshLogbookSignalPumpRegistration();
             return true;
         }
 

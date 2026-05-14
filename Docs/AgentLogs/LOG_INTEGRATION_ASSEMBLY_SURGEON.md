@@ -219,3 +219,12 @@ Verification:
 Residual risk:
 - Static bridge pruning still needs compile confirmation once the no-dotnet order is lifted.
 - Generated project-reference debt remains at 10 until Unity project generation/compile evidence is refreshed.
+
+Final static verification addendum:
+- `Hecton8.Core.asmdef` JSON parse: OK.
+- `Directory.Build.targets` XML parse: OK.
+- Removed-reference scan: `REMOVED_CORE_BRIDGE_REFS_ABSENT`.
+- Expected asmdef budget failure: `EXPECTED_ASMDEF_BUDGET_FAIL_PATH_OK`.
+- Expected bridge budget failure: `EXPECTED_BRIDGE_BUDGET_FAIL_PATH_OK`.
+- `git diff --check` on touched files: no whitespace errors.
+- Owned ASCII scan: passed.

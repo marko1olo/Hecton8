@@ -483,13 +483,13 @@ namespace Hecton8.Interaction
             if (!PhysicalHandReceiverRegistry.HasReceivers)
                 return;
 
+            IInteractionSignalService interactionSignals = GlobalRegistry.InteractionSignals;
+            if (interactionSignals == null || !interactionSignals.IsInitialized)
+                return;
+
             if (!_physicalHandController.TryGetInteractionProbePose(out Vector3 handPosition, out Quaternion handRotation))
                 return;
             if (!IsFiniteVector(handPosition))
-                return;
-
-            IInteractionSignalService interactionSignals = GlobalRegistry.InteractionSignals;
-            if (interactionSignals == null || !interactionSignals.IsInitialized)
                 return;
 
             Collider handSourceCollider = null;

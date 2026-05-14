@@ -52,7 +52,7 @@ namespace Hecton8.SaveSystem
         /// <summary>Tekuschaya versiya formata. Ispolzuetsya dlya migratsii.</summary>
         public const int CurrentVersion = 72; // v72: first-hour DTO ABI lock.
 
-        public static void EnsureExactArrayCapacity<T>(ref T[] values, int capacity)
+        internal static void EnsureExactArrayCapacity<T>(ref T[] values, int capacity)
         {
             if (values != null && values.Length == capacity)
                 return;

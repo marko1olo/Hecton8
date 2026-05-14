@@ -216,4 +216,16 @@ Cinematic Cheats used: this is a deliberate presentation fake. It preserves smoo
 
 Exact microseconds saved/spent: removes one `Quaternion.Slerp` and one `Vector3.Lerp` from grabbed lever presentation frames, replacing them with struct math and one reciprocal square root. 0 B/frame.
 
-Verification: scoped scan confirms `Quaternion.Slerp=0`, `Vector3.Lerp=0`, and `ApproximateNlerp=1` in `OpenXRManualOverrideLever.cs`. Broad forbidden-pattern scan over the seven physical-control files remains clean. No dotnet rebuild/probe was run by user instruction.
+Verification: scoped scan confirms `Quaternion.Slerp=0`, `Vector3.Lerp=0`, and `ApproximateNlerp=2` in `OpenXRManualOverrideLever.cs`. Broad forbidden-pattern scan over the seven physical-control files remains clean. No dotnet rebuild/probe was run by user instruction.
+
+## 2026-05-15 - Panel Probe Service Gate
+
+What was wrong: the physical panel probe path sampled hand pose before confirming the interaction signal service existed and was initialized. Without that service, no physical receiver can queue a valid press.
+
+What was done: moved the existing `GlobalRegistry.InteractionSignals` readiness gate before hand pose, hand collider, probe radius, and overlap work in `TickPhysicalPanelButtons()`.
+
+Cinematic Cheats used: no simulation change. This is a fast-fail gate in the existing scalar/NonAlloc cockpit bridge.
+
+Exact microseconds saved/spent: saves one hand-pose read plus all later panel-probe work per XR frame during boot/service outages. Normal initialized frames keep the same cost. 0 B/frame.
+
+Verification: diff review confirms the signal-service gate now precedes `TryGetInteractionProbePose()`. Broad forbidden-pattern scan over the seven physical-control files remains clean. No dotnet rebuild/probe was run by user instruction.
