@@ -39,6 +39,7 @@ CBUFFER_START(UnityPerMaterial)
     float4 _RustPitTint;
     float4 _BiolumLowColor;
     float4 _BiolumHighColor;
+    float4 _NoirAbyssFloorColor;
     float4 _NoirFogColor;
     float4 _UberNoirCausticColor;
     float4 _UberNoirFeatureFlags;    // x=POM, y=caustics, z=bending, w=dither transparency
@@ -457,7 +458,7 @@ half3 H8UberNoirEvaluateAnalyticalCaustics(float3 positionWS, half3 normalWS, Li
     }
 
     half intensity = (half)(featureMask * inside * depthFade * normalMask * attenuation * _UberNoirCausticParams.x * max(_HectonProjectedCausticsParams.x, 0.0));
-    half3 tint = (half3)max(_HectonProjectedCausticsColor.rgb + _UberNoirCausticColor.rgb, float3(0.0015, 0.0023, 0.0031));
+    half3 tint = (half3)max(_HectonProjectedCausticsColor.rgb + _UberNoirCausticColor.rgb, _NoirAbyssFloorColor.rgb);
     return tint * (half)caustic * intensity;
 #endif
 }
@@ -545,7 +546,7 @@ half3 H8UberNoirApplyNoirFog(half3 color, half fogFactor)
 {
     half fog = saturate(fogFactor * (half)max(_NoirFogAlpha, _UberNoirDitherParams.y));
     half fogCurve = fog * fog * (0.82h + fog * 0.18h);
-    half3 floorColor = max((half3)_NoirFogColor.rgb, half3(0.0015h, 0.0023h, 0.0031h));
+    half3 floorColor = max((half3)_NoirFogColor.rgb, (half3)_NoirAbyssFloorColor.rgb);
     return lerp(color, floorColor, fogCurve);
 }
 
@@ -559,7 +560,8 @@ half4 H8UberNoirFragment(H8UberNoirVaryings input) : SV_Target
 
     half3 color = H8UberNoirEvaluateMainLighting(input, surface);
     color = H8UberNoirApplyNoirFog(color, input.fogFactor);
-    color = all(isfinite(color)) ? max(color, half3(0.0015h, 0.0023h, 0.0031h)) : half3(0.0015h, 0.0023h, 0.0031h);
+    half3 abyssFloor = (half3)_NoirAbyssFloorColor.rgb;
+    color = all(isfinite(color)) ? max(color, abyssFloor) : abyssFloor;
     return half4(color, 1.0h);
 }
 

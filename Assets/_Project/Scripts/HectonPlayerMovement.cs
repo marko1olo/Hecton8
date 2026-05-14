@@ -20,6 +20,7 @@
 
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
+using Hecton8.Core.Memory;
 using Hecton8.Core.Signals;
 using Hecton8.Audio;
 using Hecton8.Environment;
@@ -1253,6 +1254,7 @@ namespace Hecton8.Gameplay
         private CameraJuiceInput _juiceInput;
         private CameraJuiceOutput _juiceOutput;
         private Vector3 _cameraBaseLocalPos;
+        private IDataVault _dataVault;
         private NativeArray<CinematicFocusTelemetryEntry> _cinematicFocusBlackBox;
         private AbsoluteUniversePosition _cinematicFocusTargetAup;
         private int _cinematicFocusBlackBoxCursor;
@@ -1271,6 +1273,7 @@ namespace Hecton8.Gameplay
         private bool _cinematicFocusActive;
         private bool _cinematicFocusAudioDucked;
         private bool _cinematicFocusFovAllowedCached;
+        private bool _cinematicFocusBlackBoxVaultOwned;
         private Vector3 _feedbackVelocity;
         private float _underwaterSomaticPhase;
         private float _underwaterSomaticWeight;
@@ -2616,7 +2619,7 @@ namespace Hecton8.Gameplay
 
         private void EnsurePlayerKinematicsNativeState()
         {
-            _playerKinematicsNativeState.EnsureCreated();
+            _playerKinematicsNativeState.EnsureCreated(_dataVault);
         }
 
         private void EnsureCinematicFocusBlackBox()
@@ -2624,10 +2627,37 @@ namespace Hecton8.Gameplay
             if (_cinematicFocusBlackBox.IsCreated)
                 return;
 
-            _cinematicFocusBlackBox = new NativeArray<CinematicFocusTelemetryEntry>(
+            IDataVault vault = _dataVault;
+            if (vault == null)
+            {
+                vault = GlobalRegistry.DataVault;
+                _dataVault = vault;
+            }
+
+            if (vault != null)
+            {
+                NativeArray<CinematicFocusTelemetryEntry> vaultArray = vault.GetBuffer<CinematicFocusTelemetryEntry>(
+                    BufferID.PlayerCinematicFocusBlackBox,
+                    CinematicFocusBlackBoxCapacity,
+                    SystemID.GameplayPlayer,
+                    NativeArrayOptions.ClearMemory);
+                if (vaultArray.IsCreated)
+                {
+                    _cinematicFocusBlackBox = vaultArray;
+                    _cinematicFocusBlackBoxVaultOwned = true;
+                    return;
+                }
+            }
+
+            _cinematicFocusBlackBoxVaultOwned = false;
+            _cinematicFocusBlackBox = H8Memory.Allocate<CinematicFocusTelemetryEntry>(
                 CinematicFocusBlackBoxCapacity,
+                SystemID.GameplayPlayer,
                 Allocator.Persistent,
                 NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<CinematicFocusTelemetryEntry>[300] - narrative focus black-box ring - owner: HectonPlayerMovement
+            if (!_cinematicFocusBlackBox.IsCreated)
+                return;
+
             NativeMemorySentinel.RegisterNativeArray(
                 _cinematicFocusBlackBox,
                 nameof(HectonPlayerMovement),
@@ -2640,9 +2670,17 @@ namespace Hecton8.Gameplay
             if (!_cinematicFocusBlackBox.IsCreated)
                 return;
 
+            if (_cinematicFocusBlackBoxVaultOwned)
+            {
+                _cinematicFocusBlackBox = default;
+                _cinematicFocusBlackBoxVaultOwned = false;
+                _cinematicFocusBlackBoxCursor = 0;
+                _cinematicFocusBlackBoxCount = 0;
+                return;
+            }
+
             NativeMemorySentinel.UnregisterNativeArray(_cinematicFocusBlackBox);
-            _cinematicFocusBlackBox.Dispose();
-            _cinematicFocusBlackBox = default;
+            H8Memory.Release(ref _cinematicFocusBlackBox, SystemID.GameplayPlayer);
             _cinematicFocusBlackBoxCursor = 0;
             _cinematicFocusBlackBoxCount = 0;
         }
@@ -3859,6 +3897,8 @@ namespace Hecton8.Gameplay
 
         public void OnDependencyInject()
         {
+            _dataVault = GlobalRegistry.DataVault;
+            _playerKinematicsNativeState.OnDependencyInject(_dataVault);
             _audioService = GlobalRegistry.Audio;
             _settingsRuntime = GlobalRegistry.Settings;
             _localizationRuntime = GlobalRegistry.Localization;

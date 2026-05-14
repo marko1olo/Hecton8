@@ -35,6 +35,8 @@ namespace Hecton8.Graphics.Materials
         public static readonly int BiolumLowColor = Shader.PropertyToID("_BiolumLowColor");
         /// <summary>Upper spectral bioluminescence color.</summary>
         public static readonly int BiolumHighColor = Shader.PropertyToID("_BiolumHighColor");
+        /// <summary>Noir abyss floor minimum luminance color.</summary>
+        public static readonly int NoirAbyssFloorColor = Shader.PropertyToID("_NoirAbyssFloorColor");
         /// <summary>Noir fog floor color.</summary>
         public static readonly int NoirFogColor = Shader.PropertyToID("_NoirFogColor");
         /// <summary>Material caustic tint contribution.</summary>

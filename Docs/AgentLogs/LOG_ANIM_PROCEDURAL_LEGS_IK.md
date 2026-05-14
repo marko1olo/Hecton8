@@ -120,22 +120,22 @@ Scoped forbidden-pattern scan over touched IK/KCC/signal files returned no match
 Status:
 PENDING VERIFICATION. Unity import, Burst compiler, Play Mode, GCMonitor, profiler proof, and full compile proof remain absent.
 
-## 2026-05-15 Recursive QA Addendum 10
+## 2026-05-14 Recursive QA Addendum 6
 
 What was wrong:
-`PlayerKinematicsRuntime` black-box telemetry trusted `_telemetryWriteIndex` directly. A negative or stale native cursor could become an invalid modulo index, and some main-thread telemetry payloads could copy non-finite position/velocity/intended movement into the dump path.
+Telemetry could detect invalid target state, but some executable boundaries still trusted previous-frame values. Specifically, skipped-frame target reuse could publish stale data, hand SOA writes could preserve a finite weight for an invalid hand position, foot fade/update could smooth from a non-finite packed blend, and cold AUP rebases could subtract shift from corrupt target lanes.
 
 What was done:
-Added bounded telemetry slot reservation for the Burst body job and the main-thread squeeze, environment IK, and sync-fence telemetry writers. The cursor now clamps negative values to zero, rejects missing or zero-length buffers, advances from the wrapped slot, telemetry payloads finite-sanitize position, velocity, and intended movement before writing, and the binary dump emits oldest-to-newest entries from a sanitized wrapped head.
+`ContextualPhysicalIkRuntime` now sanitizes complete target frames before SOA publication and before `ContextualPhysicalIkApplyJob` can read them. Hand SOA positions zero and weights drop to zero on invalid position/blend. Foot fade/update uses sanitized packed blend inputs. AUP rebase now clears invalid hand/foot SOA lanes and invalid packed foot state instead of rebasing corrupt values. `ContextualPhysicalIkRig` now rejects non-finite root transform capture and falls back corrupt pelvis/foot/hand probe transforms to the root position.
 
 Cinematic cheats used:
-No simulation change. This protects the 300-frame black box behind the existing KCC-driven lower-body visual fake so post-mortem evidence stays usable when stride/swim/hand IK data faults.
+No new physical simulation. The implementation remains hip-origin batched rays, squared step thresholds, triangle-wave lift, planar swim posture, pelvis yaw bias, and the existing Burst two-bone solver.
 
 Exact microseconds saved:
-Added cost is integer bounds checks and vector finite selects only on telemetry writes, estimated below 0.5 us/event on i3/MX350. Prevented cost is fault-path collapse from invalid telemetry indexing and unusable dump evidence.
+No new systems or ray lanes. Added finite checks are estimated below 1 us per active rig on i3/MX350. Avoided cost is NaN target propagation into the animation job and the visual/diagnostic damage from invalid rebases.
 
 Verification:
-No dotnet rebuild was run per user instruction. `git diff --check -- Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs` passed with CRLF warnings only. Scoped forbidden-pattern scan over lower-body/signal files returned no matches for `sqrMagnitude`, `math.sqrt`, `math.normalize`, `foreach`, `string.Format`, interpolation strings, `OnAnimatorIK`, `SetIK`, `ikPass`, `StartCoroutine`, `GameObject.Find`, `FindObjectOfType`, or `Camera.main`. MCP resource listing returned no Unity resources.
+Scoped forbidden-pattern scan returned no matches for `sqrMagnitude`, `math.sqrt`, `math.normalize`, `foreach`, `string.Format`, interpolation strings, `OnAnimatorIK`, `SetIK`, `ikPass`, `StartCoroutine`, `GameObject.Find`, `FindObjectOfType`, or `Camera.main`. `git diff --check` is clean except CRLF warnings. `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false /clp:ErrorsOnly` timed out again before diagnostics; this pass's orphaned `Hecton8.Core.csproj` build children were terminated.
 
 Status:
 PENDING VERIFICATION. Unity import, Burst compiler, Play Mode, GCMonitor, profiler proof, and full compile proof remain absent.
@@ -160,22 +160,22 @@ No dotnet rebuild was run per user instruction. `git diff --check -- Assets/_Pro
 Status:
 PENDING VERIFICATION. Unity import, Burst compiler, Play Mode, GCMonitor, profiler proof, and full compile proof remain absent.
 
-## 2026-05-14 Recursive QA Addendum 6
+## 2026-05-15 Recursive QA Addendum 10
 
 What was wrong:
-Telemetry could detect invalid target state, but some executable boundaries still trusted previous-frame values. Specifically, skipped-frame target reuse could publish stale data, hand SOA writes could preserve a finite weight for an invalid hand position, foot fade/update could smooth from a non-finite packed blend, and cold AUP rebases could subtract shift from corrupt target lanes.
+`PlayerKinematicsRuntime` black-box telemetry trusted `_telemetryWriteIndex` directly. A negative or stale native cursor could become an invalid modulo index, and some main-thread telemetry payloads could copy non-finite position/velocity/intended movement into the dump path.
 
 What was done:
-`ContextualPhysicalIkRuntime` now sanitizes complete target frames before SOA publication and before `ContextualPhysicalIkApplyJob` can read them. Hand SOA positions zero and weights drop to zero on invalid position/blend. Foot fade/update uses sanitized packed blend inputs. AUP rebase now clears invalid hand/foot SOA lanes and invalid packed foot state instead of rebasing corrupt values. `ContextualPhysicalIkRig` now rejects non-finite root transform capture and falls back corrupt pelvis/foot/hand probe transforms to the root position.
+Added bounded telemetry slot reservation for the Burst body job and the main-thread squeeze, environment IK, and sync-fence telemetry writers. The cursor now clamps negative values to zero, rejects missing or zero-length buffers, advances from the wrapped slot, telemetry payloads finite-sanitize position, velocity, and intended movement before writing, and the binary dump emits oldest-to-newest entries from a sanitized wrapped head.
 
 Cinematic cheats used:
-No new physical simulation. The implementation remains hip-origin batched rays, squared step thresholds, triangle-wave lift, planar swim posture, pelvis yaw bias, and the existing Burst two-bone solver.
+No simulation change. This protects the 300-frame black box behind the existing KCC-driven lower-body visual fake so post-mortem evidence stays usable when stride/swim/hand IK data faults.
 
 Exact microseconds saved:
-No new systems or ray lanes. Added finite checks are estimated below 1 us per active rig on i3/MX350. Avoided cost is NaN target propagation into the animation job and the visual/diagnostic damage from invalid rebases.
+Added cost is integer bounds checks and vector finite selects only on telemetry writes, estimated below 0.5 us/event on i3/MX350. Prevented cost is fault-path collapse from invalid telemetry indexing and unusable dump evidence.
 
 Verification:
-Scoped forbidden-pattern scan returned no matches for `sqrMagnitude`, `math.sqrt`, `math.normalize`, `foreach`, `string.Format`, interpolation strings, `OnAnimatorIK`, `SetIK`, `ikPass`, `StartCoroutine`, `GameObject.Find`, `FindObjectOfType`, or `Camera.main`. `git diff --check` is clean except CRLF warnings. `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false /clp:ErrorsOnly` timed out again before diagnostics; this pass's orphaned `Hecton8.Core.csproj` build children were terminated.
+No dotnet rebuild was run per user instruction. `git diff --check -- Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs` passed with CRLF warnings only. Scoped forbidden-pattern scan over lower-body/signal files returned no matches for `sqrMagnitude`, `math.sqrt`, `math.normalize`, `foreach`, `string.Format`, interpolation strings, `OnAnimatorIK`, `SetIK`, `ikPass`, `StartCoroutine`, `GameObject.Find`, `FindObjectOfType`, or `Camera.main`. MCP resource listing returned no Unity resources.
 
 Status:
 PENDING VERIFICATION. Unity import, Burst compiler, Play Mode, GCMonitor, profiler proof, and full compile proof remain absent.

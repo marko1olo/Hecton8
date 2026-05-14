@@ -295,6 +295,7 @@ namespace Hecton8.VFX.Debris
                 _debrisPositions.Length < MaxCarveDebrisCount ||
                 _debrisVelocities.Length < MaxCarveDebrisCount)
             {
+                InvalidateDataVaultLease();
                 return false;
             }
 
@@ -344,12 +345,19 @@ namespace Hecton8.VFX.Debris
                 !vault.TryGetBufferGeneration(BufferID.CarveDebris, out _positionVaultGeneration) ||
                 !vault.TryGetBufferGeneration(BufferID.CarveDebrisVelocity, out _velocityVaultGeneration))
             {
-                _positionVaultGeneration = 0u;
-                _velocityVaultGeneration = 0u;
+                InvalidateDataVaultLease();
                 return false;
             }
 
             return true;
+        }
+
+        private void InvalidateDataVaultLease()
+        {
+            _dataVault = null;
+            _positionVaultGeneration = 0u;
+            _velocityVaultGeneration = 0u;
+            _nextVaultLeaseCheckFrame = 0;
         }
 
         private bool IsDataVaultLeaseValid()
@@ -1300,7 +1308,6 @@ namespace Hecton8.VFX.Debris
             _nextGlobalSdfRefreshFrame = 0;
             _nextFluidRebindFrame = 0;
             _nextTierRefreshFrame = 0;
-            _nextVaultLeaseCheckFrame = 0;
             _pendingTierFrames = 0;
             _cachedLowTier = true;
             _pendingLowTier = true;
@@ -1312,9 +1319,7 @@ namespace Hecton8.VFX.Debris
             _cachedDrawBaseVertex = 0u;
             _cachedDrawMeshValid = false;
             _fluidEngine = null;
-            _dataVault = null;
-            _positionVaultGeneration = 0u;
-            _velocityVaultGeneration = 0u;
+            InvalidateDataVaultLease();
             _emptyTexture3D = null;
             _debrisPositions = default;
             _debrisVelocities = default;
