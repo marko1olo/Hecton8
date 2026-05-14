@@ -155,7 +155,11 @@ namespace Hecton8.Animation.IK
                 if (tailBypass)
                     continue;
 
-                float3 position = SegmentPositions[index];
+                float3 fallbackPosition = index > 0
+                    ? SanitizeFinite(SegmentPositions[index - 1], float3.zero) - ownerForward * segmentLength
+                    : float3.zero;
+                float3 position = SanitizeFinite(SegmentPositions[index], fallbackPosition);
+                SegmentPositions[index] = position;
                 float appliedPush = 0f;
                 if (canUseSdf &&
                     TrySampleSdfTrilinear(position, sdfInvCellSize, sdfRange, out float density) &&

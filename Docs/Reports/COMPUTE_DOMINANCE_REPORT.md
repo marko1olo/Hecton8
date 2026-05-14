@@ -44,6 +44,110 @@ No named active agent is convicted as a "Compute Thief" from current Status/LOG/
 | Midpoint replacement cost, meaningful LOC | USD 58.75M | CALC | Assumes USD 250k fully loaded senior/year |
 | Midpoint replacement cost, all Assets physical C# | USD 119.81M | CALC | Includes vendor/third-party physical code |
 
+## Continuation Addendum - Live Ledger Recheck
+
+Recheck timestamp: 2026-05-15 during continuation pass.
+
+The `.codex` ledger is live. After the first report write, `state_5.sqlite` moved from 43,436,372,807 to 43,651,684,909 thread tokens. Delta: +215,312,102 tokens, about +0.496%. This is not a correction of the first capture. It is new churn while the machine kept working.
+
+### Token Concentration
+
+| Top N threads | Tokens | Share of current SQLite token mass |
+|---:|---:|---:|
+| 1 | 518,697,166 | 1.188% |
+| 5 | 2,315,069,669 | 5.304% |
+| 10 | 3,958,374,314 | 9.068% |
+| 30 | 9,492,793,103 | 21.747% |
+| 50 | 13,854,323,252 | 31.738% |
+| 100 | 21,929,194,190 | 50.237% |
+| 123 | 24,574,190,128 | 56.296% |
+| 250 | 33,560,370,660 | 76.882% |
+
+Half the token mass is concentrated in the top 100 threads. That is the actual target for any future audit. Broad moralizing over 764 threads is low-yield.
+
+### Model Split - Current SQLite
+
+| Model | Threads | Tokens | Share |
+|---|---:|---:|---:|
+| `gpt-5.5` | 483 | 31,767,489,763 | 72.775% |
+| `gpt-5.4` | 244 | 11,591,437,853 | 26.554% |
+| `gpt-5.4-mini` | 25 | 192,533,099 | 0.441% |
+| `gpt-5.2-codex` | 3 | 85,512,992 | 0.196% |
+| `gpt-5.1-codex-mini` | 3 | 13,472,930 | 0.031% |
+| `gpt-5.3-codex` | 3 | 1,096,113 | 0.003% |
+| `gpt-5.2` | 3 | 142,159 | ~0% |
+
+The cost center is not "agents" in the abstract. It is `gpt-5.5` long-context work.
+
+### Working Directory Split - Current SQLite
+
+| CWD | Threads | Tokens | Share |
+|---|---:|---:|---:|
+| `\\?\C:\hades` | 440 | 25,660,018,300 | 58.784% |
+| `\\?\C:\hades\Hecton8` | 291 | 17,755,525,588 | 40.675% |
+| `c:\hades\Hecton8` | 29 | 198,567,084 | 0.455% |
+| `\\?\C:\Users\danat\Downloads` | 3 | 37,573,937 | 0.086% |
+| `c:\hades` | 1 | 0 | 0% |
+
+Root-level `C:\hades` sessions now carry more token mass than direct `Hecton8` sessions. That matters because root context usually drags more unrelated filesystem and doc surface.
+
+### Updated-Day Proxy
+
+This table assigns each thread's total tokens to the day it was last updated. It is not true daily spend; it is a triage proxy.
+
+| Day | Threads updated | Tokens assigned | Share |
+|---|---:|---:|---:|
+| 2026-05-09 | 37 | 6,975,131,407 | 15.979% |
+| 2026-05-03 | 20 | 4,031,099,628 | 9.235% |
+| 2026-05-14 | 60 | 3,708,474,086 | 8.496% |
+| 2026-05-11 | 98 | 3,397,025,439 | 7.782% |
+| 2026-05-13 | 78 | 2,906,507,916 | 6.658% |
+| 2026-04-29 | 27 | 2,286,427,061 | 5.238% |
+| 2026-05-01 | 14 | 2,040,759,482 | 4.675% |
+| 2026-05-12 | 57 | 1,966,316,084 | 4.505% |
+| 2026-05-05 | 30 | 1,866,271,582 | 4.275% |
+| 2026-05-10 | 38 | 1,861,990,920 | 4.266% |
+
+### JSONL File-Write Weight
+
+This table uses session file LastWriteTime and bytes, not tokens. It is useful for locating fat transcript days.
+
+| Day | JSONL files | Bytes |
+|---|---:|---:|
+| 2026-05-09 | 37 | 1,150,105,051 |
+| 2026-05-03 | 20 | 702,656,978 |
+| 2026-05-13 | 102 | 524,517,453 |
+| 2026-05-11 | 77 | 431,369,326 |
+| 2026-05-01 | 14 | 391,252,089 |
+| 2026-05-06 | 37 | 383,762,078 |
+| 2026-04-09 | 5 | 289,502,450 |
+| 2026-05-15 | 41 | 287,557,060 |
+| 2026-05-12 | 61 | 283,022,474 |
+| 2026-04-29 | 18 | 249,664,931 |
+
+### Current Agent-Doc Top Surfaces
+
+Current Status/LOG/Rationale docs remain small compared with `.codex` thread burn. Top active agent-doc surfaces:
+
+| Agent ID | Files | Estimated doc tokens |
+|---|---:|---:|
+| `ARCHITECTURAL_AUP_INTEGRITY_AUDITOR` | 3 | 34,595 |
+| `PROLOGUE_SEQUENCE_DIRECTOR` | 3 | 28,481 |
+| `MARAUDER_OUTPOST_ARCHITECT` | 3 | 28,455 |
+| `MACRO_WFC_PERSISTENCE_SYNC` | 3 | 25,122 |
+| `VR_COCKPIT_MANUAL_OVERRIDE` | 3 | 25,084 |
+| `VOLUMETRIC_PRESSURE_SOLVER` | 3 | 24,790 |
+| `KINETIC_IMPACT_ACOUSTICS` | 3 | 24,252 |
+| `PROCEDURAL_BIOME_BAKER_SHALLOWS` | 3 | 21,580 |
+| `PLATINUM_DATA_VAULT_WARDEN` | 3 | 19,639 |
+| `VFX_SDF_CARVE_DEBRIS` | 3 | 19,473 |
+
+Still no active named agent crosses a 1M estimated doc-token threshold. The thief hunt belongs in `.codex` thread attribution, not Markdown size.
+
+### `logs_2.sqlite` Boundary
+
+`logs_2.sqlite` exists and was previously schema-counted at 478,371 rows and 3,203,743,744 bytes. A full grouping pass over log targets timed out twice at 120 seconds. That means the log DB is heavy enough to require an indexed/offline extraction pass before it can be used as precise forensic evidence. This report does not pretend otherwise.
+
 ## Code Metrics
 
 ### Script LOC

@@ -204,3 +204,11 @@ Solution: Gate SDF and height fallback on finite metadata. Sanitize SDF cell siz
 Rejected Alternatives: Trusting upstream voxel/MapMagic producers was rejected because IK is the last native writer before GPU deformation. Disabling SDF on all questionable frames by broad exception handling was rejected because Burst has no managed exception path and predictable branch gates are cheaper.
 Scalability potential: Low/MX350 still disables SDF. High/ultra retain full SDF quality on valid data and fail closed to height fallback/no terrain push on malformed metadata.
 Hardware Impact: Estimated cost is under 0.3 us on terrain-contact solver frames; prevents NaN matrix writes rather than saving frame time.
+
+## Decision 19: Terrain Segment Pre-Sample Sanitize
+
+Problem: The terrain loop sampled `SegmentPositions[index]` directly. Earlier solver phases sanitize most writes, but terrain contact is a native indexing boundary and should not depend on prior phase success.
+Solution: Sanitize the segment position in-place with a parent-derived fallback before SDF or height sampling.
+Rejected Alternatives: Adding checks inside only the SDF sampler was rejected because height fallback also consumes `position.xz`. Re-running a full constraint pass before terrain was rejected as unnecessary cost.
+Scalability potential: All tiers preserve behavior for valid data. Low/MX350 pays only the cheap finite check on fallback-contact segments; high/ultra protect SDF indexing.
+Hardware Impact: Estimated cost is under 0.1 us for the terrain-hug segment set; it prevents invalid native indexing and NaN matrix propagation.

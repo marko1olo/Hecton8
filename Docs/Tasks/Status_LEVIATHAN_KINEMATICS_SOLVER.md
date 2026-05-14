@@ -196,4 +196,14 @@ Batch source: Docs/Tasks/CURRENT_BATCH.md
 - DOD: malformed terrain payloads cannot introduce NaN samples through SDF or height fallback contact math.
 - Alternative Rejected: trusting terrain/voxel producers because this Burst job is the last safety boundary before writing native matrices.
 - Estimate: under 0.3 us on terrain-contact solver frames; Low/MX350 still skips SDF.
+- Static grep over IK runtime/job/shader scope still found no `math.sqrt`, `math.normalize`, managed array creation, `foreach`, `string.Format`, `.ToString()`, `Debug.Log`, Unity Physics casts, `SkinnedMeshRenderer`, `renderer.material`, `Camera.main`, `GlobalRegistry.Get`, `GameObject.Find`, or `FindObject`.
+- `git diff --check` and `git diff --cached --check` on touched code/docs exit 0; unstaged output is only LF-to-CRLF warning on `LOG_LEVIATHAN_KINEMATICS_SOLVER.md`.
 - No `dotnet` rebuild, compile, or response-file probe was run.
+
+### Loop 19: Terrain Segment Pre-Sample Sanitize Recheck
+
+- Sanitized each terrain-hugged segment position in-place before SDF or height sampling.
+- DOD: bad previous-frame segment data cannot flow into `floor`, clamp, SDF index, or heightmap index math.
+- Alternative Rejected: relying only on earlier constraint passes because the terrain loop is a separate native indexing boundary.
+- Estimate: under 0.1 us for the lower five terrain-contact segments.
+- Static grep over IK runtime/job/shader scope still found no `m

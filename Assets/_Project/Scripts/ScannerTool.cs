@@ -2693,7 +2693,7 @@ namespace Hecton8.Gameplay
 
         private static string ResolveLocalized(string key, string fallback)
         {
-            ILocalizationService localization = Hecton8.Core.GlobalRegistry.Localization;
+            LocalizationManager localization = Hecton8.Core.GlobalRegistry.Localization;
             return localization != null
                 ? localization.GetOrFallback(localization.CurrentLanguage, key, fallback)
                 : fallback;

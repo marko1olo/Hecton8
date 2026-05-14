@@ -131,3 +131,27 @@ Rejected Alternatives: Running a parallel `dotnet build` was rejected because Un
 Scalability potential: Low/Middle/High/Ultra runtime tiers unaffected. Process scalability improves by avoiding false build contention during documentation-only audits.
 
 Hardware Impact: 0 runtime microseconds. Avoided possible build-output lock noise.
+
+## Decision 11 - Live Ledger Addendum
+
+Problem: The user asked to continue and update honestly. `.codex/state_5.sqlite` changed after the initial report because other Codex work continued.
+
+Solution: Add a continuation addendum rather than silently replacing the first capture. Record both the earlier figure and the new live figure with timestamp context and concentration analysis.
+
+Rejected Alternatives: Treating the new value as a correction was rejected because the first value was valid at capture time. Ignoring the new value was rejected because the user explicitly asked for continued updating.
+
+Scalability potential: Low/Middle/High/Ultra process gains a more accurate audit habit: live ledgers need timestamped snapshots, not mutable "truth".
+
+Hardware Impact: 0 runtime microseconds. Process impact: prevents false deltas from concurrent agent churn.
+
+## Decision 12 - `logs_2.sqlite` Scope Limit
+
+Problem: `logs_2.sqlite` is 3.2GB and broad grouping by target did not finish within 120 seconds.
+
+Solution: Keep prior schema/count fact and mark detailed log grouping as partial evidence pending indexed/offline extraction. Do not block the useful SQLite thread ledger on the heavier log DB.
+
+Rejected Alternatives: Running longer blind scans in the active workspace was rejected because it would waste local IO and still might race live writes. Claiming log target breakdown without a completed query was rejected.
+
+Scalability potential: Future audit should export a compact indexed slice before attempting target/module aggregation.
+
+Hardware Impact: 0 runtime microseconds. Avoided prolonged disk pressure on the active machine.

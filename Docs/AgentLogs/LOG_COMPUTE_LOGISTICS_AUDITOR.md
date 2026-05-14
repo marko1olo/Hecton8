@@ -33,3 +33,30 @@ Verification:
 - Compile was not launched because an existing `dotnet` process was active and this audit changed markdown only.
 
 STATUS: AUDIT COMPLETE.
+
+## 2026-05-15 - Continuation Addendum
+
+What was wrong:
+- The first report correctly captured `.codex` at one point in time, but `.codex/state_5.sqlite` is live and changed during continued work.
+- A raw total without concentration hides the real audit target.
+
+What was done:
+- Re-read status/rationale/report before continuing.
+- Queried current `.codex/state_5.sqlite` concentration: top 100 threads hold 50.237% of current token mass; top 250 hold 76.882%.
+- Rechecked model split: `gpt-5.5` holds 72.775% of thread tokens, `gpt-5.4` holds 26.554%.
+- Rechecked CWD split: `\\?\C:\hades` holds 58.784% of thread tokens, `\\?\C:\hades\Hecton8` holds 40.675%.
+- Added a continuation addendum to `Docs/Reports/COMPUTE_DOMINANCE_REPORT.md`.
+- Attempted `logs_2.sqlite` grouping; it timed out twice at 120 seconds and remains partial evidence only.
+
+Cinematic Cheats used:
+- None.
+
+Exact microseconds saved:
+- Runtime: 0 us.
+- Process: not claimed.
+
+Verification:
+- Report addendum written by `apply_patch`.
+- No runtime/code compile run; markdown-only continuation.
+
+STATUS: AUDIT COMPLETE.

@@ -132,6 +132,62 @@
 
   <ItemGroup Condition="'$(MSBuildProjectName)' == 'Hecton8.Core' And '$(HectonBuildProjectReferences)' != 'true'">
     <ProjectReference Remove="@(ProjectReference)" />
+    <Reference Include="Crest" Condition="Exists('$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Crest.dll') And !$([System.String]::Copy('@(Reference)').Contains('Crest'))">
+      <HintPath>$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Crest.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="EasySave3" Condition="Exists('$(MSBuildThisFileDirectory)Library\ScriptAssemblies\EasySave3.dll') And !$([System.String]::Copy('@(Reference)').Contains('EasySave3'))">
+      <HintPath>$(MSBuildThisFileDirectory)Library\ScriptAssemblies\EasySave3.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="GPUInstancer" Condition="Exists('$(MSBuildThisFileDirectory)Library\ScriptAssemblies\GPUInstancer.dll') And !$([System.String]::Copy('@(Reference)').Contains('GPUInstancer'))">
+      <HintPath>$(MSBuildThisFileDirectory)Library\ScriptAssemblies\GPUInstancer.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Hecton8.Bootstrap.Contracts" Condition="Exists('$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Hecton8.Bootstrap.Contracts.dll') And !$([System.String]::Copy('@(Reference)').Contains('Hecton8.Bootstrap.Contracts'))">
+      <HintPath>$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Hecton8.Bootstrap.Contracts.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Hecton8.Input" Condition="Exists('$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Hecton8.Input.dll') And !$([System.String]::Copy('@(Reference)').Contains('Hecton8.Input'))">
+      <HintPath>$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Hecton8.Input.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Hecton8.Input.Generated" Condition="Exists('$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Hecton8.Input.Generated.dll') And !$([System.String]::Copy('@(Reference)').Contains('Hecton8.Input.Generated'))">
+      <HintPath>$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Hecton8.Input.Generated.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="ShapesRuntime" Condition="Exists('$(MSBuildThisFileDirectory)Library\ScriptAssemblies\ShapesRuntime.dll') And !$([System.String]::Copy('@(Reference)').Contains('ShapesRuntime'))">
+      <HintPath>$(MSBuildThisFileDirectory)Library\ScriptAssemblies\ShapesRuntime.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.RenderPipelines.Core.Editor" Condition="Exists('$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Unity.RenderPipelines.Core.Editor.dll') And !$([System.String]::Copy('@(Reference)').Contains('Unity.RenderPipelines.Core.Editor'))">
+      <HintPath>$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Unity.RenderPipelines.Core.Editor.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.RenderPipelines.Universal.Runtime" Condition="Exists('$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Unity.RenderPipelines.Universal.Runtime.dll') And !$([System.String]::Copy('@(Reference)').Contains('Unity.RenderPipelines.Universal.Runtime'))">
+      <HintPath>$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Unity.RenderPipelines.Universal.Runtime.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.ShaderGraph.Editor" Condition="Exists('$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Unity.ShaderGraph.Editor.dll') And !$([System.String]::Copy('@(Reference)').Contains('Unity.ShaderGraph.Editor'))">
+      <HintPath>$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Unity.ShaderGraph.Editor.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="VolumetricLightBeam" Condition="Exists('$(MSBuildThisFileDirectory)Library\ScriptAssemblies\VolumetricLightBeam.dll') And !$([System.String]::Copy('@(Reference)').Contains('VolumetricLightBeam'))">
+      <HintPath>$(MSBuildThisFileDirectory)Library\ScriptAssemblies\VolumetricLightBeam.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="WaveHarmonic.Crest" Condition="Exists('$(MSBuildThisFileDirectory)Library\ScriptAssemblies\WaveHarmonic.Crest.dll') And !$([System.String]::Copy('@(Reference)').Contains('WaveHarmonic.Crest'))">
+      <HintPath>$(MSBuildThisFileDirectory)Library\ScriptAssemblies\WaveHarmonic.Crest.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="WaveHarmonic.Crest.Shared" Condition="Exists('$(MSBuildThisFileDirectory)Library\ScriptAssemblies\WaveHarmonic.Crest.Shared.dll') And !$([System.String]::Copy('@(Reference)').Contains('WaveHarmonic.Crest.Shared'))">
+      <HintPath>$(MSBuildThisFileDirectory)Library\ScriptAssemblies\WaveHarmonic.Crest.Shared.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="WaveHarmonic.Crest.Shared.Editor" Condition="Exists('$(MSBuildThisFileDirectory)Library\ScriptAssemblies\WaveHarmonic.Crest.Shared.Editor.dll') And !$([System.String]::Copy('@(Reference)').Contains('WaveHarmonic.Crest.Shared.Editor'))">
+      <HintPath>$(MSBuildThisFileDirectory)Library\ScriptAssemblies\WaveHarmonic.Crest.Shared.Editor.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
   </ItemGroup>
 
   <ItemGroup Condition="'$(MSBuildProjectName)' == 'Hecton8.World.Contracts'">

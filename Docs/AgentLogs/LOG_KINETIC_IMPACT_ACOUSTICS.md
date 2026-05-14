@@ -382,3 +382,36 @@ Verification:
 - Source counters for the smoke tester: `SmokeSpatialResolverAsserts=16`.
 - Scoped forbidden scan found only pre-existing comments/cold diagnostics/editor smoke strings: no new runtime `PlayClipAtPoint`, coroutine, managed hot collection, `math.exp`, or string formatting was introduced by this pass.
 - Dotnet build/rebuild was not run by explicit user order. Unity compile remains PENDING VERIFICATION until Editor console/MCP validation is available.
+
+## 2026-05-15 - DSP_ACOUSTIC_LEAD - Loop 16 Music Director World-State Resolver H-Phi Pass
+Status: PENDING VERIFICATION
+
+What was wrong:
+- `HectonMusicDirector` still read `DepthZone`, `SurfaceWeather`, and `FirstHour` registry slots directly after the earlier player/audio/acoustic resolver pass.
+- Direct reads were present in music dependency refresh, storm pressure, depth stinger gates, rare discovery gates, and first-hour pressure boost.
+- The smoke tester did not guard those remaining music world-state lookup paths.
+
+What was done:
+- Added cached `ResolveDepthZoneDirector()`, `ResolveSurfaceWeatherDirector()`, and `ResolveFirstHourDirector()` helpers on the existing 30-frame music dependency cadence.
+- Cleared the new runtime service caches with the existing music cache reset path.
+- Replaced direct depth-zone, surface-weather, and first-hour registry reads in guarded music tension/stinger methods.
+- Extended `AdvancedAcousticsSmokeTester` with music world-state resolver anchors and method-body no-direct-registry checks.
+
+Cinematic cheats used:
+- Music tension still uses authored scalar pressure inputs; no adaptive composition solver or world-state packet expansion was added.
+- First-hour, storm, and depth gates are cadence-bound because authored music decisions do not require frame-perfect registry refresh.
+- The low-tier path keeps cheap authored routing while high-tier scenes keep storm/depth/first-hour stinger polish.
+
+Exact microseconds saved:
+- Saves one depth-zone registry read per dependency refresh after warmup.
+- Saves one surface-weather registry read per storm pressure refresh after warmup.
+- Saves up to one first-hour registry read per guarded depth/rare-discovery/tension evaluation after warmup.
+- Runtime allocation delta remains 0 B/frame.
+
+Verification:
+- `git diff --check -- Assets/_Project/Scripts/Audio/HectonMusicDirector.cs Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs` passed.
+- Direct music registry reads are now confined to resolver refresh bodies: `GlobalRegistry.Player`, `GlobalRegistry.Audio`, `GlobalRegistry.AcousticZone`, `GlobalRegistry.DepthZone`, `GlobalRegistry.SurfaceWeather`, and `GlobalRegistry.FirstHour`.
+- Source counters for `HectonMusicDirector`: `DirectPlayer=1`, `DirectAudio=1`, `DirectAcousticZone=1`, `DirectDepthZone=1`, `DirectSurfaceWeather=1`, `DirectFirstHour=1`, `ResolverCalls=15`, `FindObject=0`, `UpdateMethods=0`, `StartCoroutine=0`.
+- Source counters for the smoke tester: `SmokeMusicResolverAsserts=16`.
+- Scoped forbidden scan found only existing editor/development diagnostics and editor smoke strings.
+- Dotnet build/rebuild was not run by explicit user order. Unity compile remains PENDING VERIFICATION until Editor console/MCP validation is available.

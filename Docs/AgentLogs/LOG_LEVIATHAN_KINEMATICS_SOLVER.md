@@ -361,5 +361,30 @@ Exact microseconds saved:
 - Prevented fault: NaN terrain metadata reaching native matrices.
 
 Verification:
+- Static grep over IK runtime/job/shader scope found no `math.sqrt`, `math.normalize`, managed array creation, `foreach`, `string.Format`, `.ToString()`, `Debug.Log`, Unity Physics casts, `SkinnedMeshRenderer`, `renderer.material`, `Camera.main`, `GlobalRegistry.Get`, `GameObject.Find`, or `FindObject`.
+- `git diff --check` and `git diff --cached --check` on touched code/docs exit 0; unstaged output is only LF-to-CRLF warning on `LOG_LEVIATHAN_KINEMATICS_SOLVER.md`.
+- Runtime status remains pending until Unity Editor import, shader compile, play-mode behavior, GC, and profiler evidence exist.
+
+## 2026-05-15T02:27+04:00
+
+Status: PENDING VERIFICATION. Continued terrain native-index safety audit. No `dotnet` rebuild/compile was run.
+
+What was wrong:
+- The terrain loop read raw segment positions immediately before SDF/height sampling.
+- If previous-frame data was already invalid, that value could reach floor/clamp/index math.
+
+What was done:
+- Sanitized terrain-hugged segment positions in-place before contact sampling.
+- Used a parent-derived fallback for tail/body segments.
+
+Cinematic cheats used:
+- None. Existing SDF/height fake contact behavior is unchanged for valid data.
+
+Exact microseconds saved:
+- No frame-time saving claimed.
+- Added finite check estimated under 0.1 us for lower terrain-contact segments.
+- Prevented fault: invalid segment positions reaching terrain native indexing.
+
+Verification:
 - Pending static checks after this edit.
 - Runtime status remains pending until Unity Editor import, shader compile, play-mode behavior, GC, and profiler evidence exist.

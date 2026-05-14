@@ -113,9 +113,10 @@ namespace Hecton8.Interaction
             Vector3 handForward,
             IInteractionSignalService interactionSignals,
             Collider handSourceCollider,
-            PhysicalHandSide fallbackHandSide)
+            PhysicalHandSide fallbackHandSide,
+            int sampleFrame)
         {
-            return TryQueueHandPress(handPosition, handForward, interactionSignals, handSourceCollider, fallbackHandSide, Time.frameCount);
+            return TryQueueHandPress(handPosition, handForward, interactionSignals, handSourceCollider, fallbackHandSide, sampleFrame);
         }
 
         private void Awake()

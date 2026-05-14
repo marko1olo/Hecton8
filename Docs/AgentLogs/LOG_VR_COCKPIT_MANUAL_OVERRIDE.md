@@ -229,3 +229,15 @@ Cinematic Cheats used: no simulation change. This is a fast-fail gate in the exi
 Exact microseconds saved/spent: saves one hand-pose read plus all later panel-probe work per XR frame during boot/service outages. Normal initialized frames keep the same cost. 0 B/frame.
 
 Verification: diff review confirms the signal-service gate now precedes `TryGetInteractionProbePose()`. Broad forbidden-pattern scan over the seven physical-control files remains clean. No dotnet rebuild/probe was run by user instruction.
+
+## 2026-05-15 - Receiver Frame Stamp Consistency
+
+What was wrong: the shared physical receiver interface now expected a probe-supplied frame stamp, but panel buttons and snap switches still had stale explicit five-argument interface methods and receiver-local `Time.frameCount` sampling. That creates compile risk and can desynchronize physical probe selection from signal packet frame data.
+
+What was done: completed the six-argument `IPhysicalPanelButtonReceiver.TryQueueHandPress()` contract across explicit implementations, added frame-stamp documentation, and changed `PhysicalInteractionHandler.TickPhysicalPanelButtons()` to capture one `sampleFrame` before dispatching to the chosen receiver. Public concrete receiver methods keep the optional fallback for direct calls outside the probe bridge.
+
+Cinematic Cheats used: no new physical truth. This keeps the existing kinematic hand probe and stack-only receiver bridge rather than building a managed contact envelope.
+
+Exact microseconds saved/spent: one stack int per accepted physical probe. Saves up to two redundant `Time.frameCount` property reads on panel/switch receiver callbacks and removes a stale explicit-interface compile-risk. 0 B/frame.
+
+Verification: `git diff --check` passed with CRLF warnings only. Scoped counter over five receiver files reports `ReceiverFrameParam=9`, `ExplicitOldSignature=0`, `HandlerFrameRead=1`, `ReceiverFallbackFrameReads=3`, `InterfaceCalls=1`, `LegacyBanned=0`. No dotnet rebuild/probe was run by user instruction.

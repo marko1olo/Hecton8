@@ -239,6 +239,9 @@ namespace Hecton8.UI
         /// <param name="handPosition">Runtime-space hand position.</param>
         /// <param name="handForward">Runtime-space hand forward vector.</param>
         /// <param name="interactionSignals">Authoritative interaction signal queue.</param>
+        /// <param name="handSourceCollider">Collider that produced the hand contact sample.</param>
+        /// <param name="fallbackHandSide">Hand side supplied by the physical hand bridge.</param>
+        /// <param name="sampleFrame">Frame stamp captured once by the physical hand probe.</param>
         /// <returns>True when the hand press was accepted by this button.</returns>
         public bool TryQueueHandPress(
             Vector3 handPosition,
@@ -302,9 +305,10 @@ namespace Hecton8.UI
             Vector3 handForward,
             IInteractionSignalService interactionSignals,
             Collider handSourceCollider,
-            PhysicalHandSide fallbackHandSide)
+            PhysicalHandSide fallbackHandSide,
+            int sampleFrame)
         {
-            return TryQueueHandPress(handPosition, handForward, interactionSignals, handSourceCollider, fallbackHandSide, Time.frameCount);
+            return TryQueueHandPress(handPosition, handForward, interactionSignals, handSourceCollider, fallbackHandSide, sampleFrame);
         }
 
         private static Vector3 ResolveApproxPressDirection(Vector3 handForward, Vector3 fallbackForward)

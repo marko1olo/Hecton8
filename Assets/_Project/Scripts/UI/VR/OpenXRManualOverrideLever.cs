@@ -212,6 +212,7 @@ namespace Hecton8.UI.VR
         /// <param name="interactionSignals">Interaction signal service supplied by the physical hand bridge.</param>
         /// <param name="handSourceCollider">Collider that supplied the physical hand sample.</param>
         /// <param name="fallbackHandSide">Hand side reported by the physical hand bridge.</param>
+        /// <param name="sampleFrame">Frame stamp captured once by the physical hand probe.</param>
         /// <returns>True when the hand sample is accepted into the lever's zero-GC state cache.</returns>
         public bool TryQueueHandPress(
             Vector3 handPosition,

@@ -21,6 +21,7 @@ namespace Hecton8.Interaction
         /// <summary>
         /// Attempts to queue a physical hand press through the interaction signal service.
         /// </summary>
+        /// <param name="sampleFrame">Frame stamp captured by the physical hand probe for all receivers in this sample.</param>
         bool TryQueueHandPress(
             Vector3 handPosition,
             Vector3 handForward,
@@ -548,7 +549,10 @@ namespace Hecton8.Interaction
             }
 
             if (bestButton != null)
-                bestButton.TryQueueHandPress(handPosition, handForward, interactionSignals, handSourceCollider, handSide, Time.frameCount);
+            {
+                int sampleFrame = Time.frameCount;
+                bestButton.TryQueueHandPress(handPosition, handForward, interactionSignals, handSourceCollider, handSide, sampleFrame);
+            }
         }
 
         private void HandleXRActiveChanged(bool isActive)

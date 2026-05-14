@@ -317,3 +317,15 @@ Rejected Alternatives: leaving the order unchanged was rejected because service 
 Scalability potential: Low/toaster boot and service-transition frames avoid wasted physical hand sampling. Middle/High keep identical behavior once the signal service is initialized. Ultra can keep dense cockpit controls without extra bridge work during service reloads.
 
 Hardware Impact: i3/MX350 saves one physical hand pose read and all downstream panel-probe work per XR frame when the signal service is absent/uninitialized. Normal initialized frames pay the same work as before, just in a safer order. 0 B/frame.
+
+## Decision 26 - Physical receiver callbacks must share the probe frame stamp
+
+Problem: the receiver interface had started carrying a `sampleFrame`, but two explicit implementations still declared the old five-argument signature and sampled `Time.frameCount` inside the callback. That is both compile-risk and timing drift: the probe can select a receiver on one frame stamp while concrete controls record or publish a different frame.
+
+Solution: complete the six-argument `IPhysicalPanelButtonReceiver.TryQueueHandPress()` contract across panel buttons and snap switches, document the frame stamp on the interface and manual override lever, and capture one `sampleFrame` in `PhysicalInteractionHandler.TickPhysicalPanelButtons()` before dispatching to the selected receiver. Concrete public receiver methods keep a `sampleFrame = -1` compatibility default, but interface dispatch now forwards the probe-owned value.
+
+Rejected Alternatives: removing the optional fallback from public concrete APIs was rejected because tools or direct scene scripts may still call those APIs outside the physical probe bridge. Sampling `Time.frameCount` inside every receiver was rejected because it is redundant and can desynchronize signal packet frames from the actual probe sample. Adding a managed event envelope was rejected because the existing stack-only interface already carries all required fields.
+
+Scalability potential: Low/toaster path gets fewer receiver callback property reads and no extra allocation. Middle/High keep consistent interaction packet frames across manual levers, panel buttons, switches, and strap latches. Ultra can layer denser cockpit feedback from the same frame stamp without introducing a frame-source race.
+
+Hardware Impact: i3/MX350 saves up to two redundant frame property reads on accepted panel/switch physical receiver callbacks and removes a stale explicit-interface compile-risk. Normal hot path still uses one stack int and existing NonAlloc overlap flow. 0 B/frame.

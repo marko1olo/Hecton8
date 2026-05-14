@@ -162,6 +162,12 @@ Execution lane: SIMULATION / `PriorityLayer.Player`
 - [x] Interaction signal readiness moved before hand pose. DOD: `PhysicalInteractionHandler.TickPhysicalPanelButtons()` now checks `GlobalRegistry.InteractionSignals` and `IsInitialized` before reading hand pose, hand collider, probe radius, or issuing `OverlapSphereNonAlloc`. Rejected: sampling XR hand pose when no signal service can consume a queued press. Estimate: saves one hand-pose read and all later probe work per XR frame during boot/service outages; 0 B/frame.
 - [x] Reverification without dotnet. DOD: diff review confirms the service gate precedes `TryGetInteractionProbePose`; broad forbidden-pattern scan over seven physical-control files remains clean. Rejected: dotnet rebuild/probe by explicit user instruction. Estimate: verification only.
 
+## Loop 24 - Receiver Frame Stamp Consistency
+
+- [x] Receiver contract frame stamp completed. DOD: `IPhysicalPanelButtonReceiver.TryQueueHandPress()` carries a probe-captured `sampleFrame`; `PhysicalPanelButton` and `PhysicalSnapSwitch` explicit implementations now match the six-argument interface and forward the supplied frame instead of sampling `Time.frameCount` again. Rejected: per-receiver `Time.frameCount` reads because they can drift from the probe sample and had already left stale explicit-interface signatures. Estimate: saves up to two receiver callback frame property reads in the physical panel path; 0 B/frame allocations.
+- [x] Probe callsite centralized frame capture. DOD: `PhysicalInteractionHandler.TickPhysicalPanelButtons()` captures one `sampleFrame` at dispatch to the selected receiver and passes it through the decoupled interface; public receiver methods retain a fallback frame read only for external/manual callers that do not supply a sample. Rejected: removing compatibility defaults because existing inspector/tooling calls may still invoke concrete receiver APIs directly. Estimate: one frame read per accepted physical probe instead of receiver-local reads; external fallback unchanged.
+- [x] Reverification without dotnet. DOD: `git diff --check` passed with CRLF warnings only; scoped counter over five receiver files reports `ReceiverFrameParam=9`, `ExplicitOldSignature=0`, `HandlerFrameRead=1`, `ReceiverFallbackFrameReads=3`, `InterfaceCalls=1`, `LegacyBanned=0`. Rejected: dotnet rebuild/probe by explicit user instruction. Estimate: verification only.
+
 STATUS: PENDING VERIFICATION - Unity editor/global Core compile dependency wall prevents full player compile proof in this session.
 
 ## Compile Attempts

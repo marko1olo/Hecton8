@@ -316,3 +316,22 @@ Solution: Performed source-only checks: `git diff --check`, PCRE2/direct registr
 Rejected Alternatives: Running dotnet build/rebuild would violate explicit user order; claiming Unity compile or profiler status without Editor console/MCP data would be false.
 Scalability potential: Verification only.
 Hardware Impact: Verification only.
+
+## LOOP 16 MUSIC DIRECTOR WORLD-STATE RESOLVER H-PHI PASS
+Problem: After the earlier music pass, `HectonMusicDirector` still read `GlobalRegistry.DepthZone`, `GlobalRegistry.SurfaceWeather`, and `GlobalRegistry.FirstHour` directly in dependency refresh, storm pressure, depth stinger gates, rare discovery gates, and first-hour pressure boost. These are not audio sample loops, but they run during context reevaluation and layer threat refreshes.
+Solution: Added cached resolvers for `DepthZoneDirector`, `HectonSurfaceWeatherDirector`, and `FirstHourDirector` using the existing `DependencyRetryFrameInterval = 30`. `ResolveDependencies()`, `ResolveStormPressure01()`, `HandleDepthZoneEntered()`, `HandleRareDiscoveryRequested()`, `ShouldPlayDepthDiscoveryStinger()`, and `ResolveFirstHourPressureBoost01()` now consume the helpers.
+Rejected Alternatives: Direct registry polling was acceptable for correctness but continued H-Phi debt; hard initialization references would fail bootstrap swaps; moving world, weather, or first-hour state into music-owned packets would bloat contracts and cross domain ownership.
+Scalability potential: Low tier keeps the same authored music and stingers while avoiding repeated optional world-state service lookup. Middle/High/Ultra keep storm-aware tension, depth stingers, and first-hour pacing with fewer service-locator reads. Toaster path pays cheap stale checks; high-end path can spend the saved budget on authored layer routing instead of lookup churn.
+Hardware Impact: Saves one depth-zone registry read in dependency resolution after warmup, one surface-weather registry read in storm pressure refresh after warmup, and up to one first-hour registry read in each gated stinger/tension evaluation after warmup. Runtime allocation remains 0 B/frame; added work is integer stale checks and one refresh per 30 frames.
+
+Problem: Static regression coverage did not guard the remaining music world-state resolver paths.
+Solution: Extended `AdvancedAcousticsSmokeTester` to assert `ResolveDepthZoneDirector()`, `ResolveSurfaceWeatherDirector()`, and `ResolveFirstHourDirector()`, and to check that the guarded dependency, storm pressure, stinger, rare-discovery, and first-hour boost method bodies no longer poll the registry directly.
+Rejected Alternatives: Manual-only review, or playmode/runtime validation that cannot be executed honestly without Unity MCP/Editor access.
+Scalability potential: Editor-only guard; preserves both cheap music LOD and high-tier authored stinger behavior from future lookup creep.
+Hardware Impact: 0 us runtime in player builds.
+
+Problem: Compile proof remains unavailable under the user's no-dotnet-rebuild order and missing Unity MCP session.
+Solution: Ran source-only checks: `git diff --check`, direct registry scans, resolver-anchor scans, forbidden API scans, and source counters. Current music counts are `DirectPlayer=1`, `DirectAudio=1`, `DirectAcousticZone=1`, `DirectDepthZone=1`, `DirectSurfaceWeather=1`, `DirectFirstHour=1`, `ResolverCalls=15`, `SmokeMusicResolverAsserts=16`, `FindObject=0`, `UpdateMethods=0`, `StartCoroutine=0`.
+Rejected Alternatives: Running dotnet build/rebuild would violate explicit user order; claiming Unity compile/profiler status without Editor console/MCP data would be false.
+Scalability potential: Verification only.
+Hardware Impact: Verification only.
