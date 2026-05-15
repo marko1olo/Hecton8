@@ -83,3 +83,11 @@ Rejected Alternatives: Force-push is forbidden because it discards remote histor
 Scalability potential: Runtime tier claims are not made. This checkpoint contains multiple systems authored by other agents; GIT_SYNC only validates repository-level gates and CLI tests.
 Hardware Impact: 0 us gameplay runtime gain measured; Unity/profiler evidence remains absent.
 
+## Decision 11
+
+Problem: The first synthetic checkpoint application produced index conflicts only in GIT_SYNC's own evidence files because those files had already been published in earlier remote commits and then received new local evidence entries.
+Solution: Re-run the synthetic checkpoint excluding the three GIT_SYNC files from the binary patch, apply all domain deltas cleanly, add 45 untracked files explicitly, then stage the current GIT_SYNC evidence files directly from the working tree. Commit `cb92dc6addfc0c567fc74659b1408b26b14809ab` was pushed fast-forward to `origin/main`.
+Rejected Alternatives: Manual conflict marker editing inside a temporary index would be brittle. Dropping GIT_SYNC evidence would violate reporting protocol. Force-push remained forbidden.
+Scalability potential: No runtime tier claim; repository checkpoint only.
+Hardware Impact: 0 us gameplay runtime gain measured.
+

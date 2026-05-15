@@ -73,3 +73,12 @@ Cinematic Cheats used: None. Repository synchronization only.
 Exact Microseconds saved: 0 us runtime measured.
 Verification: `git diff --check` passed; conflict-marker scan over changed/untracked text files reported 0 hits; changed/untracked payload was 191 files / 6,679,916 bytes; large-file guard reported 0 files >= 100 MB; `python -m unittest discover -s Tools -p "test*.py"` passed 188 tests in 154.679 seconds.
 Residual risk: Unity compile/runtime remains PENDING VERIFICATION; this checkpoint includes other agents' work and GIT_SYNC does not claim domain-level correctness beyond the gates above.
+
+## 2026-05-15 Multi-Agent Checkpoint Push
+
+What was wrong: Applying the dirty-tree patch over `origin/main` conflicted only in `Docs/AgentLogs/LOG_GIT_SYNC.md`, `Docs/AgentLogs/Rationale_GIT_SYNC.md`, and `Docs/Tasks/Status_GIT_SYNC.md` because those evidence files had already been pushed, then locally extended with the current gate report.
+What was done: Rebuilt the checkpoint excluding the three GIT_SYNC files from the binary patch, applied all domain files cleanly, added 45 untracked files explicitly, staged the current GIT_SYNC evidence text directly, created commit `cb92dc6addfc0c567fc74659b1408b26b14809ab`, and pushed it fast-forward to `origin/main`.
+Cinematic Cheats used: None. Git synchronization only.
+Exact Microseconds saved: 0 us runtime measured.
+Verification: Synthetic staged `git diff --check` passed; `git push origin cb92dc6addfc0c567fc74659b1408b26b14809ab:refs/heads/main` succeeded as `57a75ba81..cb92dc6ad`.
+Residual risk: Unity Editor/import/Play Mode/profiler evidence remains absent. Local checked-out branch is still stale and should not be reset while concurrent agents may still be writing.
