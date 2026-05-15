@@ -117,3 +117,21 @@ Solution: Capture `check_export()` stdout inside the regression test and assert 
 Rejected Alternatives: Suppress checker output globally; remove the invalid JSON regression; accept noisy passing tests.
 Scalability potential: Low/Middle/High/Ultra data corruption checks remain explicit without polluting the suite output.
 Hardware Impact: No runtime cost. This is Python test harness hygiene only; Unity proof remains PENDING VERIFICATION.
+
+Problem: `sourceFiles` in the tuning export could rot into non-existent evidence paths while the checker still accepted source constants from `HectonFluidEngine.cs`.
+Solution: Validate every exported source file reference as a relative path that exists under the project root.
+Rejected Alternatives: Trust the source file list because the simulator writes it; hard-code only the fluid engine source and ignore documentation/mandate references.
+Scalability potential: Low/Middle/High/Ultra tuning remains tied to real source-contract files instead of stale documentation paths.
+Hardware Impact: No runtime cost. Offline artifact validation only; Unity proof remains PENDING VERIFICATION.
+
+Problem: CLI validation only supported the default generated JSON path, so automation could not fail-test an arbitrary handoff artifact through the same command-line surface.
+Solution: Add `Tools/AiPathSim.py --check <path>` and regression coverage for corrupt JSON returning code 1 without traceback.
+Rejected Alternatives: Test only the Python function; require shell scripts to replace the production tuning file to test failure handling.
+Scalability potential: CI or integrator scripts can validate candidate Low/Middle/High/Ultra artifacts before replacing the canonical file.
+Hardware Impact: No runtime cost. CLI validation is offline tooling only.
+
+Problem: The architecture handoff still documented only the default checker path and did not mention source-file existence validation.
+Solution: Update `Docs/ARCHITECTURE/AI_POTENTIAL_FIELD_NAVIGATION.md` with explicit-path `--check` usage and the sourceFiles relative-path requirement.
+Rejected Alternatives: Let code and documentation drift; rely on agent logs instead of stable architecture documentation.
+Scalability potential: Runtime integrators can validate candidate Low/Middle/High/Ultra tuning artifacts without replacing the canonical JSON.
+Hardware Impact: No runtime cost. Documentation sync only.

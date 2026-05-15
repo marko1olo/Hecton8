@@ -183,3 +183,31 @@ Verification -> `python Tools/AiPathSim.py` printed `NAVIGATION OPTIMIZED`, `can
 Exact Microseconds saved -> 0 Unity runtime microseconds claimed. Test harness cleanup is offline only.
 
 Regression model -> CPU/GC/memory/cadence unchanged for runtime. Correctness: expected checker failures remain asserted instead of being loose console noise.
+
+## 2026-05-15 - CLI and Source Reference Fail-Closed Guard
+
+What was wrong -> The checker accepted exported `sourceFiles` without proving those evidence paths still existed, and the CLI could only validate the default generated JSON path.
+
+What was done -> Added disk validation for every relative source contract reference and extended `Tools/AiPathSim.py --check` to accept an explicit artifact path. Added regression coverage for missing source references and corrupt external JSON returning code 1 without traceback.
+
+Cinematic Cheats used -> No runtime behavior changed. This keeps the analytical-flow/SDF-proxy steering handoff fail-closed before any Unity port.
+
+Verification -> `python Tools/AiPathSim.py` printed `NAVIGATION OPTIMIZED`, `candidates=48 reached=30`, `raw_jitter=2 smoothed_jitter=1`, and `final_distance=2.810`. `python Tools/AiPathSim.py --check` printed `CHECK PASSED`. `python Tools/AiPathSim.py --check Data/AI/Navigation_Tuning.json` printed `CHECK PASSED`. `python -m unittest Tools.AI_Sim.test_ai_path_sim` ran 17 tests and passed. `python -m py_compile Tools/AiPathSim.py Tools/AI_Sim/test_ai_path_sim.py` passed. `git diff --check` passed with only autocrlf warnings. Debt-marker scan returned no hits after removing the literal traceback marker from the test body. `Navigation_Tuning.json` SHA256 stayed `BE874CA325A9B3DE0BAABB6784837C4DBA7F5BA66B93EFAD63F3D750D7FFA693`.
+
+Exact Microseconds saved -> 0 Unity runtime microseconds claimed. CLI/source-reference validation is offline only.
+
+Regression model -> CPU/GC/memory/cadence unchanged for runtime. Correctness: artifact evidence references and external JSON validation now fail closed.
+
+## 2026-05-15 - Architecture Handoff Sync
+
+What was wrong -> The stable architecture handoff still documented only the default artifact checker command and did not state that exported `sourceFiles` are validated as existing relative project paths.
+
+What was done -> Updated `Docs/ARCHITECTURE/AI_POTENTIAL_FIELD_NAVIGATION.md` with `python Tools/AiPathSim.py --check Data/AI/Navigation_Tuning.json` and the source-file existence rule.
+
+Cinematic Cheats used -> No runtime behavior changed. This keeps the analytical-flow/SDF-proxy handoff consistent for the later Unity port.
+
+Verification -> Pending in this entry until the post-doc guard is rerun: checker, regression suite, py_compile, diff whitespace guard, debt scan, and final readback.
+
+Exact Microseconds saved -> 0 Unity runtime microseconds claimed. Documentation sync is offline only.
+
+Regression model -> CPU/GC/memory/cadence unchanged for runtime. Correctness: handoff documentation now matches the tool surface.

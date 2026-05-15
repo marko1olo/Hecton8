@@ -111,3 +111,14 @@ Status: NAVIGATION OPTIMIZED (PY_SIM) / PENDING UNITY VERIFICATION
 
 - [x] Capture expected invalid-JSON checker output inside regression test | Justification: fail-closed behavior remains asserted while the unit suite no longer prints an expected `CHECK FAILED` line as loose output. Alternative rejected: suppressing checker output globally or deleting the invalid JSON regression. Estimate: 9,000,000 us.
 - [x] Re-run full verification chain after output cleanup | Justification: simulator, self-check, unit suite, py_compile, diff whitespace guard, debt scan, and deterministic export hash all remained clean. Alternative rejected: treating a test-only harness edit as too small to reverify. Estimate: 74,000,000 us.
+
+## Iterative Loop 17 - CLI and Source Reference Fail-Closed Guard
+
+- [x] Validate exported source contract paths on disk | Justification: `sourceFiles` are now checked as relative existing project paths, so stale evidence references fail the artifact check. Alternative rejected: trusting a copied source file list without disk validation. Estimate: 18,000,000 us.
+- [x] Add explicit-path `--check` CLI validation | Justification: `Tools/AiPathSim.py --check <path>` now rejects corrupt external artifacts without traceback, which protects handoff automation. Alternative rejected: testing only the default generated JSON path. Estimate: 20,000,000 us.
+- [x] Re-run full verification chain after CLI/source-reference hardening | Justification: simulator stayed `NAVIGATION OPTIMIZED`, default and explicit-path `--check` passed, regression suite reached 17 tests OK, py_compile passed, diff whitespace guard passed, debt scan had no hits, and JSON hash stayed stable. Alternative rejected: treating CLI/test hardening as documentation-only. Estimate: 92,000,000 us.
+
+## Iterative Loop 18 - Architecture Handoff Sync
+
+- [x] Update architecture handoff with explicit-path checker and source-file existence guard | Justification: documentation now matches the actual CLI and validation surface. Alternative rejected: leaving runtime integrators with stale default-only checker instructions. Estimate: 8,000,000 us.
+- [ ] Re-run post-doc verification guard | Justification: pending doc diff guard, self-check, regression suite, debt scan, and final readback. Alternative rejected: pending. Estimate: pending.

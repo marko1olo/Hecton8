@@ -487,6 +487,22 @@ def finite_float(value: object) -> float | None:
 def validate_source_constants(snapshot: dict, root: Path | None = None) -> Tuple[bool, list[str]]:
     errors: list[str] = []
     project_root = SOURCE_ROOT if root is None else root
+
+    source_files = snapshot.get("sourceFiles")
+    if not isinstance(source_files, list) or not source_files:
+        errors.append("missing sourceFiles")
+    else:
+        for source_file in source_files:
+            if not isinstance(source_file, str) or not source_file:
+                errors.append("invalid source file reference")
+                continue
+            relative_path = Path(source_file)
+            if relative_path.is_absolute():
+                errors.append(f"absolute source file reference forbidden: {source_file}")
+                continue
+            if not (project_root / relative_path).exists():
+                errors.append(f"missing source contract file: {source_file}")
+
     source_path = project_root / FLUID_ENGINE_PATH
     if not source_path.exists():
         return False, [f"missing source file: {FLUID_ENGINE_PATH.as_posix()}"]
@@ -884,10 +900,13 @@ def build_tiers(best: SteeringWeights) -> dict:
 def main(argv: Sequence[str] | None = None) -> int:
     args = tuple(sys.argv[1:] if argv is None else argv)
     output_path = Path("Data/AI/Navigation_Tuning.json")
-    if args == ("--check",):
-        return check_export(output_path)
+    if args and args[0] == "--check":
+        if len(args) > 2:
+            print("Usage: Tools/AiPathSim.py [--check [path]]", file=sys.stderr)
+            return 2
+        return check_export(output_path if len(args) == 1 else Path(args[1]))
     if args:
-        print("Usage: Tools/AiPathSim.py [--check]", file=sys.stderr)
+        print("Usage: Tools/AiPathSim.py [--check [path]]", file=sys.stderr)
         return 2
 
     best_weights, best_result, best_raw, evaluated, reached_count = find_best_candidate()

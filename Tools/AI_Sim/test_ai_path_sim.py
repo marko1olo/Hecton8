@@ -118,6 +118,33 @@ class AiPathSimTests(unittest.TestCase):
         valid, errors = self.sim.validate_source_constants(self.tuning["sourceParameterSnapshot"], self.sim.SOURCE_ROOT)
         self.assertTrue(valid, errors)
 
+    def test_source_contract_files_exist(self) -> None:
+        bad_snapshot = copy.deepcopy(self.tuning["sourceParameterSnapshot"])
+        bad_snapshot["sourceFiles"] = ["Assets/_Project/Scripts/HectonFluidEngine.cs", "Docs/ARCHITECTURE/DOES_NOT_EXIST.md"]
+        valid, errors = self.sim.validate_source_constants(bad_snapshot, self.sim.SOURCE_ROOT)
+        self.assertFalse(valid)
+        self.assertTrue(any("missing source contract file" in error for error in errors))
+
+    def test_cli_check_rejects_invalid_json_without_traceback(self) -> None:
+        with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False, encoding="utf-8") as handle:
+            temp_path = Path(handle.name)
+            handle.write("{invalid-json")
+        try:
+            result = subprocess.run(
+                [sys.executable, str(SIM_PATH), "--check", str(temp_path)],
+                cwd=ROOT,
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            output = result.stdout + result.stderr
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("CHECK FAILED", output)
+            self.assertIn("invalid JSON export", output)
+            self.assertNotIn("Trace" + "back", output)
+        finally:
+            temp_path.unlink(missing_ok=True)
+
     def test_duplicate_source_constants_are_all_checked(self) -> None:
         source_path = self.sim.SOURCE_ROOT / self.sim.FLUID_ENGINE_PATH
         source_text = source_path.read_text(encoding="utf-8")
