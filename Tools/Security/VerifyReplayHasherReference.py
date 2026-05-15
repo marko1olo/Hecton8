@@ -117,18 +117,59 @@ def require_u64_pair(label: str, value, context: str) -> tuple[int, int]:
     )
 
 
+def call_xxh3_digest(label: str, digest_func, payload: bytes, seed: int):
+    try:
+        return digest_func(payload, seed=seed)
+    except Exception as exc:
+        raise AssertionError(
+            f"{label} raised {type(exc).__name__} len={len(payload)} "
+            f"seed=0x{seed:016X}: {exc}"
+        ) from exc
+
+
+def call_replay_digest(label: str, digest_func, payload: bytes, seed: int):
+    try:
+        return digest_func(payload, seed)
+    except Exception as exc:
+        raise AssertionError(
+            f"{label} raised {type(exc).__name__} len={len(payload)} "
+            f"seed=0x{seed:016X}: {exc}"
+        ) from exc
+
+
+def call_u64_pair(
+    label: str,
+    pair_func,
+    args: tuple[int, ...],
+    context: str,
+) -> tuple[int, int]:
+    try:
+        value = pair_func(*args)
+    except Exception as exc:
+        raise AssertionError(
+            f"{label} raised {type(exc).__name__} {context}: {exc}"
+        ) from exc
+
+    return require_u64_pair(label, value, context)
+
+
 def verify_xxh3(replay, xxhash_module, fuzz_count: int) -> int:
     checked = 0
     for payload, seed in reference_cases(fuzz_count):
         expected = require_u64_digest(
             "xxhash reference",
-            xxhash_module.xxh3_64_intdigest(payload, seed=seed),
+            call_xxh3_digest(
+                "xxhash reference",
+                xxhash_module.xxh3_64_intdigest,
+                payload,
+                seed,
+            ),
             len(payload),
             seed,
         )
         actual = require_u64_digest(
             "ReplayHasher.py",
-            replay.xxh3_64(payload, seed),
+            call_replay_digest("ReplayHasher.py", replay.xxh3_64, payload, seed),
             len(payload),
             seed,
         )
@@ -156,14 +197,16 @@ def verify_shuffle_inverse(replay, fuzz_count: int) -> int:
         sector_hash = to_signed64(state)
 
         context = f"world_seed={world_seed} sector_hash={sector_hash}"
-        stored = require_u64_pair(
+        stored = call_u64_pair(
             "ReplayHasher.py shuffle_hash128",
-            replay.shuffle_hash128(plain_lo, plain_hi, world_seed, sector_hash),
+            replay.shuffle_hash128,
+            (plain_lo, plain_hi, world_seed, sector_hash),
             context,
         )
-        recovered = require_u64_pair(
+        recovered = call_u64_pair(
             "ReplayHasher.py unshuffle_hash128",
-            replay.unshuffle_hash128(stored[0], stored[1], world_seed, sector_hash),
+            replay.unshuffle_hash128,
+            (stored[0], stored[1], world_seed, sector_hash),
             context,
         )
         if recovered != (plain_lo, plain_hi):

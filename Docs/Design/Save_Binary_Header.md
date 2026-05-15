@@ -142,6 +142,12 @@ python -B .\Tools\Security\VerifyReplayHasherReference.py --xxhash-path .\.codex
 
 `--xxhash-path` is mandatory. The verifier rejects a globally installed `xxhash` module, requires a callable `xxh3_64_intdigest`, evicts any preloaded `sys.modules["xxhash"]` entry before import, removes newly loaded helper modules from that temp path, and restores host `sys.path`/`sys.modules` state after execution, so the reference proof remains isolated from the developer machine state.
 
+The verifier failure-mode guard is dependency-free and must pass before trusting the optional external reference output:
+
+```powershell
+python -B .\Tools\Security\ValidateReplayHasherReferenceVerifier.py
+```
+
 Expected master vector for the second command:
 
 ```text
@@ -189,6 +195,7 @@ Commands used:
 - `python .\Tools\Security\ReplayHasher.py self-test` -> PASS, including embedded branch, signed lane packing, lane roundtrip, exact master and shuffle preimage bytes, shuffle, four master vectors, and 128-bit rotate edge vectors.
 - `python .\Tools\Security\ReplayHasher.py master ...` -> PASS, expected `stored_le=6d24c9a87e8ec3322681980ad2b6b28c`.
 - Optional isolated comparison against Python `xxhash.xxh3_64_intdigest` via `Tools\Security\VerifyReplayHasherReference.py` -> PASS (`XXH3_REFERENCE_AND_SHUFFLE_FUZZ_OK xxh3=338 shuffle=128`).
+- `python -B .\Tools\Security\ValidateReplayHasherReferenceVerifier.py` -> PASS (`REPLAY_REFERENCE_VERIFIER_GUARD=PASS checks=20`).
 - Independent rotate formula check for the C# 128-bit lane algorithm -> PASS (`ROT128_FORMULA_OK`).
 - `SaveMasterHashV10.cs` added with stackalloc-only preimage/mask buffers and manual little-endian writes.
 - `SaveFileHeaderV10` added as a concrete 72-byte implementation header; independent packed-struct check -> PASS (`V10_HEADER_LAYOUT_OK`).

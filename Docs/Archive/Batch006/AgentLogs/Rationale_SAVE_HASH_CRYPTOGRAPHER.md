@@ -587,3 +587,27 @@ Rejected Alternatives: Keeping `isinstance` was rejected because it silently acc
 Scalability potential: No runtime impact. Low/Middle/High/Ultra retain the same V10 save ABI; the offline verifier now enforces exact scalar lane types.
 
 Hardware Impact: 0 us frame impact. Offline validation only.
+
+## Decision 50
+
+Problem: The verifier rejected bad return values, but exceptions thrown by the reference `xxhash` callable, the local replay digest, or the shuffle/unshuffle functions still escaped as raw tracebacks. That made failure output noisy and weaker for CI.
+
+Solution: Added guarded call helpers for reference digest, replay digest, and 128-bit lane-pair functions. They convert thrown exceptions into `AssertionError` messages with digest length, seed, or AUP seed context.
+
+Rejected Alternatives: Catching exceptions only in `main()` was rejected because it loses which vector and lane contract failed. Catching `BaseException` was rejected because interrupts and process exits should not be normalized into verifier failures.
+
+Scalability potential: No runtime impact. Low/Middle/High/Ultra retain the same V10 save ABI; offline failure diagnostics are stricter and deterministic.
+
+Hardware Impact: 0 us frame impact. Offline validation only.
+
+## Decision 51
+
+Problem: The reference verifier negative probes existed as shell snippets and log evidence, not as a reusable project tool. That made future agents repeat fragile ad hoc PowerShell to prove the verifier rejects bad modules and malformed replay outputs.
+
+Solution: Added `Tools/Security/ValidateReplayHasherReferenceVerifier.py`, a dependency-free guard self-test covering module API/path failures, digest type/range/bool/exception/mismatch failures, shuffle/unshuffle pair type/range/bool/exception failures, and temp helper module cleanup.
+
+Rejected Alternatives: Keeping only the log evidence was rejected because context compression and chat history loss would erase the exact probes. Folding the probes into `VerifyReplayHasherReference.py` was rejected because the reference verifier should stay focused on comparing against an explicit external package path.
+
+Scalability potential: No runtime impact. Low/Middle/High/Ultra retain the same V10 save ABI; offline verification is more reproducible.
+
+Hardware Impact: 0 us frame impact. Offline validation only.

@@ -539,3 +539,39 @@ Cinematic Cheats used: None. Verification-only pass.
 Exact Microseconds saved: 0 runtime microseconds. No runtime save path changed.
 
 Verification: `PY_AST_OK files=3`, `SELFTEST_OK`, `SAVE_MASTER_HASH_CSHARP_GUARD=PASS domains=5 constants=9 manifestSentinels=21 headerForwarding=12 preimageWrites=15 preimageOps=26 preimageEnd=80 shuffleOps=12 shuffleEnds=36/44 rotGuards=2 endianWriters=3 hash64Helpers=2 stackallocBuffers=2 internalTypes=3 activeWriterSentinels=2 resultCtor=4 blitAttrs=2`, `SHUFFLE_PAIR_TYPE_GUARD=PASS`, `SHUFFLE_PAIR_RANGE_GUARD=PASS`, `UNSHUFFLE_PAIR_TYPE_GUARD=PASS`, `UNSHUFFLE_PAIR_RANGE_GUARD=PASS`, `XXHASH_DIGEST_BOOL_GUARD=PASS`, `REPLAY_DIGEST_BOOL_GUARD=PASS`, `SHUFFLE_PAIR_BOOL_GUARD=PASS`, `UNSHUFFLE_PAIR_BOOL_GUARD=PASS`, `XXH3_REFERENCE_AND_SHUFFLE_FUZZ_OK xxh3=338 shuffle=128`, `XXHASH_TMP_REMOVED`, `RATIONALE_ORDER_OK decisions=49`, and `git diff --check` passed with line-ending warnings only.
+
+## 2026-05-15 - Reference Verifier Exception Guard
+
+What was wrong: Bad reference/replay digest functions or shuffle functions could raise arbitrary exceptions and still produce raw tracebacks before the controlled verifier failure path.
+
+What was done: Added guarded call helpers that convert digest and shuffle exceptions into contextual `AssertionError` messages.
+
+Cinematic Cheats used: None. Offline verification tooling only.
+
+Exact Microseconds saved: 0 runtime microseconds. This improves verifier failure clarity; no runtime save path changed.
+
+Verification: full owned suite returned `PY_AST_OK files=3`, `SELFTEST_OK`, `SAVE_MASTER_HASH_CSHARP_GUARD=PASS domains=5 constants=9 manifestSentinels=21 headerForwarding=12 preimageWrites=15 preimageOps=26 preimageEnd=80 shuffleOps=12 shuffleEnds=36/44 rotGuards=2 endianWriters=3 hash64Helpers=2 stackallocBuffers=2 internalTypes=3 activeWriterSentinels=2 resultCtor=4 blitAttrs=2`, `SHUFFLE_PAIR_TYPE_GUARD=PASS`, `SHUFFLE_PAIR_RANGE_GUARD=PASS`, `UNSHUFFLE_PAIR_TYPE_GUARD=PASS`, `UNSHUFFLE_PAIR_RANGE_GUARD=PASS`, `XXHASH_DIGEST_BOOL_GUARD=PASS`, `XXHASH_DIGEST_EXCEPTION_GUARD=PASS`, `REPLAY_DIGEST_BOOL_GUARD=PASS`, `REPLAY_DIGEST_EXCEPTION_GUARD=PASS`, `SHUFFLE_PAIR_BOOL_GUARD=PASS`, `SHUFFLE_PAIR_EXCEPTION_GUARD=PASS`, `UNSHUFFLE_PAIR_BOOL_GUARD=PASS`, `UNSHUFFLE_PAIR_EXCEPTION_GUARD=PASS`, `XXH3_REFERENCE_AND_SHUFFLE_FUZZ_OK xxh3=338 shuffle=128`, `XXHASH_TMP_REMOVED`, `RATIONALE_ORDER_OK decisions=50`, and `git diff --check` passed with line-ending warnings only.
+
+## 2026-05-15 - Temp Reference Package Final Cleanup
+
+What was wrong: Final readback found `.codex_tmp\xxhash_check` present after the verification sweep.
+
+What was done: Performed a path-bounded cleanup under `C:\Hecton8` and removed the temp reference package directory.
+
+Cinematic Cheats used: None. Workspace hygiene only.
+
+Exact Microseconds saved: 0 runtime microseconds. No runtime save path changed.
+
+Verification: `XXHASH_TMP_REMOVED_FINAL`; follow-up readback confirmed `.codex_tmp\xxhash_check` absent.
+
+## 2026-05-15 - Reference Verifier Guard Self-Test Tool
+
+What was wrong: The verifier negative probes were reproducible only through long shell snippets in logs.
+
+What was done: Added `Tools/Security/ValidateReplayHasherReferenceVerifier.py` and documented it in `Docs/Design/Save_Binary_Header.md`.
+
+Cinematic Cheats used: None. Offline verification tooling only.
+
+Exact Microseconds saved: 0 runtime microseconds. No runtime save path changed.
+
+Verification: full owned suite returned `PY_AST_OK files=4`, `SELFTEST_OK`, `SAVE_MASTER_HASH_CSHARP_GUARD=PASS domains=5 constants=9 manifestSentinels=21 headerForwarding=12 preimageWrites=15 preimageOps=26 preimageEnd=80 shuffleOps=12 shuffleEnds=36/44 rotGuards=2 endianWriters=3 hash64Helpers=2 stackallocBuffers=2 internalTypes=3 activeWriterSentinels=2 resultCtor=4 blitAttrs=2`, `REPLAY_REFERENCE_VERIFIER_GUARD=PASS checks=20`, `XXH3_REFERENCE_AND_SHUFFLE_FUZZ_OK xxh3=338 shuffle=128`, `XXHASH_TMP_REMOVED_FINAL`, `RATIONALE_ORDER_OK decisions=51`, and `git diff --check` passed with line-ending warnings only.
