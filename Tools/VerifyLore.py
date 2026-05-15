@@ -366,6 +366,10 @@ def build_manifest_data(
             raise ValueError(f"Cannot write manifest. Missing source for {format_hash(record.hash_value)}")
 
         payload = extract_payload(blob, record)
+        if payload != entry.payload:
+            raise ValueError(
+                f"Cannot write manifest. Payload mismatch for {entry.canonical_id} {format_hash(record.hash_value)}"
+            )
         manifest_entries.append(
             {
                 "hash": format_hash(record.hash_value),
@@ -461,6 +465,8 @@ def verify_manifest_data(
             raise ValueError(f"Manifest compressed length mismatch for {format_hash(hash_value)}")
 
         payload = extract_payload(blob, record)
+        if payload != entry.payload:
+            raise ValueError(f"Manifest payload mismatch against source for {format_hash(hash_value)}")
         if int(item.get("decompressed_length", -1)) != len(payload):
             raise ValueError(f"Manifest decompressed length mismatch for {format_hash(hash_value)}")
 

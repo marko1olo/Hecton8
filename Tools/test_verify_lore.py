@@ -218,6 +218,37 @@ class VerifyLoreTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             VerifyLore.verify_manifest_data(blob, records, entries, manifest)
 
+    def test_manifest_generation_rejects_blob_source_mismatch(self) -> None:
+        entries = [self.make_entry("Docs/Lore/entry.md", b"Entry\n")]
+        stale_entries = [self.make_entry("Docs/Lore/entry.md", b"Stale entry\n")]
+        blob = VerifyLore.bake_blob(stale_entries)
+        records = VerifyLore.parse_blob(blob)
+
+        with self.assertRaises(ValueError):
+            VerifyLore.build_manifest_data(
+                "Data/Lore/Encyclopedia.h8bin",
+                blob,
+                records,
+                entries,
+                "Docs/Lore",
+            )
+
+    def test_manifest_verification_rejects_blob_source_mismatch_even_when_manifest_matches_blob(self) -> None:
+        entries = [self.make_entry("Docs/Lore/entry.md", b"Entry\n")]
+        stale_entries = [self.make_entry("Docs/Lore/entry.md", b"Stale entry\n")]
+        blob = VerifyLore.bake_blob(stale_entries)
+        records = VerifyLore.parse_blob(blob)
+        manifest = VerifyLore.build_manifest_data(
+            "Data/Lore/Encyclopedia.h8bin",
+            blob,
+            records,
+            stale_entries,
+            "Docs/Lore",
+        )
+
+        with self.assertRaises(ValueError):
+            VerifyLore.verify_manifest_data(blob, records, entries, manifest)
+
     def test_manifest_blob_length_mismatch_is_rejected(self) -> None:
         entries = [self.make_entry("Docs/Lore/entry.md", b"Entry\n")]
         blob = VerifyLore.bake_blob(entries)

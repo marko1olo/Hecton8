@@ -390,6 +390,43 @@ Failure modes:
 - Unity/C# compile proof remains blocked by missing local toolchain/generation state.
 - Runtime loader remains out of explicit prompt scope.
 
+## 2026-05-15 - Manifest Source Payload Guard
+
+STATUS: LORE BAKED / MANIFEST SOURCE-BYTE VERIFIED
+
+What was wrong:
+- `--check` rejected source/blob mismatch, but `--verify-manifest` alone could pass if the manifest accurately described a stale blob.
+- Manifest generation could create a sidecar for a blob whose record hash matched a source file but whose decompressed payload bytes did not.
+
+What was done:
+- Added source-byte equality checks inside `build_manifest_data`.
+- Added source-byte equality checks inside `verify_manifest_data`.
+- Added two regressions: manifest generation rejects stale blob payloads, and manifest verification rejects a stale blob even when the manifest matches that stale blob.
+
+Cinematic Cheats used:
+- No runtime simulation touched.
+- Fixed binary layout and zlib payloads remain the implementation.
+
+Exact microseconds saved:
+- Current runtime frame impact remains 0 us/frame.
+- No runtime loader cost claimed.
+
+Verification:
+- `python Tools\VerifyLore.py --bake --check --list` -> `LORE BAKED`, `CHECK OK`, record `0xD1880394 offset=48 length=10281`.
+- `python -B -m unittest Tools.test_verify_lore -v` -> 19 tests passed.
+- `$env:PYTHONPYCACHEPREFIX='.codex-artifacts\pycache'; python -m py_compile Tools\VerifyLore.py Tools\test_verify_lore.py` -> passed.
+
+Regression model:
+- CPU: no runtime code touched.
+- GC: no runtime allocation path touched.
+- Memory: runtime blob remains 10329 bytes.
+- Cadence: no Tick/Update/FixedUpdate path touched.
+- Correctness: manifest validation now proves blob payload bytes against current Markdown source, not only manifest-vs-blob metadata consistency.
+
+Failure modes:
+- Unity/C# compile proof remains blocked by missing local toolchain/generation state.
+- Runtime loader remains out of explicit prompt scope.
+
 ## 2026-05-15 - Repository-Root Path Hardening
 
 STATUS: LORE BAKED / CWD-INDEPENDENT VERIFIER / STRICT TABLE GUARD VERIFIED

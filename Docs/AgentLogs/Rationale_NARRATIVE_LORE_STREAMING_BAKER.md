@@ -207,3 +207,11 @@ Solution: Use `PYTHONPYCACHEPREFIX=.codex-artifacts\pycache` for compile proof s
 Rejected Alternatives: Dropping py_compile proof would leave syntax proof dependent only on AST parsing; changing filesystem ACLs is outside this batch and would mutate the developer machine.
 Scalability potential: Low/Middle/High/Ultra unaffected; this is local verification hygiene for the offline compiler.
 Hardware Impact: 0 us/frame on i3/MX350; no runtime code or data layout changed.
+
+## Decision 027 - Make Manifest Verification Prove Current Source Bytes
+
+Problem: `--check` compared source payloads against the blob, but `--verify-manifest` could still pass if a manifest truthfully described a stale blob whose payload no longer matched the current Markdown source.
+Solution: Make `build_manifest_data` and `verify_manifest_data` reject payload mismatches against the active `SourceEntry` bytes, then add regressions where a stale blob and matching manifest are rejected against current source.
+Rejected Alternatives: Requiring operators to always remember `--check` would keep `--verify-manifest` weaker than its help text; trusting only SHA-256 values stored in the manifest would let stale packages self-certify.
+Scalability potential: Low/Middle/High/Ultra all get stricter offline package gates as lore shards scale; stale shard detection remains content-byte exact before any future runtime loader sees the blob.
+Hardware Impact: 0 us/frame on i3/MX350; this is offline validation. Runtime artifact size and layout remain unchanged.
