@@ -1304,7 +1304,7 @@ namespace Hecton8.World.Outposts
                 CellCount = (ushort)math.min(ResolveActiveCellCount(), ushort.MaxValue),
                 Flags = ResolveDescriptorFlags()
             };
-            SignalBus<WfcOutpostGeneratedSignal>.Push(in signal);
+            GlobalSignals.Publish(in signal);
         }
 
         private void ReleasePublishedPowerGrid()

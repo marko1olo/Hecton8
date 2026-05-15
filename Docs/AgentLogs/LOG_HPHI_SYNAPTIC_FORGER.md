@@ -643,6 +643,7 @@ What was done:
 - `InputDispatcher` now publishes one `PlayerInputSignal` packet for every discrete command path while preserving legacy managed events for authority consumers.
 - `PlayerPDA` now consumes `SignalBus<PlayerInputSignal>` snapshots and removed PDA/inventory/cancel/tab input-event subscriptions.
 - `HectonFabricatorUI` now consumes cancel/tab commands from `SignalBus<PlayerInputSignal>` and keeps only native navigate/submit callbacks.
+- `HectonFabricatorUI` baselines the command sequence on open so a pre-open cancel/tab packet cannot immediately close or cycle the menu.
 
 Cinematic Cheats used:
 - PDA and fabricator UI react to a compact command packet stream instead of owning input delegates.
@@ -679,3 +680,51 @@ Verification:
 - No dotnet build, restore, test, or rebuild was run.
 - `rg` confirms `PauseMenuController` has no native cancel subscription remnants.
 - `git diff --check` on touched pause/input files passed with only standard LF/CRLF notices.
+
+## 2026-05-15 - Tool Slot Command Signal Addendum
+
+What was wrong:
+- `PlayerToolManager` ticked every player frame but still refreshed four tool-slot input subscriptions and received slot switches through managed callbacks.
+- Tool-slot commands are now available as numeric `PlayerInputSignal` packets.
+
+What was done:
+- Removed `PlayerToolManager` tool-slot input subscribe/unsubscribe and per-frame subscription refresh.
+- Added source-filtered `PlayerInputSignalCommands.ToolSlot1..4` snapshot consumption inside `PlayerToolManager.Tick()`.
+- Kept continuous primary/secondary tool use on `IInputService.GetState()` because held-action state is not an edge command.
+
+Cinematic Cheats used:
+- Quick-slot intent is a compact command packet instead of four delegate paths.
+- Future quick-slot UI, haptics, and cockpit hints can read the same command lane.
+
+Exact microseconds saved:
+- Estimated 0.1-0.4 us on slot-switch frames.
+- Small steady-state reduction from removing the subscription refresh branch in the player tool tick.
+
+Verification:
+- No dotnet build, restore, test, or rebuild was run.
+- `rg` confirms only `InputDispatcher` remains subscribed to native tool-slot events.
+- `git diff --check` on `PlayerToolManager.cs` passed with only standard LF/CRLF notices.
+
+## 2026-05-15 - Builder Edge Command Signal Addendum
+
+What was wrong:
+- `PlayerBuilder` subscribed to primary, secondary, interact, tab next, and tab previous input callbacks while equipped.
+- Those actions are discrete builder edge commands now represented by `PlayerInputSignal`.
+
+What was done:
+- Removed builder input-service subscribe/unsubscribe lifecycle.
+- Added source-filtered command consumption in `PlayerBuilder.ToolTick()` for place, rotate, deconstruct, and catalog cycling.
+- Baselines the command sequence on equip so a pre-equip edge cannot replay into immediate placement/rotation.
+- Left mounted transport and player interaction callbacks untouched because they are separate immediate authority paths.
+
+Cinematic Cheats used:
+- Builder hologram commands now ride a compact input packet stream instead of five equipped-tool delegates.
+
+Exact microseconds saved:
+- Estimated 0.1-0.5 us on builder command bursts.
+- Reduced equip/unequip subscription churn for the builder tool.
+
+Verification:
+- No dotnet build, restore, test, or rebuild was run.
+- `rg` confirms `PlayerBuilder` has no input-service subscription remnants.
+- `git diff --check` on `PlayerBuilder.cs` passed with only standard LF/CRLF notices.

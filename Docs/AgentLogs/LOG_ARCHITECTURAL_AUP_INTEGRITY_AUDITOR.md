@@ -863,6 +863,70 @@ Verification:
 Integrator notes:
 - Unity Console/import, PlayMode, profiler, and GCMonitor proof remain pending.
 
+## 2026-05-15 - Loop 41 Real H-Phi Source Repair - WorldSpatialHashGrid Far-Unload Scratch
+
+What was wrong:
+- Far-unload completion in `WorldSpatialHashGrid` used a managed `List<int>` as scratch despite a fixed maximum candidate count.
+- The list was only staging handles from a completed native job before main-thread eviction.
+
+What was done:
+- Replaced `_farUnloadHandleScratch` with fixed `int[8192]` storage and `_farUnloadHandleScratchCount`.
+- Removed `Clear`, `Add`, and `.Count` calls from the far-unload completion scratch path.
+- Preserved two-pass eviction so dictionary/native-hash mutation still happens outside the job result scan.
+
+Cinematic Cheats used:
+- No simulation fake added. This is bounded-container cleanup in the AUP spatial maintenance path.
+- Low-tier devices avoid managed scratch indirection. High/Ultra retain the same 8192-entry far-unload capacity and spend fewer CPU/cache cycles on container mechanics.
+
+Exact Microseconds saved:
+- Normal gameplay frame time: 0 us claimed.
+- Far-unload completion now uses contiguous array writes and an integer count instead of managed list operations.
+- Managed memory saved is one persistent `List<int>` wrapper; backing storage remains a fixed 8192-int cold array by design.
+
+Verification:
+- Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0` completed in 136.573 seconds with `AupPrecisionRisk=0`, `AupPrecisionIntegrity=1`, `NativeArrayRefs=7072`, `PrimaryOwnerBlockedNativeArrayRefs=5678`, and `NativeOwnershipRisk=8196`.
+- Qualified AUP H-Phi risk scan returns `NO_MATCHES`.
+- Direct committed-offset leak scan returns `NO_MATCHES`.
+- Mandatory AUP regex scan returned 237 broad residual matches: broad `universe` text and known final-cast/presentation payload names.
+- Temporary Loop 41 capture is absent after cleanup.
+- No `dotnet build` or rebuild was run because the user explicitly forbade rebuilds.
+
+Integrator notes:
+- Unity Console/import, PlayMode, profiler, and GCMonitor proof remain pending.
+
+## 2026-05-15 - Loop 40 Real H-Phi Source Repair - Origin-Shift Scratch and Editor AUP History
+
+What was wrong:
+- `WorldSpatialHashGrid` still kept `_originShiftHandles` as a persistent `NativeArray<int>` although the origin-shift rebase path uses it only as synchronous main-thread scratch.
+- `KinematicGhostDebugger` regressed to legacy float AUP bridge calls and stored absolute-universe ghost history as `Vector3`.
+
+What was done:
+- Replaced `_originShiftHandles` with a fixed cold `int[8192]` scratch array.
+- Removed dead origin-shift capacity/disposal methods after the last native origin-shift scratch buffer was removed.
+- Changed editor absolute-universe ghost history to `double3[96]`, restored double AUP bridge calls, and kept the final cast at Handles output only.
+
+Cinematic Cheats used:
+- No runtime simulation fake added. This is native ownership removal plus editor diagnostic precision repair.
+- Low-tier devices save native memory and native lifetime bookkeeping. High/Ultra retain the same spatial hash capacity and get cleaner long-session AUP diagnostic evidence.
+
+Exact Microseconds saved:
+- Normal gameplay frame time: 0 us claimed.
+- Origin-shift allocation/teardown path does less NativeMemorySentinel/register/dispose work.
+- Persistent native memory saved this loop: one `NativeArray<int>[8192]`, approximately 32 KiB. Loop 39+40 combined origin-shift scratch native memory removal is approximately 224 KiB.
+
+Verification:
+- `WorldSpatialHashGrid.cs` `NativeArray<T>` references are now 24 versus the 30-reference baseline recorded at `HEAD`.
+- Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0` completed in 160.559 seconds with `AupPrecisionRisk=0`, `AupPrecisionIntegrity=1`, `NativeArrayRefs=7084`, `PrimaryOwnerBlockedNativeArrayRefs=5690`, and `NativeOwnershipRisk=8212`.
+- Qualified AUP H-Phi risk scan returns `NO_MATCHES`.
+- Direct committed-offset leak scan returns `NO_MATCHES`.
+- Dead origin-shift native scratch/refresh symbol scan returns no deleted method/buffer names.
+- Mandatory AUP regex scan returned 237 broad residual matches: broad `universe` text and known final-cast/presentation payload names.
+- Temporary Loop 40 capture is absent after cleanup.
+- No `dotnet build` or rebuild was run because the user explicitly forbade rebuilds.
+
+Integrator notes:
+- Unity Console/import, PlayMode, profiler, and GCMonitor proof remain pending.
+
 ## 2026-05-15 - Loop 34 Duplicate Signal Prefilter Counter Export
 
 What was wrong:

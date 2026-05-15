@@ -1917,6 +1917,11 @@ namespace Hecton8.UI
 
         private void DispatchInputEvents()
         {
+            DispatchInputEvents(MaxInputEventsPerTick);
+        }
+
+        private void DispatchInputEvents(int maxDispatchCount)
+        {
             if (_panelInteractable == null)
             {
                 _inputEventHead = 0;
@@ -1925,7 +1930,7 @@ namespace Hecton8.UI
                 return;
             }
 
-            int dispatchCount = math.min(_inputEventCount, MaxInputEventsPerTick);
+            int dispatchCount = math.min(_inputEventCount, math.max(0, maxDispatchCount));
             for (int i = 0; i < dispatchCount; i++)
             {
                 DiegeticPanelInputEvent inputEvent = _inputEvents[_inputEventHead];
@@ -1937,6 +1942,7 @@ namespace Hecton8.UI
 
         private void ClearHoverState()
         {
+            DispatchReleaseBeforeClear();
             _panelData.StateFlags &= ~(PanelStateFlags.CursorOver | PanelStateFlags.PlayerInRange);
             _wasPressedLastFrame = false;
             _fingerPressedLastFrame = false;
@@ -1946,6 +1952,26 @@ namespace Hecton8.UI
             _inputEventCount = 0;
             _cursorStateInitialized = false;
             SetCursorVisible(false);
+        }
+
+        private void DispatchReleaseBeforeClear()
+        {
+            if (_panelInteractable == null)
+                return;
+
+            DispatchInputEvents(_inputEventCount);
+            if (!_wasPressedLastFrame && !_fingerPressedLastFrame)
+                return;
+
+            DiegeticPanelInputEvent releaseEvent = new DiegeticPanelInputEvent
+            {
+                PanelId = panelId,
+                CanvasHitPoint = _clampedCanvasPosition,
+                AnalogDelta = float2.zero,
+                EventType = DiegeticPanelInputEventType.Up,
+                Timestamp = _tickUnscaledTime
+            };
+            _panelInteractable.ReceiveCanvasInput(in releaseEvent);
         }
 
         private bool CanUseDesktopPlaneFallback()

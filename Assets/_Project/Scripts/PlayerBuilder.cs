@@ -40,7 +40,6 @@ using Hecton8.Core.Signals;
 using Hecton8.Gameplay;
 using Hecton8.Inventory;
 using Hecton8.Items;
-using Hecton8.Input;
 using Hecton8.Modding;
 using Hecton8.Construction;
 using Hecton8.Physics;
@@ -233,7 +232,8 @@ namespace Hecton8.Building
         private ValidationSnapshot _completedValidationSnapshot;
         private bool _hasScheduledValidationSnapshot;
         private bool _hasCompletedValidationSnapshot;
-        private IInputService _subscribedInputService;
+        private uint _lastPlayerInputSignalSequence;
+        private const uint PlayerInputSignalSourceHash = 0x504C494Eu;
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC API
@@ -581,7 +581,6 @@ namespace Hecton8.Building
 
         public override void OnDespawn()
         {
-            UnsubscribeFromInputService();
             DespawnGhost();
             ResetBuilderState();
             base.OnDespawn();
@@ -606,7 +605,7 @@ namespace Hecton8.Building
             ResolveRuntimeReferences();
             EnsureCatalogSelection();
             ResetBuilderState();
-            RefreshInputSubscriptions();
+            BaselineBuilderInputSignalSequence();
 
             SpawnGhost();
             NotifyBuildableSelection();
@@ -614,8 +613,6 @@ namespace Hecton8.Building
 
         public override void OnUnequip()
         {
-            UnsubscribeFromInputService();
-
             DespawnGhost();
             ResetBuilderState();
             base.OnUnequip();
@@ -623,13 +620,72 @@ namespace Hecton8.Building
 
         public override void ToolTick(float deltaTime)
         {
-            // Position update only — input handled via events
+            ConsumeBuilderInputSignals();
+            // Position update only; edge input is consumed from PlayerInputSignal.
             if (_currentGhostObj != null)
             {
                 UpdateGhostPosition(deltaTime);
                 UpdatePlacementValidationState();
                 DrawBuildGhostProjection();
             }
+        }
+
+        private void ConsumeBuilderInputSignals()
+        {
+            ReadOnlySpan<PlayerInputSignal> signals = SignalBus<PlayerInputSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                PlayerInputSignal signal = signals[i];
+                if (signal.SourceHash != PlayerInputSignalSourceHash ||
+                    !IsNewerInputSequence(signal.Sequence, _lastPlayerInputSignalSequence))
+                    continue;
+
+                if (!TryConsumeBuilderInputCommand(signal.Command))
+                    continue;
+
+                _lastPlayerInputSignalSequence = signal.Sequence;
+            }
+        }
+
+        private void BaselineBuilderInputSignalSequence()
+        {
+            ReadOnlySpan<PlayerInputSignal> signals = SignalBus<PlayerInputSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                PlayerInputSignal signal = signals[i];
+                if (signal.SourceHash == PlayerInputSignalSourceHash &&
+                    IsNewerInputSequence(signal.Sequence, _lastPlayerInputSignalSequence))
+                    _lastPlayerInputSignalSequence = signal.Sequence;
+            }
+        }
+
+        private bool TryConsumeBuilderInputCommand(byte command)
+        {
+            switch (command)
+            {
+                case PlayerInputSignalCommands.PrimaryAction:
+                    HandlePrimaryAction();
+                    return true;
+                case PlayerInputSignalCommands.SecondaryAction:
+                    HandleSecondaryAction();
+                    return true;
+                case PlayerInputSignalCommands.Interact:
+                    HandleInteract();
+                    return true;
+                case PlayerInputSignalCommands.TabNext:
+                    HandleTabNext();
+                    return true;
+                case PlayerInputSignalCommands.TabPrevious:
+                    HandleTabPrevious();
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        private static bool IsNewerInputSequence(uint candidate, uint current)
+        {
+            return candidate != 0u && candidate != current && unchecked(candidate - current) < 0x80000000u;
         }
 
         private void HandlePrimaryAction()
@@ -2299,37 +2355,6 @@ namespace Hecton8.Building
         // ══════════════════════════════════════════════════════════
         //  AUDIO
         // ══════════════════════════════════════════════════════════
-
-        private void RefreshInputSubscriptions()
-        {
-            IInputService inputService = GlobalRegistry.Input;
-            if (ReferenceEquals(_subscribedInputService, inputService))
-                return;
-
-            UnsubscribeFromInputService();
-            if (inputService == null)
-                return;
-
-            inputService.OnPrimaryAction += HandlePrimaryAction;
-            inputService.OnSecondaryAction += HandleSecondaryAction;
-            inputService.OnInteract += HandleInteract;
-            inputService.OnTabNext += HandleTabNext;
-            inputService.OnTabPrevious += HandleTabPrevious;
-            _subscribedInputService = inputService;
-        }
-
-        private void UnsubscribeFromInputService()
-        {
-            if (_subscribedInputService == null)
-                return;
-
-            _subscribedInputService.OnPrimaryAction -= HandlePrimaryAction;
-            _subscribedInputService.OnSecondaryAction -= HandleSecondaryAction;
-            _subscribedInputService.OnInteract -= HandleInteract;
-            _subscribedInputService.OnTabNext -= HandleTabNext;
-            _subscribedInputService.OnTabPrevious -= HandleTabPrevious;
-            _subscribedInputService = null;
-        }
 
         private static IPlayerRuntimeContext ResolvePlayerContext()
         {

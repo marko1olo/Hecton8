@@ -471,3 +471,15 @@ Cinematic Cheats used -> None. Git integration only.
 Exact Microseconds saved -> 0 us runtime. Dev-path gain is avoiding a stale push and preserving both local checkpoint work and the second machine's GIT_SYNC documentation.
 
 Verification -> Current dirty tail has no conflict markers or unmerged paths before staging. Latest evidence: Fresh81 build EXIT=1, Fresh82 build EXIT=0, Fresh83 build EXIT=0, CurrentDisk build EXIT=0, HPhi Fresh84 EXIT=0 with valid JSON. Full Unity/runtime/profiler green is not claimed.
+
+## 2026-05-15 - Loop 28 Summary Checkpoint Tail
+
+What was wrong -> After synchronized pushed head `d2956babc`, active agents produced another runtime/docs/evidence tail while the user requested a complete summary of new commits.
+
+What was done -> Fetched remote, verified divergence `0 0`, inspected GasDynamics sanitized AUP routing, GlobalSignals flag propagation, PlayerBuilder/PlayerToolManager signal input consumption, HectonFabricatorUI signal baseline, SaveManager macro database open guard, diegetic release/tooltip cleanup, WFC/global signal publish routing, and WorldSpatialHash fixed scratch buffer. Staged only non-empty generated evidence and left zero-byte HPhi Fresh89 JSON unstaged.
+
+Cinematic Cheats used -> None. Git integration only.
+
+Exact Microseconds saved -> 0 us runtime. Dev-path gain is one more checked checkpoint before reporting file ownership by commit source.
+
+Verification -> `git diff --cached --check` passed. Strict staged conflict-marker scan returned clean. Build evidence is mixed: Fresh87 EXIT=1, CurrentDisk2 EXIT=0, Fresh88 EXIT=0. HPhi CurrentDisk, Fresh86, and CurrentDiskBudgetGate report EXIT=0. Full Unity/player/profiler green is not claimed.

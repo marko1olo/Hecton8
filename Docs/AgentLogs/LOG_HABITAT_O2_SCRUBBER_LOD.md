@@ -544,3 +544,49 @@ Exact microseconds saved:
 Verification:
 - Targeted scan found no forbidden normalization, distance, foreach, managed collection, coroutine, or string-format matches in `GasDynamicsSolver.cs`.
 - `git diff --check` passed with only the existing CRLF working-copy warning.
+
+## 2026-05-15 - Stale Base Center Fail-Open Addendum
+STATUS: PENDING VERIFICATION
+
+What was wrong:
+- Future AUP writes were finite-gated, but stale native base center corruption could still strand a room-owning sleeping base.
+- Non-finite distance math prevented a reliable wake decision.
+
+What was done:
+- Frost hibernation resolution now validates the stored base center before distance math.
+- Invalid centers skip hibernation and wake sleeping room-owning bases through the existing analytical catch-up path.
+
+Cinematic Cheats used:
+- Fail-open simulation policy: spend a small amount of atmosphere work instead of trusting broken coordinates.
+
+Exact microseconds saved:
+- None claimed. Cost is one finite AUP check per tracked base on FrostTick; no dotnet rebuild was run.
+
+Verification:
+- Confirmed `AbsoluteUniversePosition` uses `LocalX/LocalY/LocalZ` fields in the project source.
+- Targeted scan found no forbidden `.Complete`, component lookup, managed collection, coroutine, string-format, interpolation, or `foreach` matches in `GasDynamicsSolver.cs`.
+- `git diff --check` passed with only the existing CRLF working-copy warning.
+
+## 2026-05-15 - Sanitized Base Signal Rejection Addendum
+STATUS: PENDING VERIFICATION
+
+What was wrong:
+- `GlobalSignals` repaired invalid base-center AUP local coordinates to zero and still enqueued the packet.
+- Gas finite checks could accept that sanitized default/origin center as real hibernation authority.
+
+What was done:
+- Added `SanitizedBaseCenterFlag` to player base enter/exit signals.
+- `GlobalSignals` sets the flag when it repairs `BaseCenterAup`.
+- `GasDynamicsSolver` carries the flag through its deferred native transition buffer and rejects flagged packets before base slot creation or center updates.
+
+Cinematic Cheats used:
+- None new. This preserves the existing signal queue policy while preventing fabricated coordinates from driving the hibernation fake.
+
+Exact microseconds saved:
+- None claimed. Cost is one ushort bit test per transition packet; no dotnet rebuild was run.
+
+Verification:
+- Confirmed the sanitizer sets `SanitizedBaseCenterFlag` for both enter and exit packets.
+- Confirmed gas carries the flag into deferred packets and rejects flagged payloads through `TryEnsureBaseSlotFromSignal(in signal)`.
+- Targeted scan found no forbidden `.Complete`, component lookup, managed collection, coroutine, string-format, interpolation, or `foreach` matches in touched runtime files.
+- `git diff --check` passed with only the existing CRLF working-copy warning.

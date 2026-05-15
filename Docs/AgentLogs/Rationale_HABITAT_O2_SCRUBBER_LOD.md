@@ -305,3 +305,17 @@ Solution: `TryConfigureBase`, `TrySetBaseCenterAup`, and signal-derived base slo
 Rejected Alternatives: Sanitizing invalid AUP to zero inside public setters was rejected because that fabricates a plausible habitat location and can make hibernation distance logic lie. Adding managed diagnostics or exceptions was rejected because the solver must stay zero-GC/fail-closed in gameplay paths.
 Scalability potential: Low through Ultra keep the same hibernation Math LOD behavior on valid data. Corrupt base centers now fail closed instead of poisoning distance-gated sleep/wake decisions.
 Hardware Impact: Adds three scalar finite checks on cold/direct API paths and transition packet admission. No frame-time saving claimed; this is AUP integrity and false-hibernation prevention.
+
+## Self-Review 37 - Stale Base Center Fail-Open
+Problem: The new AUP ingress gates protect future writes, but an already-corrupt `_baseCenterAup` lane could still make `ResolveBaseHibernationStates` compute non-finite distance and leave a sleeping room-owning base asleep indefinitely.
+Solution: The Frost hibernation resolver now checks the stored base center before distance math. Non-finite centers skip distance-gated sleep logic; if the base owns rooms and is asleep, it wakes through the existing analytical catch-up path.
+Rejected Alternatives: Rewriting the corrupt center to default AUP was rejected because it invents location authority and can hibernate the wrong base. Throwing/asserting was rejected for gameplay runtime; the fail-open path is deterministic and zero-GC.
+Scalability potential: Low tier may spend extra gas simulation for a corrupted base instead of saving cycles through an invalid sleep. Middle/High/Ultra get the same correctness guard while still using distance Math LOD for valid centers.
+Hardware Impact: One AUP finite check per tracked base on FrostTick. On i3/MX350 this is cheaper than a false asleep occupied base fault; no profiler microsecond claim without Unity runtime.
+
+## Self-Review 38 - Sanitized Base Signal Rejection
+Problem: `GlobalSignals` sanitizes invalid AUP payloads to finite zero-local coordinates and still enqueues the signal. Gas-side finite checks could therefore accept a repaired default/origin center as real base authority.
+Solution: Added a high-bit `SanitizedBaseCenterFlag` to the player base transition signal payloads. The signal sanitizer sets that flag when it repairs `BaseCenterAup`, and `GasDynamicsSolver` rejects flagged transition packets before creating/updating base slots.
+Rejected Alternatives: Dropping the packet inside the generic `SignalBus<T>.Push` path was rejected because that would change all guarded signal semantics. Rejecting default AUP in gas was rejected because origin can be a legitimate authored location. Adding a managed diagnostic queue was rejected under zero-GC.
+Scalability potential: Low through Ultra avoid poisoning hibernation distance authority with sanitized coordinates while keeping the same fixed-size 64-byte signal lane and native deferred buffer.
+Hardware Impact: One ushort bit test per base transition packet only. No frame-time claim; this is a correctness guard for rare corrupt producer data.

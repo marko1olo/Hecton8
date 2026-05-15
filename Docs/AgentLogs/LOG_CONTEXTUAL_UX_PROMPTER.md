@@ -454,3 +454,25 @@ Cinematic cheats used: No visual change. The same hybrid finger/raycast panel in
 Exact microseconds saved: None claimed. Runtime cost is one branch in the finger path; the gain is deterministic input release behavior.
 
 Verification: No dotnet rebuilds were run. Static scans confirmed the `RaycastOnly` branch now emits pending release events and clears stale finger ownership.
+
+## 2026-05-15 Diegetic Panel Clear-State Release
+What was wrong: `ClearHoverState()` reset desktop and finger pressed flags without notifying the receiver, so focus/range loss, presentation pause, or disable transitions could leave a panel receiver latched.
+
+What was done: Added `DispatchReleaseBeforeClear()` and call it before clearing pressed flags or the input queue, sending a final Up event at the last clamped canvas position.
+
+Cinematic cheats used: No visual change. This preserves the physical panel event contract during cinematic state changes instead of relying on timeout behavior.
+
+Exact microseconds saved: None claimed. Normal hover frames do not pay; clear-state calls add one guarded branch and optional direct Up dispatch.
+
+Verification: No dotnet rebuilds were run. Static scans confirmed clear-state release runs before pressed flags and queued input state are reset.
+
+## 2026-05-15 Diegetic Panel Clear-State Event Ordering
+What was wrong: The clear-state release path could send the synthetic Up event before older queued events if the bounded event queue still had pending input.
+
+What was done: Split panel input dispatch into a bounded overload and made clear-state release drain queued events in FIFO order before emitting the final Up.
+
+Cinematic cheats used: No visual change. This keeps diegetic panel receivers deterministic during abrupt focus/range/pause transitions.
+
+Exact microseconds saved: None claimed. Normal frames keep the same four-event cap; clear-state calls can drain the existing 16-event ring once.
+
+Verification: No dotnet rebuilds were run. Static scans confirmed `DispatchReleaseBeforeClear()` drains queued events through the ordered dispatch overload before sending Up.

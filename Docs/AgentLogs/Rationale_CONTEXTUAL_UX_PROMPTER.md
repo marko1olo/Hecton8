@@ -382,3 +382,17 @@ Solution: Route the `RaycastOnly` branch through `ResolveFingerRelease()` when a
 Rejected Alternatives: Letting desktop input overwrite the state, clearing without an Up event, or blocking mode switches during contact. Overwrite is nondeterministic UX; clearing without Up can leave receivers latched; blocking mode switches is too heavy for runtime panel configuration.
 Scalability potential: Low gets deterministic release behavior on simple panels. Middle/High/Ultra keep the same finger/raycast hybrid contract without input latches during richer panel mode changes.
 Hardware Impact: Runtime cost is a branch only in the finger path; expected gain is correctness, not measured frame time.
+
+## Decision 54: Diegetic Panel Clear-State Release
+Problem: `ClearHoverState()` reset desktop and finger pressed flags without notifying the receiver. Losing focus/range, pausing presentation, or disabling the panel during an active press could leave an `IPanelInteractable` latched.
+Solution: Add `DispatchReleaseBeforeClear()` and call it before pressed flags and queued input are reset, using the last clamped canvas position for the final Up event.
+Rejected Alternatives: Dropping the press silently, requiring receivers to time out, or queueing the release before immediately clearing the queue. Silent drops cause stuck panel state; receiver timeouts are nondeterministic; queueing then clearing loses the event.
+Scalability potential: Low gets deterministic release behavior without extra objects. Middle/High/Ultra keep the same event contract while richer panels avoid hidden stuck-input state during cinematic transitions.
+Hardware Impact: One guarded branch on clear-state calls; normal hover frames do not pay. The gain is correctness, not measured frame time.
+
+## Decision 55: Diegetic Panel Clear-State Event Ordering
+Problem: The clear-state release path could send the synthetic Up event before older queued events if the bounded input queue still held events from a previous tick.
+Solution: Split `DispatchInputEvents()` into a bounded overload and drain the queued events in FIFO order before emitting the final clear-state Up.
+Rejected Alternatives: Keeping direct Up dispatch first, dropping queued events, or increasing `MaxInputEventsPerTick`. Up-first can invert receiver state; dropping queued events hides input; raising the per-tick cap changes normal-frame budget instead of solving clear-state ordering.
+Scalability potential: Low keeps deterministic event order without extra allocations. Middle/High/Ultra preserve richer panel interactions because receivers see the same ordered Down/Hold/Scroll/Up stream even during abrupt state changes.
+Hardware Impact: Normal frames keep the same dispatch cap. Clear-state calls can drain up to the existing 16-event ring once, which is bounded and off the steady hover path.

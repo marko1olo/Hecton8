@@ -1055,6 +1055,7 @@ namespace Hecton8.Atmosphere
                 BaseCenterAup = signal.BaseCenterAup,
                 BaseId = signal.BaseId,
                 RoomId = signal.RoomId,
+                Flags = signal.Flags,
                 IsEnter = (byte)(isEnter ? 1 : 0)
             });
         }
@@ -1072,6 +1073,7 @@ namespace Hecton8.Atmosphere
                 BaseCenterAup = signal.BaseCenterAup,
                 BaseId = signal.BaseId,
                 RoomId = signal.RoomId,
+                Flags = signal.Flags,
                 IsEnter = (byte)(isEnter ? 1 : 0)
             });
         }
@@ -1122,7 +1124,7 @@ namespace Hecton8.Atmosphere
         private void ApplyBaseExitSignal(in PendingBaseTransitionSignal signal)
         {
             AbsoluteUniversePosition centerAup = signal.BaseCenterAup;
-            if (!TryEnsureBaseSlotFromSignal(signal.BaseId, signal.RoomId, in centerAup))
+            if (!TryEnsureBaseSlotFromSignal(in signal))
                 return;
 
             int insideCount = math.max(0, _basePlayerInsideCount[signal.BaseId] - 1);
@@ -1138,6 +1140,7 @@ namespace Hecton8.Atmosphere
                 BaseCenterAup = signal.BaseCenterAup,
                 BaseId = signal.BaseId,
                 RoomId = signal.RoomId,
+                Flags = signal.Flags,
                 IsEnter = 0
             };
             ApplyBaseExitSignal(in deferredSignal);
@@ -1146,7 +1149,7 @@ namespace Hecton8.Atmosphere
         private void ApplyBaseEnterSignal(in PendingBaseTransitionSignal signal, double now, bool allowWake)
         {
             AbsoluteUniversePosition centerAup = signal.BaseCenterAup;
-            if (!TryEnsureBaseSlotFromSignal(signal.BaseId, signal.RoomId, in centerAup))
+            if (!TryEnsureBaseSlotFromSignal(in signal))
                 return;
 
             int insideCount = _basePlayerInsideCount[signal.BaseId];
@@ -1164,6 +1167,7 @@ namespace Hecton8.Atmosphere
                 BaseCenterAup = signal.BaseCenterAup,
                 BaseId = signal.BaseId,
                 RoomId = signal.RoomId,
+                Flags = signal.Flags,
                 IsEnter = 1
             };
             ApplyBaseEnterSignal(in deferredSignal, now, allowWake);
@@ -1232,6 +1236,15 @@ namespace Hecton8.Atmosphere
             return true;
         }
 
+        private bool TryEnsureBaseSlotFromSignal(in PendingBaseTransitionSignal signal)
+        {
+            if ((signal.Flags & PlayerBaseEnterSignal.SanitizedBaseCenterFlag) != 0)
+                return false;
+
+            AbsoluteUniversePosition centerAup = signal.BaseCenterAup;
+            return TryEnsureBaseSlotFromSignal(signal.BaseId, signal.RoomId, in centerAup);
+        }
+
         private void ResolveBaseHibernationStates()
         {
             if (_baseCount <= 0 || !AreBaseStateLanesReady(_baseCount))
@@ -1254,9 +1267,20 @@ namespace Hecton8.Atmosphere
                 bool playerInside = _basePlayerInside[baseId] != 0;
                 bool hasRooms = _baseRoomCount[baseId] > 0;
                 AbsoluteUniversePosition baseCenterAup = _baseCenterAup[baseId];
-                double distanceSq = hasPlayerAup
+                bool baseCenterFinite = IsFiniteAup(in baseCenterAup);
+                double distanceSq = hasPlayerAup && baseCenterFinite
                     ? AbsoluteUniversePosition.DistanceSq(in playerAup, in baseCenterAup)
                     : 0d;
+
+                if (!baseCenterFinite)
+                {
+                    if (!awake && hasRooms)
+                        WakeBase(baseId, now);
+
+                    if (BaseAwakeState[baseId] == 0 && hasRooms)
+                        sleepingCount++;
+                    continue;
+                }
 
                 if (awake)
                 {
@@ -1849,6 +1873,7 @@ namespace Hecton8.Atmosphere
             public AbsoluteUniversePosition BaseCenterAup;
             public int BaseId;
             public int RoomId;
+            public ushort Flags;
             public byte IsEnter;
         }
 

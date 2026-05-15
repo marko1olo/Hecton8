@@ -226,8 +226,8 @@ namespace Hecton8.World
         private static readonly Dictionary<int, Entry> _entries = new Dictionary<int, Entry>(MaxSpatialMaintenanceEntryCapacity);
         // COLD ALLOC: Dictionary<ulong,int>(256) - full EntityId to latest spatial handle reverse lookup - owner: WorldSpatialHashGrid
         private static readonly Dictionary<ulong, int> _handleByTransformId = new Dictionary<ulong, int>(MaxSpatialMaintenanceEntryCapacity);
-        // COLD ALLOC: List<int>[128] â€” deferred far-unload handle scratch for dynamic native-hash eviction â€” owner: WorldSpatialHashGrid
-        private static readonly List<int> _farUnloadHandleScratch = new List<int>(MaxSpatialMaintenanceEntryCapacity);
+        // COLD ALLOC: int[8192] - deferred far-unload handle scratch for dynamic native-hash eviction - owner: WorldSpatialHashGrid
+        private static readonly int[] _farUnloadHandleScratch = new int[MaxSpatialMaintenanceEntryCapacity];
         // COLD ALLOC: int[8192] - main-thread origin-shift key scratch, not a job payload - owner: WorldSpatialHashGrid
         private static readonly int[] _originShiftHandles = new int[MaxSpatialMaintenanceEntryCapacity];
 
@@ -248,6 +248,7 @@ namespace Hecton8.World
         private static JobHandle _farUnloadHandle;
         private static bool _farUnloadScheduled;
         private static int _farUnloadCount;
+        private static int _farUnloadHandleScratchCount;
         private static NativeArray<float> _acousticDensityMap;
         private static int _lastAcousticDensityFrame = -AcousticDensityMapCadenceFrames;
         private static int _transientSignalWriteIndex;
@@ -279,7 +280,7 @@ namespace Hecton8.World
             JobHandle.ScheduleBatchedJobs();
             DispatcherJobSwap.TryComplete(ref teardownDependency, forceComplete: true);
             DisposeAcousticDensityMap();
-            _farUnloadHandleScratch.Clear();
+            _farUnloadHandleScratchCount = 0;
             if (_queryHandles.IsCreated)
             {
                 NativeMemorySentinel.UnregisterNativeList(nameof(WorldSpatialHashGrid), nameof(_queryHandles));
@@ -295,6 +296,7 @@ namespace Hecton8.World
             _farUnloadHandle = default;
             _farUnloadScheduled = false;
             _farUnloadCount = 0;
+            _farUnloadHandleScratchCount = 0;
             _hasLastFarUnloadPlayerAup = false;
             _lastValidationFrame = -ValidationCadenceFrames;
             _lastAcousticDensityFrame = -AcousticDensityMapCadenceFrames;
@@ -1571,17 +1573,21 @@ namespace Hecton8.World
                 return;
 
             _farUnloadScheduled = false;
-            _farUnloadHandleScratch.Clear();
+            _farUnloadHandleScratchCount = 0;
 
             for (int i = 0; i < _farUnloadCount; i++)
             {
                 if (_farUnloadResultMask[i] == 0)
                     continue;
 
-                _farUnloadHandleScratch.Add(_farUnloadHandles[i]);
+                if (_farUnloadHandleScratchCount >= _farUnloadHandleScratch.Length)
+                    break;
+
+                _farUnloadHandleScratch[_farUnloadHandleScratchCount] = _farUnloadHandles[i];
+                _farUnloadHandleScratchCount++;
             }
 
-            for (int i = 0; i < _farUnloadHandleScratch.Count; i++)
+            for (int i = 0; i < _farUnloadHandleScratchCount; i++)
             {
                 int handle = _farUnloadHandleScratch[i];
                 if (!_entries.TryGetValue(handle, out Entry entry) || entry.IsResidentInNativeHash == 0)
@@ -1603,7 +1609,7 @@ namespace Hecton8.World
             }
 
             _farUnloadCount = 0;
-            _farUnloadHandleScratch.Clear();
+            _farUnloadHandleScratchCount = 0;
         }
 
         private static void EnsureValidationCapacity(int requiredCapacity)

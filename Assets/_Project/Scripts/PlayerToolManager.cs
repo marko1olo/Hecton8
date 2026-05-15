@@ -125,7 +125,8 @@ namespace Hecton8.Gameplay
 
         /// <summary>Tselevaya pozitsiya pri opuskanii (rest + offset).</summary>
         private Vector3 _anchorLoweredPosition;
-        private IInputService _subscribedInputManager;
+        private uint _lastPlayerInputSignalSequence;
+        private const uint PlayerInputSignalSourceHash = 0x504C494Eu;
         private readonly string[] _slotNameCache = new string[4];
         private bool _assignedPoolsWarmed;
         private bool _constructionGhostPoolsWarmed;
@@ -217,7 +218,6 @@ namespace Hecton8.Gameplay
         {
             ResolveRuntimeContextDependencies();
             TryRegisterToTickManager();
-            RefreshInputSubscriptions();
             SubscribeModuleStatusEvents();
             RefreshInteriorCarrierCache(true);
             WarmRuntimePoolsIfNeeded();
@@ -229,7 +229,6 @@ namespace Hecton8.Gameplay
         private void OnDisable()
         {
             TryUnregisterFromTickManager();
-            UnsubscribeFromInputManager();
             UnsubscribeModuleStatusEvents();
             ClearInteriorCarrierCache();
 
@@ -261,36 +260,6 @@ namespace Hecton8.Gameplay
             _registeredToTick = false;
         }
 
-        private void RefreshInputSubscriptions()
-        {
-            IInputService currentManager = GlobalRegistry.Input;
-            if (ReferenceEquals(_subscribedInputManager, currentManager))
-                return;
-
-            UnsubscribeFromInputManager();
-
-            if (currentManager == null)
-                return;
-
-            currentManager.OnToolSlot1 += HandleToolSlot1;
-            currentManager.OnToolSlot2 += HandleToolSlot2;
-            currentManager.OnToolSlot3 += HandleToolSlot3;
-            currentManager.OnToolSlot4 += HandleToolSlot4;
-            _subscribedInputManager = currentManager;
-        }
-
-        private void UnsubscribeFromInputManager()
-        {
-            if (_subscribedInputManager == null)
-                return;
-
-            _subscribedInputManager.OnToolSlot1 -= HandleToolSlot1;
-            _subscribedInputManager.OnToolSlot2 -= HandleToolSlot2;
-            _subscribedInputManager.OnToolSlot3 -= HandleToolSlot3;
-            _subscribedInputManager.OnToolSlot4 -= HandleToolSlot4;
-            _subscribedInputManager = null;
-        }
-
         // ══════════════════════════════════════════════════════════
         //  ITickable — MAIN LOOP (vyzyvaetsya kazhdyy kadr)
         // ══════════════════════════════════════════════════════════
@@ -301,7 +270,7 @@ namespace Hecton8.Gameplay
         /// </summary>
         public void Tick(float deltaTime)
         {
-            RefreshInputSubscriptions();
+            ConsumeToolSlotInputSignals();
             if (_externallyDockedTool != null)
             {
                 if (!ReferenceEquals(_externallyDockedTool, _currentTool))
@@ -1175,10 +1144,46 @@ namespace Hecton8.Gameplay
             return playerTransportCoordinator != null && playerTransportCoordinator.BlocksHandheldToolUsage();
         }
 
-        private void HandleToolSlot1() => HandleToolSlot(0);
-        private void HandleToolSlot2() => HandleToolSlot(1);
-        private void HandleToolSlot3() => HandleToolSlot(2);
-        private void HandleToolSlot4() => HandleToolSlot(3);
+        private void ConsumeToolSlotInputSignals()
+        {
+            ReadOnlySpan<PlayerInputSignal> signals = SignalBus<PlayerInputSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                PlayerInputSignal signal = signals[i];
+                if (signal.SourceHash != PlayerInputSignalSourceHash ||
+                    !IsNewerInputSequence(signal.Sequence, _lastPlayerInputSignalSequence))
+                    continue;
+
+                int slotIndex = ResolveToolSlotCommand(signal.Command);
+                if (slotIndex < 0)
+                    continue;
+
+                _lastPlayerInputSignalSequence = signal.Sequence;
+                HandleToolSlot(slotIndex);
+            }
+        }
+
+        private static int ResolveToolSlotCommand(byte command)
+        {
+            switch (command)
+            {
+                case PlayerInputSignalCommands.ToolSlot1:
+                    return 0;
+                case PlayerInputSignalCommands.ToolSlot2:
+                    return 1;
+                case PlayerInputSignalCommands.ToolSlot3:
+                    return 2;
+                case PlayerInputSignalCommands.ToolSlot4:
+                    return 3;
+                default:
+                    return -1;
+            }
+        }
+
+        private static bool IsNewerInputSequence(uint candidate, uint current)
+        {
+            return candidate != 0u && candidate != current && unchecked(candidate - current) < 0x80000000u;
+        }
 
         private void HandleToolSlot(int index)
         {

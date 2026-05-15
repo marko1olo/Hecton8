@@ -477,7 +477,7 @@ namespace Hecton8.Power
                     Unlocked = (byte)(voltage > DoorUnlockVoltage ? 1 : 0),
                     Flags = (byte)(voltage > DoorUnlockVoltage ? 1 : 0)
                 };
-                SignalBus<WfcOutpostDoorPowerSignal>.Push(in signal);
+                GlobalSignals.Publish(in signal);
             }
         }
 

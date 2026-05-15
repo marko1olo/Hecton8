@@ -1862,11 +1862,13 @@ namespace Hecton8.SaveSystem
         private async Awaitable FlushWfcOutpostDirtyPayloadAsync(ulong sectorHash, ulong payloadHash, uint frame)
         {
             bool appended = false;
+            IMacroDatabaseService macroDatabase = _macroDatabaseService;
             try
             {
-                IMacroDatabaseService macroDatabase = _macroDatabaseService;
                 await Awaitable.BackgroundThreadAsync();
-                appended = macroDatabase != null && macroDatabase.TryAppendDirtyPayload(sectorHash);
+                appended = macroDatabase != null &&
+                           macroDatabase.IsOpen &&
+                           macroDatabase.TryAppendDirtyPayload(sectorHash);
             }
             catch (Exception)
             {
@@ -1874,6 +1876,17 @@ namespace Hecton8.SaveSystem
             }
 
             await Awaitable.MainThreadAsync();
+            if (macroDatabase == null ||
+                !ReferenceEquals(_macroDatabaseService, macroDatabase) ||
+                !macroDatabase.IsOpen)
+            {
+                if (payloadHash != 0UL)
+                    MarkWfcOutpostAppendFailed(sectorHash, payloadHash, frame);
+
+                RecordWfcOutpostEventBlackBox(WfcOutpostBlackBoxOperationAppend, WfcOutpostPersistenceStatus.ServiceUnavailable, sectorHash, frame: frame);
+                return;
+            }
+
             if (appended)
             {
                 if (payloadHash != 0UL)

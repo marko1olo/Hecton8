@@ -154,6 +154,7 @@ namespace Hecton8.UI
         private TMP_FontAsset _cachedAsciiFont;
         private Texture _runtimeFontAtlasTexture;
         private Texture _runtimeSpriteAtlasTexture;
+        private TMP_Text _textSinkWithPayload;
         private Camera _cachedRenderCamera;
         private Transform _cachedRenderCameraTransform;
         private IInputDeterminismService _inputDeterminism;
@@ -196,6 +197,7 @@ namespace Hecton8.UI
         private bool _lowTierActive;
         private bool _cachedRenderCameraFromInteraction;
         private bool _inputDeterminismAwaitingRegistration;
+        private bool _textSinkHasPayload;
 
         public void LateFrameTick()
         {
@@ -207,6 +209,9 @@ namespace Hecton8.UI
                 RebuildActiveTooltipLayout(refreshScheme: false);
 
             bool hasVisiblePayload = (_textGlyphCount > 0 || _iconCount > 0) && (_hasSignalTarget || _diagnosticActive);
+            if (!hasVisiblePayload)
+                ClearTextSink();
+
             float targetAlpha = hasVisiblePayload ? 1f : 0f;
             if (IsLowTier())
             {
@@ -430,6 +435,7 @@ namespace Hecton8.UI
 
             _textGlyphCount = 0;
             _iconCount = 0;
+            ClearTextSink();
         }
 
         private void ConsumeLookTargetSignals()
@@ -543,6 +549,21 @@ namespace Hecton8.UI
                 return;
 
             sink.SetCharArray(_promptBuffer, 0, _promptLength);
+            _textSinkWithPayload = sink;
+            _textSinkHasPayload = true;
+        }
+
+        private void ClearTextSink()
+        {
+            if (!_textSinkHasPayload)
+                return;
+
+            TMP_Text sink = _textSinkWithPayload != null ? _textSinkWithPayload : worldSpaceTextSink;
+            if (sink != null && !(sink is TextMeshProUGUI))
+                sink.SetCharArray(_promptBuffer, 0, 0);
+
+            _textSinkWithPayload = null;
+            _textSinkHasPayload = false;
         }
 
         private void RebuildActiveTooltipLayout()
@@ -571,6 +592,7 @@ namespace Hecton8.UI
             _textGlyphCount = 0;
             _iconCount = 0;
             _visibleAlpha = 0f;
+            ClearTextSink();
         }
 
         private void BuildGlyphLayout(ReadOnlySpan<char> prompt, bool includeBindingIcon)
@@ -582,6 +604,7 @@ namespace Hecton8.UI
                 _runtimeSpriteAtlasTexture = null;
                 _textGlyphCount = 0;
                 _iconCount = 0;
+                ClearTextSink();
                 return;
             }
 

@@ -465,6 +465,65 @@ Status: VERIFIED AUP INTEGRITY - LOOP 39 REAL H-PHI SOURCE REPAIR REMOVED DEAD O
 - Unity import/Console verification remains pending because no Unity editor session is available.
 - H-Phi result is static-source evidence, not profiler proof.
 
+## Loop 41 Real H-Phi Source Repair - WorldSpatialHashGrid Far-Unload List Scratch Removal
+
+### Findings
+
+- `WorldSpatialHashGrid` still used a persistent `List<int>` for far-unload completion scratch despite a fixed upper bound from `MaxSpatialMaintenanceEntryCapacity`.
+- The list was only used after the far-unload job completed to stage handles before main-thread native-hash eviction.
+
+### Source Changes
+
+- `Assets/_Project/Scripts/World/WorldSpatialHashGrid.cs`: replaced `_farUnloadHandleScratch` with a fixed cold `int[8192]` and `_farUnloadHandleScratchCount`.
+- Removed `List.Clear`, `List.Add`, and `.Count` usage from the far-unload completion scratch path.
+- Kept the two-pass eviction semantics intact: first collect job-positive handles, then mutate `_entries` and `_nativeHash`.
+
+### Verification
+
+- Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0` completed in 136.573 seconds with `RuntimeHPhiRisk=0.000628274`, `RuntimeHPhiNarrow=0.010784754`, `AupPrecisionIntegrity=1`, `AupPrecisionRisk=0`, `NativeArrayRefs=7072`, `PrimaryOwnerBlockedNativeArrayRefs=5678`, and `NativeOwnershipRisk=8196`.
+- Final targeted qualified AUP H-Phi risk scan returns `NO_MATCHES`.
+- Final direct committed-offset leak scan returns `NO_MATCHES`.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` returned 237 broad residual matches. Residuals remain broad `universe` text plus known final-cast/presentation payload names.
+- `git diff --check -- Assets/_Project/Scripts/World/WorldSpatialHashGrid.cs` reports a line-ending warning only, no whitespace errors.
+- Temporary Loop 41 capture is absent after cleanup.
+- No `dotnet build` or rebuild was run in Loop 41 because the latest user instruction explicitly forbids rebuilds.
+
+### Evidence Queue
+
+- Unity import/Console verification remains pending because no Unity editor session is available.
+- H-Phi result is static-source evidence, not profiler proof.
+
+## Loop 40 Real H-Phi Source Repair - Origin-Shift Scratch Native Removal and Editor Double AUP History
+
+### Findings
+
+- `WorldSpatialHashGrid._originShiftHandles` was still a persistent `NativeArray<int>` even though the live origin-shift rebase path is synchronous and uses it only as a main-thread dictionary key scratch list.
+- The strict AUP scan caught editor-only legacy bridge calls in `KinematicGhostDebugger`, and the ghost history stored absolute-universe positions as `Vector3`.
+
+### Source Changes
+
+- `Assets/_Project/Scripts/World/WorldSpatialHashGrid.cs`: replaced `_originShiftHandles` with a fixed cold `int[8192]` scratch array.
+- Removed dead `EnsureOriginShiftCapacity` and `DisposeOriginShiftBuffers` methods plus their callsites.
+- `Assets/_Project/Scripts/Editor/KinematicGhostDebugger.cs`: changed absolute-universe ghost history from `Vector3[96]` to `double3[96]`, restored double AUP bridge calls, and kept the final `Vector3` cast at the Handles output boundary.
+
+### Verification
+
+- `WorldSpatialHashGrid.cs` `NativeArray<T>` references are now 24 versus the 30-reference `HEAD` baseline recorded for this repair lane.
+- Removed native memory this loop: one persistent `NativeArray<int>[8192]`, approximately 32 KiB. Loop 39+40 combined origin-shift scratch removal is approximately 224 KiB.
+- Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0` completed in 160.559 seconds with `RuntimeHPhiRisk=0.000626365`, `RuntimeHPhiNarrow=0.010755694`, `AupPrecisionIntegrity=1`, `AupPrecisionRisk=0`, `NativeArrayRefs=7084`, `PrimaryOwnerBlockedNativeArrayRefs=5690`, and `NativeOwnershipRisk=8212`.
+- Final targeted qualified AUP H-Phi risk scan returns `NO_MATCHES`.
+- Final direct committed-offset leak scan returns `NO_MATCHES`.
+- Dead origin-shift native scratch/refresh symbol scan returns no deleted method/buffer names.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` returned 237 broad residual matches. Residuals remain broad `universe` text plus known final-cast/presentation payload names.
+- `git diff --check -- Assets/_Project/Scripts/World/WorldSpatialHashGrid.cs Assets/_Project/Scripts/Editor/KinematicGhostDebugger.cs` reports a line-ending warning only, no whitespace errors.
+- Temporary Loop 40 capture is absent after cleanup.
+- No `dotnet build` or rebuild was run in Loop 40 because the latest user instruction explicitly forbids rebuilds.
+
+### Evidence Queue
+
+- Unity import/Console verification remains pending because no Unity editor session is available.
+- H-Phi result is static-source evidence, not profiler proof.
+
 ## Loop 28 AUP Budget CoreGraphOnly Fail-Fast Guard
 
 ### Findings

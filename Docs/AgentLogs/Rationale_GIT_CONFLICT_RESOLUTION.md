@@ -161,3 +161,9 @@ Solution: Record Fresh81=1, Fresh82=0, Fresh83=0, CurrentDisk build=0, and Fresh
 Rejected Alternatives: Claiming full readiness from static HPhi/source scans or generated-project build exits without Unity Console, PlayMode, profiler, and player build artifacts.
 Scalability potential: No runtime tier claim. Evidence discipline prevents false Low/Middle/High/Ultra readiness reports.
 Hardware Impact: 0 us runtime impact.
+
+Problem: After the pushed merge head `d2956babc`, another local runtime/docs/evidence tail appeared while the user asked for a complete commit summary.
+Solution: Fetch first, prove `origin/main...HEAD` is `0 0`, inspect runtime diffs, stage only non-empty evidence files, leave zero-byte HPhi Fresh89 JSON unstaged, then checkpoint the verified tail before summarizing.
+Rejected Alternatives: Reporting from a dirty uncommitted tree, committing an empty proof file, pulling with no incoming commits, or force-pushing over shared history.
+Scalability potential: Git-only integration pass. Runtime scalability behavior remains owned by producing agents; this pass only prevents merge drift and preserves evidence boundaries.
+Hardware Impact: 0 us runtime impact. Dev-path gain is a smaller conflict surface for GitHub Desktop and a clearer split between pushed facts and remaining generated debris.

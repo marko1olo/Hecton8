@@ -937,13 +937,21 @@ namespace Hecton8.Core.Signals
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static int SanitizePlayerBaseEnterSignal(ref PlayerBaseEnterSignal signal)
         {
-            return SanitizeAup(ref signal.BaseCenterAup) ? PlayerBaseEnterSignalGuardCode : 0;
+            if (!SanitizeAup(ref signal.BaseCenterAup))
+                return 0;
+
+            signal.Flags = (ushort)(signal.Flags | PlayerBaseEnterSignal.SanitizedBaseCenterFlag);
+            return PlayerBaseEnterSignalGuardCode;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static int SanitizePlayerBaseExitSignal(ref PlayerBaseExitSignal signal)
         {
-            return SanitizeAup(ref signal.BaseCenterAup) ? PlayerBaseExitSignalGuardCode : 0;
+            if (!SanitizeAup(ref signal.BaseCenterAup))
+                return 0;
+
+            signal.Flags = (ushort)(signal.Flags | PlayerBaseExitSignal.SanitizedBaseCenterFlag);
+            return PlayerBaseExitSignalGuardCode;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -5371,6 +5379,7 @@ namespace Hecton8.Core.Signals
     public struct PlayerBaseEnterSignal : ISignal
     {
         public const ushort DirectPlayerInsideFlag = 1 << 0;
+        public const ushort SanitizedBaseCenterFlag = 1 << 15;
 
         [FieldOffset(0)] public AbsoluteUniversePosition BaseCenterAup;
         [FieldOffset(48)] public int BaseId;
@@ -5385,6 +5394,7 @@ namespace Hecton8.Core.Signals
     public struct PlayerBaseExitSignal : ISignal
     {
         public const ushort DirectPlayerOutsideFlag = 1 << 0;
+        public const ushort SanitizedBaseCenterFlag = 1 << 15;
 
         [FieldOffset(0)] public AbsoluteUniversePosition BaseCenterAup;
         [FieldOffset(48)] public int BaseId;

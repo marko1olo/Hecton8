@@ -3,7 +3,7 @@
 Agent: ARCHITECTURAL_AUP_INTEGRITY_AUDITOR
 Domain: ECHELON 1 / Origin Shift (AUP Manager), with audit reach into Physics, Voxel, Kinematics, AI trigger math, Biome trigger math, and deterministic seed callsites.
 Assignment Source: User-supplied XML block. `Docs/Tasks/CURRENT_BATCH.md` extraction returned `PROMPT_NOT_FOUND` for this ID on initial pass.
-Status: VERIFIED AUP INTEGRITY - LOOP 39 APPLIED; REAL H-PHI SOURCE REPAIR REMOVED DEAD ORIGIN-SHIFT NATIVE BUFFERS FROM WORLD SPATIAL HASH; STRICT AUP SCANS RETURN NO_MATCHES; CORE BUILD NOT RERUN PER USER; ASMDEF BLOCKED BY ARCHITECTURE
+Status: VERIFIED AUP INTEGRITY - LOOP 41 APPLIED; REAL H-PHI SOURCE REPAIRS REMOVED WORLD SPATIAL HASH ORIGIN-SHIFT NATIVE SCRATCH, FAR-UNLOAD LIST SCRATCH, AND RESTORED EDITOR GHOST DOUBLE AUP HISTORY; STRICT AUP SCANS RETURN NO_MATCHES; CORE BUILD NOT RERUN PER USER; ASMDEF BLOCKED BY ARCHITECTURE
 
 ## Selected Mandates
 
@@ -463,3 +463,37 @@ Loop 39 - Real H-Phi Source Repair / WorldSpatialHashGrid Origin-Shift Buffer Re
 - Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` was re-run and returned 237 broad residual matches. Residuals remain broad `universe` text and known final-cast/presentation payload names.
 - Temporary capture `TEMP_HECTON_PHI_SUMMARY_LOOP39.json` was removed after extracting metrics.
 - No `dotnet build` or rebuild was run in Loop 39 because the user explicitly forbade rebuilds.
+
+Loop 40 - Real H-Phi Source Repair / Origin-Shift Scratch Native Removal and Editor Double AUP History:
+- Re-read status/rationale and kept the rebuild ban active after the user repeated the no-rebuild instruction.
+- Converted `WorldSpatialHashGrid._originShiftHandles` from a persistent `NativeArray<int>` to a fixed cold `int[8192]` main-thread scratch array.
+- Removed the now-dead `EnsureOriginShiftCapacity` and `DisposeOriginShiftBuffers` methods and their callsites; the synchronous origin-shift path no longer owns any native origin-shift scratch buffers.
+- `WorldSpatialHashGrid.cs` `NativeArray<T>` references are now 24 versus 30 at `HEAD` baseline recorded for this lane.
+- Memory impact this loop: removes one persistent `NativeArray<int>[8192]`, approximately 32768 bytes / 32 KiB, plus NativeMemorySentinel register/unregister churn. Combined Loop 39+40 origin-shift scratch removal is approximately 224 KiB native memory.
+- The first strict post-patch AUP scan caught live editor-only legacy calls in `KinematicGhostDebugger`; fixed the regression before claiming verification.
+- `KinematicGhostDebugger` now stores absolute-universe ghost history as `double3[96]`, reconstructs preview deltas in double, and casts to `Vector3` only at the Handles drawing boundary. Editor-only cold managed memory increases by approximately 1152 bytes versus the previous `Vector3[96]` history; gameplay runtime frame impact is 0 us.
+- Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0` completed in 160.559 seconds.
+- Latest full static H-Phi summary: `RuntimeHPhiRisk=0.000626365`, `RuntimeHPhiNarrow=0.010755694`, `AupPrecisionIntegrity=1`, `AupPrecisionSafe=362`, `AupPrecisionRisk=0`, `NativeArrayRefs=7084`, `PrimaryOwnerBlockedNativeArrayRefs=5690`, `NativeOwnershipRisk=8212`, `RuntimeFiles=1278`, `RuntimeLines=868884`.
+- Final targeted qualified AUP H-Phi risk scan returns `NO_MATCHES`.
+- Final direct committed-offset leak scan returns `NO_MATCHES`.
+- Dead origin-shift native scratch/refresh symbol scan in `WorldSpatialHashGrid.cs` returns only the live managed `_originShiftHandles` usages and no deleted method/buffer names.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` was re-run and returned 237 broad residual matches. Residuals remain broad `universe` text and known final-cast/presentation payload names.
+- Temporary capture `TEMP_HECTON_PHI_SUMMARY_LOOP40.json` was removed after extracting metrics.
+- `git diff --check -- Assets/_Project/Scripts/World/WorldSpatialHashGrid.cs Assets/_Project/Scripts/Editor/KinematicGhostDebugger.cs` reports a line-ending warning only, no whitespace errors.
+- No `dotnet build` or rebuild was run in Loop 40 because the user explicitly forbade rebuilds.
+
+Loop 41 - Real H-Phi Source Repair / WorldSpatialHashGrid Far-Unload List Scratch Removal:
+- Re-read status/rationale and kept the rebuild ban active.
+- Re-extracted the batch prompt from `Docs/Tasks/CURRENT_BATCH.md`; the ID still is not present there, so the user-supplied XML remains authoritative.
+- Replaced `WorldSpatialHashGrid._farUnloadHandleScratch` from `List<int>` to a fixed cold `int[8192]` plus `_farUnloadHandleScratchCount`.
+- Preserved the existing two-pass far-unload completion semantics: gather job-positive handles first, then evict from the native hash after enumeration.
+- Removed `List.Clear`, `List.Add`, and `.Count` usage from the far-unload completion scratch path; capacity is bounded by `_farUnloadHandles.Length` / `MaxSpatialMaintenanceEntryCapacity`.
+- `WorldSpatialHashGrid.cs` no longer has a managed `List<int>` far-unload scratch allocation. Remaining `NativeList<int>` is the query handle job payload and was not changed.
+- Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0` completed in 136.573 seconds.
+- Latest full static H-Phi summary: `RuntimeHPhiRisk=0.000628274`, `RuntimeHPhiNarrow=0.010784754`, `AupPrecisionIntegrity=1`, `AupPrecisionSafe=362`, `AupPrecisionRisk=0`, `NativeArrayRefs=7072`, `PrimaryOwnerBlockedNativeArrayRefs=5678`, `NativeOwnershipRisk=8196`, `RuntimeFiles=1278`, `RuntimeLines=869444`.
+- Final targeted qualified AUP H-Phi risk scan returns `NO_MATCHES`.
+- Final direct committed-offset leak scan returns `NO_MATCHES`.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` was re-run and returned 237 broad residual matches. Residuals remain broad `universe` text and known final-cast/presentation payload names.
+- Temporary capture `TEMP_HECTON_PHI_SUMMARY_LOOP41.json` was removed after extracting metrics.
+- `git diff --check -- Assets/_Project/Scripts/World/WorldSpatialHashGrid.cs` reports a line-ending warning only, no whitespace errors.
+- No `dotnet build` or rebuild was run in Loop 41 because the user explicitly forbade rebuilds.

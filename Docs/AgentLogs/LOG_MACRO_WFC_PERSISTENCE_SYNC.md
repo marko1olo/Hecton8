@@ -966,3 +966,82 @@ Verification:
 - Static scan confirms no same-frame retry and no Tick retry path.
 - `git diff --check -- Assets/_Project/Scripts/SaveManager.cs Docs/Tasks/Status_MACRO_WFC_PERSISTENCE_SYNC.md Docs/AgentLogs/Rationale_MACRO_WFC_PERSISTENCE_SYNC.md Docs/AgentLogs/LOG_MACRO_WFC_PERSISTENCE_SYNC.md` reports only Git CRLF normalization warnings.
 - No `dotnet` rebuild was run.
+
+## Recheck Report: MacroDB Dirty Cache Clean Handoff
+Status: PENDING VERIFICATION.
+
+What was wrong:
+- MacroDB direct append can durably write a dirty payload but the DataVault cache handle must then stop carrying `PayloadDirtyFlag`.
+- Direct append cleanup was present, but compaction dirty flush had been clearing cache metadata while using target temp-file offsets before `File.Replace`.
+- A failed or delayed swap could therefore leave cache metadata inconsistent with the active database boundary.
+
+What was done:
+- Kept direct append cache cleanup after active-file `UpsertPayloadOffset`.
+- Removed source-cache mutation from `FlushDirtyPayloadsIntoTargetLocked`.
+- Added post-swap `MarkDirtyPayloadCacheCleanAfterSwapLocked()` after successful replace/reopen; it resolves offsets from the active B-tree, clears dirty flags, or removes stale cache entries if the active payload cannot be proven.
+
+Cinematic cheats used:
+- Cache metadata follows active-file ownership instead of carrying a separate compaction offset side channel.
+
+Exact microseconds saved:
+- Measured savings: 0 us. No profiler or runtime trace.
+- Runtime allocation: 0 B by static inspection.
+- Hot Tick cost: unchanged.
+- Cold compaction cost: one active B-tree offset lookup per dirty payload during swap.
+
+Verification:
+- Static scan confirms `MarkPayloadCleanInCacheLocked` is called only from active append and post-swap handoff.
+- Static scan confirms compaction target dirty flush no longer clears source cache with temp offsets.
+- `git diff --check -- Assets/_Project/Scripts/Core/Database/H8MacroDatabaseService.cs Assets/_Project/Scripts/SaveManager.cs Docs/Tasks/Status_MACRO_WFC_PERSISTENCE_SYNC.md Docs/AgentLogs/Rationale_MACRO_WFC_PERSISTENCE_SYNC.md Docs/AgentLogs/LOG_MACRO_WFC_PERSISTENCE_SYNC.md` reports only Git CRLF normalization warnings.
+- No `dotnet` rebuild was run.
+
+## Recheck Report: WFC Producer Facade Drift Recheck
+Status: PENDING VERIFICATION.
+
+What was wrong:
+- `MarauderOutpostGenerationService` directly pushed `WfcOutpostGeneratedSignal`.
+- `WfcOutpostPowerBootRuntime` directly pushed `WfcOutpostDoorPowerSignal`.
+- WFC producers must publish through `GlobalSignals` so lane initialization and ownership stay centralized.
+
+What was done:
+- Replaced both producer direct pushes with `GlobalSignals.Publish(in signal)`.
+- Left snapshot reads unchanged; consumers can still read the fixed frame lanes.
+
+Cinematic cheats used:
+- Existing signal facade reused instead of adding new bridge objects, metadata fields, or managed event wrappers.
+
+Exact microseconds saved:
+- Measured savings: 0 us. No profiler or runtime trace.
+- Runtime allocation: 0 B by static inspection.
+- Payload size: unchanged.
+
+Verification:
+- Static scan confirms remaining direct WFC typed `SignalBus<T>.Push` calls are only inside `GlobalSignals`.
+- No `dotnet` rebuild was run.
+
+## Recheck Report: WFC Append Stale-Service Callback Guard
+Status: PENDING VERIFICATION.
+
+What was wrong:
+- WFC dirty append captured `_macroDatabaseService`, ran append work off-thread, then returned to main thread without proving the captured service was still current/open.
+- A stale callback could clear retry flags for a newer service boundary or produce a false write-failure dump during service shutdown/churn.
+
+What was done:
+- Captured the MacroDB service once before the background hop.
+- Required `macroDatabase.IsOpen` before background append.
+- On main thread, verified `ReferenceEquals(_macroDatabaseService, macroDatabase)` and `macroDatabase.IsOpen` before success/failure handling.
+- Stale callbacks now record `ServiceUnavailable`, keep matching retry state pending, and skip the write-failure dump path.
+
+Cinematic cheats used:
+- Owner-bound async callback validation instead of registry refresh, service polling, or expanding MacroDB contracts.
+
+Exact microseconds saved:
+- Measured savings: 0 us. No profiler or runtime trace.
+- Runtime allocation: 0 B by static inspection.
+- Hot Tick cost: unchanged.
+- Completion cost: one reference equality check and one `IsOpen` check.
+
+Verification:
+- Static scan confirms the stale-service guard in `FlushWfcOutpostDirtyPayloadAsync`.
+- `git diff --check -- Assets/_Project/Scripts/SaveManager.cs` reports only Git CRLF normalization warnings.
+- No `dotnet` rebuild was run.
