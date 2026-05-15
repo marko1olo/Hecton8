@@ -52,11 +52,11 @@ Scalability potential: Runtime Low/Middle/High/Ultra unchanged. Documentation ro
 
 Hardware Impact: Runtime microseconds saved on i3/MX350: 0 claimed.
 
-## Decision 5: Remove Unused Core GPR Reference, Not World GPR Runtime
+## Decision 5: Clear Transient Core GPR Reference Drift, Not World GPR Runtime
 
-Problem: A fresh H-Phi summary after concurrent churn showed Core asmdef debt at `26`, one above the R49 accepted ceiling. The optional unused-reference scan identified `Hecton8.World.GPR` as a high-confidence unused Core asmdef reference with `SourceInCoreCompileSurfaceCount=0`.
+Problem: A fresh H-Phi summary after concurrent churn showed Core asmdef debt at `26`, one above the R49 accepted ceiling. The optional unused-reference scan identified `Hecton8.World.GPR` as a high-confidence unused Core asmdef reference with `SourceInCoreCompileSurfaceCount=0` during transient workspace/index drift.
 
-Solution: Remove only `Hecton8.World.GPR` from `Assets/_Project/Scripts/Hecton8.Core.asmdef`, then rerun the Core graph gate and Core CLI compile. World GPR runtime and contracts were not changed.
+Solution: Align current file/index state so `Assets/_Project/Scripts/Hecton8.Core.asmdef` contains no `Hecton8.World.GPR` Core reference, then rerun the Core graph gate and Core CLI compile. World GPR runtime and contracts were not changed.
 
 Rejected Alternatives: Broad Core graph cleanup was rejected because it crosses many owner domains. Editing C# GPR/runtime code was rejected because this task owns documentation/integration hygiene, not World implementation. Keeping the unused reference was rejected because it is measurable H-Phi dependency debt with direct tool evidence.
 

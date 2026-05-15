@@ -230,11 +230,11 @@ updates this contract with a bounded dispatcher-shell justification.
 
 ## 2026-05-15 Current Static Baseline
 
-Artifact: `../AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_222428_CurrentDiskBudgetGate19.json`
+Artifact: `../AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_222808_CurrentDiskBudgetGate20_Tight.json`
 with exit summary
-`../AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_222428_CurrentDiskBudgetGate19.exit.txt`.
+`../AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_222808_CurrentDiskBudgetGate20_Tight.exit.txt`.
 Result: `EXIT=0` on a full source summary JSON budget run at
-`2026-05-15 22:26:25 +04:00`.
+`2026-05-15 22:30:16 +04:00`.
 
 Current score floors passed:
 
@@ -258,7 +258,7 @@ Current static counters passed:
 - `CoroutineSurface=0/0`
 - `AupPrecisionRisk=0`
 
-CurrentDiskBudgetGate19 Core graph debt was at the accepted ceiling:
+CurrentDiskBudgetGate20 Core graph debt was at the accepted ceiling:
 `CoreAsmdefDebtReferenceCount=25`, `GeneratedProjectDebtReferenceCount=10`,
 `SourceBackedBridgeDebtReferenceCount=14`,
 `SourceBackedCompileBridgeDebtReferenceCount=8`, and
@@ -277,8 +277,9 @@ Artifact: `../AgentLogs/HPhi_DOC_HONEST_ANALYSIS_R3_20260515_CoreGraphAfterGprPr
 with exit summary
 `../AgentLogs/HPhi_DOC_HONEST_ANALYSIS_R3_20260515_CoreGraphAfterGprPrune.exit.txt`.
 
-Result: `EXIT=0` on a Core graph summary after removing unused
-`Hecton8.World.GPR` from `Assets/_Project/Scripts/Hecton8.Core.asmdef`.
+Result: `EXIT=0` on a Core graph summary after clearing transient unused
+`Hecton8.World.GPR` Core asmdef drift; the current file/index contain no such
+Core reference.
 
 Current Core graph debt after the prune:
 

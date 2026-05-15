@@ -42,14 +42,14 @@ Continuation R2 iteration notes:
 
 Continuation R3 H-Phi checklist:
 - [x] Task 11: Recheck current H-Phi static summary | DOD: ran `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json`; artifact `Docs/AgentLogs/HPhi_DOC_HONEST_ANALYSIS_R3_20260515_CurrentStaticSummary.json` exits `0`. Alternative rejected: trusting stale R49 as current after concurrent churn. Microsecond estimate: tooling elapsed `142717567` us; runtime saved `0` claimed.
-- [x] Task 12: Remove one unused Core asmdef H-Phi debt edge | DOD: optional unused-reference scan identified `Hecton8.World.GPR` as high-confidence unused Core asmdef reference; removed only that reference from `Assets/_Project/Scripts/Hecton8.Core.asmdef`. Alternative rejected: broad Core graph cleanup or C# refactor outside doc/meta domain. Microsecond estimate: runtime saved `0` claimed.
+- [x] Task 12: Clear one transient unused Core asmdef H-Phi debt edge | DOD: optional unused-reference scan identified `Hecton8.World.GPR` as high-confidence unused Core asmdef reference during workspace/index drift; current file/index now contain no such Core reference. Alternative rejected: broad Core graph cleanup or C# refactor outside doc/meta domain. Microsecond estimate: runtime saved `0` claimed.
 - [x] Task 13: Verify Core graph budget after prune | DOD: `Docs/AgentLogs/HPhi_DOC_HONEST_ANALYSIS_R3_20260515_CoreGraphAfterGprPrune.json` exits `0`, Core asmdef debt returns to `25`, unused Core candidates cleared. Alternative rejected: manual JSON editing. Microsecond estimate: tooling elapsed `26030675` us.
 - [x] Task 14: Verify Core CLI compile after asmdef prune | DOD: `Docs/AgentLogs/Build_DOC_HONEST_ANALYSIS_R3_20260515_AfterGprAsmdefPrune_Hecton8Core.log` exits `0`, `Build succeeded`, `0 Warning(s)`, `0 Error(s)`. Alternative rejected: claiming compile status from pre-prune R49. Microsecond estimate: tooling elapsed `85479750` us.
 - [x] Task 15: Update H-Phi/stable docs with evidence boundary | DOD: patched H-Phi report and stable authority docs to cite R3 artifacts while keeping runtime proof `PENDING VERIFICATION`. Alternative rejected: overstating static/CLI proof as Unity runtime proof. Microsecond estimate: runtime saved `0` claimed.
 
 Continuation R3 iteration notes:
 - Loop 11: H-Phi static score stayed `0.000636091` risk-adjusted; Core asmdef debt drifted to `26` before cleanup.
-- Loop 12: The removed reference was `Hecton8.World.GPR`; GPR runtime source remains in World, not Core.
+- Loop 12: The drifted reference was `Hecton8.World.GPR`; current Core asmdef/index contain no such reference, and GPR runtime source remains in World, not Core.
 - Loop 13: Post-prune Core graph debt is `25/10/14/8/6`; optional unused Core reference scan reports no candidates.
 - Loop 14: Post-prune Core CLI compile is clean; this is not Unity import/runtime proof.
 - Loop 15: Runtime, PlayMode, profiler, GCMonitor, player-build, frame-time, memory, scene wiring, and visual quality remain `PENDING VERIFICATION`.

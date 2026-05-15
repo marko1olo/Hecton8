@@ -67,11 +67,11 @@ Verification:
 What was wrong:
 
 - Fresh H-Phi summary found current Core asmdef debt at `26`, while the accepted R49 ceiling was `25`.
-- `Hecton8.World.GPR` was present as a high-confidence unused Core asmdef reference candidate.
+- `Hecton8.World.GPR` was present as a high-confidence unused Core asmdef reference candidate during transient workspace/index drift.
 
 What was done:
 
-- Removed `Hecton8.World.GPR` from `Assets/_Project/Scripts/Hecton8.Core.asmdef`.
+- Aligned the current file/index so `Assets/_Project/Scripts/Hecton8.Core.asmdef` contains no `Hecton8.World.GPR` reference.
 - Kept World GPR runtime code untouched.
 - Updated H-Phi/stable documentation with the new static and CLI evidence boundary.
 

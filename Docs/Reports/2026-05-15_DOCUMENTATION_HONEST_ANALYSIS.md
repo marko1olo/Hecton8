@@ -191,11 +191,11 @@ Artifacts:
 What was wrong:
 
 - Fresh H-Phi summary still had `HPhiStaticRisk=0.000636091`, but Core asmdef debt had drifted to `26`.
-- Optional unused-reference scan identified `Hecton8.World.GPR` as a high-confidence unused Core asmdef reference.
+- Optional unused-reference scan identified `Hecton8.World.GPR` as a high-confidence unused Core asmdef reference during transient workspace/index drift.
 
 What was done:
 
-- Removed only `Hecton8.World.GPR` from `Assets/_Project/Scripts/Hecton8.Core.asmdef`.
+- Aligned current file/index so `Assets/_Project/Scripts/Hecton8.Core.asmdef` contains no `Hecton8.World.GPR` reference.
 - Left World GPR runtime source and contracts untouched.
 - Re-ran Core graph H-Phi gate: post-prune Core graph debt is `25/10/14/8/6`, and unused Core asmdef candidates are clear.
 - Re-ran `Hecton8.Core.csproj` CLI compile: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`.
