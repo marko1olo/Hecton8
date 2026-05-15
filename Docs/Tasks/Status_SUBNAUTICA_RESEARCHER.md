@@ -1,0 +1,17 @@
+# Status_SUBNAUTICA_RESEARCHER
+
+Agent: SUBNAUTICA_RESEARCHER
+Domain: External reference research / codebase foundation comparison
+Source directive: user chat request, no active CURRENT_BATCH.md found outside archive.
+Status: COMPLETE - RESEARCH ONLY, NO RUNTIME CODE CHANGED, SECOND PASS INCLUDED
+
+- [x] Task 1 - Establish authority files | DOD: read AGENTS.md, domain map, mandate registry index | Alternative rejected: using chat-only assumptions | Estimate: 0us runtime impact
+- [x] Task 2 - Read task-relevant mandates | DOD: read 8 mandate families: visual fake, perf/VRAM, noir shader/fog, Addressables, submarine kinematics, currents, acoustic sonar, voxel persistence | Alternative rejected: bulk loading whole registry or treating Subnautica as implementation authority | Estimate: 0us runtime impact
+- [x] Task 3 - Map Hecton8 docs/source surface | DOD: read stable docs, project atlas, release/build ledgers, source directories, key runtime owners, data/scene/package inventory | Alternative rejected: scanning only open IDE tab or stale archive docs as authority | Estimate: 0us runtime impact
+- [x] Task 4 - Locate local Subnautica install metadata | DOD: found C:\Games\Subnautica and inspected file taxonomy only: Unity 2019.4.36, Addressables bundles, SNUnmanagedData Build18, saved-game cache layout, no BepInEx/QMods folder present | Alternative rejected: asset extraction, binary parsing, DLL decompilation | Estimate: 0us runtime impact
+- [x] Task 5 - Research public/open-source Subnautica mod material | DOD: checked current public sources: Unknown Worlds terrain format, Nautilus GPL, BepInEx.Subnautica mixed licenses, Nitrox GPL, TerrainPatcher AGPL, QModManager archived May 13 2026 | Alternative rejected: relying on memory or decompiled game code | Estimate: 0us runtime impact
+- [x] Task 6 - Compare borrowable patterns against Hecton8 foundation | DOD: classified Addressables, world paging, save paging, terrain cache, mod handler, scene wiring, validation gaps | Alternative rejected: broad "copy Subnautica" recommendation | Estimate: 0us exact measured; implementation estimates require profiler proof
+- [x] Task 7 - Append final report | DOD: appended LOG_SUBNAUTICA_RESEARCHER.md with wrong/done/cheats/microseconds/proof limits/foundation priority | Alternative rejected: chat-only report | Estimate: 0us runtime impact
+- [x] Task 8 - Deep audit Hecton8 runtime content pipeline | DOD: read package manifest, AddressableAssetsData state, AsyncLoadHelper, ItemCatalog, AssetLoadDispatcher, AssetLifecycleGovernor, GameBootstrapper, WorldChunkResidencyManager, PersistentWorldRegistry, H8StaticDataArena, Resources, StreamingAssets | Alternative rejected: treating Addressables package presence or empty folder as a working content pipeline | Estimate: 0us runtime impact
+- [x] Task 9 - Deep audit Hecton8 modding pipeline | DOD: read ModLoader, ModAssetManager, HectonAPI, ModCommandDispatcher, ModRuntimeState, ModWorldPersistenceManager, ModBuilderWindow, PROJECT_CONTENT_LEDGER allowlist, Mods root state | Alternative rejected: accepting SDK UI and public API names as proof that external managed mods or command kernels are operational | Estimate: 0us runtime impact
+- [x] Task 10 - Append second-pass report | DOD: appended LOG_SUBNAUTICA_RESEARCHER.md with Addressables replacement verdict, modding state, concrete gaps, and tactical foundation priorities | Alternative rejected: chat-only conclusion | Estimate: 0us runtime impact

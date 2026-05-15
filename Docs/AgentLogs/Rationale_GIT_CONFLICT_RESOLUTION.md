@@ -263,3 +263,9 @@ Solution: Audit the exact incoming `.agents-skills` ranges, verify the 78-file i
 Rejected Alternatives: Roll back the mandate batch, trust the chronicler report without source checks, or claim runtime compliance from mandate text.
 Scalability potential: Low/MX350 agents get stricter, clearer constraints for phase, signal, AUP, and allocation decisions; High/Ultra work remains allowed only through VISUAL_SYNC/typed-lane overkill after proof.
 Hardware Impact: 0 us runtime impact. This is documentation authority cleanup; profiler/Unity/runtime evidence remains pending.
+
+Problem: The repository still had two local stashes after the branch was synchronized, plus four untracked documentation/archive files. Applying an old stash blindly could overwrite the current reconciled runtime state.
+Solution: Fetch first, prove `origin/main...HEAD = 0 0`, inspect both stash stats, run apply-checks, classify both stashes as stale/non-clean against current `HEAD`, and write a stash audit. Commit only the current untracked documentation/archive tail.
+Rejected Alternatives: `git stash pop`, force-push, reset, deleting untracked docs, or dropping local stashes without an explicit deletion request. `stash@{0}` fails apply-check across many runtime/docs hunks; `stash@{1}` fails patch checking with a malformed diff header.
+Scalability potential: Git/documentation hygiene only. Low/Middle/High/Ultra runtime behavior is unchanged; no gameplay tier claim is made.
+Hardware Impact: 0 us runtime impact. Dev-path gain is avoiding stale patch reintroduction while publishing the current valid documentation checkpoint.

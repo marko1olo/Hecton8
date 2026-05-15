@@ -677,3 +677,15 @@ Cinematic Cheats used -> None. This is governance/static text hygiene only.
 Exact Microseconds saved -> 0 runtime us. Process gain is reduced mandate ambiguity and less chance of agents treating optional language as acceptable.
 
 Verification -> Filesystem count matches README at 78 mandate `.txt` files. Post-patch advisory-word scan only hits the README banned-word quote. `git diff --check -- .agents-skills` reports only CRLF normalization warnings. Runtime compliance remains `PENDING VERIFICATION`.
+
+## 2026-05-15 - Loop 46 Stash And Documentation Tail
+
+What was wrong -> `main` was synchronized with `origin/main`, but the local checkout still had two old stashes and four untracked documentation/archive files. A blind stash pop would risk replaying stale runtime and docs changes over the already reconciled branch.
+
+What was done -> Fetched remote, proved divergence `0 0`, inspected both stashes, ran apply-checks, read the new Subnautica research files and Gemini archive report, and wrote `Docs/AgentLogs/StashAudit_GIT_CONFLICT_RESOLUTION_20260515.md`.
+
+Cinematic Cheats used -> None. Git/static documentation hygiene only.
+
+Exact Microseconds saved -> 0 runtime us. Process gain is avoiding a stale stash replay over current `main`.
+
+Verification -> `stash@{0}` has 76 changed files with untracked payload and fails apply-check on current runtime/docs hunks. `stash@{1}` has 196 changed files and fails apply-check with a diff-header error. Current branch sync before checkpoint is `origin/main...HEAD = 0 0`. Runtime build, Unity Editor import, Play Mode, profiler, GCMonitor, player build, and visuals are not claimed.
