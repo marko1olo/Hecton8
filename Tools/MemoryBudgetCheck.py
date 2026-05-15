@@ -2053,6 +2053,9 @@ def validate_generated_reports(
     texture_paths = [row.get("path", "") for row in texture_rows]
     mesh_paths = [row.get("path", "") for row in mesh_rows]
     render_texture_paths = [row.get("path", "") for row in render_texture_rows]
+    texture_flags_by_path = {row.get("path", ""): row.get("redline_flags", "") for row in texture_rows}
+    mesh_flags_by_path = {row.get("path", ""): row.get("redline_flags", "") for row in mesh_rows}
+    render_texture_flags_by_path = {row.get("path", ""): row.get("redline_flags", "") for row in render_texture_rows}
     texture_path_set = set(texture_paths)
     mesh_path_set = set(mesh_paths)
     render_texture_path_set = set(render_texture_paths)
@@ -2116,6 +2119,12 @@ def validate_generated_reports(
         messages.append("mesh redline paths missing from broad CSV")
     if render_texture_redlines_path is not None and any(path not in render_texture_path_set for path in render_texture_redline_paths):
         messages.append("RenderTexture redline paths missing from broad CSV")
+    if texture_redlines_path is not None and any(texture_flags_by_path.get(row.get("path", ""), "") != row.get("flags", "") for row in texture_redline_rows):
+        messages.append("texture redline flags mismatch broad CSV")
+    if mesh_redlines_path is not None and any(mesh_flags_by_path.get(row.get("path", ""), "") != row.get("flags", "") for row in mesh_redline_rows):
+        messages.append("mesh redline flags mismatch broad CSV")
+    if render_texture_redlines_path is not None and any(render_texture_flags_by_path.get(row.get("path", ""), "") != row.get("flags", "") for row in render_texture_redline_rows):
+        messages.append("RenderTexture redline flags mismatch broad CSV")
     if render_texture_hotspots_path is not None and len(render_texture_hotspot_rows) != len(render_texture_hotspot_keys):
         messages.append("duplicate RenderTexture hotspot keys")
     if render_texture_hotspots_path is not None and render_texture_hotspot_keys != json_hotspot_keys:
