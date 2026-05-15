@@ -667,3 +667,17 @@ Exact Microseconds saved: 0 us runtime.
 Verification: `python Tools/UX/run_hardware_adaptive_ui_validation.py` PASS. `python -B Tools/UX/validate_aggregate_report.py` PASS. `python -B Tools/UX/validate_status_log_consistency.py --write-report` PASS. Standalone full suite passed 40/40. Final `python Tools/UX/clean_python_cache.py --write-report` removed `UX\\__pycache__`; follow-up scan found no `__pycache__` under `Tools`. Readback: commandCount 8/8, unitHarnessTestCount 40, artifactHashCount 30/30, pythonCacheCountAfter 0, aggregate/status self-validation PASS. Unity runtime proof remains pending.
 
 Status: UI SCALED - STATIC/PYTHON AGGREGATE PASS; UNITY RUNTIME PENDING.
+
+## UX_ENGINEER Bottom-Most Current Proof - HARDWARE_ADAPTIVE_UI_BAKER
+
+What was wrong: Older append-only evidence entries still mention 40-test and 79-test states. Those are historical, not current. The active gate is stricter now.
+
+What was done: Re-established the bottom-most report with current counts after aggregate order/hash hardening. The current aggregate requires 8 commands in exact order, 42 unit-harness tests, 30 well-formed SHA-256 artifact hashes, terminal cache cleanup, and pending Unity runtime status.
+
+Cinematic Cheats used: None in this pass. Existing UI cheats remain TMP-SDF scaling, TOASTER solid contrast, GOD_MODE gated post treatment, and the two-sample widget shader cap.
+
+Exact Microseconds saved: 0 us runtime. No Unity hot path changed.
+
+Verification: `python Tools/UX/run_hardware_adaptive_ui_validation.py` PASS. `python -B Tools/UX/validate_aggregate_report.py` PASS. `python -B Tools/UX/validate_status_log_consistency.py --write-report` PASS. Standalone `PYTHONDONTWRITEBYTECODE=1` UX discovery PASS 81/81. Readback: commandCount 8/8 exact order, unitHarnessTestCount 42, artifactHashCount 30/30 valid SHA-256, pythonCacheCountAfter 0, aggregate/status self-validation PASS, Unity probe `UNITY_NOT_FOUND`, no `Library/Logs/Unity/Editor.log`, `PYTHON_CACHE_COUNT 0`.
+
+Status: UI SCALED - STATIC/PYTHON AGGREGATE PASS; UNITY RUNTIME PENDING.

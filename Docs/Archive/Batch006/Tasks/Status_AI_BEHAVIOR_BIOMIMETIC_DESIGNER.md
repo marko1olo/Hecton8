@@ -60,7 +60,7 @@ Rule quote: "All AI decisions are based on data available in the GlobalDataVault
 - `python -B Tools\AiBattleSim.py --encounters 10000 --report Tools\AiBattleSim_Report.json --check-artifacts` -> `ARTIFACT_CHECK_PASSED`; hardened checker confirms live BufferID source, matching report validation, killRate 0.422 inside target, under30KillRate 0.0, subgroup caps intact.
 - `python -B Tools\AiBattleSim.py --encounters 10000 --report Tools\AiBattleSim_Report.json --check-artifacts --verify-rerun` -> `ARTIFACT_CHECK_PASSED`, `rerunVerified=True`; digest rerun matched `8d2131741fc2d1fc03900eec6a8aba4631c753e143a6b2e068db21bf1db92d7b`.
 - `python -B -c "import ast, pathlib; ..."` -> syntax parse passed for `Tools/AiBattleSim.py` and `Tools/test_ai_battle_sim.py` without writing bytecode.
-- `python -B -m unittest Tools.test_ai_battle_sim` -> 58 tests passed in 7.006 s after GlobalDataVault field-lane contract hardening.
+- `python -B -m unittest Tools.test_ai_battle_sim` -> 58 tests passed in 8.240 s after GlobalDataVault field-lane contract hardening.
 - Prompt extraction -> bounded CLI regex extracted the complete `<AGENT_PROMPT id="AI_BEHAVIOR_BIOMIMETIC_DESIGNER">` block with 7 numbered tasks and status `INSTINCTS DEFINED`.
 - `.sln/.csproj` scan -> none found in workspace, so `dotnet build` was not applicable for this data/Python task.
 - Polish mandate extraction -> `<POLISH_MANDATE>` tag not found in `Docs/Tasks/CURRENT_BATCH.md`.

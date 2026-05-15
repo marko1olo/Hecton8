@@ -251,3 +251,11 @@ Solution: Extend `validate_generated_reports()` so `--validate-reports` reads th
 Rejected Alternatives: Leaving split CSVs to manual inspection. Those files are the asset-owner queues; stale rows there would route cleanup work to the wrong targets.
 Scalability potential: Low/MX350 remediation queues stay mechanically tied to the machine summary; Middle/High/Ultra tier asset growth can expand the reports without breaking parity if generation remains correct.
 Hardware Impact: 0us runtime measured. Tooling impact: `python Tools/MemoryBudgetCheck.py --root . --validate-reports` now passes with `texture_redlines=946 mesh_redlines=293 rt_redlines=1 rt_hotspots=61`; unit coverage remains 17 tests and ran in 8.496 seconds.
+
+## Decision 32: Avoid Hardcoded Current Hotspot Count In Tests
+
+Problem: The split-report validator test asserted the literal current RT hotspot count of 61. That catches current drift but becomes a false failure if legitimate source changes alter the count and reports are regenerated correctly.
+Solution: Read `render_texture_source_hotspot_rows` from `VRAM_Budget_Audit.json` inside the test and assert the validator output matches that generated value.
+Rejected Alternatives: Keeping `rt_hotspots=61` in source. That turns a report-parity test into a stale asset-count snapshot.
+Scalability potential: Low/MX350 still gets strict parity between split CSVs and JSON; Middle/High/Ultra can add or remove RT owners without editing tests, provided reports are regenerated consistently.
+Hardware Impact: 0us runtime measured. Tooling impact: unit coverage remains 17 tests and ran in 9.666 seconds.

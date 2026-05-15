@@ -504,51 +504,6 @@ Status:
 - INSTINCTS DEFINED for data and Python evidence.
 - Unity runtime verification remains PENDING VERIFICATION.
 
-## 2026-05-15 - GlobalDataVault Field-Lane Contract Hardening
-
-What was wrong:
-- Task 7 validation proved feature names and live `H8Memory.cs` BufferID existence, but it did not prove each `fields` list still matched the intended vault-fed data lanes.
-- The status checklist still contained stale self-audit numbers from the earlier 5224-kill run after the current brain settled at 4220 kills.
-
-What was done:
-- Added exact GlobalDataVault feed contracts to `Tools/AiBattleSim.py`: all seven features now enforce expected BufferID arrays and expected field arrays.
-- Added `globalDataVaultFieldCount` to validation and `globalDataVaultAudit`.
-- Hardened artifact checks to reject report validation/audit field-count drift.
-- Added regression tests for BufferID contract drift, field contract drift, and report field-count drift.
-- Updated the status checklist to the current 4220/10000 kill evidence and latest 80.7 s report-generation timing.
-
-Cinematic cheats used:
-- No new physical simulation truth. This pass preserves scalar/vault-fed utility decisions instead of allowing runtime scene queries for audio, light, camera, or transforms.
-
-Exact microseconds saved:
-- Unity runtime saving remains 0 us measured because no Unity runtime path changed.
-- Integration savings if imported: exact field lanes avoid hot-path component lookups and keep future decision packing contiguous and predictable.
-
-Evidence:
-- `python -B Tools\AiBattleSim.py --encounters 10000 --report Tools\AiBattleSim_Report.json` -> `INSTINCTS DEFINED`, kills 4220, killRate 0.422, under30KillRate 0.0.
-- `python -B -c "import ast, pathlib; ..."` -> `SYNTAX_OK`.
-- `python -B -m unittest Tools.test_ai_battle_sim` -> 58 tests passed in 7.006 s.
-- `python -B Tools\AiBattleSim.py --encounters 10000 --report Tools\AiBattleSim_Report.json --check-artifacts` -> `ARTIFACT_CHECK_PASSED`, reportBytes 21553.
-- `python -B Tools\AiBattleSim.py --encounters 10000 --report Tools\AiBattleSim_Report.json --check-artifacts --verify-rerun` -> `ARTIFACT_CHECK_PASSED`, `rerunVerified=True`.
-- `globalDataVaultFeedCount=7`, `globalDataVaultFieldCount=22`, `knownBufferCount=66`.
-- `brainDigest=8f96fe1c84c9b136aac2a4a0fcc3550e62ddaae28d0b6d66c782e064eae80edf`.
-- `simulationDigest=8d2131741fc2d1fc03900eec6a8aba4631c753e143a6b2e068db21bf1db92d7b`.
-
-Regression model:
-- CPU: no Unity runtime CPU added. Python validation only; strict rerun remains offline.
-- GC: no Unity hot path changed. Runtime GC proof remains PENDING VERIFICATION until importer/playmode.
-- Memory: report grew by validation/audit field-count evidence only.
-- Cadence: no gameplay cadence changed.
-- Correctness: DataVault feed drift now fails if a feature changes BufferID list, field list, or report field-count evidence.
-
-Failure modes:
-- Future vault schema changes must update expected feed constants, JSON fields, tests, report validation, and rationale together.
-- Unity runtime importer remains separate work; no runtime behavior is claimed beyond data/tooling evidence.
-
-Status:
-- INSTINCTS DEFINED for data and Python evidence.
-- Unity runtime verification remains PENDING VERIFICATION.
-
 ## 2026-05-15 - Sensory Formula and Cooldown Contract Hardening
 
 What was wrong:
@@ -669,6 +624,51 @@ Regression model:
 
 Failure modes:
 - Future pack tactic changes must preserve the exact rule id/order or deliberately update constants, tests, report validation, and rationale.
+- Unity runtime importer remains separate work; no runtime behavior is claimed beyond data/tooling evidence.
+
+Status:
+- INSTINCTS DEFINED for data and Python evidence.
+- Unity runtime verification remains PENDING VERIFICATION.
+
+## 2026-05-15 - GlobalDataVault Field-Lane Contract Hardening
+
+What was wrong:
+- Task 7 validation proved feature names and live `H8Memory.cs` BufferID existence, but it did not prove each `fields` list still matched the intended vault-fed data lanes.
+- The status checklist still contained stale self-audit numbers from the earlier 5224-kill run after the current brain settled at 4220 kills.
+
+What was done:
+- Added exact GlobalDataVault feed contracts to `Tools/AiBattleSim.py`: all seven features now enforce expected BufferID arrays and expected field arrays.
+- Added `globalDataVaultFieldCount` to validation and `globalDataVaultAudit`.
+- Hardened artifact checks to reject report validation/audit field-count drift.
+- Added regression tests for BufferID contract drift, field contract drift, and report field-count drift.
+- Updated the status checklist to the current 4220/10000 kill evidence and latest 80.7 s report-generation timing.
+
+Cinematic cheats used:
+- No new physical simulation truth. This pass preserves scalar/vault-fed utility decisions instead of allowing runtime scene queries for audio, light, camera, or transforms.
+
+Exact microseconds saved:
+- Unity runtime saving remains 0 us measured because no Unity runtime path changed.
+- Integration savings if imported: exact field lanes avoid hot-path component lookups and keep future decision packing contiguous and predictable.
+
+Evidence:
+- `python -B Tools\AiBattleSim.py --encounters 10000 --report Tools\AiBattleSim_Report.json` -> `INSTINCTS DEFINED`, kills 4220, killRate 0.422, under30KillRate 0.0.
+- `python -B -c "import ast, pathlib; ..."` -> `SYNTAX_OK`.
+- `python -B -m unittest Tools.test_ai_battle_sim` -> 58 tests passed in 8.240 s.
+- `python -B Tools\AiBattleSim.py --encounters 10000 --report Tools\AiBattleSim_Report.json --check-artifacts` -> `ARTIFACT_CHECK_PASSED`, reportBytes 21553.
+- `python -B Tools\AiBattleSim.py --encounters 10000 --report Tools\AiBattleSim_Report.json --check-artifacts --verify-rerun` -> `ARTIFACT_CHECK_PASSED`, `rerunVerified=True`.
+- `globalDataVaultFeedCount=7`, `globalDataVaultFieldCount=22`, `knownBufferCount=66`.
+- `brainDigest=8f96fe1c84c9b136aac2a4a0fcc3550e62ddaae28d0b6d66c782e064eae80edf`.
+- `simulationDigest=8d2131741fc2d1fc03900eec6a8aba4631c753e143a6b2e068db21bf1db92d7b`.
+
+Regression model:
+- CPU: no Unity runtime CPU added. Python validation only; strict rerun remains offline.
+- GC: no Unity hot path changed. Runtime GC proof remains PENDING VERIFICATION until importer/playmode.
+- Memory: report grew by validation/audit field-count evidence only.
+- Cadence: no gameplay cadence changed.
+- Correctness: DataVault feed drift now fails if a feature changes BufferID list, field list, or report field-count evidence.
+
+Failure modes:
+- Future vault schema changes must update expected feed constants, JSON fields, tests, report validation, and rationale together.
 - Unity runtime importer remains separate work; no runtime behavior is claimed beyond data/tooling evidence.
 
 Status:

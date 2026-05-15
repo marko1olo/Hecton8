@@ -680,3 +680,61 @@ Verification:
 Evidence boundary:
 - STATIC_SOURCE / FILESYSTEM / PY_UNIT_TEST only.
 - Unity import, Memory Profiler, player build, and runtime frame time remain PENDING VERIFICATION.
+
+## 2026-05-15T21:03:00+03:00 - SPLIT REPORT PARITY VALIDATOR PASS
+
+What was wrong:
+- `--validate-reports` checked the broad CSV against JSON but did not verify that dedicated remediation queues stayed in sync.
+- Stale split CSVs would send asset owners to wrong or incomplete cleanup targets.
+
+What was done:
+- Extended `validate_generated_reports()` to accept the texture redline, mesh redline, RenderTexture redline, and RenderTexture hotspot CSV paths.
+- `--validate-reports` now checks those split artifacts against JSON counters.
+- The validator also checks the runtime/non-editor RT hotspot counter.
+
+Cinematic cheats used:
+- None. This is tooling gate hardening, not runtime rendering work.
+
+Exact microseconds saved:
+- Runtime code changed: none.
+- Immediate runtime CPU saving: 0us.
+- Tooling path improvement: report artifact parity is now checked without a full asset scan.
+
+Verification:
+- PYTHONDONTWRITEBYTECODE=1 python AST syntax parse for `Tools/MemoryBudgetCheck.py` and `Tools/test_memory_budget_check.py`: PASS.
+- PYTHONDONTWRITEBYTECODE=1 python Tools/MemoryBudgetCheck.py --root . --validate-reports: PASS; `reports valid: textures=1652 meshes=302 render_textures=1 texture_redlines=946 mesh_redlines=293 rt_redlines=1 rt_hotspots=61 scan_roots=Assets,Packages,Data`.
+- PYTHONDONTWRITEBYTECODE=1 python -m unittest discover -s Tools -p test_memory_budget_check.py: PASS, 17 tests, elapsed 8.496 seconds.
+- PYTHONDONTWRITEBYTECODE=1 python Tools/MemoryBudgetCheck.py --root . --ci: EXPECTED FAIL with `ci_exit_code=2`; current redlines/overflow still produce `[CRITICAL_VRAM_OVERFLOW]`, 801 texture crimes, 293 mesh risk rows, and 1 RenderTexture risk row.
+
+Evidence boundary:
+- STATIC_SOURCE / FILESYSTEM / PY_UNIT_TEST only.
+- Unity import, Memory Profiler, player build, and runtime frame time remain PENDING VERIFICATION.
+
+## 2026-05-15T22:06:00+03:00 - HOTSPOT COUNT TEST HARDENING PASS
+
+What was wrong:
+- The split-report validator test asserted the literal current RT hotspot count of 61.
+- That made the test brittle against legitimate future RT source changes when reports are regenerated correctly.
+
+What was done:
+- Changed `test_validate_reports_cli_path_accepts_current_generated_reports` to read `render_texture_source_hotspot_rows` from `VRAM_Budget_Audit.json`.
+- The test now asserts validator output matches the generated JSON counter instead of a source-code constant.
+
+Cinematic cheats used:
+- None. This is tooling test hardening, not runtime rendering work.
+
+Exact microseconds saved:
+- Runtime code changed: none.
+- Immediate runtime CPU saving: 0us.
+- Tooling correctness improvement: no false failure from legitimate RT hotspot count changes after report regeneration.
+
+Verification:
+- PYTHONDONTWRITEBYTECODE=1 python AST syntax parse for `Tools/MemoryBudgetCheck.py` and `Tools/test_memory_budget_check.py`: PASS.
+- PYTHONDONTWRITEBYTECODE=1 python Tools/MemoryBudgetCheck.py --root . --validate-reports: PASS; `reports valid: textures=1652 meshes=302 render_textures=1 texture_redlines=946 mesh_redlines=293 rt_redlines=1 rt_hotspots=61 scan_roots=Assets,Packages,Data`.
+- PYTHONDONTWRITEBYTECODE=1 python -m unittest discover -s Tools -p test_memory_budget_check.py: PASS, 17 tests, elapsed 9.666 seconds.
+- Python bytecode cleanup for `MemoryBudgetCheck*` and `test_memory_budget_check*`: PASS.
+- LOG_ORDER_OK: 23 chronological report headers, latest `2026-05-15T22:06:00+03:00`.
+
+Evidence boundary:
+- STATIC_SOURCE / FILESYSTEM / PY_UNIT_TEST only.
+- Unity import, Memory Profiler, player build, and runtime frame time remain PENDING VERIFICATION.
