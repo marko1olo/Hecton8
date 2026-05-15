@@ -61,7 +61,8 @@ def validate_constants(constants: dict) -> None:
     if int(constants["maxApexRespawnDays"]) < int(constants["minApexRespawnDays"]):
         raise ValueError("maxApexRespawnDays must be >= minApexRespawnDays")
     acceptance = constants["acceptance"]
-    if int(acceptance["simulationDays"]) < 1:
+    acceptance_days = int(acceptance["simulationDays"])
+    if acceptance_days < 1:
         raise ValueError("acceptance simulationDays must be positive")
     if acceptance["mode"] != "total_overharvest":
         raise ValueError("acceptance mode must be total_overharvest")
@@ -83,6 +84,9 @@ def validate_constants(constants: dict) -> None:
             raise ValueError("biome temperatureQ must be positive")
         if int(biome["nutrientStartQ"]) < int(constants["minimumNutrientsQ"]):
             raise ValueError("biome nutrientStartQ must not undercut minimumNutrientsQ")
+        expected_day = int(biome["expectedHalfRecoveryDaysUnderTotalOverharvest"])
+        if expected_day < 1 or expected_day > acceptance_days:
+            raise ValueError("expected half-recovery day must fit acceptance simulationDays")
 
 
 def rotate_left_u32(value: int, count: int) -> int:
