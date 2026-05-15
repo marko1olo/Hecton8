@@ -68,6 +68,36 @@ Verification:
 Status:
 - VERIFIED VAULT LOCK - COMPILE TARGET BLOCKED BY MISSING Hecton8.Core.Memory.rsp.
 
+## 2026-05-15 - Alias Accountability Gate
+
+What was wrong:
+- `CreateAlias` accepted a `SystemID reader` but did not reject `SystemID.Unknown`.
+- Read-only aliases are still persistent vault memory exposure and need PHI/VOD attribution.
+
+What was done:
+- Added `FatalMemoryException.ThrowUnknownAliasReader`.
+- `GlobalDataVault.CreateAlias` now rejects unknown requesters before probing buffers.
+- `H8Memory.CreateAlias` now rejects unknown readers for both NativeArray and raw pointer alias helpers.
+- Documented the alias reader requirement in `Docs/ARCHITECTURE/ARENA_ALLOCATOR_2_0.md`.
+
+Cinematic Cheats used:
+- None. This is memory sovereignty and alias accountability.
+
+Exact Microseconds saved:
+- Frame cost: 0 us.
+- Alias creation adds one branch, estimated <0.05 us on i3/MX350.
+- The gain is diagnostic integrity: no anonymous read-alias consumers in DataVault/H8Memory.
+
+Verification:
+- `H8Memory.cs`, `GlobalDataVault.cs`, and `SaveBinaryPayloadCodec.cs` brace/parenthesis balance passed.
+- Direct `SystemID.Unknown` alias call scan returned clean.
+- DataVault live compaction scan remained clean.
+- `git diff --check` passed with CRLF warnings only.
+- No dotnet rebuild was run per user order.
+
+Status:
+- VERIFIED VAULT LOCK - COMPILE TARGET BLOCKED BY MISSING Hecton8.Core.Memory.rsp.
+
 ## 2026-05-15 - Procedural DTO Payload Bounds Pass
 
 What was wrong:

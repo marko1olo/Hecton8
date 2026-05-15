@@ -82,6 +82,7 @@ Status: PENDING VERIFICATION / STATIC CHECKS ONLY / UNITY COMPILE BLOCKED (NO DO
 - Loop 43: Static verification after material dirty-state pass. DOD: focused `git diff --check` returned no whitespace errors, only Git LF/CRLF notices; forbidden VFX scan returned no matches for CPU readback, ParticleSystem, ComputeBuffer, scene search, job scheduling fences, private `H8Memory.Allocate`, private `H8Memory.Release`, `MaterialPropertyBlock`, `matProps`, stale draw-frame cache, managed hot strings, `Vector3.magnitude`, or `math.sqrt`; shader hot-math scan returned no matches; exact current batch prompt tag count remains 0. Rejected alternative: dotnet rebuild or fake Unity compile pass. Estimate: verification saves 0 us.
 - Loop 44: Indirect visible-count clamp pass. DOD: carve debris cull kernel now caps indirect instance count to `_CarveDebrisCounts.z` by rolling back overflow atomic increments before writing visible indices. Rejected alternatives: CPU readback clamp, trusting indirect args to exceed visible-index capacity, or growing the visible buffer. Estimate: prevents out-of-range shader reads on over-visible frames; steady cost is one max-visible guard and no extra work below cap.
 - Loop 45: Static verification after indirect visible-count clamp. DOD: focused `git diff --check` returned no whitespace errors, only Git LF/CRLF notices; forbidden VFX scan returned no matches for CPU readback, ParticleSystem, ComputeBuffer, scene search, job scheduling fences, private `H8Memory.Allocate`, private `H8Memory.Release`, `MaterialPropertyBlock`, `matProps`, stale draw-frame cache, managed hot strings, `Vector3.magnitude`, or `math.sqrt`; shader hot-math scan returned no matches; exact current batch prompt tag count remains 0. Rejected alternative: dotnet rebuild or fake Unity compile pass. Estimate: verification saves 0 us.
+- Loop 46: Low-tier flow binding bypass pass. DOD: `BindSharedComputeParams()` now binds empty flow defaults on Low/MX350 without resolving `HectonFluidEngine` flow payloads or shader global texture metadata that the low-tier compute branch will not sample. Rejected alternatives: resolving unused flow resources every active low-tier frame or branching inside the shader only. Estimate: saves fluid contract calls and global shader reads on active low-tier frames.
 
 ## Second-Pass Upgrade Status
 
@@ -121,6 +122,7 @@ Status: PENDING VERIFICATION / STATIC CHECKS ONLY / UNITY COMPILE BLOCKED (NO DO
 - [x] Carve injection now uses packet ejection direction for deterministic cone-biased chip burst instead of a generic upward spray.
 - [x] Static debris material inputs are dirty-bound on the owned runtime material; dynamic ping-pong position/velocity buffers remain rebound every active frame.
 - [x] GPU cull clamps indirect instance count to visible-index buffer capacity, preventing overflow draws when more debris is alive than the active render cap.
+- [x] Low/MX350 compute binding skips unused flow payload resolution and binds empty flow defaults directly.
 
 ## OMEGA Polish Status
 

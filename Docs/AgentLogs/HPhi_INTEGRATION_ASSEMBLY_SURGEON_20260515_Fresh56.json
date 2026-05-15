@@ -1,0 +1,6 @@
+﻿Data Sovereignty H-Phi floor failed: score 0.021383648 is below floor 0.021386.
+At C:\hades\Hecton8\Tools\Architecture\HectonPhiAudit.ps1:1554 char:5
++     throw ('{0} H-Phi floor failed: score {1} is below floor {2}.' -f
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : OperationStopped: (Data Sovereignt...floor 0.021386.:String) [], RuntimeException
+    + FullyQualifiedErrorId : Data Sovereignty H-Phi floor failed: score 0.021383648 is below floor 0.021386.

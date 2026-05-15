@@ -2284,8 +2284,16 @@ namespace Hecton8.Editor.ProceduralGen
             for (int i = 0; i < rules.Length; i++)
             {
                 SerializedProperty element = property.GetArrayElementAtIndex(i);
-                element.FindPropertyRelative("_symbol").stringValue = rules[i].Symbol;
-                element.FindPropertyRelative("_replacement").stringValue = rules[i].Replacement;
+                SerializedProperty symbol = element.FindPropertyRelative("_symbol");
+                SerializedProperty replacement = element.FindPropertyRelative("_replacement");
+                if (symbol == null || replacement == null)
+                {
+                    Debug.LogError("[ShallowsBioForgeBatchBaker] BioRuleData _rules element schema missing serialized fields.");
+                    continue;
+                }
+
+                symbol.stringValue = rules[i].Symbol;
+                replacement.stringValue = rules[i].Replacement;
             }
         }
 

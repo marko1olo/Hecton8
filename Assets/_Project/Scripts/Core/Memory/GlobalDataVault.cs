@@ -1369,6 +1369,18 @@ namespace Hecton8.Core.Memory
             int stride = UnsafeUtility.SizeOf<T>();
             int alignment = UnsafeUtility.AlignOf<T>();
             ValidateType<T>(bufferId, meta, stride, alignment);
+
+            MarkExternalView(key, meta.OffsetBytes);
+            if (!_buffers.TryGetValue(key, out pointer) ||
+                !_metadata.TryGetValue(key, out meta) ||
+                pointer == IntPtr.Zero ||
+                meta.Length <= 0)
+            {
+                DumpPhiVodBlackBox();
+                return false;
+            }
+
+            ValidateType<T>(bufferId, meta, stride, alignment);
             handle.ptr = pointer.ToPointer();
             handle.generation = meta.Version;
             handle.BufferId = bufferId;

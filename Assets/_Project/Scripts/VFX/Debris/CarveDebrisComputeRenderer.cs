@@ -785,14 +785,26 @@ namespace Hecton8.VFX.Debris
             Camera camera = renderCamera;
             Vector3 cameraPosition = camera != null ? camera.transform.position : Vector3.zero;
             float renderDistanceSq = camera != null && renderDistanceMeters > 0f ? renderDistanceMeters * renderDistanceMeters : 0f;
-            GraphicsBuffer flowBuffer = ResolveFlowPayload(
-                out Texture flowTexture,
-                out Vector4 gridResolution,
-                out Vector4 flowCenter,
-                out Vector4 flowSpacing,
-                out Vector4 flowTextureParams,
-                out float flowTextureActive,
-                out float flowBufferActive);
+            GraphicsBuffer flowBuffer = _emptyFlowBuffer;
+            Texture flowTexture = _emptyTexture3D;
+            Vector4 gridResolution = Vector4.zero;
+            Vector4 flowCenter = Vector4.zero;
+            Vector4 flowSpacing = Vector4.zero;
+            Vector4 flowTextureParams = Vector4.zero;
+            float flowTextureActive = 0f;
+            float flowBufferActive = 0f;
+            if (!lowTier)
+            {
+                flowBuffer = ResolveFlowPayload(
+                    out flowTexture,
+                    out gridResolution,
+                    out flowCenter,
+                    out flowSpacing,
+                    out flowTextureParams,
+                    out flowTextureActive,
+                    out flowBufferActive);
+            }
+
             Texture sdfTexture = ResolveSdfTexture(lowTier, out Matrix4x4 sdfWorldToLocal, out Vector4 sdfInvDoubleHalfExtents, out float sdfActive);
             float flowActive = flowBufferActive > 0.5f || flowTextureActive > 0.5f ? 1f : 0f;
             _lastFlowActive = flowActive > 0.5f;

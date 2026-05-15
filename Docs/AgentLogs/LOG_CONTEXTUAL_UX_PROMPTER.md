@@ -322,3 +322,14 @@ Cinematic cheats used: No visual change. The same fixed-buffer, atlas-driven pro
 Exact microseconds saved: Estimate only. Expected gain is sub-1 us per prompt layout rebuild on i3/MX350; no profiler proof is claimed.
 
 Verification: No dotnet rebuilds were run. Static scans confirmed `NormalizeTooltipCharacter()` is isolated to staging, layout reads the staged span directly, and forbidden allocation/text/LINQ plus bootstrap/direct-time fallback scans stayed clean.
+
+## 2026-05-15 Tooltip Layout Math Consistency
+What was wrong: Font/text/icon layout clamps still used `Mathf.Max` while the renderer's math path uses `Unity.Mathematics`.
+
+What was done: Replaced the remaining tooltip layout `Mathf.Max` calls with `math.max` without changing clamp thresholds or glyph sizing.
+
+Cinematic cheats used: No visual change. The same diegetic glyph atlas layout remains; the pass only keeps math cheap and consistent.
+
+Exact microseconds saved: Estimate only. Expected gain is sub-1 us per layout rebuild on i3/MX350; no profiler proof is claimed.
+
+Verification: No dotnet rebuilds were run. Static scans confirmed no `Mathf.` calls remain in `DiegeticTooltipSystem.cs`, and forbidden allocation/text/LINQ plus bootstrap/direct-time fallback scans stayed clean.

@@ -1103,6 +1103,7 @@ namespace Hecton8.Core
         private const int ItemDurabilityChangedSignalCapacity = 64;
         private const int ItemAcquiredSignalCapacity = 128;
         private const int RadiationDoseSignalCapacity = 64;
+        private const int RadiationSourceSignalCapacity = 64;
         private const int TemperatureChangedSignalCapacity = 64;
         private const int ResourceDepletionDeltaSignalCapacity = 64;
         private const int LightLevelSignalCapacity = 64;
@@ -3246,6 +3247,14 @@ namespace Hecton8.Core
             SignalBus<InventoryChangedSignal>.EnsureInitialized();
             SignalBus<ItemDurabilityChangedSignal>.Configure(ItemDurabilityChangedSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(ItemDurabilityChangedSignal)));
             SignalBus<ItemDurabilityChangedSignal>.EnsureInitialized();
+            SignalBus<ItemAcquiredSignal>.Configure(ItemAcquiredSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(ItemAcquiredSignal)));
+            SignalBus<ItemAcquiredSignal>.EnsureInitialized();
+            SignalBus<RadiationDoseSignal>.Configure(RadiationDoseSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(RadiationDoseSignal)));
+            SignalBus<RadiationDoseSignal>.EnsureInitialized();
+            SignalBus<RadiationSourceSignal>.Configure(RadiationSourceSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(RadiationSourceSignal)));
+            SignalBus<RadiationSourceSignal>.EnsureInitialized();
+            SignalBus<ResourceDepletionDeltaSignal>.Configure(ResourceDepletionDeltaSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(ResourceDepletionDeltaSignal)));
+            SignalBus<ResourceDepletionDeltaSignal>.EnsureInitialized();
             SignalBus<TemperatureChangedSignal>.Configure(TemperatureChangedSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(TemperatureChangedSignal)));
             SignalBus<TemperatureChangedSignal>.EnsureInitialized();
             SignalBus<CullingOverloadSignal>.Configure(CullingOverloadSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(CullingOverloadSignal)));

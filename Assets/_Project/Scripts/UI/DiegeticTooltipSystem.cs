@@ -587,9 +587,9 @@ namespace Hecton8.UI
             _runtimeFontAtlasTexture = font.atlasTexture;
             _runtimeSpriteAtlasTexture = null;
             RefreshAsciiCharacterCache(font);
-            int atlasWidth = Mathf.Max(1, font.atlasWidth);
-            int atlasHeight = Mathf.Max(1, font.atlasHeight);
-            float glyphScale = glyphWorldHeight * math.rcp(Mathf.Max(1f, font.faceInfo.pointSize));
+            int atlasWidth = math.max(1, font.atlasWidth);
+            int atlasHeight = math.max(1, font.atlasHeight);
+            float glyphScale = glyphWorldHeight * math.rcp(math.max(1f, font.faceInfo.pointSize));
             float promptAdvance = MeasureAdvance(prompt, glyphScale);
 
             float iconWidth = 0f;
@@ -648,8 +648,8 @@ namespace Hecton8.UI
 
                 GlyphRect rect = glyph.glyphRect;
                 GlyphMetrics metrics = glyph.metrics;
-                float width = Mathf.Max(MinimumGlyphScale, metrics.width * glyphScale);
-                float height = Mathf.Max(MinimumGlyphScale, metrics.height * glyphScale);
+                float width = math.max(MinimumGlyphScale, metrics.width * glyphScale);
+                float height = math.max(MinimumGlyphScale, metrics.height * glyphScale);
                 float bearingX = metrics.horizontalBearingX * glyphScale;
                 float bearingY = metrics.horizontalBearingY * glyphScale;
 
@@ -727,14 +727,14 @@ namespace Hecton8.UI
                 return false;
 
             Glyph glyph = spriteCharacter.glyph;
-            int atlasWidth = Mathf.Max(1, spriteSheet.width);
-            int atlasHeight = Mathf.Max(1, spriteSheet.height);
+            int atlasWidth = math.max(1, spriteSheet.width);
+            int atlasHeight = math.max(1, spriteSheet.height);
             GlyphRect rect = glyph.glyphRect;
             GlyphMetrics metrics = glyph.metrics;
             float invAtlasWidth = math.rcp(math.max(1f, atlasWidth));
             float invAtlasHeight = math.rcp(math.max(1f, atlasHeight));
-            width = Mathf.Max(MinimumGlyphScale, metrics.width * glyphScale * IconScaleMultiplier);
-            height = Mathf.Max(MinimumGlyphScale, metrics.height * glyphScale * IconScaleMultiplier);
+            width = math.max(MinimumGlyphScale, metrics.width * glyphScale * IconScaleMultiplier);
+            height = math.max(MinimumGlyphScale, metrics.height * glyphScale * IconScaleMultiplier);
             Vector4 uvRect = new Vector4(
                 rect.x * invAtlasWidth,
                 rect.y * invAtlasHeight,

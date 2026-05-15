@@ -250,3 +250,28 @@ Verification:
 - `git diff --check` on edited files: no whitespace errors; LF-to-CRLF warnings only.
 - Brace scan: all edited files balanced.
 - `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json`: `RuntimeHPhiNarrow=0.01082338`, `RuntimeHPhiRisk=0.00060621`, `AllSourceHPhiNarrow=0.009634899`, `AllSourceHPhiRisk=0.000495259`, `ArchitecturalPurity=1`, `DataSovereignty=0.021386637`, `MemoryAlignment=0.506081438`, `GetComponentCalls=503`, `UnityUpdateMethods=0`, `StructLayoutAttributes=957`, `AupPrecisionRisk=0`.
+
+## 2026-05-15 12:55:12 +04:00 - Follow-Up No-Rebuild Diegetic UI Lookup Consolidation
+What was wrong:
+- Diegetic PDA/panel setup, relay HUD fail-safe construction, suit advisory binding, settings camera recovery, and UI particle setup still had local `GetComponent*<T>` hierarchy lookup debt.
+- A first attempt at generic local descendant helpers reduced calls but added unnecessary local source debt.
+
+What was done:
+- Replaced local probes in `SuitAdvisoryController`, `UIParticleEffect`, `SettingsLivePreview`, `RelayHUDRuntimeBootstrap`, `DiegeticPDAController`, and `DiegeticPanelController`.
+- Reused `ComponentReferenceUtility.ResolveOwnedComponent<T>` for descendant-owned component discovery instead of keeping duplicated helpers.
+- Kept the generated UI hierarchy, PDA render texture path, cursor cache, relay marker layout, particle configuration, and advisory logic behavior-equivalent.
+
+Cinematic Cheats used:
+- None added. This pass removed presentation setup debt only.
+- Existing PDA/visor visual fakes remain: cached pointer targets, RT-backed diegetic panel, bounded relay HUD marker, and no extra physical simulation.
+
+Exact Microseconds saved:
+- Estimated 0-10 us CPU on cold setup/recovery frames.
+- No steady-state Tick saving claimed; the measured win is static lookup debt reduction.
+
+Verification:
+- No dotnet rebuild was executed.
+- `rg` over the 22 edited files found no remaining `GetComponent*<T>` matches.
+- `git diff --check` on edited files: no whitespace errors.
+- Brace scan: all edited files balanced.
+- `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json`: `RuntimeHPhiNarrow=0.010821867`, `RuntimeHPhiRisk=0.000610985`, `AllSourceHPhiNarrow=0.009633634`, `AllSourceHPhiRisk=0.000498924`, `ArchitecturalPurity=1`, `DataSovereignty=0.021383648`, `MemoryAlignment=0.506081438`, `GetComponentCalls=481`, `UnityUpdateMethods=0`, `StructLayoutAttributes=957`, `AupPrecisionRisk=0`.

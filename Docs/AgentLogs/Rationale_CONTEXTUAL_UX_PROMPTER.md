@@ -298,3 +298,10 @@ Solution: Treat layout input as a normalized private span and read characters di
 Rejected Alternatives: Keeping duplicate normalization for defensive programming, adding a second normalized buffer, or accepting arbitrary raw spans in layout. Defensive duplication costs per layout glyph; a second buffer is unnecessary memory; raw spans would weaken the fixed-buffer contract.
 Scalability potential: Low removes small repeated layout work when prompts rebuild. Middle/High/Ultra keep the same glyph atlas path and preserve budget for richer material treatment.
 Hardware Impact: Expected gain is sub-microsecond per prompt layout rebuild on i3/MX350; no profiler proof.
+
+## Decision 42: Tooltip Layout Math Consistency
+Problem: The tooltip layout path still used `Mathf.Max` for font, text, and sprite clamp math while the surrounding renderer already uses `Unity.Mathematics` primitives.
+Solution: Replaced remaining layout clamps with `math.max`, keeping the same clamp values and behavior.
+Rejected Alternatives: Leaving mixed math APIs, replacing more unrelated Unity API calls, or folding the clamps into serialized validation. Mixed APIs are needless inconsistency; broader replacements risk touching unrelated behavior; serialized validation cannot protect runtime font/sprite metrics.
+Scalability potential: Low keeps clamps cheap and predictable. Middle/High/Ultra preserve identical glyph sizing while keeping the layout path coherent for future vectorized/predictable math.
+Hardware Impact: Expected gain is sub-microsecond per layout rebuild on i3/MX350; no profiler proof.

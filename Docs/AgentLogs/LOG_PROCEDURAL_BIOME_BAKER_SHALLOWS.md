@@ -492,9 +492,9 @@ Verification: No dotnet rebuild and no Unity import was run. `AtlasCompressionAl
 
 ## 2026-05-15 BioRule Serialized Rule Element Null-Safe Contract
 
-What was wrong: Raw BioRule `_rules` validation dereferenced child properties directly and could throw on malformed serialized assets.
+What was wrong: Raw BioRule `_rules` validation and authoring dereferenced child properties directly and could throw on malformed serialized assets.
 
-What was done: Added `SerializedRuleReplacementEquals` with explicit null/array/field checks for the single canonical `F` replacement rule.
+What was done: Added `SerializedRuleReplacementEquals` with explicit null/array/field checks for the single canonical `F` replacement rule, and added null checks before `SetRules` writes serialized rule fields.
 
 Cinematic Cheats used: Static offline L-system rule validation remains the contract. No runtime rule normalization or fallback generation was added.
 

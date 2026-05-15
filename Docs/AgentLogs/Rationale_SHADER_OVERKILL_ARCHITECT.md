@@ -163,3 +163,17 @@ Solution: Ran only `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json`, scope
 Rejected Alternatives: Running a build was rejected because it violates the direct user order and the known external World/GPR compile blocker still exists. Reusing stale H-Phi metrics was rejected as fake evidence.
 Scalability potential: Low-tier presentation now has less startup/recovery lookup debt, while high-tier visual systems keep their overkill rendering features unchanged.
 Hardware Impact: 0 us runtime from the audit itself. Latest static audit: `RuntimeHPhiNarrow=0.01082338`, `RuntimeHPhiRisk=0.00060621`, `AllSourceHPhiNarrow=0.009634899`, `AllSourceHPhiRisk=0.000495259`, `GetComponentCalls=503`, `UnityUpdateMethods=0`, `StructLayoutAttributes=957`, `AupPrecisionRisk=0`.
+
+## Decision 024 - Diegetic PDA And Relay Lookup Consolidation
+Problem: After the first UI pass, the remaining clean Presentation & UX lookup debt was concentrated in PDA shell/panel setup, relay HUD fail-safe construction, settings preview camera recovery, suit advisory binding, and UI particle setup.
+Solution: Replaced same-object probes with `TryGetComponent(out T)`, parent probes with bounded parent walks, and descendant probes with the existing `ComponentReferenceUtility.ResolveOwnedComponent<T>` instead of adding another local traversal utility.
+Rejected Alternatives: Duplicating generic descendant traversal helpers was rejected after H-Phi showed helper code added source debt. Rewriting large generated PDA/menu builders was rejected because that is higher-risk than the remaining local setup probes and several UI owners are active in parallel.
+Scalability potential: Low/MX350 removes more cold setup/recovery lookup pressure in diegetic UI and HUD fail-safe paths. High/Ultra keep the same PDA RT, cursor, relay marker, settings preview, and suit advisory behavior while reducing static coupling debt.
+Hardware Impact: Estimated runtime gain is 0-10 us on cold setup/recovery frames only. Static `GetComponentCalls` improved from 503 to 481 after this pass.
+
+## Decision 025 - No-Rebuild Second UI H-Phi Reverification
+Problem: The second UI lookup pass changed source state after the `12:38:17` H-Phi run.
+Solution: Ran only `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json`, scoped `rg`, brace counts, and `git diff --check`. No `dotnet build`, `dotnet rebuild`, Unity compile, or Unity import was executed.
+Rejected Alternatives: Running a build was rejected by the direct no-rebuild order. Expanding into non-presentation domains was rejected by the domain boundary and active multi-agent churn.
+Scalability potential: Low-tier UI/visor/PDA setup has less hierarchy lookup debt; high-tier rendering and visual overkill features remain unchanged.
+Hardware Impact: 0 us runtime from the audit itself. Latest static audit: `RuntimeHPhiNarrow=0.010821867`, `RuntimeHPhiRisk=0.000610985`, `AllSourceHPhiNarrow=0.009633634`, `AllSourceHPhiRisk=0.000498924`, `GetComponentCalls=481`, `UnityUpdateMethods=0`, `StructLayoutAttributes=957`, `AupPrecisionRisk=0`.
