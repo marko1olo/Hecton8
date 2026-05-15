@@ -99,6 +99,9 @@ namespace Hecton8.Audio.Editor
                 string spatialPolicyCold = ExtractMethodBody(spatial, "private void RefreshSpatialAudioPolicyCold()");
                 string spatialFoveatedRefresh = ExtractMethodBody(spatial, "private void RefreshFoveatedDirector()");
                 string spatialFoveatedResolve = ExtractMethodBody(spatial, "private IFoveatedSimulationDirector ResolveFoveatedSimulationDirector()");
+                string spatialColdRuntimeServices = ExtractMethodBody(spatial, "private void RefreshCachedAudioRuntimeServicesCold()");
+                string spatialPrologueQueue = ExtractMethodBody(spatial, "public bool QueuePrologueAudioTransition(");
+                string spatialHighSpeedQueue = ExtractMethodBody(spatial, "public bool QueueHighSpeedImpactSignal(");
                 AssertContains(spatial, "TryResolveCinematicZoneMismatch", "Delayed world events apply deterministic zone muffle", builder, ref failureCount);
                 AssertContains(spatial, "CinematicZoneMuffleTransmission = 0.25118864f", "Cinematic zone muffle applies -12 dB transmission", builder, ref failureCount);
                 AssertContains(spatial, "CinematicZoneMuffleCutoffHertz = 800f", "Cinematic zone muffle applies 800 Hz LPF", builder, ref failureCount);
@@ -134,6 +137,11 @@ namespace Hecton8.Audio.Editor
                 AssertContains(spatialFoveatedResolve, "GlobalRegistry.FoveatedSimulationDirector", "Spatial audio foveated director registry read is confined to the bounded resolver", builder, ref failureCount);
                 AssertContains(spatialFoveatedResolve, "_foveatedDirectorResolveFrame = frame + SpatialAudioRegistryRetryFrames", "Spatial audio foveated director resolver is retry-cadenced", builder, ref failureCount);
                 AssertNotContains(spatialFoveatedRefresh, "GlobalRegistry.FoveatedSimulationDirector", "Spatial audio slow-lane foveated refresh does not poll registry directly", builder, ref failureCount);
+                AssertContains(spatial, "IGlobalRegistryHotSwapRefListener", "Spatial audio caches player-critical runtime through hot-swap rebinding", builder, ref failureCount);
+                AssertContains(spatial, "TryRegisterHotSwapListener()", "Spatial audio registers for player-critical runtime hot swaps", builder, ref failureCount);
+                AssertContains(spatialColdRuntimeServices, "GlobalRegistry.PlayerCriticalAudio", "Spatial audio seeds player-critical runtime only during cold cache refresh", builder, ref failureCount);
+                AssertNotContains(spatialPrologueQueue, "GlobalRegistry.PlayerCriticalAudio", "Prologue audio transition queue uses cached player-critical runtime", builder, ref failureCount);
+                AssertNotContains(spatialHighSpeedQueue, "GlobalRegistry.PlayerCriticalAudio", "High-speed impact queue uses cached player-critical runtime", builder, ref failureCount);
                 AssertNotContains(spatialPortalPath, "GlobalRegistry.ScalabilityTier", "Spatial audio portal path does not poll scalability registry directly", builder, ref failureCount);
                 AssertNotContains(spatialUsePortalPath, "GlobalRegistry.ScalabilityTier", "Spatial audio portal policy does not poll scalability registry directly", builder, ref failureCount);
                 AssertNotContains(spatialVoiceLimit, "GlobalRegistry.ScalabilityTier", "Spatial audio voice-limit policy does not poll scalability registry directly", builder, ref failureCount);

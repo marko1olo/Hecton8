@@ -1023,8 +1023,7 @@ namespace Hecton8.Audio
             GlobalRegistryServiceSlot serviceSlot,
             ref object currentService)
         {
-            if (serviceSlot == GlobalRegistryServiceSlot.PlayerCriticalAudioRuntime)
-                _cachedPlayerCriticalAudio = currentService as PlayerCriticalProceduralAudioRenderer;
+            CacheReboundAudioRuntimeService(serviceSlot, currentService);
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -1032,8 +1031,7 @@ namespace Hecton8.Audio
             object previousService,
             object currentService)
         {
-            if (serviceSlot == GlobalRegistryServiceSlot.PlayerCriticalAudioRuntime)
-                _cachedPlayerCriticalAudio = currentService as PlayerCriticalProceduralAudioRenderer;
+            CacheReboundAudioRuntimeService(serviceSlot, currentService);
         }
 
         /// <summary>
@@ -2462,6 +2460,58 @@ namespace Hecton8.Audio
                 Time.frameCount);
         }
 
+        private void RefreshCachedAudioRuntimeServicesCold()
+        {
+            int nextResolveFrame = Time.frameCount + SpatialAudioRegistryRetryFrames;
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IWeatherService weatherService = GlobalRegistry.Weather;
+
+            _cachedPlayerRuntimeContext = playerContext != null && playerContext.IsInitialized ? playerContext : null;
+            _cachedWeatherService = weatherService != null && weatherService.IsInitialized ? weatherService : null;
+            _cachedAcousticZone = GlobalRegistry.AcousticZone;
+            _cachedSurfaceWeatherDirector = GlobalRegistry.SurfaceWeather;
+            _cachedPlayerCriticalAudio = GlobalRegistry.PlayerCriticalAudio;
+            _foveatedSimulationDirector = GlobalRegistry.FoveatedSimulationDirector;
+            _playerRuntimeContextResolveFrame = nextResolveFrame;
+            _weatherServiceResolveFrame = nextResolveFrame;
+            _acousticZoneResolveFrame = nextResolveFrame;
+            _surfaceWeatherResolveFrame = nextResolveFrame;
+            _foveatedDirectorResolveFrame = nextResolveFrame;
+        }
+
+        private void CacheReboundAudioRuntimeService(GlobalRegistryServiceSlot serviceSlot, object currentService)
+        {
+            int nextResolveFrame = Time.frameCount + SpatialAudioRegistryRetryFrames;
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Player:
+                    IPlayerRuntimeContext playerContext = currentService as IPlayerRuntimeContext;
+                    _cachedPlayerRuntimeContext = playerContext != null && playerContext.IsInitialized ? playerContext : null;
+                    _playerRuntimeContextResolveFrame = nextResolveFrame;
+                    break;
+                case GlobalRegistryServiceSlot.Weather:
+                    IWeatherService weatherService = currentService as IWeatherService;
+                    _cachedWeatherService = weatherService != null && weatherService.IsInitialized ? weatherService : null;
+                    _weatherServiceResolveFrame = nextResolveFrame;
+                    break;
+                case GlobalRegistryServiceSlot.AcousticZoneRuntime:
+                    _cachedAcousticZone = currentService as AcousticZoneController;
+                    _acousticZoneResolveFrame = nextResolveFrame;
+                    break;
+                case GlobalRegistryServiceSlot.SurfaceWeatherRuntime:
+                    _cachedSurfaceWeatherDirector = currentService as HectonSurfaceWeatherDirector;
+                    _surfaceWeatherResolveFrame = nextResolveFrame;
+                    break;
+                case GlobalRegistryServiceSlot.PlayerCriticalAudioRuntime:
+                    _cachedPlayerCriticalAudio = currentService as PlayerCriticalProceduralAudioRenderer;
+                    break;
+                case GlobalRegistryServiceSlot.FoveatedSimulationDirector:
+                    _foveatedSimulationDirector = currentService as IFoveatedSimulationDirector;
+                    _foveatedDirectorResolveFrame = nextResolveFrame;
+                    break;
+            }
+        }
+
         private void CacheSpatialAudioPolicy(HectonQualityTier scalabilityTier, bool lowMemoryProfile, int frame)
         {
             _cachedScalabilityTier = scalabilityTier;
@@ -2485,6 +2535,23 @@ namespace Hecton8.Audio
 
             ScalabilityEvents.Unregister(this);
             _scalabilityEventsRegistered = false;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         private HectonQualityTier ResolveCachedScalabilityTier()

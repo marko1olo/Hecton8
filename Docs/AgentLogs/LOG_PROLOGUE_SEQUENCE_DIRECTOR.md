@@ -324,3 +324,11 @@ What was done -> Added `IsFiniteRuntimeAup()` and guarded atmospheric and comple
 Cinematic Cheats used -> None; this protects the existing plasma, whiteout, splash, and visor-droplet fakes from corrupted spatial payloads.
 Exact Microseconds saved -> Adds one finite AUP check per accepted packet, below normal fan-out cost. Prevents invalid spatial packets from triggering acoustic/debris/state work.
 Verification -> No dotnet rebuild/response-file compile was run per user constraint. Targeted scan confirms VFX AUP guards; forbidden-pattern scan returned no hits; `git diff --check` reports line-ending warnings only.
+
+## 2026-05-15 - Loop 45 VFX Complete Spatial Ownership Review
+
+What was wrong -> Manual/orbital complete packets are whiteout-only concealment inputs, but VFX still let them overwrite the capsule anchor used later by splash audio, debris, droplets, and state signals.
+What was done -> Moved `_lastCapsuleAup` assignment inside the `PRLG` sequence handoff branch. Non-sequence complete packets can still enter/hold whiteout but cannot become the spatial owner.
+Cinematic Cheats used -> Whiteout remains a cheap concealment fake. Spatially expensive splash/audio/debris overkill stays tied to the sequence-owned handoff anchor.
+Exact Microseconds saved -> Removes one assignment on whiteout-only packets and prevents wrong-anchor downstream fan-out. Direct cost is below 1 us.
+Verification -> No dotnet rebuild/response-file compile was run per user constraint. Targeted scan confirms complete-packet AUP assignment is sequence-owned; forbidden-pattern scan returned no hits; `git diff --check` reports line-ending warnings only.

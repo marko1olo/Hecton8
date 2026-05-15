@@ -278,8 +278,8 @@ Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json
 ```
 
 The compact summary includes aggregate scores, Core graph debt, duplicate signal
-name debt, top owner-blocked DataVault candidate files, and
-`TopAupPrecisionRiskFiles` for immediate AUP precision regression routing.
+name debt, top owner-blocked DataVault candidate files,
+`TopAupPrecisionRiskFiles`, and `TopCouplingRiskFiles`.
 
 Core graph only:
 
@@ -303,6 +303,12 @@ AUP precision budget gate:
 
 ```powershell
 Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0
+```
+
+Full H-Phi regression budget gate:
+
+```powershell
+Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0 -MaxFindObjectCalls 5 -MaxLegacyEventPublish 28 -MaxCoreAsmdefDebtReferences 25 -MaxGeneratedProjectDebtReferences 10 -MaxSourceBackedBridgeDebtReferences 14 -MaxSourceBackedCompileBridgeDebtReferences 8 -MaxProjectReferenceReplacementDebtReferences 6
 ```
 
 Duplicate signal-name budget gate:

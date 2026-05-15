@@ -237,18 +237,28 @@ void H8UberNoirClipDitheredTransparency(half alpha, float4 positionCS)
     clip(coverage - threshold);
 }
 
-H8UberNoirInstanceData H8UberNoirLoadInstance(uint instanceID)
+H8UberNoirInstanceData H8UberNoirBuildDefaultInstance()
 {
     H8UberNoirInstanceData instanceData;
-#if defined(H8_UBERNOIR_USE_INSTANCE_BUFFER)
-    uint bufferCount = (uint)max(_UberNoirInstanceParams.y, 0.0);
-    uint bufferOffset = (uint)max(_UberNoirInstanceParams.x, 0.0);
-    uint clampedId = min(instanceID, max(bufferCount, 1u) - 1u);
-    instanceData = _H8UberNoirInstanceData[bufferOffset + clampedId];
-#else
     instanceData.ObjectToWorld = GetObjectToWorldMatrix();
     instanceData.WorldToObject = GetWorldToObjectMatrix();
     instanceData.SeedFadeFlags = float4(0.0, 1.0, 0.0, 0.0);
+    return instanceData;
+}
+
+H8UberNoirInstanceData H8UberNoirLoadInstance(uint instanceID)
+{
+    H8UberNoirInstanceData instanceData = H8UberNoirBuildDefaultInstance();
+#if defined(H8_UBERNOIR_USE_INSTANCE_BUFFER)
+    uint bufferCount = (uint)max(_UberNoirInstanceParams.y, 0.0);
+    uint bufferOffset = (uint)max(_UberNoirInstanceParams.x, 0.0);
+    uint useBuffer = (uint)step(0.5, _UberNoirInstanceParams.z);
+    [branch]
+    if ((useBuffer != 0u) && (bufferCount > 0u))
+    {
+        uint clampedId = min(instanceID, bufferCount - 1u);
+        instanceData = _H8UberNoirInstanceData[bufferOffset + clampedId];
+    }
 #endif
     return instanceData;
 }

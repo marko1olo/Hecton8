@@ -170,10 +170,15 @@ namespace Hecton8.UI
         /// <inheritdoc />
         public void Tick(float deltaTime)
         {
-            if (IsTabActive && (ConsumeInventoryChangedSignals() || ConsumeToolLoadoutChangedSignals()))
+            if (IsTabActive)
             {
-                _refreshDirty = true;
-                RefreshAll();
+                bool signalDirty = ConsumeInventoryChangedSignals();
+                signalDirty |= ConsumeToolLoadoutChangedSignals();
+                if (signalDirty)
+                {
+                    _refreshDirty = true;
+                    RefreshAll();
+                }
             }
 
             UpdateSummaryMassPulse(deltaTime);

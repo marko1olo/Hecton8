@@ -22,7 +22,7 @@ namespace Hecton8.UI.VR
     [DisallowMultipleComponent]
     [RequireComponent(typeof(BoxCollider))]
     [AddComponentMenu("Hecton8/UI/VR/OpenXR Manual Override Lever")]
-    public sealed class OpenXRManualOverrideLever : MonoBehaviour, IUpdatable, IPhysicalPanelButtonReceiver, IManualOverrideLeverReadModel, IGlobalRegistryHotSwapListener
+    public sealed class OpenXRManualOverrideLever : MonoBehaviour, IUpdatable, IPhysicalPanelButtonReceiver, IManualOverrideLeverReadModel, IGlobalRegistryHotSwapListener, IScalabilityChangedEventListener
     {
         private const int LeverCount = 1;
         private const int BlackBoxFrameCount = 300;
@@ -91,6 +91,7 @@ namespace Hecton8.UI.VR
         private JobHandle _disposeHandle;
         private bool _registeredTick;
         private bool _registeredHotSwapListener;
+        private bool _registeredScalabilityListener;
         private bool _receiverRegistered;
         private bool _grabbed;
         private bool _latched;
@@ -143,6 +144,7 @@ namespace Hecton8.UI.VR
             _inputService = GlobalRegistry.Input;
             _lowTierMath = ResolveLowTierMath();
             TryRegisterHotSwapListener();
+            TryRegisterScalabilityListener();
             TryRegisterReceiver();
             TryRegisterTick();
         }
@@ -152,6 +154,7 @@ namespace Hecton8.UI.VR
             _grabbed = false;
             TryUnregisterTick();
             TryUnregisterReceiver();
+            TryUnregisterScalabilityListener();
             TryUnregisterHotSwapListener();
         }
 
@@ -159,6 +162,7 @@ namespace Hecton8.UI.VR
         {
             TryUnregisterTick();
             TryUnregisterReceiver();
+            TryUnregisterScalabilityListener();
             TryUnregisterHotSwapListener();
             DisposeNativeState();
         }
@@ -416,6 +420,7 @@ namespace Hecton8.UI.VR
 
             TryUnregisterReceiver();
             TryUnregisterTick();
+            TryUnregisterScalabilityListener();
             TryUnregisterHotSwapListener();
         }
 
@@ -516,6 +521,15 @@ namespace Hecton8.UI.VR
                 EnsureNativeStateForLifecycle();
                 TryRegisterTick();
             }
+        }
+
+        /// <summary>
+        /// Applies cold scalability profile changes to lever presentation math without polling the registry in Tick.
+        /// </summary>
+        /// <param name="payload">Scalability transition payload.</param>
+        public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
+        {
+            _lowTierMath = IsLowTierMath(payload.CurrentQualityTier);
         }
 
         private void WriteBlackBoxFrame(float angleDegrees)
@@ -801,9 +815,28 @@ namespace Hecton8.UI.VR
             _registeredHotSwapListener = false;
         }
 
+        private void TryRegisterScalabilityListener()
+        {
+            if (_registeredScalabilityListener || _latched || !Application.isPlaying)
+                return;
+
+            ScalabilityEvents.Register(this);
+            _registeredScalabilityListener = true;
+        }
+
+        private void TryUnregisterScalabilityListener()
+        {
+            ScalabilityEvents.Unregister(this);
+            _registeredScalabilityListener = false;
+        }
+
         private bool ResolveLowTierMath()
         {
-            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
+            return IsLowTierMath(GlobalRegistry.ScalabilityTier);
+        }
+
+        private static bool IsLowTierMath(HectonQualityTier tier)
+        {
             return tier == HectonQualityTier.Unknown || tier == HectonQualityTier.Low || tier == HectonQualityTier.Mx350;
         }
 

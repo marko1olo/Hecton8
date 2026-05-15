@@ -151,3 +151,10 @@ Solution: Tick and FrostTick now seed standard atmosphere and call `TryRegisterR
 Rejected Alternatives: Waiting for the next FixedTick was rejected because paused or highly dilated frames can leave `IGasDynamicsSolver` invisible despite valid native state. Registering before seeding was rejected because consumers could observe zeroed room pressure.
 Scalability potential: Low through Ultra keep identical native buffers; this only closes a lifecycle visibility gap.
 Hardware Impact: Two steady-state guarded calls in Tick/FrostTick; cold-start correctness gain only, no runtime microsecond saving claimed.
+
+## Self-Review 15 - Wake Catch-Up Capacity Guards
+Problem: The Burst wake catch-up path read base metadata lanes and front/back gas lanes assuming every native array stayed capacity-aligned forever.
+Solution: `ApplyBaseWakeCatchUp` now refuses to schedule unless every base metadata array exists, and `BaseHibernationWakeCatchUpJob` clamps base and room limits across all arrays it touches before reading.
+Rejected Alternatives: Trusting constructor symmetry was rejected because future H-Phi/DataVault migration may split ownership or resize lanes independently. Adding managed assertions was rejected because this is runtime fault containment, not editor-only diagnostics.
+Scalability potential: Low through Ultra keep the same O(room) wake cost; the extra min checks run only in the cold wake job.
+Hardware Impact: Negligible cold-path arithmetic cost. Prevents an out-of-bounds wake fault if future low-end memory pressure or owner migration creates capacity skew.

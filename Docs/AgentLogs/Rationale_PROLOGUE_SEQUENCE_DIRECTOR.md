@@ -412,3 +412,11 @@ Solution: Add `IsFiniteRuntimeAup()` and call it after phase/shape acceptance bu
 Rejected Alternatives: Trust producers to provide valid AUP, or validate only at the later debris/audio publish sites. Producer trust is weak on shared signal lanes; late validation would duplicate checks across every downstream publish and allow contaminated controller state.
 Scalability potential: Low/MX350 avoids wasting shader/audio/debris work on invalid spatial payloads. Middle/High/Ultra keep plasma roar, ocean waves, splash debris, visor droplets, and hydrated fade aligned to valid capsule positions.
 Hardware Impact: Adds one AUP-to-runtime finite check per accepted atmospheric/complete packet, below the cost of downstream acoustic/debris fan-out and fault-only black-box dump. Verification this pass is static only by user request; no dotnet rebuild or response-file compile was run.
+
+## Decision 50 - VFX Complete Spatial Ownership
+
+Problem: Non-sequence complete packets are allowed to request a concealment whiteout, but they also overwrote `_lastCapsuleAup`. Manual or autonomous orbital whiteout packets could therefore become the spatial owner for later acoustic, debris, droplet, and VFX state fan-out.
+Solution: Keep non-sequence complete packets as whiteout-only and update `_lastCapsuleAup` only inside the `PRLG` sequence ocean-handoff branch. Atmospheric packets remain the live spatial source before handoff.
+Rejected Alternatives: Let every valid complete packet own the spatial anchor, or ignore non-sequence complete packets entirely. The first corrupts ownership; the second removes useful whiteout concealment before the authoritative handoff.
+Scalability potential: Low/MX350 avoids wrong-anchor splash/audio work from manual/orbital packets. Middle/High/Ultra keep expensive splash debris, ocean waves, visor droplets, and hydrated fade aligned to the sequence-owned handoff.
+Hardware Impact: Reuses an existing `sequenceOceanHandoff` branch and removes one assignment on whiteout-only packets. Prevents wrong-anchor downstream fan-out; verification this pass is static only by user request, no dotnet rebuild or response-file compile was run.

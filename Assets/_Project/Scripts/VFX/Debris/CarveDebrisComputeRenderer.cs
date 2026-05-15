@@ -130,7 +130,7 @@ namespace Hecton8.VFX.Debris
         private Texture3D _emptyTexture3D;
         private Mesh _ownedMesh;
         private Material _ownedMaterial;
-        private MaterialPropertyBlock _materialProperties;
+        private Material _ownedMaterialSource;
         private HectonFluidEngine _fluidEngine;
         private int _advectKernel = -1;
         private int _clearArgsKernel = -1;
@@ -989,16 +989,14 @@ namespace Hecton8.VFX.Debris
 
             GraphicsBuffer currentPositionBuffer = (_bufferParity & 1) == 0 ? _positionBufferA : _positionBufferB;
             GraphicsBuffer currentVelocityBuffer = (_bufferParity & 1) == 0 ? _velocityBufferA : _velocityBufferB;
-            EnsureMaterialPropertyBlock();
-            _materialProperties.Clear();
-            _materialProperties.SetBuffer(CarveDebrisReadId, currentPositionBuffer);
-            _materialProperties.SetBuffer(CarveDebrisVelocityReadId, currentVelocityBuffer);
-            _materialProperties.SetBuffer(CarveDebrisVisibleIndicesId, _visibleIndicesBuffer);
-            _materialProperties.SetVector(CarveDebrisMaterialParamsId, new Vector4(minRockScale, math.max(minRockScale, maxRockScale), particleLifetimeSeconds, _cachedLowTier ? 0f : 1f));
+            material.SetBuffer(CarveDebrisReadId, currentPositionBuffer);
+            material.SetBuffer(CarveDebrisVelocityReadId, currentVelocityBuffer);
+            material.SetBuffer(CarveDebrisVisibleIndicesId, _visibleIndicesBuffer);
+            material.SetVector(CarveDebrisMaterialParamsId, new Vector4(minRockScale, math.max(minRockScale, maxRockScale), particleLifetimeSeconds, _cachedLowTier ? 0f : 1f));
 
             RenderParams renderParams = new RenderParams(material)
             {
-                matProps = _materialProperties,
+                camera = renderCamera,
                 worldBounds = drawBounds,
                 layer = renderLayer,
                 shadowCastingMode = shadowCastingMode,
@@ -1049,12 +1047,36 @@ namespace Hecton8.VFX.Debris
 
         private void EnsureFallbackRenderResources()
         {
-            EnsureMaterialPropertyBlock();
-
             if (debrisMesh == null && _ownedMesh == null)
                 _ownedMesh = BuildOctahedronMesh();
 
-            if (debrisMaterial != null || _ownedMaterial != null || _materialFallbackAttempted)
+            EnsureOwnedMaterial();
+        }
+
+        private void EnsureOwnedMaterial()
+        {
+            if (debrisMaterial != null)
+            {
+                if (_ownedMaterial != null && ReferenceEquals(_ownedMaterialSource, debrisMaterial))
+                    return;
+
+                DestroyOwnedMaterial();
+                _ownedMaterial = new Material(debrisMaterial)
+                {
+                    name = debrisMaterial.name + " Runtime Carve Debris Material"
+                }; // COLD ALLOC: Material[1] - private indirect debris material copy, avoids shared material mutation and MPB geometry path - owner: VFX_SDF_CARVE_DEBRIS
+                _ownedMaterialSource = debrisMaterial;
+                _materialFallbackAttempted = false;
+                return;
+            }
+
+            if (_ownedMaterialSource != null)
+            {
+                DestroyOwnedMaterial();
+                _materialFallbackAttempted = false;
+            }
+
+            if (_ownedMaterial != null || _materialFallbackAttempted)
                 return;
 
             _materialFallbackAttempted = true;
@@ -1070,20 +1092,17 @@ namespace Hecton8.VFX.Debris
 
         private Material ResolveMaterial()
         {
-            if (debrisMaterial != null)
-                return debrisMaterial;
-            if (_ownedMaterial != null)
-                return _ownedMaterial;
             EnsureFallbackRenderResources();
             return _ownedMaterial;
         }
 
-        private void EnsureMaterialPropertyBlock()
+        private void DestroyOwnedMaterial()
         {
-            if (_materialProperties != null)
-                return;
+            if (_ownedMaterial != null)
+                DestroyUnityObject(_ownedMaterial);
 
-            _materialProperties = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - per-draw debris bindings, avoids shared material mutation - owner: VFX_SDF_CARVE_DEBRIS
+            _ownedMaterial = null;
+            _ownedMaterialSource = null;
         }
 
         private void DrainAupShiftSignals()
@@ -1338,9 +1357,6 @@ namespace Hecton8.VFX.Debris
 
         private void ReleaseGpuState()
         {
-            if (_materialProperties != null)
-                _materialProperties.Clear();
-
             ReleaseBuffer(ref _positionBufferA);
             ReleaseBuffer(ref _positionBufferB);
             ReleaseBuffer(ref _velocityBufferA);
@@ -1350,12 +1366,10 @@ namespace Hecton8.VFX.Debris
             ReleaseBuffer(ref _emptyFlowBuffer);
             if (_ownedMesh != null)
                 DestroyUnityObject(_ownedMesh);
-            if (_ownedMaterial != null)
-                DestroyUnityObject(_ownedMaterial);
+            DestroyOwnedMaterial();
             if (_emptyTexture3D != null)
                 DestroyUnityObject(_emptyTexture3D);
             _ownedMesh = null;
-            _ownedMaterial = null;
             _cachedGlobalSdfTexture = null;
             _cachedGlobalSdfWorldToLocal = Matrix4x4.identity;
             _cachedGlobalSdfInvDoubleHalfExtents = Vector4.zero;

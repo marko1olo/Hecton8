@@ -5,6 +5,8 @@ Snapshot: 2026-05-15T03:07+04:00
 Source: `C:\Users\danat\.codex\state_5.sqlite`
 Method: read-only SQLite query over `threads.tokens_used`
 Attribution detail: `COMPUTE_THREAD_ATTRIBUTION.md`
+Validation detail: `COMPUTE_VALIDATION_FORENSICS.md`
+Top-100 value detail: `COMPUTE_THREAD_VALUE_AUDIT.md`
 
 ## Verdict
 

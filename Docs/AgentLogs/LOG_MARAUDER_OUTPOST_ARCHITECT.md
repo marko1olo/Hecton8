@@ -461,6 +461,39 @@ Verification:
 
 Status: PENDING VERIFICATION. Static source audits pass; compile/runtime proof remains pending by user instruction and external Core blocker.
 
+## 2026-05-15 - WFC Outpost Loop 27 Origin-Relative Heightmap Overflow Guard
+
+What was wrong:
+- Loop 25 rejected NaN/Infinity heightmap metadata, but finite operands can still overflow when combined.
+- `SampleHeight` computes origin-relative terrain coordinates and returns `TerrainPosition.y + sample * heightScale`; finite extreme terrain metadata could still yield Infinity.
+- The user explicitly forbade `dotnet` rebuilds again.
+
+What was done:
+- Changed `IsValidHeightmapPayload` to receive the current generation origin.
+- Required finite origin, finite `originMeters - terrainPosition`, and finite `terrainPosition.y + terrainSize.y` before accepting a MapMagic heightmap payload.
+- Repeated the same origin-relative and top-height finite checks in `MarauderOutpostMatrixExtractionJob.hasHeightmap`.
+- Invalid payloads keep using the deterministic fallback slab instead of corrupting shell matrices or support heights.
+
+Cinematic Cheats used:
+- Bad terrain truth degrades to the cheap slab instead of simulating recovery or clamping terrain authority data.
+- Valid payloads still buy the visual cheat that matters: grounded stilts and shell placement with one cold height lookup path and one indirect shell draw.
+
+Exact Microseconds saved:
+- New cost: a few scalar/vector finite checks on cold extraction setup, estimated below 0.1 us per generation on i3/MX350.
+- Saved cost on corrupt finite payloads: avoids Infinity matrix generation, GPU upload fallout, and proxy correction work.
+- Hot Tick/Render remains 0 B/frame; no new buffers, signals, registries, shell GameObjects, or material mutations.
+
+Verification:
+- Targeted guard scan: PASS; two origin-relative finite guards and two top-height finite guards exist across service and Burst job.
+- Forbidden construct audit: PASS; no raw hash comparison, shader-global/material mutation, global publish wrapper, prefab shell `Instantiate`, `BaseGenerator`, `math.pow`, telemetry modulo, or `foreach` matches in owned outpost files.
+- Scoped H-Phi counts remain `GlobalRegistrySurface=12`, `SignalBusPush=1`, `EventPublish=0`, `StructLayoutAttributes=6`.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json`: PASS; `CoreAsmdefDebtReferenceCount=25`, `GeneratedProjectDebtReferenceCount=10`.
+- `git diff --check`: PASS with repository CRLF warnings only.
+- `dotnet` rebuilds/response-file compiles: NOT RUN by explicit user request.
+- Unity MCP console/profiler: unavailable from this session.
+
+Status: PENDING VERIFICATION. Static source audits pass; compile/runtime proof remains pending by user instruction and external Core blocker.
+
 ## 2026-05-15 - WFC Outpost Loop 22 Shift-Safe Public Shell Accessors
 
 What was wrong:

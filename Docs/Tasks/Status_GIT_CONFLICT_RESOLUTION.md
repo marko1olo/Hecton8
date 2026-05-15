@@ -32,3 +32,8 @@ Task loop 4:
 - [x] Continue from pushed head | DOD: `git fetch origin`; `rev-list origin/main...HEAD` returned `0 0` before staging | Rejected: assuming Desktop visual state was authoritative | Estimate: 0 us runtime.
 - [x] Validate live dirty tail | DOD: `git diff --stat`, `git diff --check`, unmerged-path scan, and strict conflict-marker scan | Rejected: blind checkpointing without evidence | Estimate: 0 us runtime.
 - [x] Record operator evidence | DOD: appended this loop to `Status`, `Rationale`, and `LOG` before commit | Rejected: chat-only report | Estimate: 0 us runtime.
+
+Task loop 5:
+- [x] Fetch before pull/merge decision | DOD: `git fetch origin`; `rev-list origin/main...HEAD` returned `0 0`, so no incoming pull was needed | Rejected: pulling blindly over a dirty worktree | Estimate: 0 us runtime.
+- [x] Classify current dirty tail | DOD: `git status`, `git diff --stat`, `git diff --check`, unmerged-path scan, and changed-file conflict-marker scan | Rejected: treating GitHub Desktop UI as proof | Estimate: 0 us runtime.
+- [x] Prepare checkpoint evidence | DOD: appended loop 5 evidence to persistent status/rationale/log before staging | Rejected: chat-only "done" report | Estimate: 0 us runtime.

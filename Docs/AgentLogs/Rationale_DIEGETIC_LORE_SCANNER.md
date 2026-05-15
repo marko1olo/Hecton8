@@ -397,3 +397,37 @@ Solution: Used staged diff checks and scanner banned-pattern scans only.
 Rejected Alternatives: Running dotnet/Unity compile validation against user instruction.
 Scalability potential: Process hygiene only.
 Hardware Impact: No runtime impact.
+
+## LOOP 17 BLACK BOX EXPORT AND NEGATIVE TITLE CACHE
+
+Problem: Scanner black-box export wrote the NativeArray in raw storage order. After the ring wrapped, the first serialized entry was not the oldest recorded frame, so a crash/postmortem reader had to reconstruct timeline order manually from the cursor.
+Solution: Track `_scannerBlackBoxRecordedCount` and export entries oldest-to-newest, using the next-write cursor as the oldest slot only after the 300-entry ring is full. `ScannerBlackBoxEntry` now declares sequential layout to document the NativeArray/binary telemetry shape before field-by-field serialization.
+Rejected Alternatives: Keeping raw ring order; allocating a managed sorted copy during fault export; changing the public dump path or adding a cross-domain telemetry reader.
+Scalability potential: Low/MX350 normal path pays one bounded integer increment per active scanner black-box write. Middle/High/Ultra get deterministic crash timelines without heavier runtime logging or debug GameObjects.
+Hardware Impact: Normal-path added cost is sub-us integer bookkeeping. Fault-path dump ordering adds one integer index calculation per serialized entry; disk I/O remains one-shot only on invalid scanner state.
+
+Problem: Diegetic scanner RT title lookup cached successful lore titles but not lookup misses. For unresolved artifact hashes, every progress repaint could re-scan the lore-title registry before falling back to `SCAN N%`.
+Solution: Add a versioned negative cache sentinel in `ToolDiegeticDisplayController`. Failed title lookups cache `(artifactHash, LoreTitleLookupVersion, miss)` in the existing fixed char-cache metadata and retry only when the title registry version changes.
+Rejected Alternatives: Managed dictionary of misses; per-repaint 1024-entry scan; widening `ScannerToolActiveSignal` to include managed title data.
+Scalability potential: Low/MX350 avoids repeated cold registry scans for unresolved scanner hashes while keeping percentage fallback. High/Ultra preserve scramble/title overkill for resolved artifacts and reattempt automatically when the title registry changes.
+Hardware Impact: Removes repeated title-registry scans on unresolved scanner artifacts; added hot cost is one integer sentinel comparison in the existing title cache path.
+
+Problem: Verification still cannot use compiler/Unity rebuilds because the user explicitly forbids dotnet rebuilds.
+Solution: Kept this loop source-only: `git diff --check` passed with docs line-ending warnings only, `git diff --cached --check` passed, and scanner banned-pattern scans found no forbidden scanner/UI patterns. Compile verification remains pending.
+Rejected Alternatives: Running prohibited `dotnet build`; claiming Unity Console or compiler proof from static source review.
+Scalability potential: Process hygiene only.
+Hardware Impact: No runtime impact.
+
+## LOOP 18 SURVIVAL CACHE MISS THROTTLE
+
+Problem: Scientific scanner metrics use `HectonSurvivalSystem` when present, but if the component is absent the scanner could retry `GameBootstrapper.TryGetCurrentPlayerTransform` plus `TryGetComponent` on active spatial/water metric samples. Cached success was cheap; cached miss was not bounded.
+Solution: Add `_nextSurvivalResolveAt` and `SurvivalResolveRetrySeconds`. A missing survival component now retries at 0.5s cadence; successful resolution clears the retry timer, and lifecycle/service cache clears reset the timer for player replacement or pool reuse.
+Rejected Alternatives: Retrying on every sample; permanently caching a null survival component; adding a direct survival-system registry dependency from the scanner UX domain.
+Scalability potential: Low/MX350 keeps scientific scanner metrics cheap when survival physiology is not present or not initialized. Middle/High/Ultra still rebind within 0.5s and can keep richer scanner presentation without paying a missing-component probe every sample.
+Hardware Impact: Miss-path lookup cadence drops from active-sample frequency to 2Hz. Normal cached-success path remains one null check. Exact microseconds PENDING PROFILER.
+
+Problem: Verification after the survival miss throttle still cannot use compiler/Unity rebuilds by user order.
+Solution: Ran source-only checks: `git diff --check` passed with line-ending warnings only, `git diff --cached --check` passed, and scanner banned-pattern scans found no forbidden scanner/UI patterns.
+Rejected Alternatives: Running prohibited `dotnet build`; marking compile verified without a compiler run.
+Scalability potential: Process hygiene only.
+Hardware Impact: No runtime impact.

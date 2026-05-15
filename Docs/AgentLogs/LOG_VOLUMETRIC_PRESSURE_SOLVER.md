@@ -355,9 +355,31 @@ Follow-up upgrade 37:
 - What was wrong: non-finite hydrodynamic/seismic ingress could be rejected without recording the fault into the 300-frame blackbox. Corrupted native module spike/integrity/flood scalar lanes could also feed the stress solver until the outer finite guard caught the final result.
 - What was done: added `RecordNonFinitePressureIngress`; non-finite `deltaTime`, seismic epicenter/radius, direct spike magnitude, and native stress scalar corruption now write the blackbox path. `ResolveModuleStress01` sanitizes non-finite depth, integrity, joint, compression, flood, and spike inputs before shader-facing stress upload.
 - Cinematic cheat used: one corrupt lane is isolated to zero visual stress instead of clearing the whole habitat deformation field. Valid rooms keep their pressure bowing/crease feedback.
-- Static checks: `rg` confirms blackbox ingress recording, `SaturateFinite01`, invalid-state reporting, and native spike sanitation are wired. Managed-offender scans found no C# string/LINQ/foreach offenders in `HabitatGraphManager.cs`; touched C# brace count is balanced.
+- Static checks: `rg` confirms blackbox ingress recording, `SaturateFinite01`, invalid-state reporting, and native spike sanitation are wired. Managed-offender scans found no C# string/LINQ/foreach offenders in `HabitatGraphManager.cs`; mesh mutation scan found no owned `Mesh.vertices` writes; exact shader normalize/sqrt scan produced no matches; touched C# brace count is balanced; `git diff --check` reports only CRLF normalization warnings.
 - Rebuild policy: no `dotnet` rebuild and no Unity rebuild were run by explicit user instruction.
 
 Exact microseconds saved after follow-up 37:
 - Fault frames avoid repeated NaN propagation through flood, pressure, module stress and shader upload state.
 - Estimated 5-20 us saved on i3/MX350 recovery frames; valid-frame overhead is bounded finite checks inside the existing 64-module stress loop and remains 0 B/frame.
+
+Follow-up upgrade 38:
+- What was wrong: habitat interior shader normal helpers used `rsqrt` but did not reject non-finite length before returning bend or normal-bias vectors.
+- What was done: `HectonHabitatInteriorSafeNormalize3` / `HectonHabitatInteriorSafeNormalizeHalf3` now take explicit fallback vectors and return them when the length is non-finite or too small. Bend normals fall back to zero offset; normal bias falls back to stable axes/base normal.
+- Cinematic cheat used: invalid normals produce a stable no-op/fallback visual instead of attempting a physically correct recovery. Valid stressed panels still get sine bow and cheap normal bias.
+- Static checks: helper callsites were updated; exact shader `normalize()`/`sqrt()` scan remains clean; managed-offender scan remains clean; mesh mutation scan found no owned `Mesh.vertices` writes; touched C#/shader brace counts are balanced; `git diff --check` reports only CRLF normalization warnings.
+- Rebuild policy: no `dotnet` rebuild and no Unity rebuild were run by explicit user instruction.
+
+Exact microseconds saved after follow-up 38:
+- Faulted vertices avoid NaN propagation into clip-space and lighting.
+- Normal-frame added cost is bounded to finite checks in the already-gated stressed vertex path; estimated under 1 us per 1k stressed vertices on MX350-class GPUs.
+
+Follow-up upgrade 39:
+- What was wrong: habitat shader stress lookup could treat NaN radius/distance comparisons as pass-through and select a corrupted module ambience slot.
+- What was done: `HectonHabitatInteriorResolveStress01` now skips candidates with non-finite radius or non-finite distance before selecting a stress-buffer index.
+- Cinematic cheat used: a corrupted ambience slot produces zero localized deformation instead of attempting visible recovery. Valid stressed slots still get localized panel bow.
+- Static checks: `rg` confirms the resolver radius/distance finite guards; exact shader `normalize()`/`sqrt()` scan remains clean; managed-offender scan remains clean; mesh mutation scan found no owned `Mesh.vertices` writes; touched shader/doc braces are balanced; `git diff --check` reports only CRLF normalization warnings.
+- Rebuild policy: no `dotnet` rebuild and no Unity rebuild were run by explicit user instruction.
+
+Exact microseconds saved after follow-up 39:
+- Fault frames avoid poisoned stress selection and downstream deformation artifacts.
+- Low/MX350 is unaffected because low-tier exits before the resolver loop; non-low valid-frame overhead is two scalar finite checks per candidate inside the existing 64-slot cap.

@@ -623,5 +623,8 @@ Exact microseconds saved:
 - Failure path cost: unchanged except the latch now reflects successful write state.
 
 Verification:
-- Pending final static scans and `git diff --check`.
+- Static scans confirm the early dump guard remains active.
+- Static scans confirm `_wfcOutpostBlackBoxDumped = true` runs only after frame and event ring serialization completes.
+- `git diff --check` reports no whitespace errors.
+- `Select-String` still finds no `MACRO_WFC_PERSISTENCE_SYNC` tag in the rotated current batch.
 - No `dotnet` rebuild was run.

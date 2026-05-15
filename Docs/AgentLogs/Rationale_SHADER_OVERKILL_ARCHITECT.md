@@ -99,4 +99,18 @@ Problem: Caustic GPU upload data, black-box telemetry entries, and the AUP culli
 Solution: Added explicit sequential pack/size to caustic GPU and telemetry structs, explicit sequential layout to the AUP shift job payload, and default-reset disposed NativeArray fields after release.
 Rejected Alternatives: Relying on C# default layout was rejected because H-Phi rewards binary-safe rendering code and GPU upload payloads must be deterministic; allocation churn was rejected in favor of keeping existing persistent NativeArrays.
 Scalability potential: Low through Ultra share the same predictable upload and black-box memory model. Higher tiers can push more waves/instances without adding managed allocations or layout ambiguity.
-Hardware Impact: Runtime microsecond gain is 0 us claimed. The benefit is lower integration risk and cleaner H-Phi memory-alignment evidence; latest no-rebuild audit reports `MemoryAlignment=0.503703704` and `AupPrecisionRisk=0`.
+Hardware Impact: Runtime microsecond gain is 0 us claimed. The benefit is lower integration risk and cleaner H-Phi memory-alignment evidence; latest no-rebuild audit reports `MemoryAlignment=0.503966155` and `AupPrecisionRisk=0`.
+
+## Decision 015 - Instance Buffer Zero-Count Guard
+Problem: The UberNoir resident-drawer path could read `_H8UberNoirInstanceData[bufferOffset]` when the instance buffer keyword was compiled but `_UberNoirInstanceParams.y` was zero or `_UberNoirInstanceParams.z` disabled the path.
+Solution: Build a default Unity matrix instance first, then only index the `StructuredBuffer` when the use flag is set and the declared count is positive.
+Rejected Alternatives: Assuming the drawer always binds a non-empty buffer was rejected because disabled variants, editor import, and fallback materials must not perform undefined GPU reads.
+Scalability potential: Low/Middle fallback materials render safely without a resident buffer. High/Ultra resident batches keep the same fast path when the buffer is valid.
+Hardware Impact: Estimated cost is 0-2 us vertex-side branch overhead in fallback cases; benefit is avoiding undefined GPU memory reads and hard-to-triage platform instability on Vulkan/Metal/DX12.
+
+## Decision 016 - No-Rebuild H-Phi Evidence Boundary
+Problem: The user explicitly forbade dotnet rebuilds, but the final shader safety patch changed source state after the previous H-Phi reading.
+Solution: Re-ran only the static `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json` audit with a longer timeout after the first 120-second attempt expired.
+Rejected Alternatives: Running `dotnet build` or Unity compilation was rejected because it violates the direct user order and remains blocked by external World/GPR compile errors.
+Scalability potential: Static audit confirms `AupPrecisionRisk=0`, `UnityUpdateMethods=2`, and increased `StructLayoutAttributes=953`; runtime scalability still requires profiler capture after the external compile blocker is cleared.
+Hardware Impact: 0 us runtime. Evidence quality improved; latest static audit reports `RuntimeHPhiNarrow=0.010497120`, `RuntimeHPhiRisk=0.000573792`, and `MemoryAlignment=0.503966155`.

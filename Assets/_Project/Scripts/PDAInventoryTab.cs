@@ -251,6 +251,8 @@ namespace Hecton8.UI
         private bool _toolStripDirty;
         private uint _inventorySignalHash;
         private uint _lastInventorySignalRevision;
+        private uint _toolLoadoutSignalSourceId;
+        private uint _lastToolLoadoutSignalSequence;
 
         private bool _registeredToUpdateLoop;
         private Transform _dropOrigin;
@@ -311,6 +313,12 @@ namespace Hecton8.UI
             if (ConsumeInventoryChangedSignals())
             {
                 MarkInventoryDirty();
+                FlushPendingRefresh();
+            }
+
+            if (ConsumeToolLoadoutChangedSignals())
+            {
+                MarkToolLoadoutDirty();
                 FlushPendingRefresh();
             }
 
@@ -387,6 +395,7 @@ namespace Hecton8.UI
                 numericFont = labelFont;
 
             RefreshInventorySignalBinding();
+            RefreshToolLoadoutSignalBinding();
         }
 
         private void PublishInventoryUiParallax()
@@ -416,22 +425,12 @@ namespace Hecton8.UI
 
         private void Subscribe()
         {
-            if (toolManager != null)
-            {
-                toolManager.ActiveSlotChanged += OnToolSlotChanged;
-                toolManager.ToolAssignmentsChanged += OnToolAssignmentsChanged;
-            }
             PDAEvents.Register(this);
             LocalizationEvents.RegisterCorruptionVisualStateListener(this);
         }
 
         private void Unsubscribe()
         {
-            if (toolManager != null)
-            {
-                toolManager.ActiveSlotChanged -= OnToolSlotChanged;
-                toolManager.ToolAssignmentsChanged -= OnToolAssignmentsChanged;
-            }
             PDAEvents.Unregister(this);
             LocalizationEvents.UnregisterCorruptionVisualStateListener(this);
         }
@@ -483,6 +482,12 @@ namespace Hecton8.UI
             _detailsDirty = true;
         }
 
+        private void MarkToolLoadoutDirty()
+        {
+            _toolStripDirty = true;
+            _detailsDirty = true;
+        }
+
         public void OnLocalizationCorruptionVisualStateChanged(in LocalizationEventPayload payload)
 
         {
@@ -499,20 +504,45 @@ namespace Hecton8.UI
                 FlushPendingRefresh();
         }
 
-        private void OnToolSlotChanged(int _)
+        private bool ConsumeToolLoadoutChangedSignals()
         {
-            _toolStripDirty = true;
-            _detailsDirty = true;
-            if (IsTabActive)
-                FlushPendingRefresh();
+            uint sourceId = _toolLoadoutSignalSourceId;
+            if (sourceId == 0u)
+                return false;
+
+            bool dirty = false;
+            ReadOnlySpan<ToolLoadoutChangedSignal> signals = SignalBus<ToolLoadoutChangedSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                ref readonly ToolLoadoutChangedSignal signal = ref signals[i];
+                if (signal.SourceId != sourceId)
+                    continue;
+
+                if (signal.Sequence == _lastToolLoadoutSignalSequence && _lastToolLoadoutSignalSequence != 0u)
+                    continue;
+
+                _lastToolLoadoutSignalSequence = signal.Sequence;
+                dirty = true;
+            }
+
+            return dirty;
         }
 
-        private void OnToolAssignmentsChanged()
+        private void RefreshToolLoadoutSignalBinding()
         {
-            _toolStripDirty = true;
-            _detailsDirty = true;
-            if (IsTabActive)
-                FlushPendingRefresh();
+            uint resolvedSourceId = ResolveToolLoadoutSignalSourceId(toolManager);
+            if (_toolLoadoutSignalSourceId == resolvedSourceId)
+                return;
+
+            _toolLoadoutSignalSourceId = resolvedSourceId;
+            _lastToolLoadoutSignalSequence = 0u;
+        }
+
+        private static uint ResolveToolLoadoutSignalSourceId(PlayerToolManager manager)
+        {
+            return manager != null && manager.gameObject != null
+                ? GlobalSignals.FoldEntityIdToSourceId(EntityId.ToULong(manager.gameObject.GetEntityId()))
+                : 0u;
         }
 
         public void OnPDAEvent(in PDAEventPayload payload)

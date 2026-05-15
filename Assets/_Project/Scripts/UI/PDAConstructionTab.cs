@@ -98,7 +98,6 @@ namespace Hecton8.UI
         private bool _layoutDirty;
         private bool _builderActionVisible;
         private bool _fieldActionVisible;
-        private Hecton8.Gameplay.PlayerToolManager _subscribedToolManager;
         private uint _inventorySignalHash;
         private uint _lastInventorySignalRevision;
         private uint _toolLoadoutSignalSourceId;
@@ -258,8 +257,6 @@ namespace Hecton8.UI
 
         private void Unsubscribe()
         {
-            _subscribedToolManager = null;
-
             UnregisterPDAEvents();
             UnregisterQuestEvents();
         }
@@ -310,7 +307,6 @@ namespace Hecton8.UI
         {
             RefreshInventorySignalBinding();
             RefreshToolLoadoutSignalBinding();
-            _subscribedToolManager = toolManager;
         }
 
         private bool ConsumeInventoryChangedSignals()

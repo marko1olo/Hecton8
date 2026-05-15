@@ -227,3 +227,27 @@ Rejected Alternatives: The first broad parse attempted to inspect too much shell
 Scalability potential: Low/Middle/High/Ultra process gains a validation debt map. Future integration should prioritize threads with both high token burn and high non-zero validation output.
 
 Hardware Impact: 0 runtime microseconds on i3/MX350. No runtime file changed.
+
+## Decision 19 - File Burn Attribution
+
+Problem: Thread-level attribution still leaves the integrator asking which files absorbed the most compute.
+
+Solution: Allocate each top-30 thread's token count across its `apply_patch` file targets by per-thread patch-hit share. Record weighted token burn, cost proxy, patch hits, thread count, current LOC, and dirty status in `COMPUTE_FILE_BURN_ATTRIBUTION.md`.
+
+Rejected Alternatives: Assigning full thread tokens to every touched file was rejected because it overcounts massively. Using file mention frequency outside patch payloads was rejected because search/read commands are weaker evidence than actual patch targets. Treating weighted burn as final value was rejected because retries and overwritten patches remain possible.
+
+Scalability potential: Low/Middle/High/Ultra process gets a concrete hot-file queue. Future compile and ownership reviews should start with the top weighted targets rather than all 1,647 patch targets.
+
+Hardware Impact: 0 runtime microseconds on i3/MX350. No runtime code changed.
+
+## Decision 19 - Top-100 Value And C++ Transfer Evidence
+
+Problem: Top-30 attribution and validation forensics showed expensive work traces, but the user requested continued certainty and specifically repeated the C++ transfer requirement. Token concentration alone cannot prove productive value or migration state.
+
+Solution: Parse the top-100 rollout JSONL files read-only with normalized path accounting, then classify threads by visible work evidence, external-path dominance, dirty-workspace collision, and C++ patch target presence. Preserve the result in `COMPUTE_THREAD_VALUE_AUDIT.md` and refresh `COMPUTE_COLLISION_RISK.md`.
+
+Rejected Alternatives: Treating top-100 patch churn as final LOC delta was rejected because rollout patches include retries and superseded edits. Calling code-heavy threads "verified value" was rejected because current compile/H-Phi joins are absent. Claiming C++ migration completion from user pressure was rejected because the parse found zero C++ patch targets in the top-100 rollout patches.
+
+Scalability potential: Low/Middle tiers gain process protection by blocking more agents from piling edits onto hot dirty files without attribution. High/Ultra process can focus expensive agents only on threads with code work trace plus validation deltas, not on external-path contamination or token mass alone.
+
+Hardware Impact: 0 runtime microseconds on i3/MX350. No C# source, C++ source, scene, prefab, shader, project setting, or Unity asset was changed. Process impact: identifies `SargassumMicroFaunaBoids.cs` and `HabitatGraphManager.cs` as live collision gates and marks C++ transfer as `NOT VERIFIED / NO PATCH EVIDENCE`.

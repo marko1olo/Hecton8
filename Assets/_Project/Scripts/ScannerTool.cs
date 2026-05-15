@@ -50,6 +50,7 @@ namespace Hecton8.Gameplay
         private const int ScannerBlackBoxInvalidStateHash = unchecked((int)0x53434E21); // SCN!
         private const uint ScannerBlackBoxMagic = 0x53434242u; // SCBB
         private const float ScannerQualityTierHysteresisSeconds = 2f;
+        private const float SurvivalResolveRetrySeconds = 0.5f;
         private const ushort ScannerBlackBoxFlagEquipped = 1 << 0;
         private const ushort ScannerBlackBoxFlagHeld = 1 << 1;
         private const ushort ScannerBlackBoxFlagSnapshotActive = 1 << 2;
@@ -628,6 +629,7 @@ namespace Hecton8.Gameplay
         private IPlayerRuntimeContext _cachedPlayerContext;
         private AtlasSignalSystem _cachedAtlasSignal;
         private LoreDatabaseManager _cachedLoreDatabase;
+        private float _nextSurvivalResolveAt;
         private float _scientificNextResampleAt;
         private float _scientificLastContactTime = float.NegativeInfinity;
         private float3 _activeScientificProbePosition;
@@ -3799,10 +3801,16 @@ namespace Hecton8.Gameplay
             if (_cachedSurvivalSystem != null)
                 return;
 
+            float now = Time.time;
+            if (now < _nextSurvivalResolveAt)
+                return;
+
+            _nextSurvivalResolveAt = now + SurvivalResolveRetrySeconds;
             if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
                 playerTransform.TryGetComponent(out HectonSurvivalSystem survivalSystem))
             {
                 _cachedSurvivalSystem = survivalSystem;
+                _nextSurvivalResolveAt = 0f;
             }
         }
 
@@ -3817,6 +3825,7 @@ namespace Hecton8.Gameplay
             _cachedPlayerContext = null;
             _cachedAtlasSignal = null;
             _cachedLoreDatabase = null;
+            _nextSurvivalResolveAt = 0f;
         }
 
         private AtlasSignalSystem ResolveCachedAtlasSignalCold()

@@ -186,6 +186,7 @@ namespace Hecton8.QA.Headless
 
             _instance = this;
             DontDestroyOnLoad(gameObject);
+            // COLD ALLOC: CancellationTokenSource[1] - startup await cancellation owner - owner: HeadlessStressFractureBot
             _shutdownCts = new CancellationTokenSource();
             _ = RunStartupAsync(_shutdownCts.Token);
         }
@@ -367,6 +368,7 @@ namespace Hecton8.QA.Headless
             TryDeleteFile(_resultPath + ".tmp");
             TryDeleteFile(_blackboxPath);
             TryDeleteFile(_h8MemoryDumpPath);
+            // COLD ALLOC: NativeArray<FractureTelemetryEntry>[300] - fixed 19200 byte blackbox ring - owner: HeadlessStressFractureBot
             _blackbox = new NativeArray<FractureTelemetryEntry>(BlackboxFrameCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             RegisterNativeArray(_blackbox, nameof(_blackbox));
             SignalBus<SectorDehydratedSignal>.EnsureInitialized();
@@ -435,8 +437,11 @@ namespace Hecton8.QA.Headless
             if (count <= 0)
                 return;
 
+            // COLD ALLOC: Camera[count] - reversible headless camera policy snapshot - owner: HeadlessStressFractureBot
             _cameraScratch = new Camera[count];
+            // COLD ALLOC: int[count] - camera culling-mask restore snapshot - owner: HeadlessStressFractureBot
             _cameraCullingMaskScratch = new int[count];
+            // COLD ALLOC: bool[count] - camera enabled-state restore snapshot - owner: HeadlessStressFractureBot
             _cameraEnabledScratch = new bool[count];
             int written = Camera.GetAllCameras(_cameraScratch);
             _cameraScratchCount = written;

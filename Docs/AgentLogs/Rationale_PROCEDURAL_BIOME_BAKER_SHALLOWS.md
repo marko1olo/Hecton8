@@ -369,3 +369,17 @@ Scalability potential: Low/MX350 gets compact renderer bounds that preserve cull
 Hardware Impact: Runtime remains 0 us/frame and 0 bytes procedural allocation. The gain is prevention: no oversized Shallows mesh bounds can silently inflate renderer visibility, LOD residency, or culling work on i3/MX350. Exact runtime microseconds are not profiled because this is editor validation.
 
 Verification: No dotnet rebuild and no Unity import was run. `MeshBoundsBudgetYamlScan TotalBad=0`; family maxima were Kelp `93.313505/121`, TubeCoral `2.168438/4`, PorousRock `5.143031/9`. `git diff --check` passed for `ShallowsBioForgeBatchBaker.cs` with only the repo CRLF warning. Source scans found `CoralMaxBoundsExtentSq`, `KelpMaxBoundsExtentSq`, `RockMaxBoundsExtentSq`, `TryResolveMaxBoundsExtentSq`, and `MaxBoundsExtentSq`; source brace count remained balanced and `NonAscii=0`. Forbidden source scan remained clean.
+
+## Decision 27 - Mesh Topology And Vertex Budget Contract
+
+Problem: The mesh validator enforced triangle count ceilings but did not explicitly reject unused vertex-buffer bloat, malformed index counts, or non-triangle submesh topology. A mesh could remain under the triangle budget while carrying extra vertices that increase GPU memory/bandwidth cost, or a topology/index drift that breaks the assumption that index count maps cleanly to triangles.
+
+Solution: Harden `ValidateMeshGeometryContract` to compute `indexCount` and `MeshTopology` only after confirming there is exactly one submesh, then reject zero index count, index counts not divisible by three, and any topology other than `MeshTopology.Triangles`. Add `ValidateLodVertexBudget`, deriving the per-LOD vertex ceiling as `triangleBudget * 3`, and call it for every generated LOD mesh.
+
+Rejected Alternatives: Keeping triangle count as the only geometry budget was rejected because unused vertices still consume memory and vertex-processing bandwidth. Runtime mesh cleanup, `RecalculateBounds`, or topology repair was rejected because Shallows payloads must be authored and validated as static assets before runtime. A raw YAML rewrite was rejected because Unity mesh serialization is fragile and current assets already satisfy the stronger contract.
+
+Scalability potential: Low/MX350 gets stricter control over mesh memory and vertex work in every LOD. Middle/High/Ultra can increase density or keep longer LOD residency while the validator prevents malformed or bloated mesh payloads from entering the authored library.
+
+Hardware Impact: Runtime remains 0 us/frame and 0 bytes procedural allocation. The gain is prevention: no extra unused vertices, non-triangle topology, or malformed index buffers can silently inflate geometry bandwidth or corrupt culling/LOD assumptions on i3/MX350. Exact runtime microseconds are not profiled because this is editor validation.
+
+Verification: No dotnet rebuild and no Unity import was run. `MeshVertexIndexYamlScan TotalBad=0`; maximum vertex/index counts were Kelp `6600/1542/282`, TubeCoral `7092/1026/72`, PorousRock `9243/1743/159`. `git diff --check` passed for `ShallowsBioForgeBatchBaker.cs` with only the repo CRLF warning. Source scans found `ValidateLodVertexBudget`, `MeshTopology.Triangles`, `indexCount % 3ul`, `GetTopology`, and `IndexCount=`; source brace count remained balanced and `NonAscii=0`. Forbidden source scan remained clean.

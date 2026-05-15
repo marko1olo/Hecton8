@@ -63,12 +63,15 @@ These files preserve the short operational view outside the long report:
 | `COMPUTE_THREAD_ATTRIBUTION.md` | Top-30 rollout JSONL work-trace attribution |
 | `COMPUTE_COLLISION_RISK.md` | Current dirty-tree intersection with hot attribution targets |
 | `COMPUTE_VALIDATION_FORENSICS.md` | Top-30 validation command/output forensic scan |
+| `COMPUTE_FILE_BURN_ATTRIBUTION.md` | Weighted token burn attribution by patch target |
 
 Latest attribution pass parsed top-30 rollout JSONL files: 490,220 events, 14,015 `apply_patch` calls, 86,616 `shell_command` calls, 1,647 unique patch targets, and patch churn of +354,203/-75,895 lines. This is work-trace evidence, not final value proof.
 
 Current collision snapshot observed 45 dirty/untracked paths and 10 dirty `Assets/_Project/Scripts/*` paths. Hot-target intersection: `Assets/_Project/Scripts/SpatialAudioManager.cs`.
 
 Validation forensics scanned 17,885 validation-relevant outputs in top-30 rollout JSONL: 15,510 exit-code-zero outputs, 2,374 non-zero outputs, 1,297 outputs with `error CS####`, 935 compile-fail signals, 746 build-success signals, and 0 reliable test-success signals. This proves validation effort existed. It does not prove final correctness.
+
+File burn attribution distributed top-30 thread tokens across 1,647 patch targets by per-thread patch-hit share. Weighted class split: code 7,411,317,235 tokens (78.073%), docs 1,143,348,625 (12.044%), assets 496,931,949 (5.235%), other 431,588,269 (4.546%), packages 9,607,022 (0.101%). Top weighted file: `Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs` at 261,401,331 weighted tokens.
 
 ## Continuation Addendum - Live Ledger Recheck
 
@@ -591,3 +594,34 @@ Cinematic cheats used: none. This was a forensic accounting pass, not a simulati
 Process microseconds saved: not claimed. There is no profiler for management confusion.
 
 STATUS: AUDIT COMPLETE.
+
+## Continuation Addendum - Top-100 Value Audit
+
+Snapshot: 2026-05-15T03:42:25+04:00
+
+The top-100 `.codex` thread value audit is preserved at `COMPUTE_THREAD_VALUE_AUDIT.md`.
+
+| Metric | Value |
+|---|---:|
+| Live SQLite all-thread tokens | 44,145,781,873 |
+| Top-100 tokens | 21,963,403,961 |
+| Top-100 share | 49.752% |
+| Top-100 rollout events scanned | 1,165,472 |
+| Top-100 `apply_patch` calls | 32,908 |
+| Top-100 `shell_command` calls | 212,479 |
+| Top-100 patch churn | +775,074 / -176,148 lines |
+| Top-100 code patch target hits | 30,172 |
+| Top-100 external path target hits | 2,324 |
+| Top-100 C++ patch target hits | 0 |
+
+Evidence bucket result:
+
+| Bucket | Threads | Tokens |
+|---|---:|---:|
+| `CODE_VALUE_EVIDENCE_PRESENT` | 57 | 11,900,526,189 |
+| `CODE_VALUE_EVIDENCE_PRESENT+COLLISION_RISK` | 38 | 8,971,483,870 |
+| `EXTERNAL_PATH_DOMINANT` | 5 | 1,091,393,902 |
+
+Current dirty hot-target intersections are `Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs` and `Assets/_Project/Scripts/Construction/HabitatGraphManager.cs`.
+
+C++ transfer verdict from compute evidence: `NOT VERIFIED / NO PATCH EVIDENCE`. The top-100 rollout patches contain zero `.cpp`, `.cc`, `.cxx`, `.h`, `.hpp`, `.ixx`, or CMake targets. Do not report HECTON-8 C++ migration completion from this ledger.

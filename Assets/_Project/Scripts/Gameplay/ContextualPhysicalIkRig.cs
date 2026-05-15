@@ -1868,18 +1868,20 @@ namespace Hecton8.Gameplay
             Transform rightSource = rightControllerProbe != null ? rightControllerProbe : rightHandProbe;
             Vector3 leftPosition = leftSource != null ? leftSource.position : Vector3.zero;
             Vector3 rightPosition = rightSource != null ? rightSource.position : Vector3.zero;
-            AbsoluteUniversePosition leftAup = leftSource != null ? AbsoluteUniversePosition.FromRuntimePosition(leftPosition) : default;
-            AbsoluteUniversePosition rightAup = rightSource != null ? AbsoluteUniversePosition.FromRuntimePosition(rightPosition) : default;
+            bool hasFiniteLeftPosition = leftSource != null && IsFiniteVector(leftPosition);
+            bool hasFiniteRightPosition = rightSource != null && IsFiniteVector(rightPosition);
+            AbsoluteUniversePosition leftAup = hasFiniteLeftPosition ? AbsoluteUniversePosition.FromRuntimePosition(leftPosition) : default;
+            AbsoluteUniversePosition rightAup = hasFiniteRightPosition ? AbsoluteUniversePosition.FromRuntimePosition(rightPosition) : default;
 
             Vector3 leftVelocity = Vector3.zero;
             Vector3 rightVelocity = Vector3.zero;
             float safeDeltaTime = math.max(SanitizeNonNegativeScalar(deltaTime), 0.0001f);
-            if (_hasPreviousLeftPredictiveControllerPose && leftSource != null)
+            if (_hasPreviousLeftPredictiveControllerPose && hasFiniteLeftPosition)
                 leftVelocity = ResolveAupVelocity(in leftAup, in _previousLeftControllerAup, safeDeltaTime);
-            if (_hasPreviousRightPredictiveControllerPose && rightSource != null)
+            if (_hasPreviousRightPredictiveControllerPose && hasFiniteRightPosition)
                 rightVelocity = ResolveAupVelocity(in rightAup, in _previousRightControllerAup, safeDeltaTime);
 
-            if (leftSource != null)
+            if (hasFiniteLeftPosition)
             {
                 _previousLeftControllerAup = leftAup;
                 _hasPreviousLeftPredictiveControllerPose = true;
@@ -1889,7 +1891,7 @@ namespace Hecton8.Gameplay
                 _hasPreviousLeftPredictiveControllerPose = false;
             }
 
-            if (rightSource != null)
+            if (hasFiniteRightPosition)
             {
                 _previousRightControllerAup = rightAup;
                 _hasPreviousRightPredictiveControllerPose = true;
@@ -2568,7 +2570,7 @@ namespace Hecton8.Gameplay
 
             AbsoluteUniversePosition headAup = AbsoluteUniversePosition.FromRuntimePosition(headPosition);
             double3 headAbsolute = headAup.ToAbsoluteDouble3();
-            Quaternion hmdRotation = headSource.rotation;
+            Quaternion hmdRotation = IsFiniteQuaternion(headSource.rotation) ? headSource.rotation : Quaternion.identity;
 
             AbsoluteUniversePosition chestAup = OffsetAupLocal(in headAbsolute, hmdRotation, HeadToChestSocketLocalOffset);
             AbsoluteUniversePosition forwardAup = OffsetAupLocal(in headAbsolute, hmdRotation, HeadForwardReferenceLocalOffset);
@@ -2599,6 +2601,10 @@ namespace Hecton8.Gameplay
                 forwardTarget += breathOffset * 0.2f;
             }
 
+            float3 fallbackHeadTarget = ContextualPhysicalIkMath.ToFloat3(headPosition);
+            chestTarget = SanitizeFloat3Value(chestTarget, fallbackHeadTarget);
+            headTarget = SanitizeFloat3Value(headTarget, fallbackHeadTarget);
+            forwardTarget = SanitizeFloat3Value(forwardTarget, headTarget);
             _spineTargets[0] = chestTarget;
             _spineTargets[1] = headTarget;
             _spineTargets[2] = forwardTarget;

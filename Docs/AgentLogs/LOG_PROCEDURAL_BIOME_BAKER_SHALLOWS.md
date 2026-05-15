@@ -261,3 +261,15 @@ Cinematic Cheats used: Static authored LOD meshes, dithered crossfade, shader ma
 Exact Microseconds saved: Runtime remains 0 us/frame and 0 bytes procedural allocation. This prevents malformed bounds from inflating renderer visibility and LOD residency; exact runtime microseconds were not profiled.
 
 Verification: No dotnet rebuild and no Unity import was run. `MeshBoundsBudgetYamlScan TotalBad=0`; family maxima were Kelp `93.313505/121`, TubeCoral `2.168438/4`, PorousRock `5.143031/9`; `git diff --check` passed for the baker with only the repo CRLF warning; source brace balance stayed `Delta=0`, `NonAscii=0`, and forbidden source scan stayed clean.
+
+## 2026-05-15 Mesh Topology And Vertex Budget Contract
+
+What was wrong: Generated mesh validation allowed a payload with valid triangle counts but unused vertex-buffer bloat, malformed index count divisibility, or non-triangle topology.
+
+What was done: Hardened mesh geometry validation to reject non-triangle topology and index counts not divisible by three, and added `ValidateLodVertexBudget` so every LOD mesh must stay inside a vertex ceiling derived from its triangle budget.
+
+Cinematic Cheats used: Static authored LOD meshes, dithered crossfade, shader masks, shared atlas/material, no flora colliders, and rock-only LOD2 convex proxies remain unchanged.
+
+Exact Microseconds saved: Runtime remains 0 us/frame and 0 bytes procedural allocation. This prevents hidden vertex-buffer bloat and malformed topology from entering the Shallows mesh library; exact runtime microseconds were not profiled.
+
+Verification: No dotnet rebuild and no Unity import was run. `MeshVertexIndexYamlScan TotalBad=0`; maxima were Kelp `6600/1542/282`, TubeCoral `7092/1026/72`, PorousRock `9243/1743/159`; `git diff --check` passed for the baker with only the repo CRLF warning; source brace balance stayed `Delta=0`, `NonAscii=0`, and forbidden source scan stayed clean.

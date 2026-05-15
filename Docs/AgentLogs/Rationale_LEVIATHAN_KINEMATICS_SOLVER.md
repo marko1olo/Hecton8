@@ -260,3 +260,19 @@ Solution: Default active segments to `LowTierSegments`, resolve active segment c
 Rejected Alternatives: Leaving first upload to be corrected by the first solver Tick was rejected because GPU consumers may query immediately after enable/rebind. Keeping terrain-edge clamp was rejected because it hides seams by applying unrelated heights to the tail. Editing `MapMagicBridge.QuantizedHeightmapPayload.IsValid` was rejected as outside this agent's domain for this pass.
 Scalability potential: Low/MX350 now publish the cheap eight-bone contract immediately; Middle/High/Ultra keep 20-bone visual overkill after quality resolution. Low - eight matrices and height fallback only. Middle - in-tile 2D height fallback. High - SDF contact first, height fallback only when valid. Ultra - same correctness with full shader deformation headroom.
 Hardware Impact: No measured frame-time saving is claimed. The change prevents a false first-frame 20-matrix low-tier upload and wrong edge-height pushes; added in-bounds checks are scalar and estimated below 0.05 us on terrain-contact frames, pending profiler proof.
+
+## Decision 26: GPU Buffer Data Freshness
+
+Problem: `TryGetLeviathanBoneGraphicsBuffer()` only checked `GraphicsBuffer.IsValid()`. A buffer can remain allocated after solver data becomes dirty through reseed/rebase, or after publishing is disabled and uploads are skipped, so external consumers could bind stale Leviathan bones.
+Solution: Track `_gpuBufferDataValid` separately from buffer allocation. Set it true only after `GraphicsBufferUploadUtility.UploadNativeArray()` completes, and clear it on seed, rebase, disposal, graphics-buffer release, skinning clear, no-consumer upload skip, and material/global unbind paths.
+Rejected Alternatives: Forcing upload inside the getter was rejected because a query method must not allocate GPU bandwidth or create hidden main-thread render work. Relying on `_gpuUploadDirty` alone was rejected because skipped uploads can clear dirty state without creating fresh buffer data.
+Scalability potential: Low/MX350/high/ultra visuals are unchanged when data is fresh. All tiers fail closed instead of showing stale deformations when the GPU binding contract is not current; high/ultra keep full visual overkill only with proven fresh upload state.
+Hardware Impact: Hot path cost is one boolean gate in an internal accessor. No frame-time savings are claimed; the gain is correctness and avoiding stale GPU deformation on weak and high-end devices alike.
+
+## Decision 27: Lifecycle Completion Frame Parity
+
+Problem: `CompleteScheduledSolverForLifecycle()` force-completed a scheduled solver and inspected telemetry, but did not advance `_frameIndex`. Normal late-frame completion and origin-shift finalization already advanced it, so disable/re-enable/rebind could consume a solver and leave the next telemetry entry with a duplicate runtime frame index.
+Solution: Add `AdvanceFrameIndex()` and use it from normal late-frame completion, origin-shift finalization, and forced lifecycle completion.
+Rejected Alternatives: Leaving lifecycle completion as a teardown-only exception was rejected because rebind/re-enable can immediately schedule another solver and blackbox frame order must remain coherent. Resetting the index on lifecycle was rejected because chronological continuity is more useful than lifecycle-local numbering.
+Scalability potential: Low/MX350/high/ultra runtime visuals are unchanged. All tiers get cleaner blackbox ordering around lifecycle edges without changing segment count, SDF, or GPU deformation.
+Hardware Impact: Steady hot-path cost is unchanged; the helper replaces duplicated scalar code in normal paths and adds one lifecycle-only scalar increment when a scheduled job is force-consumed.

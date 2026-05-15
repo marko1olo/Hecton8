@@ -140,10 +140,23 @@ Mandates read:
 - [x] Diegetic RT pool hot-swap rebind | DOD: `ToolDiegeticDisplayController` now implements `IGlobalRegistryHotSwapListener`, rebinds `RenderTexturePoolRuntime`, releases old owned RTs on pool replacement, and clears cached pool on disable | Rejected: stale RT pool handle after service replacement | Estimate: event-only; avoids failed pool calls on stale owner
 - [x] Static no-regression checks after Loop 16 | DOD: staged `git diff --cached --check` passed; scanner banned-pattern scan found no `ILocalizationService`, `Camera.main`, direct `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, or `.text =` | Rejected: dotnet rebuild, explicitly forbidden by user | Estimate: 2800 us
 
+## Loop 17 - Black Box Export and Negative Title Cache
+
+- [x] Re-read authority and mandates | DOD: loaded status/rationale, AGENTS/domain context, Unity MCP workflow, and scanner-relevant UI/ZeroGC/Registry/Signal/Telemetry/AUP mandates before edits | Rejected: coding from compressed chat memory | Estimate: 14600 us
+- [x] Ordered scanner black-box dump | DOD: `ScannerTool` now tracks recorded black-box entries and dumps the fixed ring oldest-to-newest from the next-write cursor after wrap | Rejected: raw NativeArray storage order that scrambles the last-300-frame timeline | Estimate: fault path only; normal path one bounded count increment
+- [x] Scanner black-box layout declaration | DOD: `ScannerBlackBoxEntry` now declares sequential layout before being stored in `NativeArray` and serialized field-by-field to the dump | Rejected: undocumented private struct layout for telemetry evidence | Estimate: 0 us runtime behavior change
+- [x] Diegetic RT negative title cache | DOD: missing lore titles are cached as a versioned miss in the fixed scanner title cache, preventing repeated registry scans for unresolved hashes until `LoreTitleLookupVersion` changes | Rejected: managed dictionary and repeated 1024-entry title lookup on every scanner progress repaint | Estimate: saves repeated cold title scans on unresolved artifacts
+- [x] Static no-regression checks after Loop 17 | DOD: `git diff --check` passed with docs line-ending warnings only, `git diff --cached --check` passed, and scanner banned-pattern scan found no `ILocalizationService`, `Camera.main`, direct `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, or `.text =` | Rejected: dotnet rebuild, explicitly forbidden by user | Estimate: 3100 us
+
+## Loop 18 - Survival Cache Miss Throttle
+
+- [x] Scanner survival miss retry fence | DOD: missing `HectonSurvivalSystem` resolution now retries at 0.5s cadence and resets on cached-service clear, preventing active scientific samples from probing the player transform/component every time when the optional survival component is unavailable | Rejected: hot retry on every spatial/water metrics sample and permanent stale null cache | Estimate: miss path 60Hz -> 2Hz retry
+- [x] Static no-regression checks after Loop 18 | DOD: `git diff --check` passed with line-ending warnings only, `git diff --cached --check` passed, and scanner banned-pattern scan found no `ILocalizationService`, `Camera.main`, direct `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, or `.text =` | Rejected: dotnet rebuild, explicitly forbidden by user | Estimate: 2900 us
+
 ## Verification
 
 - [x] Compile/source validation - `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:quiet -clp:Summary` passed with 0 warnings / 0 errors after Loop 10
-- [ ] Compile/source validation after Loops 11-16 - NOT RERUN: user explicitly ordered no dotnet rebuilds; static source checks only
+- [ ] Compile/source validation after Loops 11-18 - NOT RERUN: user explicitly ordered no dotnet rebuilds; static source checks only
 - [ ] Console check - BLOCKED BY UNITY SESSION: MCP validate/console calls cannot connect to Unity MCP HTTP endpoint / session
 - [x] Re-read prompt after core tasks
 - [x] Omega polish mandate after all tasks done or blocked

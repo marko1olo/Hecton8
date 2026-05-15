@@ -304,7 +304,7 @@ namespace Hecton8.Prologue.VFX
                 if (!IsRecognizedAtmosphericPhase(signal.Phase))
                     continue;
 
-                if (!IsFiniteRuntimeAup(in signal.CapsuleAup))
+                if (sequenceOceanHandoff && !IsFiniteRuntimeAup(in signal.CapsuleAup))
                 {
                     WriteTelemetry(ReentryVfxStateSignal.FlagNaNGuard);
                     DumpBlackBoxOnce();
@@ -365,11 +365,15 @@ namespace Hecton8.Prologue.VFX
                     continue;
                 }
 
-                _lastCapsuleAup = signal.CapsuleAup;
+                if (sequenceOceanHandoff)
+                    _lastCapsuleAup = signal.CapsuleAup;
+
                 _whiteoutHoldSecondsRemaining = math.max(_whiteoutHoldSecondsRemaining, math.max(0f, signal.WhiteoutHoldSeconds));
                 EnterWhiteout();
                 if (sequenceOceanHandoff)
+                {
                     EnterHydratedFade();
+                }
             }
         }
 

@@ -560,7 +560,7 @@ namespace Hecton8.World.Outposts
         private void ScheduleMatrixExtraction()
         {
             MapMagicBridge.QuantizedHeightmapPayload payload = ResolveHeightmapPayload();
-            bool hasHeightmapPayload = IsValidHeightmapPayload(in payload);
+            bool hasHeightmapPayload = IsValidHeightmapPayload(in payload, _generationOrigin);
             MarauderOutpostMatrixExtractionJob job = new MarauderOutpostMatrixExtractionJob
             {
                 WfcGrid = WfcGrid,
@@ -625,28 +625,33 @@ namespace Hecton8.World.Outposts
                 return default;
 
             Vector3 origin = new Vector3(_generationOrigin.x, _generationOrigin.y, _generationOrigin.z);
-            if (bridge.TryGetQuantizedHeightmapPayloadAUP(origin, out MapMagicBridge.QuantizedHeightmapPayload payload) && IsValidHeightmapPayload(in payload))
+            if (bridge.TryGetQuantizedHeightmapPayloadAUP(origin, out MapMagicBridge.QuantizedHeightmapPayload payload) && IsValidHeightmapPayload(in payload, _generationOrigin))
                 return payload;
 
-            if (bridge.TryGetActiveQuantizedHeightmapPayload(out payload) && IsValidHeightmapPayload(in payload))
+            if (bridge.TryGetActiveQuantizedHeightmapPayload(out payload) && IsValidHeightmapPayload(in payload, _generationOrigin))
                 return payload;
 
             return default;
         }
 
-        private static bool IsValidHeightmapPayload(in MapMagicBridge.QuantizedHeightmapPayload payload)
+        private static bool IsValidHeightmapPayload(in MapMagicBridge.QuantizedHeightmapPayload payload, float3 originMeters)
         {
             int resolution = payload.HeightmapResolution;
             if (!payload.HeightSamples.IsCreated || resolution <= 1 || resolution > 46340)
                 return false;
 
             int requiredLength = resolution * resolution;
+            float3 terrainPosition = ToFloat3(payload.TerrainPosition);
+            float3 terrainSize = ToFloat3(payload.TerrainSize);
             return payload.HeightSamples.Length >= requiredLength &&
+                   math.all(math.isfinite(originMeters)) &&
                    IsFinite(payload.TerrainPosition) &&
                    IsFinite(payload.TerrainSize) &&
                    payload.TerrainSize.x > 0.001f &&
                    payload.TerrainSize.y > 0.001f &&
-                   payload.TerrainSize.z > 0.001f;
+                   payload.TerrainSize.z > 0.001f &&
+                   math.all(math.isfinite(originMeters - terrainPosition)) &&
+                   math.isfinite(terrainPosition.y + terrainSize.y);
         }
 
         private uint ResolveWorldSeed()
@@ -847,10 +852,14 @@ namespace Hecton8.World.Outposts
 
         private void UploadMatricesAndArgs()
         {
-            if (!_shellMatrices.IsCreated || _matrixBuffer == null || _cellTypeBuffer == null)
+            if (!_shellMatrices.IsCreated || !_shellCellTypes.IsCreated || _matrixBuffer == null || _cellTypeBuffer == null || _argsBuffer == null)
                 return;
 
             int count = math.clamp(_matrixCount, 0, MarauderOutpostConstants.MaxShellMatrices);
+            count = math.min(count, _shellMatrices.Length);
+            count = math.min(count, _shellCellTypes.Length);
+            count = math.min(count, _matrixBuffer.count);
+            count = math.min(count, _cellTypeBuffer.count);
             if (count > 0)
             {
                 UploadNativeArray(_matrixBuffer, _shellMatrices, count);

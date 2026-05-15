@@ -413,3 +413,15 @@ Rejected Alternatives: last-writer-wins was rejected because callback order is n
 Scalability potential: Low/toaster gets stable hand ownership without extra containers. Middle/High keep deterministic haptic side routing under denser cockpit probes. Ultra can layer richer IK/haptic presentation on the freshest sample without solving a multi-sample history.
 
 Hardware Impact: one integer compare on receiver callbacks only, no steady dispatcher cost, no allocation. i3/MX350 avoids false stale-grab release and wrong-hand haptic work after callback reordering; stale callbacks also skip one transform conversion and any handle-distance fallback.
+
+## Decision 34 - Math LOD must follow typed scalability events
+
+Problem: the lever seeded `_lowTierMath` from `GlobalRegistry.ScalabilityTier` only during enable. If the platform governor or user options changed the active profile while the cockpit was live, IK presentation could stay on the wrong Low/High blend until the component was disabled and re-enabled.
+
+Solution: implement `IScalabilityChangedEventListener`, register with `ScalabilityEvents` on enable, and update `_lowTierMath` directly from `ScalabilityChangedEvent.CurrentQualityTier`. Disable, destroy, and latch unregister the listener; registration refuses latched controls. `Tick()` remains free of scalability registry polling.
+
+Rejected Alternatives: polling `GlobalRegistry.ScalabilityTier` in `Tick()` was rejected because it adds a hot-path service read. Keeping the cold seed only was rejected because runtime profile changes are part of the scalability pillar. Adding a new event lane was rejected because `ScalabilityEvents` already owns a typed fixed listener bucket.
+
+Scalability potential: Low/toaster can downgrade IK smoothing immediately when the governor selects MX350/Low. Middle/High can restore smoother presentation when budget returns. Ultra can keep the richer hand target blend without waiting for lifecycle churn.
+
+Hardware Impact: 0 us steady-state. Lifecycle pays one fixed-bucket listener register/unregister. Tier changes pay one bool write. i3/MX350 avoids stale high-tier IK blend after thermal or battery downgrade.

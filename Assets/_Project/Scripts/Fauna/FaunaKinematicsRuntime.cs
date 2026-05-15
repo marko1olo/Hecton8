@@ -291,7 +291,7 @@ namespace Hecton8.AI
                 return;
 
             _solverScheduled = false;
-            _frameIndex = _frameIndex == int.MaxValue ? 0 : _frameIndex + 1;
+            AdvanceFrameIndex();
             ApplyPendingOriginShiftRebase();
 
             if (TelemetryHasInvalidFrame())
@@ -321,7 +321,7 @@ namespace Hecton8.AI
                 }
 
                 _solverScheduled = false;
-                _frameIndex = _frameIndex == int.MaxValue ? 0 : _frameIndex + 1;
+                AdvanceFrameIndex();
                 if (TelemetryHasInvalidFrame())
                     DumpTelemetryBlackBoxOnce();
             }
@@ -449,6 +449,7 @@ namespace Hecton8.AI
 
             DispatcherJobSwap.TryComplete(ref _pendingHandle, forceComplete: true);
             _solverScheduled = false;
+            AdvanceFrameIndex();
             if (TelemetryHasInvalidFrame())
                 DumpTelemetryBlackBoxOnce();
         }
@@ -928,6 +929,11 @@ namespace Hecton8.AI
                 index += _telemetryRing.Length;
 
             return (_telemetryRing[index].Flags & LeviathanTerrainIkConstants.TelemetryFlagInvalid) != 0u;
+        }
+
+        private void AdvanceFrameIndex()
+        {
+            _frameIndex = _frameIndex == int.MaxValue ? 0 : _frameIndex + 1;
         }
 
         private void DumpTelemetryBlackBoxOnce()

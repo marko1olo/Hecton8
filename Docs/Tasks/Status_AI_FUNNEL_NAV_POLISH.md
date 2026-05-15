@@ -185,7 +185,7 @@ Task Count: 15
 - [x] Threat-service targeted scan | PASS: `VegetationThreatAndStructureService.cs` and nearest-node lookup ranges in `VegetationNavGridSynchronizer.cs` have no raw float-division or forbidden hot-math/allocation matches after loop 21.
 - [x] Flow sampler targeted scan | PASS: `SampleFlowFieldAtPosition` range has no raw float-division or forbidden hot-math/allocation matches after loop 22.
 - [x] Payload boundary targeted scan | PASS: `TryGetEcosystemFlowFieldPayload`, wake/pulse ingress, hotspot update, threat payload getters, and threat grid view helpers report no forbidden hot math/allocation; the only `/` hit is integer index decomposition in hotspot decode.
-- [x] Diff hygiene | PASS: `git diff --check` passed for edited funnel/scheduler/status/log files; only LF-to-CRLF working-copy warnings were emitted.
+- [x] Diff hygiene | PASS: `git diff --check` passed for touched source/status/rationale/log files; only LF-to-CRLF working-copy warnings were emitted.
 - [x] Static H-Phi audit | ATTEMPTED: `Tools/Architecture/HectonPhiAudit.ps1 -Json` timed out after 120 seconds under current repo load; no score claimed from this pass.
 - [x] Compile check | BLOCKED BY DEPENDENCY: bounded no-reference `dotnet build Hecton8.Core.csproj --no-restore /m:1 /nr:false /p:BuildProjectReferences=false` completed with 63 unrelated errors in `VRAMEnforcer`, `VoxelDeltaProcessor`, `SealedDoor`, `BinaryLayoutManifest`, and `HardwareTierDetector`; none were reported in `VegetationFlowFieldIntegrator.cs`, `VegetationNavGridSynchronizer.cs`, or `HectonMapMagicVegetationBridge.cs`.
 - [x] Dotnet rebuilds | NOT RERUN AFTER LOOP 13: user explicitly prohibited dotnet rebuilds; static scans and diff hygiene only.

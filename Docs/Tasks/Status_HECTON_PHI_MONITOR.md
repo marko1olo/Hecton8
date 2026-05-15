@@ -14,6 +14,7 @@ Task Count: 6
 - `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`
 - `ARCH_Signal_Lane_Segregation.txt`
 - `DATA_Save_Persistence_Binary_Delta_Checksum.txt`
+- `MATH_AUP_Determinism_Sync.txt`
 - `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`
 - `OPT_Native_Memory_Collections_JobSystem_Protocol.txt`
 - `QA_Evidence_Text_Filter_Audit.txt`
@@ -41,18 +42,19 @@ Task Count: 6
 - [x] Task 20: Queued signal-lane classification correction | DOD: H-Phi audit now counts confirmed NativeQueue/SystemDispatcher-backed publish lanes as signal traffic: `VehicleCommandSignalBus`, `PhysicsDeterminismSignals`, `FluidFeedbackEvents`, `LocalizationEvents`, and `VoxelChunkModifiedEvents`; direct fan-out and `HectonEventBus` remain event debt | Rejected: counting every `*Events.Publish*` as healthy signal flow | Estimate: 0 us runtime
 - [x] Task 21: Full-scan recovery and lexical-scrub containment | DOD: tested comment/string lexical scrubbing, observed two full-scan timeouts, gated it behind `-LexicalScrub`, and restored default `-Summary` completion | Rejected: leaving a >420s default audit path or claiming partial H-Phi output | Estimate: 0 us runtime
 - [x] Task 22: AUP risk stale-score verification and summary routing | DOD: reran full default `-Summary -Json`, proved current runtime `AupPrecisionRisk=0`, and added `TopAupPrecisionRiskFiles` to summary output for future regression triage | Rejected: patching gameplay files from stale counters or hiding file-level risk routing in full JSON only | Estimate: 0 us runtime
+- [x] Task 23: Coupling-risk routing and static regression budgets | DOD: added per-file coupling rows, `TopCouplingRiskFiles`, and full-scan budget gates for runtime `Find*` and legacy event publish counts; verified current gates pass without rebuild | Rejected: cross-domain gameplay edits in bootstrap/VR/UI/audio owners without owner proof | Estimate: 0 us runtime
 
 ## Latest Static Scores
-- H-Phi runtime static narrow: `0.010409098`
-- H-Phi runtime static risk-adjusted: `0.000566586`
-- H-Phi all-source static narrow: `0.009270504`
-- H-Phi all-source static risk-adjusted: `0.000465967`
+- H-Phi runtime static narrow: `0.010497120`
+- H-Phi runtime static risk-adjusted: `0.000574075`
+- H-Phi all-source static narrow: `0.009348602`
+- H-Phi all-source static risk-adjusted: `0.000472137`
 - Narrow integration: `1.0`
-- Risk integration: `0.054431837`
-- Architectural purity: `0.994699647`
-- Data sovereignty: `0.020775237`
-- Memory alignment: `0.503703704`
-- Binary-safe ratio: `0.018518519`
+- Risk integration: `0.054688783`
+- Architectural purity: `0.996460177`
+- Data sovereignty: `0.020903010`
+- Memory alignment: `0.503966155`
+- Binary-safe ratio: `0.018508726`
 - AUP precision integrity: `1.000000000`
 
 ## Current Verification Notes
@@ -76,10 +78,12 @@ Task Count: 6
 - Typed `GlobalSignals.Publish(...)` and confirmed queued publish lanes now count as SignalBus traffic in the static model. Latest full summary: `SignalBusPush=328`, `EventPublish=28`, `RiskIntegration=0.053947368`, `RuntimeHPhiRisk=0.000505917`.
 - Narrow runtime H-Phi moved `0.009266939 -> 0.009377979` since the prior layout pass; this is static model/current-tree evidence, not runtime profiler proof.
 - Lexical source scrubbing was tested for comment/string false-positive control but timed out twice on the full tree (`420s+`). It is gated behind explicit `-LexicalScrub`; default `-Summary` completed at `2026-05-15 02:55:39 +04:00`.
-- Latest full summary after current workspace changes: `SignalBusPush=331`, `EventPublish=28`, `RuntimeHPhiNarrow=0.010409098`, `RuntimeHPhiRisk=0.000566586`, `DataVaultRefs=149`, `NativeArrayRefs=7023`, `AupPrecisionRisk=0`.
-- Current Core graph summary: Core asmdef debt references `25`, generated project debt references `10`, source-backed bridge debt references `16`, compile-bridge debt references `8`, project-reference-replacement debt references `8`.
+- Latest full summary after current workspace changes: `SignalBusPush=333`, `EventPublish=28`, `RuntimeHPhiNarrow=0.010497120`, `RuntimeHPhiRisk=0.000574075`, `DataVaultRefs=150`, `NativeArrayRefs=7026`, `AupPrecisionRisk=0`.
+- Current Core graph summary: Core asmdef debt references `25`, generated project debt references `10`, source-backed bridge debt references `14`, compile-bridge debt references `8`, project-reference-replacement debt references `6`.
 - `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json` now exposes `TopAupPrecisionRiskFiles`; latest list is empty because the current runtime AUP risk counter is zero.
-- `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0` passed at `2026-05-15 03:29:17 +04:00`; `-CoreGraphOnly -RequireCoreBuildGate` also passed with the current budgets.
+- `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json` now exposes `TopCouplingRiskFiles`; current top files are `Bootstrap/GameBootstrapper.cs`, `CrashTelemetryBuffer.cs`, `HectonFluidEngine.cs`, `UI/PauseMenuController.cs`, and `Fauna/FaunaBrain.cs`.
+- `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0 -MaxFindObjectCalls 5 -MaxLegacyEventPublish 28 -MaxCoreAsmdefDebtReferences 25 -MaxGeneratedProjectDebtReferences 10 -MaxSourceBackedBridgeDebtReferences 14 -MaxSourceBackedCompileBridgeDebtReferences 8 -MaxProjectReferenceReplacementDebtReferences 6` passed at `2026-05-15 03:52:11 +04:00`.
+- Duplicate signal-name scan currently reports `6` duplicate names and remains a routing warning, not a passing zero budget.
 - Remaining runtime `Find*` debt is concentrated in `GameBootstrapper` bootstrap handoff, `HectonUrpShadowBudgetGuard` cold light scan, and `VRSomaticRuntimeBootstrap` decoupled root lookup; one textual `HectonUnderwaterVisuals` hit is editor-only and excluded from runtime score.
 - `git diff --check` on touched H-Phi files reports only LF/CRLF normalization warnings.
 - Unity Console / PlayMode / Profiler / GCMonitor: PENDING VERIFICATION.

@@ -281,3 +281,27 @@ Batch source: Docs/Tasks/CURRENT_BATCH.md
 - `rg` confirms no old segment-length clear fallback, old raw terrain-edge clamp pattern, or old `2.5f, 0.05f` segment fallback pair remains in the IK runtime/job scope.
 - `git diff --check` and `git diff --cached --check` on touched code/docs exit 0.
 - No `dotnet` rebuild, compile, Unity import, or response-file probe was run.
+
+### Loop 26: GPU Buffer Validity Gate Recheck
+
+- Added `_gpuBufferDataValid` to distinguish a valid `GraphicsBuffer` allocation from current solver data being uploaded into it.
+- Gated `TryGetLeviathanBoneGraphicsBuffer()` on both `_gpuUploadDirty == false` and `_gpuBufferDataValid == true`.
+- Invalidated external GPU buffer access after seed, origin rebase, persistent-buffer disposal, graphics-buffer release, skinning clear, and no-consumer upload skip.
+- DOD: external GPU consumers cannot read stale Leviathan bone data after reseed/rebase or after material/global publishing is disabled.
+- Alternative Rejected: trusting `GraphicsBuffer.IsValid()` because it only proves allocation health, not data freshness. Forcing an upload inside the getter was rejected because it would add hidden main-thread GPU traffic to a query path.
+- Estimate: 0 us meaningful hot-path cost; one boolean branch in an internal accessor. Prevents stale visual deformation rather than saving frame time.
+- Static grep over IK runtime/job/shader scope still found no `math.sqrt`, `math.normalize`, managed array creation, `foreach`, `string.Format`, `.ToString()`, `Debug.Log`, Unity Physics casts, `SkinnedMeshRenderer`, `renderer.material`, `Camera.main`, `GlobalRegistry.Get`, `GameObject.Find`, or `FindObject`.
+- `rg` confirms `_gpuBufferDataValid` is set false on all known stale-buffer transitions and true only after `UploadNativeArray()` completes.
+- `git diff --check` and `git diff --cached --check` on touched code/docs exit 0.
+- No `dotnet` rebuild, compile, Unity import, or response-file probe was run.
+
+### Loop 27: Lifecycle Completion Frame Parity Recheck
+
+- Added `AdvanceFrameIndex()` and routed late-frame, origin-shift finalization, and forced lifecycle completion through the same frame-index advance path.
+- DOD: a scheduled solver consumed by disable/re-enable/rebind no longer leaves the next scheduled telemetry entry with a duplicate runtime frame index.
+- Alternative Rejected: leaving forced lifecycle completion as telemetry-only because the job is still consumed and blackbox order must remain coherent.
+- Estimate: 0 us steady hot path; lifecycle-only branch plus replacing duplicate scalar code in normal completion paths.
+- Static grep over IK runtime/job/shader scope still found no `math.sqrt`, `math.normalize`, managed array creation, `foreach`, `string.Format`, `.ToString()`, `Debug.Log`, Unity Physics casts, `SkinnedMeshRenderer`, `renderer.material`, `Camera.main`, `GlobalRegistry.Get`, `GameObject.Find`, or `FindObject`.
+- `rg` confirms only `AdvanceFrameIndex()` writes `_frameIndex` and all scheduled-job completion paths call it.
+- `git diff --check` and `git diff --cached --check` on touched code/docs exit 0.
+- No `dotnet` rebuild, compile, Unity import, or response-file probe was run.

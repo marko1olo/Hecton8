@@ -513,6 +513,33 @@ Status: VERIFIED AUP INTEGRITY - LOOP 29 AUP PRECISION H-PHI BUDGET GATE PASSES 
 - Unity import/Console verification remains pending because no Unity editor session is available.
 - H-Phi result is static-source evidence, not profiler proof.
 
+## Loop 30 H-Phi AUP Budget Summary Metadata
+
+### Findings
+
+- The AUP precision budget gate was enforceable, but passing summary output did not explicitly record budget enablement, limit, actual count, pass state, or evidence class.
+
+### Tool Changes
+
+- `Tools/Architecture/HectonPhiAudit.ps1`: summary JSON and text now include `Budgets.AupPrecisionRisk`.
+- The budget row records `Enabled`, `Max`, `Actual`, `Passed`, and `EvidenceClass=STATIC_SOURCE_FULL_SCAN`.
+
+### Verification
+
+- PowerShell parser reports `PARSE_OK`.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json -MaxAupPrecisionRisk 0` still returns the expected fail-fast message.
+- Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0` completed in 116.463 seconds.
+- Gated full static summary: `RuntimeHPhiRisk=0.00057069`, `RuntimeHPhiNarrow=0.010493115`, `AupPrecisionIntegrity=1`, `AupPrecisionSafe=363`, `AupPrecisionRisk=0`, `BudgetEnabled=true`, `BudgetMax=0`, `BudgetActual=0`, `BudgetPassed=true`, `TopAupPrecisionRiskFiles=0`, `RuntimeFiles=1276`, `RuntimeLines=860419`.
+- Targeted qualified AUP H-Phi risk scan returns `NO_MATCHES`.
+- Direct committed-offset leak scan returns `NO_MATCHES`.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` was re-run. Residual hits remain broad `universe` text and known final-cast fluid/scatter/shader payload names.
+- No `dotnet build` or rebuild was run in Loop 30 because the latest user instruction explicitly forbids rebuilds.
+
+### Evidence Queue
+
+- Unity import/Console verification remains pending because no Unity editor session is available.
+- H-Phi result is static-source evidence, not profiler proof.
+
 ## Loop 27 AUP Precision H-Phi Budget Gate
 
 ### Findings

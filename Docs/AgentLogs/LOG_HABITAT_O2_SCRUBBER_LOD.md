@@ -25,7 +25,7 @@ Cinematic Cheats used:
 - Power graph hibernation returns stable summary state instead of simulating invisible Jacobi relaxation.
 
 Exact microseconds saved:
-- Measured proof absent. Static model: 20-80us per sleeping 64-room gas base per gas cadence, plus avoided bound power Jacobi slices. Signal batch cost model: 1-3us per FrostTick transition batch. No Unity profiler or Burst console was run because the user explicitly disallowed dotnet rebuilds and no Unity MCP compiler is available.
+- Measured proof absent. Static model: 20-80us per sleeping 64-room gas base per gas cadence, plus avoided bound power Jacobi slices. Signal batch cost model: transition packets avoid managed observer traversal; empty frames cost snapshot-count checks. No Unity profiler or Burst console was run because the user explicitly disallowed dotnet rebuilds and no Unity MCP compiler is available.
 
 Blocked items:
 - ASMDEF isolation is blocked by existing `GlobalRegistry` concrete references to `HectonSurfaceWeatherDirector` and `HectonAtmosphereManager`; a real split requires integrator interface work first.
@@ -184,3 +184,19 @@ Cinematic Cheats used:
 
 Exact microseconds saved:
 - No frame saving claimed. This is lifecycle correctness and H-Phi visibility hygiene; no dotnet rebuild was run.
+
+## 2026-05-15 - Wake Catch-Up Guard Addendum
+STATUS: PENDING VERIFICATION
+
+What was wrong:
+- The wake catch-up job assumed all base metadata and gas front/back arrays stayed capacity-aligned.
+
+What was done:
+- `ApplyBaseWakeCatchUp` now verifies every base metadata lane used by the Burst job.
+- `BaseHibernationWakeCatchUpJob` clamps its base limit and room limit across all arrays before indexing.
+
+Cinematic Cheats used:
+- Same analytical wake catch-up lie; no new simulation truth.
+
+Exact microseconds saved:
+- None claimed. This adds cold-path guard arithmetic only and reduces future H-Phi migration crash risk. No dotnet rebuild was run.

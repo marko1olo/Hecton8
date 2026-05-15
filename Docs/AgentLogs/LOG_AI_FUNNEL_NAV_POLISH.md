@@ -388,3 +388,29 @@ Verification:
 - Targeted forbidden hot-math/allocation scan passed for `SampleFlowFieldAtPosition`.
 - `git diff --check` on touched source/status/rationale/log files passed; only LF-to-CRLF working-copy warnings were emitted.
 - Dotnet rebuilds were not run because the user explicitly prohibited dotnet rebuilds.
+
+## 2026-05-15 - Threat/Flow Payload Boundary Proof
+
+What was wrong:
+- Public threat/flow payload getters could expose created native arrays while resolution/cell-count metadata was stale or incomplete.
+- `UpdateThreatHotspot` scanned `_ecosystemThreatGridCellCount` directly and could accept non-finite threat samples or non-finite player Y fallback.
+- Swarm wake and local external pulse merge paths still needed local finite gates, independent of service-level ingress sanitation.
+
+What was done:
+- Added shared square-grid and voxel-grid cell-count proof helpers for boundary payload validation.
+- Hardened `TryGetEcosystemFlowFieldPayload`, float/compressed/echo threat payload getters, and voxel threat payload getter with complete native length, declared cell-count coherence, and finite metadata checks.
+- Routed direct compressed/echo threat properties through the same byte-grid proof helper.
+- Hardened swarm wake registration and external pulse merge against non-finite positions, vectors, radii, strengths, lifetimes, and timers.
+- Hardened hotspot scan with complete-grid proof, finite grid metadata, finite threat sample filtering, and finite player-position fallback.
+
+Cinematic Cheats used:
+- Corrupt threat/flow payloads now disappear as influence instead of being repaired or converted into plausible steering pressure.
+- Low tier pays fixed scalar proof and keeps routes conservative; High/Ultra retain richer threat/flow navigation visuals only on complete finite payloads.
+
+Exact Microseconds saved:
+- PENDING RUNTIME PROFILER DATA. Static gain is fault avoidance before native payload exposure and O(N) hotspot scans; no allocations or new native containers were added.
+
+Verification:
+- Targeted changed-range scan passed for forbidden hot math/allocation; the only `/` hit is existing integer grid-index decomposition in hotspot decode.
+- `git diff --check` on touched source files passed; only LF-to-CRLF working-copy warnings were emitted.
+- Dotnet rebuilds were not run because the user explicitly prohibited dotnet rebuilds.

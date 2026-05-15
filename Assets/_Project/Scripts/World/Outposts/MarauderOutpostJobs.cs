@@ -284,8 +284,11 @@ namespace Hecton8.World.Outposts
                                 HeightResolution > 1 &&
                                 HeightResolution <= 46340 &&
                                 HeightSamples.Length >= HeightResolution * HeightResolution &&
+                                math.all(math.isfinite(OriginMeters)) &&
                                 math.all(math.isfinite(TerrainPosition)) &&
                                 math.all(math.isfinite(TerrainSize)) &&
+                                math.all(math.isfinite(OriginMeters - TerrainPosition)) &&
+                                math.isfinite(TerrainPosition.y + TerrainSize.y) &&
                                 TerrainSize.x > 0.001f &&
                                 TerrainSize.y > 0.001f &&
                                 TerrainSize.z > 0.001f;

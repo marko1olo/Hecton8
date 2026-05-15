@@ -1260,6 +1260,7 @@ namespace Hecton8.Editor.ProceduralGen
 
                 ValidateMeshGeometryContract(path, familyFolder, i, mesh, ref failures);
                 ValidateLodTriangleBudget(path, familyFolder, i, mesh, ref failures);
+                ValidateLodVertexBudget(path, familyFolder, i, mesh, ref failures);
                 ValidateVertexColorGradient(path, i, mesh, ref failures);
             }
         }
@@ -1278,10 +1279,15 @@ namespace Hecton8.Editor.ProceduralGen
             bool hasNormal = mesh.HasVertexAttribute(VertexAttribute.Normal);
             bool hasColor = mesh.HasVertexAttribute(VertexAttribute.Color);
             bool hasUv0 = mesh.HasVertexAttribute(VertexAttribute.TexCoord0);
+            bool hasSingleSubMesh = mesh.subMeshCount == 1;
+            ulong indexCount = hasSingleSubMesh ? mesh.GetIndexCount(0) : 0ul;
+            MeshTopology topology = hasSingleSubMesh ? mesh.GetTopology(0) : MeshTopology.Triangles;
             float boundsExtentSq = bounds.extents.sqrMagnitude;
             bool failed = mesh.vertexCount <= 0 ||
-                          mesh.subMeshCount != 1 ||
-                          mesh.GetIndexCount(0) == 0 ||
+                          !hasSingleSubMesh ||
+                          indexCount == 0ul ||
+                          indexCount % 3ul != 0ul ||
+                          topology != MeshTopology.Triangles ||
                           !mesh.isReadable ||
                           mesh.indexFormat != IndexFormat.UInt16 ||
                           !hasPosition ||
@@ -1297,7 +1303,7 @@ namespace Hecton8.Editor.ProceduralGen
                 return;
 
             failures++;
-            Debug.LogError($"[ShallowsBioForgeBatchBaker] LOD{lodIndex} mesh geometry contract failed at {path}. Vertices={mesh.vertexCount}, SubMeshes={mesh.subMeshCount}, Readable={mesh.isReadable}, IndexFormat={mesh.indexFormat}, Position={hasPosition}, Normal={hasNormal}, Color={hasColor}, Uv0={hasUv0}, BoundsExtentSq={boundsExtentSq:0.000000}, MaxBoundsExtentSq={maxBoundsExtentSq:0.000000}.");
+            Debug.LogError($"[ShallowsBioForgeBatchBaker] LOD{lodIndex} mesh geometry contract failed at {path}. Vertices={mesh.vertexCount}, SubMeshes={mesh.subMeshCount}, IndexCount={indexCount}, Topology={topology}, Readable={mesh.isReadable}, IndexFormat={mesh.indexFormat}, Position={hasPosition}, Normal={hasNormal}, Color={hasColor}, Uv0={hasUv0}, BoundsExtentSq={boundsExtentSq:0.000000}, MaxBoundsExtentSq={maxBoundsExtentSq:0.000000}.");
         }
 
         private static void ValidateLodTriangleBudget(string path, string familyFolder, int lodIndex, Mesh mesh, ref int failures)
@@ -1315,6 +1321,23 @@ namespace Hecton8.Editor.ProceduralGen
 
             failures++;
             Debug.LogError($"[ShallowsBioForgeBatchBaker] LOD{lodIndex} triangle budget failed at {path}. Triangles={triangles}, Budget={triangleBudget}.");
+        }
+
+        private static void ValidateLodVertexBudget(string path, string familyFolder, int lodIndex, Mesh mesh, ref int failures)
+        {
+            if (!TryResolveLodTriangleBudget(familyFolder, lodIndex, out int triangleBudget))
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] Missing LOD vertex budget for family={familyFolder}, LOD={lodIndex}, Prefab={path}.");
+                return;
+            }
+
+            int vertexBudget = triangleBudget * 3;
+            if (mesh.vertexCount > 0 && mesh.vertexCount <= vertexBudget)
+                return;
+
+            failures++;
+            Debug.LogError($"[ShallowsBioForgeBatchBaker] LOD{lodIndex} vertex budget failed at {path}. Vertices={mesh.vertexCount}, Budget={vertexBudget}.");
         }
 
         private static bool TryResolveLodTriangleBudget(string familyFolder, int lodIndex, out int triangleBudget)

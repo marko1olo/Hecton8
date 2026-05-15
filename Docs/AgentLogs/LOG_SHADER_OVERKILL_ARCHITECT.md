@@ -101,3 +101,23 @@ Verification:
 - `git diff --check` reported no whitespace errors for owned files.
 - Static brace scan passed for `Hecton8_UberNoir.hlsl`, `AnalyticalCausticsService.cs`, `InstanceCullingService.cs`, and `Hecton8.Graphics.Materials.asmdef`.
 - `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json` completed with `RuntimeHPhiNarrow=0.010496041`, `RuntimeHPhiRisk=0.000571225`, `ArchitecturalPurity=0.996460177`, `MemoryAlignment=0.503703704`, `UnityUpdateMethods=2`, `AupPrecisionRisk=0`.
+
+## 2026-05-15 03:48:00 +04:00 - Follow-Up No-Rebuild Shader Safety Pass
+What was wrong:
+- `H8UberNoirLoadInstance` could index `_H8UberNoirInstanceData[bufferOffset]` when the instance-buffer keyword was compiled but the runtime count was zero or the use flag was disabled.
+
+What was done:
+- Added `H8UberNoirBuildDefaultInstance`.
+- Changed `H8UberNoirLoadInstance` to use Unity object/world matrices by default and only read the `StructuredBuffer` when `_UberNoirInstanceParams.z >= 0.5` and `_UberNoirInstanceParams.y > 0`.
+
+Cinematic Cheats used:
+- None. This was a deterministic safety fix for Resident Drawer fallback behavior.
+
+Exact Microseconds saved:
+- 0 us measured. Estimated 0-2 us vertex branch cost in fallback cases; undefined GPU buffer reads removed.
+
+Verification:
+- No dotnet rebuild was executed.
+- Static HLSL review confirms the buffer read is now count/use gated before indexing.
+- First H-Phi static audit attempt timed out at 120 seconds; second no-rebuild static audit completed at 300-second timeout.
+- `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json` completed with `RuntimeHPhiNarrow=0.010497120`, `RuntimeHPhiRisk=0.000573792`, `ArchitecturalPurity=0.996460177`, `MemoryAlignment=0.503966155`, `UnityUpdateMethods=2`, `StructLayoutAttributes=953`, `AupPrecisionRisk=0`.

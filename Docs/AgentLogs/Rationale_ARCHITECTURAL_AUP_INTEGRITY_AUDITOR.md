@@ -447,3 +447,11 @@ Solution: Pass runtime file rows into `Assert-AupPrecisionBudget` and append the
 Rejected Alternatives: Leave failure triage to manual `rg` commands or always emit a full per-file report. Manual triage slows regression repair; full reports bloat the common passing path.
 Scalability potential: Low machines keep the same passing audit cost and get faster failure triage when regressions occur. Middle/High/Ultra CI gets actionable source locations before AUP drift reaches visual-overkill systems.
 Hardware Impact: Gameplay frame impact is 0 us. Full gated static run completed in 125.752 seconds with `AupPrecisionRisk=0` and `TopAupPrecisionRiskFiles=0`; failure formatting cost only occurs when the budget is already violated.
+
+## Decision 56 - H-Phi AUP Budget Summary Metadata
+
+Problem: The AUP precision budget was enforced, but successful summary output did not explicitly preserve whether the budget was enabled, what limit was used, or whether the evidence came from a full source scan.
+Solution: Add `Budgets.AupPrecisionRisk` to the H-Phi audit result and summary output with `Enabled`, `Max`, `Actual`, `Passed`, and `EvidenceClass=STATIC_SOURCE_FULL_SCAN`.
+Rejected Alternatives: Rely on command history or infer budget state from `AupPrecisionRisk=0`. Command history is lost during context compression and a zero count does not prove that the budget gate was active.
+Scalability potential: Low machines get compact CI-readable budget evidence without Unity launch or rebuild. Middle/High/Ultra pipelines get explicit AUP drift-gate metadata before expensive visual-overkill systems rely on stable long-session anchors.
+Hardware Impact: Gameplay frame impact is 0 us. Full gated static run completed in 116.463 seconds with `BudgetEnabled=true`, `BudgetMax=0`, `BudgetActual=0`, and `BudgetPassed=true`; summary metadata cost is negligible relative to the existing static scan.

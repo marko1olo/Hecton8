@@ -239,3 +239,11 @@ Status: PENDING VERIFICATION
 - Verification avoided dotnet rebuilds and Unity import. `MeshBoundsBudgetYamlScan TotalBad=0`; family maxima were Kelp `93.313505/121`, TubeCoral `2.168438/4`, PorousRock `5.143031/9`; `git diff --check` passed for the baker with only the repo CRLF warning; source brace balance stayed `Delta=0` with `NonAscii=0`; forbidden source scan remained clean.
 - Rejected alternative: relying only on triangle counts was rejected because bounds bloat can break culling/LOD without increasing triangles. Runtime bounds repair was rejected because generated meshes must be correct static assets.
 - H-Phi impact remains domain-local evidence only: stronger culling/LOD payload contracts without new runtime systems, scripts, allocations, or cross-domain dependencies.
+
+### Loop 26 - Mesh Topology And Vertex Budget Contract
+
+- Found a remaining payload-bloat drift path: a mesh could keep triangle count under budget while carrying unused vertices, malformed index counts, or a non-triangle topology that would corrupt renderer assumptions.
+- Patched `ShallowsBioForgeBatchBaker` so mesh geometry validation reads index count/topology only after confirming one submesh, rejects non-triangle topology and index counts not divisible by 3, and added `ValidateLodVertexBudget` with a per-family/per-LOD vertex ceiling derived from the triangle budget.
+- Verification avoided dotnet rebuilds and Unity import. `MeshVertexIndexYamlScan TotalBad=0`; maxima were Kelp `6600/1542/282`, TubeCoral `7092/1026/72`, PorousRock `9243/1743/159`; `git diff --check` passed for the baker with only the repo CRLF warning; source brace balance stayed `Delta=0` with `NonAscii=0`; forbidden source scan remained clean.
+- Rejected alternative: trusting triangle counts alone was rejected because unused vertex buffers still cost memory/bandwidth. Runtime mesh cleanup was rejected because the generated mesh library must be static and correct before runtime.
+- H-Phi impact remains domain-local evidence only: stricter mesh payload limits for culling/render scalability without adding runtime scripts, update cadence, allocations, or cross-domain dependencies.

@@ -372,3 +372,35 @@ Verification:
 - No temp `*SchemaClarity*.dll` probe artifacts remain in `Temp`.
 - No `dotnet` rebuild was run.
 - Full Unity/editor/player execution remains PENDING VERIFICATION because no Unity MCP/editor session is available in this tool context.
+
+## 2026-05-15 - Fallback Artifact Parity And Cold Allocation Evidence Addendum
+Status: PENDING VERIFICATION
+Evidence Class: CLI_COMPILE_PLUS_STATIC_SOURCE
+
+What was wrong:
+- Runtime results carried schema-v4/blackbox metadata, but editor fallback results still used an older minimal JSON shape.
+- CI parser behavior would diverge on the worst path: launch failure before runtime result generation.
+- Runner-owned cold allocations lacked canonical `COLD ALLOC` evidence comments.
+
+What was done:
+- Added fallback JSON fields `resultSchemaVersion`, `fallbackResult`, `blackboxMagic`, `blackboxFrameCapacity`, and `blackboxEntrySizeBytes`.
+- Added named fallback constants in `HeadlessStressFractureBatchRunner`.
+- Added canonical `COLD ALLOC` comments for startup cancellation, blackbox ring allocation, camera snapshot arrays, and editor flag bytes.
+
+Cinematic Cheats used:
+- None. This pass is CI artifact and mandate-evidence hygiene only.
+
+Exact Microseconds saved:
+- Runtime hot path: 0 us; runtime code changes are comments only.
+- Editor fallback path: terminal-only JSON fields, no frame-time relevance.
+- Avoided parser/triage branch on fallback failures: estimated 1000000+ us saved per failed launch artifact.
+
+Verification:
+- Focused static audit: PASS for both Race Condition Hunter files; no scene search, component lookup, LINQ, coroutine, `Task<`, `.Complete()`, explicit GC, reflection, managed collection creation, `string.Format`, or `Substring` parser usage.
+- Scoped source counts: `ColdAllocComments=6`, `ResultSchemaVersionTokens=4`, `FallbackResultFields=1`, `BlackboxMetadataFields=6`.
+- Runtime isolated Unity compiler probe: PASS via Unity Mono/Roslyn with UnityJIT facades, Unity modules, current `Library/ScriptAssemblies`, and `Assembly-CSharp.dll`.
+- Editor runner isolated Unity compiler probe: PASS via Unity Mono/Roslyn with UnityEngine/UnityEditor facade references and `UNITY_EDITOR` defined; an earlier failed editor probe used an invalid reference mix and required no source changes.
+- `git diff --check`: PASS for whitespace on the QA runner, editor runner, and owned status/rationale/log files; Git emitted LF-to-CRLF normalization warnings only.
+- No temp `*FallbackSchema*.dll` probe artifacts remain in `Temp`.
+- No `dotnet` rebuild was run.
+- Full Unity/editor/player execution remains PENDING VERIFICATION because no Unity MCP/editor session is available in this tool context.

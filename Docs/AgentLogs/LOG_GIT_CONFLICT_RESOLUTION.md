@@ -131,3 +131,29 @@ Verification:
 - `git rev-list --left-right --count origin/main...HEAD` returned `0 0` before staging.
 - `git diff --check` produced no semantic whitespace errors, only CRLF warnings.
 - Conflict-marker scan returned no active merge markers.
+
+## 2026-05-15 - Pull Gate and Dirty Tail Pass
+
+What was wrong:
+- The user requested continued Git work with pull/merge if needed.
+- After the last pushed checkpoint, parallel agents had produced another large dirty tail.
+- Remote history was not ahead: `origin/main...HEAD` returned `0 0`.
+
+What was done:
+- Ran `git fetch origin` before any staging.
+- Skipped pull/merge because there were no incoming remote commits.
+- Verified no unmerged paths.
+- Ran `git diff --check`; only LF/CRLF normalization warnings were present.
+- Scanned changed files for active `<<<<<<<` / `>>>>>>>` conflict markers; none were found.
+- Prepared a checkpoint of the current dirty tail instead of resetting or discarding it.
+
+Cinematic Cheats used:
+- None. Git-only operation.
+
+Exact Microseconds saved:
+- Runtime saved: 0 us. Dev-path saved: avoided a pointless pull over a dirty worktree; exact wall-clock savings not benchmarked.
+
+Verification:
+- `git rev-list --left-right --count origin/main...HEAD` returned `0 0`.
+- `git diff --check` returned only CRLF warnings.
+- Conflict-marker scan returned no active merge markers.

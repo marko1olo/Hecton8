@@ -123,7 +123,7 @@ namespace Hecton8.UI
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Diegetic Panel Controller")]
     [RequireComponent(typeof(Canvas))]
-    public sealed class DiegeticPanelController : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, ICursorHost, IDepthOcclusionReceiver, IDamageReceiver
+    public sealed class DiegeticPanelController : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, ICursorHost, IDepthOcclusionReceiver, IDamageReceiver, IGlobalRegistryHotSwapListener
     {
         private const string WorldGeometrySortingLayer = "WorldGeometry";
         private const string DefaultPhosphorDecayMaterialResourcePath = "UI/MAT_DiegeticPanelPhosphorDecay";
@@ -374,6 +374,7 @@ namespace Hecton8.UI
         private bool _tickRegistered;
         private bool _lateFrameRegistered;
         private bool _renderPipelineHookRegistered;
+        private bool _hotSwapListenerRegistered;
         private bool _phosphorMaterialResolveAttempted;
         private bool _phosphorMaterialResolveFailed;
         private bool _resolvedInteractionCameraFromExplicit;
@@ -417,6 +418,7 @@ namespace Hecton8.UI
             ResolveInterfaces();
             DetermineTargetHardwareTier();
             RefreshServices();
+            TryRegisterHotSwapListener();
             RegisterRenderPipelineHook();
             ApplyCanvasWorldSpaceSettings();
             ApplyRendererBindings();
@@ -429,6 +431,7 @@ namespace Hecton8.UI
         {
             ResolveSerializedReferences(resolveGraphicRaycaster: true);
             RefreshServices();
+            TryRegisterHotSwapListener();
             TryRegisterTick();
             RegisterRenderPipelineHook();
             ApplyCanvasWorldSpaceSettings();
@@ -439,10 +442,12 @@ namespace Hecton8.UI
         private void OnDisable()
         {
             UnregisterTick();
+            TryUnregisterHotSwapListener();
             UnregisterRenderPipelineHook();
             UnregisterProxyLight();
             ClearHoverState();
             CacheInteractionCamera(null, fromExplicit: false);
+            _input = null;
             _cursorStateInitialized = false;
             _canvasSettingsApplied = false;
             if (panelCamera != null && panelCamera.enabled)
@@ -454,6 +459,7 @@ namespace Hecton8.UI
         private void OnDestroy()
         {
             UnregisterRenderPipelineHook();
+            TryUnregisterHotSwapListener();
             UnregisterProxyLight();
             ReleaseRenderTexture();
             ReleasePhosphorResources();
@@ -926,6 +932,27 @@ namespace Hecton8.UI
             _input = GlobalRegistry.Input;
         }
 
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Input)
+            {
+                _input = currentService as IInputService;
+                return;
+            }
+
+            if (serviceSlot != GlobalRegistryServiceSlot.Player || interactionCamera != null)
+                return;
+
+            Camera playerCamera = currentService is IPlayerRuntimeContext playerContext
+                ? playerContext.PlayerCamera
+                : null;
+            CacheInteractionCamera(playerCamera != null && playerCamera.isActiveAndEnabled ? playerCamera : null, fromExplicit: false);
+            _canvasSettingsApplied = false;
+        }
+
         private bool EnsureRuntimeState()
         {
             if (!isActiveAndEnabled)
@@ -933,7 +960,8 @@ namespace Hecton8.UI
 
             ResolveSerializedReferences(resolveGraphicRaycaster: false);
             ResolveInterfaces();
-            RefreshServices();
+            if (_input == null)
+                RefreshServices();
             ApplyCanvasWorldSpaceSettings();
             return targetCanvas != null && _resolvedPanelRect != null && panelCollider != null;
         }
@@ -1938,6 +1966,23 @@ namespace Hecton8.UI
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
                 _lateFrameRegistered = false;
             }
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
         }
 
         private void UnregisterTick()

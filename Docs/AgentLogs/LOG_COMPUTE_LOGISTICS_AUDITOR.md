@@ -34,6 +34,32 @@ Verification:
 
 STATUS: AUDIT COMPLETE.
 
+## 2026-05-15 - File Burn Attribution
+
+What was wrong:
+- Top-30 thread attribution showed patch targets, but not weighted burn per file.
+- Integrators need file-level triage, not just thread IDs.
+
+What was done:
+- Parsed top-30 rollout JSONL patch targets read-only.
+- Created `COMPUTE_FILE_BURN_ATTRIBUTION.md` at project root.
+- Distributed top-30 thread tokens across 1,647 patch targets by per-thread patch-hit share.
+- Recorded weighted class split: code 7,411,317,235 tokens; docs 1,143,348,625; assets 496,931,949; other 431,588,269; packages 9,607,022.
+- Recorded top weighted targets: `SargassumMicroFaunaBoids.cs`, `CrashTelemetryBuffer.cs`, `BaseModule.cs`, `FaunaBrain.cs`, `HectonPlayerMovement.cs`, `SpatialAudioManager.cs`, `PersistentWorldRegistry.cs`, `GlobalRegistry.cs`.
+- Updated `COMPUTE_AUDIT_BRIEF.md`, `COMPUTE_DOMINANCE_REPORT.md`, Status, and Rationale.
+
+Cinematic Cheats used:
+- None.
+
+Exact microseconds saved:
+- Runtime: 0 us.
+- Process: not claimed.
+
+Verification:
+- Markdown-only file-burn attribution. Compile not run.
+
+STATUS: AUDIT COMPLETE.
+
 ## 2026-05-15 - Validation Forensics
 
 What was wrong:
@@ -221,3 +247,44 @@ Verification:
 - No runtime/code compile run; markdown-only continuation.
 
 STATUS: AUDIT COMPLETE.
+
+## 2026-05-15 - Top-100 Value And C++ Transfer Evidence
+
+What was wrong:
+- Top-thread triage identified the expensive head, but top-30 attribution did not cover the full top-100 half of the token mass.
+- Validation forensics proved effort and failures, not final value.
+- The repeated C++ transfer instruction had no preserved evidence check in the compute audit artifacts.
+
+What was done:
+- Re-read `Docs/Tasks/Status_COMPUTE_LOGISTICS_AUDITOR.md` and `Docs/AgentLogs/Rationale_COMPUTE_LOGISTICS_AUDITOR.md`.
+- Parsed the top-100 rollout JSONL files from `C:\Users\danat\.codex` read-only with normalized HECTON-8 path accounting.
+- Created `COMPUTE_THREAD_VALUE_AUDIT.md`.
+- Refreshed `COMPUTE_COLLISION_RISK.md`.
+- Updated `COMPUTE_AUDIT_BRIEF.md` with value-audit, validation, collision, and C++ evidence pointers.
+- Appended the top-100 addendum to `Docs/Reports/COMPUTE_DOMINANCE_REPORT.md`.
+- Updated status and rationale for Loop 13 / Decision 19.
+
+Evidence captured:
+- Live SQLite ledger: 764 threads, 44,145,781,873 tokens.
+- Top-100 token mass: 21,963,403,961 tokens, 49.752% of the ledger.
+- Top-100 rollout events scanned: 1,165,472.
+- Top-100 `apply_patch` calls: 32,908.
+- Top-100 `shell_command` calls: 212,479.
+- Top-100 patch churn: +775,074/-176,148 lines.
+- Top-100 code patch target hits: 30,172.
+- Top-100 external path target hits: 2,324.
+- Top-100 C++ patch target hits: 0.
+- Current dirty hot targets: `Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs` and `Assets/_Project/Scripts/Construction/HabitatGraphManager.cs`.
+
+Cinematic Cheats used:
+- None. Audit-only evidence accounting.
+
+Exact microseconds saved:
+- Runtime: 0 us.
+- Process: not claimed as a measured saving. The report prevents false C++ completion claims and flags live collision gates.
+
+Verification:
+- Markdown-only audit continuation.
+- No runtime compile run. Current workspace remains dirty from concurrent runtime agents, so a compile would not isolate this audit pass.
+
+STATUS: AUDIT COMPLETE. C++ TRANSFER STATUS: NOT VERIFIED / NO PATCH EVIDENCE.

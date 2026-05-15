@@ -80,7 +80,6 @@ namespace Hecton8.UI
         private readonly char[] _hintBuffer = new char[192];
         private readonly char[] _adviceScratchBuffer = new char[192];
         private bool _tickRegistered;
-        private PlayerToolManager _subscribedToolManager;
         private uint _inventorySignalHash;
         private uint _lastInventorySignalRevision;
         private uint _toolLoadoutSignalSourceId;
@@ -99,7 +98,6 @@ namespace Hecton8.UI
 
         private void OnDisable()
         {
-            Unsubscribe();
             UnregisterTick();
         }
 
@@ -190,17 +188,11 @@ namespace Hecton8.UI
         {
             RefreshInventorySignalBinding();
             RefreshToolLoadoutSignalBinding();
-            _subscribedToolManager = toolManager;
         }
 
         private void Subscribe()
         {
             RefreshSubscriptions();
-        }
-
-        private void Unsubscribe()
-        {
-            _subscribedToolManager = null;
         }
 
         private bool ConsumeInventoryChangedSignals()
@@ -485,7 +477,7 @@ namespace Hecton8.UI
         private bool ShouldKeepTicking(float deltaTime = 0f)
         {
             AutoResolve(deltaTime);
-            return RequiresRuntimeResolve() || IsBuilderOverlayVisible();
+            return RequiresRuntimeResolve() || _toolLoadoutSignalSourceId != 0u || IsBuilderOverlayVisible();
         }
 
         private bool RequiresRuntimeResolve()

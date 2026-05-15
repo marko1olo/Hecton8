@@ -35,3 +35,9 @@ Solution: Fetch first, prove committed history is synchronized, classify the new
 Rejected Alternatives: Reporting "clean" because pushed history matched remote, or chasing an infinite stream without marking it as live parallel work. Both misrepresent the actual local state.
 Scalability potential: Not a runtime system. Repository state tracking only; gameplay tier behavior unchanged.
 Hardware Impact: 0 us runtime impact. Dev-path gain is clearer separation between pushed commits and live post-push edits.
+
+Problem: The user explicitly requested commit, push, and pull if needed while resolving conflicts carefully.
+Solution: Fetch and compare `origin/main...HEAD` before any staging. Because the count was `0 0`, no pull/merge was required; the only active work was local dirty tail from parallel agents. Validate the tail, then checkpoint and push.
+Rejected Alternatives: Pulling with no incoming remote commits, force-pushing, deleting stashes, or resetting dirty files. These add risk without solving the actual state.
+Scalability potential: Git-only operation. No runtime tier behavior changes.
+Hardware Impact: 0 us runtime impact. Dev-path gain is avoiding unnecessary merge churn and preserving active local work.

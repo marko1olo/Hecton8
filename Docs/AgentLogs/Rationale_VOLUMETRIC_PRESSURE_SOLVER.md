@@ -369,3 +369,19 @@ Solution: Added `RecordNonFinitePressureIngress` so non-finite pressure/seismic 
 Rejected Alternatives: Silent rejection, downstream shader clamping, or clearing the entire stress matrix on one bad scalar. Silent rejection violates the blackbox mandate; shader-only clamping hides the CPU-side source; full matrix clears cause visible pressure flicker and destroy valid rooms.
 Scalability potential: Low/MX350 gets deterministic fault evidence without extra frame allocations and avoids poisoned peak-crease feedback. Mid/High/Ultra keep localized pressure bowing for valid modules while one corrupt lane is isolated.
 Hardware Impact: Normal valid-frame overhead is a few finite checks inside the existing 64-module stress loop. Fault frames save repeated NaN propagation and avoid stale spike churn; estimated 5-20 us saved on i3/MX350 recovery frames, with 0 B/frame in the valid path.
+
+## Follow-Up Correction - Habitat Shader Finite Normal Fallbacks
+
+Problem: The habitat interior shader helpers used `rsqrt` for cheap normals but did not reject non-finite length before returning bend or normal-bias vectors. A poisoned normal could propagate into object-space displacement or lighting normals.
+Solution: `HectonHabitatInteriorSafeNormalize3` and `HectonHabitatInteriorSafeNormalizeHalf3` now require finite positive length and accept explicit fallback vectors. Bend normals fall back to zero offset; normal-bias basis/final vectors fall back to stable axes or the pre-bias base normal.
+Rejected Alternatives: Exact `normalize`, shader-wide NaN clamping in the fragment, or disabling habitat bend on all questionable data. Exact normalize violates the cheap-helper mandate; fragment clamping is too late for clip-space vertex output; disabling all bend discards valid pressure visuals.
+Scalability potential: Low/MX350 is unaffected because vertex bend is bypassed. Mid/High/Ultra keep sine panel bow and cheap normal bias while invalid inputs degrade to stable no-op/fallback visuals.
+Hardware Impact: Adds finite checks only in the already-gated stressed vertex/normal-bias path. Saves catastrophic NaN propagation/debug time; expected normal-frame cost is under 1 us per 1k stressed vertices on MX350-class GPUs.
+
+## Follow-Up Correction - Shader Stress Resolver Ambience Guard
+
+Problem: `HectonHabitatInteriorResolveStress01` could evaluate a non-finite module ambience radius or distance. HLSL comparisons against NaN can fail open, allowing a corrupted ambience slot to become the selected stress index.
+Solution: Added scalar finite gates for `centerRadius.w` and `distanceSq` inside the bounded 64-slot resolver loop. Bad candidates are skipped and no stress is read unless a finite module radius/distance passes the radius test.
+Rejected Alternatives: Four-component `isfinite(centerRadius)` per slot or relying on CPU-side ambience publication only. Full vector checks cost more than required; CPU-only validation is not enough for a shared shader include fed by multiple systems.
+Scalability potential: Low/MX350 is unaffected because low-tier returns peak stress before the buffer loop. Mid/High/Ultra keep localized deformation while corrupted ambience records degrade to zero stress/no selection.
+Hardware Impact: Adds two scalar finite checks in the already-gated non-low stressed resolver path. Fault frames avoid poisoned stress selection; valid-frame overhead remains bounded under the 64-slot cap.

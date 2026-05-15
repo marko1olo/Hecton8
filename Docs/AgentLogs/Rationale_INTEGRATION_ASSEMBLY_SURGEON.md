@@ -2,7 +2,7 @@
 
 Agent: INTEGRATION_ASSEMBLY_SURGEON
 Domain: Unity Compilation Graph / Integrator
-Status: BUILD SUCCESSFUL / POST-GREEN STATIC H-PHI DEBT REDUCED (Fresh19 retained; no dotnet command run in latest static pass)
+Status: BUILD SUCCESSFUL / POST-GREEN STATIC H-PHI DEBT REDUCED (bridge debt 14/6; Fresh19 retained; no dotnet command run in latest static pass)
 
 ## Decision 0 - Session Initialization
 
@@ -203,3 +203,11 @@ Solution: Repaired the PowerShell property-array syntax without removing the AUP
 Rejected Alternatives: Reverting the AUP precision gate was rejected because it is useful H-Phi debt control. Treating the parse failure as a project build failure was rejected because no compile command was involved.
 Scalability potential: Low-end validation gets a static precision-risk tripwire without Unity import or dotnet. High/Ultra validation can keep the same gate as a preflight before runtime/profiler proof.
 Hardware Impact: Runtime impact 0 us. Tooling reliability improved; exact player-frame savings are 0 us.
+
+## Decision 26 - Exact Replacement Reference Correction
+
+Problem: The previous replacement-lane pass treated `ShapesRuntime` and `VolumetricLightBeam` as live because broad text scans saw generic words such as `Disc`, `Triangle`, `Crest`, and custom volumetric feature names. That was too weak for a Core graph dependency.
+Solution: Re-ran exact namespace/type scans for the actual package surfaces. `Assets/_Project/Scripts` had no `using Shapes`, `Shapes.`, `ShapeRenderer`, `ImmediateModeShapeDrawer`, `VLB`, `VolumetricLightBeam`, `VolumetricDustParticles`, `BeamGeometry`, `DynamicOcclusion`, or `TrackRealtimeChangesOnBeam` usage. Removed the `ShapesRuntime` and `VolumetricLightBeam` project-reference replacement blocks from `Directory.Build.targets`, then lowered the Core graph budget to 14 total bridge debt refs and 6 replacement debt refs.
+Rejected Alternatives: Keeping stale replacement references for safety was rejected because the source-backed scan had exact zero package-surface hits. Editing generated `Hecton8.Core.csproj` was rejected because Unity regenerates it. Removing live refs for `Crest`, `GPUInstancer`, `Hecton8.Input`, `Unity.RenderPipelines.Universal.Runtime`, `WaveHarmonic.Crest`, or `WaveHarmonic.Crest.Shared` was rejected because exact source hits remain.
+Scalability potential: Low tier and weak developer machines carry fewer package assemblies in the Core medic lane. Middle/High/Ultra visual lanes still keep Shapes and VLB available to their owning assemblies; Core no longer pays static graph coupling for package surfaces it does not reference.
+Hardware Impact: Runtime impact 0 us. Static graph impact: source-backed bridge references dropped from 27 to 25, total bridge debt from 16 to 14, and project-reference replacement debt from 8 to 6. No player-frame microsecond savings are claimed.

@@ -1186,7 +1186,12 @@ namespace Hecton8.Atmosphere
                 !_roomCO2Back.IsCreated ||
                 !_roomNitrogenBack.IsCreated ||
                 !_roomPressureBack.IsCreated ||
-                !_baseBatteryWattSeconds.IsCreated)
+                !_baseRoomStart.IsCreated ||
+                !_baseRoomCount.IsCreated ||
+                !_baseBatteryWattSeconds.IsCreated ||
+                !_baseIdleDrawWatts.IsCreated ||
+                !_baseLeakRatePerSecond.IsCreated ||
+                !_baseAmbientOxygenKPa.IsCreated)
             {
                 return;
             }
@@ -1545,7 +1550,15 @@ namespace Hecton8.Atmosphere
 
             public void Execute()
             {
-                if ((uint)BaseId >= (uint)BaseRoomCount.Length || ElapsedSeconds <= 0f)
+                int baseLimit = math.min(
+                    BaseRoomStart.Length,
+                    math.min(
+                        BaseRoomCount.Length,
+                        math.min(
+                            BaseBatteryWattSeconds.Length,
+                            math.min(BaseIdleDrawWatts.Length, math.min(BaseLeakRatePerSecond.Length, BaseAmbientOxygenKPa.Length)))));
+
+                if ((uint)BaseId >= (uint)baseLimit || ElapsedSeconds <= 0f)
                     return;
 
                 float elapsed = FiniteNonNegativeOrZero(ElapsedSeconds);
@@ -1554,8 +1567,19 @@ namespace Hecton8.Atmosphere
                 battery = math.max(0f, battery - idleDraw * elapsed);
                 BaseBatteryWattSeconds[BaseId] = battery;
 
-                int startRoom = math.clamp(BaseRoomStart[BaseId], 0, math.max(0, RoomCount));
-                int roomEnd = math.min(RoomCount, startRoom + math.max(0, BaseRoomCount[BaseId]));
+                int roomLimit = math.min(
+                    RoomCount,
+                    math.min(
+                        RoomO2.Length,
+                        math.min(
+                            RoomCO2.Length,
+                            math.min(
+                                RoomNitrogen.Length,
+                                math.min(
+                                    RoomPressure.Length,
+                                    math.min(RoomO2Back.Length, math.min(RoomCO2Back.Length, math.min(RoomNitrogenBack.Length, RoomPressureBack.Length))))))));
+                int startRoom = math.clamp(BaseRoomStart[BaseId], 0, math.max(0, roomLimit));
+                int roomEnd = math.min(roomLimit, startRoom + math.max(0, BaseRoomCount[BaseId]));
                 if (roomEnd <= startRoom)
                     return;
 

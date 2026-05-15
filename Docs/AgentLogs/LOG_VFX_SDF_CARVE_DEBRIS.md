@@ -492,3 +492,59 @@ Verification state:
 - `CURRENT_BATCH.md` exact prompt tag count for `VFX_SDF_CARVE_DEBRIS`: 0.
 - Unity import/compile and profiler capture remain unverified.
 - No dotnet rebuild was run.
+
+## 2026-05-15 - Camera-Scoped Indirect Draw
+
+What was wrong:
+- Compute culling used the authored `renderCamera`, but the indirect draw left `RenderParams.camera` unset.
+- With multiple cameras, debris could be submitted to views it was not culled for.
+
+What was done:
+- Added `camera = renderCamera` to the `RenderParams` used by `Graphics.RenderMeshIndirect`.
+- Kept null-camera behavior unchanged: if no authored camera is assigned, Unity can still render through the default camera set.
+- Did not run dotnet build, dotnet rebuild, or Unity batch compile.
+
+Cinematic cheats used:
+- No new physical simulation was added.
+- The existing GPU rock-chip fake is now scoped to the same view that decides its cull distance.
+
+Exact microseconds saved:
+- One-camera scenes: 0 us.
+- Multi-camera scenes with `renderCamera` assigned: avoids one indirect draw submission plus material/shader work per unrelated camera.
+- Added cost: one struct field assignment in `RenderParams`.
+
+Verification state:
+- Static verification completed: `git diff --check` returned no whitespace errors, only Git LF/CRLF notices.
+- Forbidden hot-path scan returned no matches for CPU readback, ParticleSystem, ComputeBuffer, scene search, job scheduling fences, private `H8Memory.Allocate`, private `H8Memory.Release`, `material.SetBuffer`, or `material.SetVector`.
+- Shader hot-math scan returned no matches for `sincos`, raw trig, `pow`, `exp`, `log`, or raw `normalize`.
+- Unity import/compile and profiler capture remain unverified.
+- No dotnet rebuild was run.
+
+## 2026-05-15 - AGENTS Material Binding Compliance
+
+What was wrong:
+- The previous isolation pass used `MaterialPropertyBlock` for the indirect debris draw.
+- The current AGENTS authority forbids MPB on geometry paths; keeping it would preserve isolation but violate the SRP-batcher material rule.
+
+What was done:
+- Removed `MaterialPropertyBlock` from `CarveDebrisComputeRenderer`.
+- Added one owned runtime `Material` copy for an authored first-party debris material, with the existing fallback material path still owned by the renderer.
+- `RenderDebris()` now writes `_CarveDebrisRead`, `_CarveDebrisVelocityRead`, `_CarveDebrisVisibleIndices`, and `_CarveDebrisMaterialParams` only to that owned material.
+- Release destroys the owned material through the existing Unity-object teardown path.
+- Did not run dotnet build, dotnet rebuild, or Unity batch compile.
+
+Cinematic cheats used:
+- No new physical simulation was added.
+- The fixed indirect rock-chip fake remains intact; the change is material-state ownership, not visual behavior.
+
+Exact microseconds saved:
+- Direct frame-time saving: 0 us.
+- Added memory: one cold owned material per renderer instance.
+- Avoided cost: no per-frame material clone, no geometry MPB path, and no shared authored material state corruption.
+
+Verification state:
+- Static verification completed: `git diff --check` returned no whitespace errors, only Git LF/CRLF notices.
+- Forbidden hot-path scan returned no matches for CPU readback, ParticleSystem, ComputeBuffer, scene search, job scheduling fences, private `H8Memory.Allocate`, private `H8Memory.Release`, `MaterialPropertyBlock`, or `matProps`.
+- Shader hot-math scan returned no matches for `sincos`, raw trig, `pow`, `exp`, `log`, or raw `normalize`.
+- Unity import/compile and profiler capture remain unverified.
+- No dotnet rebuild was run.

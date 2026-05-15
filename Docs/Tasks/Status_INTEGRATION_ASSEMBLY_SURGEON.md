@@ -4,7 +4,7 @@ Agent: INTEGRATION_ASSEMBLY_SURGEON
 Role: SYSTEMS_ARCHITECT
 Domain: Unity Compilation Graph / Integrator
 Prompt task count: 15 (current in-chat XML; older 17-task static pass retained below)
-Current state: BUILD SUCCESSFUL / POST-GREEN STATIC H-PHI DEBT REDUCED (Fresh19 retained; no dotnet command run in this pass)
+Current state: BUILD SUCCESSFUL / POST-GREEN STATIC H-PHI DEBT REDUCED (bridge debt 14/6; Fresh19 retained; no dotnet command run in this pass)
 
 ## Mandates Read
 
@@ -169,3 +169,16 @@ Mandates used: `PROJECT_LTS_Compatibility_Layer.txt`, `QA_Evidence_Text_Filter_A
 - [x] Full static AUP budget verified | Justification: full summary audit with `-MaxAupPrecisionRisk 0` returned `AupPrecisionSafe=363`, `AupPrecisionRisk=0` | Alternatives rejected: claiming runtime AUP proof from static scan | Estimate: 0 us runtime
 - [x] Lowered failure paths verified | Justification: total bridge budget 15 returned `EXPECTED_TOTAL_BRIDGE_BUDGET_FAIL_PATH_OK`; replacement bridge budget 7 returned `EXPECTED_REPLACEMENT_BRIDGE_BUDGET_FAIL_PATH_OK` | Alternatives rejected: untested gate update | Estimate: 0 us runtime
 - [x] No-dotnet order honored again | Justification: this pass used static PowerShell/XML/JSON/grep only; no `dotnet build`, `dotnet rebuild`, or `dotnet msbuild` command was run | Alternatives rejected: fresh compile against standing user constraint | Estimate: 0 us runtime
+
+## 2026-05-15 Replacement Bridge Exact-Use Correction
+
+Directive: continue accurate H-Phi debt pruning without dotnet rebuilds.
+Evidence boundary: STATIC_SOURCE + STATIC_DOC. Fresh compile proof remains `Fresh19`.
+
+- [x] Exact Shapes/VLB usage scan | Justification: exact namespace/type scans found no `using Shapes`, `Shapes.`, `ShapeRenderer`, `ImmediateModeShapeDrawer`, `VLB`, `VolumetricLightBeam`, `VolumetricDustParticles`, `BeamGeometry`, `DynamicOcclusion`, or `TrackRealtimeChangesOnBeam` usage under `Assets/_Project/Scripts`; earlier broad hits were generic words/comments | Alternatives rejected: trusting broad `Shapes`/`Volumetric` text hits | Estimate: 0 us runtime
+- [x] Two dead replacement refs removed | Justification: removed `ShapesRuntime` and `VolumetricLightBeam` from the Core project-reference replacement lane in `Directory.Build.targets` | Alternatives rejected: generated `.csproj` edits, package-source edits, and removing refs with live `Crest`, `GPUInstancer`, `URP`, `WaveHarmonic.Crest`, or `Hecton8.Input` usage | Estimate: 0 us runtime
+- [x] Bridge budgets lowered again | Justification: Core graph gate now passes at 25 asmdef debt refs, 10 generated-project debt refs, 14 total bridge debt refs, 8 compile-bridge debt refs, and 6 replacement debt refs | Alternatives rejected: stale 16/8 budget after the prune | Estimate: 0 us runtime
+- [x] Exact removal verified | Justification: static scan confirms `ShapesRuntime`, `VolumetricLightBeam`, and previously removed replacement refs are absent from `Directory.Build.targets` and `Hecton8.Core.asmdef` | Alternatives rejected: assuming patch success from diff only | Estimate: 0 us runtime
+- [x] Failure paths verified at new floors | Justification: total bridge budget 13 returned `EXPECTED_TOTAL_BRIDGE_BUDGET_FAIL_PATH_OK`; replacement budget 5 returned `EXPECTED_REPLACEMENT_BRIDGE_BUDGET_FAIL_PATH_OK` | Alternatives rejected: untested tightened gates | Estimate: 0 us runtime
+- [x] Full static AUP gate rerun | Justification: full summary audit completed under current graph budgets with `AupPrecisionSafe=363` and `AupPrecisionRisk=0` | Alternatives rejected: reusing old AUP result after graph edits | Estimate: 0 us runtime
+- [x] No-dotnet order honored | Justification: only PowerShell static audit, XML/JSON parse, grep, and docs/log edits were run | Alternatives rejected: fresh compile against standing constraint | Estimate: 0 us runtime

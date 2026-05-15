@@ -22,7 +22,13 @@ namespace Hecton8.QA.Headless.Editor
         private const string H8MemoryDumpRelativePath = "Docs/AgentLogs/H8Memory_HEADLESS_STRESS_FRACTURE_BOT.txt";
         private const string RunnerStatusRelativePath = "Docs/AgentLogs/HeadlessStressFractureBatchRunner_HEADLESS_STRESS_FRACTURE_BOT.txt";
         private const string ExitCodeJsonKey = "\"exitCode\"";
+        private const string AgentName = "HEADLESS_STRESS_FRACTURE_BOT";
+        private const int ResultSchemaVersion = 4;
+        private const int BlackboxFrameCapacity = 300;
+        private const int BlackboxEntrySizeBytes = 64;
+        private const uint BlackboxMagic = 0x48534642u;
         private const double TimeoutSeconds = 7200.0;
+        // COLD ALLOC: byte[1] - batch flag file payload, editor-only setup path - owner: HeadlessStressFractureBatchRunner
         private static readonly byte[] FlagBytes = { (byte)'1' };
 
         static HeadlessStressFractureBatchRunner()
@@ -266,12 +272,23 @@ namespace Hecton8.QA.Headless.Editor
                 using (StreamWriter writer = new StreamWriter(tempPath, false))
                 {
                     writer.Write('{');
-                    writer.Write("\"agent\":\"HEADLESS_STRESS_FRACTURE_BOT\"");
+                    writer.Write("\"agent\":\"");
+                    writer.Write(AgentName);
+                    writer.Write('"');
+                    writer.Write(",\"resultSchemaVersion\":");
+                    WriteInvariant(writer, ResultSchemaVersion);
                     writer.Write(",\"status\":\"");
                     WriteJsonEscaped(writer, status);
                     writer.Write("\",\"exitCode\":");
                     WriteInvariant(writer, exitCode);
                     writer.Write(",\"source\":\"HeadlessStressFractureBatchRunner\"");
+                    writer.Write(",\"fallbackResult\":1");
+                    writer.Write(",\"blackboxMagic\":");
+                    WriteInvariant(writer, BlackboxMagic);
+                    writer.Write(",\"blackboxFrameCapacity\":");
+                    WriteInvariant(writer, BlackboxFrameCapacity);
+                    writer.Write(",\"blackboxEntrySizeBytes\":");
+                    WriteInvariant(writer, BlackboxEntrySizeBytes);
                     writer.Write('}');
                 }
 
@@ -369,6 +386,15 @@ namespace Hecton8.QA.Headless.Editor
         }
 
         private static void WriteInvariant(StreamWriter writer, int value)
+        {
+            Span<char> scratch = stackalloc char[16];
+            if (value.TryFormat(scratch, out int written, default, CultureInfo.InvariantCulture))
+                writer.Write(scratch.Slice(0, written));
+            else
+                writer.Write('0');
+        }
+
+        private static void WriteInvariant(StreamWriter writer, uint value)
         {
             Span<char> scratch = stackalloc char[16];
             if (value.TryFormat(scratch, out int written, default, CultureInfo.InvariantCulture))

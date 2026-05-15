@@ -381,3 +381,53 @@ Verification:
 - `git diff --cached --check` on scanner/UI/doc edits: pass.
 - Scanner banned-pattern scan for `ILocalizationService`, `Camera.main`, direct `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, and `.text =`: no matches.
 - `dotnet build` / rebuild: NOT RUN by explicit user order.
+
+## Follow-Up Hardening Pass 13
+
+What was wrong:
+- Scanner black-box dumps serialized the 300-entry ring in raw storage order. After wrap, timeline order was not oldest-to-newest.
+- `ScannerBlackBoxEntry` was stored in a NativeArray and serialized as telemetry evidence without an explicit layout declaration.
+- The physical scanner RT display cached successful lore-title lookups only; unresolved artifact hashes could trigger repeated title registry scans on progress repaints.
+
+What was done:
+- Added `_scannerBlackBoxRecordedCount` and ordered dump traversal in `ScannerTool`.
+- Added sequential layout declaration to `ScannerBlackBoxEntry`.
+- Added a versioned negative title-cache sentinel in `ToolDiegeticDisplayController`; misses retry only when `ScannableTarget.LoreTitleLookupVersion` changes.
+
+Cinematic Cheats used:
+- No new physical truth. The scanner still uses the controlled diegetic presentation path: low hardware falls back to percentage text, high tiers keep title/scramble visuals when the title exists.
+
+Exact Microseconds saved:
+- Verified exact microseconds: PENDING PROFILER.
+- Black-box normal path: one bounded integer increment per active scanner frame.
+- Black-box fault path: ordered traversal only during one-shot dump.
+- Unresolved artifact title path: repeated cold registry scans removed until title registry version changes.
+
+Verification:
+- `git diff --check` on scanner/UI/doc edits: pass, docs line-ending warnings only.
+- `git diff --cached --check` on scanner/UI/doc edits: pass.
+- Scanner banned-pattern scan for `ILocalizationService`, `Camera.main`, direct `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, and `.text =`: no matches.
+- `dotnet build` / rebuild: NOT RUN by explicit user order.
+
+## Follow-Up Hardening Pass 14
+
+What was wrong:
+- Scanner scientific metrics cached `HectonSurvivalSystem` on success, but an unavailable survival component could still trigger player-transform/component resolution on repeated active samples.
+
+What was done:
+- Added a 0.5s miss retry fence for survival-system resolution.
+- Reset the retry timer when scanner runtime-service caches are cleared for equip/spawn/despawn/player replacement.
+
+Cinematic Cheats used:
+- No physical simulation added. Missing survival physiology continues to use deterministic fallback water/body metrics until the real component is available.
+
+Exact Microseconds saved:
+- Verified exact microseconds: PENDING PROFILER.
+- Missing survival component retry cadence: active scanner sample frequency -> 2Hz.
+- Cached-success path remains one null check.
+
+Verification:
+- `git diff --check` on scanner/doc edits: pass, line-ending warnings only.
+- `git diff --cached --check` on scanner/doc edits: pass.
+- Scanner banned-pattern scan for `ILocalizationService`, `Camera.main`, direct `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, and `.text =`: no matches.
+- `dotnet build` / rebuild: NOT RUN by explicit user order.

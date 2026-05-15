@@ -551,3 +551,58 @@ Verification:
 - `rg` confirms no old segment-length clear fallback, old raw terrain-edge clamp pattern, or old `2.5f, 0.05f` segment fallback pair remains in the IK runtime/job scope.
 - `git diff --check` and `git diff --cached --check` on touched code/docs exit 0.
 - Runtime status remains pending until Unity Editor import, shader compile, play-mode behavior, GC, and profiler evidence exist.
+
+## 2026-05-15T03:47+04:00
+
+Status: PENDING VERIFICATION. Continued GPU upload ownership audit. No `dotnet` rebuild/compile, Unity import, or response-file probe was run.
+
+What was wrong:
+- `TryGetLeviathanBoneGraphicsBuffer()` treated allocation validity as data freshness.
+- Reseed/rebase and no-consumer upload skips could leave an old buffer allocation available to external consumers.
+- A getter-side forced upload would hide GPU bandwidth cost in a query path.
+
+What was done:
+- Added `_gpuBufferDataValid` to separate allocation health from fresh uploaded bone data.
+- Gated external buffer access on `_gpuUploadDirty == false` and `_gpuBufferDataValid == true`.
+- Invalidated the buffer freshness flag on seed, origin rebase, persistent-buffer disposal, graphics-buffer release, skinning clear, no-consumer upload skip, and material/global unbind.
+- Set the flag true only after `GraphicsBufferUploadUtility.UploadNativeArray()` completes.
+
+Cinematic cheats used:
+- None. Existing GPU matrix deformation and low-tier eight-matrix cheat are unchanged.
+
+Exact microseconds saved:
+- No frame-time saving claimed.
+- Added one boolean gate in an internal accessor.
+- Prevented stale GPU bone deformation after lifecycle/rebase/publish-state transitions.
+
+Verification:
+- Static grep over IK runtime/job/shader scope found no `math.sqrt`, `math.normalize`, managed array creation, `foreach`, `string.Format`, `.ToString()`, `Debug.Log`, Unity Physics casts, `SkinnedMeshRenderer`, `renderer.material`, `Camera.main`, `GlobalRegistry.Get`, `GameObject.Find`, or `FindObject`.
+- `rg` confirms `_gpuBufferDataValid` is invalidated on stale-buffer transitions and set true only after upload.
+- `git diff --check` and `git diff --cached --check` on touched code/docs exit 0.
+- Runtime status remains pending until Unity Editor import, shader compile, play-mode behavior, GC, and profiler evidence exist.
+
+## 2026-05-15T03:54+04:00
+
+Status: PENDING VERIFICATION. Continued lifecycle/blackbox audit. No `dotnet` rebuild/compile, Unity import, or response-file probe was run.
+
+What was wrong:
+- Forced lifecycle completion consumed a scheduled solver but did not advance `_frameIndex`.
+- Normal late-frame and origin-shift completion already advanced the frame index, creating inconsistent blackbox chronology across completion paths.
+
+What was done:
+- Added `AdvanceFrameIndex()` as the single runtime frame-index advancement helper.
+- Routed normal late-frame completion, origin-shift job finalization, and forced lifecycle completion through that helper.
+
+Cinematic cheats used:
+- None. This is telemetry/lifecycle correctness only.
+
+Exact microseconds saved:
+- No frame-time saving claimed.
+- Steady hot-path cost is unchanged; duplicated scalar assignment was centralized.
+- Prevented duplicate runtime frame IDs after disable/re-enable/rebind consumes an in-flight solver.
+
+Verification:
+- Static grep over IK runtime/job/shader scope found no `math.sqrt`, `math.normalize`, managed array creation, `foreach`, `string.Format`, `.ToString()`, `Debug.Log`, Unity Physics casts, `SkinnedMeshRenderer`, `renderer.material`, `Camera.main`, `GlobalRegistry.Get`, `GameObject.Find`, or `FindObject`.
+- `rg` confirms only `AdvanceFrameIndex()` writes `_frameIndex` and all scheduled-job completion paths call it.
+- `git diff --check` and `git diff --cached --check` on touched code/docs exit 0.
+- Runtime status remains pending until Unity Editor import, shader compile, play-mode behavior, GC, and profiler evidence exist.

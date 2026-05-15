@@ -439,3 +439,52 @@ Regression Model:
 - Memory: no buffer ownership changed.
 - Cadence: no Tick/FixedTick/Update/job schedule changed.
 - Correctness: AUP risk routing is now visible in summary output; runtime Unity evidence remains pending because rebuild/runtime verification is forbidden.
+
+## 2026-05-15 Coupling-Risk Routing And Static Regression Budgets
+
+What was wrong:
+- H-Phi risk integration was low, but compact summary did not show the files causing most coupling pressure.
+- Runtime `Find*` and legacy event publish counts had no first-class full-scan budget gates.
+- The remaining obvious runtime `Find*` hits belong to bootstrap/VR/root handoff owners, not H-Phi monitor.
+
+What was done:
+- Extended audit file rows with `SignalBusPush`, `GlobalRegistrySurface`, `EventPublish`, `StaticInstance`, and computed `CouplingRisk`.
+- Added `TopCouplingRiskFiles` to compact summary output.
+- Added full-source gates:
+  - `-MaxFindObjectCalls`
+  - `-MaxLegacyEventPublish`
+- Blocked these source-count gates under `-CoreGraphOnly`.
+- Honored user instruction: no `dotnet build`, no rebuild.
+
+Cinematic Cheats used:
+- None. Static audit tooling and owner-routing only.
+
+Exact Microseconds saved:
+- Runtime gameplay: 0 us measured; no gameplay code path changed.
+- Tooling: latest full gated summary completed in about 265.4 seconds. No runtime profiler claim.
+
+Compile Status:
+- Not run by explicit user order.
+- Static checks run:
+  - `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json`
+  - Parser guard: `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -MaxFindObjectCalls 5`
+  - `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0 -MaxFindObjectCalls 5 -MaxLegacyEventPublish 28 -MaxCoreAsmdefDebtReferences 25 -MaxGeneratedProjectDebtReferences 10 -MaxSourceBackedBridgeDebtReferences 14 -MaxSourceBackedCompileBridgeDebtReferences 8 -MaxProjectReferenceReplacementDebtReferences 6`
+  - `git diff --check -- Tools/Architecture/HectonPhiAudit.ps1`
+
+Phi Gain:
+- Previous current runtime narrow score: `0.010409098`.
+- Current runtime narrow score: `0.010497120`.
+- Previous current runtime risk-adjusted score: `0.000566586`.
+- Current runtime risk-adjusted score: `0.000574075`.
+- Risk integration moved `0.054431837 -> 0.054688783`.
+- Architectural purity moved `0.994699647 -> 0.996460177`.
+- Top coupling-risk files now route to owners: `Bootstrap/GameBootstrapper.cs`, `CrashTelemetryBuffer.cs`, `HectonFluidEngine.cs`, `UI/PauseMenuController.cs`, `Fauna/FaunaBrain.cs`.
+- Duplicate signal-name scan currently reports `6` duplicate names; zero-budget enforcement is not enabled.
+- Important: the score movement includes concurrent workspace changes and static model changes. It is not measured frame-time gain.
+
+Regression Model:
+- CPU: no gameplay code path changed.
+- GC: no gameplay allocation changed.
+- Memory: no buffer ownership changed.
+- Cadence: no Tick/FixedTick/Update/job schedule changed.
+- Correctness: analyzer output is broader and more actionable; static text evidence remains `PENDING VERIFICATION` for runtime behavior.

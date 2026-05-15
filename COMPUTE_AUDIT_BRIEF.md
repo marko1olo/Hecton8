@@ -6,8 +6,11 @@ Agent: COMPUTE_LOGISTICS_AUDITOR
 Full report: `Docs/Reports/COMPUTE_DOMINANCE_REPORT.md`
 Thread triage: `COMPUTE_THREAD_TRIAGE.md`
 Thread attribution: `COMPUTE_THREAD_ATTRIBUTION.md`
+Validation forensics: `COMPUTE_VALIDATION_FORENSICS.md`
+Thread value audit: `COMPUTE_THREAD_VALUE_AUDIT.md`
 Collision risk: `COMPUTE_COLLISION_RISK.md`
 Validation forensics: `COMPUTE_VALIDATION_FORENSICS.md`
+File burn attribution: `COMPUTE_FILE_BURN_ATTRIBUTION.md`
 Status/Rationale/Log:
 - `Docs/Tasks/Status_COMPUTE_LOGISTICS_AUDITOR.md`
 - `Docs/AgentLogs/Rationale_COMPUTE_LOGISTICS_AUDITOR.md`
@@ -43,14 +46,26 @@ Status/Rationale/Log:
 | Top-30 attribution patch calls | 14,015 |
 | Top-30 attribution unique patch targets | 1,647 |
 | Top-30 attribution patch churn | +354,203 / -75,895 lines |
-| Dirty paths observed, 03:24 snapshot | 45 |
-| Dirty script paths observed | 10 |
-| Hot attribution targets currently dirty | 1 |
+| Top-30 validation outputs inspected | 17,885 |
+| Top-30 non-zero validation output rate | 13.274% |
+| Top-100 value-audit tokens, 03:42 snapshot | 21,963,403,961 |
+| Top-100 share, 03:42 snapshot | 49.752% |
+| Top-100 `apply_patch` calls | 32,908 |
+| Top-100 `shell_command` calls | 212,479 |
+| Top-100 patch churn | +775,074 / -176,148 lines |
+| Top-100 code patch target hits | 30,172 |
+| Top-100 C++ patch target hits | 0 |
+| Dirty paths observed, 03:42 snapshot | 15 |
+| Dirty script paths observed | 3 |
+| Hot attribution targets currently dirty | 2 |
 | Top-30 validation outputs inspected | 17,885 |
 | Top-30 non-zero validation outputs | 2,374 |
 | Top-30 outputs with `error CS####` | 1,297 |
 | Top-30 compile-fail signals | 935 |
 | Top-30 test-success signals | 0 |
+| File burn attribution targets | 1,647 |
+| Code target weighted-token share | 78.073% |
+| Top weighted file target | `SargassumMicroFaunaBoids.cs`, 261,401,331 tokens |
 
 ## Evidence Rules
 
@@ -74,6 +89,12 @@ Thread triage has been written to `COMPUTE_THREAD_TRIAGE.md`. The valid label is
 
 Thread attribution has been written to `COMPUTE_THREAD_ATTRIBUTION.md`. It identifies visible patch targets from top-30 rollout JSONL. This is work-trace attribution, not final value proof.
 
-Collision snapshot has been written to `COMPUTE_COLLISION_RISK.md`. Current hot-target intersection is `Assets/_Project/Scripts/SpatialAudioManager.cs`.
+Validation forensics has been written to `COMPUTE_VALIDATION_FORENSICS.md`. Top-30 threads show validation effort, but also 2,374 non-zero validation outputs and 1,297 visible `error CS####` outputs in historical rollouts. That is not a clean pass.
+
+Thread value audit has been written to `COMPUTE_THREAD_VALUE_AUDIT.md`. Top-100 threads show real work traces: 32,908 patch calls and 30,172 code patch target hits. They do not show HECTON-8 C++ transfer evidence: 0 C++ patch target hits. The only honest C++ status from this audit is `NOT VERIFIED / NO PATCH EVIDENCE`.
+
+Collision snapshot has been refreshed. Current hot-target intersections are `Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs` and `Assets/_Project/Scripts/Construction/HabitatGraphManager.cs`.
 
 Validation forensics has been written to `COMPUTE_VALIDATION_FORENSICS.md`. Top-30 threads show real validation effort, but also 13.274% non-zero validation output rate and no reliable test-success signal.
+
+File burn attribution has been written to `COMPUTE_FILE_BURN_ATTRIBUTION.md`. It distributes top-30 thread tokens across patch targets by per-thread patch-hit share. This is probabilistic work-trace attribution, not final value proof.

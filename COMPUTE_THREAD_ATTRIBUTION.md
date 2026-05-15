@@ -4,6 +4,7 @@ Status: AUDIT COMPLETE
 Snapshot: 2026-05-15T03:21:51+04:00
 Source: `.codex/state_5.sqlite` + top-30 rollout JSONL files
 Method: read-only parse of `custom_tool_call` / `function_call` payloads
+Top-100 value continuation: `COMPUTE_THREAD_VALUE_AUDIT.md`
 
 ## Boundary
 

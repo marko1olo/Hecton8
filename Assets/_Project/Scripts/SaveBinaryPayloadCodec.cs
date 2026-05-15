@@ -484,9 +484,21 @@ namespace Hecton8.SaveSystem
                 || !reader.ReadStruct(out data.environmentalStrain)
                 || !ReadEcosystemState(ref reader, data.version, out data.ecosystemState)
                 || !ReadExternalScavengerSites(ref reader, data.version, out data.externalScavengerSites)
-                || !ReadStringFloatDictionary(ref reader, out data.toolDurabilityMap)
-                || !ReadStringBoolDictionary(ref reader, out data.toolBrokenMap)
-                || !ReadIntHashSet(ref reader, out data.discoveredBiomeIds)
+                || !ReadStringFloatDictionary(
+                    ref reader,
+                    out data.toolDurabilityMap,
+                    SaveData.MaxToolDurabilityRecords,
+                    nameof(data.toolDurabilityMap))
+                || !ReadStringBoolDictionary(
+                    ref reader,
+                    out data.toolBrokenMap,
+                    SaveData.MaxToolDurabilityRecords,
+                    nameof(data.toolBrokenMap))
+                || !ReadIntHashSet(
+                    ref reader,
+                    out data.discoveredBiomeIds,
+                    SaveData.MaxLegacyDiscoveredBiomeIds,
+                    nameof(data.discoveredBiomeIds))
                 || !reader.ReadStructArrayBounded(
                     out data.discoveredBiomeBitWords,
                     BiomeDiscoveryBitMask.WordCount,
@@ -500,7 +512,11 @@ namespace Hecton8.SaveSystem
                     nameof(data.narrativeDiscoveryIds))
                 || !reader.ReadInt(out data.narrativeDepthTier)
                 || !ReadNarrativeAupTriggeredMask(ref reader, data.version, out data.narrativeAupTriggeredMask)
-                || !ReadStringList(ref reader, out data.audioLogDiscoveredIds)
+                || !ReadStringList(
+                    ref reader,
+                    out data.audioLogDiscoveredIds,
+                    SaveData.MaxLegacyAudioLogDiscoveredIds,
+                    nameof(data.audioLogDiscoveredIds))
                 || !ReadAudioLogDiscoveryBitWords(ref reader, data.version, data)
                 || !ReadEncryptedAudioLogFragments(ref reader, data.version, data)
                 || !reader.ReadStructArrayBounded(
@@ -508,35 +524,79 @@ namespace Hecton8.SaveSystem
                     IndustrialLoreBitMask.WordCount,
                     nameof(data.industrialLoreUnlockWords))
                 || !ReadDataArchaeology(ref reader, data.version, data)
-                || !ReadStringList(ref reader, out data.questActiveIds)
-                || !ReadStringList(ref reader, out data.questCompletedIds)
+                || !ReadStringList(
+                    ref reader,
+                    out data.questActiveIds,
+                    SaveData.MaxLegacyQuestIds,
+                    nameof(data.questActiveIds))
+                || !ReadStringList(
+                    ref reader,
+                    out data.questCompletedIds,
+                    SaveData.MaxLegacyQuestIds,
+                    nameof(data.questCompletedIds))
                 || !reader.ReadBool(out data.atlasSignalDetected)
                 || !reader.ReadFloat(out data.atlasSignalPulseTimer)
                 || !reader.ReadInt(out data.atlasSignalRevealStage)
                 || !ReadSuitUpgradeMask(ref reader, data.version, out data.suitUpgradeMask)
-                || !ReadStringList(ref reader, out data.suitInstalledUpgradeIds)
-                || !ReadStringList(ref reader, out data.suitUnlockedBlueprintIds)
-                || !ReadStringList(ref reader, out data.suitBrokenUpgradeIds)
+                || !ReadStringList(
+                    ref reader,
+                    out data.suitInstalledUpgradeIds,
+                    SaveData.MaxSuitUpgradeIds,
+                    nameof(data.suitInstalledUpgradeIds))
+                || !ReadStringList(
+                    ref reader,
+                    out data.suitUnlockedBlueprintIds,
+                    SaveData.MaxSuitUpgradeIds,
+                    nameof(data.suitUnlockedBlueprintIds))
+                || !ReadStringList(
+                    ref reader,
+                    out data.suitBrokenUpgradeIds,
+                    SaveData.MaxSuitUpgradeIds,
+                    nameof(data.suitBrokenUpgradeIds))
                 || !reader.ReadString(out data.playerExpressionProfileId)
                 || !reader.ReadInt(out data.atlas6PlayerStatus)
                 || !reader.ReadInt(out data.atlas6BarterCount)
                 || !reader.ReadBool(out data.atlas6DirectiveConflictTriggered)
-                || !ReadStringList(ref reader, out data.corporateReceivedOrderIds)
-                || !ReadStringList(ref reader, out data.corporatePendingOrderIds)
-                || !ReadFloatList(ref reader, out data.corporatePendingOrderTimers)
+                || !ReadStringList(
+                    ref reader,
+                    out data.corporateReceivedOrderIds,
+                    SaveData.MaxCorporateOrderIds,
+                    nameof(data.corporateReceivedOrderIds))
+                || !ReadStringList(
+                    ref reader,
+                    out data.corporatePendingOrderIds,
+                    SaveData.MaxCorporateOrderIds,
+                    nameof(data.corporatePendingOrderIds))
+                || !ReadFloatList(
+                    ref reader,
+                    out data.corporatePendingOrderTimers,
+                    SaveData.MaxCorporateOrderIds,
+                    nameof(data.corporatePendingOrderTimers))
                 || !reader.ReadFloat(out data.firstHourSessionTime)
                 || !reader.ReadInt(out data.firstHourMilestones)
                 || !reader.ReadInt(out data.firstHourGuidanceFlags)
                 || !reader.ReadInt(out data.endingChoice)
                 || !reader.ReadBool(out data.endingComplete)
                 || !reader.ReadBool(out data.endingConditionMet)
-                || !ReadStringList(ref reader, out data.missionActiveIds)
-                || !ReadStringList(ref reader, out data.missionCompletedIds)
+                || !ReadStringList(
+                    ref reader,
+                    out data.missionActiveIds,
+                    SaveData.MaxMissionIds,
+                    nameof(data.missionActiveIds))
+                || !ReadStringList(
+                    ref reader,
+                    out data.missionCompletedIds,
+                    SaveData.MaxMissionIds,
+                    nameof(data.missionCompletedIds))
                 || !reader.ReadInt(out data.LODQualityPreset)
                 || !reader.ReadBool(out data.DynamicResolutionEnabled)
                 || !ReadRadiationGrid(ref reader, data.version, data)
                 || !ReadRtgDecay(ref reader, data.version, data)
-                || !ReadStringStringDictionary(ref reader, out data.CustomModData)
+                || !ReadStringStringDictionary(
+                    ref reader,
+                    out data.CustomModData,
+                    SaveData.MaxCustomModDataEntries,
+                    nameof(data.CustomModData))
                 || !ReadFirstHourLockedDtos(ref reader, data.version, data))
             {
                 return false;
@@ -1628,6 +1688,14 @@ namespace Hecton8.SaveSystem
             upperBound = Math.Min(upperBound, values1 != null ? values1.Length : 0);
             upperBound = Math.Min(upperBound, values2 != null ? values2.Length : 0);
             return Math.Clamp(count, 0, upperBound);
+        }
+
+        private static int ClampPairedListCount<T0, T1>(List<T0> values0, List<T1> values1, int maxCount)
+        {
+            int upperBound = Math.Max(maxCount, 0);
+            upperBound = Math.Min(upperBound, values0 != null ? values0.Count : 0);
+            upperBound = Math.Min(upperBound, values1 != null ? values1.Count : 0);
+            return upperBound;
         }
 
         private static bool WriteProceduralFaunaStateArray(ref BufferWriter writer, ProceduralFaunaStateDTO[] values, int count)
@@ -3177,16 +3245,70 @@ namespace Hecton8.SaveSystem
             return true;
         }
 
+        private static int ClampListCount<T>(List<T> values, int maxCount)
+        {
+            return values != null
+                ? Math.Clamp(values.Count, 0, Math.Max(maxCount, 0))
+                : NullCollectionCount;
+        }
+
+        private static int ClampDictionaryCount<TKey, TValue>(Dictionary<TKey, TValue> values, int maxCount)
+        {
+            return values != null
+                ? Math.Clamp(values.Count, 0, Math.Max(maxCount, 0))
+                : NullCollectionCount;
+        }
+
+        private static int ClampHashSetCount<T>(HashSet<T> values, int maxCount)
+        {
+            return values != null
+                ? Math.Clamp(values.Count, 0, Math.Max(maxCount, 0))
+                : NullCollectionCount;
+        }
+
+        private static bool ReadCollectionCount(
+            ref BufferReader reader,
+            out int count,
+            int maxCount,
+            string collectionName)
+        {
+            count = 0;
+            if (!reader.ReadInt(out count))
+                return false;
+
+            if (count == NullCollectionCount)
+                return true;
+
+            if (count < 0)
+            {
+                reader.SetError(collectionName + " length is negative.");
+                return false;
+            }
+
+            if (count > Math.Max(maxCount, 0))
+            {
+                reader.SetError(collectionName + " length exceeds the supported range.");
+                return false;
+            }
+
+            return true;
+        }
+
         private static bool WriteStringList(ref BufferWriter writer, List<string> values)
         {
-            int count = values != null ? values.Count : NullCollectionCount;
+            return WriteStringList(ref writer, values, int.MaxValue);
+        }
+
+        private static bool WriteStringList(ref BufferWriter writer, List<string> values, int maxCount)
+        {
+            int count = ClampListCount(values, maxCount);
             if (!writer.WriteInt(count))
                 return false;
 
             if (values == null)
                 return true;
 
-            for (int i = 0; i < values.Count; i++)
+            for (int i = 0; i < count; i++)
             {
                 if (!writer.WriteString(values[i]))
                     return false;
@@ -3197,20 +3319,23 @@ namespace Hecton8.SaveSystem
 
         private static bool ReadStringList(ref BufferReader reader, out List<string> values)
         {
+            return ReadStringList(ref reader, out values, int.MaxValue, "String list");
+        }
+
+        private static bool ReadStringList(
+            ref BufferReader reader,
+            out List<string> values,
+            int maxCount,
+            string collectionName)
+        {
             values = null;
-            if (!reader.ReadInt(out int count))
+            if (!ReadCollectionCount(ref reader, out int count, maxCount, collectionName))
                 return false;
 
             if (count == NullCollectionCount)
                 return true;
 
-            if (count < 0)
-            {
-                reader.SetError("Collection length is negative.");
-                return false;
-            }
-
-            if (!reader.CanConsumeCollectionItems(count, SerializedStringHeaderBytes, "String list"))
+            if (!reader.CanConsumeCollectionItems(count, SerializedStringHeaderBytes, collectionName))
                 return false;
 
             values = new List<string>(count);
@@ -3227,14 +3352,19 @@ namespace Hecton8.SaveSystem
 
         private static bool WriteFloatList(ref BufferWriter writer, List<float> values)
         {
-            int count = values != null ? values.Count : NullCollectionCount;
+            return WriteFloatList(ref writer, values, int.MaxValue);
+        }
+
+        private static bool WriteFloatList(ref BufferWriter writer, List<float> values, int maxCount)
+        {
+            int count = ClampListCount(values, maxCount);
             if (!writer.WriteInt(count))
                 return false;
 
             if (values == null)
                 return true;
 
-            for (int i = 0; i < values.Count; i++)
+            for (int i = 0; i < count; i++)
             {
                 if (!writer.WriteFloat(values[i]))
                     return false;
@@ -3245,20 +3375,23 @@ namespace Hecton8.SaveSystem
 
         private static bool ReadFloatList(ref BufferReader reader, out List<float> values)
         {
+            return ReadFloatList(ref reader, out values, int.MaxValue, "Float list");
+        }
+
+        private static bool ReadFloatList(
+            ref BufferReader reader,
+            out List<float> values,
+            int maxCount,
+            string collectionName)
+        {
             values = null;
-            if (!reader.ReadInt(out int count))
+            if (!ReadCollectionCount(ref reader, out int count, maxCount, collectionName))
                 return false;
 
             if (count == NullCollectionCount)
                 return true;
 
-            if (count < 0)
-            {
-                reader.SetError("Collection length is negative.");
-                return false;
-            }
-
-            if (!reader.CanConsumeCollectionItems(count, SerializedFloatBytes, "Float list"))
+            if (!reader.CanConsumeCollectionItems(count, SerializedFloatBytes, collectionName))
                 return false;
 
             values = new List<float>(count);
@@ -3275,19 +3408,30 @@ namespace Hecton8.SaveSystem
 
         private static bool WriteStringFloatDictionary(ref BufferWriter writer, Dictionary<string, float> values)
         {
-            int count = values != null ? values.Count : NullCollectionCount;
+            return WriteStringFloatDictionary(ref writer, values, int.MaxValue);
+        }
+
+        private static bool WriteStringFloatDictionary(
+            ref BufferWriter writer,
+            Dictionary<string, float> values,
+            int maxCount)
+        {
+            int count = ClampDictionaryCount(values, maxCount);
             if (!writer.WriteInt(count))
                 return false;
 
             if (values == null)
                 return true;
 
+            int written = 0;
             Dictionary<string, float>.Enumerator enumerator = values.GetEnumerator();
-            while (enumerator.MoveNext())
+            while (written < count && enumerator.MoveNext())
             {
                 KeyValuePair<string, float> pair = enumerator.Current;
                 if (!writer.WriteString(pair.Key) || !writer.WriteFloat(pair.Value))
                     return false;
+
+                written++;
             }
 
             enumerator.Dispose();
@@ -3296,20 +3440,23 @@ namespace Hecton8.SaveSystem
 
         private static bool ReadStringFloatDictionary(ref BufferReader reader, out Dictionary<string, float> values)
         {
+            return ReadStringFloatDictionary(ref reader, out values, int.MaxValue, "String-float dictionary");
+        }
+
+        private static bool ReadStringFloatDictionary(
+            ref BufferReader reader,
+            out Dictionary<string, float> values,
+            int maxCount,
+            string collectionName)
+        {
             values = null;
-            if (!reader.ReadInt(out int count))
+            if (!ReadCollectionCount(ref reader, out int count, maxCount, collectionName))
                 return false;
 
             if (count == NullCollectionCount)
                 return true;
 
-            if (count < 0)
-            {
-                reader.SetError("Collection length is negative.");
-                return false;
-            }
-
-            if (!reader.CanConsumeCollectionItems(count, SerializedStringHeaderBytes + SerializedFloatBytes, "String-float dictionary"))
+            if (!reader.CanConsumeCollectionItems(count, SerializedStringHeaderBytes + SerializedFloatBytes, collectionName))
                 return false;
 
             values = new Dictionary<string, float>(count);
@@ -3326,19 +3473,30 @@ namespace Hecton8.SaveSystem
 
         private static bool WriteStringBoolDictionary(ref BufferWriter writer, Dictionary<string, bool> values)
         {
-            int count = values != null ? values.Count : NullCollectionCount;
+            return WriteStringBoolDictionary(ref writer, values, int.MaxValue);
+        }
+
+        private static bool WriteStringBoolDictionary(
+            ref BufferWriter writer,
+            Dictionary<string, bool> values,
+            int maxCount)
+        {
+            int count = ClampDictionaryCount(values, maxCount);
             if (!writer.WriteInt(count))
                 return false;
 
             if (values == null)
                 return true;
 
+            int written = 0;
             Dictionary<string, bool>.Enumerator enumerator = values.GetEnumerator();
-            while (enumerator.MoveNext())
+            while (written < count && enumerator.MoveNext())
             {
                 KeyValuePair<string, bool> pair = enumerator.Current;
                 if (!writer.WriteString(pair.Key) || !writer.WriteBool(pair.Value))
                     return false;
+
+                written++;
             }
 
             enumerator.Dispose();
@@ -3347,20 +3505,23 @@ namespace Hecton8.SaveSystem
 
         private static bool ReadStringBoolDictionary(ref BufferReader reader, out Dictionary<string, bool> values)
         {
+            return ReadStringBoolDictionary(ref reader, out values, int.MaxValue, "String-bool dictionary");
+        }
+
+        private static bool ReadStringBoolDictionary(
+            ref BufferReader reader,
+            out Dictionary<string, bool> values,
+            int maxCount,
+            string collectionName)
+        {
             values = null;
-            if (!reader.ReadInt(out int count))
+            if (!ReadCollectionCount(ref reader, out int count, maxCount, collectionName))
                 return false;
 
             if (count == NullCollectionCount)
                 return true;
 
-            if (count < 0)
-            {
-                reader.SetError("Collection length is negative.");
-                return false;
-            }
-
-            if (!reader.CanConsumeCollectionItems(count, SerializedStringHeaderBytes + SerializedBoolBytes, "String-bool dictionary"))
+            if (!reader.CanConsumeCollectionItems(count, SerializedStringHeaderBytes + SerializedBoolBytes, collectionName))
                 return false;
 
             values = new Dictionary<string, bool>(count);
@@ -3377,19 +3538,30 @@ namespace Hecton8.SaveSystem
 
         private static bool WriteStringStringDictionary(ref BufferWriter writer, Dictionary<string, string> values)
         {
-            int count = values != null ? values.Count : NullCollectionCount;
+            return WriteStringStringDictionary(ref writer, values, int.MaxValue);
+        }
+
+        private static bool WriteStringStringDictionary(
+            ref BufferWriter writer,
+            Dictionary<string, string> values,
+            int maxCount)
+        {
+            int count = ClampDictionaryCount(values, maxCount);
             if (!writer.WriteInt(count))
                 return false;
 
             if (values == null)
                 return true;
 
+            int written = 0;
             Dictionary<string, string>.Enumerator enumerator = values.GetEnumerator();
-            while (enumerator.MoveNext())
+            while (written < count && enumerator.MoveNext())
             {
                 KeyValuePair<string, string> pair = enumerator.Current;
                 if (!writer.WriteString(pair.Key) || !writer.WriteString(pair.Value))
                     return false;
+
+                written++;
             }
 
             enumerator.Dispose();
@@ -3398,20 +3570,23 @@ namespace Hecton8.SaveSystem
 
         private static bool ReadStringStringDictionary(ref BufferReader reader, out Dictionary<string, string> values)
         {
+            return ReadStringStringDictionary(ref reader, out values, int.MaxValue, "String-string dictionary");
+        }
+
+        private static bool ReadStringStringDictionary(
+            ref BufferReader reader,
+            out Dictionary<string, string> values,
+            int maxCount,
+            string collectionName)
+        {
             values = null;
-            if (!reader.ReadInt(out int count))
+            if (!ReadCollectionCount(ref reader, out int count, maxCount, collectionName))
                 return false;
 
             if (count == NullCollectionCount)
                 return true;
 
-            if (count < 0)
-            {
-                reader.SetError("Collection length is negative.");
-                return false;
-            }
-
-            if (!reader.CanConsumeCollectionItems(count, SerializedStringHeaderBytes * 2, "String-string dictionary"))
+            if (!reader.CanConsumeCollectionItems(count, SerializedStringHeaderBytes * 2, collectionName))
                 return false;
 
             values = new Dictionary<string, string>(count);
@@ -3428,18 +3603,26 @@ namespace Hecton8.SaveSystem
 
         private static bool WriteIntHashSet(ref BufferWriter writer, HashSet<int> values)
         {
-            int count = values != null ? values.Count : NullCollectionCount;
+            return WriteIntHashSet(ref writer, values, int.MaxValue);
+        }
+
+        private static bool WriteIntHashSet(ref BufferWriter writer, HashSet<int> values, int maxCount)
+        {
+            int count = ClampHashSetCount(values, maxCount);
             if (!writer.WriteInt(count))
                 return false;
 
             if (values == null)
                 return true;
 
+            int written = 0;
             HashSet<int>.Enumerator enumerator = values.GetEnumerator();
-            while (enumerator.MoveNext())
+            while (written < count && enumerator.MoveNext())
             {
                 if (!writer.WriteInt(enumerator.Current))
                     return false;
+
+                written++;
             }
 
             enumerator.Dispose();
@@ -3448,20 +3631,23 @@ namespace Hecton8.SaveSystem
 
         private static bool ReadIntHashSet(ref BufferReader reader, out HashSet<int> values)
         {
+            return ReadIntHashSet(ref reader, out values, int.MaxValue, "Int hash set");
+        }
+
+        private static bool ReadIntHashSet(
+            ref BufferReader reader,
+            out HashSet<int> values,
+            int maxCount,
+            string collectionName)
+        {
             values = null;
-            if (!reader.ReadInt(out int count))
+            if (!ReadCollectionCount(ref reader, out int count, maxCount, collectionName))
                 return false;
 
             if (count == NullCollectionCount)
                 return true;
 
-            if (count < 0)
-            {
-                reader.SetError("Collection length is negative.");
-                return false;
-            }
-
-            if (!reader.CanConsumeCollectionItems(count, SerializedIntBytes, "Int hash set"))
+            if (!reader.CanConsumeCollectionItems(count, SerializedIntBytes, collectionName))
                 return false;
 
             values = new HashSet<int>(count);

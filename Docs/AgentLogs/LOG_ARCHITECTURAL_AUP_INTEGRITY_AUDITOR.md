@@ -746,3 +746,32 @@ Verification:
 
 Integrator notes:
 - Failure-path file listing is source-tool evidence only; Unity Console/import, PlayMode, profiler, and GCMonitor proof remain pending.
+
+## 2026-05-15 - Loop 30 H-Phi AUP Budget Summary Metadata
+
+What was wrong:
+- Passing H-Phi summary output did not explicitly preserve the AUP precision budget state.
+
+What was done:
+- Added `Budgets.AupPrecisionRisk` to `Tools/Architecture/HectonPhiAudit.ps1` result and summary output.
+- Budget metadata now records `Enabled`, `Max`, `Actual`, `Passed`, and `EvidenceClass=STATIC_SOURCE_FULL_SCAN`.
+
+Cinematic Cheats used:
+- Static tooling only. Runtime simulation and rendering are unchanged.
+- Low-tier machines get compact CI metadata without Unity launch or rebuild; High/Ultra pipelines get explicit AUP drift-gate evidence before visual-overkill systems depend on stable anchors.
+
+Exact Microseconds saved:
+- Gameplay frame time: 0 us.
+- Static full source run completed in 116.463 seconds with the zero-risk budget enabled.
+
+Verification:
+- PowerShell parser reports `PARSE_OK`.
+- Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0` completed and reported `RuntimeHPhiRisk=0.00057069`, `RuntimeHPhiNarrow=0.010493115`, `AupPrecisionIntegrity=1`, `AupPrecisionSafe=363`, `AupPrecisionRisk=0`, `BudgetEnabled=true`, `BudgetMax=0`, `BudgetActual=0`, `BudgetPassed=true`, `TopAupPrecisionRiskFiles=0`, `RuntimeFiles=1276`, `RuntimeLines=860419`.
+- `-CoreGraphOnly -MaxAupPrecisionRisk 0` still fails fast with the expected source-scan requirement.
+- Qualified AUP H-Phi risk scan returns `NO_MATCHES`.
+- Direct committed-offset leak scan returns `NO_MATCHES`.
+- Mandatory AUP regex scan re-run; residual hits remain broad `universe` text and known final-cast fluid/scatter/shader payload names.
+- No `dotnet build` or rebuild was run because the user explicitly forbade rebuilds.
+
+Integrator notes:
+- Summary budget metadata is static-source evidence only. Unity Console/import, PlayMode, profiler, and GCMonitor proof remain pending.

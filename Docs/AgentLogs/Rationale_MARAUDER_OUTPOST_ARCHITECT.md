@@ -461,3 +461,17 @@ Solution: Verification stayed source-only: targeted AUP magnitude guard scan, fo
 Rejected Alternatives: Running response-file compiles through `dotnet` was rejected because it violates the active user instruction.
 Scalability potential: Static AUP input proof improved; runtime console/profiler proof remains pending.
 Hardware Impact: Verification only.
+
+## LOOP 27 ORIGIN-RELATIVE HEIGHTMAP OVERFLOW GUARD
+
+Problem: Loop 25 proved `TerrainPosition` and `TerrainSize` are finite, but finite operands can still overflow when combined. `SampleHeight` subtracts terrain origin from shell positions and returns `TerrainPosition.y + sample * heightScale`; a finite-but-extreme payload could still produce Infinity.
+Solution: Pass the generation origin into `IsValidHeightmapPayload`, require finite origin, finite `originMeters - terrainPosition`, and finite `terrainPosition.y + terrainSize.y`, then repeat the same final guard in `MarauderOutpostMatrixExtractionJob.hasHeightmap`.
+Rejected Alternatives: Hard-capping all MapMagic terrain extents to an arbitrary Habitat range was rejected because it could reject valid streamed terrain layouts outside this service's ownership. Clamping terrain metadata was rejected because it would desynchronize Habitat shell placement from the terrain authority.
+Scalability potential: Low uses the deterministic fallback slab when terrain metadata cannot be combined safely with the local origin. Middle/High/Ultra still use height-following stilts and shell grounding for valid payloads, preserving visual richness without trusting corrupt spatial math.
+Hardware Impact: Cold generation cost is a few scalar/vector finite checks; estimated below 0.1 us per extraction setup on i3/MX350. Corrupt payloads avoid NaN/Infinity matrix generation, GPU upload fallout, and proxy correction work. Steady Tick/Render remains 0 B/frame.
+
+Problem: The active instruction still forbids dotnet rebuilds.
+Solution: Verification stayed source-only: targeted heightmap overflow guard scan, forbidden-pattern audit, scoped H-Phi counts, `git diff --check`, and `HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json`.
+Rejected Alternatives: Running response-file compiles through `dotnet` was rejected because it violates the active user instruction.
+Scalability potential: Static terrain-ingress proof improved without extra buffers, registries, signals, shell GameObjects, or render mutations.
+Hardware Impact: Verification only. Core graph summary still reports `CoreAsmdefDebtReferenceCount=25` and `GeneratedProjectDebtReferenceCount=10`, both project-level debts outside this outpost edit.

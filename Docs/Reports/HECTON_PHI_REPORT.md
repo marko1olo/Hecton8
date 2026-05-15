@@ -809,3 +809,83 @@ Core graph audit:
 Verification:
 - `Tools/Architecture/HectonPhiAudit.ps1 -Summary -CoreGraphOnly`: completed at local timestamp `2026-05-15 03:40:33 +04:00`.
 - Improvement is static graph evidence only. Runtime H-Phi remains `PENDING VERIFICATION`.
+
+## 2026-05-15 Live Addendum 12
+
+Evidence class: `STATIC_SOURCE`.
+
+User constraint for this pass: no `dotnet build` and no rebuild.
+
+What changed:
+- Added `TopCouplingRiskFiles` to compact H-Phi summary output.
+- Added full-source budget gates for runtime `Find*` and legacy event publish counts.
+- No gameplay code, buffer ownership, tick cadence, job scheduling, signal dispatch, scene, prefab, or Unity project setting was changed.
+
+Current runtime static scores:
+
+| Coefficient | Score |
+|---|---:|
+| Narrow integration | 1.000000000 |
+| Risk-adjusted integration | 0.054688783 |
+| Architectural purity | 0.996460177 |
+| Data sovereignty | 0.020903010 |
+| Memory alignment | 0.503966155 |
+| Binary-safe ratio | 0.018508726 |
+| AUP precision integrity | 1.000000000 |
+| H-Phi runtime static narrow | 0.010497120 |
+| H-Phi runtime static risk-adjusted | 0.000574075 |
+
+Current runtime counts:
+
+| Counter | Value |
+|---|---:|
+| Runtime C# files | 1,276 |
+| Runtime source lines | 861,295 |
+| Typed/queued signal push surface | 333 |
+| Legacy/direct event publish surface | 28 |
+| `GlobalRegistry.` surface refs | 5,149 |
+| Unity `Update`/`LateUpdate`/`FixedUpdate` method declarations | 2 |
+| DataVault access surface refs | 150 |
+| `NativeArray<T>` refs | 7,026 |
+| Struct declarations | 1,891 |
+| `StructLayout(...)` attrs | 953 |
+| Runtime `Find*` calls | 5 |
+| Runtime `GetComponent*` calls | 541 |
+| `.Dispose(...)` calls | 1,251 |
+| AUP precision safe refs | 363 |
+| AUP precision risk refs | 0 |
+
+Budget gates:
+
+| Gate | Budget | Current | Status |
+|---|---:|---:|---|
+| AUP precision risk | 0 | 0 | PASS |
+| Runtime `Find*` calls | 5 | 5 | PASS |
+| Legacy event publish | 28 | 28 | PASS |
+| Core asmdef debt refs | 25 | 25 | PASS |
+| Generated project debt refs | 10 | 10 | PASS |
+| Source-backed bridge debt refs | 14 | 14 | PASS |
+| Source-backed compile bridge debt refs | 8 | 8 | PASS |
+| Project-reference replacement debt refs | 6 | 6 | PASS |
+
+Top coupling-risk files:
+
+| File | CouplingRisk | Registry | GetComponent | Find | Event |
+|---|---:|---:|---:|---:|---:|
+| `Bootstrap/GameBootstrapper.cs` | 224 | 218 | 3 | 3 | 0 |
+| `CrashTelemetryBuffer.cs` | 49 | 49 | 0 | 0 | 0 |
+| `HectonFluidEngine.cs` | 47 | 46 | 0 | 0 | 0 |
+| `UI/PauseMenuController.cs` | 47 | 26 | 21 | 0 | 0 |
+| `Fauna/FaunaBrain.cs` | 41 | 37 | 4 | 0 | 0 |
+
+Residual bottlenecks:
+- Data Sovereignty remains the hard floor: `150 / (150 + 7,026) = 0.020903010`.
+- Duplicate signal-name scan currently reports `6` duplicate names; this is a routing warning until signal/integrator owners reconcile names.
+- Top coupling files are owner-routed. Editing them blindly from H-Phi monitor would cross domain boundaries.
+- Runtime verification remains absent by user order.
+
+Verification:
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json`: completed at local timestamp `2026-05-15 03:47:34 +04:00`.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -MaxFindObjectCalls 5`: parser guard correctly rejected source-count budget under graph-only mode.
+- `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0 -MaxFindObjectCalls 5 -MaxLegacyEventPublish 28 -MaxCoreAsmdefDebtReferences 25 -MaxGeneratedProjectDebtReferences 10 -MaxSourceBackedBridgeDebtReferences 14 -MaxSourceBackedCompileBridgeDebtReferences 8 -MaxProjectReferenceReplacementDebtReferences 6`: completed at local timestamp `2026-05-15 03:52:11 +04:00`.
+- Runtime H-Phi remains `PENDING VERIFICATION` until Unity Console, PlayMode, Profiler, and GCMonitor evidence exist.

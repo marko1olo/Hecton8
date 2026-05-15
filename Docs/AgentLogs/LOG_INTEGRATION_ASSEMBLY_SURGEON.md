@@ -377,3 +377,37 @@ Verification:
 Residual risk:
 - This is not fresh compile proof. `Fresh19` remains the latest compile artifact on disk.
 - Generated `Hecton8.Core.csproj` still lists stale project references until Unity regenerates project files or a compile-enabled lane validates generated-project cleanup.
+
+## 2026-05-15 - Replacement Bridge Exact-Use Correction
+
+What was wrong:
+- The previous replacement-lane scan kept `ShapesRuntime` and `VolumetricLightBeam` from broad text hits.
+- Exact package-surface usage did not exist in `Assets/_Project/Scripts`; the hits were generic words/comments or first-party custom volumetric renderer names.
+
+What was done:
+- Removed `ShapesRuntime` and `VolumetricLightBeam` from the Core project-reference replacement lane in `Directory.Build.targets`.
+- Updated `Docs/ARCHITECTURE/HECTON_PHI_STATIC_METRIC.md` with the new Core graph budget command.
+- Updated status/rationale with the stricter evidence boundary and new debt counts.
+
+Cinematic Cheats used:
+- Static graph debt surgery only.
+- No runtime simulation, rendering algorithm, gameplay path, package source, prefab, or generated `.csproj` was edited.
+
+Exact Microseconds saved:
+- Runtime frame time saved: 0 us.
+- Build time saved: not claimed because no dotnet command was run in this pass.
+- Static graph impact: source-backed bridge refs reduced from 27 to 25, total bridge debt from 16 to 14, and project-reference replacement debt from 8 to 6.
+
+Verification:
+- Evidence class: STATIC_SOURCE + STATIC_DOC.
+- No `dotnet build`, `dotnet rebuild`, or `dotnet msbuild` command was run.
+- Exact source scan: `NO_EXACT_SHAPES_OR_VLB_CORE_SOURCE_HITS`.
+- Core graph budget pass: 43 Core asmdef refs, 25 asmdef debt refs, 12 generated project refs, 10 generated-project debt refs, 25 source-backed bridge refs, 14 total bridge debt refs, 8 compile-bridge debt refs, 6 replacement debt refs.
+- Parse pass: `STATIC_PARSE_OK`.
+- Removed-reference scan: `REMOVED_REPLACEMENT_REFS_ABSENT`.
+- Full static AUP gate: `AupPrecisionSafe=363`, `AupPrecisionRisk=0` under `-MaxAupPrecisionRisk 0`.
+- Expected failure paths: `EXPECTED_TOTAL_BRIDGE_BUDGET_FAIL_PATH_OK` at total bridge budget 13 and `EXPECTED_REPLACEMENT_BRIDGE_BUDGET_FAIL_PATH_OK` at replacement budget 5.
+
+Residual risk:
+- This is not fresh compile proof. `Fresh19` remains the latest compile artifact on disk.
+- Generated `Hecton8.Core.csproj` still lists stale project references until Unity regenerates project files or a compile-enabled lane validates generated-project cleanup.

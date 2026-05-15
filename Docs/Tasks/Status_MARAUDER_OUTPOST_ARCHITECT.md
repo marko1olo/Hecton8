@@ -204,9 +204,17 @@ State: PENDING VERIFICATION
 - [x] Re-ran source-only audits. DOD: targeted AUP cap scan confirms direct, accumulated, and pending-apply guards; forbidden-pattern audit stayed clean; scoped H-Phi counts remain unchanged. Alternative rejected: `dotnet` rebuild, forbidden by user. Estimate: verification only.
 - [ ] Compile proof [NOT RUN BY USER REQUEST]. DOD: no `dotnet` rebuild or response-file compile was executed in Loop 26. Alternative rejected: violating explicit "do not make dotnet rebuilds". Estimate: no runtime cost.
 
+### Loop 27 - Origin-Relative Heightmap Overflow Guard
+
+- [x] Re-read persisted state and re-audited height sampling after the finite payload gate. DOD: compared service validation and `SampleHeight` math against finite-but-overflowing terrain/origin combinations. Alternative rejected: broad terrain ownership changes outside Habitat/Outposts. Estimate: source audit only.
+- [x] Hardened service-side heightmap overflow acceptance. DOD: `IsValidHeightmapPayload` now receives the generation origin and requires finite origin, finite origin-to-terrain delta, and finite terrain top height before a payload is accepted. Alternative rejected: arbitrary terrain extent caps or clamping MapMagic-owned coordinates. Estimate: cold generation validation only.
+- [x] Hardened the Burst extraction predicate. DOD: `MarauderOutpostMatrixExtractionJob.hasHeightmap` repeats finite origin, finite origin-relative terrain delta, and finite top-height checks before any height sample is read; invalid payloads use the deterministic fallback slab. Alternative rejected: service-only validation. Estimate: three scalar/vector checks once per extraction job.
+- [x] Re-ran source-only audits. DOD: targeted scan finds two origin-relative and two terrain-top finite guards; forbidden-pattern audit stayed clean; scoped H-Phi counts remain `GlobalRegistrySurface=12`, `SignalBusPush=1`, `EventPublish=0`, `StructLayoutAttributes=6`; `HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json` passed with `CoreAsmdefDebtReferenceCount=25`, `GeneratedProjectDebtReferenceCount=10`; `git diff --check` passed with repository CRLF warnings only. Alternative rejected: `dotnet` rebuild, forbidden by user. Estimate: verification only.
+- [ ] Compile proof [NOT RUN BY USER REQUEST]. DOD: no `dotnet` rebuild or response-file compile was executed in Loop 27. Alternative rejected: violating explicit "do not make dotnet rebuilds". Estimate: no runtime cost.
+
 ## Verification Ledger
 
-- Compile status: NOT RUN IN LOOP 26 BY USER REQUEST / PRIOR BLOCKER STILL RECORDED. Last attempted compile path could not resolve `Hecton8.Core.ref.dll`; Core rebuild failed in `SaveMasterHashV10.cs(237,26)` on missing `xxHash3`, outside Habitat/Outposts ownership.
+- Compile status: NOT RUN IN LOOP 27 BY USER REQUEST / PRIOR BLOCKER STILL RECORDED. Last attempted compile path could not resolve `Hecton8.Core.ref.dll`; Core rebuild failed in `SaveMasterHashV10.cs(237,26)` on missing `xxHash3`, outside Habitat/Outposts ownership.
 - Unity Console status: MCP unavailable; console/scene validation not accessible from this session.
 - GC proof: code audit only; hot Tick/Render path uses spans/native buffers and no LINQ/managed allocation.
 - Frame/VRAM proof: static estimate only; runtime profiling blocked by Unity MCP transport failure; no console/profiler capture is available from this session.
