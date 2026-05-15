@@ -268,3 +268,14 @@ Rejected Alternatives: Trusting allocation-time values was rejected because the 
 Scalability potential: Low through Ultra tiers all get the same coherent topology guarantee. High-end oversized configs still respect the `1,048,576` cell cap before any job or codec path accepts state.
 
 Hardware Impact: Branch-only entry validation. Daily job bodies and entropy math are unchanged; low-end cost is effectively zero outside scheduler calls.
+
+## Decision 25 - Exact SOA Storage Guard
+Problem: Dimension coherence alone still allowed a corrupted but internally valid smaller topology to run against larger already-allocated lanes. The old codec lane check accepted `Length >= CellCount`, which could hide public field corruption and serialize only a prefix of the true SOA block.
+
+Solution: Added `HasValidStorage`. Scheduler and codec entry points now require every serialized byte lane length to equal `CellCount` and require `BlackBox.Length == 300`. The old permissive lane-length helper was removed.
+
+Rejected Alternatives: Keeping `Length >= CellCount` was rejected because it silently accepts mismatched topology. Making all lanes private was again rejected as a larger public API change during a multi-agent batch.
+
+Scalability potential: Low through Ultra tiers now have a strict one-to-one topology contract between dimensions, lanes, and persisted payloads. High-end larger grids still work when allocated coherently.
+
+Hardware Impact: Branch-only entry validation. Daily jobs execute the same math and memory traversal after the guard passes.
