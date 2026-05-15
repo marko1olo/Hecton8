@@ -91,9 +91,12 @@ def compute_fnv1a32(value: str) -> int:
 
 def parse_hash(value: str) -> int:
     stripped = value.strip()
-    if stripped.lower().startswith("0x"):
-        return int(stripped, 16) & 0xFFFFFFFF
-    return int(stripped, 10) & 0xFFFFFFFF
+    try:
+        if stripped.lower().startswith("0x"):
+            return int(stripped, 16) & 0xFFFFFFFF
+        return int(stripped, 10) & 0xFFFFFFFF
+    except ValueError as exc:
+        raise ValueError(f"Invalid hash value: {value}") from exc
 
 
 def format_hash(value: int) -> str:
@@ -566,7 +569,10 @@ def main(argv: list[str]) -> int:
         if args.source_path:
             hash_value = compute_fnv1a32(canonicalize_path(Path(args.source_path)))
         else:
-            hash_value = parse_hash(args.hash)
+            try:
+                hash_value = parse_hash(args.hash)
+            except ValueError as exc:
+                parser.error(str(exc))
         blob, records = read_blob(blob_path)
         record = find_record(records, hash_value)
         if record is None:

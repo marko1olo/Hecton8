@@ -390,6 +390,45 @@ Failure modes:
 - Unity/C# compile proof remains blocked by missing local toolchain/generation state.
 - Runtime loader remains out of explicit prompt scope.
 
+## 2026-05-15 - Invalid Hash Diagnostic Guard
+
+STATUS: LORE BAKED / BAD HASH TRACEBACK REMOVED
+
+What was wrong:
+- A malformed numeric hash exited nonzero but printed a raw Python traceback.
+- Operator-facing extraction failures should be deterministic parser diagnostics, not implementation stack traces.
+
+What was done:
+- Wrapped hash conversion failures in a clear `Invalid hash value` error.
+- Routed positional hash parsing through `argparse` error handling.
+- Added regression coverage proving invalid hashes exit nonzero without `Traceback` in stderr.
+
+Cinematic Cheats used:
+- No runtime simulation touched.
+- Fixed binary layout and zlib payloads remain unchanged.
+
+Exact microseconds saved:
+- Current runtime frame impact remains 0 us/frame.
+- CLI validation only; no runtime loader cost claimed.
+
+Verification:
+- `python Tools\VerifyLore.py --bake --check --list` -> `LORE BAKED`, `CHECK OK`, record `0xD1880394 offset=48 length=10281`.
+- `python Tools\VerifyLore.py NOT_A_HASH` -> rejected with parser error, no traceback.
+- `python -B -m unittest Tools.test_verify_lore -v` -> 23 tests passed.
+- `$env:PYTHONPYCACHEPREFIX='.codex-artifacts\pycache'; python -m py_compile Tools\VerifyLore.py Tools\test_verify_lore.py` -> passed.
+- Source/extract SHA-256 match -> `6B529A808B25D18DA276747DB9149C61BACDF90A33DCC667FC85375DE13E69CD`.
+
+Regression model:
+- CPU: no runtime code touched.
+- GC: no runtime allocation path touched.
+- Memory: runtime blob remains 10329 bytes.
+- Cadence: no Tick/Update/FixedUpdate path touched.
+- Correctness: malformed hash input now fails before blob extraction with a controlled diagnostic.
+
+Failure modes:
+- Unity/C# compile proof remains blocked by missing local toolchain/generation state.
+- Runtime loader remains out of explicit prompt scope.
+
 ## 2026-05-15 - Ambiguous Extraction Rejection
 
 STATUS: LORE BAKED / CLI SELECTOR AMBIGUITY REJECTED
@@ -660,6 +699,42 @@ Regression model:
 - Memory: runtime blob remains 10329 bytes.
 - Cadence: no Tick/Update/FixedUpdate path touched.
 - Correctness: extraction commands now have exactly one selector, avoiding silent precedence.
+
+Failure modes:
+- Unity/C# compile proof remains blocked by missing local toolchain/generation state.
+- Runtime loader remains out of explicit prompt scope.
+
+## 2026-05-15 - Invalid Hash Parser Error
+
+STATUS: LORE BAKED / INVALID HASH TRACEBACK REMOVED
+
+What was wrong:
+- Invalid positional hash input raised a raw `ValueError`.
+- That could show a Python traceback instead of a clean CLI parser error.
+
+What was done:
+- `parse_hash` now wraps invalid numeric parsing with an explicit `Invalid hash value` message.
+- Extraction routes that validation failure through `parser.error`.
+- Added a regression proving `NOT_A_HASH` exits nonzero without printing `Traceback`.
+
+Cinematic Cheats used:
+- No runtime simulation touched.
+- Fixed binary layout and zlib payloads remain unchanged.
+
+Exact microseconds saved:
+- Current runtime frame impact remains 0 us/frame.
+- CLI validation only; no runtime loader cost claimed.
+
+Verification:
+- `python Tools\VerifyLore.py NOT_A_HASH` -> rejected with parser error and no traceback.
+- `python -B -m unittest Tools.test_verify_lore -v` -> 23 tests passed.
+
+Regression model:
+- CPU: no runtime code touched.
+- GC: no runtime allocation path touched.
+- Memory: runtime blob remains 10329 bytes.
+- Cadence: no Tick/Update/FixedUpdate path touched.
+- Correctness: malformed hash input now fails at argument handling with deterministic diagnostics.
 
 Failure modes:
 - Unity/C# compile proof remains blocked by missing local toolchain/generation state.

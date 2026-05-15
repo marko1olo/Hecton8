@@ -231,3 +231,11 @@ Solution: Add a parser-level error when both selectors are present and add a reg
 Rejected Alternatives: Keeping path precedence would make extraction less auditable; choosing numeric hash precedence would surprise users who supplied `--source-path`; allowing both only when they match would add unnecessary blob reads before argument validation.
 Scalability potential: Low/Middle/High/Ultra packaging keeps extraction commands unambiguous as the lore table grows beyond one record.
 Hardware Impact: 0 us/frame on i3/MX350; CLI validation only, runtime blob unchanged.
+
+## Decision 030 - Convert Bad Hash Input To Controlled CLI Error
+
+Problem: A malformed positional hash exited nonzero but printed a raw Python traceback. That is noisy operator tooling and weaker than deterministic parser diagnostics.
+Solution: Wrap `parse_hash` conversion failures with `ValueError("Invalid hash value")`, route positional hash parsing through `parser.error`, and add a regression proving stderr has no traceback.
+Rejected Alternatives: Leaving the traceback would force operators to interpret implementation internals; returning hash zero on bad input would be dangerous because zero is a valid empty-input engine contract.
+Scalability potential: Low/Middle/High/Ultra extraction remains predictable as the table grows and operators type more hashes manually.
+Hardware Impact: 0 us/frame on i3/MX350; CLI validation only, runtime blob unchanged.

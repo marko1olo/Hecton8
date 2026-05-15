@@ -105,6 +105,17 @@ class VerifyLoreTests(unittest.TestCase):
 
         self.assertNotEqual(context.exception.code, 0)
 
+    def test_cli_rejects_invalid_hash_without_traceback(self) -> None:
+        stderr = io.StringIO()
+
+        with contextlib.redirect_stderr(stderr):
+            with self.assertRaises(SystemExit) as context:
+                VerifyLore.main(["NOT_A_HASH"])
+
+        self.assertNotEqual(context.exception.code, 0)
+        self.assertIn("Invalid hash value", stderr.getvalue())
+        self.assertNotIn("Traceback", stderr.getvalue())
+
     def test_missing_hash_returns_none(self) -> None:
         record = VerifyLore.LoreRecord(0x10, 32, 4)
         self.assertIsNone(VerifyLore.find_record([record], 0x20))
