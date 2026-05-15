@@ -89,6 +89,18 @@ class MaterialAuditTests(unittest.TestCase):
             self.assertEqual("FAIL", bright_record["energy_status"])
             self.assertEqual("PASS", dark_record["energy_status"])
 
+    def test_texture_read_errors_are_reported_for_unreadable_albedo(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            corrupt = root / "Broken_Albedo.png"
+            corrupt.write_bytes(b"not a real png")
+            write_meta(corrupt, srgb=1, mip=1, texture_type=0)
+
+            report = audit.run_audit(root, 16, False)
+
+            self.assertEqual(1, report["texture_summary"]["read_error_count"])
+            self.assertEqual("Broken_Albedo.png", report["texture_summary"]["read_error_textures"][0]["path"])
+
     def test_import_issues_detect_data_srgb_and_normal_import_debt(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
@@ -270,6 +282,30 @@ class MaterialAuditTests(unittest.TestCase):
             self.assertEqual(5, budget_gate.returncode, budget_gate.stdout + budget_gate.stderr)
             self.assertIn("texture_budget_status=FAIL", budget_gate.stdout)
 
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            corrupt = root / "Broken_Albedo.png"
+            corrupt.write_bytes(b"not a real png")
+            write_meta(corrupt, srgb=1, mip=1, texture_type=0)
+
+            read_error_gate = subprocess.run(
+                [
+                    sys.executable,
+                    str(TOOLS_ROOT / "MaterialAudit.py"),
+                    "--root",
+                    str(root),
+                    "--sample-size",
+                    "16",
+                    "--fail-on-texture-read-errors",
+                ],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
+            self.assertEqual(6, read_error_gate.returncode, read_error_gate.stdout + read_error_gate.stderr)
+            self.assertIn("texture_read_errors=1", read_error_gate.stdout)
+
     def test_markdown_and_csv_exports_include_recommendations(self) -> None:
         report = {
             "root": "Temp",
@@ -282,6 +318,7 @@ class MaterialAuditTests(unittest.TestCase):
                 "material_issues": 3,
                 "unresolved_texture_refs": 4,
                 "texture_budget": 5,
+                "texture_read_errors": 6,
             },
             "texture_budget": {
                 "estimated_mib": 1.333,
@@ -298,6 +335,10 @@ class MaterialAuditTests(unittest.TestCase):
                 "detail_candidate_count": 0,
                 "energy_fail_count": 0,
                 "energy_warn_count": 0,
+                "read_error_count": 1,
+                "read_error_textures": [
+                    {"path": "Broken_Albedo.png", "read_error": "cannot identify image file"},
+                ],
                 "import_issue_count": 1,
                 "import_issue_counts": {"DATA_TEXTURE_SRGB_ON": 1},
                 "detail_suggestions": [],
@@ -386,6 +427,7 @@ class MaterialAuditTests(unittest.TestCase):
 
             markdown_text = markdown.read_text(encoding="utf-8")
             texture_csv = Path(f"{csv_prefix}_texture_import_issues.csv").read_text(encoding="utf-8")
+            read_error_csv = Path(f"{csv_prefix}_texture_read_errors.csv").read_text(encoding="utf-8")
             material_csv = Path(f"{csv_prefix}_material_issues.csv").read_text(encoding="utf-8")
             channel_csv = Path(f"{csv_prefix}_channel_packing_candidates.csv").read_text(encoding="utf-8")
             memory_csv = Path(f"{csv_prefix}_texture_memory_hotspots.csv").read_text(encoding="utf-8")
@@ -401,8 +443,10 @@ class MaterialAuditTests(unittest.TestCase):
             self.assertIn("Gate Exit Codes", markdown_text)
             self.assertIn("unresolved_texture_refs", markdown_text)
             self.assertIn("Texture Budget Model", markdown_text)
+            self.assertIn("Texture Read Errors", markdown_text)
             self.assertIn("## Import Issue Counts\n\n| Issue | Count |", markdown_text)
             self.assertIn("Hull_ORM.png", texture_csv)
+            self.assertIn("Broken_Albedo.png", read_error_csv)
             self.assertIn("NO_DETAIL_MAP_SLOT", material_csv)
             self.assertIn("MAT_Test.mat", channel_csv)
             self.assertIn("BC7_ORM_LINEAR_8BPP", memory_csv)
