@@ -8,10 +8,12 @@ Audit source: `Docs/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA.json`
 ## Audit Facts
 
 - First-party scan root: `Assets/_Project`
-- Textures scanned by filename/material audit: 138
+- Textures scanned by filename/material audit: 137
 - Albedo energy candidates decoded by Python/Pillow: 26
 - Albedo energy failures: 0
 - Albedo energy warnings: 0
+- Texture read errors: 0
+- Albedo read errors: 0
 - Texture import-setting issues: 5
 - Estimated texture residency by offline BC-class model: 497.565 MiB
 - ORM/mask candidates found: 17
@@ -222,11 +224,12 @@ Load-shed:
 python Tools\MaterialAudit.py --root Assets\_Project --resolve-root Assets\_Project --sample-size 256 --json Docs\AgentLogs\MaterialAudit_TECHNICAL_ARTIST_DATA.json --markdown Docs\AgentLogs\MaterialAudit_TECHNICAL_ARTIST_DATA.md --csv-prefix Docs\AgentLogs\MaterialAudit_TECHNICAL_ARTIST_DATA
 ```
 
-Current result: `energy_failures=0`, `energy_warnings=0`, `import_issue_textures=5`, `estimated_texture_mib=497.565`, `texture_budget_mib=900.0`, `texture_budget_status=PASS`, `materials_with_prompt_orm=0`, `materials_with_legacy_mask=9`, `channel_packing_candidates=31`, `channel_candidate_saved_mib=113.46`, `god_mode_override_count=12`, `global_detail_overlay_count=10`, `materials_with_unresolved_texture_refs=9`, `unresolved_texture_refs=27`, `materials_with_issues=37`.
+Current result: `textures=137`, `energy_failures=0`, `energy_warnings=0`, `texture_read_errors=0`, `albedo_read_errors=0`, `import_issue_textures=5`, `estimated_texture_mib=497.565`, `texture_budget_mib=900.0`, `texture_budget_status=PASS`, `materials_with_prompt_orm=0`, `materials_with_legacy_mask=9`, `channel_packing_candidates=31`, `channel_candidate_saved_mib=113.46`, `god_mode_override_count=12`, `global_detail_overlay_count=10`, `materials_with_unresolved_texture_refs=9`, `unresolved_texture_refs=27`, `materials_with_issues=37`.
 
 Generated CSV artifacts:
 
 - `Docs/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA_texture_import_issues.csv`
+- `Docs/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA_texture_read_errors.csv`
 - `Docs/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA_material_issues.csv`
 - `Docs/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA_unresolved_texture_refs.csv`
 - `Docs/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA_detail_candidates.csv`
@@ -239,6 +242,7 @@ CI gate modes:
 
 ```powershell
 python Tools\MaterialAudit.py --root Assets\_Project --fail-on-import-issues
+python Tools\MaterialAudit.py --root Assets\_Project --resolve-root Assets\_Project --fail-on-texture-read-errors
 python Tools\MaterialAudit.py --root Assets\_Project --resolve-root Assets\_Project --fail-on-unresolved-refs
 python Tools\MaterialAudit.py --root Assets\_Project --resolve-root Assets\_Project --fail-on-material-issues
 python Tools\MaterialAudit.py --root Assets\_Project --resolve-root Assets\_Project --fail-on-texture-budget
@@ -251,6 +255,7 @@ Exit code contract:
 - `3` = broad material migration issues when `--fail-on-material-issues` is set.
 - `4` = unresolved material texture references when `--fail-on-unresolved-refs` is set.
 - `5` = offline estimated texture residency exceeds `--texture-budget-mib` when `--fail-on-texture-budget` is set.
+- `6` = albedo candidate texture cannot be decoded for energy validation when `--fail-on-texture-read-errors` is set.
 
 Regression proof:
 
@@ -259,7 +264,11 @@ python -m py_compile Tools\MaterialAudit.py Tools\test_material_audit.py
 python -m unittest Tools.test_material_audit
 ```
 
-Current test result: 9 tests pass, including subprocess coverage for import-debt exit 2, material-debt exit 3, unresolved-reference exit 4, and texture-budget exit 5.
+Current test result: 11 tests pass, including subprocess coverage for import-debt exit 2, material-debt exit 3, unresolved-reference exit 4, texture-budget exit 5, and albedo-read-error exit 6.
+
+Generated lighting exclusion:
+
+- Scene-generated lighting/probe EXR/HDR files such as `Assets/_Project/Scenes/02_HECTON_WORLD/ReflectionProbe-0.exr` are excluded from the surface PBR scan. They are not albedo, ORM, normal, or detail maps.
 
 Known import issues from the current audit:
 

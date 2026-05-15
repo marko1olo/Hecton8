@@ -149,3 +149,10 @@ Task count: 8 numbered tasks in extracted XML. Header claims 15; rejected as sta
 - [x] Added texture-budget fail gate | DOD: `--fail-on-texture-budget` returns exit 5 when estimated residency exceeds `--texture-budget-mib`. Alternatives Rejected: folding budget overflow into material issue debt. Estimate: 0 us runtime impact.
 - [x] Added budget regression tests | DOD: test suite now covers budget PASS/WARN/FAIL and subprocess exit 5; `python -m unittest Tools.test_material_audit` passed 9 tests. Alternatives Rejected: manual threshold proof only. Estimate: 0 us runtime impact.
 - [x] Re-ran project audit with budget gate | DOD: full audit with `--fail-on-texture-budget` passed at 497.565/900.0 MiB, status PASS; import/unresolved/material scoped gates still returned expected exits 2/4/3. Alternatives Rejected: stale artifacts without budget fields. Estimate: 0 us runtime impact.
+
+### Loop 20 - Albedo Read Error Gate Pass
+
+- [x] Added texture read-error reporting | DOD: audit output now counts all texture read errors and exports `MaterialAudit_TECHNICAL_ARTIST_DATA_texture_read_errors.csv`. Alternatives Rejected: silently swallowing Pillow decode failures. Estimate: 0 us runtime impact.
+- [x] Added albedo read-error fail gate | DOD: `--fail-on-texture-read-errors` returns exit 6 only when albedo candidates cannot be decoded for energy validation. Alternatives Rejected: failing the energy gate on non-albedo EXR reflection probe decode support. Estimate: 0 us runtime impact.
+- [x] Added read-error regression tests | DOD: test suite now covers corrupt albedo reporting and subprocess exit 6; `python -m unittest Tools.test_material_audit` passed 10 tests. Alternatives Rejected: manual corrupt-file proof only. Estimate: 0 us runtime impact.
+- [x] Re-ran project audit with read-error gate | DOD: full audit reports 1 total texture read warning (`ReflectionProbe-0.exr`), 0 albedo read errors, 0 energy failures, budget PASS, and expected scoped exits 2/4/3. Alternatives Rejected: marking non-albedo EXR decode support as PBR energy failure. Estimate: 0 us runtime impact.

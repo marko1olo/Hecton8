@@ -500,3 +500,36 @@ Verification:
 - Full first-party audit with `--fail-on-texture-budget`: estimated 497.565/900.0 MiB, status PASS.
 - Gate exit contract now includes texture budget exit 5.
 - Scoped import/unresolved/material gates still returned expected exits 2/4/3.
+
+## 2026-05-15 - Albedo Read Error Gate Pass
+
+What was wrong:
+
+- Texture decode failures were captured per record but not summarized, exported, or gateable.
+- A corrupt albedo could skip energy validation while the audit still reported zero albedo energy failures.
+
+What was done:
+
+- Added total texture read-error reporting.
+- Added `albedo_read_error_count` and `albedo_read_error_textures`.
+- Added `MaterialAudit_TECHNICAL_ARTIST_DATA_texture_read_errors.csv`.
+- `--fail-on-texture-read-errors` now returns exit 6 only when albedo candidates cannot be decoded.
+- Updated doctrine/status/rationale with the new gate and current project result.
+
+Cinematic Cheats used:
+
+- None. This is offline validator integrity.
+
+Exact Microseconds saved:
+
+- Runtime code changed: none.
+- Immediate runtime CPU saving: 0 us.
+- Prevents false energy-conservation evidence when albedo files are corrupt or unreadable.
+
+Verification:
+
+- `python -m py_compile Tools\MaterialAudit.py Tools\test_material_audit.py`: passed.
+- `python -m unittest Tools.test_material_audit`: passed 10 tests.
+- Full first-party audit with read-error and budget gates: 1 total texture read warning, 0 albedo read errors, 0 energy failures, texture budget PASS.
+- Read warning is `Scenes/02_HECTON_WORLD/ReflectionProbe-0.exr`; it is not an albedo candidate.
+- Scoped import/unresolved/material gates still returned expected exits 2/4/3.

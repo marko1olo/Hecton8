@@ -9,11 +9,12 @@ Include third-party: `False`
 
 | Metric | Value |
 | --- | --- |
-| Textures | 138 |
+| Textures | 137 |
 | Albedo candidates | 26 |
 | Albedo energy failures | 0 |
 | Albedo energy warnings | 0 |
-| Texture read errors | 1 |
+| Texture read errors | 0 |
+| Albedo read errors | 0 |
 | Import issue textures | 5 |
 | Estimated texture residency MiB | 497.565 |
 | ORM candidates | 17 |
@@ -37,7 +38,7 @@ Include third-party: `False`
 | material_issues | 3 |
 | unresolved_texture_refs | 4 |
 | texture_budget | 5 |
-| texture_read_errors | 6 |
+| albedo_read_errors | 6 |
 
 ## Texture Budget Model
 
@@ -137,9 +138,7 @@ Include third-party: `False`
 
 ## Texture Read Errors
 
-| Path | Error |
-| --- | --- |
-| Scenes/02_HECTON_WORLD/ReflectionProbe-0.exr | cannot identify image file 'C:\\Hecton8\\Assets\\_Project\\Scenes\\02_HECTON_WORLD\\ReflectionProbe-0.exr' |
+No texture read errors detected.
 
 ## Material Slot Issues
 

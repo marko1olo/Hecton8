@@ -159,3 +159,11 @@ Solution: Add a texture-budget model with PASS/WARN/FAIL status, `--texture-budg
 Rejected Alternatives: Treating budget overflow as broad material debt was rejected because memory budget failure is a different class from missing ORM/detail slots. Waiting for Unity profiler only was rejected because offline gates should catch obvious source-data overruns before import work.
 Scalability potential: Low = 900 MiB MX350 guard blocks texture bloat. Middle = same budget can run nightly. High = threshold can be raised intentionally for stronger machines. Ultra = GOD_MODE overrides remain gated by explicit budget status rather than wishful resolution increases.
 Hardware Impact: 0 us runtime impact. Current first-party estimate is 497.565/900.0 MiB, used ratio 0.5528, status PASS; this is an offline BC-class estimate, not Unity profiler proof.
+
+## Albedo Read Error Gate
+
+Problem: Pillow decode failures were stored per texture but not summarized, exported, or gateable; a corrupt albedo could skip the energy-conservation test while the report still showed zero energy failures.
+Solution: Count all texture read errors for triage, export them to CSV/Markdown, and make `--fail-on-texture-read-errors` fail only when albedo candidates cannot be decoded for energy validation.
+Rejected Alternatives: Failing on every decode error was rejected after the project revealed `ReflectionProbe-0.exr`; that file is not an albedo candidate and Pillow EXR support is not the PBR energy contract. Ignoring read errors entirely was rejected because corrupt albedo evidence would be false.
+Scalability potential: Low = albedo corruption blocks cheap-device builds before import. Middle = non-albedo read warnings remain visible for asset owners. High/Ultra = material upgrade passes do not inherit silent broken albedo data.
+Hardware Impact: 0 us runtime impact. Current audit reports 1 total texture read warning, 0 albedo read errors, and the albedo energy gate remains valid for 26 decoded candidates.
