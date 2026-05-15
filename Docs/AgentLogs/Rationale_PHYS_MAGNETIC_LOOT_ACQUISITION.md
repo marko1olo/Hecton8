@@ -355,3 +355,15 @@ Rejected Alternatives: Raising the acquisition cap was rejected because inventor
 Scalability potential: Low/Middle/High/Ultra preserve the same acquisition cap, but postmortem data now shows when scene density exceeds the truth-work budget.
 
 Hardware Impact: Adds one `uint` OR only on budget-exhausted acquired slots. It improves dump evidence with no normal-case cost.
+
+## Decision 28 - Dependency Telemetry And Registry Parity
+
+Problem: The black-box ring could show inventory failure and presentation clipping, but it did not identify player-pose loss, missing vault access, or registry saturation. The authored loot magnet hard cap was 8192 while the source `PickupItem` world-state registry was still capped at 4096, making high-density authoring dishonest.
+
+Solution: Added fixed telemetry bits for missing player pose, unavailable vault, and saturated pickup registry. Idle and commit telemetry now OR dependency and registry evidence into the 300-frame ring. Dump files now write a stable magic, version, and entry-size header before ring payload. `PickupItem` registry capacity was raised to 8192 as a narrow cross-domain interface fix so the source registry can feed the loot magnet hard cap.
+
+Rejected Alternatives: Leaving the registry capped at 4096 was rejected because Ultra capacity would be fake. Logging dependency failures was rejected because it allocates/noises and does not satisfy fixed black-box evidence. Expanding global signal queues was rejected because this pass needs evidence and source capacity parity, not broader event-lane memory policy.
+
+Scalability potential: Low = same default 4096 magnet capacity with explicit dependency fault evidence. Middle = same Burst pull path with diagnosable registry pressure. High = authored capacity can reach the hard cap without source-registry truncation. Ultra = dense pickup fields can feed richer presentation budgets while black-box telemetry records when authored density reaches the limit.
+
+Hardware Impact: Low-end silicon pays no extra normal-case per-entity work. Dependency telemetry is branch/bitwise only, and registry expansion adds roughly 32 KB of cold managed reference storage compared with 4096 slots. The gain is correctness under dense fields, not measured frame time.

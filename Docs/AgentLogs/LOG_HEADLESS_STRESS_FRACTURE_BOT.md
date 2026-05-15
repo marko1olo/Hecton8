@@ -404,3 +404,33 @@ Verification:
 - No temp `*FallbackSchema*.dll` probe artifacts remain in `Temp`.
 - No `dotnet` rebuild was run.
 - Full Unity/editor/player execution remains PENDING VERIFICATION because no Unity MCP/editor session is available in this tool context.
+
+## 2026-05-15 - Terminal Time-Dilation Restore And Flag Consumption Addendum
+Status: PENDING VERIFICATION
+Evidence Class: CLI_COMPILE_PLUS_STATIC_SOURCE
+
+What was wrong:
+- The runner requested 100x headless time dilation but did not explicitly restore the previous dispatcher scalar on terminal teardown.
+- A direct flag-driven activation could leave `Temp/H8_FRACTURE_TEST.flag` fresh on disk after startup, allowing accidental replay until TTL expiry.
+- Result JSON did not expose whether lifecycle cleanup ran.
+
+What was done:
+- Cached `ITickDispatcher.TimeDilationScalar` before headless dilation and restored it through `RequestTimeDilation` during idempotent hook teardown.
+- Deleted the activation flag during cold startup after resolving the activation source.
+- Added result fields `activationFlagDeletedAtStartup`, `headlessTimeDilationScalar`, `previousTimeDilationScalar`, and `headlessTimeDilationRestored`.
+
+Cinematic Cheats used:
+- None. This is headless lifecycle and CI hygiene only.
+
+Exact Microseconds saved:
+- Hot path: 0 us; changes run only during startup/terminal teardown.
+- Avoided accidental repeated stress replay: estimated 1000000+ us saved per stale-flag incident, plus avoided 50,000-frame heat on low-end CI hardware.
+- Avoided lingering 100x dispatcher pressure after terminal failure in editor context; profiler proof absent, so this remains a static lifecycle-risk estimate.
+
+Verification:
+- Focused static audit: PASS for both Race Condition Hunter files; no scene search, component lookup, LINQ, coroutine, `Task<`, `.Complete()`, explicit GC, reflection, managed collection creation, `string.Format`, or `Substring` parser usage.
+- Scoped source counts: `GlobalRegistryDot=13`, `RequestHeadlessTimeDilation=1`, `RequestTimeDilation=1`, `ActivationFlagDeletedField=4`, `HeadlessTimeDilationResultFields=11`.
+- Runtime isolated Unity compiler probe: PASS via Unity Mono/Roslyn with UnityJIT facades, Unity modules, current `Library/ScriptAssemblies`, and `Assembly-CSharp.dll`.
+- Editor runner isolated Unity compiler probe: PASS via Unity Mono/Roslyn with UnityEngine/UnityEditor facade references and `UNITY_EDITOR` defined.
+- No `dotnet` rebuild was run.
+- Full Unity/editor/player execution remains PENDING VERIFICATION because no Unity MCP/editor session is available in this tool context.

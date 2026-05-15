@@ -48,6 +48,7 @@ Status: PENDING VERIFICATION
 - Loop 15: Hot-path telemetry cadence pass removes `FastTick` service-refresh polling, caches blackbox memory snapshots to a 30-frame cadence with forced fresh samples on terminal/event records, exports the memory-sample flag schema, and reconfirms runtime/editor isolated compiles without `dotnet`.
 - Loop 16: CI artifact schema clarity pass adds a result schema version, named blackbox magic/capacity/entry-size fields, and a `rigidbodyNanIndex=-1` clean-run sentinel, then reconfirms runtime/editor isolated compiles without `dotnet`.
 - Loop 17: Fallback artifact parity and cold-allocation evidence pass adds schema-v4/blackbox metadata to editor fallback JSON, marks fallback results explicitly, adds canonical `COLD ALLOC` comments around runner-owned cold allocations, and reconfirms runtime/editor isolated compiles without `dotnet`.
+- Loop 18: Lifecycle cleanup pass restores the dispatcher time-dilation scalar on terminal teardown, consumes the activation flag during cold startup to prevent replay runs, exports both states into result JSON, and reconfirms runtime/editor isolated compiles without `dotnet`.
 
 ## Verification
 - Unity MCP editor state: BLOCKED, no Unity session available.
@@ -99,6 +100,9 @@ Status: PENDING VERIFICATION
 - Isolated editor runner compile after fallback artifact parity pass: PASS via Unity Mono/Roslyn with `UNITY_EDITOR` defined, UnityEngine/UnityEditor facade references, and `Assembly-CSharp.dll`. One earlier editor probe failed from a too-narrow/duplicate Unity reference set and was corrected without source changes.
 - `git diff --check` after fallback artifact parity pass: PASS for whitespace on the QA runner, editor runner, and owned status/rationale/log files; Git emitted LF-to-CRLF normalization warnings only.
 - Temp FallbackSchema compiler artifacts after fallback artifact parity pass: PASS, no `*FallbackSchema*.dll` files remain in `Temp`.
+- Focused static audit after lifecycle cleanup pass: PASS for both Race Condition Hunter files; no scene search, component lookup, LINQ, coroutine, `Task<`, `.Complete()`, explicit GC, reflection, managed collection creation, `string.Format`, or `Substring` parser usage. Counts: `GlobalRegistryDot=13`, `RequestHeadlessTimeDilation=1`, `RequestTimeDilation=1`, `ActivationFlagDeletedField=4`, `HeadlessTimeDilationResultFields=11`.
+- Isolated runtime compile after lifecycle cleanup pass: PASS via Unity Mono/Roslyn using UnityJIT facades, Unity modules, current `Library/ScriptAssemblies`, and `Assembly-CSharp.dll`.
+- Isolated editor runner compile after lifecycle cleanup pass: PASS via Unity Mono/Roslyn with `UNITY_EDITOR` defined, UnityEngine/UnityEditor facade references, and `Assembly-CSharp.dll`.
 - Full `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false`: BLOCKED BY EXISTING DEPENDENCIES, 139 unrelated errors before/around core missing namespaces, duplicate SaveManager members, and interface mismatches.
 - Full `dotnet build Assembly-CSharp.csproj --no-restore -m:2 /nr:false`: BLOCKED BY SAME EXISTING `Hecton8.Core.csproj` dependency failures.
 - No `dotnet` rebuilds were run during the 2026-05-15 continuation pass.

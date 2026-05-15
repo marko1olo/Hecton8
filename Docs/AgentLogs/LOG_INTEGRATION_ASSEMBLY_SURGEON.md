@@ -405,7 +405,7 @@ Verification:
 - Core graph budget pass: 43 Core asmdef refs, 25 asmdef debt refs, 12 generated project refs, 10 generated-project debt refs, 25 source-backed bridge refs, 14 total bridge debt refs, 8 compile-bridge debt refs, 6 replacement debt refs.
 - Parse pass: `STATIC_PARSE_OK`.
 - Removed-reference scan: `REMOVED_REPLACEMENT_REFS_ABSENT`.
-- Full static AUP gate: `AupPrecisionSafe=363`, `AupPrecisionRisk=0` under `-MaxAupPrecisionRisk 0`.
+- Full static regression gate: `AupPrecisionSafe=363`, `AupPrecisionRisk=0`, `FindObjectCalls=5`, `LegacyEventPublish=28`, Core asmdef debt `25`, generated-project debt `10`, total bridge debt `14`, compile-bridge debt `8`, replacement debt `6`.
 - Expected failure paths: `EXPECTED_TOTAL_BRIDGE_BUDGET_FAIL_PATH_OK` at total bridge budget 13 and `EXPECTED_REPLACEMENT_BRIDGE_BUDGET_FAIL_PATH_OK` at replacement budget 5.
 
 Residual risk:

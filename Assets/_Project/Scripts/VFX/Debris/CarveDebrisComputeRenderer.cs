@@ -21,7 +21,7 @@ namespace Hecton8.VFX.Debris
     /// GPU-only rock chip feedback for voxel SDF carve events.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class CarveDebrisComputeRenderer : MonoBehaviour, IUpdatable
+    public sealed class CarveDebrisComputeRenderer : MonoBehaviour, IUpdatable, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
     {
         private const int MaxCarveDebrisCount = 4096;
         private const int LowTierActiveCarveDebrisCount = 1024;
@@ -41,7 +41,6 @@ namespace Hecton8.VFX.Debris
         private const int GlobalSdfRefreshStrideFrames = 4;
         private const int TierRefreshStrideFrames = 30;
         private const int TierSwitchConfirmFrames = 120;
-        private const int VaultLeaseCheckStrideFrames = 30;
         private const float MinimumCarveSpawnRadiusMeters = 0.05f;
 #if UNITY_EDITOR
         private const string FluidAdvectionComputeAssetPath = "Assets/_Project/Art/Shaders/Hecton_FluidAdvection.compute";
@@ -118,6 +117,7 @@ namespace Hecton8.VFX.Debris
         private NativeArray<CarveDebrisRequest> _carveRequests;
         private NativeArray<int> _jobState;
         private NativeArray<CarveDebrisTelemetryEntry> _blackBox;
+        private IDataVault _registryDataVault;
         private IDataVault _dataVault;
         private GraphicsBuffer _positionBufferA;
         private GraphicsBuffer _positionBufferB;
@@ -140,9 +140,7 @@ namespace Hecton8.VFX.Debris
         private int _lowDispatchGroups = LowTierActiveCarveDebrisCount >> 6;
         private int _lastActiveCapacity = MaxCarveDebrisCount;
         private int _nextGlobalSdfRefreshFrame;
-        private int _nextFluidRebindFrame;
         private int _nextTierRefreshFrame;
-        private int _nextVaultLeaseCheckFrame;
         private int _pendingTierFrames;
         private int _cachedDrawMeshFrame = -1;
         private int _bufferParity;
@@ -174,6 +172,7 @@ namespace Hecton8.VFX.Debris
         private bool _cachedLowTier = true;
         private bool _pendingLowTier = true;
         private bool _tierCacheInitialized;
+        private bool _hotSwapRegistered;
 
         private void Awake()
         {
@@ -183,18 +182,21 @@ namespace Hecton8.VFX.Debris
         private void OnEnable()
         {
             EnsureFallbackRenderResources();
+            TryRegisterHotSwapListener();
             TryRegisterTick();
             TryEnsureGpuState();
         }
 
         private void Start()
         {
+            TryRegisterHotSwapListener();
             TryRegisterTick();
             TryEnsureGpuState();
         }
 
         private void OnDisable()
         {
+            TryUnregisterHotSwapListener();
             if (_registered)
             {
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
@@ -269,7 +271,7 @@ namespace Hecton8.VFX.Debris
             if (fluidAdvectionCompute == null)
                 return false;
 
-            IDataVault vault = GlobalRegistry.DataVault;
+            IDataVault vault = _registryDataVault;
             if (vault == null)
                 return false;
 
@@ -329,7 +331,6 @@ namespace Hecton8.VFX.Debris
                 return false;
 
             _dataVault = vault;
-            _nextVaultLeaseCheckFrame = Time.frameCount + VaultLeaseCheckStrideFrames;
 
             AllocateGraphicsBuffers();
             CreateEmptyResources();
@@ -380,7 +381,6 @@ namespace Hecton8.VFX.Debris
             _jobStateVaultGeneration = 0u;
             _requestVaultGeneration = 0u;
             _blackBoxVaultGeneration = 0u;
-            _nextVaultLeaseCheckFrame = 0;
         }
 
         private bool IsDataVaultLeaseValid()
@@ -415,12 +415,7 @@ namespace Hecton8.VFX.Debris
                 return false;
             }
 
-            int frame = Time.frameCount;
-            if (frame < _nextVaultLeaseCheckFrame)
-                return true;
-
-            _nextVaultLeaseCheckFrame = frame + VaultLeaseCheckStrideFrames;
-            return ReferenceEquals(_dataVault, GlobalRegistry.DataVault);
+            return ReferenceEquals(_dataVault, _registryDataVault);
         }
 
         private void AllocateGraphicsBuffers()
@@ -820,12 +815,6 @@ namespace Hecton8.VFX.Debris
 
         private HectonFluidEngine ResolveFluidEngine()
         {
-            int frame = Time.frameCount;
-            if (_fluidEngine != null && frame < _nextFluidRebindFrame)
-                return _fluidEngine;
-
-            _fluidEngine = GlobalRegistry.Fluid;
-            _nextFluidRebindFrame = frame + 30;
             return _fluidEngine;
         }
 

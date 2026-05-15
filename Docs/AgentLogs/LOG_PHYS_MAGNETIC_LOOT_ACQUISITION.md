@@ -39,6 +39,34 @@ Verification:
 Final Status:
 - PENDING VERIFICATION.
 
+## 2026-05-15 - Dependency Telemetry And Registry Parity Pass
+
+What was wrong:
+- Missing player pose and unavailable DataVault states were not explicit in the loot magnet black-box flags.
+- Dense pickup fields could saturate the source pickup registry without a loot-domain telemetry bit.
+- The loot magnet hard cap was 8192, but `PickupItem` world-state registry capacity was still 4096.
+- Telemetry dump files had no fixed magic/version/entry-size header.
+
+What was done:
+- Added fixed black-box bits for player-pose missing, vault unavailable, pickup registry saturated, and existing inventory-missing evidence.
+- Idle and commit telemetry now carry the dependency/registry evidence bits.
+- Added dump header fields: magic, version, and telemetry entry size.
+- Raised `PickupItem` world-state registry capacity to 8192 with a bounded cold allocation comment, matching the loot magnet hard cap.
+
+Cinematic Cheats used:
+- No physical simulation added. Dense-field overload remains controlled by budgeted truth work and cosmetic acoustic/wake load shedding.
+
+Exact Microseconds saved:
+- No fake profiler number. Normal path adds branch/bitwise telemetry flags only.
+- Cold managed registry storage increases by about 32 KB to make Ultra-density authoring truthful.
+
+Verification:
+- User forbade dotnet rebuilds; none were run.
+- Static verification and process hygiene are still required before any runtime claim.
+
+Final Status:
+- PENDING VERIFICATION.
+
 ## 2026-05-14 - Professional Recheck Pass
 
 What was wrong:
