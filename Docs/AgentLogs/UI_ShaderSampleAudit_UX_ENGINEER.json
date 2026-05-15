@@ -1,0 +1,121 @@
+{
+  "errors": [],
+  "maxSamplesPerUiElement": 2,
+  "owner": "UX_ENGINEER",
+  "promptId": "HARDWARE_ADAPTIVE_UI_BAKER",
+  "records": [
+    {
+      "depthTextureSamples": 1,
+      "materialTextureSamples": 1,
+      "path": "Assets/_Project/Art/Shaders/Hecton_DiegeticPanelUnlit.shader",
+      "status": "PASS",
+      "totalTextureSamples": 2
+    },
+    {
+      "depthTextureSamples": 0,
+      "materialTextureSamples": 1,
+      "path": "Assets/_Project/Art/Shaders/Hecton_DiegeticTooltipGlyph.shader",
+      "status": "PASS",
+      "totalTextureSamples": 1
+    },
+    {
+      "depthTextureSamples": 0,
+      "materialTextureSamples": 1,
+      "path": "Assets/_Project/Art/Shaders/Hecton_DiegeticTooltipIndirect.shader",
+      "status": "PASS",
+      "totalTextureSamples": 1
+    },
+    {
+      "depthTextureSamples": 0,
+      "materialTextureSamples": 1,
+      "path": "Assets/_Project/Art/Shaders/Hecton_HUD_AcousticRadarOverlay.shader",
+      "status": "PASS",
+      "totalTextureSamples": 1
+    },
+    {
+      "depthTextureSamples": 0,
+      "materialTextureSamples": 2,
+      "path": "Assets/_Project/Art/Shaders/Hecton_HUD_DiegeticProjectionUnlit.shader",
+      "status": "PASS",
+      "totalTextureSamples": 2
+    },
+    {
+      "depthTextureSamples": 0,
+      "materialTextureSamples": 1,
+      "path": "Assets/_Project/Art/Shaders/Hecton_ToolScreenDiegetic.shader",
+      "status": "PASS",
+      "totalTextureSamples": 1
+    },
+    {
+      "depthTextureSamples": 0,
+      "materialTextureSamples": 1,
+      "path": "Assets/_Project/Art/Shaders/Hecton_UI_CompassRibbon.shader",
+      "status": "PASS",
+      "totalTextureSamples": 1
+    },
+    {
+      "depthTextureSamples": 0,
+      "materialTextureSamples": 1,
+      "path": "Assets/_Project/Shaders/UI/Hecton_DataRecPulse.shader",
+      "status": "PASS",
+      "totalTextureSamples": 1
+    },
+    {
+      "depthTextureSamples": 1,
+      "materialTextureSamples": 1,
+      "path": "Assets/_Project/Shaders/UI/Hecton_DiegeticPanelDepthFade.shader",
+      "status": "PASS",
+      "totalTextureSamples": 2
+    },
+    {
+      "depthTextureSamples": 0,
+      "materialTextureSamples": 2,
+      "path": "Assets/_Project/Shaders/UI/Hecton_DiegeticVisorCurvedHUD.shader",
+      "status": "PASS",
+      "totalTextureSamples": 2
+    },
+    {
+      "depthTextureSamples": 0,
+      "materialTextureSamples": 1,
+      "path": "Assets/_Project/Shaders/UI/Hecton_IGNDitherDissolve.shader",
+      "status": "PASS",
+      "totalTextureSamples": 1
+    },
+    {
+      "depthTextureSamples": 0,
+      "materialTextureSamples": 1,
+      "path": "Assets/_Project/Shaders/UI/Hecton_IGNDitheredBackground.shader",
+      "status": "PASS",
+      "totalTextureSamples": 1
+    },
+    {
+      "depthTextureSamples": 0,
+      "materialTextureSamples": 0,
+      "path": "Assets/_Project/Shaders/UI/Hecton_RetinaStressPulse.shader",
+      "status": "PASS",
+      "totalTextureSamples": 0
+    }
+  ],
+  "schema": "hecton8.ui_shader_sample_audit.v1",
+  "shaderCount": 13,
+  "sourceHashes": {
+    "scriptSha256": "15a8a87c0597ce3e20903b5fdaf0795415e5d2dcf5b3d3f1ba929c8830a5e852",
+    "shaderSha256": {
+      "Assets/_Project/Art/Shaders/Hecton_DiegeticPanelUnlit.shader": "a412d662b9d6c65eb6a00e1338bb008a3bd84839065ec50d307686cd4ad16984",
+      "Assets/_Project/Art/Shaders/Hecton_DiegeticTooltipGlyph.shader": "e99cf936561939b4831ee7bf7ad15724c00ef73f3c49d1c28cc26e8f582d3aac",
+      "Assets/_Project/Art/Shaders/Hecton_DiegeticTooltipIndirect.shader": "1c972ad330ef29c5136370752d678bc55fadbe536f4c899f1d17213ab1f129a3",
+      "Assets/_Project/Art/Shaders/Hecton_HUD_AcousticRadarOverlay.shader": "515a1887581397e485c74e933020f8c49e397fd4a264bb154efc8060c7e15c26",
+      "Assets/_Project/Art/Shaders/Hecton_HUD_DiegeticProjectionUnlit.shader": "176de938c474a69be4ae4cbb8da16a941c366f07b31415bd560401d69358e09b",
+      "Assets/_Project/Art/Shaders/Hecton_ToolScreenDiegetic.shader": "35b731f7f761a1e6a36069c163b473c8fffb1c155587af7b09c0129ffa0e418e",
+      "Assets/_Project/Art/Shaders/Hecton_UI_CompassRibbon.shader": "780d9a44526fb9fd92680e8dbdfcda1358e3509c28d426e7a77c12b790dfa131",
+      "Assets/_Project/Shaders/UI/Hecton_DataRecPulse.shader": "8f15e3ad34f01ce218d585d15080f666ce1d6882b7111d69f4d3d9ef3ada5604",
+      "Assets/_Project/Shaders/UI/Hecton_DiegeticPanelDepthFade.shader": "131dc9db81e8b74cf9b53781b1140b1723ecc306ee132237219da393a2a6f2ab",
+      "Assets/_Project/Shaders/UI/Hecton_DiegeticVisorCurvedHUD.shader": "cb8a2f9b1a23e06945302e1ca6076a80e9b625a241b2afb5658e4bff80bd13dc",
+      "Assets/_Project/Shaders/UI/Hecton_IGNDitherDissolve.shader": "3f7d732bb10c1934b4ad98a1fa69534d3f273c122257ac67b4014a7c2754bedf",
+      "Assets/_Project/Shaders/UI/Hecton_IGNDitheredBackground.shader": "61250393c16699bed1a0112e7d2d21a0f437114bb3df007f07ec74d1e02e9acd",
+      "Assets/_Project/Shaders/UI/Hecton_RetinaStressPulse.shader": "3c6c892f8bcb6f8894bbad13b24a329c5bb9898f4df97dad8bd9282e3187725e"
+    },
+    "specSha256": "0fdef3000ff1ff02717dce14de37f7012b6cf0b7f7bf6ac27147075c126c85ce"
+  },
+  "status": "PASS"
+}

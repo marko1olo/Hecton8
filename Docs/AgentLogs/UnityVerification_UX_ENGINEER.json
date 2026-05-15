@@ -1,0 +1,80 @@
+{
+  "schema": "hecton8.hardware_adaptive_ui_scaler.unity_verification.v1",
+  "owner": "UX_ENGINEER",
+  "promptId": "HARDWARE_ADAPTIVE_UI_BAKER",
+  "domain": "PRESENTATION & UX",
+  "status": "PENDING_UNITY_VERIFICATION",
+  "requiredUnityVersion": "6000.4.1f1",
+  "sourceArtifacts": [
+    "Assets/_Project/Scripts/UI/WorldSpaceTMPSharpnessController.cs",
+    "Assets/_Project/Shaders/UI/Hecton_DiegeticVisorCurvedHUD.shader",
+    "Assets/_Project/Art/Shaders/Hecton_ToolScreenDiegetic.shader",
+    "Assets/_Project/Art/Shaders/Hecton_HUD_AcousticRadarOverlay.shader",
+    "Assets/_Project/Art/Shaders/Hecton_DiegeticPanelUnlit.shader",
+    "Docs/Design/HardwareAdaptiveUIScaler.json",
+    "Tools/UX/run_hardware_adaptive_ui_validation.py"
+  ],
+  "checks": [
+    {
+      "id": "UNITY_IMPORT",
+      "required": true,
+      "status": "PENDING",
+      "evidencePath": "",
+      "expected": "Unity Console has zero compile errors after import."
+    },
+    {
+      "id": "GC_STEADY_STATE",
+      "required": true,
+      "status": "PENDING",
+      "evidencePath": "",
+      "expected": "GCMonitor reports 0 B/frame while O2 LOW and diegetic HUD text remain visible."
+    },
+    {
+      "id": "FRAME_DEBUGGER_SHADER_SAMPLES",
+      "required": true,
+      "status": "PENDING",
+      "evidencePath": "",
+      "expected": "Audited UI shaders stay at two texture/depth samples or less in the active render path."
+    },
+    {
+      "id": "QUEST2_FOV_LAYOUT",
+      "required": true,
+      "status": "PENDING",
+      "evidencePath": "",
+      "expected": "Quest 2 profile uses the documented FOV authority, inward controls, and hysteresis band."
+    },
+    {
+      "id": "QUEST3_FOV_LAYOUT",
+      "required": true,
+      "status": "PENDING",
+      "evidencePath": "",
+      "expected": "Quest 3 profile uses the documented FOV authority, outward controls, and hysteresis band."
+    },
+    {
+      "id": "O2_LOW_READABILITY_CAPTURE",
+      "required": true,
+      "status": "PENDING",
+      "evidencePath": "",
+      "expected": "In-engine capture of O2 LOW remains readable after low-resolution or poor-vision blur simulation."
+    },
+    {
+      "id": "MX350_LOW_TIER_CAPTURE",
+      "required": true,
+      "status": "PENDING",
+      "evidencePath": "",
+      "expected": "TOASTER/MX350-style profile uses solid contrast backgrounds, no bloom, and no per-widget blur/chroma."
+    },
+    {
+      "id": "GOD_MODE_CAPTURE",
+      "required": true,
+      "status": "PENDING",
+      "evidencePath": "",
+      "expected": "GOD_MODE spends visual budget through gated post treatment, not extra per-element texture samples."
+    }
+  ],
+  "acceptanceRule": "All required checks must be PASS with evidencePath populated before runtime status can move beyond PENDING_UNITY_VERIFICATION.",
+  "notes": [
+    "Active pending report restored after archive cleanup removed Docs/AgentLogs/UnityVerification_UX_ENGINEER.json.",
+    "Static Python validation remains separate from Unity import, GCMonitor, Frame Debugger, and capture proof."
+  ]
+}

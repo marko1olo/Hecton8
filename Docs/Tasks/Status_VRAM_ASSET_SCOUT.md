@@ -17,11 +17,14 @@ Evidence class: STATIC_SOURCE / FILESYSTEM / PY_UNIT_TEST
 - [x] Original 9-task VRAM audit remains complete | DOD: existing generated reports and no-scan validator still validate current artifacts | Alternatives Rejected: rerunning unrelated UX or non-VRAM work | Microseconds estimate: 0us runtime, offline tooling only
 - [x] Loop 29: Split redline flag-payload parity | DOD: `--validate-reports` now checks that texture, mesh, and RenderTexture redline CSV `flags` match the corresponding broad CSV `redline_flags` | Alternatives Rejected: path-only identity validation, which still lets stale risk labels survive | Microseconds estimate: 0us runtime, tooling/CI handoff only
 - [x] Loop 30: Broad redline set parity | DOD: `--validate-reports` now checks broad CSV non-empty `redline_flags` sets against JSON redline counters and split CSV path sets | Alternatives Rejected: relying on split CSV counts while the broad CSV redline set could drift | Microseconds estimate: 0us runtime, tooling/CI handoff only
+- [x] Loop 31: Markdown report drift guard | DOD: `--validate-reports` now checks summary and remediation Markdown presence, evidence boundary text, key counts, gate text, scan-root line, and priority headings against JSON/broad CSV state | Alternatives Rejected: validating only machine artifacts while human-facing CTO/art-owner reports could go stale | Microseconds estimate: 0us runtime, tooling/CI handoff only
+- [x] Loop 32: JSON payload parity | DOD: `--validate-reports` now checks JSON mesh redline paths/flags and JSON RenderTexture paths/flags/dimensions/estimates against the broad and split CSV reports | Alternatives Rejected: count-only JSON validation, which lets stale machine-readable payloads survive | Microseconds estimate: 0us runtime, tooling/CI handoff only
 
 ## Verification
 
 - PYTHONDONTWRITEBYTECODE=1 python AST syntax parse for `Tools/MemoryBudgetCheck.py` and `Tools/test_memory_budget_check.py`: PASS
 - PYTHONDONTWRITEBYTECODE=1 python Tools/MemoryBudgetCheck.py --root . --validate-reports: PASS; reports valid: textures=1652 meshes=302 render_textures=1 texture_redlines=946 mesh_redlines=293 rt_redlines=1 rt_hotspots=61 scan_roots=Assets,Packages,Data
-- PYTHONDONTWRITEBYTECODE=1 python -m unittest discover -s Tools -p test_memory_budget_check.py: PASS, 17 tests, elapsed 9.753 seconds
+- PYTHONDONTWRITEBYTECODE=1 python -m unittest discover -s Tools -p test_memory_budget_check.py: PASS, 18 tests, elapsed 9.490 seconds
 - PYTHONDONTWRITEBYTECODE=1 python Tools/MemoryBudgetCheck.py --root . --ci: EXPECTED FAIL, ci_exit_code=2 because static redlines/overflow remain present
+- Docs/AgentLogs/LOG_VRAM_ASSET_SCOUT.md chronology: PASS, LOG_ORDER_OK headers=3 through 2026-05-15T22:41:00+03:00
 - C# dotnet build: NOT RUN. No .csproj files are present in current root scan; this continuation changed Python tooling and docs only.

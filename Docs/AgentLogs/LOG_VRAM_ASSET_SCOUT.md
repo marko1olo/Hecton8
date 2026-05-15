@@ -59,3 +59,63 @@ Verification:
 Evidence boundary:
 - STATIC_SOURCE / FILESYSTEM / PY_UNIT_TEST only.
 - Unity import, Memory Profiler, player build, and runtime frame time remain PENDING VERIFICATION.
+
+## 2026-05-15T22:50:00+03:00 - JSON PAYLOAD PARITY PASS
+
+What was wrong:
+- `--validate-reports` protected broad CSV rows and split redline CSVs, but JSON `mesh_redlines` and `render_textures` payloads could still be stale with matching counts.
+- Downstream agents often consume JSON first; stale JSON flags or RenderTexture estimates would corrupt remediation priority.
+
+What was done:
+- Added JSON mesh redline path/flag parity against `VRAM_Mesh_Redlines.csv`.
+- Added JSON RenderTexture path/flag/dimension/estimate parity against `VRAM_Budget_Audit.csv`.
+- Added a synthetic regression test that mutates JSON mesh flags and RenderTexture estimates, then proves validation fails.
+
+Cinematic cheats used:
+- None. This is offline report validation, not runtime rendering work.
+
+Exact microseconds saved:
+- Runtime code changed: none.
+- Immediate runtime CPU saving: 0us.
+- Tooling correctness improvement: stale JSON remediation payloads now fail the no-scan validator.
+
+Verification:
+- PYTHONDONTWRITEBYTECODE=1 Python AST syntax parse for `Tools/MemoryBudgetCheck.py` and `Tools/test_memory_budget_check.py`: PASS.
+- PYTHONDONTWRITEBYTECODE=1 python Tools/MemoryBudgetCheck.py --root . --validate-reports: PASS; `reports valid: textures=1652 meshes=302 render_textures=1 texture_redlines=946 mesh_redlines=293 rt_redlines=1 rt_hotspots=61 scan_roots=Assets,Packages,Data`.
+- PYTHONDONTWRITEBYTECODE=1 python -m unittest discover -s Tools -p test_memory_budget_check.py: PASS, 18 tests, elapsed 9.490 seconds.
+- PYTHONDONTWRITEBYTECODE=1 python Tools/MemoryBudgetCheck.py --root . --ci: EXPECTED FAIL with `ci_exit_code=2`; current redlines/overflow still produce `[CRITICAL_VRAM_OVERFLOW]`.
+
+Evidence boundary:
+- STATIC_SOURCE / FILESYSTEM / PY_UNIT_TEST only.
+- Unity import, Memory Profiler, player build, and runtime frame time remain PENDING VERIFICATION.
+
+## 2026-05-15T22:41:00+03:00 - MARKDOWN REPORT DRIFT GUARD PASS
+
+What was wrong:
+- CSV and JSON were protected by `--validate-reports`, but `VRAM_Budget_Audit_Summary.md` and `VRAM_Remediation_Plan.md` could still be stale.
+- Those Markdown files are the human-facing handoff; stale counts there mislead CTO/art-owner cleanup decisions.
+
+What was done:
+- Extended `validate_generated_reports()` to read the summary Markdown and remediation plan.
+- Added required snippet checks for evidence boundary text, scan roots, key texture/mesh/RT counts, gate text, and remediation priority headings.
+- Wired `--validate-reports` to pass `--summary` and `--plan` paths into the validator.
+
+Cinematic cheats used:
+- None. This is offline report validation, not runtime rendering work.
+
+Exact microseconds saved:
+- Runtime code changed: none.
+- Immediate runtime CPU saving: 0us.
+- Tooling correctness improvement: human-facing reports now fail validation if key values drift from machine artifacts.
+
+Verification:
+- PYTHONDONTWRITEBYTECODE=1 python AST syntax parse for `Tools/MemoryBudgetCheck.py` and `Tools/test_memory_budget_check.py`: PASS.
+- PYTHONDONTWRITEBYTECODE=1 python Tools/MemoryBudgetCheck.py --root . --validate-reports: PASS; `reports valid: textures=1652 meshes=302 render_textures=1 texture_redlines=946 mesh_redlines=293 rt_redlines=1 rt_hotspots=61 scan_roots=Assets,Packages,Data`.
+- PYTHONDONTWRITEBYTECODE=1 python -m unittest discover -s Tools -p test_memory_budget_check.py: PASS, 17 tests, elapsed 3.686 seconds.
+- PYTHONDONTWRITEBYTECODE=1 python Tools/MemoryBudgetCheck.py --root . --ci: EXPECTED FAIL with `ci_exit_code=2`; current redlines/overflow still produce `[CRITICAL_VRAM_OVERFLOW]`.
+- Python bytecode cleanup for `MemoryBudgetCheck*` and `test_memory_budget_check*`: PASS.
+- LOG_ORDER_OK: 3 chronological active-continuation report headers, latest `2026-05-15T22:41:00+03:00`.
+
+Evidence boundary:
+- STATIC_SOURCE / FILESYSTEM / PY_UNIT_TEST only.
+- Unity import, Memory Profiler, player build, and runtime frame time remain PENDING VERIFICATION.

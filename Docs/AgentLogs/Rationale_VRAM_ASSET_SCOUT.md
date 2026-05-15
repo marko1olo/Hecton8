@@ -17,3 +17,19 @@ Solution: Add broad redline set derivation for texture, mesh, and RenderTexture 
 Rejected Alternatives: Trusting split CSV parity alone. The broad CSV is the canonical inventory, so its redline set must agree with every derived artifact.
 Scalability potential: Low/MX350 remediation queues now stay mechanically tied to both broad inventory and split queues; higher tiers can change report sizes after regeneration without weakening parity checks.
 Hardware Impact: 0us runtime measured. Tooling impact: `--validate-reports` still passes; unit coverage remains 17 tests and ran in 9.753 seconds.
+
+## Decision 36: JSON Payload Parity
+
+Problem: `--validate-reports` proved CSV split queues and broad CSV redline rows agreed, but JSON `mesh_redlines` and `render_textures` payloads could still drift while keeping matching counts. Downstream agents consume JSON first, so stale JSON risk labels or RenderTexture estimates are a real handoff fault.
+Solution: Compare JSON mesh redline paths and flags against the mesh redline CSV, compare JSON RenderTexture paths, flags, dimensions, and estimates against the broad CSV, and add a synthetic regression test that mutates JSON flags/estimates and expects validation failure.
+Rejected Alternatives: Count-only JSON validation. Counts catch missing rows but do not catch stale flags, dimensions, or MiB estimates.
+Scalability potential: Low/MX350 queues now preserve exact redline labels and static RT estimates for cheap-device remediation. Middle/High/Ultra JSON consumers can trust machine payloads after report regeneration without re-parsing every CSV manually.
+Hardware Impact: 0us runtime measured. Tooling impact: `--validate-reports` passes current artifacts; unit coverage is now 18 tests and explicitly rejects stale JSON payload drift.
+
+## Decision 36: Markdown Report Drift Guard
+
+Problem: The no-scan validator protected CSV and JSON artifacts, but the human-facing summary and remediation plan could go stale while machine artifacts remained valid.
+Solution: Extend `validate_generated_reports()` to read `VRAM_Budget_Audit_Summary.md` and `VRAM_Remediation_Plan.md`, requiring evidence boundary text, scan-root text, key counts, gate text, and remediation priority headings to match the current JSON/broad CSV state.
+Rejected Alternatives: Trusting Markdown as presentation-only. The CTO and asset owners read Markdown, so stale Markdown is operationally dangerous even if JSON is correct.
+Scalability potential: Low/MX350 gates and human cleanup queues now share the same validated numbers; higher-tier content changes remain valid after regeneration if machine and Markdown artifacts stay aligned.
+Hardware Impact: 0us runtime measured. Tooling impact: `--validate-reports` still passes; unit coverage remains 17 tests and ran in 3.686 seconds.

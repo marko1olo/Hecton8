@@ -3,6 +3,7 @@ import csv
 import io
 import json
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -18,6 +19,13 @@ PROJECT_ROOT = TOOLS_ROOT.parent
 
 
 class MemoryBudgetCheckTests(unittest.TestCase):
+    def write_csv_rows(self, path: Path, fieldnames, rows) -> None:
+        with path.open("w", newline="", encoding="utf-8") as handle:
+            writer = csv.DictWriter(handle, fieldnames=fieldnames)
+            writer.writeheader()
+            for row in rows:
+                writer.writerow(row)
+
     def test_png_and_jpeg_dimensions_are_read_without_external_dependencies(self) -> None:
         png = PROJECT_ROOT / "Data" / "Textures" / "BlueNoise_RGBA.png"
         jpg = PROJECT_ROOT / "Assets" / "_Project" / "Art" / "Models" / "Rocks" / "Rock 7" / "Materials" / "2.jpg"
@@ -266,6 +274,8 @@ class MemoryBudgetCheckTests(unittest.TestCase):
             PROJECT_ROOT / "Docs" / "Reports" / "VRAM_Mesh_Redlines.csv",
             PROJECT_ROOT / "Docs" / "Reports" / "VRAM_RenderTexture_Redlines.csv",
             PROJECT_ROOT / "Docs" / "Reports" / "VRAM_RenderTexture_SourceHotspots.csv",
+            PROJECT_ROOT / "Docs" / "Reports" / "VRAM_Budget_Audit_Summary.md",
+            PROJECT_ROOT / "Docs" / "Reports" / "VRAM_Remediation_Plan.md",
         )
 
         self.assertTrue(ok, messages)
@@ -280,6 +290,194 @@ class MemoryBudgetCheckTests(unittest.TestCase):
             0,
         )
         self.assertIn("reports valid", buffer.getvalue())
+
+    def test_validate_reports_rejects_json_split_payload_drift(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            (root / "Assets").mkdir()
+            broad_csv = root / "audit.csv"
+            json_path = root / "audit.json"
+            mesh_redlines = root / "mesh_redlines.csv"
+            rt_redlines = root / "rt_redlines.csv"
+
+            broad_mesh_row = {column: "" for column in budget.BROAD_REPORT_COLUMNS}
+            broad_mesh_row.update(
+                {
+                    "asset_type": "mesh",
+                    "path": "Assets/BigMesh.fbx",
+                    "extension": ".fbx",
+                    "redline_flags": "MESH_GT_80K_ABSOLUTE_STATIC",
+                    "evidence_class": "STATIC_SOURCE",
+                }
+            )
+            broad_rt_row = {column: "" for column in budget.BROAD_REPORT_COLUMNS}
+            broad_rt_row.update(
+                {
+                    "asset_type": "render_texture",
+                    "path": "Assets/RT_Test.renderTexture",
+                    "extension": ".rendertexture",
+                    "width": "1280",
+                    "height": "720",
+                    "rt_estimate_mib": "7.031",
+                    "redline_flags": "RENDER_TEXTURE_DEPTH_STENCIL_PRESENT_STATIC_SUSPECT",
+                    "evidence_class": "STATIC_SOURCE",
+                }
+            )
+            self.write_csv_rows(broad_csv, budget.BROAD_REPORT_COLUMNS, [broad_mesh_row, broad_rt_row])
+            self.write_csv_rows(
+                mesh_redlines,
+                budget.MESH_REDLINE_COLUMNS,
+                [
+                    {
+                        "path": "Assets/BigMesh.fbx",
+                        "file_mib": "",
+                        "triangles": "",
+                        "geometry_estimate_mib": "",
+                        "lod_detected": "",
+                        "meta_is_readable": "",
+                        "meta_mesh_compression": "",
+                        "meta_optimize_mesh": "",
+                        "meta_import_blend_shapes": "",
+                        "meta_add_colliders": "",
+                        "meta_generate_secondary_uv": "",
+                        "meta_keep_quads": "",
+                        "flags": "MESH_GT_80K_ABSOLUTE_STATIC",
+                        "recommendation": "",
+                    }
+                ],
+            )
+            self.write_csv_rows(
+                rt_redlines,
+                budget.RENDER_TEXTURE_REDLINE_COLUMNS,
+                [
+                    {
+                        "path": "Assets/RT_Test.renderTexture",
+                        "width": "1280",
+                        "height": "720",
+                        "estimate_mib": "7.031",
+                        "color_format": "",
+                        "depth_stencil_format": "",
+                        "anti_aliasing": "",
+                        "mipmap": "",
+                        "random_write": "",
+                        "flags": "RENDER_TEXTURE_DEPTH_STENCIL_PRESENT_STATIC_SUSPECT",
+                        "recommendation": "",
+                    }
+                ],
+            )
+            payload = {
+                "texture_count": 0,
+                "mesh_count": 1,
+                "render_texture_count": 1,
+                "resolved_scan_roots": ["Assets"],
+                "texture_flagged_rows": 0,
+                "mesh_redline_rows": 1,
+                "render_texture_redline_rows": 1,
+                "critical_vram_overflow": False,
+                "gate_reasons": [],
+                "mesh_redlines": [
+                    {
+                        "path": "Assets/BigMesh.fbx",
+                        "flags": ["MESH_GT_80K_ABSOLUTE_STATIC"],
+                    },
+                ],
+                "render_textures": [
+                    {
+                        "path": "Assets/RT_Test.renderTexture",
+                        "width": 1280,
+                        "height": 720,
+                        "estimate_mib": 7.031,
+                        "flags": ["RENDER_TEXTURE_DEPTH_STENCIL_PRESENT_STATIC_SUSPECT"],
+                    },
+                ],
+            }
+            json_path.write_text(json.dumps(payload), encoding="utf-8")
+
+            ok, messages = budget.validate_generated_reports(
+                root,
+                broad_csv,
+                json_path,
+                None,
+                mesh_redlines,
+                rt_redlines,
+            )
+            self.assertTrue(ok, messages)
+
+            payload["mesh_redlines"][0]["flags"] = ["STALE_FLAG"]
+            json_path.write_text(json.dumps(payload), encoding="utf-8")
+            ok, messages = budget.validate_generated_reports(
+                root,
+                broad_csv,
+                json_path,
+                None,
+                mesh_redlines,
+                rt_redlines,
+            )
+            self.assertFalse(ok)
+            self.assertIn("mesh redline flags mismatch JSON", messages)
+
+            payload["mesh_redlines"][0]["flags"] = ["MESH_GT_80K_ABSOLUTE_STATIC"]
+            payload["render_textures"][0]["estimate_mib"] = 9.0
+            json_path.write_text(json.dumps(payload), encoding="utf-8")
+            ok, messages = budget.validate_generated_reports(
+                root,
+                broad_csv,
+                json_path,
+                None,
+                mesh_redlines,
+                rt_redlines,
+            )
+            self.assertFalse(ok)
+            self.assertIn("RenderTexture dimensions/estimate mismatch JSON", messages)
+
+    def test_validate_reports_rejects_broad_csv_schema_drift(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            drifted_csv = Path(temp_dir) / "VRAM_Budget_Audit_schema_drift.csv"
+            source_csv = PROJECT_ROOT / "Docs" / "Reports" / "VRAM_Budget_Audit.csv"
+            lines = source_csv.read_text(encoding="utf-8").splitlines()
+            lines[0] = lines[0].replace(",evidence_class", "")
+            drifted_csv.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+            ok, messages = budget.validate_generated_reports(
+                PROJECT_ROOT,
+                drifted_csv,
+                PROJECT_ROOT / "Docs" / "Reports" / "VRAM_Budget_Audit.json",
+                PROJECT_ROOT / "Docs" / "Reports" / "VRAM_Texture_Redlines.csv",
+                PROJECT_ROOT / "Docs" / "Reports" / "VRAM_Mesh_Redlines.csv",
+                PROJECT_ROOT / "Docs" / "Reports" / "VRAM_RenderTexture_Redlines.csv",
+                PROJECT_ROOT / "Docs" / "Reports" / "VRAM_RenderTexture_SourceHotspots.csv",
+                PROJECT_ROOT / "Docs" / "Reports" / "VRAM_Budget_Audit_Summary.md",
+                PROJECT_ROOT / "Docs" / "Reports" / "VRAM_Remediation_Plan.md",
+            )
+
+            self.assertFalse(ok)
+            self.assertIn("CSV report schema drift", messages)
+
+    def test_validate_reports_rejects_evidence_class_drift(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            drifted_csv = Path(temp_dir) / "VRAM_Budget_Audit_evidence_drift.csv"
+            source_csv = PROJECT_ROOT / "Docs" / "Reports" / "VRAM_Budget_Audit.csv"
+            with source_csv.open(newline="", encoding="utf-8") as handle:
+                reader = csv.DictReader(handle)
+                rows = list(reader)
+                fieldnames = reader.fieldnames or []
+            rows[0]["evidence_class"] = "RUNTIME_CLAIM_WITHOUT_PROFILER"
+            self.write_csv_rows(drifted_csv, fieldnames, rows)
+
+            ok, messages = budget.validate_generated_reports(
+                PROJECT_ROOT,
+                drifted_csv,
+                PROJECT_ROOT / "Docs" / "Reports" / "VRAM_Budget_Audit.json",
+                PROJECT_ROOT / "Docs" / "Reports" / "VRAM_Texture_Redlines.csv",
+                PROJECT_ROOT / "Docs" / "Reports" / "VRAM_Mesh_Redlines.csv",
+                PROJECT_ROOT / "Docs" / "Reports" / "VRAM_RenderTexture_Redlines.csv",
+                PROJECT_ROOT / "Docs" / "Reports" / "VRAM_RenderTexture_SourceHotspots.csv",
+                PROJECT_ROOT / "Docs" / "Reports" / "VRAM_Budget_Audit_Summary.md",
+                PROJECT_ROOT / "Docs" / "Reports" / "VRAM_Remediation_Plan.md",
+            )
+
+            self.assertFalse(ok)
+            self.assertIn("CSV report evidence_class drift", messages)
 
     def test_iter_assets_uses_case_insensitive_generated_tree_exclusion(self) -> None:
         self.assertIn(".codex-build", budget.SKIP_DIRS)

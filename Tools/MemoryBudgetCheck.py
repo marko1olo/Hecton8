@@ -84,6 +84,99 @@ RENDER_TEXTURE_SOURCE_PATTERNS = (
     ("RenderTexture.GetTemporary", re.compile(r"\bRenderTexture\.GetTemporary\s*\(")),
     ("GetTemporaryRT", re.compile(r"\bGetTemporaryRT\s*\(")),
 )
+BROAD_REPORT_COLUMNS = (
+    "asset_type",
+    "path",
+    "extension",
+    "width",
+    "height",
+    "source_mode",
+    "meta_max_texture_size",
+    "meta_texture_compression",
+    "meta_texture_format",
+    "meta_streaming_mipmaps",
+    "meta_is_readable",
+    "meta_texture_type",
+    "bc7_bytes",
+    "bc7_mib",
+    "bc7_full_mip_mib",
+    "file_bytes",
+    "file_mib",
+    "triangles",
+    "mesh_geometry_estimate_bytes",
+    "mesh_geometry_estimate_mib",
+    "lod_detected",
+    "mesh_meta_is_readable",
+    "mesh_meta_compression",
+    "mesh_meta_optimize_mesh",
+    "mesh_meta_import_blend_shapes",
+    "mesh_meta_add_colliders",
+    "mesh_meta_generate_secondary_uv",
+    "mesh_meta_keep_quads",
+    "rt_color_format",
+    "rt_depth_stencil_format",
+    "rt_anti_aliasing",
+    "rt_mipmap",
+    "rt_generate_mips",
+    "rt_texture_dimension",
+    "rt_volume_depth",
+    "rt_dynamic_scale",
+    "rt_random_write",
+    "rt_estimate_bytes",
+    "rt_estimate_mib",
+    "redline_flags",
+    "atlas_group",
+    "recommendation",
+    "evidence_class",
+)
+TEXTURE_REDLINE_COLUMNS = (
+    "path",
+    "width",
+    "height",
+    "bc7_full_mip_mib",
+    "first_party_production",
+    "flags",
+    "recommendation",
+)
+MESH_REDLINE_COLUMNS = (
+    "path",
+    "file_mib",
+    "triangles",
+    "geometry_estimate_mib",
+    "lod_detected",
+    "meta_is_readable",
+    "meta_mesh_compression",
+    "meta_optimize_mesh",
+    "meta_import_blend_shapes",
+    "meta_add_colliders",
+    "meta_generate_secondary_uv",
+    "meta_keep_quads",
+    "flags",
+    "recommendation",
+)
+RENDER_TEXTURE_REDLINE_COLUMNS = (
+    "path",
+    "width",
+    "height",
+    "estimate_mib",
+    "color_format",
+    "depth_stencil_format",
+    "anti_aliasing",
+    "mipmap",
+    "random_write",
+    "flags",
+    "recommendation",
+)
+RENDER_TEXTURE_HOTSPOT_COLUMNS = (
+    "path",
+    "line",
+    "pattern",
+    "editor_only",
+    "profiler_priority",
+    "snippet",
+    "required_action",
+    "evidence_class",
+)
 
 
 @dataclass
@@ -2000,6 +2093,8 @@ def validate_generated_reports(
     mesh_redlines_path: Optional[Path] = None,
     render_texture_redlines_path: Optional[Path] = None,
     render_texture_hotspots_path: Optional[Path] = None,
+    summary_path: Optional[Path] = None,
+    plan_path: Optional[Path] = None,
 ) -> Tuple[bool, List[str]]:
     messages: List[str] = []
     if not csv_path.exists():
@@ -2014,11 +2109,14 @@ def validate_generated_reports(
 
     with csv_path.open(newline="", encoding="utf-8") as handle:
         reader = csv.DictReader(handle)
-        fieldnames = set(reader.fieldnames or [])
+        broad_fieldnames = list(reader.fieldnames or [])
+        fieldnames = set(broad_fieldnames)
         rows = list(reader)
 
     if "asset_type" not in fieldnames or "path" not in fieldnames:
         return False, [f"CSV report missing asset_type/path columns: {rel(csv_path, root)}"]
+    if tuple(broad_fieldnames) != BROAD_REPORT_COLUMNS:
+        messages.append("CSV report schema drift")
 
     def read_split_report(path: Optional[Path], label: str, required_columns: Sequence[str]) -> List[Dict[str, str]]:
         if path is None:
@@ -2028,21 +2126,37 @@ def validate_generated_reports(
             return []
         with path.open(newline="", encoding="utf-8") as handle:
             reader = csv.DictReader(handle)
-            split_fieldnames = set(reader.fieldnames or [])
+            split_fieldnames = list(reader.fieldnames or [])
             split_rows = list(reader)
-        missing_columns = [column for column in required_columns if column not in split_fieldnames]
-        if missing_columns:
-            messages.append(f"{label} report missing columns: {','.join(missing_columns)}")
+        if tuple(split_fieldnames) != tuple(required_columns):
+            messages.append(f"{label} report schema drift")
         return split_rows
+
+    def read_text_report(path: Optional[Path], label: str) -> str:
+        if path is None:
+            return ""
+        if not path.exists():
+            messages.append(f"missing {label} report: {rel(path, root)}")
+            return ""
+        return path.read_text(encoding="utf-8")
+
+    def require_snippets(text: str, label: str, snippets: Sequence[str]) -> None:
+        if not text:
+            return
+        for snippet in snippets:
+            if snippet not in text:
+                messages.append(f"{label} report missing snippet: {snippet}")
 
     texture_rows = [row for row in rows if row.get("asset_type") == "texture"]
     mesh_rows = [row for row in rows if row.get("asset_type") == "mesh"]
     render_texture_rows = [row for row in rows if row.get("asset_type") == "render_texture"]
     unknown_type_rows = [row for row in rows if row.get("asset_type") not in {"texture", "mesh", "render_texture"}]
-    texture_redline_rows = read_split_report(texture_redlines_path, "texture redline", ("path", "flags"))
-    mesh_redline_rows = read_split_report(mesh_redlines_path, "mesh redline", ("path", "flags"))
-    render_texture_redline_rows = read_split_report(render_texture_redlines_path, "RenderTexture redline", ("path", "flags"))
-    render_texture_hotspot_rows = read_split_report(render_texture_hotspots_path, "RenderTexture hotspot", ("path", "line", "editor_only"))
+    texture_redline_rows = read_split_report(texture_redlines_path, "texture redline", TEXTURE_REDLINE_COLUMNS)
+    mesh_redline_rows = read_split_report(mesh_redlines_path, "mesh redline", MESH_REDLINE_COLUMNS)
+    render_texture_redline_rows = read_split_report(render_texture_redlines_path, "RenderTexture redline", RENDER_TEXTURE_REDLINE_COLUMNS)
+    render_texture_hotspot_rows = read_split_report(render_texture_hotspots_path, "RenderTexture hotspot", RENDER_TEXTURE_HOTSPOT_COLUMNS)
+    summary_text = read_text_report(summary_path, "summary")
+    plan_text = read_text_report(plan_path, "remediation plan")
     runtime_hotspot_rows = [
         row
         for row in render_texture_hotspot_rows
@@ -2056,6 +2170,14 @@ def validate_generated_reports(
     texture_flags_by_path = {row.get("path", ""): row.get("redline_flags", "") for row in texture_rows}
     mesh_flags_by_path = {row.get("path", ""): row.get("redline_flags", "") for row in mesh_rows}
     render_texture_flags_by_path = {row.get("path", ""): row.get("redline_flags", "") for row in render_texture_rows}
+    render_texture_dimensions_by_path = {
+        row.get("path", ""): (
+            row.get("width", ""),
+            row.get("height", ""),
+            row.get("rt_estimate_mib", ""),
+        )
+        for row in render_texture_rows
+    }
     texture_path_set = set(texture_paths)
     mesh_path_set = set(mesh_paths)
     render_texture_path_set = set(render_texture_paths)
@@ -2083,6 +2205,22 @@ def validate_generated_reports(
         )
         for item in payload.get("render_texture_source_hotspots", [])
     }
+    json_mesh_redline_flags_by_path = {
+        str(item.get("path", "")): ";".join(str(flag) for flag in item.get("flags", []))
+        for item in payload.get("mesh_redlines", [])
+    }
+    json_render_texture_flags_by_path = {
+        str(item.get("path", "")): ";".join(str(flag) for flag in item.get("flags", []))
+        for item in payload.get("render_textures", [])
+    }
+    json_render_texture_dimensions_by_path = {
+        str(item.get("path", "")): (
+            str(item.get("width", "")),
+            str(item.get("height", "")),
+            f"{float(item.get('estimate_mib', 0.0)):.3f}",
+        )
+        for item in payload.get("render_textures", [])
+    }
 
     if payload.get("texture_count") != len(texture_rows):
         messages.append(f"texture_count mismatch json={payload.get('texture_count')} csv={len(texture_rows)}")
@@ -2094,6 +2232,10 @@ def validate_generated_reports(
         messages.append(f"resolved_scan_roots mismatch json={payload.get('resolved_scan_roots')} expected={expected_roots}")
     if unknown_type_rows:
         messages.append(f"unknown asset_type rows={len(unknown_type_rows)}")
+    if any(row.get("evidence_class") != "STATIC_SOURCE" for row in rows):
+        messages.append("CSV report evidence_class drift")
+    if render_texture_hotspots_path is not None and any(row.get("evidence_class") != "STATIC_SOURCE" for row in render_texture_hotspot_rows):
+        messages.append("RenderTexture hotspot evidence_class drift")
     if texture_redlines_path is not None and payload.get("texture_flagged_rows") != len(texture_redline_rows):
         messages.append(f"texture redline mismatch json={payload.get('texture_flagged_rows')} csv={len(texture_redline_rows)}")
     if mesh_redlines_path is not None and payload.get("mesh_redline_rows") != len(mesh_redline_rows):
@@ -2144,6 +2286,25 @@ def validate_generated_reports(
         messages.append("duplicate RenderTexture hotspot keys")
     if render_texture_hotspots_path is not None and render_texture_hotspot_keys != json_hotspot_keys:
         messages.append("RenderTexture hotspot identity mismatch between CSV and JSON")
+    if mesh_redlines_path is not None and set(mesh_redline_paths) != set(json_mesh_redline_flags_by_path.keys()):
+        messages.append("mesh redline path set mismatch JSON")
+    if mesh_redlines_path is not None and any(
+        json_mesh_redline_flags_by_path.get(row.get("path", ""), "") != row.get("flags", "")
+        for row in mesh_redline_rows
+    ):
+        messages.append("mesh redline flags mismatch JSON")
+    if set(json_render_texture_flags_by_path.keys()) != render_texture_path_set:
+        messages.append("RenderTexture path set mismatch JSON")
+    if any(
+        json_render_texture_flags_by_path.get(path, "") != render_texture_flags_by_path.get(path, "")
+        for path in render_texture_path_set
+    ):
+        messages.append("RenderTexture flags mismatch JSON")
+    if any(
+        json_render_texture_dimensions_by_path.get(path, ("", "", "")) != render_texture_dimensions_by_path.get(path, ("", "", ""))
+        for path in render_texture_path_set
+    ):
+        messages.append("RenderTexture dimensions/estimate mismatch JSON")
     if any(not row.get("path", "").startswith(allowed_prefixes) for row in texture_rows):
         messages.append("texture rows outside import roots")
     if any(not row.get("path", "").startswith(allowed_prefixes) for row in mesh_rows):
@@ -2156,6 +2317,43 @@ def validate_generated_reports(
         messages.append("texture rows include _agent_screen_capture")
     if payload.get("critical_vram_overflow") and "CRITICAL_VRAM_OVERFLOW" not in payload.get("gate_reasons", []):
         messages.append("critical_vram_overflow missing CRITICAL_VRAM_OVERFLOW gate reason")
+    require_snippets(
+        summary_text,
+        "summary",
+        (
+            "# VRAM Budget Audit Summary",
+            "Evidence class: STATIC_SOURCE / FILESYSTEM. Runtime residency is PENDING VERIFICATION.",
+            f"Scan roots: {', '.join(expected_roots)}.",
+            f"- Texture files scanned: {len(texture_rows)}",
+            f"- Mesh files scanned: {len(mesh_rows)}",
+            f"- RenderTexture assets scanned: {len(render_texture_rows)}",
+            f"- Texture VRAM crime rows: {payload.get('texture_vram_crime_rows')}",
+            f"- Texture source-container risk rows: {payload.get('texture_source_container_risk_rows')}",
+            f"- Mesh redline/risk rows: {payload.get('mesh_redline_rows')}",
+            f"- RenderTexture redline/risk rows: {payload.get('render_texture_redline_rows')}",
+            f"- Runtime RenderTexture source hotspots: {payload.get('runtime_render_texture_source_hotspot_rows')}",
+            f"- link.xml status: {payload.get('link_xml_status')}",
+        ),
+    )
+    require_snippets(
+        plan_text,
+        "remediation plan",
+        (
+            "# VRAM Remediation Plan",
+            "Evidence class: STATIC_SOURCE / FILESYSTEM / PY_UNIT_TEST. No asset/import mutation performed.",
+            f"- Runtime-candidate full-mip BC7: {float(payload.get('bc7_full_mip_runtime_candidate_mib', 0.0)):.2f} MiB",
+            f"- First-party production full-mip BC7: {float(payload.get('bc7_full_mip_first_party_production_mib', 0.0)):.2f} MiB",
+            f"- Texture VRAM crime rows: {payload.get('texture_vram_crime_rows')}",
+            f"- Mesh redline/risk rows: {payload.get('mesh_redline_rows')}",
+            f"- RenderTexture redline/risk rows: {payload.get('render_texture_redline_rows')}",
+            f"- Runtime RenderTexture source hotspots: {payload.get('runtime_render_texture_source_hotspot_rows')}",
+            "## Priority 1 - Quarantine Non-Production Runtime Payloads",
+            "## Priority 2 - Convert Risky Texture Source Containers",
+            "## Priority 3 - RenderTexture Static Assets",
+            "## Priority 4 - Runtime RenderTexture Source Hotspots",
+            "CI behavior: `python Tools/MemoryBudgetCheck.py --root . --ci` must fail until redlines are resolved or explicitly suppressed by future policy.",
+        ),
+    )
 
     if messages:
         return False, messages
@@ -2383,7 +2581,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     parser.add_argument("--render-texture-hotspots", default="Docs/Reports/VRAM_RenderTexture_SourceHotspots.csv", help="RenderTexture source hotspot CSV path.")
     parser.add_argument("--workers", type=int, default=DEFAULT_AUDIT_WORKERS, help=f"Parallel asset audit workers, 1-{MAX_AUDIT_WORKERS}; <=0 uses default {DEFAULT_AUDIT_WORKERS}.")
     parser.add_argument("--ci", action="store_true", help="Exit non-zero if static redlines or overflow are detected.")
-    parser.add_argument("--validate-reports", action="store_true", help="Validate existing CSV/JSON reports without scanning assets.")
+    parser.add_argument("--validate-reports", action="store_true", help="Validate existing generated reports without scanning assets.")
     args = parser.parse_args(argv)
 
     root = Path(args.root).resolve()
@@ -2396,6 +2594,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             root / args.mesh_redlines,
             root / args.render_texture_redlines,
             root / args.render_texture_hotspots,
+            root / args.summary,
+            root / args.plan,
         )
         for message in messages:
             print(message)
