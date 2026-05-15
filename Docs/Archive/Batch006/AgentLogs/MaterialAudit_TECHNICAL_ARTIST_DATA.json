@@ -13,7 +13,8 @@
     "import_issues": 2,
     "material_issues": 3,
     "unresolved_texture_refs": 4,
-    "texture_budget": 5
+    "texture_budget": 5,
+    "texture_read_errors": 6
   },
   "texture_budget": {
     "estimated_mib": 497.565,
@@ -30,6 +31,37 @@
     "detail_candidate_count": 13,
     "energy_fail_count": 0,
     "energy_warn_count": 0,
+    "read_error_count": 1,
+    "read_error_textures": [
+      {
+        "path": "Scenes/02_HECTON_WORLD/ReflectionProbe-0.exr",
+        "extension": ".exr",
+        "meta": {
+          "guid": "6d60901e7b89c084bbdd725b912c9a8b",
+          "enableMipMap": "1",
+          "sRGBTexture": "1",
+          "isReadable": "0",
+          "streamingMipmaps": "0",
+          "textureFormat": "1",
+          "maxTextureSize": "2048",
+          "aniso": "0",
+          "textureType": "0",
+          "DefaultTexturePlatform.maxTextureSize": "2048",
+          "DefaultTexturePlatform.textureFormat": "-1",
+          "textureCompression": "1",
+          "DefaultTexturePlatform.textureCompression": "1",
+          "Standalone.maxTextureSize": "2048",
+          "Standalone.textureFormat": "-1",
+          "Standalone.textureCompression": "1"
+        },
+        "is_albedo_candidate": false,
+        "is_detail_candidate": false,
+        "is_normal": false,
+        "is_orm_candidate": false,
+        "import_issues": [],
+        "read_error": "cannot identify image file 'C:\\\\Hecton8\\\\Assets\\\\_Project\\\\Scenes\\\\02_HECTON_WORLD\\\\ReflectionProbe-0.exr'"
+      }
+    ],
     "import_issue_count": 5,
     "import_issue_counts": {
       "DATA_TEXTURE_SRGB_ON": 3,

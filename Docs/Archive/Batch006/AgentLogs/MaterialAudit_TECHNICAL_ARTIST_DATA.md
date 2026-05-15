@@ -13,6 +13,7 @@ Include third-party: `False`
 | Albedo candidates | 26 |
 | Albedo energy failures | 0 |
 | Albedo energy warnings | 0 |
+| Texture read errors | 1 |
 | Import issue textures | 5 |
 | Estimated texture residency MiB | 497.565 |
 | ORM candidates | 17 |
@@ -36,6 +37,7 @@ Include third-party: `False`
 | material_issues | 3 |
 | unresolved_texture_refs | 4 |
 | texture_budget | 5 |
+| texture_read_errors | 6 |
 
 ## Texture Budget Model
 
@@ -132,6 +134,12 @@ Include third-party: `False`
 | _PROLOGUE_CONTENT/Textures/Planets/pLANET/surface_bump.png | NORMAL_SRGB_ON, NORMAL_NOT_TEXTURETYPE_NORMAL | Disable sRGB for normal maps.; Set Texture Type to Normal Map. |
 | _PROLOGUE_CONTENT/Textures/Planets/pLANET/surface_norm.png | NORMAL_SRGB_ON, NORMAL_NOT_TEXTURETYPE_NORMAL | Disable sRGB for normal maps.; Set Texture Type to Normal Map. |
 | _PROLOGUE_CONTENT/Textures/Planets/pLANET/surface_spec.png | DATA_TEXTURE_SRGB_ON | Disable sRGB; data/mask/detail maps must be sampled linear. |
+
+## Texture Read Errors
+
+| Path | Error |
+| --- | --- |
+| Scenes/02_HECTON_WORLD/ReflectionProbe-0.exr | cannot identify image file 'C:\\Hecton8\\Assets\\_Project\\Scenes\\02_HECTON_WORLD\\ReflectionProbe-0.exr' |
 
 ## Material Slot Issues
 
