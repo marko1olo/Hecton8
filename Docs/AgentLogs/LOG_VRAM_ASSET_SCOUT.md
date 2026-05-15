@@ -298,6 +298,7 @@ What was done:
 - Recomputed RenderTexture hotspot JSON payloads from the hotspot CSV, including line, pattern, editor flag, and snippet.
 - Added a regression test that mutates all five list families and proves `--validate-reports` rejects the drift.
 - Updated minimal synthetic JSON fixtures to satisfy the stricter generated-list contract.
+- Self-review correction: hotspot list parity is enforced only when the optional hotspot CSV is supplied to the validator.
 - Regenerated the active VRAM report artifacts.
 
 Cinematic cheats used:
@@ -312,7 +313,7 @@ Verification:
 - PYTHONDONTWRITEBYTECODE=1 Python AST syntax parse for `Tools/MemoryBudgetCheck.py` and `Tools/test_memory_budget_check.py`: PASS.
 - PYTHONDONTWRITEBYTECODE=1 python Tools/MemoryBudgetCheck.py --root .: PASS; regenerated reports.
 - PYTHONDONTWRITEBYTECODE=1 python Tools/MemoryBudgetCheck.py --root . --validate-reports: PASS; `reports valid: textures=1652 meshes=302 render_textures=1 texture_redlines=946 mesh_redlines=293 rt_redlines=1 rt_hotspots=61 scan_roots=Assets,Packages,Data`.
-- PYTHONDONTWRITEBYTECODE=1 python -m unittest discover -s Tools -p test_memory_budget_check.py -v: PASS, 26 tests, elapsed 49.523 seconds.
+- PYTHONDONTWRITEBYTECODE=1 python -m unittest discover -s Tools -p test_memory_budget_check.py -v: PASS, 26 tests, elapsed 41.781 seconds.
 - PYTHONDONTWRITEBYTECODE=1 python Tools/MemoryBudgetCheck.py --root . --ci: EXPECTED FAIL with `ci_exit_code=2`; current static redlines/overflow still produce `[CRITICAL_VRAM_OVERFLOW]`.
 - Python bytecode cleanup: PASS, `PYTHON_CACHE_COUNT 0`.
 - git diff --check on VRAM-owned touched files: PASS, no whitespace errors; CRLF warnings only.
