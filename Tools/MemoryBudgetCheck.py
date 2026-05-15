@@ -2049,6 +2049,18 @@ def build_summary_payload(
             }
             for key, items, area in atlas_groups[:5]
         ],
+        "texture_redlines": [
+            {
+                "path": rel(record.path, root),
+                "width": record.width,
+                "height": record.height,
+                "bc7_full_mip_mib": round(mib(record.bc7_bytes * FULL_MIP_FACTOR), 3),
+                "first_party_production": is_first_party_production_candidate(record.path, root),
+                "flags": list(record.flags),
+                "recommendation": record.recommendation,
+            }
+            for record in sorted(texture_flagged, key=lambda item: item.bc7_bytes, reverse=True)
+        ],
         "mesh_redlines": [
             {
                 "path": rel(record.path, root),
@@ -2205,6 +2217,28 @@ def validate_generated_reports(
         )
         for item in payload.get("render_texture_source_hotspots", [])
     }
+    json_texture_redline_flags_by_path = {
+        str(item.get("path", "")): ";".join(str(flag) for flag in item.get("flags", []))
+        for item in payload.get("texture_redlines", [])
+    }
+    texture_redline_dimensions_by_path = {
+        row.get("path", ""): (
+            row.get("width", ""),
+            row.get("height", ""),
+            row.get("bc7_full_mip_mib", ""),
+            row.get("first_party_production", ""),
+        )
+        for row in texture_redline_rows
+    }
+    json_texture_redline_dimensions_by_path = {
+        str(item.get("path", "")): (
+            str(item.get("width", "")),
+            str(item.get("height", "")),
+            f"{float(item.get('bc7_full_mip_mib', 0.0)):.3f}",
+            str(bool(item.get("first_party_production", False))).lower(),
+        )
+        for item in payload.get("texture_redlines", [])
+    }
     json_mesh_redline_flags_by_path = {
         str(item.get("path", "")): ";".join(str(flag) for flag in item.get("flags", []))
         for item in payload.get("mesh_redlines", [])
@@ -2228,6 +2262,15 @@ def validate_generated_reports(
         messages.append(f"mesh_count mismatch json={payload.get('mesh_count')} csv={len(mesh_rows)}")
     if payload.get("render_texture_count") != len(render_texture_rows):
         messages.append(f"render_texture_count mismatch json={payload.get('render_texture_count')} csv={len(render_texture_rows)}")
+    if payload.get("schema_version") != 1:
+        messages.append("JSON schema_version drift")
+    if payload.get("evidence_class") != "STATIC_SOURCE/FILESYSTEM/PY_UNIT_TEST":
+        messages.append("JSON evidence_class drift")
+    if payload.get("scan_root_names") != list(DEFAULT_SCAN_ROOT_NAMES):
+        messages.append("JSON scan_root_names drift")
+    expected_ci_exit_code = 2 if payload.get("gate_reasons") else 0
+    if payload.get("ci_expected_exit_code") != expected_ci_exit_code:
+        messages.append("JSON ci_expected_exit_code drift")
     if payload.get("resolved_scan_roots") != expected_roots:
         messages.append(f"resolved_scan_roots mismatch json={payload.get('resolved_scan_roots')} expected={expected_roots}")
     if unknown_type_rows:
@@ -2286,6 +2329,18 @@ def validate_generated_reports(
         messages.append("duplicate RenderTexture hotspot keys")
     if render_texture_hotspots_path is not None and render_texture_hotspot_keys != json_hotspot_keys:
         messages.append("RenderTexture hotspot identity mismatch between CSV and JSON")
+    if texture_redlines_path is not None and set(texture_redline_paths) != set(json_texture_redline_flags_by_path.keys()):
+        messages.append("texture redline path set mismatch JSON")
+    if texture_redlines_path is not None and any(
+        json_texture_redline_flags_by_path.get(row.get("path", ""), "") != row.get("flags", "")
+        for row in texture_redline_rows
+    ):
+        messages.append("texture redline flags mismatch JSON")
+    if texture_redlines_path is not None and any(
+        json_texture_redline_dimensions_by_path.get(row.get("path", ""), ("", "", "", "")) != texture_redline_dimensions_by_path.get(row.get("path", ""), ("", "", "", ""))
+        for row in texture_redline_rows
+    ):
+        messages.append("texture redline dimensions/estimate mismatch JSON")
     if mesh_redlines_path is not None and set(mesh_redline_paths) != set(json_mesh_redline_flags_by_path.keys()):
         messages.append("mesh redline path set mismatch JSON")
     if mesh_redlines_path is not None and any(

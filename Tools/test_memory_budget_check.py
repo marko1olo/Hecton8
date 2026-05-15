@@ -230,9 +230,12 @@ class MemoryBudgetCheckTests(unittest.TestCase):
         self.assertIn("RENDER_TEXTURE_REDLINE_OR_RISK", payload["gate_reasons"])
         self.assertIn("texture_extension_summary", payload)
         self.assertIn("mesh_extension_summary", payload)
+        self.assertIn("texture_redlines", payload)
         self.assertIn("render_textures", payload)
         self.assertIn("render_texture_source_hotspots", payload)
         self.assertEqual(payload["runtime_render_texture_source_hotspot_rows"], 1)
+        self.assertEqual(payload["texture_flagged_rows"], 1)
+        self.assertEqual(payload["texture_redlines"][0]["path"], "Assets/_Project/Art/TEXTURES/TX_split.png")
         self.assertIn(".codex-build", payload["skipped_directory_names"])
         self.assertEqual(payload["mesh_redline_rows"], 1)
         self.assertGreater(payload["mesh_geometry_static_estimate_mib"], 0)
@@ -429,6 +432,107 @@ class MemoryBudgetCheckTests(unittest.TestCase):
             )
             self.assertFalse(ok)
             self.assertIn("RenderTexture dimensions/estimate mismatch JSON", messages)
+
+    def test_validate_reports_rejects_texture_json_split_payload_drift(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            (root / "Assets" / "_Project").mkdir(parents=True)
+            broad_csv = root / "audit.csv"
+            json_path = root / "audit.json"
+            texture_redlines = root / "texture_redlines.csv"
+
+            broad_texture_row = {column: "" for column in budget.BROAD_REPORT_COLUMNS}
+            broad_texture_row.update(
+                {
+                    "asset_type": "texture",
+                    "path": "Assets/_Project/TX_Test.png",
+                    "extension": ".png",
+                    "width": "4096",
+                    "height": "2048",
+                    "redline_flags": "VRAM CRIME: TEXTURE_GT_2048",
+                    "evidence_class": "STATIC_SOURCE",
+                }
+            )
+            self.write_csv_rows(broad_csv, budget.BROAD_REPORT_COLUMNS, [broad_texture_row])
+            self.write_csv_rows(
+                texture_redlines,
+                budget.TEXTURE_REDLINE_COLUMNS,
+                [
+                    {
+                        "path": "Assets/_Project/TX_Test.png",
+                        "width": "4096",
+                        "height": "2048",
+                        "bc7_full_mip_mib": "42.667",
+                        "first_party_production": "true",
+                        "flags": "VRAM CRIME: TEXTURE_GT_2048",
+                        "recommendation": "Clamp import cap.",
+                    }
+                ],
+            )
+            payload = {
+                "texture_count": 1,
+                "mesh_count": 0,
+                "render_texture_count": 0,
+                "resolved_scan_roots": ["Assets"],
+                "texture_flagged_rows": 1,
+                "mesh_redline_rows": 0,
+                "render_texture_redline_rows": 0,
+                "render_texture_source_hotspot_rows": 0,
+                "runtime_render_texture_source_hotspot_rows": 0,
+                "critical_vram_overflow": False,
+                "gate_reasons": [],
+                "texture_redlines": [
+                    {
+                        "path": "Assets/_Project/TX_Test.png",
+                        "width": 4096,
+                        "height": 2048,
+                        "bc7_full_mip_mib": 42.667,
+                        "first_party_production": True,
+                        "flags": ["VRAM CRIME: TEXTURE_GT_2048"],
+                    }
+                ],
+                "mesh_redlines": [],
+                "render_textures": [],
+                "render_texture_source_hotspots": [],
+            }
+            json_path.write_text(json.dumps(payload), encoding="utf-8")
+
+            ok, messages = budget.validate_generated_reports(
+                root,
+                broad_csv,
+                json_path,
+                texture_redlines,
+                None,
+                None,
+            )
+            self.assertTrue(ok, messages)
+
+            payload["texture_redlines"][0]["flags"] = ["STALE_FLAG"]
+            json_path.write_text(json.dumps(payload), encoding="utf-8")
+            ok, messages = budget.validate_generated_reports(
+                root,
+                broad_csv,
+                json_path,
+                texture_redlines,
+                None,
+                None,
+            )
+            self.assertFalse(ok)
+            self.assertIn("texture redline flags mismatch JSON", messages)
+
+            payload["texture_redlines"][0]["flags"] = ["VRAM CRIME: TEXTURE_GT_2048"]
+            payload["texture_redlines"][0]["bc7_full_mip_mib"] = 40.0
+            json_path.write_text(json.dumps(payload), encoding="utf-8")
+            ok, messages = budget.validate_generated_reports(
+                root,
+                broad_csv,
+                json_path,
+                texture_redlines,
+                None,
+                None,
+            )
+            self.assertFalse(ok)
+            self.assertIn("texture redline dimensions/estimate mismatch JSON", messages)
 
     def test_validate_reports_rejects_broad_csv_schema_drift(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
