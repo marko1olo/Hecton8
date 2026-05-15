@@ -272,3 +272,11 @@ Status: PENDING VERIFICATION
 - Verification avoided dotnet rebuilds and Unity import. `FamilyIndexContractYamlScan Count=200 Bad=0`; `git diff --check` passed for the baker with only the repo CRLF warning; source brace balance stayed `Delta=0` with `NonAscii=0`; case-sensitive forbidden source scan stayed clean.
 - Rejected alternative: sorting names or allocating per-family hash sets was rejected because a fixed scratch bitset is simpler, deterministic, and sufficient for the small generated Shallows family sizes.
 - H-Phi impact remains domain-local evidence only: generated variation coverage is now fail-closed without runtime registries, lookup repair, allocations on the render path, or cross-domain dependencies.
+
+### Loop 30 - Mesh LOD Triplet Completeness Contract
+
+- Found the mesh-side equivalent of the variation coverage gap: `ValidateMeshFamily` counted LOD suffix totals, but did not prove every variation index had exactly one LOD0, LOD1, and LOD2 mesh.
+- Patched `ShallowsBioForgeBatchBaker` with a fixed `bool[300]` mesh LOD index scratch buffer, `ValidateMeshLodIndexContract`, and `TryParseMeshLodStem` to prove exact deterministic mesh triplet coverage.
+- Verification avoided dotnet rebuilds and Unity import. `MeshLodIndexContractYamlScan Count=600 Bad=0`; `git diff --check` passed for the baker with only the repo CRLF warning; source brace balance stayed `Delta=0` with `NonAscii=0`; case-sensitive forbidden source scan found no regex, hash set, sort, or hot-path render ownership patterns.
+- Rejected alternative: relying on suffix distribution was rejected because it allows missing triplets masked by duplicate or orphan mesh assets. Sorting or hash sets were rejected because a fixed bitset is cheaper and bounded by authored Shallows family sizes.
+- H-Phi impact remains domain-local evidence only: generated mesh triplets are now fail-closed without runtime registries, lookup repair, renderer mutations, allocations on the render path, or cross-domain dependencies.

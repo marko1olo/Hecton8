@@ -304,6 +304,13 @@ namespace Hecton8.UI.Tools
 
             _toolHashFilter = toolHash;
             _hasState = false;
+            _scannerSignalActive = false;
+            _scannerArtifactHash = 0u;
+            _scannerProgress01 = 0f;
+            _lastSignalSequence = InvalidDisplayBucket;
+            _lastScannerSignalSequence = InvalidDisplayBucket;
+            _lastScannerProgressBucket = InvalidDisplayBucket;
+            _lastScannerArtifactHash = 0u;
             _stateDirty = true;
             _renderRequested = true;
             _notRenderableSeconds = 0f;

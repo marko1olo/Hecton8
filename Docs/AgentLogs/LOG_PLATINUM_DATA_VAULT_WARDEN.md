@@ -68,67 +68,6 @@ Verification:
 Status:
 - VERIFIED VAULT LOCK - COMPILE TARGET BLOCKED BY MISSING Hecton8.Core.Memory.rsp.
 
-## 2026-05-15 - Root Migration Clamp Gate
-
-What was wrong:
-- Binary reads were bounded, but non-binary restore paths could still feed oversized legacy compatibility containers into migration.
-- Corporate pending order IDs and timers could be mismatched after non-binary repair.
-
-What was done:
-- Added cold migration trims for root legacy tool maps, custom mod data, discovered biome IDs, audio-log discovery IDs, quest IDs, suit upgrade IDs, corporate order IDs/timers, and mission IDs.
-- Added paired trimming for corporate pending order IDs and timers so migration keeps both lists synchronized.
-- Kept trims in migration, not producer hot paths, because this is load/repair hygiene.
-
-Cinematic Cheats used:
-- Compatibility containers are capped repair metadata. Primary packed bitmasks and fixed DTO arrays carry scalable state.
-
-Exact Microseconds saved:
-- Frame cost: 0 us.
-- Cold corrupt/non-binary load avoids downstream iteration over oversized legacy containers. Dictionary/hash-set trimming is cold-only and allocation-free except existing container storage.
-
-Verification:
-- `SaveBinaryPayloadCodec.cs` and `SaveDataMigration.cs` brace/parenthesis balance passed.
-- Migration cap scan found all root cap constants wired.
-- Root unbounded codec read/write scans remained clean.
-- DataVault live compaction scan returned no `UnsafeUtility.MemMove`, `RunCompactionSlice`, `TryCompactFreeGapAt`, `VaultMemMoveJob`, `System.Threading`, `Stopwatch`, or `BurstCompile`.
-- `git diff --check` passed with CRLF warnings only.
-- No dotnet rebuild was run per user order.
-
-Status:
-- VERIFIED VAULT LOCK - COMPILE TARGET BLOCKED BY MISSING Hecton8.Core.Memory.rsp.
-
-## 2026-05-15 - Root Legacy Collection Bounds Gate
-
-What was wrong:
-- Root legacy compatibility collections still used unbounded binary readers for lists, dictionaries, and hash sets.
-- Malformed payload counts could allocate oversized managed containers before migration or packed-bitmask restoration had a chance to clamp state.
-
-What was done:
-- Added explicit root collection caps for legacy tool durability, discovered biome IDs, audio-log discovery IDs, quest IDs, suit upgrade IDs, corporate order IDs/timers, mission IDs, and custom mod data.
-- Routed root legacy write calls through capped list/dictionary/hashset overloads.
-- Routed root legacy read calls through capped overloads that reject over-limit counts before allocation.
-- Added a paired-count clamp for corporate pending order IDs and timers so the writer emits synchronized logical pairs.
-- Re-extracted the batch prompt with PowerShell raw regex; `CURRENT_BATCH.md` still returns `PROMPT_NOT_FOUND`, so status/rationale remain disk authority.
-
-Cinematic Cheats used:
-- Legacy compatibility state is bounded metadata, not a scalable gameplay simulation. Packed bitmasks and fixed DTO arrays remain the high-density path.
-
-Exact Microseconds saved:
-- Frame cost: 0 us.
-- Cold corrupt-load protection now rejects compatibility collection counts above fixed caps before managed allocation. Worst bounded classes: 1024 audio-log IDs, 1024 quest IDs per list, 108 biome IDs, 64 custom mod entries, 32 tool/mission/suit entries, and 16 corporate entries.
-
-Verification:
-- `SaveBinaryPayloadCodec.cs` brace/parenthesis balance passed.
-- Root unbounded read scan returned `NO_UNBOUNDED_ROOT_READS`.
-- Root unbounded write scan returned `NO_UNBOUNDED_ROOT_WRITES`.
-- Producer cap scan found matching limits in `ToolDurabilitySystem`, `AudioLogDiscoveryBitMask`, `BiomeDiscoveryBitMask`, `SuitUpgradeManager`, `CorporateOrderSystem`, `MissionManager`, and mod runtime capacity evidence.
-- DataVault live compaction scan returned no `UnsafeUtility.MemMove`, `RunCompactionSlice`, `TryCompactFreeGapAt`, `VaultMemMoveJob`, `System.Threading`, `Stopwatch`, or `BurstCompile`.
-- `git diff --check` passed with CRLF warnings only.
-- No dotnet rebuild was run per user order.
-
-Status:
-- VERIFIED VAULT LOCK - COMPILE TARGET BLOCKED BY MISSING Hecton8.Core.Memory.rsp.
-
 ## 2026-05-15 - Procedural DTO Payload Bounds Pass
 
 What was wrong:
@@ -588,6 +527,67 @@ Verification:
 - Duplicate custom-array writer scan returned clean.
 - Fixed-capacity full-array writer scan returned clean.
 - Old procedural full-array write/read scan returned clean.
+- DataVault live compaction scan returned no `UnsafeUtility.MemMove`, `RunCompactionSlice`, `TryCompactFreeGapAt`, `VaultMemMoveJob`, `System.Threading`, `Stopwatch`, or `BurstCompile`.
+- `git diff --check` passed with CRLF warnings only.
+- No dotnet rebuild was run per user order.
+
+Status:
+- VERIFIED VAULT LOCK - COMPILE TARGET BLOCKED BY MISSING Hecton8.Core.Memory.rsp.
+
+## 2026-05-15 - Root Legacy Collection Bounds Gate
+
+What was wrong:
+- Root legacy compatibility collections still used unbounded binary readers for lists, dictionaries, and hash sets.
+- Malformed payload counts could allocate oversized managed containers before migration or packed-bitmask restoration had a chance to clamp state.
+
+What was done:
+- Added explicit root collection caps for legacy tool durability, discovered biome IDs, audio-log discovery IDs, quest IDs, suit upgrade IDs, corporate order IDs/timers, mission IDs, and custom mod data.
+- Routed root legacy write calls through capped list/dictionary/hashset overloads.
+- Routed root legacy read calls through capped overloads that reject over-limit counts before allocation.
+- Added a paired-count clamp for corporate pending order IDs and timers so the writer emits synchronized logical pairs.
+- Re-extracted the batch prompt with PowerShell raw regex; `CURRENT_BATCH.md` still returns `PROMPT_NOT_FOUND`, so status/rationale remain disk authority.
+
+Cinematic Cheats used:
+- Legacy compatibility state is bounded metadata, not a scalable gameplay simulation. Packed bitmasks and fixed DTO arrays remain the high-density path.
+
+Exact Microseconds saved:
+- Frame cost: 0 us.
+- Cold corrupt-load protection now rejects compatibility collection counts above fixed caps before managed allocation. Worst bounded classes: 1024 audio-log IDs, 1024 quest IDs per list, 108 biome IDs, 64 custom mod entries, 32 tool/mission/suit entries, and 16 corporate entries.
+
+Verification:
+- `SaveBinaryPayloadCodec.cs` brace/parenthesis balance passed.
+- Root unbounded read scan returned `NO_UNBOUNDED_ROOT_READS`.
+- Root unbounded write scan returned `NO_UNBOUNDED_ROOT_WRITES`.
+- Producer cap scan found matching limits in `ToolDurabilitySystem`, `AudioLogDiscoveryBitMask`, `BiomeDiscoveryBitMask`, `SuitUpgradeManager`, `CorporateOrderSystem`, `MissionManager`, and mod runtime capacity evidence.
+- DataVault live compaction scan returned no `UnsafeUtility.MemMove`, `RunCompactionSlice`, `TryCompactFreeGapAt`, `VaultMemMoveJob`, `System.Threading`, `Stopwatch`, or `BurstCompile`.
+- `git diff --check` passed with CRLF warnings only.
+- No dotnet rebuild was run per user order.
+
+Status:
+- VERIFIED VAULT LOCK - COMPILE TARGET BLOCKED BY MISSING Hecton8.Core.Memory.rsp.
+
+## 2026-05-15 - Root Migration Clamp Gate
+
+What was wrong:
+- Binary reads were bounded, but non-binary restore paths could still feed oversized legacy compatibility containers into migration.
+- Corporate pending order IDs and timers could be mismatched after non-binary repair.
+
+What was done:
+- Added cold migration trims for root legacy tool maps, custom mod data, discovered biome IDs, audio-log discovery IDs, quest IDs, suit upgrade IDs, corporate order IDs/timers, and mission IDs.
+- Added paired trimming for corporate pending order IDs and timers so migration keeps both lists synchronized.
+- Kept trims in migration, not producer hot paths, because this is load/repair hygiene.
+
+Cinematic Cheats used:
+- Compatibility containers are capped repair metadata. Primary packed bitmasks and fixed DTO arrays carry scalable state.
+
+Exact Microseconds saved:
+- Frame cost: 0 us.
+- Cold corrupt/non-binary load avoids downstream iteration over oversized legacy containers. Dictionary/hash-set trimming is cold-only and allocation-free except existing container storage.
+
+Verification:
+- `SaveBinaryPayloadCodec.cs` and `SaveDataMigration.cs` brace/parenthesis balance passed.
+- Migration cap scan found all root cap constants wired.
+- Root unbounded codec read/write scans remained clean.
 - DataVault live compaction scan returned no `UnsafeUtility.MemMove`, `RunCompactionSlice`, `TryCompactFreeGapAt`, `VaultMemMoveJob`, `System.Threading`, `Stopwatch`, or `BurstCompile`.
 - `git diff --check` passed with CRLF warnings only.
 - No dotnet rebuild was run per user order.

@@ -309,3 +309,15 @@ Cinematic Cheats used: Static offline L-system/SDF prefab libraries, strict dete
 Exact Microseconds saved: Runtime remains 0 us/frame and 0 bytes procedural allocation. This prevents runtime registry/fallback logic and dressing-set holes from missing or duplicated variation indices; exact runtime microseconds were not profiled.
 
 Verification: No dotnet rebuild and no Unity import was run. `FamilyIndexContractYamlScan Count=200 Bad=0`; `git diff --check` passed for the baker with only the repo CRLF warning; source brace balance stayed `Delta=0`, `NonAscii=0`, and case-sensitive forbidden source scan stayed clean.
+
+## 2026-05-15 Mesh LOD Triplet Completeness Contract
+
+What was wrong: Mesh family validation counted total LOD suffixes but did not prove that each generated variation had exactly one LOD0, LOD1, and LOD2 mesh.
+
+What was done: Added `ValidateMeshLodIndexContract`, `TryParseMeshLodStem`, and a fixed `bool[300]` scratch buffer so mesh triplets are validated by family, variation index, and LOD index.
+
+Cinematic Cheats used: Static offline L-system/SDF mesh triplets, strict deterministic LOD identity, shared atlas/material, dithered LOD crossfade, no flora colliders, and rock-only LOD2 convex proxies remain unchanged.
+
+Exact Microseconds saved: Runtime remains 0 us/frame and 0 bytes procedural allocation. This prevents runtime fallback or renderer mutation for missing/duplicate LOD mesh slots; exact runtime microseconds were not profiled.
+
+Verification: No dotnet rebuild and no Unity import was run. `MeshLodIndexContractYamlScan Count=600 Bad=0`; `git diff --check` passed for the baker with only the repo CRLF warning; source brace balance stayed `Delta=0`, `NonAscii=0`, and case-sensitive forbidden source scan stayed clean.

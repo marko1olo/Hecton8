@@ -99,7 +99,7 @@ Problem: Caustic GPU upload data, black-box telemetry entries, and the AUP culli
 Solution: Added explicit sequential pack/size to caustic GPU and telemetry structs, explicit sequential layout to the AUP shift job payload, and default-reset disposed NativeArray fields after release.
 Rejected Alternatives: Relying on C# default layout was rejected because H-Phi rewards binary-safe rendering code and GPU upload payloads must be deterministic; allocation churn was rejected in favor of keeping existing persistent NativeArrays.
 Scalability potential: Low through Ultra share the same predictable upload and black-box memory model. Higher tiers can push more waves/instances without adding managed allocations or layout ambiguity.
-Hardware Impact: Runtime microsecond gain is 0 us claimed. The benefit is lower integration risk and cleaner H-Phi memory-alignment evidence; latest no-rebuild audit reports `MemoryAlignment=0.503966155` and `AupPrecisionRisk=0`.
+Hardware Impact: Runtime microsecond gain is 0 us claimed. The benefit is lower integration risk and cleaner H-Phi memory-alignment evidence; latest no-rebuild audit reports `MemoryAlignment=0.504761905` and `AupPrecisionRisk=0`.
 
 ## Decision 015 - Instance Buffer Zero-Count Guard
 Problem: The UberNoir resident-drawer path could read `_H8UberNoirInstanceData[bufferOffset]` when the instance buffer keyword was compiled but `_UberNoirInstanceParams.y` was zero or `_UberNoirInstanceParams.z` disabled the path.
@@ -113,7 +113,7 @@ Problem: The user explicitly forbade dotnet rebuilds, but the final shader safet
 Solution: Re-ran only the static `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json` audit with a longer timeout after the first 120-second attempt expired.
 Rejected Alternatives: Running `dotnet build` or Unity compilation was rejected because it violates the direct user order and remains blocked by external World/GPR compile errors.
 Scalability potential: Static audit confirms `AupPrecisionRisk=0`, `UnityUpdateMethods=2`, and increased `StructLayoutAttributes=953`; runtime scalability still requires profiler capture after the external compile blocker is cleared.
-Hardware Impact: 0 us runtime. Evidence quality improved; latest static audit reports `RuntimeHPhiNarrow=0.010497120`, `RuntimeHPhiRisk=0.000573792`, and `MemoryAlignment=0.503966155`.
+Hardware Impact: 0 us runtime. Evidence quality improved; latest static audit reports `RuntimeHPhiNarrow=0.010750800`, `RuntimeHPhiRisk=0.000587147`, and `MemoryAlignment=0.504761905`.
 
 ## Decision 017 - Dynamic Resolution Hysteresis And Asset Mutation Guard
 Problem: `ThermalDynamicResolutionAdapter` could react to a single pressure frame and mutate the active URP asset `renderScale`/`upscalingFilter` as a fallback, creating state flicker and ScriptableObject/project-setting dirtiness risk.
@@ -128,3 +128,10 @@ Solution: Sanitize tint and strength before `Shader.SetGlobalVector`, preserve t
 Rejected Alternatives: Trusting inspector data was rejected because rendering globals feed many materials and NaN propagation is a project-level failure mode. Edit-mode registry side effects were rejected because shader preview globals do not require runtime tick ownership.
 Scalability potential: All tiers receive stable globals; the visual tint fake remains cheap on low hardware and usable as biome richness on high hardware.
 Hardware Impact: 0 us speed claimed. Correctness gain is preventing shader global poisoning and edit-mode runtime-registry noise.
+
+## Decision 019 - Post-Follow-Up H-Phi Reverification
+Problem: The DRS/flora safety pass changed rendering source state after the previous H-Phi measurement, while the user explicitly forbade dotnet rebuilds.
+Solution: Reran only `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json` with a 300s timeout and recorded the latest static-source metrics.
+Rejected Alternatives: Running `dotnet build`, `dotnet rebuild`, or a Unity compilation was rejected because it violates the direct user order and remains blocked by external World/GPR compile errors. Reusing stale H-Phi numbers was rejected as fake evidence.
+Scalability potential: Low-tier rendering now keeps hysteretic DRS behavior and finite shader globals; High/Ultra keep the overkill path without one-frame scale oscillation or shader global NaN risk.
+Hardware Impact: 0 us runtime claimed from the audit itself. Latest static audit: `RuntimeHPhiNarrow=0.010750800`, `RuntimeHPhiRisk=0.000587147`, `AllSourceHPhiNarrow=0.009572479`, `AllSourceHPhiRisk=0.000482295`, `ArchitecturalPurity=0.996447602`, `MemoryAlignment=0.504761905`, `StructLayoutAttributes=954`, `AupPrecisionRisk=0`.

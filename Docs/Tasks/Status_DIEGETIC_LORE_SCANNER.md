@@ -167,11 +167,17 @@ Mandates read:
 ## Loop 21 - Filtered Scanner Signal Dirty-Churn Guard
 
 - [x] Rejected scanner packet zeroing | DOD: `ToolDiegeticDisplayController` now maps scanner-active packets that fail the tool-hash filter to artifact `0` and progress `0`, so unrelated scanner traffic cannot carry artifact/progress into the display cache | Rejected: letting rejected packets mark filtered displays dirty through irrelevant artifact hashes | Estimate: avoids one dirty-state refresh per unrelated scanner hash transition
+- [x] Static no-regression checks after Loop 21 | DOD: `git diff --check` passed with line-ending warnings only, `git diff --cached --check` passed, scanner banned-pattern scan found no forbidden UI/scanner patterns, and filter regression scan confirmed rejected packets use zero artifact/progress with no direct `signal.ArtifactHash` cache writes | Rejected: dotnet rebuild, explicitly forbidden by user | Estimate: 2500 us
+
+## Loop 22 - Tool Filter Rebind Sequence Reset
+
+- [x] Display filter rebind consumes latest state | DOD: `SetToolHashFilter()` now clears scanner display state and resets both latest-signal sequence sentinels so the newly selected filter can consume the current latest tool/scanner packets immediately | Rejected: waiting for a future signal after a filter change while the physical screen shows fallback/stale state | Estimate: cold authoring/spawn path only
+- [x] Static no-regression checks after Loop 22 | DOD: `git diff --check` passed with line-ending warnings only, `git diff --cached --check` passed, scanner banned-pattern scan found no forbidden UI/scanner patterns, and filter-rebind scan confirmed sequence resets plus scanner-cache clearing | Rejected: dotnet rebuild, explicitly forbidden by user | Estimate: 2600 us
 
 ## Verification
 
 - [x] Compile/source validation - `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:quiet -clp:Summary` passed with 0 warnings / 0 errors after Loop 10
-- [ ] Compile/source validation after Loops 11-21 - NOT RERUN: user explicitly ordered no dotnet rebuilds; static source checks only
+- [ ] Compile/source validation after Loops 11-22 - NOT RERUN: user explicitly ordered no dotnet rebuilds; static source checks only
 - [ ] Console check - BLOCKED BY UNITY SESSION: MCP validate/console calls cannot connect to Unity MCP HTTP endpoint / session
 - [x] Re-read prompt after core tasks
 - [x] Omega polish mandate after all tasks done or blocked

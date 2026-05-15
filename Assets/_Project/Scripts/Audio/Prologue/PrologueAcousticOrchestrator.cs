@@ -18,6 +18,7 @@ namespace Hecton8.Audio.Prologue
         private const float MinimumLowPassCutoffHertz = 80f;
         private const float CutoffPublishEpsilonHertz = 1f;
         private const float GainPublishEpsilon = 0.0005f;
+        private const float MaxPresentationDeltaSeconds = 0.25f;
 
         [Header("Filter")]
         [SerializeField] private float vacuumLowPassCutoffHertz = 400f;
@@ -34,6 +35,7 @@ namespace Hecton8.Audio.Prologue
         [SerializeField] private float splashdownGain = 1f;
 
         private IAudioService _audioService;
+        private ITickDispatcher _tickDispatcher;
         private bool _lateFrameRegistered;
         private bool _hotSwapRegistered;
         private bool _scalabilityEventsRegistered;
@@ -73,6 +75,7 @@ namespace Hecton8.Audio.Prologue
         private void OnEnable()
         {
             CacheAudioService(GlobalRegistry.Audio);
+            _tickDispatcher = GlobalRegistry.TickDispatcher;
             RefreshQualityPolicyCold();
             _currentLowPassCutoffHertz = ClampCutoff(oceanLowPassCutoffHertz);
             _stage = AudioTransitionState.StageSpace;
@@ -120,6 +123,7 @@ namespace Hecton8.Audio.Prologue
             }
 
             _audioService = null;
+            _tickDispatcher = null;
         }
 
         /// <inheritdoc />
@@ -133,7 +137,7 @@ namespace Hecton8.Audio.Prologue
             _tickCount++;
             ConsumeAtmosphericSignals();
             ConsumePrologueCompleteSignals();
-            AdvanceFilterSweep(Time.unscaledDeltaTime);
+            AdvanceFilterSweep(ResolveUnscaledDeltaTime());
             PublishAudioTransition(frame);
         }
 
@@ -148,8 +152,15 @@ namespace Hecton8.Audio.Prologue
             GlobalRegistryServiceSlot serviceSlot,
             ref object currentService)
         {
-            if (serviceSlot == GlobalRegistryServiceSlot.Audio)
-                CacheAudioService(currentService as IAudioService);
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Audio:
+                    CacheAudioService(currentService as IAudioService);
+                    break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    _tickDispatcher = currentService as ITickDispatcher;
+                    break;
+            }
         }
 
         /// <inheritdoc />
@@ -158,8 +169,15 @@ namespace Hecton8.Audio.Prologue
             object previousService,
             object currentService)
         {
-            if (serviceSlot == GlobalRegistryServiceSlot.Audio)
-                CacheAudioService(currentService as IAudioService);
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Audio:
+                    CacheAudioService(currentService as IAudioService);
+                    break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    _tickDispatcher = currentService as ITickDispatcher;
+                    break;
+            }
         }
 
         private void ConsumeAtmosphericSignals()
@@ -266,7 +284,7 @@ namespace Hecton8.Audio.Prologue
             if (!_sweepActive)
                 return;
 
-            float duration = math.max(0.001f, oceanFilterSweepSeconds);
+            float duration = PositiveFiniteOrMinimum(oceanFilterSweepSeconds, 0.001f);
             _sweepElapsedSeconds = math.min(duration, _sweepElapsedSeconds + math.max(0f, deltaSeconds));
             float t = math.saturate(_sweepElapsedSeconds * math.rcp(duration));
             t = t * t * (3f - 2f * t);
@@ -305,8 +323,9 @@ namespace Hecton8.Audio.Prologue
 
             float lowPassCutoffHertz = ClampCutoff(_currentLowPassCutoffHertz);
             float lfeGain = ResolveLfeGain(velocity01, plasmaStage, portalStage);
-            float granularStress = granularEnabled ? math.saturate(velocity01 * plasmaGranularStressGain) : 0f;
-            float splashdownGain01 = _splashdownPending ? math.saturate(splashdownGain) : 0f;
+            float granularGain = SaturateFiniteOrZero(plasmaGranularStressGain);
+            float granularStress = granularEnabled ? math.saturate(velocity01 * granularGain) : 0f;
+            float splashdownGain01 = _splashdownPending ? SaturateFiniteOrZero(splashdownGain) : 0f;
             float portalBlend01 = portalStage ? ResolvePortalBlend01() : 0f;
             if (!ShouldPublishTransition(lowPassCutoffHertz, lfeGain, granularStress, splashdownGain01, portalBlend01, flags))
                 return;
@@ -395,7 +414,7 @@ namespace Hecton8.Audio.Prologue
 
         private float ResolveVelocity01(float velocityMetersPerSecond)
         {
-            float velocityScale = math.max(1f, plasmaFullStressVelocityMetersPerSecond);
+            float velocityScale = PositiveFiniteOrMinimum(plasmaFullStressVelocityMetersPerSecond, 1f);
             return math.saturate(math.max(0f, velocityMetersPerSecond) * math.rcp(velocityScale));
         }
 
@@ -427,11 +446,11 @@ namespace Hecton8.Audio.Prologue
             if (portalStage)
                 return 0f;
 
-            float baseGain = math.saturate(vacuumLfeGain);
+            float baseGain = SaturateFiniteOrZero(vacuumLfeGain);
             if (!plasmaStage)
                 return baseGain;
 
-            float plasmaGain = math.saturate(plasmaLfeGain);
+            float plasmaGain = SaturateFiniteOrZero(plasmaLfeGain);
             return math.saturate(math.lerp(baseGain, plasmaGain, velocity01));
         }
 
@@ -440,7 +459,7 @@ namespace Hecton8.Audio.Prologue
             if (!_sweepActive)
                 return 1f;
 
-            float duration = math.max(0.001f, oceanFilterSweepSeconds);
+            float duration = PositiveFiniteOrMinimum(oceanFilterSweepSeconds, 0.001f);
             return math.saturate(_sweepElapsedSeconds * math.rcp(duration));
         }
 
@@ -465,22 +484,50 @@ namespace Hecton8.Audio.Prologue
 
         private float ClampCutoff(float cutoffHertz)
         {
+            float resolvedCutoff = math.isfinite(cutoffHertz) ? cutoffHertz : vacuumLowPassCutoffHertz;
+            if (!math.isfinite(resolvedCutoff))
+                resolvedCutoff = MinimumLowPassCutoffHertz;
+
             return math.clamp(
-                math.isfinite(cutoffHertz) ? cutoffHertz : vacuumLowPassCutoffHertz,
+                resolvedCutoff,
                 MinimumLowPassCutoffHertz,
                 22000f);
         }
 
+        private float ResolveUnscaledDeltaTime()
+        {
+            ITickDispatcher dispatcher = _tickDispatcher;
+            if (dispatcher != null)
+            {
+                double dispatcherDelta = dispatcher.TimeSnapshot.UnscaledDeltaTime;
+                if (dispatcherDelta > 0d && double.IsFinite(dispatcherDelta))
+                    return dispatcherDelta > MaxPresentationDeltaSeconds ? MaxPresentationDeltaSeconds : (float)dispatcherDelta;
+            }
+
+            float fallback = Time.unscaledDeltaTime;
+            return math.isfinite(fallback) && fallback > 0f ? math.min(fallback, MaxPresentationDeltaSeconds) : 0f;
+        }
+
+        private static float PositiveFiniteOrMinimum(float value, float minimum)
+        {
+            return math.isfinite(value) && value > minimum ? value : minimum;
+        }
+
+        private static float SaturateFiniteOrZero(float value)
+        {
+            return math.isfinite(value) ? math.saturate(value) : 0f;
+        }
+
         private void OnValidate()
         {
-            vacuumLowPassCutoffHertz = math.clamp(vacuumLowPassCutoffHertz, MinimumLowPassCutoffHertz, 22000f);
-            oceanLowPassCutoffHertz = math.clamp(oceanLowPassCutoffHertz, MinimumLowPassCutoffHertz, 22000f);
-            oceanFilterSweepSeconds = math.max(0.001f, oceanFilterSweepSeconds);
-            plasmaFullStressVelocityMetersPerSecond = math.max(1f, plasmaFullStressVelocityMetersPerSecond);
-            plasmaGranularStressGain = math.saturate(plasmaGranularStressGain);
-            vacuumLfeGain = math.saturate(vacuumLfeGain);
-            plasmaLfeGain = math.saturate(plasmaLfeGain);
-            splashdownGain = math.saturate(splashdownGain);
+            vacuumLowPassCutoffHertz = ClampCutoff(vacuumLowPassCutoffHertz);
+            oceanLowPassCutoffHertz = ClampCutoff(oceanLowPassCutoffHertz);
+            oceanFilterSweepSeconds = PositiveFiniteOrMinimum(oceanFilterSweepSeconds, 0.001f);
+            plasmaFullStressVelocityMetersPerSecond = PositiveFiniteOrMinimum(plasmaFullStressVelocityMetersPerSecond, 1f);
+            plasmaGranularStressGain = SaturateFiniteOrZero(plasmaGranularStressGain);
+            vacuumLfeGain = SaturateFiniteOrZero(vacuumLfeGain);
+            plasmaLfeGain = SaturateFiniteOrZero(plasmaLfeGain);
+            splashdownGain = SaturateFiniteOrZero(splashdownGain);
         }
     }
 }

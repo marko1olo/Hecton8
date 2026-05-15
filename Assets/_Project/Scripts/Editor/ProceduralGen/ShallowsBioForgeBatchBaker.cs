@@ -60,6 +60,8 @@ namespace Hecton8.Editor.ProceduralGen
         private static readonly List<Material> RendererMaterialScratch = new List<Material>(4);
         // COLD ALLOC: bool[100] - reusable editor family index completeness scratch - owner: ShallowsBioForgeBatchBaker
         private static readonly bool[] FamilyIndexScratch = new bool[KelpCount];
+        // COLD ALLOC: bool[300] - reusable editor mesh LOD triplet completeness scratch - owner: ShallowsBioForgeBatchBaker
+        private static readonly bool[] MeshLodIndexScratch = new bool[KelpCount * 3];
 
         [MenuItem("HECTON-8/Bio-Forge/Bake Safe Shallows Assets", false, 172)]
         public static void BakeSafeShallowsAssets()
@@ -980,6 +982,55 @@ namespace Hecton8.Editor.ProceduralGen
                 failures++;
                 Debug.LogError($"[ShallowsBioForgeBatchBaker] {familyFolder} LOD mesh distribution mismatch. LOD0={lod0}, LOD1={lod1}, LOD2={lod2}, Unexpected={unexpected}.");
             }
+
+            ValidateMeshLodIndexContract(familyFolder, expectedCount, meshGuids, ref failures);
+        }
+
+        private static void ValidateMeshLodIndexContract(string familyFolder, int expectedCount, string[] meshGuids, ref int failures)
+        {
+            int expectedSlots = expectedCount * 3;
+            if (expectedSlots > MeshLodIndexScratch.Length)
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] Mesh LOD index scratch too small for {familyFolder}. Expected={expectedSlots}, Capacity={MeshLodIndexScratch.Length}.");
+                return;
+            }
+
+            Array.Clear(MeshLodIndexScratch, 0, expectedSlots);
+
+            int bad = 0;
+            for (int i = 0; i < meshGuids.Length; i++)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(meshGuids[i]);
+                string assetStem = Path.GetFileNameWithoutExtension(path);
+                if (!TryParseMeshLodStem(familyFolder, assetStem, out int index, out int lodIndex) ||
+                    index >= expectedCount)
+                {
+                    bad++;
+                    continue;
+                }
+
+                int slot = (index * 3) + lodIndex;
+                if (MeshLodIndexScratch[slot])
+                {
+                    bad++;
+                    continue;
+                }
+
+                MeshLodIndexScratch[slot] = true;
+            }
+
+            for (int i = 0; i < expectedSlots; i++)
+            {
+                if (!MeshLodIndexScratch[i])
+                    bad++;
+            }
+
+            if (bad == 0)
+                return;
+
+            failures++;
+            Debug.LogError($"[ShallowsBioForgeBatchBaker] {familyFolder} mesh LOD index completeness contract failed. ExpectedSlots={expectedSlots}, BadSlots={bad}.");
         }
 
         private static void ValidatePrefab(string path, string familyFolder, GameObject prefab, Material material, bool rock, ref int failures)
@@ -1543,6 +1594,44 @@ namespace Hecton8.Editor.ProceduralGen
                     return false;
             }
 
+            return true;
+        }
+
+        private static bool TryParseMeshLodStem(string familyFolder, string assetStem, out int index, out int lodIndex)
+        {
+            index = 0;
+            lodIndex = 0;
+            if (!TryResolvePrefabNameContract(familyFolder, out string prefix, out string kind))
+                return false;
+
+            int indexStart = prefix.Length;
+            int kindSeparator = indexStart + 3;
+            int kindStart = kindSeparator + 1;
+            int hashSeparator = kindStart + kind.Length;
+            int hashStart = hashSeparator + 1;
+            int lodSeparator = hashStart + 8;
+            int lodStart = lodSeparator + 1;
+            int lodDigit = lodStart + 3;
+            int expectedLength = lodDigit + 1;
+
+            if (assetStem.Length != expectedLength ||
+                !assetStem.StartsWith(prefix, StringComparison.Ordinal) ||
+                !TryParseThreeDigitIndex(assetStem, indexStart, out index) ||
+                assetStem[kindSeparator] != '_' ||
+                !StringRangeEquals(assetStem, kindStart, kind) ||
+                assetStem[hashSeparator] != '_' ||
+                !IsUpperHex8(assetStem, hashStart) ||
+                assetStem[lodSeparator] != '_' ||
+                !StringRangeEquals(assetStem, lodStart, "LOD"))
+            {
+                return false;
+            }
+
+            char lodChar = assetStem[lodDigit];
+            if (lodChar < '0' || lodChar > '2')
+                return false;
+
+            lodIndex = lodChar - '0';
             return true;
         }
 

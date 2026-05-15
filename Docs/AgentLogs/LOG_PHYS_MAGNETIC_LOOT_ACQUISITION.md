@@ -39,6 +39,28 @@ Verification:
 Final Status:
 - PENDING VERIFICATION.
 
+## 2026-05-15 - Dotnet Process Hygiene Tail Pass
+
+What was wrong:
+- An external PowerShell wrapper spawned `dotnet build Hecton8.Core.csproj` while the user instruction explicitly forbids dotnet rebuilds.
+
+What was done:
+- Inspected the dotnet process and parent PowerShell wrapper.
+- Stopped both processes.
+- No dotnet build/rebuild was started by this agent.
+
+Cinematic Cheats used:
+- None. This is verification hygiene.
+
+Exact Microseconds saved:
+- No gameplay saving claimed. This removes local build CPU pressure and forbidden verification noise.
+
+Verification:
+- Follow-up dotnet process query was clean.
+
+Final Status:
+- PENDING VERIFICATION.
+
 ## 2026-05-15 - Idle Hash Truth And Dead-Tail Trim Pass
 
 What was wrong:

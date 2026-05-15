@@ -152,10 +152,7 @@ namespace Hecton8.World
             verticalCellSize = thermalGridVerticalCellSize;
             return _abyssalThermalGridInitialized &&
                    temperatures.IsCreated &&
-                   horizontalResolution > 0 &&
-                   verticalResolution > 0 &&
-                   horizontalCellSize > 0f &&
-                   verticalCellSize > 0f;
+                   HasCompleteAbyssalGridState(temperatures.Length);
         }
 
         /// <summary>
@@ -177,10 +174,7 @@ namespace Hecton8.World
             verticalCellSize = thermalGridVerticalCellSize;
             return _abyssalFlowVolumeInitialized &&
                    flowVectors.IsCreated &&
-                   horizontalResolution > 0 &&
-                   verticalResolution > 0 &&
-                   horizontalCellSize > 0f &&
-                   verticalCellSize > 0f;
+                   HasCompleteAbyssalGridState(flowVectors.Length);
         }
 
         /// <summary>
@@ -213,10 +207,12 @@ namespace Hecton8.World
 
             return _abyssalFlowVolumeInitialized &&
                    flowVolume.IsCreated &&
+                   HasCompleteAbyssalGridState(flowVolume.Length) &&
                    resolutionXZ > 1 &&
                    resolutionY > 1 &&
-                   horizontalCellSize > 0f &&
-                   verticalCellSize > 0f;
+                   depthMeters > 0f &&
+                   math.isfinite(surfaceY) &&
+                   math.isfinite(depthMeters);
         }
 
         /// <summary>
@@ -841,6 +837,30 @@ namespace Hecton8.World
             return _nativeMemory.EcosystemFlowFieldCurrentNative;
         }
 
+        private NativeArray<float> GetAbyssalThermalGridView()
+        {
+            if (!_abyssalThermalGridInitialized ||
+                !_nativeMemory.AbyssalThermalGridNative.IsCreated ||
+                !HasCompleteAbyssalGridState(_nativeMemory.AbyssalThermalGridNative.Length))
+            {
+                return default;
+            }
+
+            return _nativeMemory.AbyssalThermalGridNative;
+        }
+
+        private NativeArray<float3> GetAbyssalFlowVolumeView()
+        {
+            if (!_abyssalFlowVolumeInitialized ||
+                !_nativeMemory.AbyssalFlowVolumeCurrentNative.IsCreated ||
+                !HasCompleteAbyssalGridState(_nativeMemory.AbyssalFlowVolumeCurrentNative.Length))
+            {
+                return default;
+            }
+
+            return _nativeMemory.AbyssalFlowVolumeCurrentNative;
+        }
+
         private NativeArray<byte> GetThreatGridByteView(NativeArray<byte> threatGrid)
         {
             if (!_threatGridInitialized ||
@@ -851,6 +871,47 @@ namespace Hecton8.World
             }
 
             return threatGrid;
+        }
+
+        private NativeArray<Vector3> GetAbyssalAnchorNativeView()
+        {
+            return ResolveAbyssalAnchorViewCount() > 0
+                ? _nativeMemory.AbyssalAnchorPositionsNative
+                : default;
+        }
+
+        private NativeArray<AbsoluteUniversePosition> GetAbyssalAnchorAupNativeView()
+        {
+            return ResolveAbyssalAnchorAupViewCount() > 0
+                ? _nativeMemory.AbyssalAnchorAupPositionsNative
+                : default;
+        }
+
+        private int ResolveAbyssalAnchorViewCount()
+        {
+            if (_abyssalAnchorCount <= 0 ||
+                _abyssalAnchorPositions == null ||
+                _abyssalAnchorPositions.Length <= 0 ||
+                !_nativeMemory.AbyssalAnchorPositionsNative.IsCreated)
+            {
+                return 0;
+            }
+
+            int safeCount = math.min(_abyssalAnchorCount, _abyssalAnchorPositions.Length);
+            safeCount = math.min(safeCount, _nativeMemory.AbyssalAnchorPositionsNative.Length);
+            return math.max(0, safeCount);
+        }
+
+        private int ResolveAbyssalAnchorAupViewCount()
+        {
+            int safeCount = ResolveAbyssalAnchorViewCount();
+            if (safeCount <= 0 ||
+                !_nativeMemory.AbyssalAnchorAupPositionsNative.IsCreated)
+            {
+                return 0;
+            }
+
+            return math.max(0, math.min(safeCount, _nativeMemory.AbyssalAnchorAupPositionsNative.Length));
         }
 
         private NativeArray<Vector3> GetAbyssalNavNodeSnapshotNativeView()
@@ -872,6 +933,23 @@ namespace Hecton8.World
 
             int safeCount = math.min(_abyssalNavNodeCount, _abyssalNavNodeSnapshot.Length);
             safeCount = math.min(safeCount, _nativeMemory.AbyssalNavNodeSnapshotNative.Length);
+            return math.max(0, safeCount);
+        }
+
+        private int ResolveAbyssalNavGraphViewCount()
+        {
+            int safeCount = ResolveAbyssalNavNodeViewCount();
+            if (safeCount <= 0 ||
+                !_nativeMemory.AbyssalNavNodeTypesSnapshotNative.IsCreated ||
+                !_nativeMemory.AbyssalNavConduitVectorsSnapshotNative.IsCreated ||
+                !_nativeMemory.AbyssalNavConduitStrengthSnapshotNative.IsCreated)
+            {
+                return 0;
+            }
+
+            safeCount = math.min(safeCount, _nativeMemory.AbyssalNavNodeTypesSnapshotNative.Length);
+            safeCount = math.min(safeCount, _nativeMemory.AbyssalNavConduitVectorsSnapshotNative.Length);
+            safeCount = math.min(safeCount, _nativeMemory.AbyssalNavConduitStrengthSnapshotNative.Length);
             return math.max(0, safeCount);
         }
 
@@ -903,6 +981,20 @@ namespace Hecton8.World
                    _ecosystemThreatGridCellCount >= threatGridCellCount;
         }
 
+        private bool HasCompleteAbyssalGridState(int payloadLength)
+        {
+            return TryResolveAbyssalGridCellCount(
+                       _abyssalThermalGridResolutionXZ,
+                       _abyssalThermalGridResolutionY,
+                       payloadLength,
+                       out _) &&
+                   thermalGridHorizontalCellSize > 0f &&
+                   thermalGridVerticalCellSize > 0f &&
+                   math.isfinite(thermalGridHorizontalCellSize) &&
+                   math.isfinite(thermalGridVerticalCellSize) &&
+                   IsFinite(_abyssalThermalGridCenter);
+        }
+
         private static bool TryResolveSquareGridCellCount(int resolution, int payloadLength, out int cellCount)
         {
             cellCount = 0;
@@ -931,6 +1023,23 @@ namespace Hecton8.World
 
             long expectedLength = (long)dimensions.x * dimensions.y * dimensions.z;
             if (expectedLength <= 0L ||
+                expectedLength > int.MaxValue ||
+                payloadLength < expectedLength)
+            {
+                return false;
+            }
+
+            cellCount = (int)expectedLength;
+            return true;
+        }
+
+        private static bool TryResolveAbyssalGridCellCount(int horizontalResolution, int verticalResolution, int payloadLength, out int cellCount)
+        {
+            cellCount = 0;
+            long expectedLength = (long)horizontalResolution * horizontalResolution * verticalResolution;
+            if (horizontalResolution <= 0 ||
+                verticalResolution <= 0 ||
+                expectedLength <= 0L ||
                 expectedLength > int.MaxValue ||
                 payloadLength < expectedLength)
             {

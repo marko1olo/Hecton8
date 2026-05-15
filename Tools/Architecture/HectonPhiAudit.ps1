@@ -17,6 +17,10 @@ param(
     [int]$MaxGlobalRegistrySurface = -1,
     [int]$MaxGetComponentCalls = -1,
     [int]$MaxNativeArrayRefs = -1,
+    [int]$MaxLinqSurface = -1,
+    [int]$MaxCoroutineSurface = -1,
+    [int]$MaxManagedFormatSurface = -1,
+    [int]$MaxJobCompleteSurface = -1,
     [double]$MinDataSovereignty = -1.0,
     [double]$MinMemoryAlignment = -1.0,
     [double]$MinRuntimeHPhiRisk = -1.0
@@ -58,6 +62,10 @@ function New-CounterSet {
         DisposeCalls = 0
         AupPrecisionSafe = 0
         AupPrecisionRisk = 0
+        LinqSurface = 0
+        CoroutineSurface = 0
+        ManagedFormatSurface = 0
+        JobCompleteSurface = 0
     }
 }
 
@@ -80,6 +88,10 @@ function New-DomainRow {
         DisposeCalls = 0
         AupPrecisionSafe = 0
         AupPrecisionRisk = 0
+        LinqSurface = 0
+        CoroutineSurface = 0
+        ManagedFormatSurface = 0
+        JobCompleteSurface = 0
     }
 }
 
@@ -106,6 +118,13 @@ function New-FileRow {
         GetComponentCalls = [int]$Counters['GetComponentCalls']
         AupPrecisionSafe = [int]$Counters['AupPrecisionSafe']
         AupPrecisionRisk = [int]$Counters['AupPrecisionRisk']
+        LinqSurface = [int]$Counters['LinqSurface']
+        CoroutineSurface = [int]$Counters['CoroutineSurface']
+        ManagedFormatSurface = [int]$Counters['ManagedFormatSurface']
+        JobCompleteSurface = [int]$Counters['JobCompleteSurface']
+        ManagedRuntimeRisk = [int]$Counters['LinqSurface'] +
+            [int]$Counters['CoroutineSurface'] +
+            [int]$Counters['ManagedFormatSurface']
         CouplingRisk = [int]$Counters['GlobalRegistrySurface'] +
             [int]$Counters['EventPublish'] +
             [int]$Counters['StaticInstance'] +
@@ -1520,6 +1539,10 @@ function Add-DomainMetrics {
     $Row['DisposeCalls'] = [int]$Row['DisposeCalls'] + [int]$Counters['DisposeCalls']
     $Row['AupPrecisionSafe'] = [int]$Row['AupPrecisionSafe'] + [int]$Counters['AupPrecisionSafe']
     $Row['AupPrecisionRisk'] = [int]$Row['AupPrecisionRisk'] + [int]$Counters['AupPrecisionRisk']
+    $Row['LinqSurface'] = [int]$Row['LinqSurface'] + [int]$Counters['LinqSurface']
+    $Row['CoroutineSurface'] = [int]$Row['CoroutineSurface'] + [int]$Counters['CoroutineSurface']
+    $Row['ManagedFormatSurface'] = [int]$Row['ManagedFormatSurface'] + [int]$Counters['ManagedFormatSurface']
+    $Row['JobCompleteSurface'] = [int]$Row['JobCompleteSurface'] + [int]$Counters['JobCompleteSurface']
 }
 
 function Divide-OrZero {
@@ -1772,6 +1795,10 @@ function New-AuditSummary {
             DisposeCalls = $Audit.Counts.DisposeCalls
             AupPrecisionSafe = $Audit.Counts.AupPrecisionSafe
             AupPrecisionRisk = $Audit.Counts.AupPrecisionRisk
+            LinqSurface = $Audit.Counts.LinqSurface
+            CoroutineSurface = $Audit.Counts.CoroutineSurface
+            ManagedFormatSurface = $Audit.Counts.ManagedFormatSurface
+            JobCompleteSurface = $Audit.Counts.JobCompleteSurface
         }
         Budgets = $Audit.Budgets
         CoreGraph = New-CoreGraphSummary $Audit.CoreGraphAudit
@@ -1785,6 +1812,10 @@ function New-AuditSummary {
         TopAupPrecisionRiskFiles = @($Audit.TopAupPrecisionRiskFiles |
             Select-Object -First 10)
         TopCouplingRiskFiles = @($Audit.TopCouplingRiskFiles |
+            Select-Object -First 10)
+        TopManagedRuntimeRiskFiles = @($Audit.TopManagedRuntimeRiskFiles |
+            Select-Object -First 10)
+        TopJobCompleteRiskFiles = @($Audit.TopJobCompleteRiskFiles |
             Select-Object -First 10)
         TopOwnerBlockedDataVaultCandidates = @($Audit.OwnerBlockedDataVaultCandidates |
             Select-Object -First 10)

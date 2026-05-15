@@ -425,3 +425,17 @@ Scalability potential: Low/MX350 gets complete deterministic variation coverage 
 Hardware Impact: Runtime remains 0 us/frame and 0 bytes procedural allocation. The gain is prevention: no missing or duplicate variation index can force runtime fallback, lookup ambiguity, or dressing-set holes on i3/MX350. Exact runtime microseconds are not profiled because this is editor validation.
 
 Verification: No dotnet rebuild and no Unity import was run. `FamilyIndexContractYamlScan Count=200 Bad=0`. `git diff --check` passed for `ShallowsBioForgeBatchBaker.cs` with only the repo CRLF warning. Source scans found `FamilyIndexScratch`, `ValidateFamilyIndexContract`, `TryParseThreeDigitIndex`, `Array.Clear(FamilyIndexScratch`, and `index completeness contract failed`; source brace count remained balanced and `NonAscii=0`. Case-sensitive forbidden source scan found no `Shader.Find`, `mesh.colors`, `renderer.sharedMaterial`, `.material`, `Update`, `LateUpdate`, `FixedUpdate`, or `Regex` hits.
+
+## Decision 31 - Mesh LOD Triplet Completeness Contract
+
+Problem: Mesh family validation counted total mesh assets and LOD suffix distribution. That did not prove each generated variation index had a complete LOD0/LOD1/LOD2 triplet. A folder could hide a missing LOD1 for one index behind an orphan LOD1 from another index while the suffix counts still passed.
+
+Solution: Add `ValidateMeshLodIndexContract` after the existing mesh count/distribution checks. It parses deterministic mesh stems with `TryParseMeshLodStem`, then uses one fixed `bool[300]` scratch buffer to mark `(variationIndex * 3) + lodIndex` slots and reject malformed, out-of-range, duplicate, or missing slots.
+
+Rejected Alternatives: Keeping suffix counts was rejected because it proves totals, not coverage. Allocating a `HashSet` or sorting mesh names was rejected because Shallows family sizes are bounded and a fixed bitset is cheaper and simpler. Runtime mesh lookup fallback was rejected because BioForge output must be static and complete before gameplay.
+
+Scalability potential: Low/MX350 gets guaranteed complete LOD triplets with no runtime lookup repair, fallback mesh binding, or culling uncertainty. Middle/High/Ultra can scale variant density and LOD residency while the static library keeps exact triplet coverage.
+
+Hardware Impact: Runtime remains 0 us/frame and 0 bytes procedural allocation. The gain is prevention: no missing or duplicated LOD mesh slot can force runtime fallback, renderer mutation, or diagnostic ambiguity on i3/MX350. Exact runtime microseconds are not profiled because this is editor validation.
+
+Verification: No dotnet rebuild and no Unity import was run. `MeshLodIndexContractYamlScan Count=600 Bad=0`. `git diff --check` passed for `ShallowsBioForgeBatchBaker.cs` with only the repo CRLF warning. Source scans found `MeshLodIndexScratch`, `ValidateMeshLodIndexContract`, `TryParseMeshLodStem`, `Array.Clear(MeshLodIndexScratch`, and `mesh LOD index completeness contract failed`; source brace count remained balanced and `NonAscii=0`. Case-sensitive forbidden source scan found no `Shader.Find`, `mesh.colors`, `renderer.sharedMaterial`, `.material`, `Update`, `LateUpdate`, `FixedUpdate`, `Regex`, `HashSet<`, or `OrderBy` hits.

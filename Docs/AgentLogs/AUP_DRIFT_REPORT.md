@@ -568,6 +568,32 @@ Status: VERIFIED AUP INTEGRITY - LOOP 29 AUP PRECISION H-PHI BUDGET GATE PASSES 
 - Unity import/Console verification remains pending because no Unity editor session is available.
 - H-Phi result is static-source evidence, not profiler proof.
 
+## Loop 32 H-Phi Budget Text Threshold Display
+
+### Findings
+
+- The H-Phi text budget table did not expose a unified comparator/limit column, making score-floor rows harder to read than count-ceiling rows.
+
+### Tool Changes
+
+- `Tools/Architecture/HectonPhiAudit.ps1`: added `ConvertTo-BudgetDisplayRows`.
+- Source and core-graph text summaries now print `Direction` and `Limit` for budget rows.
+
+### Verification
+
+- PowerShell parser reports `PARSE_OK`.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary` prints budget columns `Budget`, `Enabled`, `Direction`, `Limit`, `Actual`, and `Passed`.
+- CoreGraphOnly JSON with enabled graph budgets still reports `CoreBuildGraphGate.Passed=True` and `CoreAsmdefDebtReferences.Actual=25`.
+- Targeted qualified AUP H-Phi risk scan returns `NO_MATCHES`.
+- Direct committed-offset leak scan returns `NO_MATCHES`.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` was re-run. Residual hits remain broad `universe` text and known final-cast fluid/scatter/shader payload names.
+- No `dotnet build` or rebuild was run in Loop 32 because the latest user instruction explicitly forbids rebuilds.
+
+### Evidence Queue
+
+- Unity import/Console verification remains pending because no Unity editor session is available.
+- H-Phi result is static-source evidence, not profiler proof.
+
 ## Loop 27 AUP Precision H-Phi Budget Gate
 
 ### Findings

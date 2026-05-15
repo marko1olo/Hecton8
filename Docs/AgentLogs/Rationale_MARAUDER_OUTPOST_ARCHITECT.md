@@ -489,3 +489,17 @@ Solution: Verification stayed source-only: targeted upload clamp scan, forbidden
 Rejected Alternatives: Running response-file compiles through `dotnet` was rejected because it violates the active user instruction.
 Scalability potential: Static render-boundary proof improved without adding buffers, registries, signals, shell GameObjects, material mutation, or runtime allocations.
 Hardware Impact: Verification only. Core graph summary still reports `CoreAsmdefDebtReferenceCount=25` and `GeneratedProjectDebtReferenceCount=10`, both project-level debts outside this outpost edit.
+
+## LOOP 29 LOGISTICS GRAPH DESCRIPTOR GATE
+
+Problem: The generated outpost power translator consumed `WfcOutpostGridDescriptor` directly inside a Burst job. It rejected non-positive dimensions, but did not cap dimensions to the authored WFC grid and used `math.max(1f, Descriptor.CellSizeMeters/FloorHeightMeters)`, which does not prove NaN-safe scalar math.
+Solution: Add explicit `[StructLayout(LayoutKind.Sequential)]` proof to `WfcOutpostGraphTranslationJob`, reject descriptor dimensions above `FullWidth/FullHeight/FullDepth`, and sanitize cell/floor meter scalars through a finite-safe helper before node offsets are computed.
+Rejected Alternatives: Relying on the generator to always publish sanitized descriptors was rejected because the translator is the final native boundary before logistics node SOA output. Clamping dimensions inside the job was rejected because an oversized descriptor implies a broken handoff and should raise `InvalidDimensions`.
+Scalability potential: Low/Middle/High/Ultra retain identical valid graph output. Cheap devices avoid invalid offset math and wasted graph work on corrupt descriptors; high-end devices still receive full generated WFC topology when the descriptor is sane.
+Hardware Impact: One native job layout attribute, three dimension upper-bound checks, and two scalar finite checks on cold graph translation. Estimated below 0.1 us per outpost graph build on i3/MX350; no steady Tick/Render allocation or GameObject cost.
+
+Problem: The active instruction still forbids dotnet rebuilds.
+Solution: Verification stayed source-only: targeted descriptor scan, WFC power/outpost forbidden-pattern audit, scoped H-Phi counts, `git diff --check`, and `HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json`.
+Rejected Alternatives: Running response-file compiles through `dotnet` was rejected because it violates the active user instruction.
+Scalability potential: Static logistics handoff proof improved without changing graph capacity, signal lane count, or render path.
+Hardware Impact: Verification only. Core graph summary still reports `CoreAsmdefDebtReferenceCount=25` and `GeneratedProjectDebtReferenceCount=10`, both project-level debts outside this outpost edit.

@@ -2,6 +2,7 @@ using System;
 using Hecton8.Audio;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
+using Hecton8.Core.Signals;
 using Hecton8.Gameplay;
 using UnityEngine;
 
@@ -9,7 +10,7 @@ namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Suit Advisory Controller")]
-    public sealed class SuitAdvisoryController : MonoBehaviour, IBaseIntegrityEventListener
+    public sealed class SuitAdvisoryController : MonoBehaviour, IBaseIntegrityEventListener, ILateFrameTickable
     {
         [Header("References")]
         [SerializeField] private HectonSurvivalSystem survival;
@@ -48,6 +49,9 @@ namespace Hecton8.UI
         private bool _bleedingWarned;
         private bool _fractureWarned;
         private bool _deathTriggered;
+        private bool _registeredForSurvivalSignals;
+        private uint _survivalSignalSourceId;
+        private uint _lastSurvivalSignalSequence;
         private FixedCharBuffer _advisoryMessageBuffer = new FixedCharBuffer(192); // COLD ALLOC: char[192] - suit advisory notification staging buffer - owner: SuitAdvisoryController
 
         private const string MsgOxygenWarning = "OXYGEN RESERVES LOW";
@@ -79,18 +83,22 @@ namespace Hecton8.UI
         private void OnEnable()
         {
             ResolveReferences();
+            RefreshSurvivalSignalBinding();
             Subscribe();
             EvaluateAll();
+            RegisterSurvivalSignalPump();
         }
 
         private void OnDisable()
         {
             Unsubscribe();
+            UnregisterSurvivalSignalPump();
         }
 
         private void OnDestroy()
         {
             Unsubscribe();
+            UnregisterSurvivalSignalPump();
             BaseIntegrityEvents.AssertUnregistered(this, nameof(SuitAdvisoryController));
         }
 
@@ -115,34 +123,10 @@ namespace Hecton8.UI
         private void Subscribe()
         {
             BaseIntegrityEvents.Register(this);
-
-            if (survival == null)
-                return;
-
-            survival.OnOxygenChanged += HandleOxygenChanged;
-            survival.OnEnergyChanged += HandleEnergyChanged;
-            survival.OnIntegrityChanged += HandleIntegrityChanged;
-            survival.OnDepthChanged += HandleDepthChanged;
-            survival.OnTemperatureChanged += HandleTemperatureChanged;
-            survival.ThermalStateChanged += HandleThermalStateChanged;
-            survival.OnDeath += HandleDeath;
-            survival.InjuryStateChanged += HandleInjuryStateChanged;
         }
 
         private void Unsubscribe()
         {
-            if (survival != null)
-            {
-                survival.OnOxygenChanged -= HandleOxygenChanged;
-                survival.OnEnergyChanged -= HandleEnergyChanged;
-                survival.OnIntegrityChanged -= HandleIntegrityChanged;
-                survival.OnDepthChanged -= HandleDepthChanged;
-                survival.OnTemperatureChanged -= HandleTemperatureChanged;
-                survival.ThermalStateChanged -= HandleThermalStateChanged;
-                survival.OnDeath -= HandleDeath;
-                survival.InjuryStateChanged -= HandleInjuryStateChanged;
-            }
-
             BaseIntegrityEvents.Unregister(this);
         }
 

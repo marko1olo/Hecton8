@@ -235,3 +235,10 @@ Solution: Cached panel output material property support when the material refere
 Rejected Alternatives: Keeping per-refresh `HasProperty` calls, mutating shader keywords, or assuming every authored material has all properties. Repeated property checks waste steady-state budget; shader mutation is unrelated; unchecked property writes would break material variants.
 Scalability potential: Low keeps the cheap phosphor-history fake with less CPU/API traffic. Middle/High/Ultra can use richer authored panel materials while the controller pays property discovery only when material ownership changes.
 Hardware Impact: Expected gain is sub-microsecond per phosphor-enabled panel late frame on i3/MX350; no profiler proof.
+
+## Decision 33: Diegetic Panel Phosphor Decay Dirty Scalar
+Problem: The phosphor composite pass must rebind previous/current RT textures every frame, but `_Decay` was also being set every frame even when the authored decay value did not change.
+Solution: Added `_appliedPhosphorDecay`, reset it on phosphor material cache reset, and dirty-gated `_Decay` writes while preserving per-frame RT texture binding and blit order.
+Rejected Alternatives: Leaving the scalar write in the per-frame blit path, moving decay into a global material, or skipping texture rebinding. The scalar is stable most frames; global material mutation is unsafe; textures swap every frame and must still be rebound.
+Scalability potential: Low reduces API traffic for the same CRT persistence fake. Middle/High/Ultra can spend the saved overhead on richer authored panel effects without changing the compositing contract.
+Hardware Impact: Expected gain is sub-microsecond per phosphor-enabled panel late frame on i3/MX350; no profiler proof.

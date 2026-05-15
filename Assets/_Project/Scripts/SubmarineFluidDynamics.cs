@@ -1128,7 +1128,6 @@ namespace Hecton8.Physics
 
             _skipHydrodynamicsForCurrentFixedTick = false;
             _currentFixedDeltaTime = fixedDeltaTime;
-            RefreshRuntimeActorContextsIfMissing();
             RefreshCargoMassScalarFromGlobalCache();
             UpdateHydroRuntimeState(fixedDeltaTime);
             ApplyCompletedHydroKinematicOutput();

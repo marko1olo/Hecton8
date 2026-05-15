@@ -771,8 +771,17 @@ namespace Hecton8.UI.VR
 
         private void TryRegisterReceiver()
         {
-            if (_receiverRegistered || _latched || !_nativeAllocated || activationVolume == null || !Application.isPlaying)
+            if (_latched || !_nativeAllocated || activationVolume == null || !Application.isPlaying)
                 return;
+
+            Collider registeredVolume = _registeredActivationVolume;
+            if (_receiverRegistered || registeredVolume != null)
+            {
+                if (_receiverRegistered && ReferenceEquals(registeredVolume, activationVolume))
+                    return;
+
+                TryUnregisterReceiver();
+            }
 
             if (!PhysicalHandReceiverRegistry.TryRegister(activationVolume, this))
                 return;

@@ -427,3 +427,14 @@ Follow-up upgrade 43:
 Exact microseconds saved after follow-up 43:
 - Fault frames avoid NaN dynamic hull displacement in UberNoir.
 - Low/MX350 remains bypassed by `_MATH_LOD_LOW`; valid non-low overhead is finite checks around already-active bending math.
+
+Follow-up upgrade 44:
+- What was wrong: UberNoir dynamic hull bending still used raw `positionWS` in buckling and final fallback after radius-mask sanitation.
+- What was done: sanitized `positionWS` once into `safePositionWS` and reused it for crush/habitat radius masks, buckling mask, and final output fallback.
+- Cinematic cheat used: non-finite vertex position becomes deterministic safe fallback instead of attempting to preserve a corrupt deformation.
+- Static checks: `rg` confirms `safePositionWS` drives radius masks, buckling mask, and final fallback.
+- Rebuild policy: no `dotnet` rebuild and no Unity rebuild were run by explicit user instruction.
+
+Exact microseconds saved after follow-up 44:
+- Fault frames avoid NaN buckling/displacement propagation.
+- Valid-frame overhead is one vector finite sanitize in the non-low bend path, below the existing bending ALU budget.

@@ -463,3 +463,11 @@ Solution: Add `New-CoreGraphBudgetSummary` and `New-BudgetState`, then surface g
 Rejected Alternatives: Leave graph-budget evidence in shell history or require integrators to infer it from raw counts. Shell history is not stable project memory, and raw counts do not prove which budgets were active.
 Scalability potential: Low machines get fast CoreGraphOnly budget proof without full source scan or Unity launch. Middle/High/Ultra CI can gate graph debt explicitly before large visual systems depend on core compile topology stability.
 Hardware Impact: Gameplay frame impact is 0 us. CoreGraphOnly budget summary completed with enabled budgets passing at actual counts: Core asmdef 25, generated project 10, source-backed bridge 14, source-backed compile bridge 8, project-reference replacement 6. Full-source Loop 31 retest timed out after 240 seconds, so no new full H-Phi score was claimed.
+
+## Decision 58 - H-Phi Budget Text Threshold Display
+
+Problem: The H-Phi text summary had both count ceilings and score floors, but the display path exposed `Max` directly and did not give a clear comparator/limit model for `Min` rows.
+Solution: Add `ConvertTo-BudgetDisplayRows` and use it for source and core-graph budget tables. The table now exposes `Direction` and `Limit` for both ceiling and floor budgets.
+Rejected Alternatives: Keep separate `Min` and `Max` columns or rely on JSON output only. Separate columns waste table width and invite missed floor thresholds; JSON-only evidence is harder to read during terminal triage.
+Scalability potential: Low machines get faster terminal triage for static H-Phi gates without rerunning Unity or full builds. Middle/High/Ultra CI keeps the same JSON contract while humans get clearer budget diagnostics.
+Hardware Impact: Gameplay frame impact is 0 us. CoreGraphOnly text summary still completes in the fast graph path and now displays `Direction`/`Limit`; no new full-source H-Phi score was claimed after the Loop 31 timeout.

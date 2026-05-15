@@ -1696,8 +1696,9 @@ namespace Hecton8.Gameplay
         {
             float safeDeltaTime = math.max(0.0001f, SanitizeNonNegativeScalar(deltaTime));
             float recoilDecay = math.rcp(1.0f + (SanitizeNonNegativeScalar(toolRecoilDecaySharpness) * safeDeltaTime));
-            _leftToolRecoilOffset *= recoilDecay;
-            _rightToolRecoilOffset *= recoilDecay;
+            float recoilCap = SanitizeNonNegativeScalar(toolRecoilMaxOffsetMeters);
+            _leftToolRecoilOffset = ClampVectorNoSqrt(_leftToolRecoilOffset * recoilDecay, recoilCap);
+            _rightToolRecoilOffset = ClampVectorNoSqrt(_rightToolRecoilOffset * recoilDecay, recoilCap);
             TickColdShiverState(safeDeltaTime);
 
             if (_terminalRightHandActive)
@@ -1738,11 +1739,11 @@ namespace Hecton8.Gameplay
         {
             float safeDeltaTime = math.max(0.0001f, SanitizeNonNegativeScalar(deltaTime));
             float targetBlend = enableProceduralBreathing ? 1.0f : 0.0f;
-            _breathingBlend = ContextualPhysicalIkMath.SmoothScalar(
+            _breathingBlend = SanitizeUnitScalar(ContextualPhysicalIkMath.SmoothScalar(
                 _breathingBlend,
                 targetBlend,
                 breathingBlendSharpness,
-                safeDeltaTime);
+                safeDeltaTime));
 
             if (_breathingBlend <= 0.0001f)
                 return;
@@ -1750,9 +1751,7 @@ namespace Hecton8.Gameplay
             float rate = SanitizeNonNegativeScalar(breathingBaseRateHz) + _playerStress01 * SanitizeNonNegativeScalar(breathingStressRateHz);
             if (lowTier)
                 rate *= 0.75f;
-            _breathingPhase += rate * safeDeltaTime;
-            if (_breathingPhase >= BreathingPhaseWrap)
-                _breathingPhase -= BreathingPhaseWrap;
+            _breathingPhase = WrapPositivePhase(_breathingPhase + (rate * safeDeltaTime), BreathingPhaseWrap);
         }
 
         private void TickExternalSqueezePoleState(float deltaTime)
@@ -1808,18 +1807,18 @@ namespace Hecton8.Gameplay
         private void TickColdShiverState(float deltaTime)
         {
             float targetBlend = ResolveColdShiverTargetBlend();
-            _coldShiverBlend = ContextualPhysicalIkMath.SmoothScalar(
+            _coldShiverBlend = SanitizeUnitScalar(ContextualPhysicalIkMath.SmoothScalar(
                 _coldShiverBlend,
                 targetBlend,
                 coldShiverBlendSharpness,
-                deltaTime);
+                deltaTime));
 
             if (_coldShiverBlend <= 0.0001f)
                 return;
 
-            _coldShiverPhase += SanitizeNonNegativeScalar(coldShiverFrequencyHz) * SanitizeNonNegativeScalar(deltaTime);
-            if (_coldShiverPhase >= ColdShiverPhaseWrap)
-                _coldShiverPhase -= ColdShiverPhaseWrap;
+            _coldShiverPhase = WrapPositivePhase(
+                _coldShiverPhase + (SanitizeNonNegativeScalar(coldShiverFrequencyHz) * SanitizeNonNegativeScalar(deltaTime)),
+                ColdShiverPhaseWrap);
         }
 
         private float ResolveColdShiverTargetBlend()
@@ -1849,17 +1848,19 @@ namespace Hecton8.Gameplay
             rightOffset = float3.zero;
 
             float amplitude = SanitizeNonNegativeScalar(coldShiverAmplitudeMeters);
-            if (amplitude <= 0.000001f || _coldShiverBlend <= 0.0001f)
+            float blend = SanitizeUnitScalar(_coldShiverBlend);
+            _coldShiverBlend = blend;
+            if (amplitude <= 0.000001f || blend <= 0.0001f)
                 return;
 
-            float phase = _coldShiverPhase;
+            float phase = WrapPositivePhase(_coldShiverPhase, ColdShiverPhaseWrap);
             float leftLateral = CinematicMath.FastTriangleWaveSigned(phase) * amplitude;
             float leftVertical = CinematicMath.FastTriangleWaveSigned((phase * 1.733f) + 0.23f) * amplitude * 0.45f;
             float rightLateral = CinematicMath.FastTriangleWaveSigned(phase + 0.41f) * amplitude;
             float rightVertical = CinematicMath.FastTriangleWaveSigned((phase * 1.619f) + 0.67f) * amplitude * 0.45f;
 
-            leftOffset = (rootRight * leftLateral) + (rootUp * leftVertical);
-            rightOffset = (rootRight * -rightLateral) + (rootUp * rightVertical);
+            leftOffset = SanitizeFloat3Value((rootRight * leftLateral) + (rootUp * leftVertical), float3.zero);
+            rightOffset = SanitizeFloat3Value((rootRight * -rightLateral) + (rootUp * rightVertical), float3.zero);
         }
 
         private void CapturePredictiveRepairLatch(float deltaTime, bool wallTouchEnabled)
@@ -2015,13 +2016,20 @@ namespace Hecton8.Gameplay
 
             AbsoluteUniversePosition targetAup = isLeftHand ? leftHandAup : rightHandAup;
             double distanceSq = AbsoluteUniversePosition.DistanceSq(in controllerAup, in targetAup);
-            if (distanceSq > PredictiveRepairLatchDistanceSq)
+            float distanceSqFloat = (float)distanceSq;
+            if (!math.isfinite(distanceSqFloat) || distanceSqFloat > PredictiveRepairLatchDistanceSq)
             {
                 predictiveBlend = ContextualPhysicalIkMath.SmoothScalar(predictiveBlend, 0.0f, predictiveRepairBlendSharpness, deltaTime);
                 return;
             }
 
             float3 targetRuntime = targetAup.ToRuntimeFloat3();
+            if (!math.all(math.isfinite(targetRuntime)))
+            {
+                predictiveBlend = ContextualPhysicalIkMath.SmoothScalar(predictiveBlend, 0.0f, predictiveRepairBlendSharpness, deltaTime);
+                return;
+            }
+
             float3 controllerRuntime = ContextualPhysicalIkMath.ToFloat3(controllerPosition);
             float3 targetVector = targetRuntime - controllerRuntime;
             float3 targetDirection = ContextualPhysicalIkMath.SafeNormalize(targetVector, new float3(0.0f, 0.0f, 1.0f));
@@ -2036,7 +2044,7 @@ namespace Hecton8.Gameplay
 
             Vector3 fallbackNormal = (Vector3)ContextualPhysicalIkMath.SafeNormalize(controllerRuntime - targetRuntime, new float3(0.0f, 1.0f, 0.0f));
 
-            float range01 = SanitizeUnitScalar(1.0f - ((float)distanceSq * math.rcp(PredictiveRepairLatchDistanceSq)));
+            float range01 = SanitizeUnitScalar(1.0f - (distanceSqFloat * math.rcp(PredictiveRepairLatchDistanceSq)));
             float direction01 = SanitizeUnitScalar((directionDot - requiredDot) * math.rcp(math.max(1.0f - requiredDot, 0.0001f)));
             float targetBlend = range01 * direction01;
             predictivePosition = (Vector3)targetRuntime;
@@ -2563,7 +2571,7 @@ namespace Hecton8.Gameplay
 
         private void CaptureSpineTargets(bool lowTier)
         {
-            if (!_spineChainRuntimes.IsCreated || !_spineTargets.IsCreated)
+            if (!_spineChainRuntimes.IsCreated || !_spineTargets.IsCreated || _spineTargets.Length < SpineTargetCountPerChain)
                 return;
 
             if (!TryGetValidSpineChain(out SpineChainAuthoring validSpineChain))
@@ -2646,13 +2654,18 @@ namespace Hecton8.Gameplay
 
         private void CaptureAppendageTargets()
         {
-            if (!_appendageChainRuntimes.IsCreated || !_appendageTargets.IsCreated)
+            if (!_appendageChainRuntimes.IsCreated || !_appendageTargets.IsCreated || _appendageTargets.Length <= 0)
                 return;
 
-            for (int chainIndex = 0; chainIndex < _appendageChainRuntimes.Length; chainIndex++)
+            int chainCount = math.min(_appendageChainRuntimes.Length, _appendageTargets.Length);
+            for (int chainIndex = 0; chainIndex < chainCount; chainIndex++)
             {
-                Transform targetSource = _appendageTargetSources[chainIndex];
-                Transform fallbackTip = _appendageFallbackTips[chainIndex];
+                Transform targetSource = _appendageTargetSources != null && chainIndex < _appendageTargetSources.Length
+                    ? _appendageTargetSources[chainIndex]
+                    : null;
+                Transform fallbackTip = _appendageFallbackTips != null && chainIndex < _appendageFallbackTips.Length
+                    ? _appendageFallbackTips[chainIndex]
+                    : null;
                 ContextualPhysicalIkAppendageChainRuntime runtime = _appendageChainRuntimes[chainIndex];
                 Vector3 targetPosition;
                 float weight;
@@ -2706,7 +2719,10 @@ namespace Hecton8.Gameplay
 
         private void ApplyMuscleBulgeSignal(float deltaTime)
         {
-            if (!_muscleBulgeOutput.IsCreated || !_muscleBulgeMaterialInitialized || _muscleBulgeMaterialInstance == null)
+            if (!_muscleBulgeOutput.IsCreated ||
+                _muscleBulgeOutput.Length <= 0 ||
+                !_muscleBulgeMaterialInitialized ||
+                _muscleBulgeMaterialInstance == null)
                 return;
 
             float safeDeltaTime = math.max(0.0001f, SanitizeNonNegativeScalar(deltaTime));
@@ -3259,6 +3275,16 @@ namespace Hecton8.Gameplay
         private static float SanitizeNonNegativeScalar(float value)
         {
             return math.select(math.max(0.0f, value), 0.0f, !math.isfinite(value));
+        }
+
+        private static float WrapPositivePhase(float phase, float wrap)
+        {
+            float safeWrap = math.max(SanitizeNonNegativeScalar(wrap), 0.0001f);
+            if (!math.isfinite(phase))
+                return 0.0f;
+
+            phase -= math.floor(phase * math.rcp(safeWrap)) * safeWrap;
+            return !math.isfinite(phase) || phase < 0.0f ? 0.0f : phase;
         }
 
         private static float3 SanitizeFloat3Value(float3 value, float3 fallback)

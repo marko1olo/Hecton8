@@ -417,3 +417,11 @@ Solution: `H8UberNoirRadiusMask` now fails closed on non-finite position or cent
 Rejected Alternatives: Leaving the CoreLit guard as the only analytical protection, or final-position sanitation only. UberNoir has its own path and must not depend on another include's guard; final sanitation hides bad intermediate displacement.
 Scalability potential: Low/MX350 remains bypassed through `_MATH_LOD_LOW`. High/Ultra keep noir hull bending when data is valid and lose only corrupted habitat contribution.
 Hardware Impact: Adds finite checks in the non-low UberNoir bend path. Fault frames avoid NaN displacement; valid-frame overhead is scalar/vector finite checks around already-active bending math.
+
+## Follow-Up Correction - UberNoir Safe Bend Position
+
+Problem: Even with finite radius-mask gates, UberNoir dynamic bending still passed raw `positionWS` into the buckling mask and final fallback. A non-finite vertex position could poison buckle math before the final `H8UberNoirFinite3` call.
+Solution: Sanitized `positionWS` once to `safePositionWS` at the non-low bending entry and reused it for crush/habitat radius masks, buckling mask, and final fallback.
+Rejected Alternatives: Sanitizing only the final output, or repeating finite checks in each mask call. Final-only sanitation still burns NaN intermediate work; repeated checks duplicate policy and cost.
+Scalability potential: Low/MX350 remains bypassed. High/Ultra dynamic hull bending keeps full valid visuals while non-finite input becomes deterministic zero-origin fallback instead of NaN output.
+Hardware Impact: Adds one vector finite sanitize in the non-low bend path and removes repeated risk downstream. Fault frames avoid NaN buckling/displacement; valid-frame cost is negligible versus existing bending ALU.

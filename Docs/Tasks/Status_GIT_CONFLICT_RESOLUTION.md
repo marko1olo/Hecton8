@@ -57,3 +57,9 @@ Task loop 9:
 Task loop 10:
 - [x] Verify pushed graphics tail | DOD: `git push origin main:main`; post-push `fetch` and divergence check returned `0 0` | Rejected: trusting push output without fetch verification | Estimate: 0 us runtime.
 - [x] Check next live tail | DOD: post-push `git status`, `git diff --stat`, `git diff --check`, unmerged-path scan, and marker scan | Rejected: hiding continuing parallel-agent writes | Estimate: 0 us runtime.
+
+Task loop 11:
+- [x] Re-check remote synchronization | DOD: `git fetch origin`; `rev-list origin/main...HEAD` returned `0 0`, so pull was not required | Rejected: pulling over a dirty worktree with no incoming commits | Estimate: 0 us runtime.
+- [x] Validate current audit tail | DOD: `git status`, `git diff --stat`, `git diff --check`, unmerged-path scan, and changed-file conflict-marker scan | Rejected: staging unchecked parallel-agent edits | Estimate: 0 us runtime.
+- [x] Review runtime diff surface | DOD: inspected staged script surface and re-staged after live writes settled; scripts include Atmosphere, Prologue audio, GlobalSignals, editor baker, survival, save codec, submarine physics, UI, world bridge, culling contracts, and vegetation flow | Rejected: treating docs-only checks as sufficient when runtime code changed | Estimate: 0 us runtime.
+- [x] Prepare checkpoint evidence | DOD: appended loop 11 evidence to Status/Rationale/LOG before staging | Rejected: chat-only status while committing | Estimate: 0 us runtime.

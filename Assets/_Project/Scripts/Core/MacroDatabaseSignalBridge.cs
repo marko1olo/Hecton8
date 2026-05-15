@@ -8,7 +8,7 @@ namespace Hecton8.Core
     /// </summary>
     public readonly struct MacroDatabaseSignalBridge : IMacroDatabaseSignalSink
     {
-        public void PublishSectorHydrated(in Hecton8.Core.Contracts.SectorHydratedSignal signal)
+        public void PublishSectorHydrated(in Hecton8.Core.Contracts.MacroDatabaseSectorHydratedSignal signal)
         {
             Hecton8.Core.Signals.SectorHydratedSignal payload = new Hecton8.Core.Signals.SectorHydratedSignal
             {

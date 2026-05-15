@@ -379,3 +379,15 @@ Rejected Alternatives: A full extra hash pass inside every idle LateFrame was re
 Scalability potential: Low = fail-closed active count when vault lanes disappear. Middle = idle black-box hashes match current registry truth. High = mass stow fields stop scheduling cleared tail slots before the next SlowTick. Ultra = dense fields retain truthful hash evidence without an extra per-frame telemetry sweep.
 
 Hardware Impact: MX350 avoids repeated Burst execution over cleared trailing slots after mass acquisition. Added work is integer FNV folding inside loops already scanning/committing loot; no heap allocation, no new native memory, and no extra idle O(n) pass.
+
+## Decision 30 - Continued Dotnet Process Hygiene
+
+Problem: The user forbids dotnet rebuilds, but an external PowerShell wrapper spawned `dotnet build Hecton8.Core.csproj` again during static verification hygiene.
+
+Solution: Inspect the dotnet process and its parent command, stop both the build process and parent wrapper, and rerun process inspection before final reporting.
+
+Rejected Alternatives: Allowing the process to finish was rejected because it violates the active user constraint and contaminates verification evidence. Starting a replacement build was rejected for the same reason.
+
+Scalability potential: No runtime behavior change. This protects evidence quality during parallel-agent execution.
+
+Hardware Impact: Removes local build CPU pressure only; no gameplay frame-time claim.

@@ -318,12 +318,43 @@ namespace Hecton8.SaveSystem
             return read == inputBytes && write == expectedOutputBytes;
         }
 
-        private static void WriteUInt(byte* ptr, int offset, uint value) => *(uint*)(ptr + offset) = value;
-        private static void WriteUShort(byte* ptr, int offset, int value) => *(ushort*)(ptr + offset) = (ushort)value;
-        private static void WriteInt(byte* ptr, int offset, int value) => *(int*)(ptr + offset) = value;
-        private static uint ReadUInt(byte* ptr, int offset) => *(uint*)(ptr + offset);
-        private static ushort ReadUShort(byte* ptr, int offset) => *(ushort*)(ptr + offset);
-        private static int ReadInt(byte* ptr, int offset) => *(int*)(ptr + offset);
+        private static void WriteUInt(byte* ptr, int offset, uint value)
+        {
+            ptr[offset] = unchecked((byte)value);
+            ptr[offset + 1] = unchecked((byte)(value >> 8));
+            ptr[offset + 2] = unchecked((byte)(value >> 16));
+            ptr[offset + 3] = unchecked((byte)(value >> 24));
+        }
+
+        private static void WriteUShort(byte* ptr, int offset, int value)
+        {
+            uint value16 = unchecked((ushort)value);
+            ptr[offset] = unchecked((byte)value16);
+            ptr[offset + 1] = unchecked((byte)(value16 >> 8));
+        }
+
+        private static void WriteInt(byte* ptr, int offset, int value)
+        {
+            WriteUInt(ptr, offset, unchecked((uint)value));
+        }
+
+        private static uint ReadUInt(byte* ptr, int offset)
+        {
+            return (uint)ptr[offset] |
+                   ((uint)ptr[offset + 1] << 8) |
+                   ((uint)ptr[offset + 2] << 16) |
+                   ((uint)ptr[offset + 3] << 24);
+        }
+
+        private static ushort ReadUShort(byte* ptr, int offset)
+        {
+            return unchecked((ushort)(ptr[offset] | (ptr[offset + 1] << 8)));
+        }
+
+        private static int ReadInt(byte* ptr, int offset)
+        {
+            return unchecked((int)ReadUInt(ptr, offset));
+        }
 
         internal static bool TryWrite(SaveData data, byte* destination, int capacity, out int bytesWritten, out string error)
         {

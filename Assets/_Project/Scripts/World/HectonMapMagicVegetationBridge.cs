@@ -2395,10 +2395,10 @@ namespace Hecton8.World
         public Vector3[] ActiveAbyssalAnchors => _abyssalAnchorPositions;
 
         /// <summary>Active resident abyssal anchor positions in persistent native memory for direct readback.</summary>
-        public NativeArray<Vector3> ActiveAbyssalAnchorsNative => _nativeMemory.AbyssalAnchorPositionsNative;
+        public NativeArray<Vector3> ActiveAbyssalAnchorsNative => GetAbyssalAnchorNativeView();
 
         /// <summary>Active resident abyssal anchor positions as AUP in persistent native memory for acoustic consumers.</summary>
-        public NativeArray<AbsoluteUniversePosition> ActiveAbyssalAnchorAupsNative => _nativeMemory.AbyssalAnchorAupPositionsNative;
+        public NativeArray<AbsoluteUniversePosition> ActiveAbyssalAnchorAupsNative => GetAbyssalAnchorAupNativeView();
 
         /// <summary>Number of active surface instances.</summary>
         public int ActiveSurfaceInstanceCount => _surfaceFrontCount;
@@ -2413,7 +2413,7 @@ namespace Hecton8.World
         public int ActiveUnderwaterAggregateRevision => _underwaterActiveAggregateRevision;
 
         /// <summary>Number of active resident abyssal anchors currently exported by the bridge.</summary>
-        public int ActiveAbyssalAnchorCount => _abyssalAnchorCount;
+        public int ActiveAbyssalAnchorCount => ResolveAbyssalAnchorViewCount();
 
         /// <summary>Immutable managed snapshot of the current abyssal safe-navigation nodes.</summary>
         public Vector3[] ActiveAbyssalNavNodes => _abyssalNavNodeSnapshot;
@@ -2446,10 +2446,10 @@ namespace Hecton8.World
         public Vector3 EcosystemFlowFieldCenter => _ecosystemFlowFieldCenter;
 
         /// <summary>Current abyssal thermal grid. Treat as read-only and reacquire after each SlowTick.</summary>
-        public NativeArray<float> AbyssalThermalGrid => _nativeMemory.AbyssalThermalGridNative;
+        public NativeArray<float> AbyssalThermalGrid => GetAbyssalThermalGridView();
 
         /// <summary>Current 3D abyssal flow volume. Treat as read-only and reacquire after each SlowTick.</summary>
-        public NativeArray<float3> AbyssalFlowVolume => _nativeMemory.AbyssalFlowVolumeCurrentNative;
+        public NativeArray<float3> AbyssalFlowVolume => GetAbyssalFlowVolumeView();
 
         /// <summary>Current abyssal thermal-grid center in world space.</summary>
         public Vector3 AbyssalThermalGridCenter => _abyssalThermalGridCenter;
@@ -2794,8 +2794,8 @@ namespace Hecton8.World
         /// </summary>
         public bool TryGetActiveAbyssalAnchorPayload(out NativeArray<Vector3> anchors, out int count)
         {
-            anchors = _nativeMemory.AbyssalAnchorPositionsNative;
-            count = _abyssalAnchorCount;
+            anchors = GetAbyssalAnchorNativeView();
+            count = ResolveAbyssalAnchorViewCount();
             return count > 0 && anchors.IsCreated;
         }
 
@@ -2804,8 +2804,8 @@ namespace Hecton8.World
         /// </summary>
         public bool TryGetActiveAbyssalAnchorAupPayload(out NativeArray<AbsoluteUniversePosition> anchors, out int count)
         {
-            anchors = _nativeMemory.AbyssalAnchorAupPositionsNative;
-            count = _abyssalAnchorCount;
+            anchors = GetAbyssalAnchorAupNativeView();
+            count = ResolveAbyssalAnchorAupViewCount();
             return count > 0 && anchors.IsCreated;
         }
 
@@ -2814,8 +2814,8 @@ namespace Hecton8.World
         /// </summary>
         public bool TryGetActiveAbyssalNavNodePayload(out NativeArray<Vector3> nodes, out int count)
         {
-            nodes = _nativeMemory.AbyssalNavNodeSnapshotNative;
-            count = _abyssalNavNodeCount;
+            nodes = GetAbyssalNavNodeSnapshotNativeView();
+            count = ResolveAbyssalNavNodeViewCount();
             return count > 0 && nodes.IsCreated;
         }
 
@@ -2829,7 +2829,7 @@ namespace Hecton8.World
         {
             conduitVectors = _nativeMemory.AbyssalNavConduitVectorsSnapshotNative;
             conduitStrengths = _nativeMemory.AbyssalNavConduitStrengthSnapshotNative;
-            count = _abyssalNavNodeCount;
+            count = ResolveAbyssalNavGraphViewCount();
             return count > 0 &&
                    conduitVectors.IsCreated &&
                    conduitStrengths.IsCreated;
@@ -2853,7 +2853,7 @@ namespace Hecton8.World
             conduitVectors = _nativeMemory.AbyssalNavConduitVectorsSnapshotNative;
             conduitStrengths = _nativeMemory.AbyssalNavConduitStrengthSnapshotNative;
             spatialHash = _nativeMemory.AbyssalNavGraphHashNative;
-            count = _abyssalNavNodeCount;
+            count = ResolveAbyssalNavGraphViewCount();
             cellSize = abyssalNavGraphCellSize;
             origin = _abyssalNavGraphOrigin;
             return count > 0 &&
@@ -2861,7 +2861,10 @@ namespace Hecton8.World
                    nodeTypes.IsCreated &&
                    conduitVectors.IsCreated &&
                    conduitStrengths.IsCreated &&
-                   spatialHash.IsCreated;
+                   spatialHash.IsCreated &&
+                   cellSize > 0f &&
+                   math.isfinite(cellSize) &&
+                   IsFinite(origin);
         }
 
         /// <summary>
@@ -2992,7 +2995,7 @@ namespace Hecton8.World
         public bool TryGetActiveAbyssalNavNodeTypePayload(out NativeArray<byte> nodeTypes, out int count)
         {
             nodeTypes = _nativeMemory.AbyssalNavNodeTypesSnapshotNative;
-            count = _abyssalNavNodeCount;
+            count = ResolveAbyssalNavGraphViewCount();
             return count > 0 && nodeTypes.IsCreated;
         }
 

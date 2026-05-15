@@ -146,3 +146,33 @@ Exact Microseconds saved:
 Verification:
 - No dotnet rebuild was executed.
 - Static review only; runtime/Unity import remains blocked by the external World/GPR compile dependency.
+
+## 2026-05-15 04:24:58 +04:00 - Post-Follow-Up Static Verification
+What was wrong:
+- The DRS/flora safety patch changed source state after the prior H-Phi reading.
+- Reusing the older `03:57:16` H-Phi numbers would be stale evidence.
+
+What was done:
+- Ran `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json` with a 300s timeout only.
+- Ran no `dotnet build`, no `dotnet rebuild`, and no Unity rebuild.
+- Recorded latest metrics in status and rationale.
+
+Cinematic Cheats used:
+- None added in this verification pass.
+- Existing low-tier shader/DRS cheats remain: base+ORM-only low path, procedural caustic gate, rust texture stall gate, and hysteretic render-scale control.
+
+Exact Microseconds saved:
+- Audit execution itself saves 0 us at runtime.
+- DRS hysteresis still estimates 5-40 us of avoided state churn/jitter during unstable pressure windows pending profiler capture.
+- Flora finite guard saves 0 us; it prevents shader global poisoning.
+
+Verification:
+- `RuntimeHPhiNarrow=0.010750800`
+- `RuntimeHPhiRisk=0.000587147`
+- `AllSourceHPhiNarrow=0.009572479`
+- `AllSourceHPhiRisk=0.000482295`
+- `ArchitecturalPurity=0.996447602`
+- `MemoryAlignment=0.504761905`
+- `UnityUpdateMethods=2`
+- `StructLayoutAttributes=954`
+- `AupPrecisionRisk=0`

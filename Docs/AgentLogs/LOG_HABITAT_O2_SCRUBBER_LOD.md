@@ -262,3 +262,19 @@ Cinematic Cheats used:
 
 Exact microseconds saved:
 - None claimed. This is cold audit accuracy for H-Phi evidence; no dotnet rebuild was run.
+
+## 2026-05-15 - Base Lane Readiness Addendum
+STATUS: PENDING VERIFICATION
+
+What was wrong:
+- Several base hibernation methods checked `BaseAwakeState` but then indexed other base SOA lanes that are separate native buffers.
+
+What was done:
+- Added `AreBaseStateLanesReady`.
+- Base snapshots, configuration, signal drain, player-inside writes, hibernation scans, and wake/sleep transitions now fail closed unless the full base lane set exists.
+
+Cinematic Cheats used:
+- None new.
+
+Exact microseconds saved:
+- None claimed. This is partial-native-state crash prevention for future H-Phi migration; no dotnet rebuild was run.

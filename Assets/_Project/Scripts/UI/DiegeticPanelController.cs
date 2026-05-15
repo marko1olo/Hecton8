@@ -373,6 +373,7 @@ namespace Hecton8.UI
         private float _tickUnscaledTime;
         private float _appliedTerminalDamageGlitch = -1f;
         private float _appliedFlashlightGlare = -1f;
+        private float _appliedPhosphorDecay = -1f;
         private bool _tickRegistered;
         private bool _lateFrameRegistered;
         private bool _renderPipelineHookRegistered;
@@ -857,6 +858,7 @@ namespace Hecton8.UI
             damageGlitchDurationSeconds = math.clamp(damageGlitchDurationSeconds, 0.02f, 1f);
             _phosphorMaterialResolveAttempted = false;
             _phosphorMaterialResolveFailed = false;
+            _appliedPhosphorDecay = -1f;
 
             RefreshFingertipBindingMask();
             ResolveSerializedReferences(resolveGraphicRaycaster: true);
@@ -1283,6 +1285,7 @@ namespace Hecton8.UI
                     ? phosphorDecayMaterial
                     : Resources.Load<Material>(DefaultPhosphorDecayMaterialResourcePath);
                 _phosphorMaterialResolveAttempted = true;
+                _appliedPhosphorDecay = -1f;
             }
 
             if (_phosphorDecayMaterial == null)
@@ -1330,7 +1333,11 @@ namespace Hecton8.UI
 
             _phosphorDecayMaterial.SetTexture(_PreviousTexId, _phosphorFrontTexture);
             _phosphorDecayMaterial.SetTexture(_CurrentTexId, _panelRenderTexture);
-            _phosphorDecayMaterial.SetFloat(_DecayId, phosphorDecay);
+            if (math.abs(_appliedPhosphorDecay - phosphorDecay) > 0.0001f)
+            {
+                _appliedPhosphorDecay = phosphorDecay;
+                _phosphorDecayMaterial.SetFloat(_DecayId, phosphorDecay);
+            }
             Graphics.Blit(null, _phosphorBackTexture, _phosphorDecayMaterial, 0);
 
             RenderTexture swap = _phosphorFrontTexture;
@@ -1345,6 +1352,7 @@ namespace Hecton8.UI
             _phosphorDecayMaterial = null;
             _phosphorMaterialResolveAttempted = false;
             _phosphorMaterialResolveFailed = false;
+            _appliedPhosphorDecay = -1f;
         }
 
         private void ReleasePhosphorTextures()

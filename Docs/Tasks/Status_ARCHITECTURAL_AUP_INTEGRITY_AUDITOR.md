@@ -3,7 +3,7 @@
 Agent: ARCHITECTURAL_AUP_INTEGRITY_AUDITOR
 Domain: ECHELON 1 / Origin Shift (AUP Manager), with audit reach into Physics, Voxel, Kinematics, AI trigger math, Biome trigger math, and deterministic seed callsites.
 Assignment Source: User-supplied XML block. `Docs/Tasks/CURRENT_BATCH.md` extraction returned `PROMPT_NOT_FOUND` for this ID on initial pass.
-Status: VERIFIED AUP INTEGRITY - LOOP 31 APPLIED; H-PHI CORE-GRAPH SUMMARY NOW RECORDS GRAPH BUDGET STATE; LOOP 30 REMAINS LATEST COMPLETED FULL AUP BUDGET SCAN; LOOP 31 FULL RETEST TIMED OUT; CORE BUILD NOT RERUN PER USER; ASMDEF BLOCKED BY ARCHITECTURE
+Status: VERIFIED AUP INTEGRITY - LOOP 32 APPLIED; H-PHI TEXT BUDGET TABLE NOW DISPLAYS MAX AND MIN THRESHOLDS CORRECTLY; LOOP 30 REMAINS LATEST COMPLETED FULL AUP BUDGET SCAN; LOOP 31 FULL RETEST TIMED OUT; CORE BUILD NOT RERUN PER USER; ASMDEF BLOCKED BY ARCHITECTURE
 
 ## Selected Mandates
 
@@ -346,3 +346,17 @@ Loop 31 - H-Phi Core-Graph Budget Summary Metadata:
 - Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` was re-run; residual hits remain broad `universe` text plus known final-cast fluid/scatter/shader payload names.
 - `git diff --check` on touched tool/docs reports no whitespace errors.
 - No `dotnet build` or rebuild was run in Loop 31 because the user explicitly forbade rebuilds.
+
+Loop 32 - H-Phi Budget Text Threshold Display:
+- Re-read status/rationale and kept the rebuild ban active.
+- Patched `Tools/Architecture/HectonPhiAudit.ps1` to add `ConvertTo-BudgetDisplayRows`.
+- Text summaries now render budget rows with `Direction` and `Limit`, so `Max` ceilings display as `<=` and `Min` floors display as `>=` instead of leaving floor thresholds visually ambiguous.
+- Core build graph gate boolean rows display as equality checks.
+- PowerShell parser reports `PARSE_OK`.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary` prints the new budget table columns: `Budget`, `Enabled`, `Direction`, `Limit`, `Actual`, `Passed`.
+- CoreGraphOnly JSON with enabled graph budgets still reports `CoreBuildGraphGate.Passed=True` and `CoreAsmdefDebtReferences.Actual=25`.
+- Targeted qualified AUP H-Phi risk scan returns `NO_MATCHES`.
+- Direct committed-offset leak scan returns `NO_MATCHES`.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` was re-run; residual hits remain broad `universe` text plus known final-cast fluid/scatter/shader payload names.
+- `git diff --check -- Tools/Architecture/HectonPhiAudit.ps1` reports line-ending warnings only, no whitespace errors.
+- No `dotnet build` or rebuild was run in Loop 32 because the user explicitly forbade rebuilds.

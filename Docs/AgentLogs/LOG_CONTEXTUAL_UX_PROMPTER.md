@@ -223,3 +223,14 @@ Cinematic cheats used: Preserved the phosphor-history CRT persistence fake. The 
 Exact microseconds saved: Estimate only. Expected gain is sub-1 us per phosphor-enabled panel late frame on i3/MX350; no profiler proof is claimed.
 
 Verification: No dotnet rebuilds were run. Static scans confirmed `HasProperty` is isolated to `RefreshPanelOutputMaterialPropertyCache()`, material writes use cached flags, and no forbidden allocation/text/LINQ, bootstrap fallback, direct `Time`, old phosphor fallback, or `resolvedCamera.transform` markers returned.
+
+## 2026-05-15 Diegetic Panel Phosphor Decay Dirty Scalar
+What was wrong: The phosphor composite pass correctly rebinds previous/current RT textures every frame, but it also wrote the stable `_Decay` scalar every frame.
+
+What was done: Added `_appliedPhosphorDecay`, reset it on phosphor material cache reset, and dirty-gated `_Decay` writes so only decay changes touch that scalar.
+
+Cinematic cheats used: Preserved the same RT-history phosphor fake; only removed redundant API traffic around the stable decay coefficient.
+
+Exact microseconds saved: Estimate only. Expected gain is sub-1 us per phosphor-enabled panel late frame on i3/MX350; no profiler proof is claimed.
+
+Verification: No dotnet rebuilds were run. Static scans confirmed `_Decay` writes pass through `_appliedPhosphorDecay` and no forbidden allocation/text/LINQ, bootstrap fallback, direct `Time`, old phosphor fallback, or `resolvedCamera.transform` markers returned.

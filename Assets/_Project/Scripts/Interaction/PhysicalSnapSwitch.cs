@@ -204,9 +204,10 @@ namespace Hecton8.Interaction
 
         private void RegisterCollider()
         {
-            if (_receiverRegistered)
+            Collider registeredVolume = _registeredActivationVolume;
+            if (_receiverRegistered || registeredVolume != null)
             {
-                if (ReferenceEquals(_registeredActivationVolume, activationVolume))
+                if (_receiverRegistered && ReferenceEquals(registeredVolume, activationVolume))
                     return;
 
                 UnregisterCollider();

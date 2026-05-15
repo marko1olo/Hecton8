@@ -889,3 +889,88 @@ Verification:
 - `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -MaxFindObjectCalls 5`: parser guard correctly rejected source-count budget under graph-only mode.
 - `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0 -MaxFindObjectCalls 5 -MaxLegacyEventPublish 28 -MaxCoreAsmdefDebtReferences 25 -MaxGeneratedProjectDebtReferences 10 -MaxSourceBackedBridgeDebtReferences 14 -MaxSourceBackedCompileBridgeDebtReferences 8 -MaxProjectReferenceReplacementDebtReferences 6`: completed at local timestamp `2026-05-15 03:52:11 +04:00`.
 - Runtime H-Phi remains `PENDING VERIFICATION` until Unity Console, PlayMode, Profiler, and GCMonitor evidence exist.
+
+## 2026-05-15 Live Addendum 13
+
+Evidence class: `STATIC_SOURCE`.
+
+User constraint for this pass: no `dotnet build` and no rebuild.
+
+What changed:
+- Added hard source-count gates for `GlobalRegistrySurface`, `GetComponentCalls`, and `NativeArrayRefs`.
+- Added hard score floors for `DataSovereignty`, `MemoryAlignment`, and risk-adjusted runtime H-Phi.
+- Added Core graph budget summaries to compact JSON output.
+- Hardened the full scan against files deleted by concurrent agents between enumeration and read.
+- No gameplay code, buffer ownership, tick cadence, job scheduling, scene, prefab, or Unity project setting was changed.
+
+Current runtime static scores:
+
+| Coefficient | Score |
+|---|---:|
+| Narrow integration | 1.000000000 |
+| Risk-adjusted integration | 0.054596284 |
+| Architectural purity | 0.996447602 |
+| Data sovereignty | 0.021374686 |
+| Memory alignment | 0.504232804 |
+| Binary-safe ratio | 0.018518519 |
+| AUP precision integrity | 1.000000000 |
+| H-Phi runtime static narrow | 0.010739531 |
+| H-Phi runtime static risk-adjusted | 0.000586338 |
+
+Current runtime counts:
+
+| Counter | Value |
+|---|---:|
+| Runtime C# files | 1,275 |
+| Runtime source lines | 860,839 |
+| Typed/queued signal push surface | 332 |
+| Legacy/direct event publish surface | 28 |
+| `GlobalRegistry.` surface refs | 5,143 |
+| Unity `Update`/`LateUpdate`/`FixedUpdate` method declarations | 2 |
+| DataVault access surface refs | 153 |
+| `NativeArray<T>` refs | 7,005 |
+| Struct declarations | 1,890 |
+| `StructLayout(...)` attrs | 953 |
+| Runtime `Find*` calls | 5 |
+| Runtime `GetComponent*` calls | 540 |
+| `.Dispose(...)` calls | 1,247 |
+| AUP precision safe refs | 363 |
+| AUP precision risk refs | 0 |
+
+Budget gates:
+
+| Gate | Budget/Floor | Current | Status |
+|---|---:|---:|---|
+| AUP precision risk | <= 0 | 0 | PASS |
+| Runtime `Find*` calls | <= 5 | 5 | PASS |
+| Legacy event publish | <= 28 | 28 | PASS |
+| Duplicate signal names | <= 6 | 6 | PASS |
+| `GlobalRegistry.` surface refs | <= 5,160 | 5,143 | PASS |
+| `GetComponent*` calls | <= 550 | 540 | PASS |
+| `NativeArray<T>` refs | <= 7,035 | 7,005 | PASS |
+| Data sovereignty | >= 0.020800000 | 0.021374686 | PASS |
+| Memory alignment | >= 0.503900000 | 0.504232804 | PASS |
+| Runtime H-Phi risk | >= 0.000570000 | 0.000586338 | PASS |
+| Core asmdef debt refs | <= 25 | 25 | PASS |
+| Generated project debt refs | <= 10 | 10 | PASS |
+| Source-backed bridge debt refs | <= 14 | 14 | PASS |
+| Source-backed compile bridge debt refs | <= 8 | 8 | PASS |
+| Project-reference replacement debt refs | <= 6 | 6 | PASS |
+
+Observed transient churn:
+- Tight gate caught `NativeArrayRefs 7029 > 7026` during concurrent work.
+- Tight gate caught `GlobalRegistrySurface 5150 > 5149` during concurrent work.
+- `Assets/_Project/Scripts/Fauna/ProceduralLeviathanSpineIK.cs` disappeared during one full scan; the auditor now skips files removed between enumerate/read.
+
+Residual bottlenecks:
+- Data Sovereignty is still the hard floor: `153 / (153 + 7005) = 0.021374686`.
+- Duplicate signal-name scan still reports `6` duplicate names; zero budget remains an integrator/signal-owner task.
+- Top owner-blocked DataVault candidates remain `HectonVoxelEngine.cs`, `Audio/PlayerCriticalProceduralAudioRenderer.cs`, `PlayerInventory.cs`, `Fauna/PredatorCognitionDomain.cs`, and `World/HectonMapMagicVegetationBridge.cs`.
+- Runtime verification remains absent by user order.
+
+Verification:
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -MinDataSovereignty 0.02 -Summary -Json`: parser guard correctly rejected source floor under graph-only mode.
+- `git diff --check -- Tools/Architecture/HectonPhiAudit.ps1`: no whitespace errors; LF/CRLF warning only.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json`: completed.
+- Final full static gate completed at local timestamp `2026-05-15 04:20:55 +04:00`.
+- Runtime H-Phi remains `PENDING VERIFICATION` until Unity Console, PlayMode, Profiler, and GCMonitor evidence exist.

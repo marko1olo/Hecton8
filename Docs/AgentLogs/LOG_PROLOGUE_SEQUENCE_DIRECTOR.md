@@ -340,3 +340,11 @@ What was done -> Complete-packet AUP validation is now gated by `sequenceOceanHa
 Cinematic Cheats used -> Whiteout-only concealment stays cheap and position-agnostic. Sequence handoff still protects splash/audio/debris overkill with AUP validation.
 Exact Microseconds saved -> Saves one AUP-to-runtime finite check per non-sequence complete packet and avoids irrelevant fault dumps. Direct cost saved is below 1 us per packet.
 Verification -> No dotnet rebuild/response-file compile was run per user constraint. Targeted scan confirms sequence-gated AUP validation; forbidden-pattern scan returned no hits after correcting a bad patch context; `git diff --check` reports line-ending warnings only.
+
+## 2026-05-15 - Loop 47 VFX Spatial-Anchor State Flag Review
+
+What was wrong -> VFX state packets carried `CapsuleAup` even before a valid atmospheric or sequence handoff anchor had been accepted, leaving downstream diagnostics to infer authority from a finite-looking default AUP.
+What was done -> `ReentryVfxStateSignal` exposes `FlagSpatialAnchor`, and both state publishing and black-box telemetry set it only from `_hasSpatialAnchor` after a valid spatial-owner packet is accepted.
+Cinematic Cheats used -> None; this is a diagnostic/ownership flag protecting existing plasma, splash, acoustic, and droplet fakes from ambiguous anchors.
+Exact Microseconds saved -> Adds one branch and byte OR per state/telemetry write, below 1 us. Avoids downstream ambiguity without increasing the 64-byte signal payload.
+Verification -> No dotnet rebuild/response-file compile was run per user constraint. Targeted scan confirms the flag in the 64-byte state signal and both VFX writers; forbidden-pattern scan returned no hits; `git diff --check` exits clean for the scoped files.

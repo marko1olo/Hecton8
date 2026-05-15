@@ -186,3 +186,10 @@ Solution: The audit now skips `BaseAwakeState` in local allocation totals when `
 Rejected Alternatives: Adding a new audit field for vault-owned bytes was rejected because the public contract would widen without compile proof. Counting it twice was rejected because it hides the H-Phi ownership improvement.
 Scalability potential: Low through Ultra get accurate memory accounting for the shared awake mask.
 Hardware Impact: No runtime saving; one cold audit branch only. Improves evidence quality for H-Phi/data-sovereignty review.
+
+## Self-Review 20 - Base Lane Readiness Guard
+Problem: Base transition and hibernation methods guarded `BaseAwakeState` but then indexed player-inside, room mapping, center AUP, and power metadata lanes that could become independently owned in later H-Phi work.
+Solution: Added `AreBaseStateLanesReady` and used it before base snapshots, configuration, signal draining, player-inside writes, hibernation scans, and wake/sleep transitions.
+Rejected Alternatives: Repeating partial guards at each callsite was rejected because it would drift. Trusting constructor symmetry was rejected because the domain is explicitly moving toward shared native buffers.
+Scalability potential: Low through Ultra keep the same base mask behavior; future per-lane ownership can fail closed instead of indexing partial state.
+Hardware Impact: Small managed branch set on base cold/Frost paths and transition packets only. Prevents crash-class faults under future H-Phi migration.

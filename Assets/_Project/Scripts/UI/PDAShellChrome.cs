@@ -604,6 +604,8 @@ namespace Hecton8.UI
             int activeTabIndex = playerPDA != null ? playerPDA.ActiveTab : -1;
             int weightDeci = (int)math.round(weight * 10f);
             ResolveSurvivalPercentBuckets(out int oxygenPercent, out int energyPercent);
+            float oxygen = math.saturate(oxygenPercent * 0.01f);
+            float energy = math.saturate(energyPercent * 0.01f);
             bool pdaOpen = PlayerPDA.IsOpen;
             bool intrusionActive = _intrusionManager != null && _intrusionManager.IsHacked;
             bool mechModeActive = _playerMovement != null && _playerMovement.CurrentLocomotionMode == PlayerLocomotionMode.ExosuitLocomotion;

@@ -428,3 +428,11 @@ Solution: Gate complete-packet AUP validation behind `sequenceOceanHandoff`. Whi
 Rejected Alternatives: Keep validating every complete packet for uniformity, or remove all complete AUP validation. Uniform validation creates false fault handling for irrelevant data; removing all validation would let the authoritative `PRLG` handoff poison the spatial anchor.
 Scalability potential: Low/MX350 saves work on repeated manual/orbital whiteout packets. Middle/High/Ultra keep expensive handoff visuals protected by AUP validation where the handoff actually owns the anchor.
 Hardware Impact: Saves one AUP-to-runtime finite check per non-sequence complete packet and avoids irrelevant black-box dumps. Verification this pass is static only by user request; no dotnet rebuild or response-file compile was run.
+
+## Decision 52 - VFX Spatial Anchor State Flag
+
+Problem: `ReentryVfxStateSignal` carried `CapsuleAup` even before a valid anchor was accepted, so diagnostics/downstream readers had no cheap way to know whether the AUP was authoritative.
+Solution: Add `FlagSpatialAnchor` to the existing state flags and set it from `_hasSpatialAnchor` in state and black-box telemetry writes. The 64-byte signal layout is unchanged.
+Rejected Alternatives: Infer validity from default AUP, or suppress state packets until anchored. Default AUP can be finite and ambiguous; suppressing packets hides whiteout/quality diagnostics.
+Scalability potential: Low/MX350 readers can cheaply reject spatial fan-out from unanchored states. Middle/High/Ultra keep richer diagnostics and effects tied to authoritative anchors.
+Hardware Impact: One branch and byte OR per state/telemetry write, below 1 us; avoids downstream ambiguity without adding payload size. Verification static only; no rebuild.

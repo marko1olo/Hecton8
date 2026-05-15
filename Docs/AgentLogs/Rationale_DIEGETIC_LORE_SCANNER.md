@@ -459,3 +459,31 @@ Solution: Ran source-only checks: `git diff --check` passed with line-ending war
 Rejected Alternatives: Running prohibited `dotnet build`; assuming the helper was cold without a source scan.
 Scalability potential: Process hygiene only.
 Hardware Impact: No runtime impact.
+
+## LOOP 21 FILTERED SCANNER SIGNAL DIRTY-CHURN GUARD
+
+Problem: `ToolDiegeticDisplayController` checked whether the latest `ScannerToolActiveSignal` matched its tool-hash filter, but rejected packets still fed their artifact hash and sanitized progress into the scanner cache comparison. A non-scanner or differently filtered physical display could be marked dirty by unrelated scanner artifact transitions.
+Solution: Convert rejected scanner packets to a zero artifact/progress state before cache comparison. Accepted scanner packets keep the existing title/scramble behavior.
+Rejected Alternatives: Ignoring scanner signals entirely for filtered displays, which would fail to clear a previously active scanner state; widening signal payloads; adding a per-display scanner signal subscription.
+Scalability potential: Low/MX350 avoids unnecessary display refresh work from unrelated scanner traffic. Middle/High/Ultra keep rich scanner decryption visuals only on displays that intentionally accept the scanner packet.
+Hardware Impact: Avoids one dirty-state refresh on unrelated scanner hash transitions for filtered displays. Added cost is one local `uint` assignment and branch already implied by existing filter logic.
+
+Problem: Verification after filtered scanner packet zeroing needed to prove old direct artifact-cache writes were gone.
+Solution: Ran source-only checks: `git diff --check` passed with line-ending warnings only, `git diff --cached --check` passed, scanner banned-pattern scan found no forbidden scanner/UI patterns, and a targeted scan confirmed zero-artifact/progress handling for rejected packets with no direct `signal.ArtifactHash` scanner-cache comparisons/writes.
+Rejected Alternatives: Running prohibited `dotnet build`; trusting the branch visually without source evidence.
+Scalability potential: Process hygiene only.
+Hardware Impact: No runtime impact.
+
+## LOOP 22 TOOL FILTER REBIND SEQUENCE RESET
+
+Problem: `ToolDiegeticDisplayController.SetToolHashFilter()` changed the target tool hash and marked `_hasState = false`, but it did not reset `_lastSignalSequence` or `_lastScannerSignalSequence`. If the latest relevant packet had already been consumed under the old filter, the display could wait for a future signal before showing the newly selected tool/scanner state.
+Solution: On filter change, clear scanner display state and reset both sequence sentinels to `InvalidDisplayBucket`, along with scanner progress/artifact cache buckets. The next UI tick can re-read the current latest signal snapshot under the new filter.
+Rejected Alternatives: Polling all historical signal queues; adding a per-filter signal replay buffer; requiring authoring code to force a new tool-state publish after every filter change.
+Scalability potential: Low/MX350 avoids a fallback/stale screen until the next equipment packet. Middle/High/Ultra keep scanner decryption visuals responsive when tool displays are rebound during spawn/equip flows.
+Hardware Impact: Cold rebind path only. No per-frame cost; it removes a frame-to-unbounded wait for the next matching signal.
+
+Problem: Verification after filter-rebind sequence reset needed to prove both signal sequence sentinels and scanner display cache were reset.
+Solution: Ran source-only checks: `git diff --check` passed with line-ending warnings only, `git diff --cached --check` passed, scanner banned-pattern scan found no forbidden scanner/UI patterns, and targeted filter-rebind scan confirmed `_lastSignalSequence`, `_lastScannerSignalSequence`, `_scannerArtifactHash`, and `_scannerProgress01` resets.
+Rejected Alternatives: Running prohibited `dotnet build`; relying on a visual source glance.
+Scalability potential: Process hygiene only.
+Hardware Impact: No runtime impact.

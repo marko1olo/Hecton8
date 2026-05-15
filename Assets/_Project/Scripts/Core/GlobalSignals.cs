@@ -24,6 +24,7 @@ using NarrativePoiStateSignal = Hecton8.Core.Signals.NarrativePoiStateSignal;
 using ProgressionEventSignal = Hecton8.Core.Signals.ProgressionEventSignal;
 using ScanLogChangedSignal = Hecton8.Core.Signals.ScanLogChangedSignal;
 using SoundscapeProfileSignal = Hecton8.Core.Signals.SoundscapeProfileSignal;
+using SurvivalVitalsChangedSignal = Hecton8.Core.Signals.SurvivalVitalsChangedSignal;
 
 namespace Hecton8.Core.Signals
 {
@@ -1025,6 +1026,7 @@ namespace Hecton8.Core
         private const int HighSpeedImpactSignalCapacity = 128;
         private const int HapticRequestCapacity = 64;
         private const int PlayerStateSignalCapacity = 64;
+        private const int SurvivalVitalsChangedSignalCapacity = 64;
         private const int AupPreShiftSignalCapacity = 64;
         private const int AupShiftSignalCapacity = 64;
         private const int DropPodLandedSignalCapacity = 8;
@@ -1698,6 +1700,7 @@ namespace Hecton8.Core
             ValidateSignalSize<HighSpeedImpactSignal>(96);
             ValidateSignalSize<HapticRequest>(32);
             ValidateSignalSize<PlayerStateSignal>(64);
+            ValidateSignalSize<SurvivalVitalsChangedSignal>(32);
             ValidateSignalPayload<AupPreShiftSignal>(32);
             ValidateSignalPayload<AupShiftSignal>(32);
             ValidateSignalSize<DropPodLandedSignal>(64);
@@ -1989,6 +1992,13 @@ namespace Hecton8.Core
             _latestPlayerStateSignal = signal;
             AdvanceSignalSequence(ref _latestPlayerStateSignalSequence);
             SignalBus<PlayerStateSignal>.Push(in signal);
+        }
+
+        /// <summary>Queues one player survival-vitals dirty packet on the typed native lane.</summary>
+        public static void Publish(in SurvivalVitalsChangedSignal signal)
+        {
+            EnsureInitialized();
+            SignalBus<SurvivalVitalsChangedSignal>.Push(in signal);
         }
 
         /// <summary>Queues one hull deformation VFX packet for downstream audio and feedback systems.</summary>
@@ -3139,6 +3149,8 @@ namespace Hecton8.Core
             SignalBus<BatteryLevelSignal>.EnsureInitialized();
             SignalBus<PlayerStateSignal>.Configure(PlayerStateSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(PlayerStateSignal)));
             SignalBus<PlayerStateSignal>.EnsureInitialized();
+            SignalBus<SurvivalVitalsChangedSignal>.Configure(SurvivalVitalsChangedSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(SurvivalVitalsChangedSignal)));
+            SignalBus<SurvivalVitalsChangedSignal>.EnsureInitialized();
             SignalBus<DropPodLandedSignal>.Configure(DropPodLandedSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(DropPodLandedSignal)));
             SignalBus<DropPodLandedSignal>.EnsureInitialized();
             SignalBus<CameraPositionSignal>.Configure(CameraPositionSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(CameraPositionSignal)));
@@ -3533,6 +3545,33 @@ namespace Hecton8.Core.Signals
         [FieldOffset(56)] public uint Frame;
         [FieldOffset(60)] public byte State;
         [FieldOffset(61)] public byte Flags;
+    }
+
+    public static class SurvivalVitalsChangedSignalFlags
+    {
+        public const uint Oxygen = 1u << 0;
+        public const uint Energy = 1u << 1;
+        public const uint Integrity = 1u << 2;
+        public const uint Depth = 1u << 3;
+        public const uint Temperature = 1u << 4;
+        public const uint Thermal = 1u << 5;
+        public const uint Injury = 1u << 6;
+        public const uint Death = 1u << 7;
+        public const uint OxygenCritical = 1u << 8;
+    }
+
+    /// <summary>Player survival-vitals dirty mask for UI and advisory consumers. Size: 32 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct SurvivalVitalsChangedSignal : ISignal
+    {
+        [FieldOffset(0)] public uint SourceId;
+        [FieldOffset(4)] public uint Frame;
+        [FieldOffset(8)] public uint Sequence;
+        [FieldOffset(12)] public uint Flags;
+        [FieldOffset(16)] public float Oxygen01;
+        [FieldOffset(20)] public float Energy01;
+        [FieldOffset(24)] public float Integrity01;
+        [FieldOffset(28)] public byte DeathCause;
     }
 
     /// <summary>Player delayed-action progress lane for UI and feedback consumers. Size: 32 bytes.</summary>

@@ -493,6 +493,37 @@ Verification state:
 - Unity import/compile and profiler capture remain unverified.
 - No dotnet rebuild was run.
 
+## 2026-05-15 - Final No-Dotnet Static Closeout
+
+What was wrong:
+- The earlier material-isolation report entry described an MPB implementation that is now superseded.
+- Current AGENTS authority forbids MPB on geometry paths, so the final report must point at the owned runtime material path as the authoritative implementation.
+- Unity compile/profiler validation is still unavailable in this session, and dotnet rebuilds are explicitly prohibited.
+
+What was done:
+- Re-read `Status_VFX_SDF_CARVE_DEBRIS.md`, `Rationale_VFX_SDF_CARVE_DEBRIS.md`, `CarveDebrisComputeRenderer.cs`, and the `GlobalRegistry` hot-swap contracts.
+- Confirmed `CarveDebrisComputeRenderer` implements `IGlobalRegistryHotSwapListener` and `IGlobalRegistryHotSwapRefListener`.
+- Confirmed DataVault/Fluid service references are cached during enable/start wiring and rebound through registry callbacks.
+- Confirmed ready-state DataVault validation compares against the cached registry service reference instead of polling `GlobalRegistry.DataVault`.
+- Confirmed `RenderDebris()` binds buffers/vectors on one owned runtime material and scopes `Graphics.RenderMeshIndirect` through the authored `renderCamera`.
+- Ran static verification only. No dotnet build, no dotnet rebuild, no Unity batch compile.
+
+Cinematic cheats used:
+- No new physical simulation was added.
+- The shipped visual remains a compute-advection rock-chip fake: low tier buys stability with cheaper samples, high/ultra spends the saved budget on SDF/flow motion, velocity edge response, and richer lighting.
+
+Exact microseconds saved:
+- Final closeout adds 0 us runtime saving.
+- Preserved runtime estimates: 25-35 us saved from low-tier dispatch reduction, 20-70 us from batched same-frame injection, 15-60 us from dense-batch scan reduction, visible-count-dependent savings from removing vertex trig and low-tier shadow work, and sub-microsecond steady saving from removing ready-state registry service polling.
+
+Verification state:
+- Focused `git diff --check` completed with no whitespace error output.
+- Forbidden hot-path scan returned no matches for CPU readback, ParticleSystem, ComputeBuffer, scene search, job scheduling fences, private `H8Memory.Allocate`, private `H8Memory.Release`, `MaterialPropertyBlock`, `matProps`, stale `nextFluidRebind`, or `VaultLeaseCheckStride`.
+- Shader hot-math scan returned no matches for `sincos`, raw trig, `pow`, `exp`, `log`, or raw `normalize`.
+- `CURRENT_BATCH.md` exact prompt tag count for `VFX_SDF_CARVE_DEBRIS`: 0.
+- Unity import/compile and profiler capture remain unverified.
+- No dotnet rebuild was run.
+
 ## 2026-05-15 - Camera-Scoped Indirect Draw
 
 What was wrong:

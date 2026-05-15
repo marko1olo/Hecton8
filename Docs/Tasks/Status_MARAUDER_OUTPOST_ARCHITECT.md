@@ -220,9 +220,16 @@ State: PENDING VERIFICATION
 - [x] Re-ran source-only audits. DOD: targeted upload scan finds all four capacity clamps; forbidden-pattern audit stayed clean; scoped H-Phi counts remain `GlobalRegistrySurface=12`, `SignalBusPush=1`, `EventPublish=0`, `StructLayoutAttributes=6`; `HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json` passed with `CoreAsmdefDebtReferenceCount=25`, `GeneratedProjectDebtReferenceCount=10`; `git diff --check` passed with repository CRLF warnings only. Alternative rejected: `dotnet` rebuild, forbidden by user. Estimate: verification only.
 - [ ] Compile proof [NOT RUN BY USER REQUEST]. DOD: no `dotnet` rebuild or response-file compile was executed in Loop 28. Alternative rejected: violating explicit "do not make dotnet rebuilds". Estimate: no runtime cost.
 
+### Loop 29 - Logistics Graph Descriptor Gate
+
+- [x] Re-audited the WFC outpost power handoff inside Echelon 6. DOD: inspected generated-signal consumption, graph translation, AUP shift handling, and blackbox ring behavior. Alternative rejected: editing unrelated logistics systems. Estimate: source audit only.
+- [x] Hardened the Burst graph translator descriptor gate. DOD: `WfcOutpostGraphTranslationJob` now has explicit sequential layout proof, rejects dimensions outside the authored WFC outpost grid, and sanitizes descriptor cell/floor meters before computing local node offsets. Alternative rejected: trusting `math.max` against NaN or allowing oversized descriptor dimensions to overflow expected-cell math. Estimate: cold translation job only.
+- [x] Re-ran source-only audits. DOD: targeted scan confirms no `GlobalSignals.Publish`, no blackbox modulo, no raw descriptor `math.max`, two descriptor scalar sanitizers, and `StructLayoutAttributes=8` across owned WFC outpost/logistics files; `HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json` passed with `CoreAsmdefDebtReferenceCount=25`, `GeneratedProjectDebtReferenceCount=10`; `git diff --check` passed with repository CRLF warnings only. Alternative rejected: `dotnet` rebuild, forbidden by user. Estimate: verification only.
+- [ ] Compile proof [NOT RUN BY USER REQUEST]. DOD: no `dotnet` rebuild or response-file compile was executed in Loop 29. Alternative rejected: violating explicit "do not make dotnet rebuilds". Estimate: no runtime cost.
+
 ## Verification Ledger
 
-- Compile status: NOT RUN IN LOOP 28 BY USER REQUEST / PRIOR BLOCKER STILL RECORDED. Last attempted compile path could not resolve `Hecton8.Core.ref.dll`; Core rebuild failed in `SaveMasterHashV10.cs(237,26)` on missing `xxHash3`, outside Habitat/Outposts ownership.
+- Compile status: NOT RUN IN LOOP 29 BY USER REQUEST / PRIOR BLOCKER STILL RECORDED. Last attempted compile path could not resolve `Hecton8.Core.ref.dll`; Core rebuild failed in `SaveMasterHashV10.cs(237,26)` on missing `xxHash3`, outside Habitat/Outposts ownership.
 - Unity Console status: MCP unavailable; console/scene validation not accessible from this session.
 - GC proof: code audit only; hot Tick/Render path uses spans/native buffers and no LINQ/managed allocation.
 - Frame/VRAM proof: static estimate only; runtime profiling blocked by Unity MCP transport failure; no console/profiler capture is available from this session.

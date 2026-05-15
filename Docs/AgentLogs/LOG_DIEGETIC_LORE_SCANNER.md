@@ -477,3 +477,49 @@ Verification:
 - Scanner banned-pattern scan for `ILocalizationService`, `Camera.main`, direct `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, and `.text =`: no matches.
 - RT format support scan: support query only in `ResolveRenderTextureFormatCold()`.
 - `dotnet build` / rebuild: NOT RUN by explicit user order.
+
+## Follow-Up Hardening Pass 17
+
+What was wrong:
+- Filtered physical tool displays could still let rejected scanner-active packets carry artifact/progress into scanner cache comparison, causing unnecessary dirty-state refreshes on unrelated scanner traffic.
+
+What was done:
+- Rejected scanner packets now map to artifact `0` and progress `0` before comparison.
+- Accepted scanner packets keep the existing title/scramble path.
+
+Cinematic Cheats used:
+- None added. This keeps diegetic scanner visuals scoped to displays that intentionally accept scanner packets.
+
+Exact Microseconds saved:
+- Verified exact microseconds: PENDING PROFILER.
+- Avoids one dirty-state refresh per unrelated scanner artifact transition on filtered displays.
+
+Verification:
+- `git diff --check` on scanner/UI/doc edits: pass, line-ending warnings only.
+- `git diff --cached --check` on scanner/UI/doc edits: pass.
+- Scanner banned-pattern scan for `ILocalizationService`, `Camera.main`, direct `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, and `.text =`: no matches.
+- Filter regression scan: rejected scanner packets use zero artifact/progress; no direct `signal.ArtifactHash` scanner-cache writes remain.
+- `dotnet build` / rebuild: NOT RUN by explicit user order.
+
+## Follow-Up Hardening Pass 18
+
+What was wrong:
+- Changing the physical display tool-hash filter did not reset consumed signal sequence IDs. A newly selected filter could miss the current latest tool/scanner packets until another signal arrived.
+
+What was done:
+- `SetToolHashFilter()` now clears scanner display state and resets `_lastSignalSequence` / `_lastScannerSignalSequence`.
+- Scanner progress/artifact cache buckets are reset with the filter change.
+
+Cinematic Cheats used:
+- None added. This keeps diegetic screens responsive during spawn/equip rebinding without new signal lanes.
+
+Exact Microseconds saved:
+- Verified exact microseconds: PENDING PROFILER.
+- Runtime hot path unchanged; cold rebind now avoids a stale/fallback display wait.
+
+Verification:
+- `git diff --check` on scanner/UI/doc edits: pass, line-ending warnings only.
+- `git diff --cached --check` on scanner/UI/doc edits: pass.
+- Scanner banned-pattern scan for `ILocalizationService`, `Camera.main`, direct `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, and `.text =`: no matches.
+- Filter rebind scan: sequence sentinels and scanner artifact/progress cache reset in `SetToolHashFilter()`.
+- `dotnet build` / rebuild: NOT RUN by explicit user order.

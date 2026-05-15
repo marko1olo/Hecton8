@@ -443,6 +443,7 @@ namespace Hecton8.Audio
             unchecked((uint)Hecton.Localization.LocHash.Compute("Audio.DspProducerOverBudget"));
         private static readonly uint _dspProducerContextHash =
             unchecked((uint)Hecton.Localization.LocHash.Compute("PlayerCriticalProceduralAudioRenderer.DspProducer"));
+        private static int s_runtimeInstalled;
 
         [Header("References")]
         [Tooltip("Resolved live player movement owner. Bound automatically by the runtime installer.")]
@@ -1494,7 +1495,7 @@ namespace Hecton8.Audio
         /// <summary>
         /// True while the player-owned procedural critical-audio renderer is active.
         /// </summary>
-        public static bool IsRuntimeInstalled => GlobalRegistry.PlayerCriticalAudio != null;
+        public static bool IsRuntimeInstalled => Volatile.Read(ref s_runtimeInstalled) != 0;
 
         /// <summary>
         /// True when a vocal warning is active in the producer DSP state or pending activation.
@@ -5173,12 +5174,14 @@ namespace Hecton8.Audio
             PlayerCriticalProceduralAudioRenderer registeredInstance = GlobalRegistry.PlayerCriticalAudio;
             if (registeredInstance != null && registeredInstance != this)
             {
+                Volatile.Write(ref s_runtimeInstalled, 1);
                 Destroy(this);
                 return false;
             }
 
             GlobalRegistry.RegisterPlayerCriticalAudioRuntime(this);
             _runtimeRegistered = ReferenceEquals(GlobalRegistry.PlayerCriticalAudio, this);
+            Volatile.Write(ref s_runtimeInstalled, _runtimeRegistered ? 1 : 0);
             return _runtimeRegistered;
         }
 
@@ -5205,6 +5208,7 @@ namespace Hecton8.Audio
 
             GlobalRegistry.UnregisterPlayerCriticalAudioRuntime(this);
             _runtimeRegistered = false;
+            Volatile.Write(ref s_runtimeInstalled, GlobalRegistry.PlayerCriticalAudio != null ? 1 : 0);
         }
 
         private void SubscribeTransportCoordinator()

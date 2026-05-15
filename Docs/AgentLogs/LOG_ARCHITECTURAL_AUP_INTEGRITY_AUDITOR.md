@@ -806,3 +806,32 @@ Verification:
 
 Integrator notes:
 - Loop 30 remains the latest completed full `-MaxAupPrecisionRisk 0` static run. Loop 31 is CoreGraphOnly/tooling summary evidence plus AUP regex scans; Unity Console/import, PlayMode, profiler, and GCMonitor proof remain pending.
+
+## 2026-05-15 - Loop 32 H-Phi Budget Text Threshold Display
+
+What was wrong:
+- The H-Phi text summary mixed ceiling and floor budgets, but the terminal table did not present a single comparator/limit model.
+
+What was done:
+- Added `ConvertTo-BudgetDisplayRows` to `Tools/Architecture/HectonPhiAudit.ps1`.
+- Source and core-graph budget text tables now show `Direction` and `Limit`, so ceilings and floors are readable in the same table.
+
+Cinematic Cheats used:
+- Static tooling only. Runtime simulation and rendering are unchanged.
+- Low-tier machines get faster terminal triage without launching Unity; High/Ultra pipelines keep the same JSON budget contract with cleaner human-readable output.
+
+Exact Microseconds saved:
+- Gameplay frame time: 0 us.
+- CoreGraphOnly summary still runs in the fast static graph path; text formatting cost is negligible.
+
+Verification:
+- PowerShell parser reports `PARSE_OK`.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary` prints the new `Direction`/`Limit` budget table.
+- CoreGraphOnly JSON with enabled graph budgets still reports `CoreBuildGraphGate.Passed=True` and `CoreAsmdefDebtReferences.Actual=25`.
+- Qualified AUP H-Phi risk scan returns `NO_MATCHES`.
+- Direct committed-offset leak scan returns `NO_MATCHES`.
+- Mandatory AUP regex scan re-run; residual hits remain broad `universe` text and known final-cast fluid/scatter/shader payload names.
+- No `dotnet build` or rebuild was run because the user explicitly forbade rebuilds.
+
+Integrator notes:
+- No new full-source H-Phi score was claimed after the Loop 31 timeout. Unity Console/import, PlayMode, profiler, and GCMonitor proof remain pending.

@@ -47,3 +47,9 @@ Solution: Treat the dirty tail as post-push live work, prove no incoming remote 
 Rejected Alternatives: Calling the repo clean because committed history matched remote, or pulling with no incoming commits. Both would misstate the live worktree.
 Scalability potential: Git-only operation. Runtime Low/Middle/High/Ultra behavior unchanged by this repository operation.
 Hardware Impact: 0 us runtime impact. Dev-path gain is reduced local conflict exposure by publishing another validated batch.
+
+Problem: New live audit tail now includes runtime scripts plus documentation while remote history is synchronized.
+Solution: Fetch first, prove no incoming remote commits, scan for unmerged paths and conflict markers, inspect the runtime diff surface, then checkpoint only the validated snapshot.
+Rejected Alternatives: Blind pull, force push, reset, or assuming docs-only risk. Runtime scripts changed, so the script diff surface required a separate sanity pass before staging.
+Scalability potential: Git-only operation. Low/Middle/High/Ultra runtime behavior is not changed by the repository operation; any authored runtime tier effects remain owned by the producing agents.
+Hardware Impact: 0 us runtime impact on i3/MX350. Compile/profiler proof remains absent; this pass only reduces integration conflict exposure.

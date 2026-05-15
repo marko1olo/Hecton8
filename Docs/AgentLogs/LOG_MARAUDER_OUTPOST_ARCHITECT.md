@@ -461,6 +461,39 @@ Verification:
 
 Status: PENDING VERIFICATION. Static source audits pass; compile/runtime proof remains pending by user instruction and external Core blocker.
 
+## 2026-05-15 - WFC Outpost Loop 29 Logistics Graph Descriptor Gate
+
+What was wrong:
+- The WFC outpost power translator consumed descriptor dimensions and meter scalars inside Burst.
+- Dimensions were only checked for positive values, not capped to the authored outpost grid.
+- `math.max(1f, Descriptor.CellSizeMeters/FloorHeightMeters)` did not prove NaN-safe scalar math before node local offsets were written.
+
+What was done:
+- Added explicit sequential layout proof to `WfcOutpostGraphTranslationJob`.
+- Rejected dimensions above `WfcOutpostGridConstants.FullWidth/FullHeight/FullDepth` before expected-cell math.
+- Replaced raw descriptor meter `math.max` calls with finite-safe `SanitizeMeters`.
+- Re-audited the WFC power runtime readback for direct typed SignalBus traffic, duplicate generated-graph guard, and blackbox non-modulo ring behavior.
+
+Cinematic Cheats used:
+- Bad logistics descriptors fail closed instead of producing a partial physical power graph.
+- Valid outposts keep the cheap power fake: graph translation from packed WFC bytes, scalar node demand, and bounded door-power signals.
+
+Exact Microseconds saved:
+- New cost: three dimension upper-bound checks and two scalar finite checks on cold graph translation, estimated below 0.1 us per graph build on i3/MX350.
+- Saved cost on corrupt descriptors: avoids invalid node offsets, wasted graph build/evaluation work, and downstream door-power signal churn.
+- Hot Tick/Render remains 0 B/frame.
+
+Verification:
+- Targeted descriptor scan: PASS; no `MaxWidth/MaxHeight/MaxDepth`, no raw descriptor `math.max`, finite-safe descriptor scalar sanitizers present, and translator has `[StructLayout(LayoutKind.Sequential)]`.
+- WFC outpost/logistics audit: PASS; no `GlobalSignals.Publish`, no blackbox modulo, no `foreach`, no LINQ/list conversions, no shell prefab `Instantiate`, no material mutation patterns in the scoped files.
+- Scoped H-Phi counts across WFC outpost/logistics files: `GlobalRegistrySurface=12`, `SignalBusPush=3`, `GlobalSignalsPublish=0`, `EventPublish=0`, `StructLayoutAttributes=8`, `BlackboxModulo=0`.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json`: PASS; `CoreAsmdefDebtReferenceCount=25`, `GeneratedProjectDebtReferenceCount=10`.
+- `git diff --check`: PASS with repository CRLF warnings only.
+- `dotnet` rebuilds/response-file compiles: NOT RUN by explicit user request.
+- Unity MCP console/profiler: unavailable from this session.
+
+Status: PENDING VERIFICATION. Static source audits pass; compile/runtime proof remains pending by user instruction and external Core blocker.
+
 ## 2026-05-15 - WFC Outpost Loop 28 Indirect Upload Capacity Fence
 
 What was wrong:

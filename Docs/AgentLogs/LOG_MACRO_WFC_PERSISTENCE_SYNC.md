@@ -647,7 +647,7 @@ Cinematic cheats used:
 
 Exact microseconds saved:
 - Measured savings: 0 us. No profiler or runtime trace.
-- Hydration candidate cost: one 32-bit read before decode.
+- Hydration candidate cost: four byte reads before decode.
 - False-positive avoidance: skips one roughly 38.4 KB WFC dump plus header for unrelated small payload bursts.
 
 Verification:
@@ -706,5 +706,29 @@ Exact microseconds saved:
 Verification:
 - Static scans confirm `HasWfcOutpostBitmaskMagic()` no longer calls `ReadUInt`.
 - Static scans confirm full WFC decode still performs complete header validation.
+- Targeted `git diff --check` reports only Git CRLF normalization warnings.
+- No `dotnet` rebuild was run.
+
+## Recheck Report: WFC Payload Header Alignment Hardening
+Status: PENDING VERIFICATION.
+
+What was wrong:
+- Full WFC payload header helpers still used raw scalar pointer casts.
+- That made the fixed binary header depend on pointer alignment and host scalar layout.
+
+What was done:
+- Replaced WFC header scalar helpers with explicit little-endian byte stores/loads.
+- Kept the 32-byte WFC header, checksum path, and payload decoder validation unchanged.
+
+Cinematic cheats used:
+- Fixed 32-byte byte-addressed header instead of scratch structs or payload contract churn.
+
+Exact microseconds saved:
+- Measured savings: 0 us. No profiler or runtime trace.
+- Runtime allocation: 0 B by static inspection.
+- Cost shift: fixed header byte ops replace six raw scalar stores/loads on WFC persist/restore.
+
+Verification:
+- Static scans find no raw pointer-cast scalar helpers left in the WFC payload codec path.
 - Targeted `git diff --check` reports only Git CRLF normalization warnings.
 - No `dotnet` rebuild was run.
