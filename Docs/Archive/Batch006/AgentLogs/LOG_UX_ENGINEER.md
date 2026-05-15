@@ -357,3 +357,27 @@ Cinematic Cheats used: None. Evidence readback only.
 Exact Microseconds saved: 0 us runtime.
 
 Verification: Aggregate report status is PASS, unit harness ran 24 tests, `missingArtifacts` is empty, `unityRuntimeStatus` is `PENDING_UNITY_VERIFICATION`, cleanup report status is PASS with 1 cache directory removed, and the follow-up scan found `PYTHON_CACHE_COUNT 0`.
+
+## UX_ENGINEER Unity Probe Version Matching - HARDWARE_ADAPTIVE_UI_BAKER
+
+What was wrong: The Unity environment probe reported candidates but did not classify whether candidates matched required Unity `6000.4.1f1`.
+
+What was done: Added candidate version inference, required-version matching, explicit `--unity-path`, candidate detail records, and more precise statuses: `UNITY_REQUIRED_VERSION_FOUND`, `UNITY_VERSION_MISMATCH`, `UNITY_AVAILABLE_VERSION_UNKNOWN`, and `UNITY_NOT_FOUND`.
+
+Cinematic Cheats used: None. Offline environment validation only.
+
+Exact Microseconds saved: 0 us runtime.
+
+Verification: Rerun required after patch.
+
+## UX_ENGINEER Unity Probe Version Matching Verified - HARDWARE_ADAPTIVE_UI_BAKER
+
+What was wrong: The probe version-matching patch needed focused and aggregate verification.
+
+What was done: Ran `python -m py_compile Tools/UX/probe_unity_environment.py Tools/UX/test_unity_environment_probe.py Tools/UX/run_hardware_adaptive_ui_validation.py`; clean exit. Ran `python -m unittest Tools.UX.test_unity_environment_probe -v`; 6 tests passed. Ran `python Tools/UX/run_hardware_adaptive_ui_validation.py`; PASS and rewrote `Docs/AgentLogs/UI_HardwareAdaptiveValidation_UX_ENGINEER.json`. Parsed `Docs/AgentLogs/UI_UnityEnvironmentProbe_UX_ENGINEER.json` with `python -m json.tool`.
+
+Cinematic Cheats used: None. Environment validation only.
+
+Exact Microseconds saved: 0 us runtime.
+
+Verification: Probe status remains `UNITY_NOT_FOUND`; required Unity is `6000.4.1f1`; `candidateDetails` and `matchingCandidates` are empty. Runtime proof remains blocked on editor availability.

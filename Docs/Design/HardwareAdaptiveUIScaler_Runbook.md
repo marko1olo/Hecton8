@@ -87,6 +87,12 @@ Before that, the local Unity availability probe can be rerun with:
 python Tools/UX/probe_unity_environment.py --write-report
 ```
 
+When Unity is installed outside the default roots, pass the executable explicitly:
+
+```powershell
+python Tools/UX/probe_unity_environment.py --unity-path "D:\Unity\6000.4.1f1\Editor\Unity.exe" --write-report
+```
+
 If a Unity import log already exists, audit it with:
 
 ```powershell

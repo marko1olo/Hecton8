@@ -7,7 +7,13 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from Tools.UX.probe_unity_environment import find_unity_candidates, read_required_unity_version
+from Tools.UX.probe_unity_environment import (
+    build_candidate_details,
+    find_unity_candidates,
+    infer_unity_version_from_path,
+    read_required_unity_version,
+    resolve_probe_status,
+)
 
 
 class UnityEnvironmentProbeTests(unittest.TestCase):
@@ -32,6 +38,23 @@ class UnityEnvironmentProbeTests(unittest.TestCase):
             candidates = find_unity_candidates((root,))
 
             self.assertIn(str(unity_exe.resolve()), candidates)
+
+    def test_infers_unity_version_from_candidate_path(self) -> None:
+        path = Path("C:/Program Files/Unity/Hub/Editor/6000.4.1f1/Editor/Unity.exe")
+
+        self.assertEqual("6000.4.1f1", infer_unity_version_from_path(path))
+
+    def test_candidate_details_mark_required_version_match(self) -> None:
+        candidate = str(Path("C:/Unity/6000.4.1f1/Editor/Unity.exe"))
+        details = build_candidate_details([candidate], "6000.4.1f1")
+
+        self.assertTrue(details[0]["matchesRequiredVersion"])
+
+    def test_probe_status_reports_version_mismatch(self) -> None:
+        candidate = str(Path("C:/Unity/6000.4.0f1/Editor/Unity.exe"))
+        details = build_candidate_details([candidate], "6000.4.1f1")
+
+        self.assertEqual("UNITY_VERSION_MISMATCH", resolve_probe_status([candidate], details, "6000.4.1f1"))
 
 
 if __name__ == "__main__":

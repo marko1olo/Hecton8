@@ -5,6 +5,8 @@
   "status": "UNITY_NOT_FOUND",
   "requiredUnityVersion": "6000.4.1f1",
   "unityCandidates": [],
+  "candidateDetails": [],
+  "matchingCandidates": [],
   "defaultRoots": [
     "C:\\Program Files\\Unity\\Hub\\Editor",
     "C:\\Program Files\\Unity",

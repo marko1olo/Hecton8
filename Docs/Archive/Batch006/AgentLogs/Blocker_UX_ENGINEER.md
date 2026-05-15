@@ -27,6 +27,7 @@ Status: STATIC/PYTHON VALIDATION PASS - RUNTIME VERIFICATION BLOCKED
 - Added deterministic Python cache cleanup tool and test. Initial test exposed a reporting bug; fixed it. `python -m unittest Tools.UX.test_python_cache_cleanup -v` passed 1/1. `python Tools/UX/run_hardware_adaptive_ui_validation.py` returned PASS again with cleanup included.
 - Added Unity environment probe and tests. `python -m unittest Tools.UX.test_unity_environment_probe -v` passed 3/3. `python Tools/UX/run_hardware_adaptive_ui_validation.py` returned PASS again. `UI_UnityEnvironmentProbe_UX_ENGINEER.json` reports `UNITY_NOT_FOUND`, required Unity `6000.4.1f1`, and zero candidates.
 - Aggregate report readback: `UI_HardwareAdaptiveValidation_UX_ENGINEER.json` parsed clean with PASS, 24 unit tests, no missing artifacts, and runtime pending. Cache cleanup report parsed clean; `Tools` scan found `PYTHON_CACHE_COUNT 0`.
+- Patched Unity environment probe to classify candidate version matches and accept explicit `--unity-path`. `python -m unittest Tools.UX.test_unity_environment_probe -v` passed 6/6. Aggregate validation returned PASS. Probe readback still reports `UNITY_NOT_FOUND`, required `6000.4.1f1`, no candidates.
 
 ## Completed Static Scope
 

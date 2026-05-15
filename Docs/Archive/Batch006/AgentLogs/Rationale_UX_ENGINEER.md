@@ -231,6 +231,20 @@ Solution: Parsed `UI_HardwareAdaptiveValidation_UX_ENGINEER.json` and `UI_Python
 Rejected Alternatives: Trusting the aggregate stdout alone was rejected because generated report integrity matters under multi-agent churn.
 Scalability potential: The report now confirms no missing artifacts, 24 tests executed, cleanup ran, and Unity runtime status stayed pending.
 Hardware Impact: Runtime impact is 0 us. Offline evidence readback only.
+
+## Decision - Unity Probe Version Matching
+Problem: The Unity environment probe could list executable candidates but did not classify whether they matched required Unity `6000.4.1f1`. A wrong editor path would still be insufficient runtime evidence.
+Solution: Added version inference from candidate paths, candidate detail records, required-version matching, explicit `--unity-path`, and statuses for required-version found, version mismatch, unknown version, and not found.
+Rejected Alternatives: Treating any Unity executable as acceptable was rejected because Unity import proof must use the project-required editor version.
+Scalability potential: Runtime validation can now distinguish a usable editor from a wrong install before import/profiler work begins.
+Hardware Impact: Runtime impact is 0 us. Offline environment proof only.
+
+## Decision - Unity Probe Version Matching Verified
+Problem: The version-matching probe patch needed focused test, aggregate validation, and report readback.
+Solution: Python compile returned clean, probe tests passed 6/6, aggregate validation returned PASS, and `UI_UnityEnvironmentProbe_UX_ENGINEER.json` parsed clean with new candidate detail fields.
+Rejected Alternatives: Skipping report readback was rejected because the changed output schema needed confirmation on disk.
+Scalability potential: The runtime blocker is now precise even if a wrong Unity version is installed later.
+Hardware Impact: Runtime impact is 0 us. No editor runtime data exists.
 Hardware Impact: Static estimate 0.05-0.20 ms GPU avoided across HUD-heavy frames on MX350. Evidence class is STATIC_SOURCE + PYTHON_STATIC_AUDIT; Frame Debugger proof absent.
 
 ## Decision - Offline Icon Baker
