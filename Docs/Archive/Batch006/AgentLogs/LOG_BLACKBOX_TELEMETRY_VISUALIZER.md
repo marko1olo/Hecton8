@@ -318,3 +318,27 @@ Verification:
 - `python -B -m py_compile Tools\TelemetryDashboard\server.py Tools\TelemetryDashboard\smoke_test.py`: PASS.
 - `git diff --check -- Tools\TelemetryDashboard\smoke_test.py`: PASS; Git reports only LF-to-CRLF warning.
 - C# boundary: no `Assets/_Project/Scripts` edits by this task.
+
+## 2026-05-15 - Live Dashboard Endpoint Recheck
+
+What was wrong:
+- After the smoke harness repair, the browser-facing server needed a fresh live endpoint check, not only parser tests.
+
+What was done:
+- Started uvicorn for `Tools/TelemetryDashboard/server.py` on `127.0.0.1:8000`.
+- Checked `/`, `/api/summary`, and `/api/health`.
+
+Cinematic Cheats used:
+- Missing Unity telemetry still renders as honest empty file-backed data plus static H-Phi fallback; no runtime values were invented.
+
+Exact Microseconds saved:
+- Unity gameplay frame: 0 us changed.
+- Dashboard auxiliary request timing remains PENDING MEASUREMENT.
+
+Verification:
+- Dashboard PID: `11956`.
+- URL: `http://127.0.0.1:8000`.
+- `/api/summary`: HTTP 200, `DASHBOARD OPERATIONAL`, files 0, frame series 0, H-Phi `0.00062`.
+- `/`: HTTP 200, 16769 bytes, `cache-control: no-store, max-age=0`, `x-content-type-options: nosniff`.
+- `/api/health`: HTTP 200, `ok`, `cache-control: no-store, max-age=0`, `x-content-type-options: nosniff`.
+- C# boundary: no `Assets/_Project/Scripts` edits by this task.

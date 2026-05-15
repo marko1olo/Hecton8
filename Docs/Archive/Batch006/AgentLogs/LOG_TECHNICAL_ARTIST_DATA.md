@@ -468,3 +468,35 @@ Verification:
 - Full first-party audit regenerated with existing counts preserved.
 - Markdown readback confirms Gate Exit Codes and Import Issue Counts tables are present; import issue table starts at the corrected section.
 - Scoped import/unresolved/material gates returned expected exits 2/4/3.
+
+## 2026-05-15 - Texture Budget Gate Pass
+
+What was wrong:
+
+- The audit estimated texture residency but could not fail CI when source texture data exceeded the 900 MiB MX350 texture budget.
+
+What was done:
+
+- Added `texture_budget` data to JSON and Markdown.
+- Added `--texture-budget-mib` and `--fail-on-texture-budget`.
+- Exit code 5 now means estimated texture residency exceeds the configured budget.
+- Added regression coverage for PASS/WARN/FAIL budget states and subprocess exit 5.
+- Updated doctrine with the budget gate and current PASS result.
+
+Cinematic Cheats used:
+
+- None. This is budget enforcement for future visual spending.
+
+Exact Microseconds saved:
+
+- Runtime code changed: none.
+- Immediate runtime CPU saving: 0 us.
+- Prevents high-tier texture upgrades from leaking into MX350 budgets without an offline gate failure.
+
+Verification:
+
+- `python -m py_compile Tools\MaterialAudit.py Tools\test_material_audit.py`: passed.
+- `python -m unittest Tools.test_material_audit`: passed 9 tests.
+- Full first-party audit with `--fail-on-texture-budget`: estimated 497.565/900.0 MiB, status PASS.
+- Gate exit contract now includes texture budget exit 5.
+- Scoped import/unresolved/material gates still returned expected exits 2/4/3.

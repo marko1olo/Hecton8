@@ -151,3 +151,11 @@ Solution: Move the header emission to the table emission point and add a regress
 Rejected Alternatives: Leaving the report structurally misleading was rejected because the CTO-facing Markdown is a handoff artifact, not decoration. Manually editing the generated Markdown was rejected because regeneration would reintroduce the defect.
 Scalability potential: Low/Middle/High/Ultra unchanged; report consumers get deterministic issue ordering for triage.
 Hardware Impact: 0 us runtime impact. The fix only changes offline Markdown generation and test coverage.
+
+## Texture Budget Gate
+
+Problem: The audit estimated texture residency but could not fail CI when the estimate crossed the 900 MiB MX350 texture budget.
+Solution: Add a texture-budget model with PASS/WARN/FAIL status, `--texture-budget-mib`, and `--fail-on-texture-budget` returning exit 5 when the offline estimate exceeds the configured budget.
+Rejected Alternatives: Treating budget overflow as broad material debt was rejected because memory budget failure is a different class from missing ORM/detail slots. Waiting for Unity profiler only was rejected because offline gates should catch obvious source-data overruns before import work.
+Scalability potential: Low = 900 MiB MX350 guard blocks texture bloat. Middle = same budget can run nightly. High = threshold can be raised intentionally for stronger machines. Ultra = GOD_MODE overrides remain gated by explicit budget status rather than wishful resolution increases.
+Hardware Impact: 0 us runtime impact. Current first-party estimate is 497.565/900.0 MiB, used ratio 0.5528, status PASS; this is an offline BC-class estimate, not Unity profiler proof.
