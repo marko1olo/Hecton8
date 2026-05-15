@@ -105,11 +105,14 @@ DETAIL_MAP_PROPS = {"_DetailAlbedoMap", "_DetailNormalMap", "_DetailMask"}
 IGNORED_TEXTURE_PROP_PREFIXES = ("unity_",)
 STANDARD_MATERIAL_MIB = 6.65
 OPTIMIZED_MATERIAL_MIB = 2.99
+TEXTURE_BUDGET_MIB = 900.0
+TEXTURE_BUDGET_WARNING_RATIO = 0.90
 GATE_EXIT_CODES = {
     "energy_failures": 1,
     "import_issues": 2,
     "material_issues": 3,
     "unresolved_texture_refs": 4,
+    "texture_budget": 5,
 }
 GOD_MODE_TEXTURE_OVERRIDES = [
     {
@@ -823,6 +826,25 @@ def summarize_textures(textures: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
+def build_texture_budget_model(texture_summary: dict[str, Any], budget_mib: float) -> dict[str, Any]:
+    safe_budget = max(0.001, budget_mib)
+    estimated_mib = float(texture_summary.get("estimated_texture_mib", 0.0))
+    used_ratio = estimated_mib / safe_budget
+    status = "PASS"
+    if estimated_mib > safe_budget:
+        status = "FAIL"
+    elif used_ratio >= TEXTURE_BUDGET_WARNING_RATIO:
+        status = "WARN"
+
+    return {
+        "estimated_mib": round(estimated_mib, 3),
+        "budget_mib": round(safe_budget, 3),
+        "warning_threshold_mib": round(safe_budget * TEXTURE_BUDGET_WARNING_RATIO, 3),
+        "used_ratio": round(used_ratio, 4),
+        "status": status,
+    }
+
+
 def summarize_materials(materials: list[dict[str, Any]]) -> dict[str, Any]:
     issue_counts: dict[str, int] = {}
     issue_materials: list[dict[str, Any]] = []
@@ -874,7 +896,13 @@ def summarize_materials(materials: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
-def run_audit(root: Path, sample_size: int, include_third_party: bool, resolve_root: Path | None = None) -> dict[str, Any]:
+def run_audit(
+    root: Path,
+    sample_size: int,
+    include_third_party: bool,
+    resolve_root: Path | None = None,
+    texture_budget_mib: float = TEXTURE_BUDGET_MIB,
+) -> dict[str, Any]:
     effective_resolve_root = resolve_root if resolve_root is not None else root
     textures: list[dict[str, Any]] = []
     material_paths: list[Path] = []
@@ -898,6 +926,7 @@ def run_audit(root: Path, sample_size: int, include_third_party: bool, resolve_r
 
     guid_map = build_guid_map(effective_resolve_root, needed_guids, include_third_party)
     materials = [resolve_material(material, guid_map) for material in raw_materials]
+    texture_summary = summarize_textures(textures)
 
     return {
         "root": normalized(root),
@@ -910,7 +939,8 @@ def run_audit(root: Path, sample_size: int, include_third_party: bool, resolve_r
             "albedo_energy_warn": "p95_srgb_luma > 0.92 and bright_pixel_ratio > 0.10",
         },
         "gate_exit_codes": GATE_EXIT_CODES,
-        "texture_summary": summarize_textures(textures),
+        "texture_budget": build_texture_budget_model(texture_summary, texture_budget_mib),
+        "texture_summary": texture_summary,
         "material_summary": summarize_materials(materials),
         "god_mode_texture_overrides": GOD_MODE_TEXTURE_OVERRIDES,
         "global_detail_overlay_plan": GLOBAL_DETAIL_OVERLAY_PLAN,
@@ -970,6 +1000,21 @@ def write_markdown_report(report: dict[str, Any], output: Path) -> None:
         for gate, exit_code in gate_exit_codes.items():
             lines.append(markdown_row([gate, exit_code]))
         lines.append("")
+
+    texture_budget = report.get("texture_budget", {})
+    if texture_budget:
+        lines.extend([
+            "## Texture Budget Model",
+            "",
+            markdown_row(["Metric", "Value"]),
+            markdown_row(["---", "---"]),
+            markdown_row(["Estimated MiB", texture_budget["estimated_mib"]]),
+            markdown_row(["Budget MiB", texture_budget["budget_mib"]]),
+            markdown_row(["Warning threshold MiB", texture_budget["warning_threshold_mib"]]),
+            markdown_row(["Used ratio", texture_budget["used_ratio"]]),
+            markdown_row(["Status", texture_budget["status"]]),
+            "",
+        ])
 
     vram_model = material_summary.get("vram_model", {})
     if vram_model:
@@ -1257,6 +1302,12 @@ def main() -> int:
     )
     parser.add_argument("--sample-size", type=int, default=512, help="Max image sample dimension.")
     parser.add_argument(
+        "--texture-budget-mib",
+        type=float,
+        default=TEXTURE_BUDGET_MIB,
+        help="Offline texture residency budget in MiB.",
+    )
+    parser.add_argument(
         "--include-third-party",
         action="store_true",
         help="Include third-party/vendor folders. Slow and not default for owned doctrine.",
@@ -1279,6 +1330,11 @@ def main() -> int:
         action="store_true",
         help="Return non-zero when material texture GUIDs cannot be resolved.",
     )
+    parser.add_argument(
+        "--fail-on-texture-budget",
+        action="store_true",
+        help="Return non-zero when estimated texture residency exceeds --texture-budget-mib.",
+    )
     args = parser.parse_args()
 
     root = Path(args.root).resolve()
@@ -1288,7 +1344,13 @@ def main() -> int:
     if not resolve_root.exists():
         raise SystemExit(f"Resolve root not found: {resolve_root}")
 
-    report = run_audit(root, max(16, args.sample_size), args.include_third_party, resolve_root)
+    report = run_audit(
+        root,
+        max(16, args.sample_size),
+        args.include_third_party,
+        resolve_root,
+        args.texture_budget_mib,
+    )
 
     if args.json:
         output = Path(args.json)
@@ -1310,6 +1372,8 @@ def main() -> int:
     print(f"energy_warnings={texture_summary['energy_warn_count']}")
     print(f"import_issue_textures={texture_summary['import_issue_count']}")
     print(f"estimated_texture_mib={texture_summary['estimated_texture_mib']}")
+    print(f"texture_budget_mib={report['texture_budget']['budget_mib']}")
+    print(f"texture_budget_status={report['texture_budget']['status']}")
     print(f"detail_candidates={texture_summary['detail_candidate_count']}")
     print(f"orm_candidates={texture_summary['orm_candidate_count']}")
     print(f"materials={material_summary['material_count']}")
@@ -1336,6 +1400,8 @@ def main() -> int:
         return 2
     if args.fail_on_unresolved_refs and material_summary["unresolved_texture_ref_count"]:
         return 4
+    if args.fail_on_texture_budget and report["texture_budget"]["status"] == "FAIL":
+        return 5
     if args.fail_on_material_issues and material_summary["materials_with_issues"]:
         return 3
     return 0
