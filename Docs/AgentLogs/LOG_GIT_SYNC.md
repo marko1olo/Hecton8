@@ -82,3 +82,22 @@ Cinematic Cheats used: None. Git synchronization only.
 Exact Microseconds saved: 0 us runtime measured.
 Verification: Synthetic staged `git diff --check` passed; `git push origin cb92dc6addfc0c567fc74659b1408b26b14809ab:refs/heads/main` succeeded as `57a75ba81..cb92dc6ad`.
 Residual risk: Unity Editor/import/Play Mode/profiler evidence remains absent. Local checked-out branch is still stale and should not be reset while concurrent agents may still be writing.
+
+## 2026-05-15 Local Checkout Alignment
+
+What was wrong: Remote `origin/main` was cleanly pushed to `abe92af4273fa7aea03a420088f3a11be47e31a7`, but the physical local checkout still pointed at stale commit `b12c4d0d4382d9ec9166b758ba76eef32772118c` and showed hundreds of misleading local modifications.
+What was done: Classified local content against `origin/main`, preserved the stale local ref as `git-sync-pre-local-align`, moved `main` to `origin/main`, refreshed the index without touching files, then restored tracked files from the remote tip. The three mixed-content local regressions were resolved by keeping remote: `HectonMarineSnowRenderer.cs`, `VfxComputeParticleBudgetCatalog.cs`, and `Docs/Design/Save_Binary_Header.md`.
+Cinematic Cheats used: None. Git checkout hygiene only.
+Exact Microseconds saved: 0 us runtime measured.
+Verification: Post-alignment `git status --short --branch` reported `## main...origin/main` with no dirty entries.
+Residual risk: None for Git cleanliness at this point. Runtime remains unverified by Unity.
+
+## 2026-05-15 Post-Alignment Verification
+
+What was wrong: Previous CLI verification had run before the physical checkout matched remote tip.
+What was done: Re-ran feasible checks on the aligned checkout.
+Cinematic Cheats used: None.
+Exact Microseconds saved: 0 us runtime measured.
+Verification: `git status --porcelain=v1` clean; `git ls-files -u` empty; `git diff --check` clean; local first-party orphan `.meta` count 0; tracked large-file count >=100 MB is 0; `python -m unittest discover -s Tools -p "test*.py"` passed 188 tests in 95.824 seconds.
+Failed/limited checks: `dotnet` is not in PATH; root `.csproj` files are absent; MSBuild 17.14 fails `Hecton8.slnx` with MSB3202 for missing generated Unity `.csproj` files. Unity Editor/import/Play Mode/profiler/GCMonitor/player build remain PENDING VERIFICATION.
+Residual risk: Compile/runtime proof requires Unity project-file generation or a Unity Editor run.

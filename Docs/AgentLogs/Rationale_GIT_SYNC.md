@@ -91,3 +91,19 @@ Rejected Alternatives: Manual conflict marker editing inside a temporary index w
 Scalability potential: No runtime tier claim; repository checkpoint only.
 Hardware Impact: 0 us gameplay runtime gain measured.
 
+## Decision 12
+
+Problem: After successful pushes, the physical local checkout still pointed at stale commit `b12c4d0d4382d9ec9166b758ba76eef32772118c` while `origin/main` was `abe92af4273fa7aea03a420088f3a11be47e31a7`. This made `git status` report hundreds of false local modifications even though the checkpoint was already in remote.
+Solution: Classify every local-vs-remote delta before touching files: 191 files matched old `HEAD`, 65 remote files were missing locally, 45 untracked paths already matched `origin/main`, and 3 files were stale mixed-content regressions versus the safer remote version. Preserve the old local ref as `git-sync-pre-local-align`, move `main` to `origin/main`, refresh the index with `git reset --mixed`, and restore tracked files from `HEAD`.
+Rejected Alternatives: `git reset --hard` would be an unnecessary destructive operation. Leaving the checkout stale would poison future validation. Publishing the 3 stale mixed-content regressions would remove remote fixes: `TryGetComponent` helper usage, `StructLayout` on `VfxComputeParticleBudget`, and save-header documentation.
+Scalability potential: Runtime tier behavior is not changed by checkout alignment. It makes future verification use the same tree as `origin/main`.
+Hardware Impact: 0 us gameplay runtime gain measured.
+
+## Decision 13
+
+Problem: Post-alignment Unity compile proof is still unavailable from local CLI.
+Solution: Re-run the feasible gates on the clean remote-tip checkout and record the exact compile blocker: no root `.csproj` files exist, and MSBuild fails `Hecton8.slnx` because all generated Unity project files are absent.
+Rejected Alternatives: Generating fake `.csproj` files would create project drift. Claiming compile from Python tests would be false evidence.
+Scalability potential: None for runtime tiers; this is verification infrastructure debt.
+Hardware Impact: 0 us gameplay runtime gain measured.
+
