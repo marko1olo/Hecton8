@@ -738,3 +738,34 @@ Verification:
 Evidence boundary:
 - STATIC_SOURCE / FILESYSTEM / PY_UNIT_TEST only.
 - Unity import, Memory Profiler, player build, and runtime frame time remain PENDING VERIFICATION.
+
+## 2026-05-15T22:15:00+03:00 - SPLIT REPORT IDENTITY VALIDATOR PASS
+
+What was wrong:
+- Split CSV validation compared row counts but did not prove those rows pointed at the same assets as the broad CSV and JSON.
+- A stale remediation queue with the correct row count but wrong paths could still pass.
+
+What was done:
+- Added duplicate path detection for broad texture, mesh, and RenderTexture rows.
+- Added duplicate path detection for texture, mesh, and RenderTexture redline CSVs.
+- Added subset validation so split redline paths must exist in the matching broad CSV asset type.
+- Added RenderTexture hotspot identity validation between CSV and JSON using `(path, line, pattern, editor_only)`.
+
+Cinematic cheats used:
+- None. This is tooling gate hardening, not runtime rendering work.
+
+Exact microseconds saved:
+- Runtime code changed: none.
+- Immediate runtime CPU saving: 0us.
+- Tooling correctness improvement: same-count stale remediation queues now fail validation.
+
+Verification:
+- PYTHONDONTWRITEBYTECODE=1 python AST syntax parse for `Tools/MemoryBudgetCheck.py` and `Tools/test_memory_budget_check.py`: PASS.
+- PYTHONDONTWRITEBYTECODE=1 python Tools/MemoryBudgetCheck.py --root . --validate-reports: PASS; `reports valid: textures=1652 meshes=302 render_textures=1 texture_redlines=946 mesh_redlines=293 rt_redlines=1 rt_hotspots=61 scan_roots=Assets,Packages,Data`.
+- PYTHONDONTWRITEBYTECODE=1 python -m unittest discover -s Tools -p test_memory_budget_check.py: PASS, 17 tests, elapsed 5.924 seconds.
+- PYTHONDONTWRITEBYTECODE=1 python Tools/MemoryBudgetCheck.py --root . --ci: EXPECTED FAIL with `ci_exit_code=2`; current redlines/overflow still produce `[CRITICAL_VRAM_OVERFLOW]`, 801 texture crimes, 293 mesh risk rows, and 1 RenderTexture risk row.
+- Python bytecode cleanup for `MemoryBudgetCheck*` and `test_memory_budget_check*`: PASS.
+
+Evidence boundary:
+- STATIC_SOURCE / FILESYSTEM / PY_UNIT_TEST only.
+- Unity import, Memory Profiler, player build, and runtime frame time remain PENDING VERIFICATION.

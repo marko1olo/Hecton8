@@ -259,3 +259,11 @@ Solution: Read `render_texture_source_hotspot_rows` from `VRAM_Budget_Audit.json
 Rejected Alternatives: Keeping `rt_hotspots=61` in source. That turns a report-parity test into a stale asset-count snapshot.
 Scalability potential: Low/MX350 still gets strict parity between split CSVs and JSON; Middle/High/Ultra can add or remove RT owners without editing tests, provided reports are regenerated consistently.
 Hardware Impact: 0us runtime measured. Tooling impact: unit coverage remains 17 tests and ran in 9.666 seconds.
+
+## Decision 33: Split Report Identity Validation
+
+Problem: Split report parity still accepted same-count stale CSVs. A texture redline CSV with the right row count but wrong paths would pass and misroute cleanup.
+Solution: Validate split redline path subsets against the broad CSV, reject duplicate broad/split asset paths, and compare RenderTexture hotspot identity between CSV and JSON by `(path, line, pattern, editor_only)`.
+Rejected Alternatives: Count-only validation. Counts are necessary but insufficient for asset-owner remediation queues.
+Scalability potential: Low/MX350 remediation queues now point at the same assets as the machine summary; Middle/High/Ultra report changes can still pass after regeneration if identity remains consistent.
+Hardware Impact: 0us runtime measured. Tooling impact: `--validate-reports` still passes on current artifacts; unit coverage remains 17 tests and ran in 5.924 seconds.
