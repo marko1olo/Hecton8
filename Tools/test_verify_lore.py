@@ -220,6 +220,23 @@ class VerifyLoreTests(unittest.TestCase):
         self.assertIn("Cannot read manifest", stderr.getvalue())
         self.assertNotIn("Traceback", stderr.getvalue())
 
+    def test_cli_rejects_invalid_manifest_json_without_traceback(self) -> None:
+        manifest_path = Path(".codex-artifacts/invalid_lore_manifest.json")
+        VerifyLore.atomic_write_text(manifest_path, "{")
+        stderr = io.StringIO()
+
+        try:
+            with contextlib.redirect_stderr(stderr):
+                with self.assertRaises(SystemExit) as context:
+                    VerifyLore.main(["--verify-manifest", "--manifest", str(manifest_path)])
+        finally:
+            if manifest_path.exists():
+                manifest_path.unlink()
+
+        self.assertNotEqual(context.exception.code, 0)
+        self.assertIn("Cannot parse manifest JSON", stderr.getvalue())
+        self.assertNotIn("Traceback", stderr.getvalue())
+
     def test_hash_parser_rejects_out_of_uint32_range_values(self) -> None:
         for value in ("-1", "0x100000000", "4294967296"):
             with self.subTest(value=value):
@@ -464,24 +481,127 @@ class VerifyLoreTests(unittest.TestCase):
             "Docs/Lore",
         )
 
-        for key in ("blob_length",):
-            with self.subTest(key=key):
-                mutated = dict(manifest)
-                mutated[key] = None
-                with self.assertRaisesRegex(ValueError, "Manifest blob length mismatch"):
-                    VerifyLore.verify_manifest_data(blob, records, entries, mutated)
+        for key, message in (
+            ("version", "Manifest version mismatch"),
+            ("blob_length", "Manifest blob length mismatch"),
+            ("entry_count", "Manifest entry count mismatch"),
+        ):
+            for invalid_value in (None, "1", 1.5, True):
+                with self.subTest(key=key, invalid_value=invalid_value):
+                    mutated = dict(manifest)
+                    mutated[key] = invalid_value
+                    with self.assertRaisesRegex(ValueError, message):
+                        VerifyLore.verify_manifest_data(blob, records, entries, mutated)
 
         for key, message in (
             ("offset", "Manifest offset mismatch"),
             ("compressed_length", "Manifest compressed length mismatch"),
             ("decompressed_length", "Manifest decompressed length mismatch"),
         ):
-            with self.subTest(key=key):
+            for invalid_value in (None, "1", 1.5, True):
+                with self.subTest(key=key, invalid_value=invalid_value):
+                    mutated = dict(manifest)
+                    mutated_entries = [dict(manifest["entries"][0])]
+                    mutated_entries[0][key] = invalid_value
+                    mutated["entries"] = mutated_entries
+                    with self.assertRaisesRegex(ValueError, message):
+                        VerifyLore.verify_manifest_data(blob, records, entries, mutated)
+
+    def test_manifest_malformed_entry_shapes_are_rejected(self) -> None:
+        entries = [self.make_entry("Docs/Lore/entry.md", b"Entry\n")]
+        blob = VerifyLore.bake_blob(entries)
+        records = VerifyLore.parse_blob(blob)
+        manifest = VerifyLore.build_manifest_data(
+            "Data/Lore/Encyclopedia.h8bin",
+            blob,
+            records,
+            entries,
+            "Docs/Lore",
+        )
+
+        with self.subTest(shape="root"):
+            with self.assertRaisesRegex(ValueError, "Manifest root must be an object"):
+                VerifyLore.verify_manifest_data(blob, records, entries, [])
+
+        with self.subTest(shape="entries-not-list"):
+            mutated = dict(manifest)
+            mutated["entries"] = {}
+            with self.assertRaisesRegex(ValueError, "Manifest entries must be a list"):
+                VerifyLore.verify_manifest_data(blob, records, entries, mutated)
+
+        with self.subTest(shape="entry-not-object"):
+            mutated = dict(manifest)
+            mutated["entries"] = ["bad"]
+            with self.assertRaisesRegex(ValueError, "Manifest entry must be an object"):
+                VerifyLore.verify_manifest_data(blob, records, entries, mutated)
+
+    def test_manifest_unknown_keys_are_rejected(self) -> None:
+        entries = [self.make_entry("Docs/Lore/entry.md", b"Entry\n")]
+        blob = VerifyLore.bake_blob(entries)
+        records = VerifyLore.parse_blob(blob)
+        manifest = VerifyLore.build_manifest_data(
+            "Data/Lore/Encyclopedia.h8bin",
+            blob,
+            records,
+            entries,
+            "Docs/Lore",
+        )
+
+        with self.subTest(shape="root-extra"):
+            mutated = dict(manifest)
+            mutated["debug_note"] = "bad"
+            with self.assertRaisesRegex(ValueError, "Manifest root keys mismatch"):
+                VerifyLore.verify_manifest_data(blob, records, entries, mutated)
+
+        with self.subTest(shape="root-missing"):
+            mutated = dict(manifest)
+            del mutated["blob_sha256"]
+            with self.assertRaisesRegex(ValueError, "Manifest root keys mismatch"):
+                VerifyLore.verify_manifest_data(blob, records, entries, mutated)
+
+        with self.subTest(shape="entry-extra"):
+            mutated = dict(manifest)
+            mutated_entries = [dict(manifest["entries"][0])]
+            mutated_entries[0]["debug_note"] = "bad"
+            mutated["entries"] = mutated_entries
+            with self.assertRaisesRegex(ValueError, "Manifest entry keys mismatch"):
+                VerifyLore.verify_manifest_data(blob, records, entries, mutated)
+
+        with self.subTest(shape="entry-missing"):
+            mutated = dict(manifest)
+            mutated_entries = [dict(manifest["entries"][0])]
+            del mutated_entries[0]["sha256"]
+            mutated["entries"] = mutated_entries
+            with self.assertRaisesRegex(ValueError, "Manifest entry keys mismatch"):
+                VerifyLore.verify_manifest_data(blob, records, entries, mutated)
+
+    def test_manifest_hash_field_must_be_canonical_string(self) -> None:
+        entries = [self.make_entry("Docs/Lore/entry.md", b"Entry\n")]
+        blob = VerifyLore.bake_blob(entries)
+        records = VerifyLore.parse_blob(blob)
+        manifest = VerifyLore.build_manifest_data(
+            "Data/Lore/Encyclopedia.h8bin",
+            blob,
+            records,
+            entries,
+            "Docs/Lore",
+        )
+        hash_value = manifest["entries"][0]["hash"]
+        decimal_hash = str(VerifyLore.parse_hash(hash_value))
+        invalid_values = (
+            VerifyLore.parse_hash(hash_value),
+            hash_value.lower(),
+            decimal_hash,
+            hash_value.replace("0x", "0X"),
+        )
+
+        for invalid_value in invalid_values:
+            with self.subTest(invalid_value=invalid_value):
                 mutated = dict(manifest)
                 mutated_entries = [dict(manifest["entries"][0])]
-                mutated_entries[0][key] = None
+                mutated_entries[0]["hash"] = invalid_value
                 mutated["entries"] = mutated_entries
-                with self.assertRaisesRegex(ValueError, message):
+                with self.assertRaises(ValueError):
                     VerifyLore.verify_manifest_data(blob, records, entries, mutated)
 
     def test_manifest_blob_label_mismatch_is_rejected_when_expected(self) -> None:

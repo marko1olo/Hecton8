@@ -327,3 +327,35 @@ Solution: Extend `validate_source_entries` to require repository-relative normal
 Rejected Alternatives: Trusting helper callers was rejected because manifest/source verification uses the same public entry contract; normalizing bad direct IDs silently was rejected because it could hide mismatched hash inputs.
 Scalability potential: Low/Middle/High/Ultra lore shards keep one portable ID namespace as the source tree grows; high-tier future tools can prefetch by stable IDs without traversal aliases.
 Hardware Impact: 0 us/frame on i3/MX350; this is offline validation only.
+
+## Decision 042 - Enforce Strict Manifest Schema
+
+Problem: Manifest numeric fields were parsed with Python `int()`, which accepts strings and truncates floats; malformed JSON also reported raw decoder wording rather than a lore manifest diagnostic.
+Solution: Convert manifest JSON decode failures into controlled `ValueError`, require JSON integer fields with no bool/string/float coercion, and add regression coverage for invalid JSON, malformed entry containers, and non-integer numeric fields.
+Rejected Alternatives: Keeping permissive coercion was rejected because sidecars are packaging contracts, not user input forms; silently normalizing bad schema values would let stale or hand-edited manifests self-certify.
+Scalability potential: Low/Middle/High/Ultra package gates stay deterministic as the manifest grows to multiple lore shards; high-tier preload tools can trust sidecar integer fields without defensive truncation rules.
+Hardware Impact: 0 us/frame on i3/MX350; strict schema validation is offline tooling only.
+
+## Decision 043 - Require Canonical Manifest Hash Strings
+
+Problem: Manifest entry hashes could still be accepted as decimal strings, lowercase hex, alternate prefixes, or numeric JSON values, creating multiple textual identities for the same record key.
+Solution: Add `read_manifest_hash` and require each manifest entry hash to exactly match `format_hash`, then add regression coverage for numeric, lowercase, decimal, and alternate-prefix hash fields.
+Rejected Alternatives: Permitting decimal or lowercase aliases was rejected because the sidecar is a deterministic package contract; auto-normalizing hash strings would hide hand-edited manifests.
+Scalability potential: Low/Middle/High/Ultra tooling now has one hash spelling for every lore shard, avoiding alias bugs as the table grows.
+Hardware Impact: 0 us/frame on i3/MX350; manifest hash validation is offline tooling only.
+
+## Decision 044 - Reject Unknown Manifest Keys
+
+Problem: The manifest verifier validated known fields but ignored surplus root or entry keys, allowing hand-edited sidecars to carry unaudited data.
+Solution: Add exact manifest root and entry key sets, reject any missing or unknown field, and add regression coverage for surplus root and entry keys.
+Rejected Alternatives: Ignoring unknown fields was rejected because the manifest is a binary package contract, not an extensible user document; warning-only behavior would not fail CI packaging gates.
+Scalability potential: Low/Middle/High/Ultra package gates keep one stable schema as lore shard counts grow; future schema expansion must be deliberate and versioned.
+Hardware Impact: 0 us/frame on i3/MX350; manifest key validation is offline tooling only.
+
+## Decision 045 - Reject Boolean Manifest Version
+
+Problem: Python equality treats `True == 1`, so a hand-edited manifest with `version: true` could pass the version check.
+Solution: Route manifest `version` through the same strict JSON integer reader used for lengths and offsets, rejecting bool/string/float/null values.
+Rejected Alternatives: Keeping direct equality was rejected because JSON booleans are not valid schema integers; adding a special-case bool check only for version would duplicate the stricter integer path.
+Scalability potential: Low/Middle/High/Ultra package gates preserve exact schema semantics as future manifest versions are added.
+Hardware Impact: 0 us/frame on i3/MX350; manifest version validation is offline tooling only.

@@ -1150,3 +1150,165 @@ Regression model:
 Failure modes:
 - Unity/C# compile proof remains blocked by missing local toolchain/generation state.
 - Runtime loader remains out of explicit prompt scope.
+
+## 2026-05-15 - Strict Manifest Schema Guard
+
+STATUS: LORE BAKED / MANIFEST SCHEMA STRICT
+
+What was wrong:
+- Manifest numeric fields accepted Python coercion through `int()`, allowing strings and float truncation.
+- Invalid manifest JSON lacked a lore-specific parse diagnostic.
+- Manifest entry container shape guards existed but did not have explicit regression coverage.
+
+What was done:
+- Manifest JSON decode failures now become `ValueError` with the manifest path.
+- Manifest integer fields now require JSON integers and reject booleans, strings, floats, and nulls.
+- Added regression coverage for invalid JSON, malformed entry containers, and non-integer manifest numeric fields.
+- Updated `Data/Lore/README.md` with the strict manifest schema contract.
+
+Cinematic Cheats used:
+- No runtime simulation touched.
+- Fixed binary layout and zlib payloads remain unchanged.
+
+Exact microseconds saved:
+- Current runtime frame impact remains 0 us/frame.
+- Offline manifest schema validation only; no runtime loader cost claimed.
+
+Verification:
+- `python Tools\VerifyLore.py --bake --check --list` -> `LORE BAKED`, `CHECK OK`, `0xD1880394 offset=48 length=10281`.
+- `python Tools\VerifyLore.py --verify-manifest --verify-source --list` -> source and manifest verification passed.
+- `python -B -m unittest Tools.test_verify_lore -v` -> 38 tests passed.
+- `python -B -m unittest discover -s Tools -p 'test_verify_lore.py' -v` -> 38 tests passed.
+- `$env:PYTHONPYCACHEPREFIX='.codex-artifacts\pycache'; python -m py_compile Tools\VerifyLore.py Tools\test_verify_lore.py` -> passed.
+
+Regression model:
+- CPU: no runtime code touched.
+- GC: no runtime allocation path touched.
+- Memory: runtime blob remains 10329 bytes.
+- Cadence: no Tick/Update/FixedUpdate path touched.
+- Correctness: malformed or hand-edited manifests can no longer self-certify through numeric coercion.
+
+Failure modes:
+- Unity/C# compile proof remains blocked by missing local toolchain/generation state.
+- Runtime loader remains out of explicit prompt scope.
+
+## 2026-05-15 - Canonical Manifest Hash Guard
+
+STATUS: LORE BAKED / MANIFEST HASHES CANONICAL
+
+What was wrong:
+- Manifest entry hashes could be accepted as decimal strings, lowercase hex, alternate-prefix hex, or numeric JSON values.
+
+What was done:
+- Added `read_manifest_hash`.
+- Manifest entry hash fields must now exactly match canonical `0xXXXXXXXX` format.
+- Added regression coverage for numeric, lowercase, decimal, and alternate-prefix hash fields.
+- Updated `Data/Lore/README.md` with the canonical manifest hash rule.
+
+Cinematic Cheats used:
+- No runtime simulation touched.
+- Fixed binary layout and zlib payloads remain unchanged.
+
+Exact microseconds saved:
+- Current runtime frame impact remains 0 us/frame.
+- Offline manifest hash validation only; no runtime loader cost claimed.
+
+Verification:
+- `python Tools\VerifyLore.py --bake --check --list` -> `LORE BAKED`, `CHECK OK`, `0xD1880394 offset=48 length=10281`.
+- `python Tools\VerifyLore.py --verify-manifest --verify-source --list` -> source and manifest verification passed.
+- `python -B -m unittest Tools.test_verify_lore -v` -> 39 tests passed.
+- `python -B -m unittest discover -s Tools -p 'test_verify_lore.py' -v` -> 39 tests passed.
+- `$env:PYTHONPYCACHEPREFIX='.codex-artifacts\pycache'; python -m py_compile Tools\VerifyLore.py Tools\test_verify_lore.py` -> passed.
+- Source/extract SHA-256 matched `6B529A808B25D18DA276747DB9149C61BACDF90A33DCC667FC85375DE13E69CD`; blob SHA-256 remained `8FDBAC8752B5DB10B98226D88BC5A27EEDA049207E139E6F2F3FB15ECDBDDC00`.
+- `git diff --check` on touched lore compiler files -> no whitespace errors; Git emitted only existing LF-to-CRLF warnings.
+
+Regression model:
+- CPU: no runtime code touched.
+- GC: no runtime allocation path touched.
+- Memory: runtime blob remains 10329 bytes.
+- Cadence: no Tick/Update/FixedUpdate path touched.
+- Correctness: sidecar records now have one textual hash identity per binary record.
+
+Failure modes:
+- Unity/C# compile proof remains blocked by missing local toolchain/generation state.
+- Runtime loader remains out of explicit prompt scope.
+
+## 2026-05-15 - Exact Manifest Key Guard
+
+STATUS: LORE BAKED / MANIFEST KEYS EXACT
+
+What was wrong:
+- Manifest verification ignored surplus root or entry keys, allowing hand-edited sidecars to carry unaudited fields.
+
+What was done:
+- Added exact manifest root and entry key sets to `Tools/VerifyLore.py`.
+- Surplus or missing manifest fields now fail verification.
+- Added regression coverage for surplus root and entry keys.
+- Updated `Data/Lore/README.md` with the exact-key schema rule.
+
+Cinematic Cheats used:
+- No runtime simulation touched.
+- Fixed binary layout and zlib payloads remain unchanged.
+
+Exact microseconds saved:
+- Current runtime frame impact remains 0 us/frame.
+- Offline manifest schema validation only; no runtime loader cost claimed.
+
+Verification:
+- `python Tools\VerifyLore.py --bake --check --list` -> `LORE BAKED`, `CHECK OK`, `0xD1880394 offset=48 length=10281`.
+- `python Tools\VerifyLore.py --verify-manifest --verify-source --list` -> source and manifest verification passed.
+- `python -B -m unittest Tools.test_verify_lore -v` -> 40 tests passed.
+- `python -B -m unittest discover -s Tools -p 'test_verify_lore.py' -v` -> 40 tests passed.
+- `$env:PYTHONPYCACHEPREFIX='.codex-artifacts\pycache'; python -m py_compile Tools\VerifyLore.py Tools\test_verify_lore.py` -> passed.
+- Source/extract SHA-256 matched `6B529A808B25D18DA276747DB9149C61BACDF90A33DCC667FC85375DE13E69CD`; blob SHA-256 remained `8FDBAC8752B5DB10B98226D88BC5A27EEDA049207E139E6F2F3FB15ECDBDDC00`.
+- `git diff --check` on touched lore compiler files -> no whitespace errors; Git emitted only existing LF-to-CRLF warnings.
+
+Regression model:
+- CPU: no runtime code touched.
+- GC: no runtime allocation path touched.
+- Memory: runtime blob remains 10329 bytes.
+- Cadence: no Tick/Update/FixedUpdate path touched.
+- Correctness: sidecar schema changes now require deliberate code changes instead of silent acceptance.
+
+Failure modes:
+- Unity/C# compile proof remains blocked by missing local toolchain/generation state.
+- Runtime loader remains out of explicit prompt scope.
+
+## 2026-05-15 - Strict Manifest Version Guard
+
+STATUS: LORE BAKED / MANIFEST VERSION STRICT
+
+What was wrong:
+- Manifest version used direct equality, and Python treats `True == 1`.
+
+What was done:
+- Manifest `version` now uses strict JSON integer validation through `read_manifest_int`.
+- Existing malformed-integer regression coverage now includes the `version` field.
+
+Cinematic Cheats used:
+- No runtime simulation touched.
+- Fixed binary layout and zlib payloads remain unchanged.
+
+Exact microseconds saved:
+- Current runtime frame impact remains 0 us/frame.
+- Offline manifest schema validation only; no runtime loader cost claimed.
+
+Verification:
+- `python Tools\VerifyLore.py --bake --check --list` -> `LORE BAKED`, `CHECK OK`, `0xD1880394 offset=48 length=10281`.
+- `python Tools\VerifyLore.py --verify-manifest --verify-source --list` -> source and manifest verification passed.
+- `python -B -m unittest Tools.test_verify_lore -v` -> 40 tests passed.
+- `python -B -m unittest discover -s Tools -p 'test_verify_lore.py' -v` -> 40 tests passed.
+- `$env:PYTHONPYCACHEPREFIX='.codex-artifacts\pycache'; python -m py_compile Tools\VerifyLore.py Tools\test_verify_lore.py` -> passed.
+- Source/extract SHA-256 matched `6B529A808B25D18DA276747DB9149C61BACDF90A33DCC667FC85375DE13E69CD`; blob SHA-256 remained `8FDBAC8752B5DB10B98226D88BC5A27EEDA049207E139E6F2F3FB15ECDBDDC00`.
+- `git diff --check` on touched lore compiler files -> no whitespace errors; Git emitted only existing LF-to-CRLF warnings.
+
+Regression model:
+- CPU: no runtime code touched.
+- GC: no runtime allocation path touched.
+- Memory: runtime blob remains 10329 bytes.
+- Cadence: no Tick/Update/FixedUpdate path touched.
+- Correctness: JSON boolean version values can no longer masquerade as integer version `1`.
+
+Failure modes:
+- Unity/C# compile proof remains blocked by missing local toolchain/generation state.
+- Runtime loader remains out of explicit prompt scope.

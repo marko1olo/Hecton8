@@ -55,6 +55,32 @@ PRIMARY_SOURCE_DIR_RELATIVE = Path("Docs/Lore")
 DEFAULT_BLOB = REPO_ROOT / DEFAULT_BLOB_RELATIVE
 DEFAULT_MANIFEST = REPO_ROOT / DEFAULT_MANIFEST_RELATIVE
 PRIMARY_SOURCE_DIR = REPO_ROOT / PRIMARY_SOURCE_DIR_RELATIVE
+MANIFEST_ROOT_KEYS = frozenset(
+    (
+        "magic",
+        "version",
+        "hash_algorithm",
+        "compression",
+        "alignment_bytes",
+        "record_layout",
+        "blob",
+        "blob_length",
+        "blob_sha256",
+        "source_dir",
+        "entry_count",
+        "entries",
+    )
+)
+MANIFEST_ENTRY_KEYS = frozenset(
+    (
+        "hash",
+        "canonical_id",
+        "offset",
+        "compressed_length",
+        "decompressed_length",
+        "sha256",
+    )
+)
 
 
 @dataclass(frozen=True)
@@ -506,9 +532,11 @@ def verify_manifest_data(
 
     if not isinstance(manifest, dict):
         raise ValueError("Manifest root must be an object.")
+    if set(manifest.keys()) != MANIFEST_ROOT_KEYS:
+        raise ValueError("Manifest root keys mismatch.")
     if manifest.get("magic") != MAGIC.decode("ascii"):
         raise ValueError("Manifest magic mismatch.")
-    if manifest.get("version") != VERSION:
+    if read_manifest_int(manifest, "version", "Manifest version mismatch.") != VERSION:
         raise ValueError("Manifest version mismatch.")
     if manifest.get("hash_algorithm") != HASH_ALGORITHM:
         raise ValueError("Manifest hash algorithm mismatch.")
@@ -539,8 +567,10 @@ def verify_manifest_data(
     for item in manifest_entries:
         if not isinstance(item, dict):
             raise ValueError("Manifest entry must be an object.")
+        if set(item.keys()) != MANIFEST_ENTRY_KEYS:
+            raise ValueError("Manifest entry keys mismatch.")
 
-        hash_value = parse_hash(str(item.get("hash", "")))
+        hash_value = read_manifest_hash(item)
         if hash_value in seen_hashes:
             raise ValueError(f"Duplicate manifest hash: {format_hash(hash_value)}")
         seen_hashes.add(hash_value)
@@ -576,6 +606,16 @@ def read_manifest_int(container: dict[str, object], key: str, error_message: str
     if not isinstance(value, int) or isinstance(value, bool):
         raise ValueError(error_message)
     return value
+
+
+def read_manifest_hash(container: dict[str, object]) -> int:
+    value = container.get("hash", "")
+    if not isinstance(value, str):
+        raise ValueError("Manifest hash field must be a string.")
+    hash_value = parse_hash(value)
+    if value != format_hash(hash_value):
+        raise ValueError("Manifest hash field must use canonical 0xXXXXXXXX format.")
+    return hash_value
 
 
 def print_record_list(records: list[LoreRecord]) -> None:
