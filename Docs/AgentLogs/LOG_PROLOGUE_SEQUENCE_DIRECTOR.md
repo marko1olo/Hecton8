@@ -435,4 +435,4 @@ What was wrong -> Re-entry burn could advance on atmospheric Mach fallback using
 What was done -> Added a current-iteration `hasFreshAtmosphericReentry` gate so atmospheric Mach fallback only uses a packet consumed inside the burn loop iteration.
 Cinematic Cheats used -> None; this preserves deterministic pacing before the VWS/rumble/manual override presentation cheats are allowed to advance.
 Exact Microseconds saved -> Adds one stack bool and branch below 1 us per burn wait frame. Prevents false sequence progression and avoids heavier rollback/debug work.
-Verification -> No dotnet rebuild/response-file compile was run per user constraint. Targeted readback confirms the fresh-atmospheric gate; forbidden-pattern scan returned no hits; `git diff --check` reports line-ending warnings only for existing mixed-line-ending docs.
+Verification -> No dotnet rebuild/response-file compile was run per user constraint. Targeted readback confirms the fresh-atmospheric gate; forbidden-pattern scan returned no hits; scoped `git diff --check` exits clean.

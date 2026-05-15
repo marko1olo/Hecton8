@@ -488,4 +488,4 @@ Cinematic Cheats used: Fixed 1024 procedural atlas fakes, Standalone BC7/BC5 com
 
 Exact Microseconds saved: Runtime remains 0 us/frame and 0 bytes procedural allocation. This prevents hidden import-quality or alpha-split drift; exact runtime microseconds were not profiled.
 
-Verification: Pending static verification. No dotnet rebuild and no Unity import will be run.
+Verification: No dotnet rebuild and no Unity import was run. `AtlasCompressionAlphaSplitMetaScan Count=4 Bad=0`; `git diff --check` passed with only repo CRLF warnings; source brace balance stayed `Delta=0`, `NonAscii=0`, and forbidden source scan stayed clean.

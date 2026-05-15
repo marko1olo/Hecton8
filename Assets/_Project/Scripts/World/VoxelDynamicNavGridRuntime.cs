@@ -2054,19 +2054,26 @@ namespace Hecton8.World
 
         private static bool IsPureVoidSnapshot(VolumeRecord record)
         {
-            if (record == null ||
-                !record.Current.IsCreated ||
+            if (!HasValidRecordBounds(record) ||
                 !record.CurrentDistance.IsCreated ||
-                !record.PureVoidBlockFlags.IsCreated ||
-                record.Current.Length <= 0 ||
-                record.Current.Length != record.CurrentDistance.Length ||
-                record.PureVoidBlockCount <= 0 ||
-                record.PureVoidBlockCount > record.PureVoidBlockFlags.Length)
+                !record.PureVoidBlockFlags.IsCreated)
             {
                 return false;
             }
 
-            for (int i = 0; i < record.PureVoidBlockCount; i++)
+            if (!TryResolveVoxelCellCount(record.Dimensions, out int requiredCellCount))
+                return false;
+
+            int requiredBlockCount = ResolvePureVoidBlockCount(requiredCellCount);
+            if (requiredBlockCount <= 0 ||
+                record.CurrentDistance.Length < requiredCellCount ||
+                record.PureVoidBlockCount != requiredBlockCount ||
+                record.PureVoidBlockFlags.Length < requiredBlockCount)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < requiredBlockCount; i++)
             {
                 if (record.PureVoidBlockFlags[i] == 0)
                     return false;

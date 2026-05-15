@@ -579,3 +579,28 @@ Verification:
 - No dotnet build, restore, or rebuild was run.
 - `rg` confirms `SignalBus<MovementAcousticSignal>` is configured, pushed, and consumed by biolum/sargassum snapshots.
 - `HectonBiolumManager` no longer calls `TryDequeueMovementAcoustic()`.
+
+## 2026-05-15 - Acoustic and Biome SignalBus Prewarm Addendum
+
+What was wrong:
+- `AcousticPingSignal` was pushed and consumed through `SignalBus`, but had no central `Configure()` / `EnsureInitialized()` call.
+- `BiomeGradientSignal` had audio, GI, and ecosystem snapshot consumers but no central prewarm.
+- `BiomeChangedSignal` had snapshot consumers while `GlobalSignals.Publish(in BiomeChangedSignal)` only wrote the native queue.
+
+What was done:
+- Added `BiomeGradientSignalCapacity`.
+- Added `SignalBus<AcousticPingSignal>`, `SignalBus<BiomeChangedSignal>`, and `SignalBus<BiomeGradientSignal>` configuration in `GlobalSignals`.
+- Added `SignalBus<BiomeChangedSignal>.Push(in signal)` to the biome transition publisher.
+
+Cinematic Cheats used:
+- Music, GI, flora, inventory, and fauna reactions now share numeric biome/acoustic packets instead of polling owners.
+- No new producer-specific message type was added.
+
+Exact microseconds saved:
+- Estimated 0.1-0.5 us avoided in cold-lane fallback/retry paths.
+- Main gain is deterministic packet visibility for biome/acoustic consumers already reading SignalBus snapshots.
+
+Verification:
+- No dotnet build, restore, or rebuild was run.
+- `rg` confirms all three lanes are configured and their existing consumers read snapshots.
+- `git diff --check` on `GlobalSignals.cs` reported only standard LF/CRLF notices.

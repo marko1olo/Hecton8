@@ -1,0 +1,24 @@
+﻿NativeArray H-Phi budget failed: count 7002 exceeds budget 7001.
+Top files:
+HectonVoxelEngine.cs NativeArrayRefs=277 coupling=40
+Audio\PlayerCriticalProceduralAudioRenderer.cs NativeArrayRefs=232 coupling=25
+PlayerInventory.cs NativeArrayRefs=197 coupling=20
+Fauna\PredatorCognitionDomain.cs NativeArrayRefs=173 coupling=1
+World\HectonMapMagicVegetationBridge.cs NativeArrayRefs=166 coupling=19
+HectonFluidEngine.cs NativeArrayRefs=163 coupling=36
+World\EcosystemDirector.cs NativeArrayRefs=154 coupling=29
+Power\LogisticsNetworkGraph.cs NativeArrayRefs=145 coupling=1
+At C:\hades\Hecton8\Tools\Architecture\HectonPhiAudit.ps1:1512 char:5
++     throw $message
++     ~~~~~~~~~~~~~~
+    + CategoryInfo          : OperationStopped: (NativeArray H-P...=145 coupling=1:String) [], RuntimeException
+    + FullyQualifiedErrorId : NativeArray H-Phi budget failed: count 7002 exceeds budget 7001.
+Top files:
+HectonVoxelEngine.cs NativeArrayRefs=277 coupling=40
+Audio\PlayerCriticalProceduralAudioRenderer.cs NativeArrayRefs=232 coupling=25
+PlayerInventory.cs NativeArrayRefs=197 coupling=20
+Fauna\PredatorCognitionDomain.cs NativeArrayRefs=173 coupling=1
+World\HectonMapMagicVegetationBridge.cs NativeArrayRefs=166 coupling=19
+HectonFluidEngine.cs NativeArrayRefs=163 coupling=36
+World\EcosystemDirector.cs NativeArrayRefs=154 coupling=29
+Power\LogisticsNetworkGraph.cs NativeArrayRefs=145 coupling=1

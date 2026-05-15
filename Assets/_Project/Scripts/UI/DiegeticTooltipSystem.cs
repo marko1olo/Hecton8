@@ -634,10 +634,7 @@ namespace Hecton8.UI
             float invAtlasHeight = math.rcp(math.max(1f, atlasHeight));
             for (int i = 0; i < text.Length && _textGlyphCount < MaxGlyphCount; i++)
             {
-                char c = NormalizeTooltipCharacter(text[i]);
-                if (c == '\0')
-                    continue;
-
+                char c = text[i];
                 TMP_Character character = ResolveCachedCharacter(c);
                 if (character == null || character.glyph == null)
                     continue;
@@ -699,10 +696,7 @@ namespace Hecton8.UI
             int visibleGlyphCount = 0;
             for (int i = 0; i < text.Length && visibleGlyphCount < MaxGlyphCount; i++)
             {
-                char c = NormalizeTooltipCharacter(text[i]);
-                if (c == '\0')
-                    continue;
-
+                char c = text[i];
                 TMP_Character character = ResolveCachedCharacter(c);
                 if (character == null || character.glyph == null)
                     continue;

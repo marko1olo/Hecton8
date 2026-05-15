@@ -80,6 +80,7 @@ Status: PENDING VERIFICATION / STATIC CHECKS ONLY / UNITY COMPILE BLOCKED (NO DO
 - Loop 41: Static verification after directional ejection cone. DOD: focused `git diff --check` returned no whitespace errors, only Git LF/CRLF notices; forbidden VFX scan found no CPU readback, ParticleSystem, ComputeBuffer, scene search, job scheduling fences, private `H8Memory.Allocate`, private `H8Memory.Release`, `MaterialPropertyBlock`, `matProps`, stale draw-frame cache, `Vector3.magnitude`, or `math.sqrt`; shader hot-math scan returned no matches; exact current batch prompt tag count remains 0. Rejected alternative: dotnet rebuild or fake Unity compile pass. Estimate: verification saves 0 us.
 - Loop 42: Render material dirty-state pass. DOD: owned runtime material now caches static visible-index and material-parameter bindings, invalidates them on material/buffer replacement, and keeps per-frame writes only for the ping-pong position/velocity lanes. Rejected alternatives: rebinding every material input per active frame, using `MaterialPropertyBlock`, or sharing authored material state. Estimate: saves two redundant material property writes on steady active frames after first bind.
 - Loop 43: Static verification after material dirty-state pass. DOD: focused `git diff --check` returned no whitespace errors, only Git LF/CRLF notices; forbidden VFX scan returned no matches for CPU readback, ParticleSystem, ComputeBuffer, scene search, job scheduling fences, private `H8Memory.Allocate`, private `H8Memory.Release`, `MaterialPropertyBlock`, `matProps`, stale draw-frame cache, managed hot strings, `Vector3.magnitude`, or `math.sqrt`; shader hot-math scan returned no matches; exact current batch prompt tag count remains 0. Rejected alternative: dotnet rebuild or fake Unity compile pass. Estimate: verification saves 0 us.
+- Loop 44: Indirect visible-count clamp pass. DOD: carve debris cull kernel now caps indirect instance count to `_CarveDebrisCounts.z` by rolling back overflow atomic increments before writing visible indices. Rejected alternatives: CPU readback clamp, trusting indirect args to exceed visible-index capacity, or growing the visible buffer. Estimate: prevents out-of-range shader reads on over-visible frames; steady cost is one max-visible guard and no extra work below cap.
 
 ## Second-Pass Upgrade Status
 
@@ -118,6 +119,7 @@ Status: PENDING VERIFICATION / STATIC CHECKS ONLY / UNITY COMPILE BLOCKED (NO DO
 - [x] Cold render resources now use persistent mesh draw metadata, first-party shader material gating, and non-readable fallback mesh CPU storage.
 - [x] Carve injection now uses packet ejection direction for deterministic cone-biased chip burst instead of a generic upward spray.
 - [x] Static debris material inputs are dirty-bound on the owned runtime material; dynamic ping-pong position/velocity buffers remain rebound every active frame.
+- [x] GPU cull clamps indirect instance count to visible-index buffer capacity, preventing overflow draws when more debris is alive than the active render cap.
 
 ## OMEGA Polish Status
 

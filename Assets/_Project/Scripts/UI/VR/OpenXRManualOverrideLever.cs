@@ -229,8 +229,9 @@ namespace Hecton8.UI.VR
             if (!_nativeAllocated || _latched || !IsFiniteVector(handPosition))
                 return false;
 
-            int resolvedSampleFrame = sampleFrame >= 0 ? sampleFrame : Time.frameCount;
-            if (resolvedSampleFrame < _lastHandFrame)
+            int currentFrame = Time.frameCount;
+            int resolvedSampleFrame = sampleFrame >= 0 ? sampleFrame : currentFrame;
+            if (resolvedSampleFrame > currentFrame || resolvedSampleFrame < _lastHandFrame)
                 return false;
 
             float3 localHand = WorldToLocal(handPosition);

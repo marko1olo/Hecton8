@@ -634,4 +634,4 @@ Scalability potential: Low/MX350 keeps predictable atlas import behavior and no 
 
 Hardware Impact: Runtime remains 0 us/frame and 0 bytes procedural allocation. The gain is prevention: no hidden compression-quality or alpha-splitting drift can change imported atlas behavior for MX350 builds. Exact runtime microseconds are not profiled because this is editor validation.
 
-Verification: Pending static verification. Planned checks: no dotnet rebuild and no Unity import; atlas meta scan for `compressionQuality: 50` and `allowsAlphaSplitting: 0`; source token scan; `git diff --check`; source brace/non-ASCII balance; case-sensitive forbidden source scan.
+Verification: No dotnet rebuild and no Unity import was run. `AtlasCompressionAlphaSplitMetaScan Count=4 Bad=0`. Source scan found global, Default, and Standalone compression-quality setters/checks plus Default/Standalone alpha-split setters/checks. `git diff --check` passed for the touched Shallows files with only repo CRLF warnings. Source brace count remained `Delta=0` and `NonAscii=0`; case-sensitive forbidden source scan remained clean.

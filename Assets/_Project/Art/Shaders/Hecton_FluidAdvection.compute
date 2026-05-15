@@ -363,8 +363,18 @@ void CullCarveDebrisForRender(uint3 id : SV_DispatchThreadID)
             return;
     }
 
+    uint maxVisible = (uint)max(0.0, _CarveDebrisCounts.z);
+    if (maxVisible == 0u)
+        return;
+
     uint visibleSlot;
     _CarveDebrisIndirectArgs.InterlockedAdd(4, 1u, visibleSlot);
-    if (visibleSlot < (uint)max(0.0, _CarveDebrisCounts.z))
-        _CarveDebrisVisibleIndices[visibleSlot] = index;
+    if (visibleSlot >= maxVisible)
+    {
+        uint ignoredRollbackSlot;
+        _CarveDebrisIndirectArgs.InterlockedAdd(4, 0xffffffffu, ignoredRollbackSlot);
+        return;
+    }
+
+    _CarveDebrisVisibleIndices[visibleSlot] = index;
 }

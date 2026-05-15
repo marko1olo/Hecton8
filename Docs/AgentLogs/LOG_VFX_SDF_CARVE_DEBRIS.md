@@ -779,3 +779,29 @@ Verification state:
 - `CURRENT_BATCH.md` exact prompt tag count for `VFX_SDF_CARVE_DEBRIS`: 0.
 - Unity import/compile/profiler evidence remains unavailable.
 - No dotnet build or rebuild was run.
+
+## 2026-05-15 - Indirect Visible-Count Overflow Guard
+
+What was wrong:
+- The GPU cull kernel incremented indirect instance count before checking visible-index capacity.
+- On dense frames, indirect args could ask the vertex shader to draw more instances than `_CarveDebrisVisibleIndices` contained.
+
+What was done:
+- Added a max-visible guard in `CullCarveDebrisForRender`.
+- Added an atomic rollback for overflow slots so indirect instance count cannot exceed the active render cap.
+- Kept overflow behavior as silent discard, matching fixed GPU budget rules.
+- Did not add CPU readback, larger buffers, ParticleSystem fallback, dotnet build, or dotnet rebuild.
+
+Cinematic cheats used:
+- Fixed-budget visibility: when too many chips are visible, excess chips are skipped rather than forcing a larger draw budget.
+- Visual density remains authored by Low/Middle/High/Ultra caps, not by unbounded indirect args.
+
+Exact Microseconds saved:
+- Direct steady-frame saving: 0 us.
+- Added steady cost below cap: one max-visible guard.
+- Avoided cost/risk: undefined visible-index reads and excess indirect instances during over-visible carve bursts.
+
+Verification state:
+- Static verification pending for this pass.
+- Unity import/compile/profiler evidence remains unavailable.
+- No dotnet build or rebuild was run.

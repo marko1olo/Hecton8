@@ -257,8 +257,9 @@ namespace Hecton8.UI
             if (!IsFinite(handPosition))
                 return false;
 
-            int frame = sampleFrame >= 0 ? sampleFrame : Time.frameCount;
-            if (frame < _lastHandInsideFrame)
+            int currentFrame = Time.frameCount;
+            int frame = sampleFrame >= 0 ? sampleFrame : currentFrame;
+            if (frame > currentFrame || frame < _lastHandInsideFrame)
                 return false;
 
             _lastHandInsideFrame = frame;

@@ -91,8 +91,9 @@ namespace Hecton8.Interaction
             if (activationVolume == null || !IsFiniteVector(handPosition))
                 return false;
 
-            int resolvedSampleFrame = sampleFrame >= 0 ? sampleFrame : Time.frameCount;
-            if (resolvedSampleFrame < _lastSampleFrame)
+            int currentFrame = Time.frameCount;
+            int resolvedSampleFrame = sampleFrame >= 0 ? sampleFrame : currentFrame;
+            if (resolvedSampleFrame > currentFrame || resolvedSampleFrame < _lastSampleFrame)
                 return false;
 
             Vector3 localPoint = activationVolume.transform.InverseTransformPoint(handPosition) - activationVolume.center;
