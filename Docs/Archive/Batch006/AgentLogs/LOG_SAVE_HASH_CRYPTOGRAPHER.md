@@ -456,6 +456,30 @@ Exact Microseconds saved: 0 runtime microseconds. This improves failure clarity;
 
 Verification: full owned suite returned `PY_AST_OK files=3`, `SELFTEST_OK`, `SAVE_MASTER_HASH_CSHARP_GUARD=PASS domains=5 constants=9 manifestSentinels=21 headerForwarding=12 preimageWrites=15 preimageOps=26 preimageEnd=80 shuffleOps=12 shuffleEnds=36/44 rotGuards=2 endianWriters=3 hash64Helpers=2 stackallocBuffers=2 internalTypes=3 activeWriterSentinels=2 resultCtor=4 blitAttrs=2`, `XXHASH_PATH_REQUIRED_GUARD=PASS`, `XXHASH_MODULE_FILE_GUARD=PASS`, `XXHASH_API_SHAPE_GUARD=PASS`, `XXHASH_EMBEDDED_CLEANUP_SUCCESS_GUARD=PASS`, `XXHASH_TEMP_HELPER_MODULE_CLEANUP_GUARD=PASS`, `XXHASH_EMBEDDED_CLEANUP_FAILURE_GUARD=PASS`, `XXH3_REFERENCE_AND_SHUFFLE_FUZZ_OK xxh3=338 shuffle=128`, and `XXHASH_TMP_REMOVED`. `git diff --check` passed with line-ending warnings only.
 
+## 2026-05-15 - Reference Verifier Digest Shape Guard
+
+What was wrong: A callable `xxh3_64_intdigest` could still return a non-integer or an integer outside the unsigned 64-bit digest range, causing noisy failures or invalid comparison data.
+
+What was done: Added explicit reference digest type and range checks inside `verify_xxh3()` before comparing against `ReplayHasher.py`.
+
+Cinematic Cheats used: None. Offline verification tooling only.
+
+Exact Microseconds saved: 0 runtime microseconds. This improves verifier failure precision; no runtime save path changed.
+
+Verification: full owned suite returned `PY_AST_OK files=3`, `SELFTEST_OK`, `SAVE_MASTER_HASH_CSHARP_GUARD=PASS domains=5 constants=9 manifestSentinels=21 headerForwarding=12 preimageWrites=15 preimageOps=26 preimageEnd=80 shuffleOps=12 shuffleEnds=36/44 rotGuards=2 endianWriters=3 hash64Helpers=2 stackallocBuffers=2 internalTypes=3 activeWriterSentinels=2 resultCtor=4 blitAttrs=2`, `XXHASH_DIGEST_TYPE_GUARD=PASS`, `XXHASH_DIGEST_RANGE_GUARD=PASS`, `XXH3_REFERENCE_AND_SHUFFLE_FUZZ_OK xxh3=338 shuffle=128`, and `XXHASH_TMP_REMOVED`. `git diff --check` passed with line-ending warnings only.
+
+## 2026-05-15 - Replay Digest Shape Guard
+
+What was wrong: The external reference digest was type/range checked, but the local `ReplayHasher.py` digest was not. A future oracle regression could produce a non-integer or out-of-range value and fail through later formatting.
+
+What was done: Added shared `require_u64_digest()` validation and applied it to both reference and replay digests before comparison.
+
+Cinematic Cheats used: None. Offline verification tooling only.
+
+Exact Microseconds saved: 0 runtime microseconds. This improves verifier failure precision; no runtime save path changed.
+
+Verification: full owned suite returned `PY_AST_OK files=3`, `SELFTEST_OK`, `SAVE_MASTER_HASH_CSHARP_GUARD=PASS domains=5 constants=9 manifestSentinels=21 headerForwarding=12 preimageWrites=15 preimageOps=26 preimageEnd=80 shuffleOps=12 shuffleEnds=36/44 rotGuards=2 endianWriters=3 hash64Helpers=2 stackallocBuffers=2 internalTypes=3 activeWriterSentinels=2 resultCtor=4 blitAttrs=2`, `REPLAY_DIGEST_TYPE_GUARD=PASS`, `REPLAY_DIGEST_RANGE_GUARD=PASS`, `XXH3_REFERENCE_AND_SHUFFLE_FUZZ_OK xxh3=338 shuffle=128`, and `XXHASH_TMP_REMOVED`. `git diff --check` passed with line-ending warnings only.
+
 ## 2026-05-15 - Shuffle Mask Preimage Byte Fixtures
 
 What was wrong: Shuffle mask output vectors were frozen, but the raw low/high mask preimage bytes were not. That makes lane-order drift harder to diagnose.

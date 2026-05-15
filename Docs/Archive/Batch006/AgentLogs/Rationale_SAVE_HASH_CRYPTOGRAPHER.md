@@ -527,3 +527,27 @@ Rejected Alternatives: Letting `verify_xxh3()` fail naturally was rejected becau
 Scalability potential: No runtime impact. All tiers retain the same save ABI; offline reference failure modes are clearer.
 
 Hardware Impact: 0 us frame impact. Offline validation only.
+
+## Decision 45
+
+Problem: A callable `xxh3_64_intdigest` can still return a bad value. Non-integer or out-of-range reference digests would either produce noisy formatting failures or compare against invalid data.
+
+Solution: Added explicit digest type and `0..0xffffffffffffffff` range checks before comparing against `ReplayHasher.py`.
+
+Rejected Alternatives: Allowing Python formatting/comparison to fail later was rejected because the verifier should identify reference contamination precisely. Masking the reference value was rejected because that could hide a bad third-party or fake module.
+
+Scalability potential: No runtime impact. All tiers retain the same save ABI; offline reference validation is stricter.
+
+Hardware Impact: 0 us frame impact. Offline validation only.
+
+## Decision 46
+
+Problem: The external reference digest was type/range checked, but the local `ReplayHasher.py` result was not. If the oracle regressed to a non-integer or out-of-range value, the verifier could fail later through formatting instead of reporting the bad replay digest directly.
+
+Solution: Replaced duplicated reference checks with `require_u64_digest()` and applied it to both the external reference digest and the `ReplayHasher.py` digest.
+
+Rejected Alternatives: Trusting `ReplayHasher.py` because its self-test currently passes was rejected; the verifier is meant to diagnose future regressions. Masking the replay result was rejected because that would hide an oracle bug.
+
+Scalability potential: No runtime impact. All tiers retain the same save ABI; offline comparison diagnostics are stricter.
+
+Hardware Impact: 0 us frame impact. Offline validation only.

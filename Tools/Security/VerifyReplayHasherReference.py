@@ -75,11 +75,36 @@ def to_signed64(value: int) -> int:
     return value
 
 
+def require_u64_digest(label: str, value, length: int, seed: int) -> int:
+    if not isinstance(value, int):
+        raise AssertionError(
+            f"{label} returned non-int digest len={length} "
+            f"seed=0x{seed:016X} type={type(value).__name__}"
+        )
+    if value < 0 or value > MASK64:
+        raise AssertionError(
+            f"{label} returned out-of-range digest len={length} "
+            f"seed=0x{seed:016X} value={value}"
+        )
+
+    return value
+
+
 def verify_xxh3(replay, xxhash_module, fuzz_count: int) -> int:
     checked = 0
     for payload, seed in reference_cases(fuzz_count):
-        expected = xxhash_module.xxh3_64_intdigest(payload, seed=seed)
-        actual = replay.xxh3_64(payload, seed)
+        expected = require_u64_digest(
+            "xxhash reference",
+            xxhash_module.xxh3_64_intdigest(payload, seed=seed),
+            len(payload),
+            seed,
+        )
+        actual = require_u64_digest(
+            "ReplayHasher.py",
+            replay.xxh3_64(payload, seed),
+            len(payload),
+            seed,
+        )
         if actual != expected:
             raise AssertionError(
                 f"XXH3 mismatch len={len(payload)} seed=0x{seed:016X} "
