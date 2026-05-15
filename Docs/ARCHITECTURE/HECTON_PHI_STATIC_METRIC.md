@@ -230,11 +230,11 @@ updates this contract with a bounded dispatcher-shell justification.
 
 ## 2026-05-15 Current Static Baseline
 
-Artifact: `../AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_222240_CurrentDiskBudgetGate18.json`
+Artifact: `../AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_222428_CurrentDiskBudgetGate19.json`
 with exit summary
-`../AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_222240_CurrentDiskBudgetGate18.exit.txt`.
+`../AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_222428_CurrentDiskBudgetGate19.exit.txt`.
 Result: `EXIT=0` on a full source summary JSON budget run at
-`2026-05-15 22:25:11 +04:00`.
+`2026-05-15 22:26:25 +04:00`.
 
 Current score floors passed:
 
@@ -254,21 +254,22 @@ Current static counters passed:
 - `DuplicateSignalNames=0`
 - `UnityUpdateMethods=0`
 - `LegacyEventPublish=28/28`
-- `LinqSurface=3/5`
+- `LinqSurface=3/3`
 - `CoroutineSurface=0/0`
 - `AupPrecisionRisk=0`
 
-R49 Core graph debt was at the accepted ceiling:
+CurrentDiskBudgetGate19 Core graph debt was at the accepted ceiling:
 `CoreAsmdefDebtReferenceCount=25`, `GeneratedProjectDebtReferenceCount=10`,
 `SourceBackedBridgeDebtReferenceCount=14`,
 `SourceBackedCompileBridgeDebtReferenceCount=8`, and
 `ProjectReferenceReplacementDebtReferenceCount=6`.
 
-This supersedes earlier same-day MemoryAlignment failure artifacts and the
-interim R47 `GlobalRegistrySurface=5076 > 5075` failure for current-disk static
-H-Phi status only. It is not compile proof, Unity import
-proof, Play Mode proof, profiler proof, GC proof, player-build proof, or visual
-quality proof.
+This supersedes earlier same-day MemoryAlignment failure artifacts, the interim
+R47 `GlobalRegistrySurface=5076 > 5075` failure, and R49 as current-disk static
+H-Phi status. Pair it with
+`../AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_222140_CurrentDisk50.log`
+for CLI compile evidence. It is not Unity import proof, Play Mode proof,
+profiler proof, GC proof, player-build proof, or visual quality proof.
 
 ## 2026-05-15 DOC_HONEST_ANALYSIS R3 Core Graph Prune
 
@@ -407,7 +408,7 @@ Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0
 Full H-Phi regression budget gate:
 
 ```powershell
-Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0 -MaxFindObjectCalls 0 -MaxLegacyEventPublish 28 -MaxDuplicateSignalNames 0 -MaxUnityUpdateMethods 0 -MaxGlobalRegistrySurface 5060 -MaxGetComponentCalls 321 -MaxNativeArrayRefs 7074 -MaxLinqSurface 5 -MaxCoroutineSurface 0 -MaxManagedFormatSurface 534 -MaxJobCompleteSurface 58 -MaxPrimaryManagedRuntimeRisk 147 -MaxOwnerBlockedNativeArrayRefs 6262 -MaxPrimaryOwnerBlockedNativeArrayRefs 5678 -MinDataSovereignty 0.021306000 -MinMemoryAlignment 0.506309000 -MinRuntimeHPhiRisk 0.000636000 -MaxCoreAsmdefDebtReferences 25 -MaxGeneratedProjectDebtReferences 10 -MaxSourceBackedBridgeDebtReferences 14 -MaxSourceBackedCompileBridgeDebtReferences 8 -MaxProjectReferenceReplacementDebtReferences 6
+Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0 -MaxFindObjectCalls 0 -MaxLegacyEventPublish 28 -MaxDuplicateSignalNames 0 -MaxUnityUpdateMethods 0 -MaxGlobalRegistrySurface 5060 -MaxGetComponentCalls 321 -MaxNativeArrayRefs 7074 -MaxLinqSurface 3 -MaxCoroutineSurface 0 -MaxManagedFormatSurface 534 -MaxJobCompleteSurface 58 -MaxPrimaryManagedRuntimeRisk 147 -MaxOwnerBlockedNativeArrayRefs 6262 -MaxPrimaryOwnerBlockedNativeArrayRefs 5678 -MinDataSovereignty 0.021306000 -MinMemoryAlignment 0.506309000 -MinRuntimeHPhiRisk 0.000636000 -MaxCoreAsmdefDebtReferences 25 -MaxGeneratedProjectDebtReferences 10 -MaxSourceBackedBridgeDebtReferences 14 -MaxSourceBackedCompileBridgeDebtReferences 8 -MaxProjectReferenceReplacementDebtReferences 6
 ```
 
 Source-count and score-floor gates require a full source scan. `-CoreGraphOnly`
