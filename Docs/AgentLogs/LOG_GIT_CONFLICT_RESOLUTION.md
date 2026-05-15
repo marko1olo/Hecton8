@@ -507,3 +507,15 @@ Cinematic Cheats used -> None. Git integration only.
 Exact Microseconds saved -> 0 us runtime by this operator pass. Producer evidence reports CurrentDisk5 build at 2,558,166 us, CurrentDisk6 build at 64,381,476 us, and HPhi diagnostic at 116,020,615 us.
 
 Verification -> `git diff --check` returned only CRLF warnings. Strict conflict-marker scan returned clean. Build CurrentDisk5/6 exit 0; HPhi `165347_CurrentDiskBudgetGate3` exit 0; later HPhi `165615_CurrentDiskBudgetGate3` exit 1 on `NativeArrayRefs=7074 > 7072`; diagnostic HPhi exit 0 is not a replacement for the failed budget gate. No Unity Editor import, Play Mode, profiler, GCMonitor, player build, or runtime visual proof is claimed.
+
+## 2026-05-15 - Loop 31 Remote Merge And Acoustic Tail
+
+What was wrong -> Remote advanced by 17 commits while the local checkpoint was pending, then the merge left a small post-merge live tail in acoustic AUP distance, MacroDB/WFC dirty snapshot handling, WFC status docs, and diegetic tooltip black-box dump ordering.
+
+What was done -> Merged `origin/main` with the `ort` strategy, kept both histories, verified no unmerged paths, inspected the acoustic double AUP distance diff, MacroDB dirty flag contract move, WFC restore/hydration dirty cache preservation, WFC last-snapshot gating documentation, and tooltip initialized-entry dump change, then prepared a separate post-merge checkpoint.
+
+Cinematic Cheats used -> None. Git integration only.
+
+Exact Microseconds saved -> 0 us runtime by this operator pass.
+
+Verification -> Merge completed with no conflicts. `git diff --check` returned only CRLF warnings. Strict conflict-marker scan returned clean. No Unity Editor import, Play Mode, profiler, GCMonitor, player build, or runtime visual proof is claimed.

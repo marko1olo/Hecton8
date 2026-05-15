@@ -770,7 +770,12 @@ namespace Hecton8.SaveSystem
 
             UnpackWfcOutpostMutableStateGrid(_wfcOutpostRestoreWords, wfcGrid);
             ulong restoredPayloadHash = ComputeWfcOutpostPackedHash(_wfcOutpostRestoreWords);
-            RememberWfcOutpostSnapshotHash(sectorHash, restoredPayloadHash, 0u, 0u);
+            uint cacheFlags = ResolveWfcOutpostSnapshotCacheFlags(in handle);
+            RememberWfcOutpostSnapshotHash(
+                sectorHash,
+                restoredPayloadHash,
+                cacheFlags,
+                ResolveWfcOutpostSnapshotCacheFrame(cacheFlags));
             status = WfcOutpostPersistenceStatus.Ready;
             RecordWfcOutpostEventBlackBox(WfcOutpostBlackBoxOperationRestore, status, sectorHash, restoredPayloadHash, handle.ByteLength);
             return true;
@@ -1568,7 +1573,12 @@ namespace Hecton8.SaveSystem
 
             UnpackWfcOutpostMutableStateGrid(_wfcOutpostRestoreWords, wfcGrid);
             ulong hydratedPayloadHash = ComputeWfcOutpostPackedHash(_wfcOutpostRestoreWords);
-            RememberWfcOutpostSnapshotHash(sectorHash, hydratedPayloadHash, 0u, 0u);
+            uint cacheFlags = ResolveWfcOutpostSnapshotCacheFlags(in handle);
+            RememberWfcOutpostSnapshotHash(
+                sectorHash,
+                hydratedPayloadHash,
+                cacheFlags,
+                ResolveWfcOutpostSnapshotCacheFrame(cacheFlags));
             _wfcOutpostMutableGridSectorHash = sectorHash;
             RecordWfcOutpostEventBlackBox(WfcOutpostBlackBoxOperationHydration, WfcOutpostPersistenceStatus.Ready, sectorHash, hydratedPayloadHash, handle.ByteLength);
             return true;
@@ -1633,6 +1643,18 @@ namespace Hecton8.SaveSystem
             }
 
             return false;
+        }
+
+        private static uint ResolveWfcOutpostSnapshotCacheFlags(in MacroDatabasePayloadHandle handle)
+        {
+            return (handle.Flags & MacroDatabasePayloadFlags.Dirty) != 0
+                ? WfcOutpostSnapshotCacheFlagAppendPending
+                : 0u;
+        }
+
+        private static uint ResolveWfcOutpostSnapshotCacheFrame(uint cacheFlags)
+        {
+            return cacheFlags != 0u ? unchecked((uint)Time.frameCount) : 0u;
         }
 
         private void RememberWfcOutpostSnapshotHash(

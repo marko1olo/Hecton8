@@ -1085,6 +1085,7 @@ What was wrong:
 What was done:
 - Added `WfcOutpostSnapshotCacheFlagAppendAny`.
 - Full-cache replacement now chooses only clean cache entries and skips replacement if every entry is unresolved.
+- Pending dirty writes update the one-slot last-snapshot shortcut only after retry flags are actually stored.
 - Append callback flag updates reinsert pending state when the callback finds its cache entry missing and a clean slot exists.
 - SlowTick retry returns early while MacroDB compaction is in a write-locked state.
 
@@ -1099,8 +1100,8 @@ Exact microseconds saved:
 - Compaction window savings: up to two avoided background append submissions per SlowTick.
 
 Verification:
-- Static scan confirms `WfcOutpostSnapshotCacheFlagAppendAny`, clean-slot replacement, callback pending reinsert, and compaction-gated retry.
+- Static scan confirms `WfcOutpostSnapshotCacheFlagAppendAny`, clean-slot replacement, last-snapshot gating, callback pending reinsert, and compaction-gated retry.
 - Static scan confirms remaining direct WFC typed `SignalBus<T>.Push` calls are only inside `GlobalSignals`.
 - `git diff --check -- Assets/_Project/Scripts/SaveManager.cs` reports only Git CRLF normalization warnings.
-- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary` exited 0 at 2026-05-15 17:04:19 +04:00; core graph debt counts unchanged.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary` exited 0 at 2026-05-15 17:11:19 +04:00; core graph debt counts unchanged.
 - No `dotnet` rebuild was run.

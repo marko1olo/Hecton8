@@ -498,3 +498,14 @@ Cinematic cheats used: No visual change for valid authoring. Invalid values now 
 Exact microseconds saved: None claimed. This is correctness hardening; added scalar checks are tiny and only on visible render paths.
 
 Verification: No dotnet rebuilds were run. Static scans confirmed visible distance is clamped to finite `[0.5, 20]` and XR depth offset is finite/non-negative before use.
+
+## 2026-05-15 Tooltip Black-Box Chronological Dump
+What was wrong: Tooltip telemetry used a circular NativeArray but dumped raw storage order, so after wraparound the file did not read as the actual last-frame sequence.
+
+What was done: Added valid-sample tracking and changed `DumpBlackBox()` to write entries oldest-to-newest, wrapping from `_blackBoxCursor` when the ring is full.
+
+Cinematic cheats used: No visual change. This improves the crash evidence trail for diegetic prompts instead of spending runtime budget on extra diagnostics.
+
+Exact microseconds saved: None claimed. Normal render path adds one bounded counter increment; dump path is cold and writes only valid samples.
+
+Verification: No dotnet rebuilds were run. Static scans confirmed `_blackBoxWrittenCount` bounds the dump length, wrapped export starts at `_blackBoxCursor`, and release resets cursor/count.

@@ -59,6 +59,11 @@ namespace Hecton8.Core.Contracts
         public const byte LastSwapExceededBudget = 1 << 3;
     }
 
+    public static class MacroDatabasePayloadFlags
+    {
+        public const byte Dirty = 1 << 0;
+    }
+
     [StructLayout(LayoutKind.Sequential)]
     public struct MacroDatabaseConfig
     {

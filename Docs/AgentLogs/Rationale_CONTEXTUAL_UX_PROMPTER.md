@@ -410,3 +410,10 @@ Solution: Add finite clamps to the visible-distance cache and clamp VR depth off
 Rejected Alternatives: Relying on `[Range]` attributes, mutating serialized fields every render, or ignoring bad values until a NaN dump. Range does not protect runtime mutation; render-time serialization mutation is noisy; preventing NaN/culling poison is cheaper than post-crash analysis.
 Scalability potential: Low fails to a predictable compact range. Middle/High/Ultra preserve the same authored defaults while keeping richer tooltip rendering from inheriting invalid culling state.
 Hardware Impact: Adds small scalar checks on render-visible paths; prevents expensive bad-state debugging and keeps culling deterministic. No profiler proof.
+
+## Decision 58: Tooltip Black-Box Chronological Dump
+Problem: Tooltip black-box telemetry writes into a circular NativeArray, but `DumpBlackBox()` exported raw storage order. After wraparound, the binary file no longer read as the actual last-frame sequence.
+Solution: Track valid black-box sample count, write that count into the dump, and export entries oldest-to-newest by starting at `_blackBoxCursor` once the ring is full.
+Rejected Alternatives: Keeping raw storage order, sorting by frame on dump, or dumping all 300 slots even before they are valid. Raw order slows post-mortem analysis; sorting allocates/complicates cold path; invalid zero slots obscure first-fault evidence.
+Scalability potential: Low/Middle/High/Ultra all get the same bounded 300-frame evidence trail without runtime allocation. Better dumps reduce time spent reproducing rare prompt faults.
+Hardware Impact: Normal render path adds one bounded counter increment. Dump path is cold and writes at most the valid telemetry count in chronological order.

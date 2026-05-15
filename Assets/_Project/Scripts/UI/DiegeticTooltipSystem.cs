@@ -169,6 +169,7 @@ namespace Hecton8.UI
         private uint _activeSchemeHash;
         private uint _lastAupShiftFrame;
         private int _blackBoxCursor;
+        private int _blackBoxWrittenCount;
         private int _promptLength;
         private int _textGlyphCount;
         private int _iconCount;
@@ -1305,6 +1306,9 @@ namespace Hecton8.UI
             _blackBoxCursor++;
             if (_blackBoxCursor >= BlackBoxCapacity)
                 _blackBoxCursor = 0;
+
+            if (_blackBoxWrittenCount < BlackBoxCapacity)
+                _blackBoxWrittenCount++;
         }
 
         private void DumpBlackBox()
@@ -1320,9 +1324,16 @@ namespace Hecton8.UI
             {
                 writer.Write(_blackBoxCursor);
                 writer.Write(_blackBox.Length);
-                for (int i = 0; i < _blackBox.Length; i++)
+                writer.Write(_blackBoxWrittenCount);
+
+                int firstIndex = _blackBoxWrittenCount >= _blackBox.Length ? _blackBoxCursor : 0;
+                for (int i = 0; i < _blackBoxWrittenCount; i++)
                 {
-                    TooltipBlackBoxEntry entry = _blackBox[i];
+                    int entryIndex = firstIndex + i;
+                    if (entryIndex >= _blackBox.Length)
+                        entryIndex -= _blackBox.Length;
+
+                    TooltipBlackBoxEntry entry = _blackBox[entryIndex];
                     writer.Write(entry.Frame);
                     writer.Write(entry.TargetHash);
                     writer.Write(entry.Anchor.x);
@@ -1406,6 +1417,8 @@ namespace Hecton8.UI
             if (_blackBox.IsCreated)
                 _blackBox.Dispose();
 
+            _blackBoxCursor = 0;
+            _blackBoxWrittenCount = 0;
             _resourceObjectsReady = false;
         }
 

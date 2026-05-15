@@ -179,3 +179,9 @@ Solution: Preserve the tail as evidence, include the completed signal-lane prewa
 Rejected Alternatives: Dropping failure evidence, editing other agents' reports to look cleaner, or claiming final Unity/profiler/HPhi green from partial artifacts.
 Scalability potential: Git-only integration pass. Runtime effects belong to the producing agents; this pass keeps the audit trail intact.
 Hardware Impact: 0 us runtime impact. Prevents false readiness claims while still reducing Git conflict surface.
+
+Problem: Remote advanced by 17 commits while the local HPhi evidence checkpoint was ready, and the merge created another small live AUP/WFC tail.
+Solution: Merge remote main normally, keep both histories, then validate and checkpoint the post-merge `AcousticEcholocationTranslator` double-distance cleanup and WFC documentation correction before pushing.
+Rejected Alternatives: Force-pushing the local checkpoint over remote lore/regrowth/hash work, rebasing shared history, or pushing a dirty post-merge tree.
+Scalability potential: Git-only operator pass. Low/Middle/High/Ultra runtime behavior remains producer-owned; this pass preserves shared history and conflict boundaries.
+Hardware Impact: 0 us runtime impact.

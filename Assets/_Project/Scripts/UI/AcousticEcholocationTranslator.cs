@@ -149,6 +149,7 @@ namespace Hecton8.UI
         private const float FadeDuration = 0.42f;
         private const float PulseDecaySharpness = 3.6f;
         private const float AnchorClassificationRadius = 112f;
+        private const long AupAxisClampCells = 1000000L;
         private const int MaxBioformContacts = 24;
         private const int MaxAbyssalAnchorClassificationScan = 64;
         private const int HeaderTextCapacity = 64;
@@ -524,11 +525,11 @@ namespace Hecton8.UI
             }
 
             int limit = math.min(MaxAbyssalAnchorClassificationScan, math.min(count, anchors.Length));
-            float nearestDistanceMeters = float.MaxValue;
+            double nearestDistanceMeters = double.MaxValue;
             for (int i = 0; i < limit; i++)
             {
                 AbsoluteUniversePosition anchorAup = AbsoluteUniversePosition.FromRuntimePosition(anchors[i]);
-                float candidateDistanceMeters = ApproximateAupDistanceMeters(in anchorAup, in originAup);
+                double candidateDistanceMeters = ApproximateAupDistanceMeters(in anchorAup, in originAup);
                 if (candidateDistanceMeters > AnchorClassificationRadius ||
                     candidateDistanceMeters >= nearestDistanceMeters)
                 {
@@ -538,7 +539,7 @@ namespace Hecton8.UI
                 nearestDistanceMeters = candidateDistanceMeters;
             }
 
-            if (nearestDistanceMeters == float.MaxValue)
+            if (nearestDistanceMeters == double.MaxValue)
                 return false;
 
             distanceMeters = nearestDistanceMeters >= int.MaxValue ? int.MaxValue : (int)math.round(nearestDistanceMeters);
@@ -553,11 +554,11 @@ namespace Hecton8.UI
         {
             distanceMeters = 0;
             int limit = math.min(MaxAbyssalAnchorClassificationScan, math.min(count, anchorAups.Length));
-            float nearestDistanceMeters = float.MaxValue;
+            double nearestDistanceMeters = double.MaxValue;
             for (int i = 0; i < limit; i++)
             {
                 AbsoluteUniversePosition anchorAup = anchorAups[i];
-                float candidateDistanceMeters = ApproximateAupDistanceMeters(in anchorAup, in originAup);
+                double candidateDistanceMeters = ApproximateAupDistanceMeters(in anchorAup, in originAup);
                 if (candidateDistanceMeters > AnchorClassificationRadius ||
                     candidateDistanceMeters >= nearestDistanceMeters)
                 {
@@ -567,7 +568,7 @@ namespace Hecton8.UI
                 nearestDistanceMeters = candidateDistanceMeters;
             }
 
-            if (nearestDistanceMeters == float.MaxValue)
+            if (nearestDistanceMeters == double.MaxValue)
                 return false;
 
             distanceMeters = nearestDistanceMeters >= int.MaxValue ? int.MaxValue : (int)math.round(nearestDistanceMeters);
@@ -598,21 +599,46 @@ namespace Hecton8.UI
 
         private static int RoundApproximateAupDistanceMeters(in AbsoluteUniversePosition a, in AbsoluteUniversePosition b)
         {
-            float distanceMeters = ApproximateAupDistanceMeters(in a, in b);
+            double distanceMeters = ApproximateAupDistanceMeters(in a, in b);
             return distanceMeters >= int.MaxValue ? int.MaxValue : (int)math.round(distanceMeters);
         }
 
-        private static float ApproximateAupDistanceMeters(in AbsoluteUniversePosition a, in AbsoluteUniversePosition b)
+        private static double ApproximateAupDistanceMeters(in AbsoluteUniversePosition a, in AbsoluteUniversePosition b)
         {
-            double3 delta = a.ToAbsoluteDouble3() - b.ToAbsoluteDouble3();
-            double ax = math.abs(delta.x);
-            double ay = math.abs(delta.y);
-            double az = math.abs(delta.z);
+            double dx = ResolveAupAxisDeltaMeters(a.GridX, b.GridX, a.LocalX, b.LocalX);
+            double dy = ResolveAupAxisDeltaMeters(a.GridY, b.GridY, a.LocalY, b.LocalY);
+            double dz = ResolveAupAxisDeltaMeters(a.GridZ, b.GridZ, a.LocalZ, b.LocalZ);
+            double ax = math.abs(dx);
+            double ay = math.abs(dy);
+            double az = math.abs(dz);
             double maxAxis = math.max(ax, math.max(ay, az));
             double minAxis = math.min(ax, math.min(ay, az));
             double midAxis = ax + ay + az - maxAxis - minAxis;
             double approximateDistance = maxAxis + midAxis * 0.375d + minAxis * 0.125d;
-            return approximateDistance >= int.MaxValue ? int.MaxValue : (float)approximateDistance;
+            return approximateDistance >= int.MaxValue ? int.MaxValue : approximateDistance;
+        }
+
+        private static double ResolveAupAxisDeltaMeters(long aGrid, long bGrid, float aLocal, float bLocal)
+        {
+            if (aGrid > bGrid)
+            {
+                long positiveLimit = bGrid > long.MaxValue - AupAxisClampCells
+                    ? long.MaxValue
+                    : bGrid + AupAxisClampCells;
+                if (aGrid > positiveLimit)
+                    return double.MaxValue * 0.25d;
+            }
+            else if (aGrid < bGrid)
+            {
+                long negativeLimit = bGrid < long.MinValue + AupAxisClampCells
+                    ? long.MinValue
+                    : bGrid - AupAxisClampCells;
+                if (aGrid < negativeLimit)
+                    return double.MinValue * 0.25d;
+            }
+
+            long gridDelta = aGrid - bGrid;
+            return (gridDelta * (double)AbsoluteUniversePosition.CellSizeMeters) + ((double)aLocal - bLocal);
         }
 
         private void ShowClassification(ContactClassification classification, int distanceMeters)

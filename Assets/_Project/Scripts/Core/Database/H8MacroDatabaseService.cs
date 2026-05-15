@@ -14,7 +14,6 @@ namespace Hecton8.Core.Database
 {
     public sealed unsafe class H8MacroDatabaseService : IMacroDatabaseService
     {
-        private const byte PayloadDirtyFlag = 1 << 0;
         private const int BlackBoxFrameCount = 300;
         private const int MemoryPressurePauseMilliseconds = 3000;
         private const long DefaultCompactionThresholdBytes = 10L * 1024L * 1024L;
@@ -466,13 +465,13 @@ namespace Hecton8.Core.Database
                         payload,
                         byteLength,
                         0L,
-                        (byte)(flags | PayloadDirtyFlag),
+                        (byte)(flags | MacroDatabasePayloadFlags.Dirty),
                         out MacroDatabasePayloadHandle handle))
                 {
                     return false;
                 }
 
-                handle.Flags = (byte)(handle.Flags | PayloadDirtyFlag);
+                handle.Flags = (byte)(handle.Flags | MacroDatabasePayloadFlags.Dirty);
                 if (hadDirty)
                 {
                     _dirtyPayloads[sectorHash] = handle;
@@ -1074,7 +1073,7 @@ namespace Hecton8.Core.Database
                 return;
             }
 
-            byte cleanFlags = (byte)(dirty.Flags & ~PayloadDirtyFlag);
+            byte cleanFlags = (byte)(dirty.Flags & ~MacroDatabasePayloadFlags.Dirty);
             if (!_cacheOwner.TryStoreMacroDatabasePayload(
                     sectorHash,
                     dirty.Pointer,
@@ -1462,7 +1461,7 @@ namespace Hecton8.Core.Database
             H8MacroDatabaseFileFormat.WriteULong(header, H8MacroDatabaseFileFormat.PayloadHashOffset, sectorHash);
             H8MacroDatabaseFileFormat.WriteInt(header, H8MacroDatabaseFileFormat.PayloadBytesOffset, payloadBytes);
             H8MacroDatabaseFileFormat.WriteUInt(header, H8MacroDatabaseFileFormat.PayloadVersionOffset, unchecked(_frameIndex + 1u));
-            H8MacroDatabaseFileFormat.WriteByte(header, H8MacroDatabaseFileFormat.PayloadFlagsOffset, (byte)(flags & ~PayloadDirtyFlag));
+            H8MacroDatabaseFileFormat.WriteByte(header, H8MacroDatabaseFileFormat.PayloadFlagsOffset, (byte)(flags & ~MacroDatabasePayloadFlags.Dirty));
 
             byte* destination = _basePointer + appendOffset;
             UnsafeUtility.MemCpy(destination, header, H8MacroDatabaseFileFormat.PayloadHeaderSizeBytes);
