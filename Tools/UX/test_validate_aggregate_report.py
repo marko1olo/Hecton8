@@ -53,6 +53,9 @@ def _valid_report_fixture() -> dict:
         "promptSourceStatus": "ARCHIVE_FALLBACK_ACTIVE_CURRENT_BATCH_MISSING",
         "promptSourcePath": "Docs/Archive/Batch006/Tasks/CURRENT_BATCH.md",
         "activeCurrentBatchExists": False,
+        "promptTaskCount": 7,
+        "promptRequiredStatus": "UI SCALED",
+        "promptSha256": "1" * 64,
         "commandCount": len(commands),
         "commands": commands,
         "missingArtifacts": [],
@@ -112,6 +115,24 @@ class AggregateReportValidatorTests(unittest.TestCase):
         failures = validate_aggregate_report(report, _load(PROBE_PATH))
 
         self.assertIn("archived prompt fallback requires activeCurrentBatchExists false", failures)
+
+    def test_rejects_prompt_task_count_drift(self) -> None:
+        report = _valid_report_fixture()
+        report["promptTaskCount"] = 6
+
+        failures = validate_aggregate_report(report, _load(PROBE_PATH))
+
+        self.assertIn("promptTaskCount must be 7", failures)
+
+    def test_rejects_prompt_status_drift(self) -> None:
+        report = _valid_report_fixture()
+        report["promptRequiredStatus"] = "WRONG"
+        report["promptSha256"] = "not-a-sha"
+
+        failures = validate_aggregate_report(report, _load(PROBE_PATH))
+
+        self.assertIn("promptRequiredStatus must be UI SCALED", failures)
+        self.assertIn("promptSha256 must be a lowercase SHA-256 digest", failures)
 
     def test_rejects_missing_command(self) -> None:
         report = _valid_report_fixture()

@@ -50,6 +50,63 @@ Verification:
 
 Status: UI SCALED - STATIC/PYTHON AGGREGATE PASS; UNITY RUNTIME PENDING.
 
+## 2026-05-15 - Final Prompt Block Metadata Gate
+
+What was wrong:
+- The active log bottom still contained the older 46-test prompt-source-only proof.
+- Current aggregate evidence is stricter: it extracts the exact UX XML prompt block, counts tasks, validates required status, and hashes the block.
+
+What was done:
+- Appended this bottom-most current evidence entry.
+- Active aggregate evidence now records `promptTaskCount=7`, `promptRequiredStatus=UI SCALED`, and prompt SHA-256 `1c5ee113c932e0b63d3c5136ac0c72424c76e72c9bba1014c452f375a912095d`.
+- Kept Unity runtime verification explicitly pending because Unity Console, Play Mode, Profiler, Frame Debugger, and Player Build evidence are absent in this CLI session.
+
+Cinematic Cheats used:
+- No new runtime cheat in this evidence pass. Existing UX static gates remain TOASTER readability, GOD_MODE artifact hashing, evidence-class locks, and shader sample caps.
+
+Exact Microseconds saved:
+- 0 us runtime. No Unity runtime path changed.
+
+Verification:
+- `python Tools/UX/run_hardware_adaptive_ui_validation.py` PASS.
+- `python -B Tools/UX/validate_aggregate_report.py` PASS.
+- `python -B Tools/UX/validate_status_log_consistency.py --write-report` PASS.
+- `python -B Tools/UX/validate_unity_verification_report.py --write-audit` PASS.
+- `PYTHONDONTWRITEBYTECODE=1 python -m unittest discover -s Tools/UX -p test_*.py` PASS 87/87.
+- Aggregate readback: promptSourceStatus `ARCHIVE_FALLBACK_ACTIVE_CURRENT_BATCH_MISSING`, promptSourcePath `Docs\Archive\Batch006\Tasks\CURRENT_BATCH.md`, activeCurrentBatchExists false, promptTaskCount 7, promptRequiredStatus `UI SCALED`, promptSha256 `1c5ee113c932e0b63d3c5136ac0c72424c76e72c9bba1014c452f375a912095d`, commandCount 8/8 exact order, unitHarnessTestCount 48, artifactHashCount 30/30, pythonCacheCountAfter 0.
+- `PYTHON_CACHE_COUNT 0`; `git diff --check` no whitespace errors.
+
+Status: UI SCALED - STATIC/PYTHON AGGREGATE PASS; UNITY RUNTIME PENDING.
+
+## 2026-05-15 - Prompt Block Extraction Proof
+
+What was wrong:
+- Prompt-source fallback proved the archived file path, but not the exact extracted XML block, the task count, or the required final status.
+
+What was done:
+- Added archived/active prompt block extraction to the aggregate runner.
+- Added aggregate validation for `promptTaskCount=7`, `promptRequiredStatus=UI SCALED`, and a valid lowercase SHA-256 prompt digest.
+- Added regression tests for prompt task-count drift and prompt status/hash drift.
+
+Cinematic Cheats used:
+- None in this evidence pass. Existing UX static gates remain TOASTER readability, GOD_MODE artifact hashing, evidence-class locks, and shader sample caps.
+
+Exact Microseconds saved:
+- 0 us runtime. No Unity runtime path changed.
+
+Verification:
+- `python -m py_compile Tools/UX/run_hardware_adaptive_ui_validation.py Tools/UX/validate_aggregate_report.py Tools/UX/test_validate_aggregate_report.py` PASS.
+- Focused aggregate-validator suite PASS 18 tests with 1 aggregate-mode skip.
+- `python Tools/UX/run_hardware_adaptive_ui_validation.py` PASS.
+- `python -B Tools/UX/validate_aggregate_report.py` PASS.
+- `python -B Tools/UX/validate_status_log_consistency.py --write-report` PASS.
+- `python -B Tools/UX/validate_unity_verification_report.py --write-audit` PASS.
+- `PYTHONDONTWRITEBYTECODE=1 python -m unittest discover -s Tools/UX -p test_*.py` PASS 87/87.
+- Aggregate readback: promptSourceStatus `ARCHIVE_FALLBACK_ACTIVE_CURRENT_BATCH_MISSING`, promptSourcePath `Docs\Archive\Batch006\Tasks\CURRENT_BATCH.md`, activeCurrentBatchExists false, promptTaskCount 7, promptRequiredStatus `UI SCALED`, promptSha256 `1c5ee113c932e0b63d3c5136ac0c72424c76e72c9bba1014c452f375a912095d`, commandCount 8/8 exact order, unitHarnessTestCount 48, artifactHashCount 30/30, pythonCacheCountAfter 0.
+- `PYTHON_CACHE_COUNT 0`; `git diff --check` no whitespace errors.
+
+Status: UI SCALED - STATIC/PYTHON AGGREGATE PASS; UNITY RUNTIME PENDING.
+
 ## 2026-05-15 - Prompt Source Blocker Hardened
 
 What was wrong:
@@ -133,6 +190,34 @@ Verification:
 - `python -B Tools/UX/validate_unity_verification_report.py --write-audit` PASS.
 - `PYTHONDONTWRITEBYTECODE=1 python -m unittest discover -s Tools/UX -p test_*.py` PASS 85/85.
 - Aggregate readback: promptSourceStatus `ARCHIVE_FALLBACK_ACTIVE_CURRENT_BATCH_MISSING`, promptSourcePath `Docs\Archive\Batch006\Tasks\CURRENT_BATCH.md`, activeCurrentBatchExists false, commandCount 8/8 exact order, unitHarnessTestCount 46, artifactHashCount 30/30, pythonCacheCountAfter 0.
+- `PYTHON_CACHE_COUNT 0`; `git diff --check` no whitespace errors.
+
+Status: UI SCALED - STATIC/PYTHON AGGREGATE PASS; UNITY RUNTIME PENDING.
+
+## 2026-05-15 - Final Prompt Block Metadata Gate
+
+What was wrong:
+- The active log bottom still contained the older 46-test prompt-source-only proof.
+- Current aggregate evidence is stricter: it extracts the exact UX XML prompt block, counts tasks, validates required status, and hashes the block.
+
+What was done:
+- Appended this bottom-most current evidence entry.
+- Active aggregate evidence records `promptTaskCount=7`, `promptRequiredStatus=UI SCALED`, and prompt SHA-256 `1c5ee113c932e0b63d3c5136ac0c72424c76e72c9bba1014c452f375a912095d`.
+- Kept Unity runtime verification explicitly pending because Unity Console, Play Mode, Profiler, Frame Debugger, and Player Build evidence are absent in this CLI session.
+
+Cinematic Cheats used:
+- No new runtime cheat in this evidence pass. Existing UX static gates remain TOASTER readability, GOD_MODE artifact hashing, evidence-class locks, and shader sample caps.
+
+Exact Microseconds saved:
+- 0 us runtime. No Unity runtime path changed.
+
+Verification:
+- `python Tools/UX/run_hardware_adaptive_ui_validation.py` PASS.
+- `python -B Tools/UX/validate_aggregate_report.py` PASS.
+- `python -B Tools/UX/validate_status_log_consistency.py --write-report` PASS.
+- `python -B Tools/UX/validate_unity_verification_report.py --write-audit` PASS.
+- `PYTHONDONTWRITEBYTECODE=1 python -m unittest discover -s Tools/UX -p test_*.py` PASS 87/87.
+- Aggregate readback: promptSourceStatus `ARCHIVE_FALLBACK_ACTIVE_CURRENT_BATCH_MISSING`, promptSourcePath `Docs\Archive\Batch006\Tasks\CURRENT_BATCH.md`, activeCurrentBatchExists false, promptTaskCount 7, promptRequiredStatus `UI SCALED`, promptSha256 `1c5ee113c932e0b63d3c5136ac0c72424c76e72c9bba1014c452f375a912095d`, commandCount 8/8 exact order, unitHarnessTestCount 48, artifactHashCount 30/30, pythonCacheCountAfter 0.
 - `PYTHON_CACHE_COUNT 0`; `git diff --check` no whitespace errors.
 
 Status: UI SCALED - STATIC/PYTHON AGGREGATE PASS; UNITY RUNTIME PENDING.

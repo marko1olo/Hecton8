@@ -27,6 +27,14 @@ Rejected Alternatives: Treating file restoration as proof without rerunning the 
 Scalability potential: Static TOASTER/GOD_MODE gates are active again in the current tree; runtime visual proof remains blocked until Unity and captures exist.
 Hardware Impact: 0 us runtime impact. Offline validation only.
 
+## Decision - Prompt Block Extraction Proof
+
+Problem: The aggregate prompt-source fallback proved the archived file path, but not the exact extracted XML block, task count, required status, or prompt content hash.
+Solution: Added prompt-block extraction to the aggregate runner. The report now records `promptTaskCount`, `promptRequiredStatus`, and `promptSha256`; the validator requires 7 tasks, required status `UI SCALED`, and a valid SHA-256 digest.
+Rejected Alternatives: Keeping marker-only fallback proof was rejected because neighboring prompts in the archived batch could hide extraction drift. Recreating active `CURRENT_BATCH.md` was still rejected because it would be a cross-agent coordination change.
+Scalability potential: Integrators can now identify exactly which archived prompt drove the UX static gate without reading chat history or trusting a broad archived file.
+Hardware Impact: 0 us runtime impact. Offline validation only.
+
 ## Decision - Prompt Source Blocker Hardened
 
 Problem: Active `Docs/Tasks/CURRENT_BATCH.md` is missing, so the mandatory prompt extraction source cannot be satisfied from the active task folder. The UX prompt exists in archived Batch006, but that fallback was only a manual note.
@@ -34,3 +42,11 @@ Solution: Added aggregate fields for prompt-source status, path, and active batc
 Rejected Alternatives: Recreating a broad active master batch from archive was rejected because other active continuation agents are not necessarily Batch006 agents. Ignoring the missing active batch was rejected because the batch prompt protocol needs explicit evidence.
 Scalability potential: Static UX gates remain active without polluting the active task root for other agents. The prompt-source blocker is machine-readable for integrators.
 Hardware Impact: 0 us runtime impact. Offline validation only.
+
+## Decision - Bottom-Most Prompt Evidence Lock
+
+Problem: The active log still ended with an older 46-test prompt-source-only proof after the aggregate had been hardened to extract and hash the exact UX XML prompt block.
+Solution: Append a current bottom-most evidence entry that records the 7-task prompt block, required `UI SCALED` status, prompt SHA-256, 48-test unit harness, 87-test broad discovery, and unchanged Unity pending boundary.
+Rejected Alternatives: Leaving stale tail evidence was rejected because compressed contexts read the last active log entry first. Rewriting archived Batch006 logs was rejected because archive files are historical evidence, not active state.
+Scalability potential: Future agents can recover the exact UX assignment and validation state from active files only, even when active `CURRENT_BATCH.md` remains absent.
+Hardware Impact: 0 us runtime impact. Evidence ordering only; no Unity runtime path changed.

@@ -33,6 +33,9 @@ BLOCKER_PATH = Path("Docs/AgentLogs/Blocker_UX_ENGINEER.md")
 CURRENT_BATCH_PATH = Path("Docs/Tasks/CURRENT_BATCH.md")
 ARCHIVE_BATCH_PROMPT_PATH = Path("Docs/Archive/Batch006/Tasks/CURRENT_BATCH.md")
 PROMPT_MARKER = '<AGENT_PROMPT id="HARDWARE_ADAPTIVE_UI_BAKER"'
+PROMPT_BLOCK_PATTERN = re.compile(r'<AGENT_PROMPT id="HARDWARE_ADAPTIVE_UI_BAKER"[\s\S]*?</AGENT_PROMPT>')
+PROMPT_TASK_PATTERN = re.compile(r"^\d+\.\s+", re.MULTILINE)
+PROMPT_STATUS_PATTERN = re.compile(r'STATUS:\s+MUST BE\s+"([^"]+)"')
 
 COMMANDS = (
     (
@@ -213,36 +216,60 @@ def _count_pycache_dirs(root: Path) -> int:
     return sum(1 for path in root.rglob("__pycache__") if path.is_dir())
 
 
+def _extract_prompt_metadata(text: str) -> dict[str, object] | None:
+    match = PROMPT_BLOCK_PATTERN.search(text)
+    if not match:
+        return None
+
+    prompt_block = match.group(0)
+    status_match = PROMPT_STATUS_PATTERN.search(prompt_block)
+    return {
+        "taskCount": len(PROMPT_TASK_PATTERN.findall(prompt_block)),
+        "requiredStatus": status_match.group(1) if status_match else "",
+        "sha256": hashlib.sha256(prompt_block.encode("utf-8")).hexdigest(),
+    }
+
+
 def _resolve_prompt_source(root: Path) -> dict[str, object]:
     active_path = root / CURRENT_BATCH_PATH
     if active_path.exists():
         active_text = active_path.read_text(encoding="utf-8", errors="replace")
-        if PROMPT_MARKER in active_text:
+        active_metadata = _extract_prompt_metadata(active_text)
+        if active_metadata is not None:
             return {
                 "status": "ACTIVE_CURRENT_BATCH",
                 "path": str(CURRENT_BATCH_PATH),
                 "activeCurrentBatchExists": True,
+                **active_metadata,
             }
         return {
             "status": "ACTIVE_CURRENT_BATCH_MISSING_PROMPT",
             "path": str(CURRENT_BATCH_PATH),
             "activeCurrentBatchExists": True,
+            "taskCount": 0,
+            "requiredStatus": "",
+            "sha256": "",
         }
 
     archive_path = root / ARCHIVE_BATCH_PROMPT_PATH
     if archive_path.exists():
         archive_text = archive_path.read_text(encoding="utf-8", errors="replace")
-        if PROMPT_MARKER in archive_text:
+        archive_metadata = _extract_prompt_metadata(archive_text)
+        if archive_metadata is not None:
             return {
                 "status": "ARCHIVE_FALLBACK_ACTIVE_CURRENT_BATCH_MISSING",
                 "path": str(ARCHIVE_BATCH_PROMPT_PATH),
                 "activeCurrentBatchExists": False,
+                **archive_metadata,
             }
 
     return {
         "status": "PROMPT_SOURCE_MISSING",
         "path": "",
         "activeCurrentBatchExists": active_path.exists(),
+        "taskCount": 0,
+        "requiredStatus": "",
+        "sha256": "",
     }
 
 
@@ -273,6 +300,9 @@ def main() -> int:
         "promptSourceStatus": prompt_source["status"],
         "promptSourcePath": prompt_source["path"],
         "activeCurrentBatchExists": prompt_source["activeCurrentBatchExists"],
+        "promptTaskCount": prompt_source["taskCount"],
+        "promptRequiredStatus": prompt_source["requiredStatus"],
+        "promptSha256": prompt_source["sha256"],
         "commandCount": len(results),
         "commands": results,
         "missingArtifacts": missing_artifacts,

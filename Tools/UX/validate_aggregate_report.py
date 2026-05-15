@@ -25,8 +25,10 @@ EXPECTED_COMMANDS = (
     "python_cache_cleanup",
 )
 
-EXPECTED_UNIT_HARNESS_TESTS = 46
+EXPECTED_UNIT_HARNESS_TESTS = 48
 EXPECTED_ARTIFACT_HASHES = 30
+EXPECTED_PROMPT_TASK_COUNT = 7
+EXPECTED_PROMPT_REQUIRED_STATUS = "UI SCALED"
 EXPECTED_EVIDENCE_CLASSES = (
     "STATIC_SOURCE",
     "STATIC_DOC",
@@ -87,6 +89,12 @@ def validate_aggregate_report(report: dict[str, Any], environment_probe: dict[st
         failures.append("active prompt source requires activeCurrentBatchExists true")
     if not isinstance(report.get("promptSourcePath"), str) or not report.get("promptSourcePath"):
         failures.append("promptSourcePath must identify the prompt source")
+    if report.get("promptTaskCount") != EXPECTED_PROMPT_TASK_COUNT:
+        failures.append(f"promptTaskCount must be {EXPECTED_PROMPT_TASK_COUNT}")
+    if report.get("promptRequiredStatus") != EXPECTED_PROMPT_REQUIRED_STATUS:
+        failures.append("promptRequiredStatus must be UI SCALED")
+    if not isinstance(report.get("promptSha256"), str) or re.fullmatch(r"[0-9a-f]{64}", report.get("promptSha256", "")) is None:
+        failures.append("promptSha256 must be a lowercase SHA-256 digest")
 
     self_validation = report.get("aggregateSelfValidation")
     if self_validation is not None:

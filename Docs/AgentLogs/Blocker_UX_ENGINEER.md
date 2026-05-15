@@ -1,7 +1,7 @@
 # Blocker: UX_ENGINEER
 
 Prompt ID: HARDWARE_ADAPTIVE_UI_BAKER
-Status: STATIC/PYTHON VALIDATION PENDING RERUN - RUNTIME VERIFICATION BLOCKED
+Status: STATIC/PYTHON AGGREGATE PASS - RUNTIME VERIFICATION BLOCKED
 
 ## Runtime Blocker
 
@@ -20,4 +20,6 @@ Status: STATIC/PYTHON VALIDATION PENDING RERUN - RUNTIME VERIFICATION BLOCKED
 
 - Active `Docs/Tasks/CURRENT_BATCH.md` is missing.
 - Aggregate prompt source fallback is `Docs\Archive\Batch006\Tasks\CURRENT_BATCH.md`.
+- Fallback prompt block is machine-checked: 7 tasks, required status `UI SCALED`, SHA-256 `1c5ee113c932e0b63d3c5136ac0c72424c76e72c9bba1014c452f375a912095d`.
+- Current static/Python gate is stricter than path-only fallback: 8 ordered commands, 48 unit-harness tests, 87 broad `Tools/UX` discovery tests, and 30 artifact hashes are expected.
 - Do not recreate a broad active master batch from archive without integrator approval; active continuation agents may not share the Batch006 prompt set.
