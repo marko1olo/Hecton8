@@ -211,3 +211,11 @@ Solution: Keep the `args.ci` return before `find_render_texture_source_hotspots(
 Rejected Alternatives: Claiming CI is fast because one expensive report-only scan is skipped. That would be false evidence and would hide the next real tooling bottleneck.
 Scalability potential: Low/MX350 remains protected by the same redline failure gate. Middle/High/Ultra content stays report-driven through the non-CI path where the RT hotspot CSV is generated deliberately.
 Hardware Impact: 0us runtime measured. This is build/tooling behavior only; no game memory or frame-time improvement is claimed.
+
+## Decision 27: Import-Root Scan Scope
+
+Problem: The scanner was counting non-import evidence artifacts as textures, including `Docs/AgentLogs` screenshots and `_agent_screen_capture.png`. That polluted all-scanned VRAM totals with files Unity will not import from the project root.
+Solution: Restrict default discovery to Unity/importable roots `Assets`, `Packages`, and `Data`, with fallback to the provided root only when those roots do not exist. Link.xml discovery now rides the same asset-root walk.
+Rejected Alternatives: Continuing to count documentation screenshots as VRAM assets. That is "all files" accounting, not asset residency evidence.
+Scalability potential: Low/MX350 now sees cleaner residency pressure from importable content only; Middle/High/Ultra decisions keep the same runtime-candidate pressure and still require Unity Memory Profiler proof.
+Hardware Impact: 0us runtime measured. Static total full-mip BC7 dropped from 1,329.88 MiB to 1,298.65 MiB by removing 16 non-import screenshot/doc rows. Runtime-candidate pressure remains 1,298.65 MiB and still exceeds the 1.2GB trigger.

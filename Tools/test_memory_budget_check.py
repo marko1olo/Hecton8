@@ -79,6 +79,39 @@ class MemoryBudgetCheckTests(unittest.TestCase):
         self.assertGreater(records[0].estimated_bytes, 0)
         self.assertIn("RENDER_TEXTURE_DEPTH_STENCIL_PRESENT_STATIC_SUSPECT", records[0].flags)
 
+    def test_parallel_audits_match_serial_records_for_fixture_subset(self) -> None:
+        textures = [
+            PROJECT_ROOT / "Data" / "Textures" / "BlueNoise_RGBA.png",
+            PROJECT_ROOT / "Assets" / "_Project" / "Art" / "Models" / "Rocks" / "Rock 7" / "Materials" / "2.jpg",
+        ]
+        meshes = [
+            PROJECT_ROOT / "Assets" / "Dynamic Decals" / "Resources" / "Decal.obj",
+            PROJECT_ROOT / "Assets" / "_Project" / "Art" / "Models" / "Rocks" / "nordic_beach_rock_vbumba2fa_mid.glb",
+        ]
+        render_textures = [PROJECT_ROOT / "Assets" / "_Project" / "Art" / "TEXTURES" / "RT_HUD_Display.renderTexture"]
+
+        serial_textures = budget.audit_textures(textures, PROJECT_ROOT, workers=1)
+        parallel_textures = budget.audit_textures(textures, PROJECT_ROOT, workers=2)
+        serial_meshes = budget.audit_meshes(meshes, workers=1)
+        parallel_meshes = budget.audit_meshes(meshes, workers=2)
+        serial_rts = budget.audit_render_textures(render_textures, workers=1)
+        parallel_rts = budget.audit_render_textures(render_textures, workers=2)
+
+        self.assertEqual(
+            [(item.path, item.width, item.height, item.mode, item.bc7_bytes, item.flags) for item in serial_textures],
+            [(item.path, item.width, item.height, item.mode, item.bc7_bytes, item.flags) for item in parallel_textures],
+        )
+        self.assertEqual(
+            [(item.path, item.triangles, item.estimated_geometry_bytes, item.flags) for item in serial_meshes],
+            [(item.path, item.triangles, item.estimated_geometry_bytes, item.flags) for item in parallel_meshes],
+        )
+        self.assertEqual(
+            [(item.path, item.width, item.height, item.estimated_bytes, item.flags) for item in serial_rts],
+            [(item.path, item.width, item.height, item.estimated_bytes, item.flags) for item in parallel_rts],
+        )
+        self.assertEqual(budget.normalize_worker_count(0), budget.DEFAULT_AUDIT_WORKERS)
+        self.assertEqual(budget.normalize_worker_count(9999), budget.MAX_AUDIT_WORKERS)
+
     def test_render_texture_source_hotspots_find_runtime_allocations(self) -> None:
         hits = budget.find_render_texture_source_hotspots(PROJECT_ROOT)
 
@@ -200,6 +233,12 @@ class MemoryBudgetCheckTests(unittest.TestCase):
         self.assertIn(".codex-artifacts", budget.SKIP_DIRS)
         self.assertIn(".codex-build", budget.SKIP_DIR_NAMES_LOWER)
         self.assertIn("library", budget.SKIP_DIR_NAMES_LOWER)
+        textures, meshes, render_textures, link_xml_paths = budget.iter_asset_and_link_paths(PROJECT_ROOT)
+        self.assertGreater(len(textures), 0)
+        self.assertGreater(len(meshes), 0)
+        self.assertGreater(len(render_textures), 0)
+        self.assertTrue(all(path.name.lower() == "link.xml" for path in link_xml_paths))
+        self.assertGreater(len(link_xml_paths), 0)
 
 
 if __name__ == "__main__":

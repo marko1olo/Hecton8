@@ -1,6 +1,6 @@
 # VRAM Remediation Plan
 
-Generated: 2026-05-15T17:56:51
+Generated: 2026-05-15T19:34:04
 Evidence class: STATIC_SOURCE / FILESYSTEM / PY_UNIT_TEST. No asset/import mutation performed.
 
 ## Gate Status
@@ -88,11 +88,11 @@ Evidence class: STATIC_SOURCE / FILESYSTEM / PY_UNIT_TEST. No asset/import mutat
 | Assets/_Project/Scripts/HectonUnderwaterVisuals.cs | 5684 | new RenderTexture | false | Profiler capture and lifecycle proof required; static scan cannot estimate dynamic dimensions safely. |
 | Assets/_Project/Scripts/Optimization/RenderTexturePool.cs | 159 | new RenderTexture | false | Profiler capture and lifecycle proof required; static scan cannot estimate dynamic dimensions safely. |
 | Assets/_Project/Scripts/SaveThumbnailCaptureFeature.cs | 119 | RTHandles.Alloc | false | Profiler capture and lifecycle proof required; static scan cannot estimate dynamic dimensions safely. |
-| Assets/_Project/Scripts/UI/DiegeticPanelController.cs | 1180 | RenderTextureDescriptor | false | Profiler capture and lifecycle proof required; static scan cannot estimate dynamic dimensions safely. |
-| Assets/_Project/Scripts/UI/DiegeticPanelController.cs | 1194 | new RenderTexture | false | Profiler capture and lifecycle proof required; static scan cannot estimate dynamic dimensions safely. |
-| Assets/_Project/Scripts/UI/DiegeticPanelController.cs | 1278 | RenderTextureDescriptor | false | Profiler capture and lifecycle proof required; static scan cannot estimate dynamic dimensions safely. |
-| Assets/_Project/Scripts/UI/DiegeticPanelController.cs | 1326 | RenderTextureDescriptor | false | Profiler capture and lifecycle proof required; static scan cannot estimate dynamic dimensions safely. |
-| Assets/_Project/Scripts/UI/DiegeticPanelController.cs | 1328 | new RenderTexture | false | Profiler capture and lifecycle proof required; static scan cannot estimate dynamic dimensions safely. |
+| Assets/_Project/Scripts/UI/DiegeticPanelController.cs | 1198 | RenderTextureDescriptor | false | Profiler capture and lifecycle proof required; static scan cannot estimate dynamic dimensions safely. |
+| Assets/_Project/Scripts/UI/DiegeticPanelController.cs | 1212 | new RenderTexture | false | Profiler capture and lifecycle proof required; static scan cannot estimate dynamic dimensions safely. |
+| Assets/_Project/Scripts/UI/DiegeticPanelController.cs | 1296 | RenderTextureDescriptor | false | Profiler capture and lifecycle proof required; static scan cannot estimate dynamic dimensions safely. |
+| Assets/_Project/Scripts/UI/DiegeticPanelController.cs | 1342 | RenderTextureDescriptor | false | Profiler capture and lifecycle proof required; static scan cannot estimate dynamic dimensions safely. |
+| Assets/_Project/Scripts/UI/DiegeticPanelController.cs | 1344 | new RenderTexture | false | Profiler capture and lifecycle proof required; static scan cannot estimate dynamic dimensions safely. |
 | Assets/_Project/Scripts/UI/VehicleSubOsCockpitRuntime.cs | 1002 | new RenderTexture | false | Profiler capture and lifecycle proof required; static scan cannot estimate dynamic dimensions safely. |
 | Assets/_Project/Scripts/VFX/HectonMarineSnowRenderer.cs | 1696 | new RenderTexture | false | Profiler capture and lifecycle proof required; static scan cannot estimate dynamic dimensions safely. |
 | Assets/_Project/Scripts/VFX/HectonMarineSnowRenderer.cs | 1744 | new RenderTexture | false | Profiler capture and lifecycle proof required; static scan cannot estimate dynamic dimensions safely. |

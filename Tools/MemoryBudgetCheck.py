@@ -9,6 +9,7 @@ Evidence boundary:
 from __future__ import annotations
 
 import argparse
+from concurrent.futures import ThreadPoolExecutor
 import csv
 import datetime as _dt
 import json
@@ -19,7 +20,7 @@ import sys
 import zlib
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, Iterable, Iterator, List, Optional, Sequence, Tuple
+from typing import Callable, Dict, Iterable, Iterator, List, Optional, Sequence, Tuple, TypeVar
 
 
 TEXTURE_EXTS = {".png", ".jpg", ".jpeg", ".tga", ".bmp", ".psd", ".tif", ".tiff", ".dds", ".hdr", ".exr", ".gif"}
@@ -27,6 +28,7 @@ MESH_EXTS = {".fbx", ".obj", ".gltf", ".glb"}
 RENDER_TEXTURE_EXTS = {".rendertexture"}
 SKIP_DIRS = {".git", ".vs", ".codex-build", ".codex-artifacts", "Library", "Temp", "Obj", "Build", "Builds"}
 SKIP_DIR_NAMES_LOWER = {name.lower() for name in SKIP_DIRS}
+DEFAULT_SCAN_ROOT_NAMES = ("Assets", "Packages", "Data")
 JPEG_SOF_MARKERS = {0xC0, 0xC1, 0xC2, 0xC3, 0xC5, 0xC6, 0xC7, 0xC9, 0xCA, 0xCB, 0xCD, 0xCE, 0xCF}
 BC7_BYTES_PER_PIXEL = 1.0
 FULL_MIP_FACTOR = 4.0 / 3.0
@@ -45,6 +47,10 @@ STATIC_GEOMETRY_INDEX_BYTES = 4
 MESH_GEOMETRY_SINGLE_ASSET_REDLINE_MIB = 16.0
 RENDER_TEXTURE_SINGLE_ASSET_REDLINE_MIB = 32.0
 TEXTURE_CONTAINER_RISK_EXTS = {".hdr", ".exr", ".psd", ".gif", ".tga", ".tif", ".tiff", ".bmp"}
+DEFAULT_AUDIT_WORKERS = 1
+MAX_AUDIT_WORKERS = 32
+T = TypeVar("T")
+U = TypeVar("U")
 RENDER_TEXTURE_COLOR_FORMAT_BYTES = {
     0: 4,   # ARGB32
     2: 8,   # ARGBHalf
@@ -162,26 +168,56 @@ def is_first_party_production_candidate(path: Path, root: Path) -> bool:
     return value.startswith("Assets/_Project/") or value.startswith("Data/")
 
 
-def iter_assets(root: Path) -> Tuple[List[Path], List[Path], List[Path]]:
+def resolve_scan_roots(root: Path) -> List[Path]:
+    scan_roots = [root / name for name in DEFAULT_SCAN_ROOT_NAMES if (root / name).exists()]
+    if scan_roots:
+        return scan_roots
+    return [root]
+
+
+def iter_asset_and_link_paths(root: Path) -> Tuple[List[Path], List[Path], List[Path], List[Path]]:
     textures: List[Path] = []
     meshes: List[Path] = []
     render_textures: List[Path] = []
-    for current_root, dirs, files in os.walk(root):
-        dirs[:] = [d for d in dirs if d.lower() not in SKIP_DIR_NAMES_LOWER]
-        current = Path(current_root)
-        for filename in files:
-            path = current / filename
-            ext = path.suffix.lower()
-            if ext in TEXTURE_EXTS:
-                textures.append(path)
-            elif ext in MESH_EXTS:
-                meshes.append(path)
-            elif ext in RENDER_TEXTURE_EXTS:
-                render_textures.append(path)
+    link_xml_paths: List[Path] = []
+    for scan_root in resolve_scan_roots(root):
+        for current_root, dirs, files in os.walk(scan_root):
+            dirs[:] = [d for d in dirs if d.lower() not in SKIP_DIR_NAMES_LOWER]
+            current = Path(current_root)
+            for filename in files:
+                path = current / filename
+                ext = path.suffix.lower()
+                if ext in TEXTURE_EXTS:
+                    textures.append(path)
+                elif ext in MESH_EXTS:
+                    meshes.append(path)
+                elif ext in RENDER_TEXTURE_EXTS:
+                    render_textures.append(path)
+                elif filename.lower() == "link.xml":
+                    link_xml_paths.append(path)
     textures.sort(key=lambda p: rel(p, root).lower())
     meshes.sort(key=lambda p: rel(p, root).lower())
     render_textures.sort(key=lambda p: rel(p, root).lower())
+    link_xml_paths.sort(key=lambda p: rel(p, root).lower())
+    return textures, meshes, render_textures, link_xml_paths
+
+
+def iter_assets(root: Path) -> Tuple[List[Path], List[Path], List[Path]]:
+    textures, meshes, render_textures, _link_xml_paths = iter_asset_and_link_paths(root)
     return textures, meshes, render_textures
+
+
+def normalize_worker_count(value: int) -> int:
+    if value <= 0:
+        return DEFAULT_AUDIT_WORKERS
+    return max(1, min(value, MAX_AUDIT_WORKERS))
+
+
+def ordered_parallel_map(function: Callable[[T], U], items: Sequence[T], workers: int) -> List[U]:
+    if workers <= 1 or len(items) <= 1:
+        return [function(item) for item in items]
+    with ThreadPoolExecutor(max_workers=workers) as executor:
+        return list(executor.map(function, items))
 
 
 def read_png_size(path: Path) -> Tuple[int, int, str]:
@@ -526,41 +562,43 @@ def classify_texture(
     return flags, recommendation
 
 
-def audit_textures(paths: Sequence[Path], root: Path) -> List[TextureRecord]:
-    records: List[TextureRecord] = []
-    for path in paths:
-        record = TextureRecord(path=path)
-        try:
-            record.width, record.height, record.mode = read_image_size(path)
-            record.bc7_bytes = int(record.width * record.height * BC7_BYTES_PER_PIXEL)
-        except Exception as exc:  # noqa: BLE001 - report must keep scanning.
-            record.error = str(exc)
-            record.flags.append("VRAM CRIME: TEXTURE_PARSE_FAILED")
-        (
+def audit_texture_record(path: Path) -> TextureRecord:
+    record = TextureRecord(path=path)
+    try:
+        record.width, record.height, record.mode = read_image_size(path)
+        record.bc7_bytes = int(record.width * record.height * BC7_BYTES_PER_PIXEL)
+    except Exception as exc:  # noqa: BLE001 - report must keep scanning.
+        record.error = str(exc)
+        record.flags.append("VRAM CRIME: TEXTURE_PARSE_FAILED")
+    (
+        record.meta_max_texture_size,
+        record.meta_texture_compression,
+        record.meta_texture_format,
+        record.meta_streaming_mipmaps,
+        record.meta_is_readable,
+        record.meta_texture_type,
+    ) = parse_meta_fields(path)
+    if not record.error:
+        flags, recommendation = classify_texture(
+            path,
+            record.width,
+            record.height,
+            record.mode,
             record.meta_max_texture_size,
             record.meta_texture_compression,
             record.meta_texture_format,
             record.meta_streaming_mipmaps,
             record.meta_is_readable,
-            record.meta_texture_type,
-        ) = parse_meta_fields(path)
-        if not record.error:
-            flags, recommendation = classify_texture(
-                path,
-                record.width,
-                record.height,
-                record.mode,
-                record.meta_max_texture_size,
-                record.meta_texture_compression,
-                record.meta_texture_format,
-                record.meta_streaming_mipmaps,
-                record.meta_is_readable,
-            )
-            record.flags.extend(flags)
-            record.recommendation = recommendation
-        else:
-            record.recommendation = "Open in Unity importer or asset tool; dimensions unavailable to static scanner."
-        records.append(record)
+        )
+        record.flags.extend(flags)
+        record.recommendation = recommendation
+    else:
+        record.recommendation = "Open in Unity importer or asset tool; dimensions unavailable to static scanner."
+    return record
+
+
+def audit_textures(paths: Sequence[Path], root: Path, workers: int = 1) -> List[TextureRecord]:
+    records = ordered_parallel_map(audit_texture_record, paths, normalize_worker_count(workers))
     assign_atlas_groups(records, root)
     return records
 
@@ -937,59 +975,64 @@ def append_mesh_import_flags(record: MeshRecord) -> None:
         record.flags.append("MESH_KEEP_QUADS_ENABLED_STATIC_SUSPECT")
 
 
-def audit_meshes(paths: Sequence[Path]) -> List[MeshRecord]:
+def audit_mesh_record(path: Path, lod_map: Dict[str, int]) -> MeshRecord:
+    record = MeshRecord(path=path)
+    (
+        record.meta_is_readable,
+        record.meta_mesh_compression,
+        record.meta_optimize_mesh,
+        record.meta_import_blend_shapes,
+        record.meta_add_colliders,
+        record.meta_generate_secondary_uv,
+        record.meta_keep_quads,
+    ) = parse_mesh_meta_fields(path)
+    try:
+        record.file_bytes = path.stat().st_size
+    except OSError:
+        record.file_bytes = 0
+    record.lod_detected = detect_lod(path, lod_map)
+    ext = path.suffix.lower()
+    if ext == ".obj":
+        record.triangles = count_obj_triangles(path)
+    elif ext == ".fbx":
+        record.triangles = count_fbx_triangles(path)
+    elif ext in (".gltf", ".glb"):
+        record.triangles = count_gltf_triangles(path)
+    record.estimated_geometry_bytes = estimate_geometry_bytes(record.triangles)
+    if record.triangles is None:
+        record.flags.append("TRIANGLE_COUNT_UNREADABLE_STATIC")
+        if record.file_bytes > FBX_SIZE_RISK_BYTES and not record.lod_detected:
+            record.flags.append("MESH_SIZE_RISK_NO_LOD_STATIC")
+    else:
+        if mib(record.estimated_geometry_bytes) > MESH_GEOMETRY_SINGLE_ASSET_REDLINE_MIB:
+            record.flags.append("MESH_GEOMETRY_ESTIMATE_GT_16MIB_STATIC")
+        if record.triangles > MESH_ABSOLUTE_REDLINE:
+            record.flags.append("MESH_GT_80K_ABSOLUTE_STATIC")
+        if record.triangles > MESH_TRI_REDLINE and not record.lod_detected:
+            record.flags.append("MESH_REDLINE_GT_50K_NO_LOD")
+    append_mesh_import_flags(record)
+    has_lod_redline = "MESH_REDLINE_GT_50K_NO_LOD" in record.flags or "MESH_SIZE_RISK_NO_LOD_STATIC" in record.flags
+    has_import_risk = any(flag.endswith("_STATIC_SUSPECT") for flag in record.flags)
+    if has_lod_redline:
+        record.recommendation = "Add LOD0/LOD1/LOD2 or cull/impostor path before production visibility beyond 20m."
+    elif record.triangles is not None and record.triangles > MESH_TRI_REDLINE:
+        record.recommendation = "Keep LOD chain; verify LOD1 <= 50 percent and LOD2 <= 25 percent of LOD0."
+    elif has_import_risk:
+        record.recommendation = "Fix ModelImporter risk: disable Read/Write, BlendShapes, colliders, or compression-off unless CPU/hero proof exists."
+    elif not record.lod_detected:
+        record.recommendation = "Verify size and production visibility; props above 0.5m need LOD/cull or impostor proof."
+    else:
+        record.recommendation = "Static mesh budget requires Unity import/readback for final proof."
+    return record
+
+
+def audit_meshes(paths: Sequence[Path], workers: int = 1) -> List[MeshRecord]:
     lod_map = build_lod_map(paths)
-    records: List[MeshRecord] = []
-    for path in paths:
-        record = MeshRecord(path=path)
-        (
-            record.meta_is_readable,
-            record.meta_mesh_compression,
-            record.meta_optimize_mesh,
-            record.meta_import_blend_shapes,
-            record.meta_add_colliders,
-            record.meta_generate_secondary_uv,
-            record.meta_keep_quads,
-        ) = parse_mesh_meta_fields(path)
-        try:
-            record.file_bytes = path.stat().st_size
-        except OSError:
-            record.file_bytes = 0
-        record.lod_detected = detect_lod(path, lod_map)
-        ext = path.suffix.lower()
-        if ext == ".obj":
-            record.triangles = count_obj_triangles(path)
-        elif ext == ".fbx":
-            record.triangles = count_fbx_triangles(path)
-        elif ext in (".gltf", ".glb"):
-            record.triangles = count_gltf_triangles(path)
-        record.estimated_geometry_bytes = estimate_geometry_bytes(record.triangles)
-        if record.triangles is None:
-            record.flags.append("TRIANGLE_COUNT_UNREADABLE_STATIC")
-            if record.file_bytes > FBX_SIZE_RISK_BYTES and not record.lod_detected:
-                record.flags.append("MESH_SIZE_RISK_NO_LOD_STATIC")
-        else:
-            if mib(record.estimated_geometry_bytes) > MESH_GEOMETRY_SINGLE_ASSET_REDLINE_MIB:
-                record.flags.append("MESH_GEOMETRY_ESTIMATE_GT_16MIB_STATIC")
-            if record.triangles > MESH_ABSOLUTE_REDLINE:
-                record.flags.append("MESH_GT_80K_ABSOLUTE_STATIC")
-            if record.triangles > MESH_TRI_REDLINE and not record.lod_detected:
-                record.flags.append("MESH_REDLINE_GT_50K_NO_LOD")
-        append_mesh_import_flags(record)
-        has_lod_redline = "MESH_REDLINE_GT_50K_NO_LOD" in record.flags or "MESH_SIZE_RISK_NO_LOD_STATIC" in record.flags
-        has_import_risk = any(flag.endswith("_STATIC_SUSPECT") for flag in record.flags)
-        if has_lod_redline:
-            record.recommendation = "Add LOD0/LOD1/LOD2 or cull/impostor path before production visibility beyond 20m."
-        elif record.triangles is not None and record.triangles > MESH_TRI_REDLINE:
-            record.recommendation = "Keep LOD chain; verify LOD1 <= 50 percent and LOD2 <= 25 percent of LOD0."
-        elif has_import_risk:
-            record.recommendation = "Fix ModelImporter risk: disable Read/Write, BlendShapes, colliders, or compression-off unless CPU/hero proof exists."
-        elif not record.lod_detected:
-            record.recommendation = "Verify size and production visibility; props above 0.5m need LOD/cull or impostor proof."
-        else:
-            record.recommendation = "Static mesh budget requires Unity import/readback for final proof."
-        records.append(record)
-    return records
+
+    def build_record(path: Path) -> MeshRecord:
+        return audit_mesh_record(path, lod_map)
+
+    return ordered_parallel_map(build_record, paths, normalize_worker_count(workers))
 
 
 def parse_yaml_int(text: str, key: str, default: int = 0) -> int:
@@ -1031,49 +1074,49 @@ def estimate_render_texture_bytes(record: RenderTextureRecord) -> int:
     return bytes_estimate
 
 
-def audit_render_textures(paths: Sequence[Path]) -> List[RenderTextureRecord]:
-    records: List[RenderTextureRecord] = []
-    for path in paths:
-        record = RenderTextureRecord(path=path)
-        try:
-            text = path.read_text(encoding="utf-8", errors="replace")
-        except OSError:
-            record.flags.append("RENDER_TEXTURE_YAML_UNREADABLE_STATIC")
-            record.recommendation = "Open asset in Unity and verify render target dimensions/format manually."
-            records.append(record)
-            continue
-        record.width = parse_yaml_int(text, "m_Width")
-        record.height = parse_yaml_int(text, "m_Height")
-        record.color_format = parse_yaml_str(text, "m_ColorFormat")
-        record.depth_stencil_format = parse_yaml_str(text, "m_DepthStencilFormat")
-        record.anti_aliasing = max(1, parse_yaml_int(text, "m_AntiAliasing", 1))
-        record.mipmap = parse_yaml_str(text, "m_MipMap")
-        record.generate_mips = parse_yaml_str(text, "m_GenerateMips")
-        record.texture_dimension = parse_yaml_str(text, "m_TextureDimension")
-        record.volume_depth = max(1, parse_yaml_int(text, "m_VolumeDepth", 1))
-        record.dynamic_scale = parse_yaml_str(text, "m_UseDynamicScale")
-        record.random_write = parse_yaml_str(text, "m_EnableRandomWrite")
-        record.estimated_bytes = estimate_render_texture_bytes(record)
-        if record.width <= 0 or record.height <= 0:
-            record.flags.append("RENDER_TEXTURE_DIMENSIONS_UNREADABLE_STATIC")
-        if max(record.width, record.height) > MAX_TEXTURE_DIM:
-            record.flags.append("RENDER_TEXTURE_GT_2048_STATIC")
-        if mib(record.estimated_bytes) > RENDER_TEXTURE_SINGLE_ASSET_REDLINE_MIB:
-            record.flags.append("RENDER_TEXTURE_SINGLE_ASSET_GT_32MIB_STATIC")
-        if record.anti_aliasing > 1:
-            record.flags.append("RENDER_TEXTURE_MSAA_GT1_STATIC_SUSPECT")
-        if meta_contains(record.mipmap, "1") or meta_contains(record.generate_mips, "1"):
-            record.flags.append("RENDER_TEXTURE_MIPMAPS_ENABLED_STATIC_SUSPECT")
-        if meta_contains(record.random_write, "1"):
-            record.flags.append("RENDER_TEXTURE_RANDOM_WRITE_ENABLED_STATIC_SUSPECT")
-        if as_non_negative_int(record.depth_stencil_format):
-            record.flags.append("RENDER_TEXTURE_DEPTH_STENCIL_PRESENT_STATIC_SUSPECT")
-        if record.flags:
-            record.recommendation = "Verify RT necessity in Unity; remove depth/MSAA/mips/random-write unless required and keep RT+Depth under 320 MiB."
-        else:
-            record.recommendation = "Static RT estimate only; verify live RT+Depth budget in Memory Profiler."
-        records.append(record)
-    return records
+def audit_render_texture_record(path: Path) -> RenderTextureRecord:
+    record = RenderTextureRecord(path=path)
+    try:
+        text = path.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        record.flags.append("RENDER_TEXTURE_YAML_UNREADABLE_STATIC")
+        record.recommendation = "Open asset in Unity and verify render target dimensions/format manually."
+        return record
+    record.width = parse_yaml_int(text, "m_Width")
+    record.height = parse_yaml_int(text, "m_Height")
+    record.color_format = parse_yaml_str(text, "m_ColorFormat")
+    record.depth_stencil_format = parse_yaml_str(text, "m_DepthStencilFormat")
+    record.anti_aliasing = max(1, parse_yaml_int(text, "m_AntiAliasing", 1))
+    record.mipmap = parse_yaml_str(text, "m_MipMap")
+    record.generate_mips = parse_yaml_str(text, "m_GenerateMips")
+    record.texture_dimension = parse_yaml_str(text, "m_TextureDimension")
+    record.volume_depth = max(1, parse_yaml_int(text, "m_VolumeDepth", 1))
+    record.dynamic_scale = parse_yaml_str(text, "m_UseDynamicScale")
+    record.random_write = parse_yaml_str(text, "m_EnableRandomWrite")
+    record.estimated_bytes = estimate_render_texture_bytes(record)
+    if record.width <= 0 or record.height <= 0:
+        record.flags.append("RENDER_TEXTURE_DIMENSIONS_UNREADABLE_STATIC")
+    if max(record.width, record.height) > MAX_TEXTURE_DIM:
+        record.flags.append("RENDER_TEXTURE_GT_2048_STATIC")
+    if mib(record.estimated_bytes) > RENDER_TEXTURE_SINGLE_ASSET_REDLINE_MIB:
+        record.flags.append("RENDER_TEXTURE_SINGLE_ASSET_GT_32MIB_STATIC")
+    if record.anti_aliasing > 1:
+        record.flags.append("RENDER_TEXTURE_MSAA_GT1_STATIC_SUSPECT")
+    if meta_contains(record.mipmap, "1") or meta_contains(record.generate_mips, "1"):
+        record.flags.append("RENDER_TEXTURE_MIPMAPS_ENABLED_STATIC_SUSPECT")
+    if meta_contains(record.random_write, "1"):
+        record.flags.append("RENDER_TEXTURE_RANDOM_WRITE_ENABLED_STATIC_SUSPECT")
+    if as_non_negative_int(record.depth_stencil_format):
+        record.flags.append("RENDER_TEXTURE_DEPTH_STENCIL_PRESENT_STATIC_SUSPECT")
+    if record.flags:
+        record.recommendation = "Verify RT necessity in Unity; remove depth/MSAA/mips/random-write unless required and keep RT+Depth under 320 MiB."
+    else:
+        record.recommendation = "Static RT estimate only; verify live RT+Depth budget in Memory Profiler."
+    return record
+
+
+def audit_render_textures(paths: Sequence[Path], workers: int = 1) -> List[RenderTextureRecord]:
+    return ordered_parallel_map(audit_render_texture_record, paths, normalize_worker_count(workers))
 
 
 def is_editor_source_path(path: Path, root: Path) -> bool:
@@ -1801,6 +1844,8 @@ def build_summary_payload(
         "generated_utc": _dt.datetime.now(_dt.timezone.utc).isoformat(timespec="seconds"),
         "evidence_class": "STATIC_SOURCE/FILESYSTEM/PY_UNIT_TEST",
         "root": str(root),
+        "scan_root_names": list(DEFAULT_SCAN_ROOT_NAMES),
+        "resolved_scan_roots": [rel(path, root) for path in resolve_scan_roots(root)],
         "skipped_directory_names": sorted(SKIP_DIRS, key=str.lower),
         "texture_count": len(textures),
         "mesh_count": len(meshes),
@@ -1982,6 +2027,7 @@ def write_summary(
     lines.append("")
     lines.append(f"Generated: {now}")
     lines.append("Evidence class: STATIC_SOURCE / FILESYSTEM. Runtime residency is PENDING VERIFICATION.")
+    lines.append(f"Scan roots: {', '.join(rel(path, root) for path in resolve_scan_roots(root))}. Non-import roots such as Docs/AgentLogs are excluded from asset residency totals.")
     lines.append("")
     lines.append("## Summary")
     lines.append("")
@@ -2152,15 +2198,17 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     parser.add_argument("--mesh-redlines", default="Docs/Reports/VRAM_Mesh_Redlines.csv", help="Mesh redline CSV path.")
     parser.add_argument("--render-texture-redlines", default="Docs/Reports/VRAM_RenderTexture_Redlines.csv", help="RenderTexture redline CSV path.")
     parser.add_argument("--render-texture-hotspots", default="Docs/Reports/VRAM_RenderTexture_SourceHotspots.csv", help="RenderTexture source hotspot CSV path.")
+    parser.add_argument("--workers", type=int, default=DEFAULT_AUDIT_WORKERS, help=f"Parallel asset audit workers, 1-{MAX_AUDIT_WORKERS}; <=0 uses default {DEFAULT_AUDIT_WORKERS}.")
     parser.add_argument("--ci", action="store_true", help="Exit non-zero if static redlines or overflow are detected.")
     args = parser.parse_args(argv)
 
     root = Path(args.root).resolve()
-    textures_paths, mesh_paths, render_texture_paths = iter_assets(root)
-    textures = audit_textures(textures_paths, root)
-    meshes = audit_meshes(mesh_paths)
-    render_textures = audit_render_textures(render_texture_paths)
-    link_status, link_notes = summarize_link_xml(find_link_xml(root), root)
+    workers = normalize_worker_count(args.workers)
+    textures_paths, mesh_paths, render_texture_paths, link_xml_paths = iter_asset_and_link_paths(root)
+    textures = audit_textures(textures_paths, root, workers)
+    meshes = audit_meshes(mesh_paths, workers)
+    render_textures = audit_render_textures(render_texture_paths, workers)
+    link_status, link_notes = summarize_link_xml(link_xml_paths, root)
     ci_failure = print_console_summary(root, textures, meshes, render_textures, link_status)
     if args.ci:
         return 2 if ci_failure else 0

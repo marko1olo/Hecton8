@@ -1,15 +1,16 @@
 # VRAM Budget Audit Summary
 
-Generated: 2026-05-15T17:56:36
+Generated: 2026-05-15T19:33:49
 Evidence class: STATIC_SOURCE / FILESYSTEM. Runtime residency is PENDING VERIFICATION.
+Scan roots: Assets, Packages, Data. Non-import roots such as Docs/AgentLogs are excluded from asset residency totals.
 
 ## Summary
 
-- Texture files scanned: 1668
+- Texture files scanned: 1652
 - Mesh files scanned: 302
 - RenderTexture assets scanned: 1
-- Total BC7 no-mip estimate: 997.41 MiB
-- Total BC7 full-mip estimate: 1329.88 MiB
+- Total BC7 no-mip estimate: 973.99 MiB
+- Total BC7 full-mip estimate: 1298.65 MiB
 - Runtime-candidate BC7 full-mip estimate: 1298.65 MiB
 - First-party production BC7 full-mip estimate: 505.62 MiB
 - MX350 texture budget: 900 MiB
@@ -125,11 +126,11 @@ Evidence class: STATIC_SOURCE / FILESYSTEM. Runtime residency is PENDING VERIFIC
 | Assets/_Project/Scripts/HectonUnderwaterVisuals.cs | 5684 | new RenderTexture | false | RenderTexture texture = new RenderTexture(descriptor) |
 | Assets/_Project/Scripts/Optimization/RenderTexturePool.cs | 159 | new RenderTexture | false | RenderTexture newRT = new RenderTexture(safeWidth, safeHeight, safeDepthBits, format); |
 | Assets/_Project/Scripts/SaveThumbnailCaptureFeature.cs | 119 | RTHandles.Alloc | false | _captureTexture = RTHandles.Alloc( |
-| Assets/_Project/Scripts/UI/DiegeticPanelController.cs | 1180 | RenderTextureDescriptor | false | RenderTextureDescriptor descriptor = new RenderTextureDescriptor(requiredResolution.x, requiredResolution.y) |
-| Assets/_Project/Scripts/UI/DiegeticPanelController.cs | 1194 | new RenderTexture | false | _panelRenderTexture = new RenderTexture(descriptor) |
-| Assets/_Project/Scripts/UI/DiegeticPanelController.cs | 1278 | RenderTextureDescriptor | false | RenderTextureDescriptor descriptor = _panelRenderTexture.descriptor; |
-| Assets/_Project/Scripts/UI/DiegeticPanelController.cs | 1326 | RenderTextureDescriptor | false | private static RenderTexture CreatePhosphorTexture(RenderTextureDescriptor descriptor, string textureName) |
-| Assets/_Project/Scripts/UI/DiegeticPanelController.cs | 1328 | new RenderTexture | false | RenderTexture texture = new RenderTexture(descriptor) |
+| Assets/_Project/Scripts/UI/DiegeticPanelController.cs | 1198 | RenderTextureDescriptor | false | RenderTextureDescriptor descriptor = new RenderTextureDescriptor(requiredResolution.x, requiredResolution.y) |
+| Assets/_Project/Scripts/UI/DiegeticPanelController.cs | 1212 | new RenderTexture | false | _panelRenderTexture = new RenderTexture(descriptor) |
+| Assets/_Project/Scripts/UI/DiegeticPanelController.cs | 1296 | RenderTextureDescriptor | false | RenderTextureDescriptor descriptor = _panelRenderTexture.descriptor; |
+| Assets/_Project/Scripts/UI/DiegeticPanelController.cs | 1342 | RenderTextureDescriptor | false | private static RenderTexture CreatePhosphorTexture(RenderTextureDescriptor descriptor, string textureName) |
+| Assets/_Project/Scripts/UI/DiegeticPanelController.cs | 1344 | new RenderTexture | false | RenderTexture texture = new RenderTexture(descriptor) |
 | Assets/_Project/Scripts/UI/VehicleSubOsCockpitRuntime.cs | 1002 | new RenderTexture | false | RenderTexture rt = new RenderTexture(math.max(16, width), math.max(16, height), 16, format) |
 | Assets/_Project/Scripts/VFX/HectonMarineSnowRenderer.cs | 1696 | new RenderTexture | false | _sonarGlowTexture = new RenderTexture(targetWidth, targetHeight, 0, RenderTextureFormat.RInt, RenderTextureReadWrite.Linear) |
 | Assets/_Project/Scripts/VFX/HectonMarineSnowRenderer.cs | 1744 | new RenderTexture | false | _fogDensityTexture = new RenderTexture(targetWidth, targetHeight, 0, RenderTextureFormat.RInt, RenderTextureReadWrite.Linear) |

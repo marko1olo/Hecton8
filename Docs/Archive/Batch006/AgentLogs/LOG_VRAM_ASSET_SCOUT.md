@@ -132,7 +132,6 @@ Verification:
 Evidence boundary:
 - STATIC_SOURCE / FILESYSTEM / PY_UNIT_TEST only.
 - Unity import, Memory Profiler, player build, and runtime frame time remain PENDING VERIFICATION.
-- CURRENT_BATCH.md no longer contains VRAM_ASSET_SCOUT; continued from persisted status/rationale under direct user instruction.
 
 ## 2026-05-15T01:29:00+03:00 - LOG HYGIENE PASS
 
@@ -550,3 +549,40 @@ Verification:
 Evidence boundary:
 - STATIC_SOURCE / FILESYSTEM / PY_UNIT_TEST only.
 - Unity import, Memory Profiler, player build, and runtime frame time remain PENDING VERIFICATION.
+
+## 2026-05-15T19:35:00+03:00 - IMPORT ROOT SCOPE PASS
+
+What was wrong:
+- The scanner treated non-import evidence files as texture assets. Concrete pollution: `Docs/AgentLogs` screenshots and `_agent_screen_capture.png`.
+- That made the all-scanned BC7 total larger than the runtime/importable asset pool and created useless rows for asset owners.
+
+What was done:
+- Added default scan roots: `Assets`, `Packages`, and `Data`.
+- Added fallback to the provided root only when those import roots are absent.
+- Merged `link.xml` discovery into the same asset-root walk.
+- Added `scan_root_names` and `resolved_scan_roots` to `Docs/Reports/VRAM_Budget_Audit.json`.
+- Added the scan-root evidence line to `Docs/Reports/VRAM_Budget_Audit_Summary.md`.
+- Kept `--workers` as an explicit option but restored serial as default after measured thread-worker regressions.
+
+Cinematic cheats used:
+- None. This is evidence cleanup: remove false VRAM pressure from non-import screenshots instead of hiding real asset debt.
+
+Exact microseconds saved:
+- Runtime code changed: none.
+- Immediate runtime CPU saving: 0us.
+- Static total full-mip BC7 changed from 1,329.88 MiB to 1,298.65 MiB by removing non-import screenshot/doc rows.
+- Runtime-candidate full-mip BC7 remains 1,298.65 MiB and still fails the 1.2GB trigger.
+
+Verification:
+- PYTHONDONTWRITEBYTECODE=1 python AST syntax parse for `Tools/MemoryBudgetCheck.py` and `Tools/test_memory_budget_check.py`: PASS.
+- PYTHONDONTWRITEBYTECODE=1 python -m unittest discover -s Tools -p test_memory_budget_check.py: PASS, 15 tests.
+- PYTHONDONTWRITEBYTECODE=1 python Tools/MemoryBudgetCheck.py --root . --ci: expected failure with `ci_exit_code=2`; counts 1,652 import-root textures / 302 meshes / 1 RenderTexture; elapsed 85.71 seconds under current workstation load.
+- PYTHONDONTWRITEBYTECODE=1 python Tools/MemoryBudgetCheck.py --root .: PASS as full report generation; emitted expected `[CRITICAL_VRAM_OVERFLOW]`; elapsed 113.09 seconds.
+- CSV structural validation: PASS. Broad CSV 1,956 rows / 43 columns / 0 bad rows; texture redlines 947 rows / 7 columns / 0 bad rows; mesh redlines 294 rows / 14 columns / 0 bad rows; RenderTexture redlines 2 rows / 11 columns / 0 bad rows; RT source hotspots 62 rows / 8 columns / 0 bad rows.
+- JSON schema validation: PASS. `texture_count=1652`, `mesh_count=302`, `render_texture_count=1`, `resolved_scan_roots=Assets,Packages,Data`, `render_texture_source_hotspot_rows=61`, `runtime_render_texture_source_hotspot_rows=53`, and gate reasons include `CRITICAL_VRAM_OVERFLOW`.
+- CSV grep for `Docs/` and `_agent_screen_capture` texture rows returned no hits.
+
+Evidence boundary:
+- STATIC_SOURCE / FILESYSTEM / PY_UNIT_TEST only.
+- Unity import, Memory Profiler, player build, and runtime frame time remain PENDING VERIFICATION.
+- CURRENT_BATCH.md no longer contains VRAM_ASSET_SCOUT; continued from persisted status/rationale under direct user instruction.

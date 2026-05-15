@@ -132,21 +132,8 @@ Packages/com.unity.shadergraph/GraphTemplates/Cross Pipeline/UnlitParticleTempla
 Data/Visuals/Biolum_Waveforms.png,1800,1200,2.747,true,MISSING_META_IMPORT_UNKNOWN,Low tier should halve source/import max; keep high mips only with hero or streaming proof.
 Assets/ScifiFacility/Textures/sky_hdr.hdr,2048,1024,2.667,false,HDR_TEXTURE_CONTAINER_STATIC_SUSPECT,Verify HDR import format/probe or skybox residency; keep only tier-gated or baked proof for MX350.
 Packages/com.waveharmonic.crest/Shared/Textures/Skybox.hdr,2048,1024,2.667,false,HDR_TEXTURE_CONTAINER_STATIC_SUSPECT;STREAMING_MIPMAPS_OFF_LARGE,Verify HDR import format/probe or skybox residency; keep only tier-gated or baked proof for MX350.
-_agent_screen_capture.png,1920,1080,2.637,false,MISSING_META_IMPORT_UNKNOWN,Low tier should halve source/import max; keep high mips only with hero or streaming proof.
 Assets/Feel/MMTools/Tools/MMVFX/MMBloomDirt/MMBloomDirt3.png,1920,1080,2.637,false,VRAM CRIME: IMPORT_MAX_GT_2048;STREAMING_MIPMAPS_OFF_LARGE,Low tier should halve source/import max; keep high mips only with hero or streaming proof.
-Docs/AgentLogs/Desktop_after_play_stop_mcp_UI_DIEGETIC_INPUT.png,1920,1080,2.637,false,MISSING_META_IMPORT_UNKNOWN,Low tier should halve source/import max; keep high mips only with hero or streaming proof.
-Docs/AgentLogs/Desktop_MCP_reconnect_UI_DIEGETIC_INPUT.png,1920,1080,2.637,false,MISSING_META_IMPORT_UNKNOWN,Low tier should halve source/import max; keep high mips only with hero or streaming proof.
-Docs/AgentLogs/Desktop_mcp_start_after_click_UI_DIEGETIC_INPUT.png,1920,1080,2.637,false,MISSING_META_IMPORT_UNKNOWN,Low tier should halve source/import max; keep high mips only with hero or streaming proof.
-Docs/AgentLogs/Desktop_recover_foreground_UI_DIEGETIC_INPUT.png,1920,1080,2.637,false,MISSING_META_IMPORT_UNKNOWN,Low tier should halve source/import max; keep high mips only with hero or streaming proof.
-Docs/AgentLogs/Desktop_recover_scene_after_click_UI_DIEGETIC_INPUT.png,1920,1080,2.637,false,MISSING_META_IMPORT_UNKNOWN,Low tier should halve source/import max; keep high mips only with hero or streaming proof.
-Docs/AgentLogs/Desktop_recover_scene_UI_DIEGETIC_INPUT.png,1920,1080,2.637,false,MISSING_META_IMPORT_UNKNOWN,Low tier should halve source/import max; keep high mips only with hero or streaming proof.
-Docs/AgentLogs/Desktop_relaunch2_open_UI_DIEGETIC_INPUT.png,1920,1080,2.637,false,MISSING_META_IMPORT_UNKNOWN,Low tier should halve source/import max; keep high mips only with hero or streaming proof.
-Docs/AgentLogs/Desktop_UI_DIEGETIC_INPUT.png,1920,1080,2.637,false,MISSING_META_IMPORT_UNKNOWN,Low tier should halve source/import max; keep high mips only with hero or streaming proof.
-Docs/AgentLogs/Desktop_unity_open_no_mcp_UI_DIEGETIC_INPUT.png,1920,1080,2.637,false,MISSING_META_IMPORT_UNKNOWN,Low tier should halve source/import max; keep high mips only with hero or streaming proof.
 Assets/Screenshots/codex_hud_surface_editor_capture_20260512.png,1462,808,1.502,false,STREAMING_MIPMAPS_OFF_LARGE,Low tier should halve source/import max; keep high mips only with hero or streaming proof.
-Docs/AgentLogs/UnityWindow_AssetsClick_UI_DIEGETIC_INPUT.png,1462,808,1.502,false,MISSING_META_IMPORT_UNKNOWN,Low tier should halve source/import max; keep high mips only with hero or streaming proof.
-Docs/AgentLogs/UnityWindow_AssetsMenu_UI_DIEGETIC_INPUT.png,1462,808,1.502,false,MISSING_META_IMPORT_UNKNOWN,Low tier should halve source/import max; keep high mips only with hero or streaming proof.
-Docs/AgentLogs/UnityWindow_UI_DIEGETIC_INPUT.png,1462,808,1.502,false,MISSING_META_IMPORT_UNKNOWN,Low tier should halve source/import max; keep high mips only with hero or streaming proof.
 Assets/RealtimeCSG/RealtimeCSG/Readme/Images/house_view.png,1409,789,1.414,false,STREAMING_MIPMAPS_OFF_LARGE,Low tier should halve source/import max; keep high mips only with hero or streaming proof.
 Assets/_Project/Art/Skyboxes/panorama_noch.png,1472,720,1.348,true,STREAMING_MIPMAPS_OFF_LARGE,Low tier should halve source/import max; keep high mips only with hero or streaming proof.
 Assets/_Project/Art/Skyboxes/panorama_shtorm.png,1472,720,1.348,true,STREAMING_MIPMAPS_OFF_LARGE,Low tier should halve source/import max; keep high mips only with hero or streaming proof.
@@ -178,7 +165,6 @@ Data/Visuals/Biolum_Waveforms.gif,960,720,0.879,true,GIF_SOURCE_CONTAINER_STATIC
 Data/Visuals/Water_Extinction_GradientPreview.png,1024,512,0.667,true,MISSING_META_IMPORT_UNKNOWN,Keep compressed; atlas if grouped with small sibling textures.
 Assets/Particle Attractor by Moonflower Carnivore/Textures/glow_small_dot.psd,512,512,0.333,false,PSD_SOURCE_CONTAINER_STATIC_SUSPECT,Flatten/export production texture and import compressed; keep PSD source out of runtime payload.
 Assets/VolumetricLightBeam/Resources/DustParticles.psd,512,512,0.333,false,PSD_SOURCE_CONTAINER_STATIC_SUSPECT,Flatten/export production texture and import compressed; keep PSD source out of runtime payload.
-Docs/AgentLogs/IconBaker_UX_ENGINEER_SelfTest/h8_self_test_icon_512.png,512,512,0.333,false,MISSING_META_IMPORT_UNKNOWN,Keep compressed; atlas if grouped with small sibling textures.
 Packages/com.waveharmonic.crest/Shared/Effects/LensFlares/Textures/Flare50mm.psd,256,512,0.167,false,PSD_SOURCE_CONTAINER_STATIC_SUSPECT,Flatten/export production texture and import compressed; keep PSD source out of runtime payload.
 Assets/_Project/Scenes/02_HECTON_WORLD/ReflectionProbe-0.exr,768,128,0.125,true,HDR_TEXTURE_CONTAINER_STATIC_SUSPECT,Verify HDR import format/probe or skybox residency; keep only tier-gated or baked proof for MX350.
 Assets/Feel/MMTools/Demos/MMPrototypeTextures/MMPrototypeTexturesDemo/ReflectionProbe-0.exr,768,128,0.125,false,HDR_TEXTURE_CONTAINER_STATIC_SUSPECT,Verify HDR import format/probe or skybox residency; keep only tier-gated or baked proof for MX350.
@@ -213,7 +199,6 @@ Assets/MapMagic/Tools/GUI/Editor/Resources/DPUI/Backgrounds/Empty.png,128,128,0.
 Assets/MapMagic/Tools/GUI/Editor/Resources/DPUI/Backgrounds/Popup.png,256,64,0.021,false,VRAM CRIME: UNCOMPRESSED_RGBA32_STATIC_SUSPECT,Keep compressed; atlas if grouped with small sibling textures.
 Assets/MapMagic/Tools/GUI/Editor/Resources/DPUI/Node/Shadow.png,128,128,0.021,false,VRAM CRIME: UNCOMPRESSED_RGBA32_STATIC_SUSPECT,Keep compressed; atlas if grouped with small sibling textures.
 Data/Textures/AbyssalFlowField_LowTier_RGBA.png,128,128,0.021,true,MISSING_META_IMPORT_UNKNOWN,Keep compressed; atlas if grouped with small sibling textures.
-Docs/AgentLogs/IconBaker_UX_ENGINEER_SelfTest/h8_self_test_icon_128.png,128,128,0.021,false,MISSING_META_IMPORT_UNKNOWN,Keep compressed; atlas if grouped with small sibling textures.
 Assets/MapMagic/Core/Editor/Resources/MapMagic/Comment.png,80,80,0.008,false,VRAM CRIME: UNCOMPRESSED_RGBA32_STATIC_SUSPECT,Keep compressed; atlas if grouped with small sibling textures.
 Assets/Graphy - Ultimate Stats Monitor/Textures/Debugger_Logo_Dark.png,172,36,0.008,false,VRAM CRIME: UNCOMPRESSED_RGBA32_STATIC_SUSPECT,Keep compressed; atlas if grouped with small sibling textures.
 Assets/Graphy - Ultimate Stats Monitor/Textures/Debugger_Logo_White.png,172,36,0.008,false,VRAM CRIME: UNCOMPRESSED_RGBA32_STATIC_SUSPECT,Keep compressed; atlas if grouped with small sibling textures.
@@ -457,7 +442,6 @@ Assets/Shapes/Textures/regpol-4.png,32,32,0.001,false,VRAM CRIME: UNCOMPRESSED_R
 Assets/Shapes/Textures/regpol-5.png,32,32,0.001,false,VRAM CRIME: UNCOMPRESSED_RGBA32_STATIC_SUSPECT,Keep compressed; atlas if grouped with small sibling textures.
 Assets/Shapes/Textures/regpol-6.png,32,32,0.001,false,VRAM CRIME: UNCOMPRESSED_RGBA32_STATIC_SUSPECT,Keep compressed; atlas if grouped with small sibling textures.
 Assets/Shapes/Textures/regpol-8.png,32,32,0.001,false,VRAM CRIME: UNCOMPRESSED_RGBA32_STATIC_SUSPECT,Keep compressed; atlas if grouped with small sibling textures.
-Docs/AgentLogs/IconBaker_UX_ENGINEER_SelfTest/h8_self_test_icon_32.png,32,32,0.001,false,MISSING_META_IMPORT_UNKNOWN,Keep compressed; atlas if grouped with small sibling textures.
 Assets/MapMagic/Core/Editor/Resources/MapMagic/Foldout.png,28,30,0.001,false,VRAM CRIME: UNCOMPRESSED_RGBA32_STATIC_SUSPECT,Keep compressed; atlas if grouped with small sibling textures.
 Assets/MapMagic/Tools/GUI/Editor/Resources/DPUI/Backgrounds/FoldoutBlue.png,28,28,0.001,false,VRAM CRIME: UNCOMPRESSED_RGBA32_STATIC_SUSPECT,Keep compressed; atlas if grouped with small sibling textures.
 Assets/MapMagic/Tools/GUI/Editor/Resources/DPUI/KeyCodes/KeyCodeShift.png,38,20,0.001,false,VRAM CRIME: UNCOMPRESSED_RGBA32_STATIC_SUSPECT,Keep compressed; atlas if grouped with small sibling textures.

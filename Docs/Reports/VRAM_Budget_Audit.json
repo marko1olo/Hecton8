@@ -64,8 +64,8 @@
   ],
   "bc7_full_mip_first_party_production_mib": 505.623,
   "bc7_full_mip_runtime_candidate_mib": 1298.652,
-  "bc7_full_mip_total_mib": 1329.881,
-  "bc7_no_mip_mib": 997.41,
+  "bc7_full_mip_total_mib": 1298.652,
+  "bc7_no_mip_mib": 973.989,
   "ci_expected_exit_code": 2,
   "critical_texture_pool_mib": 1228.8,
   "critical_vram_overflow": true,
@@ -83,8 +83,8 @@
     "MESH_REDLINE_OR_RISK",
     "RENDER_TEXTURE_REDLINE_OR_RISK"
   ],
-  "generated": "2026-05-15T17:57:01",
-  "generated_utc": "2026-05-15T14:57:01+00:00",
+  "generated": "2026-05-15T19:34:13",
+  "generated_utc": "2026-05-15T16:34:13+00:00",
   "geometry_buffer_budget_mib": 200.0,
   "link_xml_notes": [
     "Assets/AstarPathfindingProject/link.xml assemblies=1 types=18 preserve_all=18",
@@ -5296,35 +5296,35 @@
     },
     {
       "editor_only": false,
-      "line": 1180,
+      "line": 1198,
       "path": "Assets/_Project/Scripts/UI/DiegeticPanelController.cs",
       "pattern": "RenderTextureDescriptor",
       "snippet": "RenderTextureDescriptor descriptor = new RenderTextureDescriptor(requiredResolution.x, requiredResolution.y)"
     },
     {
       "editor_only": false,
-      "line": 1194,
+      "line": 1212,
       "path": "Assets/_Project/Scripts/UI/DiegeticPanelController.cs",
       "pattern": "new RenderTexture",
       "snippet": "_panelRenderTexture = new RenderTexture(descriptor)"
     },
     {
       "editor_only": false,
-      "line": 1278,
+      "line": 1296,
       "path": "Assets/_Project/Scripts/UI/DiegeticPanelController.cs",
       "pattern": "RenderTextureDescriptor",
       "snippet": "RenderTextureDescriptor descriptor = _panelRenderTexture.descriptor;"
     },
     {
       "editor_only": false,
-      "line": 1326,
+      "line": 1342,
       "path": "Assets/_Project/Scripts/UI/DiegeticPanelController.cs",
       "pattern": "RenderTextureDescriptor",
       "snippet": "private static RenderTexture CreatePhosphorTexture(RenderTextureDescriptor descriptor, string textureName)"
     },
     {
       "editor_only": false,
-      "line": 1328,
+      "line": 1344,
       "path": "Assets/_Project/Scripts/UI/DiegeticPanelController.cs",
       "pattern": "new RenderTexture",
       "snippet": "RenderTexture texture = new RenderTexture(descriptor)"
@@ -5543,8 +5543,18 @@
       "width": 1280
     }
   ],
+  "resolved_scan_roots": [
+    "Assets",
+    "Packages",
+    "Data"
+  ],
   "root": "C:\\Hecton8",
   "runtime_render_texture_source_hotspot_rows": 53,
+  "scan_root_names": [
+    "Assets",
+    "Packages",
+    "Data"
+  ],
   "schema_version": 1,
   "skipped_directory_names": [
     ".codex-artifacts",
@@ -5557,7 +5567,7 @@
     "Obj",
     "Temp"
   ],
-  "texture_count": 1668,
+  "texture_count": 1652,
   "texture_extension_summary": [
     {
       "bc7_full_mip_mib": 1132.123,
@@ -5623,7 +5633,7 @@
       "vram_crime_rows": 0
     }
   ],
-  "texture_flagged_rows": 962,
+  "texture_flagged_rows": 946,
   "texture_source_container_risk_rows": 23,
   "texture_vram_crime_rows": 801,
   "top_non_first_party_runtime_directories": [
