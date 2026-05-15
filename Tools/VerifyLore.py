@@ -525,6 +525,15 @@ def build_arg_parser() -> argparse.ArgumentParser:
 def main(argv: list[str]) -> int:
     parser = build_arg_parser()
     args = parser.parse_args(argv)
+
+    try:
+        return run_command(args, parser)
+    except ValueError as exc:
+        parser.error(str(exc))
+    return 2
+
+
+def run_command(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
     blob_path = resolve_repo_path(Path(args.blob))
     manifest_path = resolve_repo_path(Path(args.manifest))
     source_dir = resolve_repo_path(Path(args.source_dir))
@@ -574,10 +583,7 @@ def main(argv: list[str]) -> int:
         if args.source_path:
             hash_value = compute_fnv1a32(canonicalize_path(Path(args.source_path)))
         else:
-            try:
-                hash_value = parse_hash(args.hash)
-            except ValueError as exc:
-                parser.error(str(exc))
+            hash_value = parse_hash(args.hash)
         blob, records = read_blob(blob_path)
         record = find_record(records, hash_value)
         if record is None:

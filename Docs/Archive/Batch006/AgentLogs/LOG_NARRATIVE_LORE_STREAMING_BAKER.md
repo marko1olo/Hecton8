@@ -773,3 +773,85 @@ Regression model:
 Failure modes:
 - Unity/C# compile proof remains blocked by missing local toolchain/generation state.
 - Runtime loader remains out of explicit prompt scope.
+
+## 2026-05-15 - CLI ValueError Boundary
+
+STATUS: LORE BAKED / CLI TRACEBACK GUARD EXTENDED
+
+What was wrong:
+- Bad hash input was clean, but other verifier `ValueError`s could still escape `main` as raw tracebacks.
+- A missing hash such as `0xFFFFFFFF` was an operator error and needed the same controlled diagnostic path.
+
+What was done:
+- Split CLI execution into `run_command`.
+- `main` now catches `ValueError` once and routes it through `argparse` as a parser error.
+- Added regression coverage proving a missing hash exits nonzero without `Traceback`.
+- Appended this report at the bottom after correcting the patch insertion point.
+
+Cinematic Cheats used:
+- No runtime simulation touched.
+- Fixed binary layout and zlib payloads remain unchanged.
+
+Exact microseconds saved:
+- Current runtime frame impact remains 0 us/frame.
+- CLI validation only; no runtime loader cost claimed.
+
+Verification:
+- `python Tools\VerifyLore.py --bake --check --list` -> `LORE BAKED`, `CHECK OK`, record `0xD1880394 offset=48 length=10281`.
+- `python Tools\VerifyLore.py 0xFFFFFFFF` -> rejected with parser error and no traceback.
+- `python -B -m unittest Tools.test_verify_lore -v` -> 25 tests passed.
+- `$env:PYTHONPYCACHEPREFIX='.codex-artifacts\pycache'; python -m py_compile Tools\VerifyLore.py Tools\test_verify_lore.py` -> passed.
+- Source/extract SHA-256 match -> `6B529A808B25D18DA276747DB9149C61BACDF90A33DCC667FC85375DE13E69CD`.
+
+Regression model:
+- CPU: no runtime code touched.
+- GC: no runtime allocation path touched.
+- Memory: runtime blob remains 10329 bytes.
+- Cadence: no Tick/Update/FixedUpdate path touched.
+- Correctness: CLI verifier failures now report as controlled parser diagnostics instead of raw tracebacks.
+
+Failure modes:
+- Unity/C# compile proof remains blocked by missing local toolchain/generation state.
+- Runtime loader remains out of explicit prompt scope.
+
+## 2026-05-15 - Scoped Lore Discovery Verification
+
+STATUS: LORE BAKED / SCOPED DISCOVERY VERIFIED
+
+What was wrong:
+- A broad `Tools/test_*.py` discovery command was too wide for this prompt and timed out because it includes unrelated domain suites.
+- Treating that timeout as a lore compiler failure would be inaccurate, but ignoring it would leave the verification boundary vague.
+
+What was done:
+- Re-ran the lore-specific unittest module and the lore-specific unittest discovery pattern.
+- Recorded the broad discovery timeout as out-of-scope for this backend lore package.
+- Kept all verification tied to `Tools/VerifyLore.py`, `Tools/test_verify_lore.py`, `Data/Lore/Encyclopedia.h8bin`, and the manifest.
+
+Cinematic Cheats used:
+- No runtime simulation touched.
+- Fixed binary layout and zlib payloads remain unchanged.
+
+Exact microseconds saved:
+- Current runtime frame impact remains 0 us/frame.
+- Verification scope cleanup only; no runtime loader cost claimed.
+
+Verification:
+- `python Tools\VerifyLore.py --verify-manifest --verify-source --list` -> `VERIFY OK`, `MANIFEST VERIFY OK`, record `0xD1880394 offset=48 length=10281`.
+- `python Tools\VerifyLore.py --check` -> `CHECK OK`.
+- `python -B -m unittest Tools.test_verify_lore -v` -> 25 tests passed.
+- `python -B -m unittest discover -s Tools -p 'test_verify_lore.py' -v` -> 25 tests passed.
+- `$env:PYTHONPYCACHEPREFIX='.codex-artifacts\pycache'; python -m py_compile Tools\VerifyLore.py Tools\test_verify_lore.py` -> passed.
+- `git diff --check -- ...` -> exit 0; line-ending warnings only.
+- Source/extract SHA-256 match -> `6B529A808B25D18DA276747DB9149C61BACDF90A33DCC667FC85375DE13E69CD`.
+- Blob SHA-256 -> `8FDBAC8752B5DB10B98226D88BC5A27EEDA049207E139E6F2F3FB15ECDBDDC00`.
+
+Regression model:
+- CPU: no runtime code touched.
+- GC: no runtime allocation path touched.
+- Memory: runtime blob remains 10329 bytes.
+- Cadence: no Tick/Update/FixedUpdate path touched.
+- Correctness: lore verifier gates are explicit; unrelated tool-suite timeout is documented rather than hidden.
+
+Failure modes:
+- Unity/C# compile proof remains blocked by missing local toolchain/generation state.
+- Runtime loader remains out of explicit prompt scope.

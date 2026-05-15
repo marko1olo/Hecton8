@@ -116,6 +116,17 @@ class VerifyLoreTests(unittest.TestCase):
         self.assertIn("Invalid hash value", stderr.getvalue())
         self.assertNotIn("Traceback", stderr.getvalue())
 
+    def test_cli_rejects_missing_hash_without_traceback(self) -> None:
+        stderr = io.StringIO()
+
+        with contextlib.redirect_stderr(stderr):
+            with self.assertRaises(SystemExit) as context:
+                VerifyLore.main(["0xFFFFFFFF"])
+
+        self.assertNotEqual(context.exception.code, 0)
+        self.assertIn("Hash not found", stderr.getvalue())
+        self.assertNotIn("Traceback", stderr.getvalue())
+
     def test_hash_parser_rejects_out_of_uint32_range_values(self) -> None:
         for value in ("-1", "0x100000000", "4294967296"):
             with self.subTest(value=value):

@@ -247,3 +247,19 @@ Solution: Parse the numeric value first, reject anything outside `0..0xFFFFFFFF`
 Rejected Alternatives: Continuing to mask user input was rejected because it can extract the wrong record. Rejecting only negative values was rejected because overflow has the same ambiguity problem.
 Scalability potential: Low/Middle/High/Ultra packaging remains deterministic as the lore table grows and operators pass hashes manually.
 Hardware Impact: 0 us/frame on i3/MX350; offline CLI validation only.
+
+## Decision 032 - Add CLI ValueError Boundary
+
+Problem: Bad hash parsing was handled, but other verifier `ValueError`s such as missing hashes could still reach `main` as raw Python tracebacks.
+Solution: Split command execution into `run_command`, catch `ValueError` once at the CLI boundary, route it through `parser.error`, and add a regression proving a missing hash reports cleanly without `Traceback`.
+Rejected Alternatives: Wrapping each call site would duplicate error handling and miss future verifier errors; swallowing errors would hide packaging failures.
+Scalability potential: Low/Middle/High/Ultra operator tooling stays readable as more lore entries and validation rules are added.
+Hardware Impact: 0 us/frame on i3/MX350; CLI validation only, runtime blob unchanged.
+
+## Decision 033 - Scope Unit Discovery To Lore Verifier
+
+Problem: Broad `python -B -m unittest discover -s Tools -p 'test_*.py'` enters many unrelated domain suites and timed out, which makes it a noisy gate for a lore-only backend bake.
+Solution: Treat `Tools.test_verify_lore` and `discover -p 'test_verify_lore.py'` as the authoritative lore compiler regression gates, while documenting the broader timeout as out-of-scope evidence.
+Rejected Alternatives: Claiming the entire `Tools/` suite passed would be false; expanding this prompt to debug unrelated AI/audio/hardware/material tests would violate the assigned domain boundary.
+Scalability potential: Low/Middle/High/Ultra lore packaging keeps a bounded deterministic verification gate as unrelated tool suites grow.
+Hardware Impact: 0 us/frame on i3/MX350; test scope documentation only.
