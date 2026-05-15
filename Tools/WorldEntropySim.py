@@ -13,6 +13,7 @@ STAGE_SEED = 1
 STAGE_IMMATURE = 2
 STAGE_MATURE = 3
 UINT32_MASK = 0xFFFFFFFF
+MAX_SAFE_GRID_CELLS = 1_048_576
 EXPECTED_BIOME_NAMES = ("Safe Shallows", "Temperate Reef", "Thermal Vent", "Deep Abyss")
 
 
@@ -22,8 +23,12 @@ def load_constants(path: Path) -> dict:
 
 
 def validate_constants(constants: dict) -> None:
-    if int(constants["gridWidth"]) < 1 or int(constants["gridHeight"]) < 1:
+    width = int(constants["gridWidth"])
+    height = int(constants["gridHeight"])
+    if width < 1 or height < 1:
         raise ValueError("grid dimensions must be positive")
+    if width * height > MAX_SAFE_GRID_CELLS:
+        raise ValueError("grid cell count exceeds safe entropy harness budget")
     if int(constants["macroSectorMeters"]) < 1:
         raise ValueError("macroSectorMeters must be positive")
     if int(constants["baseGrowthProgressPerDayQ"]) < 1 or int(constants["baseGrowthProgressPerDayQ"]) > 255:
