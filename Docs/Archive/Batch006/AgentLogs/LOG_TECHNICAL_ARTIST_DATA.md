@@ -737,7 +737,7 @@ What was wrong:
 What was done:
 
 - Added surface-material eligibility filtering before ORM/detail issue generation.
-- Excluded HUD/UI, gas giant, skybox, and terrain material names.
+- Excluded HUD/UI, celestial/moon/gas giant, skybox, and terrain material names.
 - Excluded renderTexture/UI/skybox base-map references.
 - Added a regression test proving a HUD renderTexture material produces no channel/detail/material debt.
 - Regenerated JSON/Markdown/CSV audit artifacts.
@@ -756,6 +756,6 @@ Verification:
 
 - `python -m py_compile Tools\MaterialAudit.py Tools\test_material_audit.py`: passed.
 - `python -m unittest Tools.test_material_audit`: passed 13 tests.
-- Full first-party audit with `--ci-surface-gates`: still passes, 28 channel candidates, 28 detail-missing materials, 35 material issue materials, 102.48 MiB modeled savings.
-- Scoped `Art/Materials` channel/detail gates returned expected exits 8/9 with 20 candidates each.
+- Full first-party audit with `--ci-surface-gates`: still passes, 22 channel candidates, 22 detail-missing materials, 29 material issue materials, 80.52 MiB modeled savings.
+- Scoped `Art/Materials` channel/detail gates returned expected exits 8/9 with 14 candidates each.
 - Scoped import/unresolved/material gates still returned expected exits 2/4/3.

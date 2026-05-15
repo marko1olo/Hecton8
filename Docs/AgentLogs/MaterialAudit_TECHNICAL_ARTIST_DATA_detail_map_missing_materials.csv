@@ -1,11 +1,5 @@
 path,base_maps,normal_maps
 Art/Materials/Meshy_AI_Alien_barnacles_clust_0301230506_texture.mat,_BaseMap:Art/TEXTURES/Meshy_AI_Alien_barnacles_clust_0301230506_texture.png;_MainTex:Art/TEXTURES/Meshy_AI_Alien_barnacles_clust_0301230506_texture.png,
-Art/Materials/Celestial/MAT_CelestialMoon_Ione.mat,_BaseMap:Art/TEXTURES/Terrain Textures/rocks/Rocks019_1K-JPG_Color.jpg;_MainTex:Art/TEXTURES/Terrain Textures/rocks/Rocks019_1K-JPG_Color.jpg,
-Art/Materials/Celestial/MAT_CelestialMoon_Khepri.mat,_BaseMap:Art/TEXTURES/Terrain Textures/basalt/Rock031_1K-JPG_Color.jpg;_MainTex:Art/TEXTURES/Terrain Textures/basalt/Rock031_1K-JPG_Color.jpg,
-Art/Materials/Celestial/MAT_CelestialMoon_Nammu.mat,_BaseMap:Art/TEXTURES/Terrain Textures/basalt/Rock031_1K-JPG_Color.jpg;_MainTex:Art/TEXTURES/Terrain Textures/basalt/Rock031_1K-JPG_Color.jpg,
-Art/Materials/Celestial/MAT_CelestialMoon_Pelagia.mat,_BaseMap:Art/TEXTURES/Terrain Textures/rocks/Rocks019_1K-JPG_Color.jpg;_MainTex:Art/TEXTURES/Terrain Textures/rocks/Rocks019_1K-JPG_Color.jpg,
-Art/Materials/Celestial/MAT_CelestialMoon_Thalos.mat,_BaseMap:Art/TEXTURES/Terrain Textures/basalt/Rock031_1K-JPG_Color.jpg;_MainTex:Art/TEXTURES/Terrain Textures/basalt/Rock031_1K-JPG_Color.jpg,
-Art/Materials/Celestial/MAT_CelestialMoon_Varda.mat,_BaseMap:Art/TEXTURES/Terrain Textures/rocks/Rocks019_1K-JPG_Color.jpg;_MainTex:Art/TEXTURES/Terrain Textures/rocks/Rocks019_1K-JPG_Color.jpg,
 Art/Materials/Construction/Mat_RuinSeepSheen.mat,_MainTex:Art/TEXTURES/Detali/Mineral Seep Mask - second try.png,
 Art/Materials/WorldProceduralProxy/MAT_family_coral_branching.mat,_BaseMap:Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.branching/albedo___family.coral.branching.png,_NormalMap:Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.branching/normal___family.coral.branching.png
 Art/Materials/WorldProceduralProxy/MAT_family_coral_brittle.mat,_BaseMap:Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.brittle/albedo___family.coral.brittle.png,_NormalMap:Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.brittle/normal___family.coral.brittle.png

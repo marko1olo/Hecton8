@@ -218,8 +218,8 @@ Hardware Impact: 0 us runtime impact. Current full audit reports 31 materials mi
 
 ## Non-Surface Material Exclusion
 
-Problem: The detail-missing CSV exposed projection HUD, celestial gas giant, and terrain materials as false surface migration debt.
-Solution: Add a conservative surface-material eligibility filter before ORM/detail issue generation and channel candidate generation. Exclude HUD/UI, gas giant, skybox, terrain material names, and renderTexture/UI/skybox base-map references.
+Problem: The detail-missing CSV exposed projection HUD, celestial gas giant/moon, and terrain materials as false surface migration debt.
+Solution: Add a conservative surface-material eligibility filter before ORM/detail issue generation and channel candidate generation. Exclude HUD/UI, celestial/moon/gas giant, skybox, terrain material names, and renderTexture/UI/skybox base-map references.
 Rejected Alternatives: Keeping false positives was rejected because false debt wastes art migration time. Excluding all unresolved GUID materials was rejected because some unresolved references still represent real surface dependencies that must be fixed.
 Scalability potential: Low = migration gates focus on actual hard-surface materials. Middle = CI reports stop assigning projection/celestial work to the surface-material queue. High/Ultra = saved detail/ORM budgets remain tied to visible inspectable surfaces rather than non-PBR special materials.
-Hardware Impact: 0 us runtime impact. Full audit now reports 28 channel candidates, 28 detail-missing materials, 35 material issue materials, and 102.48 MiB modeled channel-packing savings potential.
+Hardware Impact: 0 us runtime impact. Full audit now reports 22 channel candidates, 22 detail-missing materials, 29 material issue materials, and 80.52 MiB modeled channel-packing savings potential.

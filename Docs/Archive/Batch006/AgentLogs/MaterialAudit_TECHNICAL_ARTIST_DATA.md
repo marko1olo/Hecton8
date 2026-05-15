@@ -24,11 +24,11 @@ Include third-party: `False`
 | Materials with legacy mask | 9 |
 | Materials with packed mask | 9 |
 | Materials with detail | 0 |
-| Materials missing detail maps | 28 |
-| Materials with issues | 35 |
+| Materials missing detail maps | 22 |
+| Materials with issues | 29 |
 | Materials with unresolved texture refs | 9 |
 | Unresolved texture refs | 27 |
-| Channel packing candidates | 28 |
+| Channel packing candidates | 22 |
 
 ## Gate Exit Codes
 
@@ -73,9 +73,9 @@ Include third-party: `False`
 | --- | --- |
 | Standard MiB/material | 6.65 |
 | Optimized MiB/material | 2.99 |
-| Candidate standard MiB | 186.2 |
-| Candidate optimized MiB | 83.72 |
-| Candidate saved MiB | 102.48 |
+| Candidate standard MiB | 146.3 |
+| Candidate optimized MiB | 65.78 |
+| Candidate saved MiB | 80.52 |
 | Candidate reduction percent | 55.0 |
 
 ## GOD_MODE Texture Overrides
@@ -123,9 +123,9 @@ Include third-party: `False`
 | Issue | Count |
 | --- | --- |
 | LEGACY_MASK_SLOT_REQUIRES_CHANNEL_REVIEW | 9 |
-| NO_DETAIL_MAP_SLOT | 28 |
-| NO_PACKED_ORM_OR_MASK_SLOT | 19 |
-| NO_PROMPT_ORM_SLOT | 28 |
+| NO_DETAIL_MAP_SLOT | 22 |
+| NO_PACKED_ORM_OR_MASK_SLOT | 13 |
+| NO_PROMPT_ORM_SLOT | 22 |
 | UNRESOLVED_TEXTURE_GUID | 9 |
 
 ## Detail Candidates
@@ -148,12 +148,6 @@ Include third-party: `False`
 | Material | Base maps | Normal maps |
 | --- | --- | --- |
 | Art/Materials/Meshy_AI_Alien_barnacles_clust_0301230506_texture.mat | _BaseMap:Art/TEXTURES/Meshy_AI_Alien_barnacles_clust_0301230506_texture.png; _MainTex:Art/TEXTURES/Meshy_AI_Alien_barnacles_clust_0301230506_texture.png |  |
-| Art/Materials/Celestial/MAT_CelestialMoon_Ione.mat | _BaseMap:Art/TEXTURES/Terrain Textures/rocks/Rocks019_1K-JPG_Color.jpg; _MainTex:Art/TEXTURES/Terrain Textures/rocks/Rocks019_1K-JPG_Color.jpg |  |
-| Art/Materials/Celestial/MAT_CelestialMoon_Khepri.mat | _BaseMap:Art/TEXTURES/Terrain Textures/basalt/Rock031_1K-JPG_Color.jpg; _MainTex:Art/TEXTURES/Terrain Textures/basalt/Rock031_1K-JPG_Color.jpg |  |
-| Art/Materials/Celestial/MAT_CelestialMoon_Nammu.mat | _BaseMap:Art/TEXTURES/Terrain Textures/basalt/Rock031_1K-JPG_Color.jpg; _MainTex:Art/TEXTURES/Terrain Textures/basalt/Rock031_1K-JPG_Color.jpg |  |
-| Art/Materials/Celestial/MAT_CelestialMoon_Pelagia.mat | _BaseMap:Art/TEXTURES/Terrain Textures/rocks/Rocks019_1K-JPG_Color.jpg; _MainTex:Art/TEXTURES/Terrain Textures/rocks/Rocks019_1K-JPG_Color.jpg |  |
-| Art/Materials/Celestial/MAT_CelestialMoon_Thalos.mat | _BaseMap:Art/TEXTURES/Terrain Textures/basalt/Rock031_1K-JPG_Color.jpg; _MainTex:Art/TEXTURES/Terrain Textures/basalt/Rock031_1K-JPG_Color.jpg |  |
-| Art/Materials/Celestial/MAT_CelestialMoon_Varda.mat | _BaseMap:Art/TEXTURES/Terrain Textures/rocks/Rocks019_1K-JPG_Color.jpg; _MainTex:Art/TEXTURES/Terrain Textures/rocks/Rocks019_1K-JPG_Color.jpg |  |
 | Art/Materials/Construction/Mat_RuinSeepSheen.mat | _MainTex:Art/TEXTURES/Detali/Mineral Seep Mask - second try.png |  |
 | Art/Materials/WorldProceduralProxy/MAT_family_coral_branching.mat | _BaseMap:Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.branching/albedo___family.coral.branching.png | _NormalMap:Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.branching/normal___family.coral.branching.png |
 | Art/Materials/WorldProceduralProxy/MAT_family_coral_brittle.mat | _BaseMap:Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.brittle/albedo___family.coral.brittle.png | _NormalMap:Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.brittle/normal___family.coral.brittle.png |
@@ -201,12 +195,6 @@ No texture read errors detected.
 | Art/Materials/Skybox.mat | UNRESOLVED_TEXTURE_GUID | Resolve the texture GUID inside first-party assets or quarantine the external dependency. |
 | Art/Materials/Snow.mat | UNRESOLVED_TEXTURE_GUID | Resolve the texture GUID inside first-party assets or quarantine the external dependency. |
 | Art/Materials/terrain.mat | UNRESOLVED_TEXTURE_GUID | Resolve the texture GUID inside first-party assets or quarantine the external dependency. |
-| Art/Materials/Celestial/MAT_CelestialMoon_Ione.mat | NO_PROMPT_ORM_SLOT, NO_PACKED_ORM_OR_MASK_SLOT, NO_DETAIL_MAP_SLOT | Add prompt ORM slot using R=AO, G=Roughness, B=Metallic after shader convention is resolved.; Pack AO/Roughness/Metallic into one ORM map after shader convention is resolved.; Wire shared detail albedo/normal or explicitly mark material as too distant/low-tier. |
-| Art/Materials/Celestial/MAT_CelestialMoon_Khepri.mat | NO_PROMPT_ORM_SLOT, NO_PACKED_ORM_OR_MASK_SLOT, NO_DETAIL_MAP_SLOT | Add prompt ORM slot using R=AO, G=Roughness, B=Metallic after shader convention is resolved.; Pack AO/Roughness/Metallic into one ORM map after shader convention is resolved.; Wire shared detail albedo/normal or explicitly mark material as too distant/low-tier. |
-| Art/Materials/Celestial/MAT_CelestialMoon_Nammu.mat | NO_PROMPT_ORM_SLOT, NO_PACKED_ORM_OR_MASK_SLOT, NO_DETAIL_MAP_SLOT | Add prompt ORM slot using R=AO, G=Roughness, B=Metallic after shader convention is resolved.; Pack AO/Roughness/Metallic into one ORM map after shader convention is resolved.; Wire shared detail albedo/normal or explicitly mark material as too distant/low-tier. |
-| Art/Materials/Celestial/MAT_CelestialMoon_Pelagia.mat | NO_PROMPT_ORM_SLOT, NO_PACKED_ORM_OR_MASK_SLOT, NO_DETAIL_MAP_SLOT | Add prompt ORM slot using R=AO, G=Roughness, B=Metallic after shader convention is resolved.; Pack AO/Roughness/Metallic into one ORM map after shader convention is resolved.; Wire shared detail albedo/normal or explicitly mark material as too distant/low-tier. |
-| Art/Materials/Celestial/MAT_CelestialMoon_Thalos.mat | NO_PROMPT_ORM_SLOT, NO_PACKED_ORM_OR_MASK_SLOT, NO_DETAIL_MAP_SLOT | Add prompt ORM slot using R=AO, G=Roughness, B=Metallic after shader convention is resolved.; Pack AO/Roughness/Metallic into one ORM map after shader convention is resolved.; Wire shared detail albedo/normal or explicitly mark material as too distant/low-tier. |
-| Art/Materials/Celestial/MAT_CelestialMoon_Varda.mat | NO_PROMPT_ORM_SLOT, NO_PACKED_ORM_OR_MASK_SLOT, NO_DETAIL_MAP_SLOT | Add prompt ORM slot using R=AO, G=Roughness, B=Metallic after shader convention is resolved.; Pack AO/Roughness/Metallic into one ORM map after shader convention is resolved.; Wire shared detail albedo/normal or explicitly mark material as too distant/low-tier. |
 | Art/Materials/Construction/Mat_LeakWetSheen.mat | UNRESOLVED_TEXTURE_GUID | Resolve the texture GUID inside first-party assets or quarantine the external dependency. |
 | Art/Materials/Construction/Mat_RuinSeepSheen.mat | NO_PROMPT_ORM_SLOT, NO_PACKED_ORM_OR_MASK_SLOT, NO_DETAIL_MAP_SLOT | Add prompt ORM slot using R=AO, G=Roughness, B=Metallic after shader convention is resolved.; Pack AO/Roughness/Metallic into one ORM map after shader convention is resolved.; Wire shared detail albedo/normal or explicitly mark material as too distant/low-tier. |
 | Art/Materials/WorldProceduralProxy/MAT_family_coral_branching.mat | NO_PROMPT_ORM_SLOT, LEGACY_MASK_SLOT_REQUIRES_CHANNEL_REVIEW, NO_DETAIL_MAP_SLOT | Add prompt ORM slot using R=AO, G=Roughness, B=Metallic after shader convention is resolved.; Review legacy mask/gloss channel order before treating it as prompt ORM.; Wire shared detail albedo/normal or explicitly mark material as too distant/low-tier. |
@@ -274,12 +262,6 @@ No texture read errors detected.
 | Material | Priority | Reason | Mask sources | Has detail |
 | --- | --- | --- | --- | --- |
 | Art/Materials/Meshy_AI_Alien_barnacles_clust_0301230506_texture.mat | LOW | Base material has no prompt ORM slot; author or reuse ORM if the material is near-field. |  | False |
-| Art/Materials/Celestial/MAT_CelestialMoon_Ione.mat | LOW | Base material has no prompt ORM slot; author or reuse ORM if the material is near-field. |  | False |
-| Art/Materials/Celestial/MAT_CelestialMoon_Khepri.mat | LOW | Base material has no prompt ORM slot; author or reuse ORM if the material is near-field. |  | False |
-| Art/Materials/Celestial/MAT_CelestialMoon_Nammu.mat | LOW | Base material has no prompt ORM slot; author or reuse ORM if the material is near-field. |  | False |
-| Art/Materials/Celestial/MAT_CelestialMoon_Pelagia.mat | LOW | Base material has no prompt ORM slot; author or reuse ORM if the material is near-field. |  | False |
-| Art/Materials/Celestial/MAT_CelestialMoon_Thalos.mat | LOW | Base material has no prompt ORM slot; author or reuse ORM if the material is near-field. |  | False |
-| Art/Materials/Celestial/MAT_CelestialMoon_Varda.mat | LOW | Base material has no prompt ORM slot; author or reuse ORM if the material is near-field. |  | False |
 | Art/Materials/Construction/Mat_RuinSeepSheen.mat | LOW | Base material has no prompt ORM slot; author or reuse ORM if the material is near-field. |  | False |
 | Art/Materials/WorldProceduralProxy/MAT_family_coral_branching.mat | MEDIUM | Legacy packed/gloss slot exists, but prompt ORM slot is absent. | _MaskMap:Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.branching/mask___family.coral.branching.png | False |
 | Art/Materials/WorldProceduralProxy/MAT_family_coral_brittle.mat | MEDIUM | Legacy packed/gloss slot exists, but prompt ORM slot is absent. | _MaskMap:Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.brittle/mask___family.coral.brittle.png | False |

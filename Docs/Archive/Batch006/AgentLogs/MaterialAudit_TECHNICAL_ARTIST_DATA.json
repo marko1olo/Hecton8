@@ -2352,7 +2352,7 @@
     "materials_with_legacy_mask": 9,
     "materials_with_packed_mask": 9,
     "materials_with_detail": 0,
-    "detail_map_missing_count": 28,
+    "detail_map_missing_count": 22,
     "detail_map_missing_materials": [
       {
         "path": "Art/Materials/Meshy_AI_Alien_barnacles_clust_0301230506_texture.mat",
@@ -2376,225 +2376,6 @@
           "base_maps": [
             "_BaseMap:Art/TEXTURES/Meshy_AI_Alien_barnacles_clust_0301230506_texture.png",
             "_MainTex:Art/TEXTURES/Meshy_AI_Alien_barnacles_clust_0301230506_texture.png"
-          ],
-          "normal_maps": [],
-          "occlusion_sources": [],
-          "roughness_sources": [],
-          "metallic_sources": [],
-          "legacy_mask_sources": [],
-          "detail_sources": [],
-          "has_detail": false
-        },
-        "issues": [
-          "NO_PROMPT_ORM_SLOT",
-          "NO_PACKED_ORM_OR_MASK_SLOT",
-          "NO_DETAIL_MAP_SLOT"
-        ]
-      },
-      {
-        "path": "Art/Materials/Celestial/MAT_CelestialMoon_Ione.mat",
-        "texture_properties": {
-          "_BaseMap": "Art/TEXTURES/Terrain Textures/rocks/Rocks019_1K-JPG_Color.jpg",
-          "_MainTex": "Art/TEXTURES/Terrain Textures/rocks/Rocks019_1K-JPG_Color.jpg"
-        },
-        "has_base_map": true,
-        "has_normal": false,
-        "has_prompt_orm": false,
-        "has_legacy_packed_mask": false,
-        "has_packed_mask": false,
-        "has_detail": false,
-        "is_surface_material_candidate": true,
-        "unresolved_texture_refs": [],
-        "channel_packing_candidate": {
-          "path": "Art/Materials/Celestial/MAT_CelestialMoon_Ione.mat",
-          "priority": "LOW",
-          "reason": "Base material has no prompt ORM slot; author or reuse ORM if the material is near-field.",
-          "base_maps": [
-            "_BaseMap:Art/TEXTURES/Terrain Textures/rocks/Rocks019_1K-JPG_Color.jpg",
-            "_MainTex:Art/TEXTURES/Terrain Textures/rocks/Rocks019_1K-JPG_Color.jpg"
-          ],
-          "normal_maps": [],
-          "occlusion_sources": [],
-          "roughness_sources": [],
-          "metallic_sources": [],
-          "legacy_mask_sources": [],
-          "detail_sources": [],
-          "has_detail": false
-        },
-        "issues": [
-          "NO_PROMPT_ORM_SLOT",
-          "NO_PACKED_ORM_OR_MASK_SLOT",
-          "NO_DETAIL_MAP_SLOT"
-        ]
-      },
-      {
-        "path": "Art/Materials/Celestial/MAT_CelestialMoon_Khepri.mat",
-        "texture_properties": {
-          "_BaseMap": "Art/TEXTURES/Terrain Textures/basalt/Rock031_1K-JPG_Color.jpg",
-          "_MainTex": "Art/TEXTURES/Terrain Textures/basalt/Rock031_1K-JPG_Color.jpg",
-          "unity_ShadowMasks": "d0353a89b1f911e48b9e16bdc9f2e058"
-        },
-        "has_base_map": true,
-        "has_normal": false,
-        "has_prompt_orm": false,
-        "has_legacy_packed_mask": false,
-        "has_packed_mask": false,
-        "has_detail": false,
-        "is_surface_material_candidate": true,
-        "unresolved_texture_refs": [],
-        "channel_packing_candidate": {
-          "path": "Art/Materials/Celestial/MAT_CelestialMoon_Khepri.mat",
-          "priority": "LOW",
-          "reason": "Base material has no prompt ORM slot; author or reuse ORM if the material is near-field.",
-          "base_maps": [
-            "_BaseMap:Art/TEXTURES/Terrain Textures/basalt/Rock031_1K-JPG_Color.jpg",
-            "_MainTex:Art/TEXTURES/Terrain Textures/basalt/Rock031_1K-JPG_Color.jpg"
-          ],
-          "normal_maps": [],
-          "occlusion_sources": [],
-          "roughness_sources": [],
-          "metallic_sources": [],
-          "legacy_mask_sources": [],
-          "detail_sources": [],
-          "has_detail": false
-        },
-        "issues": [
-          "NO_PROMPT_ORM_SLOT",
-          "NO_PACKED_ORM_OR_MASK_SLOT",
-          "NO_DETAIL_MAP_SLOT"
-        ]
-      },
-      {
-        "path": "Art/Materials/Celestial/MAT_CelestialMoon_Nammu.mat",
-        "texture_properties": {
-          "_BaseMap": "Art/TEXTURES/Terrain Textures/basalt/Rock031_1K-JPG_Color.jpg",
-          "_MainTex": "Art/TEXTURES/Terrain Textures/basalt/Rock031_1K-JPG_Color.jpg",
-          "unity_ShadowMasks": "d0353a89b1f911e48b9e16bdc9f2e058"
-        },
-        "has_base_map": true,
-        "has_normal": false,
-        "has_prompt_orm": false,
-        "has_legacy_packed_mask": false,
-        "has_packed_mask": false,
-        "has_detail": false,
-        "is_surface_material_candidate": true,
-        "unresolved_texture_refs": [],
-        "channel_packing_candidate": {
-          "path": "Art/Materials/Celestial/MAT_CelestialMoon_Nammu.mat",
-          "priority": "LOW",
-          "reason": "Base material has no prompt ORM slot; author or reuse ORM if the material is near-field.",
-          "base_maps": [
-            "_BaseMap:Art/TEXTURES/Terrain Textures/basalt/Rock031_1K-JPG_Color.jpg",
-            "_MainTex:Art/TEXTURES/Terrain Textures/basalt/Rock031_1K-JPG_Color.jpg"
-          ],
-          "normal_maps": [],
-          "occlusion_sources": [],
-          "roughness_sources": [],
-          "metallic_sources": [],
-          "legacy_mask_sources": [],
-          "detail_sources": [],
-          "has_detail": false
-        },
-        "issues": [
-          "NO_PROMPT_ORM_SLOT",
-          "NO_PACKED_ORM_OR_MASK_SLOT",
-          "NO_DETAIL_MAP_SLOT"
-        ]
-      },
-      {
-        "path": "Art/Materials/Celestial/MAT_CelestialMoon_Pelagia.mat",
-        "texture_properties": {
-          "_BaseMap": "Art/TEXTURES/Terrain Textures/rocks/Rocks019_1K-JPG_Color.jpg",
-          "_MainTex": "Art/TEXTURES/Terrain Textures/rocks/Rocks019_1K-JPG_Color.jpg"
-        },
-        "has_base_map": true,
-        "has_normal": false,
-        "has_prompt_orm": false,
-        "has_legacy_packed_mask": false,
-        "has_packed_mask": false,
-        "has_detail": false,
-        "is_surface_material_candidate": true,
-        "unresolved_texture_refs": [],
-        "channel_packing_candidate": {
-          "path": "Art/Materials/Celestial/MAT_CelestialMoon_Pelagia.mat",
-          "priority": "LOW",
-          "reason": "Base material has no prompt ORM slot; author or reuse ORM if the material is near-field.",
-          "base_maps": [
-            "_BaseMap:Art/TEXTURES/Terrain Textures/rocks/Rocks019_1K-JPG_Color.jpg",
-            "_MainTex:Art/TEXTURES/Terrain Textures/rocks/Rocks019_1K-JPG_Color.jpg"
-          ],
-          "normal_maps": [],
-          "occlusion_sources": [],
-          "roughness_sources": [],
-          "metallic_sources": [],
-          "legacy_mask_sources": [],
-          "detail_sources": [],
-          "has_detail": false
-        },
-        "issues": [
-          "NO_PROMPT_ORM_SLOT",
-          "NO_PACKED_ORM_OR_MASK_SLOT",
-          "NO_DETAIL_MAP_SLOT"
-        ]
-      },
-      {
-        "path": "Art/Materials/Celestial/MAT_CelestialMoon_Thalos.mat",
-        "texture_properties": {
-          "_BaseMap": "Art/TEXTURES/Terrain Textures/basalt/Rock031_1K-JPG_Color.jpg",
-          "_MainTex": "Art/TEXTURES/Terrain Textures/basalt/Rock031_1K-JPG_Color.jpg",
-          "unity_ShadowMasks": "d0353a89b1f911e48b9e16bdc9f2e058"
-        },
-        "has_base_map": true,
-        "has_normal": false,
-        "has_prompt_orm": false,
-        "has_legacy_packed_mask": false,
-        "has_packed_mask": false,
-        "has_detail": false,
-        "is_surface_material_candidate": true,
-        "unresolved_texture_refs": [],
-        "channel_packing_candidate": {
-          "path": "Art/Materials/Celestial/MAT_CelestialMoon_Thalos.mat",
-          "priority": "LOW",
-          "reason": "Base material has no prompt ORM slot; author or reuse ORM if the material is near-field.",
-          "base_maps": [
-            "_BaseMap:Art/TEXTURES/Terrain Textures/basalt/Rock031_1K-JPG_Color.jpg",
-            "_MainTex:Art/TEXTURES/Terrain Textures/basalt/Rock031_1K-JPG_Color.jpg"
-          ],
-          "normal_maps": [],
-          "occlusion_sources": [],
-          "roughness_sources": [],
-          "metallic_sources": [],
-          "legacy_mask_sources": [],
-          "detail_sources": [],
-          "has_detail": false
-        },
-        "issues": [
-          "NO_PROMPT_ORM_SLOT",
-          "NO_PACKED_ORM_OR_MASK_SLOT",
-          "NO_DETAIL_MAP_SLOT"
-        ]
-      },
-      {
-        "path": "Art/Materials/Celestial/MAT_CelestialMoon_Varda.mat",
-        "texture_properties": {
-          "_BaseMap": "Art/TEXTURES/Terrain Textures/rocks/Rocks019_1K-JPG_Color.jpg",
-          "_MainTex": "Art/TEXTURES/Terrain Textures/rocks/Rocks019_1K-JPG_Color.jpg"
-        },
-        "has_base_map": true,
-        "has_normal": false,
-        "has_prompt_orm": false,
-        "has_legacy_packed_mask": false,
-        "has_packed_mask": false,
-        "has_detail": false,
-        "is_surface_material_candidate": true,
-        "unresolved_texture_refs": [],
-        "channel_packing_candidate": {
-          "path": "Art/Materials/Celestial/MAT_CelestialMoon_Varda.mat",
-          "priority": "LOW",
-          "reason": "Base material has no prompt ORM slot; author or reuse ORM if the material is near-field.",
-          "base_maps": [
-            "_BaseMap:Art/TEXTURES/Terrain Textures/rocks/Rocks019_1K-JPG_Color.jpg",
-            "_MainTex:Art/TEXTURES/Terrain Textures/rocks/Rocks019_1K-JPG_Color.jpg"
           ],
           "normal_maps": [],
           "occlusion_sources": [],
@@ -3485,7 +3266,7 @@
         ]
       }
     ],
-    "materials_with_issues": 35,
+    "materials_with_issues": 29,
     "materials_with_unresolved_texture_refs": 9,
     "unresolved_texture_ref_count": 27,
     "unresolved_texture_ref_materials": [
@@ -3762,9 +3543,9 @@
         ]
       }
     ],
-    "channel_packing_candidate_count": 28,
+    "channel_packing_candidate_count": 22,
     "channel_packing_priority_counts": {
-      "LOW": 19,
+      "LOW": 13,
       "MEDIUM": 9
     },
     "channel_packing_candidates": [
@@ -3775,102 +3556,6 @@
         "base_maps": [
           "_BaseMap:Art/TEXTURES/Meshy_AI_Alien_barnacles_clust_0301230506_texture.png",
           "_MainTex:Art/TEXTURES/Meshy_AI_Alien_barnacles_clust_0301230506_texture.png"
-        ],
-        "normal_maps": [],
-        "occlusion_sources": [],
-        "roughness_sources": [],
-        "metallic_sources": [],
-        "legacy_mask_sources": [],
-        "detail_sources": [],
-        "has_detail": false
-      },
-      {
-        "path": "Art/Materials/Celestial/MAT_CelestialMoon_Ione.mat",
-        "priority": "LOW",
-        "reason": "Base material has no prompt ORM slot; author or reuse ORM if the material is near-field.",
-        "base_maps": [
-          "_BaseMap:Art/TEXTURES/Terrain Textures/rocks/Rocks019_1K-JPG_Color.jpg",
-          "_MainTex:Art/TEXTURES/Terrain Textures/rocks/Rocks019_1K-JPG_Color.jpg"
-        ],
-        "normal_maps": [],
-        "occlusion_sources": [],
-        "roughness_sources": [],
-        "metallic_sources": [],
-        "legacy_mask_sources": [],
-        "detail_sources": [],
-        "has_detail": false
-      },
-      {
-        "path": "Art/Materials/Celestial/MAT_CelestialMoon_Khepri.mat",
-        "priority": "LOW",
-        "reason": "Base material has no prompt ORM slot; author or reuse ORM if the material is near-field.",
-        "base_maps": [
-          "_BaseMap:Art/TEXTURES/Terrain Textures/basalt/Rock031_1K-JPG_Color.jpg",
-          "_MainTex:Art/TEXTURES/Terrain Textures/basalt/Rock031_1K-JPG_Color.jpg"
-        ],
-        "normal_maps": [],
-        "occlusion_sources": [],
-        "roughness_sources": [],
-        "metallic_sources": [],
-        "legacy_mask_sources": [],
-        "detail_sources": [],
-        "has_detail": false
-      },
-      {
-        "path": "Art/Materials/Celestial/MAT_CelestialMoon_Nammu.mat",
-        "priority": "LOW",
-        "reason": "Base material has no prompt ORM slot; author or reuse ORM if the material is near-field.",
-        "base_maps": [
-          "_BaseMap:Art/TEXTURES/Terrain Textures/basalt/Rock031_1K-JPG_Color.jpg",
-          "_MainTex:Art/TEXTURES/Terrain Textures/basalt/Rock031_1K-JPG_Color.jpg"
-        ],
-        "normal_maps": [],
-        "occlusion_sources": [],
-        "roughness_sources": [],
-        "metallic_sources": [],
-        "legacy_mask_sources": [],
-        "detail_sources": [],
-        "has_detail": false
-      },
-      {
-        "path": "Art/Materials/Celestial/MAT_CelestialMoon_Pelagia.mat",
-        "priority": "LOW",
-        "reason": "Base material has no prompt ORM slot; author or reuse ORM if the material is near-field.",
-        "base_maps": [
-          "_BaseMap:Art/TEXTURES/Terrain Textures/rocks/Rocks019_1K-JPG_Color.jpg",
-          "_MainTex:Art/TEXTURES/Terrain Textures/rocks/Rocks019_1K-JPG_Color.jpg"
-        ],
-        "normal_maps": [],
-        "occlusion_sources": [],
-        "roughness_sources": [],
-        "metallic_sources": [],
-        "legacy_mask_sources": [],
-        "detail_sources": [],
-        "has_detail": false
-      },
-      {
-        "path": "Art/Materials/Celestial/MAT_CelestialMoon_Thalos.mat",
-        "priority": "LOW",
-        "reason": "Base material has no prompt ORM slot; author or reuse ORM if the material is near-field.",
-        "base_maps": [
-          "_BaseMap:Art/TEXTURES/Terrain Textures/basalt/Rock031_1K-JPG_Color.jpg",
-          "_MainTex:Art/TEXTURES/Terrain Textures/basalt/Rock031_1K-JPG_Color.jpg"
-        ],
-        "normal_maps": [],
-        "occlusion_sources": [],
-        "roughness_sources": [],
-        "metallic_sources": [],
-        "legacy_mask_sources": [],
-        "detail_sources": [],
-        "has_detail": false
-      },
-      {
-        "path": "Art/Materials/Celestial/MAT_CelestialMoon_Varda.mat",
-        "priority": "LOW",
-        "reason": "Base material has no prompt ORM slot; author or reuse ORM if the material is near-field.",
-        "base_maps": [
-          "_BaseMap:Art/TEXTURES/Terrain Textures/rocks/Rocks019_1K-JPG_Color.jpg",
-          "_MainTex:Art/TEXTURES/Terrain Textures/rocks/Rocks019_1K-JPG_Color.jpg"
         ],
         "normal_maps": [],
         "occlusion_sources": [],
@@ -4278,16 +3963,16 @@
     "vram_model": {
       "standard_mib_per_material": 6.65,
       "optimized_mib_per_material": 2.99,
-      "candidate_standard_mib": 186.2,
-      "candidate_optimized_mib": 83.72,
-      "candidate_saved_mib": 102.48,
+      "candidate_standard_mib": 146.3,
+      "candidate_optimized_mib": 65.78,
+      "candidate_saved_mib": 80.52,
       "candidate_reduction_percent": 55.0
     },
     "issue_counts": {
       "UNRESOLVED_TEXTURE_GUID": 9,
-      "NO_PROMPT_ORM_SLOT": 28,
-      "NO_PACKED_ORM_OR_MASK_SLOT": 19,
-      "NO_DETAIL_MAP_SLOT": 28,
+      "NO_PROMPT_ORM_SLOT": 22,
+      "NO_PACKED_ORM_OR_MASK_SLOT": 13,
+      "NO_DETAIL_MAP_SLOT": 22,
       "LEGACY_MASK_SLOT_REQUIRES_CHANNEL_REVIEW": 9
     },
     "issue_materials": [
@@ -4471,225 +4156,6 @@
         "channel_packing_candidate": null,
         "issues": [
           "UNRESOLVED_TEXTURE_GUID"
-        ]
-      },
-      {
-        "path": "Art/Materials/Celestial/MAT_CelestialMoon_Ione.mat",
-        "texture_properties": {
-          "_BaseMap": "Art/TEXTURES/Terrain Textures/rocks/Rocks019_1K-JPG_Color.jpg",
-          "_MainTex": "Art/TEXTURES/Terrain Textures/rocks/Rocks019_1K-JPG_Color.jpg"
-        },
-        "has_base_map": true,
-        "has_normal": false,
-        "has_prompt_orm": false,
-        "has_legacy_packed_mask": false,
-        "has_packed_mask": false,
-        "has_detail": false,
-        "is_surface_material_candidate": true,
-        "unresolved_texture_refs": [],
-        "channel_packing_candidate": {
-          "path": "Art/Materials/Celestial/MAT_CelestialMoon_Ione.mat",
-          "priority": "LOW",
-          "reason": "Base material has no prompt ORM slot; author or reuse ORM if the material is near-field.",
-          "base_maps": [
-            "_BaseMap:Art/TEXTURES/Terrain Textures/rocks/Rocks019_1K-JPG_Color.jpg",
-            "_MainTex:Art/TEXTURES/Terrain Textures/rocks/Rocks019_1K-JPG_Color.jpg"
-          ],
-          "normal_maps": [],
-          "occlusion_sources": [],
-          "roughness_sources": [],
-          "metallic_sources": [],
-          "legacy_mask_sources": [],
-          "detail_sources": [],
-          "has_detail": false
-        },
-        "issues": [
-          "NO_PROMPT_ORM_SLOT",
-          "NO_PACKED_ORM_OR_MASK_SLOT",
-          "NO_DETAIL_MAP_SLOT"
-        ]
-      },
-      {
-        "path": "Art/Materials/Celestial/MAT_CelestialMoon_Khepri.mat",
-        "texture_properties": {
-          "_BaseMap": "Art/TEXTURES/Terrain Textures/basalt/Rock031_1K-JPG_Color.jpg",
-          "_MainTex": "Art/TEXTURES/Terrain Textures/basalt/Rock031_1K-JPG_Color.jpg",
-          "unity_ShadowMasks": "d0353a89b1f911e48b9e16bdc9f2e058"
-        },
-        "has_base_map": true,
-        "has_normal": false,
-        "has_prompt_orm": false,
-        "has_legacy_packed_mask": false,
-        "has_packed_mask": false,
-        "has_detail": false,
-        "is_surface_material_candidate": true,
-        "unresolved_texture_refs": [],
-        "channel_packing_candidate": {
-          "path": "Art/Materials/Celestial/MAT_CelestialMoon_Khepri.mat",
-          "priority": "LOW",
-          "reason": "Base material has no prompt ORM slot; author or reuse ORM if the material is near-field.",
-          "base_maps": [
-            "_BaseMap:Art/TEXTURES/Terrain Textures/basalt/Rock031_1K-JPG_Color.jpg",
-            "_MainTex:Art/TEXTURES/Terrain Textures/basalt/Rock031_1K-JPG_Color.jpg"
-          ],
-          "normal_maps": [],
-          "occlusion_sources": [],
-          "roughness_sources": [],
-          "metallic_sources": [],
-          "legacy_mask_sources": [],
-          "detail_sources": [],
-          "has_detail": false
-        },
-        "issues": [
-          "NO_PROMPT_ORM_SLOT",
-          "NO_PACKED_ORM_OR_MASK_SLOT",
-          "NO_DETAIL_MAP_SLOT"
-        ]
-      },
-      {
-        "path": "Art/Materials/Celestial/MAT_CelestialMoon_Nammu.mat",
-        "texture_properties": {
-          "_BaseMap": "Art/TEXTURES/Terrain Textures/basalt/Rock031_1K-JPG_Color.jpg",
-          "_MainTex": "Art/TEXTURES/Terrain Textures/basalt/Rock031_1K-JPG_Color.jpg",
-          "unity_ShadowMasks": "d0353a89b1f911e48b9e16bdc9f2e058"
-        },
-        "has_base_map": true,
-        "has_normal": false,
-        "has_prompt_orm": false,
-        "has_legacy_packed_mask": false,
-        "has_packed_mask": false,
-        "has_detail": false,
-        "is_surface_material_candidate": true,
-        "unresolved_texture_refs": [],
-        "channel_packing_candidate": {
-          "path": "Art/Materials/Celestial/MAT_CelestialMoon_Nammu.mat",
-          "priority": "LOW",
-          "reason": "Base material has no prompt ORM slot; author or reuse ORM if the material is near-field.",
-          "base_maps": [
-            "_BaseMap:Art/TEXTURES/Terrain Textures/basalt/Rock031_1K-JPG_Color.jpg",
-            "_MainTex:Art/TEXTURES/Terrain Textures/basalt/Rock031_1K-JPG_Color.jpg"
-          ],
-          "normal_maps": [],
-          "occlusion_sources": [],
-          "roughness_sources": [],
-          "metallic_sources": [],
-          "legacy_mask_sources": [],
-          "detail_sources": [],
-          "has_detail": false
-        },
-        "issues": [
-          "NO_PROMPT_ORM_SLOT",
-          "NO_PACKED_ORM_OR_MASK_SLOT",
-          "NO_DETAIL_MAP_SLOT"
-        ]
-      },
-      {
-        "path": "Art/Materials/Celestial/MAT_CelestialMoon_Pelagia.mat",
-        "texture_properties": {
-          "_BaseMap": "Art/TEXTURES/Terrain Textures/rocks/Rocks019_1K-JPG_Color.jpg",
-          "_MainTex": "Art/TEXTURES/Terrain Textures/rocks/Rocks019_1K-JPG_Color.jpg"
-        },
-        "has_base_map": true,
-        "has_normal": false,
-        "has_prompt_orm": false,
-        "has_legacy_packed_mask": false,
-        "has_packed_mask": false,
-        "has_detail": false,
-        "is_surface_material_candidate": true,
-        "unresolved_texture_refs": [],
-        "channel_packing_candidate": {
-          "path": "Art/Materials/Celestial/MAT_CelestialMoon_Pelagia.mat",
-          "priority": "LOW",
-          "reason": "Base material has no prompt ORM slot; author or reuse ORM if the material is near-field.",
-          "base_maps": [
-            "_BaseMap:Art/TEXTURES/Terrain Textures/rocks/Rocks019_1K-JPG_Color.jpg",
-            "_MainTex:Art/TEXTURES/Terrain Textures/rocks/Rocks019_1K-JPG_Color.jpg"
-          ],
-          "normal_maps": [],
-          "occlusion_sources": [],
-          "roughness_sources": [],
-          "metallic_sources": [],
-          "legacy_mask_sources": [],
-          "detail_sources": [],
-          "has_detail": false
-        },
-        "issues": [
-          "NO_PROMPT_ORM_SLOT",
-          "NO_PACKED_ORM_OR_MASK_SLOT",
-          "NO_DETAIL_MAP_SLOT"
-        ]
-      },
-      {
-        "path": "Art/Materials/Celestial/MAT_CelestialMoon_Thalos.mat",
-        "texture_properties": {
-          "_BaseMap": "Art/TEXTURES/Terrain Textures/basalt/Rock031_1K-JPG_Color.jpg",
-          "_MainTex": "Art/TEXTURES/Terrain Textures/basalt/Rock031_1K-JPG_Color.jpg",
-          "unity_ShadowMasks": "d0353a89b1f911e48b9e16bdc9f2e058"
-        },
-        "has_base_map": true,
-        "has_normal": false,
-        "has_prompt_orm": false,
-        "has_legacy_packed_mask": false,
-        "has_packed_mask": false,
-        "has_detail": false,
-        "is_surface_material_candidate": true,
-        "unresolved_texture_refs": [],
-        "channel_packing_candidate": {
-          "path": "Art/Materials/Celestial/MAT_CelestialMoon_Thalos.mat",
-          "priority": "LOW",
-          "reason": "Base material has no prompt ORM slot; author or reuse ORM if the material is near-field.",
-          "base_maps": [
-            "_BaseMap:Art/TEXTURES/Terrain Textures/basalt/Rock031_1K-JPG_Color.jpg",
-            "_MainTex:Art/TEXTURES/Terrain Textures/basalt/Rock031_1K-JPG_Color.jpg"
-          ],
-          "normal_maps": [],
-          "occlusion_sources": [],
-          "roughness_sources": [],
-          "metallic_sources": [],
-          "legacy_mask_sources": [],
-          "detail_sources": [],
-          "has_detail": false
-        },
-        "issues": [
-          "NO_PROMPT_ORM_SLOT",
-          "NO_PACKED_ORM_OR_MASK_SLOT",
-          "NO_DETAIL_MAP_SLOT"
-        ]
-      },
-      {
-        "path": "Art/Materials/Celestial/MAT_CelestialMoon_Varda.mat",
-        "texture_properties": {
-          "_BaseMap": "Art/TEXTURES/Terrain Textures/rocks/Rocks019_1K-JPG_Color.jpg",
-          "_MainTex": "Art/TEXTURES/Terrain Textures/rocks/Rocks019_1K-JPG_Color.jpg"
-        },
-        "has_base_map": true,
-        "has_normal": false,
-        "has_prompt_orm": false,
-        "has_legacy_packed_mask": false,
-        "has_packed_mask": false,
-        "has_detail": false,
-        "is_surface_material_candidate": true,
-        "unresolved_texture_refs": [],
-        "channel_packing_candidate": {
-          "path": "Art/Materials/Celestial/MAT_CelestialMoon_Varda.mat",
-          "priority": "LOW",
-          "reason": "Base material has no prompt ORM slot; author or reuse ORM if the material is near-field.",
-          "base_maps": [
-            "_BaseMap:Art/TEXTURES/Terrain Textures/rocks/Rocks019_1K-JPG_Color.jpg",
-            "_MainTex:Art/TEXTURES/Terrain Textures/rocks/Rocks019_1K-JPG_Color.jpg"
-          ],
-          "normal_maps": [],
-          "occlusion_sources": [],
-          "roughness_sources": [],
-          "metallic_sources": [],
-          "legacy_mask_sources": [],
-          "detail_sources": [],
-          "has_detail": false
-        },
-        "issues": [
-          "NO_PROMPT_ORM_SLOT",
-          "NO_PACKED_ORM_OR_MASK_SLOT",
-          "NO_DETAIL_MAP_SLOT"
         ]
       },
       {
