@@ -747,7 +747,7 @@ namespace Hecton8.Construction
             AbsoluteUniversePosition worldAup,
             AbsoluteUniversePosition habitatAup)
         {
-            double3 relativeMeters = worldAup.ToAbsoluteDouble3() - habitatAup.ToAbsoluteDouble3();
+            double3 relativeMeters = AbsoluteUniversePosition.DeltaMetersClamped(in worldAup, in habitatAup);
             return AbsoluteUniversePosition.FromAbsolutePosition(relativeMeters);
         }
 

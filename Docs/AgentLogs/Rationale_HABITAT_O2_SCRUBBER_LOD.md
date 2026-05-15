@@ -382,3 +382,17 @@ Solution: Recorded the exact boundary: `Build_INTEGRATION_ASSEMBLY_SURGEON_20260
 Rejected Alternatives: Waiting indefinitely for unrelated agents to stop editing was rejected. Claiming whole-tree current after the UI edit was rejected.
 Scalability potential: No behavior change; this keeps reporting precise in a moving multi-agent workspace.
 Hardware Impact: Reporting-only boundary. No runtime microsecond claim.
+
+## Self-Review 48 - Current Build Repair And H-Phi Evidence
+Problem: The moving workspace repeatedly reintroduced compile failures around `SaveManager.ResolveWfcOutpostSnapshotCacheFlags` and half-written input/UI migrations while the user explicitly ordered build repair and debt work.
+Solution: Kept the cross-domain persistence fix minimal: `SaveManager` resolves WFC snapshot cache dirty state with a method-local `const byte DirtyPayloadFlag = 1 << 0`, avoiding a namespace-sensitive `MacroDatabasePayloadFlags` reference in this file. Waited through concurrent verifier processes, then confirmed current-disk build and latest integration build both exit 0 with 0 warnings and 0 errors. Read the latest H-Phi budget gate; it exits 0 and shows `ManagedFormatSurface` at 590 and `PrimaryManagedRuntimeRisk` at 205, down from the earlier 606/221 evidence during this session.
+Rejected Alternatives: Adding a new using/namespace dependency to SaveManager was rejected because the recurring failure came from integration race visibility around that symbol and the local bit is the binary contract already used by the handle. Reverting other agents' PlayerFlashlight/DiegeticPanel/WorldPopulation changes was rejected because current source compiles and those edits are outside this domain. Running `dotnet rebuild` was rejected by user instruction; normal `dotnet build --no-restore` was sufficient for compile evidence.
+Scalability potential: Low devices keep the same gas hibernation path and avoid compile-blocked integration. Middle/High/Ultra keep cleaner H-Phi evidence from adjacent signal/input formatting reductions without changing Dalton gas simulation truth.
+Hardware Impact: SaveManager dirty-bit check is one byte mask on a cold persistence path; no runtime microsecond saving claimed. Build/H-Phi verification only.
+
+## Self-Review 49 - Post-ModLoader Build Freshness
+Problem: `ModdingAPI/ModLoader.cs` changed after the green 19:34 integration artifact, so the whole-tree compile claim became stale again even though the edit was unrelated to habitat gas.
+Solution: Inspected the ModLoader diff, confirmed it was diagnostic string interpolation replacement with `string.Concat`, then ran another normal current-disk build. `Build_HABITAT_O2_SCRUBBER_LOD_20260515_193739_CurrentDisk.log` exits 0 with 0 warnings and 0 errors; a concurrent doc-audit build also exits 0. No C# source is newer than the latest build log.
+Rejected Alternatives: Ignoring the post-build C# timestamp was rejected because the user explicitly asked to fix build. Editing ModLoader was rejected because current source compiles and the change is outside this domain. Running `dotnet rebuild` remains rejected by instruction.
+Scalability potential: No gas behavior change. The project keeps a verified compile baseline after adjacent H-Phi/string-format cleanup.
+Hardware Impact: Verification only. No runtime microsecond saving claimed.

@@ -773,3 +773,44 @@ Cinematic Cheats used:
 
 Exact microseconds saved:
 - None. Evidence boundary only.
+
+## 2026-05-15 - Current Disk Build Repair And H-Phi Refresh
+STATUS: BUILD VERIFIED
+
+What was wrong:
+- The active compile wall recurred around `SaveManager.cs` resolving WFC snapshot dirty state through `MacroDatabasePayloadFlags`, plus transient half-written input/UI migrations from other agents.
+- In a moving workspace, earlier green build artifacts became stale whenever another C# file changed after the log timestamp.
+
+What was done:
+- Kept `SaveManager.ResolveWfcOutpostSnapshotCacheFlags` on a method-local `const byte DirtyPayloadFlag = 1 << 0` and confirmed no `MacroDatabasePayloadFlags` reference remains in `SaveManager.cs`.
+- Waited for concurrent `dotnet` verifier processes instead of stacking duplicate compilers.
+- Ran/checked normal builds only, never `dotnet rebuild`.
+- Latest direct current-disk build: `Build_HABITAT_O2_SCRUBBER_LOD_20260515_193318_CurrentDisk.log`, exit 0, 0 warnings, 0 errors.
+- Latest integration build: `Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_193359_CurrentDisk28.log`, exit 0, 0 warnings, 0 errors.
+- Confirmed no C# source under `Assets/_Project/Scripts` is newer than the 19:34:50 integration build log.
+- Latest H-Phi gate checked: `HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_193117_CurrentDiskBudgetGate10.json`, exit 0. Key counts: AUP risk 0, FindObject 0, ManagedFormatSurface 590, PrimaryManagedRuntimeRisk 205, JobCompleteSurface 58.
+
+Cinematic Cheats used:
+- None. This was compile repair and static debt evidence, not simulation work.
+
+Exact microseconds saved:
+- No measured runtime claim. The dirty-bit fix is a cold byte-mask path; the earlier WFC bridge work remains the runtime sync-stall reduction in this domain.
+
+## 2026-05-15 - Post-ModLoader Current Build Freshness
+STATUS: BUILD VERIFIED
+
+What was wrong:
+- `Assets/_Project/Scripts/ModdingAPI/ModLoader.cs` changed after the 19:34 green build, making that artifact stale for whole-tree compile evidence.
+
+What was done:
+- Inspected the diff: it replaces interpolated warning/status strings with `string.Concat`; no behavior or domain authority change was made by this agent.
+- `git diff --check` for `ModLoader.cs` and the build-fix surface reports CRLF warnings only.
+- Ran `dotnet build Hecton8.Core.csproj --no-restore --nologo -v:minimal`; `Build_HABITAT_O2_SCRUBBER_LOD_20260515_193739_CurrentDisk.log` exits 0 with 0 warnings and 0 errors.
+- Read concurrent `Build_DOC_AUDIT_R47_20260515_193833_FinalCurrentDiskCore.log`; it also exits 0 with 0 warnings and 0 errors.
+- Confirmed no C# source under `Assets/_Project/Scripts` is newer than the 19:38:49 build log.
+
+Cinematic Cheats used:
+- None.
+
+Exact microseconds saved:
+- None. This is evidence freshness after another agent's adjacent string-format cleanup.

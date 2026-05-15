@@ -1328,12 +1328,12 @@ Integrator notes:
 
 What was wrong:
 - Five repaired AUP consumers kept duplicate grid/local delta helper functions after the precision fixes.
-- `PlayerFlashlight.cs` failed `Hecton8.Core.csproj` compilation on unqualified typed signal-bus references.
+- `PlayerFlashlight.cs` failed `Hecton8.Core.csproj` compilation on typed signal-bus binding.
 
 What was done:
 - Added shared clamped AUP delta helpers through `AbsoluteUniversePosition` and `AUPMath`.
 - Refactored scanner marker sizing, acoustic echolocation labels, seismic shockwave falloff, thunder propagation, and transport entanglement tether distance to use the shared helpers.
-- Qualified `PlayerFlashlight` input signal reads with `global::Hecton8.Core.Signals` instead of changing assemblies or adding a fallback input path.
+- Routed `PlayerFlashlight` input reads through `Hecton8.Core.Signals.SignalBus<PlayerInputSignal>` frame snapshots instead of changing assemblies or adding a fallback input path.
 
 Cinematic Cheats used:
 - Kept existing cheap max/mid/min distance approximations for scanner, acoustic, thunder, and tether presentation.

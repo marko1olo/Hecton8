@@ -898,6 +898,43 @@ Verification:
 Current Status:
 - YELLOW / ACTIVE MOVING WALL.
 
+## 2026-05-15 - CurrentDisk28/CurrentDiskBudgetGate10 Fresh Current-Disk Closure
+
+What was wrong:
+- Parallel edits kept invalidating green artifacts.
+- `SaveManager` repeatedly drifted back to a `MacroDatabasePayloadFlags` helper that is not visible in the Core CLI compile lane.
+- `PlayerInteraction` used `ReadOnlySpan<T>` in the typed input signal snapshot path without a visible `System` namespace.
+- Several compiler walls from `DiegeticPanelController` and input subscription fields were stale mid-write snapshots; current disk already contained the needed helper methods/signal-snapshot flow.
+
+What was done:
+- Repaired `SaveManager.ResolveWfcOutpostSnapshotCacheFlags` with a method-local dirty payload bit.
+- Added `using System;` to `PlayerInteraction` for the current `SignalBus<PlayerInputSignal>` snapshot consumer.
+- Recompiled current disk until a fresh artifact existed.
+- Re-ran the strict full-source H-Phi budget gate and tightened the documented H-Phi command to the current counters.
+
+Cinematic Cheats used:
+- Compile/static contract repair only.
+- No gameplay feature, physics simulation, rendering rewrite, package change, prefab/scene change, `.asmdef` edit, or generated `.csproj` edit.
+
+Exact Microseconds saved:
+- Runtime frame time saved: 0 us measured.
+- Compile verification time: 51,673,823 us.
+- H-Phi verification time: 114,947,663 us.
+
+Verification:
+- Compile artifact: `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_193359_CurrentDisk28.log`.
+- Compile result: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `EXIT=0`.
+- H-Phi artifact: `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_193117_CurrentDiskBudgetGate10.json`.
+- H-Phi result: `EXIT=0`, `RuntimeHPhiRisk=0.000634555`, `DataSovereignty=0.021306032`, `MemoryAlignment=0.506309148`, `GlobalRegistrySurface=5074`, `GetComponentCalls=321`, `NativeArrayRefs=7074`, `ManagedFormatSurface=590`, `JobCompleteSurface=58`, `PrimaryManagedRuntimeRisk=205`, `UnityUpdateMethods=0`, `FindObjectCalls=0`, `AupPrecisionRisk=0`.
+- Freshness: no C# source under `Assets/_Project/Scripts` was newer than either final artifact at verification time.
+
+Residual risk:
+- Unity Editor import, Play Mode, profiler, GCMonitor, player build, runtime visuals, Quest/IL2CPP, and platform build were not run.
+- Runtime microsecond savings are not claimed without profiler evidence.
+
+Current Status:
+- BUILD SUCCESSFUL / PLATINUM GRADE / CURRENTDISK28 CURRENT-DISK GREEN.
+
 ## 2026-05-15 - CurrentDisk24/CurrentDiskBudgetGate14 Active Writer Boundary
 
 What was wrong:

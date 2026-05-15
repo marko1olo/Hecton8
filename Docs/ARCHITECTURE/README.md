@@ -20,7 +20,7 @@ Purpose: stable index for `Docs/ARCHITECTURE`. These files are long-lived system
 
 The previously cited local compile-only artifact `../../CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.summary.txt` is absent from the current filesystem. Treat the May 11 compile-success claim as dated report text. Current May 14 R43 evidence is external root `Hecton8*.csproj` no-restore CLI compile at `0 Warning(s)` / `0 Error(s)` after restore assets and referenced `Temp\bin\Debug` DLLs exist, not Unity runtime proof.
 
-2026-05-15 continuation: current latest-observed `Hecton8.Core.csproj` CLI artifact `../AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_190406_CurrentDisk25.log` exits `0` with `Build succeeded`, `0 Warning(s)`, and `0 Error(s)`. Latest-observed H-Phi full static budget artifact `../AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_185213_CurrentDiskBudgetGate10.json` exits `0`; it supersedes earlier same-day MemoryAlignment failure artifacts only for static H-Phi status.
+2026-05-15 continuation: current latest-observed `Hecton8.Core.csproj` CLI artifact `../AgentLogs/Build_DOC_AUDIT_R47_20260515_193833_FinalCurrentDiskCore.log` exits `0` with `Build succeeded`, `0 Warning(s)`, and `0 Error(s)`. Latest-observed H-Phi full static budget artifact `../AgentLogs/HPhi_DOC_AUDIT_R47_20260515_193609_PostRaceCurrentDiskBudgetGate.json` exits `0`; it supersedes earlier same-day MemoryAlignment failure artifacts only for static H-Phi status.
 
 Not proven by this folder: Unity import, Unity Console, Play Mode, profiler, GCMonitor, player build, frame-time, memory, scene wiring, and visual quality.
 

@@ -1985,14 +1985,7 @@ namespace Hecton8.World
 
         private static float ApproximateAupDistanceMeters(in AbsoluteUniversePosition a, in AbsoluteUniversePosition b)
         {
-            double3 delta = a.ToAbsoluteDouble3() - b.ToAbsoluteDouble3();
-            double ax = math.abs(delta.x);
-            double ay = math.abs(delta.y);
-            double az = math.abs(delta.z);
-            double maxAxis = math.max(ax, math.max(ay, az));
-            double minAxis = math.min(ax, math.min(ay, az));
-            double midAxis = ax + ay + az - maxAxis - minAxis;
-            double approximateDistance = maxAxis + midAxis * 0.375d + minAxis * 0.125d;
+            double approximateDistance = AbsoluteUniversePosition.ApproximateDistanceMetersClamped(in a, in b);
             return approximateDistance >= float.MaxValue ? float.MaxValue : (float)approximateDistance;
         }
 

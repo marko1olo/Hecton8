@@ -209,3 +209,9 @@ Solution: Treat the tree as a bounded integration checkpoint, verify `origin/mai
 Rejected Alternatives: Staging root deletions without copied evidence paths, committing a zero-byte HPhi JSON, reverting other agents' world population cleanup, or claiming Unity/runtime readiness from CLI compile and static HPhi artifacts.
 Scalability potential: Git-only operator pass. Producer changes keep Low/Middle/High/Ultra runtime behavior owner-scoped: input lanes reduce delegate coupling, UI clamps protect authored scalar ranges, and root cleanup reduces agent context load without becoming runtime evidence.
 Hardware Impact: 0 us runtime impact. Dev-path gain is a smaller Git conflict surface and an isolated Core compile boundary; Unity import, Play Mode, profiler, GCMonitor, player build, and visual proof remain pending.
+
+Problem: After `8e9c5044f` was pushed and verified, a residual tail appeared in `ModLoader` logging cleanup, clamped AUP delta consumers, and habitat/integrator status evidence.
+Solution: Keep it as a separate checkpoint, inspect the `ModLoader` changes as string formatting/log-message cleanup, verify the AUP consumers use existing clamped delta helpers, preserve non-empty build/HPhi evidence, and run a fresh isolated Core compile after the AUP tail appeared.
+Rejected Alternatives: Amending the already-pushed checkpoint, hiding the post-push dirty tail, or reporting full Unity health from CLI build output.
+Scalability potential: Git-only operator pass. `ModLoader` edits stay cold/error-path logging cleanup; AUP clamped-delta consumers reduce impossible-distance math risk across Low/Middle/High/Ultra without claiming runtime/profiler proof.
+Hardware Impact: 0 us runtime impact claimed. `Hecton8.Core.csproj` compile passes; Unity import, Play Mode, profiler, GCMonitor, player build, and visual proof remain pending.

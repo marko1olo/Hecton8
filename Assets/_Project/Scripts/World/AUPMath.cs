@@ -29,7 +29,7 @@ namespace Hecton8.World
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static double AUPDistanceSq(in AbsoluteUniversePosition a, in AbsoluteUniversePosition b)
         {
-            double3 delta = AUPDelta(in a, in b);
+            double3 delta = AUPDeltaClamped(in a, in b);
             return math.dot(delta, delta);
         }
 
@@ -67,7 +67,7 @@ namespace Hecton8.World
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static float3 AUPDirection(in AbsoluteUniversePosition from, in AbsoluteUniversePosition to)
         {
-            double3 delta = AUPDelta(in to, in from);
+            double3 delta = AUPDeltaClamped(in to, in from);
             double lengthSq = math.dot(delta, delta);
             if (!math.isfinite(lengthSq) || lengthSq <= double.Epsilon)
                 return float3.zero;

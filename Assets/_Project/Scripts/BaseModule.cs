@@ -3903,7 +3903,7 @@ namespace Hecton8.Gameplay
             AbsoluteUniversePosition moduleAup = AbsoluteUniversePosition.FromRuntimePosition(moduleRuntimePosition);
             moduleRuntimePosition.y = seaLevelRuntimeY;
             AbsoluteUniversePosition seaLevelAup = AbsoluteUniversePosition.FromRuntimePosition(moduleRuntimePosition);
-            double depthMeters = seaLevelAup.ToAbsoluteDouble3().y - moduleAup.ToAbsoluteDouble3().y;
+            double depthMeters = AbsoluteUniversePosition.DeltaMetersClamped(in seaLevelAup, in moduleAup).y;
             if (!math.isfinite(depthMeters) || depthMeters <= 0d)
                 return 0f;
 

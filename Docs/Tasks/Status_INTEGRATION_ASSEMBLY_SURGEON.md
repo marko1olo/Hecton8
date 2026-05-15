@@ -4,7 +4,23 @@ Agent: INTEGRATION_ASSEMBLY_SURGEON
 Role: SYSTEMS_ARCHITECT
 Domain: Unity Compilation Graph / Integrator
 Prompt task count: 15 (current in-chat XML; older 17-task static pass retained below)
-Current state: YELLOW / ACTIVE MOVING WALL. Latest compile artifact `CurrentDisk24` is green but stale by later `SaveManager.cs`; latest H-Phi gate `CurrentDiskBudgetGate14` is green but stale by later `WorldPopulationRule.cs` and `SaveManager.cs`.
+Current state: BUILD SUCCESSFUL / PLATINUM GRADE / CURRENTDISK28 CURRENT-DISK GREEN. `CurrentDisk28` and `CurrentDiskBudgetGate10` are fresh; zero C# source files under `Assets/_Project/Scripts` are newer than either artifact.
+
+## 2026-05-15 CurrentDisk28/CurrentDiskBudgetGate10 Fresh Current-Disk Closure
+
+Directive: repair current source compile drift and keep static H-Phi evidence current under parallel edits.
+Domain: Echelon 9 / The Integrator (Compile Medic).
+Current state: BUILD SUCCESSFUL / PLATINUM GRADE.
+Compile artifact: `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_193359_CurrentDisk28.log`.
+Compile exit artifact: `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_193359_CurrentDisk28.exit.txt`.
+H-Phi artifact: `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_193117_CurrentDiskBudgetGate10.json`.
+H-Phi exit artifact: `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_193117_CurrentDiskBudgetGate10.exit.txt`.
+
+- [x] Current compile wall repaired | Justification: re-applied the Core-visible method-local dirty flag in `SaveManager`, added the missing `System` import for `PlayerInteraction` signal snapshots, and rejected stale mid-write UI/helper errors after disk inspection showed the helpers existed | Alternatives rejected: widening Core assembly references to `MacroDatabasePayloadFlags`, restoring obsolete input-service subscription fields, or editing generated `.csproj` files | Estimate: 0 us runtime
+- [x] Current-disk Core compile reverified | Justification: `CurrentDisk28` reports `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `EXIT=0` after later `WorldPopulationRule.cs` and `SaveManager.cs` writes | Alternatives rejected: reporting stale `CurrentDisk24/25/26/27` artifacts after timestamp scans disproved them | Estimate: 51,673,823 us build verification
+- [x] Current-disk H-Phi gate reverified and tightened | Justification: `CurrentDiskBudgetGate10` exits 0 with `RuntimeHPhiRisk=0.000634555`, `DataSovereignty=0.021306032`, `MemoryAlignment=0.506309148`, `GlobalRegistrySurface=5074`, `NativeArrayRefs=7074`, `ManagedFormatSurface=590`, `JobCompleteSurface=58`, `PrimaryManagedRuntimeRisk=205`, `UnityUpdateMethods=0`, `FindObjectCalls=0`, and `AupPrecisionRisk=0` | Alternatives rejected: retaining stale Gate8/Gate9 evidence or loosening budgets to hide source churn | Estimate: 114,947,663 us tooling verification
+- [x] Final freshness checked | Justification: no C# source under `Assets/_Project/Scripts` was newer than either `CurrentDisk28` or `CurrentDiskBudgetGate10` at verification time | Alternatives rejected: accepting green artifacts without timestamp proof during active parallel edits | Estimate: 400 us scan
+- [x] Regression scope constrained | Justification: no gameplay feature, public contract signature, `.asmdef`, package, prefab, scene, shader, or generated project edit was made; fixes stayed at compile-boundary call-sites/imports | Alternatives rejected: broad refactors and cross-domain ownership rewrites | Estimate: 0 us runtime
 
 ## 2026-05-15 CurrentDisk24/CurrentDiskBudgetGate14 Moving-Wall Stop
 

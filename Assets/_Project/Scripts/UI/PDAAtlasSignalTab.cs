@@ -760,7 +760,7 @@ namespace Hecton8.UI
             if (double.IsInfinity(distanceSq))
                 return DirectionDistanceMaxDisplayMeters;
 
-            Unity.Mathematics.double3 delta = coreAup.ToAbsoluteDouble3() - playerAup.ToAbsoluteDouble3();
+            double3 delta = AbsoluteUniversePosition.DeltaMetersClamped(in coreAup, in playerAup);
             double ax = Math.Abs(delta.x);
             double ay = Math.Abs(delta.y);
             double az = Math.Abs(delta.z);

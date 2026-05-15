@@ -801,9 +801,9 @@ namespace Hecton8.AtlasSignal
             in AbsoluteUniversePosition playerAup,
             in AbsoluteUniversePosition coreAup)
         {
-            double3 delta = coreAup.ToAbsoluteDouble3() - playerAup.ToAbsoluteDouble3();
+            double3 delta = AbsoluteUniversePosition.DeltaMetersClamped(in coreAup, in playerAup);
             double lengthSq = math.lengthsq(delta);
-            if (lengthSq <= 0.000001d)
+            if (!math.isfinite(lengthSq) || lengthSq <= 0.000001d)
                 return Vector3.down;
 
             double ax = math.abs(delta.x);
@@ -813,7 +813,7 @@ namespace Hecton8.AtlasSignal
             double minAxis = math.min(ax, math.min(ay, az));
             double midAxis = ax + ay + az - maxAxis - minAxis;
             double approximateLength = maxAxis + (midAxis * 0.5d) + (minAxis * 0.25d);
-            double invLength = 1d / math.max(approximateLength, 0.000001d);
+            double invLength = math.rcp(math.max(approximateLength, 0.000001d));
             return new Vector3(
                 (float)(delta.x * invLength),
                 (float)(delta.y * invLength),

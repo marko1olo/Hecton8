@@ -567,3 +567,15 @@ Cinematic Cheats used -> None by this operator pass.
 Exact Microseconds saved -> 0 us runtime by this operator pass.
 
 Verification -> `dotnet build Hecton8.Core.csproj` using `Temp\obj\CodexGitCheckNext3` and `Temp\bin\CodexGitCheckNext3` passed with `0 Warning(s)` and `0 Error(s)`. `git diff --check` returned only CRLF warnings before staging. HPhi `CurrentDiskBudgetGate14` reports `EXIT=0`; a later zero-byte HPhi JSON without exit was left unstaged. Unity Editor import, Play Mode, profiler, GCMonitor, player build, and runtime visuals are not claimed.
+
+## 2026-05-15 - Loop 36 Post-Push Modding And AUP Tail
+
+What was wrong -> After `8e9c5044f` was pushed and fetch-verified, active agents produced a residual tail: `ModLoader` log string cleanup, clamped AUP delta consumers, habitat/integrator docs, and fresh build/HPhi evidence.
+
+What was done -> Kept the pushed checkpoint immutable, inspected the residual source diff, verified the AUP edits use existing clamped delta helpers, and ran a fresh isolated Core compile on the latest post-push tail before preparing a second checkpoint.
+
+Cinematic Cheats used -> None by this operator pass.
+
+Exact Microseconds saved -> 0 us runtime by this operator pass.
+
+Verification -> `dotnet build Hecton8.Core.csproj` using `Temp\obj\CodexGitCheckTail2` and `Temp\bin\CodexGitCheckTail2` passed with `0 Warning(s)` and `0 Error(s)`. `git diff --check` and strict marker scan returned clean except CRLF warnings. Unity Editor import, Play Mode, profiler, GCMonitor, player build, and runtime visuals are not claimed.
