@@ -692,3 +692,37 @@ Verification:
 - Full first-party audit with `--ci-surface-gates`: still passes.
 - Scoped `Art/Materials` channel gate returned expected exit 8 with 23 channel candidates.
 - Scoped import/unresolved/material gates still returned expected exits 2/4/3.
+
+## 2026-05-15 - Detail Map Gate Pass
+
+What was wrong:
+
+- Detail-map debt was only part of broad material issue failure.
+- The prompt requires detail-map auditing and the optimized material model depends on shared detail overlays.
+
+What was done:
+
+- Added `--fail-on-detail-map-missing`.
+- Exit code 9 now means base materials are missing detail-map slots.
+- Added `detail_map_missing_count` and `detail_map_missing_materials` to material summary.
+- Added `Detail Map Missing Materials` to Markdown.
+- Added `MaterialAudit_TECHNICAL_ARTIST_DATA_detail_map_missing_materials.csv`.
+- Extended subprocess/export regression coverage.
+
+Cinematic Cheats used:
+
+- Shared detail overlays remain the intended visual fake. No per-material unique microtexture inflation.
+
+Exact Microseconds saved:
+
+- Runtime code changed: none.
+- Immediate runtime CPU saving: 0 us.
+- Prevents material migration from missing the shared-detail path required for 20% perceived detail without unique texture bloat.
+
+Verification:
+
+- `python -m py_compile Tools\MaterialAudit.py Tools\test_material_audit.py`: passed.
+- `python -m unittest Tools.test_material_audit`: passed 12 tests.
+- Full first-party audit with `--ci-surface-gates`: still passes, 31 materials missing detail maps.
+- Scoped `Art/Materials` detail gate returned expected exit 9 with 23 missing detail slots.
+- Scoped channel/import/unresolved/material gates still returned expected exits 8/2/4/3.
