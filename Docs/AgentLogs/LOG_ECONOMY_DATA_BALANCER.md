@@ -743,3 +743,58 @@ negative_cases=6
 energy_pacing_warning=literal_30kw_requires_owner_decision
 STATUS: ECONOMY BALANCED
 ```
+
+## 2026-05-15 - Remote Clean Origin Verification
+
+What was wrong:
+- Local `main` is divergent from `origin/main` and the shared worktree contains unrelated dirty files from parallel agents. A local validation run alone does not prove another machine can reproduce the economy data from GitHub.
+
+What was done:
+- Fetched `origin/main` and confirmed commit `3ff5b9933289709022fb884fa6e9c8ecb4dc6f53` is an ancestor of current remote `main`.
+- Built a clean temp-index export from `origin/main` with 181 scoped paths: `Data/Economy`, `Tools/EconomyValidator.py`, and validator-scanned `.asset` files.
+- Ran normal validation, strict negative validation, Python compile, and binding-plan JSON parse in the clean export.
+- Removed the temporary export after checking it stayed under `%TEMP%`.
+
+Cinematic Cheats used:
+- No runtime simulation added. This remains static economy data and offline importer-gate proof.
+
+Exact Microseconds saved:
+- 0 us measured gameplay. Evidence class is CLI validation/CLI compile only; Unity import, PlayMode, profiler, and GCMonitor remain pending verification.
+
+Verification:
+
+```text
+git fetch origin main
+origin/main = a192bbc161362be2bfb14213cee67a70a74c6af4
+
+git merge-base --is-ancestor 3ff5b9933289709022fb884fa6e9c8ecb4dc6f53 origin/main
+economy_commit_on_origin_OK
+
+temp-index export from origin/main
+remote_clean_verify_OK exported_paths=181
+
+python -B Tools\EconomyValidator.py --root .
+ECONOMY VALIDATION OK
+matrix_rows=150 biomes=10 resources=15
+items_rows=55 raw=15 crafted=40
+matrix_recipe_value_aligned_resources=15
+recipes=40 tier_ratios=[3.667, 2.69]
+survival_velocity_bands=5
+binding_unresolved_ids=22
+binding_plan_blocked_ids=22 candidates=18 author_required=4
+first_sub_recursive_kwh=433.1 literal_minutes=901.7
+hash_pairs_checked=1041
+unique_id_hashes=188
+energy_pacing_warning=literal_30kw_requires_owner_decision
+STATUS: ECONOMY BALANCED
+
+python -B Tools\EconomyValidator.py --root . --negative-tests
+negative_test_first_sub_result_item_mismatch=FAILED_AS_EXPECTED
+negative_test_first_sub_duplicate_raw_resource=FAILED_AS_EXPECTED
+negative_test_first_sub_batch_band_overflow=FAILED_AS_EXPECTED
+negative_test_matrix_recipe_value_drift=FAILED_AS_EXPECTED
+negative_test_items_missing_source_recipe=FAILED_AS_EXPECTED
+negative_test_binding_plan_runtime_allowed=FAILED_AS_EXPECTED
+negative_cases=6
+STATUS: ECONOMY BALANCED
+```

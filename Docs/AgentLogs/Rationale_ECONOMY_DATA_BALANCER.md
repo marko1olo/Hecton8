@@ -268,3 +268,15 @@ Rejected Alternatives: Leaving `Items.csv` out of the global sweep was rejected 
 Scalability potential: Low keeps a flat manifest with direct hash validation; Middle can add approved runtime alias IDs later; High/Ultra can add richer item presentation metadata while the collision gate remains deterministic.
 
 Hardware Impact: Offline-only validation, 0 us gameplay. It prevents runtime catalog fallback or misbinding caused by cross-file hash collisions before data reaches baked tables.
+
+## Decision 23 - Remote Clean Export Proof
+
+Problem: The local shared worktree diverged from `origin/main` and contains unrelated dirty files from parallel agents. A normal local pull or push would risk mixing foreign commits or workspace edits into the economy proof.
+
+Solution: Fetched `origin/main`, proved economy commit `3ff5b9933289709022fb884fa6e9c8ecb4dc6f53` is still an ancestor of remote `main`, then built a clean verification tree from `origin/main` using a temporary Git index. Exported only `Data/Economy`, `Tools/EconomyValidator.py`, and the `.asset` files scanned by the validator, then ran normal validation, strict negative validation, Python compile, and binding-plan JSON parse outside the working copy.
+
+Rejected Alternatives: Local `git pull` was rejected because `main` is divergent and the worktree is shared/dirty. Full `git archive Assets/_Project/Data` was rejected after repeated 10-minute timeouts. Treating local validation as another-computer proof was rejected because local uncommitted files could mask remote state.
+
+Scalability potential: Low/Middle/High/Ultra all receive the same committed static economy data from remote. Importer owners can reproduce from `origin/main` without relying on local workspace residue.
+
+Hardware Impact: Offline-only validation, 0 us gameplay. It prevents false handoff confidence caused by dirty-tree-only success.

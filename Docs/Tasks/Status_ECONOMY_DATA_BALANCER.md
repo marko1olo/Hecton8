@@ -32,6 +32,7 @@ Runtime Unity import/profiler proof: PENDING VERIFICATION
 22. Loop 22: Generated `Data/Economy/Items.csv` from `Recipes.json` and the resource matrix; validator now proves 55 item manifest rows, 15 raw resources, and 40 crafted outputs.
 23. Loop 23: Re-extracted current `CURRENT_BATCH.md` and found the original `ECONOMY_DATA_BALANCER` prompt is no longer present; used this status/rationale as the durable boundary and hardened the primary validator with the 5-50 first-submarine batch-band gate plus `first_sub_batch_band_overflow` negative proof.
 24. Loop 24: Fixed the CSV global hash scanner so optional empty ID/hash pairs are skipped, half-empty pairs fail through `require()`, strict negative mode reports `negative_cases=6`, and generated `EconomyValidator` bytecode was removed.
+25. Loop 25: Fetched current `origin/main`, proved commit `3ff5b9933289709022fb884fa6e9c8ecb4dc6f53` is still an ancestor of remote `main`, and validated a clean temp-index export from `origin/main` with 181 economy/asset-scan paths. Local `main` remains divergent, so no local pull was applied into the dirty shared worktree.
 
 ## Checklist
 
@@ -94,6 +95,8 @@ STATUS: ECONOMY BALANCED
 
 C# scope note: `git diff --name-only -- "*.cs"` currently reports unrelated dirty C# files under Bootstrap/Core/Editor/Optimization plus `PlayerInventory.cs`; this pass did not edit or revert them and does not claim Unity compile/import proof.
 
+Remote clean checkout note: `git fetch origin main` updated `origin/main` to `a192bbc161362be2bfb14213cee67a70a74c6af4`; `git merge-base --is-ancestor 3ff5b9933289709022fb884fa6e9c8ecb4dc6f53 origin/main` returned success. A temp-index export from `origin/main` copied 181 scoped paths (`Data/Economy`, `Tools/EconomyValidator.py`, and validator-scanned `.asset` files), then passed normal validation, strict negative validation, Python compile, and binding-plan JSON parse. Evidence class: CLI validation/CLI compile only; Unity import/profiler proof remains pending.
+
 ## Self-Review Findings
 
 - [x] Hash mismatch defect corrected | DOD: `Data_TitaniumScrap` now stores unsigned `3511699502`, matching project `LocHash.Compute` signed pattern `-783267794` | Alternative rejected: preserving earlier local hash convention.
@@ -114,3 +117,4 @@ C# scope note: `git diff --name-only -- "*.cs"` currently reports unrelated dirt
 - [x] Items manifest guard hardened | DOD: validator enforces row count and item set = 15 matrix raw resources + 40 recipe outputs, exact raw/crafted counts, crafted source-recipe hashes, and `items_missing_source_recipe` negative proof | Alternative rejected: accepting partial manifest classification or row-count-only validation.
 - [x] First-submarine pacing band enforced | DOD: validator rejects structurally consistent first-submarine paths outside 5-50 recursive recipe batches, and `first_sub_batch_band_overflow` fails as expected | Alternative rejected: relying only on a separate graph-audit report outside the primary balancer gate.
 - [x] CSV optional hash guard fixed | DOD: optional empty CSV ID/hash pairs are ignored by global collision scanning, half-empty pairs fail through `require()`, and strict negative mode remains controlled at `negative_cases=6` | Alternative rejected: allowing raw `ValueError` from `int("")`.
+- [x] Remote clean-export verification completed | DOD: current `origin/main` contains commit `3ff5b9933289709022fb884fa6e9c8ecb4dc6f53`; temp-index export of 181 scoped paths from remote passed validator, negative tests, `py_compile`, and `json.tool` | Alternative rejected: treating local dirty workspace validation as proof for another computer.
