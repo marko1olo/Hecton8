@@ -149,3 +149,15 @@ Rejected Alternatives: Staging the live index was rejected because it would incl
 Scalability potential: Not runtime. The branch remains isolated for integrator review.
 
 Hardware Impact: No runtime impact.
+
+## Decision 13 - Polish Hardening for Drift Failure
+
+Problem: The post-completion anti-bloat audit found no `<POLISH_MANDATE>` tag in `Docs/Tasks/CURRENT_BATCH.md`, but it did find a legitimate robustness gap: `build_report()` tried to stress every required tier before it could produce a structured failure report. If a future edit removed `GOD_MODE`, the tool would throw a Python key error instead of returning a deterministic audit failure.
+
+Solution: Add an early missing-tier check in `build_report()` and expose `REQUIRED_GOD_FALLBACK_REFS` as a module constant so tests verify every expensive GOD_MODE fallback path points at an existing `godModeFallbacks` key.
+
+Rejected Alternatives: Leaving the throw path was rejected because stress tooling must fail cleanly in CI-style use. Adding a schema package was rejected because it would introduce dependency weight for a small fixed JSON contract.
+
+Scalability potential: Not runtime. The matrix handoff becomes harder to corrupt during future tier edits.
+
+Hardware Impact: No runtime impact. Offline validation still reports TOASTER 1560 MiB and GOD_MODE/PRO density ratio 9.097.

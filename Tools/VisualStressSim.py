@@ -34,6 +34,16 @@ REQUIRED_GOD_FALLBACK_KEYS = (
     "shadowQuality",
     "postProcessing",
 )
+REQUIRED_GOD_FALLBACK_REFS = (
+    "shaderFeatures.pom.fallback",
+    "shaderFeatures.ssr.fallback",
+    "shaderFeatures.screenSpaceRefractions.fallback",
+    "shaderFeatures.fallback",
+    "volumetricScattering.fallback",
+    "volumetricScattering.noise.fallback",
+    "particles.fallback",
+    "textures.fallback",
+)
 
 
 def require(condition: bool, message: str, failures: List[str]) -> None:
@@ -243,18 +253,8 @@ def validate_matrix(data: Dict[str, Any], report: Dict[str, Any]) -> List[str]:
     for key in REQUIRED_GOD_FALLBACK_KEYS:
         require(key in fallback_map and bool(fallback_map[key]), f"missing GOD_MODE fallback key {key}", failures)
 
-    fallback_refs = (
-        "shaderFeatures.pom.fallback",
-        "shaderFeatures.ssr.fallback",
-        "shaderFeatures.screenSpaceRefractions.fallback",
-        "shaderFeatures.fallback",
-        "volumetricScattering.fallback",
-        "volumetricScattering.noise.fallback",
-        "particles.fallback",
-        "textures.fallback",
-    )
     god = tiers["GOD_MODE"]
-    for path in fallback_refs:
+    for path in REQUIRED_GOD_FALLBACK_REFS:
         value = get_nested(god, path)
         require(isinstance(value, str) and value.startswith("godModeFallbacks."), f"GOD_MODE missing fallback ref {path}", failures)
 
@@ -276,6 +276,12 @@ def build_report(data: Dict[str, Any], matrix_path: Path, seed: int, frame_count
             "status": "PENDING"
         }
     }
+    missing_tiers = [name for name in REQUIRED_TIERS if name not in tiers]
+    if missing_tiers:
+        report["selfAudit"]["failures"] = [f"missing tier {name}" for name in missing_tiers]
+        report["selfAudit"]["status"] = "FAIL"
+        return report
+
     for name in REQUIRED_TIERS:
         report["tiers"][name] = stress_tier(tiers[name], seed + len(name), frame_count)
     failures = validate_matrix(data, report)

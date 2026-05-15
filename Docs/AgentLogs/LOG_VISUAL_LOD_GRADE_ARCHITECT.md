@@ -132,3 +132,55 @@ Why rejected:
 - Batch-file editing was rejected.
 - Unrelated dirty worktree edits were rejected.
 - Live-index staging was rejected; the final verification evidence uses a temporary-index branch-tip commit on `origin/visual-lod-grade-architect`.
+
+## 2026-05-15 - Polish Hardening Pass
+
+What was wrong:
+- `Docs/Tasks/CURRENT_BATCH.md` contains no `<POLISH_MANDATE>` tag, so no batch-specific polish text exists to parse.
+- The simulator had a brittle missing-tier path: a future deleted tier could raise a Python key error before the self-audit could return `FAIL`.
+
+What was done:
+- Searched the batch file for `POLISH`; result was `POLISH_MANDATE_TAG_NOT_FOUND`.
+- Added early missing-tier handling to `Tools/VisualStressSim.py`.
+- Promoted GOD_MODE fallback reference paths to `REQUIRED_GOD_FALLBACK_REFS`.
+- Expanded `Tools/test_visual_stress_sim.py` from 2 tests to 4 tests.
+- Added coverage for every tier staying under its declared VRAM guard.
+- Added coverage that removing `GOD_MODE` returns `selfAudit.status=FAIL` without throwing.
+
+Cinematic Cheats used:
+- No new runtime visual cheat was added.
+- The existing matrix still keeps TOASTER on depth fog, baked AO, HLOD cards, texture downgrade, and capped particles.
+
+Exact Microseconds saved:
+- Measured runtime microseconds saved: 0 us. Tooling-only change.
+- Offline failure-path cost is irrelevant to frame time.
+
+Verification:
+- `python -m py_compile Tools/VisualStressSim.py Tools/test_visual_stress_sim.py` passed.
+- `python -m unittest Tools.test_visual_stress_sim` passed: 4 tests.
+- `python Tools/VisualStressSim.py --write-report` passed.
+- `python -m json.tool Data/System/Visual_Scalability_Matrix.json` passed.
+- `python -m json.tool Docs/AgentLogs/VisualStressSim_VISUAL_LOD_GRADE_ARCHITECT.json` passed.
+- `git diff --check` passed for owned changed files.
+- Offline stress results remain TOASTER 1560.0 MiB, PRO density 338.4, GOD_MODE density 3078.4, GOD_MODE/PRO ratio 9.097.
+
+Regression model:
+- CPU: runtime unchanged.
+- GC: runtime unchanged.
+- Memory: runtime unchanged.
+- Cadence: runtime unchanged.
+- Correctness: simulator now fails cleanly on missing required tiers.
+
+Hot path impact:
+- None.
+
+Failure modes:
+- Unity runtime verification remains absent.
+- A JSON shape change outside the fixed contract can still fail by exception; current hardening targets the required-tier drift path found in this polish pass.
+
+Why kept:
+- The patch improves deterministic validation and expands tests without adding runtime code or third-party dependencies.
+
+Why rejected:
+- Adding a JSON schema dependency was rejected as bloat.
+- Editing the batch file to invent a polish mandate was rejected.
