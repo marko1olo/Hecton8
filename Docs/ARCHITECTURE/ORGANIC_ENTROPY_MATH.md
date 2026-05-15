@@ -348,6 +348,7 @@ Persistence contract:
 - `Tools/test_world_entropy_sim.py` locks exported constants against the C# fast-path config bounds.
 - `WorldEntropySim.py` rejects non-positive `--days` values instead of silently clamping them.
 - `run_sim()` also rejects non-positive day counts, so direct test/automation callers cannot bypass the CLI evidence guard.
+- `build_initial_state()` validates constants before allocating per-cell lists, so direct helper calls cannot bypass the grid cap or byte-lane guards.
 - Acceptance balance requires required biome recovery evidence; an absent Deep Abyss biome cannot pass total-overharvest from final mature ratio alone.
 - Summary recovery days require at least one macro-sector in the biome; absent biomes remain `None` instead of reporting false day-1 recovery.
 - The Python harness validates the biome constants contract before simulation: exactly four biomes with ids/names matching runtime indices `0..3`.

@@ -832,3 +832,27 @@ Verification:
 - `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 1000 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`, mature counts stable through day 1000.
 - Visual Studio Roslyn C# 9 unsafe probe compile: exit code 0.
 - Probe temp directory: removed.
+
+## 2026-05-15 - Direct Helper Allocation Guard
+
+What was wrong:
+- `run_sim()` validated constants before state construction.
+- Direct `build_initial_state()` callers could still bypass validation and allocate oversized per-cell lists.
+
+What was done:
+- Added `validate_constants(constants)` at the start of `build_initial_state()`.
+- Added `test_build_initial_state_rejects_invalid_constants_before_allocation` with a `1025x1025` grid.
+
+Cinematic cheats used:
+- None. This is offline validation hardening.
+
+Exact microseconds saved:
+- Runtime microseconds saved: 0. Unity runtime backend was not changed.
+- Failure avoided: malformed direct helper calls abort before Python list allocation.
+
+Verification:
+- `python -m py_compile Tools/WorldEntropySim.py Tools/test_world_entropy_sim.py`: exit code 0.
+- Guard scan found `validate_constants(constants)` in `build_initial_state()` and the new regression test.
+- `python -m unittest Tools.test_world_entropy_sim -v`: 18 tests passed in 37.183 s.
+- `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 365 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`, Safe day 28, Deep Abyss day 88, ratio 3.143, final mature ratio 1.000.
+- `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 1000 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`, mature counts stable through day 1000.
