@@ -383,3 +383,14 @@ Follow-up upgrade 39:
 Exact microseconds saved after follow-up 39:
 - Fault frames avoid poisoned stress selection and downstream deformation artifacts.
 - Low/MX350 is unaffected because low-tier exits before the resolver loop; non-low valid-frame overhead is two scalar finite checks per candidate inside the existing 64-slot cap.
+
+Follow-up upgrade 40:
+- What was wrong: the habitat stress resolver trusted peak stress and selected buffer stress after CPU publication. A non-finite scalar could still leak into low-tier crease or localized bend.
+- What was done: `HectonHabitatInteriorResolveStress01` now rejects non-finite peak stress before low-tier/buffer branches and returns zero if the selected buffer scalar is non-finite.
+- Cinematic cheat used: corrupted stress scalars become silent visual output; valid pressure deformation remains unchanged.
+- Static checks: `rg` confirms peak and buffer finite gates; exact shader `normalize()`/`sqrt()` scan remains clean.
+- Rebuild policy: no `dotnet` rebuild and no Unity rebuild were run by explicit user instruction.
+
+Exact microseconds saved after follow-up 40:
+- Fault frames avoid NaN crease/deformation propagation.
+- Valid-frame overhead is two scalar finite checks in already-gated stress paths; expected cost is below measurement noise under the 64-slot cap.

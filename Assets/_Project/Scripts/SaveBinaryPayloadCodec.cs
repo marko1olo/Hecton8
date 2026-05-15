@@ -150,6 +150,13 @@ namespace Hecton8.SaveSystem
             return true;
         }
 
+        internal static bool HasWfcOutpostBitmaskMagic(byte* source, int length)
+        {
+            return source != null &&
+                   length >= sizeof(uint) &&
+                   ReadUInt(source, 0) == WfcOutpostPayloadMagic;
+        }
+
         internal static bool TryReadWfcOutpostBitmaskPayload(
             byte* source,
             int length,

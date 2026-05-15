@@ -172,6 +172,12 @@ Rejected Alternatives: Leaving the legacy writer untouched because current inven
 Scalability potential: Low devices avoid malformed legacy payload expansion; Middle keeps save repair deterministic; High and Ultra can keep larger DTO backings without allowing wire payloads to grow past logical caps.
 Hardware Impact: 0 us frame impact. Cold legacy save path now caps the custom item-cell loop at 128 records and prevents oversized string-bearing inventory-cell payloads from being emitted.
 
+Problem: Root legacy save collections still had unbounded binary read paths for compatibility lists, dictionaries, and hash sets. A malformed payload could force large managed allocations before migration could clamp or rebuild packed state.
+Solution: Added explicit root collection caps in `SaveData` from producer evidence: 32 tool records, 108 legacy biome IDs, 1024 audio-log IDs, 1024 legacy quest IDs, 32 suit upgrade IDs, 16 corporate orders, 32 mission IDs, and 64 custom mod entries. `SaveBinaryPayloadCodec` now writes those collections through capped overloads and rejects over-limit counts before allocating during read. Corporate pending order IDs and timers use a paired-count clamp on write.
+Rejected Alternatives: Trusting migration to trim after allocation; keeping generic unbounded list/dictionary/hashset readers for root compatibility fields; sorting/truncating dictionaries with temporary arrays. Read-time rejection is the only deterministic anti-bomb gate, and producer caps make write-side truncation a cold bug containment path rather than a gameplay feature.
+Scalability potential: Low devices reject corrupt save payloads before heap pressure; Middle keeps legacy compatibility lists bounded while packed bitmasks and DTO arrays carry primary state; High and Ultra can keep richer save DTO capacity without letting compatibility maps scale with mod or corruption noise.
+Hardware Impact: 0 us frame impact. Cold load now caps worst-case root compatibility allocation to 32/108/1024/1024/32/16/32/64 records instead of attacker-controlled counts; cold save adds scalar clamps and one paired-list min chain only.
+
 ## OMEGA POLISH CHANGES
 
 Problem: Polish audit required removal of fake precision, managed iteration/string debt, and any code outside the DataVault domain without justification.

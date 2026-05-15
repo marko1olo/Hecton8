@@ -546,5 +546,6 @@ Verification state:
 - Static verification completed: `git diff --check` returned no whitespace errors, only Git LF/CRLF notices.
 - Forbidden hot-path scan returned no matches for CPU readback, ParticleSystem, ComputeBuffer, scene search, job scheduling fences, private `H8Memory.Allocate`, private `H8Memory.Release`, `MaterialPropertyBlock`, or `matProps`.
 - Shader hot-math scan returned no matches for `sincos`, raw trig, `pow`, `exp`, `log`, or raw `normalize`.
+- `CURRENT_BATCH.md` exact prompt tag count for `VFX_SDF_CARVE_DEBRIS`: 0.
 - Unity import/compile and profiler capture remain unverified.
 - No dotnet rebuild was run.

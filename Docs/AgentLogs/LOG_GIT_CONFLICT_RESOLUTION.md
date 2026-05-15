@@ -157,3 +157,25 @@ Verification:
 - `git rev-list --left-right --count origin/main...HEAD` returned `0 0`.
 - `git diff --check` returned only CRLF warnings.
 - Conflict-marker scan returned no active merge markers.
+
+## 2026-05-15 - Post-Push Tail Bound
+
+What was wrong:
+- `f9c51f410` pushed successfully, but another post-push dirty tail appeared immediately.
+- Remote history still matched local committed history after fetch: `origin/main...HEAD` returned `0 0`.
+
+What was done:
+- Verified the pushed commit was present on `origin/main`.
+- Re-ran dirty-tail checks: unmerged paths absent, conflict markers absent, `git diff --check` only reported CRLF warnings.
+- Prepared one more checkpoint to avoid leaving already-validated local work unpushed.
+
+Cinematic Cheats used:
+- None. Git-only operation.
+
+Exact Microseconds saved:
+- Runtime saved: 0 us. Dev-path saved: bounded the live-tail loop while preserving another validated batch.
+
+Verification:
+- `git fetch origin` succeeded.
+- `git rev-list --left-right --count origin/main...HEAD` returned `0 0`.
+- `git diff --check` returned only CRLF warnings.

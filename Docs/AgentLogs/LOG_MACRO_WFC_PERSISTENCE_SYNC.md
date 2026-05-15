@@ -628,3 +628,30 @@ Verification:
 - `git diff --check` reports no whitespace errors.
 - `Select-String` still finds no `MACRO_WFC_PERSISTENCE_SYNC` tag in the rotated current batch.
 - No `dotnet` rebuild was run.
+
+## Recheck Report: WFC Hydration Magic Prefilter
+Status: PENDING VERIFICATION.
+
+What was wrong:
+- Hydration WFC restore candidates were filtered by byte length only.
+- Any unrelated MacroDB payload sized 32-288 bytes could be treated as corrupt WFC and trigger the WFC black-box dump.
+
+What was done:
+- Added `SaveBinaryPayloadCodec.HasWfcOutpostBitmaskMagic()`.
+- Hydration now checks the WFC magic before full decode.
+- Non-WFC small payloads become missing-WFC hydration events, not corrupt WFC dumps.
+- Pointer-null handles and WFC-magic malformed payloads still use the corrupt/dump path.
+
+Cinematic cheats used:
+- One fixed magic read replaces payload-type contract churn and avoids replay/simulation diagnostics.
+
+Exact microseconds saved:
+- Measured savings: 0 us. No profiler or runtime trace.
+- Hydration candidate cost: one 32-bit read before decode.
+- False-positive avoidance: skips one roughly 38.4 KB WFC dump plus header for unrelated small payload bursts.
+
+Verification:
+- Static scans confirm hydration checks magic before WFC decode.
+- Static scans confirm public WFC restore still decodes directly and dumps corrupt WFC.
+- `git diff --check` reports no whitespace errors beyond Git CRLF normalization warnings.
+- No `dotnet` rebuild was run.

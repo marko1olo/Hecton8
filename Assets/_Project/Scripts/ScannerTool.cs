@@ -976,8 +976,10 @@ namespace Hecton8.Gameplay
                 deltaTime = 0f;
 
             bool heldForBlackBox = _heldPrimaryThisFrame;
-            UpdateScientificScanning(deltaTime);
-            WriteScannerBlackBox(deltaTime, heldForBlackBox);
+            float now = Time.time;
+            int frame = Time.frameCount;
+            UpdateScientificScanning(deltaTime, now);
+            WriteScannerBlackBox(deltaTime, heldForBlackBox, now, frame);
         }
 
         public void SlowTick()
@@ -1189,7 +1191,7 @@ namespace Hecton8.Gameplay
             }
         }
 
-        private void WriteScannerBlackBox(float deltaTime, bool heldThisFrame)
+        private void WriteScannerBlackBox(float deltaTime, bool heldThisFrame, float now, int frame)
         {
             if (!_scannerBlackBox.IsCreated)
                 return;
@@ -1205,7 +1207,7 @@ namespace Hecton8.Gameplay
                 ? _activeScientificEntityProgress
                 : _scientificSnapshot.Progress01;
             float lastContactAge = math.isfinite(_scientificLastContactTime)
-                ? Time.time - _scientificLastContactTime
+                ? now - _scientificLastContactTime
                 : 0f;
             float pendingDistance = _pendingScientificOcclusionDistance;
             bool invalidState =
@@ -1251,7 +1253,7 @@ namespace Hecton8.Gameplay
             ResolveScannerTuningHashes(out uint artifactHash, out uint blueprintHash, out _);
             _scannerBlackBox[_scannerBlackBoxCursor] = new ScannerBlackBoxEntry
             {
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = unchecked((uint)frame),
                 ToolHash = RuntimeToolId != 0u ? RuntimeToolId : ScannerToolTuningHash,
                 ArtifactHash = artifactHash,
                 BlueprintHash = blueprintHash != 0u ? blueprintHash : FallbackScannerBlueprintHash,
@@ -2828,7 +2830,7 @@ namespace Hecton8.Gameplay
             return snapshot.IsActive;
         }
 
-        private void UpdateScientificScanning(float deltaTime)
+        private void UpdateScientificScanning(float deltaTime, float now)
         {
             bool heldThisFrame = _heldPrimaryThisFrame;
             float heldDeltaTime = SafeNonNegative(_heldPrimaryDeltaTime);
@@ -2848,7 +2850,7 @@ namespace Hecton8.Gameplay
             float effectiveResampleInterval = ResolveFocusedScanResampleInterval();
             float holdTimeout = math.max(effectiveResampleInterval * ScientificScanHoldGraceMultiplier, 0.1f);
             if (_activeScientificFragment != null &&
-                Time.time - _scientificLastContactTime <= holdTimeout &&
+                now - _scientificLastContactTime <= holdTimeout &&
                 heldDeltaTime > 0f)
             {
                 float fragmentProgressDelta = heldDeltaTime;
@@ -2879,7 +2881,7 @@ namespace Hecton8.Gameplay
                 RefreshScientificSnapshotProgress();
             }
             else if (_activeScientificEntityHash != 0u &&
-                     Time.time - _scientificLastContactTime <= holdTimeout &&
+                     now - _scientificLastContactTime <= holdTimeout &&
                      heldDeltaTime > 0f)
             {
                 _activeScientificEntityProgress = SafeNonNegative(_activeScientificEntityProgress + heldDeltaTime);
@@ -2900,11 +2902,11 @@ namespace Hecton8.Gameplay
                 InvalidateOperationalStringCache();
             }
 
-            if (Time.time >= _scientificNextResampleAt)
-                ScheduleScientificConeBatch();
+            if (now >= _scientificNextResampleAt)
+                ScheduleScientificConeBatch(now);
         }
 
-        private void ScheduleScientificConeBatch()
+        private void ScheduleScientificConeBatch(float now)
         {
             if (!TryResolveScientificAcquisitionPose(out Vector3 origin, out Vector3 forward))
                 return;
@@ -2927,7 +2929,7 @@ namespace Hecton8.Gameplay
                     out uint loreHash))
             {
                 QueueScientificOcclusionRaycast(origin, loreTarget, lorePosition, loreHash);
-                _scientificNextResampleAt = Time.time + resampleInterval;
+                _scientificNextResampleAt = now + resampleInterval;
                 return;
             }
 
@@ -2946,7 +2948,7 @@ namespace Hecton8.Gameplay
                 ConsumeScientificSpatialHit(in hit);
             }
 
-            _scientificNextResampleAt = Time.time + resampleInterval;
+            _scientificNextResampleAt = now + resampleInterval;
         }
 
         private bool TryResolveScientificAcquisitionPose(out Vector3 origin, out Vector3 forward)

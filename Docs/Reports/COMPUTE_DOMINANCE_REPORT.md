@@ -58,6 +58,7 @@ These files preserve the short operational view outside the long report:
 
 | File | Purpose |
 |---|---|
+| `COMPUTE_AUDIT_INDEX.md` | Read-order index and hard evidence boundaries |
 | `COMPUTE_AUDIT_BRIEF.md` | Root hard-number snapshot and evidence rules |
 | `COMPUTE_THREAD_TRIAGE.md` | Top-heavy `.codex` thread queue by token concentration |
 | `COMPUTE_THREAD_ATTRIBUTION.md` | Top-30 rollout JSONL work-trace attribution |

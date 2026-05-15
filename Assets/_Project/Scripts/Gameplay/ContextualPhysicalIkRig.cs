@@ -2086,15 +2086,20 @@ namespace Hecton8.Gameplay
             }
 
             _upperArmCullTimer += SanitizeNonNegativeScalar(deltaTime);
-            if (_upperArmCullTimer >= math.max(0.01f, upperArmCullHysteresisSeconds) && _upperArmRenderersVisible)
+            if (_upperArmCullTimer >= math.max(0.01f, SanitizeNonNegativeScalar(upperArmCullHysteresisSeconds)) && _upperArmRenderersVisible)
                 SetUpperArmRenderersVisible(false);
         }
 
         private bool IsAnyUpperArmRendererInViewCone(Transform cameraTransform)
         {
             float3 cameraPosition = ContextualPhysicalIkMath.ToFloat3(cameraTransform.position);
-            float3 cameraForward = ContextualPhysicalIkMath.ToFloat3(cameraTransform.forward);
-            float minimumForwardDot = math.max(0.0f, upperArmFovDotThreshold);
+            float3 cameraForward = ContextualPhysicalIkMath.SafeNormalize(
+                ContextualPhysicalIkMath.ToFloat3(cameraTransform.forward),
+                new float3(0.0f, 0.0f, 1.0f));
+            if (!math.all(math.isfinite(cameraPosition)))
+                return true;
+
+            float minimumForwardDot = SanitizeUnitScalar(upperArmFovDotThreshold);
             float minimumForwardDotSq = minimumForwardDot * minimumForwardDot;
             for (int i = 0; i < upperArmRenderers.Length; i++)
             {
@@ -2104,6 +2109,9 @@ namespace Hecton8.Gameplay
 
                 float3 direction = ContextualPhysicalIkMath.ToFloat3(renderer.bounds.center) - cameraPosition;
                 float distanceSq = math.lengthsq(direction);
+                if (!math.isfinite(distanceSq))
+                    continue;
+
                 if (distanceSq <= UpperArmVisibilityProxyRadiusSq)
                     return true;
 
@@ -2674,14 +2682,21 @@ namespace Hecton8.Gameplay
                         ? _appendageSurfaceNormalSources[chainIndex]
                         : null;
                     Vector3 targetNormal = normalSource != null ? normalSource.up : Vector3.up;
-                    if (voxelVolume.TryGetNearestCorner(targetPosition, targetNormal, out Vector3 snappedCorner))
+                    if (IsFiniteVector(targetPosition) &&
+                        voxelVolume.TryGetNearestCorner(targetPosition, targetNormal, out Vector3 snappedCorner) &&
+                        IsFiniteVector(snappedCorner))
+                    {
                         targetPosition = snappedCorner;
+                    }
                 }
 
+                float3 safePosition = IsFiniteVector(targetPosition)
+                    ? ContextualPhysicalIkMath.ToFloat3(targetPosition)
+                    : float3.zero;
                 _appendageTargets[chainIndex] = new ContextualPhysicalIkAppendageTarget
                 {
-                    Position = ContextualPhysicalIkMath.ToFloat3(targetPosition),
-                    Weight = weight,
+                    Position = safePosition,
+                    Weight = SanitizeUnitScalar(weight),
                 };
             }
         }

@@ -325,3 +325,15 @@ Cinematic Cheats used: no simulation change. This preserves the scalar kinematic
 Exact microseconds saved/spent: one integer compare per receiver callback. Stale callbacks skip one transform conversion plus local/distance checks. No allocations, no new containers, no dispatcher cost.
 
 Verification: `git diff --check` passed. Scoped source counter reports `ForbiddenPatternTotal=0`, `ResolvedSampleFrame=1`, `StaleSampleReject=1`, `FrameGuardBeforeWorldToLocal=1`, `LastHandFrameSingleWrite=1`, `OldFrameWrite=0`, `TryQueueLatchedGuard=1`, `DotnetMention=0`. `CURRENT_BATCH.md` extraction still returns no matching prompt block. No dotnet rebuild/probe was run by user instruction.
+
+## 2026-05-15 - Dynamic Math LOD Rebind
+
+What was wrong: the manual override lever seeded `_lowTierMath` only on enable. Runtime scalability profile changes could leave cockpit IK presentation on the wrong Low/High blend.
+
+What was done: the lever now implements `IScalabilityChangedEventListener`, registers with `ScalabilityEvents`, updates `_lowTierMath` from the typed payload, and unregisters on disable, destroy, and latch.
+
+Cinematic Cheats used: no physical simulation change. This keeps the kinematic lever authoritative and lets presentation smoothing scale by platform tier without polling in the hot path.
+
+Exact microseconds saved/spent: 0 us steady-state. Tier changes pay one bool write. Lifecycle/latch pay fixed-bucket listener register/unregister only.
+
+Verification: `git diff --check` passed for the lever source. Scoped counter reports `ForbiddenPatternTotal=0`, `ScalabilityInterface=1`, `ScalabilityRegister=1`, `ScalabilityUnregister=1`, `ScalabilityCallback=1`, `LowTierPayloadUpdate=1`, `LatchedScalabilityGuard=1`, `LatchUnregisterScalability=1`, `TickBodyHasScalabilityPoll=false`, `ColdResolveLowTierMath=1`, `DotnetMention=0`. `CURRENT_BATCH.md` extraction still returns no matching prompt block. No dotnet rebuild/probe was run by user instruction.

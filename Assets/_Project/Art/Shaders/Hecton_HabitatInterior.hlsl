@@ -36,11 +36,12 @@ half3 HectonHabitatInteriorSafeNormalizeHalf3(half3 value, half3 fallbackValue)
 
 float HectonHabitatInteriorResolveStress01(float3 positionWS)
 {
-    if (_HectonHabitatModuleStressParams.w <= HECTON_HABITAT_INTERIOR_STRESS_EPSILON)
+    float peakStress01 = _HectonHabitatModuleStressParams.w;
+    if (!isfinite(peakStress01) || peakStress01 <= HECTON_HABITAT_INTERIOR_STRESS_EPSILON)
         return 0.0;
 
     if (_HectonHabitatModuleStressParams.z > 0.5)
-        return saturate(_HectonHabitatModuleStressParams.w);
+        return saturate(peakStress01);
 
     uint count = HectonHabitatInteriorModuleCount();
     if (count == 0u)
@@ -68,7 +69,8 @@ float HectonHabitatInteriorResolveStress01(float3 positionWS)
     if (bestIndex >= count)
         return 0.0;
 
-    return saturate(_HectonHabitatModuleStressBuffer[bestIndex]);
+    float stress01 = _HectonHabitatModuleStressBuffer[bestIndex];
+    return isfinite(stress01) ? saturate(stress01) : 0.0;
 }
 
 float2 HectonHabitatInteriorPanelUv(float2 uv)

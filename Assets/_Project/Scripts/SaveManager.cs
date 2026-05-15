@@ -1379,8 +1379,20 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
+            if (handle.Pointer == IntPtr.Zero)
+            {
+                RecordWfcOutpostEventBlackBox(WfcOutpostBlackBoxOperationHydration, WfcOutpostPersistenceStatus.CorruptLength, sectorHash, payloadBytes: handle.ByteLength);
+                PublishWfcCorruptPayloadWarning();
+                return false;
+            }
+
+            if (!SaveBinaryPayloadCodec.HasWfcOutpostBitmaskMagic((byte*)handle.Pointer, handle.ByteLength))
+            {
+                RecordWfcOutpostEventBlackBox(WfcOutpostBlackBoxOperationHydration, WfcOutpostPersistenceStatus.Missing, sectorHash, payloadBytes: handle.ByteLength);
+                return false;
+            }
+
             if (
-                handle.Pointer == IntPtr.Zero ||
                 handle.ByteLength < WfcOutpostPersistenceConstants.PayloadHeaderBytes ||
                 handle.ByteLength > WfcOutpostPersistenceConstants.PayloadMaxBytes ||
                 !SaveBinaryPayloadCodec.TryReadWfcOutpostBitmaskPayload(

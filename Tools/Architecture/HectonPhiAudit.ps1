@@ -13,7 +13,13 @@ param(
     [int]$MaxAupPrecisionRisk = -1,
     [int]$MaxFindObjectCalls = -1,
     [int]$MaxLegacyEventPublish = -1,
-    [int]$MaxDuplicateSignalNames = -1
+    [int]$MaxDuplicateSignalNames = -1,
+    [int]$MaxGlobalRegistrySurface = -1,
+    [int]$MaxGetComponentCalls = -1,
+    [int]$MaxNativeArrayRefs = -1,
+    [double]$MinDataSovereignty = -1.0,
+    [double]$MinMemoryAlignment = -1.0,
+    [double]$MinRuntimeHPhiRisk = -1.0
 )
 
 $ErrorActionPreference = 'Stop'
@@ -1414,6 +1420,30 @@ function Assert-StaticCounterBudget {
     throw $message
 }
 
+function Assert-StaticScoreFloor {
+    param(
+        [System.Collections.Specialized.OrderedDictionary]$Scores,
+        [string]$ScoreName,
+        [double]$MinValue,
+        [string]$Label
+    )
+
+    if ($MinValue -lt 0.0) {
+        return
+    }
+
+    $actual = [double]$Scores[$ScoreName]
+    if ($actual -ge $MinValue) {
+        return
+    }
+
+    $culture = [System.Globalization.CultureInfo]::InvariantCulture
+    throw ('{0} H-Phi floor failed: score {1} is below floor {2}.' -f
+        $Label,
+        $actual.ToString('0.#########', $culture),
+        $MinValue.ToString('0.#########', $culture))
+}
+
 function Add-Count {
     param(
         [System.Collections.Specialized.OrderedDictionary]$Counters,
@@ -1570,6 +1600,73 @@ function New-Scores {
     }
 }
 
+function New-BudgetState {
+    param(
+        [bool]$Enabled,
+        [object]$Max,
+        [object]$Actual,
+        [bool]$Passed,
+        [string]$EvidenceClass
+    )
+
+    [ordered]@{
+        Enabled = $Enabled
+        Max = $Max
+        Actual = $Actual
+        Passed = $Passed
+        EvidenceClass = $EvidenceClass
+    }
+}
+
+function New-CoreGraphBudgetSummary {
+    param([System.Collections.Specialized.OrderedDictionary]$CoreGraphAudit)
+
+    $gate = $CoreGraphAudit.BuildGraphGate
+    $counts = $CoreGraphAudit.Counts
+    $gateActual =
+        [bool]$gate.CoreBuildProjectReferencesDisabledByDefault -and
+        [bool]$gate.CoreBuildInParallelDisabledByDefault
+
+    [ordered]@{
+        CoreBuildGraphGate = New-BudgetState `
+            ([bool]$RequireCoreBuildGate) `
+            $true `
+            $gateActual `
+            ((-not [bool]$RequireCoreBuildGate) -or $gateActual) `
+            'STATIC_SOURCE_GRAPH'
+        CoreAsmdefDebtReferences = New-BudgetState `
+            ($MaxCoreAsmdefDebtReferences -ge 0) `
+            $MaxCoreAsmdefDebtReferences `
+            ([int]$counts.CoreAsmdefDebtReferenceCount) `
+            ($MaxCoreAsmdefDebtReferences -lt 0 -or [int]$counts.CoreAsmdefDebtReferenceCount -le $MaxCoreAsmdefDebtReferences) `
+            'STATIC_SOURCE_GRAPH'
+        GeneratedProjectDebtReferences = New-BudgetState `
+            ($MaxGeneratedProjectDebtReferences -ge 0) `
+            $MaxGeneratedProjectDebtReferences `
+            ([int]$counts.GeneratedProjectDebtReferenceCount) `
+            ($MaxGeneratedProjectDebtReferences -lt 0 -or [int]$counts.GeneratedProjectDebtReferenceCount -le $MaxGeneratedProjectDebtReferences) `
+            'STATIC_SOURCE_GRAPH'
+        SourceBackedBridgeDebtReferences = New-BudgetState `
+            ($MaxSourceBackedBridgeDebtReferences -ge 0) `
+            $MaxSourceBackedBridgeDebtReferences `
+            ([int]$counts.SourceBackedBridgeDebtReferenceCount) `
+            ($MaxSourceBackedBridgeDebtReferences -lt 0 -or [int]$counts.SourceBackedBridgeDebtReferenceCount -le $MaxSourceBackedBridgeDebtReferences) `
+            'STATIC_SOURCE_GRAPH'
+        SourceBackedCompileBridgeDebtReferences = New-BudgetState `
+            ($MaxSourceBackedCompileBridgeDebtReferences -ge 0) `
+            $MaxSourceBackedCompileBridgeDebtReferences `
+            ([int]$counts.SourceBackedCompileBridgeDebtReferenceCount) `
+            ($MaxSourceBackedCompileBridgeDebtReferences -lt 0 -or [int]$counts.SourceBackedCompileBridgeDebtReferenceCount -le $MaxSourceBackedCompileBridgeDebtReferences) `
+            'STATIC_SOURCE_GRAPH'
+        ProjectReferenceReplacementDebtReferences = New-BudgetState `
+            ($MaxProjectReferenceReplacementDebtReferences -ge 0) `
+            $MaxProjectReferenceReplacementDebtReferences `
+            ([int]$counts.ProjectReferenceReplacementDebtReferenceCount) `
+            ($MaxProjectReferenceReplacementDebtReferences -lt 0 -or [int]$counts.ProjectReferenceReplacementDebtReferenceCount -le $MaxProjectReferenceReplacementDebtReferences) `
+            'STATIC_SOURCE_GRAPH'
+    }
+}
+
 function New-CoreGraphSummary {
     param([System.Collections.Specialized.OrderedDictionary]$CoreGraphAudit)
 
@@ -1594,6 +1691,7 @@ function New-CoreGraphSummary {
         CoreProject = $CoreGraphAudit.CoreProject
         BuildGraphGate = $CoreGraphAudit.BuildGraphGate
         Counts = $CoreGraphAudit.Counts
+        Budgets = New-CoreGraphBudgetSummary $CoreGraphAudit
         CoreAsmdefDebtReferences = @($CoreGraphAudit.CoreAsmdefDebtReferences |
             Select-Object -ExpandProperty Reference)
         GeneratedProjectDebtReferences = @($CoreGraphAudit.GeneratedProjectDebtReferences |
@@ -1678,6 +1776,30 @@ if ($CoreGraphOnly) {
         throw 'Duplicate signal-name budget requires full source scan. Remove -CoreGraphOnly when using -MaxDuplicateSignalNames.'
     }
 
+    if ($MaxGlobalRegistrySurface -ge 0) {
+        throw 'GlobalRegistry surface budget requires full source scan. Remove -CoreGraphOnly when using -MaxGlobalRegistrySurface.'
+    }
+
+    if ($MaxGetComponentCalls -ge 0) {
+        throw 'GetComponent budget requires full source scan. Remove -CoreGraphOnly when using -MaxGetComponentCalls.'
+    }
+
+    if ($MaxNativeArrayRefs -ge 0) {
+        throw 'NativeArray budget requires full source scan. Remove -CoreGraphOnly when using -MaxNativeArrayRefs.'
+    }
+
+    if ($MinDataSovereignty -ge 0.0) {
+        throw 'Data Sovereignty floor requires full source scan. Remove -CoreGraphOnly when using -MinDataSovereignty.'
+    }
+
+    if ($MinMemoryAlignment -ge 0.0) {
+        throw 'Memory Alignment floor requires full source scan. Remove -CoreGraphOnly when using -MinMemoryAlignment.'
+    }
+
+    if ($MinRuntimeHPhiRisk -ge 0.0) {
+        throw 'Runtime H-Phi risk floor requires full source scan. Remove -CoreGraphOnly when using -MinRuntimeHPhiRisk.'
+    }
+
     $result = [ordered]@{
         Timestamp = (Get-Date).ToString('yyyy-MM-dd HH:mm:ss zzz')
         Scope = 'Core dependency graph'
@@ -1702,6 +1824,19 @@ if ($CoreGraphOnly) {
         Write-Output "Timestamp: $($summaryResult.Timestamp)"
         Write-Output 'Counts:'
         [pscustomobject]$summaryResult.CoreGraph.Counts | Format-List
+        Write-Output ''
+        Write-Output 'Core graph H-Phi budgets:'
+        $summaryResult.CoreGraph.Budgets.GetEnumerator() |
+            ForEach-Object {
+                [pscustomobject]@{
+                    Budget = $_.Key
+                    Enabled = $_.Value.Enabled
+                    Max = $_.Value.Max
+                    Actual = $_.Value.Actual
+                    Passed = $_.Value.Passed
+                }
+            } |
+            Format-Table -AutoSize
         Write-Output ''
         Write-Output 'Core asmdef H-Phi debt references:'
         $summaryResult.CoreGraph.CoreAsmdefDebtReferences | ForEach-Object { Write-Output ("  {0}" -f $_) }
@@ -1904,6 +2039,12 @@ $editorScores = New-Scores $editorCounters
 Assert-AupPrecisionBudget $runtimeCounters $runtimeFileRows
 Assert-StaticCounterBudget $runtimeCounters $runtimeFileRows 'FindObjectCalls' $MaxFindObjectCalls 'FindObject runtime lookup'
 Assert-StaticCounterBudget $runtimeCounters $runtimeFileRows 'EventPublish' $MaxLegacyEventPublish 'Legacy event publish'
+Assert-StaticCounterBudget $runtimeCounters $runtimeFileRows 'GlobalRegistrySurface' $MaxGlobalRegistrySurface 'GlobalRegistry surface'
+Assert-StaticCounterBudget $runtimeCounters $runtimeFileRows 'GetComponentCalls' $MaxGetComponentCalls 'GetComponent'
+Assert-StaticCounterBudget $runtimeCounters $runtimeFileRows 'NativeArrayRefs' $MaxNativeArrayRefs 'NativeArray'
+Assert-StaticScoreFloor $runtimeScores 'DataSovereignty' $MinDataSovereignty 'Data Sovereignty'
+Assert-StaticScoreFloor $runtimeScores 'MemoryAlignment' $MinMemoryAlignment 'Memory Alignment'
+Assert-StaticScoreFloor $runtimeScores 'HPhiStaticRisk' $MinRuntimeHPhiRisk 'Runtime risk-adjusted H-Phi'
 
 $result = [ordered]@{
     Timestamp = (Get-Date).ToString('yyyy-MM-dd HH:mm:ss zzz')
@@ -1944,6 +2085,48 @@ $result = [ordered]@{
             Max = $MaxDuplicateSignalNames
             Actual = [int]$duplicateSignalNameAudit.DuplicateSignalNameCount
             Passed = $MaxDuplicateSignalNames -lt 0 -or [int]$duplicateSignalNameAudit.DuplicateSignalNameCount -le $MaxDuplicateSignalNames
+            EvidenceClass = 'STATIC_SOURCE_FULL_SCAN'
+        }
+        GlobalRegistrySurface = [ordered]@{
+            Enabled = $MaxGlobalRegistrySurface -ge 0
+            Max = $MaxGlobalRegistrySurface
+            Actual = [int]$runtimeCounters.GlobalRegistrySurface
+            Passed = $MaxGlobalRegistrySurface -lt 0 -or [int]$runtimeCounters.GlobalRegistrySurface -le $MaxGlobalRegistrySurface
+            EvidenceClass = 'STATIC_SOURCE_FULL_SCAN'
+        }
+        GetComponentCalls = [ordered]@{
+            Enabled = $MaxGetComponentCalls -ge 0
+            Max = $MaxGetComponentCalls
+            Actual = [int]$runtimeCounters.GetComponentCalls
+            Passed = $MaxGetComponentCalls -lt 0 -or [int]$runtimeCounters.GetComponentCalls -le $MaxGetComponentCalls
+            EvidenceClass = 'STATIC_SOURCE_FULL_SCAN'
+        }
+        NativeArrayRefs = [ordered]@{
+            Enabled = $MaxNativeArrayRefs -ge 0
+            Max = $MaxNativeArrayRefs
+            Actual = [int]$runtimeCounters.NativeArrayRefs
+            Passed = $MaxNativeArrayRefs -lt 0 -or [int]$runtimeCounters.NativeArrayRefs -le $MaxNativeArrayRefs
+            EvidenceClass = 'STATIC_SOURCE_FULL_SCAN'
+        }
+        DataSovereignty = [ordered]@{
+            Enabled = $MinDataSovereignty -ge 0.0
+            Min = $MinDataSovereignty
+            Actual = [double]$runtimeScores.DataSovereignty
+            Passed = $MinDataSovereignty -lt 0.0 -or [double]$runtimeScores.DataSovereignty -ge $MinDataSovereignty
+            EvidenceClass = 'STATIC_SOURCE_FULL_SCAN'
+        }
+        MemoryAlignment = [ordered]@{
+            Enabled = $MinMemoryAlignment -ge 0.0
+            Min = $MinMemoryAlignment
+            Actual = [double]$runtimeScores.MemoryAlignment
+            Passed = $MinMemoryAlignment -lt 0.0 -or [double]$runtimeScores.MemoryAlignment -ge $MinMemoryAlignment
+            EvidenceClass = 'STATIC_SOURCE_FULL_SCAN'
+        }
+        RuntimeHPhiRisk = [ordered]@{
+            Enabled = $MinRuntimeHPhiRisk -ge 0.0
+            Min = $MinRuntimeHPhiRisk
+            Actual = [double]$runtimeScores.HPhiStaticRisk
+            Passed = $MinRuntimeHPhiRisk -lt 0.0 -or [double]$runtimeScores.HPhiStaticRisk -ge $MinRuntimeHPhiRisk
             EvidenceClass = 'STATIC_SOURCE_FULL_SCAN'
         }
     }
@@ -2004,6 +2187,7 @@ if ($Summary) {
             [pscustomobject]@{
                 Budget = $_.Key
                 Enabled = $_.Value.Enabled
+                Min = $_.Value.Min
                 Max = $_.Value.Max
                 Actual = $_.Value.Actual
                 Passed = $_.Value.Passed
@@ -2013,6 +2197,19 @@ if ($Summary) {
     Write-Output ''
     Write-Output 'Core graph H-Phi debt counts:'
     [pscustomobject]$summaryResult.CoreGraph.Counts | Format-List
+    Write-Output ''
+    Write-Output 'Core graph H-Phi budgets:'
+    $summaryResult.CoreGraph.Budgets.GetEnumerator() |
+        ForEach-Object {
+            [pscustomobject]@{
+                Budget = $_.Key
+                Enabled = $_.Value.Enabled
+                Max = $_.Value.Max
+                Actual = $_.Value.Actual
+                Passed = $_.Value.Passed
+            }
+        } |
+        Format-Table -AutoSize
     if (@($summaryResult.TopAupPrecisionRiskFiles).Count -gt 0) {
         Write-Output ''
         Write-Output 'Top AUP precision risk files:'

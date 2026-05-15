@@ -9,6 +9,7 @@ namespace Hecton8.Gameplay.Loot.Contracts
         public const int DefaultMaxEntities = 4096;
         public const int MaxEntitiesHardCap = 8192;
         public const int TelemetryFrameCount = 300;
+        public const int TelemetryEntrySizeBytes = 120;
         public const float AcquireDistanceMeters = 0.5f;
         public const float AcquireDistanceSq = AcquireDistanceMeters * AcquireDistanceMeters;
         public const float MinDistanceSq = 0.01f;

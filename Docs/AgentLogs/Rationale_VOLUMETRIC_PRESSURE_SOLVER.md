@@ -385,3 +385,11 @@ Solution: Added scalar finite gates for `centerRadius.w` and `distanceSq` inside
 Rejected Alternatives: Four-component `isfinite(centerRadius)` per slot or relying on CPU-side ambience publication only. Full vector checks cost more than required; CPU-only validation is not enough for a shared shader include fed by multiple systems.
 Scalability potential: Low/MX350 is unaffected because low-tier returns peak stress before the buffer loop. Mid/High/Ultra keep localized deformation while corrupted ambience records degrade to zero stress/no selection.
 Hardware Impact: Adds two scalar finite checks in the already-gated non-low stressed resolver path. Fault frames avoid poisoned stress selection; valid-frame overhead remains bounded under the 64-slot cap.
+
+## Follow-Up Correction - Shader Stress Scalar Finite Gates
+
+Problem: Habitat module stress globals and buffer values are expected finite from CPU publication, but the shared shader include still trusted `_HectonHabitatModuleStressParams.w` and `_HectonHabitatModuleStressBuffer[bestIndex]`. A bad scalar could enter low-tier crease or localized vertex bend.
+Solution: Cached the peak scalar, rejected it when non-finite before any low-tier or module-buffer branch, and explicitly returns zero when the selected buffer stress is non-finite.
+Rejected Alternatives: Relying on HLSL `saturate` NaN behavior or clamping in downstream bend/crease helpers. NaN saturation behavior is not a contract worth depending on; downstream clamping is duplicated and too late for shared resolver correctness.
+Scalability potential: Low/MX350 peak-only crease now has the same finite gate as Mid/High/Ultra localized stress. Ultra keeps visual overkill when data is valid and degrades bad slots to silence.
+Hardware Impact: Adds two scalar finite checks in already-gated stress paths. Fault frames avoid NaN deformation/crease output; valid-frame overhead is negligible under the 64-slot cap.

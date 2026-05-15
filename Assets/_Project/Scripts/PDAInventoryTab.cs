@@ -310,17 +310,21 @@ namespace Hecton8.UI
                 return;
             }
 
+            bool signalDirty = false;
             if (ConsumeInventoryChangedSignals())
             {
                 MarkInventoryDirty();
-                FlushPendingRefresh();
+                signalDirty = true;
             }
 
             if (ConsumeToolLoadoutChangedSignals())
             {
                 MarkToolLoadoutDirty();
-                FlushPendingRefresh();
+                signalDirty = true;
             }
+
+            if (signalDirty)
+                FlushPendingRefresh();
 
             PublishInventoryUiParallax();
         }

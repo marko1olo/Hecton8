@@ -475,3 +475,17 @@ Solution: Verification stayed source-only: targeted heightmap overflow guard sca
 Rejected Alternatives: Running response-file compiles through `dotnet` was rejected because it violates the active user instruction.
 Scalability potential: Static terrain-ingress proof improved without extra buffers, registries, signals, shell GameObjects, or render mutations.
 Hardware Impact: Verification only. Core graph summary still reports `CoreAsmdefDebtReferenceCount=25` and `GeneratedProjectDebtReferenceCount=10`, both project-level debts outside this outpost edit.
+
+## LOOP 28 INDIRECT UPLOAD CAPACITY FENCE
+
+Problem: `UploadMatricesAndArgs` guarded only `_shellMatrices`, `_matrixBuffer`, and `_cellTypeBuffer`. If `_shellCellTypes` or `_argsBuffer` was missing, or if any CPU/GPU buffer capacity drifted below `_matrixCount`, the helper-local copy clamp could upload fewer values while indirect args still advertised the larger count.
+Solution: Require `_shellCellTypes` and `_argsBuffer` before upload, and clamp the instance count to `_shellMatrices.Length`, `_shellCellTypes.Length`, `_matrixBuffer.count`, and `_cellTypeBuffer.count` before uploading data or writing draw args.
+Rejected Alternatives: Trusting authored max capacities was rejected because this is the render boundary and external lifecycle errors should fail closed. Forcing buffer recreation from the upload function was rejected because graphics resource ownership belongs to `EnsureGraphicsResources`, not the upload primitive.
+Scalability potential: Low/Middle/High/Ultra keep the same one-indirect-draw shell path. Cheap devices avoid undefined shader reads after partial resource loss; high-end devices can still push the full generated shell count when capacities are valid.
+Hardware Impact: Four scalar clamps on cold matrix upload, estimated below 0.1 us per upload on i3/MX350. Prevents oversized indirect instance counts and possible GPU buffer overread. Steady Tick/Render remains 0 B/frame.
+
+Problem: The active instruction still forbids dotnet rebuilds.
+Solution: Verification stayed source-only: targeted upload clamp scan, forbidden-pattern audit, scoped H-Phi counts, `git diff --check`, and `HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json`.
+Rejected Alternatives: Running response-file compiles through `dotnet` was rejected because it violates the active user instruction.
+Scalability potential: Static render-boundary proof improved without adding buffers, registries, signals, shell GameObjects, material mutation, or runtime allocations.
+Hardware Impact: Verification only. Core graph summary still reports `CoreAsmdefDebtReferenceCount=25` and `GeneratedProjectDebtReferenceCount=10`, both project-level debts outside this outpost edit.

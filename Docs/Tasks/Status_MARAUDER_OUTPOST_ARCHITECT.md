@@ -212,9 +212,17 @@ State: PENDING VERIFICATION
 - [x] Re-ran source-only audits. DOD: targeted scan finds two origin-relative and two terrain-top finite guards; forbidden-pattern audit stayed clean; scoped H-Phi counts remain `GlobalRegistrySurface=12`, `SignalBusPush=1`, `EventPublish=0`, `StructLayoutAttributes=6`; `HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json` passed with `CoreAsmdefDebtReferenceCount=25`, `GeneratedProjectDebtReferenceCount=10`; `git diff --check` passed with repository CRLF warnings only. Alternative rejected: `dotnet` rebuild, forbidden by user. Estimate: verification only.
 - [ ] Compile proof [NOT RUN BY USER REQUEST]. DOD: no `dotnet` rebuild or response-file compile was executed in Loop 27. Alternative rejected: violating explicit "do not make dotnet rebuilds". Estimate: no runtime cost.
 
+### Loop 28 - Indirect Upload Capacity Fence
+
+- [x] Re-audited the owner GPU upload path after render and public-buffer fences. DOD: inspected `UploadMatricesAndArgs`, `UpdateIndirectArgsBuffer`, and `UploadNativeArray` for source/destination count mismatches. Alternative rejected: assuming native/GPU buffers always share the authored max length. Estimate: source audit only.
+- [x] Hardened matrix/type upload readiness. DOD: `UploadMatricesAndArgs` now requires `_shellCellTypes` and `_argsBuffer` in addition to matrix/type buffers before clearing `_matrixUploadDirty`. Alternative rejected: silently clearing dirty state after a partial upload setup. Estimate: one cold upload branch set, 0 B/frame.
+- [x] Clamped uploaded instances to every CPU/GPU capacity. DOD: upload count is bounded by `_shellMatrices.Length`, `_shellCellTypes.Length`, `_matrixBuffer.count`, and `_cellTypeBuffer.count` before buffer writes and indirect args are updated. Alternative rejected: relying on only `MaxShellMatrices` and helper-local copy clamps while the draw args still expose a larger count. Estimate: four scalar clamps on cold upload.
+- [x] Re-ran source-only audits. DOD: targeted upload scan finds all four capacity clamps; forbidden-pattern audit stayed clean; scoped H-Phi counts remain `GlobalRegistrySurface=12`, `SignalBusPush=1`, `EventPublish=0`, `StructLayoutAttributes=6`; `HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json` passed with `CoreAsmdefDebtReferenceCount=25`, `GeneratedProjectDebtReferenceCount=10`; `git diff --check` passed with repository CRLF warnings only. Alternative rejected: `dotnet` rebuild, forbidden by user. Estimate: verification only.
+- [ ] Compile proof [NOT RUN BY USER REQUEST]. DOD: no `dotnet` rebuild or response-file compile was executed in Loop 28. Alternative rejected: violating explicit "do not make dotnet rebuilds". Estimate: no runtime cost.
+
 ## Verification Ledger
 
-- Compile status: NOT RUN IN LOOP 27 BY USER REQUEST / PRIOR BLOCKER STILL RECORDED. Last attempted compile path could not resolve `Hecton8.Core.ref.dll`; Core rebuild failed in `SaveMasterHashV10.cs(237,26)` on missing `xxHash3`, outside Habitat/Outposts ownership.
+- Compile status: NOT RUN IN LOOP 28 BY USER REQUEST / PRIOR BLOCKER STILL RECORDED. Last attempted compile path could not resolve `Hecton8.Core.ref.dll`; Core rebuild failed in `SaveMasterHashV10.cs(237,26)` on missing `xxHash3`, outside Habitat/Outposts ownership.
 - Unity Console status: MCP unavailable; console/scene validation not accessible from this session.
 - GC proof: code audit only; hot Tick/Render path uses spans/native buffers and no LINQ/managed allocation.
 - Frame/VRAM proof: static estimate only; runtime profiling blocked by Unity MCP transport failure; no console/profiler capture is available from this session.

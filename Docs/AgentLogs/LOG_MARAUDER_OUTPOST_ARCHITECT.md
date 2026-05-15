@@ -461,6 +461,38 @@ Verification:
 
 Status: PENDING VERIFICATION. Static source audits pass; compile/runtime proof remains pending by user instruction and external Core blocker.
 
+## 2026-05-15 - WFC Outpost Loop 28 Indirect Upload Capacity Fence
+
+What was wrong:
+- `UploadMatricesAndArgs` did not explicitly require `_shellCellTypes` or `_argsBuffer` before clearing `_matrixUploadDirty`.
+- The data-copy helper clamps to destination/source count, but indirect args were still derived from `_matrixCount` clamped only by `MaxShellMatrices`.
+- A partial resource/lifecycle failure could advertise more instances to the shader than the type or matrix buffers safely cover.
+
+What was done:
+- Added `_shellCellTypes.IsCreated` and `_argsBuffer != null` readiness checks to `UploadMatricesAndArgs`.
+- Clamped the upload/draw instance count to `_shellMatrices.Length`, `_shellCellTypes.Length`, `_matrixBuffer.count`, and `_cellTypeBuffer.count`.
+- Kept the fix inside the owner upload path; no new registries, signals, buffers, or render mutations.
+
+Cinematic Cheats used:
+- Fail closed on partial render resources. The outpost skips stale/unsafe upload state instead of trying to repair graphics resources in the draw path.
+- Valid buffers keep the same cheap visual cheat: one indirect shell draw fed by bounded CPU extraction.
+
+Exact Microseconds saved:
+- New cost: four scalar clamps on cold upload, estimated below 0.1 us per upload on i3/MX350.
+- Saved cost on corrupt resource state: avoids oversized indirect instance counts and possible GPU buffer overread or driver recovery.
+- Hot Tick/Render remains 0 B/frame.
+
+Verification:
+- Targeted upload scan: PASS; all four capacity clamps are present and `_argsBuffer`/`_shellCellTypes` are required before upload.
+- Forbidden construct audit: PASS; no raw hash comparison, shader-global/material mutation, global publish wrapper, prefab shell `Instantiate`, `BaseGenerator`, `math.pow`, telemetry modulo, or `foreach` matches in owned outpost files.
+- Scoped H-Phi counts remain `GlobalRegistrySurface=12`, `SignalBusPush=1`, `EventPublish=0`, `StructLayoutAttributes=6`.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json`: PASS; `CoreAsmdefDebtReferenceCount=25`, `GeneratedProjectDebtReferenceCount=10`.
+- `git diff --check`: PASS with repository CRLF warnings only.
+- `dotnet` rebuilds/response-file compiles: NOT RUN by explicit user request.
+- Unity MCP console/profiler: unavailable from this session.
+
+Status: PENDING VERIFICATION. Static source audits pass; compile/runtime proof remains pending by user instruction and external Core blocker.
+
 ## 2026-05-15 - WFC Outpost Loop 27 Origin-Relative Heightmap Overflow Guard
 
 What was wrong:

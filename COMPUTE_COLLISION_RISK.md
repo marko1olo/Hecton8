@@ -34,7 +34,7 @@ Current hot-target intersections:
 - Do not revert these files from this audit agent. They are concurrent-agent/user work.
 - Any new agent touching `SargassumMicroFaunaBoids.cs` or `HabitatGraphManager.cs` must first read current diff and attribution context.
 - Any compile failure after this point must be attributed by file and agent, not blamed on generic churn.
-- Root audit docs modified by this agent: `COMPUTE_AUDIT_BRIEF.md`, `COMPUTE_THREAD_TRIAGE.md`, `COMPUTE_THREAD_ATTRIBUTION.md`, `COMPUTE_VALIDATION_FORENSICS.md`, `COMPUTE_THREAD_VALUE_AUDIT.md`, `COMPUTE_COLLISION_RISK.md`.
+- Root audit docs modified by this agent: `COMPUTE_AUDIT_BRIEF.md`, `COMPUTE_THREAD_TRIAGE.md`, `COMPUTE_THREAD_ATTRIBUTION.md`, `COMPUTE_VALIDATION_FORENSICS.md`, `COMPUTE_THREAD_VALUE_AUDIT.md`, `COMPUTE_FILE_BURN_ATTRIBUTION.md`, `COMPUTE_COLLISION_RISK.md`.
 
 ## Next Verification Gate
 

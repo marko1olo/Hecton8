@@ -319,8 +319,8 @@ Verification -> No dotnet rebuild/response-file compile was run per user constra
 
 ## 2026-05-15 - Loop 44 VFX AUP Finite Guard Review
 
-What was wrong -> Re-entry VFX copied `CapsuleAup` from accepted atmospheric/complete packets into later acoustic, debris, droplet, and VFX state signals without proving the AUP resolves to finite runtime space.
-What was done -> Added `IsFiniteRuntimeAup()` and guarded atmospheric and complete packet consumption before `_lastCapsuleAup` is updated. Bad AUP packets now write NaN telemetry and dump the VFX black box.
+What was wrong -> Re-entry VFX copied `CapsuleAup` from accepted atmospheric/sequence-complete packets into later acoustic, debris, droplet, and VFX state signals without proving the AUP resolves to finite runtime space.
+What was done -> Added `IsFiniteRuntimeAup()` and guarded atmospheric and sequence-handoff complete packet consumption before `_lastCapsuleAup` is updated. Bad spatial-owner packets now write NaN telemetry and dump the VFX black box.
 Cinematic Cheats used -> None; this protects the existing plasma, whiteout, splash, and visor-droplet fakes from corrupted spatial payloads.
 Exact Microseconds saved -> Adds one finite AUP check per accepted packet, below normal fan-out cost. Prevents invalid spatial packets from triggering acoustic/debris/state work.
 Verification -> No dotnet rebuild/response-file compile was run per user constraint. Targeted scan confirms VFX AUP guards; forbidden-pattern scan returned no hits; `git diff --check` reports line-ending warnings only.
@@ -332,3 +332,11 @@ What was done -> Moved `_lastCapsuleAup` assignment inside the `PRLG` sequence h
 Cinematic Cheats used -> Whiteout remains a cheap concealment fake. Spatially expensive splash/audio/debris overkill stays tied to the sequence-owned handoff anchor.
 Exact Microseconds saved -> Removes one assignment on whiteout-only packets and prevents wrong-anchor downstream fan-out. Direct cost is below 1 us.
 Verification -> No dotnet rebuild/response-file compile was run per user constraint. Targeted scan confirms complete-packet AUP assignment is sequence-owned; forbidden-pattern scan returned no hits; `git diff --check` reports line-ending warnings only.
+
+## 2026-05-15 - Loop 46 VFX Whiteout-Only AUP Validation Trim
+
+What was wrong -> Whiteout-only complete packets no longer own the VFX spatial anchor, but the consumer still validated their AUP and could dump black-box state for irrelevant position data.
+What was done -> Complete-packet AUP validation is now gated by `sequenceOceanHandoff`; non-sequence complete packets preserve whiteout concealment using the current anchor.
+Cinematic Cheats used -> Whiteout-only concealment stays cheap and position-agnostic. Sequence handoff still protects splash/audio/debris overkill with AUP validation.
+Exact Microseconds saved -> Saves one AUP-to-runtime finite check per non-sequence complete packet and avoids irrelevant fault dumps. Direct cost saved is below 1 us per packet.
+Verification -> No dotnet rebuild/response-file compile was run per user constraint. Targeted scan confirms sequence-gated AUP validation; forbidden-pattern scan returned no hits after correcting a bad patch context; `git diff --check` reports line-ending warnings only.

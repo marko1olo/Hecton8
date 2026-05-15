@@ -407,11 +407,11 @@ Hardware Impact: Adds one flag check and two float checks per complete packet in
 
 ## Decision 49 - Re-entry VFX AUP Guard
 
-Problem: `OrbitalDropReentryVfxController` validated scalar atmospheric and complete packet data but then copied `CapsuleAup` directly into later acoustic, debris, droplet, and state signals. A corrupted AUP could propagate NaN/Inf runtime positions into multiple presentation consumers.
-Solution: Add `IsFiniteRuntimeAup()` and call it after phase/shape acceptance but before `_lastCapsuleAup` assignment for atmospheric and complete packets. Invalid AUP packets write the existing NaN telemetry flag and dump the VFX black box.
+Problem: `OrbitalDropReentryVfxController` validated scalar atmospheric and sequence complete packet data but then copied `CapsuleAup` directly into later acoustic, debris, droplet, and state signals. A corrupted AUP could propagate NaN/Inf runtime positions into multiple presentation consumers.
+Solution: Add `IsFiniteRuntimeAup()` and call it after phase/shape acceptance but before `_lastCapsuleAup` assignment for atmospheric and sequence-handoff complete packets. Invalid spatial-owner packets write the existing NaN telemetry flag and dump the VFX black box.
 Rejected Alternatives: Trust producers to provide valid AUP, or validate only at the later debris/audio publish sites. Producer trust is weak on shared signal lanes; late validation would duplicate checks across every downstream publish and allow contaminated controller state.
 Scalability potential: Low/MX350 avoids wasting shader/audio/debris work on invalid spatial payloads. Middle/High/Ultra keep plasma roar, ocean waves, splash debris, visor droplets, and hydrated fade aligned to valid capsule positions.
-Hardware Impact: Adds one AUP-to-runtime finite check per accepted atmospheric/complete packet, below the cost of downstream acoustic/debris fan-out and fault-only black-box dump. Verification this pass is static only by user request; no dotnet rebuild or response-file compile was run.
+Hardware Impact: Adds one AUP-to-runtime finite check per spatial-owner atmospheric/complete packet, below the cost of downstream acoustic/debris fan-out and fault-only black-box dump. Verification this pass is static only by user request; no dotnet rebuild or response-file compile was run.
 
 ## Decision 50 - VFX Complete Spatial Ownership
 
@@ -420,3 +420,11 @@ Solution: Keep non-sequence complete packets as whiteout-only and update `_lastC
 Rejected Alternatives: Let every valid complete packet own the spatial anchor, or ignore non-sequence complete packets entirely. The first corrupts ownership; the second removes useful whiteout concealment before the authoritative handoff.
 Scalability potential: Low/MX350 avoids wrong-anchor splash/audio work from manual/orbital packets. Middle/High/Ultra keep expensive splash debris, ocean waves, visor droplets, and hydrated fade aligned to the sequence-owned handoff.
 Hardware Impact: Reuses an existing `sequenceOceanHandoff` branch and removes one assignment on whiteout-only packets. Prevents wrong-anchor downstream fan-out; verification this pass is static only by user request, no dotnet rebuild or response-file compile was run.
+
+## Decision 51 - VFX Whiteout-Only AUP Validation Trim
+
+Problem: After non-sequence complete packets stopped owning `_lastCapsuleAup`, the complete consumer still validated their `CapsuleAup` and dumped the VFX black box on invalid position data that would not be used.
+Solution: Gate complete-packet AUP validation behind `sequenceOceanHandoff`. Whiteout-only packets keep concealment behavior using the current spatial anchor and do not pay an AUP-to-runtime conversion.
+Rejected Alternatives: Keep validating every complete packet for uniformity, or remove all complete AUP validation. Uniform validation creates false fault handling for irrelevant data; removing all validation would let the authoritative `PRLG` handoff poison the spatial anchor.
+Scalability potential: Low/MX350 saves work on repeated manual/orbital whiteout packets. Middle/High/Ultra keep expensive handoff visuals protected by AUP validation where the handoff actually owns the anchor.
+Hardware Impact: Saves one AUP-to-runtime finite check per non-sequence complete packet and avoids irrelevant black-box dumps. Verification this pass is static only by user request; no dotnet rebuild or response-file compile was run.

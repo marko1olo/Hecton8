@@ -328,3 +328,34 @@ Verification:
 - Broad `rg` shows only non-UI inventory delegates remain: HectonPlayerMovement, SuitUpgradeManager, and PlayerToolManager.
 - Diff-only anti-bloat scan found no added `foreach`, `string.Format`, `.ToString(`, interpolation, LINQ, or `new List<`.
 - `git diff --check` on touched UI code reported only LF/CRLF notices.
+
+## 2026-05-15 - UI Tool Loadout SignalLane Addendum
+
+What was wrong:
+- Passive UI/HUD surfaces still had quick-slot/loadout delegate residue or stale subscription bookkeeping after the project already had `ToolLoadoutChangedSignal`.
+- HUDQuickBar and PDAInventoryTab still depended on `PlayerToolManager.ActiveSlotChanged` / `ToolAssignmentsChanged`.
+- PDALoadoutTab short-circuited combined inventory/tool signal consumption, so one dirty lane could mask the other in the same tick.
+- PDAConstructionTab and BuilderStatusOverlay retained `_subscribedToolManager` sentinel state after conversion; BuilderStatusOverlay also needed a signal-based wake path while hidden.
+
+What was done:
+- HUDQuickBar now consumes `SignalBus<ToolLoadoutChangedSignal>` in its existing UI tick and invalidates slot binding cache only for assignment reasons.
+- PDAInventoryTab consumes the same signal while the inventory tab is active and marks the tool strip/details dirty without tool-manager delegates.
+- PDALoadoutTab now reads inventory and tool-loadout snapshots independently before refresh.
+- PDAConstructionTab and BuilderStatusOverlay removed stale `_subscribedToolManager` state.
+- BuilderStatusOverlay remains registered while a tool-loadout source id is bound, allowing builder-tool equip to wake the overlay without a callback.
+
+Cinematic Cheats used:
+- Existing 32-byte loadout dirty packet replaces UI delegate fanout.
+- Closed PDA tabs still avoid idle scans and force refresh on activation.
+- Builder overlay uses a cheap source-id signal gate instead of a concrete owner callback.
+
+Exact microseconds saved:
+- Estimated 0.3-0.9 us on quick-slot/loadout UI bursts from removed UI delegate dispatch and subscription churn.
+- Overlay idle cost is one bounded snapshot gate only while a player tool source is bound; accepted to preserve hidden-overlay wake correctness without a callback.
+
+Verification:
+- No dotnet build, restore, or rebuild was run.
+- `rg` found no UI/PDA/HUD `ActiveSlotChanged +=`, `ActiveSlotChanged -=`, `ToolAssignmentsChanged +=`, `ToolAssignmentsChanged -=`, or matching handler remnants in `Assets/_Project/Scripts/UI`, `PDAInventoryTab.cs`, and `HUDQuickBar.cs`.
+- Broad `rg` shows the only remaining tool loadout delegate subscriber is `Gameplay/PlayerTransportCoordinator`, left because it is gameplay transport authority.
+- Diff-only anti-bloat scan found no added `foreach`, LINQ, `string.Format`, `.ToString(`, interpolation, `new List`, or `new Dictionary`.
+- `git diff --check` on touched UI code reported only LF/CRLF notices.

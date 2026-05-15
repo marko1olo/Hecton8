@@ -304,7 +304,7 @@ namespace Hecton8.Prologue.VFX
                 if (!IsRecognizedAtmosphericPhase(signal.Phase))
                     continue;
 
-                if (sequenceOceanHandoff && !IsFiniteRuntimeAup(in signal.CapsuleAup))
+                if (!IsFiniteRuntimeAup(in signal.CapsuleAup))
                 {
                     WriteTelemetry(ReentryVfxStateSignal.FlagNaNGuard);
                     DumpBlackBoxOnce();
@@ -358,7 +358,7 @@ namespace Hecton8.Prologue.VFX
                 if (!sequenceOceanHandoff && _phase >= ReentryPhase.HydratedFade)
                     continue;
 
-                if (!IsFiniteRuntimeAup(in signal.CapsuleAup))
+                if (sequenceOceanHandoff && !IsFiniteRuntimeAup(in signal.CapsuleAup))
                 {
                     WriteTelemetry(ReentryVfxStateSignal.FlagNaNGuard);
                     DumpBlackBoxOnce();

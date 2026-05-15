@@ -228,7 +228,7 @@ Scalability potential: Low/Middle/High/Ultra process gains a validation debt map
 
 Hardware Impact: 0 runtime microseconds on i3/MX350. No runtime file changed.
 
-## Decision 19 - File Burn Attribution
+## Decision 20 - File Burn Attribution
 
 Problem: Thread-level attribution still leaves the integrator asking which files absorbed the most compute.
 
@@ -240,7 +240,7 @@ Scalability potential: Low/Middle/High/Ultra process gets a concrete hot-file qu
 
 Hardware Impact: 0 runtime microseconds on i3/MX350. No runtime code changed.
 
-## Decision 19 - Top-100 Value And C++ Transfer Evidence
+## Decision 20 - Top-100 Value And C++ Transfer Evidence
 
 Problem: Top-30 attribution and validation forensics showed expensive work traces, but the user requested continued certainty and specifically repeated the C++ transfer requirement. Token concentration alone cannot prove productive value or migration state.
 
