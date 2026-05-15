@@ -21,6 +21,7 @@ import json
 import struct
 import sys
 import zlib
+from json import JSONDecodeError
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -476,11 +477,16 @@ def verify_manifest(blob_path: Path, manifest_path: Path, source_dir: Path) -> N
         manifest_text = resolved_manifest_path.read_text(encoding="utf-8")
     except OSError as exc:
         raise ValueError(f"Cannot read manifest: {format_repo_path(resolved_manifest_path)}") from exc
+    try:
+        manifest = json.loads(manifest_text)
+    except JSONDecodeError as exc:
+        raise ValueError(f"Cannot parse manifest JSON: {format_repo_path(resolved_manifest_path)}") from exc
+
     verify_manifest_data(
         blob,
         records,
         entries,
-        json.loads(manifest_text),
+        manifest,
         expected_blob_label=format_repo_path(blob_path),
         expected_source_dir_label=format_repo_path(source_dir),
     )
@@ -516,7 +522,7 @@ def verify_manifest_data(
         raise ValueError("Manifest blob path mismatch.")
     if expected_source_dir_label is not None and manifest.get("source_dir") != expected_source_dir_label:
         raise ValueError("Manifest source directory mismatch.")
-    if manifest.get("entry_count") != len(records):
+    if read_manifest_int(manifest, "entry_count", "Manifest entry count mismatch.") != len(records):
         raise ValueError("Manifest entry count mismatch.")
     if read_manifest_int(manifest, "blob_length", "Manifest blob length mismatch.") != len(blob):
         raise ValueError("Manifest blob length mismatch.")
@@ -567,12 +573,9 @@ def verify_manifest_data(
 
 def read_manifest_int(container: dict[str, object], key: str, error_message: str) -> int:
     value = container.get(key, -1)
-    if isinstance(value, bool):
+    if not isinstance(value, int) or isinstance(value, bool):
         raise ValueError(error_message)
-    try:
-        return int(value)
-    except (TypeError, ValueError) as exc:
-        raise ValueError(error_message) from exc
+    return value
 
 
 def print_record_list(records: list[LoreRecord]) -> None:
