@@ -219,7 +219,7 @@ Load-shed:
 ## Validator Command
 
 ```powershell
-python Tools\MaterialAudit.py --root Assets\_Project --sample-size 256 --json Docs\AgentLogs\MaterialAudit_TECHNICAL_ARTIST_DATA.json --markdown Docs\AgentLogs\MaterialAudit_TECHNICAL_ARTIST_DATA.md --csv-prefix Docs\AgentLogs\MaterialAudit_TECHNICAL_ARTIST_DATA
+python Tools\MaterialAudit.py --root Assets\_Project --resolve-root Assets\_Project --sample-size 256 --json Docs\AgentLogs\MaterialAudit_TECHNICAL_ARTIST_DATA.json --markdown Docs\AgentLogs\MaterialAudit_TECHNICAL_ARTIST_DATA.md --csv-prefix Docs\AgentLogs\MaterialAudit_TECHNICAL_ARTIST_DATA
 ```
 
 Current result: `energy_failures=0`, `energy_warnings=0`, `import_issue_textures=5`, `estimated_texture_mib=497.565`, `materials_with_prompt_orm=0`, `materials_with_legacy_mask=9`, `channel_packing_candidates=31`, `channel_candidate_saved_mib=113.46`, `god_mode_override_count=12`, `global_detail_overlay_count=10`, `materials_with_unresolved_texture_refs=9`, `unresolved_texture_refs=27`, `materials_with_issues=37`.
@@ -239,8 +239,25 @@ CI gate modes:
 
 ```powershell
 python Tools\MaterialAudit.py --root Assets\_Project --fail-on-import-issues
-python Tools\MaterialAudit.py --root Assets\_Project --fail-on-material-issues
+python Tools\MaterialAudit.py --root Assets\_Project --resolve-root Assets\_Project --fail-on-unresolved-refs
+python Tools\MaterialAudit.py --root Assets\_Project --resolve-root Assets\_Project --fail-on-material-issues
 ```
+
+Exit code contract:
+
+- `1` = albedo energy failures.
+- `2` = texture import-setting issues when `--fail-on-import-issues` is set.
+- `3` = broad material migration issues when `--fail-on-material-issues` is set.
+- `4` = unresolved material texture references when `--fail-on-unresolved-refs` is set.
+
+Regression proof:
+
+```powershell
+python -m py_compile Tools\MaterialAudit.py Tools\test_material_audit.py
+python -m unittest Tools.test_material_audit
+```
+
+Current test result: 8 tests pass, including subprocess coverage for import-debt exit 2, material-debt exit 3, and unresolved-reference exit 4.
 
 Known import issues from the current audit:
 

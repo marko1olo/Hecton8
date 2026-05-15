@@ -119,3 +119,27 @@ Solution: Add unresolved texture GUID detection after first-party GUID mapping, 
 Rejected Alternatives: Counting `unity_ShadowMasks` as material debt was rejected as noise. Silently leaving raw GUIDs in migration CSVs was rejected because integrators need exact reference debt before material migration.
 Scalability potential: Low = broken/external references can be fixed before MX350 import passes. Middle = CI can flag missing dependencies. High/Ultra = high-tier material upgrades do not inherit broken texture slots.
 Hardware Impact: 0 us runtime impact. Updated audit reports 9 materials with 27 unresolved first-party texture refs and 37 total material issue materials.
+
+## Scoped Resolve Root
+
+Problem: Scoped material audits over `Assets/_Project/Art/Materials` produced inflated unresolved-reference counts because texture GUID resolution was limited to the scan root.
+Solution: Add `--resolve-root` so a narrow scan can resolve texture GUIDs against a wider first-party asset root without scanning all textures for energy/memory work.
+Rejected Alternatives: Always scanning all of `Assets/_Project` was rejected because scoped CI gates need fast targeted runs. Ignoring scoped unresolved noise was rejected because it weakens fail-gate evidence.
+Scalability potential: Low = scoped gates stay fast on cheap machines. Middle = CI can use narrow roots with full first-party resolution. High/Ultra = migration agents get cleaner material debt lists.
+Hardware Impact: 0 us runtime impact. Scoped `Art/Materials` unresolved refs dropped from 106 to 19 when resolved against `Assets/_Project`; full-root audit remained 9 materials with 27 unresolved refs.
+
+## CLI Gate Regression
+
+Problem: The fail flags had manual shell evidence, but the regression suite did not prove the packaged CLI process returned the documented exit codes.
+Solution: Add a subprocess regression test that creates synthetic debt, executes `Tools/MaterialAudit.py`, and asserts `--fail-on-import-issues` returns 2 and `--fail-on-material-issues` returns 3.
+Rejected Alternatives: Direct function-only tests were rejected because `argparse`, stdout summary, and process return codes are the actual CI contract. Manual wrapper proof was rejected as insufficient long-term guardrail.
+Scalability potential: Low = local authoring gates fail deterministically. Middle = CI can run the same suite before nightly asset scans. High/Ultra = material migration remains blocked by machine-verifiable surface debt instead of subjective review.
+Hardware Impact: 0 us runtime impact. Regression suite now passes 8 tests and protects the offline gate behavior that keeps bad imports/material debt out of MX350 texture budgets.
+
+## Unresolved Reference Gate
+
+Problem: Broad material issues include expected migration work such as missing prompt ORM/detail slots, but unresolved texture GUIDs are dependency faults that need a sharper CI signal.
+Solution: Add `--fail-on-unresolved-refs` with exit code 4, publish the exit-code contract in JSON/Markdown/doctrine, and extend the subprocess test to prove exit 4.
+Rejected Alternatives: Reusing `--fail-on-material-issues` was rejected because it makes broken references compete with planned material modernization debt. Adding an editor mutator was rejected because this pass must not repair material YAML without shader/import authority.
+Scalability potential: Low = dependency damage can block cheap-device builds without blocking all migration planning. Middle = CI can split import, unresolved-reference, and broad material modernization jobs. High/Ultra = high-tier material upgrades avoid inheriting missing/external texture references.
+Hardware Impact: 0 us runtime impact. Full audit still reports 9 materials with 27 unresolved refs; scoped `Art/Materials` gate returns exit 4 with 19 unresolved refs after wider GUID resolution.

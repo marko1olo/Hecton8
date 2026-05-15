@@ -114,3 +114,25 @@ Task count: 8 numbered tasks in extracted XML. Header claims 15; rejected as sta
 - [x] Added unresolved texture reference CSV | DOD: generated `MaterialAudit_TECHNICAL_ARTIST_DATA_unresolved_texture_refs.csv` with 9 affected materials and 27 unresolved refs. Alternatives Rejected: burying unresolved refs inside channel candidate rows. Estimate: 0 us runtime impact.
 - [x] Re-ran full audit after unresolved-reference pass | DOD: final audit reports 37 material issue materials, 9 unresolved-reference materials, 27 unresolved refs, 0 energy failures, 31 channel candidates, and prior GOD_MODE/detail exports preserved. Alternatives Rejected: stale material debt counts. Estimate: 0 us runtime impact.
 - [x] Re-verified fail gates after unresolved-reference pass | DOD: import-debt scoped run still returned exit 2 and material-debt scoped run still returned exit 3 with unresolved-reference summary fields present. Alternatives Rejected: assuming new material issue type did not affect exit paths. Estimate: 0 us runtime impact.
+
+### Loop 15 - Scoped Resolve Root Pass
+
+- [x] Added `--resolve-root` support | DOD: scoped audits can scan a narrow folder while resolving material texture GUIDs against `Assets\_Project`. Alternatives Rejected: forcing every scoped material gate to scan all textures. Estimate: 0 us runtime impact.
+- [x] Added scoped-resolution regression test | DOD: `python -m unittest Tools.test_material_audit` passed 7 tests, including a material folder scan resolving a texture outside the scan root. Alternatives Rejected: proving behavior only with project assets. Estimate: 0 us runtime impact.
+- [x] Re-ran full audit with explicit resolve root | DOD: `--root Assets\_Project --resolve-root Assets\_Project` preserved full audit counts: 37 material issue materials, 9 unresolved-reference materials, 27 unresolved refs, 0 energy failures. Alternatives Rejected: stale JSON without resolve-root metadata. Estimate: 0 us runtime impact.
+- [x] Re-verified scoped fail gates with resolve root | DOD: import-debt scoped run returned exit 2; material-debt scoped run returned exit 3 and dropped scoped unresolved refs from 106 to 19 by resolving against `Assets\_Project`. Alternatives Rejected: accepting inflated scoped unresolved debt. Estimate: 0 us runtime impact.
+
+### Loop 16 - CLI Gate Regression Pass
+
+- [x] Added subprocess CLI fail-gate test | DOD: `Tools/test_material_audit.py` now launches `Tools/MaterialAudit.py` as a real process and asserts import-debt exit 2 plus material-debt exit 3. Alternatives Rejected: relying only on direct function tests or manual shell wrappers. Estimate: 0 us runtime impact.
+- [x] Recompiled and re-ran regression suite | DOD: `python -m py_compile Tools\MaterialAudit.py Tools\test_material_audit.py` passed and `python -m unittest Tools.test_material_audit` passed 8 tests. Alternatives Rejected: leaving CLI exit-code behavior unprotected. Estimate: 0 us runtime impact.
+- [x] Re-ran full audit artifacts after CLI test pass | DOD: full audit with `--root Assets\_Project --resolve-root Assets\_Project` preserved 0 energy failures, 5 import issue textures, 37 material issue materials, 31 channel candidates, and 113.46 MiB modeled savings. Alternatives Rejected: stale artifacts after test harness changes. Estimate: 0 us runtime impact.
+- [x] Re-verified scoped fail gates after CLI test pass | DOD: scoped import gate still returned expected exit 2 and scoped material gate still returned expected exit 3 with 19 resolved-root unresolved refs. Alternatives Rejected: assuming subprocess test proof replaced project-corpus proof. Estimate: 0 us runtime impact.
+- [x] Re-extracted prompt after loop 16 | DOD: CLI regex extraction confirmed the same 8 numbered tasks and required status `SURFACE DOCTRINE READY`. Alternatives Rejected: continuing from compressed-chat memory. Estimate: 0 us runtime impact.
+
+### Loop 17 - Unresolved Reference Gate Pass
+
+- [x] Added dedicated unresolved-reference fail gate | DOD: `--fail-on-unresolved-refs` returns exit 4 when material texture GUIDs cannot be resolved. Alternatives Rejected: treating broken references as indistinguishable from expected ORM/detail migration debt. Estimate: 0 us runtime impact.
+- [x] Published exit-code contract in reports | DOD: generated JSON now includes `gate_exit_codes`, Markdown includes a Gate Exit Codes section, and doctrine lists exit codes 1/2/3/4. Alternatives Rejected: relying on source-code inspection for CI behavior. Estimate: 0 us runtime impact.
+- [x] Extended CLI subprocess test | DOD: `python -m unittest Tools.test_material_audit` still passes 8 tests and now asserts unresolved-reference exit 4 in addition to exit 2 and exit 3. Alternatives Rejected: manual-only proof for the new gate. Estimate: 0 us runtime impact.
+- [x] Re-ran full audit and scoped gates | DOD: full audit preserved 0 energy failures, 5 import issues, 37 material issue materials, 27 unresolved refs; scoped import/material/unresolved gates returned expected exits 2/3/4. Alternatives Rejected: stale artifacts after CLI contract change. Estimate: 0 us runtime impact.

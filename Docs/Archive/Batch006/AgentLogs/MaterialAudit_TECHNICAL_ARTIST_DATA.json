@@ -1,11 +1,18 @@
 {
   "root": "C:/Hecton8/Assets/_Project",
+  "resolve_root": "C:/Hecton8/Assets/_Project",
   "sample_size": 256,
   "include_third_party": false,
   "doctrine": {
     "orm_layout": "R=AO, G=Roughness, B=Metallic",
     "albedo_energy_fail": "mean_srgb_luma > 0.75 or mean_linear_luma > 0.60",
     "albedo_energy_warn": "p95_srgb_luma > 0.92 and bright_pixel_ratio > 0.10"
+  },
+  "gate_exit_codes": {
+    "energy_failures": 1,
+    "import_issues": 2,
+    "material_issues": 3,
+    "unresolved_texture_refs": 4
   },
   "texture_summary": {
     "texture_count": 138,

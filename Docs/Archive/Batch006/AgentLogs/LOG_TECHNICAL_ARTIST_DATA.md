@@ -344,3 +344,97 @@ Verification:
 - `python -m unittest Tools.test_material_audit`: passed 6 tests.
 - Full first-party audit: 9 materials with unresolved texture refs, 27 unresolved refs, 37 material issue materials, 0 energy failures.
 - Scoped fail gates after unresolved-reference pass: import-debt root returned exit 2; material-debt root returned exit 3.
+
+## 2026-05-15 - Scoped Resolve Root Pass
+
+What was wrong:
+
+- Scoped material audits could not resolve texture GUIDs outside the material folder, inflating unresolved-reference counts.
+
+What was done:
+
+- Added `--resolve-root` to `Tools/MaterialAudit.py`.
+- Added a regression test for scoped material scanning with wider GUID resolution.
+- Re-ran full audit and scoped fail gates with explicit resolve roots.
+
+Cinematic Cheats used:
+
+- None. This is audit precision and CI hygiene.
+
+Exact Microseconds saved:
+
+- Runtime code changed: none.
+- Immediate runtime CPU saving: 0 us.
+- Offline scoped gates avoid full texture scan work while retaining correct GUID resolution.
+
+Verification:
+
+- `python -m py_compile Tools\MaterialAudit.py Tools\test_material_audit.py`: passed.
+- `python -m unittest Tools.test_material_audit`: passed 7 tests.
+- Full first-party audit with `--resolve-root Assets\_Project`: 37 material issue materials, 9 unresolved-reference materials, 27 unresolved refs, 0 energy failures.
+- Scoped material gate with `--resolve-root Assets\_Project`: exit 3; unresolved refs dropped from 106 to 19 versus narrow-root-only resolution.
+
+## 2026-05-15 - CLI Gate Regression Pass
+
+What was wrong:
+
+- The CI fail flags were proven by manual shell wrappers but not by automated subprocess tests.
+
+What was done:
+
+- Added a subprocess regression test that executes `Tools/MaterialAudit.py` as a real CLI process.
+- The test asserts import-debt exit 2 and material-debt exit 3.
+- Re-ran full audit artifact generation and scoped fail gates after the test pass.
+
+Cinematic Cheats used:
+
+- None. This is offline gate hardening.
+
+Exact Microseconds saved:
+
+- Runtime code changed: none.
+- Immediate runtime CPU saving: 0 us.
+- Prevents CI drift where the Python API works but the command-line gate silently stops failing.
+
+Verification:
+
+- `python -m py_compile Tools\MaterialAudit.py Tools\test_material_audit.py`: passed.
+- `python -m unittest Tools.test_material_audit`: passed 8 tests.
+- Full first-party audit: 0 energy failures, 5 import issue textures, 37 material issue materials, 31 channel-packing candidates, 113.46 MiB modeled savings.
+- Scoped import gate with `--resolve-root Assets\_Project`: expected exit 2 confirmed.
+- Scoped material gate with `--resolve-root Assets\_Project`: expected exit 3 confirmed, 19 unresolved refs after wider GUID resolution.
+- Prompt re-extraction confirmed the same 8 numbered tasks and required `SURFACE DOCTRINE READY` status.
+
+## 2026-05-15 - Unresolved Reference Gate Pass
+
+What was wrong:
+
+- Broken/unresolved material texture references were only detectable through broad material issue gates.
+- That mixed dependency faults with expected ORM/detail migration debt.
+
+What was done:
+
+- Added `--fail-on-unresolved-refs` to `Tools/MaterialAudit.py`.
+- Exit code 4 now means unresolved material texture references.
+- Added `gate_exit_codes` to JSON and a Gate Exit Codes section to Markdown.
+- Updated doctrine with the gate contract.
+- Extended the CLI subprocess test to prove exit 4.
+
+Cinematic Cheats used:
+
+- None. This is offline dependency hygiene.
+
+Exact Microseconds saved:
+
+- Runtime code changed: none.
+- Immediate runtime CPU saving: 0 us.
+- Prevents material migration from spending shader/import work on assets with unresolved texture dependencies.
+
+Verification:
+
+- `python -m py_compile Tools\MaterialAudit.py Tools\test_material_audit.py`: passed.
+- `python -m unittest Tools.test_material_audit`: passed 8 tests.
+- Full first-party audit: 0 energy failures, 5 import issue textures, 37 material issue materials, 9 unresolved-reference materials, 27 unresolved refs.
+- Scoped import gate: expected exit 2 confirmed.
+- Scoped unresolved-reference gate: expected exit 4 confirmed, 19 unresolved refs under `Assets\_Project\Art\Materials` with `--resolve-root Assets\_Project`.
+- Scoped broad material gate: expected exit 3 confirmed.

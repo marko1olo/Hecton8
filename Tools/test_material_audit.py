@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import sys
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -120,11 +121,127 @@ class MaterialAuditTests(unittest.TestCase):
             self.assertEqual(3, len(resolved["unresolved_texture_refs"]))
             self.assertEqual("HIGH", resolved["channel_packing_candidate"]["priority"])
 
+    def test_scoped_material_audit_resolves_guids_from_wider_root(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            textures = root / "Textures"
+            materials = root / "Materials"
+            textures.mkdir()
+            materials.mkdir()
+
+            albedo = textures / "Panel_Albedo.png"
+            albedo.write_bytes(b"")
+            write_meta(albedo, srgb=1, mip=1, texture_type=0)
+
+            material = materials / "MAT_Scoped.mat"
+            material.write_text(
+                "\n".join(
+                    [
+                        "%YAML 1.1",
+                        "m_SavedProperties:",
+                        "  m_TexEnvs:",
+                        "  - _BaseMap:",
+                        "      m_Texture: {fileID: 2800000, guid: 11111111111111111111111111111111, type: 3}",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+
+            report = audit.run_audit(materials, 16, False, root)
+
+            self.assertEqual(str(root.as_posix()), report["resolve_root"])
+            self.assertEqual(0, report["material_summary"]["materials_with_unresolved_texture_refs"])
+            self.assertEqual(0, report["material_summary"]["unresolved_texture_ref_count"])
+
+    def test_cli_fail_flags_return_expected_exit_codes(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            texture = root / "Hull_ORM.png"
+            Image.new("RGB", (8, 8), (64, 64, 64)).save(texture)
+            write_meta(texture, srgb=1, mip=1, texture_type=0)
+
+            import_gate = subprocess.run(
+                [
+                    sys.executable,
+                    str(TOOLS_ROOT / "MaterialAudit.py"),
+                    "--root",
+                    str(root),
+                    "--sample-size",
+                    "16",
+                    "--fail-on-import-issues",
+                ],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
+            self.assertEqual(2, import_gate.returncode, import_gate.stdout + import_gate.stderr)
+            self.assertIn("import_issue_textures=1", import_gate.stdout)
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            material = root / "MAT_CliGate.mat"
+            material.write_text(
+                "\n".join(
+                    [
+                        "%YAML 1.1",
+                        "m_SavedProperties:",
+                        "  m_TexEnvs:",
+                        "  - _BaseMap:",
+                        "      m_Texture: {fileID: 2800000, guid: 22222222222222222222222222222222, type: 3}",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+
+            material_gate = subprocess.run(
+                [
+                    sys.executable,
+                    str(TOOLS_ROOT / "MaterialAudit.py"),
+                    "--root",
+                    str(root),
+                    "--sample-size",
+                    "16",
+                    "--fail-on-material-issues",
+                ],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
+            self.assertEqual(3, material_gate.returncode, material_gate.stdout + material_gate.stderr)
+            self.assertIn("materials_with_issues=1", material_gate.stdout)
+
+            unresolved_gate = subprocess.run(
+                [
+                    sys.executable,
+                    str(TOOLS_ROOT / "MaterialAudit.py"),
+                    "--root",
+                    str(root),
+                    "--sample-size",
+                    "16",
+                    "--fail-on-unresolved-refs",
+                ],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
+            self.assertEqual(4, unresolved_gate.returncode, unresolved_gate.stdout + unresolved_gate.stderr)
+            self.assertIn("unresolved_texture_refs=1", unresolved_gate.stdout)
+
     def test_markdown_and_csv_exports_include_recommendations(self) -> None:
         report = {
             "root": "Temp",
+            "resolve_root": "Temp",
             "sample_size": 16,
             "include_third_party": False,
+            "gate_exit_codes": {
+                "energy_failures": 1,
+                "import_issues": 2,
+                "material_issues": 3,
+                "unresolved_texture_refs": 4,
+            },
             "texture_summary": {
                 "texture_count": 1,
                 "albedo_candidate_count": 0,
@@ -233,6 +350,8 @@ class MaterialAuditTests(unittest.TestCase):
             self.assertIn("Texture Memory Hotspots", markdown_text)
             self.assertIn("GOD_MODE Texture Overrides", markdown_text)
             self.assertIn("Global Detail Overlay Plan", markdown_text)
+            self.assertIn("Gate Exit Codes", markdown_text)
+            self.assertIn("unresolved_texture_refs", markdown_text)
             self.assertIn("Hull_ORM.png", texture_csv)
             self.assertIn("NO_DETAIL_MAP_SLOT", material_csv)
             self.assertIn("MAT_Test.mat", channel_csv)

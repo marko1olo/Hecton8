@@ -1,6 +1,7 @@
 # Material Audit - TECHNICAL_ARTIST_DATA
 
 Root: `C:/Hecton8/Assets/_Project`
+Resolve root: `C:/Hecton8/Assets/_Project`
 Sample size: `256`
 Include third-party: `False`
 
@@ -25,6 +26,15 @@ Include third-party: `False`
 | Materials with unresolved texture refs | 9 |
 | Unresolved texture refs | 27 |
 | Channel packing candidates | 31 |
+
+## Gate Exit Codes
+
+| Gate | Exit code |
+| --- | --- |
+| energy_failures | 1 |
+| import_issues | 2 |
+| material_issues | 3 |
+| unresolved_texture_refs | 4 |
 
 ## Import Issue Counts
 

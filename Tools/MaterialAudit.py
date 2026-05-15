@@ -105,6 +105,12 @@ DETAIL_MAP_PROPS = {"_DetailAlbedoMap", "_DetailNormalMap", "_DetailMask"}
 IGNORED_TEXTURE_PROP_PREFIXES = ("unity_",)
 STANDARD_MATERIAL_MIB = 6.65
 OPTIMIZED_MATERIAL_MIB = 2.99
+GATE_EXIT_CODES = {
+    "energy_failures": 1,
+    "import_issues": 2,
+    "material_issues": 3,
+    "unresolved_texture_refs": 4,
+}
 GOD_MODE_TEXTURE_OVERRIDES = [
     {
         "asset_class": "Hero cockpit albedo",
@@ -868,7 +874,8 @@ def summarize_materials(materials: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
-def run_audit(root: Path, sample_size: int, include_third_party: bool) -> dict[str, Any]:
+def run_audit(root: Path, sample_size: int, include_third_party: bool, resolve_root: Path | None = None) -> dict[str, Any]:
+    effective_resolve_root = resolve_root if resolve_root is not None else root
     textures: list[dict[str, Any]] = []
     material_paths: list[Path] = []
 
@@ -889,11 +896,12 @@ def run_audit(root: Path, sample_size: int, include_third_party: bool) -> dict[s
             if isinstance(guid_or_path, str) and re.fullmatch(r"[0-9a-fA-F]{32}", guid_or_path):
                 needed_guids.add(guid_or_path)
 
-    guid_map = build_guid_map(root, needed_guids, include_third_party)
+    guid_map = build_guid_map(effective_resolve_root, needed_guids, include_third_party)
     materials = [resolve_material(material, guid_map) for material in raw_materials]
 
     return {
         "root": normalized(root),
+        "resolve_root": normalized(effective_resolve_root),
         "sample_size": sample_size,
         "include_third_party": include_third_party,
         "doctrine": {
@@ -901,6 +909,7 @@ def run_audit(root: Path, sample_size: int, include_third_party: bool) -> dict[s
             "albedo_energy_fail": "mean_srgb_luma > 0.75 or mean_linear_luma > 0.60",
             "albedo_energy_warn": "p95_srgb_luma > 0.92 and bright_pixel_ratio > 0.10",
         },
+        "gate_exit_codes": GATE_EXIT_CODES,
         "texture_summary": summarize_textures(textures),
         "material_summary": summarize_materials(materials),
         "god_mode_texture_overrides": GOD_MODE_TEXTURE_OVERRIDES,
@@ -920,6 +929,7 @@ def write_markdown_report(report: dict[str, Any], output: Path) -> None:
         "# Material Audit - TECHNICAL_ARTIST_DATA",
         "",
         f"Root: `{report['root']}`",
+        f"Resolve root: `{report.get('resolve_root', report['root'])}`",
         f"Sample size: `{report['sample_size']}`",
         f"Include third-party: `{report['include_third_party']}`",
         "",
@@ -948,9 +958,20 @@ def write_markdown_report(report: dict[str, Any], output: Path) -> None:
         markdown_row(["Unresolved texture refs", material_summary.get("unresolved_texture_ref_count", 0)]),
         markdown_row(["Channel packing candidates", material_summary.get("channel_packing_candidate_count", 0)]),
         "",
-        "## Import Issue Counts",
-        "",
     ]
+    gate_exit_codes = report.get("gate_exit_codes", {})
+    if gate_exit_codes:
+        lines.extend([
+            "## Gate Exit Codes",
+            "",
+            markdown_row(["Gate", "Exit code"]),
+            markdown_row(["---", "---"]),
+        ])
+        for gate, exit_code in gate_exit_codes.items():
+            lines.append(markdown_row([gate, exit_code]))
+        lines.append("")
+
+    lines.extend(["## Import Issue Counts", ""])
     vram_model = material_summary.get("vram_model", {})
     if vram_model:
         lines.extend([
@@ -1230,6 +1251,10 @@ def write_csv_reports(report: dict[str, Any], prefix: Path) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Audit HECTON-8 surface textures/materials.")
     parser.add_argument("--root", default="Assets", help="Asset root to scan.")
+    parser.add_argument(
+        "--resolve-root",
+        help="Optional wider asset root used only for resolving material texture GUIDs.",
+    )
     parser.add_argument("--sample-size", type=int, default=512, help="Max image sample dimension.")
     parser.add_argument(
         "--include-third-party",
@@ -1249,13 +1274,21 @@ def main() -> int:
         action="store_true",
         help="Return non-zero when material slot issues are found.",
     )
+    parser.add_argument(
+        "--fail-on-unresolved-refs",
+        action="store_true",
+        help="Return non-zero when material texture GUIDs cannot be resolved.",
+    )
     args = parser.parse_args()
 
     root = Path(args.root).resolve()
     if not root.exists():
         raise SystemExit(f"Root not found: {root}")
+    resolve_root = Path(args.resolve_root).resolve() if args.resolve_root else root
+    if not resolve_root.exists():
+        raise SystemExit(f"Resolve root not found: {resolve_root}")
 
-    report = run_audit(root, max(16, args.sample_size), args.include_third_party)
+    report = run_audit(root, max(16, args.sample_size), args.include_third_party, resolve_root)
 
     if args.json:
         output = Path(args.json)
@@ -1270,6 +1303,7 @@ def main() -> int:
     material_summary = report["material_summary"]
     print("MATERIAL_AUDIT_SUMMARY")
     print(f"root={report['root']}")
+    print(f"resolve_root={report['resolve_root']}")
     print(f"textures={texture_summary['texture_count']}")
     print(f"albedo_candidates={texture_summary['albedo_candidate_count']}")
     print(f"energy_failures={texture_summary['energy_fail_count']}")
@@ -1300,6 +1334,8 @@ def main() -> int:
         return 1
     if args.fail_on_import_issues and texture_summary["import_issue_count"]:
         return 2
+    if args.fail_on_unresolved_refs and material_summary["unresolved_texture_ref_count"]:
+        return 4
     if args.fail_on_material_issues and material_summary["materials_with_issues"]:
         return 3
     return 0
