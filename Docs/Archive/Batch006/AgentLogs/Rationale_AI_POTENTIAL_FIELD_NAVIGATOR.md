@@ -105,3 +105,9 @@ Solution: Add finite-number coercion for source parameters, path trace clearance
 Rejected Alternatives: Trust generated JSON only; let `--check` crash on malformed data.
 Scalability potential: Future tooling can corrupt-test Low/Middle/High/Ultra data without losing the validation report.
 Hardware Impact: No runtime cost. Offline checker robustness only; Unity proof remains PENDING VERIFICATION.
+
+Problem: Invalid JSON syntax or non-object JSON roots could still crash or mislead the export checker.
+Solution: Catch JSON parse/IO failures in `check_export` and reject non-object roots in `validate_export`.
+Rejected Alternatives: Assume the file is parseable because the simulator writes it; let malformed hand edits terminate the checker.
+Scalability potential: Tooling now handles corrupt Low/Middle/High/Ultra handoff files with explicit failure output.
+Hardware Impact: No runtime cost. Offline checker robustness only; Unity proof remains PENDING VERIFICATION.

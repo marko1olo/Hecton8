@@ -8,6 +8,7 @@ import importlib.util
 import json
 import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -62,6 +63,19 @@ class AiPathSimTests(unittest.TestCase):
         valid, errors = self.sim.validate_source_constants(bad_snapshot, self.sim.SOURCE_ROOT)
         self.assertFalse(valid)
         self.assertTrue(any("non-finite exported source parameter" in error for error in errors))
+
+    def test_invalid_json_and_non_object_roots_fail_closed(self) -> None:
+        valid, errors = self.sim.validate_export([])
+        self.assertFalse(valid)
+        self.assertIn("export root must be a JSON object", errors)
+
+        with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False, encoding="utf-8") as handle:
+            temp_path = Path(handle.name)
+            handle.write("{invalid-json")
+        try:
+            self.assertEqual(self.sim.check_export(temp_path), 1)
+        finally:
+            temp_path.unlink(missing_ok=True)
 
     def test_sample_cost_model_is_deterministic(self) -> None:
         self.assertEqual(self.sim.deterministic_sample_cost_model(), self.tuning["sampleCostModel"])

@@ -175,3 +175,9 @@ Solution: Re-extracted the agent prompt with a bounded CLI regex against `Docs/T
 Rejected Alternatives: Treating the timed-out neighboring fragment as acceptable was rejected. Batch parsing evidence must point to this agent tag only.
 Scalability potential: Bounded tag extraction avoids contamination from neighboring agents during later anti-amnesia checks.
 Hardware Impact: Offline documentation/readback only. Runtime impact remains 0 us.
+
+Problem: The saved report carried 20 representative samples, but the artifact checker did not validate them. A malformed sample could mislead reviewers while summary, digest, and breakdown fields stayed correct.
+Solution: Added sample validation to `Tools/AiBattleSim.py`: exact count, index order, profile/tier/pack key membership, mutually exclusive outcome flags, kill-time bounds, HP bounds, terror bounds, and mean-terror <= max-terror. Added tests for missing sample, profile drift, and outcome collision.
+Rejected Alternatives: Treating samples as decorative evidence was rejected because the report is read by humans during integration and must be internally trustworthy.
+Scalability potential: Future sample expansion can reuse this shape validator and keep samples aligned with the same profile/tier/pack contracts as the breakdown tables.
+Hardware Impact: Offline validation only. Runtime impact remains 0 us; strict 10,000 rerun passed with unchanged brain and simulation digests.

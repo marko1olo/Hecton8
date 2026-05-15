@@ -155,3 +155,17 @@ Verification -> `python Tools/AiPathSim.py` printed `NAVIGATION OPTIMIZED`. `pyt
 Exact Microseconds saved -> 0 Unity runtime microseconds claimed. Validation robustness is offline tooling only.
 
 Regression model -> CPU/GC/memory/cadence unchanged for runtime. Correctness: malformed tuning data now fails closed with evidence instead of crashing the checker.
+
+## 2026-05-15 - JSON Root/Parse Fail-Closed Guard
+
+What was wrong -> Invalid JSON syntax or a non-object JSON root could still break artifact validation instead of returning a clean failure report.
+
+What was done -> `check_export` now catches JSON parse and file-read failures, and `validate_export` rejects non-object roots before accessing fields. Added regression coverage for a JSON array root and a temporary malformed JSON file.
+
+Cinematic Cheats used -> No runtime behavior changed. This hardens validation for the existing analytical-flow/SDF-proxy tuning artifact.
+
+Verification -> `python Tools/AiPathSim.py` printed `NAVIGATION OPTIMIZED`. `python Tools/AiPathSim.py --check` printed `CHECK PASSED`. `python -m unittest Tools.AI_Sim.test_ai_path_sim` ran 15 tests and passed. `python -m py_compile Tools/AiPathSim.py Tools/AI_Sim/test_ai_path_sim.py` passed. Standalone assertion printed `invalid-json-fail-closed-ok`.
+
+Exact Microseconds saved -> 0 Unity runtime microseconds claimed. JSON failure handling is offline tooling only.
+
+Regression model -> CPU/GC/memory/cadence unchanged for runtime. Correctness: syntactically corrupt tuning data now fails closed with evidence instead of traceback.

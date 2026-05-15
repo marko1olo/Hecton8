@@ -380,3 +380,43 @@ Failure modes:
 Status:
 - INSTINCTS DEFINED for data and Python evidence.
 - Unity runtime verification remains PENDING VERIFICATION.
+
+## 2026-05-15 - Report Sample Evidence Hardening
+
+What was wrong:
+- The report exposed 20 representative encounter samples, but normal artifact validation did not prove those samples were structurally valid.
+- A malformed profile label, impossible outcome combination, or broken terror/HP range could mislead integration review even if summary numbers passed.
+
+What was done:
+- Hardened `Tools/AiBattleSim.py` to validate sample count, sample index order, profile/tier/pack membership, outcome exclusivity, kill-time bounds, HP bounds, terror bounds, and `meanTerror <= maxTerror`.
+- Added regression tests for missing sample rows, invalid sample profile labels, and contradictory sample outcomes.
+
+Cinematic cheats used:
+- No new simulation truth. This pass only hardens the offline evidence report around the existing utility-brain simulation.
+
+Exact microseconds saved:
+- Unity runtime saving remains 0 us measured because no Unity runtime path changed.
+- Integration value: malformed human-facing report samples now fail before the report is trusted or imported.
+
+Evidence:
+- `python -B -c "import ast, pathlib; ..."` -> `SYNTAX_OK`.
+- `python -B -m unittest Tools.test_ai_battle_sim` -> 38 tests passed in 10.347 s.
+- `python -B Tools\AiBattleSim.py --encounters 10000 --report Tools\AiBattleSim_Report.json --check-artifacts --verify-rerun` -> `ARTIFACT_CHECK_PASSED`, `rerunVerified=True`.
+- killRate 0.5224, under30KillRate 0.0.
+- `brainDigest=07dad20de885023d068e93c97ae468732cb077efd6fc0b01420279900389e246`.
+- `simulationDigest=97a10330bb86ded1a29b82aa896ac9acbe46d768fe0c403360c80e08bca50867`.
+
+Regression model:
+- CPU: no Unity runtime CPU added. Python sample validation is offline report checking.
+- GC: no Unity hot path changed. Runtime GC proof remains PENDING VERIFICATION until importer/playmode.
+- Memory: no runtime memory allocation added.
+- Cadence: no gameplay cadence changed.
+- Correctness: report samples are now constrained to the same profile, tier, pack, and outcome contracts as the simulator summary.
+
+Failure modes:
+- Future sample shape changes require corresponding checker and test updates.
+- Unity runtime importer remains separate work; no runtime behavior is claimed beyond data/tooling evidence.
+
+Status:
+- INSTINCTS DEFINED for data and Python evidence.
+- Unity runtime verification remains PENDING VERIFICATION.

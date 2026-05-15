@@ -101,3 +101,8 @@ Status: NAVIGATION OPTIMIZED (PY_SIM) / PENDING UNITY VERIFICATION
 
 - [x] Harden numeric validation against malformed JSON | Justification: `finite_float` now prevents malformed source/hysteresis/path numeric fields from crashing `--check`; invalid data returns structured errors. Alternative rejected: letting Python `float()` exceptions terminate artifact validation. Estimate: 24,000,000 us.
 - [x] Add corrupted-field regression coverage | Justification: `test_malformed_numeric_fields_fail_closed` corrupts hysteresis and source snapshot values in memory; regression suite reached 14 tests and standalone invariant printed `fail-closed-json-ok`. Alternative rejected: testing only valid exports. Estimate: 32,000,000 us.
+
+## Iterative Loop 15 - JSON Root/Parse Fail-Closed Guard
+
+- [x] Harden invalid JSON handling | Justification: `check_export` now catches `JSONDecodeError`/IO errors and reports `CHECK FAILED` instead of traceback; `validate_export` rejects non-object roots. Alternative rejected: letting malformed files crash the checker. Estimate: 18,000,000 us.
+- [x] Add invalid JSON regression coverage | Justification: `test_invalid_json_and_non_object_roots_fail_closed` validates JSON array roots and temporary malformed JSON files fail cleanly; regression suite reached 15 tests and standalone invariant printed `invalid-json-fail-closed-ok`. Alternative rejected: only testing syntactically valid JSON. Estimate: 27,000,000 us.
