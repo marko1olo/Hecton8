@@ -194,8 +194,8 @@ Hardware Impact: 0 us/frame on i3/MX350; documentation only.
 
 ## Decision 025 - Anchor Verifier Paths To Repository Root
 
-Problem: The verifier used process cwd for relative path identity, so launching `Tools/VerifyLore.py` from `Tools/` or another operator shell could break default paths or alter source-path hashing.
-Solution: Define the repository root from `Tools/VerifyLore.py`, resolve default blob/manifest/source paths from that root, keep manifest labels repository-relative, add `.tmp` + atomic replace writes for generated files, and add regression coverage for cwd-independent `--check` plus unsorted record-table rejection.
+Problem: The verifier used process cwd for relative path identity, so launching `Tools/VerifyLore.py` from `Tools/` or another operator shell could break default paths or alter source-path hashing. Direct helper calls still needed the same guarantee after the CLI path was fixed.
+Solution: Define the repository root from `Tools/VerifyLore.py`, resolve default blob/manifest/source paths from that root, make `read_blob` and `verify_manifest` resolve repo-relative paths internally, keep manifest labels repository-relative, add `.tmp` + atomic replace writes for generated files, and add regression coverage for cwd-independent `--check`, helper usage, and unsorted record-table rejection.
 Rejected Alternatives: Telling operators to always run from repo root is a process dependency, not a compiler guarantee; hashing cwd-relative paths would corrupt stable lore IDs; direct writes risk partial blobs if interrupted.
 Scalability potential: Low uses deterministic one-file packaging from any shell; Middle/High/Ultra can add more Markdown shards without path drift, and atomic replacement prevents stale half-written package data.
 Hardware Impact: 0 us/frame on i3/MX350; this is offline tooling. Low-tier runtime still reads the same 10329-byte blob, while high-tier future loaders can rely on stable IDs and strict binary ordering.

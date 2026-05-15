@@ -45,7 +45,7 @@ Loop 5: polish mandate and final log - COMPLETE
 - Raw binary header inspection -> `H8LR`, version `1`, header size `32`, record size `16`, table offset `32`, payload offset `48`, flags `15`, all alignment remainders `0`, file length `10329`.
 - `python -B -m unittest Tools.test_verify_lore -v` -> 17 tests passed without bytecode writes or new scratch directories.
 - `python -c "import ast, pathlib; ..."` -> `AST OK` for `Tools/VerifyLore.py` and `Tools/test_verify_lore.py`.
-- `Push-Location Tools; python ..\Tools\VerifyLore.py --check; Pop-Location` -> `CHECK OK`, proving default source/blob/manifest paths are anchored to the repository root instead of process cwd.
+- `Push-Location Tools; python ..\Tools\VerifyLore.py --check; Pop-Location` -> `CHECK OK`, proving default source/blob/manifest paths are anchored to the repository root instead of process cwd; regression coverage also calls `read_blob` and `verify_manifest` with repo-relative paths from `Tools`.
 - `$env:PYTHONPYCACHEPREFIX='.codex-artifacts\pycache'; python -m py_compile Tools\VerifyLore.py Tools\test_verify_lore.py` -> passed. Default pycache emission remains unreliable in this workspace, so the command redirects bytecode into the ignored artifact cache.
 - `python Tools\VerifyLore.py --check` -> `CHECK OK: entries=1 blob=Data\Lore\Encyclopedia.h8bin manifest=Data\Lore\Encyclopedia.manifest.json`.
 - `Data\Lore\Encyclopedia.manifest.json` written with `entry_count=1`, canonical id `Docs/Lore/Lore_Bible.md`, hash `0xD1880394`, offset `48`, compressed length `10281`, decompressed length `25003`, source SHA-256 match, blob length `10329`, blob SHA-256 `8FDBAC8752B5DB10B98226D88BC5A27EEDA049207E139E6F2F3FB15ECDBDDC00`.
@@ -75,5 +75,5 @@ Loop 5: polish mandate and final log - COMPLETE
 - Fifteenth self-audit added parser rejection for nonzero alignment padding and trailing bytes after the final payload.
 - Sixteenth self-audit hardened the nonzero-padding regression so it searches for a guaranteed alignment gap instead of assuming one specific zlib output length.
 - Seventeenth self-audit added `Data/Lore/README.md` as an operator runbook outside `Docs/Lore` so verification commands and binary layout are documented without becoming compiled lore content.
-- Eighteenth self-audit made verifier paths repository-root anchored, added atomic `.tmp` + replace writes for blob/manifest/extracted Markdown, documented the operator behavior, and added cwd-independent plus unsorted-record regression tests.
+- Eighteenth self-audit made verifier CLI and imported helper paths repository-root anchored, added atomic `.tmp` + replace writes for blob/manifest/extracted Markdown, documented the operator behavior, and added cwd-independent plus unsorted-record regression tests.
 - Re-ran bake, source verification, list, extraction SHA-256 check, regression tests, AST syntax parsing, and py_compile with redirected pycache after polish fixes.
