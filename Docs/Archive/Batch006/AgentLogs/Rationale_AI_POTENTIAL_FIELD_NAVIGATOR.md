@@ -111,3 +111,9 @@ Solution: Catch JSON parse/IO failures in `check_export` and reject non-object r
 Rejected Alternatives: Assume the file is parseable because the simulator writes it; let malformed hand edits terminate the checker.
 Scalability potential: Tooling now handles corrupt Low/Middle/High/Ultra handoff files with explicit failure output.
 Hardware Impact: No runtime cost. Offline checker robustness only; Unity proof remains PENDING VERIFICATION.
+
+Problem: The invalid-JSON regression intentionally printed `CHECK FAILED` during a passing unit test, which made clean verification output look like a real failure.
+Solution: Capture `check_export()` stdout inside the regression test and assert that the expected failure text is present.
+Rejected Alternatives: Suppress checker output globally; remove the invalid JSON regression; accept noisy passing tests.
+Scalability potential: Low/Middle/High/Ultra data corruption checks remain explicit without polluting the suite output.
+Hardware Impact: No runtime cost. This is Python test harness hygiene only; Unity proof remains PENDING VERIFICATION.

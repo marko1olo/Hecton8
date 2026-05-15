@@ -169,3 +169,17 @@ Verification -> `python Tools/AiPathSim.py` printed `NAVIGATION OPTIMIZED`. `pyt
 Exact Microseconds saved -> 0 Unity runtime microseconds claimed. JSON failure handling is offline tooling only.
 
 Regression model -> CPU/GC/memory/cadence unchanged for runtime. Correctness: syntactically corrupt tuning data now fails closed with evidence instead of traceback.
+
+## 2026-05-15 - Test Output Hygiene
+
+What was wrong -> The invalid-JSON regression deliberately exercised `check_export()`, but its expected `CHECK FAILED` output leaked into a passing unit-test run.
+
+What was done -> Captured stdout around the invalid JSON checker call and asserted the failure text explicitly, preserving fail-closed coverage while keeping the unit suite output clean.
+
+Cinematic Cheats used -> No runtime behavior changed. This is offline verification hygiene for the analytical-flow/SDF-proxy tuning artifact.
+
+Verification -> `python Tools/AiPathSim.py` printed `NAVIGATION OPTIMIZED`, `candidates=48 reached=30`, `raw_jitter=2 smoothed_jitter=1`, and `final_distance=2.810`. `python Tools/AiPathSim.py --check` printed `CHECK PASSED`. `python -m unittest Tools.AI_Sim.test_ai_path_sim` ran 15 tests and passed with clean output. `python -m py_compile Tools/AiPathSim.py Tools/AI_Sim/test_ai_path_sim.py` passed. `git diff --check` passed with only autocrlf warnings. Debt-marker scan returned no hits. `Navigation_Tuning.json` SHA256 stayed `BE874CA325A9B3DE0BAABB6784837C4DBA7F5BA66B93EFAD63F3D750D7FFA693`.
+
+Exact Microseconds saved -> 0 Unity runtime microseconds claimed. Test harness cleanup is offline only.
+
+Regression model -> CPU/GC/memory/cadence unchanged for runtime. Correctness: expected checker failures remain asserted instead of being loose console noise.

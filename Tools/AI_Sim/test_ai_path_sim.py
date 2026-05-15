@@ -4,6 +4,8 @@
 from __future__ import annotations
 
 import copy
+import contextlib
+import io
 import importlib.util
 import json
 import subprocess
@@ -73,7 +75,11 @@ class AiPathSimTests(unittest.TestCase):
             temp_path = Path(handle.name)
             handle.write("{invalid-json")
         try:
-            self.assertEqual(self.sim.check_export(temp_path), 1)
+            output = io.StringIO()
+            with contextlib.redirect_stdout(output):
+                self.assertEqual(self.sim.check_export(temp_path), 1)
+            self.assertIn("CHECK FAILED", output.getvalue())
+            self.assertIn("invalid JSON export", output.getvalue())
         finally:
             temp_path.unlink(missing_ok=True)
 

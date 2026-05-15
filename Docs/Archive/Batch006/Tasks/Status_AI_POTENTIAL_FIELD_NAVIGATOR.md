@@ -106,3 +106,8 @@ Status: NAVIGATION OPTIMIZED (PY_SIM) / PENDING UNITY VERIFICATION
 
 - [x] Harden invalid JSON handling | Justification: `check_export` now catches `JSONDecodeError`/IO errors and reports `CHECK FAILED` instead of traceback; `validate_export` rejects non-object roots. Alternative rejected: letting malformed files crash the checker. Estimate: 18,000,000 us.
 - [x] Add invalid JSON regression coverage | Justification: `test_invalid_json_and_non_object_roots_fail_closed` validates JSON array roots and temporary malformed JSON files fail cleanly; regression suite reached 15 tests and standalone invariant printed `invalid-json-fail-closed-ok`. Alternative rejected: only testing syntactically valid JSON. Estimate: 27,000,000 us.
+
+## Iterative Loop 16 - Test Output Hygiene
+
+- [x] Capture expected invalid-JSON checker output inside regression test | Justification: fail-closed behavior remains asserted while the unit suite no longer prints an expected `CHECK FAILED` line as loose output. Alternative rejected: suppressing checker output globally or deleting the invalid JSON regression. Estimate: 9,000,000 us.
+- [x] Re-run full verification chain after output cleanup | Justification: simulator, self-check, unit suite, py_compile, diff whitespace guard, debt scan, and deterministic export hash all remained clean. Alternative rejected: treating a test-only harness edit as too small to reverify. Estimate: 74,000,000 us.
