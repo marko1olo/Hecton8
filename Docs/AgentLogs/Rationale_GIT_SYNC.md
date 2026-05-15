@@ -39,3 +39,11 @@ Solution: Rebasing the full local queue over fresh `origin/main` completed witho
 Rejected Alternatives: Pushing against stale remote was rejected. Merge commit was rejected for history hygiene.
 Scalability potential: Keeps local agent output linear on top of the newest integrator state.
 Hardware Impact: 0us runtime. Git-only operation; Unity runtime remains PENDING VERIFICATION.
+
+## Decision 6: Remote Push Verification
+
+Problem: Evidence files created before push still showed remote verification pending.
+Solution: After `git push origin main`, fetched `origin/main` and verified local and remote hashes matched at `68c2fe0a388ae7371aa8f70930859207c12364f7` with divergence `0 0`.
+Rejected Alternatives: Ending with chat-only push proof was rejected because the repository must carry the handoff evidence.
+Scalability potential: Integrators can verify from files that the queue reached remote before this final evidence update.
+Hardware Impact: 0us runtime. Git-only operation.
