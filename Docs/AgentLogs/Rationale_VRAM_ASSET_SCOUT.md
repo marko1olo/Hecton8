@@ -81,3 +81,11 @@ Solution: Recompute those derived JSON lists inside `validate_generated_reports(
 Rejected Alternatives: Count-only validation. Counts prove size, not payload identity, priority ordering, or row membership.
 Scalability potential: Low/MX350 cleanup queues now keep exact directory, extension, atlas, and RT hotspot priorities tied to static evidence; Middle/High/Ultra can consume larger reports after regeneration without accepting stale list payloads.
 Hardware Impact: 0us runtime measured. Tooling impact: unit coverage is now 26 tests and rejects JSON derived list drift.
+
+## Decision 44: JSON Recommendation Parity
+
+Problem: Risk flags, counters, and derived lists were guarded, but JSON recommendation text for texture, mesh, and RenderTexture redlines could still drift from broad/split CSV evidence. Stale remediation text can send cleanup work in the wrong direction.
+Solution: Add recommendation fields to JSON mesh redlines and RenderTexture payloads, keep texture recommendation parity, and validate broad CSV to split CSV and split/broad CSV to JSON recommendation equality.
+Rejected Alternatives: Treating recommendations as prose-only. In this report they are machine-consumed remediation instructions and must stay tied to the risk row.
+Scalability potential: Low/MX350 remediation instructions now stay synchronized with static evidence; higher tiers can consume JSON directly without re-parsing CSV recommendation columns.
+Hardware Impact: 0us runtime measured. Tooling impact: unit coverage is now 28 tests and rejects split/JSON recommendation drift.

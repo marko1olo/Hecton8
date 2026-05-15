@@ -425,6 +425,7 @@ class MemoryBudgetCheckTests(unittest.TestCase):
                     {
                         "path": "Assets/BigMesh.fbx",
                         "flags": ["MESH_GT_80K_ABSOLUTE_STATIC"],
+                        "recommendation": "",
                     },
                 ],
                 "render_textures": [
@@ -434,6 +435,7 @@ class MemoryBudgetCheckTests(unittest.TestCase):
                         "height": 720,
                         "estimate_mib": 7.031,
                         "flags": ["RENDER_TEXTURE_DEPTH_STENCIL_PRESENT_STATIC_SUSPECT"],
+                        "recommendation": "",
                     },
                 ],
                 "render_texture_source_hotspots": [],
@@ -496,6 +498,7 @@ class MemoryBudgetCheckTests(unittest.TestCase):
                     "bc7_bytes": "8388608",
                     "bc7_full_mip_mib": "10.667",
                     "redline_flags": "VRAM CRIME: TEXTURE_GT_2048",
+                    "recommendation": "Clamp import cap.",
                     "evidence_class": "STATIC_SOURCE",
                 }
             )
@@ -576,6 +579,7 @@ class MemoryBudgetCheckTests(unittest.TestCase):
                         "bc7_full_mip_mib": 10.667,
                         "first_party_production": True,
                         "flags": ["VRAM CRIME: TEXTURE_GT_2048"],
+                        "recommendation": "Clamp import cap.",
                     }
                 ],
                 "mesh_redlines": [],
@@ -821,6 +825,69 @@ class MemoryBudgetCheckTests(unittest.TestCase):
             self.assertIn("JSON mesh_extension_summary drift", messages)
             self.assertIn("JSON atlas_suggestions drift", messages)
             self.assertIn("JSON render_texture_source_hotspots drift", messages)
+
+    def test_validate_reports_rejects_json_recommendation_drift(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            drifted_json = Path(temp_dir) / "VRAM_Budget_Audit_recommendation_drift.json"
+            payload = json.loads((PROJECT_ROOT / "Docs" / "Reports" / "VRAM_Budget_Audit.json").read_text(encoding="utf-8"))
+            payload["texture_redlines"][0]["recommendation"] = "STALE_TEXTURE_RECOMMENDATION"
+            payload["mesh_redlines"][0]["recommendation"] = "STALE_MESH_RECOMMENDATION"
+            payload["render_textures"][0]["recommendation"] = "STALE_RT_RECOMMENDATION"
+            drifted_json.write_text(json.dumps(payload), encoding="utf-8")
+
+            ok, messages = budget.validate_generated_reports(
+                PROJECT_ROOT,
+                PROJECT_ROOT / "Docs" / "Reports" / "VRAM_Budget_Audit.csv",
+                drifted_json,
+                PROJECT_ROOT / "Docs" / "Reports" / "VRAM_Texture_Redlines.csv",
+                PROJECT_ROOT / "Docs" / "Reports" / "VRAM_Mesh_Redlines.csv",
+                PROJECT_ROOT / "Docs" / "Reports" / "VRAM_RenderTexture_Redlines.csv",
+                PROJECT_ROOT / "Docs" / "Reports" / "VRAM_RenderTexture_SourceHotspots.csv",
+                PROJECT_ROOT / "Docs" / "Reports" / "VRAM_Budget_Audit_Summary.md",
+                PROJECT_ROOT / "Docs" / "Reports" / "VRAM_Remediation_Plan.md",
+            )
+
+            self.assertFalse(ok)
+            self.assertIn("texture redline recommendation mismatch JSON", messages)
+            self.assertIn("mesh redline recommendation mismatch JSON", messages)
+            self.assertIn("RenderTexture recommendation mismatch JSON", messages)
+
+    def test_validate_reports_rejects_split_recommendation_drift(self) -> None:
+        def write_drifted_recommendation(source: Path, target: Path) -> None:
+            with source.open(newline="", encoding="utf-8") as handle:
+                reader = csv.DictReader(handle)
+                rows = list(reader)
+                fieldnames = reader.fieldnames or []
+            rows[0]["recommendation"] = "STALE_SPLIT_RECOMMENDATION"
+            self.write_csv_rows(target, fieldnames, rows)
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_root = Path(temp_dir)
+            texture_redlines = temp_root / "VRAM_Texture_Redlines.csv"
+            mesh_redlines = temp_root / "VRAM_Mesh_Redlines.csv"
+            render_texture_redlines = temp_root / "VRAM_RenderTexture_Redlines.csv"
+            write_drifted_recommendation(PROJECT_ROOT / "Docs" / "Reports" / "VRAM_Texture_Redlines.csv", texture_redlines)
+            write_drifted_recommendation(PROJECT_ROOT / "Docs" / "Reports" / "VRAM_Mesh_Redlines.csv", mesh_redlines)
+            write_drifted_recommendation(PROJECT_ROOT / "Docs" / "Reports" / "VRAM_RenderTexture_Redlines.csv", render_texture_redlines)
+
+            ok, messages = budget.validate_generated_reports(
+                PROJECT_ROOT,
+                PROJECT_ROOT / "Docs" / "Reports" / "VRAM_Budget_Audit.csv",
+                PROJECT_ROOT / "Docs" / "Reports" / "VRAM_Budget_Audit.json",
+                texture_redlines,
+                mesh_redlines,
+                render_texture_redlines,
+                PROJECT_ROOT / "Docs" / "Reports" / "VRAM_RenderTexture_SourceHotspots.csv",
+                PROJECT_ROOT / "Docs" / "Reports" / "VRAM_Budget_Audit_Summary.md",
+                PROJECT_ROOT / "Docs" / "Reports" / "VRAM_Remediation_Plan.md",
+            )
+
+            self.assertFalse(ok)
+            self.assertIn("texture redline recommendation mismatch broad CSV", messages)
+            self.assertIn("mesh redline recommendation mismatch broad CSV", messages)
+            self.assertIn("RenderTexture redline recommendation mismatch broad CSV", messages)
+            self.assertIn("texture redline recommendation mismatch JSON", messages)
+            self.assertIn("mesh redline recommendation mismatch JSON", messages)
 
     def test_iter_assets_uses_case_insensitive_generated_tree_exclusion(self) -> None:
         self.assertIn(".codex-build", budget.SKIP_DIRS)

@@ -26,15 +26,16 @@ Evidence class: STATIC_SOURCE / FILESYSTEM / PY_UNIT_TEST
 - [x] Loop 36: JSON derived counter and gate-reason parity | DOD: `--validate-reports` now recomputes texture crime rows, texture container risks, streaming mip risks, mesh import risks, RenderTexture depth/stencil risk rows, and expected gate reasons from CSV rows before accepting JSON | Alternatives Rejected: validating only top-level counts while derived remediation counters could drift | Microseconds estimate: 0us runtime, tooling/CI handoff only
 - [x] Loop 37: JSON budget aggregate parity | DOD: `--validate-reports` now recomputes BC7 full-mip totals, runtime texture totals, first-party texture totals, mesh geometry totals, first-party mesh totals, RenderTexture totals, budget constants, and critical overflow state before accepting JSON | Alternatives Rejected: trusting generated MiB aggregates after partial regeneration or manual edits | Microseconds estimate: 0us runtime, tooling/CI handoff only
 - [x] Loop 38: JSON derived list parity | DOD: `--validate-reports` now recomputes non-first-party runtime directory pressure, texture/mesh extension summaries, atlas suggestions, and RenderTexture hotspot JSON payloads from CSV/static evidence | Alternatives Rejected: validating only scalar counters while downstream list payloads could drift | Microseconds estimate: 0us runtime, tooling/CI handoff only
+- [x] Loop 39: JSON recommendation parity | DOD: JSON texture, mesh, and RenderTexture redline recommendation fields now validate against broad and split CSV evidence | Alternatives Rejected: preserving risk flags while letting remediation instructions drift | Microseconds estimate: 0us runtime, tooling/CI handoff only
 
 ## Verification
 
 - PYTHONDONTWRITEBYTECODE=1 python AST syntax parse for `Tools/MemoryBudgetCheck.py` and `Tools/test_memory_budget_check.py`: PASS
 - PYTHONDONTWRITEBYTECODE=1 python Tools/MemoryBudgetCheck.py --root . --validate-reports: PASS; reports valid: textures=1652 meshes=302 render_textures=1 texture_redlines=946 mesh_redlines=293 rt_redlines=1 rt_hotspots=61 scan_roots=Assets,Packages,Data
-- PYTHONDONTWRITEBYTECODE=1 python -m unittest discover -s Tools -p test_memory_budget_check.py -v: PASS, 26 tests, elapsed 41.781 seconds
+- PYTHONDONTWRITEBYTECODE=1 python -m unittest Tools.test_memory_budget_check -v: PASS, 28 tests, elapsed 49.990 seconds
 - PYTHONDONTWRITEBYTECODE=1 python Tools/MemoryBudgetCheck.py --root . --ci: EXPECTED FAIL, ci_exit_code=2 because static redlines/overflow remain present
-- PYTHONDONTWRITEBYTECODE=1 python Tools/MemoryBudgetCheck.py --root .: PASS; regenerated reports after derived list validator hardening
+- PYTHONDONTWRITEBYTECODE=1 python Tools/MemoryBudgetCheck.py --root .: PASS; regenerated reports after derived list and recommendation parity hardening
 - Python bytecode cleanup: PASS, `PYTHON_CACHE_COUNT 0`
 - git diff --check on VRAM-owned touched files: PASS, no whitespace errors; CRLF warnings only
-- Docs/AgentLogs/LOG_VRAM_ASSET_SCOUT.md chronology: PASS, LOG_ORDER_OK headers=10 through 2026-05-15T23:39:51+03:00
+- Docs/AgentLogs/LOG_VRAM_ASSET_SCOUT.md chronology: PASS, LOG_ORDER_OK headers=11 through 2026-05-15T23:55:24+03:00
 - C# dotnet build: NOT RUN. No .csproj files are present in current root scan; this continuation changed Python tooling and docs only.

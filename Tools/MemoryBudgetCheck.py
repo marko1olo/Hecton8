@@ -2027,6 +2027,7 @@ def build_summary_payload(
                 "mipmap": record.mipmap,
                 "random_write": record.random_write,
                 "flags": list(record.flags),
+                "recommendation": record.recommendation,
             }
             for record in render_textures
         ],
@@ -2075,6 +2076,7 @@ def build_summary_payload(
                 "meta_generate_secondary_uv": record.meta_generate_secondary_uv,
                 "meta_keep_quads": record.meta_keep_quads,
                 "flags": list(record.flags),
+                "recommendation": record.recommendation,
             }
             for record in mesh_redlines
         ],
@@ -2213,6 +2215,9 @@ def validate_generated_reports(
     texture_flags_by_path = {row.get("path", ""): row.get("redline_flags", "") for row in texture_rows}
     mesh_flags_by_path = {row.get("path", ""): row.get("redline_flags", "") for row in mesh_rows}
     render_texture_flags_by_path = {row.get("path", ""): row.get("redline_flags", "") for row in render_texture_rows}
+    texture_recommendation_by_path = {row.get("path", ""): row.get("recommendation", "") for row in texture_rows}
+    mesh_recommendation_by_path = {row.get("path", ""): row.get("recommendation", "") for row in mesh_rows}
+    render_texture_recommendation_by_path = {row.get("path", ""): row.get("recommendation", "") for row in render_texture_rows}
     render_texture_dimensions_by_path = {
         row.get("path", ""): (
             row.get("width", ""),
@@ -2430,6 +2435,10 @@ def validate_generated_reports(
         str(item.get("path", "")): ";".join(str(flag) for flag in item.get("flags", []))
         for item in payload.get("texture_redlines", [])
     }
+    json_texture_redline_recommendation_by_path = {
+        str(item.get("path", "")): str(item.get("recommendation", ""))
+        for item in payload.get("texture_redlines", [])
+    }
     texture_redline_dimensions_by_path = {
         row.get("path", ""): (
             row.get("width", ""),
@@ -2452,8 +2461,16 @@ def validate_generated_reports(
         str(item.get("path", "")): ";".join(str(flag) for flag in item.get("flags", []))
         for item in payload.get("mesh_redlines", [])
     }
+    json_mesh_redline_recommendation_by_path = {
+        str(item.get("path", "")): str(item.get("recommendation", ""))
+        for item in payload.get("mesh_redlines", [])
+    }
     json_render_texture_flags_by_path = {
         str(item.get("path", "")): ";".join(str(flag) for flag in item.get("flags", []))
+        for item in payload.get("render_textures", [])
+    }
+    json_render_texture_recommendation_by_path = {
+        str(item.get("path", "")): str(item.get("recommendation", ""))
         for item in payload.get("render_textures", [])
     }
     json_render_texture_dimensions_by_path = {
@@ -2598,6 +2615,12 @@ def validate_generated_reports(
         messages.append("mesh redline flags mismatch broad CSV")
     if render_texture_redlines_path is not None and any(render_texture_flags_by_path.get(row.get("path", ""), "") != row.get("flags", "") for row in render_texture_redline_rows):
         messages.append("RenderTexture redline flags mismatch broad CSV")
+    if texture_redlines_path is not None and any(texture_recommendation_by_path.get(row.get("path", ""), "") != row.get("recommendation", "") for row in texture_redline_rows):
+        messages.append("texture redline recommendation mismatch broad CSV")
+    if mesh_redlines_path is not None and any(mesh_recommendation_by_path.get(row.get("path", ""), "") != row.get("recommendation", "") for row in mesh_redline_rows):
+        messages.append("mesh redline recommendation mismatch broad CSV")
+    if render_texture_redlines_path is not None and any(render_texture_recommendation_by_path.get(row.get("path", ""), "") != row.get("recommendation", "") for row in render_texture_redline_rows):
+        messages.append("RenderTexture redline recommendation mismatch broad CSV")
     if render_texture_hotspots_path is not None and len(render_texture_hotspot_rows) != len(render_texture_hotspot_keys):
         messages.append("duplicate RenderTexture hotspot keys")
     if render_texture_hotspots_path is not None and render_texture_hotspot_keys != json_hotspot_keys:
@@ -2614,6 +2637,11 @@ def validate_generated_reports(
         for row in texture_redline_rows
     ):
         messages.append("texture redline dimensions/estimate mismatch JSON")
+    if texture_redlines_path is not None and any(
+        json_texture_redline_recommendation_by_path.get(row.get("path", ""), "") != row.get("recommendation", "")
+        for row in texture_redline_rows
+    ):
+        messages.append("texture redline recommendation mismatch JSON")
     if mesh_redlines_path is not None and set(mesh_redline_paths) != set(json_mesh_redline_flags_by_path.keys()):
         messages.append("mesh redline path set mismatch JSON")
     if mesh_redlines_path is not None and any(
@@ -2621,6 +2649,11 @@ def validate_generated_reports(
         for row in mesh_redline_rows
     ):
         messages.append("mesh redline flags mismatch JSON")
+    if mesh_redlines_path is not None and any(
+        json_mesh_redline_recommendation_by_path.get(row.get("path", ""), "") != row.get("recommendation", "")
+        for row in mesh_redline_rows
+    ):
+        messages.append("mesh redline recommendation mismatch JSON")
     if set(json_render_texture_flags_by_path.keys()) != render_texture_path_set:
         messages.append("RenderTexture path set mismatch JSON")
     if any(
@@ -2633,6 +2666,11 @@ def validate_generated_reports(
         for path in render_texture_path_set
     ):
         messages.append("RenderTexture dimensions/estimate mismatch JSON")
+    if any(
+        json_render_texture_recommendation_by_path.get(path, "") != render_texture_recommendation_by_path.get(path, "")
+        for path in render_texture_path_set
+    ):
+        messages.append("RenderTexture recommendation mismatch JSON")
     if any(not row.get("path", "").startswith(allowed_prefixes) for row in texture_rows):
         messages.append("texture rows outside import roots")
     if any(not row.get("path", "").startswith(allowed_prefixes) for row in mesh_rows):

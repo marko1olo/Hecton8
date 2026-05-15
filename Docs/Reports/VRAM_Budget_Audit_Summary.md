@@ -1,6 +1,6 @@
 # VRAM Budget Audit Summary
 
-Generated: 2026-05-15T23:38:08
+Generated: 2026-05-15T23:53:10
 Evidence class: STATIC_SOURCE / FILESYSTEM. Runtime residency is PENDING VERIFICATION.
 Scan roots: Assets, Packages, Data. Non-import roots such as Docs/AgentLogs are excluded from asset residency totals.
 

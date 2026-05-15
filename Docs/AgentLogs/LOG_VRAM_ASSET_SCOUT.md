@@ -284,6 +284,35 @@ Evidence boundary:
 - STATIC_SOURCE / FILESYSTEM / PY_UNIT_TEST only.
 - Unity import, Memory Profiler, player build, and runtime frame time remain PENDING VERIFICATION.
 
+## 2026-05-15T23:55:24+03:00 - JSON RECOMMENDATION PARITY PASS
+
+What was wrong:
+- JSON redline payloads did not fully carry or validate remediation recommendation text.
+- Mesh and RenderTexture JSON could match flags/dimensions while losing the exact cleanup instruction.
+
+What was done:
+- Added `recommendation` to JSON mesh redlines and RenderTexture payloads.
+- Added validator parity checks for broad CSV to split CSV recommendations.
+- Added JSON recommendation parity checks for texture, mesh, and RenderTexture payloads.
+- Regenerated active VRAM report artifacts.
+
+Cinematic cheats used:
+- None. This is offline report validation, not runtime rendering work.
+
+Exact microseconds saved:
+- Runtime code changed: none.
+- Immediate runtime CPU saving: 0us.
+- Tooling correctness improvement: stale remediation instruction text now fails validation.
+
+Verification:
+- PYTHONDONTWRITEBYTECODE=1 python Tools/MemoryBudgetCheck.py --root .: PASS; regenerated reports.
+- PYTHONDONTWRITEBYTECODE=1 python Tools/MemoryBudgetCheck.py --root . --validate-reports: PASS; `reports valid: textures=1652 meshes=302 render_textures=1 texture_redlines=946 mesh_redlines=293 rt_redlines=1 rt_hotspots=61 scan_roots=Assets,Packages,Data`.
+- PYTHONDONTWRITEBYTECODE=1 python -m unittest Tools.test_memory_budget_check -v: PASS, 28 tests, elapsed 49.990 seconds.
+
+Evidence boundary:
+- STATIC_SOURCE / FILESYSTEM / PY_UNIT_TEST only.
+- Unity import, Memory Profiler, player build, and runtime frame time remain PENDING VERIFICATION.
+
 ## 2026-05-15T23:39:51+03:00 - JSON DERIVED LIST PARITY PASS
 
 What was wrong:
