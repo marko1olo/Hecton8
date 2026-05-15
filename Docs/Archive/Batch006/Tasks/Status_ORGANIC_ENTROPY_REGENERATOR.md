@@ -181,6 +181,11 @@ Verification after Loop 2: Constants and codec implemented; no Unity import proo
 - [x] Invalid export identity regression | Added `test_run_sim_rejects_invalid_export_identity` by changing `status` to `PENDING`. DOD: malformed export identity raises `ValueError` before state construction. Rejected: relying only on the happy-path status assertion.
 - [x] Loop 28 verification | Re-ran `python -m py_compile Tools/WorldEntropySim.py Tools/test_world_entropy_sim.py`, `python -m unittest Tools.test_world_entropy_sim -v`, 365-day entropy command, 1000-day entropy command, target forbidden-token scan, raw native allocation/dispose scan, `git diff --check`, `dotnet --info`, and temp check. Results: py_compile exit `0`; unittest 13 passed in `23.639 s`; 365/1000-day entropy `STATUS=ENTROPY BALANCED`; no forbidden hot-path matches; no raw `new NativeArray`/raw dispose matches; `git diff --check` clean; `dotnet` unavailable; `.codex_tmp` absent.
 
+## Loop 29 - CLI Acceptance Mode Surface Guard
+- [x] CLI mode narrowing | Removed the unused `baseline` CLI choice so `WorldEntropySim.py` only exposes `total_overharvest`, matching the XML task and exported acceptance metadata. DOD: CLI cannot run a non-acceptance mode while still printing the authoritative status surface. Rejected: keeping baseline because `validate_constants` now enforces `acceptance.mode == total_overharvest`. Estimate: tooling-only; runtime C# unchanged.
+- [x] Non-acceptance mode regression | Added `test_cli_rejects_non_acceptance_mode` and suppressed argparse stderr. DOD: `--mode baseline` exits with code `2`. Rejected: manual CLI check.
+- [x] Loop 29 verification | Re-ran `python -m py_compile Tools/WorldEntropySim.py Tools/test_world_entropy_sim.py`, `python -m unittest Tools.test_world_entropy_sim -v`, 365-day entropy command, 1000-day entropy command, target forbidden-token scan, raw native allocation/dispose scan, `git diff --check`, `dotnet --info`, and temp check. Results: py_compile exit `0`; unittest 14 passed in `43.707 s`; 365/1000-day entropy `STATUS=ENTROPY BALANCED`; no forbidden hot-path matches; no raw `new NativeArray`/raw dispose matches; `git diff --check` clean; `dotnet` unavailable; `.codex_tmp` absent.
+
 ## Final State
 - [x] Core tasks 1-8 complete.
 - [x] Recursive verification target met by Python entropy-test.

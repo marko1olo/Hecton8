@@ -400,3 +400,14 @@ Rejected Alternatives: Trusting only the happy-path assertions was rejected beca
 Scalability potential: Low/Middle/High/Ultra validation runs now reject non-authoritative constants before any day loop starts. Future schema upgrades must explicitly bump validation and tests.
 
 Hardware Impact: Tooling-only. Unity runtime backend unchanged; invalid export identity aborts before Python allocates per-cell lanes.
+
+## Decision 37 - CLI Acceptance Mode Surface Guard
+Problem: The XML assignment and exported constants define only `total_overharvest`, but the CLI still advertised `baseline`. That mode could run under total-overharvest acceptance metadata and create ambiguous evidence.
+
+Solution: Removed `baseline` from the argparse choices, leaving `total_overharvest` as the only CLI mode. Added a regression asserting `--mode baseline` exits with argparse code `2`.
+
+Rejected Alternatives: Keeping baseline was rejected because it is outside the XML task and conflicts with fail-closed acceptance metadata validation. Adding a separate baseline acceptance schema was rejected as scope creep.
+
+Scalability potential: Low/Middle/High/Ultra validation runs now expose one acceptance surface for this batch. Future baseline tooling must define its own schema and task instead of piggybacking on this export.
+
+Hardware Impact: Tooling-only. Unity runtime backend unchanged; invalid CLI mode exits before JSON simulation work.

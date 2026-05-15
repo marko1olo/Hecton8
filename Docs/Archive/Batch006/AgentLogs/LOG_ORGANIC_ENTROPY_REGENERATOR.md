@@ -665,3 +665,30 @@ Verification:
 - Target scans: no forbidden hot-path token matches; no raw `new NativeArray`; no raw native dispose.
 - `git diff --check`: clean.
 - `dotnet --info`: unavailable; full Unity import/build remains PENDING VERIFICATION.
+
+## 2026-05-15 - CLI Acceptance Mode Surface Guard
+
+What was wrong:
+- The CLI advertised a `baseline` mode outside the XML task.
+- That mode could run while the constants still described total-overharvest acceptance.
+
+What was done:
+- Restricted `--mode` to `total_overharvest`.
+- Added `test_cli_rejects_non_acceptance_mode`.
+- Re-ran unit, entropy, syntax, static, and workspace checks.
+
+Cinematic cheats used:
+- None. This is offline CLI contract hygiene.
+
+Exact microseconds saved:
+- Runtime microseconds saved: 0. Unity runtime backend was not changed.
+- Failure avoided: non-acceptance CLI mode now exits before JSON loading and simulation.
+
+Verification:
+- `python -m py_compile Tools/WorldEntropySim.py Tools/test_world_entropy_sim.py`: exit code 0.
+- `python -m unittest Tools.test_world_entropy_sim -v`: 14 tests passed in 43.707 s.
+- `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 365 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`, Safe day 28, Deep Abyss day 88, ratio 3.143, final mature ratio 1.000.
+- `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 1000 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`, mature counts stable through day 1000.
+- Target scans: no forbidden hot-path token matches; no raw `new NativeArray`; no raw native dispose.
+- `git diff --check`: clean.
+- `dotnet --info`: unavailable; full Unity import/build remains PENDING VERIFICATION.
