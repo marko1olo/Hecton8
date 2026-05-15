@@ -356,3 +356,11 @@ What was done -> Cached `ITickDispatcher`, updated dispatcher binding on registr
 Cinematic Cheats used -> Portal/ocean sweep remains a controlled DSP fake; the patch keeps that fake tied to project tick time and finite scalar inputs.
 Exact Microseconds saved -> Adds one cached pointer read and scalar finite checks, below 1 us per prologue audio frame. Prevents invalid DSP transition churn rather than chasing it downstream.
 Verification -> No dotnet rebuild/response-file compile was run per user constraint. Targeted scan confirms dispatcher-backed delta resolution, finite helpers, and hot-swap cache; forbidden-pattern scan returned no hits; `git diff --cached --check` exits clean for the staged audio source, and working-tree doc diff check reports line-ending warnings only.
+
+## 2026-05-15 - Loop 49 VFX Serialized Scalar Finite-Config Review
+
+What was wrong -> Re-entry VFX validated shared signal payloads, but malformed serialized scalars could still push NaN/Inf into shader globals, overlay transforms, acoustic radii, crossfade timing, or telemetry before generic sanitize ran.
+What was done -> Added finite clamps for heat scale, whiteout threshold, ramp rates, ambient/crossfade timing, overlay distance, and acoustic radius, with matching `OnValidate()` cleanup.
+Cinematic Cheats used -> Plasma whiteout, ocean crossfade, and splash acoustics stay shader/audio fakes; the patch keeps those fakes fed by finite, bounded control values.
+Exact Microseconds saved -> Adds scalar finite checks below 1 us per VFX frame. Prevents invalid material/global writes and downstream audio/debris churn from corrupted config.
+Verification -> No dotnet rebuild/response-file compile was run per user constraint. Targeted scan confirms finite helper coverage in VFX; forbidden-pattern scan returned no hits; `git diff --check` reports line-ending warnings only for the touched working-tree files.

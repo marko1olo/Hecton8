@@ -176,3 +176,27 @@ Verification:
 - `UnityUpdateMethods=2`
 - `StructLayoutAttributes=954`
 - `AupPrecisionRisk=0`
+
+## 2026-05-15 04:46:29 +04:00 - Follow-Up No-Rebuild Underwater Visuals Lookup Hygiene
+What was wrong:
+- `HectonUnderwaterVisuals` still carried runtime `GetComponent<T>` / `GetComponentInParent<T>` lookup debt in camera recovery paths.
+- The file is a fragile presentation hub with Crest ownership, editor preview, gameplay camera composition, and underwater pass control, so broad refactoring would be riskier than the debt being removed.
+
+What was done:
+- Replaced runtime camera/component probes with `TryGetComponent(out T)`.
+- Replaced `GetComponentInParent<Camera>()` with a zero-allocation parent `Transform` walk that preserves first-parent-camera semantics.
+- Left `UNITY_EDITOR` fallback discovery code intact.
+
+Cinematic Cheats used:
+- None added. This was rendering hot-path hygiene and static coupling cleanup.
+
+Exact Microseconds saved:
+- Estimated 0-5 us CPU on rare camera recovery frames.
+- No steady-state frame-time savings claimed; this is primarily H-Phi/zero-GC hygiene.
+
+Verification:
+- No dotnet rebuild was executed.
+- `git diff --check` on `HectonUnderwaterVisuals.cs`: no whitespace errors; LF-to-CRLF warning only.
+- Brace scan: `564/564`.
+- Runtime lookup scan: no runtime `GetComponent<T>` / `GetComponentInParent<T>` left in `HectonUnderwaterVisuals`; remaining lookup patterns are `UNITY_EDITOR` fallback discovery.
+- `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json`: `RuntimeHPhiNarrow=0.010750370`, `RuntimeHPhiRisk=0.000590952`, `AllSourceHPhiNarrow=0.009572568`, `AllSourceHPhiRisk=0.000485398`, `ArchitecturalPurity=0.996447602`, `MemoryAlignment=0.505023797`, `GetComponentCalls=532`, `StructLayoutAttributes=955`, `AupPrecisionRisk=0`.

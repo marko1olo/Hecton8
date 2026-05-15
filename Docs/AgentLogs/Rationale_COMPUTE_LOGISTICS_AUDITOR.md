@@ -263,3 +263,15 @@ Rejected Alternatives: Treating top-100 patch churn as final LOC delta was rejec
 Scalability potential: Low/Middle tiers gain process protection by blocking more agents from piling edits onto hot dirty files without attribution. High/Ultra process can focus expensive agents only on threads with code work trace plus validation deltas, not on external-path contamination or token mass alone.
 
 Hardware Impact: 0 runtime microseconds on i3/MX350. No C# source, C++ source, scene, prefab, shader, project setting, or Unity asset was changed. Process impact: identifies `SargassumMicroFaunaBoids.cs` and `HabitatGraphManager.cs` as live collision gates and marks C++ transfer as `NOT VERIFIED / NO PATCH EVIDENCE`.
+
+## Decision 22 - Rate Efficiency Recheck
+
+Problem: The user explicitly asked to keep working and compute tokens per second, minute, hour, day, cache-aware price, token-per-byte, and other useful indicators. The ledger is live, so older totals were already stale as current-state facts.
+
+Solution: Run a read-only optimized JSONL scan that only parses `token_count` and user-message rows, join session paths to `state_5.sqlite` for model attribution, and preserve the result in `COMPUTE_RATE_EFFICIENCY_AUDIT.md`. Keep three cost scenarios: model-aware lower bound, all-GPT-5.5 standard, and all-GPT-5.5 long-context.
+
+Rejected Alternatives: Reusing the previous 43.78B snapshot was rejected because `.codex` had moved. Treating all unknown sessions as exact GPT-5.5 billing was rejected because 20 JSONL sessions did not map cleanly to SQLite model rows. Treating the model-aware lower bound as an invoice was rejected because no billing export was read.
+
+Scalability potential: Low/Middle/High/Ultra process gains a hard rate dashboard. Future work can see when prompt velocity jumps from normal burn into pathological burst mode and can decide whether to pause agents before piling more context onto hot files.
+
+Hardware Impact: 0 runtime microseconds on i3/MX350. No C# source, scene, prefab, shader, project setting, or Unity asset was changed. Process impact: identifies 57,503.86 tokens per meaningful LOC and 1,070.477 tokens per script source byte as the current context-recursion signature.

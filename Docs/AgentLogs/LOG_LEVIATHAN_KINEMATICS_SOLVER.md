@@ -683,3 +683,77 @@ Exact microseconds saved:
 Verification:
 - `rg` confirms no `_motionIntentFrame` or `Time.frameCount` references remain in `FaunaKinematicsRuntime`.
 - Runtime status remains pending until Unity Editor import, shader compile, play-mode behavior, GC, and profiler evidence exist.
+
+## 2026-05-15T04:52+04:00
+
+Status: PENDING VERIFICATION. Continued Leviathan tentacle lifecycle audit. No `dotnet` rebuild/compile, Unity import, or response-file probe was run.
+
+What was wrong:
+- `LeviathanTentacleVerletSolver.TryRegister()` could return with only the update dispatcher path registered.
+- Late-frame owns Burst job completion, blackbox telemetry, GPU upload, and indirect draw submission, so a partial registration state can stall the solver/render path.
+
+What was done:
+- Repaired partial dispatcher registration by unregistering both update and late-frame paths, clearing both flags, and retrying from a clean state.
+
+Cinematic cheats used:
+- No added physical simulation. The fix protects the existing cheap Verlet + indirect-render visual path instead of adding fallback render work.
+
+Exact microseconds saved:
+- 0 us claimed in the hot path.
+- Cold lifecycle-only repair prevents missing completion/upload; no profiler-backed frame-time number exists.
+
+Verification:
+- Static snippet inspection confirms both partial registration flags are cleared before retry.
+- Runtime status remains pending until Unity Editor import, shader compile, play-mode behavior, GC, and profiler evidence exist.
+
+## 2026-05-15T04:58+04:00
+
+Status: PENDING VERIFICATION. Continued Leviathan tentacle native-memory audit. No `dotnet` rebuild/compile, Unity import, or response-file probe was run.
+
+What was wrong:
+- `LeviathanTentacleVerletSolver` owned thirteen persistent SOA/blackbox arrays through direct `new NativeArray<T>` calls.
+- Tick only gated on `_positions`, so a partial allocation state could still enter scheduling with missing lanes.
+
+What was done:
+- Added `Hecton8.Core.Memory` and moved persistent arrays to `H8Memory.Allocate<T>(..., SystemID.External, ...)`.
+- Released arrays through `H8Memory.Release` while preserving `NativeMemorySentinel` labels.
+- Added `HasPersistentBuffers()` and required the complete array set before scheduling.
+- Cleaned up immediately if a cold allocation attempt does not produce the full buffer set.
+
+Cinematic cheats used:
+- None added. The existing fixed 8 tentacle / 20 node SOA budget and indirect render path are unchanged.
+
+Exact microseconds saved:
+- 0 us hot-path savings claimed.
+- Added only fixed `IsCreated` gates before scheduling; the gain is owner tracking and fail-closed memory behavior, not measured frame time.
+
+Verification:
+- `rg` confirms no direct `new NativeArray<` or `array.Dispose(` remains in `LeviathanTentacleVerletSolver`.
+- `git diff --check` on touched code/docs exits 0 with only LF-to-CRLF warnings.
+- Runtime status remains pending until Unity Editor import, shader compile, play-mode behavior, GC, and profiler evidence exist.
+
+## 2026-05-15T05:03+04:00
+
+Status: PENDING VERIFICATION. Continued Leviathan tentacle blackbox/lifecycle audit. No `dotnet` rebuild/compile, Unity import, or response-file probe was run.
+
+What was wrong:
+- Tentacle telemetry was written only on the normal late-frame render path.
+- Disable, origin-shift finalization, queued origin-shift rebase, and forced lifecycle completion could consume a scheduled solve without recording the frame.
+
+What was done:
+- Wrote blackbox telemetry after scheduled-job finalization on disable.
+- Wrote telemetry after origin-shift completion and after pending-origin-shift late-frame completion.
+- Wrote telemetry after forced lifecycle completion through `CompletePendingJob()`.
+- Required the complete persistent buffer set before origin-shift rebase.
+
+Cinematic cheats used:
+- No new simulation. Origin-shift frames still skip render submit; only the blackbox state is recorded.
+
+Exact microseconds saved:
+- 0 us normal hot-path saving claimed.
+- Lifecycle/rebase completion writes one fixed telemetry entry; estimated below 0.02 us, pending profiler proof.
+
+Verification:
+- Static grep confirms every `_pendingSolverHandle` completion/finalization site now writes telemetry when it consumes a scheduled solve.
+- `git diff --check` on touched code/docs exits 0.
+- Runtime status remains pending until Unity Editor import, shader compile, play-mode behavior, GC, and profiler evidence exist.

@@ -2021,6 +2021,7 @@ namespace Hecton8.Gameplay
             if (math.abs(pressure - lastPubPressure) > Epsilon)
             {
                 lastPubPressure = pressure;
+                survivalVitalsFlags |= SurvivalVitalsChangedSignalFlags.Pressure;
                 OnPressureChanged?.Invoke(pressure);
             }
 

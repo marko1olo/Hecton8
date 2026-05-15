@@ -273,6 +273,8 @@ namespace NASAPunk.Visor
         private TraumaDispatcher _traumaDispatcher;
         private HectonPlayerHealth _playerHealth;
         private HectonSurvivalSystem _subscribedSurvivalSystem;
+        private uint _survivalVitalsSourceId;
+        private uint _lastSurvivalVitalsSignalSequence;
         private ISubmarineRuntimeContext _submarineRuntimeContext;
         private SubmarineStructuralGrid _structuralGrid;
         private bool _hasTemperatureSample;
@@ -558,6 +560,7 @@ namespace NASAPunk.Visor
         public void Tick(float deltaTime)
         {
             AutoResolveReferences(force: false);
+            ConsumeSurvivalVitalsSignals();
             DrainBrownoutSignals();
             SyncProjectionPose();
             RefreshAdaptiveRuntimeProjection();
@@ -1297,21 +1300,51 @@ namespace NASAPunk.Visor
             if (_subscribedSurvivalSystem == target)
                 return;
 
-            if (_subscribedSurvivalSystem != null)
-            {
-                _subscribedSurvivalSystem.OnTemperatureChanged -= HandleTemperatureChanged;
-                _subscribedSurvivalSystem.OnPressureChanged -= HandlePressureChanged;
-            }
-
             _subscribedSurvivalSystem = target;
+            _survivalVitalsSourceId = ResolveSurvivalVitalsSourceId(_subscribedSurvivalSystem);
+            _lastSurvivalVitalsSignalSequence = 0u;
 
             if (_subscribedSurvivalSystem == null)
                 return;
 
-            _subscribedSurvivalSystem.OnTemperatureChanged += HandleTemperatureChanged;
-            _subscribedSurvivalSystem.OnPressureChanged += HandlePressureChanged;
             HandleTemperatureChanged(_subscribedSurvivalSystem.EnvironmentTemperature);
             HandlePressureChanged(_subscribedSurvivalSystem.Pressure);
+        }
+
+        private void ConsumeSurvivalVitalsSignals()
+        {
+            HectonSurvivalSystem system = _subscribedSurvivalSystem;
+            uint sourceId = _survivalVitalsSourceId;
+            if (system == null || sourceId == 0u)
+                return;
+
+            ReadOnlySpan<SurvivalVitalsChangedSignal> signals = SignalBus<SurvivalVitalsChangedSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                ref readonly SurvivalVitalsChangedSignal signal = ref signals[i];
+                if (signal.SourceId != sourceId)
+                    continue;
+
+                if (signal.Sequence == 0u || signal.Sequence == _lastSurvivalVitalsSignalSequence)
+                    continue;
+
+                uint flags = signal.Flags;
+                if ((flags & (SurvivalVitalsChangedSignalFlags.Temperature | SurvivalVitalsChangedSignalFlags.Pressure)) == 0u)
+                    continue;
+
+                _lastSurvivalVitalsSignalSequence = signal.Sequence;
+                if ((flags & SurvivalVitalsChangedSignalFlags.Temperature) != 0u)
+                    HandleTemperatureChanged(system.EnvironmentTemperature);
+                if ((flags & SurvivalVitalsChangedSignalFlags.Pressure) != 0u)
+                    HandlePressureChanged(system.Pressure);
+            }
+        }
+
+        private static uint ResolveSurvivalVitalsSourceId(HectonSurvivalSystem system)
+        {
+            return system != null
+                ? GlobalSignals.FoldEntityIdToSourceId(EntityId.ToULong(system.GetEntityId()))
+                : 0u;
         }
 
         private void HandleTemperatureChanged(float temperature)

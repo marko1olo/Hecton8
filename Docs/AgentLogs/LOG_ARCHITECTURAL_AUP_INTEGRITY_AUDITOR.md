@@ -862,3 +862,57 @@ Verification:
 
 Integrator notes:
 - Unity Console/import, PlayMode, profiler, and GCMonitor proof remain pending.
+
+## 2026-05-15 - Loop 34 Duplicate Signal Prefilter Counter Export
+
+What was wrong:
+- Duplicate signal prefilter counts were not exposed in H-Phi summary JSON.
+
+What was done:
+- `Get-DuplicateSignalNameAudit` now returns `SourceFileCount`, `CandidateFileCount`, and `PrefilterSkippedFileCount`.
+- `New-AuditSummary` now preserves those counters in `DuplicateSignalNameAudit`.
+
+Cinematic Cheats used:
+- Static tooling only. Runtime simulation and rendering are unchanged.
+- Low-tier machines and CI can now verify the source-mask prefilter without rerunning manual file counts.
+
+Exact Microseconds saved:
+- Gameplay frame time: 0 us.
+- Full gated static run completed in 159.965 seconds; duplicate-signal masking candidate set remains 222 of 1501 files.
+
+Verification:
+- PowerShell parser reports `PARSE_OK`.
+- Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0` completed and reported `RuntimeHPhiRisk=0.000590952`, `RuntimeHPhiNarrow=0.01075037`, `AupPrecisionIntegrity=1`, `AupPrecisionSafe=363`, `AupPrecisionRisk=0`, `DuplicateSignalSourceFiles=1501`, `DuplicateSignalCandidateFiles=222`, `DuplicateSignalSkippedFiles=1279`, `DuplicateSignalNameCount=0`, `RuntimeFiles=1275`, `RuntimeLines=861928`.
+- Qualified AUP H-Phi risk scan returns `NO_MATCHES`.
+- Direct committed-offset leak scan returns `NO_MATCHES`.
+- Mandatory AUP regex scan re-run; residual hits remain broad `universe` text and known final-cast fluid/scatter/shader payload names.
+- No `dotnet build` or rebuild was run because the user explicitly forbade rebuilds.
+
+Integrator notes:
+- Unity Console/import, PlayMode, profiler, and GCMonitor proof remain pending.
+
+## 2026-05-15 - Loop 35 Primary Managed Runtime Risk Lane Verification
+
+What was wrong:
+- Broad managed-runtime risk counts do not tell whether debt is in primary gameplay runtime or support lanes.
+
+What was done:
+- Verified the active working-tree primary-runtime H-Phi lane in `Tools/Architecture/HectonPhiAudit.ps1`.
+- Verified `-MaxPrimaryManagedRuntimeRisk` cannot be used with `-CoreGraphOnly`.
+- Extracted full-source primary managed-risk role metrics.
+
+Cinematic Cheats used:
+- Static tooling only. Runtime simulation and rendering are unchanged.
+- Low-tier machines can gate primary runtime managed debt separately; High/Ultra QA can keep instrumentation without masking primary runtime debt.
+
+Exact Microseconds saved:
+- Gameplay frame time: 0 us.
+- Full static run completed in 193.981 seconds and isolated primary managed risk to 353 counts.
+
+Verification:
+- CoreGraphOnly fail-fast for `-MaxPrimaryManagedRuntimeRisk 0` returned the expected full-source requirement.
+- Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0` completed and reported `RuntimeHPhiRisk=0.00059249`, `AupPrecisionRisk=0`, `PrimaryManagedRuntimeRisk=353`, `PrimaryJobCompleteRisk=44`, `PrimaryBudgetActual=353`, `PrimaryBudgetPassed=True`, role split `PrimaryRuntime=353`, `Instrumentation=236`, `Persistence=96`, `UI=24`, `RuntimeFiles=1275`, `RuntimeLines=862084`.
+- No `dotnet build` or rebuild was run because the user explicitly forbade rebuilds.
+
+Integrator notes:
+- Unity Console/import, PlayMode, profiler, and GCMonitor proof remain pending.

@@ -546,3 +546,94 @@ Verification:
 - Scanner/UI banned-pattern scan for `ILocalizationService`, `Camera.main`, direct `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, `SetText(`, and `.text =`: no matches.
 - Shader-state scan: no `Shader.SetGlobalFloat` or `ApplyGlobalFloat` remains in `ToolDiegeticDisplayController`.
 - `dotnet build` / rebuild: NOT RUN.
+
+## Follow-Up Hardening Pass 20
+
+What was wrong:
+- Focused scanner fast-tick work used a tick-level `now` snapshot, but quality-tier hysteresis still re-read `Time.time` through helper methods during the same scientific scan sample.
+
+What was done:
+- `ResolveFocusedScanResampleInterval()` now accepts the tick timestamp.
+- `ResolveScannerQualityTier()` now accepts the caller timestamp and uses it for candidate-age hysteresis.
+- Late-frame scanner signal publication snapshots time once before resolving signal tier.
+
+Cinematic Cheats used:
+- None added. This preserves the existing Math LOD scanner fake and makes its cadence decision deterministic inside the sample.
+
+Exact Microseconds saved:
+- Verified exact microseconds: PENDING PROFILER.
+- Removes 1-2 repeated engine time reads from active focused scanner ticks.
+
+Verification:
+- `git diff --check` on scanner/UI/doc edits: pass, line-ending warnings only.
+- `git diff --cached --check` on scanner/UI/doc edits: pass.
+- Scanner/UI banned-pattern scan for `ILocalizationService`, `Camera.main`, direct `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, `SetText(`, and `.text =`: no matches.
+- Time-threading scan: focused scan path uses `ResolveFocusedScanResampleInterval(now)` and `ResolveScannerQualityTier(now)`; old `Time.time - _scannerQualityTierCandidateSince` pattern is gone.
+- `dotnet build` / rebuild: NOT RUN.
+
+## Follow-Up Hardening Pass 21
+
+What was wrong:
+- Scanner tier initialization and tier-candidate updates still read `Time.time` inside helper methods. Scanner tuning signal payload also read `Time.frameCount` directly inside the object initializer.
+
+What was done:
+- `QueueScannerQualityTierCandidate()` snapshots time once and passes it through initialization/candidate stamps.
+- `InitializeScannerQualityTier()` now receives caller time.
+- `PublishScannerTuningSignal()` snapshots frame once and writes that value into `ScannerToolActiveSignal.Frame`.
+
+Cinematic Cheats used:
+- None added. This is deterministic timing hygiene for the existing tiered scanner presentation fake.
+
+Exact Microseconds saved:
+- Verified exact microseconds: PENDING PROFILER.
+- Removes up to 2 repeated engine time reads per tier candidate update and one direct frame read per scanner tuning packet.
+
+Verification:
+- `git diff --check` on scanner source: pass, line-ending warning only.
+- `git diff --cached --check` on scanner source: pass.
+- Scanner/UI banned-pattern scan for `ILocalizationService`, `Camera.main`, direct `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, `SetText(`, and `.text =`: no matches.
+- Timestamp scan: no direct candidate-stamp `Time.time`, no no-time `InitializeScannerQualityTier(...)`, and no direct scanner active payload `Time.frameCount` write remain.
+- `dotnet build` / rebuild: NOT RUN.
+
+## Follow-Up Hardening Pass 22
+
+What was wrong:
+- Scanner operational text generation still mixed timestamps between cache-bucket selection, cooldown/last-result text, low-tier decryption gates, and high-tier title scramble.
+
+What was done:
+- `GetOperationalSummary()` snapshots `Time.time` and `Time.frameCount` once before cache/write work.
+- `GetOperationalDirective()` snapshots `Time.time` once before cache/write work.
+- Summary/directive writes now use timestamped internal helpers.
+- Lore decryption summary receives caller `now`/`frame` for tier gating and scramble.
+
+Cinematic Cheats used:
+- Kept the existing title scramble fake; made its frame seed coherent per generated scanner line.
+
+Exact Microseconds saved:
+- Verified exact microseconds: PENDING PROFILER.
+- Removes 2-4 repeated engine time/frame reads per uncached operational text refresh.
+
+Verification:
+- Static verification pending final pass in this session.
+- `dotnet build` / rebuild: NOT RUN.
+
+## Follow-Up Hardening Pass 23
+
+What was wrong:
+- Focused scanner contact consumers still wrote `_scientificLastContactTime` from helper-local `Time.time` reads after the fast-tick scheduler had already captured a timestamp.
+
+What was done:
+- Voxel and spatial contact consumers now receive the scheduler timestamp.
+- Queued occlusion raycast completion captures time at the callback boundary and passes it through lore-target consumption.
+- `_scientificLastContactTime` now uses caller-provided time in lore, voxel, and spatial contact paths.
+
+Cinematic Cheats used:
+- None added. This is timing hygiene for the existing scientific scanner presentation path.
+
+Exact Microseconds saved:
+- Verified exact microseconds: PENDING PROFILER.
+- Removes up to 3 helper-local engine time reads across active focused-contact acquisition paths.
+
+Verification:
+- Static verification pending final pass in this session.
+- `dotnet build` / rebuild: NOT RUN.

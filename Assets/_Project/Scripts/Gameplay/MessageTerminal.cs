@@ -71,7 +71,7 @@ namespace Hecton8.Gameplay
     [AddComponentMenu("Hecton/Gameplay/Message Terminal")]
     public sealed class MessageTerminal : MonoBehaviour, IInteractable, ITickable, IUpdatable, ILocalizationLanguageChangedListener
     {
-        private const uint WfcOutpostDatapadSourceHash = 0x57464350u; // WFCP
+        private const uint WfcOutpostDatapadSourceHash = 0x57464354u; // WFCT
         private const byte WfcDatapadLootedFlag = (byte)WfcOutpostCellStateFlags.DatapadLooted;
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR

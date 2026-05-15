@@ -326,6 +326,9 @@ float3 H8UberNoirApplyDynamicHullBendingWS(float3 positionWS, float3 normalWS, h
     float featureMask = isfinite(featureSource) ? step(0.5, featureSource) : 0.0;
     float localStrengthSource = _UberNoirBendParams.x;
     float localStrength = isfinite(localStrengthSource) ? max(localStrengthSource, 0.0) : 0.0;
+    [branch]
+    if (featureMask <= 0.0 || localStrength <= H8_UBER_NOIR_EPS)
+        return safePositionWS;
 
     float crushDepthSource = _HectonSubmarineCrushDepthParams.y;
     float crushCurrentSource = _HectonSubmarineCrushDepthParams.x;
@@ -352,8 +355,13 @@ float3 H8UberNoirApplyDynamicHullBendingWS(float3 positionWS, float3 normalWS, h
     if (habitatDisplacement > H8_UBER_NOIR_EPS)
         habitatMask = H8UberNoirRadiusMask(safePositionWS, _HectonHabitatStressCenterRadius);
 
+    float weightedDisplacement = crushDisplacement * crushMask + habitatDisplacement * habitatMask;
+    [branch]
+    if (weightedDisplacement <= H8_UBER_NOIR_EPS)
+        return safePositionWS;
+
     float buckle = H8UberNoirBucklingMask(safePositionWS, instanceSeed) * 2.0 - 1.0;
-    float displacement = (crushDisplacement * crushMask + habitatDisplacement * habitatMask) * buckle * localStrength * featureMask;
+    float displacement = weightedDisplacement * buckle * localStrength * featureMask;
     displacement = isfinite(displacement) ? displacement : 0.0;
     return H8UberNoirFinite3(safePositionWS + H8UberNoirSafeNormalize(normalWS, float3(0.0, 1.0, 0.0)) * displacement, safePositionWS);
 #endif

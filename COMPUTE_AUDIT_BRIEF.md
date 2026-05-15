@@ -11,6 +11,7 @@ Validation forensics: `COMPUTE_VALIDATION_FORENSICS.md`
 Thread value audit: `COMPUTE_THREAD_VALUE_AUDIT.md`
 Collision risk: `COMPUTE_COLLISION_RISK.md`
 File burn attribution: `COMPUTE_FILE_BURN_ATTRIBUTION.md`
+Rate efficiency audit: `COMPUTE_RATE_EFFICIENCY_AUDIT.md`
 Status/Rationale/Log:
 - `Docs/Tasks/Status_COMPUTE_LOGISTICS_AUDITOR.md`
 - `Docs/AgentLogs/Rationale_COMPUTE_LOGISTICS_AUDITOR.md`
@@ -25,24 +26,26 @@ Status/Rationale/Log:
 | Script meaningful LOC | 775,435 |
 | Script logic density | 81.94% |
 | All `Assets/**/*.cs` physical LOC | 1,581,522 |
-| Latest JSONL final tokens | 43,778,987,916 |
-| Input tokens | 43,630,634,851 |
-| Cached input tokens | 41,886,807,040 |
-| Output tokens | 148,094,665 |
-| Cached-input ratio | 96.0032% |
-| Cache-aware current API estimate | USD 29,135.37 |
-| No-cache equivalent | USD 191,832.08 |
-| Cache avoided | USD 162,696.72 |
-| Whole-period average | 12,291.36 tokens/sec |
-| Whole-period minute rate | 737,481.59 tokens/min |
-| Whole-period hour rate | 44,248,895.33 tokens/hour |
-| Whole-period day rate | 1,061,973,487.91 tokens/day |
-| Last 6h rate | 61,645.10 tokens/sec |
-| Tokens per meaningful LOC | 56,457.33 |
-| Tokens per script source byte | 1,055.433 |
-| Cache-aware cost per meaningful LOC | USD 0.037573 |
-| Energy by prompt constant | 2,188.95 MWh |
-| Live SQLite all-thread tokens, 03:21 snapshot | 43,998,578,833 |
+| Latest JSONL final tokens | 44,590,504,461 |
+| Input tokens | 44,439,003,137 |
+| Cached input tokens | 42,661,425,024 |
+| Output tokens | 151,242,924 |
+| Cached-input ratio | 95.99996% |
+| Model-aware cache-aware lower-bound estimate | USD 28,860.62 |
+| All-GPT-5.5 standard cache-aware scenario | USD 34,755.89 |
+| All-GPT-5.5 standard no-cache scenario | USD 226,732.30 |
+| All-GPT-5.5 standard cache avoided | USD 191,976.41 |
+| Whole-period average | 12,491.21 tokens/sec |
+| Whole-period minute rate | 749,472.71 tokens/min |
+| Whole-period hour rate | 44,968,362.72 tokens/hour |
+| Whole-period day rate | 1,079,240,705.29 tokens/day |
+| Last 6h rate | 97,652.24 tokens/sec |
+| Tokens per meaningful LOC | 57,503.86 |
+| Tokens per script source byte | 1,070.477 |
+| Model-aware cost per meaningful LOC | USD 0.03722 |
+| All-GPT-5.5 standard cost per meaningful LOC | USD 0.04482 |
+| Energy by prompt constant | 2,229.53 MWh |
+| Live SQLite all-thread tokens, 04:47 snapshot | 44,567,638,432 |
 | Top-30 attribution patch calls | 14,015 |
 | Top-30 attribution unique patch targets | 1,647 |
 | Top-30 attribution patch churn | +354,203 / -75,895 lines |
@@ -80,7 +83,7 @@ Status/Rationale/Log:
 
 The codebase is not 1.63M meaningful first-party LOC. It is 775,435 meaningful script LOC and 1.58M physical all-Assets C# LOC.
 
-The economic anomaly is context recursion: 43.78B total tokens against 775,435 meaningful LOC equals 56,457 tokens per meaningful line. Cache pricing makes the bill survivable; it does not make the workflow clean.
+The economic anomaly is context recursion: 44.59B total tokens against 775,435 meaningful LOC equals 57,504 tokens per meaningful line. Cache pricing makes the bill survivable; it does not make the workflow clean.
 
 The top-100 `.codex` thread audit has been executed. They hold about half of the recorded token mass. Broad scanning below that is lower yield than joining these threads to final diffs, compile/test results, and quality deltas.
 
@@ -95,3 +98,5 @@ Thread value audit has been written to `COMPUTE_THREAD_VALUE_AUDIT.md`. Top-100 
 Collision snapshot has been refreshed. Current hot-target intersections are `Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs` and `Assets/_Project/Scripts/Construction/HabitatGraphManager.cs`.
 
 File burn attribution has been written to `COMPUTE_FILE_BURN_ATTRIBUTION.md`. It distributes top-30 thread tokens across patch targets by per-thread patch-hit share. This is probabilistic work-trace attribution, not final value proof.
+
+Rate efficiency audit has been written to `COMPUTE_RATE_EFFICIENCY_AUDIT.md`. It preserves the latest token/sec, token/min, token/hour, token/day, cache economics, and token/code-byte ratios.

@@ -449,3 +449,14 @@ Follow-up upgrade 45:
 Exact microseconds saved after follow-up 45:
 - Calm-crush states skip one radius-mask evaluation per UberNoir vertex.
 - Estimated 1-4 us saved per 1k affected UberNoir vertices on MX350-class GPUs; active-crush valid-frame overhead is scalar finite checks inside the already-active bending path.
+
+Follow-up upgrade 46:
+- What was wrong: UberNoir dynamic hull bending still reached crush/habitat mask setup and buckling noise when bend feature/strength were inactive or both pressure displacement contributions resolved to zero.
+- What was done: added early returns to `safePositionWS` before mask work for inactive feature/strength and before buckling when combined crush/habitat displacement is below epsilon.
+- Cinematic cheat used: calm or disabled bend states now collapse to the already-sanitized vertex position; active pressure deformation keeps the same shader fake.
+- Static checks: `rg` confirms the feature/strength early return, `weightedDisplacement` branch, and buckling call order; exact shader `normalize()`/`sqrt()` scan produced no matches; managed-offender scan remains clean; mesh mutation scan found no owned `Mesh.vertices` writes; touched shader/doc braces are balanced; `git diff --check` reports only CRLF normalization warnings.
+- Rebuild policy: no `dotnet` rebuild and no Unity rebuild were run by explicit user instruction.
+
+Exact microseconds saved after follow-up 46:
+- Disabled/calm non-low UberNoir vertices skip crush/habitat mask and buckling ALU.
+- Estimated 2-8 us saved per 1k UberNoir vertices in no-op bend states on MX350-class GPUs; active bend output is unchanged.

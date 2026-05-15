@@ -544,3 +544,55 @@ Regression Model:
 - Memory: no buffer ownership changed.
 - Cadence: no Tick/FixedTick/Update/job schedule changed.
 - Correctness: future H-Phi regressions now fail on score floors and source-count ceilings instead of only appearing as advisory text.
+
+## 2026-05-15 Managed-Runtime And Job-Sync Risk Gates
+
+What was wrong:
+- H-Phi could gate coupling, DataVault pressure, AUP risk, and layout floors, but it did not gate static managed-runtime risk surfaces.
+- LINQ, coroutine, managed formatting, and job `.Complete()` text could increase without a first-class budget failure.
+
+What was done:
+- Added audit counters and budget gates:
+  - `-MaxLinqSurface`
+  - `-MaxCoroutineSurface`
+  - `-MaxManagedFormatSurface`
+  - `-MaxJobCompleteSurface`
+- Added the new counters to compact summary output.
+- Added `TopManagedRuntimeRiskFiles` and `TopJobCompleteRiskFiles`.
+- Added `CoreGraphOnly` guards for the new source-only gates.
+- Honored user instruction: no `dotnet build`, no rebuild.
+
+Cinematic Cheats used:
+- None. Static audit tooling and owner-routing only.
+
+Exact Microseconds saved:
+- Runtime gameplay: 0 us measured; no gameplay code path changed.
+- Tooling: final managed-risk gated summary completed in about 162.5 seconds. This is static-source evidence only.
+
+Compile Status:
+- Not run by explicit user order.
+- Static checks run:
+  - `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json`
+  - `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -MaxLinqSurface 1 -Summary -Json` correctly rejected source budget under graph-only mode.
+  - `git diff --check -- Tools/Architecture/HectonPhiAudit.ps1`
+  - Full ungated summary at `2026-05-15 04:43:55 +04:00`
+  - Full gated summary at `2026-05-15 04:47:08 +04:00`
+- `git diff --check`: no whitespace errors; LF/CRLF warning only.
+
+Phi Gain:
+- Previous runtime narrow score: `0.010739531`.
+- Current runtime narrow score: `0.010750370`.
+- Previous runtime risk-adjusted score: `0.000586338`.
+- Current runtime risk-adjusted score: `0.000590952`.
+- Data Sovereignty moved `0.021374686 -> 0.021362748`.
+- Memory Alignment moved `0.504232804 -> 0.505023797`.
+- Duplicate signal names moved `6 -> 0` in the current static source scan.
+- New managed-risk counters: `LinqSurface=5`, `CoroutineSurface=0`, `ManagedFormatSurface=704`, `JobCompleteSurface=61`.
+- Important: the score movement includes concurrent workspace changes. It is not measured frame-time or GC gain.
+
+Regression Model:
+- CPU: no gameplay code path changed.
+- GC: no gameplay allocation changed.
+- Memory: no buffer ownership changed.
+- Cadence: no Tick/FixedTick/Update/job schedule changed.
+- Correctness: future managed-runtime and sync debt regressions now fail static budgets before profiler work starts.

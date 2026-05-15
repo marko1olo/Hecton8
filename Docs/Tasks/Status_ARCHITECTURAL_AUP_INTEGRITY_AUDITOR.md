@@ -3,7 +3,7 @@
 Agent: ARCHITECTURAL_AUP_INTEGRITY_AUDITOR
 Domain: ECHELON 1 / Origin Shift (AUP Manager), with audit reach into Physics, Voxel, Kinematics, AI trigger math, Biome trigger math, and deterministic seed callsites.
 Assignment Source: User-supplied XML block. `Docs/Tasks/CURRENT_BATCH.md` extraction returned `PROMPT_NOT_FOUND` for this ID on initial pass.
-Status: VERIFIED AUP INTEGRITY - LOOP 33 APPLIED; DUPLICATE SIGNAL H-PHI SCAN NOW PREFILTERS NON-CANDIDATE FILES; FULL `-MaxAupPrecisionRisk 0` SCAN PASSES AGAIN; CORE BUILD NOT RERUN PER USER; ASMDEF BLOCKED BY ARCHITECTURE
+Status: VERIFIED AUP INTEGRITY - LOOP 35 VERIFIED; PRIMARY RUNTIME MANAGED-RISK H-PHI LANE IS ACTIVE AND FULL `-MaxAupPrecisionRisk 0` SCAN PASSES; CORE BUILD NOT RERUN PER USER; ASMDEF BLOCKED BY ARCHITECTURE
 
 ## Selected Mandates
 
@@ -375,3 +375,26 @@ Loop 33 - Duplicate Signal Scan Prefilter:
 - Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` was re-run; residual hits remain broad `universe` text plus known final-cast fluid/scatter/shader payload names.
 - `git diff --check -- Tools/Architecture/HectonPhiAudit.ps1` reports no whitespace errors.
 - No `dotnet build` or rebuild was run in Loop 33 because the user explicitly forbade rebuilds.
+
+Loop 34 - Duplicate Signal Prefilter Counter Export:
+- Re-read status/rationale and kept the rebuild ban active.
+- Patched `Tools/Architecture/HectonPhiAudit.ps1` so `Get-DuplicateSignalNameAudit` returns `SourceFileCount`, `CandidateFileCount`, and `PrefilterSkippedFileCount`.
+- Patched `New-AuditSummary` so duplicate signal prefilter counts are preserved in summary JSON.
+- PowerShell parser reports `PARSE_OK`.
+- Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0` completed in 159.965 seconds.
+- Latest full static H-Phi summary: `RuntimeHPhiRisk=0.000590952`, `RuntimeHPhiNarrow=0.01075037`, `AupPrecisionIntegrity=1`, `AupPrecisionSafe=363`, `AupPrecisionRisk=0`, `DuplicateSignalSourceFiles=1501`, `DuplicateSignalCandidateFiles=222`, `DuplicateSignalSkippedFiles=1279`, `DuplicateSignalNameCount=0`, `RuntimeFiles=1275`, `RuntimeLines=861928`.
+- Removed the temporary JSON capture after extracting the metrics.
+- Targeted qualified AUP H-Phi risk scan returns `NO_MATCHES`.
+- Direct committed-offset leak scan returns `NO_MATCHES`.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` was re-run; residual hits remain broad `universe` text plus known final-cast fluid/scatter/shader payload names.
+- `git diff --check -- Tools/Architecture/HectonPhiAudit.ps1` reports line-ending warnings only, no whitespace errors.
+- No `dotnet build` or rebuild was run in Loop 34 because the user explicitly forbade rebuilds.
+
+Loop 35 - Primary Managed Runtime Risk Lane Verification:
+- Re-read status/rationale and kept the rebuild ban active.
+- Detected an active working-tree H-Phi lane in `Tools/Architecture/HectonPhiAudit.ps1` that classifies managed-runtime risk by file role and adds `-MaxPrimaryManagedRuntimeRisk`.
+- Verified CoreGraphOnly fail-fast: `-CoreGraphOnly -Summary -Json -MaxPrimaryManagedRuntimeRisk 0` returns `Primary managed runtime risk budget requires full source scan. Remove -CoreGraphOnly when using -MaxPrimaryManagedRuntimeRisk.`
+- Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0` completed in 193.981 seconds.
+- Latest full static H-Phi summary: `RuntimeHPhiRisk=0.00059249`, `AupPrecisionRisk=0`, `PrimaryManagedRuntimeRisk=353`, `PrimaryJobCompleteRisk=44`, `PrimaryBudgetActual=353`, `PrimaryBudgetPassed=True`, role split `PrimaryRuntime=353`, `Instrumentation=236`, `Persistence=96`, `UI=24`, `RuntimeFiles=1275`, `RuntimeLines=862084`.
+- Temporary JSON capture was removed after extracting metrics.
+- No `dotnet build` or rebuild was run in Loop 35 because the user explicitly forbade rebuilds.

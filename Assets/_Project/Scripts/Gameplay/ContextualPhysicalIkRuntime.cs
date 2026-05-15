@@ -202,13 +202,18 @@ namespace Hecton8.Gameplay
             QueryParameters groundQuery = new QueryParameters(entity.GroundLayerMask, false, QueryTriggerInteraction.Ignore, false);
             QueryParameters wallQuery = new QueryParameters(entity.WallLayerMask, false, QueryTriggerInteraction.Ignore, false);
 
+            float3 safeRootPosition = SanitizeFloat3(entity.RootPosition, float3.zero);
             float footPlacementMask = math.select(0.0f, 1.0f, entity.EnableFootPlacement != 0);
             float footProbeScale = SanitizeNonNegative(entity.FootProbeDistanceScale);
             float handProbeScale = SanitizeNonNegative(entity.HandProbeDistanceScale);
             float leftFootDistance = math.max(ContextualPhysicalIkRuntime.GroundPresenceDistanceMeters, SanitizeNonNegative(entity.LeftLegReach * footProbeScale)) * footPlacementMask;
             float rightFootDistance = math.max(ContextualPhysicalIkRuntime.GroundPresenceDistanceMeters, SanitizeNonNegative(entity.RightLegReach * footProbeScale)) * footPlacementMask;
-            bool leftHandUsesPredictiveLatch = entity.PredictiveLeftHandBlend > 0.0001f;
-            bool rightHandUsesPredictiveLatch = entity.PredictiveRightHandBlend > 0.0001f;
+            bool leftHandUsesPredictiveLatch =
+                SanitizeBlend(entity.PredictiveLeftHandBlend) > 0.0001f &&
+                math.all(math.isfinite(entity.PredictiveLeftHandPosition));
+            bool rightHandUsesPredictiveLatch =
+                SanitizeBlend(entity.PredictiveRightHandBlend) > 0.0001f &&
+                math.all(math.isfinite(entity.PredictiveRightHandPosition));
             float wallTouchMask = math.select(0.0f, 1.0f, entity.EnableHandBracing != 0 && entity.EnableWallTouch != 0);
             float leftHandMask = math.select(0.0f, 1.0f, wallTouchMask > 0.0f && entity.LeftHandEmpty != 0 && !leftHandUsesPredictiveLatch);
             float rightHandMask = math.select(0.0f, 1.0f, wallTouchMask > 0.0f && !rightHandUsesPredictiveLatch);
@@ -233,22 +238,22 @@ namespace Hecton8.Gameplay
             float3 cameraForward = ContextualPhysicalIkMath.SafeNormalize(entity.CameraForward, rootForward);
             float3 cameraUp = ContextualPhysicalIkMath.SafeNormalize(entity.CameraUp, rootUp);
             float3 cameraRight = ContextualPhysicalIkMath.SafeNormalize(entity.CameraRight, rootRight);
-            float3 cameraPosition = math.select(entity.RootPosition, entity.CameraPosition, entity.HasCameraPose != 0);
-            cameraPosition = math.select(cameraPosition, entity.RootPosition, !math.all(math.isfinite(cameraPosition)));
+            float3 cameraPosition = math.select(safeRootPosition, entity.CameraPosition, entity.HasCameraPose != 0);
+            cameraPosition = SanitizeFloat3(cameraPosition, safeRootPosition);
             float cameraHandLateralOffset = SanitizeNonNegative(entity.CameraHandLateralOffset);
             float cameraHandVerticalOffset = math.select(entity.CameraHandVerticalOffset, 0.0f, !math.isfinite(entity.CameraHandVerticalOffset));
             float toolDistance = SanitizeNonNegative(entity.ToolCollisionDistance) *
                 math.select(0.0f, 1.0f, entity.EnableToolRetraction != 0 && entity.HasCameraPose != 0);
             float3 leftToolRayOrigin = cameraPosition - (cameraRight * cameraHandLateralOffset) + (cameraUp * cameraHandVerticalOffset);
             float3 rightToolRayOrigin = cameraPosition + (cameraRight * cameraHandLateralOffset) + (cameraUp * cameraHandVerticalOffset);
-            leftToolRayOrigin = math.select(leftToolRayOrigin, entity.RootPosition, !math.all(math.isfinite(leftToolRayOrigin)));
-            rightToolRayOrigin = math.select(rightToolRayOrigin, entity.RootPosition, !math.all(math.isfinite(rightToolRayOrigin)));
-            float3 leftHandProbeOrigin = math.select(entity.LeftHandProbeOrigin, entity.RootPosition, !math.all(math.isfinite(entity.LeftHandProbeOrigin)));
-            float3 rightHandProbeOrigin = math.select(entity.RightHandProbeOrigin, entity.RootPosition, !math.all(math.isfinite(entity.RightHandProbeOrigin)));
-            float3 leftFootRayOrigin = ResolveHipFootRayOrigin(in entity, rootRight, rootForward, rootUp, -1.0f);
-            float3 rightFootRayOrigin = ResolveHipFootRayOrigin(in entity, rootRight, rootForward, rootUp, 1.0f);
-            leftFootRayOrigin = math.select(leftFootRayOrigin, entity.RootPosition, !math.all(math.isfinite(leftFootRayOrigin)));
-            rightFootRayOrigin = math.select(rightFootRayOrigin, entity.RootPosition, !math.all(math.isfinite(rightFootRayOrigin)));
+            leftToolRayOrigin = SanitizeFloat3(leftToolRayOrigin, safeRootPosition);
+            rightToolRayOrigin = SanitizeFloat3(rightToolRayOrigin, safeRootPosition);
+            float3 leftHandProbeOrigin = SanitizeFloat3(entity.LeftHandProbeOrigin, safeRootPosition);
+            float3 rightHandProbeOrigin = SanitizeFloat3(entity.RightHandProbeOrigin, safeRootPosition);
+            float3 leftFootRayOrigin = ResolveHipFootRayOrigin(in entity, safeRootPosition, rootRight, rootForward, rootUp, -1.0f);
+            float3 rightFootRayOrigin = ResolveHipFootRayOrigin(in entity, safeRootPosition, rootRight, rootForward, rootUp, 1.0f);
+            leftFootRayOrigin = SanitizeFloat3(leftFootRayOrigin, safeRootPosition);
+            rightFootRayOrigin = SanitizeFloat3(rightFootRayOrigin, safeRootPosition);
 
             Commands[baseCommandIndex + 0] = new RaycastCommand(
                 ContextualPhysicalIkMath.ToUnityVector3(leftFootRayOrigin),
@@ -329,16 +334,28 @@ namespace Hecton8.Gameplay
             return math.select(math.max(0.0f, value), 0.0f, !math.isfinite(value));
         }
 
+        private static float SanitizeBlend(float value)
+        {
+            return math.select(math.saturate(value), 0.0f, !math.isfinite(value));
+        }
+
+        private static float3 SanitizeFloat3(float3 value, float3 fallback)
+        {
+            float3 safeFallback = math.select(fallback, float3.zero, !math.all(math.isfinite(fallback)));
+            return math.select(value, safeFallback, !math.all(math.isfinite(value)));
+        }
+
         private static float3 ResolveHipFootRayOrigin(
             in ContextualPhysicalIkEntityState entity,
+            float3 safeRootPosition,
             float3 rootRight,
             float3 rootForward,
             float3 rootUp,
             float side)
         {
-            float3 safePelvis = math.select(entity.PelvisPosition, entity.RootPosition, !math.all(math.isfinite(entity.PelvisPosition)));
+            float3 safePelvis = SanitizeFloat3(entity.PelvisPosition, safeRootPosition);
             float3 authoredProbe = side < 0.0f ? entity.LeftFootProbeOrigin : entity.RightFootProbeOrigin;
-            authoredProbe = math.select(authoredProbe, safePelvis, !math.all(math.isfinite(authoredProbe)));
+            authoredProbe = SanitizeFloat3(authoredProbe, safePelvis);
             float3 pelvisToProbe = authoredProbe - safePelvis;
             float lateral = math.clamp(math.abs(math.dot(pelvisToProbe, rootRight)), 0.08f, 0.45f);
             float forward = math.clamp(math.dot(pelvisToProbe, rootForward), -0.35f, 0.45f);
@@ -353,7 +370,7 @@ namespace Hecton8.Gameplay
                 (rootRight * (side * lateral)) +
                 (rootForward * forward) +
                 velocityLead;
-            return math.select(hipOrigin, authoredProbe, !math.all(math.isfinite(hipOrigin)));
+            return SanitizeFloat3(hipOrigin, authoredProbe);
         }
     }
 
@@ -422,7 +439,7 @@ namespace Hecton8.Gameplay
             float tunnelTargetBlend = entity.EnableHandBracing != 0 && entity.EnableWallTouch != 0
                 ? ResolveBraceProxyTunnelBlend(in leftHandHit, in rightHandHit, in entity)
                 : 0.0f;
-            next.TunnelBlend = ContextualPhysicalIkMath.SmoothScalar(previous.TunnelBlend, tunnelTargetBlend, entity.BlendFadeSharpness, entity.DeltaTime);
+            next.TunnelBlend = SmoothBlend(previous.TunnelBlend, tunnelTargetBlend, entity.BlendFadeSharpness, entity.DeltaTime);
             next.ContextMask = next.TunnelBlend > 0.05f ? (byte)0x01 : (byte)0x00;
 
             if (entity.EnableHandBracing != 0 && entity.EnableWallTouch != 0)
@@ -570,8 +587,8 @@ namespace Hecton8.Gameplay
                 entity.DeltaTime);
 
             next.ComLeanRadians = new float2(
-                ContextualPhysicalIkMath.SmoothScalar(previousComLean.x, pitch, entity.ComResponseSharpness, entity.DeltaTime),
-                ContextualPhysicalIkMath.SmoothScalar(previousComLean.y, roll, entity.ComResponseSharpness, entity.DeltaTime));
+                SmoothFiniteScalar(previousComLean.x, pitch, entity.ComResponseSharpness, entity.DeltaTime),
+                SmoothFiniteScalar(previousComLean.y, roll, entity.ComResponseSharpness, entity.DeltaTime));
             SanitizeTargetFrame(ref next);
 
             WriteIkSoa(baseIkIndex, in next);
@@ -777,7 +794,7 @@ namespace Hecton8.Gameplay
             data.StepStartPosition = safePosition;
             data.SurfaceNormal = safeNormal;
             data.StepProgress01 = 1.0f;
-            data.Blend = ContextualPhysicalIkMath.SmoothScalar(SanitizeBlend(data.Blend), 0.0f, fadeSharpness, deltaTime);
+            data.Blend = SmoothBlend(data.Blend, 0.0f, fadeSharpness, deltaTime);
             data.Flags = 0;
             FootData[footIndex] = data;
         }
@@ -861,11 +878,7 @@ namespace Hecton8.Gameplay
             }
 
             currentPosition = math.select(currentPosition, safeTarget, !math.all(math.isfinite(currentPosition)));
-            float smoothedBlend = ContextualPhysicalIkMath.SmoothScalar(
-                SanitizeBlend(data.Blend),
-                SanitizeBlend(targetBlend),
-                entity.BlendFadeSharpness,
-                entity.DeltaTime);
+            float smoothedBlend = SmoothBlend(data.Blend, targetBlend, entity.BlendFadeSharpness, entity.DeltaTime);
             data.TargetPosition = safeTarget;
             data.CurrentPosition = currentPosition;
             data.SurfaceNormal = safeNormal;
@@ -1058,7 +1071,7 @@ namespace Hecton8.Gameplay
             target.WorldPosition = math.select(previous.WorldPosition, float3.zero, !math.all(math.isfinite(previous.WorldPosition)));
             target.WorldNormal = ContextualPhysicalIkMath.SafeNormalize(previous.WorldNormal, new float3(0.0f, 1.0f, 0.0f));
             float previousBlend = SanitizeBlend(previous.Blend);
-            target.Blend = ContextualPhysicalIkMath.SmoothScalar(previousBlend, 0.0f, fadeSharpness, deltaTime);
+            target.Blend = SmoothBlend(previousBlend, 0.0f, fadeSharpness, deltaTime);
             target.DeltaHeight = 0.0f;
         }
 
@@ -1084,7 +1097,7 @@ namespace Hecton8.Gameplay
             target.WorldNormal = ContextualPhysicalIkMath.SafeNormalize(
                 ContextualPhysicalIkMath.SmoothVector(currentNormal, normal, normalSharpness, deltaTime),
                 normal);
-            target.Blend = math.max(target.Blend, ContextualPhysicalIkMath.SmoothScalar(previous.Blend, targetBlend, fadeSharpness, deltaTime));
+            target.Blend = math.max(SanitizeBlend(target.Blend), SmoothBlend(previous.Blend, targetBlend, fadeSharpness, deltaTime));
             target.DeltaHeight = 0.0f;
         }
 
@@ -1130,7 +1143,7 @@ namespace Hecton8.Gameplay
             target.WorldNormal = ContextualPhysicalIkMath.SafeNormalize(
                 ContextualPhysicalIkMath.SmoothVector(currentNormal, hitNormal, normalSharpness, deltaTime),
                 hitNormal);
-            target.Blend = math.max(target.Blend, ContextualPhysicalIkMath.SmoothScalar(previous.Blend, targetBlend, fadeSharpness, deltaTime));
+            target.Blend = math.max(SanitizeBlend(target.Blend), SmoothBlend(previous.Blend, targetBlend, fadeSharpness, deltaTime));
             target.DeltaHeight = 0.0f;
         }
 
@@ -1169,7 +1182,7 @@ namespace Hecton8.Gameplay
             target.WorldNormal = ContextualPhysicalIkMath.SafeNormalize(
                 ResolveSmoothingNormal(in target, in previous, fallbackNormal),
                 fallbackNormal);
-            target.Blend = math.max(target.Blend, ContextualPhysicalIkMath.SmoothScalar(previous.Blend, targetBlend, fadeSharpness, deltaTime));
+            target.Blend = math.max(SanitizeBlend(target.Blend), SmoothBlend(previous.Blend, targetBlend, fadeSharpness, deltaTime));
             target.DeltaHeight = 0.0f;
         }
 
@@ -1228,7 +1241,7 @@ namespace Hecton8.Gameplay
             target.WorldNormal = ContextualPhysicalIkMath.SafeNormalize(
                 ContextualPhysicalIkMath.SmoothVector(currentNormal, normal, normalSharpness, deltaTime),
                 normal);
-            target.Blend = ContextualPhysicalIkMath.SmoothScalar(previous.Blend, safeTargetBlend, fadeSharpness, deltaTime);
+            target.Blend = SmoothBlend(previous.Blend, safeTargetBlend, fadeSharpness, deltaTime);
             float deltaHeight = point.y - probeOrigin.y;
             deltaHeight = math.select(deltaHeight, 0.0f, !math.isfinite(deltaHeight));
             target.DeltaHeight = math.clamp(deltaHeight, -safeMaxDeltaHeight, safeMaxDeltaHeight);
@@ -1303,7 +1316,8 @@ namespace Hecton8.Gameplay
 
         private static float3 SanitizeFloat3(float3 value, float3 fallback)
         {
-            return math.select(value, fallback, !math.all(math.isfinite(value)));
+            float3 safeFallback = math.select(fallback, float3.zero, !math.all(math.isfinite(fallback)));
+            return math.select(value, safeFallback, !math.all(math.isfinite(value)));
         }
 
         private static float2 SanitizeFloat2(float2 value, float2 fallback)
@@ -1319,6 +1333,24 @@ namespace Hecton8.Gameplay
         private static float SanitizeBlend(float value)
         {
             return math.select(math.saturate(value), 0.0f, !math.isfinite(value));
+        }
+
+        private static float SmoothBlend(float current, float target, float sharpness, float deltaTime)
+        {
+            float value = ContextualPhysicalIkMath.SmoothScalar(
+                SanitizeBlend(current),
+                SanitizeBlend(target),
+                sharpness,
+                deltaTime);
+            return SanitizeBlend(value);
+        }
+
+        private static float SmoothFiniteScalar(float current, float target, float sharpness, float deltaTime)
+        {
+            float safeCurrent = math.select(current, 0.0f, !math.isfinite(current));
+            float safeTarget = math.select(target, 0.0f, !math.isfinite(target));
+            float value = ContextualPhysicalIkMath.SmoothScalar(safeCurrent, safeTarget, sharpness, deltaTime);
+            return math.select(value, safeTarget, !math.isfinite(value));
         }
 
         private static bool HasHit(in RaycastHit hit)

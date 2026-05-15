@@ -263,3 +263,10 @@ Solution: Implemented `IScalabilityChangedEventListener`, registered with `Scala
 Rejected Alternatives: Per-frame registry polling, ignoring runtime tier changes, or adding a bespoke UI tier signal. Polling is avoidable; ignoring runtime tier changes breaks thermal/battery downgrades; a bespoke signal duplicates the existing lane.
 Scalability potential: Low immediately snaps fade and disables dither when the event switches low. Middle/High/Ultra keep fade/dither without polling the registry every late frame.
 Hardware Impact: Expected gain is sub-microsecond per active tooltip late frame on weak hardware; no profiler proof.
+
+## Decision 37: Tooltip Active Camera Fail-Closed Gate
+Problem: Tooltip camera resolution accepted cached or authored camera references without proving they were active, leaving a path where disabled cameras could still drive render math when the render context did not provide a current camera.
+Solution: Require `isActiveAndEnabled` for authored and player cameras, clear inactive cached registry cameras, and keep the SRP current-camera comparison as the final render gate.
+Rejected Alternatives: Trusting serialized camera state, using `Camera.main`, or drawing with a null/current fallback. Serialized cameras can be disabled at runtime; `Camera.main` is a scene search; drawing against an arbitrary current camera duplicates or misorients prompts.
+Scalability potential: Low avoids duplicate or invalid submissions on weak devices. Middle/High/Ultra keep deterministic camera ownership for richer prompt materials and glyph effects.
+Hardware Impact: Expected gain is mostly correctness and avoiding invalid draw attempts; worst-case auxiliary camera passes skip earlier. No profiler proof.

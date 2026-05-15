@@ -444,3 +444,11 @@ Solution: Cache `ITickDispatcher`, update it through hot-swap callbacks, resolve
 Rejected Alternatives: Keep raw Unity time, or rely on `OnValidate()`. Raw Unity time drifts from the project tick source; `OnValidate()` does not protect runtime-loaded or tool-mutated serialized data.
 Scalability potential: Low/MX350 gets stable cheap portal sweeps under frame spikes and corrupted config. Middle/High/Ultra keep granular stress and splashdown gain overkill, but only from finite DSP inputs.
 Hardware Impact: One cached service pointer, one delta clamp, and scalar finite checks per audio transition frame, below 1 us; avoids invalid DSP packets and transition churn. Verification static only; no rebuild.
+
+## Decision 54 - VFX Serialized Scalar Finite Config
+
+Problem: `OrbitalDropReentryVfxController` had runtime guards for signal data, but malformed serialized presentation scalars could still push NaN/Inf into shader globals, overlay placement, acoustic radii, crossfade timing, or telemetry before the generic runtime sanitize path caught derived state.
+Solution: Add local finite clamps for heat scale, whiteout altitude, ramp rates, ambient/crossfade timing, overlay distance, and acoustic radius, then reuse them in runtime paths and `OnValidate()`.
+Rejected Alternatives: Trust inspector attributes, or rely on post-NaN sanitize. Inspector attributes do not protect runtime-loaded/tool-mutated data; post-NaN sanitize happens after visible shader/audio damage can already be emitted.
+Scalability potential: Low/MX350 avoids invalid shader/audio work and keeps cheap whiteout stable. Middle/High/Ultra can keep stronger plasma/splash visuals without letting malformed config poison overkill responders.
+Hardware Impact: Scalar finite checks are below 1 us on prologue VFX frames; they prevent invalid material/global writes and downstream audio/debris churn. Verification static only; no rebuild.

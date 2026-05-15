@@ -315,3 +315,15 @@ Cinematic Cheats used -> None. Git-only integration pass.
 Exact Microseconds saved -> 0 us runtime. Dev-path savings are reduced local conflict surface and a truthful handoff state.
 
 Verification -> Remote divergence was `0 0`; conflict-marker scan clean; `git diff --check` only reported LF-to-CRLF warnings. Unity compile/profiler not run.
+
+## 2026-05-15 - Loop 15 Runtime Tail Gate
+
+What was wrong -> After `a1b0c0b88`, another mixed runtime/docs/audit tail appeared while `origin/main` still matched local committed history.
+
+What was done -> Fetched remote, verified divergence `0 0`, scanned for unmerged paths and conflict markers, reviewed the changed runtime hunks, and attempted a CLI build before checkpointing.
+
+Cinematic Cheats used -> None. Git integration and evidence gate only.
+
+Exact Microseconds saved -> 0 us runtime. Dev-path gain is smaller conflict exposure and a clear boundary between pushed history and Unity compile proof.
+
+Verification -> Conflict-marker scan clean. `git diff --check` reported only LF-to-CRLF warnings. `dotnet build Assembly-CSharp.csproj --no-restore -v:minimal` did not produce a completed green artifact; Unity Console/build verification remains pending.

@@ -620,6 +620,50 @@ Status: VERIFIED AUP INTEGRITY - LOOP 29 AUP PRECISION H-PHI BUDGET GATE PASSES 
 - Unity import/Console verification remains pending because no Unity editor session is available.
 - H-Phi result is static-source evidence, not profiler proof.
 
+## Loop 34 Duplicate Signal Prefilter Counter Export
+
+### Findings
+
+- Duplicate signal prefilter counts were measured manually, but summary JSON did not expose those counts for CI or integrator review.
+
+### Tool Changes
+
+- `Tools/Architecture/HectonPhiAudit.ps1`: `Get-DuplicateSignalNameAudit` now returns `SourceFileCount`, `CandidateFileCount`, and `PrefilterSkippedFileCount`.
+- `New-AuditSummary` now preserves those duplicate-signal prefilter counts.
+
+### Verification
+
+- PowerShell parser reports `PARSE_OK`.
+- Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0` completed in 159.965 seconds.
+- Full static summary: `RuntimeHPhiRisk=0.000590952`, `RuntimeHPhiNarrow=0.01075037`, `AupPrecisionIntegrity=1`, `AupPrecisionSafe=363`, `AupPrecisionRisk=0`, `DuplicateSignalSourceFiles=1501`, `DuplicateSignalCandidateFiles=222`, `DuplicateSignalSkippedFiles=1279`, `DuplicateSignalNameCount=0`, `RuntimeFiles=1275`, `RuntimeLines=861928`.
+- Targeted qualified AUP H-Phi risk scan returns `NO_MATCHES`.
+- Direct committed-offset leak scan returns `NO_MATCHES`.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` was re-run. Residual hits remain broad `universe` text and known final-cast fluid/scatter/shader payload names.
+- No `dotnet build` or rebuild was run in Loop 34 because the latest user instruction explicitly forbids rebuilds.
+
+### Evidence Queue
+
+- Unity import/Console verification remains pending because no Unity editor session is available.
+- H-Phi result is static-source evidence, not profiler proof.
+
+## Loop 35 Primary Managed Runtime Risk Lane Verification
+
+### Findings
+
+- The H-Phi audit tool has a working-tree lane that separates primary runtime managed risk from instrumentation, persistence, and UI roles.
+
+### Verification
+
+- CoreGraphOnly fail-fast for `-MaxPrimaryManagedRuntimeRisk 0` returns the expected full-source requirement.
+- Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0` completed in 193.981 seconds.
+- Full static summary: `RuntimeHPhiRisk=0.00059249`, `AupPrecisionRisk=0`, `PrimaryManagedRuntimeRisk=353`, `PrimaryJobCompleteRisk=44`, `PrimaryBudgetActual=353`, `PrimaryBudgetPassed=True`, role split `PrimaryRuntime=353`, `Instrumentation=236`, `Persistence=96`, `UI=24`, `RuntimeFiles=1275`, `RuntimeLines=862084`.
+- No `dotnet build` or rebuild was run in Loop 35 because the latest user instruction explicitly forbids rebuilds.
+
+### Evidence Queue
+
+- Unity import/Console verification remains pending because no Unity editor session is available.
+- H-Phi result is static-source evidence, not profiler proof.
+
 ## Loop 27 AUP Precision H-Phi Budget Gate
 
 ### Findings

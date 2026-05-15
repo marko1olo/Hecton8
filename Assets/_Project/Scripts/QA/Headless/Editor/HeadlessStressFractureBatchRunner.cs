@@ -24,9 +24,13 @@ namespace Hecton8.QA.Headless.Editor
         private const string RunnerStatusRelativePath = "Docs/AgentLogs/HeadlessStressFractureBatchRunner_HEADLESS_STRESS_FRACTURE_BOT.txt";
         private const string ExitCodeJsonKey = "\"exitCode\"";
         private const string AgentName = "HEADLESS_STRESS_FRACTURE_BOT";
-        private const int ResultSchemaVersion = 7;
+        private const int ResultSchemaVersion = 8;
         private const int BlackboxFrameCapacity = 300;
         private const int BlackboxHeaderSizeBytes = 16;
+        private const int BlackboxHeaderOffsetMagic = 0;
+        private const int BlackboxHeaderOffsetValidEntryCount = 4;
+        private const int BlackboxHeaderOffsetEntrySizeBytes = 8;
+        private const int BlackboxHeaderOffsetCursor = 12;
         private const int BlackboxEntrySizeBytes = 64;
         private const int BlackboxEntryOffsetFrame = 0;
         private const int BlackboxEntryOffsetExtremeFrame = 4;
@@ -308,6 +312,7 @@ namespace Hecton8.QA.Headless.Editor
                     WriteInvariant(writer, BlackboxHeaderSizeBytes);
                     writer.Write(",\"blackboxEntrySizeBytes\":");
                     WriteInvariant(writer, BlackboxEntrySizeBytes);
+                    WriteBlackboxHeaderLayout(writer);
                     writer.Write(",\"blackboxManifestRelativePath\":\"");
                     WriteJsonEscaped(writer, BlackboxManifestRelativePath);
                     writer.Write('"');
@@ -438,6 +443,20 @@ namespace Hecton8.QA.Headless.Editor
             WriteInvariant(writer, BlackboxEntryOffsetLastShiftMetersZ);
             writer.Write(",\"blackboxEntryOffsetFlags\":");
             WriteInvariant(writer, BlackboxEntryOffsetFlags);
+        }
+
+        private static void WriteBlackboxHeaderLayout(StreamWriter writer)
+        {
+            writer.Write(",\"blackboxByteOrder\":\"little_endian\"");
+            writer.Write(",\"blackboxFloatFormat\":\"ieee754_binary32\"");
+            writer.Write(",\"blackboxHeaderOffsetMagic\":");
+            WriteInvariant(writer, BlackboxHeaderOffsetMagic);
+            writer.Write(",\"blackboxHeaderOffsetValidEntryCount\":");
+            WriteInvariant(writer, BlackboxHeaderOffsetValidEntryCount);
+            writer.Write(",\"blackboxHeaderOffsetEntrySizeBytes\":");
+            WriteInvariant(writer, BlackboxHeaderOffsetEntrySizeBytes);
+            writer.Write(",\"blackboxHeaderOffsetCursor\":");
+            WriteInvariant(writer, BlackboxHeaderOffsetCursor);
         }
 
         private static void WriteJsonHexNibble(StreamWriter writer, int value)

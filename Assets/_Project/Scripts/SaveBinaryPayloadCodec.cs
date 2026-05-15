@@ -49,6 +49,7 @@ namespace Hecton8.SaveSystem
         private const int SerializedLongBytes = sizeof(long);
         private const int SerializedFloatBytes = sizeof(float);
         private const int SerializedBoolBytes = sizeof(byte);
+        private const int MaxSerializedStringChars = ProtectedLz4BlockSizeBytes / 2;
         private const uint WfcOutpostPayloadMagic = 0x57464342u; // WFCB
         private const ushort WfcOutpostPayloadVersion = 1;
         private const byte WfcOutpostPayloadFlagRle = 1 << 0;
@@ -3205,24 +3206,6 @@ namespace Hecton8.SaveSystem
                 ConstructionDTO.MaxGraphEdges);
         }
 
-        private static bool WriteStringArray(ref BufferWriter writer, string[] values)
-        {
-            int count = values != null ? values.Length : NullCollectionCount;
-            if (!writer.WriteInt(count))
-                return false;
-
-            if (values == null)
-                return true;
-
-            for (int i = 0; i < values.Length; i++)
-            {
-                if (!writer.WriteString(values[i]))
-                    return false;
-            }
-
-            return true;
-        }
-
         private static bool WriteStringArraySlice(ref BufferWriter writer, string[] values, int count, int maxCount)
         {
             if (values == null)
@@ -3239,11 +3222,6 @@ namespace Hecton8.SaveSystem
             }
 
             return true;
-        }
-
-        private static bool ReadStringArray(ref BufferReader reader, out string[] values)
-        {
-            return ReadStringArray(ref reader, out values, int.MaxValue, "String array");
         }
 
         private static bool ReadStringArray(ref BufferReader reader, out string[] values, int maxCount, string collectionName)
@@ -3822,40 +3800,6 @@ namespace Hecton8.SaveSystem
                 return true;
             }
 
-            public bool WriteStructArray<T>(T[] values) where T : unmanaged
-            {
-                int count = values != null ? values.Length : NullCollectionCount;
-                if (!WriteInt(count))
-                    return false;
-
-                if (values == null || values.Length == 0)
-                    return true;
-
-                long byteCountLong = (long)values.Length * UnsafeUtility.SizeOf<T>();
-                if (byteCountLong > int.MaxValue)
-                {
-                    Error = "Struct array byte count exceeds the supported range.";
-                    return false;
-                }
-
-                int byteCount = (int)byteCountLong;
-                if (!TryReserve(byteCount))
-                    return false;
-
-                fixed (T* sourcePtr = values)
-                {
-                    if (!UnsafeMemoryCopyGuard.TryMemCpy(_buffer + _cursor, _capacity - _cursor, sourcePtr, byteCount))
-                    {
-                        Error = "Struct array copy exceeded the raw buffer ceiling.";
-                        UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(SaveBinaryPayloadCodec));
-                        return false;
-                    }
-                }
-
-                _cursor += byteCount;
-                return true;
-            }
-
             public bool WriteStructArraySlice<T>(T[] values, int count) where T : unmanaged
             {
                 if (values == null)
@@ -3966,6 +3910,12 @@ namespace Hecton8.SaveSystem
                     return WriteInt(NullCollectionCount);
 
                 int charCount = value.Length;
+                if (charCount > MaxSerializedStringChars)
+                {
+                    Error = "String length exceeds the protected block range.";
+                    return false;
+                }
+
                 if (!WriteInt(charCount))
                     return false;
 
@@ -4043,11 +3993,6 @@ namespace Hecton8.SaveSystem
                 value = UnsafeUtility.ReadArrayElement<T>(_buffer + _cursor, 0);
                 _cursor += size;
                 return true;
-            }
-
-            public bool ReadStructArray<T>(out T[] values) where T : unmanaged
-            {
-                return ReadStructArrayBounded(out values, int.MaxValue, "Collection");
             }
 
             public bool ReadStructArrayBounded<T>(out T[] values, int maxCount, string collectionName) where T : unmanaged
@@ -4164,6 +4109,12 @@ namespace Hecton8.SaveSystem
                 if (charCount < 0)
                 {
                     SetError("String length is negative.");
+                    return false;
+                }
+
+                if (charCount > MaxSerializedStringChars)
+                {
+                    SetError("String length exceeds the protected block range.");
                     return false;
                 }
 

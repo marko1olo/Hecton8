@@ -72,6 +72,7 @@ Status: PENDING VERIFICATION / STATIC CHECKS ONLY / UNITY COMPILE BLOCKED (NO DO
 - Loop 33: Registry hot-swap cache pass. DOD: renderer now registers as a `GlobalRegistry` hot-swap/ref listener, caches DataVault/Fluid during enable/start wiring, invalidates DataVault lease from callbacks, and validates the ready lease against the cached registry service instead of polling `GlobalRegistry.DataVault` every 30 frames. Rejected alternative: cadence-based ready-state service lookup. Estimate: sub-microsecond steady saving; stronger H-Phi service replacement correctness.
 - Loop 34: Static verification after registry hot-swap pass. DOD: `git diff --check` returned no whitespace errors, only Git LF/CRLF notices; VFX static scan found no CPU readback, ParticleSystem, ComputeBuffer, scene search, job scheduling fences, private `H8Memory.Allocate`, private `H8Memory.Release`, `MaterialPropertyBlock`, `matProps`, stale `nextFluidRebind`, or `VaultLeaseCheckStride`; shader hot-math scan returned no matches; exact current batch prompt tag count remains 0. Rejected alternative: dotnet rebuild or fake Unity compile pass. Estimate: verification saves 0 us.
 - Loop 35: Final no-dotnet closeout pass. DOD: re-read renderer, GlobalRegistry hot-swap contracts, status, rationale, and log; confirmed current authoritative code uses an owned runtime material, camera-scoped indirect draw, cached DataVault/Fluid service references, and callback-driven DataVault lease invalidation. Rejected alternative: treating the older MPB log entry as current implementation or running a dotnet rebuild. Estimate: 0 us new runtime saving; final verification prevents a false compile/performance claim.
+- Loop 36: AUP blackbox truth pass. DOD: renderer now snapshots the AUP shift submitted to the compute dispatch and writes that value into the 300-frame telemetry ring/hash instead of recording a cleared post-dispatch pending shift. Rejected alternative: leaving blackbox telemetry blind to applied origin rebases. Estimate: one `float3` assignment and three FNV mixes on telemetry write; 0 us material frame saving, stronger crash forensics.
 
 ## Second-Pass Upgrade Status
 
@@ -106,6 +107,7 @@ Status: PENDING VERIFICATION / STATIC CHECKS ONLY / UNITY COMPILE BLOCKED (NO DO
 - [x] Indirect debris draw now uses the same authored camera as the compute cull path when `renderCamera` is assigned.
 - [x] DataVault and Fluid service caches now rebind through `GlobalRegistry` hot-swap callbacks; ready-state DataVault validation no longer polls the registry.
 - [x] Final closeout recorded that the older MPB isolation entry is superseded by the current owned-runtime-material path.
+- [x] Blackbox telemetry records applied AUP shift, not post-dispatch cleared pending shift.
 
 ## OMEGA Polish Status
 

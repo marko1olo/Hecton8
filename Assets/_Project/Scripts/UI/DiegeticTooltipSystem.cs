@@ -382,10 +382,10 @@ namespace Hecton8.UI
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Player)
             {
-                CacheRenderCamera(interactionCamera == null && currentService is IPlayerRuntimeContext playerContext
+                Camera playerCamera = interactionCamera == null && currentService is IPlayerRuntimeContext playerContext
                     ? playerContext.PlayerCamera
-                    : null,
-                    fromInteraction: false);
+                    : null;
+                CacheRenderCamera(playerCamera != null && playerCamera.isActiveAndEnabled ? playerCamera : null, fromInteraction: false);
             }
 
             if (serviceSlot != GlobalRegistryServiceSlot.Input)
@@ -1071,22 +1071,26 @@ namespace Hecton8.UI
 
         private Camera ResolveCamera()
         {
-            if (interactionCamera != null)
+            if (interactionCamera != null && interactionCamera.isActiveAndEnabled)
             {
                 if (!_cachedRenderCameraFromInteraction || !ReferenceEquals(_cachedRenderCamera, interactionCamera))
                     CacheRenderCamera(interactionCamera, fromInteraction: true);
 
-                return interactionCamera;
+                return _cachedRenderCamera;
             }
 
             if (_cachedRenderCameraFromInteraction)
                 CacheRenderCamera(null, fromInteraction: false);
 
-            if (_cachedRenderCamera != null)
+            if (_cachedRenderCamera != null && _cachedRenderCamera.isActiveAndEnabled)
                 return _cachedRenderCamera;
 
+            if (_cachedRenderCamera != null)
+                CacheRenderCamera(null, fromInteraction: false);
+
             IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
-            CacheRenderCamera(playerContext != null ? playerContext.PlayerCamera : null, fromInteraction: false);
+            Camera playerCamera = playerContext != null ? playerContext.PlayerCamera : null;
+            CacheRenderCamera(playerCamera != null && playerCamera.isActiveAndEnabled ? playerCamera : null, fromInteraction: false);
             return _cachedRenderCamera;
         }
 
@@ -1160,7 +1164,7 @@ namespace Hecton8.UI
 
         private void RefreshScalabilityTier()
         {
-            _lowTierActive = GlobalRegistry.ScalabilityTierProfileByte == 0;
+            _lowTierActive = GlobalRegistry.ScalabilityTierProfileByte == ScalabilityTierProfiles.LowMx350;
         }
 
         private void TryRegisterRuntime()

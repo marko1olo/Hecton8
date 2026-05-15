@@ -1223,6 +1223,7 @@ namespace Hecton8.Core
         private static SeismicSignal _latestSeismicSignal;
         private static ScannerToolActiveSignal _latestScannerToolActiveSignal;
         private static ToolStateChangedSignal _latestToolStateChangedSignal;
+        private static SurvivalVitalsChangedSignal _latestSurvivalDeathSignal;
         private static int _latestStorageDebtMilli;
         private static int _latestStorageLatencyMilli;
         private static int _latestStorageDebtSequence;
@@ -1236,6 +1237,7 @@ namespace Hecton8.Core
         private static int _latestSeismicSignalSequence;
         private static int _latestScannerToolActiveSignalSequence;
         private static int _latestToolStateChangedSignalSequence;
+        private static int _latestSurvivalDeathSignalSequence;
         private static int _latestCraftingCompletedSignalSequence;
         private static int _latestCraftingCompletedUnitCount;
         private static int _timeDilationScalarMilli = 1000;
@@ -1732,7 +1734,9 @@ namespace Hecton8.Core
             ValidateSignalPayload<MovementAcousticSignal>(64);
             ValidateSignalPayload<SwarmDispersedSignal>(64);
             ValidateSignalSize<MacroDatabaseSectorHydrationSignal>(32);
+            ValidateSignalSize<WfcOutpostGeneratedSignal>(128);
             ValidateSignalSize<WfcOutpostStateChangedSignal>(32);
+            ValidateSignalSize<WfcOutpostDoorPowerSignal>(96);
             ValidateSignalSize<SectorResidencyHydratedSignal>(64);
             ValidateSignalSize<SectorDehydratedSignal>(64);
             ValidateSignalSize<ChunkDehydratedSignal>(64);
@@ -1998,6 +2002,12 @@ namespace Hecton8.Core
         public static void Publish(in SurvivalVitalsChangedSignal signal)
         {
             EnsureInitialized();
+            if ((signal.Flags & SurvivalVitalsChangedSignalFlags.Death) != 0u)
+            {
+                _latestSurvivalDeathSignal = signal;
+                AdvanceSignalSequence(ref _latestSurvivalDeathSignalSequence);
+            }
+
             SignalBus<SurvivalVitalsChangedSignal>.Push(in signal);
         }
 
@@ -2976,6 +2986,13 @@ namespace Hecton8.Core
             return sequence != 0;
         }
 
+        public static bool TryGetLatestSurvivalDeathSignal(out SurvivalVitalsChangedSignal signal, out int sequence)
+        {
+            sequence = Volatile.Read(ref _latestSurvivalDeathSignalSequence);
+            signal = _latestSurvivalDeathSignal;
+            return sequence != 0;
+        }
+
         public static bool TryGetLatestSeismicSignal(out SeismicSignal signal, out int sequence)
         {
             sequence = Volatile.Read(ref _latestSeismicSignalSequence);
@@ -3265,6 +3282,7 @@ namespace Hecton8.Core
             _latestSeismicSignal = default;
             _latestScannerToolActiveSignal = default;
             _latestToolStateChangedSignal = default;
+            _latestSurvivalDeathSignal = default;
             Volatile.Write(ref _latestStorageDebtMilli, 0);
             Volatile.Write(ref _latestStorageLatencyMilli, 0);
             Volatile.Write(ref _latestStorageDebtSequence, 0);
@@ -3278,6 +3296,7 @@ namespace Hecton8.Core
             Volatile.Write(ref _latestSeismicSignalSequence, 0);
             Volatile.Write(ref _latestScannerToolActiveSignalSequence, 0);
             Volatile.Write(ref _latestToolStateChangedSignalSequence, 0);
+            Volatile.Write(ref _latestSurvivalDeathSignalSequence, 0);
             Volatile.Write(ref _latestCraftingCompletedSignalSequence, 0);
             Volatile.Write(ref _latestCraftingCompletedUnitCount, 0);
             Volatile.Write(ref _timeDilationScalarMilli, 1000);
@@ -3558,6 +3577,7 @@ namespace Hecton8.Core.Signals
         public const uint Injury = 1u << 6;
         public const uint Death = 1u << 7;
         public const uint OxygenCritical = 1u << 8;
+        public const uint Pressure = 1u << 9;
     }
 
     /// <summary>Player survival-vitals dirty mask for UI and advisory consumers. Size: 32 bytes.</summary>

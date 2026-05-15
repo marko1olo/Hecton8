@@ -74,8 +74,7 @@ namespace Hecton8.Audio.Prologue
 
         private void OnEnable()
         {
-            CacheAudioService(GlobalRegistry.Audio);
-            _tickDispatcher = GlobalRegistry.TickDispatcher;
+            RefreshRuntimeServicesCold();
             RefreshQualityPolicyCold();
             _currentLowPassCutoffHertz = ClampCutoff(oceanLowPassCutoffHertz);
             _stage = AudioTransitionState.StageSpace;
@@ -365,6 +364,12 @@ namespace Hecton8.Audio.Prologue
         private void CacheAudioService(IAudioService audioService)
         {
             _audioService = audioService;
+        }
+
+        private void RefreshRuntimeServicesCold()
+        {
+            CacheAudioService(GlobalRegistry.Audio);
+            _tickDispatcher = GlobalRegistry.TickDispatcher;
         }
 
         private void TryRegisterScalabilityEvents()

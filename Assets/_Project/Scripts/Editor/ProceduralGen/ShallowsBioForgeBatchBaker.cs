@@ -15,7 +15,8 @@ namespace Hecton8.Editor.ProceduralGen
         private const string RuleFolder = "Assets/_Project/Data/ProceduralGen/Shallows";
         private const string MeshRoot = "Assets/_Project/Art/Generated/Flora/BioForge/Shallows";
         private const string PrefabRoot = "Assets/_Project/Prefabs/Nature/Flora/BioForge/Shallows";
-        private const string MaterialPath = "Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_ProceduralBio_Shallows.mat";
+        private const string MaterialFolder = "Assets/_Project/Art/Materials/WorldProceduralProxy";
+        private const string MaterialPath = MaterialFolder + "/MAT_ProceduralBio_Shallows.mat";
         private const string MaterialName = "MAT_ProceduralBio_Shallows";
         private const string ShaderPath = "Assets/_Project/Art/Shaders/Hecton_ProceduralBio.shader";
         private const string TextureRoot = "Assets/_Project/Art/TEXTURES/WorldProceduralFlora";
@@ -111,12 +112,15 @@ namespace Hecton8.Editor.ProceduralGen
 
             int failures = 0;
             ValidateRequiredFolders(ref failures);
+            ValidateFamilySubfolderContracts(ref failures);
             if (material == null || albedo == null || normal == null || orm == null || matCap == null)
             {
                 failures++;
                 Debug.LogError("[ShallowsBioForgeBatchBaker] Missing shared material or atlas texture dependency.");
             }
 
+            ValidateMaterialFolderContract(ref failures);
+            ValidateAtlasFolderContract(ref failures);
             ValidateRuleAssets(material, ref failures);
             ValidateMaterialAssetContract(material, ref failures);
             ValidateSharedMaterial(material, albedo, normal, orm, matCap, ref failures);
@@ -509,6 +513,27 @@ namespace Hecton8.Editor.ProceduralGen
             }
         }
 
+        private static void ValidateMaterialFolderContract(ref int failures)
+        {
+            string[] guids = AssetDatabase.FindAssets("MAT_ProceduralBio_Shallows t:Material", new[] { MaterialFolder });
+            bool found = false;
+            int unexpected = 0;
+            for (int i = 0; i < guids.Length; i++)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guids[i]);
+                if (string.Equals(path, MaterialPath, StringComparison.Ordinal))
+                    found = true;
+                else
+                    unexpected++;
+            }
+
+            if (guids.Length == 1 && found && unexpected == 0)
+                return;
+
+            failures++;
+            Debug.LogError($"[ShallowsBioForgeBatchBaker] Shared material folder contract failed. Count={guids.Length}, Found={found}, Unexpected={unexpected}.");
+        }
+
         private static void ValidateAtlasTextureAsset(Texture texture, string expectedPath, ref int failures)
         {
             Texture2D texture2D = texture as Texture2D;
@@ -525,6 +550,36 @@ namespace Hecton8.Editor.ProceduralGen
                 failures++;
                 Debug.LogError($"[ShallowsBioForgeBatchBaker] Atlas texture contract failed at {expectedPath}. ActualPath={actualPath}, Size={texture2D.width}x{texture2D.height}.");
             }
+        }
+
+        private static void ValidateAtlasFolderContract(ref int failures)
+        {
+            string[] guids = AssetDatabase.FindAssets("TX_ProceduralBio_Shallows t:Texture2D", new[] { TextureRoot });
+            bool hasAlbedo = false;
+            bool hasNormal = false;
+            bool hasOrm = false;
+            bool hasMatCap = false;
+            int unexpected = 0;
+            for (int i = 0; i < guids.Length; i++)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guids[i]);
+                if (string.Equals(path, AlbedoAtlasPath, StringComparison.Ordinal))
+                    hasAlbedo = true;
+                else if (string.Equals(path, NormalAtlasPath, StringComparison.Ordinal))
+                    hasNormal = true;
+                else if (string.Equals(path, OrmAtlasPath, StringComparison.Ordinal))
+                    hasOrm = true;
+                else if (string.Equals(path, MatCapPath, StringComparison.Ordinal))
+                    hasMatCap = true;
+                else
+                    unexpected++;
+            }
+
+            if (guids.Length == 4 && unexpected == 0 && hasAlbedo && hasNormal && hasOrm && hasMatCap)
+                return;
+
+            failures++;
+            Debug.LogError($"[ShallowsBioForgeBatchBaker] Atlas folder contract failed. Count={guids.Length}, Unexpected={unexpected}, Albedo={hasAlbedo}, Normal={hasNormal}, ORM={hasOrm}, MatCap={hasMatCap}.");
         }
 
         private static void ValidateShaderSourceContract(Shader shader, ref int failures)
@@ -613,21 +668,21 @@ namespace Hecton8.Editor.ProceduralGen
 
         private static void ValidateShaderPragmaBudget(string shaderPath, string source, ref int failures)
         {
-            bool valid = CountSourceToken(source, "#pragma target 4.5") == 1 &&
-                         CountSourceToken(source, "#pragma target 3.5") == 1 &&
-                         CountSourceToken(source, "#pragma vertex Vert") == 1 &&
-                         CountSourceToken(source, "#pragma vertex ShadowVert") == 1 &&
-                         CountSourceToken(source, "#pragma fragment Frag") == 1 &&
-                         CountSourceToken(source, "#pragma fragment ShadowFrag") == 1 &&
-                         CountSourceToken(source, "#pragma multi_compile_instancing") == 2 &&
-                         CountSourceToken(source, "#pragma instancing_options assumeuniformscaling") == 2 &&
-                         CountSourceToken(source, "#pragma multi_compile_fog") == 1 &&
-                         CountSourceToken(source, "#pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE") == 1 &&
-                         CountSourceToken(source, "#pragma multi_compile _ LOD_FADE_CROSSFADE") == 2 &&
-                         CountSourceToken(source, "#pragma multi_compile _ _MATH_LOD_LOW") == 1 &&
-                         CountSourceToken(source, "#pragma shader_feature_local _QUALITY_HIGH") == 1 &&
-                         CountSourceToken(source, "#pragma skip_variants") == 1 &&
-                         CountSourceToken(source, "#pragma multi_compile _ _ADDITIONAL_LIGHTS") == 0;
+            bool valid = CountShaderLineToken(source, "#pragma target 4.5") == 1 &&
+                         CountShaderLineToken(source, "#pragma target 3.5") == 1 &&
+                         CountShaderLineToken(source, "#pragma vertex Vert") == 1 &&
+                         CountShaderLineToken(source, "#pragma vertex ShadowVert") == 1 &&
+                         CountShaderLineToken(source, "#pragma fragment Frag") == 1 &&
+                         CountShaderLineToken(source, "#pragma fragment ShadowFrag") == 1 &&
+                         CountShaderLineToken(source, "#pragma multi_compile_instancing") == 2 &&
+                         CountShaderLineToken(source, "#pragma instancing_options assumeuniformscaling") == 2 &&
+                         CountShaderLineToken(source, "#pragma multi_compile_fog") == 1 &&
+                         CountShaderLineToken(source, "#pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE") == 1 &&
+                         CountShaderLineToken(source, "#pragma multi_compile _ LOD_FADE_CROSSFADE") == 2 &&
+                         CountShaderLineToken(source, "#pragma multi_compile _ _MATH_LOD_LOW") == 1 &&
+                         CountShaderLineToken(source, "#pragma shader_feature_local _QUALITY_HIGH") == 1 &&
+                         CountShaderLineToken(source, "#pragma skip_variants") == 1 &&
+                         CountShaderLineToken(source, "#pragma multi_compile _ _ADDITIONAL_LIGHTS") == 0;
             if (valid)
                 return;
 
@@ -658,23 +713,6 @@ namespace Hecton8.Editor.ProceduralGen
                 }
 
                 index = lineEnd + 1;
-            }
-
-            return count;
-        }
-
-        private static int CountSourceToken(string source, string token)
-        {
-            int count = 0;
-            int index = 0;
-            while (index < source.Length)
-            {
-                index = source.IndexOf(token, index, StringComparison.Ordinal);
-                if (index < 0)
-                    break;
-
-                count++;
-                index += token.Length;
             }
 
             return count;
@@ -720,6 +758,7 @@ namespace Hecton8.Editor.ProceduralGen
             ValidateFolderExists(RuleFolder, ref failures);
             ValidateFolderExists(MeshRoot, ref failures);
             ValidateFolderExists(PrefabRoot, ref failures);
+            ValidateFolderExists(MaterialFolder, ref failures);
             ValidateFolderExists(TextureRoot, ref failures);
             ValidateFolderExists($"{MeshRoot}/TubeCoral", ref failures);
             ValidateFolderExists($"{MeshRoot}/Kelp", ref failures);
@@ -736,6 +775,39 @@ namespace Hecton8.Editor.ProceduralGen
 
             failures++;
             Debug.LogError($"[ShallowsBioForgeBatchBaker] Missing required folder: {folder}.");
+        }
+
+        private static void ValidateFamilySubfolderContracts(ref int failures)
+        {
+            ValidateFamilySubfolderContract(MeshRoot, "MeshRoot", ref failures);
+            ValidateFamilySubfolderContract(PrefabRoot, "PrefabRoot", ref failures);
+        }
+
+        private static void ValidateFamilySubfolderContract(string root, string label, ref int failures)
+        {
+            string[] folders = AssetDatabase.GetSubFolders(root);
+            bool hasTubeCoral = false;
+            bool hasKelp = false;
+            bool hasPorousRock = false;
+            int unexpected = 0;
+            for (int i = 0; i < folders.Length; i++)
+            {
+                string path = folders[i];
+                if (string.Equals(path, $"{root}/TubeCoral", StringComparison.Ordinal))
+                    hasTubeCoral = true;
+                else if (string.Equals(path, $"{root}/Kelp", StringComparison.Ordinal))
+                    hasKelp = true;
+                else if (string.Equals(path, $"{root}/PorousRock", StringComparison.Ordinal))
+                    hasPorousRock = true;
+                else
+                    unexpected++;
+            }
+
+            if (folders.Length == 3 && unexpected == 0 && hasTubeCoral && hasKelp && hasPorousRock)
+                return;
+
+            failures++;
+            Debug.LogError($"[ShallowsBioForgeBatchBaker] {label} family subfolder contract failed. Count={folders.Length}, Unexpected={unexpected}, TubeCoral={hasTubeCoral}, Kelp={hasKelp}, PorousRock={hasPorousRock}.");
         }
 
         private static void ValidateRuleAssets(Material material, ref int failures)

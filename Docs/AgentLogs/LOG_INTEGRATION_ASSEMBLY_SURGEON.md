@@ -404,6 +404,44 @@ Verification:
 Current Status:
 - BUILD SUCCESSFUL / FRESH25 CURRENT-DISK GREEN.
 
+## 2026-05-15 - Duplicate Signal Name Zero Closure
+
+What was wrong:
+- H-Phi exposed six duplicate `*Signal` struct names across first-party source.
+- Fresh26 proved the macro-database contract rename alone was unsafe for the CLI Core lane because the current `Hecton8.Core.Contracts` DLL still exposes `SectorHydratedSignal`.
+
+What was done:
+- Renamed world culling camera payloads to `InstanceCullingCameraPositionSignal` and `InstanceCullingCameraFrustumSignal`.
+- Renamed the gameplay combat queue payload to `CombatDamageRequest`.
+- Renamed the habitat callback damage payload to `HabitatDamageSignal`.
+- Renamed the player interaction stress payload to `PlayerInteractionStressSignal`.
+- Preserved the macro-database contract payload name for DLL compatibility and renamed the Core signal-bus payload to `MacroDatabaseSectorHydrationSignal`.
+- Updated the H-Phi metric documentation with the duplicate-zero baseline and evidence boundary.
+
+Cinematic Cheats used:
+- No runtime simulation, rendering, physics, or visual algorithm changed.
+- This was contract-name and compile-lane surgery only.
+
+Exact Microseconds saved:
+- Runtime frame time saved: 0 us measured.
+- Fresh26 failed build wall read: 35,030,000 us.
+- Fresh27 final build verification time: 117,430,000 us.
+- Full H-Phi duplicate-zero verification time: 190,100,000 us.
+
+Verification:
+- CLI_COMPILE artifact: `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh27.log`.
+- Command: `dotnet build Hecton8.Core.csproj --no-restore --disable-build-servers -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal`.
+- Result: `Build succeeded. 0 Warning(s). 0 Error(s). EXIT=0`.
+- H-Phi artifact: `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_DuplicateZero.json`.
+- H-Phi result: `EXIT=0`, `DuplicateSignalNameCount=0`, `AupPrecisionRisk=0`, Core asmdef debt `25`, generated-project debt `10`, total bridge debt `14`, compile-bridge debt `8`, replacement debt `6`.
+
+Residual risk:
+- Unity Editor import, Play Mode, profiler, GCMonitor, player build, and runtime visuals were not run.
+- Public type renames were validated by CLI compile only. External branches or serialized references outside the current source tree still need Unity/project-wide owner review.
+
+Current Status:
+- BUILD SUCCESSFUL / FRESH27 CURRENT-DISK GREEN.
+
 ## 2026-05-15 - Fresh25 Compile And H-Phi Continuation
 
 What was wrong:

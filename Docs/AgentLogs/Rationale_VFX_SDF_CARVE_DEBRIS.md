@@ -233,3 +233,11 @@ Solution: Treat `CarveDebrisComputeRenderer.cs` as the authoritative implementat
 Rejected Alternatives: Leaving the MPB entry unqualified was rejected because it can be misread as current code. Running `dotnet build` or `dotnet rebuild` was rejected by direct user instruction. Claiming Unity import success without editor/MCP evidence was rejected as a false report.
 Scalability potential: Low/MX350 keeps 1024 active slots, no SDF sample, no velocity-overkill branch, no shadow sample, and no steady registry service lookup once ready. Middle/High/Ultra keep 4096 active slots, SDF/flow binding, velocity fresh-edge response, shadowed debris lighting, and callback-driven H-Phi service replacement correctness.
 Hardware Impact: This closeout adds 0 us runtime cost. Preserved savings remain 25-35 us low-tier dispatch reduction, 20-70 us burst scheduler-fence removal, 15-60 us dense-batch scan reduction, visible-count-dependent shadow/trig shader savings, and sub-microsecond ready-state service polling removal.
+
+## Decision 29 - Applied AUP Shift Blackbox Fidelity
+
+Problem: `DispatchGpu()` correctly submitted `_pendingAupShift` to the compute shader, then cleared it before `WriteBlackBox()` stored the telemetry entry. That made the blackbox report zero shift on the exact frame where an origin rebase was applied.
+Solution: Snapshot the submitted shift into `_lastAppliedAupShift` before dispatch, write that value into `CarveDebrisTelemetryEntry`, include its bits in the telemetry hash, then clear the snapshot after the blackbox entry is written.
+Rejected Alternatives: Reading GPU particle positions back was rejected because it violates GPU residency and stalls. Leaving the telemetry field as post-dispatch pending state was rejected because it hides the applied AUP correction from crash forensics.
+Scalability potential: Low/MX350, Middle, High, and Ultra share the same fixed telemetry cost. Visual budgets are unchanged; this is truthfulness in the crash ring, not a simulation feature.
+Hardware Impact: Runtime cost is one `float3` field assignment on dispatch and three FNV hash mixes on telemetry write. Estimated cost is sub-microsecond on i3/MX350; the gain is deterministic diagnosis for origin-shift artifacts without CPU readback.

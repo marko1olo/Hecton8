@@ -460,3 +460,26 @@ Verification:
 - Targeted nav graph payload scan reported no raw division, forbidden hot math, managed allocation, or `foreach`.
 - `git diff --check` on touched source/status/rationale/log files passed; only LF-to-CRLF working-copy warnings were emitted.
 - Dotnet rebuilds were not run because the user explicitly prohibited dotnet rebuilds.
+
+## 2026-05-15 - Conduit Payload Count Decoupling
+
+What was wrong:
+- `TryGetAbyssalCurrentConduitPayload` reused the full native nav-graph count proof.
+- That made current-conductor steering depend on node-type metadata even though the conduit payload only needs nodes, conduit vectors, and conduit strengths.
+
+What was done:
+- Added `ResolveAbyssalConduitViewCount`, clamping conduit payload count to the proven node snapshot, conduit-vector native length, and conduit-strength native length.
+- Updated `TryGetAbyssalCurrentConduitPayload` to use the conduit-specific count proof.
+- Reworked `ResolveAbyssalNavGraphViewCount` to compose conduit proof plus node-type proof, preserving strict full-graph export while preventing duplicated clamp logic.
+
+Cinematic Cheats used:
+- Missing optional node-type metadata no longer kills current steering; corrupt or partial conduit payloads still vanish by count proof.
+- Low tier keeps cheap fail-closed current reads. High/Ultra keep full graph payload strictness for richer navigation overlays and diagnostics.
+
+Exact Microseconds saved:
+- PENDING RUNTIME PROFILER DATA. Static gain is avoided fallback steering/recovery when only classification metadata is stale; no allocations, no new containers, no managed copies.
+
+Verification:
+- Targeted conduit/view-count range scan reported no raw division, forbidden hot math, managed allocation, or `foreach`.
+- `git diff --check` on touched source/status/rationale/log files was rerun without invoking dotnet rebuilds.
+- Dotnet rebuilds were not run because the user explicitly prohibited dotnet rebuilds.

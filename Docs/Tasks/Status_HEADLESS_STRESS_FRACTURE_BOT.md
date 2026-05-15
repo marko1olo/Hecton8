@@ -51,6 +51,8 @@ Status: PENDING VERIFICATION
 - Loop 18: Lifecycle cleanup pass restores the dispatcher time-dilation scalar on terminal teardown, consumes the activation flag during cold startup to prevent replay runs, exports both states into result JSON, and reconfirms runtime/editor isolated compiles without `dotnet`.
 - Loop 19: Blackbox manifest schema pass bumps result schema to v5, writes a terminal JSON manifest beside `Dump_HEADLESS_STRESS_FRACTURE_BOT.bin`, exports manifest paths from runtime/fallback result artifacts, and reconfirms runtime/editor isolated compiles without `dotnet`.
 - Loop 20: Event-hash legend pass bumps result schema to v6, exports blackbox header size, writes the terminal event-hash legend into the manifest, and reconfirms runtime/editor isolated compiles without `dotnet`.
+- Loop 21: Blackbox decode contract pass bumps result schema to v7, exports binary dump success/existence status, writes binary paths, publishes all 64-byte entry field offsets, and reconfirms runtime/editor isolated compiles without `dotnet`.
+- Loop 22: Blackbox header layout pass bumps result schema to v8, exports little-endian/IEEE754 format labels and all 16-byte header offsets, and reconfirms runtime/editor isolated compiles without `dotnet`.
 
 ## Verification
 - Unity MCP editor state: BLOCKED, no Unity session available.
@@ -117,6 +119,16 @@ Status: PENDING VERIFICATION
 - Isolated editor runner compile after event-hash legend pass: PASS via Unity Mono/Roslyn with `UNITY_EDITOR` defined, UnityEngine/UnityEditor facade references, and `Assembly-CSharp.dll`.
 - `git diff --check` after event-hash legend pass: PASS for whitespace on the QA runner, editor runner, and owned status/rationale/log files; Git emitted LF-to-CRLF normalization warnings only.
 - Temp EventLegend compiler artifacts after event-hash legend pass: PASS, no `*EventLegend*.dll` files remain in `Temp`.
+- Focused static audit after blackbox decode contract pass: PASS for both Race Condition Hunter files; no scene search, component lookup, LINQ, coroutine, `Task<`, `.Complete()`, explicit GC, reflection, managed collection creation, `string.Format`, or `Substring` parser usage. Counts: `ResultSchemaVersion7=2`, `BlackboxEntryOffsetFields=89`, `BlackboxDumpStatusFields=16`.
+- Isolated runtime compile after blackbox decode contract pass: PASS via Unity Mono/Roslyn using UnityJIT facades, Unity modules, current `Library/ScriptAssemblies`, and `Assembly-CSharp.dll`.
+- Isolated editor runner compile after blackbox decode contract pass: PASS via Unity Mono/Roslyn with `UNITY_EDITOR` defined, UnityEngine/UnityEditor facade references, and `Assembly-CSharp.dll`.
+- `git diff --check` after blackbox decode contract pass: PASS for whitespace on the QA runner, editor runner, and owned status/rationale/log files; Git emitted LF-to-CRLF normalization warnings only.
+- Temp SchemaV7 compiler artifacts after blackbox decode contract pass: PASS, no `*SchemaV7*.dll` files remain in `Temp`.
+- Focused static audit after blackbox header layout pass: PASS for both Race Condition Hunter files; no scene search, component lookup, LINQ, coroutine, `Task<`, `.Complete()`, explicit GC, reflection, managed collection creation, `string.Format`, or `Substring` parser usage. Counts: `ResultSchemaVersion8=2`, `BlackboxHeaderLayoutFields=28`, `BlackboxEntryOffsetFields=89`.
+- Isolated runtime compile after blackbox header layout pass: PASS via Unity Mono/Roslyn using UnityJIT facades, Unity modules, current `Library/ScriptAssemblies`, and `Assembly-CSharp.dll`.
+- Isolated editor runner compile after blackbox header layout pass: PASS via Unity Mono/Roslyn with `UNITY_EDITOR` defined, UnityEngine/UnityEditor facade references, and `Assembly-CSharp.dll`.
+- `git diff --check` after blackbox header layout pass: PASS for whitespace on the QA runner, editor runner, and owned status/rationale/log files; Git emitted LF-to-CRLF normalization warnings only.
+- Temp SchemaV8 compiler artifacts after blackbox header layout pass: PASS, no `*SchemaV8*.dll` files remain in `Temp`.
 - Full `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false`: BLOCKED BY EXISTING DEPENDENCIES, 139 unrelated errors before/around core missing namespaces, duplicate SaveManager members, and interface mismatches.
 - Full `dotnet build Assembly-CSharp.csproj --no-restore -m:2 /nr:false`: BLOCKED BY SAME EXISTING `Hecton8.Core.csproj` dependency failures.
-- No `dotnet` rebuilds were run during the 2026-05-15 continuation pass.
+- No `dotnet` rebuilds were run during the 2026-05-15 continuation pass, including the schema-v7 blackbox decode contract pass and schema-v8 header layout pass.

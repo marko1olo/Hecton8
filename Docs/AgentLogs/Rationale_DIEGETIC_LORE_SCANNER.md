@@ -501,3 +501,47 @@ Solution: Ran source-only checks: `git diff --check` passed with line-ending war
 Rejected Alternatives: Running a prohibited dotnet rebuild; assuming `MaterialPropertyBlock` migration was complete without static evidence.
 Scalability potential: Process hygiene only.
 Hardware Impact: No runtime impact.
+
+## LOOP 24 SCANNER QUALITY-TIER TIME SNAPSHOT HYGIENE
+
+Problem: Scanner `FastTick` captured `Time.time` once, but the focused scan resample path still reached `ResolveScannerQualityTier()` and re-read `Time.time` for quality-tier hysteresis age. That kept a hidden engine-time read inside one scientific scanner sample.
+Solution: Thread the existing tick `now` snapshot through `ResolveFocusedScanResampleInterval(now)` and `ResolveScannerQualityTier(now)`. Late-frame signal publication takes its own single timestamp before resolving signal tier.
+Rejected Alternatives: Leaving the hidden time read; introducing a global clock service inside the scanner UX pass; disabling tier hysteresis.
+Scalability potential: Low/MX350 keeps cheaper focused resample cadence with deterministic hold windows. High/Ultra keep tighter scanner responsiveness without mixed timestamps inside one sample.
+Hardware Impact: Removes 1-2 repeated engine time reads from active focused scan ticks. Exact microseconds remain PENDING PROFILER.
+
+Problem: Verification after the quality-tier time threading needed to prove no old no-argument helper call survived on the focused scan path.
+Solution: Ran source-only checks: `git diff --check` passed with line-ending warning only, `git diff --cached --check` passed, scanner banned-pattern scan found no forbidden scanner/UI patterns, and targeted time scan found only `ResolveFocusedScanResampleInterval(now)` / `ResolveScannerQualityTier(now)` on the focused scan path with no old `Time.time - _scannerQualityTierCandidateSince` pattern.
+Rejected Alternatives: Running a prohibited dotnet rebuild; relying on visual inspection of a large scanner file.
+Scalability potential: Process hygiene only.
+Hardware Impact: No runtime impact.
+
+## LOOP 25 SCANNER TIER CANDIDATE TIMESTAMP COLLAPSE
+
+Problem: Quality-tier initialization and candidate updates still read `Time.time` from inside helper methods. SlowTick/event cadence is not as hot as FastTick, but a single tier observation could stamp multiple fields from separate engine-time reads.
+Solution: `QueueScannerQualityTierCandidate()` snapshots `now` once and passes it into `InitializeScannerQualityTier()`. Initialization no longer reads time internally. `PublishScannerTuningSignal()` also snapshots `Time.frameCount` once before writing the scanner active signal payload.
+Rejected Alternatives: Leaving the helper-local time reads; moving tier state into a new global clock service; removing hysteresis to avoid timestamp state.
+Scalability potential: Low/MX350 tier fallback remains stable and cheap. High/Ultra tier transitions remain deterministic while scanner visual overkill values update from one coherent signal timestamp/frame.
+Hardware Impact: Removes up to 2 repeated engine time reads per tier candidate update and one direct frame read per scanner tuning packet. Exact microseconds remain PENDING PROFILER.
+
+Problem: Verification after timestamp collapse needed to prove the old helper-local timestamp writes did not remain.
+Solution: Ran source-only checks: `git diff --check` passed with line-ending warning only, `git diff --cached --check` passed, scanner banned-pattern scan found no forbidden scanner/UI patterns, and targeted timestamp scan found no direct `_scannerQualityTierCandidateSince = Time.time`, no no-time `InitializeScannerQualityTier(...)`, and no direct `Frame = unchecked((uint)Time.frameCount)` payload write.
+Rejected Alternatives: Running a prohibited dotnet rebuild; claiming deterministic timestamp hygiene without source evidence.
+Scalability potential: Process hygiene only.
+Hardware Impact: No runtime impact.
+
+## LOOP 26 OPERATIONAL TEXT TIMESTAMP COHESION
+
+Problem: Scanner operational summary/directive generation still sampled `Time.time` and `Time.frameCount` inside cache-bucket and lore-decryption helper methods. One generated scanner line could use one timestamp for cache cadence, another for cooldown/last-result text, and a later frame for title scramble.
+Solution: Snapshot `now` and `frame` at the operational text entry point, route summary/directive writes through timestamped internal helpers, pass `now` into the low-tier decryption gate, and pass `frame` into `ScrambleDecryptionSpan()`.
+Rejected Alternatives: Leaving helper-local time reads; adding a global clock service for one UI text path; disabling title scramble on high tiers.
+Scalability potential: Low/MX350 keeps the cheap `DECRYPT xx%` path with no rich scramble cost. Middle/High/Ultra keep richer title scramble, but it now keys from one coherent frame snapshot per summary refresh.
+Hardware Impact: Removes 2-4 repeated engine time/frame reads per uncached operational text refresh. Exact microseconds remain PENDING PROFILER.
+
+## LOOP 27 SCIENTIFIC CONTACT TIMESTAMP COHESION
+
+Problem: Focused scanner acquisition had a tick-level timestamp, but voxel, spatial, and lore-contact consumers still wrote `_scientificLastContactTime = Time.time` internally. That reintroduced hidden engine-time reads and mixed timestamps into hold-window evidence.
+Solution: Pass the scheduler timestamp into voxel/spatial consumers and pass a callback-boundary timestamp through queued occlusion/lore consumption. Contact consumers now store the caller-provided time.
+Rejected Alternatives: Re-reading `Time.time` in every consumer; reusing the original raycast scheduling timestamp for an asynchronous occlusion result; moving contact timing into a new global scanner clock service.
+Scalability potential: Low/MX350 reduces redundant engine time reads on focused contact acquisition. Middle/High/Ultra preserve tight resampling and rich scientific presentation while keeping contact hold windows coherent.
+Hardware Impact: Removes up to 3 helper-local engine time reads across active contact acquisition paths; async occlusion keeps one boundary read when the raycast result returns. Exact microseconds remain PENDING PROFILER.

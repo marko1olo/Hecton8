@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Hecton8.Core.Memory;
 using Hecton8.Gameplay;
 using Hecton8.World;
 using Unity.Burst;
@@ -463,7 +464,13 @@ namespace Hecton8.AI
 
             TryUnregisterOriginShiftListener();
             TryUnregister();
-            DispatcherJobSwap.TryFinalizeCompleted(ref _pendingSolverHandle);
+            if (_solverScheduled && DispatcherJobSwap.TryFinalizeCompleted(ref _pendingSolverHandle))
+            {
+                _solverScheduled = false;
+                WriteTelemetryFrame();
+                return;
+            }
+
             _solverScheduled = !_pendingSolverHandle.IsCompleted;
         }
 
@@ -498,7 +505,7 @@ namespace Hecton8.AI
                 return;
 
             Vector3 shiftOffset = shiftData.ShiftOffset;
-            if (shiftOffset.sqrMagnitude <= 0.000001f || !_positions.IsCreated)
+            if (shiftOffset.sqrMagnitude <= 0.000001f || !HasPersistentBuffers())
                 return;
 
             float3 offset = new float3(shiftOffset.x, shiftOffset.y, shiftOffset.z);
@@ -517,6 +524,9 @@ namespace Hecton8.AI
                 }
 
                 _solverScheduled = false;
+                ApplyOriginShiftRebase(offset);
+                WriteTelemetryFrame();
+                return;
             }
 
             ApplyOriginShiftRebase(offset);
@@ -558,7 +568,7 @@ namespace Hecton8.AI
         /// <param name="deltaTime">Scaled dispatcher delta time in seconds.</param>
         public void Tick(float deltaTime)
         {
-            if (_disposed || !_positions.IsCreated || _solverScheduled || deltaTime <= 0f)
+            if (_disposed || !HasPersistentBuffers() || _solverScheduled || deltaTime <= 0f)
                 return;
 
             ApplyPendingOriginShiftRebase();
@@ -622,7 +632,10 @@ namespace Hecton8.AI
 
             _solverScheduled = false;
             if (ApplyPendingOriginShiftRebase())
+            {
+                WriteTelemetryFrame();
                 return;
+            }
 
             WriteTelemetryFrame();
             UploadAndRenderIndirect();
@@ -699,6 +712,7 @@ namespace Hecton8.AI
                 return false;
 
             _solverScheduled = false;
+            WriteTelemetryFrame();
             return true;
         }
 
@@ -707,83 +721,28 @@ namespace Hecton8.AI
             if (_disposed)
                 return;
 
-            if (!_positions.IsCreated)
-            {
-                _positions = new NativeArray<float3>(TotalSegments, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float3>[160] - tentacle Verlet positions - owner: LeviathanTentacleVerletSolver
-                NativeMemorySentinel.RegisterNativeArray(_positions, NativeMemoryOwner, nameof(_positions), NativeMemoryLifetime);
-            }
+            if (HasPersistentBuffers())
+                return;
 
-            if (!_previousPositions.IsCreated)
-            {
-                _previousPositions = new NativeArray<float3>(TotalSegments, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float3>[160] - tentacle Verlet previous positions - owner: LeviathanTentacleVerletSolver
-                NativeMemorySentinel.RegisterNativeArray(_previousPositions, NativeMemoryOwner, nameof(_previousPositions), NativeMemoryLifetime);
-            }
+            JobHandle dependency = _solverScheduled ? _pendingSolverHandle : default;
+            DisposePersistentBuffers(dependency);
 
-            if (!_radius.IsCreated)
-            {
-                _radius = new NativeArray<float>(TotalSegments, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[160] - tentacle per-node radius lane - owner: LeviathanTentacleVerletSolver
-                NativeMemorySentinel.RegisterNativeArray(_radius, NativeMemoryOwner, nameof(_radius), NativeMemoryLifetime);
-            }
+            _positions = AllocatePersistentArray<float3>(TotalSegments, nameof(_positions)); // COLD ALLOC: NativeArray<float3>[160] - tentacle Verlet positions - owner: LeviathanTentacleVerletSolver
+            _previousPositions = AllocatePersistentArray<float3>(TotalSegments, nameof(_previousPositions)); // COLD ALLOC: NativeArray<float3>[160] - tentacle Verlet previous positions - owner: LeviathanTentacleVerletSolver
+            _radius = AllocatePersistentArray<float>(TotalSegments, nameof(_radius)); // COLD ALLOC: NativeArray<float>[160] - tentacle per-node radius lane - owner: LeviathanTentacleVerletSolver
+            _segmentMatrices = AllocatePersistentArray<float4x4>(TotalSegments, nameof(_segmentMatrices)); // COLD ALLOC: NativeArray<float4x4>[160] - tentacle GPU matrix upload lane - owner: LeviathanTentacleVerletSolver
+            _stretchFractions = AllocatePersistentArray<float>(MaxTentacles, nameof(_stretchFractions)); // COLD ALLOC: NativeArray<float>[8] - max stretch clamp telemetry - owner: LeviathanTentacleVerletSolver
+            _constraintCorrections = AllocatePersistentArray<float3>(TotalSegments, nameof(_constraintCorrections)); // COLD ALLOC: NativeArray<float3>[160] - Jacobi constraint correction lane - owner: LeviathanTentacleVerletSolver
+            _constraintCorrectionCounts = AllocatePersistentArray<int>(TotalSegments, nameof(_constraintCorrectionCounts)); // COLD ALLOC: NativeArray<int>[160] - Jacobi constraint correction counts - owner: LeviathanTentacleVerletSolver
+            _rootPositions = AllocatePersistentArray<float3>(MaxTentacles, nameof(_rootPositions)); // COLD ALLOC: NativeArray<float3>[8] - root socket runtime positions - owner: LeviathanTentacleVerletSolver
+            _targetPositions = AllocatePersistentArray<float3>(MaxTentacles, nameof(_targetPositions)); // COLD ALLOC: NativeArray<float3>[8] - tentacle target runtime positions - owner: LeviathanTentacleVerletSolver
+            _rootAups = AllocatePersistentArray<AbsoluteUniversePosition>(MaxTentacles, nameof(_rootAups)); // COLD ALLOC: NativeArray<AbsoluteUniversePosition>[8] - root socket AUP cache - owner: LeviathanTentacleVerletSolver
+            _targetAups = AllocatePersistentArray<AbsoluteUniversePosition>(MaxTentacles, nameof(_targetAups)); // COLD ALLOC: NativeArray<AbsoluteUniversePosition>[8] - target AUP cache - owner: LeviathanTentacleVerletSolver
+            _tentacleStates = AllocatePersistentArray<uint>(MaxTentacles, nameof(_tentacleStates)); // COLD ALLOC: NativeArray<uint>[8] - tentacle active/grab state bits - owner: LeviathanTentacleVerletSolver
+            _telemetryRing = AllocatePersistentArray<LeviathanTentacleTelemetryEntry>(TelemetryCapacity, nameof(_telemetryRing)); // COLD ALLOC: NativeArray<LeviathanTentacleTelemetryEntry>[300] - tentacle black box ring - owner: LeviathanTentacleVerletSolver
 
-            if (!_segmentMatrices.IsCreated)
-            {
-                _segmentMatrices = new NativeArray<float4x4>(TotalSegments, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float4x4>[160] - tentacle GPU matrix upload lane - owner: LeviathanTentacleVerletSolver
-                NativeMemorySentinel.RegisterNativeArray(_segmentMatrices, NativeMemoryOwner, nameof(_segmentMatrices), NativeMemoryLifetime);
-            }
-
-            if (!_stretchFractions.IsCreated)
-            {
-                _stretchFractions = new NativeArray<float>(MaxTentacles, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[8] - max stretch clamp telemetry - owner: LeviathanTentacleVerletSolver
-                NativeMemorySentinel.RegisterNativeArray(_stretchFractions, NativeMemoryOwner, nameof(_stretchFractions), NativeMemoryLifetime);
-            }
-
-            if (!_constraintCorrections.IsCreated)
-            {
-                _constraintCorrections = new NativeArray<float3>(TotalSegments, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float3>[160] - Jacobi constraint correction lane - owner: LeviathanTentacleVerletSolver
-                NativeMemorySentinel.RegisterNativeArray(_constraintCorrections, NativeMemoryOwner, nameof(_constraintCorrections), NativeMemoryLifetime);
-            }
-
-            if (!_constraintCorrectionCounts.IsCreated)
-            {
-                _constraintCorrectionCounts = new NativeArray<int>(TotalSegments, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[160] - Jacobi constraint correction counts - owner: LeviathanTentacleVerletSolver
-                NativeMemorySentinel.RegisterNativeArray(_constraintCorrectionCounts, NativeMemoryOwner, nameof(_constraintCorrectionCounts), NativeMemoryLifetime);
-            }
-
-            if (!_rootPositions.IsCreated)
-            {
-                _rootPositions = new NativeArray<float3>(MaxTentacles, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float3>[8] - root socket runtime positions - owner: LeviathanTentacleVerletSolver
-                NativeMemorySentinel.RegisterNativeArray(_rootPositions, NativeMemoryOwner, nameof(_rootPositions), NativeMemoryLifetime);
-            }
-
-            if (!_targetPositions.IsCreated)
-            {
-                _targetPositions = new NativeArray<float3>(MaxTentacles, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float3>[8] - tentacle target runtime positions - owner: LeviathanTentacleVerletSolver
-                NativeMemorySentinel.RegisterNativeArray(_targetPositions, NativeMemoryOwner, nameof(_targetPositions), NativeMemoryLifetime);
-            }
-
-            if (!_rootAups.IsCreated)
-            {
-                _rootAups = new NativeArray<AbsoluteUniversePosition>(MaxTentacles, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<AbsoluteUniversePosition>[8] - root socket AUP cache - owner: LeviathanTentacleVerletSolver
-                NativeMemorySentinel.RegisterNativeArray(_rootAups, NativeMemoryOwner, nameof(_rootAups), NativeMemoryLifetime);
-            }
-
-            if (!_targetAups.IsCreated)
-            {
-                _targetAups = new NativeArray<AbsoluteUniversePosition>(MaxTentacles, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<AbsoluteUniversePosition>[8] - target AUP cache - owner: LeviathanTentacleVerletSolver
-                NativeMemorySentinel.RegisterNativeArray(_targetAups, NativeMemoryOwner, nameof(_targetAups), NativeMemoryLifetime);
-            }
-
-            if (!_tentacleStates.IsCreated)
-            {
-                _tentacleStates = new NativeArray<uint>(MaxTentacles, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<uint>[8] - tentacle active/grab state bits - owner: LeviathanTentacleVerletSolver
-                NativeMemorySentinel.RegisterNativeArray(_tentacleStates, NativeMemoryOwner, nameof(_tentacleStates), NativeMemoryLifetime);
-            }
-
-            if (!_telemetryRing.IsCreated)
-            {
-                _telemetryRing = new NativeArray<LeviathanTentacleTelemetryEntry>(TelemetryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<LeviathanTentacleTelemetryEntry>[300] - tentacle black box ring - owner: LeviathanTentacleVerletSolver
-                NativeMemorySentinel.RegisterNativeArray(_telemetryRing, NativeMemoryOwner, nameof(_telemetryRing), NativeMemoryLifetime);
-            }
+            if (!HasPersistentBuffers())
+                DisposePersistentBuffers(default);
         }
 
         private void DisposePersistentBuffers(JobHandle dependency)
@@ -812,8 +771,34 @@ namespace Hecton8.AI
                 return;
 
             NativeMemorySentinel.UnregisterNativeArray(array);
-            _disposeHandle = JobHandle.CombineDependencies(_disposeHandle, array.Dispose(dependency));
+            JobHandle releaseHandle = H8Memory.Release(ref array, dependency, SystemID.External);
+            _disposeHandle = JobHandle.CombineDependencies(_disposeHandle, releaseHandle);
             array = default;
+        }
+
+        private static NativeArray<T> AllocatePersistentArray<T>(int length, string label) where T : struct
+        {
+            NativeArray<T> array = H8Memory.Allocate<T>(length, SystemID.External, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            if (array.IsCreated)
+                NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeMemoryLifetime);
+            return array;
+        }
+
+        private bool HasPersistentBuffers()
+        {
+            return _positions.IsCreated &&
+                _previousPositions.IsCreated &&
+                _radius.IsCreated &&
+                _segmentMatrices.IsCreated &&
+                _stretchFractions.IsCreated &&
+                _constraintCorrections.IsCreated &&
+                _constraintCorrectionCounts.IsCreated &&
+                _rootPositions.IsCreated &&
+                _targetPositions.IsCreated &&
+                _rootAups.IsCreated &&
+                _targetAups.IsCreated &&
+                _tentacleStates.IsCreated &&
+                _telemetryRing.IsCreated;
         }
 
         private void BuildFallbackRootOffsets()

@@ -501,3 +501,67 @@ Verification:
 - No temp `*EventLegend*.dll` probe artifacts remain in `Temp`.
 - No `dotnet` rebuild was run.
 - Full Unity/editor/player execution remains PENDING VERIFICATION because no Unity MCP/editor session is available in this tool context.
+
+## 2026-05-15 - Blackbox Decode Contract And Dump Status Addendum
+Status: PENDING VERIFICATION
+Evidence Class: CLI_COMPILE_PLUS_STATIC_SOURCE
+
+What was wrong:
+- CI/postmortem decoders still needed source knowledge for byte offsets inside each 64-byte blackbox entry.
+- Terminal binary/manifest dump failures were swallowed and not reflected in result JSON.
+- Editor fallback results did not carry the same decode contract when runtime never started.
+
+What was done:
+- Bumped the artifact schema to v7.
+- Added named byte offsets for every blackbox entry field: frame, extreme frame, shift sequence, event hash, native/H8 byte counters, allocation counters, dispatcher phase, DataVault fragmentation, last shift vector, and flags.
+- Runtime result/manifest artifacts now expose binary dump path/status fields and the full offset map.
+- Editor fallback artifacts now expose zeroed dump status fields plus the same offset map for parser parity.
+
+Cinematic Cheats used:
+- None. This is CI artifact and postmortem decode hygiene only.
+
+Exact Microseconds saved:
+- Hot path: 0 us; no per-frame work or binary entry expansion was added.
+- Binary memory footprint remains 300 entries x 64 bytes.
+- Avoided source lookup and rerun confusion when a dump write fails: estimated 1000000+ us saved per failed dump review.
+
+Verification:
+- Focused static audit: PASS for both Race Condition Hunter files; no scene search, component lookup, LINQ, coroutine, `Task<`, `.Complete()`, explicit GC, reflection, managed collection creation, `string.Format`, or `Substring` parser usage.
+- Scoped source counts: `ResultSchemaVersion7=2`, `BlackboxEntryOffsetFields=89`, `BlackboxDumpStatusFields=16`.
+- Runtime isolated Unity compiler probe: PASS via Unity Mono/Roslyn with UnityJIT facades, Unity modules, current `Library/ScriptAssemblies`, and `Assembly-CSharp.dll`.
+- Editor runner isolated Unity compiler probe: PASS via Unity Mono/Roslyn with UnityEngine/UnityEditor facade references and `UNITY_EDITOR` defined.
+- `git diff --check`: PASS for whitespace on the QA runner, editor runner, and owned status/rationale/log files; Git emitted LF-to-CRLF normalization warnings only.
+- No temp `*SchemaV7*.dll` probe artifacts remain in `Temp`.
+- No `dotnet` rebuild was run.
+- Full Unity/editor/player execution remains PENDING VERIFICATION because no Unity MCP/editor session is available in this tool context.
+
+## 2026-05-15 - Blackbox Header Layout And Binary Format Addendum
+Status: PENDING VERIFICATION
+Evidence Class: CLI_COMPILE_PLUS_STATIC_SOURCE
+
+What was wrong:
+- Schema v7 exposed entry offsets, but not byte offsets inside the 16-byte binary header.
+- External decoders still had to assume `BinaryWriter` little-endian primitive encoding and IEEE754 float format.
+
+What was done:
+- Bumped the artifact schema to v8.
+- Added named header offsets for magic, valid entry count, entry size bytes, and cursor.
+- Runtime result/manifest and editor fallback artifacts now write `blackboxByteOrder`, `blackboxFloatFormat`, and all header offsets.
+
+Cinematic Cheats used:
+- None. This is binary artifact contract hygiene only.
+
+Exact Microseconds saved:
+- Hot path: 0 us; no per-frame work changed.
+- Binary size remains 16-byte header plus 300 entries x 64 bytes.
+- Avoided source lookup/decoder guesswork for binary header parsing: estimated 1000000+ us saved per external decoder implementation or failed dump review.
+
+Verification:
+- Focused static audit: PASS for both Race Condition Hunter files; no scene search, component lookup, LINQ, coroutine, `Task<`, `.Complete()`, explicit GC, reflection, managed collection creation, `string.Format`, or `Substring` parser usage.
+- Scoped source counts: `ResultSchemaVersion8=2`, `BlackboxHeaderLayoutFields=28`, `BlackboxEntryOffsetFields=89`.
+- Runtime isolated Unity compiler probe: PASS via Unity Mono/Roslyn with UnityJIT facades, Unity modules, current `Library/ScriptAssemblies`, and `Assembly-CSharp.dll`.
+- Editor runner isolated Unity compiler probe: PASS via Unity Mono/Roslyn with UnityEngine/UnityEditor facade references and `UNITY_EDITOR` defined.
+- `git diff --check`: PASS for whitespace on the QA runner, editor runner, and owned status/rationale/log files; Git emitted LF-to-CRLF normalization warnings only.
+- No temp `*SchemaV8*.dll` probe artifacts remain in `Temp`.
+- No `dotnet` rebuild was run.
+- Full Unity/editor/player execution remains PENDING VERIFICATION because no Unity MCP/editor session is available in this tool context.

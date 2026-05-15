@@ -509,3 +509,45 @@ Scalability potential: Low/MX350 gets canonical bake inputs only, preventing acc
 Hardware Impact: Runtime remains 0 us/frame and 0 bytes procedural allocation. The gain is prevention: no extra Shallows rule asset can silently produce out-of-budget meshes or materials for i3/MX350. Exact runtime microseconds are not profiled because this is editor validation.
 
 Verification: No dotnet rebuild and no Unity import was run. `RuleFolderExactnessYamlScan Count=3 Bad=0`. `git diff --check` passed for `ShallowsBioForgeBatchBaker.cs`; source scans found `ValidateRuleFolderContract`, `t:BioRuleData`, and `Rule folder contract failed`; source brace count remained `Delta=0` and `NonAscii=0`; case-sensitive forbidden source scan remained clean.
+
+## Decision 37 - Shallows Atlas And Material Folder Exactness Contract
+
+Problem: The validator proved that the four expected atlas textures and one shared material exist and are correctly bound. It did not reject extra Shallows-named atlas or material assets in the same authoring folders. Stale assets can be rebound manually or by later tooling and break the shared atlas/material contract while the canonical assets still pass.
+
+Solution: Add `MaterialFolder`, `ValidateMaterialFolderContract`, and `ValidateAtlasFolderContract`. The material folder contract requires exactly one `MAT_ProceduralBio_Shallows` material at the canonical path. The atlas folder contract requires exactly four `TX_ProceduralBio_Shallows` texture assets: Albedo, Normal, ORM, and MatCap.
+
+Rejected Alternatives: Ignoring extra assets was rejected because stale authoring payloads are a real rebinding risk. Auto-deleting unexpected assets was rejected because the validator must fail closed and report, not destructively mutate the project. Runtime texture/material fallback was rejected because Shallows uses one static shared material and offline atlas payloads.
+
+Scalability potential: Low/MX350 keeps one shared material and four shared atlas textures, preserving batching and VRAM predictability. Middle/High/Ultra can add richer Shallows variants only by explicitly expanding the folder contract.
+
+Hardware Impact: Runtime remains 0 us/frame and 0 bytes procedural allocation. The gain is prevention: no extra Shallows material or atlas can silently split batching, variant state, or VRAM assumptions on i3/MX350. Exact runtime microseconds are not profiled because this is editor validation.
+
+Verification: No dotnet rebuild and no Unity import was run. `AtlasFolderExactnessScan Count=4 Bad=0`; `MaterialFolderExactnessScan Count=1 Bad=0`. `git diff --check` passed for `ShallowsBioForgeBatchBaker.cs`; source scans found `ValidateMaterialFolderContract`, `ValidateAtlasFolderContract`, `TX_ProceduralBio_Shallows t:Texture2D`, and `MAT_ProceduralBio_Shallows t:Material`; source brace count remained `Delta=0` and `NonAscii=0`; case-sensitive forbidden source scan remained clean.
+
+## Decision 38 - Shader Pragma Line-Token Hardening
+
+Problem: `ValidateShaderPragmaBudget` initially used broad source substring counts. That can be fooled by a commented pragma token or unrelated string literal, letting the validator pass while the actual shader directives drift.
+
+Solution: Replace every shader pragma budget count with `CountShaderLineToken`, which scans each line after leading whitespace and only counts real line-start directives. Remove the broader `CountSourceToken` helper.
+
+Rejected Alternatives: Keeping substring counts was rejected because comments must not satisfy a render/variant budget contract. Regex parsing was rejected because the existing line scanner is deterministic, allocation-free for the validator path, and already used for pass counting. Runtime variant auditing was rejected because variant budget drift must be caught in source before import/build.
+
+Scalability potential: Low/MX350 gets stricter shader source validation against silent variant fan-out. Middle/High/Ultra can still add visual overkill only through explicit pragma budget changes and updated rationale.
+
+Hardware Impact: Runtime remains 0 us/frame and 0 bytes procedural allocation. The gain is prevention: commented or stale pragma text cannot hide actual shader directive drift that would affect i3/MX350 variant/build pressure. Exact runtime microseconds are not profiled because this is editor validation.
+
+Verification: No dotnet rebuild and no Unity import was run. Shader line-token scan found all expected pragma counts and zero additional-light multi_compile; source scan found `CountSourceToken Count=0`. `git diff --check` passed for `ShallowsBioForgeBatchBaker.cs`; source brace count remained `Delta=0` and `NonAscii=0`; case-sensitive forbidden source scan remained clean.
+
+## Decision 39 - Mesh And Prefab Family Subfolder Exactness Contract
+
+Problem: The validator checked TubeCoral, Kelp, and PorousRock mesh/prefab families by expected folder path and asset counts. It did not reject extra subfolders under the Shallows mesh or prefab roots. Stale generated family folders can become future tooling or manual selection hazards while the canonical three families still pass.
+
+Solution: Add `ValidateFamilySubfolderContracts` and `ValidateFamilySubfolderContract`. The validator now requires exactly three subfolders under both `MeshRoot` and `PrefabRoot`: TubeCoral, Kelp, and PorousRock.
+
+Rejected Alternatives: Ignoring extra subfolders was rejected because stale generated payloads can bypass the canonical batch contract. Automatic folder deletion was rejected because validation should fail closed and report, not destructively modify assets. Runtime family filtering was rejected because generated Shallows payload ownership is editor-offline.
+
+Scalability potential: Low/MX350 gets canonical generated family roots only, reducing risk of stray out-of-budget content entering scenes. Middle/High/Ultra can add richer family tiers only through explicit root-contract expansion.
+
+Hardware Impact: Runtime remains 0 us/frame and 0 bytes procedural allocation. The gain is prevention: no stale Shallows generated family folder can silently add draw, mesh, material, or VRAM load on i3/MX350. Exact runtime microseconds are not profiled because this is editor validation.
+
+Verification: No dotnet rebuild and no Unity import was run. `FamilySubfolderExactnessScan Bad=0`, with `Count=3` under both Shallows mesh and prefab roots. `git diff --check` passed for `ShallowsBioForgeBatchBaker.cs`; source scans found `ValidateFamilySubfolderContracts`, `ValidateFamilySubfolderContract`, `AssetDatabase.GetSubFolders`, and `family subfolder contract failed`; source brace count remained `Delta=0` and `NonAscii=0`; case-sensitive forbidden source scan remained clean.

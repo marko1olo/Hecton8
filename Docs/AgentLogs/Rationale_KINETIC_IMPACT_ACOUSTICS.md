@@ -462,3 +462,22 @@ Solution: Ran source-only checks: fixed-symbol scan, property/method counters, c
 Rejected Alternatives: Running dotnet build/rebuild would violate explicit user order; claiming Unity compile or profiler status without Editor console/MCP data would be false.
 Scalability potential: Verification only.
 Hardware Impact: Verification only.
+
+## LOOP 24 PROLOGUE ACOUSTIC COLD RUNTIME SERVICE H-PHI PASS
+Problem: `PrologueAcousticOrchestrator.OnEnable()` read `GlobalRegistry.Audio` and `GlobalRegistry.TickDispatcher` directly. This is not a per-frame path, but prologue audio already uses hot-swap callbacks and typed scalability events; leaving service reads unnamed weakens the cold/hot boundary for a visual-sync audio bridge.
+Solution: Added `RefreshRuntimeServicesCold()` and routed `OnEnable()` through it. The helper cold-seeds `IAudioService` and `ITickDispatcher`. Existing `IGlobalRegistryHotSwapListener` and `IGlobalRegistryHotSwapRefListener` callbacks remain the live rebind mechanism for audio/dispatcher swaps.
+Rejected Alternatives: Periodic `GlobalRegistry.TickDispatcher` lookup inside `ResolveUnscaledDeltaTime()` would make prologue late-frame audio resilient but would introduce per-frame service lookup; adding a new prologue-specific service event is unnecessary because the registry hot-swap lane already exists.
+Scalability potential: Low/MX350 keeps prologue transition publishing to cached service pointers and scalar fakes. Middle/High/Ultra preserve richer plasma/splashdown DSP handoff while spending late-frame work on authored transition math, not service discovery.
+Hardware Impact: Runtime cost is unchanged on cold enable; protected hot path remains 0 service lookups/frame and 0 B/frame.
+
+Problem: Static smoke coverage only guarded prologue quality-policy registry reads, not runtime service reads.
+Solution: Extended `AdvancedAcousticsSmokeTester` to extract `RefreshRuntimeServicesCold()`, assert `GlobalRegistry.Audio` and `GlobalRegistry.TickDispatcher` are cold-seeded there, and assert `LateFrameTick()` has no `GlobalRegistry.` access.
+Rejected Alternatives: Manual-only review, or checking only scalability registry strings while allowing audio/dispatcher polling to creep into late-frame publishing.
+Scalability potential: Editor-only guard; protects low-tier prologue fake transition audio and high-tier granular splashdown handoff from lookup creep.
+Hardware Impact: 0 us runtime in player builds.
+
+Problem: Compile/profiler proof remains unavailable under the user's no-dotnet-rebuild order and missing Unity MCP resources.
+Solution: Ran source-only checks: method-body registry counters, `git diff --check`, and scoped forbidden-API scan. Counters: `PrologueColdRuntime GlobalRegistry=2`, `PrologueColdPolicy GlobalRegistry=3`, `PrologueLateFrame GlobalRegistry=0`, `ResolveUnscaledDeltaTime GlobalRegistry=0`.
+Rejected Alternatives: Running dotnet build/rebuild would violate explicit user order; claiming Unity compile or profiler status without Editor console/MCP data would be false.
+Scalability potential: Verification only.
+Hardware Impact: Verification only.

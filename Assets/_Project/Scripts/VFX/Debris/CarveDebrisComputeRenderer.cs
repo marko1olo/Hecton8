@@ -162,6 +162,7 @@ namespace Hecton8.VFX.Debris
         private uint _cachedDrawIndexStart;
         private uint _cachedDrawBaseVertex;
         private float3 _pendingAupShift;
+        private float3 _lastAppliedAupShift;
         private Matrix4x4 _cachedGlobalSdfWorldToLocal = Matrix4x4.identity;
         private Vector4 _cachedGlobalSdfInvDoubleHalfExtents;
         private Mesh _cachedDrawMesh;
@@ -726,6 +727,7 @@ namespace Hecton8.VFX.Debris
         {
             if (_activeMirrorCount <= 0 && math.lengthsq(_pendingAupShift) <= 0.000001f)
             {
+                _lastAppliedAupShift = default;
                 _lastFlowActive = false;
                 _lastSdfActive = false;
                 return;
@@ -746,6 +748,7 @@ namespace Hecton8.VFX.Debris
             int dispatchGroups = lowTier ? _lowDispatchGroups : _maxDispatchGroups;
             Vector4 drawArgs = drawArgsBase;
             drawArgs.w = activeCapacity;
+            float3 appliedAupShift = _pendingAupShift;
 
             BindSharedComputeParams(dt, lowTier, activeCapacity, drawArgs);
             fluidAdvectionCompute.SetBuffer(_clearArgsKernel, CarveDebrisIndirectArgsId, _indirectArgsBuffer);
@@ -763,6 +766,7 @@ namespace Hecton8.VFX.Debris
             fluidAdvectionCompute.Dispatch(_cullKernel, dispatchGroups, 1, 1);
 
             _bufferParity ^= 1;
+            _lastAppliedAupShift = appliedAupShift;
             _pendingAupShift = default;
         }
 
@@ -1408,7 +1412,8 @@ namespace Hecton8.VFX.Debris
             flags |= lowTier ? LowTierFlag : 0u;
             flags |= _lastSdfActive ? SdfActiveFlag : 0u;
             flags |= _lastFlowActive ? FlowActiveFlag : 0u;
-            uint hash = BuildTelemetryHash(_activeMirrorCount, queuedCarves, injectedParticles, flags);
+            float3 appliedAupShift = _lastAppliedAupShift;
+            uint hash = BuildTelemetryHash(_activeMirrorCount, queuedCarves, injectedParticles, flags, appliedAupShift);
             _blackBox[_blackBoxCursor] = new CarveDebrisTelemetryEntry
             {
                 FrameIndex = (uint)frame,
@@ -1417,7 +1422,7 @@ namespace Hecton8.VFX.Debris
                 InjectedParticles = injectedParticles,
                 Flags = flags,
                 StateHash = hash,
-                PendingAupShift = _pendingAupShift
+                AppliedAupShift = appliedAupShift
             };
             _blackBoxCursor = (_blackBoxCursor + 1) % _blackBox.Length;
 
@@ -1428,15 +1433,20 @@ namespace Hecton8.VFX.Debris
                 DumpBlackBoxOnce(flags);
 
             _jobState[JobStateFlagsIndex] = 0;
+            _lastAppliedAupShift = default;
         }
 
-        private static uint BuildTelemetryHash(int activeCount, int queuedCarves, int injectedParticles, uint flags)
+        private static uint BuildTelemetryHash(int activeCount, int queuedCarves, int injectedParticles, uint flags, float3 appliedAupShift)
         {
             uint hash = 2166136261u;
             hash = (hash ^ (uint)activeCount) * 16777619u;
             hash = (hash ^ (uint)queuedCarves) * 16777619u;
             hash = (hash ^ (uint)injectedParticles) * 16777619u;
             hash = (hash ^ flags) * 16777619u;
+            uint3 shiftBits = math.asuint(appliedAupShift);
+            hash = (hash ^ shiftBits.x) * 16777619u;
+            hash = (hash ^ shiftBits.y) * 16777619u;
+            hash = (hash ^ shiftBits.z) * 16777619u;
             return hash;
         }
 
@@ -1495,6 +1505,7 @@ namespace Hecton8.VFX.Debris
             _cachedDrawIndexStart = 0u;
             _cachedDrawBaseVertex = 0u;
             _cachedDrawMeshValid = false;
+            _lastAppliedAupShift = default;
             _registryDataVault = null;
             _fluidEngine = null;
             _hotSwapRegistered = false;
@@ -1775,7 +1786,7 @@ namespace Hecton8.VFX.Debris
             public int InjectedParticles;
             public uint Flags;
             public uint StateHash;
-            public float3 PendingAupShift;
+            public float3 AppliedAupShift;
         }
     }
 }

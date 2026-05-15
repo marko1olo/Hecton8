@@ -684,6 +684,30 @@ Verification:
 - Targeted `git diff --check` reports only Git CRLF normalization warnings.
 - No `dotnet` rebuild was run.
 
+## Recheck Report: WFC Producer Attribution Closure
+Status: PENDING VERIFICATION.
+
+What was wrong:
+- Current worktree drift had one WFC door-power producer bypassing `GlobalSignals`.
+- Terminal/audio-log datapad mutations reused the `WFCP` persistence source hash.
+
+What was done:
+- Restored door-power publication through `GlobalSignals.Publish(in signal)`.
+- Split datapad source hashes to `WFCT` for `MessageTerminal` and `WFCA` for `AudioLogPickup`.
+
+Cinematic cheats used:
+- Metadata-only attribution fix; no simulation, storage format, or payload growth.
+
+Exact microseconds saved:
+- Measured savings: 0 us. No profiler or runtime trace.
+- Runtime allocation: 0 B by static inspection.
+- Cost: unchanged typed native enqueue path plus constant source metadata.
+
+Verification:
+- Static scan shows remaining direct WFC typed `SignalBus<T>.Push` calls are only inside `GlobalSignals`.
+- Datapad source hashes no longer collide with `SaveManager` persistence `WFCP`.
+- No `dotnet` rebuild was run.
+
 ## Recheck Report: WFC Hydration Magic Unaligned Read Guard
 Status: PENDING VERIFICATION.
 
@@ -779,5 +803,6 @@ Exact microseconds saved:
 
 Verification:
 - Static scan shows remaining direct WFC typed `SignalBus<T>.Push` calls are only inside `GlobalSignals` facade overloads.
+- `Select-String` still finds no rotated batch XML tag for this ID.
 - Targeted `git diff --check` reports only Git CRLF normalization warnings.
 - No `dotnet` rebuild was run.

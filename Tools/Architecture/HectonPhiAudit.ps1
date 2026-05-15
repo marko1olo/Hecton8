@@ -21,6 +21,7 @@ param(
     [int]$MaxCoroutineSurface = -1,
     [int]$MaxManagedFormatSurface = -1,
     [int]$MaxJobCompleteSurface = -1,
+    [int]$MaxPrimaryManagedRuntimeRisk = -1,
     [double]$MinDataSovereignty = -1.0,
     [double]$MinMemoryAlignment = -1.0,
     [double]$MinRuntimeHPhiRisk = -1.0
@@ -95,6 +96,36 @@ function New-DomainRow {
     }
 }
 
+function Get-FileRiskRole {
+    param([string]$RelativePath)
+
+    if ([string]::IsNullOrEmpty($RelativePath)) {
+        return 'PrimaryRuntime'
+    }
+
+    $path = $RelativePath.Replace('\', '/')
+    $fileName = [System.IO.Path]::GetFileNameWithoutExtension($RelativePath)
+
+    if ($path -match '(^|/)(Editor)(/|$)') {
+        return 'Editor'
+    }
+
+    if ($path -match '(^|/)(QA|Dev|Debug|Tests?)(/|$)' -or
+        $fileName -match '(Smoke|SmokeTester|Stress|Profiler|Diagnostic|Verification|Validator|Benchmark|Harness|Runner|Test)') {
+        return 'Instrumentation'
+    }
+
+    if ($fileName -match '(Save|Persistence|Migration|Codec|Storage|Serializer|Deserializer)') {
+        return 'Persistence'
+    }
+
+    if ($path -match '(^|/)UI/') {
+        return 'UI'
+    }
+
+    return 'PrimaryRuntime'
+}
+
 function New-FileRow {
     param(
         [string]$RelativePath,
@@ -103,9 +134,15 @@ function New-FileRow {
         [int]$LineCount
     )
 
+    $fileRole = Get-FileRiskRole $RelativePath
+    $managedRuntimeRisk = [int]$Counters['LinqSurface'] +
+        [int]$Counters['CoroutineSurface'] +
+        [int]$Counters['ManagedFormatSurface']
+
     [ordered]@{
         File = $RelativePath
         Domain = $Domain
+        FileRole = $fileRole
         Lines = $LineCount
         SignalBusPush = [int]$Counters['SignalBusPush']
         GlobalRegistrySurface = [int]$Counters['GlobalRegistrySurface']
@@ -122,9 +159,9 @@ function New-FileRow {
         CoroutineSurface = [int]$Counters['CoroutineSurface']
         ManagedFormatSurface = [int]$Counters['ManagedFormatSurface']
         JobCompleteSurface = [int]$Counters['JobCompleteSurface']
-        ManagedRuntimeRisk = [int]$Counters['LinqSurface'] +
-            [int]$Counters['CoroutineSurface'] +
-            [int]$Counters['ManagedFormatSurface']
+        ManagedRuntimeRisk = $managedRuntimeRisk
+        PrimaryManagedRuntimeRisk = if ($fileRole -eq 'PrimaryRuntime') { $managedRuntimeRisk } else { 0 }
+        PrimaryJobCompleteRisk = if ($fileRole -eq 'PrimaryRuntime') { [int]$Counters['JobCompleteSurface'] } else { 0 }
         CouplingRisk = [int]$Counters['GlobalRegistrySurface'] +
             [int]$Counters['EventPublish'] +
             [int]$Counters['StaticInstance'] +
@@ -1458,6 +1495,27 @@ function Assert-StaticCounterBudget {
     throw $message
 }
 
+function Assert-ScalarMaxBudget {
+    param(
+        [int]$Actual,
+        [int]$MaxValue,
+        [string]$Label
+    )
+
+    if ($MaxValue -lt 0) {
+        return
+    }
+
+    if ($Actual -le $MaxValue) {
+        return
+    }
+
+    throw ('{0} H-Phi budget failed: count {1} exceeds budget {2}.' -f
+        $Label,
+        $Actual,
+        $MaxValue)
+}
+
 function Assert-StaticScoreFloor {
     param(
         [System.Collections.Specialized.OrderedDictionary]$Scores,
@@ -1814,6 +1872,8 @@ function New-AuditSummary {
             CoroutineSurface = $Audit.Counts.CoroutineSurface
             ManagedFormatSurface = $Audit.Counts.ManagedFormatSurface
             JobCompleteSurface = $Audit.Counts.JobCompleteSurface
+            PrimaryManagedRuntimeRisk = $Audit.RiskSums.PrimaryManagedRuntimeRisk
+            PrimaryJobCompleteRisk = $Audit.RiskSums.PrimaryJobCompleteRisk
         }
         Budgets = $Audit.Budgets
         CoreGraph = New-CoreGraphSummary $Audit.CoreGraphAudit
@@ -1833,8 +1893,12 @@ function New-AuditSummary {
             Select-Object -First 10)
         TopManagedRuntimeRiskFiles = @($Audit.TopManagedRuntimeRiskFiles |
             Select-Object -First 10)
+        TopPrimaryManagedRuntimeRiskFiles = @($Audit.TopPrimaryManagedRuntimeRiskFiles |
+            Select-Object -First 10)
         TopJobCompleteRiskFiles = @($Audit.TopJobCompleteRiskFiles |
             Select-Object -First 10)
+        ManagedRiskByRole = @($Audit.ManagedRiskByRole |
+            Select-Object -First 8)
         TopOwnerBlockedDataVaultCandidates = @($Audit.OwnerBlockedDataVaultCandidates |
             Select-Object -First 10)
     }
@@ -1886,6 +1950,10 @@ if ($CoreGraphOnly) {
 
     if ($MaxJobCompleteSurface -ge 0) {
         throw 'Job Complete surface budget requires full source scan. Remove -CoreGraphOnly when using -MaxJobCompleteSurface.'
+    }
+
+    if ($MaxPrimaryManagedRuntimeRisk -ge 0) {
+        throw 'Primary managed runtime risk budget requires full source scan. Remove -CoreGraphOnly when using -MaxPrimaryManagedRuntimeRisk.'
     }
 
     if ($MinDataSovereignty -ge 0.0) {
@@ -2141,6 +2209,10 @@ foreach ($file in $files) {
 $runtimeScores = New-Scores $runtimeCounters
 $allSourceScores = New-Scores $allCounters
 $editorScores = New-Scores $editorCounters
+$primaryManagedRuntimeRisk = [int](@($runtimeFileRows |
+    Measure-Object -Property PrimaryManagedRuntimeRisk -Sum).Sum)
+$primaryJobCompleteRisk = [int](@($runtimeFileRows |
+    Measure-Object -Property PrimaryJobCompleteRisk -Sum).Sum)
 
 Assert-AupPrecisionBudget $runtimeCounters $runtimeFileRows
 Assert-StaticCounterBudget $runtimeCounters $runtimeFileRows 'FindObjectCalls' $MaxFindObjectCalls 'FindObject runtime lookup'
@@ -2152,6 +2224,7 @@ Assert-StaticCounterBudget $runtimeCounters $runtimeFileRows 'LinqSurface' $MaxL
 Assert-StaticCounterBudget $runtimeCounters $runtimeFileRows 'CoroutineSurface' $MaxCoroutineSurface 'Coroutine runtime surface'
 Assert-StaticCounterBudget $runtimeCounters $runtimeFileRows 'ManagedFormatSurface' $MaxManagedFormatSurface 'Managed format runtime surface'
 Assert-StaticCounterBudget $runtimeCounters $runtimeFileRows 'JobCompleteSurface' $MaxJobCompleteSurface 'Job Complete runtime surface'
+Assert-ScalarMaxBudget $primaryManagedRuntimeRisk $MaxPrimaryManagedRuntimeRisk 'Primary managed runtime risk'
 Assert-StaticScoreFloor $runtimeScores 'DataSovereignty' $MinDataSovereignty 'Data Sovereignty'
 Assert-StaticScoreFloor $runtimeScores 'MemoryAlignment' $MinMemoryAlignment 'Memory Alignment'
 Assert-StaticScoreFloor $runtimeScores 'HPhiStaticRisk' $MinRuntimeHPhiRisk 'Runtime risk-adjusted H-Phi'
@@ -2168,6 +2241,10 @@ $result = [ordered]@{
     AllSourceScores = $allSourceScores
     EditorCounts = $editorCounters
     EditorScores = $editorScores
+    RiskSums = [ordered]@{
+        PrimaryManagedRuntimeRisk = $primaryManagedRuntimeRisk
+        PrimaryJobCompleteRisk = $primaryJobCompleteRisk
+    }
     Budgets = [ordered]@{
         AupPrecisionRisk = [ordered]@{
             Enabled = $MaxAupPrecisionRisk -ge 0
@@ -2246,6 +2323,13 @@ $result = [ordered]@{
             Passed = $MaxJobCompleteSurface -lt 0 -or [int]$runtimeCounters.JobCompleteSurface -le $MaxJobCompleteSurface
             EvidenceClass = 'STATIC_SOURCE_FULL_SCAN'
         }
+        PrimaryManagedRuntimeRisk = [ordered]@{
+            Enabled = $MaxPrimaryManagedRuntimeRisk -ge 0
+            Max = $MaxPrimaryManagedRuntimeRisk
+            Actual = $primaryManagedRuntimeRisk
+            Passed = $MaxPrimaryManagedRuntimeRisk -lt 0 -or $primaryManagedRuntimeRisk -le $MaxPrimaryManagedRuntimeRisk
+            EvidenceClass = 'STATIC_SOURCE_FULL_SCAN'
+        }
         DataSovereignty = [ordered]@{
             Enabled = $MinDataSovereignty -ge 0.0
             Min = $MinDataSovereignty
@@ -2300,6 +2384,27 @@ $result = [ordered]@{
             @{ Expression = 'LinqSurface'; Descending = $true },
             @{ Expression = 'CoroutineSurface'; Descending = $true }) |
         Select-Object -First 25)
+    TopPrimaryManagedRuntimeRiskFiles = @($runtimeFileRows |
+        Where-Object { $_.PrimaryManagedRuntimeRisk -gt 0 } |
+        Sort-Object -Property @(
+            @{ Expression = 'PrimaryManagedRuntimeRisk'; Descending = $true },
+            @{ Expression = 'ManagedFormatSurface'; Descending = $true },
+            @{ Expression = 'LinqSurface'; Descending = $true }) |
+        Select-Object -First 25)
+    ManagedRiskByRole = @($runtimeFileRows |
+        Group-Object FileRole |
+        ForEach-Object {
+            [pscustomobject][ordered]@{
+                FileRole = $_.Name
+                FileCount = @($_.Group).Count
+                ManagedRuntimeRisk = [int](@($_.Group | Measure-Object -Property ManagedRuntimeRisk -Sum).Sum)
+                LinqSurface = [int](@($_.Group | Measure-Object -Property LinqSurface -Sum).Sum)
+                CoroutineSurface = [int](@($_.Group | Measure-Object -Property CoroutineSurface -Sum).Sum)
+                ManagedFormatSurface = [int](@($_.Group | Measure-Object -Property ManagedFormatSurface -Sum).Sum)
+                JobCompleteSurface = [int](@($_.Group | Measure-Object -Property JobCompleteSurface -Sum).Sum)
+            }
+        } |
+        Sort-Object ManagedRuntimeRisk -Descending)
     TopJobCompleteRiskFiles = @($runtimeFileRows |
         Where-Object { $_.JobCompleteSurface -gt 0 } |
         Sort-Object -Property @(
@@ -2352,6 +2457,12 @@ if ($Summary) {
     Write-Output ''
     Write-Output 'Top managed runtime risk files:'
     $summaryResult.TopManagedRuntimeRiskFiles | Format-Table -AutoSize
+    Write-Output ''
+    Write-Output 'Top primary managed runtime risk files:'
+    $summaryResult.TopPrimaryManagedRuntimeRiskFiles | Format-Table -AutoSize
+    Write-Output ''
+    Write-Output 'Managed runtime risk by role:'
+    $summaryResult.ManagedRiskByRole | Format-Table -AutoSize
     Write-Output ''
     Write-Output 'Top job Complete risk files:'
     $summaryResult.TopJobCompleteRiskFiles | Format-Table -AutoSize

@@ -637,3 +637,32 @@ Verification:
 - `git diff --check -- Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs Docs/Tasks/Status_KINETIC_IMPACT_ACOUSTICS.md Docs/AgentLogs/Rationale_KINETIC_IMPACT_ACOUSTICS.md Docs/AgentLogs/LOG_KINETIC_IMPACT_ACOUSTICS.md` passed except CRLF normalization warnings.
 - Scoped forbidden scan found only pre-existing renderer diagnostics and editor smoke strings.
 - Dotnet build/rebuild was not run by explicit user order. Unity compile remains PENDING VERIFICATION until Editor console/MCP validation is available.
+
+## 2026-05-15 - DSP_ACOUSTIC_LEAD - Loop 24 Prologue Acoustic Cold Runtime Service H-Phi Pass
+Status: PENDING VERIFICATION
+
+What was wrong:
+- `PrologueAcousticOrchestrator.OnEnable()` directly read `GlobalRegistry.Audio` and `GlobalRegistry.TickDispatcher`.
+- The late-frame prologue bridge already uses cached service pointers and hot-swap callbacks, but the cold runtime service boundary was not explicit.
+- Smoke coverage guarded quality-policy reads but not runtime service reads.
+
+What was done:
+- Added `RefreshRuntimeServicesCold()`.
+- Routed `OnEnable()` through the cold runtime service helper.
+- Kept `Audio` and `Dispatcher` hot-swap callback handling unchanged.
+- Added smoke assertions for cold-only audio/dispatcher seeding and no `GlobalRegistry.` in `LateFrameTick()`.
+
+Cinematic cheats used:
+- Prologue acoustic sync remains scalar transition state plus cached service pointers, not runtime discovery or physical acoustic simulation.
+- Low tier keeps cheap LPF/LFE/portal-blend fakes.
+- High tier keeps richer plasma granular/splashdown handoff with no per-frame service lookup.
+
+Exact microseconds saved:
+- Runtime performance is unchanged on cold enable.
+- Protected late-frame path remains zero service lookups per frame and 0 B/frame.
+
+Verification:
+- Method-body counters: `PrologueColdRuntime GlobalRegistry=2`, `PrologueColdPolicy GlobalRegistry=3`, `PrologueLateFrame GlobalRegistry=0`, `ResolveUnscaledDeltaTime GlobalRegistry=0`.
+- `git diff --check -- Assets/_Project/Scripts/Audio/Prologue/PrologueAcousticOrchestrator.cs Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs` passed.
+- Scoped forbidden scan found only pre-existing editor smoke diagnostics/assertion strings.
+- Dotnet build/rebuild was not run by explicit user order. Unity compile remains PENDING VERIFICATION until Editor console/MCP validation is available.

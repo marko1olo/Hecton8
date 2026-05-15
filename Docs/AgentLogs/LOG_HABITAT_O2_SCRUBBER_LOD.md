@@ -324,3 +324,37 @@ Cinematic Cheats used:
 
 Exact microseconds saved:
 - No measurable claim. This removes branch noise on API/transition paths; no dotnet rebuild was run.
+
+## 2026-05-15 - Base Room Mapping Guard Addendum
+STATUS: PENDING VERIFICATION
+
+What was wrong:
+- Base remap code still trusted logical `_roomCount` for `_roomBaseIndex` writes.
+- Signal-created base slots could map a room id that was valid logically but outside a shrunken/native-migrated mapping lane.
+
+What was done:
+- `TryConfigureBase` now requires live room-lane readiness before remapping and clamps ranges to `_roomBaseIndex.Length`.
+- Transition signal mapping writes now require `roomId` to be inside both `_roomCount` and `_roomBaseIndex.Length`.
+
+Cinematic Cheats used:
+- None new.
+
+Exact microseconds saved:
+- None claimed. This is H-Phi capacity-skew crash containment; no dotnet rebuild was run.
+
+## 2026-05-15 - Bulkhead And Telemetry Capacity Addendum
+STATUS: PENDING VERIFICATION
+
+What was wrong:
+- Bulkhead endpoints could be accepted while current room lanes were not capacity-coherent.
+- Black-box fault detection still used `TelemetryCapacity` to index the ring even after scheduling switched to live telemetry length.
+
+What was done:
+- Added room-lane readiness to `TrySetBulkhead`.
+- Switched telemetry fault index math and dump entry-count metadata to `_telemetryRing.Length`.
+
+Cinematic Cheats used:
+- None new.
+
+Exact microseconds saved:
+- None claimed. This prevents capacity-skew faults and preserves truthful crash evidence; no dotnet rebuild was run.

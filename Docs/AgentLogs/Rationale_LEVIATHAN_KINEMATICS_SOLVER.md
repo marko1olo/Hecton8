@@ -300,3 +300,27 @@ Solution: Replace the integer frame marker with `_motionIntentPending`. `SetMoti
 Rejected Alternatives: Passing frame indices through `SetMotionIntent()` was rejected because it widens the internal call contract and still couples the runtime to external frame bookkeeping. Keeping `Time.frameCount` was rejected because dispatcher cadence, not Unity frame equality, is the authoritative update boundary.
 Scalability potential: Low/MX350/high/ultra behavior is unchanged for valid ordering. All tiers now tolerate intent publication on either side of the runtime tick without losing the next solver input; high/ultra keep smoother body pursuit because authored intent is not discarded by frame-count drift.
 Hardware Impact: No profiler-backed saving is claimed. The change replaces one `int` field with one `bool` and removes two Unity frame-global reads from the IK runtime hot/caller path.
+
+## Decision 31: Tentacle Dispatcher Registration Repair
+
+Problem: `LeviathanTentacleVerletSolver.TryRegister()` returned when `_registeredUpdate` was true even if `_registeredLateFrame` was false. That can strand a scheduled Burst Verlet solve because late-frame owns completion, blackbox telemetry, and indirect render submission.
+Solution: Treat only the full update+late-frame pair as stable. If either registration flag is set alone, unregister both dispatcher paths, clear both flags, and retry from a clean state.
+Rejected Alternatives: Trusting the update registration flag was rejected because a partial lifecycle state can keep simulation ticking while completion/upload is absent. Adding a second callback fallback was rejected because it duplicates dispatcher ownership instead of repairing the broken registration invariant.
+Scalability potential: Low/MX350/high/ultra motion quality is unchanged for normal registration. All tiers now fail back into a coherent dispatcher pair after lifecycle/rebind disturbance, preserving cheap low-tier tentacle simulation and high-tier indirect visual overkill.
+Hardware Impact: Hot-path cost is 0 us. Cold enable/rebind can pay one unregister pair only when the state is already partial; this protects job completion and render submission rather than claiming frame-time savings.
+
+## Decision 32: Tentacle Native Memory Ownership
+
+Problem: `LeviathanTentacleVerletSolver` allocated thirteen persistent SOA/blackbox `NativeArray<T>` buffers directly, outside the H8Memory owner/cap path used by the current Leviathan spine runtime. If allocation failed or was interrupted, the old code could also leave `_positions` created while other lanes were absent.
+Solution: Add `Hecton8.Core.Memory`, allocate every persistent tentacle array through `H8Memory.Allocate<T>(..., SystemID.External, ...)`, release through `H8Memory.Release`, retain NativeMemorySentinel labels, and require `HasPersistentBuffers()` before scheduling.
+Rejected Alternatives: Keeping direct `NativeArray<T>` allocations was rejected because H-Phi memory policy requires explicit owner tracking. Dropping `NativeMemorySentinel` registration was rejected because scene-lifetime leak telemetry is still useful for the tentacle blackbox and indirect-render buffers.
+Scalability potential: Low/MX350/high/ultra visual behavior is unchanged when memory is available. Under memory pressure, all tiers now fail closed by refusing to schedule without a complete buffer set, preserving predictable low-tier behavior and preventing high-tier partial-buffer crashes.
+Hardware Impact: No runtime frame-time saving is claimed. Hot-path cost is a fixed `IsCreated` gate before scheduling; cold allocation is now visible to H8Memory caps, which matters most on i3/MX350-class memory budgets.
+
+## Decision 33: Tentacle Completion Telemetry Parity
+
+Problem: `LeviathanTentacleVerletSolver` wrote blackbox telemetry only on the normal late-frame render path. A scheduled job completed during disable, origin-shift finalization, queued origin-shift rebase, or forced lifecycle completion could be consumed without a telemetry entry.
+Solution: Call `WriteTelemetryFrame()` after every scheduled-job completion/finalization path that consumes the solver result. Origin-shift paths rebase first, then record telemetry, while still skipping render submission on that rebase frame.
+Rejected Alternatives: Rendering immediately from the origin-shift path was rejected because the barrier should not add GPU submit work. Leaving lifecycle completion invisible was rejected because the blackbox requirement is about explainable state, not only rendered frames.
+Scalability potential: Low/MX350/high/ultra visuals are unchanged. All tiers now preserve coherent last-300-frame state across lifecycle and origin-shift edges, so invalid tentacle positions have a dump trail even when no render upload happens.
+Hardware Impact: Normal render-frame cost is unchanged. Lifecycle/rebase completion writes one fixed-size telemetry entry, estimated below 0.02 us and not profiler-backed; no hot-path saving is claimed.

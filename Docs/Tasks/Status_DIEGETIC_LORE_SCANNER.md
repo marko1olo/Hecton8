@@ -184,10 +184,26 @@ Mandates read:
 - [x] Focused scan tier resolver uses tick timestamp | DOD: `UpdateScientificScanning()` and `ScheduleScientificConeBatch()` now pass the fast-tick `now` snapshot into focused resample interval and quality-tier hysteresis resolution | Rejected: hidden `Time.time` reads inside tier helpers during one scientific scanner sample | Estimate: removes 1-2 repeated engine time reads per active focused scan tick
 - [x] Static no-regression checks after Loop 24 | DOD: `git diff --check` passed with line-ending warning only, `git diff --cached --check` passed, scanner banned-pattern scan found no forbidden UI/scanner patterns, and targeted time scan found no no-arg focused resample/quality resolver calls or old `Time.time - _scannerQualityTierCandidateSince` pattern | Rejected: dotnet rebuild; static source checks only | Estimate: 2900 us
 
+## Loop 25 - Scanner Tier Candidate Timestamp Collapse
+
+- [x] Scanner tier candidate updates snapshot time once | DOD: `QueueScannerQualityTierCandidate()` now uses one local `now` for initialization and candidate-age stamps, and `InitializeScannerQualityTier()` receives caller time instead of reading `Time.time` internally | Rejected: multiple engine time reads inside one tier event/slow-tick candidate update | Estimate: removes up to 2 repeated time reads per tier candidate update
+- [x] Scanner tuning signal frame snapshot | DOD: `PublishScannerTuningSignal()` snapshots `Time.frameCount` once and writes that value into `ScannerToolActiveSignal.Frame` | Rejected: direct frame read inside the signal object initializer | Estimate: removes one direct frame property read per scanner tuning packet
+- [x] Static no-regression checks after Loop 25 | DOD: `git diff --check` passed with line-ending warning only, `git diff --cached --check` passed, scanner banned-pattern scan found no forbidden UI/scanner patterns, and targeted timestamp scan found no direct candidate-stamp `Time.time`, no no-time `InitializeScannerQualityTier(...)`, and no direct `Frame = Time.frameCount` payload write | Rejected: dotnet rebuild; static source checks only | Estimate: 3100 us
+
+## Loop 26 - Operational Text Timestamp Cohesion
+
+- [x] Summary/directive cache timestamp snapshot | DOD: `GetOperationalSummary()` and `GetOperationalDirective()` now snapshot `Time.time` once for cache bucket selection and fixed-buffer writing, and `GetOperationalSummary()` snapshots `Time.frameCount` once for lore-title scramble | Rejected: helper-local time/frame reads that can disagree inside one generated scanner line | Estimate: removes 2-4 repeated engine time/frame reads per uncached operational text refresh
+- [x] Low-tier decryption gate timestamp threading | DOD: lore decryption summary passes caller `now` into `ResolveScannerQualityTier(now)` and caller `frame` into `ScrambleDecryptionSpan()` | Rejected: hidden `Time.time`/`Time.frameCount` reads inside presentation helpers | Estimate: removes one time read and one frame read from rich lore summary refresh
+
+## Loop 27 - Scientific Contact Timestamp Cohesion
+
+- [x] Focused scanner contact writes use caller timestamp | DOD: voxel, spatial, and occlusion lore contact consumers now receive the scheduler/callback timestamp and write `_scientificLastContactTime` from that value | Rejected: hidden `Time.time` reads inside scientific contact consumers | Estimate: removes up to 3 helper-local engine time reads across active contact acquisition paths
+- [x] Raycast callback timestamp boundary isolated | DOD: dispatcher raycast callback snapshots `Time.time` at the asynchronous boundary and passes it through occlusion/lore consumption | Rejected: using old scheduling timestamp for a later async result or reading time inside the lore consumer | Estimate: one callback-boundary time read only when a queued occlusion result returns
+
 ## Verification
 
 - [x] Compile/source validation - `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:quiet -clp:Summary` passed with 0 warnings / 0 errors after Loop 10
-- [ ] Compile/source validation after Loops 11-24 - NOT RERUN: user explicitly ordered no dotnet rebuilds; static source checks only
+- [ ] Compile/source validation after Loops 11-27 - NOT RERUN: user explicitly ordered no dotnet rebuilds; static source checks only
 - [ ] Console check - BLOCKED BY UNITY SESSION: MCP validate/console calls cannot connect to Unity MCP HTTP endpoint / session
 - [x] Re-read prompt after core tasks
 - [x] Omega polish mandate after all tasks done or blocked

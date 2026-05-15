@@ -479,3 +479,19 @@ Solution: Add a raw-literal prefilter in `Get-DuplicateSignalNameAudit` that ski
 Rejected Alternatives: Disable duplicate signal audit or cache all file contents globally. Disabling the audit would hide signal-lane name collisions; a broad content cache increases memory pressure in a PowerShell tool and does not address the expensive masking work directly.
 Scalability potential: Low machines skip 1279 non-candidate files before duplicate-signal masking. Middle/High/Ultra CI keeps the same duplicate-name evidence while preserving budget for full AUP/H-Phi source gates.
 Hardware Impact: Gameplay frame impact is 0 us. Full static `-MaxAupPrecisionRisk 0` run completed in 221.618 seconds with `AupPrecisionRisk=0` and `DuplicateSignalNameCount=0`; tooling-only improvement.
+
+## Decision 60 - Duplicate Signal Prefilter Counter Export
+
+Problem: The duplicate signal prefilter reduced masking work, but the H-Phi summary JSON did not expose candidate/skipped counts, making the optimization invisible to CI evidence.
+Solution: Return `SourceFileCount`, `CandidateFileCount`, and `PrefilterSkippedFileCount` from `Get-DuplicateSignalNameAudit`, and pass them through `New-AuditSummary`.
+Rejected Alternatives: Keep prefilter counts only in agent logs or terminal output. Logs are not machine-gated evidence; terminal output is easy to lose during context compression.
+Scalability potential: Low machines and CI runners can verify the prefilter remains active without manual file counting. Middle/High/Ultra pipelines retain duplicate-signal collision detection while proving the static audit is not doing avoidable source masking.
+Hardware Impact: Gameplay frame impact is 0 us. Full static `-MaxAupPrecisionRisk 0` run completed in 159.965 seconds with `DuplicateSignalSourceFiles=1501`, `DuplicateSignalCandidateFiles=222`, `DuplicateSignalSkippedFiles=1279`, and `AupPrecisionRisk=0`.
+
+## Decision 61 - Primary Managed Runtime Risk Lane Verification
+
+Problem: The H-Phi managed-risk surface needs to distinguish primary gameplay runtime debt from instrumentation, persistence, and UI support code; otherwise a single managed-risk count hides where budget pressure actually threatens frame time.
+Solution: Verify the active working-tree primary-runtime managed-risk lane, including `FileRole`, `PrimaryManagedRuntimeRisk`, `PrimaryJobCompleteRisk`, `ManagedRiskByRole`, and `-MaxPrimaryManagedRuntimeRisk` CoreGraphOnly fail-fast behavior.
+Rejected Alternatives: Revert or ignore the working-tree lane. Reverting would discard useful H-Phi separation; ignoring it would leave unverified budget behavior in the same AUP/H-Phi audit tool.
+Scalability potential: Low machines can gate primary runtime debt separately from debug/CI/persistence support code. Middle/High/Ultra pipelines can keep instrumentation-rich QA while still protecting primary runtime from managed allocations and job-completion debt.
+Hardware Impact: Gameplay frame impact is 0 us. Full static run completed in 193.981 seconds with `PrimaryManagedRuntimeRisk=353`, `PrimaryJobCompleteRisk=44`, role split `PrimaryRuntime=353`, `Instrumentation=236`, `Persistence=96`, `UI=24`, and `AupPrecisionRisk=0`.

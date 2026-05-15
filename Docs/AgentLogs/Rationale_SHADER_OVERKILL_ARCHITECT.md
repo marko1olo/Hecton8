@@ -135,3 +135,10 @@ Solution: Reran only `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json` with
 Rejected Alternatives: Running `dotnet build`, `dotnet rebuild`, or a Unity compilation was rejected because it violates the direct user order and remains blocked by external World/GPR compile errors. Reusing stale H-Phi numbers was rejected as fake evidence.
 Scalability potential: Low-tier rendering now keeps hysteretic DRS behavior and finite shader globals; High/Ultra keep the overkill path without one-frame scale oscillation or shader global NaN risk.
 Hardware Impact: 0 us runtime claimed from the audit itself. Latest static audit: `RuntimeHPhiNarrow=0.010750800`, `RuntimeHPhiRisk=0.000587147`, `AllSourceHPhiNarrow=0.009572479`, `AllSourceHPhiRisk=0.000482295`, `ArchitecturalPurity=0.996447602`, `MemoryAlignment=0.504761905`, `StructLayoutAttributes=954`, `AupPrecisionRisk=0`.
+
+## Decision 020 - Underwater Visuals Component Lookup Hygiene
+Problem: `HectonUnderwaterVisuals` carried runtime `GetComponent<T>` and `GetComponentInParent<T>` lookup debt in camera recovery paths, increasing H-Phi static coupling risk and violating the preferred `TryGetComponent` pattern.
+Solution: Replaced runtime camera/component probes with `TryGetComponent(out T)` and added a zero-allocation parent `Transform` walk that preserves first-parent-camera semantics without `GetComponentInParent<T>`.
+Rejected Alternatives: A full camera-stack rewrite was rejected because this presentation hub owns Crest fallback, editor preview, gameplay camera composition, and underwater ownership. Editing Crest wrappers or moving camera ownership to another domain was rejected as higher-risk cross-domain churn.
+Scalability potential: Low/MX350 avoids extra Unity lookup debt during cold camera recovery and keeps the same visual ownership path. High/Ultra remain behavior-equivalent while cleaner static coupling leaves room for later RenderGraph/camera-stack work.
+Hardware Impact: Runtime speed gain is estimated at 0-5 us on rare camera recovery frames, not hot path. Static H-Phi evidence after the pass: `GetComponentCalls=532`, `MemoryAlignment=0.505023797`, `AupPrecisionRisk=0`.

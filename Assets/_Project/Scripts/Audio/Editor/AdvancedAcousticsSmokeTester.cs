@@ -40,6 +40,7 @@ namespace Hecton8.Audio.Editor
         private const string HectonMusicDirectorPath = "Assets/_Project/Scripts/Audio/HectonMusicDirector.cs";
         private const string PrologueAcousticOrchestratorPath = "Assets/_Project/Scripts/Audio/Prologue/PrologueAcousticOrchestrator.cs";
         private const string VocalWarningSystemPath = "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs";
+        private const string PlayerThrusterAudioPath = "Assets/_Project/Scripts/PlayerThrusterAudio.cs";
 
         [MenuItem("Hecton8/Audio/Run Advanced Acoustics Smoke Test")]
         public static void RunMenuItem()
@@ -85,6 +86,7 @@ namespace Hecton8.Audio.Editor
             string musicDirector = ReadAssetText(HectonMusicDirectorPath, builder, ref failureCount);
             string prologueAcoustic = ReadAssetText(PrologueAcousticOrchestratorPath, builder, ref failureCount);
             string vocalWarning = ReadAssetText(VocalWarningSystemPath, builder, ref failureCount);
+            string playerThrusterAudio = ReadAssetText(PlayerThrusterAudioPath, builder, ref failureCount);
 
             if (spatial.Length > 0)
             {
@@ -332,12 +334,16 @@ namespace Hecton8.Audio.Editor
             if (prologueAcoustic.Length > 0)
             {
                 string prologueLateFrame = ExtractMethodBody(prologueAcoustic, "public void LateFrameTick()");
+                string prologueColdRuntime = ExtractMethodBody(prologueAcoustic, "private void RefreshRuntimeServicesCold()");
                 string prologueColdPolicy = ExtractMethodBody(prologueAcoustic, "private void RefreshQualityPolicyCold()");
                 AssertContains(prologueAcoustic, "IScalabilityChangedEventListener", "Prologue acoustic bridge receives scalability changes through the typed event lane", builder, ref failureCount);
                 AssertContains(prologueAcoustic, "ScalabilityEvents.Register(this)", "Prologue acoustic bridge registers for scalability events", builder, ref failureCount);
                 AssertContains(prologueAcoustic, "ScalabilityEvents.Unregister(this)", "Prologue acoustic bridge unregisters scalability events", builder, ref failureCount);
                 AssertContains(prologueAcoustic, "CacheQualityPolicy(payload.CurrentQualityTier, payload.CurrentTier, _lowMemoryProfile)", "Prologue acoustic bridge updates quality policy from scalability payloads", builder, ref failureCount);
+                AssertContains(prologueColdRuntime, "GlobalRegistry.Audio", "Prologue acoustic bridge reads audio service only during cold runtime refresh", builder, ref failureCount);
+                AssertContains(prologueColdRuntime, "GlobalRegistry.TickDispatcher", "Prologue acoustic bridge reads tick dispatcher only during cold runtime refresh", builder, ref failureCount);
                 AssertContains(prologueColdPolicy, "GlobalRegistry.H8_LOW_MEMORY_PROFILE", "Prologue acoustic bridge reads low-memory policy only during cold cache refresh", builder, ref failureCount);
+                AssertNotContains(prologueLateFrame, "GlobalRegistry.", "Prologue acoustic LateFrameTick does not poll registry services directly", builder, ref failureCount);
                 AssertNotContains(prologueLateFrame, "GlobalRegistry.ScalabilityTier", "Prologue acoustic LateFrameTick does not poll scalability tier registry directly", builder, ref failureCount);
                 AssertNotContains(prologueLateFrame, "GlobalRegistry.ScalabilityTierProfileByte", "Prologue acoustic LateFrameTick does not poll scalability profile byte directly", builder, ref failureCount);
                 AssertNotContains(prologueLateFrame, "GlobalRegistry.H8_LOW_MEMORY_PROFILE", "Prologue acoustic LateFrameTick does not poll low-memory registry directly", builder, ref failureCount);
@@ -362,6 +368,17 @@ namespace Hecton8.Audio.Editor
                 AssertNotContains(vocalSlowTick, ".ToString(", "Vocal warning SlowTick has no string formatting", builder, ref failureCount);
                 AssertNotContains(vocalTick, "Debug.Log", "Vocal warning Tick has no debug log allocation path", builder, ref failureCount);
                 AssertNotContains(vocalSlowTick, "Debug.Log", "Vocal warning SlowTick has no debug log allocation path", builder, ref failureCount);
+            }
+
+            if (playerThrusterAudio.Length > 0)
+            {
+                string thrusterColdRuntime = ExtractMethodBody(playerThrusterAudio, "private void RefreshRuntimeAudioServicesCold()");
+                string thrusterMixerRoute = ExtractMethodBody(playerThrusterAudio, "private void TryAssignMixerRoute(");
+                AssertContains(playerThrusterAudio, "IGlobalRegistryHotSwapRefListener", "Player thruster fallback audio listens for audio service rebinding", builder, ref failureCount);
+                AssertContains(thrusterColdRuntime, "GlobalRegistry.Audio", "Player thruster fallback resolves audio service only during cold runtime refresh", builder, ref failureCount);
+                AssertContains(playerThrusterAudio, "GlobalRegistryServiceSlot.Audio", "Player thruster fallback handles audio service hot swaps", builder, ref failureCount);
+                AssertContains(thrusterMixerRoute, "_cachedSpatialAudioManager", "Player thruster mixer route uses cached spatial audio manager", builder, ref failureCount);
+                AssertNotContains(thrusterMixerRoute, "GlobalRegistry.Audio", "Player thruster mixer route does not poll audio registry directly", builder, ref failureCount);
             }
 
             if (physicsApply.Length > 0)

@@ -433,3 +433,11 @@ Solution: Added finite gates for bend feature, local strength, crush depth/curre
 Rejected Alternatives: Relying on final output sanitation, clamping every shared helper globally, or removing the crush contribution. Final-only sanitation wastes NaN intermediate work; global helper clamps would tax unrelated fragment paths; removing crush contribution breaks vehicle pressure visuals.
 Scalability potential: Low/MX350 remains bypassed by `_MATH_LOD_LOW` and spends no extra ALU. Mid/High/Ultra keep full valid dynamic hull bending while malformed scalar globals degrade to deterministic no-op contribution.
 Hardware Impact: Saves one crush radius-mask evaluation whenever crush displacement is zero and prevents fault-frame NaN propagation through buckle/displacement math. Estimated 1-4 us saved per 1k affected UberNoir vertices on MX350-class GPUs in calm-crush states; valid active-crush overhead is scalar finite checks inside the already-active bending path.
+
+## Follow-Up Correction - UberNoir Bend No-Op Early Exits
+
+Problem: After finite sanitation, UberNoir still evaluated crush/habitat displacement branches and buckling noise when bending was disabled, local strength was zero, or both pressure displacement contributions resolved to zero.
+Solution: Return `safePositionWS` immediately when bend feature/strength cannot produce output, and return again before buckling when the combined crush/habitat displacement is below epsilon.
+Rejected Alternatives: Leaving the existing final zero displacement path, or adding a new material keyword. Final zero displacement preserves correctness but wastes vertex ALU; a new keyword widens shader variant pressure for a local no-op case.
+Scalability potential: Low/MX350 remains bypassed by `_MATH_LOD_LOW`. Mid/High/Ultra skip dead bend work on disabled/calm materials while keeping full visual overkill once crush or habitat pressure actually contributes.
+Hardware Impact: Saves crush/habitat mask and buckling work on non-low no-op vertices. Estimated 2-8 us saved per 1k UberNoir vertices in disabled/calm bend states on MX350-class GPUs; active bend behavior is unchanged.

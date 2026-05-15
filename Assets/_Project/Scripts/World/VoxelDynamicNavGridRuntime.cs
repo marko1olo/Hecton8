@@ -1260,8 +1260,15 @@ namespace Hecton8.World
 
             double3 stableUniverseRoot = new double3(matrix.m03, matrix.m13, matrix.m23);
             Vector3 runtimeRoot = HectonMapMagicVegetationBridge.ToRuntimeSpace(stableUniverseRoot);
-            center = new float3(runtimeRoot.x, runtimeRoot.y, runtimeRoot.z) + centerOffset;
-            return true;
+            float3 runtimeRoot3 = new float3(runtimeRoot.x, runtimeRoot.y, runtimeRoot.z);
+            center = runtimeRoot3 + centerOffset;
+            return math.all(math.isfinite(runtimeRoot3)) &&
+                   math.all(math.isfinite(centerOffset)) &&
+                   math.all(math.isfinite(center)) &&
+                   math.all(math.isfinite(extents)) &&
+                   extents.x > 0f &&
+                   extents.y > 0f &&
+                   extents.z > 0f;
         }
 
         internal static bool TryGetPassabilityPayload(
@@ -2107,35 +2114,70 @@ namespace Hecton8.World
                 return 0;
 
             int obstacleCount = 0;
-            if (vegetationBridge.TryGetActiveUnderwaterNativePayload(out _, out NativeArray<HectonVegetationInstanceData> underwaterMetadata, out NativeArray<int> underwaterTypes, out int underwaterCount) &&
-                vegetationBridge.TryGetActiveUnderwaterSemanticPayload(out NativeArray<int> underwaterSemanticTypes, out _, out int underwaterSemanticCount))
+            if (vegetationBridge.TryGetActiveUnderwaterNativePayload(
+                    out NativeArray<Matrix4x4> underwaterMatrices,
+                    out NativeArray<HectonVegetationInstanceData> underwaterMetadata,
+                    out NativeArray<int> underwaterTypes,
+                    out int underwaterCount) &&
+                vegetationBridge.TryGetActiveUnderwaterSemanticPayload(
+                    out NativeArray<int> underwaterSemanticTypes,
+                    out _,
+                    out int underwaterSemanticCount))
             {
-                obstacleCount += CountMacroFloraObstacles(underwaterMetadata, underwaterTypes, underwaterSemanticTypes, math.min(underwaterCount, underwaterSemanticCount));
+                obstacleCount += CountMacroFloraObstacles(
+                    underwaterMatrices,
+                    underwaterMetadata,
+                    underwaterTypes,
+                    underwaterSemanticTypes,
+                    math.min(underwaterCount, underwaterSemanticCount));
             }
 
-            if (vegetationBridge.TryGetActiveSurfaceNativePayload(out _, out NativeArray<HectonVegetationInstanceData> surfaceMetadata, out NativeArray<int> surfaceTypes, out int surfaceCount) &&
-                vegetationBridge.TryGetActiveSurfaceSemanticPayload(out NativeArray<int> surfaceSemanticTypes, out _, out int surfaceSemanticCount))
+            if (vegetationBridge.TryGetActiveSurfaceNativePayload(
+                    out NativeArray<Matrix4x4> surfaceMatrices,
+                    out NativeArray<HectonVegetationInstanceData> surfaceMetadata,
+                    out NativeArray<int> surfaceTypes,
+                    out int surfaceCount) &&
+                vegetationBridge.TryGetActiveSurfaceSemanticPayload(
+                    out NativeArray<int> surfaceSemanticTypes,
+                    out _,
+                    out int surfaceSemanticCount))
             {
-                obstacleCount += CountMacroFloraObstacles(surfaceMetadata, surfaceTypes, surfaceSemanticTypes, math.min(surfaceCount, surfaceSemanticCount));
+                obstacleCount += CountMacroFloraObstacles(
+                    surfaceMatrices,
+                    surfaceMetadata,
+                    surfaceTypes,
+                    surfaceSemanticTypes,
+                    math.min(surfaceCount, surfaceSemanticCount));
             }
 
             return obstacleCount;
         }
 
         private static int CountMacroFloraObstacles(
+            NativeArray<Matrix4x4> matrices,
             NativeArray<HectonVegetationInstanceData> metadata,
             NativeArray<int> types,
             NativeArray<int> semanticTypes,
             int count)
         {
-            if (!metadata.IsCreated || !types.IsCreated || !semanticTypes.IsCreated || count <= 0)
+            if (!matrices.IsCreated ||
+                !metadata.IsCreated ||
+                !types.IsCreated ||
+                !semanticTypes.IsCreated ||
+                count <= 0)
+            {
                 return 0;
+            }
 
-            int safeCount = math.min(count, math.min(metadata.Length, math.min(types.Length, semanticTypes.Length)));
+            int safeCount = math.min(
+                count,
+                math.min(
+                    matrices.Length,
+                    math.min(metadata.Length, math.min(types.Length, semanticTypes.Length))));
             int obstacleCount = 0;
             for (int i = 0; i < safeCount; i++)
             {
-                if (TryResolveMacroFloraObstacle(metadata[i], types[i], semanticTypes[i], out _, out _))
+                if (TryResolveMacroFloraObstacleWorldBounds(matrices[i], metadata[i], types[i], semanticTypes[i], out _, out _))
                     obstacleCount++;
             }
 
@@ -2265,11 +2307,17 @@ namespace Hecton8.World
                 return;
             }
 
+            int remainingCapacity = snapshot.Length - writeIndex;
+            if (remainingCapacity <= 0)
+                return;
+
             int safeCount = math.min(
                 count,
                 math.min(
-                    matrices.Length,
-                    math.min(metadata.Length, math.min(types.Length, semanticTypes.Length))));
+                    remainingCapacity,
+                    math.min(
+                        matrices.Length,
+                        math.min(metadata.Length, math.min(types.Length, semanticTypes.Length)))));
             for (int i = 0; i < safeCount; i++)
             {
                 if (!TryResolveMacroFloraObstacleWorldBounds(matrices[i], metadata[i], types[i], semanticTypes[i], out float3 center, out float3 extents))

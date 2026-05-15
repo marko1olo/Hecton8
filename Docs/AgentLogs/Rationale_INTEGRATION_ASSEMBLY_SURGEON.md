@@ -2,7 +2,7 @@
 
 Agent: INTEGRATION_ASSEMBLY_SURGEON
 Domain: Unity Compilation Graph / Integrator
-Status: BUILD SUCCESSFUL / FRESH25 CURRENT-DISK GREEN (Hecton8.Core --no-restore 0 warnings / 0 errors)
+Status: BUILD SUCCESSFUL / FRESH27 CURRENT-DISK GREEN (Hecton8.Core --no-restore 0 warnings / 0 errors)
 
 ## Decision 0 - Session Initialization
 
@@ -220,10 +220,18 @@ Rejected Alternatives: Keeping the `Update()` exception was rejected. Blindly re
 Scalability potential: Low tier removes a standalone Unity Update fallback from the Quest FFR path. Middle/High/Ultra keep deterministic dispatcher ownership; duplicate-signal cleanup can now be staged without silent API drift.
 Hardware Impact: Runtime impact measured: 0 us. Static tool verification cost: 296,100,000 us for the final H-Phi budget pass. Expected player-frame savings are not claimed without profiler evidence.
 
-## Decision 26 - Exact Replacement Reference Correction
+## Decision 28 - Exact Replacement Reference Correction
 
 Problem: The previous replacement-lane pass treated `ShapesRuntime` and `VolumetricLightBeam` as live because broad text scans saw generic words such as `Disc`, `Triangle`, `Crest`, and custom volumetric feature names. That was too weak for a Core graph dependency.
 Solution: Re-ran exact namespace/type scans for the actual package surfaces. `Assets/_Project/Scripts` had no `using Shapes`, `Shapes.`, `ShapeRenderer`, `ImmediateModeShapeDrawer`, `VLB`, `VolumetricLightBeam`, `VolumetricDustParticles`, `BeamGeometry`, `DynamicOcclusion`, or `TrackRealtimeChangesOnBeam` usage. Removed the `ShapesRuntime` and `VolumetricLightBeam` project-reference replacement blocks from `Directory.Build.targets`, then lowered the Core graph budget to 14 total bridge debt refs and 6 replacement debt refs.
 Rejected Alternatives: Keeping stale replacement references for safety was rejected because the source-backed scan had exact zero package-surface hits. Editing generated `Hecton8.Core.csproj` was rejected because Unity regenerates it. Removing live refs for `Crest`, `GPUInstancer`, `Hecton8.Input`, `Unity.RenderPipelines.Universal.Runtime`, `WaveHarmonic.Crest`, or `WaveHarmonic.Crest.Shared` was rejected because exact source hits remain.
 Scalability potential: Low tier and weak developer machines carry fewer package assemblies in the Core medic lane. Middle/High/Ultra visual lanes still keep Shapes and VLB available to their owning assemblies; Core no longer pays static graph coupling for package surfaces it does not reference.
 Hardware Impact: Runtime impact 0 us. Static graph impact: source-backed bridge references dropped from 27 to 25, total bridge debt from 16 to 14, and project-reference replacement debt from 8 to 6. No player-frame microsecond savings are claimed.
+
+## Decision 29 - Duplicate Signal Name Zero Closure
+
+Problem: H-Phi exposed six duplicate `*Signal` struct names. They were real public payload names, not audit noise: culling camera contracts duplicated Core camera signals, gameplay combat queue payload duplicated the Core combat signal lane, habitat callback damage payload duplicated Core damage, player interaction stress duplicated equipment interaction, and macro-database contract hydration duplicated the Core hydration lane.
+Solution: Renamed non-canonical payloads while preserving behavior and layout: `InstanceCullingCameraPositionSignal`, `InstanceCullingCameraFrustumSignal`, `CombatDamageRequest`, `HabitatDamageSignal`, `PlayerInteractionStressSignal`, and `MacroDatabaseSectorHydrationSignal`. The macro-database contracts surface kept `SectorHydratedSignal` because the CLI Core lane compiles against the existing contracts DLL; the Core signal-bus payload was renamed instead. Fresh27 compiled green and the full H-Phi gate passed with `DuplicateSignalNameCount=0`.
+Rejected Alternatives: Hiding the debt with an audit whitelist was rejected because the signal-lane mandate forbids duplicate names. Renaming the macro-database contracts payload only was rejected after Fresh26 proved the prebuilt `Hecton8.Core.Contracts` DLL still exposes `SectorHydratedSignal`. Leaving public duplicates until a future batch was rejected because call-site evidence showed the non-canonical names could be changed without behavior changes.
+Scalability potential: Low tier benefits from unambiguous bounded signal lanes and fewer false coupling decisions. Middle/High/Ultra systems can attach richer visual consumers to uniquely named lanes without type-name collisions or accidental contract reuse.
+Hardware Impact: Runtime frame impact is 0 us measured; these are type-name and compile-contract changes only. Fresh27 build verification cost: 117,430,000 us. H-Phi duplicate-zero verification cost: 190,100,000 us.

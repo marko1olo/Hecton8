@@ -4,7 +4,24 @@ Agent: INTEGRATION_ASSEMBLY_SURGEON
 Role: SYSTEMS_ARCHITECT
 Domain: Unity Compilation Graph / Integrator
 Prompt task count: 15 (current in-chat XML; older 17-task static pass retained below)
-Current state: BUILD SUCCESSFUL / FRESH25 CURRENT-DISK GREEN (Hecton8.Core --no-restore 0 warnings / 0 errors)
+Current state: BUILD SUCCESSFUL / FRESH27 CURRENT-DISK GREEN (Hecton8.Core --no-restore 0 warnings / 0 errors)
+
+## 2026-05-15 Duplicate Signal Zero Pass
+
+Directive: continue improving H-Phi debt accurately after Fresh25.
+Domain: Echelon 9 / The Integrator (signal contract collision cleanup and compile authority).
+Current state: BUILD SUCCESSFUL / FRESH27 CURRENT-DISK GREEN.
+Compile artifact: `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh27.log`.
+H-Phi artifact: `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_DuplicateZero.json`.
+
+- [x] Status and rationale reloaded before edits | Justification: disk state was read before touching signal contracts | Alternatives rejected: compressed chat memory | Estimate: 200 us process
+- [x] Relevant mandates re-read | Justification: signal lane segregation and LTS compatibility mandate duplicate name removal and DLL/source compatibility | Alternatives rejected: bulk mandate loading | Estimate: 1200 us process
+- [x] Duplicate signal declarations mapped | Justification: exact source scan identified six duplicate names and concrete declaration/call-site files | Alternatives rejected: blind public rename from prior JSON only | Estimate: 49,000,000 us static scan
+- [x] Non-canonical payloads renamed | Justification: culling, gameplay combat queue, habitat damage callback, player interaction stress, and Core macro-database signal-bus payloads now have globally unique type names | Alternatives rejected: audit whitelist or behavior-changing payload rewrites | Estimate: 0 us runtime
+- [x] Macro database DLL compatibility preserved | Justification: Fresh26 proved the current contracts DLL still exposes `SectorHydratedSignal`; final fix renamed the Core signal lane instead of forcing a contract-DLL rename | Alternatives rejected: relying on a define that the generated Core project overwrote | Estimate: 0 us runtime
+- [x] Fresh compile revalidated | Justification: Fresh27 reports `Build succeeded`, `0 Warning(s)`, `0 Error(s)` | Alternatives rejected: reporting Fresh25 after source edits | Estimate: 117,430,000 us build verification
+- [x] H-Phi duplicate-zero gate verified | Justification: `HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_DuplicateZero.json` exits 0 with `DuplicateSignalNameCount=0`, `AupPrecisionRisk=0`, and unchanged Core graph budgets | Alternatives rejected: quick scan as final proof | Estimate: 190,100,000 us tooling verification
+- [x] H-Phi documentation updated | Justification: `HECTON_PHI_STATIC_METRIC.md` now records the zero duplicate-name baseline and the DLL-compatible macro-database decision | Alternatives rejected: log-only knowledge | Estimate: 0 us runtime
 
 ## 2026-05-15 Fresh25 Continuation
 

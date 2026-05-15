@@ -163,6 +163,7 @@ Static source audit of `Assets/_Project/Scripts/SaveData.cs` found:
 - `RunModifiersDTO` contains four `bool` fields and a `string`; it is managed compatibility data only.
 - `ModuleDTO`, `ModuleGraphNodeDTO`, `PDAMarkerEntryDTO`, `ProceduralLorePlacementDTO`, barter/log/scan DTOs, and several root `SaveData` fields contain managed strings or arrays. They are not native DTOs.
 - `Dictionary<string, *>`, `HashSet<int>`, and `List<string>` fields in root `SaveData` are migration/compatibility debt and must not enter Burst or raw save pages.
+- `SaveBinaryPayloadCodec` now caps each serialized UTF-16 string at `ProtectedLz4BlockSizeBytes` (8192 chars / 16 KiB) before writer copy or reader allocation. Larger mod state must stay in protected indexed sectors, not root compatibility strings.
 
 PHI_VOD handoff: create or reuse fixed blit mirrors for the remaining managed compatibility DTOs above. Do not mutate existing public DTO field order during the active batch without a legacy wrapper.
 

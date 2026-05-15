@@ -267,3 +267,14 @@ Cinematic cheats used: Preserved the Low-tier snap and non-Low dither fade. The 
 Exact microseconds saved: Estimate only. Expected gain is sub-1 us per active tooltip late frame on i3/MX350; no profiler proof is claimed.
 
 Verification: No dotnet rebuilds were run. Static scans confirmed no late-frame scalability registry poll remains, `ScalabilityEvents` owns runtime tier updates, and existing no-bootstrap/no-direct-Time/no-old-phosphor/no-hot-path scans stayed clean.
+
+## 2026-05-15 Tooltip Active Camera Fail-Closed Gate
+What was wrong: Tooltip camera resolution could retain inactive authored/player camera references and still draw when the render context did not provide a current SRP camera.
+
+What was done: Required `isActiveAndEnabled` for authored and player cameras, cleared inactive cached registry cameras, and kept the `GlobalRenderContext.CurrentCamera` comparison as the final render submission gate.
+
+Cinematic cheats used: No visual change. The same indirect quad prompt remains; invalid camera ownership now fails closed instead of spending draw work on wrong views.
+
+Exact microseconds saved: Estimate only. Steady single-camera frames are neutral; invalid/auxiliary camera paths avoid unnecessary render preparation.
+
+Verification: No dotnet rebuilds were run. Static scans confirmed active-camera checks in tooltip resolution and no forbidden allocation/text/LINQ, bootstrap fallback, direct `Time`, old phosphor fallback, or `resolvedCamera.transform` markers.

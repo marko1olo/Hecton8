@@ -335,3 +335,36 @@ Batch source: Docs/Tasks/CURRENT_BATCH.md
 - Estimate: 0 us meaningful hot-path savings; one `bool` replaces one `int` and removes two Unity frame-global reads from the IK runtime.
 - `rg` confirms no `_motionIntentFrame` or `Time.frameCount` references remain in `FaunaKinematicsRuntime`.
 - No `dotnet` rebuild, compile, Unity import, or response-file probe was run.
+
+### Loop 31: Tentacle Dispatcher Registration Repair Recheck
+
+- Updated `LeviathanTentacleVerletSolver.TryRegister()` to repair one-sided dispatcher registration before retrying.
+- DOD: tentacle solver cannot remain update-registered without late-frame completion/render upload, or late-frame registered without update scheduling, after lifecycle/rebind disturbance.
+- Alternative Rejected: returning when `_registeredUpdate` is true because late-frame is the callback that completes the Burst job, writes blackbox telemetry, and submits indirect rendering.
+- Estimate: 0 us hot path; cold enable/rebind registration only.
+- Static snippet inspection confirms partial registration now unregisters both dispatcher paths and resets both flags before a clean retry.
+- No `dotnet` rebuild, compile, Unity import, or response-file probe was run.
+
+### Loop 32: Tentacle Native Memory Ownership Recheck
+
+- Moved `LeviathanTentacleVerletSolver` persistent SOA and blackbox arrays from direct `new NativeArray<T>` construction to `H8Memory.Allocate/Release` with `SystemID.External`.
+- Added `HasPersistentBuffers()` so Tick and seed paths require the complete native buffer set instead of only `_positions`.
+- Kept `NativeMemorySentinel` labels around the H8Memory-owned arrays and clean up partial allocation attempts immediately.
+- DOD: tentacle arrays are owned by the project native-memory cap/tracking path, and partial allocation cannot leave a schedulable solver with only some lanes present.
+- Alternative Rejected: leaving direct persistent native allocation because it bypasses H8Memory policy; removing sentinel labels because scene-lifetime leak visibility still matters for this blackbox-heavy runtime.
+- Estimate: 0 us hot path beyond a fixed set of `IsCreated` guards before scheduling; cold allocation/release only.
+- `rg` confirms no direct `new NativeArray<` or `array.Dispose(` remains in `LeviathanTentacleVerletSolver`.
+- `git diff --check` on touched code/docs exits 0; output is only LF-to-CRLF warnings.
+- No `dotnet` rebuild, compile, Unity import, or response-file probe was run.
+
+### Loop 33: Tentacle Completion Telemetry Parity Recheck
+
+- Added blackbox telemetry writes when a scheduled tentacle job is finalized during disable, origin-shift completion, pending-origin-shift late-frame completion, or forced lifecycle completion.
+- Changed origin-shift entry to require the complete persistent buffer set before rebasing.
+- Preserved the existing no-render-submit behavior on origin-shift rebase frames.
+- DOD: every path that actually consumes a scheduled tentacle solve now records the completed high-level state before the frame is forgotten.
+- Alternative Rejected: uploading/rendering during origin shift because telemetry coherence is required, but extra render work in an origin-shift barrier is not.
+- Estimate: 0 us normal hot-path change outside already-completed job paths; lifecycle/rebase paths write one fixed telemetry entry.
+- Static grep confirms all `_pendingSolverHandle` completion/finalization sites now feed `WriteTelemetryFrame()` when they consume a scheduled job.
+- `git diff --check` on touched code/docs exits 0.
+- No `dotnet` rebuild, compile, Unity import, or response-file probe was run.

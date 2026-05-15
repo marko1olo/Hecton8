@@ -368,22 +368,24 @@ namespace Hecton8.Atmosphere
                 !_roomBaseIndex.IsCreated ||
                 baseId < 0 ||
                 baseId >= _baseCapacityLimit ||
-                !AreBaseStateLanesReady(baseId + 1))
+                !AreBaseStateLanesReady(baseId + 1) ||
+                !AreRoomStateLanesReady(_roomCount))
             {
                 return false;
             }
 
+            int mappedRoomCount = math.min(_roomCount, _roomBaseIndex.Length);
             int previousStart = 0;
             int previousEnd = 0;
             bool knownBase = baseId < _baseCount;
             if (knownBase)
             {
-                previousStart = math.clamp(_baseRoomStart[baseId], 0, math.max(0, _roomCount));
-                previousEnd = math.min(_roomCount, previousStart + math.max(0, _baseRoomCount[baseId]));
+                previousStart = math.clamp(_baseRoomStart[baseId], 0, math.max(0, mappedRoomCount));
+                previousEnd = math.min(mappedRoomCount, previousStart + math.max(0, _baseRoomCount[baseId]));
             }
 
-            int safeRoomStart = math.clamp(roomStart, 0, math.max(0, _roomCount - 1));
-            int safeRoomCount = math.clamp(roomCount, 0, math.max(0, _roomCount - safeRoomStart));
+            int safeRoomStart = math.clamp(roomStart, 0, math.max(0, mappedRoomCount - 1));
+            int safeRoomCount = math.clamp(roomCount, 0, math.max(0, mappedRoomCount - safeRoomStart));
             for (int room = previousStart; room < previousEnd; room++)
             {
                 if (_roomBaseIndex[room] == baseId)
@@ -441,7 +443,8 @@ namespace Hecton8.Atmosphere
             if (_stepRunning ||
                 edgeIndex < 0 ||
                 edgeIndex >= _bulkheadCapacityLimit ||
-                !AreBulkheadLanesReady(edgeIndex + 1))
+                !AreBulkheadLanesReady(edgeIndex + 1) ||
+                !AreRoomStateLanesReady(_roomCount))
             {
                 return false;
             }
@@ -1054,7 +1057,8 @@ namespace Hecton8.Atmosphere
                 _baseCount = baseId + 1;
             }
 
-            if ((uint)roomId < (uint)_roomCount)
+            if ((uint)roomId < (uint)_roomCount &&
+                (uint)roomId < (uint)_roomBaseIndex.Length)
             {
                 if (_baseRoomCount[baseId] <= 0)
                 {
@@ -1328,7 +1332,11 @@ namespace Hecton8.Atmosphere
             if (!_telemetryRing.IsCreated)
                 return;
 
-            int lastIndex = (_telemetryWriteIndex + TelemetryCapacity - 1) % TelemetryCapacity;
+            int telemetryLength = _telemetryRing.Length;
+            if (telemetryLength <= 0)
+                return;
+
+            int lastIndex = (_telemetryWriteIndex + telemetryLength - 1) % telemetryLength;
             GasDynamicsTelemetryEntry entry = _telemetryRing[lastIndex];
             if ((entry.Flags & TelemetryFlagNaN) != 0)
                 DumpBlackBoxOnce();
@@ -1349,7 +1357,7 @@ namespace Hecton8.Atmosphere
                     writer.Write(DumpMagic);
                     writer.Write(DumpFormatVersion);
                     writer.Write(TelemetryEntrySizeBytes);
-                    writer.Write(TelemetryCapacity);
+                    writer.Write(_telemetryRing.Length);
                     writer.Write(_telemetryWriteIndex);
                     writer.Write(_tickCount);
                     for (int i = 0; i < _telemetryRing.Length; i++)

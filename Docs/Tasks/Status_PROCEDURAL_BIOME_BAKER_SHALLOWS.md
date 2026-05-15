@@ -320,3 +320,27 @@ Status: PENDING VERIFICATION
 - Verification avoided dotnet rebuilds and Unity import. `RuleFolderExactnessYamlScan Count=3 Bad=0`; `git diff --check` passed for the baker; source brace balance stayed `Delta=0` with `NonAscii=0`; forbidden source scan stayed clean.
 - Rejected alternative: ignoring extra rules was rejected because stale authoring inputs can be selected manually and regenerate payloads outside the canonical batch contract.
 - H-Phi impact remains domain-local evidence only: the Shallows rule folder is now fail-closed without runtime registries, runtime bake paths, material mutation, or cross-domain dependencies.
+
+### Loop 36 - Shallows Atlas And Material Folder Exactness Contract
+
+- Found another stale-asset drift path: the validator locked expected atlas/material assets by path, but did not reject extra `TX_ProceduralBio_Shallows*` textures or `MAT_ProceduralBio_Shallows*` materials beside the canonical payloads.
+- Patched `ValidateSafeShallowsAssets` with `ValidateAtlasFolderContract` and `ValidateMaterialFolderContract`, plus a `MaterialFolder` constant, so the Shallows atlas/material ownership surface must stay exact.
+- Verification avoided dotnet rebuilds and Unity import. `AtlasFolderExactnessScan Count=4 Bad=0`; `MaterialFolderExactnessScan Count=1 Bad=0`; `git diff --check` passed for the baker; source brace balance stayed `Delta=0` with `NonAscii=0`; forbidden source scan stayed clean.
+- Rejected alternative: ignoring extras was rejected because stale atlases/materials can be rebound manually or by future tooling and silently split the shared-material contract. Automatic deletion was rejected because validation must fail closed and report, not destructively edit assets.
+- H-Phi impact remains domain-local evidence only: Shallows atlas/material folders are now fail-closed without runtime material mutation, texture fallback logic, material clones, or cross-domain ownership.
+
+### Loop 37 - Shader Pragma Line-Token Hardening
+
+- Found a validator-quality defect in the shader pragma budget: broad source substring counts could be satisfied by commented pragma text instead of actual line-start shader directives.
+- Patched `ValidateShaderPragmaBudget` to use `CountShaderLineToken` for every pragma check and removed the broader `CountSourceToken` helper.
+- Verification avoided dotnet rebuilds and Unity import. Shader line-token scan matched all expected pragma counts and zero additional-light multi_compile; `CountSourceToken Count=0`; `git diff --check` passed for the baker; source brace balance stayed `Delta=0` with `NonAscii=0`; forbidden source scan stayed clean.
+- Rejected alternative: leaving substring counting was rejected because comments should not satisfy a render-budget contract. Regex parsing was rejected because the existing line scanner is sufficient and allocation-free for this editor validator.
+- H-Phi impact remains domain-local evidence only: shader variant budget validation is now stricter without changing runtime shader behavior, material variants, or cross-domain ownership.
+
+### Loop 38 - Mesh And Prefab Family Subfolder Exactness Contract
+
+- Found a stale-family drift path: the three canonical mesh/prefab families validated, but extra subfolders under the Shallows mesh or prefab roots were not rejected.
+- Patched `ValidateSafeShallowsAssets` with `ValidateFamilySubfolderContracts` and `ValidateFamilySubfolderContract`, requiring exactly `TubeCoral`, `Kelp`, and `PorousRock` below both Shallows roots.
+- Verification avoided dotnet rebuilds and Unity import. `FamilySubfolderExactnessScan Bad=0` with `Count=3` for both mesh and prefab roots; `git diff --check` passed for the baker; source brace balance stayed `Delta=0` with `NonAscii=0`; forbidden source scan stayed clean.
+- Rejected alternative: ignoring extra subfolders was rejected because stale generated families can be selected or streamed by future tooling outside the canonical batch contract. Automatic cleanup was rejected because validation must fail closed and report.
+- H-Phi impact remains domain-local evidence only: Shallows generated-family roots are now fail-closed without runtime registries, runtime filtering, asset deletion, or cross-domain dependencies.

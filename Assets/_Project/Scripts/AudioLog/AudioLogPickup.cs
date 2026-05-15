@@ -17,7 +17,7 @@ namespace Hecton8.Narrative
     [RequireComponent(typeof(Collider))]
     public sealed class AudioLogPickup : MonoBehaviour, IInteractable, ILocalizationLanguageChangedListener
     {
-        private const uint WfcOutpostDatapadSourceHash = 0x57464350u; // WFCP
+        private const uint WfcOutpostDatapadSourceHash = 0x57464341u; // WFCA
         private const byte WfcDatapadLootedFlag = (byte)WfcOutpostCellStateFlags.DatapadLooted;
         private const int MaxRegisteredPickupTemplates = 64;
         private const string DefaultPlaybackVerbRu = "Vosproizvesti zapis";

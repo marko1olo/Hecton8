@@ -416,3 +416,59 @@ Verification:
 - No dotnet build, restore, or rebuild was run.
 - `rg` found no `OnDepthChanged +=` or `OnDepthChanged -=` remnants in `SuitHUDV4CanvasOverlay`.
 - `git diff --check` on touched code reported only standard LF/CRLF notices.
+
+## 2026-05-15 - Contextual Advisory Death Aggregate Addendum
+
+What was wrong:
+- `PDAContextualAdvisorySystem` still subscribed to `HectonSurvivalSystem.OnDeath`.
+- The advisory system already slow-ticks for survival pressure/thermal state, so a managed death callback was unnecessary.
+- Reading only `LastDeathCause` would replay persisted death state without a new-death sequence.
+
+What was done:
+- Added a latest death-flagged `SurvivalVitalsChangedSignal` snapshot and sequence to `GlobalSignals`.
+- `PDAContextualAdvisorySystem` now consumes that snapshot from `SlowTick()` before the alive-state early return.
+- Source filtering uses the folded survival entity id, matching the survival-vitals producer.
+- Source rebind baselines the latest death sequence so stale deaths are not counted after enable/load.
+- Removed the direct `OnDeath +=` / `OnDeath -=` path from contextual advisories.
+
+Cinematic Cheats used:
+- Slow progression logic reads one monotonic aggregate instead of owning a callback.
+- The full 32-byte survival-vitals packet remains available for richer consumers without extra producer references.
+
+Exact microseconds saved:
+- Estimated 0.1-0.3 us on death dispatch by removing the contextual advisory delegate hook.
+- Steady-state frame cost remains 0; the consumer runs only on the existing slow tick.
+
+Verification:
+- No dotnet build, restore, or rebuild was run.
+- `rg` found no `OnDeath +=` / `OnDeath -=` remnants in `PDAContextualAdvisorySystem`.
+- `rg` confirms the only remaining PDA/progression survival death subscriber is `PDALogbookManager`, left because converting it would add idle UI pump cost.
+- `git diff --check` on touched code reported only standard LF/CRLF notices.
+
+## 2026-05-15 - Visor Survival Vitals SignalLane Addendum
+
+What was wrong:
+- `VisorHUDController` still subscribed to `HectonSurvivalSystem.OnTemperatureChanged` and `OnPressureChanged`.
+- The visor already runs through the UI tick pipeline, so survival callbacks were only dirty triggers.
+- `SurvivalVitalsChangedSignal` had temperature dirtiness but lacked a pressure dirty bit.
+
+What was done:
+- Added `SurvivalVitalsChangedSignalFlags.Pressure`.
+- `HectonSurvivalSystem.PublishDirty()` now marks pressure changes on the shared vitals packet.
+- `VisorHUDController` caches the folded survival source id and consumes `SignalBus<SurvivalVitalsChangedSignal>` in its existing tick.
+- The visor reads exact temperature/pressure only after matching temperature or pressure dirty flags.
+- Removed direct visor temperature/pressure survival subscribe and unsubscribe code.
+
+Cinematic Cheats used:
+- Condensation, frost, and pressure shock visuals ride the shared dirty mask instead of owning callbacks.
+- No extra dispatcher lane or per-system producer packet was added.
+
+Exact microseconds saved:
+- Estimated 0.2-0.7 us on visor thermal/pressure bursts by removing two delegate hooks.
+- Steady-state cost is a bounded source-filtered packet scan in an already active UI tick.
+
+Verification:
+- No dotnet build, restore, or rebuild was run.
+- `rg` found no visor `OnTemperatureChanged +=`, `OnTemperatureChanged -=`, `OnPressureChanged +=`, or `OnPressureChanged -=` remnants.
+- `rg` confirmed `SurvivalVitalsChangedSignalFlags.Pressure` publication from `HectonSurvivalSystem`.
+- `git diff --check` on touched code reported only standard LF/CRLF notices.

@@ -78,3 +78,9 @@ Task loop 14:
 - [x] Verify third pushed checkpoint | DOD: `88f698e08` pushed to `origin/main`; post-fetch divergence returned `0 0` | Rejected: assuming remote synchronization without fetch | Estimate: 0 us runtime.
 - [x] Classify final bounded tail | DOD: 22-file tail checked with `git diff --stat`, `git diff --check`, and changed-file marker scan | Rejected: endless checkpoint loop while parallel agents continue writing | Estimate: 0 us runtime.
 - [x] Prepare final bounded checkpoint | DOD: loop 14 evidence appended before staging final local tail for this run | Rejected: force-push/amend/reset | Estimate: 0 us runtime.
+
+Task loop 15:
+- [x] Re-open pull gate | DOD: `git fetch origin`; `rev-list origin/main...HEAD` returned `0 0`, so no pull was required | Rejected: pulling over local live edits without incoming commits | Estimate: 0 us runtime.
+- [x] Validate active tail | DOD: 34 tracked/untracked-file tail checked with `git diff --stat`, `git diff --check`, unmerged-path scan, and marker scan | Rejected: staging unchecked edits | Estimate: 0 us runtime.
+- [x] Review runtime surface | DOD: inspected GasDynamicsSolver, GlobalSignals, ShallowsBioForgeBatchBaker, LeviathanTentacleVerletSolver, WFC power boot, headless stress fracture, SaveBinaryPayloadCodec, and ScannerTool hunks | Rejected: docs-only validation while runtime code changed | Estimate: 0 us runtime.
+- [BLOCKED BY DEPENDENCY] CLI compile green proof | DOD attempted: `dotnet build Assembly-CSharp.csproj --no-restore -v:minimal` | Rejected: claiming Unity/build green without a completed artifact | Estimate: 0 us runtime. Blocker: MSBuild process ended without success result after partial output; Unity Console/build log still required.

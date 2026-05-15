@@ -214,3 +214,17 @@ Solution: Removed redundant checks in room configuration, room flag updates, CO2
 Rejected Alternatives: Leaving the branches was rejected because the readiness helpers already prove those lanes before indexing. Removing readiness helpers was rejected because future H-Phi capacity skew still needs fail-closed protection.
 Scalability potential: Low through Ultra keep identical behavior with fewer branch checks on transition packets and room API calls.
 Hardware Impact: Tiny branch reduction only; no measurable frame-time claim.
+
+## Self-Review 24 - Base Room Mapping Capacity Guard
+Problem: `TryConfigureBase` and signal-derived base slot creation still trusted `_roomCount` when writing `_roomBaseIndex`, even though future H-Phi room-lane migration can desynchronize mapping capacity.
+Solution: `TryConfigureBase` now requires full live room readiness for the current room count and clamps remap ranges to `_roomBaseIndex.Length`; transition signals only write a room-to-base mapping when the room id is inside both `_roomCount` and the mapping array length.
+Rejected Alternatives: Trusting `_roomCount` was rejected because it is logical occupancy, not native capacity proof. Rebuilding all base room ranges from managed module state was rejected because gas must stay decoupled from habitat construction modules.
+Scalability potential: Low through Ultra keep identical hibernation behavior while partial native owner migration fails closed instead of indexing stale room mapping memory.
+Hardware Impact: One readiness check and scalar min during base configuration, plus one bounds comparison per transition packet with a valid room id. No frame-time saving claimed; this is crash containment.
+
+## Self-Review 25 - Bulkhead And Telemetry Live-Capacity Guard
+Problem: Bulkhead configuration accepted logical room endpoints without proving room SOA readiness, and the black-box fault checker still indexed telemetry with `TelemetryCapacity` after the scheduler moved to live ring length.
+Solution: `TrySetBulkhead` now requires current room-lane readiness before accepting endpoints. `CheckTelemetryForFault` and dump headers now use `_telemetryRing.Length`, with a zero-length fail-closed guard.
+Rejected Alternatives: Letting the Burst job skip invalid endpoint rooms was rejected for API consistency; the public setter should not admit edges against incoherent room state. Keeping constant dump capacity was rejected because future telemetry ring migration should produce truthful dump metadata.
+Scalability potential: Low through Ultra keep the 300-frame default black box. Future smaller diagnostic rings on low-end devices remain safe, while higher-tier builds can expand the ring without code changes.
+Hardware Impact: One room readiness check per bulkhead edit and one live-length branch on post-step telemetry fault checks. No frame-time saving claimed.

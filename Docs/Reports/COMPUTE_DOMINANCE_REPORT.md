@@ -626,3 +626,53 @@ Evidence bucket result:
 Current dirty hot-target intersections are `Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs` and `Assets/_Project/Scripts/Construction/HabitatGraphManager.cs`.
 
 C++ transfer verdict from compute evidence: `NOT VERIFIED / NO PATCH EVIDENCE`. The top-100 rollout patches contain zero `.cpp`, `.cc`, `.cxx`, `.h`, `.hpp`, `.ixx`, or CMake targets. A project tree scan found existing native audio plugin C++ files under `NativeAudio/HectonSensoryKernel`, plus a third-party Lofelt iOS header. That is native-plugin presence, not evidence of a domain transfer. Do not report HECTON-8 C++ migration completion from this ledger.
+
+## Continuation Addendum - Rate Efficiency Recheck
+
+Snapshot: 2026-05-15T04:47+04:00
+
+The latest rate and cache audit is preserved at `COMPUTE_RATE_EFFICIENCY_AUDIT.md`.
+
+| Metric | Value |
+|---|---:|
+| JSONL sessions with final usage | 756 |
+| JSONL final total tokens | 44,590,504,461 |
+| JSONL input tokens | 44,439,003,137 |
+| JSONL cached input tokens | 42,661,425,024 |
+| JSONL output tokens | 151,242,924 |
+| SQLite token sum | 44,567,638,432 |
+| JSONL/SQLite drift | 0.0513% |
+| Cached-input ratio | 95.99996% |
+| Cache-miss ratio | 4.00004% |
+| Tokens per meaningful script LOC | 57,503.86 |
+| Tokens per script source byte | 1,070.477 |
+| Energy by prompt constant | 2,229.53 MWh |
+
+Cost scenarios using official OpenAI pricing checked on 2026-05-15:
+
+| Scenario | Cache-aware cost | No-cache equivalent | Cache avoided |
+|---|---:|---:|---:|
+| Model-aware local ledger lower bound | USD 28,860.62 | USD 189,914.82 | USD 161,054.20 |
+| All tokens as GPT-5.5 standard | USD 34,755.89 | USD 226,732.30 | USD 191,976.41 |
+| All tokens as GPT-5.5 long-context | USD 67,243.14 | USD 451,195.96 | USD 383,952.83 |
+
+Latest token flow:
+
+| Window | Tokens/sec | Tokens/min | Tokens/hour | Tokens/day equivalent |
+|---|---:|---:|---:|---:|
+| Whole observed period | 12,491.21 | 749,472.71 | 44,968,362.72 | 1,079,240,705.29 |
+| Last 1h | 112,547.68 | 6,752,860.87 | 405,171,652.00 | 9,724,119,648.00 |
+| Last 6h | 97,652.24 | 5,859,134.67 | 351,548,080.00 | 8,437,153,920.00 |
+| Last 24h | 33,084.55 | 1,985,072.94 | 119,104,376.46 | 2,858,505,035.00 |
+
+Worst file-burn-per-LOC signal from the current attribution layer:
+
+| File | Class | Weighted tokens/LOC |
+|---|---|---:|
+| `BUILD_PLAYTEST_ISSUES.md` | docs | 75,665.59 |
+| `Assets/_Project/Scripts/CrashTelemetryBuffer.cs` | code | 55,640.89 |
+| `MASTER_RELEASE_WORK_PLAN.md` | docs | 50,105.00 |
+| `Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs` | code | 37,917.22 |
+| `Assets/_Project/Scripts/BaseModule.cs` | code | 32,380.26 |
+
+Verdict: the cache is carrying the economy. Roughly 96% of input tokens are cached. That makes the bill survivable; it does not make 57,504 tokens per meaningful LOC a clean engineering pipeline.

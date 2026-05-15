@@ -192,6 +192,12 @@ Task Count: 15
 - [x] Node type count clamp | DOD: `TryGetActiveAbyssalNavNodeTypePayload` now uses `ResolveAbyssalNavNodeTypeViewCount` so type payload count is clamped to node and type array lengths without requiring conduit arrays; rejected raw `_abyssalNavNodeCount`; estimate 3 us.
 - [x] Nav graph payload scan | DOD: thermal/flow export, anchor/nav graph payload, and view-helper ranges report no raw division, forbidden hot math, managed allocation, or `foreach`; `git diff --check` passed with LF/CRLF warnings only; estimate 4 us.
 
+## Loop 26 - Conduit Payload Count Decoupling
+
+- [x] Conduit-only count proof | DOD: added `ResolveAbyssalConduitViewCount` so current-conductor payloads clamp to node, conduit-vector, and conduit-strength buffers without requiring node-type metadata; rejected over-coupling optional classification data to current steering; estimate 3 us.
+- [x] Full graph count composition | DOD: `ResolveAbyssalNavGraphViewCount` now composes conduit proof plus node-type proof, preserving stricter full-graph export while avoiding duplicated conduit clamps; rejected two diverging graph count implementations; estimate 2 us.
+- [x] Conduit payload scan | DOD: changed conduit/view-count ranges report no raw division, forbidden hot math, managed allocation, or `foreach`; `git diff --check` was rerun with dotnet rebuilds prohibited; estimate 3 us.
+
 ## Verification
 
 - [x] Static scan | PASS: `StringPullPathJob`, `NativeAStarJob`, `TryResolveAbyssalNavNodeCandidate`, abyssal nav support/hash, nav graph ingress, and funnel telemetry conversion regions have no `math.normalize`, `math.length(`, `math.distance(`, `.normalized`, or raw `/` code matches after loop 19.
@@ -201,6 +207,7 @@ Task Count: 15
 - [x] Payload boundary targeted scan | PASS: `TryGetEcosystemFlowFieldPayload`, wake/pulse ingress, hotspot update, threat payload getters, and threat grid view helpers report no forbidden hot math/allocation; the only `/` hit is integer index decomposition in hotspot decode.
 - [x] Direct native view targeted scan | PASS: direct flow/nav-node/path view helpers report no raw division, forbidden hot math, managed allocation, or `foreach`.
 - [x] Nav graph payload targeted scan | PASS: thermal/flow exports, anchor/nav-node/conduit payload getters, native nav graph getter, and new node-type view-count helper report no raw division, forbidden hot math, managed allocation, or `foreach`.
+- [x] Conduit payload targeted scan | PASS: `ResolveAbyssalConduitViewCount`, `ResolveAbyssalNavGraphViewCount`, and `TryGetAbyssalCurrentConduitPayload` report no raw division, forbidden hot math, managed allocation, or `foreach`.
 - [x] Diff hygiene | PASS: `git diff --check` passed for touched source/status/rationale/log files; only LF-to-CRLF working-copy warnings were emitted.
 - [x] Static H-Phi audit | ATTEMPTED: `Tools/Architecture/HectonPhiAudit.ps1 -Json` timed out after 120 seconds under current repo load; no score claimed from this pass.
 - [x] Compile check | BLOCKED BY DEPENDENCY: bounded no-reference `dotnet build Hecton8.Core.csproj --no-restore /m:1 /nr:false /p:BuildProjectReferences=false` completed with 63 unrelated errors in `VRAMEnforcer`, `VoxelDeltaProcessor`, `SealedDoor`, `BinaryLayoutManifest`, and `HardwareTierDetector`; none were reported in `VegetationFlowFieldIntegrator.cs`, `VegetationNavGridSynchronizer.cs`, or `HectonMapMagicVegetationBridge.cs`.

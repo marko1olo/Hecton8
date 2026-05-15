@@ -1,6 +1,7 @@
 using System;
 using Hecton.Localization;
 using Hecton8.Core;
+using Hecton8.Core.Signals;
 using Hecton8.Gameplay;
 using Hecton8.Inventory;
 using Hecton8.Modding;
@@ -112,6 +113,8 @@ namespace Hecton8.Progression
         // COLD ALLOC: uint[8] - pre-registered advisory notification hashes - owner: PDAContextualAdvisorySystem
         private readonly uint[] _advisoryNotificationHashes = new uint[AdvisoryNotificationCapacity];
         private HectonSurvivalSystem _survivalSystem;
+        private uint _survivalSignalSourceId;
+        private int _lastSurvivalDeathSignalSequence;
         private bool _registeredToTick;
         private bool _registeredToSave;
         private bool _advisoryNotificationsCached;
@@ -230,6 +233,8 @@ namespace Hecton8.Progression
             if (!ResolveOwnersHot())
                 return;
 
+            ConsumeSurvivalDeathSignal();
+
             if (_survivalSystem == null || !_survivalSystem.IsAlive)
                 return;
 
@@ -323,12 +328,31 @@ namespace Hecton8.Progression
                 PushAdvisory(_inventoryFullAdvisoryHash, InventoryFullAdvisoryId, InventoryFullMessage);
         }
 
-        private void HandleSurvivalDeath()
+        private void ConsumeSurvivalDeathSignal()
         {
-            if (_survivalSystem == null)
+            uint sourceId = _survivalSignalSourceId;
+            if (sourceId == 0u)
                 return;
 
-            switch (_survivalSystem.LastDeathCause)
+            if (!GlobalSignals.TryGetLatestSurvivalDeathSignal(out SurvivalVitalsChangedSignal signal, out int sequence))
+                return;
+
+            if (sequence == _lastSurvivalDeathSignalSequence)
+                return;
+
+            _lastSurvivalDeathSignalSequence = sequence;
+            if (signal.SourceId != sourceId ||
+                (signal.Flags & SurvivalVitalsChangedSignalFlags.Death) == 0u)
+            {
+                return;
+            }
+
+            HandleSurvivalDeath((SurvivalDeathCause)signal.DeathCause);
+        }
+
+        private void HandleSurvivalDeath(SurvivalDeathCause cause)
+        {
+            switch (cause)
             {
                 case SurvivalDeathCause.OxygenDepletion:
                     if ((_issuedFlags & AdvisoryFlags.OxygenDeaths) == 0)
@@ -409,17 +433,14 @@ namespace Hecton8.Progression
 
         private void RebindOwnerSubscriptions()
         {
-            UnbindOwnerSubscriptions();
             ResolveOwnersCold();
-
-            if (_survivalSystem != null)
-                _survivalSystem.OnDeath += HandleSurvivalDeath;
+            RefreshSurvivalSignalBinding();
         }
 
         private void UnbindOwnerSubscriptions()
         {
-            if (_survivalSystem != null)
-                _survivalSystem.OnDeath -= HandleSurvivalDeath;
+            _survivalSignalSourceId = 0u;
+            _lastSurvivalDeathSignalSequence = 0;
         }
 
         private bool ResolveOwnersHot()
@@ -433,6 +454,25 @@ namespace Hecton8.Progression
                 TryGetComponent(out _survivalSystem);
 
             return _survivalSystem != null;
+        }
+
+        private void RefreshSurvivalSignalBinding()
+        {
+            uint sourceId = ResolveSurvivalSignalSourceId(_survivalSystem);
+            if (_survivalSignalSourceId == sourceId)
+                return;
+
+            _survivalSignalSourceId = sourceId;
+            _lastSurvivalDeathSignalSequence = GlobalSignals.TryGetLatestSurvivalDeathSignal(out _, out int sequence)
+                ? sequence
+                : 0;
+        }
+
+        private static uint ResolveSurvivalSignalSourceId(HectonSurvivalSystem system)
+        {
+            return system != null
+                ? GlobalSignals.FoldEntityIdToSourceId(EntityId.ToULong(system.GetEntityId()))
+                : 0u;
         }
 
         private bool TryMarkIssued(uint advisoryHash)

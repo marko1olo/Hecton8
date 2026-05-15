@@ -381,3 +381,39 @@ Cinematic Cheats used: Static offline bake-input discipline remains the contract
 Exact Microseconds saved: Runtime remains 0 us/frame and 0 bytes procedural allocation. This prevents stale rule assets from producing non-canonical generated payloads; exact runtime microseconds were not profiled.
 
 Verification: No dotnet rebuild and no Unity import was run. `RuleFolderExactnessYamlScan Count=3 Bad=0`; `git diff --check` passed for the baker; source brace balance stayed `Delta=0`, `NonAscii=0`, and forbidden source scan stayed clean.
+
+## 2026-05-15 Shallows Atlas And Material Folder Exactness Contract
+
+What was wrong: Extra Shallows-named atlas textures or shared materials could exist beside the canonical payloads without failing validation.
+
+What was done: Added `ValidateAtlasFolderContract` and `ValidateMaterialFolderContract`, requiring exactly four Shallows atlas textures and exactly one Shallows shared material.
+
+Cinematic Cheats used: One shared material, four shared atlases, opaque shader path, dithered LOD crossfade, and no runtime material/texture fallback remain unchanged.
+
+Exact Microseconds saved: Runtime remains 0 us/frame and 0 bytes procedural allocation. This prevents stale assets from splitting batching or VRAM assumptions; exact runtime microseconds were not profiled.
+
+Verification: No dotnet rebuild and no Unity import was run. `AtlasFolderExactnessScan Count=4 Bad=0`; `MaterialFolderExactnessScan Count=1 Bad=0`; `git diff --check` passed for the baker; source brace balance stayed `Delta=0`, `NonAscii=0`, and forbidden source scan stayed clean.
+
+## 2026-05-15 Shader Pragma Line-Token Hardening
+
+What was wrong: Shader pragma budget validation used substring counts, so commented pragma text could satisfy the contract.
+
+What was done: Switched all pragma budget checks to `CountShaderLineToken` and removed the broad source-token counter.
+
+Cinematic Cheats used: Bounded shader variant budget, opaque shared material, dithered LOD crossfade, and no runtime shader compensation remain unchanged.
+
+Exact Microseconds saved: Runtime remains 0 us/frame and 0 bytes procedural allocation. This prevents hidden shader-source validation false positives; exact runtime microseconds were not profiled.
+
+Verification: No dotnet rebuild and no Unity import was run. Shader line-token pragma scan matched the locked budget, `CountSourceToken Count=0`, `git diff --check` passed for the baker, and forbidden source scan stayed clean.
+
+## 2026-05-15 Mesh And Prefab Family Subfolder Exactness Contract
+
+What was wrong: Extra generated-family subfolders could exist under Shallows mesh or prefab roots while the three canonical families still validated.
+
+What was done: Added `ValidateFamilySubfolderContracts`, requiring exactly TubeCoral, Kelp, and PorousRock under both generated mesh and prefab roots.
+
+Cinematic Cheats used: Static offline generated families remain the contract. No runtime family filtering, registry repair, or destructive asset cleanup was added.
+
+Exact Microseconds saved: Runtime remains 0 us/frame and 0 bytes procedural allocation. This prevents stale generated families from adding hidden mesh/material/VRAM load; exact runtime microseconds were not profiled.
+
+Verification: No dotnet rebuild and no Unity import was run. `FamilySubfolderExactnessScan Bad=0`, `git diff --check` passed for the baker, source brace balance stayed `Delta=0`, `NonAscii=0`, and forbidden source scan stayed clean.

@@ -71,3 +71,9 @@ Solution: Make one final bounded checkpoint for this run after the same conflict
 Rejected Alternatives: Infinite commit loop, reset, amend/force-push, or pretending active local edits are conflicts. The correct boundary is synchronized remote plus clearly reported residual local state if it appears again.
 Scalability potential: Git-only operation. No runtime tier claims.
 Hardware Impact: 0 us runtime impact. Compile/profiler proof remains pending.
+
+Problem: User requested continued honest work and improvement, while another mixed runtime/docs/audit tail exists after synchronized `origin/main`.
+Solution: Re-open the pull gate, inspect runtime hunks before staging, attempt a CLI build for evidence, and keep the result as pending because no completed green artifact was produced.
+Rejected Alternatives: Blind commit, fake compile-green report, reset, amend/force-push, or treating line-ending warnings as conflicts. The correct path is evidence-first checkpointing.
+Scalability potential: Git-only integration pass. Runtime tier behavior belongs to the producing agents; this pass does not claim Low/Middle/High/Ultra performance changes.
+Hardware Impact: 0 us runtime impact on i3/MX350. Dev-path improvement is reduced conflict exposure plus explicit compile-proof boundary.

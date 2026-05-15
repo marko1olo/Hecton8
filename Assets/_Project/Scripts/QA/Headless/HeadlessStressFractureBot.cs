@@ -35,6 +35,10 @@ namespace Hecton8.QA.Headless
         private const string H8MemoryDumpRelativePath = "Docs/AgentLogs/H8Memory_HEADLESS_STRESS_FRACTURE_BOT.txt";
         private const int BlackboxFrameCapacity = 300;
         private const int BlackboxHeaderSizeBytes = 16;
+        private const int BlackboxHeaderOffsetMagic = 0;
+        private const int BlackboxHeaderOffsetValidEntryCount = 4;
+        private const int BlackboxHeaderOffsetEntrySizeBytes = 8;
+        private const int BlackboxHeaderOffsetCursor = 12;
         private const int BlackboxEntrySizeBytes = 64;
         private const int BlackboxEntryOffsetFrame = 0;
         private const int BlackboxEntryOffsetExtremeFrame = 4;
@@ -55,7 +59,7 @@ namespace Hecton8.QA.Headless
         private const int DefaultScratchMegabytes = 50;
         private const int MinScratchMegabytes = 8;
         private const int MaxScratchMegabytes = 256;
-        private const int ResultSchemaVersion = 7;
+        private const int ResultSchemaVersion = 8;
         private const int DefaultStartupTimeoutSeconds = 60;
         private const int MinStartupTimeoutSeconds = 5;
         private const int MaxStartupTimeoutSeconds = 600;
@@ -982,6 +986,7 @@ namespace Hecton8.QA.Headless
                 WriteInvariant(writer, BlackboxEntrySizeBytes);
                 writer.Write(",\"blackboxHeaderSizeBytes\":");
                 WriteInvariant(writer, BlackboxHeaderSizeBytes);
+                WriteBlackboxHeaderLayout(writer);
                 WriteBlackboxEntryOffsets(writer);
                 writer.Write(",\"blackboxValidEntryCount\":");
                 WriteInvariant(writer, validCount);
@@ -1107,6 +1112,7 @@ namespace Hecton8.QA.Headless
                     WriteInvariant(writer, BlackboxHeaderSizeBytes);
                     writer.Write(",\"blackboxEntrySizeBytes\":");
                     WriteInvariant(writer, BlackboxEntrySizeBytes);
+                    WriteBlackboxHeaderLayout(writer);
                     writer.Write(",\"blackboxManifestRelativePath\":\"");
                     WriteJsonEscaped(writer, BlackboxManifestRelativePath);
                     writer.Write("\",\"blackboxManifestPath\":\"");
@@ -1277,6 +1283,20 @@ namespace Hecton8.QA.Headless
             WriteInvariant(writer, BlackboxEntryOffsetLastShiftMetersZ);
             writer.Write(",\"blackboxEntryOffsetFlags\":");
             WriteInvariant(writer, BlackboxEntryOffsetFlags);
+        }
+
+        private static void WriteBlackboxHeaderLayout(StreamWriter writer)
+        {
+            writer.Write(",\"blackboxByteOrder\":\"little_endian\"");
+            writer.Write(",\"blackboxFloatFormat\":\"ieee754_binary32\"");
+            writer.Write(",\"blackboxHeaderOffsetMagic\":");
+            WriteInvariant(writer, BlackboxHeaderOffsetMagic);
+            writer.Write(",\"blackboxHeaderOffsetValidEntryCount\":");
+            WriteInvariant(writer, BlackboxHeaderOffsetValidEntryCount);
+            writer.Write(",\"blackboxHeaderOffsetEntrySizeBytes\":");
+            WriteInvariant(writer, BlackboxHeaderOffsetEntrySizeBytes);
+            writer.Write(",\"blackboxHeaderOffsetCursor\":");
+            WriteInvariant(writer, BlackboxHeaderOffsetCursor);
         }
 
         private static bool FileExistsCold(string path)
