@@ -99,7 +99,9 @@ class MaterialAuditTests(unittest.TestCase):
             report = audit.run_audit(root, 16, False)
 
             self.assertEqual(1, report["texture_summary"]["read_error_count"])
+            self.assertEqual(1, report["texture_summary"]["albedo_read_error_count"])
             self.assertEqual("Broken_Albedo.png", report["texture_summary"]["read_error_textures"][0]["path"])
+            self.assertEqual("Broken_Albedo.png", report["texture_summary"]["albedo_read_error_textures"][0]["path"])
 
     def test_import_issues_detect_data_srgb_and_normal_import_debt(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -318,7 +320,7 @@ class MaterialAuditTests(unittest.TestCase):
                 "material_issues": 3,
                 "unresolved_texture_refs": 4,
                 "texture_budget": 5,
-                "texture_read_errors": 6,
+                "albedo_read_errors": 6,
             },
             "texture_budget": {
                 "estimated_mib": 1.333,
@@ -337,6 +339,10 @@ class MaterialAuditTests(unittest.TestCase):
                 "energy_warn_count": 0,
                 "read_error_count": 1,
                 "read_error_textures": [
+                    {"path": "Broken_Albedo.png", "read_error": "cannot identify image file"},
+                ],
+                "albedo_read_error_count": 1,
+                "albedo_read_error_textures": [
                     {"path": "Broken_Albedo.png", "read_error": "cannot identify image file"},
                 ],
                 "import_issue_count": 1,
