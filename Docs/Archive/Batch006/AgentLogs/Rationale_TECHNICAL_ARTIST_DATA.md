@@ -215,3 +215,11 @@ Solution: Add `--fail-on-detail-map-missing` with exit code 9, expose `detail_ma
 Rejected Alternatives: Using `--fail-on-material-issues` was rejected because it mixes detail absence with ORM, unresolved reference, and legacy mask debt. Adding the detail gate to `--ci-surface-gates` was rejected because current first-party assets intentionally have detail debt and the safe profile must remain usable.
 Scalability potential: Low = detail slots can be enforced only on material migration branches. Middle = CI can prevent new near-field surfaces without shared detail overlays. High = shared scratches/dust/wear overlays buy the required 20% perceived detail. Ultra = GOD_MODE can raise detail overlay density after base materials have stable slots.
 Hardware Impact: 0 us runtime impact. Current full audit reports 31 materials missing detail maps; scoped `Art/Materials` detail gate reports 23 and returns exit 9.
+
+## Non-Surface Material Exclusion
+
+Problem: The detail-missing CSV exposed projection HUD, celestial gas giant, and terrain materials as false surface migration debt.
+Solution: Add a conservative surface-material eligibility filter before ORM/detail issue generation and channel candidate generation. Exclude HUD/UI, gas giant, skybox, terrain material names, and renderTexture/UI/skybox base-map references.
+Rejected Alternatives: Keeping false positives was rejected because false debt wastes art migration time. Excluding all unresolved GUID materials was rejected because some unresolved references still represent real surface dependencies that must be fixed.
+Scalability potential: Low = migration gates focus on actual hard-surface materials. Middle = CI reports stop assigning projection/celestial work to the surface-material queue. High/Ultra = saved detail/ORM budgets remain tied to visible inspectable surfaces rather than non-PBR special materials.
+Hardware Impact: 0 us runtime impact. Full audit now reports 28 channel candidates, 28 detail-missing materials, 35 material issue materials, and 102.48 MiB modeled channel-packing savings potential.

@@ -726,3 +726,36 @@ Verification:
 - Full first-party audit with `--ci-surface-gates`: still passes, 31 materials missing detail maps.
 - Scoped `Art/Materials` detail gate returned expected exit 9 with 23 missing detail slots.
 - Scoped channel/import/unresolved/material gates still returned expected exits 8/2/4/3.
+
+## 2026-05-15 - Non-Surface Material Exclusion Pass
+
+What was wrong:
+
+- Detail and channel migration debt included projection HUD, celestial gas giant, and terrain materials.
+- Those are not hard-surface PBR material targets for this prompt, so the CSV handoff contained false debt.
+
+What was done:
+
+- Added surface-material eligibility filtering before ORM/detail issue generation.
+- Excluded HUD/UI, gas giant, skybox, and terrain material names.
+- Excluded renderTexture/UI/skybox base-map references.
+- Added a regression test proving a HUD renderTexture material produces no channel/detail/material debt.
+- Regenerated JSON/Markdown/CSV audit artifacts.
+
+Cinematic Cheats used:
+
+- None. This is audit precision, not runtime rendering.
+
+Exact Microseconds saved:
+
+- Runtime code changed: none.
+- Immediate runtime CPU saving: 0 us.
+- Prevents art migration time from being spent on non-PBR special materials.
+
+Verification:
+
+- `python -m py_compile Tools\MaterialAudit.py Tools\test_material_audit.py`: passed.
+- `python -m unittest Tools.test_material_audit`: passed 13 tests.
+- Full first-party audit with `--ci-surface-gates`: still passes, 28 channel candidates, 28 detail-missing materials, 35 material issue materials, 102.48 MiB modeled savings.
+- Scoped `Art/Materials` channel/detail gates returned expected exits 8/9 with 20 candidates each.
+- Scoped import/unresolved/material gates still returned expected exits 2/4/3.
