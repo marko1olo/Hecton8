@@ -372,3 +372,31 @@ Scalability potential: Low/MX350 benefits from less failure-path and compile-lab
 Hardware Impact: Hot path cost remains 0 us measured. Cold/runtime source surfaces improved: managed formatting surface `606 -> 564`, primary managed-runtime risk `221 -> 177`, and LINQ-risk surface `5 -> 3`. Exact microseconds and GC deltas are not claimed without Unity Profiler/GCMonitor.
 
 Verification: `Select-String` found no `string.Format`, `$"..."`, explicit `.ToString()`, or `.ToArray()` hits in the patched target files. `git diff --check` reported only CRLF normalization warnings. `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -p:GenerateFullPaths=true -v:minimal` passed at `2026-05-15 19:58 +04:00` with `0 Warning(s)` and `0 Error(s)`. This historical tightened static H-Phi gate passed with `ManagedFormatSurface=564`, `PrimaryManagedRuntimeRisk=177`, `LinqSurface=3`, `FindObjectCalls=0`, `UnityUpdateMethods=0`, and `RuntimeHPhiRisk=0.000634555`; it is superseded for current-disk truth by DOC_AUDIT R49 at `2026-05-15 21:04 +04:00` with `HPhiStaticRisk=0.000636091`, `GlobalRegistrySurface=5060/5075`, `ManagedFormatSurface=534/564`, and `PrimaryManagedRuntimeRisk=147/177`. Unity Console, PlayMode, Profiler, and GCMonitor evidence remain pending.
+
+## 2026-05-15 Mod Asset / Geology / Persistence Formatter Debt Batch And Current Closeout
+
+Problem: The current H-Phi risk model had already removed all runtime `Find*` debt and Unity loop debt, so the remaining safe H-Phi surface in this domain was managed formatter noise and compile/gate drift. The live tree also moved concurrently: one build saw a stale `HectonVisorUberPostFeature.cs` RenderGraph `AddBlitPass` snapshot, while current disk already contained the raster-pass repair.
+
+Solution: Removed avoidable formatter debt from cold production paths instead of crossing owner boundaries. `ModAssetManager.cs` diagnostics now use concat/constant labels instead of interpolation or explicit numeric `ToString()`. `WorldGenerativeGeologyVoxelBridgeDirector.cs` VOD trace string construction is compiled only for editor/development builds. `PersistentWorldRegistry.cs` persistence and diagnostic labels now use deterministic concat/span hex helpers while preserving sector hashes, resource tombstone labels, and temp-file suffix semantics. For build drift, current disk was re-read and the Core build was retried after proving the file no longer contained the failing `AddBlitPass` call.
+
+Rejected Alternatives: DataVault migration was rejected because the top scalar bottleneck remains owner-blocked native memory and needs BufferID, SystemID, generation, relocation, disposal, and restart semantics from the owning systems. Reverting dirty files was rejected because multiple agents are editing the same tree. Hiding release warnings was rejected because mod and persistence failure diagnostics are one-time/cold correctness evidence. Patching generated `.csproj` references was rejected because the correct proof is current source plus current build.
+
+Scalability potential: Low/MX350 gets less cold diagnostic/persistence allocation pressure and a tighter static regression gate. Middle/High/Ultra keep the same gameplay/visual behavior; the saved discipline is only useful if owner teams later spend it on richer world, visor, and persistence presentation with profiler proof. The remaining high-value improvement is DataVault/native ownership, not more formatter cleanup.
+
+Hardware Impact: Hot path gain is 0 us measured. Static source surfaces improved in the current batch from `ManagedFormatSurface=564` / `PrimaryManagedRuntimeRisk=177` to `ManagedFormatSurface=534` / `PrimaryManagedRuntimeRisk=147`. Runtime profiler, GCMonitor, Unity Console, PlayMode, player build, frame-time, and memory proof remain pending.
+
+Verification: Current Core build retry artifact `Docs/AgentLogs/DotnetBuild_HECTON_PHI_MONITOR_current_retry1.log` passed with `0 Warning(s)` and `0 Error(s)`. Current tightened static H-Phi gate artifact `Docs/AgentLogs/HPhiGate_HECTON_PHI_MONITOR_current.json` passed at `2026-05-15 22:25:52 +04:00` with `RuntimeHPhiRisk=0.000636091`, `FindObjectCalls=0`, `UnityUpdateMethods=0`, `ManagedFormatSurface=534`, `PrimaryManagedRuntimeRisk=147`, `DataSovereignty=0.021306032`, and `MemoryAlignment=0.506309148`.
+
+## 2026-05-15 Build Graph / Duplicate Helper Repair
+
+Problem: Current source was green earlier, then fresh build verification exposed integration drift. Unity Library/package references had previously disappeared and required Unity batch import. `PlayerKinematicsRuntime.cs` also contained duplicate storage helper methods in a dirty owner file, producing duplicate-member compile risk during the build-repair window.
+
+Solution: Used Unity batch import to restore missing package/ScriptAssemblies state, kept source edits scoped, added only the compile graph reference needed for current source resolution, and removed the duplicate `PlayerKinematicsRuntime.cs` helper block while keeping the earlier stricter implementation. No kinematics math, signal contract, buffer storage, or motion synchronization logic was changed.
+
+Rejected Alternatives: Reverting the dirty kinematics file was rejected because it contained other agents' work. Moving GPR runtime code across asmdefs was rejected for this closeout because it is an Integrator/domain-owner decision with Unity asset/meta risk. Hacking generated project references was rejected because generated files drift and do not prove the Unity assembly graph.
+
+Scalability potential: Low/MX350 and High/Ultra receive no runtime performance change from this repair. Value is compile determinism: the project can continue to accept real H-Phi changes without source graph breakage masking the metrics.
+
+Hardware Impact: Runtime 0 us. Build determinism improved; runtime behavior is unchanged by design.
+
+Verification: Current disk Core build passed on retry with `0 Warning(s)` and `0 Error(s)`. Current H-Phi gate passed with all enabled static budgets. Unity runtime validation remains PENDING VERIFICATION.

@@ -423,3 +423,32 @@ Exact Microseconds saved:
 - Scoped Visor `AddUnsafePass` count reduced from 28 to 4.
 - Static H-Phi: `RuntimeHPhiNarrow=0.010787439`, `RuntimeHPhiRisk=0.000636091`, `AllSourceHPhiRisk=0.000518488`, `ManagedFormatSurface=534`, `PrimaryManagedRuntimeRisk=147`, `FindObjectCalls=0`, `GetComponentCalls=321`, `AupPrecisionRisk=0`.
 - No dotnet rebuild or Unity rebuild was run.
+
+## 2026-05-15 22:21:40 +04:00 - Follow-Up No-Rebuild Visor Unsafe RenderGraph Closure
+What was wrong:
+- Four scoped runtime Visor passes still used legacy unsafe/obsolete RenderGraph surfaces after the simple blit migration: holographic edge custom draws, dry-volume stencil/restore x2, and fluid advection compute.
+- `HectonVisorUberPostFeature` still had an obsolete `AddRenderPass<PassData>` plus `Blitter.BlitCameraTexture` even though the pass is a plain fullscreen material blit.
+
+What was done:
+- Added an `IRasterCommandBuffer` draw path to `HectonScanRenderRegistry` and migrated `HectonHolographicEdgeFeature` to `AddRasterRenderPass`.
+- Added `IComputeCommandBuffer` bind/unbind overloads in `HectonFluidEngine` and migrated `HectonFluidAdvectionRenderFeature` to `AddComputePass`.
+- Split `HectonDryVolumeFeature` into graph-visible stencil, color-copy, restore, resolve, and clear phases using raster and blit passes.
+- Migrated `HectonVisorUberPostFeature` to `RenderGraphUtils.AddBlitPass` and kept the explicit camera-depth read when depthless TBDR mode is off.
+
+Cinematic Cheats used:
+- No visual effect was removed. The same noir visor, dry interior, holographic edge, and fluid distortion fakes now execute through graph-visible raster/compute/blit passes.
+- Low-tier/depthless paths stay cheap; high-tier paths keep the full layered presentation stack.
+
+Exact Microseconds saved:
+- Estimated 5-45 us CPU/render-graph scheduling hygiene across the formerly unsafe Visor islands pending Frame Debugger/Profiler capture.
+- Scoped runtime Visor `AddUnsafePass` count reduced from 4 to 0.
+- Scoped runtime Visor obsolete/native debt scan now returns no `AddUnsafePass`, `AddRenderPass<`, `CommandBufferHelpers.GetNativeCommandBuffer`, `CoreUtils.SetRenderTarget`, or `Blitter.BlitCameraTexture` hits.
+
+Verification:
+- No dotnet rebuild was executed.
+- No Unity import, Unity compile, or player build was executed.
+- Scoped `rg` over `Assets/_Project/Scripts/Visor`: no project-owned unsafe/obsolete/native RenderGraph debt hits listed above.
+- `git diff --check` on touched render files: no whitespace errors; LF-to-CRLF warnings only.
+- Brace scan: `HectonScanRenderRegistry 48/48`, `HectonFluidEngine 625/625`, `HectonFluidAdvectionRenderFeature 11/11`, `HectonHolographicEdgeFeature 20/20`, `HectonDryVolumeFeature 44/44`, `HectonVisorUberPostFeature 64/64`.
+- `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json`: `RuntimeHPhiNarrow=0.010787439`, `RuntimeHPhiRisk=0.000636091`, `AllSourceHPhiNarrow=0.009611624`, `AllSourceHPhiRisk=0.000518488`, `ArchitecturalPurity=1`, `DataSovereignty=0.021306032`, `MemoryAlignment=0.506309148`, `FindObjectCalls=0`, `GetComponentCalls=321`, `UnityUpdateMethods=0`, `StructLayoutAttributes=963`, `ManagedFormatSurface=534`, `PrimaryManagedRuntimeRisk=147`, `AupPrecisionRisk=0`.
+- Compile remains blocked by the external World/GPR dependency already recorded in the status file.

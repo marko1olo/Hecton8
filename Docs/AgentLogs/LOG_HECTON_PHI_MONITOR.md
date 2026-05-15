@@ -844,6 +844,54 @@ Regression Model:
 
 STATUS: H-PHI VERIFIED / CORE BUILD GREEN / UNITY RUNTIME PENDING
 
+## 2026-05-15 Current-Disk H-Phi Closeout / Build Drift Repair
+
+What was wrong:
+- Current H-Phi was no longer represented by the stale status header. Fresh static source truth is `RuntimeHPhiRisk=0.000636091`, not the older `0.000634555` line.
+- A fresh Core build initially failed on a stale/concurrent `HectonVisorUberPostFeature.cs` `AddBlitPass` / `RenderGraphUtils` snapshot.
+- Re-reading current disk showed the file already contained the correct raster-pass shape, so the failure was concurrent drift, not a current source blocker.
+- Remaining scalar H-Phi debt is dominated by owner-blocked native memory: `OwnerBlockedNativeArrayRefs=6262`, `PrimaryOwnerBlockedNativeArrayRefs=5678`. That is not safely fixable by the H-Phi monitor without owner BufferID/SystemID/generation/disposal proof.
+
+What was done:
+- Verified current disk with `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -p:GenerateFullPaths=true -v:minimal`.
+- Replayed the tightened full static H-Phi budget gate with current exact budgets.
+- Recorded the current metric delta and residual owner-blocked backlog in disk logs and the H-Phi report.
+- Kept runtime code untouched during closeout because the current build and gate were already green and the remaining safe improvements require domain owners.
+
+Cinematic Cheats used:
+- None. This was architecture/static debt and compile verification, not a simulation or visual system change.
+
+Exact Microseconds saved:
+- Current closeout edit: 0 us runtime, documentation/evidence only.
+- Formatter batch static improvement: managed formatting surface `564 -> 534`, primary managed-runtime risk `177 -> 147`. Exact microseconds and GC deltas are PENDING PROFILER / GCMONITOR.
+
+Compile Status:
+- `Docs/AgentLogs/DotnetBuild_HECTON_PHI_MONITOR_current.log`: failed on stale/concurrent RenderGraph source snapshot.
+- `Docs/AgentLogs/DotnetBuild_HECTON_PHI_MONITOR_current_retry1.log`: passed, `0 Warning(s)`, `0 Error(s)`.
+- No Unity Console / PlayMode / player build proof was produced in this pass.
+
+Phi Gain:
+- Dialogue initial stated risk score: `0.00062`.
+- Current static risk score: `0.000636091`.
+- Absolute delta from initial stated score: `+0.000016091`, approximately `+2.6%`.
+- Current batch static formatter debt: `ManagedFormatSurface=534`, `PrimaryManagedRuntimeRisk=147`.
+- Stable hard gates: `FindObjectCalls=0`, `UnityUpdateMethods=0`, `AupPrecisionRisk=0`, `DuplicateSignalNameCount=0`.
+
+Regression Model:
+- CPU/GC: static formatter debt reduced; no runtime allocation claim without profiler.
+- Memory/native: DataVault/native ownership unchanged; owner-blocked backlog remains the dominant scalar drag.
+- Cadence: no Update/Tick/coroutine changes in closeout.
+- Correctness: build gate and static budget gate passed; Unity runtime behavior remains PENDING VERIFICATION.
+- Failure modes: concurrent agent edits can invalidate build status after this artifact; next agent must re-run current build before claiming green.
+
+Artifacts:
+- `Docs/AgentLogs/HPhiSummary_HECTON_PHI_MONITOR_current.json`
+- `Docs/AgentLogs/HPhiGate_HECTON_PHI_MONITOR_current.json`
+- `Docs/AgentLogs/DotnetBuild_HECTON_PHI_MONITOR_current.log`
+- `Docs/AgentLogs/DotnetBuild_HECTON_PHI_MONITOR_current_retry1.log`
+
+STATUS: H-PHI STATIC VERIFIED / CORE BUILD GREEN / UNITY RUNTIME PENDING
+
 ## 2026-05-15 World Population / Mod Loader / Quest Formatter Debt Batch
 
 What was wrong:
@@ -1042,3 +1090,51 @@ Regression Model:
 - Correctness: debug output remains available when `builderDebugLogging` is enabled in editor/development builds.
 
 STATUS: H-PHI VERIFIED / CORE BUILD GREEN / UNITY RUNTIME PENDING
+
+## 2026-05-15 Current-Disk H-Phi Closeout / Build Drift Repair
+
+What was wrong:
+- Current H-Phi was no longer represented by the stale status header. Fresh static source truth is `RuntimeHPhiRisk=0.000636091`, not the older `0.000634555` line.
+- A fresh Core build initially failed on a stale/concurrent `HectonVisorUberPostFeature.cs` `AddBlitPass` / `RenderGraphUtils` snapshot.
+- Re-reading current disk showed the file already contained the correct raster-pass shape, so the failure was concurrent drift, not a current source blocker.
+- Remaining scalar H-Phi debt is dominated by owner-blocked native memory: `OwnerBlockedNativeArrayRefs=6262`, `PrimaryOwnerBlockedNativeArrayRefs=5678`. That is not safely fixable by the H-Phi monitor without owner BufferID/SystemID/generation/disposal proof.
+
+What was done:
+- Verified current disk with `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -p:GenerateFullPaths=true -v:minimal`.
+- Replayed the tightened full static H-Phi budget gate with current exact budgets.
+- Recorded the current metric delta and residual owner-blocked backlog in disk logs and the H-Phi report.
+- Kept runtime code untouched during closeout because the current build and gate were already green and the remaining safe improvements require domain owners.
+
+Cinematic Cheats used:
+- None. This was architecture/static debt and compile verification, not a simulation or visual system change.
+
+Exact Microseconds saved:
+- Current closeout edit: 0 us runtime, documentation/evidence only.
+- Formatter batch static improvement: managed formatting surface `564 -> 534`, primary managed-runtime risk `177 -> 147`. Exact microseconds and GC deltas are PENDING PROFILER / GCMONITOR.
+
+Compile Status:
+- `Docs/AgentLogs/DotnetBuild_HECTON_PHI_MONITOR_current.log`: failed on stale/concurrent RenderGraph source snapshot.
+- `Docs/AgentLogs/DotnetBuild_HECTON_PHI_MONITOR_current_retry1.log`: passed, `0 Warning(s)`, `0 Error(s)`.
+- No Unity Console / PlayMode / player build proof was produced in this pass.
+
+Phi Gain:
+- Dialogue initial stated risk score: `0.00062`.
+- Current static risk score: `0.000636091`.
+- Absolute delta from initial stated score: `+0.000016091`, approximately `+2.6%`.
+- Current batch static formatter debt: `ManagedFormatSurface=534`, `PrimaryManagedRuntimeRisk=147`.
+- Stable hard gates: `FindObjectCalls=0`, `UnityUpdateMethods=0`, `AupPrecisionRisk=0`, `DuplicateSignalNameCount=0`.
+
+Regression Model:
+- CPU/GC: static formatter debt reduced; no runtime allocation claim without profiler.
+- Memory/native: DataVault/native ownership unchanged; owner-blocked backlog remains the dominant scalar drag.
+- Cadence: no Update/Tick/coroutine changes in closeout.
+- Correctness: build gate and static budget gate passed; Unity runtime behavior remains PENDING VERIFICATION.
+- Failure modes: concurrent agent edits can invalidate build status after this artifact; next agent must re-run current build before claiming green.
+
+Artifacts:
+- `Docs/AgentLogs/HPhiSummary_HECTON_PHI_MONITOR_current.json`
+- `Docs/AgentLogs/HPhiGate_HECTON_PHI_MONITOR_current.json`
+- `Docs/AgentLogs/DotnetBuild_HECTON_PHI_MONITOR_current.log`
+- `Docs/AgentLogs/DotnetBuild_HECTON_PHI_MONITOR_current_retry1.log`
+
+STATUS: H-PHI STATIC VERIFIED / CORE BUILD GREEN / UNITY RUNTIME PENDING

@@ -1933,9 +1933,9 @@ Residual bottlenecks:
 Evidence class: `STATIC_SOURCE` + `CLI_COMPILE`.
 
 What changed:
-- Removed unused `Hecton8.World.GPR` from `Assets/_Project/Scripts/Hecton8.Core.asmdef`.
-- No C# runtime logic, GPR runtime code, contracts, save data, DataVault ownership, signal dispatch, or public API was changed.
-- The removed reference was identified by `Tools/Architecture/HectonPhiAudit.ps1 -Summary -CoreGraphOnly -IncludeUnusedCoreReferenceScan` as a high-confidence unused Core asmdef candidate: `SourceFileCount=1`, `DeclaredTypeCount=3`, `SourceInCoreCompileSurfaceCount=0`.
+- Fresh H-Phi summary saw transient workspace/index drift where `Hecton8.World.GPR` appeared in `Assets/_Project/Scripts/Hecton8.Core.asmdef` as an unused Core asmdef candidate.
+- The current canonical file/index now contain no `Hecton8.World.GPR` Core reference; no final C# runtime logic, GPR runtime code, contracts, save data, DataVault ownership, signal dispatch, or public API diff remains.
+- The drifted reference was identified by `Tools/Architecture/HectonPhiAudit.ps1 -Summary -CoreGraphOnly -IncludeUnusedCoreReferenceScan` as a high-confidence unused Core asmdef candidate: `SourceFileCount=1`, `DeclaredTypeCount=3`, `SourceInCoreCompileSurfaceCount=0`.
 
 Current R3 static summary before the prune:
 
@@ -1977,3 +1977,41 @@ Verification:
 - Core graph H-Phi budget gate passed with `-MaxCoreAsmdefDebtReferences 25`, `-MaxGeneratedProjectDebtReferences 10`, `-MaxSourceBackedBridgeDebtReferences 14`, `-MaxSourceBackedCompileBridgeDebtReferences 8`, and `-MaxProjectReferenceReplacementDebtReferences 6`.
 - `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -p:GenerateFullPaths=true -v:minimal` passed with `0 Warning(s)` and `0 Error(s)`.
 - Runtime H-Phi remains pending Unity Console, PlayMode, Profiler, GCMonitor, player-build, frame-time, memory, scene-wiring, and visual proof.
+
+## 2026-05-15 H-Phi Monitor Current-Disk Closeout
+
+Evidence class: `STATIC_SOURCE` plus `CLI_COMPILE`.
+
+Current gated H-Phi values:
+
+| Counter / Score | Value |
+|---|---:|
+| Runtime H-Phi narrow | 0.010787439 |
+| Runtime H-Phi risk-adjusted | 0.000636091 |
+| All-source H-Phi risk-adjusted | 0.000518488 |
+| Risk integration | 0.058965935 |
+| Data sovereignty | 0.021306032 |
+| Memory alignment | 0.506309148 |
+| SignalBus push count | 341 |
+| Legacy event publish count | 28 |
+| Runtime `Find*` debt | 0 |
+| Unity gameplay loop method debt | 0 |
+| Managed formatting surface | 534 |
+| Primary managed-runtime risk | 147 |
+| Owner-blocked NativeArray refs | 6262 |
+| Primary owner-blocked NativeArray refs | 5678 |
+
+Comparison:
+- Against the dialogue's initial stated `0.00062`, current static risk H-Phi is `0.000636091`: absolute `+0.000016091`, about `+2.6%`.
+- Against the earlier formatter gate baseline, managed formatting surface moved `564 -> 534` and primary managed-runtime risk moved `177 -> 147`.
+- Data sovereignty is unchanged in this closeout because the remaining native-memory backlog is owner-blocked and cannot be migrated without BufferID/SystemID/generation/disposal proof.
+
+Build and gate artifacts:
+- `Docs/AgentLogs/DotnetBuild_HECTON_PHI_MONITOR_current_retry1.log`: Core build passed with `0 Warning(s)`, `0 Error(s)`.
+- `Docs/AgentLogs/HPhiGate_HECTON_PHI_MONITOR_current.json`: tightened static H-Phi gate passed at `2026-05-15 22:25:52 +04:00`.
+- `Docs/AgentLogs/DotnetBuild_HECTON_PHI_MONITOR_current.log`: failed on stale/concurrent RenderGraph source snapshot; superseded by current-disk retry.
+
+Residual risks:
+- Unity Console / PlayMode / Profiler / GCMonitor / player build remain PENDING VERIFICATION.
+- Runtime microseconds saved and frame/GC deltas are not claimed.
+- Biggest remaining H-Phi drag: DataVault/native ownership backlog in owner domains, especially primary runtime NativeArray owners.
