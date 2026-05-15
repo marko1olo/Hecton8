@@ -219,14 +219,14 @@ namespace Hecton8.Quest
                 uint questHash = QuestFlagHashKernel.ComputeStableHash(questData.questId);
                 if (questHash == 0u)
                 {
-                    RegisterCompileError($"Quest '{questData.name}' resolved to hash 0. Stable IDs are required.");
+                    RegisterCompileError(string.Concat("Quest '", questData.name, "' resolved to hash 0. Stable IDs are required."));
                     continue;
                 }
 
                 if (_questIndexByHash.TryGetValue(questHash, out int existingQuestIndex) &&
                     existingQuestIndex != questIndex)
                 {
-                    RegisterCompileError($"Quest hash collision for '{questData.questId}'. Source indices {existingQuestIndex} and {questIndex} resolve to 0x{questHash:X8}.");
+                    RegisterCompileError(BuildQuestHashCollisionError(questData.questId, existingQuestIndex, questIndex, questHash));
                     continue;
                 }
 
@@ -241,13 +241,13 @@ namespace Hecton8.Quest
                 _activeAddressesByQuestIndex[questIndex] = RegisterStateBit(
                     MixHash(questHash, ActiveFlagSalt),
                     QuestStateBand.Quest,
-                    $"quest-active:{questData.questId}",
+                    string.Concat("quest-active:", questData.questId),
                     hashLabels,
                     bandBitUsage);
                 _completedAddressesByQuestIndex[questIndex] = RegisterStateBit(
                     MixHash(questHash, CompletedFlagSalt),
                     QuestStateBand.Quest,
-                    $"quest-complete:{questData.questId}",
+                    string.Concat("quest-complete:", questData.questId),
                     hashLabels,
                     bandBitUsage);
             }
@@ -348,13 +348,13 @@ namespace Hecton8.Quest
                 QuestBitAddress entityDestroyAddress = RegisterStateBit(
                     MixHash(criticalItemHash, EntityDestroyFlagSalt),
                     QuestStateBand.EntityDestroy,
-                    $"entity-destroy:{questData.questId}:{criticalItemHash:X8}",
+                    BuildQuestHashLabel("entity-destroy:", questData.questId, criticalItemHash),
                     hashLabels,
                     bandBitUsage);
                 QuestBitAddress deadlockAddress = RegisterStateBit(
                     MixHash(criticalItemHash, DeadlockFlagSalt),
                     QuestStateBand.Deadlock,
-                    $"deadlock:{questData.questId}:{criticalItemHash:X8}",
+                    BuildQuestHashLabel("deadlock:", questData.questId, criticalItemHash),
                     hashLabels,
                     bandBitUsage);
 
@@ -380,13 +380,13 @@ namespace Hecton8.Quest
                 _activeAddressesByQuestIndex[questIndex] = RegisterStateBit(
                     MixHash(slotSeed, ActiveFlagSalt),
                     QuestStateBand.Quest,
-                    $"quest-active:procedural:{proceduralOffset}",
+                    BuildProceduralQuestLabel("quest-active:procedural:", proceduralOffset),
                     hashLabels,
                     bandBitUsage);
                 _completedAddressesByQuestIndex[questIndex] = RegisterStateBit(
                     MixHash(slotSeed, CompletedFlagSalt),
                     QuestStateBand.Quest,
-                    $"quest-complete:procedural:{proceduralOffset}",
+                    BuildProceduralQuestLabel("quest-complete:procedural:", proceduralOffset),
                     hashLabels,
                     bandBitUsage);
                 _proceduralNodeIndexByQuestIndex[questIndex] = nodeBuilder.Count + proceduralOffset;
@@ -410,8 +410,8 @@ namespace Hecton8.Quest
             _completedQuestIndices = new NativeList<int>(Math.Max(nodeCapacity, 1), Allocator.Persistent);
             NativeMemorySentinel.RegisterNativeList(_activatedQuestIndices, NativeMemoryOwner, nameof(_activatedQuestIndices), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeList(_completedQuestIndices, NativeMemoryOwner, nameof(_completedQuestIndices), NativeMemoryLifetime);
-            _revertDescriptors = revertBuilder.ToArray();
-            _depthThresholdFlags = depthFlags.ToArray();
+            _revertDescriptors = CopyListToArray(revertBuilder);
+            _depthThresholdFlags = CopyListToArray(depthFlags);
             _isInitialized = true;
             RefreshStateMetadata(resetVersion: true);
             return !HasCompileErrors;
@@ -987,7 +987,7 @@ namespace Hecton8.Quest
                 uint prerequisiteQuestHash = QuestFlagHashKernel.ComputeStableHash(prerequisiteQuestId);
                 if (!TryGetQuestIndex(prerequisiteQuestHash, out int prerequisiteQuestIndex))
                 {
-                    RegisterCompileError($"Quest '{questData.questId}' references unknown prerequisite quest '{prerequisiteQuestId}'.");
+                    RegisterCompileError(BuildUnknownPrerequisiteError(questData.questId, prerequisiteQuestId));
                     continue;
                 }
 
@@ -1100,7 +1100,7 @@ namespace Hecton8.Quest
             if (payloadHash == 0u && signalKind != QuestSignalKind.EclipseStarted)
                 return;
 
-            QuestBitAddress address = RegisterStateBit(payloadHash, band, $"{signalKind}:{signalId}:{signalValue}", hashLabels, bandBitUsage);
+            QuestBitAddress address = RegisterStateBit(payloadHash, band, BuildSignalDebugLabel(signalKind, signalId, signalValue), hashLabels, bandBitUsage);
             if (signalKind == QuestSignalKind.DepthReached)
             {
                 depthFlags.Add(new ThresholdFlag
@@ -1126,7 +1126,7 @@ namespace Hecton8.Quest
                 if (hashLabels.TryGetValue(bitHash, out string existingLabel) &&
                     !string.Equals(existingLabel, debugLabel, StringComparison.Ordinal))
                 {
-                    RegisterCompileError($"Quest bit collision between '{existingLabel}' and '{debugLabel}' at 0x{bitHash:X8}.");
+                    RegisterCompileError(BuildQuestBitCollisionError(existingLabel, debugLabel, bitHash));
                 }
 
                 return existingAddress;
@@ -1137,7 +1137,7 @@ namespace Hecton8.Quest
             int bandCapacity = GetBandWordCount(band) * WordStride;
             if (bandBitIndex >= bandCapacity)
             {
-                RegisterCompileError($"Quest state band '{band}' exceeded its {bandCapacity} bit ceiling.");
+                RegisterCompileError(BuildQuestBandCapacityError(band, bandCapacity));
                 return default;
             }
 
@@ -1183,6 +1183,318 @@ namespace Hecton8.Quest
 
             gateWordIndex = (ushort)sharedWordIndex;
             gateMask = sharedMask;
+        }
+
+        private static T[] CopyListToArray<T>(List<T> source)
+        {
+            if (source == null || source.Count == 0)
+                return Array.Empty<T>();
+
+            T[] result = new T[source.Count];
+            source.CopyTo(result);
+            return result;
+        }
+
+        private static string BuildQuestHashCollisionError(string questId, int existingQuestIndex, int questIndex, uint questHash)
+        {
+            questId ??= string.Empty;
+
+            const string prefix = "Quest hash collision for '";
+            const string middleA = "'. Source indices ";
+            const string middleB = " and ";
+            const string middleC = " resolve to 0x";
+            const string suffix = ".";
+            int length = prefix.Length + questId.Length + middleA.Length + CountIntDigits(existingQuestIndex) +
+                         middleB.Length + CountIntDigits(questIndex) + middleC.Length + 8 + suffix.Length;
+
+            return string.Create(length, (questId, existingQuestIndex, questIndex, questHash), (buffer, state) =>
+            {
+                int write = 0;
+                write = CopyString(prefix, buffer, write);
+                write = CopyString(state.questId, buffer, write);
+                write = CopyString(middleA, buffer, write);
+                write = WriteInt(state.existingQuestIndex, buffer, write);
+                write = CopyString(middleB, buffer, write);
+                write = WriteInt(state.questIndex, buffer, write);
+                write = CopyString(middleC, buffer, write);
+                write = WriteHex8(state.questHash, buffer, write);
+                CopyString(suffix, buffer, write);
+            });
+        }
+
+        private static string BuildQuestHashLabel(string prefix, string questId, uint hash)
+        {
+            prefix ??= string.Empty;
+            questId ??= string.Empty;
+
+            int length = prefix.Length + questId.Length + 1 + 8;
+            return string.Create(length, (prefix, questId, hash), (buffer, state) =>
+            {
+                int write = 0;
+                write = CopyString(state.prefix, buffer, write);
+                write = CopyString(state.questId, buffer, write);
+                buffer[write++] = ':';
+                WriteHex8(state.hash, buffer, write);
+            });
+        }
+
+        private static string BuildProceduralQuestLabel(string prefix, int proceduralOffset)
+        {
+            prefix ??= string.Empty;
+            int length = prefix.Length + CountIntDigits(proceduralOffset);
+            return string.Create(length, (prefix, proceduralOffset), (buffer, state) =>
+            {
+                int write = CopyString(state.prefix, buffer, 0);
+                WriteInt(state.proceduralOffset, buffer, write);
+            });
+        }
+
+        private static string BuildUnknownPrerequisiteError(string questId, string prerequisiteQuestId)
+        {
+            questId ??= string.Empty;
+            prerequisiteQuestId ??= string.Empty;
+
+            const string prefix = "Quest '";
+            const string middle = "' references unknown prerequisite quest '";
+            const string suffix = "'.";
+            int length = prefix.Length + questId.Length + middle.Length + prerequisiteQuestId.Length + suffix.Length;
+
+            return string.Create(length, (questId, prerequisiteQuestId), (buffer, state) =>
+            {
+                int write = 0;
+                write = CopyString(prefix, buffer, write);
+                write = CopyString(state.questId, buffer, write);
+                write = CopyString(middle, buffer, write);
+                write = CopyString(state.prerequisiteQuestId, buffer, write);
+                CopyString(suffix, buffer, write);
+            });
+        }
+
+        private static string BuildSignalDebugLabel(QuestSignalKind signalKind, string signalId, float signalValue)
+        {
+            string signalKindLabel = ResolveQuestSignalKindLabel(signalKind);
+            signalId ??= string.Empty;
+            int valueLength = CountFloatChars(signalValue);
+            int length = signalKindLabel.Length + 1 + signalId.Length + 1 + valueLength;
+
+            return string.Create(length, (signalKindLabel, signalId, signalValue), (buffer, state) =>
+            {
+                int write = 0;
+                write = CopyString(state.signalKindLabel, buffer, write);
+                buffer[write++] = ':';
+                write = CopyString(state.signalId, buffer, write);
+                buffer[write++] = ':';
+                WriteFloat(state.signalValue, buffer, write);
+            });
+        }
+
+        private static string BuildQuestBitCollisionError(string existingLabel, string debugLabel, uint bitHash)
+        {
+            existingLabel ??= string.Empty;
+            debugLabel ??= string.Empty;
+
+            const string prefix = "Quest bit collision between '";
+            const string middle = "' and '";
+            const string suffixA = "' at 0x";
+            const string suffixB = ".";
+            int length = prefix.Length + existingLabel.Length + middle.Length + debugLabel.Length + suffixA.Length + 8 + suffixB.Length;
+
+            return string.Create(length, (existingLabel, debugLabel, bitHash), (buffer, state) =>
+            {
+                int write = 0;
+                write = CopyString(prefix, buffer, write);
+                write = CopyString(state.existingLabel, buffer, write);
+                write = CopyString(middle, buffer, write);
+                write = CopyString(state.debugLabel, buffer, write);
+                write = CopyString(suffixA, buffer, write);
+                write = WriteHex8(state.bitHash, buffer, write);
+                CopyString(suffixB, buffer, write);
+            });
+        }
+
+        private static string BuildQuestBandCapacityError(QuestStateBand band, int bandCapacity)
+        {
+            string bandLabel = ResolveQuestStateBandLabel(band);
+            const string prefix = "Quest state band '";
+            const string middle = "' exceeded its ";
+            const string suffix = " bit ceiling.";
+            int length = prefix.Length + bandLabel.Length + middle.Length + CountIntDigits(bandCapacity) + suffix.Length;
+
+            return string.Create(length, (bandLabel, bandCapacity), (buffer, state) =>
+            {
+                int write = 0;
+                write = CopyString(prefix, buffer, write);
+                write = CopyString(state.bandLabel, buffer, write);
+                write = CopyString(middle, buffer, write);
+                write = WriteInt(state.bandCapacity, buffer, write);
+                CopyString(suffix, buffer, write);
+            });
+        }
+
+        private static string BuildQuestAuditLine(double timestamp, uint questHash, string state)
+        {
+            state ??= string.Empty;
+
+            const string prefix = "[";
+            const string middle = "] Quest 0x";
+            const string suffix = " -> ";
+            int timestampLength = CountDoubleF3Chars(timestamp);
+            int length = prefix.Length + timestampLength + middle.Length + 8 + suffix.Length + state.Length + 1;
+
+            return string.Create(length, (timestamp, questHash, state), (buffer, value) =>
+            {
+                int write = 0;
+                write = CopyString(prefix, buffer, write);
+                write = WriteDoubleF3(value.timestamp, buffer, write);
+                write = CopyString(middle, buffer, write);
+                write = WriteHex8(value.questHash, buffer, write);
+                write = CopyString(suffix, buffer, write);
+                write = CopyString(value.state, buffer, write);
+                buffer[write] = '\n';
+            });
+        }
+
+        private static string ResolveQuestSignalKindLabel(QuestSignalKind signalKind)
+        {
+            switch (signalKind)
+            {
+                case QuestSignalKind.ItemCollected:
+                    return "ItemCollected";
+                case QuestSignalKind.DepthReached:
+                    return "DepthReached";
+                case QuestSignalKind.BiomeEntered:
+                    return "BiomeEntered";
+                case QuestSignalKind.DiscoveryMade:
+                    return "DiscoveryMade";
+                case QuestSignalKind.AudioLogFound:
+                    return "AudioLogFound";
+                case QuestSignalKind.EclipseStarted:
+                    return "EclipseStarted";
+                case QuestSignalKind.SignalDecoded:
+                    return "SignalDecoded";
+                case QuestSignalKind.ItemLost:
+                    return "ItemLost";
+                case QuestSignalKind.CraftCompleted:
+                    return "CraftCompleted";
+                default:
+                    return "None";
+            }
+        }
+
+        private static string ResolveQuestStateBandLabel(QuestStateBand band)
+        {
+            switch (band)
+            {
+                case QuestStateBand.Item:
+                    return "Item";
+                case QuestStateBand.Location:
+                    return "Location";
+                case QuestStateBand.Narrative:
+                    return "Narrative";
+                case QuestStateBand.Phase:
+                    return "Phase";
+                case QuestStateBand.EntityDestroy:
+                    return "EntityDestroy";
+                case QuestStateBand.Deadlock:
+                    return "Deadlock";
+                default:
+                    return "Quest";
+            }
+        }
+
+        private static int CountIntDigits(int value)
+        {
+            long remaining = value;
+            int digits = remaining < 0L ? 2 : 1;
+            if (remaining < 0L)
+                remaining = -remaining;
+
+            while (remaining >= 10L)
+            {
+                remaining /= 10L;
+                digits++;
+            }
+
+            return digits;
+        }
+
+        private static int WriteInt(int value, Span<char> buffer, int start)
+        {
+            long remaining = value;
+            bool negative = remaining < 0L;
+            if (negative)
+            {
+                buffer[start++] = '-';
+                remaining = -remaining;
+            }
+
+            int digitCount = CountPositiveIntDigits(remaining);
+            int write = start + digitCount - 1;
+            do
+            {
+                buffer[write--] = (char)('0' + remaining % 10L);
+                remaining /= 10L;
+            }
+            while (write >= start);
+
+            return start + digitCount;
+        }
+
+        private static int CountPositiveIntDigits(long value)
+        {
+            int digits = 1;
+            while (value >= 10L)
+            {
+                value /= 10L;
+                digits++;
+            }
+
+            return digits;
+        }
+
+        private static int WriteHex8(uint value, Span<char> buffer, int start)
+        {
+            for (int shift = 28; shift >= 0; shift -= 4)
+            {
+                int nibble = (int)((value >> shift) & 0xFu);
+                buffer[start++] = (char)(nibble < 10 ? '0' + nibble : 'A' + nibble - 10);
+            }
+
+            return start;
+        }
+
+        private static int CountFloatChars(float value)
+        {
+            Span<char> temp = stackalloc char[32];
+            return value.TryFormat(temp, out int written, ReadOnlySpan<char>.Empty, null) ? written : 1;
+        }
+
+        private static int WriteFloat(float value, Span<char> buffer, int start)
+        {
+            return value.TryFormat(buffer.Slice(start), out int written, ReadOnlySpan<char>.Empty, null)
+                ? start + written
+                : CopyString("0", buffer, start);
+        }
+
+        private static int CountDoubleF3Chars(double value)
+        {
+            Span<char> temp = stackalloc char[32];
+            return value.TryFormat(temp, out int written, "F3".AsSpan(), null) ? written : 1;
+        }
+
+        private static int WriteDoubleF3(double value, Span<char> buffer, int start)
+        {
+            return value.TryFormat(buffer.Slice(start), out int written, "F3".AsSpan(), null)
+                ? start + written
+                : CopyString("0", buffer, start);
+        }
+
+        private static int CopyString(string value, Span<char> buffer, int start)
+        {
+            for (int i = 0; i < value.Length; i++)
+                buffer[start + i] = value[i];
+
+            return start + value.Length;
         }
 
         private void RegisterCompileError(string message)
@@ -1233,11 +1545,11 @@ namespace Hecton8.Quest
                 string path = HectonPersistentPathPolicy.CombineFile(QuestAuditLogFileName);
                 File.AppendAllText(
                     path,
-                    $"[{timestamp:F3}] Quest 0x{_questHashesByQuestIndex[questIndex]:X8} -> {state}\n");
+                    BuildQuestAuditLine(timestamp, _questHashesByQuestIndex[questIndex], state));
             }
             catch (Exception exception)
             {
-                Debug.LogWarning($"[QuestStateManager] Quest audit append failed: {exception.Message}");
+                Debug.LogWarning(string.Concat("[QuestStateManager] Quest audit append failed: ", exception.Message));
             }
 #endif
         }

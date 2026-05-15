@@ -223,3 +223,43 @@ Verification:
 - Freshness failure: C# source changed after both final artifacts.
 
 Current Status: YELLOW / ACTIVE MOVING WALL.
+
+## 2026-05-15 - CurrentDisk28/CurrentDiskBudgetGate10 Triage Record
+
+Errors Fixed: 4 current-source compile failures plus repeated moving-write walls. Final Core build is 0 warnings / 0 errors.
+
+Files Moved:
+- None.
+
+ASMDEFs Repaired:
+- None.
+
+What was wrong:
+- `SaveManager` referenced `MacroDatabasePayloadFlags`, which is hidden from the Core CLI compile lane.
+- `PlayerInteraction` used `ReadOnlySpan<T>` in the signal-snapshot input path without the `System` namespace.
+- Active parallel edits repeatedly produced stale errors and invalidated older green artifacts.
+
+What was done:
+- Repaired `SaveManager` with a method-local dirty payload bit.
+- Added the missing `System` import in `PlayerInteraction`.
+- Rejected stale UI/input-service errors after inspecting current source.
+- Re-ran current Core compile and current H-Phi budget gate.
+- Updated status/rationale/logs and H-Phi metric documentation to point at `CurrentDisk28` / `CurrentDiskBudgetGate10`.
+
+Cinematic Cheats used:
+- Compile/static contract repair only.
+- No feature work, simulation rewrite, package change, generated `.csproj` edit, `.asmdef` edit, prefab/scene edit, or leaf-domain refactor.
+
+Exact Microseconds saved:
+- Runtime frame time saved: 0 us measured.
+- Compile verification time: 51,673,823 us.
+- H-Phi verification time: 114,947,663 us.
+
+Verification:
+- Build artifact: `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_193359_CurrentDisk28.log`.
+- Build result: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `EXIT=0`.
+- H-Phi artifact: `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_193117_CurrentDiskBudgetGate10.json`.
+- H-Phi result: `EXIT=0`, `RuntimeHPhiRisk=0.000634555`, `GlobalRegistrySurface=5074`, `GetComponentCalls=321`, `NativeArrayRefs=7074`, `ManagedFormatSurface=590`, `JobCompleteSurface=58`, `PrimaryManagedRuntimeRisk=205`, `UnityUpdateMethods=0`, `FindObjectCalls=0`, `AupPrecisionRisk=0`.
+- Freshness: no C# source under `Assets/_Project/Scripts` was newer than either final artifact at verification time.
+
+Current Status: BUILD SUCCESSFUL / PLATINUM GRADE / CURRENTDISK28 CURRENT-DISK GREEN.

@@ -379,7 +379,7 @@ Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0
 Full H-Phi regression budget gate:
 
 ```powershell
-Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0 -MaxFindObjectCalls 0 -MaxLegacyEventPublish 28 -MaxDuplicateSignalNames 0 -MaxUnityUpdateMethods 0 -MaxGlobalRegistrySurface 5074 -MaxGetComponentCalls 321 -MaxNativeArrayRefs 7074 -MaxLinqSurface 5 -MaxCoroutineSurface 0 -MaxManagedFormatSurface 590 -MaxJobCompleteSurface 58 -MaxPrimaryManagedRuntimeRisk 205 -MaxOwnerBlockedNativeArrayRefs 6262 -MaxPrimaryOwnerBlockedNativeArrayRefs 5678 -MinDataSovereignty 0.021306000 -MinMemoryAlignment 0.506309000 -MinRuntimeHPhiRisk 0.000634500 -MaxCoreAsmdefDebtReferences 25 -MaxGeneratedProjectDebtReferences 10 -MaxSourceBackedBridgeDebtReferences 14 -MaxSourceBackedCompileBridgeDebtReferences 8 -MaxProjectReferenceReplacementDebtReferences 6
+Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0 -MaxFindObjectCalls 0 -MaxLegacyEventPublish 28 -MaxDuplicateSignalNames 0 -MaxUnityUpdateMethods 0 -MaxGlobalRegistrySurface 5074 -MaxGetComponentCalls 321 -MaxNativeArrayRefs 7074 -MaxLinqSurface 5 -MaxCoroutineSurface 0 -MaxManagedFormatSurface 564 -MaxJobCompleteSurface 58 -MaxPrimaryManagedRuntimeRisk 177 -MaxOwnerBlockedNativeArrayRefs 6262 -MaxPrimaryOwnerBlockedNativeArrayRefs 5678 -MinDataSovereignty 0.021306000 -MinMemoryAlignment 0.506309000 -MinRuntimeHPhiRisk 0.000634500 -MaxCoreAsmdefDebtReferences 25 -MaxGeneratedProjectDebtReferences 10 -MaxSourceBackedBridgeDebtReferences 14 -MaxSourceBackedCompileBridgeDebtReferences 8 -MaxProjectReferenceReplacementDebtReferences 6
 ```
 
 Source-count and score-floor gates require a full source scan. `-CoreGraphOnly`

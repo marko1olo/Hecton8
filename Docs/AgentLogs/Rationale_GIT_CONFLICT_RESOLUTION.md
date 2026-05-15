@@ -215,3 +215,9 @@ Solution: Keep it as a separate checkpoint, inspect the `ModLoader` changes as s
 Rejected Alternatives: Amending the already-pushed checkpoint, hiding the post-push dirty tail, or reporting full Unity health from CLI build output.
 Scalability potential: Git-only operator pass. `ModLoader` edits stay cold/error-path logging cleanup; AUP clamped-delta consumers reduce impossible-distance math risk across Low/Middle/High/Ultra without claiming runtime/profiler proof.
 Hardware Impact: 0 us runtime impact claimed. `Hecton8.Core.csproj` compile passes; Unity import, Play Mode, profiler, GCMonitor, player build, and visual proof remain pending.
+
+Problem: After `d9c57273b` was pushed and verified, a quest allocation-cleanup tail and mixed integrator evidence appeared; one generated build exit failed before a later build exit passed.
+Solution: Keep the quest tail separate, inspect `QuestStateManager` helper/string formatting changes, preserve both failed and successful evidence files, exclude the in-progress zero-byte HPhi artifact, and run a fresh isolated Core compile.
+Rejected Alternatives: Amending the already-pushed AUP checkpoint, deleting failed CurrentDisk29 evidence, or reporting Quest runtime/hot-path purity without profiler/GCMonitor proof.
+Scalability potential: Git-only operator pass. Quest changes reduce cold/compile/audit string allocation surfaces by construction, but runtime tier behavior remains pending Unity/profiler verification.
+Hardware Impact: 0 us runtime impact claimed. `Hecton8.Core.csproj` compile passes; Unity import, Play Mode, profiler, GCMonitor, player build, and visual proof remain pending.

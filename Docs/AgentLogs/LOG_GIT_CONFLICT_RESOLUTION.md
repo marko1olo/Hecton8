@@ -579,3 +579,15 @@ Cinematic Cheats used -> None by this operator pass.
 Exact Microseconds saved -> 0 us runtime by this operator pass.
 
 Verification -> `dotnet build Hecton8.Core.csproj` using `Temp\obj\CodexGitCheckTail2` and `Temp\bin\CodexGitCheckTail2` passed with `0 Warning(s)` and `0 Error(s)`. `git diff --check` and strict marker scan returned clean except CRLF warnings. Unity Editor import, Play Mode, profiler, GCMonitor, player build, and runtime visuals are not claimed.
+
+## 2026-05-15 - Loop 37 Quest Tail
+
+What was wrong -> After `d9c57273b` was pushed and fetch-verified, a new tail appeared: `QuestStateManager` string-allocation cleanup, integrator docs, after-atlas build/HPhi evidence, and mixed CurrentDisk29/30 build exits.
+
+What was done -> Inspected the quest source diff, preserved both failed and successful evidence classes, excluded the in-progress zero-byte HPhi artifact, and ran an isolated Core compile before staging.
+
+Cinematic Cheats used -> None by this operator pass.
+
+Exact Microseconds saved -> 0 us runtime by this operator pass.
+
+Verification -> `dotnet build Hecton8.Core.csproj` using `Temp\obj\CodexGitCheckTail3` and `Temp\bin\CodexGitCheckTail3` passed with `0 Warning(s)` and `0 Error(s)`. `git diff --check` returned only CRLF warnings. Unity Editor import, Play Mode, profiler, GCMonitor, player build, and runtime visuals are not claimed.
