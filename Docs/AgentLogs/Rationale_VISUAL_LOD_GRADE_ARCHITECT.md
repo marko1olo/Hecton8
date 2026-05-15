@@ -125,3 +125,15 @@ Rejected Alternatives: Manual re-run only was rejected because it does not fail 
 Scalability potential: Low - keeps TOASTER under the hard guard. High - keeps GOD_MODE overkill above 5x PRO.
 
 Hardware Impact: Offline-only. No runtime cost.
+
+## Decision 11 - Post-Resume Verification Discipline
+
+Problem: After the first completion report, a verification command used an escaped quote pattern and returned `TASK_COUNT=0`, which could be misread as a prompt extraction failure.
+
+Solution: Re-run extraction with `rg` against `Docs/Tasks/CURRENT_BATCH.md`, verify the exact `VISUAL_LOD_GRADE_ARCHITECT` XML block, and record that the block contains 10 numbered tasks even though its local header text says 15 titanium tasks.
+
+Rejected Alternatives: Treating the stale `TASK_COUNT=0` result as authoritative was rejected because the raw XML block visibly contains tasks 1-10. Editing the batch file was rejected because the prompt source is not this agent's artifact.
+
+Scalability potential: Not runtime. This protects the matrix handoff from false task-count rejection.
+
+Hardware Impact: No runtime impact. Offline validation was rerun and still reports TOASTER 1560 MiB and GOD_MODE/PRO density ratio 9.097.

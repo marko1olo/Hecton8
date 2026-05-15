@@ -78,3 +78,56 @@ Why rejected:
 - Physical volumetric truth on TOASTER was rejected.
 - Pull/rebase/force-push in the dirty divergent repository was rejected.
 - Repeated blind push loops were rejected after two long transport timeouts.
+
+## 2026-05-15 - Post-Resume Verification Pass
+
+What was wrong:
+- A post-completion prompt-count command used the wrong escaped-quote pattern and returned `TASK_COUNT=0`.
+- The workspace remains dirty with unrelated multi-agent files, so any additional commit must stay allowlisted.
+
+What was done:
+- Re-read status and rationale from disk.
+- Re-extracted the `VISUAL_LOD_GRADE_ARCHITECT` XML block with `rg`.
+- Confirmed the block contains 10 numbered tasks despite the header text saying 15 titanium tasks.
+- Reran JSON validation, Python bytecode compilation, unit tests, and the visual stress simulation.
+- Rechecked owned-file isolation for the pushed commits.
+
+Cinematic Cheats used:
+- No new runtime cheats were added in this pass.
+- Existing matrix cheats remain depth-only fog, baked AO, HLOD cards, texture downgrade, and GOD_MODE visual overkill instead of physical truth.
+
+Exact Microseconds saved:
+- Measured runtime microseconds saved: 0 us. No Unity runtime code changed.
+- Verification cost is offline only.
+
+Verification:
+- `python -m json.tool Data/System/Visual_Scalability_Matrix.json` passed.
+- `python -m json.tool Docs/AgentLogs/VisualStressSim_VISUAL_LOD_GRADE_ARCHITECT.json` passed.
+- `python -m py_compile Tools/VisualStressSim.py Tools/test_visual_stress_sim.py` passed.
+- `python -m unittest Tools.test_visual_stress_sim` passed: 2 tests.
+- `python Tools/VisualStressSim.py --write-report` passed.
+- Offline stress results remain TOASTER 1560.0 MiB, PRO density 338.4, GOD_MODE density 3078.4, GOD_MODE/PRO ratio 9.097.
+- `git diff-tree --no-commit-id --name-only -r 04329730fd3d9e4563ba2d1045302ce9b99ed73f` reports exactly 7 owned files.
+- `git diff-tree --no-commit-id --name-only -r 2c91f065b0a0ec1e8ff980678f3f09cbddf69257` reports exactly 3 owned docs files.
+- Unity runtime verification remains PENDING VERIFICATION.
+
+Regression model:
+- CPU: runtime unchanged.
+- GC: runtime unchanged.
+- Memory: runtime unchanged; offline TOASTER estimate remains under 1.6 GB.
+- Cadence: runtime unchanged; matrix still requires hysteresis.
+- Correctness: prompt count corrected to the actual 10 numbered tasks in the XML block.
+
+Hot path impact:
+- None.
+
+Failure modes:
+- Unity import, Play Mode, Memory Profiler, Frame Debugger, RenderDoc, player build, and screenshots are still absent.
+- Remote network checks can hang in this workspace; local commit-content verification is clean.
+
+Why kept:
+- The added notes remove ambiguity from the failed count command and preserve evidence integrity.
+
+Why rejected:
+- Batch-file editing was rejected.
+- Unrelated dirty worktree edits were rejected.
