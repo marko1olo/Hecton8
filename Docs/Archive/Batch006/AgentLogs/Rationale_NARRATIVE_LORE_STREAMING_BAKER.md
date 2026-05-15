@@ -271,3 +271,27 @@ Solution: Add `validate_source_entries` before compression, require UTF-8-decoda
 Rejected Alternatives: Letting invalid bytes compress would push decode failure to a future runtime loader; trusting direct test/helper entries would leave the binary contract weaker than the manifest claims.
 Scalability potential: Low/Middle/High/Ultra lore packaging fails fast as additional Markdown shards are added, preserving one stable hash namespace and UTF-8 payload contract.
 Hardware Impact: 0 us/frame on i3/MX350; validation is offline only and runtime blob size remains 10329 bytes.
+
+## Decision 035 - Convert Corrupt Payload Decompression To Verifier Error
+
+Problem: A blob with valid table bounds but corrupted zlib bytes could make `extract_payload` raise a raw `zlib.error`, bypassing the CLI `ValueError` boundary and producing weaker diagnostics.
+Solution: Catch `zlib.error` inside `extract_payload`, convert it to `ValueError` with the affected hash, and add a regression that corrupts the compressed payload byte.
+Rejected Alternatives: Letting the decompressor exception leak would leave corrupted packages harder to diagnose; adding a second broad exception handler in `main` would hide the exact failure source.
+Scalability potential: Low/Middle/High/Ultra packaging gets deterministic corruption diagnostics as lore shards scale.
+Hardware Impact: 0 us/frame on i3/MX350; decompression validation is offline tooling only.
+
+## Decision 036 - Apply Source Validation To Verification Helpers
+
+Problem: Source-entry validation ran during source loading and baking, but direct manifest/source verification helpers could still accept mismatched `SourceEntry` metadata from tests or future tooling.
+Solution: Call `validate_source_entries` inside `verify_entries_against_blob`, `build_manifest_data`, and `verify_manifest_data`; add a manifest-generation regression for hash-mismatched entries.
+Rejected Alternatives: Trusting callers to validate first would keep public helper behavior inconsistent; validating only during bake would miss stale helper inputs in package gates.
+Scalability potential: Low/Middle/High/Ultra package verification remains deterministic as lore tooling grows beyond one CLI.
+Hardware Impact: 0 us/frame on i3/MX350; offline verification only.
+
+## Decision 037 - Convert Atomic Write Failures To Controlled Diagnostics
+
+Problem: Re-extracting to an existing `.codex-artifacts` output hit a Windows `PermissionError` during atomic replace and printed a raw Python traceback.
+Solution: Catch `OSError` in `atomic_write_bytes`, clean the `.tmp` file when possible, and rethrow as `ValueError` so the CLI boundary reports a parser error without stack trace.
+Rejected Alternatives: Writing directly to the target would risk partial files; adding a broad `Exception` catch in `main` would hide specific tooling failures.
+Scalability potential: Low/Middle/High/Ultra operators get deterministic output-write diagnostics for larger lore packages and repeated extraction workflows.
+Hardware Impact: 0 us/frame on i3/MX350; filesystem write handling is offline tooling only.

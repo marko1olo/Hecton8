@@ -8,6 +8,7 @@ import io
 import os
 import sys
 import unittest
+from unittest import mock
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -156,6 +157,18 @@ class VerifyLoreTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     VerifyLore.parse_hash(value)
 
+    def test_atomic_write_failure_reports_value_error_and_cleans_temp(self) -> None:
+        output_path = Path(".codex-artifacts/atomic_write_failure_probe.md")
+        temp_path = output_path.with_name(output_path.name + ".tmp")
+        if temp_path.exists():
+            temp_path.unlink()
+
+        with mock.patch.object(Path, "replace", side_effect=PermissionError("denied")):
+            with self.assertRaisesRegex(ValueError, "Cannot write file atomically"):
+                VerifyLore.atomic_write_bytes(output_path, b"payload")
+
+        self.assertFalse(temp_path.exists())
+
     def test_missing_hash_returns_none(self) -> None:
         record = VerifyLore.LoreRecord(0x10, 32, 4)
         self.assertIsNone(VerifyLore.find_record([record], 0x20))
@@ -243,6 +256,15 @@ class VerifyLoreTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             VerifyLore.parse_blob(blob)
 
+    def test_corrupt_compressed_payload_is_rejected(self) -> None:
+        entries = [self.make_entry("Docs/Lore/entry.md", b"Entry\n")]
+        blob = bytearray(VerifyLore.bake_blob(entries))
+        records = VerifyLore.parse_blob(blob)
+        blob[records[0].offset] ^= 0xFF
+
+        with self.assertRaisesRegex(ValueError, "Payload decompression failed"):
+            VerifyLore.verify_entries_against_blob(bytes(blob), records, entries)
+
     def test_missing_docs_lore_does_not_fallback_to_design_redirect(self) -> None:
         self.assertTrue(Path("Docs/Design/Lore_Bible.md").exists())
         missing_dir = Path(".__verify_lore_missing_docs_lore_sentinel__")
@@ -288,6 +310,28 @@ class VerifyLoreTests(unittest.TestCase):
                 blob,
                 records,
                 entries,
+                "Docs/Lore",
+            )
+
+    def test_manifest_generation_rejects_hash_mismatched_entries(self) -> None:
+        entries = [self.make_entry("Docs/Lore/entry.md", b"Entry\n")]
+        blob = VerifyLore.bake_blob(entries)
+        records = VerifyLore.parse_blob(blob)
+        mismatched_entries = [
+            VerifyLore.SourceEntry(
+                source_path=Path("Docs/Lore/entry.md"),
+                canonical_id="Docs/Lore/entry.md",
+                hash_value=0x12345678,
+                payload=b"Entry\n",
+            )
+        ]
+
+        with self.assertRaisesRegex(ValueError, "Hash mismatch"):
+            VerifyLore.build_manifest_data(
+                "Data/Lore/Encyclopedia.h8bin",
+                blob,
+                records,
+                mismatched_entries,
                 "Docs/Lore",
             )
 

@@ -185,10 +185,18 @@ def discover_markdown_sources(source_dir: Path) -> list[Path]:
 
 def atomic_write_bytes(path: Path, payload: bytes) -> None:
     resolved = resolve_repo_path(path)
-    resolved.parent.mkdir(parents=True, exist_ok=True)
     temp_path = resolved.with_name(resolved.name + ".tmp")
-    temp_path.write_bytes(payload)
-    temp_path.replace(resolved)
+    try:
+        resolved.parent.mkdir(parents=True, exist_ok=True)
+        temp_path.write_bytes(payload)
+        temp_path.replace(resolved)
+    except OSError as exc:
+        try:
+            if temp_path.exists():
+                temp_path.unlink()
+        except OSError:
+            pass
+        raise ValueError(f"Cannot write file atomically: {format_repo_path(resolved)}") from exc
 
 
 def atomic_write_text(path: Path, payload: str) -> None:
@@ -352,10 +360,14 @@ def find_record(records: list[LoreRecord], hash_value: int) -> LoreRecord | None
 
 def extract_payload(blob: bytes, record: LoreRecord) -> bytes:
     compressed = blob[record.offset : record.offset + record.length]
-    return zlib.decompress(compressed)
+    try:
+        return zlib.decompress(compressed)
+    except zlib.error as exc:
+        raise ValueError(f"Payload decompression failed for {format_hash(record.hash_value)}") from exc
 
 
 def verify_entries_against_blob(blob: bytes, records: list[LoreRecord], entries: list[SourceEntry]) -> None:
+    validate_source_entries(entries)
     if len(entries) != len(records):
         raise ValueError(
             f"Source/blob count mismatch: sources={len(entries)} blob={len(records)}"
@@ -390,6 +402,7 @@ def build_manifest_data(
     entries: list[SourceEntry],
     source_dir_label: str,
 ) -> dict[str, object]:
+    validate_source_entries(entries)
     if len(entries) != len(records):
         raise ValueError(
             f"Cannot write manifest. Source/blob count mismatch: sources={len(entries)} blob={len(records)}"
@@ -459,6 +472,7 @@ def verify_manifest_data(
     expected_blob_label: str | None = None,
     expected_source_dir_label: str | None = None,
 ) -> None:
+    validate_source_entries(entries)
     record_by_hash = {record.hash_value: record for record in records}
     entry_by_hash = {entry.hash_value: entry for entry in entries}
 

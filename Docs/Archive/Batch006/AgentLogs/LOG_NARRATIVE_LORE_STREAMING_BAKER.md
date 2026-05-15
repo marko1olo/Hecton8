@@ -814,6 +814,48 @@ Failure modes:
 - Unity/C# compile proof remains blocked by missing local toolchain/generation state.
 - Runtime loader remains out of explicit prompt scope.
 
+## 2026-05-15 - Scoped Lore Discovery Verification
+
+STATUS: LORE BAKED / SCOPED DISCOVERY VERIFIED
+
+What was wrong:
+- A broad `Tools/test_*.py` discovery command was too wide for this prompt and timed out because it includes unrelated domain suites.
+- Treating that timeout as a lore compiler failure would be inaccurate, but ignoring it would leave the verification boundary vague.
+
+What was done:
+- Re-ran the lore-specific unittest module and the lore-specific unittest discovery pattern.
+- Recorded the broad discovery timeout as out-of-scope for this backend lore package.
+- Kept all verification tied to `Tools/VerifyLore.py`, `Tools/test_verify_lore.py`, `Data/Lore/Encyclopedia.h8bin`, and the manifest.
+
+Cinematic Cheats used:
+- No runtime simulation touched.
+- Fixed binary layout and zlib payloads remain unchanged.
+
+Exact microseconds saved:
+- Current runtime frame impact remains 0 us/frame.
+- Verification scope cleanup only; no runtime loader cost claimed.
+
+Verification:
+- `python Tools\VerifyLore.py --verify-manifest --verify-source --list` -> `VERIFY OK`, `MANIFEST VERIFY OK`, record `0xD1880394 offset=48 length=10281`.
+- `python Tools\VerifyLore.py --check` -> `CHECK OK`.
+- `python -B -m unittest Tools.test_verify_lore -v` -> 25 tests passed.
+- `python -B -m unittest discover -s Tools -p 'test_verify_lore.py' -v` -> 25 tests passed.
+- `$env:PYTHONPYCACHEPREFIX='.codex-artifacts\pycache'; python -m py_compile Tools\VerifyLore.py Tools\test_verify_lore.py` -> passed.
+- `git diff --check -- ...` -> exit 0; line-ending warnings only.
+- Source/extract SHA-256 match -> `6B529A808B25D18DA276747DB9149C61BACDF90A33DCC667FC85375DE13E69CD`.
+- Blob SHA-256 -> `8FDBAC8752B5DB10B98226D88BC5A27EEDA049207E139E6F2F3FB15ECDBDDC00`.
+
+Regression model:
+- CPU: no runtime code touched.
+- GC: no runtime allocation path touched.
+- Memory: runtime blob remains 10329 bytes.
+- Cadence: no Tick/Update/FixedUpdate path touched.
+- Correctness: lore verifier gates are explicit; unrelated tool-suite timeout is documented rather than hidden.
+
+Failure modes:
+- Unity/C# compile proof remains blocked by missing local toolchain/generation state.
+- Runtime loader remains out of explicit prompt scope.
+
 ## 2026-05-15 - Source Entry Contract Guard
 
 STATUS: LORE BAKED / SOURCE CONTRACT HARDENED
@@ -854,18 +896,18 @@ Failure modes:
 - Unity/C# compile proof remains blocked by missing local toolchain/generation state.
 - Runtime loader remains out of explicit prompt scope.
 
-## 2026-05-15 - Scoped Lore Discovery Verification
+## 2026-05-15 - Corrupt Payload Diagnostic Guard
 
-STATUS: LORE BAKED / SCOPED DISCOVERY VERIFIED
+STATUS: LORE BAKED / DECOMPRESSION FAILURE HARDENED
 
 What was wrong:
-- A broad `Tools/test_*.py` discovery command was too wide for this prompt and timed out because it includes unrelated domain suites.
-- Treating that timeout as a lore compiler failure would be inaccurate, but ignoring it would leave the verification boundary vague.
+- A blob could pass table-bound validation but still contain corrupted zlib bytes.
+- `zlib.error` would bypass the verifier's controlled `ValueError` diagnostic path.
 
 What was done:
-- Re-ran the lore-specific unittest module and the lore-specific unittest discovery pattern.
-- Recorded the broad discovery timeout as out-of-scope for this backend lore package.
-- Kept all verification tied to `Tools/VerifyLore.py`, `Tools/test_verify_lore.py`, `Data/Lore/Encyclopedia.h8bin`, and the manifest.
+- Wrapped `zlib.decompress` in `extract_payload`.
+- Corrupt payloads now raise `ValueError` with the affected lore hash.
+- Added regression coverage that flips a compressed payload byte and verifies controlled rejection.
 
 Cinematic Cheats used:
 - No runtime simulation touched.
@@ -873,24 +915,91 @@ Cinematic Cheats used:
 
 Exact microseconds saved:
 - Current runtime frame impact remains 0 us/frame.
-- Verification scope cleanup only; no runtime loader cost claimed.
+- Offline corruption diagnostics only; no runtime loader cost claimed.
 
 Verification:
-- `python Tools\VerifyLore.py --verify-manifest --verify-source --list` -> `VERIFY OK`, `MANIFEST VERIFY OK`, record `0xD1880394 offset=48 length=10281`.
+- `python -B -m unittest Tools.test_verify_lore -v` -> 29 tests passed.
 - `python Tools\VerifyLore.py --check` -> `CHECK OK`.
-- `python -B -m unittest Tools.test_verify_lore -v` -> 25 tests passed.
-- `python -B -m unittest discover -s Tools -p 'test_verify_lore.py' -v` -> 25 tests passed.
 - `$env:PYTHONPYCACHEPREFIX='.codex-artifacts\pycache'; python -m py_compile Tools\VerifyLore.py Tools\test_verify_lore.py` -> passed.
-- `git diff --check -- ...` -> exit 0; line-ending warnings only.
-- Source/extract SHA-256 match -> `6B529A808B25D18DA276747DB9149C61BACDF90A33DCC667FC85375DE13E69CD`.
-- Blob SHA-256 -> `8FDBAC8752B5DB10B98226D88BC5A27EEDA049207E139E6F2F3FB15ECDBDDC00`.
 
 Regression model:
 - CPU: no runtime code touched.
 - GC: no runtime allocation path touched.
 - Memory: runtime blob remains 10329 bytes.
 - Cadence: no Tick/Update/FixedUpdate path touched.
-- Correctness: lore verifier gates are explicit; unrelated tool-suite timeout is documented rather than hidden.
+- Correctness: corrupted compressed payloads fail with deterministic verifier diagnostics.
+
+Failure modes:
+- Unity/C# compile proof remains blocked by missing local toolchain/generation state.
+- Runtime loader remains out of explicit prompt scope.
+
+## 2026-05-15 - Verification Helper Source Contract Guard
+
+STATUS: LORE BAKED / VERIFY HELPERS HARDENED
+
+What was wrong:
+- Source-entry validation was present for loading and baking, but direct manifest/source verification helpers still trusted caller-supplied `SourceEntry` metadata.
+
+What was done:
+- `verify_entries_against_blob`, `build_manifest_data`, and `verify_manifest_data` now validate source-entry identity before using it.
+- Added regression coverage for manifest generation with a hash-mismatched source entry.
+
+Cinematic Cheats used:
+- No runtime simulation touched.
+- Fixed binary layout and zlib payloads remain unchanged.
+
+Exact microseconds saved:
+- Current runtime frame impact remains 0 us/frame.
+- Offline verification hardening only; no runtime loader cost claimed.
+
+Verification:
+- `python -B -m unittest Tools.test_verify_lore -v` -> 30 tests passed.
+- `python Tools\VerifyLore.py --check` -> `CHECK OK`.
+- `$env:PYTHONPYCACHEPREFIX='.codex-artifacts\pycache'; python -m py_compile Tools\VerifyLore.py Tools\test_verify_lore.py` -> passed.
+
+Regression model:
+- CPU: no runtime code touched.
+- GC: no runtime allocation path touched.
+- Memory: runtime blob remains 10329 bytes.
+- Cadence: no Tick/Update/FixedUpdate path touched.
+- Correctness: every public helper path now rejects invalid source-entry identity before package acceptance.
+
+Failure modes:
+- Unity/C# compile proof remains blocked by missing local toolchain/generation state.
+- Runtime loader remains out of explicit prompt scope.
+
+## 2026-05-15 - Atomic Write Failure Guard
+
+STATUS: LORE BAKED / OUTPUT WRITE ERRORS CONTROLLED
+
+What was wrong:
+- Re-extracting to an existing `.codex-artifacts` Markdown output hit a Windows `PermissionError` during atomic replace.
+- Before this pass, that filesystem failure printed a raw Python traceback.
+
+What was done:
+- `atomic_write_bytes` now catches `OSError`, removes the `.tmp` file when possible, and raises `ValueError` with the target path.
+- Added regression coverage for atomic replace failure cleanup and diagnostics.
+
+Cinematic Cheats used:
+- No runtime simulation touched.
+- Fixed binary layout and zlib payloads remain unchanged.
+
+Exact microseconds saved:
+- Current runtime frame impact remains 0 us/frame.
+- Offline output-write diagnostics only; no runtime loader cost claimed.
+
+Verification:
+- `python -B -m unittest Tools.test_verify_lore -v` -> 31 tests passed.
+- `python Tools\VerifyLore.py --check` -> `CHECK OK`.
+- Existing locked extract path now returns parser error without `Traceback`.
+- Fresh extract path `.codex-artifacts\NARRATIVE_LORE_STREAMING_BAKER_final_extract.md` matched source SHA-256 `6B529A808B25D18DA276747DB9149C61BACDF90A33DCC667FC85375DE13E69CD`.
+
+Regression model:
+- CPU: no runtime code touched.
+- GC: no runtime allocation path touched.
+- Memory: runtime blob remains 10329 bytes.
+- Cadence: no Tick/Update/FixedUpdate path touched.
+- Correctness: failed output writes no longer masquerade as Python implementation crashes.
 
 Failure modes:
 - Unity/C# compile proof remains blocked by missing local toolchain/generation state.
