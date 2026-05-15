@@ -798,6 +798,42 @@ Verification:
 - Scoped `Art/Materials` surface-unresolved gate did not trip because current unresolved refs there are non-surface by this prompt filter; scoped broad/material/channel/detail gates still returned expected exits 4/3/8/9.
 - `git diff --check`: passed with line-ending warnings only.
 - Owned Python hot-path scan found no Unity runtime API matches.
+
+## 2026-05-15 - Surface Migration Queue Pass
+
+What was wrong:
+
+- Blocker refs, channel-packing candidates, and missing detail maps were correct but fragmented across separate CSVs.
+- Manual correlation can cause artists to start ORM/detail work on materials that still have base/normal blocker refs.
+
+What was done:
+
+- Added `surface_material_migration_queue` to generated JSON.
+- Added `Surface Material Migration Queue` to Markdown.
+- Added `MaterialAudit_TECHNICAL_ARTIST_DATA_surface_material_migration_queue.csv`.
+- Added `surface_migration_queue_rows` and `surface_migration_queue_priority_counts` to CLI/Markdown/JSON.
+- Tuned queue priority so BLOCKER refs lead, then actual channel-packing priority is preserved.
+
+Cinematic Cheats used:
+
+- None. This is offline triage for later shared ORM/detail visual fakes.
+
+Exact Microseconds saved:
+
+- Runtime code changed: none.
+- Immediate runtime CPU saving: 0 us.
+- Reduces wasted material migration passes by putting dependency blockers before cosmetic/detail work.
+
+Verification:
+
+- `python -m py_compile Tools\MaterialAudit.py Tools\test_material_audit.py`: passed.
+- `python -m unittest Tools.test_material_audit`: passed 13 tests.
+- Full first-party audit with `--ci-surface-gates`: passed; `surface_migration_queue_rows=22`.
+- Queue priority counts: `BLOCKER=2`, `MEDIUM=9`, `LOW=11`.
+- Full-root `--fail-on-surface-unresolved-refs` returned expected exit 10 under wrapper.
+- `git diff --check`: passed with line-ending warnings only.
+- Owned Python hot-path scan found no Unity runtime API matches.
+- Artifact grep confirmed queue rows in doctrine, generated Markdown/JSON, status, rationale, log, tool, and tests.
 - Artifact readback confirmed exit code 10 and `Surface Material Texture GUIDs` in generated documentation.
 
 ## 2026-05-15 - Surface Blocker Severity Pass

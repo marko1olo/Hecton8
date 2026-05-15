@@ -29,6 +29,7 @@ Audit source: `Docs/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA.json`
 - Surface materials with unresolved texture references: 2
 - Surface unresolved texture references: 8
 - Surface unresolved BLOCKER materials: 2
+- Surface material migration queue rows: 22 (`BLOCKER` = 2, `MEDIUM` = 9, `LOW` = 11)
 - Channel-packing migration candidates: 22 (`LOW` = 13, `MEDIUM` = 9)
 - Channel-packing candidate model: 146.3 MiB standard -> 65.78 MiB optimized, saving 80.52 MiB (55.0%)
 - Machine-readable GOD_MODE texture override rows: 12
@@ -227,7 +228,7 @@ Load-shed:
 python Tools\MaterialAudit.py --root Assets\_Project --resolve-root Assets\_Project --sample-size 256 --json Docs\AgentLogs\MaterialAudit_TECHNICAL_ARTIST_DATA.json --markdown Docs\AgentLogs\MaterialAudit_TECHNICAL_ARTIST_DATA.md --csv-prefix Docs\AgentLogs\MaterialAudit_TECHNICAL_ARTIST_DATA --ci-surface-gates
 ```
 
-Current result: `ci_surface_gates=enabled`, `active_gate_profiles=surface_safe`, `active_gates=energy_failures,energy_warnings,albedo_read_errors,texture_budget`, `textures=137`, `energy_failures=0`, `energy_warnings=0`, `texture_read_errors=0`, `albedo_read_errors=0`, `import_issue_textures=5`, `estimated_texture_mib=497.565`, `texture_budget_mib=900.0`, `texture_budget_status=PASS`, `materials_with_prompt_orm=0`, `materials_with_legacy_mask=9`, `materials_with_detail=0`, `detail_map_missing_materials=22`, `channel_packing_candidates=22`, `channel_candidate_saved_mib=80.52`, `god_mode_override_count=12`, `global_detail_overlay_count=10`, `materials_with_unresolved_texture_refs=9`, `unresolved_texture_refs=27`, `surface_materials_with_unresolved_texture_refs=2`, `surface_unresolved_texture_refs=8`, `surface_unresolved_blocker_materials=2`, `materials_with_issues=29`.
+Current result: `ci_surface_gates=enabled`, `active_gate_profiles=surface_safe`, `active_gates=energy_failures,energy_warnings,albedo_read_errors,texture_budget`, `textures=137`, `energy_failures=0`, `energy_warnings=0`, `texture_read_errors=0`, `albedo_read_errors=0`, `import_issue_textures=5`, `estimated_texture_mib=497.565`, `texture_budget_mib=900.0`, `texture_budget_status=PASS`, `materials_with_prompt_orm=0`, `materials_with_legacy_mask=9`, `materials_with_detail=0`, `detail_map_missing_materials=22`, `channel_packing_candidates=22`, `channel_candidate_saved_mib=80.52`, `god_mode_override_count=12`, `global_detail_overlay_count=10`, `materials_with_unresolved_texture_refs=9`, `unresolved_texture_refs=27`, `surface_materials_with_unresolved_texture_refs=2`, `surface_unresolved_texture_refs=8`, `surface_unresolved_blocker_materials=2`, `surface_migration_queue_rows=22`, `surface_migration_queue_priority_counts=BLOCKER=2, MEDIUM=9, LOW=11`, `materials_with_issues=29`.
 
 Generated CSV artifacts:
 
@@ -236,6 +237,7 @@ Generated CSV artifacts:
 - `Docs/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA_material_issues.csv`
 - `Docs/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA_unresolved_texture_refs.csv`
 - `Docs/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA_surface_unresolved_texture_refs.csv`
+- `Docs/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA_surface_material_migration_queue.csv`
 - `Docs/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA_detail_candidates.csv`
 - `Docs/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA_detail_map_missing_materials.csv`
 - `Docs/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA_channel_packing_candidates.csv`

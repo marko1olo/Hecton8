@@ -239,3 +239,11 @@ Solution: Group unresolved refs by base-color, normal, data-mask, detail, and ot
 Rejected Alternatives: Raw GUID-only export was rejected because it forces every downstream owner to duplicate slot classification. Blocking only on total unresolved count was rejected because base/normal loss is worse than a stale optional detail slot.
 Scalability potential: Low = artists fix base/normal blockers first before cheap-device imports. Middle = CI can sort blocker/high/medium debt. High = surface migration can prioritize visible rock/cockpit/module materials. Ultra = GOD_MODE override rollout can require zero BLOCKER refs before spending higher mips.
 Hardware Impact: 0 us runtime impact. Current full audit reports `surface_unresolved_blocker_materials=2`; both are Rock_4 surface materials with unresolved base, normal, and occlusion/data slots.
+
+## Surface Migration Queue
+
+Problem: The audit produced correct but fragmented worklists: unresolved refs, channel-packing candidates, and detail-map-missing materials had to be manually correlated before migration.
+Solution: Build a single `surface_material_migration_queue` sorted by practical migration order: BLOCKER refs first, then medium legacy-mask review, then low-risk ORM/detail authoring.
+Rejected Alternatives: Keeping separate CSVs only was rejected because cross-file correlation causes missed blockers and repeated artist triage. Promoting all missing ORM rows to medium was rejected after readback because low-risk base-only materials should stay LOW until they are near-field or hero.
+Scalability potential: Low = queue starts with blocker repair so cheap-device imports do not carry broken surfaces. Middle = channel review can be batched. High = detail/ORM authoring can target visible surfaces first. Ultra = GOD_MODE material upgrades can consume the same queue after blockers are cleared.
+Hardware Impact: 0 us runtime impact. Current full audit reports `surface_migration_queue_rows=22` with `BLOCKER=2, MEDIUM=9, LOW=11`.

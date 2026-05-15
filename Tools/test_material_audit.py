@@ -177,6 +177,7 @@ class MaterialAuditTests(unittest.TestCase):
             self.assertEqual(1, summary["unresolved_texture_ref_severity_counts"]["BLOCKER"])
             self.assertEqual(1, summary["surface_unresolved_texture_ref_severity_counts"]["BLOCKER"])
             self.assertEqual(1, summary["surface_migration_queue_count"])
+            self.assertEqual(1, summary["surface_migration_queue_priority_counts"]["BLOCKER"])
             self.assertEqual("BLOCKER", summary["surface_material_migration_queue"][0]["priority"])
             self.assertEqual("HIGH", resolved["channel_packing_candidate"]["priority"])
 
@@ -645,6 +646,7 @@ class MaterialAuditTests(unittest.TestCase):
                     },
                 ],
                 "surface_migration_queue_count": 1,
+                "surface_migration_queue_priority_counts": {"BLOCKER": 1},
                 "surface_material_migration_queue": [
                     {
                         "path": "MAT_Test.mat",
@@ -748,6 +750,7 @@ class MaterialAuditTests(unittest.TestCase):
             self.assertIn("Surface Material Migration Queue", markdown_text)
             self.assertIn("BLOCKER", markdown_text)
             self.assertIn("Surface unresolved BLOCKER materials", markdown_text)
+            self.assertIn("Surface migration queue priority counts", markdown_text)
             self.assertIn("surface_safe", markdown_text)
             self.assertIn("unresolved_texture_refs", markdown_text)
             self.assertIn("surface_unresolved_texture_refs", markdown_text)

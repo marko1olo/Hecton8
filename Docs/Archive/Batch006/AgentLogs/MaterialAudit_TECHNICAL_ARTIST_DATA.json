@@ -4026,6 +4026,11 @@
       }
     ],
     "surface_migration_queue_count": 22,
+    "surface_migration_queue_priority_counts": {
+      "BLOCKER": 2,
+      "MEDIUM": 9,
+      "LOW": 11
+    },
     "surface_material_migration_queue": [
       {
         "path": "Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/mat_Rock2.mat",
@@ -4072,44 +4077,9 @@
         "detail_refs": []
       },
       {
-        "path": "Art/Materials/Construction/Mat_RuinSeepSheen.mat",
-        "priority": "MEDIUM",
-        "action": "Author prompt ORM or review legacy mask channel order before shader rollout.",
-        "needs_reference_repair": false,
-        "unresolved_severity": "NONE",
-        "needs_prompt_orm": true,
-        "needs_detail_map": true,
-        "needs_legacy_mask_review": false,
-        "channel_priority": "LOW",
-        "base_maps": [
-          "_MainTex:Art/TEXTURES/Detali/Mineral Seep Mask - second try.png"
-        ],
-        "normal_maps": [],
-        "data_refs": [],
-        "detail_refs": []
-      },
-      {
-        "path": "Art/Materials/Meshy_AI_Alien_barnacles_clust_0301230506_texture.mat",
-        "priority": "MEDIUM",
-        "action": "Author prompt ORM or review legacy mask channel order before shader rollout.",
-        "needs_reference_repair": false,
-        "unresolved_severity": "NONE",
-        "needs_prompt_orm": true,
-        "needs_detail_map": true,
-        "needs_legacy_mask_review": false,
-        "channel_priority": "LOW",
-        "base_maps": [
-          "_BaseMap:Art/TEXTURES/Meshy_AI_Alien_barnacles_clust_0301230506_texture.png",
-          "_MainTex:Art/TEXTURES/Meshy_AI_Alien_barnacles_clust_0301230506_texture.png"
-        ],
-        "normal_maps": [],
-        "data_refs": [],
-        "detail_refs": []
-      },
-      {
         "path": "Art/Materials/WorldProceduralProxy/MAT_family_coral_branching.mat",
         "priority": "MEDIUM",
-        "action": "Author prompt ORM or review legacy mask channel order before shader rollout.",
+        "action": "Review legacy mask channel order before prompt ORM shader rollout.",
         "needs_reference_repair": false,
         "unresolved_severity": "NONE",
         "needs_prompt_orm": true,
@@ -4128,7 +4098,7 @@
       {
         "path": "Art/Materials/WorldProceduralProxy/MAT_family_coral_brittle.mat",
         "priority": "MEDIUM",
-        "action": "Author prompt ORM or review legacy mask channel order before shader rollout.",
+        "action": "Review legacy mask channel order before prompt ORM shader rollout.",
         "needs_reference_repair": false,
         "unresolved_severity": "NONE",
         "needs_prompt_orm": true,
@@ -4147,7 +4117,7 @@
       {
         "path": "Art/Materials/WorldProceduralProxy/MAT_family_coral_low.mat",
         "priority": "MEDIUM",
-        "action": "Author prompt ORM or review legacy mask channel order before shader rollout.",
+        "action": "Review legacy mask channel order before prompt ORM shader rollout.",
         "needs_reference_repair": false,
         "unresolved_severity": "NONE",
         "needs_prompt_orm": true,
@@ -4166,7 +4136,7 @@
       {
         "path": "Art/Materials/WorldProceduralProxy/MAT_family_coral_massive.mat",
         "priority": "MEDIUM",
-        "action": "Author prompt ORM or review legacy mask channel order before shader rollout.",
+        "action": "Review legacy mask channel order before prompt ORM shader rollout.",
         "needs_reference_repair": false,
         "unresolved_severity": "NONE",
         "needs_prompt_orm": true,
@@ -4185,7 +4155,7 @@
       {
         "path": "Art/Materials/WorldProceduralProxy/MAT_family_coral_plate.mat",
         "priority": "MEDIUM",
-        "action": "Author prompt ORM or review legacy mask channel order before shader rollout.",
+        "action": "Review legacy mask channel order before prompt ORM shader rollout.",
         "needs_reference_repair": false,
         "unresolved_severity": "NONE",
         "needs_prompt_orm": true,
@@ -4204,7 +4174,7 @@
       {
         "path": "Art/Materials/WorldProceduralProxy/MAT_family_kelp_abyssal.mat",
         "priority": "MEDIUM",
-        "action": "Author prompt ORM or review legacy mask channel order before shader rollout.",
+        "action": "Review legacy mask channel order before prompt ORM shader rollout.",
         "needs_reference_repair": false,
         "unresolved_severity": "NONE",
         "needs_prompt_orm": true,
@@ -4223,7 +4193,7 @@
       {
         "path": "Art/Materials/WorldProceduralProxy/MAT_family_kelp_canopy.mat",
         "priority": "MEDIUM",
-        "action": "Author prompt ORM or review legacy mask channel order before shader rollout.",
+        "action": "Review legacy mask channel order before prompt ORM shader rollout.",
         "needs_reference_repair": false,
         "unresolved_severity": "NONE",
         "needs_prompt_orm": true,
@@ -4242,7 +4212,7 @@
       {
         "path": "Art/Materials/WorldProceduralProxy/MAT_family_kelp_patch_dense.mat",
         "priority": "MEDIUM",
-        "action": "Author prompt ORM or review legacy mask channel order before shader rollout.",
+        "action": "Review legacy mask channel order before prompt ORM shader rollout.",
         "needs_reference_repair": false,
         "unresolved_severity": "NONE",
         "needs_prompt_orm": true,
@@ -4261,7 +4231,7 @@
       {
         "path": "Art/Materials/WorldProceduralProxy/MAT_family_kelp_tall.mat",
         "priority": "MEDIUM",
-        "action": "Author prompt ORM or review legacy mask channel order before shader rollout.",
+        "action": "Review legacy mask channel order before prompt ORM shader rollout.",
         "needs_reference_repair": false,
         "unresolved_severity": "NONE",
         "needs_prompt_orm": true,
@@ -4278,9 +4248,44 @@
         "detail_refs": []
       },
       {
+        "path": "Art/Materials/Construction/Mat_RuinSeepSheen.mat",
+        "priority": "LOW",
+        "action": "Author prompt ORM if near-field, then assign shared detail overlay.",
+        "needs_reference_repair": false,
+        "unresolved_severity": "NONE",
+        "needs_prompt_orm": true,
+        "needs_detail_map": true,
+        "needs_legacy_mask_review": false,
+        "channel_priority": "LOW",
+        "base_maps": [
+          "_MainTex:Art/TEXTURES/Detali/Mineral Seep Mask - second try.png"
+        ],
+        "normal_maps": [],
+        "data_refs": [],
+        "detail_refs": []
+      },
+      {
+        "path": "Art/Materials/Meshy_AI_Alien_barnacles_clust_0301230506_texture.mat",
+        "priority": "LOW",
+        "action": "Author prompt ORM if near-field, then assign shared detail overlay.",
+        "needs_reference_repair": false,
+        "unresolved_severity": "NONE",
+        "needs_prompt_orm": true,
+        "needs_detail_map": true,
+        "needs_legacy_mask_review": false,
+        "channel_priority": "LOW",
+        "base_maps": [
+          "_BaseMap:Art/TEXTURES/Meshy_AI_Alien_barnacles_clust_0301230506_texture.png",
+          "_MainTex:Art/TEXTURES/Meshy_AI_Alien_barnacles_clust_0301230506_texture.png"
+        ],
+        "normal_maps": [],
+        "data_refs": [],
+        "detail_refs": []
+      },
+      {
         "path": "Art/Materials/WorldProceduralProxy/MAT_family_rock_arch_large.mat",
-        "priority": "MEDIUM",
-        "action": "Author prompt ORM or review legacy mask channel order before shader rollout.",
+        "priority": "LOW",
+        "action": "Author prompt ORM if near-field, then assign shared detail overlay.",
         "needs_reference_repair": false,
         "unresolved_severity": "NONE",
         "needs_prompt_orm": true,
@@ -4299,8 +4304,8 @@
       },
       {
         "path": "Art/Materials/WorldProceduralProxy/MAT_family_rock_cluster_medium.mat",
-        "priority": "MEDIUM",
-        "action": "Author prompt ORM or review legacy mask channel order before shader rollout.",
+        "priority": "LOW",
+        "action": "Author prompt ORM if near-field, then assign shared detail overlay.",
         "needs_reference_repair": false,
         "unresolved_severity": "NONE",
         "needs_prompt_orm": true,
@@ -4319,8 +4324,8 @@
       },
       {
         "path": "Art/Materials/WorldProceduralProxy/MAT_family_rock_small_floor.mat",
-        "priority": "MEDIUM",
-        "action": "Author prompt ORM or review legacy mask channel order before shader rollout.",
+        "priority": "LOW",
+        "action": "Author prompt ORM if near-field, then assign shared detail overlay.",
         "needs_reference_repair": false,
         "unresolved_severity": "NONE",
         "needs_prompt_orm": true,
@@ -4339,8 +4344,8 @@
       },
       {
         "path": "Art/Models/Rocks/Rock 6/rock6/rock_6.mat",
-        "priority": "MEDIUM",
-        "action": "Author prompt ORM or review legacy mask channel order before shader rollout.",
+        "priority": "LOW",
+        "action": "Author prompt ORM if near-field, then assign shared detail overlay.",
         "needs_reference_repair": false,
         "unresolved_severity": "NONE",
         "needs_prompt_orm": true,
@@ -4359,8 +4364,8 @@
       },
       {
         "path": "Art/Models/Rocks/Rock 7/Materials/2.mat",
-        "priority": "MEDIUM",
-        "action": "Author prompt ORM or review legacy mask channel order before shader rollout.",
+        "priority": "LOW",
+        "action": "Author prompt ORM if near-field, then assign shared detail overlay.",
         "needs_reference_repair": false,
         "unresolved_severity": "NONE",
         "needs_prompt_orm": true,
@@ -4379,8 +4384,8 @@
       },
       {
         "path": "Materials/WorldRuntime/ProceduralPlaceholders/TerrainLod/MAT_family_rock_arch_large_Placeholder.mat",
-        "priority": "MEDIUM",
-        "action": "Author prompt ORM or review legacy mask channel order before shader rollout.",
+        "priority": "LOW",
+        "action": "Author prompt ORM if near-field, then assign shared detail overlay.",
         "needs_reference_repair": false,
         "unresolved_severity": "NONE",
         "needs_prompt_orm": true,
@@ -4399,8 +4404,8 @@
       },
       {
         "path": "_PROLOGUE_CONTENT/Textures/Planets/pLANET/Mat_HectonClouds.mat",
-        "priority": "MEDIUM",
-        "action": "Author prompt ORM or review legacy mask channel order before shader rollout.",
+        "priority": "LOW",
+        "action": "Author prompt ORM if near-field, then assign shared detail overlay.",
         "needs_reference_repair": false,
         "unresolved_severity": "NONE",
         "needs_prompt_orm": true,
@@ -4417,8 +4422,8 @@
       },
       {
         "path": "_PROLOGUE_CONTENT/Textures/Planets/pLANET/Mat_HectonSurface.mat",
-        "priority": "MEDIUM",
-        "action": "Author prompt ORM or review legacy mask channel order before shader rollout.",
+        "priority": "LOW",
+        "action": "Author prompt ORM if near-field, then assign shared detail overlay.",
         "needs_reference_repair": false,
         "unresolved_severity": "NONE",
         "needs_prompt_orm": true,
@@ -4437,8 +4442,8 @@
       },
       {
         "path": "_PROLOGUE_CONTENT/Textures/Planets/pLANET/Materials/clouds0_diff.mat",
-        "priority": "MEDIUM",
-        "action": "Author prompt ORM or review legacy mask channel order before shader rollout.",
+        "priority": "LOW",
+        "action": "Author prompt ORM if near-field, then assign shared detail overlay.",
         "needs_reference_repair": false,
         "unresolved_severity": "NONE",
         "needs_prompt_orm": true,

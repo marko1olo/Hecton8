@@ -32,6 +32,7 @@ Include third-party: `False`
 | Surface unresolved texture refs | 8 |
 | Surface unresolved BLOCKER materials | 2 |
 | Surface migration queue rows | 22 |
+| Surface migration queue priority counts | BLOCKER=2, MEDIUM=9, LOW=11 |
 | Channel packing candidates | 22 |
 
 ## Gate Exit Codes
@@ -250,26 +251,26 @@ No texture read errors detected.
 | --- | --- | --- | --- | --- | --- |
 | Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/mat_Rock2.mat | BLOCKER | Restore base/normal refs or clear invalid slots before material migration. | True | True | True |
 | Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/mat_Rock_Shared.mat | BLOCKER | Restore base/normal refs or clear invalid slots before material migration. | True | True | True |
-| Art/Materials/Construction/Mat_RuinSeepSheen.mat | MEDIUM | Author prompt ORM or review legacy mask channel order before shader rollout. | True | True | False |
-| Art/Materials/Meshy_AI_Alien_barnacles_clust_0301230506_texture.mat | MEDIUM | Author prompt ORM or review legacy mask channel order before shader rollout. | True | True | False |
-| Art/Materials/WorldProceduralProxy/MAT_family_coral_branching.mat | MEDIUM | Author prompt ORM or review legacy mask channel order before shader rollout. | True | True | False |
-| Art/Materials/WorldProceduralProxy/MAT_family_coral_brittle.mat | MEDIUM | Author prompt ORM or review legacy mask channel order before shader rollout. | True | True | False |
-| Art/Materials/WorldProceduralProxy/MAT_family_coral_low.mat | MEDIUM | Author prompt ORM or review legacy mask channel order before shader rollout. | True | True | False |
-| Art/Materials/WorldProceduralProxy/MAT_family_coral_massive.mat | MEDIUM | Author prompt ORM or review legacy mask channel order before shader rollout. | True | True | False |
-| Art/Materials/WorldProceduralProxy/MAT_family_coral_plate.mat | MEDIUM | Author prompt ORM or review legacy mask channel order before shader rollout. | True | True | False |
-| Art/Materials/WorldProceduralProxy/MAT_family_kelp_abyssal.mat | MEDIUM | Author prompt ORM or review legacy mask channel order before shader rollout. | True | True | False |
-| Art/Materials/WorldProceduralProxy/MAT_family_kelp_canopy.mat | MEDIUM | Author prompt ORM or review legacy mask channel order before shader rollout. | True | True | False |
-| Art/Materials/WorldProceduralProxy/MAT_family_kelp_patch_dense.mat | MEDIUM | Author prompt ORM or review legacy mask channel order before shader rollout. | True | True | False |
-| Art/Materials/WorldProceduralProxy/MAT_family_kelp_tall.mat | MEDIUM | Author prompt ORM or review legacy mask channel order before shader rollout. | True | True | False |
-| Art/Materials/WorldProceduralProxy/MAT_family_rock_arch_large.mat | MEDIUM | Author prompt ORM or review legacy mask channel order before shader rollout. | True | True | False |
-| Art/Materials/WorldProceduralProxy/MAT_family_rock_cluster_medium.mat | MEDIUM | Author prompt ORM or review legacy mask channel order before shader rollout. | True | True | False |
-| Art/Materials/WorldProceduralProxy/MAT_family_rock_small_floor.mat | MEDIUM | Author prompt ORM or review legacy mask channel order before shader rollout. | True | True | False |
-| Art/Models/Rocks/Rock 6/rock6/rock_6.mat | MEDIUM | Author prompt ORM or review legacy mask channel order before shader rollout. | True | True | False |
-| Art/Models/Rocks/Rock 7/Materials/2.mat | MEDIUM | Author prompt ORM or review legacy mask channel order before shader rollout. | True | True | False |
-| Materials/WorldRuntime/ProceduralPlaceholders/TerrainLod/MAT_family_rock_arch_large_Placeholder.mat | MEDIUM | Author prompt ORM or review legacy mask channel order before shader rollout. | True | True | False |
-| _PROLOGUE_CONTENT/Textures/Planets/pLANET/Mat_HectonClouds.mat | MEDIUM | Author prompt ORM or review legacy mask channel order before shader rollout. | True | True | False |
-| _PROLOGUE_CONTENT/Textures/Planets/pLANET/Mat_HectonSurface.mat | MEDIUM | Author prompt ORM or review legacy mask channel order before shader rollout. | True | True | False |
-| _PROLOGUE_CONTENT/Textures/Planets/pLANET/Materials/clouds0_diff.mat | MEDIUM | Author prompt ORM or review legacy mask channel order before shader rollout. | True | True | False |
+| Art/Materials/WorldProceduralProxy/MAT_family_coral_branching.mat | MEDIUM | Review legacy mask channel order before prompt ORM shader rollout. | True | True | False |
+| Art/Materials/WorldProceduralProxy/MAT_family_coral_brittle.mat | MEDIUM | Review legacy mask channel order before prompt ORM shader rollout. | True | True | False |
+| Art/Materials/WorldProceduralProxy/MAT_family_coral_low.mat | MEDIUM | Review legacy mask channel order before prompt ORM shader rollout. | True | True | False |
+| Art/Materials/WorldProceduralProxy/MAT_family_coral_massive.mat | MEDIUM | Review legacy mask channel order before prompt ORM shader rollout. | True | True | False |
+| Art/Materials/WorldProceduralProxy/MAT_family_coral_plate.mat | MEDIUM | Review legacy mask channel order before prompt ORM shader rollout. | True | True | False |
+| Art/Materials/WorldProceduralProxy/MAT_family_kelp_abyssal.mat | MEDIUM | Review legacy mask channel order before prompt ORM shader rollout. | True | True | False |
+| Art/Materials/WorldProceduralProxy/MAT_family_kelp_canopy.mat | MEDIUM | Review legacy mask channel order before prompt ORM shader rollout. | True | True | False |
+| Art/Materials/WorldProceduralProxy/MAT_family_kelp_patch_dense.mat | MEDIUM | Review legacy mask channel order before prompt ORM shader rollout. | True | True | False |
+| Art/Materials/WorldProceduralProxy/MAT_family_kelp_tall.mat | MEDIUM | Review legacy mask channel order before prompt ORM shader rollout. | True | True | False |
+| Art/Materials/Construction/Mat_RuinSeepSheen.mat | LOW | Author prompt ORM if near-field, then assign shared detail overlay. | True | True | False |
+| Art/Materials/Meshy_AI_Alien_barnacles_clust_0301230506_texture.mat | LOW | Author prompt ORM if near-field, then assign shared detail overlay. | True | True | False |
+| Art/Materials/WorldProceduralProxy/MAT_family_rock_arch_large.mat | LOW | Author prompt ORM if near-field, then assign shared detail overlay. | True | True | False |
+| Art/Materials/WorldProceduralProxy/MAT_family_rock_cluster_medium.mat | LOW | Author prompt ORM if near-field, then assign shared detail overlay. | True | True | False |
+| Art/Materials/WorldProceduralProxy/MAT_family_rock_small_floor.mat | LOW | Author prompt ORM if near-field, then assign shared detail overlay. | True | True | False |
+| Art/Models/Rocks/Rock 6/rock6/rock_6.mat | LOW | Author prompt ORM if near-field, then assign shared detail overlay. | True | True | False |
+| Art/Models/Rocks/Rock 7/Materials/2.mat | LOW | Author prompt ORM if near-field, then assign shared detail overlay. | True | True | False |
+| Materials/WorldRuntime/ProceduralPlaceholders/TerrainLod/MAT_family_rock_arch_large_Placeholder.mat | LOW | Author prompt ORM if near-field, then assign shared detail overlay. | True | True | False |
+| _PROLOGUE_CONTENT/Textures/Planets/pLANET/Mat_HectonClouds.mat | LOW | Author prompt ORM if near-field, then assign shared detail overlay. | True | True | False |
+| _PROLOGUE_CONTENT/Textures/Planets/pLANET/Mat_HectonSurface.mat | LOW | Author prompt ORM if near-field, then assign shared detail overlay. | True | True | False |
+| _PROLOGUE_CONTENT/Textures/Planets/pLANET/Materials/clouds0_diff.mat | LOW | Author prompt ORM if near-field, then assign shared detail overlay. | True | True | False |
 
 ## Texture Memory Hotspots
 

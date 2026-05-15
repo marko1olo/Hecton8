@@ -967,6 +967,25 @@ def migration_priority_rank(priority: str) -> int:
     return 3
 
 
+def migration_queue_sort_key(row: dict[str, Any]) -> tuple[int, str]:
+    return (migration_priority_rank(row["priority"]), row["path"])
+
+
+def count_priorities(rows: list[dict[str, Any]]) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for row in rows:
+        priority = row.get("priority", "UNKNOWN")
+        counts[priority] = counts.get(priority, 0) + 1
+    return counts
+
+
+def format_counts(counts: dict[str, int]) -> str:
+    if not counts:
+        return "none"
+    ordered_keys = sorted(counts.keys(), key=migration_priority_rank)
+    return ", ".join(f"{key}={counts[key]}" for key in ordered_keys)
+
+
 def build_surface_material_migration_queue(materials: list[dict[str, Any]]) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     for material in materials:
@@ -994,12 +1013,17 @@ def build_surface_material_migration_queue(materials: list[dict[str, Any]]) -> l
         if unresolved_severity == "BLOCKER":
             priority = "BLOCKER"
             action = "Restore base/normal refs or clear invalid slots before material migration."
-        elif channel_candidate and channel_candidate.get("priority") == "HIGH":
-            priority = "HIGH"
-            action = "Pack AO/roughness/metallic into prompt ORM, then assign shared detail overlay."
+        elif channel_candidate:
+            priority = channel_candidate.get("priority", "LOW")
+            if priority == "HIGH":
+                action = "Pack AO/roughness/metallic into prompt ORM, then assign shared detail overlay."
+            elif priority == "MEDIUM":
+                action = "Review legacy mask channel order before prompt ORM shader rollout."
+            else:
+                action = "Author prompt ORM if near-field, then assign shared detail overlay."
         elif needs_prompt_orm or needs_legacy_mask_review:
-            priority = "MEDIUM"
-            action = "Author prompt ORM or review legacy mask channel order before shader rollout."
+            priority = "LOW"
+            action = "Author prompt ORM if near-field, then assign shared detail overlay."
         elif needs_detail_map:
             priority = "LOW"
             action = "Assign shared detail overlay after base ORM state is valid."
@@ -1024,7 +1048,7 @@ def build_surface_material_migration_queue(materials: list[dict[str, Any]]) -> l
             "detail_refs": unresolved_summary.get("detail_refs", []),
         })
 
-    return sorted(rows, key=lambda row: (migration_priority_rank(row["priority"]), row["path"]))[:200]
+    return sorted(rows, key=migration_queue_sort_key)[:200]
 
 
 def summarize_materials(materials: list[dict[str, Any]]) -> dict[str, Any]:
@@ -1065,6 +1089,7 @@ def summarize_materials(materials: list[dict[str, Any]]) -> dict[str, Any]:
             priority = candidate.get("priority", "UNKNOWN")
             channel_priority_counts[priority] = channel_priority_counts.get(priority, 0) + 1
     migration_queue = build_surface_material_migration_queue(materials)
+    migration_queue_priority_counts = count_priorities(migration_queue)
 
     return {
         "material_count": len(materials),
@@ -1084,6 +1109,7 @@ def summarize_materials(materials: list[dict[str, Any]]) -> dict[str, Any]:
         "surface_unresolved_texture_ref_severity_counts": surface_unresolved_severity_counts,
         "surface_unresolved_texture_ref_materials": surface_unresolved_materials[:100],
         "surface_migration_queue_count": len(migration_queue),
+        "surface_migration_queue_priority_counts": migration_queue_priority_counts,
         "surface_material_migration_queue": migration_queue,
         "channel_packing_candidate_count": len(channel_candidates),
         "channel_packing_priority_counts": channel_priority_counts,
@@ -1214,6 +1240,10 @@ def write_markdown_report(report: dict[str, Any], output: Path) -> None:
             material_summary.get("surface_unresolved_texture_ref_severity_counts", {}).get("BLOCKER", 0),
         ]),
         markdown_row(["Surface migration queue rows", material_summary.get("surface_migration_queue_count", 0)]),
+        markdown_row([
+            "Surface migration queue priority counts",
+            format_counts(material_summary.get("surface_migration_queue_priority_counts", {})),
+        ]),
         markdown_row(["Channel packing candidates", material_summary.get("channel_packing_candidate_count", 0)]),
         "",
     ]
@@ -1856,6 +1886,10 @@ def main() -> int:
         f"{material_summary.get('surface_unresolved_texture_ref_severity_counts', {}).get('BLOCKER', 0)}"
     )
     print(f"surface_migration_queue_rows={material_summary['surface_migration_queue_count']}")
+    print(
+        "surface_migration_queue_priority_counts="
+        f"{format_counts(material_summary.get('surface_migration_queue_priority_counts', {}))}"
+    )
     print(f"channel_packing_candidates={material_summary['channel_packing_candidate_count']}")
     print(f"channel_candidate_saved_mib={material_summary['vram_model']['candidate_saved_mib']}")
     print(f"god_mode_override_count={len(report['god_mode_texture_overrides'])}")
