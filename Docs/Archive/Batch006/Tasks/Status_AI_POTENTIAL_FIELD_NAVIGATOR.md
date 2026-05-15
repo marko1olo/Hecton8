@@ -122,3 +122,8 @@ Status: NAVIGATION OPTIMIZED (PY_SIM) / PENDING UNITY VERIFICATION
 
 - [x] Update architecture handoff with explicit-path checker and source-file existence guard | Justification: documentation now matches the actual CLI and validation surface. Alternative rejected: leaving runtime integrators with stale default-only checker instructions. Estimate: 8,000,000 us.
 - [x] Re-run post-doc verification guard | Justification: default and explicit-path `--check` passed, regression suite stayed 17 tests OK, py_compile passed, diff whitespace guard passed, debt scan had no hits, and JSON hash stayed stable. Alternative rejected: trusting documentation-only edits without verification. Estimate: 62,000,000 us.
+
+## Iterative Loop 19 - Export Authority Field Guard
+
+- [x] Validate `promptId` and `sourceContracts` in the checker | Justification: ownership and source-boundary fields are now hard contract data, so a hand-edited artifact cannot pass with the wrong agent id or a forbidden flow boundary. Alternative rejected: treating these fields as decorative JSON metadata. Estimate: 16,000,000 us.
+- [x] Re-run authority-field verification chain | Justification: simulator stayed `NAVIGATION OPTIMIZED`, both checker paths passed, regression suite stayed 17 tests OK with new authority-field assertions, py_compile passed, diff guard passed, debt scan had no hits, and JSON hash stayed stable. Alternative rejected: accepting validator changes without proving deterministic export. Estimate: 176,000,000 us.

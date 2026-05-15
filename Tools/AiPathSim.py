@@ -57,6 +57,13 @@ SOURCE_CONSTANTS = {
     "heatSourceCapacity": ("MaxAbyssalHeatSourceCount", 8),
 }
 
+SOURCE_CONTRACTS = {
+    "flowField": "AbyssalFlowField analytical current sample; no GPU readback",
+    "obstacle": "Voxel SDF / hybrid nav clearance snapshot; 1/d^2 repulsion",
+    "target": "player/prey biomass pull vector from cognition input",
+    "phase": "SIMULATION for steering solve; POST_SIMULATION for blackbox write; VISUAL_SYNC only consumes output",
+}
+
 BLACK_BOX_TELEMETRY_SCHEMA = {
     "capacityFrames": 300,
     "storage": "NativeArray<AiPotentialFieldTelemetryEntry> circular buffer",
@@ -712,6 +719,8 @@ def validate_export(data: object) -> Tuple[bool, list[str]]:
     expect(data.get("schema") == "H8.NavigationTuning.PotentialField.v1", "schema mismatch")
     expect(data.get("status") == "NAVIGATION OPTIMIZED", "status is not NAVIGATION OPTIMIZED")
     expect(data.get("evidenceClass") == "PY_SIM_STATIC_MODEL", "evidence class mismatch")
+    expect(data.get("promptId") == "AI_POTENTIAL_FIELD_NAVIGATOR", "promptId mismatch")
+    expect(data.get("sourceContracts") == SOURCE_CONTRACTS, "source contracts mismatch")
 
     snapshot = data.get("sourceParameterSnapshot")
     if not isinstance(snapshot, dict):
@@ -916,12 +925,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         "status": "NAVIGATION OPTIMIZED",
         "evidenceClass": "PY_SIM_STATIC_MODEL",
         "promptId": "AI_POTENTIAL_FIELD_NAVIGATOR",
-        "sourceContracts": {
-            "flowField": "AbyssalFlowField analytical current sample; no GPU readback",
-            "obstacle": "Voxel SDF / hybrid nav clearance snapshot; 1/d^2 repulsion",
-            "target": "player/prey biomass pull vector from cognition input",
-            "phase": "SIMULATION for steering solve; POST_SIMULATION for blackbox write; VISUAL_SYNC only consumes output",
-        },
+        "sourceContracts": SOURCE_CONTRACTS,
         "sourceParameterSnapshot": SOURCE_PARAMETER_SNAPSHOT,
         "formula": {
             "targetAttraction": "normalize(target - position) * targetAttractionWeight",

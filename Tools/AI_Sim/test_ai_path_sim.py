@@ -42,6 +42,8 @@ class AiPathSimTests(unittest.TestCase):
 
     def test_export_status_and_source_parameters(self) -> None:
         self.assertEqual(self.tuning["status"], "NAVIGATION OPTIMIZED")
+        self.assertEqual(self.tuning["promptId"], "AI_POTENTIAL_FIELD_NAVIGATOR")
+        self.assertEqual(self.tuning["sourceContracts"], self.sim.SOURCE_CONTRACTS)
         snapshot = self.tuning["sourceParameterSnapshot"]
         self.assertEqual(snapshot["flowTextureResolution"], 32)
         self.assertEqual(snapshot["vectorNoiseResolution"], 32)
@@ -59,6 +61,18 @@ class AiPathSimTests(unittest.TestCase):
         valid, errors = self.sim.validate_export(bad_tuning)
         self.assertFalse(valid)
         self.assertTrue(any("hysteresis distance" in error for error in errors))
+
+        bad_prompt = copy.deepcopy(self.tuning)
+        bad_prompt["promptId"] = "WRONG_AGENT"
+        valid, errors = self.sim.validate_export(bad_prompt)
+        self.assertFalse(valid)
+        self.assertTrue(any("promptId mismatch" in error for error in errors))
+
+        bad_contract = copy.deepcopy(self.tuning)
+        bad_contract["sourceContracts"]["flowField"] = "GPU readback"
+        valid, errors = self.sim.validate_export(bad_contract)
+        self.assertFalse(valid)
+        self.assertTrue(any("source contracts mismatch" in error for error in errors))
 
         bad_snapshot = copy.deepcopy(self.tuning["sourceParameterSnapshot"])
         bad_snapshot["flowTextureWorldSizeMeters"] = "invalid"

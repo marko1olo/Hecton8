@@ -135,3 +135,9 @@ Solution: Update `Docs/ARCHITECTURE/AI_POTENTIAL_FIELD_NAVIGATION.md` with expli
 Rejected Alternatives: Let code and documentation drift; rely on agent logs instead of stable architecture documentation.
 Scalability potential: Runtime integrators can validate candidate Low/Middle/High/Ultra tuning artifacts without replacing the canonical JSON.
 Hardware Impact: No runtime cost. Documentation sync only.
+
+Problem: `promptId` and `sourceContracts` were exported but not validated, allowing a corrupted handoff artifact to keep valid metrics while changing ownership or source boundaries.
+Solution: Promote source contract text to a shared simulator constant and require exact `promptId`/`sourceContracts` matches in `validate_export`.
+Rejected Alternatives: Validate only numeric steering evidence; leave ownership/source-boundary drift to manual review.
+Scalability potential: Low/Middle/High/Ultra tuning artifacts remain bound to the correct agent and no-GPU-readback flow contract before runtime porting.
+Hardware Impact: No runtime cost. Offline artifact validation only.

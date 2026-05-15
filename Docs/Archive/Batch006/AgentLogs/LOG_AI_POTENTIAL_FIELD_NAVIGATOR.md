@@ -211,3 +211,17 @@ Verification -> `python Tools/AiPathSim.py --check` printed `CHECK PASSED`. `pyt
 Exact Microseconds saved -> 0 Unity runtime microseconds claimed. Documentation sync is offline only.
 
 Regression model -> CPU/GC/memory/cadence unchanged for runtime. Correctness: handoff documentation now matches the tool surface.
+
+## 2026-05-15 - Export Authority Field Guard
+
+What was wrong -> `promptId` and `sourceContracts` were present in `Navigation_Tuning.json`, but the checker did not reject artifacts where those authority fields were corrupted.
+
+What was done -> Added a shared `SOURCE_CONTRACTS` constant, reused it during export, and made `validate_export` require exact `promptId` and source contract matches. Added regression coverage for wrong agent id and corrupted flow-field contract text.
+
+Cinematic Cheats used -> No runtime behavior changed. The analytical-flow/SDF-proxy contract remains the authority; this prevents accidental drift toward GPU readback or wrong-agent handoff data.
+
+Verification -> `python Tools/AiPathSim.py` printed `NAVIGATION OPTIMIZED`, `candidates=48 reached=30`, `raw_jitter=2 smoothed_jitter=1`, and `final_distance=2.810`. `python Tools/AiPathSim.py --check` printed `CHECK PASSED`. `python Tools/AiPathSim.py --check Data/AI/Navigation_Tuning.json` printed `CHECK PASSED`. `python -m unittest Tools.AI_Sim.test_ai_path_sim` ran 17 tests and passed with wrong-agent and source-contract corruption assertions. `python -m py_compile Tools/AiPathSim.py Tools/AI_Sim/test_ai_path_sim.py` passed. `git diff --check` passed with only autocrlf warnings. Debt-marker scan returned no hits. `Navigation_Tuning.json` SHA256 stayed `BE874CA325A9B3DE0BAABB6784837C4DBA7F5BA66B93EFAD63F3D750D7FFA693`.
+
+Exact Microseconds saved -> 0 Unity runtime microseconds claimed. Artifact authority validation is offline only.
+
+Regression model -> CPU/GC/memory/cadence unchanged for runtime. Correctness: ownership and source-boundary corruption now fail closed.
