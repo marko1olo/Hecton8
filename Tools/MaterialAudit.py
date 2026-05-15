@@ -957,6 +957,76 @@ def build_texture_budget_model(texture_summary: dict[str, Any], budget_mib: floa
     }
 
 
+def migration_priority_rank(priority: str) -> int:
+    if priority == "BLOCKER":
+        return 0
+    if priority == "HIGH":
+        return 1
+    if priority == "MEDIUM":
+        return 2
+    return 3
+
+
+def build_surface_material_migration_queue(materials: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for material in materials:
+        if not material.get("is_surface_material_candidate"):
+            continue
+
+        issues = set(material.get("issues", []))
+        channel_candidate = material.get("channel_packing_candidate")
+        unresolved_refs = material.get("unresolved_texture_refs", [])
+        unresolved_summary = material.get("unresolved_texture_ref_summary", {})
+        unresolved_severity = unresolved_summary.get("severity", "NONE")
+        needs_reference_repair = bool(unresolved_refs)
+        needs_prompt_orm = "NO_PROMPT_ORM_SLOT" in issues
+        needs_detail_map = "NO_DETAIL_MAP_SLOT" in issues
+        needs_legacy_mask_review = "LEGACY_MASK_SLOT_REQUIRES_CHANNEL_REVIEW" in issues
+        if not (
+            needs_reference_repair
+            or needs_prompt_orm
+            or needs_detail_map
+            or needs_legacy_mask_review
+            or channel_candidate
+        ):
+            continue
+
+        if unresolved_severity == "BLOCKER":
+            priority = "BLOCKER"
+            action = "Restore base/normal refs or clear invalid slots before material migration."
+        elif channel_candidate and channel_candidate.get("priority") == "HIGH":
+            priority = "HIGH"
+            action = "Pack AO/roughness/metallic into prompt ORM, then assign shared detail overlay."
+        elif needs_prompt_orm or needs_legacy_mask_review:
+            priority = "MEDIUM"
+            action = "Author prompt ORM or review legacy mask channel order before shader rollout."
+        elif needs_detail_map:
+            priority = "LOW"
+            action = "Assign shared detail overlay after base ORM state is valid."
+        else:
+            priority = "LOW"
+            action = "Review surface material migration state."
+
+        props = material.get("texture_properties", {})
+        rows.append({
+            "path": material["path"],
+            "priority": priority,
+            "action": action,
+            "needs_reference_repair": needs_reference_repair,
+            "unresolved_severity": unresolved_severity,
+            "needs_prompt_orm": needs_prompt_orm,
+            "needs_detail_map": needs_detail_map,
+            "needs_legacy_mask_review": needs_legacy_mask_review,
+            "channel_priority": channel_candidate.get("priority", "") if channel_candidate else "",
+            "base_maps": property_paths(props, BASE_MAP_PROPS),
+            "normal_maps": property_paths(props, NORMAL_MAP_PROPS),
+            "data_refs": unresolved_summary.get("data_refs", []),
+            "detail_refs": unresolved_summary.get("detail_refs", []),
+        })
+
+    return sorted(rows, key=lambda row: (migration_priority_rank(row["priority"]), row["path"]))[:200]
+
+
 def summarize_materials(materials: list[dict[str, Any]]) -> dict[str, Any]:
     issue_counts: dict[str, int] = {}
     issue_materials: list[dict[str, Any]] = []
@@ -965,6 +1035,8 @@ def summarize_materials(materials: list[dict[str, Any]]) -> dict[str, Any]:
     unresolved_materials: list[dict[str, Any]] = []
     surface_unresolved_materials: list[dict[str, Any]] = []
     detail_missing_materials: list[dict[str, Any]] = []
+    unresolved_severity_counts: dict[str, int] = {}
+    surface_unresolved_severity_counts: dict[str, int] = {}
     unresolved_ref_count = 0
     surface_unresolved_ref_count = 0
     for material in materials:
@@ -979,14 +1051,20 @@ def summarize_materials(materials: list[dict[str, Any]]) -> dict[str, Any]:
         if unresolved_refs:
             unresolved_materials.append(material)
             unresolved_ref_count += len(unresolved_refs)
+            severity = material.get("unresolved_texture_ref_summary", {}).get("severity", "UNKNOWN")
+            unresolved_severity_counts[severity] = unresolved_severity_counts.get(severity, 0) + 1
             if material.get("is_surface_material_candidate"):
                 surface_unresolved_materials.append(material)
                 surface_unresolved_ref_count += len(unresolved_refs)
+                surface_unresolved_severity_counts[severity] = (
+                    surface_unresolved_severity_counts.get(severity, 0) + 1
+                )
         candidate = material.get("channel_packing_candidate")
         if candidate:
             channel_candidates.append(candidate)
             priority = candidate.get("priority", "UNKNOWN")
             channel_priority_counts[priority] = channel_priority_counts.get(priority, 0) + 1
+    migration_queue = build_surface_material_migration_queue(materials)
 
     return {
         "material_count": len(materials),
@@ -999,10 +1077,14 @@ def summarize_materials(materials: list[dict[str, Any]]) -> dict[str, Any]:
         "materials_with_issues": len(issue_materials),
         "materials_with_unresolved_texture_refs": len(unresolved_materials),
         "unresolved_texture_ref_count": unresolved_ref_count,
+        "unresolved_texture_ref_severity_counts": unresolved_severity_counts,
         "unresolved_texture_ref_materials": unresolved_materials[:100],
         "surface_materials_with_unresolved_texture_refs": len(surface_unresolved_materials),
         "surface_unresolved_texture_ref_count": surface_unresolved_ref_count,
+        "surface_unresolved_texture_ref_severity_counts": surface_unresolved_severity_counts,
         "surface_unresolved_texture_ref_materials": surface_unresolved_materials[:100],
+        "surface_migration_queue_count": len(migration_queue),
+        "surface_material_migration_queue": migration_queue,
         "channel_packing_candidate_count": len(channel_candidates),
         "channel_packing_priority_counts": channel_priority_counts,
         "channel_packing_candidates": channel_candidates[:100],
@@ -1127,6 +1209,11 @@ def write_markdown_report(report: dict[str, Any], output: Path) -> None:
             material_summary.get("surface_materials_with_unresolved_texture_refs", 0),
         ]),
         markdown_row(["Surface unresolved texture refs", material_summary.get("surface_unresolved_texture_ref_count", 0)]),
+        markdown_row([
+            "Surface unresolved BLOCKER materials",
+            material_summary.get("surface_unresolved_texture_ref_severity_counts", {}).get("BLOCKER", 0),
+        ]),
+        markdown_row(["Surface migration queue rows", material_summary.get("surface_migration_queue_count", 0)]),
         markdown_row(["Channel packing candidates", material_summary.get("channel_packing_candidate_count", 0)]),
         "",
     ]
@@ -1338,6 +1425,25 @@ def write_markdown_report(report: dict[str, Any], output: Path) -> None:
     else:
         lines.append("No unresolved surface-material texture GUIDs detected.")
 
+    lines.extend(["", "## Surface Material Migration Queue", ""])
+    migration_queue = material_summary.get("surface_material_migration_queue", [])
+    if migration_queue:
+        lines.extend([
+            markdown_row(["Material", "Priority", "Action", "Needs ORM", "Needs Detail", "Reference Repair"]),
+            markdown_row(["---", "---", "---", "---", "---", "---"]),
+        ])
+        for item in migration_queue:
+            lines.append(markdown_row([
+                item["path"],
+                item["priority"],
+                item["action"],
+                item["needs_prompt_orm"],
+                item["needs_detail_map"],
+                item["needs_reference_repair"],
+            ]))
+    else:
+        lines.append("No surface material migration rows detected.")
+
     lines.extend(["", "## Texture Memory Hotspots", ""])
     hotspots = texture_summary.get("largest_estimated_textures", [])
     if hotspots:
@@ -1449,6 +1555,40 @@ def write_csv_reports(report: dict[str, Any], prefix: Path) -> None:
                 ";".join(summary["other_refs"]),
                 summary["recommendation"],
                 ";".join(unresolved_refs),
+            ])
+
+    with Path(f"{prefix}_surface_material_migration_queue.csv").open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.writer(handle)
+        writer.writerow([
+            "path",
+            "priority",
+            "action",
+            "needs_reference_repair",
+            "unresolved_severity",
+            "needs_prompt_orm",
+            "needs_detail_map",
+            "needs_legacy_mask_review",
+            "channel_priority",
+            "base_maps",
+            "normal_maps",
+            "data_refs",
+            "detail_refs",
+        ])
+        for item in material_summary.get("surface_material_migration_queue", []):
+            writer.writerow([
+                item["path"],
+                item["priority"],
+                item["action"],
+                item["needs_reference_repair"],
+                item["unresolved_severity"],
+                item["needs_prompt_orm"],
+                item["needs_detail_map"],
+                item["needs_legacy_mask_review"],
+                item["channel_priority"],
+                ";".join(item.get("base_maps", [])),
+                ";".join(item.get("normal_maps", [])),
+                ";".join(item.get("data_refs", [])),
+                ";".join(item.get("detail_refs", [])),
             ])
 
     with Path(f"{prefix}_detail_candidates.csv").open("w", encoding="utf-8", newline="") as handle:
@@ -1711,6 +1851,11 @@ def main() -> int:
     print(f"unresolved_texture_refs={material_summary['unresolved_texture_ref_count']}")
     print(f"surface_materials_with_unresolved_texture_refs={material_summary['surface_materials_with_unresolved_texture_refs']}")
     print(f"surface_unresolved_texture_refs={material_summary['surface_unresolved_texture_ref_count']}")
+    print(
+        "surface_unresolved_blocker_materials="
+        f"{material_summary.get('surface_unresolved_texture_ref_severity_counts', {}).get('BLOCKER', 0)}"
+    )
+    print(f"surface_migration_queue_rows={material_summary['surface_migration_queue_count']}")
     print(f"channel_packing_candidates={material_summary['channel_packing_candidate_count']}")
     print(f"channel_candidate_saved_mib={material_summary['vram_model']['candidate_saved_mib']}")
     print(f"god_mode_override_count={len(report['god_mode_texture_overrides'])}")

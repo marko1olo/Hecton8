@@ -231,3 +231,11 @@ Solution: Add surface-unresolved counts, Markdown/CSV handoff, and `--fail-on-su
 Rejected Alternatives: Reusing broad unresolved exit 4 was rejected because it would block this domain on celestial, terrain, projection, or other non-surface material references. Ignoring unresolved surface refs was rejected because channel-packing/detail migration cannot trust a material whose base/normal/AO references cannot resolve.
 Scalability potential: Low = surface migration blocks only real visible material dependency faults. Middle = CI can run broad dependency and surface dependency lanes separately. High = prompt ORM/detail work can proceed without inherited broken references. Ultra = GOD_MODE material overrides stay gated by valid source textures before higher mips are allowed.
 Hardware Impact: 0 us runtime impact. Full first-party audit reports 9 broad unresolved materials / 27 refs, but only 2 surface unresolved materials / 8 refs; full-root surface gate returns expected exit 10 under wrapper. The two affected materials are `mat_Rock2.mat` and `mat_Rock_Shared.mat` under the Rock_4 asset.
+
+## Surface Blocker Severity
+
+Problem: The surface unresolved CSV listed GUIDs but did not classify which shader slots made the material unsafe for ORM/detail migration.
+Solution: Group unresolved refs by base-color, normal, data-mask, detail, and other slots; assign severity; expose severity counts in JSON/Markdown/stdout and row-level severity in CSV.
+Rejected Alternatives: Raw GUID-only export was rejected because it forces every downstream owner to duplicate slot classification. Blocking only on total unresolved count was rejected because base/normal loss is worse than a stale optional detail slot.
+Scalability potential: Low = artists fix base/normal blockers first before cheap-device imports. Middle = CI can sort blocker/high/medium debt. High = surface migration can prioritize visible rock/cockpit/module materials. Ultra = GOD_MODE override rollout can require zero BLOCKER refs before spending higher mips.
+Hardware Impact: 0 us runtime impact. Current full audit reports `surface_unresolved_blocker_materials=2`; both are Rock_4 surface materials with unresolved base, normal, and occlusion/data slots.

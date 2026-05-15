@@ -799,3 +799,40 @@ Verification:
 - `git diff --check`: passed with line-ending warnings only.
 - Owned Python hot-path scan found no Unity runtime API matches.
 - Artifact readback confirmed exit code 10 and `Surface Material Texture GUIDs` in generated documentation.
+
+## 2026-05-15 - Surface Blocker Severity Pass
+
+What was wrong:
+
+- Surface unresolved material rows exposed raw GUIDs but did not classify the failing shader slots.
+- The report did not expose an aggregate blocker count for CI/art triage.
+
+What was done:
+
+- Added `unresolved_slot_summary()` to classify unresolved refs into base, normal, data, detail, and other slots.
+- Added `BLOCKER/HIGH/MEDIUM/LOW` severity classification.
+- Added `surface_unresolved_texture_ref_severity_counts` to generated JSON.
+- Added `Surface unresolved BLOCKER materials` to Markdown summary.
+- Added `surface_unresolved_blocker_materials` to CLI stdout.
+- Expanded the surface unresolved CSV with severity, slot groups, and recommendation columns.
+- Extended regression tests for severity classification and export readback.
+
+Cinematic Cheats used:
+
+- None. This is offline surface dependency triage.
+
+Exact Microseconds saved:
+
+- Runtime code changed: none.
+- Immediate runtime CPU saving: 0 us.
+- Prevents material migration from spending time on ORM/detail work while base/normal texture sources are unresolved.
+
+Verification:
+
+- `python -m py_compile Tools\MaterialAudit.py Tools\test_material_audit.py`: passed.
+- `python -m unittest Tools.test_material_audit`: passed 13 tests.
+- Full first-party audit with `--ci-surface-gates`: passed; `surface_unresolved_blocker_materials=2`.
+- Full-root `--fail-on-surface-unresolved-refs` returned expected exit 10 under wrapper.
+- Artifact readback confirmed both affected Rock_4 materials are `BLOCKER` severity with base, normal, and data refs split into separate columns.
+- `git diff --check`: passed with line-ending warnings only.
+- Owned Python hot-path scan found no Unity runtime API matches.

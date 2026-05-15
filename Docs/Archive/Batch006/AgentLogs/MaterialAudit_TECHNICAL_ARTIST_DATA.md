@@ -30,6 +30,8 @@ Include third-party: `False`
 | Unresolved texture refs | 27 |
 | Surface materials with unresolved texture refs | 2 |
 | Surface unresolved texture refs | 8 |
+| Surface unresolved BLOCKER materials | 2 |
+| Surface migration queue rows | 22 |
 | Channel packing candidates | 22 |
 
 ## Gate Exit Codes
@@ -241,6 +243,33 @@ No texture read errors detected.
 | --- | --- | --- | --- | --- | --- | --- |
 | Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/mat_Rock2.mat | BLOCKER | _BaseMap:920eb4a5d89009b42a522ff2aa1e6ef3; _MainTex:920eb4a5d89009b42a522ff2aa1e6ef3 | _BumpMap:5189dcc817bc5e24095d445209499d1f | _OcclusionMap:df147ac10298ce44e9557850251a533a |  | Restore source base/normal textures or clear invalid slots before ORM/detail migration. |
 | Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/mat_Rock_Shared.mat | BLOCKER | _BaseMap:920eb4a5d89009b42a522ff2aa1e6ef3; _MainTex:920eb4a5d89009b42a522ff2aa1e6ef3 | _BumpMap:5189dcc817bc5e24095d445209499d1f | _OcclusionMap:df147ac10298ce44e9557850251a533a |  | Restore source base/normal textures or clear invalid slots before ORM/detail migration. |
+
+## Surface Material Migration Queue
+
+| Material | Priority | Action | Needs ORM | Needs Detail | Reference Repair |
+| --- | --- | --- | --- | --- | --- |
+| Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/mat_Rock2.mat | BLOCKER | Restore base/normal refs or clear invalid slots before material migration. | True | True | True |
+| Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/mat_Rock_Shared.mat | BLOCKER | Restore base/normal refs or clear invalid slots before material migration. | True | True | True |
+| Art/Materials/Construction/Mat_RuinSeepSheen.mat | MEDIUM | Author prompt ORM or review legacy mask channel order before shader rollout. | True | True | False |
+| Art/Materials/Meshy_AI_Alien_barnacles_clust_0301230506_texture.mat | MEDIUM | Author prompt ORM or review legacy mask channel order before shader rollout. | True | True | False |
+| Art/Materials/WorldProceduralProxy/MAT_family_coral_branching.mat | MEDIUM | Author prompt ORM or review legacy mask channel order before shader rollout. | True | True | False |
+| Art/Materials/WorldProceduralProxy/MAT_family_coral_brittle.mat | MEDIUM | Author prompt ORM or review legacy mask channel order before shader rollout. | True | True | False |
+| Art/Materials/WorldProceduralProxy/MAT_family_coral_low.mat | MEDIUM | Author prompt ORM or review legacy mask channel order before shader rollout. | True | True | False |
+| Art/Materials/WorldProceduralProxy/MAT_family_coral_massive.mat | MEDIUM | Author prompt ORM or review legacy mask channel order before shader rollout. | True | True | False |
+| Art/Materials/WorldProceduralProxy/MAT_family_coral_plate.mat | MEDIUM | Author prompt ORM or review legacy mask channel order before shader rollout. | True | True | False |
+| Art/Materials/WorldProceduralProxy/MAT_family_kelp_abyssal.mat | MEDIUM | Author prompt ORM or review legacy mask channel order before shader rollout. | True | True | False |
+| Art/Materials/WorldProceduralProxy/MAT_family_kelp_canopy.mat | MEDIUM | Author prompt ORM or review legacy mask channel order before shader rollout. | True | True | False |
+| Art/Materials/WorldProceduralProxy/MAT_family_kelp_patch_dense.mat | MEDIUM | Author prompt ORM or review legacy mask channel order before shader rollout. | True | True | False |
+| Art/Materials/WorldProceduralProxy/MAT_family_kelp_tall.mat | MEDIUM | Author prompt ORM or review legacy mask channel order before shader rollout. | True | True | False |
+| Art/Materials/WorldProceduralProxy/MAT_family_rock_arch_large.mat | MEDIUM | Author prompt ORM or review legacy mask channel order before shader rollout. | True | True | False |
+| Art/Materials/WorldProceduralProxy/MAT_family_rock_cluster_medium.mat | MEDIUM | Author prompt ORM or review legacy mask channel order before shader rollout. | True | True | False |
+| Art/Materials/WorldProceduralProxy/MAT_family_rock_small_floor.mat | MEDIUM | Author prompt ORM or review legacy mask channel order before shader rollout. | True | True | False |
+| Art/Models/Rocks/Rock 6/rock6/rock_6.mat | MEDIUM | Author prompt ORM or review legacy mask channel order before shader rollout. | True | True | False |
+| Art/Models/Rocks/Rock 7/Materials/2.mat | MEDIUM | Author prompt ORM or review legacy mask channel order before shader rollout. | True | True | False |
+| Materials/WorldRuntime/ProceduralPlaceholders/TerrainLod/MAT_family_rock_arch_large_Placeholder.mat | MEDIUM | Author prompt ORM or review legacy mask channel order before shader rollout. | True | True | False |
+| _PROLOGUE_CONTENT/Textures/Planets/pLANET/Mat_HectonClouds.mat | MEDIUM | Author prompt ORM or review legacy mask channel order before shader rollout. | True | True | False |
+| _PROLOGUE_CONTENT/Textures/Planets/pLANET/Mat_HectonSurface.mat | MEDIUM | Author prompt ORM or review legacy mask channel order before shader rollout. | True | True | False |
+| _PROLOGUE_CONTENT/Textures/Planets/pLANET/Materials/clouds0_diff.mat | MEDIUM | Author prompt ORM or review legacy mask channel order before shader rollout. | True | True | False |
 
 ## Texture Memory Hotspots
 

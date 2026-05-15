@@ -173,6 +173,11 @@ class MaterialAuditTests(unittest.TestCase):
             self.assertEqual("BLOCKER", resolved["unresolved_texture_ref_summary"]["severity"])
             self.assertEqual(1, len(resolved["unresolved_texture_ref_summary"]["base_color_refs"]))
             self.assertEqual(2, len(resolved["unresolved_texture_ref_summary"]["data_refs"]))
+            summary = audit.summarize_materials([resolved])
+            self.assertEqual(1, summary["unresolved_texture_ref_severity_counts"]["BLOCKER"])
+            self.assertEqual(1, summary["surface_unresolved_texture_ref_severity_counts"]["BLOCKER"])
+            self.assertEqual(1, summary["surface_migration_queue_count"])
+            self.assertEqual("BLOCKER", summary["surface_material_migration_queue"][0]["priority"])
             self.assertEqual("HIGH", resolved["channel_packing_candidate"]["priority"])
 
     def test_scoped_material_audit_resolves_guids_from_wider_root(self) -> None:
@@ -623,6 +628,7 @@ class MaterialAuditTests(unittest.TestCase):
                 "materials_with_issues": 1,
                 "materials_with_unresolved_texture_refs": 1,
                 "unresolved_texture_ref_count": 1,
+                "unresolved_texture_ref_severity_counts": {"BLOCKER": 1},
                 "unresolved_texture_ref_materials": [
                     {
                         "path": "MAT_Test.mat",
@@ -631,10 +637,29 @@ class MaterialAuditTests(unittest.TestCase):
                 ],
                 "surface_materials_with_unresolved_texture_refs": 1,
                 "surface_unresolved_texture_ref_count": 1,
+                "surface_unresolved_texture_ref_severity_counts": {"BLOCKER": 1},
                 "surface_unresolved_texture_ref_materials": [
                     {
                         "path": "MAT_Test.mat",
                         "unresolved_texture_refs": ["_BaseMap:22222222222222222222222222222222"],
+                    },
+                ],
+                "surface_migration_queue_count": 1,
+                "surface_material_migration_queue": [
+                    {
+                        "path": "MAT_Test.mat",
+                        "priority": "BLOCKER",
+                        "action": "Restore base/normal refs or clear invalid slots before material migration.",
+                        "needs_reference_repair": True,
+                        "unresolved_severity": "BLOCKER",
+                        "needs_prompt_orm": True,
+                        "needs_detail_map": True,
+                        "needs_legacy_mask_review": False,
+                        "channel_priority": "LOW",
+                        "base_maps": ["_BaseMap:Panel_Albedo.png"],
+                        "normal_maps": [],
+                        "data_refs": [],
+                        "detail_refs": [],
                     },
                 ],
                 "channel_packing_candidate_count": 1,
@@ -704,6 +729,7 @@ class MaterialAuditTests(unittest.TestCase):
             detail_missing_csv = Path(f"{csv_prefix}_detail_map_missing_materials.csv").read_text(encoding="utf-8")
             channel_csv = Path(f"{csv_prefix}_channel_packing_candidates.csv").read_text(encoding="utf-8")
             surface_unresolved_csv = Path(f"{csv_prefix}_surface_unresolved_texture_refs.csv").read_text(encoding="utf-8")
+            migration_queue_csv = Path(f"{csv_prefix}_surface_material_migration_queue.csv").read_text(encoding="utf-8")
             memory_csv = Path(f"{csv_prefix}_texture_memory_hotspots.csv").read_text(encoding="utf-8")
             overrides_csv = Path(f"{csv_prefix}_god_mode_texture_overrides.csv").read_text(encoding="utf-8")
             detail_plan_csv = Path(f"{csv_prefix}_global_detail_overlay_plan.csv").read_text(encoding="utf-8")
@@ -719,7 +745,9 @@ class MaterialAuditTests(unittest.TestCase):
             self.assertIn("Active Gates", markdown_text)
             self.assertIn("Detail Map Missing Materials", markdown_text)
             self.assertIn("Surface Material Texture GUIDs", markdown_text)
+            self.assertIn("Surface Material Migration Queue", markdown_text)
             self.assertIn("BLOCKER", markdown_text)
+            self.assertIn("Surface unresolved BLOCKER materials", markdown_text)
             self.assertIn("surface_safe", markdown_text)
             self.assertIn("unresolved_texture_refs", markdown_text)
             self.assertIn("surface_unresolved_texture_refs", markdown_text)
@@ -734,6 +762,8 @@ class MaterialAuditTests(unittest.TestCase):
             self.assertIn("MAT_Test.mat", surface_unresolved_csv)
             self.assertIn("base_color_refs", surface_unresolved_csv)
             self.assertIn("Restore source base/normal textures", surface_unresolved_csv)
+            self.assertIn("MAT_Test.mat", migration_queue_csv)
+            self.assertIn("Restore base/normal refs", migration_queue_csv)
             self.assertIn("BC7_ORM_LINEAR_8BPP", memory_csv)
             self.assertIn("Hero cockpit albedo", overrides_csv)
             self.assertIn("fine_cockpit_scratches", detail_plan_csv)
