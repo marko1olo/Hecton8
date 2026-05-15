@@ -76,7 +76,7 @@ Evidence class: STATIC_SOURCE / STATIC_DOC / FILESYSTEM
 - RenderTexture source-hotspot validation: scanner report now records 61 RT source hotspots, 53 runtime/non-editor RT source hotspots, pattern split = 19 new RenderTexture / 18 RTHandles.Alloc / 16 RenderTextureDescriptor / 8 RenderTexture.GetTemporary.
 - Docs/Reports/VRAM_RenderTexture_SourceHotspots.csv: generated; rows=62 including header, columns=8, bad_rows=0, runtime profiler priority rows=53.
 - Docs/AgentLogs/LOG_VRAM_ASSET_SCOUT.md: chronological block order repaired after self-audit found MACHINE GATE above REMEDIATION
-- Docs/AgentLogs/LOG_VRAM_ASSET_SCOUT.md: chronological block order rechecked after import-root block relocation; latest order is top-old/bottom-new through 2026-05-15T19:35:00+03:00.
+- Docs/AgentLogs/LOG_VRAM_ASSET_SCOUT.md: chronological block order rechecked after report-drift block relocation; LOG_ORDER_OK headers=20, latest order is top-old/bottom-new through 2026-05-15T20:05:00+03:00.
 - Test hygiene: read-only test suite now avoids Python temp-file writes under workspace-write sandbox; MemoryBudgetCheck pyc temp files removed
 - Prompt re-extraction note: Docs/Tasks/CURRENT_BATCH.md no longer contains AGENT_PROMPT id VRAM_ASSET_SCOUT as of this loop; current file belongs to a new batch. Continued from persisted Status/Rationale by user instruction.
 - POLISH_MANDATE extraction note: Docs/Tasks/CURRENT_BATCH.md currently contains no POLISH_MANDATE tag; final anti-bloat pass was executed from persisted VRAM_ASSET_SCOUT state instead of inventing missing batch instructions.
