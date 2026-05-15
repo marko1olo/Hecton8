@@ -905,3 +905,27 @@ Verification:
 - `python -m unittest Tools.test_world_entropy_sim -v`: 20 tests passed in 23.836 s.
 - `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 365 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`, Safe day 28, Deep Abyss day 88, ratio 3.143, final mature ratio 1.000.
 - `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 1000 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`, mature counts stable through day 1000.
+
+## 2026-05-15 - Direct Balance Constants Guard
+
+What was wrong:
+- `calculate_balance()` could be called directly with malformed constants after a valid final state existed.
+- That allowed bad acceptance metadata at status-publication time.
+
+What was done:
+- Added `validate_constants(constants)` inside `calculate_balance()`.
+- Added `test_calculate_balance_rejects_invalid_constants`.
+
+Cinematic cheats used:
+- None. This is offline status-publication hardening.
+
+Exact microseconds saved:
+- Runtime microseconds saved: 0. Unity runtime backend was not changed.
+- Failure avoided: malformed direct balance constants abort before status publication.
+
+Verification:
+- `python -m py_compile Tools/WorldEntropySim.py Tools/test_world_entropy_sim.py`: exit code 0.
+- Guard scan found `validate_constants(constants)` in `calculate_balance()` and the new regression test.
+- `python -m unittest Tools.test_world_entropy_sim -v`: 21 tests passed in 41.890 s.
+- `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 365 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`, Safe day 28, Deep Abyss day 88, ratio 3.143, final mature ratio 1.000.
+- `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 1000 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`, mature counts stable through day 1000.

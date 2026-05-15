@@ -499,3 +499,14 @@ Rejected Alternatives: Leaving the branch as harmless legacy code was rejected b
 Scalability potential: Low/Middle/High/Ultra validation paths now use one balance calculation contract. Future alternate validation modes must become explicit data/schema work.
 
 Hardware Impact: Tooling-only. Unity runtime backend unchanged; invalid direct balance calls abort before publishing a status.
+
+## Decision 46 - Direct Balance Constants Guard
+Problem: After a valid simulation final state existed, a direct caller could pass malformed constants into `calculate_balance()` and still publish balance output.
+
+Solution: Added `validate_constants(constants)` inside `calculate_balance()` and a regression that mutates the Safe/Abyss ratio threshold to `0.0` before direct balance publication.
+
+Rejected Alternatives: Trusting `run_sim()` validation was rejected because `calculate_balance()` is a public helper in the tooling module. Sanitizing invalid acceptance metadata was rejected because evidence generation must fail closed.
+
+Scalability potential: Low/Middle/High/Ultra validation paths now share the same constants validation at simulation and status-publication time.
+
+Hardware Impact: Tooling-only. Unity runtime backend unchanged; invalid balance constants abort before status publication.
