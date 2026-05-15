@@ -234,10 +234,10 @@ Mandates loaded:
   - Quest3_90Hz: maxAngleDelta 3.115 deg, maxOpacityDelta 0.050, shockFrames 0
 - `python Tools/UX/vr_snap_turn_comfort_audit.py --write-report`: PASS; wrote `Docs/AgentLogs/VR_Comfort_Audit_SOMATIC_COMFORT_ANALYST.json`
 - `python Tools/UX/vr_snap_turn_comfort_audit.py --check-report`: PASS; report hashes/results/source contract match current files
-- `PYTHONDONTWRITEBYTECODE=1 python -B Tools/UX/test_vr_snap_turn_comfort_audit.py -v`: PASS, 37 tests
+- `python -B Tools/UX/test_vr_snap_turn_comfort_audit.py -v`: PASS, 37 tests via sandbox-escalated run because the cleanup contract intentionally deletes workspace scratch files
 - Audit now loads `Docs/Design/VR_Comfort_Profile_Quest.json` and validates exact device IDs, combine rule, device thresholds, device-table parity, markdown companion parity, runtime integration field bindings, jerk caps, visual shock rules, speed LUT monotonicity, Quest 2 LUT derivation, FastNlerp alpha formula, runtime acceleration source fragments, exact haptic waveform IDs/events, haptic waveform-table parity, haptic cadence/duration bounds, haptic limits, `VRSomaticProvider` comfort defaults, and `ToolHapticsRuntime` haptic buffer limits.
 - Audit report now hashes the comfort JSON, comfort Markdown, haptic JSON, audit script, audit test script, `VRSomaticProvider.cs`, and `ToolHapticsRuntime.cs`.
-- `python -m py_compile Tools/UX/vr_snap_turn_comfort_audit.py Tools/UX/test_vr_snap_turn_comfort_audit.py`: PASS
+- `python -B -m py_compile Tools/UX/vr_snap_turn_comfort_audit.py Tools/UX/test_vr_snap_turn_comfort_audit.py`: PASS via sandbox-escalated run because `.pyc` creation uses rename
 - `python -m json.tool` on comfort JSON, haptic JSON, and audit report JSON: PASS
 - `FILE_HYGIENE files=10 trailingWs=0`: PASS
 - Markdown threshold unit matching: PASS; `markdown_contains_number_with_unit()` requires the `rad/s2` unit for soft/emergency acceleration thresholds

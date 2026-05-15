@@ -1401,3 +1401,23 @@ Verification:
 - Cleanup fragments verified in `Tools/UX/test_vr_snap_turn_comfort_audit.py`: PASS.
 - `Temp/CodexValidation/SOMATIC_COMFORT_ANALYST_TESTS`: absent.
 - Runtime Unity / GCMonitor proof remains PENDING VERIFICATION due to unavailable Unity/.NET project tooling.
+
+## 2026-05-15 - Final Escalated Cleanup Verification
+
+What was wrong:
+- The cleanup-contract test intentionally deletes workspace scratch files, which sandboxed commands block.
+
+What was done:
+- Re-ran the current 37-test suite outside the sandbox under the approved `python -B Tools\UX\test_vr_snap_turn_comfort_audit.py` prefix.
+- Verified the cleanup contract passes and leaves `Temp/CodexValidation/SOMATIC_COMFORT_ANALYST_TESTS` absent.
+
+Cinematic Cheats used:
+- No runtime behavior changed.
+
+Exact Microseconds saved:
+- 0 us/frame. Verification only.
+
+Verification:
+- `python -B Tools/UX/test_vr_snap_turn_comfort_audit.py -v`: PASS, 37 tests via sandbox-escalated run.
+- `Temp/CodexValidation/SOMATIC_COMFORT_ANALYST_TESTS`: absent.
+- Runtime Unity / GCMonitor proof remains PENDING VERIFICATION due to unavailable Unity/.NET project tooling.
